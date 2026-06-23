@@ -557,7 +557,7 @@
         "avg": 20
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "true-crime-002",
@@ -595,7 +595,7 @@
         "avg": 17
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "true-crime-004",
@@ -614,7 +614,7 @@
         "avg": 21
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "true-crime-005",
@@ -633,7 +633,7 @@
         "avg": 19
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     }
   ],
   "narrative_motivation": [

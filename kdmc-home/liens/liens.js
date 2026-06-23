@@ -1,4 +1,4 @@
-/* KDMC APEX — Centre de contrôle (liens 1-clic, par famille). v1.2.0
+/* KDMC APEX — Centre de contrôle (liens 1-clic, par famille). v1.3.0
    Réservé Kevin / Lolo. Tout est fail-open (anti-lockout, règles #81/#98).
    Aucun secret ici : uniquement des liens vers TES tableaux de bord.
    + Recherche instantanée + pastilles d'état des workers (lit le JSON de
@@ -38,6 +38,12 @@
         { ic: '🌿', nm: 'La Détente', ds: 'Boutique & studio (POD)', links: [
           { l: 'Boutique', u: 'https://la-detente.kd-mc.com/' },
           { l: 'Studio', u: 'https://la-detente.kd-mc.com/studio.html' }
+        ] },
+        { ic: '🚧', nm: 'Boutiques en construction', ds: 'Aperçu des prochaines boutiques', links: [
+          { l: 'Tech Hub', u: PAGES + '/shops/tech-hub/' },
+          { l: 'EcoCraft', u: PAGES + '/shops/ecocraft/' },
+          { l: 'Digital Vault', u: PAGES + '/shops/digital-vault/' },
+          { l: 'Pawsome', u: PAGES + '/shops/pawsome/' }
         ] }
       ]
     },
@@ -113,6 +119,10 @@
         ] },
         { ic: '💬', nm: 'Telegram', ds: 'TELEGRAM_API_KEY (bot)', links: [
           { l: 'BotFather', u: 'https://t.me/BotFather' }
+        ] },
+        { ic: '📺', nm: 'YouTube / Google', ds: 'YOUTUBE_CLIENT_ID · SECRET · REFRESH_TOKEN', links: [
+          { l: 'YouTube Studio', u: 'https://studio.youtube.com/' },
+          { l: 'Identifiants Google', u: 'https://console.cloud.google.com/apis/credentials' }
         ] }
       ]
     },
@@ -168,7 +178,12 @@
           { l: 'v13-backend', u: GH + '/actions/workflows/deploy-apex-v13-backend.yml' },
           { l: 'auth', u: GH + '/actions/workflows/deploy-apex-auth-worker.yml' },
           { l: 'push', u: GH + '/actions/workflows/deploy-push-worker.yml' },
-          { l: 'coffre-r2', u: GH + '/actions/workflows/deploy-coffre-r2.yml' }
+          { l: 'coffre-r2', u: GH + '/actions/workflows/deploy-coffre-r2.yml' },
+          { l: 'soldes', u: GH + '/actions/workflows/deploy-kdmc-balances.yml' },
+          { l: 'santé workers', u: GH + '/actions/workflows/workers-health-check.yml' },
+          { l: 'social-publish', u: GH + '/actions/workflows/social-publish.yml' },
+          { l: 'social-scheduler', u: GH + '/actions/workflows/social-scheduler.yml' },
+          { l: 'agent 24/7', u: GH + '/actions/workflows/agent-cron.yml' }
         ] },
         { ic: '🔐', nm: 'Secrets & Pages', ds: 'Réglages du dépôt', links: [
           { l: 'Secrets Actions', u: GH + '/settings/secrets/actions' },

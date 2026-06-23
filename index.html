@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.807";
+var APP_VER="v9.819";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -10944,8 +10944,15 @@ function dc(){
         // familyHistory[_km] PRÉSERVÉE (section d'import = autorité, v9.805).
       });
       try{localStorage.removeItem("cmc_team_mirror_"+_km);}catch(_){}
+      // v9.808 : reset le LOCK union-find pour ce mois (teamHistory vient d'être wipé).
+      try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(_km);}catch(_){}
       if(_hash>3){
-        // v9.757 — union-find par codes journaliers D'ABORD (équipes nettes),
+        // v9.810 — AUTORITÉ géométrique D'ABORD : ré-applique les équipes séparées
+        // par POSITION dans le PDF (persistées dans cmc_geom_teams à l'import ;
+        // window._cmcPdfGeometry absente au boot) + verrouille. Les détecteurs
+        // d'horaire ci-dessous (skip-on-explicit) ne les réassignent pas.
+        try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(A.year,A.month);}catch(_agt){}
+        // v9.757 — union-find par codes journaliers (équipes nettes),
         // puis rest-pattern remplit les emps non clusterisés (skip-on-explicit).
         try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(A.year,A.month);}catch(_dcuf){}
         try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(A.year,A.month);}catch(_dtErr){}
@@ -23989,6 +23996,46 @@ function vPlan(){
       });
     }
   });
+  // v9.819 (Kevin 2026-06-23 « peut aussi être ajouté au groupe en congé avec les
+  // dates pour information ») : les congés/maladie/formation PARTIELS (ex CP 16-31)
+  // restent dans leur équipe de travail (v9.818) et sont AUSSI listés ici POUR INFO,
+  // avec leurs dates. N'affiche QUE les partiels (les absences pleines sont déjà dans
+  // la section dédiée ci-dessus, teamHistory===conges/maladie/…).
+  (function(){
+    var _absDays=new Date(A.year,A.month+1,0).getDate();
+    var _absOv=A.overrides[_v747KeyFam]||{};
+    function _absRanges(cells,codeSet){
+      var runs=[],start=null;
+      for(var d=1;d<=_absDays;d++){
+        var c=cells[d];var hit=!!c&&codeSet.indexOf(String(c).toUpperCase())>=0;
+        if(hit&&start===null)start=d;
+        else if(!hit&&start!==null){runs.push(start===d-1?(""+start):(start+"-"+(d-1)));start=null;}
+      }
+      if(start!==null)runs.push(start===_absDays?(""+start):(start+"-"+_absDays));
+      return runs;
+    }
+    var _absTypes=[{id:"conges",label:"🏖️ Congés",color:"#4a8a4a",codes:["CP","CRH","CDP","CDH"]},
+                   {id:"maladie",label:"🤒 Maladie",color:"#8a4a4a",codes:["M","MAL"]},
+                   {id:"formation",label:"🎓 Formation",color:"#7a5aa8",codes:["AF"]}];
+    _absTypes.forEach(function(a){
+      var list=[];
+      A.employees.forEach(function(e){
+        if(!isEmpActive(e,A.year,A.month))return;
+        var th=e.teamHistory&&e.teamHistory[_v747KeyFam];
+        if(th===a.id)return; // absence pleine déjà affichée dans sa section
+        var cells=_absOv[e.id];if(!cells)return;
+        var runs=_absRanges(cells,a.codes);
+        if(runs.length)list.push({name:e.name,runs:runs});
+      });
+      if(!list.length)return;
+      list.sort(function(x,y){return String(x.name).localeCompare(String(y.name));});
+      h+='<div style="margin:6px 0 4px;padding:8px 12px;background:'+a.color+'10;border:1px dashed '+a.color+'55;border-radius:8px">'
+        +'<span style="font-size:13px;font-weight:800;color:'+a.color+'">'+a.label+' — aussi en cours (partiel) <span style="opacity:.7;font-weight:600">· pour info, restent dans leur équipe</span></span>'
+        +'<div style="margin-top:5px;font-size:13px;color:#cdd6cd;line-height:1.8">'
+        +list.map(function(it){return esc(it.name)+' <span style="color:'+a.color+';font-weight:700">('+it.runs.join(', ')+')</span>';}).join(' &nbsp;·&nbsp; ')
+        +'</div></div>';
+    });
+  })();
   FAMS_ORDER.forEach(function(fid){
     // v9.153 — respect filter chip si actif
     if(A._planFilter&&A._planFilter.family&&A._planFilter.family!==fid) return;
@@ -25951,6 +25998,96 @@ function _cmcRenderVisualPlanningModal(meta){
   document.body.insertAdjacentHTML("beforeend",modal);
 }
 
+// v9.811 — Modale copiable réutilisable (CSP-safe, iOS) : titre + rapport texte.
+function _cmcShowCopyModal(title,report){
+  try{
+    var reportEsc=esc(report);
+    var modalId="cmcCopyModal_"+Date.now();
+    var modal='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px">'
+      +'<div style="background:#0f1a14;border:2px solid #c9a227;border-radius:14px;max-width:900px;width:100%;max-height:95vh;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center"><h2 style="color:#c9a227;margin:0;font-size:17px">'+esc(title)+'</h2>'
+      +'<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:rgba(224,64,64,.2);border:1px solid #e06060;color:#e06060;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;font-size:16px">✕</button></div>'
+      +'<p style="color:#a0cca0;font-size:13px;margin:0">1. « 📋 Copier ». 2. Ouvre ton chat Claude Code. 3. Colle. (PAS dans le chat CMC Teams.)</p>'
+      +'<textarea id="'+modalId+'_ta" readonly style="width:100%;height:46vh;background:#0a0f0c;color:#a0cca0;border:1px solid #c9a22755;border-radius:8px;padding:10px;font-family:monospace;font-size:11px;resize:none">'+reportEsc+'</textarea>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button id="'+modalId+'_copy" style="flex:2;min-width:160px;min-height:52px;padding:14px;background:linear-gradient(135deg,#5aaa70,#3a8a50);border:none;color:#fff;font-weight:800;border-radius:10px;cursor:pointer;font-size:15px">📋 Copier le texte</button>'
+      +'<button id="'+modalId+'_dl" style="flex:1;min-width:140px;min-height:52px;padding:14px;background:rgba(74,160,255,.18);border:1px solid #4aa0ff;color:#4aa0ff;font-weight:700;border-radius:10px;cursor:pointer;font-size:14px">💾 .txt</button>'
+      +'</div><div id="'+modalId+'_status" style="font-size:12px;color:#a0cca0;min-height:18px;text-align:center"></div>'
+      +'</div></div>';
+    document.body.insertAdjacentHTML("beforeend",modal);
+    var btnCopy=document.getElementById(modalId+"_copy"),btnDl=document.getElementById(modalId+"_dl"),status=document.getElementById(modalId+"_status"),ta=document.getElementById(modalId+"_ta");
+    if(btnCopy)btnCopy.addEventListener("click",function(){
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(report).then(function(){status.style.color="#5aaa70";status.textContent="✅ Copié !";btnCopy.textContent="✅ Copié !";},function(){ta.focus();ta.select();status.style.color="#e06060";status.textContent="⚠ Sélectionne manuellement.";});}
+      else{ta.focus();ta.select();try{document.execCommand("copy");status.textContent="✅ Sélectionné — long-press → Copier";}catch(_){status.textContent="⚠ Sélectionne manuellement.";}}
+    });
+    if(btnDl)btnDl.addEventListener("click",function(){try{var blob=new Blob([report],{type:"text/plain;charset=utf-8"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download="cmc_diag_"+Date.now()+".txt";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);status.textContent="✅ Téléchargé.";}catch(e){status.textContent="⚠ "+(e&&e.message||e);}});
+  }catch(e){if(typeof toast==="function")toast("Modale erreur: "+(e&&e.message||e),"err");}
+}
+
+// v9.811 — Diag PAR EMPLOYÉ : montre la ligne SOURCE BRUTE (ce que le parser a lu)
+// + les cellules parsées + l'équipe. Cible auto = équipe de l'admin + tout "GARRO".
+// But (Kevin 2026-06-20) : trancher si GARRO est en CP dans la source (bug parser)
+// ou s'il a une vraie ligne de travail. Lecture seule, aucune écriture.
+function cmcDiagEmpSource(){
+  try{
+    if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
+    var iy=A.year,im=A.month,key=iy+"-"+im;
+    var src=lg("cmc_import_src_"+key,null);
+    var rawLines=(src&&src.txt)?String(src.txt).split(/\r?\n/):[];
+    var ov=A.overrides[key]||{};
+    function norm(s){return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();}
+    var me=A.employees.find(function(e){return e.id===AID;});
+    var myTeam=me&&me.teamHistory&&me.teamHistory[key];
+    var targets=[];
+    A.employees.forEach(function(e){
+      if(!e||!e.name||!isEmpActive(e,iy,im))return;
+      var inTeam=myTeam&&e.teamHistory&&e.teamHistory[key]===myTeam;
+      var isGarro=norm(e.name).indexOf("GARRO")>=0;
+      if(inTeam||isGarro)targets.push(e);
+    });
+    var report="=== DIAG SOURCE PAR EMP "+APP_VER+" ===\n"
+      +"Mois: "+MFR[im]+" "+iy+" (key="+key+")\n"
+      +"Source brute PDF: "+(src&&src.txt?(src.txt.length+" chars, strat="+(src.strategy||"PDF")):"ABSENTE (ré-importe le fichier PDF)")+"\n"
+      +"Équipe admin (DESARZENS K): "+(myTeam||"(aucune)")+"\n"
+      +"Cibles (équipe admin + GARRO): "+targets.length+"\n\n";
+    targets.forEach(function(e){
+      var n=norm(e.name),r=ov[e.id]||{};
+      var filled=Object.keys(r).filter(function(d){return !!r[d];});
+      var cells=filled.sort(function(a,b){return parseInt(a)-parseInt(b);}).map(function(d){return d+":"+r[d];}).join(" ");
+      var th=(e.teamHistory&&e.teamHistory[key])||"(aucune)";
+      var surname=n.split(" ")[0];
+      var found=rawLines.filter(function(L){var ln=norm(L);return ln.indexOf(n)>=0||(surname.length>=3&&ln.indexOf(surname)>=0);}).slice(0,6);
+      report+="── "+e.name+"  [id="+e.id+" fam="+(e.family||"?")+" team="+th+"]\n";
+      report+="   cellules("+filled.length+"): "+(cells||"(VIDE)")+"\n";
+      report+="   lignes source ("+found.length+") :\n";
+      if(!found.length)report+="     (aucune ligne source ne contient ce nom — parser n'a pas vu son nom OU source absente)\n";
+      found.forEach(function(L){report+="     | "+L.replace(/\t/g," ").trim().slice(0,200)+"\n";});
+      report+="\n";
+    });
+    // v9.812 — ORDRE GÉOMÉTRIQUE + écarts verticaux (trait noir = gros écart).
+    // Permet de voir NUMÉRIQUEMENT où GARRO est séparé du bloc de l'admin.
+    try{
+      var gom=lg("cmc_geom_order",{})||{};var go=gom[key]||null;
+      report+="\n=== GÉOMÉTRIE (ordre vertical PDF + écart/ligne) ===\n";
+      if(!go||!go.length){
+        report+="(cmc_geom_order absent pour ce mois → RÉ-IMPORTE le FICHIER PDF en v9.812+ pour capturer les positions)\n";
+      }else{
+        report+="Lignes: "+go.length+" — col: page | y | écart(=y-précédent même page) | équipe | famille | nom\n";
+        var prevY=null,prevPage=null;
+        go.forEach(function(o){
+          var gap=(prevPage===o.page&&prevY!==null)?Math.abs(o.y-prevY):0;
+          prevY=o.y;prevPage=o.page;
+          var e=A.employees.find(function(x){return x.id===o.eid;});
+          var th=(e&&e.teamHistory&&e.teamHistory[key])||"?";
+          var mark=(myTeam&&th===myTeam)?" «MOI»":((norm(o.name).indexOf("GARRO")>=0)?" «GARRO»":"");
+          report+="  p"+o.page+" y"+o.y+" Δ"+(gap||"")+" ["+th+"] "+(o.fam||"?").slice(0,4)+" "+o.name+mark+"\n";
+        });
+      }
+    }catch(_geo){report+="\n(géométrie: erreur "+(_geo&&_geo.message||_geo)+")\n";}
+    _cmcShowCopyModal("🔬 Diag source "+MFR[im]+" "+iy,report);
+  }catch(e){if(typeof toast==="function")toast("Diag erreur: "+(e&&e.message||e),"err",6000);}
+}
+
 function cmcExportPdfSourceForDiag(){
   try{
     if(!A.user||A.user.id!==AID){toast(typeof cmcT==="function"?cmcT("err.permission"):"⚠ Admin only","err");return;}
@@ -26094,10 +26231,18 @@ function cmcExportTeamsDetectionDiag(){
       if(!_srcTxt && window._lastImportText)_srcTxt=window._lastImportText;
       if(_srcTxt&&typeof _cmcDetectTeamsByPdfColumn==="function")_cmcDetectTeamsByPdfColumn(_srcTxt,iy,im);
     }catch(_){}
+    // v9.808 — autorité union-find (verrouille) AVANT le filet rest-pattern, pour que
+    // le diag reflète l'état FINAL réel (équipes séparées par codes journaliers).
+    try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    // v9.810 — ré-applique l'autorité géométrique persistée (auto-pin) AVANT les
+    // détecteurs d'horaire, pour que le diag reflète l'état FINAL réel (équipes
+    // séparées par POSITION). window._cmcPdfGeometry absente ici → on lit cmc_geom_teams.
+    try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(iy,im);}catch(_){}
+    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
     try{ls("cmc_e",A.employees);}catch(_){}
 
-    // Re-run algo pour avoir le report
+    // Re-run algo pour avoir le report (FILET fill-only : ne touche pas les emps verrouillés)
     var algoRes=null;
     try{algoRes=_cmcDetectTeamsByRestPattern(iy,im);}catch(e){}
 
@@ -34281,6 +34426,12 @@ function empAutoSaveProfil(){
 //    trop (au-delà des colonnes ouvertes) = statut → ignorées.
 //  • Chaque colonne = une ÉQUIPE. Famille = section. Bloc 1 col N ⇌ bloc 2 col N = miroir.
 function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
+  // v9.815 (Kevin diag JUILLET 2026-06-22 « encore tout mélangé, pas les mêmes repos ») —
+  // DÉSACTIVÉ. Le groupement par COLONNE/POSITION du PDF met ensemble des gens à
+  // repos DIFFÉRENTS (position ≠ équipe, lesson #112). Seule règle correcte = même
+  // famille + MÊMES jours de repos + même 1er code travail (rest-pattern v9.803).
+  return {ok:false,reason:"disabled_v9815_position_not_team"};
+  /* eslint-disable no-unreachable */
   try{
     if(!srcText||typeof srcText!=="string"||srcText.length<20){return{ok:false,reason:"no_src"};}
     var key=iy+"-"+im;
@@ -36345,6 +36496,13 @@ function _cmcApplyGeometricParse(iy,im){
 //   (reproduction identique) — seulement teamHistory/familyHistory/miroir.
 //   Remplace _cmcDetectTeamsByDailyCodes comme source de verite d'equipe a l'import.
 function _cmcApplyValidatedTeams(iy,im){
+  // v9.815 (Kevin diag JUILLET 2026-06-22 « pas les mêmes repos ») — DÉSACTIVÉ.
+  // L'union-find par codes journaliers (lib T1) regroupe par similarité de codes
+  // sur jours co-travaillés → met ensemble des gens à REPOS DIFFÉRENTS et MERGE les
+  // équipes MIROIRS (mêmes repos, 1er code différent ; >82% de codes communs).
+  // Seule règle correcte = même famille + MÊMES repos + même 1er code (rest-pattern).
+  return {ok:false,reason:"disabled_v9815_union_find_merges_mirrors"};
+  /* eslint-disable no-unreachable */
   if(!A.user||A.user.id!==AID)return{ok:false,reason:"not_admin"};
   try{
     if(typeof window==="undefined"||!window.TeamDetector||typeof window.TeamDetector.detectTeams!=="function")
@@ -36365,6 +36523,9 @@ function _cmcApplyValidatedTeams(iy,im){
       if(!hasCell)return;
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
+      // v9.810 : AUTORITÉ GÉOMÉTRIQUE prioritaire — ne PAS feeder au TeamDetector
+      // un emp déjà verrouillé par la position PDF (sinon re-fusion des blocs).
+      if(typeof _cmcTeamLocked==="function"&&_cmcTeamLocked(key,eid))return;
       var fam=null;
       try{if(typeof familyForMonth==="function")fam=familyForMonth(emp,iy,im,{strict:true});}catch(_){}
       if(!fam){
@@ -36406,6 +36567,7 @@ function _cmcApplyValidatedTeams(iy,im){
         if(!emp)return;
         if(!emp.teamHistory)emp.teamHistory={};
         emp.teamHistory[key]=prodId;
+        if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,emp.id); // v9.808 : autorité union-find → verrouille
         if(fam&&fam!=="amenage"){if(!emp.familyHistory)emp.familyHistory={};emp.familyHistory[key]=fam;}
       });
     });
@@ -36512,6 +36674,11 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
+      // v9.808 : FILET fill-only — un emp déjà clusterisé par l'autorité union-find
+      // (daily-codes / validatedTeams) est VERROUILLÉ. Le rest-pattern (signature
+      // grossière qui sur-clusterise GARRO/MARIOTTINI avec DESARZENS) ne le réassigne
+      // PAS. Il ne traite que les emps que l'union-find n'a pas pu clusteriser.
+      if(typeof _cmcTeamLocked==="function"&&_cmcTeamLocked(key,eid)){skipReasons.explicit++;return;}
       var _empFam=_famForDetect(emp);
       if(_empFam==="cadres"){skipReasons.cadres++;return;}
       var r=ov[eid]||{};
@@ -36557,6 +36724,34 @@ function _cmcDetectTeamsByRestPattern(iy,im){
         if(!g.emp.familyHistory)g.emp.familyHistory={};g.emp.familyHistory[key]=fam;
       });
     });
+    // 1bis) v9.818 (Kevin 2026-06-23 « un congé partiel reste dans son équipe de
+    //    travail ») : une équipe dont les repos sont un SOUS-ENSEMBLE STRICT d'une
+    //    autre équipe MÊME famille + MÊME horaire-base = la MÊME rotation, juste
+    //    tronquée par un congé/maladie (ex : DESARZENS+MARIOTTINI en CP 16-31, repos
+    //    {5,11}, étaient une équipe à part au lieu de rester avec PUGNETTI/DESSI/
+    //    MALENFANT/DEJANOVIC repos {5,11,17,23,29}). → FUSION dans la plus grande.
+    //    Garde-fous : même famille ET même horaire-base (jamais fusionner un miroir,
+    //    qui a un horaire-base différent) ; l'hôte doit être STRICTEMENT plus grand.
+    teamGroups.sort(function(a,b){return b.rest.length-a.rest.length;});
+    var _kept=[];
+    teamGroups.forEach(function(T){
+      var host=null;
+      for(var hi=0;hi<_kept.length;hi++){
+        var U=_kept[hi];
+        if(U.fam!==T.fam||U.fwBase!==T.fwBase)continue;
+        if(U.rest.length<=T.rest.length)continue;
+        var subset=T.rest.every(function(d){return U.rest.indexOf(d)>=0;});
+        if(subset){host=U;break;}
+      }
+      if(host){
+        T.members.forEach(function(g){
+          if(!g.emp.teamHistory)g.emp.teamHistory={};
+          g.emp.teamHistory[key]=host.teamId;
+          host.members.push(g);
+        });
+      }else{_kept.push(T);}
+    });
+    teamGroups=_kept;
     // 2) Singletons (souvent CP partiel : repos tronqués) → rattachés à l'équipe de
     //    LEUR famille dont les repos sont identiques, sinon un SUR-ENSEMBLE des leurs,
     //    en préférant le même horaire-base. Sinon laissés au fallback v9.743.
@@ -36636,6 +36831,30 @@ function _cmcDeriveFamily(emp,ovRow,key){
   return (emp&&emp.family==="baccara"?"cmc":(emp&&emp.family))||"bj";
 }
 
+// v9.808 (Kevin diag JUILLET 2026 "GARRO S / MARIOTTINI J pas dans mon équipe ;
+// MARIANI M (CP 1ère moitié) doit y être") — LOCK des assignations faites par un
+// détecteur AUTORITAIRE union-find (codes journaliers : _cmcDetectTeamsByDailyCodes
+// + _cmcApplyValidatedTeams/window.TeamDetector). La signature grossière de
+// _cmcDetectTeamsByRestPattern (famille|repos|1er-code) SUR-CLUSTERISE : deux
+// équipes partageant repos+1er-code mais avec des rotations COMPLÈTES différentes
+// (GARRO/MARIOTTINI vs DESARZENS) étaient fusionnées. L'union-find par codes
+// journaliers les SÉPARE correctement (lessons #104/#106) ET rattache un CP-partiel
+// (MARIANI) à son équipe via les jours co-travaillés. Le rest-pattern doit donc
+// devenir un FILET (fill-only) : il ne réassigne QUE les emps que l'union-find n'a
+// pas pu clusteriser, il n'ÉCRASE JAMAIS un teamHistory verrouillé.
+// Le lock est stampé par clé-mois ; reset quand la clé change (nouveau mois/import).
+function _cmcTeamLockKey(key){
+  try{
+    if(!window._cmcTeamLock||window._cmcTeamLock.key!==key){
+      window._cmcTeamLock={key:key,set:{}};
+    }
+    return window._cmcTeamLock.set;
+  }catch(_){return {};}
+}
+function _cmcTeamLockReset(key){ try{window._cmcTeamLock={key:key,set:{}};}catch(_){}}
+function _cmcTeamLockAdd(key,eid){ try{_cmcTeamLockKey(key)[eid]=1;}catch(_){} }
+function _cmcTeamLocked(key,eid){ try{return !!_cmcTeamLockKey(key)[eid];}catch(_){return false;} }
+
 // v9.757 (Kevin 2026-05-29 "porter l'algo validé") — DÉTECTION ÉQUIPES par
 // IDENTITÉ DES CODES JOURNALIERS (union-find), portée du banc d'essai T1
 // (tools/planning-parser-tester/lib/team-detector.js, validée 6/6 sur l'équipe
@@ -36653,6 +36872,13 @@ function _cmcDeriveFamily(emp,ovRow,key){
 // remplit ensuite les emps que l'union-find n'a pas pu clusteriser (données
 // bruitées). Aucun emp ne perd son équipe (filet rest-pattern + fallback).
 function _cmcDetectTeamsByDailyCodes(iy,im){
+  // v9.815 (Kevin diag JUILLET 2026-06-22 « encore tout mélangé, pas les mêmes repos ») —
+  // DÉSACTIVÉ. L'union-find par codes journaliers (≥82% de match sur jours co-
+  // travaillés) MERGE les équipes MIROIRS (mêmes repos, 1er code ≠ → >82% communs,
+  // ex team 8 mêlait 22/6 et 20/5) ET peut joindre des gens à REPOS DIFFÉRENTS.
+  // Seule règle correcte = même famille + MÊMES repos + même 1er code (rest-pattern).
+  return {ok:false,reason:"disabled_v9815_union_find_merges_mirrors"};
+  /* eslint-disable no-unreachable */
   try{
     var key=iy+"-"+im;
     var ov=(A.overrides&&A.overrides[key])||{};
@@ -36678,6 +36904,11 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
     Object.keys(ov).forEach(function(eid){
       var emp=A.employees.find(function(e){return e.id===eid;});
       if(!emp)return;
+      // v9.810 : un emp déjà verrouillé par l'AUTORITÉ GÉOMÉTRIQUE (position PDF,
+      // _cmcDetectTeamsByGeometry / _cmcApplyGeomTeams) n'est PAS re-clusterisé par
+      // l'union-find horaire — sinon deux blocs à rotation identique mais positions
+      // différentes seraient re-fusionnés (BJ Éq.3). La géométrie a priorité.
+      if(typeof _cmcTeamLocked==="function"&&_cmcTeamLocked(key,eid))return;
       var fam=_famDC(emp);
       if(fam==="cadres")return;
       var r=ov[eid]||{},dn={},work=0,rest=0;
@@ -36734,6 +36965,7 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
         m.emp.teamHistory[key]=teamId;
         if(!m.emp.familyHistory)m.emp.familyHistory={};
         m.emp.familyHistory[key]=domFam;
+        _cmcTeamLockAdd(key,m.emp.id); // v9.808 : autorité union-find → verrouille
         assigned++;
       });
     });
@@ -36759,6 +36991,224 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
     console.log("[v9.757 dailyCodes] "+teamGroups.length+" équipes, "+assigned+" emps, "+(Object.keys(mirrors).length/2)+" miroirs");
     return{ok:true,teams:teamGroups.length,assigned:assigned,mirrors:Object.keys(mirrors).length/2};
   }catch(e){console.warn("[v9.757 dailyCodes]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+
+// v9.810 (Kevin diag JUILLET 2026 « BJ Éq.3 = 10 mais devrait être ~6 ») —
+// DÉTECTION ÉQUIPES par GÉOMÉTRIE / POSITION dans le PDF. PROBLÈME : deux blocs
+// "22/6c" SÉPARÉS dans la section "Chefs black Jack" (l'équipe de Kevin + une
+// AUTRE équipe plus bas, séparées par un bloc "20/5c") ont des ROTATIONS
+// IDENTIQUES jour par jour → AUCUN algo basé sur l'horaire (rest-pattern OU
+// union-find codes journaliers) ne peut les séparer. Le SEUL signal = leur
+// POSITION/ORDRE vertical dans le PDF. Ce détecteur lit la géométrie
+// (window._cmcPdfGeometry, artefact d'import) : il ordonne les emps par
+// (page, y), puis DANS CHAQUE FAMILLE segmente en BLOCS d'équipe — un nouveau
+// bloc démarre quand la SIGNATURE de rotation change OU quand le même run de
+// signature est INTERROMPU (une signature différente apparaît puis la même
+// revient = NOUVELLE équipe séparée). Les deux blocs 22/6c deviennent ainsi
+// 2 équipes distinctes purement par la position. AUTOMATIQUE (aucun pin manuel),
+// résultat PERSISTÉ dans cmc_geom_teams (l'« auto-pin ») pour survivre au
+// re-detect au boot (où la géométrie n'est plus disponible).
+// NE TOUCHE JAMAIS les codes de cellules — uniquement teamHistory (groupement).
+function _cmcDetectTeamsByGeometry(iy,im){
+  try{
+    var key=iy+"-"+im;
+    // v9.814 (Kevin diag JUILLET réel 2026-06-22) — DÉTECTEUR DÉSACTIVÉ.
+    // La découpe par POSITION dans le PDF (écart vertical / "trait noir") a été
+    // RÉFUTÉE par les vraies données : GARRO S se retrouvait dans BJ Éq.2 avec
+    // GAZAGNE F (son voisin PHYSIQUE dans le PDF) alors que GAZAGNE travaille 14j
+    // avec une rotation totalement différente. La POSITION ≠ ÉQUIPE pour ce PDF.
+    // La vérité = mêmes repos + mêmes codes journaliers (rest-pattern v9.803 +
+    // union-find dailyCodes v9.808). On abstient toujours → fallback rest+codes.
+    // (Le diag géométrique reste capturé via cmc_geom_order pour analyse.)
+    return {ok:false,reason:"disabled_v9814_position_not_team"};
+    /* eslint-disable no-unreachable */
+    var geo=(typeof window!=="undefined")?window._cmcPdfGeometry:null;
+    if(!geo||!Array.isArray(geo.pages)||!geo.pages.length)return{ok:false,reason:"no_geometry"};
+    if(typeof window.TextParser!=="object"||typeof window.TextParser.groupItemsByLine!=="function"
+       ||typeof window.TextParser.parseLineForEmployee!=="function")return{ok:false,reason:"no_TextParser"};
+    var ov=(A.overrides&&A.overrides[key])||{};
+    if(!Object.keys(ov).length)return{ok:false,reason:"no_data"};
+    // Normalisation de nom — réutilise EncadresParser.normName (homonyme-safe :
+    // surname multi-token + strip codes-poste), comme _cmcApplyGeometricParse.
+    function norm(s){
+      try{ if(window.EncadresParser&&typeof window.EncadresParser.normName==="function")return window.EncadresParser.normName(s); }catch(_n){}
+      return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();
+    }
+    // Map nom normalisé → liste d'eids présents dans A.overrides[key] (actifs ce mois).
+    var nameToEid={};
+    A.employees.forEach(function(e){
+      if(!e||!e.name)return;
+      if(!ov[e.id])return; // seulement les emps qui ont des cellules ce mois
+      var n=norm(e.name);(nameToEid[n]=nameToEid[n]||[]).push(e.id);
+    });
+    // 1) Ordonner les emps par (page, y) en lisant la géométrie ligne par ligne.
+    //    groupItemsByLine trie déjà les lignes haut→bas (y décroissant) ;
+    //    parseLineForEmployee extrait le nom de chaque ligne.
+    var ordered=[]; // [{eid, family, sig}]
+    var seen={};    // anti-doublon (le nom peut réapparaître page roulements)
+    geo.pages.forEach(function(pg,pgIdx){
+      if(!pg||!Array.isArray(pg.items))return;
+      var lines=[];
+      try{lines=window.TextParser.groupItemsByLine(pg.items,2)||[];}catch(_gl){return;}
+      lines.forEach(function(line){
+        var _ly=0;try{if(line&&line.length){var _ys=line.map(function(it){return (it&&typeof it.y==="number")?it.y:null;}).filter(function(v){return v!==null;});if(_ys.length)_ly=_ys.sort(function(a,b){return a-b;})[Math.floor(_ys.length/2)];}}catch(_y){}
+        var pe=null;try{pe=window.TextParser.parseLineForEmployee(line);}catch(_pe){}
+        if(!pe||!pe.name)return;
+        var n=norm(pe.name);
+        var eids=nameToEid[n]||[];
+        if(eids.length>1){
+          // homonyme : résoudre par initiale exacte (lesson #38/#68)
+          var toks=String(pe.name||"").trim().split(/\s+/).filter(Boolean);
+          var last=toks[toks.length-1];
+          if(last&&/^[A-Z]{1,3}$/.test(last)){
+            var mm=eids.filter(function(id){var e=A.employees.find(function(x){return x.id===id;});if(!e||!e.name)return false;var pt=e.name.trim().split(/\s+/).filter(Boolean);return pt[pt.length-1]===last;});
+            eids=(mm.length===1)?mm:[];
+          }else eids=[];
+        }
+        if(!eids.length)return;
+        var eid=eids[0];
+        if(seen[eid])return; // garder la 1ère occurrence (grille planning, haut de page)
+        seen[eid]=1;
+        var emp=A.employees.find(function(x){return x.id===eid;});
+        if(!emp)return;
+        var fam=(typeof _cmcDeriveFamily==="function")?_cmcDeriveFamily(emp,ov[eid],key):(emp.family||"bj");
+        if(fam==="cadres")return; // cadres traités à part
+        ordered.push({eid:eid,family:(fam==="baccara"?"cmc":fam),sig:_cmcGeomSig(ov[eid]),y:_ly,page:pgIdx,name:emp.name});
+      });
+    });
+    if(ordered.length<2)return{ok:false,reason:"too_few_rows"};
+    // v9.812 — Persiste l'ORDRE géométrique brut (nom, famille, page, y, sig) pour
+    // diagnostic & future découpe par écart vertical (trait noir). Lecture seule par
+    // cmcDiagEmpSource ; aucune influence sur l'algo actuel.
+    try{
+      var _go=ordered.map(function(o){return {eid:o.eid,name:o.name,fam:o.family,page:o.page,y:Math.round(o.y),sig:o.sig};});
+      var _gom=lg("cmc_geom_order",{})||{};_gom[key]=_go;ls("cmc_geom_order",_gom);
+    }catch(_persist){}
+    // 2) Segmentation par ÉCART VERTICAL (règle Kevin 2026-06, vérité terrain) :
+    //    une ÉQUIPE = UN bloc CONTIGU, TOUTES FAMILLES MÉLANGÉES, séparé du suivant
+    //    par un "trait noir" / une ligne vide = un GROS écart vertical OU un saut de
+    //    page. Seuil ADAPTATIF (aucun nombre magique) : médiane des écarts ligne-à-
+    //    ligne × facteur ; un écart nettement supérieur = frontière d'équipe.
+    var blocks=[]; // {teamId, members:[{eid,family}]}
+    var gaps=[];
+    for(var gi=1;gi<ordered.length;gi++){
+      if(ordered[gi].page===ordered[gi-1].page){
+        var gv=Math.abs(ordered[gi].y-ordered[gi-1].y);
+        if(gv>0)gaps.push(gv);
+      }
+    }
+    if(gaps.length<1)return{ok:false,reason:"no_gaps"};
+    var gsort=gaps.slice().sort(function(a,b){return a-b;});
+    var pitch=gsort[Math.floor(gsort.length/2)]||0; // médiane = interligne "normal"
+    if(pitch<=0)return{ok:false,reason:"pitch_zero"};
+    var GAP_BREAK=pitch*1.75; // frontière d'équipe = écart > 1.75× l'interligne normal
+    var teamN=0,curB=null;
+    for(var oi=0;oi<ordered.length;oi++){
+      var o=ordered[oi];
+      var brk=(oi===0)||(o.page!==ordered[oi-1].page)||(Math.abs(o.y-ordered[oi-1].y)>GAP_BREAK);
+      if(brk){teamN++;curB={teamId:"g"+teamN,members:[]};blocks.push(curB);}
+      curB.members.push({eid:o.eid,family:o.family});
+    }
+    // 2b) AUTO-VALIDATION : la géométrie ne prend l'AUTORITÉ que si la découpe
+    //     ressemble à des équipes. Sinon → ok:false → on laisse les détecteurs
+    //     d'horaire/rest-pattern faire (zéro régression sur les 290 si le PDF n'a
+    //     pas d'écarts exploitables : trait noir vectoriel sans ligne vide, etc.).
+    if(blocks.length<2)return{ok:false,reason:"single_block"};
+    var biggest=blocks.reduce(function(m,b){return Math.max(m,b.members.length);},0);
+    if(biggest>Math.max(16,Math.floor(ordered.length*0.4)))return{ok:false,reason:"block_too_big"};
+    var singles=blocks.filter(function(b){return b.members.length===1;}).length;
+    if(singles>blocks.length*0.5)return{ok:false,reason:"too_fragmented"};
+    // 3) N'assigner QUE les blocs ≥2 (un singleton géométrique = laissé aux
+    //    détecteurs d'horaire/fallback). Écrire teamHistory + LOCK + persister.
+    var geomMap=lg("cmc_geom_teams",{})||{};
+    var perMonth={};
+    var assigned=0,teams=0;
+    blocks.forEach(function(b){
+      if(b.members.length<2)return;
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(b.teamId);
+      teams++;
+      b.members.forEach(function(m){
+        var emp=A.employees.find(function(x){return x.id===m.eid;});
+        if(!emp)return;
+        if(!emp.teamHistory)emp.teamHistory={};
+        emp.teamHistory[key]=b.teamId;
+        if(!emp.familyHistory)emp.familyHistory={};
+        if(!emp.familyHistory[key])emp.familyHistory[key]=m.family; // famille PAR PERSONNE (équipe cross-famille)
+        if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,m.eid);
+        perMonth[m.eid]=b.teamId;
+        assigned++;
+      });
+    });
+    if(assigned){
+      geomMap[key]=perMonth;
+      try{ls("cmc_geom_teams",geomMap);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_geom_teams",geomMap);}catch(_){}
+      try{ls("cmc_e",A.employees);}catch(_){}
+      try{ls("cmc_t",A.teams);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}
+    }
+    console.log("[v9.810 geomTeams] "+teams+" équipes (position), "+assigned+" emps");
+    return{ok:true,teams:teams,assigned:assigned};
+  }catch(e){console.warn("[v9.810 geomTeams]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+
+// Signature de rotation pour la segmentation géométrique : repos (RH∪R) + code
+// de base de CHAQUE jour travaillé (suffixes c/'/"/* strippés). Deux emps de la
+// MÊME équipe ont la MÊME signature (ils tournent ensemble) ; deux blocs 22/6c
+// séparés mais à rotation identique auront la même signature → ils ne sont PAS
+// séparés par la signature seule, c'est l'INTERRUPTION de position qui les sépare.
+function _cmcGeomSig(row){
+  if(!row)return "";
+  var STATUS_ABS={CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DELPT:1,CL:1,CDH:1,CEO:1,CSC:1,CSS:1,HD:1};
+  var parts=[];
+  for(var d=1;d<=31;d++){
+    var c=row[d];
+    if(c==null||c===""){parts.push(d+":-");continue;}
+    var u=String(c).trim().toUpperCase();
+    if(u==="RH"||u==="R"){parts.push(d+":REST");continue;}
+    if(STATUS_ABS[u]){parts.push(d+":ABS");continue;}
+    parts.push(d+":"+String(c).replace(/[c'"*:]+$/gi,"").trim().toUpperCase());
+  }
+  return parts.join("|");
+}
+
+// v9.810 — PERSISTANCE géométrique (« l'auto-pin »). Réapplique le résultat
+// géométrique stocké (cmc_geom_teams) à chaque détection, AVANT les détecteurs
+// d'horaire. Indispensable car le boot WIPE teamHistory et la géométrie
+// (window._cmcPdfGeometry) n'est PAS présente hors import. Pose teamHistory +
+// crée l'équipe + VERROUILLE → les détecteurs d'horaire (skip-on-explicit) ne
+// les réassignent pas. Comme familyHistory, NE PAS wiper au boot ; rafraîchi
+// uniquement à un nouvel import (par _cmcDetectTeamsByGeometry).
+function _cmcApplyGeomTeams(iy,im){
+  // v9.814 — détecteur géométrique (position) DÉSACTIVÉ (cf. _cmcDetectTeamsByGeometry).
+  // Ne ré-applique plus les anciennes équipes "g*" issues de la position (réfutées par
+  // les données réelles). Purge le record stale pour que le rest-pattern (repos+codes)
+  // réassigne proprement. Les emps avec un teamHistory "g*" périmé seront réécrits par
+  // _cmcDetectTeamsByRestPattern au boot/import.
+  try{ var k2=iy+"-"+im; var gm=lg("cmc_geom_teams",{})||{};
+       if(gm&&gm[k2]){ delete gm[k2]; ls("cmc_geom_teams",gm); } }catch(_){}
+  return {ok:false,reason:"disabled_v9814"};
+  /* eslint-disable no-unreachable */
+  try{
+    var key=iy+"-"+im;
+    var geomMap=lg("cmc_geom_teams",{})||{};
+    var perMonth=geomMap[key];
+    if(!perMonth||typeof perMonth!=="object")return{ok:false,reason:"no_record"};
+    var applied=0;
+    Object.keys(perMonth).forEach(function(eid){
+      var emp=A.employees.find(function(x){return x.id===eid;});
+      if(!emp)return;
+      var tid=perMonth[eid];
+      if(!tid)return;
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(tid);
+      if(!emp.teamHistory)emp.teamHistory={};
+      emp.teamHistory[key]=tid;
+      if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,eid);
+      applied++;
+    });
+    if(applied)console.log("[v9.810 applyGeomTeams] "+applied+" emps ré-appliqués depuis cmc_geom_teams");
+    return{ok:true,applied:applied};
+  }catch(e){console.warn("[v9.810 applyGeomTeams]",e&&e.message);return{ok:false,error:e&&e.message};}
 }
 
 // v9.733 RESCUE PASS retiré v9.734 (Kevin règle absolue "aucune invention,
@@ -36875,6 +37325,13 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
+    // v9.808 : reset le LOCK union-find pour ce mois (fresh import).
+    try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    // v9.810 : ré-applique d'abord l'éventuel résultat géométrique déjà persisté
+    // (auto-pin survivant) — il sera rafraîchi juste après par le compute frais
+    // (_cmcDetectTeamsByGeometry, plus bas, une fois les cellules géométriques
+    // remplies). Pose le lock pour ces emps.
+    try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(iy,im);}catch(_){}
     // v9.738 (Kevin "Go 3 tout auto") — HYBRIDE confidence score :
     // après les détections d'équipes (pdf-column + RH-pattern), calcule un
     // score de confiance 0-100 basé sur couverture + CP dominant + conflits.
@@ -36913,13 +37370,38 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
         _cmcApplyGeometricParse(iy,im);
       }
     }catch(_geoImpErr){console.warn("[v9.766 geoParse import]",_geoImpErr&&_geoImpErr.message);}
+    // v9.810 — DÉTECTION ÉQUIPES PAR GÉOMÉTRIE (autorité de POSITION) : après le
+    // parse géométrique des cellules, segmente les emps par bloc vertical dans le
+    // PDF → sépare 2 équipes à rotation identique mais à positions différentes
+    // (BJ Éq.3 sur-clusterisée). VERROUILLE ses emps + PERSISTE dans cmc_geom_teams
+    // (survit au boot). Les détecteurs d'horaire ci-dessous (skip-on-explicit) ne
+    // réassignent pas ces emps. NE TOUCHE JAMAIS les codes (groupement seul).
+    // v9.814 — PURGE des teamHistory "g*" périmés (issus de l'ancien détecteur
+    // géométrique par position, désactivé). Avant de re-détecter, on efface ces
+    // assignations pour que le rest-pattern (repos+codes) réassigne proprement.
+    try{ var _gk=iy+"-"+im; A.employees.forEach(function(_e){
+      if(_e&&_e.teamHistory&&/^g\d+$/.test(String(_e.teamHistory[_gk]||""))){ delete _e.teamHistory[_gk]; }
+    }); }catch(_purgeG){}
+    // v9.814 — détecteur géométrique DÉSACTIVÉ (position ≠ équipe, réfuté par les
+    // données réelles juillet). Conservé en abstention ; la vérité = repos+codes.
+    try{
+      if(typeof _cmcDetectTeamsByGeometry==="function"&&typeof window!=="undefined"&&window._cmcPdfGeometry){
+        _cmcDetectTeamsByGeometry(iy,im);
+      }
+    }catch(_geomTeamErr){console.warn("[v9.810 geomTeams import]",_geomTeamErr&&_geomTeamErr.message);}
     try{
       if(typeof _cmcApplyValidatedTeams==="function"&&typeof window!=="undefined"&&window.TeamDetector){
         _cmcApplyValidatedTeams(iy,im);
       }
     }catch(_vtImpErr){console.warn("[v9.762 validatedTeams import]",_vtImpErr&&_vtImpErr.message);}
-    // v9.648 — Détection auto équipes par pattern RH (filet de sécurité hybride :
-    // SKIP les emps ayant déjà teamHistory[key] → complète seulement les non-couverts)
+    // v9.808 — AUTORITÉ union-find par codes journaliers (inline, marche même sans
+    // window.TeamDetector). Sépare les équipes que la signature grossière du
+    // rest-pattern fusionnait (GARRO/MARIOTTINI vs DESARZENS) et rattache les
+    // CP-partiels (MARIANI) via leurs jours co-travaillés. VERROUILLE ses emps.
+    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_dcImpErr){console.warn("[v9.808 dailyCodes import]",_dcImpErr&&_dcImpErr.message);}
+    // v9.648/v9.808 — Détection équipes par pattern RH = FILET fill-only : SKIP les
+    // emps déjà clusterisés par l'autorité union-find (lock), complète seulement les
+    // non-couverts. Ne réassigne ni n'écrase JAMAIS un teamHistory verrouillé.
     try{_cmcDetectTeamsByRestPattern(iy,im);}catch(_dtErr){console.warn("[v9.648 auto-detect]",_dtErr);}
     // v9.743 (Kevin 2026-05-26 "tjs pas les bonnes équipes pour tout le monde") :
     // Fallback final pour emps avec cellules sans équipe. Pour chaque tel emp,
@@ -37581,6 +38063,7 @@ function vImport(){
         <button class="btn" onclick="sv('parserlearning')" style="flex:1;min-width:160px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(74,200,160,.12);border:1px solid rgba(74,200,160,.4);color:#7adcb0;font-weight:700">📚 Apprentissage</button>
         <button class="btn" onclick="cmcExportPitBossDiag()" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.5);color:#ff8080;font-weight:800">🔍 Diag Pit Boss horaires</button>
         <button class="btn" onclick="cmcExportTeamsDetectionDiag()" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(192,128,255,.15);border:1px solid rgba(192,128,255,.5);color:#c080ff;font-weight:800">🔍 Diag détection équipes</button>
+        <button class="btn" onclick="cmcDiagEmpSource()" title="Montre la ligne source brute + cellules parsées pour ton équipe + GARRO" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(90,200,140,.15);border:1px solid rgba(90,200,140,.5);color:#7adcb0;font-weight:800">🔬 Diag source (mon équipe + GARRO)</button>
         <button class="btn" onclick="cmcWipeCadresForMonth()" style="flex:1;min-width:180px;min-height:44px;justify-content:center;padding:10px;font-size:13px;border-radius:8px;background:rgba(224,64,64,.12);border:1px solid rgba(224,64,64,.45);color:#e06060;font-weight:700">🗑️ Effacer cadres (ce mois)</button>
       </div>
     </details>
@@ -40870,6 +41353,21 @@ function doImport(){
       }
     })();
   }
+  // v9.817 (Kevin 2026-06-23 « page 1 = encadrés d'absence AVEC dates ; GARRO est en
+  // CP tout le mois ») — PRIORITÉ AUX ABSENCES : appliquer les ENCADRÉS (CP/M/AF/FORMATION
+  // du..au) + la grille géométrique AVANT le consensus d'équipe. Sinon le consensus
+  // INVENTE une rotation de travail (chef) pour un employé en congé/maladie absent de la
+  // grille (ex : GARRO en CP 1-31 mis chez les chefs BJ dans l'équipe de Kevin), et les
+  // encadrés (fill-empty-only) n'attrapaient ensuite que les rares trous. ADDITIF : ne
+  // touche JAMAIS une cellule déjà parsée. Le consensus ne comble ensuite que les vrais
+  // trous des employés réellement en poste (couverture préservée). Cf. règle Kevin :
+  // horaires = grille seule ; absences = encadrés droite page 1 ; gros bloc page 1 ignoré.
+  try{
+    if(typeof _cmcApplyGeometricParse==="function"&&typeof window!=="undefined"
+       &&window._cmcPdfGeometry&&window.TextParser&&window.EncadresParser){
+      _cmcApplyGeometricParse(iy,im);
+    }
+  }catch(_geoPreErr){console.warn("[v9.817 geoParse pre-consensus]",_geoPreErr&&_geoPreErr.message);}
   // === Remplissage équipe BJ — employés absents du copier-coller ===
   // Problème iOS : certaines lignes PDF ne sont pas capturées.
   // Solution : pour les employés BJ sans données (ou avec < 5 codes = ligne tronquée),
@@ -44801,15 +45299,21 @@ function _iaExecuteTool(toolName,input){
         A.employees.forEach(function(e){
           if(!isEmpActive(e,y,m))return;
           var codes=pl[e.id]||{};
-          var travCons=0,reposCount=0;
+          var travCons=0,reposCount=0,travTotal=0;
           for(var d=1;d<=days;d++){
             var c=codes[d]||"";
-            if(isWork(c)){travCons++;}
+            if(isWork(c)){travCons++;travTotal++;}
             else if(c==="RH"||c==="R"){if(travCons>6)issues.push({emp:e.name,type:"serie_longue",msg:travCons+"j cons\u00e9cutifs \u00e0 j"+(d-1)});travCons=0;reposCount++;}
             else if(c==="CP"){travCons=0;}
           }
           if(travCons>6)issues.push({emp:e.name,type:"serie_longue_fin",msg:travCons+"j cons\u00e9cutifs \u00e0 fin de mois"});
-          if(reposCount<8)issues.push({emp:e.name,type:"repos_insuffisant",msg:reposCount+" repos sur "+days+"j (min 8 recommand\u00e9)"});
+          // v9.809 : seuil PROPORTIONNEL aux jours de pr\u00e9sence (travail+repos), comme
+          // detectRepoConflicts v9.783. Un emp en CP/absence une partie du mois a
+          // logiquement moins de repos \u2014 ne plus le signaler \u00e0 tort (96 faux positifs
+          // juillet, diag Kevin). min \u2248 jours de pr\u00e9sence / 7.
+          var _presDays=travTotal+reposCount;
+          var _minRepos=Math.ceil((_presDays>0?_presDays:days)/7);
+          if(travTotal>0&&reposCount<_minRepos)issues.push({emp:e.name,type:"repos_insuffisant",msg:reposCount+" repos sur "+_presDays+"j pr\u00e9sents (min "+_minRepos+")"});
         });
         if(!issues.length)return"\u2705 COH\u00c9RENCE OK "+MFR[m]+" "+y+" : aucune anomalie m\u00e9tier d\u00e9tect\u00e9e";
         var byType={};
@@ -46249,6 +46753,8 @@ setTimeout(function(){
       }
       if(_srcTxt&&typeof _cmcDetectTeamsByPdfColumn==="function")_cmcDetectTeamsByPdfColumn(_srcTxt,iy,im);
     }catch(_){}
+    // v9.808 — autorité union-find AVANT le filet rest-pattern (verrouille ses emps).
+    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
     try{ls("cmc_e",A.employees);}catch(_){}
@@ -46324,9 +46830,16 @@ document.addEventListener("touchmove",_onScrollActivity,{passive:true,capture:tr
 var _deferredDone=false;
 /* v9.530 PERF: sentinelle daily-cleanup - trim toutes les listes longues 1x/jour */
 function _cmcDailyCleanup(){try{var caps={cmc_audit:500,cmc_userlog:500,cmc_admin_sessions:200,cmc_chat:500,cmc_pin_fails:50,cmc_import_log:200,cmc_parser_learning_log:200,cmc_learned_patterns:200,cmc_pdf_fingerprints:50,cmc_import_anomalies:300,cmc_lessons_learned:500,cmc_user_telemetry:300,cmc_err_log:500,cmc_click_failures:50,cmc_handoff_journal:200};var trimmed=0;Object.keys(caps).forEach(function(k){try{var arr=lg(k,null);if(Array.isArray(arr)&&arr.length>caps[k]){ls(k,arr.slice(-caps[k]));trimmed++;}}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-daily-cleanup",_e);}catch(__){}}});/* Backups > 7j supprimes */try{Object.keys(localStorage).forEach(function(kk){if(kk.indexOf("cmc_backup_")===0){var d=kk.replace("cmc_backup_","");var age=Date.now()-new Date(d).getTime();if(!isNaN(age)&&age>7*86400000){localStorage.removeItem(kk);trimmed++;}}});}catch(_){}try{ls("cmc_last_daily_cleanup",{ts:Date.now(),trimmed:trimmed});}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_cmc-daily-cleanup",_e);}catch(__){}}return trimmed;}catch(e){console.warn("[_cmcDailyCleanup]",e);return 0;}}
+// v9.809 — FILET BOOT anti « jours hors limite » (lesson #105). Le filet v9.801 ne
+// tourne qu'à l'import ; ce balayage nettoie les données DÉJÀ présentes (importées par
+// une version antérieure, ou un writer qui a écrit après le filet import). Supprime
+// toute cellule dont la clé-jour sort de 1..getDays(mois), pour TOUS les mois.
+function _cmcSweepAllOOB(){try{var ov=A.overrides||{},changed=0;Object.keys(ov).forEach(function(key){var mm=String(key).split("-");if(mm.length!==2)return;var y=parseInt(mm[0],10),m=parseInt(mm[1],10);if(isNaN(y)||isNaN(m))return;var dim=getDays(y,m);var row=ov[key];if(!row||typeof row!=="object")return;Object.keys(row).forEach(function(eid){var cells=row[eid];if(!cells||typeof cells!=="object")return;Object.keys(cells).forEach(function(d){var n=parseInt(d,10);if(isNaN(n)||n<1||n>dim){delete cells[d];changed++;}});});});if(changed){try{ls("cmc_ov",A.overrides);}catch(_){}console.info("[v9.809 oob-sweep] "+changed+" cellules hors-limite supprimées (boot)");}return changed;}catch(e){console.warn("[_cmcSweepAllOOB]",e&&e.message);return 0;}}
 function _deferredInit(){
   if(_deferredDone)return;_deferredDone=true;
   fbInit();
+  // v9.809 — balayage hors-limite (après chargement local + laisse fbLoadAll se faire)
+  setTimeout(function(){try{_cmcSweepAllOOB();}catch(_){}},7000);
   if(Object.keys(_syncQueue).length&&navigator.onLine){setTimeout(flushSyncQueue,2000);}
   // v9.81 — Backup auto quotidien (diff\u00e9r\u00e9 apr\u00e8s init Firebase)
   setTimeout(function(){if(typeof _autoBackupIfNeeded==="function")_autoBackupIfNeeded();},4000);
@@ -47550,6 +48063,51 @@ if(typeof window.cmcDiagnoseAllAxes !== "function"){
 }
 })();
 
+</script>
+<!-- v9.816 — Watchdog écran blanc (SCRIPT SÉPARÉ : s'exécute même si le script principal plante).
+     Si #app reste vide ~4,5s après chargement → remplace le blanc par un panneau de secours 1-clic
+     (vide SW + caches + recharge). N'auto-recharge JAMAIS (zéro boucle) : Kevin tape le bouton. -->
+<script>
+(function(){
+  "use strict";
+  function show(){
+    var app=document.getElementById("app")||document.body;
+    var len=0; try{len=(app.innerHTML||"").replace(/\s/g,"").length;}catch(_){}
+    // si l'app a rendu (login, contenu ou écran d'erreur déjà présent) → ne rien faire
+    if(len>200) return;
+    if(document.getElementById("cmcWhiteHeal")) return;
+    var d=document.createElement("div");
+    d.id="cmcWhiteHeal";
+    d.setAttribute("style","position:fixed;inset:0;z-index:2147483647;background:#0a1a0c;color:#e8d8a0;font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;overflow:auto;-webkit-overflow-scrolling:touch;padding:24px;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))");
+    d.innerHTML=''
+      +'<div style="max-width:480px;margin:0 auto">'
+      +'<div style="font-size:42px;text-align:center;margin-bottom:6px">🔄</div>'
+      +'<h1 style="font-family:Georgia,serif;color:#e8b830;text-align:center;font-size:24px;margin:0 0 6px">CMC Teams</h1>'
+      +'<p style="text-align:center;color:#a8b0a0;font-size:14px;margin:0 0 20px">L\'app n\'a pas réussi à s\'afficher.<br>Touche le bouton doré : tes données sont conservées.</p>'
+      +'<button id="cmcWhiteFix" style="display:block;width:100%;min-height:56px;background:linear-gradient(135deg,#e8b830,#c9a227);color:#0a1a0c;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;margin:0 0 16px">⚡ Réparer et recharger</button>'
+      +'<div id="cmcWhiteLog" style="font-family:ui-monospace,monospace;font-size:12px;color:#9aa39a;background:#0d1810;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;min-height:40px;white-space:pre-wrap;margin-bottom:18px">Prêt.</div>'
+      +'<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;font-size:13px;line-height:1.6;color:#cfd8c8">'
+      +'<b style="color:#e8b830">Si le bouton ne suffit pas (iPhone)</b><br>'
+      +'1. Supprime l\'icône CMC Teams de l\'écran d\'accueil<br>'
+      +'2. Ouvre <b>Safari</b> → la page CMC Teams<br>'
+      +'3. Bouton Partager → <b>Sur l\'écran d\'accueil</b><br>'
+      +'<span style="color:#9aa39a">(Réinstaller force iOS à reprendre la dernière version.)</span>'
+      +'</div></div>';
+    (document.body||document.documentElement).appendChild(d);
+    var log=function(m){var el=document.getElementById("cmcWhiteLog");if(el)el.textContent=m;};
+    document.getElementById("cmcWhiteFix").addEventListener("click",function(){
+      var btn=this;btn.disabled=true;btn.textContent="⏳ Nettoyage…";
+      var go=function(){var u=location.href.split("?")[0].split("#")[0]+"?_whiteheal="+Date.now();try{location.replace(u);}catch(_){location.href=u;}};
+      var p=Promise.resolve();
+      if("serviceWorker" in navigator){p=p.then(function(){return navigator.serviceWorker.getRegistrations().then(function(rs){log("Service Workers: "+rs.length);return Promise.all(rs.map(function(r){return r.unregister();}));});});}
+      if("caches" in window){p=p.then(function(){return caches.keys().then(function(ks){log("Caches: "+ks.length);return Promise.all(ks.map(function(k){return caches.delete(k);}));});});}
+      p.then(function(){log("Nettoyé. Rechargement…");setTimeout(go,800);}).catch(function(e){log("Erreur: "+(e&&e.message||e)+" — rechargement…");setTimeout(go,800);});
+    });
+  }
+  // déclenche une seule fois, après que le rendu normal ait eu le temps de se faire
+  if(document.readyState==="complete") setTimeout(show,4500);
+  else window.addEventListener("load",function(){setTimeout(show,4500);});
+})();
 </script>
 </body>
 </html>

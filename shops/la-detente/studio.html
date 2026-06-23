@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.7.1 — + modèles La Détente (Cœur AR-15, Cœur AR-15 & ball-trap) -->
+<!-- La Détente — Studio (admin) v1.9.2 — logos transparents (fini le cadre blanc), logo plus petit par défaut, glisser=déplacer + poignée rouge=redimensionner, déplacement fluide, libellé Vue -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -23,7 +23,9 @@ button{cursor:pointer;border:none;background:none}
 .brand .tag{font-size:10px;background:var(--p);padding:2px 6px;border-radius:6px;font-weight:700}
 .topbar .sp{flex:1}
 .btn{padding:9px 14px;border-radius:var(--rs);font-weight:700;font-size:13px;background:var(--panel2);border:1px solid var(--border);transition:.15s;white-space:nowrap}
-.btn:hover{border-color:var(--p)}
+.btn:hover{border-color:var(--p);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){.btn:hover,.btn:active{transform:none}}
 .btn.primary{background:var(--p);border-color:var(--p);color:#fff}
 .btn.primary:hover{opacity:.92}
 .btn.ghost{background:transparent}
@@ -101,7 +103,12 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .zoomctl .zbtn:hover{border-color:var(--p)}
 .zoomctl .zbtn:active{transform:translateY(1px)}
 .zoomctl .zlvl{font-size:11.5px;font-weight:800;text-align:center;color:#fff;background:rgba(18,20,24,.93);border:1px solid var(--border);border-radius:9px;padding:5px 0;letter-spacing:.3px}
+.zoomctl .zcap{font-size:9px;font-weight:800;text-align:center;color:#fff;background:rgba(18,20,24,.93);border:1px solid var(--border);border-radius:9px;padding:3px 0;letter-spacing:.5px}
 .zoomctl .zfit{height:auto;font-size:11px;font-weight:700;letter-spacing:.2px;padding:7px 0}
+.ovwrap{position:absolute;left:8px;top:8px;width:31%;max-width:140px;aspect-ratio:1;border:2px solid rgba(255,255,255,.55);border-radius:10px;overflow:hidden;background:#d2d5d9;z-index:6;box-shadow:0 4px 14px rgba(0,0,0,.5);cursor:pointer}
+.ovwrap svg{width:100%;height:100%;display:block}
+.ovwrap .ovtag{position:absolute;left:0;right:0;bottom:0;font-size:9px;font-weight:800;text-align:center;color:#fff;background:rgba(11,13,15,.74);padding:2px 0;letter-spacing:.3px}
+.ovwrap.hide{display:none}
 .empty{color:var(--muted);font-size:12px;text-align:center;padding:14px;border:1px dashed var(--border);border-radius:var(--rs)}
 .hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel);border:1px solid var(--border);padding:12px 18px;border-radius:100px;font-size:13px;font-weight:600;transition:.3s;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.5)}
@@ -110,6 +117,17 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 .modal.show{display:flex}
 .modal .box{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal .box.wide{max-width:940px;max-height:90vh;overflow:auto}
+.mvHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px}
+.mvHead h2{margin:0;font-size:17px}
+.mvGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.mvTile{padding:0;border:2px solid var(--border);border-radius:12px;overflow:hidden;background:var(--panel2);cursor:pointer;text-align:center;transition:.12s}
+.mvTile.on{border-color:var(--p)}
+.mvTile:hover{border-color:var(--gold)}
+.mvImg{aspect-ratio:1;background:#d2d5d9;display:block}
+.mvImg svg{width:100%;height:100%;display:block}
+.mvName{font-size:12px;font-weight:700;padding:7px 4px;color:#e7e9ec}
+.mvFoot{margin-top:16px}
+@media(max-width:520px){.mvGrid{grid-template-columns:repeat(2,1fr)}}
 .modal h2{font-size:18px;margin-bottom:16px}
 @media(max-width:860px){.side{width:200px}.side.right{width:220px}}
 @media(max-width:680px){
@@ -181,6 +199,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
       <button role="menuitem" onclick="Studio.closeExportMenu();Studio.exportPDF()">📄 <span>PDF 300 dpi<span class="mdesc">30×30 cm, prêt impression</span></span></button>
     </div>
   </div>
+  <button class="btn" onclick="Studio.multiView()" title="Voir mon design sur tous les produits en même temps">🖼️ Vue multi‑produits</button>
   <button class="btn" onclick="Studio.finishCreation()">💾 Enregistrer / Ranger</button>
   <button class="btn primary" onclick="Studio.addToShop()">＋ Ajouter à la boutique</button>
   <a class="btn" href="index.html" title="Retour boutique">↩</a>
@@ -189,7 +208,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 <div class="wrap">
   <!-- LEFT: garment + add layers -->
   <div class="side">
-    <details class="grp grp-macro" name="ld-left" open><summary>🎽 Produit</summary>
+    <details class="grp grp-macro" open><summary>🎽 Produit</summary>
       <div class="sublab">👕 Vêtement</div><div class="garments" id="garments"></div>
       <button class="btn primary" style="width:100%;margin-top:8px" onclick="Studio.openCatalog()">🛍️ Catalogue produits — créer sur un vrai produit</button>
       <div id="pfSel" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
@@ -207,7 +226,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
       <a class="btn" href="index.html?q=aop" style="display:block;text-align:center;margin-top:8px;text-decoration:none">🛍️ Voir les produits AOP</a>
       <div class="sublab">🎨 Couleur</div><div class="swatches" id="swatches"></div>
     </details>
-    <details class="grp grp-macro" name="ld-left"><summary>➕ Création</summary>
+    <details class="grp grp-macro" open><summary>➕ Création</summary>
       <div class="sublab">🖼️ Ajouter un calque</div>
       <div class="addrow">
         <button class="btn" onclick="document.getElementById('upl').click()">🖼️ Importer image(s)…</button>
@@ -224,7 +243,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
         <div class="hint" id="aiHint">Décris ton design : l'IA le crée et l'ajoute en calque (fond rendu transparent).</div>
       </div>
     </details>
-    <details class="grp grp-macro" name="ld-left"><summary>🎨 Bibliothèque</summary>
+    <details class="grp grp-macro"><summary>🎨 Bibliothèque</summary>
       <div class="sublab">⭐ Mes logos créés</div><div class="emblems" id="myLogos"></div><div class="hint" id="myLogosHint">Tes logos enregistrés (bouton « 💾 Enregistrer comme logo »). Touche pour réutiliser.</div>
       <div class="sublab">🖼️ Modèles La Détente</div><div class="emblems" id="realLib"></div>
       <input id="webq" placeholder="🔎 Chercher sur le web (cerf, aigle, fusil…)" style="width:100%;margin-top:8px;box-sizing:border-box;background:#0f1216;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;font:500 13px system-ui" onkeydown="if(event.key==='Enter')Studio.webSearch()">
@@ -237,7 +256,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
-    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de l'aperçu"><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
+    <div id="stageBox"><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div class="ovwrap hide" id="ovWrap" onclick="Studio.zoomReset()" title="Vue d'ensemble — touche pour revoir toute la pièce"></div><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de la vue produit"><div class="zcap">Vue</div><button class="zbtn" onclick="Studio.zoomToSel()" title="Zoomer sur le logo sélectionné" aria-label="Zoom sur le logo">🎯</button><button class="zbtn" onclick="Studio.toggleOverview()" title="Afficher / masquer la vue d'ensemble" aria-label="Vue d'ensemble">⊞</button><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
   </div>
 
   <!-- RIGHT: layers + properties -->
@@ -245,7 +264,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
     <details class="grp" open><summary>🗂 Calques</summary><div class="layers" id="layers"></div></details>
     <details class="grp" id="propsWrap" open><summary>🎛 Propriétés</summary><div id="props"><div class="empty">Sélectionne un calque</div></div></details>
     <details class="grp"><summary>🖨 Zone d'impression</summary>
-      <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="zoneChk" checked onchange="Studio.render()"> Afficher le repère</label>
+      <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="zoneChk" onchange="Studio.render()"> Afficher le repère</label>
       <div class="hint">Garde ton design dans le repère pour une impression nette.</div>
     </details>
   </div>
@@ -281,7 +300,7 @@ var FONTS=["Arial Black","Arial","Georgia","Impact","Courier New","Brush Script 
 
 /* Photos RÉELLES du produit (récupérées de Printify par le workflow printify-mockups). Repli auto sur le dessin si absentes. */
 var MOCK={tee:"img/mockups/tee.png",hoodie:"img/mockups/hoodie.png",polo:"img/mockups/polo.png",cap:"img/mockups/cap.png",tote:"img/mockups/tote.png",tank:"img/mockups/tank.png",shirt:"img/mockups/shirt.png",zip:"img/mockups/zip.png",bandana:"img/mockups/bandana.png",jogger:"img/mockups/jogger.png",short:"img/mockups/short.png"};
-var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:true,mockReady:{},pf:null,pfReady:false,pfPhoto:""};
+var st={garment:"tee",placement:"chest",color:"#15171a",layers:[],sel:null,uid:1,realphoto:true,mockReady:{},pf:null,pfReady:false,pfPhoto:"",overview:true};
 function preloadMocks(){Object.keys(MOCK).forEach(function(g){if(!MOCK[g])return;var im=new Image();im.onload=function(){st.mockReady[g]=true;render()};im.onerror=function(){st.mockReady[g]=false;paintRealBtn()};im.src=MOCK[g];});}
 /* AUTO via API Printify : mappe chaque vêtement de base à une VRAIE photo produit (catalogue généré par l'API) */
 function loadDefaultMocks(){
@@ -345,8 +364,10 @@ function stageInner(forExport,withGarment){
  }
  if(!forExport && st.sel!=null){
    var l=st.layers.filter(function(x){return x.id===st.sel})[0];
-   if(l){var hw=(l.type==="text"?l.size:l.type==="image"?l.w:40)*l.scale*0.6+6;
-     s+='<rect x="'+(l.x-hw)+'" y="'+(l.y-hw)+'" width="'+(hw*2)+'" height="'+(hw*2)+'" fill="none" stroke="#fff" stroke-width="0.4" stroke-dasharray="1.5 1" opacity=".7"/>';}
+   if(l){var hw=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+6;
+     s+='<rect x="'+(l.x-hw)+'" y="'+(l.y-hw)+'" width="'+(hw*2)+'" height="'+(hw*2)+'" fill="none" stroke="#fff" stroke-width="0.4" stroke-dasharray="1.5 1" opacity=".7"/>';
+     var _hr=Math.max((st.vb?st.vb.w:100)*0.035,1.6);
+     s+='<circle cx="'+(l.x+hw)+'" cy="'+(l.y+hw)+'" r="'+_hr+'" fill="#dc2626" stroke="#fff" stroke-width="0.5"/>';}
  }
  return s;
 }
@@ -354,7 +375,7 @@ function render(){
  var stage=$("stage");
  stage.innerHTML=spriteDefs()+stageInner(false);
  if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
- renderLayers(); renderProps(); paintRealBtn(); zoomLabel();
+ renderLayers(); renderProps(); paintRealBtn(); zoomLabel(); renderOverview();
  var ps=document.getElementById("pfSel");if(ps)ps.innerHTML=st.pf?('🛍️ Produit : <b>'+esc(st.pf.title)+'</b> '+esc(st.pf.brand||"")+' <span style="color:var(--p)">#'+st.pf.id+'</span>'):"";
  var _sl=st.layers.filter(function(x){return x.id===st.sel})[0];
  var _fab=$("aiFab");if(_fab)_fab.style.display=(_sl&&_sl.type==="image"&&_aiCfg&&_aiCfg.worker_url)?"block":"none";
@@ -363,7 +384,7 @@ function render(){
 function renderStageOnly(){
  var stage=$("stage");if(!stage)return;
  stage.innerHTML=spriteDefs()+stageInner(false);
- if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);
+ if(!st.vb)st.vb={x:0,y:0,w:100,h:100};stage.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);renderOverview();
 }
 /* Met à jour l'indicateur de zoom en % (100% = vue entière). */
 function zoomLabel(){var e=document.getElementById("zoomLvl");if(!e||!st.vb)return;var pct=Math.round(100/(st.vb.w/100));e.textContent=pct+"%";}
@@ -384,13 +405,13 @@ function renderEmblems(){
  }).join("");
 }
 /* Bibliothèque de modèles vidée à la demande de Kevin (2026-06-13) — aucun modèle proposé par défaut. Kevin réajoute au fur et à mesure. */
-var REAL_LIB=[["logo_t03","Cœur AR-15 & ball-trap"],["logo_t10b","Cœur AR-15"]];
+var REAL_LIB=[["logo_t03","Cœur AR-15 & ball-trap"],["logo_t10b","Cœur AR-15"],["logo_m01","Monaco 1"],["logo_m02","Monaco 2"],["logo_m03","Monaco 3"],["logo_m04","Monaco 4"],["logo_m05","Monaco 5"],["logo_m06","Monaco 6"],["logo_m07","Monaco 7"],["logo_m08","Monaco 8"],["logo_m09","Monaco 9"],["logo_m10","Monaco 10"],["logo_m11","Monaco 11"],["logo_m12","Monaco 12"],["logo_m13","Monaco 13"],["logo_m14","Monaco 14"],["logo_m15","Monaco 15"],["logo_m16","Monaco 16"],["logo_m17","Monaco 17"],["logo_m18","Monaco 18"],["logo_m19","Monaco 19"],["logo_m20","Monaco 20"],["logo_h01","Blason 1"],["logo_h02","Blason 2"],["logo_h03","Blason 3"],["logo_h04","Blason 4"],["logo_h06","Blason 6"],["logo_h07","Blason 7"],["logo_h08","Blason 8"],["logo_h09","Blason 9"],["logo_h10","Blason 10"],["logo_h11","Blason 11"],["logo_h12","Blason 12"]];
 function renderRealLib(){var el=$("realLib");if(!el)return;el.innerHTML=REAL_LIB.map(function(e){return '<button class="eb" title="'+e[1]+'" onclick="Studio.addImageURL(\'img/designs/'+e[0]+'.png\')"><img src="img/designs/'+e[0]+'.png" style="width:100%;height:100%;object-fit:contain" loading="lazy" onerror="this.closest(\'.eb\').style.display=\'none\'"></button>';}).join("");}
 function _myLogos(){try{return JSON.parse(localStorage.getItem("ld_logos_cache")||"[]")}catch(_){return[]}}
 function renderMyLogos(){var el=$("myLogos");if(!el)return;var L=_myLogos();var h=$("myLogosHint");el.innerHTML=L.length?L.map(function(l,i){return '<button class="eb" title="'+esc(l.name||"Logo")+'" onclick="Studio.addMyLogo('+i+')"><img src="'+l.img+'" style="width:100%;height:100%;object-fit:contain"></button>';}).join(""):'';if(h)h.style.display=L.length?"none":"block";}
 function addMyLogo(i){var L=_myLogos();if(L[i])addImageURL(L[i].img);}
 function syncMyLogos(){if(window.kdmcFetchLogos)window.kdmcFetchLogos("la-detente",function(arr){if(arr&&arr.length){try{var cur=_myLogos();var ids={};cur.forEach(function(x){ids[x.id]=1});arr.forEach(function(a){if(a&&a.id&&!ids[a.id])cur.push(a)});localStorage.setItem("ld_logos_cache",JSON.stringify(cur));}catch(_){}renderMyLogos();}});}
-function addImageURL(url){if(!url)return;var img=new Image();try{img.crossOrigin="anonymous"}catch(_){}img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?42:42*ar,hh=ar>=1?42/ar:42;addLayer({type:"image",href:url,orig:url,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée ✅");};img.onerror=function(){var i2=new Image();i2.onload=function(){addLayer({type:"image",href:url,orig:url,w:42,h:42,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée (sans CORS — l'export pourra nécessiter l'IA ou une image locale)","info");};i2.onerror=function(){toast("Image inaccessible","error")};i2.src=url;};img.src=url;}
+function addImageURL(url){if(!url)return;var img=new Image();try{img.crossOrigin="anonymous"}catch(_){}img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?26:26*ar,hh=ar>=1?26/ar:26;addLayer({type:"image",href:url,orig:url,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée ✅");};img.onerror=function(){var i2=new Image();i2.onload=function(){addLayer({type:"image",href:url,orig:url,w:26,h:26,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"});toast("Image ajoutée (sans CORS — l'export pourra nécessiter l'IA ou une image locale)","info");};i2.onerror=function(){toast("Image inaccessible","error")};i2.src=url;};img.src=url;}
 function webSearch(){var q=($("webq")||{}).value;q=(q||"").trim();if(q.length<2){toast("Tape ce que tu cherches","error");return;}var b=$("webBtn");if(b){b.disabled=true;b.textContent="⏳ Recherche…";}var r=$("webResults");if(r)r.innerHTML="";
  fetch("https://api.openverse.org/v1/images/?q="+encodeURIComponent(q)+"&license_type=commercial&mature=false&page_size=12").then(function(x){return x.ok?x.json():null}).then(function(j){
   if(b){b.disabled=false;b.textContent="🔎 Chercher sur le web";}
@@ -469,12 +490,16 @@ function renderProps(){
  var dispo='';
  dispo+='<div class="sublab">📐 Placement</div>';
  dispo+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'+placeKeys().map(function(k){return '<button class="mini" style="flex:1 0 30%;'+(k===st.placement?'border-color:var(--p);color:#fff':'')+'" onclick="Studio.placeAndMove('+l.id+',\''+k+'\')">'+(PLBL[k]||k)+'</button>'}).join("")+'</div>';
- dispo+=rngN("Échelle",l.id,"scale",l.scale,0.04,4,0.02);
+ dispo+=rngN("Position X  ⟷",l.id,"x",(l.x==null?50:l.x),0,100,0.5);
+ dispo+=rngN("Position Y  ↕",l.id,"y",(l.y==null?50:l.y),0,100,0.5);
+ dispo+=rngN("Échelle (taille)",l.id,"scale",l.scale,0.02,4,0.01);
  dispo+=rngN("Rotation",l.id,"rot",l.rot,-180,180,1,"°");
  dispo+=rngN("Opacité",l.id,"op",l.op,0.1,1,0.05);
- dispo+='<div class="row2"><button class="mini" onclick="Studio.scaleBy('+l.id+',0.9)">➖ Réduire</button><button class="mini" onclick="Studio.scaleBy('+l.id+',1.1)">➕ Agrandir</button></div>';
- dispo+='<div class="sublab">🎯 Déplacement fin</div>';
- dispo+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:170px"><span></span><button class="mini" title="Monter" onclick="Studio.nudge('+l.id+',0,-2)">↑</button><span></span><button class="mini" title="Gauche" onclick="Studio.nudge('+l.id+',-2,0)">←</button><button class="mini" title="Centrer" onclick="Studio.center('+l.id+')">⊕</button><button class="mini" title="Droite" onclick="Studio.nudge('+l.id+',2,0)">→</button><span></span><button class="mini" title="Descendre" onclick="Studio.nudge('+l.id+',0,2)">↓</button><span></span></div>';
+ dispo+='<div class="sublab">📏 Taille rapide</div>';
+ dispo+='<div style="display:flex;flex-wrap:wrap;gap:6px"><button class="mini" onclick="Studio.fitSize('+l.id+',14)">❤️ Cœur</button><button class="mini" onclick="Studio.fitSize('+l.id+',22)">Petit</button><button class="mini" onclick="Studio.fitSize('+l.id+',34)">Moyen</button><button class="mini" onclick="Studio.fitSize('+l.id+',48)">Grand</button><button class="mini" onclick="Studio.fitSize('+l.id+',66)">Dos</button></div>';
+ dispo+='<div class="row2" style="margin-top:8px"><button class="mini" onclick="Studio.scaleBy('+l.id+',0.92)">➖ Réduire</button><button class="mini" onclick="Studio.scaleBy('+l.id+',1.08)">➕ Agrandir</button></div>';
+ dispo+='<div class="sublab">🎯 Déplacement fin (pas 0,5)</div>';
+ dispo+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:180px"><span></span><button class="mini" title="Monter" onclick="Studio.nudge('+l.id+',0,-0.5)">↑</button><span></span><button class="mini" title="Gauche" onclick="Studio.nudge('+l.id+',-0.5,0)">←</button><button class="mini" title="Centrer" onclick="Studio.center('+l.id+')">⊕</button><button class="mini" title="Droite" onclick="Studio.nudge('+l.id+',0.5,0)">→</button><span></span><button class="mini" title="Descendre" onclick="Studio.nudge('+l.id+',0,0.5)">↓</button><span></span></div>';
  dispo+='<div class="row2" style="margin-top:8px"><button class="mini" onclick="Studio.center('+l.id+')">⊕ Centrer</button><button class="mini" onclick="Studio.toZone('+l.id+')">⌖ Dans la zone</button></div>';
 
  /* ===== 🎨 APPARENCE — selon le type de calque ===== */
@@ -538,7 +563,7 @@ function rng(lab,id,prop,val,mn,mx,st_){return field(lab+' ('+(+val).toFixed(pro
 function addLayer(l){snap();l.id=st.uid++;l.x=l.x||50;l.y=l.y||(curZone()[1]+curZone()[3]/2);l.rot=l.rot||0;l.scale=l.scale||1;l.op=l.op==null?1:l.op;st.layers.push(l);st.sel=l.id;render()}
 function addText(){addLayer({type:"text",text:"TON TEXTE",font:"Arial Black",bold:true,color:"#ffffff",size:11,outline:0,ocolor:"#000000"})}
 function addEmblem(sym){addLayer({type:"emblem",sym:sym,scale:1})}
-function addImageFile(file){if(!file||!/^image\//.test(file.type||"")&&!/\.svg$/i.test(file.name||""))return;var r=new FileReader();r.onload=function(e){var src=e.target.result;var img=new Image();img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?36:36*ar,hh=ar>=1?36/ar:36;addLayer({type:"image",href:src,orig:src,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.onerror=function(){addLayer({type:"image",href:src,orig:src,w:36,h:36,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.src=src};r.readAsDataURL(file)}
+function addImageFile(file){if(!file||!/^image\//.test(file.type||"")&&!/\.svg$/i.test(file.name||""))return;var r=new FileReader();r.onload=function(e){var src=e.target.result;var img=new Image();img.onload=function(){var ar=(img.width&&img.height)?img.width/img.height:1;var w=ar>=1?24:24*ar,hh=ar>=1?24/ar:24;addLayer({type:"image",href:src,orig:src,w:w,h:hh,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.onerror=function(){addLayer({type:"image",href:src,orig:src,w:24,h:24,f:{br:1,ct:1,sat:1,gray:0,inv:0},shape:"none",flipH:false,flipV:false,duo:false,blend:"normal"})};img.src=src};r.readAsDataURL(file)}
 function select(id){st.sel=id;render()}
 function upd(id,prop,val){var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l[prop]=val;render()}
 function move(id,dir){var i=st.layers.findIndex(function(x){return x.id===id});var j=i+dir;if(j<0||j>=st.layers.length)return;var t=st.layers[i];st.layers[i]=st.layers[j];st.layers[j]=t;render()}
@@ -547,7 +572,9 @@ function del(id){snap();st.layers=st.layers.filter(function(x){return x.id!==id}
 function center(id){upd(id,"x",50);var l=st.layers.filter(function(x){return x.id===id})[0];var _z=curZone();l.y=_z[1]+_z[3]/2;render()}
 function toZone(id){var z=curZone();var l=st.layers.filter(function(x){return x.id===id})[0];l.x=z[0]+z[2]/2;l.y=z[1]+z[3]/2;render()}
 function nudge(id,dx,dy){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,(l.x==null?50:l.x)+dx));l.y=Math.max(0,Math.min(100,(l.y==null?50:l.y)+dy));render()}
-function scaleBy(id,f){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l.scale=Math.max(0.04,Math.min(6,(l.scale||1)*f));render()}
+function scaleBy(id,f){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l.scale=Math.max(0.02,Math.min(6,(l.scale||1)*f));render()}
+/* Taille rapide : règle l'échelle pour que la plus grande dimension du logo fasse ~`units` % de la pièce (Cœur 14 → Dos 66). */
+function fitSize(id,units){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;var dim=l.type==="text"?(l.size||20):l.type==="emblem"?40:Math.max(l.w||40,l.h||40);l.scale=Math.max(0.02,Math.min(6,units/dim));render();toast("Taille réglée ("+units+"%)");}
 function placeAndMove(id,k){if(PLACE[st.garment]&&PLACE[st.garment][k]){st.placement=k;renderPlacement();}toZone(id);}
 function setGarment(g){st.garment=g;st.placement=placeKeys()[0];renderGarments();renderPlacement();render()}
 function setPlacement(k){st.placement=k;renderPlacement();render()}
@@ -574,27 +601,93 @@ function closeExportMenu(){var m=$("expMenu"),b=$("expBtn");if(m)m.classList.rem
 
 /* ---------- DRAG on stage ---------- */
 function _clampVB(){if(!st.vb)return;var v=st.vb;v.w=Math.max(20,Math.min(100,v.w));v.h=v.w;v.x=Math.max(0,Math.min(100-v.w,v.x));v.y=Math.max(0,Math.min(100-v.h,v.y))}
-function _applyVB(){var s2=$("stage");if(s2&&st.vb)s2.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);zoomLabel();}
+function _applyVB(){var s2=$("stage");if(s2&&st.vb)s2.setAttribute("viewBox",st.vb.x+" "+st.vb.y+" "+st.vb.w+" "+st.vb.h);zoomLabel();renderOverview();}
 function zoomBy(fr){if(!st.vb)st.vb={x:0,y:0,w:100,h:100};var v=st.vb;var cx=v.x+v.w/2,cy=v.y+v.h/2;var nw=Math.max(20,Math.min(100,v.w*fr));st.vb={x:cx-nw/2,y:cy-nw/2,w:nw,h:nw};_clampVB();_applyVB()}
 function zoomReset(){st.vb={x:0,y:0,w:100,h:100};_applyVB()}
+/* ---------- DOUBLE VUE (minimap = vue d'ensemble pendant qu'on zoome sur le logo) ---------- */
+function renderOverview(){
+ var w=$("ovWrap"); if(!w)return;
+ if(!st.overview){w.className="ovwrap hide";return;}
+ w.className="ovwrap";
+ var v=st.vb||{x:0,y:0,w:100,h:100};
+ var rect=(v.w<99.5)?('<rect x="'+v.x+'" y="'+v.y+'" width="'+v.w+'" height="'+v.h+'" fill="rgba(220,38,38,.10)" stroke="#dc2626" stroke-width="1.4" rx="1.5"/>'):'';
+ w.innerHTML='<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+stageInner(true,true)+rect+'</svg><div class="ovtag">Vue d\'ensemble</div>';
+}
+function toggleOverview(){st.overview=!st.overview;renderOverview();toast(st.overview?"🗺️ Vue d'ensemble affichée":"Vue d'ensemble masquée");}
+function zoomToSel(){
+ var l=st.layers.filter(function(x){return x.id===st.sel})[0];
+ if(!l){toast("Sélectionne d'abord un logo / calque");return;}
+ var dim=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale;
+ var nw=Math.max(16,Math.min(100,dim*1.7)),cx=(l.x==null?50:l.x),cy=(l.y==null?50:l.y);
+ st.vb={x:cx-nw/2,y:cy-nw/2,w:nw,h:nw};_clampVB();st.overview=true;_applyVB();renderOverview();toast("🔍 Zoom sur le logo");
+}
 function initDrag(){
  var box=$("stageBox");var drag=null;var _pinch=null;
  function _pinchStart(ev){var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var v=st.vb||{x:0,y:0,w:100,h:100};var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;_pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),w:v.w,cx:v.x+mx*v.w,cy:v.y+my*v.h};drag=null}
  function _pinchMove(ev){if(!_pinch)return;var a=ev.touches[0],b=ev.touches[1];var r=box.getBoundingClientRect();var nd=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1;var nw=Math.max(20,Math.min(100,_pinch.w*(_pinch.d/nd)));var mx=((a.clientX+b.clientX)/2-r.left)/r.width,my=((a.clientY+b.clientY)/2-r.top)/r.height;st.vb={x:_pinch.cx-mx*nw,y:_pinch.cy-my*nw,w:nw,h:nw};_clampVB();_applyVB()}
  function pt(ev){var r=box.getBoundingClientRect();var cx=(ev.touches?ev.touches[0].clientX:ev.clientX);var cy=(ev.touches?ev.touches[0].clientY:ev.clientY);var v=st.vb||{x:0,y:0,w:100,h:100};return{x:v.x+(cx-r.left)/r.width*v.w,y:v.y+(cy-r.top)/r.height*v.h}}
+ function _hwOf(l){return (l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*(l.scale||1)*0.6+6;}
  function down(ev){if(ev.touches&&ev.touches.length>=2){_pinchStart(ev);ev.preventDefault();return}var p=pt(ev);
-   // pick topmost layer near point
-   for(var i=st.layers.length-1;i>=0;i--){var l=st.layers[i];var rad=Math.max((l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6+4,(st.vb?st.vb.w:100)*0.06);
-     if(Math.abs(p.x-l.x)<rad&&Math.abs(p.y-l.y)<rad){snap();st.sel=l.id;drag={id:l.id,dx:l.x-p.x,dy:l.y-p.y};render();ev.preventDefault();return}}
-   st.sel=null;render();
+   // 1) poignée rouge (coin bas-droit) du calque sélectionné = redimensionner
+   if(st.sel!=null){var sl=st.layers.filter(function(x){return x.id===st.sel})[0];if(sl){var hw=_hwOf(sl);var hr=Math.max((st.vb?st.vb.w:100)*0.07,3);
+     if(Math.abs(p.x-(sl.x+hw))<hr&&Math.abs(p.y-(sl.y+hw))<hr){snap();drag={mode:"resize",id:sl.id,sc0:sl.scale||1,d0:Math.max(Math.hypot(p.x-sl.x,p.y-sl.y),0.5)};ev.preventDefault();return}}}
+   // 2) sinon : prendre le calque sous le doigt = déplacer
+   for(var i=st.layers.length-1;i>=0;i--){var l=st.layers[i];var rad=Math.max((l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*(l.scale||1)*0.6+5,(st.vb?st.vb.w:100)*0.09);
+     if(Math.abs(p.x-l.x)<rad&&Math.abs(p.y-l.y)<rad){snap();var was=st.sel;st.sel=l.id;drag={mode:"move",id:l.id,dx:l.x-p.x,dy:l.y-p.y};if(was!==l.id)render();else renderStageOnly();ev.preventDefault();return}}
+   if(st.sel!=null){st.sel=null;render();}
  }
- function mv(ev){if(ev.touches&&ev.touches.length>=2){_pinchMove(ev);if(ev.preventDefault)ev.preventDefault();return}if(!drag)return;var p=pt(ev);var l=st.layers.filter(function(x){return x.id===drag.id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,p.x+drag.dx));l.y=Math.max(0,Math.min(100,p.y+drag.dy));render();ev.preventDefault()}
- function up(){drag=null;_pinch=null}
+ function mv(ev){if(ev.touches&&ev.touches.length>=2){_pinchMove(ev);if(ev.preventDefault)ev.preventDefault();return}if(!drag)return;var p=pt(ev);var l=st.layers.filter(function(x){return x.id===drag.id})[0];if(!l)return;
+   if(drag.mode==="resize"){var d=Math.max(Math.hypot(p.x-l.x,p.y-l.y),0.5);l.scale=Math.max(0.02,Math.min(6,drag.sc0*(d/drag.d0)));}
+   else{l.x=Math.max(0,Math.min(100,p.x+drag.dx));l.y=Math.max(0,Math.min(100,p.y+drag.dy));}
+   renderStageOnly();ev.preventDefault();
+ }
+ function up(){if(drag||_pinch){drag=null;_pinch=null;render();}else{drag=null;_pinch=null;}}
  box.addEventListener("mousedown",down);window.addEventListener("mousemove",mv);window.addEventListener("mouseup",up);
  box.addEventListener("touchstart",down,{passive:false});window.addEventListener("touchmove",mv,{passive:false});window.addEventListener("touchend",up);
 }
 
 /* ---------- EXPORT ---------- */
+/* ---------- VUE MULTI-PRODUITS ---------- */
+/* Rend le design courant (st.layers) sur un vêtement donné — photo réelle si dispo, sinon dessin du vêtement. */
+function stageInnerFor(gid){
+ var g=GARMENTS.filter(function(x){return x.id===gid})[0]; if(!g)return '';
+ var s='<rect x="0" y="0" width="100" height="100" rx="3" fill="#d2d5d9"/>';
+ if(st.realphoto&&MOCK[gid]&&st.mockReady[gid]){s+='<image href="'+MOCK[gid]+'" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';}
+ else{s+='<g style="color:'+st.color+'"><use href="#'+g.sym+'"/></g>';}
+ st.layers.forEach(function(l){s+=layerSVG(l)});
+ return s;
+}
+/* Modale : aperçu du design sur TOUS les produits en même temps. Les symboles/filtres sont résolus via le sprite global du document (pas besoin de réinjecter defs ici). */
+function multiView(){
+ if(!st.layers.length){toast("Ajoute au moins un calque pour voir la vue multi-produits");return;}
+ var tiles=GARMENTS.map(function(g){
+  var svg='<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">'+stageInnerFor(g.id)+'</svg>';
+  return '<button class="mvTile'+(g.id===st.garment?' on':'')+'" onclick="Studio.pickMulti(\''+g.id+'\')" title="Éditer sur '+esc(g.name)+'"><div class="mvImg">'+svg+'</div><div class="mvName">'+esc(g.name)+(g.id===st.garment?' • en cours':'')+'</div></button>';
+ }).join("");
+ modal('<div class="mvHead"><h2>🖼️ Mon design sur tous les produits</h2><button class="btn ghost" onclick="Studio.closeModal()">✕</button></div>'
+  +'<div class="mvGrid">'+tiles+'</div>'
+  +'<div class="mvFoot"><button class="btn primary" style="width:100%" onclick="Studio.exportPlanche()">⬇️ Télécharger la planche (PNG)</button>'
+  +'<div class="hint" style="margin-top:8px">Touche un produit pour l\'éditer précisément. Le design garde sa position — ajuste-le par produit au besoin.</div></div>');
+ var mb=$("modalBox"); if(mb) mb.classList.add("wide");
+}
+function pickMulti(gid){var g=GARMENTS.filter(function(x){return x.id===gid})[0];setGarment(gid);closeModal();toast("✏️ Édition sur "+((g&&g.name)||gid));}
+/* Exporte la planche (tous produits) en 1 seul PNG. Rastérisé hors-DOM → defs inlinés obligatoires. */
+function exportPlanche(){
+ if(!st.layers.length)return toast("Ajoute au moins un calque");
+ toast("Génération de la planche…");
+ var cols=4,n=GARMENTS.length,rows=Math.ceil(n/cols),cell=420,lab=40,pad=14,defs=spriteDefs();
+ var W=cols*cell,H=rows*(cell+lab),body='';
+ GARMENTS.forEach(function(g,i){
+  var cx=(i%cols)*cell,cy=Math.floor(i/cols)*(cell+lab);
+  body+='<svg x="'+(cx+pad)+'" y="'+(cy+pad)+'" width="'+(cell-2*pad)+'" height="'+(cell-2*pad)+'" viewBox="0 0 100 100">'+stageInnerFor(g.id)+'</svg>';
+  body+='<text x="'+(cx+cell/2)+'" y="'+(cy+cell+lab-15)+'" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="800" fill="#15171a">'+esc(g.name)+'</text>';
+ });
+ var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+defs+'<rect width="'+W+'" height="'+H+'" fill="#ffffff"/>'+body+'</svg>';
+ var blob=new Blob([svg],{type:"image/svg+xml;charset=utf-8"}),url=URL.createObjectURL(blob),im=new Image();
+ im.onload=function(){var c=document.createElement("canvas");c.width=W;c.height=H;var x=c.getContext("2d");x.drawImage(im,0,0,W,H);URL.revokeObjectURL(url);download(c.toDataURL("image/png"),"la-detente-planche-produits.png");toast("Planche téléchargée ✅");};
+ im.onerror=function(){URL.revokeObjectURL(url);toast("Erreur planche (image)")};
+ im.src=url;
+}
 function buildSVG(size,withGarment,bg){
  var inner=stageInner(true,withGarment);
  var rect=bg?'<rect width="100" height="100" fill="'+bg+'"/>':'';
@@ -902,7 +995,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,fitSize:fitSize,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>

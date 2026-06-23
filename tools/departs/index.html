@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>Départs — Chefs Black Jack</title>
+<style>
+:root{--gold:#c9a227;--gold2:#ffd700;--bg:#0a1a0c;--bg2:#0e2410;--card:#13301a;--ink:#eaf5ea;--mut:#9bb89b;--ease:cubic-bezier(.4,0,.2,1);
+ --c-work:#1d3a55;--c-rh:#7a5cc0;--c-r:#a98fe0;--c-cp:#d98aa8;--c-m:#d98a4a;--c-conv:#d8342e;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;max-width:100vw;overflow-x:hidden;background:var(--bg);color:var(--ink);
+ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 70px) env(safe-area-inset-left)}
+header{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,#0e2410,#0a1a0c);
+ border-bottom:1px solid rgba(201,162,39,.3);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.3px;color:var(--gold2)}
+.sub{font-size:12px;color:var(--mut);margin:0}
+.spacer{flex:1}
+button{font-family:inherit;cursor:pointer}
+select{font-family:inherit;background:#0a1a0c;color:var(--gold2);border:1px solid rgba(201,162,39,.4);
+ border-radius:9px;padding:8px 10px;font-size:13px;font-weight:700;min-height:40px}
+.btn{background:rgba(201,162,39,.12);color:var(--gold2);border:1px solid rgba(201,162,39,.4);
+ border-radius:9px;padding:8px 12px;font-size:13px;font-weight:700;min-height:40px}
+.btn:active{transform:translateY(1px)}
+.btn.prim{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border:none}
+.wrap{padding:12px 8px 4px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid rgba(201,162,39,.18);border-radius:12px;background:var(--card)}
+table{border-collapse:separate;border-spacing:0;font-size:12px;min-width:max-content}
+th,td{padding:5px 4px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,.05)}
+thead th{position:sticky;top:0;background:#0b1d0e;color:var(--gold2);font-size:11px;z-index:5;padding:7px 4px}
+thead th.wknd{color:#ffb37a}
+.cNom{position:sticky;left:0;background:#0f2613;text-align:left;z-index:8;min-width:118px;font-weight:700;
+ box-shadow:2px 0 6px rgba(0,0,0,.4)}
+thead .cNom{z-index:12}
+.cNR{background:#10240f;min-width:46px;border-left:2px solid rgba(201,162,39,.35)}
+.cCq{background:#10240f;min-width:46px}
+.today{box-shadow:inset 0 0 0 2px var(--gold2)}
+thead th.today{background:#3a3410;color:#fff}
+.cell{font-size:10px;line-height:1.15;padding:3px 2px;min-width:42px}
+.dep{display:inline-block;font-weight:900;font-size:12px;color:#ffe23a;background:rgba(0,0,0,.62);border-radius:5px;padding:0 5px;margin-top:2px}
+.w{background:var(--c-work)} .conv{background:var(--c-conv);color:#ffe23a}
+.rh{background:var(--c-rh)} .r{background:var(--c-r);color:#221} .cp{background:var(--c-cp);color:#221} .m{background:var(--c-m);color:#221}
+.off .dep{display:none}
+.mark{font-size:13px;color:var(--gold2);font-weight:700;min-height:28px}
+body.admin .mark{cursor:pointer}
+.ed{display:none}
+body.admin .ed{display:inline;cursor:pointer;opacity:.55;margin-left:4px;font-size:12px}
+.tot td{background:#0b1d0e;font-weight:800;color:var(--gold2);border-top:2px solid rgba(201,162,39,.35)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;font-size:11px;color:var(--mut)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.note{padding:10px 14px;font-size:11px;color:var(--mut);line-height:1.5}
+.posp{margin:8px;padding:12px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.25);border-radius:12px}
+.posp-t{font-size:13px;color:var(--gold2);font-weight:700;margin-bottom:10px}
+.posp-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.posp-nm{flex:1;font-size:13px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.posp-btns{display:flex;gap:5px;flex-wrap:wrap}
+.posp-b{width:38px;height:38px;border-radius:8px;border:2px solid #2a3a2c;background:#13241a;color:#7a8a7c;font-size:16px;font-weight:900}
+.posp-b.sel{border-color:var(--gold2);background:rgba(201,162,39,.18);color:var(--gold2)}
+.rest{padding:6px 14px;font-size:11px;color:var(--mut)}
+.rest b{color:var(--gold2)}
+.warn{color:#ffb37a;font-weight:700}
+.adminbar{display:none;gap:8px;flex-wrap:wrap;padding:8px 12px;background:rgba(201,162,39,.06);border-bottom:1px solid rgba(201,162,39,.15)}
+body.admin .adminbar{display:flex}
+.mv{display:none}
+body.admin .mv{display:inline-block;background:none;border:none;color:var(--gold2);font-size:13px;padding:0 3px}
+body.admin td.cell{cursor:pointer}
+body.admin td.cell:hover{outline:1px solid var(--gold2)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:100;display:none;
+ align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.box{background:var(--card);border:1px solid rgba(201,162,39,.4);border-radius:16px;padding:22px;max-width:340px;width:100%}
+.box h2{margin:0 0 6px;font-size:17px;color:var(--gold2)}
+.box p{margin:0 0 14px;font-size:13px;color:var(--mut)}
+.box input{width:100%;padding:12px;font-size:18px;text-align:center;letter-spacing:6px;border-radius:10px;
+ border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);margin-bottom:12px}
+.row{display:flex;gap:8px}
+.badge{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:50;
+ background:rgba(10,26,12,.9);color:var(--gold);border:1px solid rgba(201,162,39,.35);border-radius:20px;
+ padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:#13301a;color:var(--gold2);
+ border:1px solid var(--gold);border-radius:10px;padding:10px 16px;font-size:13px;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+tr.me td{box-shadow:inset 0 0 0 2px var(--gold)}
+tr.me .cNom{background:rgba(201,162,39,.20);color:var(--gold2);font-weight:800}
+.mebanner{margin:8px 0 4px;padding:8px 12px;border:1px solid rgba(201,162,39,.35);border-radius:10px;
+ background:rgba(10,26,12,.55);font-size:13px;color:var(--gold2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mebanner b{color:#fff}
+.mebanner .jump{margin-left:auto;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;
+ border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:13px}
+#meSel{max-width:150px}
+</style>
+<script>/* lz-string 1.5.0 MIT (inliné: CSP self+unsafe-inline, hors-ligne) — décompresse cmc_ov/cmc_e de l app */
+var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToBase64:function(r){if(null==r)return"";var n=i._compress(r,6,function(r){return o.charAt(r)});switch(n.length%4){default:case 0:return n;case 1:return n+"===";case 2:return n+"==";case 3:return n+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(n){return t(o,r.charAt(n))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:i._decompress(r.length,16384,function(o){return r.charCodeAt(o)-32})},compressToUint8Array:function(r){for(var o=i.compress(r),n=new Uint8Array(2*o.length),e=0,t=o.length;e<t;e++){var s=o.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null==o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;e<t;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return n.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(o){return t(n,r.charAt(o))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,s={},u={},a="",p="",c="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<r.length;i+=1)if(a=r.charAt(i),Object.prototype.hasOwnProperty.call(s,a)||(s[a]=f++,u[a]=!0),p=c+a,Object.prototype.hasOwnProperty.call(s,p))c=p;else{if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++),s[p]=f++,c=String(a)}if(""!==c){if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==o-1){d.push(n(m));break}v++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:i._decompress(r.length,32768,function(o){return r.charCodeAt(o)})},_decompress:function(o,n,e){var t,i,s,u,a,p,c,l=[],f=4,h=4,d=3,m="",v=[],g={val:e(0),position:n,index:1};for(t=0;t<3;t+=1)l[t]=t;for(s=0,a=Math.pow(2,2),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 2:return""}for(l[3]=c,i=c,v.push(c);;){if(g.index>o)return"";for(s=0,a=Math.pow(2,d),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(c=s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 2:return v.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])m=l[c];else{if(c!==h)return null;m=i+i.charAt(0)}v.push(m),l[h++]=i+m.charAt(0),i=m,0==--f&&(f=Math.pow(2,d),d++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module?module.exports=LZString:"undefined"!=typeof angular&&null!=angular&&angular.module("LZString",[]).factory("LZString",function(){return LZString});
+</script>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Départs — Chefs Black Jack</h1>
+    <p class="sub" id="hSub"></p>
+  </div>
+  <span class="spacer"></span>
+  <select id="meSel" onchange="setMe(this.value)" title="Ma vue — choisis ton nom"></select>
+  <select id="boardSel" onchange="switchBoard(this.value)"></select>
+  <button class="btn" id="lockBtn" onclick="toggleAdmin()">🔒 Admin</button>
+</header>
+
+<div class="adminbar">
+  <button class="btn" onclick="togglePositions()">⚙️ Positions de départ</button>
+  <button class="btn" id="anchorBtn" onclick="toggleAnchor()">📍 Placer Départ 1</button>
+  <button class="btn" onclick="resetAnchor()">↩︎ Rotation normale</button>
+  <button class="btn" onclick="resetCounters()">↺ Vider NR/5e</button>
+  <button class="btn" onclick="resetAll()">⚠️ Réinit. ce mois</button>
+  <span class="sub" id="adminHint" style="align-self:center">Touche une case = corriger le code · NR/5e : tap = ✗, ✎ = écrire</span>
+</div>
+
+<div class="wrap">
+  <div class="mebanner" id="meBanner" style="display:none"></div>
+  <div class="scroll"><table id="grid"></table></div>
+  <div id="posPanel"></div>
+  <div class="rest" id="restCheck"></div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--c-work)"></i>travail</span>
+    <span><i class="dot" style="background:var(--c-rh)"></i>RH</span>
+    <span><i class="dot" style="background:var(--c-r)"></i>R</span>
+    <span><i class="dot" style="background:var(--c-cp)"></i>CP</span>
+    <span><i class="dot" style="background:var(--c-m)"></i>M/abs</span>
+    <span><b style="color:var(--gold2)">↑N</b> = ordre de départ</span>
+    <span><b>NR</b> = non-retour · <b>5e</b> = cinquième</span>
+  </div>
+  <div class="rest" id="appDiag" style="cursor:pointer" onclick="showAppDiag()" title="Toucher pour le détail"></div>
+</div>
+
+<div class="modal" id="pinModal">
+  <div class="box">
+    <h2>🔒 Accès admin</h2>
+    <p>Code à 6 chiffres pour modifier (les collègues restent en lecture seule).</p>
+    <input id="pinIn" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
+    <div class="row">
+      <button class="btn" style="flex:1" onclick="closePin()">Annuler</button>
+      <button class="btn prim" style="flex:1" onclick="checkPin()">Déverrouiller</button>
+    </div>
+  </div>
+</div>
+
+<div class="badge" id="ver" onclick="forceRefresh()">v1.11.3</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+var APP_VER="v1.11.3";
+var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
+var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
+ 8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
+ 11:[1,6,4,9,2,11,7,3,8,5,10],12:[1,6,4,9,2,11,7,3,12,8,5,10],13:[1,6,4,9,2,11,7,3,13,8,5,10,12]};
+function seqForSize(n){return SEQS[n]||(function(){var a=[];for(var i=1;i<=n;i++)a.push(i);return a;})();}
+function isWork(c){return !!c && ["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","DEPL","DEP","SS"].indexOf(c)<0;}
+function cellClass(c){
+  if(!c) return "off";
+  if(c==="RH") return "rh"; if(c==="R") return "r";
+  if(c==="CP") return "cp"; if(["M","AF","RRT","PAT","MT","AT","ABS","ABI","DEPL","DEP","SS"].indexOf(c)>=0) return "m";
+  if(/['"]$/.test(c)) return "conv"; return "w";
+}
+// Couleurs IDENTIQUES à l'import CMCteams (table CODES) — par horaire + absences
+var CODE_COLORS={
+  "22/6":{bg:"#fccfe0",fg:"#3a0818"}, "19/4":{bg:"#fff4a0",fg:"#1a1004"}, "16/3":{bg:"#ffb070",fg:"#2a1004"},
+  "14/19":{bg:"#c4e8a8",fg:"#0a2004"}, "20/5":{bg:"#b8d4f0",fg:"#041838"}, "16/22":{bg:"#d4c4ec",fg:"#1a0840"},
+  "12h30/19":{bg:"#c4e8a8",fg:"#0a2004"}, "15/19":{bg:"#c4e8a8",fg:"#0a2004"}, "15/20":{bg:"#fff4a0",fg:"#1a1004"},
+  "19/6":{bg:"#fff4a0",fg:"#1a1004"}, "14/20":{bg:"#d4c4ec",fg:"#1a0840"},
+  "RH":{bg:"#c8a8e0",fg:"#0c0430"}, "R":{bg:"#d8c8f0",fg:"#2a1850"}, "CP":{bg:"#f8c0d0",fg:"#2a0410"},
+  "AF":{bg:"#a8e0a8",fg:"#031805"}, "M":{bg:"#ffe840",fg:"#1a1004"}, "RRT":{bg:"#ffd850",fg:"#1a1004"},
+  "MAL":{bg:"#ffe840",fg:"#1a1004"}, "MT":{bg:"#ffe840",fg:"#1a1004"}, "AT":{bg:"#ffe840",fg:"#1a1004"},
+  "PAT":{bg:"#ffd850",fg:"#1a1004"}, "DEPL":{bg:"#d0d0d0",fg:"#202020"}, "DEP":{bg:"#d0d0d0",fg:"#202020"},
+  "SS":{bg:"#e0e0e0",fg:"#202020"}, "FL":{bg:"#ffd850",fg:"#1a1004"}, "ABS":{bg:"#e0e0e0",fg:"#202020"}, "ABI":{bg:"#e0e0e0",fg:"#202020"}
+};
+var CONV_COLOR={bg:"#d8342e",fg:"#ffe23a"}; // Convention (' ou ") = fond rouge / écriture jaune (PDF SBM)
+function codeStyle(c){
+  if(!c) return null;
+  if(CODE_COLORS[c]) return CODE_COLORS[c];            // RH/R/CP/M/AF... exacts
+  // v1.11.2 (Kevin 2026-06-22 « il manque l'orange pour le CDP, service orange Café de Paris ») :
+  // CDP (Café de Paris) = marqueur '*' (ou texte CDP) → ORANGE, IDENTIQUE à l'import CMCteams
+  // (table CODES : 20/5*/16/3* = #ffc488 cdp:true). Avant, le '*' était stripé → la cellule
+  // prenait la couleur de l'HORAIRE de base (ex 20/5* → bleu) au lieu de l'orange CDP.
+  if(/\*/.test(c)||/CDP/i.test(c)) return {bg:"#ffc488",fg:"#5a2808"};
+  if(/['"]/.test(c)) return CONV_COLOR;                // jour Convention → rouge/jaune
+  var base=c.replace(/[c*]+$/,"").replace(/['"]/g,""); // strip suffixe chef/CDP
+  return CODE_COLORS[base]||{bg:"#1d3a55",fg:"#dfeaf5"}; // base horaire, sinon bleu travail
+}
+function isRest(c){return c==="RH"||c==="R";} // pour la détection d'équipe (jours de repos)
+
+// rythme de roulement (chef plein-mois) + générateur de planning par personne
+function mkPerson(rhy,days,opts){ // opts:{from,to,marks}
+  var o={};
+  for(var d=1;d<=days;d++){
+    var c=rhy[d]||"";
+    if(opts.from && d<opts.from) c="CP";
+    if(opts.to && d>opts.to) c="CP";
+    if(opts.marks && opts.marks[d]!==undefined) c=opts.marks[d];
+    o[d]=c;
+  }
+  return o;
+}
+var RHY_JUN={1:"20/5c",2:"19/4c",3:"16/22c",4:"14/19c",5:"RH",6:"19/4'c",7:"22/6c",8:"20/5c",9:"16/3c",10:"14/19'c",
+ 11:"RH",12:"R",13:"20/5c",14:"19/4c",15:"16/22c",16:"14/19c",17:"RH",18:"R",19:"22/6c",20:"19/4'c",21:"16/3c",
+ 22:"14/19'c",23:"RH",24:"R",25:"20/5c",26:"19/4c",27:"16/22c",28:"14/19c",29:"RH",30:"R"};
+var RHY_JUL={1:"22/6c",2:"19/4'c",3:"16/3c",4:"14/19c",5:"RH",6:"R",7:"20/5c",8:"19/4c",9:"16/22c",10:"14/19c",
+ 11:"RH",12:"R",13:"22/6c",14:"19/4'c",15:"16/3c",16:"14/19'c",17:"RH",18:"R",19:"20/5c",20:"19/4c",21:"16/22c",
+ 22:"14/19c",23:"RH",24:"R",25:"22/6c",26:"19/4'c",27:"16/3c",28:"14/19'c",29:"RH",30:"R",31:"20/5c"};
+
+// ── ÉQUIPES (1 par mois pour l'instant : Chefs BJ) — corrigeables en admin ──
+var BOARDS={
+ "2026-06-bjC":{label:"Juin 2026 — Chefs BJ (4)",month:"Juin 2026",year:2026,monthIdx:5,days:30,key:"cmc_dep_2026_06_bjC4",
+   anchor:{name:"DESARZENS K",day:20},
+   people:[
+     {name:"FAUTRIER M",   codes:mkPerson(RHY_JUN,30,{marks:{1:"M"}})},
+     {name:"DEJANOVIC D",  codes:mkPerson(RHY_JUN,30,{})},
+     {name:"MALENFANT PJ", codes:mkPerson(RHY_JUN,30,{marks:{1:"20/5*",9:"16/3*",21:"16/3*",25:"20/5*",30:"22/6c"}})},
+     {name:"DESARZENS K",  codes:mkPerson(RHY_JUN,30,{from:16})}
+   ]},
+};
+var JUL_TEAMS=[{"label": "Juillet 2026 — BJ Éq.1", "id": "2026-07-bj1", "people": [{"name": "MARIOTTINI J", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "RRT", "14": "19/4'c", "15": "16/3c", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "PUGNETTI S", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "14/19'c", "17": "RH", "18": "R", "19": "20/5c", "20": "19/4c", "21": "16/22c", "22": "14/19c", "23": "RH", "24": "R", "25": "22/6c", "26": "19/4'c", "27": "16/3c", "28": "14/19'c", "29": "RH", "30": "R", "31": "20/5c"}}, {"name": "DEJANOVIC D", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "14/19'c", "17": "RH", "18": "R", "19": "20/5c", "20": "19/4c", "21": "16/22c", "22": "14/19c", "23": "RH", "24": "R", "25": "22/6c", "26": "19/4'c", "27": "16/3c", "28": "14/19'c", "29": "RH", "30": "R", "31": "20/5c"}}, {"name": "MALENFANT PJ", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "14/19'c", "17": "RH", "18": "R", "19": "20/5c", "20": "19/4c", "21": "16/22c", "22": "14/19c", "23": "RH", "24": "R", "25": "22/6c", "26": "19/4'c", "27": "16/3c", "28": "14/19'c", "29": "RH", "30": "R", "31": "20/5c"}}, {"name": "DESARZENS K", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "DESSI F", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "14/19'c", "17": "RH", "18": "R", "19": "20/5c", "20": "19/4c", "21": "16/22c", "22": "14/19c", "23": "RH", "24": "R", "25": "22/6c", "26": "19/4'c", "27": "16/3c", "28": "14/19'c", "29": "RH", "30": "R", "31": "20/5c"}}]}, {"label": "Juillet 2026 — BJ Éq.2", "id": "2026-07-bj2", "people": [{"name": "PASSERON G", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "19/4c", "18": "16/22c", "19": "14/19c", "20": "RH", "21": "R", "22": "22/6c", "23": "19/4'c", "24": "16/3c", "25": "14/19'c", "26": "RH", "27": "R", "28": "20/5c", "29": "19/4c", "30": "16/22c", "31": "14/19c"}}, {"name": "DESSI P", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "BRASSEUR F", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "19/4c", "18": "16/22c", "19": "14/19c", "20": "RH", "21": "R", "22": "22/6c", "23": "19/4'c", "24": "16/3c", "25": "14/19'c", "26": "RH", "27": "R", "28": "20/5c", "29": "19/4c", "30": "16/22c", "31": "14/19c"}}, {"name": "RUZIC M", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "19/4c", "18": "16/22c", "19": "14/19c", "20": "RH", "21": "R", "22": "22/6c", "23": "19/4'c", "24": "16/3c", "25": "14/19'c", "26": "RH", "27": "R", "28": "20/5c", "29": "19/4c", "30": "16/22c", "31": "14/19c"}}, {"name": "PETIT T", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "19/4c", "18": "16/22c", "19": "14/19c", "20": "RH", "21": "R", "22": "22/6c", "23": "19/4'c", "24": "16/3c", "25": "14/19'c", "26": "RH", "27": "R", "28": "20/5c", "29": "19/4c", "30": "16/22c", "31": "14/19c"}}, {"name": "MERLINO T", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}]}, {"label": "Juillet 2026 — BJ Éq.3", "id": "2026-07-bj3", "people": [{"name": "GARINO Y", "codes": {"1": "19/4'c", "2": "16/3c", "3": "14/19'c", "4": "RH", "5": "R", "6": "20/5c", "7": "19/4c", "8": "16/22c", "9": "14/19c", "10": "RH", "11": "R", "12": "22/6c", "13": "19/4'c", "14": "16/3c", "15": "14/19'c", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "20/5c", "31": "19/4c"}}, {"name": "EHRET G", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "20/5c", "31": "19/4c"}}, {"name": "MILLO W", "codes": {"1": "19/4'c", "2": "16/3c", "3": "14/19'c", "4": "RH", "5": "R", "6": "20/5c", "7": "19/4c", "8": "16/22c", "9": "14/19c", "10": "RH", "11": "R", "12": "RRT", "13": "19/4'c", "14": "16/3c", "15": "14/19'c", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "RRT", "31": "RRT"}}, {"name": "RICORDO B", "codes": {"1": "19/4'c", "2": "16/3c", "3": "14/19'c", "4": "RH", "5": "R", "6": "20/5c", "7": "19/4c", "8": "16/22c", "9": "14/19c", "10": "RH", "11": "R", "12": "22/6c", "13": "19/4'c", "14": "16/3c", "15": "14/19'c", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "20/5c"}}, {"name": "GANCIA G", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "20/5c"}}]}, {"label": "Juillet 2026 — BJ Éq.4", "id": "2026-07-bj4", "people": [{"name": "GATTI B", "codes": {"1": "16/3c", "2": "14/19'c", "3": "RH", "4": "R", "5": "20/5c", "6": "19/4c", "7": "16/22c", "8": "14/19c", "9": "RH", "10": "R", "11": "22/6c", "12": "19/4'c", "13": "16/3c", "14": "14/19'c", "15": "RH", "16": "R", "17": "20/5c", "18": "19/4c", "19": "16/22c", "20": "14/19c", "21": "RH", "22": "R", "23": "22/6c", "24": "19/4'c", "25": "16/3c", "26": "14/19'c", "27": "RH", "28": "R", "29": "20/5c", "30": "19/4c"}}, {"name": "GRAUSS A", "codes": {"1": "16/3c", "2": "14/19'c", "3": "RH", "4": "R", "5": "20/5c", "6": "19/4c", "7": "16/22c", "8": "14/19c", "9": "RH", "10": "R", "11": "22/6c", "12": "19/4'c", "13": "16/3c", "14": "14/19'c", "15": "RH", "16": "R", "17": "20/5c", "18": "19/4c", "19": "16/22c", "20": "14/19c", "21": "RH", "22": "R", "23": "22/6c", "24": "19/4'c", "25": "16/3c", "26": "14/19'c", "27": "RH", "28": "R", "29": "20/5c", "30": "19/4c", "31": "16/22c"}}, {"name": "ESPAGNOL S", "codes": {"1": "16/3c", "2": "14/19'c", "3": "RH", "4": "R", "5": "20/5c", "6": "19/4c", "7": "16/22c", "8": "14/19c", "9": "RH", "10": "R", "11": "22/6c", "12": "19/4'c", "13": "16/3c", "14": "14/19'c", "15": "RH", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "GALLIS J", "codes": {"1": "16/3c", "2": "14/19'c", "3": "RH", "4": "R", "5": "20/5c", "6": "19/4c", "7": "16/22c", "8": "14/19c", "9": "RH", "10": "R", "11": "22/6c", "12": "19/4'c", "13": "16/3c", "14": "14/19'c", "15": "RH", "16": "R", "17": "20/5c", "18": "19/4c", "19": "16/22c", "20": "14/19c", "21": "RH", "22": "R", "23": "22/6c", "24": "19/4'c", "25": "16/3c", "26": "14/19'c", "27": "RH", "28": "R", "29": "20/5c", "30": "19/4c", "31": "16/22c"}}]}, {"label": "Juillet 2026 — BJ Éq.5", "id": "2026-07-bj5", "people": [{"name": "BENNEJEAN I", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "19/4c", "17": "16/22c", "18": "14/19c", "19": "RH", "20": "R", "21": "22/6c", "22": "19/4'c", "23": "16/3c", "24": "14/19'c", "25": "RH", "26": "R", "27": "20/5c", "28": "19/4c", "29": "16/22c", "30": "14/19c", "31": "RH"}}, {"name": "BELTRANDI N", "codes": {"1": "RH", "2": "R", "3": "20/5c", "4": "19/4c", "5": "16/22c", "6": "14/19c", "7": "RH", "8": "R", "9": "22/6c", "10": "19/4'c", "11": "16/3c", "12": "14/19'c", "13": "RH", "14": "R", "15": "20/5c", "16": "19/4c", "17": "16/22c", "18": "14/19c", "19": "RH", "20": "R", "21": "22/6c", "22": "19/4'c", "23": "16/3c", "24": "14/19'c", "25": "RH", "26": "R", "27": "20/5c", "28": "19/4c", "29": "16/22c", "30": "14/19c", "31": "RH"}}, {"name": "DUPONT A", "codes": {"1": "RH", "2": "R", "3": "20/5c", "4": "19/4c", "5": "16/22c", "6": "14/19c", "7": "RH", "8": "R", "9": "22/6c", "10": "19/4'c", "11": "16/3c", "12": "14/19'c", "13": "RH", "14": "R", "15": "20/5c", "16": "19/4c", "17": "16/22c", "18": "14/19c", "19": "RH", "20": "R", "21": "22/6c", "22": "19/4'c", "23": "16/3c", "24": "14/19'c", "25": "RH", "26": "R", "27": "20/5c", "28": "19/4c", "29": "16/22c", "30": "14/19c", "31": "RH"}}, {"name": "CAMPI PH", "codes": {"1": "RH", "2": "R", "3": "20/5c", "4": "19/4c", "5": "16/22c", "6": "14/19c", "7": "RH", "8": "R", "9": "22/6c", "10": "19/4'c", "11": "16/3c", "12": "14/19'c", "13": "RH", "14": "R", "15": "20/5c", "16": "19/4c", "17": "16/22c", "18": "14/19c", "19": "RH", "20": "R", "21": "22/6c", "22": "19/4'c", "23": "16/3c", "24": "14/19'c", "25": "RH", "26": "R", "27": "20/5c", "28": "19/4c", "29": "16/22c", "30": "14/19c", "31": "RH"}}]}];
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.1 (20/5)", "id": "2026-07-roul1", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul1", "people": [{"name": "BONO V", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}, {"name": "VATRICAN T", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}, {"name": "GAZAGNE F", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}, {"name": "CARPINELLI K", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}, {"name": "MOUFLARD L", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.2 (19/4)", "id": "2026-07-roul2", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul2", "people": [{"name": "BARONE E", "codes": {"1": "19/4", "2": "16/22", "3": "14/19", "4": "RH", "5": "R", "6": "22/6'", "7": "19/4\"", "8": "16/3", "9": "14/19'", "10": "RH", "11": "R", "12": "20/5", "13": "19/4", "14": "16/22", "15": "14/19", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}, {"name": "RINALDI S", "codes": {"1": "19/4", "2": "16/22", "3": "14/19", "4": "RH", "5": "R", "6": "22/6'", "7": "19/4\"", "8": "16/3", "9": "14/19'", "10": "RH", "11": "R", "12": "20/5", "13": "19/4", "14": "16/22", "15": "14/19", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}, {"name": "GARCIA N", "codes": {"1": "19/4", "2": "16/22", "3": "14/19", "4": "RH", "5": "R", "6": "22/6'", "7": "19/4\"", "8": "16/3", "9": "14/19'", "10": "RH", "11": "R", "12": "20/5", "13": "19/4", "14": "16/22", "15": "14/19", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}, {"name": "ANDRE C", "codes": {"1": "19/4", "2": "16/22", "3": "14/19", "4": "RH", "5": "R", "6": "22/6'", "7": "19/4\"", "8": "16/3", "9": "14/19'", "10": "RH", "11": "R", "12": "20/5", "13": "19/4", "14": "16/22", "15": "14/19", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}, {"name": "MILLET T", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.3 (16/22)", "id": "2026-07-roul3", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul3", "people": [{"name": "SABINE O", "codes": {"1": "16/22", "2": "14/19", "3": "RH", "4": "R", "5": "22/6'", "6": "19/4\"", "7": "16/3", "8": "14/19'", "9": "RH", "10": "R", "11": "20/5", "12": "19/4", "13": "16/22", "14": "14/19", "15": "RH", "16": "R", "17": "22/6'", "18": "19/4\"", "19": "16/3", "20": "14/19'", "21": "RH", "22": "R", "23": "20/5", "24": "19/4", "25": "16/22", "26": "14/19", "27": "RH", "28": "R", "29": "22/6'", "30": "19/4\"", "31": "16/3"}}, {"name": "HAREL H", "codes": {"1": "16/22", "2": "14/19", "3": "RH", "4": "R", "5": "22/6'", "6": "19/4\"", "7": "16/3", "8": "14/19'", "9": "RH", "10": "R", "11": "20/5", "12": "19/4", "13": "16/22", "14": "14/19", "15": "RH", "16": "R", "17": "22/6'", "18": "19/4\"", "19": "16/3", "20": "14/19'", "21": "RH", "22": "R", "23": "20/5", "24": "19/4", "25": "16/22", "26": "14/19", "27": "RH", "28": "R", "29": "22/6'", "30": "19/4\"", "31": "16/3"}}, {"name": "SBARATTO S", "codes": {"1": "16/22", "2": "14/19", "3": "RH", "4": "R", "5": "22/6'", "6": "19/4\"", "7": "16/3", "8": "14/19'", "9": "RH", "10": "R", "11": "20/5", "12": "19/4", "13": "16/22", "14": "14/19", "15": "RH", "16": "R", "17": "22/6'", "18": "19/4\"", "19": "16/3", "20": "14/19'", "21": "RH", "22": "R", "23": "20/5", "24": "19/4", "25": "16/22", "26": "14/19", "27": "RH", "28": "R", "29": "22/6'", "30": "19/4\"", "31": "16/3"}}, {"name": "CARDONA P", "codes": {"1": "16/22", "2": "14/19", "3": "RH", "4": "R", "5": "22/6'", "6": "19/4\"", "7": "16/3", "8": "14/19'", "9": "RH", "10": "R", "11": "20/5", "12": "19/4", "13": "16/22", "14": "14/19", "15": "RH", "16": "R", "17": "22/6'", "18": "19/4\"", "19": "16/3", "20": "14/19'", "21": "RH", "22": "R", "23": "20/5", "24": "19/4", "25": "16/22", "26": "14/19", "27": "RH", "28": "R", "29": "22/6'", "30": "19/4\"", "31": "16/3"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.4 (14/19)", "id": "2026-07-roul4", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul4", "people": [{"name": "BOURDIER C", "codes": {"1": "14/19", "2": "RH", "3": "R", "4": "22/6'", "5": "19/4\"", "6": "16/3", "7": "14/19'", "8": "RH", "9": "R", "10": "20/5", "11": "19/4", "12": "16/22", "13": "14/19", "14": "RH", "15": "R", "16": "22/6'", "17": "19/4\"", "18": "16/3", "19": "14/19'", "20": "RH", "21": "R", "22": "20/5", "23": "19/4", "24": "16/22", "25": "14/19", "26": "RH", "27": "R", "28": "22/6'", "29": "19/4\"", "30": "16/3", "31": "14/19'"}}, {"name": "ANTOGNELLI D", "codes": {"1": "14/19", "2": "RH", "3": "R", "4": "22/6'", "5": "19/4\"", "6": "16/3", "7": "14/19'", "8": "RH", "9": "R", "10": "20/5", "11": "19/4", "12": "16/22", "13": "14/19", "14": "RH", "15": "R", "16": "22/6'", "17": "19/4\"", "18": "16/3", "19": "14/19'", "20": "RH", "21": "R", "22": "20/5", "23": "19/4", "24": "16/22", "25": "14/19", "26": "RH", "27": "R", "28": "22/6'", "29": "19/4\"", "30": "16/3", "31": "14/19'"}}, {"name": "DERI W", "codes": {"1": "14/19", "2": "RH", "3": "R", "4": "22/6'", "5": "19/4\"", "6": "16/3", "7": "14/19'", "8": "RH", "9": "R", "10": "20/5", "11": "19/4", "12": "16/22", "13": "14/19", "14": "RH", "15": "R", "16": "22/6'", "17": "19/4\"", "18": "16/3", "19": "14/19'", "20": "RH", "21": "R", "22": "20/5", "23": "19/4", "24": "16/22", "25": "14/19", "26": "RH", "27": "R", "28": "22/6'", "29": "19/4\"", "30": "16/3", "31": "14/19'"}}, {"name": "SEGGIARO G", "codes": {"1": "14/19", "2": "RH", "3": "R", "4": "22/6'", "5": "19/4\"", "6": "16/3", "7": "14/19'", "8": "RH", "9": "R", "10": "20/5", "11": "19/4", "12": "16/22", "13": "14/19", "14": "RH", "15": "R", "16": "22/6'", "17": "19/4\"", "18": "16/3", "19": "14/19'", "20": "RH", "21": "R", "22": "20/5", "23": "19/4", "24": "16/22", "25": "14/19", "26": "RH", "27": "R", "28": "22/6'", "29": "19/4\"", "30": "16/3", "31": "14/19'"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.5 (RH)", "id": "2026-07-roul5", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul5", "people": [{"name": "AUBERT P", "codes": {"1": "RH", "2": "R", "3": "22/6'", "4": "19/4\"", "5": "16/3", "6": "14/19'", "7": "RH", "8": "R", "9": "20/5", "10": "19/4", "11": "16/22", "12": "14/19", "13": "RH", "14": "R", "15": "22/6'", "16": "19/4\"", "17": "16/3", "18": "14/19'", "19": "RH", "20": "R", "21": "20/5", "22": "19/4", "23": "16/22", "24": "14/19", "25": "RH", "26": "R", "27": "22/6'", "28": "19/4\"", "29": "16/3", "30": "14/19'", "31": "RH"}}, {"name": "CERETTI R", "codes": {"1": "RH", "2": "R", "3": "22/6'", "4": "19/4\"", "5": "16/3", "6": "14/19'", "7": "RH", "8": "R", "9": "20/5", "10": "19/4", "11": "16/22", "12": "14/19", "13": "RH", "14": "R", "15": "22/6'", "16": "19/4\"", "17": "16/3", "18": "14/19'", "19": "RH", "20": "R", "21": "20/5", "22": "19/4", "23": "16/22", "24": "14/19", "25": "RH", "26": "R", "27": "22/6'", "28": "19/4\"", "29": "16/3", "30": "14/19'", "31": "RH"}}, {"name": "ELIODORI V", "codes": {"1": "RH", "2": "R", "3": "22/6'", "4": "19/4\"", "5": "16/3", "6": "14/19'", "7": "RH", "8": "R", "9": "20/5", "10": "19/4", "11": "16/22", "12": "14/19", "13": "RH", "14": "R", "15": "22/6'", "16": "19/4\"", "17": "16/3", "18": "14/19'", "19": "RH", "20": "R", "21": "20/5", "22": "19/4", "23": "16/22", "24": "14/19", "25": "RH", "26": "R", "27": "22/6'", "28": "19/4\"", "29": "16/3", "30": "14/19'", "31": "RH"}}, {"name": "BEARD B", "codes": {"1": "RH", "2": "R", "3": "22/6'", "4": "19/4\"", "5": "16/3", "6": "14/19'", "7": "RH", "8": "R", "9": "20/5", "10": "19/4", "11": "16/22", "12": "14/19", "13": "RH", "14": "R", "15": "22/6'", "16": "19/4\"", "17": "16/3", "18": "14/19'", "19": "RH", "20": "R", "21": "20/5", "22": "19/4", "23": "16/22", "24": "14/19", "25": "RH", "26": "R", "27": "22/6'", "28": "19/4\"", "29": "16/3", "30": "14/19'", "31": "RH"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.6 (R)", "id": "2026-07-roul6", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul6", "people": [{"name": "RIGOLI JL", "codes": {"1": "R", "2": "22/6'", "3": "19/4\"", "4": "16/3", "5": "14/19'", "6": "RH", "7": "R", "8": "20/5", "9": "19/4", "10": "16/22", "11": "14/19", "12": "RH", "13": "R", "14": "22/6'", "15": "19/4\"", "16": "16/3", "17": "14/19'", "18": "RH", "19": "R", "20": "20/5", "21": "19/4", "22": "16/22", "23": "14/19", "24": "RH", "25": "R", "26": "22/6'", "27": "19/4\"", "28": "16/3", "29": "14/19'", "30": "RH", "31": "R"}}, {"name": "CONNEN R", "codes": {"1": "R", "2": "22/6'", "3": "19/4\"", "4": "16/3", "5": "14/19'", "6": "RH", "7": "R", "8": "20/5", "9": "19/4", "10": "16/22", "11": "14/19", "12": "RH", "13": "R", "14": "22/6'", "15": "19/4\"", "16": "16/3", "17": "14/19'", "18": "RH", "19": "R", "20": "20/5", "21": "19/4", "22": "16/22", "23": "14/19", "24": "RH", "25": "R", "26": "22/6'", "27": "19/4\"", "28": "16/3", "29": "14/19'", "30": "RH", "31": "R"}}, {"name": "BERNARDI JE", "codes": {"1": "R", "2": "22/6'", "3": "19/4\"", "4": "16/3", "5": "14/19'", "6": "RH", "7": "R", "8": "20/5", "9": "19/4", "10": "16/22", "11": "14/19", "12": "RH", "13": "R", "14": "22/6'", "15": "19/4\"", "16": "16/3", "17": "14/19'", "18": "RH", "19": "R", "20": "20/5", "21": "19/4", "22": "16/22", "23": "14/19", "24": "RH", "25": "R", "26": "22/6'", "27": "19/4\"", "28": "16/3", "29": "14/19'", "30": "RH", "31": "R"}}, {"name": "MACCARIO S", "codes": {"1": "R", "2": "22/6'", "3": "19/4\"", "4": "16/3", "5": "14/19'", "6": "RH", "7": "R", "8": "20/5", "9": "19/4", "10": "16/22", "11": "14/19", "12": "RH", "13": "R", "14": "22/6'", "15": "19/4\"", "16": "16/3", "17": "14/19'", "18": "RH", "19": "R", "20": "20/5", "21": "19/4", "22": "16/22", "23": "14/19", "24": "RH", "25": "R", "26": "22/6'", "27": "19/4\"", "28": "16/3", "29": "14/19'", "30": "RH", "31": "R"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.1m (22/6') miroir", "id": "2026-07-roul1m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul1m", "people": [{"name": "SOLFERINO F", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "ROSSI J", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "14/19'", "17": "RH", "18": "R", "19": "20/5", "20": "19/4", "21": "16/22", "22": "14/19", "23": "RH", "24": "R", "25": "22/6'", "26": "19/4\"", "27": "16/3", "28": "14/19'", "29": "RH", "30": "R", "31": "20/5"}}, {"name": "SOLIMEIS F", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "14/19'", "17": "RH", "18": "R", "19": "20/5", "20": "19/4", "21": "16/22", "22": "14/19", "23": "RH", "24": "R", "25": "22/6'", "26": "19/4\"", "27": "16/3", "28": "14/19'", "29": "RH", "30": "R", "31": "20/5"}}, {"name": "VECCHIERINI L", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "14/19'", "17": "RH", "18": "R", "19": "20/5", "20": "19/4", "21": "16/22", "22": "14/19", "23": "RH", "24": "R", "25": "22/6'", "26": "19/4\"", "27": "16/3", "28": "14/19'", "29": "RH", "30": "R", "31": "20/5"}}, {"name": "DELMAS G", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "14/19'", "17": "RH", "18": "R", "19": "20/5", "20": "19/4", "21": "16/22", "22": "14/19", "23": "RH", "24": "R", "25": "22/6'", "26": "19/4\"", "27": "16/3", "28": "14/19'", "29": "RH", "30": "R", "31": "20/5"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.2m (19/4\") miroir", "id": "2026-07-roul2m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul2m", "people": [{"name": "BASILE F", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}, {"name": "RAMOS R", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}, {"name": "PARIZIA K", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}, {"name": "MARCHI T", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}, {"name": "DAGIONI M", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.3m (16/3) miroir", "id": "2026-07-roul3m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul3m", "people": [{"name": "LE DUC F", "codes": {"1": "16/3", "2": "14/19'", "3": "RH", "4": "R", "5": "20/5", "6": "19/4", "7": "16/22", "8": "14/19", "9": "RH", "10": "R", "11": "22/6'", "12": "19/4\"", "13": "16/3", "14": "14/19'", "15": "RH", "16": "R", "17": "20/5", "18": "19/4", "19": "16/22", "20": "14/19", "21": "RH", "22": "R", "23": "22/6'", "24": "19/4\"", "25": "16/3", "26": "14/19'", "27": "RH", "28": "R", "29": "20/5", "30": "19/4", "31": "16/22"}}, {"name": "CHOISIT J", "codes": {"1": "16/3", "2": "14/19'", "3": "RH", "4": "R", "5": "20/5", "6": "19/4", "7": "16/22", "8": "14/19", "9": "RH", "10": "R", "11": "22/6'", "12": "19/4\"", "13": "16/3", "14": "14/19'", "15": "RH", "16": "R", "17": "20/5", "18": "19/4", "19": "16/22", "20": "14/19", "21": "RH", "22": "R", "23": "22/6'", "24": "19/4\"", "25": "16/3", "26": "14/19'", "27": "RH", "28": "R", "29": "20/5", "30": "19/4", "31": "16/22"}}, {"name": "DEVERINI F", "codes": {"1": "16/3", "2": "14/19'", "3": "RH", "4": "R", "5": "20/5", "6": "19/4", "7": "16/22", "8": "14/19", "9": "RH", "10": "R", "11": "22/6'", "12": "19/4\"", "13": "16/3", "14": "14/19'", "15": "RH", "16": "R", "17": "20/5", "18": "19/4", "19": "16/22", "20": "14/19", "21": "RH", "22": "R", "23": "22/6'", "24": "19/4\"", "25": "16/3", "26": "14/19'", "27": "RH", "28": "R", "29": "20/5", "30": "19/4", "31": "16/22"}}, {"name": "NUNEZ S", "codes": {"1": "16/3", "2": "14/19'", "3": "RH", "4": "R", "5": "20/5", "6": "19/4", "7": "16/22", "8": "14/19", "9": "RH", "10": "R", "11": "22/6'", "12": "19/4\"", "13": "16/3", "14": "14/19'", "15": "RH", "16": "R", "17": "20/5", "18": "19/4", "19": "16/22", "20": "14/19", "21": "RH", "22": "R", "23": "22/6'", "24": "19/4\"", "25": "16/3", "26": "14/19'", "27": "RH", "28": "R", "29": "20/5", "30": "19/4", "31": "16/22"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.4m (14/19') miroir", "id": "2026-07-roul4m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul4m", "people": [{"name": "FILIPPI F", "codes": {"1": "14/19'", "2": "RH", "3": "R", "4": "20/5", "5": "19/4", "6": "16/22", "7": "14/19", "8": "RH", "9": "R", "10": "22/6'", "11": "19/4\"", "12": "16/3", "13": "14/19'", "14": "RH", "15": "R", "16": "20/5", "17": "19/4", "18": "16/22", "19": "14/19", "20": "RH", "21": "R", "22": "22/6'", "23": "19/4\"", "24": "16/3", "25": "14/19'", "26": "RH", "27": "R", "28": "20/5", "29": "19/4", "30": "16/22", "31": "14/19"}}, {"name": "IMBERT E", "codes": {"1": "14/19'", "2": "RH", "3": "R", "4": "20/5", "5": "19/4", "6": "16/22", "7": "14/19", "8": "RH", "9": "R", "10": "22/6'", "11": "19/4\"", "12": "16/3", "13": "14/19'", "14": "RH", "15": "R", "16": "20/5", "17": "19/4", "18": "16/22", "19": "14/19", "20": "RH", "21": "R", "22": "22/6'", "23": "19/4\"", "24": "16/3", "25": "14/19'", "26": "RH", "27": "R", "28": "20/5", "29": "19/4", "30": "16/22", "31": "14/19"}}, {"name": "COSTE W", "codes": {"1": "14/19'", "2": "RH", "3": "R", "4": "20/5", "5": "19/4", "6": "16/22", "7": "14/19", "8": "RH", "9": "R", "10": "22/6'", "11": "19/4\"", "12": "16/3", "13": "14/19'", "14": "RH", "15": "R", "16": "20/5", "17": "19/4", "18": "16/22", "19": "14/19", "20": "RH", "21": "R", "22": "22/6'", "23": "19/4\"", "24": "16/3", "25": "14/19'", "26": "RH", "27": "R", "28": "20/5", "29": "19/4", "30": "16/22", "31": "14/19"}}, {"name": "PICCIONE F", "codes": {"1": "14/19'", "2": "RH", "3": "R", "4": "20/5", "5": "19/4", "6": "16/22", "7": "14/19", "8": "RH", "9": "R", "10": "22/6'", "11": "19/4\"", "12": "16/3", "13": "14/19'", "14": "RH", "15": "R", "16": "20/5", "17": "19/4", "18": "16/22", "19": "14/19", "20": "RH", "21": "R", "22": "22/6'", "23": "19/4\"", "24": "16/3", "25": "14/19'", "26": "RH", "27": "R", "28": "20/5", "29": "19/4", "30": "16/22", "31": "14/19"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.5m (RH) miroir", "id": "2026-07-roul5m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul5m", "people": [{"name": "CASSINI A", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "19/4", "17": "16/22", "18": "14/19", "19": "RH", "20": "R", "21": "22/6'", "22": "19/4\"", "23": "16/3", "24": "14/19'", "25": "RH", "26": "R", "27": "20/5", "28": "19/4", "29": "16/22", "30": "14/19", "31": "RH"}}, {"name": "ARCURI F", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "19/4", "17": "16/22", "18": "14/19", "19": "RH", "20": "R", "21": "22/6'", "22": "19/4\"", "23": "16/3", "24": "14/19'", "25": "RH", "26": "R", "27": "20/5", "28": "19/4", "29": "16/22", "30": "14/19", "31": "RH"}}, {"name": "BESSI N", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "19/4", "17": "16/22", "18": "14/19", "19": "RH", "20": "R", "21": "22/6'", "22": "19/4\"", "23": "16/3", "24": "14/19'", "25": "RH", "26": "R", "27": "20/5", "28": "19/4", "29": "16/22", "30": "14/19", "31": "RH"}}, {"name": "ELIODORI J", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "19/4", "17": "16/22", "18": "14/19", "19": "RH", "20": "R", "21": "22/6'", "22": "19/4\"", "23": "16/3", "24": "14/19'", "25": "RH", "26": "R", "27": "20/5", "28": "19/4", "29": "16/22", "30": "14/19", "31": "RH"}}, {"name": "GARINO J", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.6m (R) miroir", "id": "2026-07-roul6m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul6m", "people": [{"name": "CRETOT L", "codes": {"1": "R", "2": "20/5", "3": "19/4", "4": "16/22", "5": "14/19", "6": "RH", "7": "R", "8": "22/6'", "9": "19/4\"", "10": "16/3", "11": "14/19'", "12": "RH", "13": "R", "14": "20/5", "15": "19/4", "16": "16/22", "17": "14/19", "18": "RH", "19": "R", "20": "22/6'", "21": "19/4\"", "22": "16/3", "23": "14/19'", "24": "RH", "25": "R", "26": "20/5", "27": "19/4", "28": "16/22", "29": "14/19", "30": "RH", "31": "R"}}, {"name": "PASTOR P", "codes": {"1": "R", "2": "20/5", "3": "19/4", "4": "16/22", "5": "14/19", "6": "RH", "7": "R", "8": "22/6'", "9": "19/4\"", "10": "16/3", "11": "14/19'", "12": "RH", "13": "R", "14": "20/5", "15": "19/4", "16": "16/22", "17": "14/19", "18": "RH", "19": "R", "20": "22/6'", "21": "19/4\"", "22": "16/3", "23": "14/19'", "24": "RH", "25": "R", "26": "20/5", "27": "19/4", "28": "16/22", "29": "14/19", "30": "RH", "31": "R"}}, {"name": "GARCIA A", "codes": {"1": "R", "2": "20/5", "3": "19/4", "4": "16/22", "5": "14/19", "6": "RH", "7": "R", "8": "22/6'", "9": "19/4\"", "10": "16/3", "11": "14/19'", "12": "RH", "13": "R", "14": "20/5", "15": "19/4", "16": "16/22", "17": "14/19", "18": "RH", "19": "R", "20": "22/6'", "21": "19/4\"", "22": "16/3", "23": "14/19'", "24": "RH", "25": "R", "26": "20/5", "27": "19/4", "28": "16/22", "29": "14/19", "30": "RH", "31": "R"}}, {"name": "SIMONETTI N", "codes": {"1": "R", "2": "20/5", "3": "19/4", "4": "16/22", "5": "14/19", "6": "RH", "7": "R", "8": "22/6'", "9": "19/4\"", "10": "16/3", "11": "14/19'", "12": "RH", "13": "R", "14": "20/5", "15": "19/4", "16": "16/22", "17": "14/19", "18": "RH", "19": "R", "20": "22/6'", "21": "19/4\"", "22": "16/3", "23": "14/19'", "24": "RH", "25": "R", "26": "20/5", "27": "19/4", "28": "16/22", "29": "14/19", "30": "RH", "31": "R"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+var ABS_BOARD={"label": "Juillet 2026 — Absences (M/CP)", "id": "2026-07-abs", "kind": "abs", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_abs", "people": [{"name": "SANGIORGIO G", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "LORENZI Y", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "SANNA O", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "GALLIS F", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "BESSI N", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "ARDISSON S", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "ORRADO F", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "MIRANDA T", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "CATALA P", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "RICHARDIN T", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "ROBIN M", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": ""}}, {"name": "CAPRA C", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": ""}}, {"name": "LEMONNIER PH", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": ""}}, {"name": "MUCCILLI D", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "TERRAGNO S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "COSTAGLIOLI J", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "MARCHISIO M", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "NIGIONI C", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "PODGORNY B", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SIRIO J", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "GARRO S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "GIAUNA S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "PORASSO C", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SEGGIARO J", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "ROSSI D", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "LANTERI MINET P", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "GUERRE S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SESTINI F", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SYNAVE S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "FAUTRIER M", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "MAGARA M", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "FABRE SOCCAL Y", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SCHWIETZER M", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "BERNARD J", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "CAMBI O", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SIRIO S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "RONCALLI A", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "LAVAGNA Y", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "LAVAGNA E", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "MORET A", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "BASTIANELLI A", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "CAMILLERI P", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "CATTALANO C", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}]};
+BOARDS[ABS_BOARD.id]={label:ABS_BOARD.label,kind:"abs",month:ABS_BOARD.month,year:ABS_BOARD.year,monthIdx:ABS_BOARD.monthIdx,days:ABS_BOARD.days,key:ABS_BOARD.key,people:ABS_BOARD.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||"";return {name:p.name,codes:c};})};
+JUL_TEAMS.forEach(function(t){ BOARDS[t.id]={label:t.label,month:"Juillet 2026",year:2026,monthIdx:6,days:31,key:"cmc_dep_"+t.id,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";return {name:p.name,codes:c};})}; });
+// ── CMC depuis l'app principale CMCteams (MÊME origine localStorage → données du parser géométrique validé, lessons #66-77) ──
+function _appDecomp(v){ if(typeof v!=="string")return v; if(v.indexOf("__LZ__")===0){ try{ return (window.LZString&&LZString.decompressFromUTF16)?(LZString.decompressFromUTF16(v.slice(6))||""):""; }catch(e){ return ""; } } return v; }
+function _appRead(k){ try{ var v=localStorage.getItem(k); if(!v)return null; v=_appDecomp(v); if(!v)return null; return JSON.parse(v); }catch(e){ return null; } }
+function _appFam(e,key){ try{ if(e.familyHistory&&e.familyHistory[key]) return e.familyHistory[key]; }catch(_e){} return (e.family==="baccara"?"cmc":e.family)||"bj"; } // = familyForMonth() de l'app
+function _appTeam(e,key){ try{ if(e.teamHistory&&e.teamHistory[key]) return e.teamHistory[key]; }catch(_e){} return "?"; } // = teamForMonth() de l'app
+function buildAppCmcBoards(){
+  var key="2026-6"; // juillet 2026 (mois 0-indexé comme l'app)
+  var emps=_appRead("cmc_e"), ov=_appRead("cmc_ov");
+  var diag={ov:!!ov,cmc_e:!!emps,hasKey:!!(ov&&ov[key]),counts:{},added:0};
+  window._appBoardDiag=diag;
+  if(!emps||!ov||!ov[key]) return 0;
+  var row=ov[key], teams={}, added=0;
+  // v1.11.3 (Kevin « il manque les employés cartes ») : construit TOUTES les familles
+  // depuis l'import réel de l'app (cartes CMC + roulettes + aménagé), pas seulement cmc.
+  var famLabel={cmc:"CMC (cartes)",amenage:"CMC aménagé",roulettes:"Roulettes",bj:"BJ"};
+  emps.forEach(function(e){ if(!e||!e.id||!e.name)return; var fam=_appFam(e,key);
+    if(fam==="baccara")fam="cmc";
+    if(fam!=="cmc"&&fam!=="amenage"&&fam!=="roulettes")return; var tid=_appTeam(e,key); if(!tid||tid==="?")return;
+    var cells=row[e.id]; if(!cells||!Object.keys(cells).length)return;
+    diag.counts[fam]=(diag.counts[fam]||0)+1;
+    var g=fam+"::"+tid; (teams[g]=teams[g]||[]).push({name:e.name,cells:cells}); });
+  Object.keys(teams).sort().forEach(function(g){ var ppl=teams[g]; if(!ppl.length)return;
+    var parts=g.split("::"), fam=parts[0], tid=parts[1], id="appcmc-"+fam+"-"+tid;
+    BOARDS[id]={ label:"Juillet 2026 — "+(famLabel[fam]||fam)+" "+tid, month:"Juillet 2026", year:2026, monthIdx:6, days:31, key:"cmc_dep_"+id,
+      people:ppl.map(function(p){ var c={}; for(var d=1;d<=31;d++) c[d]=(p.cells[String(d)]||p.cells[d]||""); return {name:p.name,codes:c}; }) };
+    added++; });
+  diag.added=added;
+  return added;
+}
+var _appCmcCount=buildAppCmcBoards();
+var BID=null, B=null;
+function defaultBoard(){ var now=new Date(), k=Object.keys(BOARDS); // mois courant en priorité
+  var cur=k.filter(function(id){var b=BOARDS[id];return b.year===now.getFullYear()&&b.monthIdx===now.getMonth()&&b.kind!=="abs";});
+  return cur[0]||k[0]; }
+
+var ST=null;
+function load(){
+  B=BOARDS[BID];
+  var saved=null; try{saved=JSON.parse(localStorage.getItem(B.key)||"null");}catch(e){}
+  ST={ order:(saved&&saved.order)||B.people.map(function(p){return p.name;}), codes:{}, nr:(saved&&saved.nr)||{}, cq:(saved&&saved.cq)||{}, off:(saved&&saved.off)||0, ci:(saved&&saved.ci)||{} };
+  B.people.forEach(function(p){ ST.codes[p.name]=Object.assign({},p.codes); });
+  if(saved&&saved.codes){ Object.keys(saved.codes).forEach(function(n){ if(ST.codes[n]) Object.assign(ST.codes[n],saved.codes[n]); }); }
+  ST.order=ST.order.filter(function(n){return ST.codes[n];});
+  B.people.forEach(function(p){ if(ST.order.indexOf(p.name)<0) ST.order.push(p.name); });
+  // ancrage par défaut (ex: DESARZENS = Départ 1 le 20) si l'utilisateur n'a pas déjà calé la rotation
+  if(B.anchor && !(saved&&saved.off!==undefined)){ try{var _o=anchorOff(B.anchor.name,B.anchor.day); if(_o!==null) ST.off=_o;}catch(e){} }
+}
+function save(){ try{localStorage.setItem(B.key,JSON.stringify(ST));}catch(e){} }
+
+// départ : taille = nb de personnes (conservée même en congé). W = jours où ≥1 membre travaille.
+function compute(){
+  var days=B.days;
+  // IDENTIQUE à calcDepPos (CMCteams) : chefs ACTIFS uniquement (>=1 jour travaillé, full-CP exclus),
+  // refEmp = 1er chef actif, wi = index du jour dans SES jours de travail, base = index dans les chefs actifs.
+  var active=ST.order.filter(function(nm){ for(var d=1;d<=days;d++){ if(isWork(ST.codes[nm][d])) return true; } return false; });
+  var sl=active.length, SEQ=seqForSize(sl);
+  // v1.11.1 (Kevin 2026-06-22 « il manque les départs à partir du 16 ») :
+  // jours de travail de l'ÉQUIPE = UNION des jours travaillés par TOUT chef actif.
+  // AVANT : workDays indexés sur le SEUL 1er chef actif → s'il part en CP à la
+  // mi-mois (ex MARIOTTINI J en CP du 16 au 31), wi=-1 pour TOUS dès le 16 →
+  // plus AUCUN ordre de départ affiché alors que les autres chefs travaillent.
+  // La rotation avance sur chaque jour où L'ÉQUIPE a un service.
+  var workDays=[];
+  for(var d=1;d<=days;d++){
+    for(var _ai=0;_ai<active.length;_ai++){ if(isWork(ST.codes[active[_ai]][d])){ workDays.push(d); break; } }
+  }
+  var deps={}; ST.order.forEach(function(nm){ deps[nm]={}; });
+  var off=ST.off||0;
+  // index de base (rotation) par chef : CI perso (CMCteams) sinon position dans active.
+  var baseOf={}; active.forEach(function(nm,ai){ baseOf[nm]=(ST.ci&&ST.ci[nm]!==undefined)?ST.ci[nm]:ai; });
+  // v1.11.1 (Kevin 2026-06-22 « passer à 4 pour l'algo ») : l'ordre de départ est
+  // calculé PAR JOUR sur les chefs réellement PRÉSENTS, et la TAILLE de séquence
+  // suit ce nombre (6 en 1ʳᵉ quinzaine, 4 en 2ᵉ quand 2 chefs sont en CP) → fini
+  // les numéros fantômes/trous. La rotation (wi) avance sur chaque jour de service
+  // de l'équipe (workDays = union). Jours 1-12 inchangés ; le jour où le 1er chef
+  // est absent (RRT/CP) reçoit désormais ses départs au lieu de rester vide.
+  for(var d=1;d<=days;d++){
+    var wi=workDays.indexOf(d); if(wi<0) continue;
+    var present=active.filter(function(nm){ return isWork(ST.codes[nm][d]); })
+                      .sort(function(a,b){ return baseOf[a]-baseOf[b]; });
+    var pc=present.length; if(!pc) continue;
+    var SEQd=seqForSize(pc), rot=(wi%4)+Math.floor(wi/4)+off;
+    present.forEach(function(nm,j){ deps[nm][d]=SEQd[(((rot+j)%pc)+pc)%pc]; });
+  }
+  return {deps:deps,workDays:workDays,SEQ:SEQ,n:sl,active:active};
+}
+// vérif jours de repos identiques (signature d'équipe) — repère les captures imprécises / un miroir
+function restSig(nm){ var s=[]; for(var d=1;d<=B.days;d++){ if(isRest(ST.codes[nm][d])) s.push(d); } return s.join(","); }
+
+function render(){
+  var days=B.days, R=compute();
+  var dow=["dim","lun","mar","mer","jeu","ven","sam"];
+  var now=new Date(); var todayD=(now.getFullYear()===B.year&&now.getMonth()===B.monthIdx)?now.getDate():0;
+  var html="<thead><tr><th class='cNom'>"+(B.kind==="abs"?"Personne":"Chef")+"</th>";
+  for(var d=1;d<=days;d++){ var wd=new Date(B.year,B.monthIdx,d).getDay();
+    html+="<th class='"+((wd===0||wd===6)?"wknd":"")+(d===todayD?" today":"")+"'>"+dow[wd]+"<br>"+d+"</th>"; }
+  html+="<th class='cNR'>NR</th><th class='cCq'>5e</th></tr></thead><tbody>";
+  ST.order.forEach(function(nm,idx){
+    var nr=ST.nr[nm]||"", cq=ST.cq[nm]||"";
+    html+="<tr"+(nm===ME?" class='me'":"")+"><td class='cNom'>"+esc(nm)+"</td>";
+    for(var d=1;d<=days;d++){ var c=ST.codes[nm][d]||"", dep=R.deps[nm][d], stl=codeStyle(c);
+      html+="<td class='cell"+(dep?"":" off")+(d===todayD?" today":"")+"'"
+        +(stl?(" style='background:"+stl.bg+";color:"+stl.fg+"'"):"")
+        +" onclick=\"editCell('"+esc(nm)+"',"+d+")\">"+esc(c||"·")+(dep?"<span class='dep'>"+dep+"</span>":"")+"</td>"; }
+    html+="<td class='cNR mark' onclick=\"addCross('nr','"+esc(nm)+"')\">"+esc(nr)
+      +"<span class='ed' onclick=\"event.stopPropagation();editMark('nr','"+esc(nm)+"')\">✎</span></td>";
+    html+="<td class='cCq mark' onclick=\"addCross('cq','"+esc(nm)+"')\">"+esc(cq)
+      +"<span class='ed' onclick=\"event.stopPropagation();editMark('cq','"+esc(nm)+"')\">✎</span></td></tr>";
+  });
+  var cx=function(o){var t=0;ST.order.forEach(function(nm){t+=((o[nm]||"").match(/✗/g)||[]).length;});return t;};
+  html+="<tr class='tot'><td class='cNom'>TOTAL ✗</td>";
+  for(var d2=1;d2<=days;d2++) html+="<td"+(d2===todayD?" class='today'":"")+"></td>";
+  html+="<td class='cNR'>"+cx(ST.nr)+"</td><td class='cCq'>"+cx(ST.cq)+"</td></tr></tbody>";
+  document.getElementById("grid").innerHTML=html;
+  if(todayD){ var sc=document.querySelector(".scroll"), th=document.querySelector("#grid thead th.today");
+    if(sc&&th) sc.scrollLeft=Math.max(0, th.offsetLeft - sc.clientWidth/2 + th.offsetWidth/2); }
+  var _pp=document.getElementById("posPanel"); if(_pp) _pp.innerHTML=(isAdmin()&&window._posOpen)?positionsPanelHTML(R):"";
+  document.getElementById("hSub").textContent=B.kind==="abs"
+    ? B.month+" · "+ST.order.length+" absents (M/CP/FORMATION)"
+    : B.month+" · "+ST.order.length+" chefs · séquence "+R.SEQ.join("·");
+  // contrôle jours de repos : comparer chaque chef à l'ancre SUR LA PÉRIODE COMMUNE
+  // (un chef en CP une partie du mois a moins de RH/R — normal, on ne compare que les jours planifiés des deux)
+  var sched=function(nm,d){ var c=ST.codes[nm][d]||""; return c!=="" && ["CP","M","AF","ABS","ABI","FL","DEPL","DEP","SS"].indexOf(c)<0; };
+  var cntSched=function(nm){ var t=0; for(var d=1;d<=B.days;d++) if(sched(nm,d)) t++; return t; };
+  var anchor=ST.order.slice().sort(function(a,b){return cntSched(b)-cntSched(a);})[0];
+  var bad=[];
+  ST.order.forEach(function(nm){ if(nm===anchor)return; var miss=0;
+    for(var d=1;d<=B.days;d++){ if(sched(nm,d)&&sched(anchor,d) && isRest(ST.codes[nm][d])!==isRest(ST.codes[anchor][d])) miss++; }
+    if(miss>=2) bad.push(nm+" ("+miss+"j)"); });
+  document.getElementById("restCheck").innerHTML = B.kind==="abs"
+    ? "🛌 Absents tout le mois (M/CP/FORMATION) — pas d'ordre de départ. Chacun a bien son planning."
+    : (bad.length===0
+      ? "<b>✅ Jours de repos cohérents</b> sur la période commune ("+ST.order.length+" chefs) — équipe validée."
+      : "<span class='warn'>⚠️ Repos différents</span> pour : "+bad.join(", ")+" → vérifier (lecture imprécise ou équipe miroir).");
+  // bannière "Ma vue" : équipe + miroir de la personne choisie
+  var mb=document.getElementById("meBanner");
+  if(mb){
+    if(!ME){ mb.style.display="none"; mb.innerHTML=""; }
+    else {
+      var inHere=ST.order.indexOf(ME)>=0, myBid=boardForName(ME), mir=mirrorBoardId(BID);
+      var h2="👤 <b>"+esc(ME)+"</b>";
+      if(inHere){ h2+=" · ton équipe : <b>"+esc(B.label)+"</b>";
+        if(mir) h2+=" <button class='jump' onclick=\"switchBoard('"+mir+"')\">Équipe miroir →</button>"; }
+      else if(myBid){ h2+=" · ton équipe : <b>"+esc(BOARDS[myBid].label)+"</b> <button class='jump' onclick=\"switchBoard('"+myBid+"')\">Aller à mon équipe →</button>"; }
+      else { h2+=" · <i>pas d'équipe trouvée ce mois</i>"; }
+      mb.innerHTML=h2; mb.style.display="flex";
+    }
+  }
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+
+function isAdmin(){return document.body.classList.contains("admin");}
+function guard(){ if(!isAdmin()){toast("Lecture seule — déverrouille en admin");return false;} return true; }
+function move(idx,dir){ if(!guard())return; var j=idx+dir; if(j<0||j>=ST.order.length)return;
+  var a=ST.order,t=a[idx];a[idx]=a[j];a[j]=t; save(); render(); }
+function addCross(f,nm){ if(!guard())return; ST[f][nm]=(ST[f][nm]||"")+"✗"; save(); render(); toast(nm+" "+(f==="nr"?"non-retour":"5e")+" +✗"); }
+function editMark(f,nm){ if(!guard())return; var v=prompt((f==="nr"?"Non-retour":"5ème")+" — "+nm+"\n(✗ ou texte ; vide pour effacer)",ST[f][nm]||"");
+  if(v===null)return; ST[f][nm]=v.trim(); save(); render(); }
+function editCell(nm,d){ if(!guard())return;
+  if(window._anchorMode){ setAnchor(nm,d); return; }
+  var v=prompt("Code "+nm+" — jour "+d+"\n(ex 20/5c, 16/3*, RH, R, CP, M ; vide = rien)",ST.codes[nm][d]||"");
+  if(v===null)return; ST.codes[nm][d]=v.trim(); save(); render(); }
+function toggleAnchor(){ if(!guard())return; window._anchorMode=!window._anchorMode;
+  document.getElementById("anchorBtn").style.background=window._anchorMode?"linear-gradient(135deg,var(--gold),var(--gold2))":"";
+  document.getElementById("anchorBtn").style.color=window._anchorMode?"#000":"";
+  document.getElementById("adminHint").innerHTML=window._anchorMode
+    ? "<b style='color:var(--gold2)'>📍 Mode Départ 1 : touche la case de la personne (jour) qui doit être DÉPART 1 → toute la rotation se cale.</b>"
+    : "Touche une case = corriger le code · NR/5e : tap = ✗, ✎ = écrire";
+  toast(window._anchorMode?"📍 Touche la case = Départ 1":"Mode normal"); }
+function anchorOff(nm,d){ // offset pour que nm = Départ 1 le jour d (null si impossible)
+  var R=compute(); var ai=R.active.indexOf(nm); if(ai<0) return null;
+  var wi=R.workDays.indexOf(d); if(wi<0 || !isWork(ST.codes[nm][d])) return null;
+  var base=(ST.ci&&ST.ci[nm]!==undefined)?ST.ci[nm]:ai, sl=R.n;
+  return ((-((wi%4)+Math.floor(wi/4)+base))%sl+sl)%sl; }
+function setAnchor(nm,d){ var o=anchorOff(nm,d);
+  if(o===null){ toast("Choisis un JOUR TRAVAILLÉ d'une personne présente"); return; }
+  ST.off=o; save();
+  window._anchorMode=false; document.getElementById("anchorBtn").style.background=""; document.getElementById("anchorBtn").style.color="";
+  document.getElementById("adminHint").textContent="Touche une case = corriger le code · NR/5e : tap = ✗, ✎ = écrire";
+  render(); toast("✅ "+nm+" = Départ 1 le "+d+" — rotation calée"); }
+function resetAnchor(){ if(!guard())return; ST.off=0; save(); render(); toast("Rotation remise par défaut"); }
+function togglePositions(){ if(!guard())return; window._posOpen=!window._posOpen; render(); toast(window._posOpen?"Positions : touche un n° pour échanger":"Fermé"); }
+function panelDay(R){ var now=new Date(); var td=(now.getFullYear()===B.year&&now.getMonth()===B.monthIdx)?now.getDate():0;
+  if(td && R.workDays.indexOf(td)>=0) return td;
+  return R.workDays.length?R.workDays[R.workDays.length-1]:1; }
+function setPos(nm,p){ if(!guard())return; var R=compute(); var day=panelDay(R);
+  if(!ST.ci) ST.ci={}; R.active.forEach(function(n,ai){ if(ST.ci[n]===undefined) ST.ci[n]=ai; });
+  var other=null; R.active.forEach(function(n){ if(n!==nm && R.deps[n][day]===p) other=n; });
+  if(other){ var t=ST.ci[nm]; ST.ci[nm]=ST.ci[other]; ST.ci[other]=t; save(); render(); toast(nm+" ⇄ "+other+" (départ "+p+")"); }
+  else { toast("Départ "+p+" non occupé ce jour (trou)"); } }
+function replaceLine(){ if(!guard())return; var R=compute();
+  var entr=prompt("Remplaçant (qui ENTRE et reprend la ligne de départ) — nom exact :",""); if(entr===null)return; entr=entr.trim();
+  if(ST.order.indexOf(entr)<0){ toast("Nom introuvable dans cette équipe"); return; }
+  var leav=prompt("Personne REMPLACÉE (dont il reprend la ligne) — nom exact :",""); if(leav===null)return; leav=leav.trim();
+  if(ST.order.indexOf(leav)<0){ toast("Nom remplacé introuvable"); return; }
+  if(entr===leav){ toast("Choisis deux personnes différentes"); return; }
+  if(!ST.ci) ST.ci={}; R.active.forEach(function(n,ai){ if(ST.ci[n]===undefined) ST.ci[n]=ai; });
+  var base=(ST.ci[leav]!==undefined)?ST.ci[leav]:ST.order.indexOf(leav);
+  ST.ci[entr]=base; save(); render(); toast(entr+" reprend la ligne de départ de "+leav); }
+function positionsPanelHTML(R){
+  var day=panelDay(R), sl=R.n;
+  var h="<div class='posp'><div class='posp-t'>⚙️ Ordre de départ du "+day+" — touche un n° pour ÉCHANGER deux personnes (les lignes ne bougent pas) · <button class='posp-b' style='width:auto;padding:2px 9px' onclick=\"replaceLine()\">♻︎ Remplacement</button></div>";
+  R.active.forEach(function(nm){ var cur=R.deps[nm][day];
+    h+="<div class='posp-row'><span class='posp-nm'>"+esc(nm)+(cur?"":" <span style='color:#888'>(absent)</span>")+"</span><span class='posp-btns'>";
+    for(var p=1;p<=sl;p++){ h+="<button class='posp-b"+(cur===p?" sel":"")+"' onclick=\"setPos('"+esc(nm)+"',"+p+")\">"+p+"</button>"; }
+    h+="</span></div>"; });
+  return h+"</div>"; }
+function resetCounters(){ if(!guard())return; if(!confirm("Vider NR et 5e ?"))return; ST.nr={};ST.cq={};save();render();toast("Vidé"); }
+function resetAll(){ if(!guard())return; if(!confirm("Réinitialiser ce mois (codes, ordre, NR/5e) ?"))return;
+  try{localStorage.removeItem(B.key);}catch(e){} load(); render(); toast("Réinitialisé"); }
+
+function switchBoard(id){ BID=id; try{localStorage.setItem("cmc_dep_board",id);}catch(e){} load(); render(); }
+function fillSel(){ var s=document.getElementById("boardSel"); s.innerHTML="";
+  var groups=[["Chefs Black Jack",function(k){return /bj/i.test(k);}],
+              ["Roulettes",function(k){return /roul\d+$/.test(k);}],
+              ["Roulettes — miroir",function(k){return /roul\d+m$/.test(k);}],
+              ["CMC (importé app)",function(k){return /^appcmc-/.test(k);}],
+              ["Absences",function(k){return BOARDS[k].kind==="abs";}]];
+  var used={};
+  groups.forEach(function(g){ var keys=Object.keys(BOARDS).filter(function(k){return !used[k]&&g[1](k);}); if(!keys.length)return;
+    var og=document.createElement("optgroup"); og.label=g[0];
+    keys.forEach(function(k){ used[k]=1; var o=document.createElement("option"); o.value=k; o.textContent=BOARDS[k].label; if(k===BID)o.selected=true; og.appendChild(o); });
+    s.appendChild(og); });
+  Object.keys(BOARDS).filter(function(k){return !used[k];}).forEach(function(k){ var o=document.createElement("option"); o.value=k; o.textContent=BOARDS[k].label; if(k===BID)o.selected=true; s.appendChild(o); });
+}
+// ── Ma vue (vue par personne) ──
+function allNames(){ var set={},out=[]; Object.keys(BOARDS).forEach(function(k){ var b=BOARDS[k]; if(b.kind==="abs")return;
+  (b.people||[]).forEach(function(p){ if(!set[p.name]){ set[p.name]=1; out.push(p.name); } }); }); out.sort(); return out; }
+function boardForName(nm){ var ks=Object.keys(BOARDS); for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
+  if((b.people||[]).some(function(p){return p.name===nm;})) return ks[i]; } return null; }
+function mirrorBoardId(id){ if(!id)return null; if(/m$/.test(id)){ var base=id.replace(/m$/,""); return BOARDS[base]?base:null; } var m=id+"m"; return BOARDS[m]?m:null; }
+function fillMeSel(){ var s=document.getElementById("meSel"); if(!s)return; s.innerHTML="";
+  var o0=document.createElement("option"); o0.value=""; o0.textContent="👤 Ma vue…"; s.appendChild(o0);
+  allNames().forEach(function(n){ var o=document.createElement("option"); o.value=n; o.textContent=n; if(n===ME)o.selected=true; s.appendChild(o); }); }
+function setMe(nm){ ME=nm; try{localStorage.setItem("cmc_dep_me",nm);}catch(e){}
+  if(nm){ var bid=boardForName(nm); if(bid&&bid!==BID){ switchBoard(bid); return; } } render(); }
+
+function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; toast("Verrouillé — lecture seule"); }
+  else { document.getElementById("pinModal").classList.add("on"); setTimeout(function(){var e=document.getElementById("pinIn");if(e){e.value="";e.focus();}},60); } }
+function closePin(){ document.getElementById("pinModal").classList.remove("on"); }
+async function sha256(s){ var b=new TextEncoder().encode(s); var h=await crypto.subtle.digest("SHA-256",b);
+  return Array.from(new Uint8Array(h)).map(function(x){return x.toString(16).padStart(2,"0");}).join(""); }
+async function checkPin(){ var h=await sha256((document.getElementById("pinIn").value||"").trim());
+  if(h===PIN_SHA256){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); toast("Mode admin activé"); }
+  else toast("Code incorrect"); }
+document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&document.getElementById("pinModal").classList.contains("on"))checkPin(); });
+function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(window._tt); window._tt=setTimeout(function(){t.classList.remove("on");},2200); }
+function _appDiagText(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
+  if(!d.cmc_e&&!d.ov) return "📥 Données de l'app introuvables — ouvre d'abord l'app CMCteams (même iPhone) puis reviens ici.";
+  if(!d.hasKey) return "📥 Aucun planning juillet 2026 dans l'app — importe le PDF de juillet dans CMCteams, puis recharge.";
+  var fam=["roulettes","cmc","amenage"].filter(function(f){return c[f];}).map(function(f){return ({roulettes:"Roulettes",cmc:"Cartes CMC",amenage:"CMC aménagé"}[f])+" "+c[f];});
+  return fam.length ? ("📥 Importé de l'app : "+fam.join(" · ")+" → "+(d.added||0)+" équipe(s).")
+                    : "📥 App lue mais aucun employé carte/roulette trouvé pour juillet (vérifie l'import dans CMCteams).";
+}
+function showAppDiag(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
+  toast(_appDiagText()+" | app:"+(d.cmc_e?"oui":"non")+" planning:"+(d.hasKey?"oui":"non")+" R:"+(c.roulettes||0)+" C:"+(c.cmc||0)+" A:"+(c.amenage||0)); }
+function paintAppDiag(){ var el=document.getElementById("appDiag"); if(!el)return;
+  var d=window._appBoardDiag||{}; var warn=(!d.cmc_e||!d.hasKey||!(d.added>0));
+  el.innerHTML=(warn?"<span class='warn'>":"<b style='color:var(--gold2)'>")+_appDiagText()+(warn?"</span>":"</b>"); }
+function forceRefresh(){ var go=function(){location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());};
+  if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));})
+    .then(function(){return ('caches' in window)?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0;}).then(go).catch(go); } else go(); }
+
+document.getElementById("ver").textContent=APP_VER;
+var ME=(function(){try{return localStorage.getItem("cmc_dep_me")||"";}catch(e){return "";}})();
+BID=(function(){try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
+fillSel(); fillMeSel(); load(); render(); paintAppDiag();
+if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
+</script>
+</body>
+</html>
