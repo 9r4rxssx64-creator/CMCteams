@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.815";
+var APP_VER="v9.816";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -47980,6 +47980,51 @@ if(typeof window.cmcDiagnoseAllAxes !== "function"){
 }
 })();
 
+</script>
+<!-- v9.816 — Watchdog écran blanc (SCRIPT SÉPARÉ : s'exécute même si le script principal plante).
+     Si #app reste vide ~4,5s après chargement → remplace le blanc par un panneau de secours 1-clic
+     (vide SW + caches + recharge). N'auto-recharge JAMAIS (zéro boucle) : Kevin tape le bouton. -->
+<script>
+(function(){
+  "use strict";
+  function show(){
+    var app=document.getElementById("app")||document.body;
+    var len=0; try{len=(app.innerHTML||"").replace(/\s/g,"").length;}catch(_){}
+    // si l'app a rendu (login, contenu ou écran d'erreur déjà présent) → ne rien faire
+    if(len>200) return;
+    if(document.getElementById("cmcWhiteHeal")) return;
+    var d=document.createElement("div");
+    d.id="cmcWhiteHeal";
+    d.setAttribute("style","position:fixed;inset:0;z-index:2147483647;background:#0a1a0c;color:#e8d8a0;font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;overflow:auto;-webkit-overflow-scrolling:touch;padding:24px;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))");
+    d.innerHTML=''
+      +'<div style="max-width:480px;margin:0 auto">'
+      +'<div style="font-size:42px;text-align:center;margin-bottom:6px">🔄</div>'
+      +'<h1 style="font-family:Georgia,serif;color:#e8b830;text-align:center;font-size:24px;margin:0 0 6px">CMC Teams</h1>'
+      +'<p style="text-align:center;color:#a8b0a0;font-size:14px;margin:0 0 20px">L\'app n\'a pas réussi à s\'afficher.<br>Touche le bouton doré : tes données sont conservées.</p>'
+      +'<button id="cmcWhiteFix" style="display:block;width:100%;min-height:56px;background:linear-gradient(135deg,#e8b830,#c9a227);color:#0a1a0c;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;margin:0 0 16px">⚡ Réparer et recharger</button>'
+      +'<div id="cmcWhiteLog" style="font-family:ui-monospace,monospace;font-size:12px;color:#9aa39a;background:#0d1810;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;min-height:40px;white-space:pre-wrap;margin-bottom:18px">Prêt.</div>'
+      +'<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;font-size:13px;line-height:1.6;color:#cfd8c8">'
+      +'<b style="color:#e8b830">Si le bouton ne suffit pas (iPhone)</b><br>'
+      +'1. Supprime l\'icône CMC Teams de l\'écran d\'accueil<br>'
+      +'2. Ouvre <b>Safari</b> → la page CMC Teams<br>'
+      +'3. Bouton Partager → <b>Sur l\'écran d\'accueil</b><br>'
+      +'<span style="color:#9aa39a">(Réinstaller force iOS à reprendre la dernière version.)</span>'
+      +'</div></div>';
+    (document.body||document.documentElement).appendChild(d);
+    var log=function(m){var el=document.getElementById("cmcWhiteLog");if(el)el.textContent=m;};
+    document.getElementById("cmcWhiteFix").addEventListener("click",function(){
+      var btn=this;btn.disabled=true;btn.textContent="⏳ Nettoyage…";
+      var go=function(){var u=location.href.split("?")[0].split("#")[0]+"?_whiteheal="+Date.now();try{location.replace(u);}catch(_){location.href=u;}};
+      var p=Promise.resolve();
+      if("serviceWorker" in navigator){p=p.then(function(){return navigator.serviceWorker.getRegistrations().then(function(rs){log("Service Workers: "+rs.length);return Promise.all(rs.map(function(r){return r.unregister();}));});});}
+      if("caches" in window){p=p.then(function(){return caches.keys().then(function(ks){log("Caches: "+ks.length);return Promise.all(ks.map(function(k){return caches.delete(k);}));});});}
+      p.then(function(){log("Nettoyé. Rechargement…");setTimeout(go,800);}).catch(function(e){log("Erreur: "+(e&&e.message||e)+" — rechargement…");setTimeout(go,800);});
+    });
+  }
+  // déclenche une seule fois, après que le rendu normal ait eu le temps de se faire
+  if(document.readyState==="complete") setTimeout(show,4500);
+  else window.addEventListener("load",function(){setTimeout(show,4500);});
+})();
 </script>
 </body>
 </html>
