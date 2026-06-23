@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.9.0 — double vue création (minimap vue d'ensemble + zoom logo) + panneaux fonctions indépendants + polish visuel -->
+<!-- La Détente — Studio (admin) v1.9.1 — maniabilité: Position X/Y précises, échelle fine (0,02), tailles rapides, zoom logo ajusté, repère impression off par défaut -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -263,7 +263,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
     <details class="grp" open><summary>🗂 Calques</summary><div class="layers" id="layers"></div></details>
     <details class="grp" id="propsWrap" open><summary>🎛 Propriétés</summary><div id="props"><div class="empty">Sélectionne un calque</div></div></details>
     <details class="grp"><summary>🖨 Zone d'impression</summary>
-      <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="zoneChk" checked onchange="Studio.render()"> Afficher le repère</label>
+      <label style="font-size:12px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="zoneChk" onchange="Studio.render()"> Afficher le repère</label>
       <div class="hint">Garde ton design dans le repère pour une impression nette.</div>
     </details>
   </div>
@@ -487,12 +487,16 @@ function renderProps(){
  var dispo='';
  dispo+='<div class="sublab">📐 Placement</div>';
  dispo+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'+placeKeys().map(function(k){return '<button class="mini" style="flex:1 0 30%;'+(k===st.placement?'border-color:var(--p);color:#fff':'')+'" onclick="Studio.placeAndMove('+l.id+',\''+k+'\')">'+(PLBL[k]||k)+'</button>'}).join("")+'</div>';
- dispo+=rngN("Échelle",l.id,"scale",l.scale,0.04,4,0.02);
+ dispo+=rngN("Position X  ⟷",l.id,"x",(l.x==null?50:l.x),0,100,0.5);
+ dispo+=rngN("Position Y  ↕",l.id,"y",(l.y==null?50:l.y),0,100,0.5);
+ dispo+=rngN("Échelle (taille)",l.id,"scale",l.scale,0.02,4,0.01);
  dispo+=rngN("Rotation",l.id,"rot",l.rot,-180,180,1,"°");
  dispo+=rngN("Opacité",l.id,"op",l.op,0.1,1,0.05);
- dispo+='<div class="row2"><button class="mini" onclick="Studio.scaleBy('+l.id+',0.9)">➖ Réduire</button><button class="mini" onclick="Studio.scaleBy('+l.id+',1.1)">➕ Agrandir</button></div>';
- dispo+='<div class="sublab">🎯 Déplacement fin</div>';
- dispo+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:170px"><span></span><button class="mini" title="Monter" onclick="Studio.nudge('+l.id+',0,-2)">↑</button><span></span><button class="mini" title="Gauche" onclick="Studio.nudge('+l.id+',-2,0)">←</button><button class="mini" title="Centrer" onclick="Studio.center('+l.id+')">⊕</button><button class="mini" title="Droite" onclick="Studio.nudge('+l.id+',2,0)">→</button><span></span><button class="mini" title="Descendre" onclick="Studio.nudge('+l.id+',0,2)">↓</button><span></span></div>';
+ dispo+='<div class="sublab">📏 Taille rapide</div>';
+ dispo+='<div style="display:flex;flex-wrap:wrap;gap:6px"><button class="mini" onclick="Studio.fitSize('+l.id+',14)">❤️ Cœur</button><button class="mini" onclick="Studio.fitSize('+l.id+',22)">Petit</button><button class="mini" onclick="Studio.fitSize('+l.id+',34)">Moyen</button><button class="mini" onclick="Studio.fitSize('+l.id+',48)">Grand</button><button class="mini" onclick="Studio.fitSize('+l.id+',66)">Dos</button></div>';
+ dispo+='<div class="row2" style="margin-top:8px"><button class="mini" onclick="Studio.scaleBy('+l.id+',0.92)">➖ Réduire</button><button class="mini" onclick="Studio.scaleBy('+l.id+',1.08)">➕ Agrandir</button></div>';
+ dispo+='<div class="sublab">🎯 Déplacement fin (pas 0,5)</div>';
+ dispo+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:180px"><span></span><button class="mini" title="Monter" onclick="Studio.nudge('+l.id+',0,-0.5)">↑</button><span></span><button class="mini" title="Gauche" onclick="Studio.nudge('+l.id+',-0.5,0)">←</button><button class="mini" title="Centrer" onclick="Studio.center('+l.id+')">⊕</button><button class="mini" title="Droite" onclick="Studio.nudge('+l.id+',0.5,0)">→</button><span></span><button class="mini" title="Descendre" onclick="Studio.nudge('+l.id+',0,0.5)">↓</button><span></span></div>';
  dispo+='<div class="row2" style="margin-top:8px"><button class="mini" onclick="Studio.center('+l.id+')">⊕ Centrer</button><button class="mini" onclick="Studio.toZone('+l.id+')">⌖ Dans la zone</button></div>';
 
  /* ===== 🎨 APPARENCE — selon le type de calque ===== */
@@ -565,7 +569,9 @@ function del(id){snap();st.layers=st.layers.filter(function(x){return x.id!==id}
 function center(id){upd(id,"x",50);var l=st.layers.filter(function(x){return x.id===id})[0];var _z=curZone();l.y=_z[1]+_z[3]/2;render()}
 function toZone(id){var z=curZone();var l=st.layers.filter(function(x){return x.id===id})[0];l.x=z[0]+z[2]/2;l.y=z[1]+z[3]/2;render()}
 function nudge(id,dx,dy){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l.x=Math.max(0,Math.min(100,(l.x==null?50:l.x)+dx));l.y=Math.max(0,Math.min(100,(l.y==null?50:l.y)+dy));render()}
-function scaleBy(id,f){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l.scale=Math.max(0.04,Math.min(6,(l.scale||1)*f));render()}
+function scaleBy(id,f){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;l.scale=Math.max(0.02,Math.min(6,(l.scale||1)*f));render()}
+/* Taille rapide : règle l'échelle pour que la plus grande dimension du logo fasse ~`units` % de la pièce (Cœur 14 → Dos 66). */
+function fitSize(id,units){snap();var l=st.layers.filter(function(x){return x.id===id})[0];if(!l)return;var dim=l.type==="text"?(l.size||20):l.type==="emblem"?40:Math.max(l.w||40,l.h||40);l.scale=Math.max(0.02,Math.min(6,units/dim));render();toast("Taille réglée ("+units+"%)");}
 function placeAndMove(id,k){if(PLACE[st.garment]&&PLACE[st.garment][k]){st.placement=k;renderPlacement();}toZone(id);}
 function setGarment(g){st.garment=g;st.placement=placeKeys()[0];renderGarments();renderPlacement();render()}
 function setPlacement(k){st.placement=k;renderPlacement();render()}
@@ -608,9 +614,9 @@ function toggleOverview(){st.overview=!st.overview;renderOverview();toast(st.ove
 function zoomToSel(){
  var l=st.layers.filter(function(x){return x.id===st.sel})[0];
  if(!l){toast("Sélectionne d'abord un logo / calque");return;}
- var rad=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale*0.6;
- var half=Math.max(rad*1.5,9),nw=Math.min(100,half*2);
- st.vb={x:l.x-nw/2,y:l.y-nw/2,w:nw,h:nw};_clampVB();st.overview=true;_applyVB();renderOverview();toast("🔍 Zoom sur le logo");
+ var dim=(l.type==="text"?l.size:l.type==="image"?Math.max(l.w,l.h):40)*l.scale;
+ var nw=Math.max(16,Math.min(100,dim*1.7)),cx=(l.x==null?50:l.x),cy=(l.y==null?50:l.y);
+ st.vb={x:cx-nw/2,y:cy-nw/2,w:nw,h:nw};_clampVB();st.overview=true;_applyVB();renderOverview();toast("🔍 Zoom sur le logo");
 }
 function initDrag(){
  var box=$("stageBox");var drag=null;var _pinch=null;
@@ -978,7 +984,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,fitSize:fitSize,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
