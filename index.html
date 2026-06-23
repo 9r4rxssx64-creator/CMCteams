@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.819";
+var APP_VER="v9.820";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -23588,16 +23588,35 @@ function vPlan(){
   // maladie/conges/amenage, rendues séparément) NE passent PAS ce filtre → visibles.
   var _PLAN_ABS_CODES={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,ABS:1,FL:1,HD:1,HC:1};
   function _planHasWork(e){
-    // Visible dans une équipe de TRAVAIL si : (a) ≥1 jour travaillé, OU (b) absence
-    // COMPLÈTE du mois (CP/M/AF tout le mois = vraie donnée, à montrer — règle #1).
-    // MASQUÉ seulement si 0 jour travaillé ET ligne INCOMPLÈTE (codes non parsés =
-    // section fragmentée, ex COURTIN F « · RH R » + 20 jours vides).
+    // v9.820 (Kevin 2026-06-23 « mets les malades/congés dans leur groupe ») : un emp
+    // est dans une équipe de TRAVAIL UNIQUEMENT s'il a ≥1 jour réellement travaillé.
+    // Une absence INTÉGRALE du mois (CP/M/AF tout le mois) n'est PLUS affichée dans une
+    // équipe de travail → elle va dans le groupe Congés/Maladie/Formation (tableau
+    // compact ci-dessous, _planAbsenceTeam). Règle #1 (nom→cellule) reste respectée :
+    // ces emps restent visibles, dans leur groupe d'absence. « 0 travaillé + que des
+    // RH/R » (parse cassé/fragmenté) reste masqué des équipes (v9.765).
     var r=pl[e.id]||{};
-    var filled=0,worked=0;
-    for(var _wd=1;_wd<=days;_wd++){var c=r[_wd];if(!c)continue;filled++;var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");if(!_PLAN_ABS_CODES[u])worked++;}
-    if(worked>0)return true;       // travaille → visible
-    if(filled>=days-1)return true; // absence intégrale (mois plein) → visible (règle #1)
-    return false;                  // 0 travaillé + ligne incomplète → masqué (parse cassé)
+    var worked=0;
+    for(var _wd=1;_wd<=days;_wd++){var c=r[_wd];if(!c)continue;var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");if(!_PLAN_ABS_CODES[u])worked++;}
+    return worked>0;
+  }
+  // v9.820 — Déduit le groupe d'ABSENCE INTÉGRALE (0 jour travaillé) depuis les CELLULES
+  // (robuste : indépendant d'un teamHistory périmé — GARRO=CP, MIRANDA=M ne polluent
+  // plus une équipe de travail). Retourne 'conges'/'maladie'/'formation'/'deplacement'
+  // ou null si l'emp travaille (≥1 jour) ou n'a aucun code d'absence reconnu.
+  var _PLAN_ABS_TEAM={CP:"conges",CRH:"conges",CDP:"conges",CDH:"conges",M:"maladie",MAL:"maladie",AF:"formation",DEPL:"deplacement",DEP:"deplacement"};
+  function _planAbsenceTeam(e){
+    var r=pl[e.id]||{};
+    var worked=0,by={},tot=0;
+    for(var _ad=1;_ad<=days;_ad++){var c=r[_ad];if(!c)continue;
+      var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");
+      if(u==="RH"||u==="R")continue;
+      if(_PLAN_ABS_TEAM[u]){by[_PLAN_ABS_TEAM[u]]=(by[_PLAN_ABS_TEAM[u]]||0)+1;tot++;}
+      else worked++;
+    }
+    if(worked>0||tot<1)return null; // travaille → pas une absence intégrale
+    var best=null,bestN=0;Object.keys(by).forEach(function(t){if(by[t]>bestN){bestN=by[t];best=t;}});
+    return best;
   }
   // v9.644+646 (Kevin "j'efface le planning du mois, toujours les équipes présentes" / "l'app scintille"):
   // si A.overrides[key] vide → afficher empty state au lieu de la structure équipe.
@@ -23926,115 +23945,94 @@ function vPlan(){
     +'<button class="btn ghost" onclick="FAMS_ORDER=[\'bj\',\'roulettes\',\'baccara\',\'cmc\',\'cadres\'];FAMS_ORDER.forEach(function(f){window._planFamOpen[f]=true;});dc()" style="font-size:12px;padding:4px 8px;margin-left:auto">\ud83d\udcc2 Tout ouvrir</button>'
     +'<button class="btn ghost" onclick="[\'bj\',\'roulettes\',\'baccara\',\'cmc\',\'cadres\'].forEach(function(f){window._planFamOpen[f]=false;});dc()" style="font-size:12px;padding:4px 8px">\ud83d\udcc1 Tout fermer</button>'
     +'</div>';
-  // v9.747 (Kevin 2026-05-26 "Pas de section malades, formation etc") :
-  // Section d\u00e9di\u00e9e AVANT les familles standards pour les \u00e9quipes sp\u00e9ciales
-  // (formation, maladie, conges, amenage). Agr\u00e8ge tous les emps quelle que soit
-  // leur family DEF_EMP. Affichage seulement si au moins 1 emp dans l'\u00e9quipe.
-  var _v747SpecialTeams=[
-    {id:"formation",label:"\ud83c\udf93 Formation",color:"#7a5aa8"},
-    {id:"maladie",label:"\ud83e\udd12 Maladie",color:"#8a4a4a"},
-    {id:"conges",label:"\ud83c\udfd6\ufe0f Cong\u00e9s",color:"#4a8a4a"},
-    {id:"deplacement",label:"\u2708 En d\u00e9placement",color:"#5a7aa8"},
-    {id:"amenage",label:"\ud83d\udd50 Horaires am\u00e9nag\u00e9s",color:"#8a8a9a"}
-  ];
+  // v9.820 (Kevin 2026-06-23 « Mets les dans leur famille, malades, congé etc et fait
+  // un tableau c'est plus clair ») — Groupes d'ABSENCE rendus en TABLEAU COMPACT
+  // (Nom · Période · Équipe) au lieu de la grille 31 jours (redondante quand qqn est
+  // absent tout le mois). Membres déduits des CELLULES (_planAbsenceTeam) = ROBUSTE :
+  // marche même si un teamHistory périmé pointe encore vers une équipe de travail →
+  // GARRO (CP tout le mois) et MIRANDA (M tout le mois) ne polluent plus l'équipe de
+  // Kevin, ils tombent dans Congés / Maladie. Pliables, FERMÉS par défaut (« le reste
+  // fermé »). Les PARTIELS (travaillent + qq jours CP/M/AF) restent dans leur équipe de
+  // travail et sont listés ici « pour info » avec leurs dates (Kevin v9.818/819).
   var _v747KeyFam=A.year+"-"+A.month;
-  // v9.769 (Kevin diag « tout est mélangé ») — split par FAMILLE dans chaque section
-  // d'absence : un emp BJ en CP s'affiche dans « 🏖️ Congés (BJ) » et un emp Roul.
-  // en CP dans « 🏖️ Congés (Roulettes) ». Évite la confusion visuelle « pourquoi
-  // des BJ, des Roul. et des CMC dans la même section ? ». amenage reste regroupé
-  // (toujours famille=cmc en pratique).
-  var _v769FamLabels={bj:"BJ",roulettes:"Roul.",cmc:"CMC",baccara:"Bac."};
-  _v747SpecialTeams.forEach(function(sp){
-    if(_globalShown[sp.id])return;
+  var _absOv=A.overrides[_v747KeyFam]||{};
+  var _v769FamLabels={bj:"BJ",roulettes:"Roul.",cmc:"CMC",baccara:"Bac.",cadres:"Cadres",amenage:"Aménagé"};
+  function _empFamLabel(e){
+    var f=(e.familyHistory&&e.familyHistory[_v747KeyFam])||e.family||"bj";
+    return _v769FamLabels[f]||f;
+  }
+  function _absRangesFor(cells,codeSet){
+    var runs=[],start=null;
+    for(var d=1;d<=days;d++){
+      var c=cells[d];var u=c?String(c).toUpperCase().replace(/[C'"*:]+$/g,""):"";
+      var hit=!!c&&codeSet.indexOf(u)>=0;
+      if(hit&&start===null)start=d;
+      else if(!hit&&start!==null){runs.push(start===d-1?(""+start):(start+"-"+(d-1)));start=null;}
+    }
+    if(start!==null)runs.push(start===days?(""+days):(start+"-"+days));
+    return runs;
+  }
+  if(!window._planAbsOpen)window._planAbsOpen={conges:false,maladie:false,formation:false,deplacement:false,amenage:false};
+  var _absGroups=[
+    {id:"conges",label:"🏖️ Congés",color:"#4a8a4a",codes:["CP","CRH","CDP","CDH"]},
+    {id:"maladie",label:"🤒 Maladie",color:"#8a4a4a",codes:["M","MAL"]},
+    {id:"formation",label:"🎓 Formation",color:"#7a5aa8",codes:["AF"]},
+    {id:"deplacement",label:"✈️ En déplacement",color:"#5a7aa8",codes:["DEPL","DEP"]}
+  ];
+  _absGroups.forEach(function(g){
+    var full=[],partial=[];
+    A.employees.forEach(function(e){
+      if(!isEmpActive(e,A.year,A.month))return;
+      var cells=_absOv[e.id];if(!cells)return;
+      var runs=_absRangesFor(cells,g.codes);
+      if(!runs.length)return;
+      if(_planAbsenceTeam(e)===g.id)full.push({e:e,runs:runs});      // absence intégrale → ce groupe
+      else if(_planHasWork(e))partial.push({e:e,runs:runs});         // travaille + qq jours → partiel (info)
+    });
+    if(!full.length&&!partial.length)return;
+    full.sort(function(a,b){return String(a.e.name).localeCompare(String(b.e.name));});
+    partial.sort(function(a,b){return String(a.e.name).localeCompare(String(b.e.name));});
+    var _open=!!window._planAbsOpen[g.id];
+    h+='<button onclick="window._planAbsOpen[\''+g.id+'\']=!window._planAbsOpen[\''+g.id+'\'];dc()" style="width:100%;display:flex;align-items:center;gap:10px;margin:8px 0 0;padding:10px 14px;background:linear-gradient(90deg,'+g.color+'22,'+g.color+'08 70%,transparent);border:1px solid '+g.color+'40;border-left:3px solid '+g.color+';border-radius:10px;cursor:pointer;text-align:left;min-height:48px">'
+      +'<span style="font-size:18px;display:inline-block;transition:transform .2s;transform:rotate('+(_open?90:0)+'deg);color:'+g.color+'">▶</span>'
+      +'<span style="flex:1;font-size:15px;font-weight:800;color:'+g.color+';letter-spacing:.5px">'+g.label+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:'+g.color+';background:'+g.color+'22;padding:3px 10px;border-radius:14px">'+full.length+(partial.length?(' + '+partial.length+' partiel'+(partial.length>1?'s':'')):'')+'</span>'
+      +'</button>';
+    if(!_open)return;
+    h+='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 0 6px;border:1px solid '+g.color+'22;border-top:none;border-radius:0 0 8px 8px">'
+      +'<table style="border-collapse:collapse;width:100%;min-width:300px;font-size:14px">'
+      +'<thead><tr style="background:'+g.color+'14"><th style="text-align:left;padding:7px 10px;color:'+g.color+';font-weight:800">Nom</th><th style="text-align:left;padding:7px 10px;color:'+g.color+';font-weight:800">Période</th><th style="text-align:left;padding:7px 10px;color:'+g.color+';font-weight:800">Équipe</th></tr></thead><tbody>';
+    full.forEach(function(it){
+      h+='<tr style="border-top:1px solid rgba(255,255,255,.05)"><td style="padding:7px 10px;color:#e6ece6;font-weight:600">'+esc(it.e.name)+'</td>'
+        +'<td style="padding:7px 10px;color:'+g.color+';font-weight:700;white-space:nowrap">'+it.runs.join(', ')+'</td>'
+        +'<td style="padding:7px 10px;color:#9fb89f;white-space:nowrap">'+esc(_empFamLabel(it.e))+'</td></tr>';
+    });
+    if(partial.length){
+      h+='<tr><td colspan="3" style="padding:6px 10px;background:rgba(255,255,255,.02);color:#9aa89a;font-size:12px;font-style:italic">↪ Partiels — restent dans leur équipe de travail (pour info)</td></tr>';
+      partial.forEach(function(it){
+        h+='<tr style="border-top:1px solid rgba(255,255,255,.04);opacity:.85"><td style="padding:6px 10px;color:#cdd6cd">'+esc(it.e.name)+'</td>'
+          +'<td style="padding:6px 10px;color:'+g.color+';white-space:nowrap">'+it.runs.join(', ')+'</td>'
+          +'<td style="padding:6px 10px;color:#9fb89f;white-space:nowrap">'+esc(_empFamLabel(it.e))+'</td></tr>';
+      });
+    }
+    h+='</tbody></table></div>';
+  });
+  // Aménagés (TRAVAILLENT en horaires adaptés) : équipe de travail, rendue comme une
+  // famille pliable (grille jours), FERMÉE par défaut — pas un groupe d'absence.
+  (function(){
     var members=A.employees.filter(function(e){
       if(!isEmpActive(e,A.year,A.month))return false;
-      var et=e.teamHistory&&e.teamHistory[_v747KeyFam];
-      return et===sp.id;
+      return (e.teamHistory&&e.teamHistory[_v747KeyFam])==="amenage";
     });
-    if(!members.length)return;
-    _globalShown[sp.id]=true;
-    // amenage : pas de split (toujours cmc, et label déjà spécifique)
-    if(sp.id==="amenage"){
-      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
-        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
-        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
-        +'</div>';
-      h+=_renderTeamBlock(sp.id,members,tc(sp.id));
-      return;
-    }
-    // Group members by family
-    var byFam={};
-    members.forEach(function(e){
-      var f=(e.familyHistory&&e.familyHistory[_v747KeyFam])||e.family||"bj";
-      if(!byFam[f])byFam[f]=[];
-      byFam[f].push(e);
-    });
-    // Render header + un sous-bloc par famille (ordre BJ → Roul. → CMC)
-    var famsHere=["bj","roulettes","cmc","baccara"].filter(function(f){return byFam[f];});
-    if(famsHere.length<=1){
-      // 1 seule famille → rendu simple sans split
-      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
-        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
-        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp.</span>'
-        +'</div>';
-      h+=_renderTeamBlock(sp.id,members,tc(sp.id));
-    }else{
-      // Plusieurs familles → header agrégé + sous-sections par famille
-      h+='<div style="margin:10px 0 4px;padding:10px 14px;background:linear-gradient(90deg,'+sp.color+'22,'+sp.color+'08 70%,transparent);border:1px solid '+sp.color+'40;border-left:3px solid '+sp.color+';border-radius:10px">'
-        +'<span style="font-size:15px;font-weight:800;color:'+sp.color+';letter-spacing:1px">'+sp.label+'</span>'
-        +' <span style="font-size:13px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:3px 10px;border-radius:14px;margin-left:8px">'+members.length+' emp. ('+famsHere.map(function(f){return byFam[f].length+' '+_v769FamLabels[f];}).join(' · ')+')</span>'
-        +'</div>';
-      famsHere.forEach(function(f){
-        var subLabel=sp.label+' — '+_v769FamLabels[f];
-        h+='<div style="margin:6px 0 4px 10px;padding:6px 12px;background:'+sp.color+'15;border-left:2px solid '+sp.color+'80;border-radius:8px">'
-          +'<span style="font-size:13px;font-weight:700;color:'+sp.color+'">'+esc(subLabel)+'</span>'
-          +' <span style="font-size:12px;font-weight:700;color:'+sp.color+';background:'+sp.color+'22;padding:2px 8px;border-radius:10px;margin-left:6px">'+byFam[f].length+'</span>'
-          +'</div>';
-        // virtual team-id by family for _renderTeamBlock — uses real members but
-        // groups under a per-family subkey for visual splitting (doesn't change data)
-        h+=_renderTeamBlock(sp.id+"_"+f,byFam[f],tc(sp.id));
-      });
-    }
-  });
-  // v9.819 (Kevin 2026-06-23 « peut aussi être ajouté au groupe en congé avec les
-  // dates pour information ») : les congés/maladie/formation PARTIELS (ex CP 16-31)
-  // restent dans leur équipe de travail (v9.818) et sont AUSSI listés ici POUR INFO,
-  // avec leurs dates. N'affiche QUE les partiels (les absences pleines sont déjà dans
-  // la section dédiée ci-dessus, teamHistory===conges/maladie/…).
-  (function(){
-    var _absDays=new Date(A.year,A.month+1,0).getDate();
-    var _absOv=A.overrides[_v747KeyFam]||{};
-    function _absRanges(cells,codeSet){
-      var runs=[],start=null;
-      for(var d=1;d<=_absDays;d++){
-        var c=cells[d];var hit=!!c&&codeSet.indexOf(String(c).toUpperCase())>=0;
-        if(hit&&start===null)start=d;
-        else if(!hit&&start!==null){runs.push(start===d-1?(""+start):(start+"-"+(d-1)));start=null;}
-      }
-      if(start!==null)runs.push(start===_absDays?(""+start):(start+"-"+_absDays));
-      return runs;
-    }
-    var _absTypes=[{id:"conges",label:"🏖️ Congés",color:"#4a8a4a",codes:["CP","CRH","CDP","CDH"]},
-                   {id:"maladie",label:"🤒 Maladie",color:"#8a4a4a",codes:["M","MAL"]},
-                   {id:"formation",label:"🎓 Formation",color:"#7a5aa8",codes:["AF"]}];
-    _absTypes.forEach(function(a){
-      var list=[];
-      A.employees.forEach(function(e){
-        if(!isEmpActive(e,A.year,A.month))return;
-        var th=e.teamHistory&&e.teamHistory[_v747KeyFam];
-        if(th===a.id)return; // absence pleine déjà affichée dans sa section
-        var cells=_absOv[e.id];if(!cells)return;
-        var runs=_absRanges(cells,a.codes);
-        if(runs.length)list.push({name:e.name,runs:runs});
-      });
-      if(!list.length)return;
-      list.sort(function(x,y){return String(x.name).localeCompare(String(y.name));});
-      h+='<div style="margin:6px 0 4px;padding:8px 12px;background:'+a.color+'10;border:1px dashed '+a.color+'55;border-radius:8px">'
-        +'<span style="font-size:13px;font-weight:800;color:'+a.color+'">'+a.label+' — aussi en cours (partiel) <span style="opacity:.7;font-weight:600">· pour info, restent dans leur équipe</span></span>'
-        +'<div style="margin-top:5px;font-size:13px;color:#cdd6cd;line-height:1.8">'
-        +list.map(function(it){return esc(it.name)+' <span style="color:'+a.color+';font-weight:700">('+it.runs.join(', ')+')</span>';}).join(' &nbsp;·&nbsp; ')
-        +'</div></div>';
-    });
+    if(!members.length||_globalShown["amenage"])return;
+    _globalShown["amenage"]=true;
+    var _open=!!window._planAbsOpen.amenage;
+    h+='<button onclick="window._planAbsOpen.amenage=!window._planAbsOpen.amenage;dc()" style="width:100%;display:flex;align-items:center;gap:10px;margin:8px 0 0;padding:10px 14px;background:linear-gradient(90deg,#8a8a9a22,#8a8a9a08 70%,transparent);border:1px solid #8a8a9a40;border-left:3px solid #8a8a9a;border-radius:10px;cursor:pointer;text-align:left;min-height:48px">'
+      +'<span style="font-size:18px;display:inline-block;transition:transform .2s;transform:rotate('+(_open?90:0)+'deg);color:#8a8a9a">▶</span>'
+      +'<span style="flex:1;font-size:15px;font-weight:800;color:#8a8a9a">🕐 Horaires aménagés</span>'
+      +'<span style="font-size:13px;font-weight:700;color:#8a8a9a;background:#8a8a9a22;padding:3px 10px;border-radius:14px">'+members.length+' emp.</span>'
+      +'</button>';
+    if(_open)h+=_renderTeamBlock("amenage",members,tc("amenage"));
   })();
   FAMS_ORDER.forEach(function(fid){
     // v9.153 — respect filter chip si actif
