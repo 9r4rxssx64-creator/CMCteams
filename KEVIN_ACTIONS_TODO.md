@@ -1,5 +1,26 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔐 CANARI — Firebase custom-tokens par rôle (durcissement final) — MAJ 2026-06-19
+**Le seul vrai axe de fond sécu restant** (issu de l'ultra-review). État actuel : root `deny`,
+`/cmcteams` déjà `auth != null`, secrets bloqués, footguns retirés ✅. MAIS l'auth anonyme reste
+ouverte à tous + le nœud `/apex` est volontairement laissé ouvert (garde-fou du workflow) pour ne
+pas casser le pont Apex↔CMC. Le **vrai** verrouillage par rôle = **custom-tokens** (un worker émet
+un jeton Firebase avec `role: admin|employee` après vérif du mot de passe ; les règles deviennent
+`auth.token.role == 'admin'` sur les chemins sensibles).
+
+**Pourquoi c'est en attente (pas ramé à l'aveugle)** : migration d'AUTH sur une DB **live (258 employés)**,
+**intestable depuis l'environnement Claude Code** (réseau bloqué). La ramer = risque de verrouiller tout
+le monde (règles #54/#81/#98). À faire en **CANARI** : infra isolée + activation sur TON device d'abord,
+vérif, puis bascule globale, rollback armé (`deploy-cmcteams-rules.yml` input `open`).
+
+**Déclencheur** : dis **« go canari »** → je construis l'infra isolée (worker tokens par rôle + règles
+prêtes), SANS toucher la prod tant que tu n'actives pas. Aucune action manuelle pour toi avant ça.
+
+## 🔑 EN COURS — Restreindre les clés Web Firebase (P3, par API) — MAJ 2026-06-19
+Pas-à-pas exact fourni (console GCP, 2 projets `cmcteams-c16ab` + `kdmc-clients`, restriction **par API**
+PAS par référent — sinon ça casse les workers SSO). Action 100% à toi (pas d'accès GCP de mon côté).
+Reste à confirmer « fait » + test connexion cmcteams.kd-mc.com.
+
 ## 🤖 OPTIONNEL — Réactiver pleinement l'Agent KDMC (Vercel) — MAJ 2026-06-19
 Le spam Telegram « Agent KDMC crash : Firebase 401 » est **déjà coupé** (anti-spam déployé) et le code
 de l'agent sait s'authentifier (compte de service). Pour qu'il **relise vraiment** ta base (surveillance auto) :
