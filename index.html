@@ -4007,7 +4007,20 @@ function fbRestoreKey(k){return k.replace(/\uff0e/g,".");}
 var _syncQueue={};
 function _syncQueueAdd(k,v){_syncQueue[k]={v:v,ts:Date.now()};ls("cmc_sync_queue",_syncQueue);_updateSyncBadge();}
 function _syncQueueRemove(k){delete _syncQueue[k];ls("cmc_sync_queue",_syncQueue);_updateSyncBadge();}
-function _updateSyncBadge(){
+/* v9.821 anti-flicker boot offline : throttle le RYTHME de rendu des badges sync.
+   Au boot hors-ligne le compteur grimpe 0→N → N mutations DOM (audit:stability
+   topbar 256/6s). Coalesce à ≤1/s, rend toujours la valeur courante. Ne touche
+   JAMAIS la logique de sync (juste la fréquence de rendu du badge). */
+var _sbS1={t:0,p:false}, _sbS2={t:0,p:false};
+function _sbThrottle(s,fn){
+  var now=Date.now();
+  if(now-s.t>=1000){ s.t=now; fn(); return; }
+  if(s.p) return;
+  s.p=true;
+  setTimeout(function(){ s.p=false; s.t=Date.now(); fn(); }, 1000-(now-s.t));
+}
+function _updateSyncBadge(){ _sbThrottle(_sbS1,_updateSyncBadgeNow); }
+function _updateSyncBadgeNow(){
   var el=document.getElementById("syncBadge");
   if(!el)return;
   var n=Object.keys(_syncQueue).length;
@@ -4115,7 +4128,8 @@ function _cbStatus(){
 
 // v9.138 — Optimistic UI : compteur syncs en vol pour badge "Sync..."
 var _fbPendingWrites=0;
-function _fbShowSyncBadge(){
+function _fbShowSyncBadge(){ _sbThrottle(_sbS2,_fbShowSyncBadgeNow); }
+function _fbShowSyncBadgeNow(){
   var el=document.getElementById("syncBadge");
   if(!el)return;
   // v9.795 anti-flicker : idempotent (pas de mutation DOM si inchang\u00e9)
@@ -5399,7 +5413,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.820";
+var APP_VER="v9.821";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -27519,36 +27533,9 @@ function copyPrevMonthPlanning(){
   }
 }
 // v9.165 — Export CSV planning complet du mois (admin)
-function exportPlanningCSV(year,month){
-  if(!A.user||A.user.id!==AID){toast("\u26a0 R\u00e9serv\u00e9 admin","err");return;}
-  var pl=gpl(year,month)||{};
-  var days=getDays(year,month);
-  var header=["Matricule","Nom","Equipe","Famille","Role"];
-  for(var d=1;d<=days;d++)header.push("J"+d);
-  header.push("Trav","Repos");
-  var rows=[header.join(";")];
-  A.employees.filter(function(e){return isEmpActive(e,year,month);}).forEach(function(e){
-    var r=pl[e.id]||{};
-    var travN=0,repN=0;
-    var cells=[e.id,'"'+(e.name||"").replace(/"/g,'""')+'"',e.team||"",e.family||"",e.role||""];
-    for(var d=1;d<=days;d++){
-      var c=r[d]||"";
-      cells.push(c);
-      if(c==="RH"||c==="R")repN++;
-      else if(c)travN++;
-    }
-    cells.push(travN,repN);
-    rows.push(cells.join(";"));
-  });
-  var csv="\ufeff"+rows.join("\r\n"); // BOM UTF-8 pour Excel FR
-  var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement("a");
-  a.href=url;a.download="planning-"+year+"-"+("0"+(month+1)).slice(-2)+".csv";
-  document.body.appendChild(a);a.click();
-  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},200);
-  toast("\ud83d\udcca Planning CSV export\u00e9 ("+(rows.length-1)+" emp, "+days+" jours)");
-}
+/* v9.821 : exportPlanningCSV(year,month) supprim\u00e9 \u2014 code mort (lesson #108).
+   La d\u00e9f globale gagnante exportPlanningCSV() (plus bas, en-t\u00eate paie enrichi) la
+   masquait ; les call sites passent A.year,A.month \u2192 comportement identique. */
 // Stats complètes pour un employé sur une plage (mois ou année)
 // scope = {y:2026, m:3} pour un mois, {y:2026} pour une année, {} pour carrière
 function calcStats(empId,scope){
