@@ -44,7 +44,7 @@ jobs:
 
       - name: Validate JSON files
         run: |
-          for f in manifest.json firebase-rules.json; do
+          for f in manifest.json firebase-rules-apex.json; do
             if [ -f "$f" ]; then
               node -e "JSON.parse(require('fs').readFileSync('$f'))" && echo "✅ $f valide"
             fi
