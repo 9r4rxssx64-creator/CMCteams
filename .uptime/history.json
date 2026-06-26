@@ -1,22 +1,5 @@
 [
   {
-    "ts": "2026-04-28T19:57:37Z",
-    "results": [
-      {
-        "url": "https://9r4rxssx64-creator.github.io/CMCteams/",
-        "code": "200",
-        "ms": 416,
-        "status": "ok"
-      },
-      {
-        "url": "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/",
-        "code": "200",
-        "ms": 174,
-        "status": "ok"
-      }
-    ]
-  },
-  {
     "ts": "2026-04-28T21:15:07Z",
     "results": [
       {
@@ -10757,6 +10740,29 @@
         "url": "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/",
         "code": "200",
         "ms": 50,
+        "status": "ok"
+      }
+    ]
+  },
+  {
+    "ts": "2026-06-26T16:00:48Z",
+    "results": [
+      {
+        "url": "https://9r4rxssx64-creator.github.io/CMCteams/",
+        "code": "200",
+        "ms": 148,
+        "status": "ok"
+      },
+      {
+        "url": "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/",
+        "code": "200",
+        "ms": 88,
+        "status": "ok"
+      },
+      {
+        "url": "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/",
+        "code": "200",
+        "ms": 62,
         "status": "ok"
       }
     ]
