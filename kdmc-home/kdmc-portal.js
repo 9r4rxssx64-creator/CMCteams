@@ -254,7 +254,10 @@
       var a = e.target && e.target.closest ? e.target.closest('a.card') : null;
       if (!a || !a.getAttribute('href')) return;
       var host; try { host = new URL(a.href).hostname; } catch (_) { return; }
-      if (host !== 'apex-chat.kd-mc.com') return; /* seul consommateur du fragment */
+      /* Consommateurs connus du fragment (lisent+nettoient #kdmc_sso=) : Apex Chat ET
+         le Dashboard boutiques (cookie isolé en PWA iOS → besoin du pass Bearer). Ne
+         JAMAIS décorer une app à routeur #hash qui ne consomme pas le jeton (leçon #101). */
+      if (host !== 'apex-chat.kd-mc.com' && host !== 'dashboard.kd-mc.com') return;
       var t = (window.kdmcSSO && window.kdmcSSO.token) ? window.kdmcSSO.token() : '';
       if (!t) return;
       var base = a.href.replace(/([#&])kdmc_sso=[^&]*/, '$1').replace(/[#&]+$/, '');
