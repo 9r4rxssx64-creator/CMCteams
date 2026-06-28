@@ -32,7 +32,11 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
     handleFileImport(inp);
   }, { b64, name: pdfRel.split('/').pop(), y: year, m: monthIdx });
   await page.waitForFunction((key) => { const ov = (window.A && A.overrides && A.overrides[key]) || null; return ov && Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length > 50; }, year + '-' + monthIdx, { timeout: 45000 }).catch(() => {});
-  await page.waitForTimeout(3000); // laisse la passe géométrique différée (900ms) + détection équipes finir
+  await page.waitForTimeout(1500);
+  // DÉTERMINISME : forcer la passe géométrique finale (différée 900ms) à se TERMINER
+  // synchroniquement avant la lecture — sinon la couverture dépend du timing (race).
+  await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
+  await page.waitForTimeout(500);
   const out = await page.evaluate(({ key, year, monthIdx, MOIS }) => {
     const ov = A.overrides[key] || {};
     const days = new Date(year, monthIdx + 1, 0).getDate();
@@ -100,4 +104,8 @@ async function main() {
   writeFileSync(resolve(__dirname, 'boards-gen.js'), js);
   console.log('→ tools/departs/boards-gen.js écrit (' + js.length + ' octets, ' + Object.keys(boards).length + ' boards, ' + Object.keys(mirror).length + ' miroirs)');
 }
-main().catch(e => { console.error(e); process.exit(1); });
+export { importMonth, MOIS };
+// Exécution directe (génération du fichier) — pas quand importé (cross-check).
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch(e => { console.error(e); process.exit(1); });
+}

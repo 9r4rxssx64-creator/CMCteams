@@ -2042,3 +2042,23 @@ Dans Réglages → "🎙 Voice Bio" :
 4. **Le matricule SBM est la clé de jonction** entre le compte domaine et la fiche employé CMCteams (`A.reg[U…]`). Non-SBM = pas de matricule = pas de jonction CMCteams.
 
 S'applique : domaine kd-mc.com (portal kdmc-home), CMCteams, page Départs, toutes apps du domaine.
+
+---
+
+## 🤒 MALADIE LONGUE DURÉE = noms en ROUGE (Kevin 2026-06-28)
+
+PORASSO C, ROBIN M, CAPRA C (signalés par vVerify « dans le PDF sans grille ») sont
+en **maladie longue durée**. Ce sont les noms écrits en **rouge** dans le PDF
+(marqueur `{{REDNAME}}` à l'extraction) : période `1 30`/`1 31` mais **pas de grille
+d'horaires** → doivent être traités comme **M (maladie) sur toute la période**, donc
+affichés dans le groupe **Maladie** (et non comptés comme « erreur de couverture »).
+→ TODO parser : un nom en `{{REDNAME}}` avec période mais sans codes journaliers = M intégral.
+
+## 🎨 LIEUX = NOMENCLATURE COULEURS (rappel Kevin 2026-06-28)
+
+Sur l'import, le **lieu** vient de la **couleur de fond + suffixe du code** (cf. sections
+« Nomenclature visuelle » / « Mapping code → lieu » plus haut) : suffixe `*` (ou `CDP`) =
+**Café de Paris (CCDP)** → ORANGE ; `"`/`'` = CMC/Convention ; code de base = CMC.
+**En général seuls les horaires Café de Paris (`*`) changent.** La vue ✅ Vérifier ne doit
+PAS dire « 0 lieu » : le lieu EST encodé par la couleur/suffixe (la page Départs le rend
+déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomenclature couleur (CDP/CMC/CCDP).
