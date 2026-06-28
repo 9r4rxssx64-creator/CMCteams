@@ -28,6 +28,7 @@ async function main() {
   await ctx.route(/cdnjs\.cloudflare\.com\/.*pdf\.worker\.min\.js/, r => r.fulfill({ status: 200, contentType: 'application/javascript', body: PDFW }));
   const page = await ctx.newPage();
   const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.addInitScript(() => { window.__CMC_NO_SEED = true; });
   await page.goto('file://' + resolve(root, 'index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => typeof window.handleFileImport === 'function' && window.A && Array.isArray(A.employees), { timeout: 20000 });
   await page.evaluate(({ y, m }) => {

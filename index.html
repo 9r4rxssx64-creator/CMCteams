@@ -1244,6 +1244,11 @@ html[data-theme="light"] #topbar{
 <div id="fab-menu" role="menu" aria-label="Menu actions rapides"></div>
 <!-- v9.699 Kevin "Enlève la version en dorée qui reste sur toutes les vu. MAJ force auto marche, version écrite à la connexion." -->
 <!-- Badge cmc-version-badge supprimé (était redondant avec version login). -->
+<!-- v9.824 — SEED planning partagé (généré depuis les vrais PDF, même source que la page
+     Départs). Chargé AVANT l'app ; appliqué en affichage pour les mois sans données live
+     (jamais d'écrasement, aucun push Firebase). Permet d'intégrer un nouveau mois sans
+     que l'admin importe. Absent/404 → l'app fonctionne normalement (no-op). -->
+<script src="/CMCteams/tools/shared/planning-seed.js" onerror="window.__cmcSeedLoadErr=1"></script>
 <script>
 // v9.45 \u2014 Error boundary global renforc\u00e9 + unhandledrejection
 (function(){
@@ -4288,6 +4293,9 @@ function fbApplyData(k,v){
       }
     }catch(_){}
     A.overrides=vc;
+    // v9.824 — Firebase remplace A.overrides en entier → re-applique le SEED pour les
+    // mois absents de Firebase (idempotent, ne touche jamais un mois live présent).
+    try{if(typeof _cmcApplyPlanningSeed==="function")_cmcApplyPlanningSeed();}catch(_){}
     try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
   }
   // v9.615 — Sync A.overrides_meta cross-device (visual markers: bg, fg, star, ff)
@@ -5436,10 +5444,40 @@ try{_rebuildIndexes();}catch(_){}
   }
   if(clean.length!==A.employees.length){A.employees=clean;ls("cmc_e",A.employees);}
 })();
+// v9.824 (Kevin « tu intègres toi-même les nouveaux plannings dans l'app ») —
+// SEED de planning partagé (tools/shared/planning-seed.js, généré depuis les VRAIS
+// PDF, MÊME source que la page Départs). Appliqué EN MÉMOIRE/AFFICHAGE pour les mois
+// que l'app n'a PAS en local (jamais d'écrasement des données live, AUCUN push
+// Firebase, aucune persistance ls() qui syncerait). La détection d'équipe re-tourne
+// ensuite sur ces cellules (comme un import). Désactivable via window.__CMC_NO_SEED
+// (harness de test : on teste l'import brut, pas le seed).
+function _cmcApplyPlanningSeed(){
+  try{
+    if(window.__CMC_NO_SEED)return 0;
+    var S=window.CMC_PLANNING_SEED; if(!S||!S.months)return 0;
+    var applied=0;
+    Object.keys(S.months).forEach(function(key){
+      var m=S.months[key]; if(!m||!m.ov)return;
+      var cur=A.overrides[key]||{};
+      var hasLive=Object.keys(cur).some(function(id){return cur[id]&&Object.keys(cur[id]).length>0;});
+      if(hasLive)return; // données live (import/Firebase) = priorité absolue → on ne touche pas
+      var byId={}; A.employees.forEach(function(e){if(e&&e.id)byId[e.id]=e;});
+      (m.emps||[]).forEach(function(se){ if(!se||!se.id)return; if(!byId[se.id]){ var ne={id:se.id,name:se.name,family:se.family||"bj",teamHistory:{},familyHistory:{}}; A.employees.push(ne); byId[se.id]=ne; } });
+      var row={}; Object.keys(m.ov).forEach(function(id){ row[id]={}; Object.keys(m.ov[id]).forEach(function(d){ row[id][d]=m.ov[id][d]; }); });
+      A.overrides[key]=row;
+      if(m.mirror&&Object.keys(m.mirror).length){ try{localStorage.setItem("cmc_team_mirror_"+key,JSON.stringify(m.mirror));}catch(_){} }
+      if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[id]; if(e){ if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]=m.fam[id]; } }); }
+      applied++;
+    });
+    if(applied){ try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){} try{if(typeof _rebuildIndexes==="function")_rebuildIndexes();}catch(_){} console.info("[v9.824 seed] "+applied+" mois intégrés (affichage, sans écrasement ni push)"); }
+    return applied;
+  }catch(e){ try{console.warn("[v9.824 seed]",e&&e.message);}catch(_){} return 0; }
+}
+// (appliqué plus tard, après chargement d'état + purges boot — voir _cmcApplyPlanningSeed)
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.823";
+var APP_VER="v9.824";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9124,6 +9162,10 @@ try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontal
     }
   }
 })();
+// v9.824 — applique le SEED de planning partagé APRÈS la restauration de session
+// (donc après le chargement d'état). Idempotent (hasLive guard : n'écrase jamais un
+// mois live, jamais de push Firebase). Toujours exécuté (pas réservé à l'admin).
+try{if(typeof _cmcApplyPlanningSeed==="function")_cmcApplyPlanningSeed();}catch(_seedBoot){}
 /* v9.798 — Auto-login « compte unique » kd-mc.com (Face ID prouvé). ADDITIF + fail-open :
    n'agit QUE si AUCUNE session locale (cmc_uid) ET UNIQUEMENT pour le propriétaire admin
    PROUVÉ par Face ID (whoami.verified === true ET whoami.admin === true). Ne touche JAMAIS

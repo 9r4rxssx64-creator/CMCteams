@@ -12,6 +12,7 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
   const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.addInitScript(() => { window.__CMC_NO_SEED = true; });
   await page.goto('file://' + resolve(__dirname, '../index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => typeof window.doImport === 'function' && window.A && Array.isArray(A.employees), { timeout: 20000 });
   await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); A.year = 2026; A.month = 6; A.overrides = A.overrides || {}; delete A.overrides['2026-6']; });
