@@ -145,12 +145,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.11.3</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.12.0</div>
 <div class="toast" id="toast"></div>
 
+<script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.11.3";
+var APP_VER="v1.12.0";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -266,9 +267,33 @@ function buildAppCmcBoards(){
   return added;
 }
 var _appCmcCount=buildAppCmcBoards();
+// v1.12 (Kevin « mets à jour avec les nouveaux plannings ») — fusionne les boards
+// GÉNÉRÉS depuis les VRAIS PDF (Août V1 + Juillet V2, parser géométrique validé,
+// lessons #66-77 / #104-114). Rend la page AUTONOME : elle marche SANS ouvrir
+// l'app (fini le « Données introuvables ») et couvre tous les mois fournis.
+// Remplace les boards hardcodés des mois régénérés (évite doublons ancien/nouveau).
+var DEP_MIRROR={}, DEP_GEN_MONTHS=[];
+(function(){
+  try{
+    var G=window.DEPARTS_GEN; if(!G||!G.boards)return;
+    var covered={}; (G.months||[]).forEach(function(m){covered[m.year+"/"+m.monthIdx]=1;DEP_GEN_MONTHS.push(m);});
+    Object.keys(BOARDS).forEach(function(id){var b=BOARDS[id];if(b&&covered[b.year+"/"+b.monthIdx])delete BOARDS[id];});
+    Object.keys(G.boards).forEach(function(id){ var b=G.boards[id]; var dy=b.days||31;
+      BOARDS[id]={label:b.label,month:b.month,year:b.year,monthIdx:b.monthIdx,days:dy,kind:b.kind||undefined,key:"cmc_dep_"+id,
+        people:(b.people||[]).map(function(p){var c={};for(var d=1;d<=dy;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";return {name:p.name,id:p.id||null,codes:c};})};
+    });
+    if(G.mirror)Object.keys(G.mirror).forEach(function(a){DEP_MIRROR[a]=G.mirror[a];DEP_MIRROR[G.mirror[a]]=a;});
+  }catch(e){ try{console.warn("[DEPARTS_GEN merge]",e&&e.message);}catch(_){} }
+})();
 var BID=null, B=null;
-function defaultBoard(){ var now=new Date(), k=Object.keys(BOARDS); // mois courant en priorité
-  var cur=k.filter(function(id){var b=BOARDS[id];return b.year===now.getFullYear()&&b.monthIdx===now.getMonth()&&b.kind!=="abs";});
+function defaultBoard(){ var k=Object.keys(BOARDS);
+  // 1) board non-abs du mois GÉNÉRÉ le plus récent (Août > Juillet) — données à jour
+  if(DEP_GEN_MONTHS&&DEP_GEN_MONTHS.length){
+    var ms=DEP_GEN_MONTHS.slice().sort(function(a,b){return (b.year*12+b.monthIdx)-(a.year*12+a.monthIdx);});
+    for(var i=0;i<ms.length;i++){ var hit=k.filter(function(id){var b=BOARDS[id];return b.year===ms[i].year&&b.monthIdx===ms[i].monthIdx&&b.kind!=="abs";}); if(hit[0])return hit[0]; }
+  }
+  // 2) sinon mois courant
+  var now=new Date(); var cur=k.filter(function(id){var b=BOARDS[id];return b.year===now.getFullYear()&&b.monthIdx===now.getMonth()&&b.kind!=="abs";});
   return cur[0]||k[0]; }
 
 var ST=null;
@@ -466,11 +491,20 @@ function allNames(){ var set={},out=[]; Object.keys(BOARDS).forEach(function(k){
   (b.people||[]).forEach(function(p){ if(!set[p.name]){ set[p.name]=1; out.push(p.name); } }); }); out.sort(); return out; }
 function boardForName(nm){ var ks=Object.keys(BOARDS); for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
   if((b.people||[]).some(function(p){return p.name===nm;})) return ks[i]; } return null; }
-function mirrorBoardId(id){ if(!id)return null; if(/m$/.test(id)){ var base=id.replace(/m$/,""); return BOARDS[base]?base:null; } var m=id+"m"; return BOARDS[m]?m:null; }
+function mirrorBoardId(id){ if(!id)return null;
+  if(DEP_MIRROR[id]&&BOARDS[DEP_MIRROR[id]])return DEP_MIRROR[id]; // miroir explicite (données générées)
+  if(/m$/.test(id)){ var base=id.replace(/m$/,""); return BOARDS[base]?base:null; } var m=id+"m"; return BOARDS[m]?m:null; }
+// v1.12 — résout une personne par matricule SBM (U…) → {bid, name}
+function personById(uid){ if(!uid)return null; var U=String(uid).toUpperCase(); var ks=Object.keys(BOARDS);
+  for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
+    var p=(b.people||[]).find(function(x){return x.id&&String(x.id).toUpperCase()===U;}); if(p)return {bid:ks[i],name:p.name}; } return null; }
 function fillMeSel(){ var s=document.getElementById("meSel"); if(!s)return; s.innerHTML="";
   var o0=document.createElement("option"); o0.value=""; o0.textContent="👤 Ma vue…"; s.appendChild(o0);
   allNames().forEach(function(n){ var o=document.createElement("option"); o.value=n; o.textContent=n; if(n===ME)o.selected=true; s.appendChild(o); }); }
-function setMe(nm){ ME=nm; try{localStorage.setItem("cmc_dep_me",nm);}catch(e){}
+function setMe(val){ var nm=val;
+  // v1.12 — accepte aussi un matricule SBM (U…) : connexion par identifiant employé
+  if(/^u\w*\d/i.test(val||"")){ var hit=personById(val); if(hit){ nm=hit.name; } }
+  ME=nm; try{localStorage.setItem("cmc_dep_me",nm);}catch(e){}
   if(nm){ var bid=boardForName(nm); if(bid&&bid!==BID){ switchBoard(bid); return; } } render(); }
 
 function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; toast("Verrouillé — lecture seule"); }
@@ -484,6 +518,11 @@ async function checkPin(){ var h=await sha256((document.getElementById("pinIn").
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&document.getElementById("pinModal").classList.contains("on"))checkPin(); });
 function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(window._tt); window._tt=setTimeout(function(){t.classList.remove("on");},2200); }
 function _appDiagText(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
+  if(window.DEPARTS_GEN&&window.DEPARTS_GEN.months&&window.DEPARTS_GEN.months.length){
+    var _ms=window.DEPARTS_GEN.months.map(function(m){return m.label;}).join(" + ");
+    var _nb=Object.keys(window.DEPARTS_GEN.boards||{}).length;
+    return "✅ Plannings à jour : "+_ms+" — "+_nb+" équipes intégrées (pas besoin d'ouvrir l'app).";
+  }
   if(!d.cmc_e&&!d.ov) return "📥 Données de l'app introuvables — ouvre d'abord l'app CMCteams (même iPhone) puis reviens ici.";
   if(!d.hasKey) return "📥 Aucun planning juillet 2026 dans l'app — importe le PDF de juillet dans CMCteams, puis recharge.";
   var fam=["roulettes","cmc","amenage"].filter(function(f){return c[f];}).map(function(f){return ({roulettes:"Roulettes",cmc:"Cartes CMC",amenage:"CMC aménagé"}[f])+" "+c[f];});
@@ -493,7 +532,9 @@ function _appDiagText(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
 function showAppDiag(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
   toast(_appDiagText()+" | app:"+(d.cmc_e?"oui":"non")+" planning:"+(d.hasKey?"oui":"non")+" R:"+(c.roulettes||0)+" C:"+(c.cmc||0)+" A:"+(c.amenage||0)); }
 function paintAppDiag(){ var el=document.getElementById("appDiag"); if(!el)return;
-  var d=window._appBoardDiag||{}; var warn=(!d.cmc_e||!d.hasKey||!(d.added>0));
+  var d=window._appBoardDiag||{};
+  var hasGen=!!(window.DEPARTS_GEN&&window.DEPARTS_GEN.months&&window.DEPARTS_GEN.months.length);
+  var warn=hasGen?false:(!d.cmc_e||!d.hasKey||!(d.added>0));
   el.innerHTML=(warn?"<span class='warn'>":"<b style='color:var(--gold2)'>")+_appDiagText()+(warn?"</span>":"</b>"); }
 function forceRefresh(){ var go=function(){location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());};
   if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));})
@@ -501,7 +542,15 @@ function forceRefresh(){ var go=function(){location.replace(location.href.split(
 
 document.getElementById("ver").textContent=APP_VER;
 var ME=(function(){try{return localStorage.getItem("cmc_dep_me")||"";}catch(e){return "";}})();
-BID=(function(){try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
+// v1.12 — lien profond ?me=U11804 (matricule SBM) ou ?me=DESARZENS+K (nom) →
+// ouvre directement sur l'équipe de l'employé (connexion par identifiant).
+var _MEBID=null;
+try{ var _mq=new URLSearchParams(location.search).get("me");
+  if(_mq){ if(/^u\w*\d/i.test(_mq)){ var _h=personById(_mq); if(_h){ ME=_h.name; _MEBID=_h.bid; } } else { ME=_mq; _MEBID=boardForName(_mq); }
+    try{localStorage.setItem("cmc_dep_me",ME);}catch(_){} }
+}catch(_){}
+BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
+  try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
 fillSel(); fillMeSel(); load(); render(); paintAppDiag();
 if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
 </script>

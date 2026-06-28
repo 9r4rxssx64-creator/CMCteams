@@ -25,6 +25,7 @@ const ROUTES = {
   'dashboard.kd-mc.com': '/CMCteams/shops/dashboard',
   'sourcing.kd-mc.com': '/CMCteams/shops/sourcing',
   'coffre.kd-mc.com': '/CMCteams/coffre-fort',
+  'departs.kd-mc.com': '/CMCteams/tools/departs',
 };
 
 export default {
