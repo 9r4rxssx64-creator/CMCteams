@@ -5,54 +5,46 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const file = 'file://' + resolve(__dirname, 'index.html');
 const b = await chromium.launch({ headless: true });
 let pass=0, fail=0; const t=(l,ok)=>{console.log((ok?'  ✅ ':'  ❌ ')+l);ok?pass++:fail++;};
-
-// 1) load default
-let ctx = await b.newContext(); let page = await ctx.newPage();
+const ctx = await b.newContext(); const page = await ctx.newPage();
 const errs=[]; page.on('pageerror',e=>errs.push(String(e)));
-await page.goto(file,{waitUntil:'networkidle',timeout:30000});
-await page.waitForTimeout(500);
+await page.goto(file,{waitUntil:'networkidle',timeout:30000}); await page.waitForTimeout(500);
+
 const r = await page.evaluate(()=>{
-  const gen = window.DEPARTS_GEN;
-  const ids = Object.keys(BOARDS);
-  const aout = ids.filter(id=>BOARDS[id].monthIdx===7);
-  const juil = ids.filter(id=>BOARDS[id].monthIdx===6);
-  const def = (typeof BID!=='undefined')?BID:null;
-  // duplicates? old hardcoded juillet ids like 2026-07-bj1 should be gone
-  const oldJuil = ids.filter(id=>/^2026-07-(bj1|roul1|roul2|abs)$/.test(id));
-  // mirror of Kevin's juillet team
-  const kJuil = ids.find(id=>id.indexOf('2026-07')===0 && BOARDS[id].people.some(p=>/DESARZENS K/.test(p.name)));
-  const kMir = kJuil? mirrorBoardId(kJuil):null;
-  // setMe by matricule
-  let meByIdName=null; try{ setMe('U11804'); meByIdName=ME; }catch(e){ meByIdName='ERR:'+e.message; }
-  const curBoardLabel = (typeof B!=='undefined'&&B)?B.label:'(none)';
-  return { genBoards:Object.keys(gen.boards).length, genMonths:gen.months.map(m=>m.label),
-    aout:aout.length, juil:juil.length, oldJuil:oldJuil.length, def, defLabel:BOARDS[def]?BOARDS[def].label:'?',
-    kJuil, kMir, kMirLabel:kMir?BOARDS[kMir].label:'(aucun)', meByIdName, curBoardLabel };
+  const ids=Object.keys(BOARDS);
+  const months={}; ids.forEach(id=>{const b=BOARDS[id];months[b.year+'-'+b.monthIdx]=1;});
+  const moSel=document.getElementById('moSel');
+  const moOpts=moSel?[...moSel.options].map(o=>o.value):[];
+  // no stale June board
+  const hasJune = ids.some(id=>BOARDS[id].monthIdx===5);
+  // connect Kevin, then test month switching
+  setMe('DESARZENS K');
+  setMonth('2026-7'); const aoutBID=BID, aoutLabel=B.label;       // Août
+  setMonth('2026-6'); const juilBID=BID, juilLabel=B.label, juilMir=mirrorBoardId(BID); // Juillet
+  // board dropdown scoped to current month (Juillet) — count
+  const bs=document.getElementById('boardSel'); const scopedCount=[...bs.querySelectorAll('option')].length;
+  // search across months
+  const ts=document.getElementById('teamSearch'); ts.value='PUGNETTI'; fillSel();
+  const searchCount=[...bs.querySelectorAll('option')].filter(o=>o.value).length;
+  ts.value=''; fillSel();
+  // readability: me-row name cell opaque background
+  setMonth('2026-6');
+  const meNom=document.querySelector('tr.me .cNom');
+  const bg=meNom?getComputedStyle(meNom).backgroundColor:'';
+  const opaque = /rgb\(/.test(bg) && !/rgba\([^)]*,\s*0?\.\d+\)/.test(bg);
+  return { totalBoards:ids.length, months:Object.keys(months), moOpts, hasJune,
+    aoutBID, aoutLabel, juilBID, juilLabel, juilMir, juilMirLabel:juilMir?BOARDS[juilMir].label:'', scopedCount, searchCount, bg, opaque, totalCount:ids.length };
 });
 t('aucune pageerror', errs.length===0);
-t('boards générés mergés (>70)', r.genBoards>70);
-t('mois générés = Août + Juillet', r.genMonths.length===2);
-t('boards Août présents', r.aout>30);
-t('boards Juillet présents', r.juil>30);
-t('anciens boards Juillet hardcodés supprimés (0 doublon)', r.oldJuil===0);
-t('défaut = Août (mois le plus récent)', /Août/.test(r.defLabel));
-t('équipe Juillet de Kevin trouvée', !!r.kJuil);
-t('miroir Juillet de Kevin résolu (Éq.2)', /Éq\.2\b/.test(r.kMirLabel));
-t('setMe("U11804") → DESARZENS K', r.meByIdName==='DESARZENS K');
-console.log('   defaut:',r.defLabel,'| Kevin juil:',r.kJuil,'→ miroir:',r.kMirLabel);
-await ctx.close();
-
-// 2) deep-link ?me=U11804 → opens on Kevin's board
-ctx = await b.newContext(); page = await ctx.newPage();
-const errs2=[]; page.on('pageerror',e=>errs2.push(String(e)));
-await page.goto(file+'?me=U11804',{waitUntil:'networkidle',timeout:30000});
-await page.waitForTimeout(400);
-const r2 = await page.evaluate(()=>({ me:ME, board:(typeof B!=='undefined'&&B)?B.label:'?', hasKevin:(B&&B.people||[]).some(p=>/DESARZENS K/.test(p.name)) }));
-t('?me=U11804 : ME = DESARZENS K', r2.me==='DESARZENS K');
-t('?me=U11804 : ouvre sur l\'équipe de Kevin', r2.hasKevin===true);
-console.log('   deep-link board:',r2.board,'| me:',r2.me, errs2.length?('· err '+errs2[0]):'');
-await ctx.close();
-
-await b.close();
-console.log('\n'+(fail===0?'✅ DEPARTS OK':'❌ KO')+'  PASS:'+pass+' FAIL:'+fail);
+t('seulement 2 mois (Août + Juillet), pas de Juin', r.months.length===2 && !r.hasJune);
+t('sélecteur Mois = 2 options', r.moOpts.length===2);
+t('setMonth(Août) → équipe de Kevin Éq.11', /Éq\.11\b/.test(r.aoutLabel));
+t('setMonth(Juillet) → équipe de Kevin Éq.13', /Éq\.13\b/.test(r.juilLabel));
+t('miroir Juillet de Kevin = Éq.2', /Éq\.2\b/.test(r.juilMirLabel));
+t('liste équipes SCOPÉE au mois (< 50, pas 81)', r.scopedCount>5 && r.scopedCount<50);
+t('recherche "PUGNETTI" trouve des résultats (tous mois)', r.searchCount>=1);
+t('nom (me) sur fond OPAQUE → lisible', r.opaque===true);
+console.log('   boards:',r.totalCount,'| mois:',r.moOpts.join(','),'| Août:',r.aoutLabel,'| Juil:',r.juilLabel,'→ miroir',r.juilMirLabel);
+console.log('   scopé/mois:',r.scopedCount,'options | recherche PUGNETTI:',r.searchCount,'| me-bg:',r.bg);
+await ctx.close(); await b.close();
+console.log('\n'+(fail===0?'✅ DEPARTS v1.12.1 OK':'❌ KO')+'  PASS:'+pass+' FAIL:'+fail);
 process.exit(fail===0?0:1);
