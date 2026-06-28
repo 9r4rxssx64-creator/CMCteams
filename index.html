@@ -5477,7 +5477,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.824";
+var APP_VER="v9.825";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36740,6 +36740,7 @@ function _cmcFinalGeometricFill(iy,im){
     try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_a){}
     try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_b){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_c){}
+    try{if(typeof _cmcApplyMaladieLongueDuree==="function")_cmcApplyMaladieLongueDuree(iy,im);}catch(_ld){}
     try{ls("cmc_ov",A.overrides);ls("cmc_e",A.employees);}catch(_e2){}
     try{if(typeof fbWrite==="function"){fbWrite("cmc_ov",A.overrides);fbWrite("cmc_e",A.employees);}}catch(_f){}
     try{if(typeof dc==="function"&&!window._silentReplayMode)dc();}catch(_g){}
@@ -37671,6 +37672,9 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     // existante de SA FAMILLE avec MÊME offset (data du mois courant uniquement,
     // pas d'historique → respecte règle "AUCUNE invention").
     try{_cmcFallbackUnassignedTeams(iy,im);}catch(_fbErr){console.warn("[v9.743 fallback]",_fbErr&&_fbErr.message);}
+    // v9.825 — maladie longue durée (PORASSO C/ROBIN M/CAPRA C) : nom dans le PDF sans
+    // grille → M intégral + équipe Maladie (en DERNIER, aucun détecteur ne l'écrase).
+    try{_cmcApplyMaladieLongueDuree(iy,im);}catch(_ldErr){console.warn("[v9.825 maladie-LD]",_ldErr&&_ldErr.message);}
     // v9.734 (Kevin 2026-05-23 "Aucune invention. Reproduction exacte de l'import") :
     // Le RESCUE PASS v9.733 (assignation par signature similaire) a été RETIRÉ.
     // Inférer une équipe à partir d'autres emps de signature similaire = INVENTION.
@@ -38944,6 +38948,65 @@ function _saveImportSnapshot(iy,im,sourceText){
 // avec le MÊME offset. Utilise UNIQUEMENT les données du mois courant
 // (pas d'historique) — respecte la règle Kevin "AUCUNE invention".
 // ═══════════════════════════════════════════════════════════════════════════
+// v9.825 (Kevin 2026-06-28 « Les 3 employés sont en maladie. Longue durée ») —
+// PORASSO C / ROBIN M / CAPRA C apparaissent dans le PDF (poste+nom+matricule+période)
+// SANS aucun code journalier (ce ne sont PAS des échecs parser : ce sont des maladies
+// longue durée, listées dans le roster mais sans grille). Règle métier documentée
+// (NOTES_USER « MALADIE LONGUE DURÉE = noms ROUGE ») : nom dans le PDF ⇒ ≥1 cellule
+// (règle absolue #1) → on remplit le mois entier de "M" + équipe "maladie". Liste
+// éditable (cmc_maladie_ld) — donnée métier, pas un hack ; n'agit QUE si le nom est
+// présent dans le texte source du mois (jamais d'invention pour un absent du PDF) et
+// ne remplit QUE les jours vides (ne masque aucun code réellement parsé).
+var CMC_MALADIE_LD_DEFAULT=["PORASSO C","ROBIN M","CAPRA C"];
+function _cmcMaladieLdList(){
+  try{var l=lg("cmc_maladie_ld",null);if(Array.isArray(l)&&l.length)return l;}catch(_){}
+  return CMC_MALADIE_LD_DEFAULT.slice();
+}
+function _cmcApplyMaladieLongueDuree(iy,im){
+  try{
+    var key=iy+"-"+im, days=getDays(iy,im);
+    var list=_cmcMaladieLdList(); if(!list.length)return 0;
+    // texte source du mois (pour vérifier « nom présent dans le PDF »)
+    var srcTxt="";
+    try{var se=lg("cmc_import_src_"+key,null);
+      if(se){srcTxt=(typeof se==="string")?se:(se.txt||se.text||"");}
+    }catch(_){}
+    if(!srcTxt&&window._lastImportText)srcTxt=String(window._lastImportText);
+    var srcUp=srcTxt?srcTxt.toUpperCase().replace(/\{\{[A-Z]+\}\}/gi,""):"";
+    A.overrides[key]=A.overrides[key]||{};
+    var applied=0;
+    list.forEach(function(rawNm){
+      var nm=String(rawNm||"").trim(); if(!nm)return;
+      var nmNorm=(typeof _cmcNormalizeName==="function")?_cmcNormalizeName(nm):nm.toUpperCase();
+      var nmUp=nm.toUpperCase();
+      // présence dans le PDF (nom complet OU « NOM Initiale » sans espace) — sinon on
+      // ne touche RIEN (l'employé n'est pas dans le planning de ce mois).
+      if(srcUp && srcUp.indexOf(nmUp)<0 && srcUp.indexOf(nmUp.replace(/\s+/g,""))<0)return;
+      // trouver l'employé (match nom normalisé) ou le créer
+      var emp=null;
+      for(var i=0;i<A.employees.length;i++){
+        var e=A.employees[i]; if(!e||!e.name)continue;
+        var en=(typeof _cmcNormalizeName==="function")?_cmcNormalizeName(e.name):String(e.name).toUpperCase();
+        if(en===nmNorm){emp=e;break;}
+      }
+      if(!emp){
+        emp={id:"U_LD_"+nmUp.replace(/[^A-Z0-9]/g,"").slice(0,12),name:nm,family:"bj",teamHistory:{},familyHistory:{}};
+        A.employees.push(emp);
+      }
+      if(!emp.teamHistory)emp.teamHistory={};
+      var row=A.overrides[key][emp.id]||{};
+      // M intégral : remplit UNIQUEMENT les jours vides (ne masque aucun code réel)
+      for(var d=1;d<=days;d++){ if(!row[d]&&!row[String(d)])row[d]="M"; }
+      A.overrides[key][emp.id]=row;
+      emp.teamHistory[key]="maladie";
+      applied++;
+    });
+    if(applied){ try{_cmcEnsureTeam("maladie");}catch(_){} try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
+      console.info("[v9.825 maladie-LD] "+applied+" employé(s) en maladie longue durée → M intégral + équipe Maladie");
+    }
+    return applied;
+  }catch(e){console.warn("[_cmcApplyMaladieLongueDuree]",e&&e.message);return 0;}
+}
 function _cmcFallbackUnassignedTeams(iy,im){
   var key=iy+"-"+im;
   var ov=A.overrides[key]||{};
