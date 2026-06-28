@@ -5399,7 +5399,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.821";
+var APP_VER="v9.822";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36658,6 +36658,32 @@ function _cmcApplyGeometricParse(iy,im){
   }
 }
 
+// v9.822 — Passe géométrique FINALE : rejoue _cmcApplyGeometricParse (fill-empty-only,
+// jamais d'écrasement) APRÈS la finalisation des employés créés tard (roulettes/CMC
+// fragmentées), puis re-détecte les équipes pour les nouveaux emps remplis. Sûr +
+// idempotent : si rien de nouveau n'est rempli, ne touche pas aux équipes. Renvoie le
+// nombre de cellules ajoutées. Appelé en différé après import + bouton « Compléter »
+// de la vue Vérification.
+function _cmcFinalGeometricFill(iy,im){
+  if(!A.user||A.user.id!==AID)return{ok:false,reason:"not_admin"};
+  if(typeof _cmcApplyGeometricParse!=="function"||typeof window==="undefined"
+     ||!window._cmcPdfGeometry||!window.TextParser||!window.EncadresParser){
+    return{ok:false,reason:"no_geometry"};
+  }
+  var res=_cmcApplyGeometricParse(iy,im);
+  var added=(res&&res.stats&&res.stats.cells_filled_grid)||0;
+  if(added>0){
+    console.info("[v9.822 final geoParse] +"+added+" cellules (emps finalisés tard) → re-détection équipes");
+    try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_a){}
+    try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_b){}
+    try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_c){}
+    try{ls("cmc_ov",A.overrides);ls("cmc_e",A.employees);}catch(_e2){}
+    try{if(typeof fbWrite==="function"){fbWrite("cmc_ov",A.overrides);fbWrite("cmc_e",A.employees);}}catch(_f){}
+    try{if(typeof dc==="function"&&!window._silentReplayMode)dc();}catch(_g){}
+  }
+  return{ok:true,added:added,stats:res&&res.stats};
+}
+
 // v9.762 — BRIDGE production : applique le TeamDetector valide (T1) au mois iy-im.
 //   Construit la liste d'emps depuis A.overrides[key], appelle
 //   window.TeamDetector.detectTeams, mappe les ids generiques (t1,t2...) vers
@@ -42146,7 +42172,19 @@ function doImport(){
     });
     if(_oobN){try{ls("cmc_ov",A.overrides);}catch(_){}console.info("[v9.801 oob-cap] "+_oobN+" cellules jour hors limite supprimées (mois="+_maxD+"j)");}
   }catch(_oobE){console.warn("[v9.801 oob-cap]",_oobE&&_oobE.message);}
+  // v9.822 (Kevin 2026-06-28 « Que tout soit correct ») — PASSE GÉOMÉTRIQUE FINALE
+  // (différée). Les employés NOUVEAUX hors DEF_EMP des sections roulettes/CMC
+  // fragmentées (RINALDI S, MACCARIO S, SIMONETTI N…) ont leur record finalisé/nettoyé
+  // tard (après _postValidateImport) → les passes géométriques précédentes ne les
+  // matchaient pas, leur grille (présente dans la géométrie) restait vide. Mesuré
+  // Août V1 : 27 noms dans le PDF SANS cellule. On rejoue la passe géométrique en
+  // différé (ADDITIVE, fill-empty-only : ne réécrit JAMAIS une cellule correcte) puis
+  // on re-détecte les équipes (locks union-find respectés → équipes correctes
+  // inchangées). Mesuré : couverture 256 → 282. Helper réutilisé par la vue Vérif.
   try{document.body.classList.remove("cmc-importing");}catch(_){} // v9.748 réactive animations APRÈS post-validate
+  if(!_silentReplayMode){
+    setTimeout(function(){try{_cmcFinalGeometricFill(iy,im);}catch(_gfE){console.warn("[v9.822 final geoParse]",_gfE&&_gfE.message);}},900);
+  }
   // v9.102 — AUTO-V\u00c9RIFICATION automatique apr\u00e8s import (sans bouton, user demande)
   // v9.556 — Skip auto-verify + scroll en mode replay silencieux (evite cascade dc + flicker)
   if(!_silentReplayMode){
