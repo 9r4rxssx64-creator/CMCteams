@@ -16776,6 +16776,7 @@ function _vMainImpl(){
     case"partage":  return vPartage();
     case"retrait":  return isAdm?vRetrait():"";
     case"import":   return isAdm?vImport():"";
+    case"verify":   return isAdm?vVerify():""; // v9.821 — vérification autonome (équipes/horaires/départs/lieux)
     case"importtests": return isAdm?vImportTestResults():""; // v9.521
     case"importversions": return isAdm?vImportVersions():""; // v9.596 — historique V1/V2/V3
     case"parserlearning": return isAdm?vParserLearning():""; // v9.524
@@ -23591,6 +23592,179 @@ function vAccueil(){
   return h+'</div>';
 }
 
+// v9.821 (Kevin 2026-06-28 « Fais en sorte de pouvoir vérifier dans l'app seul,
+// autonome. Que tout soit correct. Équipes, horaires, départs, lieux ») — Vue de
+// VÉRIFICATION AUTONOME : après un import, l'admin voit en 1 écran si tout est
+// correct (couverture, horaires/codes, équipes+repos cohérents, ordre de départ,
+// lieux, absences) avec ✅ / ⚠️ et le détail cliquable. Tout est calculé en LOCAL
+// depuis A.overrides (la donnée réelle de l'app) — pas besoin d'un outil externe
+// (l'outil Départs séparé ne lit pas le stockage de l'app sur iPhone, cf. PWA).
+function vVerify(){
+  var isAdm=A.user&&A.user.id===AID;
+  if(!isAdm) return "";
+  var y=A.year,m=A.month,key=y+"-"+m,days=getDays(y,m);
+  var ov=(A.overrides||{})[key]||{};
+  var pl=gpl(y,m);
+  var MFRl=(typeof MFR!=="undefined")?MFR:["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  var ABS={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,CDH:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,ABS:1,FL:1,HD:1,HC:1,CLM:1,MT:1,CEO:1,CSC:1,CSS:1};
+  function base(c){return String(c).toUpperCase().replace(/[C'"*:]+$/g,"");}
+  function isW(c){return c&&!ABS[base(c)];}
+  function restDays(eid){var a=[];for(var d=1;d<=days;d++){var c=(pl[eid]||{})[d];if(!c)continue;var u=base(c);if(u==="RH"||u==="R")a.push(d);}return a;}
+  function workedCount(eid){var n=0;for(var d=1;d<=days;d++){if(isW((pl[eid]||{})[d]))n++;}return n;}
+
+  var h='<div class="page bg-planning">';
+  // En-tête sticky : nav mois + re-vérifier
+  h+='<div class="cmc-sticky-header" style="position:sticky;top:0;z-index:20;background:rgba(10,20,12,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,162,39,.18);padding:8px 4px;margin:-4px -4px 10px -4px">'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +'<button class="btn ghost" onclick="prevM()" style="padding:7px 13px;font-size:20px;line-height:1">‹</button>'
+    +'<div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#d8cc9a">✅ Vérification</div><div style="font-size:13px;color:#a0cca0">'+esc(MFRl[m])+' '+y+'</div></div>'
+    +'<button class="btn ghost" onclick="dc()" title="Re-vérifier" style="padding:5px 10px;font-size:13px">🔄</button>'
+    +'<button class="btn ghost" onclick="nextM()" style="padding:7px 13px;font-size:20px;line-height:1">›</button>'
+    +'</div></div>';
+
+  if(!hasImportedData(y,m)){
+    h+='<div style="padding:30px 18px;text-align:center"><div style="font-size:50px">📭</div>'
+      +'<div style="font-size:18px;font-weight:800;color:#c9a227;margin:10px 0 6px">Aucun planning pour '+esc(MFRl[m])+' '+y+'</div>'
+      +'<div style="color:#a0cca0;font-size:14px;margin-bottom:14px">Importe le PDF du mois, puis reviens ici pour tout vérifier.</div>'
+      +'<button class="btn gold" onclick="sv(\'import\')">📥 Importer</button></div></div>';
+    return h;
+  }
+
+  var ids=Object.keys(ov).filter(function(id){return ov[id]&&Object.keys(ov[id]).length>0;});
+  var problems=0,warns=0;
+  function card(state,title,body){
+    var col=state==="ok"?"#3a8a50":state==="warn"?"#c9a227":"#e06060";
+    var ic=state==="ok"?"✅":state==="warn"?"⚠️":"❌";
+    return '<div style="margin:10px 0;border:1px solid '+col+'40;border-left:3px solid '+col+';border-radius:10px;overflow:hidden">'
+      +'<div style="padding:10px 14px;background:'+col+'14;font-size:15px;font-weight:800;color:'+col+'">'+ic+' '+esc(title)+'</div>'
+      +'<div style="padding:10px 14px;font-size:13px;color:#cdd6cd;line-height:1.6">'+body+'</div></div>';
+  }
+
+  // ── 1) COUVERTURE ───────────────────────────────────────────────
+  var actives=A.employees.filter(function(e){return isEmpActive(e,y,m);});
+  var actNoCell=actives.filter(function(e){return !(ov[e.id]&&Object.keys(ov[e.id]).length>0);});
+  // règle #1 : noms du texte source PDF sans cellule
+  var srcMissing=[];
+  try{
+    var src=(window._lastImportText||lg("cmc_import_src_"+key,"")||"").toUpperCase();
+    if(src){
+      actives.forEach(function(e){
+        var has=ov[e.id]&&Object.keys(ov[e.id]).length>0; if(has)return;
+        var sn=String(e.name||"").toUpperCase().replace(/\s+/g," ").trim();
+        if(sn.length>=4&&src.indexOf(sn)>=0)srcMissing.push(e.name);
+      });
+    }
+  }catch(_){}
+  var covState=srcMissing.length?"err":(actNoCell.length>5?"warn":"ok");
+  if(covState==="err")problems++;else if(covState==="warn")warns++;
+  var covBody=ids.length+' employés avec planning · '+actives.length+' actifs.';
+  if(srcMissing.length)covBody+='<br><b style="color:#e06060">'+srcMissing.length+' nom(s) présents dans le PDF mais SANS cellule (règle « tout le monde a un planning ») :</b> '+esc(srcMissing.slice(0,30).join(", "));
+  else if(actNoCell.length)covBody+='<br><span style="color:#c9a227">'+actNoCell.length+' actif(s) sans cellule ce mois (peut être normal : non présents au PDF).</span>';
+  else covBody+='<br>Tous les actifs présents au PDF ont un planning.';
+  h+=card(covState,"Couverture (tout le monde a un planning)",covBody);
+
+  // ── 2) HORAIRES & CODES ─────────────────────────────────────────
+  var oob=0,unknown={},cellTot=0;
+  ids.forEach(function(id){var r=ov[id];Object.keys(r).forEach(function(d){var n=+d;cellTot++;if(n<1||n>days)oob++;var c=r[d];if(!c)return;var bc=base(c);if(ABS[bc])return;if(!(CODES&&(CODES[c]||CODES[bc])))unknown[c]=(unknown[c]||0)+1;});});
+  var conf=[];try{conf=detectRepoConflicts(y,m)||[];}catch(_){}
+  var unkList=Object.keys(unknown);
+  var horState=(oob>0)?"err":(unkList.length||conf.length>5)?"warn":"ok";
+  if(horState==="err")problems++;else if(horState==="warn")warns++;
+  var horBody=cellTot+' cellules · '+oob+' hors-limite (doit être 0).';
+  if(unkList.length)horBody+='<br><span style="color:#c9a227">'+unkList.length+' code(s) non reconnu(s) : '+esc(unkList.slice(0,20).join(", "))+'</span>';
+  else horBody+='<br>Tous les codes horaires sont reconnus.';
+  if(conf.length)horBody+='<br><span style="color:#c9a227">'+conf.length+' anomalie(s) planning détectée(s) (repos/jours consécutifs).</span> <button class="btn ghost" style="font-size:12px;padding:3px 8px" onclick="sv(\'conflits\')">Voir détails →</button>';
+  h+=card(horState,"Horaires & codes",horBody);
+
+  // ── 3) ÉQUIPES (mêmes repos + cohérence) ────────────────────────
+  var WORK_RE=/^(\d+|r\d+|c\d+|b\d+)$/;
+  var teams={};
+  A.employees.forEach(function(e){var t=(e.teamHistory||{})[key];if(!t||!WORK_RE.test(t))return;if(!(ov[e.id]&&Object.keys(ov[e.id]).length))return;(teams[t]=teams[t]||[]).push(e);});
+  var tids=Object.keys(teams).sort(function(a,b){var na=parseInt(a.replace(/\D/g,""))||0,nb=parseInt(b.replace(/\D/g,""))||0;var fa=a.replace(/\d.*/,""),fb=b.replace(/\d.*/,"");return fa===fb?na-nb:fa.localeCompare(fb);});
+  var teamWarn=0,teamRows="";
+  var mir={};try{mir=lg("cmc_team_mirror_"+key,{})||{};}catch(_){}
+  tids.forEach(function(t){
+    var ms=teams[t];
+    // restKey des membres présents tout le mois (≥1 repos) — doit être identique
+    var keys={};ms.forEach(function(e){var rk=restDays(e.id).join(",");if(rk)keys[rk]=(keys[rk]||0)+1;});
+    var nKeys=Object.keys(keys).length;
+    var sizeBad=ms.length<2||ms.length>10;
+    var restBad=nKeys>2; // tolère équipe + 1 variante (CP partiels)
+    var st=(sizeBad||restBad)?"warn":"ok";
+    if(st==="warn")teamWarn++;
+    var col=st==="ok"?"#3a8a50":"#c9a227";
+    var famLbl=t.replace(/^r.*/,"Roul.").replace(/^c.*/,"CMC").replace(/^b.*/,"Bac.").replace(/^\d+$/,"BJ");
+    teamRows+='<div style="padding:6px 0;border-top:1px solid rgba(255,255,255,.05)">'
+      +'<span style="color:'+col+';font-weight:700">'+(st==="ok"?"✅":"⚠️")+' '+esc(famLbl)+' Éq.'+esc(t)+'</span> '
+      +'<span style="color:#9fb89f">· '+ms.length+' emp.'+(mir[t]?(' · miroir '+esc(mir[t])):'')+'</span>'
+      +(restBad?'<br><span style="color:#c9a227;font-size:12px">repos non homogènes ('+nKeys+' rotations distinctes) — vérifier</span>':'')
+      +(sizeBad?'<br><span style="color:#c9a227;font-size:12px">taille inhabituelle ('+ms.length+') — équipe trop '+(ms.length>10?'grande':'petite')+'</span>':'')
+      +'<br><span style="font-size:12px;color:#90a890">'+esc(ms.map(function(e){return e.name;}).slice(0,14).join(" · "))+(ms.length>14?" …":"")+'</span>'
+      +'</div>';
+  });
+  if(teamWarn)warns++;
+  h+=card(teamWarn?"warn":"ok","Équipes — "+tids.length+" détectées ("+teamWarn+" à vérifier)",
+    'Règle : même famille + mêmes jours de repos (RH/R) ; miroir = mêmes repos, 1er horaire différent.'+teamRows
+    +'<div style="margin-top:8px"><button class="btn ghost" style="font-size:12px;padding:3px 8px" onclick="cmcExportTeamsDetectionDiag()">📋 Copier le diagnostic équipes</button></div>');
+
+  // ── 4) DÉPARTS (ordre, par équipe de travail) ───────────────────
+  function seqFor(n){return (typeof getSeqForSize==="function")?getSeqForSize(n):(function(){var a=[];for(var i=1;i<=n;i++)a.push(i);return a;})();}
+  var depRows="",depBad=0;
+  tids.forEach(function(t){
+    var ms=teams[t].filter(function(e){return workedCount(e.id)>0;});
+    if(ms.length<2)return;
+    var ci=gCI(y,m)||{};
+    ms.sort(function(a,b){var ba=ci[a.name]!==undefined?ci[a.name]:0,bb=ci[b.name]!==undefined?ci[b.name]:0;return ba-bb;});
+    // 1er jour où l'équipe a un service
+    var wd=null;for(var d=1;d<=days;d++){if(ms.some(function(e){return isW((pl[e.id]||{})[d]);})){wd=d;break;}}
+    if(wd===null)return;
+    var present=ms.filter(function(e){return isW((pl[e.id]||{})[wd]);});
+    var pc=present.length;if(!pc)return;
+    var seq=seqFor(pc),rot=0; // wi=0 au 1er jour de service
+    var order=present.map(function(e,j){return {n:e.name,p:seq[((rot+j)%pc+pc)%pc]};});
+    // valider permutation 1..pc
+    var seen={},okPerm=true;order.forEach(function(o){if(o.p<1||o.p>pc||seen[o.p])okPerm=false;seen[o.p]=1;});
+    if(!okPerm){depBad++;}
+    var famLbl=t.replace(/^r.*/,"Roul.").replace(/^c.*/,"CMC").replace(/^b.*/,"Bac.").replace(/^\d+$/,"BJ");
+    order.sort(function(a,b){return a.p-b.p;});
+    depRows+='<div style="padding:6px 0;border-top:1px solid rgba(255,255,255,.05)">'
+      +'<span style="color:'+(okPerm?"#3a8a50":"#e06060")+';font-weight:700">'+(okPerm?"✅":"❌")+' '+esc(famLbl)+' Éq.'+esc(t)+'</span> '
+      +'<span style="color:#9fb89f;font-size:12px">(jour '+wd+', '+pc+' présents)</span>'
+      +'<br><span style="font-size:12px;color:#cdd6cd">'+order.map(function(o){return '<b style="color:#c9a227">'+o.p+'</b> '+esc(o.n);}).join(' · ')+'</span>'
+      +'</div>';
+  });
+  if(depBad)problems++;
+  h+=card(depBad?"err":"ok","Ordre de départ — séquence par équipe",
+    'Algo : rotation '+'(wi%4)+⌊wi/4⌋'+' sur les présents du jour (séquence '+seqFor(6).join("·")+' pour 6). Aperçu au 1er jour de service :'+(depRows||'<br>Aucune équipe de travail à afficher.'));
+
+  // ── 5) LIEUX ────────────────────────────────────────────────────
+  var codeSet={};ids.forEach(function(id){Object.keys(ov[id]).forEach(function(d){var c=ov[id][d];if(c&&isW(c))codeSet[c]=1;});});
+  var codes=Object.keys(codeSet),withLieu=0,noLieu=[];
+  codes.forEach(function(c){var l=(typeof getCodeLieu==="function")?getCodeLieu(c,null):((CODES[c]&&CODES[c].lieu)||null);if(l)withLieu++;else noLieu.push(c);});
+  h+=card(noLieu.length>codes.length*0.6?"warn":"ok","Lieux (tables / salles)",
+    codes.length+' codes horaires utilisés · '+withLieu+' ont un lieu associé.'
+    +(noLieu.length?'<br><span style="color:#9fb89f;font-size:12px">Sans lieu mappé : '+esc(noLieu.slice(0,24).join(", "))+(noLieu.length>24?" …":"")+'</span><br><span style="font-size:12px;color:#7a9a80">Les lieux précis viennent surtout des codes cadres (Pit Boss/Sup). C\'est informatif.</span>':''));
+
+  // ── 6) ABSENCES ─────────────────────────────────────────────────
+  function absTeam(eid){var w=0,by={},tot=0;for(var d=1;d<=days;d++){var c=(pl[eid]||{})[d];if(!c)continue;var u=base(c);if(u==="RH"||u==="R")continue;var map={CP:"Congés",CRH:"Congés",CDP:"Congés",CDH:"Congés",M:"Maladie",MAL:"Maladie",AF:"Formation",DEPL:"Déplacement",DEP:"Déplacement"};if(map[u]){by[map[u]]=(by[map[u]]||0)+1;tot++;}else w++;}if(w>0||!tot)return null;var best=null,bn=0;Object.keys(by).forEach(function(k2){if(by[k2]>bn){bn=by[k2];best=k2;}});return best;}
+  var absCount={};ids.forEach(function(id){var t=absTeam(id);if(t)absCount[t]=(absCount[t]||0)+1;});
+  h+=card("ok","Absences intégrales du mois",
+    Object.keys(absCount).length?Object.keys(absCount).map(function(k2){return '<b>'+absCount[k2]+'</b> en '+esc(k2);}).join(' · '):'Aucune absence intégrale ce mois.');
+
+  // ── VERDICT GLOBAL (en tête, inséré après le sticky) ────────────
+  var verdict;
+  if(problems>0)verdict='<div style="margin:0 0 4px;padding:14px;border-radius:12px;background:rgba(224,96,96,.12);border:1px solid #e0606055;text-align:center"><div style="font-size:34px">❌</div><div style="font-size:17px;font-weight:800;color:#e06060">'+problems+' problème(s) à corriger</div><div style="font-size:13px;color:#e0a0a0">'+(warns?warns+' avertissement(s) en plus.':'')+'</div></div>';
+  else if(warns>0)verdict='<div style="margin:0 0 4px;padding:14px;border-radius:12px;background:rgba(201,162,39,.12);border:1px solid #c9a22755;text-align:center"><div style="font-size:34px">⚠️</div><div style="font-size:17px;font-weight:800;color:#c9a227">'+warns+' point(s) à vérifier</div><div style="font-size:13px;color:#d8cc9a">Pas de problème bloquant — relis les ⚠️ ci-dessous.</div></div>';
+  else verdict='<div style="margin:0 0 4px;padding:14px;border-radius:12px;background:rgba(58,138,80,.14);border:1px solid #3a8a5055;text-align:center"><div style="font-size:34px">✅</div><div style="font-size:18px;font-weight:800;color:#3a8a50">Tout est correct</div><div style="font-size:13px;color:#a0cca0">Couverture, horaires, équipes, départs, lieux : aucun problème détecté.</div></div>';
+  h=h.replace('</div></div>\n','</div></div>'); // no-op safety
+  // insérer le verdict juste après l'en-tête sticky
+  var anchor='</div></div>';
+  var pos=h.indexOf(anchor)+anchor.length;
+  h=h.slice(0,pos)+verdict+h.slice(pos);
+
+  return h+'</div>';
+}
+
 function vPlan(){
   var isAdm=A.user&&A.user.id===AID;
   var pl=gpl(),days=getDays(A.year,A.month);
@@ -23686,7 +23860,7 @@ function vPlan(){
       +'</div></div></div>';
   }
   if(!isAdm&&utid){h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:${utc}0c;border:1px solid ${utc}20;border-radius:8px"><span style="color:${utc};font-weight:700;font-size:16px">${esc(gt(utid)?gt(utid).name:"")}</span>${mirT?'<span style="font-size:14px;color:#a0cca0">\u21cc '+esc(mirT.name)+'</span>':""}</div>`;}
-  h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">${isAdm?`<button onclick="sv('admin')" style="background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:7px;padding:4px 10px;font-size:14px;color:#c9a227;cursor:pointer;font-weight:700">\u2699\ufe0f Admin</button>`:`<div></div>`}<button class="btn ghost" onclick="A.showLeg=!A.showLeg;dc()" style="padding:3px 9px;font-size:14px">${A.showLeg?"\u25b2 L\u00e9gende":"\u25bc L\u00e9gende"}</button></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">${isAdm?`<span style="display:flex;gap:6px"><button onclick="sv('admin')" style="background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:7px;padding:4px 10px;font-size:14px;color:#c9a227;cursor:pointer;font-weight:700">\u2699\ufe0f Admin</button><button onclick="sv('verify')" title="V\u00e9rifier que tout est correct" style="background:rgba(58,138,80,.1);border:1px solid rgba(58,138,80,.35);border-radius:7px;padding:4px 10px;font-size:14px;color:#5abf78;cursor:pointer;font-weight:700">\u2705 V\u00e9rifier</button></span>`:`<div></div>`}<button class="btn ghost" onclick="A.showLeg=!A.showLeg;dc()" style="padding:3px 9px;font-size:14px">${A.showLeg?"\u25b2 L\u00e9gende":"\u25bc L\u00e9gende"}</button></div>`;
   if(A.showLeg){
     // v9.126 — Légende groupée : Employés / Cadres (pit boss) / Absences
     var _legEmp=[],_legCadre=[],_legAbs=[];
@@ -37997,6 +38171,9 @@ function vImport(){
     <div class="sec-title">Import Planning</div>
     <div class="sec-sub">${MFR[im]} ${iy}</div>
   </div>
+
+  <!-- v9.821 — accès direct vérification autonome après import -->
+  <button onclick="sv('verify')" style="width:100%;margin-bottom:10px;padding:12px;background:rgba(58,138,80,.12);border:1px solid rgba(58,138,80,.4);border-radius:10px;color:#5abf78;font-weight:800;font-size:15px;cursor:pointer;min-height:48px">✅ Vérifier que tout est correct (équipes · horaires · départs · lieux)</button>
 
   <!-- Sélection mois + version optionnelle (compact) -->
   <div class="card" style="padding:10px;margin-bottom:8px">
