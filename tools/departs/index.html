@@ -83,7 +83,9 @@ body.admin td.cell:hover{outline:1px solid var(--gold2)}
  border:1px solid var(--gold);border-radius:10px;padding:10px 16px;font-size:13px;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.on{opacity:1}
 tr.me td{box-shadow:inset 0 0 0 2px var(--gold)}
-tr.me .cNom{background:rgba(201,162,39,.20);color:var(--gold2);font-weight:800}
+/* v1.12.1 — fond OPAQUE sur la colonne nom (sinon les cases du jour défilent
+   dessous à travers le fond transparent → nom illisible, cf. capture Kevin). */
+tr.me .cNom{background:#2c280c;color:var(--gold2);font-weight:800;z-index:9}
 .mebanner{margin:8px 0 4px;padding:8px 12px;border:1px solid rgba(201,162,39,.35);border-radius:10px;
  background:rgba(10,26,12,.55);font-size:13px;color:var(--gold2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .mebanner b{color:#fff}
@@ -102,8 +104,11 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     <p class="sub" id="hSub"></p>
   </div>
   <span class="spacer"></span>
-  <select id="meSel" onchange="setMe(this.value)" title="Ma vue — choisis ton nom"></select>
-  <select id="boardSel" onchange="switchBoard(this.value)"></select>
+  <select id="meSel" onchange="setMe(this.value)" title="Connexion — ton nom ou matricule SBM (U…)"></select>
+  <select id="moSel" onchange="setMonth(this.value)" title="Choisir le mois"></select>
+  <input id="teamSearch" placeholder="🔎 équipe / nom" oninput="fillSel()" autocomplete="off" title="Chercher une autre équipe ou une personne"
+   style="min-width:110px;max-width:150px;min-height:40px;padding:8px 10px;border-radius:9px;border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);font-size:13px">
+  <select id="boardSel" onchange="switchBoard(this.value)" title="Équipe du mois"></select>
   <button class="btn" id="lockBtn" onclick="toggleAdmin()">🔒 Admin</button>
 </header>
 
@@ -145,13 +150,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.12.0</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.12.1</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.12.0";
+var APP_VER="v1.12.1";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -272,19 +277,38 @@ var _appCmcCount=buildAppCmcBoards();
 // lessons #66-77 / #104-114). Rend la page AUTONOME : elle marche SANS ouvrir
 // l'app (fini le « Données introuvables ») et couvre tous les mois fournis.
 // Remplace les boards hardcodés des mois régénérés (évite doublons ancien/nouveau).
-var DEP_MIRROR={}, DEP_GEN_MONTHS=[];
+var DEP_MIRROR={}, DEP_GEN_MONTHS=[], CURMO=null;
 (function(){
   try{
     var G=window.DEPARTS_GEN; if(!G||!G.boards)return;
-    var covered={}; (G.months||[]).forEach(function(m){covered[m.year+"/"+m.monthIdx]=1;DEP_GEN_MONTHS.push(m);});
-    Object.keys(BOARDS).forEach(function(id){var b=BOARDS[id];if(b&&covered[b.year+"/"+b.monthIdx])delete BOARDS[id];});
+    (G.months||[]).forEach(function(m){DEP_GEN_MONTHS.push(m);});
+    // Données générées = SOURCE UNIQUE : on retire TOUT le hardcodé (Juin obsolète,
+    // anciens Juillet, appcmc) → plus de doublon ni de mois fantôme « ma vue ».
+    Object.keys(BOARDS).forEach(function(id){delete BOARDS[id];});
     Object.keys(G.boards).forEach(function(id){ var b=G.boards[id]; var dy=b.days||31;
-      BOARDS[id]={label:b.label,month:b.month,year:b.year,monthIdx:b.monthIdx,days:dy,kind:b.kind||undefined,key:"cmc_dep_"+id,
+      BOARDS[id]={label:b.label,month:b.month,year:b.year,monthIdx:b.monthIdx,days:dy,fam:b.fam||"",kind:b.kind||undefined,key:"cmc_dep_"+id,
         people:(b.people||[]).map(function(p){var c={};for(var d=1;d<=dy;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";return {name:p.name,id:p.id||null,codes:c};})};
     });
     if(G.mirror)Object.keys(G.mirror).forEach(function(a){DEP_MIRROR[a]=G.mirror[a];DEP_MIRROR[G.mirror[a]]=a;});
   }catch(e){ try{console.warn("[DEPARTS_GEN merge]",e&&e.message);}catch(_){} }
 })();
+// v1.12.1 — équipe de la personne connectée POUR LE MOIS affiché (CURMO) :
+// « tjs mon équipe et miroir », mois par mois. Renvoie l'id du board ou null.
+function teamForMeInMonth(){ if(!ME||!CURMO)return null; var ks=Object.keys(BOARDS);
+  for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue; if((b.year+"-"+b.monthIdx)!==CURMO)continue;
+    if((b.people||[]).some(function(p){return p.name===ME;}))return ks[i]; } return null; }
+function fillMoSel(){ var s=document.getElementById("moSel"); if(!s)return; s.innerHTML="";
+  var ms=DEP_GEN_MONTHS.slice();
+  if(!ms.length){ var seen={}; Object.keys(BOARDS).forEach(function(k){var b=BOARDS[k];var mk=b.year+"-"+b.monthIdx;if(!seen[mk]){seen[mk]=1;ms.push({year:b.year,monthIdx:b.monthIdx,label:b.month});}}); }
+  ms.sort(function(a,b){return (b.year*12+b.monthIdx)-(a.year*12+a.monthIdx);});
+  ms.forEach(function(m){ var o=document.createElement("option"); o.value=m.year+"-"+m.monthIdx; o.textContent=(m.label||(m.year+"-"+(m.monthIdx+1))); if(o.value===CURMO)o.selected=true; s.appendChild(o); });
+}
+function setMonth(mk){ CURMO=mk;
+  var target=teamForMeInMonth(); // priorité : MON équipe ce mois
+  if(!target){ var w=Object.keys(BOARDS).filter(function(k){return (BOARDS[k].year+"-"+BOARDS[k].monthIdx)===mk&&BOARDS[k].kind!=="abs";});
+    target=w[0]||Object.keys(BOARDS).filter(function(k){return (BOARDS[k].year+"-"+BOARDS[k].monthIdx)===mk;})[0]; }
+  if(target){ BID=target; try{localStorage.setItem("cmc_dep_board",BID);}catch(e){} }
+  fillSel(); load(); render(); }
 var BID=null, B=null;
 function defaultBoard(){ var k=Object.keys(BOARDS);
   // 1) board non-abs du mois GÉNÉRÉ le plus récent (Août > Juillet) — données à jour
@@ -400,12 +424,12 @@ function render(){
   if(mb){
     if(!ME){ mb.style.display="none"; mb.innerHTML=""; }
     else {
-      var inHere=ST.order.indexOf(ME)>=0, myBid=boardForName(ME), mir=mirrorBoardId(BID);
+      var inHere=ST.order.indexOf(ME)>=0, myBid=teamForMeInMonth(), mir=mirrorBoardId(BID);
       var h2="👤 <b>"+esc(ME)+"</b>";
       if(inHere){ h2+=" · ton équipe : <b>"+esc(B.label)+"</b>";
         if(mir) h2+=" <button class='jump' onclick=\"switchBoard('"+mir+"')\">Équipe miroir →</button>"; }
       else if(myBid){ h2+=" · ton équipe : <b>"+esc(BOARDS[myBid].label)+"</b> <button class='jump' onclick=\"switchBoard('"+myBid+"')\">Aller à mon équipe →</button>"; }
-      else { h2+=" · <i>pas d'équipe trouvée ce mois</i>"; }
+      else { h2+=" · <i>pas d'équipe ce mois</i>"; }
       mb.innerHTML=h2; mb.style.display="flex";
     }
   }
@@ -472,19 +496,27 @@ function resetCounters(){ if(!guard())return; if(!confirm("Vider NR et 5e ?"))re
 function resetAll(){ if(!guard())return; if(!confirm("Réinitialiser ce mois (codes, ordre, NR/5e) ?"))return;
   try{localStorage.removeItem(B.key);}catch(e){} load(); render(); toast("Réinitialisé"); }
 
-function switchBoard(id){ BID=id; try{localStorage.setItem("cmc_dep_board",id);}catch(e){} load(); render(); }
-function fillSel(){ var s=document.getElementById("boardSel"); s.innerHTML="";
-  var groups=[["Chefs Black Jack",function(k){return /bj/i.test(k);}],
-              ["Roulettes",function(k){return /roul\d+$/.test(k);}],
-              ["Roulettes — miroir",function(k){return /roul\d+m$/.test(k);}],
-              ["CMC (importé app)",function(k){return /^appcmc-/.test(k);}],
-              ["Absences",function(k){return BOARDS[k].kind==="abs";}]];
+function switchBoard(id){ if(!BOARDS[id])return; BID=id; CURMO=BOARDS[id].year+"-"+BOARDS[id].monthIdx;
+  try{localStorage.setItem("cmc_dep_board",id);}catch(e){}
+  var mo=document.getElementById("moSel"); if(mo)mo.value=CURMO;
+  fillSel(); load(); render(); }
+// v1.12.1 — liste des équipes SCOPÉE au mois choisi (CURMO), groupée par famille,
+// + recherche : si on tape qqch, on cherche dans TOUS les mois (autres équipes/personnes).
+function _famOf(k){ var b=BOARDS[k]; if(!b)return "bj"; if(b.kind==="abs")return "abs"; if(b.fam)return b.fam==="baccara"?"cmc":b.fam;
+  if(/-r\d+$/.test(k))return "roulettes"; if(/-c\d+$/.test(k)||/-amenage/.test(k))return "cmc"; return "bj"; }
+function fillSel(){ var s=document.getElementById("boardSel"); if(!s)return; s.innerHTML="";
+  var q=((document.getElementById("teamSearch")||{}).value||"").trim().toLowerCase();
+  function matchQ(k){ if(!q)return true; var b=BOARDS[k]; if(String(b.label).toLowerCase().indexOf(q)>=0)return true;
+    return (b.people||[]).some(function(p){return String(p.name).toLowerCase().indexOf(q)>=0||(p.id&&String(p.id).toLowerCase().indexOf(q)>=0);}); }
+  function inScope(k){ if(q)return true; var b=BOARDS[k]; return (b.year+"-"+b.monthIdx)===CURMO; } // recherche = tous mois
+  var groups=[["♣ Chefs Black Jack","bj"],["🎡 Roulettes","roulettes"],["🃏 CMC (cartes)","cmc"],["🏖 Absences","abs"]];
   var used={};
-  groups.forEach(function(g){ var keys=Object.keys(BOARDS).filter(function(k){return !used[k]&&g[1](k);}); if(!keys.length)return;
-    var og=document.createElement("optgroup"); og.label=g[0];
+  groups.forEach(function(g){ var keys=Object.keys(BOARDS).filter(function(k){return !used[k]&&inScope(k)&&matchQ(k)&&_famOf(k)===g[1];}); if(!keys.length)return;
+    var og=document.createElement("optgroup"); og.label=g[0]+(q?"":"");
     keys.forEach(function(k){ used[k]=1; var o=document.createElement("option"); o.value=k; o.textContent=BOARDS[k].label; if(k===BID)o.selected=true; og.appendChild(o); });
     s.appendChild(og); });
-  Object.keys(BOARDS).filter(function(k){return !used[k];}).forEach(function(k){ var o=document.createElement("option"); o.value=k; o.textContent=BOARDS[k].label; if(k===BID)o.selected=true; s.appendChild(o); });
+  Object.keys(BOARDS).filter(function(k){return !used[k]&&inScope(k)&&matchQ(k);}).forEach(function(k){ var o=document.createElement("option"); o.value=k; o.textContent=BOARDS[k].label; if(k===BID)o.selected=true; s.appendChild(o); });
+  if(!s.options.length){ var o0=document.createElement("option"); o0.value=""; o0.textContent=q?"(aucun résultat)":"(aucune équipe ce mois)"; s.appendChild(o0); }
 }
 // ── Ma vue (vue par personne) ──
 function allNames(){ var set={},out=[]; Object.keys(BOARDS).forEach(function(k){ var b=BOARDS[k]; if(b.kind==="abs")return;
@@ -505,7 +537,8 @@ function setMe(val){ var nm=val;
   // v1.12 — accepte aussi un matricule SBM (U…) : connexion par identifiant employé
   if(/^u\w*\d/i.test(val||"")){ var hit=personById(val); if(hit){ nm=hit.name; } }
   ME=nm; try{localStorage.setItem("cmc_dep_me",nm);}catch(e){}
-  if(nm){ var bid=boardForName(nm); if(bid&&bid!==BID){ switchBoard(bid); return; } } render(); }
+  // « ma vue » → MON équipe POUR LE MOIS affiché (pas le 1er board trouvé tous mois)
+  if(nm){ var bid=teamForMeInMonth()||boardForName(nm); if(bid&&bid!==BID){ switchBoard(bid); return; } } render(); }
 
 function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; toast("Verrouillé — lecture seule"); }
   else { document.getElementById("pinModal").classList.add("on"); setTimeout(function(){var e=document.getElementById("pinIn");if(e){e.value="";e.focus();}},60); } }
@@ -551,7 +584,8 @@ try{ var _mq=new URLSearchParams(location.search).get("me");
 }catch(_){}
 BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
   try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
-fillSel(); fillMeSel(); load(); render(); paintAppDiag();
+CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
+fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
 if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
 </script>
 </body>
