@@ -2020,3 +2020,25 @@ Dans Réglages → "🎙 Voice Bio" :
 - Vercel shops à configurer : Action 1 dans TODO_KEVIN.md
 - Agent : `kdmc-agent-monaco.vercel.app`
 
+
+---
+
+## 🔐 MODÈLE D'IDENTITÉ DU DOMAINE kd-mc.com (Kevin 2026-06-28)
+
+> **"Les employés SBM, une fois connectés, permettra de connaître leur identifiant et assimiler au nom, pour chacun. Il y aura des personnes non-SBM qui se connecteront au domaine aussi."** — Kevin 2026-06-28
+
+**Règle de conception (login du domaine + CMCteams + Départs) :**
+
+1. **Deux types de comptes sur le domaine :**
+   - **Employé SBM** : connexion **Nom + Prénom + matricule SBM (U…)**. Le `uid` du compte domaine = **le matricule SBM** → relie directement à la fiche CMCteams, au planning, à l'équipe + miroir.
+   - **Non-SBM** (Laurence, amis, famille, clients) : connexion **Nom + Prénom** seul (uid généré). Accès au domaine/apps, **mais pas de planning casino**.
+
+2. **Assimilation matricule ↔ nom :** à la connexion d'un employé SBM, le système **enregistre et apprend le couple `U… ↔ "Prénom Nom"`** dans le registre des comptes (kdmc-router KV `acc:`). Au fil des connexions, **chaque** identifiant SBM est connu et associé à son nom. → permet de retrouver qui est qui par matricule OU par nom, partout (CMCteams, Départs, domaine).
+
+3. **Sécurité (règles Kevin + leçon #99 : une identité tapée ≠ droit de modifier) :**
+   - 1ère connexion : Nom + Prénom (+ matricule si SBM) + **code perso**. Ensuite **Face ID** (reconnaissance auto), code en secours.
+   - **Voir** son équipe/miroir : léger. **Modifier** sa fiche : code/Face ID obligatoire.
+
+4. **Le matricule SBM est la clé de jonction** entre le compte domaine et la fiche employé CMCteams (`A.reg[U…]`). Non-SBM = pas de matricule = pas de jonction CMCteams.
+
+S'applique : domaine kd-mc.com (portal kdmc-home), CMCteams, page Départs, toutes apps du domaine.
