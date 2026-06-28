@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.0.1 — Cloud connected admin -->
+<!-- v2.0.2 — Cloud connected admin -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -211,7 +211,8 @@ async function initAuth(){
   // Additif + fail-open : SSO injoignable (servi hors *.kd-mc.com) → on retombe sur le PIN.
   try{
     var hsh=location.hash||"";var mm=hsh.match(/[#&]kdmc_sso=([^&]+)/);
-    if(mm){try{localStorage.setItem("kdmc_sso_token",decodeURIComponent(mm[1]));}catch(_){}}
+    if(mm){try{localStorage.setItem("kdmc_sso_token",decodeURIComponent(mm[1]));}catch(_){}
+           try{history.replaceState(null,"",location.pathname+location.search);}catch(_){}}
     var tok="";try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
     var hdr={};if(tok)hdr.Authorization="Bearer "+tok;
     var rs=await fetch("/__sso/whoami",{credentials:"include",cache:"no-store",headers:hdr});
@@ -219,13 +220,27 @@ async function initAuth(){
     var allowed=j&&(j.admin===true||/laurence|lolo|saint.?polit|kevin|desarzens/i.test(j.name||""));
     if(j&&j.ok&&j.verified===true&&allowed){enterApp();return}
   }catch(_){/* fail-open → PIN */}
-  // aucun code défini sur cet appareil → Kevin CHOISIT le sien (pas de code public)
-  if(!lg(SK.pinHash)){showCreate();return}
-  showAuth();
+  // Anti-lockout : un code local DÉJÀ défini (appareil déjà configuré par une identité
+  // prouvée) reste accepté même si le SSO est momentanément injoignable.
+  if(lg(SK.pinHash)){showAuth();return}
+  // Sinon : aucune identité prouvée + aucun code local → VERROUILLÉ. La 1ʳᵉ entrée se
+  // fait TOUJOURS via le portail (prénom+nom+code OU Face ID). Jamais de code sans nom.
+  showLocked();
+}
+function showLocked(){
+  _authMode="locked";
+  document.getElementById("authSub").textContent="Connecte-toi sur le portail kd-mc.com (prénom + nom + code, ou Face ID).";
+  document.getElementById("pin").style.display="none";
+  document.getElementById("pin2").style.display="none";
+  document.getElementById("loginBtn").textContent="Aller au portail kd-mc.com";
+  document.getElementById("forgotLink").style.display="none";
+  document.getElementById("authErr").textContent="";
+  document.getElementById("auth").style.display="flex";document.getElementById("app").classList.remove("on");
 }
 function showAuth(){
   _authMode="login";
   document.getElementById("authSub").textContent="Accès administrateur";
+  document.getElementById("pin").style.display="";
   document.getElementById("pin").placeholder="Ton code";document.getElementById("pin").value="";
   document.getElementById("pin2").style.display="none";document.getElementById("pin2").value="";
   document.getElementById("loginBtn").textContent="Se connecter";
@@ -261,6 +276,9 @@ function logout(){
   document.getElementById("pin").value="";
 }
 async function doLogin(){
+  // Mode verrouillé : aucune identité prouvée → on renvoie au portail (jamais d'entrée
+  // par code sans nom). Le portail prouve l'identité (prénom+nom+code OU Face ID).
+  if(_authMode==="locked"){location.href="https://kd-mc.com/?return="+encodeURIComponent(location.href);return;}
   var btn=document.getElementById("loginBtn"),err=document.getElementById("authErr"),pin=document.getElementById("pin").value.trim();
   err.textContent="";
   // 1er lancement / réinit : Kevin définit SON code
@@ -540,15 +558,16 @@ document.getElementById("pin").addEventListener("keydown",function(e){if(e.key==
 document.getElementById("pin2").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin()});
 document.getElementById("forgotLink").addEventListener("click",function(e){
   e.preventDefault();
-  if(confirm("Redéfinir ton code sur cet appareil ? (ne touche pas aux données des boutiques)")){
-    rm(SK.pinHash);rm(SK.pinSalt);rm(SK.fails);showCreate();
-  }
+  // Code oublié : on NE permet PAS de réinitialiser librement (sinon contournement du
+  // code sans identité). On reprouve l'identité via le portail (Face ID OU prénom+nom+code),
+  // qui rouvre le Dashboard automatiquement ; le code se redéfinit ensuite dans Réglages.
+  location.href="https://kd-mc.com/?return="+encodeURIComponent(location.href);
 });
 // auto-extend session sur activité
 document.addEventListener("click",function(){if(document.getElementById("app").classList.contains("on"))ls(SK.lastact,Date.now())});
 
 initAuth();
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-dashboard" data-version="v2.0.1" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-dashboard" data-version="v2.0.2" data-color="#c9a227" defer></script>
 </body>
 </html>
