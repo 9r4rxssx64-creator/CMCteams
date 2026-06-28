@@ -27,7 +27,7 @@ async function boot(browser, { noSeed }) {
 
 async function main() {
   const browser = await chromium.launch({ headless: true });
-  console.log('SEED v9.824 — application au boot');
+  console.log('SEED v9.825 — application au boot');
 
   // A — boot AVEC seed (mois vides) → doit remplir 2026-7 et 2026-6
   {
