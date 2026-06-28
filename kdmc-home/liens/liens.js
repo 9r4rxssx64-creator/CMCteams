@@ -350,7 +350,9 @@
     });
   }
 
-  /* ---- Porte d'accès (fail-open, anti-lockout) ---- */
+  /* ---- Porte d'accès : admin (prouvé serveur) OU Face ID (verified) + nom autorisé.
+     Fail-CLOSED : sans preuve d'identité, on cache (centre de contrôle = zone privée).
+     Pas un lockout d'app : on retombe sur l'écran "aller au portail" (récupérable). ---- */
   function show(el, on) { if (el) el.hidden = !on; }
   function applyGate() {
     var ctl = document.getElementById('ctl'), lock = document.getElementById('lock'), tools = document.getElementById('tools');
@@ -358,13 +360,14 @@
     function locked() { show(ctl, false); show(lock, true); show(tools, false); }
     try {
       var sso = window.kdmcSSO;
-      if (!sso || typeof sso.whoami !== 'function') { open(false); return; }
+      if (!sso || typeof sso.whoami !== 'function') { locked(); return; }
       sso.whoami().then(function (who) {
-        if (!who) { open(false); return; }
-        var ok = who.admin === true || /kevin|laurence|lolo/i.test(who.name || '');
+        if (!who) { locked(); return; }
+        var named = /kevin|laurence|lolo|saint.?polit/i.test(who.name || '');
+        var ok = who.admin === true || (who.verified === true && named);
         if (ok) open(who.admin === true); else locked();
-      }).catch(function () { open(false); });
-    } catch (e) { open(false); }
+      }).catch(function () { locked(); });
+    } catch (e) { locked(); }
   }
 
   function boot() {

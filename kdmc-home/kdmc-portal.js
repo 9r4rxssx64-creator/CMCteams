@@ -75,7 +75,11 @@
       /* Espace privé regroupé (Sourcing, Coffre-fort, Dashboard, Admin) :
          Kevin + Laurence (Lolo) OU admin. Les autres clients ne le voient jamais.
          /admin/ reste protégé par le code admin côté serveur (fail-closed). */
-      var isPriv = !!(s && s.admin) || /kevin|desarzens|laurence|lolo|saint.?polit/.test(norm(s && s.name || ''));
+      var named = /kevin|desarzens|laurence|lolo|saint.?polit/.test(norm(s && s.name || ''));
+      /* Visuel réservé : admin (prouvé serveur via ADMIN_UIDS) OU identité FORTE Face ID
+         (verified) + nom autorisé. Un inconnu qui tape "Kevin"/"Laurence" SANS Face ID
+         n'est PAS verified → ne voit rien (leçon #99 : un nom auto-déclaré n'accorde aucun droit). */
+      var isPriv = !!(s && s.admin) || (!!(s && s.verified) && named);
       priv.hidden = !isPriv;
     };
     if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }
