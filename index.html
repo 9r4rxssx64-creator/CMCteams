@@ -4247,6 +4247,32 @@ function fbApplyData(k,v){
         });
       }
     }catch(_){}
+    // v9.823 (Kevin diag Juillet « 291 cellules jours hors limite ») — STRIP oob à
+    // CHAQUE application Firebase. Le filet boot (v9.809 _cmcSweepAllOOB) est un
+    // one-shot 7s ; une donnée cloud stale (importée par une vieille version) ré-injecte
+    // des cellules jour 31/32 APRÈS le sweep (race avec fbLoadAll/SSE). Ici on nettoie à
+    // la source à chaque réception → le cloud ne peut plus polluer. Si on a retiré qqch,
+    // re-push corrige la copie cloud une bonne fois (pas de boucle : après correction,
+    // plus rien à retirer au prochain apply).
+    try{
+      var _oobFb=0;
+      if(vc&&typeof vc==="object"){
+        Object.keys(vc).forEach(function(mk){
+          var mm=String(mk).split("-");if(mm.length!==2)return;
+          var yy=parseInt(mm[0],10),mo=parseInt(mm[1],10);if(isNaN(yy)||isNaN(mo))return;
+          var dim=getDays(yy,mo),rows=vc[mk];if(!rows||typeof rows!=="object")return;
+          Object.keys(rows).forEach(function(eid){
+            var cells=rows[eid];if(!cells||typeof cells!=="object")return;
+            Object.keys(cells).forEach(function(d){var n=parseInt(d,10);if(isNaN(n)||n<1||n>dim){delete cells[d];_oobFb++;}});
+          });
+        });
+      }
+      if(_oobFb>0){
+        try{localStorage.setItem("cmc_ov",JSON.stringify(vc));}catch(_ls){}
+        if(typeof fbWrite==="function")try{fbWrite("cmc_ov",vc);}catch(_fw){}
+        console.info("[v9.823 fb oob-strip] "+_oobFb+" cellules hors-limite retirées des données Firebase entrantes (+ re-push correctif)");
+      }
+    }catch(_){}
     A.overrides=vc;
     try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
   }
@@ -5399,7 +5425,7 @@ try{_rebuildIndexes();}catch(_){}
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.822";
+var APP_VER="v9.823";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -36672,6 +36698,14 @@ function _cmcFinalGeometricFill(iy,im){
   }
   var res=_cmcApplyGeometricParse(iy,im);
   var added=(res&&res.stats&&res.stats.cells_filled_grid)||0;
+  // v9.823 — re-cap oob : cette passe différée tourne APRÈS le filet import v9.801.
+  // _cmcApplyGeometricParse cappe déjà par cellule, mais défensif : aucun jour hors
+  // mois ne doit subsister (diag Kevin Juillet « 291 hors limite »).
+  try{
+    var _kf=iy+"-"+im,_dimf=getDays(iy,im),_rowsf=A.overrides[_kf]||{},_ocf=0;
+    Object.keys(_rowsf).forEach(function(eid){var c=_rowsf[eid];if(!c)return;Object.keys(c).forEach(function(d){var n=parseInt(d,10);if(isNaN(n)||n<1||n>_dimf){delete c[d];_ocf++;}});});
+    if(_ocf)console.info("[v9.823 final geoParse oob-cap] "+_ocf+" cellules hors-limite retirées");
+  }catch(_oce){}
   if(added>0){
     console.info("[v9.822 final geoParse] +"+added+" cellules (emps finalisés tard) → re-détection équipes");
     try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_a){}
@@ -39181,6 +39215,56 @@ function _cmcFallbackUnassignedTeams(iy,im){
     });
     if(_purged){console.info("[v9.764 purge] "+_purged+" emp(s) 0-travaillé retiré(s) des équipes de travail");try{ls("cmc_e",A.employees);}catch(_){}}
   }catch(_pgErr){console.warn("[v9.764 purge]",_pgErr&&_pgErr.message);}
+  // v9.823 (Kevin diag Août/Juillet « DESARZENS K = (aucune) ») — FILET FINAL équipe :
+  // aucun emp qui TRAVAILLE vraiment ne doit rester « (aucune) ». Cas vécu : les CHEFS
+  // (2-3 par section ; chacun un restKey légèrement différent à cause d'un CP ou d'un
+  // ajustement chef) ne clusterisent pas par restKey EXACT (rest-pattern) et l'offset
+  // peut rater le fallback family:offset → DESARZENS K (Kevin lui-même) sans équipe.
+  // → rattache chaque emp travaillant (≥5 j travaillés, ≥2 repos) encore sans équipe à
+  // l'équipe de TRAVAIL de SA FAMILLE dont l'ensemble de repos CHEVAUCHE le plus le sien
+  // (Jaccard ≥0.5). Garde-fou lesson #112 (position ≠ équipe) : seuil ≥5 j travaillés →
+  // GARRO (3 j) reste exclu, jamais collé de force ; et le chevauchement de repos exige
+  // une VRAIE rotation commune (pas un voisin physique). N'écrase jamais une équipe
+  // d'absence. Idempotent. teamHistory = regroupement d'affichage (jamais une cellule
+  // PDF) → ne viole pas « reproduction à l'identique ».
+  try{
+    var _absR={formation:1,maladie:1,conges:1,deplacement:1,amenage:1};
+    function _restSetOf(eid){var s={},rr=ov[eid]||{};Object.keys(rr).forEach(function(d){var c=String(rr[d]).toUpperCase();if(c==="RH"||c==="R")s[parseInt(d,10)]=1;});return s;}
+    // équipes de TRAVAIL existantes → ensemble de repos représentatif (1er membre suffit)
+    var _wTeams={};
+    A.employees.forEach(function(_e){
+      if(!_e||!_e.teamHistory)return;var tid=_e.teamHistory[key];if(!tid||_absR[tid])return;
+      if(!isEmpActive(_e,iy,im))return;
+      var fam=(_e.familyHistory&&_e.familyHistory[key])||_e.family;if(!fam||fam==="cadres")return;
+      if(_wTeams[tid])return;
+      var rs=_restSetOf(_e.id);if(Object.keys(rs).length<2)return;
+      _wTeams[tid]={fam:fam,rest:rs};
+    });
+    var _rescued=0;
+    A.employees.forEach(function(_e){
+      if(!_e||!isEmpActive(_e,iy,im))return;
+      if(_e.teamHistory&&_e.teamHistory[key])return; // déjà une équipe
+      if(_e.family==="cadres")return;
+      if(_workedCount(_e.id)<5)return; // lesson #112 : GARRO (3 j) reste exclu
+      var myRest=_restSetOf(_e.id),myKeys=Object.keys(myRest);if(myKeys.length<2)return;
+      var fam=(_e.familyHistory&&_e.familyHistory[key])||_e.family||"bj";
+      var best=null,bestJ=0;
+      Object.keys(_wTeams).forEach(function(tid){
+        var wt=_wTeams[tid];if(wt.fam!==fam)return;
+        var inter=0;myKeys.forEach(function(d){if(wt.rest[d])inter++;});
+        var uni=myKeys.length;for(var d in wt.rest){if(!myRest[d])uni++;}
+        var jac=uni?inter/uni:0;
+        if(jac>bestJ){bestJ=jac;best=tid;}
+      });
+      if(best&&bestJ>=0.5){
+        if(!_e.teamHistory)_e.teamHistory={};_e.teamHistory[key]=best;
+        if(!_e.familyHistory)_e.familyHistory={};if(!_e.familyHistory[key])_e.familyHistory[key]=fam;
+        _rescued++;
+        console.info("[v9.823 rescue] "+_e.name+" → "+best+" (fam="+fam+" Jaccard="+bestJ.toFixed(2)+")");
+      }
+    });
+    if(_rescued){console.info("[v9.823 rescue] "+_rescued+" emp(s) travaillant rattaché(s) à leur équipe (overlap repos)");try{ls("cmc_e",A.employees);}catch(_){}if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}}
+  }catch(_rescErr){console.warn("[v9.823 rescue]",_rescErr&&_rescErr.message);}
   return{ok:true,assigned:assigned+absenceAssigned,consolidated:reattributed};
 }
 // ═══════════════════════════════════════════════════════════════════════════
