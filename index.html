@@ -1416,12 +1416,35 @@ var CADRE_LIEU={
   "19/70" :"CMC",
   "15/6"  :"CMC"
 };
-// Retourne le lieu exact d'un code pour un employé (rôle pit/sup → CADRE_LIEU, autres → code.lieu ou null)
+// v9.826 — NOMENCLATURE LIEUX PAR COULEURS (Kevin 2026-06-28 « tu as la nomenclature
+// avec les couleurs pour les lieux, tu n'as en général que les horaires Café de Paris
+// qui changent »). Tout code de TRAVAIL a un lieu : par défaut CMC (Monte-Carlo), et
+// Café de Paris quand le code porte la marque CDP (suffixe * OU flag .cdp, = orange dans
+// le PDF). Les codes de repos/absence n'ont pas de lieu (null). Les cadres gardent leur
+// table spécifique CADRE_LIEU en priorité (même code = lieu différent selon le rôle).
+var _CMC_ABS_LIEU={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,CDH:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,ABS:1,FL:1,HD:1,HC:1,CLM:1,MT:1,CEO:1,CSC:1,CSS:1};
+function _cmcCodeIsWork(code){
+  if(!code)return false;
+  var b=String(code).toUpperCase().replace(/[C'"*:]+$/g,"");
+  return !_CMC_ABS_LIEU[b];
+}
+// Retourne le lieu d'un code pour un employé (rôle pit/sup → CADRE_LIEU, puis lieu explicite
+// du code, puis nomenclature couleurs : * / cdp → Café de Paris, sinon CMC pour tout travail).
 function getCodeLieu(code,emp){
-  if(emp && (emp.role==="pit"||emp.role==="sup"||emp.family==="cadres")){
-    return CADRE_LIEU[code]||(CODES[code]&&CODES[code].lieu)||null;
+  if(!code)return null;
+  // Cadres : table spécifique d'abord (un même horaire = lieu différent selon le rôle)
+  if(emp && (emp.role==="pit"||emp.role==="sup"||String(emp.family||"").indexOf("cadre")>=0)){
+    if(CADRE_LIEU[code])return CADRE_LIEU[code];
   }
-  return (CODES[code]&&CODES[code].lieu)||null;
+  // Lieu explicite déclaré sur le code (ex POKER, CCDP)
+  if(CODES[code]&&CODES[code].lieu)return CODES[code].lieu;
+  // Repos / absence → pas de lieu
+  if(!_cmcCodeIsWork(code))return null;
+  // Nomenclature couleurs : marque CDP (suffixe * ou flag cdp, orange PDF) = Café de Paris
+  if((CODES[code]&&CODES[code].cdp)||/\*$/.test(String(code)))return "Café de Paris (CDP)";
+  // Défaut : Casino de Monte-Carlo (la majorité des employés y travaillent ;
+  // « en général seuls les horaires Café de Paris changent » — Kevin)
+  return "CMC";
 }
 // v9.140 — Auto-apprentissage codes : fusionne les codes appris depuis les imports pr\u00e9c\u00e9dents
 var _learnedCodes=lg("cmc_learned_codes",{});
@@ -5477,7 +5500,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.825";
+var APP_VER="v9.826";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -23806,12 +23829,17 @@ function vVerify(){
     'Algo : rotation '+'(wi%4)+⌊wi/4⌋'+' sur les présents du jour (séquence '+seqFor(6).join("·")+' pour 6). Aperçu au 1er jour de service :'+(depRows||'<br>Aucune équipe de travail à afficher.'));
 
   // ── 5) LIEUX ────────────────────────────────────────────────────
+  // v9.826 — nomenclature couleurs : chaque code de travail a un lieu (CMC par défaut,
+  // Café de Paris si marque CDP * / orange). On compte par lieu pour preuve visuelle.
   var codeSet={};ids.forEach(function(id){Object.keys(ov[id]).forEach(function(d){var c=ov[id][d];if(c&&isW(c))codeSet[c]=1;});});
-  var codes=Object.keys(codeSet),withLieu=0,noLieu=[];
-  codes.forEach(function(c){var l=(typeof getCodeLieu==="function")?getCodeLieu(c,null):((CODES[c]&&CODES[c].lieu)||null);if(l)withLieu++;else noLieu.push(c);});
+  var codes=Object.keys(codeSet),withLieu=0,noLieu=[],byLieu={};
+  codes.forEach(function(c){var l=(typeof getCodeLieu==="function")?getCodeLieu(c,null):((CODES[c]&&CODES[c].lieu)||null);if(l){withLieu++;byLieu[l]=(byLieu[l]||0)+1;}else noLieu.push(c);});
+  var lieuBreak=Object.keys(byLieu).sort(function(a,b){return byLieu[b]-byLieu[a];}).map(function(k2){return '<b style="color:#c9a227">'+byLieu[k2]+'</b> '+esc(k2);}).join(' · ');
   h+=card(noLieu.length>codes.length*0.6?"warn":"ok","Lieux (tables / salles)",
     codes.length+' codes horaires utilisés · '+withLieu+' ont un lieu associé.'
-    +(noLieu.length?'<br><span style="color:#9fb89f;font-size:12px">Sans lieu mappé : '+esc(noLieu.slice(0,24).join(", "))+(noLieu.length>24?" …":"")+'</span><br><span style="font-size:12px;color:#7a9a80">Les lieux précis viennent surtout des codes cadres (Pit Boss/Sup). C\'est informatif.</span>':''));
+    +(lieuBreak?'<br><span style="font-size:12px;color:#cdd6cd">'+lieuBreak+'</span>':'')
+    +'<br><span style="font-size:12px;color:#7a9a80">Nomenclature couleurs : code normal → CMC ; marque CDP (suffixe *, orange) → Café de Paris ; les codes cadres (Pit Boss/Sup) ont un lieu précis.</span>'
+    +(noLieu.length?'<br><span style="color:#9fb89f;font-size:12px">Sans lieu : '+esc(noLieu.slice(0,24).join(", "))+(noLieu.length>24?" …":"")+'</span>':''));
 
   // ── 6) ABSENCES ─────────────────────────────────────────────────
   function absTeam(eid){var w=0,by={},tot=0;for(var d=1;d<=days;d++){var c=(pl[eid]||{})[d];if(!c)continue;var u=base(c);if(u==="RH"||u==="R")continue;var map={CP:"Congés",CRH:"Congés",CDP:"Congés",CDH:"Congés",M:"Maladie",MAL:"Maladie",AF:"Formation",DEPL:"Déplacement",DEP:"Déplacement"};if(map[u]){by[map[u]]=(by[map[u]]||0)+1;tot++;}else w++;}if(w>0||!tot)return null;var best=null,bn=0;Object.keys(by).forEach(function(k2){if(by[k2]>bn){bn=by[k2];best=k2;}});return best;}
