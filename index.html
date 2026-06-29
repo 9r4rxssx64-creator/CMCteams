@@ -1489,6 +1489,19 @@ _rebuildCK();
 // \u00e9criture JAUNE dans le PDF SBM \u2014 rep\u00e8re visuel exact). Source UNIQUE de
 // d\u00e9tection, utilis\u00e9e partout (couleur cellule, badge, m\u00e9ta, compteurs).
 function _cmcIsConv(code){return /['"]$/.test(String(code==null?"":code));}
+// v9.832 — classe couleur d'une cellule depuis la META capturée au PIXEL du PDF
+// (autorité « à l'identique ») : "conv" = fond rouge (jour de R travaillé),
+// "modh" = écriture rouge / fond clair (horaire modifié), "" sinon.
+function _cmcCellColorClass(eid,d,y,m){
+  try{
+    y=(y==null?A.year:y); m=(m==null?A.month:m);
+    var by=((A.overrides_meta||{})[y+"-"+m]||{})[eid]; if(!by)return "";
+    var c=by[d]||by[String(d)]; if(!c)return "";
+    if(c.bg==="CONV")return "conv";
+    if(c.fg==="red")return "modh";
+  }catch(_){}
+  return "";
+}
 // v9.727 \u2014 Style CONVENTION : copie exacte du rep\u00e8re visuel PDF SBM
 // (fond rouge / \u00e9criture jaune). Appliqu\u00e9 aux variantes ' / " des codes.
 var _CMC_CONV_STYLE={bg:"#d8342e",c:"#ffe23a",b:"#a31f1a",cdp:false,conv:true};
@@ -5508,7 +5521,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.831";
+var APP_VER="v9.832";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -21868,6 +21881,8 @@ function vMonPlanning(){
     var _dc=myPl[d]||"";
     if(isWork(_dc))_weekHrs+=codeHours(_dc);
     var code=myPl[d]||"";
+    // v9.832 — couleur « à l'identique » du PDF (pixel) : conv = fond rouge, modh = écriture rouge
+    var _mc=_cmcCellColorClass(emp.id,d);
     var isToday=d===todD;
     var dow2=new Date(A.year,A.month,d).getDay();
     var isWE=dow2===0||dow2===6;
@@ -21895,14 +21910,15 @@ function vMonPlanning(){
       :code==="M"?"linear-gradient(135deg,rgba(255,220,40,.65),rgba(230,190,20,.55))"
       :code==="RRT"||code==="PRT"?"linear-gradient(135deg,rgba(255,200,40,.58),rgba(220,160,20,.48))"
       :code.endsWith("*")?"linear-gradient(135deg,rgba(255,160,60,.60),rgba(220,120,30,.50))"
-      :_cmcIsConv(code)?"linear-gradient(135deg,rgba(216,52,46,.78),rgba(170,30,26,.68))"
+      :(_mc==="conv"||_cmcIsConv(code))?"linear-gradient(135deg,rgba(216,52,46,.78),rgba(170,30,26,.68))"
       :(ci2&&isWork(code)?codeBg+"cc":"rgba(10,22,12,.45)");
     var borderStyle=isToday?"3px solid #ffdc40":"2px solid "+(_isPast?"rgba(40,50,40,.6)":ci2&&isWork(code)?codeColor+"99":code==="CP"?"rgba(232,120,200,.7)":code==="RH"?"rgba(160,100,220,.7)":code==="AF"?"rgba(80,220,100,.7)":code==="M"?"rgba(255,220,40,.8)":isWE?"rgba(80,120,180,.4)":"rgba(120,180,120,.35)");
     var _affDot=_affOn&&_affCache[d]?'<span aria-hidden="true" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff4040;margin-left:3px;vertical-align:middle;box-shadow:0 0 6px rgba(255,64,64,.8)" title="Forte affluence"></span>':"";
     // Texte très contrasté : blanc sur fond coloré, text-shadow gras pour lisibilité
     var txtShadow="text-shadow:0 2px 4px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.7)";
     var numColor=isToday?"#fff8d0":isWE?"#d8e8ff":"#ffffff";
-    var codeTxtColor=isToday?"#0a1408":"#ffffff";
+    // v9.832 — horaire modifié (PDF) : écriture rouge
+    var codeTxtColor=isToday?"#0a1408":(_mc==="modh"?"#ff5a5a":"#ffffff");
     h+='<div data-mpday="'+d+'" onclick="_showDayDetail('+d+')" style="cursor:pointer;padding:5px 3px;background:'+cellBg
       +';border:'+borderStyle+';border-radius:10px;text-align:center;min-height:78px;opacity:'+(_isPast?"0.5":"1")
       +';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:'+(isToday?"0 0 14px rgba(255,220,64,.55),inset 0 1px 0 rgba(255,255,255,.25)":"0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)")+'">'
@@ -21911,8 +21927,8 @@ function vMonPlanning(){
       +(_timeLabel?'<div style="font-size:11px;color:'+codeTxtColor+';opacity:.92;line-height:1;white-space:nowrap;overflow:hidden;max-width:100%;font-weight:700;'+txtShadow+'">'+_timeLabel+'</div>':"")
       +(depPos?'<div style="font-size:13px;color:#ffdc40;font-weight:900;'+txtShadow+'">\u2191'+depPos+'</div>':"")
       +(code.endsWith("*")?'<div style="font-size:10px;color:#fff;font-weight:900;line-height:1;background:rgba(220,120,30,.85);padding:1px 5px;border-radius:3px">\u2615 CDP</div>':"")
-      +(_cmcIsConv(code)?'<div style="font-size:10px;color:#ffe23a;font-weight:900;line-height:1;background:rgba(170,30,26,.92);padding:1px 5px;border-radius:3px">\ud83c\udfa9 CONV</div>':"")
-      +(isWork(code)&&!code.endsWith("*")&&!_cmcIsConv(code)?'<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1;font-weight:700">CMC</div>':"")
+      +((_mc==="conv"||_cmcIsConv(code))?'<div style="font-size:10px;color:#ffe23a;font-weight:900;line-height:1;background:rgba(170,30,26,.92);padding:1px 5px;border-radius:3px">\ud83c\udfa9 CONV</div>':_mc==="modh"?'<div style="font-size:9px;color:#ff5a5a;font-weight:900;line-height:1;background:rgba(255,255,255,.92);padding:1px 5px;border-radius:3px">\u270e modifi\u00e9</div>':"")
+      +(isWork(code)&&!code.endsWith("*")&&!(_mc==="conv"||_cmcIsConv(code))&&_mc!=="modh"?'<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1;font-weight:700">CMC</div>':"")
       +'</div>';
     // Fin de semaine (samedi) ou fin de mois
     var _dow3=new Date(A.year,A.month,d).getDay();
