@@ -5505,7 +5505,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.829";
+var APP_VER="v9.830";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -27090,10 +27090,10 @@ var _CMC_WORK_CELL_BG="#fbfaf3"; // blanc cassé (cellule de travail, comme le P
 function cmcCodeStatusBg(code){
   if(code==null||code==="")return "";
   var s=String(code);
-  // Convention = jour de repos (R) TRAVAILLÉ (jour en plus) → suffixe ' ou " (même
-  // suivi du « c » chef, ex 19/4'c) → ROUGE (Kevin 2026-06-29). ' ou " N'APPARAÎT que
-  // sur les codes Convention → détection « n'importe où » sûre.
-  if(/['"]/.test(s))return CMC_META_BG_COLORS.CONV;            // Convention → rouge
+  // Convention = code à suffixe ' ou " EN FIN (ex 19/4', 22/6', 19/3') → ROUGE, comme
+  // l'import PDF SBM. ATTENTION : les codes « 'c » / « c » (chef : 19/4'c, 19/3c) NE
+  // sont PAS Convention (Kevin 2026-06-29 : « le 1er/3 ne sont pas convention ») → blancs.
+  if(/['"]$/.test(s))return CMC_META_BG_COLORS.CONV;           // Convention → rouge
   if(/\*$/.test(s)||(typeof CODES!=="undefined"&&CODES[s]&&CODES[s].cdp))return CMC_META_BG_COLORS.CDP; // CDP → orange
   var base=s.toUpperCase().replace(/[C'":*]+$/g,"");
   if(base==="CP"||base==="CRH"||base==="CDP"||base==="CDH"||base==="CPS"||base==="CPM")return CMC_META_BG_COLORS.CP; // congé → rose
