@@ -5493,6 +5493,9 @@ function _cmcApplyPlanningSeed(){
       (m.emps||[]).forEach(function(se){ if(!se||!se.id)return; if(!byId[se.id]){ var ne={id:se.id,name:se.name,family:se.family||"bj",teamHistory:{},familyHistory:{}}; A.employees.push(ne); byId[se.id]=ne; } });
       var row={}; Object.keys(m.ov).forEach(function(id){ row[id]={}; Object.keys(m.ov[id]).forEach(function(d){ row[id][d]=m.ov[id][d]; }); });
       A.overrides[key]=row;
+      // v9.831 — couleurs PDF à l'identique : fond rouge (convention) / écriture rouge
+      // (horaire modifié), portées par la meta (comme l'import).
+      if(m.meta){ A.overrides_meta=A.overrides_meta||{}; var mrow={}; Object.keys(m.meta).forEach(function(id){ mrow[id]={}; Object.keys(m.meta[id]).forEach(function(d){ mrow[id][d]=Object.assign({},m.meta[id][d]); }); }); A.overrides_meta[key]=mrow; }
       if(m.mirror&&Object.keys(m.mirror).length){ try{localStorage.setItem("cmc_team_mirror_"+key,JSON.stringify(m.mirror));}catch(_){} }
       if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[id]; if(e){ if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]=m.fam[id]; } }); }
       applied++;
@@ -5505,7 +5508,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.830";
+var APP_VER="v9.831";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24194,6 +24197,10 @@ function vPlan(){
         // du code (rose/violet/rouge/orange/blanc), au lieu d'une couleur arc-en-ciel par code.
         var _statusBg=cmcCodeStatusBg(code);
         var cellBg=isTodCell?(code?(_metaBg||_statusBg):"rgba(201,162,39,.06)"):(_metaBg||_statusBg);
+        // v9.831 — horaire modifié (PDF) : ÉCRITURE rouge sur fond CLAIR (meta.fg="red").
+        // Le fond reste blanc même si le code finit par ' / " (≠ convention à fond rouge).
+        var _metaFg="";try{var _mfr=_vPlanMetaCache&&_vPlanMetaCache[emp.id];if(_mfr&&_mfr[d]&&_mfr[d].fg==="red")_metaFg="#cc0000";}catch(_mfe){}
+        if(_metaFg&&!_metaBg)cellBg=_CMC_WORK_CELL_BG;
         // v9.71 — Toutes les cellules utilisent box-shadow:inset (ne déborde pas sur voisines)
         // au lieu de border (qui avec border-collapse:collapse créait un chevauchement visuel
         // sur la colonne "aujourd'hui" à cause de la bordure dorée plus épaisse)
@@ -24206,9 +24213,10 @@ function vPlan(){
         var _codeTxt=code||"\u00b7";
         var _codeLen=_codeTxt.length;
         var _codeCls=_codeLen>=7?"codeL7":_codeLen>=6?"codeL6":_codeLen>=5?"codeL5":"";
+        var _txtCol=_metaFg||ci.c;
         var cellInner=ci.cdp
-          ?'<div style="display:flex;flex-direction:column;align-items:center;line-height:1.1"><span class="'+_codeCls+'" style="color:'+ci.c+';font-size:13px;font-weight:900">'+code.replace("*","")+'</span><span style="font-size:10px;color:#987018;font-weight:700">CDP</span></div>'
-          :'<span class="'+_codeCls+'" style="color:'+ci.c+';font-weight:900">'+_codeTxt+'</span>';
+          ?'<div style="display:flex;flex-direction:column;align-items:center;line-height:1.1"><span class="'+_codeCls+'" style="color:'+_txtCol+';font-size:13px;font-weight:900">'+code.replace("*","")+'</span><span style="font-size:10px;color:#987018;font-weight:700">CDP</span></div>'
+          :'<span class="'+_codeCls+'" style="color:'+_txtCol+';font-weight:900">'+_codeTxt+'</span>';
         cellInner+=(_myComment?'<div style="width:4px;height:4px;border-radius:50%;background:#c9a227;margin:1px auto" title="'+esc(_myComment)+'"></div>':'');
         _rha.push('<td class="ctd'+_admClass+'" style="background:'+cellBg+';border:0;'+cellShadow+'"'+click+'>'+cellInner+'</td>');
       });
@@ -27012,6 +27020,30 @@ function _cmcRollbackToPreviousImport(iy,im){
   }catch(e){toast("Erreur rollback : "+(e&&e.message||e),"err");}
 }
 
+// v9.831 — Filet anti-fuite des marqueurs couleur. Certains parsers grille (CSV/secours
+// index-based) ne strippent pas les marqueurs {{CONV}}/{{MODH}} → ils se retrouvent dans
+// le code stocké. On les convertit en meta (fond rouge / écriture rouge) puis on nettoie
+// le code (reproduction à l'identique : le code reste celui du PDF, la couleur va en meta).
+function _cmcApplyLeakedColorMarkers(key){
+  try{
+    var ov=A.overrides&&A.overrides[key]; if(!ov)return;
+    Object.keys(ov).forEach(function(eid){
+      var row=ov[eid]; if(!row)return;
+      Object.keys(row).forEach(function(d){
+        var c=String(row[d]==null?"":row[d]);
+        if(c.indexOf("{{")<0)return;
+        var conv=/\{\{CONV\}\}/.test(c),modh=/\{\{MODH\}\}/.test(c);
+        row[d]=c.replace(/\{\{[A-Z]+\}\}/g,"").trim();
+        if(conv)_cmcStoreImportMeta(key,eid,d,{bg:"CONV"});
+        if(modh)_cmcStoreImportMeta(key,eid,d,{fg:"red"});
+      });
+    });
+    // Nettoie les entrées CODES « garbage » apprises avec marqueur (ex 19/3C{{CONV}}).
+    var dirty=false;
+    Object.keys(CODES).forEach(function(k){if(k.indexOf("{{")>=0){delete CODES[k];dirty=true;}});
+    if(dirty&&typeof _rebuildCK==="function")_rebuildCK();
+  }catch(e){console.warn("[_cmcApplyLeakedColorMarkers]",e);}
+}
 function _cmcInferCellMetaFromCodes(key){
   var stats={inferred:0,bgTypes:{},ffCells:0,starCells:0};
   try{
@@ -27027,10 +27059,14 @@ function _cmcInferCellMetaFromCodes(key){
       Object.keys(row).forEach(function(d){
         var c=String(row[d]||"").trim();
         if(!c)return;
+        // v9.831 — un jour « horaire modifié » (pixel : fond blanc + écriture rouge, meta.fg=red)
+        // N'EST PAS une convention même si le code finit par ' ou " → ne pas lui mettre de fond rouge.
+        var _prevM=(A.overrides_meta&&A.overrides_meta[key]&&A.overrides_meta[key][eid]&&A.overrides_meta[key][eid][d])||null;
+        var _isModh=!!(_prevM&&_prevM.fg==="red");
         var bg=null;
         // Inferrence bg depuis code SBM (priorité 1)
         if(c.endsWith("*"))bg="CDP";
-        else if(_cmcIsConv(c))bg="CONV";
+        else if(_cmcIsConv(c)&&!_isModh)bg="CONV";
         else if(c==="CP")bg="CP";
         else if(c==="RH")bg="RH";
         else if(c==="R")bg="R";
@@ -38672,6 +38708,40 @@ function _doExtractPdfLines(file,onDone,onErr){
           onDone(_tr);return;
         }
         pdf.getPage(pg).then(function(page){
+          // v9.831 — Convention = code de travail en TEXTE ROUGE dans le PDF SBM (jour
+          // de R travaillé, « jour en plus »). L'ordre des opérateurs PDF ne capture PAS
+          // ce rouge de façon fiable (vérifié) → on rastérise la page et on échantillonne
+          // l'encre du glyph. Rendu NON-FATAL : si échec, l'import continue sans conv.
+          var _convImg=null,_convW=0,_convH=0,_convVpT=null,_convS=2;
+          // v9.831 — Reproduction À L'IDENTIQUE des couleurs (Kevin) : pour une cellule de
+          // travail, on lit le pixel rendu et on distingue le FOND (case) de l'ENCRE :
+          //   • fond ROUGE          → {{CONV}}  = jour de R travaillé (convention, « jour en plus »)
+          //   • encre rouge / fond clair → {{MODH}} = horaire modifié (écrit en rouge, fond blanc)
+          //   • sinon (encre noire) → "" (la couleur de fond CDP/CP/RH/R… vient déjà du code)
+          function _convCellTag(it){
+            if(!_convImg||!it||!it.transform)return "";
+            try{
+              var p=pdfjsLib.Util.applyTransform([it.transform[4],it.transform[5]],_convVpT);
+              var w=Math.max(6,(it.width||4)*_convS),h=Math.max(8,(it.height||8)*_convS);
+              var x0=Math.round(p[0]-1),y0=Math.round(p[1]-h),D=_convImg,W=_convW;
+              var red=0,dark=0,cnt={},best=null,bn=0;
+              for(var yy=Math.max(0,y0);yy<Math.min(_convH,y0+h+2);yy++){
+                for(var xx=Math.max(0,x0);xx<Math.min(_convW,x0+w+2);xx++){
+                  var idx=(yy*W+xx)*4,r=D[idx],g=D[idx+1],b=D[idx+2];
+                  if(r>140&&g<90&&b<90&&r>g+60&&r>b+60)red++;
+                  else if(r<90&&g<90&&b<90)dark++;
+                  var key=(r>>4)+","+(g>>4)+","+(b>>4),c=(cnt[key]=(cnt[key]||0)+1);
+                  if(c>bn){bn=c;best=key;}
+                }
+              }
+              if(!best)return "";
+              var mb=best.split(",").map(function(v){return parseInt(v)*16+8;});
+              if(mb[0]>170&&mb[1]<110&&mb[2]<110)return "{{CONV}}";   // fond rouge = convention
+              if(red>=3&&red>dark)return "{{MODH}}";                  // encre rouge / fond clair = horaire modifié
+              return "";
+            }catch(_ir){return "";}
+          }
+          function _afterRender(){
           // v9.67 — Extraire texte + couleurs pour détecter jours rouges (affluence)
           Promise.all([page.getTextContent(),page.getOperatorList()]).then(function(results){
             var tc=results[0],ops=results[1];
@@ -38722,7 +38792,7 @@ function _doExtractPdfLines(file,onDone,onErr){
               }catch(_g2){}
               if(!t)return;
               if(!rowMap[y])rowMap[y]=[];
-              rowMap[y].push({x:x,t:t,color:col,bg:bgCol});
+              rowMap[y].push({x:x,t:t,color:col,bg:bgCol,it:it});
             });
             // Détecter jours rouges (affluence) + fonds orange/rouge (CDP)
             if(!window._pdfRedDays)window._pdfRedDays=[];
@@ -38833,6 +38903,12 @@ function _doExtractPdfLines(file,onDone,onErr){
                    && /[A-Z]{3,}/.test(i.t||"")){
                   tag+="{{REDNAME}}";
                 }
+                // v9.831 — Reproduction identique : fond rouge = {{CONV}} (convention),
+                // encre rouge / fond clair = {{MODH}} (horaire modifié, écrit en rouge).
+                if(_convImg && /\d{1,2}\s*[\/Hh]\s*\d{1,2}/.test(i.t||"")){
+                  var _ct=_convCellTag(i.it);
+                  if(_ct&&tag.indexOf(_ct)<0)tag+=_ct;
+                }
                 return i.t+tag;
               }).join("\t");
               if(line.trim())allLines.push(line);
@@ -38845,6 +38921,19 @@ function _doExtractPdfLines(file,onDone,onErr){
             }catch(_g3){}
             pg++;nextPage();
           });
+          }
+          // v9.831 — Rastérisation (non-fatale) pour détecter l'encre rouge (convention).
+          try{
+            var _cvp=page.getViewport({scale:_convS});_convVpT=_cvp.transform;
+            var _ccnv=document.createElement("canvas");_ccnv.width=Math.ceil(_cvp.width);_ccnv.height=Math.ceil(_cvp.height);
+            _convW=_ccnv.width;_convH=_ccnv.height;
+            var _cctx=_ccnv.getContext("2d",{willReadFrequently:true});
+            page.render({canvasContext:_cctx,viewport:_cvp}).promise.then(function(){
+              try{_convImg=_cctx.getImageData(0,0,_convW,_convH).data;}catch(_gi){}
+              try{_ccnv.width=_ccnv.height=0;}catch(_fc){} // libère le canvas (mémoire iPhone)
+              _afterRender();
+            }).catch(function(){_afterRender();});
+          }catch(_rr){_afterRender();}
         });
       }
       nextPage();
@@ -40881,13 +40970,19 @@ function doImport(){
       // v9.67 — Appliquer automatiquement le tag couleur PDF
       if(_pdfTag){
         if(_pdfTag==="CDP"&&CDP_MAP[_ac.replace(/[*']/g,"")])_ac=CDP_MAP[_ac.replace(/[*']/g,"")];
-        else if(_pdfTag==="CONV"&&CODES[_ac.replace(/[*]/g,"")+"'"])_ac=_ac.replace(/[*]/g,"")+"'";
+        // v9.831 — CONV = fond rouge (convention). On NE mute PAS le code (reproduction à
+        // l'identique : 19/3c reste 19/3c) ; le rouge est porté par la meta bg, robuste
+        // quelle que soit la forme du code (chef « 'c » sans apostrophe finale).
+        else if(_pdfTag==="CONV"){try{if(typeof _cmcStoreImportMeta==="function")_cmcStoreImportMeta(key,empObj.id,_adn,{bg:"CONV"});}catch(_cvm){}}
         else if(_pdfTag==="AF")_ac="AF";
         else if(_pdfTag==="CP")_ac="CP";
         else if(_pdfTag==="RH")_ac="RH";
         else if(_pdfTag==="R")_ac="R";
         else if(_pdfTag==="RRT")_ac="RRT";
       }
+      // v9.831 — MODH = horaire modifié (écrit en ROUGE sur fond blanc, PDF SBM). Pas un
+      // jour de repos → fond reste celui du code, mais l'ÉCRITURE est rouge (meta.fg).
+      if(/\{\{MODH\}\}/.test(codeArr[_ai]||"")){try{if(typeof _cmcStoreImportMeta==="function")_cmcStoreImportMeta(key,empObj.id,_adn,{fg:"red"});}catch(_mhm){}}
       A.overrides[key][empObj.id][_adn]=_ac;
       refData.rows[empObj.id][_adn]=_ac;
       ok++;
@@ -41156,6 +41251,11 @@ function doImport(){
         if(_ci2>=_row.length) break;
         var _code=(_row[_ci2]||"").toUpperCase().replace(/[\u2215\u2044\uff0f]/g,"/");
         if(!_code||_code==="-"||_code==="0") continue;
+        // v9.831 — couleurs PDF à l'identique : {{CONV}} = fond rouge (convention,
+        // jour de R travaillé), {{MODH}} = écriture rouge (horaire modifié). On capture
+        // puis on STRIP le marqueur AVANT le lookup CODES (sinon code = garbage).
+        var _cConv=/\{\{CONV\}\}/.test(_code),_cModh=/\{\{MODH\}\}/.test(_code);
+        if(_cConv||_cModh)_code=_code.replace(/\{\{[A-Z]+\}\}/g,"");
         var _base=_code.endsWith("*")?_code.slice(0,-1):_code;
         // v9.140 — Auto-apprentissage : si code inconnu, l'apprendre au lieu de l'ignorer
         if(!CODES[_base]&&!CODES[_code]){learnNewCode(_base||_code);_rebuildCK();}
@@ -41163,6 +41263,8 @@ function doImport(){
         var _final=_code.endsWith("*")?(CDP_MAP[_base]||_code):_code;
         A.overrides[key][_emp.id][_di+1]=_final;
         refData.rows[_emp.id][_di+1]=_final;
+        if(_cConv){try{_cmcStoreImportMeta(key,_emp.id,_di+1,{bg:"CONV"});}catch(_cv1){}}
+        if(_cModh){try{_cmcStoreImportMeta(key,_emp.id,_di+1,{fg:"red"});}catch(_mh1){}}
         ok++;
       }
     }
@@ -41709,6 +41811,11 @@ function doImport(){
     refData.rows[emp.id]={};
     for(var di=codesStart;di<parts.length;di++){
       var _codeRaw=parts[di].trim();
+      // v9.831 — couleurs PDF à l'identique : {{CONV}} = fond rouge (convention, jour de
+      // R travaillé), {{MODH}} = écriture rouge (horaire modifié). Capturer puis STRIP
+      // le marqueur AVANT tout traitement (sinon le code devient garbage → décalage/perte).
+      var _gConv=/\{\{CONV\}\}/.test(_codeRaw),_gModh=/\{\{MODH\}\}/.test(_codeRaw);
+      if(_gConv||_gModh)_codeRaw=_codeRaw.replace(/\{\{[A-Z]+\}\}/g,"");
       // v9.770 (Kevin audit JUIN : "20/5\"C" vs PDF "20/5\"c") — préserver le `c`
       // final chef minuscule AVANT toUpperCase, sinon MATTONE F / BASILE G / FOREST M
       // / MAGAGNIN J / PASTOR P récupèrent `20/5"C` au lieu de `20/5"c` (l'algo de
@@ -41821,6 +41928,8 @@ function doImport(){
       if(!A.overrides[key][emp.id])A.overrides[key][emp.id]={};
       A.overrides[key][emp.id][dayNum]=code;
       refData.rows[emp.id][dayNum]=code;
+      if(_gConv){try{_cmcStoreImportMeta(key,emp.id,dayNum,{bg:"CONV"});}catch(_cv2){}}
+      if(_gModh){try{_cmcStoreImportMeta(key,emp.id,dayNum,{fg:"red"});}catch(_mh2){}}
       ok++;
     }
     // Marquer les employés supplémentaires imbriqués comme tokens invalides dans la section codes
@@ -42984,6 +43093,9 @@ function doImport(){
         _visualStats=_cmcApplyVisualMarkers(key,txt);
       }
     }catch(_visErr){console.warn("[visual-markers]",_visErr&&_visErr.message);}
+    // v9.831 — Filet : transforme tout marqueur couleur {{CONV}}/{{MODH}} laissé dans un
+    // code par un parser grille (qui ne les strip pas) en meta + NETTOIE le code.
+    try{if(typeof _cmcApplyLeakedColorMarkers==="function")_cmcApplyLeakedColorMarkers(key);}catch(_lkErr){console.warn("[leaked-markers]",_lkErr&&_lkErr.message);}
     // v9.616 — Infère meta bg per-cell depuis codes parser (CP/RH/R/AF/CDP/CONV/RRT)
     try{if(typeof _cmcInferCellMetaFromCodes==="function")_cmcInferCellMetaFromCodes(key);}catch(_inferErr){console.warn("[infer-meta]",_inferErr&&_inferErr.message);}
     // v9.615 — Flush A.overrides_meta cross-device via Firebase

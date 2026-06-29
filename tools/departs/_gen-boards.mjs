@@ -53,14 +53,18 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
     // 1er code de travail (pour le libellé horaire)
     const ABS = { RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1 };
     function firstWork(cells){ for (let d=1; d<=days; d++){ const c=cells[d]||cells[String(d)]; if(!c) continue; const u=String(c).toUpperCase(); if(ABS[u]) continue; return String(c).replace(/[c'"*:]+$/gi,''); } return ''; }
-    const teams = {}; // tid -> {fam, people:[{name,codes}]}
+    const metaAll = (A.overrides_meta || {})[key] || {};
+    const teams = {}; // tid -> {fam, people:[{name,codes,conv,modh}]}
     A.employees.forEach(e => {
       if (!e || !e.id || !e.name) return;
       const tid = (e.teamHistory||{})[key]; if (!tid) return;
       const cells = ov[e.id]; if (!cells || !Object.keys(cells).length) return;
       let fam = (e.familyHistory||{})[key] || e.family || 'bj'; if (fam === 'baccara') fam = 'cmc';
       const codes = {}; for (let d=1; d<=days; d++){ const c = cells[d]||cells[String(d)]||''; if(c) codes[d] = c; }
-      (teams[tid] = teams[tid] || { fam, people: [] }).people.push({ name: e.name, id: e.id, codes, fw: firstWork(cells) });
+      // v9.831 — couleurs PDF à l'identique : fond rouge (convention) / écriture rouge (horaire modifié)
+      const meta = metaAll[e.id] || {}, conv = {}, modh = {};
+      for (let d=1; d<=days; d++){ const m = meta[d]||meta[String(d)]; if(m){ if(m.bg==='CONV') conv[d]=1; if(m.fg==='red') modh[d]=1; } }
+      (teams[tid] = teams[tid] || { fam, people: [] }).people.push({ name: e.name, id: e.id, codes, conv, modh, fw: firstWork(cells) });
     });
     const mirror = {}; try { const m = JSON.parse(localStorage.getItem('cmc_team_mirror_'+key)||'{}'); Object.keys(m).forEach(k=>mirror[k]=m[k]); } catch(_){}
     // Construit les boards
@@ -79,7 +83,7 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
         const hw = t.people.map(p=>p.fw).filter(Boolean).sort((a,b)=>{const c={};t.people.forEach(p=>{if(p.fw)c[p.fw]=(c[p.fw]||0)+1;});return (c[b]||0)-(c[a]||0);})[0]||'';
         label = MOIS[monthIdx]+' '+year+' — '+fl+' '+num+(hw?(' ('+hw+')'):'');
       }
-      const board = { label, month: MOIS[monthIdx]+' '+year, year, monthIdx, days, fam: t.fam, people: t.people.map(p=>({ name:p.name, id:p.id, codes:p.codes })) };
+      const board = { label, month: MOIS[monthIdx]+' '+year, year, monthIdx, days, fam: t.fam, people: t.people.map(p=>{ const pe={ name:p.name, id:p.id, codes:p.codes }; if(p.conv&&Object.keys(p.conv).length)pe.conv=p.conv; if(p.modh&&Object.keys(p.modh).length)pe.modh=p.modh; return pe; }) };
       if (isAbs) board.kind = 'abs';
       if (t.fam === 'bj' && !isAbs) { const kev = t.people.find(p=>/DESARZENS/.test(p.name)); /* ancre facultative */ }
       boards[id] = board;
