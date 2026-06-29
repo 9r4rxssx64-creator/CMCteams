@@ -1382,6 +1382,11 @@ var CODES={
   // cleanup ligne 9054 car DEPL absent du dict CODES) : ajout DEPL + DELPT
   "DEPL"  :{l:"D\u00e9placement", bg:"#d8c0a0",c:"#2a1408",b:"#b09060",cdp:false},
   "DELPT" :{l:"D\u00e9placement", bg:"#d8c0a0",c:"#2a1408",b:"#b09060",cdp:false},
+  // v9.829 (Kevin 2026-06-29, source DERI W juillet) : code horaire opaque observ\u00e9 dans
+  // le PDF (cellule bleu clair). Reproduit \u00c0 L'IDENTIQUE (pas invent\u00e9). Code de TRAVAIL
+  // (ni repos ni absence) \u2192 occupe 1 jour, ne d\u00e9cale pas la ligne (lesson #69) et ne
+  // cr\u00e9e pas de faux repos \u2192 l'employ\u00e9 reste dans son \u00e9quipe.
+  "DELTTRA":{l:"DELTTRA", bg:"#bcd8e8",c:"#0c3a55",b:"#88b8d0",cdp:false},
   "15/19" :{l:"15h\u201319h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   "14/20" :{l:"14h\u201320h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   // ── PIT BOSS / SUPERVISEUR — codes spécifiques cadres (v9.121) ─────────
@@ -5500,7 +5505,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.828";
+var APP_VER="v9.829";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24185,8 +24190,10 @@ function vPlan(){
         var _isKb=isAdm&&window._kbFocus&&window._kbFocus.eid===emp.id&&window._kbFocus.day===d;
         var _admClass=(isAdm?" admc"+(window._lastPickedCode?" brush-active":"")+(_isSel?" bulk-sel":"")+(_isKb?" kb-focus":""):"")+_codeCls2;
         var isTodCell=d===todayD;
-        // v9.615 — _metaBg override si meta capture du PDF (ex: fond bleu FF) prioritaire sur ci.bg
-        var cellBg=isTodCell?(code?(_metaBg||ci.bg):"rgba(201,162,39,.06)"):(_metaBg||ci.bg);
+        // v9.829 — couleur cellule = STATUT (comme l'import PDF) : marqueur capturé > statut
+        // du code (rose/violet/rouge/orange/blanc), au lieu d'une couleur arc-en-ciel par code.
+        var _statusBg=cmcCodeStatusBg(code);
+        var cellBg=isTodCell?(code?(_metaBg||_statusBg):"rgba(201,162,39,.06)"):(_metaBg||_statusBg);
         // v9.71 — Toutes les cellules utilisent box-shadow:inset (ne déborde pas sur voisines)
         // au lieu de border (qui avec border-collapse:collapse créait un chevauchement visuel
         // sur la colonne "aujourd'hui" à cause de la bordure dorée plus épaisse)
@@ -27072,6 +27079,32 @@ var CMC_META_BG_COLORS={
 function cmcCellBgFromMeta(meta){
   if(!meta||!meta.bg)return "";
   return CMC_META_BG_COLORS[meta.bg]||"";
+}
+// v9.829 (Kevin 2026-06-29 « Reproduis les couleurs à l'identique. Comme l'import »):
+// la couleur d'une cellule horaire = son STATUT (comme le PDF SBM), PAS une couleur
+// par code. Le PDF laisse les cellules de TRAVAIL en BLANC et ne colore que : congé
+// (rose), repos RH (violet), repos R (lavande), Convention suffixe ' ou " (rouge),
+// CDP suffixe * (orange), formation AF (vert), maladie M (rouge clair), RRT (jaune).
+// Marche SANS marqueur d'import (donc aussi sur la page Départs). Source unique.
+var _CMC_WORK_CELL_BG="#fbfaf3"; // blanc cassé (cellule de travail, comme le PDF)
+function cmcCodeStatusBg(code){
+  if(code==null||code==="")return "";
+  var s=String(code);
+  // Convention = jour de repos (R) TRAVAILLÉ (jour en plus) → suffixe ' ou " (même
+  // suivi du « c » chef, ex 19/4'c) → ROUGE (Kevin 2026-06-29). ' ou " N'APPARAÎT que
+  // sur les codes Convention → détection « n'importe où » sûre.
+  if(/['"]/.test(s))return CMC_META_BG_COLORS.CONV;            // Convention → rouge
+  if(/\*$/.test(s)||(typeof CODES!=="undefined"&&CODES[s]&&CODES[s].cdp))return CMC_META_BG_COLORS.CDP; // CDP → orange
+  var base=s.toUpperCase().replace(/[C'":*]+$/g,"");
+  if(base==="CP"||base==="CRH"||base==="CDP"||base==="CDH"||base==="CPS"||base==="CPM")return CMC_META_BG_COLORS.CP; // congé → rose
+  if(base==="RH")return CMC_META_BG_COLORS.RH;                  // repos hebdo → violet
+  if(base==="R")return CMC_META_BG_COLORS.R;                    // repos → lavande
+  if(base==="AF")return CMC_META_BG_COLORS.AF;                  // formation → vert
+  if(base==="M"||base==="MAL")return "rgba(224,96,96,.30)";    // maladie → rouge clair
+  if(base==="RRT"||base==="PRT"||base==="RTP"||base==="RTR")return CMC_META_BG_COLORS.RRT; // RRT → jaune
+  if(base==="DEPL"||base==="DEP")return "rgba(216,192,160,.34)"; // déplacement → beige
+  if(base==="AT"||base==="PAT"||base==="ABI"||base==="ABS"||base==="SS"||base==="CL"||base==="CFL")return "rgba(200,200,200,.28)"; // autres absences → gris
+  return _CMC_WORK_CELL_BG;                                     // TRAVAIL → blanc (PDF)
 }
 // v9.619 — Helper unique factorisé vPlan/vDeparts avec CACHE activé.
 // Signature : metaByEidCache optionnel (objet `A.overrides_meta[key]` précalculé
@@ -36026,7 +36059,7 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
     "CMC", "CDP", "CCDP", "MCB", "SUN", "PK", "HD", "PRT", "HC", "RRT",
     "RTP", "RTR", "RHS", "DP", "CRH", "CPS", "CPM", "CDH", "FL", "CFL",
     "FTP", "FTR", "RFT", "FCP", "FCS", "FRH", "FFL", "CL", "CEO", "CSC",
-    "CSS", "PNE", "AMP", "MPC", "MPP", "AT", "PAT", "SS", "P", "DEPL", "DEP",
+    "CSS", "PNE", "AMP", "MPC", "MPP", "AT", "PAT", "SS", "P", "DEPL", "DEP", "DELTTRA",
     "PIT", "BOSS", "SUPERVISEUR", "INSPECTEUR", "POKER", "NO", "LIMIT", "DU", "AU",
     "AVRIL", "MAI", "JUIN", "JUILLET", "AOUT", "AOÛT", "SEPTEMBRE", "OCTOBRE",
     "NOVEMBRE", "DECEMBRE", "JANVIER", "FEVRIER", "FÉVRIER", "MARS",
@@ -36060,7 +36093,7 @@ function _cmcDetectTeamsByPdfColumn(srcText,iy,im){
   //   « R » seul (repos générique) : également accepté.
   // Format horaire : <heures>/<heures> avec suffixes c/'/"/:/* + CDP/PK (postfix)
   //   H majuscule accepté (12H30/19 cf NOTES_USER 1214).
-  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP|PK)*|P|RH|R|RTP|RTR|RRT|RHS|DP|CP|CRH|CPS|CPM|CDP|CDH|FL|CFL|FTP|FTR|RFT|FCP|FCS|FRH|FFL|M|MAL|AT|MT|ABS|ABI|ABP|AF|CL|CEO|CSC|CSS|SS|PNE|AMP|MPC|MPP|PAT|PRT|HC|EDC|HD|PK|DEPL|DEP)$/;
+  const CODE_RE = /^(?:\d{1,2}[hH]?\d{0,2}\/\d{1,2}[hH]?\d{0,2}(?:[c'":]|"\'|\*|CDP|PK)*|P|RH|R|RTP|RTR|RRT|RHS|DP|CP|CRH|CPS|CPM|CDP|CDH|FL|CFL|FTP|FTR|RFT|FCP|FCS|FRH|FFL|M|MAL|AT|MT|ABS|ABI|ABP|AF|CL|CEO|CSC|CSS|SS|PNE|AMP|MPC|MPP|PAT|PRT|HC|EDC|HD|PK|DEPL|DEP|DELTTRA)$/;
 
   // Numéro d'équipe explicite (V1 juin 2026+) : « BRTP+K 5 NAME »
   //   - Code poste BRTPECK suivi d'un espace, puis 1-2 chiffres = numéro d'équipe,

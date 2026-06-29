@@ -150,13 +150,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.12.1</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.13</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.12.1";
+var APP_VER="v1.13";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -182,17 +182,25 @@ var CODE_COLORS={
   "SS":{bg:"#e0e0e0",fg:"#202020"}, "FL":{bg:"#ffd850",fg:"#1a1004"}, "ABS":{bg:"#e0e0e0",fg:"#202020"}, "ABI":{bg:"#e0e0e0",fg:"#202020"}
 };
 var CONV_COLOR={bg:"#d8342e",fg:"#ffe23a"}; // Convention (' ou ") = fond rouge / écriture jaune (PDF SBM)
+// v1.13 (Kevin 2026-06-29 « Reproduis les couleurs à l'identique. Comme l'import ») :
+// couleur d'une cellule = son STATUT (comme le PDF SBM / l'app CMCteams), PAS une couleur
+// par horaire. Le PDF laisse les cellules de TRAVAIL en BLANC et ne colore que : congé
+// (rose), RH (violet), R (lavande), Convention ' ou " (rouge), CDP * (orange), formation
+// AF (vert), maladie M (rouge clair), RRT (jaune). Aligné sur cmcCodeStatusBg de l'app.
 function codeStyle(c){
   if(!c) return null;
-  if(CODE_COLORS[c]) return CODE_COLORS[c];            // RH/R/CP/M/AF... exacts
-  // v1.11.2 (Kevin 2026-06-22 « il manque l'orange pour le CDP, service orange Café de Paris ») :
-  // CDP (Café de Paris) = marqueur '*' (ou texte CDP) → ORANGE, IDENTIQUE à l'import CMCteams
-  // (table CODES : 20/5*/16/3* = #ffc488 cdp:true). Avant, le '*' était stripé → la cellule
-  // prenait la couleur de l'HORAIRE de base (ex 20/5* → bleu) au lieu de l'orange CDP.
-  if(/\*/.test(c)||/CDP/i.test(c)) return {bg:"#ffc488",fg:"#5a2808"};
-  if(/['"]/.test(c)) return CONV_COLOR;                // jour Convention → rouge/jaune
-  var base=c.replace(/[c*]+$/,"").replace(/['"]/g,""); // strip suffixe chef/CDP
-  return CODE_COLORS[base]||{bg:"#1d3a55",fg:"#dfeaf5"}; // base horaire, sinon bleu travail
+  if(/['"]/.test(c)) return CONV_COLOR;                                   // Convention (' ou ", même 'c) → rouge/jaune
+  if(/\*/.test(c)||/CDP/i.test(c)) return {bg:"#ffc488",fg:"#5a2808"};    // CDP → orange
+  var base=String(c).replace(/[c*:]+$/,"").replace(/['"]/g,"").toUpperCase();
+  if(base==="CP"||base==="CRH"||base==="CDP"||base==="CDH"||base==="CPS"||base==="CPM") return {bg:"#f8c0d0",fg:"#2a0410"}; // congé → rose
+  if(base==="RH") return {bg:"#c8a8e0",fg:"#0c0430"};                      // repos hebdo → violet
+  if(base==="R")  return {bg:"#d8c8f0",fg:"#2a1850"};                      // repos → lavande
+  if(base==="AF") return {bg:"#a8e0a8",fg:"#031805"};                      // formation → vert
+  if(base==="M"||base==="MAL") return {bg:"#f0a0a0",fg:"#3a0808"};         // maladie → rouge clair
+  if(base==="RRT"||base==="PRT"||base==="RTP"||base==="RTR") return {bg:"#ffd850",fg:"#1a1004"}; // RRT → jaune
+  if(base==="DEPL"||base==="DEP") return {bg:"#e0d2bc",fg:"#3a2810"};      // déplacement → beige
+  if(base==="AT"||base==="PAT"||base==="ABI"||base==="ABS"||base==="SS"||base==="CL"||base==="CFL"||base==="MT") return {bg:"#dcdcdc",fg:"#202020"}; // autres absences → gris
+  return {bg:"#fbfaf3",fg:"#1a2a1a"};                                      // TRAVAIL → blanc (PDF)
 }
 function isRest(c){return c==="RH"||c==="R";} // pour la détection d'équipe (jours de repos)
 
