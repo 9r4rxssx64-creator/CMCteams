@@ -5526,7 +5526,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.833";
+var APP_VER="v9.834";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17094,20 +17094,31 @@ function calcDepPos(empName,tid,day){
     return da.some(function(d){return isWork((pl[e.id]||{})[d]||'');});
   });
   if(!chefEmps.length) return null;
-  var sl=chefEmps.length;
-  var SEQ=getSeqForSize(sl);
-  // Position de empName dans la liste effective (pas CHEFS_T)
-  var empIdx=chefEmps.findIndex(function(e){return e.name===empName;});
-  if(empIdx<0) return null;
-  // Référence : premier employé ayant des données (cohérent avec vDeparts refEmpD)
-  var refEmp=chefEmps.find(function(e){return da.some(function(d){return isWork((pl[e.id]||{})[d]||'');});});
-  if(!refEmp) return null;
-  var workDays=da.filter(function(d){return isWork((pl[refEmp.id]||{})[d]||'');});
+  // v9.834 (Kevin 2026-06-29 « vérifie les numéros des départs, l'algorithme ») — PORT
+  // de l'algo VALIDÉ de la page Départs (compute v1.11.1, Kevin 2026-06-22 « il manque
+  // les départs à partir du 16 » + « passer à 4 pour l'algo »). L'ancien calcDepPos
+  // (refEmp + taille fixe sl + base par personne) produisait 3 bugs mesurés sur l'import
+  // réel (34/38 équipes) : (a) AUCUN départ dès que le 1er chef réf part en CP à la
+  // mi-mois (workDays indexés sur lui seul → wi=-1 pour TOUS) ; (b) numéros FANTÔMES
+  // supérieurs au nb de chefs présents (taille = total, pas présents) ; (c) un absent
+  // « consommait » un numéro. Correctif (réplique exacte de compute() de la page) :
+  //  (1) workDays = UNION des jours travaillés par TOUT chef actif ;
+  //  (2) rotation calculée sur les chefs PRÉSENTS le jour J, taille de séquence = présents ;
+  //  (3) chaque présent reçoit SEQd[(rot+rang)%pc] selon son rang parmi les présents
+  //      (triés par base = CI perso, sinon index dans chefEmps). off=0 (pas d'ancre côté app).
+  var baseOf={}; chefEmps.forEach(function(e,ai){ baseOf[e.name]=(CI[e.name]!==undefined?CI[e.name]:ai); });
+  var workDays=[];
+  for(var _wd=1;_wd<=days;_wd++){
+    for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWork((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
+  }
   var wi=workDays.indexOf(day); if(wi<0) return null;
-  // base : index personnalisé CI ou index dans chefEmps (cohérent avec vDeparts)
-  var base=CI[empName]!==undefined?CI[empName]:empIdx;
-  var rotIdx=(wi%4+Math.floor(wi/4)+base)%sl;
-  return SEQ[rotIdx];
+  var present=chefEmps.filter(function(e){return isWork((pl[e.id]||{})[day]||'');})
+                      .sort(function(a,b){return baseOf[a.name]-baseOf[b.name];});
+  var pc=present.length; if(!pc) return null;
+  var j=present.findIndex(function(e){return e.name===empName;});
+  if(j<0) return null; // empName ne travaille pas ce jour-là → pas de numéro de départ
+  var SEQd=getSeqForSize(pc), rot=(wi%4)+Math.floor(wi/4);
+  return SEQd[(((rot+j)%pc)+pc)%pc];
 }
 
 // ── Commentaires sur un jour ──
