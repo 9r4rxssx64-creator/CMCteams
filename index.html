@@ -5500,7 +5500,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.826";
+var APP_VER="v9.827";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11611,6 +11611,48 @@ async function webauthnDoLogin(uid){
   setTimeout(function(){if(typeof _checkPitBanner==="function")_checkPitBanner();},600);
   if(greet)toast("\ud83d\udc4b Bienvenue "+greet+" (Face ID)");
 }
+// v9.827 (Kevin 2026-06-29 \u00ab Oui pour FaceID dans CMCteams \u00bb) \u2014 S\u00c9CURIT\u00c9 NIVEAU B :
+// 1\u00e8re connexion = code perso ; ensuite Face ID auto. Apr\u00e8s un login r\u00e9ussi PAR CODE
+// (PIN/mot de passe, PAS via Face ID), si l'appareil supporte la biom\u00e9trie et que
+// l'employ\u00e9 n'a PAS encore enr\u00f4l\u00e9 \u2192 on PROPOSE une fois d'activer Face ID pour la
+// prochaine fois. Fail-open total : refus / non support\u00e9 \u2192 rien ne change, le code
+// reste la m\u00e9thode. Propos\u00e9 1\u00d7 par compte+appareil (flag cmc_faceid_offered_<uid>) ;
+// re-propos\u00e9 seulement si l'employ\u00e9 clique \u00ab Plus tard \u00bb (pas \u00ab Non merci \u00bb).
+function _cmcOfferFaceIdEnroll(uid){
+  try{
+    if(!uid||typeof webauthnSupported!=="function"||!webauthnSupported())return;
+    if(typeof webauthnCredsOf==="function" && webauthnCredsOf(uid).length>0)return; // d\u00e9j\u00e0 enr\u00f4l\u00e9
+    var offKey="cmc_faceid_offered_"+uid;
+    if(localStorage.getItem(offKey)==="no")return; // a d\u00e9j\u00e0 refus\u00e9 d\u00e9finitivement
+    setTimeout(function(){
+      try{
+        if(document.getElementById("cmcFidOffer"))return;
+        var prenom=((A.reg&&A.reg[uid])||{}).prenom||"";
+        var ov=document.createElement("div");
+        ov.id="cmcFidOffer";
+        ov.style.cssText="position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);padding:18px";
+        ov.innerHTML='<div style="max-width:360px;width:100%;background:#13201a;border:1px solid rgba(74,160,255,.4);border-radius:16px;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.5)">'
+          +'<div style="font-size:40px;text-align:center;margin-bottom:6px">\ud83d\udd10</div>'
+          +'<div style="font-size:18px;font-weight:800;color:#d8ecff;text-align:center;margin-bottom:6px">Activer Face ID '+(prenom?esc(prenom):"")+' ?</div>'
+          +'<div style="font-size:13px;color:#a8c4b8;text-align:center;line-height:1.5;margin-bottom:18px">La prochaine fois, connecte-toi d\u2019un regard \u2014 sans retaper ton code. Tes donn\u00e9es biom\u00e9triques restent <b>uniquement sur ton iPhone</b>.</div>'
+          +'<button id="cmcFidYes" style="width:100%;padding:14px;font-size:16px;font-weight:800;background:linear-gradient(135deg,rgba(74,160,255,.3),rgba(122,204,144,.22));border:1px solid rgba(74,160,255,.55);color:#d8ecff;border-radius:11px;cursor:pointer;min-height:50px;margin-bottom:8px">\ud83d\udd10 Activer Face ID</button>'
+          +'<button id="cmcFidLater" style="width:100%;padding:11px;font-size:14px;background:transparent;border:1px solid rgba(160,200,150,.3);color:#9fb89f;border-radius:10px;cursor:pointer;min-height:42px;margin-bottom:6px">Plus tard</button>'
+          +'<button id="cmcFidNo" style="width:100%;padding:8px;font-size:12px;background:transparent;border:none;color:#7a9a80;cursor:pointer">Non merci, ne plus demander</button>'
+          +'</div>';
+        document.body.appendChild(ov);
+        var close=function(){try{ov.remove();}catch(_){}};
+        document.getElementById("cmcFidYes").onclick=function(){
+          close();
+          try{webauthnRegister(uid).then(function(okR){
+            if(okR){try{localStorage.setItem(offKey,"yes");}catch(_){}if(typeof toast==="function")toast("\u2705 Face ID activ\u00e9 \u2014 connexion d\u2019un regard la prochaine fois");}
+          });}catch(_){}
+        };
+        document.getElementById("cmcFidLater").onclick=close; // re-propos\u00e9 au prochain login
+        document.getElementById("cmcFidNo").onclick=function(){try{localStorage.setItem(offKey,"no");}catch(_){}close();};
+      }catch(_){}
+    },900);
+  }catch(_){}
+}
 // ═══════════════════════════════════════════════════════════════════════
 // Ping-casino — détection WiFi casino sans accès direct au SSID (v9.399)
 // Kevin configure des URLs d'endpoints internes casino ; si l'une répond
@@ -16110,7 +16152,7 @@ function stepVerifyCode(){
   if(A.reg[loginUid]){A.reg[loginUid].verified=true;A.reg[loginUid].verifiedAt=Date.now();ls("cmc_reg",A.reg);}
   var emp=empById(loginUid);
   if(!emp){if(er)er.textContent="Compte introuvable";return;}
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
+  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
   toast("\u2705 Bienvenue !");
   // Guide premier login
   if(!localStorage.getItem("cmc_onboarded")){
@@ -16198,7 +16240,7 @@ function stepPin(){
   ls("cmc_pin_fails",{count:0,until:0});
   logAdminSession("success",{method:"pin",failsSinceLast:_failsSinceLast});
   var emp=empById(AID);
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
+  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
 }
 function step1(){
   var er=document.getElementById("lerr");
@@ -16320,7 +16362,7 @@ function step2(){
   }
   var regPrenom=(A.reg[loginUid]||{}).prenom||"";
   var greet=regPrenom||(emp.name||"").split(" ").slice(1).join(" ")||(emp.name||"").split(" ")[0]||"";
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);
+  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
   if(greet)toast("Bienvenue "+greet+"\u00a0!");
 }
 
