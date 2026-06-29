@@ -33,11 +33,18 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
     handleFileImport(inp);
   }, { b64, name: pdfRel.split('/').pop(), y: year, m: monthIdx });
   await page.waitForFunction((key) => { const ov = (window.A && A.overrides && A.overrides[key]) || null; return ov && Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length > 50; }, year + '-' + monthIdx, { timeout: 45000 }).catch(() => {});
-  await page.waitForTimeout(1500);
-  // DÉTERMINISME : forcer la passe géométrique finale (différée 900ms) à se TERMINER
-  // synchroniquement avant la lecture — sinon la couverture dépend du timing (race).
-  await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
-  await page.waitForTimeout(500);
+  // DÉTERMINISME (lesson #88) : la passe géométrique finale est différée (900ms) ET
+  // sensible à la contention CPU. On FORCE _cmcFinalGeometricFill puis on POLL jusqu'à
+  // ce que la couverture soit STABLE (2 lectures identiques), max ~15s — indépendant du
+  // timing/charge machine. Sinon la couverture varie (247 vs 285) selon la charge.
+  const cov = (key) => { const ov = (window.A && A.overrides && A.overrides[key]) || {}; return Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length; };
+  let prev = -1, stable = 0, key = year + '-' + monthIdx;
+  for (let i = 0; i < 30 && stable < 2; i++) {
+    await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
+    await page.waitForTimeout(500);
+    const c = await page.evaluate(cov, key);
+    stable = (c === prev && c > 50) ? stable + 1 : 0; prev = c;
+  }
   const out = await page.evaluate(({ key, year, monthIdx, MOIS }) => {
     const ov = A.overrides[key] || {};
     const days = new Date(year, monthIdx + 1, 0).getDate();

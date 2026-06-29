@@ -39,9 +39,18 @@ async function extract(browser, pdfRel, year, monthIdx) {
     handleFileImport(inp);
   }, { b64, name: pdfRel.split('/').pop(), y: year, m: monthIdx });
   await page.waitForFunction((key) => { const ov = (window.A && A.overrides && A.overrides[key]) || null; return ov && Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length > 50; }, year + '-' + monthIdx, { timeout: 45000 }).catch(() => {});
-  await page.waitForTimeout(1500);
-  await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
-  await page.waitForTimeout(500);
+  // DÉTERMINISME (lesson #88) : FORCE la passe géométrique différée + POLL jusqu'à
+  // couverture STABLE (2 lectures identiques), indépendant de la contention CPU.
+  {
+    const cov = (key) => { const ov = (window.A && A.overrides && A.overrides[key]) || {}; return Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length; };
+    let prev = -1, stable = 0, key = year + '-' + monthIdx;
+    for (let i = 0; i < 30 && stable < 2; i++) {
+      await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
+      await page.waitForTimeout(500);
+      const c = await page.evaluate(cov, key);
+      stable = (c === prev && c > 50) ? stable + 1 : 0; prev = c;
+    }
+  }
   const out = await page.evaluate((key) => {
     const ov = {}, raw = A.overrides[key] || {};
     Object.keys(raw).forEach(id => { const r = raw[id]; if (r && Object.keys(r).length) { ov[id] = {}; Object.keys(r).forEach(d => { if (r[d]) ov[id][d] = r[d]; }); } });

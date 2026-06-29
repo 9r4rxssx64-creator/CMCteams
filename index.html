@@ -5500,7 +5500,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.827";
+var APP_VER="v9.828";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -23818,20 +23818,29 @@ function vVerify(){
   var mir={};try{mir=lg("cmc_team_mirror_"+key,{})||{};}catch(_){}
   tids.forEach(function(t){
     var ms=teams[t];
-    // restKey des membres présents tout le mois (≥1 repos) — doit être identique
-    var keys={};ms.forEach(function(e){var rk=restDays(e.id).join(",");if(rk)keys[rk]=(keys[rk]||0)+1;});
-    var nKeys=Object.keys(keys).length;
-    var sizeBad=ms.length<2||ms.length>10;
-    var restBad=nKeys>2; // tolère équipe + 1 variante (CP partiels)
+    // v9.828 — REPOS HOMOGÈNES = même rotation. Les CP-partiels (présents une partie
+    // du mois) ont MOINS de jours de repos, mais TOUS inclus dans le pattern de
+    // l'équipe → leur restKey tronqué est un SOUS-ENSEMBLE du pattern dominant → ils
+    // appartiennent bien à l'équipe (règle Kevin : même famille + mêmes repos). On ne
+    // flag QUE les membres dont les repos NE SONT PAS un sous-ensemble du dominant
+    // (= vraie rotation différente, mal fusionnée). Une grande équipe à repos
+    // homogènes est légitime (cartes CMC tournent en pools larges) → pas de cap taille.
+    var restArrs=ms.map(function(e){return restDays(e.id);}).filter(function(a){return a&&a.length;});
+    var dom=[];restArrs.forEach(function(a){if(a.length>dom.length)dom=a;});
+    var domSet={};dom.forEach(function(d){domSet[d]=1;});
+    var nonSubNames=ms.filter(function(e){var a=restDays(e.id);return a&&a.length&&a.some(function(d){return !domSet[d];});}).map(function(e){return e.name;});
+    var partials=restArrs.filter(function(a){return a.length<dom.length;}).length; // CP-partiels (sous-ensemble plus court)
+    var restBad=nonSubNames.length>0; // au moins 1 membre avec une rotation vraiment différente
+    var sizeBad=ms.length<2;          // singleton (sur-/sous-découpe). Grande équipe homogène = OK.
     var st=(sizeBad||restBad)?"warn":"ok";
     if(st==="warn")teamWarn++;
     var col=st==="ok"?"#3a8a50":"#c9a227";
     var famLbl=t.replace(/^r.*/,"Roul.").replace(/^c.*/,"CMC").replace(/^b.*/,"Bac.").replace(/^\d+$/,"BJ");
     teamRows+='<div style="padding:6px 0;border-top:1px solid rgba(255,255,255,.05)">'
       +'<span style="color:'+col+';font-weight:700">'+(st==="ok"?"✅":"⚠️")+' '+esc(famLbl)+' Éq.'+esc(t)+'</span> '
-      +'<span style="color:#9fb89f">· '+ms.length+' emp.'+(mir[t]?(' · miroir '+esc(mir[t])):'')+'</span>'
-      +(restBad?'<br><span style="color:#c9a227;font-size:12px">repos non homogènes ('+nKeys+' rotations distinctes) — vérifier</span>':'')
-      +(sizeBad?'<br><span style="color:#c9a227;font-size:12px">taille inhabituelle ('+ms.length+') — équipe trop '+(ms.length>10?'grande':'petite')+'</span>':'')
+      +'<span style="color:#9fb89f">· '+ms.length+' emp.'+(partials?(' (dont '+partials+' CP-partiels)'):'')+(mir[t]?(' · miroir '+esc(mir[t])):'')+'</span>'
+      +(restBad?'<br><span style="color:#c9a227;font-size:12px">'+nonSubNames.length+' membre(s) avec une rotation différente (repos hors équipe) — vérifier : '+esc(nonSubNames.slice(0,6).join(", "))+'</span>':'')
+      +(sizeBad?'<br><span style="color:#c9a227;font-size:12px">équipe à 1 seul membre — vérifier le regroupement</span>':'')
       +'<br><span style="font-size:12px;color:#90a890">'+esc(ms.map(function(e){return e.name;}).slice(0,14).join(" · "))+(ms.length>14?" …":"")+'</span>'
       +'</div>';
   });
