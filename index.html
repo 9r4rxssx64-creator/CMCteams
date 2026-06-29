@@ -1367,7 +1367,7 @@ var CODES={
   "19/4*" :{l:"19h\u20134h CDP",   bg:"#ffc488",c:"#5a2808",b:"#e0a058",cdp:true},
   "16/3*" :{l:"Coupure CDP",       bg:"#ffc488",c:"#5a2808",b:"#e0a058",cdp:true},
   "16/22*":{l:"16h\u201322h CDP",  bg:"#ffc488",c:"#5a2808",b:"#e0a058",cdp:true},
-  "19/4'" :{l:"19h–4h (Convention)",bg:"#d8342e",c:"#ffe23a",b:"#a31f1a",cdp:false,conv:true}, // CONVENTION : fond rouge / écriture jaune (PDF SBM)
+  "19/4'" :{l:"19h–4h",bg:"#fff4a0",c:"#1a1004",b:"#e0c860",cdp:false}, // v9.833 (lesson #115) : variante ' = style de base (blanc), PAS convention (= meta pixel uniquement)
   // ── Repos / congés / absences (fonds colorés pastel) ──────────────────
   "RH"    :{l:"Repos Hebdo",  bg:"#c8a8e0",c:"#0c0430",b:"#a088c8",cdp:false},  // violet
   "R"     :{l:"Repos",        bg:"#d8c8f0",c:"#2a1850",b:"#b0a0d8",cdp:false},  // lavande (PDF SBM : R = lavande, NOTES_USER ; aligné vMonPlanning v9.754)
@@ -1515,12 +1515,17 @@ function _cmcEnsureQuoteVariant(tok){
   if(!m)return null;
   var base=m[1],variant=base+m[2];
   var existing=CODES[variant];
-  if(existing&&existing.conv)return variant; // d\u00e9j\u00e0 en couleur Convention
+  if(existing&&!existing.conv)return variant; // variante d\u00e9j\u00e0 cr\u00e9\u00e9e (style de base)
   if(!existing&&!CODES[base])return null;
+  // v9.833 (lesson #115) \u2014 la variante apostrophe garde le STYLE DU CODE DE BASE
+  // (texte sombre, fond de travail), PAS la couleur Convention : le PDF montre ces
+  // cellules en BLANC pour les croupiers. La convention (fond rouge) vient UNIQUEMENT
+  // de la m\u00e9ta pixel ({{CONV}}). Le suffixe ne fait que rendre le code reconnaissable
+  // par les parsers (\u00e9vite le drop/d\u00e9calage, lesson #69), sans le colorer en rouge.
   try{
-    var src=existing||CODES[base]||{};
-    var ent=Object.assign({},src,_CMC_CONV_STYLE,{learned:true,
-      l:(src.l&&!/convention/i.test(src.l))?(src.l+" (Convention)"):"Convention"});
+    var src=CODES[base]||existing||{};
+    var ent=Object.assign({},src,{learned:true,conv:false,
+      l:(src.l||variant)});
     CODES[variant]=ent;
     if(typeof _learnedCodes==="object"&&_learnedCodes){
       _learnedCodes[variant]=ent;
@@ -5521,7 +5526,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.832";
+var APP_VER="v9.833";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -21910,7 +21915,7 @@ function vMonPlanning(){
       :code==="M"?"linear-gradient(135deg,rgba(255,220,40,.65),rgba(230,190,20,.55))"
       :code==="RRT"||code==="PRT"?"linear-gradient(135deg,rgba(255,200,40,.58),rgba(220,160,20,.48))"
       :code.endsWith("*")?"linear-gradient(135deg,rgba(255,160,60,.60),rgba(220,120,30,.50))"
-      :(_mc==="conv"||_cmcIsConv(code))?"linear-gradient(135deg,rgba(216,52,46,.78),rgba(170,30,26,.68))"
+      :(_mc==="conv")?"linear-gradient(135deg,rgba(216,52,46,.78),rgba(170,30,26,.68))"
       :(ci2&&isWork(code)?codeBg+"cc":"rgba(10,22,12,.45)");
     var borderStyle=isToday?"3px solid #ffdc40":"2px solid "+(_isPast?"rgba(40,50,40,.6)":ci2&&isWork(code)?codeColor+"99":code==="CP"?"rgba(232,120,200,.7)":code==="RH"?"rgba(160,100,220,.7)":code==="AF"?"rgba(80,220,100,.7)":code==="M"?"rgba(255,220,40,.8)":isWE?"rgba(80,120,180,.4)":"rgba(120,180,120,.35)");
     var _affDot=_affOn&&_affCache[d]?'<span aria-hidden="true" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff4040;margin-left:3px;vertical-align:middle;box-shadow:0 0 6px rgba(255,64,64,.8)" title="Forte affluence"></span>':"";
@@ -21927,8 +21932,8 @@ function vMonPlanning(){
       +(_timeLabel?'<div style="font-size:11px;color:'+codeTxtColor+';opacity:.92;line-height:1;white-space:nowrap;overflow:hidden;max-width:100%;font-weight:700;'+txtShadow+'">'+_timeLabel+'</div>':"")
       +(depPos?'<div style="font-size:13px;color:#ffdc40;font-weight:900;'+txtShadow+'">\u2191'+depPos+'</div>':"")
       +(code.endsWith("*")?'<div style="font-size:10px;color:#fff;font-weight:900;line-height:1;background:rgba(220,120,30,.85);padding:1px 5px;border-radius:3px">\u2615 CDP</div>':"")
-      +((_mc==="conv"||_cmcIsConv(code))?'<div style="font-size:10px;color:#ffe23a;font-weight:900;line-height:1;background:rgba(170,30,26,.92);padding:1px 5px;border-radius:3px">\ud83c\udfa9 CONV</div>':_mc==="modh"?'<div style="font-size:9px;color:#ff5a5a;font-weight:900;line-height:1;background:rgba(255,255,255,.92);padding:1px 5px;border-radius:3px">\u270e modifi\u00e9</div>':"")
-      +(isWork(code)&&!code.endsWith("*")&&!(_mc==="conv"||_cmcIsConv(code))&&_mc!=="modh"?'<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1;font-weight:700">CMC</div>':"")
+      +((_mc==="conv")?'<div style="font-size:10px;color:#ffe23a;font-weight:900;line-height:1;background:rgba(170,30,26,.92);padding:1px 5px;border-radius:3px">\ud83c\udfa9 CONV</div>':_mc==="modh"?'<div style="font-size:9px;color:#ff5a5a;font-weight:900;line-height:1;background:rgba(255,255,255,.92);padding:1px 5px;border-radius:3px">\u270e modifi\u00e9</div>':"")
+      +(isWork(code)&&!code.endsWith("*")&&_mc!=="conv"&&_mc!=="modh"?'<div style="font-size:9px;color:rgba(255,255,255,.7);line-height:1;font-weight:700">CMC</div>':"")
       +'</div>';
     // Fin de semaine (samedi) ou fin de mois
     var _dow3=new Date(A.year,A.month,d).getDay();
@@ -27075,14 +27080,13 @@ function _cmcInferCellMetaFromCodes(key){
       Object.keys(row).forEach(function(d){
         var c=String(row[d]||"").trim();
         if(!c)return;
-        // v9.831 — un jour « horaire modifié » (pixel : fond blanc + écriture rouge, meta.fg=red)
-        // N'EST PAS une convention même si le code finit par ' ou " → ne pas lui mettre de fond rouge.
-        var _prevM=(A.overrides_meta&&A.overrides_meta[key]&&A.overrides_meta[key][eid]&&A.overrides_meta[key][eid][d])||null;
-        var _isModh=!!(_prevM&&_prevM.fg==="red");
         var bg=null;
         // Inferrence bg depuis code SBM (priorité 1)
+        // v9.833 (lesson #115) — on n'INVENTE PLUS de convention (fond rouge) à partir
+        // du suffixe ' / " : la convention est capturée au PIXEL du PDF ({{CONV}} →
+        // meta.bg="CONV", déjà posée par les parsers). Le pixel dit que les codes
+        // apostrophe des croupiers sont BLANCS → ne pas leur fabriquer un fond rouge ici.
         if(c.endsWith("*"))bg="CDP";
-        else if(_cmcIsConv(c)&&!_isModh)bg="CONV";
         else if(c==="CP")bg="CP";
         else if(c==="RH")bg="RH";
         else if(c==="R")bg="R";
@@ -27142,10 +27146,12 @@ var _CMC_WORK_CELL_BG="#fbfaf3"; // blanc cassé (cellule de travail, comme le P
 function cmcCodeStatusBg(code){
   if(code==null||code==="")return "";
   var s=String(code);
-  // Convention = code à suffixe ' ou " EN FIN (ex 19/4', 22/6', 19/3') → ROUGE, comme
-  // l'import PDF SBM. ATTENTION : les codes « 'c » / « c » (chef : 19/4'c, 19/3c) NE
-  // sont PAS Convention (Kevin 2026-06-29 : « le 1er/3 ne sont pas convention ») → blancs.
-  if(/['"]$/.test(s))return CMC_META_BG_COLORS.CONV;           // Convention → rouge
+  // v9.833 (lesson #115) — le suffixe ' / " N'EST PAS un signal de couleur (le PDF
+  // montre les codes apostrophe des CROUPIERS en BLANC ; la convention = fond rouge
+  // capturé au PIXEL, porté par A.overrides_meta bg="CONV"). On ne déduit donc PLUS
+  // jamais la convention du suffixe ici : le fond rouge vient UNIQUEMENT de la méta
+  // pixel (_metaBg dans vPlan). Le suffixe reste un marqueur de RÔLE (contrat), pas
+  // de couleur. Cellule de travail apostrophe sans méta rouge → blanc, à l'identique.
   if(/\*$/.test(s)||(typeof CODES!=="undefined"&&CODES[s]&&CODES[s].cdp))return CMC_META_BG_COLORS.CDP; // CDP → orange
   var base=s.toUpperCase().replace(/[C'":*]+$/g,"");
   if(base==="CP"||base==="CRH"||base==="CDP"||base==="CDH"||base==="CPS"||base==="CPM")return CMC_META_BG_COLORS.CP; // congé → rose
@@ -40900,8 +40906,7 @@ function doImport(){
         else{
           var _baseF=_origF.toUpperCase().replace(/["':;]+$/,"");
           if(CODES[_baseF]){
-            var _quoteF=/["']$/.test(_origF);
-            try{CODES[_origF]=Object.assign({},CODES[_baseF],_quoteF?_CMC_CONV_STYLE:{},{learned:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_f0){}
+            try{CODES[_origF]=Object.assign({},CODES[_baseF],{learned:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_f0){} /* v9.833 lesson#115 : variante ' / " = style de base (blanc), convention = méta pixel uniquement */
             if(CODES[_origF])_ac=_origF;
           }
         }
@@ -41851,8 +41856,7 @@ function doImport(){
         else{
           var _fidBase=_fidO.toUpperCase().replace(/["':;]+$/,"");
           if(CODES[_fidBase]){
-            var _fidQ=/["']$/.test(_fidO);
-            try{CODES[_fidO]=Object.assign({},CODES[_fidBase],_fidQ?_CMC_CONV_STYLE:{},{learned:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_fg){}
+            try{CODES[_fidO]=Object.assign({},CODES[_fidBase],{learned:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_fg){} /* v9.833 lesson#115 : variante ' / " = style de base (blanc), convention = méta pixel uniquement */
             if(CODES[_fidO])code=_fidO;
           }
         }
