@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.10.1 — sélection fiable: minimap click-through + garde anti-tap-fantôme tactile -->
+<!-- La Détente — Studio (admin) v1.10.2 — « Ajouter à la boutique » publie aussi sur Firebase (visible clients en 1 étape) -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -800,12 +800,13 @@ function _saveProduct(cat){
  var realImg=st.realphoto?((st.pf&&st.pf.image)?st.pf.image:(st.mockReady[st.garment]?MOCK[st.garment]:null)):null;
  toast("Génération des visuels…");
  function save(mockImg,print){
-  var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");
-  arr.push({id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,garmentColor:st.color,motif:"design perso",price:price,origPrice:orig,
+  var prod={id:"cust"+Date.now().toString(36),name:name,cat:cat,garment:st.garment,garmentColor:st.color,motif:"design perso",price:price,origPrice:orig,
     img:mockImg,printFile:print,rating:5,reviews:0,desc:name+" — création La Détente (Studio). Tailles S à XXL.",
-    material:(st.pf?("Print-on-demand · "+(st.pf.brand||"")):"Coton premium"),placement:st.placement,theme:theme,tags:["personnalisé","studio","la détente",theme.toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",_printify:(st.pf?{blueprint_id:st.pf.id,category:cat,design:"studio",placement:st.placement}:undefined),ts:Date.now()});
-  localStorage.setItem("ld_custom_products",JSON.stringify(arr));
-  closeModal();toast("Produit ajouté à la boutique ✅ ("+arr.length+" créa)");
+    material:(st.pf?("Print-on-demand · "+(st.pf.brand||"")):"Coton premium"),placement:st.placement,theme:theme,tags:["personnalisé","studio","la détente",theme.toLowerCase()].filter(Boolean),sizes:["S","M","L","XL","XXL"],stock:99,shipping:"standard",_printify:(st.pf?{blueprint_id:st.pf.id,category:cat,design:"studio",placement:st.placement}:undefined),ts:Date.now()};
+  var arr=JSON.parse(localStorage.getItem("ld_custom_products")||"[]");arr.push(prod);localStorage.setItem("ld_custom_products",JSON.stringify(arr));
+  /* Publie pour les CLIENTS (Firebase) en 1 étape — copie allégée sans le gros fichier d'impression (gardé en local pour la production) */
+  if(window.kdmcPublishProduct){var pub={};Object.keys(prod).forEach(function(k){if(k!=="printFile")pub[k]=prod[k];});window.kdmcPublishProduct("la-detente",pub).then(function(){closeModal();toast("✅ Publié en boutique — visible par les clients");}).catch(function(){closeModal();toast("Enregistré localement. Cloud KO — republie via Admin → 🚀 Publier","error");});}
+  else{closeModal();toast("Produit ajouté (local). Publie via Admin → 🚀 Publier en boutique");}
  }
  /* fichier d'impression = design transparent (sans photo distante → pas de canvas taint) */
  svgToPng(buildSVG(2000,false,null),2000,function(print){
