@@ -152,13 +152,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.13.2</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.13.3</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.13.2";
+var APP_VER="v1.13.3";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -297,7 +297,7 @@ var DEP_MIRROR={}, DEP_GEN_MONTHS=[], CURMO=null;
     Object.keys(BOARDS).forEach(function(id){delete BOARDS[id];});
     Object.keys(G.boards).forEach(function(id){ var b=G.boards[id]; var dy=b.days||31;
       BOARDS[id]={label:b.label,month:b.month,year:b.year,monthIdx:b.monthIdx,days:dy,fam:b.fam||"",kind:b.kind||undefined,key:"cmc_dep_"+id,
-        people:(b.people||[]).map(function(p){var c={};for(var d=1;d<=dy;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";return {name:p.name,id:p.id||null,codes:c};})};
+        people:(b.people||[]).map(function(p){var c={};for(var d=1;d<=dy;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";var r={name:p.name,id:p.id||null,codes:c};if(p.conv)r.conv=p.conv;if(p.modh)r.modh=p.modh;return r;})};
     });
     if(G.mirror)Object.keys(G.mirror).forEach(function(a){DEP_MIRROR[a]=G.mirror[a];DEP_MIRROR[G.mirror[a]]=a;});
   }catch(e){ try{console.warn("[DEPARTS_GEN merge]",e&&e.message);}catch(_){} }
@@ -334,8 +334,11 @@ var ST=null;
 function load(){
   B=BOARDS[BID];
   var saved=null; try{saved=JSON.parse(localStorage.getItem(B.key)||"null");}catch(e){}
-  ST={ order:(saved&&saved.order)||B.people.map(function(p){return p.name;}), codes:{}, nr:(saved&&saved.nr)||{}, cq:(saved&&saved.cq)||{}, off:(saved&&saved.off)||0, ci:(saved&&saved.ci)||{} };
-  B.people.forEach(function(p){ ST.codes[p.name]=Object.assign({},p.codes); });
+  ST={ order:(saved&&saved.order)||B.people.map(function(p){return p.name;}), codes:{}, meta:{}, nr:(saved&&saved.nr)||{}, cq:(saved&&saved.cq)||{}, off:(saved&&saved.off)||0, ci:(saved&&saved.ci)||{} };
+  B.people.forEach(function(p){ ST.codes[p.name]=Object.assign({},p.codes);
+    // v1.13.3 — couleurs PDF à l'identique : conv = fond rouge, modh = écriture rouge
+    if(p.conv||p.modh){ ST.meta[p.name]={}; for(var _d=1;_d<=31;_d++){ if(p.conv&&p.conv[_d])ST.meta[p.name][_d]="conv"; else if(p.modh&&p.modh[_d])ST.meta[p.name][_d]="modh"; } }
+  });
   if(saved&&saved.codes){ Object.keys(saved.codes).forEach(function(n){ if(ST.codes[n]) Object.assign(ST.codes[n],saved.codes[n]); }); }
   ST.order=ST.order.filter(function(n){return ST.codes[n];});
   B.people.forEach(function(p){ if(ST.order.indexOf(p.name)<0) ST.order.push(p.name); });
@@ -396,6 +399,11 @@ function render(){
     var nr=ST.nr[nm]||"", cq=ST.cq[nm]||"";
     html+="<tr"+(nm===ME?" class='me'":"")+"><td class='cNom'>"+esc(nm)+"</td>";
     for(var d=1;d<=days;d++){ var c=ST.codes[nm][d]||"", dep=R.deps[nm][d], stl=codeStyle(c);
+      // v1.13.3 — reproduction identique des couleurs PDF : fond rouge (convention,
+      // jour de R travaillé) ou écriture rouge / fond clair (horaire modifié).
+      var _mk=(ST.meta&&ST.meta[nm]&&ST.meta[nm][d])||"";
+      if(_mk==="conv")stl=CONV_COLOR;
+      else if(_mk==="modh")stl={bg:"#fbfaf3",fg:"#cc0000"}; // fond blanc + écriture rouge (≠ convention)
       html+="<td class='cell"+(dep?"":" off")+(d===todayD?" today":"")+"'"
         +(stl?(" style='background:"+stl.bg+";color:"+stl.fg+"'"):"")
         +" onclick=\"editCell('"+esc(nm)+"',"+d+")\">"+esc(c||"·")+(dep?"<span class='dep'>"+dep+"</span>":"")+"</td>"; }
