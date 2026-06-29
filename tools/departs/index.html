@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>Départs — Chefs Black Jack</title>
 <style>
 :root{--gold:#c9a227;--gold2:#ffd700;--bg:#0a1a0c;--bg2:#0e2410;--card:#13301a;--ink:#eaf5ea;--mut:#9bb89b;--ease:cubic-bezier(.4,0,.2,1);
@@ -152,13 +152,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.13.4</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.14.0</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.13.4";
+var APP_VER="v1.14.0";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -169,7 +169,7 @@ function cellClass(c){
   if(!c) return "off";
   if(c==="RH") return "rh"; if(c==="R") return "r";
   if(c==="CP") return "cp"; if(["M","AF","RRT","PAT","MT","AT","ABS","ABI","DEPL","DEP","SS"].indexOf(c)>=0) return "m";
-  return "w"; // v1.13.4 (lesson #115) : apostrophe ≠ convention (PDF blanc) ; conv = méta pixel via _mk
+  return "w"; // v1.14.0 (lesson #115) : apostrophe ≠ convention (PDF blanc) ; conv = méta pixel via _mk
 }
 // Couleurs IDENTIQUES à l'import CMCteams (table CODES) — par horaire + absences
 var CODE_COLORS={
@@ -191,7 +191,7 @@ var CONV_COLOR={bg:"#d8342e",fg:"#ffe23a"}; // Convention (' ou ") = fond rouge 
 // AF (vert), maladie M (rouge clair), RRT (jaune). Aligné sur cmcCodeStatusBg de l'app.
 function codeStyle(c){
   if(!c) return null;
-  // v1.13.4 (lesson #115) — le suffixe ' / " N'EST PAS un signal de couleur : le PDF
+  // v1.14.0 (lesson #115) — le suffixe ' / " N'EST PAS un signal de couleur : le PDF
   // montre les codes apostrophe des CROUPIERS en BLANC. La convention (fond rouge) vient
   // UNIQUEMENT de la méta pixel (ST.meta[nm][d]==="conv", posée par les boards). On ne
   // colore donc plus en rouge sur le suffixe ici (le rendu applique CONV_COLOR via _mk).
@@ -291,20 +291,86 @@ var _appCmcCount=buildAppCmcBoards();
 // l'app (fini le « Données introuvables ») et couvre tous les mois fournis.
 // Remplace les boards hardcodés des mois régénérés (évite doublons ancien/nouveau).
 var DEP_MIRROR={}, DEP_GEN_MONTHS=[], CURMO=null;
-(function(){
-  try{
-    var G=window.DEPARTS_GEN; if(!G||!G.boards)return;
-    (G.months||[]).forEach(function(m){DEP_GEN_MONTHS.push(m);});
-    // Données générées = SOURCE UNIQUE : on retire TOUT le hardcodé (Juin obsolète,
-    // anciens Juillet, appcmc) → plus de doublon ni de mois fantôme « ma vue ».
-    Object.keys(BOARDS).forEach(function(id){delete BOARDS[id];});
-    Object.keys(G.boards).forEach(function(id){ var b=G.boards[id]; var dy=b.days||31;
-      BOARDS[id]={label:b.label,month:b.month,year:b.year,monthIdx:b.monthIdx,days:dy,fam:b.fam||"",kind:b.kind||undefined,key:"cmc_dep_"+id,
-        people:(b.people||[]).map(function(p){var c={};for(var d=1;d<=dy;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";var r={name:p.name,id:p.id||null,codes:c};if(p.conv)r.conv=p.conv;if(p.modh)r.modh=p.modh;return r;})};
+// ===================== SYNCHRO APP ⇄ PAGE (v1.14) =====================
+// Kevin 2026-06-29 « les deux côtés s'actualisent auto, aussi entre appareils ».
+// La page lit le planning LIVE de l'app (cmc_e/cmc_ov/cmc_ov_meta/cmc_team_mirror)
+// en local (MÊME origine localStorage) ET via Firebase (cross-device, SSE), et
+// reconstruit les boards À L'IDENTIQUE de tools/departs/_gen-boards.mjs. Les boards
+// COMMITTÉS (DEPARTS_GEN) servent de repli hors-ligne / mois sans données live.
+// App→page = lecture live ; page→app = écriture de cellule dans cmc_ov (Firebase+LS).
+var MOIS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+var _ABS_TEAMS={conges:'Congés',maladie:'Maladie',formation:'Formation',deplacement:'Déplacement'};
+var _FAM_LABEL={bj:'BJ',roulettes:'Roul.',cmc:'CMC',amenage:'CMC aménagé',baccara:'CMC'};
+var _ABS_CODES={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1};
+function _diM(y,mi){return new Date(y,mi+1,0).getDate();}
+function _pad2(n){n=String(n);return n.length<2?('0'+n):n;}
+function _fw(cells,days){for(var d=1;d<=days;d++){var c=cells[d]||cells[String(d)];if(!c)continue;var u=String(c).toUpperCase();if(_ABS_CODES[u])continue;return String(c).replace(/[c'"*:]+$/gi,'');}return '';}
+// Reconstruit les boards (forme DEPARTS_GEN) depuis l'état app — IDENTIQUE _gen-boards.mjs.
+function buildBoardsFromState(emps,ov,metaAll,mirrorByKey){
+  var out={},mir={},months={};
+  if(!emps||!ov)return {boards:out,mirror:mir,months:[]};
+  var byId={};emps.forEach(function(e){if(e&&e.id)byId[e.id]=e;});
+  Object.keys(ov).forEach(function(key){
+    var pm=key.split('-');if(pm.length!==2)return;var year=+pm[0],mi=+pm[1];if(isNaN(year)||isNaN(mi))return;
+    var days=_diM(year,mi),row=ov[key]||{},metaK=(metaAll&&metaAll[key])||{},teams={},mm=_pad2(mi+1);
+    Object.keys(row).forEach(function(id){
+      var e=byId[id];if(!e||!e.name)return;var cells=row[id];if(!cells||!Object.keys(cells).length)return;
+      var tid=(e.teamHistory&&e.teamHistory[key]);if(!tid)return;
+      var fam=(e.familyHistory&&e.familyHistory[key])||e.family||'bj';if(fam==='baccara')fam='cmc';
+      var codes={},conv={},modh={};
+      for(var d=1;d<=days;d++){var c=cells[d]||cells[String(d)]||'';if(c)codes[d]=c;
+        var md=(metaK[id]&&(metaK[id][d]||metaK[id][String(d)]))||null;if(md){if(md.bg==='CONV')conv[d]=1;if(md.fg==='red')modh[d]=1;}}
+      (teams[tid]=teams[tid]||{fam:fam,people:[]}).people.push({name:e.name,id:e.id,codes:codes,conv:conv,modh:modh,fw:_fw(cells,days)});
     });
-    if(G.mirror)Object.keys(G.mirror).forEach(function(a){DEP_MIRROR[a]=G.mirror[a];DEP_MIRROR[G.mirror[a]]=a;});
-  }catch(e){ try{console.warn("[DEPARTS_GEN merge]",e&&e.message);}catch(_){} }
-})();
+    if(!Object.keys(teams).length)return;
+    months[key]={year:year,monthIdx:mi,label:MOIS_FR[mi]+' '+year};
+    Object.keys(teams).forEach(function(tid){
+      var t=teams[tid],isAbs=!!_ABS_TEAMS[tid],id=year+'-'+mm+'-'+tid,label;
+      if(isAbs)label=MOIS_FR[mi]+' '+year+' — '+_ABS_TEAMS[tid];
+      else{var fl=_FAM_LABEL[t.fam]||t.fam,num=/^\d/.test(tid)?('Éq.'+tid):('Éq.'+tid.replace(/^[a-z]/,''));
+        var cnt={};t.people.forEach(function(p){if(p.fw)cnt[p.fw]=(cnt[p.fw]||0)+1;});
+        var hw=t.people.map(function(p){return p.fw;}).filter(Boolean).sort(function(a,b){return (cnt[b]||0)-(cnt[a]||0);})[0]||'';
+        label=MOIS_FR[mi]+' '+year+' — '+fl+' '+num+(hw?(' ('+hw+')'):'');}
+      var b={label:label,month:MOIS_FR[mi]+' '+year,year:year,monthIdx:mi,days:days,fam:t.fam,
+        people:t.people.map(function(p){var pe={name:p.name,id:p.id,codes:p.codes};if(Object.keys(p.conv).length)pe.conv=p.conv;if(Object.keys(p.modh).length)pe.modh=p.modh;return pe;})};
+      if(isAbs)b.kind='abs';out[id]=b;
+    });
+    var mp=(mirrorByKey&&mirrorByKey[key])||{};
+    Object.keys(mp).forEach(function(a){mir[year+'-'+mm+'-'+a]=year+'-'+mm+'-'+mp[a];});
+  });
+  return {boards:out,mirror:mir,months:Object.keys(months).map(function(k){return months[k];})};
+}
+// Pose les boards globaux : committés (repli) + overlay des mois LIVE (live gagne).
+window._depLiveMonths={};
+function applyBoards(live){
+  var BB={},MIR={},MO={};
+  var G=window.DEPARTS_GEN;
+  if(G&&G.boards){Object.keys(G.boards).forEach(function(id){BB[id]=G.boards[id];});if(G.mirror)Object.keys(G.mirror).forEach(function(a){MIR[a]=G.mirror[a];});(G.months||[]).forEach(function(m){MO[m.year+'-'+m.monthIdx]=m;});}
+  window._depLiveMonths={};
+  if(live&&live.boards&&Object.keys(live.boards).length){
+    (live.months||[]).forEach(function(m){window._depLiveMonths[m.year+'-'+m.monthIdx]=1;MO[m.year+'-'+m.monthIdx]=m;});
+    Object.keys(BB).forEach(function(id){var b=BB[id];if(window._depLiveMonths[b.year+'-'+b.monthIdx])delete BB[id];});
+    Object.keys(live.boards).forEach(function(id){BB[id]=live.boards[id];});
+    Object.keys(live.mirror||{}).forEach(function(a){MIR[a]=live.mirror[a];});
+  }
+  Object.keys(BOARDS).forEach(function(id){delete BOARDS[id];});
+  Object.keys(BB).forEach(function(id){var b=BB[id],dy=b.days||31;
+    BOARDS[id]={label:b.label,month:b.month,year:b.year,monthIdx:b.monthIdx,days:dy,fam:b.fam||"",kind:b.kind||undefined,key:"cmc_dep_"+id,
+      people:(b.people||[]).map(function(p){var c={};for(var d=1;d<=dy;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";var r={name:p.name,id:p.id||null,codes:c};if(p.conv)r.conv=p.conv;if(p.modh)r.modh=p.modh;return r;})};
+  });
+  DEP_MIRROR={};Object.keys(MIR).forEach(function(a){DEP_MIRROR[a]=MIR[a];DEP_MIRROR[MIR[a]]=a;});
+  DEP_GEN_MONTHS=Object.keys(MO).map(function(k){return MO[k];}).sort(function(a,b){return (b.year*12+b.monthIdx)-(a.year*12+a.monthIdx);});
+}
+// Lit l'état app depuis le localStorage PARTAGÉ (même origine = données du device).
+function _liveFromLS(){
+  var emps=_appRead("cmc_e"),ov=_appRead("cmc_ov"),meta=_appRead("cmc_ov_meta");
+  if(!emps||!ov)return null;
+  var mir={};try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("cmc_team_mirror_")===0){var key=k.slice("cmc_team_mirror_".length);var v=_appRead(k);if(v)mir[key]=v;}}}catch(_){}
+  var r=buildBoardsFromState(emps,ov,meta,mir);
+  return (r&&r.months&&r.months.length)?r:null;
+}
+// Build initial : committés + overlay live local (instantané, même device).
+applyBoards(_liveFromLS());
 // v1.12.1 — équipe de la personne connectée POUR LE MOIS affiché (CURMO) :
 // « tjs mon équipe et miroir », mois par mois. Renvoie l'id du board ou null.
 function teamForMeInMonth(){ if(!ME||!CURMO)return null; var ks=Object.keys(BOARDS);
@@ -337,9 +403,9 @@ var ST=null;
 function load(){
   B=BOARDS[BID];
   var saved=null; try{saved=JSON.parse(localStorage.getItem(B.key)||"null");}catch(e){}
-  ST={ order:(saved&&saved.order)||B.people.map(function(p){return p.name;}), codes:{}, meta:{}, nr:(saved&&saved.nr)||{}, cq:(saved&&saved.cq)||{}, off:(saved&&saved.off)||0, ci:(saved&&saved.ci)||{} };
-  B.people.forEach(function(p){ ST.codes[p.name]=Object.assign({},p.codes);
-    // v1.13.4 — couleurs PDF à l'identique : conv = fond rouge, modh = écriture rouge
+  ST={ order:(saved&&saved.order)||B.people.map(function(p){return p.name;}), codes:{}, meta:{}, ids:{}, nr:(saved&&saved.nr)||{}, cq:(saved&&saved.cq)||{}, off:(saved&&saved.off)||0, ci:(saved&&saved.ci)||{} };
+  B.people.forEach(function(p){ ST.codes[p.name]=Object.assign({},p.codes); if(p.id)ST.ids[p.name]=p.id; // v1.14 page→app : matricule pour écrire dans cmc_ov
+    // v1.14.0 — couleurs PDF à l'identique : conv = fond rouge, modh = écriture rouge
     if(p.conv||p.modh){ ST.meta[p.name]={}; for(var _d=1;_d<=31;_d++){ if(p.conv&&p.conv[_d])ST.meta[p.name][_d]="conv"; else if(p.modh&&p.modh[_d])ST.meta[p.name][_d]="modh"; } }
   });
   if(saved&&saved.codes){ Object.keys(saved.codes).forEach(function(n){ if(ST.codes[n]) Object.assign(ST.codes[n],saved.codes[n]); }); }
@@ -402,7 +468,7 @@ function render(){
     var nr=ST.nr[nm]||"", cq=ST.cq[nm]||"";
     html+="<tr"+(nm===ME?" class='me'":"")+"><td class='cNom'>"+esc(nm)+"</td>";
     for(var d=1;d<=days;d++){ var c=ST.codes[nm][d]||"", dep=R.deps[nm][d], stl=codeStyle(c);
-      // v1.13.4 — reproduction identique des couleurs PDF : fond rouge (convention,
+      // v1.14.0 — reproduction identique des couleurs PDF : fond rouge (convention,
       // jour de R travaillé) ou écriture rouge / fond clair (horaire modifié).
       var _mk=(ST.meta&&ST.meta[nm]&&ST.meta[nm][d])||"";
       if(_mk==="conv")stl=CONV_COLOR;
@@ -467,7 +533,9 @@ function editMark(f,nm){ if(!guard())return; var v=prompt((f==="nr"?"Non-retour"
 function editCell(nm,d){ if(!guard())return;
   if(window._anchorMode){ setAnchor(nm,d); return; }
   var v=prompt("Code "+nm+" — jour "+d+"\n(ex 20/5c, 16/3*, RH, R, CP, M ; vide = rien)",ST.codes[nm][d]||"");
-  if(v===null)return; ST.codes[nm][d]=v.trim(); save(); render(); }
+  if(v===null)return; ST.codes[nm][d]=v.trim(); save(); render();
+  // v1.14 page→app : remonte la cellule dans le planning de l'app (Firebase, cross-device)
+  try{ if(window._depSyncCell&&ST.ids&&ST.ids[nm]&&B)window._depSyncCell(ST.ids[nm],B.year+"-"+B.monthIdx,d,v.trim()); }catch(_){} }
 function toggleAnchor(){ if(!guard())return; window._anchorMode=!window._anchorMode;
   document.getElementById("anchorBtn").style.background=window._anchorMode?"linear-gradient(135deg,var(--gold),var(--gold2))":"";
   document.getElementById("anchorBtn").style.color=window._anchorMode?"#000":"";
@@ -608,6 +676,81 @@ BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
 CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
 fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
 if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
+// ===== Firebase LIVE (cross-device) — App→Page : lit le planning de l'app et
+// reconstruit les boards en direct, sur N'IMPORTE QUEL appareil (pas seulement
+// celui où l'app a tourné). Repli sur les boards committés si Firebase KO/offline.
+(function(){
+  var FBURL="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+  var FBPATH="/cmcteams";
+  var FBKEY_DEFAULT="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs";
+  function _fbKey(){ try{ return (localStorage.getItem("cmc_fb_apikey")||FBKEY_DEFAULT||"").trim(); }catch(_){ return FBKEY_DEFAULT; } }
+  var _fbTok=null,_fbTimer=null,_es=null;
+  function _qs(){ return _fbTok?("?auth="+encodeURIComponent(_fbTok)):""; }
+  function _fbAuth(cb){ var key=_fbKey(); if(!key){_fbTok=null;if(cb)cb();return;}
+    fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+encodeURIComponent(key),
+      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({returnSecureToken:true})})
+      .then(function(r){return r.json();})
+      .then(function(d){ if(d&&d.idToken){ _fbTok=d.idToken; var ms=(parseInt(d.expiresIn||"3600",10)*1000)-120000;
+          if(_fbTimer)clearTimeout(_fbTimer); _fbTimer=setTimeout(function(){_fbAuth(function(){_fbSSE();});},Math.max(60000,ms)); } else _fbTok=null; if(cb)cb(); })
+      .catch(function(){ _fbTok=null; if(cb)cb(); }); } // fail-open : sans token on tente quand même (règles ouvertes)
+  function _fbGet(k,cb){ fetch(FBURL+FBPATH+"/"+encodeURIComponent(k)+".json"+_qs())
+      .then(function(r){return r.ok?r.json():null;}).then(function(j){cb(j);}).catch(function(){cb(null);}); }
+  var _depRefreshT=null;
+  function _depRefresh(){ if(_depRefreshT)clearTimeout(_depRefreshT);
+    _depRefreshT=setTimeout(function(){ try{
+      if(!BID||!BOARDS[BID]){ BID=defaultBoard(); }
+      if(BID&&BOARDS[BID])CURMO=BOARDS[BID].year+"-"+BOARDS[BID].monthIdx;
+      fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
+    }catch(e){ try{console.warn("[depRefresh]",e&&e.message);}catch(_){} } },120); }
+  function _applyLive(emps,ov,meta,mir){ try{ var live=buildBoardsFromState(emps,ov,meta||{},mir||{});
+    if(live&&live.months&&live.months.length){ applyBoards(live); _depRefresh(); } }catch(e){ try{console.warn("[applyLive]",e&&e.message);}catch(_){} } }
+  var _pulling=false;
+  function _fbPull(){ if(_pulling)return; _pulling=true;
+    _fbGet("cmc_e",function(emps){ _fbGet("cmc_ov",function(ov){
+      if(!emps||!ov){ _pulling=false; return; }
+      window._fbLastOv=ov; // cache du planning COMPLET (anti-clobber pour page→app)
+      _fbGet("cmc_ov_meta",function(meta){
+        var keys=Object.keys(ov), mir={}, pend=keys.length;
+        if(!pend){ _applyLive(emps,ov,meta,mir); _pulling=false; return; }
+        keys.forEach(function(key){ _fbGet("cmc_team_mirror_"+key,function(mm){ if(mm)mir[key]=mm;
+          if(--pend<=0){ _applyLive(emps,ov,meta,mir); _pulling=false; } }); });
+      });
+    }); }); }
+  function _fbSSE(){ try{ if(_es){_es.close();_es=null;} }catch(_){}
+    try{ _es=new EventSource(FBURL+FBPATH+"/cmc_ov.json"+_qs()); var _t=null;
+      var bump=function(){ if(_t)clearTimeout(_t); _t=setTimeout(_fbPull,800); };
+      _es.addEventListener("put",bump); _es.addEventListener("patch",bump);
+    }catch(e){ try{console.warn("[fbSSE]",e&&e.message);}catch(_){} } }
+  // ===== Page→App : une cellule corrigée sur la page remonte dans le planning de l'app.
+  // SÉCURITÉ (lesson #65/#109) : on re-lit le cmc_ov COMPLET et on n'écrit QUE si le mois
+  // édité existe déjà → JAMAIS de PUT partiel qui écraserait le planning de l'app. Seules
+  // les CELLULES (codes) remontent ; l'ordre/NR/5e restent des préférences locales page.
+  window._depSyncCell=function(empId,key,day,code){
+    if(!empId||!key)return;
+    var apply=function(ov){
+      if(!ov||typeof ov!=="object"||!ov[key]){ if(typeof toast==="function")toast("✏️ Modif locale (ce mois n'est pas chargé depuis l'app)"); return; }
+      if(!ov[key][empId])ov[key][empId]={};
+      if(code==="")delete ov[key][empId][day]; else ov[key][empId][day]=code;
+      // Firebase : PUT de l'OBJET ENTIER (SSE app : path="/cmc_ov" → fbApplyData OK, cross-device)
+      fetch(FBURL+FBPATH+"/cmc_ov.json"+_qs(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(ov)})
+        .then(function(r){ if(r.ok)window._fbLastOv=ov; if(typeof toast==="function")toast(r.ok?"✅ Synchronisé avec l'app (tous appareils)":"⚠ Sync app échouée (réseau)"); })
+        .catch(function(){ if(typeof toast==="function")toast("⚠ Hors-ligne : modif gardée en local"); });
+      // Même appareil : maj du localStorage partagé au format app (__LZ__ compressé si gros)
+      try{ var s=JSON.stringify(ov); localStorage.setItem("cmc_ov",(s.length>1024&&window.LZString&&LZString.compressToUTF16)?("__LZ__"+LZString.compressToUTF16(s)):s); }catch(_){}
+    };
+    // re-lit le cmc_ov FRAIS (anti-perte d'une modif concurrente) ; repli sur le dernier complet connu.
+    _fbGet("cmc_ov",function(ov){ apply(ov||window._fbLastOv||_appRead("cmc_ov")); });
+  };
+  // Boot : auth best-effort → pull initial → SSE live.
+  _fbAuth(function(){ _fbPull(); _fbSSE(); });
+  // Même appareil : un autre onglet (l'app) écrit le localStorage partagé → rebuild local.
+  window.addEventListener("storage",function(e){ if(!e||!e.key)return;
+    if(e.key==="cmc_ov"||e.key==="cmc_e"||e.key==="cmc_ov_meta"||e.key.indexOf("cmc_team_mirror_")===0){
+      try{ var live=_liveFromLS(); if(live){ applyBoards(live); _depRefresh(); } }catch(_){} } });
+  // Retour premier plan → re-pull Firebase (cross-device).
+  document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible")_fbPull(); });
+  window.addEventListener("focus",function(){ _fbPull(); });
+})();
 </script>
 </body>
 </html>
