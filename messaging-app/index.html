@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.246",
+  "softwareVersion": "v1.1.247",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.246';
+const __APEX_CHAT_VERSION__ = 'v1.1.247';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.246</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.247</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.246</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.247</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -14674,6 +14674,28 @@ window.addEventListener('unhandledrejection', (e) => _safeCatch('unhandledreject
 // Démarrage
 document.addEventListener('DOMContentLoaded', _boot);
 if(document.readyState !== 'loading') _boot();
+</script>
+<script>
+/* KDMC — battement de présence domaine (garde la session "verte" dans l'Admin
+   domaine tant que l'app est ouverte+visible). Autonome, fail-open, économe :
+   coupé en arrière-plan, s'arrête seul si pas de session, no-op hors *.kd-mc.com. */
+(function(){
+  if(window.__kdmcBeat)return; window.__kdmcBeat=1; var t=null;
+  function tick(){
+    if(document.visibilityState!=="visible")return;
+    var tok=""; try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(e){}
+    var h={}; if(tok)h.Authorization="Bearer "+tok;
+    fetch("/__sso/whoami",{credentials:"include",cache:"no-store",headers:h})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(j){ if((!j||!j.ok)&&t){clearInterval(t);t=null;} })
+      .catch(function(){});
+  }
+  function start(){ if(!t){ try{t=setInterval(tick,60000);}catch(e){} } }
+  try{document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="visible"){tick();start();} else if(t){clearInterval(t);t=null;}
+  });}catch(e){}
+  tick(); start();
+})();
 </script>
 
 <!-- v1.1.115 — Kevin "version superposée, déjà en haut" : badge bottom-left retiré
