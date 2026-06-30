@@ -226,16 +226,38 @@ async function enrich(env, request, uid, name, cgu) {
   const os = /iphone|ipad|ios/i.test(ua) ? 'iOS' : /android/i.test(ua) ? 'Android' : /mac/i.test(ua) ? 'macOS' : /windows/i.test(ua) ? 'Windows' : /linux/i.test(ua) ? 'Linux' : '';
   const place = [cf.city, cf.region, cf.country].filter(Boolean).join(', ');
   const now = Date.now();
-  const prev = (await accGet(env, uid)) || { uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [] };
+  const host = (request.headers.get('host') || '').toLowerCase().replace(/:.*$/, '');
+  const prev = (await accGet(env, uid)) || { uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [] };
   prev.name = name || prev.name;
   if (cgu && !prev.cgu_at) prev.cgu_at = now;
   prev.last_seen = now;
   prev.last_ip_hash = ipHash;
   prev.last_place = place;
   prev.last_device = device + (os ? ' · ' + os : '');
-  prev.hits = (prev.hits || 0) + 1;
+  prev.last_app = host || prev.last_app || '';
   prev.devices = Array.from(new Set([...(prev.devices || []), device + (os ? '·' + os : '')])).slice(-10);
   if (place) prev.places = Array.from(new Set([...(prev.places || []), place])).slice(-20);
+  /* Historique de connexions PAR SITE, déduplié : une "connexion" = nouvelle session
+     sur ce site après >30 min d'inactivité. Les pings de présence (60s) ne créent
+     donc PAS de doublon. On garde quel site (host), l'appareil et le lieu de chaque
+     session. hits = nombre total de vraies sessions (plus l'inflation des pings). */
+  const SESSION_GAP = 30 * 60e3;
+  prev.apps = prev.apps || {};
+  prev.history = prev.history || [];
+  if (host) {
+    const a = prev.apps[host] || { first: now, last: 0, sessions: 0 };
+    const newSession = !a.sessions || (now - (a.last || 0)) > SESSION_GAP;
+    a.last = now;
+    if (newSession) {
+      a.sessions = (a.sessions || 0) + 1;
+      prev.hits = (prev.hits || 0) + 1;
+      prev.history.unshift({ ts: now, app: host, device: device + (os ? '·' + os : ''), place: place });
+      if (prev.history.length > 80) prev.history = prev.history.slice(0, 80);
+    }
+    prev.apps[host] = a;
+  } else if (!prev.hits) {
+    prev.hits = 1;
+  }
   await accPut(env, prev);
 }
 

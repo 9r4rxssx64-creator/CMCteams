@@ -75,6 +75,49 @@
   }
   function wirePresence() { var b = document.getElementById('prefresh'); if (b) b.addEventListener('click', function () { loadAccounts(0, true); }); }
 
+  /* ---- Historique des connexions : 1 personne (pas de doublon), avec quels sites ---- */
+  var APP_NAMES = {
+    'cmcteams.kd-mc.com': '📅 CMCteams', 'apex-ai.kd-mc.com': '🤖 Apex AI', 'apex-chat.kd-mc.com': '💬 Apex Chat',
+    'dashboard.kd-mc.com': '📊 Dashboard', 'sourcing.kd-mc.com': '📦 Sourcing', 'coffre.kd-mc.com': '🔐 Coffre',
+    'kd-mc.com': '🏠 Portail', 'www.kd-mc.com': '🏠 Portail', 'la-detente.kd-mc.com': '🎨 La Détente', 'chez-lolo.kd-mc.com': '🎨 Chez Lolo'
+  };
+  function appName(host) { return APP_NAMES[host] || ('🌐 ' + (host || '?')); }
+  function appsSummary(apps) {
+    if (!apps) return '—';
+    var keys = Object.keys(apps).sort(function (x, y) { return (apps[y].last || 0) - (apps[x].last || 0); });
+    if (!keys.length) return '—';
+    return keys.map(function (h) { return appName(h) + ' ×' + (apps[h].sessions || 1); }).join(' · ');
+  }
+  function histRow(a) {
+    var hist = a.history || [];
+    var tl = hist.length
+      ? hist.slice(0, 40).map(function (e) {
+        return '<div class="tlrow">' + esc(dt(e.ts)) + ' · <b>' + esc(appName(e.app)) + '</b>'
+          + (e.device ? ' · ' + esc(e.device) : '') + (e.place ? ' · ' + esc(e.place) : '') + '</div>';
+      }).join('')
+      : '<div class="tlrow" style="color:var(--subtle)">Aucune connexion enregistrée pour l\'instant — l\'historique se remplit à la prochaine connexion.</div>';
+    var n = a.hits || 0;
+    return '<details class="histrow kdmc-card kdmc-in">'
+      + '<summary><span class="i">' + esc(ini(a)) + '</span>'
+      + '<span class="ct"><span class="n">' + esc(a.name || a.uid) + '</span>'
+      + '<span class="d">' + n + ' connexion' + (n > 1 ? 's' : '') + ' · ' + esc(appsSummary(a.apps)) + '</span></span>'
+      + '<span class="when"><span class="kdmc-dot"></span>' + ago(a.last_seen) + '</span></summary>'
+      + '<div class="timeline">' + tl + '</div></details>';
+  }
+  function histSection(accounts) {
+    return '<h2 class="cat">🕘 Historique des connexions</h2>'
+      + '<input class="search" id="hq" placeholder="🔎 Filtrer (nom, site…)" autocomplete="off" autocapitalize="off">'
+      + (accounts.length ? '<div id="histlist">' + accounts.map(histRow).join('') + '</div>'
+        : '<div class="msg">Aucune connexion pour l\'instant.</div>');
+  }
+  function wireHist() {
+    var hq = document.getElementById('hq');
+    if (hq) hq.addEventListener('input', function () {
+      var v = hq.value.toLowerCase(), list = document.querySelectorAll('#histlist .histrow');
+      for (var i = 0; i < list.length; i++) list[i].style.display = list[i].textContent.toLowerCase().indexOf(v) >= 0 ? '' : 'none';
+    });
+  }
+
   function fiche(a) {
     var places = (a.places || []).map(esc).join(' · ') || esc(a.last_place || '—');
     var devs = (a.devices || []).map(esc).join(' · ') || esc(a.last_device || '—');
@@ -85,6 +128,7 @@
       + kvp('Compte créé', dt(a.created))
       + kvp('CGU acceptée', a.cgu_at ? dt(a.cgu_at) : '—')
       + kvp('Connexions', String(a.hits || 0))
+      + kvp('Sites utilisés', esc(appsSummary(a.apps)))
       + kvp('Appareils', devs)
       + kvp('Lieux', places)
       + kvp('Dernière connexion', dt(a.last_seen))
@@ -97,12 +141,14 @@
       + (kv ? '' : '<div class="note">⚙️ Le registre central (KV) s\'activera au prochain déploiement du router : les fiches apparaîtront alors automatiquement. Les fonctions communes ci-dessous marchent déjà.</div>')
       + '<h2 class="cat">📊 Tous les comptes</h2>'
       + '<div class="stat" id="gstat">' + globalPills(accounts) + '</div>'
+      + histSection(accounts)
       + '<input class="search" id="q" placeholder="🔎 Rechercher un client (nom, lieu, appareil)…" autocomplete="off" autocapitalize="off">'
       + '<h2 class="cat">👥 Fiches clients</h2>'
       + (accounts.length ? '<div id="list">' + accounts.map(fiche).join('') + '</div>'
         : '<div class="msg">Aucune fiche pour l\'instant.<br>Les comptes apparaissent ici dès leur 1ʳᵉ connexion sur le domaine.</div>')
       + hub();
     wirePresence();
+    wireHist();
     var q = document.getElementById('q');
     if (q) q.addEventListener('input', function () {
       var v = q.value.toLowerCase();
