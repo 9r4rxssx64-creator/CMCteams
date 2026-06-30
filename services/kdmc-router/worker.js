@@ -237,21 +237,26 @@ async function enrich(env, request, uid, name, cgu) {
   prev.last_app = host || prev.last_app || '';
   prev.devices = Array.from(new Set([...(prev.devices || []), device + (os ? '·' + os : '')])).slice(-10);
   if (place) prev.places = Array.from(new Set([...(prev.places || []), place])).slice(-20);
-  /* Historique de connexions PAR SITE, déduplié : une "connexion" = nouvelle session
-     sur ce site après >30 min d'inactivité. Les pings de présence (60s) ne créent
-     donc PAS de doublon. On garde quel site (host), l'appareil et le lieu de chaque
-     session. hits = nombre total de vraies sessions (plus l'inflation des pings). */
-  const SESSION_GAP = 30 * 60e3;
+  /* Historique de connexions PAR SITE, avec DURÉE. Une "connexion" = une session :
+     début à la 1re activité, PROLONGÉE par les pings de présence (60s) tant que l'app
+     reste ouverte, TERMINÉE dès ~3 min sans ping (= app fermée). Durée = end - ts.
+     Les pings ne créent PAS de doublon (ils prolongent la session en cours).
+     hits = nombre de vraies sessions. */
+  const SESSION_GAP = 3 * 60e3;
   prev.apps = prev.apps || {};
   prev.history = prev.history || [];
   if (host) {
     const a = prev.apps[host] || { first: now, last: 0, sessions: 0 };
-    const newSession = !a.sessions || (now - (a.last || 0)) > SESSION_GAP;
+    const cont = a.sessions > 0 && (now - (a.last || 0)) <= SESSION_GAP; /* session encore en cours ? */
     a.last = now;
-    if (newSession) {
+    let cur = null; /* la session la plus récente pour CE site */
+    for (let i = 0; i < prev.history.length; i++) { if (prev.history[i].app === host) { cur = prev.history[i]; break; } }
+    if (cont && cur) {
+      cur.end = now; /* prolonge la session ouverte → la durée grandit */
+    } else {
       a.sessions = (a.sessions || 0) + 1;
       prev.hits = (prev.hits || 0) + 1;
-      prev.history.unshift({ ts: now, app: host, device: device + (os ? '·' + os : ''), place: place });
+      prev.history.unshift({ ts: now, end: now, app: host, device: device + (os ? '·' + os : ''), place: place });
       if (prev.history.length > 80) prev.history = prev.history.slice(0, 80);
     }
     prev.apps[host] = a;

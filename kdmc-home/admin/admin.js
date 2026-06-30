@@ -7,6 +7,7 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function ago(ts) { if (!ts) return '—'; var d = Date.now() - ts, m = Math.floor(d / 6e4), h = Math.floor(d / 36e5), j = Math.floor(d / 864e5); if (m < 1) return "à l'instant"; if (m < 60) return 'il y a ' + m + ' min'; if (h < 24) return 'il y a ' + h + ' h'; return 'il y a ' + j + ' j'; }
   function dt(ts) { if (!ts) return '—'; try { return new Date(ts).toLocaleString('fr-FR'); } catch (e) { return '—'; } }
+  function dur(ms) { ms = ms || 0; if (ms < 60000) return '< 1 min'; var m = Math.round(ms / 60000); if (m < 60) return m + ' min'; var h = Math.floor(m / 60); m = m % 60; return h + ' h' + (m ? (' ' + m) : ''); }
 
   function deny(s) {
     var diag;
@@ -93,14 +94,16 @@
     var tl = hist.length
       ? hist.slice(0, 40).map(function (e) {
         return '<div class="tlrow">' + esc(dt(e.ts)) + ' · <b>' + esc(appName(e.app)) + '</b>'
+          + ' · <span class="tdur">⏱ ' + esc(dur((e.end || e.ts) - e.ts)) + '</span>'
           + (e.device ? ' · ' + esc(e.device) : '') + (e.place ? ' · ' + esc(e.place) : '') + '</div>';
       }).join('')
       : '<div class="tlrow" style="color:var(--subtle)">Aucune connexion enregistrée pour l\'instant — l\'historique se remplit à la prochaine connexion.</div>';
     var n = a.hits || 0;
+    var total = hist.reduce(function (s, e) { return s + Math.max(0, (e.end || e.ts) - e.ts); }, 0);
     return '<details class="histrow kdmc-card kdmc-in">'
       + '<summary><span class="i">' + esc(ini(a)) + '</span>'
       + '<span class="ct"><span class="n">' + esc(a.name || a.uid) + '</span>'
-      + '<span class="d">' + n + ' connexion' + (n > 1 ? 's' : '') + ' · ' + esc(appsSummary(a.apps)) + '</span></span>'
+      + '<span class="d">' + n + ' connexion' + (n > 1 ? 's' : '') + (total ? ' · ⏱ ' + esc(dur(total)) + ' au total' : '') + ' · ' + esc(appsSummary(a.apps)) + '</span></span>'
       + '<span class="when"><span class="kdmc-dot"></span>' + ago(a.last_seen) + '</span></summary>'
       + '<div class="timeline">' + tl + '</div></details>';
   }
