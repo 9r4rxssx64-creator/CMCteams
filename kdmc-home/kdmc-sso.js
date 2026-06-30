@@ -179,6 +179,32 @@
     }).catch(function () { return null; });
   }
 
+  /* ===== Battement de présence (« connecté en direct ») =====
+     Tant qu'une page du domaine reste OUVERTE et VISIBLE, on rafraîchit discrètement
+     la session (whoami → le router met à jour last_seen) pour que la présence reste
+     "verte" dans l'Admin domaine. Économe : coupé en arrière-plan (batterie), ping
+     immédiat au retour au 1er plan, et s'arrête tout seul si la session disparaît. */
+  var _beatTimer = null, _beatMs = 60000, _beatWired = false;
+  function _beatTick() {
+    if (typeof document === 'undefined' || document.visibilityState !== 'visible') return;
+    whoami().then(function (s) { if (!s) _beatStop(); }).catch(function () { /* on retentera */ });
+  }
+  function _beatStop() { if (_beatTimer) { clearInterval(_beatTimer); _beatTimer = null; } }
+  function _beatStart() { if (!_beatTimer) { try { _beatTimer = setInterval(_beatTick, _beatMs); } catch (e) { /* */ } } }
+  function startHeartbeat(intervalMs) {
+    if (intervalMs && intervalMs >= 20000) _beatMs = intervalMs; /* plancher 20s */
+    if (!_beatWired) {
+      _beatWired = true;
+      try {
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible') { _beatTick(); _beatStart(); } else _beatStop();
+        });
+      } catch (e) { /* ignore */ }
+    }
+    _beatTick();  /* met à jour la présence tout de suite */
+    _beatStart(); /* puis périodiquement (s'auto-arrête si déconnecté) */
+  }
+
   global.kdmcSSO = {
     whoami: whoami,
     issue: issue,
@@ -190,5 +216,15 @@
     supportsPasskey: supportsPasskey,
     registerPasskey: registerPasskey,
     loginPasskey: loginPasskey,
+    startHeartbeat: startHeartbeat,
   };
+
+  /* Auto-démarrage : toute page qui charge kdmc-sso.js garde sa présence à jour.
+     Si pas de session, le 1er whoami renvoie null et le battement s'arrête (0 spam). */
+  try {
+    if (typeof document !== 'undefined') {
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { startHeartbeat(); });
+      else startHeartbeat();
+    }
+  } catch (e) { /* ignore */ }
 })(window);
