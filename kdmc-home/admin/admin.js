@@ -31,7 +31,7 @@
       + card('📅', 'CMCteams — Admin', 'Plannings, équipes, employés', 'https://cmcteams.kd-mc.com/')
       + card('🤖', 'Apex AI — Admin', 'Coffre, RGPD, santé, conso', 'https://apex-ai.kd-mc.com/')
       + card('💬', 'Apex Chat — Admin', 'Users, connexions, sentinelles', 'https://apex-chat.kd-mc.com/')
-      + card('📊', 'Boutiques — Dashboard', 'Commandes, produits, finances', 'https://9r4rxssx64-creator.github.io/CMCteams/shops/dashboard/')
+      + card('📊', 'Boutiques — Dashboard', 'Commandes, produits, finances', 'https://dashboard.kd-mc.com/')
       + card('🩺', 'Santé des workers', 'État live de tous les services', 'https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/health/workers-status.json')
       + '</div>'
       + '<h2 class="cat">🎨 Studios de création</h2><div class="grid">'
@@ -40,10 +40,45 @@
       + '</div>';
   }
   function kvp(k, v) { return '<div><span>' + k + '</span><br>' + v + '</div>'; }
+  /* ---- Présence : qui est connecté, combien, cliquable → fiche ---- */
+  var ONLINE_MS = 5 * 60e3, RECENT_MS = 60 * 60e3;
+  function ini(a) { return (String(a.name || a.uid || '?').trim().charAt(0) || '?').toUpperCase(); }
+  function prow(a) {
+    var on = Date.now() - (a.last_seen || 0) < ONLINE_MS;
+    var meta = ago(a.last_seen) + (a.last_device ? ' · ' + a.last_device : '') + (a.last_place ? ' · ' + a.last_place : '');
+    return '<a class="kdmc-card kdmc-in cardrow onrow" href="#fiche-' + esc(a.uid) + '">'
+      + '<span class="i">' + esc(ini(a)) + '</span>'
+      + '<span class="ct"><span class="n">' + esc(a.name || a.uid) + '</span>'
+      + '<span class="d"><span class="don' + (on ? '' : ' rec') + '"></span>' + esc(meta) + '</span></span>'
+      + '<span class="arr">›</span></a>';
+  }
+  function globalPills(accounts) {
+    var withCgu = accounts.filter(function (a) { return a.cgu_at; }).length;
+    var hits = accounts.reduce(function (s, a) { return s + (a.hits || 0); }, 0);
+    return '<div class="pill kdmc-in"><b>' + accounts.length + '</b> comptes clients</div>'
+      + '<div class="pill kdmc-in"><b>' + withCgu + '</b> CGU acceptées</div>'
+      + '<div class="pill kdmc-in"><b>' + hits + '</b> connexions cumulées</div>';
+  }
+  function presence(accounts) {
+    var now = Date.now();
+    var on = accounts.filter(function (a) { return a.last_seen && now - a.last_seen < ONLINE_MS; });
+    var rec = accounts.filter(function (a) { return a.last_seen && now - a.last_seen >= ONLINE_MS && now - a.last_seen < RECENT_MS; });
+    var h = '<h2 class="cat">🟢 Connectés <button class="refresh" id="prefresh" type="button">↻ Rafraîchir</button></h2>'
+      + '<div class="stat">'
+      + '<div class="pill kdmc-in"><b>' + on.length + '</b> en ligne <span style="color:var(--subtle)">vus &lt; 5 min</span></div>'
+      + '<div class="pill kdmc-in"><b>' + rec.length + '</b> récents <span style="color:var(--subtle)">&lt; 1 h</span></div>'
+      + '</div>'
+      + (on.length ? '<div>' + on.map(prow).join('') + '</div>'
+        : '<div class="msg" style="padding:18px 16px">Personne en ligne à l\'instant.</div>');
+    if (rec.length) h += '<h2 class="cat" style="margin-top:14px">🟡 Récents <span style="color:var(--subtle);text-transform:none;letter-spacing:0;font-weight:500">— moins d\'une heure</span></h2><div>' + rec.map(prow).join('') + '</div>';
+    return h;
+  }
+  function wirePresence() { var b = document.getElementById('prefresh'); if (b) b.addEventListener('click', function () { loadAccounts(0, true); }); }
+
   function fiche(a) {
     var places = (a.places || []).map(esc).join(' · ') || esc(a.last_place || '—');
     var devs = (a.devices || []).map(esc).join(' · ') || esc(a.last_device || '—');
-    return '<div class="kdmc-card kdmc-in fiche">'
+    return '<div class="kdmc-card kdmc-in fiche" id="fiche-' + esc(a.uid) + '">'
       + '<div class="fhead"><div><h3>' + esc(a.name || a.uid) + '</h3><div class="uid">' + esc(a.uid) + '</div></div>'
       + '<div class="when"><span class="kdmc-dot"></span>' + ago(a.last_seen) + '</div></div>'
       + '<div class="kv">'
@@ -57,26 +92,31 @@
   }
 
   function render(accounts, kv) {
-    var withCgu = accounts.filter(function (a) { return a.cgu_at; }).length;
-    var hits = accounts.reduce(function (s, a) { return s + (a.hits || 0); }, 0);
     app.innerHTML =
-      '<div class="stat">'
-      + '<div class="pill kdmc-in"><b>' + accounts.length + '</b> comptes clients</div>'
-      + '<div class="pill kdmc-in"><b>' + withCgu + '</b> CGU acceptées</div>'
-      + '<div class="pill kdmc-in"><b>' + hits + '</b> connexions</div>'
-      + '</div>'
+      '<div id="presence">' + presence(accounts) + '</div>'
       + (kv ? '' : '<div class="note">⚙️ Le registre central (KV) s\'activera au prochain déploiement du router : les fiches apparaîtront alors automatiquement. Les fonctions communes ci-dessous marchent déjà.</div>')
+      + '<h2 class="cat">📊 Tous les comptes</h2>'
+      + '<div class="stat" id="gstat">' + globalPills(accounts) + '</div>'
       + '<input class="search" id="q" placeholder="🔎 Rechercher un client (nom, lieu, appareil)…" autocomplete="off" autocapitalize="off">'
       + '<h2 class="cat">👥 Fiches clients</h2>'
       + (accounts.length ? '<div id="list">' + accounts.map(fiche).join('') + '</div>'
         : '<div class="msg">Aucune fiche pour l\'instant.<br>Les comptes apparaissent ici dès leur 1ʳᵉ connexion sur le domaine.</div>')
       + hub();
+    wirePresence();
     var q = document.getElementById('q');
     if (q) q.addEventListener('input', function () {
       var v = q.value.toLowerCase();
       var list = document.querySelectorAll('#list .fiche');
       for (var i = 0; i < list.length; i++) list[i].style.display = list[i].textContent.toLowerCase().indexOf(v) >= 0 ? '' : 'none';
     });
+    startPolling();
+  }
+  /* Rafraîchissement présence : non-intrusif (ne touche QUE #presence + #gstat,
+     ne réinitialise ni la recherche ni le scroll). 25 s, seulement onglet visible. */
+  var _poll = null;
+  function startPolling() {
+    if (_poll) return;
+    _poll = setInterval(function () { if (document.visibilityState === 'visible') loadAccounts(0, true); }, 25000);
   }
 
   /* Le grant admin (preuve du code) voyage en header x-kdmc-admin pour marcher
@@ -118,23 +158,32 @@
     if (inp) { inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); }); inp.focus(); }
   }
 
-  function loadAccounts(tries) {
+  function loadAccounts(tries, silent) {
     return fetch('/__admin/accounts', { credentials: 'include', cache: 'no-store', headers: adminHeaders() })
       .then(function (r) { return r.json().then(function (j) { return { st: r.status, j: j }; }).catch(function () { return { st: r.status, j: null }; }); })
       .then(function (res) {
         var j = res.j;
         if (res.st === 403 || !j || !j.ok) {
+          if (silent) return; /* refresh auto : ne casse pas la vue si hoquet réseau/grant */
           if (j && j.reason === 'need_admin_code') { try { localStorage.removeItem(ADMIN_TOK); } catch (e) { /* */ } promptAdminCode(); return; }
           denyViaWhoami(); return; /* rollout sans hash : ancien diag par nom */
         }
         var accounts = j.accounts || [];
         /* KV éventuellement cohérent : retente 1-2× (2s) si index vide après 1ʳᵉ connexion. */
         if (accounts.length === 0 && j.kv !== false && (tries || 0) < 2) {
-          setTimeout(function () { loadAccounts((tries || 0) + 1); }, 2000);
+          setTimeout(function () { loadAccounts((tries || 0) + 1, silent); }, 2000);
+        }
+        if (silent) {
+          /* Mise à jour ciblée : seulement la présence + les compteurs globaux. */
+          var p = document.getElementById('presence'), g = document.getElementById('gstat');
+          if (!p || !g) { render(accounts, j.kv !== false); return; }
+          p.innerHTML = presence(accounts); wirePresence();
+          g.innerHTML = globalPills(accounts);
+          return;
         }
         render(accounts, j.kv !== false);
       })
-      .catch(function () { denyViaWhoami(); });
+      .catch(function () { if (!silent) denyViaWhoami(); });
   }
   function boot() { loading(); loadAccounts(0); }
   boot();
