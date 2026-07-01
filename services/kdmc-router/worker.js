@@ -274,7 +274,9 @@ async function handleSso(request, url, env) {
   const path = url.pathname;
   if (path === '/__sso/whoami' && request.method === 'GET') {
     const s = await ssoVerify(secret, ssoToken(request));
-    if (s) { await enrich(env, request, s.uid, s.name, s.cgu); return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 }); }
+    /* SÉCU (leçon #99) : admin EXIGE une identité FORTE (verified = Face ID prouvé).
+       Un uid admin auto-déclaré via /__sso/issue reste verified:false → admin:false. */
+    if (s) { await enrich(env, request, s.uid, s.name, s.cgu); return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 && !!s.verified }); }
     return J({ ok: false });
   }
 
@@ -300,7 +302,22 @@ async function handleSso(request, url, env) {
     if ((await challengeConsume(env, b.clientDataJSON)) === 'replay') return J({ ok: false, reason: 'challenge déjà utilisé (rejeu)' });
     if (env && env.ACCOUNTS) {
       const list = JSON.parse((await env.ACCOUNTS.get('pk:' + s.uid)) || '[]');
-      if (!list.some((k) => k.credId === reg.credId)) list.push({ credId: reg.credId, jwk: reg.jwk, created: Date.now() });
+      const already = list.some((k) => k.credId === reg.credId);
+      /* SÉCU (leçon #99) : l'identité SSO est AUTO-DÉCLARÉE. Interdit de GREFFER un
+         passkey sur un UID ADMIN dont la liste est déjà NON VIDE depuis une session
+         non-vérifiée — sinon un inconnu déclarant "kevin-desarzens" au portail
+         pourrait enrôler SON Face ID sur le compte admin. Bootstrap (liste vide) OK ;
+         une session déjà vérifiée OU une preuve du code admin (grant /__admin/login)
+         autorise l'ajout d'un nouvel appareil → Kevin n'est JAMAIS bloqué (il connaît
+         le PIN admin). Les comptes non-admin (Laurence, etc.) restent multi-appareils. */
+      const isAdminUid = ADMIN_UIDS.indexOf(s.uid) >= 0;
+      if (isAdminUid && list.length > 0 && !already && !s.verified) {
+        const g = await ssoVerify(secret, adminGrantTok(request));
+        if (!(g && g.uid === '__kdmc_admin__')) {
+          return J({ ok: false, reason: 'compte admin protégé — prouve le code admin (/__admin/login) pour ajouter un appareil' });
+        }
+      }
+      if (!already) list.push({ credId: reg.credId, jwk: reg.jwk, created: Date.now() });
       await env.ACCOUNTS.put('pk:' + s.uid, JSON.stringify(list.slice(-10)));
       const acc = await accGet(env, s.uid);
       if (acc) { acc.passkey = true; acc.passkey_at = acc.passkey_at || Date.now(); await accPut(env, acc); }
@@ -358,7 +375,9 @@ async function handleSso(request, url, env) {
     const cookie = `${SSO_COOKIE}=${token}; Domain=.kd-mc.com; Path=/; Max-Age=${SSO_TTL}; Secure; HttpOnly; SameSite=Lax`;
     /* token renvoyé dans le corps : le portail le met dans le lien de retour
        (#kdmc_sso=) pour les apps installées (où le cookie ne traverse pas). */
-    return J({ ok: true, uid, name, cgu, token, admin: ADMIN_UIDS.indexOf(uid) >= 0 }, cookie);
+    /* /issue = identité AUTO-DÉCLARÉE (aucune preuve) → jamais admin/verified ici.
+       L'admin ne s'obtient que par un passkey Face ID vérifié (auth/verify). */
+    return J({ ok: true, uid, name, cgu, token, admin: false }, cookie);
   }
   if (path === '/__sso/logout' && request.method === 'POST') {
     return J({ ok: true }, `${SSO_COOKIE}=; Domain=.kd-mc.com; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax`);

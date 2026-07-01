@@ -142,11 +142,14 @@
   global.KDMCSourcing = {
     esc: esc, qs: qs, el: el, toast: toast, num: num,
     bootSSO: bootSSO, loginRedirect: loginRedirect, currentUser: function () { return _user; },
-    /* Accès réservé admin (Kevin) + Lolo (Laurence). Anti-lockout : true si offline/réseau KO. */
+    /* Accès réservé admin (Kevin) + Lolo (Laurence). Zone PRIVÉE sans secret local :
+       le nom auto-déclaré ne suffit JAMAIS (leçon #99) — on exige verified (Face ID).
+       Pas de fail-open ici : si le SSO est injoignable, la porte renvoie au portail
+       (re-connexion Face ID), ce n'est pas un lockout (aucun secret à taper). */
     isAllowed: function (u) {
       if (!u) return false;
-      if (u.open) return true;            // fail-open (réseau/SSO KO) — jamais de lockout
-      if (u.admin) return true;
+      if (u.admin) return true;                 // admin prouvé serveur (verified)
+      if (u.verified !== true) return false;    // nom seul = zéro accès
       var n = String(u.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       return /kevin|desarzens|laurence|lolo|saint.?polit/.test(n);
     },

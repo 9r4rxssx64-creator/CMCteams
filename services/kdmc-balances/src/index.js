@@ -62,7 +62,10 @@ async function requireAdmin(req) {
     if (!r.ok) return { ok: false, status: 502, detail: 'whoami HTTP ' + r.status, step: 'whoami_fetch' };
     const j = await r.json();
     if (!j || !j.ok) return { ok: false, status: 401, detail: 'session invalide', step: 'whoami_session' };
-    if (!j.admin) return { ok: false, status: 403, detail: 'réservé admin', step: 'whoami_admin' };
+    /* SÉCU (leçon #99) : exige une identité FORTE. j.admin n'est vrai que si le
+       routeur a confirmé verified (Face ID) ; on re-vérifie j.verified par sécurité
+       (défense en profondeur — un uid admin auto-déclaré ne suffit jamais). */
+    if (!j.admin || !j.verified) return { ok: false, status: 403, detail: 'réservé admin vérifié', step: 'whoami_admin' };
     return { ok: true, name: j.name };
   } catch (e) {
     return { ok: false, status: 502, detail: String((e && e.message) || e).slice(0, 120), step: 'whoami_exc' };
