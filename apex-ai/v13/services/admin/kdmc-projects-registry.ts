@@ -49,6 +49,8 @@ export interface KdmcProject {
   repo_url: string;
   /** URL déploiement live (GitHub Pages, Vercel, custom domain) */
   deploy_url: string;
+  /** Adresse kd-mc.com dédiée (sous-domaine du portail, si applicable) */
+  domain_url?: string;
   /** Stack technique principale (max 6 entries pour lisibilité IA) */
   tech_stack: readonly string[];
   /** Date de création (ISO 8601 YYYY-MM-DD) */
@@ -78,6 +80,7 @@ export const KDMC_PROJECTS: readonly KdmcProject[] = [
     description: 'Assistant IA personnel niveau entreprise (multi-providers, vault chiffré, sentinelles 24/7)',
     repo_url: 'https://github.com/9r4rxssx64-creator/cmcteams',
     deploy_url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/',
+    domain_url: 'https://apex-ai.kd-mc.com/',
     tech_stack: ['TypeScript', 'Vite', 'Vitest', 'Playwright', 'Anthropic Claude', 'Cloudflare Workers'],
     created_at: '2025-12-15',
     last_updated: Date.now(),
@@ -96,6 +99,7 @@ export const KDMC_PROJECTS: readonly KdmcProject[] = [
     description: 'Planning + équipes Casino Monaco SBM (258 employés, sync Firebase temps réel)',
     repo_url: 'https://github.com/9r4rxssx64-creator/cmcteams',
     deploy_url: 'https://9r4rxssx64-creator.github.io/CMCteams/',
+    domain_url: 'https://cmcteams.kd-mc.com/',
     tech_stack: ['HTML5 SPA monofichier', 'JavaScript vanilla', 'Firebase Realtime DB', 'PWA'],
     created_at: '2024-06-01',
     last_updated: Date.now(),
@@ -105,6 +109,23 @@ export const KDMC_PROJECTS: readonly KdmcProject[] = [
       changelog: 'https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CHANGELOG.md',
     },
     sentinels_count: 16,
+  },
+  {
+    id: 'cmcteams-light',
+    name: 'CMCteams light',
+    version: 'v1.16',
+    status: 'active',
+    description: 'Vue rapide des ordres de départ + équipes du Casino Monaco (page légère, lecture sans ouvrir l\'app ; sync app↔page, mode admin PIN)',
+    repo_url: 'https://github.com/9r4rxssx64-creator/cmcteams',
+    deploy_url: 'https://9r4rxssx64-creator.github.io/CMCteams/tools/departs/',
+    domain_url: 'https://cmcteams-light.kd-mc.com/',
+    tech_stack: ['HTML5 monofichier', 'JavaScript vanilla', 'Firebase Realtime DB', 'PWA'],
+    created_at: '2026-06-22',
+    last_updated: Date.now(),
+    docs_links: {
+      claude_md: 'https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CLAUDE.md',
+    },
+    sentinels_count: 0,
   },
   {
     id: 'ekdmc',
@@ -171,7 +192,8 @@ export const KDMC_PROJECTS: readonly KdmcProject[] = [
     status: 'wip',
     description: 'Interface conversationnelle standalone (clone WhatsApp pour amis/clients)',
     repo_url: 'https://github.com/9r4rxssx64-creator/cmcteams',
-    deploy_url: 'https://apex-chat.kdmc.fr/',
+    deploy_url: 'https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/',
+    domain_url: 'https://apex-chat.kd-mc.com/',
     tech_stack: ['TypeScript', 'Vite', 'Firebase Realtime DB', 'WhatsApp OTP'],
     created_at: '2026-03-01',
     last_updated: Date.now(),
