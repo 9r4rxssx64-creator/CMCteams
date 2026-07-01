@@ -115,10 +115,12 @@
     }).catch(function () { /* repli intégré */ });
   } catch (e) { /* repli intégré */ }
   function _appNm(h) { return APP_NM[h] || ('🌐 ' + (h || '?')); }
+  var _ssUid = ''; /* uid de la session courante (pour l'enrôlement Face ID depuis le hub) */
   function renderSelfService(s) {
     var box = document.getElementById('self-svc');
     if (!box) return;
-    if (!s || !s.uid) { box.hidden = true; box.innerHTML = ''; return; }
+    if (!s || !s.uid) { _ssUid = ''; box.hidden = true; box.innerHTML = ''; return; }
+    _ssUid = s.uid;
     box.hidden = false;
     box.innerHTML = '<h2 class="cat">🔐 Mes appareils &amp; connexions</h2>'
       + '<div id="ss-pk" class="ss-card">Chargement…</div>'
@@ -133,15 +135,30 @@
       if (!el) return;
       if (!j || !j.ok) { el.innerHTML = '<b>📱 Mes appareils Face ID</b><div class="ss-mut">Indisponible pour le moment.</div>'; return; }
       var pk = j.passkeys || [];
+      /* Activation Face ID DÉCOUVRABLE en permanence (pas seulement au modal post-login
+         qu'on peut esquiver). Sans Face ID → pas « verified » → ni auto-login cross-app
+         ni espace privé. Ce bouton comble ce manque. */
+      var canEnroll = _pkSupported();
       var rows = pk.length
         ? pk.map(function (k) {
           return '<div class="ss-row"><span>🔑 Appareil <code>' + esc(k.id) + '…</code>'
             + '<span class="ss-mut"> — ajouté ' + esc(_ago(k.created)) + '</span></span>'
             + '<button class="ss-del" data-pk="' + esc(k.id) + '" type="button">Retirer</button></div>';
         }).join('')
-        : '<div class="ss-mut">Aucun appareil Face ID enregistré. Ajoute-en un pour te connecter d\'un regard.</div>';
+        : '<div class="ss-mut">Aucun appareil Face ID.' + (canEnroll
+          ? ' Active-le pour te connecter d\'un regard <b>et</b> débloquer l\'auto-connexion sur toutes tes apps + ton espace privé.'
+          : ' (Face ID non disponible sur cet appareil.)') + '</div>';
       el.innerHTML = '<b>📱 Mes appareils Face ID</b>' + rows
-        + '<button class="ss-act" id="ss-revoke" type="button">🚪 Déconnecter mes autres appareils</button>';
+        + (canEnroll ? '<button class="ss-act" id="ss-enroll" type="button" style="border-color:rgba(232,184,48,.5);color:var(--gold2,#f6d97a)">➕ Activer Face ID sur cet appareil</button>' : '')
+        + (pk.length ? '<button class="ss-act" id="ss-revoke" type="button">🚪 Déconnecter mes autres appareils</button>' : '');
+      var en = document.getElementById('ss-enroll');
+      if (en) en.addEventListener('click', function () {
+        en.disabled = true; en.textContent = '…';
+        window.kdmcSSO.registerPasskey().then(function (r) {
+          if (r && r.ok) { try { if (_ssUid) _setPasskey(_ssUid); } catch (e) { /* */ } loadMyPasskeys(); applyAdminVisibility(); }
+          else { en.disabled = false; en.textContent = '➕ Activer Face ID — réessaie (' + ((r && r.reason) || 'annulé') + ')'; }
+        });
+      });
       var rv = document.getElementById('ss-revoke');
       if (rv) rv.addEventListener('click', function () {
         if (!confirm('Déconnecter tous tes AUTRES appareils ?\n\nCE téléphone reste connecté ; les autres devront se reconnecter (Face ID ou code).')) return;
