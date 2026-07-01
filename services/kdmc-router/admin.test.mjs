@@ -28,9 +28,11 @@ ok(r.status === 403, 'admin accounts session NON-admin → 403');
 r = await mod.fetch(REQ({ path: '/__admin/accounts', headers: { cookie: 'kdmc_sso=' + cKevin } }), env);
 ok(r.status === 403, 'FAIL-CLOSED : sans hash PIN, token nom-admin → 403 (plus de fail-open par nom)');
 
-/* whoami : le flag admin reflète la liste blanche (sert au rôle des apps, PAS au gate). */
+/* whoami : le flag admin EXIGE verified (Face ID). Un uid admin AUTO-DÉCLARÉ
+   (cKevin = issue, non vérifié) → admin:false (leçon #99). L'admin réel ne vient
+   que d'un passkey vérifié (webauthn.test.mjs). */
 r = await mod.fetch(REQ({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + cKevin } }), env); let j = await r.json();
-ok(j.ok && j.admin === true, 'whoami Kevin → admin:true');
+ok(j.ok && j.verified === false && j.admin === false, 'whoami Kevin auto-déclaré (non vérifié) → admin:false');
 r = await mod.fetch(REQ({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + await issue('marie-dupont', 'Marie Dupont') } }), env); j = await r.json();
 ok(j.ok && j.admin === false, 'whoami client → admin:false');
 

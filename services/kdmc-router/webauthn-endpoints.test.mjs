@@ -93,6 +93,26 @@ const run = async () => {
   ok((await (await mod.fetch(POST('/__sso/webauthn/auth/verify', asr), env)).json()).ok === true, 'auth/verify count=2 → OK (compteur progresse)');
   ok((await (await mod.fetch(POST('/__sso/webauthn/auth/verify', asr), env)).json()).ok === false, 'rejeu de la MÊME assertion → REFUS (challenge consommé)');
 
+  /* 9) SÉCU P0 (leçon #99) : pk:kevin-desarzens est désormais NON VIDE (Kevin enrôlé).
+     Un ATTAQUANT qui déclare "kevin-desarzens" au portail (session faible, non vérifiée)
+     NE DOIT PAS pouvoir greffer SON passkey sur le compte admin. */
+  const kp2 = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  const pj2 = await crypto.subtle.exportKey('jwk', kp2.publicKey);
+  const x2 = b64uDec(pj2.x), y2 = b64uDec(pj2.y);
+  const credId2 = crypto.getRandomValues(new Uint8Array(32));
+  let ra = await mod.fetch(POST('/__sso/issue', { uid: 'kevin-desarzens', name: 'Kevin Desarzens', cgu: true }), env);
+  const cookieAtk = 'kdmc_sso=' + cookieOf(ra);
+  const roA = await (await mod.fetch(POST('/__sso/webauthn/register/options', {}, { cookie: cookieAtk }), env)).json();
+  const cose2 = cat(head(5, 5), enc(1), enc(2), enc(3), enc(-7), enc(-1), enc(1), enc(-2), enc(x2), enc(-3), enc(y2));
+  const regAuthData2 = cat(rpIdHash, Uint8Array.of(0x45), Uint8Array.of(0, 0, 0, 0), new Uint8Array(16), Uint8Array.of(0, credId2.length), credId2, cose2);
+  const attObj2 = cat(head(5, 3), enc('fmt'), enc('none'), enc('attStmt'), head(5, 0), enc('authData'), enc(regAuthData2));
+  const regCD2 = te.encode(JSON.stringify({ type: 'webauthn.create', challenge: roA.challenge, origin: ORIGIN }));
+  ra = await mod.fetch(POST('/__sso/webauthn/register/verify', { attestationObject: b64uEnc(attObj2), clientDataJSON: b64uEnc(regCD2) }, { cookie: cookieAtk }), env);
+  const rvA = await ra.json();
+  ok(rvA.ok === false && /admin protégé/i.test(rvA.reason || ''), 'attaquant (session faible) NE greffe PAS de passkey sur admin → REFUS');
+  const pkList = JSON.parse(store.get('pk:kevin-desarzens') || '[]');
+  ok(!pkList.some((k) => k.credId === b64uEnc(credId2)), 'le passkey de l\'attaquant n\'est PAS entré en KV');
+
   console.log(`WebAuthn endpoints test: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 };

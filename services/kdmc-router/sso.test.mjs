@@ -27,7 +27,9 @@ ok(j.ok === false, 'mauvais secret → rejeté (forge impossible)');
 
 // Canal Bearer (pass signé) — cross-PWA iOS : whoami via Authorization header SANS cookie
 r = await mod.fetch(H({ path: '/__sso/whoami', headers: { authorization: 'Bearer ' + token } }), env); j = await r.json();
-ok(j.ok === true && j.uid === 'kdmc_admin' && j.admin === true, 'whoami via Bearer (sans cookie) → identité + admin');
+// SÉCU (leçon #99) : un uid admin AUTO-DÉCLARÉ (issue, sans Face ID) → admin:false.
+// L'admin n'est vrai qu'après un passkey vérifié (couvert par webauthn.test.mjs).
+ok(j.ok === true && j.uid === 'kdmc_admin' && j.verified === false && j.admin === false, 'whoami via Bearer (issue, non-vérifié) → identité, admin:false (nom auto-déclaré ≠ admin)');
 // issue renvoie le token dans le corps (pour le mettre dans le lien de retour)
 r = await mod.fetch(H({ path: '/__sso/issue', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ uid: 'laurence_sp', name: 'Laurence Saint-Polit', cgu: true }) }), env); j = await r.json();
 ok(j.ok === true && typeof j.token === 'string' && j.token.indexOf('.') > 0 && j.admin === false, 'issue → token signé dans le corps + admin:false pour client');
