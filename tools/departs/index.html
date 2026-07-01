@@ -152,13 +152,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.14.0</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.14.1</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.14.0";
+var APP_VER="v1.14.1";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -202,9 +202,11 @@ function codeStyle(c){
   if(base==="R")  return {bg:"#d8c8f0",fg:"#2a1850"};                      // repos → lavande
   if(base==="AF") return {bg:"#a8e0a8",fg:"#031805"};                      // formation → vert
   if(base==="M"||base==="MAL") return {bg:"#f0a0a0",fg:"#3a0808"};         // maladie → rouge clair
-  if(base==="RRT"||base==="PRT"||base==="RTP"||base==="RTR") return {bg:"#ffd850",fg:"#1a1004"}; // RRT → jaune
-  if(base==="DEPL"||base==="DEP") return {bg:"#e0d2bc",fg:"#3a2810"};      // déplacement → beige
-  if(base==="AT"||base==="PAT"||base==="ABI"||base==="ABS"||base==="SS"||base==="CL"||base==="CFL"||base==="MT") return {bg:"#dcdcdc",fg:"#202020"}; // autres absences → gris
+  if(base==="RRT"||base==="PRT"||base==="RTP"||base==="RTR") return {bg:"#ffd850",fg:"#1a1004"}; // RRT/PRT → jaune
+  if(base==="DEPL"||base==="DEP"||base==="DELPT") return {bg:"#e0d2bc",fg:"#3a2810"};      // déplacement → beige
+  // v9.837 — DELTTRA = cellule bleu clair du PDF (reproduit à l'identique, comme l'app)
+  if(base==="DELTTRA") return {bg:"#bcd8e8",fg:"#0c3a55"};                 // DELTTRA → bleu clair
+  if(base==="AT"||base==="MT"||base==="PAT"||base==="ABI"||base==="ABS"||base==="ABP"||base==="SS"||base==="CSS"||base==="CL"||base==="CEO"||base==="CSC"||base==="EDC"||base==="CFL") return {bg:"#dcdcdc",fg:"#202020"}; // autres absences → gris
   return {bg:"#fbfaf3",fg:"#1a2a1a"};                                      // TRAVAIL → blanc (PDF)
 }
 function isRest(c){return c==="RH"||c==="R";} // pour la détection d'équipe (jours de repos)

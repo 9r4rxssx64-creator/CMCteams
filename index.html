@@ -1387,6 +1387,25 @@ var CODES={
   // (ni repos ni absence) \u2192 occupe 1 jour, ne d\u00e9cale pas la ligne (lesson #69) et ne
   // cr\u00e9e pas de faux repos \u2192 l'employ\u00e9 reste dans son \u00e9quipe.
   "DELTTRA":{l:"DELTTRA", bg:"#bcd8e8",c:"#0c3a55",b:"#88b8d0",cdp:false},
+  // v9.837 (Kevin 2026-07-01 \u00ab reproduit \u00e0 l'identique partout \u2026 ajoute aux l\u00e9gendes \u00bb) :
+  // codes SBM (BULLETIN_CODES, Note DAJS 6/1/1993) pr\u00e9sents dans les PDF mais absents
+  // du dict \u2192 ni dans la l\u00e9gende ni reconnus. Ajout\u00e9s ici avec le libell\u00e9 officiel +
+  // la couleur de STATUT (comme les cellules, cmcCodeStatusBg). Reconnus = pas de
+  // d\u00e9calage de ligne (lesson #69). Repos-travaill\u00e9s \u2192 jaune ; absences \u2192 gris ; cong\u00e9 \u2192 rose.
+  "RTP"   :{l:"Repos Trav. \u00e0 Payer", bg:"#ffd850",c:"#1a1004",b:"#e0b838",cdp:false},
+  "RTR"   :{l:"Repos Trav. \u00e0 R\u00e9cup", bg:"#ffd850",c:"#1a1004",b:"#e0b838",cdp:false},
+  "DEP"   :{l:"D\u00e9placement", bg:"#d8c0a0",c:"#2a1408",b:"#b09060",cdp:false},
+  "AT"    :{l:"Accident travail", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "MT"    :{l:"Cong\u00e9 maternit\u00e9", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "SS"    :{l:"Sans solde", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "CSS"   :{l:"Cong\u00e9 Sans Solde", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "CL"    :{l:"Cong\u00e9 L\u00e9gal (familial)", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "ABS"   :{l:"Absence tol\u00e9r\u00e9e", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "ABI"   :{l:"Absence injustifi\u00e9e", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "EDC"   :{l:"EDC", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "CFL"   :{l:"F\u00eate incluse cong\u00e9", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
+  "CRH"   :{l:"RH inclus cong\u00e9", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
+  "CDH"   :{l:"RH cong\u00e9 pay\u00e9", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
   "15/19" :{l:"15h\u201319h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   "14/20" :{l:"14h\u201320h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   // ── PIT BOSS / SUPERVISEUR — codes spécifiques cadres (v9.121) ─────────
@@ -5526,7 +5545,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.836";
+var APP_VER="v9.837";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24071,14 +24090,27 @@ function vPlan(){
       if(!items.length)return"";
       var out='<div style="margin-bottom:8px"><div style="font-size:13px;font-weight:900;color:'+color+';text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;text-shadow:0 2px 4px rgba(0,0,0,1)">'+title+'</div><div style="display:flex;flex-wrap:wrap;gap:4px">';
       items.forEach(function(x){var c=x[0],ci=x[1];
-        out+='<div style="display:flex;align-items:center;gap:4px;background:'+ci.bg+';border:1.5px solid '+ci.b+';border-radius:8px;padding:4px 8px;box-shadow:0 2px 6px rgba(0,0,0,.3)"><span style="color:'+ci.c+';font-size:14px;font-weight:900;letter-spacing:0.3px">'+c+'</span><span style="color:'+ci.c+';opacity:.85;font-size:12px;font-weight:700">'+ci.l+(ci.lieu?' · <b>'+ci.lieu+'</b>':'')+'</span></div>';
+        // v9.837 — la pastille de légende prend la couleur RÉELLE de la cellule
+        // (cmcCodeStatusBg = statut, comme le rendu vPlan/vDeparts/PDF) → légende
+        // À L'IDENTIQUE des cellules. Les cadres (ci.lieu) gardent leur couleur PDF
+        // distincte (par lieu). Repli sur ci.bg si le statut renvoie blanc de travail.
+        var _chipBg=ci.bg;
+        if(!ci.lieu){try{var _sb=cmcCodeStatusBg(c);if(_sb&&_sb!==_CMC_WORK_CELL_BG)_chipBg=_sb;else if(_sb===_CMC_WORK_CELL_BG)_chipBg=ci.bg;}catch(_lcb){}}
+        out+='<div style="display:flex;align-items:center;gap:4px;background:'+_chipBg+';border:1.5px solid '+ci.b+';border-radius:8px;padding:4px 8px;box-shadow:0 2px 6px rgba(0,0,0,.3)"><span style="color:'+ci.c+';font-size:14px;font-weight:900;letter-spacing:0.3px">'+c+'</span><span style="color:'+ci.c+';opacity:.85;font-size:12px;font-weight:700">'+ci.l+(ci.lieu?' · <b>'+ci.lieu+'</b>':'')+'</span></div>';
       });
       out+='</div></div>';return out;
     }
+    // v9.837 \u2014 rep\u00e8res couleur du PDF sans code (captur\u00e9s au pixel) : convention
+    // (fond rouge = jour de repos travaill\u00e9) et horaire modifi\u00e9 (\u00e9criture rouge).
+    var _legMeta='<div style="margin-bottom:8px"><div style="font-size:13px;font-weight:900;color:#e0808a;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;text-shadow:0 2px 4px rgba(0,0,0,1)">\ud83d\udd34 Rep\u00e8res PDF</div><div style="display:flex;flex-wrap:wrap;gap:4px">'
+      +'<div style="display:flex;align-items:center;gap:4px;background:'+CMC_META_BG_COLORS.CONV+';border:1.5px solid rgba(224,64,64,.6);border-radius:8px;padding:4px 8px"><span style="color:#fff;font-size:12px;font-weight:700">Fond rouge \u00b7 Convention (repos travaill\u00e9)</span></div>'
+      +'<div style="display:flex;align-items:center;gap:4px;background:'+_CMC_WORK_CELL_BG+';border:1.5px solid #cc0000;border-radius:8px;padding:4px 8px"><span style="color:#cc0000;font-size:12px;font-weight:800">\u00c9criture rouge \u00b7 horaire modifi\u00e9</span></div>'
+      +'</div></div>';
     h+='<div style="margin-bottom:12px">'
       +_legBlock('\ud83c\udfb0 Horaires employ\u00e9s',_legEmp,'#c9a227')
       +_legBlock('\ud83d\udc51 Horaires cadres (Pit Boss / Sup)',_legCadre,'#ff80c0')
       +_legBlock('\ud83d\udcc5 Absences & repos',_legAbs,'#8ab0e0')
+      +_legMeta
       +'</div>';
   }
   if(!hasImportedData(A.year,A.month)){
@@ -27192,15 +27224,22 @@ function cmcCodeStatusBg(code){
   // pixel (_metaBg dans vPlan). Le suffixe reste un marqueur de RÔLE (contrat), pas
   // de couleur. Cellule de travail apostrophe sans méta rouge → blanc, à l'identique.
   if(/\*$/.test(s)||(typeof CODES!=="undefined"&&CODES[s]&&CODES[s].cdp))return CMC_META_BG_COLORS.CDP; // CDP → orange
+  // v9.837 — EDC finit par un C légitime (pas un marqueur chef) que le strip ci-dessous
+  // effacerait ("EDC"→"ED") → traité sur le code brut, en gris (absence).
+  if(s.toUpperCase()==="EDC")return "rgba(200,200,200,.28)";
   var base=s.toUpperCase().replace(/[C'":*]+$/g,"");
   if(base==="CP"||base==="CRH"||base==="CDP"||base==="CDH"||base==="CPS"||base==="CPM")return CMC_META_BG_COLORS.CP; // congé → rose
   if(base==="RH")return CMC_META_BG_COLORS.RH;                  // repos hebdo → violet
   if(base==="R")return CMC_META_BG_COLORS.R;                    // repos → lavande
   if(base==="AF")return CMC_META_BG_COLORS.AF;                  // formation → vert
   if(base==="M"||base==="MAL")return "rgba(224,96,96,.30)";    // maladie → rouge clair
-  if(base==="RRT"||base==="PRT"||base==="RTP"||base==="RTR")return CMC_META_BG_COLORS.RRT; // RRT → jaune
-  if(base==="DEPL"||base==="DEP")return "rgba(216,192,160,.34)"; // déplacement → beige
-  if(base==="AT"||base==="PAT"||base==="ABI"||base==="ABS"||base==="SS"||base==="CL"||base==="CFL")return "rgba(200,200,200,.28)"; // autres absences → gris
+  if(base==="RRT"||base==="PRT"||base==="RTP"||base==="RTR")return CMC_META_BG_COLORS.RRT; // RRT/PRT → jaune
+  if(base==="DEPL"||base==="DEP"||base==="DELPT")return "rgba(216,192,160,.34)"; // déplacement → beige
+  // v9.837 (Kevin 2026-07-01 « reproduit à l'identique partout DELTTRA, PRT, etc ») :
+  // DELTTRA = code horaire opaque du PDF, cellule BLEU CLAIR (v9.829) → reproduit ici
+  // au lieu du blanc de travail (sinon washé). Source unique app+page+légende.
+  if(base==="DELTTRA")return "rgba(140,196,230,.34)";          // DELTTRA → bleu clair (PDF)
+  if(base==="AT"||base==="MT"||base==="PAT"||base==="ABI"||base==="ABS"||base==="ABP"||base==="SS"||base==="CSS"||base==="CL"||base==="CEO"||base==="CSC"||base==="EDC"||base==="CFL")return "rgba(200,200,200,.28)"; // autres absences → gris
   return _CMC_WORK_CELL_BG;                                     // TRAVAIL → blanc (PDF)
 }
 // v9.619 — Helper unique factorisé vPlan/vDeparts avec CACHE activé.
