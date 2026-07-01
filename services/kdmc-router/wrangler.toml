@@ -28,3 +28,10 @@ routes = [
   { pattern = "departs.kd-mc.com", custom_domain = true },
   { pattern = "cmcteams-light.kd-mc.com", custom_domain = true },
 ]
+
+# Alerte push « nouvel appareil » → worker de push existant (sous-domaine = le COMPTE
+# 9r4rxssx64, jamais un nom deviné — leçon #85). URL publique ici ; le JETON est un
+# secret (KDMC_PUSH_TOKEN, posé par le workflow depuis PUSH_ADMIN_TOKEN). Sans jeton,
+# l'alerte no-op (le journal admin reste la trace) — fail-open total.
+[vars]
+KDMC_PUSH_URL = "https://apex-push-worker.9r4rxssx64.workers.dev"

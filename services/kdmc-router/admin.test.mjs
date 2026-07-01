@@ -121,5 +121,41 @@ await mod.fetch(REQ({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + to
 ok(w3.ok === true && puts3 === putsAfterIssue, 'heartbeats rapprochés (<2 min, rien de nouveau) → 0 écriture KV (throttle)');
 ok(JSON.parse(store3.get('acc:beat-user')).hits === 1, 'les heartbeats ne gonflent pas les connexions (hits=1)');
 
+/* ---- Alerte push « nouvel appareil » (opt-in par config, fail-open) ---- */
+const realFetch = globalThis.fetch;
+let pushCalls = [];
+globalThis.fetch = async (u, o) => {
+  const url = typeof u === 'string' ? u : (u && u.url) || '';
+  if (url.indexOf('/send-all') >= 0) { pushCalls.push({ url, body: o && o.body }); return new Response('{"ok":true}', { status: 200 }); }
+  return realFetch(u, o);
+};
+try {
+  const st = new Map();
+  const AK = { get: async (k) => (st.has(k) ? st.get(k) : null), put: async (k, v) => { st.set(k, v); }, delete: async (k) => { st.delete(k); } };
+  const UA_A = { 'user-agent': 'Mozilla/5.0 (iPhone)' };
+  const UA_B = { 'user-agent': 'Mozilla/5.0 (Macintosh)' }; /* device différent (desktop·macOS) */
+  const ISS = (env0, ua) => mod.fetch(REQ({ path: '/__sso/issue', method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, ua), body: JSON.stringify({ uid: 'push-user', name: 'Push User', cgu: true }) }), env0);
+
+  /* NON configuré (pas de KDMC_PUSH_URL/TOKEN) : jamais d'appel push, même sur nouvel appareil */
+  const envNP = { KDMC_SSO_SECRET: 'sec', ACCOUNTS: AK };
+  await ISS(envNP, UA_A);                 /* création (isNew) → pas d'alerte */
+  await ISS(envNP, UA_B);                 /* nouvel appareil, mais NON configuré */
+  ok(pushCalls.length === 0, 'push NON configuré → aucun appel /send-all (repli = journal admin)');
+
+  /* Configuré : nouvel appareil sur fiche existante → 1 alerte push */
+  const st2 = new Map();
+  const AK2 = { get: async (k) => (st2.has(k) ? st2.get(k) : null), put: async (k, v) => { st2.set(k, v); }, delete: async (k) => { st2.delete(k); } };
+  const envP = { KDMC_SSO_SECRET: 'sec', ACCOUNTS: AK2, KDMC_PUSH_URL: 'https://push.example.dev', KDMC_PUSH_TOKEN: 'tok' };
+  pushCalls = [];
+  await ISS(envP, UA_A);                   /* création → PAS d'alerte (isNew) */
+  ok(pushCalls.length === 0, 'création de fiche → pas d\'alerte push (1er appareil)');
+  await ISS(envP, UA_B);                   /* 2e appareil → alerte */
+  ok(pushCalls.length === 1 && /\/send-all$/.test(pushCalls[0].url), 'nouvel appareil (configuré) → 1 appel /send-all');
+  ok(/kdmc-new-device/.test(pushCalls[0].body || ''), 'payload push = tag kdmc-new-device');
+  pushCalls = [];
+  await ISS(envP, UA_B);                   /* même appareil → pas de nouvelle alerte */
+  ok(pushCalls.length === 0, 'même appareil re-vu → pas de nouvelle alerte push');
+} finally { globalThis.fetch = realFetch; }
+
 console.log(`Admin domaine test: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
