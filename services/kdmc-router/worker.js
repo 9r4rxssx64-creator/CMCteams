@@ -26,6 +26,7 @@ const ROUTES = {
   'sourcing.kd-mc.com': '/CMCteams/shops/sourcing',
   'coffre.kd-mc.com': '/CMCteams/coffre-fort',
   'departs.kd-mc.com': '/CMCteams/tools/departs',
+  'cmcteams-light.kd-mc.com': '/CMCteams/tools/departs', // « CMCteams light » (Kevin 2026-07-01) — alias nommé de la page Départs (departs.kd-mc.com reste actif)
 };
 
 export default {
