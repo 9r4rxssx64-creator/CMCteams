@@ -100,12 +100,20 @@
   }
   function _dt(ts) { try { return ts ? new Date(ts).toLocaleString('fr-FR') : '—'; } catch (e) { return '—'; } }
   function _dur(ms) { ms = ms || 0; if (ms < 60000) return '< 1 min'; var m = Math.round(ms / 60000); if (m < 60) return m + ' min'; var h = Math.floor(m / 60); m = m % 60; return h + ' h' + (m ? (' ' + m) : ''); }
+  /* Copie de REPLI (hors-ligne). La SOURCE UNIQUE = /apps.json (chargée au boot,
+     fusionnée par-dessus). Le test apps-consistency garantit qu'elles ne divergent pas. */
   var APP_NM = {
     'cmcteams.kd-mc.com': '📅 CMCteams', 'apex-ai.kd-mc.com': '🤖 Apex AI', 'apex-chat.kd-mc.com': '💬 Apex Chat',
     'dashboard.kd-mc.com': '📊 Dashboard', 'sourcing.kd-mc.com': '📦 Sourcing', 'coffre.kd-mc.com': '🔐 Coffre',
     'kd-mc.com': '🏠 Portail', 'www.kd-mc.com': '🏠 Portail', 'la-detente.kd-mc.com': '🌿 La Détente',
     'chez-lolo.kd-mc.com': '🎨 Chez Lolo', 'departs.kd-mc.com': '🎯 CMCteams light', 'cmcteams-light.kd-mc.com': '🎯 CMCteams light'
   };
+  try {
+    fetch('/apps.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      var a = j && j.apps; if (!a) return;
+      Object.keys(a).forEach(function (h) { APP_NM[h] = (a[h].icon ? a[h].icon + ' ' : '') + (a[h].name || h); });
+    }).catch(function () { /* repli intégré */ });
+  } catch (e) { /* repli intégré */ }
   function _appNm(h) { return APP_NM[h] || ('🌐 ' + (h || '?')); }
   function renderSelfService(s) {
     var box = document.getElementById('self-svc');

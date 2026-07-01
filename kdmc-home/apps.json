@@ -1,0 +1,17 @@
+{
+  "_doc": "SOURCE UNIQUE des apps du domaine kd-mc.com (host -> nom + icône). Consommé au boot par le portail (kdmc-portal.js) et l'admin (admin/admin.js) — chacun garde une copie de repli intégrée pour l'hors-ligne. Le test apps-consistency.test.mjs échoue si cette liste diverge du routeur (worker ROUTES) ou des copies de repli. Ajouter une app = 1 entrée ici + la route dans services/kdmc-router/wrangler.toml + ROUTES du worker.",
+  "apps": {
+    "kd-mc.com": { "name": "Portail", "icon": "🏠" },
+    "www.kd-mc.com": { "name": "Portail", "icon": "🏠" },
+    "cmcteams.kd-mc.com": { "name": "CMCteams", "icon": "📅" },
+    "cmcteams-light.kd-mc.com": { "name": "CMCteams light", "icon": "🎯" },
+    "departs.kd-mc.com": { "name": "CMCteams light", "icon": "🎯" },
+    "apex-ai.kd-mc.com": { "name": "Apex AI", "icon": "🤖" },
+    "apex-chat.kd-mc.com": { "name": "Apex Chat", "icon": "💬" },
+    "dashboard.kd-mc.com": { "name": "Dashboard", "icon": "📊" },
+    "sourcing.kd-mc.com": { "name": "Sourcing", "icon": "📦" },
+    "coffre.kd-mc.com": { "name": "Coffre", "icon": "🔐" },
+    "la-detente.kd-mc.com": { "name": "La Détente", "icon": "🌿" },
+    "chez-lolo.kd-mc.com": { "name": "Chez Lolo", "icon": "🎨" }
+  }
+}

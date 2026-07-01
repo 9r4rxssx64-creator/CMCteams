@@ -77,11 +77,20 @@
   function wirePresence() { var b = document.getElementById('prefresh'); if (b) b.addEventListener('click', function () { loadAccounts(0, true); }); }
 
   /* ---- Historique des connexions : 1 personne (pas de doublon), avec quels sites ---- */
+  /* Copie de REPLI (hors-ligne). SOURCE UNIQUE = /apps.json (chargée au boot,
+     fusionnée par-dessus). Le test apps-consistency garantit qu'elles ne divergent pas. */
   var APP_NAMES = {
-    'cmcteams.kd-mc.com': '📅 CMCteams', 'apex-ai.kd-mc.com': '🤖 Apex AI', 'apex-chat.kd-mc.com': '💬 Apex Chat',
+    'cmcteams.kd-mc.com': '📅 CMCteams', 'cmcteams-light.kd-mc.com': '🎯 CMCteams light', 'departs.kd-mc.com': '🎯 CMCteams light',
+    'apex-ai.kd-mc.com': '🤖 Apex AI', 'apex-chat.kd-mc.com': '💬 Apex Chat',
     'dashboard.kd-mc.com': '📊 Dashboard', 'sourcing.kd-mc.com': '📦 Sourcing', 'coffre.kd-mc.com': '🔐 Coffre',
-    'kd-mc.com': '🏠 Portail', 'www.kd-mc.com': '🏠 Portail', 'la-detente.kd-mc.com': '🎨 La Détente', 'chez-lolo.kd-mc.com': '🎨 Chez Lolo'
+    'kd-mc.com': '🏠 Portail', 'www.kd-mc.com': '🏠 Portail', 'la-detente.kd-mc.com': '🌿 La Détente', 'chez-lolo.kd-mc.com': '🎨 Chez Lolo'
   };
+  try {
+    fetch('/apps.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      var a = j && j.apps; if (!a) return;
+      Object.keys(a).forEach(function (h) { APP_NAMES[h] = (a[h].icon ? a[h].icon + ' ' : '') + (a[h].name || h); });
+    }).catch(function () { /* repli intégré */ });
+  } catch (e) { /* repli intégré */ }
   function appName(host) { return APP_NAMES[host] || ('🌐 ' + (host || '?')); }
   function appsSummary(apps) {
     if (!apps) return '—';
