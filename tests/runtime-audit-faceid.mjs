@@ -61,6 +61,46 @@ async function main() {
   await page.waitForTimeout(1000);
   ok(await page.evaluate(() => !document.getElementById('cmcFidOffer')), 'non supporté → fail-open (pas d\'offre)');
 
+  // ── v9.838 : RECONNU AUTO — cmc_last_uid + saut direct à Face ID (sans retaper le matricule) ──
+  // stubs : appareil compatible + U11804 (admin) enrôlé
+  await page.evaluate(() => {
+    window.webauthnSupported = () => true;
+    window.webauthnCredsOf = (uid) => (uid === 'U11804' ? [{ id: 'fake', uid }] : []);
+  });
+  // 7) dernier user connu + Face ID enrôlé → vLogin saute à l'écran Face ID (loginStep=1)
+  const jump = await page.evaluate(() => {
+    localStorage.setItem('cmc_last_uid', 'U11804');
+    loginStep = 0; window._cmcFidPrepped = false; loginUid = '';
+    const html = vLogin();
+    return { step: loginStep, uid: loginUid, hasFaceBtn: /Face\s*ID/.test(html), hasRetour: /Retour|Back|Indietro/.test(html) };
+  });
+  ok(jump.step === 1, 'dernier user + Face ID enrôlé → saut direct à l\'écran Face ID (loginStep=1)');
+  ok(jump.uid === 'U11804', 'loginUid pré-rempli = dernier user (U11804, pas de re-saisie)');
+  ok(jump.hasFaceBtn, 'bouton Face ID affiché');
+  ok(jump.hasRetour, 'repli « ← Retour » présent (jamais de lockout)');
+
+  // 8) dernier user connu mais PAS enrôlé → reste au formulaire (loginStep=0), pas de saut
+  const noJump = await page.evaluate(() => {
+    localStorage.setItem('cmc_last_uid', 'U00071'); // employé sans creds
+    loginStep = 0; window._cmcFidPrepped = false;
+    vLogin();
+    return loginStep;
+  });
+  ok(noJump === 0, 'dernier user SANS Face ID → reste au formulaire (pas de saut)');
+
+  // 9) appareil non compatible → pas de saut (fail-open)
+  const noSupport = await page.evaluate(() => {
+    window.webauthnSupported = () => false;
+    localStorage.setItem('cmc_last_uid', 'U11804');
+    loginStep = 0; window._cmcFidPrepped = false;
+    vLogin();
+    return loginStep;
+  });
+  ok(noSupport === 0, 'appareil non compatible → pas de saut (fail-open)');
+
+  // 10) cmc_last_uid dans FB_LOCAL (jamais synchronisé Firebase — anti-impersonation, lesson #40)
+  ok(await page.evaluate(() => Array.isArray(FB_LOCAL) && FB_LOCAL.indexOf('cmc_last_uid') >= 0), 'cmc_last_uid dans FB_LOCAL (jamais sync Firebase)');
+
   await browser.close();
   console.log('\nFACE ID (niveau B) : ' + pass + ' OK / ' + fail + ' KO');
   if (fail) process.exit(1);

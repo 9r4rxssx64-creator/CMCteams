@@ -4052,7 +4052,7 @@ var FB_FIX=["cmc_ov","cmc_ov_meta","ax_admin_profile","ax_admin_kevin","cmc_admi
 var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","cmc_affluence_","cmc_import_history_","cmc_live_","cmc_import_src_","cmc_visual_planning_","cmc_apex_vision_request_","cmc_apex_vision_result_","cmc_structured_"];
 // Clés qui restent strictement locales (session, PIN, paramètres IA)
 /* v9.530 - cmc_pin_fails enleve de FB_LOCAL : doit sync FB pour resister clear localStorage */
-var FB_LOCAL=["cmc_uid","cmc_lastact","cmc_lastread","cmc_lastread_dm","cmc_admin_sessions","cmc_admin_pin","cmc_ia_enabled","cmc_ia_websearch","cmc_ia_key","cmc_ia_proxy","cmc_backend_url","cmc_fb_url","cmc_sync_queue","cmc_notif_ts","cmc_emailjs_config","cmc_last_seen_ver","cmc_a11y","cmc_err_log","cmc_theme","cmc_last_auto_backup","cmc_tts_enabled","cmc_lang","cmc_ghost_log","cmc_auto_rotation_off","cmc_auto_assign_gps","cmc_pit_ai_mode","cmc_pit_ai_shift_mode","cmc_qr_checkin_enabled","cmc_login_geo_log","cmc_import_anomalies",
+var FB_LOCAL=["cmc_uid","cmc_last_uid","cmc_lastact","cmc_lastread","cmc_lastread_dm","cmc_admin_sessions","cmc_admin_pin","cmc_ia_enabled","cmc_ia_websearch","cmc_ia_key","cmc_ia_proxy","cmc_backend_url","cmc_fb_url","cmc_sync_queue","cmc_notif_ts","cmc_emailjs_config","cmc_last_seen_ver","cmc_a11y","cmc_err_log","cmc_theme","cmc_last_auto_backup","cmc_tts_enabled","cmc_lang","cmc_ghost_log","cmc_auto_rotation_off","cmc_auto_assign_gps","cmc_pit_ai_mode","cmc_pit_ai_shift_mode","cmc_qr_checkin_enabled","cmc_login_geo_log","cmc_import_anomalies",
 // v9.399 — Statut onsite local (ne sert que sur l'appareil courant)
 "cmc_onsite_last",
 // v9.401 — Agents internes permanents (reports + toggles admin local)
@@ -5545,7 +5545,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.837";
+var APP_VER="v9.838";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11657,7 +11657,7 @@ async function webauthnDoLogin(uid){
   if(!ok){toast("\u2717 Authentification biom\u00e9trique annul\u00e9e");return;}
   var regPrenom=(A.reg[uid]||{}).prenom||"";
   var greet=regPrenom||(emp.name||"").split(" ").slice(1).join(" ")||(emp.name||"").split(" ")[0]||"";
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;
+  A.user=emp;ls("cmc_uid",emp.id);try{localStorage.setItem("cmc_last_uid",emp.id);}catch(_){}touchSession();loginStep=0;
   try{logUserLogin(emp);}catch(_){}
   try{startPresenceHeartbeat();}catch(_){}
   try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}
@@ -15804,6 +15804,24 @@ function vTelemetry(){
   return h;
 }
 function vLogin(){
+  // v9.838 (Kevin 2026-07-01 « il n'y a pas de FaceID… je dois mettre mon U11804 tjs ») —
+  // RECONNU AUTO après 1ère connexion : si aucune session active mais un DERNIER
+  // utilisateur connu (cmc_last_uid, jamais effacé par le TTL) a ENRÔLÉ Face ID sur cet
+  // appareil → on saute DIRECTEMENT à l'écran Face ID (loginStep=1) au lieu du formulaire
+  // nom/prénom/matricule. Kevin ouvre l'app → Face ID d'un regard, sans retaper U11804.
+  // 1× par ouverture (flag anti-boucle) ; fail-open : la vue Face ID garde le repli mot
+  // de passe + « ← Retour » (jamais de lockout, lesson #55/#81).
+  if(loginStep===0 && !window._cmcFidPrepped){
+    window._cmcFidPrepped=true;
+    try{
+      var _lu=localStorage.getItem("cmc_last_uid")||"";
+      if(_lu && typeof webauthnSupported==="function" && webauthnSupported()
+         && typeof webauthnCredsOf==="function" && webauthnCredsOf(_lu).length>0
+         && A.employees.some(function(x){return x.id===_lu;})){
+        loginUid=_lu; loginStep=1;
+      }
+    }catch(_fidPrep){}
+  }
   if(loginStep===1) return vLoginStep1();
   if(loginStep===2) return vLoginStepPin();
   if(loginStep===3) return vLoginRegister();
@@ -16208,7 +16226,7 @@ function stepVerifyCode(){
   if(A.reg[loginUid]){A.reg[loginUid].verified=true;A.reg[loginUid].verifiedAt=Date.now();ls("cmc_reg",A.reg);}
   var emp=empById(loginUid);
   if(!emp){if(er)er.textContent="Compte introuvable";return;}
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
+  A.user=emp;ls("cmc_uid",emp.id);try{localStorage.setItem("cmc_last_uid",emp.id);}catch(_){}touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
   toast("\u2705 Bienvenue !");
   // Guide premier login
   if(!localStorage.getItem("cmc_onboarded")){
@@ -16296,7 +16314,7 @@ function stepPin(){
   ls("cmc_pin_fails",{count:0,until:0});
   logAdminSession("success",{method:"pin",failsSinceLast:_failsSinceLast});
   var emp=empById(AID);
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
+  A.user=emp;ls("cmc_uid",emp.id);try{localStorage.setItem("cmc_last_uid",emp.id);}catch(_){}touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
 }
 function step1(){
   var er=document.getElementById("lerr");
@@ -16317,7 +16335,7 @@ function step1(){
     loginUid=AID;
     var pin=lg("cmc_admin_pin",null);
     if(pin){loginStep=2;render();}
-    else{var empA=empById(AID);if(empA){logAdminSession("success",{method:"direct"});A.user=empA;ls("cmc_uid",empA.id);touchSession();loginStep=0;logUserLogin(empA);startPresenceHeartbeat();render();}else{if(er)er.textContent="Admin non trouv\u00e9.";}}
+    else{var empA=empById(AID);if(empA){logAdminSession("success",{method:"direct"});A.user=empA;ls("cmc_uid",empA.id);try{localStorage.setItem("cmc_last_uid",empA.id);}catch(_){}touchSession();loginStep=0;logUserLogin(empA);startPresenceHeartbeat();render();try{_cmcOfferFaceIdEnroll(empA.id);}catch(_){}}else{if(er)er.textContent="Admin non trouv\u00e9.";}}
     return;
   }
   // ── Visiteur U007 : bloqué si désactivé par admin ──
@@ -16418,7 +16436,7 @@ function step2(){
   }
   var regPrenom=(A.reg[loginUid]||{}).prenom||"";
   var greet=regPrenom||(emp.name||"").split(" ").slice(1).join(" ")||(emp.name||"").split(" ")[0]||"";
-  A.user=emp;ls("cmc_uid",emp.id);touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
+  A.user=emp;ls("cmc_uid",emp.id);try{localStorage.setItem("cmc_last_uid",emp.id);}catch(_){}touchSession();loginStep=0;logUserLogin(emp);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}try{setTimeout(function(){if(typeof cmcAutoCheckin==="function")cmcAutoCheckin();},1500);}catch(_){}render();if(typeof _checkVersionUpdate==="function")_checkVersionUpdate();setTimeout(function(){if(typeof showTuto==="function")showTuto();if(typeof _checkPitBanner==="function")_checkPitBanner();if(typeof _handleCheckinParam==="function")_handleCheckinParam();},600);try{_cmcOfferFaceIdEnroll(emp.id);}catch(_){}
   if(greet)toast("Bienvenue "+greet+"\u00a0!");
 }
 
