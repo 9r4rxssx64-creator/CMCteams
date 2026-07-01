@@ -187,13 +187,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.20</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.21</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.20";
+var APP_VER="v1.21";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -387,6 +387,11 @@ function applyBoards(live){
   if(live&&live.boards&&Object.keys(live.boards).length){
     (live.months||[]).forEach(function(m){window._depLiveMonths[m.year+'-'+m.monthIdx]=1;MO[m.year+'-'+m.monthIdx]=m;});
     Object.keys(BB).forEach(function(id){var b=BB[id];if(window._depLiveMonths[b.year+'-'+b.monthIdx])delete BB[id];});
+    // v1.21 — les MIROIRS committés d'un mois LIVE sont périmés → les retirer AVANT
+    // d'appliquer les miroirs live (sinon un miroir committé stale — ex après régénération
+    // des boards — survit et son reverse écrase le miroir live). Live seul fait autorité
+    // pour un mois live (cohérent lesson #117 : live gagne).
+    Object.keys(MIR).forEach(function(a){var pa=String(a).split('-');if(pa.length>=3){var mk=(+pa[0])+'-'+((+pa[1])-1);if(window._depLiveMonths[mk])delete MIR[a];}});
     Object.keys(live.boards).forEach(function(id){BB[id]=live.boards[id];});
     Object.keys(live.mirror||{}).forEach(function(a){MIR[a]=live.mirror[a];});
   }
