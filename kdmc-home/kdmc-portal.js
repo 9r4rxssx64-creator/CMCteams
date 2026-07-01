@@ -51,13 +51,19 @@
       return null;
     } catch (e) { return null; }
   }
+  /* Consommateurs CONNUS du pass en fragment (lisent ET nettoient #kdmc_sso=).
+     Même allowlist que _decorateAppLinks (leçon #101 : une app à routeur #hash qui
+     ne consomme pas le jeton casse — « Page introuvable » — ou le laisse traîner
+     dans son URL/historique). Sourcing consomme (bootSSO → consumeHashToken). */
+  var SSO_PASS_CONSUMERS = { 'apex-chat.kd-mc.com': 1, 'dashboard.kd-mc.com': 1, 'sourcing.kd-mc.com': 1 };
   function gotoReturnIfAny() {
     var r = safeReturnUrl();
     if (r) {
       /* On ajoute le "pass signé" dans le fragment (#) — non envoyé aux serveurs,
-         non journalisé — pour que l'app installée (cookie isolé) puisse se
-         reconnaître via le canal Bearer. */
-      var t = (window.kdmcSSO && window.kdmcSSO.token) ? window.kdmcSSO.token() : '';
+         non journalisé — SEULEMENT vers les apps qui le consomment. Les autres
+         reçoivent l'URL propre (elles se reconnaissent par cookie même-contexte). */
+      var host = ''; try { host = new URL(r).hostname; } catch (e) { /* */ }
+      var t = SSO_PASS_CONSUMERS[host] && window.kdmcSSO && window.kdmcSSO.token ? window.kdmcSSO.token() : '';
       if (t) r += (r.indexOf('#') >= 0 ? '&' : '#') + 'kdmc_sso=' + encodeURIComponent(t);
       location.replace(r);
       return true;
