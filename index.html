@@ -5574,7 +5574,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.845";
+var APP_VER="v9.846";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -27579,6 +27579,54 @@ function _cmcApplyFFToEmpsTest(sourceText){
   });
   return applied;
 }
+// v9.846 (Kevin 2026-07-01 « Sur les imports, dans les employés carte, tous ceux avec
+// le fond bleu clair doivent être intégrés dans les équipes roulettes par rapport au
+// repos etc. Ce sont des employés qui sortent de l'école roulette Europe et s'intègrent
+// dans les équipes. Les enlever des équipes cartes ») — reclasse les employés CARTE
+// (famille cmc) marqués fond bleu clair ({{ECOLE}}) vers la famille ROULETTES, puis
+// efface leur teamHistory du mois → la détection par repos (_cmcDetectTeamsByRestPattern)
+// les place dans l'équipe roulettes dont les repos correspondent. SÉCURITÉ : n'agit que
+// sur un tag qui correspond à un VRAI employé (surname+initiale) ET actuellement en cmc
+// → un code bleu (DELTTRA) ou faux positif = ignoré (aucun employé ne matche).
+// Doit tourner AVANT _postValidateImport (qui fait la détection d'équipes).
+function _cmcApplyEcoleToRoulettes(key, sourceText){
+  if(!key||!sourceText||sourceText.indexOf("{{ECOLE}}")<0)return 0;
+  var _norm=function(s){return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();};
+  // extrait les noms marqués : "SURNAME I{{ECOLE}}" (au moins 3 lettres, finit par une lettre)
+  var matches=sourceText.match(/[A-Z][A-Z\s\.\-]{2,30}[A-Z]\s*\{\{ECOLE\}\}/g)||[];
+  var wanted=[]; // {surname, init}
+  matches.forEach(function(raw){
+    var nm=_norm(raw.replace(/\{\{ECOLE\}\}/g,""));
+    var toks=nm.split(/\s+/).filter(Boolean); if(!toks.length)return;
+    var surname=toks[0]; if(surname.length<3)return;
+    var init=(toks.length>1)?toks[toks.length-1].replace(/[^A-Z]/g,""):"";
+    wanted.push({surname:surname,init:init});
+  });
+  if(!wanted.length)return 0;
+  var moved=0,movedNames=[];
+  A.employees.forEach(function(emp){
+    if(!emp||!emp.name)return;
+    var enm=_norm(emp.name),etoks=enm.split(/\s+/).filter(Boolean);
+    var esurname=etoks[0]||"",einit=(etoks.length>1)?etoks[etoks.length-1].replace(/[^A-Z]/g,""):"";
+    if(esurname.length<3)return;
+    // match : même surname, et si le tag a une initiale → doit matcher (anti-homonyme #38)
+    var hit=wanted.some(function(w){ return w.surname===esurname && (!w.init||!einit||w.init===einit); });
+    if(!hit)return;
+    // ne déplacer QUE les employés CARTE (cmc / baccara résiduel) — jamais bj/roulettes
+    var fam=(emp.familyHistory&&emp.familyHistory[key])||_cmcDeriveFamily(emp,(A.overrides[key]||{})[emp.id],key);
+    if(fam!=="cmc"&&fam!=="baccara")return;
+    if(!emp.familyHistory)emp.familyHistory={};
+    emp.familyHistory[key]="roulettes";                       // section d'affichage = roulettes
+    if(emp.teamHistory&&emp.teamHistory[key])delete emp.teamHistory[key]; // re-team par repos
+    moved++; movedNames.push(emp.name);
+  });
+  if(moved>0){
+    try{ls("cmc_e",A.employees);}catch(_){}
+    try{if(typeof _audit==="function")_audit("ecole_roulette_reassign",AID,key,String(moved),"carte fond bleu clair → roulettes : "+movedNames.join(", "));}catch(_){}
+    console.info("[v9.846 école→roulettes] "+moved+" employé(s) carte (fond bleu clair) → roulettes : "+movedNames.join(", "));
+  }
+  return {moved:moved,names:movedNames};
+}
 function _cmcFlagRedNamesTest(redNamesOverride){
   var redNames=redNamesOverride||window._pdfRedNames||[];
   var seen={},flagged=0,unknownNames=[];
@@ -39276,6 +39324,17 @@ function _doExtractPdfLines(file,onDone,onErr){
                    && /[A-Z]{3,}/.test(i.t||"")){
                   tag+="{{REDNAME}}";
                 }
+                // v9.846 (Kevin 2026-07-01 « employés carte fond bleu clair = école
+                // roulette Europe → équipes roulettes ») — fond BLEU CLAIR (brillant,
+                // b nettement dominant) sur un texte type NOM (majuscules, pas un code
+                // horaire) = diplômé de l'école roulette Europe intégré aux roulettes.
+                // Distinct de {{FF}} (bleu MOYEN, r<150) et de 20/5/DELTTRA (bleus MAIS
+                // codes). Le tag est confirmé APRÈS coup par correspondance à un vrai
+                // employé (_cmcApplyEcoleToRoulettes) → DELTTRA/faux positifs = ignorés.
+                if(i.bg && i.bg.b>=i.bg.r+15 && i.bg.b>=i.bg.g+8 && i.bg.b>190 && i.bg.r>130
+                   && /^[A-Z][A-Z\s.\-]{2,}$/.test((i.t||"").trim()) && tag.indexOf("{{ECOLE}}")<0){
+                  tag+="{{ECOLE}}";
+                }
                 // v9.831 — Reproduction identique : fond rouge = {{CONV}} (convention),
                 // encre rouge / fond clair = {{MODH}} (horaire modifié, écrit en rouge).
                 if(_convImg && /\d{1,2}\s*[\/Hh]\s*\d{1,2}/.test(i.t||"")){
@@ -42924,7 +42983,19 @@ function doImport(){
   // ACTIVE pendant _postValidateImport (qui fait PDF column + fallback v9.743/744 +
   // consolidation v9.746) pour bloquer les animations CSS pendant cette phase lourde.
   // Auparavant la classe était retirée AVANT _postValidateImport → scintillement.
+  // v9.846 (Kevin « employés carte fond bleu clair = école roulette Europe → équipes
+  // roulettes ») — reclasse AVANT la détection d'équipes (dans _postValidateImport) pour
+  // que le regroupement par repos les place dans les bonnes équipes roulettes.
+  var _ecoleRes=null;
+  try{ if(typeof _cmcApplyEcoleToRoulettes==="function") _ecoleRes=_cmcApplyEcoleToRoulettes(key,txt); }catch(_ecErr){console.warn("[ecole-roulettes]",_ecErr&&_ecErr.message);}
   try{_postValidateImport(iy,im,ok,err,errLines);}catch(_pvErr){console.warn("[postValidateImport] err",_pvErr);}
+  // Banner récap si des employés carte ont été déplacés en roulettes
+  try{
+    if(_ecoleRes&&_ecoleRes.moved>0){
+      var _rE=document.getElementById("impRes");
+      if(_rE){ _rE.innerHTML += '<div style="margin-top:8px;padding:8px 12px;background:rgba(74,160,255,.10);border:1px solid rgba(74,160,255,.35);border-radius:8px;font-size:13px;color:#a8c8e0">🎡 <b>'+_ecoleRes.moved+' employé(s) carte (fond bleu clair = école roulette Europe)</b> intégré(s) aux équipes roulettes : '+esc(_ecoleRes.names.join(", "))+'</div>'; }
+    }
+  }catch(_be){}
   // v9.801 — FILET UNIVERSEL anti « jours hors limite » : après TOUS les writers
   // (grille texte, géométrique, secours index-based _si+1/_di+1, manual, postValidate),
   // supprime toute cellule dont la clé-jour sort du mois (1..days). Un seul writer

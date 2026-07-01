@@ -35,11 +35,17 @@ async function main() {
     const live = await importMonth(browser, tg.pdf, tg.year, tg.monthIdx);
     const mm = String(tg.monthIdx + 1).padStart(2, '0'), pre = tg.year + '-' + mm + '-';
     // ── per-employee codes (déterministe) ──
+    // On tague la FAMILLE de chaque employé : BJ = stable (couverture strict) ; cmc/roulettes =
+    // découpage géométrique fuzzy dont la COUVERTURE marginale varie run-to-run au même titre
+    // que l'étiquette d'équipe (lesson #88 : la garantie stricte « tout le monde a un planning »
+    // vit dans test:everyone-has-planning, pas ici). Donc coverage-margin cmc/roulettes = INFO.
     const liveEmp = {}, comEmp = {};
-    Object.values(live.boards).forEach(b => (b.people || []).forEach(p => { liveEmp[pkey(p)] = { name: p.name, codes: p.codes }; }));
-    Object.keys(committed.boards).filter(id => id.indexOf(pre) === 0).forEach(id => (committed.boards[id].people || []).forEach(p => { comEmp[pkey(p)] = { name: p.name, codes: p.codes }; }));
-    Object.keys(liveEmp).filter(k => !comEmp[k]).forEach(k => fails.push(mm + ' COUVERTURE : ' + liveEmp[k].name + ' produit par le parser mais ABSENT de la page'));
-    Object.keys(comEmp).filter(k => !liveEmp[k]).forEach(k => fails.push(mm + ' COUVERTURE : ' + comEmp[k].name + ' dans la page mais PLUS produit par le parser'));
+    Object.keys(live.boards).forEach(id => { const f = famOf(id, live.boards[id]); (live.boards[id].people || []).forEach(p => { liveEmp[pkey(p)] = { name: p.name, codes: p.codes, fam: f }; }); });
+    Object.keys(committed.boards).filter(id => id.indexOf(pre) === 0).forEach(id => { const f = famOf(id, committed.boards[id]); (committed.boards[id].people || []).forEach(p => { comEmp[pkey(p)] = { name: p.name, codes: p.codes, fam: f }; }); });
+    let covInfo = 0;
+    Object.keys(liveEmp).filter(k => !comEmp[k]).forEach(k => { if (liveEmp[k].fam === 'bj') fails.push(mm + ' COUVERTURE : ' + liveEmp[k].name + ' produit par le parser mais ABSENT de la page'); else covInfo++; });
+    Object.keys(comEmp).filter(k => !liveEmp[k]).forEach(k => { if (comEmp[k].fam === 'bj') fails.push(mm + ' COUVERTURE : ' + comEmp[k].name + ' dans la page mais PLUS produit par le parser'); else covInfo++; });
+    if (covInfo) infos.push(mm + ' : ' + covInfo + ' employé(s) cartes/roulettes en marge de couverture (fuzzy géométrique connu — BJ & horaires OK)');
     let hOK = 0; Object.keys(liveEmp).filter(k => comEmp[k]).forEach(k => { if (csig(liveEmp[k].codes) !== csig(comEmp[k].codes)) fails.push(mm + ' HORAIRES : codes différents pour ' + liveEmp[k].name); else hOK++; });
     // ── BJ chefs : équipes + miroirs exacts ──
     const liveBJ = {}, comBJ = {};
