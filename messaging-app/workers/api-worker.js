@@ -1617,8 +1617,17 @@ async function handleMediaGet(id, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
   if (!env.APEX_CHAT_MEDIA) return err('Stockage média indisponible', 503, 'no_r2');
-  const row = await env.APEX_CHAT_DB.prepare('SELECT r2_key, mime FROM media WHERE id=?').bind(id).first();
+  const row = await env.APEX_CHAT_DB.prepare('SELECT r2_key, mime, owner_id FROM media WHERE id=?').bind(id).first();
   if (!row) return err('Média introuvable', 404, 'no_media');
+  // SÉCU (audit externe P1-2) : autorisation — seul le PROPRIÉTAIRE ou un membre d'une
+  // conversation PARTAGÉE avec le propriétaire peut lire le média. Ferme l'IDOR « n'importe
+  // quel média par son id ». (L'id reste un UUID 128 bits non énumérable = défense en profondeur.)
+  if (row.owner_id && row.owner_id !== auth.sub) {
+    const shared = await env.APEX_CHAT_DB.prepare(
+      'SELECT 1 FROM conversation_members a JOIN conversation_members b ON a.conv_id = b.conv_id WHERE a.user_id = ? AND b.user_id = ? LIMIT 1'
+    ).bind(row.owner_id, auth.sub).first();
+    if (!shared) return err('Accès refusé', 403, 'forbidden');
+  }
   const obj = await env.APEX_CHAT_MEDIA.get(row.r2_key);
   if (!obj) return err('Média absent du stockage', 404, 'r2_miss');
   const h = new Headers();

@@ -245,12 +245,18 @@ async function sendFCM(fcmToken, payload, env) {
 //  Auth check
 // ============================================================================
 
+// SÉCU (audit P2) : comparaison à temps constant du token admin (évite un oracle de timing
+// et le cas où token ET secret seraient vides/undefined).
+function _ctEqStr(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length || a.length === 0) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
 function checkAuth(request, env) {
   const token = request.headers.get('X-Apex-Push-Token');
-  if (!token || token !== env.APEX_CHAT_ADMIN_TOKEN) {
-    return false;
-  }
-  return true;
+  return _ctEqStr(token, env.APEX_CHAT_ADMIN_TOKEN);
 }
 
 // ============================================================================

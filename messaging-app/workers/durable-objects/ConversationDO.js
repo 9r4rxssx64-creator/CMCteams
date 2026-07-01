@@ -394,10 +394,12 @@ export class ConversationDO {
       }
 
       case 'reaction': {
-        // Update reactions JSON
+        // Update reactions JSON — SÉCU (audit P2) : scoper à la conversation courante
+        // (conv_id=session.convId) pour empêcher un membre d'écrire une réaction sur un
+        // message d'une AUTRE conversation via un message_id forgé.
         const existing = await this.env.APEX_CHAT_DB.prepare(
-          'SELECT reactions FROM messages WHERE id=?'
-        ).bind(msg.message_id).first();
+          'SELECT reactions FROM messages WHERE id=? AND conv_id=?'
+        ).bind(msg.message_id, session.convId).first();
         if (existing) {
           let reactions = {};
           try { reactions = JSON.parse(existing.reactions || '{}'); } catch {}
@@ -411,8 +413,8 @@ export class ConversationDO {
             reactions[msg.emoji].push(session.userId);
           }
           await this.env.APEX_CHAT_DB.prepare(
-            'UPDATE messages SET reactions=? WHERE id=?'
-          ).bind(JSON.stringify(reactions), msg.message_id).run();
+            'UPDATE messages SET reactions=? WHERE id=? AND conv_id=?'
+          ).bind(JSON.stringify(reactions), msg.message_id, session.convId).run();
 
           this.broadcast({
             type: 'reaction',
