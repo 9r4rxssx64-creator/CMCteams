@@ -443,7 +443,7 @@ async function handleAdmin(request, url, env) {
      /__admin/login = PIN sha256), mint un id_token Firebase role:admin pour que les
      écritures shops_admin_v1/(products|logos) + shops_sourcing_v1/selection exigent
      auth.token.role==='admin'. FAIL-SAFE si secrets FB absents (client fail-open). */
-  if (path === '/__admin/fbtoken' && (request.method === 'POST' || request.method === 'GET')) {
+  if (path === '/__admin/fbtoken' && request.method === 'POST') { // POST-only (durcissement audit P2-d : réduit la surface CSRF via cookie SameSite=Lax sur GET)
     const out = await mintShopsAdminIdToken(env);
     return out.ok ? J(out) : J(out, null, 503);
   }
