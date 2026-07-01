@@ -5574,7 +5574,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.844";
+var APP_VER="v9.845";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17365,10 +17365,15 @@ function calcDepPos(empName,tid,day){
     _seenIds[e.id]=true;_seenNames[e.name]=true;
     return true;
   });
-  // Ajouter A.user si dans cette équipe ce mois-ci
-  if(A.user&&teamForMonth(A.user,A.year,A.month)===tid&&isEmpActive(A.user,A.year,A.month)&&!_seenIds[A.user.id]&&!_seenNames[A.user.name]){
-    chefEmps.push(A.user);
-  }
+  // v9.845 (Kevin 2026-07-01 « Pourquoi les autres non pas les mêmes départ sur leurs app »)
+  // — SUPPRESSION de l'injection A.user. AVANT : on ajoutait le user QUI REGARDE dans
+  // chefEmps s'il était dans l'équipe → la base de rotation (index ai) + la liste des
+  // présents changeaient SELON LE SPECTATEUR → chaque employé calculait des numéros de
+  // départ DIFFÉRENTS pour la même équipe/le même jour. Or l'ordre de départ est un fait
+  // OPÉRATIONNEL PARTAGÉ (tout le monde à la table voit le même ordre). Le roster de
+  // rotation DOIT être 100% déterministe = uniquement CHEFS_T[tid] (synchronisé cmc_chefs_t
+  // FB_FIX) + CI (cmc_ci_* FB_PRE), identiques sur tous les appareils. Un chef absent de
+  // CHEFS_T doit être ajouté par l'admin (⭐ Chefs), pas injecté selon le spectateur.
   if(!chefEmps.length) return null;
   // v9.433 — Exclure chefs SANS aucun jour de travail sur le mois (CP/M plein mois)
   // Fix bug : PASSERON en CP plein mois décalait les positions (ordre 1→6→4→2→3→5
@@ -25061,13 +25066,11 @@ function vDeparts(){
       _seenIds[e.id]=true;_seenNames[e.name]=true;
       return true;
     });
-    // Garantir que l'utilisateur connecté apparaît dans sa propre grille même si son nom
-    // ne correspond pas exactement à CHEFS_T (ex: initiale différente après inscription)
-    // Utilise teamForMonth pour gérer les changements d'équipe mensuels
-    if(A.user&&teamForMonth(A.user,A.year,A.month)===tid&&isEmpActive(A.user,A.year,A.month)&&!_seenIds[A.user.id]&&!_seenNames[A.user.name]){
-      chefEmps.push(A.user);
-      _seenIds[A.user.id]=true;_seenNames[A.user.name]=true;
-    }
+    // v9.845 (Kevin 2026-07-01 « Pourquoi les autres non pas les mêmes départ sur leurs
+    // app ») — PLUS d'injection A.user. Le roster de rotation affiché DOIT être identique
+    // pour tout le monde = uniquement CHEFS_T[tid] (synchronisé). Injecter le spectateur
+    // faisait diverger les numéros de départ affichés selon QUI regarde. Un chef manquant
+    // se corrige via ⭐ Chefs (admin), pas par spectateur.
     if(!chefEmps.length)return;
     // v9.433 — Exclure chefs SANS aucun jour de travail sur le mois (CP/M plein mois)
     // Fix bug : position 1 manquante quand 1 chef est en CP plein mois
@@ -25123,9 +25126,15 @@ function vDeparts(){
       +'<div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team.name)+'</div>'
       +'<div style="font-size:11px;color:#a0bca0;text-transform:uppercase;letter-spacing:1px">Chefs</div>'
       +'</div></th>';
-    // Indice de jour travaillé pour chaque jour calendaire (pour formule de rotation)
+    // v9.845 — Jours "ouvrés" = UNION des jours travaillés par TOUT chef de l'équipe
+    // (identique à calcDepPos / page compute). AVANT : basé sur refEmpD seul → si le chef
+    // de référence part en CP à la mi-mois, les colonnes n'étaient plus ombrées "travail"
+    // à partir du 16 (et l'ancienne formule perdait les départs). Le numéro affiché vient
+    // désormais de calcDepPos (source unique), _wiMap ne sert plus qu'à l'ombrage visuel.
     var _wiMap={};var _wiCount=0;
-    da.forEach(function(d){if(refEmpD&&isWork((pl[refEmpD.id]||{})[d]||""))_wiMap[d]=_wiCount++;});
+    da.forEach(function(d){
+      for(var _cu=0;_cu<chefEmps.length;_cu++){ if(isWork((pl[chefEmps[_cu].id]||{})[d]||"")){ _wiMap[d]=_wiCount++; break; } }
+    });
     // En-têtes : tous les jours du mois
     da.forEach(function(d){
       var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
@@ -25151,9 +25160,11 @@ function vDeparts(){
         var isHigh=d===highlightD,isNext=d===nextWorkD;
         var colOvl=isHigh?';border-left:1px solid rgba(201,162,39,.2);border-right:1px solid rgba(201,162,39,.2)':isNext?';border-left:1px solid rgba(80,160,80,.12);border-right:1px solid rgba(80,160,80,.12)':'';
         if(works){
-          var wi=_wiMap[d]!==undefined?_wiMap[d]:0;
-          var rotIdx=(wi%4+Math.floor(wi/4)+base)%sl;
-          var pos=SEQ[rotIdx];
+          // v9.845 — NUMÉRO DE DÉPART = calcDepPos (source UNIQUE, algo validé page +
+          // déterministe pour tous). Supprime le calcul inline dupliqué (ancien algo
+          // refEmpD+sl fixe = 34/38 équipes divergentes, lesson #116). null → pas de numéro.
+          var pos=calcDepPos(emp.name,tid,d);
+          if(pos==null){ h+='<td style="padding:0;text-align:center'+colOvl+'"></td>'; return; }
           var col=DCOL[pos-1]||"#888";
           var ci=CODES[code]||{c:"#6b7280"};
           var borderStyle=code?"1.5px solid "+col+"45":"1px dashed "+col+"35";

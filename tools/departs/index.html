@@ -162,13 +162,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.14.1</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.19</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.18";
+var APP_VER="v1.19";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -426,7 +426,13 @@ function load(){
   // ancrage par défaut (ex: DESARZENS = Départ 1 le 20) si l'utilisateur n'a pas déjà calé la rotation
   if(B.anchor && !(saved&&saved.off!==undefined)){ try{var _o=anchorOff(B.anchor.name,B.anchor.day); if(_o!==null) ST.off=_o;}catch(e){} }
 }
-function save(){ try{localStorage.setItem(B.key,JSON.stringify(ST));}catch(e){} }
+function save(){ try{localStorage.setItem(B.key,JSON.stringify(ST));}catch(e){}
+  // v1.19 (Kevin 2026-07-01 « les autres n'ont pas les mêmes départs sur leurs app » —
+  // CMCteams light) : l'ancrage (off), la base de départ (ci) et les marques NR/5e (nr/cq)
+  // étaient des préférences LOCALES → chaque appareil calculait une rotation différente.
+  // On les synchronise cross-appareil (clé dédiée cmc_dep_cfg, ne touche JAMAIS cmc_ov).
+  try{ if(window._depSyncCfg&&B&&B.key)window._depSyncCfg(B.key,ST); }catch(_){}
+}
 
 // départ : taille = nb de personnes (conservée même en congé). W = jours où ≥1 membre travaille.
 function compute(){
@@ -622,6 +628,7 @@ function resetAll(){ if(!guard())return; if(!confirm("Réinitialiser ce mois (co
 
 function switchBoard(id){ if(!BOARDS[id])return; BID=id; CURMO=BOARDS[id].year+"-"+BOARDS[id].monthIdx;
   try{localStorage.setItem("cmc_dep_board",id);}catch(e){}
+  try{if(window._depPullCfg)setTimeout(window._depPullCfg,50);}catch(_){} // v1.19 pull rotation partagée du nouveau board
   var mo=document.getElementById("moSel"); if(mo)mo.value=CURMO;
   fillSel(); load(); render(); }
 // v1.12.1 — liste des équipes SCOPÉE au mois choisi (CURMO), groupée par famille,
@@ -702,6 +709,31 @@ function forceRefresh(){ var go=function(){location.replace(location.href.split(
     .then(function(){return ('caches' in window)?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0;}).then(go).catch(go); } else go(); }
 
 document.getElementById("ver").textContent=APP_VER;
+// v1.19 (Kevin 2026-07-01 « Vérifie aussi la Maj auto force partout ») — MAJ AUTO FORCÉE :
+// la page n'a pas de Service Worker, mais le cache navigateur peut servir une vieille version.
+// On sonde un marqueur léger (version.txt) au boot + toutes les 60 s + au retour premier plan ;
+// si la version distante diffère de APP_VER → force-refresh auto (unregister SW + clear caches +
+// reload cache-busté). Throttle 15 s. Le badge reste cliquable pour un force manuel (repli).
+(function(){
+  function _chkUpd(){
+    try{
+      fetch("version.txt?_v="+Date.now(),{cache:"reload"}).then(function(r){return r.ok?r.text():null;}).then(function(t){
+        if(!t)return; t=String(t).trim();
+        if(!/^v[\d.]+$/.test(t))return;
+        if(t===APP_VER)return;
+        if(window._depUpdTs&&Date.now()-window._depUpdTs<15000)return; window._depUpdTs=Date.now();
+        try{if(typeof toast==="function")toast("🔄 Mise à jour "+t+" en cours…");}catch(_){}
+        setTimeout(function(){ try{ if(typeof forceRefresh==="function"){forceRefresh();return;} }catch(_){}
+          location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now()); },700);
+      }).catch(function(){});
+    }catch(_){}
+  }
+  try{ setInterval(_chkUpd,60000);
+    document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible")_chkUpd(); });
+    window.addEventListener("focus",_chkUpd);
+    setTimeout(_chkUpd,4000);
+  }catch(_){}
+})();
 var ME=(function(){try{return localStorage.getItem("cmc_dep_me")||"";}catch(e){return "";}})();
 // v1.12 — lien profond ?me=U11804 (matricule SBM) ou ?me=DESARZENS+K (nom) →
 // ouvre directement sur l'équipe de l'employé (connexion par identifiant).
@@ -791,15 +823,51 @@ if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app 
     try{ localStorage.setItem("cmc_dep_chefs",JSON.stringify(ch)); }catch(_){}
     try{ if(typeof render==="function")render(); }catch(_){}
   }}); }
+  // v1.19 — ROTATION PARTAGÉE (Kevin « ils n'ont pas les mêmes départs que moi ; doit se
+  // mettre à jour partout si je modifie »). L'ancrage/base/NR/5e décidés par l'admin ou le
+  // chef sur SA page doivent apparaître IDENTIQUES sur toutes les CMCteams light. Node dédié
+  // cmc_dep_cfg = { <B.key>: {off,ci,nr,cq,ts} } (par board, ne touche jamais cmc_ov).
+  var _cfgT=null,_applyingCfg=false;
+  window._depSyncCfg=function(bkey,st){
+    if(_applyingCfg||!bkey||!st)return; // pas d'écho pendant l'application d'un pull
+    var subset={off:st.off||0,ci:st.ci||{},nr:st.nr||{},cq:st.cq||{},ts:Date.now()};
+    if(_cfgT)clearTimeout(_cfgT);
+    _cfgT=setTimeout(function(){ // debounce : 1 seul PUT même sur une rafale d'édits
+      fetch(FBURL+FBPATH+"/cmc_dep_cfg/"+encodeURIComponent(bkey)+".json"+_qs(),
+        {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(subset)})
+        .then(function(){}).catch(function(){}); // silencieux (l'action a déjà son toast)
+    },500);
+  };
+  function _fbPullCfg(){ if(!B||!B.key)return; var bkey=B.key;
+    _fbGet("cmc_dep_cfg",function(all){
+      if(!all||typeof all!=="object")return; var cfg=all[bkey]; if(!cfg||typeof cfg!=="object")return;
+      if(!ST||B.key!==bkey)return; // board a changé entre-temps
+      _applyingCfg=true;
+      try{
+        if(cfg.off!==undefined)ST.off=cfg.off;
+        if(cfg.ci&&typeof cfg.ci==="object")ST.ci=cfg.ci;
+        if(cfg.nr&&typeof cfg.nr==="object")ST.nr=cfg.nr;
+        if(cfg.cq&&typeof cfg.cq==="object")ST.cq=cfg.cq;
+        try{ localStorage.setItem(B.key,JSON.stringify(ST)); }catch(_){} // persist sans re-push
+        try{ if(typeof render==="function")render(); }catch(_){}
+      } finally { _applyingCfg=false; }
+    });
+  }
+  window._depPullCfg=_fbPullCfg; // exposé pour goBoard/pickBoard après changement de board
+  function _fbSSECfg(){ try{ if(window._esCfg){window._esCfg.close();window._esCfg=null;} }catch(_){}
+    try{ window._esCfg=new EventSource(FBURL+FBPATH+"/cmc_dep_cfg.json"+_qs()); var _t2=null;
+      var bump2=function(){ if(_t2)clearTimeout(_t2); _t2=setTimeout(_fbPullCfg,600); };
+      window._esCfg.addEventListener("put",bump2); window._esCfg.addEventListener("patch",bump2);
+    }catch(e){ try{console.warn("[fbSSECfg]",e&&e.message);}catch(_){} } }
   // Boot : auth best-effort → pull initial → SSE live.
-  _fbAuth(function(){ _fbPull(); _fbPullChefs(); _fbSSE(); });
+  _fbAuth(function(){ _fbPull(); _fbPullChefs(); _fbPullCfg(); _fbSSE(); _fbSSECfg(); });
   // Même appareil : un autre onglet (l'app) écrit le localStorage partagé → rebuild local.
   window.addEventListener("storage",function(e){ if(!e||!e.key)return;
     if(e.key==="cmc_ov"||e.key==="cmc_e"||e.key==="cmc_ov_meta"||e.key.indexOf("cmc_team_mirror_")===0){
       try{ var live=_liveFromLS(); if(live){ applyBoards(live); _depRefresh(); } }catch(_){} } });
   // Retour premier plan → re-pull Firebase (cross-device).
-  document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible")_fbPull(); });
-  window.addEventListener("focus",function(){ _fbPull(); });
+  document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){_fbPull();_fbPullChefs();_fbPullCfg();} });
+  window.addEventListener("focus",function(){ _fbPull();_fbPullChefs();_fbPullCfg(); });
 })();
 </script>
 </body>
