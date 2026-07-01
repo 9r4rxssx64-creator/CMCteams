@@ -1,5 +1,31 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## ⭐ SESSION 2026-07-01 — bilan + tes actions (tout le reste = auto)
+
+### ✅ Livré, testé, mergé, **auto-déployé** (RIEN à faire de ta part)
+Tout part en prod tout seul (workflows CI sur push `main`) :
+- **Fiche perso complète** (admin only) + reliée à « Activité par utilisateur ». CMCteams **v9.844**.
+- **CMCteams light** : page renommée + tuile dans le portail + adresse **cmcteams-light.kd-mc.com** + infos vertes ✅ masquées hors admin. Page **v1.17**.
+- **Chefs d'équipe** (page light) : tu désignes en cliquant, un chef édite **NR + 5e uniquement** sur son équipe. Sync cross-appareil.
+- **Sécurité (ultra-audit externe)** : mots de passe en clair supprimés + scrub (CMCteams) ; clés API jamais en clair vers Firebase (Apex) ; IDOR média + réactions + push durcis (Apex Chat) ; `/__admin/fbtoken` POST-only (domaine).
+- **Cercle de confiance ANNULÉ** (ta demande) : Laurence + famille passent désormais par **l'OTP réel** (SMS) — ⚠️ **info** : au prochain login ils recevront un code SMS (c'est voulu, plus de connexion par numéro seul).
+- **Apex AI** : registre projets à jour (vraies adresses kd-mc.com + CMCteams light).
+
+> GitHub MCP s'est déconnecté en fin de session → les tout derniers commits doc partent sur la branche `claude/*` ; le **bot auto-merge** les bascule sur `main` (comme d'habitude). Si dans ~15 min `main` n'a pas bougé, lance **Actions → « Auto-merge claude » → Run** (1 clic) : https://github.com/9r4rxssx64-creator/cmcteams/actions
+
+### 🔴 TON SEUL VRAI CHOIX EN ATTENTE — confidentialité lecture Firebase (chantier « 3 »)
+**État** : la base est déjà **durcie en écriture** (mots de passe clair rejetés, PIN/clé non écrivables, deny racine). Le trou restant = **lecture** : avec l'auth **anonyme**, toute la base `/cmcteams` est lisible par quiconque a un jeton anonyme (identités, GPS, boîte Kevin).
+
+**Pourquoi je ne l'ai PAS fait à l'aveugle** (et ne dois pas) : fermer la lecture exige (a) un **worker qui signe des jetons Firebase par rôle** + (b) le **client qui attache ce jeton à chaque lecture** + (c) des **règles scopées**. Si un seul maillon manque → **les 258 employés sont lockout** (ta règle absolue « jamais casser le login » + ta leçon #109). Et je **ne peux pas tester en live** depuis mon environnement (réseau vers Firebase bloqué de mon côté).
+
+**Ce que JE peux faire à ta place (autonome, prochaine session dédiée)** : construire tout (worker de signature réutilisant ton service account déjà en secrets + threading client **fail-open** + règles scopées + un **canari CI qui teste et rollback tout seul** si ça casse). 
+
+**Ce qui reste IRRÉDUCTIBLEMENT à toi (≈5 min, une seule fois, à la fin)** : ouvrir CMCteams sur **ton iPhone** après le canari et me dire **« ça marche »** ou **« cassé »** (le seul test que le CI ne peut pas simuler à 100% = ton vrai PWA iOS). Si « cassé » → rollback instantané déjà armé (input `open`).
+
+👉 **Décision attendue** : réponds **« construis le 3 »** (je bâtis tout en autonomie, tu ne fais que le check final iPhone) — ou **« laisse comme ça »** (on garde l'écriture durcie, lecture ouverte assumée pour ton app privée).
+
+---
+
 ## 🤖 OPTIONNEL — Réactiver pleinement l'Agent KDMC (Vercel) — MAJ 2026-06-19
 Le spam Telegram « Agent KDMC crash : Firebase 401 » est **déjà coupé** (anti-spam déployé) et le code
 de l'agent sait s'authentifier (compte de service). Pour qu'il **relise vraiment** ta base (surveillance auto) :
