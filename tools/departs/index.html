@@ -44,8 +44,16 @@ thead th.today{background:#3a3410;color:#fff}
 .off .dep{display:none}
 .mark{font-size:13px;color:var(--gold2);font-weight:700;min-height:28px}
 body.admin .mark{cursor:pointer}
+body.canmark .mark{cursor:pointer}
 .ed{display:none}
 body.admin .ed{display:inline;cursor:pointer;opacity:.55;margin-left:4px;font-size:12px}
+body.canmark .ed{display:inline;cursor:pointer;opacity:.55;margin-left:4px;font-size:12px}
+/* v1.17 — désignation des chefs d'équipe (admin) : noms cliquables + badge chef */
+body.chefdesign .cNom{cursor:pointer;outline:1px dashed rgba(255,215,0,.5);border-radius:5px}
+body.chefdesign .cNom:active{background:rgba(255,215,0,.15)}
+.cNom.ischef{color:var(--gold2);font-weight:800}
+.chefbar{display:none;margin:6px 14px 0;padding:8px 12px;border-radius:10px;background:rgba(255,215,0,.10);border:1px solid rgba(255,215,0,.35);color:var(--gold2);font-size:13px;font-weight:700}
+body.chefme .chefbar{display:block}
 .tot td{background:#0b1d0e;font-weight:800;color:var(--gold2);border-top:2px solid rgba(201,162,39,.35)}
 .legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;font-size:11px;color:var(--mut)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -117,11 +125,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   <button class="btn" id="anchorBtn" onclick="toggleAnchor()">📍 Placer Départ 1</button>
   <button class="btn" onclick="resetAnchor()">↩︎ Rotation normale</button>
   <button class="btn" onclick="resetCounters()">↺ Vider NR/5e</button>
+  <button class="btn" id="chefBtn" onclick="toggleChefDesign()">⭐ Chefs d'équipe</button>
   <button class="btn" onclick="resetAll()">⚠️ Réinit. ce mois</button>
   <span class="sub" id="adminHint" style="align-self:center">Touche une case = corriger le code · NR/5e : tap = ✗, ✎ = écrire</span>
 </div>
 
 <div class="wrap">
+  <div class="chefbar">⭐ Tu es <b>chef d'équipe</b> : tu peux écrire dans <b>NR</b> (non-retour) et <b>5e</b> sur ton équipe. Touche la case (✗) ou le crayon ✎.</div>
   <div class="mebanner" id="meBanner" style="display:none"></div>
   <div class="scroll"><table id="grid"></table></div>
   <div id="posPanel"></div>
@@ -158,7 +168,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.16";
+var APP_VER="v1.17";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -459,6 +469,9 @@ function compute(){
 function restSig(nm){ var s=[]; for(var d=1;d<=B.days;d++){ if(isRest(ST.codes[nm][d])) s.push(d); } return s.join(","); }
 
 function render(){
+  // v1.17 — droits d'édition NR/5e : admin OU chef d'équipe (sur son board) → classe body
+  try{ document.body.classList.toggle("canmark", canEditMark());
+       document.body.classList.toggle("chefme", isChefMe() && !isAdmin()); }catch(_){}
   var days=B.days, R=compute();
   var dow=["dim","lun","mar","mer","jeu","ven","sam"];
   var now=new Date(); var todayD=(now.getFullYear()===B.year&&now.getMonth()===B.monthIdx)?now.getDate():0;
@@ -468,7 +481,7 @@ function render(){
   html+="<th class='cNR'>NR</th><th class='cCq'>5e</th></tr></thead><tbody>";
   ST.order.forEach(function(nm,idx){
     var nr=ST.nr[nm]||"", cq=ST.cq[nm]||"";
-    html+="<tr"+(nm===ME?" class='me'":"")+"><td class='cNom'>"+esc(nm)+"</td>";
+    html+="<tr"+(nm===ME?" class='me'":"")+"><td class='cNom"+(isChef(nm)?" ischef":"")+"' onclick=\"nameClick('"+esc(nm)+"')\">"+(isChef(nm)?"⭐ ":"")+esc(nm)+"</td>";
     for(var d=1;d<=days;d++){ var c=ST.codes[nm][d]||"", dep=R.deps[nm][d], stl=codeStyle(c);
       // v1.14.0 — reproduction identique des couleurs PDF : fond rouge (convention,
       // jour de R travaillé) ou écriture rouge / fond clair (horaire modifié).
@@ -530,10 +543,27 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
 
 function isAdmin(){return document.body.classList.contains("admin");}
 function guard(){ if(!isAdmin()){toast("Lecture seule — déverrouille en admin");return false;} return true; }
+// v1.17 (Kevin 2026-07-01) — CHEFS D'ÉQUIPE : l'admin les désigne en cliquant sur un nom.
+// Un chef peut modifier UNIQUEMENT « non retour » (nr) et « 5ème » (cq) sur le board de SON
+// équipe (là où il est présent). Rien d'autre. Liste persistée + synchronisée cross-appareil.
+function _chefsGet(){ try{ return JSON.parse(localStorage.getItem("cmc_dep_chefs")||"[]")||[]; }catch(_){ return []; } }
+function _chefsSet(a){ try{ localStorage.setItem("cmc_dep_chefs",JSON.stringify(a)); }catch(_){}
+  try{ if(window._depSyncChefs)window._depSyncChefs(a); }catch(_){} }
+function isChef(nm){ return !!nm && _chefsGet().indexOf(nm)>=0; }
+function isChefMe(){ return !!ME && isChef(ME) && !!(ST&&ST.order&&ST.order.indexOf(ME)>=0); }
+function canEditMark(){ return isAdmin() || isChefMe(); } // qui peut toucher NR / 5e
+function guardMark(){ if(!canEditMark()){ toast("Réservé à l'admin ou au chef d'équipe"); return false; } return true; }
+function toggleChef(nm){ if(!isAdmin())return; var a=_chefsGet(); var i=a.indexOf(nm);
+  if(i>=0)a.splice(i,1); else a.push(nm); _chefsSet(a); render();
+  toast(i>=0?(nm+" n'est plus chef"):(nm+" ⭐ chef d'équipe (peut écrire NR + 5e)")); }
+function nameClick(nm){ if(window._chefDesignMode && isAdmin()) toggleChef(nm); }
+function toggleChefDesign(){ if(!guard())return; window._chefDesignMode=!window._chefDesignMode;
+  document.body.classList.toggle("chefdesign", !!window._chefDesignMode);
+  toast(window._chefDesignMode?"⭐ Touche un NOM pour le désigner/retirer chef d'équipe":"Désignation terminée"); }
 function move(idx,dir){ if(!guard())return; var j=idx+dir; if(j<0||j>=ST.order.length)return;
   var a=ST.order,t=a[idx];a[idx]=a[j];a[j]=t; save(); render(); }
-function addCross(f,nm){ if(!guard())return; ST[f][nm]=(ST[f][nm]||"")+"✗"; save(); render(); toast(nm+" "+(f==="nr"?"non-retour":"5e")+" +✗"); }
-function editMark(f,nm){ if(!guard())return; var v=prompt((f==="nr"?"Non-retour":"5ème")+" — "+nm+"\n(✗ ou texte ; vide pour effacer)",ST[f][nm]||"");
+function addCross(f,nm){ if(!guardMark())return; ST[f][nm]=(ST[f][nm]||"")+"✗"; save(); render(); toast(nm+" "+(f==="nr"?"non-retour":"5e")+" +✗"); }
+function editMark(f,nm){ if(!guardMark())return; var v=prompt((f==="nr"?"Non-retour":"5ème")+" — "+nm+"\n(✗ ou texte ; vide pour effacer)",ST[f][nm]||"");
   if(v===null)return; ST[f][nm]=v.trim(); save(); render(); }
 function editCell(nm,d){ if(!guard())return;
   if(window._anchorMode){ setAnchor(nm,d); return; }
@@ -750,8 +780,19 @@ if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app 
     // re-lit le cmc_ov FRAIS (anti-perte d'une modif concurrente) ; repli sur le dernier complet connu.
     _fbGet("cmc_ov",function(ov){ apply(ov||window._fbLastOv||_appRead("cmc_ov")); });
   };
+  // v1.17 — CHEFS D'ÉQUIPE : liste synchronisée cross-appareil (clé DÉDIÉE cmc_dep_chefs,
+  // ne touche JAMAIS cmc_ov/le planning). L'admin désigne → PUT ; le chef pull au boot →
+  // son appareil le reconnaît (droit d'écrire NR/5e sur son équipe).
+  window._depSyncChefs=function(list){
+    try{ fetch(FBURL+FBPATH+"/cmc_dep_chefs.json"+_qs(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(list||[])})
+      .then(function(r){ if(typeof toast==="function"&&r.ok)toast("⭐ Chefs synchronisés (tous appareils)"); }).catch(function(){}); }catch(_){}
+  };
+  function _fbPullChefs(){ _fbGet("cmc_dep_chefs",function(ch){ if(Array.isArray(ch)){
+    try{ localStorage.setItem("cmc_dep_chefs",JSON.stringify(ch)); }catch(_){}
+    try{ if(typeof render==="function")render(); }catch(_){}
+  }}); }
   // Boot : auth best-effort → pull initial → SSE live.
-  _fbAuth(function(){ _fbPull(); _fbSSE(); });
+  _fbAuth(function(){ _fbPull(); _fbPullChefs(); _fbSSE(); });
   // Même appareil : un autre onglet (l'app) écrit le localStorage partagé → rebuild local.
   window.addEventListener("storage",function(e){ if(!e||!e.key)return;
     if(e.key==="cmc_ov"||e.key==="cmc_e"||e.key==="cmc_ov_meta"||e.key.indexOf("cmc_team_mirror_")===0){
