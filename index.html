@@ -5545,7 +5545,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.838";
+var APP_VER="v9.839";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11614,6 +11614,55 @@ function cmcCguAsk(feature,label,description){
 }
 function cmcCguRevoke(feature){localStorage.setItem("cmc_cgu_"+feature,"0");toast("Consentement « "+feature+" » revoque");}
 function cmcCguStatus(){var out={};["biometric","microphone","geolocation","camera","notifications"].forEach(function(f){out[f]=(localStorage.getItem("cmc_cgu_"+f)||"")==="1";});return out;}
+// v9.839 (Kevin 2026-07-01 « Les cgu accepté pour tout d'un clic ? Loca, caméra, micro etc ») —
+// UN SEUL clic : accepte le CGU de toutes les features ET déclenche les demandes
+// d'autorisation natives iOS (notifications, géoloc, caméra, micro) à la suite. Chaque
+// demande OS peut être accordée/refusée individuellement par l'utilisateur (iOS l'exige) ;
+// le refus d'une n'empêche pas les autres. Biométrie = flag posé (l'enrôlement Face ID
+// se fait via _cmcOfferFaceIdEnroll). Retourne le récap {granted, denied}.
+async function cmcRequestAllPermissions(){
+  var res={granted:[],denied:[],asked:[]};
+  try{
+    var intro="🔓 Autoriser CMCteams à utiliser :\n\n"
+      +"• 📍 Localisation (pointage sur site)\n• 📷 Caméra (scan planning / badge)\n"
+      +"• 🎙 Micro (dictée)\n• 🔔 Notifications (planning, messages)\n• 🔐 Face ID (connexion rapide)\n\n"
+      +"iPhone te demandera chaque autorisation une par une. Données locales, révocables dans Admin › Confidentialité.\n\nTout autoriser ?";
+    if(!confirm(intro))return {cancelled:true};
+    ["biometric","microphone","geolocation","camera","notifications"].forEach(function(f){try{localStorage.setItem("cmc_cgu_"+f,"1");}catch(_){}});
+    try{_audit("cgu_accept_all",A.user?A.user.id:"*","all","one-click");}catch(_){}
+    // 1) Notifications
+    try{res.asked.push("notifications");
+      if(typeof Notification!=="undefined"&&Notification.requestPermission){
+        var np=await Notification.requestPermission();
+        (np==="granted"?res.granted:res.denied).push("notifications");
+      }
+    }catch(_n){res.denied.push("notifications");}
+    // 2) Géolocalisation
+    try{res.asked.push("geolocation");
+      if(navigator.geolocation){
+        await new Promise(function(ok){navigator.geolocation.getCurrentPosition(
+          function(){res.granted.push("geolocation");ok();},
+          function(){res.denied.push("geolocation");ok();},
+          {timeout:12000,maximumAge:60000});});
+      }
+    }catch(_g){res.denied.push("geolocation");}
+    // 3) Caméra + micro (getUserMedia puis on coupe les pistes)
+    try{res.asked.push("camera+micro");
+      if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+        var st=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+        try{st.getTracks().forEach(function(t){t.stop();});}catch(_){}
+        res.granted.push("caméra","micro");
+      }
+    }catch(_cm){
+      // réessaie caméra seule puis micro seul si le combo échoue
+      try{var sv=await navigator.mediaDevices.getUserMedia({video:true});sv.getTracks().forEach(function(t){t.stop();});res.granted.push("caméra");}catch(_c){res.denied.push("caméra");}
+      try{var sa=await navigator.mediaDevices.getUserMedia({audio:true});sa.getTracks().forEach(function(t){t.stop();});res.granted.push("micro");}catch(_a){res.denied.push("micro");}
+    }
+    try{if(typeof toast==="function")toast("✅ Autorisations : "+(res.granted.join(", ")||"—")+(res.denied.length?" · refusées : "+res.denied.join(", "):""),"ok");}catch(_){}
+    try{if(typeof dc==="function")dc();}catch(_){}
+  }catch(e){try{if(typeof toast==="function")toast("⚠ "+(e&&e.message||"erreur"),"warn");}catch(_){}}
+  return res;
+}
 async function webauthnLogin(uid){
   if(!webauthnSupported())return false;
   if(!cmcCguAsk("biometric","🔐 Face ID / Touch ID","CMCteams peut utiliser votre biometrie (Face ID, Touch ID, empreinte) pour une connexion rapide sans saisir votre PIN. Les donnees biometriques restent UNIQUEMENT sur votre appareil (jamais transmises)."))return false;
@@ -48560,6 +48609,8 @@ function vRGPD(){
   // Card 3 : Consentements
   h+='<div class="card" style="margin-bottom:12px;padding:14px;border-left:4px solid #4cd080">'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:22px">&#x1F4CB;</span><strong style="color:#4cd080;font-size:15px">Mes consentements ('+consents.length+')</strong></div>';
+  // v9.839 — UN SEUL clic : tout autoriser (loca + caméra + micro + notifs + Face ID)
+  h+='<button onclick="cmcRequestAllPermissions()" style="width:100%;min-height:48px;padding:12px;margin-bottom:10px;background:linear-gradient(135deg,#4cd080,#2a9a58);border:none;color:#04140a;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer">&#x1F513; Tout autoriser en 1 clic (loca · caméra · micro · notifs · Face&nbsp;ID)</button>';
   if(!consents.length){
     h+='<p style="font-size:13px;color:#999;margin:0">Aucun consentement enregistre.</p>';
   }else{
