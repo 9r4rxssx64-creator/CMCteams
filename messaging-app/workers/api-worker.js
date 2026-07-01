@@ -490,15 +490,10 @@ export async function handleSendOtp(request, env) {
     });
   }
 
-  // ============ CERCLE DE CONFIANCE (Kevin 2026 « trouve une solution pour
-  // faire à ma place ») — Laurence + famille : login SANS SMS, exactement comme
-  // Kevin. Numéros configurés via LAURENCE_PHONE_E164 + TRUSTED_CIRCLE_PHONES (CSV).
-  // App privée à invitation : Kevin assume ce modèle pour son cercle (cf. sa règle
-  // « ma famille n'est régie par aucune règle externe »). Pas un backdoor universel :
-  // SEULS les numéros que Kevin a explicitement configurés passent.
-  if (await _isTrustedCircleAsync(env, cleanPhone)) {
-    return json({ ok: true, sessionId: phoneHash, provider: 'circle-bypass', _circle_bypass: true });
-  }
+  // ============ CERCLE DE CONFIANCE — SUPPRIMÉ (Kevin 2026-07-01 « annule cercle
+  // confiance », audit sécu P1-1). Le login sans SMS par numéro seul (numéro = credential
+  // à faible entropie) est retiré : Laurence + famille passent désormais par l'OTP réel,
+  // comme tout le monde. (Le bypass admin de Kevin lui-même, géré plus bas, est conservé.)
 
   // ============ Rate limit ============
   const ipHash = await sha256(request.headers.get('CF-Connecting-IP') || 'unknown');
@@ -820,37 +815,10 @@ export async function handleVerifyOtp(request, env) {
     // Sinon (non-Kevin + ALLOW_TEST_OTP off) : on retombe sur l'OTP réel (Mode 1).
   }
 
-  // ============ CERCLE DE CONFIANCE (v1.1.216) — session SANS OTP ============
-  // Laurence + famille/amis configurés (LAURENCE_PHONE_E164 / TRUSTED_CIRCLE_PHONES).
-  // Compte NORMAL (jamais admin). Déclenché par le numéro seul (Kevin l'a demandé
-  // pour son cercle privé). Placé AVANT la vérif OTP → aucun SMS requis.
-  if (!isKevinBypass && await _isTrustedCircleAsync(env, cleanPhone)) {
-    if (!env.JWT_SIGN_KEY) return err('Config serveur incomplète', 503, 'jwt_key_unset');
-    let cuser = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
-    if (!cuser) {
-      const newId = crypto.randomUUID();
-      const base = String(pseudo || name || 'ami').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 16) || 'ami';
-      for (const tryPseudo of [base, base + '_' + Date.now().toString(36).slice(-4)]) {
-        try {
-          await env.APEX_CHAT_DB.prepare(
-            `INSERT INTO users (id, pseudo, real_name, phone, phone_hash,
-               identity_key_pub, pq_key_pub, prekey_signed, source, admin_authorized, created_at, status)
-             VALUES (?, ?, ?, ?, ?, 'PENDING_PQXDH','PENDING_PQXDH','PENDING_PQXDH','trusted-circle', 1, ?, 'active')
-             ON CONFLICT(pseudo) DO NOTHING`
-          ).bind(newId, tryPseudo, name || tryPseudo, cleanPhone, phoneHash, Date.now()).run();
-        } catch (_) { /* pseudo pris → tentative suivante */ }
-        cuser = await env.APEX_CHAT_DB.prepare('SELECT * FROM users WHERE phone=?').bind(cleanPhone).first();
-        if (cuser) break;
-      }
-    }
-    if (!cuser) return err('Création compte cercle échouée', 500, 'circle_signup_fail');
-    const cjwt = await signJWT({
-      sub: cuser.id, pseudo: cuser.pseudo,
-      iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 30 * 86400
-    }, env.JWT_SIGN_KEY);
-    try { await captureConnection(env, request, cuser); } catch (_) { /* best-effort */ }
-    return json({ ok: true, token: cjwt, user: { id: cuser.id, pseudo: cuser.pseudo, real_name: cuser.real_name } });
-  }
+  // ============ CERCLE DE CONFIANCE — SUPPRIMÉ (Kevin 2026-07-01 « annule cercle
+  // confiance », audit sécu P1-1). La session sans OTP par numéro seul est retirée :
+  // Laurence + famille/amis passent par l'OTP réel (Mode 1 ci-dessous) → une vraie preuve
+  // de possession du numéro est désormais exigée. Le compte est créé normalement après OTP.
 
   // Mode 1 : OTP Vonage (priorité)
   if (otp) {
