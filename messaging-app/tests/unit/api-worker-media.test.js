@@ -21,12 +21,14 @@ function dbOk() {
       bind(...a) { this._a = a; return this; },
       async first() {
         if (sql.includes('SELECT last_force_logout_at')) return { last_force_logout_at: null, is_banned: 0, status: 'active' };
-        if (sql.includes('SELECT r2_key, mime FROM media')) return store.media;
+        if (sql.includes('FROM media WHERE id')) return store.media; // r2_key, mime, owner_id
+        // requête d'autorisation « conversation partagée » : contrôlée par store.shared
+        if (sql.includes('conversation_members a JOIN conversation_members b')) return store.shared ? { 1: 1 } : null;
         return null;
       },
       async run() {
         if (sql.includes('INSERT INTO media')) {
-          store.media = { r2_key: this._a[2], mime: this._a[4] };
+          store.media = { r2_key: this._a[2], mime: this._a[4], owner_id: this._a[1] };
         }
         return { success: true };
       },
@@ -95,8 +97,29 @@ describe('Médias R2', () => {
     const key = db._store.media.r2_key;
     // get
     const res = await worker.fetch(new Request('https://api.apex/api/media/abc123?token=' + token, { method: 'GET' }), env);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(200); // le propriétaire (kevin) accède à son propre média
     expect(res.headers.get('Content-Type')).toBe('image/png');
     expect(r2._store.has(key)).toBe(true);
+  });
+
+  it('SÉCU (IDOR) : refuse un média à un non-propriétaire sans conversation partagée (403)', async () => {
+    const db = dbOk();
+    const r2 = ENV().APEX_CHAT_MEDIA;
+    const env = ENV({ APEX_CHAT_DB: db, APEX_CHAT_MEDIA: r2 });
+    // upload par kevin
+    const ownerTok = await tok();
+    await worker.fetch(new Request('https://api.apex/api/media', {
+      method: 'POST', headers: { 'content-type': 'image/png', 'x-file-name': 'p.png', 'Authorization': 'Bearer ' + ownerTok },
+      body: new Uint8Array([9, 9, 9]),
+    }), env);
+    // un AUTRE utilisateur (mallory) sans conversation partagée → 403
+    db._store.shared = false;
+    const otherTok = await makeJWT({ sub: 'mallory', iat: Math.floor(Date.now() / 1000) });
+    const res403 = await worker.fetch(new Request('https://api.apex/api/media/abc123?token=' + otherTok, { method: 'GET' }), env);
+    expect(res403.status).toBe(403);
+    // mais s'il PARTAGE une conversation avec le propriétaire → 200
+    db._store.shared = true;
+    const res200 = await worker.fetch(new Request('https://api.apex/api/media/abc123?token=' + otherTok, { method: 'GET' }), env);
+    expect(res200.status).toBe(200);
   });
 });
