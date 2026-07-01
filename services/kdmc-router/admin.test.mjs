@@ -79,5 +79,47 @@ for (let i = 0; i < 8; i++) { await mod.fetch(REQ({ path: '/__admin/login', meth
 j = await (await mod.fetch(REQ({ path: '/__admin/login', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: CODE }) }), envNoKv)).json();
 ok(j.ok === true && typeof j.grant === 'string', 'sans KV → fail-open : bon code accepté même après 8 échecs (jamais de lockout)');
 
+/* ---- Journal d'audit admin (événements sensibles tracés) ---- */
+r = await mod.fetch(REQ({ path: '/__admin/audit', headers: { 'x-kdmc-admin': grant } }), envH); j = await r.json();
+ok(j.ok === true && Array.isArray(j.log)
+  && j.log.some((e) => e.ev === 'admin_login_ok')
+  && j.log.some((e) => e.ev === 'admin_login_fail'), 'journal admin : connexion réussie + code refusé tracés');
+r = await mod.fetch(REQ({ path: '/__admin/audit' }), envH);
+ok(r.status === 403, 'journal admin sans preuve → 403');
+
+/* ---- ?limit= sur /__admin/accounts (borne la lecture parallèle) ---- */
+r = await mod.fetch(REQ({ path: '/__admin/accounts?limit=1', headers: { 'x-kdmc-admin': grant } }), envH); j = await r.json();
+ok(j.ok === true && j.accounts.length === 1, 'accounts?limit=1 → 1 fiche');
+
+/* ---- Révocation à distance (« Déconnecter partout ») ---- */
+const tMarie = await issue('marie-dupont', 'Marie Dupont');
+r = await mod.fetch(REQ({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + tMarie } }), env); j = await r.json();
+ok(j.ok === true, 'avant révocation : session Marie OK');
+r = await mod.fetch(REQ({ path: '/__admin/revoke', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ uid: 'marie-dupont' }) }), envH);
+ok(r.status === 403, 'revoke SANS preuve admin → 403');
+await new Promise((res) => setTimeout(res, 5)); /* iat(tMarie) < revoked_at garanti */
+r = await mod.fetch(REQ({ path: '/__admin/revoke', method: 'POST', headers: { 'content-type': 'application/json', 'x-kdmc-admin': grant }, body: JSON.stringify({ uid: 'marie-dupont' }) }), envH); j = await r.json();
+ok(j.ok === true && j.revoked_at > 0, 'revoke avec grant → ok');
+r = await mod.fetch(REQ({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + tMarie } }), env); j = await r.json();
+ok(j.ok === false && j.reason === 'session_revoquee', 'ancien token → session_revoquee (déconnecté partout)');
+const tMarie2 = await issue('marie-dupont', 'Marie Dupont');
+r = await mod.fetch(REQ({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + tMarie2 } }), env); j = await r.json();
+ok(j.ok === true, 'reconnexion APRÈS révocation → nouveau token OK (compte intact, jamais de lockout)');
+r = await mod.fetch(REQ({ path: '/__admin/audit', headers: { 'x-kdmc-admin': grant } }), envH); j = await r.json();
+ok(j.log.some((e) => e.ev === 'revoke_sessions' && e.uid === 'marie-dupont'), 'révocation tracée dans le journal admin');
+
+/* ---- Throttle écritures KV : un heartbeat rapproché n'écrit PAS (quota free) ---- */
+const store3 = new Map(); let puts3 = 0;
+const ACC3 = { get: async (k) => (store3.has(k) ? store3.get(k) : null), put: async (k, v) => { puts3++; store3.set(k, v); }, delete: async (k) => { store3.delete(k); } };
+const env3 = { KDMC_SSO_SECRET: 'sec', ACCOUNTS: ACC3 };
+const r3 = await mod.fetch(REQ({ path: '/__sso/issue', method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ uid: 'beat-user', name: 'Beat User', cgu: true }) }), env3);
+const tok3 = (r3.headers.get('set-cookie').match(/kdmc_sso=([^;]+)/) || [])[1];
+const putsAfterIssue = puts3;
+ok(putsAfterIssue >= 2 && store3.has('acc:beat-user'), 'création de fiche : écrite + indexée');
+let w3 = await (await mod.fetch(REQ({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + tok3 } }), env3)).json();
+await mod.fetch(REQ({ path: '/__sso/whoami', headers: { cookie: 'kdmc_sso=' + tok3 } }), env3);
+ok(w3.ok === true && puts3 === putsAfterIssue, 'heartbeats rapprochés (<2 min, rien de nouveau) → 0 écriture KV (throttle)');
+ok(JSON.parse(store3.get('acc:beat-user')).hits === 1, 'les heartbeats ne gonflent pas les connexions (hits=1)');
+
 console.log(`Admin domaine test: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

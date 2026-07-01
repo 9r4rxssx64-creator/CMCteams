@@ -121,6 +121,17 @@
     });
   }
 
+  /* Détail par site : nom + dernière fois VU sur ce site (la donnée existait
+     déjà dans apps[host].last, elle n'était juste pas affichée). */
+  function appsDetail(apps) {
+    if (!apps) return '—';
+    var keys = Object.keys(apps).sort(function (x, y) { return (apps[y].last || 0) - (apps[x].last || 0); });
+    if (!keys.length) return '—';
+    return keys.map(function (h) {
+      return esc(appName(h)) + ' ×' + (apps[h].sessions || 1)
+        + ' <span style="color:var(--subtle)">— vu ' + esc(ago(apps[h].last)) + '</span>';
+    }).join('<br>');
+  }
   function fiche(a) {
     var places = (a.places || []).map(esc).join(' · ') || esc(a.last_place || '—');
     var devs = (a.devices || []).map(esc).join(' · ') || esc(a.last_device || '—');
@@ -131,11 +142,59 @@
       + kvp('Compte créé', dt(a.created))
       + kvp('CGU acceptée', a.cgu_at ? dt(a.cgu_at) : '—')
       + kvp('Connexions', String(a.hits || 0))
-      + kvp('Sites utilisés', esc(appsSummary(a.apps)))
+      + kvp('Sites utilisés', appsDetail(a.apps))
       + kvp('Appareils', devs)
       + kvp('Lieux', places)
       + kvp('Dernière connexion', dt(a.last_seen))
-      + '</div></div>';
+      + '</div>'
+      + '<button class="revoke" data-uid="' + esc(a.uid) + '" type="button" '
+      + 'title="Coupe toutes ses sessions ouvertes (appareil perdu/volé). Il pourra se reconnecter normalement.">🚪 Déconnecter partout</button>'
+      + '</div>';
+  }
+
+  /* ---- Journal admin (événements sensibles, tracés côté serveur) ---- */
+  var AUD_EV = {
+    admin_login_ok: '🔓 Connexion admin réussie', admin_login_fail: '⛔️ Code admin refusé',
+    revoke_sessions: '🚪 Déconnexion forcée', new_device: '📱 Nouvel appareil', fbtoken_mint: '🔥 Jeton Firebase admin émis'
+  };
+  function audRow(e) {
+    return '<div class="tlrow">' + esc(dt(e.ts)) + ' · <b>' + esc(AUD_EV[e.ev] || e.ev) + '</b>'
+      + (e.uid ? ' · ' + esc(e.uid) : '') + (e.detail ? ' · ' + esc(e.detail) : '')
+      + (e.ip ? ' · <span style="color:var(--subtle)">ip ' + esc(e.ip) + '</span>' : '') + '</div>';
+  }
+  function loadAudit() {
+    fetch('/__admin/audit', { credentials: 'include', cache: 'no-store', headers: adminHeaders() })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var el2 = document.getElementById('audsec');
+        if (!el2 || !j || !j.ok) return;
+        var log = j.log || [];
+        el2.innerHTML = '<h2 class="cat">🛡 Journal admin</h2>'
+          + '<details class="histrow kdmc-card kdmc-in"><summary><span class="i">🛡</span>'
+          + '<span class="ct"><span class="n">Événements sensibles</span>'
+          + '<span class="d">' + log.length + ' entrée' + (log.length > 1 ? 's' : '') + ' — connexions admin, nouveaux appareils, déconnexions forcées</span></span></summary>'
+          + '<div class="timeline">' + (log.length ? log.slice(0, 60).map(audRow).join('') : '<div class="tlrow" style="color:var(--subtle)">Rien pour l\'instant.</div>') + '</div></details>';
+      })
+      .catch(function () { /* silencieux : section optionnelle */ });
+  }
+
+  function wireRevoke() {
+    var list = document.getElementById('list');
+    if (!list) return;
+    list.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('.revoke') : null;
+      if (!b) return;
+      var uid = b.getAttribute('data-uid') || '';
+      if (!confirm('Déconnecter « ' + uid + ' » de TOUS ses appareils ?\n\nSes sessions ouvertes seront coupées immédiatement.\nIl pourra se reconnecter normalement (Face ID ou nom + code).')) return;
+      b.disabled = true; b.textContent = '…';
+      fetch('/__admin/revoke', { method: 'POST', credentials: 'include', headers: Object.assign({ 'content-type': 'application/json' }, adminHeaders()), body: JSON.stringify({ uid: uid }) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok) { b.textContent = '✅ Déconnecté partout'; loadAudit(); }
+          else { b.disabled = false; b.textContent = '⚠️ Échec — réessaie'; }
+        })
+        .catch(function () { b.disabled = false; b.textContent = '🚪 Déconnecter partout'; });
+    });
   }
 
   function render(accounts, kv) {
@@ -149,20 +208,23 @@
       + '<h2 class="cat">👥 Fiches clients</h2>'
       + (accounts.length ? '<div id="list">' + accounts.map(fiche).join('') + '</div>'
         : '<div class="msg">Aucune fiche pour l\'instant.<br>Les comptes apparaissent ici dès leur 1ʳᵉ connexion sur le domaine.</div>')
+      + '<div id="audsec"></div>'
       + hub();
     wirePresence();
     wireHist();
+    wireRevoke();
     var q = document.getElementById('q');
     if (q) q.addEventListener('input', function () {
       var v = q.value.toLowerCase();
       var list = document.querySelectorAll('#list .fiche');
       for (var i = 0; i < list.length; i++) list[i].style.display = list[i].textContent.toLowerCase().indexOf(v) >= 0 ? '' : 'none';
     });
+    loadAudit();
     startPolling();
   }
   /* Rafraîchissement présence : non-intrusif (ne touche QUE #presence + #gstat,
      ne réinitialise ni la recherche ni le scroll). 25 s, seulement onglet visible. */
-  var _poll = null;
+  var _poll = null, _lastPres = '', _lastPills = '';
   function startPolling() {
     if (_poll) return;
     _poll = setInterval(function () { if (document.visibilityState === 'visible') loadAccounts(0, true); }, 25000);
@@ -223,11 +285,13 @@
           setTimeout(function () { loadAccounts((tries || 0) + 1, silent); }, 2000);
         }
         if (silent) {
-          /* Mise à jour ciblée : seulement la présence + les compteurs globaux. */
+          /* Mise à jour ciblée + IDEMPOTENTE (leçon #94) : ne réécrit le DOM que
+             si le HTML a réellement changé → 0 mutation au repos, 0 clignotement. */
           var p = document.getElementById('presence'), g = document.getElementById('gstat');
           if (!p || !g) { render(accounts, j.kv !== false); return; }
-          p.innerHTML = presence(accounts); wirePresence();
-          g.innerHTML = globalPills(accounts);
+          var ph = presence(accounts), gh = globalPills(accounts);
+          if (_lastPres !== ph) { _lastPres = ph; p.innerHTML = ph; wirePresence(); }
+          if (_lastPills !== gh) { _lastPills = gh; g.innerHTML = gh; }
           return;
         }
         render(accounts, j.kv !== false);

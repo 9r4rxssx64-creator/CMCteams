@@ -135,8 +135,12 @@ async function ssoVerify(secret, token) {
   if (diff !== 0) return null;
   let d; try { d = JSON.parse(b64urlToStr(p)); } catch { return null; }
   if (!d || !d.u || !d.exp || d.exp < Date.now()) return null;
-  return { uid: d.u, name: d.n || '', cgu: d.c === 1, verified: d.v === 1 };
+  return { uid: d.u, name: d.n || '', cgu: d.c === 1, verified: d.v === 1, iat: d.iat || 0 };
 }
+/* Révocation à distance (« Déconnecter partout ») : un token émis AVANT
+   acc.revoked_at est refusé. Le user peut se RE-connecter (nouveau token,
+   iat > revoked_at) — on tue les sessions perdues/volées, jamais le compte. */
+function revoked(acc, s) { return !!(acc && acc.revoked_at && (s.iat || 0) < acc.revoked_at); }
 function ssoCookie(request, name) {
   const c = request.headers.get('cookie') || '';
   const m = c.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
@@ -209,16 +213,28 @@ async function accGet(env, uid) {
   if (!env || !env.ACCOUNTS) return null;
   try { return JSON.parse((await env.ACCOUNTS.get('acc:' + uid)) || 'null'); } catch { return null; }
 }
-async function accPut(env, acc) {
+async function accPut(env, acc, knownExisting) {
   if (!env || !env.ACCOUNTS || !acc || !acc.uid) return;
   try {
     await env.ACCOUNTS.put('acc:' + acc.uid, JSON.stringify(acc));
+    if (knownExisting) return; /* fiche déjà indexée → pas de relecture idx (chemin chaud) */
     const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
     if (idx.indexOf(acc.uid) < 0) { idx.push(acc.uid); await env.ACCOUNTS.put('idx:uids', JSON.stringify(idx.slice(-5000))); }
   } catch { /* fail-open */ }
 }
+/* Journal d'audit ADMIN (KV, FIFO 200) : trace les événements sensibles —
+   connexions admin (ok/échec), déconnexions forcées, nouveaux appareils, mints
+   Firebase. L'action la plus sensible du domaine doit laisser une trace. Fail-open. */
+async function audLog(env, entry) {
+  if (!env || !env.ACCOUNTS) return;
+  try {
+    const log = JSON.parse((await env.ACCOUNTS.get('aud:log')) || '[]');
+    log.unshift(Object.assign({ ts: Date.now() }, entry));
+    await env.ACCOUNTS.put('aud:log', JSON.stringify(log.slice(0, 200)));
+  } catch { /* fail-open */ }
+}
 /* Enrichit (ou crée) la fiche à chaque connexion : MAX de renseignements. */
-async function enrich(env, request, uid, name, cgu) {
+async function enrich(env, request, uid, name, cgu, pre) {
   if (!env || !env.ACCOUNTS) return;
   const cf = request.cf || {};
   const ipHash = await sha256Hex((request.headers.get('CF-Connecting-IP') || '') + '|kdmc');
@@ -227,44 +243,68 @@ async function enrich(env, request, uid, name, cgu) {
   const os = /iphone|ipad|ios/i.test(ua) ? 'iOS' : /android/i.test(ua) ? 'Android' : /mac/i.test(ua) ? 'macOS' : /windows/i.test(ua) ? 'Windows' : /linux/i.test(ua) ? 'Linux' : '';
   const place = [cf.city, cf.region, cf.country].filter(Boolean).join(', ');
   const now = Date.now();
-  const host = (request.headers.get('host') || '').toLowerCase().replace(/:.*$/, '');
-  const prev = (await accGet(env, uid)) || { uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [] };
-  prev.name = name || prev.name;
-  if (cgu && !prev.cgu_at) prev.cgu_at = now;
-  prev.last_seen = now;
-  prev.last_ip_hash = ipHash;
-  prev.last_place = place;
-  prev.last_device = device + (os ? ' · ' + os : '');
-  prev.last_app = host || prev.last_app || '';
-  prev.devices = Array.from(new Set([...(prev.devices || []), device + (os ? '·' + os : '')])).slice(-10);
-  if (place) prev.places = Array.from(new Set([...(prev.places || []), place])).slice(-20);
+  const rawHost = (request.headers.get('host') || '').toLowerCase().replace(/:.*$/, '');
+  /* Whitelist ROUTES : un en-tête Host forgé ne crée JAMAIS de clé apps/history
+     parasite (la map apps reste bornée aux vrais sous-domaines du domaine). */
+  const host = ROUTES[rawHost] ? rawHost : '';
+  /* `pre` = fiche préchargée par l'appelant (whoami la lit déjà pour la révocation)
+     → évite une 2e lecture KV sur le chemin chaud. undefined = on lit nous-même. */
+  const prev = pre !== undefined ? pre : await accGet(env, uid);
+  const isNew = !prev;
+  const acc = prev || { uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [] };
+  const prevSeen = acc.last_seen || 0;
+  /* `structural` = quelque chose de NOUVEAU à persister tout de suite (nouvelle fiche,
+     CGU, nouvel appareil/lieu, nouvelle session). Un simple heartbeat n'en est pas un. */
+  let structural = isNew;
+  if (name && name !== acc.name) { acc.name = name; structural = true; }
+  if (cgu && !acc.cgu_at) { acc.cgu_at = now; structural = true; }
+  acc.last_seen = now;
+  acc.last_ip_hash = ipHash;
+  acc.last_place = place;
+  acc.last_device = device + (os ? ' · ' + os : '');
+  acc.last_app = host || acc.last_app || '';
+  const devKey = device + (os ? '·' + os : '');
+  const newDevice = (acc.devices || []).indexOf(devKey) < 0;
+  if (newDevice) structural = true;
+  acc.devices = Array.from(new Set([...(acc.devices || []), devKey])).slice(-10);
+  if (place && (acc.places || []).indexOf(place) < 0) structural = true;
+  if (place) acc.places = Array.from(new Set([...(acc.places || []), place])).slice(-20);
   /* Historique de connexions PAR SITE, avec DURÉE. Une "connexion" = une session :
-     début à la 1re activité, PROLONGÉE par les pings de présence (60s) tant que l'app
+     début à la 1re activité, PROLONGÉE par les pings de présence tant que l'app
      reste ouverte, TERMINÉE dès ~3 min sans ping (= app fermée). Durée = end - ts.
      Les pings ne créent PAS de doublon (ils prolongent la session en cours).
      hits = nombre de vraies sessions. */
   const SESSION_GAP = 3 * 60e3;
-  prev.apps = prev.apps || {};
-  prev.history = prev.history || [];
+  acc.apps = acc.apps || {};
+  acc.history = acc.history || [];
   if (host) {
-    const a = prev.apps[host] || { first: now, last: 0, sessions: 0 };
+    const a = acc.apps[host] || { first: now, last: 0, sessions: 0 };
     const cont = a.sessions > 0 && (now - (a.last || 0)) <= SESSION_GAP; /* session encore en cours ? */
     a.last = now;
     let cur = null; /* la session la plus récente pour CE site */
-    for (let i = 0; i < prev.history.length; i++) { if (prev.history[i].app === host) { cur = prev.history[i]; break; } }
+    for (let i = 0; i < acc.history.length; i++) { if (acc.history[i].app === host) { cur = acc.history[i]; break; } }
     if (cont && cur) {
       cur.end = now; /* prolonge la session ouverte → la durée grandit */
     } else {
       a.sessions = (a.sessions || 0) + 1;
-      prev.hits = (prev.hits || 0) + 1;
-      prev.history.unshift({ ts: now, end: now, app: host, device: device + (os ? '·' + os : ''), place: place });
-      if (prev.history.length > 80) prev.history = prev.history.slice(0, 80);
+      acc.hits = (acc.hits || 0) + 1;
+      acc.history.unshift({ ts: now, end: now, app: host, device: devKey, place: place });
+      if (acc.history.length > 80) acc.history = acc.history.slice(0, 80);
+      structural = true;
     }
-    prev.apps[host] = a;
-  } else if (!prev.hits) {
-    prev.hits = 1;
+    acc.apps[host] = a;
+  } else if (!acc.hits) {
+    acc.hits = 1;
   }
-  await accPut(env, prev);
+  /* THROTTLE écritures KV (quota free = 1000 writes/jour, partagé compte) : un
+     heartbeat qui ne change rien de structurel n'écrit que si last_seen stocké a
+     plus de 2 min. Présence « en ligne < 5 min » intacte (écriture ≤ toutes les
+     2 min) ; SESSION_GAP 3 min intact (2 min < 3 min). Précision durée : ±2 min. */
+  if (!structural && now - prevSeen < 120e3) return;
+  /* Nouvel appareil sur une fiche EXISTANTE → trace dans le journal admin
+     (signal fort avec si peu d'utilisateurs ; zéro secret requis, zéro push). */
+  if (newDevice && !isNew) await audLog(env, { ev: 'new_device', uid, detail: devKey + (place ? ' · ' + place : '') });
+  await accPut(env, acc, !isNew);
 }
 
 async function handleSso(request, url, env) {
@@ -276,7 +316,13 @@ async function handleSso(request, url, env) {
     const s = await ssoVerify(secret, ssoToken(request));
     /* SÉCU (leçon #99) : admin EXIGE une identité FORTE (verified = Face ID prouvé).
        Un uid admin auto-déclaré via /__sso/issue reste verified:false → admin:false. */
-    if (s) { await enrich(env, request, s.uid, s.name, s.cgu); return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 && !!s.verified }); }
+    if (s) {
+      const acc = await accGet(env, s.uid);
+      /* Révocation à distance : token émis avant « Déconnecter partout » → refusé. */
+      if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
+      await enrich(env, request, s.uid, s.name, s.cgu, acc);
+      return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 && !!s.verified });
+    }
     return J({ ok: false });
   }
 
@@ -288,12 +334,14 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/webauthn/register/options' && request.method === 'POST') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
+    if (revoked(await accGet(env, s.uid), s)) return J({ ok: false, reason: 'session révoquée — reconnecte-toi' });
     const challenge = await makeChallenge(secret, 'reg');
     return J({ ok: true, challenge, rp: { id: RP_ID, name: 'KDMC APEX' }, user: { id: b64uEnc(new TextEncoder().encode(s.uid)), name: s.name || s.uid, displayName: s.name || s.uid }, pubKeyCredParams: [{ type: 'public-key', alg: -7 }] });
   }
   if (path === '/__sso/webauthn/register/verify' && request.method === 'POST') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
+    if (revoked(await accGet(env, s.uid), s)) return J({ ok: false, reason: 'session révoquée — reconnecte-toi' });
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     let reg;
     try { reg = await parseRegistration(secret, b.attestationObject, b.clientDataJSON); }
@@ -428,8 +476,9 @@ async function handleAdmin(request, url, env) {
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     const code = String(b.code || '').trim();
     if (!code) return J({ ok: false, reason: 'code_requis' });
-    if ((await sha256Hex(code)) !== adminHash) { await rlFail(env, ipHash); return J({ ok: false, reason: 'code_invalide' }); }
+    if ((await sha256Hex(code)) !== adminHash) { await rlFail(env, ipHash); await audLog(env, { ev: 'admin_login_fail', ip: ipHash.slice(0, 12) }); return J({ ok: false, reason: 'code_invalide' }); }
     await rlReset(env, ipHash);
+    await audLog(env, { ev: 'admin_login_ok', ip: ipHash.slice(0, 12) });
     const grant = await ssoSign(secret, '__kdmc_admin__', 'admin', 1);
     const cookie = `kdmc_admin=${grant}; Domain=.kd-mc.com; Path=/; Max-Age=43200; Secure; HttpOnly; SameSite=Lax`;
     return J({ ok: true, grant }, cookie);
@@ -445,10 +494,33 @@ async function handleAdmin(request, url, env) {
   if (path === '/__admin/accounts' && request.method === 'GET') {
     if (!env.ACCOUNTS) return J({ ok: true, accounts: [], kv: false });
     const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
-    const accounts = [];
-    for (const uid of idx.slice(-500)) { const a = await accGet(env, uid); if (a) accounts.push(a); }
+    /* PERF : lectures KV en PARALLÈLE (avant : boucle `await` séquentielle → ~5 s
+       pour 500 fiches, re-tirée toutes les 25 s par l'admin). ?limit= borne. */
+    const lim = Math.max(1, Math.min(500, parseInt(url.searchParams.get('limit') || '500', 10) || 500));
+    const accounts = (await Promise.all(idx.slice(-lim).map((uid) => accGet(env, uid)))).filter(Boolean);
     accounts.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
     return J({ ok: true, accounts, kv: true, count: accounts.length });
+  }
+  /* Journal d'audit admin : connexions admin ok/échec, déconnexions forcées,
+     nouveaux appareils, mints Firebase. FIFO 200 en KV. */
+  if (path === '/__admin/audit' && request.method === 'GET') {
+    if (!env.ACCOUNTS) return J({ ok: true, log: [] });
+    let log = []; try { log = JSON.parse((await env.ACCOUNTS.get('aud:log')) || '[]'); } catch { /* fail-open */ }
+    return J({ ok: true, log });
+  }
+  /* « Déconnecter partout » : révoque toutes les sessions ÉMISES d'un compte
+     (perte/vol d'appareil). Le compte reste intact : une reconnexion (Face ID ou
+     nom+code) émet un token frais (iat > revoked_at) qui marche normalement. */
+  if (path === '/__admin/revoke' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { /* ignore */ }
+    const uid = String(b.uid || '').slice(0, 80).trim();
+    if (!uid) return J({ ok: false, reason: 'uid requis' });
+    const acc = await accGet(env, uid);
+    if (!acc) return J({ ok: false, reason: 'not_found' });
+    acc.revoked_at = Date.now();
+    await accPut(env, acc, true);
+    await audLog(env, { ev: 'revoke_sessions', uid });
+    return J({ ok: true, uid, revoked_at: acc.revoked_at });
   }
   if (path === '/__admin/account' && request.method === 'GET') {
     const uid = url.searchParams.get('uid') || '';
@@ -464,6 +536,7 @@ async function handleAdmin(request, url, env) {
      auth.token.role==='admin'. FAIL-SAFE si secrets FB absents (client fail-open). */
   if (path === '/__admin/fbtoken' && request.method === 'POST') { // POST-only (durcissement audit P2-d : réduit la surface CSRF via cookie SameSite=Lax sur GET)
     const out = await mintShopsAdminIdToken(env);
+    if (out.ok) await audLog(env, { ev: 'fbtoken_mint' });
     return out.ok ? J(out) : J(out, null, 503);
   }
   return J({ ok: false, reason: 'not_found' });

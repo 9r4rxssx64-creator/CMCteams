@@ -184,7 +184,9 @@
      la session (whoami → le router met à jour last_seen) pour que la présence reste
      "verte" dans l'Admin domaine. Économe : coupé en arrière-plan (batterie), ping
      immédiat au retour au 1er plan, et s'arrête tout seul si la session disparaît. */
-  var _beatTimer = null, _beatMs = 60000, _beatWired = false;
+  /* 150 s (pas 60) : la présence admin est « en ligne < 5 min » → 150 s garde la
+     pastille verte tout en divisant les écritures KV (quota free 1000/jour). */
+  var _beatTimer = null, _beatMs = 150000, _beatWired = false;
   function _beatTick() {
     if (typeof document === 'undefined' || document.visibilityState !== 'visible') return;
     whoami().then(function (s) { if (!s) _beatStop(); }).catch(function () { /* on retentera */ });
