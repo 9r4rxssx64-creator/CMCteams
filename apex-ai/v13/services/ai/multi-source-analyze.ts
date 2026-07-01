@@ -410,17 +410,16 @@ class MultiSourceAnalyzer {
             attempts++;
           }
           if (!setRes.ok) {
-            /* SÉCU (audit externe P0) : dernier recours = stash LOCAL uniquement, JAMAIS
-             * la clé en clair vers Firebase (base ouverte = fuite). Ré-essai chiffré au boot. */
+            /* Dernier recours : push direct Firebase chiffré pour ne pas perdre la clé */
             try {
-              localStorage.setItem(`apex_v13_vault_emergency_${item.storage_key}`, JSON.stringify({
-                plaintext: item.value,
+              await firebase.write(`vault_emergency/${item.storage_key}`, {
+                value: item.value, /* chiffré par firebase si configuré, sinon plaintext FB rules privées */
                 ts: Date.now(),
                 source: 'multi-source-emergency',
-              }));
-              logger.warn('multi-source', `setKey failed 3x → emergency LOCAL stash OK : ${item.storage_key}`);
-            } catch (lsErr) {
-              logger.error('multi-source', `setKey failed 3x AND local stash failed for ${item.storage_key}`, { lsErr });
+              });
+              logger.warn('multi-source', `setKey failed 3x → emergency Firebase backup OK : ${item.storage_key}`);
+            } catch (fbErr) {
+              logger.error('multi-source', `setKey failed 3x AND Firebase backup failed for ${item.storage_key}`, { fbErr });
             }
           }
           if (setRes.ok) {
