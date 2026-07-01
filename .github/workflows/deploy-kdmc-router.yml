@@ -96,6 +96,21 @@ jobs:
             printf '%s' "$FB_WEB_API_KEY" | wrangler secret put FIREBASE_WEB_API_KEY 2>&1 | tail -2 || true
           fi
 
+      - name: Alerte push « nouvel appareil » — jeton (fail-open si absent)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Le worker de push accepte son ADMIN_TOKEN (= PUSH_ADMIN_TOKEN). Repli : AX_PUSH_ADMIN_TOKEN.
+          PUSH_TOKEN: ${{ secrets.PUSH_ADMIN_TOKEN != '' && secrets.PUSH_ADMIN_TOKEN || secrets.AX_PUSH_ADMIN_TOKEN }}
+        run: |
+          if [ -n "${PUSH_TOKEN:-}" ]; then
+            printf '%s' "$PUSH_TOKEN" | wrangler secret put KDMC_PUSH_TOKEN 2>&1 | tail -2 \
+              || echo "::warning::KDMC_PUSH_TOKEN non posé (alerte nouvel appareil no-op → le journal admin reste la trace)"
+          else
+            echo "::warning::PUSH_ADMIN_TOKEN absent → alerte nouvel appareil désactivée (fail-open ; journal admin OK)."
+          fi
+
       - name: Health check des belles adresses
         run: |
           for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \

@@ -222,6 +222,25 @@ async function accPut(env, acc, knownExisting) {
     if (idx.indexOf(acc.uid) < 0) { idx.push(acc.uid); await env.ACCOUNTS.put('idx:uids', JSON.stringify(idx.slice(-5000))); }
   } catch { /* fail-open */ }
 }
+/* Alerte push « nouvel appareil » vers l'iPhone de Kevin, via le worker de push
+   existant (POST /send-all, Bearer). OPT-IN par config : sans KDMC_PUSH_URL +
+   KDMC_PUSH_TOKEN, on ne fait RIEN (le journal admin reste la trace = repli).
+   Fail-open total : timeout 2 s, jamais d'exception propagée, ne bloque jamais
+   la connexion. Corps volontairement générique (pas de donnée sensible). */
+async function notifyPush(env, title, body) {
+  const url = env && env.KDMC_PUSH_URL, tok = env && env.KDMC_PUSH_TOKEN;
+  if (!url || !tok) return; /* non configuré → repli = journal admin */
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 2000);
+    await fetch(url.replace(/\/$/, '') + '/send-all', {
+      method: 'POST', signal: ctrl.signal,
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + tok },
+      body: JSON.stringify({ payload: { title, body, tag: 'kdmc-new-device', url: 'https://kd-mc.com/admin/' } }),
+    }).catch(() => {});
+    clearTimeout(to);
+  } catch { /* fail-open : jamais d'échec de connexion à cause d'une notif */ }
+}
 /* Journal d'audit ADMIN (KV, FIFO 200) : trace les événements sensibles —
    connexions admin (ok/échec), déconnexions forcées, nouveaux appareils, mints
    Firebase. L'action la plus sensible du domaine doit laisser une trace. Fail-open. */
@@ -302,8 +321,12 @@ async function enrich(env, request, uid, name, cgu, pre) {
      2 min) ; SESSION_GAP 3 min intact (2 min < 3 min). Précision durée : ±2 min. */
   if (!structural && now - prevSeen < 120e3) return;
   /* Nouvel appareil sur une fiche EXISTANTE → trace dans le journal admin
-     (signal fort avec si peu d'utilisateurs ; zéro secret requis, zéro push). */
-  if (newDevice && !isNew) await audLog(env, { ev: 'new_device', uid, detail: devKey + (place ? ' · ' + place : '') });
+     (signal fort avec si peu d'utilisateurs) + alerte push si configurée. */
+  if (newDevice && !isNew) {
+    await audLog(env, { ev: 'new_device', uid, detail: devKey + (place ? ' · ' + place : '') });
+    await notifyPush(env, '🔐 KDMC — nouvel appareil',
+      'Nouvelle connexion (' + (acc.name || uid) + ') depuis ' + devKey + (place ? ' · ' + place : '') + '.');
+  }
   await accPut(env, acc, !isNew);
 }
 
