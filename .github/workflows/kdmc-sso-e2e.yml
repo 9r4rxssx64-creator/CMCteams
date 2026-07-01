@@ -44,6 +44,8 @@ jobs:
           node admin.test.mjs
           node webauthn.test.mjs
           node webauthn-endpoints.test.mjs
+          node self-service.test.mjs
+          node apps-consistency.test.mjs
           node fb-token.test.mjs
       - name: Install Playwright + Chromium
         run: |
