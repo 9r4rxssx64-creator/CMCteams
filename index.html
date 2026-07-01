@@ -5549,7 +5549,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.840";
+var APP_VER="v9.841";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11720,15 +11720,108 @@ function vKevinInbox(){
   else{box.forEach(function(m){
     var isNew=m.status==="new";
     h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid '+(isNew?"#c9a227":"#444")+'">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><strong style="color:'+(isNew?"#c9a227":"#bbb")+';font-size:14px">'+esc(m.name||"?")+'</strong>'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      +'<strong onclick="cmcOpenFiche(\''+esc(m.from||"")+'\')" style="color:'+(isNew?"#c9a227":"#bbb")+';font-size:14px;cursor:pointer;text-decoration:underline">'+esc(m.name||"?")+'</strong>'
       +(m.team?'<span style="font-size:11px;color:#8ab888;background:rgba(74,160,120,.12);padding:2px 8px;border-radius:10px">'+esc(String(m.team))+'</span>':'')
       +'<span style="margin-left:auto;font-size:11px;color:#8a8a8a">'+_cmcRelTime(m.ts)+'</span></div>'
       +'<div style="font-size:14px;color:#e8e8e0;white-space:pre-wrap;line-height:1.5">'+esc(m.text||"")+'</div>'
+      +'<button onclick="cmcOpenFiche(\''+esc(m.from||"")+'\')" class="btn ghost" style="margin-top:8px;font-size:12px;padding:5px 10px">📇 Voir la fiche complète</button>'
       +'</div>';
   });}
   return h+'</div>';
 }
 function _cmcRelTime(ts){try{var d=Date.now()-ts;if(d<60000)return"à l'instant";if(d<3600000)return Math.floor(d/60000)+" min";if(d<86400000)return Math.floor(d/3600000)+" h";return Math.floor(d/86400000)+" j";}catch(_){return"";}}
+function cmcOpenFiche(uid){window._ficheUid=uid;A.view="fiche";dc();}
+// v9.841 (Kevin 2026-07-01 « l'historique remonte dans chaque fiche perso avec toutes les
+// infos possibles » + « Oubli pas la map, position live, historique, travail, question,
+// effectué demandé »). FICHE PERSO COMPLÈTE (admin) : agrège TOUT pour un employé —
+// identité, travail du mois, historique connexions (appareils/lieux/GPS), position live
+// + présence + map, demandes (échanges/uploads : effectué/demandé), messages envoyés.
+function vFichePerso(uid){
+  if(!A.user||A.user.id!==AID)return '<div class="page"><div class="card">Accès réservé.</div></div>';
+  uid=uid||window._ficheUid||"";
+  var emp=(A.employees||[]).find(function(e){return e.id===uid;});
+  var reg=(A.reg&&A.reg[uid])||{};
+  if(!emp&&!reg.nom)return '<div class="page" style="padding:14px"><button class="btn ghost" onclick="A.view=\'kevininbox\';dc()">← Retour</button><div class="card" style="margin-top:10px">Employé introuvable ('+esc(uid)+').</div></div>';
+  var nm=(emp&&emp.name)||((reg.nom||"")+" "+(reg.prenom||"")).trim()||uid;
+  var key=A.year+"-"+A.month;
+  var h='<div class="page" style="padding:14px;max-width:760px;margin:0 auto">';
+  h+='<button class="btn ghost" onclick="history.length>1?history.back():(A.view=\'kevininbox\',dc())" style="margin-bottom:10px">← Retour</button>';
+  h+='<div class="sec-title" style="margin-bottom:10px">📇 Fiche complète — '+esc(nm)+'</div>';
+  // ── Identité ──
+  h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid #c9a227">'
+    +'<div style="font-weight:800;color:#c9a227;font-size:14px;margin-bottom:8px">👤 Identité</div>'
+    +'<div style="font-size:13px;color:#ddd;line-height:1.9">'
+    +'<div>Matricule : <b>'+esc(uid)+'</b></div>'
+    +(reg.email?'<div>Email : '+esc(reg.email)+'</div>':'')
+    +(reg.poste?'<div>Poste : '+esc(reg.poste)+'</div>':'')
+    +(reg.dateNaissance?'<div>Naissance : '+esc(reg.dateNaissance)+'</div>':'')
+    +'<div>Équipe (mois) : '+esc(String((emp&&emp.teamHistory&&emp.teamHistory[key])||(emp&&emp.team)||"—"))+'</div>'
+    +(reg.usbm?'<div>USBM : '+esc(reg.usbm)+'</div>':'')
+    +'</div></div>';
+  // ── Travail ce mois ──
+  var ov=(A.overrides[key]||{})[uid]||{};
+  var days=getDays(A.year,A.month),wCount=0,rCount=0,aCount=0,codesUsed={};
+  for(var d=1;d<=days;d++){var c=ov[d];if(!c)continue;codesUsed[c]=(codesUsed[c]||0)+1;
+    if(typeof isWork==="function"&&isWork(c))wCount++;
+    else if(String(c).toUpperCase().replace(/[C'"*:]+$/,"")==="RH"||String(c).toUpperCase()==="R")rCount++;
+    else aCount++;}
+  var todN=new Date(),todD=(todN.getFullYear()===A.year&&todN.getMonth()===A.month)?todN.getDate():0;
+  var todCode=todD?ov[todD]||"":"";var depPos=(todCode&&typeof isWork==="function"&&isWork(todCode)&&emp)?calcDepPos(emp.name,(emp.teamHistory&&emp.teamHistory[key])||emp.team,todD):null;
+  h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid #5aaa70">'
+    +'<div style="font-weight:800;color:#5aaa70;font-size:14px;margin-bottom:8px">🎰 Travail — '+esc(MFR[A.month])+' '+A.year+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
+    +'<span style="background:rgba(90,170,112,.15);border:1px solid rgba(90,170,112,.4);border-radius:10px;padding:5px 12px;font-size:13px;color:#8ee0a8"><b>'+wCount+'</b> travaillés</span>'
+    +'<span style="background:rgba(180,170,220,.12);border:1px solid rgba(180,170,220,.3);border-radius:10px;padding:5px 12px;font-size:13px;color:#c8bce8"><b>'+rCount+'</b> repos</span>'
+    +'<span style="background:rgba(255,180,210,.12);border:1px solid rgba(255,180,210,.3);border-radius:10px;padding:5px 12px;font-size:13px;color:#f0b8ce"><b>'+aCount+'</b> absences</span>'
+    +'</div>'
+    +(todD?'<div style="font-size:13px;color:#ddd">Aujourd\'hui : <b>'+(todCode?esc(todCode):"—")+'</b>'+(depPos?' · départ n°<b style="color:'+(DCOL[depPos-1]||"#c9a227")+'">'+depPos+'</b>':'')+'</div>':'')
+    +'</div>';
+  // ── Position live + présence + map ──
+  var online=false;try{(getOnlineUsers()||[]).forEach(function(u){if(u.uid===uid)online=true;});}catch(_){}
+  var pos=null;try{var ps=(lg("cmc_positions",{})||{})[uid];if(Array.isArray(ps)&&ps.length)pos=ps[ps.length-1];}catch(_){}
+  h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid #4aa0ff">'
+    +'<div style="font-weight:800;color:#4aa0ff;font-size:14px;margin-bottom:8px">📍 Position &amp; présence</div>'
+    +'<div style="font-size:13px;color:#ddd;line-height:1.8">'
+    +'<div>'+(online?'🟢 <b style="color:#5aaa70">En ligne maintenant</b>':'⚪ Hors ligne')+'</div>'
+    +(pos?'<div>Dernière position : '+(pos.lat).toFixed(4)+', '+(pos.lng).toFixed(4)+' <span style="color:#8a8a8a">('+_cmcRelTime(pos.ts)+')</span> '
+      +'<a href="https://maps.google.com/?q='+pos.lat+','+pos.lng+'" target="_blank" rel="noopener" style="color:#4aa0ff">🗺 carte</a></div>':'<div style="color:#8a8a8a">Aucune position enregistrée</div>')
+    +'</div>'
+    +'<button onclick="A.view=\'pitmap\';dc()" class="btn ghost" style="margin-top:8px;font-size:12px;padding:6px 10px">🗺 Voir la map des tables</button>'
+    +'</div>';
+  // ── Historique connexions ──
+  var ul=[];try{ul=(lg("cmc_userlog",[])||[]).filter(function(e){return e&&e.uid===uid;}).slice(-15).reverse();}catch(_){}
+  h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid #b088c8">'
+    +'<div style="font-weight:800;color:#b088c8;font-size:14px;margin-bottom:8px">🕓 Historique connexions ('+ul.length+')</div>';
+  if(!ul.length){h+='<div style="font-size:13px;color:#8a8a8a">Aucune connexion enregistrée.</div>';}
+  else{h+='<div style="display:flex;flex-direction:column;gap:5px">';ul.forEach(function(e){
+    var place=[e.city,e.country].filter(Boolean).join(", ");
+    h+='<div style="font-size:12px;color:#cbb8dc;background:rgba(176,136,200,.06);border-radius:6px;padding:6px 8px">'
+      +'<b>'+esc(e.type||"login")+'</b> · '+_cmcRelTime(e.ts)+' · '+esc((e.browser||"")+" "+(e.os||""))+(place?' · '+esc(place):'')+(e.geo?' · 📍':'')+'</div>';
+  });h+='</div>';}
+  h+='</div>';
+  // ── Demandes (échanges + uploads) : effectué / demandé ──
+  var exs=[];try{exs=(A.exchanges||[]).filter(function(x){return x&&(x.uid===uid||x.from===uid||x.empId===uid);});}catch(_){}
+  var reqs=[];try{reqs=(_empRequests||[]).filter(function(r){return r&&(r.uid===uid||r.from===uid||r.empId===uid);});}catch(_){}
+  h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid #e0a848">'
+    +'<div style="font-weight:800;color:#e0a848;font-size:14px;margin-bottom:8px">🔄 Demandes ('+(exs.length+reqs.length)+')</div>';
+  if(!exs.length&&!reqs.length){h+='<div style="font-size:13px;color:#8a8a8a">Aucune demande.</div>';}
+  else{h+='<div style="display:flex;flex-direction:column;gap:5px;font-size:12px">';
+    exs.forEach(function(x){var st=x.status||"pending";h+='<div style="color:#e8d0a0;background:rgba(224,168,72,.06);border-radius:6px;padding:6px 8px">🔁 Échange · <b>'+esc(st)+'</b>'+(x.ts?' · '+_cmcRelTime(x.ts):'')+'</div>';});
+    reqs.forEach(function(r){var st=r.status||r.done?"effectué":"demandé";h+='<div style="color:#e8d0a0;background:rgba(224,168,72,.06);border-radius:6px;padding:6px 8px">📎 '+esc(r.type||"Demande")+' · <b>'+esc(String(st))+'</b>'+(r.ts?' · '+_cmcRelTime(r.ts):'')+'</div>';});
+    h+='</div>';}
+  h+='</div>';
+  // ── Messages envoyés à Kevin ──
+  var msgs=[];try{msgs=(lg("cmc_kevin_inbox",[])||[]).filter(function(m){return m&&m.from===uid;});}catch(_){}
+  h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid #4cd080">'
+    +'<div style="font-weight:800;color:#4cd080;font-size:14px;margin-bottom:8px">💬 Questions / messages ('+msgs.length+')</div>';
+  if(!msgs.length){h+='<div style="font-size:13px;color:#8a8a8a">Aucun message.</div>';}
+  else{h+='<div style="display:flex;flex-direction:column;gap:5px">';msgs.forEach(function(m){
+    h+='<div style="font-size:13px;color:#e8e8e0;background:rgba(76,208,128,.06);border-radius:6px;padding:7px 9px"><span style="color:#8a8a8a;font-size:11px">'+_cmcRelTime(m.ts)+'</span><br>'+esc(m.text||"")+'</div>';
+  });h+='</div>';}
+  h+='</div>';
+  return h+'</div>';
+}
 async function webauthnLogin(uid){
   if(!webauthnSupported())return false;
   if(!cmcCguAsk("biometric","🔐 Face ID / Touch ID","CMCteams peut utiliser votre biometrie (Face ID, Touch ID, empreinte) pour une connexion rapide sans saisir votre PIN. Les donnees biometriques restent UNIQUEMENT sur votre appareil (jamais transmises)."))return false;
@@ -17100,6 +17193,7 @@ function _vMainImpl(){
     case"import":   return isAdm?vImport():"";
     case"verify":   return isAdm?vVerify():""; // v9.821 — vérification autonome (équipes/horaires/départs/lieux)
     case"kevininbox": return isAdm?vKevinInbox():""; // v9.840 — messages directs employés → Kevin
+    case"fiche":    return isAdm?vFichePerso():""; // v9.841 — fiche perso complète (identité/travail/position/historique/demandes/messages)
     case"importtests": return isAdm?vImportTestResults():""; // v9.521
     case"importversions": return isAdm?vImportVersions():""; // v9.596 — historique V1/V2/V3
     case"parserlearning": return isAdm?vParserLearning():""; // v9.524
@@ -32944,7 +33038,10 @@ function vEmps(){
               </div>
             </div>
             <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(201,162,39,.12)">
-              <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">\ud83d\udc64 Identit\u00e9 compl\u00e8te</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <div style="font-size:13px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px">\ud83d\udc64 Identit\u00e9 compl\u00e8te</div>
+                <button onclick="cmcOpenFiche('${emp.id}')" style="margin-left:auto;background:rgba(76,208,128,.14);border:1px solid rgba(76,208,128,.4);border-radius:6px;color:#7fe0a8;font-size:12px;padding:4px 10px;cursor:pointer;font-weight:700">\ud83d\udcc7 Fiche compl\u00e8te</button>
+              </div>
               <!-- v9.147 — Nom affich\u00e9 modifiable (utilis\u00e9 pour matching import + affichage partout) -->
               <div style="font-size:13px;color:#ffdc40;font-weight:700;margin-bottom:3px">\u270f\ufe0f Nom affich\u00e9 (NOM + Initiale)</div>
               <div style="display:flex;gap:4px;margin-bottom:8px">
