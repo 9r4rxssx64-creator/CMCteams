@@ -3990,6 +3990,10 @@ var FB_PATH="/cmcteams";
 var _fbEs=null,_fbConnected=false,_lastSyncTs=0,_fbInitialLoad=false;
 // Clés fixes partagées entre tous les appareils
 var FB_FIX=["cmc_ov","cmc_ov_meta","ax_admin_profile","ax_admin_kevin","cmc_admin_profile","cmc_e","cmc_t","cmc_pw","cmc_reg","cmc_chat","cmc_reg_alerts","cmc_audit","cmc_presence","cmc_userlog","cmc_ia_log","cmc_stats_archive","cmc_verif_codes","cmc_photos","cmc_docs","cmc_templates","cmc_access","cmc_doc_cats_shared","cmc_upload_requests","cmc_upload_enabled","cmc_likes","cmc_emp_requests","cmc_motd",
+// v9.840 (Kevin 2026-07-01 « Intègre un chat, message direct à moi… passe par mon chat apex ») :
+// boîte de réception « Message à Kevin ». cmc_kevin_inbox = visible admin CMCteams ;
+// ax_cmc_kevin_inbox = chemin PARTAGÉ cross-app (bridge Apex : ton chat Apex le lit).
+"cmc_kevin_inbox","ax_cmc_kevin_inbox",
 // v9.204 — Ajout sync pour toutes les données admin partagées (bug cross-device résolu)
 "cmc_cagnottes","cmc_events","cmc_timeclock","cmc_chefs_t","cmc_chef_eq","cmc_learned_codes","cmc_features","cmc_exchanges","cmc_exchanges_enabled","cmc_day_notes","cmc_geofence",
 // v9.214 — Positions live (admin uniquement les consulte) + consentement RGPD
@@ -5545,7 +5549,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.839";
+var APP_VER="v9.840";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11663,6 +11667,68 @@ async function cmcRequestAllPermissions(){
   }catch(e){try{if(typeof toast==="function")toast("⚠ "+(e&&e.message||"erreur"),"warn");}catch(_){}}
   return res;
 }
+// v9.840 (Kevin 2026-07-01 « Intègre un chat, message direct à moi par les personnes si
+// problème ou question. Passe par mon chat apex ») — Message direct à Kevin. Écrit dans
+// la boîte admin CMCteams (cmc_kevin_inbox) ET le chemin PARTAGÉ cross-app
+// (ax_cmc_kevin_inbox, FB_FIX) que le chat Apex lit → Kevin reçoit dans Apex.
+function cmcSendToKevin(text){
+  try{
+    text=String(text||"").trim();
+    if(!text)return false;
+    if(text.length>2000)text=text.slice(0,2000);
+    var u=A.user||{};
+    var msg={id:"k_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
+      from:u.id||"?", name:u.name||"Anonyme",
+      team:(u.teamHistory&&u.teamHistory[A.year+"-"+A.month])||u.team||"",
+      text:text, ts:Date.now(), app:"cmcteams", status:"new"};
+    var box=lg("cmc_kevin_inbox",[]); if(!Array.isArray(box))box=[]; box.unshift(msg); if(box.length>300)box=box.slice(0,300); ls("cmc_kevin_inbox",box);
+    var shared=lg("ax_cmc_kevin_inbox",[]); if(!Array.isArray(shared))shared=[]; shared.unshift(msg); if(shared.length>200)shared=shared.slice(0,200); ls("ax_cmc_kevin_inbox",shared);
+    try{fbWrite("cmc_kevin_inbox",box);}catch(_){}
+    try{fbWrite("ax_cmc_kevin_inbox",shared);}catch(_){}
+    try{_audit("kevin_message",msg.from,msg.name,text.slice(0,80));}catch(_){}
+    return true;
+  }catch(e){return false;}
+}
+// Modale « Écrire à Kevin » (textarea + envoyer). Pas de prompt() natif (clavier iPhone).
+function cmcOpenContactKevin(){
+  try{
+    if(document.getElementById("cmcContactKevin"))return;
+    var ov=document.createElement("div");
+    ov.id="cmcContactKevin";
+    ov.style.cssText="position:fixed;inset:0;z-index:2147483600;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)";
+    ov.innerHTML='<div style="max-width:520px;width:100%;background:#13201a;border:1px solid rgba(201,162,39,.4);border-radius:16px 16px 0 0;padding:18px;box-shadow:0 -8px 40px rgba(0,0,0,.5)">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:24px">💬</span><strong style="color:#c9a227;font-size:16px">Écrire à Kevin</strong></div>'
+      +'<div style="font-size:13px;color:#a8c4b8;margin-bottom:10px">Un problème, une question ? Ton message arrive directement à Kevin.</div>'
+      +'<textarea id="cmcCkTxt" rows="4" placeholder="Ton message…" style="width:100%;box-sizing:border-box;padding:11px;font-size:16px;border-radius:10px;border:1px solid rgba(201,162,39,.3);background:rgba(5,16,10,.4);color:#f0e8d0;resize:vertical;margin-bottom:10px"></textarea>'
+      +'<div style="display:flex;gap:8px">'
+      +'<button onclick="(function(){var t=(document.getElementById(&quot;cmcCkTxt&quot;)||{}).value||&quot;&quot;;if(!t.trim()){toast(&quot;Écris ton message d\'abord&quot;,&quot;warn&quot;);return;}var ok=cmcSendToKevin(t);var o=document.getElementById(&quot;cmcContactKevin&quot;);if(o)o.remove();toast(ok?&quot;✅ Message envoyé à Kevin&quot;:&quot;⚠ Échec, réessaie&quot;,ok?&quot;ok&quot;:&quot;warn&quot;);})()" style="flex:1;min-height:50px;padding:13px;background:linear-gradient(135deg,#c9a227,#ffdc40);border:none;color:#0a1408;border-radius:11px;font-weight:800;font-size:15px;cursor:pointer">Envoyer</button>'
+      +'<button onclick="var o=document.getElementById(\'cmcContactKevin\');if(o)o.remove()" style="min-height:50px;padding:13px 18px;background:transparent;border:1px solid rgba(160,200,150,.3);color:#9fb89f;border-radius:11px;font-size:15px;cursor:pointer">Annuler</button>'
+      +'</div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener("click",function(e){if(e.target===ov)ov.remove();});
+    setTimeout(function(){try{document.getElementById("cmcCkTxt").focus();}catch(_){}},100);
+  }catch(_){}
+}
+// Vue admin : boîte de réception des messages employés (Kevin les lit ici aussi).
+function vKevinInbox(){
+  if(!A.user||A.user.id!==AID)return '<div class="page"><div class="card">Accès réservé.</div></div>';
+  var box=lg("cmc_kevin_inbox",[]);if(!Array.isArray(box))box=[];
+  var h='<div class="page" style="padding:14px;max-width:720px;margin:0 auto">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="sec-title">💬 Messages reçus ('+box.length+')</div>'
+    +(box.length?'<button onclick="if(confirm(\'Tout marquer lu ?\')){var b=lg(\'cmc_kevin_inbox\',[]);b.forEach(function(m){m.status=\'read\';});ls(\'cmc_kevin_inbox\',b);try{fbWrite(\'cmc_kevin_inbox\',b);}catch(_){}dc();}" class="btn ghost" style="font-size:12px;padding:6px 10px">Tout lu</button>':'')+'</div>';
+  if(!box.length){h+='<div class="card" style="padding:18px;text-align:center;color:#9fb89f">📭 Aucun message pour le moment.</div>';}
+  else{box.forEach(function(m){
+    var isNew=m.status==="new";
+    h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid '+(isNew?"#c9a227":"#444")+'">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><strong style="color:'+(isNew?"#c9a227":"#bbb")+';font-size:14px">'+esc(m.name||"?")+'</strong>'
+      +(m.team?'<span style="font-size:11px;color:#8ab888;background:rgba(74,160,120,.12);padding:2px 8px;border-radius:10px">'+esc(String(m.team))+'</span>':'')
+      +'<span style="margin-left:auto;font-size:11px;color:#8a8a8a">'+_cmcRelTime(m.ts)+'</span></div>'
+      +'<div style="font-size:14px;color:#e8e8e0;white-space:pre-wrap;line-height:1.5">'+esc(m.text||"")+'</div>'
+      +'</div>';
+  });}
+  return h+'</div>';
+}
+function _cmcRelTime(ts){try{var d=Date.now()-ts;if(d<60000)return"à l'instant";if(d<3600000)return Math.floor(d/60000)+" min";if(d<86400000)return Math.floor(d/3600000)+" h";return Math.floor(d/86400000)+" j";}catch(_){return"";}}
 async function webauthnLogin(uid){
   if(!webauthnSupported())return false;
   if(!cmcCguAsk("biometric","🔐 Face ID / Touch ID","CMCteams peut utiliser votre biometrie (Face ID, Touch ID, empreinte) pour une connexion rapide sans saisir votre PIN. Les donnees biometriques restent UNIQUEMENT sur votre appareil (jamais transmises)."))return false;
@@ -17033,6 +17099,7 @@ function _vMainImpl(){
     case"retrait":  return isAdm?vRetrait():"";
     case"import":   return isAdm?vImport():"";
     case"verify":   return isAdm?vVerify():""; // v9.821 — vérification autonome (équipes/horaires/départs/lieux)
+    case"kevininbox": return isAdm?vKevinInbox():""; // v9.840 — messages directs employés → Kevin
     case"importtests": return isAdm?vImportTestResults():""; // v9.521
     case"importversions": return isAdm?vImportVersions():""; // v9.596 — historique V1/V2/V3
     case"parserlearning": return isAdm?vParserLearning():""; // v9.524
@@ -23092,6 +23159,18 @@ function vAccueil(){
   var h='<div class="page bg-casino" style="position:relative">';
   /* v9.480 — Pub Apex AI banner top accueil (Kevin: 'fais la pub à plusieurs endroits') */
   h+=_cmcApexPubBanner("banner");
+  /* v9.840 — « Écrire à Kevin » (problème/question) pour TOUS ; boîte de réception pour l'admin */
+  if(A.user){
+    if(A.user.id===AID){
+      var _kbx=lg("cmc_kevin_inbox",[]);var _kNew=(Array.isArray(_kbx)?_kbx:[]).filter(function(m){return m&&m.status==="new";}).length;
+      h+='<button onclick="sv(\'kevininbox\')" style="width:100%;display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:11px 14px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.28);border-radius:12px;cursor:pointer;text-align:left;min-height:48px">'
+        +'<span style="font-size:20px">💬</span><span style="flex:1;font-size:14px;font-weight:700;color:#c9a227">Messages des employés</span>'
+        +(_kNew?'<span style="font-size:12px;font-weight:800;color:#0a1408;background:#ffdc40;padding:3px 10px;border-radius:12px">'+_kNew+' nouveau'+(_kNew>1?'x':'')+'</span>':'<span style="font-size:12px;color:#8ab888">boîte de réception</span>')+'</button>';
+    }else{
+      h+='<button onclick="cmcOpenContactKevin()" style="width:100%;display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:11px 14px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.28);border-radius:12px;cursor:pointer;text-align:left;min-height:48px">'
+        +'<span style="font-size:20px">💬</span><span style="flex:1;font-size:14px;font-weight:700;color:#c9a227">Écrire à Kevin</span><span style="font-size:12px;color:#8ab888">problème / question</span></button>';
+    }
+  }
   /* Trigger popup 1x par jour si admin a active */
   if(A.user&&A.user.id===AID){
     setTimeout(function(){try{_cmcApexPubPopupShow();}catch(_){}},800);
