@@ -219,7 +219,26 @@
     registerPasskey: registerPasskey,
     loginPasskey: loginPasskey,
     startHeartbeat: startHeartbeat,
+    /* Self-service : chacun gère SES appareils / connexions (uid pris dans le token). */
+    myPasskeys: function () { return _selfFetch('/__sso/passkeys'); },
+    deletePasskey: function (id) { return _selfFetch('/__sso/passkeys/delete', 'POST', { id: id }); },
+    myHistory: function () { return _selfFetch('/__sso/me/history'); },
+    revokeMyOtherSessions: function () {
+      return _selfFetch('/__sso/me/revoke', 'POST').then(function (j) {
+        if (j && j.ok && j.token) setToken(j.token); /* garde CE device connecté */
+        return j;
+      });
+    },
   };
+  /* fetch self-service : joint le pass Bearer (PWA iOS cookie isolé) + cookie. */
+  function _selfFetch(path, method, body) {
+    return fetch(path, {
+      method: method || 'GET', credentials: 'include', cache: 'no-store',
+      headers: authHeaders({ 'content-type': 'application/json' }),
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
+      .catch(function () { return { ok: false, reason: 'neterr' }; });
+  }
 
   /* Auto-démarrage : toute page qui charge kdmc-sso.js garde sa présence à jour.
      Si pas de session, le 1er whoami renvoie null et le battement s'arrête (0 spam). */

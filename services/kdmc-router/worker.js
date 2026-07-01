@@ -430,6 +430,66 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/logout' && request.method === 'POST') {
     return J({ ok: true }, `${SSO_COOKIE}=; Domain=.kd-mc.com; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax`);
   }
+
+  /* ===== Self-service utilisateur : chacun ne voit/gère QUE SES données =====
+     (uid pris dans SON token vérifié — jamais un paramètre → aucun accès croisé). */
+
+  /* Mes appareils (passkeys Face ID) : liste. Session requise. */
+  if (path === '/__sso/passkeys' && request.method === 'GET') {
+    const s = await ssoVerify(secret, ssoToken(request));
+    if (!s) return J({ ok: false, reason: 'session requise' });
+    if (revoked(await accGet(env, s.uid), s)) return J({ ok: false, reason: 'session_revoquee' });
+    let list = [];
+    if (env && env.ACCOUNTS) { try { list = JSON.parse((await env.ACCOUNTS.get('pk:' + s.uid)) || '[]'); } catch { /* fail-open */ } }
+    /* On ne renvoie JAMAIS la clé publique/jwk — juste un aperçu non sensible. */
+    const items = list.map((k) => ({ id: String(k.credId || '').slice(0, 12), created: k.created || 0 }));
+    return J({ ok: true, passkeys: items, count: items.length });
+  }
+  /* Supprimer un de MES appareils. Session VÉRIFIÉE requise (tu as prouvé Face ID
+     cette session) → un token faible volé ne peut pas retirer tes passkeys.
+     Pas de lockout : sans passkey, le login retombe sur nom+code (fail-open). */
+  if (path === '/__sso/passkeys/delete' && request.method === 'POST') {
+    const s = await ssoVerify(secret, ssoToken(request));
+    if (!s) return J({ ok: false, reason: 'session requise' });
+    if (!s.verified) return J({ ok: false, reason: 'Face ID requis pour gérer tes appareils' });
+    if (revoked(await accGet(env, s.uid), s)) return J({ ok: false, reason: 'session_revoquee' });
+    let b = {}; try { b = await request.json(); } catch { /* ignore */ }
+    const id = String(b.id || b.credId || '').trim();
+    if (!id || !env || !env.ACCOUNTS) return J({ ok: false, reason: 'id requis' });
+    let list = []; try { list = JSON.parse((await env.ACCOUNTS.get('pk:' + s.uid)) || '[]'); } catch { /* */ }
+    const next = list.filter((k) => String(k.credId || '').slice(0, 12) !== id && k.credId !== id);
+    await env.ACCOUNTS.put('pk:' + s.uid, JSON.stringify(next));
+    if (next.length === 0) { const acc = await accGet(env, s.uid); if (acc && acc.passkey) { acc.passkey = false; await accPut(env, acc, true); } }
+    return J({ ok: true, removed: list.length - next.length, remaining: next.length });
+  }
+  /* Mon historique de connexions (le mien uniquement). Session requise. */
+  if (path === '/__sso/me/history' && request.method === 'GET') {
+    const s = await ssoVerify(secret, ssoToken(request));
+    if (!s) return J({ ok: false, reason: 'session requise' });
+    const acc = await accGet(env, s.uid);
+    if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
+    return J({
+      ok: true, uid: s.uid, name: s.name,
+      hits: (acc && acc.hits) || 0,
+      devices: (acc && acc.devices) || [],
+      apps: (acc && acc.apps) || {},
+      history: (acc && acc.history) || [],
+    });
+  }
+  /* « Déconnecter mes AUTRES appareils » : je révoque mes sessions puis on émet un
+     token frais pour CE device (il reste connecté) → les autres tombent. */
+  if (path === '/__sso/me/revoke' && request.method === 'POST') {
+    const s = await ssoVerify(secret, ssoToken(request));
+    if (!s) return J({ ok: false, reason: 'session requise' });
+    const acc = (await accGet(env, s.uid)) || { uid: s.uid, name: s.name };
+    if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
+    acc.revoked_at = Date.now();
+    await accPut(env, acc, true);
+    /* token frais pour CE device (iat >= revoked_at → survit ; les autres non) */
+    const token = await ssoSign(secret, s.uid, s.name, s.cgu, s.verified);
+    const cookie = `${SSO_COOKIE}=${token}; Domain=.kd-mc.com; Path=/; Max-Age=${SSO_TTL}; Secure; HttpOnly; SameSite=Lax`;
+    return J({ ok: true, token, revoked_at: acc.revoked_at }, cookie);
+  }
   return J({ ok: false, reason: 'not_found' });
 }
 

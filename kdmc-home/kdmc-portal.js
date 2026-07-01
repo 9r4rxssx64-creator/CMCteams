@@ -87,8 +87,92 @@
          n'est PAS verified → ne voit rien (leçon #99 : un nom auto-déclaré n'accorde aucun droit). */
       var isPriv = !!(s && s.admin) || (!!(s && s.verified) && named);
       priv.hidden = !isPriv;
+      renderSelfService(s); /* « Mes appareils / connexions » — pour TOUT connecté */
     };
     if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }
+  }
+
+  /* ===== Self-service : chacun voit/gère SES appareils + SON historique ===== */
+  function _ago(ts) {
+    if (!ts) return '—';
+    var d = Date.now() - ts, m = Math.floor(d / 6e4), h = Math.floor(d / 36e5), j = Math.floor(d / 864e5);
+    if (m < 1) return "à l'instant"; if (m < 60) return 'il y a ' + m + ' min'; if (h < 24) return 'il y a ' + h + ' h'; return 'il y a ' + j + ' j';
+  }
+  function _dt(ts) { try { return ts ? new Date(ts).toLocaleString('fr-FR') : '—'; } catch (e) { return '—'; } }
+  function _dur(ms) { ms = ms || 0; if (ms < 60000) return '< 1 min'; var m = Math.round(ms / 60000); if (m < 60) return m + ' min'; var h = Math.floor(m / 60); m = m % 60; return h + ' h' + (m ? (' ' + m) : ''); }
+  var APP_NM = {
+    'cmcteams.kd-mc.com': '📅 CMCteams', 'apex-ai.kd-mc.com': '🤖 Apex AI', 'apex-chat.kd-mc.com': '💬 Apex Chat',
+    'dashboard.kd-mc.com': '📊 Dashboard', 'sourcing.kd-mc.com': '📦 Sourcing', 'coffre.kd-mc.com': '🔐 Coffre',
+    'kd-mc.com': '🏠 Portail', 'www.kd-mc.com': '🏠 Portail', 'la-detente.kd-mc.com': '🌿 La Détente',
+    'chez-lolo.kd-mc.com': '🎨 Chez Lolo', 'departs.kd-mc.com': '🎯 CMCteams light', 'cmcteams-light.kd-mc.com': '🎯 CMCteams light'
+  };
+  function _appNm(h) { return APP_NM[h] || ('🌐 ' + (h || '?')); }
+  function renderSelfService(s) {
+    var box = document.getElementById('self-svc');
+    if (!box) return;
+    if (!s || !s.uid) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    box.innerHTML = '<h2 class="cat">🔐 Mes appareils &amp; connexions</h2>'
+      + '<div id="ss-pk" class="ss-card">Chargement…</div>'
+      + '<div id="ss-hist" class="ss-card"></div>';
+    loadMyPasskeys();
+    loadMyHistory();
+  }
+  function loadMyPasskeys() {
+    var el = document.getElementById('ss-pk');
+    if (!el || !window.kdmcSSO || !window.kdmcSSO.myPasskeys) return;
+    window.kdmcSSO.myPasskeys().then(function (j) {
+      if (!el) return;
+      if (!j || !j.ok) { el.innerHTML = '<b>📱 Mes appareils Face ID</b><div class="ss-mut">Indisponible pour le moment.</div>'; return; }
+      var pk = j.passkeys || [];
+      var rows = pk.length
+        ? pk.map(function (k) {
+          return '<div class="ss-row"><span>🔑 Appareil <code>' + esc(k.id) + '…</code>'
+            + '<span class="ss-mut"> — ajouté ' + esc(_ago(k.created)) + '</span></span>'
+            + '<button class="ss-del" data-pk="' + esc(k.id) + '" type="button">Retirer</button></div>';
+        }).join('')
+        : '<div class="ss-mut">Aucun appareil Face ID enregistré. Ajoute-en un pour te connecter d\'un regard.</div>';
+      el.innerHTML = '<b>📱 Mes appareils Face ID</b>' + rows
+        + '<button class="ss-act" id="ss-revoke" type="button">🚪 Déconnecter mes autres appareils</button>';
+      var rv = document.getElementById('ss-revoke');
+      if (rv) rv.addEventListener('click', function () {
+        if (!confirm('Déconnecter tous tes AUTRES appareils ?\n\nCE téléphone reste connecté ; les autres devront se reconnecter (Face ID ou code).')) return;
+        rv.disabled = true; rv.textContent = '…';
+        window.kdmcSSO.revokeMyOtherSessions().then(function (r) {
+          rv.textContent = (r && r.ok) ? '✅ Autres appareils déconnectés' : '⚠️ Échec — réessaie';
+          if (!(r && r.ok)) rv.disabled = false;
+        });
+      });
+      el.querySelectorAll('.ss-del').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (!confirm('Retirer cet appareil Face ID ?\n\nTu pourras toujours te connecter avec ton nom + code.')) return;
+          b.disabled = true; b.textContent = '…';
+          window.kdmcSSO.deletePasskey(b.getAttribute('data-pk')).then(function (r) {
+            if (r && r.ok) loadMyPasskeys();
+            else { b.disabled = false; b.textContent = (r && r.reason === 'Face ID requis pour gérer tes appareils') ? '🔒 Face ID requis' : 'Réessaie'; }
+          });
+        });
+      });
+    });
+  }
+  function loadMyHistory() {
+    var el = document.getElementById('ss-hist');
+    if (!el || !window.kdmcSSO || !window.kdmcSSO.myHistory) return;
+    window.kdmcSSO.myHistory().then(function (j) {
+      if (!el) return;
+      if (!j || !j.ok) { el.innerHTML = ''; return; }
+      var hist = (j.history || []).slice(0, 20);
+      var rows = hist.length
+        ? hist.map(function (e) {
+          return '<div class="ss-hrow">' + esc(_dt(e.ts)) + ' · <b>' + esc(_appNm(e.app)) + '</b>'
+            + ' <span class="ss-dur">⏱ ' + esc(_dur((e.end || e.ts) - e.ts)) + '</span>'
+            + (e.place ? ' <span class="ss-mut">· ' + esc(e.place) + '</span>' : '') + '</div>';
+        }).join('')
+        : '<div class="ss-mut">Aucune connexion enregistrée pour l\'instant.</div>';
+      el.innerHTML = '<b>🕘 Mes ' + (hist.length ? hist.length + ' dernières ' : '') + 'connexions</b>'
+        + '<div class="ss-mut" style="margin:2px 0 8px">' + (j.hits || 0) + ' connexion' + ((j.hits || 0) > 1 ? 's' : '') + ' au total.</div>'
+        + rows;
+    });
   }
 
   function showHub(name) {
