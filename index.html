@@ -5549,7 +5549,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.841";
+var APP_VER="v9.842";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11731,7 +11731,7 @@ function vKevinInbox(){
   return h+'</div>';
 }
 function _cmcRelTime(ts){try{var d=Date.now()-ts;if(d<60000)return"à l'instant";if(d<3600000)return Math.floor(d/60000)+" min";if(d<86400000)return Math.floor(d/3600000)+" h";return Math.floor(d/86400000)+" j";}catch(_){return"";}}
-function cmcOpenFiche(uid){window._ficheUid=uid;A.view="fiche";dc();}
+function cmcOpenFiche(uid){window._ficheBack=(A.view&&A.view!=="fiche")?A.view:"emps";window._ficheUid=uid;A.view="fiche";dc();}
 // v9.841 (Kevin 2026-07-01 « l'historique remonte dans chaque fiche perso avec toutes les
 // infos possibles » + « Oubli pas la map, position live, historique, travail, question,
 // effectué demandé »). FICHE PERSO COMPLÈTE (admin) : agrège TOUT pour un employé —
@@ -11742,11 +11742,11 @@ function vFichePerso(uid){
   uid=uid||window._ficheUid||"";
   var emp=(A.employees||[]).find(function(e){return e.id===uid;});
   var reg=(A.reg&&A.reg[uid])||{};
-  if(!emp&&!reg.nom)return '<div class="page" style="padding:14px"><button class="btn ghost" onclick="A.view=\'kevininbox\';dc()">← Retour</button><div class="card" style="margin-top:10px">Employé introuvable ('+esc(uid)+').</div></div>';
+  if(!emp&&!reg.nom)return '<div class="page" style="padding:14px"><button class="btn ghost" onclick="A.view=(window._ficheBack||\'emps\');dc()">← Retour</button><div class="card" style="margin-top:10px">Employé introuvable ('+esc(uid)+').</div></div>';
   var nm=(emp&&emp.name)||((reg.nom||"")+" "+(reg.prenom||"")).trim()||uid;
   var key=A.year+"-"+A.month;
   var h='<div class="page" style="padding:14px;max-width:760px;margin:0 auto">';
-  h+='<button class="btn ghost" onclick="history.length>1?history.back():(A.view=\'kevininbox\',dc())" style="margin-bottom:10px">← Retour</button>';
+  h+='<button class="btn ghost" onclick="A.view=(window._ficheBack||\'emps\');dc()" style="margin-bottom:10px">← Retour</button>';
   h+='<div class="sec-title" style="margin-bottom:10px">📇 Fiche complète — '+esc(nm)+'</div>';
   // ── Identité ──
   h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid #c9a227">'
@@ -31415,6 +31415,8 @@ function vUsersActivity(){
       var maxC=r.top5[0].c||1;
       r.top5.forEach(function(t){var w=Math.round(t.c*100/maxC);h+='<div style="margin:3px 0"><div style="display:flex;justify-content:space-between;font-size:11px"><span>'+esc(t.k)+'</span><span style="color:#c9a227;font-weight:700">'+t.c+'</span></div><div style="height:4px;background:rgba(201,162,39,.15);border-radius:2px"><div style="width:'+w+'%;height:100%;background:#c9a227;border-radius:2px"></div></div></div>';});
     }else{h+='<div style="font-size:11px;color:#7a9a7a;font-style:italic">Aucune action dans le journal d\'audit</div>';}
+    // v9.842 — lien vers la FICHE COMPLÈTE (identité/travail/position/map/historique/demandes/messages)
+    h+='<button onclick="event.stopPropagation();cmcOpenFiche(\''+esc(r.uid)+'\')" class="btn ghost" style="margin-top:8px;font-size:12px;padding:6px 10px;width:100%;min-height:40px">📇 Ouvrir la fiche complète</button>';
     h+='</div></div>';
   });
   h+='</div>';return h;
