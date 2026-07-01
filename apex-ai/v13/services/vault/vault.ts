@@ -693,20 +693,20 @@ class Vault {
     try {
       encrypted = await this.encryptAuto(plaintext);
     } catch (err: unknown) {
-      logger.error('vault', 'setKey encrypt failed → emergency raw backup Firebase', { err, storageKey });
-      /* v13.4.6 (Kevin "ne JAMAIS perdre une clé déposée") : si chiffrement échoue,
-       * push brut vers Firebase emergency path (rules Firebase doivent être privées).
-       * Sera ré-essayé chiffré au prochain boot. */
+      logger.error('vault', 'setKey encrypt failed → emergency LOCAL stash (jamais Firebase en clair)', { err, storageKey });
+      /* v13.4.x SÉCU (audit externe P0) : si le chiffrement échoue, on NE POUSSE JAMAIS
+       * la clé EN CLAIR vers Firebase (base ouverte = fuite). Stash LOCAL uniquement
+       * (même niveau de risque que l'historique de passphrase local, jamais synchronisé) ;
+       * ré-essai chiffré au prochain boot. On préserve « ne jamais perdre une clé ». */
       try {
-        const { firebase } = await import('../storage/firebase.js');
-        await firebase.write(`vault_emergency/${storageKey}`, {
-          plaintext, /* CHIFFRÉ par les Firebase rules privées Kevin */
+        localStorage.setItem(`apex_v13_vault_emergency_${storageKey}`, JSON.stringify({
+          plaintext,
           ts: Date.now(),
           reason: 'encrypt_failed',
-        });
-        return { ok: true, persisted: { local: false, idb: false, firebase: true } };
-      } catch (fbErr: unknown) {
-        logger.error('vault', 'setKey emergency Firebase ALSO failed', { fbErr, storageKey });
+        }));
+        return { ok: true, persisted: { local: true, idb: false, firebase: false } };
+      } catch (lsErr: unknown) {
+        logger.error('vault', 'setKey emergency LOCAL stash ALSO failed', { lsErr, storageKey });
       }
       return { ok: false, persisted };
     }
