@@ -106,6 +106,31 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 </script>
 </head>
 <body>
+<!-- v1.20 (Kevin 2026-07-01 « J'ai partagé la PWA CMCteams light. Les personnes se connectent
+     sans rien valider. Rien n'est demandé. Cgu, fiche, rien ») — GATE 1ère connexion : nom +
+     prénom (règle LOGIN TOUJOURS PRÉNOM + NOM) + acceptation CGU. Ensuite reconnu auto. -->
+<div id="depGate" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#0a140c,#060d08);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top) + 24px) 18px calc(env(safe-area-inset-bottom) + 24px)">
+  <div style="max-width:420px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:26px;font-weight:900;color:var(--gold2);letter-spacing:.5px">CMCteams light</div>
+      <div style="font-size:14px;color:#9ec2a4;margin-top:6px">Ordres de départ — accès réservé au personnel</div>
+    </div>
+    <div style="background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.25);border-radius:14px;padding:18px 16px">
+      <div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:12px">👋 Première connexion — identifie-toi</div>
+      <label style="display:block;font-size:13px;color:#a8c4ac;margin:0 0 4px">Prénom</label>
+      <input id="gatePrenom" autocomplete="given-name" placeholder="Ton prénom" style="width:100%;box-sizing:border-box;min-height:46px;padding:10px 12px;margin-bottom:12px;border-radius:10px;border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);font-size:16px">
+      <label style="display:block;font-size:13px;color:#a8c4ac;margin:0 0 4px">Nom</label>
+      <input id="gateNom" autocomplete="family-name" placeholder="Ton nom de famille" style="width:100%;box-sizing:border-box;min-height:46px;padding:10px 12px;margin-bottom:14px;border-radius:10px;border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);font-size:16px">
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#c8e0cc;line-height:1.5;cursor:pointer;margin-bottom:6px">
+        <input type="checkbox" id="gateCgu" style="width:20px;height:20px;margin-top:1px;flex-shrink:0;accent-color:#c9a227">
+        <span>J'accepte les conditions : outil <b>interne SBM</b> (planning). Mes nom et prénom servent à ouvrir mon équipe et à savoir qui consulte. <b>Aucune donnée n'est partagée à l'extérieur.</b></span>
+      </label>
+      <div id="gateErr" style="font-size:13px;color:#e0a0a0;min-height:18px;margin:4px 0 8px"></div>
+      <button onclick="_depSubmitGate()" style="width:100%;min-height:52px;font-size:17px;font-weight:800;background:linear-gradient(135deg,#c9a227,#a8821f);border:none;color:#0a0f0c;border-radius:12px;cursor:pointer">Accéder aux départs</button>
+    </div>
+    <div style="text-align:center;font-size:11px;color:#5a7060;margin-top:14px">🔒 Tu ne seras plus redemandé sur cet appareil.</div>
+  </div>
+</div>
 <header>
   <div>
     <h1>CMCteams light</h1>
@@ -162,13 +187,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.19</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.20</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.19";
+var APP_VER="v1.20";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -747,6 +772,41 @@ BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
 CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
 fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
 if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
+// v1.20 — GATE 1ère connexion : si pas d'identité stockée sur cet appareil, on demande
+// nom + prénom (règle LOGIN TOUJOURS PRÉNOM + NOM) + CGU AVANT de laisser voir les départs.
+// Ensuite reconnu auto (localStorage). Fail-open : jamais de lockout (repli si erreur).
+function _depHasIdentity(){ try{ var v=JSON.parse(localStorage.getItem("cmc_dep_identity")||"null"); return !!(v&&v.cgu&&v.nom&&v.prenom); }catch(_){ return false; } }
+function _depShowGate(){ try{
+    var g=document.getElementById("depGate"); if(!g)return;
+    // pré-remplir depuis ?me= / ME si dispo (nom SBM « NOM I ») — confort, la CGU reste requise
+    try{ var toks=String(ME||"").trim().split(/\s+/); if(toks.length>=1&&toks[0]){ var np=document.getElementById("gateNom"); if(np&&!np.value)np.value=toks[0]; } }catch(_){}
+    g.style.display="block";
+    setTimeout(function(){ try{ var p=document.getElementById("gatePrenom"); if(p)p.focus(); }catch(_){} },200);
+  }catch(_){}
+}
+function _depSubmitGate(){
+  try{
+    var prenom=((document.getElementById("gatePrenom")||{}).value||"").trim();
+    var nom=((document.getElementById("gateNom")||{}).value||"").trim();
+    var cgu=!!(document.getElementById("gateCgu")||{}).checked;
+    var err=document.getElementById("gateErr");
+    if(prenom.length<2||nom.length<2){ if(err)err.textContent="Indique ton prénom ET ton nom (au moins 2 lettres chacun)."; return; }
+    if(!cgu){ if(err)err.textContent="Coche la case pour accepter les conditions."; return; }
+    var ident={prenom:prenom,nom:nom,cgu:true,ts:Date.now()};
+    try{ localStorage.setItem("cmc_dep_identity",JSON.stringify(ident)); }catch(_){}
+    // ME au format SBM « NOM I » pour ouvrir son équipe si elle existe
+    try{ var meName=(nom+" "+prenom.charAt(0)).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,""); ME=meName; localStorage.setItem("cmc_dep_me",meName);
+      var bid=boardForName(meName); if(bid&&BOARDS[bid]){ BID=bid; CURMO=BOARDS[bid].year+"-"+BOARDS[bid].monthIdx; } }catch(_){}
+    // Fiche/accès → Firebase (best-effort) : l'admin voit QUI consulte (comme cmc_userlog)
+    try{ if(typeof window._depLogAccess==="function")window._depLogAccess(ident); }catch(_){}
+    var g=document.getElementById("depGate"); if(g)g.style.display="none";
+    try{ fillMeSel(); fillMoSel(); load(); render(); paintAppDiag(); }catch(_){}
+    try{ if(typeof toast==="function")toast("Bienvenue "+prenom+" 👋"); }catch(_){}
+  }catch(e){ // fail-open : en cas d'erreur, ne bloque personne
+    try{ var g2=document.getElementById("depGate"); if(g2)g2.style.display="none"; }catch(_){}
+  }
+}
+if(!_depHasIdentity()){ _depShowGate(); }
 // ===== Firebase LIVE (cross-device) — App→Page : lit le planning de l'app et
 // reconstruit les boards en direct, sur N'IMPORTE QUEL appareil (pas seulement
 // celui où l'app a tourné). Repli sur les boards committés si Firebase KO/offline.
@@ -815,6 +875,19 @@ if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app 
   // v1.17 — CHEFS D'ÉQUIPE : liste synchronisée cross-appareil (clé DÉDIÉE cmc_dep_chefs,
   // ne touche JAMAIS cmc_ov/le planning). L'admin désigne → PUT ; le chef pull au boot →
   // son appareil le reconnaît (droit d'écrire NR/5e sur son équipe).
+  // v1.20 — FICHE/ACCÈS : à la 1ère connexion, enregistre QUI consulte (nom+prénom+appareil)
+  // dans un node dédié cmc_dep_access/<clé> (best-effort, ne bloque jamais). L'admin peut
+  // ainsi savoir qui a accédé au lien partagé. Ne touche jamais cmc_ov/le planning.
+  window._depLogAccess=function(ident){
+    try{
+      if(!ident||!ident.nom)return;
+      var raw=((ident.nom||"")+"_"+(ident.prenom||"")).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+      var k=raw.replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60)||("USER_"+String(ident.ts||0));
+      var rec={nom:ident.nom,prenom:ident.prenom,cgu:true,ts:ident.ts||0,ua:(navigator.userAgent||"").slice(0,180),last:ident.ts||0};
+      fetch(FBURL+FBPATH+"/cmc_dep_access/"+encodeURIComponent(k)+".json"+_qs(),
+        {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)}).then(function(){}).catch(function(){});
+    }catch(_){}
+  };
   window._depSyncChefs=function(list){
     try{ fetch(FBURL+FBPATH+"/cmc_dep_chefs.json"+_qs(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(list||[])})
       .then(function(r){ if(typeof toast==="function"&&r.ok)toast("⭐ Chefs synchronisés (tous appareils)"); }).catch(function(){}); }catch(_){}
