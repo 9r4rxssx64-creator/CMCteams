@@ -67,6 +67,12 @@ ok(await page.evaluate((u) => { A.user = A.employees.find(e => e.id !== 'U11804'
 // 5) uid introuvable → message d'erreur propre (pas de crash)
 ok(await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); return /introuvable/i.test(vFichePerso('U_INEXISTANT_XYZ')); }), 'uid introuvable → message propre (pas de crash)');
 
+// 6) la vue EXISTANTE « Activité par utilisateur » lie vers la fiche complète (pas de doublon parallèle)
+ok(await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); return /cmcOpenFiche\(/.test(vUsersActivity()) && /Ouvrir la fiche compl/.test(vUsersActivity()); }), 'vUsersActivity relie vers la fiche complète (cmcOpenFiche)');
+
+// 7) cmcOpenFiche mémorise la vue d'origine → « ← Retour » y revient
+ok(await page.evaluate((u) => { A.user = A.employees.find(e => e.id === 'U11804'); A.view = 'usersactivity'; cmcOpenFiche(u); return window._ficheBack === 'usersactivity' && /_ficheBack/.test(vFichePerso(u)); }, uid), 'cmcOpenFiche mémorise l\'origine + Retour y revient');
+
 await browser.close();
 console.log('\nFICHE PERSO : ' + pass + ' OK / ' + fail + ' KO');
 process.exit(fail ? 1 : 0);
