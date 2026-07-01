@@ -158,7 +158,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.14.1";
+var APP_VER="v1.15";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -503,10 +503,13 @@ function render(){
   ST.order.forEach(function(nm){ if(nm===anchor)return; var miss=0;
     for(var d=1;d<=B.days;d++){ if(sched(nm,d)&&sched(anchor,d) && isRest(ST.codes[nm][d])!==isRest(ST.codes[anchor][d])) miss++; }
     if(miss>=2) bad.push(nm+" ("+miss+"j)"); });
+  // v1.15 (Kevin 2026-07-01 « efface les infos avec le trait vert ✅, seulement pour admin ») :
+  // le ✅ « équipe validée » n'est utile qu'à l'admin → masqué en lecture seule ; les ⚠️
+  // (vrais problèmes à vérifier) et le 🛌 (absents) restent toujours visibles.
   document.getElementById("restCheck").innerHTML = B.kind==="abs"
     ? "🛌 Absents tout le mois (M/CP/FORMATION) — pas d'ordre de départ. Chacun a bien son planning."
     : (bad.length===0
-      ? "<b>✅ Jours de repos cohérents</b> sur la période commune ("+ST.order.length+" chefs) — équipe validée."
+      ? (isAdmin() ? "<b>✅ Jours de repos cohérents</b> sur la période commune ("+ST.order.length+" chefs) — équipe validée." : "")
       : "<span class='warn'>⚠️ Repos différents</span> pour : "+bad.join(", ")+" → vérifier (lecture imprécise ou équipe miroir).");
   // bannière "Ma vue" : équipe + miroir de la personne choisie
   var mb=document.getElementById("meBanner");
@@ -631,13 +634,13 @@ function setMe(val){ var nm=val;
   // « ma vue » → MON équipe POUR LE MOIS affiché (pas le 1er board trouvé tous mois)
   if(nm){ var bid=teamForMeInMonth()||boardForName(nm); if(bid&&bid!==BID){ switchBoard(bid); return; } } render(); }
 
-function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; toast("Verrouillé — lecture seule"); }
+function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; render(); paintAppDiag(); toast("Verrouillé — lecture seule"); }
   else { document.getElementById("pinModal").classList.add("on"); setTimeout(function(){var e=document.getElementById("pinIn");if(e){e.value="";e.focus();}},60); } }
 function closePin(){ document.getElementById("pinModal").classList.remove("on"); }
 async function sha256(s){ var b=new TextEncoder().encode(s); var h=await crypto.subtle.digest("SHA-256",b);
   return Array.from(new Uint8Array(h)).map(function(x){return x.toString(16).padStart(2,"0");}).join(""); }
 async function checkPin(){ var h=await sha256((document.getElementById("pinIn").value||"").trim());
-  if(h===PIN_SHA256){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); toast("Mode admin activé"); }
+  if(h===PIN_SHA256){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); paintAppDiag(); toast("Mode admin activé"); }
   else toast("Code incorrect"); }
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&document.getElementById("pinModal").classList.contains("on"))checkPin(); });
 function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(window._tt); window._tt=setTimeout(function(){t.classList.remove("on");},2200); }
@@ -659,6 +662,10 @@ function paintAppDiag(){ var el=document.getElementById("appDiag"); if(!el)retur
   var d=window._appBoardDiag||{};
   var hasGen=!!(window.DEPARTS_GEN&&window.DEPARTS_GEN.months&&window.DEPARTS_GEN.months.length);
   var warn=hasGen?false:(!d.cmc_e||!d.hasKey||!(d.added>0));
+  // v1.15 : bandeau vert ✅ « Plannings à jour » masqué en lecture seule (info admin) ;
+  // les ⚠️ (importer le PDF) restent toujours affichés.
+  if(!warn && !isAdmin()){ el.style.display="none"; el.innerHTML=""; return; }
+  el.style.display="";
   el.innerHTML=(warn?"<span class='warn'>":"<b style='color:var(--gold2)'>")+_appDiagText()+(warn?"</span>":"</b>"); }
 function forceRefresh(){ var go=function(){location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());};
   if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));})
