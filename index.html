@@ -5549,7 +5549,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.842";
+var APP_VER="v9.843";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11731,7 +11731,7 @@ function vKevinInbox(){
   return h+'</div>';
 }
 function _cmcRelTime(ts){try{var d=Date.now()-ts;if(d<60000)return"à l'instant";if(d<3600000)return Math.floor(d/60000)+" min";if(d<86400000)return Math.floor(d/3600000)+" h";return Math.floor(d/86400000)+" j";}catch(_){return"";}}
-function cmcOpenFiche(uid){window._ficheBack=(A.view&&A.view!=="fiche")?A.view:"emps";window._ficheUid=uid;A.view="fiche";dc();}
+function cmcOpenFiche(uid){if(!A.user||A.user.id!==AID)return;/* fiche = données réservées à l'admin (identité/position/historique/messages) */window._ficheBack=(A.view&&A.view!=="fiche")?A.view:"employees";window._ficheUid=uid;A.view="fiche";dc();}
 // v9.841 (Kevin 2026-07-01 « l'historique remonte dans chaque fiche perso avec toutes les
 // infos possibles » + « Oubli pas la map, position live, historique, travail, question,
 // effectué demandé »). FICHE PERSO COMPLÈTE (admin) : agrège TOUT pour un employé —

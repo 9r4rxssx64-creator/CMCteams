@@ -67,6 +67,9 @@ ok(await page.evaluate((u) => { A.user = A.employees.find(e => e.id !== 'U11804'
 // 5) uid introuvable → message d'erreur propre (pas de crash)
 ok(await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); return /introuvable/i.test(vFichePerso('U_INEXISTANT_XYZ')); }), 'uid introuvable → message propre (pas de crash)');
 
+// 5b) SÉCURITÉ — cmcOpenFiche est un NO-OP pour un non-admin (données réservées admin)
+ok(await page.evaluate((u) => { A.user = A.employees.find(e => e.id !== 'U11804'); A.view = 'accueil'; window._ficheUid = ''; cmcOpenFiche(u); return A.view === 'accueil' && window._ficheUid !== u; }, uid), 'cmcOpenFiche no-op pour non-admin (guard défense-en-profondeur)');
+
 // 6) la vue EXISTANTE « Activité par utilisateur » lie vers la fiche complète (pas de doublon parallèle)
 ok(await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); return /cmcOpenFiche\(/.test(vUsersActivity()) && /Ouvrir la fiche compl/.test(vUsersActivity()); }), 'vUsersActivity relie vers la fiche complète (cmcOpenFiche)');
 
