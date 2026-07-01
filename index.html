@@ -5392,6 +5392,31 @@ function _stripPersistedTeamFamHistory(empsArr){
     console.log("[v9.707 redetect-boot] "+_wiped+" teamHistory entries wiped — re-detection au prochain dc()");
   }catch(_e){console.warn("[v9.707 redetect-boot]",_e);}
 })();
+// v9.844 — SÉCU P0 (audit externe) : purge des mots de passe EN CLAIR (champ .clear) de
+// cmc_pw. Ils étaient synchronisés dans la base Firebase ouverte → lisibles. On ne stocke
+// plus JAMAIS le clair (seul le hash .h). Ce scrub nettoie l'existant en local ET re-pousse
+// le cmc_pw nettoyé pour effacer le clair déjà présent dans Firebase (comme le scrub iaKey).
+(function _cmcScrubClearPasswords(){
+  try{
+    if(localStorage.getItem("cmc_v844_pw_scrub_done"))return;
+    var raw=localStorage.getItem("cmc_pw");
+    if(!raw){localStorage.setItem("cmc_v844_pw_scrub_done","1");return;}
+    var pw=JSON.parse(raw); if(!pw||typeof pw!=="object"){localStorage.setItem("cmc_v844_pw_scrub_done","1");return;}
+    var n=0;
+    Object.keys(pw).forEach(function(uid){
+      var e=pw[uid];
+      if(e&&typeof e==="object"&&("clear" in e)){ delete e.clear; n++; }
+    });
+    localStorage.setItem("cmc_pw",JSON.stringify(pw));
+    localStorage.setItem("cmc_v844_pw_scrub_done",JSON.stringify({ts:Date.now(),scrubbed:n}));
+    // Re-pousse le cmc_pw nettoyé vers Firebase dès que fbWrite est prêt (efface le clair distant)
+    if(n>0){ var _t=0,_iv=setInterval(function(){ _t++;
+      if(typeof fbWrite==="function"){ clearInterval(_iv); try{fbWrite("cmc_pw",pw);}catch(_){} }
+      else if(_t>40){ clearInterval(_iv); } // ~20s max
+    },500); }
+    if(n>0)console.log("[v9.844 pw-scrub] "+n+" mots de passe en clair purgés (local + Firebase)");
+  }catch(_e){console.warn("[v9.844 pw-scrub]",_e);}
+})();
 // v9.710 — Re-trigger forcé du re-detect (Kevin "Tu m'as les vraies équipes, ça ne
 // fonctionne pas. Des équipes de 1 ou 2, pas d'équipe miroir, mon équipe pas en
 // première"). Cause : teamHistory stale d'un import précédent (avant v9.707) →
@@ -5549,7 +5574,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.843";
+var APP_VER="v9.844";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11742,11 +11767,11 @@ function vFichePerso(uid){
   uid=uid||window._ficheUid||"";
   var emp=(A.employees||[]).find(function(e){return e.id===uid;});
   var reg=(A.reg&&A.reg[uid])||{};
-  if(!emp&&!reg.nom)return '<div class="page" style="padding:14px"><button class="btn ghost" onclick="A.view=(window._ficheBack||\'emps\');dc()">← Retour</button><div class="card" style="margin-top:10px">Employé introuvable ('+esc(uid)+').</div></div>';
+  if(!emp&&!reg.nom)return '<div class="page" style="padding:14px"><button class="btn ghost" onclick="A.view=(window._ficheBack||\'employees\');dc()">← Retour</button><div class="card" style="margin-top:10px">Employé introuvable ('+esc(uid)+').</div></div>';
   var nm=(emp&&emp.name)||((reg.nom||"")+" "+(reg.prenom||"")).trim()||uid;
   var key=A.year+"-"+A.month;
   var h='<div class="page" style="padding:14px;max-width:760px;margin:0 auto">';
-  h+='<button class="btn ghost" onclick="A.view=(window._ficheBack||\'emps\');dc()" style="margin-bottom:10px">← Retour</button>';
+  h+='<button class="btn ghost" onclick="A.view=(window._ficheBack||\'employees\');dc()" style="margin-bottom:10px">← Retour</button>';
   h+='<div class="sec-title" style="margin-bottom:10px">📇 Fiche complète — '+esc(nm)+'</div>';
   // ── Identité ──
   h+='<div class="card" style="margin-bottom:10px;padding:12px;border-left:4px solid #c9a227">'
@@ -16344,7 +16369,7 @@ function stepRegister(){
   A.reg[finalUid]={nom:nom,prenom:prenom,email:email,matricule:matIn||finalUid,createdAt:Date.now(),verified:false};
   ls("cmc_reg",A.reg);
   // v9.151 — clear stock\u00e9 LOCAL uniquement (filtr\u00e9 avant Firebase) pour que l'admin puisse voir
-  A.passwords[finalUid]={h:hashPwStrong(pw1),clear:pw1};
+  A.passwords[finalUid]={h:hashPwStrong(pw1)};
   // Migrer le compte temp si UID a changé
   if(finalUid!==loginUid){
     delete A.passwords[loginUid];
@@ -33025,15 +33050,7 @@ function vEmps(){
                   +'<button onclick="doResetPwDirect(\''+emp.id+'\')" aria-label="R\u00e9initialiser le mot de passe" style="background:rgba(160,60,60,.12);border:1px solid rgba(160,60,60,.3);border-radius:5px;color:#c07070;font-size:13px;padding:3px 8px;cursor:pointer;flex-shrink:0;font-weight:700">\ud83d\udd04 R\u00e9init.</button>'
                   :'<span style="font-size:14px;color:#c9a227;font-style:italic">\u26a0\ufe0f Non cr\u00e9\u00e9</span>'}
               </div>
-              ${A.passwords[emp.id]&&A.passwords[emp.id].clear?(function(){
-                var _shId="empPwShow_"+emp.id;
-                return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;padding:6px 10px;background:rgba(58,138,80,.08);border:1px solid rgba(58,138,80,.25);border-radius:6px">'
-                  +'<span style="font-size:12px;color:#5a8a60;text-transform:uppercase;letter-spacing:.5px">Actuel :</span>'
-                  +'<span id="'+_shId+'" data-masked="true" data-clear="'+esc(A.passwords[emp.id].clear)+'" style="font-size:15px;font-family:monospace;color:#c0d8a8;font-weight:700;letter-spacing:2px;user-select:all">\u2022\u2022\u2022\u2022\u2022\u2022</span>'
-                  +'<button onclick="var el=document.getElementById(\''+_shId+'\');if(el.dataset.masked===\'true\'){el.textContent=el.dataset.clear;el.dataset.masked=\'false\';this.innerHTML=\'\ud83d\ude48\';}else{el.textContent=\'\u2022\u2022\u2022\u2022\u2022\u2022\';el.dataset.masked=\'true\';this.innerHTML=\'\ud83d\udc41\ufe0f\';}" aria-label="Afficher/masquer le mot de passe" style="background:transparent;border:1px solid rgba(201,162,39,.3);border-radius:5px;padding:3px 7px;color:#c9a227;font-size:14px;cursor:pointer">\ud83d\udc41\ufe0f</button>'
-                  +'<button onclick="var c=this.parentElement.querySelector(\'[data-clear]\').dataset.clear;if(navigator.clipboard){navigator.clipboard.writeText(c);toast(\'Copi\u00e9\');}else{toast(c);}" aria-label="Copier le mot de passe" style="background:transparent;border:1px solid rgba(201,162,39,.3);border-radius:5px;padding:3px 7px;color:#c9a227;font-size:13px;cursor:pointer">\ud83d\udccb</button>'
-                  +'</div>';
-              })():""}
+              ${A.passwords[emp.id]?'<div style="font-size:12px;color:#7a9a7a;margin-bottom:5px;padding:5px 10px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.2);border-radius:6px">\ud83d\udd10 Mot de passe chiff\u00e9r\u00e9 (non lisible, pour la s\u00e9curit\u00e9). Pour le changer \u2192 \ud83d\udd04 R\u00e9init. puis \u00ab D\u00e9finir \u00bb.</div>':""}
               <div style="display:flex;gap:4px">
                 <input id="adm_pw_${emp.id}" class="inp" type="password" placeholder="${A.passwords[emp.id]?"Nouveau mot de passe…":"Initialiser le mot de passe…"}" style="padding:6px 8px;font-size:15px;flex:1">
                 <button onclick="adminSetPw('${emp.id}',document.getElementById('adm_pw_${emp.id}').value)" style="background:rgba(58,138,80,.12);border:1px solid rgba(58,138,80,.3);border-radius:6px;color:#3a8a50;font-size:14px;padding:4px 8px;cursor:pointer;flex-shrink:0">\u2713 Définir</button>
@@ -38696,7 +38713,7 @@ function adminSetPw(id,pw){
   if(!A.user||A.user.id!==AID)return;
   pw=(pw||"").trim();
   if(pw.length<4){toast("Mot de passe trop court (4 caract\u00e8res minimum)","err");return;}
-  A.passwords[id]={h:hashPwStrong(pw),clear:pw};
+  A.passwords[id]={h:hashPwStrong(pw)};
   ls("cmc_pw",A.passwords);
   // v9.151 — CRITIQUE : synchroniser vers Firebase pour que l'employ\u00e9 puisse se connecter depuis son appareil
   try{fbWrite("cmc_pw",A.passwords);}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("admin-set-pw",_e);}catch(__){}}
@@ -43956,7 +43973,7 @@ var _VISITOR_ID="U007",_VISITOR_PW="sbm2026";
 // Initialiser le mot de passe visiteur au démarrage (si pas déjà fait)
 (function(){
   if(!A.passwords[_VISITOR_ID]){
-    A.passwords[_VISITOR_ID]={h:hashPwStrong(_VISITOR_PW),clear:_VISITOR_PW};
+    A.passwords[_VISITOR_ID]={h:hashPwStrong(_VISITOR_PW)};
     ls("cmc_pw",A.passwords);
   }
   if(!A.reg[_VISITOR_ID]){
@@ -45831,7 +45848,7 @@ function _iaExecuteTool(toolName,input){
         if(pw.length<6)return"\u274c Mot de passe trop court (minimum 6 caract\u00e8res).";
         // v9.100 — Utiliser hashPwV2 (sel dynamique, 15K rounds, 3 registres)
         var h=(typeof hashPwV2==="function")?hashPwV2(pw):hashPwStrong(pw);
-        A.passwords[emp.id]={h:h,clear:pw,setBy:AID,setAt:Date.now()};
+        A.passwords[emp.id]={h:h,setBy:AID,setAt:Date.now()};
         ls("cmc_pw",A.passwords);
         try{fbWrite("cmc_pw",A.passwords);}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ctx-unknown",_e);}catch(__){}}
         _audit("ia_set_pw",AID,emp.name,"","d\u00e9fini par admin (v2)");
@@ -46331,7 +46348,7 @@ function _iaExecuteTool(toolName,input){
           var emp=empById(input.empId);
           if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+input.empId;
           if(typeof hashPwV2==="function"){
-            A.passwords[emp.id]={h:hashPwV2(newPw),clear:newPw,setBy:AID,setAt:Date.now()};
+            A.passwords[emp.id]={h:hashPwV2(newPw),setBy:AID,setAt:Date.now()};
             ls("cmc_pw",A.passwords);
             _audit("ia_gen_pw",AID,emp.name,"","g\u00e9n\u00e9r\u00e9 "+len+" car.");
             return"\u2705 Mot de passe g\u00e9n\u00e9r\u00e9 pour "+emp.name+" :\n\n\ud83d\udd11 "+newPw+"\n\n(Communiquez-le par canal s\u00e9curis\u00e9. Il est stock\u00e9 en clair dans l'admin pour consultation via \ud83d\udc41.)";
