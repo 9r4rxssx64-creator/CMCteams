@@ -5574,7 +5574,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.846";
+var APP_VER="v9.847";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37523,7 +37523,22 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       rest.sort(function(a,b){return a-b;});
       if(rest.length<2){skipReasons.low_rh++;return;}
       var firstWork=_firstWorkCode(r)||"?";
-      var fwBase=firstWork.replace(/[c'"*:]+$/gi,"")||firstWork;
+      var fwBase0=firstWork.replace(/[c'"*:]+$/gi,"")||firstWork;
+      // v9.847 (Kevin 2026-07-01 « Vérifie l'équipe 5 par exemple, bcp trop de personnes.
+      // Je pense équipe et miroir regroupés. Faire attention aux horaires du 1er et du 3ème
+      // jour pour dispatch »). L'ancienne signature = SEUL 1er code travail (fwBase). Quand
+      // équipe et MIROIR partagent les mêmes repos ET le même 1er code, elles fusionnaient
+      // en une seule équipe surpeuplée (mesuré : cartes équipe 5 = 21 personnes). Les
+      // employés réels divergent dès les JOURS 1-3 (ex cartes : jour 2 « 16/22 » vs « 16/3 »).
+      // → signature = les 3 PREMIERS codes de TRAVAIL (base, sans suffixe c/'/"/*), en
+      // sautant les repos/absences. RAFFINEMENT MONOTONE de fwBase (le 1er code reste le
+      // 1er élément) : ne fusionne JAMAIS ce que fwBase séparait, ne fait que SÉPARER les
+      // équipes+miroirs mal fusionnées. Membres d'une même équipe (chef inclus, suffixe
+      // strippé ; CP-partiel dont on saute les absences) → même séquence → regroupés.
+      // Mesuré sur juillet réel : cartes équipe 5 21→10, 0 fragment, +5 miroirs détectés.
+      var _ABS2=["RH","R","CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","EDC","RRT","PRT","RTP","RTR","DEPL","CL","DELPT","CDH","HD","CEO","CSC","CSS"];
+      var _seq=[]; for(var _sd=1;_sd<=31&&_seq.length<3;_sd++){var _sc=r[_sd];if(!_sc)continue;var _scu=String(_sc).toUpperCase();if(_ABS2.indexOf(_scu)>=0)continue;_seq.push(String(_sc).replace(/[c'"*:]+$/gi,""));}
+      var fwBase=_seq.join(">")||fwBase0;
       _nodes.push({eid:eid,emp:emp,fam:_empFam,rest:rest,restKey:rest.join(","),fwBase:fwBase});
       detectableEmps.push(eid);
     });
