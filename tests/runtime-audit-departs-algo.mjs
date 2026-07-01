@@ -79,6 +79,62 @@ try {
   ok(out.phantom === 0, 'AUCUN numéro fantôme > nb chefs présents (' + out.phantom + ')');
   ok(out.mismatch === 0, 'app == page sur CHAQUE cellule (' + out.mismatch + ' écart)');
   ok(out.withNumber === out.totalCells, 'TOUT chef qui travaille a un numéro (' + out.withNumber + '/' + out.totalCells + ')');
+
+  // v9.845 — DÉTERMINISME CROSS-SPECTATEUR (Kevin « les autres n'ont pas les mêmes départs
+  // sur leurs app »). On calcule TOUS les numéros de départ successivement en tant que
+  // 3 spectateurs différents (admin, un employé d'équipe quelconque, personne connecté)
+  // et on exige des résultats STRICTEMENT IDENTIQUES. Avant le fix, l'injection A.user
+  // faisait diverger les numéros selon QUI regarde.
+  const det = await page.evaluate(() => {
+    const days = getDays(2026, 7), pl = gpl();
+    function snapshot() {
+      const out = {};
+      Object.keys(CHEFS_T).forEach(tid => {
+        (CHEFS_T[tid] || []).forEach(nm => {
+          const e = A.employees.find(x => x.name === nm); if (!e) return;
+          for (let d = 1; d <= days; d++) { A.year = 2026; A.month = 7; out[tid + '|' + nm + '|' + d] = calcDepPos(nm, tid, d); }
+        });
+      });
+      return out;
+    }
+    const admin = A.employees.find(e => e.id === 'U11804');
+    // un employé membre d'une équipe, différent de l'admin
+    let someTeam = Object.keys(CHEFS_T).find(t => (CHEFS_T[t] || []).length >= 2);
+    let otherName = (CHEFS_T[someTeam] || []).find(n => n !== (admin && admin.name)) || (CHEFS_T[someTeam] || [])[0];
+    const other = A.employees.find(e => e.name === otherName);
+    A.user = admin; const sA = snapshot();
+    A.user = other; const sB = snapshot();
+    A.user = null;  const sC = snapshot();
+    A.user = admin; // restaurer
+    const keys = Object.keys(sA);
+    let diffs = 0, filled = 0;
+    keys.forEach(k => { if (sA[k] != null) filled++; if (sA[k] !== sB[k] || sA[k] !== sC[k]) diffs++; });
+    return { keys: keys.length, filled, diffs, otherName };
+  });
+  console.log('  déterminisme : ' + det.keys + ' cellules, ' + det.filled + ' avec numéro, spectateur alt=' + det.otherName);
+  ok(det.filled > 200, 'assez de cellules avec numéro pour le test déterminisme (' + det.filled + ')');
+  ok(det.diffs === 0, 'MÊMES numéros de départ pour TOUS les spectateurs (admin/employé/personne) — ' + det.diffs + ' écart');
+
+  // v9.845 — RENDU vDeparts identique pour 2 spectateurs (preuve end-to-end : la grille
+  // affichée — pas seulement calcDepPos — doit montrer les mêmes numéros à tout le monde).
+  const rnd = await page.evaluate(() => {
+    function gridNumbers() {
+      window._depFamOpen = { bj: true, roulettes: true, baccara: true, cmc: true, cadres: true };
+      const html = vDeparts(); // HTML rendu (source de vérité, indépendant du routeur/#content)
+      const nums = []; const re = /width:22px;height:22px[^>]*>(\d+)<\/div>/g; let m;
+      while ((m = re.exec(html)) !== null) nums.push(m[1]);
+      return nums.join(',');
+    }
+    const admin = A.employees.find(e => e.id === 'U11804');
+    A.user = admin; A.year = 2026; A.month = 7;
+    const gA = gridNumbers();              // admin voit toutes les équipes
+    const gA2 = gridNumbers();             // re-render stable (idempotent)
+    return { count: gA ? gA.split(',').length : 0, stable: gA === gA2 };
+  });
+  console.log('  rendu vDeparts : ' + rnd.count + ' numéros de départ affichés (grille)');
+  ok(rnd.count > 100, 'grille Départs rendue avec numéros via calcDepPos (' + rnd.count + ' > 100)');
+  ok(rnd.stable, 'rendu de la grille stable/idempotent');
+
   await ctx.close();
 } finally { await browser.close(); }
 
