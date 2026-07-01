@@ -5,7 +5,8 @@
  * par Kevin passent (pas un backdoor universel). Kevin = bypass admin séparé.
  */
 import { describe, it, expect } from 'vitest';
-import { _trustedCircleSet, _isTrustedCircle, _dbTrustedCircleList, _isTrustedCircleAsync } from '../../workers/api-worker.js';
+import worker, { _trustedCircleSet, _isTrustedCircle, _dbTrustedCircleList, _isTrustedCircleAsync, handleVerifyOtp } from '../../workers/api-worker.js';
+import { ENV, makeRequest } from './api-worker-helpers.js';
 
 function dbWith(value) {
   return { APEX_CHAT_DB: { prepare: () => ({ bind() { return this; }, async first() { return value === undefined ? null : { value }; } }) } };
@@ -65,5 +66,19 @@ describe('cercle de confiance — géré en base / self-service (v1.1.218)', () 
     expect(await _isTrustedCircleAsync(env, '+33611111111')).toBe(true);  // env
     expect(await _isTrustedCircleAsync(env, '0640616184')).toBe(true);    // base (format national)
     expect(await _isTrustedCircleAsync(env, '+33699999999')).toBe(false); // ni l'un ni l'autre
+  });
+
+  // v1.x — SÉCU P1-1 (Kevin « annule cercle confiance ») : le bypass sans OTP est SUPPRIMÉ.
+  it('BYPASS SUPPRIMÉ : un numéro de confiance SANS OTP est refusé (preuve de possession exigée)', async () => {
+    const env = ENV({ LAURENCE_PHONE_E164: '+33611111111' });
+    // verify-otp avec le numéro de confiance mais NI otp NI firebase_id_token
+    const res = await handleVerifyOtp(makeRequest({
+      method: 'POST', path: '/api/auth/verify-otp',
+      body: { phone: '+33611111111', pseudo: 'laurence', name: 'Laurence Martin' },
+    }), env);
+    expect(res.status).toBe(400);
+    const d = await res.json();
+    expect(d.error).toBe('no_auth_method'); // plus AUCune session émise sur le numéro seul
+    expect(d.token).toBeUndefined();
   });
 });
