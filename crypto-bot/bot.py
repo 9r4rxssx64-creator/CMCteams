@@ -141,5 +141,14 @@ def _cycle(ex: Exchange, strat: Strategy, risk: RiskManager,
         _flatten(ex, state, price, sig.reason)
 
 
+def _live_flag() -> bool:
+    """Double verrou argent réel : drapeau --live OU variable BOT_LIVE=true
+    (cette dernière pour les hébergeurs cloud sans ligne de commande)."""
+    if "--live" in sys.argv:
+        return True
+    import os
+    return os.getenv("BOT_LIVE", "").strip().lower() in ("1", "true", "yes", "oui", "on")
+
+
 if __name__ == "__main__":
-    run(live="--live" in sys.argv)
+    run(live=_live_flag())
