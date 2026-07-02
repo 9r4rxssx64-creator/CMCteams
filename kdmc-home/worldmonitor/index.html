@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070d">
+<title>World Monitor — kd-mc.com</title>
+<style>
+  :root{
+    --bg:#05070d; --panel:rgba(14,20,34,.72); --line:rgba(120,150,210,.16);
+    --txt:#dfe7f5; --dim:#8fa0c4; --gold:#e8b830;
+    --cyan:#35d6e6; --red:#ff5a4d; --amber:#ffb84d; --green:#4fd18b; --violet:#b992ff; --orange:#ff8a3d;
+    --radius:16px; font-synthesis:none;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; max-width:100vw; overflow-x:hidden}
+  body{
+    background:
+      radial-gradient(1200px 700px at 72% -12%, rgba(40,70,140,.22), transparent 60%),
+      radial-gradient(900px 600px at 8% 112%, rgba(120,40,90,.16), transparent 55%),
+      var(--bg);
+    color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;
+    min-height:100vh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 14px) env(safe-area-inset-left);
+  }
+  a{color:inherit}
+  .wrap{max-width:1220px; margin:0 auto; padding:14px}
+  header.top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:6px 4px 14px}
+  .logo{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.14em; font-size:18px}
+  .logo .dot{width:11px;height:11px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.82)}}
+  @media (prefers-reduced-motion:reduce){.logo .dot,.blink{animation:none!important}}
+  .clock{margin-left:auto; font-variant-numeric:tabular-nums; font-size:13px; color:var(--dim); letter-spacing:.06em; text-align:right}
+  .clock b{display:block; color:var(--txt); font-size:15px; letter-spacing:.1em}
+  .grid{display:grid; grid-template-columns:1fr; gap:14px}
+  @media(min-width:860px){.grid{grid-template-columns:1.4fr 1fr}}
+  .col{display:flex; flex-direction:column; gap:14px; min-width:0}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    backdrop-filter:blur(14px) saturate(150%); -webkit-backdrop-filter:blur(14px) saturate(150%); overflow:hidden}
+  .card h2{margin:0; padding:12px 15px; font-size:12px; letter-spacing:.15em; text-transform:uppercase; color:var(--dim);
+    border-bottom:1px solid var(--line); display:flex; align-items:center; gap:9px}
+  .card h2 .k{margin-left:auto; font-size:11px; color:var(--gold); letter-spacing:.06em}
+  .globe-card{position:relative; min-height:360px}
+  #globe{display:block; width:100%; height:auto; touch-action:pan-y}
+  .toggles{display:flex; gap:7px; flex-wrap:wrap; padding:10px 12px; border-bottom:1px solid var(--line)}
+  .tg{border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--dim); border-radius:20px;
+    padding:7px 12px; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:6px; min-height:34px}
+  .tg .i{width:9px;height:9px;border-radius:50%}
+  .tg[aria-pressed="true"]{color:var(--txt); border-color:rgba(160,190,240,.45); background:rgba(120,160,240,.10)}
+  .tg[aria-pressed="false"]{opacity:.5}
+  .stat-row{display:flex; border-top:1px solid var(--line); flex-wrap:wrap}
+  .stat{flex:1 1 25%; min-width:80px; padding:11px 8px; text-align:center; border-right:1px solid var(--line); border-top:1px solid var(--line)}
+  .stat .n{font-size:20px; font-weight:800; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-top:3px}
+  .list{max-height:320px; overflow-y:auto; -webkit-overflow-scrolling:touch}
+  .list.sm{max-height:250px}
+  .row{display:flex; align-items:center; gap:11px; padding:10px 15px; border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .badge{min-width:42px; text-align:center; font-weight:800; font-size:13px; border-radius:9px; padding:6px 4px; font-variant-numeric:tabular-nums}
+  .row .main{flex:1; min-width:0}
+  .row .t1{font-size:14px; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .row .t2{font-size:11px; color:var(--dim); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .row .when{font-size:11px; color:var(--dim); white-space:nowrap}
+  .empty{padding:20px 15px; color:var(--dim); font-size:13px; text-align:center}
+  .newsrow{display:block; padding:10px 15px; border-bottom:1px solid var(--line); text-decoration:none}
+  .newsrow:last-child{border-bottom:0}
+  .newsrow .t1{font-size:13.5px; line-height:1.3}
+  .newsrow .t2{font-size:11px; color:var(--dim); margin-top:3px}
+  /* Monaco */
+  .mc{border:1px solid rgba(232,184,48,.32); box-shadow:0 0 0 1px rgba(232,184,48,.06) inset}
+  .mc h2{color:var(--gold)}
+  .mcgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line)}
+  @media(min-width:520px){.mcgrid{grid-template-columns:repeat(3,1fr)}}
+  .mccell{background:var(--panel); padding:13px 14px}
+  .mccell .l{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim)}
+  .mccell .v{font-size:19px; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums}
+  .mccell .s{font-size:11px; color:var(--dim); margin-top:2px}
+  .mkt{display:flex; align-items:center; gap:11px; padding:11px 15px; border-bottom:1px solid var(--line)}
+  .mkt:last-child{border-bottom:0}
+  .mkt .sym{font-weight:800; min-width:60px}
+  .mkt .px{margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700}
+  .up{color:var(--green)} .down{color:var(--red)}
+  footer{max-width:1220px; margin:16px auto 0; padding:0 14px; color:var(--dim); font-size:11px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .ver{border:1px solid var(--line); border-radius:20px; padding:4px 11px; color:var(--gold); letter-spacing:.05em; cursor:pointer}
+  .src{opacity:.72; line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><span class="dot"></span> 🌍 WORLD&nbsp;MONITOR</div>
+    <div class="clock"><b id="utc">—</b><span id="local">—</span></div>
+  </header>
+
+  <div class="grid">
+    <!-- COLONNE GAUCHE -->
+    <div class="col">
+      <section class="card globe-card">
+        <h2>🛰️ Globe temps réel <span class="k" id="globeState">chargement…</span></h2>
+        <div class="toggles" id="toggles">
+          <button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>Séismes</button>
+          <button class="tg" data-layer="fires" aria-pressed="true"><span class="i" style="background:var(--orange)"></span>Feux</button>
+          <button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>Volcans</button>
+          <button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>Tempêtes</button>
+          <button class="tg" data-layer="flights" aria-pressed="true"><span class="i" style="background:var(--green)"></span>Vols</button>
+          <button class="tg" data-layer="iss" aria-pressed="true"><span class="i" style="background:var(--cyan)"></span>ISS</button>
+        </div>
+        <canvas id="globe" width="760" height="600" aria-label="Globe animé : séismes, feux, volcans, tempêtes, vols et ISS en direct"></canvas>
+        <div class="stat-row" id="stats">
+          <div class="stat"><div class="n" id="sQuakes">—</div><div class="l">Séismes 24h</div></div>
+          <div class="stat"><div class="n" id="sEvents">—</div><div class="l">Événements</div></div>
+          <div class="stat"><div class="n" id="sFlights">—</div><div class="l">Vols Europe</div></div>
+          <div class="stat"><div class="n" id="sIss">—</div><div class="l">ISS km/h</div></div>
+        </div>
+      </section>
+
+      <!-- MONACO -->
+      <section class="card mc">
+        <h2>🇲🇨 Monaco — en direct <span class="k" id="mcState">…</span></h2>
+        <div class="mcgrid" id="mcGrid">
+          <div class="mccell"><div class="l">Météo</div><div class="v" id="mcWx">—</div><div class="s" id="mcWxS">chargement…</div></div>
+          <div class="mccell"><div class="l">Ressenti</div><div class="v" id="mcFeel">—</div><div class="s" id="mcHum">—</div></div>
+          <div class="mccell"><div class="l">Vent</div><div class="v" id="mcWind">—</div><div class="s">km/h</div></div>
+          <div class="mccell"><div class="l">Mer</div><div class="v" id="mcSea">—</div><div class="s" id="mcWave">—</div></div>
+          <div class="mccell"><div class="l">Air (AQI)</div><div class="v" id="mcAqi">—</div><div class="s" id="mcPm">—</div></div>
+          <div class="mccell"><div class="l">Soleil</div><div class="v" id="mcSun">—</div><div class="s" id="mcSunS">lever / coucher</div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>📈 Séismes — 24h <span class="k" id="quakeState">…</span></h2>
+        <div id="quakes" class="list"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="card">
+        <h2>🌪️ Événements naturels (NASA) <span class="k" id="eonetState">…</span></h2>
+        <div id="eonet" class="list"><div class="empty">Chargement…</div></div>
+      </section>
+    </div>
+
+    <!-- COLONNE DROITE -->
+    <div class="col">
+      <section class="card">
+        <h2>🌐 Actualité monde <span class="k" id="newsState">…</span></h2>
+        <div id="news" class="list"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="card">
+        <h2>💹 Marchés <span class="k" id="mktState">…</span></h2>
+        <div id="markets"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="card">
+        <h2>📡 Station Spatiale (ISS) <span class="k" id="issState">…</span></h2>
+        <div class="row" style="border-bottom:1px solid var(--line)"><div class="badge" style="background:#35d6e622;color:#35d6e6;border:1px solid #35d6e655;font-size:18px">🛰️</div><div class="main co" id="issInfo" style="font-variant-numeric:tabular-nums;color:var(--dim);font-size:13px;line-height:1.5">Localisation…</div></div>
+      </section>
+
+      <section class="card">
+        <h2>🌌 Météo spatiale <span class="k" id="spaceState">…</span></h2>
+        <div class="row"><div class="badge" style="background:#b992ff22;color:#b992ff;border:1px solid #b992ff55;font-size:16px" id="kpBadge">Kp</div>
+          <div class="main"><div class="t1" id="kpTxt">Indice géomagnétique…</div><div class="t2" id="kpSub">Aurores boréales</div></div></div>
+      </section>
+
+      <section class="card">
+        <h2>🚀 Prochains lancements <span class="k" id="launchState">…</span></h2>
+        <div id="launches" class="list sm"><div class="empty">Chargement…</div></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.0</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko. Inspiré d'Osiris / WorldMonitor.</span>
+</footer>
+
+<script>
+"use strict";
+var VER="v2.0";
+document.getElementById("ver").textContent="World Monitor "+VER;
+document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
+
+function $(id){return document.getElementById(id);}
+function setText(el,v){ if(el&&el.textContent!==v) el.textContent=v; }
+function setHTML(el,v){ if(el&&el.innerHTML!==v) el.innerHTML=v; }
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function ago(ms){var s=Math.max(0,(Date.now()-ms)/1000);if(s<60)return Math.floor(s)+"s";if(s<3600)return Math.floor(s/60)+"min";if(s<86400)return Math.floor(s/3600)+"h";return Math.floor(s/86400)+"j";}
+function reduceMotion(){try{return matchMedia("(prefers-reduced-motion:reduce)").matches;}catch(e){return false;}}
+async function getJSON(url,ms){var c=new AbortController();var t=setTimeout(function(){c.abort();},ms||9000);
+  try{var r=await fetch(url,{signal:c.signal,cache:"no-store"});if(!r.ok)throw 0;return await r.json();}finally{clearTimeout(t);}}
+
+/* horloge */
+function tickClock(){var d=new Date();
+  setText($("utc"),d.toISOString().slice(11,19)+" UTC");
+  setText($("local"),d.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"})+" · "+d.toLocaleTimeString("fr-FR").slice(0,5)+" local");}
+tickClock();setInterval(tickClock,1000);
+
+/* ============ GLOBE ============ */
+var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
+var L={quakes:[],fires:[],volcano:[],storms:[],flights:[],iss:null};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,iss:1};
+$("toggles").addEventListener("click",function(e){var b=e.target.closest(".tg");if(!b)return;
+  var k=b.dataset.layer,v=b.getAttribute("aria-pressed")==="true"?false:true;
+  b.setAttribute("aria-pressed",String(v));ON[k]=v?1:0;});
+function resizeGlobe(){var w=cv.parentElement.clientWidth,h=Math.max(320,Math.min(600,Math.round(w*0.8)));
+  var dpr=Math.min(2,window.devicePixelRatio||1);cv.style.width=w+"px";cv.style.height=h+"px";
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);cv._w=w;cv._h=h;}
+window.addEventListener("resize",resizeGlobe);
+function proj(lat,lon){var phi=lat*Math.PI/180,lam=lon*Math.PI/180+rot;
+  return {x:Math.cos(phi)*Math.sin(lam),y:Math.sin(phi),z:Math.cos(phi)*Math.cos(lam)};}
+function dot(cx,cy,R,lat,lon,rad,col,alpha){var p=proj(lat,lon);if(p.z<0)return;
+  var sx=cx+p.x*R,sy=cy-p.y*R;ctx.beginPath();ctx.arc(sx,sy,rad,0,7);ctx.fillStyle=col;ctx.globalAlpha=alpha||.85;ctx.fill();ctx.globalAlpha=1;return {sx:sx,sy:sy};}
+function drawGlobe(){var w=cv._w,h=cv._h,cx=w/2,cy=h/2,R=Math.min(w,h)/2-14;ctx.clearRect(0,0,w,h);
+  var g=ctx.createRadialGradient(cx,cy,R*0.2,cx,cy,R*1.25);g.addColorStop(0,"rgba(40,90,180,.20)");g.addColorStop(1,"rgba(5,7,13,0)");
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R*1.25,0,7);ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fillStyle="rgba(12,26,52,.55)";ctx.fill();
+  ctx.lineWidth=1;ctx.strokeStyle="rgba(120,160,230,.5)";ctx.stroke();
+  ctx.strokeStyle="rgba(120,150,210,.15)";var lat,lon,p,st;
+  for(lat=-60;lat<=60;lat+=30){ctx.beginPath();st=false;for(lon=-180;lon<=180;lon+=4){p=proj(lat,lon);if(p.z<0){st=false;continue;}var x=cx+p.x*R,y=cy-p.y*R;st?ctx.lineTo(x,y):(ctx.moveTo(x,y),st=true);}ctx.stroke();}
+  for(lon=-180;lon<180;lon+=30){ctx.beginPath();st=false;for(lat=-90;lat<=90;lat+=4){p=proj(lat,lon);if(p.z<0){st=false;continue;}var x2=cx+p.x*R,y2=cy-p.y*R;st?ctx.lineTo(x2,y2):(ctx.moveTo(x2,y2),st=true);}ctx.stroke();}
+  if(ON.flights)L.flights.forEach(function(f){dot(cx,cy,R,f.lat,f.lon,1.6,"#4fd18b",.7);});
+  if(ON.quakes)L.quakes.forEach(function(q){var m=q.mag||1,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d";dot(cx,cy,R,q.lat,q.lon,Math.max(2,Math.min(9,m*1.6)),col,.85);});
+  if(ON.fires)L.fires.forEach(function(f){dot(cx,cy,R,f.lat,f.lon,2.4,"#ff8a3d",.8);});
+  if(ON.volcano)L.volcano.forEach(function(f){dot(cx,cy,R,f.lat,f.lon,3,"#ff5a4d",.9);});
+  if(ON.storms)L.storms.forEach(function(f){dot(cx,cy,R,f.lat,f.lon,3.2,"#b992ff",.85);});
+  if(ON.iss&&L.iss){var d=dot(cx,cy,R,L.iss.lat,L.iss.lon,5,"#35d6e6",1);if(d){ctx.beginPath();ctx.arc(d.sx,d.sy,10,0,7);ctx.strokeStyle="#35d6e6";ctx.globalAlpha=.5;ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle="#9fe9f2";ctx.font="10px sans-serif";ctx.fillText("ISS",d.sx+13,d.sy+3);}}}
+function loop(){if(spin)rot+=0.0021;drawGlobe();requestAnimationFrame(loop);}
+resizeGlobe();requestAnimationFrame(loop);
+
+/* ============ SÉISMES (USGS) ============ */
+async function loadQuakes(){try{
+  var d=await getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
+  var f=(d&&d.features)||[];f.sort(function(a,b){return b.properties.time-a.properties.time;});
+  L.quakes=f.map(function(x){var c=x.geometry.coordinates;return {lat:c[1],lon:c[0],mag:x.properties.mag||0};});
+  setText($("sQuakes"),String(f.length));setText($("quakeState"),f.length+" / 24h");setText($("globeState"),"en direct");
+  var box=$("quakes");if(!f.length){setHTML(box,'<div class="empty">Aucun séisme. 🌍</div>');return;}
+  setHTML(box,f.slice(0,30).map(function(x){var m=x.properties.mag||0,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d";
+    return '<div class="row"><div class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'55">'+m.toFixed(1)+'</div><div class="main"><div class="t1">'+esc(x.properties.place||"?")+'</div><div class="t2">Profondeur '+((x.geometry.coordinates[2]||0).toFixed(0))+' km</div></div><div class="when">'+ago(x.properties.time)+'</div></div>';}).join(""));
+}catch(e){setText($("quakeState"),"indispo");if($("sQuakes").textContent==="—")setHTML($("quakes"),'<div class="empty">Séismes indisponibles — reprise auto.</div>');}}
+
+/* ============ ÉVÉNEMENTS NATURELS (NASA EONET) ============ */
+async function loadEonet(){try{
+  var d=await getJSON("https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=80");
+  var ev=(d&&d.events)||[];var fires=[],volc=[],storms=[],rows=[];
+  ev.forEach(function(e){var cat=(e.categories&&e.categories[0]&&e.categories[0].id)||"";
+    var geo=e.geometry&&e.geometry[e.geometry.length-1];var c=geo&&geo.coordinates;if(!c||c.length<2)return;
+    var pt={lat:c[1],lon:c[0]};var icon="🌪️",tcat="Événement";
+    if(cat==="wildfires"){fires.push(pt);icon="🔥";tcat="Feu";}
+    else if(cat==="volcanoes"){volc.push(pt);icon="🌋";tcat="Volcan";}
+    else if(cat==="severeStorms"){storms.push(pt);icon="🌀";tcat="Tempête";}
+    else{storms.push(pt);}
+    rows.push({icon:icon,tcat:tcat,title:e.title,when:geo&&geo.date?new Date(geo.date).getTime():0});});
+  L.fires=fires;L.volcano=volc;L.storms=storms;
+  setText($("sEvents"),String(ev.length));setText($("eonetState"),ev.length+" ouverts");
+  rows.sort(function(a,b){return b.when-a.when;});
+  var box=$("eonet");if(!rows.length){setHTML(box,'<div class="empty">Aucun événement ouvert.</div>');return;}
+  setHTML(box,rows.slice(0,25).map(function(r){return '<div class="row"><div class="badge" style="background:#ff8a3d1a;border:1px solid #ff8a3d44;font-size:16px">'+r.icon+'</div><div class="main"><div class="t1">'+esc(r.title)+'</div><div class="t2">'+r.tcat+'</div></div><div class="when">'+(r.when?ago(r.when):"")+'</div></div>';}).join(""));
+}catch(e){setText($("eonetState"),"indispo");if($("sEvents").textContent==="—")setHTML($("eonet"),'<div class="empty">Événements indisponibles — reprise auto.</div>');}}
+
+/* ============ VOLS EUROPE (OpenSky) ============ */
+async function loadFlights(){try{
+  var d=await getJSON("https://opensky-network.org/api/states/all?lamin=41&lomin=-6&lamax=52&lomax=12",11000);
+  var s=(d&&d.states)||[];
+  L.flights=s.filter(function(a){return a[5]!=null&&a[6]!=null&&!a[8];}).slice(0,600).map(function(a){return {lat:a[6],lon:a[5]};});
+  setText($("sFlights"),String(s.length));
+}catch(e){/* OpenSky rate-limit fréquent → silencieux, on garde l'ancienne valeur */}}
+
+/* ============ ISS ============ */
+async function loadIss(){try{
+  var d=await getJSON("https://api.wheretheiss.at/v1/satellites/25544",8000);
+  L.iss={lat:d.latitude,lon:d.longitude};
+  setText($("sIss"),Math.round(d.velocity).toLocaleString("fr-FR"));setText($("issState"),"en direct");
+  setHTML($("issInfo"),"Lat <b style='color:#dfe7f5'>"+d.latitude.toFixed(2)+"°</b> · Lon <b style='color:#dfe7f5'>"+d.longitude.toFixed(2)+"°</b><br>Altitude <b style='color:#dfe7f5'>"+Math.round(d.altitude)+" km</b> · Vitesse <b style='color:#dfe7f5'>"+Math.round(d.velocity).toLocaleString("fr-FR")+" km/h</b>");
+}catch(e){setText($("issState"),"indispo");}}
+
+/* ============ MONACO (Open-Meteo + sunrise-sunset) ============ */
+var WMO={0:["Ciel clair","☀️"],1:["Peu nuageux","🌤️"],2:["Nuageux","⛅"],3:["Couvert","☁️"],45:["Brouillard","🌫️"],48:["Brouillard givrant","🌫️"],51:["Bruine","🌦️"],53:["Bruine","🌦️"],55:["Bruine dense","🌧️"],61:["Pluie faible","🌧️"],63:["Pluie","🌧️"],65:["Pluie forte","🌧️"],71:["Neige","🌨️"],73:["Neige","🌨️"],75:["Neige forte","❄️"],80:["Averses","🌦️"],81:["Averses","🌧️"],82:["Averses fortes","⛈️"],95:["Orage","⛈️"],96:["Orage grêle","⛈️"],99:["Orage violent","⛈️"]};
+async function loadMonaco(){
+  var lat=43.7384,lon=7.4246;
+  try{var w=await getJSON("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&timezone=Europe%2FParis");
+    var c=w.current||{};var wm=WMO[c.weather_code]||["—","🌡️"];
+    setText($("mcWx"),Math.round(c.temperature_2m)+"° "+wm[1]);setText($("mcWxS"),wm[0]);
+    setText($("mcFeel"),Math.round(c.apparent_temperature)+"°");setText($("mcHum"),"Humidité "+Math.round(c.relative_humidity_2m)+"%");
+    setText($("mcWind"),Math.round(c.wind_speed_10m));setText($("mcState"),"en direct");
+  }catch(e){setText($("mcState"),"partiel");}
+  try{var m=await getJSON("https://marine-api.open-meteo.com/v1/marine?latitude=43.73&longitude=7.43&current=wave_height,sea_surface_temperature&timezone=Europe%2FParis");
+    var mc=m.current||{};setText($("mcSea"),mc.sea_surface_temperature!=null?Math.round(mc.sea_surface_temperature)+"°":"—");
+    setText($("mcWave"),mc.wave_height!=null?"Vagues "+mc.wave_height.toFixed(1)+" m":"—");}catch(e){}
+  try{var a=await getJSON("https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+lat+"&longitude="+lon+"&current=european_aqi,pm2_5&timezone=Europe%2FParis");
+    var ac=a.current||{};var aqi=ac.european_aqi;var lab=aqi==null?"—":aqi<=20?"Excellent":aqi<=40?"Bon":aqi<=60?"Moyen":aqi<=80?"Médiocre":"Mauvais";
+    setText($("mcAqi"),aqi!=null?aqi+" · "+lab:"—");setText($("mcPm"),ac.pm2_5!=null?"PM2.5 "+Math.round(ac.pm2_5)+" µg/m³":"—");}catch(e){}
+  try{var s=await getJSON("https://api.sunrise-sunset.org/json?lat="+lat+"&lng="+lon+"&formatted=0");
+    if(s.status==="OK"){var sr=new Date(s.results.sunrise),ss=new Date(s.results.sunset);
+      var f=function(x){return x.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});};
+      setText($("mcSun"),f(sr)+" → "+f(ss));setText($("mcSunS"),"lever / coucher");}}catch(e){}
+}
+
+/* ============ MARCHÉS (CoinGecko + open.er-api) ============ */
+async function loadMarkets(){
+  var rows=[];
+  try{var d=await getJSON("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=eur&include_24hr_change=true");
+    [["BTC","bitcoin"],["ETH","ethereum"]].forEach(function(p){var o=d[p[1]];if(!o)return;var ch=o.eur_24h_change||0;
+      rows.push({sym:p[0],px:o.eur.toLocaleString("fr-FR")+" €",ch:ch});});}catch(e){}
+  try{var fx=await getJSON("https://open.er-api.com/v6/latest/EUR");
+    if(fx&&fx.rates){rows.push({sym:"EUR/USD",px:fx.rates.USD.toFixed(4),ch:null});rows.push({sym:"EUR/CHF",px:fx.rates.CHF.toFixed(4),ch:null});}}catch(e){}
+  if(!rows.length){setHTML($("markets"),'<div class="empty">Marchés indisponibles — reprise auto.</div>');setText($("mktState"),"indispo");return;}
+  setText($("mktState"),"live");
+  setHTML($("markets"),rows.map(function(r){var chh=r.ch==null?"":'<span class="'+(r.ch>=0?"up":"down")+'" style="font-size:12px;margin-left:8px">'+(r.ch>=0?"▲":"▼")+Math.abs(r.ch).toFixed(1)+'%</span>';
+    return '<div class="mkt"><span class="sym">'+r.sym+'</span><span class="px">'+r.px+chh+'</span></div>';}).join(""));
+}
+
+/* ============ MÉTÉO SPATIALE (NOAA Kp) ============ */
+async function loadSpace(){try{
+  var d=await getJSON("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",9000);
+  var last=d[d.length-1];var kp=parseFloat(last[1]);
+  var col=kp>=6?"#ff5a4d":kp>=5?"#ffb84d":"#4fd18b";
+  var lab=kp>=6?"Tempête géomagnétique — aurores possibles à basse latitude":kp>=5?"Activité élevée — aurores probables au nord":"Calme";
+  setText($("kpBadge"),"Kp"+Math.round(kp));$("kpBadge").style.color=col;$("kpBadge").style.borderColor=col+"66";$("kpBadge").style.background=col+"1a";
+  setText($("kpTxt"),"Indice Kp "+kp.toFixed(1));setText($("kpSub"),lab);setText($("spaceState"),"live");
+}catch(e){setText($("spaceState"),"indispo");}}
+
+/* ============ ACTUALITÉ (GDELT) ============ */
+async function loadNews(){try{
+  var d=await getJSON("https://api.gdeltproject.org/api/v2/doc/doc?query="+encodeURIComponent("(world OR breaking)")+"&mode=artlist&maxrecords=10&sort=datedesc&format=json",11000);
+  var a=(d&&d.articles)||[];setText($("newsState"),a.length?"live":"—");
+  var box=$("news");if(!a.length){setHTML(box,'<div class="empty">Flux vide.</div>');return;}
+  setHTML(box,a.slice(0,10).map(function(x){return '<a class="newsrow" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer"><div class="t1">'+esc(x.title||"—")+'</div><div class="t2">'+esc(x.domain||"")+(x.sourcecountry?" · "+esc(x.sourcecountry):"")+'</div></a>';}).join(""));
+}catch(e){setText($("newsState"),"indispo");if($("news").querySelector(".empty"))setHTML($("news"),'<div class="empty">Actualité indisponible — reprise auto.</div>');}}
+
+/* ============ LANCEMENTS (The Space Devs) ============ */
+async function loadLaunches(){try{
+  var d=await getJSON("https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=6&mode=list",11000);
+  var r=(d&&d.results)||[];setText($("launchState"),r.length?"à venir":"—");
+  var box=$("launches");if(!r.length){setHTML(box,'<div class="empty">Aucun lancement.</div>');return;}
+  setHTML(box,r.map(function(l){var w=l.net?new Date(l.net):null;
+    var ws=w?w.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+" "+w.toLocaleTimeString("fr-FR").slice(0,5):"à confirmer";
+    var prov=(l.launch_service_provider&&l.launch_service_provider.name)||"";
+    return '<div class="row"><div class="badge" style="background:#35d6e622;color:#35d6e6;border:1px solid #35d6e655">🚀</div><div class="main"><div class="t1">'+esc(l.name||"Lancement")+'</div><div class="t2">'+esc(prov)+'</div></div><div class="when">'+esc(ws)+'</div></div>';}).join(""));
+}catch(e){setText($("launchState"),"indispo");if($("launches").querySelector(".empty"))setHTML($("launches"),'<div class="empty">Lancements indisponibles.</div>');}}
+
+/* ============ orchestrateur ============ */
+function fast(){loadIss();loadFlights();}
+function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();}
+slow();fast();
+setInterval(fast,7000);
+setInterval(loadQuakes,60000);
+setInterval(loadFlights,45000);
+setInterval(loadNews,300000);
+setInterval(loadEonet,600000);
+setInterval(loadMarkets,120000);
+setInterval(loadSpace,600000);
+setInterval(loadMonaco,600000);
+setInterval(loadLaunches,1800000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)fast();});
+</script>
+</body>
+</html>
