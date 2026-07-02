@@ -144,9 +144,13 @@
   function fiche(a) {
     var places = (a.places || []).map(esc).join(' · ') || esc(a.last_place || '—');
     var devs = (a.devices || []).map(esc).join(' · ') || esc(a.last_device || '—');
+    var anom = a.anomaly && a.anomaly.at
+      ? '<div class="anom">⚠️ Connexion suspecte — <b>' + esc(a.anomaly.from || '?') + ' → ' + esc(a.anomaly.to || '?') + '</b> en ' + esc(String(a.anomaly.mins || '?')) + ' min · ' + esc(ago(a.anomaly.at)) + '</div>'
+      : '';
     return '<div class="kdmc-card kdmc-in fiche" id="fiche-' + esc(a.uid) + '">'
       + '<div class="fhead"><div><h3>' + esc(a.name || a.uid) + '</h3><div class="uid">' + esc(a.uid) + '</div></div>'
       + '<div class="when"><span class="kdmc-dot"></span>' + ago(a.last_seen) + '</div></div>'
+      + anom
       + '<div class="kv">'
       + kvp('Compte créé', dt(a.created))
       + kvp('CGU acceptée', a.cgu_at ? dt(a.cgu_at) : '—')

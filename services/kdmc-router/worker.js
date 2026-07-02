@@ -272,6 +272,7 @@ async function enrich(env, request, uid, name, cgu, pre) {
   const isNew = !prev;
   const acc = prev || { uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [] };
   const prevSeen = acc.last_seen || 0;
+  const prevCountry = acc.last_country || '';
   /* `structural` = quelque chose de NOUVEAU à persister tout de suite (nouvelle fiche,
      CGU, nouvel appareil/lieu, nouvelle session). Un simple heartbeat n'en est pas un. */
   let structural = isNew;
@@ -288,6 +289,14 @@ async function enrich(env, request, uid, name, cgu, pre) {
   acc.devices = Array.from(new Set([...(acc.devices || []), devKey])).slice(-10);
   if (place && (acc.places || []).indexOf(place) < 0) structural = true;
   if (place) acc.places = Array.from(new Set([...(acc.places || []), place])).slice(-20);
+  /* Détection d'anomalie SIMPLE (pas de ML) : changement de PAYS entre deux
+     connexions rapprochées (< 60 min) = déplacement géographiquement impossible
+     (compte partagé/volé, ou VPN). On FLAGUE (jamais on ne bloque : anti-lockout ;
+     un VPN reste légitime). Le drapeau est affiché en admin + poussé en alerte. */
+  const curCountry = cf.country || '';
+  const geoAnomaly = !isNew && curCountry && prevCountry && curCountry !== prevCountry && (now - prevSeen) < 60 * 60e3;
+  if (geoAnomaly) { acc.anomaly = { at: now, from: prevCountry, to: curCountry, place: place, mins: Math.round((now - prevSeen) / 60e3) }; structural = true; }
+  if (curCountry) acc.last_country = curCountry;
   /* Historique de connexions PAR SITE, avec DURÉE. Une "connexion" = une session :
      début à la 1re activité, PROLONGÉE par les pings de présence tant que l'app
      reste ouverte, TERMINÉE dès ~3 min sans ping (= app fermée). Durée = end - ts.
@@ -326,6 +335,11 @@ async function enrich(env, request, uid, name, cgu, pre) {
     await audLog(env, { ev: 'new_device', uid, detail: devKey + (place ? ' · ' + place : '') });
     await notifyPush(env, '🔐 KDMC — nouvel appareil',
       'Nouvelle connexion (' + (acc.name || uid) + ') depuis ' + devKey + (place ? ' · ' + place : '') + '.');
+  }
+  if (geoAnomaly) {
+    await audLog(env, { ev: 'geo_anomaly', uid, detail: prevCountry + ' → ' + curCountry + ' en ' + acc.anomaly.mins + ' min' });
+    await notifyPush(env, '⚠️ KDMC — connexion suspecte',
+      (acc.name || uid) + ' : ' + prevCountry + ' → ' + curCountry + ' en ' + acc.anomaly.mins + ' min (déplacement impossible).');
   }
   await accPut(env, acc, !isNew);
 }
@@ -624,3 +638,6 @@ async function handleAdmin(request, url, env) {
   }
   return J({ ok: false, reason: 'not_found' });
 }
+
+/* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
+export { enrich };
