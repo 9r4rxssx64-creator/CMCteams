@@ -81,6 +81,25 @@
   .mkt .sym{font-weight:800; min-width:60px}
   .mkt .px{margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700}
   .up{color:var(--green)} .down{color:var(--red)}
+  /* webcams */
+  .camgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:12px}
+  @media(min-width:640px){.camgrid{grid-template-columns:repeat(3,1fr)}}
+  .cam{position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#0a101e; cursor:pointer; min-height:44px}
+  .cam .ph{aspect-ratio:16/9; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; padding:8px}
+  .cam .ph .e{font-size:26px}
+  .cam .ph .n{font-size:12px; font-weight:700; line-height:1.25}
+  .cam .ph .live{font-size:9px; letter-spacing:.14em; color:var(--red); font-weight:800}
+  .cam .ph .live::before{content:"●"; margin-right:4px; animation:pulse 1.6s infinite}
+  .cam iframe{display:block; width:100%; aspect-ratio:16/9; border:0}
+  .cam .close{position:absolute; top:6px; right:6px; z-index:2; background:rgba(0,0,0,.65); color:#fff; border:1px solid var(--line); border-radius:50%; width:30px; height:30px; font-size:13px; cursor:pointer}
+  .tfl{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:12px}
+  @media(min-width:640px){.tfl{grid-template-columns:repeat(4,1fr)}}
+  .tfl figure{margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#0a101e}
+  .tfl img{display:block; width:100%; aspect-ratio:4/3; object-fit:cover}
+  .tfl figcaption{font-size:10px; color:var(--dim); padding:6px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .btnrow{display:flex; gap:8px; padding:0 12px 12px; flex-wrap:wrap}
+  .btn{border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--txt); border-radius:12px; padding:10px 14px; font-size:13px; cursor:pointer; min-height:44px; text-decoration:none; display:inline-flex; align-items:center; gap:7px}
+  .btn:active{transform:scale(.98)}
   footer{max-width:1220px; margin:16px auto 0; padding:0 14px; color:var(--dim); font-size:11px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
   .ver{border:1px solid var(--line); border-radius:20px; padding:4px 11px; color:var(--gold); letter-spacing:.05em; cursor:pointer}
   .src{opacity:.72; line-height:1.5}
@@ -126,6 +145,22 @@
           <div class="mccell"><div class="l">Air (AQI)</div><div class="v" id="mcAqi">—</div><div class="s" id="mcPm">—</div></div>
           <div class="mccell"><div class="l">Soleil</div><div class="v" id="mcSun">—</div><div class="s" id="mcSunS">lever / coucher</div></div>
         </div>
+        <div class="btnrow" style="padding-top:12px">
+          <a class="btn" href="https://www.windy.com/webcams/1369259377" target="_blank" rel="noopener noreferrer">📷 Webcam Port Hercule</a>
+          <a class="btn" href="https://www.windy.com/webcams/1234952621" target="_blank" rel="noopener noreferrer">📷 Webcam Place du Casino</a>
+        </div>
+      </section>
+
+      <!-- CAMÉRAS LIVE -->
+      <section class="card">
+        <h2>🎥 Caméras live — chaînes 24/7 <span class="k">tape pour lancer</span></h2>
+        <div class="camgrid" id="cams"></div>
+      </section>
+
+      <section class="card">
+        <h2>🚦 Londres — caméras trafic (TfL) <span class="k" id="tflState">…</span></h2>
+        <div class="tfl" id="tfl"><div class="empty" style="grid-column:1/-1">Chargement…</div></div>
+        <div class="btnrow"><button class="btn" id="tflShuffle">🔀 Autres caméras</button></div>
       </section>
 
       <section class="card">
@@ -171,13 +206,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.0</span>
-  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko. Inspiré d'Osiris / WorldMonitor.</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.1</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.0";
+var VER="v2.1";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -339,9 +374,72 @@ async function loadLaunches(){try{
     return '<div class="row"><div class="badge" style="background:#35d6e622;color:#35d6e6;border:1px solid #35d6e655">🚀</div><div class="main"><div class="t1">'+esc(l.name||"Lancement")+'</div><div class="t2">'+esc(prov)+'</div></div><div class="when">'+esc(ws)+'</div></div>';}).join(""));
 }catch(e){setText($("launchState"),"indispo");if($("launches").querySelector(".empty"))setHTML($("launches"),'<div class="empty">Lancements indisponibles.</div>');}}
 
+/* ============ CAMÉRAS LIVE (YouTube — embed par CHAÎNE = suit toujours le direct en cours) ============ */
+var CAMS=[
+  {n:"Sky News",e:"🇬🇧",ch:"UCoMdktPbSTixAyNGwb-UYkQ",q:"sky news live"},
+  {n:"France 24",e:"🇫🇷",ch:"UCCCPCZNChQdGa9EkATeye4g",q:"france 24 direct"},
+  {n:"Al Jazeera",e:"🌍",ch:"UCNye-wNBqNL5ZzHSJj3l8Bg",q:"al jazeera english live"},
+  {n:"DW News",e:"🇩🇪",ch:"UCknLrEdhRCp1aegoMqRaCZg",q:"dw news live"},
+  {n:"ABC News",e:"🇺🇸",ch:"UCBi2mrWuNuyYy4gbM6fU18Q",q:"abc news live"},
+  {n:"Bloomberg TV",e:"💹",ch:"UCIALMKvObZNtJ6AmdCLP7Lg",q:"bloomberg tv live"},
+  {n:"TRT World",e:"🌐",ch:"UC7fWeaHhqgM4Ry-RMpM2YYw",q:"trt world live"},
+  {n:"NASA TV",e:"🚀",ch:"UCLA_DiR1FfKNvjuUpBHmylQ",q:"nasa live"},
+  {n:"Times Square NYC",e:"🗽",q:"times square live cam 4k"},
+  {n:"Venise — Grand Canal",e:"🛶",q:"venice italy live cam"},
+  {n:"Tokyo — Shibuya",e:"🇯🇵",q:"shibuya crossing live camera"},
+  {n:"Jérusalem — Mur",e:"🕍",q:"jerusalem western wall live"}
+];
+function renderCams(){
+  setHTML($("cams"),CAMS.map(function(c,i){
+    var tag=c.ch?'<span class="live">LIVE</span>':'<span class="live" style="color:var(--cyan)">↗ OUVRIR</span>';
+    return '<div class="cam" data-i="'+i+'"><div class="ph"><span class="e">'+c.e+'</span><span class="n">'+esc(c.n)+'</span>'+tag+'</div></div>';
+  }).join(""));
+}
+renderCams();
+$("cams").addEventListener("click",function(ev){
+  var close=ev.target.closest(".close");
+  var cell=ev.target.closest(".cam");if(!cell)return;
+  var i=+cell.dataset.i,c=CAMS[i];
+  if(close){
+    cell.innerHTML='<div class="ph"><span class="e">'+c.e+'</span><span class="n">'+esc(c.n)+'</span><span class="live">LIVE</span></div>'; return; }
+  if(cell.querySelector("iframe"))return;
+  if(!c.ch){ /* pas de chaîne stable → recherche YouTube live en 1 tap (toujours à jour) */
+    window.open("https://www.youtube.com/results?search_query="+encodeURIComponent(c.q)+"&sp=EgJAAQ%253D%253D","_blank","noopener");
+    return; }
+  var src="https://www.youtube-nocookie.com/embed/live_stream?channel="+c.ch+"&autoplay=1&mute=1";
+  cell.innerHTML='<button class="close" aria-label="Fermer">✕</button>'+
+    '<iframe src="'+src+'" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="no-referrer" title="'+esc(c.n)+'"></iframe>';
+});
+
+/* ============ TfL JamCams — Londres (~900 caméras publiques, gratuit sans clé) ============ */
+var _tflAll=[];
+function pick(arr,n){var a=arr.slice(),out=[];while(a.length&&out.length<n){out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]);}return out;}
+function renderTfl(){
+  if(!_tflAll.length)return;
+  var sel=pick(_tflAll,8),bust=Date.now();
+  setHTML($("tfl"),sel.map(function(c){
+    return '<figure><img src="'+esc(c.img)+'?_='+bust+'" alt="'+esc(c.name)+'" loading="lazy" onerror="this.closest(\'figure\').style.display=\'none\'">'+
+      '<figcaption>'+esc(c.name)+'</figcaption></figure>';
+  }).join(""));
+  setText($("tflState"),_tflAll.length+" caméras");
+}
+async function loadTfl(){try{
+  var d=await getJSON("https://api.tfl.gov.uk/Place/Type/JamCam",12000);
+  _tflAll=(d||[]).map(function(p){
+    var img=(p.additionalProperties||[]).filter(function(x){return x.key==="imageUrl";})[0];
+    return img&&img.value?{name:(p.commonName||"Londres").replace(/^JamCams?\s*/i,""),img:img.value}:null;
+  }).filter(Boolean);
+  if(!_tflAll.length)throw 0;
+  renderTfl();
+}catch(e){setText($("tflState"),"indispo");
+  setHTML($("tfl"),'<div class="empty" style="grid-column:1/-1">Caméras Londres momentanément indisponibles — reprise auto.</div>');}}
+$("tflShuffle").addEventListener("click",renderTfl);
+setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
+
 /* ============ orchestrateur ============ */
 function fast(){loadIss();loadFlights();}
-function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();}
+function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();}
+setInterval(loadTfl,600000); /* re-liste les caméras TfL toutes les 10 min */
 slow();fast();
 setInterval(fast,7000);
 setInterval(loadQuakes,60000);
