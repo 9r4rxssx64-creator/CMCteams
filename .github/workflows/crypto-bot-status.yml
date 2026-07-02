@@ -1,0 +1,72 @@
+# Vérifie l'état RÉEL du bot crypto sur Railway (build + logs runtime).
+# Déclenchement : manuel uniquement. Lecture seule — ne modifie rien.
+# Règle "détailler les erreurs" : réponses GraphQL brutes loggées (tronquées).
+
+name: Crypto Bot Status (Railway)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      GQL: https://backboard.railway.com/graphql/v2
+    steps:
+      - name: Interroger Railway (projet, service, déploiement, logs)
+        run: |
+          set +e
+          gql() {
+            curl -sS -m 20 -X POST \
+              -H "Project-Access-Token: $RAILWAY_TOKEN" \
+              -H "content-type: application/json" \
+              -d "$1" "$GQL"
+          }
+
+          echo "── 1) Projet lié au token ──"
+          PT=$(gql '{"query":"query { projectToken { projectId environmentId } }"}')
+          echo "$PT" | head -c 500; echo
+          PID=$(echo "$PT" | jq -r '.data.projectToken.projectId // empty')
+          EID=$(echo "$PT" | jq -r '.data.projectToken.environmentId // empty')
+          [ -z "$PID" ] && { echo "::error::Token projet invalide — réponse ci-dessus."; exit 1; }
+
+          echo "── 2) Nom du projet + services ──"
+          PR=$(gql "{\"query\":\"query { project(id: \\\"$PID\\\") { name services { edges { node { id name } } } } }\"}")
+          echo "$PR" | head -c 1000; echo
+          PNAME=$(echo "$PR" | jq -r '.data.project.name // "?"')
+          SID=$(echo "$PR" | jq -r '.data.project.services.edges[] | select(.node.name=="crypto-bot") | .node.id' | head -1)
+          echo "Projet: $PNAME | Service crypto-bot: ${SID:-INTROUVABLE}"
+          [ -z "$SID" ] && { echo "::error::Service crypto-bot introuvable dans le projet $PNAME."; exit 1; }
+
+          echo "── 3) Dernier déploiement ──"
+          DP=$(gql "{\"query\":\"query { deployments(first: 2, input: { projectId: \\\"$PID\\\", serviceId: \\\"$SID\\\", environmentId: \\\"$EID\\\" }) { edges { node { id status createdAt } } } }\"}")
+          echo "$DP" | head -c 1000; echo
+          DID=$(echo "$DP" | jq -r '.data.deployments.edges[0].node.id // empty')
+          DSTATUS=$(echo "$DP" | jq -r '.data.deployments.edges[0].node.status // "?"')
+          echo "Déploiement: ${DID:-aucun} | Statut: $DSTATUS"
+          [ -z "$DID" ] && { echo "::error::Aucun déploiement trouvé."; exit 1; }
+
+          echo "── 4) Logs de BUILD (30 dernières lignes) ──"
+          BL=$(gql "{\"query\":\"query { buildLogs(deploymentId: \\\"$DID\\\", limit: 30) { timestamp message } }\"}")
+          echo "$BL" | jq -r '.data.buildLogs[]? | "\(.timestamp) \(.message)"' 2>/dev/null || echo "$BL" | head -c 800
+
+          echo "── 5) Logs RUNTIME du bot (40 dernières lignes) ──"
+          RL=$(gql "{\"query\":\"query { deploymentLogs(deploymentId: \\\"$DID\\\", limit: 40) { timestamp message } }\"}")
+          echo "$RL" | jq -r '.data.deploymentLogs[]? | "\(.timestamp) \(.message)"' 2>/dev/null || echo "$RL" | head -c 800
+
+          {
+            echo "## 🤖 Crypto Bot — état Railway"
+            echo ""
+            echo "- Projet : \`$PNAME\`"
+            echo "- Statut dernier déploiement : **$DSTATUS**"
+          } >> $GITHUB_STEP_SUMMARY
+
+          case "$DSTATUS" in
+            SUCCESS|DEPLOYING|BUILDING|INITIALIZING|QUEUED|WAITING) exit 0 ;;
+            *) echo "::error::Déploiement en état $DSTATUS — voir logs de build ci-dessus (cause exacte)."; exit 1 ;;
+          esac
