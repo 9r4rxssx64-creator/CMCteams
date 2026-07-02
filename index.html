@@ -5564,6 +5564,9 @@ function _cmcApplyPlanningSeed(){
       if(m.meta){ A.overrides_meta=A.overrides_meta||{}; var mrow={}; Object.keys(m.meta).forEach(function(id){ mrow[id]={}; Object.keys(m.meta[id]).forEach(function(d){ mrow[id][d]=Object.assign({},m.meta[id][d]); }); }); A.overrides_meta[key]=mrow; }
       if(m.mirror&&Object.keys(m.mirror).length){ try{localStorage.setItem("cmc_team_mirror_"+key,JSON.stringify(m.mirror));}catch(_){} }
       if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[id]; if(e){ if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]=m.fam[id]; } }); }
+      // v9.849 — marqueur STICKY école roulette Europe (KE) : survit au wipe familyHistory
+      // one-shot + à la re-dérivation, sinon la détection différée les re-team en cartes.
+      if(m.ecole&&m.ecole.length){ m.ecole.forEach(function(id){ var e=byId[id]; if(e){ if(!e.ecoleRoulette)e.ecoleRoulette={}; e.ecoleRoulette[key]=1; if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]="roulettes"; } }); }
       applied++;
     });
     if(applied){ try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){} try{if(typeof _rebuildIndexes==="function")_rebuildIndexes();}catch(_){} console.info("[v9.824 seed] "+applied+" mois intégrés (affichage, sans écrasement ni push)"); }
@@ -5574,7 +5577,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.848";
+var APP_VER="v9.849";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
