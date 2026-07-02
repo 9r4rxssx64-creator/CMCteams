@@ -1,0 +1,10 @@
+# NE JAMAIS committer les secrets ni les logs
+.env
+*.env
+logs/
+state.json
+KILL
+__pycache__/
+*.pyc
+.venv/
+venv/
