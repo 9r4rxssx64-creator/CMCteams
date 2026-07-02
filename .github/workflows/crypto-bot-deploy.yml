@@ -1,0 +1,125 @@
+# Déploie le bot crypto (crypto-bot/) sur Railway — 100% auto, zéro clic Kevin.
+# Déclenchement : manuel uniquement (workflow_dispatch) — pas de cron (règle anti-spam).
+#
+# Secrets requis (noms EXACTS) :
+#   RAILWAY_TOKEN               (déjà présent — token projet Railway)
+#   BINANCE_TESTNET_API_KEY     (clé testnet Binance de Kevin)
+#   BINANCE_TESTNET_API_SECRET  (secret testnet Binance de Kevin)
+#
+# Règle "détailler les erreurs" : chaque étape logge la sortie RÉELLE des
+# commandes (codes GraphQL, stderr CLI) — jamais de "failed" muet.
+
+name: Crypto Bot Deploy (Railway)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      SERVICE_NAME: crypto-bot
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier les secrets requis
+        env:
+          BK: ${{ secrets.BINANCE_TESTNET_API_KEY }}
+          BS: ${{ secrets.BINANCE_TESTNET_API_SECRET }}
+        run: |
+          MISSING=""
+          [ -z "$RAILWAY_TOKEN" ] && MISSING="$MISSING RAILWAY_TOKEN"
+          [ -z "$BK" ] && MISSING="$MISSING BINANCE_TESTNET_API_KEY"
+          [ -z "$BS" ] && MISSING="$MISSING BINANCE_TESTNET_API_SECRET"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Secrets manquants :$MISSING — les ajouter dans Settings > Secrets > Actions (noms EXACTS)."
+            exit 1
+          fi
+          echo "✅ Tous les secrets requis sont présents."
+
+      - name: Vérifier le token Railway (type + projet lié)
+        run: |
+          set +e
+          HTTP=$(curl -sS -o /tmp/pt.json -w "%{http_code}" -m 15 -X POST \
+            -H "Project-Access-Token: $RAILWAY_TOKEN" \
+            -H "content-type: application/json" \
+            -d '{"query":"query { projectToken { projectId environmentId } }"}' \
+            https://backboard.railway.com/graphql/v2)
+          echo "HTTP=$HTTP ; réponse: $(cat /tmp/pt.json)"
+          PID=$(jq -r '.data.projectToken.projectId // empty' /tmp/pt.json)
+          EID=$(jq -r '.data.projectToken.environmentId // empty' /tmp/pt.json)
+          if [ -n "$PID" ]; then
+            echo "✅ Token PROJET valide — projectId=$PID environmentId=$EID"
+            echo "PROJECT_ID=$PID" >> $GITHUB_ENV
+            echo "ENV_ID=$EID" >> $GITHUB_ENV
+          else
+            echo "::warning::Le token n'a pas répondu comme un token projet. Détail exact ci-dessus. On tente quand même le CLI (token de compte possible)."
+          fi
+
+      - name: Installer Railway CLI
+        run: |
+          npm i -g @railway/cli
+          railway --version
+
+      - name: Créer le service s'il n'existe pas (tolérant)
+        working-directory: crypto-bot
+        run: |
+          set +e
+          OUT=$(railway add --service "$SERVICE_NAME" 2>&1)
+          RC=$?
+          echo "railway add (rc=$RC) : $OUT"
+          echo "$OUT" | grep -qiE "already exists|existe" && echo "ℹ️ Service déjà présent — OK."
+          exit 0
+
+      - name: Régler les variables du bot (testnet, garde-fous)
+        working-directory: crypto-bot
+        env:
+          BK: ${{ secrets.BINANCE_TESTNET_API_KEY }}
+          BS: ${{ secrets.BINANCE_TESTNET_API_SECRET }}
+        run: |
+          set +e
+          OUT=$(railway variables --service "$SERVICE_NAME" --skip-deploys \
+            --set "BINANCE_API_KEY=$BK" \
+            --set "BINANCE_API_SECRET=$BS" \
+            --set "TESTNET=true" \
+            --set "BOT_KILL=0" \
+            --set "SYMBOL=BTC/USDT" \
+            --set "TIMEFRAME=15m" 2>&1)
+          RC=$?
+          # Ne jamais logger les valeurs — uniquement le code retour + erreurs
+          echo "railway variables rc=$RC"
+          if [ $RC -ne 0 ]; then
+            echo "::error::Échec réglage variables — sortie CLI : $(echo "$OUT" | sed 's/[A-Za-z0-9]\{20,\}/***MASQUÉ***/g')"
+            exit 1
+          fi
+          echo "✅ Variables réglées (clés masquées dans les logs)."
+
+      - name: Déployer le bot (railway up)
+        working-directory: crypto-bot
+        run: |
+          set +e
+          OUT=$(railway up --service "$SERVICE_NAME" --detach 2>&1)
+          RC=$?
+          echo "railway up (rc=$RC) :"
+          echo "$OUT"
+          if [ $RC -ne 0 ]; then
+            echo "::error::Échec du déploiement — sortie CLI complète ci-dessus (cause exacte)."
+            exit 1
+          fi
+          echo "✅ Déploiement lancé. Logs du bot : dashboard Railway > service crypto-bot > Deployments > View Logs."
+
+      - name: Récapitulatif
+        run: |
+          {
+            echo "## 🤖 Crypto Bot — déploiement Railway"
+            echo ""
+            echo "- Mode : 🧪 TESTNET (faux argent) — TESTNET=true, BOT_KILL=0"
+            echo "- Service : \`crypto-bot\`"
+            echo "- Suivi : https://railway.app → projet → service crypto-bot → View Logs"
+            echo "- Kill switch iPhone : Variables → BOT_KILL=1 (le bot vend et s'arrête au cycle suivant)"
+          } >> $GITHUB_STEP_SUMMARY
