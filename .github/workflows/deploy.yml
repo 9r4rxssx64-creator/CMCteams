@@ -50,6 +50,12 @@ jobs:
             || echo "Fallback : source non-minifiee deployee (minify/smoke KO)"
           exit 0
 
+      # Alléger l'artefact : node_modules (générés par npm install ci-dessus, PAS dans git,
+      # ~240 Mo / ~50k fichiers) ne doivent jamais être publiés — c'est ce qui fait échouer
+      # la synchro Pages ("Deployment failed, try again later"). Contenu servi inchangé.
+      - name: Alléger l'artefact (retire node_modules générés)
+        run: find . -name node_modules -type d -prune -exec rm -rf {} + 2>/dev/null || true
+
       - name: Setup Pages
         uses: actions/configure-pages@v6
         with:
