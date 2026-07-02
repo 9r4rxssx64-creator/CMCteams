@@ -187,6 +187,11 @@
       </section>
 
       <section class="card">
+        <h2>📊 Bourse <span class="k" id="bourseState">…</span></h2>
+        <div id="bourse"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="card">
         <h2>🔥 Tendances Wikipédia FR <span class="k" id="wikiState">…</span></h2>
         <div id="wiki" class="list sm"><div class="empty">Chargement…</div></div>
       </section>
@@ -216,13 +221,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.2</span>
-  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me. Inspiré d'Osiris / WorldMonitor.</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.3</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare). Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.2";
+var VER="v2.3";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -388,6 +393,19 @@ async function loadLaunches(){try{
     return '<div class="row"><div class="badge" style="background:#35d6e622;color:#35d6e6;border:1px solid #35d6e655">🚀</div><div class="main"><div class="t1">'+esc(l.name||"Lancement")+'</div><div class="t2">'+esc(prov)+'</div></div><div class="when">'+esc(ws)+'</div></div>';}).join(""));
 }catch(e){setText($("launchState"),"indispo");if($("launches").querySelector(".empty"))setHTML($("launches"),'<div class="empty">Lancements indisponibles.</div>');}}
 
+/* ============ BOURSE (Finnhub via worker wm-quotes — la clé reste côté serveur, jamais exposée) ============ */
+async function loadBourse(){try{
+  var d=await getJSON("https://wm-quotes.9r4rxssx64.workers.dev/quotes",10000);
+  var q=(d&&d.quotes)||[];
+  if(d&&d.error)throw new Error(d.detail||d.error);
+  if(!q.length)throw new Error("vide");
+  setText($("bourseState"),"live");
+  setHTML($("bourse"),q.map(function(r){
+    var chh=r.changePct==null?"":'<span class="'+(r.changePct>=0?"up":"down")+'" style="font-size:12px;margin-left:8px">'+(r.changePct>=0?"▲":"▼")+Math.abs(r.changePct).toFixed(2)+'%</span>';
+    return '<div class="mkt"><span class="sym" style="min-width:0">'+esc(r.label)+'</span><span class="px">'+(+r.price).toLocaleString("fr-FR",{maximumFractionDigits:2})+' $'+chh+'</span></div>';}).join(""));
+}catch(e){setText($("bourseState"),"indispo");
+  setHTML($("bourse"),'<div class="empty">Bourse indisponible — reprise auto.</div>');}}
+
 /* ============ TENDANCES WIKIPÉDIA FR (Wikimedia pageviews — gratuit sans clé) ============ */
 async function loadWiki(){try{
   var d=new Date(Date.now()-864e5); /* hier (le jour courant n'est pas encore agrégé) */
@@ -485,8 +503,8 @@ setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ orchestrateur ============ */
 function fast(){loadIss();loadFlights();}
-function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();}
-setInterval(loadHn,600000);setInterval(loadWiki,3600000);
+function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();loadBourse();}
+setInterval(loadHn,600000);setInterval(loadBourse,120000);setInterval(loadWiki,3600000);
 setInterval(loadTfl,600000); /* re-liste les caméras TfL toutes les 10 min */
 slow();fast();
 setInterval(fast,7000);
