@@ -187,6 +187,16 @@
       </section>
 
       <section class="card">
+        <h2>🔥 Tendances Wikipédia FR <span class="k" id="wikiState">…</span></h2>
+        <div id="wiki" class="list sm"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="card">
+        <h2>💻 Tech — Hacker News <span class="k" id="hnState">…</span></h2>
+        <div id="hn" class="list sm"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="card">
         <h2>📡 Station Spatiale (ISS) <span class="k" id="issState">…</span></h2>
         <div class="row" style="border-bottom:1px solid var(--line)"><div class="badge" style="background:#35d6e622;color:#35d6e6;border:1px solid #35d6e655;font-size:18px">🛰️</div><div class="main co" id="issInfo" style="font-variant-numeric:tabular-nums;color:var(--dim);font-size:13px;line-height:1.5">Localisation…</div></div>
       </section>
@@ -206,13 +216,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.1</span>
-  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube. Inspiré d'Osiris / WorldMonitor.</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.2</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.1";
+var VER="v2.2";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -313,10 +323,11 @@ async function loadIss(){try{
 var WMO={0:["Ciel clair","☀️"],1:["Peu nuageux","🌤️"],2:["Nuageux","⛅"],3:["Couvert","☁️"],45:["Brouillard","🌫️"],48:["Brouillard givrant","🌫️"],51:["Bruine","🌦️"],53:["Bruine","🌦️"],55:["Bruine dense","🌧️"],61:["Pluie faible","🌧️"],63:["Pluie","🌧️"],65:["Pluie forte","🌧️"],71:["Neige","🌨️"],73:["Neige","🌨️"],75:["Neige forte","❄️"],80:["Averses","🌦️"],81:["Averses","🌧️"],82:["Averses fortes","⛈️"],95:["Orage","⛈️"],96:["Orage grêle","⛈️"],99:["Orage violent","⛈️"]};
 async function loadMonaco(){
   var lat=43.7384,lon=7.4246;
-  try{var w=await getJSON("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&timezone=Europe%2FParis");
+  try{var w=await getJSON("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,uv_index&timezone=Europe%2FParis");
     var c=w.current||{};var wm=WMO[c.weather_code]||["—","🌡️"];
     setText($("mcWx"),Math.round(c.temperature_2m)+"° "+wm[1]);setText($("mcWxS"),wm[0]);
-    setText($("mcFeel"),Math.round(c.apparent_temperature)+"°");setText($("mcHum"),"Humidité "+Math.round(c.relative_humidity_2m)+"%");
+    var uvTxt="";if(c.uv_index!=null){var uv=Math.round(c.uv_index);uvTxt=" · UV "+uv+(uv>=8?" 🔴":uv>=6?" 🟠":uv>=3?" 🟡":" 🟢");}
+    setText($("mcFeel"),Math.round(c.apparent_temperature)+"°");setText($("mcHum"),"Humidité "+Math.round(c.relative_humidity_2m)+"%"+uvTxt);
     setText($("mcWind"),Math.round(c.wind_speed_10m));setText($("mcState"),"en direct");
   }catch(e){setText($("mcState"),"partiel");}
   try{var m=await getJSON("https://marine-api.open-meteo.com/v1/marine?latitude=43.73&longitude=7.43&current=wave_height,sea_surface_temperature&timezone=Europe%2FParis");
@@ -334,11 +345,14 @@ async function loadMonaco(){
 /* ============ MARCHÉS (CoinGecko + open.er-api) ============ */
 async function loadMarkets(){
   var rows=[];
-  try{var d=await getJSON("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=eur&include_24hr_change=true");
-    [["BTC","bitcoin"],["ETH","ethereum"]].forEach(function(p){var o=d[p[1]];if(!o)return;var ch=o.eur_24h_change||0;
+  try{var d=await getJSON("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,pax-gold&vs_currencies=eur&include_24hr_change=true");
+    [["BTC","bitcoin"],["ETH","ethereum"],["OR (once)","pax-gold"]].forEach(function(p){var o=d[p[1]];if(!o)return;var ch=o.eur_24h_change||0;
       rows.push({sym:p[0],px:o.eur.toLocaleString("fr-FR")+" €",ch:ch});});}catch(e){}
   try{var fx=await getJSON("https://open.er-api.com/v6/latest/EUR");
     if(fx&&fx.rates){rows.push({sym:"EUR/USD",px:fx.rates.USD.toFixed(4),ch:null});rows.push({sym:"EUR/CHF",px:fx.rates.CHF.toFixed(4),ch:null});}}catch(e){}
+  try{var fg=await getJSON("https://api.alternative.me/fng/",8000);
+    var v=fg&&fg.data&&fg.data[0];if(v){var n=+v.value;
+      rows.push({sym:"Sentiment",px:n+"/100 · "+(n<25?"😱 Peur extrême":n<45?"😟 Peur":n<55?"😐 Neutre":n<75?"🙂 Avidité":"🤑 Avidité extrême"),ch:null});}}catch(e){}
   if(!rows.length){setHTML($("markets"),'<div class="empty">Marchés indisponibles — reprise auto.</div>');setText($("mktState"),"indispo");return;}
   setText($("mktState"),"live");
   setHTML($("markets"),rows.map(function(r){var chh=r.ch==null?"":'<span class="'+(r.ch>=0?"up":"down")+'" style="font-size:12px;margin-left:8px">'+(r.ch>=0?"▲":"▼")+Math.abs(r.ch).toFixed(1)+'%</span>';
@@ -374,6 +388,33 @@ async function loadLaunches(){try{
     return '<div class="row"><div class="badge" style="background:#35d6e622;color:#35d6e6;border:1px solid #35d6e655">🚀</div><div class="main"><div class="t1">'+esc(l.name||"Lancement")+'</div><div class="t2">'+esc(prov)+'</div></div><div class="when">'+esc(ws)+'</div></div>';}).join(""));
 }catch(e){setText($("launchState"),"indispo");if($("launches").querySelector(".empty"))setHTML($("launches"),'<div class="empty">Lancements indisponibles.</div>');}}
 
+/* ============ TENDANCES WIKIPÉDIA FR (Wikimedia pageviews — gratuit sans clé) ============ */
+async function loadWiki(){try{
+  var d=new Date(Date.now()-864e5); /* hier (le jour courant n'est pas encore agrégé) */
+  var y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,"0"),j=String(d.getUTCDate()).padStart(2,"0");
+  var r=await getJSON("https://wikimedia.org/api/rest_v1/metrics/pageviews/top/fr.wikipedia/all-access/"+y+"/"+m+"/"+j,10000);
+  var arts=(((r||{}).items||[])[0]||{}).articles||[];
+  var skip=/^(Wikipédia|Spécial|Special|Cookie|Portail|Aide|Fichier|Main_Page|Recherche)/i;
+  var top=arts.filter(function(a){return !skip.test(a.article);}).slice(0,8);
+  if(!top.length)throw 0;
+  setText($("wikiState"),"hier");
+  setHTML($("wiki"),top.map(function(a,i){var t=a.article.replace(/_/g," ");
+    return '<a class="newsrow" href="https://fr.wikipedia.org/wiki/'+encodeURIComponent(a.article)+'" target="_blank" rel="noopener noreferrer"><div class="t1">'+(i+1)+'. '+esc(t)+'</div><div class="t2">'+a.views.toLocaleString("fr-FR")+' vues</div></a>';}).join(""));
+}catch(e){setText($("wikiState"),"indispo");setHTML($("wiki"),'<div class="empty">Tendances indisponibles — reprise auto.</div>');}}
+
+/* ============ TECH — HACKER NEWS (Firebase public — gratuit sans clé) ============ */
+async function loadHn(){try{
+  var ids=await getJSON("https://hacker-news.firebaseio.com/v0/topstories.json",9000);
+  var top=await Promise.all((ids||[]).slice(0,8).map(function(id){
+    return getJSON("https://hacker-news.firebaseio.com/v0/item/"+id+".json",8000).catch(function(){return null;});}));
+  top=top.filter(Boolean);
+  if(!top.length)throw 0;
+  setText($("hnState"),"live");
+  setHTML($("hn"),top.map(function(s){
+    var u=s.url||("https://news.ycombinator.com/item?id="+s.id);
+    return '<a class="newsrow" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer"><div class="t1">'+esc(s.title||"—")+'</div><div class="t2">▲ '+(s.score||0)+' · '+(s.descendants||0)+' commentaires</div></a>';}).join(""));
+}catch(e){setText($("hnState"),"indispo");setHTML($("hn"),'<div class="empty">Hacker News indisponible — reprise auto.</div>');}}
+
 /* ============ CAMÉRAS LIVE (YouTube — embed par CHAÎNE = suit toujours le direct en cours) ============ */
 var CAMS=[
   {n:"Sky News",e:"🇬🇧",ch:"UCoMdktPbSTixAyNGwb-UYkQ",q:"sky news live"},
@@ -387,7 +428,13 @@ var CAMS=[
   {n:"Times Square NYC",e:"🗽",q:"times square live cam 4k"},
   {n:"Venise — Grand Canal",e:"🛶",q:"venice italy live cam"},
   {n:"Tokyo — Shibuya",e:"🇯🇵",q:"shibuya crossing live camera"},
-  {n:"Jérusalem — Mur",e:"🕍",q:"jerusalem western wall live"}
+  {n:"Jérusalem — Mur",e:"🕍",q:"jerusalem western wall live"},
+  {n:"Paris — Tour Eiffel",e:"🗼",q:"paris eiffel tower live cam"},
+  {n:"Dubaï — Skyline",e:"🏙️",q:"dubai live cam 4k"},
+  {n:"Las Vegas — Strip",e:"🎰",q:"las vegas strip live cam"},
+  {n:"Chutes du Niagara",e:"💦",q:"niagara falls live cam"},
+  {n:"Rome — Fontaine de Trevi",e:"⛲",q:"trevi fountain rome live cam"},
+  {n:"Sydney — Opéra",e:"🦘",q:"sydney harbour opera house live cam"}
 ];
 function renderCams(){
   setHTML($("cams"),CAMS.map(function(c,i){
@@ -438,7 +485,8 @@ setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ orchestrateur ============ */
 function fast(){loadIss();loadFlights();}
-function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();}
+function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();}
+setInterval(loadHn,600000);setInterval(loadWiki,3600000);
 setInterval(loadTfl,600000); /* re-liste les caméras TfL toutes les 10 min */
 slow();fast();
 setInterval(fast,7000);
