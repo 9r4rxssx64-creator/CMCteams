@@ -57,14 +57,14 @@ async function extract(browser, pdfRel, year, monthIdx) {
     // v9.831 — couleurs PDF à l'identique : fond rouge (convention) / écriture rouge (horaire modifié)
     const meta = {}, rawM = (A.overrides_meta || {})[key] || {};
     Object.keys(rawM).forEach(id => { const r = rawM[id]; if (!r) return; const e = {}; Object.keys(r).forEach(d => { const m = r[d]; if (m && (m.bg === 'CONV' || m.fg === 'red')) { e[d] = {}; if (m.bg === 'CONV') e[d].bg = 'CONV'; if (m.fg === 'red') e[d].fg = 'red'; } }); if (Object.keys(e).length) meta[id] = e; });
-    const team = {}, fam = {}, emps = [];
+    const team = {}, fam = {}, emps = [], ecole = [];
     A.employees.forEach(e => {
       if (!e || !e.id) return;
       const t = (e.teamHistory || {})[key], f = (e.familyHistory || {})[key];
-      if (ov[e.id]) { emps.push({ id: e.id, name: e.name, family: e.family || '' }); if (t) team[e.id] = t; if (f) fam[e.id] = f; }
+      if (ov[e.id]) { emps.push({ id: e.id, name: e.name, family: e.family || '' }); if (t) team[e.id] = t; if (f) fam[e.id] = f; if (e.ecoleRoulette && e.ecoleRoulette[key]) ecole.push(e.id); }
     });
     let mirror = {}; try { mirror = JSON.parse(localStorage.getItem('cmc_team_mirror_' + key) || '{}'); } catch (_) {}
-    return { ov, meta, team, fam, mirror, emps, nCells: Object.keys(ov).reduce((s, id) => s + Object.keys(ov[id]).length, 0) };
+    return { ov, meta, team, fam, mirror, emps, ecole, nCells: Object.keys(ov).reduce((s, id) => s + Object.keys(ov[id]).length, 0) };
   }, year + '-' + monthIdx);
   await ctx.close();
   return out;
@@ -76,8 +76,8 @@ async function main() {
   for (const tg of TARGETS) {
     const key = tg.year + '-' + tg.monthIdx;
     const r = await extract(browser, tg.pdf, tg.year, tg.monthIdx);
-    months[key] = { ov: r.ov, meta: r.meta, emps: r.emps, team: r.team, fam: r.fam, mirror: r.mirror };
-    console.log(key + ' : ' + r.emps.length + ' emps · ' + r.nCells + ' cellules · ' + Object.keys(r.team).length + ' avec équipe · ' + (Object.keys(r.mirror).length / 2) + ' miroirs');
+    months[key] = { ov: r.ov, meta: r.meta, emps: r.emps, team: r.team, fam: r.fam, mirror: r.mirror, ecole: r.ecole };
+    console.log(key + ' : ' + r.emps.length + ' emps · ' + r.nCells + ' cellules · ' + Object.keys(r.team).length + ' avec équipe · ' + (Object.keys(r.mirror).length / 2) + ' miroirs · ' + r.ecole.length + ' école→roulettes');
   }
   await browser.close();
   const payload = { version: '2026-06-28', months };
