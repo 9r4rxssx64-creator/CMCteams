@@ -1,11 +1,13 @@
-// Régression v9.846 — ÉCOLE ROULETTE EUROPE (Kevin 2026-07-01 « Sur les imports, dans les
-// employés carte, tous ceux avec le fond bleu clair doivent être intégrés dans les équipes
-// roulettes par rapport au repos. Ce sont des employés qui sortent de l'école roulette Europe
-// et s'intègrent dans les équipes. Les enlever des équipes cartes »).
-// Prouve _cmcApplyEcoleToRoulettes : un employé CARTE (cmc) marqué fond bleu clair ({{ECOLE}})
-// passe en famille ROULETTES + sa teamHistory du mois est effacée (re-team par repos) ; un
-// employé bj/roulettes n'est PAS touché ; un tag {{ECOLE}} qui ne correspond à AUCUN employé
-// (ex code DELTTRA, faux positif bleu) est ignoré ; anti-homonyme (initiale) respecté.
+// Régression v9.846/v9.848 — ÉCOLE ROULETTE EUROPE (Kevin 2026-07-01 « dans les employés
+// carte, tous ceux avec le fond bleu clair doivent être intégrés dans les équipes roulettes.
+// Ce sont des employés qui sortent de l'école roulette Europe » + captures IMG_2957/2958
+// « pareil pour les autres avec le fond bleu »).
+// Le fond bleu clair = code-poste contenant « KE » (.BRTCP+KE / .BRTCPKE). Prouve
+// _cmcApplyEcoleToRoulettes : (1) un employé CARTE (cmc) dont le code-poste contient KE
+// passe en famille ROULETTES + teamHistory du mois effacée ; (2) un carte .BRTCPK (K SANS
+// E) N'EST PAS déplacé (pas de faux positif) ; (3) un roulettes avec KE (déjà roulettes)
+// intouché (garde famille) ; (4) anti-homonyme (initiale) ; (5) tag pixel {{ECOLE}}
+// accepté en secondaire ; (6) un code bleu isolé (DELTTRA, aucun employé) ignoré.
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
@@ -25,39 +27,43 @@ try {
 
   const r = await page.evaluate(() => {
     const key = '2026-7';
-    // 3 employés carte + 1 vrai roulette + 1 chef BJ ; repos alignés sur une "équipe roulette"
     A.employees = [
-      { id: 'E1', name: 'SANNA O', family: 'cmc', familyHistory: { [key]: 'cmc' }, teamHistory: { [key]: 'c3' } },   // école → doit passer roulettes
-      { id: 'E2', name: 'CABALLERO PA', family: 'cmc', familyHistory: { [key]: 'cmc' }, teamHistory: { [key]: 'c3' } }, // PAS marqué → reste cmc
-      { id: 'E3', name: 'MARTIRE D', family: 'roulettes', familyHistory: { [key]: 'roulettes' }, teamHistory: { [key]: 'r2' } }, // déjà roulettes → intouché
-      { id: 'E4', name: 'SANNA X', family: 'cmc', familyHistory: { [key]: 'cmc' }, teamHistory: { [key]: 'c3' } }     // homonyme SANNA autre initiale → NE doit PAS bouger
+      { id: 'E1', name: 'BARILARO A', family: 'cmc', familyHistory: { [key]: 'cmc' }, teamHistory: { [key]: 'c8' } },     // carte .BRTCP+KE → roulettes
+      { id: 'E2', name: 'CABALLERO PA', family: 'cmc', familyHistory: { [key]: 'cmc' }, teamHistory: { [key]: 'c3' } },   // carte .BRTCPKE → roulettes
+      { id: 'E3', name: 'SONDOORKHAN N', family: 'cmc', familyHistory: { [key]: 'cmc' }, teamHistory: { [key]: 'c3' } },  // carte .BRTCPK (K sans E) → RESTE cmc
+      { id: 'E4', name: 'GARINO Y', family: 'roulettes', familyHistory: { [key]: 'roulettes' }, teamHistory: { [key]: 'r2' } }, // déjà roulettes (a KE) → intouché
+      { id: 'E5', name: 'SERRA N', family: 'cmc', familyHistory: { [key]: 'cmc' }, teamHistory: { [key]: 'c3' } },        // carte {{ECOLE}} pixel → roulettes
+      { id: 'E6', name: 'SERRA X', family: 'cmc', familyHistory: { [key]: 'cmc' }, teamHistory: { [key]: 'c3' } }         // homonyme SERRA autre initiale → NE bouge PAS
     ];
     A.overrides = { [key]: {
-      E1: { 1: '22/6', 2: '19/4', 3: 'RH', 4: 'R' },
-      E2: { 1: '20/5', 2: '19/4', 3: 'RH', 4: 'R' },
-      E3: { 1: '22/6', 2: '19/4', 3: 'RH', 4: 'R' },
-      E4: { 1: '20/5', 2: '19/4', 3: 'RH', 4: 'R' }
+      E1: { 1: '20/5', 2: '19/4', 3: 'RH', 4: 'R' }, E2: { 1: '20/5', 2: '19/4', 3: 'RH', 4: 'R' },
+      E3: { 1: '20/5', 2: '19/4', 3: 'RH', 4: 'R' }, E4: { 1: '20/5', 2: '19/4', 3: 'RH', 4: 'R' },
+      E5: { 1: '20/5', 2: '19/4', 3: 'RH', 4: 'R' }, E6: { 1: '20/5', 2: '19/4', 3: 'RH', 4: 'R' }
     }};
-    // source : SANNA O marqué école (bleu clair), + un faux positif DELTTRA (code, aucun emp)
-    const src = 'SANNA O{{ECOLE}}\t22/6\tRH\nDELTTRA{{ECOLE}}\t20/5\nCABALLERO PA\t20/5\tRH';
+    // source au FORMAT PDF réel : code-poste<TAB>nom<TAB>1<TAB>31…
+    const src = [
+      '.BRTCP+KE\tBARILARO A\t1\t31',
+      '.BRTCPKE\tCABALLERO PA\t1\t31',
+      '.BRTCPK\tSONDOORKHAN N\t1\t31',      // K sans E → NE doit PAS matcher
+      'BRTP+KE.\tGARINO Y\t1\t31',          // roulettes (garde famille bloque)
+      'SERRA N{{ECOLE}}\t20/5\tRH',         // secondaire pixel
+      'DELTTRA{{ECOLE}}\t20/5'              // code bleu, aucun employé
+    ].join('\n');
     const res = _cmcApplyEcoleToRoulettes(key, src);
-    return {
-      res,
-      e1fam: A.employees[0].familyHistory[key], e1team: A.employees[0].teamHistory ? (A.employees[0].teamHistory[key] || null) : null,
-      e2fam: A.employees[1].familyHistory[key], e2team: A.employees[1].teamHistory[key],
-      e3fam: A.employees[2].familyHistory[key], e3team: A.employees[2].teamHistory[key],
-      e4fam: A.employees[3].familyHistory[key]
-    };
+    const fam = id => { const e = A.employees.find(x => x.id === id); return e.familyHistory[key]; };
+    const team = id => { const e = A.employees.find(x => x.id === id); return e.teamHistory ? (e.teamHistory[key] || null) : null; };
+    return { res, e1: [fam('E1'), team('E1')], e2: [fam('E2'), team('E2')], e3: [fam('E3'), team('E3')], e4: [fam('E4'), team('E4')], e5: [fam('E5'), team('E5')], e6: [fam('E6'), team('E6')] };
   });
 
   console.log('Résultat : ' + JSON.stringify(r.res));
   ok(perr.length === 0, 'aucune erreur page (' + perr.join(' | ') + ')');
-  ok(r.res && r.res.moved === 1, '1 seul employé déplacé (SANNA O) — ' + (r.res && r.res.moved));
-  ok(r.e1fam === 'roulettes', 'SANNA O (carte, bleu clair) → famille roulettes');
-  ok(r.e1team === null, 'SANNA O : teamHistory du mois effacée (re-team par repos)');
-  ok(r.e2fam === 'cmc' && r.e2team === 'c3', 'CABALLERO PA (non marqué) reste carte + équipe intacte');
-  ok(r.e3fam === 'roulettes' && r.e3team === 'r2', 'MARTIRE D (déjà roulettes) intouché');
-  ok(r.e4fam === 'cmc', 'SANNA X (homonyme, autre initiale) NON déplacé (anti-homonyme #38)');
+  ok(r.res && r.res.moved === 3, '3 employés déplacés (BARILARO, CABALLERO, SERRA ; GARINO bloqué par le garde famille) — moved=' + (r.res && r.res.moved));
+  ok(r.e1[0] === 'roulettes' && r.e1[1] === null, 'BARILARO A (.BRTCP+KE) → roulettes + team effacée');
+  ok(r.e2[0] === 'roulettes' && r.e2[1] === null, 'CABALLERO PA (.BRTCPKE) → roulettes + team effacée');
+  ok(r.e3[0] === 'cmc' && r.e3[1] === 'c3', 'SONDOORKHAN N (.BRTCPK, K sans E) RESTE carte (pas de faux positif KE)');
+  ok(r.e4[0] === 'roulettes' && r.e4[1] === 'r2', 'GARINO Y (déjà roulettes, a KE) intouché — garde famille');
+  ok(r.e5[0] === 'roulettes' && r.e5[1] === null, 'SERRA N ({{ECOLE}} pixel secondaire) → roulettes');
+  ok(r.e6[0] === 'cmc', 'SERRA X (homonyme, autre initiale) NON déplacé (anti-homonyme #38)');
   ok(!(r.res && r.res.names && r.res.names.indexOf('DELTTRA') >= 0), 'DELTTRA (code bleu, aucun employé) ignoré');
 
   await page.context().close();

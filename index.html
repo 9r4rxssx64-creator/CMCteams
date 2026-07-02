@@ -5574,7 +5574,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.847";
+var APP_VER="v9.848";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11119,7 +11119,9 @@ function dc(){
             // purge UNE fois l'ancienne familyHistory (erronée par l'ancien 'c'→bj)
             // puis on la PRÉSERVE (section d'import = autorité, lesson #67 / v9.805).
             try{ if(!localStorage.getItem("cmc_v805_famreset")){
-              A.employees.forEach(function(_e){ if(_e&&_e.familyHistory){ for(var _fk in _e.familyHistory) delete _e.familyHistory[_fk]; } });
+              // v9.848 : ne PAS effacer la famille des diplômés école roulette Europe
+              // (ecoleRoulette[key]) — sinon rest-pattern les re-team en cartes.
+              A.employees.forEach(function(_e){ if(_e&&_e.familyHistory){ for(var _fk in _e.familyHistory){ if(_e.ecoleRoulette&&_e.ecoleRoulette[_fk]){_e.familyHistory[_fk]="roulettes";} else {delete _e.familyHistory[_fk];} } } });
               localStorage.setItem("cmc_v805_famreset","1");
               try{ls("cmc_e",A.employees);}catch(_){}
             } }catch(_){}
@@ -27579,29 +27581,44 @@ function _cmcApplyFFToEmpsTest(sourceText){
   });
   return applied;
 }
-// v9.846 (Kevin 2026-07-01 « Sur les imports, dans les employés carte, tous ceux avec
-// le fond bleu clair doivent être intégrés dans les équipes roulettes par rapport au
-// repos etc. Ce sont des employés qui sortent de l'école roulette Europe et s'intègrent
-// dans les équipes. Les enlever des équipes cartes ») — reclasse les employés CARTE
-// (famille cmc) marqués fond bleu clair ({{ECOLE}}) vers la famille ROULETTES, puis
-// efface leur teamHistory du mois → la détection par repos (_cmcDetectTeamsByRestPattern)
-// les place dans l'équipe roulettes dont les repos correspondent. SÉCURITÉ : n'agit que
-// sur un tag qui correspond à un VRAI employé (surname+initiale) ET actuellement en cmc
-// → un code bleu (DELTTRA) ou faux positif = ignoré (aucun employé ne matche).
+// v9.846/v9.848 (Kevin 2026-07-01 « dans les employés carte, tous ceux avec le fond bleu
+// clair doivent être intégrés dans les équipes roulettes… Ce sont des employés qui sortent
+// de l'école roulette Europe et s'intègrent dans les équipes. Les enlever des équipes
+// cartes » + captures IMG_2957/2958 « pareil pour les autres avec le fond bleu »).
+//
+// SIGNAL FIABLE = la COMPÉTENCE « KE » (K blackjack super + E roulette Europe) dans le
+// code-poste BRTPECK du PDF : dans le PDF SBM, le fond bleu clair de la case NOM est
+// posé EXACTEMENT sur les employés carte dont le code-poste contient « KE » (.BRTCP+KE /
+// .BRTCPKE). La couleur bleu-clair au PIXEL est trop pâle pour un seuil fiable (b≈g) ET
+// l'ordre des opérateurs PDF ne capture pas toujours le fond des cases-noms → on lit la
+// VÉRITÉ dans le TEXTE : « KE » est écrit noir sur blanc dans le PDF (reproduction fidèle,
+// aucune invention). Un employé carte (famille cmc) avec « KE » = diplômé école roulette
+// Europe → famille ROULETTES + on efface son teamHistory → la détection par repos
+// (_cmcDetectTeamsByRestPattern) le place dans l'équipe roulettes de ses jours de repos.
+// SÉCURITÉ (lessons #38/#67/#104) : (1) ne bouge QUE les employés actuellement en cmc/
+// cartes (jamais bj/roulettes déjà classés) ; (2) match surname+initiale anti-homonyme ;
+// (3) « KE » substring ne matche PAS « .BRTCPK » (K sans E) → pas de faux positif.
+// Le tag pixel {{ECOLE}} reste accepté en secondaire s'il apparaît un jour.
 // Doit tourner AVANT _postValidateImport (qui fait la détection d'équipes).
 function _cmcApplyEcoleToRoulettes(key, sourceText){
-  if(!key||!sourceText||sourceText.indexOf("{{ECOLE}}")<0)return 0;
+  if(!key||!sourceText)return 0;
   var _norm=function(s){return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();};
-  // extrait les noms marqués : "SURNAME I{{ECOLE}}" (au moins 3 lettres, finit par une lettre)
-  var matches=sourceText.match(/[A-Z][A-Z\s\.\-]{2,30}[A-Z]\s*\{\{ECOLE\}\}/g)||[];
   var wanted=[]; // {surname, init}
-  matches.forEach(function(raw){
-    var nm=_norm(raw.replace(/\{\{ECOLE\}\}/g,""));
-    var toks=nm.split(/\s+/).filter(Boolean); if(!toks.length)return;
+  var _pushName=function(rawName){
+    var nm=_norm(rawName); var toks=nm.split(/\s+/).filter(Boolean); if(!toks.length)return;
     var surname=toks[0]; if(surname.length<3)return;
     var init=(toks.length>1)?toks[toks.length-1].replace(/[^A-Z]/g,""):"";
     wanted.push({surname:surname,init:init});
-  });
+  };
+  // (A) SIGNAL PRINCIPAL — code-poste contenant « KE » suivi du nom. Le PDF sérialise
+  // « .BRTCP+KE<TAB>BARILARO A » ou « BRTP+KE.<TAB>GARINO Y ». On capture le post-code KE
+  // + le NOM qui suit (après un éventuel {{TAG}} visuel + le séparateur). L'over-capture
+  // de la section roulettes (déjà roulettes) est neutralisée par le garde famille cmc.
+  var reKE=/\.?[BRTPECK+]*KE[BRTPECK+]*\.?(?:\{\{[A-Z]+\}\})*[\t ]+([A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ][A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ .\-]{1,28}[A-ZÉÈÀÂÊÎÔÛÄËÏÖÜÇ])/g, mKE;
+  while((mKE=reKE.exec(sourceText))!==null){ _pushName((mKE[1]||"").replace(/\{\{[A-Z]+\}\}/g,"")); }
+  // (B) SIGNAL SECONDAIRE — tag pixel {{ECOLE}} (si un jour le raster le pose)
+  var matches=sourceText.match(/[A-Z][A-Z\s\.\-]{2,30}[A-Z]\s*\{\{ECOLE\}\}/g)||[];
+  matches.forEach(function(raw){ _pushName(raw.replace(/\{\{ECOLE\}\}/g,"")); });
   if(!wanted.length)return 0;
   var moved=0,movedNames=[];
   A.employees.forEach(function(emp){
@@ -27617,6 +27634,8 @@ function _cmcApplyEcoleToRoulettes(key, sourceText){
     if(fam!=="cmc"&&fam!=="baccara")return;
     if(!emp.familyHistory)emp.familyHistory={};
     emp.familyHistory[key]="roulettes";                       // section d'affichage = roulettes
+    if(!emp.ecoleRoulette)emp.ecoleRoulette={};
+    emp.ecoleRoulette[key]=1;                                 // v9.848 : marqueur STICKY (école = autorité finale, survit au wipe familyHistory v9.805 + à toute re-dérivation de famille)
     if(emp.teamHistory&&emp.teamHistory[key])delete emp.teamHistory[key]; // re-team par repos
     moved++; movedNames.push(emp.name);
   });
@@ -37663,6 +37682,9 @@ function _cmcDetectTeamsByRestPattern(iy,im){
 // = '"' (CMC, jamais sur roulettes/bj). baccara→cmc (artefact DEF_EMP, lesson #50).
 // NE JAMAIS déduire bj du 'c'.
 function _cmcDeriveFamily(emp,ovRow,key){
+  // 0) v9.848 — École roulette Europe (KE, fond bleu clair) = AUTORITÉ FINALE (Kevin
+  // « les enlever des équipes cartes »). Prime même sur la section d'import cmc.
+  try{ if(emp&&emp.ecoleRoulette&&emp.ecoleRoulette[key])return "roulettes"; }catch(_){}
   // 1) Section d'import (familyHistory[key]) = autorité absolue.
   try{ var fh=emp&&emp.familyHistory&&emp.familyHistory[key];
        if(fh)return fh==="baccara"?"cmc":fh; }catch(_){}
