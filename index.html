@@ -4967,19 +4967,35 @@ function isEmpActive(emp,y,m){
 // v9.655 (Kevin "RAMOS chef BJ mai → roulettes juin = changement de secteur pour période")
 // familyForMonth retourne la family du mois (via familyHistory[key]) au lieu de emp.family
 // figé. Permet aux vues de refléter le secteur courant de l'emp.
+// v9.850 (Kevin 2026-07-02 « EHRET G, BATTAGLIA D sont chef baccara → doivent être dans
+// les plannings chefs, pas en équipe carte ») — repli famille pour un emp.family DEF_EMP
+// « baccara » (Punto Banco, pas de section propre dans les PDF actuels) : un CHEF (codes
+// journaliers majoritairement suffixe 'c') appartient au planning CHEFS (bj) ; un croupier
+// baccara → cartes (cmc). Avant, TOUT baccara → cmc (lesson #104) mettait les chefs
+// baccara dans les cartes. Le suffixe 'c' = rôle CHEF (lesson #107) ; ici on ne l'utilise
+// QUE pour trancher entre les 2 replis d'un DEF_EMP baccara, jamais comme famille directe.
+function _cmcBaccaraFallback(emp,key){
+  try{
+    var ov=(A.overrides&&A.overrides[key])||{}; var r=ov&&emp&&ov[emp.id];
+    if(r){ var work=0,chef=0; for(var d in r){ var c=r[d]; if(!c)continue;
+      var cu=String(c).toUpperCase();
+      if(cu==="RH"||cu==="R"||/^(CP|M|MAL|AF|AT|PAT|ABI|SS|CFL|CRH|CDP|EDC|RRT|PRT|RTP|RTR|DEPL|DELPT|CL|CDH|CEO|CSC|CSS|HD)$/.test(cu))continue;
+      work++; if(/c$/.test(String(c)))chef++; }
+      if(work>=3&&chef/work>=0.5)return "bj"; } // chef baccara → planning chefs
+  }catch(_){}
+  return "cmc"; // croupier baccara → cartes
+}
 function familyForMonth(emp,y,m,opts){
   if(!emp)return null;
   var key=y+"-"+m;
   var strict=opts&&opts.strict;
-  try{if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];}catch(e){return strict?null:(emp.family||"bj");}
+  try{if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];}catch(e){return strict?null:(emp.family==="baccara"?_cmcBaccaraFallback(emp,key):(emp.family||"bj"));}
   if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];
   // Chercher familyHistory plus récent antérieur (NON, règle Kevin "zéro historique")
   // En strict mode → null (force section "Pas de planning"). Sinon fallback emp.family DEF_EMP.
   if(strict)return null;
-  // v9.802 : garde anti-phantom — emp.family DEF_EMP "baccara" (Punto Banco, pas de
-  // section dans les PDF actuels) = artefact périmé → afficher cmc (cartes) plutôt
-  // qu'une famille fantôme (lesson #50/#104).
-  return (emp.family==="baccara"?"cmc":emp.family)||"bj";
+  // v9.850 : baccara → chefs (bj) si CHEF, sinon cartes (cmc) — anti-phantom lesson #104.
+  return (emp.family==="baccara"?_cmcBaccaraFallback(emp,key):emp.family)||"bj";
 }
 
 function teamForMonth(emp,y,m,opts){
@@ -5577,7 +5593,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.849";
+var APP_VER="v9.850";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37698,8 +37714,8 @@ function _cmcDeriveFamily(emp,ovRow,key){
           if(cu==="RH"||cu==="R"||/^(CP|M|MAL|AF|AT|PAT|ABI|SS|CFL|CRH|CDP|EDC|RRT|PRT|RTP|RTR|DEPL|DELPT|CL|CDH|CEO|CSC|CSS|HD)$/.test(cu))continue;
           t++; if(String(c).indexOf('"')>=0)q++; }
         if(t>=5&&q/t>=0.35)return "cmc"; } }catch(_){}
-  // 3) fallback DEF_EMP nettoyé (baccara→cmc).
-  return (emp&&emp.family==="baccara"?"cmc":(emp&&emp.family))||"bj";
+  // 3) fallback DEF_EMP nettoyé — v9.850 : baccara → chefs (bj) si CHEF, sinon cartes (cmc).
+  return (emp&&emp.family==="baccara"?_cmcBaccaraFallback(emp,key):(emp&&emp.family))||"bj";
 }
 
 // v9.808 (Kevin diag JUILLET 2026 "GARRO S / MARIOTTINI J pas dans mon équipe ;
