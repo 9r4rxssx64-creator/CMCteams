@@ -1,7 +1,7 @@
 /* KDMC APEX portail — service worker (MAJ auto + offline léger).
    Network-first sur la navigation (toujours la dernière version), cache du shell
    en repli hors-ligne. Ne cache jamais /__sso/* (auth dynamique). */
-var CACHE_VERSION = 'kdmc-apex-v1.0.16';
+var CACHE_VERSION = 'kdmc-apex-v1.0.17';
 var SHELL = ['./', './index.html', './kdmc-sso.js', './kdmc-portal.js', './manifest.json', './apps.json', './icon.svg'];
 
 self.addEventListener('install', function (e) {

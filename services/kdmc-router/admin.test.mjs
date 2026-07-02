@@ -157,5 +157,48 @@ try {
   ok(pushCalls.length === 0, 'même appareil re-vu → pas de nouvelle alerte push');
 } finally { globalThis.fetch = realFetch; }
 
+/* ---- Détection d'anomalie géo (changement de pays < 60 min) — enrich() direct ----
+   request.cf (géo Cloudflare) n'existe pas via mod.fetch sous Node → on appelle enrich()
+   directement avec une requête mockée porteuse de .cf. FLAG jamais BLOQUE (anti-lockout). */
+{
+  const { enrich } = await import('./worker.js');
+  const mkReq = (country, ip) => ({ cf: { country, city: 'X', region: 'Y' }, headers: new Headers({ 'CF-Connecting-IP': ip || '1.2.3.4', 'user-agent': 'Mozilla/5.0 (iPhone)', host: 'apex-chat.kd-mc.com' }) });
+  let anomPush = [];
+  const rf = globalThis.fetch;
+  globalThis.fetch = async (u, o) => { const url = typeof u === 'string' ? u : (u && u.url) || ''; if (url.indexOf('/send-all') >= 0) { anomPush.push(o && o.body); return new Response('{"ok":true}', { status: 200 }); } return rf(u, o); };
+  try {
+    /* même pays, reconnexion rapide → PAS d'anomalie */
+    const sa = new Map(); const AA = { get: async (k) => (sa.has(k) ? sa.get(k) : null), put: async (k, v) => { sa.set(k, v); }, delete: async (k) => { sa.delete(k); } };
+    const envA = { KDMC_SSO_SECRET: 'sec', ACCOUNTS: AA, KDMC_PUSH_URL: 'https://push.example.dev', KDMC_PUSH_TOKEN: 'tok' };
+    await enrich(envA, mkReq('FR'), 'geo-a', 'Geo A', true);      /* isNew */
+    sa.set('acc:geo-a', JSON.stringify(Object.assign(JSON.parse(sa.get('acc:geo-a')), { last_seen: Date.now() - 5 * 60e3 }))); /* rembobine 5 min */
+    anomPush = [];
+    await enrich(envA, mkReq('FR'), 'geo-a', 'Geo A', true);      /* même pays */
+    ok(!JSON.parse(sa.get('acc:geo-a')).anomaly && anomPush.length === 0, 'même pays reconnexion rapide → aucune anomalie');
+
+    /* changement de pays < 60 min → anomalie flaggée + audit + push (jamais bloqué) */
+    const sb = new Map(); const AB = { get: async (k) => (sb.has(k) ? sb.get(k) : null), put: async (k, v) => { sb.set(k, v); }, delete: async (k) => { sb.delete(k); } };
+    const envB = { KDMC_SSO_SECRET: 'sec', ACCOUNTS: AB, KDMC_PUSH_URL: 'https://push.example.dev', KDMC_PUSH_TOKEN: 'tok' };
+    await enrich(envB, mkReq('FR'), 'geo-b', 'Geo B', true);
+    sb.set('acc:geo-b', JSON.stringify(Object.assign(JSON.parse(sb.get('acc:geo-b')), { last_seen: Date.now() - 10 * 60e3 }))); /* 10 min avant */
+    anomPush = [];
+    await enrich(envB, mkReq('US'), 'geo-b', 'Geo B', true);      /* FR → US en 10 min */
+    const accB = JSON.parse(sb.get('acc:geo-b'));
+    ok(accB.anomaly && accB.anomaly.from === 'FR' && accB.anomaly.to === 'US', 'FR→US <60min → acc.anomaly {from:FR,to:US}');
+    ok(anomPush.length === 1 && /connexion suspecte|déplacement impossible/.test(anomPush[0] || ''), 'anomalie géo → 1 alerte push');
+    const logB = JSON.parse(sb.get('aud:log') || '[]');
+    ok(logB.some((e) => e.ev === 'geo_anomaly' && e.uid === 'geo-b'), 'anomalie géo tracée dans le journal admin');
+
+    /* changement de pays MAIS > 60 min → déplacement légitime, pas d'anomalie */
+    const sc = new Map(); const AC = { get: async (k) => (sc.has(k) ? sc.get(k) : null), put: async (k, v) => { sc.set(k, v); }, delete: async (k) => { sc.delete(k); } };
+    const envC = { KDMC_SSO_SECRET: 'sec', ACCOUNTS: AC, KDMC_PUSH_URL: 'https://push.example.dev', KDMC_PUSH_TOKEN: 'tok' };
+    await enrich(envC, mkReq('FR'), 'geo-c', 'Geo C', true);
+    sc.set('acc:geo-c', JSON.stringify(Object.assign(JSON.parse(sc.get('acc:geo-c')), { last_seen: Date.now() - 3 * 60 * 60e3 }))); /* 3 h avant */
+    anomPush = [];
+    await enrich(envC, mkReq('IT'), 'geo-c', 'Geo C', true);      /* FR → IT en 3 h = OK */
+    ok(!JSON.parse(sc.get('acc:geo-c')).anomaly && anomPush.length === 0, 'changement de pays >60 min (déplacement réel) → aucune anomalie');
+  } finally { globalThis.fetch = rf; }
+}
+
 console.log(`Admin domaine test: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
