@@ -71,7 +71,11 @@ class RiskManager:
     # --- Kill switch ---
     @staticmethod
     def kill_requested() -> bool:
-        return os.path.exists(KILL_PATH)
+        """Fichier KILL (local) OU variable BOT_KILL=1 (cloud, réglable
+        depuis le dashboard Railway sur iPhone)."""
+        if os.path.exists(KILL_PATH):
+            return True
+        return os.getenv("BOT_KILL", "").strip().lower() in ("1", "true", "yes", "oui", "on")
 
     # --- Suivi capital (sommet + démarrage de journée) ---
     def mark_equity(self, state: State, equity: float) -> None:
