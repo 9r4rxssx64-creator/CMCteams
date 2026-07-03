@@ -764,5 +764,12 @@ async function handleBot(request, url, env) {
   return J({ ok: false, reason: 'not_found' });
 }
 
+/* Grant admin MACHINE : produit le même jeton signé que /__admin/login, mais à
+   partir du SECRET SSO (pas du code PIN). Sert à l'agent de contrôle GitHub Actions
+   pour s'authentifier en admin et vérifier le bot À LA PLACE de Kevin, sans jamais
+   détenir son Face ID. Minter un jeton exige déjà le secret → n'affaiblit rien.
+   Utilise le MÊME ssoSign que le worker → zéro dérive (le jeton est forcément accepté). */
+async function adminGrant(secret) { return ssoSign(secret, '__kdmc_admin__', 'admin', 1); }
+
 /* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
-export { enrich };
+export { enrich, adminGrant };

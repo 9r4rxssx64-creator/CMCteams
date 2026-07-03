@@ -101,7 +101,18 @@ ok(!gqlCalls.some((q) => q.includes('variableUpsert')), 'config invalide → auc
 r = await mod.fetch(REQ({ path: '/__bot/config', method: 'POST', body: '{}' }), env);
 ok(r.status === 403, 'config POST sans grant → 403');
 
-/* 11) Route inconnue → not_found */
+/* 11) Grant admin MACHINE (agent de contrôle GitHub) : adminGrant(secret) doit être
+   accepté par /__bot/status exactement comme un login admin (même ssoSign). */
+import { adminGrant } from './worker.js';
+const machineTok = await adminGrant('sec');
+r = await mod.fetch(REQ({ path: '/__bot/status', headers: { 'x-kdmc-admin': machineTok } }), env);
+j = await r.json();
+ok(j.ok === true && j.status === 'SUCCESS', 'grant machine (adminGrant) accepté par /__bot/status');
+const badTok = await adminGrant('MAUVAIS_SECRET');
+r = await mod.fetch(REQ({ path: '/__bot/status', headers: { 'x-kdmc-admin': badTok } }), env);
+ok(r.status === 403, 'grant signé avec un mauvais secret → 403 (forge rejetée)');
+
+/* 12) Route inconnue → not_found */
 r = await mod.fetch(REQ({ path: '/__bot/xyz', headers: H }), env);
 ok((await r.json()).reason === 'not_found', 'route inconnue → not_found');
 
