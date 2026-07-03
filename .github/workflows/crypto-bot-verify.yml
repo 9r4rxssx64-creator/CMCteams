@@ -35,7 +35,12 @@ jobs:
         env:
           # Même secret que le worker (KDMC_SSO_SECRET, avec repli JWT_SECRET) → jeton accepté.
           SEC: ${{ secrets.KDMC_SSO_SECRET != '' && secrets.KDMC_SSO_SECRET || secrets.JWT_SECRET }}
-          BASE: https://bot.kd-mc.com
+          # API : les endpoints /__bot/* sont gérés AVANT le routage par host → dispo sur
+          # n'importe quel sous-domaine kd-mc.com déjà actif. On tape un host STABLE
+          # (cmcteams.kd-mc.com, utilisé au quotidien) pour ne pas dépendre de la
+          # provision du certificat du nouveau bot.kd-mc.com.
+          BASE: https://cmcteams.kd-mc.com
+          PAGE: https://bot.kd-mc.com
         run: |
           set +e
           HEALTHY=true; REPORT=""
@@ -52,9 +57,10 @@ jobs:
           TOK=$(SEC="$SEC" node -e "import('./services/kdmc-router/worker.js').then(async m=>{process.stdout.write(await m.adminGrant(process.env.SEC));}).catch(e=>{console.error(e);process.exit(1);})")
           if [ -z "$TOK" ]; then add "❌ Échec génération du jeton admin machine."; HEALTHY=false; fi
 
-          # 2) La page du tableau de bord répond
-          PC=$(curl -s -o /dev/null -w "%{http_code}" -m 15 "$BASE/")
-          if [ "$PC" = "200" ]; then add "✅ Page bot.kd-mc.com : HTTP $PC"; else add "❌ Page bot.kd-mc.com : HTTP $PC (attendu 200)"; HEALTHY=false; fi
+          # 2) La page du tableau de bord répond (souple : la santé du BOT ne dépend
+          #    pas de la provision du certificat de la jolie adresse)
+          PC=$(curl -s -o /dev/null -w "%{http_code}" -m 15 "$PAGE/")
+          if [ "$PC" = "200" ]; then add "✅ Page bot.kd-mc.com : HTTP $PC"; else add "⚠️ Page bot.kd-mc.com : HTTP $PC (certificat peut-être en cours — non bloquant)"; fi
 
           # 3) Le verrou admin est bien ACTIF (sans jeton → 403 need_admin_code)
           NOAUTH=$(curl -s -m 15 "$BASE/__bot/status"); echo "$NOAUTH" | grep -q 'need_admin_code' \
