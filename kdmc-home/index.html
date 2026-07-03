@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v1.0.19 -->
+<!-- v1.0.20 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
@@ -144,8 +144,17 @@
           <a class="card adm" href="/liens/"><span class="ic">🎛️</span><span class="ct"><span class="nm">Centre de contrôle <span class="badge">Privé</span></span><span class="ds">Tous mes liens 1-clic : apps, boutiques, clés API, workers, Firebase…</span><span class="url">kd-mc.com → liens</span></span><span class="arr">›</span></a>
           <a class="card adm" href="https://coffre.kd-mc.com/"><span class="ic">🔐</span><span class="ct"><span class="nm">Coffre-fort <span class="badge">Privé</span></span><span class="ds">Documents &amp; accès sécurisés</span><span class="url">coffre.kd-mc.com</span></span><span class="arr">›</span></a>
           <a class="card adm" href="https://dashboard.kd-mc.com/"><span class="ic">📊</span><span class="ct"><span class="nm">Dashboard boutiques <span class="badge">Privé</span></span><span class="ds">Commandes, produits, stats, finances</span><span class="url">dashboard.kd-mc.com</span></span><span class="arr">›</span></a>
-          <a class="card adm" href="https://bot.kd-mc.com/"><span class="ic">🤖</span><span class="ct"><span class="nm">Bot Crypto <span class="badge">Privé</span></span><span class="ds">Trading auto — état, cryptos, garde-fous, marche/arrêt</span><span class="url">bot.kd-mc.com</span></span><span class="arr">›</span></a>
           <a class="card adm" href="/admin/"><span class="ic">👥</span><span class="ct"><span class="nm">Admin domaine <span class="badge">Admin</span></span><span class="ds">Fiches clients &amp; fonctions communes (code admin requis)</span><span class="url">kd-mc.com → admin</span></span><span class="arr">›</span></a>
+        </nav>
+      </div>
+
+      <!-- Bot crypto : révélé dès que tu es connecté sous ton nom (Kevin/Laurence), SANS exiger
+           le Face ID — la page bot.kd-mc.com est protégée par son propre code admin, donc
+           afficher la tuile ne donne AUCUN accès. Caché pour les autres clients. -->
+      <div id="bot-zone" hidden>
+        <h2 class="cat">🤖 Mon bot</h2>
+        <nav class="grid" aria-label="Bot crypto">
+          <a class="card adm" href="https://bot.kd-mc.com/"><span class="ic">🤖</span><span class="ct"><span class="nm">Bot Crypto <span class="badge">Privé</span></span><span class="ds">Trading auto — état, cryptos, garde-fous, marche/arrêt</span><span class="url">bot.kd-mc.com</span></span><span class="arr">›</span></a>
         </nav>
       </div>
 
@@ -161,6 +170,6 @@
   <script src="kdmc-sso.js"></script>
   <script src="kdmc-portal.js"></script>
   <!-- MAJ auto forcée + badge version (helper partagé) -->
-  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-home" data-version="v1.0.19" data-color="#c9a227" defer></script>
+  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-home" data-version="v1.0.20" data-color="#c9a227" defer></script>
 </body>
 </html>
