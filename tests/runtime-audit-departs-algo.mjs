@@ -49,7 +49,7 @@ try {
       const deps = {}; active.forEach(e=>deps[e.name]={});
       for(let d=1;d<=days;d++){ const wi=wd.indexOf(d); if(wi<0) continue;
         const present = active.filter(e=>isWork((pl[e.id]||{})[d]||'')).sort((a,b)=>baseOf[a.name]-baseOf[b.name]);
-        const pc=present.length; if(!pc) continue; const SEQd=sq(pc), rot=(wi%4)+Math.floor(wi/4);
+        const pc=present.length; if(!pc) continue; const SEQd=sq(pc), rot=wi; // v9.851 : +1 par jour travaillé
         present.forEach((e,j)=>deps[e.name][d]=SEQd[(((rot+j)%pc)+pc)%pc]); }
       return deps;
     }
@@ -79,6 +79,47 @@ try {
   ok(out.phantom === 0, 'AUCUN numéro fantôme > nb chefs présents (' + out.phantom + ')');
   ok(out.mismatch === 0, 'app == page sur CHAQUE cellule (' + out.mismatch + ' écart)');
   ok(out.withNumber === out.totalCells, 'TOUT chef qui travaille a un numéro (' + out.withNumber + '/' + out.totalCells + ')');
+
+  // v9.851 (Kevin 2026-07-03 capture CMC Éq.5 « il y a des erreurs ») — VERROU anti-répétition :
+  // avec l'ancienne (wi%4)+floor(wi/4), 2 jours à qq jours d'écart (même effectif) avaient les
+  // MÊMES numéros (jeu6==dim9) → chaque chef bloqué sur 3-4 places. La rotation rot=wi visite pc
+  // permutations DISTINCTES par cycle. On prend, pour chaque équipe, les jours où l'effectif
+  // présent = effectif complet (roster stable), et on exige que les pc premiers de ces jours
+  // aient des vecteurs de départ TOUS DIFFÉRENTS + que le 1er = la séquence dans l'ordre des chefs.
+  const rot = await page.evaluate(() => {
+    const days = getDays(2026, 7), pl = gpl();
+    const SEQS = { 2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],11:[1,6,4,9,2,11,7,3,8,5,10],12:[1,6,4,9,2,11,7,3,12,8,5,10],13:[1,6,4,9,2,11,7,3,13,8,5,10,12] };
+    const sq = n => SEQS[n] || Array.from({length:n},(_,i)=>i+1);
+    let teamsBig = 0, badNear = 0, checked = 0;
+    Object.keys(CHEFS_T).forEach(tid => {
+      const names = CHEFS_T[tid] || []; if (names.length < 5) return; // équipes ≥5 chefs (là où le bug était visible)
+      const active = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWork((pl[e.id]||{})[i+1]||'')));
+      if (active.length < 5) return;
+      const full = active.length; teamsBig++;
+      // jours de travail de l'équipe (union) + index wi
+      const wd = []; for (let d = 1; d <= days; d++) { if (active.some(e => isWork((pl[e.id]||{})[d]||''))) wd.push(d); }
+      // jours à roster complet (tous présents) + leur wi + vecteur de départ (ordre des chefs)
+      const stable = [];
+      for (let d = 1; d <= days; d++) {
+        if (!active.every(e => isWork((pl[e.id]||{})[d]||''))) continue;
+        const wi = wd.indexOf(d);
+        const vec = active.map(e => { A.year=2026; A.month=7; return calcDepPos(e.name, tid, d); });
+        stable.push({ d, wi, vec: JSON.stringify(vec) });
+      }
+      // PROPRIÉTÉ rot=wi : 2 jours à roster complet dont wi diffèrent de k avec 0<k<pc
+      // (donc PAS un cycle complet) DOIVENT avoir des vecteurs DIFFÉRENTS. C'est exactement
+      // ce que l'ancienne (wi%4)+floor(wi/4) violait (jeu6 wi3, dim9 wi6 : k=3<7 mais identiques).
+      for (let a = 0; a < stable.length; a++) for (let b = a + 1; b < stable.length; b++) {
+        const k = Math.abs(stable[a].wi - stable[b].wi);
+        if (k % full !== 0 && stable[a].vec === stable[b].vec) badNear++;
+      }
+      checked++;
+    });
+    return { teamsBig, badNear, checked };
+  });
+  console.log('  anti-répétition : ' + rot.teamsBig + ' équipes ≥5 chefs, ' + rot.checked + ' vérifiées');
+  ok(rot.checked >= 3, 'assez d’équipes ≥5 chefs pour tester la rotation (' + rot.checked + ' ≥ 3)');
+  ok(rot.badNear === 0, 'AUCUNE répétition à moins d’un cycle complet (' + rot.badNear + ') — bug jeu6==dim9 (rotation qui se réinitialise) corrigé');
 
   // v9.845 — DÉTERMINISME CROSS-SPECTATEUR (Kevin « les autres n'ont pas les mêmes départs
   // sur leurs app »). On calcule TOUS les numéros de départ successivement en tant que
