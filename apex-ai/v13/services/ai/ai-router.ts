@@ -1547,17 +1547,8 @@ class AIRouter {
       /* v13.3.33 — Smart Router prefix.
        * Si smartRouter dispose d'un best provider scored > 70 ET supporté ai-router,
        * on le met en TÊTE devant decision.primary. Override admin (Kevin "force X")
-       * géré via getOverride() dans smartRouter — bypass tout.
-       *
-       * v13.4.337 (Kevin « toujours openai » malgré premium v336) : en mode 'premium'
-       * ou 'forced', l'admin a EXPLICITEMENT choisi son provider (Anthropic par défaut
-       * pour Kevin). Le smart-router NE DOIT PAS le ré-ordonner — sinon il remet openai
-       * en tête après quelques succès openai, exactement le drift que premium corrige.
-       * Le smart-router reste actif en 'auto'/'economy' (optimisation clients). */
-      const policyMode = aiRoutingPolicy.getMode();
-      const skipSmartPrefix = policyMode === 'premium' || policyMode === 'forced';
+       * géré via getOverride() dans smartRouter — bypass tout. */
       try {
-        if (skipSmartPrefix) throw new Error('skip:explicit-mode');
         const { smartRouter } = await import('./smart-router.js');
         const taskType = this.detectTaskType(userText);
         const smartBest = await smartRouter.getBest(taskType);
@@ -1574,10 +1565,7 @@ class AIRouter {
           });
         }
       } catch (err: unknown) {
-        if (!skipSmartPrefix) {
-          logger.warn('ai-router', 'smart-router unavailable, fallback policy only', { err });
-        }
-        /* skipSmartPrefix : sortie volontaire (premium/forced) → pas un warning */
+        logger.warn('ai-router', 'smart-router unavailable, fallback policy only', { err });
       }
 
       push(decision.primary);
