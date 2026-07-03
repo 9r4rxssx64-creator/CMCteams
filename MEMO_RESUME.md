@@ -1,3 +1,7 @@
+# v13.4.337 (2026-06-19→23) — « toujours openai » corrigé (rebasé sur main à jour)
+- Cause : dans `ai-router.buildPolicyAwareChain`, le prefix smart-router remettait openai en tête AVANT `decision.primary`, écrasant le mode premium (admin→Anthropic). Fix : sauter le prefix smart-router quand mode premium/forced (choix explicite). Smart-router gardé en auto/economy.
+- Test `v13_4_337-premium-no-smart-drift` (4/4). Leçon CLAUDE.md #124. Rebasé proprement sur main (563 commits d'écart, méthode leçon #108 : reset sur main + ré-appliquer les modifs source + rebuild, pour éviter les conflits de build folder).
+
 # Mémo de reprise — Apex PWA : corrections fonctionnelles (2026-06-14, branche `claude/remove-unsold-items-qpnypb`)
 
 > Suite aux captures Kevin de la PWA Apex. Tout mergé sur le vrai `main` (vérifié via API GitHub).
