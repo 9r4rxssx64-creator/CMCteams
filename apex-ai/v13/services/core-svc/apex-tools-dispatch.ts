@@ -58,6 +58,7 @@ import {
 import {
   auditSelf,
   backupTrigger,
+  cloneSite,
   detectIntent,
   escalateHuman,
   githubSearch,
@@ -864,6 +865,8 @@ class ApexToolsDispatcher {
         return marketData(params['type'] as string, params['symbol'] as string);
       case 'scrape_url':
         return scrapeUrl(params['url'] as string);
+      case 'clone_site':
+        return cloneSite(params['url'] as string, params['mode'] as string | undefined);
       case 'detect_intent':
         return detectIntent(params['text'] as string);
       case 'sentinels_status':
