@@ -84,7 +84,7 @@ jobs:
         run: |
           set +e
           # A) testnet (faux argent) + garde-fous  B) plusieurs cryptos (capital réparti 1/N)
-          # C) plus réactif : bougies 5 min + EMA rapides (7/15) + RSI un peu plus permissif.
+          # C) plus réactif : bougies 5 min + EMA rapides (5/13) + RSI plus permissif (78).
           # Le risque TOTAL reste borné : risque/trade et position max sont divisés par le
           # nombre de paires (alloc = 1/N) → exposition globale inchangée. Stop-loss + plafond
           # perte/jour + max drawdown toujours actifs (défauts config : 3% / 15%).
@@ -97,9 +97,9 @@ jobs:
             --set "SYMBOL=BTC/USDT" \
             --set "TIMEFRAME=5m" \
             --set "LOOP_SECONDS=30" \
-            --set "EMA_FAST=7" \
-            --set "EMA_SLOW=15" \
-            --set "RSI_MAX=72" 2>&1)
+            --set "EMA_FAST=5" \
+            --set "EMA_SLOW=13" \
+            --set "RSI_MAX=78" 2>&1)
           RC=$?
           # Ne jamais logger les valeurs — uniquement le code retour + erreurs
           echo "railway variables rc=$RC"
@@ -130,7 +130,7 @@ jobs:
             echo ""
             echo "- Mode : 🧪 TESTNET (faux argent) — TESTNET=true, BOT_KILL=0"
             echo "- Cryptos : BTC, ETH, SOL, BNB, XRP (capital réparti à parts égales)"
-            echo "- Rythme : bougies 5 min, EMA rapides 7/15 (plus réactif)"
+            echo "- Rythme : bougies 5 min, EMA rapides 5/13 + RSI 78 (mode PLUS réactif — plus de trades)"
             echo "- Service : \`crypto-bot\`"
             echo "- Suivi : https://railway.app → projet → service crypto-bot → View Logs"
             echo "- Kill switch iPhone : Variables → BOT_KILL=1 (le bot vend et s'arrête au cycle suivant)"
