@@ -27,6 +27,7 @@ const ROUTES = {
   'coffre.kd-mc.com': '/CMCteams/coffre-fort',
   'departs.kd-mc.com': '/CMCteams/tools/departs',
   'cmcteams-light.kd-mc.com': '/CMCteams/tools/departs', // « CMCteams light » (Kevin 2026-07-01) — alias nommé de la page Départs (departs.kd-mc.com reste actif)
+  'bot.kd-mc.com': '/CMCteams/tools/crypto-bot-dashboard', // Tableau de bord crypto-bot (Kevin 2026-07-03) — admin-gated via /__bot/*
 };
 
 export default {
@@ -38,6 +39,8 @@ export default {
     if (url.pathname.startsWith('/__sso/')) return handleSso(request, url, env);
     // Admin domaine (fiches clients + fonctions communes). Réservé admin.
     if (url.pathname.startsWith('/__admin/')) return handleAdmin(request, url, env);
+    // Crypto-bot Railway (statut + kill switch). Réservé admin (même grant que /__admin).
+    if (url.pathname.startsWith('/__bot/')) return handleBot(request, url, env);
 
     const base = ROUTES[host];
     if (!base) return Response.redirect('https://kd-mc.com/', 302);
@@ -636,6 +639,69 @@ async function handleAdmin(request, url, env) {
     if (out.ok) await audLog(env, { ev: 'fbtoken_mint' });
     return out.ok ? J(out) : J(out, null, 503);
   }
+  return J({ ok: false, reason: 'not_found' });
+}
+
+/* ===================== Crypto-bot Railway (bot.kd-mc.com) ===================== */
+/* Tableau de bord du bot de trading (service Railway "crypto-bot").
+   SÉCU : réservé admin — MÊME grant signé que /__admin (fail-closed, leçons #98/#99).
+   Le RAILWAY_TOKEN (secret worker, posé par deploy-kdmc-router.yml) ne quitte JAMAIS
+   le worker ; la page ne reçoit que du JSON déjà filtré.
+   Erreurs : cause EXACTE relayée dans `detail` (règle "détailler les erreurs"). */
+const BOT_SERVICE_NAME = 'crypto-bot';
+async function railGql(env, query) {
+  const r = await fetch('https://backboard.railway.com/graphql/v2', {
+    method: 'POST',
+    headers: { 'Project-Access-Token': env.RAILWAY_TOKEN, 'content-type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+  let j = null; try { j = await r.json(); } catch { /* corps non-JSON */ }
+  return { http: r.status, j };
+}
+async function botCtx(env) {
+  const pt = await railGql(env, 'query { projectToken { projectId environmentId } }');
+  const projectId = pt.j && pt.j.data && pt.j.data.projectToken && pt.j.data.projectToken.projectId;
+  const environmentId = pt.j && pt.j.data && pt.j.data.projectToken && pt.j.data.projectToken.environmentId;
+  if (!projectId) return { err: 'token_railway_invalide', detail: JSON.stringify(pt.j || pt.http).slice(0, 300) };
+  const pr = await railGql(env, `query { project(id: "${projectId}") { name services { edges { node { id name } } } } }`);
+  const edges = (((pr.j || {}).data || {}).project || { services: { edges: [] } }).services.edges || [];
+  const svc = edges.map((e) => e.node).find((n) => n.name === BOT_SERVICE_NAME);
+  if (!svc) return { err: 'service_bot_introuvable', detail: 'services: ' + edges.map((e) => e.node.name).join(', ') };
+  return { projectId, environmentId, serviceId: svc.id, projectName: (((pr.j || {}).data || {}).project || {}).name };
+}
+async function handleBot(request, url, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  const me = await adminSession(request, env);
+  if (!me) {
+    const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
+    return J({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }, null, 403);
+  }
+  if (!env.RAILWAY_TOKEN) return J({ ok: false, reason: 'railway_token_absent', detail: 'Secret RAILWAY_TOKEN non déployé sur le worker (relancer deploy-kdmc-router).' });
+  const ctx = await botCtx(env);
+  if (ctx.err) return J({ ok: false, reason: ctx.err, detail: ctx.detail });
+  const path = url.pathname;
+
+  if (path === '/__bot/status' && request.method === 'GET') {
+    const dp = await railGql(env, `query { deployments(first: 1, input: { projectId: "${ctx.projectId}", serviceId: "${ctx.serviceId}", environmentId: "${ctx.environmentId}" }) { edges { node { id status createdAt } } } }`);
+    const node = ((((dp.j || {}).data || {}).deployments || { edges: [] }).edges[0] || {}).node;
+    if (!node) return J({ ok: false, reason: 'aucun_deploiement', detail: JSON.stringify(dp.j || dp.http).slice(0, 300) });
+    const rl = await railGql(env, `query { deploymentLogs(deploymentId: "${node.id}", limit: 80) { timestamp message } }`);
+    const logs = (((rl.j || {}).data || {}).deploymentLogs || []).map((l) => ({ t: l.timestamp, m: String(l.message || '').slice(0, 300) }));
+    return J({ ok: true, project: ctx.projectName, status: node.status, since: node.createdAt, logs });
+  }
+
+  /* Kill switch / relance : pose BOT_KILL puis redéploie (le bot lit BOT_KILL au
+     cycle suivant → vend et s'arrête proprement ; exit 0 + ON_FAILURE = pas de restart). */
+  if ((path === '/__bot/kill' || path === '/__bot/start') && request.method === 'POST') {
+    const val = path === '/__bot/kill' ? '1' : '0';
+    const up = await railGql(env, `mutation { variableUpsert(input: { projectId: "${ctx.projectId}", environmentId: "${ctx.environmentId}", serviceId: "${ctx.serviceId}", name: "BOT_KILL", value: "${val}" }) }`);
+    if (!up.j || up.j.errors) return J({ ok: false, reason: 'variable_upsert_echec', detail: JSON.stringify((up.j && up.j.errors) || up.http).slice(0, 300) });
+    const rd = await railGql(env, `mutation { serviceInstanceRedeploy(environmentId: "${ctx.environmentId}", serviceId: "${ctx.serviceId}") }`);
+    if (!rd.j || rd.j.errors) return J({ ok: false, reason: 'redeploy_echec', detail: JSON.stringify((rd.j && rd.j.errors) || rd.http).slice(0, 300) });
+    await audLog(env, { ev: path === '/__bot/kill' ? 'bot_kill' : 'bot_start' });
+    return J({ ok: true, action: path === '/__bot/kill' ? 'kill' : 'start' });
+  }
+
   return J({ ok: false, reason: 'not_found' });
 }
 

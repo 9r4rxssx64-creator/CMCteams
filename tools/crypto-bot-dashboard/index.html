@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://kd-mc.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>🤖 Bot Crypto — kd-mc.com</title>
+<style>
+  :root{
+    --bg:#0b0e14; --card:#131826; --card2:#0f1420; --line:#232b3d;
+    --txt:#e8ecf4; --mut:#8b94a8; --gold:#e8b830; --green:#3ecf7a; --red:#ff5c5c; --orange:#ffab3d;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--txt);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+       min-height:100vh;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px calc(env(safe-area-inset-bottom,0px) + 90px)}
+  .wrap{max-width:560px;margin:0 auto}
+  h1{font-size:21px;display:flex;align-items:center;gap:10px;margin-bottom:2px}
+  .sub{color:var(--mut);font-size:12.5px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .kpi{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .kpi .l{color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
+  .kpi .v{font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:99px;font-size:12.5px;font-weight:600}
+  .p-ok{background:rgba(62,207,122,.12);color:var(--green)} .p-ko{background:rgba(255,92,92,.12);color:var(--red)}
+  .p-warn{background:rgba(255,171,61,.12);color:var(--orange)} .p-test{background:rgba(232,184,48,.12);color:var(--gold)}
+  .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 2.2s infinite}
+  @keyframes pulse{50%{opacity:.35}} @media (prefers-reduced-motion){.dot{animation:none}}
+  button{font:inherit;border:0;border-radius:12px;cursor:pointer;min-height:48px;font-weight:700}
+  .btn-kill{background:linear-gradient(135deg,#ff5c5c,#c93030);color:#fff;width:100%}
+  .btn-start{background:linear-gradient(135deg,#3ecf7a,#1f9d55);color:#08130c;width:100%}
+  .btn-ghost{background:var(--card2);border:1px solid var(--line);color:var(--txt);width:100%}
+  .btn-gold{background:linear-gradient(135deg,#e8b830,#c79418);color:#181000;width:100%}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+  .logs{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:12px;
+        max-height:300px;overflow-y:auto;font:11.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .lg{white-space:pre-wrap;word-break:break-word;color:var(--mut)}
+  .lg.buy{color:var(--green)} .lg.sell{color:var(--red)} .lg.warn{color:var(--orange)} .lg.info{color:var(--gold)}
+  input{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--txt);
+        padding:14px;font-size:16px;margin:10px 0} /* 16px = pas de zoom iOS */
+  .err{background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.35);border-radius:12px;padding:12px;
+       font-size:13px;color:#ffb3b3;margin-top:10px;word-break:break-word}
+  .hid{display:none}
+  .foot{color:var(--mut);font-size:11.5px;text-align:center;margin-top:14px}
+  .upd{color:var(--mut);font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🤖 Bot Crypto <span id="modePill" class="pill p-test hid"></span></h1>
+  <div class="sub">Binance · service Railway <b>crypto-bot</b> · kd-mc.com</div>
+
+  <!-- Écran code admin (1ère fois par appareil, reconnu ensuite) -->
+  <div id="login" class="card hid">
+    <b>🔐 Partie réservée à l'admin</b>
+    <div class="sub" style="margin:6px 0 0">Entre ton code admin (une seule fois par appareil).</div>
+    <input id="code" type="password" inputmode="numeric" autocomplete="off" placeholder="Code admin">
+    <button class="btn-gold" onclick="doLogin()">Entrer</button>
+    <div id="loginErr" class="err hid"></div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dash" class="hid">
+    <div class="card">
+      <div class="row">
+        <span id="statusPill" class="pill p-warn"><span class="dot"></span><span id="statusTxt">Chargement…</span></span>
+        <span class="upd" id="updatedAt"></span>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Prix BTC</div><div class="v" id="kPrice">—</div></div>
+        <div class="kpi"><div class="l">Capital (equity)</div><div class="v" id="kEquity">—</div></div>
+        <div class="kpi"><div class="l">Dernière décision</div><div class="v" id="kAction">—</div></div>
+        <div class="kpi"><div class="l">Trades visibles</div><div class="v" id="kTrades">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <b>📜 Activité du bot (en direct)</b>
+      <div class="logs" id="logs"><div class="lg">Chargement des logs…</div></div>
+    </div>
+
+    <div class="card">
+      <b>🎛 Commandes</b>
+      <div class="sub" style="margin:4px 0 10px">Le kill vend la position et arrête le bot (il NE redémarre pas tout seul).</div>
+      <div class="btns">
+        <button class="btn-kill" onclick="botCmd('kill')">🛑 Couper le bot</button>
+        <button class="btn-start" onclick="botCmd('start')">▶️ Relancer</button>
+      </div>
+      <div style="margin-top:10px"><button class="btn-ghost" onclick="refresh(true)">🔄 Actualiser maintenant</button></div>
+      <div id="cmdErr" class="err hid"></div>
+    </div>
+
+    <div class="foot">🧪 Testnet = faux argent. Auto-actualisation toutes les 60 s.<br>
+      Aucune promesse de gains — décisions mesurées, garde-fous actifs.</div>
+  </div>
+
+  <div id="fatal" class="err hid"></div>
+</div>
+
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" defer></script>
+<script>
+(function(){
+  var API = location.origin;            // /__bot/* servi par le routeur, même origine
+  var GRANT_KEY = 'kdmc_admin_grant';   // même pass que la partie admin (PWA iOS : cookie isolé → header)
+  var lastJson = '';
+
+  function hdrs(){
+    var h = {};
+    var g = null; try{ g = localStorage.getItem(GRANT_KEY); }catch(e){}
+    if (g) h['x-kdmc-admin'] = g;
+    return h;
+  }
+  function show(id, on){ document.getElementById(id).classList[on?'remove':'add']('hid'); }
+  function esc(s){ return String(s).replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
+  function idem(id, txt){ var el = document.getElementById(id); if (el.textContent !== txt) el.textContent = txt; }
+
+  window.doLogin = function(){
+    var code = document.getElementById('code').value.trim();
+    if (!code) return;
+    show('loginErr', false);
+    fetch(API + '/__admin/login', { method:'POST', credentials:'include',
+      headers:{ 'content-type':'application/json' }, body: JSON.stringify({ code: code }) })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if (j.ok && j.grant){
+        try{ localStorage.setItem(GRANT_KEY, j.grant); }catch(e){}
+        show('login', false); refresh(true);
+      } else {
+        var el = document.getElementById('loginErr');
+        el.textContent = j.reason === 'code_invalide' ? 'Code incorrect.' :
+                         j.reason === 'rate_limited' ? ('Trop d’essais — attends ' + (j.wait||60) + ' s.') :
+                         ('Erreur : ' + (j.reason||'inconnue'));
+        show('loginErr', true);
+      }
+    })
+    .catch(function(e){ var el = document.getElementById('loginErr'); el.textContent = 'Réseau : ' + e.message; show('loginErr', true); });
+  };
+
+  function render(j){
+    var s = JSON.stringify(j); if (s === lastJson) { idem('updatedAt', 'à ' + new Date().toLocaleTimeString('fr-FR')); return; }
+    lastJson = s;
+    show('dash', true); show('login', false); show('fatal', false);
+
+    // Statut
+    var pill = document.getElementById('statusPill');
+    var okStates = { SUCCESS:1, DEPLOYING:1, BUILDING:1, INITIALIZING:1, QUEUED:1, WAITING:1 };
+    pill.className = 'pill ' + (okStates[j.status] ? 'p-ok' : 'p-ko');
+    idem('statusTxt', okStates[j.status] ? (j.status === 'SUCCESS' ? 'Bot en ligne' : 'Démarrage… (' + j.status + ')') : 'Arrêté / problème (' + j.status + ')');
+    idem('updatedAt', 'à ' + new Date().toLocaleTimeString('fr-FR'));
+
+    // Parse des logs
+    var logs = j.logs || [], price = null, equity = null, action = null, buys = 0, sells = 0, testnet = null;
+    logs.forEach(function(l){
+      var m = l.m;
+      var mm = m.match(/(HOLD|BUY|SELL)\s*\|\s*prix=([\d.]+)\s*\|\s*equity=([\d.]+)/);
+      if (mm){ action = mm[1]; price = mm[2]; equity = mm[3]; }
+      if (/ACHAT|"event": "BUY"|🟢 ACHAT/.test(m)) buys++;
+      if (/VENTE|🔻 VENTE/.test(m)) sells++;
+      if (/TESTNET/.test(m)) testnet = true;
+      if (/ARGENT RÉEL/.test(m)) testnet = false;
+    });
+    idem('kPrice', price ? Number(price).toLocaleString('fr-FR') + ' $' : '—');
+    idem('kEquity', equity ? Number(equity).toLocaleString('fr-FR') + ' $' : '—');
+    idem('kAction', action === 'HOLD' ? '⏸ Attente' : action === 'BUY' ? '🟢 Achat' : action === 'SELL' ? '🔻 Vente' : '—');
+    idem('kTrades', (buys + sells) ? (buys + ' achats · ' + sells + ' ventes') : 'aucun (normal)');
+
+    var mp = document.getElementById('modePill');
+    if (testnet !== null){
+      mp.className = 'pill ' + (testnet ? 'p-test' : 'p-ko');
+      idem('modePill', testnet ? '🧪 TESTNET' : '💶 RÉEL');
+      show('modePill', true);
+    }
+
+    // Logs (30 dernières lignes, plus récent en haut)
+    var box = document.getElementById('logs'); box.innerHTML = '';
+    logs.slice(-30).reverse().forEach(function(l){
+      var d = document.createElement('div');
+      var cls = 'lg';
+      if (/ACHAT|BUY \|/.test(l.m)) cls += ' buy';
+      else if (/VENTE|SELL/.test(l.m)) cls += ' sell';
+      else if (/KILL|HALT|Erreur|ERROR/i.test(l.m)) cls += ' warn';
+      else if (/Démarrage|TESTNET/.test(l.m)) cls += ' info';
+      d.className = cls;
+      var t = ''; try{ t = new Date(l.t).toLocaleTimeString('fr-FR'); }catch(e){}
+      d.textContent = t + '  ' + l.m;
+      box.appendChild(d);
+    });
+    if (!logs.length) box.innerHTML = '<div class="lg">Aucun log pour l’instant.</div>';
+  }
+
+  window.refresh = function(manual){
+    fetch(API + '/__bot/status', { credentials:'include', headers: hdrs() })
+    .then(function(r){ return r.json().then(function(j){ return { st: r.status, j: j }; }); })
+    .then(function(x){
+      if (x.st === 403){ show('login', true); show('dash', false); return; }
+      if (!x.j.ok){
+        var el = document.getElementById('fatal');
+        el.innerHTML = '⚠️ <b>' + esc(x.j.reason || 'erreur') + '</b><br>Détail exact : ' + esc(x.j.detail || '—');
+        show('fatal', true); show('dash', true);
+        return;
+      }
+      render(x.j);
+    })
+    .catch(function(e){
+      var el = document.getElementById('fatal');
+      el.textContent = 'Réseau indisponible : ' + e.message + ' — vérifie ta connexion, ré-essaie.';
+      show('fatal', true);
+    });
+  };
+
+  window.botCmd = function(action){
+    var msg = action === 'kill'
+      ? '🛑 Couper le bot ?\n\nIl vendra sa position (s’il en a une) et s’arrêtera. Il ne redémarrera pas tout seul.'
+      : '▶️ Relancer le bot ?';
+    if (!confirm(msg)) return;
+    show('cmdErr', false);
+    fetch(API + '/__bot/' + action, { method:'POST', credentials:'include', headers: hdrs() })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if (j.ok){ alert(action === 'kill' ? '🛑 Ordre envoyé — le bot se coupe (≈1 min).' : '▶️ Relance lancée (≈1-2 min).'); setTimeout(function(){ refresh(true); }, 4000); }
+      else { var el = document.getElementById('cmdErr'); el.innerHTML = '⚠️ <b>' + esc(j.reason||'erreur') + '</b><br>Détail : ' + esc(j.detail||'—'); show('cmdErr', true); }
+    })
+    .catch(function(e){ var el = document.getElementById('cmdErr'); el.textContent = 'Réseau : ' + e.message; show('cmdErr', true); });
+  };
+
+  refresh(false);
+  setInterval(function(){ refresh(false); }, 60000);
+})();
+</script>
+</body>
+</html>
