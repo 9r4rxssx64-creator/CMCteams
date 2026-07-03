@@ -272,7 +272,7 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.7</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.8</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
@@ -764,10 +764,23 @@ function loadChoke(){
 }
 var CHOKE_TENSION_LABEL=TENSION.map(function(t){return t.n;}).join(" · ");
 
-/* ============ SYNTHÈSE ACTU (auto, sans clé) — thèmes dominants extraits des flux agrégés ============ */
+/* ============ SYNTHÈSE ACTU IA (worker wm-brief — Claude Haiku, clé côté serveur, cache 15 min) ============
+   Repli automatique vers la synthèse heuristique locale (buildBrief) si le worker est indispo. */
+var WM_BRIEF_URL="https://wm-brief.9r4rxssx64.workers.dev",_briefAI=false;
+async function loadBrief(){try{
+  var d=await getJSON(WM_BRIEF_URL+"/brief",13000);
+  if(d&&d.brief){_briefAI=true;setText($("briefState"),"IA");
+    var html=esc(d.brief).replace(/\n+/g,"<br>");
+    setHTML($("brief"),'<div style="padding:11px 13px;line-height:1.6;font-size:13px;color:#dfe8ff">'+html+'</div><div class="t2" style="padding:0 13px 10px">Synthèse Claude · '+(d.sources||0)+' titres · maj ~15 min</div>');
+    return;}
+  throw 0;
+}catch(e){_briefAI=false;buildBrief();}}
+
+/* ============ SYNTHÈSE ACTU (repli local, sans clé) — thèmes dominants extraits des flux agrégés ============ */
 var STOP=("le la les un une des de du et à a au aux en dans sur pour par avec sans est sont être ont ce cet cette ces qui que quoi dont où mais ou donc or ni car son sa ses leur leurs il elle ils elles on nous vous se ne pas plus the a an of to in on for and or with from at by as is are be was were will new news world after over into out up down amid say says said report reports latest live update updates video how why what who when will can could may vs et").split(" ");
 function tokens(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(function(w){return w.length>3&&STOP.indexOf(w)<0;});}
 function buildBrief(){
+  if(_briefAI)return; /* la synthèse IA (worker) a priorité si dispo */
   var titles=[].concat(FEED.news||[],FEED.hn||[],FEED.cve||[]);
   if(!titles.length){return;}
   var freq={};titles.forEach(function(t){var seen={};tokens(t).forEach(function(w){if(seen[w])return;seen[w]=1;freq[w]=(freq[w]||0)+1;});});
@@ -783,7 +796,7 @@ function buildBrief(){
 
 /* ============ orchestrateur ============ */
 function fast(){loadIss();loadFlights();}
-function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();loadBourse();loadCve();loadFires();loadChoke();}
+function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();loadBourse();loadCve();loadFires();loadChoke();loadBrief();}
 setInterval(loadHn,600000);setInterval(loadBourse,120000);setInterval(loadWiki,3600000);
 setInterval(loadTfl,600000); /* re-liste les caméras TfL toutes les 10 min */
 showMap(true);slow();fast();
@@ -798,6 +811,7 @@ setInterval(loadMonaco,600000);
 setInterval(loadLaunches,1800000);
 setInterval(loadCve,900000);       /* vulnérabilités : 15 min */
 setInterval(loadFires,900000);     /* incendies actifs : 15 min */
+setInterval(loadBrief,900000);     /* synthèse IA : 15 min (cache worker) */
 document.addEventListener("visibilitychange",function(){if(!document.hidden)fast();});
 </script>
 </body>
