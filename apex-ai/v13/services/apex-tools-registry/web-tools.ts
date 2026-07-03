@@ -76,6 +76,20 @@ export const WEB_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
   {
+    name: 'clone_site',
+    description: 'Lit, extrait ou CLONE une page web publique via le worker kdmc-clone (fetch côté serveur → contourne blocages CORS/embed). mode="read" (texte + markdown lisibles, défaut), "meta" (titre, description, technos détectées, liens internes), "html" (HTML brut), "clone" (HTML portable qui s\'ouvre seul, liens/images absolutisés). Utilise quand user dit "clone ce site", "lis/copie cette page", "extrais le contenu de...", "récupère le HTML de...".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL de la page (https:// ajouté auto si manquant)' },
+        mode: { type: 'string', description: 'read | meta | html | clone (défaut: read)' },
+      },
+      required: ['url'],
+    },
+    minTier: 'family',
+    impactLevel: 'A',
+  },
+  {
     name: 'wikipedia_lookup',
     description: 'Recherche Wikipedia (FR par défaut) via API publique gratuite. Retourne extrait + URL article.',
     inputSchema: {

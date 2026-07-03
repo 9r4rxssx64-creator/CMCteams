@@ -606,6 +606,35 @@ export async function scrapeUrl(url: string): Promise<{
     word_count: stripped.split(/\s+/).filter(Boolean).length,
   };
 }
+/**
+ * clone_site — lit / extrait / clone une page publique via le worker kdmc-clone.
+ * Le fetch se fait CÔTÉ SERVEUR (worker) → contourne les blocages CORS/embed.
+ * Apex tourne sur une origine whitelistée (*.kd-mc.com / github.io) → le worker accepte.
+ * Modes : read (texte+markdown, défaut) | meta (titre/description/technos/liens) |
+ *         html (HTML brut) | clone (HTML portable qui s'ouvre seul).
+ */
+export async function cloneSite(
+  url: string,
+  mode?: string,
+): Promise<{ mode: string; url: string; result: unknown }> {
+  if (!url) throw new Error('url required');
+  let target = url.trim();
+  if (!/^https?:\/\//i.test(target)) target = 'https://' + target;
+  const m = ['read', 'meta', 'html', 'clone'].includes(mode ?? '') ? (mode as string) : 'read';
+  const WORKER = 'https://kdmc-clone.9r4rxssx64.workers.dev';
+  const res = await fetch(`${WORKER}/${m}?url=${encodeURIComponent(target)}`, {
+    signal: AbortSignal.timeout(20000),
+  });
+  const ct = res.headers.get('content-type') ?? '';
+  if (ct.includes('application/json')) {
+    const data = (await res.json()) as Record<string, unknown>;
+    if (data['error']) throw new Error(String(data['detail'] ?? data['error']));
+    return { mode: m, url: target, result: data };
+  }
+  const text = await res.text();
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0, 160)}`);
+  return { mode: m, url: target, result: text.slice(0, 20000) };
+}
 export function detectIntent(text: string): { intent: string; confidence: number; suggested_tool?: string } {
   if (!text) return { intent: 'unknown', confidence: 0 };
   const lc = text.toLowerCase();

@@ -252,13 +252,15 @@ describe('vault additional coverage', () => {
       expect(stored?.startsWith('AXENC1:')).toBe(true);
     });
 
-    it('setKey avec encrypt fail + firebase emergency fail → ok=false', async () => {
-      /* v13.4.6 introduced emergency Firebase backup if encrypt fails.
-       * Test : si AUSSI Firebase fail (offline réaliste), retour ok=false. */
+    it('setKey avec encrypt fail + emergency LOCAL stash fail → ok=false', async () => {
+      /* v13.4.x SÉCU (audit P0) : sur encrypt fail, le Coffre stash LOCAL uniquement
+       * (JAMAIS Firebase en clair) et retourne ok=true. ok=false SEULEMENT si le stash
+       * local échoue AUSSI. On mocke donc localStorage.setItem (pas firebase.write, qui
+       * n'est plus touché sur ce chemin sécurisé). */
       vi.spyOn(crypto.subtle, 'encrypt').mockRejectedValue(new Error('encrypt failed'));
-      /* Mock firebase.write pour reject — simule offline */
-      const fbMod = await import('../../services/storage/firebase.js');
-      vi.spyOn(fbMod.firebase, 'write').mockRejectedValue(new Error('offline'));
+      vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {
+        throw new Error('quota exceeded');
+      });
       const r = await vault.setKey('ax_fail_key', 'value');
       expect(r.ok).toBe(false);
     });
