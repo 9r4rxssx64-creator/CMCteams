@@ -83,13 +83,23 @@ jobs:
           BS: ${{ secrets.BINANCE_TESTNET_API_SECRET }}
         run: |
           set +e
+          # A) testnet (faux argent) + garde-fous  B) plusieurs cryptos (capital réparti 1/N)
+          # C) plus réactif : bougies 5 min + EMA rapides (7/15) + RSI un peu plus permissif.
+          # Le risque TOTAL reste borné : risque/trade et position max sont divisés par le
+          # nombre de paires (alloc = 1/N) → exposition globale inchangée. Stop-loss + plafond
+          # perte/jour + max drawdown toujours actifs (défauts config : 3% / 15%).
           OUT=$(railway variables --service "$SERVICE_NAME" --skip-deploys \
             --set "BINANCE_API_KEY=$BK" \
             --set "BINANCE_API_SECRET=$BS" \
             --set "TESTNET=true" \
             --set "BOT_KILL=0" \
+            --set "SYMBOLS=BTC/USDT,ETH/USDT,SOL/USDT,BNB/USDT,XRP/USDT" \
             --set "SYMBOL=BTC/USDT" \
-            --set "TIMEFRAME=15m" 2>&1)
+            --set "TIMEFRAME=5m" \
+            --set "LOOP_SECONDS=30" \
+            --set "EMA_FAST=7" \
+            --set "EMA_SLOW=15" \
+            --set "RSI_MAX=72" 2>&1)
           RC=$?
           # Ne jamais logger les valeurs — uniquement le code retour + erreurs
           echo "railway variables rc=$RC"
@@ -119,6 +129,8 @@ jobs:
             echo "## 🤖 Crypto Bot — déploiement Railway"
             echo ""
             echo "- Mode : 🧪 TESTNET (faux argent) — TESTNET=true, BOT_KILL=0"
+            echo "- Cryptos : BTC, ETH, SOL, BNB, XRP (capital réparti à parts égales)"
+            echo "- Rythme : bougies 5 min, EMA rapides 7/15 (plus réactif)"
             echo "- Service : \`crypto-bot\`"
             echo "- Suivi : https://railway.app → projet → service crypto-bot → View Logs"
             echo "- Kill switch iPhone : Variables → BOT_KILL=1 (le bot vend et s'arrête au cycle suivant)"
