@@ -19,7 +19,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment2.outputs.page_url || steps.deployment3.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -64,6 +64,27 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: '.'
-      - name: Deploy to GitHub Pages
+      # Déploiement Pages avec RETRY : la synchro Pages renvoie parfois une erreur
+      # PASSAGÈRE (« Deployment failed, try again later » pendant syncing_files) qui
+      # laissait la prod SILENCIEUSEMENT sur l'ancienne version (cf. v1.0.18). On
+      # réessaie jusqu'à 3 fois avec un court back-off ; seul l'échec des 3 tentatives
+      # fait échouer le job (= vrai problème, pas un hoquet passager).
+      - name: Deploy to GitHub Pages (tentative 1)
         id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Back-off avant retry
+        if: steps.deployment.outcome == 'failure'
+        run: echo "Pages a échoué (passager ?) — nouvelle tentative dans 20 s"; sleep 20
+      - name: Deploy to GitHub Pages (tentative 2)
+        id: deployment2
+        if: steps.deployment.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Back-off avant tentative finale
+        if: steps.deployment.outcome == 'failure' && steps.deployment2.outcome == 'failure'
+        run: echo "2e échec — dernière tentative dans 30 s"; sleep 30
+      - name: Deploy to GitHub Pages (tentative 3, bloquante)
+        id: deployment3
+        if: steps.deployment.outcome == 'failure' && steps.deployment2.outcome == 'failure'
         uses: actions/deploy-pages@v5
