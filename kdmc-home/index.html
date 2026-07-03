@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v1.0.20 -->
+<!-- v1.0.21 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
@@ -167,9 +167,11 @@
       <span class="v">PWA · session unique signée · CSP stricte</span>
     </footer>
   </div>
-  <script src="kdmc-sso.js"></script>
-  <script src="kdmc-portal.js"></script>
+  <!-- ?v= numéroté : force le rafraîchissement du JS à chaque version (sinon le cache
+       HTTP/SW sert l'ancien fichier — la tuile bot n'apparaissait pas, leçon #39/#82). -->
+  <script src="kdmc-sso.js?v=1.0.21"></script>
+  <script src="kdmc-portal.js?v=1.0.21"></script>
   <!-- MAJ auto forcée + badge version (helper partagé) -->
-  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-home" data-version="v1.0.20" data-color="#c9a227" defer></script>
+  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-home" data-version="v1.0.21" data-color="#c9a227" defer></script>
 </body>
 </html>
