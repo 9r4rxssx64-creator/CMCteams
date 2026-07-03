@@ -187,13 +187,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.22</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.23</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.22";
+var APP_VER="v1.23";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -811,6 +811,7 @@ function _depSubmitGate(){
     try{ if(typeof window._depLogAccess==="function")window._depLogAccess(ident); }catch(_){}
     var g=document.getElementById("depGate"); if(g)g.style.display="none";
     try{ fillMeSel(); fillMoSel(); load(); render(); paintAppDiag(); }catch(_){}
+    try{ if(window._depChatSync)window._depChatSync(); if(window._depPullReplies_boot)window._depPullReplies_boot(); }catch(_){}
     try{ if(typeof toast==="function")toast("Bienvenue "+prenom+" 👋"); }catch(_){}
   }catch(e){ // fail-open : en cas d'erreur, ne bloque personne
     try{ var g2=document.getElementById("depGate"); if(g2)g2.style.display="none"; }catch(_){}
@@ -942,8 +943,55 @@ if(!_depHasIdentity()){ _depShowGate(); }
       var bump2=function(){ if(_t2)clearTimeout(_t2); _t2=setTimeout(_fbPullCfg,600); };
       window._esCfg.addEventListener("put",bump2); window._esCfg.addEventListener("patch",bump2);
     }catch(e){ try{console.warn("[fbSSECfg]",e&&e.message);}catch(_){} } }
+  // ===== v1.23 (Kevin 2026-07-03 « donne accès au chat apex une fois connecté, pour me
+  // joindre si besoin ») — CHAT « Joindre Kevin » depuis CMCteams light. L'employé CONNECTÉ
+  // (gate franchi) écrit → Kevin reçoit dans son inbox CMCteams (cmc_kevin_inbox) ET dans le
+  // pont Apex (ax_cmc_kevin_inbox, que son chat Apex lit). Kevin répond depuis l'app →
+  // cmc_dep_reply[<clé user>] → l'employé voit la réponse ici (2 voies). Nodes DÉDIÉS, ne
+  // touchent JAMAIS cmc_ov/le planning. Anti-clobber : GET frais → unshift → PUT (arrays).
+  function _depUserKey(){ try{ var v=JSON.parse(localStorage.getItem("cmc_dep_identity")||"null"); if(!v||!v.nom)return "";
+    var raw=((v.nom||"")+"_"+(v.prenom||"")).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    return raw.replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60); }catch(_){ return ""; } }
+  function _depLocalChat(){ try{ return JSON.parse(localStorage.getItem("cmc_dep_chat")||"[]")||[]; }catch(_){ return []; } }
+  function _depSaveChat(a){ try{ localStorage.setItem("cmc_dep_chat",JSON.stringify(a.slice(-100))); }catch(_){} }
+  window._depGetChat=_depLocalChat;
+  window._depSendKevin=function(text,cb){
+    text=String(text||"").trim(); if(!text){ if(cb)cb(false); return; } if(text.length>2000)text=text.slice(0,2000);
+    var ident={}; try{ ident=JSON.parse(localStorage.getItem("cmc_dep_identity")||"{}")||{}; }catch(_){}
+    var dkey=_depUserKey();
+    var name=((ident.prenom||"")+" "+(ident.nom||"")).trim()||"Employé";
+    var board=(typeof B!=="undefined"&&B&&B.label)?B.label:((typeof ME!=="undefined"&&ME)||"");
+    var msg={id:"kd_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),from:dkey||"dep",name:name,
+      team:board,text:text,ts:Date.now(),app:"cmcteams-light",status:"new",dkey:dkey};
+    // 1) inbox admin CMCteams + pont Apex : GET frais → unshift → PUT (anti-clobber)
+    function pushArr(k,cap){ _fbGet(k,function(cur){ var a=Array.isArray(cur)?cur:[]; a.unshift(msg); if(a.length>cap)a=a.slice(0,cap);
+      fetch(FBURL+FBPATH+"/"+k+".json"+_qs(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(a)}).catch(function(){}); }); }
+    pushArr("cmc_kevin_inbox",300); pushArr("ax_cmc_kevin_inbox",200);
+    // 2) filet append-only (jamais clobbé) : un node par message
+    fetch(FBURL+FBPATH+"/cmc_dep_msgs/"+encodeURIComponent(msg.id)+".json"+_qs(),
+      {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(msg)}).catch(function(){});
+    // 3) conversation locale (ce que l'employé voit)
+    var chat=_depLocalChat(); chat.push({who:"me",text:text,ts:msg.ts,id:msg.id}); _depSaveChat(chat);
+    if(cb)cb(true);
+  };
+  window._depPullReplies=function(){ var dkey=_depUserKey(); if(!dkey)return;
+    _fbGet("cmc_dep_reply",function(all){ var rep=(all&&typeof all==="object")?all[dkey]:null; if(!Array.isArray(rep)||!rep.length)return;
+      var chat=_depLocalChat(),seen={},added=0; chat.forEach(function(m){ if(m.rid)seen[m.rid]=1; });
+      rep.forEach(function(r){ if(!r||!r.text)return; var rid=r.id||("r_"+r.ts); if(seen[rid])return;
+        chat.push({who:"kevin",text:String(r.text),ts:r.ts||Date.now(),rid:rid}); added++; });
+      if(added){ chat.sort(function(a,b){return (a.ts||0)-(b.ts||0);}); _depSaveChat(chat);
+        try{ if(window._depRenderChat)window._depRenderChat(); }catch(_){}
+        try{ if(typeof toast==="function")toast("💬 Réponse de Kevin"); }catch(_){}
+        try{ var btn=document.getElementById("depChatBtn"); if(btn&&(!window._depChatOpen))btn.classList.add("has-unread"); }catch(_){} }
+    }); };
+  function _depSSEReplies(){ try{ if(window._esRep){window._esRep.close();window._esRep=null;} }catch(_){}
+    try{ window._esRep=new EventSource(FBURL+FBPATH+"/cmc_dep_reply.json"+_qs()); var _tr=null;
+      var b=function(){ if(_tr)clearTimeout(_tr); _tr=setTimeout(window._depPullReplies,600); };
+      window._esRep.addEventListener("put",b); window._esRep.addEventListener("patch",b); }catch(_){}
+  }
+  window._depPullReplies_boot=function(){ try{ _depPullReplies(); _depSSEReplies(); }catch(_){} };
   // Boot : auth best-effort → pull initial → SSE live.
-  _fbAuth(function(){ _fbPull(); _fbPullChefs(); _fbPullCfg(); _fbSSE(); _fbSSECfg(); });
+  _fbAuth(function(){ _fbPull(); _fbPullChefs(); _fbPullCfg(); _fbSSE(); _fbSSECfg(); window._depPullReplies_boot(); });
   // Même appareil : un autre onglet (l'app) écrit le localStorage partagé → rebuild local.
   window.addEventListener("storage",function(e){ if(!e||!e.key)return;
     if(e.key==="cmc_ov"||e.key==="cmc_e"||e.key==="cmc_ov_meta"||e.key.indexOf("cmc_team_mirror_")===0){
@@ -951,6 +999,66 @@ if(!_depHasIdentity()){ _depShowGate(); }
   // Retour premier plan → re-pull Firebase (cross-device).
   document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){_fbPull();_fbPullChefs();_fbPullCfg();} });
   window.addEventListener("focus",function(){ _fbPull();_fbPullChefs();_fbPullCfg(); });
+})();
+
+// ===== v1.23 — WIDGET « Joindre Kevin » (chat). Visible UNIQUEMENT une fois connecté
+// (gate franchi). Bouton flottant → panneau de conversation (2 voies). Autonome, n'affecte
+// jamais le planning. Envoi via window._depSendKevin ; réponses via window._depPullReplies.
+(function(){
+  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function relt(ts){ try{ var d=Date.now()-ts; if(d<60000)return"à l'instant"; if(d<3600000)return Math.floor(d/60000)+" min"; if(d<86400000)return Math.floor(d/3600000)+" h"; return Math.floor(d/86400000)+" j"; }catch(_){ return""; } }
+  var st=document.createElement("style");
+  st.textContent=""
+    +"#depChatBtn{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:9998;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,#c9a227,#8a6d10);color:#1a1408;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,.45);cursor:pointer;display:none;align-items:center;justify-content:center}"
+    +"#depChatBtn.has-unread::after{content:'';position:absolute;top:8px;right:8px;width:12px;height:12px;border-radius:50%;background:#e5484d;border:2px solid #1a1408}"
+    +"#depChatPanel{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 80px);z-index:9999;width:min(360px,calc(100vw - 28px));max-height:min(70vh,560px);display:none;flex-direction:column;background:#12180f;border:1px solid #2c3a24;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden}"
+    +"#depChatPanel .hd{display:flex;align-items:center;gap:8px;padding:12px 14px;background:linear-gradient(135deg,#1c2814,#141d0e);border-bottom:1px solid #2c3a24}"
+    +"#depChatPanel .hd b{color:#e8d48a;font-size:15px}#depChatPanel .hd .sub{color:#8ab888;font-size:11px}"
+    +"#depChatPanel .hd .x{margin-left:auto;background:none;border:none;color:#9fb89f;font-size:20px;cursor:pointer;line-height:1}"
+    +"#depChatMsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}"
+    +"#depChatMsgs .b{max-width:82%;padding:8px 11px;border-radius:14px;font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word}"
+    +"#depChatMsgs .me{align-self:flex-end;background:linear-gradient(135deg,#c9a227,#9c7c15);color:#1a1408;border-bottom-right-radius:4px}"
+    +"#depChatMsgs .kv{align-self:flex-start;background:#20301a;color:#e8f0e0;border-bottom-left-radius:4px}"
+    +"#depChatMsgs .t{font-size:10px;color:#8a8a8a;margin-top:2px}"
+    +"#depChatMsgs .empty{color:#8ab888;text-align:center;font-size:13px;margin:auto;padding:16px}"
+    +"#depChatBar{display:flex;gap:8px;padding:10px;border-top:1px solid #2c3a24;background:#0f140c}"
+    +"#depChatIn{flex:1;resize:none;border-radius:10px;border:1px solid #33452a;background:#0b0f08;color:#eef;padding:9px 11px;font-size:15px;font-family:inherit;max-height:90px}"
+    +"#depChatSend{border:none;border-radius:10px;background:linear-gradient(135deg,#4aa078,#2f7d55);color:#fff;font-size:14px;font-weight:700;padding:0 14px;cursor:pointer}";
+  document.head.appendChild(st);
+  var btn=document.createElement("button"); btn.id="depChatBtn"; btn.type="button"; btn.title="Joindre Kevin"; btn.textContent="💬";
+  var panel=document.createElement("div"); panel.id="depChatPanel";
+  panel.innerHTML=""
+    +"<div class='hd'><div><b>💬 Joindre Kevin</b><div class='sub'>question, souci, absence…</div></div><button class='x' type='button' aria-label='Fermer'>✕</button></div>"
+    +"<div id='depChatMsgs'></div>"
+    +"<div id='depChatBar'><textarea id='depChatIn' rows='1' placeholder='Écris ton message…' maxlength='2000'></textarea><button id='depChatSend' type='button'>Envoyer</button></div>";
+  document.body.appendChild(btn); document.body.appendChild(panel);
+  window._depChatOpen=false;
+  window._depRenderChat=function(){
+    var box=document.getElementById("depChatMsgs"); if(!box)return;
+    var chat=(window._depGetChat?window._depGetChat():[])||[];
+    if(!chat.length){ box.innerHTML="<div class='empty'>Écris à Kevin — il reçoit ton message sur son téléphone (chat Apex) et te répond ici.</div>"; return; }
+    box.innerHTML=chat.map(function(m){ return "<div class='b "+(m.who==="me"?"me":"kv")+"'>"+esc(m.text)+"<div class='t'>"+(m.who==="me"?"toi":"Kevin")+" · "+relt(m.ts)+"</div></div>"; }).join("");
+    box.scrollTop=box.scrollHeight;
+  };
+  function openPanel(){ window._depChatOpen=true; panel.style.display="flex"; btn.classList.remove("has-unread");
+    try{ if(window._depPullReplies)window._depPullReplies(); }catch(_){}
+    window._depRenderChat(); setTimeout(function(){ try{ document.getElementById("depChatIn").focus(); }catch(_){} },150); }
+  function closePanel(){ window._depChatOpen=false; panel.style.display="none"; }
+  btn.addEventListener("click",function(){ window._depChatOpen?closePanel():openPanel(); });
+  panel.querySelector(".x").addEventListener("click",closePanel);
+  function doSend(){ var ta=document.getElementById("depChatIn"); if(!ta)return; var t=ta.value.trim(); if(!t)return;
+    if(!window._depSendKevin){ try{ if(typeof toast==="function")toast("⚠ Chat indisponible"); }catch(_){} return; }
+    window._depSendKevin(t,function(ok){ if(ok){ ta.value=""; ta.style.height="auto"; window._depRenderChat();
+      try{ if(typeof toast==="function")toast("✅ Envoyé à Kevin"); }catch(_){} } else { try{ if(typeof toast==="function")toast("⚠ Message vide"); }catch(_){} } });
+  }
+  document.getElementById("depChatSend").addEventListener("click",doSend);
+  var inp=document.getElementById("depChatIn");
+  inp.addEventListener("input",function(){ this.style.height="auto"; this.style.height=Math.min(90,this.scrollHeight)+"px"; });
+  inp.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); doSend(); } });
+  // visibilité : uniquement une fois connecté (gate franchi)
+  window._depChatSync=function(){ try{ btn.style.display=(typeof _depHasIdentity==="function"&&_depHasIdentity())?"flex":"none"; if(!_depHasIdentity())closePanel(); }catch(_){} };
+  window._depChatSync();
+  document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){ window._depChatSync(); try{ if(window._depPullReplies)window._depPullReplies(); }catch(_){} } });
 })();
 </script>
 </body>
