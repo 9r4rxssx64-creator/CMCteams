@@ -27,6 +27,7 @@ routes = [
   { pattern = "coffre.kd-mc.com", custom_domain = true },
   { pattern = "departs.kd-mc.com", custom_domain = true },
   { pattern = "cmcteams-light.kd-mc.com", custom_domain = true },
+  { pattern = "bot.kd-mc.com", custom_domain = true },
 ]
 
 # Alerte push « nouvel appareil » → worker de push existant (sous-domaine = le COMPTE

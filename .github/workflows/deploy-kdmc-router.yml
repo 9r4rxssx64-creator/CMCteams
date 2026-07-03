@@ -111,11 +111,25 @@ jobs:
             echo "::warning::PUSH_ADMIN_TOKEN absent → alerte nouvel appareil désactivée (fail-open ; journal admin OK)."
           fi
 
+      - name: Crypto-bot — jeton Railway pour le tableau de bord bot.kd-mc.com (fail-open si absent)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RW_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -n "${RW_TOKEN:-}" ]; then
+            printf '%s' "$RW_TOKEN" | wrangler secret put RAILWAY_TOKEN 2>&1 | tail -2 \
+              || echo "::warning::RAILWAY_TOKEN non posé (/__bot renverra railway_token_absent — cause exacte visible)"
+          else
+            echo "::warning::RAILWAY_TOKEN absent → tableau de bord bot en railway_token_absent (fail-open)."
+          fi
+
       - name: Health check des belles adresses
         run: |
           for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \
                    apex-chat.kd-mc.com la-detente.kd-mc.com chez-lolo.kd-mc.com \
-                   dashboard.kd-mc.com sourcing.kd-mc.com coffre.kd-mc.com; do
+                   dashboard.kd-mc.com sourcing.kd-mc.com coffre.kd-mc.com bot.kd-mc.com; do
             echo "== https://$H =="
             curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
               || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"

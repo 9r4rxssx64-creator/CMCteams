@@ -83,7 +83,7 @@
     'cmcteams.kd-mc.com': '📅 CMCteams', 'cmcteams-light.kd-mc.com': '🎯 CMCteams light', 'departs.kd-mc.com': '🎯 CMCteams light',
     'apex-ai.kd-mc.com': '🤖 Apex AI', 'apex-chat.kd-mc.com': '💬 Apex Chat',
     'dashboard.kd-mc.com': '📊 Dashboard', 'sourcing.kd-mc.com': '📦 Sourcing', 'coffre.kd-mc.com': '🔐 Coffre',
-    'kd-mc.com': '🏠 Portail', 'www.kd-mc.com': '🏠 Portail', 'la-detente.kd-mc.com': '🌿 La Détente', 'chez-lolo.kd-mc.com': '🎨 Chez Lolo'
+    'kd-mc.com': '🏠 Portail', 'www.kd-mc.com': '🏠 Portail', 'la-detente.kd-mc.com': '🌿 La Détente', 'chez-lolo.kd-mc.com': '🎨 Chez Lolo', 'bot.kd-mc.com': '🤖 Bot Crypto'
   };
   try {
     fetch('/apps.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
