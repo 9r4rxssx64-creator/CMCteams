@@ -5629,7 +5629,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.854";
+var APP_VER="v9.855";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11842,8 +11842,9 @@ function vKevinInbox(){
     if(changed){ ls("cmc_dep_read",prev); try{fbWrite("cmc_dep_read",prev);}catch(_){} }
   }catch(_){}
   var h='<div class="page" style="padding:14px;max-width:720px;margin:0 auto">';
-  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="sec-title">💬 Messages reçus ('+box.length+')</div>'
-    +(box.length?'<button onclick="if(confirm(\'Tout marquer lu ?\')){var b=lg(\'cmc_kevin_inbox\',[]);b.forEach(function(m){m.status=\'read\';});ls(\'cmc_kevin_inbox\',b);try{fbWrite(\'cmc_kevin_inbox\',b);}catch(_){}dc();}" class="btn ghost" style="font-size:12px;padding:6px 10px">Tout lu</button>':'')+'</div>';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px"><div class="sec-title">💬 Messages reçus ('+box.length+')</div>'
+    +(box.length?'<div style="display:flex;gap:8px"><button onclick="if(confirm(\'Tout marquer lu ?\')){var b=lg(\'cmc_kevin_inbox\',[]);b.forEach(function(m){m.status=\'read\';});ls(\'cmc_kevin_inbox\',b);try{fbWrite(\'cmc_kevin_inbox\',b);}catch(_){}dc();}" class="btn ghost" style="font-size:12px;padding:6px 10px">Tout lu</button>'
+    +'<button onclick="cmcClearInbox()" class="btn ghost" style="font-size:12px;padding:6px 10px;color:#e88">🗑 Tout effacer</button></div>':'')+'</div>';
   if(!box.length){h+='<div class="card" style="padding:18px;text-align:center;color:#9fb89f">📭 Aucun message pour le moment.</div>';}
   else{box.forEach(function(m){
     var isNew=m.status==="new";
@@ -11857,9 +11858,37 @@ function vKevinInbox(){
       +(m.dkey?'<button onclick="cmcReplyDepModal(\''+esc(m.dkey)+'\',\''+esc((m.name||"").replace(/\x27/g,""))+'\')" class="btn" style="font-size:12px;padding:5px 10px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:8px">↩️ Répondre</button>':'')
       +((m.hasImg&&m.imgId)?'<button onclick="cmcViewDepImg(\''+esc(m.imgId)+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📷 Voir la photo</button>':'')
       +'<button onclick="cmcOpenFiche(\''+esc(m.from||"")+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📇 Voir la fiche complète</button>'
+      +'<button onclick="cmcDeleteInboxMsg(\''+esc(m.id||"")+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px;color:#e88">🗑</button>'
       +'</div></div>';
   });}
   return h+'</div>';
+}
+// v9.855 — Effacer un message reçu (admin). Retire de cmc_kevin_inbox + miroir Apex ax_cmc_kevin_inbox.
+function cmcDeleteInboxMsg(id){
+  if(!A.user||A.user.id!==AID||!id)return;
+  try{
+    ["cmc_kevin_inbox","ax_cmc_kevin_inbox"].forEach(function(k){
+      var b=lg(k,[]); if(!Array.isArray(b))b=[]; b=b.filter(function(m){return !m||m.id!==id;});
+      ls(k,b); try{fbWrite(k,b);}catch(_){} });
+    try{_audit("kevin_inbox_del",id,"","");}catch(_){}
+    dc();
+  }catch(e){}
+}
+// v9.855 — Effacer TOUT l'historique des messages (admin) : inbox + miroir Apex + réponses
+// + accusés de lecture + filet append-only. Synchronisé partout (console Apex incluse).
+function cmcClearInbox(){
+  if(!A.user||A.user.id!==AID)return;
+  if(!confirm("Effacer TOUT l'historique des messages ? Cette action est définitive."))return;
+  try{
+    ls("cmc_kevin_inbox",[]); try{fbWrite("cmc_kevin_inbox",[]);}catch(_){}
+    ls("ax_cmc_kevin_inbox",[]); try{fbWrite("ax_cmc_kevin_inbox",[]);}catch(_){}
+    ls("cmc_dep_reply",{}); try{fbWrite("cmc_dep_reply",{});}catch(_){}
+    ls("cmc_dep_read",{}); try{fbWrite("cmc_dep_read",{});}catch(_){}
+    try{fbWrite("cmc_dep_msgs",null);}catch(_){}
+    try{_audit("kevin_inbox_clear","","","");}catch(_){}
+    if(typeof toast==="function")toast("🗑 Historique des messages effacé");
+    dc();
+  }catch(e){}
 }
 function _cmcRelTime(ts){try{var d=Date.now()-ts;if(d<60000)return"à l'instant";if(d<3600000)return Math.floor(d/60000)+" min";if(d<86400000)return Math.floor(d/3600000)+" h";return Math.floor(d/86400000)+" j";}catch(_){return"";}}
 function cmcOpenFiche(uid){if(!A.user||A.user.id!==AID)return;/* fiche = données réservées à l'admin (identité/position/historique/messages) */window._ficheBack=(A.view&&A.view!=="fiche")?A.view:"employees";window._ficheUid=uid;A.view="fiche";dc();}
