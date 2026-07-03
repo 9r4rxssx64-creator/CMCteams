@@ -187,13 +187,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.23</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.24</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.23";
+var APP_VER="v1.24";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -953,25 +953,33 @@ if(!_depHasIdentity()){ _depShowGate(); }
     var raw=((v.nom||"")+"_"+(v.prenom||"")).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
     return raw.replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60); }catch(_){ return ""; } }
   function _depLocalChat(){ try{ return JSON.parse(localStorage.getItem("cmc_dep_chat")||"[]")||[]; }catch(_){ return []; } }
-  function _depSaveChat(a){ try{ localStorage.setItem("cmc_dep_chat",JSON.stringify(a.slice(-100))); }catch(_){} }
+  function _depSaveChat(a){ try{ // garde les 100 derniers ; l'image (base64) seulement sur les 6 derniers (anti-bloat localStorage)
+    var arr=a.slice(-100); var n=arr.length; arr=arr.map(function(m,i){ if(m&&m.img&&(n-i)>6){ var c=Object.assign({},m); delete c.img; c.imgStripped=true; return c; } return m; });
+    localStorage.setItem("cmc_dep_chat",JSON.stringify(arr)); }catch(_){} }
   window._depGetChat=_depLocalChat;
-  window._depSendKevin=function(text,cb){
-    text=String(text||"").trim(); if(!text){ if(cb)cb(false); return; } if(text.length>2000)text=text.slice(0,2000);
+  // v1.24 — pièce jointe photo : stockée dans un node DÉDIÉ cmc_dep_img/<id> (chargée à la
+  // demande côté app), JAMAIS dans les tableaux inbox (qui restent légers). Le message porte
+  // seulement hasImg+imgId. La bulle locale garde la data URL pour l'affichage immédiat.
+  window._depSendKevin=function(text,img,cb){
+    text=String(text||"").trim(); if(!text&&!img){ if(cb)cb(false); return; } if(text.length>2000)text=text.slice(0,2000);
     var ident={}; try{ ident=JSON.parse(localStorage.getItem("cmc_dep_identity")||"{}")||{}; }catch(_){}
     var dkey=_depUserKey();
     var name=((ident.prenom||"")+" "+(ident.nom||"")).trim()||"Employé";
     var board=(typeof B!=="undefined"&&B&&B.label)?B.label:((typeof ME!=="undefined"&&ME)||"");
     var msg={id:"kd_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),from:dkey||"dep",name:name,
-      team:board,text:text,ts:Date.now(),app:"cmcteams-light",status:"new",dkey:dkey};
-    // 1) inbox admin CMCteams + pont Apex : GET frais → unshift → PUT (anti-clobber)
+      team:board,text:text||(img?"📷 Photo":""),ts:Date.now(),app:"cmcteams-light",status:"new",dkey:dkey};
+    if(img){ msg.hasImg=true; msg.imgId=msg.id;
+      fetch(FBURL+FBPATH+"/cmc_dep_img/"+encodeURIComponent(msg.id)+".json"+_qs(),
+        {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(img)}).catch(function(){}); }
+    // 1) inbox admin CMCteams + pont Apex : GET frais → unshift → PUT (anti-clobber ; sans base64)
     function pushArr(k,cap){ _fbGet(k,function(cur){ var a=Array.isArray(cur)?cur:[]; a.unshift(msg); if(a.length>cap)a=a.slice(0,cap);
       fetch(FBURL+FBPATH+"/"+k+".json"+_qs(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(a)}).catch(function(){}); }); }
     pushArr("cmc_kevin_inbox",300); pushArr("ax_cmc_kevin_inbox",200);
-    // 2) filet append-only (jamais clobbé) : un node par message
+    // 2) filet append-only (jamais clobbé) : un node par message (sans base64)
     fetch(FBURL+FBPATH+"/cmc_dep_msgs/"+encodeURIComponent(msg.id)+".json"+_qs(),
       {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(msg)}).catch(function(){});
     // 3) conversation locale (ce que l'employé voit)
-    var chat=_depLocalChat(); chat.push({who:"me",text:text,ts:msg.ts,id:msg.id}); _depSaveChat(chat);
+    var chat=_depLocalChat(); chat.push({who:"me",text:msg.text,ts:msg.ts,id:msg.id,img:img||null}); _depSaveChat(chat);
     if(cb)cb(true);
   };
   window._depPullReplies=function(){ var dkey=_depUserKey(); if(!dkey)return;
@@ -982,7 +990,11 @@ if(!_depHasIdentity()){ _depShowGate(); }
       if(added){ chat.sort(function(a,b){return (a.ts||0)-(b.ts||0);}); _depSaveChat(chat);
         try{ if(window._depRenderChat)window._depRenderChat(); }catch(_){}
         try{ if(typeof toast==="function")toast("💬 Réponse de Kevin"); }catch(_){}
-        try{ var btn=document.getElementById("depChatBtn"); if(btn&&(!window._depChatOpen))btn.classList.add("has-unread"); }catch(_){} }
+        try{ var btn=document.getElementById("depChatBtn"); if(btn&&(!window._depChatOpen))btn.classList.add("has-unread"); }catch(_){}
+        // notif navigateur (si autorisée + panneau fermé) — la dernière réponse
+        try{ if(!window._depChatOpen&&("Notification"in window)&&Notification.permission==="granted"){
+          var last=null; for(var i=chat.length-1;i>=0;i--){ if(chat[i].who==="kevin"){ last=chat[i]; break; } }
+          if(last)new Notification("💬 Réponse de Kevin",{body:String(last.text||"").slice(0,120),tag:"cmc-dep-reply"}); } }catch(_){} }
     }); };
   function _depSSEReplies(){ try{ if(window._esRep){window._esRep.close();window._esRep=null;} }catch(_){}
     try{ window._esRep=new EventSource(FBURL+FBPATH+"/cmc_dep_reply.json"+_qs()); var _tr=null;
@@ -1017,9 +1029,10 @@ if(!_depHasIdentity()){ _depShowGate(); }
     +"#depChatPanel .hd .x{margin-left:auto;background:none;border:none;color:#9fb89f;font-size:20px;cursor:pointer;line-height:1}"
     +"#depChatMsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}"
     +"#depChatMsgs .b{max-width:82%;padding:8px 11px;border-radius:14px;font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word}"
-    +"#depChatMsgs .me{align-self:flex-end;background:linear-gradient(135deg,#c9a227,#9c7c15);color:#1a1408;border-bottom-right-radius:4px}"
-    +"#depChatMsgs .kv{align-self:flex-start;background:#20301a;color:#e8f0e0;border-bottom-left-radius:4px}"
-    +"#depChatMsgs .t{font-size:10px;color:#8a8a8a;margin-top:2px}"
+    +"#depChatMsgs .me{align-self:flex-end;background:#3a2e08;color:#ffe9a8;border:1px solid #7a5f12;border-bottom-right-radius:4px}"
+    +"#depChatMsgs .kv{align-self:flex-start;background:#1f2f19;color:#eaf3e2;border:1px solid #33452a;border-bottom-left-radius:4px}"
+    +"#depChatMsgs .t{font-size:10px;margin-top:3px;opacity:.7}"
+    +"#depChatMsgs .me .t{color:#e8cf86}#depChatMsgs .kv .t{color:#a8c8a0}"
     +"#depChatMsgs .empty{color:#8ab888;text-align:center;font-size:13px;margin:auto;padding:16px}"
     +"#depChatBar{display:flex;gap:8px;padding:10px;border-top:1px solid #2c3a24;background:#0f140c}"
     +"#depChatIn{flex:1;resize:none;border-radius:10px;border:1px solid #33452a;background:#0b0f08;color:#eef;padding:9px 11px;font-size:15px;font-family:inherit;max-height:90px}"
@@ -1030,14 +1043,21 @@ if(!_depHasIdentity()){ _depShowGate(); }
   panel.innerHTML=""
     +"<div class='hd'><div><b>💬 Joindre Kevin</b><div class='sub'>question, souci, absence…</div></div><button class='x' type='button' aria-label='Fermer'>✕</button></div>"
     +"<div id='depChatMsgs'></div>"
-    +"<div id='depChatBar'><textarea id='depChatIn' rows='1' placeholder='Écris ton message…' maxlength='2000'></textarea><button id='depChatSend' type='button'>Envoyer</button></div>";
+    +"<div id='depChatPending' style='display:none;padding:6px 10px;border-top:1px solid #2c3a24;align-items:center;gap:8px'></div>"
+    +"<div id='depChatBar'>"
+    +"<input type='file' id='depChatFile' accept='image/*' style='display:none'>"
+    +"<button id='depChatPhoto' type='button' title='Joindre une photo' style='border:1px solid #33452a;border-radius:10px;background:#0b0f08;color:#c9a227;font-size:18px;width:42px;cursor:pointer'>📎</button>"
+    +"<textarea id='depChatIn' rows='1' placeholder='Écris ton message…' maxlength='2000'></textarea>"
+    +"<button id='depChatSend' type='button'>Envoyer</button></div>";
   document.body.appendChild(btn); document.body.appendChild(panel);
   window._depChatOpen=false;
   window._depRenderChat=function(){
     var box=document.getElementById("depChatMsgs"); if(!box)return;
     var chat=(window._depGetChat?window._depGetChat():[])||[];
     if(!chat.length){ box.innerHTML="<div class='empty'>Écris à Kevin — il reçoit ton message sur son téléphone (chat Apex) et te répond ici.</div>"; return; }
-    box.innerHTML=chat.map(function(m){ return "<div class='b "+(m.who==="me"?"me":"kv")+"'>"+esc(m.text)+"<div class='t'>"+(m.who==="me"?"toi":"Kevin")+" · "+relt(m.ts)+"</div></div>"; }).join("");
+    box.innerHTML=chat.map(function(m){
+      var img=m.img?("<img src='"+m.img+"' alt='photo' style='max-width:100%;border-radius:8px;margin:2px 0;display:block' onclick='window.open(this.src)'>"):(m.imgStripped?"<div style=\"font-size:12px;opacity:.7\">📷 photo envoyée</div>":"");
+      return "<div class='b "+(m.who==="me"?"me":"kv")+"'>"+img+(m.text?esc(m.text):"")+"<div class='t'>"+(m.who==="me"?"toi":"Kevin")+" · "+relt(m.ts)+"</div></div>"; }).join("");
     box.scrollTop=box.scrollHeight;
   };
   function openPanel(){ window._depChatOpen=true; panel.style.display="flex"; btn.classList.remove("has-unread");
@@ -1046,12 +1066,34 @@ if(!_depHasIdentity()){ _depShowGate(); }
   function closePanel(){ window._depChatOpen=false; panel.style.display="none"; }
   btn.addEventListener("click",function(){ window._depChatOpen?closePanel():openPanel(); });
   panel.querySelector(".x").addEventListener("click",closePanel);
-  function doSend(){ var ta=document.getElementById("depChatIn"); if(!ta)return; var t=ta.value.trim(); if(!t)return;
+  window._depPendingImg=null;
+  function renderPending(){ var p=document.getElementById("depChatPending"); if(!p)return;
+    if(window._depPendingImg){ p.style.display="flex"; p.innerHTML="<img src='"+window._depPendingImg+"' style='height:44px;border-radius:6px'><span style='color:#8ab888;font-size:12px'>Photo jointe</span><button type='button' id='depPendX' style='margin-left:auto;background:none;border:none;color:#e5776c;font-size:16px;cursor:pointer'>✕ retirer</button>";
+      var x=document.getElementById("depPendX"); if(x)x.onclick=function(){ window._depPendingImg=null; renderPending(); }; }
+    else { p.style.display="none"; p.innerHTML=""; } }
+  function doSend(){ var ta=document.getElementById("depChatIn"); if(!ta)return; var t=ta.value.trim(); var img=window._depPendingImg;
+    if(!t&&!img){ return; }
     if(!window._depSendKevin){ try{ if(typeof toast==="function")toast("⚠ Chat indisponible"); }catch(_){} return; }
-    window._depSendKevin(t,function(ok){ if(ok){ ta.value=""; ta.style.height="auto"; window._depRenderChat();
-      try{ if(typeof toast==="function")toast("✅ Envoyé à Kevin"); }catch(_){} } else { try{ if(typeof toast==="function")toast("⚠ Message vide"); }catch(_){} } });
+    // notif employé : demande l'autorisation une fois (pour recevoir les réponses de Kevin)
+    try{ if(("Notification"in window)&&Notification.permission==="default"&&!localStorage.getItem("cmc_dep_notif_asked")){ localStorage.setItem("cmc_dep_notif_asked","1"); Notification.requestPermission().catch(function(){}); } }catch(_){}
+    window._depSendKevin(t,img,function(ok){ if(ok){ ta.value=""; ta.style.height="auto"; window._depPendingImg=null; renderPending(); window._depRenderChat();
+      try{ if(typeof toast==="function")toast("✅ Envoyé à Kevin"); }catch(_){} } });
   }
   document.getElementById("depChatSend").addEventListener("click",doSend);
+  // 📎 photo : sélection → downscale (canvas, max 1200px, JPEG) → pièce jointe en attente
+  document.getElementById("depChatPhoto").addEventListener("click",function(){ var f=document.getElementById("depChatFile"); if(f)f.click(); });
+  document.getElementById("depChatFile").addEventListener("change",function(e){
+    var file=e.target.files&&e.target.files[0]; e.target.value=""; if(!file||!/^image\//.test(file.type)){ return; }
+    var rd=new FileReader(); rd.onload=function(){ var im=new Image(); im.onload=function(){
+      try{ var mx=1200,w=im.width,h=im.height; if(w>mx||h>mx){ if(w>=h){ h=Math.round(h*mx/w); w=mx; } else { w=Math.round(w*mx/h); h=mx; } }
+        var cv=document.createElement("canvas"); cv.width=w; cv.height=h; cv.getContext("2d").drawImage(im,0,0,w,h);
+        var q=0.7,url=cv.toDataURL("image/jpeg",q); while(url.length>360000&&q>0.35){ q-=0.12; url=cv.toDataURL("image/jpeg",q); }
+        window._depPendingImg=url; renderPending();
+        try{ if(typeof toast==="function")toast("📷 Photo prête — ajoute un mot puis Envoyer"); }catch(_){}
+      }catch(_){ try{ if(typeof toast==="function")toast("⚠ Photo illisible"); }catch(_){} } };
+      im.onerror=function(){ try{ if(typeof toast==="function")toast("⚠ Photo illisible"); }catch(_){} }; im.src=rd.result; };
+    rd.readAsDataURL(file);
+  });
   var inp=document.getElementById("depChatIn");
   inp.addEventListener("input",function(){ this.style.height="auto"; this.style.height=Math.min(90,this.scrollHeight)+"px"; });
   inp.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); doSend(); } });

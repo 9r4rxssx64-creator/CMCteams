@@ -4305,6 +4305,8 @@ function fbApplyData(k,v){
   // Cloner profondément pour éviter les références partagées avec l'objet Firebase SSE
   var vc;try{vc=JSON.parse(JSON.stringify(v));}catch(e){console.warn("fbApplyData: JSON invalide pour",k);return;}
   try{localStorage.setItem(k,JSON.stringify(vc));}catch(e){}
+  // v9.853 — nouveau message employé (page CMCteams light) → notif Kevin (admin)
+  if(k==="cmc_kevin_inbox"){ try{ _checkKevinInbox(vc); }catch(_){} }
   // Mettre à jour l'état A directement (sans passer par ls pour éviter la boucle)
   // v9.580 — Invalider _gplCache quand cmc_ov change via Firebase SSE
   // (sinon vues affichent ancien planning même après nouvel import sur autre device)
@@ -4554,6 +4556,38 @@ function _checkNewChat(msgs){
   var preview=(m.text||"").slice(0,80);
   var _sent=sendNotif(m.to?"💬 Message privé de "+m.name:"💬 "+m.name+" dans le chat",preview,{tag:"chat"});
   if(_sent)localStorage.setItem("cmc_notif_ts",String(m.ts));
+}
+// v9.853 — Kevin (admin) est notifié quand un employé écrit depuis la page CMCteams light.
+// Réutilise sendNotif (PWA/onglet) + toast si l'app est visible. Anti-doublon via ts.
+function _checkKevinInbox(box){
+  if(!A.user||A.user.id!==AID||!Array.isArray(box)||!box.length)return;
+  var lastTs=parseInt(localStorage.getItem("cmc_kevin_notif_ts")||"0")||0;
+  var fresh=box.filter(function(m){return m&&m.ts>lastTs&&m.status==="new";});
+  if(!fresh.length)return;
+  var m=fresh[0]; // box unshift → le plus récent en tête
+  localStorage.setItem("cmc_kevin_notif_ts",String(m.ts));
+  var preview=(m.text||"").slice(0,80);
+  if(document.visibilityState==="visible"){
+    if(A.view!=="kevininbox")toast("💬 "+esc(m.name||"?")+" : "+esc(preview));
+    try{if(A.view==="accueil"||A.view==="kevininbox")dcDebounced();}catch(_){}
+  }else{
+    sendNotif("💬 Message de "+(m.name||"?"),preview,{tag:"kevininbox"});
+  }
+}
+// v9.853 — l'admin ouvre la photo jointe (chargée à la demande depuis cmc_dep_img/<id>,
+// jamais synchronisée en masse). Modale plein écran.
+function cmcViewDepImg(imgId){
+  if(!A.user||A.user.id!==AID||!imgId)return;
+  try{
+    if(typeof toast==="function")toast("📷 Chargement…");
+    fetch(FB_URL+FB_PATH+"/cmc_dep_img/"+encodeURIComponent(imgId)+".json"+_fbAuthQS())
+      .then(function(r){return r.ok?r.json():null;}).then(function(url){
+        if(!url||typeof url!=="string"){ toast("⚠ Photo introuvable","warn"); return; }
+        var ov=document.createElement("div"); ov.style.cssText="position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.9);padding:14px";
+        ov.innerHTML='<img src="'+url+'" style="max-width:100%;max-height:100%;border-radius:8px">';
+        ov.addEventListener("click",function(){ov.remove();}); document.body.appendChild(ov);
+      }).catch(function(){ toast("⚠ Réseau","warn"); });
+  }catch(_){}
 }
 /** Request browser Notification API permission. @returns {Promise} */
 function requestNotifPermission(){
@@ -5594,7 +5628,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.852";
+var APP_VER="v9.853";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11811,6 +11845,7 @@ function vKevinInbox(){
       +'<div style="font-size:14px;color:#e8e8e0;white-space:pre-wrap;line-height:1.5">'+esc(m.text||"")+'</div>'
       +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
       +(m.dkey?'<button onclick="cmcReplyDepModal(\''+esc(m.dkey)+'\',\''+esc((m.name||"").replace(/\x27/g,""))+'\')" class="btn" style="font-size:12px;padding:5px 10px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:8px">↩️ Répondre</button>':'')
+      +((m.hasImg&&m.imgId)?'<button onclick="cmcViewDepImg(\''+esc(m.imgId)+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📷 Voir la photo</button>':'')
       +'<button onclick="cmcOpenFiche(\''+esc(m.from||"")+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📇 Voir la fiche complète</button>'
       +'</div></div>';
   });}
