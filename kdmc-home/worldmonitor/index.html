@@ -50,6 +50,12 @@
   .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0e1424; color:var(--txt); border:1px solid var(--line)}
   .leaflet-popup-content{margin:9px 12px; font-size:12px; line-height:1.5}
   .leaflet-bar a{background:#0e1424; color:var(--txt); border-color:var(--line)}
+  #map:fullscreen{height:100%!important;width:100%!important}
+  .leaflet-control-layers{background:#0e1424e6!important; color:var(--txt); border:1px solid var(--line)!important; border-radius:10px!important; box-shadow:0 4px 16px #0008}
+  .leaflet-control-layers-list{padding:4px 8px}
+  .leaflet-control-layers label{font-size:12px; margin:3px 0; cursor:pointer}
+  .leaflet-control-layers-selector{margin-right:6px}
+  #vFull{font-size:15px;line-height:1}
   .leaflet-bar a:hover{background:#16203a}
   .plane{font-size:15px; line-height:15px; text-shadow:0 0 3px #000}
   .vswitch{display:flex; gap:6px; margin-left:auto}
@@ -131,7 +137,7 @@
     <div class="col">
       <section class="card globe-card">
         <h2>🛰️ Vue Terre <span class="k" id="globeState">chargement…</span>
-          <span class="vswitch"><button id="vMap" aria-pressed="true">🗺️ Carte</button><button id="vGlobe" aria-pressed="false">🌍 Globe</button></span>
+          <span class="vswitch"><button id="vMap" aria-pressed="true">🗺️ Carte</button><button id="vGlobe" aria-pressed="false">🌍 Globe</button><button id="vFull" title="Plein écran" aria-pressed="false">⛶</button></span>
         </h2>
         <div style="position:relative"><div id="map"></div><div class="maphint" id="mapHint">✈️ avions en direct · 🔴 séismes · pince pour zoomer</div></div>
         <div class="toggles" id="toggles">
@@ -272,7 +278,7 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.8</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.9</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
@@ -631,7 +637,7 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_mapReady=false,_planesTimer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_mapReady=false,_planesTimer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
@@ -642,8 +648,14 @@ function initMap(){
   _quakeLayer=LEAF.layerGroup().addTo(MAP);
   _fireLayer=LEAF.layerGroup().addTo(MAP);
   _chokeLayer=LEAF.layerGroup().addTo(MAP);
+  _volcanoLayer=LEAF.layerGroup().addTo(MAP);
+  _stormLayer=LEAF.layerGroup().addTo(MAP);
+  /* Contrôle de couches natif : afficher/masquer chaque type en direct */
+  LEAF.control.layers(null,{
+    "✈️ Avions":_planeLayer,"🔴 Séismes":_quakeLayer,"🔥 Feux":_fireLayer,"🌋 Volcans":_volcanoLayer,"🌀 Tempêtes":_stormLayer,"⚓ Détroits & tensions":_chokeLayer
+  },{collapsed:false,position:"topright"}).addTo(MAP);
   MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
-  setTimeout(function(){MAP.invalidateSize();loadPlanes();drawQuakesMap();drawFiresMap();drawChokeMap();},250);
+  setTimeout(function(){MAP.invalidateSize();loadPlanes();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
 }
 function planeIcon(track){
@@ -697,6 +709,14 @@ function drawChokeMap(){
     LEAF.circleMarker([t.lat,t.lon],{radius:9,color:"#ff5a4d",weight:1,fillColor:"#ff5a4d",fillOpacity:.18}).bindPopup("⚠️ Zone de tension (indicatif)<br><b>"+esc(t.n)+"</b>").addTo(_chokeLayer);
   });
 }
+function drawVolcanoMap(){
+  if(!MAP||!_volcanoLayer)return;_volcanoLayer.clearLayers();
+  (DL.volcano||[]).forEach(function(v){LEAF.circleMarker([v.lat,v.lon],{radius:6,color:"#ff5a4d",weight:1,fillColor:"#ff5a4d",fillOpacity:.55}).bindPopup("🌋 "+esc(v.title||"Volcan actif")).addTo(_volcanoLayer);});
+}
+function drawStormsMap(){
+  if(!MAP||!_stormLayer)return;_stormLayer.clearLayers();
+  (DL.storms||[]).forEach(function(s){LEAF.circleMarker([s.lat,s.lon],{radius:7,color:"#b992ff",weight:1,fillColor:"#b992ff",fillOpacity:.3}).bindPopup("🌀 "+esc(s.title||"Tempête")).addTo(_stormLayer);});
+}
 /* bascule Carte / Globe */
 function showMap(on){
   document.getElementById("map").classList.toggle("hidden",!on);
@@ -709,6 +729,15 @@ function showMap(on){
 }
 $("vMap").addEventListener("click",function(){showMap(true);});
 $("vGlobe").addEventListener("click",function(){showMap(false);});
+/* Plein écran carte (bascule auto sur la carte si on est en globe) */
+$("vFull").addEventListener("click",function(){
+  var el=document.getElementById("map");
+  if(document.fullscreenElement){document.exitFullscreen&&document.exitFullscreen();return;}
+  showMap(true);
+  var req=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(req){try{req.call(el);}catch(e){}}
+});
+document.addEventListener("fullscreenchange",function(){if(MAP)setTimeout(function(){MAP.invalidateSize();},120);});
 
 /* ============ CYBER — vulnérabilités (Shodan CVEDB, sans clé, CORS) ============ */
 var FEED={news:[],hn:[],cve:[]};
@@ -737,6 +766,17 @@ async function loadFires(){try{
   DL.fires=pts;if(_mapReady)drawFiresMap();
   var box=$("fires");setHTML(box,rows.length?rows.slice(0,10).join(""):'<div class="empty">Aucun foyer actif signalé.</div>');
 }catch(e){setText($("firesState"),"indispo");if($("fires").querySelector(".empty"))setHTML($("fires"),'<div class="empty">Incendies indisponibles — reprise auto.</div>');}}
+
+/* ============ VOLCANS + TEMPÊTES (NASA EONET, sans clé) — alimente les couches globe/carte ============ */
+function _eonetPoints(ev){var pts=[];(ev||[]).forEach(function(e){var g=(e.geometry&&e.geometry[e.geometry.length-1])||null;if(!g||!g.coordinates)return;var lon=g.coordinates[0],lat=g.coordinates[1];if(lat==null||lon==null)return;pts.push({lat:lat,lon:lon,title:e.title||""});});return pts;}
+async function loadVolcano(){try{
+  var d=await getJSON("https://eonet.gsfc.nasa.gov/api/v3/events?category=volcanoes&status=open&limit=40",14000);
+  DL.volcano=_eonetPoints(d&&d.events);if(_mapReady)drawVolcanoMap();
+}catch(e){}}
+async function loadStorms(){try{
+  var d=await getJSON("https://eonet.gsfc.nasa.gov/api/v3/events?category=severeStorms&status=open&limit=40",14000);
+  DL.storms=_eonetPoints(d&&d.events);if(_mapReady)drawStormsMap();
+}catch(e){}}
 
 /* ============ POINTS STRATÉGIQUES MARITIMES (détroits/canaux) + zones de tension (indicatif, statique) ============ */
 var CHOKE=[
@@ -796,7 +836,7 @@ function buildBrief(){
 
 /* ============ orchestrateur ============ */
 function fast(){loadIss();loadFlights();}
-function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();loadBourse();loadCve();loadFires();loadChoke();loadBrief();}
+function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();loadBourse();loadCve();loadFires();loadVolcano();loadStorms();loadChoke();loadBrief();}
 setInterval(loadHn,600000);setInterval(loadBourse,120000);setInterval(loadWiki,3600000);
 setInterval(loadTfl,600000); /* re-liste les caméras TfL toutes les 10 min */
 showMap(true);slow();fast();
@@ -811,6 +851,8 @@ setInterval(loadMonaco,600000);
 setInterval(loadLaunches,1800000);
 setInterval(loadCve,900000);       /* vulnérabilités : 15 min */
 setInterval(loadFires,900000);     /* incendies actifs : 15 min */
+setInterval(loadVolcano,1800000);  /* volcans : 30 min */
+setInterval(loadStorms,1800000);   /* tempêtes : 30 min */
 setInterval(loadBrief,900000);     /* synthèse IA : 15 min (cache worker) */
 document.addEventListener("visibilitychange",function(){if(!document.hidden)fast();});
 </script>
