@@ -117,6 +117,23 @@ try {
   const active2 = await page.evaluate(() => !!document.getElementById('ss-active'));
   ok(active2, 'Après reconnexion Face ID : appareil toujours reconnu « actif »');
 
+  /* --- Cas Kevin (v1.0.23) : appareil enrôlé par une ANCIENNE version → aucun credId
+     stocké localement, MAIS session vérifiée Face ID → reconnu AUTO « actif » SANS taper
+     « Activer/vérifier ». On efface le marqueur local et on recharge. (En dernier : le
+     nettoyage n'impacte plus les étapes suivantes.) --- */
+  await page.evaluate(() => { try { localStorage.removeItem('kdmc_passkey_v1'); } catch (e) {} });
+  await page.reload();
+  const off = await page.waitForSelector('#pk-skip', { timeout: 4000 }).then(() => true).catch(() => false);
+  if (off) await page.click('#pk-skip'); /* sans marqueur local, l'offre Face ID réapparaît → passer */
+  await page.waitForFunction(() => {
+    var el = document.getElementById('ss-pk');
+    return el && (el.querySelector('.ss-del') || el.querySelector('#ss-active'));
+  }, { timeout: 8000 }).catch(() => {});
+  const autoActive = await page.evaluate(() => !!document.getElementById('ss-active'));
+  ok(autoActive, 'Session vérifiée + credId local absent → reconnu AUTO « ✅ actif » (0 tap requis)');
+  const autoLabel = await page.evaluate(() => { var b = document.getElementById('ss-enroll'); return b ? b.textContent : ''; });
+  ok(!/Activer.*sur cet appareil/i.test(autoLabel), 'Plus de bouton « Activer Face ID sur cet appareil » quand déjà vérifié  [' + autoLabel + ']');
+
   await ctx.close();
 } finally {
   await browser.close();

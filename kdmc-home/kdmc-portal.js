@@ -106,6 +106,14 @@
   }
   function _dt(ts) { try { return ts ? new Date(ts).toLocaleString('fr-FR') : '—'; } catch (e) { return '—'; } }
   function _dur(ms) { ms = ms || 0; if (ms < 60000) return '< 1 min'; var m = Math.round(ms / 60000); if (m < 60) return m + ' min'; var h = Math.floor(m / 60); m = m % 60; return h + ' h' + (m ? (' ' + m) : ''); }
+  function _dayKey(ts) { try { var d = new Date(ts); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); } catch (e) { return String(ts); } }
+  function _hm(ts) { try { return new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return '—'; } }
+  function _dayLabel(ts) {
+    var dk = _dayKey(ts);
+    if (dk === _dayKey(Date.now())) return "Aujourd'hui";
+    if (dk === _dayKey(Date.now() - 864e5)) return 'Hier';
+    try { return new Date(ts).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }); } catch (e) { return dk; }
+  }
   /* Copie de REPLI (hors-ligne). La SOURCE UNIQUE = /apps.json (chargée au boot,
      fusionnée par-dessus). Le test apps-consistency garantit qu'elles ne divergent pas. */
   var APP_NM = {
@@ -122,11 +130,13 @@
   } catch (e) { /* repli intégré */ }
   function _appNm(h) { return APP_NM[h] || ('🌐 ' + (h || '?')); }
   var _ssUid = ''; /* uid de la session courante (pour l'enrôlement Face ID depuis le hub) */
+  var _ssVerified = false; /* session prouvée par Face ID ? → cet appareil est enrôlé (reconnu AUTO) */
   function renderSelfService(s) {
     var box = document.getElementById('self-svc');
     if (!box) return;
-    if (!s || !s.uid) { _ssUid = ''; box.hidden = true; box.innerHTML = ''; return; }
+    if (!s || !s.uid) { _ssUid = ''; _ssVerified = false; box.hidden = true; box.innerHTML = ''; return; }
     _ssUid = s.uid;
+    _ssVerified = !!(s && s.verified);
     box.hidden = false;
     box.innerHTML = '<h2 class="cat">🔐 Mes appareils &amp; connexions</h2>'
       + '<div id="ss-pk" class="ss-card">Chargement…</div>'
@@ -147,10 +157,16 @@
       var canEnroll = _pkSupported();
       var mine = _myCred(_ssUid); /* credId (b64u) du passkey de CET appareil, si connu */
       /* la liste renvoie k.id = 12 premiers car. du credId → « ce téléphone » = mine commence par k.id */
-      var enrolledHere = !!(mine && pk.some(function (k) { return mine.indexOf(k.id) === 0; }));
+      var credMatch = !!(mine && pk.some(function (k) { return mine.indexOf(k.id) === 0; }));
+      /* RECONNU AUTO : si la session est prouvée par Face ID (verified) ET qu'il existe
+         au moins un passkey, c'est que CE téléphone s'est authentifié en Face ID → il est
+         enrôlé. Plus besoin de taper « Activer/vérifier » pour l'ancien enrôlement. */
+      var enrolledHere = credMatch || (_ssVerified && pk.length > 0);
+      /* quand on ne connaît pas le credId exact mais qu'il n'y a qu'UNE clé, c'est celle-ci */
+      var soleHere = !credMatch && _ssVerified && pk.length === 1;
       var rows = pk.length
         ? pk.map(function (k) {
-          var here = mine && mine.indexOf(k.id) === 0;
+          var here = (mine && mine.indexOf(k.id) === 0) || soleHere;
           return '<div class="ss-row"><span>🔑 Appareil <code>' + esc(k.id) + '…</code>'
             + (here ? '<span class="ss-here"> · cet appareil ✓</span>' : '')
             + '<span class="ss-mut"> — ajouté ' + esc(_ago(k.created)) + '</span></span>'
@@ -216,17 +232,34 @@
     window.kdmcSSO.myHistory().then(function (j) {
       if (!el) return;
       if (!j || !j.ok) { el.innerHTML = ''; return; }
-      var hist = (j.history || []).slice(0, 20);
-      var rows = hist.length
-        ? hist.map(function (e) {
-          return '<div class="ss-hrow">' + esc(_dt(e.ts)) + ' · <b>' + esc(_appNm(e.app)) + '</b>'
+      var hist = (j.history || []).slice(0, 60);
+      if (!hist.length) {
+        el.innerHTML = '<b>🕘 Mes connexions</b><div class="ss-mut">Aucune connexion enregistrée pour l\'instant.</div>';
+        return;
+      }
+      /* Dossiers repliables PAR JOUR (au lieu d'une longue liste). Aujourd'hui ouvert,
+         les autres jours repliés → 1 tap pour dérouler. */
+      var groups = [], byDay = {};
+      hist.forEach(function (e) {
+        var k = _dayKey(e.ts);
+        if (!byDay[k]) { byDay[k] = { ts: e.ts, items: [] }; groups.push(byDay[k]); }
+        byDay[k].items.push(e);
+      });
+      var todayK = _dayKey(Date.now());
+      var folders = groups.map(function (g, i) {
+        var open = (i === 0 || _dayKey(g.ts) === todayK) ? ' open' : '';
+        var rows = g.items.map(function (e) {
+          return '<div class="ss-hrow">' + esc(_hm(e.ts)) + ' · <b>' + esc(_appNm(e.app)) + '</b>'
             + ' <span class="ss-dur">⏱ ' + esc(_dur((e.end || e.ts) - e.ts)) + '</span>'
             + (e.place ? ' <span class="ss-mut">· ' + esc(e.place) + '</span>' : '') + '</div>';
-        }).join('')
-        : '<div class="ss-mut">Aucune connexion enregistrée pour l\'instant.</div>';
-      el.innerHTML = '<b>🕘 Mes ' + (hist.length ? hist.length + ' dernières ' : '') + 'connexions</b>'
-        + '<div class="ss-mut" style="margin:2px 0 8px">' + (j.hits || 0) + ' connexion' + ((j.hits || 0) > 1 ? 's' : '') + ' au total.</div>'
-        + rows;
+        }).join('');
+        return '<details class="ss-fold"' + open + '><summary>📅 ' + esc(_dayLabel(g.ts))
+          + ' <span class="ss-mut">· ' + g.items.length + ' connexion' + (g.items.length > 1 ? 's' : '') + '</span></summary>'
+          + rows + '</details>';
+      }).join('');
+      el.innerHTML = '<b>🕘 Mes connexions</b>'
+        + '<div class="ss-mut" style="margin:2px 0 8px">' + (j.hits || 0) + ' au total · touche un jour pour le détail.</div>'
+        + folders;
     });
   }
 
