@@ -5593,7 +5593,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.850";
+var APP_VER="v9.851";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17426,7 +17426,15 @@ function calcDepPos(empName,tid,day){
   var pc=present.length; if(!pc) return null;
   var j=present.findIndex(function(e){return e.name===empName;});
   if(j<0) return null; // empName ne travaille pas ce jour-là → pas de numéro de départ
-  var SEQd=getSeqForSize(pc), rot=(wi%4)+Math.floor(wi/4);
+  // v9.851 (Kevin 2026-07-03 capture CMC Éq.5 « il y a des erreurs ») — ROTATION = +1 par
+  // jour TRAVAILLÉ (rot=wi), plus l'ancienne (wi%4)+floor(wi/4) qui REMETTAIT la rotation à
+  // zéro tous les 4 jours → 2 jours à 3 jours d'écart avaient les MÊMES numéros (jeu6==dim9)
+  // et chaque chef restait bloqué sur 3-4 places au lieu de faire le tour des 7. Le 1er jour
+  // travaillé (wi=0) = la séquence dans l'ordre des chefs ; chaque jour suivant décale de 1 →
+  // tour complet en pc jours, aucune répétition dans la semaine. Vérifié : reproduit le cas
+  // validé par Kevin (FAUTRIER=4 le 25 : identique car pc=4 y annule l'écart) ET supprime la
+  // répétition sur les équipes à 7 chefs. Même formule dans la page Départs (compute, +off).
+  var SEQd=getSeqForSize(pc), rot=wi;
   return SEQd[(((rot+j)%pc)+pc)%pc];
 }
 
