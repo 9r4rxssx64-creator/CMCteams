@@ -70,9 +70,11 @@
   <!-- Code admin (1ère fois par appareil) -->
   <div id="login" class="card hid">
     <b>🔐 Partie réservée à l'admin</b>
-    <div class="sub" style="margin:6px 0 0">Entre ton code admin (une seule fois par appareil).</div>
+    <div class="sub" style="margin:6px 0 0">Déverrouille avec Face ID, ou ton code admin.</div>
+    <button class="btn-gold" onclick="faceidLogin()" style="margin-top:10px">🔓 Se connecter avec Face ID</button>
+    <div style="text-align:center;color:#7a8a72;font-size:12px;margin:10px 0">— ou —</div>
     <input id="code" type="password" inputmode="numeric" autocomplete="off" placeholder="Code admin">
-    <button class="btn-gold" onclick="doLogin()" style="margin-top:10px">Entrer</button>
+    <button class="btn-gold" onclick="doLogin()" style="margin-top:10px;background:transparent;border:1px solid rgba(232,184,48,.4);color:#e8b830">Entrer avec le code</button>
     <div id="loginErr" class="err hid"></div>
   </div>
 
@@ -159,11 +161,19 @@
 <script src="/CMCteams/tools/shared/version-badge-pwa.js" defer></script>
 <script>
 (function(){
-  var API = location.origin, GRANT_KEY = 'kdmc_admin_grant', lastStatus = '';
+  var API = location.origin, GRANT_KEY = 'kdmc_admin_grant', SSO_KEY = 'kdmc_sso_pass', lastStatus = '';
   var COIN_LIST = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','AVAX','LINK','MATIC','DOT','LTC'];
   var selected = { 'BTC':1 };   // sélection de cryptos (rempli par la config réelle)
 
-  function hdrs(){ var h={}, g=null; try{ g=localStorage.getItem(GRANT_KEY); }catch(e){} if(g) h['x-kdmc-admin']=g; return h; }
+  // Face ID : le portail (kd-mc.com) renvoie ici avec un laissez-passer signé dans le
+  // fragment (#kdmc_sso=…, non envoyé aux serveurs). On le garde puis on nettoie l'URL.
+  try{ var _m=(location.hash||'').match(/[#&]kdmc_sso=([^&]+)/); if(_m){ localStorage.setItem(SSO_KEY, decodeURIComponent(_m[1])); history.replaceState(null,'',location.pathname+location.search); } }catch(e){}
+
+  function hdrs(){ var h={}; try{ var g=localStorage.getItem(GRANT_KEY); if(g) h['x-kdmc-admin']=g; var sp=localStorage.getItem(SSO_KEY); if(sp) h['x-kdmc-sso']=sp; }catch(e){} return h; }
+
+  // « Se connecter avec Face ID » = passer par le portail (qui gère déjà Face ID) et
+  // revenir ici authentifié. Aucune crypto en double : on réutilise le SSO du domaine.
+  window.faceidLogin = function(){ location.href = 'https://kd-mc.com/?return=' + encodeURIComponent(location.origin + '/'); };
   function show(id,on){ document.getElementById(id).classList[on?'remove':'add']('hid'); }
   function esc(s){ return String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
   function idem(id,t){ var el=document.getElementById(id); if(el.textContent!==t) el.textContent=t; }

@@ -558,9 +558,21 @@ async function adminSession(request, env) {
      par nom). Le hash est déployé en prod ; un déploiement sans hash FERME l'admin
      plutôt que de l'ouvrir. L'accès exige un GRANT signé prouvé via /__admin/login. */
   if (!adminHash) return null;
+  /* 1) GRANT prouvé par le CODE admin (/__admin/login) — cookie kdmc_admin ou header x-kdmc-admin. */
   const g = await ssoVerify(secret, adminGrantTok(request));
-  if (!g || g.uid !== '__kdmc_admin__') return null;
-  return { uid: '__kdmc_admin__', name: 'Admin', grant: true };
+  if (g && g.uid === '__kdmc_admin__') return { uid: '__kdmc_admin__', name: 'Admin', grant: true };
+  /* 2) Session SSO FORTE (Face ID = verified) d'un UID ADMIN connu. Une session verified
+     n'est émise QUE par le flux WebAuthn (passkey), et un passkey ne peut être GREFFÉ sur
+     un uid admin qu'après bootstrap + preuve du code pour tout appareil suivant (voir
+     enrôlement, leçon #99) → « verified + uid∈ADMIN_UIDS » = Kevin, même confiance que
+     whoami admin:true. Jeton via header x-kdmc-sso (PWA iOS = cookies isolés) OU cookie
+     kdmc_sso (Safari). Permet le Face ID sur bot.kd-mc.com sans retaper le code. */
+  const ssoRaw = (request.headers.get('x-kdmc-sso') || '').replace(/^Bearer\s+/i, '').trim() || ssoCookie(request, SSO_COOKIE);
+  if (ssoRaw) {
+    const s = await ssoVerify(secret, ssoRaw);
+    if (s && s.verified && ADMIN_UIDS.indexOf(s.uid) >= 0) return { uid: s.uid, name: s.name, faceid: true };
+  }
+  return null;
 }
 async function handleAdmin(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
