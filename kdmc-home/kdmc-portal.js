@@ -139,23 +139,47 @@
          qu'on peut esquiver). Sans Face ID → pas « verified » → ni auto-login cross-app
          ni espace privé. Ce bouton comble ce manque. */
       var canEnroll = _pkSupported();
+      var mine = _myCred(_ssUid); /* credId (b64u) du passkey de CET appareil, si connu */
+      /* la liste renvoie k.id = 12 premiers car. du credId → « ce téléphone » = mine commence par k.id */
+      var enrolledHere = !!(mine && pk.some(function (k) { return mine.indexOf(k.id) === 0; }));
       var rows = pk.length
         ? pk.map(function (k) {
+          var here = mine && mine.indexOf(k.id) === 0;
           return '<div class="ss-row"><span>🔑 Appareil <code>' + esc(k.id) + '…</code>'
+            + (here ? '<span class="ss-here"> · cet appareil ✓</span>' : '')
             + '<span class="ss-mut"> — ajouté ' + esc(_ago(k.created)) + '</span></span>'
             + '<button class="ss-del" data-pk="' + esc(k.id) + '" type="button">Retirer</button></div>';
         }).join('')
         : '<div class="ss-mut">Aucun appareil Face ID.' + (canEnroll
           ? ' Active-le pour te connecter d\'un regard <b>et</b> débloquer l\'auto-connexion sur toutes tes apps + ton espace privé.'
           : ' (Face ID non disponible sur cet appareil.)') + '</div>';
-      el.innerHTML = '<b>📱 Mes appareils Face ID</b>' + rows
-        + (canEnroll ? '<button class="ss-act" id="ss-enroll" type="button" style="border-color:rgba(232,184,48,.5);color:var(--gold2,#f6d97a)">➕ Activer Face ID sur cet appareil</button>' : '')
+      /* Action selon l'état de CET appareil (fin du bouton « Activer » qui s'affiche à vie
+         et empile des doublons — cf. capture Kevin 4 clés) :
+         - déjà enrôlé ici → statut vert « actif » + petit lien pour un AUTRE appareil ;
+         - pas encore reconnu → si des passkeys existent, on tente d'abord une assertion
+           (Face ID) qui RECONNAÎT ce téléphone sans créer de doublon, sinon on enrôle. */
+      var actBtn = '';
+      if (canEnroll && enrolledHere) {
+        actBtn = '<div class="ss-ok" id="ss-active">✅ Face ID est actif sur cet appareil</div>'
+          + '<button class="ss-act ss-sub" id="ss-enroll" type="button">➕ Ajouter un autre appareil</button>';
+      } else if (canEnroll) {
+        actBtn = '<button class="ss-act" id="ss-enroll" type="button" style="border-color:rgba(232,184,48,.5);color:var(--gold2,#f6d97a)">'
+          + (pk.length ? '🔎 Activer / vérifier Face ID sur cet appareil' : '➕ Activer Face ID sur cet appareil') + '</button>';
+      }
+      el.innerHTML = '<b>📱 Mes appareils Face ID</b>' + rows + actBtn
         + (pk.length ? '<button class="ss-act" id="ss-revoke" type="button">🚪 Déconnecter mes autres appareils</button>' : '');
       var en = document.getElementById('ss-enroll');
       if (en) en.addEventListener('click', function () {
+        var addMore = enrolledHere; /* clic « Ajouter un autre appareil » → on CRÉE un nouveau passkey */
         en.disabled = true; en.textContent = '…';
-        window.kdmcSSO.registerPasskey().then(function (r) {
-          if (r && r.ok) { try { if (_ssUid) _setPasskey(_ssUid); } catch (e) { /* */ } loadMyPasskeys(); applyAdminVisibility(); }
+        var step = (!addMore && pk.length && window.kdmcSSO.loginPasskey)
+          ? window.kdmcSSO.loginPasskey(_ssUid).then(function (v) {
+              if (v && v.ok && v.credId) { if (_ssUid) _setPasskey(_ssUid, v.credId); return { ok: true }; }
+              return window.kdmcSSO.registerPasskey(); /* pas de passkey sur ce téléphone → on enrôle */
+            })
+          : window.kdmcSSO.registerPasskey();
+        step.then(function (r) {
+          if (r && r.ok) { try { if (_ssUid) _setPasskey(_ssUid, r.credId); } catch (e) { /* */ } loadMyPasskeys(); applyAdminVisibility(); }
           else { en.disabled = false; en.textContent = '➕ Activer Face ID — réessaie (' + ((r && r.reason) || 'annulé') + ')'; }
         });
       });
@@ -302,7 +326,10 @@
   /* ===== Passkey (Face ID) — fait de l'appareil une preuve d'identité FORTE ===== */
   var LS_PASSKEY = 'kdmc_passkey_v1';
   function _hasPasskey(uid) { try { return !!(lg(LS_PASSKEY, {})[uid]); } catch (e) { return false; } }
-  function _setPasskey(uid) { try { var m = lg(LS_PASSKEY, {}); m[uid] = 1; ls(LS_PASSKEY, m); } catch (e) { /* */ } }
+  /* Stocke le credId (b64u) du passkey de CET appareil (ou 1 si inconnu) → l'UI sait
+     que ce téléphone est déjà enrôlé et n'affiche plus « Activer » (anti-doublon). */
+  function _setPasskey(uid, credId) { try { var m = lg(LS_PASSKEY, {}); m[uid] = credId || m[uid] || 1; ls(LS_PASSKEY, m); } catch (e) { /* */ } }
+  function _myCred(uid) { try { var v = lg(LS_PASSKEY, {})[uid]; return (typeof v === 'string') ? v : ''; } catch (e) { return ''; } }
   function _pkSupported() { return !!(window.kdmcSSO && window.kdmcSSO.supportsPasskey && window.kdmcSSO.supportsPasskey()); }
   /* Après connexion : propose l'enrôlement Face ID si supporté + pas déjà fait. */
   function _postLogin(acc) {
@@ -321,7 +348,7 @@
     document.getElementById('pk-go').addEventListener('click', function () {
       var b = document.getElementById('pk-go'); b.disabled = true; b.textContent = '…';
       window.kdmcSSO.registerPasskey().then(function (j) {
-        if (j && j.ok) { _setPasskey(acc.uid); showHub(acc.name); }
+        if (j && j.ok) { _setPasskey(acc.uid, j.credId); showHub(acc.name); }
         else { document.getElementById('pk-err').textContent = 'Face ID non activé (' + ((j && j.reason) || 'annulé') + '). Tu peux réessayer plus tard.'; b.disabled = false; b.textContent = 'Activer Face ID / Touch ID'; }
       });
     });

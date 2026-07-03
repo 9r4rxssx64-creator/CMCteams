@@ -78,6 +78,22 @@ try {
   const who1 = await page.evaluate(() => window.kdmcSSO.whoami());
   ok(who1 && who1.verified === true, 'Session après enrôlement = FORTE (verified:true)  [' + JSON.stringify(who1) + ']');
 
+  /* --- Régression bug Kevin (v1.0.18, capture IMG_2971) : après enrôlement, l'appareil
+     est RECONNU dans « Mes appareils Face ID » → 1 seule clé (pas de doublon), badge
+     « actif », et le gros bouton « Activer Face ID sur cet appareil » ne s'affiche plus. --- */
+  await page.waitForFunction(() => {
+    var el = document.getElementById('ss-pk');
+    return el && (el.querySelector('.ss-del') || el.querySelector('#ss-active'));
+  }, { timeout: 8000 }).catch(() => {});
+  const pkCount1 = await page.evaluate(() => document.querySelectorAll('#ss-pk .ss-del').length);
+  ok(pkCount1 === 1, 'Self-service : 1 seul appareil Face ID listé (pas de doublon)  [' + pkCount1 + ']');
+  const activeShown = await page.evaluate(() => !!document.getElementById('ss-active'));
+  ok(activeShown, 'Cet appareil → « ✅ Face ID est actif sur cet appareil » (fin du bouton Activer trompeur)');
+  const hereMark = await page.evaluate(() => !!document.querySelector('#ss-pk .ss-here'));
+  ok(hereMark, 'La ligne de CE téléphone est marquée « · cet appareil ✓ »');
+  const enrollLabel = await page.evaluate(() => { var b = document.getElementById('ss-enroll'); return b ? b.textContent : ''; });
+  ok(/autre appareil/i.test(enrollLabel), 'Le bouton restant propose « Ajouter un AUTRE appareil » (pas « Activer sur cet appareil »)  [' + enrollLabel + ']');
+
   /* Déconnexion → écran de déverrouillage avec bouton Face ID */
   await page.click('#logout');
   const pkBtn = await page.waitForSelector('#u-pk', { timeout: 5000 }).then(() => true).catch(() => false);
@@ -89,6 +105,17 @@ try {
   ok(back, 'Connexion par Face ID (sans code) → réussie, hub affiché');
   const who2 = await page.evaluate(() => window.kdmcSSO.whoami());
   ok(who2 && who2.verified === true && who2.uid === 'kevin-desarzens', 'Session Face ID = FORTE (verified:true) + bonne identité');
+
+  /* Après reconnexion Face ID : toujours 1 SEULE clé + appareil reconnu (pas de doublon
+     créé par l'assertion) — la connexion Face ID ne doit jamais empiler de passkey. */
+  await page.waitForFunction(() => {
+    var el = document.getElementById('ss-pk');
+    return el && (el.querySelector('.ss-del') || el.querySelector('#ss-active'));
+  }, { timeout: 8000 }).catch(() => {});
+  const pkCount2 = await page.evaluate(() => document.querySelectorAll('#ss-pk .ss-del').length);
+  ok(pkCount2 === 1, 'Après reconnexion Face ID : toujours 1 seule clé (l\'assertion n\'empile pas)  [' + pkCount2 + ']');
+  const active2 = await page.evaluate(() => !!document.getElementById('ss-active'));
+  ok(active2, 'Après reconnexion Face ID : appareil toujours reconnu « actif »');
 
   await ctx.close();
 } finally {

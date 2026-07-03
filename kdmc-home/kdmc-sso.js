@@ -82,9 +82,10 @@
           timeout: 60000, attestation: 'none',
         } }).then(function (cred) {
           var att = cred.response;
+          var _cid = cred.id; /* id (b64u) du passkey de CET appareil → l'UI peut le reconnaître (anti-doublon) */
           return fetch(BASE + '/webauthn/register/verify', { method: 'POST', credentials: 'include', headers: authHeaders({ 'content-type': 'application/json' }), body: JSON.stringify({ attestationObject: _bufToB64u(att.attestationObject), clientDataJSON: _bufToB64u(att.clientDataJSON) }) })
             .then(function (r) { return r.json(); })
-            .then(function (j) { if (j && j.ok && j.token) setToken(j.token); return j || { ok: false }; });
+            .then(function (j) { if (j && j.ok && j.token) setToken(j.token); if (j && j.ok && !j.credId) j.credId = _cid; return j || { ok: false }; });
         });
       })
       .catch(function (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 120) }; });
@@ -105,9 +106,10 @@
           userVerification: 'required', timeout: 60000,
         } }).then(function (cred) {
           var a = cred.response;
+          var _cid = cred.id; /* id (b64u) du passkey utilisé sur CET appareil */
           return fetch(BASE + '/webauthn/auth/verify', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ uid: uid, credId: cred.id, clientDataJSON: _bufToB64u(a.clientDataJSON), authenticatorData: _bufToB64u(a.authenticatorData), signature: _bufToB64u(a.signature) }) })
             .then(function (r) { return r.json(); })
-            .then(function (j) { if (j && j.ok && j.token) setToken(j.token); return j || { ok: false }; });
+            .then(function (j) { if (j && j.ok && j.token) setToken(j.token); if (j && j.ok && !j.credId) j.credId = _cid; return j || { ok: false }; });
         });
       })
       .catch(function (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 120) }; });

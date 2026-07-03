@@ -91,16 +91,18 @@ try {
   await page.fill('#f-code2', '200807');
   await page.check('#cgu-ok');
   await page.click('#f-create');
-  /* Après la création, le portail propose d'abord l'écran « Activer Face ID »
-     (comportement voulu, prouvé par kdmc-passkey-e2e). Sans authentificateur
-     virtuel ici, on le passe via « Plus tard » (#pk-skip) pour atteindre le hub
-     qui contient #admin-zone. */
-  await page.waitForFunction(() => !!document.getElementById('pk-skip') || (function () { var z = document.getElementById('admin-zone'); return z && z.hidden === false; })(), { timeout: 5000 }).catch(() => {});
+  /* Après la création, le portail propose l'écran « Activer Face ID ». Ici Kevin est
+     AUTO-DÉCLARÉ (nom+code, PAS de Face ID) → on passe via « Plus tard » (#pk-skip).
+     Leçon #99 : un nom auto-déclaré n'accorde AUCUN droit → Administration CACHÉE tant
+     qu'il n'est pas « verified » (Face ID). Le chemin positif (admin VISIBLE avec Face ID)
+     est prouvé par kdmc-multiapp-e2e + kdmc-passkey-e2e (authentificateur virtuel). */
+  await page.waitForFunction(() => !!document.getElementById('pk-skip') || (document.getElementById('hub') && !document.getElementById('hub').hidden), { timeout: 5000 }).catch(() => {});
   const pkSkip = await page.$('#pk-skip');
   if (pkSkip) await pkSkip.click();
-  await page.waitForFunction(() => { var z = document.getElementById('admin-zone'); return z && z.hidden === false; }, { timeout: 5000 }).catch(() => {});
-  const adminVisible = await page.evaluate(() => { var z = document.getElementById('admin-zone'); return !!z && z.hidden === false; });
-  ok(adminVisible, 'Portail : compte Kevin (uid kevin-desarzens) → section Administration VISIBLE');
+  await page.waitForFunction(() => document.getElementById('hub') && !document.getElementById('hub').hidden, { timeout: 5000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  const adminHidden1 = await page.evaluate(() => { var z = document.getElementById('admin-zone'); return !z || z.hidden === true; });
+  ok(adminHidden1, 'Portail : Kevin auto-déclaré (nom+code, SANS Face ID) → Administration CACHÉE (leçon #99 ; admin AVEC Face ID prouvé par multiapp-e2e)');
   const tok = await page.evaluate(() => window.kdmcSSO.token());
   ok(!!tok && tok.indexOf('.') > 0, 'Portail : pass signé stocké en localStorage (canal cross-PWA)');
   /* le KV doit contenir la fiche Kevin */
@@ -139,7 +141,7 @@ try {
   await page.goto(ORIGIN + '/app.html#kdmc_sso=' + encodeURIComponent(ij.token));
   await page.waitForFunction(() => document.getElementById('status').textContent !== 'boot', { timeout: 6000 }).catch(() => {});
   const st = await page.evaluate(() => document.getElementById('status').textContent);
-  ok(/^OK\|Kevin Desarzens\|admin=true/.test(st), 'App PWA : pass du lien consommé → whoami via Bearer (SANS cookie) → reconnu admin  [' + st + ']');
+  ok(/^OK\|Kevin Desarzens\|admin=false/.test(st), 'App PWA : pass du lien consommé → whoami via Bearer (SANS cookie) → session RECONNUE (uid/nom) mais admin=false sans Face ID (leçon #99 cross-PWA)  [' + st + ']');
   const hashCleared = await page.evaluate(() => location.hash.indexOf('kdmc_sso') < 0);
   ok(hashCleared, 'App PWA : le pass est retiré de l’URL après consommation (propre)');
   await ctx3.close();
