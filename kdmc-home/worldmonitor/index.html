@@ -56,6 +56,7 @@
   .leaflet-control-layers label{font-size:12px; margin:3px 0; cursor:pointer}
   .leaflet-control-layers-selector{margin-right:6px}
   #vFull{font-size:15px;line-height:1}
+  .camopen{display:block;text-align:center;font-size:11px;color:var(--cyan);padding:5px;text-decoration:none;background:#0a1220;border-top:1px solid var(--line)}
   .leaflet-bar a:hover{background:#16203a}
   .plane{font-size:15px; line-height:15px; text-shadow:0 0 3px #000}
   .vswitch{display:flex; gap:6px; margin-left:auto}
@@ -278,7 +279,7 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.9</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.10</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
@@ -497,14 +498,27 @@ async function loadSpace(){try{
 }catch(e){setText($("spaceState"),"indispo");}}
 
 /* ============ ACTUALITÉ (GDELT) ============ */
-async function loadNews(){try{
-  var d=await getJSON("https://api.gdeltproject.org/api/v2/doc/doc?query="+encodeURIComponent("(world OR breaking)")+"&mode=artlist&maxrecords=10&sort=datedesc&format=json",11000);
-  var a=(d&&d.articles)||[];setText($("newsState"),a.length?"live":"—");
-  var box=$("news");if(!a.length){setHTML(box,'<div class="empty">Flux vide.</div>');return;}
-  FEED.news=a.map(function(x){return x.title||"";});
-  setHTML(box,a.slice(0,10).map(function(x){return '<a class="newsrow" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer"><div class="t1">'+esc(x.title||"—")+'</div><div class="t2">'+esc(x.domain||"")+(x.sourcecountry?" · "+esc(x.sourcecountry):"")+'</div></a>';}).join(""));
-  buildBrief();
-}catch(e){setText($("newsState"),"indispo");if($("news").querySelector(".empty"))setHTML($("news"),'<div class="empty">Actualité indisponible — reprise auto.</div>');}}
+async function loadNews(){
+  /* Source 1 : GDELT (monde). Repli : Reddit r/worldnews (CORS, sans clé). */
+  var rows=null,titles=null;
+  try{
+    var d=await getJSON("https://api.gdeltproject.org/api/v2/doc/doc?query="+encodeURIComponent("(world OR breaking)")+"&mode=artlist&maxrecords=12&sort=datedesc&format=json",11000);
+    var a=(d&&d.articles)||[];
+    if(a.length){titles=a.map(function(x){return x.title||"";});
+      rows=a.slice(0,10).map(function(x){return '<a class="newsrow" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer"><div class="t1">'+esc(x.title||"—")+'</div><div class="t2">'+esc(x.domain||"")+(x.sourcecountry?" · "+esc(x.sourcecountry):"")+'</div></a>';}).join("");
+      setText($("newsState"),"live");}
+  }catch(e){/* repli ci-dessous */}
+  if(!rows){try{
+    var r=await getJSON("https://www.reddit.com/r/worldnews/hot.json?limit=12&raw_json=1",11000);
+    var ch=(r&&r.data&&r.data.children)||[];var posts=ch.map(function(c){return c.data;}).filter(function(p){return p&&!p.stickied&&p.title;});
+    if(posts.length){titles=posts.map(function(p){return p.title;});
+      rows=posts.slice(0,10).map(function(p){var u=p.url&&/^https?:/.test(p.url)?p.url:("https://www.reddit.com"+p.permalink);
+        return '<a class="newsrow" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer"><div class="t1">'+esc(p.title)+'</div><div class="t2">'+esc(p.domain||"reddit")+' · r/worldnews</div></a>';}).join("");
+      setText($("newsState"),"reddit");}
+  }catch(e2){/* rien */}}
+  if(rows){FEED.news=titles||[];setHTML($("news"),rows);buildBrief();}
+  else{setText($("newsState"),"indispo");if($("news").querySelector(".empty"))setHTML($("news"),'<div class="empty">Actualité indisponible — reprise auto.</div>');}
+}
 
 /* ============ LANCEMENTS (The Space Devs) ============ */
 async function loadLaunches(){try{
@@ -606,9 +620,14 @@ $("cams").addEventListener("click",function(ev){
   if(!c.ch){ /* pas de chaîne stable → recherche YouTube live en 1 tap (toujours à jour) */
     window.open("https://www.youtube.com/results?search_query="+encodeURIComponent(c.q)+"&sp=EgJAAQ%253D%253D","_blank","noopener");
     return; }
-  var src="https://www.youtube-nocookie.com/embed/live_stream?channel="+c.ch+"&autoplay=1&mute=1";
+  /* Embed live par CHAÎNE : www.youtube.com (le nocookie ne sert pas live_stream) +
+     PAS de referrerpolicy no-referrer (YouTube exige le Referer pour autoriser l'embed,
+     sinon "Erreur 153"). playsinline=1 pour iOS. Lien "Ouvrir sur YouTube" en secours. */
+  var src="https://www.youtube.com/embed/live_stream?channel="+c.ch+"&autoplay=1&mute=1&playsinline=1&rel=0";
+  var watch="https://www.youtube.com/channel/"+c.ch+"/live";
   cell.innerHTML='<button class="close" aria-label="Fermer">✕</button>'+
-    '<iframe src="'+src+'" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="no-referrer" title="'+esc(c.n)+'"></iframe>';
+    '<iframe src="'+src+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" title="'+esc(c.n)+'"></iframe>'+
+    '<a class="camopen" href="'+watch+'" target="_blank" rel="noopener noreferrer">↗ Ouvrir sur YouTube si l\'aperçu ne charge pas</a>';
 });
 
 /* ============ TfL JamCams — Londres (~900 caméras publiques, gratuit sans clé) ============ */
@@ -741,18 +760,30 @@ document.addEventListener("fullscreenchange",function(){if(MAP)setTimeout(functi
 
 /* ============ CYBER — vulnérabilités (Shodan CVEDB, sans clé, CORS) ============ */
 var FEED={news:[],hn:[],cve:[]};
-async function loadCve(){try{
-  var d=await getJSON("https://cvedb.shodan.io/cves?limit=8&sort_by_epss=true",11000);
-  var a=(d&&(d.cves||d.data))||(Array.isArray(d)?d:[]);setText($("cveState"),a.length?"live":"—");
-  var box=$("cve");if(!a.length){setHTML(box,'<div class="empty">Flux vide.</div>');return;}
-  FEED.cve=a.map(function(x){return x.summary||x.cve_id||"";});
-  setHTML(box,a.slice(0,8).map(function(x){
-    var id=x.cve_id||x.id||"CVE",sc=(x.cvss_v3!=null?x.cvss_v3:(x.cvss!=null?x.cvss:(x.cvss_v2!=null?x.cvss_v2:null)));
-    var col=sc>=9?"#ff5a4d":sc>=7?"#ff8a3d":sc>=4?"#ffd24d":"#7fd08a";
-    var sev=sc!=null?sc.toFixed(1):"—";
-    return '<a class="row" href="https://nvd.nist.gov/vuln/detail/'+esc(id)+'" target="_blank" rel="noopener noreferrer"><div class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'55;font-size:11px">'+esc(sev)+'</div><div class="main"><div class="t1">'+esc(id)+'</div><div class="t2">'+esc((x.summary||"").slice(0,120))+'</div></div></a>';
-  }).join(""));buildBrief();
-}catch(e){setText($("cveState"),"indispo");if($("cve").querySelector(".empty"))setHTML($("cve"),'<div class="empty">Vulnérabilités indisponibles — reprise auto.</div>');}}
+function _cveNorm(x){var id=x.cve_id||x.id||"CVE";var sc=(x.cvss_v3!=null?x.cvss_v3:(x.cvss!=null?x.cvss:(x.cvss_v2!=null?x.cvss_v2:null)));return {id:id,sum:x.summary||"",cvss:(sc!=null?+sc:null)};}
+async function loadCve(){
+  /* Source 1 : Shodan CVEDB. Repli : CIRCL (cve.circl.lu). Les 2 sans clé. */
+  var items=null,src="";
+  try{
+    var d=await getJSON("https://cvedb.shodan.io/cves?limit=8&sort_by_epss=true",11000);
+    var a=(d&&(d.cves||d.data))||(Array.isArray(d)?d:[]);
+    if(a.length){items=a.slice(0,8).map(_cveNorm);src="Shodan";}
+  }catch(e){}
+  if(!items){try{
+    var c=await getJSON("https://cve.circl.lu/api/last",11000);
+    var arr=Array.isArray(c)?c:((c&&c.results)||[]);
+    if(arr.length){items=arr.slice(0,8).map(_cveNorm);src="CIRCL";}
+  }catch(e2){}}
+  if(items&&items.length){
+    setText($("cveState"),src?src.toLowerCase():"live");
+    FEED.cve=items.map(function(x){return x.sum||x.id;});
+    setHTML($("cve"),items.map(function(x){
+      var col=x.cvss>=9?"#ff5a4d":x.cvss>=7?"#ff8a3d":x.cvss>=4?"#ffd24d":"#7fd08a";
+      var sev=x.cvss!=null?x.cvss.toFixed(1):"—";
+      return '<a class="row" href="https://nvd.nist.gov/vuln/detail/'+esc(x.id)+'" target="_blank" rel="noopener noreferrer"><div class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'55;font-size:11px">'+esc(sev)+'</div><div class="main"><div class="t1">'+esc(x.id)+'</div><div class="t2">'+esc((x.sum||"").slice(0,120))+'</div></div></a>';
+    }).join(""));buildBrief();
+  }else{setText($("cveState"),"indispo");if($("cve").querySelector(".empty"))setHTML($("cve"),'<div class="empty">Vulnérabilités indisponibles — reprise auto.</div>');}
+}
 
 /* ============ INCENDIES actifs (NASA EONET wildfires, sans clé) ============ */
 async function loadFires(){try{
@@ -824,7 +855,9 @@ function buildBrief(){
   var titles=[].concat(FEED.news||[],FEED.hn||[],FEED.cve||[]);
   if(!titles.length){return;}
   var freq={};titles.forEach(function(t){var seen={};tokens(t).forEach(function(w){if(seen[w])return;seen[w]=1;freq[w]=(freq[w]||0)+1;});});
+  /* thèmes récurrents (freq>1) en priorité ; sinon, top mots-clés du moment (freq>=1) */
   var top=Object.keys(freq).filter(function(w){return freq[w]>1;}).sort(function(a,b){return freq[b]-freq[a];}).slice(0,10);
+  if(!top.length)top=Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];}).slice(0,10);
   setText($("briefState"),titles.length+" titres");
   if(!top.length){setHTML($("brief"),'<div class="empty">Pas de thème dominant pour l\'instant.</div>');return;}
   var max=freq[top[0]]||1;
