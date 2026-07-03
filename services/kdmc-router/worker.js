@@ -669,6 +669,40 @@ async function botCtx(env) {
   if (!svc) return { err: 'service_bot_introuvable', detail: 'services: ' + edges.map((e) => e.node.name).join(', ') };
   return { projectId, environmentId, serviceId: svc.id, projectName: (((pr.j || {}).data || {}).project || {}).name };
 }
+/* Validation serveur des « gros réglages » (défense en profondeur — la page valide
+   aussi). Renvoie { set:{VAR:val} } ou { err:"cause exacte" }. */
+function botValidateConfig(b) {
+  const set = {};
+  if (b.symbols !== undefined) {
+    const arr = (Array.isArray(b.symbols) ? b.symbols : String(b.symbols).split(','))
+      .map((s) => String(s).trim().toUpperCase().replace(/[-_]/g, '/'))
+      .map((s) => (!s.includes('/') && s.endsWith('USDT') ? s.slice(0, -4) + '/USDT' : s))
+      .filter(Boolean);
+    const uniq = [...new Set(arr)];
+    if (uniq.length < 1 || uniq.length > 8) return { err: 'choisis entre 1 et 8 cryptos' };
+    for (const s of uniq) {
+      if (!/^[A-Z0-9]{2,15}\/USDT$/.test(s)) return { err: 'paire invalide: ' + s + ' (format attendu ex BTC/USDT, cotation en USDT)' };
+    }
+    set.SYMBOLS = uniq.join(',');
+  }
+  const num = (key, envName, min, max) => {
+    if (b[key] === undefined) return null;
+    const n = Number(b[key]);
+    if (!isFinite(n) || n < min || n > max) return envName + ' doit être entre ' + min + ' et ' + max;
+    set[envName] = String(n);
+    return null;
+  };
+  const errs = [
+    (b.timeframe !== undefined) ? (['5m', '15m', '30m', '1h', '4h'].includes(String(b.timeframe)) ? (set.TIMEFRAME = String(b.timeframe), null) : 'timeframe: 5m/15m/30m/1h/4h') : null,
+    num('risk', 'RISK_PER_TRADE_PCT', 0.1, 5),
+    num('maxpos', 'MAX_POSITION_PCT', 5, 90),
+    num('dailyloss', 'DAILY_LOSS_CAP_PCT', 1, 20),
+    num('maxdd', 'MAX_DRAWDOWN_PCT', 3, 40),
+  ].filter(Boolean);
+  if (errs.length) return { err: errs.join(' ; ') };
+  if (!Object.keys(set).length) return { err: 'aucun réglage fourni' };
+  return { set };
+}
 async function handleBot(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
   const me = await adminSession(request, env);
@@ -688,6 +722,31 @@ async function handleBot(request, url, env) {
     const rl = await railGql(env, `query { deploymentLogs(deploymentId: "${node.id}", limit: 80) { timestamp message } }`);
     const logs = (((rl.j || {}).data || {}).deploymentLogs || []).map((l) => ({ t: l.timestamp, m: String(l.message || '').slice(0, 300) }));
     return J({ ok: true, project: ctx.projectName, status: node.status, since: node.createdAt, logs });
+  }
+
+  /* Réglages (« gros réglages » choisis par Kevin ; le bot gère le reste).
+     GET = valeurs actuelles ; POST = applique + redéploie. TESTNET non modifiable
+     ici (bascule argent réel = décision volontaire hors dashboard). */
+  const BOT_KNOBS = ['SYMBOLS', 'TIMEFRAME', 'RISK_PER_TRADE_PCT', 'MAX_POSITION_PCT', 'DAILY_LOSS_CAP_PCT', 'MAX_DRAWDOWN_PCT'];
+  if (path === '/__bot/config' && request.method === 'GET') {
+    const vq = await railGql(env, `query { variables(projectId: "${ctx.projectId}", environmentId: "${ctx.environmentId}", serviceId: "${ctx.serviceId}") }`);
+    const vars = ((vq.j || {}).data || {}).variables || {};
+    const cfg = {};
+    BOT_KNOBS.forEach((k) => { if (vars[k] != null) cfg[k] = vars[k]; });
+    return J({ ok: true, config: cfg, testnet: (vars.TESTNET !== 'false'), live: (vars.BOT_LIVE === 'true'), symbol_default: 'BTC/USDT' });
+  }
+  if (path === '/__bot/config' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { /* ignore */ }
+    const v = botValidateConfig(b);
+    if (v.err) return J({ ok: false, reason: 'reglage_invalide', detail: v.err });
+    for (const [name, value] of Object.entries(v.set)) {
+      const up = await railGql(env, `mutation { variableUpsert(input: { projectId: "${ctx.projectId}", environmentId: "${ctx.environmentId}", serviceId: "${ctx.serviceId}", name: "${name}", value: "${value}" }) }`);
+      if (!up.j || up.j.errors) return J({ ok: false, reason: 'variable_upsert_echec', detail: name + ': ' + JSON.stringify((up.j && up.j.errors) || up.http).slice(0, 200) });
+    }
+    const rd = await railGql(env, `mutation { serviceInstanceRedeploy(environmentId: "${ctx.environmentId}", serviceId: "${ctx.serviceId}") }`);
+    if (!rd.j || rd.j.errors) return J({ ok: false, reason: 'redeploy_echec', detail: JSON.stringify((rd.j && rd.j.errors) || rd.http).slice(0, 200) });
+    await audLog(env, { ev: 'bot_config', set: Object.keys(v.set).join(',') });
+    return J({ ok: true, set: v.set });
   }
 
   /* Kill switch / relance : pose BOT_KILL puis redéploie (le bot lit BOT_KILL au

@@ -25,41 +25,55 @@ class Exchange:
             self.client.set_sandbox_mode(True)
         self.client.load_markets()
 
-    # --- Lecture marché ---
-    def fetch_ohlcv(self, limit: int = 200) -> List[list]:
+    # --- Lecture marché (par paire) ---
+    def fetch_ohlcv(self, symbol: str, limit: int = 200) -> List[list]:
         """Renvoie [[ts, open, high, low, close, volume], ...] bougies clôturées."""
-        return self.client.fetch_ohlcv(
-            self.cfg.symbol, timeframe=self.cfg.timeframe, limit=limit
-        )
+        return self.client.fetch_ohlcv(symbol, timeframe=self.cfg.timeframe, limit=limit)
 
-    def last_price(self) -> float:
-        return float(self.client.fetch_ticker(self.cfg.symbol)["last"])
+    def last_price(self, symbol: str) -> float:
+        return float(self.client.fetch_ticker(symbol)["last"])
+
+    def prices(self, symbols: List[str]) -> dict:
+        """Dernier prix de chaque paire (un appel par paire, tolérant aux erreurs)."""
+        out = {}
+        for s in symbols:
+            try:
+                out[s] = self.last_price(s)
+            except Exception:  # noqa: BLE001 — une paire indispo ne bloque pas les autres
+                out[s] = None
+        return out
 
     # --- Lecture solde ---
     def quote_balance(self) -> float:
-        """Solde disponible dans la devise de cotation (ex: USDT)."""
-        quote = self.cfg.symbol.split("/")[1]
+        """Solde disponible dans la devise de cotation commune (ex: USDT)."""
         bal = self.client.fetch_balance()
-        return float(bal.get(quote, {}).get("free", 0.0) or 0.0)
+        return float(bal.get(self.cfg.quote, {}).get("free", 0.0) or 0.0)
 
-    def base_balance(self) -> float:
-        """Solde disponible dans l'actif de base (ex: BTC)."""
-        base = self.cfg.symbol.split("/")[0]
+    def base_balance(self, symbol: str) -> float:
+        """Solde disponible dans l'actif de base d'une paire (ex: BTC pour BTC/USDT)."""
+        base = symbol.split("/")[0]
         bal = self.client.fetch_balance()
         return float(bal.get(base, {}).get("free", 0.0) or 0.0)
 
-    def equity_in_quote(self, price: float) -> float:
-        """Capital total estimé en devise de cotation (quote + base*prix)."""
-        return self.quote_balance() + self.base_balance() * price
+    def equity_in_quote(self, prices: dict) -> float:
+        """Capital total = cash (quote) + somme(base détenue * prix) sur toutes les paires."""
+        total = self.quote_balance()
+        bal = self.client.fetch_balance()
+        for sym, px in prices.items():
+            if not px:
+                continue
+            base = sym.split("/")[0]
+            total += float(bal.get(base, {}).get("free", 0.0) or 0.0) * px
+        return total
 
-    # --- Ordres (marché uniquement) ---
-    def amount_to_precision(self, qty: float) -> float:
-        return float(self.client.amount_to_precision(self.cfg.symbol, qty))
+    # --- Ordres (marché uniquement, par paire) ---
+    def amount_to_precision(self, symbol: str, qty: float) -> float:
+        return float(self.client.amount_to_precision(symbol, qty))
 
-    def market_buy(self, qty: float) -> dict:
-        qty = self.amount_to_precision(qty)
-        return self.client.create_order(self.cfg.symbol, "market", "buy", qty)
+    def market_buy(self, symbol: str, qty: float) -> dict:
+        qty = self.amount_to_precision(symbol, qty)
+        return self.client.create_order(symbol, "market", "buy", qty)
 
-    def market_sell(self, qty: float) -> dict:
-        qty = self.amount_to_precision(qty)
-        return self.client.create_order(self.cfg.symbol, "market", "sell", qty)
+    def market_sell(self, symbol: str, qty: float) -> dict:
+        qty = self.amount_to_precision(symbol, qty)
+        return self.client.create_order(symbol, "market", "sell", qty)

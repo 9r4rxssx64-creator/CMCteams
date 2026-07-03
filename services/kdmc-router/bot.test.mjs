@@ -28,6 +28,7 @@ globalThis.fetch = async (input, init) => {
     if (q.includes('project(id')) return j({ data: { project: { name: 'CMCteams', services: { edges: [{ node: { id: 'S0', name: 'CMCteams' } }, { node: { id: 'S1', name: 'crypto-bot' } }] } } } });
     if (q.includes('deployments(')) return j({ data: { deployments: { edges: [{ node: { id: 'D1', status: 'SUCCESS', createdAt: '2026-07-03T00:00:00Z' } }] } } });
     if (q.includes('deploymentLogs')) return j({ data: { deploymentLogs: [{ timestamp: '2026-07-03T00:01:00Z', message: 'HOLD | prix=61500.00 | equity=71500.00 | pas de signal' }] } });
+    if (q.includes('variables(')) return j({ data: { variables: { SYMBOLS: 'BTC/USDT,ETH/USDT', TIMEFRAME: '15m', RISK_PER_TRADE_PCT: '1', MAX_POSITION_PCT: '25', TESTNET: 'true' } } });
     if (q.includes('variableUpsert')) return j({ data: { variableUpsert: true } });
     if (q.includes('serviceInstanceRedeploy')) return j({ data: { serviceInstanceRedeploy: true } });
     return j({ errors: [{ message: 'query inconnue (mock)' }] });
@@ -76,7 +77,31 @@ gqlCalls.length = 0;
 r = await mod.fetch(REQ({ path: '/__bot/kill', method: 'POST' }), env);
 ok(r.status === 403 && gqlCalls.length === 0, 'kill sans grant → 403, zéro appel Railway');
 
-/* 7) Route inconnue → not_found */
+/* 7) Config GET → réglages actuels + testnet */
+r = await mod.fetch(REQ({ path: '/__bot/config', headers: H }), env);
+j = await r.json();
+ok(j.ok === true && j.config.SYMBOLS === 'BTC/USDT,ETH/USDT' && j.testnet === true, 'config GET → réglages + testnet');
+
+/* 8) Config POST valide → upsert normalisé (eth-usdt → ETH/USDT) + redeploy */
+gqlCalls.length = 0;
+r = await mod.fetch(REQ({ path: '/__bot/config', method: 'POST', headers: { ...H, 'content-type': 'application/json' }, body: JSON.stringify({ symbols: ['btc-usdt', 'ETH/USDT', 'SOLUSDT'], timeframe: '1h', risk: 1.5, maxpos: 30 }) }), env);
+j = await r.json();
+ok(j.ok === true && j.set.SYMBOLS === 'BTC/USDT,ETH/USDT,SOL/USDT', 'config POST normalise + accepte');
+ok(j.set.TIMEFRAME === '1h' && j.set.RISK_PER_TRADE_PCT === '1.5', 'config POST applique timeframe + risk');
+ok(gqlCalls.some((q) => q.includes('serviceInstanceRedeploy')), 'config POST → redeploy');
+
+/* 9) Config POST invalide → cause exacte, aucun upsert */
+gqlCalls.length = 0;
+r = await mod.fetch(REQ({ path: '/__bot/config', method: 'POST', headers: { ...H, 'content-type': 'application/json' }, body: JSON.stringify({ symbols: ['BTC/EUR'], risk: 99 }) }), env);
+j = await r.json();
+ok(j.ok === false && j.reason === 'reglage_invalide' && /USDT|BTC\/EUR/.test(j.detail), 'config POST invalide (devise ≠ USDT) → cause exacte');
+ok(!gqlCalls.some((q) => q.includes('variableUpsert')), 'config invalide → aucun upsert Railway');
+
+/* 10) Config POST sans grant → 403 */
+r = await mod.fetch(REQ({ path: '/__bot/config', method: 'POST', body: '{}' }), env);
+ok(r.status === 403, 'config POST sans grant → 403');
+
+/* 11) Route inconnue → not_found */
 r = await mod.fetch(REQ({ path: '/__bot/xyz', headers: H }), env);
 ok((await r.json()).reason === 'not_found', 'route inconnue → not_found');
 

@@ -28,16 +28,31 @@ class Position:
 
 @dataclass
 class State:
-    position: Position = field(default_factory=Position)
+    # Une position ouverte PAR PAIRE (clé = symbole ex "BTC/USDT")
+    positions: dict = field(default_factory=dict)
     equity_peak: float = 0.0
     day: str = ""
     day_start_equity: float = 0.0
     halted: bool = False
     halt_reason: str = ""
 
+    def pos(self, symbol: str) -> Position:
+        """Position de la paire (créée vide si absente)."""
+        p = self.positions.get(symbol)
+        if p is None:
+            p = Position()
+            self.positions[symbol] = p
+        return p
+
     def to_dict(self) -> dict:
-        d = asdict(self)
-        return d
+        return {
+            "positions": {k: asdict(v) for k, v in self.positions.items()},
+            "equity_peak": self.equity_peak,
+            "day": self.day,
+            "day_start_equity": self.day_start_equity,
+            "halted": self.halted,
+            "halt_reason": self.halt_reason,
+        }
 
     @staticmethod
     def load() -> "State":
@@ -46,16 +61,20 @@ class State:
         try:
             with open(STATE_PATH, encoding="utf-8") as fh:
                 raw = json.load(fh)
-            pos = Position(**raw.get("position", {}))
-            st = State(
-                position=pos,
+            positions = {}
+            for k, v in (raw.get("positions") or {}).items():
+                positions[k] = Position(**v)
+            # Rétro-compat : ancien format à position unique (single-symbol)
+            if not positions and raw.get("position"):
+                positions["BTC/USDT"] = Position(**raw["position"])
+            return State(
+                positions=positions,
                 equity_peak=raw.get("equity_peak", 0.0),
                 day=raw.get("day", ""),
                 day_start_equity=raw.get("day_start_equity", 0.0),
                 halted=raw.get("halted", False),
                 halt_reason=raw.get("halt_reason", ""),
             )
-            return st
         except Exception:
             return State()
 
@@ -108,16 +127,22 @@ class RiskManager:
     def compute_stop(self, entry_price: float, atr_value: float) -> float:
         return max(0.0, entry_price - atr_value * self.cfg.atr_stop_mult)
 
-    def position_size(self, equity: float, price: float, stop_price: float) -> float:
-        """Renvoie une quantité (en actif de base) respectant tous les plafonds."""
+    def position_size(self, equity: float, price: float, stop_price: float,
+                      alloc: float = 1.0) -> float:
+        """Renvoie une quantité (en actif de base) respectant tous les plafonds.
+
+        `alloc` (0-1) répartit le capital entre les paires en multi-cryptos :
+        avec 4 paires, alloc=1/4 → risque ET plafond de position divisés par 4,
+        donc l'exposition TOTALE reste bornée par les mêmes garde-fous.
+        """
         stop_dist = price - stop_price
-        if stop_dist <= 0 or price <= 0 or equity <= 0:
+        if stop_dist <= 0 or price <= 0 or equity <= 0 or alloc <= 0:
             return 0.0
-        # 1) risque : on ne perd que risk_per_trade_pct du capital si le stop saute
-        risk_amount = equity * (self.cfg.risk_per_trade_pct / 100.0)
+        # 1) risque : on ne perd que (risk_per_trade_pct * alloc) du capital si le stop saute
+        risk_amount = equity * (self.cfg.risk_per_trade_pct / 100.0) * alloc
         qty_by_risk = risk_amount / stop_dist
-        # 2) plafond de taille de position
-        max_notional = equity * (self.cfg.max_position_pct / 100.0)
+        # 2) plafond de taille de position (part allouée à cette paire)
+        max_notional = equity * (self.cfg.max_position_pct / 100.0) * alloc
         qty_by_cap = max_notional / price
         qty = min(qty_by_risk, qty_by_cap)
         # 3) respect de l'ordre minimum de l'exchange

@@ -1,16 +1,20 @@
-"""Boucle principale du bot (full-auto, spot, long-only).
+"""Boucle principale du bot (full-auto, spot, long-only, MULTI-CRYPTOS).
+
+Kevin choisit les paires (SYMBOLS) et les gros réglages ; le bot gère le reste.
+Le capital est réparti entre les paires : avec N paires, chaque paire reçoit
+1/N du risque et du plafond de position → l'exposition TOTALE reste bornée par
+les mêmes garde-fous (perte/jour, drawdown) qu'en mono-crypto.
 
 Ordre de priorité à CHAQUE cycle :
-  1. Kill switch (fichier KILL) -> on solde la position et on s'arrête
-  2. Coupures de risque (perte du jour / drawdown) -> on solde et on s'arrête
-  3. Stop-loss ATR -> on vend
-  4. Signal de la stratégie -> achat / vente
+  1. Kill switch (fichier KILL ou BOT_KILL=1) -> on solde TOUT et on s'arrête
+  2. Coupures de risque (perte du jour / drawdown, sur le capital TOTAL) -> solde tout
+  3. Par paire : stop-loss ATR -> vente ; puis signal stratégie -> achat / vente
 
-Sécurité : par défaut TESTNET (faux argent). Pour l'argent réel il faut
-À LA FOIS TESTNET=false dans .env ET le drapeau --live sur la ligne de commande.
+Sécurité : par défaut TESTNET (faux argent). Argent réel = TESTNET=false ET (--live OU BOT_LIVE=true).
 """
 from __future__ import annotations
 
+import os
 import sys
 import time
 
@@ -30,20 +34,27 @@ def _closed_candles(ohlcv: list) -> tuple[list, list, list]:
     return highs, lows, closes
 
 
-def _flatten(ex: Exchange, state: State, price: float, reason: str) -> None:
-    """Vend toute la position en cours (sortie de sécurité)."""
-    if not state.position.in_position:
+def _flatten_symbol(ex: Exchange, state: State, symbol: str, price: float, reason: str) -> None:
+    """Vend toute la position d'UNE paire (sortie de sécurité)."""
+    pos = state.pos(symbol)
+    if not pos.in_position:
         return
-    qty = min(state.position.qty, ex.base_balance())
     try:
+        qty = min(pos.qty, ex.base_balance(symbol))
         if qty > 0:
-            ex.market_sell(qty)
-        audit.log("SELL", reason=reason, qty=qty, price=price)
-        audit.console(f"🔻 VENTE ({reason}) qty={qty} @ {price}")
+            ex.market_sell(symbol, qty)
+        audit.log("SELL", symbol=symbol, reason=reason, qty=qty, price=price)
+        audit.console(f"🔻 {symbol} VENTE ({reason}) qty={qty} @ {price}")
     except Exception as exc:  # noqa: BLE001
-        audit.log("ERROR", where="flatten", detail=str(exc))
-        audit.console(f"⚠️ Erreur vente : {exc}")
-    state.position = type(state.position)()  # reset
+        audit.log("ERROR", where="flatten", symbol=symbol, detail=str(exc))
+        audit.console(f"⚠️ {symbol} erreur vente : {exc}")
+    state.positions[symbol] = type(pos)()  # reset
+
+
+def _flatten_all(ex: Exchange, state: State, prices: dict, reason: str) -> None:
+    for sym in list(state.positions.keys()):
+        px = prices.get(sym) or 0.0
+        _flatten_symbol(ex, state, sym, px, reason)
 
 
 def run(live: bool) -> None:
@@ -52,26 +63,27 @@ def run(live: bool) -> None:
 
     if not cfg.testnet and not live:
         raise SystemExit(
-            "⛔ TESTNET=false mais drapeau --live absent. "
-            "Pour trader du VRAI argent : ajoute --live. "
+            "⛔ TESTNET=false mais argent réel non confirmé. "
+            "Pour trader du VRAI argent : --live OU BOT_LIVE=true. "
             "(Tant que tu n'as pas validé en testnet, laisse TESTNET=true.)"
         )
 
     mode = "🧪 TESTNET (faux argent)" if cfg.testnet else "💶 ARGENT RÉEL"
     ex = Exchange(cfg)
-    strat = Strategy(cfg.ema_fast, cfg.ema_slow, cfg.rsi_period,
-                     cfg.rsi_max, cfg.atr_period)
+    strat = Strategy(cfg.ema_fast, cfg.ema_slow, cfg.rsi_period, cfg.rsi_max, cfg.atr_period)
     risk = RiskManager(cfg)
     state = State.load()
+    alloc = 1.0 / max(1, len(cfg.symbols))  # part de capital par paire
 
-    audit.log("START", mode=mode, symbol=cfg.symbol, timeframe=cfg.timeframe)
-    audit.console(f"Démarrage — {mode} — {cfg.symbol} {cfg.timeframe}")
-    audit.console("Kill switch : crée un fichier nommé 'KILL' dans ce dossier "
-                  "pour tout couper.")
+    audit.log("START", mode=mode, symbols=cfg.symbols, timeframe=cfg.timeframe)
+    audit.console(f"Démarrage — {mode} — {', '.join(cfg.symbols)} — {cfg.timeframe}")
+    audit.console("Kill switch : BOT_KILL=1 (Railway) ou fichier 'KILL' pour tout couper.")
 
     while True:
         try:
-            _cycle(ex, strat, risk, state, cfg)
+            _cycle(ex, strat, risk, state, cfg, alloc)
+        except SystemExit:
+            raise
         except KeyboardInterrupt:
             audit.console("Arrêt manuel (Ctrl+C).")
             audit.log("STOP", reason="manuel")
@@ -84,69 +96,83 @@ def run(live: bool) -> None:
 
 
 def _cycle(ex: Exchange, strat: Strategy, risk: RiskManager,
-           state: State, cfg: Config) -> None:
-    price = ex.last_price()
-    equity = ex.equity_in_quote(price)
+           state: State, cfg: Config, alloc: float) -> None:
+    prices = ex.prices(cfg.symbols)
+    equity = ex.equity_in_quote(prices)
 
-    # 1) Kill switch
+    # 1) Kill switch (global)
     if RiskManager.kill_requested():
-        _flatten(ex, state, price, "kill switch")
+        _flatten_all(ex, state, prices, "kill switch")
         state.halted = True
         state.halt_reason = "kill switch"
         state.save()
-        audit.log("KILL", price=price)
-        audit.console("🛑 KILL détecté — position soldée, arrêt.")
+        audit.log("KILL", equity=equity)
+        audit.console("🛑 KILL détecté — tout soldé, arrêt.")
         raise SystemExit(0)
 
-    # Suivi capital + coupures de risque
+    # 2) Coupures de risque (sur le capital TOTAL)
     risk.mark_equity(state, equity)
     halted, reason = risk.check_halts(state, equity)
     if halted:
-        _flatten(ex, state, price, reason)
+        _flatten_all(ex, state, prices, reason)
         state.halted = True
         state.halt_reason = reason
         audit.log("HALT", reason=reason, equity=equity)
-        audit.console(f"🛑 Coupure risque : {reason}. Efface state.json pour relancer.")
+        audit.console(f"🛑 Coupure risque : {reason}. Efface state.json / relance pour repartir.")
         raise SystemExit(0)
 
-    # 2) Stop-loss ATR (si en position)
-    if state.position.in_position and price <= state.position.stop_price:
-        _flatten(ex, state, price, f"stop-loss @ {state.position.stop_price:.2f}")
+    # 3) Chaque paire, indépendamment
+    for symbol in cfg.symbols:
+        price = prices.get(symbol)
+        if not price:
+            audit.console(f"… {symbol} prix indisponible, ignoré ce cycle")
+            continue
+        try:
+            _cycle_symbol(ex, strat, risk, state, symbol, price, equity, alloc)
+        except Exception as exc:  # noqa: BLE001 — une paire ne bloque pas les autres
+            audit.log("ERROR", where="cycle_symbol", symbol=symbol, detail=str(exc))
+            audit.console(f"⚠️ {symbol} erreur : {exc}")
+
+
+def _cycle_symbol(ex: Exchange, strat: Strategy, risk: RiskManager, state: State,
+                  symbol: str, price: float, equity: float, alloc: float) -> None:
+    pos = state.pos(symbol)
+
+    # Stop-loss ATR
+    if pos.in_position and price <= pos.stop_price:
+        _flatten_symbol(ex, state, symbol, price, f"stop-loss @ {pos.stop_price:.2f}")
         return
 
-    # 3) Signal stratégie
-    ohlcv = ex.fetch_ohlcv(limit=max(200, strat.min_candles() + 5))
+    ohlcv = ex.fetch_ohlcv(symbol, limit=max(200, strat.min_candles() + 5))
     highs, lows, closes = _closed_candles(ohlcv)
-    sig = strat.evaluate(highs, lows, closes, state.position.in_position)
-    audit.console(f"{sig.action} | prix={price:.2f} | equity={equity:.2f} | {sig.reason}")
+    sig = strat.evaluate(highs, lows, closes, pos.in_position)
+    # Format lisible par le tableau de bord : "<SYM> <ACTION> | prix= | equity="
+    audit.console(f"{symbol} {sig.action} | prix={price:.2f} | equity={equity:.2f} | {sig.reason}")
 
     if sig.action == "BUY" and sig.atr:
         stop = risk.compute_stop(price, sig.atr)
-        qty = risk.position_size(equity, price, stop)
+        qty = risk.position_size(equity, price, stop, alloc=alloc)
         if qty <= 0:
-            audit.log("SKIP_BUY", reason="taille nulle (risque/plafond/min ordre)",
-                      price=price)
+            audit.log("SKIP_BUY", symbol=symbol, reason="taille nulle (risque/plafond/min ordre)")
             return
-        order = ex.market_buy(qty)
+        order = ex.market_buy(symbol, qty)
         filled = float(order.get("filled") or qty)
         avg = float(order.get("average") or price)
-        state.position.in_position = True
-        state.position.entry_price = avg
-        state.position.qty = filled
-        state.position.stop_price = stop
-        audit.log("BUY", qty=filled, price=avg, stop=stop, reason=sig.reason)
-        audit.console(f"🟢 ACHAT qty={filled} @ {avg:.2f} (stop {stop:.2f})")
+        pos.in_position = True
+        pos.entry_price = avg
+        pos.qty = filled
+        pos.stop_price = stop
+        audit.log("BUY", symbol=symbol, qty=filled, price=avg, stop=stop, reason=sig.reason)
+        audit.console(f"🟢 {symbol} ACHAT qty={filled} @ {avg:.2f} (stop {stop:.2f})")
 
-    elif sig.action == "SELL" and state.position.in_position:
-        _flatten(ex, state, price, sig.reason)
+    elif sig.action == "SELL" and pos.in_position:
+        _flatten_symbol(ex, state, symbol, price, sig.reason)
 
 
 def _live_flag() -> bool:
-    """Double verrou argent réel : drapeau --live OU variable BOT_LIVE=true
-    (cette dernière pour les hébergeurs cloud sans ligne de commande)."""
+    """Double verrou argent réel : drapeau --live OU variable BOT_LIVE=true."""
     if "--live" in sys.argv:
         return True
-    import os
     return os.getenv("BOT_LIVE", "").strip().lower() in ("1", "true", "yes", "oui", "on")
 
 

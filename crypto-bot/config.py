@@ -36,12 +36,29 @@ def _b(name: str, default: bool) -> bool:
     return val.strip().lower() in ("1", "true", "yes", "oui", "on")
 
 
+def _symbols() -> list:
+    """Liste de paires depuis SYMBOLS (séparées par virgule) ; repli SYMBOL ; défaut BTC/USDT.
+    Normalise en MAJUSCULES avec un slash (ex "eth-usdt" -> "ETH/USDT")."""
+    raw = os.getenv("SYMBOLS") or os.getenv("SYMBOL") or "BTC/USDT"
+    out, seen = [], set()
+    for part in raw.replace(";", ",").split(","):
+        s = part.strip().upper().replace("-", "/").replace("_", "/")
+        if not s:
+            continue
+        if "/" not in s and s.endswith("USDT"):
+            s = s[:-4] + "/USDT"
+        if "/" in s and s not in seen:
+            seen.add(s)
+            out.append(s)
+    return out or ["BTC/USDT"]
+
+
 @dataclass
 class Config:
     api_key: str
     api_secret: str
     testnet: bool
-    symbol: str
+    symbols: list  # liste de paires ex ["BTC/USDT", "ETH/USDT"] — Kevin choisit
     timeframe: str
     loop_seconds: int
     ema_fast: int
@@ -62,7 +79,7 @@ class Config:
             api_key=os.getenv("BINANCE_API_KEY", ""),
             api_secret=os.getenv("BINANCE_API_SECRET", ""),
             testnet=_b("TESTNET", True),
-            symbol=os.getenv("SYMBOL", "BTC/USDT"),
+            symbols=_symbols(),
             timeframe=os.getenv("TIMEFRAME", "15m"),
             loop_seconds=_i("LOOP_SECONDS", 60),
             ema_fast=_i("EMA_FAST", 9),
@@ -80,7 +97,25 @@ class Config:
         cfg.validate()
         return cfg
 
+    @property
+    def symbol(self) -> str:
+        """Rétro-compat : première paire (backtest, precision, etc.)."""
+        return self.symbols[0]
+
+    @property
+    def quote(self) -> str:
+        """Devise de cotation commune (ex USDT)."""
+        return self.symbols[0].split("/")[1]
+
     def validate(self) -> None:
+        if not self.symbols:
+            raise ValueError("Aucune paire à trader (SYMBOLS vide)")
+        quotes = {s.split("/")[1] for s in self.symbols if "/" in s}
+        if len(quotes) != 1:
+            raise ValueError(
+                "Toutes les paires doivent partager la même devise de cotation "
+                f"(ex tout en /USDT). Vu : {sorted(quotes)}"
+            )
         if self.ema_fast >= self.ema_slow:
             raise ValueError("EMA_FAST doit être < EMA_SLOW")
         if not (0 < self.risk_per_trade_pct <= 100):
