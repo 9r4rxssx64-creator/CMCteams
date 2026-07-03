@@ -3993,7 +3993,8 @@ var FB_FIX=["cmc_ov","cmc_ov_meta","ax_admin_profile","ax_admin_kevin","cmc_admi
 // v9.840 (Kevin 2026-07-01 « Intègre un chat, message direct à moi… passe par mon chat apex ») :
 // boîte de réception « Message à Kevin ». cmc_kevin_inbox = visible admin CMCteams ;
 // ax_cmc_kevin_inbox = chemin PARTAGÉ cross-app (bridge Apex : ton chat Apex le lit).
-"cmc_kevin_inbox","ax_cmc_kevin_inbox",
+// cmc_dep_reply = réponses de Kevin aux employés de la page CMCteams light (2 voies, v9.852).
+"cmc_kevin_inbox","ax_cmc_kevin_inbox","cmc_dep_reply",
 // v9.204 — Ajout sync pour toutes les données admin partagées (bug cross-device résolu)
 "cmc_cagnottes","cmc_events","cmc_timeclock","cmc_chefs_t","cmc_chef_eq","cmc_learned_codes","cmc_features","cmc_exchanges","cmc_exchanges_enabled","cmc_day_notes","cmc_geofence",
 // v9.214 — Positions live (admin uniquement les consulte) + consentement RGPD
@@ -5593,7 +5594,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.851";
+var APP_VER="v9.852";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11735,6 +11736,43 @@ function cmcSendToKevin(text){
     return true;
   }catch(e){return false;}
 }
+// v9.852 (Kevin 2026-07-03 « donne accès au chat apex une fois connecté, pour me joindre »)
+// — RÉPONSE de Kevin à un employé de la page CMCteams light. Écrit dans cmc_dep_reply[<dkey>]
+// (synchronisé FB_FIX) → la page CMCteams light de l'employé affiche la réponse (chat 2 voies).
+// dkey = clé stable dérivée nom_prénom (identique des 2 côtés). Admin uniquement.
+function cmcReplyToDep(dkey,text){
+  if(!A.user||A.user.id!==AID)return false;
+  try{
+    dkey=String(dkey||"").trim(); text=String(text||"").trim();
+    if(!dkey||!text)return false; if(text.length>2000)text=text.slice(0,2000);
+    var all=lg("cmc_dep_reply",{}); if(!all||typeof all!=="object"||Array.isArray(all))all={};
+    var arr=Array.isArray(all[dkey])?all[dkey]:[];
+    arr.push({id:"r_"+Date.now()+"_"+Math.random().toString(36).slice(2,6),text:text,ts:Date.now()});
+    if(arr.length>50)arr=arr.slice(-50);
+    all[dkey]=arr; ls("cmc_dep_reply",all); try{fbWrite("cmc_dep_reply",all);}catch(_){}
+    try{_audit("kevin_reply",dkey,"",text.slice(0,80));}catch(_){}
+    return true;
+  }catch(e){return false;}
+}
+function cmcReplyDepModal(dkey,name){
+  if(!A.user||A.user.id!==AID)return;
+  try{
+    if(document.getElementById("cmcReplyDep"))return;
+    var ov=document.createElement("div"); ov.id="cmcReplyDep";
+    ov.style.cssText="position:fixed;inset:0;z-index:2147483600;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)";
+    ov.innerHTML='<div style="max-width:520px;width:100%;background:#13201a;border:1px solid rgba(74,160,120,.45);border-radius:16px 16px 0 0;padding:18px;box-shadow:0 -8px 40px rgba(0,0,0,.5)">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:24px">↩️</span><strong style="color:#4aa078;font-size:16px">Répondre à '+esc(name||dkey)+'</strong></div>'
+      +'<div style="font-size:13px;color:#a8c4b8;margin-bottom:10px">Ta réponse s\'affiche dans son app CMCteams light.</div>'
+      +'<textarea id="cmcRdTxt" rows="4" placeholder="Ta réponse…" style="width:100%;box-sizing:border-box;padding:11px;font-size:16px;border-radius:10px;border:1px solid rgba(74,160,120,.35);background:rgba(5,16,10,.4);color:#f0e8d0;resize:vertical;margin-bottom:10px"></textarea>'
+      +'<div style="display:flex;gap:8px">'
+      +'<button onclick="(function(){var t=(document.getElementById(&quot;cmcRdTxt&quot;)||{}).value||&quot;&quot;;if(!t.trim()){toast(&quot;Écris ta réponse&quot;,&quot;warn&quot;);return;}var ok=cmcReplyToDep(&quot;'+esc(dkey)+'&quot;,t);var o=document.getElementById(&quot;cmcReplyDep&quot;);if(o)o.remove();toast(ok?&quot;✅ Réponse envoyée&quot;:&quot;⚠ Échec&quot;,ok?&quot;ok&quot;:&quot;warn&quot;);})()" style="flex:1;min-height:50px;padding:13px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:11px;font-weight:800;font-size:15px;cursor:pointer">Envoyer</button>'
+      +'<button onclick="var o=document.getElementById(\'cmcReplyDep\');if(o)o.remove()" style="min-height:50px;padding:13px 18px;background:transparent;border:1px solid rgba(160,200,150,.3);color:#9fb89f;border-radius:11px;font-size:15px;cursor:pointer">Annuler</button>'
+      +'</div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener("click",function(e){if(e.target===ov)ov.remove();});
+    setTimeout(function(){try{document.getElementById("cmcRdTxt").focus();}catch(_){}},150);
+  }catch(_){}
+}
 // Modale « Écrire à Kevin » (textarea + envoyer). Pas de prompt() natif (clavier iPhone).
 function cmcOpenContactKevin(){
   try{
@@ -11771,8 +11809,10 @@ function vKevinInbox(){
       +(m.team?'<span style="font-size:11px;color:#8ab888;background:rgba(74,160,120,.12);padding:2px 8px;border-radius:10px">'+esc(String(m.team))+'</span>':'')
       +'<span style="margin-left:auto;font-size:11px;color:#8a8a8a">'+_cmcRelTime(m.ts)+'</span></div>'
       +'<div style="font-size:14px;color:#e8e8e0;white-space:pre-wrap;line-height:1.5">'+esc(m.text||"")+'</div>'
-      +'<button onclick="cmcOpenFiche(\''+esc(m.from||"")+'\')" class="btn ghost" style="margin-top:8px;font-size:12px;padding:5px 10px">📇 Voir la fiche complète</button>'
-      +'</div>';
+      +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
+      +(m.dkey?'<button onclick="cmcReplyDepModal(\''+esc(m.dkey)+'\',\''+esc((m.name||"").replace(/\x27/g,""))+'\')" class="btn" style="font-size:12px;padding:5px 10px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:8px">↩️ Répondre</button>':'')
+      +'<button onclick="cmcOpenFiche(\''+esc(m.from||"")+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📇 Voir la fiche complète</button>'
+      +'</div></div>';
   });}
   return h+'</div>';
 }
