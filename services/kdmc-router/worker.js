@@ -41,6 +41,8 @@ export default {
     if (url.pathname.startsWith('/__admin/')) return handleAdmin(request, url, env);
     // Crypto-bot Railway (statut + kill switch). Réservé admin (même grant que /__admin).
     if (url.pathname.startsWith('/__bot/')) return handleBot(request, url, env);
+    // Push « message CMCteams light » → Kevin même app fermée (token serveur, anti-spam KV).
+    if (url.pathname === '/__notify-kevin' && request.method === 'POST') return handleNotifyKevin(request, env);
 
     const base = ROUTES[host];
     if (!base) return Response.redirect('https://kd-mc.com/', 302);
@@ -230,7 +232,7 @@ async function accPut(env, acc, knownExisting) {
    KDMC_PUSH_TOKEN, on ne fait RIEN (le journal admin reste la trace = repli).
    Fail-open total : timeout 2 s, jamais d'exception propagée, ne bloque jamais
    la connexion. Corps volontairement générique (pas de donnée sensible). */
-async function notifyPush(env, title, body) {
+async function notifyPush(env, title, body, opts) {
   const url = env && env.KDMC_PUSH_URL, tok = env && env.KDMC_PUSH_TOKEN;
   if (!url || !tok) return; /* non configuré → repli = journal admin */
   try {
@@ -239,10 +241,34 @@ async function notifyPush(env, title, body) {
     await fetch(url.replace(/\/$/, '') + '/send-all', {
       method: 'POST', signal: ctrl.signal,
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + tok },
-      body: JSON.stringify({ payload: { title, body, tag: 'kdmc-new-device', url: 'https://kd-mc.com/admin/' } }),
+      body: JSON.stringify({ payload: { title, body, tag: (opts && opts.tag) || 'kdmc-new-device', url: (opts && opts.url) || 'https://kd-mc.com/admin/' } }),
     }).catch(() => {});
     clearTimeout(to);
   } catch { /* fail-open : jamais d'échec de connexion à cause d'une notif */ }
+}
+/* Push « nouveau message CMCteams light » → iPhone de Kevin même app fermée, via le
+   worker de push existant (token gardé SERVEUR, jamais exposé à la page). Appelé par la
+   page CMCteams light quand un employé écrit. Anti-spam : throttle KV 12 s. Fail-open.
+   Corps générique + tronqué (pas de donnée sensible au-delà du prénom + court aperçu). */
+async function handleNotifyKevin(request, env) {
+  const J = (o, s) => new Response(JSON.stringify(o), { status: s || 200, headers: { 'content-type': 'application/json' } });
+  try {
+    const host = (request.headers.get('host') || '').toLowerCase().replace(/:.*$/, '');
+    if (!ROUTES[host]) return J({ ok: false, reason: 'bad_host' }, 403);
+    let b = {}; try { b = await request.json(); } catch { /* corps vide */ }
+    const name = String((b && b.name) || '').slice(0, 60).replace(/[\r\n]+/g, ' ').trim() || 'Employé';
+    const text = String((b && b.text) || '').slice(0, 140).replace(/[\r\n]+/g, ' ').trim();
+    if (!text) return J({ ok: true, skipped: 'empty' });
+    if (env && env.ACCOUNTS) {
+      try {
+        const last = parseInt((await env.ACCOUNTS.get('push:kevin_last')) || '0', 10) || 0;
+        if (Date.now() - last < 12000) return J({ ok: true, throttled: true });
+        await env.ACCOUNTS.put('push:kevin_last', String(Date.now()));
+      } catch { /* fail-open */ }
+    }
+    await notifyPush(env, '💬 ' + name, text, { tag: 'cmc-msg', url: 'https://cmcteams.kd-mc.com/' });
+    return J({ ok: true });
+  } catch { return J({ ok: false }, 200); }
 }
 /* Journal d'audit ADMIN (KV, FIFO 200) : trace les événements sensibles —
    connexions admin (ok/échec), déconnexions forcées, nouveaux appareils, mints
