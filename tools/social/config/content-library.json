@@ -808,7 +808,7 @@
         "avg": 18
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "tech-005",
