@@ -187,13 +187,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.24</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.25</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.24";
+var APP_VER="v1.25";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -978,11 +978,17 @@ if(!_depHasIdentity()){ _depShowGate(); }
     // 2) filet append-only (jamais clobbé) : un node par message (sans base64)
     fetch(FBURL+FBPATH+"/cmc_dep_msgs/"+encodeURIComponent(msg.id)+".json"+_qs(),
       {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(msg)}).catch(function(){});
-    // 3) conversation locale (ce que l'employé voit)
+    // 3) push « même app fermée » : le routeur relaie vers le worker de push (jeton gardé
+    //    SERVEUR). Best-effort, anti-spam côté routeur. Sans réseau/hors kd-mc.com → no-op.
+    try{ fetch("/__notify-kevin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:name,text:msg.text})}).catch(function(){}); }catch(_){}
+    // 4) conversation locale (ce que l'employé voit)
     var chat=_depLocalChat(); chat.push({who:"me",text:msg.text,ts:msg.ts,id:msg.id,img:img||null}); _depSaveChat(chat);
     if(cb)cb(true);
   };
+  window._depReadTs=0;
   window._depPullReplies=function(){ var dkey=_depUserKey(); if(!dkey)return;
+    // accusé de lecture : Kevin a lu jusqu'à ce ts → « ✓ Lu » sur mes messages plus anciens
+    _fbGet("cmc_dep_read",function(rd){ var t=(rd&&typeof rd==="object")?parseInt(rd[dkey]||0,10):0; if(t&&t!==window._depReadTs){ window._depReadTs=t; try{ if(window._depRenderChat)window._depRenderChat(); }catch(_){} } });
     _fbGet("cmc_dep_reply",function(all){ var rep=(all&&typeof all==="object")?all[dkey]:null; if(!Array.isArray(rep)||!rep.length)return;
       var chat=_depLocalChat(),seen={},added=0; chat.forEach(function(m){ if(m.rid)seen[m.rid]=1; });
       rep.forEach(function(r){ if(!r||!r.text)return; var rid=r.id||("r_"+r.ts); if(seen[rid])return;
@@ -1057,7 +1063,8 @@ if(!_depHasIdentity()){ _depShowGate(); }
     if(!chat.length){ box.innerHTML="<div class='empty'>Écris à Kevin — il reçoit ton message sur son téléphone (chat Apex) et te répond ici.</div>"; return; }
     box.innerHTML=chat.map(function(m){
       var img=m.img?("<img src='"+m.img+"' alt='photo' style='max-width:100%;border-radius:8px;margin:2px 0;display:block' onclick='window.open(this.src)'>"):(m.imgStripped?"<div style=\"font-size:12px;opacity:.7\">📷 photo envoyée</div>":"");
-      return "<div class='b "+(m.who==="me"?"me":"kv")+"'>"+img+(m.text?esc(m.text):"")+"<div class='t'>"+(m.who==="me"?"toi":"Kevin")+" · "+relt(m.ts)+"</div></div>"; }).join("");
+      var lu=(m.who==="me"&&window._depReadTs&&m.ts<=window._depReadTs)?" · <span style='color:#7fd0a0'>✓ Lu</span>":"";
+      return "<div class='b "+(m.who==="me"?"me":"kv")+"'>"+img+(m.text?esc(m.text):"")+"<div class='t'>"+(m.who==="me"?"toi":"Kevin")+" · "+relt(m.ts)+lu+"</div></div>"; }).join("");
     box.scrollTop=box.scrollHeight;
   };
   function openPanel(){ window._depChatOpen=true; panel.style.display="flex"; btn.classList.remove("has-unread");

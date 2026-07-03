@@ -3994,7 +3994,8 @@ var FB_FIX=["cmc_ov","cmc_ov_meta","ax_admin_profile","ax_admin_kevin","cmc_admi
 // boîte de réception « Message à Kevin ». cmc_kevin_inbox = visible admin CMCteams ;
 // ax_cmc_kevin_inbox = chemin PARTAGÉ cross-app (bridge Apex : ton chat Apex le lit).
 // cmc_dep_reply = réponses de Kevin aux employés de la page CMCteams light (2 voies, v9.852).
-"cmc_kevin_inbox","ax_cmc_kevin_inbox","cmc_dep_reply",
+// cmc_dep_read = accusé de lecture (dkey→ts) : « ✓ Lu par Kevin » côté employé (v9.854).
+"cmc_kevin_inbox","ax_cmc_kevin_inbox","cmc_dep_reply","cmc_dep_read",
 // v9.204 — Ajout sync pour toutes les données admin partagées (bug cross-device résolu)
 "cmc_cagnottes","cmc_events","cmc_timeclock","cmc_chefs_t","cmc_chef_eq","cmc_learned_codes","cmc_features","cmc_exchanges","cmc_exchanges_enabled","cmc_day_notes","cmc_geofence",
 // v9.214 — Positions live (admin uniquement les consulte) + consentement RGPD
@@ -5628,7 +5629,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.853";
+var APP_VER="v9.854";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11831,6 +11832,15 @@ function cmcOpenContactKevin(){
 function vKevinInbox(){
   if(!A.user||A.user.id!==AID)return '<div class="page"><div class="card">Accès réservé.</div></div>';
   var box=lg("cmc_kevin_inbox",[]);if(!Array.isArray(box))box=[];
+  // v9.854 — accusé de lecture : en ouvrant l'inbox, Kevin marque « lu » chaque expéditeur
+  // page (dkey) jusqu'au ts le plus récent → l'employé voit « ✓ Lu ». Écrit UNIQUEMENT si
+  // la map change (pas de boucle de rendu).
+  try{
+    var readMap={}; box.forEach(function(m){ if(m&&m.dkey&&m.ts){ if(!readMap[m.dkey]||m.ts>readMap[m.dkey])readMap[m.dkey]=m.ts; } });
+    var prev=lg("cmc_dep_read",{}); if(!prev||typeof prev!=="object"||Array.isArray(prev))prev={};
+    var changed=false; Object.keys(readMap).forEach(function(k){ if((prev[k]||0)<readMap[k]){ prev[k]=readMap[k]; changed=true; } });
+    if(changed){ ls("cmc_dep_read",prev); try{fbWrite("cmc_dep_read",prev);}catch(_){} }
+  }catch(_){}
   var h='<div class="page" style="padding:14px;max-width:720px;margin:0 auto">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="sec-title">💬 Messages reçus ('+box.length+')</div>'
     +(box.length?'<button onclick="if(confirm(\'Tout marquer lu ?\')){var b=lg(\'cmc_kevin_inbox\',[]);b.forEach(function(m){m.status=\'read\';});ls(\'cmc_kevin_inbox\',b);try{fbWrite(\'cmc_kevin_inbox\',b);}catch(_){}dc();}" class="btn ghost" style="font-size:12px;padding:6px 10px">Tout lu</button>':'')+'</div>';
