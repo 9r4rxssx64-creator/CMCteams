@@ -213,6 +213,26 @@
       </section>
 
       <section class="card">
+        <h2>🧭 Synthèse actu <span class="k" id="briefState">auto</span></h2>
+        <div id="brief" class="list sm"><div class="empty">Analyse des flux…</div></div>
+      </section>
+
+      <section class="card">
+        <h2>🛡️ Cyber — vulnérabilités <span class="k" id="cveState">…</span></h2>
+        <div id="cve" class="list sm"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="card">
+        <h2>🔥 Incendies actifs (NASA) <span class="k" id="firesState">…</span></h2>
+        <div id="fires" class="list sm"><div class="empty">Chargement…</div></div>
+      </section>
+
+      <section class="card">
+        <h2>⚓ Points stratégiques &amp; tensions <span class="k" id="chokeState">carte</span></h2>
+        <div id="choke" class="list sm"><div class="empty">…</div></div>
+      </section>
+
+      <section class="card">
         <h2>💹 Marchés <span class="k" id="mktState">…</span></h2>
         <div id="markets"><div class="empty">Chargement…</div></div>
       </section>
@@ -252,7 +272,7 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.6</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.7</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
@@ -475,7 +495,9 @@ async function loadNews(){try{
   var d=await getJSON("https://api.gdeltproject.org/api/v2/doc/doc?query="+encodeURIComponent("(world OR breaking)")+"&mode=artlist&maxrecords=10&sort=datedesc&format=json",11000);
   var a=(d&&d.articles)||[];setText($("newsState"),a.length?"live":"—");
   var box=$("news");if(!a.length){setHTML(box,'<div class="empty">Flux vide.</div>');return;}
+  FEED.news=a.map(function(x){return x.title||"";});
   setHTML(box,a.slice(0,10).map(function(x){return '<a class="newsrow" href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer"><div class="t1">'+esc(x.title||"—")+'</div><div class="t2">'+esc(x.domain||"")+(x.sourcecountry?" · "+esc(x.sourcecountry):"")+'</div></a>';}).join(""));
+  buildBrief();
 }catch(e){setText($("newsState"),"indispo");if($("news").querySelector(".empty"))setHTML($("news"),'<div class="empty">Actualité indisponible — reprise auto.</div>');}}
 
 /* ============ LANCEMENTS (The Space Devs) ============ */
@@ -534,6 +556,7 @@ async function loadHn(){try{
   top=top.filter(Boolean);
   if(!top.length)throw 0;
   setText($("hnState"),"live");
+  FEED.hn=top.map(function(s){return s.title||"";});buildBrief();
   setHTML($("hn"),top.map(function(s){
     var u=s.url||("https://news.ycombinator.com/item?id="+s.id);
     return '<a class="newsrow" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer"><div class="t1">'+esc(s.title||"—")+'</div><div class="t2">▲ '+(s.score||0)+' · '+(s.descendants||0)+' commentaires</div></a>';}).join(""));
@@ -608,7 +631,7 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_quakeLayer=null,_mapReady=false,_planesTimer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_mapReady=false,_planesTimer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
@@ -617,8 +640,10 @@ function initMap(){
     subdomains:"abcd",maxZoom:18,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(MAP);
   _planeLayer=LEAF.layerGroup().addTo(MAP);
   _quakeLayer=LEAF.layerGroup().addTo(MAP);
+  _fireLayer=LEAF.layerGroup().addTo(MAP);
+  _chokeLayer=LEAF.layerGroup().addTo(MAP);
   MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
-  setTimeout(function(){MAP.invalidateSize();loadPlanes();drawQuakesMap();},250);
+  setTimeout(function(){MAP.invalidateSize();loadPlanes();drawQuakesMap();drawFiresMap();drawChokeMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
 }
 function planeIcon(track){
@@ -655,6 +680,23 @@ function drawQuakesMap(){
     LEAF.circleMarker([q.lat,q.lon],{radius:r,color:col,weight:1,fillColor:col,fillOpacity:.35}).bindPopup("<b>M "+m.toFixed(1)+"</b><br>"+esc(q.place||"")+"<br>Profondeur "+((q.depth||0).toFixed(0))+" km").addTo(_quakeLayer);
   });
 }
+function drawFiresMap(){
+  if(!MAP||!_fireLayer)return;
+  _fireLayer.clearLayers();
+  (DL.fires||[]).forEach(function(f){
+    LEAF.circleMarker([f.lat,f.lon],{radius:5,color:"#ff8a3d",weight:1,fillColor:"#ff8a3d",fillOpacity:.5}).bindPopup("🔥 Incendie actif").addTo(_fireLayer);
+  });
+}
+function drawChokeMap(){
+  if(!MAP||!_chokeLayer)return;
+  _chokeLayer.clearLayers();
+  (DL.choke||[]).forEach(function(c){
+    LEAF.marker([c.lat,c.lon],{icon:LEAF.divIcon({className:"",html:'<div style="font-size:15px">⚓</div>',iconSize:[16,16],iconAnchor:[8,8]})}).bindPopup("<b>"+esc(c.n)+"</b><br>"+esc(c.d||"")).addTo(_chokeLayer);
+  });
+  (DL.tension||[]).forEach(function(t){
+    LEAF.circleMarker([t.lat,t.lon],{radius:9,color:"#ff5a4d",weight:1,fillColor:"#ff5a4d",fillOpacity:.18}).bindPopup("⚠️ Zone de tension (indicatif)<br><b>"+esc(t.n)+"</b>").addTo(_chokeLayer);
+  });
+}
 /* bascule Carte / Globe */
 function showMap(on){
   document.getElementById("map").classList.toggle("hidden",!on);
@@ -668,9 +710,80 @@ function showMap(on){
 $("vMap").addEventListener("click",function(){showMap(true);});
 $("vGlobe").addEventListener("click",function(){showMap(false);});
 
+/* ============ CYBER — vulnérabilités (Shodan CVEDB, sans clé, CORS) ============ */
+var FEED={news:[],hn:[],cve:[]};
+async function loadCve(){try{
+  var d=await getJSON("https://cvedb.shodan.io/cves?limit=8&sort_by_epss=true",11000);
+  var a=(d&&(d.cves||d.data))||(Array.isArray(d)?d:[]);setText($("cveState"),a.length?"live":"—");
+  var box=$("cve");if(!a.length){setHTML(box,'<div class="empty">Flux vide.</div>');return;}
+  FEED.cve=a.map(function(x){return x.summary||x.cve_id||"";});
+  setHTML(box,a.slice(0,8).map(function(x){
+    var id=x.cve_id||x.id||"CVE",sc=(x.cvss_v3!=null?x.cvss_v3:(x.cvss!=null?x.cvss:(x.cvss_v2!=null?x.cvss_v2:null)));
+    var col=sc>=9?"#ff5a4d":sc>=7?"#ff8a3d":sc>=4?"#ffd24d":"#7fd08a";
+    var sev=sc!=null?sc.toFixed(1):"—";
+    return '<a class="row" href="https://nvd.nist.gov/vuln/detail/'+esc(id)+'" target="_blank" rel="noopener noreferrer"><div class="badge" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'55;font-size:11px">'+esc(sev)+'</div><div class="main"><div class="t1">'+esc(id)+'</div><div class="t2">'+esc((x.summary||"").slice(0,120))+'</div></div></a>';
+  }).join(""));buildBrief();
+}catch(e){setText($("cveState"),"indispo");if($("cve").querySelector(".empty"))setHTML($("cve"),'<div class="empty">Vulnérabilités indisponibles — reprise auto.</div>');}}
+
+/* ============ INCENDIES actifs (NASA EONET wildfires, sans clé) ============ */
+async function loadFires(){try{
+  var d=await getJSON("https://eonet.gsfc.nasa.gov/api/v3/events?category=wildfires&status=open&limit=40",14000);
+  var ev=(d&&d.events)||[];setText($("firesState"),ev.length?ev.length+" foyers":"—");
+  var pts=[],rows=[];
+  ev.forEach(function(e){var g=(e.geometry&&e.geometry[e.geometry.length-1])||null;if(!g||!g.coordinates)return;
+    var lon=g.coordinates[0],lat=g.coordinates[1];if(lat==null||lon==null)return;
+    pts.push({lat:lat,lon:lon});
+    rows.push('<div class="row"><div class="badge" style="background:#ff8a3d22;color:#ff8a3d;border:1px solid #ff8a3d55">🔥</div><div class="main"><div class="t1">'+esc(e.title||"Feu")+'</div><div class="t2">'+esc(lat.toFixed(1))+"°, "+esc(lon.toFixed(1))+"°</div></div></div>");});
+  DL.fires=pts;if(_mapReady)drawFiresMap();
+  var box=$("fires");setHTML(box,rows.length?rows.slice(0,10).join(""):'<div class="empty">Aucun foyer actif signalé.</div>');
+}catch(e){setText($("firesState"),"indispo");if($("fires").querySelector(".empty"))setHTML($("fires"),'<div class="empty">Incendies indisponibles — reprise auto.</div>');}}
+
+/* ============ POINTS STRATÉGIQUES MARITIMES (détroits/canaux) + zones de tension (indicatif, statique) ============ */
+var CHOKE=[
+  {n:"Détroit d'Ormuz",lat:26.6,lon:56.3,d:"~20 % du pétrole mondial"},
+  {n:"Canal de Suez",lat:30.4,lon:32.35,d:"Europe ↔ Asie"},
+  {n:"Détroit de Malacca",lat:2.5,lon:101.4,d:"Asie de l'Est ↔ Moyen-Orient"},
+  {n:"Bab-el-Mandeb",lat:12.6,lon:43.4,d:"mer Rouge ↔ golfe d'Aden"},
+  {n:"Canal de Panama",lat:9.1,lon:-79.7,d:"Atlantique ↔ Pacifique"},
+  {n:"Bosphore",lat:41.1,lon:29.1,d:"mer Noire ↔ Méditerranée"},
+  {n:"Détroit de Gibraltar",lat:35.95,lon:-5.6,d:"Atlantique ↔ Méditerranée"},
+  {n:"Cap de Bonne-Espérance",lat:-34.35,lon:18.47,d:"contournement Afrique"},
+  {n:"Détroit de Taïwan",lat:24.4,lon:119.6,d:"route Asie-Pacifique"}
+];
+var TENSION=[
+  {n:"Ukraine",lat:49.0,lon:32.0},{n:"Proche-Orient (Gaza/Israël)",lat:31.4,lon:34.4},
+  {n:"Mer Rouge / Yémen",lat:14.5,lon:43.0},{n:"Sahel",lat:15.0,lon:0.0},
+  {n:"Soudan",lat:15.5,lon:32.5},{n:"Est de la RDC",lat:-1.7,lon:29.0},{n:"Myanmar",lat:21.0,lon:96.0}
+];
+function loadChoke(){
+  DL.choke=CHOKE;DL.tension=TENSION;if(_mapReady)drawChokeMap();
+  setHTML($("choke"),
+    CHOKE.map(function(c){return '<div class="row"><div class="badge" style="background:#5aa9ff22;color:#5aa9ff;border:1px solid #5aa9ff55">⚓</div><div class="main"><div class="t1">'+esc(c.n)+'</div><div class="t2">'+esc(c.d)+'</div></div></div>';}).join("")
+    +'<div class="row" style="opacity:.85"><div class="badge" style="background:#ff5a4d22;color:#ff5a4d;border:1px solid #ff5a4d55">⚠️</div><div class="main"><div class="t1">Zones de tension (indicatif)</div><div class="t2">'+CHOKE_TENSION_LABEL+'</div></div></div>');
+  setText($("chokeState"),"carte");
+}
+var CHOKE_TENSION_LABEL=TENSION.map(function(t){return t.n;}).join(" · ");
+
+/* ============ SYNTHÈSE ACTU (auto, sans clé) — thèmes dominants extraits des flux agrégés ============ */
+var STOP=("le la les un une des de du et à a au aux en dans sur pour par avec sans est sont être ont ce cet cette ces qui que quoi dont où mais ou donc or ni car son sa ses leur leurs il elle ils elles on nous vous se ne pas plus the a an of to in on for and or with from at by as is are be was were will new news world after over into out up down amid say says said report reports latest live update updates video how why what who when will can could may vs et").split(" ");
+function tokens(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(function(w){return w.length>3&&STOP.indexOf(w)<0;});}
+function buildBrief(){
+  var titles=[].concat(FEED.news||[],FEED.hn||[],FEED.cve||[]);
+  if(!titles.length){return;}
+  var freq={};titles.forEach(function(t){var seen={};tokens(t).forEach(function(w){if(seen[w])return;seen[w]=1;freq[w]=(freq[w]||0)+1;});});
+  var top=Object.keys(freq).filter(function(w){return freq[w]>1;}).sort(function(a,b){return freq[b]-freq[a];}).slice(0,10);
+  setText($("briefState"),titles.length+" titres");
+  if(!top.length){setHTML($("brief"),'<div class="empty">Pas de thème dominant pour l\'instant.</div>');return;}
+  var max=freq[top[0]]||1;
+  setHTML($("brief"),'<div style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px">'+top.map(function(w){
+    var s=0.55+0.45*(freq[w]/max);
+    return '<span style="font-size:'+(11+Math.round(s*6))+'px;padding:3px 9px;border-radius:999px;background:rgba(90,150,255,'+(0.10+s*0.22).toFixed(2)+');border:1px solid rgba(120,170,255,.35);color:#cfe0ff">'+esc(w)+' <b style="opacity:.6">'+freq[w]+'</b></span>';
+  }).join("")+'</div><div class="t2" style="padding:0 12px 10px">Thèmes récurrents dans l\'actu, la tech et les alertes cyber de la dernière heure.</div>');
+}
+
 /* ============ orchestrateur ============ */
 function fast(){loadIss();loadFlights();}
-function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();loadBourse();}
+function slow(){loadQuakes();loadEonet();loadNews();loadLaunches();loadMonaco();loadMarkets();loadSpace();loadTfl();loadWiki();loadHn();loadBourse();loadCve();loadFires();loadChoke();}
 setInterval(loadHn,600000);setInterval(loadBourse,120000);setInterval(loadWiki,3600000);
 setInterval(loadTfl,600000); /* re-liste les caméras TfL toutes les 10 min */
 showMap(true);slow();fast();
@@ -683,6 +796,8 @@ setInterval(loadMarkets,120000);
 setInterval(loadSpace,600000);
 setInterval(loadMonaco,600000);
 setInterval(loadLaunches,1800000);
+setInterval(loadCve,900000);       /* vulnérabilités : 15 min */
+setInterval(loadFires,900000);     /* incendies actifs : 15 min */
 document.addEventListener("visibilitychange",function(){if(!document.hidden)fast();});
 </script>
 </body>
