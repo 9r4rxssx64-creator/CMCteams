@@ -3,17 +3,13 @@ main = "worker.js"
 compatibility_date = "2024-11-01"
 workers_dev = true
 
-# Registre fiches clients — KV à id FIGÉ (provisionné le 2026-06-09) pour un déploiement
-# FIABLE. Le provisioning dynamique cassait `wrangler deploy` quand le namespace existait
-# déjà : `kv:namespace create` → "already exists", le fallback re-parsait un MAUVAIS id,
-# l'ajoutait au toml → "KV namespace not found [10041]" → worker PAS déployé (gate admin
-# + token jamais en ligne). Id figé = plus jamais ce souci.
-[[kv_namespaces]]
-binding = "ACCOUNTS"
-id = "8cfa33a28ac045adb7b7a9556ca8a073"
-
-# Chaque custom_domain auto-provisionne le DNS + le certificat SSL sur la zone
-# kd-mc.com (déjà dans le compte Cloudflare de Kevin). Aucune manip DNS manuelle.
+# ⚠️ TOML SCOPING : `routes` DOIT rester AVANT tout [[table]]/[table] (ici [[kv_namespaces]]
+# et [vars]). Sinon TOML rattache `routes` à la dernière table ouverte (« Unexpected fields
+# found in kv_namespaces[0] field: routes ») et wrangler IGNORE tout le tableau → AUCUN
+# custom_domain provisionné → les sous-domaines (departs, cmcteams-light, dashboard,
+# sourcing, coffre, bot) renvoient « serveur introuvable » (DNS absent). Bug vécu 2026-07-03.
+# Chaque custom_domain auto-provisionne le DNS + le certificat SSL sur la zone kd-mc.com
+# (déjà dans le compte Cloudflare de Kevin). Aucune manip DNS manuelle.
 routes = [
   { pattern = "kd-mc.com", custom_domain = true },
   { pattern = "www.kd-mc.com", custom_domain = true },
@@ -29,6 +25,15 @@ routes = [
   { pattern = "cmcteams-light.kd-mc.com", custom_domain = true },
   { pattern = "bot.kd-mc.com", custom_domain = true },
 ]
+
+# Registre fiches clients — KV à id FIGÉ (provisionné le 2026-06-09) pour un déploiement
+# FIABLE. Le provisioning dynamique cassait `wrangler deploy` quand le namespace existait
+# déjà : `kv:namespace create` → "already exists", le fallback re-parsait un MAUVAIS id,
+# l'ajoutait au toml → "KV namespace not found [10041]" → worker PAS déployé (gate admin
+# + token jamais en ligne). Id figé = plus jamais ce souci.
+[[kv_namespaces]]
+binding = "ACCOUNTS"
+id = "8cfa33a28ac045adb7b7a9556ca8a073"
 
 # Alerte push « nouvel appareil » → worker de push existant (sous-domaine = le COMPTE
 # 9r4rxssx64, jamais un nom deviné — leçon #85). URL publique ici ; le JETON est un
