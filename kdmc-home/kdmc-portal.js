@@ -55,7 +55,7 @@
      Même allowlist que _decorateAppLinks (leçon #101 : une app à routeur #hash qui
      ne consomme pas le jeton casse — « Page introuvable » — ou le laisse traîner
      dans son URL/historique). Sourcing consomme (bootSSO → consumeHashToken). */
-  var SSO_PASS_CONSUMERS = { 'apex-chat.kd-mc.com': 1, 'dashboard.kd-mc.com': 1, 'sourcing.kd-mc.com': 1 };
+  var SSO_PASS_CONSUMERS = { 'apex-chat.kd-mc.com': 1, 'dashboard.kd-mc.com': 1, 'sourcing.kd-mc.com': 1, 'bot.kd-mc.com': 1 };
   function gotoReturnIfAny() {
     var r = safeReturnUrl();
     if (r) {
@@ -405,7 +405,7 @@
       /* Consommateurs connus du fragment (lisent+nettoient #kdmc_sso=) : Apex Chat ET
          le Dashboard boutiques (cookie isolé en PWA iOS → besoin du pass Bearer). Ne
          JAMAIS décorer une app à routeur #hash qui ne consomme pas le jeton (leçon #101). */
-      if (host !== 'apex-chat.kd-mc.com' && host !== 'dashboard.kd-mc.com') return;
+      if (host !== 'apex-chat.kd-mc.com' && host !== 'dashboard.kd-mc.com' && host !== 'bot.kd-mc.com') return;
       var t = (window.kdmcSSO && window.kdmcSSO.token) ? window.kdmcSSO.token() : '';
       if (!t) return;
       var base = a.href.replace(/([#&])kdmc_sso=[^&]*/, '$1').replace(/[#&]+$/, '');

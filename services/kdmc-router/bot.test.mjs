@@ -4,7 +4,14 @@
    - Railway GraphQL mocké (backboard.railway.com) — aucune requête réseau réelle.
    - Erreurs : la cause exacte doit remonter dans `detail` (règle #97). */
 import mod from './worker.js';
-import { createHash } from 'crypto';
+import { createHash, createHmac } from 'crypto';
+
+/* Forge un jeton SSO (même format que worker.ssoSign) pour tester le Face ID. */
+const b64u = (b) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+function signSso(secret, uid, verified) {
+  const p = b64u(JSON.stringify({ u: uid, n: uid, c: 1, v: verified ? 1 : 0, iat: Date.now(), exp: Date.now() + 1e9 }));
+  return p + '.' + b64u(createHmac('sha256', secret).update(p).digest());
+}
 
 const store = new Map();
 const ACCOUNTS = { get: async (k) => (store.has(k) ? store.get(k) : null), put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); } };
@@ -112,7 +119,25 @@ const badTok = await adminGrant('MAUVAIS_SECRET');
 r = await mod.fetch(REQ({ path: '/__bot/status', headers: { 'x-kdmc-admin': badTok } }), env);
 ok(r.status === 403, 'grant signé avec un mauvais secret → 403 (forge rejetée)');
 
-/* 12) Route inconnue → not_found */
+/* 12) FACE ID : session SSO VÉRIFIÉE d'un uid admin (via x-kdmc-sso) → accès accordé
+   SANS le code (déverrouillage Face ID depuis bot.kd-mc.com). */
+r = await mod.fetch(REQ({ path: '/__bot/status', headers: { 'x-kdmc-sso': signSso('sec', 'kevin-desarzens', true) } }), env);
+j = await r.json();
+ok(j.ok === true && j.status === 'SUCCESS', 'Face ID vérifié + uid admin → /__bot/status accordé');
+
+/* 13) SÉCU : session NON vérifiée (nom auto-déclaré, pas de Face ID) → refusée (leçon #99). */
+r = await mod.fetch(REQ({ path: '/__bot/status', headers: { 'x-kdmc-sso': signSso('sec', 'kevin-desarzens', false) } }), env);
+ok(r.status === 403, 'SSO non vérifié (sans Face ID) → 403');
+
+/* 14) SÉCU : session vérifiée mais uid NON admin → refusée. */
+r = await mod.fetch(REQ({ path: '/__bot/status', headers: { 'x-kdmc-sso': signSso('sec', 'un-inconnu', true) } }), env);
+ok(r.status === 403, 'Face ID vérifié mais uid non-admin → 403');
+
+/* 15) SÉCU : jeton SSO signé avec un mauvais secret → refusé (forge). */
+r = await mod.fetch(REQ({ path: '/__bot/status', headers: { 'x-kdmc-sso': signSso('MAUVAIS', 'kevin-desarzens', true) } }), env);
+ok(r.status === 403, 'SSO forgé (mauvais secret) → 403');
+
+/* 16) Route inconnue → not_found */
 r = await mod.fetch(REQ({ path: '/__bot/xyz', headers: H }), env);
 ok((await r.json()).reason === 'not_found', 'route inconnue → not_found');
 
