@@ -1,0 +1,8 @@
+{
+  "_comment": "MARKER — modifier ce fichier déclenche firebase-rules-auto-apply.yml qui publie firebase-rules-apex.json avec ces états. Rollback : apex_state=open (rouvre /apex + /coffre_vault) ou rules_state=open (rouvre /cmcteams), commit, push.",
+  "rules_state": "hardened",
+  "apex_state": "hardened",
+  "shops_lock": "keep",
+  "requested_at": "2026-07-04",
+  "reason": "Kevin « Durci » — /apex + /coffre_vault → auth != null (prérequis clients/workers/workflows livrés PR #2053, Apex v13.4.339 + push-worker + Pages déployés verts)"
+}
