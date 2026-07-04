@@ -1,3 +1,10 @@
+# 2026-07-04 — Passerelle APIs gratuites domaine (kdmc-apis) + 3 câblages (branche `claude/free-apis-analysis-c4sy5d`)
+- **Passerelle `services/kdmc-apis`** (apis.kd-mc.com) : 20 routes — keyless (weather/holidays/fx/geo/geoip/time/translate/wiki/pwned/entreprise/adresse/iban/vat/crypto/rss-allowlist) + keyed (ai failover gemini→groq→openrouter→mistral→cohere→**Workers AI sans clé**, search Tavily→Brave, finance, images, printify, reputation Safe Browsing). 27 tests node verts. Workflow `deploy-kdmc-apis.yml` + client `tools/shared/free-apis-client.js` + config + page 1-clic `free-apis-keys.html`.
+- **Câblage #1 CMCteams v9.856** : jours fériés Monaco (● + tooltip) sur en-têtes vPlan/vDeparts/vMonPlanning — display-only, 0 mutation cellules, tests CMCteams verts (échec `test:apex-messages` = artefact build absent, pré-existant sur main, non lié).
+- **Câblage #2 la-detente** : TODO #B résolu — `GARMENT_BP.polo: 1402` (JERZEES 443M, ID du VRAI dump catalogue committé, leçon #93) + warning garment non mappé.
+- **Câblage #3 Apex v13.4.338** : `chatFallback.tryGatewayRescue()` (8s, fail-open) dans ai-router quand TOUS providers KO → vraie réponse IA via passerelle (Workers AI = 0 clé) avant le fallback local. tsc 0, eslint 0, 27+109 tests ciblés verts.
+- Tâches Kevin : `KEVIN_TODO_FREE_APIS.md` (merge auto → deploy ; clés bonus via page 1-clic).
+
 # v13.4.337 (2026-06-19→23) — « toujours openai » corrigé (rebasé sur main à jour)
 - Cause : dans `ai-router.buildPolicyAwareChain`, le prefix smart-router remettait openai en tête AVANT `decision.primary`, écrasant le mode premium (admin→Anthropic). Fix : sauter le prefix smart-router quand mode premium/forced (choix explicite). Smart-router gardé en auto/economy.
 - Test `v13_4_337-premium-no-smart-drift` (4/4). Leçon CLAUDE.md #124. Rebasé proprement sur main (563 commits d'écart, méthode leçon #108 : reset sur main + ré-appliquer les modifs source + rebuild, pour éviter les conflits de build folder).

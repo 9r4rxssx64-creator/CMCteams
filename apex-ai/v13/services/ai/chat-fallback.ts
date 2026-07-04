@@ -24,7 +24,63 @@ export interface FallbackResponse {
   is_offline?: boolean;
 }
 
+/** Passerelle domaine kd-mc.com (worker kdmc-apis) — /ai a un fallback Cloudflare
+ *  Workers AI = répond SANS aucune clé provider externe. Dernier recours avant la
+ *  réponse locale en conserve. */
+const KDMC_APIS_GATEWAY = 'https://apis.kd-mc.com';
+
 class ChatFallback {
+  /**
+   * v13.4.338 — Secours ULTIME via la passerelle kdmc-apis (/ai → chaîne gemini→groq→
+   * openrouter→…→ Workers AI sans clé). Appelé UNIQUEMENT quand TOUS les providers
+   * Apex ont échoué (ai-router streamWithFailover → error). Fail-open : toute erreur/
+   * timeout → null → le fallback local existant prend le relais (jamais de blocage).
+   * Timeout dur 8s (AbortController) : jamais de hang, y compris en environnement test.
+   */
+  async tryGatewayRescue(
+    messages: Array<{ role: string; content: unknown }>,
+  ): Promise<string | null> {
+    try {
+      if (typeof fetch !== 'function') return null;
+      /* Ne garde que les contenus texte simples (le gateway ne gère pas les blocs
+         image/tool Anthropic) — 12 derniers messages, tronqués. */
+      const simple = messages
+        .filter(
+          (m) =>
+            typeof m.content === 'string' &&
+            (m.role === 'user' || m.role === 'assistant' || m.role === 'system'),
+        )
+        .slice(-12)
+        .map((m) => ({ role: m.role, content: String(m.content).slice(0, 8000) }));
+      if (!simple.length || simple[simple.length - 1]?.role !== 'user') return null;
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      try {
+        const res = await fetch(`${KDMC_APIS_GATEWAY}/ai?app=apex`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: simple }),
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return null;
+        const data = (await res.json().catch(() => null)) as {
+          ok?: boolean;
+          text?: string;
+          provider?: string;
+        } | null;
+        if (data?.ok && typeof data.text === 'string' && data.text.trim().length >= 10) {
+          logger.info('chat-fallback', `gateway rescue OK via ${data.provider ?? '?'}`);
+          return data.text;
+        }
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch {
+      return null; /* fail-open : le fallback local existant répond */
+    }
+  }
+
   /**
    * Détecte si réponse IA est vide/non-utile et substitue avec fallback intelligent.
    */

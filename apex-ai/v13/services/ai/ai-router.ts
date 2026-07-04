@@ -1180,6 +1180,17 @@ class AIRouter {
       typeof userLastMsg?.content === 'string'
         ? userLastMsg.content
         : JSON.stringify(userLastMsg?.content ?? '');
+    /* v13.4.338 — SECOURS passerelle kdmc-apis AVANT la réponse locale en conserve :
+     * /ai du domaine a sa propre chaîne (gemini→groq→openrouter→…→ Workers AI SANS clé)
+     * → une vraie réponse IA même quand TOUS les providers Apex sont KO (règle
+     * ANTI-BLOCAGE IA). Fail-open 8s : null → fallback local inchangé. */
+    const rescueText = await chatFallback.tryGatewayRescue(truncatedMessages);
+    if (rescueText) {
+      logger.info('ai-router', 'gateway rescue a répondu (kdmc-apis)');
+      onChunk({ text: '⚡ _Mode secours (passerelle domaine)_\n\n' + rescueText, done: false, provider: lastProvider });
+      onChunk({ text: '', done: true, provider: lastProvider });
+      return; /* vraie réponse IA → pas d'onError (pas un échec user-visible) */
+    }
     const fallback = chatFallback.generateFallback(userText, finalErr.message);
     /* Stream le fallback en chunks pour cohérence UI typing animation */
     onChunk({ text: fallback.text, done: false, provider: 'anthropic' });
