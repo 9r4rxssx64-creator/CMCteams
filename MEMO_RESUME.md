@@ -1,3 +1,17 @@
+# Mémo de reprise — World Monitor + OSINT live (2026-07-04, branche `claude/graphity-auto-install-sm3f92`)
+
+> Session « globe live → OSINT live » + intégration OSINT4ALL + fix sandbox. Tout mergé sur le vrai `main` (vérifié via API GitHub).
+
+## Livré 2026-07-04 (tout mergé sur `main`, Pages déployé)
+- **World Monitor v2.11** — globe Blue Marble live, carte Leaflet multi-couches, 4 bricks (CVE/feux/détroits/brief IA), synthèse IA (worker `wm-brief`), fix caméras (Erreur 153) + news/CVE (replis Reddit/CIRCL), panneau « 🔎 OSINT accès rapide ».
+- **OSINT hub → v2.1** (`kdmc-home/osint/`) — de « liste de liens » à **centre live** : fix header masqué (safe-area-inset-top, leçon #103) ; **KPI EN DIRECT** (Vols/Séismes/Feux/CVE) ; **carte Leaflet 6 couches** (vols · séismes · feux · volcans · tempêtes · détroits, avec sélecteur) rendue par nous (aucun blocage iframe) ; embed Windy ; 64 outils curés OSINT4ALL + tuile accueil.
+- **Cloneur de sites** (`kdmc-home/clone/` + worker `kdmc-clone`) — lit/extrait/clone toute page (fetch serveur, anti-CORS). **Apex** : outils natifs `clone_site` + `osint_tools` (gate complet vert 610 fichiers / 12 236 tests).
+- **FIX SANDBOX (leçon #126)** — le proxy agent autorise `registry.npmjs.org` → `npm install leaflet` local + servi dans Playwright = **carte vérifiée pour de vrai** (24 marqueurs, 6 couches, _mapOk). + **smoke CI** `pages-smoke.yml` (vrai Chromium runner) vérifie la PROD (tuiles, KPIs, 0 erreur).
+
+---
+
+---
+
 # v13.4.337 (2026-06-19→23) — « toujours openai » corrigé (rebasé sur main à jour)
 - Cause : dans `ai-router.buildPolicyAwareChain`, le prefix smart-router remettait openai en tête AVANT `decision.primary`, écrasant le mode premium (admin→Anthropic). Fix : sauter le prefix smart-router quand mode premium/forced (choix explicite). Smart-router gardé en auto/economy.
 - Test `v13_4_337-premium-no-smart-drift` (4/4). Leçon CLAUDE.md #124. Rebasé proprement sur main (563 commits d'écart, méthode leçon #108 : reset sur main + ré-appliquer les modifs source + rebuild, pour éviter les conflits de build folder).

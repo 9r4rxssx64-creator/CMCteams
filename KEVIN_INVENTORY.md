@@ -1,7 +1,23 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-06-19** (Apex v13.4.336 — proxy IA/CORS, Firebase auth throttle, Claude par défaut ; Agent KDMC anti-401 + workflow Vercel)
+> Dernière mise à jour : **2026-07-04** (World Monitor v2.11 + OSINT v2.1 live + Cloneur + fix sandbox)
+
+## 🌍 World Monitor + 🔎 OSINT live — session 2026-07-04 (mergé sur main)
+
+**Pages (kd-mc.com) :**
+- 🌍 [World Monitor](https://kd-mc.com/worldmonitor/) — `kdmc-home/worldmonitor/index.html`
+- 🔎 [OSINT live](https://kd-mc.com/osint/) — `kdmc-home/osint/index.html`
+- 🧬 [Cloneur de sites](https://kd-mc.com/clone/) — `kdmc-home/clone/index.html`
+
+**Workers Cloudflare :** `tools/cloudflare/kdmc-clone/` (clone), `tools/cloudflare/wm-brief/` (synthèse IA Haiku).
+
+**Apex :** outils natifs `clone_site` + `osint_tools` (`services/apex-tools-registry/web-tools.ts`, `services/apex-tools-dispatch/utils-misc.ts`).
+
+**Vérif sandbox (leçon #124) :** `tools/smoke/pages-smoke.mjs` + `.github/workflows/pages-smoke.yml` (smoke PROD réel).
+
+---
+
 
 ## 🔧 Apex v13.4.322 → .336 + Agent KDMC — session 2026-06-16 → 19 (mergé sur main)
 
