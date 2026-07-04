@@ -147,12 +147,15 @@
         </h2>
         <div style="position:relative"><div id="map"></div><div class="maphint" id="mapHint">✈️ avions en direct · 🔴 séismes · pince pour zoomer</div></div>
         <div class="toggles" id="toggles">
-          <button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>Séismes</button>
-          <button class="tg" data-layer="fires" aria-pressed="true"><span class="i" style="background:var(--orange)"></span>Feux</button>
-          <button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>Volcans</button>
-          <button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>Tempêtes</button>
-          <button class="tg" data-layer="flights" aria-pressed="true"><span class="i" style="background:var(--green)"></span>Vols</button>
-          <button class="tg" data-layer="iss" aria-pressed="true"><span class="i" style="background:var(--cyan)"></span>ISS</button>
+          <button class="tg" data-layer="flights" aria-pressed="true"><span class="i" style="background:var(--green)"></span>✈️ Vols</button>
+          <button class="tg" data-layer="ships" aria-pressed="true"><span class="i" style="background:#35d6e6"></span>🚢 Navires</button>
+          <button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>🔴 Séismes</button>
+          <button class="tg" data-layer="fires" aria-pressed="true"><span class="i" style="background:var(--orange)"></span>🔥 Feux</button>
+          <button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>🌋 Volcans</button>
+          <button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>🌀 Tempêtes</button>
+          <button class="tg" data-layer="detroits" aria-pressed="true"><span class="i" style="background:#5aa9ff"></span>⚓ Détroits</button>
+          <button class="tg" data-layer="iss" aria-pressed="true"><span class="i" style="background:var(--cyan)"></span>🛰️ ISS</button>
+          <button class="tg" data-base="sat" aria-pressed="false" title="Fond satellite / sombre"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite</button>
         </div>
         <canvas id="globe" class="hidden" width="760" height="600" aria-label="Globe animé : séismes, feux, volcans, tempêtes, vols et ISS en direct"></canvas>
         <div class="stat-row" id="stats">
@@ -289,13 +292,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.11</span>
-  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Inspiré d'Osiris / WorldMonitor.</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.12</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (fond satellite) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.11";
+var VER="v2.12";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -327,11 +330,14 @@ tickClock();setInterval(tickClock,1000);
 
 /* ============ GLOBE ============ */
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
-var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],iss:null};
-var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,iss:1};
+var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],iss:null};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1};
 $("toggles").addEventListener("click",function(e){var b=e.target.closest(".tg");if(!b)return;
-  var k=b.dataset.layer,v=b.getAttribute("aria-pressed")==="true"?false:true;
-  b.setAttribute("aria-pressed",String(v));ON[k]=v?1:0;});
+  var v=b.getAttribute("aria-pressed")==="true"?false:true;
+  b.setAttribute("aria-pressed",String(v));
+  if(b.dataset.base==="sat"){if(typeof setSatBase==="function")setSatBase(v);return;}
+  var k=b.dataset.layer;ON[k]=v?1:0;
+  if(typeof applyLeafToggle==="function")applyLeafToggle(k,v);});
 function resizeGlobe(){var w=cv.parentElement.clientWidth,h=Math.max(320,Math.min(600,Math.round(w*0.8)));
   var dpr=Math.min(2,window.devicePixelRatio||1);cv.style.width=w+"px";cv.style.height=h+"px";
   cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);cv._w=w;cv._h=h;}
@@ -677,26 +683,28 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_mapReady=false,_planesTimer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_mapReady=false,_planesTimer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
   MAP=LEAF.map("map",{worldCopyJump:true,zoomControl:true,attributionControl:true}).setView([43.74,7.42],7);
-  LEAF.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
+  /* Fonds : sombre (CARTO) par défaut, satellite (Esri) togglable — sans clé */
+  _darkBase=LEAF.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
     subdomains:"abcd",maxZoom:18,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(MAP);
+  _satBase=LEAF.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
+    maxZoom:18,attribution:'&copy; Esri World Imagery'});
   _planeLayer=LEAF.layerGroup().addTo(MAP);
+  _shipLayer=LEAF.layerGroup().addTo(MAP);
   _quakeLayer=LEAF.layerGroup().addTo(MAP);
   _fireLayer=LEAF.layerGroup().addTo(MAP);
   _chokeLayer=LEAF.layerGroup().addTo(MAP);
   _volcanoLayer=LEAF.layerGroup().addTo(MAP);
   _stormLayer=LEAF.layerGroup().addTo(MAP);
-  /* Contrôle de couches natif : afficher/masquer chaque type en direct */
-  LEAF.control.layers(null,{
-    "✈️ Avions":_planeLayer,"🔴 Séismes":_quakeLayer,"🔥 Feux":_fireLayer,"🌋 Volcans":_volcanoLayer,"🌀 Tempêtes":_stormLayer,"⚓ Détroits & tensions":_chokeLayer
-  },{collapsed:false,position:"topright"}).addTo(MAP);
+  /* Les couches se pilotent par les puces sous la carte (pas de boîte sur la carte). */
   MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
-  setTimeout(function(){MAP.invalidateSize();loadPlanes();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
+  setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
+  setInterval(loadShips,60000);
 }
 function planeIcon(track){
   var t=((track||0)-45); /* ✈️ pointe vers le NE */
@@ -757,12 +765,38 @@ function drawStormsMap(){
   if(!MAP||!_stormLayer)return;_stormLayer.clearLayers();
   (DL.storms||[]).forEach(function(s){LEAF.circleMarker([s.lat,s.lon],{radius:7,color:"#b992ff",weight:1,fillColor:"#b992ff",fillOpacity:.3}).bindPopup("🌀 "+esc(s.title||"Tempête")).addTo(_stormLayer);});
 }
+/* 🚢 Navires en direct — Digitraffic (AIS mer Baltique/Finlande, ouvert sans clé, CORS OK) */
+async function loadShips(){
+  try{
+    var d=await getJSON("https://meri.digitraffic.fi/api/ais/v1/locations",12000);
+    var f=(d&&d.features)||[];
+    DL.ships=f.map(function(x){var c=x.geometry&&x.geometry.coordinates;if(!c)return null;
+      var p=x.properties||{};return {lat:c[1],lon:c[0],mmsi:x.mmsi||p.mmsi,sog:p.sog,cog:p.cog};}).filter(Boolean);
+    if(_mapReady)drawShipsMap();
+  }catch(e){}
+}
+function drawShipsMap(){
+  if(!MAP||!_shipLayer)return;_shipLayer.clearLayers();
+  (DL.ships||[]).slice(0,800).forEach(function(s){
+    LEAF.circleMarker([s.lat,s.lon],{radius:3,color:"#35d6e6",weight:1,fillColor:"#7ff0ff",fillOpacity:.8})
+      .bindPopup("🚢 Navire"+(s.mmsi?" "+esc(String(s.mmsi)):"")+(s.sog!=null?"<br>Vitesse "+s.sog+" nds":"")).addTo(_shipLayer);
+  });
+}
+/* Bascule fond satellite / sombre */
+function setSatBase(on){
+  if(!MAP||!_satBase||!_darkBase)return;
+  if(on){if(MAP.hasLayer(_darkBase))MAP.removeLayer(_darkBase);if(!MAP.hasLayer(_satBase))_satBase.addTo(MAP);_satBase.bringToBack();}
+  else{if(MAP.hasLayer(_satBase))MAP.removeLayer(_satBase);if(!MAP.hasLayer(_darkBase))_darkBase.addTo(MAP);_darkBase.bringToBack();}
+}
+/* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
+function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer}[k]||null;}
+function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
   document.getElementById("map").classList.toggle("hidden",!on);
   document.getElementById("globe").classList.toggle("hidden",on);
   document.getElementById("mapHint").style.display=on?"":"none";
-  document.getElementById("toggles").style.display=on?"none":"";
+  document.getElementById("toggles").style.display="";
   $("vMap").setAttribute("aria-pressed",on?"true":"false");
   $("vGlobe").setAttribute("aria-pressed",on?"false":"true");
   if(on){initMap();if(MAP)setTimeout(function(){MAP.invalidateSize();},60);}
@@ -783,17 +817,18 @@ document.addEventListener("fullscreenchange",function(){if(MAP)setTimeout(functi
 var FEED={news:[],hn:[],cve:[]};
 function _cveNorm(x){var id=x.cve_id||x.id||"CVE";var sc=(x.cvss_v3!=null?x.cvss_v3:(x.cvss!=null?x.cvss:(x.cvss_v2!=null?x.cvss_v2:null)));return {id:id,sum:x.summary||"",cvss:(sc!=null?+sc:null)};}
 async function loadCve(){
-  /* Source 1 : Shodan CVEDB. Repli : CIRCL (cve.circl.lu). Les 2 sans clé. */
+  /* Source 1 : CIRCL (cve.circl.lu, CORS OK). Repli : Shodan CVEDB. Les 2 sans clé.
+     CIRCL en 1er car Shodan CVEDB bloque le CORS navigateur (bruit console). */
   var items=null,src="";
   try{
-    var d=await getJSON("https://cvedb.shodan.io/cves?limit=8&sort_by_epss=true",11000);
-    var a=(d&&(d.cves||d.data))||(Array.isArray(d)?d:[]);
-    if(a.length){items=a.slice(0,8).map(_cveNorm);src="Shodan";}
-  }catch(e){}
-  if(!items){try{
     var c=await getJSON("https://cve.circl.lu/api/last",11000);
     var arr=Array.isArray(c)?c:((c&&c.results)||[]);
     if(arr.length){items=arr.slice(0,8).map(_cveNorm);src="CIRCL";}
+  }catch(e){}
+  if(!items){try{
+    var d=await getJSON("https://cvedb.shodan.io/cves?limit=8&sort_by_epss=true",11000);
+    var a=(d&&(d.cves||d.data))||(Array.isArray(d)?d:[]);
+    if(a.length){items=a.slice(0,8).map(_cveNorm);src="Shodan";}
   }catch(e2){}}
   if(items&&items.length){
     setText($("cveState"),src?src.toLowerCase():"live");
