@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.firebasedatabase.app; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.firebasedatabase.app https://identitytoolkit.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
 <meta name="color-scheme" content="dark">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -217,11 +217,37 @@ async function idbDel(key){ var db=await idb(); return new Promise(function(res)
 /* Firebase REST (best-effort, ne bloque jamais l'UI) */
 function fbBase(){ if(!ST.cfg||!ST.cfg.firebase_url||!ST.uid) return null;
   return ST.cfg.firebase_url.replace(/\/$/,"")+"/"+(ST.cfg.firebase_path||"coffre_vault")+"/"+ST.uid; }
+/* Auth anonyme Identity Toolkit (durcissement /coffre_vault auth != null, Kevin 2026-07-04).
+   Clé Web PUBLIQUE du projet cmcteams-c16ab (même que CMCteams v9.792 — la sécurité vient
+   des règles RTDB, pas de la clé). FAIL-OPEN : échec → pas de token → comportement d'avant. */
+var FB_WEB_APIKEY="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs";
+var _fbTok=null,_fbTokExp=0,_fbTokNext=0,_fbTokP=null;
+function _fbQS(){ return (_fbTok&&_fbTokExp>Date.now()+30000)?("?auth="+encodeURIComponent(_fbTok)):""; }
+async function fbAnonAuth(){
+  if(_fbTok&&_fbTokExp>Date.now()+30000) return _fbTok;
+  if(Date.now()<_fbTokNext) return null;
+  if(_fbTokP) return _fbTokP;
+  _fbTokP=(async function(){
+    try{
+      var r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+encodeURIComponent(FB_WEB_APIKEY),
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({returnSecureToken:true})});
+      var d=await r.json().catch(function(){return null;});
+      if(d&&d.idToken){ _fbTok=d.idToken; _fbTokExp=Date.now()+((parseInt(d.expiresIn||"3600",10)||3600)*1000); return _fbTok; }
+      _fbTokNext=Date.now()+60000;
+      try{console.warn("[coffre fb auth] HTTP "+r.status+" : "+((d&&d.error&&d.error.message)||"reponse inattendue"));}catch(e){}
+      return null;
+    }catch(e){ _fbTokNext=Date.now()+60000; try{console.warn("[coffre fb auth] reseau KO : "+((e&&e.message)||"?"));}catch(_){} return null; }
+    finally{ _fbTokP=null; }
+  })();
+  return _fbTokP;
+}
 async function fbPut(path,val){ var b=fbBase(); if(!b) return false;
-  try{ var r=await fetch(b+"/"+path+".json",{method:"PUT",body:JSON.stringify(val)}); return r.ok; }
+  try{ await fbAnonAuth();
+    var r=await fetch(b+"/"+path+".json"+_fbQS(),{method:"PUT",body:JSON.stringify(val)}); return r.ok; }
   catch(e){ return false; } }
 async function fbGet(path){ var b=fbBase(); if(!b) return null;
-  try{ var r=await fetch(b+"/"+path+".json"); if(!r.ok) return null; return await r.json(); }
+  try{ await fbAnonAuth();
+    var r=await fetch(b+"/"+path+".json"+_fbQS()); if(!r.ok) return null; return await r.json(); }
   catch(e){ return null; } }
 
 /* R2 (gros fichiers) via worker — best-effort */
@@ -790,6 +816,7 @@ async function boot(){
   try{ var r=await fetch("config.json?_="+Date.now(),{cache:"reload"}); ST.cfg=await r.json(); }
   catch(e){ ST.cfg={firebase_url:"https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",firebase_path:"coffre_vault",r2_worker_url:"",r2_inline_max_bytes:5242880}; }
   ST.uid=localStorage.getItem(LS.uid)||null;
+  try{fbAnonAuth();}catch(e){} // pré-chauffe token anonyme (règles auth != null)
   // SW
   if("serviceWorker" in navigator){ try{ navigator.serviceWorker.register("sw.js"); }catch(e){} }
   render(); bumpIdle();

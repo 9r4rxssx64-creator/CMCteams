@@ -182,6 +182,8 @@ jobs:
           VAPID_PUBLIC_KEY: ${{ steps.derive_vapid.outputs.vapid_public }}
           ADMIN_TOKEN_VAL: ${{ steps.admin_token.outputs.token }}
           APEX_CHAT_ADMIN_TOKEN: ${{ secrets.APEX_CHAT_ADMIN_TOKEN }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         working-directory: /tmp/push-worker-deploy
         run: |
           set -e
@@ -202,6 +204,16 @@ jobs:
             printf '%s' "$APEX_CHAT_ADMIN_TOKEN" | wrangler secret put APEX_CHAT_ADMIN_TOKEN
           else
             echo "::warning::secret APEX_CHAT_ADMIN_TOKEN absent — le push-worker n'acceptera que ADMIN_TOKEN"
+          fi
+          # Durcissement /apex auth != null (Kevin 2026-07-04) : le worker lit les
+          # push subs dans /apex → il lui faut le service account pour s'authentifier.
+          if [ -n "$FIREBASE_CLIENT_EMAIL" ] && [ -n "$FIREBASE_PRIVATE_KEY" ]; then
+            echo "Pushing FIREBASE_CLIENT_EMAIL..."
+            printf '%s' "$FIREBASE_CLIENT_EMAIL" | wrangler secret put FIREBASE_CLIENT_EMAIL
+            echo "Pushing FIREBASE_PRIVATE_KEY..."
+            printf '%s' "$FIREBASE_PRIVATE_KEY" | wrangler secret put FIREBASE_PRIVATE_KEY
+          else
+            echo "::warning::FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY absents — le worker lira /apex SANS auth (KO si règles durcies)"
           fi
           echo "::notice::secrets poussés au worker."
 

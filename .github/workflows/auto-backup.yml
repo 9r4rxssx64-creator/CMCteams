@@ -29,6 +29,9 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FB_URL: ${{ secrets.FB_URL || 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app' }}
+          # Regles durcies auth != null → l'agent lit via service account (lib/gauth.js, fail-open)
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node cli.js daily-backup

@@ -21,11 +21,17 @@ import { logger } from '../../core/logger.js';
 
 const DEFAULT_WORKER_URL = 'https://apex-auth-worker.9r4rxssx64.workers.dev';
 const FB_DEFAULT = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
+/* Clé Web API PUBLIQUE du projet cmcteams-c16ab (même clé que CMCteams v9.792 —
+ * une clé Web Firebase est publique par design, elle n'autorise que les flux
+ * Identity Toolkit ; la sécurité vient des règles RTDB). Sert au repli anonyme. */
+const FB_WEB_API_KEY = 'AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs';
 
 const TOKEN_KEY = 'apex_v13_fb_idtoken';
 const EXP_KEY = 'apex_v13_fb_idtoken_exp';
 const REFRESH_KEY = 'apex_v13_fb_refresh';
 const STATUS_KEY = 'apex_v13_fb_auth_status';
+const ANON_TOKEN_KEY = 'apex_v13_fb_anon_token';
+const ANON_EXP_KEY = 'apex_v13_fb_anon_exp';
 
 type LoginResult = 'ok' | 'user_not_found' | string;
 
@@ -33,6 +39,13 @@ class FirebaseAuthBridge {
   private idToken = '';
   private exp = 0;
   private started = false;
+  /* Repli anonyme (durcissement /apex auth != null — Kevin 2026-07-04).
+   * Garantit qu'un client Apex a TOUJOURS un token (auth != null satisfait)
+   * même avant le login PIN / sans worker Phase 5. Fail-open : échec → ''. */
+  private anonToken = '';
+  private anonExp = 0;
+  private anonNextTs = 0;
+  private anonInflight: Promise<string> | null = null;
 
   /** Wiré au boot (core/bootstrap.ts safeInit). Idempotent. */
   init(): void {
@@ -45,6 +58,12 @@ class FirebaseAuthBridge {
       const e = parseInt(localStorage.getItem(EXP_KEY) ?? '0', 10);
       if (t && e > Date.now() + 60_000) { this.idToken = t; this.exp = e; }
     } catch { /* ignore */ }
+    /* Restore token anonyme encore valide */
+    try {
+      const t = localStorage.getItem(ANON_TOKEN_KEY);
+      const e = parseInt(localStorage.getItem(ANON_EXP_KEY) ?? '0', 10);
+      if (t && e > Date.now() + 60_000) { this.anonToken = t; this.anonExp = e; }
+    } catch { /* ignore */ }
 
     events.on('auth:login', (p) => { void this.activate(p.uid, p.isAdmin); });
     events.on('auth:logout', () => { this.clear(); });
@@ -56,12 +75,69 @@ class FirebaseAuthBridge {
         void this.activate(uid, uid === 'kdmc_admin');
       }
     } catch { /* ignore */ }
+    /* Pré-chauffe le repli anonyme (non-bloquant) pour que le 1er ping RTDB
+     * parte déjà authentifié quand les règles exigent auth != null. */
+    if (!this.getToken()) void this.ensureAnonToken();
   }
 
-  /** Token id_token valide (>30s avant expiry) ou '' (fail-open). Lecture sync. */
+  /** Token valide (>30s avant expiry) ou '' (fail-open). Phase 5 prioritaire,
+   * sinon repli anonyme. Lecture sync. */
   getToken(): string {
     if (this.idToken && this.exp > Date.now() + 30_000) return this.idToken;
+    if (this.anonToken && this.anonExp > Date.now() + 30_000) return this.anonToken;
+    /* Pas de token → '' (le repli anonyme est déclenché par init() et
+     * ensureFreshToken(), jamais ici : getToken() reste PURE/sync — un fetch
+     * fire-and-forget ici fuirait après teardown dans les tests, lesson #89). */
     return '';
+  }
+
+  /**
+   * Repli anonyme : signUp Identity Toolkit (returnSecureToken) avec la clé Web
+   * publique → id_token anonyme 1h. Satisfait `auth != null` pour les lectures
+   * boot / users sans PIN. Throttle 60 s après échec. FAIL-OPEN : jamais de throw.
+   */
+  async ensureAnonToken(): Promise<string> {
+    if (this.anonToken && this.anonExp > Date.now() + 30_000) return this.anonToken;
+    if (Date.now() < this.anonNextTs) return '';
+    if (this.anonInflight) return this.anonInflight;
+    this.anonInflight = (async () => {
+      try {
+        const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(FB_WEB_API_KEY)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ returnSecureToken: true }),
+          signal: AbortSignal.timeout(10_000),
+        });
+        const d = await r.json().catch(() => null) as { idToken?: string; expiresIn?: string; error?: { message?: string } } | null;
+        if (d?.idToken) {
+          this.anonToken = d.idToken;
+          this.anonExp = Date.now() + ((parseInt(d.expiresIn ?? '3600', 10) || 3600) * 1000);
+          try {
+            localStorage.setItem(ANON_TOKEN_KEY, this.anonToken);
+            localStorage.setItem(ANON_EXP_KEY, String(this.anonExp));
+          } catch { /* ignore */ }
+          return this.anonToken;
+        }
+        this.anonNextTs = Date.now() + 60_000;
+        logger.warn('fb-auth-bridge', 'anon signUp KO (fail-open)', { status: r.status, err: d?.error?.message ?? '?' });
+        return '';
+      } catch (e) {
+        this.anonNextTs = Date.now() + 60_000;
+        logger.warn('fb-auth-bridge', 'anon signUp exception (fail-open)', { err: String((e as Error)?.message ?? e).slice(0, 80) });
+        return '';
+      } finally {
+        this.anonInflight = null;
+      }
+    })();
+    return this.anonInflight;
+  }
+
+  /** Query-string `?auth=`/`&auth=` prête à concaténer, '' si aucun token.
+   * Pour les fetch RTDB directs hors firebase.ts (rgpd, memory-bridge). */
+  authQS(hasQuery: boolean): string {
+    const t = this.getToken();
+    if (!t) return '';
+    return `${hasQuery ? '&' : '?'}auth=${encodeURIComponent(t)}`;
   }
 
   /**
@@ -77,9 +153,11 @@ class FirebaseAuthBridge {
     try {
       let uid = '';
       try { uid = localStorage.getItem('apex_v13_uid') ?? ''; } catch { uid = ''; }
-      if (!uid) return '';
-      await this.activate(uid, uid === 'kdmc_admin');
+      if (uid) await this.activate(uid, uid === 'kdmc_admin');
     } catch { /* fail-open */ }
+    /* Phase 5 indisponible (pas de uid/PIN, worker KO, backoff) → repli anonyme
+     * pour satisfaire les règles auth != null quand même. */
+    if (!this.getToken()) await this.ensureAnonToken();
     return this.getToken();
   }
 
@@ -183,7 +261,7 @@ class FirebaseAuthBridge {
   /** PUT direct du hash dans /apex/ax_pin_<uid> (règles ouvertes phase 4). Best-effort. */
   private async bootstrapFirebasePin(uid: string, pinHash: string): Promise<void> {
     try {
-      await fetch(`${this.fbUrl()}/apex/ax_pin_${encodeURIComponent(uid)}.json`, {
+      await fetch(`${this.fbUrl()}/apex/ax_pin_${encodeURIComponent(uid)}.json${this.authQS(false)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pinHash),

@@ -119,8 +119,64 @@ async function safeJson(request) {
   try { return await request.json(); } catch (_) { return {}; }
 }
 
+/* ============================================================
+   Auth Firebase par SERVICE ACCOUNT (durcissement /apex auth != null, Kevin 2026-07-04).
+   Mint un access_token Google OAuth2 (JWT RS256 signé WebCrypto) depuis
+   FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY (wrangler secrets), caché en
+   module scope (~55 min). FAIL-OPEN : secrets absents / mint KO → "" → URL
+   identique à avant (marche tant que les règles restent ouvertes).
+   ============================================================ */
+let _fbTokCache = { tok: "", exp: 0 };
+function _b64u(buf) {
+  let s = "";
+  const b = new Uint8Array(buf);
+  for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+async function _importSaKey(raw) {
+  let k = String(raw || "").trim();
+  if ((k.startsWith('"') && k.endsWith('"')) || (k.startsWith("'") && k.endsWith("'"))) k = k.slice(1, -1);
+  if (k.startsWith("{")) { try { const j = JSON.parse(k); if (j.private_key) k = j.private_key; } catch (_) {} }
+  k = k.replace(/\\n/g, "\n");
+  let b64 = k.replace(/-----BEGIN[^-]*-----/g, "").replace(/-----END[^-]*-----/g, "").replace(/[^A-Za-z0-9+/]/g, "");
+  while (b64.length % 4) b64 += "=";
+  const der = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  return crypto.subtle.importKey("pkcs8", der.buffer, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+}
+async function fbAccessToken(env) {
+  try {
+    if (!env.FIREBASE_CLIENT_EMAIL || !env.FIREBASE_PRIVATE_KEY) return "";
+    if (_fbTokCache.tok && _fbTokCache.exp > Date.now() + 60000) return _fbTokCache.tok;
+    const key = await _importSaKey(env.FIREBASE_PRIVATE_KEY);
+    const now = Math.floor(Date.now() / 1000);
+    const enc = new TextEncoder();
+    const header = _b64u(enc.encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
+    const claim = _b64u(enc.encode(JSON.stringify({
+      iss: env.FIREBASE_CLIENT_EMAIL,
+      scope: "https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email",
+      aud: "https://oauth2.googleapis.com/token",
+      iat: now, exp: now + 3600
+    })));
+    const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, enc.encode(header + "." + claim));
+    const jwt = header + "." + claim + "." + _b64u(sig);
+    const r = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=" + encodeURIComponent(jwt)
+    });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || !j.access_token) { console.error("[fbAccessToken] OAuth KO HTTP " + r.status + " " + JSON.stringify(j).slice(0, 200)); return ""; }
+    _fbTokCache = { tok: j.access_token, exp: Date.now() + (Number(j.expires_in || 3600) - 300) * 1000 };
+    return _fbTokCache.tok;
+  } catch (e) { console.error("[fbAccessToken] " + (e && e.message)); return ""; }
+}
+async function fbAuthQS(env) {
+  const t = await fbAccessToken(env);
+  return t ? "?access_token=" + encodeURIComponent(t) : "";
+}
+
 async function fbRead(env, path) {
-  const url = env.FIREBASE_URL.replace(/\/$/, "") + path;
+  const url = env.FIREBASE_URL.replace(/\/$/, "") + path + (await fbAuthQS(env));
   const r = await fetch(url, { method: "GET" });
   if (!r.ok) throw new Error("Firebase read " + r.status);
   const txt = await r.text();
@@ -129,7 +185,7 @@ async function fbRead(env, path) {
 }
 
 async function fbWrite(env, path, data) {
-  const url = env.FIREBASE_URL.replace(/\/$/, "") + path;
+  const url = env.FIREBASE_URL.replace(/\/$/, "") + path + (await fbAuthQS(env));
   return fetch(url, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -222,7 +278,7 @@ async function pushBatch(env, targets, payload) {
 
 async function pruneSubscription(env, uid) {
   try {
-    const url = env.FIREBASE_URL.replace(/\/$/, "") + "/apex/ax_push_subs/" + encodeURIComponent(uid) + ".json";
+    const url = env.FIREBASE_URL.replace(/\/$/, "") + "/apex/ax_push_subs/" + encodeURIComponent(uid) + ".json" + (await fbAuthQS(env));
     await fetch(url, { method: "DELETE" });
   } catch (_) {}
 }
