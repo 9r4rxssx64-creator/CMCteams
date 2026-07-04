@@ -7,7 +7,10 @@
 > Session « globe live → OSINT live » + intégration OSINT4ALL + fix sandbox. Tout mergé sur le vrai `main` (vérifié via API GitHub).
 
 ## Livré 2026-07-04 (tout mergé sur `main`, Pages déployé)
-- **World Monitor → v2.12** (`kdmc-home/worldmonitor/`) = LE tableau de bord unique qui additionne TOUT le live (Kevin « additionne tout le live OSINT dans Monitor ») :
+- **World Monitor → v2.13** (`kdmc-home/worldmonitor/`) = LE hub unique = TOUT le live + TOUTE la boîte à outils OSINT (Kevin « Go tout ») :
+  - **🧰 Boîte à outils OSINT complète intégrée** (v2.13) : 64 outils / 10 catégories + recherche, dans un repli déroulant sous « OSINT accès rapide » (même annuaire que le hub `/osint/`). World Monitor devient le point d'entrée unique : live **et** outils au même endroit. Vérifié Playwright local (leçon #126) : carte montée, 10 catégories, 64 outils, recherche filtre (shodan→1, vidée→64), toggles navires+satellite présents, **0 exception**.
+  - **🚢 Navires mondiaux (option)** : worker `tools/cloudflare/kdmc-ais-proxy/` (Durable Object relais WebSocket→aisstream.io, clé **secrète côté worker**, `/ships` GeoJSON) + workflow `deploy-kdmc-ais-proxy.yml` (dispatch). `loadShips` essaie `AIS_PROXY_URL` (vide par défaut → **Baltique Digitraffic, zéro régression**) sinon Digitraffic. Nécessite une **clé gratuite aisstream.io** de Kevin (honnête, cf KEVIN_ACTIONS) → couverture mondiale.
+- **World Monitor v2.12 (base)** (`kdmc-home/worldmonitor/`) = additionne TOUT le live (Kevin « additionne tout le live OSINT dans Monitor ») :
   - **🚢 Navires en direct** — AIS **Digitraffic** (`meri.digitraffic.fi/api/ais/v1/locations`, ouvert **sans clé**, CORS OK ; couverture Baltique/Finlande = seule vraie source AIS live gratuite sans clé).
   - **🛰️ Fond satellite** — **Esri World Imagery** (`server.arcgisonline.com/.../World_Imagery`, sans clé) togglable ↔ sombre CARTO (« visuels cartes/maps »).
   - **Boîte de couches retirée de SUR la carte** (Kevin « enlève les choix du milieu de la carte ») → tout piloté par les **puces sous la carte** (Vols·Navires·Séismes·Feux·Volcans·Tempêtes·Détroits·ISS·Satellite), Carte comme Globe.

@@ -110,6 +110,27 @@
   .osintlinks a{display:flex; align-items:center; gap:7px; text-decoration:none; color:var(--txt); background:#0a101e; border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:13px; font-weight:600; min-height:44px; transition:border-color .12s}
   .osintlinks a:hover{border-color:var(--blue)}
   .osintlinks a .em{font-size:15px}
+  .osintbox{margin:0 12px 12px}
+  .osintbox>summary{cursor:pointer; list-style:none; padding:10px 12px; background:#0a101e; border:1px solid var(--line); border-radius:10px; font-size:13px; font-weight:600; color:var(--txt); min-height:44px; display:flex; align-items:center}
+  .osintbox>summary::-webkit-details-marker{display:none}
+  .osintbox>summary::before{content:"▸"; margin-right:8px; color:var(--cyan); transition:transform .12s}
+  .osintbox[open]>summary::before{transform:rotate(90deg)}
+  .osintbox>summary b{color:var(--cyan); font-weight:600; margin-left:4px}
+  .osintsearch{width:100%; background:#0a1220; border:1px solid var(--line); border-radius:10px; color:var(--txt); padding:11px 13px; font-size:16px; margin:10px 0 4px}
+  .osintsearch:focus{outline:none; border-color:var(--cyan)}
+  .ocat{margin:12px 0 4px}
+  .ocat h3{font-size:13px; margin:0 0 8px; display:flex; align-items:center; gap:7px; color:#cfe0ff; font-weight:600}
+  .ocat h3 .n{color:var(--dim); font-weight:400; font-size:11px}
+  .ocat h3 .lv{font-size:10px; color:var(--green); border:1px solid #2b5a44; background:#0e2018; border-radius:999px; padding:2px 7px; letter-spacing:.05em}
+  .ogrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px}
+  a.otool{display:block; background:#0a101e; border:1px solid var(--line); border-radius:10px; padding:10px 12px; text-decoration:none; color:var(--txt); transition:border-color .12s,transform .12s; min-height:44px}
+  a.otool:hover,a.otool:focus{border-color:var(--cyan); transform:translateY(-2px)}
+  a.otool .t{font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:6px}
+  a.otool .t .arr{color:var(--dim); font-size:11px}
+  a.otool .h{font-size:11px; color:var(--dim); margin-top:3px; word-break:break-all}
+  a.otool .no{font-size:11px; color:var(--amber); margin-top:4px; line-height:1.35}
+  .osintempty{color:var(--dim); font-size:13px; padding:8px 2px}
+  @media (max-width:520px){.ogrid{grid-template-columns:1fr 1fr} a.otool .h{display:none}}
   .cam{position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#0a101e; cursor:pointer; min-height:44px}
   .cam .ph{aspect-ratio:16/9; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; padding:8px}
   .cam .ph .e{font-size:26px}
@@ -284,21 +305,27 @@
       </section>
 
       <section class="card">
-        <h2>🔎 OSINT — accès rapide <a class="k" href="/osint/" style="color:var(--blue);text-decoration:none">64 outils ›</a></h2>
+        <h2>🔎 OSINT — accès rapide <a class="k" href="/osint/" style="color:var(--cyan);text-decoration:none">hub complet ›</a></h2>
         <div class="osintlinks" id="osintLinks"></div>
+        <details class="osintbox">
+          <summary>🧰 Boîte à outils complète — <b id="osintCount">64 outils</b></summary>
+          <input class="osintsearch" id="osintQ" type="search" placeholder="Rechercher un outil, un site…" aria-label="Rechercher un outil OSINT">
+          <div id="osintCats"></div>
+          <p class="osintempty" id="osintEmpty" style="display:none">Aucun outil pour cette recherche.</p>
+        </details>
       </section>
     </div>
   </div>
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.12</span>
-  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (fond satellite) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Inspiré d'Osiris / WorldMonitor.</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.13</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (fond satellite) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.12";
+var VER="v2.13";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -311,8 +338,73 @@ function $(id){return document.getElementById(id);}
  ["🛰️","Satellite","https://apps.sentinel-hub.com/eo-browser/"],["🌐","Shodan","https://www.shodan.io/"],
  ["🔓","Fuites e-mail","https://haveibeenpwned.com/"],["🖼️","Image inversée","https://yandex.com/images/"],
  ["🕰️","Archive web","https://web.archive.org/"]];
- var el=$("osintLinks");if(!el)return;
- el.innerHTML=OS.map(function(o){return '<a href="'+o[2]+'" target="_blank" rel="noopener noreferrer"><span class="em">'+o[0]+'</span>'+o[1]+'</a>';}).join("");
+ var el=$("osintLinks");if(el)el.innerHTML=OS.map(function(o){return '<a href="'+o[2]+'" target="_blank" rel="noopener noreferrer"><span class="em">'+o[0]+'</span>'+o[1]+'</a>';}).join("");
+
+ /* Boîte à outils complète (même annuaire que le hub /osint/) */
+ function onorm(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");}
+ function ohost(u){try{return new URL(u).hostname.replace(/^www\./,"");}catch(e){return u;}}
+ var CATS=[
+  {i:"🗺️",n:"Cartes & Satellite",live:1,t:[
+    {n:"Google Maps",u:"https://www.google.com/maps"},{n:"OpenStreetMap",u:"https://www.openstreetmap.org/"},
+    {n:"Google Earth",u:"https://earth.google.com/web/"},{n:"Bing Maps (oblique)",u:"https://www.bing.com/maps"},
+    {n:"Sentinel Hub (satellite)",u:"https://apps.sentinel-hub.com/eo-browser/"},{n:"Zoom Earth (live)",u:"https://zoom.earth/"},
+    {n:"Mapillary (rue)",u:"https://www.mapillary.com/app/"},{n:"SunCalc (ombres/soleil)",u:"https://www.suncalc.org/"},
+    {n:"Wikimapia",u:"http://wikimapia.org/"},{n:"Living Atlas (ArcGIS)",u:"https://livingatlas.arcgis.com/en/browse/"}]},
+  {i:"✈️",n:"Vols & Aviation",live:1,t:[
+    {n:"Flightradar24",u:"https://www.flightradar24.com/"},{n:"ADS-B Exchange",u:"https://globe.adsbexchange.com/"},
+    {n:"FlightAware",u:"https://flightaware.com/"},{n:"adsb.lol",u:"https://globe.adsb.lol/"},
+    {n:"RadarBox",u:"https://www.radarbox.com/"},{n:"Planespotters",u:"https://www.planespotters.net/"}]},
+  {i:"🚢",n:"Navires & Maritime",live:1,t:[
+    {n:"MarineTraffic",u:"https://www.marinetraffic.com/"},{n:"VesselFinder",u:"https://www.vesselfinder.com/"},
+    {n:"ShipFinder",u:"https://www.shipfinder.com/Monitor/Index"},{n:"FleetMon",u:"https://www.fleetmon.com/"},
+    {n:"ShipAIS.uk",u:"https://shipais.uk/"},{n:"Cruise Ship Tracker",u:"https://www.livecruiseshiptracker.com/"}]},
+  {i:"📷",n:"Webcams live",live:1,t:[
+    {n:"Windy Webcams",u:"https://www.windy.com/-Webcams/webcams"},{n:"EarthCam",u:"https://www.earthcam.com/"},
+    {n:"WorldCam",u:"https://worldcam.eu/"},{n:"Airport Webcams",u:"https://airportwebcams.net/"},
+    {n:"Skyline Webcams",u:"https://www.skylinewebcams.com/"},{n:"Opentopia",u:"http://www.opentopia.com/"}]},
+  {i:"👤",n:"Pseudos & Personnes",t:[
+    {n:"WhatsMyName",u:"https://whatsmyname.app/"},{n:"Sherlock (GitHub)",u:"https://github.com/sherlock-project/sherlock"},
+    {n:"Maigret",u:"https://pypi.org/project/maigret/"},{n:"IDCrawl",u:"https://www.idcrawl.com/"},
+    {n:"WebMii",u:"https://webmii.com/"},{n:"TruePeopleSearch (US)",u:"https://www.truepeoplesearch.com/"}]},
+  {i:"🌐",n:"Domaines · IP · Infra",t:[
+    {n:"Shodan",u:"https://www.shodan.io/"},{n:"Censys",u:"https://search.censys.io/"},
+    {n:"urlscan.io",u:"https://urlscan.io/"},{n:"DNSDumpster",u:"https://dnsdumpster.com/"},
+    {n:"ViewDNS.info",u:"https://viewdns.info/"},{n:"crt.sh (certificats)",u:"https://crt.sh/"},
+    {n:"SecurityTrails",u:"https://securitytrails.com/"},{n:"WHOIS (ICANN)",u:"https://lookup.icann.org/"}]},
+  {i:"🖼️",n:"Image inversée",t:[
+    {n:"Google Images",u:"https://images.google.com/"},{n:"Yandex Images",u:"https://yandex.com/images/"},
+    {n:"TinEye",u:"https://tineye.com/"},{n:"Bing Visual",u:"https://www.bing.com/images"},
+    {n:"Jimpl (EXIF/GPS)",u:"https://jimpl.com/"},{n:"PimEyes (faciale)",u:"https://pimeyes.com/en/",no:"Reconnaissance faciale — cadre légal strict."}]},
+  {i:"💬",n:"Réseaux sociaux",t:[
+    {n:"Social-Searcher",u:"https://www.social-searcher.com/"},{n:"Mentionmapp",u:"https://mentionmapp.com/"},
+    {n:"Socialbearing",u:"https://socialbearing.com/"},{n:"Nitter (X mirror)",u:"https://nitter.net/"},
+    {n:"Bluesky search",u:"https://bsky.app/search"},{n:"Intelligence X",u:"https://intelx.io/"}]},
+  {i:"🔓",n:"Fuites & compromissions",t:[
+    {n:"Have I Been Pwned",u:"https://haveibeenpwned.com/"},{n:"DeHashed",u:"https://dehashed.com/",no:"Base de fuites — usage légitime uniquement."},
+    {n:"Intelligence X",u:"https://intelx.io/"},{n:"DDoSecrets",u:"https://ddosecrets.com/",no:"Documents sensibles — attention légale."}]},
+  {i:"📰",n:"Vérification d'actualité",live:1,t:[
+    {n:"Wayback Machine",u:"https://web.archive.org/"},{n:"archive.today",u:"https://archive.ph/"},
+    {n:"Hoaxy (propagation)",u:"https://hoaxy.osome.iu.edu/"},{n:"Snopes",u:"https://www.snopes.com/"},
+    {n:"Google News",u:"https://news.google.com/"},{n:"GDELT (événements)",u:"https://www.gdeltproject.org/"}]}
+ ];
+ function osintRender(f){
+   f=onorm(f||"");var box=$("osintCats");if(!box)return;var html="",shown=0,total=0;
+   for(var c=0;c<CATS.length;c++){
+     var cat=CATS[c],rows="",catMatch=onorm(cat.n).indexOf(f)>=0;
+     for(var i=0;i<cat.t.length;i++){
+       var tool=cat.t[i];total++;
+       if(f&&!catMatch&&onorm(tool.n+" "+ohost(tool.u)).indexOf(f)<0)continue;
+       shown++;
+       rows+='<a class="otool" href="'+esc(tool.u)+'" target="_blank" rel="noopener noreferrer"><span class="t">'+esc(tool.n)+'<span class="arr">↗</span></span><span class="h">'+esc(ohost(tool.u))+'</span>'+(tool.no?'<span class="no">⚠ '+esc(tool.no)+'</span>':'')+'</a>';
+     }
+     if(rows)html+='<div class="ocat"><h3>'+cat.i+' '+esc(cat.n)+' <span class="n">'+cat.t.length+'</span>'+(cat.live?'<span class="lv">● live plus haut</span>':'')+'</h3><div class="ogrid">'+rows+'</div></div>';
+   }
+   box.innerHTML=html;
+   var em=$("osintEmpty");if(em)em.style.display=shown?"none":"block";
+   var ct=$("osintCount");if(ct)ct.textContent=(f?shown+" / ":"")+total+" outils";
+ }
+ osintRender("");
+ var oq=$("osintQ");if(oq)oq.addEventListener("input",function(){osintRender(this.value);});
 })();
 function setText(el,v){ if(el&&el.textContent!==v) el.textContent=v; }
 function setHTML(el,v){ if(el&&el.innerHTML!==v) el.innerHTML=v; }
@@ -766,12 +858,21 @@ function drawStormsMap(){
   (DL.storms||[]).forEach(function(s){LEAF.circleMarker([s.lat,s.lon],{radius:7,color:"#b992ff",weight:1,fillColor:"#b992ff",fillOpacity:.3}).bindPopup("🌀 "+esc(s.title||"Tempête")).addTo(_stormLayer);});
 }
 /* 🚢 Navires en direct — Digitraffic (AIS mer Baltique/Finlande, ouvert sans clé, CORS OK) */
+/* Vide par défaut → navires Baltique (Digitraffic). Quand Kevin fournit une clé aisstream
+   gratuite et déploie kdmc-ais-proxy, on renseigne cette URL → navires MONDIAUX (leçon #93). */
+var AIS_PROXY_URL="";
+function mapFeats(f){return f.map(function(x){var c=x.geometry&&x.geometry.coordinates;if(!c)return null;
+    var p=x.properties||{};return {lat:c[1],lon:c[0],mmsi:x.mmsi||p.mmsi,sog:p.sog,cog:p.cog,name:p.name};}).filter(Boolean);}
 async function loadShips(){
   try{
+    if(AIS_PROXY_URL){
+      try{var g=await getJSON(AIS_PROXY_URL.replace(/\/$/,"")+"/ships?limit=1500",12000);
+        var gf=(g&&g.features)||[];
+        if(gf.length){DL.ships=mapFeats(gf);if(_mapReady)drawShipsMap();return;}
+      }catch(e2){}
+    }
     var d=await getJSON("https://meri.digitraffic.fi/api/ais/v1/locations",12000);
-    var f=(d&&d.features)||[];
-    DL.ships=f.map(function(x){var c=x.geometry&&x.geometry.coordinates;if(!c)return null;
-      var p=x.properties||{};return {lat:c[1],lon:c[0],mmsi:x.mmsi||p.mmsi,sog:p.sog,cog:p.cog};}).filter(Boolean);
+    DL.ships=mapFeats((d&&d.features)||[]);
     if(_mapReady)drawShipsMap();
   }catch(e){}
 }

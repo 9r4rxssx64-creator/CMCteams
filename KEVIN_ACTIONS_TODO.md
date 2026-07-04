@@ -1,5 +1,21 @@
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## ⭐ SESSION 2026-07-04 — World Monitor = hub unique + navires mondiaux (option)
+
+### ✅ Livré, testé (Playwright local, 0 exception), auto-déployé
+- **World Monitor v2.13** : la **boîte à outils OSINT complète (64 outils, 10 catégories + recherche)** est maintenant **dans World Monitor** (repli déroulant sous « OSINT — accès rapide »). Plus besoin d'ouvrir 2 pages : tout le live (avions, **navires**, feux, volcans, tempêtes, séismes, ISS, **fond satellite**) **et** l'annuaire d'outils sont sur la même page. Contrôles de couches déplacés **hors** de la carte (puces en haut).
+
+### 🟡 TON SEUL CHOIX (facultatif) — navires du MONDE ENTIER
+Aujourd'hui les navires viennent de **Digitraffic** = gratuit, sans clé, mais **Baltique/Finlande uniquement** (seule source AIS live gratuite sans clé). Pour couvrir **le monde entier** :
+1. Crée une **clé gratuite** sur https://aisstream.io/ (compte gratuit → API keys).
+2. Ajoute-la en **secret GitHub** nommé **`AISSTREAM_KEY`** : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions
+3. Lance **Actions → « Deploy KDMC AIS Proxy » → Run workflow** (1 clic). Le smoke test vérifie `/health` + `/ships` en live et te donne l'URL.
+4. Dis-moi « c'est fait » → je renseigne `AIS_PROXY_URL` dans World Monitor → **navires mondiaux**.
+
+**Sans clé, tout marche déjà** (navires Baltique). La clé ne fait qu'**étendre au monde entier** — la clé reste **secrète côté worker**, jamais exposée. Worker prêt : `tools/cloudflare/kdmc-ais-proxy/`.
+
+---
+
 ## ⭐ SESSION 2026-07-01 — bilan + tes actions (tout le reste = auto)
 
 ### ✅ Livré, testé, mergé, **auto-déployé** (RIEN à faire de ta part)
