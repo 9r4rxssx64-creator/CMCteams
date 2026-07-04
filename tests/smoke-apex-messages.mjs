@@ -1,4 +1,4 @@
-// Smoke test for apex-ai-v13/messages.html — mocks Firebase REST + Identity Toolkit,
+// Smoke test for tools/messages/index.html — mocks Firebase REST + Identity Toolkit,
 // verifies: PIN gate, conversation grouping, thread render, reply write, clear-all write.
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
@@ -41,7 +41,7 @@ await ctx.route(FB + '/**', async r => {
 
 const page = await ctx.newPage();
 const errs = []; page.on('pageerror', e => errs.push(String(e)));
-await page.goto('file://' + resolve(root, 'apex-ai-v13/messages.html'), { waitUntil: 'domcontentloaded' });
+await page.goto('file://' + resolve(root, 'tools/messages/index.html'), { waitUntil: 'domcontentloaded' });
 
 function assert(c, m) { if (!c) { console.error('FAIL: ' + m); process.exitCode = 1; } else console.log('ok: ' + m); }
 
