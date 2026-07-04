@@ -69,14 +69,14 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
     <div class="kpis">
       <div class="kpi"><div class="v" id="kFlights">—</div><div class="l">✈️ Vols Europe</div></div>
       <div class="kpi"><div class="v" id="kQuakes">—</div><div class="l">🔴 Séismes 24h</div></div>
+      <div class="kpi"><div class="v" id="kFires">—</div><div class="l">🔥 Feux actifs</div></div>
       <div class="kpi"><div class="v" id="kCve">—</div><div class="l">💻 CVE récentes</div></div>
-      <div class="kpi"><div class="v" id="kIss">—</div><div class="l">🛰️ ISS km/h</div></div>
     </div>
   </section>
 
   <!-- CARTE LIVE (rendue par nous : pas de blocage iframe) -->
   <section class="card">
-    <h2>🗺️ Carte live — vols &amp; séismes <span class="k" id="mapState">…</span></h2>
+    <h2>🗺️ Carte live — vols · séismes · feux · volcans · tempêtes · détroits <span class="k" id="mapState">…</span></h2>
     <div id="map"></div>
     <div class="maphint" id="mapHint">Chargement de la carte…
       <a href="https://globe.adsb.lol/" target="_blank" rel="noopener noreferrer">↗ Radar aérien complet</a></div>
@@ -103,7 +103,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
     <div class="empty" id="empty" style="display:none">Aucun outil ne correspond.</div>
   </section>
 </div>
-<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.0</span>
+<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.1</span>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -121,66 +121,90 @@ async function getJSON(url,ms){
 
 /* ============ EN DIRECT (APIs publiques gratuites, sans clé — mêmes sources que World Monitor) ============ */
 var EU_LAT=46,EU_LON=7,EU_NM=250;
+var EONET="https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=40&category=";
+/* Détroits stratégiques + zones de tension (statique, indicatif — cf. World Monitor) */
+var CHOKE=[
+  {n:"Détroit d'Ormuz",lat:26.6,lon:56.3},{n:"Canal de Suez",lat:30.4,lon:32.35},
+  {n:"Détroit de Malacca",lat:2.5,lon:101.4},{n:"Bab-el-Mandeb",lat:12.6,lon:43.4},
+  {n:"Canal de Panama",lat:9.1,lon:-79.7},{n:"Bosphore",lat:41.1,lon:29.1},
+  {n:"Détroit de Gibraltar",lat:35.95,lon:-5.6},{n:"Détroit de Taïwan",lat:24.4,lon:119.6}];
+var TENSION=[{n:"Ukraine",lat:49,lon:32},{n:"Proche-Orient",lat:31.4,lon:34.4},
+  {n:"Mer Rouge / Yémen",lat:14.5,lon:43},{n:"Sahel",lat:15,lon:0},{n:"Soudan",lat:15.5,lon:32.5},
+  {n:"Est RDC",lat:-1.7,lon:29},{n:"Myanmar",lat:21,lon:96}];
+function eonetPts(ev){var p=[];(ev||[]).forEach(function(e){var g=e.geometry&&e.geometry[e.geometry.length-1];if(!g||!g.coordinates)return;var lo=g.coordinates[0],la=g.coordinates[1];if(la==null||lo==null)return;p.push({lat:la,lon:lo,title:e.title||""});});return p;}
+
 async function loadFlights(){
   var ac=null;
   try{var d=await getJSON("https://api.adsb.lol/v2/point/"+EU_LAT+"/"+EU_LON+"/"+EU_NM,10000);ac=(d&&d.ac)||null;}catch(e){}
   if(!ac){try{var d2=await getJSON("https://api.airplanes.live/v2/point/"+EU_LAT+"/"+EU_LON+"/"+EU_NM,10000);ac=(d2&&d2.ac)||null;}catch(e2){}}
   if(ac){setText($("kFlights"),String(ac.length));drawFlights(ac);}
-  return ac;
 }
 async function loadQuakes(){
-  try{
-    var d=await getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",10000);
-    var f=(d&&d.features)||[];
-    setText($("kQuakes"),String(f.length));
-    drawQuakes(f);
-  }catch(e){}
+  try{var d=await getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",10000);
+    var f=(d&&d.features)||[];setText($("kQuakes"),String(f.length));drawQuakes(f);}catch(e){}
+}
+async function loadFires(){
+  try{var d=await getJSON(EONET+"wildfires",14000);var p=eonetPts(d&&d.events);setText($("kFires"),String(p.length));drawPts(_fireLayer,p,"#ff8a3d",4,"🔥 Feu");}catch(e){}
+}
+async function loadVolcano(){
+  try{var d=await getJSON(EONET+"volcanoes",14000);drawPts(_volcanoLayer,eonetPts(d&&d.events),"#ff5a4d",6,"🌋 Volcan");}catch(e){}
+}
+async function loadStorms(){
+  try{var d=await getJSON(EONET+"severeStorms",14000);drawPts(_stormLayer,eonetPts(d&&d.events),"#b992ff",7,"🌀 Tempête");}catch(e){}
 }
 async function loadCve(){
-  /* Shodan CVEDB → repli CIRCL, les 2 sans clé */
   try{var d=await getJSON("https://cvedb.shodan.io/cves?limit=25",9000);var arr=(d&&d.cves)||null;if(arr){setText($("kCve"),String(arr.length));return;}}catch(e){}
   try{var c=await getJSON("https://cve.circl.lu/api/last",11000);if(Array.isArray(c)){setText($("kCve"),String(Math.min(c.length,50)));return;}}catch(e2){}
 }
-async function loadIss(){
-  try{var d=await getJSON("https://api.wheretheiss.at/v1/satellites/25544",9000);
-    if(d&&d.velocity!=null)setText($("kIss"),Math.round(d.velocity).toLocaleString("fr-FR"));}catch(e){}
-}
 async function refreshLive(){
   setText($("liveState"),"maj…");
-  await Promise.allSettled([loadFlights(),loadQuakes(),loadCve(),loadIss()]);
+  await Promise.allSettled([loadFlights(),loadQuakes(),loadFires(),loadCve(),loadVolcano(),loadStorms()]);
   setText($("liveState"),"en direct");
 }
 
 /* ============ CARTE LIVE (Leaflet — rendue par nous, aucun blocage iframe) ============ */
-var _map=null,_flightLayer=null,_quakeLayer=null,_mapOk=false;
+var _map=null,_mapOk=false,_flightLayer=null,_quakeLayer=null,_fireLayer=null,_volcanoLayer=null,_stormLayer=null,_chokeLayer=null;
 function initMap(){
   if(typeof L==="undefined"||!L.map){setText($("mapState"),"indispo");$("mapHint").firstChild.textContent="Carte momentanément indisponible ";return;}
   try{
-    _map=L.map("map",{zoomControl:true,attributionControl:true,worldCopyJump:true}).setView([44,7],5);
+    _map=L.map("map",{zoomControl:true,attributionControl:true,worldCopyJump:true}).setView([40,10],4);
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:12,subdomains:"abcd",attribution:"© OpenStreetMap © CARTO"}).addTo(_map);
     _flightLayer=L.layerGroup().addTo(_map);_quakeLayer=L.layerGroup().addTo(_map);
+    _fireLayer=L.layerGroup().addTo(_map);_volcanoLayer=L.layerGroup().addTo(_map);
+    _stormLayer=L.layerGroup().addTo(_map);_chokeLayer=L.layerGroup().addTo(_map);
+    L.control.layers(null,{
+      "✈️ Vols":_flightLayer,"🔴 Séismes":_quakeLayer,"🔥 Feux":_fireLayer,
+      "🌋 Volcans":_volcanoLayer,"🌀 Tempêtes":_stormLayer,"⚓ Détroits & tensions":_chokeLayer
+    },{collapsed:false}).addTo(_map);
     _mapOk=true;setText($("mapState"),"en direct");
+    drawChoke();
   }catch(e){setText($("mapState"),"indispo");}
 }
+function drawPts(layer,pts,col,r,label){
+  if(!_mapOk||!layer)return;layer.clearLayers();
+  pts.forEach(function(p){L.circleMarker([p.lat,p.lon],{radius:r,color:col,weight:1,fillColor:col,fillOpacity:.5})
+    .bindPopup(label+(p.title?" — "+esc(p.title):"")).addTo(layer);});
+}
 function drawFlights(ac){
-  if(!_mapOk||!_flightLayer)return;
-  _flightLayer.clearLayers();var n=0;
-  ac.forEach(function(a){
-    if(a.lat==null||a.lon==null)return;n++;
+  if(!_mapOk||!_flightLayer)return;_flightLayer.clearLayers();var n=0;
+  ac.forEach(function(a){if(a.lat==null||a.lon==null)return;n++;
     L.circleMarker([a.lat,a.lon],{radius:3,color:"#5aa9ff",weight:1,fillColor:"#9ecbff",fillOpacity:.85})
-      .bindPopup("✈️ "+esc((a.flight||a.r||"vol").trim())+(a.alt_baro?"<br>Alt "+a.alt_baro+" ft":"")).addTo(_flightLayer);
-  });
-  setText($("mapHint").firstChild,n+" vols en direct · 🔴 séismes 24h ");
+      .bindPopup("✈️ "+esc((a.flight||a.r||"vol").trim())+(a.alt_baro?"<br>Alt "+a.alt_baro+" ft":"")).addTo(_flightLayer);});
+  setText($("mapHint").firstChild,n+" vols · séismes · feux · volcans · tempêtes en direct ");
 }
 function drawQuakes(f){
-  if(!_mapOk||!_quakeLayer)return;
-  _quakeLayer.clearLayers();
-  f.slice(0,300).forEach(function(x){
-    var c=x.geometry&&x.geometry.coordinates;if(!c)return;var m=x.properties.mag||0;
+  if(!_mapOk||!_quakeLayer)return;_quakeLayer.clearLayers();
+  f.slice(0,300).forEach(function(x){var c=x.geometry&&x.geometry.coordinates;if(!c)return;var m=x.properties.mag||0;
     var col=m>=5?"#ff3b30":m>=3?"#ff8a3d":"#e8b830";
     L.circleMarker([c[1],c[0]],{radius:Math.max(2,m),color:col,weight:1,fillColor:col,fillOpacity:.35})
-      .bindPopup("<b>M "+m.toFixed(1)+"</b><br>"+esc(x.properties.place||"")).addTo(_quakeLayer);
-  });
+      .bindPopup("<b>M "+m.toFixed(1)+"</b><br>"+esc(x.properties.place||"")).addTo(_quakeLayer);});
+}
+function drawChoke(){
+  if(!_mapOk||!_chokeLayer)return;_chokeLayer.clearLayers();
+  CHOKE.forEach(function(c){L.circleMarker([c.lat,c.lon],{radius:6,color:"#5aa9ff",weight:1,fillColor:"#5aa9ff",fillOpacity:.25})
+    .bindPopup("⚓ "+esc(c.n)+" (point stratégique)").addTo(_chokeLayer);});
+  TENSION.forEach(function(t){L.circleMarker([t.lat,t.lon],{radius:9,color:"#ff5a4d",weight:1,fillColor:"#ff5a4d",fillOpacity:.18})
+    .bindPopup("⚠️ Zone de tension (indicatif)<br><b>"+esc(t.n)+"</b>").addTo(_chokeLayer);});
 }
 
 /* ============ BOITE A OUTILS (curé OSINT4ALL) ============ */
