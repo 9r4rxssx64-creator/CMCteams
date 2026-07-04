@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clés APIs — 1 clic</title>
+<style>
+  :root { --gold:#e8b830; --bg:#0b1210; --card:#141d1a; --txt:#efe9d8; --mut:#9fb0a6; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:16px/1.5 -apple-system,system-ui,sans-serif;
+         padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 32px); }
+  h1 { font-size:20px; margin:0 0 4px; }
+  p.sub { color:var(--mut); margin:0 0 18px; font-size:14px; }
+  .step { background:linear-gradient(135deg,#1a2620,#101815); border:1px solid #24332c; border-radius:14px;
+          padding:14px 16px; margin:0 0 12px; }
+  .step h2 { font-size:15px; margin:0 0 8px; color:var(--gold); }
+  .btn { display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; width:100%;
+         border:none; border-radius:12px; font-size:16px; font-weight:600; cursor:pointer; text-decoration:none;
+         margin-top:8px; }
+  .primary { background:linear-gradient(135deg,#f0c440,#d99e1f); color:#20180a; }
+  .ghost { background:#1d2a24; color:var(--txt); border:1px solid #2c3d34; }
+  .row { display:flex; gap:8px; align-items:center; margin-top:10px; }
+  .row .name { flex:1; font:600 13px/1.3 ui-monospace,Menlo,monospace; color:var(--gold);
+               background:#0e1512; border:1px solid #24332c; border-radius:9px; padding:9px 10px; overflow:auto; }
+  .row a { flex:0 0 auto; }
+  .row a.open { min-height:44px; padding:0 14px; display:flex; align-items:center; }
+  .copy { flex:0 0 auto; min-height:44px; min-width:44px; padding:0 12px; }
+  .desc { color:var(--mut); font-size:13px; margin:2px 0 0; }
+  .ok { color:#7fdca0; font-size:13px; min-height:18px; margin-top:6px; }
+  .foot { color:var(--mut); font-size:12px; margin-top:20px; text-align:center; }
+</style>
+</head>
+<body>
+  <h1>🔑 Clés APIs — 1 clic</h1>
+  <p class="sub">Chaque bouton ouvre la page. Tu copies la clé, tu la colles dans les Secrets GitHub. Aucun KYC — juste un email.</p>
+
+  <div class="step">
+    <h2>① Ouvre tes Secrets GitHub (l'endroit où coller)</h2>
+    <p class="desc">Colle chaque clé avec le nom EXACT indiqué plus bas (bouton « Copier le nom »).</p>
+    <a class="btn primary" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions">Ouvrir les Secrets GitHub ▸</a>
+  </div>
+
+  <div class="step">
+    <h2>② Récupère les clés (email seul, gratuit)</h2>
+    <div id="list"></div>
+  </div>
+
+  <div class="step">
+    <h2>③ Vérifie que la passerelle répond</h2>
+    <a class="btn ghost" target="_blank" rel="noopener" href="https://apis.kd-mc.com/health">Ouvrir /health ▸</a>
+  </div>
+
+  <p class="foot">Rappel : l'IA marche même sans aucune de ces clés (Cloudflare Workers AI). Ces clés = du bonus.</p>
+
+<script>
+  var PROVIDERS = [
+    { name:"Google Gemini", secret:"GEMINI_API_KEY", url:"https://aistudio.google.com/apikey", desc:"IA + vision (déjà en secret ✓)" },
+    { name:"Groq", secret:"GROQ_API_KEY", url:"https://console.groq.com/keys", desc:"IA ultra-rapide (déjà ✓)" },
+    { name:"OpenRouter", secret:"OPENROUTER_API_KEY", url:"https://openrouter.ai/keys", desc:"1 clé = 390+ modèles (déjà ✓)" },
+    { name:"Brave Search", secret:"BRAVE_API_KEY", url:"https://api-dashboard.search.brave.com/app/keys", desc:"Recherche web (à ajouter)" },
+    { name:"Resend", secret:"RESEND_API_KEY", url:"https://resend.com/api-keys", desc:"Emails propres (à ajouter)" },
+    { name:"HuggingFace", secret:"HF_TOKEN", url:"https://huggingface.co/settings/tokens", desc:"Transcription/sous-titres (option)" },
+    { name:"Cohere", secret:"COHERE_API_KEY", url:"https://dashboard.cohere.com/api-keys", desc:"Embeddings mémoire (déjà ✓)" },
+    { name:"Mistral", secret:"MISTRAL_API_KEY", url:"https://console.mistral.ai/api-keys", desc:"IA + code (déjà ✓)" }
+  ];
+  var list = document.getElementById('list');
+  PROVIDERS.forEach(function(p, i){
+    var wrap = document.createElement('div');
+    wrap.innerHTML =
+      '<p class="desc" style="margin-top:14px"><b style="color:#efe9d8">'+p.name+'</b> — '+p.desc+'</p>'+
+      '<div class="row">'+
+        '<code class="name">'+p.secret+'</code>'+
+        '<button class="btn ghost copy" data-s="'+p.secret+'" data-i="'+i+'">📋</button>'+
+        '<a class="btn ghost open" target="_blank" rel="noopener" href="'+p.url+'">Ouvrir ▸</a>'+
+      '</div>'+
+      '<div class="ok" id="ok'+i+'"></div>';
+    list.appendChild(wrap);
+  });
+  list.addEventListener('click', function(e){
+    var b = e.target.closest('.copy'); if(!b) return;
+    var s = b.getAttribute('data-s'), i = b.getAttribute('data-i');
+    (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(function(){
+      document.getElementById('ok'+i).textContent = '✅ Nom copié : '+s;
+    }).catch(function(){
+      document.getElementById('ok'+i).textContent = 'Nom : '+s+' (copie manuelle)';
+    });
+  });
+</script>
+</body>
+</html>

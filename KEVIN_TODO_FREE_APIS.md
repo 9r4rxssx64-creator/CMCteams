@@ -44,8 +44,12 @@ Chaque app charge `/CMCteams/tools/shared/free-apis-client.js` puis appelle `Kdm
 - [x] `/iban` — [openiban.com](https://openiban.com/) ✅ FAIT
 - [x] `/vat` — [VIES](https://ec.europa.eu/taxation_customs/vies/) ✅ FAIT
 - [x] `/crypto` — [CoinGecko keyless](https://www.coingecko.com/learn/best-free-crypto-api) ✅ FAIT
-- [ ] `/reputation` — proxifier Malwarebytes ScamGuard (MCP) → scan liens partagés.
-- [ ] `/rss` — proxy RSS **avec allowlist de domaines** (anti-SSRF) → veille Monaco/SBM.
+- [x] `/reputation` — Google Safe Browsing (clé `GOOGLE_API_KEY` déjà en secret) ✅ FAIT
+- [x] `/rss` — proxy RSS **allowlist anti-SSRF** (`RSS_ALLOW`) ✅ FAIT
+
+## 🖱️ Page 1-clic pour les clés
+- [x] `tools/shared/free-apis-keys.html` — boutons directs + copie du nom de secret EXACT +
+  lien Secrets GitHub. Sur le domaine : `https://cmcteams.kd-mc.com/CMCteams/tools/shared/free-apis-keys.html`
 
 ## 🆓 Solution comptes providers / KYC (répondu 2026-07-04)
 
