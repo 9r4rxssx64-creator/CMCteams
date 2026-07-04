@@ -5629,7 +5629,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.855";
+var APP_VER="v9.856";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11380,6 +11380,35 @@ function initAxisLock(g){
     if(_ax==="y")g.scrollLeft=_sl;
   },{passive:true});
 }
+// ── v9.856 — Jours fériés Monaco (DISPLAY-ONLY) via passerelle kdmc-apis ──────────
+// Marque les en-têtes de dates (vPlan/vDeparts/vMonPlanning). Ne modifie JAMAIS
+// A.overrides (règle fidélité #1). Cache localStorage + mémoire ; 1 re-render au chargement.
+// Node/tests : pas de fetch → map vide → aucun marqueur → zéro régression.
+var _cmcHolMem={},_cmcHolFetching={};
+function _cmcHolKey(y){return "cmc_holidays_MC_"+y;}
+function _cmcHolidays(year){
+  if(_cmcHolMem[year])return _cmcHolMem[year];
+  var cached=null;try{cached=JSON.parse(localStorage.getItem(_cmcHolKey(year))||"null");}catch(_){}
+  if(cached&&cached.map){_cmcHolMem[year]=cached.map;return cached.map;}
+  if(typeof fetch!=="function"||_cmcHolFetching[year])return {};
+  _cmcHolFetching[year]=true;
+  try{
+    fetch("https://apis.kd-mc.com/holidays?year="+year+"&country=MC&app=cmcteams")
+      .then(function(r){return r.ok?r.json():[];})
+      .then(function(arr){
+        var map={};(Array.isArray(arr)?arr:[]).forEach(function(h){
+          if(!h||!h.date)return;var pz=String(h.date).split("-");
+          if(pz.length===3)map[(parseInt(pz[1],10)-1)+"-"+parseInt(pz[2],10)]=h.localName||h.name||"Jour férié";
+        });
+        _cmcHolMem[year]=map;_cmcHolFetching[year]=false;
+        try{localStorage.setItem(_cmcHolKey(year),JSON.stringify({map:map,ts:Date.now()}));}catch(_){}
+        if(Object.keys(map).length&&typeof dc==="function")dc();
+      })
+      .catch(function(){_cmcHolFetching[year]=false;});
+  }catch(_){_cmcHolFetching[year]=false;}
+  return {};
+}
+function _cmcHolidayName(y,m,d){try{var mp=_cmcHolidays(y);return (mp&&mp[m+"-"+d])||null;}catch(_){return null;}}
 function adjGrid(){
   var g=document.getElementById("planGrid");if(!g)return;
   var tod2=new Date();
@@ -22361,6 +22390,7 @@ function vMonPlanning(){
       :(ci2&&isWork(code)?codeBg+"cc":"rgba(10,22,12,.45)");
     var borderStyle=isToday?"3px solid #ffdc40":"2px solid "+(_isPast?"rgba(40,50,40,.6)":ci2&&isWork(code)?codeColor+"99":code==="CP"?"rgba(232,120,200,.7)":code==="RH"?"rgba(160,100,220,.7)":code==="AF"?"rgba(80,220,100,.7)":code==="M"?"rgba(255,220,40,.8)":isWE?"rgba(80,120,180,.4)":"rgba(120,180,120,.35)");
     var _affDot=_affOn&&_affCache[d]?'<span aria-hidden="true" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff4040;margin-left:3px;vertical-align:middle;box-shadow:0 0 6px rgba(255,64,64,.8)" title="Forte affluence"></span>':"";
+    var _holM=_cmcHolidayName(A.year,A.month,d);var _holDot=_holM?'<span aria-hidden="true" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff9ec4;margin-left:3px;vertical-align:middle" title="'+esc(_holM)+'"></span>':"";
     // Texte très contrasté : blanc sur fond coloré, text-shadow gras pour lisibilité
     var txtShadow="text-shadow:0 2px 4px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.7)";
     var numColor=isToday?"#fff8d0":isWE?"#d8e8ff":"#ffffff";
@@ -22369,7 +22399,7 @@ function vMonPlanning(){
     h+='<div data-mpday="'+d+'" onclick="_showDayDetail('+d+')" style="cursor:pointer;padding:5px 3px;background:'+cellBg
       +';border:'+borderStyle+';border-radius:10px;text-align:center;min-height:78px;opacity:'+(_isPast?"0.5":"1")
       +';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:'+(isToday?"0 0 14px rgba(255,220,64,.55),inset 0 1px 0 rgba(255,255,255,.25)":"0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)")+'">'
-      +'<div style="font-size:16px;color:'+numColor+';font-weight:900;'+txtShadow+';line-height:1">'+d+_affDot+'</div>'
+      +'<div style="font-size:16px;color:'+numColor+';font-weight:900;'+txtShadow+';line-height:1">'+d+_affDot+_holDot+'</div>'
       +'<div style="font-size:'+(code.length>5?'14':code.length>3?'16':'17')+'px;font-weight:900;color:'+codeTxtColor+';line-height:1.15;letter-spacing:0.3px;'+txtShadow+'">'+(code||'<span style="opacity:.25;font-size:20px">\u00b7</span>')+'</div>'
       +(_timeLabel?'<div style="font-size:11px;color:'+codeTxtColor+';opacity:.92;line-height:1;white-space:nowrap;overflow:hidden;max-width:100%;font-weight:700;'+txtShadow+'">'+_timeLabel+'</div>':"")
       +(depPos?'<div style="font-size:13px;color:#ffdc40;font-weight:900;'+txtShadow+'">\u2191'+depPos+'</div>':"")
@@ -24733,7 +24763,7 @@ function vPlan(){
     bh+='<thead><tr><th style="padding:0;background:#0b1409;position:sticky;left:0;border-right:1px solid #182818;z-index:6;width:118px"><div style="width:118px;padding:3px 5px;overflow:hidden"><div style="font-size:13px;font-weight:700;color:'+tcc+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(team?team.name:"\u00c9q."+tid)+'</div></div></th>';
     // v9.167 — Annotations admin par jour (clic sur header = prompt si admin, tooltip pour tous)
     var _dayNotes=getDayNotes(A.year,A.month);
-    da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#0a1408":"#0c1608";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?";border-bottom:2px solid rgba(201,162,39,.5)":"";var dn=_dayNotes[d];var _dnTitle=dn?'title="'+esc(dn.text)+'"':'';var _clickAttr=isAdm?(' onclick="promptDayNote('+A.year+','+A.month+','+d+')" style="cursor:pointer"'):'';bh+='<th data-planday="'+d+'" '+_dnTitle+' style="padding:3px 1px;min-width:28px;background:'+thBg+';text-align:center;position:sticky;top:0;z-index:2'+thBorder+(isAdm?";cursor:pointer":"")+'"'+_clickAttr+'><div style="font-weight:700;color:'+thCol+';font-size:14px">'+d+(dn?'<span style="color:#ffce3a;font-size:10px;margin-left:2px">\u2605</span>':'')+'</div><div style="font-size:11px;color:'+(isTod?"rgba(201,162,39,.4)":"#182818")+'">'+DS[dow]+'</div></th>';});
+    da.forEach(function(d){var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var _hol=_cmcHolidayName(A.year,A.month,d);var isTod=d===todayD;var thBg=isTod?"rgba(201,162,39,.18)":we?"#0a1408":"#0c1608";var thCol=isTod?"#c9a227":we?"#4a6888":"#3a4a38";var thBorder=isTod?";border-bottom:2px solid rgba(201,162,39,.5)":"";var dn=_dayNotes[d];var _dnTitle=(dn||_hol)?'title="'+esc((_hol?("🎉 "+_hol+(dn?" | ":"")):"")+(dn?dn.text:""))+'"':'';var _clickAttr=isAdm?(' onclick="promptDayNote('+A.year+','+A.month+','+d+')" style="cursor:pointer"'):'';bh+='<th data-planday="'+d+'" '+_dnTitle+' style="padding:3px 1px;min-width:28px;background:'+thBg+';text-align:center;position:sticky;top:0;z-index:2'+thBorder+(isAdm?";cursor:pointer":"")+'"'+_clickAttr+'><div style="font-weight:700;color:'+thCol+';font-size:14px">'+d+(dn?'<span style="color:#ffce3a;font-size:10px;margin-left:2px">\u2605</span>':'')+(_hol?'<span style="color:#ff9ec4;font-size:9px;margin-left:1px;vertical-align:top">\u25cf</span>':'')+'</div><div style="font-size:11px;color:'+(isTod?"rgba(201,162,39,.4)":"#182818")+'">'+DS[dow]+'</div></th>';});
     bh+='<th style="padding:3px 4px;background:rgba(6,14,7,.22);min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">RH</th><th style="padding:3px 4px;background:rgba(6,14,7,.22);min-width:22px;font-size:14px;color:#90b888;text-align:center;position:sticky;top:0;z-index:2">Tr.</th></tr></thead><tbody>';
     bh+=_renderEmpRows(emps,tcc);
     bh+='</tbody></table></div></div></div>';
@@ -25280,14 +25310,14 @@ function vDeparts(){
     });
     // En-têtes : tous les jours du mois
     da.forEach(function(d){
-      var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;
+      var dow=getDow(A.year,A.month,d),we=dow===0||dow===6;var _hol=_cmcHolidayName(A.year,A.month,d);
       var isHigh=d===highlightD,isNext=d===nextWorkD;
       var isWork2=_wiMap[d]!==undefined;
       var bg=isHigh?'rgba(201,162,39,.18)':isNext?'rgba(80,140,80,.12)':isWork2?'#16281a':'#0a1408';
       var col=isHigh?'#c9a227':we?'#4a6888':isWork2?'#3a4a38':'#1e2a1e';
       var brd=isHigh?';border-bottom:2px solid rgba(201,162,39,.5)':isNext?';border-bottom:2px solid rgba(80,160,80,.3)':'';
       h+='<th data-depday="'+d+'" style="padding:3px 1px;min-width:28px;background:'+bg+';text-align:center'+brd+'">'
-        +'<div style="font-weight:700;color:'+col+';font-size:14px">'+d+'</div>'
+        +'<div style="font-weight:700;color:'+col+';font-size:14px" '+(_hol?'title="🎉 '+esc(_hol)+'"':'')+'>'+d+(_hol?'<span style="color:#ff9ec4;font-size:9px;margin-left:1px;vertical-align:top">●</span>':'')+'</div>'
         +'<div style="font-size:11px;color:'+(isHigh?'rgba(201,162,39,.4)':isNext?'rgba(80,160,80,.3)':'#182818')+'">'+DS[dow]+'</div></th>';
     });
     h+=`</tr></thead><tbody>`;
