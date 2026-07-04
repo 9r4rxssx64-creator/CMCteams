@@ -1,0 +1,22 @@
+{
+  "gateway": "https://apis.kd-mc.com",
+  "gateway_fallback": "https://kdmc-apis.9r4rxssx64.workers.dev",
+  "app_tag": "kdmc-apis-v1",
+  "updated_at": "2026-07-04T00:00:00Z",
+  "routes": {
+    "ai": { "method": "POST", "auth": "origin", "body": "{messages,model?,provider?}", "desc": "Chat IA failover gemini→groq→openrouter→mistral→cohere" },
+    "search": { "method": "GET|POST", "auth": "origin", "params": "q", "desc": "Recherche web Tavily→Brave" },
+    "finance": { "method": "GET", "auth": "origin", "params": "symbol", "desc": "Cours Finnhub" },
+    "images": { "method": "GET", "auth": "origin", "params": "q,per_page", "desc": "Photos Pexels" },
+    "printify": { "method": "GET", "auth": "origin", "params": "path", "desc": "Catalogue Printify (blueprints)" },
+    "weather": { "method": "GET", "auth": "public", "params": "lat,lon,daily,days", "desc": "Météo Open-Meteo (affluence)" },
+    "holidays": { "method": "GET", "auth": "public", "params": "year,country", "desc": "Jours fériés Nager.Date (FL/CFL)" },
+    "fx": { "method": "GET", "auth": "public", "params": "from,to,amount", "desc": "Taux de change BCE Frankfurter" },
+    "geo": { "method": "GET", "auth": "public", "params": "q,limit", "desc": "Géocodage Nominatim (OSM)" },
+    "geoip": { "method": "GET", "auth": "public", "desc": "Géoloc par IP (ipwho.is)" },
+    "time": { "method": "GET", "auth": "public", "params": "tz", "desc": "Heure/fuseau exact timeapi.io" },
+    "translate": { "method": "GET", "auth": "public", "params": "q,from,to", "desc": "Traduction MyMemory (RGPD)" },
+    "wiki": { "method": "GET", "auth": "public", "params": "title,lang", "desc": "Résumé Wikipedia" },
+    "pwned": { "method": "GET", "auth": "public", "params": "prefix", "desc": "Pwned Passwords k-anonymity (mdp fuité)" }
+  }
+}
