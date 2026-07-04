@@ -635,6 +635,149 @@ export async function cloneSite(
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0, 160)}`);
   return { mode: m, url: target, result: text.slice(0, 20000) };
 }
+
+/* OSINT — répertoire curé (source: OSINT4ALL). Outils publics gratuits sauf note. */
+interface OsintTool {
+  name: string;
+  url: string;
+  note?: string;
+}
+interface OsintCategory {
+  category: string;
+  tools: OsintTool[];
+}
+const OSINT_DIRECTORY: OsintCategory[] = [
+  {
+    category: 'Cartes & Satellite',
+    tools: [
+      { name: 'Google Maps', url: 'https://www.google.com/maps' },
+      { name: 'OpenStreetMap', url: 'https://www.openstreetmap.org/' },
+      { name: 'Google Earth', url: 'https://earth.google.com/web/' },
+      { name: 'Sentinel Hub (satellite)', url: 'https://apps.sentinel-hub.com/eo-browser/' },
+      { name: 'Zoom Earth (live)', url: 'https://zoom.earth/' },
+      { name: 'Mapillary (rue)', url: 'https://www.mapillary.com/app/' },
+      { name: 'SunCalc (ombres/soleil)', url: 'https://www.suncalc.org/' },
+    ],
+  },
+  {
+    category: 'Vols & Aviation',
+    tools: [
+      { name: 'Flightradar24', url: 'https://www.flightradar24.com/' },
+      { name: 'ADS-B Exchange', url: 'https://globe.adsbexchange.com/' },
+      { name: 'FlightAware', url: 'https://flightaware.com/' },
+      { name: 'adsb.lol', url: 'https://globe.adsb.lol/' },
+      { name: 'Planespotters', url: 'https://www.planespotters.net/' },
+    ],
+  },
+  {
+    category: 'Navires & Maritime',
+    tools: [
+      { name: 'MarineTraffic', url: 'https://www.marinetraffic.com/' },
+      { name: 'VesselFinder', url: 'https://www.vesselfinder.com/' },
+      { name: 'ShipFinder', url: 'https://www.shipfinder.com/Monitor/Index' },
+      { name: 'FleetMon', url: 'https://www.fleetmon.com/' },
+    ],
+  },
+  {
+    category: 'Webcams live',
+    tools: [
+      { name: 'Windy Webcams', url: 'https://www.windy.com/-Webcams/webcams' },
+      { name: 'EarthCam', url: 'https://www.earthcam.com/' },
+      { name: 'WorldCam', url: 'https://worldcam.eu/' },
+      { name: 'Skyline Webcams', url: 'https://www.skylinewebcams.com/' },
+    ],
+  },
+  {
+    category: 'Pseudos & Personnes',
+    tools: [
+      { name: 'WhatsMyName', url: 'https://whatsmyname.app/' },
+      { name: 'Sherlock (GitHub)', url: 'https://github.com/sherlock-project/sherlock' },
+      { name: 'Maigret', url: 'https://pypi.org/project/maigret/' },
+      { name: 'IDCrawl', url: 'https://www.idcrawl.com/' },
+      { name: 'WebMii', url: 'https://webmii.com/' },
+    ],
+  },
+  {
+    category: 'Domaines · IP · Infra',
+    tools: [
+      { name: 'Shodan', url: 'https://www.shodan.io/' },
+      { name: 'Censys', url: 'https://search.censys.io/' },
+      { name: 'urlscan.io', url: 'https://urlscan.io/' },
+      { name: 'DNSDumpster', url: 'https://dnsdumpster.com/' },
+      { name: 'crt.sh (certificats)', url: 'https://crt.sh/' },
+      { name: 'WHOIS (ICANN)', url: 'https://lookup.icann.org/' },
+    ],
+  },
+  {
+    category: 'Image inversée',
+    tools: [
+      { name: 'Google Images', url: 'https://images.google.com/' },
+      { name: 'Yandex Images', url: 'https://yandex.com/images/' },
+      { name: 'TinEye', url: 'https://tineye.com/' },
+      { name: 'Jimpl (EXIF/GPS)', url: 'https://jimpl.com/' },
+      { name: 'PimEyes (faciale)', url: 'https://pimeyes.com/en/', note: 'Reconnaissance faciale — cadre légal strict.' },
+    ],
+  },
+  {
+    category: 'Réseaux sociaux',
+    tools: [
+      { name: 'Social-Searcher', url: 'https://www.social-searcher.com/' },
+      { name: 'Mentionmapp', url: 'https://mentionmapp.com/' },
+      { name: 'Nitter (X mirror)', url: 'https://nitter.net/' },
+      { name: 'Bluesky search', url: 'https://bsky.app/search' },
+      { name: 'Intelligence X', url: 'https://intelx.io/' },
+    ],
+  },
+  {
+    category: 'Fuites & compromissions',
+    tools: [
+      { name: 'Have I Been Pwned', url: 'https://haveibeenpwned.com/' },
+      { name: 'DeHashed', url: 'https://dehashed.com/', note: 'Base de fuites — usage légitime uniquement.' },
+      { name: 'Intelligence X', url: 'https://intelx.io/' },
+    ],
+  },
+  {
+    category: "Vérification d'actualité",
+    tools: [
+      { name: 'Wayback Machine', url: 'https://web.archive.org/' },
+      { name: 'archive.today', url: 'https://archive.ph/' },
+      { name: 'Hoaxy (propagation)', url: 'https://hoaxy.osome.iu.edu/' },
+      { name: 'Snopes', url: 'https://www.snopes.com/' },
+      { name: 'GDELT (événements)', url: 'https://www.gdeltproject.org/' },
+    ],
+  },
+];
+
+/**
+ * Répertoire OSINT curé (cartes, vols, navires, webcams, personnes, domaines/IP,
+ * image inversée, réseaux, fuites, vérif actu). Sans clé, données statiques.
+ * Si `category` est fourni, filtre par correspondance (accent-insensible) sur le
+ * nom de catégorie OU d'outil. Hub complet : kd-mc.com/osint/.
+ */
+export function osintTools(category?: string): {
+  hub: string;
+  matched: string | null;
+  categories: OsintCategory[];
+} {
+  const hub = 'https://kd-mc.com/osint/';
+  const q = (category ?? '').trim();
+  if (!q) return { hub, matched: null, categories: OSINT_DIRECTORY };
+  const norm = (s: string): string =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '');
+  const nq = norm(q);
+  const catHits = OSINT_DIRECTORY.filter((c) => norm(c.category).includes(nq));
+  if (catHits.length) return { hub, matched: q, categories: catHits };
+  /* Sinon filtre par nom d'outil, en gardant la structure par catégorie */
+  const toolHits = OSINT_DIRECTORY.map((c) => ({
+    category: c.category,
+    tools: c.tools.filter((t) => norm(t.name).includes(nq)),
+  })).filter((c) => c.tools.length > 0);
+  if (toolHits.length) return { hub, matched: q, categories: toolHits };
+  return { hub, matched: q, categories: OSINT_DIRECTORY };
+}
 export function detectIntent(text: string): { intent: string; confidence: number; suggested_tool?: string } {
   if (!text) return { intent: 'unknown', confidence: 0 };
   const lc = text.toLowerCase();

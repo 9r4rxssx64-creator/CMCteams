@@ -90,6 +90,19 @@ export const WEB_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
   {
+    name: 'osint_tools',
+    description: 'Répertoire OSINT curé (investigation en sources ouvertes) : cartes/satellite, vols, navires, webcams, pseudos/personnes, domaines·IP·infra, image inversée, réseaux sociaux, fuites/compromissions, vérification d\'actualité. Retourne les outils (nom + URL) par catégorie, avec le hub complet kd-mc.com/osint/. Utilise quand user demande "outils OSINT", "comment tracer un navire/avion", "vérifier une image/une fuite", "chercher un pseudo", "webcams live", etc. Param category optionnel pour filtrer (ex "maritime", "vols", "image").',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        category: { type: 'string', description: 'Filtre optionnel : catégorie ou nom d\'outil (ex "navires", "vols", "image inversée", "fuites")' },
+      },
+      required: [],
+    },
+    minTier: 'client_free',
+    impactLevel: 'A',
+  },
+  {
     name: 'wikipedia_lookup',
     description: 'Recherche Wikipedia (FR par défaut) via API publique gratuite. Retourne extrait + URL article.',
     inputSchema: {

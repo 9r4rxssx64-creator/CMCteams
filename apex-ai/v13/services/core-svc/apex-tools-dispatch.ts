@@ -69,6 +69,7 @@ import {
   memoryAdd,
   memoryRecall,
   newsHeadlines,
+  osintTools,
   perfMetricsSnapshot,
   projectContinue,
   projectStatus,
@@ -867,6 +868,8 @@ class ApexToolsDispatcher {
         return scrapeUrl(params['url'] as string);
       case 'clone_site':
         return cloneSite(params['url'] as string, params['mode'] as string | undefined);
+      case 'osint_tools':
+        return osintTools(params['category'] as string | undefined);
       case 'detect_intent':
         return detectIntent(params['text'] as string);
       case 'sentinels_status':
