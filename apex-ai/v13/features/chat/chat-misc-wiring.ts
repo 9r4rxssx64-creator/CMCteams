@@ -85,7 +85,7 @@ export function wireLogoAndModeToggle(rootEl: HTMLElement): void {
         /* Cycle : auto → economy → premium → auto (skip forced, admin-only) */
         const next: 'auto' | 'economy' | 'premium' =
           current === 'auto' ? 'economy' : current === 'economy' ? 'premium' : 'auto';
-        aiRoutingPolicy.setMode(next);
+        aiRoutingPolicy.setMode(next, true); /* choix EXPLICITE user (⚡) */
         if (modeToggleBtn) {
           modeToggleBtn.textContent = MODE_ICONS[next] ?? '⚡';
           modeToggleBtn.setAttribute('title', `Mode IA : ${MODE_LABELS[next]} — clic pour basculer`);
@@ -241,7 +241,7 @@ export function wireSettingsAndPasteKey(rootEl: HTMLElement, rerender: () => voi
           const modeSelect = document.getElementById('ax-settings-mode') as HTMLSelectElement | null;
           modeSelect?.addEventListener('change', () => {
             const newMode = modeSelect.value as 'auto' | 'economy' | 'premium' | 'forced';
-            aiRoutingPolicy.setMode(newMode);
+            aiRoutingPolicy.setMode(newMode, true); /* choix EXPLICITE user (réglages) */
             toast.success(`Mode routing : ${newMode}`);
             haptic.medium();
           });

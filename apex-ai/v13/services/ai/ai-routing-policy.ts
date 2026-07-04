@@ -183,22 +183,44 @@ class AIRoutingPolicy {
   getMode(): RoutingMode {
     try {
       const m = localStorage.getItem('apex_v13_routing_mode');
-      if (m === 'auto' || m === 'economy' || m === 'premium' || m === 'forced') return m;
-      /* v13.4.336 (Kevin « il n'est pas sur Anthropic de base, comme IA ») : par
-       * DÉFAUT, l'admin Kevin est en 'premium' = Anthropic toujours (le mode 'auto'
-       * laissait le smart-router dériver vers openai après quelques succès). Les
-       * clients restent en 'auto'. Kevin peut basculer via ⚡ (choix persisté). */
-      if (localStorage.getItem('apex_v13_uid') === 'kdmc_admin') return 'premium';
+      const valid = m === 'auto' || m === 'economy' || m === 'premium' || m === 'forced';
+      const isAdmin = localStorage.getItem('apex_v13_uid') === 'kdmc_admin';
+      /* v13.4.338 (Kevin « toujours openai » MALGRÉ le fix v337) : cause racine =
+       * un mode stocké 'economy' posé AUTOMATIQUEMENT par apex-self-audit
+       * (switch_to_economy_mode) OU un ancien toggle → getMode le renvoyait AVANT le
+       * défaut premium → l'admin n'était pas en premium → v337 (premium-only) ne
+       * s'activait pas → smart-router remettait openai en tête.
+       *
+       * Fix (conforme leçon #124 : respecter le choix EXPLICITE, pas un réglage auto) :
+       * pour l'ADMIN, on n'honore le mode stocké QUE s'il a été choisi EXPLICITEMENT
+       * via ⚡ (flag `apex_v13_routing_mode_explicit`). Un mode posé par un auto-fix
+       * (sans flag) est IGNORÉ → l'admin retombe sur 'premium' (Anthropic toujours).
+       * Effet de bord voulu : les appareils déjà pollués (economy auto, sans flag)
+       * repassent premium tout seuls, sans action de Kevin. Les clients : inchangés. */
+      if (valid) {
+        if (!isAdmin) return m;
+        const explicit = localStorage.getItem('apex_v13_routing_mode_explicit') === '1';
+        if (explicit) return m;
+        /* admin + mode stocké NON explicite → ignoré, on tombe sur premium */
+      }
+      if (isAdmin) return 'premium';
     } catch {
       /* ignore */
     }
     return 'auto';
   }
 
-  setMode(mode: RoutingMode): void {
+  /**
+   * @param explicit true = choix utilisateur direct (⚡ / réglages) → honoré même
+   *   pour l'admin. false (défaut) = réglage automatique (auto-fix) → n'écrase PAS
+   *   le défaut premium de l'admin (cf. getMode v13.4.338).
+   */
+  setMode(mode: RoutingMode, explicit = false): void {
     try {
       localStorage.setItem('apex_v13_routing_mode', mode);
-      logger.info('ai-routing-policy', `mode set to ${mode}`);
+      if (explicit) localStorage.setItem('apex_v13_routing_mode_explicit', '1');
+      else localStorage.removeItem('apex_v13_routing_mode_explicit');
+      logger.info('ai-routing-policy', `mode set to ${mode}`, { explicit });
     } catch {
       /* ignore */
     }

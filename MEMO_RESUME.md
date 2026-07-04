@@ -1,3 +1,7 @@
+# v13.4.338 (2026-07-03) — « toujours openai » : VRAIE cause racine corrigée
+- v337 (skip smart-router en premium) était bon MAIS ne s'activait pas : `apex-self-audit` avait posé le mode `economy` AUTO sur l'appareil de Kevin → getMode ≠ premium → skip inactif → openai. (Leçon #129 : vérifier la valeur runtime, pas l'hypothèse.)
+- Fix : mode stocké honoré pour l'admin UNIQUEMENT si choisi explicitement (flag `apex_v13_routing_mode_explicit` posé par ⚡/réglages) ; un mode auto sans flag est ignoré → premium (Anthropic). Les appareils déjà pollués repassent premium seuls. Guard : switch_to_economy_mode ne rétrograde plus l'admin. 8 tests (dont economy-auto→premium + economy-explicite honoré + client inchangé). Leçon CLAUDE.md #129.
+
 # Mémo de reprise — World Monitor + OSINT live (2026-07-04, branche `claude/graphity-auto-install-sm3f92`)
 
 > Session « globe live → OSINT live » + intégration OSINT4ALL + fix sandbox. Tout mergé sur le vrai `main` (vérifié via API GitHub).
