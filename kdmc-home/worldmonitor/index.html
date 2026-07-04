@@ -105,6 +105,11 @@
   /* webcams */
   .camgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:12px}
   @media(min-width:640px){.camgrid{grid-template-columns:repeat(3,1fr)}}
+  .osintlinks{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:12px}
+  @media(min-width:640px){.osintlinks{grid-template-columns:repeat(3,1fr)}}
+  .osintlinks a{display:flex; align-items:center; gap:7px; text-decoration:none; color:var(--txt); background:#0a101e; border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:13px; font-weight:600; min-height:44px; transition:border-color .12s}
+  .osintlinks a:hover{border-color:var(--blue)}
+  .osintlinks a .em{font-size:15px}
   .cam{position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#0a101e; cursor:pointer; min-height:44px}
   .cam .ph{aspect-ratio:16/9; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; padding:8px}
   .cam .ph .e{font-size:26px}
@@ -274,22 +279,38 @@
         <h2>🚀 Prochains lancements <span class="k" id="launchState">…</span></h2>
         <div id="launches" class="list sm"><div class="empty">Chargement…</div></div>
       </section>
+
+      <section class="card">
+        <h2>🔎 OSINT — accès rapide <a class="k" href="/osint/" style="color:var(--blue);text-decoration:none">64 outils ›</a></h2>
+        <div class="osintlinks" id="osintLinks"></div>
+      </section>
     </div>
   </div>
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.10</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.11</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.5";
+var VER="v2.11";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
 function $(id){return document.getElementById(id);}
+
+/* OSINT accès rapide (statique, sous-ensemble live du hub /osint/) */
+(function(){var OS=[
+ ["🗺️","Carte live","https://zoom.earth/"],["✈️","Vols","https://globe.adsbexchange.com/"],
+ ["🚢","Navires","https://www.marinetraffic.com/"],["📷","Webcams","https://www.windy.com/-Webcams/webcams"],
+ ["🛰️","Satellite","https://apps.sentinel-hub.com/eo-browser/"],["🌐","Shodan","https://www.shodan.io/"],
+ ["🔓","Fuites e-mail","https://haveibeenpwned.com/"],["🖼️","Image inversée","https://yandex.com/images/"],
+ ["🕰️","Archive web","https://web.archive.org/"]];
+ var el=$("osintLinks");if(!el)return;
+ el.innerHTML=OS.map(function(o){return '<a href="'+o[2]+'" target="_blank" rel="noopener noreferrer"><span class="em">'+o[0]+'</span>'+o[1]+'</a>';}).join("");
+})();
 function setText(el,v){ if(el&&el.textContent!==v) el.textContent=v; }
 function setHTML(el,v){ if(el&&el.innerHTML!==v) el.innerHTML=v; }
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
