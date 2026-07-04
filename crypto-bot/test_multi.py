@@ -81,13 +81,18 @@ ok(abs(q_quart - q_full / 4) < 1e-9, "alloc=1/4 divise la taille par 4")
 
 # ---- 5) Achat / vente par paire (faux exchange + strat stubbée) ----
 class FakeEx:
-    def __init__(self):
+    def __init__(self, cash=10000.0):
         self.orders = []
         self.bases = {}  # base -> qty détenue
+        self.cash = cash  # USDT libre disponible pour acheter
     def prices(self, syms):
         return {s: 100.0 for s in syms}
     def equity_in_quote(self, prices):
         return 10000.0
+    def quote_balance(self):
+        return self.cash
+    def last_price(self, symbol):
+        return 100.0
     def fetch_ohlcv(self, symbol, limit=200):
         return [[0, 100, 101, 99, 100, 1]] * 30
     def base_balance(self, symbol):
@@ -120,13 +125,39 @@ st5 = State()
 fx = FakeEx()
 alloc5 = 1.0 / len(c5.symbols)
 # BUY sur les 2 paires
-bot._cycle_symbol(fx, StubStrat("BUY"), rm5, st5, "BTC/USDT", 100.0, 10000.0, alloc5)
-bot._cycle_symbol(fx, StubStrat("BUY"), rm5, st5, "ETH/USDT", 100.0, 10000.0, alloc5)
+bot._cycle_symbol(fx, StubStrat("BUY"), rm5, st5, "BTC/USDT", 100.0, 10000.0, alloc5, c5)
+bot._cycle_symbol(fx, StubStrat("BUY"), rm5, st5, "ETH/USDT", 100.0, 10000.0, alloc5, c5)
 ok(st5.pos("BTC/USDT").in_position and st5.pos("ETH/USDT").in_position, "achat ouvre une position par paire")
 ok(len([o for o in fx.orders if o[0] == "BUY"]) == 2, "2 ordres d'achat (un par paire)")
 # SELL sur BTC uniquement
-bot._cycle_symbol(fx, StubStrat("SELL"), rm5, st5, "BTC/USDT", 100.0, 10000.0, alloc5)
+bot._cycle_symbol(fx, StubStrat("SELL"), rm5, st5, "BTC/USDT", 100.0, 10000.0, alloc5, c5)
 ok(not st5.pos("BTC/USDT").in_position and st5.pos("ETH/USDT").in_position, "vente ferme UNE paire, l'autre reste")
+
+# ---- 5b) Borne cash : un achat n'excède jamais le cash libre (anti « insufficient balance ») ----
+fx_low = FakeEx(cash=5.0)  # 5 USDT libres < ordre minimum (11) -> aucun achat
+st_low = State()
+bot._cycle_symbol(fx_low, StubStrat("BUY"), rm5, st_low, "BTC/USDT", 100.0, 10000.0, alloc5, c5)
+ok(not st_low.pos("BTC/USDT").in_position, "cash libre insuffisant -> pas d'achat (pas de refus exchange)")
+ok(len(fx_low.orders) == 0, "cash libre insuffisant -> aucun ordre envoyé")
+
+fx_cap = FakeEx(cash=50.0)  # assez pour un petit ordre : qty bornée à ~50/100 = 0.5 max
+st_cap = State()
+bot._cycle_symbol(fx_cap, StubStrat("BUY"), rm5, st_cap, "BTC/USDT", 100.0, 10000.0, alloc5, c5)
+bought = [o for o in fx_cap.orders if o[0] == "BUY"]
+ok(len(bought) == 1 and bought[0][2] * 100.0 <= 50.0 + 1e-6,
+   f"achat borné au cash libre (notional <= 50) -> {bought}")
+
+# ---- 5c) Reconciliation : une crypto déjà détenue devient une position gérée ----
+c5c = cfg_with(SYMBOLS="BTC/USDT,ETH/USDT")
+rm5c = RiskManager(c5c)
+st_rec = State()
+fx_rec = FakeEx()
+fx_rec.bases = {"BTC": 1.0}  # le compte détient 1 BTC, mais state ne le sait pas
+bot._reconcile_positions(fx_rec, StubStrat("HOLD"), rm5c, st_rec, c5c)
+ok(st_rec.pos("BTC/USDT").in_position and st_rec.pos("BTC/USDT").qty == 1.0,
+   "crypto détenue reprise comme position (sera revendue -> libère du cash)")
+ok(st_rec.pos("BTC/USDT").stop_price > 0, "position reprise reçoit un stop protecteur")
+ok(not st_rec.pos("ETH/USDT").in_position, "paire non détenue -> pas de position fantôme")
 
 # ---- 6) Kill = solde TOUT ----
 st6 = State()

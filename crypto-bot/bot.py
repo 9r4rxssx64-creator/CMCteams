@@ -57,6 +57,43 @@ def _flatten_all(ex: Exchange, state: State, prices: dict, reason: str) -> None:
         _flatten_symbol(ex, state, sym, px, reason)
 
 
+def _reconcile_positions(ex: Exchange, strat: Strategy, risk: RiskManager,
+                         state: State, cfg: Config) -> None:
+    """Adopte les cryptos DÉJÀ détenues sur le compte comme positions gérées.
+
+    Sur Railway, state.json est éphémère (remis à zéro à chaque déploiement) :
+    sans ça, le bot « oublie » les cryptos qu'il détient, ne les revend jamais
+    (la vente n'agit que si in_position=True) et bloque tout le cash → plus aucun
+    achat possible. On repart donc de la RÉALITÉ du compte : toute crypto détenue
+    au-dessus de l'ordre minimum devient une position ouverte, avec un stop ATR
+    protecteur, pour que le bot puisse la revendre et libérer du cash.
+    """
+    for symbol in cfg.symbols:
+        try:
+            pos = state.pos(symbol)
+            if pos.in_position:
+                continue
+            held = ex.base_balance(symbol)
+            price = ex.last_price(symbol)
+            if held <= 0 or price <= 0 or held * price < cfg.min_order_usdt:
+                continue
+            ohlcv = ex.fetch_ohlcv(symbol, limit=max(200, strat.min_candles() + 5))
+            highs, lows, closes = _closed_candles(ohlcv)
+            sig = strat.evaluate(highs, lows, closes, True)
+            stop = risk.compute_stop(price, sig.atr) if sig.atr else price * 0.9
+            pos.in_position = True
+            pos.entry_price = price  # entrée réelle inconnue → prix courant (neutre)
+            pos.qty = held
+            pos.stop_price = stop
+            audit.log("RECONCILE", symbol=symbol, qty=held, price=price, stop=stop)
+            audit.console(
+                f"🔄 {symbol} position reprise du compte : qty={held} @ ~{price:.2f} "
+                f"(stop {stop:.2f}) — sera gérée/revendue normalement")
+        except Exception as exc:  # noqa: BLE001 — la reprise d'une paire ne bloque pas les autres
+            audit.log("ERROR", where="reconcile", symbol=symbol, detail=str(exc))
+            audit.console(f"⚠️ {symbol} reprise impossible : {exc}")
+
+
 def run(live: bool) -> None:
     cfg = Config.load()
     cfg.require_keys()
@@ -78,6 +115,12 @@ def run(live: bool) -> None:
     audit.log("START", mode=mode, symbols=cfg.symbols, timeframe=cfg.timeframe)
     audit.console(f"Démarrage — {mode} — {', '.join(cfg.symbols)} — {cfg.timeframe}")
     audit.console("Kill switch : BOT_KILL=1 (Railway) ou fichier 'KILL' pour tout couper.")
+
+    # Repart de la réalité du compte (state.json éphémère sur Railway) : adopte
+    # les cryptos déjà détenues comme positions gérées → elles seront revendues
+    # et libéreront du cash pour de nouveaux achats.
+    _reconcile_positions(ex, strat, risk, state, cfg)
+    state.save()
 
     while True:
         try:
@@ -128,14 +171,15 @@ def _cycle(ex: Exchange, strat: Strategy, risk: RiskManager,
             audit.console(f"… {symbol} prix indisponible, ignoré ce cycle")
             continue
         try:
-            _cycle_symbol(ex, strat, risk, state, symbol, price, equity, alloc)
+            _cycle_symbol(ex, strat, risk, state, symbol, price, equity, alloc, cfg)
         except Exception as exc:  # noqa: BLE001 — une paire ne bloque pas les autres
             audit.log("ERROR", where="cycle_symbol", symbol=symbol, detail=str(exc))
             audit.console(f"⚠️ {symbol} erreur : {exc}")
 
 
 def _cycle_symbol(ex: Exchange, strat: Strategy, risk: RiskManager, state: State,
-                  symbol: str, price: float, equity: float, alloc: float) -> None:
+                  symbol: str, price: float, equity: float, alloc: float,
+                  cfg: Config) -> None:
     pos = state.pos(symbol)
 
     # Stop-loss ATR
@@ -151,9 +195,13 @@ def _cycle_symbol(ex: Exchange, strat: Strategy, risk: RiskManager, state: State
 
     if sig.action == "BUY" and sig.atr:
         stop = risk.compute_stop(price, sig.atr)
-        qty = risk.position_size(equity, price, stop, alloc=alloc)
+        cash = ex.quote_balance()  # USDT LIBRE réellement disponible pour acheter
+        qty = risk.position_size(equity, price, stop, alloc=alloc, cash=cash)
         if qty <= 0:
-            audit.log("SKIP_BUY", symbol=symbol, reason="taille nulle (risque/plafond/min ordre)")
+            reason = ("cash libre insuffisant" if cash < cfg.min_order_usdt
+                      else "taille nulle (risque/plafond/min ordre)")
+            audit.log("SKIP_BUY", symbol=symbol, reason=reason, cash=round(cash, 2))
+            audit.console(f"… {symbol} achat ignoré : {reason} (USDT libre={cash:.2f})")
             return
         order = ex.market_buy(symbol, qty)
         filled = float(order.get("filled") or qty)
