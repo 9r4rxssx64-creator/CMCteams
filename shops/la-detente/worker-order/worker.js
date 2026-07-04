@@ -24,7 +24,12 @@ function rl(key, max, windowMs) {
   return false;
 }
 
-const GARMENT_BP = { tee: 6, hoodie: 77, cap: 5383, polo: null, tote: 1313 };
+// polo: 1402 = JERZEES 443M « Men's Piqué Polo » — ID issu du VRAI catalogue Printify
+// committé (shops/chez-lolo/printify-blueprints.json, dump API 2026-06-03), polo classique
+// imprimable (pas « Embroidery »), résout le TODO #B sans rien inventer (leçon #93).
+// bandana : AUCUN bandana humain dans les 1435 blueprints du catalogue → pas de mapping ;
+// le fallback tee + warning explicite ci-dessous le signale (commande on-hold = Kevin voit).
+const GARMENT_BP = { tee: 6, hoodie: 77, cap: 5383, polo: 1402, tote: 1313 };
 const COLOR_FR2EN = { 'Noir': 'Black', 'Blanc': 'White', 'Marine': 'Navy', 'Kaki': 'Military Green', 'Ardoise': 'Dark Heather', 'Bordeaux': 'Maroon', 'Anthracite': 'Black', 'Sable': 'Sand', 'Vert': 'Forest Green' };
 const COUNTRY_ISO = { 'france': 'FR', 'monaco': 'MC', 'belgique': 'BE', 'belgium': 'BE', 'suisse': 'CH', 'switzerland': 'CH', 'luxembourg': 'LU', 'espagne': 'ES', 'spain': 'ES', 'italie': 'IT', 'italy': 'IT', 'allemagne': 'DE', 'germany': 'DE', 'royaume-uni': 'GB', 'uk': 'GB' };
 
@@ -222,6 +227,11 @@ export default {
     const warnings = [];
     for (const it of items) {
       const bp = it.blueprint_id || GARMENT_BP[it.garment] || GARMENT_BP.tee;
+      // Garment sans mapping (ex: bandana) → tee par défaut MAIS warning explicite
+      // (avant : substitution SILENCIEUSE — leçon « cause exacte partout »).
+      if (!it.blueprint_id && !GARMENT_BP[it.garment]) {
+        warnings.push('garment "' + (it.garment || '?') + '" sans blueprint → tee par défaut, à vérifier avant validation');
+      }
       const design = String(it.design || 'crest').replace(/[^a-z0-9-]/gi, '');
       const colorEn = COLOR_FR2EN[it.color] || it.color || 'Black';
       try {
