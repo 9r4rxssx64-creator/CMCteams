@@ -24,7 +24,12 @@ origines de confiance uniquement.
 | `GET /translate?q&from&to` | publique | — | Traduction MyMemory (RGPD) |
 | `GET /wiki?title&lang` | publique | — | Résumé Wikipedia |
 | `GET /pwned?prefix` | publique | — | Pwned Passwords (k-anonymity) |
-| `POST /ai` | origine | GEMINI/GROQ/OPENROUTER/MISTRAL/COHERE… | Chat IA failover |
+| `GET /entreprise?q` | publique | — | Recherche entreprise FR (SIREN/SIRET) |
+| `GET /adresse?q` | publique | — | Autocomplete adresse FR (BAN) |
+| `GET /iban?value` | publique | — | Validation IBAN (openiban) |
+| `GET /vat?country&number` | publique | — | Validation TVA UE (VIES) |
+| `GET /crypto?ids&vs` | publique | — | Prix crypto CoinGecko (keyless) |
+| `POST /ai` | origine | aucune requise* | Chat IA failover + **Workers AI** |
 | `GET\|POST /search?q` | origine | TAVILY / BRAVE | Recherche web |
 | `GET /finance?symbol` | origine | FINNHUB | Cours bourse |
 | `GET /images?q` | origine | PEXELS | Photos |
@@ -35,6 +40,10 @@ ou `localhost` (le navigateur force cet en-tête, non falsifiable en JS front). 
 publiques (déjà gratuites/anonymes) tolèrent `*`.
 
 **Fail-open** : une route dont la clé manque renvoie `501` clair — jamais de crash.
+
+*\* `/ai` a un **fallback Cloudflare Workers AI** (binding `env.AI`, `wrangler.toml [ai]`) :
+l'IA répond **sans aucun compte provider externe ni KYC** — juste ton compte Cloudflare.
+Chaîne complète : GEMINI → GROQ → OPENROUTER → MISTRAL → COHERE → … → **Workers AI**.
 
 ## Sécurité (règle SÉCURITÉ MAXIMALE PARTOUT)
 

@@ -60,6 +60,11 @@
     translate: function (params) { return req('translate', { params: params }); },
     wiki: function (params) { return req('wiki', { params: params }); },
     pwned: function (params) { return req('pwned', { params: params }); },
+    entreprise: function (params) { return req('entreprise', { params: params }); },
+    adresse: function (params) { return req('adresse', { params: params }); },
+    iban: function (params) { return req('iban', { params: params }); },
+    vat: function (params) { return req('vat', { params: params }); },
+    crypto: function (params) { return req('crypto', { params: params }); },
     // Keyed (origine de confiance requise → marche sur *.kd-mc.com)
     ai: function (body) { return req('ai', { body: body }); },
     search: function (params) { return req('search', { params: params }); },

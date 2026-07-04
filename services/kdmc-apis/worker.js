@@ -108,6 +108,15 @@ export const KEYLESS = {
     const title = enc(p.get('title') || '');
     return `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${title}`;
   },
+  // Recherche d'entreprise FR (SIREN/SIRET, dirigeants). /entreprise?q=SBM&per_page=5
+  entreprise: (p) =>
+    `https://recherche-entreprises.api.gouv.fr/search?q=${enc(p.get('q') || '')}&page=1&per_page=${enc(p.get('per_page') || '5')}`,
+  // Autocomplete adresse FR — Base Adresse Nationale. /adresse?q=1+av+monte-carlo&limit=5
+  adresse: (p) =>
+    `https://api-adresse.data.gouv.fr/search/?q=${enc(p.get('q') || '')}&limit=${enc(p.get('limit') || '5')}`,
+  // Prix crypto (CoinGecko keyless). /crypto?ids=bitcoin,ethereum&vs=eur
+  crypto: (p) =>
+    `https://api.coingecko.com/api/v3/simple/price?ids=${enc(p.get('ids') || 'bitcoin,ethereum')}&vs_currencies=${enc(p.get('vs') || 'eur')}`,
 };
 
 // Géoloc par IP : upstream spécial (chemin depuis l'IP de l'appelant). /geoip
@@ -136,6 +145,21 @@ async function handlePwned(p, origin) {
   } catch (e) {
     return err('pwned upstream failed', 502, origin, String(e && e.message));
   }
+}
+
+// Validation IBAN (openiban.com, sans clé ni compte). /iban?value=FR76...
+async function handleIban(p, origin) {
+  const raw = (p.get('value') || p.get('iban') || '').replace(/\s+/g, '').toUpperCase();
+  if (!/^[A-Z0-9]{5,34}$/.test(raw)) return err('IBAN invalide (format)', 400, origin);
+  return relay(`https://openiban.com/validate/${raw}?getBIC=true&validateBankCode=true`, {}, origin, 'iban');
+}
+
+// Validation TVA UE (VIES REST officiel, sans clé). /vat?country=FR&number=12345678901
+async function handleVat(p, origin) {
+  const cc = (p.get('country') || '').toUpperCase();
+  const num = (p.get('number') || '').replace(/[^0-9A-Za-z]/g, '');
+  if (!/^[A-Z]{2}$/.test(cc) || !num) return err('country (2 lettres) + number requis', 400, origin);
+  return relay(`https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${cc}/vat/${enc(num)}`, {}, origin, 'vat');
 }
 
 // ---------- KEYED : providers avec clé serveur (constructeurs PURS = testables) ----------
@@ -248,6 +272,19 @@ async function handleAi(request, env, origin) {
       tried.push({ provider, status: r.status, detail: (data && (data.error?.message || data.message)) || 'upstream error' });
     } catch (e) {
       tried.push({ provider, error: String(e && e.message) });
+    }
+  }
+  // Fallback ULTIME sans AUCUN compte provider externe ni KYC : Cloudflare Workers AI
+  // (binding env.AI). Marche même si zéro clé externe n'est configurée.
+  if (env.AI && (!opts.provider || opts.provider === 'workers-ai')) {
+    try {
+      const model = opts.model || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+      const out = await env.AI.run(model, { messages: opts.messages });
+      const text = (out && (out.response || (out.result && out.result.response))) || '';
+      if (text) return json({ ok: true, provider: 'workers-ai', model, text }, 200, origin);
+      tried.push({ provider: 'workers-ai', detail: 'réponse vide' });
+    } catch (e) {
+      tried.push({ provider: 'workers-ai', error: String(e && e.message) });
     }
   }
   return err('aucun provider IA disponible', 503, origin, tried);
@@ -380,8 +417,9 @@ export default {
         {
           ok: true,
           service: 'kdmc-apis',
-          keyless: Object.keys(KEYLESS).concat(['geoip', 'pwned']),
+          keyless: Object.keys(KEYLESS).concat(['geoip', 'pwned', 'iban', 'vat']),
           keyed: ['ai', 'search', 'finance', 'images', 'printify'],
+          workers_ai: !!env.AI,
           keys: keyStatus(env),
           ts: Date.now(),
         },
@@ -398,6 +436,8 @@ export default {
     }
     if (routeName === 'geoip') return handleGeoip(request, origin);
     if (routeName === 'pwned') return handlePwned(p, origin);
+    if (routeName === 'iban') return handleIban(p, origin);
+    if (routeName === 'vat') return handleVat(p, origin);
 
     // Routes keyed (clé serveur) : Origin de confiance OBLIGATOIRE (anti-abus).
     const keyed = ['ai', 'search', 'finance', 'images', 'printify'];
