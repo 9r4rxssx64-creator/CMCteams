@@ -17,6 +17,14 @@
     "time": { "method": "GET", "auth": "public", "params": "tz", "desc": "Heure/fuseau exact timeapi.io" },
     "translate": { "method": "GET", "auth": "public", "params": "q,from,to", "desc": "Traduction MyMemory (RGPD)" },
     "wiki": { "method": "GET", "auth": "public", "params": "title,lang", "desc": "Résumé Wikipedia" },
-    "pwned": { "method": "GET", "auth": "public", "params": "prefix", "desc": "Pwned Passwords k-anonymity (mdp fuité)" }
+    "pwned": { "method": "GET", "auth": "public", "params": "prefix", "desc": "Pwned Passwords k-anonymity (mdp fuité)" },
+    "entreprise": { "method": "GET", "auth": "public", "params": "q,per_page", "desc": "Recherche entreprise FR (SIREN/SIRET)" },
+    "adresse": { "method": "GET", "auth": "public", "params": "q,limit", "desc": "Autocomplete adresse FR (BAN)" },
+    "iban": { "method": "GET", "auth": "public", "params": "value", "desc": "Validation IBAN (openiban)" },
+    "vat": { "method": "GET", "auth": "public", "params": "country,number", "desc": "Validation TVA UE (VIES)" },
+    "crypto": { "method": "GET", "auth": "public", "params": "ids,vs", "desc": "Prix crypto CoinGecko (keyless)" }
+  },
+  "notes": {
+    "no_kyc": "Toutes les routes 'public' = 0 compte, 0 clé, 0 KYC. /ai a un fallback Cloudflare Workers AI = 0 compte provider externe."
   }
 }

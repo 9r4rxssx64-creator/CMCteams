@@ -37,17 +37,28 @@ Chaque app charge `/CMCteams/tools/shared/free-apis-client.js` puis appelle `Kdm
 - [ ] **Chez Lolo / Shops** : `fx()` prix €↔$ · `printify()` blueprints (résout le TODO catalogue) · `images()`.
 - [ ] **Portail / dashboard kd-mc.com** : `health()` page d'état des apps · `pwned()`.
 
-## 🟢 Priorité 4 — extensions passerelle (JE peux ajouter, sans clé)
+## 🟢 Priorité 4 — extensions passerelle keyless
 
-APIs gratuites keyless à brancher dans le worker (aucune clé, aucun compte) :
+- [x] `/entreprise` — [Recherche d'entreprises gouv.fr](https://recherche-entreprises.api.gouv.fr/docs/) ✅ FAIT
+- [x] `/adresse` — [Base Adresse Nationale](https://adresse.data.gouv.fr/api-doc/adresse) ✅ FAIT
+- [x] `/iban` — [openiban.com](https://openiban.com/) ✅ FAIT
+- [x] `/vat` — [VIES](https://ec.europa.eu/taxation_customs/vies/) ✅ FAIT
+- [x] `/crypto` — [CoinGecko keyless](https://www.coingecko.com/learn/best-free-crypto-api) ✅ FAIT
+- [ ] `/reputation` — proxifier Malwarebytes ScamGuard (MCP) → scan liens partagés.
+- [ ] `/rss` — proxy RSS **avec allowlist de domaines** (anti-SSRF) → veille Monaco/SBM.
 
-- [ ] `/entreprise` — [API Recherche d'entreprises gouv.fr](https://recherche-entreprises.api.gouv.fr/docs/) (SIREN/SIRET, sans clé, 7 req/s) → fiches pro.
-- [ ] `/adresse` — [Base Adresse Nationale (BAN)](https://adresse.data.gouv.fr/api-doc/adresse) (autocomplete adresse FR, sans clé).
-- [ ] `/iban` — [openiban.com](https://openiban.com/) (validation IBAN, sans clé) → vérif RIB.
-- [ ] `/vat` — [VIES](https://ec.europa.eu/taxation_customs/vies/) (validation TVA UE) → factures Shops.
-- [ ] `/crypto` — [CoinGecko Demo](https://www.coingecko.com/learn/best-free-crypto-api) (keyless) → module crypto Apex.
-- [ ] `/reputation` — proxifier [Malwarebytes ScamGuard] (dispo en MCP) → scan liens partagés.
-- [ ] `/rss` — proxy flux RSS (actus Monaco / SBM) → veille.
+## 🆓 Solution comptes providers / KYC (répondu 2026-07-04)
+
+**Aucune de ces APIs gratuites ne demande de KYC** (le KYC = bancaire : Stripe/banque, pas ici).
+Trois niveaux, du + autonome au + de friction :
+
+1. **0 compte, 0 clé, 0 KYC** — toutes les routes `public` (météo, jours fériés, taux, géo,
+   adresse, entreprise, IBAN, TVA, crypto, traduction, wiki, pwned). Déjà en place, marchent seules.
+2. **0 compte provider, 0 KYC — IA incluse** — `/ai` bascule sur **Cloudflare Workers AI**
+   (ton compte Cloudflare existant, binding `env.AI`). L'IA répond même sans une seule clé externe.
+3. **Signup email uniquement (pas de KYC, pas de CB)** — pour Gemini/Groq/OpenRouter/Cohere/
+   Mistral/Brave/Resend : juste un email + copier la clé (1 fois). Aucune vérification d'identité.
+   → JE prépare les liens 1-clic ; TOI tu colles la clé dans les Secrets. C'est le seul geste manuel.
 
 ## 🔵 Priorité 5 — mesure & robustesse
 

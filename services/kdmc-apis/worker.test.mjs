@@ -151,3 +151,42 @@ test('pwned : prefix invalide → 400', async () => {
   const r = await call('/pwned?prefix=zz', { headers: { Origin: 'https://kd-mc.com' } });
   assert.equal(r.status, 400);
 });
+
+test('KEYLESS.entreprise/adresse/crypto : URLs gouv.fr + coingecko', () => {
+  assert.ok(KEYLESS.entreprise(new URLSearchParams('q=SBM')).startsWith('https://recherche-entreprises.api.gouv.fr/search?q=SBM'));
+  assert.ok(KEYLESS.adresse(new URLSearchParams('q=monaco')).startsWith('https://api-adresse.data.gouv.fr/search/?q=monaco'));
+  assert.ok(KEYLESS.crypto(new URLSearchParams('ids=bitcoin&vs=eur')).includes('ids=bitcoin') );
+});
+
+test('/iban : format invalide → 400', async () => {
+  const r = await call('/iban?value=xx', { headers: { Origin: 'https://kd-mc.com' } });
+  assert.equal(r.status, 400);
+});
+
+test('/vat : country/number manquants → 400', async () => {
+  const r = await call('/vat?country=FR', { headers: { Origin: 'https://kd-mc.com' } });
+  assert.equal(r.status, 400);
+});
+
+test('/health : liste iban/vat/entreprise + flag workers_ai', async () => {
+  const r = await call('/health');
+  const b = await r.json();
+  assert.ok(b.keyless.includes('iban'));
+  assert.ok(b.keyless.includes('vat'));
+  assert.ok(b.keyless.includes('entreprise'));
+  assert.equal(b.workers_ai, false); // pas de binding AI en test
+});
+
+test('/ai : fallback Workers AI SANS clé externe (env.AI mock) → 200', async () => {
+  const fakeAI = { run: async () => ({ response: 'salut depuis Workers AI' }) };
+  const r = await call('/ai', {
+    method: 'POST',
+    headers: { Origin: 'https://apex-ai.kd-mc.com', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: 'coucou' }] }),
+    env: { AI: fakeAI }, // aucune clé externe, juste le binding Cloudflare
+  });
+  assert.equal(r.status, 200);
+  const b = await r.json();
+  assert.equal(b.provider, 'workers-ai');
+  assert.ok(b.text.includes('Workers AI'));
+});

@@ -10,6 +10,11 @@ routes = [
   { pattern = "apis.kd-mc.com", custom_domain = true },
 ]
 
-# Aucun binding (KV/D1) : le worker est un pur relais sans état. Rate-limit best-effort
-# assuré par Cloudflare + les quotas des upstreams. Les clés sont posées en secrets par
-# le workflow deploy-kdmc-apis.yml (jamais dans ce fichier).
+# Binding Workers AI : LLM (Llama 3.3…) SANS aucun compte provider externe ni KYC.
+# Fallback ultime de /ai → l'IA marche même avec zéro clé externe configurée.
+# [ai] est une TABLE → placée APRÈS `routes` (règle TOML scoping kdmc-router).
+[ai]
+binding = "AI"
+
+# Pas de KV/D1 : worker = pur relais sans état. Rate-limit best-effort via quotas
+# upstream. Les clés externes sont posées en secrets par deploy-kdmc-apis.yml.
