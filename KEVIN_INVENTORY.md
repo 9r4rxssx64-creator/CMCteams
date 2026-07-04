@@ -3,18 +3,20 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-07-04** (World Monitor v2.11 + OSINT v2.1 live + Cloneur + fix sandbox)
 
-## 🌍 World Monitor + 🔎 OSINT live — session 2026-07-04 (mergé sur main)
+## 🌍 World Monitor v2.12 + 🔎 OSINT v2.1 live — session 2026-07-04 (mergé sur main)
 
 **Pages (kd-mc.com) :**
-- 🌍 [World Monitor](https://kd-mc.com/worldmonitor/) — `kdmc-home/worldmonitor/index.html`
-- 🔎 [OSINT live](https://kd-mc.com/osint/) — `kdmc-home/osint/index.html`
+- 🌍 [World Monitor v2.12](https://kd-mc.com/worldmonitor/) — `kdmc-home/worldmonitor/index.html` — carte live tout-en-un : ✈️ avions · 🚢 **navires (AIS Digitraffic)** · 🔴 séismes · 🔥 feux · 🌋 volcans · 🌀 tempêtes · ⚓ détroits · 🛰️ ISS · 🛰️ **fond satellite (Esri)** ; couches pilotées par **puces sous la carte** (plus de boîte sur la carte) ; globe Blue Marble.
+- 🔎 [OSINT v2.1 live](https://kd-mc.com/osint/) — `kdmc-home/osint/index.html` — KPI live + carte 6 couches + Windy + 64 outils curés.
 - 🧬 [Cloneur de sites](https://kd-mc.com/clone/) — `kdmc-home/clone/index.html`
 
-**Workers Cloudflare :** `tools/cloudflare/kdmc-clone/` (clone), `tools/cloudflare/wm-brief/` (synthèse IA Haiku).
+**Sources live gratuites SANS clé (à réutiliser) :** avions `api.adsb.lol/v2/point/{lat}/{lon}/{nm}` (repli airplanes.live) · **navires** `meri.digitraffic.fi/api/ais/v1/locations` (AIS Baltique) · séismes `earthquake.usgs.gov/.../all_day.geojson` · feux/volcans/tempêtes `eonet.gsfc.nasa.gov/api/v3/events?category=` · ISS `api.wheretheiss.at` · CVE `cve.circl.lu/api/last` (CORS OK, préférer à Shodan) · **fond satellite** `server.arcgisonline.com/.../World_Imagery` · carte sombre CARTO.
+
+**Workers Cloudflare :** `tools/cloudflare/kdmc-clone/` (clone/anti-CORS), `tools/cloudflare/wm-brief/` (synthèse IA Haiku).
 
 **Apex :** outils natifs `clone_site` + `osint_tools` (`services/apex-tools-registry/web-tools.ts`, `services/apex-tools-dispatch/utils-misc.ts`).
 
-**Vérif sandbox (leçon #124) :** `tools/smoke/pages-smoke.mjs` + `.github/workflows/pages-smoke.yml` (smoke PROD réel).
+**Vérif sandbox (leçon #126) :** `tools/smoke/pages-smoke.mjs` + `.github/workflows/pages-smoke.yml` (smoke PROD réel, tolère le bruit console CORS). Leaflet local via `npm install leaflet` pour vérifier la carte hors-ligne dans Playwright.
 
 ---
 
