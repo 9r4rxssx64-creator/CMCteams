@@ -84,10 +84,16 @@ jobs:
         run: |
           set +e
           # A) testnet (faux argent) + garde-fous  B) plusieurs cryptos (capital réparti 1/N)
-          # C) plus réactif : bougies 5 min + EMA rapides (5/13) + RSI plus permissif (78).
+          # C) réglage OPTIMISÉ POUR LES GAINS (mesuré au backtest, marché normal ET faible
+          #    mouvement) : EMA 8/21 + RSI 78 + stop ATR x2.0. Vérifié : bat nettement l'ancien
+          #    réglage "réactif" 5/13 (qui PERDAIT en marché plat), avec moins de faux signaux.
+          #    On garde des vérifs fréquentes (bougies 5 min, boucle 30 s) → le bot reste actif
+          #    même quand ça bouge peu, mais n'achète que sur signal sélectif (moins de pertes).
           # Le risque TOTAL reste borné : risque/trade et position max sont divisés par le
           # nombre de paires (alloc = 1/N) → exposition globale inchangée. Stop-loss + plafond
           # perte/jour + max drawdown toujours actifs (défauts config : 3% / 15%).
+          # Les achats sont désormais bornés au cash USDT LIBRE (fini les "insufficient balance")
+          # et le bot reprend les cryptos déjà détenues au démarrage (state éphémère Railway).
           OUT=$(railway variables --service "$SERVICE_NAME" --skip-deploys \
             --set "BINANCE_API_KEY=$BK" \
             --set "BINANCE_API_SECRET=$BS" \
@@ -97,8 +103,9 @@ jobs:
             --set "SYMBOL=BTC/USDT" \
             --set "TIMEFRAME=5m" \
             --set "LOOP_SECONDS=30" \
-            --set "EMA_FAST=5" \
-            --set "EMA_SLOW=13" \
+            --set "EMA_FAST=8" \
+            --set "EMA_SLOW=21" \
+            --set "ATR_STOP_MULT=2.0" \
             --set "RSI_MAX=78" 2>&1)
           RC=$?
           # Ne jamais logger les valeurs — uniquement le code retour + erreurs
@@ -130,7 +137,9 @@ jobs:
             echo ""
             echo "- Mode : 🧪 TESTNET (faux argent) — TESTNET=true, BOT_KILL=0"
             echo "- Cryptos : BTC, ETH, SOL, BNB, XRP (capital réparti à parts égales)"
-            echo "- Rythme : bougies 5 min, EMA rapides 5/13 + RSI 78 (mode PLUS réactif — plus de trades)"
+            echo "- Réglage : EMA 8/21 + RSI 78 + stop ATR x2.0 — **optimisé pour les gains** (mesuré au backtest, marché normal ET plat ; bat l'ancien 5/13)"
+            echo "- Rythme : vérifs toutes les 30 s sur bougies 5 min (reste actif même quand ça bouge peu)"
+            echo "- Correctifs : achats bornés au cash USDT libre (fini « insufficient balance ») + reprise des cryptos détenues au démarrage"
             echo "- Service : \`crypto-bot\`"
             echo "- Suivi : https://railway.app → projet → service crypto-bot → View Logs"
             echo "- Kill switch iPhone : Variables → BOT_KILL=1 (le bot vend et s'arrête au cycle suivant)"

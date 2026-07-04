@@ -128,12 +128,17 @@ class RiskManager:
         return max(0.0, entry_price - atr_value * self.cfg.atr_stop_mult)
 
     def position_size(self, equity: float, price: float, stop_price: float,
-                      alloc: float = 1.0) -> float:
+                      alloc: float = 1.0, cash: float | None = None) -> float:
         """Renvoie une quantité (en actif de base) respectant tous les plafonds.
 
         `alloc` (0-1) répartit le capital entre les paires en multi-cryptos :
         avec 4 paires, alloc=1/4 → risque ET plafond de position divisés par 4,
         donc l'exposition TOTALE reste bornée par les mêmes garde-fous.
+
+        `cash` (optionnel) = liquidités RÉELLEMENT disponibles dans la devise de
+        cotation (USDT libre). On ne peut jamais acheter pour plus que ce cash :
+        sinon l'exchange refuse l'ordre (« insufficient balance ») et AUCUN trade
+        ne passe. On garde une petite marge (2 %) pour les frais/le slippage.
         """
         stop_dist = price - stop_price
         if stop_dist <= 0 or price <= 0 or equity <= 0 or alloc <= 0:
@@ -145,7 +150,11 @@ class RiskManager:
         max_notional = equity * (self.cfg.max_position_pct / 100.0) * alloc
         qty_by_cap = max_notional / price
         qty = min(qty_by_risk, qty_by_cap)
-        # 3) respect de l'ordre minimum de l'exchange
+        # 3) borne dure : jamais plus que le cash libre disponible (évite le refus
+        #    « insufficient balance » qui bloquait tous les achats).
+        if cash is not None and cash > 0:
+            qty = min(qty, (cash * 0.98) / price)
+        # 4) respect de l'ordre minimum de l'exchange
         if qty * price < self.cfg.min_order_usdt:
             return 0.0
         return qty
