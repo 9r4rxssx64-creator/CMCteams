@@ -244,7 +244,35 @@ function buildSummary(report: Omit<VaultDiagnosticReport, 'summary' | 'recommend
   } else {
     parts.push(`🌐 Cloudflare proxy KO (${cf.error ?? 'unreachable'})`);
   }
+  /* v13.4.339 (Kevin « Toutes les IA KO » + badge openai) — leçon #97 : afficher
+   * le DERNIER ÉCHEC EXACT par provider IA (message + HTTP), capturé par ai-router
+   * au moment réel de l'échec. C'est la donnée qui manquait pour diagnostiquer
+   * pourquoi anthropic échoue sur CE device alors que le serveur répond 200. */
+  try {
+    const fails = formatLastAiFailsSafe();
+    if (fails.length > 0) {
+      parts.push(`🧨 Derniers échecs IA : ${fails.join(' | ')}`);
+    }
+  } catch { /* ignore */ }
   return parts.join(' · ');
+}
+
+/** Import sync-safe du formateur (module léger, pas de dépendance circulaire). */
+function formatLastAiFailsSafe(): string[] {
+  try {
+    const raw = localStorage.getItem('apex_v13_last_ai_fail');
+    if (!raw) return [];
+    const map = JSON.parse(raw) as Record<string, { ts: number; msg: string; status?: number }>;
+    const out: string[] = [];
+    for (const [provider, f] of Object.entries(map)) {
+      const ageMin = Math.max(0, Math.round((Date.now() - f.ts) / 60_000));
+      const http = typeof f.status === 'number' ? `HTTP ${f.status} — ` : '';
+      out.push(`${provider} (il y a ${ageMin} min) : ${http}${f.msg.slice(0, 220)}`);
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 function buildRecommendations(
@@ -348,6 +376,16 @@ export async function runVaultDiagnostic(): Promise<VaultDiagnosticReport> {
   };
   const summary = buildSummary(partial);
   const recommendations = buildRecommendations(partial);
+  /* v13.4.339 self-heal : le proxy est 🟢 et couvre anthropic → efface les marques
+   * DEAD (ai-key-rotation) pour retenter Anthropic AU PROCHAIN MESSAGE au lieu
+   * d'attendre l'expiration TTL 1h. Lancer le Diagnostic = « redonne sa chance ». */
+  if (cfLayer.reachable && cfLayer.providers.includes('anthropic')) {
+    try {
+      const { aiKeyRotation } = await import('../ai/ai-key-rotation.js');
+      aiKeyRotation.clearAllDead();
+      logger.info('vault-diag', 'proxy 🟢 → marques DEAD effacées (Anthropic retenté au prochain message)');
+    } catch { /* ignore */ }
+  }
   logger.info('vault-diag', `${summary}`, {
     local: local.total,
     fb: fbLayer.backup_count,

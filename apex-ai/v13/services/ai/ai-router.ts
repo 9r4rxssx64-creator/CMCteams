@@ -1273,6 +1273,14 @@ class AIRouter {
       const serviceName = this.providerToService(provider);
       if (aiKeyRotation.isProviderDead(serviceName)) {
         logger.info('ai-router', `${provider} skipped (DEAD until ${new Date(aiKeyRotation.getDeadUntil(serviceName)).toISOString()})`);
+        /* v13.4.339 diag : trace le skip DEAD (visible Diagnostic Coffre) SANS écraser
+         * le message d'échec ORIGINEL (celui qui a causé la marque DEAD) s'il existe. */
+        try {
+          const { getLastAiFails, recordLastAiFail } = await import('./last-ai-fail.js');
+          if (!getLastAiFails()[provider]) {
+            recordLastAiFail(provider, `skip DEAD jusqu'à ${new Date(aiKeyRotation.getDeadUntil(serviceName)).toLocaleTimeString()} (échec originel non capturé — antérieur à v339)`);
+          }
+        } catch { /* ignore */ }
         return { status: 'error', error: new Error(`${provider} DEAD (provider marked unhealthy)`) };
       }
     } catch {
@@ -1303,11 +1311,18 @@ class AIRouter {
           } catch {
             /* ignore */
           }
+          /* v13.4.339 diag : succès → efface le dernier échec (entrée jamais périmée) */
+          try { (await import('./last-ai-fail.js')).clearLastAiFail(provider); } catch { /* ignore */ }
           return { status: 'ok', streamResult, provider };
         } catch (err: unknown) {
           const e = err instanceof Error ? err : new Error(String(err));
           if (e.name === 'AbortError') return { status: 'aborted' };
           lastErr = e;
+          /* v13.4.339 diag : capture l'échec EXACT (message + status) → Diagnostic Coffre */
+          try {
+            const { recordLastAiFail } = await import('./last-ai-fail.js');
+            recordLastAiFail(provider, e.message, this.parseHttpStatus(e.message));
+          } catch { /* ignore */ }
 
           /* Classifie pour décider rotate vs backoff */
           let shouldBackoff = false;
@@ -1384,11 +1399,18 @@ class AIRouter {
         } catch {
           /* ignore */
         }
+        /* v13.4.339 diag : succès → efface le dernier échec */
+        try { (await import('./last-ai-fail.js')).clearLastAiFail(provider); } catch { /* ignore */ }
         return { status: 'ok', streamResult, provider };
       } catch (err: unknown) {
         const e = err instanceof Error ? err : new Error(String(err));
         if (e.name === 'AbortError') return { status: 'aborted' };
         lastErr = e;
+        /* v13.4.339 diag : capture l'échec EXACT (message + status) → Diagnostic Coffre */
+        try {
+          const { recordLastAiFail } = await import('./last-ai-fail.js');
+          recordLastAiFail(provider, e.message, this.parseHttpStatus(e.message));
+        } catch { /* ignore */ }
         /* Record fail mais sans rotation (pas de keyId multi-key dispo) */
         try {
           const { aiKeyRotation } = await import('./ai-key-rotation.js');
