@@ -3,10 +3,17 @@
 > Session « globe live → OSINT live » + intégration OSINT4ALL + fix sandbox. Tout mergé sur le vrai `main` (vérifié via API GitHub).
 
 ## Livré 2026-07-04 (tout mergé sur `main`, Pages déployé)
-- **World Monitor v2.11** — globe Blue Marble live, carte Leaflet multi-couches, 4 bricks (CVE/feux/détroits/brief IA), synthèse IA (worker `wm-brief`), fix caméras (Erreur 153) + news/CVE (replis Reddit/CIRCL), panneau « 🔎 OSINT accès rapide ».
-- **OSINT hub → v2.1** (`kdmc-home/osint/`) — de « liste de liens » à **centre live** : fix header masqué (safe-area-inset-top, leçon #103) ; **KPI EN DIRECT** (Vols/Séismes/Feux/CVE) ; **carte Leaflet 6 couches** (vols · séismes · feux · volcans · tempêtes · détroits, avec sélecteur) rendue par nous (aucun blocage iframe) ; embed Windy ; 64 outils curés OSINT4ALL + tuile accueil.
-- **Cloneur de sites** (`kdmc-home/clone/` + worker `kdmc-clone`) — lit/extrait/clone toute page (fetch serveur, anti-CORS). **Apex** : outils natifs `clone_site` + `osint_tools` (gate complet vert 610 fichiers / 12 236 tests).
-- **FIX SANDBOX (leçon #126)** — le proxy agent autorise `registry.npmjs.org` → `npm install leaflet` local + servi dans Playwright = **carte vérifiée pour de vrai** (24 marqueurs, 6 couches, _mapOk). + **smoke CI** `pages-smoke.yml` (vrai Chromium runner) vérifie la PROD (tuiles, KPIs, 0 erreur).
+- **World Monitor → v2.12** (`kdmc-home/worldmonitor/`) = LE tableau de bord unique qui additionne TOUT le live (Kevin « additionne tout le live OSINT dans Monitor ») :
+  - **🚢 Navires en direct** — AIS **Digitraffic** (`meri.digitraffic.fi/api/ais/v1/locations`, ouvert **sans clé**, CORS OK ; couverture Baltique/Finlande = seule vraie source AIS live gratuite sans clé).
+  - **🛰️ Fond satellite** — **Esri World Imagery** (`server.arcgisonline.com/.../World_Imagery`, sans clé) togglable ↔ sombre CARTO (« visuels cartes/maps »).
+  - **Boîte de couches retirée de SUR la carte** (Kevin « enlève les choix du milieu de la carte ») → tout piloté par les **puces sous la carte** (Vols·Navires·Séismes·Feux·Volcans·Tempêtes·Détroits·ISS·Satellite), Carte comme Globe.
+  - **CVE** : CIRCL en 1er (CORS OK), Shodan en repli → fin du bruit console CORS.
+  - déjà : globe Blue Marble, avions (adsb.lol), séismes (USGS), feux/volcans/tempêtes (EONET), détroits/tensions, synthèse IA (`wm-brief`), fix caméras Erreur 153, panneau « 🔎 OSINT accès rapide ».
+- **OSINT hub → v2.1** (`kdmc-home/osint/`) — de « liste de liens » à **centre live** : fix header masqué (safe-area-inset-top, #103) ; **KPI EN DIRECT** ; **carte Leaflet 6 couches** rendue par nous (aucun blocage iframe) ; embed Windy ; 64 outils curés OSINT4ALL + tuile accueil. *(prod prouvé par smoke : 10 tuiles, 328 marqueurs, KPIs 31/208/40/30)*.
+- **Cloneur de sites** (`kdmc-home/clone/` + worker `kdmc-clone`) — lit/extrait/clone toute page (fetch serveur, anti-CORS). **Apex** : outils natifs `clone_site` + `osint_tools` (gate vert 610 fichiers / 12 236 tests).
+- **FIX SANDBOX (leçon #126)** — proxy agent autorise `registry.npmjs.org` → `npm install leaflet` local + servi dans Playwright = **carte vérifiée pour de vrai** (v2.12 : navires rendus, 9 puces, 0 boîte sur carte, satellite OK, 0 exception). + **smoke CI** `pages-smoke.yml` (vrai Chromium runner) vérifie la PROD ; assoupli pour ne PAS casser sur le bruit console CORS d'une source de repli.
+- **Idée cloneur (Kevin)** : bon outil pour les sources **CORS-bloquées** (fetch serveur via worker) ; évité ici en choisissant des APIs nativement CORS-OK. Cartes **iframe-bloquées** (FR24/MarineTraffic) ≠ transformables en données → on dessine nos propres couches.
+- **Branches** : cleanup-stale-branches + branch-coordinator relancés.
 
 ---
 
