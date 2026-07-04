@@ -54,5 +54,24 @@ jobs:
           call "OPENAI (contrôle — marche dans l'app)" "/openai/v1/chat/completions" \
             '{"model":"gpt-4o-mini","max_tokens":8,"messages":[{"role":"user","content":"ping"}]}'
 
+          echo "== ANTHROPIC APP-LIKE (stream + system cache_control + tools — le body EXACT du chat) =="
+          OUT=$(curl -sS -m 30 -w '\n__HTTP:%{http_code}__' -X POST "$W/anthropic/v1/messages" \
+            -H "content-type: application/json" \
+            -H "x-apex-pin: $PIN_SHA" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "anthropic-dangerous-direct-browser-access: true" \
+            -H "origin: https://apex-ai.kd-mc.com" \
+            --data '{"model":"claude-sonnet-4-6","max_tokens":32,"stream":true,"system":[{"type":"text","text":"Tu es APEX, assistant de test.","cache_control":{"type":"ephemeral"}}],"messages":[{"role":"user","content":[{"type":"text","text":"ping","cache_control":{"type":"ephemeral"}}]}],"tools":[{"name":"get_time","description":"Heure actuelle","input_schema":{"type":"object","properties":{},"required":[]}}]}')
+          CODE=$(printf '%s' "$OUT" | grep -o '__HTTP:[0-9]*__' | tr -dc '0-9')
+          printf '%s' "$OUT" | sed 's/__HTTP:[0-9]*__//' | head -c 700 | redact; echo
+          echo ">>> ANTHROPIC APP-LIKE (stream+tools) HTTP $CODE"; echo
+
+          echo "== PRÉFLIGHT CORS exact du navigateur (OPTIONS) =="
+          curl -sS -m 15 -X OPTIONS "$W/anthropic/v1/messages" \
+            -H "origin: https://apex-ai.kd-mc.com" \
+            -H "access-control-request-method: POST" \
+            -H "access-control-request-headers: content-type,x-apex-pin,anthropic-version,anthropic-dangerous-direct-browser-access" \
+            -D - -o /dev/null | grep -iE "^HTTP|access-control" | head -8
+
           echo "Diag terminé — lire les >>> lignes HTTP ci-dessus."
           exit 0
