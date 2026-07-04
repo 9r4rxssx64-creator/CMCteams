@@ -17,10 +17,15 @@ const DB = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.ap
 const ROOT = path.resolve(__dirname, '..', '..');
 const RULES_FILE = path.join(ROOT, 'firebase-rules-apex.json');
 const STATE = (process.env.RULES_STATE || 'hardened').toLowerCase();
+// Durcissement /apex + /coffre_vault (Kevin 2026-07-04 « Durci ») :
+// 'hardened' (défaut) = auth != null (état du fichier) | 'open' = rollback lecture/écriture libres.
+const APEX_STATE = (process.env.APEX_STATE || 'hardened').toLowerCase();
 // Lockdown shops par rôle : 'on' applique les .write role:admin aux écritures admin
 // (products/logos/selection) depuis le bloc _phase_shops_rolelock. 'off' = écriture
 // anon+validation actuelle (n'affecte JAMAIS les commandes clients ni les lectures).
-const SHOPS_LOCK = (process.env.SHOPS_LOCK || 'off').toLowerCase();
+// 'keep' (défaut) = préserve l'état LIVE actuel du lock shops (lu avant publication)
+// → re-déclencher ce workflow pour /cmcteams ou /apex ne change JAMAIS les shops par accident.
+const SHOPS_LOCK = (process.env.SHOPS_LOCK || 'keep').toLowerCase();
 
 function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 
@@ -78,9 +83,28 @@ async function getAccessToken(){
   } else {
     console.log('🔒 HARDEN : /cmcteams .read/.write = ' + JSON.stringify(rules.cmcteams['.read']));
   }
-  // Lockdown shops par rôle (custom-token) — applique les .write role:admin si SHOPS_LOCK=on.
+  const token = await getAccessToken();
+  console.log('✅ access_token obtenu');
+
+  // SHOPS_LOCK=keep → lire l'état LIVE et le préserver (anti-régression : un run
+  // déclenché pour durcir /apex ne doit pas rouvrir un lock shops déjà actif).
+  let shopsLock = SHOPS_LOCK;
+  if (shopsLock === 'keep') {
+    try {
+      const cur = await fetch(DB + '/.settings/rules.json?access_token=' + encodeURIComponent(token)).then(r => r.json());
+      const w = cur && cur.rules && cur.rules.shops_admin_v1 && cur.rules.shops_admin_v1.products
+        && cur.rules.shops_admin_v1.products.$shop && cur.rules.shops_admin_v1.products.$shop.$id
+        && cur.rules.shops_admin_v1.products.$shop.$id['.write'];
+      shopsLock = /role/.test(String(w || '')) ? 'on' : 'off';
+      console.log('🔎 SHOPS_LOCK=keep → état live détecté : ' + shopsLock);
+    } catch (e) {
+      throw new Error('SHOPS_LOCK=keep : lecture des règles live impossible (' + e.message + '), abort (ne pas publier à l\'aveugle)');
+    }
+  }
+
+  // Lockdown shops par rôle (custom-token) — applique les .write role:admin si lock actif.
   // N'altère QUE products/logos/selection ; orders + lectures intacts.
-  if (SHOPS_LOCK === 'on') {
+  if (shopsLock === 'on') {
     const lock = doc._phase_shops_rolelock && doc._phase_shops_rolelock.writes;
     if (!lock) throw new Error('SHOPS_LOCK=on mais bloc _phase_shops_rolelock.writes absent, abort');
     const setWrite = (dotPath, val) => {
@@ -96,12 +120,20 @@ async function getAccessToken(){
   } else {
     console.log('🛟 SHOPS_LOCK=off : écriture shops anon+validation (inchangé)');
   }
-  // garde-fou : ne JAMAIS toucher apex/coffre/deny racine
+  // /apex + /coffre_vault : hardened (défaut, état du fichier = auth != null) ou rollback open
+  if (APEX_STATE === 'open') {
+    rules.apex['.read'] = true;
+    rules.apex['.write'] = true; // rollback = sémantique pré-durcissement (write au niveau parent)
+    rules.coffre_vault['.read'] = true;
+    rules.coffre_vault['.write'] = true;
+    console.log('⏪ ROLLBACK APEX : /apex + /coffre_vault .read/.write = true');
+  } else {
+    if (JSON.stringify(rules.apex['.read']) !== '"auth != null"') throw new Error('SECURITÉ : /apex .read attendu "auth != null" dans le fichier, abort');
+    if (JSON.stringify(rules.coffre_vault['.read']) !== '"auth != null"') throw new Error('SECURITÉ : /coffre_vault .read attendu "auth != null" dans le fichier, abort');
+    console.log('🔒 HARDEN : /apex + /coffre_vault .read/.write = auth != null');
+  }
+  // garde-fou : ne JAMAIS perdre le deny racine
   if (rules['.read'] !== false || rules['.write'] !== false) throw new Error('SECURITÉ : deny racine perdu, abort');
-  if (rules.apex['.read'] !== true) throw new Error('SECURITÉ : /apex modifié par erreur, abort');
-
-  const token = await getAccessToken();
-  console.log('✅ access_token obtenu');
 
   const put = await fetch(DB + '/.settings/rules.json?access_token=' + encodeURIComponent(token), {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -118,5 +150,27 @@ async function getAccessToken(){
   console.log('🔎 Vérif live : /cmcteams .read = ' + JSON.stringify(cr));
   const expect = STATE === 'open' ? true : 'auth != null';
   if (JSON.stringify(cr) !== JSON.stringify(expect)) throw new Error('Vérif KO : attendu ' + JSON.stringify(expect) + ', live ' + JSON.stringify(cr));
-  console.log('✅ Vérif OK — base ' + (STATE === 'open' ? 'rouverte' : 'fermée (auth requise)'));
+  const ar = live && live.rules && live.rules.apex && live.rules.apex['.read'];
+  const vr = live && live.rules && live.rules.coffre_vault && live.rules.coffre_vault['.read'];
+  console.log('🔎 Vérif live : /apex .read = ' + JSON.stringify(ar) + ' · /coffre_vault .read = ' + JSON.stringify(vr));
+  const expectApex = APEX_STATE === 'open' ? true : 'auth != null';
+  if (JSON.stringify(ar) !== JSON.stringify(expectApex)) throw new Error('Vérif KO /apex : attendu ' + JSON.stringify(expectApex) + ', live ' + JSON.stringify(ar));
+  if (JSON.stringify(vr) !== JSON.stringify(expectApex)) throw new Error('Vérif KO /coffre_vault : attendu ' + JSON.stringify(expectApex) + ', live ' + JSON.stringify(vr));
+
+  // Vérif COMPORTEMENTALE (lesson #95 : un état de règles ne prouve rien — tester
+  // un vrai appel) : GET anonyme sur chaque path durci → 401 attendu quand hardened.
+  async function anonProbe(path) {
+    const r = await fetch(DB + path + '.json?shallow=true');
+    return r.status;
+  }
+  const sApex = await anonProbe('/apex');
+  const sCoffre = await anonProbe('/coffre_vault');
+  const sCmc = await anonProbe('/cmcteams');
+  console.log('🔬 Probe anonyme : /apex=' + sApex + ' /coffre_vault=' + sCoffre + ' /cmcteams=' + sCmc);
+  if (APEX_STATE !== 'open') {
+    if (sApex === 200) throw new Error('DANGER : /apex lisible SANS auth malgré hardened, abort');
+    if (sCoffre === 200) throw new Error('DANGER : /coffre_vault lisible SANS auth malgré hardened, abort');
+  }
+  if (STATE !== 'open' && sCmc === 200) throw new Error('DANGER : /cmcteams lisible SANS auth malgré hardened, abort');
+  console.log('✅ Vérif OK — /cmcteams ' + (STATE === 'open' ? 'ouvert' : 'fermé') + ' · /apex + /coffre_vault ' + (APEX_STATE === 'open' ? 'ouverts' : 'fermés (auth requise)'));
 })().catch(e => { console.error('❌ ' + e.message); process.exit(1); });
