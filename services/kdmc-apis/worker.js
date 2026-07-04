@@ -162,6 +162,71 @@ async function handleVat(p, origin) {
   return relay(`https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${cc}/vat/${enc(num)}`, {}, origin, 'vat');
 }
 
+// RSS : proxy de flux avec ALLOWLIST de domaines (anti-SSRF — pas un proxy ouvert).
+// Étendre RSS_ALLOW pour autoriser d'autres sources (suffixes d'hôte).
+export const RSS_ALLOW = ['gouv.fr', 'gouv.mc', 'europa.eu', 'monaco.mc', 'legimonaco.mc', 'wikipedia.org', 'nature.com'];
+
+export function isRssAllowed(u) {
+  try {
+    const url = new URL(u);
+    if (url.protocol !== 'https:') return false;
+    const h = url.hostname.toLowerCase();
+    if (h === 'localhost' || /^127\.|^10\.|^192\.168\.|^169\.254\./.test(h)) return false;
+    return RSS_ALLOW.some((suf) => h === suf || h.endsWith('.' + suf));
+  } catch (_) {
+    return false;
+  }
+}
+
+async function handleRss(p, origin) {
+  const u = p.get('url') || '';
+  if (!u) return err('paramètre url requis', 400, origin);
+  if (!isRssAllowed(u)) return err('hôte non autorisé (ajouter à RSS_ALLOW)', 403, origin, u);
+  try {
+    const r = await fetch(u, { headers: { 'User-Agent': 'kdmc-apis (kd-mc.com)' } });
+    const text = await r.text();
+    return new Response(text.slice(0, 500000), {
+      status: r.status,
+      headers: { 'Content-Type': 'application/xml; charset=utf-8', ...corsHeaders(origin) },
+    });
+  } catch (e) {
+    return err('rss upstream indisponible', 502, origin, String(e && e.message));
+  }
+}
+
+// Réputation d'URL via Google Safe Browsing v4 (clé GOOGLE_API_KEY déjà en secret).
+async function handleReputation(request, env, origin) {
+  const url = new URL(request.url);
+  let target = url.searchParams.get('url') || '';
+  if (!target && request.method === 'POST') {
+    const b = await request.json().catch(() => ({}));
+    target = b.url || '';
+  }
+  if (!target) return err('paramètre url requis', 400, origin);
+  if (!env.GOOGLE_API_KEY) return err('GOOGLE_API_KEY manquant', 501, origin);
+  try {
+    const r = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${enc(env.GOOGLE_API_KEY)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client: { clientId: 'kdmc-apis', clientVersion: '1.0' },
+        threatInfo: {
+          threatTypes: ['MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
+          platformTypes: ['ANY_PLATFORM'],
+          threatEntryTypes: ['URL'],
+          threatEntries: [{ url: target }],
+        },
+      }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) return err('safebrowsing upstream', 502, origin, data);
+    const matches = data.matches || [];
+    return json({ ok: true, url: target, safe: matches.length === 0, verdict: matches.length ? 'malicious' : 'safe', matches }, 200, origin);
+  } catch (e) {
+    return err('reputation indisponible', 502, origin, String(e && e.message));
+  }
+}
+
 // ---------- KEYED : providers avec clé serveur (constructeurs PURS = testables) ----------
 // buildAiRequest : convertit {messages, model} vers le format de CHAQUE provider.
 // Chaîne de failover par défaut : gemini → groq → openrouter → mistral → cohere.
@@ -307,6 +372,7 @@ export function secretName(provider) {
     finnhub: 'FINNHUB_API_KEY',
     printify: 'PRINTIFY_API_KEY',
     resend: 'RESEND_API_KEY',
+    google: 'GOOGLE_API_KEY',
   };
   return map[provider] || '';
 }
@@ -392,7 +458,7 @@ async function relay(url, headers, origin, tag) {
 // Liste des clés présentes (health, sans révéler les valeurs).
 function keyStatus(env) {
   const out = {};
-  for (const prov of ['gemini', 'groq', 'openrouter', 'mistral', 'cohere', 'deepseek', 'together', 'xai', 'tavily', 'brave', 'pexels', 'finnhub', 'printify', 'resend']) {
+  for (const prov of ['gemini', 'groq', 'openrouter', 'mistral', 'cohere', 'deepseek', 'together', 'xai', 'tavily', 'brave', 'pexels', 'finnhub', 'printify', 'resend', 'google']) {
     out[prov] = !!env[secretName(prov)];
   }
   return out;
@@ -417,8 +483,8 @@ export default {
         {
           ok: true,
           service: 'kdmc-apis',
-          keyless: Object.keys(KEYLESS).concat(['geoip', 'pwned', 'iban', 'vat']),
-          keyed: ['ai', 'search', 'finance', 'images', 'printify'],
+          keyless: Object.keys(KEYLESS).concat(['geoip', 'pwned', 'iban', 'vat', 'rss']),
+          keyed: ['ai', 'search', 'finance', 'images', 'printify', 'reputation'],
           workers_ai: !!env.AI,
           keys: keyStatus(env),
           ts: Date.now(),
@@ -438,9 +504,10 @@ export default {
     if (routeName === 'pwned') return handlePwned(p, origin);
     if (routeName === 'iban') return handleIban(p, origin);
     if (routeName === 'vat') return handleVat(p, origin);
+    if (routeName === 'rss') return handleRss(p, origin);
 
     // Routes keyed (clé serveur) : Origin de confiance OBLIGATOIRE (anti-abus).
-    const keyed = ['ai', 'search', 'finance', 'images', 'printify'];
+    const keyed = ['ai', 'search', 'finance', 'images', 'printify', 'reputation'];
     if (keyed.includes(routeName)) {
       if (!isTrustedOrigin(origin)) {
         return err('origine non autorisée', 403, origin, 'Origin doit être *.kd-mc.com, Pages ou localhost');
@@ -450,6 +517,7 @@ export default {
       if (routeName === 'finance') return handleFinance(p, env, origin);
       if (routeName === 'images') return handleImages(p, env, origin);
       if (routeName === 'printify') return handlePrintify(path, env, origin);
+      if (routeName === 'reputation') return handleReputation(request, env, origin);
     }
 
     return err('route inconnue', 404, origin, path);

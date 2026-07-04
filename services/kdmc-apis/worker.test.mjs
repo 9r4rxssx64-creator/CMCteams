@@ -10,6 +10,8 @@ import worker, {
   extractAiText,
   secretName,
   AI_CHAIN,
+  isRssAllowed,
+  RSS_ALLOW,
 } from './worker.js';
 
 const ENV = {}; // aucune clé → teste le comportement fail-open
@@ -175,6 +177,29 @@ test('/health : liste iban/vat/entreprise + flag workers_ai', async () => {
   assert.ok(b.keyless.includes('vat'));
   assert.ok(b.keyless.includes('entreprise'));
   assert.equal(b.workers_ai, false); // pas de binding AI en test
+});
+
+test('isRssAllowed : allowlist (gouv.fr OK, evil.com KO, http KO, IP privée KO)', () => {
+  assert.equal(isRssAllowed('https://www.gouv.fr/rss.xml'), true);
+  assert.equal(isRssAllowed('https://legimonaco.mc/feed'), true);
+  assert.equal(isRssAllowed('https://evil.com/feed'), false);
+  assert.equal(isRssAllowed('http://www.gouv.fr/feed'), false); // http refusé
+  assert.equal(isRssAllowed('https://192.168.1.1/feed'), false); // IP privée refusée
+  assert.ok(RSS_ALLOW.includes('gouv.mc'));
+});
+
+test('/rss : hôte non autorisé → 403 ; url manquante → 400', async () => {
+  const r1 = await call('/rss?url=https://evil.com/feed', { headers: { Origin: 'https://kd-mc.com' } });
+  assert.equal(r1.status, 403);
+  const r2 = await call('/rss', { headers: { Origin: 'https://kd-mc.com' } });
+  assert.equal(r2.status, 400);
+});
+
+test('/reputation : origine KO → 403 ; origine OK sans GOOGLE_API_KEY → 501', async () => {
+  const bad = await call('/reputation?url=https://x.com', { headers: { Origin: 'https://evil.com' } });
+  assert.equal(bad.status, 403);
+  const ok = await call('/reputation?url=https://x.com', { headers: { Origin: 'https://apex-chat.kd-mc.com' }, env: {} });
+  assert.equal(ok.status, 501);
 });
 
 test('/ai : fallback Workers AI SANS clé externe (env.AI mock) → 200', async () => {
