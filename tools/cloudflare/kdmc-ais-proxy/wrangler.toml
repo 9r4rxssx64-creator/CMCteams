@@ -1,0 +1,11 @@
+name = "kdmc-ais-proxy"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+# account_id injecté par le workflow via CLOUDFLARE_ACCOUNT_ID (jamais commité)
+
+[durable_objects]
+bindings = [{ name = "AIS_HUB", class_name = "AisHub" }]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["AisHub"]
