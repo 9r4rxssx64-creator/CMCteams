@@ -610,6 +610,11 @@ class ApexSelfAudit {
           return r.migrated > 0;
         }
         case 'switch_to_economy_mode': {
+          /* v13.4.338 : NE JAMAIS rétrograder l'admin Kevin (il veut Anthropic
+           * toujours). C'est ce switch auto qui posait 'economy' → cassait le
+           * défaut premium → drift openai. setMode reste NON explicite (défaut
+           * false) → même s'il tourne pour un client, il n'usurpe pas un choix user. */
+          if (localStorage.getItem('apex_v13_uid') === 'kdmc_admin') return true;
           const { aiRoutingPolicy } = await import('../ai/ai-routing-policy.js');
           aiRoutingPolicy.setMode('economy');
           return true;

@@ -60,4 +60,38 @@ describe('v13.4.337 — premium/forced ignore le prefix smart-router', () => {
     const chain = await buildChain(MESSAGES);
     expect(chain[0]).toBe('openai');
   });
+
+  /* v13.4.338 — cause racine réelle de « toujours openai » malgré v337 :
+   * un mode 'economy' posé AUTOMATIQUEMENT (apex-self-audit, sans flag explicite)
+   * était honoré AVANT le défaut premium → l'admin n'était pas en premium → drift.
+   * Le fix : pour l'admin, un mode stocké NON explicite est ignoré → premium. */
+  it('admin + economy AUTO (sans flag explicite) → IGNORÉ → premium → Anthropic', async () => {
+    localStorage.setItem('apex_v13_uid', 'kdmc_admin');
+    localStorage.setItem('apex_v13_routing_mode', 'economy'); /* posé par auto-fix, pas de flag */
+    const chain = await buildChain(MESSAGES);
+    expect(chain[0]).toBe('anthropic');
+  });
+
+  it('admin + economy EXPLICITE (flag) → honoré (choix user respecté, leçon #124)', async () => {
+    localStorage.setItem('apex_v13_uid', 'kdmc_admin');
+    localStorage.setItem('apex_v13_routing_mode', 'economy');
+    localStorage.setItem('apex_v13_routing_mode_explicit', '1'); /* Kevin a choisi via ⚡ */
+    const { aiRoutingPolicy } = await import('../../services/ai/ai-routing-policy.js');
+    expect(aiRoutingPolicy.getMode()).toBe('economy');
+  });
+
+  it('setMode(mode, true) pose le flag explicite ; setMode(mode) le retire', async () => {
+    const { aiRoutingPolicy } = await import('../../services/ai/ai-routing-policy.js');
+    aiRoutingPolicy.setMode('premium', true);
+    expect(localStorage.getItem('apex_v13_routing_mode_explicit')).toBe('1');
+    aiRoutingPolicy.setMode('economy'); /* auto (non explicite) */
+    expect(localStorage.getItem('apex_v13_routing_mode_explicit')).toBeNull();
+  });
+
+  it('client (non-admin) + economy stocké → honoré (comportement inchangé)', async () => {
+    localStorage.setItem('apex_v13_uid', 'laurence_sp');
+    localStorage.setItem('apex_v13_routing_mode', 'economy');
+    const { aiRoutingPolicy } = await import('../../services/ai/ai-routing-policy.js');
+    expect(aiRoutingPolicy.getMode()).toBe('economy');
+  });
 });
