@@ -59,7 +59,10 @@ export default {
     if (url.pathname === "/health" || url.pathname === "/ships") {
       // On délègue au DO (il tient le cache). On lui passe l'info "clé présente".
       const hasKey = !!(env.AISSTREAM_KEY && String(env.AISSTREAM_KEY).length > 8);
-      const fwd = new URL(request.url);
+      // Hostname SYNTHÉTIQUE pour l'appel au Durable Object : réutiliser l'URL publique
+      // du worker (…workers.dev) fait croire à Cloudflare à un sous-appel du même worker
+      // sur la même zone → erreur 1042. Le host est ignoré pour le routage DO. (leçon #132)
+      const fwd = new URL(url.pathname + url.search, "https://ais-hub.internal");
       fwd.searchParams.set("_haskey", hasKey ? "1" : "0");
       const r = await stub.fetch(new Request(fwd.toString(), { method: "GET" }));
       const body = await r.text();
