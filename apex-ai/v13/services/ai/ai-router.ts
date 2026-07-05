@@ -513,11 +513,18 @@ async function tryProxyRoute(
   if (!health || !health.ok) return null;
   /* Provider supporté par proxy ? */
   if (!health.available_providers.includes(provider)) return null;
-  /* PIN hash pour auth */
+  /* PIN hash pour auth.
+   * v13.4.341 (Kevin « Tjs OpenAI ») : le readKey du PIN peut échouer par COURSE AU
+   * BOOT (vault pas encore déverrouillé au 1er message — anthropic, tête de chaîne,
+   * la payait ; openai 2s plus tard passait) → retry 1× après 400ms avant d'abandonner. */
   let pinHash = '';
   try {
     const { vault } = await import('../vault/vault.js');
-    const pinPlain = (await vault.readKey('ax_pin_kdmc_admin')) ?? (await vault.readKey('ax_pin'));
+    let pinPlain = (await vault.readKey('ax_pin_kdmc_admin')) ?? (await vault.readKey('ax_pin'));
+    if (!pinPlain) {
+      await new Promise((r) => setTimeout(r, 400));
+      pinPlain = (await vault.readKey('ax_pin_kdmc_admin')) ?? (await vault.readKey('ax_pin'));
+    }
     if (!pinPlain) return null;
     pinHash = await sha256HexAr(pinPlain);
   } catch {
@@ -1664,6 +1671,18 @@ class AIRouter {
      * Sinon → fallback direct fetch avec clé vault local (comportement actuel).
      * Health check caché 5min pour éviter spam. */
     const proxyRoute = await tryProxyRoute(provider, directUrl);
+    /* v13.4.341 (Kevin « Tjs OpenAI » — cause racine FINALE) : sans clé locale ET
+     * proxy indisponible À CET INSTANT (PIN vault pas lisible = course au boot,
+     * ou health KO), l'ancien code faisait un fetch DIRECT api.anthropic.com avec
+     * une clé VIDE → 401 « invalid x-api-key » → classé auth → provider marqué
+     * DEAD 1h → badge openai permanent + bannière « clés expirées » MENSONGÈRE.
+     * FIX : JAMAIS de direct sans clé — erreur EXPLICITE (classée transitoire →
+     * backoff/retry, pas DEAD-auth) + capturée par last-ai-fail (Diagnostic 🧨). */
+    if (!apiKey && !proxyRoute && provider !== 'gemini') {
+      /* « network » DANS le message = classifyError → 'network' → backoff/retry,
+       * JAMAIS markDead (c'est bien un souci transitoire réseau/boot, pas une clé HS). */
+      throw new Error(`${provider} network: proxy indisponible à cet instant (PIN vault non lisible ou health KO) — retry auto`);
+    }
     const url = proxyRoute?.url ?? directUrl;
     const headers = proxyRoute?.headers ?? cfg.headers(apiKey);
     let res = await fetch(url, {

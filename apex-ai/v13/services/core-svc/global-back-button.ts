@@ -36,7 +36,7 @@ class GlobalBackButton {
     const css = `
       #${BTN_ID} {
         position: fixed;
-        top: max(env(safe-area-inset-top, 8px), 8px);
+        top: calc(env(safe-area-inset-top, 0px) + 8px); /* v13.4.341 : + 8px SOUS la safe-area (lecon #103c) — avant : posé PILE sur l'heure iOS */
         left: max(env(safe-area-inset-left, 8px), 8px);
         z-index: 999999;
         min-width: 44px;

@@ -78,4 +78,17 @@ describe('v13.4.340 — no-key optimiste (flag proxy ON)', () => {
     expect(f?.msg).toContain('HTTP 529');
     expect(f?.status).toBe(529);
   });
+
+  /* v13.4.341 — cause racine FINALE : sans clé locale + proxy indisponible à cet
+   * instant (PIN vault non lisible = course au boot), l'ancien code faisait un fetch
+   * DIRECT avec clé VIDE → 401 → classé auth → anthropic DEAD 1h. La nouvelle garde
+   * throw une erreur contenant « network » → classifyError = 'network' → backoff/
+   * retry, JAMAIS markDead. Ce test verrouille cette classification. */
+  it('v341 : l\'erreur « proxy indisponible » est classée network (jamais DEAD)', async () => {
+    const { classifyError } = await import('../../services/ai/ai-key-rotation.js');
+    const msg = 'anthropic network: proxy indisponible à cet instant (PIN vault non lisible ou health KO) — retry auto';
+    expect(classifyError({ message: msg })).toBe('network');
+    /* contre-exemple : le 401 direct (ancien comportement) était classé auth → DEAD */
+    expect(classifyError({ status: 401, message: 'invalid x-api-key' })).not.toBe('network');
+  });
 });
