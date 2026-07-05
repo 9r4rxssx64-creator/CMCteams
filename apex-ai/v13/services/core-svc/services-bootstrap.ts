@@ -88,6 +88,14 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       ]);
     }),
 
+    /* v13.4.342 (Kevin « fais tout toi auto avec Apex ») : auto-test + auto-réparation
+     * IA au boot — attend le vault, ping réel anthropic via proxy, efface les DEAD si
+     * 200, capture l'échec EXACT sinon (Diagnostic 🧨 + rapport d'audit). Différé 2,5s. */
+    safeInit('ai-boot-heal', async () => {
+      const { initAiBootHeal } = await import('../ai/ai-boot-heal.js');
+      initAiBootHeal();
+    }),
+
     /* Apex tools registry : log disponibilité */
     safeInit('apex-tools', async () => {
       const { apexTools } = await import('./apex-tools.js');

@@ -849,6 +849,33 @@ class ApexSelfAudit {
       }
     }
     lines.push('');
+    /* v13.4.342 (Kevin « fais tout toi auto avec Apex ») : le rapport embarque
+     * l'auto-diagnostic IA — Kevin partage déjà ses audits à Claude Code → la
+     * donnée qui manquait (échec anthropic EXACT) lui revient AUTOMATIQUEMENT. */
+    try {
+      const heal = localStorage.getItem('apex_v13_boot_heal');
+      if (heal) {
+        const h = JSON.parse(heal) as { ok: boolean; step: string; detail: string; ts: number };
+        const age = Math.max(0, Math.round((Date.now() - h.ts) / 60_000));
+        lines.push(`## 🤖 Auto-test IA au boot (il y a ${age} min)`);
+        lines.push(`- ${h.ok ? '✅' : '🧨'} [${h.step}] ${h.detail}`);
+        lines.push('');
+      }
+      const fails = localStorage.getItem('apex_v13_last_ai_fail');
+      if (fails) {
+        const map = JSON.parse(fails) as Record<string, { ts: number; msg: string; status?: number }>;
+        const entries = Object.entries(map);
+        if (entries.length > 0) {
+          lines.push(`## 🧨 Derniers échecs IA (message exact)`);
+          for (const [provider, f] of entries) {
+            const ageMin = Math.max(0, Math.round((Date.now() - f.ts) / 60_000));
+            const http = typeof f.status === 'number' ? `HTTP ${f.status} — ` : '';
+            lines.push(`- **${provider}** (il y a ${ageMin} min) : ${http}${f.msg.slice(0, 250)}`);
+          }
+          lines.push('');
+        }
+      }
+    } catch { /* fail-open */ }
     lines.push(`## Prochaines étapes`);
     for (const step of report.next_steps) lines.push(`- ${step}`);
     return lines.join('\n');
