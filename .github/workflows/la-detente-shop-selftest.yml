@@ -1,0 +1,63 @@
+name: La Détente — Boutique self-test (cloud)
+
+# Vérifie tout seul que le tunnel boutique cloud marche : un produit publié
+# (comme depuis le Studio) est bien visible par les clients, puis nettoyé.
+# N'alerte QUE si ça casse (échec = workflow rouge + email GitHub). Anti-spam OK.
+
+on:
+  push:
+    paths:
+      - 'shops/la-detente/**'
+      - '.github/workflows/la-detente-shop-selftest.yml'
+  schedule:
+    - cron: '0 6 * * *'   # 1x/jour (nuit Monaco) — détecte une dérive des règles Firebase
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ld-shop-selftest
+  cancel-in-progress: true
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Firebase publier -> lire (client) -> supprimer
+        run: |
+          set -e
+          FB="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app"
+          P="shops_admin_v1/products/la-detente"
+          KEY="_selftest_${GITHUB_RUN_ID}"
+
+          echo "1) Lecture catalogue (ce que voit un CLIENT)…"
+          code=$(curl -s -m 25 -o /tmp/prods.json -w "%{http_code}" "$FB/$P.json")
+          echo "   GET produits -> HTTP $code"
+          [ "$code" = "200" ] || { echo "::error::Lecture catalogue KO (HTTP $code) — les clients ne peuvent pas charger les produits."; exit 1; }
+          N=$(node -e "let d={};try{d=JSON.parse(require('fs').readFileSync('/tmp/prods.json','utf8'))||{}}catch(e){};console.log(d&&typeof d==='object'?Object.keys(d).filter(k=>!k.startsWith('_selftest')).length:0)")
+          echo "   produits publiés actuellement: $N"
+
+          echo "2) Publication d'un produit test (comme « Ajouter à la boutique » du Studio)…"
+          put=$(curl -s -m 25 -o /dev/null -w "%{http_code}" -X PUT -H "Content-Type: application/json" \
+            -d "{\"id\":\"$KEY\",\"name\":\"selftest CI\",\"price\":1,\"cat\":\"tshirts\"}" "$FB/$P/$KEY.json")
+          echo "   PUT -> HTTP $put"
+          if [ "$put" != "200" ]; then
+            echo "::error::Publication produit KO (HTTP $put). Les créations du Studio NE seront PAS visibles des clients. Vérifier les règles Firebase de shops_admin_v1 (write autorisé ?)."
+            exit 1
+          fi
+
+          echo "3) Re-lecture du produit test (le client le verrait-il ?)…"
+          got=$(curl -s -m 25 "$FB/$P/$KEY.json")
+          echo "   $got"
+          if ! echo "$got" | grep -q "selftest CI"; then
+            curl -s -m 25 -X DELETE "$FB/$P/$KEY.json" >/dev/null || true
+            echo "::error::Produit publié introuvable au re-fetch — publication non persistée."
+            exit 1
+          fi
+
+          echo "4) Nettoyage (suppression du produit test)…"
+          del=$(curl -s -m 25 -o /dev/null -w "%{http_code}" -X DELETE "$FB/$P/$KEY.json")
+          echo "   DELETE -> HTTP $del"
+
+          echo "✅ Boutique cloud OK : un produit publié est bien visible par les clients, puis nettoyé."
