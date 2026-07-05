@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.3.0 -->
+<!-- v0.4.0 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -108,6 +108,15 @@
   .empty{text-align:center;color:var(--dim);padding:26px 10px;font-size:13.5px}
   .kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
   .kv:last-child{border-bottom:none}.kv b{color:var(--txt);font-weight:600}.kv span{color:var(--dim);text-align:right}
+  #d3{position:fixed;inset:0;z-index:60;background:#04101c;display:flex;flex-direction:column}
+  #d3[hidden]{display:none}
+  #d3top{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 14px 10px;border-bottom:1px solid var(--line)}
+  #d3top b{font-size:15px}
+  #d3top button{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:10px;width:40px;height:40px;font-size:16px}
+  #d3c{flex:1;width:100%;display:block;touch-action:none}
+  #d3hint{position:absolute;top:calc(60px + var(--safe-t));left:0;right:0;text-align:center;color:var(--dim);font-size:11.5px;pointer-events:none}
+  #d3ctl{display:flex;gap:8px;padding:10px 14px calc(10px + var(--safe-b));border-top:1px solid var(--line)}
+  #d3ctl button{flex:1;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:12px;font-size:13px;font-weight:700}
 </style>
 </head>
 <body>
@@ -119,8 +128,18 @@
 <div id="app"></div>
 <nav id="nav"></nav>
 
+<div id="d3" hidden>
+  <div id="d3top"><b>🧊 Ta piscine en 3D</b><button onclick="close3D()" aria-label="Fermer">✕</button></div>
+  <canvas id="d3c"></canvas>
+  <div id="d3hint">Fais glisser pour tourner · pince/molette pour zoomer</div>
+  <div id="d3ctl">
+    <button id="d3play" onclick="toggle3D()">⏸️ Pause robot</button>
+    <button onclick="reset3D()">🎥 Recentrer la vue</button>
+  </div>
+</div>
+
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.3.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.4.0" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -128,7 +147,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.3.0";
+var APP_VER="v0.4.0";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -154,7 +173,7 @@ var cfg=Object.assign({
   /* réglages performance */
   env:"peu",usage:"moyenne",debris:"fines",focus:"equilibre",batteryMin:180
 },lg("cfg",{}));
-var pool=Object.assign({L:6.9,W:4.0,shape:"bean",preset:"celine7",markers:[]},lg("pool",{}));
+var pool=Object.assign({L:6.9,W:4.0,shape:"bean",preset:"celine7",depthShallow:1.1,depthDeep:1.7,markers:[]},lg("pool",{}));
 var sessions=lg("sessions",[]);
 var plan=lg("plan",{mode:"Standard",generatedAt:0});
 var maint=Object.assign({filter:0,brush:0,seal:0,clearwater:0},lg("maint",{}));
@@ -184,6 +203,13 @@ function distToPoly(x,y,poly){var m=1e9;for(var i=0,j=poly.length-1;i<poly.lengt
 function polyArea(poly){var a=0;for(var i=0,j=poly.length-1;i<poly.length;j=i++)a+=(poly[j].x+poly[i].x)*(poly[j].y-poly[i].y);return Math.abs(a/2)}
 function polyCentroid(poly){var cx=0,cy=0;poly.forEach(function(p){cx+=p.x;cy+=p.y});return {x:cx/poly.length,y:cy/poly.length}}
 function poolAreaM2(){return polyArea(poolPoly())*pool.L*pool.W}
+function worldPerimeter(){var poly=poolPoly(),per=0;for(var i=0;i<poly.length;i++){var a=poly[i],b=poly[(i+1)%poly.length];per+=Math.hypot((a.x-b.x)*pool.L,(a.y-b.y)*pool.W)}return per}
+function depthShallow(){return +pool.depthShallow||1.1}
+function depthDeep(){return +pool.depthDeep||1.7}
+function avgDepth(){return (depthShallow()+depthDeep())/2}
+function volumeM3(){return poolAreaM2()*avgDepth()}
+function wallAreaM2(){return worldPerimeter()*avgDepth()}
+function floorSlopeLen(){return Math.hypot(pool.L,depthDeep()-depthShallow())}
 
 /* ============ NAV ============ */
 var NAV=[
@@ -253,17 +279,13 @@ function vBassin(){
     ["depot","📍 Dépôt robot"],["anglemort","⛔ Angle mort"],["obstacle","🪨 Obstacle"]
   ].map(function(t){return '<div class="tool'+(S.tool===t[0]?" on":"")+'" data-tool="'+t[0]+'">'+esc(t[1])+'</div>'}).join("");
   return card("🗺️ Cartographie de ta piscine",
-    "Waterair Céline 7 — forme haricot. Renseigne les dimensions, pose les repères (tape pour ajouter, glisse pour déplacer).",
+    "Waterair Céline 7 — forme haricot. Renseigne tes mesures, pose les repères (tape pour ajouter, glisse pour déplacer).",
     '<div class="row">'+
       '<div style="flex:2"><label>Forme</label><select id="poolShape">'+
         '<option value="bean" '+(pool.shape==="bean"?"selected":"")+'>Haricot (Waterair Céline)</option>'+
         '<option value="rect" '+(pool.shape==="rect"?"selected":"")+'>Rectangle</option>'+
       '</select></div>'+
       '<button class="btn ghost sm" style="flex:1;align-self:end" onclick="applyPreset(\'celine7\')">↺ Céline 7</button>'+
-    '</div>'+
-    '<div class="row" style="margin-top:8px">'+
-      field("Longueur (m)","poolL",pool.L,"number","0.1")+
-      field("Largeur (m)","poolW",pool.W,"number","0.1")+
     '</div>'+
     '<div class="palette">'+toolsHtml+'</div>'+
     '<canvas id="poolCanvas" height="420"></canvas>'+
@@ -275,7 +297,27 @@ function vBassin(){
       '<span><i style="background:#8a97a6"></i>Obstacle</span>'+
     '</div>'+
     '<div id="markerPanel" style="margin-top:10px"></div>'+
+    '<button class="btn" style="margin-top:12px" onclick="open3D()">🧊 Voir ma piscine en 3D</button>'+
     '<div class="note">💡 Sur un bassin haricot, les <b>escaliers</b> (souvent dans une courbe) et le <b>rétrécissement</b> sont les zones que le robot rate le plus. Marque-les bien : c\'est ce qui rend le plan (🎯) efficace.</div>'
+  )+
+  card("📐 Mesures précises","Tes vraies mesures Waterair (ajuste-les) — surface, périmètre et volume se recalculent.",
+    '<div class="row">'+
+      field("Longueur (m)","poolL",pool.L,"number","0.05")+
+      field("Largeur max (m)","poolW",pool.W,"number","0.05")+
+    '</div>'+
+    '<div class="row" style="margin-top:8px">'+
+      field("Prof. petit bain (m)","poolPB",depthShallow(),"number","0.05")+
+      field("Prof. grand bain (m)","poolGB",depthDeep(),"number","0.05")+
+    '</div>'+
+    '<div style="margin-top:12px">'+
+      '<div class="kv"><b>Surface plan d\'eau</b><span>'+poolAreaM2().toFixed(1)+' m²</span></div>'+
+      '<div class="kv"><b>Périmètre (ligne d\'eau)</b><span>'+worldPerimeter().toFixed(1)+' m</span></div>'+
+      '<div class="kv"><b>Profondeur moyenne</b><span>'+avgDepth().toFixed(2)+' m</span></div>'+
+      '<div class="kv"><b>Volume estimé</b><span>'+volumeM3().toFixed(1)+' m³ (~'+Math.round(volumeM3()*1000).toLocaleString("fr-FR")+' L)</span></div>'+
+      '<div class="kv"><b>Parois immergées (~)</b><span>'+wallAreaM2().toFixed(1)+' m²</span></div>'+
+      '<div class="kv"><b>Surface totale à nettoyer</b><span>'+(poolAreaM2()+wallAreaM2()).toFixed(1)+' m²</span></div>'+
+    '</div>'+
+    '<div class="note">Volume/parois = estimations d\'après tes cotes (bassin à pente régulière). Pour du 100 % exact, reporte le volume officiel Waterair de ton contrat.</div>'
   );
 }
 
@@ -298,7 +340,8 @@ function vPlan(){
       '<span><i style="background:var(--warn)"></i>Moyen</span>'+
       '<span><i style="background:var(--bad)"></i>Faible</span>'+
     '</div>'+
-    '<div class="note">⚠️ <b>Estimation</b> — d\'après le comportement type du robot + TES zones marquées, sur le contour réel du bassin. Pas une mesure du robot ; ça sert à décider où renforcer.</div>'
+    '<div class="note">⚠️ <b>Estimation</b> — d\'après le comportement type du robot + TES zones marquées, sur le contour réel du bassin. Pas une mesure du robot ; ça sert à décider où renforcer.</div>'+
+    '<button class="btn ghost" style="margin-top:10px" onclick="open3D()">🧊 Voir en 3D (avec cotes + robot animé)</button>'
   )+
   card("📋 Étapes recommandées","",
     (stepsHtml||'<div class="empty">Cartographie ton bassin puis génère le plan.</div>')+
@@ -663,6 +706,106 @@ function drawTrend(){
   g.fillStyle="#93b0c8";g.font="10px -apple-system";g.fillText("Durée des "+data.length+" dernières sessions (min)",pad,12);
 }
 
+/* ============ VUE 3D (canvas, projection maison — pas de WebGL) ============ */
+var D3={raf:0,t0:0,prog:0,playing:true,yaw:-0.7,pitch:1.02,zoom:1,drag:null,pointers:{},pinch:0,path:null};
+function floorDepth3(nx){return -(depthShallow()+(depthDeep()-depthShallow())*nx)}
+function worldPt3(nx,ny,z){return {x:(nx-0.5)*pool.L,y:(ny-0.5)*pool.W,z:z}}
+function proj3(w){
+  var cy=Math.cos(D3.yaw),sy=Math.sin(D3.yaw);
+  var rx=w.x*cy-w.y*sy, ry=w.x*sy+w.y*cy;
+  return {x:rx, y:-(ry*Math.sin(D3.pitch)+w.z*Math.cos(D3.pitch)), depth:ry*Math.cos(D3.pitch)-w.z*Math.sin(D3.pitch)};
+}
+function buildPath3D(){
+  var poly=poolPoly(),pts=[],rows=15;
+  for(var r=0;r<rows;r++){var ny=0.08+r/(rows-1)*0.84,row=[];
+    for(var i=0;i<=30;i++){var nx=i/30;if(pointInPoly(nx,ny,poly))row.push({x:nx,y:ny})}
+    if(row.length){if(r%2)row.reverse();pts=pts.concat(row)}
+  }
+  D3.path=pts;
+}
+function open3D(){var o=$("#d3");if(!o)return;o.hidden=false;buildPath3D();D3.playing=true;D3.prog=0;D3.t0=performance.now();reset3D();resize3D();bind3D();cancelAnimationFrame(D3.raf);D3.raf=requestAnimationFrame(loop3D)}
+function close3D(){var o=$("#d3");if(o)o.hidden=true;cancelAnimationFrame(D3.raf)}
+function toggle3D(){D3.playing=!D3.playing;if(D3.playing)D3.t0=performance.now()-D3.prog*24000;var b=$("#d3play");if(b)b.textContent=D3.playing?"⏸️ Pause robot":"▶️ Lancer robot"}
+function reset3D(){D3.yaw=-0.7;D3.pitch=1.02;D3.zoom=1}
+function resize3D(){var cv=$("#d3c");if(!cv)return;var dpr=Math.min(2,window.devicePixelRatio||1);cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;cv._dpr=dpr}
+function bind3D(){
+  var cv=$("#d3c");if(!cv||cv._bound)return;cv._bound=true;
+  cv.addEventListener("pointerdown",function(e){cv.setPointerCapture&&cv.setPointerCapture(e.pointerId);D3.pointers[e.pointerId]={x:e.clientX,y:e.clientY};var ks=Object.keys(D3.pointers);if(ks.length===1){D3.drag={x:e.clientX,y:e.clientY,yaw:D3.yaw,pitch:D3.pitch}}else if(ks.length===2){D3.pinch=ptrDist();D3.pinchZoom=D3.zoom}});
+  cv.addEventListener("pointermove",function(e){if(!D3.pointers[e.pointerId])return;D3.pointers[e.pointerId]={x:e.clientX,y:e.clientY};var ks=Object.keys(D3.pointers);
+    if(ks.length>=2){var d=ptrDist();if(D3.pinch)D3.zoom=Math.max(0.5,Math.min(3,D3.pinchZoom*d/D3.pinch));}
+    else if(D3.drag){D3.yaw=D3.drag.yaw+(e.clientX-D3.drag.x)*0.01;D3.pitch=Math.max(0.35,Math.min(1.45,D3.drag.pitch-(e.clientY-D3.drag.y)*0.008))}});
+  function endp(e){delete D3.pointers[e.pointerId];if(Object.keys(D3.pointers).length<2)D3.pinch=0;if(!Object.keys(D3.pointers).length)D3.drag=null}
+  cv.addEventListener("pointerup",endp);cv.addEventListener("pointercancel",endp);
+  cv.addEventListener("wheel",function(e){e.preventDefault();D3.zoom=Math.max(0.5,Math.min(3,D3.zoom*(e.deltaY<0?1.1:0.9)))},{passive:false});
+}
+function ptrDist(){var p=Object.keys(D3.pointers).map(function(k){return D3.pointers[k]});if(p.length<2)return 0;return Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)}
+function loop3D(ts){
+  if($("#d3").hidden){return}
+  if(D3.playing)D3.prog=((ts-D3.t0)/24000)%1;
+  if(!D3.drag&&!Object.keys(D3.pointers).length)D3.yaw+=0.0018;
+  draw3D();D3.raf=requestAnimationFrame(loop3D);
+}
+function draw3D(){
+  var cv=$("#d3c");if(!cv)return;var dpr=cv._dpr||1;var g=cv.getContext("2d");
+  var W=cv.width/dpr,H=cv.height/dpr;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  g.fillStyle="#04101c";g.fillRect(0,0,W,H);
+  var poly=poolPoly();
+  /* fit: projeter contour haut + fond → bbox → scale/centre */
+  var proj=[],i;
+  for(i=0;i<poly.length;i++){proj.push(proj3(worldPt3(poly[i].x,poly[i].y,0)));proj.push(proj3(worldPt3(poly[i].x,poly[i].y,floorDepth3(poly[i].x))))}
+  var minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;proj.forEach(function(p){minx=Math.min(minx,p.x);maxx=Math.max(maxx,p.x);miny=Math.min(miny,p.y);maxy=Math.max(maxy,p.y)});
+  var scale=0.8*Math.min(W/(maxx-minx||1),H/(maxy-miny||1))*D3.zoom;
+  var cx=W/2-(minx+maxx)/2*scale, cy=H/2-(miny+maxy)/2*scale;
+  function S(nx,ny,z){var p=proj3(worldPt3(nx,ny,z));return {x:cx+p.x*scale,y:cy+p.y*scale}}
+  function tp(pts,close){g.beginPath();pts.forEach(function(p,k){k?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y)});if(close!==false)g.closePath()}
+  /* FOND */
+  tp(poly.map(function(p){return S(p.x,p.y,floorDepth3(p.x))}));
+  var fg=g.createLinearGradient(0,cy-scale,0,cy+scale);fg.addColorStop(0,"#0a3a58");fg.addColorStop(1,"#062338");g.fillStyle=fg;g.fill();
+  /* grille fond */
+  g.strokeStyle="rgba(120,200,255,.12)";g.lineWidth=1;
+  for(var gx=0;gx<=10;gx++){g.beginPath();for(var t=0;t<=20;t++){var ny=t/20,nx=gx/10;var s=S(nx,ny,floorDepth3(nx));t?g.lineTo(s.x,s.y):g.moveTo(s.x,s.y)}g.stroke()}
+  /* TRAÎNÉE robot (nettoyé) */
+  if(D3.path&&D3.path.length){var ci=Math.floor(D3.prog*D3.path.length);g.strokeStyle="rgba(120,240,200,.45)";g.lineWidth=Math.max(6,scale*0.42);g.lineJoin="round";g.lineCap="round";g.beginPath();for(i=0;i<=ci;i++){var pt=D3.path[i];var s=S(pt.x,pt.y,floorDepth3(pt.x));i?g.lineTo(s.x,s.y):g.moveTo(s.x,s.y)}g.stroke()}
+  /* MARQUEURS (au fond) */
+  pool.markers.forEach(function(m){var z=floorDepth3(m.x);var sf=S(m.x,m.y,z),ss=S(m.x,m.y,0);
+    g.strokeStyle=markerColor(m.type);g.lineWidth=2;g.beginPath();g.moveTo(sf.x,sf.y);g.lineTo(ss.x,ss.y);g.stroke();
+    if(m.type==="escalier"){for(var st=0;st<3;st++){drawBox3D(g,S,m.x,m.y,0.5,depthShallow()*0.33*(st+1),floorDepth3(m.x),"rgba(196,107,255,.7)")}}
+  });
+  /* PAROIS (verre translucide) */
+  g.lineWidth=1;g.strokeStyle="rgba(120,200,255,.25)";
+  for(i=0;i<poly.length;i++){var a=poly[i],b=poly[(i+1)%poly.length];
+    tp([S(a.x,a.y,0),S(b.x,b.y,0),S(b.x,b.y,floorDepth3(b.x)),S(a.x,a.y,floorDepth3(a.x))]);
+    g.fillStyle="rgba(45,123,214,.16)";g.fill();g.stroke();
+  }
+  /* SURFACE EAU */
+  tp(poly.map(function(p){return S(p.x,p.y,0)}));g.fillStyle="rgba(80,190,255,.22)";g.fill();g.strokeStyle="#5bc8ff";g.lineWidth=2;g.stroke();
+  /* ROBOT */
+  if(D3.path&&D3.path.length){var idx=Math.min(D3.path.length-1,Math.floor(D3.prog*D3.path.length));var rp=D3.path[idx];drawBox3D(g,S,rp.x,rp.y,0.42,0.16,floorDepth3(rp.x),"#39c2ff",true)}
+  /* MARQUEURS icônes (au-dessus de l'eau, lisibles) */
+  pool.markers.forEach(function(m){var ss=S(m.x,m.y,0.05);g.font="15px -apple-system";g.textAlign="center";g.textBaseline="middle";g.fillText(markerIcon(m.type),ss.x,ss.y-6)});
+  /* COTES */
+  g.font="12px -apple-system";g.textAlign="center";g.textBaseline="middle";
+  dimLine(g,S(0,1,0),S(1,1,0),pool.L.toFixed(2)+" m");
+  dimLine(g,S(0,0,0),S(0,1,0),pool.W.toFixed(2)+" m");
+  var dS=S(0,0.5,floorDepth3(0)*0.5),dD=S(1,0.5,floorDepth3(1)*0.5);
+  g.fillStyle="#f6d68a";g.fillText("PB "+depthShallow().toFixed(2)+" m",dS.x,dS.y);g.fillText("GB "+depthDeep().toFixed(2)+" m",dD.x,dD.y);
+  /* légende chiffres */
+  g.textAlign="left";g.fillStyle="#bfe3fb";g.font="11px -apple-system";
+  g.fillText("Surface "+poolAreaM2().toFixed(1)+" m² · Volume ~"+volumeM3().toFixed(1)+" m³ · Périmètre "+worldPerimeter().toFixed(1)+" m",12,H-10);
+}
+function drawBox3D(g,S,nx,ny,sizeM,hM,zFloor,col,top){
+  var hx=sizeM/pool.L/2,hy=sizeM/pool.W/2;
+  var c=[[-1,-1],[1,-1],[1,1],[-1,1]].map(function(o){return {x:nx+o[0]*hx,y:ny+o[1]*hy}});
+  var bot=c.map(function(p){return S(p.x,p.y,zFloor)}),topP=c.map(function(p){return S(p.x,p.y,zFloor+hM)});
+  for(var i=0;i<4;i++){var j=(i+1)%4;g.beginPath();g.moveTo(bot[i].x,bot[i].y);g.lineTo(bot[j].x,bot[j].y);g.lineTo(topP[j].x,topP[j].y);g.lineTo(topP[i].x,topP[i].y);g.closePath();g.fillStyle=col;g.globalAlpha=.85;g.fill();g.globalAlpha=1}
+  g.beginPath();topP.forEach(function(p,k){k?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y)});g.closePath();g.fillStyle=top?"#cdeafd":col;g.fill();if(top){g.strokeStyle="#052034";g.lineWidth=1.5;g.stroke()}
+}
+function dimLine(g,a,b,label){
+  g.strokeStyle="rgba(255,255,255,.5)";g.lineWidth=1;g.setLineDash([4,3]);g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();g.setLineDash([]);
+  var mx=(a.x+b.x)/2,my=(a.y+b.y)/2;g.fillStyle="#0e88c9";var w=g.measureText(label).width+10;g.fillRect(mx-w/2,my-9,w,18);g.fillStyle="#fff";g.fillText(label,mx,my);
+}
+window.addEventListener("resize",function(){if($("#d3")&&!$("#d3").hidden)resize3D()});
+
 /* ============ render ============ */
 function renderRobotTag(){var m=MODELS[cfg.model]||MODELS.autre;var t=$("#robotTag");if(t)t.textContent="🤖 "+m.name}
 function render(){
@@ -678,9 +821,11 @@ function render(){
   $("#app").innerHTML=html;renderNav();
   if(v==="bassin"){
     setTimeout(function(){drawPool();bindCanvas();
-      var sh=$("#poolShape");if(sh)sh.addEventListener("change",function(){pool.shape=this.value;save();drawPool()});
-      $("#poolL").addEventListener("change",function(){pool.L=Math.max(1,+this.value||6.9);save();drawPool()});
-      $("#poolW").addEventListener("change",function(){pool.W=Math.max(1,+this.value||4);save();drawPool()});
+      var sh=$("#poolShape");if(sh)sh.addEventListener("change",function(){pool.shape=this.value;save();render()});
+      $("#poolL").addEventListener("change",function(){pool.L=Math.max(1,+this.value||6.9);save();render()});
+      $("#poolW").addEventListener("change",function(){pool.W=Math.max(1,+this.value||4);save();render()});
+      var pb=$("#poolPB");if(pb)pb.addEventListener("change",function(){pool.depthShallow=Math.max(0.3,+this.value||1.1);save();render()});
+      var gb=$("#poolGB");if(gb)gb.addEventListener("change",function(){pool.depthDeep=Math.max(0.3,+this.value||1.7);save();render()});
     },30);
   }
   if(v==="plan")setTimeout(drawCoverage,40);
