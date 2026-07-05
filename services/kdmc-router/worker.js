@@ -42,6 +42,8 @@ export default {
     if (url.pathname.startsWith('/__admin/')) return handleAdmin(request, url, env);
     // Crypto-bot Railway (statut + kill switch). Réservé admin (même grant que /__admin).
     if (url.pathname.startsWith('/__bot/')) return handleBot(request, url, env);
+    // Relais Beatbot (contrôle réel du robot piscine) — admin-gated, HTTPS public only, même origine que l'app beatbot.kd-mc.com.
+    if (url.pathname.startsWith('/__beatbot/')) return handleBeatbot(request, url, env);
     // Push « message CMCteams light » → Kevin même app fermée (token serveur, anti-spam KV).
     if (url.pathname === '/__notify-kevin' && request.method === 'POST') return handleNotifyKevin(request, env);
 
@@ -803,6 +805,58 @@ async function handleBot(request, url, env) {
   return J({ ok: false, reason: 'not_found' });
 }
 
+/* ---- Relais Beatbot : contrôle réel du robot piscine (PoolPilot / beatbot.kd-mc.com) ----
+   L'app découvre l'API cloud Beatbot depuis une CAPTURE que Kevin exporte de SON iPhone
+   (seul geste manuel possible), puis relaie start/stop/mode/base + carte via ce proxy.
+   SÉCURITÉ : admin-gated (même grant Face ID/PIN que /__admin), HTTPS public uniquement
+   (blocage IP privées/métadonnées → anti-SSRF), même origine (0 CORS), audité, réponse cap 256 Ko.
+   AUCUNE modif firmware (garantie intacte) : on relaie les MÊMES requêtes que l'app officielle. */
+function beatbotTargetOk(rawUrl) {
+  let u; try { u = new URL(rawUrl); } catch { return false; }
+  if (u.protocol !== 'https:') return false;
+  const h = (u.hostname || '').toLowerCase();
+  if (!h || h.indexOf(':') >= 0) return false;           // pas d'IPv6 littéral
+  if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.localhost')) return false;
+  if (!h.includes('.')) return false;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) {              // IPv4 littéral → bloque plages privées/link-local/multicast
+    const p = h.split('.').map(Number);
+    if (p.some((n) => n > 255)) return false;
+    if (p[0] === 0 || p[0] === 10 || p[0] === 127 || p[0] >= 224) return false;
+    if (p[0] === 169 && p[1] === 254) return false;
+    if (p[0] === 172 && p[1] >= 16 && p[1] <= 31) return false;
+    if (p[0] === 192 && p[1] === 168) return false;
+    if (p[0] === 100 && p[1] >= 64 && p[1] <= 127) return false;
+  }
+  return true;
+}
+function abToB64(ab) { const u = new Uint8Array(ab); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+async function handleBeatbot(request, url, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  const me = await adminSession(request, env);
+  if (!me) { const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256); return J({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }, null, 403); }
+  const path = url.pathname;
+  if (path === '/__beatbot/health' && request.method === 'GET') return J({ ok: true, relay: 'ready' });
+  if (path === '/__beatbot/relay' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    if (!beatbotTargetOk(b.url)) return J({ ok: false, reason: 'target_refuse', detail: 'URL cible invalide (HTTPS public uniquement, IP privées interdites).' });
+    const method = String(b.method || 'GET').toUpperCase();
+    if (['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'].indexOf(method) < 0) return J({ ok: false, reason: 'method_refuse' });
+    const headers = new Headers();
+    if (b.headers && typeof b.headers === 'object') for (const k in b.headers) { const kl = k.toLowerCase(); if (['host', 'cookie', 'content-length'].indexOf(kl) < 0) headers.set(k, String(b.headers[k])); }
+    let resp;
+    try { resp = await fetch(b.url, { method, headers, body: (method === 'GET' || method === 'HEAD') ? undefined : (typeof b.body === 'string' ? b.body : JSON.stringify(b.body || {})), redirect: 'manual' }); }
+    catch (e) { return J({ ok: false, reason: 'fetch_fail', detail: String((e && e.message) || e).slice(0, 300) }); }
+    const ct = resp.headers.get('content-type') || '';
+    const raw = await resp.arrayBuffer();
+    const capped = raw.byteLength > 262144 ? raw.slice(0, 262144) : raw;
+    const isText = /text|json|xml|javascript|urlencoded/.test(ct);
+    const bodyOut = isText ? { text: new TextDecoder().decode(capped) } : { b64: abToB64(capped) };
+    try { await audLog(env, { ev: 'beatbot_relay', host: new URL(b.url).hostname, st: resp.status }); } catch { /* fail-open */ }
+    return J({ ok: true, status: resp.status, ct, size: raw.byteLength, body: bodyOut });
+  }
+  return J({ ok: false, reason: 'not_found' });
+}
+
 /* Grant admin MACHINE : produit le même jeton signé que /__admin/login, mais à
    partir du SECRET SSO (pas du code PIN). Sert à l'agent de contrôle GitHub Actions
    pour s'authentifier en admin et vérifier le bot À LA PLACE de Kevin, sans jamais
@@ -811,4 +865,4 @@ async function handleBot(request, url, env) {
 async function adminGrant(secret) { return ssoSign(secret, '__kdmc_admin__', 'admin', 1); }
 
 /* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
-export { enrich, adminGrant };
+export { enrich, adminGrant, beatbotTargetOk };

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.6.0 -->
+<!-- v0.7.0 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -139,7 +139,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.6.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.7.0" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -147,7 +147,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.6.0";
+var APP_VER="v0.7.0";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -171,7 +171,8 @@ var cfg=Object.assign({
   reference:"PRCMDS02-EU-G",serial:"P0004EUGJ155601124KF1",
   warrantyYears:3,retailer:"mypiscine.com",price:2499,purchaseDate:"",firmwareOk:true,
   /* réglages performance */
-  env:"peu",usage:"moyenne",debris:"fines",focus:"equilibre",batteryMin:180
+  env:"peu",usage:"moyenne",debris:"fines",focus:"equilibre",batteryMin:180,
+  robotId:"bf97b001fc39788539s9b3",robotUuid:"uuid10f452b75a80a003",pluginVersion:"0.0.80"
 },lg("cfg",{}));
 var pool=Object.assign({L:6.85,W:4.10,shape:"bean",preset:"celine7",depthShallow:1.20,depthDeep:2.20,depthProfile:"fosse",volOfficial:0,markers:[]},lg("pool",{}));
 /* Migration v0.5 : cotes officielles Waterair Céline 07 (6,85 x 4,10 - waterair.com) + escalier roman lobe avant-droit (photo Kevin) */
@@ -192,11 +193,21 @@ var pool=Object.assign({L:6.85,W:4.10,shape:"bean",preset:"celine7",depthShallow
   if(!pool.depthProfile)pool.depthProfile="fosse";
   pool._v6=1;ls("pool",pool);
 })();
+/* v0.7 : identifiants robot Beatbot (écran « Autres réglages ») */
+(function(){
+  if(cfg._v7)return;
+  if(!cfg.robotId)cfg.robotId="bf97b001fc39788539s9b3";
+  if(!cfg.robotUuid)cfg.robotUuid="uuid10f452b75a80a003";
+  if(!cfg.pluginVersion)cfg.pluginVersion="0.0.80";
+  cfg._v7=1;ls("cfg",cfg);
+})();
 var sessions=lg("sessions",[]);
 var plan=lg("plan",{mode:"Standard",generatedAt:0});
 var maint=Object.assign({filter:0,brush:0,seal:0,clearwater:0},lg("maint",{}));
+var beatbot=Object.assign({relay:"https://beatbot.kd-mc.com/__beatbot/relay",hosts:[],token:"",tokenHeader:"Authorization",commands:{},mapUrl:""},lg("beatbot",{}));
+var _bbAnalysis=null;
 var S={view:"accueil"};
-function save(){ls("cfg",cfg);ls("pool",pool);ls("sessions",sessions);ls("plan",plan);ls("maint",maint)}
+function save(){ls("cfg",cfg);ls("pool",pool);ls("sessions",sessions);ls("plan",plan);ls("maint",maint);ls("beatbot",beatbot)}
 
 /* ---- Presets bassins ---- */
 var PRESETS={
@@ -279,6 +290,9 @@ function vAccueil(){
   card("🤖 Mon robot","",
     '<div class="kv"><b>'+esc(m.name)+'</b><span>Réf. '+esc(cfg.reference)+'</span></div>'+
     '<div class="kv"><b>N° série</b><span><code>'+esc(cfg.serial.slice(0,6)+"…"+cfg.serial.slice(-4))+'</code></span></div>'+
+    (cfg.robotId?'<div class="kv"><b>ID Robot</b><span><code>'+esc(cfg.robotId)+'</code></span></div>':'')+
+    (cfg.robotUuid?'<div class="kv"><b>UUID</b><span><code>'+esc(cfg.robotUuid)+'</code></span></div>':'')+
+    (cfg.pluginVersion?'<div class="kv"><b>Plug-in Beatbot</b><span>'+esc(cfg.pluginVersion)+'</span></div>':'')+
     '<div class="kv"><b>Acheté</b><span>'+esc(cfg.retailer)+' · '+esc(cfg.price)+' €</span></div>'+
     '<div class="kv"><b>État</b><span>Firmware '+(cfg.firmwareOk?'✅':'—')+' · Brosses ✅ · ClearWater ✅</span></div>'+
     '<div class="row" style="margin-top:10px"><div style="flex:2"><label>Date d\'achat</label><input id="purch" type="date" value="'+esc(cfg.purchaseDate)+'"></div>'+
@@ -422,33 +436,135 @@ function vEntretien(){
   card("🔧 Entretien intelligent","Basé sur tes heures réelles depuis la dernière action.",html);
 }
 
-function vPilotage(){
-  return card("🎮 Pilotage réel du robot","Aller VRAIMENT plus loin que l'app : contrôle direct, zones, passes escaliers manuelles.",
-    '<div class="note warn"><b>Statut : à activer.</b> Beatbot n\'a pas d\'API publique. Pour piloter le robot depuis PoolPilot, il faut d\'abord <b>capturer le protocole</b> de son app (une seule fois). Aucun démontage → <b>garantie matérielle intacte</b>. Zone grise vis-à-vis des conditions de l\'app Beatbot : c\'est TON choix.</div>'+
-    '<b style="font-size:14px">Procédure de capture (10 min, à faire par toi)</b>'+
+function analyzeCapture(text){
+  var hosts={},auth=null,cands=[],maps=[];
+  var NOISE=/(apple|icloud|gstatic|googleapis|google-analytics|firebaseio|crashlytics|sentry|facebook|doubleclick|akamai|appsflyer|adjust\.com|amplitude|mixpanel|branch\.io|bugsnag|datadog)/i;
+  function push(method,url,headers,body){
+    var h;try{h=new URL(url).hostname;}catch(e){return;}
+    if(NOISE.test(h))return;
+    hosts[h]=(hosts[h]||0)+1;
+    var lc=(url+" "+(body||"")).toLowerCase(),label=null;
+    if(/start|clean|\bwork\b|begin|\bplay\b|\brun\b/.test(lc))label="start";
+    else if(/stop|pause|\bhalt\b/.test(lc))label="stop";
+    else if(/mode|program|setting|profile|waterline|floor/.test(lc))label="mode";
+    else if(/dock|home|charge|return|\bpark\b|\bbase\b/.test(lc))label="dock";
+    if(/map|coverage|track|record|\bpath\b|route/.test(lc))maps.push({method:method||"GET",url:url});
+    if(headers)for(var k in headers){var kl=k.toLowerCase();if((kl==="authorization"||kl==="token"||/x-.*(token|auth|session)/.test(kl))&&!auth)auth={header:k,value:String(headers[k])};}
+    var mine=false;try{var idn=[cfg.robotId,cfg.robotUuid,cfg.serial].filter(Boolean);var blob=(url+" "+(body||"")+" "+JSON.stringify(headers||{}));mine=idn.some(function(x){return x&&blob.indexOf(x)>=0;});}catch(e){}
+    cands.push({method:method||"GET",url:url,label:label,headers:headers||{},body:body||"",mine:mine});
+  }
+  var t=(text||"").trim(),har=null;try{har=JSON.parse(t);}catch(e){}
+  if(har&&har.log&&har.log.entries){har.log.entries.forEach(function(e){var r=e.request||{},hs={};(r.headers||[]).forEach(function(x){hs[x.name]=x.value;});push(r.method,r.url,hs,(r.postData&&r.postData.text)||"");});}
+  else{var urls=t.match(/https:\/\/[^\s"'<>]+/g)||[];var al=(t.match(/authorization["']?\s*[:=]\s*["']?([^"'\r\n]+)/i)||[])[1];if(al&&!auth)auth={header:"Authorization",value:al.trim()};urls.forEach(function(u){push("POST",u,al?{Authorization:al.trim()}:{},"");});}
+  return {hosts:Object.keys(hosts).sort(function(a,b){return hosts[b]-hosts[a]}),auth:auth,candidates:cands,maps:maps};
+}
+var beatbotClient={
+  configured:function(){return !!(beatbot.commands&&Object.keys(beatbot.commands).length)},
+  onBeatbot:function(){return location.hostname==="beatbot.kd-mc.com"},
+  _hdrs:function(extra){var hh=Object.assign({},extra||{});if(beatbot.token)hh[beatbot.tokenHeader||"Authorization"]=beatbot.token;return hh;},
+  send:function(name){
+    var c=beatbot.commands[name];var el=$("#bbCockOut");
+    if(!c){if(el)el.innerHTML='<div class="note warn">« '+esc(name)+' » non configuré.</div>';return;}
+    if(!this.onBeatbot()&&el)el.innerHTML='<div class="note warn">Ouvre l\'app sur <b>beatbot.kd-mc.com</b> pour piloter (sécurité admin même-origine).</div>';
+    if(el&&this.onBeatbot())el.innerHTML='<span class="mut">Envoi de « '+esc(name)+' »…</span>';
+    fetch(beatbot.relay,{method:"POST",credentials:"include",headers:{"content-type":"application/json"},body:JSON.stringify({url:c.url,method:c.method||"POST",headers:this._hdrs(c.headers),body:c.body||""})})
+    .then(function(r){return r.json().catch(function(){return {ok:false,reason:"réponse illisible (HTTP "+r.status+")"};});})
+    .then(function(j){if(!el)return;
+      if(j.ok&&j.status>=200&&j.status<300)el.innerHTML='<div class="note">✅ « '+esc(name)+' » envoyé au robot (HTTP '+j.status+').</div>';
+      else if(j.reason==="need_admin_code"||j.reason==="admin_only")el.innerHTML='<div class="note warn">🔐 Prouve ton code admin (Face ID) sur <a href="https://kd-mc.com" target="_blank" rel="noopener noreferrer">kd-mc.com</a>, puis réessaie.</div>';
+      else el.innerHTML='<div class="note warn">⚠️ Échec : '+esc(j.reason||("HTTP "+(j.status||"?")))+(j.detail?" — "+esc(j.detail):"")+'.<br>Le robot doit être <b>connecté</b> (accosté/surface) — le WiFi ne passe pas sous l\'eau.</div>';
+    }).catch(function(e){if(el)el.innerHTML='<div class="note warn">⚠️ '+esc((e&&e.message)||e)+'</div>';});
+  },
+  fetchMap:function(){
+    var el=$("#bbMapOut");if(!beatbot.mapUrl){if(el)el.innerHTML='<div class="note warn">Aucune carte détectée dans la capture.</div>';return;}
+    if(el)el.innerHTML='<span class="mut">Chargement de la carte du robot…</span>';
+    fetch(beatbot.relay,{method:"POST",credentials:"include",headers:{"content-type":"application/json"},body:JSON.stringify({url:beatbot.mapUrl,method:"GET",headers:this._hdrs({})})})
+    .then(function(r){return r.json();}).then(function(j){if(!el)return;
+      if(j.ok&&j.body&&j.body.b64&&/image/.test(j.ct||""))el.innerHTML='<img alt="carte robot" style="width:100%;border-radius:10px;border:1px solid var(--line)" src="data:'+esc(j.ct)+';base64,'+j.body.b64+'">';
+      else if(j.ok&&j.body&&j.body.text)el.innerHTML='<pre style="white-space:pre-wrap;font-size:11px;max-height:220px;overflow:auto;background:var(--bg2);padding:8px;border-radius:8px">'+esc(j.body.text.slice(0,2000))+'</pre>';
+      else el.innerHTML='<div class="note warn">⚠️ '+esc(j.reason||"carte indisponible")+'</div>';
+    }).catch(function(e){if(el)el.innerHTML='<div class="note warn">⚠️ '+esc((e&&e.message)||e)+'</div>';});
+  }
+};
+function bbAnalyze(){
+  var t=($("#bbPaste")&&$("#bbPaste").value)||"";
+  if(!t.trim()){$("#bbResult").innerHTML='<div class="note warn">Dépose un fichier .har ou colle le log d\'abord.</div>';return;}
+  _bbAnalysis=analyzeCapture(t);
+  $("#bbResult").innerHTML=bbResultHtml(_bbAnalysis);
+}
+function bbCandOpts(cands,label){
+  var idx=cands.map(function(c,i){return i;}).sort(function(a,b){return (cands[b].mine?1:0)-(cands[a].mine?1:0);});
+  var sel=null;for(var q=0;q<idx.length;q++){if(cands[idx[q]].label===label){sel=idx[q];break;}}
+  return idx.map(function(i){var c=cands[i];var tail=c.url.replace(/^https:\/\//,"").slice(0,42);return '<option value="'+i+'" '+(i===sel?"selected":"")+'>'+(c.mine?"⭐ ":"")+esc(c.method+" "+tail)+'</option>';}).join("");
+}
+function bbResultHtml(a){
+  if(!a.candidates.length)return '<div class="note warn">Rien de exploitable détecté. Assure-toi d\'avoir capturé pendant que tu appuyais sur Start/Stop dans l\'app Beatbot.</div>';
+  var nm=a.candidates.filter(function(c){return c.mine;}).length;
+  var h='<div class="note">🔎 '+a.candidates.length+' requêtes · serveur principal : <b>'+esc(a.hosts[0]||"?")+'</b>'+(a.auth?' · token détecté ✅':' · <b>aucun token</b> (recapture connecté)')+(nm?' · '+nm+' ciblent TON robot ✅':'')+'</div>';
+  ["start","stop","mode","dock"].forEach(function(k){
+    var lbl={start:"▶️ Démarrer",stop:"⏹️ Stop",mode:"🔁 Mode",dock:"🏠 Base"}[k];
+    h+='<label style="margin-top:8px">'+lbl+'</label><select id="bbCmd_'+k+'"><option value="">— aucune —</option>'+bbCandOpts(a.candidates,k)+'</select>';
+  });
+  if(a.maps.length)h+='<div class="note">🗺️ '+a.maps.length+' endpoint(s) de carte détecté(s) — carte robot activable.</div>';
+  h+='<button class="btn" style="margin-top:12px" onclick="bbSaveConfig()">💾 Enregistrer la config & activer le pilotage</button>';
+  return h;
+}
+function bbSaveConfig(){
+  if(!_bbAnalysis)return;var a=_bbAnalysis,cmds={};
+  ["start","stop","mode","dock"].forEach(function(k){var s=$("#bbCmd_"+k);if(s&&s.value!==""){var c=a.candidates[+s.value];if(c)cmds[k]={url:c.url,method:c.method,headers:c.headers,body:c.body};}});
+  beatbot.commands=cmds;
+  if(a.auth){beatbot.token=a.auth.value;beatbot.tokenHeader=a.auth.header;}
+  beatbot.hosts=a.hosts;beatbot.mapUrl=a.maps.length?a.maps[0].url:"";
+  save();toast("✅ Config enregistrée — "+Object.keys(cmds).length+" commande(s) prête(s)");render();
+}
+function bbCaptureProcedure(){
+  return '<div class="note warn"><b>Une seule étape manuelle</b> (personne d\'autre ne peut lire le trafic de TON iPhone) :</div>'+
     '<ol class="clean">'+
-      '<li>Installe <b>Proxyman</b> (iOS) ou <code>mitmproxy</code> sur le même WiFi que ton iPhone.</li>'+
-      '<li>Configure le proxy + installe le certificat (HTTPS déchiffré).</li>'+
-      '<li>Ouvre l\'app Beatbot et fais : <b>Start, Stop, changement de mode, retour base</b>.</li>'+
-      '<li>Exporte le log (cloud + BLE si visible) et envoie-le moi.</li>'+
+    '<li>Installe <b>Proxyman</b> (App Store) ou <b>Stream</b> sur ton iPhone.</li>'+
+    '<li>Active le proxy + installe/active le certificat (déchiffrement HTTPS).</li>'+
+    '<li>Ouvre l\'app <b>Beatbot</b> et fais : <b>Démarrer, Arrêter, changer de mode, retour base</b>.</li>'+
+    '<li>Exporte en <b>.har</b> et dépose-le ci-dessous. Le reste est automatique.</li>'+
     '</ol>'+
-    '<div class="note">Avec ce log je construis <code>beatbotClient</code> : je pourrai <b>relayer les mêmes commandes</b> que l\'app (start/stop/mode/zone si le robot le supporte). ⚠️ Je ne pourrai PAS réécrire la navigation/cartographie interne — ça reste dans le firmware verrouillé.</div>'
-  )+
-  card("🕹️ Cockpit (aperçu — désactivé)","Ce que tu auras une fois le protocole branché :",
-    '<div class="disabled-wrap">'+
+    '<div class="note">🔒 Aucun démontage → <b>garantie matérielle intacte</b>. On relaie les MÊMES requêtes que l\'app Beatbot. (Zone grise vis-à-vis des conditions de l\'app : ton choix.)</div>';
+}
+function vPilotage(){
+  var configured=beatbotClient.configured();
+  var out=card("🎮 Contrôle réel du robot",
+    configured?"Config chargée — pilote ton robot ci-dessous.":"À activer une seule fois via une capture de l'app Beatbot.",
+    configured
+      ? '<div class="note">✅ Connecté à <b>'+esc(beatbot.hosts[0]||"?")+'</b> · '+Object.keys(beatbot.commands).length+' commande(s)'+(beatbot.mapUrl?' · carte 🗺️':'')+'. Le pilotage passe par ton relais sécurisé (admin kd-mc.com).</div>'+
+        (beatbotClient.onBeatbot()?'':'<div class="note warn">Pour piloter, ouvre l\'app sur <b>beatbot.kd-mc.com</b> (sécurité admin même-origine).</div>')
+      : bbCaptureProcedure()
+  );
+  if(configured){
+    out+=card("🕹️ Cockpit",
+      "Le robot doit être connecté (accosté ou en surface) — le WiFi ne passe pas sous l'eau.",
       '<div class="grid2" style="margin-bottom:10px">'+
-        '<button class="btn ghost">▶️ Démarrer cycle</button>'+
-        '<button class="btn ghost">⏹️ Stop / Base</button>'+
+        '<button class="btn" onclick="beatbotClient.send(\'start\')">▶️ Démarrer</button>'+
+        '<button class="btn ghost" onclick="beatbotClient.send(\'stop\')">⏹️ Stop</button>'+
       '</div>'+
-      '<div class="row"><button class="btn ghost sm">🪜 Passe escaliers ×2</button><button class="btn ghost sm">💧 Ligne d\'eau</button><button class="btn ghost sm">🎯 Zone ciblée</button></div>'+
-      '<div class="center mut" style="margin-top:12px">Joystick directionnel + envoi de zones depuis ta carte 🗺️</div>'+
-    '</div>'
-  )+
-  card("⚙️ Réglages robot","",
+      '<div class="row">'+
+        (beatbot.commands.mode?'<button class="btn ghost sm" onclick="beatbotClient.send(\'mode\')">🔁 Mode</button>':'')+
+        (beatbot.commands.dock?'<button class="btn ghost sm" onclick="beatbotClient.send(\'dock\')">🏠 Base</button>':'')+
+      '</div>'+
+      '<div id="bbCockOut" style="margin-top:10px"></div>'+
+      (beatbot.mapUrl?'<button class="btn ghost" style="margin-top:12px" onclick="beatbotClient.fetchMap()">🗺️ Récupérer la carte du robot</button><div id="bbMapOut" style="margin-top:10px"></div>':'')
+    );
+  }
+  out+=card("📥 Importer une capture Beatbot",
+    "Dépose le .har exporté de l'app Beatbot — serveurs, token et commandes sont détectés automatiquement.",
+    '<input type="file" id="bbFile" accept=".har,.json,.txt,.log" style="margin-bottom:8px">'+
+    '<textarea id="bbPaste" rows="3" placeholder="…ou colle le log/HAR ici"></textarea>'+
+    '<button class="btn" style="margin-top:10px" onclick="bbAnalyze()">🔎 Analyser la capture</button>'+
+    '<div id="bbResult" style="margin-top:10px"></div>'+
+    (beatbotClient.configured()?'<button class="btn ghost sm" style="margin-top:10px;width:100%" onclick="if(confirm(\'Effacer la config de pilotage ?\')){beatbot.commands={};beatbot.token=\'\';beatbot.mapUrl=\'\';save();render();}">🗑 Effacer la config</button>':'')
+  );
+  out+=card("⚙️ Réglages robot","",
     '<label>Modèle Beatbot</label><select id="cfgModel">'+
     Object.keys(MODELS).map(function(k){return '<option value="'+k+'" '+(cfg.model===k?"selected":"")+'>'+esc(MODELS[k].name)+'</option>'}).join("")+
     '</select><button class="btn ghost sm" style="margin-top:10px;width:100%" onclick="setModel()">Enregistrer le modèle</button>'
   );
+  return out;
 }
 
 function selOpts(val,opts){return opts.map(function(o){return '<option value="'+o[0]+'" '+(val===o[0]?"selected":"")+'>'+esc(o[1])+'</option>'}).join("")}
@@ -876,6 +992,7 @@ function render(){
     var bind={rgEnv:"env",rgUse:"usage",rgDeb:"debris",rgFoc:"focus"};
     Object.keys(bind).forEach(function(id){var el=$("#"+id);if(el)el.addEventListener("change",function(){setPerf(bind[id],this.value)})});
   }
+  if(v==="pilotage"){setTimeout(function(){var f=$("#bbFile");if(f)f.addEventListener("change",function(){var file=this.files&&this.files[0];if(!file)return;var rd=new FileReader();rd.onload=function(){var ta=$("#bbPaste");if(ta){ta.value=String(rd.result||"").slice(0,3000000);bbAnalyze();}};rd.readAsText(file);});},30);}
 }
 document.addEventListener("click",function(e){
   var nb=e.target.closest("#nav button");if(nb){go(nb.getAttribute("data-v"));return}
