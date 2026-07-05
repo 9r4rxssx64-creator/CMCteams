@@ -2121,6 +2121,24 @@ S'applique : Apex priorité absolue, CMCteams, tous projets futurs.
 
 ---
 
+## ⏱ RÈGLE ABSOLUE — TEMPS RÉEL / LIVE OU PRESQUE, TOUJOURS PARTOUT (Kevin 2026-07-05, ABSOLUE)
+
+> **« Temps réel, live ou presque tjs partout »** — Kevin 2026-07-05
+
+**Règle absolue, NON-NÉGOCIABLE** — World Monitor (référence), OSINT, CMCteams, Apex, tous
+projets avec données. Toute donnée affichée doit être **en direct ou quasi-direct**, avec
+**rafraîchissement AUTOMATIQUE** adapté à la cadence RÉELLE de la source (pas de données
+figées, pas de « chargé une fois au boot ») : avions 15 s, satellites SGP4 5 s, navires 60 s,
+radar pluie 5 min, alertes GDACS 15 min, aurores 10 min, air 30 min, géostationnaire
+time=default (~10-20 min). Préférer TOUJOURS la source la plus fraîche disponible gratuitement
+sans clé (leçon #127) ; si la seule source temps réel exige une clé/WS → worker-proxy (leçon
+#130/#133). Afficher l'âge de la donnée quand utile (« maj ~10 min », « image d'hier ») —
+JAMAIS laisser croire qu'une donnée périodique est du temps réel strict (honnêteté). Un
+timer de refresh est gated sur la puce active (`if(ON.x)`) pour ne pas gaspiller ; la donnée
+au boot se charge TOUJOURS (même puce OFF) pour un premier affichage instantané au toggle.
+
+---
+
 ## 💪 RÈGLE ABSOLUE — TROUVE DES SOLUTIONS, NE JAMAIS DIRE « JE NE PEUX PAS » (Kevin 2026-07-05, MAÎTRESSE)
 
 > **"Trouve des solutions ne me dis jamais que tu ne peux pas"** — Kevin 2026-07-05
