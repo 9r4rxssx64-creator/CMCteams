@@ -51,21 +51,26 @@ async function collectShips(key, ms, cap) {
   const ws = resp.webSocket;
   if (!ws) throw new Error("aisstream: pas de webSocket dans la réponse");
   ws.accept();
+  try { ws.binaryType = "arraybuffer"; } catch (e) {} // recevoir le binaire en ArrayBuffer (pas Blob)
   // APIKey nettoyée (un espace/retour collé dans le secret casserait l'abonnement).
   // BoundingBoxes = monde entier, chaque box = [[latSW,lonSW],[latNE,lonNE]] (format aisstream).
   ws.send(JSON.stringify({ APIKey: String(key).trim(), BoundingBoxes: [[[-90, -180], [90, 180]]] }));
   const ships = new Map();
-  const debug = { msgs: 0, firstRaw: "", closeCode: null, closeReason: "" };
+  const dec = new TextDecoder();
+  const debug = { msgs: 0, firstRaw: "", dataType: "", closeCode: null, closeReason: "" };
+  const toText = (d) => {
+    if (typeof d === "string") return d;
+    if (d instanceof ArrayBuffer) return dec.decode(d);
+    if (d && d.buffer instanceof ArrayBuffer) return dec.decode(d); // TypedArray (Uint8Array…)
+    return null; // Blob ou inconnu → traité à part
+  };
   await new Promise((resolve) => {
     let done = false;
     const finish = () => { if (done) return; done = true; try { ws.close(); } catch (e) {} resolve(); };
     const timer = setTimeout(finish, ms);
-    ws.addEventListener("message", (ev) => {
+    const handle = (txt) => {
       try {
-        debug.msgs++;
-        // aisstream envoie les messages en BINAIRE (ArrayBuffer) → décoder en texte JSON.
-        const txt = typeof ev.data === "string" ? ev.data : new TextDecoder().decode(ev.data);
-        if (!debug.firstRaw) debug.firstRaw = txt.slice(0, 220); // 1er message brut (diagnostic)
+        if (!debug.firstRaw && txt) debug.firstRaw = txt.slice(0, 220);
         const m = JSON.parse(txt);
         // aisstream : MetaData.{MMSI,ShipName,latitude,longitude} + Message.PositionReport.{Latitude,Longitude,Sog,Cog}
         const meta = m && m.MetaData;
@@ -78,6 +83,18 @@ async function collectShips(key, ms, cap) {
         ships.set(mmsi, { lat, lon, sog: pr && pr.Sog, cog: pr && pr.Cog, name: (meta.ShipName || "").trim() });
         if (ships.size >= cap) { clearTimeout(timer); finish(); }
       } catch (e) {}
+    };
+    ws.addEventListener("message", (ev) => {
+      debug.msgs++;
+      if (!debug.dataType) debug.dataType = typeof ev.data === "string" ? "string" : (ev.data && ev.data.constructor && ev.data.constructor.name) || Object.prototype.toString.call(ev.data);
+      const txt = toText(ev.data);
+      if (txt != null) { handle(txt); return; }
+      // Blob (ou autre) → conversion asynchrone en texte.
+      if (ev.data && typeof ev.data.arrayBuffer === "function") {
+        ev.data.arrayBuffer().then((ab) => handle(dec.decode(ab))).catch(() => {});
+      } else if (ev.data && typeof ev.data.text === "function") {
+        ev.data.text().then((t) => handle(t)).catch(() => {});
+      }
     });
     ws.addEventListener("close", (ev) => { debug.closeCode = ev && ev.code; debug.closeReason = (ev && ev.reason) || ""; clearTimeout(timer); finish(); });
     ws.addEventListener("error", () => { clearTimeout(timer); finish(); });
