@@ -377,10 +377,12 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         out.innerHTML = `<p style="font-size:13px;color:var(--ax-text-dim)">Aucun badge stocké</p>`;
         return;
       }
+      /* v13.4.343 audit sécu : label (saisi user) et uid (tag NFC EXTERNE) doivent
+       * être échappés — un tag NFC forgé pouvait injecter du HTML (XSS stocké). */
       out.innerHTML = list.map((b) => `
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:8px;margin-top:6px">
-          <strong class="ax-gs-266">${b.label ?? b.format}</strong>
-          <div class="ax-gs-2">UID: ${b.uid ?? 'n/a'} · ${new Date(b.scanned_at).toLocaleString()}</div>
+          <strong class="ax-gs-266">${escapeHtml(b.label ?? b.format)}</strong>
+          <div class="ax-gs-2">UID: ${escapeHtml(b.uid ?? 'n/a')} · ${new Date(b.scanned_at).toLocaleString()}</div>
         </div>
       `).join('');
     })();
