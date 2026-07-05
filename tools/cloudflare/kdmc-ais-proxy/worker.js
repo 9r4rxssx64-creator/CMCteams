@@ -52,27 +52,39 @@ export default {
     const origin = request.headers.get("Origin");
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
 
-    // Une seule instance de Durable Object garde la WebSocket AIS + le cache.
-    const id = env.AIS_HUB.idFromName("global");
-    const stub = env.AIS_HUB.get(id);
+    const hasKey = !!(env.AISSTREAM_KEY && String(env.AISSTREAM_KEY).length > 8);
 
-    if (url.pathname === "/health" || url.pathname === "/ships") {
-      // On délègue au DO (il tient le cache). On lui passe l'info "clé présente".
-      const hasKey = !!(env.AISSTREAM_KEY && String(env.AISSTREAM_KEY).length > 8);
-      // Hostname SYNTHÉTIQUE pour l'appel au Durable Object : réutiliser l'URL publique
-      // du worker (…workers.dev) fait croire à Cloudflare à un sous-appel du même worker
-      // sur la même zone → erreur 1042. Le host est ignoré pour le routage DO. (leçon #132)
-      const fwd = new URL(url.pathname + url.search, "https://ais-hub.internal");
+    // Helper : appelle le Durable Object avec un hostname SYNTHÉTIQUE (le host est ignoré
+    // pour le routage DO), en CAPTURANT toute erreur DO (au lieu de laisser Cloudflare
+    // renvoyer une page « error code: 10xx »). Le message exact remonte pour diagnostic.
+    async function callDO(path) {
+      const id = env.AIS_HUB.idFromName("global");
+      const stub = env.AIS_HUB.get(id);
+      const fwd = new URL(path, "https://ais-hub.internal");
       fwd.searchParams.set("_haskey", hasKey ? "1" : "0");
       const r = await stub.fetch(new Request(fwd.toString(), { method: "GET" }));
-      const body = await r.text();
-      return new Response(body, {
-        status: r.status,
-        headers: Object.assign(
-          { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
-          cors(origin)
-        ),
-      });
+      return await r.json();
+    }
+
+    // /health : répond TOUJOURS au niveau worker (prouve que le worker tourne). On tente
+    // en plus le DO et on joint son état OU l'erreur exacte — sans jamais faire échouer /health.
+    if (url.pathname === "/health") {
+      let doState = null, doError = null;
+      try { doState = await callDO("/health"); }
+      catch (e) { doError = String((e && e.message) || e); }
+      return json({ ok: true, hasKey, worker: "up", do: doState, doError, ts: Date.now() }, origin);
+    }
+
+    // /ships : FAIL-OPEN. Si le DO échoue (plan, migration, 1042…), on renvoie une
+    // FeatureCollection VIDE + la note d'erreur → World Monitor bascule sur Digitraffic
+    // (Baltique), zéro régression, et le message exact du DO est visible.
+    if (url.pathname === "/ships") {
+      try {
+        const data = await callDO(url.pathname + url.search);
+        return json(data, origin);
+      } catch (e) {
+        return json({ type: "FeatureCollection", features: [], note: "DO indisponible: " + String((e && e.message) || e) }, origin);
+      }
     }
 
     return json({ ok: false, error: "not_found", endpoints: ["/health", "/ships?bbox=…"] }, origin, 404);
