@@ -92,10 +92,11 @@ export default {
 };
 
 /**
- * AisHub — Durable Object : maintient la WebSocket aisstream.io et met en cache les
- * positions par MMSI (Map en mémoire, capée, TTL). Un alarm() reconnecte si la WS tombe.
+ * AisHubShips — Durable Object (storage SQLite, compatible plan FREE) : maintient la
+ * WebSocket aisstream.io et met en cache les positions par MMSI (Map en mémoire, capée,
+ * TTL). Un alarm() reconnecte si la WS tombe.
  */
-export class AisHub {
+export class AisHubShips {
   constructor(state, env) {
     this.state = state;
     this.env = env;
