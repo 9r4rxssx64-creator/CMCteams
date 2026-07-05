@@ -1,8 +1,8 @@
 {
-  "_comment": "MARKER — modifier ce fichier déclenche firebase-rules-auto-apply.yml qui publie firebase-rules-apex.json avec ces états. Rollback : apex_state=open (rouvre /apex + /coffre_vault) ou rules_state=open (rouvre /cmcteams), commit, push.",
+  "_comment": "MARKER — modifier ce fichier déclenche firebase-rules-auto-apply.yml qui publie firebase-rules-apex.json avec ces états. Rollback : apex_state=open (rouvre /apex + /coffre_vault), rules_state=open (rouvre /cmcteams), shops_lock=off (rouvre l'écriture produits anon). Commit, push.",
   "rules_state": "hardened",
   "apex_state": "hardened",
-  "shops_lock": "keep",
-  "requested_at": "2026-07-04",
-  "reason": "Kevin « Durci » — /apex + /coffre_vault → auth != null (prérequis clients/workers/workflows livrés PR #2053, Apex v13.4.339 + push-worker + Pages déployés verts)"
+  "shops_lock": "on",
+  "requested_at": "2026-07-05",
+  "reason": "Kevin « Go / Tout auto » — verrou écriture boutique par rôle (shops_admin_v1/products+logos+selection → auth.token.role==='admin' minté par kdmc-router /__admin/fbtoken). Prérequis complet : kdmc-fb-auth.js (intercepteur fail-open) désormais chargé sur TOUTES les surfaces d'écriture admin (studios + storefronts chez-lolo/la-detente). Orders clients + lectures INCHANGÉS (garde-fou deploy-rules.cjs). Grant = grant admin domaine (reconnu auto après 1 preuve PIN). Rollback : shops_lock=off."
 }
