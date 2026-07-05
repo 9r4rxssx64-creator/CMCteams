@@ -28,6 +28,7 @@ const ROUTES = {
   'departs.kd-mc.com': '/CMCteams/tools/departs',
   'cmcteams-light.kd-mc.com': '/CMCteams/tools/departs', // « CMCteams light » (Kevin 2026-07-01) — alias nommé de la page Départs (departs.kd-mc.com reste actif)
   'bot.kd-mc.com': '/CMCteams/tools/crypto-bot-dashboard', // Tableau de bord crypto-bot (Kevin 2026-07-03) — admin-gated via /__bot/*
+  'beatbot.kd-mc.com': '/CMCteams/tools/poolrobot', // PoolPilot — app robot piscine Beatbot (Kevin 2026-07-05)
 };
 
 export default {

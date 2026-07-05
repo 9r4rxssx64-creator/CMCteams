@@ -13,6 +13,7 @@
     "coffre.kd-mc.com": { "name": "Coffre", "icon": "🔐" },
     "la-detente.kd-mc.com": { "name": "La Détente", "icon": "🌿" },
     "chez-lolo.kd-mc.com": { "name": "Chez Lolo", "icon": "🎨" },
-    "bot.kd-mc.com": { "name": "Bot Crypto", "icon": "🤖" }
+    "bot.kd-mc.com": { "name": "Bot Crypto", "icon": "🤖" },
+    "beatbot.kd-mc.com": { "name": "PoolPilot", "icon": "🌊" }
   }
 }
