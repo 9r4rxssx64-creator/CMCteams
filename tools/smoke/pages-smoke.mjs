@@ -86,6 +86,30 @@ for (const t of TARGETS) {
 
 await browser.close();
 
+/* Sondes DIRECTES des sources live v2.17 (réseau ouvert du runner — ce que le sandbox
+   Claude Code ne peut pas atteindre, leçon #126). SOFT : la page est fail-open par
+   design, donc une source down = ⚠ rapportée, pas un échec du smoke. Mais le log
+   PROUVE que chaque identifiant de couche GIBS / endpoint est correct. */
+const PROBES = [
+  ['GIBS GOES-East GeoColor (géo LIVE)', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/0.png'],
+  ['GIBS GOES-West GeoColor', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-West_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/0.png'],
+  ['GIBS Himawari GeoColor', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/1.png'],
+  ['GIBS VIIRS Thermal Anomalies (feux sat.)', (() => { const d = new Date(Date.now() - 24 * 3600 * 1000); const iso = d.toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/' + iso + '/GoogleMapsCompatible_Level9/1/0/0.png'; })()],
+  ['RainViewer (radar pluie)', 'https://api.rainviewer.com/public/weather-maps.json'],
+  ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
+  ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
+];
+console.log('\n--- Sondes sources live (soft) ---');
+for (const [label, url] of PROBES) {
+  try {
+    const r = await fetch(url, { redirect: 'follow' });
+    const ct = r.headers.get('content-type') || '';
+    console.log((r.ok ? '✅' : '⚠️ HTTP ' + r.status) + ' ' + label + ' (' + ct.split(';')[0] + ')');
+  } catch (e) {
+    console.log('⚠️ ' + label + ' : ' + (e && e.message ? e.message : e));
+  }
+}
+
 for (const r of report) {
   console.log((r.ok ? '✅' : '❌') + ' ' + r.url);
   for (const n of r.notes) console.log('   · ' + n);
