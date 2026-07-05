@@ -3,9 +3,18 @@ main = "worker.js"
 compatibility_date = "2025-01-01"
 # account_id injecté par le workflow via CLOUDFLARE_ACCOUNT_ID (jamais commité)
 
+# Durable Object en storage SQLite (new_sqlite_classes) : seul backend DO disponible
+# sur le plan Workers FREE. La classe KV-backed d'origine (AisHub, new_classes) exigeait
+# un plan payant → le worker ne démarrait pas → error code: 1042 sur toutes les requêtes.
+# On crée une NOUVELLE classe SQLite (AisHubShips) via une migration v2 additive : v1
+# reste inchangée (pas de deleted_classes qui pourrait échouer si v1 n'a jamais provisionné).
 [durable_objects]
-bindings = [{ name = "AIS_HUB", class_name = "AisHub" }]
+bindings = [{ name = "AIS_HUB", class_name = "AisHubShips" }]
 
 [[migrations]]
 tag = "v1"
 new_classes = ["AisHub"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["AisHubShips"]
