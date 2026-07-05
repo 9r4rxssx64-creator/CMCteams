@@ -38,10 +38,17 @@ jobs:
         id: fetch
         env:
           FB_URL: https://kdmc-clients-default-rtdb.firebaseio.com
+          # Règles /apex durcies auth != null (2026-07-04) → lecture par service
+          # account (leçon #109 : un lecteur serveur anonyme = 401 en boucle).
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: |
-          curl -s "${FB_URL}/apex/ax_claude_todo.json" -o todo.json || echo '[]' > todo.json
-          curl -s "${FB_URL}/apex/ax_lessons_learned.json" -o lessons.json || echo '[]' > lessons.json
-          curl -s "${FB_URL}/apex/ax_handoff_journal.json" -o journal.json || echo '[]' > journal.json
+          TOKEN=$(node tools/firebase/gauth.cjs || true)
+          QS=""
+          if [ -n "$TOKEN" ]; then QS="?access_token=${TOKEN}"; echo "Auth service account OK"; else echo "::warning::pas de token — lecture non authentifiée (Permission denied attendu sur /apex durci)"; fi
+          curl -s "${FB_URL}/apex/ax_claude_todo.json${QS}" -o todo.json || echo '[]' > todo.json
+          curl -s "${FB_URL}/apex/ax_lessons_learned.json${QS}" -o lessons.json || echo '[]' > lessons.json
+          curl -s "${FB_URL}/apex/ax_handoff_journal.json${QS}" -o journal.json || echo '[]' > journal.json
           echo "todo_size=$(wc -c < todo.json)" >> $GITHUB_OUTPUT
           echo "Total queue size: $(wc -c < todo.json) bytes"
 
@@ -55,8 +62,15 @@ jobs:
           try:
               with open('todo.json') as f:
                   data = json.load(f)
+              # Une réponse d'erreur RTDB ({"error":"Permission denied"}) est un dict
+              # de STRINGS → l'ancien code la transformait en ["Permission denied"] et
+              # plantait sur t.get() (AttributeError). Condition d'infra = log, pas crash.
+              if isinstance(data, dict) and isinstance(data.get('error'), str):
+                  print(f"::warning::Lecture Firebase refusée/erronée : {data} — file traitée comme vide (auth service account manquante ?)")
+                  data = []
               if not isinstance(data, list):
                   data = list(data.values()) if isinstance(data, dict) else []
+              data = [t for t in data if isinstance(t, dict)]
           except Exception:
               data = []
 
@@ -102,7 +116,12 @@ jobs:
         if: steps.analyze.outputs.has_critical == 'true'
         env:
           FB_URL: https://kdmc-clients-default-rtdb.firebaseio.com
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: |
+          FB_QS="?access_token=$(node tools/firebase/gauth.cjs || true)"
+          [ "$FB_QS" = "?access_token=" ] && FB_QS=""
+          export FB_QS
           python3 << 'EOF'
           import json, os, time, urllib.request
           with open('/tmp/report.json') as f:
@@ -119,8 +138,9 @@ jobs:
               'status': 'pending_review',
           }
           fb = os.environ['FB_URL']
+          qs = os.environ.get('FB_QS', '')  # ?access_token=… (règles /apex durcies)
           req = urllib.request.Request(
-              f"{fb}/apex/ax_claude_alerts/{alert['id']}.json",
+              f"{fb}/apex/ax_claude_alerts/{alert['id']}.json{qs}",
               data=json.dumps(alert).encode('utf-8'),
               method='PUT',
               headers={'Content-Type': 'application/json'},
