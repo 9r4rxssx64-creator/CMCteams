@@ -1,0 +1,568 @@
+<!doctype html>
+<!-- v0.1.0 -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#0a1622">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PoolPilot">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>PoolPilot — Beatbot+</title>
+<style>
+  :root{
+    --bg:#08131f; --bg2:#0d1c2c; --card:#11263a; --card2:#16324c;
+    --line:#1f3d5a; --txt:#e8f1fa; --dim:#93b0c8; --gold:#39c2ff; --gold2:#0e88c9;
+    --ok:#2ecc71; --warn:#f2b632; --bad:#e8624a; --stair:#c46bff; --deep:#2d7bd6;
+    --r:14px; --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;max-width:100vw;overflow-x:hidden}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:linear-gradient(180deg,var(--bg),#050c14 60%);color:var(--txt);
+    font-size:15px;line-height:1.45;min-height:100vh;
+    padding-bottom:calc(78px + var(--safe-b));
+  }
+  #top{
+    position:sticky;top:0;z-index:20;background:rgba(8,19,31,.92);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);padding:calc(10px + var(--safe-t)) 14px 10px;
+    display:flex;align-items:center;gap:10px;
+  }
+  #top .logo{font-size:20px}
+  #top h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.3px;flex:1}
+  #top .robot{font-size:11px;color:var(--dim);background:var(--card);padding:4px 9px;border-radius:20px;border:1px solid var(--line);white-space:nowrap}
+  #app{padding:14px;max-width:640px;margin:0 auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 14px}
+  .card h2{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .card .sub{color:var(--dim);font-size:12.5px;margin:0 0 12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>*{flex:1;min-width:0}
+  label{display:block;font-size:12px;color:var(--dim);margin:0 0 4px;font-weight:600}
+  input,select,textarea{
+    width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);
+    border-radius:10px;padding:11px 12px;font-size:16px;font-family:inherit;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    background:linear-gradient(135deg,var(--gold),var(--gold2));color:#052034;
+    border:none;border-radius:11px;padding:12px 16px;font-size:15px;font-weight:700;
+    cursor:pointer;min-height:46px;width:100%;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+  .btn.sm{min-height:38px;padding:8px 12px;font-size:13px;width:auto}
+  .btn.bad{background:linear-gradient(135deg,#e8624a,#b8402c);color:#fff}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--bg2)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+  .stat .n{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:11px;color:var(--dim);margin-top:2px}
+  .note{background:rgba(57,194,255,.08);border:1px solid rgba(57,194,255,.35);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#bfe3fb;margin:10px 0}
+  .warn{background:rgba(242,182,50,.09);border:1px solid rgba(242,182,50,.4);color:#f6d68a}
+  canvas{width:100%;display:block;border-radius:12px;background:#071726;border:1px solid var(--line);touch-action:none}
+  #poolCanvas{height:420px}
+  #covCanvas{height:300px}
+  .palette{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 8px}
+  .tool{flex:0 0 auto;padding:9px 11px;border-radius:11px;border:1px solid var(--line);background:var(--bg2);font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .tool.on{border-color:var(--gold);background:rgba(57,194,255,.15);color:#cdeafd}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--dim);margin-top:8px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:4px;vertical-align:-1px}
+  .step{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:none}
+  .step .n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--gold);color:#052034;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+  .step .b{flex:1}
+  .step .b b{font-size:14px}
+  .step .b span{display:block;color:var(--dim);font-size:12.5px;margin-top:2px}
+  .logrow{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .logrow:last-child{border-bottom:none}
+  .logrow .d{flex:1}
+  .logrow .d b{font-size:14px}
+  .logrow .d span{color:var(--dim);font-size:12px;display:block}
+  .maint{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .maint:last-child{border-bottom:none}
+  .maint .bar{flex:1;height:8px;background:var(--bg2);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+  .maint .bar i{display:block;height:100%;border-radius:6px}
+  #nav{
+    position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(8,19,31,.96);
+    backdrop-filter:blur(14px);border-top:1px solid var(--line);
+    display:flex;padding:6px 4px calc(6px + var(--safe-b));
+  }
+  #nav button{
+    flex:1;background:none;border:none;color:var(--dim);font-size:10px;font-weight:600;
+    padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border-radius:10px;
+  }
+  #nav button .ic{font-size:19px;line-height:1}
+  #nav button.on{color:var(--gold)}
+  .disabled-wrap{opacity:.55;pointer-events:none;filter:grayscale(.3)}
+  .center{text-align:center}
+  .mut{color:var(--dim);font-size:12.5px}
+  ol.clean{margin:8px 0 0;padding-left:18px}
+  ol.clean li{margin:6px 0;font-size:13.5px}
+  code{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:12px}
+  a{color:var(--gold)}
+  .chipzone{display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:5px 10px;font-size:12px;margin:3px 4px 0 0}
+  .empty{text-align:center;color:var(--dim);padding:26px 10px;font-size:13.5px}
+</style>
+</head>
+<body>
+<div id="top">
+  <span class="logo">🌊</span>
+  <h1>PoolPilot <span style="color:var(--gold)">Beatbot+</span></h1>
+  <span class="robot" id="robotTag">…</span>
+</div>
+<div id="app"></div>
+<nav id="nav"></nav>
+
+<script src="/CMCteams/tools/shared/version-badge-pwa.js"
+        data-project="poolrobot" data-version="v0.1.0" data-color="#39c2ff" defer></script>
+<script>
+"use strict";
+/* ============ PoolPilot — Beatbot+ companion (v0.1.0) ============
+   Garantie intacte : aucune modif firmware, aucun accès physique.
+   Couche stratégie/cartographie/analytics AUTOUR du robot.
+================================================================= */
+var APP_VER="v0.1.0";
+function $(s,el){return (el||document).querySelector(s)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
+function ls(k,v){try{localStorage.setItem("pr_"+k,JSON.stringify(v))}catch(e){}}
+function uid(){return "m"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36)}
+function fmtDate(ts){var d=new Date(ts);return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
+
+/* ---- Modèles Beatbot connus (capacités indicatives) ---- */
+var MODELS={
+  "aquasense2ultra":{name:"AquaSense 2 Ultra",modes:["Standard","Sol","Ligne d'eau","Ultra profond","Éco"],waterline:true,map:true},
+  "aquasense2pro":{name:"AquaSense 2 Pro",modes:["Standard","Sol","Ligne d'eau","Éco"],waterline:true,map:true},
+  "aquasense2":{name:"AquaSense 2",modes:["Standard","Sol","Ligne d'eau","Éco"],waterline:true,map:false},
+  "aquasense":{name:"AquaSense",modes:["Standard","Sol","Ligne d'eau"],waterline:true,map:false},
+  "iskimultra":{name:"iSkim Ultra (surface)",modes:["Surface"],waterline:false,map:false},
+  "autre":{name:"Autre Beatbot",modes:["Standard","Sol","Ligne d'eau","Éco"],waterline:true,map:false}
+};
+
+/* ---- State ---- */
+var S={view:"accueil"};
+var cfg=lg("cfg",{model:"aquasense2ultra",unit:"m",runHours:0});
+var pool=lg("pool",{L:8,W:4,shape:"rect",markers:[]});
+var sessions=lg("sessions",[]);
+var plan=lg("plan",{mode:"Standard",generatedAt:0});
+var maint=lg("maint",{filter:0,brush:0,seal:0}); /* heures depuis dernier entretien */
+
+function save(){ls("cfg",cfg);ls("pool",pool);ls("sessions",sessions);ls("plan",plan);ls("maint",maint)}
+
+/* ============ NAV ============ */
+var NAV=[
+  {v:"accueil",ic:"🏠",l:"Accueil"},
+  {v:"bassin",ic:"🗺️",l:"Bassin"},
+  {v:"plan",ic:"🎯",l:"Plan"},
+  {v:"journal",ic:"📊",l:"Journal"},
+  {v:"entretien",ic:"🔧",l:"Entretien"},
+  {v:"pilotage",ic:"🎮",l:"Pilotage"}
+];
+function renderNav(){
+  $("#nav").innerHTML=NAV.map(function(n){
+    return '<button class="'+(S.view===n.v?"on":"")+'" data-v="'+n.v+'"><span class="ic">'+n.ic+'</span>'+esc(n.l)+'</button>';
+  }).join("");
+}
+function go(v){S.view=v;render();window.scrollTo(0,0)}
+
+/* ============ VIEWS ============ */
+function vAccueil(){
+  var m=MODELS[cfg.model]||MODELS.autre;
+  var last=sessions[0];
+  var nStairs=pool.markers.filter(function(x){return x.type==="escalier"}).length;
+  var area=(pool.L*pool.W).toFixed(1);
+  var alerts=maintAlerts();
+  return card("👋 Bonjour Kevin","",
+    '<div class="grid2" style="margin-bottom:12px">'+
+      stat(area+" m²","Surface bassin")+
+      stat(nStairs||"0","Escaliers cartographiés")+
+      stat(sessions.length,"Sessions loguées")+
+      stat(cfg.runHours+" h","Heures cumulées")+
+    '</div>'+
+    (alerts.length?'<div class="note warn">🔧 '+alerts.length+' entretien(s) à prévoir — <a href="#" onclick="go(\'entretien\');return false">voir</a></div>':'')+
+    '<button class="btn" onclick="go(\'plan\')">🎯 Générer mon plan de nettoyage optimisé</button>'+
+    '<div class="row" style="margin-top:10px">'+
+      '<button class="btn ghost sm" style="flex:1" onclick="go(\'bassin\')">🗺️ Cartographier le bassin</button>'+
+      '<button class="btn ghost sm" style="flex:1" onclick="quickLog()">➕ Loguer une session</button>'+
+    '</div>'
+  )+
+  card("🤖 Ce que fait PoolPilot (garantie intacte)",
+    "Une couche intelligente autour de ton "+esc(m.name)+" — pas dans son firmware.",
+    '<ol class="clean">'+
+      '<li><b>Ta cartographie</b> : tu marques escaliers, angles morts, point bas → le plan cible ces zones.</li>'+
+      '<li><b>Plan optimisé</b> : dépôt, orientation, séquence de cycles + passes escaliers.</li>'+
+      '<li><b>Journal & tendances</b> que l\'app Beatbot ne garde pas.</li>'+
+      '<li><b>Entretien</b> basé sur tes heures réelles.</li>'+
+      '<li><b>Pilotage réel</b> : possible après capture du protocole (onglet 🎮).</li>'+
+    '</ol>'
+  );
+}
+
+function vBassin(){
+  var toolsHtml=[
+    ["main","✋ Déplacer"],["escalier","🪜 Escalier"],["pointbas","🕳️ Point bas"],
+    ["depot","📍 Dépôt robot"],["anglemort","⛔ Angle mort"],["obstacle","🪨 Obstacle"]
+  ].map(function(t){return '<div class="tool'+(S.tool===t[0]?" on":"")+'" data-tool="'+t[0]+'">'+esc(t[1])+'</div>'}).join("");
+  return card("🗺️ Cartographie de ta piscine",
+    "Renseigne les dimensions puis pose les repères. Tape le bassin pour ajouter, glisse pour déplacer.",
+    '<div class="row">'+
+      field("Longueur (m)","poolL",pool.L,"number","0.5")+
+      field("Largeur (m)","poolW",pool.W,"number","0.5")+
+    '</div>'+
+    '<div class="palette">'+toolsHtml+'</div>'+
+    '<canvas id="poolCanvas" height="420"></canvas>'+
+    '<div class="legend">'+
+      '<span><i style="background:var(--stair)"></i>Escalier</span>'+
+      '<span><i style="background:var(--deep)"></i>Point bas</span>'+
+      '<span><i style="background:var(--gold)"></i>Dépôt robot</span>'+
+      '<span><i style="background:var(--bad)"></i>Angle mort</span>'+
+      '<span><i style="background:#8a97a6"></i>Obstacle</span>'+
+    '</div>'+
+    '<div id="markerPanel" style="margin-top:10px"></div>'+
+    '<div class="note">💡 Bien placer tes <b>escaliers</b> et <b>angles morts</b> = c\'est ce qui rend le plan (onglet 🎯) vraiment efficace là où le robot galère.</div>'
+  );
+}
+
+function vPlan(){
+  var m=MODELS[cfg.model]||MODELS.autre;
+  var modes=m.modes.map(function(md){return '<option '+(plan.mode===md?"selected":"")+'>'+esc(md)+'</option>'}).join("");
+  var computed=computeCoverage();
+  var stepsHtml=buildPlanSteps(computed).map(function(s,i){
+    return '<div class="step"><div class="n">'+(i+1)+'</div><div class="b"><b>'+esc(s.t)+'</b><span>'+s.d+'</span></div></div>';
+  }).join("");
+  var weak=computed.weak;
+  return card("🎯 Plan de nettoyage optimisé","Choisis le cycle prévu, PoolPilot calcule dépôt, ordre et passes escaliers.",
+    '<label>Mode de cycle prévu</label><select id="planMode">'+modes+'</select>'+
+    '<button class="btn" style="margin-top:12px" onclick="regenPlan()">⚙️ (Re)générer le plan + la carte de couverture</button>'
+  )+
+  card("🌡️ Carte de couverture estimée","",
+    '<canvas id="covCanvas" height="300"></canvas>'+
+    '<div class="legend">'+
+      '<span><i style="background:var(--ok)"></i>Bien couvert</span>'+
+      '<span><i style="background:var(--warn)"></i>Moyen</span>'+
+      '<span><i style="background:var(--bad)"></i>Faible</span>'+
+    '</div>'+
+    '<div class="note">⚠️ <b>Estimation</b> — basée sur le comportement type du robot et TES zones marquées, pas une mesure réelle du robot. Ça sert à décider où renforcer.</div>'
+  )+
+  card("📋 Étapes recommandées","",
+    (stepsHtml||'<div class="empty">Cartographie ton bassin puis génère le plan.</div>')+
+    (weak.length?'<div style="margin-top:12px"><b style="font-size:13px">Zones à renforcer :</b><br>'+weak.map(function(w){return '<span class="chipzone">'+esc(w)+'</span>'}).join("")+'</div>':'')
+  );
+}
+
+function vJournal(){
+  var rows=sessions.length?sessions.map(function(s){
+    return '<div class="logrow"><div class="d"><b>'+esc(s.mode)+'</b><span>'+fmtDate(s.ts)+' · '+s.dur+' min'+(s.batt!=null?' · 🔋'+s.batt+'%':'')+'</span></div>'+
+      '<button class="btn ghost sm" onclick="delSession(\''+s.id+'\')">🗑</button></div>';
+  }).join(""):'<div class="empty">Aucune session. Logue ton premier cycle 👇</div>';
+  var avg=sessions.length?Math.round(sessions.reduce(function(a,s){return a+(+s.dur||0)},0)/sessions.length):0;
+  return card("➕ Loguer une session","À faire à la fin de chaque cycle du robot.",
+    '<div class="row">'+
+      '<div style="flex:2"><label>Mode</label><select id="lgMode">'+((MODELS[cfg.model]||MODELS.autre).modes.map(function(md){return '<option>'+esc(md)+'</option>'}).join(""))+'</select></div>'+
+      '<div><label>Durée (min)</label><input id="lgDur" type="number" value="120"></div>'+
+      '<div><label>Batterie fin %</label><input id="lgBatt" type="number" placeholder="—"></div>'+
+    '</div>'+
+    '<button class="btn" style="margin-top:12px" onclick="saveLog()">💾 Enregistrer la session</button>'
+  )+
+  card("📊 Tendances","",
+    '<div class="grid2">'+stat(sessions.length,"Sessions")+stat(avg+" min","Durée moyenne")+'</div>'+
+    (sessions.length>1?'<canvas id="trendCanvas" height="150" style="margin-top:12px"></canvas>':'')
+  )+
+  card("🗂️ Historique",""+rows);
+}
+
+function vEntretien(){
+  var items=[
+    {k:"filter",l:"Nettoyer le filtre",ic:"🧽",max:8,tip:"Rincer le panier/filtre fin"},
+    {k:"brush",l:"Vérifier brosses/chenilles",ic:"🌀",max:60,tip:"Usure + débris coincés"},
+    {k:"seal",l:"Joints & flotteur ligne d'eau",ic:"🔩",max:120,tip:"Étanchéité + capteur"}
+  ];
+  var html=items.map(function(it){
+    var h=maint[it.k]||0,pct=Math.min(100,Math.round(h/it.max*100));
+    var col=pct>=100?"var(--bad)":pct>=70?"var(--warn)":"var(--ok)";
+    return '<div class="maint"><span style="font-size:20px">'+it.ic+'</span>'+
+      '<div style="flex:1"><b style="font-size:14px">'+esc(it.l)+'</b><div class="mut" style="font-size:11.5px">'+esc(it.tip)+' · '+h+'/'+it.max+' h</div>'+
+      '<div class="bar" style="margin-top:5px"><i style="width:'+pct+'%;background:'+col+'"></i></div></div>'+
+      '<button class="btn ghost sm" onclick="resetMaint(\''+it.k+'\')">✓ Fait</button></div>';
+  }).join("");
+  return card("⏱️ Compteur d'heures","Ajoute le temps de fonctionnement pour piloter l'entretien.",
+    '<div class="row"><div style="flex:2"><label>Heures totales cumulées</label><input id="runH" type="number" value="'+cfg.runHours+'"></div>'+
+    '<button class="btn sm" style="flex:1;align-self:end" onclick="setRunH()">Mettre à jour</button></div>'
+  )+
+  card("🔧 Entretien intelligent","Basé sur tes heures réelles depuis la dernière action."+html.length,html);
+}
+
+function vPilotage(){
+  return card("🎮 Pilotage réel du robot","Aller VRAIMENT plus loin que l'app : contrôle direct, zones, passes escaliers manuelles.",
+    '<div class="note warn"><b>Statut : à activer.</b> Beatbot n\'a pas d\'API publique. Pour piloter le robot depuis PoolPilot, il faut d\'abord <b>capturer le protocole</b> de son app (une seule fois). Aucun démontage → <b>garantie matérielle intacte</b>. Zone grise vis-à-vis des conditions de l\'app Beatbot : c\'est TON choix.</div>'+
+    '<b style="font-size:14px">Procédure de capture (10 min, à faire par toi)</b>'+
+    '<ol class="clean">'+
+      '<li>Installe <code>mitmproxy</code> ou l\'app <b>Proxyman</b> (iOS) sur le même WiFi que ton téléphone.</li>'+
+      '<li>Configure le proxy + installe le certificat (HTTPS déchiffré).</li>'+
+      '<li>Ouvre l\'app Beatbot et fais : <b>Start, Stop, changement de mode, retour base</b>.</li>'+
+      '<li>Exporte le log (cloud + BLE si visible) et envoie-le moi.</li>'+
+    '</ol>'+
+    '<div class="note">Avec ce log je construis <code>beatbotClient</code> : je pourrai <b>relayer les mêmes commandes</b> que l\'app (start/stop/mode/zone si le robot le supporte). ⚠️ Je ne pourrai PAS réécrire la navigation/cartographie interne — ça reste dans le firmware verrouillé.</div>'
+  )+
+  card("🕹️ Cockpit (aperçu — désactivé)","Ce que tu auras une fois le protocole branché :",
+    '<div class="disabled-wrap">'+
+      '<div class="grid2" style="margin-bottom:10px">'+
+        '<button class="btn ghost">▶️ Démarrer cycle</button>'+
+        '<button class="btn ghost">⏹️ Stop / Base</button>'+
+      '</div>'+
+      '<div class="row"><button class="btn ghost sm">🪜 Passe escaliers ×2</button><button class="btn ghost sm">💧 Ligne d\'eau</button><button class="btn ghost sm">🎯 Zone ciblée</button></div>'+
+      '<div class="center mut" style="margin-top:12px">Joystick directionnel + envoi de zones depuis ta carte 🗺️</div>'+
+    '</div>'
+  )+
+  card("⚙️ Réglages robot","",
+    '<label>Modèle Beatbot</label><select id="cfgModel">'+
+    Object.keys(MODELS).map(function(k){return '<option value="'+k+'" '+(cfg.model===k?"selected":"")+'>'+esc(MODELS[k].name)+'</option>'}).join("")+
+    '</select><button class="btn ghost sm" style="margin-top:10px;width:100%" onclick="setModel()">Enregistrer le modèle</button>'
+  );
+}
+
+/* ============ helpers UI ============ */
+function card(title,sub,body){return '<div class="card"><h2>'+esc(title)+'</h2>'+(sub?'<p class="sub">'+esc(sub)+'</p>':'')+(body||'')+'</div>'}
+function stat(n,l){return '<div class="stat"><div class="n">'+esc(n)+'</div><div class="l">'+esc(l)+'</div></div>'}
+function field(l,id,v,type,step){return '<div><label>'+esc(l)+'</label><input id="'+id+'" type="'+(type||"text")+'"'+(step?' step="'+step+'"':'')+' value="'+esc(v)+'"></div>'}
+
+/* ============ actions ============ */
+function setModel(){cfg.model=$("#cfgModel").value;save();renderRobotTag();render()}
+function setRunH(){cfg.runHours=Math.max(0,+$("#runH").value||0);save();render()}
+function resetMaint(k){maint[k]=0;save();render()}
+function delSession(id){sessions=sessions.filter(function(s){return s.id!==id});save();render()}
+function quickLog(){go("journal")}
+function saveLog(){
+  var dur=+$("#lgDur").value||0;
+  sessions.unshift({id:uid(),ts:Date.now(),mode:$("#lgMode").value,dur:dur,batt:$("#lgBatt").value?+$("#lgBatt").value:null});
+  if(sessions.length>300)sessions=sessions.slice(0,300);
+  var addH=Math.round(dur/60*10)/10; cfg.runHours=Math.round((cfg.runHours+addH)*10)/10;
+  maint.filter=Math.round((maint.filter+addH)*10)/10;maint.brush=Math.round((maint.brush+addH)*10)/10;maint.seal=Math.round((maint.seal+addH)*10)/10;
+  save();render();
+}
+function regenPlan(){plan.mode=$("#planMode").value;plan.generatedAt=Date.now();save();render();setTimeout(drawCoverage,30)}
+function maintAlerts(){
+  var a=[];if((maint.filter||0)>=8)a.push("filtre");if((maint.brush||0)>=60)a.push("brosses");if((maint.seal||0)>=120)a.push("joints");return a;
+}
+
+/* ============ Coverage engine (estimation) ============ */
+function computeCoverage(){
+  var NX=40,NY=Math.max(10,Math.round(40*(pool.W/Math.max(1,pool.L))));
+  var mode=plan.mode||"Standard";
+  var grid=[],weakSet={};
+  var stairs=pool.markers.filter(function(m){return m.type==="escalier"});
+  var deads=pool.markers.filter(function(m){return m.type==="anglemort"});
+  var obst=pool.markers.filter(function(m){return m.type==="obstacle"});
+  for(var y=0;y<NY;y++){grid[y]=[];for(var x=0;x<NX;x++){
+    var nx=x/(NX-1),ny=y/(NY-1);
+    var edge=Math.min(nx,1-nx,ny,1-ny); /* 0=bord */
+    var isBand=edge<0.08;
+    var c;
+    if(mode.indexOf("Ligne")>=0)      c=isBand?0.92:0.35;
+    else if(mode.indexOf("Sol")>=0)   c=isBand?0.45:0.9;
+    else if(mode.indexOf("Ultra")>=0) c=isBand?0.75:0.9;
+    else if(mode.indexOf("Éco")>=0)   c=0.55;
+    else                              c=isBand?0.7:0.78; /* Standard */
+    /* pénalités zones marquées */
+    stairs.forEach(function(m){if(dist(nx,ny,m.x,m.y)<0.13)c=Math.min(c,0.32)});
+    deads.forEach(function(m){if(dist(nx,ny,m.x,m.y)<0.11)c=Math.min(c,0.28)});
+    obst.forEach(function(m){if(dist(nx,ny,m.x,m.y)<0.09)c=Math.min(c,0.4)});
+    grid[y][x]=c;
+    if(c<0.5){ /* localise zone faible */
+      var q=(ny<0.5?"avant":"arrière")+"-"+(nx<0.5?"gauche":"droite");
+      weakSet[q]=(weakSet[q]||0)+1;
+    }
+  }}
+  /* zones faibles textuelles + escaliers explicites */
+  var weak=[];
+  if(stairs.length)weak.push("🪜 Escaliers ("+stairs.length+")");
+  Object.keys(weakSet).sort(function(a,b){return weakSet[b]-weakSet[a]}).slice(0,3).forEach(function(q){weak.push("Angle "+q)});
+  return {grid:grid,NX:NX,NY:NY,mode:mode,weak:weak,stairs:stairs};
+}
+function dist(a,b,c,d){return Math.sqrt((a-c)*(a-c)+(b-d)*(b-d))}
+
+function buildPlanSteps(cv){
+  if(!plan.generatedAt) return [];
+  var m=MODELS[cfg.model]||MODELS.autre, steps=[];
+  var depot=pool.markers.filter(function(x){return x.type==="depot"})[0];
+  var stairs=cv.stairs;
+  if((maint.filter||0)>=8) steps.push({t:"Nettoie le filtre AVANT",d:"Filtre encrassé = aspiration réduite → escaliers encore moins bien faits."});
+  steps.push({t:"Dépose le robot au bon endroit",d:depot?"Repère 📍 posé sur ta carte. Oriente-le vers la zone la plus ouverte pour qu'il finisse près des escaliers.":"Pose-le à ~1 m d'un angle, face au grand axe. (Astuce : marque un point 📍 Dépôt sur ta carte)."});
+  steps.push({t:"Lance le cycle « "+esc(cv.mode)+" »",d:cv.mode.indexOf("Sol")>=0?"Bon pour le fond, mais la ligne d'eau et les escaliers restent faibles → étapes suivantes.":cv.mode.indexOf("Ligne")>=0?"Couvre bien la ligne d'eau ; enchaîne un cycle Sol pour le fond.":"Cycle mixte fond + ligne d'eau."});
+  if(stairs.length){
+    steps.push({t:"Renforce les escaliers ("+stairs.length+")",d:"Point noir des robots. À la fin du cycle : "+(m.map?"crée une zone 'escaliers' si ton modèle le permet, sinon ":"")+"repositionne le robot au pied des marches et relance 5–8 min, ×2. Passage manuel possible via 🎮 une fois le protocole branché."});
+  }
+  if(m.waterline && cv.mode.indexOf("Ligne")<0){
+    steps.push({t:"Cycle ligne d'eau",d:"Si tu as des dépôts gras à la surface, ajoute un cycle « Ligne d'eau » dédié."});
+  }
+  steps.push({t:"Contrôle & log",d:"Vérifie escaliers + angles marqués ⛔. Note la session dans 📊 Journal (durée/batterie) pour suivre l'efficacité dans le temps."});
+  return steps;
+}
+
+/* ============ Canvas: pool editor ============ */
+var canvasState={drag:null,sel:null};
+function poolRect(cv){
+  var pad=26,w=cv.width-pad*2,h=cv.height-pad*2;
+  var ar=pool.L/pool.W, car=w/h, rw,rh;
+  if(ar>car){rw=w;rh=w/ar}else{rh=h;rw=h*ar}
+  return {x:(cv.width-rw)/2,y:(cv.height-rh)/2,w:rw,h:rh};
+}
+function drawPool(){
+  var cv=$("#poolCanvas");if(!cv)return;
+  var dpr=Math.min(2,window.devicePixelRatio||1);
+  var cssW=cv.clientWidth||cv.parentNode.clientWidth-28;
+  cv.width=cssW*dpr;cv.height=420*dpr;
+  var g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);
+  var W=cssW,H=420;g.clearRect(0,0,W,H);
+  var r=poolRectCss(W,H);
+  /* eau */
+  g.fillStyle="#0c3a5c";g.strokeStyle="#2d7bd6";g.lineWidth=2;
+  roundRect(g,r.x,r.y,r.w,r.h,10);g.fill();g.stroke();
+  /* bande ligne d'eau */
+  g.strokeStyle="rgba(120,200,255,.35)";g.lineWidth=1;
+  roundRect(g,r.x+7,r.y+7,r.w-14,r.h-14,8);g.stroke();
+  /* dimensions */
+  g.fillStyle="#93b0c8";g.font="11px -apple-system";g.textAlign="center";
+  g.fillText(pool.L+" m",r.x+r.w/2,r.y-8);
+  g.save();g.translate(r.x-10,r.y+r.h/2);g.rotate(-Math.PI/2);g.fillText(pool.W+" m",0,0);g.restore();
+  /* markers */
+  pool.markers.forEach(function(m){
+    var px=r.x+m.x*r.w,py=r.y+m.y*r.h;var ic=markerIcon(m.type),col=markerColor(m.type);
+    g.beginPath();g.arc(px,py,m===canvasState.sel?16:13,0,7);g.fillStyle=col;g.globalAlpha=.9;g.fill();g.globalAlpha=1;
+    if(m===canvasState.sel){g.strokeStyle="#fff";g.lineWidth=2;g.stroke()}
+    g.font="14px -apple-system";g.textAlign="center";g.textBaseline="middle";g.fillStyle="#fff";g.fillText(ic,px,py);
+  });
+  g.textBaseline="alphabetic";
+}
+function poolRectCss(W,H){
+  var pad=26,w=W-pad*2,h=H-pad*2;
+  var ar=pool.L/Math.max(0.1,pool.W),car=w/h,rw,rh;
+  if(ar>car){rw=w;rh=w/ar}else{rh=h;rw=h*ar}
+  return {x:(W-rw)/2,y:(H-rh)/2,w:rw,h:rh};
+}
+function markerIcon(t){return{escalier:"🪜",pointbas:"🕳️",depot:"📍",anglemort:"⛔",obstacle:"🪨"}[t]||"•"}
+function markerColor(t){return{escalier:"#c46bff",pointbas:"#2d7bd6",depot:"#39c2ff",anglemort:"#e8624a",obstacle:"#8a97a6"}[t]||"#888"}
+function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+
+function canvasPos(cv,e){
+  var rect=cv.getBoundingClientRect();
+  var cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+  var cy=(e.touches?e.touches[0].clientY:e.clientY)-rect.top;
+  var r=poolRectCss(cv.clientWidth,420);
+  return {nx:clamp((cx-r.x)/r.w),ny:clamp((cy-r.y)/r.h),px:cx,py:cy,r:r};
+}
+function clamp(v){return Math.max(0,Math.min(1,v))}
+function hitMarker(p){
+  var best=null,bd=22;
+  pool.markers.forEach(function(m){
+    var mx=p.r.x+m.x*p.r.w,my=p.r.y+m.y*p.r.h,d=Math.sqrt((mx-p.px)*(mx-p.px)+(my-p.py)*(my-p.py));
+    if(d<bd){bd=d;best=m}
+  });
+  return best;
+}
+function bindCanvas(){
+  var cv=$("#poolCanvas");if(!cv)return;
+  function down(e){
+    e.preventDefault();var p=canvasPos(cv,e);var hit=hitMarker(p);
+    if(hit){canvasState.drag=hit;canvasState.sel=hit;showMarkerPanel();drawPool();return}
+    if(S.tool&&S.tool!=="main"){
+      if(S.tool==="depot"||S.tool==="pointbas")pool.markers=pool.markers.filter(function(m){return m.type!==S.tool});
+      var m={id:uid(),type:S.tool,x:p.nx,y:p.ny};pool.markers.push(m);canvasState.sel=m;save();showMarkerPanel();drawPool();
+    }else{canvasState.sel=null;showMarkerPanel();drawPool()}
+  }
+  function move(e){if(!canvasState.drag)return;e.preventDefault();var p=canvasPos(cv,e);canvasState.drag.x=p.nx;canvasState.drag.y=p.ny;drawPool()}
+  function up(){if(canvasState.drag){save()}canvasState.drag=null}
+  cv.addEventListener("pointerdown",down);cv.addEventListener("pointermove",move);
+  window.addEventListener("pointerup",up);
+}
+function showMarkerPanel(){
+  var el=$("#markerPanel");if(!el)return;var m=canvasState.sel;
+  if(!m){el.innerHTML="";return}
+  var names={escalier:"Escalier",pointbas:"Point bas",depot:"Dépôt robot",anglemort:"Angle mort",obstacle:"Obstacle"};
+  el.innerHTML='<div class="row" style="align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:10px"><div style="flex:2">'+markerIcon(m.type)+' <b>'+esc(names[m.type]||m.type)+'</b></div><button class="btn bad sm" style="flex:1" onclick="delMarker(\''+m.id+'\')">🗑 Supprimer</button></div>';
+}
+function delMarker(id){pool.markers=pool.markers.filter(function(m){return m.id!==id});canvasState.sel=null;save();showMarkerPanel();drawPool()}
+
+/* ============ Canvas: coverage heatmap ============ */
+function drawCoverage(){
+  var cv=$("#covCanvas");if(!cv)return;
+  var dpr=Math.min(2,window.devicePixelRatio||1);
+  var cssW=cv.clientWidth||300;cv.width=cssW*dpr;cv.height=300*dpr;
+  var g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);
+  var W=cssW,H=300;g.clearRect(0,0,W,H);
+  var cvd=computeCoverage(),r=poolRectCss(W,H);
+  var cw=r.w/cvd.NX,ch=r.h/cvd.NY;
+  for(var y=0;y<cvd.NY;y++)for(var x=0;x<cvd.NX;x++){
+    g.fillStyle=heat(cvd.grid[y][x]);
+    g.fillRect(r.x+x*cw,r.y+y*ch,cw+0.6,ch+0.6);
+  }
+  g.strokeStyle="#2d7bd6";g.lineWidth=2;roundRect(g,r.x,r.y,r.w,r.h,8);g.stroke();
+  /* markers overlay */
+  pool.markers.forEach(function(m){
+    var px=r.x+m.x*r.w,py=r.y+m.y*r.h;g.font="13px -apple-system";g.textAlign="center";g.textBaseline="middle";g.fillText(markerIcon(m.type),px,py);
+  });
+  g.textBaseline="alphabetic";
+}
+function heat(c){
+  /* c 0..1 → rouge..vert */
+  var r,gc,b;
+  if(c<0.5){r=232;gc=Math.round(98+(c/0.5)*(179-98));b=74}
+  else{r=Math.round(232-((c-0.5)/0.5)*(232-46));gc=Math.round(179+((c-0.5)/0.5)*(204-179));b=Math.round(74+((c-0.5)/0.5)*(113-74))}
+  return "rgba("+r+","+gc+","+b+",.82)";
+}
+
+/* ============ trend chart ============ */
+function drawTrend(){
+  var cv=$("#trendCanvas");if(!cv)return;
+  var dpr=Math.min(2,window.devicePixelRatio||1);var cssW=cv.clientWidth||300;
+  cv.width=cssW*dpr;cv.height=150*dpr;var g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);
+  var W=cssW,H=150;g.clearRect(0,0,W,H);
+  var data=sessions.slice(0,14).reverse().map(function(s){return +s.dur||0});
+  if(data.length<2)return;
+  var mx=Math.max.apply(null,data)*1.1||1,pad=10;
+  g.strokeStyle="#39c2ff";g.lineWidth=2;g.beginPath();
+  data.forEach(function(v,i){var x=pad+i/(data.length-1)*(W-pad*2),y=H-pad-v/mx*(H-pad*2);i?g.lineTo(x,y):g.moveTo(x,y)});
+  g.stroke();
+  g.fillStyle="rgba(57,194,255,.15)";g.lineTo(W-pad,H-pad);g.lineTo(pad,H-pad);g.closePath();g.fill();
+  g.fillStyle="#93b0c8";g.font="10px -apple-system";g.fillText("Durée des "+data.length+" dernières sessions (min)",pad,12);
+}
+
+/* ============ render ============ */
+function renderRobotTag(){var m=MODELS[cfg.model]||MODELS.autre;var t=$("#robotTag");if(t)t.textContent="🤖 "+m.name}
+function render(){
+  renderRobotTag();
+  var v=S.view,html="";
+  if(v==="accueil")html=vAccueil();
+  else if(v==="bassin"){S.tool=S.tool||"escalier";html=vBassin()}
+  else if(v==="plan")html=vPlan();
+  else if(v==="journal")html=vJournal();
+  else if(v==="entretien")html=vEntretien();
+  else if(v==="pilotage")html=vPilotage();
+  $("#app").innerHTML=html;renderNav();
+  /* post-render bindings */
+  if(v==="bassin"){
+    setTimeout(function(){drawPool();bindCanvas();
+      $("#poolL").addEventListener("change",function(){pool.L=Math.max(1,+this.value||8);save();drawPool()});
+      $("#poolW").addEventListener("change",function(){pool.W=Math.max(1,+this.value||4);save();drawPool()});
+    },30);
+  }
+  if(v==="plan"){setTimeout(drawCoverage,40)}
+  if(v==="journal"&&sessions.length>1){setTimeout(drawTrend,40)}
+}
+/* nav + tool delegation */
+document.addEventListener("click",function(e){
+  var nb=e.target.closest("#nav button");if(nb){go(nb.getAttribute("data-v"));return}
+  var tl=e.target.closest(".tool");if(tl){S.tool=tl.getAttribute("data-tool");render();return}
+});
+window.addEventListener("resize",function(){if(S.view==="bassin")drawPool();if(S.view==="plan")drawCoverage()});
+
+/* boot */
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){})}
+renderRobotTag();render();
+</script>
+</body>
+</html>
