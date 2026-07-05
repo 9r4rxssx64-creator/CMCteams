@@ -10,12 +10,11 @@
 ### ✅ Livré, testé (Playwright local, 0 exception), auto-déployé
 - **World Monitor v2.13** : la **boîte à outils OSINT complète (64 outils, 10 catégories + recherche)** est maintenant **dans World Monitor** (repli déroulant sous « OSINT — accès rapide »). Plus besoin d'ouvrir 2 pages : tout le live (avions, **navires**, feux, volcans, tempêtes, séismes, ISS, **fond satellite**) **et** l'annuaire d'outils sont sur la même page. Contrôles de couches déplacés **hors** de la carte (puces en haut).
 
-### 🟡 TON SEUL CHOIX (facultatif) — navires du MONDE ENTIER
-Aujourd'hui les navires viennent de **Digitraffic** = gratuit, sans clé, mais **Baltique/Finlande uniquement** (seule source AIS live gratuite sans clé). Pour couvrir **le monde entier** :
-1. Crée une **clé gratuite** sur https://aisstream.io/ (compte gratuit → API keys).
-2. Ajoute-la en **secret GitHub** nommé **`AISSTREAM_KEY`** : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions
-3. Lance **Actions → « Deploy KDMC AIS Proxy » → Run workflow** (1 clic). Le smoke test vérifie `/health` + `/ships` en live et te donne l'URL.
-4. Dis-moi « c'est fait » → je renseigne `AIS_PROXY_URL` dans World Monitor → **navires mondiaux**.
+### ✅ FAIT — navires du MONDE ENTIER ACTIFS (2026-07-05)
+Tu as créé la **clé gratuite aisstream.io** et l'as mise en secret `AISSTREAM_KEY`, le worker `kdmc-ais` est déployé (smoke live = **vrais navires mondiaux** : OCEAN GREG à Vancouver, Pays-Bas, Lettonie…). J'ai câblé `AIS_PROXY_URL` dans **World Monitor v2.16** → **navires du monde entier** (repli Digitraffic Baltique si le worker tombe). Techniquement : Durable Object impossible sur ton compte (plan FREE, `error code 1042`) → remplacé par une **WebSocket courte par requête** + décodage binaire (leçon #133). Rien à faire de ton côté.
+
+### 🆕 v2.16 — vues satellite LIVE (aucune action)
+Ajout de **fonds satellite en direct** (NASA GIBS/EOSDIS VIIRS, image d'hier, sans clé) : boutons **🛰️ Live NASA** (nuages/feux/tempêtes vus de l'espace) et **🌃 Terre nuit** (lumières des villes), en plus de 🌙 Carte et 🛰️ Satellite HD. Un seul fond actif à la fois (radio).
 
 **Sans clé, tout marche déjà** (navires Baltique). La clé ne fait qu'**étendre au monde entier** — la clé reste **secrète côté worker**, jamais exposée. Worker prêt : `tools/cloudflare/kdmc-ais-proxy/`.
 
