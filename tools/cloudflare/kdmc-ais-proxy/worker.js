@@ -63,7 +63,8 @@ async function collectShips(key, ms, cap) {
     ws.addEventListener("message", (ev) => {
       try {
         debug.msgs++;
-        const txt = typeof ev.data === "string" ? ev.data : "";
+        // aisstream envoie les messages en BINAIRE (ArrayBuffer) → décoder en texte JSON.
+        const txt = typeof ev.data === "string" ? ev.data : new TextDecoder().decode(ev.data);
         if (!debug.firstRaw) debug.firstRaw = txt.slice(0, 220); // 1er message brut (diagnostic)
         const m = JSON.parse(txt);
         // aisstream : MetaData.{MMSI,ShipName,latitude,longitude} + Message.PositionReport.{Latitude,Longitude,Sog,Cog}
