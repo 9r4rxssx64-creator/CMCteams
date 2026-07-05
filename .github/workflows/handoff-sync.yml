@@ -29,11 +29,24 @@ jobs:
 
       - name: Fetch handoff from Firebase
         id: fetch_fb
+        env:
+          # /apex durci auth != null (2026-07-04) → lecture par service account (gauth.cjs, fail-open)
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: |
           FB_URL="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app"
+          TOKEN=$(node tools/firebase/gauth.cjs); QS=""
+          [ -n "$TOKEN" ] && QS="?access_token=${TOKEN}"
+          echo "qs_auth=$QS" >> $GITHUB_OUTPUT
 
           # Recupere ce qu'Apex a ecrit dans Firebase
-          curl -s "${FB_URL}/apex/ax_claude_code_handoff.json" -o /tmp/fb_handoff.json
+          curl -s "${FB_URL}/apex/ax_claude_code_handoff.json${QS}" -o /tmp/fb_handoff.json
+          # Permission denied = auth manquante → traiter comme "pas de handoff" (fail-open, pas de faux merge)
+          if grep -q '"error"' /tmp/fb_handoff.json 2>/dev/null; then
+            echo "::warning::lecture handoff refusee : $(cat /tmp/fb_handoff.json)"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
           # Si pas de handoff Firebase, on garde le local
           if [ ! -s /tmp/fb_handoff.json ] || [ "$(cat /tmp/fb_handoff.json)" = "null" ]; then
@@ -78,9 +91,10 @@ jobs:
         if: steps.fetch_fb.outputs.merge != 'true' && steps.fetch_fb.outputs.skip != 'true'
         run: |
           FB_URL="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app"
+          QS="${{ steps.fetch_fb.outputs.qs_auth }}"
 
           # Push notre version locale vers Firebase (claude_code section)
-          curl -s -X PUT "${FB_URL}/apex/ax_claude_code_handoff.json" \
+          curl -s -X PUT "${FB_URL}/apex/ax_claude_code_handoff.json${QS}" \
             -H "Content-Type: application/json" \
             -d @CLAUDE_HANDOFF.json
 

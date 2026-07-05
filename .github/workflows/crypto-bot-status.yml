@@ -1,4 +1,4 @@
-# Vérifie l'état RÉEL du bot crypto sur Railway (build + logs runtime).
+# Vérifie l'état RÉEL du bot crypto sur Railway (build + logs runtime + bilan des trades).
 # Déclenchement : manuel uniquement. Lecture seule — ne modifie rien.
 # Règle "détailler les erreurs" : réponses GraphQL brutes loggées (tronquées).
 
@@ -18,7 +18,9 @@ jobs:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       GQL: https://backboard.railway.com/graphql/v2
     steps:
-      - name: Interroger Railway (projet, service, déploiement, logs)
+      - uses: actions/checkout@v4
+
+      - name: Interroger Railway (projet, service, déploiement, logs, trades)
         run: |
           set +e
           gql() {
@@ -59,11 +61,29 @@ jobs:
           RL=$(gql "{\"query\":\"query { deploymentLogs(deploymentId: \\\"$DID\\\", limit: 40) { timestamp message } }\"}")
           echo "$RL" | jq -r '.data.deploymentLogs[]? | "\(.timestamp) \(.message)"' 2>/dev/null || echo "$RL" | head -c 800
 
+          echo "── 6) Bilan des TRADES (grande fenêtre de logs) ──"
+          # Grande fenêtre pour compter les vrais trades (repli 1000 si 5000 refusé).
+          RLF=$(gql "{\"query\":\"query { deploymentLogs(deploymentId: \\\"$DID\\\", limit: 5000) { timestamp message } }\"}")
+          echo "$RLF" | jq -c '.data.deploymentLogs // []' > /tmp/logs.json 2>/dev/null || echo '[]' > /tmp/logs.json
+          if [ "$(jq 'length' /tmp/logs.json 2>/dev/null || echo 0)" = "0" ]; then
+            RLF=$(gql "{\"query\":\"query { deploymentLogs(deploymentId: \\\"$DID\\\", limit: 1000) { timestamp message } }\"}")
+            echo "$RLF" | jq -c '.data.deploymentLogs // []' > /tmp/logs.json 2>/dev/null || echo '[]' > /tmp/logs.json
+          fi
+          python3 crypto-bot/trade_stats.py > /tmp/trades.env
+          . /tmp/trades.env
+          echo "Trades: buys=$BUYS sells=$SELLS wins=$WINS losses=$LOSSES net=$NET open=$OPEN window=$FIRST..$LAST lines=$NLINES"
+
           {
             echo "## 🤖 Crypto Bot — état Railway"
             echo ""
             echo "- Projet : \`$PNAME\`"
             echo "- Statut dernier déploiement : **$DSTATUS**"
+            echo ""
+            echo "### 💹 Bilan des trades (fenêtre visible : $FIRST → $LAST · $NLINES lignes)"
+            echo "- Achats : **$BUYS** · Ventes bouclées : **$SELLS** (🟢 $WINS gagnants / 🔴 $LOSSES perdants)"
+            echo "- Gain/perte NET réalisé : **$NET USDT** _(faux argent — testnet)_"
+            echo "- Positions encore ouvertes : $OPEN"
+            if [ "$SELLS" = "0" ] && [ "$BUYS" = "0" ]; then echo "- _Aucun trade sur cette fenêtre — marché plat, bot resté en HOLD._"; fi
           } >> $GITHUB_STEP_SUMMARY
 
           case "$DSTATUS" in

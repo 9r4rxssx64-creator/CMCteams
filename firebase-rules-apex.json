@@ -1,10 +1,10 @@
 {
   "_comment": "Firebase Realtime Database Security Rules — projet cmcteams-c16ab (Apex + CMCteams + Shops)",
   "_database": "cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
-  "_phase": "4.1 (2026-06-08) : /cmcteams exige auth != null (read+write) — DB fermée au scraping anonyme. Apex/coffre_vault/shops INCHANGÉS. Prérequis livrés : auth anonyme app v9.788 + clé Web embarquée v9.792 + Anonymous activé console.",
+  "_phase": "4.2 (2026-07-04) : /apex + /coffre_vault exigent auth != null (comme /cmcteams depuis 2026-06-12). Prérequis livrés : repli anonyme Apex v13 (firebase-auth-bridge) + coffre-fort anon auth + push-worker/handoff/backup en service account. Le .write de /apex passe au niveau $key pour que les .write:false des clés secrètes (ax_pin, ax_user…) soient réellement effectifs (un .write parent ne peut pas être révoqué plus bas en RTDB). Regex $key élargie : apex_v13_* + vault_backup + users (chemins réellement écrits par l'app).",
   "_published_by": "Kevin DESARZENS",
-  "_published_at": "2026-06-08",
-  "_rollback": "Pour revenir en arrière : remettre cmcteams .read et .write à true (valeurs du 2026-05-26). Le reste est inchangé.",
+  "_published_at": "2026-07-04",
+  "_rollback": "deploy-cmcteams-rules.yml input apex_state=open (remet /apex + /coffre_vault en lecture/écriture libres) ; rules_state=open pour rouvrir /cmcteams. Le reste est inchangé.",
   "_instructions": [
     "1. Console Firebase > project cmcteams-c16ab > Realtime Database > Rules",
     "2. Copier-coller l'objet 'rules' ci-dessous",
@@ -27,7 +27,7 @@
       ".read": "auth != null",
       ".write": "auth != null",
       "$key": {
-        ".validate": "$key.matches(/^cmc_[a-z0-9_\\-]+$/)"
+        ".validate": "$key.matches(/^(cmc_|ax_cmc_)[a-z0-9_\\-]+$/)"
       },
       "cmc_admin_pin": {
         ".write": false
@@ -54,10 +54,10 @@
       }
     },
     "apex": {
-      ".read": true,
-      ".write": true,
+      ".read": "auth != null",
       "$key": {
-        ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)"
+        ".write": "auth != null",
+        ".validate": "$key.matches(/^(ax_[a-z0-9_\\-]+|apex_v13_[a-z0-9_\\-]+|vault_backup|users)$/)"
       },
       "ax_admin_pass": {
         ".write": false
@@ -76,8 +76,8 @@
       }
     },
     "coffre_vault": {
-      ".read": true,
-      ".write": true,
+      ".read": "auth != null",
+      ".write": "auth != null",
       "$uid": {
         ".validate": "$uid.matches(/^u_[a-z0-9]+$/)",
         "salt": {

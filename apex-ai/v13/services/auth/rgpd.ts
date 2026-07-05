@@ -32,6 +32,8 @@
 import { logger } from '../../core/logger.js';
 import { auditLog } from '../observability/audit-log.js';
 
+import { firebaseAuthBridge } from './firebase-auth-bridge.js';
+
 interface UserDataExport {
   uid: string;
   exportedAt: number;
@@ -207,7 +209,7 @@ class RGPD {
       let allOk = true;
       for (const p of paths) {
         try {
-          const res = await fetch(`${fbUrl}${p}.json`, { method: 'DELETE', signal: AbortSignal.timeout(8000) });
+          const res = await fetch(`${fbUrl}${p}.json${firebaseAuthBridge.authQS(false)}`, { method: 'DELETE', signal: AbortSignal.timeout(8000) });
           if (!res.ok) {
             allOk = false;
             failures.push(`firebase:${p}:HTTP_${res.status}`);
@@ -250,7 +252,7 @@ class RGPD {
         let allEmpty = true;
         for (const p of verifyPaths) {
           try {
-            const res = await fetch(`${fbUrl}${p}.json`, { signal: AbortSignal.timeout(5000) });
+            const res = await fetch(`${fbUrl}${p}.json${firebaseAuthBridge.authQS(false)}`, { signal: AbortSignal.timeout(5000) });
             if (res.ok) {
               const body = await res.text();
               if (body !== 'null' && body !== '' && body !== 'undefined') {
@@ -258,7 +260,7 @@ class RGPD {
                 allEmpty = false;
                 failures.push(`verify_orphan:${p}`);
                 try {
-                  await fetch(`${fbUrl}${p}.json`, { method: 'DELETE', signal: AbortSignal.timeout(5000) });
+                  await fetch(`${fbUrl}${p}.json${firebaseAuthBridge.authQS(false)}`, { method: 'DELETE', signal: AbortSignal.timeout(5000) });
                 } catch {
                   /* retry échoué, déjà flaggé failure */
                 }

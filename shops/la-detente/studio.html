@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- La Détente — Studio (admin) v1.10.2 — « Ajouter à la boutique » publie aussi sur Firebase (visible clients en 1 étape) -->
+<!-- La Détente — Studio (admin) v1.10.3 — barre d'action claire (Image·Texte·Logos·IA·Produits) au-dessus du plan -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -40,6 +40,12 @@ button{cursor:pointer;border:none;background:none}
 .sidetabs{display:flex;gap:6px}
 .sidetabs button{padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:var(--panel2);color:#cfd3da;font-size:13px;font-weight:800;cursor:pointer;transition:.12s}
 .sidetabs button.on{background:var(--p);border-color:var(--p);color:#fff}
+.actionbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:min(92vw,80vh,560px);max-width:100%}
+.actionbar button{flex:1 1 0;min-width:60px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 6px;border-radius:12px;background:var(--panel2);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:700;cursor:pointer;transition:.14s}
+.actionbar button:hover{border-color:var(--p);transform:translateY(-1px)}
+.actionbar button .ai{font-size:20px;line-height:1}
+.actionbar button.primary{background:linear-gradient(135deg,#ff5d5d,#dc2626);border-color:transparent;color:#fff}
+@media(max-width:520px){.actionbar button{min-width:54px;font-size:10px;padding:8px 4px}}
 .sizebar{display:none;align-items:center;gap:10px;width:min(92vw,80vh,560px);max-width:100%;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:8px 12px}
 .sizebar input[type=range]{flex:1;min-width:0;accent-color:var(--p);height:30px}
 .sizebar .szb{width:44px;height:44px;flex:none;border-radius:11px;border:1px solid var(--border);background:var(--panel2);color:#fff;font-size:22px;font-weight:800;cursor:pointer}
@@ -276,6 +282,7 @@ details.grp>.sublab:nth-child(2){margin-top:3px}
 
   <!-- CENTER: stage -->
   <div class="stage-wrap">
+    <div class="actionbar" id="actionBar" role="group" aria-label="Actions rapides"><button onclick="document.getElementById('upl').click()"><span class="ai">🖼️</span>Image</button><button onclick="Studio.addText()"><span class="ai">🔤</span>Texte</button><button onclick="Studio.focusLib()"><span class="ai">🎨</span>Logos</button><button class="primary" onclick="Studio.focusAI()"><span class="ai">✨</span>IA</button><button onclick="Studio.multiView()"><span class="ai">👕</span>Produits</button></div>
     <div class="sidetabs" role="group" aria-label="Côté du vêtement"><button id="tabFront" class="on" onclick="Studio.setSide('front')">👕 Devant</button><button id="tabBack" onclick="Studio.setSide('back')">🔄 Dos</button></div>
     <div id="stageBox"><svg id="stageBg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><svg id="stage" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg><div class="ovwrap hide" id="ovWrap" onclick="Studio.zoomReset()" title="Vue d'ensemble — touche pour revoir toute la pièce"></div><button id="aiFab" onclick="Studio.aiEdit()" title="Modifier la photo sélectionnée avec l'IA" style="display:none;position:absolute;left:8px;bottom:8px;z-index:6;padding:11px 15px;border-radius:11px;border:1px solid var(--p);background:rgba(220,38,38,.94);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45)">✨ Modifier la photo (IA)</button><div class="zoomctl" role="group" aria-label="Zoom de la vue produit"><div class="zcap">Vue</div><button class="zbtn" onclick="Studio.zoomToSel()" title="Zoomer sur le logo sélectionné" aria-label="Zoom sur le logo">🎯</button><button class="zbtn" onclick="Studio.toggleOverview()" title="Afficher / masquer la vue d'ensemble" aria-label="Vue d'ensemble">⊞</button><button class="zbtn" onclick="Studio.zoomBy(0.8)" title="Voir de plus près" aria-label="Zoom avant">＋</button><div class="zlvl" id="zoomLvl" title="Niveau de zoom">100%</div><button class="zbtn" onclick="Studio.zoomBy(1.25)" title="Voir de plus loin" aria-label="Zoom arrière">−</button><button class="zbtn zfit" onclick="Studio.zoomReset()" title="Ajuster : voir tout le produit" aria-label="Ajuster">Ajuster</button></div></div>
     <div id="sizeBar" class="sizebar" aria-label="Taille du logo"></div>
@@ -409,6 +416,8 @@ function renderBg(){var bg=$("stageBg");if(!bg)return;
  if(bg._sig!==sig){bg.innerHTML=_bgInner(false);bg._sig=sig;} /* ne reconstruit la photo que si vêtement/couleur/côté change → zéro scintillement */
  bg.setAttribute("viewBox",_vbStr());}
 function selLayer(){return st.layers.filter(function(x){return x.id===st.sel})[0];}
+function focusLib(){var el=$("realLib");if(el){var d=el.closest("details");if(d)d.open=true;el.scrollIntoView({behavior:"smooth",block:"center"});}}
+function focusAI(){var t=$("aiPrompt");if(t){var d=t.closest("details");if(d)d.open=true;t.scrollIntoView({behavior:"smooth",block:"center"});setTimeout(function(){try{t.focus();}catch(e){}},300);}}
 function render(){
  renderBg();
  var stage=$("stage");
@@ -1073,7 +1082,7 @@ function pickProduct(i){var it=(window._pfShown||[])[i];if(!it)return;
  if(st.pfPhoto){var im=new Image();im.onload=function(){st.pfReady=true;render();};im.onerror=function(){st.pfReady=false;toast("Photo produit indisponible — dessin affiché");render();};im.src=st.pfPhoto;}
  closeModal();renderGarments();renderPlacement();render();
  toast("Produit chargé : "+(it.title||"").slice(0,42)+" — crée ton design 🎨");}
-return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,fitSize:fitSize,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,libCat:libCat,libSearch:libSearch,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,setSide:setSide,szSet:szSet,szStep:szStep,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
+return {init:init,setGarment:setGarment,setPlacement:setPlacement,setColor:setColor,addText:addText,addEmblem:addEmblem,select:select,upd:upd,move:move,dup:dup,del:del,center:center,toZone:toZone,nudge:nudge,scaleBy:scaleBy,fitSize:fitSize,placeAndMove:placeAndMove,openCatalog:openCatalog,pfCat:pfCat,pfSearch:pfSearch,pickProduct:pickProduct,scatter:scatter,clearScatter:clearScatter,toggleRealPhoto:toggleRealPhoto,addImageURL:addImageURL,addMyLogo:addMyLogo,webSearch:webSearch,saveAsLogo:saveAsLogo,finishCreation:finishCreation,saveToLibrary:saveToLibrary,clearCanvas:clearCanvas,multiView:multiView,pickMulti:pickMulti,exportPlanche:exportPlanche,renderMyLogos:renderMyLogos,libCat:libCat,libSearch:libSearch,focusLib:focusLib,focusAI:focusAI,render:render,exportMockup:exportMockup,exportPrint:exportPrint,exportPDF:exportPDF,addToShop:addToShop,_saveProduct:_saveProduct,openProjects:openProjects,saveProject:saveProject,loadProject:loadProject,delProject:delProject,closeModal:closeModal,setSize:setSize,flip:flip,setThr:setThr,toggle:toggle,toggleF:toggleF,updF:updF,resetImg:resetImg,bgRemove:bgRemove,autoTrim:autoTrim,aiGen:aiGen,aiEdit:aiEdit,aiEditRun:aiEditRun,zoomBy:zoomBy,zoomReset:zoomReset,zoomToSel:zoomToSel,toggleOverview:toggleOverview,setSide:setSide,szSet:szSet,szStep:szStep,updPair:updPair,updPairF:updPairF,toggleExportMenu:toggleExportMenu,closeExportMenu:closeExportMenu,undo:undo,redo:redo,copyLayer:copyLayer,cutLayer:cutLayer,pasteLayer:pasteLayer,imgEdit:imgEdit,iceTool:iceTool,iceUndo:iceUndo,iceReset:iceReset,iceBrush:iceBrush,iceTol:iceTol,iceApply:iceApply};
 })();
 Studio.init();
 </script>
