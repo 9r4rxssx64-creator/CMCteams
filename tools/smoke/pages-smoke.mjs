@@ -100,14 +100,25 @@ const PROBES = [
   ['GIBS WMS Himawari Band13 IR (géo LIVE Asie)', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=Himawari_AHI_Band13_Clean_Infrared&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
   ['GIBS WMS VIIRS Thermal (feux sat.)', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=VIIRS_SNPP_Thermal_Anomalies_375m_All&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
   ['RainViewer (radar pluie)', 'https://api.rainviewer.com/public/weather-maps.json'],
+  /* v2.20 — nouvelles sources live : la sonde envoie Origin et exige l'en-tête CORS
+     access-control-allow-origin (sinon le NAVIGATEUR bloquera même si le runner voit 200). */
+  ['GDACS alertes catastrophes (CORS)', 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP', 'cors'],
+  ['NOAA OVATION aurores (CORS)', 'https://services.swpc.noaa.gov/json/ovation_aurora_latest.json', 'cors'],
+  ['Open-Meteo qualité air (CORS)', 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=43.73&longitude=7.42&current=european_aqi', 'cors'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
 ];
 console.log('\n--- Sondes sources live (soft) ---');
-for (const [label, url] of PROBES) {
+for (const [label, url, mode] of PROBES) {
   try {
-    const r = await fetch(url, { redirect: 'follow' });
+    const r = await fetch(url, { redirect: 'follow', headers: mode === 'cors' ? { Origin: 'https://kd-mc.com' } : {} });
     const ct = r.headers.get('content-type') || '';
+    if (mode === 'cors') {
+      const acao = r.headers.get('access-control-allow-origin') || '';
+      const corsOk = acao === '*' || acao.includes('kd-mc.com');
+      console.log((r.ok && corsOk ? '✅' : '⚠️ HTTP ' + r.status + (r.ok && !corsOk ? ' SANS CORS (le navigateur bloquera)' : '')) + ' ' + label + ' (ACAO: ' + (acao || 'absent') + ')');
+      continue;
+    }
     // FAUX VERT (leçon #103) : une sonde d'IMAGE (GetMap/GetTile/.png) qui répond 200 mais
     // en text/xml = ExceptionReport déguisé → à traiter comme un échec, avec la cause exacte.
     const wantsImage = /GetMap|\.png|\.jpg/i.test(url);
