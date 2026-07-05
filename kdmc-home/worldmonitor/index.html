@@ -185,7 +185,6 @@
           <button class="tg" data-layer="air" aria-pressed="false" title="Qualité de l'air EN DIRECT dans ~34 grandes villes (Open-Meteo, indice européen) — Monaco inclus"><span class="i" style="background:#a8e05f"></span>🌫️ Air</button>
           <button class="tg" data-layer="waves" aria-pressed="false" title="Vagues & houle EN DIRECT sur ~28 points d'océans et mers (Open-Meteo Marine) — Méditerranée/Monaco inclus"><span class="i" style="background:#4db8ff"></span>🌊 Vagues</button>
           <button class="tg" data-layer="smoke" aria-pressed="false" title="Fumées & poussières VUES PAR SATELLITE — indice d'aérosols OMPS/NASA (feux, sable, éruptions ; image la plus récente)"><span class="i" style="background:#c9a06a"></span>🌫️ Fumées sat.</button>
-          <button class="tg" data-layer="news" aria-pressed="true" title="Points chauds de l'ACTUALITÉ MONDIALE en direct — lieux les plus cités par les médias cette dernière heure (GDELT, maj 15 min)"><span class="i" style="background:#ff7ab8"></span>📰 Actus live</button>
           <button class="tg" data-layer="night" aria-pressed="true" title="Ombre jour/nuit RÉELLE — position du soleil calculée en direct (maj 1 min)"><span class="i" style="background:#26304a"></span>🌓 Jour/Nuit</button>
           <button class="tg" data-base="dark" aria-pressed="true" title="Carte sombre (par défaut)"><span class="i" style="background:#5a6a8a"></span>🌙 Carte</button>
           <button class="tg" data-base="sat" aria-pressed="false" title="Satellite haute résolution (Esri)"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite HD</button>
@@ -351,13 +350,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.25</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.26</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.25";
+var VER="v2.26";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -458,7 +457,7 @@ tickClock();setInterval(tickClock,1000);
 /* ============ GLOBE ============ */
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
 var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],waves:[],iss:null};
-var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1,news:1};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1};
 $("toggles").addEventListener("click",function(e){var b=e.target.closest(".tg");if(!b)return;
   if(b.dataset.view){if(typeof setMapView==="function")setMapView(b.dataset.view);return;}
   var v=b.getAttribute("aria-pressed")==="true"?false:true;
@@ -825,7 +824,7 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_smokeLayer=null,_newsLayer=null,_nightLayer=null,_issLayer=null,_issMarker=null,_issTrack=null,_issRec=null,_mapReady=false,_planesTimer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_smokeLayer=null,_nightLayer=null,_issLayer=null,_issMarker=null,_issTrack=null,_issRec=null,_mapReady=false,_planesTimer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
@@ -869,7 +868,6 @@ function initMap(){
   _gdacsLayer=LEAF.layerGroup().addTo(MAP); /* 🚨 alertes GDACS, ON */
   _auroraLayer=LEAF.layerGroup(); /* 🌌 aurores, OFF par défaut */
   _airLayer=LEAF.layerGroup(); /* 🌫️ qualité de l'air, OFF par défaut */
-  _newsLayer=LEAF.layerGroup().addTo(MAP); /* 📰 points chauds actus, ON */
   _nightLayer=LEAF.layerGroup().addTo(MAP); /* 🌓 ombre jour/nuit réelle, ON */
   _issLayer=LEAF.layerGroup().addTo(MAP);   /* 🛰️ ISS + orbite 45 min sur la carte, ON */
   _wavesLayer=LEAF.layerGroup(); /* 🌊 vagues/houle, OFF par défaut */
@@ -888,7 +886,7 @@ function initMap(){
   _stormLayer=LEAF.layerGroup().addTo(MAP);
   /* Les couches se pilotent par les puces sous la carte (pas de boîte sur la carte). */
   MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
-  setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();loadSats();loadRadar();loadGdacs();loadAurora();loadAir();loadWaves();loadNewsMap();drawNight();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
+  setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();loadSats();loadRadar();loadGdacs();loadAurora();loadAir();loadWaves();drawNight();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
   setInterval(loadShips,60000);
   setInterval(function(){if(ON.radar)loadRadar();},300000); /* radar rafraîchi ~10 min côté source */
@@ -897,7 +895,6 @@ function initMap(){
   setInterval(function(){if(ON.air)loadAir();},1800000);      /* air (données horaires) */
   setInterval(function(){if(ON.waves)loadWaves();},1800000);   /* vagues (données horaires) */
   setInterval(function(){if(ON.night)drawNight();},60000);     /* terminateur solaire, maj 1 min */
-  setInterval(function(){if(ON.news)loadNewsMap();},900000);   /* points chauds actus, 15 min */
   setInterval(function(){var el=document.getElementById("mapClock");if(!el)return;
     var s=new Date().toISOString().slice(11,19)+" UTC";if(el.textContent!==s)el.textContent=s;},1000);
 }
@@ -1019,42 +1016,6 @@ async function loadRadar(){
     _radarLayer.clearLayers();
     LEAF.tileLayer(host+f.path+"/512/{z}/{x}/{y}/2/1_1.png",{opacity:.65,zIndex:5,maxZoom:18,
       attribution:'&copy; RainViewer — radar pluie en direct'}).addTo(_radarLayer);
-  }catch(e){}
-}
-/* 📰 ACTUS LIVE SUR LA CARTE — GDELT GEO 2.0 (gratuit, sans clé, maj ~15 min) :
-   les lieux les plus cités par les médias du monde entier cette dernière heure.
-   Popup = lieu + nb d'articles + image d'actu (https seulement) + lien articles. */
-async function loadNewsMap(){
-  try{
-    /* Le GEO 2.0 est pointilleux sur les paramètres (la sonde CI a vu un 404 avec
-       mode=pointdata&timespan=60m) → CASCADE de variantes, la 1ère qui répond gagne. */
-    var _q=encodeURIComponent("(war OR conflict OR strike OR attack OR crisis OR earthquake OR election)");
-    var _urls=[
-      "https://api.gdeltproject.org/api/v2/geo/geo?query="+_q+"&format=GeoJSON&mode=PointData&timespan=1H",
-      "https://api.gdeltproject.org/api/v2/geo/geo?query="+_q+"&format=GeoJSON",
-      "https://api.gdeltproject.org/api/v2/geo/geo?query="+_q+"&format=geojson&mode=pointdata"
-    ];
-    var j=null;
-    for(var ui=0;ui<_urls.length&&!j;ui++){
-      try{var cand=await getJSON(_urls[ui],15000);if(cand&&cand.features&&cand.features.length)j=cand;}catch(e2){}
-    }
-    var fs=(j&&j.features)||[];if(!_newsLayer)return;
-    _newsLayer.clearLayers();var n=0;
-    fs.sort(function(a,b){return ((b.properties||{}).count||0)-((a.properties||{}).count||0);});
-    fs.forEach(function(f){
-      if(n>=150)return;
-      var g=f.geometry,pr=f.properties||{};if(!g||!g.coordinates)return;
-      var lon=+g.coordinates[0],lat=+g.coordinates[1];if(!isFinite(lat)||!isFinite(lon))return;
-      var c=+pr.count||1,name=String(pr.name||"Actualité");
-      var img=(typeof pr.shareimage==="string"&&/^https:\/\//.test(pr.shareimage))?pr.shareimage:null;
-      n++;
-      LEAF.circleMarker([lat,lon],{radius:Math.max(4,Math.min(11,3+Math.log(c+1)*2)),color:"#ff7ab8",weight:1.5,fillColor:"#ff9fcb",fillOpacity:.45})
-        .bindPopup("<b>📰 "+esc(name)+"</b><br>"+c+" mention"+(c>1?"s":"")+" médias cette heure"
-          +(img?"<br><img src=\'"+img.replace(/'/g,"")+"\' style=\'max-width:220px;border-radius:6px;margin-top:6px\' loading=\'lazy\' onerror=\'this.remove()\'>":"")
-          +"<br><a href=\'https://news.google.com/search?q="+encodeURIComponent(name)+"\' target=\'_blank\' rel=\'noopener noreferrer\'>↗ Voir les articles</a>"
-          +"<br><span style=\'opacity:.7\'>GDELT · dernière heure</span>",{maxWidth:260})
-        .addTo(_newsLayer);
-    });
   }catch(e){}
 }
 /* 🖼️ IMAGES DES ACTUS EN DIRECT — GDELT DOC 2.0 artlist (images des articles publiés
@@ -1276,7 +1237,7 @@ function setBase(name){
 /* Compat : ancien appel booléen (true=satellite HD, false=sombre). */
 function setSatBase(on){setBase(on?"sat":"dark");}
 /* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
-function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer,news:_newsLayer}[k]||null;}
+function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer}[k]||null;}
 function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
