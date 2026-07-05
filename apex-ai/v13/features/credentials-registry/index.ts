@@ -283,7 +283,7 @@ function openRecoverModal(rootEl: HTMLElement, storageKey: string, serviceName: 
           toast.error(`❌ ${r.reason ?? 'recover failed'}`);
         }
       } catch (err: unknown) {
-        toast.error(`Erreur : ${String(err).slice(0, 100)}`);
+        console.error("credentials action:", err); toast.error("Action impossible pour le moment — réessaie");
       }
     })();
   });
@@ -357,7 +357,7 @@ function attachHandlers(rootEl: HTMLElement): void {
           else if (r.valid === false) toast.warn(`❌ ${key} : invalide`);
           else toast.info(`❓ ${key} : ${r.error ?? 'test impossible'}`);
         } catch (err: unknown) {
-          toast.error(`Test failed : ${String(err).slice(0, 100)}`);
+          console.error("credentials test:", err); toast.error("Test de la clé impossible — réessaie");
         } finally {
           btn.textContent = original ?? '🧪 Tester';
           btn.disabled = false;

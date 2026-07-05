@@ -221,7 +221,7 @@ function renderPage(): string {
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <button class="ax-btn" data-action="back" style="min-height:44px;min-width:44px;padding:8px 14px;border-radius:22px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.1);font-weight:600;cursor:pointer">← Admin</button>
         <h2 style="margin:0;font-size:20px;color:rgba(255,255,255,0.95);flex:1">🤖 Mode Autonome Apex</h2>
-        <button class="ax-btn" data-action="refresh" style="min-height:44px;min-width:44px;padding:8px 12px;border-radius:22px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.08);font-weight:600;cursor:pointer" title="Rafraîchir">🔄</button>
+        <button class="ax-btn" data-action="refresh" aria-label="Rafraîchir" style="min-height:44px;min-width:44px;padding:8px 12px;border-radius:22px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.08);font-weight:600;cursor:pointer" title="Rafraîchir">🔄</button>
       </div>
       <p class="ax-muted" style="color:rgba(255,255,255,0.55);font-size:13px;margin:0 0 14px">Apex bosse seul jusqu'à fin objectif ou épuisement forfait Anthropic.</p>
 

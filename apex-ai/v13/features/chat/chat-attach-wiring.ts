@@ -174,10 +174,10 @@ export function wireAttachments(
           const { fileConverter } = await import('../../services/core-svc/file-converter.js');
           const r = await fileConverter.ingest(file, 'admin');
           if (r.ok) toast.success(`✅ ${file.name} ingéré`);
-          else toast.warn(`Ingest fail : ${r.reason ?? file.name}`);
+          else toast.warn(`Fichier non ajouté : ${r.reason ?? file.name}`);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'erreur';
-          toast.warn(`File error : ${msg}`);
+          console.warn("attach:", msg); toast.warn("Ce fichier n'a pas pu être lu");
         }
       })();
     }

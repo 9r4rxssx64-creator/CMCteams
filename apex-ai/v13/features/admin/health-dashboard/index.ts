@@ -187,7 +187,7 @@ function renderItemsList(report: FullHealthReport): string {
             <div style="font-size:13px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(item.label)}</div>
             <div style="font-size:11px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(item.message ?? '—')}${escapeHtml(dur)}${escapeHtml(retry)}</div>
           </div>
-          <button class="ax-btn-mini" data-test-item="${safeId}" style="padding:6px 10px;font-size:11px;border-radius:14px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.08);cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:30px;flex-shrink:0">🔄</button>
+          <button class="ax-btn-mini" data-test-item="${safeId}" aria-label="Re-tester" style="padding:6px 10px;font-size:11px;border-radius:14px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.08);cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:30px;flex-shrink:0">🔄</button>
         </li>
       `;
     })
@@ -420,7 +420,7 @@ function showAllRulesModal(rootEl: HTMLElement): void {
     <div style="background:#11131e;border-radius:16px;border:1px solid rgba(255,255,255,0.08);max-width:720px;width:100%;padding:18px;color:#fff">
       <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
         <h2 style="margin:0;color:#e8b830;font-size:18px">📚 Règles + erreurs CLAUDE.md</h2>
-        <button id="ax-rules-close" style="background:rgba(255,255,255,0.06);color:#fff;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
+        <button id="ax-rules-close" aria-label="Fermer" style="background:rgba(255,255,255,0.06);color:#fff;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
       </header>
       <input id="ax-rules-search" type="text" placeholder="Recherche…" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#fff;font-size:14px;margin-bottom:12px" />
       <div class="ax-gs-105">Règles (${rules.length})</div>

@@ -284,6 +284,12 @@ class LiveTranscription {
       transition: opacity 0.2s ease, transform 0.2s ease;
       will-change: opacity, transform;
     `;
+    /* v13.4.344 audit UX : bottom-center au-dessus du home indicator iOS (safe-area).
+     * setProperty après cssText → les vrais navigateurs appliquent le calc(env()) ;
+     * happy-dom (tests) rejette env() comme no-op → conserve la base 12px (testable). */
+    if (this.opts.position === 'bottom-center') {
+      overlay.style.setProperty('bottom', 'calc(env(safe-area-inset-bottom, 0px) + 12px)');
+    }
     overlay.innerHTML = `
       <div style="display:flex;align-items:start;gap:10px">
         <span style="display:inline-flex;align-items:center;gap:4px;color:#6366f1;font-size:12px;font-style:normal;font-weight:600;white-space:nowrap;padding-top:2px">

@@ -730,7 +730,8 @@ class AutoUltraReset {
         'left:0',
         'right:0',
         'z-index:99998',
-        'padding:14px 16px',
+        /* v13.4.344 audit UX : padding-top sous l'encoche iOS (safe-area). */
+        'padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 14px',
         'background:linear-gradient(135deg,#e8b830,#c9a227)',
         'color:#0a0a14',
         'font:600 14px/1.4 system-ui,-apple-system,sans-serif',
@@ -757,7 +758,8 @@ class AutoUltraReset {
         'left:0',
         'right:0',
         'z-index:99997',
-        'padding:14px 16px',
+        /* v13.4.344 audit UX : safe-area top iOS. */
+        'padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 14px',
         'background:linear-gradient(135deg,#22cc77,#16a85a)',
         'color:#fff',
         'font:600 14px/1.4 system-ui,-apple-system,sans-serif',

@@ -331,7 +331,7 @@ async function refresh(rootEl: HTMLElement, opts?: { search?: string; cat?: stri
       </div>
 
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <input id="ax-sec-search" type="search" placeholder="🔎 Rechercher (nom, service, alias…)" value="${escapeHtml(search)}" style="flex:1;min-width:200px;padding:10px 12px;font-size:13px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--ax-text)" aria-label="Rechercher un secret" />
+        <input id="ax-sec-search" type="search" placeholder="🔎 Rechercher (nom, service, alias…)" value="${escapeHtml(search)}" style="flex:1;min-width:200px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--ax-text);font-size:16px" aria-label="Rechercher un secret" />
         <button id="ax-sec-export" class="ax-btn ax-gs-264" aria-label="Exporter JSON chiffré">📤 Export JSON chiffré</button>
         <button id="ax-sec-refresh" class="ax-btn ax-gs-264" aria-label="Rafraîchir">🔄</button>
       </div>

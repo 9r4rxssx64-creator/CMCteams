@@ -27,6 +27,12 @@ import { logger } from '../../core/logger.js';
 import { store } from '../../core/store.js';
 import { isFeatureEnabled, renderDisabledNotice } from '../../services/auth/feature-toggles.js';
 import { cspStyleHelper } from '../../services/core-svc/csp-style-helper.js';
+/* v13.4.344 (leçon #108/#116 — doublon feature/service) : source unique.
+ * buildArchiveUrl/buildReaderUrl vivaient à l'identique ici ET dans browser-controller
+ * (le commentaire "cohérent avec features/browser" y annonçait le risque de dérive).
+ * On importe depuis le service (bon sens de dépendance, pas de cycle) + on ré-exporte
+ * pour préserver l'API publique du feature. */
+import { buildArchiveUrl, buildReaderUrl } from '../../services/integrations/browser-controller.js';
 
 /* Re-export escapeHtml for backward compatibility (tests import from this module). */
 export { escapeHtml };
@@ -476,14 +482,9 @@ export const historyStore = new HistoryStore();
    Anti X-Frame-Options bypass
    ============================================================ */
 
-export function buildArchiveUrl(url: string): string {
-  return `https://web.archive.org/web/2/${encodeURIComponent(url)}`;
-}
-
-export function buildReaderUrl(url: string): string {
-  /* reader.jina.ai retourne version texte propre, gratuit */
-  return `https://r.jina.ai/${url}`;
-}
+/* buildArchiveUrl / buildReaderUrl : importés depuis browser-controller (source unique)
+ * puis ré-exportés ci-dessous pour conserver l'API publique historique du feature. */
+export { buildArchiveUrl, buildReaderUrl };
 
 export function buildGoogleCacheUrl(url: string): string {
   return `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(url)}`;

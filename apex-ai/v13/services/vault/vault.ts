@@ -54,9 +54,14 @@ export interface DecryptResult {
 const PASSPHRASE_HISTORY_KEY = 'apex_v13_passphrase_history';
 const PASSPHRASE_HISTORY_MAX = 3;
 
-/* Backward-compat alias pour tests + features existantes (15 patterns minimum).
- * v13.4.8 fix C7 (Ultra Review) : OpenAI regex avec negative lookahead `(?!ant-)`
- * pour ne pas matcher Anthropic `sk-ant-api03-...` (sk-anything sinon trop large). */
+/* Backward-compat alias — sous-ensemble CURATÉ minimal (≥15 patterns), importé
+ * UNIQUEMENT par des tests (vault-final-coverage / vault-critical / ultrareview-fixes) ;
+ * AUCUN code feature/service ne l'importe (tous passent par credential-patterns.ts,
+ * la liste canonique de 109 patterns). Ce n'est donc PAS un doublon de prod à risque
+ * de dérive (leçon #108) mais une fixture de test stable : on la garde volontairement
+ * réduite car la liste canonique contient un fourre-tout `[A-Za-z0-9_-]{40,128}` qui
+ * casserait l'assertion « sk-ant-* ne matche QUE Anthropic » du fix C7.
+ * v13.4.8 fix C7 : OpenAI regex négative lookahead `(?!ant-)` (ne matche pas Anthropic). */
 export const CREDENTIAL_PATTERNS: ReadonlyArray<{ name: string; regex: RegExp; key: string }> = [
   { name: 'Anthropic', regex: /^sk-ant-api\d{2}-[A-Za-z0-9_-]{40,}/, key: 'ax_anthropic_key' },
   { name: 'OpenAI', regex: /^sk-(?!ant-)[A-Za-z0-9_-]{40,}/, key: 'ax_openai_key' },
