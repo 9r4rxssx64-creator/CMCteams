@@ -4,6 +4,13 @@ on:
     - cron: '0 3 * * *'  # Every day at 03:00 UTC
   workflow_dispatch:       # Manual trigger too
 
+# actions:write requis par l'étape cleanup (deleteWorkflowRun) — sans lui, 403
+# « Resource not accessible by integration » = le run échouait CHAQUE nuit depuis
+# des semaines alors que le backup lui-même réussissait.
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   backup:
     runs-on: ubuntu-latest
