@@ -260,7 +260,7 @@ class ForceUpdateBanner {
     const css = `
       #${BANNER_ID} {
         position: fixed;
-        top: max(env(safe-area-inset-top, 8px), 8px);
+        top: calc(env(safe-area-inset-top, 0px) + 8px);
         left: max(env(safe-area-inset-left, 8px), 8px);
         right: max(env(safe-area-inset-right, 8px), 8px);
         z-index: 999998;
