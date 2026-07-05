@@ -1,3 +1,8 @@
+<!-- Backlog Claude Code (audit Apex 2026-07-05, aucune action Kevin requise) :
+     1. 15 lessons critical non résolues → tests de régression dédiés (session à venir).
+     2. 6 boutons < 36px → enlarge_touch_targets (P2 UX, iOS HIG 44px).
+     Les 2 escalades P1 de l'audit : « Aucun provider IA » = corrigé v13.4.340. -->
+
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
 ## ⭐ SESSION 2026-07-04 — World Monitor = hub unique + navires mondiaux (option)
