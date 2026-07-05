@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.2.0 -->
+<!-- v0.3.0 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -120,7 +120,7 @@
 <nav id="nav"></nav>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.2.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.3.0" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -128,7 +128,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.2.0";
+var APP_VER="v0.3.0";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -150,7 +150,9 @@ var MODELS={
 var cfg=Object.assign({
   model:"aquasense2ultra",unit:"m",runHours:0,
   reference:"PRCMDS02-EU-G",serial:"P0004EUGJ155601124KF1",
-  warrantyYears:3,retailer:"mypiscine.com",price:2499,purchaseDate:"",firmwareOk:true
+  warrantyYears:3,retailer:"mypiscine.com",price:2499,purchaseDate:"",firmwareOk:true,
+  /* réglages performance */
+  env:"peu",usage:"moyenne",debris:"fines",focus:"equilibre",batteryMin:180
 },lg("cfg",{}));
 var pool=Object.assign({L:6.9,W:4.0,shape:"bean",preset:"celine7",markers:[]},lg("pool",{}));
 var sessions=lg("sessions",[]);
@@ -189,6 +191,7 @@ var NAV=[
   {v:"bassin",ic:"🗺️",l:"Bassin"},
   {v:"plan",ic:"🎯",l:"Plan"},
   {v:"journal",ic:"📊",l:"Journal"},
+  {v:"reglage",ic:"⚙️",l:"Réglage"},
   {v:"entretien",ic:"🔧",l:"Entretien"},
   {v:"pilotage",ic:"🎮",l:"Pilotage"}
 ];
@@ -282,7 +285,9 @@ function vPlan(){
   var computed=computeCoverage();
   var stepsHtml=buildPlanSteps(computed).map(function(s,i){return '<div class="step"><div class="n">'+(i+1)+'</div><div class="b"><b>'+esc(s.t)+'</b><span>'+s.d+'</span></div></div>'}).join("");
   var weak=computed.weak;
+  var rec=recommend();
   return card("🎯 Plan de nettoyage optimisé","Choisis le cycle prévu, PoolPilot calcule dépôt, ordre et passes escaliers.",
+    '<div class="note">💡 D\'après tes conditions (⚙️ Réglage) : mode <b>'+esc(rec.mode)+'</b> · <b>'+esc(rec.freq)+'</b>'+(rec.mode!==plan.mode?' · <a href="#" onclick="applyReco();go(\'plan\');return false">appliquer</a>':'')+'</div>'+
     '<label>Mode de cycle prévu</label><select id="planMode">'+modes+'</select>'+
     '<button class="btn" style="margin-top:12px" onclick="regenPlan()">⚙️ (Re)générer le plan + la carte de couverture</button>'
   )+
@@ -371,6 +376,53 @@ function vPilotage(){
   );
 }
 
+function selOpts(val,opts){return opts.map(function(o){return '<option value="'+o[0]+'" '+(val===o[0]?"selected":"")+'>'+esc(o[1])+'</option>'}).join("")}
+function vReglage(){
+  var m=MODELS[cfg.model]||MODELS.autre;
+  var rec=recommend();
+  var eff=coverageMean(rec.mode);
+  var effCol=eff>=75?"var(--ok)":eff>=55?"var(--warn)":"var(--bad)";
+  var realA=realAutonomy();
+  var avg=sessions.length?Math.round(sessions.reduce(function(a,s){return a+(+s.dur||0)},0)/sessions.length):0;
+  var tips=effTips();
+  var seasonBtns=Object.keys(SEASONS).map(function(k){return '<button class="btn ghost sm" style="flex:1 1 46%" onclick="applySeason(\''+k+'\')">'+SEASONS[k].ic+' '+esc(SEASONS[k].l.split(" (")[0])+'</button>'}).join("");
+  return card("🎛️ Conditions du bassin","Dis-moi l'environnement, j'adapte fréquence, mode et filtre.",
+    '<div class="row">'+
+      '<div><label>Environnement</label><select id="rgEnv">'+selOpts(cfg.env,[["peu","Dégagé"],["arbres","Arbres proches"],["pollen","Beaucoup de pollen"]])+'</select></div>'+
+      '<div><label>Fréquentation</label><select id="rgUse">'+selOpts(cfg.usage,[["faible","Faible"],["moyenne","Moyenne"],["forte","Forte"]])+'</select></div>'+
+    '</div>'+
+    '<div class="row" style="margin-top:8px">'+
+      '<div><label>Saletés dominantes</label><select id="rgDeb">'+selOpts(cfg.debris,[["fines","Poussières fines"],["feuilles","Feuilles"],["sable","Sable"],["algues","Algues / dépôts verts"]])+'</select></div>'+
+      '<div><label>Priorité</label><select id="rgFoc">'+selOpts(cfg.focus,[["equilibre","Équilibré"],["sol","Le fond"],["ligne","Ligne d'eau"],["escaliers","Escaliers"]])+'</select></div>'+
+    '</div>'
+  )+
+  card("✅ Recommandation PoolPilot","",
+    '<div class="kv"><b>Fréquence conseillée</b><span>'+esc(rec.freq)+'</span></div>'+
+    '<div class="kv"><b>Mode conseillé</b><span>'+esc(rec.mode)+'</span></div>'+
+    '<div class="kv"><b>Filtre</b><span>'+esc(rec.filter)+'</span></div>'+
+    (m.clearwater?'<div class="kv"><b>Cartouche ClearWater</b><span>'+(rec.clearwater?"Recommandée ✅":"Optionnelle")+'</span></div>':'')+
+    '<button class="btn" style="margin-top:12px" onclick="applyReco()">🎯 Appliquer ce mode au plan</button>'
+  )+
+  card("📈 Score d'efficacité estimé","",
+    '<div style="text-align:center;margin:4px 0 10px"><span style="font-size:40px;font-weight:800;color:'+effCol+'">'+eff+'%</span><div class="mut">couverture estimée avec le mode conseillé</div></div>'+
+    (tips.length?'<b style="font-size:13px">Pour gagner des points :</b><ol class="clean">'+tips.map(function(t){return '<li>'+esc(t)+'</li>'}).join("")+'</ol>':'<div class="note">👍 Bien réglé. Continue à loguer tes sessions pour affiner.</div>')+
+    '<div class="note">⚠️ Estimation d\'après le comportement type + tes zones marquées, pas une mesure du robot.</div>'
+  )+
+  card("🔋 Autonomie & couverture","",
+    '<div class="row"><div style="flex:2"><label>Autonomie annoncée du robot (min)</label><input id="battMin" type="number" value="'+esc(cfg.batteryMin)+'"></div>'+
+    '<button class="btn ghost sm" style="flex:1;align-self:end" onclick="setBattery()">OK</button></div>'+
+    (realA?'<div class="note">🔎 D\'après tes '+sessions.filter(function(s){return s.batt!=null}).length+' sessions avec batterie notée, ton autonomie <b>réelle</b> ≈ <b>'+realA+' min</b>'+(realA<cfg.batteryMin*0.8?' (nettement sous l\'annoncé → brosses/filtre à vérifier).':'.')+'</div>':'<div class="mut" style="font-size:12.5px;margin-top:8px">Note la batterie de fin dans 📊 Journal → je calcule ton autonomie réelle.</div>')+
+    (avg?'<div class="mut" style="font-size:12.5px;margin-top:6px">Cycle moyen logué : '+avg+' min'+(avg>cfg.batteryMin?' — > autonomie : prévois 2 charges / 2 jours pour un nettoyage complet.':' — tient sur une charge.')+'</div>':'')
+  )+
+  card("📍 Optimiseur de point de dépôt","Où poser le robot pour la meilleure couverture (loin des escaliers, dans la grande boucle).",
+    '<button class="btn" onclick="optimizeDepot()">📍 Calculer & placer le point optimal</button>'
+  )+
+  card("🗓️ Presets saisonniers","Un tap règle conditions + priorité pour la saison.",
+    '<div class="row">'+seasonBtns+'</div>'+
+    '<div class="note">'+esc((function(){var best=null;Object.keys(SEASONS).forEach(function(k){if(SEASONS[k].usage===cfg.usage&&SEASONS[k].debris===cfg.debris&&SEASONS[k].focus===cfg.focus)best=SEASONS[k]});return best?best.note:"Choisis une saison pour un réglage rapide.";})())+'</div>'
+  );
+}
+
 /* ============ helpers UI ============ */
 function card(title,sub,body){return '<div class="card"><h2>'+esc(title)+'</h2>'+(sub?'<p class="sub">'+esc(sub)+'</p>':'')+(body||'')+'</div>'}
 function stat(n,l){return '<div class="stat"><div class="n">'+esc(n)+'</div><div class="l">'+esc(l)+'</div></div>'}
@@ -394,11 +446,74 @@ function saveLog(){
 function regenPlan(){plan.mode=$("#planMode").value;plan.generatedAt=Date.now();save();render();setTimeout(drawCoverage,30)}
 function maintAlerts(){var a=[];if((maint.filter||0)>=8)a.push("filtre");if((MODELS[cfg.model]||{}).clearwater&&(maint.clearwater||0)>=40)a.push("ClearWater");if((maint.brush||0)>=60)a.push("brosses");if((maint.seal||0)>=120)a.push("joints");return a}
 
+/* ============ PERFORMANCE / RÉGLAGES ============ */
+var SEASONS={
+  printemps:{ic:"🌱",l:"Printemps (ouverture)",usage:"moyenne",debris:"fines",focus:"equilibre",note:"Eau trouble à la réouverture → Standard + ClearWater, 2-3×/sem le temps que l'eau s'éclaircisse."},
+  ete:{ic:"☀️",l:"Été (baignade)",usage:"forte",debris:"fines",focus:"ligne",note:"Forte fréquentation → priorité ligne d'eau (crème solaire/gras) + fréquence haute."},
+  automne:{ic:"🍂",l:"Automne (feuilles)",usage:"faible",debris:"feuilles",focus:"sol",note:"Feuilles : cycle Sol, vide le panier souvent, filtre standard (pas ultra-fin qui se bouche)."},
+  hivernage:{ic:"❄️",l:"Avant hivernage",usage:"faible",debris:"fines",focus:"equilibre",note:"Grand nettoyage final Sol + Ligne d'eau avant de bâcher."}
+};
+function recommend(){
+  var m=MODELS[cfg.model]||MODELS.autre;
+  var envScore={peu:0,arbres:1,pollen:2}[cfg.env]||0;
+  var useScore={faible:0,moyenne:1,forte:2}[cfg.usage]||1;
+  var debris=cfg.debris||"fines";
+  var s=envScore+useScore+({fines:0,feuilles:1,sable:1,algues:2}[debris]||0);
+  var freq=s>=5?"tous les jours":s>=4?"3×/semaine":s>=2?"2×/semaine":"1×/semaine";
+  var mode;
+  if(cfg.focus==="ligne"||debris==="algues")mode="Ligne d'eau";
+  else if(cfg.focus==="escaliers")mode="Sol";
+  else if(debris==="sable")mode=(m.modes.indexOf("Ultra profond")>=0?"Ultra profond":"Sol");
+  else if(cfg.focus==="sol")mode="Sol";
+  else mode="Standard";
+  if(m.modes.indexOf(mode)<0)mode=m.modes[0];
+  var filter=(debris==="sable"||debris==="fines")?"Ultra-fin":"Standard";
+  var clearwater=!!(m.clearwater&&(debris==="algues"||useScore>=2));
+  return {freq:freq,mode:mode,filter:filter,clearwater:clearwater};
+}
+function realAutonomy(){
+  var wb=sessions.filter(function(s){return s.batt!=null&&s.dur>10&&s.batt<95});
+  var est=wb.map(function(s){return s.dur/(100-s.batt)*100}).filter(function(v){return isFinite(v)&&v>0&&v<600});
+  if(!est.length)return null;
+  return Math.round(est.reduce(function(a,b){return a+b},0)/est.length);
+}
+function coverageMean(mode){
+  var cv=computeCoverage(mode);var sum=0,n=0;
+  for(var y=0;y<cv.NY;y++)for(var x=0;x<cv.NX;x++){var c=cv.grid[y][x];if(c<0)continue;sum+=c;n++}
+  return n?Math.round(sum/n*100):0;
+}
+function effTips(){
+  var t=[],cv=computeCoverage(recommend().mode);
+  if(!pool.markers.some(function(m){return m.type==="escalier"}))t.push("Marque tes escaliers (🗺️) — le score les ignore tant qu'ils ne sont pas placés.");
+  if(!pool.markers.some(function(m){return m.type==="depot"}))t.push("Place le point de dépôt optimal (bouton ci-dessous) : bien démarrer améliore la couverture.");
+  if(recommend().mode.indexOf("Ligne")<0)t.push("Ajoute un cycle « Ligne d'eau » de temps en temps : le rétrécissement du haricot y accumule le gras.");
+  return t.slice(0,2);
+}
+function setPerf(k,v){cfg[k]=v;save();render()}
+function applyReco(){plan.mode=recommend().mode;plan.generatedAt=Date.now();save();toast("✅ Mode « "+plan.mode+" » appliqué au plan");}
+function applySeason(k){var s=SEASONS[k];if(!s)return;cfg.usage=s.usage;cfg.debris=s.debris;cfg.focus=s.focus;save();toast(s.ic+" Preset « "+s.l+" » appliqué");render()}
+function setBattery(){cfg.batteryMin=Math.max(30,+$("#battMin").value||180);save();render()}
+function optimizeDepot(){
+  var poly=poolPoly(),c=polyCentroid(poly),dx=0,dy=0;
+  var stairs=pool.markers.filter(function(m){return m.type==="escalier"});
+  if(stairs.length){var sx=0,sy=0;stairs.forEach(function(m){sx+=m.x;sy+=m.y});sx/=stairs.length;sy/=stairs.length;dx=c.x-sx;dy=c.y-sy;var L=Math.hypot(dx,dy)||1;dx/=L;dy/=L}
+  var best={x:c.x,y:c.y};
+  for(var k=0.32;k>=0;k-=0.04){var px=c.x+dx*k,py=c.y+dy*k;if(pointInPoly(px,py,poly)){best={x:px,y:py};break}}
+  pool.markers=pool.markers.filter(function(m){return m.type!=="depot"});
+  pool.markers.push({id:uid(),type:"depot",x:best.x,y:best.y});
+  save();toast("📍 Point de dépôt optimal placé — vois-le sur ta carte 🗺️");render();
+}
+function toast(msg){
+  var t=document.createElement("div");t.textContent=msg;
+  t.style.cssText="position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#0e88c9;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;z-index:50;box-shadow:0 6px 22px rgba(0,0,0,.45);max-width:90vw;text-align:center";
+  document.body.appendChild(t);setTimeout(function(){t.style.transition="opacity .4s";t.style.opacity="0";setTimeout(function(){t.remove()},400)},2200);
+}
+
 /* ============ Coverage engine (estimation, contour réel) ============ */
-function computeCoverage(){
+function computeCoverage(modeOverride){
   var poly=poolPoly();
   var NX=40,NY=Math.max(12,Math.round(40*(pool.W/Math.max(1,pool.L))));
-  var mode=plan.mode||"Standard";
+  var mode=modeOverride||plan.mode||"Standard";
   var grid=[],weakSet={};
   var stairs=pool.markers.filter(function(m){return m.type==="escalier"});
   var deads=pool.markers.filter(function(m){return m.type==="anglemort"});
@@ -557,6 +672,7 @@ function render(){
   else if(v==="bassin"){S.tool=S.tool||"escalier";html=vBassin()}
   else if(v==="plan")html=vPlan();
   else if(v==="journal")html=vJournal();
+  else if(v==="reglage")html=vReglage();
   else if(v==="entretien")html=vEntretien();
   else if(v==="pilotage")html=vPilotage();
   $("#app").innerHTML=html;renderNav();
@@ -569,6 +685,10 @@ function render(){
   }
   if(v==="plan")setTimeout(drawCoverage,40);
   if(v==="journal"&&sessions.length>1)setTimeout(drawTrend,40);
+  if(v==="reglage"){
+    var bind={rgEnv:"env",rgUse:"usage",rgDeb:"debris",rgFoc:"focus"};
+    Object.keys(bind).forEach(function(id){var el=$("#"+id);if(el)el.addEventListener("change",function(){setPerf(bind[id],this.value)})});
+  }
 }
 document.addEventListener("click",function(e){
   var nb=e.target.closest("#nav button");if(nb){go(nb.getAttribute("data-v"));return}
