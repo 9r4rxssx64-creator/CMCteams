@@ -93,15 +93,10 @@ await browser.close();
 const PROBES = [
   ['GIBS GOES-East GeoColor (géo LIVE)', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/0.png'],
   ['GIBS GOES-West GeoColor', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-West_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/0.png'],
-  /* Matrice de candidats Himawari + Thermal (les 2 premiers essais ont renvoyé 400 —
-     le XML GIBS dit la cause EXACTE, affichée ci-dessous pour choisir le bon ID). */
-  ['Himawari GeoColor L8', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_GeoColor/default/default/GoogleMapsCompatible_Level8/1/0/1.png'],
-  ['Himawari Band3 visible L8', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band3_Red_Visible_1km/default/default/GoogleMapsCompatible_Level8/1/0/1.png'],
-  ['Himawari Band13 IR L7', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band13_Clean_Infrared/default/default/GoogleMapsCompatible_Level7/1/0/1.png'],
-  ['Thermal VIIRS SNPP L8 (hier)', (() => { const iso = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/' + iso + '/GoogleMapsCompatible_Level8/1/0/0.png'; })()],
-  ['Thermal VIIRS SNPP L9 (avant-hier)', (() => { const iso = new Date(Date.now() - 48 * 3600 * 1000).toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/' + iso + '/GoogleMapsCompatible_Level9/1/0/0.png'; })()],
-  ['Thermal VIIRS NOAA20 L9 (hier)', (() => { const iso = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_Thermal_Anomalies_375m_All/default/' + iso + '/GoogleMapsCompatible_Level9/1/0/0.png'; })()],
-  ['Thermal MODIS Combined L9 (avant-hier)', (() => { const iso = new Date(Date.now() - 48 * 3600 * 1000).toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Combined_Thermal_Anomalies_All/default/' + iso + '/GoogleMapsCompatible_Level9/1/0/0.png'; })()],
+  /* WMTS 3857 n'a NI Himawari NI Thermal (matrice v2.17 : 400 sur tous les candidats).
+     → la page v2.18 passe par le WMS 3857 : sondes GetMap directes ci-dessous. */
+  ['GIBS WMS Himawari GeoColor', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=Himawari_AHI_GeoColor&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
+  ['GIBS WMS VIIRS Thermal (feux sat.)', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=VIIRS_SNPP_Thermal_Anomalies_375m_All&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
   ['RainViewer (radar pluie)', 'https://api.rainviewer.com/public/weather-maps.json'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
@@ -121,6 +116,16 @@ for (const [label, url] of PROBES) {
     console.log('⚠️ ' + label + ' : ' + (e && e.message ? e.message : e));
   }
 }
+
+/* Sonde DÉFINITIVE : le GetCapabilities WMTS 3857 liste les couches RÉELLEMENT dispo —
+   on affiche celles qui matchent Himawari/Thermal/GeoColor (fin des devinettes d'IDs). */
+try {
+  const cap = await (await fetch('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml')).text();
+  const ids = [...cap.matchAll(/<ows:Identifier>([^<]*(?:Himawari|Thermal_Anomalies|GeoColor)[^<]*)<\/ows:Identifier>/g)].map(m => m[1]);
+  const uniq = [...new Set(ids)].slice(0, 40);
+  console.log('\n--- Couches WMTS 3857 réelles (Himawari|Thermal|GeoColor) : ' + uniq.length + ' ---');
+  for (const id of uniq) console.log('   · ' + id);
+} catch (e) { console.log('⚠️ GetCapabilities WMTS : ' + (e && e.message ? e.message : e)); }
 
 for (const r of report) {
   console.log((r.ok ? '✅' : '❌') + ' ' + r.url);
