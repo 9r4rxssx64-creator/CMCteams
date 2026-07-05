@@ -5,6 +5,17 @@
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔎 SESSION 2026-07-05 — Ultra-audit du domaine kd-mc.com (crew 5 experts)
+
+### ✅ Corrigé + mergé (aucune action) — PR #2167
+- `test:ci` réparé pour un clone propre (`pdfjs-dist` déclaré) · versions synchronisées (Coffre v1.0.2, Liens v1.3.1) · garde anti-débordement mobile sur Chez Lolo.
+- Backup Firebase nocturne : le 403 chronique (nettoyage des vieux runs) est réglé (`actions:write`), le backup lit maintenant les règles durcies en compte de service. Vérifié vert.
+
+### 🟡 3 décisions qui te reviennent (je NE touche PAS sans ton feu vert — risque réel)
+1. **Boutique — verrou d'écriture Firebase (`shops_admin_v1/products`)** : aujourd'hui, un produit peut être **écrit sans authentification** (règle `.write` sans `auth`). Le durcissement est **déjà écrit et prêt** (`_phase_shops_rolelock`) mais je ne le publie PAS seul : il faut d'abord confirmer que **l'app boutique écrit bien avec un jeton admin** (sinon plus aucun produit ne s'ajoute). Dis-moi « durcis la boutique » quand tu veux tester d'abord côté admin.
+2. **Face ID admin du domaine — enrôlement** : le bootstrap admin garde encore un repli « nom connu » tant qu'aucun passkey n'est posé. Le fermer **totalement** (Face ID obligatoire) est plus sûr MAIS peut te **verrouiller dehors** si ton passkey saute. Je ne le ferme pas à l'aveugle — à faire ensemble quand tu es devant ton iPhone pour ré-enrôler dans la foulée.
+3. **Apex Chat — chiffrement E2E** : les primitives sont bonnes mais l'échange de clés n'est pas systématiquement actif (repli texte possible). Le rebrancher demande un test à 2 vrais clients — je te le propose en session dédiée (ne pas activer à l'aveugle, risque de casser l'envoi).
+
 ## ⭐ SESSION 2026-07-04 — World Monitor = hub unique + navires mondiaux (option)
 
 ### ✅ Livré, testé (Playwright local, 0 exception), auto-déployé
