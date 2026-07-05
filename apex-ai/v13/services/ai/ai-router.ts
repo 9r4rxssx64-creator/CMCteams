@@ -1384,9 +1384,29 @@ class AIRouter {
       if (!key && provider !== 'gemini') {
         /* Pas de clé locale : OK uniquement si le proxy serveur couvre ce provider
          * (streamFromProvider routera via tryProxyRoute avec auth PIN, clés server-side).
-         * Sinon erreur "no key" (comportement historique). */
+         * Sinon erreur "no key" (comportement historique).
+         *
+         * v13.4.340 (Kevin « toujours openai » — audit Apex « aucun provider détecté ») :
+         * proxyCoversProvider dépend d'un HEALTH réseau. getProxyHealth ne cache QUE
+         * les succès → un health raté au 1er provider de la chaîne (anthropic, cold
+         * start/timeout ponctuel) le faisait skip « no key » SILENCIEUSEMENT, puis le
+         * health RETENTÉ pour openai réussissait → openai répond. Répété → anthropic
+         * marqué DEAD 1h → badge openai permanent. FIX : quand le FLAG proxy est ON,
+         * on est OPTIMISTE — on tente quand même (tryProxyRoute refait son health ;
+         * si le worker est vraiment down, l'erreur réelle est capturée et VISIBLE au
+         * Diagnostic au lieu d'un skip muet). Le skip « no key » ne reste que si le
+         * proxy est explicitement désactivé. */
         if (!(await this.proxyCoversProvider(provider))) {
-          return { status: 'error', error: lastErr ?? new Error(`${provider} no key`) };
+          const flag = localStorage.getItem(PROXY_FLAG_KEY);
+          const proxyFlagOn = flag === 'true' || flag === '1';
+          if (!proxyFlagOn) {
+            try {
+              const { recordLastAiFail } = await import('./last-ai-fail.js');
+              recordLastAiFail(provider, 'no key locale + proxy désactivé (flag off)');
+            } catch { /* ignore */ }
+            return { status: 'error', error: lastErr ?? new Error(`${provider} no key`) };
+          }
+          logger.info('ai-router', `${provider} sans clé locale + health proxy KO ponctuel → tentative proxy optimiste (v340)`);
         }
       }
       const tStart = Date.now();
