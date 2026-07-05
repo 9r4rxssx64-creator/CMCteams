@@ -93,8 +93,15 @@ await browser.close();
 const PROBES = [
   ['GIBS GOES-East GeoColor (géo LIVE)', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/0.png'],
   ['GIBS GOES-West GeoColor', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-West_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/0.png'],
-  ['GIBS Himawari GeoColor', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/1.png'],
-  ['GIBS VIIRS Thermal Anomalies (feux sat.)', (() => { const d = new Date(Date.now() - 24 * 3600 * 1000); const iso = d.toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/' + iso + '/GoogleMapsCompatible_Level9/1/0/0.png'; })()],
+  /* Matrice de candidats Himawari + Thermal (les 2 premiers essais ont renvoyé 400 —
+     le XML GIBS dit la cause EXACTE, affichée ci-dessous pour choisir le bon ID). */
+  ['Himawari GeoColor L8', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_GeoColor/default/default/GoogleMapsCompatible_Level8/1/0/1.png'],
+  ['Himawari Band3 visible L8', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band3_Red_Visible_1km/default/default/GoogleMapsCompatible_Level8/1/0/1.png'],
+  ['Himawari Band13 IR L7', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Himawari_AHI_Band13_Clean_Infrared/default/default/GoogleMapsCompatible_Level7/1/0/1.png'],
+  ['Thermal VIIRS SNPP L8 (hier)', (() => { const iso = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/' + iso + '/GoogleMapsCompatible_Level8/1/0/0.png'; })()],
+  ['Thermal VIIRS SNPP L9 (avant-hier)', (() => { const iso = new Date(Date.now() - 48 * 3600 * 1000).toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Thermal_Anomalies_375m_All/default/' + iso + '/GoogleMapsCompatible_Level9/1/0/0.png'; })()],
+  ['Thermal VIIRS NOAA20 L9 (hier)', (() => { const iso = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_Thermal_Anomalies_375m_All/default/' + iso + '/GoogleMapsCompatible_Level9/1/0/0.png'; })()],
+  ['Thermal MODIS Combined L9 (avant-hier)', (() => { const iso = new Date(Date.now() - 48 * 3600 * 1000).toISOString().slice(0, 10); return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Combined_Thermal_Anomalies_All/default/' + iso + '/GoogleMapsCompatible_Level9/1/0/0.png'; })()],
   ['RainViewer (radar pluie)', 'https://api.rainviewer.com/public/weather-maps.json'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
@@ -104,7 +111,12 @@ for (const [label, url] of PROBES) {
   try {
     const r = await fetch(url, { redirect: 'follow' });
     const ct = r.headers.get('content-type') || '';
-    console.log((r.ok ? '✅' : '⚠️ HTTP ' + r.status) + ' ' + label + ' (' + ct.split(';')[0] + ')');
+    let extra = '';
+    if (!r.ok) { // cause EXACTE : le XML d'exception GIBS dit quoi corriger (règle CLAUDE.md)
+      const body = (await r.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 180);
+      extra = ' — ' + body;
+    }
+    console.log((r.ok ? '✅' : '⚠️ HTTP ' + r.status) + ' ' + label + ' (' + ct.split(';')[0] + ')' + extra);
   } catch (e) {
     console.log('⚠️ ' + label + ' : ' + (e && e.message ? e.message : e));
   }
