@@ -531,7 +531,18 @@ class ApexSelfAudit {
     try {
       const { aiRoutingPolicy } = await import('../ai/ai-routing-policy.js');
       const status = aiRoutingPolicy.getStatus();
-      if (status.paid_providers_available.length === 0 && status.free_providers_available.length === 0) {
+      /* v13.4.340 (leçon #103 « indicateur vert mais faux », audit 2026-07-05) :
+       * getStatus() ne compte QUE les clés LOCALES (slots legacy). Chez Kevin les
+       * 22 clés vivent CÔTÉ SERVEUR (proxy) → ce finding sortait « aucun provider »
+       * alors que l'IA répond très bien. On compte désormais le proxy comme voie
+       * valide : finding UNIQUEMENT si ni clé locale NI proxy actif. */
+      const proxyFlagOn = ((): boolean => {
+        try {
+          const f = localStorage.getItem('apex_v13_use_secrets_proxy');
+          return f === 'true' || f === '1';
+        } catch { return false; }
+      })();
+      if (!proxyFlagOn && status.paid_providers_available.length === 0 && status.free_providers_available.length === 0) {
         /* v13.4.242 (Kevin 2026-05-20) : message honnête — Apex peut répondre
          * via le Worker proxy apex-secrets-proxy (clés server-side) OU via une
          * clé locale. Ce finding signale que le routing-policy ne détecte
