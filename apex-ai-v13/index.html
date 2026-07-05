@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark" data-app-ver="v13.4.342">
+<html lang="fr" data-theme="dark" data-app-ver="v13.4.343">
 <head>
   <meta charset="utf-8">
   <!-- v13.4.248 a11y : zoom utilisateur réactivé (Apple HIG + skill apex-ui-ux-pro-max).
@@ -38,8 +38,8 @@
        réduire violations CSP de 100/h à <5/h (cf csp-monitor.ts pour escalade auto). -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self';
-             script-src 'self' 'nonce-9f6ed86874256f8643a8692fc93fb902' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
-             style-src 'self' 'nonce-9f6ed86874256f8643a8692fc93fb902';
+             script-src 'self' 'nonce-a0a46ce61054cae490bfcd48c9100d43' 'strict-dynamic' https://cdn.jsdelivr.net https://browser.sentry-cdn.com;
+             style-src 'self' 'nonce-a0a46ce61054cae490bfcd48c9100d43';
              style-src-attr 'unsafe-inline';
              img-src 'self' data: blob: https:;
              font-src 'self' data:;
@@ -50,6 +50,8 @@
                           https://api.openai.com
                           https://api.groq.com
                           https://generativelanguage.googleapis.com
+                          https://identitytoolkit.googleapis.com
+                          https://securetoken.googleapis.com
                           https://openrouter.ai
                           https://api.cohere.com
                           https://api.cohere.ai
@@ -146,14 +148,14 @@
              upgrade-insecure-requests;">
 
   <title>APEX AI — Assistant IA personnel multi-providers & studios</title>
-  <script type="application/ld+json" nonce="9f6ed86874256f8643a8692fc93fb902">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"APEX AI","applicationCategory":"BusinessApplication","operatingSystem":"Web, iOS, Android (PWA)","description":"Assistant IA personnel niveau entreprise : multi-providers (Claude, GPT, Gemini, Groq, Mistral…), reconnaissance vocale, studios créatifs, modules pro, vault chiffré AES-GCM-256.","url":"https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/","image":"https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/og-image.png","author":{"@type":"Person","name":"Kevin DESARZENS"},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"featureList":["Multi-providers IA avec failover","Reconnaissance vocale Dis Apex","Studios créatifs (musique, vidéo, image, CV, facture)","Modules experts (juridique, finance, médical)","Vault chiffré AES-GCM-256","Mode hors-ligne PWA"]}</script>
+  <script type="application/ld+json" nonce="a0a46ce61054cae490bfcd48c9100d43">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"APEX AI","applicationCategory":"BusinessApplication","operatingSystem":"Web, iOS, Android (PWA)","description":"Assistant IA personnel niveau entreprise : multi-providers (Claude, GPT, Gemini, Groq, Mistral…), reconnaissance vocale, studios créatifs, modules pro, vault chiffré AES-GCM-256.","url":"https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/","image":"https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/og-image.png","author":{"@type":"Person","name":"Kevin DESARZENS"},"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"featureList":["Multi-providers IA avec failover","Reconnaissance vocale Dis Apex","Studios créatifs (musique, vidéo, image, CV, facture)","Modules experts (juridique, finance, médical)","Vault chiffré AES-GCM-256","Mode hors-ligne PWA"]}</script>
 
   <!-- v13.4.222 (Kevin "100/100 réel Performance LCP") :
        Critical CSS inline pour 1st paint INSTANTANÉ (avant chargement des
        link CSS externes). Réduit LCP ~150-250ms iPhone Safari.
        INTERVENTION ADDITIVE : aucun fichier existant modifié, juste ajout.
        Validation auto-test au boot v13.4.204 testVisualRender + Layout. -->
-  <style nonce="9f6ed86874256f8643a8692fc93fb902">
+  <style nonce="a0a46ce61054cae490bfcd48c9100d43">
     html { background: #08080f; color: #e8b830; color-scheme: dark; }
     body { margin: 0; padding: 0; min-height: 100vh; font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; background: #08080f; color: #f0e8d8; -webkit-text-size-adjust: 100%; }
     #apex-root { min-height: 100vh; position: relative; }
@@ -187,15 +189,17 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
   <link rel="dns-prefetch" href="https://browser.sentry-cdn.com">
   <link rel="dns-prefetch" href="https://api.openai.com">
-  <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com">
+  <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com
+                          https://identitytoolkit.googleapis.com
+                          https://securetoken.googleapis.com">
   <link rel="preload" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACi0lEQVR42u3YMRGAMBBFwZTpkBHfcRNVUOEB5m3xDNz8bW7Med1SteEIAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAuA3nb3cAYDu+N/cAwAABEBx/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAABAefwQAJAfPwQAAAAAAOXxQwAAAAAAUB4/BADkxw8BAAAAAEB5/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAABAefwQAJAfPwQAAAAAAOXxQwAAAAAAUB4/BADkxw8BAAAAAEB5/BAAAAAAAJTHDwEA+fFDAAAAAABQHj8EAAAAAADl8UMAQH78EAAAAAAAlMcPAQAAAGD8WgAYvwAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAAAAADjhwAA44cAAAAAAMD4IQAAAAAAMH4IADB+CAAAAAAAjB8CAAwLgCoAo4IgC8CYIABAABQBGBEEAAiAIgDjgSALwGggAEAAFAEYCwQACIAiACOBIAvAOCAAQAAUARgFBAAIAF8gCQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAB4BACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQPpuD3jJmw663UkDAAAAAElFTkSuQmCC" as="image" fetchpriority="high">
-  <script nonce="9f6ed86874256f8643a8692fc93fb902" type="module" crossorigin src="./core/main-CimcBgrS.js"></script>
+  <script nonce="a0a46ce61054cae490bfcd48c9100d43" type="module" crossorigin src="./core/main-DFq-1Qsm.js"></script>
   <link rel="modulepreload" crossorigin href="./chunks/credential-patterns-DUMYZEMu.js">
-  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-D6LOeL9m.js">
-  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-ORaraTFl.js">
-  <link rel="modulepreload" crossorigin href="./chunks/monitoring-FVZXdgCC.js">
-  <link nonce="9f6ed86874256f8643a8692fc93fb902" rel="stylesheet" crossorigin href="./assets/css/main-DypJgvjZ.css">
-  <link rel="modulepreload" crossorigin href="./chunks/index-Br8emNjP.js">
+  <link rel="modulepreload" crossorigin href="./chunks/apex-kb-z0aUEZIG.js">
+  <link rel="modulepreload" crossorigin href="./chunks/multi-source-analyze-B6It-ijz.js">
+  <link rel="modulepreload" crossorigin href="./chunks/monitoring-Bg0Oiujo.js">
+  <link nonce="a0a46ce61054cae490bfcd48c9100d43" rel="stylesheet" crossorigin href="./assets/css/main-DypJgvjZ.css">
+  <link rel="modulepreload" crossorigin href="./chunks/index-BKQ5p-ZO.js">
 </head>
 <body>
   <a href="https://kd-mc.com/" aria-label="Retour au portail KDMC" style="position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:99999;background:rgba(10,10,12,.72);color:#fff;text-decoration:none;padding:7px 13px;border-radius:999px;font:600 13px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid rgba(232,184,48,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">← KDMC</a>
@@ -254,14 +258,14 @@
   <!-- Boot loader minimal — charge le bundle ES module Vite -->
 
   <!-- Rescue handler + fail-safe (externalisé pour CSP strict, nonce required) -->
-  <script nonce="9f6ed86874256f8643a8692fc93fb902" src="./assets/js/rescue.js"></script>
+  <script nonce="a0a46ce61054cae490bfcd48c9100d43" src="./assets/js/rescue.js"></script>
 
   <!-- v13.4.225 (Kevin "intègre le système MAJ auto forcé de CMCteams qui marche") :
        Defense-in-depth — auto-MAJ inline indépendant du bundle Vite, copie 1:1
        du système CMCteams v9.615 qui fonctionne. Si bundle bootstrap.js échoue
        ou tarde, ce script garantit MAJ auto en standalone (même logique).
        Anti-récidive Erreur #54 + Kevin "tjs v207 sur iPhone". -->
-  <script nonce="9f6ed86874256f8643a8692fc93fb902">
+  <script nonce="a0a46ce61054cae490bfcd48c9100d43">
     (function(){
       var APX_VER = document.documentElement.getAttribute('data-app-ver') || 'v0';
       var inProgress = false;
@@ -320,7 +324,7 @@
       window.addEventListener('focus', autoForceUpdate);
     })();
   </script>
-  <script nonce="9f6ed86874256f8643a8692fc93fb902">
+  <script nonce="a0a46ce61054cae490bfcd48c9100d43">
   /* KDMC — battement de présence domaine : garde la session "verte" dans l'Admin
      domaine tant que l'app est ouverte+visible. Autonome, fail-open, économe :
      coupé en arrière-plan, s'arrête seul si pas de session, no-op hors *.kd-mc.com. */
