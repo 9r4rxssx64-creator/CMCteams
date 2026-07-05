@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.7.0 -->
+<!-- v0.9.0 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -110,6 +110,20 @@
   .kv:last-child{border-bottom:none}.kv b{color:var(--txt);font-weight:600}.kv span{color:var(--dim);text-align:right}
   #d3{position:fixed;inset:0;z-index:60;background:#04101c;display:flex;flex-direction:column}
   #d3[hidden]{display:none}
+  #lv{position:fixed;inset:0;z-index:60;background:#04101c;display:flex;flex-direction:column}
+  #lv[hidden]{display:none}
+  #lvtop{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--safe-t)) 14px 10px;border-bottom:1px solid var(--line)}
+  #lvtop b{font-size:15px;flex:1}
+  #lvbadge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;border:1px solid var(--line)}
+  #lvtop button{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:10px;width:40px;height:40px;font-size:16px}
+  #lvc{flex:1;width:100%;display:block;touch-action:none}
+  #lvstat{display:flex;gap:8px;padding:8px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+  #lvstat .s{flex:1;min-width:70px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+  #lvstat .s .n{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+  #lvstat .s .l{font-size:10px;color:var(--dim)}
+  #lvctl{display:flex;gap:8px;padding:8px 14px calc(10px + var(--safe-b));border-top:1px solid var(--line)}
+  #lvctl button{flex:1;border:1px solid var(--line);border-radius:11px;padding:12px;font-size:13px;font-weight:700;background:var(--card2);color:var(--txt)}
+  #lvctl button.pri{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#052034;border:none}
   #d3top{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 14px 10px;border-bottom:1px solid var(--line)}
   #d3top b{font-size:15px}
   #d3top button{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:10px;width:40px;height:40px;font-size:16px}
@@ -128,6 +142,20 @@
 <div id="app"></div>
 <nav id="nav"></nav>
 
+<div id="lv" hidden>
+  <div id="lvtop"><b>📡 Robot en direct</b><span id="lvbadge">⏳ EN ATTENTE</span><button onclick="closeLive()" aria-label="Fermer">✕</button></div>
+  <canvas id="lvc"></canvas>
+  <div id="lvstat">
+    <div class="s"><div class="n" id="lvCov">0%</div><div class="l">Couverture</div></div>
+    <div class="s"><div class="n" id="lvTime">0:00</div><div class="l">Temps</div></div>
+    <div class="s"><div class="n" id="lvBatt">—</div><div class="l">Batterie</div></div>
+    <div class="s"><div class="n" id="lvSpeed">—</div><div class="l">État</div></div>
+  </div>
+  <div id="lvctl">
+    <button id="lvReal" class="pri" onclick="lvStartReal()">▶️ Démarrer le robot</button>
+    <button onclick="lvPollNow()">🔄 Actualiser la position réelle</button>
+  </div>
+</div>
 <div id="d3" hidden>
   <div id="d3top"><b>🧊 Ta piscine en 3D</b><button onclick="close3D()" aria-label="Fermer">✕</button></div>
   <canvas id="d3c"></canvas>
@@ -139,7 +167,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.7.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.9.0" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -147,7 +175,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.7.0";
+var APP_VER="v0.9.0";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -204,7 +232,7 @@ var pool=Object.assign({L:6.85,W:4.10,shape:"bean",preset:"celine7",depthShallow
 var sessions=lg("sessions",[]);
 var plan=lg("plan",{mode:"Standard",generatedAt:0});
 var maint=Object.assign({filter:0,brush:0,seal:0,clearwater:0},lg("maint",{}));
-var beatbot=Object.assign({relay:"https://beatbot.kd-mc.com/__beatbot/relay",hosts:[],token:"",tokenHeader:"Authorization",commands:{},mapUrl:""},lg("beatbot",{}));
+var beatbot=Object.assign({relay:"https://beatbot.kd-mc.com/__beatbot/relay",hosts:[],token:"",tokenHeader:"Authorization",commands:{},mapUrl:"",statusUrl:""},lg("beatbot",{}));
 var _bbAnalysis=null;
 var S={view:"accueil"};
 function save(){ls("cfg",cfg);ls("pool",pool);ls("sessions",sessions);ls("plan",plan);ls("maint",maint);ls("beatbot",beatbot)}
@@ -285,7 +313,8 @@ function vAccueil(){
     '<div class="row" style="margin-top:10px">'+
       '<button class="btn ghost sm" style="flex:1" onclick="go(\'bassin\')">🗺️ Cartographier</button>'+
       '<button class="btn ghost sm" style="flex:1" onclick="go(\'journal\')">➕ Loguer</button>'+
-    '</div>'
+    '</div>'+
+    '<button class="btn" style="margin-top:10px" onclick="openLive()">📡 Voir le robot en direct</button>'
   )+
   card("🤖 Mon robot","",
     '<div class="kv"><b>'+esc(m.name)+'</b><span>Réf. '+esc(cfg.reference)+'</span></div>'+
@@ -387,7 +416,8 @@ function vPlan(){
       '<span><i style="background:var(--bad)"></i>Faible</span>'+
     '</div>'+
     '<div class="note">⚠️ <b>Estimation</b> — d\'après le comportement type du robot + TES zones marquées, sur le contour réel du bassin. Pas une mesure du robot ; ça sert à décider où renforcer.</div>'+
-    '<button class="btn ghost" style="margin-top:10px" onclick="open3D()">🧊 Voir en 3D (avec cotes + robot animé)</button>'
+    '<button class="btn ghost" style="margin-top:10px" onclick="open3D()">🧊 Voir en 3D (avec cotes + robot animé)</button>'+
+    '<button class="btn" style="margin-top:8px" onclick="openLive()">📡 Suivre le robot en direct (plan)</button>'
   )+
   card("📋 Étapes recommandées","",
     (stepsHtml||'<div class="empty">Cartographie ton bassin puis génère le plan.</div>')+
@@ -437,7 +467,7 @@ function vEntretien(){
 }
 
 function analyzeCapture(text){
-  var hosts={},auth=null,cands=[],maps=[];
+  var hosts={},auth=null,cands=[],maps=[],stats=[];
   var NOISE=/(apple|icloud|gstatic|googleapis|google-analytics|firebaseio|crashlytics|sentry|facebook|doubleclick|akamai|appsflyer|adjust\.com|amplitude|mixpanel|branch\.io|bugsnag|datadog)/i;
   function push(method,url,headers,body){
     var h;try{h=new URL(url).hostname;}catch(e){return;}
@@ -449,6 +479,7 @@ function analyzeCapture(text){
     else if(/mode|program|setting|profile|waterline|floor/.test(lc))label="mode";
     else if(/dock|home|charge|return|\bpark\b|\bbase\b/.test(lc))label="dock";
     if(/map|coverage|track|record|\bpath\b|route/.test(lc))maps.push({method:method||"GET",url:url});
+    if(/status|state|realtime|position|location|\/info\b|device.?status|heartbeat|telemetr/.test(lc))stats.push({method:method||"GET",url:url});
     if(headers)for(var k in headers){var kl=k.toLowerCase();if((kl==="authorization"||kl==="token"||/x-.*(token|auth|session)/.test(kl))&&!auth)auth={header:k,value:String(headers[k])};}
     var mine=false;try{var idn=[cfg.robotId,cfg.robotUuid,cfg.serial].filter(Boolean);var blob=(url+" "+(body||"")+" "+JSON.stringify(headers||{}));mine=idn.some(function(x){return x&&blob.indexOf(x)>=0;});}catch(e){}
     cands.push({method:method||"GET",url:url,label:label,headers:headers||{},body:body||"",mine:mine});
@@ -456,7 +487,7 @@ function analyzeCapture(text){
   var t=(text||"").trim(),har=null;try{har=JSON.parse(t);}catch(e){}
   if(har&&har.log&&har.log.entries){har.log.entries.forEach(function(e){var r=e.request||{},hs={};(r.headers||[]).forEach(function(x){hs[x.name]=x.value;});push(r.method,r.url,hs,(r.postData&&r.postData.text)||"");});}
   else{var urls=t.match(/https:\/\/[^\s"'<>]+/g)||[];var al=(t.match(/authorization["']?\s*[:=]\s*["']?([^"'\r\n]+)/i)||[])[1];if(al&&!auth)auth={header:"Authorization",value:al.trim()};urls.forEach(function(u){push("POST",u,al?{Authorization:al.trim()}:{},"");});}
-  return {hosts:Object.keys(hosts).sort(function(a,b){return hosts[b]-hosts[a]}),auth:auth,candidates:cands,maps:maps};
+  return {hosts:Object.keys(hosts).sort(function(a,b){return hosts[b]-hosts[a]}),auth:auth,candidates:cands,maps:maps,stats:stats};
 }
 var beatbotClient={
   configured:function(){return !!(beatbot.commands&&Object.keys(beatbot.commands).length)},
@@ -506,6 +537,7 @@ function bbResultHtml(a){
     h+='<label style="margin-top:8px">'+lbl+'</label><select id="bbCmd_'+k+'"><option value="">— aucune —</option>'+bbCandOpts(a.candidates,k)+'</select>';
   });
   if(a.maps.length)h+='<div class="note">🗺️ '+a.maps.length+' endpoint(s) de carte détecté(s) — carte robot activable.</div>';
+  if(a.stats.length)h+='<div class="note">📡 '+a.stats.length+' endpoint(s) de statut détecté(s) — suivi LIVE de la position activable.</div>';
   h+='<button class="btn" style="margin-top:12px" onclick="bbSaveConfig()">💾 Enregistrer la config & activer le pilotage</button>';
   return h;
 }
@@ -514,7 +546,7 @@ function bbSaveConfig(){
   ["start","stop","mode","dock"].forEach(function(k){var s=$("#bbCmd_"+k);if(s&&s.value!==""){var c=a.candidates[+s.value];if(c)cmds[k]={url:c.url,method:c.method,headers:c.headers,body:c.body};}});
   beatbot.commands=cmds;
   if(a.auth){beatbot.token=a.auth.value;beatbot.tokenHeader=a.auth.header;}
-  beatbot.hosts=a.hosts;beatbot.mapUrl=a.maps.length?a.maps[0].url:"";
+  beatbot.hosts=a.hosts;beatbot.mapUrl=a.maps.length?a.maps[0].url:"";beatbot.statusUrl=(a.stats&&a.stats.length)?a.stats[0].url:"";
   save();toast("✅ Config enregistrée — "+Object.keys(cmds).length+" commande(s) prête(s)");render();
 }
 function bbCaptureProcedure(){
@@ -548,6 +580,7 @@ function vPilotage(){
         (beatbot.commands.dock?'<button class="btn ghost sm" onclick="beatbotClient.send(\'dock\')">🏠 Base</button>':'')+
       '</div>'+
       '<div id="bbCockOut" style="margin-top:10px"></div>'+
+      '<button class="btn ghost" style="margin-top:10px" onclick="openLive()">📡 Suivre le robot en direct (plan)</button>'+
       (beatbot.mapUrl?'<button class="btn ghost" style="margin-top:12px" onclick="beatbotClient.fetchMap()">🗺️ Récupérer la carte du robot</button><div id="bbMapOut" style="margin-top:10px"></div>':'')
     );
   }
@@ -961,6 +994,111 @@ function dimLine(g,a,b,label){
   var mx=(a.x+b.x)/2,my=(a.y+b.y)/2;g.fillStyle="#0e88c9";var w=g.measureText(label).width+10;g.fillRect(mx-w/2,my-9,w,18);g.fillStyle="#fff";g.fillText(label,mx,my);
 }
 window.addEventListener("resize",function(){if($("#d3")&&!$("#d3").hidden)resize3D()});
+
+/* ============ VUE LIVE 2D — 100% RÉELLE (aucune simulation) ============
+   N'affiche QUE la position/trace/batterie réellement remontées par le robot
+   (via la capture → endpoint statut, relayé par le proxy admin). Pas de robot
+   simulé. Le robot n'émet pas sous l'eau → « en attente » tant qu'il n'est pas
+   connecté (surface/base) ou tant que la capture n'est pas faite. */
+var LV={raf:0,grid:null,realPos:null,realTrack:null,batt:null,state:null,pollTimer:0,lastData:0,startedTs:0};
+function buildLiveGrid(){
+  var poly=poolPoly(),NX=46,NY=Math.max(14,Math.round(46*(pool.W/Math.max(1,pool.L))));
+  var inside=[],n=0;
+  for(var y=0;y<NY;y++)for(var x=0;x<NX;x++){var nx=(x+0.5)/NX,ny=(y+0.5)/NY;var ins=pointInPoly(nx,ny,poly);inside.push(ins);if(ins)n++;}
+  LV.grid={NX:NX,NY:NY,inside:inside,total:n,visited:new Uint8Array(NX*NY)};
+}
+function openLive(){
+  var o=$("#lv");if(!o)return;o.hidden=false;buildLiveGrid();
+  LV.realPos=null;LV.realTrack=null;LV.batt=null;LV.state=null;LV.lastData=0;LV.startedTs=performance.now();
+  var rb=$("#lvReal");if(rb)rb.style.display=beatbotClient.configured()?"":"none";
+  resizeLive();
+  if(beatbot.statusUrl){lvPollNow();LV.pollTimer=setInterval(lvPollNow,4000);}
+  cancelAnimationFrame(LV.raf);LV.raf=requestAnimationFrame(loopLive);
+}
+function closeLive(){var o=$("#lv");if(o)o.hidden=true;cancelAnimationFrame(LV.raf);if(LV.pollTimer){clearInterval(LV.pollTimer);LV.pollTimer=0;}}
+function resizeLive(){var cv=$("#lvc");if(!cv)return;var dpr=Math.min(2,window.devicePixelRatio||1);cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;cv._dpr=dpr;}
+function lvStartReal(){ if(!beatbotClient.configured()){toast("Configure d'abord le pilotage (onglet 🎮)");return;} beatbotClient.send("start"); toast("▶️ Commande Démarrer envoyée au robot"); }
+function lvPollNow(){
+  if(!beatbot.statusUrl){return;}
+  var headers={};if(beatbot.token)headers[beatbot.tokenHeader||"Authorization"]=beatbot.token;
+  fetch(beatbot.relay,{method:"POST",credentials:"include",headers:{"content-type":"application/json"},body:JSON.stringify({url:beatbot.statusUrl,method:"GET",headers:headers})})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j.ok||!j.body||!j.body.text)return;
+    var data;try{data=JSON.parse(j.body.text);}catch(e){return;}
+    var t=parseTelemetry(data);
+    if(t.pos){LV.realPos=t.pos;LV.lastData=performance.now();}
+    if(t.track&&t.track.length){LV.realTrack=t.track;LV.lastData=performance.now();}
+    if(t.batt!=null)LV.batt=t.batt;
+    if(t.state)LV.state=t.state;
+  }).catch(function(){});
+}
+function parseTelemetry(d){
+  var out={pos:null,track:null,batt:null,state:null};
+  function num(v){return typeof v==="number"&&isFinite(v);}
+  function norm(p){ if(!p)return null; var x=p.x,y=p.y; if(!num(x)||!num(y))return null; if(x>1.5||y>1.5){x=x/Math.max(1,pool.L);y=y/Math.max(1,pool.W);} return {x:Math.max(0,Math.min(1,x)),y:Math.max(0,Math.min(1,y))}; }
+  function walk(o,depth){
+    if(!o||depth>4)return;
+    if(Array.isArray(o)){ if(o.length>3&&o[0]&&(num(o[0].x)||num(o[0].lat))){out.track=o.map(function(p){return norm(p);}).filter(Boolean);} else o.forEach(function(v){walk(v,depth+1);}); return; }
+    if(typeof o!=="object")return;
+    for(var k in o){var kl=k.toLowerCase(),v=o[k];
+      if(num(v)&&/batt|power|soc|electric/.test(kl)&&v>=0&&v<=100)out.batt=Math.round(v);
+      if(typeof v==="string"&&/state|status|mode|working|cleaning/.test(kl)&&!out.state)out.state=v;
+      if(!out.pos&&num(o.x)&&num(o.y))out.pos=norm(o);
+    }
+    for(var k2 in o)walk(o[k2],depth+1);
+  }
+  walk(d,0);return out;
+}
+function markVisited(nx,ny){var g=LV.grid;if(!g)return;
+  var cx=Math.round(nx*g.NX-0.5),cy=Math.round(ny*g.NY-0.5);
+  for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){var x=cx+dx,y=cy+dy;if(x<0||y<0||x>=g.NX||y>=g.NY)continue;var k=y*g.NX+x;if(g.inside[k])g.visited[k]=1;}
+}
+function loopLive(ts){
+  if($("#lv").hidden)return;
+  var g=LV.grid;if(!g){LV.raf=requestAnimationFrame(loopLive);return;}
+  if(LV.realTrack)LV.realTrack.forEach(function(p){if(p)markVisited(p.x,p.y);});
+  if(LV.realPos)markVisited(LV.realPos.x,LV.realPos.y);
+  drawLive(ts);updateLiveStats(ts);
+  LV.raf=requestAnimationFrame(loopLive);
+}
+function drawLive(ts){
+  var cv=$("#lvc");if(!cv)return;var dpr=cv._dpr||1,g=cv.getContext("2d");
+  var W=cv.width/dpr,H=cv.height/dpr;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  g.fillStyle="#04101c";g.fillRect(0,0,W,H);
+  var r=poolRectCss(W,H),gr=LV.grid,cw=r.w/gr.NX,ch=r.h/gr.NY,poly=poolPoly();
+  var pp=poly.map(function(p){return {x:r.x+p.x*r.w,y:r.y+p.y*r.h}});
+  g.save();g.beginPath();if(pool.shape==="bean")tracePoly(g,pp);else roundRect(g,r.x,r.y,r.w,r.h,10);g.clip();
+  for(var y=0;y<gr.NY;y++)for(var x=0;x<gr.NX;x++){var k=y*gr.NX+x;if(!gr.inside[k])continue;g.fillStyle=gr.visited[k]?"rgba(60,220,150,.55)":"rgba(20,70,110,.45)";g.fillRect(r.x+x*cw,r.y+y*ch,cw+0.6,ch+0.6);}
+  g.restore();
+  g.strokeStyle="#5bc8ff";g.lineWidth=2;if(pool.shape==="bean"){tracePoly(g,pp);g.stroke();}else{roundRect(g,r.x,r.y,r.w,r.h,10);g.stroke();}
+  pool.markers.forEach(function(m){var px=r.x+m.x*r.w,py=r.y+m.y*r.h;g.font="14px -apple-system";g.textAlign="center";g.textBaseline="middle";g.fillText(markerIcon(m.type),px,py);});
+  if(LV.realPos){
+    var px=r.x+LV.realPos.x*r.w,py=r.y+LV.realPos.y*r.h;
+    g.beginPath();g.arc(px,py,Math.max(14,18+3*Math.sin(ts/200)),0,7);g.strokeStyle="rgba(255,90,90,.6)";g.lineWidth=2;g.stroke();
+    g.beginPath();g.arc(px,py,11,0,7);g.fillStyle="#39c2ff";g.fill();g.strokeStyle="#fff";g.lineWidth=2;g.stroke();
+  }else{
+    g.fillStyle="rgba(147,176,200,.9)";g.font="600 14px -apple-system";g.textAlign="center";g.textBaseline="middle";
+    var msg=beatbot.statusUrl?"En attente de la position réelle du robot…":"Position réelle non configurée";
+    g.fillText(msg,W/2,H/2-10);
+    g.fillStyle="rgba(147,176,200,.7)";g.font="12px -apple-system";
+    var sub=beatbot.statusUrl?"Le robot n'émet pas sous l'eau — dispo quand il est connecté (surface/base).":"Fais la capture (onglet 🎮) pour suivre la position réelle.";
+    g.fillText(sub,W/2,H/2+12);
+  }
+  g.textBaseline="alphabetic";
+}
+function updateLiveStats(ts){
+  var gr=LV.grid;if(!gr)return;var vis=0;for(var i=0;i<gr.visited.length;i++)if(gr.visited[i])vis++;
+  var hasData=!!(LV.realPos||LV.realTrack);
+  setTxt("lvCov",hasData?(gr.total?Math.round(vis/gr.total*100):0)+"%":"—");
+  var sec=Math.floor((ts-LV.startedTs)/1000);setTxt("lvTime",Math.floor(sec/60)+":"+("0"+(sec%60)).slice(-2));
+  setTxt("lvBatt",LV.batt!=null?LV.batt+"%":"—");
+  var fresh=hasData&&(performance.now()-LV.lastData<15000);
+  setTxt("lvSpeed",LV.state?String(LV.state).slice(0,10):(fresh?"connecté":"hors ligne"));
+  var bd=$("#lvbadge");if(bd){var t=fresh?"🔴 LIVE":(beatbot.statusUrl?"⏳ EN ATTENTE":"⚙️ À CONFIGURER");if(bd.textContent!==t)bd.textContent=t;bd.style.color=fresh?"#ff5a5a":"#93b0c8";}
+}
+function setTxt(id,t){var el=$("#"+id);if(el&&el.textContent!==t)el.textContent=t;}
+window.addEventListener("resize",function(){if($("#lv")&&!$("#lv").hidden)resizeLive();});
+
 
 /* ============ render ============ */
 function renderRobotTag(){var m=MODELS[cfg.model]||MODELS.autre;var t=$("#robotTag");if(t)t.textContent="🤖 "+m.name}
