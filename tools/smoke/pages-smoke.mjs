@@ -95,7 +95,9 @@ const PROBES = [
   ['GIBS GOES-West GeoColor', 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-West_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/1/0/0.png'],
   /* WMTS 3857 n'a NI Himawari NI Thermal (matrice v2.17 : 400 sur tous les candidats).
      → la page v2.18 passe par le WMS 3857 : sondes GetMap directes ci-dessous. */
-  ['GIBS WMS Himawari GeoColor', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=Himawari_AHI_GeoColor&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
+  /* ⚠ Un GetMap WMS peut renvoyer 200 + ExceptionReport XML (faux vert, leçon #103) →
+     la boucle ci-dessous exige content-type image/* pour les sondes d'images. */
+  ['GIBS WMS Himawari Band13 IR (géo LIVE Asie)', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=Himawari_AHI_Band13_Clean_Infrared&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
   ['GIBS WMS VIIRS Thermal (feux sat.)', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=VIIRS_SNPP_Thermal_Anomalies_375m_All&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
   ['RainViewer (radar pluie)', 'https://api.rainviewer.com/public/weather-maps.json'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
@@ -106,12 +108,16 @@ for (const [label, url] of PROBES) {
   try {
     const r = await fetch(url, { redirect: 'follow' });
     const ct = r.headers.get('content-type') || '';
+    // FAUX VERT (leçon #103) : une sonde d'IMAGE (GetMap/GetTile/.png) qui répond 200 mais
+    // en text/xml = ExceptionReport déguisé → à traiter comme un échec, avec la cause exacte.
+    const wantsImage = /GetMap|\.png|\.jpg/i.test(url);
+    const imageOk = !wantsImage || /^image\//i.test(ct);
     let extra = '';
-    if (!r.ok) { // cause EXACTE : le XML d'exception GIBS dit quoi corriger (règle CLAUDE.md)
-      const body = (await r.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 180);
+    if (!r.ok || !imageOk) { // cause EXACTE : le corps dit quoi corriger (règle CLAUDE.md)
+      const body = (await r.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 220);
       extra = ' — ' + body;
     }
-    console.log((r.ok ? '✅' : '⚠️ HTTP ' + r.status) + ' ' + label + ' (' + ct.split(';')[0] + ')' + extra);
+    console.log(((r.ok && imageOk) ? '✅' : '⚠️ HTTP ' + r.status + (r.ok ? ' FAUX VERT (pas une image)' : '')) + ' ' + label + ' (' + ct.split(';')[0] + ')' + extra);
   } catch (e) {
     console.log('⚠️ ' + label + ' : ' + (e && e.message ? e.message : e));
   }
