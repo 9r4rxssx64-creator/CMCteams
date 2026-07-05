@@ -53,7 +53,7 @@ jobs:
 
       - name: Smoke test réel (leçon #95 — un deploy vert sans test live ne prouve rien)
         run: |
-          URL=$(cat /tmp/url.txt); [ -z "$URL" ] && URL="https://kdmc-ais-proxy.9r4rxssx64.workers.dev"
+          URL=$(cat /tmp/url.txt); [ -z "$URL" ] && URL="https://kdmc-ais.9r4rxssx64.workers.dev"
           sleep 8
           echo "--- /health ---"
           curl -sS "$URL/health" | tee /tmp/h.json; echo
