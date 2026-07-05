@@ -1,0 +1,32 @@
+name: KDMC — Smoke réel PoolPilot / beatbot.kd-mc.com
+
+# Teste le déploiement RÉEL (à la place de Kevin, en auto) : app privée gardée,
+# relais de contrôle live+gaté, app déployée. Le runner GitHub a le réseau ouvert
+# (contrairement au sandbox de l'agent). Retries intégrés pour le délai de déploiement.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'tools/poolrobot/**'
+      - 'services/kdmc-router/worker.js'
+      - 'tools/smoke/beatbot-smoke.mjs'
+      - '.github/workflows/beatbot-smoke.yml'
+  schedule:
+    - cron: '17 6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Attendre le déploiement (déploiements parallèles)
+        run: sleep 45
+      - name: Smoke réel beatbot.kd-mc.com
+        run: node tools/smoke/beatbot-smoke.mjs

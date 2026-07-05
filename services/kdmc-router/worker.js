@@ -50,6 +50,14 @@ export default {
     const base = ROUTES[host];
     if (!base) return Response.redirect('https://kd-mc.com/', 302);
 
+    // beatbot.kd-mc.com = ESPACE PRIVÉ ADMIN (Kevin) : session admin (Face ID/PIN) requise
+    // pour VOIR l'app PoolPilot. Fail-open si le PIN admin n'est pas déployé (anti-lockout
+    // au rollout — leçons #99/#100 ; le secret étant déployé, le gate est effectif).
+    if (host === 'beatbot.kd-mc.com' && env && env.KDMC_ADMIN_PIN_SHA256) {
+      const meB = await adminSession(request, env);
+      if (!meB) return beatbotLock();
+    }
+
     let p = url.pathname;
     let upstreamPath;
     if (p === '/' || p === '') upstreamPath = base + '/';
@@ -805,6 +813,24 @@ async function handleBot(request, url, env) {
   return J({ ok: false, reason: 'not_found' });
 }
 
+function beatbotLock() {
+  const html = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08131f"><title>PoolPilot — privé</title>'
+  + '<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#08131f,#050c14);color:#e8f1fa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px}'
+  + '.c{width:100%;max-width:340px;text-align:center}.lg{font-size:44px}h1{font-size:19px;margin:10px 0 4px}p{color:#93b0c8;font-size:13px;margin:0 0 18px}'
+  + 'input{width:100%;background:#0d1c2c;border:1px solid #1f3d5a;color:#e8f1fa;border-radius:12px;padding:14px;font-size:20px;text-align:center;letter-spacing:6px}'
+  + 'button{width:100%;margin-top:12px;background:linear-gradient(135deg,#39c2ff,#0e88c9);color:#052034;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700}'
+  + '.e{color:#f2b632;font-size:12.5px;margin-top:10px;min-height:16px}a{color:#39c2ff}</style></head><body>'
+  + '<div class="c"><div class="lg">🔒🌊</div><h1>PoolPilot — espace privé</h1><p>Réservé à l\'administrateur. Déverrouille avec ton code (Face ID te reconnaît ensuite automatiquement).</p>'
+  + '<input id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="12">'
+  + '<button id="go">Déverrouiller</button><div class="e" id="err"></div>'
+  + '<p style="margin-top:18px;font-size:11.5px">Déjà connecté sur <a href="https://kd-mc.com">kd-mc.com</a> ? Recharge cette page.</p></div>'
+  + '<script>var b=document.getElementById("go"),pin=document.getElementById("pin"),err=document.getElementById("err");'
+  + 'function sub(){var c=(pin.value||"").trim();if(!c){err.textContent="Entre ton code.";return;}b.disabled=true;err.textContent="Vérification…";'
+  + 'fetch("/__admin/login",{method:"POST",headers:{"content-type":"application/json"},credentials:"include",body:JSON.stringify({code:c})}).then(function(r){return r.json();}).then(function(j){'
+  + 'if(j.ok){location.reload();}else{b.disabled=false;err.textContent=j.reason==="rate_limited"?("Trop d\'essais, attends "+Math.ceil((j.wait||0)/1000)+"s"):(j.reason==="code_invalide"?"Code incorrect.":"Erreur : "+(j.reason||"?"));}}).catch(function(e){b.disabled=false;err.textContent="Réseau : "+e;});}'
+  + 'b.onclick=sub;pin.addEventListener("keydown",function(e){if(e.key==="Enter")sub();});pin.focus();</script></body></html>';
+  return new Response(html, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' } });
+}
 /* ---- Relais Beatbot : contrôle réel du robot piscine (PoolPilot / beatbot.kd-mc.com) ----
    L'app découvre l'API cloud Beatbot depuis une CAPTURE que Kevin exporte de SON iPhone
    (seul geste manuel possible), puis relaie start/stop/mode/base + carte via ce proxy.
