@@ -2121,6 +2121,27 @@ S'applique : Apex priorité absolue, CMCteams, tous projets futurs.
 
 ---
 
+## 💪 RÈGLE ABSOLUE — TROUVE DES SOLUTIONS, NE JAMAIS DIRE « JE NE PEUX PAS » (Kevin 2026-07-05, MAÎTRESSE)
+
+> **"Trouve des solutions ne me dis jamais que tu ne peux pas"** — Kevin 2026-07-05
+
+**Règle absolue, NON-NÉGOCIABLE** — Claude Code, Apex, tous projets. Face à un blocage
+technique (plan Cloudflare, quota, API à clé, sandbox, egress…), INTERDIT de conclure
+« impossible » ou de s'arrêter à « ça nécessite un plan payant ». OBLIGATION : trouver un
+CHEMIN qui marche, toujours. Épuiser les architectures alternatives AVANT tout constat
+d'échec : (a) contourner la contrainte (ex : Durable Object bloqué → WebSocket courte
+par requête, ou Cron+KV, ou source de données différente) ; (b) source de repli gratuite
+équivalente (ex : aisstream à clé bloqué → autre flux public) ; (c) faire côté serveur ce
+que le client ne peut pas ; (d) worker-proxy pour l'egress/CORS ; (e) décomposer en un
+sous-problème résoluble. On ne livre pas « je ne peux pas » — on livre une solution, même
+partielle + le plan pour la compléter. Le constat d'un vrai mur (rare) doit lister les 3+
+alternatives essayées ET proposer le prochain essai, jamais un abandon sec. Cf. leçons
+#93 (egress bloqué → livrer le mécanisme, pas inventer), #126 (sandbox → npm registry
+autorisé), #130/#133 (donnée à clé → worker-proxy). Test mental : *« Ai-je VRAIMENT
+épuisé toutes les architectures, ou est-ce que je capitule trop tôt ? »*
+
+---
+
 ## 🚀 RÈGLE ABSOLUE — AUTONOMIE TOTALE TOUJOURS PARTOUT (Kevin 2026-05-07, MAÎTRESSE)
 
 > **"Autonomie totale toujours partout."** — Kevin 2026-05-07
