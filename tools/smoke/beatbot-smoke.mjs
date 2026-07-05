@@ -20,6 +20,12 @@ async function runChecks() {
     let j = {}; try { j = await r.json(); } catch { /* */ }
     checks.push(['relais /__beatbot gardé (403 need_admin_code)', r.status === 403 && j.reason === 'need_admin_code']);
   } catch (e) { checks.push(['relais /__beatbot gardé', false, String(e)]); }
+  // 2b) routes Tuya (contrôle réel officiel) live + gardées
+  try {
+    const r = await fetch('https://beatbot.kd-mc.com/__beatbot/tuya/state');
+    let j = {}; try { j = await r.json(); } catch { /* */ }
+    checks.push(['routes Tuya gardées (403 need_admin_code)', r.status === 403 && j.reason === 'need_admin_code']);
+  } catch (e) { checks.push(['routes Tuya gardées', false, String(e)]); }
   // 3) app déployée (version valide, host non gaté)
   try {
     const r = await fetch('https://cmcteams.kd-mc.com/tools/poolrobot/version.txt', { cache: 'no-store' });

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.9.0 -->
+<!-- v0.10.0 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -167,7 +167,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.9.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.10.0" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -175,7 +175,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.9.0";
+var APP_VER="v0.10.0";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -233,9 +233,10 @@ var sessions=lg("sessions",[]);
 var plan=lg("plan",{mode:"Standard",generatedAt:0});
 var maint=Object.assign({filter:0,brush:0,seal:0,clearwater:0},lg("maint",{}));
 var beatbot=Object.assign({relay:"https://beatbot.kd-mc.com/__beatbot/relay",hosts:[],token:"",tokenHeader:"Authorization",commands:{},mapUrl:"",statusUrl:""},lg("beatbot",{}));
+var tuya=Object.assign({linked:false,region:"eu",device_id:"",device_name:""},lg("tuya",{}));
 var _bbAnalysis=null;
 var S={view:"accueil"};
-function save(){ls("cfg",cfg);ls("pool",pool);ls("sessions",sessions);ls("plan",plan);ls("maint",maint);ls("beatbot",beatbot)}
+function save(){ls("cfg",cfg);ls("pool",pool);ls("sessions",sessions);ls("plan",plan);ls("maint",maint);ls("beatbot",beatbot);ls("tuya",tuya)}
 
 /* ---- Presets bassins ---- */
 var PRESETS={
@@ -559,9 +560,165 @@ function bbCaptureProcedure(){
     '</ol>'+
     '<div class="note">🔒 Aucun démontage → <b>garantie matérielle intacte</b>. On relaie les MÊMES requêtes que l\'app Beatbot. (Zone grise vis-à-vis des conditions de l\'app : ton choix.)</div>';
 }
+/* ---- Tuya : contrôle RÉEL du robot via l'API officielle (Smart Life / Tuya) ----
+   Le robot passe par le cloud Tuya (Smart Life = l'app Tuya). Aucune capture, aucune
+   bidouille firmware → garantie intacte. Kevin lie son compte Smart Life à un projet
+   Tuya IoT et colle 2 clés ; le worker signe et relaie. On lit/écrit les VRAIS data
+   points (batterie, état, marche/arrêt, mode…). Honnête : position live seulement si
+   le robot publie un DP de position. */
+var TUYA_BASE=(location.hostname==="beatbot.kd-mc.com"?"":"https://beatbot.kd-mc.com")+"/__beatbot/tuya/";
+var TUYA={funcs:null,status:null,online:null,name:"",pollTimer:0,lastErr:""};
+function onBeatbotHost(){return location.hostname==="beatbot.kd-mc.com";}
+function tuyaApi(seg,method,body){
+  return fetch(TUYA_BASE+seg,{method:method||"GET",credentials:"include",headers:{"content-type":"application/json"},body:body?JSON.stringify(body):undefined})
+    .then(function(r){return r.json();}).catch(function(e){return {ok:false,reason:"net",detail:String(e&&e.message||e)};});
+}
+/* mappe un tableau Tuya [{code,value}] vers batterie/état lisibles */
+function tuyaMap(status){
+  var o={batt:null,state:null,mode:null,fault:null};
+  (status||[]).forEach(function(s){var k=String(s.code||"").toLowerCase(),v=s.value;
+    if(o.batt==null&&/electric|battery|soc|elec_left|residual/.test(k)&&typeof v==="number"&&v>=0&&v<=100)o.batt=Math.round(v);
+    if(o.mode==null&&/^mode$|work_mode|clean_mode/.test(k))o.mode=String(v);
+    if(o.fault==null&&/fault|error|alarm/.test(k)&&v&&v!=="0"&&v!=="no_fault")o.fault=String(v);
+    if(o.state==null&&/status|state|work_state|working/.test(k))o.state=String(v);
+  });
+  return o;
+}
+function tuyaLabelState(st){var m={standby:"En veille",charging:"En charge",cleaning:"Nettoyage",paused:"En pause",fault:"Défaut",sleep:"Veille",going_home:"Retour base",smart:"Auto"};return m[String(st||"").toLowerCase()]||st||"—";}
+function tuyaLink(){
+  var id=($("#tyId").value||"").trim(),sec=($("#tySec").value||"").trim(),reg=($("#tyReg").value||"eu");
+  if(!id||!sec){toast("Colle Access ID et Access Secret");return;}
+  var b=$("#tyLinkBtn");b.disabled=true;b.textContent="Connexion…";
+  tuyaApi("link","POST",{access_id:id,access_secret:sec,region:reg}).then(function(j){
+    b.disabled=false;b.textContent="🔗 Lier mon robot";
+    if(j.ok){tuya.linked=true;tuya.region=reg;save();toast("✅ Compte Tuya lié");tuyaLoadDevices();render();}
+    else{$("#tyErr").innerHTML='<div class="note warn">'+esc(j.detail||j.reason||"Échec")+'</div>';}
+  });
+}
+function tuyaLoadDevices(){
+  var el=$("#tyDevs");if(el)el.innerHTML='<div class="mut">Recherche de tes robots…</div>';
+  tuyaApi("devices").then(function(j){
+    if(!el)return;
+    if(!j.ok){el.innerHTML='<div class="note warn">'+esc(j.detail||j.reason||"Erreur")+'</div>';return;}
+    if(!j.devices.length){el.innerHTML='<div class="note warn">Aucun appareil trouvé. Vérifie que ton compte Smart Life est bien lié au projet Tuya (voir étapes).</div>';return;}
+    el.innerHTML=j.devices.map(function(d){return '<button class="btn ghost sm" style="width:100%;text-align:left;margin-top:6px" onclick="tuyaSelect(\''+esc(d.id)+'\',\''+esc((d.name||"").replace(/\x27/g,""))+'\')">'+(d.online?"🟢":"⚪")+' '+esc(d.name||d.id)+' <span class="mut">· '+esc(d.category||"")+'</span></button>';}).join("");
+  });
+}
+function tuyaSelect(id,name){
+  tuyaApi("select","POST",{device_id:id}).then(function(j){
+    if(j.ok){tuya.device_id=id;tuya.device_name=name||id;save();toast("Robot sélectionné");tuyaRefresh();render();}
+    else toast(j.detail||"Erreur");
+  });
+}
+function tuyaUnlink(){ if(!confirm("Délier le compte Tuya ? (clés effacées du serveur)"))return;
+  tuyaApi("unlink","POST",{}).then(function(){tuya.linked=false;tuya.device_id="";tuya.device_name="";TUYA.status=null;TUYA.funcs=null;save();render();});
+}
+function tuyaRefresh(){
+  var el=$("#tyState");if(el)el.innerHTML='<div class="mut">Lecture du robot…</div>';
+  Promise.all([tuyaApi("status"),tuyaApi("functions")]).then(function(r){
+    var st=r[0],fn=r[1];
+    if(st.ok){TUYA.status=st.status;TUYA.online=st.online;TUYA.name=st.name||"";}
+    if(fn.ok)TUYA.funcs=fn.functions;
+    TUYA.lastErr=(!st.ok&&(st.detail||st.reason))||(!fn.ok&&(fn.detail||fn.reason))||"";
+    if(el)el.innerHTML=tuyaStateHtml();
+  });
+}
+function tuyaStateHtml(){
+  if(TUYA.lastErr&&!TUYA.status)return '<div class="note warn">'+esc(TUYA.lastErr)+'</div>';
+  var m=tuyaMap(TUYA.status);
+  var h='<div class="row" style="gap:14px;flex-wrap:wrap">';
+  h+='<div><b style="font-size:22px">'+(m.batt!=null?m.batt+"%":"—")+'</b><br><span class="mut">🔋 Batterie</span></div>';
+  h+='<div><b style="font-size:15px">'+esc(tuyaLabelState(m.state||m.mode))+'</b><br><span class="mut">'+(TUYA.online?"🟢 En ligne":"⚪ Hors ligne")+'</span></div>';
+  h+='</div>';
+  if(m.fault)h+='<div class="note warn" style="margin-top:8px">⚠️ Défaut : '+esc(m.fault)+'</div>';
+  /* commandes réelles construites à partir des vraies fonctions du robot */
+  var cmds=tuyaCmdButtons();
+  h+='<div style="margin-top:12px">'+cmds+'</div>';
+  h+='<details style="margin-top:10px"><summary class="mut" style="font-size:12px">Voir les données brutes du robot</summary><div style="font-size:11.5px;color:var(--mut);margin-top:6px;font-family:ui-monospace,monospace;word-break:break-all">'+(TUYA.status||[]).map(function(s){return esc(s.code)+" = "+esc(JSON.stringify(s.value));}).join("<br>")+'</div></details>';
+  return h;
+}
+/* boutons de commande dérivés des fonctions écrivables réelles + raccourcis start/stop */
+function tuyaCmdButtons(){
+  var fns=TUYA.funcs||[];if(!fns.length)return '<div class="mut" style="font-size:12px">Aucune commande exposée par ce robot.</div>';
+  var sw=fns.filter(function(f){return f.type==="Boolean"&&/switch|power|start|go|clean|work|pause/.test(String(f.code).toLowerCase());});
+  var out="";
+  if(sw.length){var c=sw[0].code;
+    out+='<div class="grid2" style="margin-bottom:10px">'+
+      '<button class="btn" onclick="tuyaCmd(\''+esc(c)+'\',true)">▶️ Démarrer</button>'+
+      '<button class="btn ghost" onclick="tuyaCmd(\''+esc(c)+'\',false)">⏹️ Stop</button></div>';
+  }
+  /* retour base */
+  var home=fns.filter(function(f){return f.type==="Boolean"&&/seek|home|dock|charge|back/.test(String(f.code).toLowerCase());});
+  /* modes */
+  var modes=fns.filter(function(f){return f.type==="Enum"&&/mode/.test(String(f.code).toLowerCase());});
+  var extra="";
+  if(home.length)extra+='<button class="btn ghost sm" onclick="tuyaCmd(\''+esc(home[0].code)+'\',true)">🏠 Base</button>';
+  modes.forEach(function(md){var vals=[];try{vals=(JSON.parse(md.values||"{}").range)||[];}catch(e){}
+    if(vals.length){extra+='<select id="tyMode_'+esc(md.code)+'" style="max-width:150px">'+vals.map(function(v){return '<option value="'+esc(v)+'">'+esc(v)+'</option>';}).join("")+'</select>'+
+      '<button class="btn ghost sm" onclick="tuyaCmd(\''+esc(md.code)+'\',$(\'#tyMode_'+esc(md.code)+'\').value)">🔁 Mode</button>';}
+  });
+  if(extra)out+='<div class="row" style="gap:8px;flex-wrap:wrap">'+extra+'</div>';
+  out+='<div id="tyCmdOut" style="margin-top:8px"></div>';
+  return out;
+}
+function tuyaCmd(code,value){
+  var el=$("#tyCmdOut");if(el)el.innerHTML='<span class="mut">Envoi…</span>';
+  tuyaApi("command","POST",{commands:[{code:code,value:value}]}).then(function(j){
+    if(el)el.innerHTML=j.ok?'<span style="color:#5fd38a">✅ Commande envoyée au robot</span>':'<div class="note warn">'+esc(j.detail||j.reason||"Échec")+'</div>';
+    if(j.ok)setTimeout(tuyaRefresh,1500);
+  });
+}
+function vTuyaCard(){
+  if(!onBeatbotHost())return card("🌊 Contrôle réel du robot (Tuya / Smart Life)","","<div class=\"note warn\">Ouvre l'app sur <b>beatbot.kd-mc.com</b> (ton espace privé) pour piloter — sécurité admin même-origine.</div>");
+  if(!tuya.linked){
+    return card("🌊 Contrôle réel du robot (Tuya / Smart Life)",
+      "Ton robot passe par le cloud Tuya. Lie-le une fois — accès officiel, garantie intacte.",
+      '<label>Access ID (client_id)</label><input id="tyId" placeholder="colle l\'Access ID Tuya">'+
+      '<label style="margin-top:8px;display:block">Access Secret</label><input id="tySec" type="password" placeholder="colle l\'Access Secret">'+
+      '<label style="margin-top:8px;display:block">Région du compte</label><select id="tyReg">'+
+        '<option value="eu" '+(tuya.region==="eu"?"selected":"")+'>Europe (Central Europe)</option>'+
+        '<option value="us" '+(tuya.region==="us"?"selected":"")+'>Amérique (Western America)</option>'+
+        '<option value="in" '+(tuya.region==="in"?"selected":"")+'>Inde</option>'+
+        '<option value="cn" '+(tuya.region==="cn"?"selected":"")+'>Chine</option></select>'+
+      '<button class="btn" id="tyLinkBtn" style="margin-top:12px" onclick="tuyaLink()">🔗 Lier mon robot</button>'+
+      '<div id="tyErr" style="margin-top:8px"></div>'+
+      '<details style="margin-top:14px"><summary style="color:var(--acc);font-size:13px;font-weight:600">📋 Comment obtenir les 2 clés (5 min, une seule fois)</summary>'+
+      '<ol class="clean" style="font-size:12.5px;line-height:1.55;margin-top:8px">'+
+        '<li>Va sur <b>iot.tuya.com</b> → crée un compte gratuit.</li>'+
+        '<li>Menu <b>Cloud → Development → Create Cloud Project</b> (région = <b>Central Europe</b>). Ouvre le projet → onglet <b>Overview</b> : tu vois <b>Access ID</b> et <b>Access Secret</b> → colle-les ici.</li>'+
+        '<li>Onglet <b>Devices → Link App Account → Add App Account</b> → un QR s\'affiche.</li>'+
+        '<li>Dans <b>Smart Life</b> (ton app) : <b>Moi → icône scan (haut droite) → scanne le QR</b>. Ton robot apparaît alors dans le projet.</li>'+
+        '<li>Onglet <b>Service API → Go to Authorize</b> → active <b>IoT Core</b> (gratuit).</li>'+
+      '</ol></details>'
+    );
+  }
+  var body='<div class="note">✅ Compte Tuya lié'+(tuya.device_name?' · robot <b>'+esc(tuya.device_name)+'</b>':'')+'.</div>';
+  if(!tuya.device_id){
+    body+='<div id="tyDevs" style="margin-top:8px"></div><button class="btn ghost sm" style="margin-top:8px;width:100%" onclick="tuyaLoadDevices()">🔎 Découvrir mes robots</button>';
+    setTimeout(tuyaLoadDevices,50);
+  }else{
+    body+='<div id="tyState" style="margin-top:10px"></div>'+
+      '<div class="row" style="gap:8px;margin-top:10px"><button class="btn ghost sm" onclick="tuyaRefresh()">🔄 Rafraîchir</button>'+
+      '<button class="btn ghost sm" onclick="openLive()">📡 Live plan</button></div>';
+    setTimeout(tuyaRefresh,50);
+  }
+  body+='<button class="btn ghost sm" style="margin-top:12px;width:100%" onclick="tuyaUnlink()">🗑 Délier le compte Tuya</button>';
+  return card("🌊 Contrôle réel du robot (Tuya / Smart Life)","Officiel, sans bidouille — garantie intacte.",body);
+}
 function vPilotage(){
+  var out=vTuyaCard();
+  /* La capture .har est bloquée par l'app Beatbot (certificate pinning) → méthode
+     avancée, repliée. Tuya (ci-dessus) est le chemin réel recommandé. */
+  var har=vPilotageHar();
+  if(beatbotClient.configured())return out+har; /* déjà configurée par capture → on la montre */
+  out+='<div class="card"><details><summary style="cursor:pointer;font-weight:600;font-size:15px">🎮 Méthode avancée — capture .har (souvent bloquée)</summary>'+
+    '<p class="sub" style="margin-top:8px">L\'app Beatbot protège ses échanges (certificate pinning) : la capture donne souvent « rien ». Utilise Tuya ci-dessus. Si tu veux quand même essayer :</p>'+
+    har+'</details></div>';
+  return out;
+}
+function vPilotageHar(){
   var configured=beatbotClient.configured();
-  var out=card("🎮 Contrôle réel du robot",
+  var out=card("Contrôle par capture",
     configured?"Config chargée — pilote ton robot ci-dessous.":"À activer une seule fois via une capture de l'app Beatbot.",
     configured
       ? '<div class="note">✅ Connecté à <b>'+esc(beatbot.hosts[0]||"?")+'</b> · '+Object.keys(beatbot.commands).length+' commande(s)'+(beatbot.mapUrl?' · carte 🗺️':'')+'. Le pilotage passe par ton relais sécurisé (admin kd-mc.com).</div>'+
@@ -1010,10 +1167,32 @@ function buildLiveGrid(){
 function openLive(){
   var o=$("#lv");if(!o)return;o.hidden=false;buildLiveGrid();
   LV.realPos=null;LV.realTrack=null;LV.batt=null;LV.state=null;LV.lastData=0;LV.startedTs=performance.now();
-  var rb=$("#lvReal");if(rb)rb.style.display=beatbotClient.configured()?"":"none";
+  var rb=$("#lvReal");if(rb)rb.style.display=(beatbotClient.configured()||tuyaLive())?"":"none";
   resizeLive();
-  if(beatbot.statusUrl){lvPollNow();LV.pollTimer=setInterval(lvPollNow,4000);}
+  if(tuyaLive()){tuyaPollLive();LV.pollTimer=setInterval(tuyaPollLive,5000);}
+  else if(beatbot.statusUrl){lvPollNow();LV.pollTimer=setInterval(lvPollNow,4000);}
   cancelAnimationFrame(LV.raf);LV.raf=requestAnimationFrame(loopLive);
+}
+/* Live via Tuya (source réelle) : batterie + état. La position n'est fournie que si le
+   robot publie un DP de position — sinon on reste honnête (« en attente »). */
+function tuyaLive(){return !!(tuya.linked&&tuya.device_id&&onBeatbotHost());}
+function tuyaPollLive(){
+  if(!tuyaLive())return;
+  tuyaApi("status").then(function(j){
+    if(!j.ok||!j.status)return;
+    var m=tuyaMap(j.status);
+    if(m.batt!=null)LV.batt=m.batt;
+    if(m.state||m.mode)LV.state=tuyaLabelState(m.state||m.mode);
+    /* cherche un DP de position éventuel (rare sur ces robots) */
+    j.status.forEach(function(s){var k=String(s.code||"").toLowerCase();
+      if(/position|coordinate|robot_pos|point/.test(k)&&s.value){
+        var v=s.value;try{if(typeof v==="string")v=JSON.parse(v);}catch(e){}
+        if(v&&typeof v.x==="number"&&typeof v.y==="number"){var x=v.x>1.5?v.x/Math.max(1,pool.L):v.x,y=v.y>1.5?v.y/Math.max(1,pool.W):v.y;LV.realPos={x:Math.max(0,Math.min(1,x)),y:Math.max(0,Math.min(1,y))};LV.lastData=performance.now();}
+      }
+    });
+    /* état de nettoyage = signe de vie même sans position */
+    if(m.state&&/clean|work/.test(String(m.state).toLowerCase()))LV.lastData=performance.now();
+  });
 }
 function closeLive(){var o=$("#lv");if(o)o.hidden=true;cancelAnimationFrame(LV.raf);if(LV.pollTimer){clearInterval(LV.pollTimer);LV.pollTimer=0;}}
 function resizeLive(){var cv=$("#lvc");if(!cv)return;var dpr=Math.min(2,window.devicePixelRatio||1);cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;cv._dpr=dpr;}
@@ -1078,10 +1257,11 @@ function drawLive(ts){
     g.beginPath();g.arc(px,py,11,0,7);g.fillStyle="#39c2ff";g.fill();g.strokeStyle="#fff";g.lineWidth=2;g.stroke();
   }else{
     g.fillStyle="rgba(147,176,200,.9)";g.font="600 14px -apple-system";g.textAlign="center";g.textBaseline="middle";
-    var msg=beatbot.statusUrl?"En attente de la position réelle du robot…":"Position réelle non configurée";
+    var linked=tuyaLive()||beatbot.statusUrl;
+    var msg=linked?"En attente de la position réelle du robot…":"Position réelle non configurée";
     g.fillText(msg,W/2,H/2-10);
     g.fillStyle="rgba(147,176,200,.7)";g.font="12px -apple-system";
-    var sub=beatbot.statusUrl?"Le robot n'émet pas sous l'eau — dispo quand il est connecté (surface/base).":"Fais la capture (onglet 🎮) pour suivre la position réelle.";
+    var sub=tuyaLive()?"Batterie/état lus en direct via Tuya. La position n'est affichée que si ton robot la publie.":(beatbot.statusUrl?"Le robot n'émet pas sous l'eau — dispo quand il est connecté (surface/base).":"Lie ton robot via Tuya (onglet 🎮) pour le suivi réel.");
     g.fillText(sub,W/2,H/2+12);
   }
   g.textBaseline="alphabetic";
@@ -1094,7 +1274,7 @@ function updateLiveStats(ts){
   setTxt("lvBatt",LV.batt!=null?LV.batt+"%":"—");
   var fresh=hasData&&(performance.now()-LV.lastData<15000);
   setTxt("lvSpeed",LV.state?String(LV.state).slice(0,10):(fresh?"connecté":"hors ligne"));
-  var bd=$("#lvbadge");if(bd){var t=fresh?"🔴 LIVE":(beatbot.statusUrl?"⏳ EN ATTENTE":"⚙️ À CONFIGURER");if(bd.textContent!==t)bd.textContent=t;bd.style.color=fresh?"#ff5a5a":"#93b0c8";}
+  var bd=$("#lvbadge");if(bd){var t=fresh?"🔴 LIVE":((tuyaLive()||beatbot.statusUrl)?"⏳ EN ATTENTE":"⚙️ À CONFIGURER");if(bd.textContent!==t)bd.textContent=t;bd.style.color=fresh?"#ff5a5a":"#93b0c8";}
 }
 function setTxt(id,t){var el=$("#"+id);if(el&&el.textContent!==t)el.textContent=t;}
 window.addEventListener("resize",function(){if($("#lv")&&!$("#lv").hidden)resizeLive();});
