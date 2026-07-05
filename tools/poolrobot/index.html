@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.4.0 -->
+<!-- v0.5.0 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -139,7 +139,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.4.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.5.0" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -147,7 +147,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.4.0";
+var APP_VER="v0.5.0";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -173,7 +173,17 @@ var cfg=Object.assign({
   /* réglages performance */
   env:"peu",usage:"moyenne",debris:"fines",focus:"equilibre",batteryMin:180
 },lg("cfg",{}));
-var pool=Object.assign({L:6.9,W:4.0,shape:"bean",preset:"celine7",depthShallow:1.1,depthDeep:1.7,markers:[]},lg("pool",{}));
+var pool=Object.assign({L:6.85,W:4.10,shape:"bean",preset:"celine7",depthShallow:1.1,depthDeep:1.7,volOfficial:0,markers:[]},lg("pool",{}));
+/* Migration v0.5 : cotes officielles Waterair Céline 07 (6,85 x 4,10 - waterair.com) + escalier roman lobe avant-droit (photo Kevin) */
+(function(){
+  if(pool._v5)return;
+  if(pool.L===6.9)pool.L=6.85;
+  if(pool.W===4.0)pool.W=4.10;
+  if(pool.preset==="celine7"&&!pool.markers.some(function(m){return m.type==="escalier"})){
+    pool.markers.push({id:"stairs_roman",type:"escalier",x:0.80,y:0.55});
+  }
+  pool._v5=1;ls("pool",pool);
+})();
 var sessions=lg("sessions",[]);
 var plan=lg("plan",{mode:"Standard",generatedAt:0});
 var maint=Object.assign({filter:0,brush:0,seal:0,clearwater:0},lg("maint",{}));
@@ -182,7 +192,7 @@ function save(){ls("cfg",cfg);ls("pool",pool);ls("sessions",sessions);ls("plan",
 
 /* ---- Presets bassins ---- */
 var PRESETS={
-  celine7:{name:"Waterair Céline 7 (haricot)",shape:"bean",L:6.9,W:4.0},
+  celine7:{name:"Waterair Céline 7 (haricot) — 6,85 × 4,10 m officiel",shape:"bean",L:6.85,W:4.10},
   celine8:{name:"Waterair Céline 8 (haricot)",shape:"bean",L:7.9,W:4.2},
   rect84:{name:"Rectangle 8×4",shape:"rect",L:8,W:4},
   rect104:{name:"Rectangle 10×5",shape:"rect",L:10,W:5}
@@ -309,15 +319,18 @@ function vBassin(){
       field("Prof. petit bain (m)","poolPB",depthShallow(),"number","0.05")+
       field("Prof. grand bain (m)","poolGB",depthDeep(),"number","0.05")+
     '</div>'+
+    '<div class="row" style="margin-top:8px">'+
+      field("Volume officiel Waterair (m³) — optionnel","poolVol",(pool.volOfficial||""),"number","0.5")+
+    '</div>'+
     '<div style="margin-top:12px">'+
       '<div class="kv"><b>Surface plan d\'eau</b><span>'+poolAreaM2().toFixed(1)+' m²</span></div>'+
       '<div class="kv"><b>Périmètre (ligne d\'eau)</b><span>'+worldPerimeter().toFixed(1)+' m</span></div>'+
       '<div class="kv"><b>Profondeur moyenne</b><span>'+avgDepth().toFixed(2)+' m</span></div>'+
-      '<div class="kv"><b>Volume estimé</b><span>'+volumeM3().toFixed(1)+' m³ (~'+Math.round(volumeM3()*1000).toLocaleString("fr-FR")+' L)</span></div>'+
+      '<div class="kv"><b>'+(pool.volOfficial>0?"Volume officiel":"Volume estimé")+'</b><span>'+(pool.volOfficial>0?(+pool.volOfficial).toFixed(1):volumeM3().toFixed(1))+' m³ (~'+Math.round((pool.volOfficial>0?+pool.volOfficial:volumeM3())*1000).toLocaleString("fr-FR")+' L)</span></div>'+
       '<div class="kv"><b>Parois immergées (~)</b><span>'+wallAreaM2().toFixed(1)+' m²</span></div>'+
       '<div class="kv"><b>Surface totale à nettoyer</b><span>'+(poolAreaM2()+wallAreaM2()).toFixed(1)+' m²</span></div>'+
     '</div>'+
-    '<div class="note">Volume/parois = estimations d\'après tes cotes (bassin à pente régulière). Pour du 100 % exact, reporte le volume officiel Waterair de ton contrat.</div>'
+    '<div class="note">📏 Cotes officielles Waterair Céline 07 pré-remplies : <b>6,85 × 4,10 m</b> (waterair.com). Profondeurs à ajuster selon TA config (version fosse annoncée jusqu\'à ~2,2 m en pointe). Ton escalier roman est pré-placé dans le lobe avant-droit (ta photo) — déplace-le si besoin.</div>'
   );
 }
 
@@ -791,7 +804,7 @@ function draw3D(){
   g.fillStyle="#f6d68a";g.fillText("PB "+depthShallow().toFixed(2)+" m",dS.x,dS.y);g.fillText("GB "+depthDeep().toFixed(2)+" m",dD.x,dD.y);
   /* légende chiffres */
   g.textAlign="left";g.fillStyle="#bfe3fb";g.font="11px -apple-system";
-  g.fillText("Surface "+poolAreaM2().toFixed(1)+" m² · Volume ~"+volumeM3().toFixed(1)+" m³ · Périmètre "+worldPerimeter().toFixed(1)+" m",12,H-10);
+  g.fillText("Surface "+poolAreaM2().toFixed(1)+" m² · Volume "+(pool.volOfficial>0?(+pool.volOfficial).toFixed(1)+" m³ (officiel)":"~"+volumeM3().toFixed(1)+" m³")+" · Périmètre "+worldPerimeter().toFixed(1)+" m",12,H-10);
 }
 function drawBox3D(g,S,nx,ny,sizeM,hM,zFloor,col,top){
   var hx=sizeM/pool.L/2,hy=sizeM/pool.W/2;
@@ -826,6 +839,7 @@ function render(){
       $("#poolW").addEventListener("change",function(){pool.W=Math.max(1,+this.value||4);save();render()});
       var pb=$("#poolPB");if(pb)pb.addEventListener("change",function(){pool.depthShallow=Math.max(0.3,+this.value||1.1);save();render()});
       var gb=$("#poolGB");if(gb)gb.addEventListener("change",function(){pool.depthDeep=Math.max(0.3,+this.value||1.7);save();render()});
+      var pv=$("#poolVol");if(pv)pv.addEventListener("change",function(){pool.volOfficial=Math.max(0,+this.value||0);save();render()});
     },30);
   }
   if(v==="plan")setTimeout(drawCoverage,40);
