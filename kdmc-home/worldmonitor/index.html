@@ -351,13 +351,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.24</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.25</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.24";
+var VER="v2.25";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -1026,7 +1026,18 @@ async function loadRadar(){
    Popup = lieu + nb d'articles + image d'actu (https seulement) + lien articles. */
 async function loadNewsMap(){
   try{
-    var j=await getJSON("https://api.gdeltproject.org/api/v2/geo/geo?query="+encodeURIComponent("(war OR conflict OR strike OR attack OR crisis OR earthquake OR election)")+"&mode=pointdata&format=geojson&timespan=60m",15000);
+    /* Le GEO 2.0 est pointilleux sur les paramètres (la sonde CI a vu un 404 avec
+       mode=pointdata&timespan=60m) → CASCADE de variantes, la 1ère qui répond gagne. */
+    var _q=encodeURIComponent("(war OR conflict OR strike OR attack OR crisis OR earthquake OR election)");
+    var _urls=[
+      "https://api.gdeltproject.org/api/v2/geo/geo?query="+_q+"&format=GeoJSON&mode=PointData&timespan=1H",
+      "https://api.gdeltproject.org/api/v2/geo/geo?query="+_q+"&format=GeoJSON",
+      "https://api.gdeltproject.org/api/v2/geo/geo?query="+_q+"&format=geojson&mode=pointdata"
+    ];
+    var j=null;
+    for(var ui=0;ui<_urls.length&&!j;ui++){
+      try{var cand=await getJSON(_urls[ui],15000);if(cand&&cand.features&&cand.features.length)j=cand;}catch(e2){}
+    }
     var fs=(j&&j.features)||[];if(!_newsLayer)return;
     _newsLayer.clearLayers();var n=0;
     fs.sort(function(a,b){return ((b.properties||{}).count||0)-((a.properties||{}).count||0);});

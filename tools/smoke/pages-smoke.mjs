@@ -110,7 +110,10 @@ const PROBES = [
   /* Exploration cycle suivant : cyclones NHC (trajectoires) — le navigateur a besoin du CORS. */
   ['NOAA NHC cyclones actifs (CORS)', 'https://www.nhc.noaa.gov/CurrentStorms.json', 'cors'],
   /* v2.24 — actus live (points chauds carte + images d'articles guerres/crises) */
-  ['GDELT GEO points chauds actus (CORS)', 'https://api.gdeltproject.org/api/v2/geo/geo?query=war&mode=pointdata&format=geojson&timespan=60m', 'cors'],
+  /* Matrice GEO (le 1er essai a renvoyé 404) — la page essaie ces variantes en cascade. */
+  ['GDELT GEO v1 PointData+1H (CORS)', 'https://api.gdeltproject.org/api/v2/geo/geo?query=war&format=GeoJSON&mode=PointData&timespan=1H', 'cors'],
+  ['GDELT GEO v2 simple (CORS)', 'https://api.gdeltproject.org/api/v2/geo/geo?query=war&format=GeoJSON', 'cors'],
+  ['GDELT GEO v3 pointdata (CORS)', 'https://api.gdeltproject.org/api/v2/geo/geo?query=war&format=geojson&mode=pointdata', 'cors'],
   ['GDELT DOC images d\'articles (CORS)', 'https://api.gdeltproject.org/api/v2/doc/doc?query=breaking%20sourcelang:eng&mode=artlist&maxrecords=3&format=json&timespan=3h', 'cors'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
@@ -123,7 +126,9 @@ for (const [label, url, mode] of PROBES) {
     if (mode === 'cors') {
       const acao = r.headers.get('access-control-allow-origin') || '';
       const corsOk = acao === '*' || acao.includes('kd-mc.com');
-      console.log((r.ok && corsOk ? '✅' : '⚠️ HTTP ' + r.status + (r.ok && !corsOk ? ' SANS CORS (le navigateur bloquera)' : '')) + ' ' + label + ' (ACAO: ' + (acao || 'absent') + ')');
+      let cext = '';
+      if (!r.ok) cext = ' — ' + (await r.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 160);
+      console.log((r.ok && corsOk ? '✅' : '⚠️ HTTP ' + r.status + (r.ok && !corsOk ? ' SANS CORS (le navigateur bloquera)' : '')) + ' ' + label + ' (ACAO: ' + (acao || 'absent') + ')' + cext);
       continue;
     }
     // FAUX VERT (leçon #103) : une sonde d'IMAGE (GetMap/GetTile/.png) qui répond 200 mais
