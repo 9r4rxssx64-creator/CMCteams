@@ -110,10 +110,8 @@ const PROBES = [
   /* Exploration cycle suivant : cyclones NHC (trajectoires) — le navigateur a besoin du CORS. */
   ['NOAA NHC cyclones actifs (CORS)', 'https://www.nhc.noaa.gov/CurrentStorms.json', 'cors'],
   /* v2.24 — actus live (points chauds carte + images d'articles guerres/crises) */
-  /* Matrice GEO (le 1er essai a renvoyé 404) — la page essaie ces variantes en cascade. */
-  ['GDELT GEO v1 PointData+1H (CORS)', 'https://api.gdeltproject.org/api/v2/geo/geo?query=war&format=GeoJSON&mode=PointData&timespan=1H', 'cors'],
-  ['GDELT GEO v2 simple (CORS)', 'https://api.gdeltproject.org/api/v2/geo/geo?query=war&format=GeoJSON', 'cors'],
-  ['GDELT GEO v3 pointdata (CORS)', 'https://api.gdeltproject.org/api/v2/geo/geo?query=war&format=geojson&mode=pointdata', 'cors'],
+  /* GDELT GEO 2.0 : endpoint MORT (404 Apache sur toutes les variantes, sondes 2026-07-05)
+     → couche carte retirée (v2.26). Le DOC (ci-dessous) reste la source actus/images. */
   ['GDELT DOC images d\'articles (CORS)', 'https://api.gdeltproject.org/api/v2/doc/doc?query=breaking%20sourcelang:eng&mode=artlist&maxrecords=3&format=json&timespan=3h', 'cors'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
