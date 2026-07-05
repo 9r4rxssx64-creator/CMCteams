@@ -81,9 +81,8 @@ async function collectShips(key, ms, cap) {
     ws.addEventListener("close", (ev) => { debug.closeCode = ev && ev.code; debug.closeReason = (ev && ev.reason) || ""; clearTimeout(timer); finish(); });
     ws.addEventListener("error", () => { clearTimeout(timer); finish(); });
   });
-  const out = [...ships.entries()].map(([mmsi, s]) => Object.assign({ mmsi }, s));
-  out._debug = debug;
-  return out;
+  const list = [...ships.entries()].map(([mmsi, s]) => Object.assign({ mmsi }, s));
+  return { ships: list, debug };
 }
 
 export default {
@@ -106,15 +105,14 @@ export default {
       const limit = Math.max(1, Math.min(2000, parseInt(url.searchParams.get("limit") || "1500", 10) || 1500));
       const secs = Math.max(1, Math.min(15, parseInt(url.searchParams.get("secs") || "6", 10) || 6));
       try {
-        const raw = await collectShips(env.AISSTREAM_KEY, secs * 1000, limit + 500);
+        const { ships, debug } = await collectShips(env.AISSTREAM_KEY, secs * 1000, limit + 500);
         const feats = [];
-        for (const s of raw) {
+        for (const s of ships) {
           if (hasBox && (s.lon < bbox[0] || s.lon > bbox[2] || s.lat < bbox[1] || s.lat > bbox[3])) continue;
           feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [s.lon, s.lat] }, properties: { mmsi: s.mmsi, sog: s.sog, cog: s.cog, name: s.name } });
           if (feats.length >= limit) break;
         }
-        // Diagnostic si 0 navire (msgs reçus, 1er message brut, code de fermeture) — jamais la clé.
-        const debug = feats.length === 0 ? (raw._debug || null) : undefined;
+        // Diagnostic TOUJOURS remonté (msgs reçus, 1er message brut, code de fermeture) — jamais la clé.
         return json({ type: "FeatureCollection", features: feats, count: feats.length, debug }, origin);
       } catch (e) {
         return json({ type: "FeatureCollection", features: [], note: "aisstream indisponible: " + String((e && e.message) || e) }, origin);
