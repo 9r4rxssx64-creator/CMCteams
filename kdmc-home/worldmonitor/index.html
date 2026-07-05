@@ -319,13 +319,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.13</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.14</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (fond satellite) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.13";
+var VER="v2.14";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -509,7 +509,7 @@ resizeGlobe();requestAnimationFrame(loop);
 async function loadQuakes(){try{
   var d=await getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
   var f=(d&&d.features)||[];f.sort(function(a,b){return b.properties.time-a.properties.time;});
-  DL.quakes=f.map(function(x){var c=x.geometry.coordinates;return {lat:c[1],lon:c[0],mag:x.properties.mag||0,place:x.properties.place||"",depth:c[2]||0};});if(_mapReady)drawQuakesMap();
+  DL.quakes=f.map(function(x){var c=x.geometry.coordinates;return {lat:c[1],lon:c[0],mag:x.properties.mag||0,place:x.properties.place||"",depth:c[2]||0,time:x.properties.time||0};});if(_mapReady)drawQuakesMap();
   setText($("sQuakes"),String(f.length));setText($("quakeState"),f.length+" / 24h");setText($("globeState"),"en direct");
   var box=$("quakes");if(!f.length){setHTML(box,'<div class="empty">Aucun séisme. 🌍</div>');return;}
   setHTML(box,f.slice(0,30).map(function(x){var m=x.properties.mag||0,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d";
@@ -522,12 +522,13 @@ async function loadEonet(){try{
   var ev=(d&&d.events)||[];var fires=[],volc=[],storms=[],rows=[];
   ev.forEach(function(e){var cat=(e.categories&&e.categories[0]&&e.categories[0].id)||"";
     var geo=e.geometry&&e.geometry[e.geometry.length-1];var c=geo&&geo.coordinates;if(!c||c.length<2)return;
-    var pt={lat:c[1],lon:c[0]};var icon="🌪️",tcat="Événement";
+    var when=geo&&geo.date?new Date(geo.date).getTime():0;
+    var pt={lat:c[1],lon:c[0],title:e.title,when:when};var icon="🌪️",tcat="Événement";
     if(cat==="wildfires"){fires.push(pt);icon="🔥";tcat="Feu";}
     else if(cat==="volcanoes"){volc.push(pt);icon="🌋";tcat="Volcan";}
     else if(cat==="severeStorms"){storms.push(pt);icon="🌀";tcat="Tempête";}
     else{storms.push(pt);}
-    rows.push({icon:icon,tcat:tcat,title:e.title,when:geo&&geo.date?new Date(geo.date).getTime():0});});
+    rows.push({icon:icon,tcat:tcat,title:e.title,when:when});});
   DL.fires=fires;DL.volcano=volc;DL.storms=storms;
   setText($("sEvents"),String(ev.length));setText($("eonetState"),ev.length+" ouverts");
   rows.sort(function(a,b){return b.when-a.when;});
@@ -829,14 +830,14 @@ function drawQuakesMap(){
   _quakeLayer.clearLayers();
   (DL.quakes||[]).forEach(function(q){
     var m=q.mag||0,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d",r=Math.max(4,Math.min(16,m*2.4));
-    LEAF.circleMarker([q.lat,q.lon],{radius:r,color:col,weight:1,fillColor:col,fillOpacity:.35}).bindPopup("<b>M "+m.toFixed(1)+"</b><br>"+esc(q.place||"")+"<br>Profondeur "+((q.depth||0).toFixed(0))+" km").addTo(_quakeLayer);
+    LEAF.circleMarker([q.lat,q.lon],{radius:r,color:col,weight:1,fillColor:col,fillOpacity:.35}).bindPopup("<b>Séisme M "+m.toFixed(1)+"</b><br>"+esc(q.place||"")+"<br>Profondeur "+((q.depth||0).toFixed(0))+" km"+(q.time?"<br>Il y a "+ago(q.time):"")).addTo(_quakeLayer);
   });
 }
 function drawFiresMap(){
   if(!MAP||!_fireLayer)return;
   _fireLayer.clearLayers();
   (DL.fires||[]).forEach(function(f){
-    LEAF.circleMarker([f.lat,f.lon],{radius:5,color:"#ff8a3d",weight:1,fillColor:"#ff8a3d",fillOpacity:.5}).bindPopup("🔥 Incendie actif").addTo(_fireLayer);
+    LEAF.circleMarker([f.lat,f.lon],{radius:5,color:"#ff8a3d",weight:1,fillColor:"#ff8a3d",fillOpacity:.5}).bindPopup("<b>🔥 "+esc(f.title||"Incendie actif")+"</b>"+(f.when?"<br>Depuis "+ago(f.when):"")+"<br><span style='opacity:.7'>"+f.lat.toFixed(2)+"°, "+f.lon.toFixed(2)+"°</span>").addTo(_fireLayer);
   });
 }
 function drawChokeMap(){
@@ -851,11 +852,11 @@ function drawChokeMap(){
 }
 function drawVolcanoMap(){
   if(!MAP||!_volcanoLayer)return;_volcanoLayer.clearLayers();
-  (DL.volcano||[]).forEach(function(v){LEAF.circleMarker([v.lat,v.lon],{radius:6,color:"#ff5a4d",weight:1,fillColor:"#ff5a4d",fillOpacity:.55}).bindPopup("🌋 "+esc(v.title||"Volcan actif")).addTo(_volcanoLayer);});
+  (DL.volcano||[]).forEach(function(v){LEAF.circleMarker([v.lat,v.lon],{radius:6,color:"#ff5a4d",weight:1,fillColor:"#ff5a4d",fillOpacity:.55}).bindPopup("<b>🌋 "+esc(v.title||"Volcan actif")+"</b>"+(v.when?"<br>Depuis "+ago(v.when):"")+"<br><span style='opacity:.7'>"+v.lat.toFixed(2)+"°, "+v.lon.toFixed(2)+"°</span>").addTo(_volcanoLayer);});
 }
 function drawStormsMap(){
   if(!MAP||!_stormLayer)return;_stormLayer.clearLayers();
-  (DL.storms||[]).forEach(function(s){LEAF.circleMarker([s.lat,s.lon],{radius:7,color:"#b992ff",weight:1,fillColor:"#b992ff",fillOpacity:.3}).bindPopup("🌀 "+esc(s.title||"Tempête")).addTo(_stormLayer);});
+  (DL.storms||[]).forEach(function(s){LEAF.circleMarker([s.lat,s.lon],{radius:7,color:"#b992ff",weight:1,fillColor:"#b992ff",fillOpacity:.3}).bindPopup("<b>🌀 "+esc(s.title||"Tempête")+"</b>"+(s.when?"<br>Depuis "+ago(s.when):"")+"<br><span style='opacity:.7'>"+s.lat.toFixed(2)+"°, "+s.lon.toFixed(2)+"°</span>").addTo(_stormLayer);});
 }
 /* 🚢 Navires en direct — Digitraffic (AIS mer Baltique/Finlande, ouvert sans clé, CORS OK) */
 /* Vide par défaut → navires Baltique (Digitraffic). Quand Kevin fournit une clé aisstream
@@ -880,7 +881,7 @@ function drawShipsMap(){
   if(!MAP||!_shipLayer)return;_shipLayer.clearLayers();
   (DL.ships||[]).slice(0,800).forEach(function(s){
     LEAF.circleMarker([s.lat,s.lon],{radius:3,color:"#35d6e6",weight:1,fillColor:"#7ff0ff",fillOpacity:.8})
-      .bindPopup("🚢 Navire"+(s.mmsi?" "+esc(String(s.mmsi)):"")+(s.sog!=null?"<br>Vitesse "+s.sog+" nds":"")).addTo(_shipLayer);
+      .bindPopup("<b>🚢 "+esc(s.name&&String(s.name).trim()?String(s.name).trim():"Navire")+"</b>"+(s.mmsi?"<br>MMSI "+esc(String(s.mmsi)):"")+(s.sog!=null?"<br>Vitesse "+s.sog+" nds":"")+(s.cog!=null?"<br>Cap "+Math.round(s.cog)+"°":"")).addTo(_shipLayer);
   });
 }
 /* Bascule fond satellite / sombre */
