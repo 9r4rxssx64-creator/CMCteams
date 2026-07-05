@@ -7,6 +7,7 @@
 <title>World Monitor — kd-mc.com</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js" crossorigin=""></script>
 <style>
   :root{
     --bg:#05070d; --panel:rgba(14,20,34,.72); --line:rgba(120,150,210,.16);
@@ -176,10 +177,14 @@
           <button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>🌀 Tempêtes</button>
           <button class="tg" data-layer="detroits" aria-pressed="true"><span class="i" style="background:#5aa9ff"></span>⚓ Détroits</button>
           <button class="tg" data-layer="iss" aria-pressed="true"><span class="i" style="background:var(--cyan)"></span>🛰️ ISS</button>
+          <button class="tg" data-layer="sats" aria-pressed="true" title="Positions RÉELLES des ~150 satellites les plus brillants — données orbitales Celestrak, calcul SGP4 recalculé toutes les 5 s"><span class="i" style="background:#ffe9b8"></span>🛰️ Satellites</button>
+          <button class="tg" data-layer="radar" aria-pressed="false" title="Radar de précipitations MONDIAL en direct (RainViewer, maj ~10 min)"><span class="i" style="background:#61c8ff"></span>🌧️ Pluie radar</button>
+          <button class="tg" data-layer="firesat" aria-pressed="false" title="Détections thermiques VUES PAR SATELLITE — NASA VIIRS (image d'hier)"><span class="i" style="background:#ff8a5a"></span>🔥 Feux sat.</button>
           <button class="tg" data-base="dark" aria-pressed="true" title="Carte sombre (par défaut)"><span class="i" style="background:#5a6a8a"></span>🌙 Carte</button>
           <button class="tg" data-base="sat" aria-pressed="false" title="Satellite haute résolution (Esri)"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite HD</button>
           <button class="tg" data-base="live" aria-pressed="false" title="Vue satellite LIVE — VIIRS/NASA, image d'hier (nuages, feux, tempêtes vus de l'espace)"><span class="i" style="background:#7fd6ff"></span>🛰️ Live NASA</button>
           <button class="tg" data-base="night" aria-pressed="false" title="Terre de nuit LIVE — VIIRS Day/Night Band (lumières des villes, image d'hier)"><span class="i" style="background:#ffd27f"></span>🌃 Terre nuit</button>
+          <button class="tg" data-base="geo" aria-pressed="false" title="Vue géostationnaire quasi TEMPS RÉEL (~10-20 min) — GOES-East/West + Himawari GeoColor (NASA GIBS) : nuages et tempêtes en continu"><span class="i" style="background:#9be47f"></span>🌎 Géo LIVE</button>
         </div>
         <canvas id="globe" class="hidden" width="760" height="600" aria-label="Globe animé : séismes, feux, volcans, tempêtes, vols et ISS en direct"></canvas>
         <div class="stat-row" id="stats">
@@ -322,13 +327,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.16</span>
-  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.17</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.16";
+var VER="v2.17";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -425,8 +430,8 @@ tickClock();setInterval(tickClock,1000);
 
 /* ============ GLOBE ============ */
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
-var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],iss:null};
-var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1};
+var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],iss:null};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0};
 $("toggles").addEventListener("click",function(e){var b=e.target.closest(".tg");if(!b)return;
   var v=b.getAttribute("aria-pressed")==="true"?false:true;
   b.setAttribute("aria-pressed",String(v));
@@ -779,7 +784,7 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_bases={},_mapReady=false,_planesTimer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_mapReady=false,_planesTimer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
@@ -798,7 +803,22 @@ function initMap(){
     maxNativeZoom:9,maxZoom:18,bounds:[[-85,-180],[85,180]],attribution:'&copy; NASA GIBS/EOSDIS — VIIRS True Color '+_giso});
   _nightBase=LEAF.tileLayer(_gibs("VIIRS_SNPP_DayNightBand_ENCC","GoogleMapsCompatible_Level8","jpg"),{
     maxNativeZoom:8,maxZoom:18,bounds:[[-85,-180],[85,180]],attribution:'&copy; NASA GIBS/EOSDIS — VIIRS Nuit '+_giso});
-  _bases={dark:_darkBase,sat:_satBase,live:_liveBase,night:_nightBase};
+  /* 🌎 Géo LIVE : disques géostationnaires GOES-East/West + Himawari (GIBS, time=default =
+     DERNIÈRE image dispo, ~10-20 min) sur un fond sombre pour les zones hors disques.
+     Tuiles hors couverture = vides → le fond sombre reste visible (fail-open). */
+  function _gibsNow(layer,matrix){return "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/"+layer+"/default/default/"+matrix+"/{z}/{y}/{x}.png";}
+  _geoBase=LEAF.layerGroup([
+    LEAF.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:18,zIndex:1}),
+    LEAF.tileLayer(_gibsNow("GOES-East_ABI_GeoColor","GoogleMapsCompatible_Level7"),{maxNativeZoom:7,maxZoom:18,zIndex:2,attribution:'&copy; NASA GIBS — GOES/Himawari GeoColor (quasi temps réel)'}),
+    LEAF.tileLayer(_gibsNow("GOES-West_ABI_GeoColor","GoogleMapsCompatible_Level7"),{maxNativeZoom:7,maxZoom:18,zIndex:2}),
+    LEAF.tileLayer(_gibsNow("Himawari_AHI_GeoColor","GoogleMapsCompatible_Level7"),{maxNativeZoom:7,maxZoom:18,zIndex:2})
+  ]);
+  _bases={dark:_darkBase,sat:_satBase,live:_liveBase,night:_nightBase,geo:_geoBase};
+  /* 🔥 Feux VUS PAR SATELLITE (VIIRS Thermal Anomalies, image d'hier) — OFF par défaut */
+  _fireSatLayer=LEAF.tileLayer(_gibs("VIIRS_SNPP_Thermal_Anomalies_375m_All","GoogleMapsCompatible_Level9","png"),{
+    maxNativeZoom:9,maxZoom:18,zIndex:4,opacity:.9,attribution:'&copy; NASA VIIRS Thermal Anomalies '+_giso});
+  _radarLayer=LEAF.layerGroup(); /* 🌧️ rempli par loadRadar, OFF par défaut */
+  _satsLayer=LEAF.layerGroup().addTo(MAP); /* 🛰️ positions satellites, ON */
   _planeLayer=LEAF.layerGroup().addTo(MAP);
   _shipLayer=LEAF.layerGroup().addTo(MAP);
   _quakeLayer=LEAF.layerGroup().addTo(MAP);
@@ -808,9 +828,10 @@ function initMap(){
   _stormLayer=LEAF.layerGroup().addTo(MAP);
   /* Les couches se pilotent par les puces sous la carte (pas de boîte sur la carte). */
   MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
-  setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
+  setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();loadSats();loadRadar();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
   setInterval(loadShips,60000);
+  setInterval(function(){if(ON.radar)loadRadar();},300000); /* radar rafraîchi ~10 min côté source */
 }
 function planeIcon(track){
   var t=((track||0)-45); /* ✈️ pointe vers le NE */
@@ -871,6 +892,64 @@ function drawStormsMap(){
   if(!MAP||!_stormLayer)return;_stormLayer.clearLayers();
   (DL.storms||[]).forEach(function(s){LEAF.circleMarker([s.lat,s.lon],{radius:7,color:"#b992ff",weight:1,fillColor:"#b992ff",fillOpacity:.3}).bindPopup("<b>🌀 "+esc(s.title||"Tempête")+"</b>"+(s.when?"<br>Depuis "+ago(s.when):"")+"<br><span style='opacity:.7'>"+s.lat.toFixed(2)+"°, "+s.lon.toFixed(2)+"°</span>").addTo(_stormLayer);});
 }
+/* 🛰️ SATELLITES EN DIRECT — données orbitales Celestrak (groupe "visual" = les plus brillants),
+   positions RÉELLES recalculées toutes les 5 s en SGP4 (satellite.js, dans le navigateur).
+   Aucune clé, CORS OK (leçon #127). Fail-open : échec réseau/lib → couche vide, rien ne casse. */
+async function loadSats(){
+  if(!window.satellite)return;
+  var txt=null;
+  try{
+    var c=new AbortController();var t=setTimeout(function(){c.abort();},12000);
+    var r=await fetch("https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle",{signal:c.signal,cache:"no-store"});
+    clearTimeout(t);if(!r.ok)throw 0;txt=await r.text();
+  }catch(e){return;}
+  var lines=txt.split(/\r?\n/),recs=[];
+  for(var i=0;i+2<lines.length;i+=3){
+    var name=(lines[i]||"").trim(),l1=lines[i+1],l2=lines[i+2];
+    if(!l1||!l2||l1[0]!=="1"||l2[0]!=="2")continue;
+    try{recs.push({name:name,rec:satellite.twoline2satrec(l1,l2)});}catch(e){}
+    if(recs.length>=150)break;
+  }
+  _satRecs=recs;updateSats();
+  if(!window._satsTimer)window._satsTimer=setInterval(updateSats,5000);
+}
+function updateSats(){
+  if(!MAP||!_satsLayer||!_satRecs||!window.satellite)return;
+  var now=new Date(),gmst=satellite.gstime(now),out=[];
+  _satRecs.forEach(function(s,idx){
+    try{
+      var pv=satellite.propagate(s.rec,now);if(!pv||!pv.position)return;
+      var g=satellite.eciToGeodetic(pv.position,gmst);
+      var lat=g.latitude*180/Math.PI,lon=((g.longitude*180/Math.PI+540)%360)-180;
+      if(!isFinite(lat)||!isFinite(lon))return;
+      var d={name:s.name,lat:lat,lon:lon,alt:Math.round(g.height),
+             kmh:pv.velocity?Math.round(Math.sqrt(pv.velocity.x*pv.velocity.x+pv.velocity.y*pv.velocity.y+pv.velocity.z*pv.velocity.z)*3600):null};
+      out.push(d);
+      var m=_satMarkers[idx];
+      if(!m){
+        m=LEAF.circleMarker([lat,lon],{radius:2.6,color:"#ffd27f",weight:1,fillColor:"#ffe9b8",fillOpacity:.9});
+        m.bindPopup(function(){var x=m._sat||{};
+          return "<b>🛰️ "+esc(x.name||"Satellite")+"</b><br>Altitude "+(x.alt!=null?x.alt+" km":"?")
+            +(x.kmh?" · "+x.kmh.toLocaleString("fr-FR")+" km/h":"")
+            +"<br><span style='opacity:.7'>Position réelle en direct (SGP4 · Celestrak)</span>";});
+        m.addTo(_satsLayer);_satMarkers[idx]=m;
+      }
+      m._sat=d;m.setLatLng([lat,lon]);
+    }catch(e){}
+  });
+  DL.sats=out;
+}
+/* 🌧️ RADAR DE PRÉCIPITATIONS MONDIAL en direct — RainViewer (gratuit, sans clé, maj ~10 min) */
+async function loadRadar(){
+  try{
+    var j=await getJSON("https://api.rainviewer.com/public/weather-maps.json",10000);
+    var past=j&&j.radar&&j.radar.past;if(!past||!past.length||!_radarLayer)return;
+    var f=past[past.length-1],host=j.host||"https://tilecache.rainviewer.com";
+    _radarLayer.clearLayers();
+    LEAF.tileLayer(host+f.path+"/512/{z}/{x}/{y}/2/1_1.png",{opacity:.65,zIndex:5,maxZoom:18,
+      attribution:'&copy; RainViewer — radar pluie en direct'}).addTo(_radarLayer);
+  }catch(e){}
+}
 /* 🚢 Navires en direct — Digitraffic (AIS mer Baltique/Finlande, ouvert sans clé, CORS OK) */
 /* Vide par défaut → navires Baltique (Digitraffic). Quand Kevin fournit une clé aisstream
    gratuite et déploie kdmc-ais-proxy, on renseigne cette URL → navires MONDIAUX (leçon #93). */
@@ -902,7 +981,8 @@ function drawShipsMap(){
 function setBase(name){
   if(!MAP||!_bases[name])return;
   Object.keys(_bases).forEach(function(k){var L=_bases[k];if(!L)return;
-    if(k===name){if(!MAP.hasLayer(L))L.addTo(MAP);L.bringToBack();}
+    if(k===name){if(!MAP.hasLayer(L))L.addTo(MAP);
+      if(L.bringToBack)L.bringToBack();else if(L.eachLayer)L.eachLayer(function(t){if(t.bringToBack)t.bringToBack();});}
     else if(MAP.hasLayer(L))MAP.removeLayer(L);});
   var btns=document.querySelectorAll("[data-base]");
   for(var i=0;i<btns.length;i++)btns[i].setAttribute("aria-pressed",String(btns[i].getAttribute("data-base")===name));
@@ -910,7 +990,7 @@ function setBase(name){
 /* Compat : ancien appel booléen (true=satellite HD, false=sombre). */
 function setSatBase(on){setBase(on?"sat":"dark");}
 /* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
-function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer}[k]||null;}
+function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer}[k]||null;}
 function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
