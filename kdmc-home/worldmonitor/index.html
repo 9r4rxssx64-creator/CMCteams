@@ -184,6 +184,7 @@
           <button class="tg" data-layer="aurora" aria-pressed="false" title="Aurores boréales/australes EN DIRECT — prévision NOAA OVATION maj ~5 min (probabilité d'aurore visible)"><span class="i" style="background:#7fffc9"></span>🌌 Aurores</button>
           <button class="tg" data-layer="air" aria-pressed="false" title="Qualité de l'air EN DIRECT dans ~34 grandes villes (Open-Meteo, indice européen) — Monaco inclus"><span class="i" style="background:#a8e05f"></span>🌫️ Air</button>
           <button class="tg" data-layer="waves" aria-pressed="false" title="Vagues & houle EN DIRECT sur ~28 points d'océans et mers (Open-Meteo Marine) — Méditerranée/Monaco inclus"><span class="i" style="background:#4db8ff"></span>🌊 Vagues</button>
+          <button class="tg" data-layer="smoke" aria-pressed="false" title="Fumées & poussières VUES PAR SATELLITE — indice d'aérosols OMPS/NASA (feux, sable, éruptions ; image la plus récente)"><span class="i" style="background:#c9a06a"></span>🌫️ Fumées sat.</button>
           <button class="tg" data-base="dark" aria-pressed="true" title="Carte sombre (par défaut)"><span class="i" style="background:#5a6a8a"></span>🌙 Carte</button>
           <button class="tg" data-base="sat" aria-pressed="false" title="Satellite haute résolution (Esri)"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite HD</button>
           <button class="tg" data-base="live" aria-pressed="false" title="Vue satellite LIVE — VIIRS/NASA, image d'hier (nuages, feux, tempêtes vus de l'espace)"><span class="i" style="background:#7fd6ff"></span>🛰️ Live NASA</button>
@@ -331,13 +332,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.21</span>
-  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.22</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.21";
+var VER="v2.22";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -435,7 +436,7 @@ tickClock();setInterval(tickClock,1000);
 /* ============ GLOBE ============ */
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
 var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],waves:[],iss:null};
-var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0};
 $("toggles").addEventListener("click",function(e){var b=e.target.closest(".tg");if(!b)return;
   var v=b.getAttribute("aria-pressed")==="true"?false:true;
   b.setAttribute("aria-pressed",String(v));
@@ -794,7 +795,7 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_mapReady=false,_planesTimer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_smokeLayer=null,_mapReady=false,_planesTimer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
@@ -838,6 +839,12 @@ function initMap(){
   _auroraLayer=LEAF.layerGroup(); /* 🌌 aurores, OFF par défaut */
   _airLayer=LEAF.layerGroup(); /* 🌫️ qualité de l'air, OFF par défaut */
   _wavesLayer=LEAF.layerGroup(); /* 🌊 vagues/houle, OFF par défaut */
+  /* 🌫️ Fumées/poussières vues de l'espace — OMPS Aerosol Index (présent en WMTS 3857
+     d'après GetCapabilities CI, mais TileMatrixSet incertain → WMS comme les feux sat.).
+     NB : pas de FOUDRE live dans GIBS (les couches "Lightning" = archives DMSP années 90). */
+  _smokeLayer=LEAF.tileLayer.wms(GIBS_WMS,{layers:"OMPS_Aerosol_Index",
+    format:"image/png",transparent:true,version:"1.3.0",zIndex:4,opacity:.75,
+    attribution:'&copy; NASA OMPS Aerosol Index'});
   _planeLayer=LEAF.layerGroup().addTo(MAP);
   _shipLayer=LEAF.layerGroup().addTo(MAP);
   _quakeLayer=LEAF.layerGroup().addTo(MAP);
@@ -1109,7 +1116,7 @@ function setBase(name){
 /* Compat : ancien appel booléen (true=satellite HD, false=sombre). */
 function setSatBase(on){setBase(on?"sat":"dark");}
 /* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
-function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer}[k]||null;}
+function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer}[k]||null;}
 function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){

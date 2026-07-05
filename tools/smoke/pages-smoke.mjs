@@ -99,6 +99,7 @@ const PROBES = [
      la boucle ci-dessous exige content-type image/* pour les sondes d'images. */
   ['GIBS WMS Himawari Band13 IR (géo LIVE Asie)', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=Himawari_AHI_Band13_Clean_Infrared&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
   ['GIBS WMS VIIRS Thermal (feux sat.)', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=VIIRS_SNPP_Thermal_Anomalies_375m_All&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
+  ['GIBS WMS OMPS Aerosol Index (fumées sat.)', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=OMPS_Aerosol_Index&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=true&CRS=EPSG%3A3857&BBOX=-20037508,-20037508,20037508,20037508&WIDTH=256&HEIGHT=256'],
   ['RainViewer (radar pluie)', 'https://api.rainviewer.com/public/weather-maps.json'],
   /* v2.20 — nouvelles sources live : la sonde envoie Origin et exige l'en-tête CORS
      access-control-allow-origin (sinon le NAVIGATEUR bloquera même si le runner voit 200). */
