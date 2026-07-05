@@ -183,6 +183,7 @@
           <button class="tg" data-layer="gdacs" aria-pressed="true" title="Alertes catastrophes MONDIALES en direct (GDACS/ONU) : cyclones, inondations, séismes majeurs — niveau vert/orange/rouge, maj ~15 min"><span class="i" style="background:#ff5a4d"></span>🚨 Alertes ONU</button>
           <button class="tg" data-layer="aurora" aria-pressed="false" title="Aurores boréales/australes EN DIRECT — prévision NOAA OVATION maj ~5 min (probabilité d'aurore visible)"><span class="i" style="background:#7fffc9"></span>🌌 Aurores</button>
           <button class="tg" data-layer="air" aria-pressed="false" title="Qualité de l'air EN DIRECT dans ~34 grandes villes (Open-Meteo, indice européen) — Monaco inclus"><span class="i" style="background:#a8e05f"></span>🌫️ Air</button>
+          <button class="tg" data-layer="waves" aria-pressed="false" title="Vagues & houle EN DIRECT sur ~28 points d'océans et mers (Open-Meteo Marine) — Méditerranée/Monaco inclus"><span class="i" style="background:#4db8ff"></span>🌊 Vagues</button>
           <button class="tg" data-base="dark" aria-pressed="true" title="Carte sombre (par défaut)"><span class="i" style="background:#5a6a8a"></span>🌙 Carte</button>
           <button class="tg" data-base="sat" aria-pressed="false" title="Satellite haute résolution (Esri)"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite HD</button>
           <button class="tg" data-base="live" aria-pressed="false" title="Vue satellite LIVE — VIIRS/NASA, image d'hier (nuages, feux, tempêtes vus de l'espace)"><span class="i" style="background:#7fd6ff"></span>🛰️ Live NASA</button>
@@ -330,13 +331,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.20</span>
-  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.21</span>
+  <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.20";
+var VER="v2.21";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -433,8 +434,8 @@ tickClock();setInterval(tickClock,1000);
 
 /* ============ GLOBE ============ */
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
-var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],iss:null};
-var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0};
+var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],waves:[],iss:null};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0};
 $("toggles").addEventListener("click",function(e){var b=e.target.closest(".tg");if(!b)return;
   var v=b.getAttribute("aria-pressed")==="true"?false:true;
   b.setAttribute("aria-pressed",String(v));
@@ -732,7 +733,13 @@ var CAMS=[
   {n:"Las Vegas — Strip",e:"🎰",q:"las vegas strip live cam"},
   {n:"Chutes du Niagara",e:"💦",q:"niagara falls live cam"},
   {n:"Rome — Fontaine de Trevi",e:"⛲",q:"trevi fountain rome live cam"},
-  {n:"Sydney — Opéra",e:"🦘",q:"sydney harbour opera house live cam"}
+  {n:"Sydney — Opéra",e:"🦘",q:"sydney harbour opera house live cam"},
+  {n:"ISS — la Terre en direct",e:"🌍",q:"iss live earth view"},
+  {n:"La Mecque",e:"🕋",q:"makkah live"},
+  {n:"Istanbul — Bosphore",e:"🌉",q:"istanbul bosphorus live cam"},
+  {n:"Rio — Copacabana",e:"🏖️",q:"rio copacabana live cam"},
+  {n:"Amsterdam — Canaux",e:"🚲",q:"amsterdam live cam dam square"},
+  {n:"Aurores en direct (Laponie)",e:"🌌",q:"northern lights live cam aurora"}
 ];
 function renderCams(){
   setHTML($("cams"),CAMS.map(function(c,i){
@@ -787,7 +794,7 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_mapReady=false,_planesTimer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_mapReady=false,_planesTimer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
@@ -830,6 +837,7 @@ function initMap(){
   _gdacsLayer=LEAF.layerGroup().addTo(MAP); /* 🚨 alertes GDACS, ON */
   _auroraLayer=LEAF.layerGroup(); /* 🌌 aurores, OFF par défaut */
   _airLayer=LEAF.layerGroup(); /* 🌫️ qualité de l'air, OFF par défaut */
+  _wavesLayer=LEAF.layerGroup(); /* 🌊 vagues/houle, OFF par défaut */
   _planeLayer=LEAF.layerGroup().addTo(MAP);
   _shipLayer=LEAF.layerGroup().addTo(MAP);
   _quakeLayer=LEAF.layerGroup().addTo(MAP);
@@ -839,13 +847,14 @@ function initMap(){
   _stormLayer=LEAF.layerGroup().addTo(MAP);
   /* Les couches se pilotent par les puces sous la carte (pas de boîte sur la carte). */
   MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
-  setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();loadSats();loadRadar();loadGdacs();loadAurora();loadAir();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
+  setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();loadSats();loadRadar();loadGdacs();loadAurora();loadAir();loadWaves();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
   setInterval(loadShips,60000);
   setInterval(function(){if(ON.radar)loadRadar();},300000); /* radar rafraîchi ~10 min côté source */
   setInterval(loadGdacs,900000);                            /* alertes ONU ~15 min */
   setInterval(function(){if(ON.aurora)loadAurora();},600000); /* aurores maj NOAA ~5-10 min */
   setInterval(function(){if(ON.air)loadAir();},1800000);      /* air (données horaires) */
+  setInterval(function(){if(ON.waves)loadWaves();},1800000);   /* vagues (données horaires) */
 }
 function planeIcon(track){
   var t=((track||0)-45); /* ✈️ pointe vers le NE */
@@ -1034,6 +1043,32 @@ async function loadAir(){
     DL.air=out;
   }catch(e){}
 }
+/* 🌊 VAGUES & HOULE en direct — Open-Meteo Marine (sans clé, CORS OK), ~28 points
+   océans/mers dont Méditerranée au large de Monaco. Couleur+taille = hauteur des vagues. */
+var _WAVE_PTS=[["Méditerranée (Monaco)",43.5,7.6],["Golfe du Lion",42.6,4.2],["Baléares",39.4,2.6],["Gibraltar",35.9,-5.5],["Adriatique",42.8,15.2],["Mer Égée",37.5,25.0],["Golfe de Gascogne",45.5,-4.0],["Manche",50.0,-1.5],["Mer du Nord",55.5,3.5],["Atlantique Nord",50.0,-30.0],["Açores",38.0,-27.0],["Canaries",28.0,-15.5],["Caraïbes",15.5,-70.0],["Golfe du Mexique",25.5,-90.0],["Côte Est US",35.0,-73.0],["Côte Ouest US",36.0,-123.0],["Hawaï",21.0,-157.0],["Pacifique Nord",40.0,-165.0],["Japon (Pacifique)",34.0,141.0],["Mer de Chine",15.0,113.0],["Philippines",13.0,127.0],["Indonésie (océan Indien)",-9.0,107.0],["Maldives",3.5,73.0],["Mer Rouge",20.0,38.5],["Cap de Bonne-Espérance",-35.5,19.0],["Brésil",-25.0,-43.0],["Pacifique Sud",-30.0,-120.0],["Tasmanie",-44.0,147.0]];
+function _waveColor(h){return h<1?"#4db8ff":h<2?"#38d6b7":h<3?"#ffd166":h<4.5?"#ff9500":"#ff3b30";}
+async function loadWaves(){
+  try{
+    var lats=_WAVE_PTS.map(function(c){return c[1];}).join(","),lons=_WAVE_PTS.map(function(c){return c[2];}).join(",");
+    var j=await getJSON("https://marine-api.open-meteo.com/v1/marine?latitude="+lats+"&longitude="+lons+"&current=wave_height,wave_direction,wave_period",15000);
+    var arr=Array.isArray(j)?j:[j];if(!_wavesLayer)return;
+    _wavesLayer.clearLayers();var out=[];
+    arr.forEach(function(r,i){
+      var pt=_WAVE_PTS[i];if(!pt||!r||!r.current)return;
+      var h=+r.current.wave_height,dir=+r.current.wave_direction,per=+r.current.wave_period;
+      if(!isFinite(h))return;
+      var col=_waveColor(h);
+      out.push({name:pt[0],h:h});
+      LEAF.circleMarker([pt[1],pt[2]],{radius:Math.max(5,Math.min(13,4+h*2)),color:col,weight:2,fillColor:col,fillOpacity:.4})
+        .bindPopup("<b>🌊 "+esc(pt[0])+"</b><br>Vagues : <b style=\'color:"+col+"\'>"+h.toFixed(1)+" m</b>"
+          +(isFinite(per)?" · période "+per.toFixed(0)+" s":"")
+          +(isFinite(dir)?"<br>Direction houle : "+Math.round(dir)+"°":"")
+          +"<br><span style=\'opacity:.7\'>Open-Meteo Marine · en direct</span>")
+        .addTo(_wavesLayer);
+    });
+    DL.waves=out;
+  }catch(e){}
+}
 /* 🚢 Navires en direct — Digitraffic (AIS mer Baltique/Finlande, ouvert sans clé, CORS OK) */
 /* Vide par défaut → navires Baltique (Digitraffic). Quand Kevin fournit une clé aisstream
    gratuite et déploie kdmc-ais-proxy, on renseigne cette URL → navires MONDIAUX (leçon #93). */
@@ -1074,7 +1109,7 @@ function setBase(name){
 /* Compat : ancien appel booléen (true=satellite HD, false=sombre). */
 function setSatBase(on){setBase(on?"sat":"dark");}
 /* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
-function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer}[k]||null;}
+function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer}[k]||null;}
 function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){

@@ -105,6 +105,9 @@ const PROBES = [
   ['GDACS alertes catastrophes (CORS)', 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP', 'cors'],
   ['NOAA OVATION aurores (CORS)', 'https://services.swpc.noaa.gov/json/ovation_aurora_latest.json', 'cors'],
   ['Open-Meteo qualité air (CORS)', 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=43.73&longitude=7.42&current=european_aqi', 'cors'],
+  ['Open-Meteo Marine vagues (CORS)', 'https://marine-api.open-meteo.com/v1/marine?latitude=43.5&longitude=7.6&current=wave_height', 'cors'],
+  /* Exploration cycle suivant : cyclones NHC (trajectoires) — le navigateur a besoin du CORS. */
+  ['NOAA NHC cyclones actifs (CORS)', 'https://www.nhc.noaa.gov/CurrentStorms.json', 'cors'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
 ];
@@ -138,9 +141,9 @@ for (const [label, url, mode] of PROBES) {
    on affiche celles qui matchent Himawari/Thermal/GeoColor (fin des devinettes d'IDs). */
 try {
   const cap = await (await fetch('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml')).text();
-  const ids = [...cap.matchAll(/<ows:Identifier>([^<]*(?:Himawari|Thermal_Anomalies|GeoColor)[^<]*)<\/ows:Identifier>/g)].map(m => m[1]);
+  const ids = [...cap.matchAll(/<ows:Identifier>([^<]*(?:Himawari|Thermal_Anomalies|GeoColor|GLM|Lightning|Aerosol|AOD|SO2|Dust|Smoke)[^<]*)<\/ows:Identifier>/g)].map(m => m[1]);
   const uniq = [...new Set(ids)].slice(0, 40);
-  console.log('\n--- Couches WMTS 3857 réelles (Himawari|Thermal|GeoColor) : ' + uniq.length + ' ---');
+  console.log('\n--- Couches WMTS 3857 réelles (Himawari|Thermal|GeoColor|GLM|Aerosol|SO2…) : ' + uniq.length + ' ---');
   for (const id of uniq) console.log('   · ' + id);
 } catch (e) { console.log('⚠️ GetCapabilities WMTS : ' + (e && e.message ? e.message : e)); }
 
