@@ -862,6 +862,7 @@ async function handleBeatbot(request, url, env) {
   if (!me) { const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256); return J({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }, null, 403); }
   const path = url.pathname;
   if (path === '/__beatbot/health' && request.method === 'GET') return J({ ok: true, relay: 'ready' });
+  if (path.startsWith('/__beatbot/tuya/')) return handleTuya(request, path, env);
   if (path === '/__beatbot/relay' && request.method === 'POST') {
     let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
     if (!beatbotTargetOk(b.url)) return J({ ok: false, reason: 'target_refuse', detail: 'URL cible invalide (HTTPS public uniquement, IP privées interdites).' });
@@ -883,6 +884,136 @@ async function handleBeatbot(request, url, env) {
   return J({ ok: false, reason: 'not_found' });
 }
 
+/* ---- Tuya OpenAPI : contrôle RÉEL du robot piscine via l'écosystème cloud Tuya ----
+   Le robot Beatbot AquaSense 2 Ultra passe par le cloud Tuya (« plug-in » + ID/UUID
+   robot). La capture .har de l'app est bloquée (certificate pinning) ; l'API Tuya, elle,
+   est officielle, documentée, SANS bidouille firmware → garantie intacte. Kevin lie une
+   fois son compte robot à un projet Tuya IoT et colle 2 clés (Access ID + Secret) DANS
+   PoolPilot ; le worker les garde côté serveur (KV ACCOUNTS, préfixe `tuya:`, jamais
+   renvoyées au client), signe chaque requête (HMAC-SHA256, algo Tuya v2) et relaie
+   status/commandes. Admin-gated (handleTuya n'est atteint qu'après adminSession OK).
+   Honnête : on lit/écrit les VRAIS « data points » du robot (batterie, état, mode,
+   marche/arrêt, retour base…). La position live n'est exposée que si le robot publie un
+   DP de position — sinon l'app le dit franchement (aucune invention). */
+async function tuyaSha256Hex(str) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str || ''));
+  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('');
+}
+async function tuyaHmacHex(secret, msg) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const s = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(msg));
+  return [...new Uint8Array(s)].map((x) => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+/* stringToSign Tuya = METHOD \n SHA256(body) \n (headers vides) \n url?query-trié */
+async function tuyaStringToSign(method, pathWithQuery, bodyStr) {
+  return String(method).toUpperCase() + '\n' + (await tuyaSha256Hex(bodyStr || '')) + '\n' + '' + '\n' + pathWithQuery;
+}
+/* sign = HMAC-SHA256( clientId + [access_token] + t + nonce("") + stringToSign , secret ) */
+async function tuyaSign(clientId, secret, token, t, s2s) {
+  return tuyaHmacHex(secret, clientId + (token || '') + t + '' + s2s);
+}
+const TUYA_HOSTS = { eu: 'openapi.tuyaeu.com', us: 'openapi.tuyaus.com', cn: 'openapi.tuyacn.com', in: 'openapi.tuyain.com' };
+async function tuyaCfg(env) { if (!env || !env.ACCOUNTS) return null; try { return JSON.parse((await env.ACCOUNTS.get('tuya:cfg')) || 'null'); } catch { return null; } }
+async function tuyaSaveCfg(env, cfg) { if (env && env.ACCOUNTS) await env.ACCOUNTS.put('tuya:cfg', JSON.stringify(cfg)); }
+async function tuyaMintToken(host, clientId, secret) {
+  const p = '/v1.0/token?grant_type=1', t = Date.now();
+  const sign = await tuyaSign(clientId, secret, '', t, await tuyaStringToSign('GET', p, ''));
+  const r = await fetch('https://' + host + p, { headers: { client_id: clientId, sign, t: String(t), sign_method: 'HMAC-SHA256' } });
+  const j = await r.json().catch(() => ({}));
+  if (!j || j.success !== true || !j.result) return { ok: false, detail: (j && (j.msg || ('code ' + j.code))) || ('HTTP ' + r.status) };
+  return { ok: true, token: j.result.access_token, exp: Date.now() + Math.max(60, (j.result.expire_time || 7200) - 60) * 1000 };
+}
+async function tuyaEnsureToken(env, cfg) {
+  let tok = null; try { tok = JSON.parse((await env.ACCOUNTS.get('tuya:token')) || 'null'); } catch { /* */ }
+  if (tok && tok.token && tok.exp > Date.now()) return tok.token;
+  const m = await tuyaMintToken(cfg.host, cfg.access_id, cfg.access_secret);
+  if (!m.ok) return null;
+  await env.ACCOUNTS.put('tuya:token', JSON.stringify({ token: m.token, exp: m.exp }), { expirationTtl: 7200 });
+  return m.token;
+}
+/* Appel métier signé (status, commandes, découverte…). Retourne {ok, http, result, msg}. */
+async function tuyaBiz(env, cfg, method, pathWithQuery, bodyObj) {
+  const token = await tuyaEnsureToken(env, cfg);
+  if (!token) return { ok: false, reason: 'token_fail', detail: 'Clés Tuya refusées (Access ID/Secret ou région incorrects).' };
+  const bodyStr = bodyObj ? JSON.stringify(bodyObj) : '';
+  const t = Date.now();
+  const sign = await tuyaSign(cfg.access_id, cfg.access_secret, token, t, await tuyaStringToSign(method, pathWithQuery, bodyStr));
+  let r; try {
+    r = await fetch('https://' + cfg.host + pathWithQuery, { method, headers: { client_id: cfg.access_id, access_token: token, sign, t: String(t), sign_method: 'HMAC-SHA256', 'Content-Type': 'application/json' }, body: bodyStr || undefined });
+  } catch (e) { return { ok: false, reason: 'fetch_fail', detail: String((e && e.message) || e).slice(0, 200) }; }
+  const j = await r.json().catch(() => ({}));
+  return { ok: j && j.success === true, http: r.status, result: j && j.result, msg: j && j.msg, code: j && j.code };
+}
+async function handleTuya(request, path, env) {
+  const seg = path.slice('/__beatbot/tuya/'.length);
+  const need = () => J({ ok: false, reason: 'not_linked', detail: 'Robot non lié. Colle tes clés Tuya (Access ID + Secret) dans PoolPilot.' });
+  /* état de liaison (jamais le secret) */
+  if (seg === 'state' && request.method === 'GET') {
+    const c = await tuyaCfg(env);
+    return J({ ok: true, linked: !!c, host: c && c.host, region: c && c.region, device_id: c && c.device_id, id_hint: c && c.access_id ? c.access_id.slice(0, 4) + '…' : null });
+  }
+  /* lier : stocke les clés + teste le token */
+  if (seg === 'link' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    const region = (b.region || 'eu').toLowerCase();
+    const host = TUYA_HOSTS[region] || TUYA_HOSTS.eu;
+    const access_id = String(b.access_id || '').trim(), access_secret = String(b.access_secret || '').trim();
+    if (!access_id || !access_secret) return J({ ok: false, reason: 'missing', detail: 'Access ID et Access Secret requis.' });
+    const m = await tuyaMintToken(host, access_id, access_secret);
+    if (!m.ok) return J({ ok: false, reason: 'auth_fail', detail: m.detail });
+    const cfg = { access_id, access_secret, host, region, device_id: (b.device_id || '').trim() || null };
+    await tuyaSaveCfg(env, cfg);
+    await env.ACCOUNTS.put('tuya:token', JSON.stringify({ token: m.token, exp: m.exp }), { expirationTtl: 7200 });
+    try { await audLog(env, { ev: 'tuya_link', region }); } catch { /* */ }
+    return J({ ok: true, linked: true, region });
+  }
+  const cfg = await tuyaCfg(env);
+  if (!cfg) return need();
+  /* découverte des robots liés au projet Tuya */
+  if (seg === 'devices' && request.method === 'GET') {
+    const r = await tuyaBiz(env, cfg, 'GET', '/v1.0/iot-01/associated-users/devices', null);
+    if (!r.ok) return J({ ok: false, reason: 'tuya_error', detail: r.detail || r.msg || ('code ' + r.code) });
+    const devs = ((r.result && r.result.devices) || []).map((d) => ({ id: d.id, name: d.name, category: d.category, product_name: d.product_name, online: d.online }));
+    return J({ ok: true, devices: devs });
+  }
+  /* choisir le robot actif */
+  if (seg === 'select' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    const id = String(b.device_id || '').trim(); if (!id) return J({ ok: false, reason: 'missing' });
+    cfg.device_id = id; await tuyaSaveCfg(env, cfg);
+    return J({ ok: true, device_id: id });
+  }
+  if (seg === 'unlink' && request.method === 'POST') {
+    try { await env.ACCOUNTS.delete('tuya:cfg'); await env.ACCOUNTS.delete('tuya:token'); } catch { /* */ }
+    return J({ ok: true, linked: false });
+  }
+  /* les routes suivantes ont besoin d'un robot choisi */
+  if (!cfg.device_id) return J({ ok: false, reason: 'no_device', detail: 'Choisis d\'abord ton robot (découverte).' });
+  const idp = encodeURIComponent(cfg.device_id);
+  if (seg === 'status' && request.method === 'GET') {
+    const info = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp, null);
+    const st = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/status', null);
+    if (!st.ok && !info.ok) return J({ ok: false, reason: 'tuya_error', detail: st.detail || st.msg || info.msg || ('code ' + st.code) });
+    return J({ ok: true, online: info.result && info.result.online, name: info.result && info.result.name, status: st.result || [] });
+  }
+  if (seg === 'functions' && request.method === 'GET') {
+    const r = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/functions', null);
+    if (!r.ok) return J({ ok: false, reason: 'tuya_error', detail: r.detail || r.msg || ('code ' + r.code) });
+    return J({ ok: true, functions: (r.result && r.result.functions) || [] });
+  }
+  if (seg === 'command' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    const cmds = Array.isArray(b.commands) ? b.commands : null;
+    if (!cmds || !cmds.length) return J({ ok: false, reason: 'missing', detail: 'commands[] requis.' });
+    const safe = cmds.filter((c) => c && typeof c.code === 'string').map((c) => ({ code: c.code, value: c.value }));
+    const r = await tuyaBiz(env, cfg, 'POST', '/v1.0/devices/' + idp + '/commands', { commands: safe });
+    try { await audLog(env, { ev: 'tuya_command', codes: safe.map((c) => c.code).join(',') }); } catch { /* */ }
+    if (!r.ok) return J({ ok: false, reason: 'tuya_error', detail: r.detail || r.msg || ('code ' + r.code) });
+    return J({ ok: true, sent: safe });
+  }
+  return J({ ok: false, reason: 'not_found' });
+}
+
 /* Grant admin MACHINE : produit le même jeton signé que /__admin/login, mais à
    partir du SECRET SSO (pas du code PIN). Sert à l'agent de contrôle GitHub Actions
    pour s'authentifier en admin et vérifier le bot À LA PLACE de Kevin, sans jamais
@@ -891,4 +1022,4 @@ async function handleBeatbot(request, url, env) {
 async function adminGrant(secret) { return ssoSign(secret, '__kdmc_admin__', 'admin', 1); }
 
 /* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
-export { enrich, adminGrant, beatbotTargetOk };
+export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex };
