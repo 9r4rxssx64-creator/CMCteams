@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.5.0 -->
+<!-- v0.6.0 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -139,7 +139,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.5.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.6.0" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -147,7 +147,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.5.0";
+var APP_VER="v0.6.0";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -173,7 +173,7 @@ var cfg=Object.assign({
   /* réglages performance */
   env:"peu",usage:"moyenne",debris:"fines",focus:"equilibre",batteryMin:180
 },lg("cfg",{}));
-var pool=Object.assign({L:6.85,W:4.10,shape:"bean",preset:"celine7",depthShallow:1.1,depthDeep:1.7,volOfficial:0,markers:[]},lg("pool",{}));
+var pool=Object.assign({L:6.85,W:4.10,shape:"bean",preset:"celine7",depthShallow:1.20,depthDeep:2.20,depthProfile:"fosse",volOfficial:0,markers:[]},lg("pool",{}));
 /* Migration v0.5 : cotes officielles Waterair Céline 07 (6,85 x 4,10 - waterair.com) + escalier roman lobe avant-droit (photo Kevin) */
 (function(){
   if(pool._v5)return;
@@ -183,6 +183,14 @@ var pool=Object.assign({L:6.85,W:4.10,shape:"bean",preset:"celine7",depthShallow
     pool.markers.push({id:"stairs_roman",type:"escalier",x:0.80,y:0.55});
   }
   pool._v5=1;ls("pool",pool);
+})();
+/* Migration v0.6 : profondeurs réelles Kevin (petit bain ~1,20 / fosse centrale ~2,20) */
+(function(){
+  if(pool._v6)return;
+  if(pool.depthShallow===1.1||pool.depthShallow==null)pool.depthShallow=1.20;
+  if(pool.depthDeep===1.7||pool.depthDeep==null)pool.depthDeep=2.20;
+  if(!pool.depthProfile)pool.depthProfile="fosse";
+  pool._v6=1;ls("pool",pool);
 })();
 var sessions=lg("sessions",[]);
 var plan=lg("plan",{mode:"Standard",generatedAt:0});
@@ -216,7 +224,12 @@ function poolAreaM2(){return polyArea(poolPoly())*pool.L*pool.W}
 function worldPerimeter(){var poly=poolPoly(),per=0;for(var i=0;i<poly.length;i++){var a=poly[i],b=poly[(i+1)%poly.length];per+=Math.hypot((a.x-b.x)*pool.L,(a.y-b.y)*pool.W)}return per}
 function depthShallow(){return +pool.depthShallow||1.1}
 function depthDeep(){return +pool.depthDeep||1.7}
-function avgDepth(){return (depthShallow()+depthDeep())/2}
+function avgDepth(){
+  if(pool.depthProfile==="pente")return (depthShallow()+depthDeep())/2;
+  var poly=poolPoly(),sum=0,n=0;
+  for(var y=0;y<20;y++)for(var x=0;x<30;x++){var nx=(x+0.5)/30,ny=(y+0.5)/20;if(!pointInPoly(nx,ny,poly))continue;sum+=-floorDepthAt(nx,ny);n++}
+  return n?sum/n:(depthShallow()+depthDeep())/2;
+}
 function volumeM3(){return poolAreaM2()*avgDepth()}
 function wallAreaM2(){return worldPerimeter()*avgDepth()}
 function floorSlopeLen(){return Math.hypot(pool.L,depthDeep()-depthShallow())}
@@ -316,8 +329,14 @@ function vBassin(){
       field("Largeur max (m)","poolW",pool.W,"number","0.05")+
     '</div>'+
     '<div class="row" style="margin-top:8px">'+
+      '<div><label>Profil du fond</label><select id="poolProfile">'+
+        '<option value="fosse" '+(pool.depthProfile!=="pente"?"selected":"")+'>Fosse centrale</option>'+
+        '<option value="pente" '+(pool.depthProfile==="pente"?"selected":"")+'>Pente régulière</option>'+
+      '</select></div>'+
+    '</div>'+
+    '<div class="row" style="margin-top:8px">'+
       field("Prof. petit bain (m)","poolPB",depthShallow(),"number","0.05")+
-      field("Prof. grand bain (m)","poolGB",depthDeep(),"number","0.05")+
+      field((pool.depthProfile==="pente"?"Prof. grand bain (m)":"Prof. fosse (m)"),"poolGB",depthDeep(),"number","0.05")+
     '</div>'+
     '<div class="row" style="margin-top:8px">'+
       field("Volume officiel Waterair (m³) — optionnel","poolVol",(pool.volOfficial||""),"number","0.5")+
@@ -721,7 +740,14 @@ function drawTrend(){
 
 /* ============ VUE 3D (canvas, projection maison — pas de WebGL) ============ */
 var D3={raf:0,t0:0,prog:0,playing:true,yaw:-0.7,pitch:1.02,zoom:1,drag:null,pointers:{},pinch:0,path:null};
-function floorDepth3(nx){return -(depthShallow()+(depthDeep()-depthShallow())*nx)}
+function floorDepthAt(nx,ny){
+  var s=depthShallow(),d=depthDeep();
+  if(pool.depthProfile==="pente")return -(s+(d-s)*nx);
+  var c=polyCentroid(poolPoly());
+  var r=Math.min(1,Math.hypot(nx-c.x,ny-c.y)/0.42);
+  var f=1-r;f=f*f*(3-2*f);            /* smoothstep : 1 au centre (fosse), 0 au bord */
+  return -(s+(d-s)*f);
+}
 function worldPt3(nx,ny,z){return {x:(nx-0.5)*pool.L,y:(ny-0.5)*pool.W,z:z}}
 function proj3(w){
   var cy=Math.cos(D3.yaw),sy=Math.sin(D3.yaw);
@@ -765,43 +791,44 @@ function draw3D(){
   var poly=poolPoly();
   /* fit: projeter contour haut + fond → bbox → scale/centre */
   var proj=[],i;
-  for(i=0;i<poly.length;i++){proj.push(proj3(worldPt3(poly[i].x,poly[i].y,0)));proj.push(proj3(worldPt3(poly[i].x,poly[i].y,floorDepth3(poly[i].x))))}
+  for(i=0;i<poly.length;i++){proj.push(proj3(worldPt3(poly[i].x,poly[i].y,0)));proj.push(proj3(worldPt3(poly[i].x,poly[i].y,floorDepthAt(poly[i].x,poly[i].y))))}
   var minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;proj.forEach(function(p){minx=Math.min(minx,p.x);maxx=Math.max(maxx,p.x);miny=Math.min(miny,p.y);maxy=Math.max(maxy,p.y)});
   var scale=0.8*Math.min(W/(maxx-minx||1),H/(maxy-miny||1))*D3.zoom;
   var cx=W/2-(minx+maxx)/2*scale, cy=H/2-(miny+maxy)/2*scale;
   function S(nx,ny,z){var p=proj3(worldPt3(nx,ny,z));return {x:cx+p.x*scale,y:cy+p.y*scale}}
   function tp(pts,close){g.beginPath();pts.forEach(function(p,k){k?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y)});if(close!==false)g.closePath()}
   /* FOND */
-  tp(poly.map(function(p){return S(p.x,p.y,floorDepth3(p.x))}));
+  tp(poly.map(function(p){return S(p.x,p.y,floorDepthAt(p.x,p.y))}));
   var fg=g.createLinearGradient(0,cy-scale,0,cy+scale);fg.addColorStop(0,"#0a3a58");fg.addColorStop(1,"#062338");g.fillStyle=fg;g.fill();
   /* grille fond */
   g.strokeStyle="rgba(120,200,255,.12)";g.lineWidth=1;
-  for(var gx=0;gx<=10;gx++){g.beginPath();for(var t=0;t<=20;t++){var ny=t/20,nx=gx/10;var s=S(nx,ny,floorDepth3(nx));t?g.lineTo(s.x,s.y):g.moveTo(s.x,s.y)}g.stroke()}
+  for(var gx=0;gx<=10;gx++){g.beginPath();for(var t=0;t<=20;t++){var ny=t/20,nx=gx/10;var s=S(nx,ny,floorDepthAt(nx,ny));t?g.lineTo(s.x,s.y):g.moveTo(s.x,s.y)}g.stroke()}
   /* TRAÎNÉE robot (nettoyé) */
-  if(D3.path&&D3.path.length){var ci=Math.floor(D3.prog*D3.path.length);g.strokeStyle="rgba(120,240,200,.45)";g.lineWidth=Math.max(6,scale*0.42);g.lineJoin="round";g.lineCap="round";g.beginPath();for(i=0;i<=ci;i++){var pt=D3.path[i];var s=S(pt.x,pt.y,floorDepth3(pt.x));i?g.lineTo(s.x,s.y):g.moveTo(s.x,s.y)}g.stroke()}
+  if(D3.path&&D3.path.length){var ci=Math.floor(D3.prog*D3.path.length);g.strokeStyle="rgba(120,240,200,.45)";g.lineWidth=Math.max(6,scale*0.42);g.lineJoin="round";g.lineCap="round";g.beginPath();for(i=0;i<=ci;i++){var pt=D3.path[i];var s=S(pt.x,pt.y,floorDepthAt(pt.x,pt.y));i?g.lineTo(s.x,s.y):g.moveTo(s.x,s.y)}g.stroke()}
   /* MARQUEURS (au fond) */
-  pool.markers.forEach(function(m){var z=floorDepth3(m.x);var sf=S(m.x,m.y,z),ss=S(m.x,m.y,0);
+  pool.markers.forEach(function(m){var z=floorDepthAt(m.x,m.y);var sf=S(m.x,m.y,z),ss=S(m.x,m.y,0);
     g.strokeStyle=markerColor(m.type);g.lineWidth=2;g.beginPath();g.moveTo(sf.x,sf.y);g.lineTo(ss.x,ss.y);g.stroke();
-    if(m.type==="escalier"){for(var st=0;st<3;st++){drawBox3D(g,S,m.x,m.y,0.5,depthShallow()*0.33*(st+1),floorDepth3(m.x),"rgba(196,107,255,.7)")}}
+    if(m.type==="escalier"){for(var st=0;st<3;st++){drawBox3D(g,S,m.x,m.y,0.5,depthShallow()*0.33*(st+1),floorDepthAt(m.x,m.y),"rgba(196,107,255,.7)")}}
   });
   /* PAROIS (verre translucide) */
   g.lineWidth=1;g.strokeStyle="rgba(120,200,255,.25)";
   for(i=0;i<poly.length;i++){var a=poly[i],b=poly[(i+1)%poly.length];
-    tp([S(a.x,a.y,0),S(b.x,b.y,0),S(b.x,b.y,floorDepth3(b.x)),S(a.x,a.y,floorDepth3(a.x))]);
+    tp([S(a.x,a.y,0),S(b.x,b.y,0),S(b.x,b.y,floorDepthAt(b.x,b.y)),S(a.x,a.y,floorDepthAt(a.x,a.y))]);
     g.fillStyle="rgba(45,123,214,.16)";g.fill();g.stroke();
   }
   /* SURFACE EAU */
   tp(poly.map(function(p){return S(p.x,p.y,0)}));g.fillStyle="rgba(80,190,255,.22)";g.fill();g.strokeStyle="#5bc8ff";g.lineWidth=2;g.stroke();
   /* ROBOT */
-  if(D3.path&&D3.path.length){var idx=Math.min(D3.path.length-1,Math.floor(D3.prog*D3.path.length));var rp=D3.path[idx];drawBox3D(g,S,rp.x,rp.y,0.42,0.16,floorDepth3(rp.x),"#39c2ff",true)}
+  if(D3.path&&D3.path.length){var idx=Math.min(D3.path.length-1,Math.floor(D3.prog*D3.path.length));var rp=D3.path[idx];drawBox3D(g,S,rp.x,rp.y,0.42,0.16,floorDepthAt(rp.x,rp.y),"#39c2ff",true)}
   /* MARQUEURS icônes (au-dessus de l'eau, lisibles) */
   pool.markers.forEach(function(m){var ss=S(m.x,m.y,0.05);g.font="15px -apple-system";g.textAlign="center";g.textBaseline="middle";g.fillText(markerIcon(m.type),ss.x,ss.y-6)});
   /* COTES */
   g.font="12px -apple-system";g.textAlign="center";g.textBaseline="middle";
   dimLine(g,S(0,1,0),S(1,1,0),pool.L.toFixed(2)+" m");
   dimLine(g,S(0,0,0),S(0,1,0),pool.W.toFixed(2)+" m");
-  var dS=S(0,0.5,floorDepth3(0)*0.5),dD=S(1,0.5,floorDepth3(1)*0.5);
-  g.fillStyle="#f6d68a";g.fillText("PB "+depthShallow().toFixed(2)+" m",dS.x,dS.y);g.fillText("GB "+depthDeep().toFixed(2)+" m",dD.x,dD.y);
+  var cC=polyCentroid(poolPoly());
+  var dS=S(0.14,0.5,floorDepthAt(0.14,0.5)*0.5),dD=S(cC.x,cC.y,floorDepthAt(cC.x,cC.y)*0.55);
+  g.fillStyle="#f6d68a";g.fillText("PB "+depthShallow().toFixed(2)+" m",dS.x,dS.y);g.fillText((pool.depthProfile==="pente"?"GB ":"Fosse ")+depthDeep().toFixed(2)+" m",dD.x,dD.y);
   /* légende chiffres */
   g.textAlign="left";g.fillStyle="#bfe3fb";g.font="11px -apple-system";
   g.fillText("Surface "+poolAreaM2().toFixed(1)+" m² · Volume "+(pool.volOfficial>0?(+pool.volOfficial).toFixed(1)+" m³ (officiel)":"~"+volumeM3().toFixed(1)+" m³")+" · Périmètre "+worldPerimeter().toFixed(1)+" m",12,H-10);
@@ -839,6 +866,7 @@ function render(){
       $("#poolW").addEventListener("change",function(){pool.W=Math.max(1,+this.value||4);save();render()});
       var pb=$("#poolPB");if(pb)pb.addEventListener("change",function(){pool.depthShallow=Math.max(0.3,+this.value||1.1);save();render()});
       var gb=$("#poolGB");if(gb)gb.addEventListener("change",function(){pool.depthDeep=Math.max(0.3,+this.value||1.7);save();render()});
+      var pf=$("#poolProfile");if(pf)pf.addEventListener("change",function(){pool.depthProfile=this.value;save();render()});
       var pv=$("#poolVol");if(pv)pv.addEventListener("change",function(){pool.volOfficial=Math.max(0,+this.value||0);save();render()});
     },30);
   }
