@@ -109,6 +109,9 @@ const PROBES = [
   ['Open-Meteo Marine vagues (CORS)', 'https://marine-api.open-meteo.com/v1/marine?latitude=43.5&longitude=7.6&current=wave_height', 'cors'],
   /* Exploration cycle suivant : cyclones NHC (trajectoires) — le navigateur a besoin du CORS. */
   ['NOAA NHC cyclones actifs (CORS)', 'https://www.nhc.noaa.gov/CurrentStorms.json', 'cors'],
+  /* v2.24 — actus live (points chauds carte + images d'articles guerres/crises) */
+  ['GDELT GEO points chauds actus (CORS)', 'https://api.gdeltproject.org/api/v2/geo/geo?query=war&mode=pointdata&format=geojson&timespan=60m', 'cors'],
+  ['GDELT DOC images d\'articles (CORS)', 'https://api.gdeltproject.org/api/v2/doc/doc?query=breaking%20sourcelang:eng&mode=artlist&maxrecords=3&format=json&timespan=3h', 'cors'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
 ];
