@@ -70,7 +70,7 @@ function renderUpgradePlansModal(service: string): string {
     <div class="ax-modal-sheet" role="dialog" aria-label="Plans ${service}">
       <header class="ax-modal-head">
         <h2>Plans ${service.toUpperCase()}</h2>
-        <button type="button" class="ax-btn-close" data-action="close-modal">✕</button>
+        <button type="button" class="ax-btn-close" data-action="close-modal" aria-label="Fermer">✕</button>
       </header>
       ${recoBlock}
       <div class="ax-plans-list">${plansHtml}</div>

@@ -34,7 +34,7 @@ export function render(rootEl: HTMLElement): void {
               ${slidesState.length > 1 ? `<button data-rm="${i}" style="padding:4px 10px;background:#ef4444;color:#fff;border:0;border-radius:4px;font-size:12px;cursor:pointer">🗑</button>` : ''}
             </div>
             <input data-slide-title="${i}" value="${escapeHtml(s.title)}" placeholder="Titre slide" style="width:100%;padding:8px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:14px;margin-bottom:6px">
-            <textarea data-slide-content="${i}" rows="3" placeholder="Contenu (bullets)" style="width:100%;padding:8px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:13px;resize:vertical">${escapeHtml(s.content)}</textarea>
+            <textarea data-slide-content="${i}" rows="3" placeholder="Contenu (bullets)" style="width:100%;padding:8px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:16px;resize:vertical">${escapeHtml(s.content)}</textarea>
           </div>`,
       )
       .join('');

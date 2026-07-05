@@ -78,8 +78,29 @@
 .ax-btn-icon {
   width: var(--ax-touch-min);
   height: var(--ax-touch-min);
+  /* v13.4.344 audit UX : min-width/height 44px — sans ça, un parent flex (topbar)
+   * écrasait les icônes 📜🗑☰ à 24px de large (< cible tactile Apple HIG 44px). */
+  min-width: var(--ax-touch-min);
+  min-height: var(--ax-touch-min);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border-radius: var(--ax-r-full);
+}
+
+/* v13.4.344 audit UX : plancher tactile Apple HIG 44px sur les boutons (les cibles
+ * < 36px repérées dans les tables admin denses avaient font-size:10-11px sans
+ * min-height). N'affecte pas la largeur (texte libre). Exceptions : liens inline
+ * markdown, chips de nav scrollables, badge version → gardent leur flow. */
+button, [role="button"], .ax-btn, .ax-btn-sm {
+  min-height: 44px;
+}
+.ax-md-body a, .ax-message a, .ax-msg-body a, .ax-result a,
+.ax-tabs a, .ax-tabs button, .ax-nav-item, .ax-chip, .ax-badge,
+.ax-version-badge, .ax-md-body button {
+  min-height: 0;
 }
 
 /* ───────── Forms ───────── */

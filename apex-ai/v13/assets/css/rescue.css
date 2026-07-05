@@ -295,6 +295,16 @@ form input[type="text"] {
     min-height: 36px !important;
     padding: 4px !important;
   }
+  /* v13.4.344 audit UX : les icônes du TOPBAR (📜🗑☰) étaient écrasées à 24px de
+   * large par le flex du header (< cible Apple HIG). Header-scoped = prioritaire. */
+  .ax-chat-header .ax-btn-icon {
+    min-width: 44px !important;
+    width: 44px !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 /* v13.4.94 — FIX iOS Safari auto-zoom triple stack (Kevin "Zoom tjs UX") :

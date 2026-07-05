@@ -27,7 +27,7 @@ export function render(rootEl: HTMLElement): void {
 
       <label class="ax-gs-473">
         <span class="ax-gs-15">Données (CSV, 1ère ligne = headers)</span>
-        <textarea id="xlsx-data" rows="10" placeholder="Catégorie,Recettes,Dépenses&#10;Salaire,4500,0&#10;Loyer,0,1200&#10;Courses,0,400" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:13px;font-family:monospace;resize:vertical">Catégorie,Recettes,Dépenses
+        <textarea id="xlsx-data" rows="10" placeholder="Catégorie,Recettes,Dépenses&#10;Salaire,4500,0&#10;Loyer,0,1200&#10;Courses,0,400" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:16px;font-family:monospace;resize:vertical">Catégorie,Recettes,Dépenses
 Salaire,4500,0
 Loyer,0,1200
 Courses,0,400</textarea>
