@@ -51,28 +51,39 @@ async function collectShips(key, ms, cap) {
   const ws = resp.webSocket;
   if (!ws) throw new Error("aisstream: pas de webSocket dans la réponse");
   ws.accept();
-  ws.send(JSON.stringify({ APIKey: key, BoundingBoxes: [[[-90, -180], [90, 180]]], FilterMessageTypes: ["PositionReport"] }));
+  // APIKey nettoyée (un espace/retour collé dans le secret casserait l'abonnement).
+  // BoundingBoxes = monde entier, chaque box = [[latSW,lonSW],[latNE,lonNE]] (format aisstream).
+  ws.send(JSON.stringify({ APIKey: String(key).trim(), BoundingBoxes: [[[-90, -180], [90, 180]]] }));
   const ships = new Map();
+  const debug = { msgs: 0, firstRaw: "", closeCode: null, closeReason: "" };
   await new Promise((resolve) => {
     let done = false;
     const finish = () => { if (done) return; done = true; try { ws.close(); } catch (e) {} resolve(); };
     const timer = setTimeout(finish, ms);
     ws.addEventListener("message", (ev) => {
       try {
-        const m = JSON.parse(typeof ev.data === "string" ? ev.data : "");
-        const pr = m && m.Message && m.Message.PositionReport;
+        debug.msgs++;
+        const txt = typeof ev.data === "string" ? ev.data : "";
+        if (!debug.firstRaw) debug.firstRaw = txt.slice(0, 220); // 1er message brut (diagnostic)
+        const m = JSON.parse(txt);
+        // aisstream : MetaData.{MMSI,ShipName,latitude,longitude} + Message.PositionReport.{Latitude,Longitude,Sog,Cog}
         const meta = m && m.MetaData;
-        if (!pr || !meta) return;
-        const mmsi = String(meta.MMSI || pr.UserID || "");
+        const pr = m && m.Message && (m.Message.PositionReport || m.Message.StandardClassBPositionReport);
+        const lat = pr ? (pr.Latitude != null ? pr.Latitude : (meta && meta.latitude)) : (meta && meta.latitude);
+        const lon = pr ? (pr.Longitude != null ? pr.Longitude : (meta && meta.longitude)) : (meta && meta.longitude);
+        if (!meta || lat == null || lon == null) return;
+        const mmsi = String(meta.MMSI || "");
         if (!mmsi) return;
-        ships.set(mmsi, { lat: pr.Latitude, lon: pr.Longitude, sog: pr.Sog, cog: pr.Cog, name: (meta.ShipName || "").trim() });
+        ships.set(mmsi, { lat, lon, sog: pr && pr.Sog, cog: pr && pr.Cog, name: (meta.ShipName || "").trim() });
         if (ships.size >= cap) { clearTimeout(timer); finish(); }
       } catch (e) {}
     });
-    ws.addEventListener("close", () => { clearTimeout(timer); finish(); });
+    ws.addEventListener("close", (ev) => { debug.closeCode = ev && ev.code; debug.closeReason = (ev && ev.reason) || ""; clearTimeout(timer); finish(); });
     ws.addEventListener("error", () => { clearTimeout(timer); finish(); });
   });
-  return [...ships.entries()].map(([mmsi, s]) => Object.assign({ mmsi }, s));
+  const out = [...ships.entries()].map(([mmsi, s]) => Object.assign({ mmsi }, s));
+  out._debug = debug;
+  return out;
 }
 
 export default {
@@ -102,7 +113,9 @@ export default {
           feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [s.lon, s.lat] }, properties: { mmsi: s.mmsi, sog: s.sog, cog: s.cog, name: s.name } });
           if (feats.length >= limit) break;
         }
-        return json({ type: "FeatureCollection", features: feats, count: feats.length }, origin);
+        // Diagnostic si 0 navire (msgs reçus, 1er message brut, code de fermeture) — jamais la clé.
+        const debug = feats.length === 0 ? (raw._debug || null) : undefined;
+        return json({ type: "FeatureCollection", features: feats, count: feats.length, debug }, origin);
       } catch (e) {
         return json({ type: "FeatureCollection", features: [], note: "aisstream indisponible: " + String((e && e.message) || e) }, origin);
       }
