@@ -32,8 +32,14 @@ globalThis.fetch = async (input, init) => {
     gqlCalls.push(q);
     const j = (d) => new Response(JSON.stringify(d), { headers: { 'content-type': 'application/json' } });
     if (q.includes('projectToken')) return j({ data: { projectToken: { projectId: 'P1', environmentId: 'E1' } } });
-    if (q.includes('project(id')) return j({ data: { project: { name: 'CMCteams', services: { edges: [{ node: { id: 'S0', name: 'CMCteams' } }, { node: { id: 'S1', name: 'crypto-bot' } }] } } } });
+    if (q.includes('project(id')) return j({ data: { project: { name: 'CMCteams', services: { edges: [{ node: { id: 'S0', name: 'CMCteams' } }, { node: { id: 'S1', name: 'crypto-bot' } }, { node: { id: 'S2', name: 'crypto-bot-p1' } }] } } } });
     if (q.includes('deployments(')) return j({ data: { deployments: { edges: [{ node: { id: 'D1', status: 'SUCCESS', createdAt: '2026-07-03T00:00:00Z' } }] } } });
+    /* /__bot/fleet lit limit: 1000 (avec trades) ; /__bot/status lit limit: 80 (ligne HOLD). */
+    if (q.includes('deploymentLogs') && q.includes('limit: 1000')) return j({ data: { deploymentLogs: [
+      { message: '🟢 BTC/USDT ACHAT qty=0.5 @ 100.00 (stop 90.00)' },
+      { message: '🔻 BTC/USDT VENTE (signal) qty=0.5 @ 110.00' },
+      { message: 'HOLD | prix=61500.00 | equity=10005.00 | pas de signal' },
+    ] } });
     if (q.includes('deploymentLogs')) return j({ data: { deploymentLogs: [{ timestamp: '2026-07-03T00:01:00Z', message: 'HOLD | prix=61500.00 | equity=71500.00 | pas de signal' }] } });
     if (q.includes('variables(')) return j({ data: { variables: { SYMBOLS: 'BTC/USDT,ETH/USDT', TIMEFRAME: '15m', RISK_PER_TRADE_PCT: '1', MAX_POSITION_PCT: '25', TESTNET: 'true' } } });
     if (q.includes('variableUpsert')) return j({ data: { variableUpsert: true } });
@@ -140,6 +146,21 @@ ok(r.status === 403, 'SSO forgé (mauvais secret) → 403');
 /* 16) Route inconnue → not_found */
 r = await mod.fetch(REQ({ path: '/__bot/xyz', headers: H }), env);
 ok((await r.json()).reason === 'not_found', 'route inconnue → not_found');
+
+/* 17) FLOTTE sans grant → 403 (fail-closed, comme le reste de /__bot) */
+r = await mod.fetch(REQ({ path: '/__bot/fleet' }), env);
+ok(r.status === 403, '/__bot/fleet sans grant → 403');
+
+/* 18) FLOTTE avec grant : 6 entrées, trades FIFO comptés, absents honnêtes */
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+j = await r.json();
+ok(j.ok === true && Array.isArray(j.bots) && j.bots.length === 6, 'fleet → 6 bots listés');
+const alive = (j.bots || []).filter((b) => b.status === 'SUCCESS');
+const absent = (j.bots || []).filter((b) => b.status === 'absent');
+ok(alive.length === 2 && absent.length === 4, 'fleet → 2 déployés (crypto-bot, p1) + 4 absents (honnête)');
+ok(alive.every((b) => b.buys === 1 && b.sells === 1 && b.wins === 1 && b.losses === 0), 'fleet → trades FIFO comptés (1 achat, 1 vente gagnante)');
+ok(alive.every((b) => b.net === 5 && b.equity === 10005), 'fleet → net FIFO = 0.5×(110−100) = 5 $ + équité extraite');
+ok(j.bots[0].net === 5 && j.bots[5].status === 'absent', 'fleet → trié par net, absents en dernier');
 
 globalThis.fetch = realFetch;
 console.log(`bot.test.mjs : ${pass} OK / ${fail} FAIL`);
