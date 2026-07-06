@@ -84,6 +84,8 @@ class Config:
     du_trend_period: int     # EMA de tendance de fond (stratégie dipup)
     du_rsi_buy: float        # RSI sous lequel on achète le creux (dipup)
     du_rsi_sell: float       # RSI au-dessus duquel on encaisse le rebond (dipup)
+    paper: bool              # True = portefeuille VIRTUEL (aucune clé requise)
+    bot_name: str            # étiquette du bot dans les logs (flotte multi-bots)
 
     @staticmethod
     def load() -> "Config":
@@ -116,6 +118,8 @@ class Config:
             du_trend_period=_i("DU_TREND_PERIOD", 50),
             du_rsi_buy=_f("DU_RSI_BUY", 35.0),
             du_rsi_sell=_f("DU_RSI_SELL", 60.0),
+            paper=_b("PAPER", False),
+            bot_name=os.getenv("BOT_NAME", "bot"),
         )
         cfg.validate()
         return cfg

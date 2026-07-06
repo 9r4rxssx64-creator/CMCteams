@@ -211,6 +211,38 @@ from indicators import sma, rolling_std  # noqa: E402
 ok(sma([2, 4, 6], 3)[-1] == 4.0, "sma calcule la moyenne")
 ok(rolling_std([2, 2, 2], 3)[-1] == 0.0, "rolling_std nul sur série constante")
 
+# ---- 5i) Mode PAPIER : portefeuille virtuel (aucune clé requise) ----
+c_pap = cfg_with(SYMBOLS="BTC/USDT", PAPER="true", BOT_NAME="p1")
+ok(c_pap.paper is True and c_pap.bot_name == "p1", "PAPER + BOT_NAME lus depuis l'env")
+from paper import PaperExchange  # noqa: E402
+pe = PaperExchange.__new__(PaperExchange)  # sans réseau (pas de load_markets)
+pe.cfg = c_pap
+pe.wallet = {"USDT": 1000.0}
+pe.last_price = lambda s: 100.0
+o = pe.market_buy("BTC/USDT", 2.0)
+ok(o["filled"] == 2.0 and abs(pe.wallet["USDT"] - (1000 - 2 * 100 * 1.001)) < 1e-6,
+   "achat papier débite le cash + frais 0.1%")
+ok(pe.base_balance("BTC/USDT") == 2.0, "achat papier crédite la crypto")
+o2 = pe.market_buy("BTC/USDT", 100.0)  # bien plus que le cash restant
+ok(o2["filled"] * 100 * 1.001 <= 1000 - 2 * 100 * 1.001 + 1e-6,
+   "achat papier borné au cash virtuel")
+q_before = pe.quote_balance()
+o3 = pe.market_sell("BTC/USDT", 999.0)  # plus que détenu -> vend tout
+ok(pe.base_balance("BTC/USDT") == 0.0 and pe.quote_balance() > q_before,
+   "vente papier borne à la quantité détenue + crédite le cash")
+try:
+    pe.market_sell("BTC/USDT", 1.0)
+    ok(False, "vendre sans rien détenir doit lever")
+except ValueError:
+    ok(True, "vente papier sans position -> erreur claire")
+ok(abs(pe.equity_in_quote({"BTC/USDT": 100.0}) - pe.quote_balance()) < 1e-9,
+   "équité papier = cash quand plus de crypto")
+
+# ---- 5j) STRATEGY=dipup -> DipUptrendStrategy ----
+from strategy import DipUptrendStrategy  # noqa: E402
+ok(isinstance(make_strategy(cfg_with(STRATEGY="dipup")), DipUptrendStrategy),
+   "STRATEGY=dipup -> DipUptrendStrategy")
+
 # ---- 6) Kill = solde TOUT ----
 st6 = State()
 st6.pos("BTC/USDT").in_position = True; st6.pos("BTC/USDT").qty = 1
