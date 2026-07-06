@@ -770,7 +770,7 @@
         "avg": 15
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "tech-003",
