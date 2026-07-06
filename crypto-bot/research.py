@@ -26,7 +26,9 @@ from risk import RiskManager
 from strategy import DipUptrendStrategy, MeanReversionStrategy, Strategy
 
 FEE = 0.001
-BASE = os.getenv("KLINES_BASE", "https://api.binance.com")
+# data-api.binance.vision = miroir PUBLIC officiel des données de marché,
+# NON géo-bloqué (api.binance.com renvoie HTTP 451 depuis les runners GitHub US).
+BASE = os.getenv("KLINES_BASE", "https://data-api.binance.vision")
 
 
 def fetch_klines(symbol: str, interval: str, total: int = 3000):

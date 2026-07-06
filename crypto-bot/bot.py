@@ -96,17 +96,23 @@ def _reconcile_positions(ex: Exchange, strat: Strategy, risk: RiskManager,
 
 def run(live: bool) -> None:
     cfg = Config.load()
-    cfg.require_keys()
+    if not cfg.paper:
+        cfg.require_keys()  # le mode papier n'a besoin d'AUCUNE clé
 
-    if not cfg.testnet and not live:
+    if not cfg.testnet and not live and not cfg.paper:
         raise SystemExit(
             "⛔ TESTNET=false mais argent réel non confirmé. "
             "Pour trader du VRAI argent : --live OU BOT_LIVE=true. "
             "(Tant que tu n'as pas validé en testnet, laisse TESTNET=true.)"
         )
 
-    mode = "🧪 TESTNET (faux argent)" if cfg.testnet else "💶 ARGENT RÉEL"
-    ex = Exchange(cfg)
+    if cfg.paper:
+        from paper import PaperExchange
+        mode = f"📝 PAPIER [{cfg.bot_name}] (simulation, portefeuille virtuel 10000 USDT)"
+        ex = PaperExchange(cfg)
+    else:
+        mode = "🧪 TESTNET (faux argent)" if cfg.testnet else "💶 ARGENT RÉEL"
+        ex = Exchange(cfg)
     strat = make_strategy(cfg)
     risk = RiskManager(cfg)
     state = State.load()
