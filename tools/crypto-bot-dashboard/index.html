@@ -65,7 +65,7 @@
 <body>
 <div class="wrap">
   <h1>🤖 Bot Crypto <span id="modePill" class="pill p-test hid"></span></h1>
-  <div class="sub">Binance · service Railway <b>crypto-bot</b> · bot.kd-mc.com</div>
+  <div class="sub">Binance · Railway · <b>6 bots</b> (1 testnet + 5 papier) · bot.kd-mc.com</div>
 
   <!-- Code admin (1ère fois par appareil) -->
   <div id="login" class="card hid">
@@ -96,6 +96,13 @@
     <div class="card">
       <h2>💹 Par crypto (en direct)</h2>
       <div class="coins" id="coins"><div class="sub">Chargement…</div></div>
+    </div>
+
+    <!-- Flotte : classement des 6 bots -->
+    <div class="card">
+      <h2>🏁 Mes 6 bots — classement</h2>
+      <div class="sub" style="margin:-4px 0 8px">1 bot testnet + 5 bots papier (10 000 faux $ chacun, stratégies différentes). Net = gains/pertes déjà encaissés — faux argent, aucune promesse.</div>
+      <div class="coins" id="fleet"><div class="sub">Chargement…</div></div>
     </div>
 
     <!-- Réglages -->
@@ -148,7 +155,7 @@
         <button class="btn-kill" onclick="botCmd('kill')">🛑 Couper</button>
         <button class="btn-start" onclick="botCmd('start')">▶️ Relancer</button>
       </div>
-      <div style="margin-top:10px"><button class="btn-ghost" onclick="refresh(true)">🔄 Actualiser</button></div>
+      <div style="margin-top:10px"><button class="btn-ghost" onclick="refresh(true);loadFleet()">🔄 Actualiser</button></div>
       <div id="cmdErr" class="err hid"></div>
     </div>
 
@@ -158,7 +165,7 @@
   <div id="fatal" class="err hid"></div>
 </div>
 
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="crypto-bot" data-version="v1.0.1" data-color="#e8b830" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="crypto-bot" data-version="v1.1.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   var API = location.origin, GRANT_KEY = 'kdmc_admin_grant', SSO_KEY = 'kdmc_sso_pass', lastStatus = '';
@@ -226,6 +233,37 @@
       else{ var e=document.getElementById('cfgErr'); e.innerHTML='⚠️ <b>'+esc(j.reason||'erreur')+'</b><br>'+esc(j.detail||''); show('cfgErr',true); }
     }).catch(function(e){ var el=document.getElementById('cfgErr'); el.textContent='Réseau : '+e.message; show('cfgErr',true); });
   };
+
+  // ---- Flotte (6 bots : testnet + 5 papier) ----
+  var FLEET_LABELS={'crypto-bot':'🧪 Principal — testnet','crypto-bot-p1':'📝 P1 · Tendance 8/21','crypto-bot-p2':'📝 P2 · Tendance lente','crypto-bot-p3':'📝 P3 · Creux haussier','crypto-bot-p4':'📝 P4 · Retour moyenne','crypto-bot-p5':'📝 P5 · Réactif 5/13'};
+  window.loadFleet = loadFleet; // bouton 🔄 (onclick inline) — la fonction vit dans l'IIFE
+  function loadFleet(){
+    fetch(API+'/__bot/fleet',{credentials:'include',headers:hdrs()})
+    .then(function(r){ return r.json(); }).then(function(j){
+      if(!j.ok||!j.bots) return;
+      var box=document.getElementById('fleet'); box.innerHTML='';
+      var rank=0;
+      j.bots.forEach(function(b){
+        var row=document.createElement('div'); row.className='coin';
+        var label=FLEET_LABELS[b.name]||b.name;
+        if(b.status==='absent'||b.status==='aucun_deploiement'){
+          row.innerHTML='<span class="nm" style="color:var(--mut)">'+esc(label)+'</span><span class="px">pas encore lancé</span>';
+        }else{
+          rank++;
+          var medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank+'ᵉ';
+          var net=(b.net==null)?0:b.net;
+          var netTxt=(net>0?'+':'')+net.toLocaleString('fr-FR')+' $';
+          var netCol=net>0?'var(--green)':net<0?'var(--red)':'var(--mut)';
+          var okS={SUCCESS:1,DEPLOYING:1,BUILDING:1,INITIALIZING:1,QUEUED:1,WAITING:1};
+          var dot=okS[b.status]?'🟢':'🔴';
+          row.innerHTML='<span class="nm">'+medal+' '+esc(label)+' '+dot+'</span>'
+            +'<span class="px">'+(b.equity!=null?Number(b.equity).toLocaleString('fr-FR')+' $':'—')+' · '+(b.buys||0)+'A/'+(b.sells||0)+'V</span>'
+            +'<span class="tag" style="background:rgba(138,148,168,.12);color:'+netCol+'">'+netTxt+'</span>';
+        }
+        box.appendChild(row);
+      });
+    }).catch(function(){});
+  }
 
   // ---- Statut / logs ----
   function render(j){
@@ -295,9 +333,10 @@
     }).catch(function(e){ var el=document.getElementById('cmdErr'); el.textContent='Réseau : '+e.message; show('cmdErr',true); });
   };
 
-  function boot(){ renderChips(); loadConfig(); refresh(true); }
+  function boot(){ renderChips(); loadConfig(); refresh(true); loadFleet(); }
   boot();
   setInterval(function(){ refresh(false); }, 60000);
+  setInterval(function(){ loadFleet(); }, 120000); // flotte : 6 bots interrogés → toutes les 2 min suffit
 })();
 </script>
 </body>

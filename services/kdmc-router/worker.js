@@ -714,9 +714,34 @@ async function botCtx(env) {
   if (!projectId) return { err: 'token_railway_invalide', detail: JSON.stringify(pt.j || pt.http).slice(0, 300) };
   const pr = await railGql(env, `query { project(id: "${projectId}") { name services { edges { node { id name } } } } }`);
   const edges = (((pr.j || {}).data || {}).project || { services: { edges: [] } }).services.edges || [];
-  const svc = edges.map((e) => e.node).find((n) => n.name === BOT_SERVICE_NAME);
-  if (!svc) return { err: 'service_bot_introuvable', detail: 'services: ' + edges.map((e) => e.node.name).join(', ') };
-  return { projectId, environmentId, serviceId: svc.id, projectName: (((pr.j || {}).data || {}).project || {}).name };
+  const services = edges.map((e) => e.node);
+  const svc = services.find((n) => n.name === BOT_SERVICE_NAME);
+  if (!svc) return { err: 'service_bot_introuvable', detail: 'services: ' + services.map((n) => n.name).join(', ') };
+  return { projectId, environmentId, serviceId: svc.id, projectName: (((pr.j || {}).data || {}).project || {}).name, services };
+}
+/* Compte les VRAIS trades dans les logs d'un bot (mêmes règles que
+   crypto-bot/trade_stats.py) : appariement FIFO 🟢 ACHAT → 🔻 VENTE par paire,
+   net = Σ qty×(prix_vente − prix_achat). Jamais d'estimation : uniquement les
+   lignes réellement présentes dans les logs visibles. */
+function fleetTradeStats(logs) {
+  const fifo = {}; let buys = 0, sells = 0, wins = 0, losses = 0, net = 0;
+  for (const l of logs) {
+    const m = String((l && l.message) || '');
+    let mm = m.match(/🟢\s+(\S+)\s+ACHAT\s+qty=([\d.]+)\s+@\s+([\d.]+)/);
+    if (mm) { buys++; (fifo[mm[1]] = fifo[mm[1]] || []).push({ q: Number(mm[2]), p: Number(mm[3]) }); continue; }
+    mm = m.match(/🔻\s+(\S+)\s+VENTE\s+\([^)]*\)\s+qty=([\d.]+)\s+@\s+([\d.]+)/);
+    if (mm) {
+      sells++; let q = Number(mm[2]); const ps = Number(mm[3]); let pnl = 0; const lot = fifo[mm[1]] || [];
+      while (q > 1e-12 && lot.length) {
+        const b = lot[0]; const take = Math.min(q, b.q);
+        pnl += take * (ps - b.p); b.q -= take; q -= take;
+        if (b.q <= 1e-12) lot.shift();
+      }
+      net += pnl; if (pnl >= 0) wins++; else losses++;
+    }
+  }
+  let open = 0; Object.keys(fifo).forEach((k) => { if (fifo[k].length) open++; });
+  return { buys, sells, wins, losses, net: Math.round(net * 100) / 100, open };
 }
 /* Validation serveur des « gros réglages » (défense en profondeur — la page valide
    aussi). Renvoie { set:{VAR:val} } ou { err:"cause exacte" }. */
@@ -771,6 +796,33 @@ async function handleBot(request, url, env) {
     const rl = await railGql(env, `query { deploymentLogs(deploymentId: "${node.id}", limit: 80) { timestamp message } }`);
     const logs = (((rl.j || {}).data || {}).deploymentLogs || []).map((l) => ({ t: l.timestamp, m: String(l.message || '').slice(0, 300) }));
     return J({ ok: true, project: ctx.projectName, status: node.status, since: node.createdAt, logs });
+  }
+
+  /* Classement de la FLOTTE : bot principal (testnet) + 5 bots papier — tournoi de
+     stratégies (Kevin 2026-07-06 « Je ne les vois pas dans l'app »). Net = gains/pertes
+     RÉALISÉS comptés dans les logs visibles (FIFO, cf fleetTradeStats). Le RAILWAY_TOKEN
+     ne quitte jamais le worker ; les 6 services sont interrogés EN PARALLÈLE. */
+  if (path === '/__bot/fleet' && request.method === 'GET') {
+    const FLEET = ['crypto-bot', 'crypto-bot-p1', 'crypto-bot-p2', 'crypto-bot-p3', 'crypto-bot-p4', 'crypto-bot-p5'];
+    const bots = await Promise.all(FLEET.map(async (name) => {
+      const svc = (ctx.services || []).find((s) => s.name === name);
+      if (!svc) return { name, status: 'absent' };
+      const dp = await railGql(env, `query { deployments(first: 1, input: { projectId: "${ctx.projectId}", serviceId: "${svc.id}", environmentId: "${ctx.environmentId}" }) { edges { node { id status } } } }`);
+      const node = ((((dp.j || {}).data || {}).deployments || { edges: [] }).edges[0] || {}).node;
+      if (!node) return { name, status: 'aucun_deploiement' };
+      const rl = await railGql(env, `query { deploymentLogs(deploymentId: "${node.id}", limit: 1000) { message } }`);
+      const logs = (((rl.j || {}).data || {}).deploymentLogs || []);
+      const st = fleetTradeStats(logs);
+      let equity = null;
+      for (let i = logs.length - 1; i >= 0; i--) {
+        const m = String(logs[i].message || '').match(/equity=([0-9.]+)/);
+        if (m) { equity = Number(m[1]); break; }
+      }
+      return Object.assign({ name, status: node.status, equity }, st);
+    }));
+    /* Tri par net réalisé décroissant ; les bots absents/sans logs en dernier. */
+    bots.sort((a, b) => (((b.net == null) ? -1e9 : b.net) - ((a.net == null) ? -1e9 : a.net)));
+    return J({ ok: true, bots });
   }
 
   /* Réglages (« gros réglages » choisis par Kevin ; le bot gère le reste).
