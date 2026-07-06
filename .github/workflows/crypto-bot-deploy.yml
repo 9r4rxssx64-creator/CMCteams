@@ -92,8 +92,13 @@ jobs:
           # Le risque TOTAL reste borné : risque/trade et position max sont divisés par le
           # nombre de paires (alloc = 1/N) → exposition globale inchangée. Stop-loss + plafond
           # perte/jour + max drawdown toujours actifs (défauts config : 3% / 15%).
-          # Les achats sont désormais bornés au cash USDT LIBRE (fini les "insufficient balance")
+          # Les achats sont bornés au cash USDT LIBRE (fini les "insufficient balance")
           # et le bot reprend les cryptos déjà détenues au démarrage (state éphémère Railway).
+          # D) POLITIQUE DE SORTIE (demande Kevin) : HOLD_UNTIL_PROFIT=true → le bot ne vend
+          #    JAMAIS à perte, il attend la remontée et ne sort qu'en profit (marge 0.5%).
+          #    Le plafond perte/jour ne solde plus (il PAUSE les achats). Garde-fou honnête :
+          #    CATASTROPHE_STOP_PCT=20 → si une position s'effondre de -20%, on coupe quand même
+          #    (mesuré : évite le piège de rester bloqué à -50% en marché baissier).
           OUT=$(railway variables --service "$SERVICE_NAME" --skip-deploys \
             --set "BINANCE_API_KEY=$BK" \
             --set "BINANCE_API_SECRET=$BS" \
@@ -103,10 +108,14 @@ jobs:
             --set "SYMBOL=BTC/USDT" \
             --set "TIMEFRAME=5m" \
             --set "LOOP_SECONDS=30" \
+            --set "STRATEGY=ema" \
             --set "EMA_FAST=8" \
             --set "EMA_SLOW=21" \
             --set "ATR_STOP_MULT=2.0" \
-            --set "RSI_MAX=78" 2>&1)
+            --set "RSI_MAX=78" \
+            --set "HOLD_UNTIL_PROFIT=true" \
+            --set "MIN_PROFIT_PCT=0.5" \
+            --set "CATASTROPHE_STOP_PCT=20" 2>&1)
           RC=$?
           # Ne jamais logger les valeurs — uniquement le code retour + erreurs
           echo "railway variables rc=$RC"
@@ -137,9 +146,12 @@ jobs:
             echo ""
             echo "- Mode : 🧪 TESTNET (faux argent) — TESTNET=true, BOT_KILL=0"
             echo "- Cryptos : BTC, ETH, SOL, BNB, XRP (capital réparti à parts égales)"
-            echo "- Réglage : EMA 8/21 + RSI 78 + stop ATR x2.0 — **optimisé pour les gains** (mesuré au backtest, marché normal ET plat ; bat l'ancien 5/13)"
-            echo "- Rythme : vérifs toutes les 30 s sur bougies 5 min (reste actif même quand ça bouge peu)"
-            echo "- Correctifs : achats bornés au cash USDT libre (fini « insufficient balance ») + reprise des cryptos détenues au démarrage"
+            echo "- Réglage : EMA 8/21 + RSI 78 (mesuré meilleur ; la mean-reversion faisait moins bien)"
+            echo "- 🟢 **Ne vend JAMAIS à perte** : attend la remontée, sort seulement en profit (+0,5%)"
+            echo "- 🛟 Frein catastrophe -20% : coupe quand même si une position s'effondre (anti-piège du -50%)"
+            echo "- Le plafond perte/jour ne solde plus : il met les ACHATS en pause (garde les positions)"
+            echo "- Rythme : vérifs toutes les 30 s sur bougies 5 min"
+            echo "- ⚠️ Honnête : « ne pas vendre à perte » affiche 100% de trades gagnants mais peut BLOQUER du capital en perte latente. Mesuré : rend moins que le stop classique. Pour revenir : HOLD_UNTIL_PROFIT=false."
             echo "- Service : \`crypto-bot\`"
             echo "- Suivi : https://railway.app → projet → service crypto-bot → View Logs"
             echo "- Kill switch iPhone : Variables → BOT_KILL=1 (le bot vend et s'arrête au cycle suivant)"

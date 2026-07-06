@@ -28,7 +28,8 @@ def ok(c, m):
 
 
 def cfg_with(**env) -> Config:
-    for k in ("SYMBOLS", "SYMBOL"):
+    for k in ("SYMBOLS", "SYMBOL", "HOLD_UNTIL_PROFIT", "CATASTROPHE_STOP_PCT",
+              "STRATEGY", "MIN_PROFIT_PCT"):
         os.environ.pop(k, None)
     base = {"BINANCE_API_KEY": "k", "BINANCE_API_SECRET": "s", "TESTNET": "true"}
     base.update(env)
@@ -158,6 +159,57 @@ ok(st_rec.pos("BTC/USDT").in_position and st_rec.pos("BTC/USDT").qty == 1.0,
    "crypto détenue reprise comme position (sera revendue -> libère du cash)")
 ok(st_rec.pos("BTC/USDT").stop_price > 0, "position reprise reçoit un stop protecteur")
 ok(not st_rec.pos("ETH/USDT").in_position, "paire non détenue -> pas de position fantôme")
+
+# ---- 5d) « Ne pas vendre à perte » : garde tant qu'on n'est pas en profit ----
+c_hold = cfg_with(SYMBOLS="BTC/USDT", HOLD_UNTIL_PROFIT="true")
+ok(c_hold.hold_until_profit is True, "HOLD_UNTIL_PROFIT lu depuis l'env")
+rm_h = RiskManager(c_hold)
+st_h = State()
+ph = st_h.pos("BTC/USDT")
+ph.in_position = True; ph.entry_price = 100.0; ph.qty = 1.0; ph.stop_price = 0.0
+fxh = FakeEx(); fxh.bases = {"BTC": 1.0}
+# Signal SELL mais prix 95 < entrée 100 -> on NE vend PAS (attente remontée)
+bot._cycle_symbol(fxh, StubStrat("SELL"), rm_h, st_h, "BTC/USDT", 95.0, 10000.0, alloc5, c_hold)
+ok(st_h.pos("BTC/USDT").in_position, "ne vend pas à perte : position conservée")
+ok(len([o for o in fxh.orders if o[0] == "SELL"]) == 0, "aucune vente à perte envoyée")
+# Prix 101 > entrée + marge -> on prend le profit
+bot._cycle_symbol(fxh, StubStrat("SELL"), rm_h, st_h, "BTC/USDT", 101.0, 10000.0, alloc5, c_hold)
+ok(not st_h.pos("BTC/USDT").in_position, "vend une fois en profit (101 > 100.3)")
+
+# ---- 5e) Frein catastrophe : coupe même en mode « ne pas vendre à perte » ----
+c_cat = cfg_with(SYMBOLS="BTC/USDT", HOLD_UNTIL_PROFIT="true", CATASTROPHE_STOP_PCT="20")
+rm_cat = RiskManager(c_cat)
+st_cat = State()
+pc = st_cat.pos("BTC/USDT")
+pc.in_position = True; pc.entry_price = 100.0; pc.qty = 1.0; pc.stop_price = 0.0
+fxcat = FakeEx(); fxcat.bases = {"BTC": 1.0}
+bot._cycle_symbol(fxcat, StubStrat("HOLD"), rm_cat, st_cat, "BTC/USDT", 79.0, 10000.0, alloc5, c_cat)
+ok(not st_cat.pos("BTC/USDT").in_position, "frein catastrophe -20% coupe (79 <= 80)")
+# À -10% seulement, on garde (pas encore catastrophe)
+st_cat2 = State(); p2 = st_cat2.pos("BTC/USDT")
+p2.in_position = True; p2.entry_price = 100.0; p2.qty = 1.0; p2.stop_price = 0.0
+fxcat2 = FakeEx(); fxcat2.bases = {"BTC": 1.0}
+bot._cycle_symbol(fxcat2, StubStrat("HOLD"), rm_cat, st_cat2, "BTC/USDT", 90.0, 10000.0, alloc5, c_cat)
+ok(st_cat2.pos("BTC/USDT").in_position, "-10% : on garde (pas de vente à perte)")
+
+# ---- 5f) pause_buys : le garde-fou pause les achats sans vendre ----
+c_pb = cfg_with(SYMBOLS="BTC/USDT", HOLD_UNTIL_PROFIT="true")
+st_pb = State(); fxpb = FakeEx()
+bot._cycle_symbol(fxpb, StubStrat("BUY"), RiskManager(c_pb), st_pb, "BTC/USDT", 100.0, 10000.0, alloc5, c_pb, True)
+ok(not st_pb.pos("BTC/USDT").in_position, "pause_buys=True : aucun achat ouvert")
+ok(len(fxpb.orders) == 0, "pause_buys=True : aucun ordre")
+
+# ---- 5g) Fabrique de stratégie (STRATEGY=ema|meanrev) ----
+from strategy import make_strategy, MeanReversionStrategy  # noqa: E402
+ok(isinstance(make_strategy(cfg_with(STRATEGY="meanrev")), MeanReversionStrategy),
+   "STRATEGY=meanrev -> MeanReversionStrategy")
+ok(type(make_strategy(cfg_with(STRATEGY="ema"))).__name__ == "Strategy",
+   "STRATEGY=ema -> Strategy EMA")
+
+# ---- 5h) Indicateurs sma / rolling_std ----
+from indicators import sma, rolling_std  # noqa: E402
+ok(sma([2, 4, 6], 3)[-1] == 4.0, "sma calcule la moyenne")
+ok(rolling_std([2, 2, 2], 3)[-1] == 0.0, "rolling_std nul sur série constante")
 
 # ---- 6) Kill = solde TOUT ----
 st6 = State()

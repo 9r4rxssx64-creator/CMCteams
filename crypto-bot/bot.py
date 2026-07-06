@@ -22,7 +22,7 @@ import audit
 from config import Config
 from exchange import Exchange
 from risk import RiskManager, State
-from strategy import Strategy
+from strategy import Strategy, make_strategy
 
 
 def _closed_candles(ohlcv: list) -> tuple[list, list, list]:
@@ -107,13 +107,17 @@ def run(live: bool) -> None:
 
     mode = "🧪 TESTNET (faux argent)" if cfg.testnet else "💶 ARGENT RÉEL"
     ex = Exchange(cfg)
-    strat = Strategy(cfg.ema_fast, cfg.ema_slow, cfg.rsi_period, cfg.rsi_max, cfg.atr_period)
+    strat = make_strategy(cfg)
     risk = RiskManager(cfg)
     state = State.load()
     alloc = 1.0 / max(1, len(cfg.symbols))  # part de capital par paire
 
-    audit.log("START", mode=mode, symbols=cfg.symbols, timeframe=cfg.timeframe)
-    audit.console(f"Démarrage — {mode} — {', '.join(cfg.symbols)} — {cfg.timeframe}")
+    audit.log("START", mode=mode, symbols=cfg.symbols, timeframe=cfg.timeframe,
+              strategy=cfg.strategy, hold_until_profit=cfg.hold_until_profit)
+    audit.console(f"Démarrage — {mode} — {', '.join(cfg.symbols)} — {cfg.timeframe} "
+                  f"— stratégie={cfg.strategy}"
+                  + (" — 🟢 NE VEND JAMAIS À PERTE (attend la remontée)"
+                     if cfg.hold_until_profit else ""))
     audit.console("Kill switch : BOT_KILL=1 (Railway) ou fichier 'KILL' pour tout couper.")
 
     # Repart de la réalité du compte (state.json éphémère sur Railway) : adopte
@@ -156,13 +160,22 @@ def _cycle(ex: Exchange, strat: Strategy, risk: RiskManager,
     # 2) Coupures de risque (sur le capital TOTAL)
     risk.mark_equity(state, equity)
     halted, reason = risk.check_halts(state, equity)
+    pause_buys = False
     if halted:
-        _flatten_all(ex, state, prices, reason)
-        state.halted = True
-        state.halt_reason = reason
-        audit.log("HALT", reason=reason, equity=equity)
-        audit.console(f"🛑 Coupure risque : {reason}. Efface state.json / relance pour repartir.")
-        raise SystemExit(0)
+        if cfg.hold_until_profit:
+            # « Ne pas vendre à perte » : on NE solde PAS (ça réaliserait la perte).
+            # On arrête seulement d'OUVRIR de nouvelles positions ; on garde les
+            # positions ouvertes jusqu'à ce qu'elles remontent en profit.
+            pause_buys = True
+            audit.log("PAUSE_BUYS", reason=reason, equity=equity)
+            audit.console(f"⏸️ {reason} → j'arrête d'acheter, je GARDE les positions (attente remontée).")
+        else:
+            _flatten_all(ex, state, prices, reason)
+            state.halted = True
+            state.halt_reason = reason
+            audit.log("HALT", reason=reason, equity=equity)
+            audit.console(f"🛑 Coupure risque : {reason}. Efface state.json / relance pour repartir.")
+            raise SystemExit(0)
 
     # 3) Chaque paire, indépendamment
     for symbol in cfg.symbols:
@@ -171,20 +184,30 @@ def _cycle(ex: Exchange, strat: Strategy, risk: RiskManager,
             audit.console(f"… {symbol} prix indisponible, ignoré ce cycle")
             continue
         try:
-            _cycle_symbol(ex, strat, risk, state, symbol, price, equity, alloc, cfg)
+            _cycle_symbol(ex, strat, risk, state, symbol, price, equity, alloc, cfg, pause_buys)
         except Exception as exc:  # noqa: BLE001 — une paire ne bloque pas les autres
             audit.log("ERROR", where="cycle_symbol", symbol=symbol, detail=str(exc))
             audit.console(f"⚠️ {symbol} erreur : {exc}")
 
 
-def _cycle_symbol(ex: Exchange, strat: Strategy, risk: RiskManager, state: State,
+def _cycle_symbol(ex: Exchange, strat, risk: RiskManager, state: State,
                   symbol: str, price: float, equity: float, alloc: float,
-                  cfg: Config) -> None:
+                  cfg: Config, pause_buys: bool = False) -> None:
     pos = state.pos(symbol)
 
-    # Stop-loss ATR
-    if pos.in_position and price <= pos.stop_price:
+    # Stop-loss ATR — désactivé si « ne pas vendre à perte » (on n'accepte JAMAIS
+    # de réaliser une petite perte : on attend la remontée).
+    if pos.in_position and price <= pos.stop_price and not cfg.hold_until_profit:
         _flatten_symbol(ex, state, symbol, price, f"stop-loss @ {pos.stop_price:.2f}")
+        return
+
+    # Frein CATASTROPHE — même en « ne pas vendre à perte », on coupe si la position
+    # s'effondre au-delà de -X % (évite de rester bloqué sur un actif qui plonge).
+    if (pos.in_position and cfg.hold_until_profit and cfg.catastrophe_stop_pct > 0
+            and pos.entry_price > 0
+            and price <= pos.entry_price * (1 - cfg.catastrophe_stop_pct / 100.0)):
+        _flatten_symbol(ex, state, symbol, price,
+                        f"frein catastrophe -{cfg.catastrophe_stop_pct:.0f}% (protection)")
         return
 
     ohlcv = ex.fetch_ohlcv(symbol, limit=max(200, strat.min_candles() + 5))
@@ -193,7 +216,7 @@ def _cycle_symbol(ex: Exchange, strat: Strategy, risk: RiskManager, state: State
     # Format lisible par le tableau de bord : "<SYM> <ACTION> | prix= | equity="
     audit.console(f"{symbol} {sig.action} | prix={price:.2f} | equity={equity:.2f} | {sig.reason}")
 
-    if sig.action == "BUY" and sig.atr:
+    if sig.action == "BUY" and sig.atr and not pause_buys:
         stop = risk.compute_stop(price, sig.atr)
         cash = ex.quote_balance()  # USDT LIBRE réellement disponible pour acheter
         qty = risk.position_size(equity, price, stop, alloc=alloc, cash=cash)
@@ -214,6 +237,15 @@ def _cycle_symbol(ex: Exchange, strat: Strategy, risk: RiskManager, state: State
         audit.console(f"🟢 {symbol} ACHAT qty={filled} @ {avg:.2f} (stop {stop:.2f})")
 
     elif sig.action == "SELL" and pos.in_position:
+        # « Ne pas vendre à perte » : on ne vend QUE si le prix est au-dessus du
+        # prix d'entrée (+ marge mini). Sinon on garde et on attend la remontée.
+        if cfg.hold_until_profit:
+            min_sell = pos.entry_price * (1 + cfg.min_profit_pct / 100.0)
+            if price < min_sell:
+                audit.console(
+                    f"⏳ {symbol} pas de vente à perte : prix {price:.2f} < entrée+marge "
+                    f"{min_sell:.2f} — on attend la remontée")
+                return
         _flatten_symbol(ex, state, symbol, price, sig.reason)
 
 
