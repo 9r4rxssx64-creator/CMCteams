@@ -54,6 +54,32 @@ def _rsi_from(avg_gain: float, avg_loss: float) -> float:
     return 100.0 - (100.0 / (1.0 + rs))
 
 
+def sma(values: List[float], period: int) -> List[Optional[float]]:
+    """Moyenne mobile simple sur `period` (None tant qu'il manque des points)."""
+    out: List[Optional[float]] = [None] * len(values)
+    if period <= 0 or len(values) < period:
+        return out
+    s = sum(values[:period])
+    out[period - 1] = s / period
+    for i in range(period, len(values)):
+        s += values[i] - values[i - period]
+        out[i] = s / period
+    return out
+
+
+def rolling_std(values: List[float], period: int) -> List[Optional[float]]:
+    """Écart-type mobile (population) sur `period` — sert aux bandes de Bollinger."""
+    out: List[Optional[float]] = [None] * len(values)
+    if period <= 0 or len(values) < period:
+        return out
+    for i in range(period - 1, len(values)):
+        window = values[i - period + 1:i + 1]
+        m = sum(window) / period
+        var = sum((x - m) ** 2 for x in window) / period
+        out[i] = var ** 0.5
+    return out
+
+
 def atr(highs: List[float], lows: List[float], closes: List[float],
         period: int = 14) -> List[Optional[float]]:
     """Average True Range de Wilder — mesure de volatilité, sert au stop-loss."""

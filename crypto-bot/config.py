@@ -72,6 +72,15 @@ class Config:
     daily_loss_cap_pct: float
     max_drawdown_pct: float
     min_order_usdt: float
+    # Choix de stratégie + politique de sortie
+    strategy: str            # "ema" (tendance) ou "meanrev" (retour à la moyenne)
+    hold_until_profit: bool  # True = ne JAMAIS vendre à perte, attendre la remontée
+    min_profit_pct: float    # marge mini au-dessus du prix d'entrée pour vendre (%)
+    mr_period: int           # période SMA/écart-type (mean reversion)
+    mr_std_mult: float       # largeur des bandes (k·écart-type)
+    mr_rsi_buy: float        # RSI sous lequel on achète le creux
+    mr_rsi_sell: float       # RSI au-dessus duquel on prend le profit
+    catastrophe_stop_pct: float  # même en "ne pas vendre à perte", on coupe si -X% (0 = jamais)
 
     @staticmethod
     def load() -> "Config":
@@ -93,6 +102,14 @@ class Config:
             daily_loss_cap_pct=_f("DAILY_LOSS_CAP_PCT", 3.0),
             max_drawdown_pct=_f("MAX_DRAWDOWN_PCT", 15.0),
             min_order_usdt=_f("MIN_ORDER_USDT", 11.0),
+            strategy=os.getenv("STRATEGY", "ema"),
+            hold_until_profit=_b("HOLD_UNTIL_PROFIT", False),
+            min_profit_pct=_f("MIN_PROFIT_PCT", 0.3),
+            mr_period=_i("MR_PERIOD", 20),
+            mr_std_mult=_f("MR_STD_MULT", 2.0),
+            mr_rsi_buy=_f("MR_RSI_BUY", 35.0),
+            mr_rsi_sell=_f("MR_RSI_SELL", 60.0),
+            catastrophe_stop_pct=_f("CATASTROPHE_STOP_PCT", 0.0),
         )
         cfg.validate()
         return cfg
