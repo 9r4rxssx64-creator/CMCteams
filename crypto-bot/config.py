@@ -81,6 +81,9 @@ class Config:
     mr_rsi_buy: float        # RSI sous lequel on achète le creux
     mr_rsi_sell: float       # RSI au-dessus duquel on prend le profit
     catastrophe_stop_pct: float  # même en "ne pas vendre à perte", on coupe si -X% (0 = jamais)
+    du_trend_period: int     # EMA de tendance de fond (stratégie dipup)
+    du_rsi_buy: float        # RSI sous lequel on achète le creux (dipup)
+    du_rsi_sell: float       # RSI au-dessus duquel on encaisse le rebond (dipup)
 
     @staticmethod
     def load() -> "Config":
@@ -110,6 +113,9 @@ class Config:
             mr_rsi_buy=_f("MR_RSI_BUY", 35.0),
             mr_rsi_sell=_f("MR_RSI_SELL", 60.0),
             catastrophe_stop_pct=_f("CATASTROPHE_STOP_PCT", 0.0),
+            du_trend_period=_i("DU_TREND_PERIOD", 50),
+            du_rsi_buy=_f("DU_RSI_BUY", 35.0),
+            du_rsi_sell=_f("DU_RSI_SELL", 60.0),
         )
         cfg.validate()
         return cfg

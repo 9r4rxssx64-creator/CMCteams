@@ -139,13 +139,75 @@ class MeanReversionStrategy:
         return Signal("HOLD", price, a, "position conservée (attente rebond)")
 
 
+class DipUptrendStrategy:
+    """Achat de CREUX en TENDANCE HAUSSIÈRE (pattern « buy the dip »).
+
+    Idée : on ne trade QUE dans le sens de la tendance de fond (prix au-dessus
+    de sa grande moyenne EMA `trend_period`). Quand le RSI plonge (repli court
+    dans une tendance montante), on achète le creux ; on revend quand le RSI
+    remonte (rebond encaissé) ou si la tendance de fond casse.
+
+    C'est le compromis entre suivi de tendance (on évite d'acheter dans un
+    marché qui coule) et retour à la moyenne (on achète bas, on revend haut).
+    """
+
+    def __init__(self, trend_period: int, rsi_period: int, rsi_buy: float,
+                 rsi_sell: float, atr_period: int) -> None:
+        self.trend_period = trend_period
+        self.rsi_period = rsi_period
+        self.rsi_buy = rsi_buy
+        self.rsi_sell = rsi_sell
+        self.atr_period = atr_period
+
+    def min_candles(self) -> int:
+        return max(self.trend_period, self.rsi_period, self.atr_period) + 2
+
+    def evaluate(self, highs: List[float], lows: List[float],
+                 closes: List[float], in_position: bool) -> Signal:
+        price = closes[-1]
+        if len(closes) < self.min_candles():
+            return Signal("HOLD", price, None, "pas assez de bougies")
+
+        trend = ema(closes, self.trend_period)[-1]
+        r = rsi(closes, self.rsi_period)[-1]
+        a = atr(highs, lows, closes, self.atr_period)[-1]
+        if None in (trend, r):
+            return Signal("HOLD", price, a, "indicateurs incomplets")
+
+        if not in_position:
+            if price > trend and r < self.rsi_buy:
+                return Signal(
+                    "BUY", price, a,
+                    f"creux en tendance haussière : prix {price:.2f} > EMA{self.trend_period} "
+                    f"{trend:.2f}, RSI={r:.1f} < {self.rsi_buy}",
+                )
+            if price > trend:
+                return Signal("HOLD", price, a,
+                              f"tendance haussière mais pas de creux (RSI={r:.1f})")
+            return Signal("HOLD", price, a, "tendance baissière — on n'achète pas")
+
+        # En position : rebond encaissé (RSI haut) OU tendance de fond cassée.
+        if r > self.rsi_sell:
+            return Signal("SELL", price, a, f"rebond encaissé (RSI={r:.1f} > {self.rsi_sell})")
+        if price < trend:
+            return Signal("SELL", price, a,
+                          f"tendance cassée : prix {price:.2f} < EMA{self.trend_period} {trend:.2f}")
+        return Signal("HOLD", price, a, "position conservée (rebond en cours)")
+
+
 def make_strategy(cfg):
-    """Fabrique la stratégie choisie par la config (STRATEGY=ema|meanrev)."""
+    """Fabrique la stratégie choisie par la config (STRATEGY=ema|meanrev|dipup)."""
     name = (getattr(cfg, "strategy", "ema") or "ema").strip().lower()
     if name in ("meanrev", "mean_reversion", "mr", "reversion"):
         return MeanReversionStrategy(
             period=cfg.mr_period, std_mult=cfg.mr_std_mult,
             rsi_period=cfg.rsi_period, rsi_buy=cfg.mr_rsi_buy,
             rsi_sell=cfg.mr_rsi_sell, atr_period=cfg.atr_period,
+        )
+    if name in ("dipup", "dip", "dip_uptrend", "buythedip"):
+        return DipUptrendStrategy(
+            trend_period=cfg.du_trend_period, rsi_period=cfg.rsi_period,
+            rsi_buy=cfg.du_rsi_buy, rsi_sell=cfg.du_rsi_sell,
+            atr_period=cfg.atr_period,
         )
     return Strategy(cfg.ema_fast, cfg.ema_slow, cfg.rsi_period, cfg.rsi_max, cfg.atr_period)
