@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05070d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="World Monitor">
 <title>World Monitor — kd-mc.com</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -157,7 +163,7 @@
 <div class="wrap">
   <header class="top">
     <div class="logo"><span class="dot"></span> 🌍 WORLD&nbsp;MONITOR</div>
-    <div class="clock"><b id="utc">—</b><span id="local">—</span></div>
+    <div style="display:flex;align-items:center;gap:10px"><button id="btnBrief" class="tg" style="min-height:38px" title="Résumé IA de la situation mondiale (généré toutes les 6 h : conflits, catastrophes, à surveiller)">🧠 Brief IA</button><div class="clock"><b id="utc">—</b><span id="local">—</span></div></div>
   </header>
 
   <div class="grid">
@@ -168,6 +174,11 @@
           <span class="vswitch"><button id="vMap" aria-pressed="true">🗺️ Carte</button><button id="vGlobe" aria-pressed="false">🌍 Globe</button><button id="vFull" title="Plein écran" aria-pressed="false">⛶</button></span>
         </h2>
         <div style="position:relative"><div id="map"></div><div id="mapLive" style="position:absolute;top:8px;right:8px;z-index:800;background:rgba(8,12,24,.78);border:1px solid rgba(120,150,210,.25);border-radius:8px;padding:4px 9px;font-size:11px;letter-spacing:.4px;display:flex;align-items:center;gap:6px;pointer-events:none"><span style="width:7px;height:7px;border-radius:50%;background:#ff3b30;animation:pulseDot 1.6s ease-in-out infinite"></span><b>LIVE</b><span id="mapClock" style="font-variant-numeric:tabular-nums;opacity:.85">—</span></div><div class="maphint" id="mapHint">✈️ avions en direct · 🔴 séismes · pince pour zoomer</div></div>
+        <div id="wmSearch" style="display:flex;gap:6px;margin:8px 0 2px">
+          <input id="wmQ" type="search" placeholder="🔍 Aller à… (ville, pays, lieu)" autocomplete="off" style="flex:1;min-width:0;background:rgba(10,16,30,.7);border:1px solid var(--line);border-radius:9px;color:var(--fg);padding:9px 12px;font:inherit;font-size:14px">
+          <button id="wmGo" class="tg" style="min-height:40px" title="Voler vers ce lieu">➜</button>
+          <span id="wmQState" style="align-self:center;color:var(--dim);font-size:11px"></span>
+        </div>
         <div class="toggles" id="toggles">
           <button class="tg" data-layer="flights" aria-pressed="true"><span class="i" style="background:var(--green)"></span>✈️ Vols</button>
           <button class="tg" data-layer="ships" aria-pressed="true"><span class="i" style="background:#35d6e6"></span>🚢 Navires</button>
@@ -194,9 +205,15 @@
           <button class="tg" data-view="world" aria-pressed="false" title="Recentrer sur le monde entier"><span class="i" style="background:#5aa9ff"></span>🌍 Monde</button>
           <button class="tg" data-view="mc" aria-pressed="false" title="Recentrer sur Monaco"><span class="i" style="background:#e8b830"></span>📍 Monaco</button>
         </div>
+        <div id="radarBar" style="display:none;align-items:center;gap:10px;margin:6px 0 2px;font-size:12px;color:var(--dim)">
+          <span>⏪ Replay pluie 2h</span>
+          <input id="radarRange" type="range" min="0" max="12" value="12" step="1" style="flex:1;accent-color:#61c8ff">
+          <b id="radarT" style="color:var(--fg);font-variant-numeric:tabular-nums;min-width:72px">maintenant</b>
+        </div>
         <canvas id="globe" class="hidden" width="760" height="600" aria-label="Globe animé : séismes, feux, volcans, tempêtes, vols et ISS en direct"></canvas>
         <div class="stat-row" id="stats">
           <div class="stat"><div class="n" id="sQuakes">—</div><div class="l">Séismes 24h</div></div>
+          <div class="stat" title="Météo spatiale EN DIRECT — indice Kp NOAA (activité géomagnétique) : ≤3 calme · 4 agité · ≥5 tempête G1-G5 (aurores, radio)"><div class="n" id="sKp">—</div><div class="l" id="sKpL">Météo spatiale</div></div>
           <div class="stat"><div class="n" id="sEvents">—</div><div class="l">Événements</div></div>
           <div class="stat"><div class="n" id="sFlights">—</div><div class="l">Vols Europe</div></div>
           <div class="stat"><div class="n" id="sIss">—</div><div class="l">ISS km/h</div></div>
@@ -350,13 +367,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.26</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.29</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.26";
+var VER="v2.29";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -458,12 +475,21 @@ tickClock();setInterval(tickClock,1000);
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
 var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],waves:[],iss:null};
 var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1};
+/* 🧠 Mémoire des réglages (Kevin n°13) : couches/fond/vue persistés par appareil */
+var _PREFS_K="wm_prefs_v1",_lastView="",_wantBase="";
+try{var _pf=JSON.parse(localStorage.getItem(_PREFS_K)||"{}");
+  if(_pf&&_pf.on)Object.keys(ON).forEach(function(k){if(typeof _pf.on[k]!=="undefined")ON[k]=_pf.on[k]?1:0;});
+  _wantBase=_pf&&_pf.base||"";_lastView=_pf&&_pf.view||"";
+}catch(_e){}
+function _savePrefs(){try{localStorage.setItem(_PREFS_K,JSON.stringify({on:ON,base:_wantBase,view:_lastView}));}catch(_e){}}
+/* synchronise l'état visuel des puces couches avec ON restauré (idempotent) */
+(function(){var bs=document.querySelectorAll("[data-layer]");for(var i=0;i<bs.length;i++){var k=bs[i].getAttribute("data-layer"),w=String(!!ON[k]);if(bs[i].getAttribute("aria-pressed")!==w)bs[i].setAttribute("aria-pressed",w);}})();
 $("toggles").addEventListener("click",function(e){var b=e.target.closest(".tg");if(!b)return;
-  if(b.dataset.view){if(typeof setMapView==="function")setMapView(b.dataset.view);return;}
+  if(b.dataset.view){_lastView=b.dataset.view;_savePrefs();if(typeof setMapView==="function")setMapView(b.dataset.view);return;}
   var v=b.getAttribute("aria-pressed")==="true"?false:true;
   b.setAttribute("aria-pressed",String(v));
-  if(b.dataset.base){if(typeof setBase==="function")setBase(b.dataset.base);return;}
-  var k=b.dataset.layer;ON[k]=v?1:0;
+  if(b.dataset.base){_wantBase=b.dataset.base;_savePrefs();if(typeof setBase==="function")setBase(b.dataset.base);return;}
+  var k=b.dataset.layer;ON[k]=v?1:0;_savePrefs();
   if(typeof applyLeafToggle==="function")applyLeafToggle(k,v);});
 function resizeGlobe(){var w=cv.parentElement.clientWidth,h=Math.max(320,Math.min(600,Math.round(w*0.8)));
   var dpr=Math.min(2,window.devicePixelRatio||1);cv.style.width=w+"px";cv.style.height=h+"px";
@@ -541,10 +567,21 @@ function loop(){if(spin)rot+=0.0021;drawGlobe();requestAnimationFrame(loop);}
 resizeGlobe();requestAnimationFrame(loop);
 
 /* ============ SÉISMES (USGS) ============ */
+/* ☀️ Météo spatiale (Kevin n°7) : indice Kp planétaire NOAA SWPC, live */
+async function loadSpaceWx(){try{
+  var a=await getJSON("https://services.swpc.noaa.gov/json/planetary_k_index_1m.json",12000);
+  if(!a||!a.length)return;
+  var kp=+a[a.length-1].kp_index,lab=kp>=8?"G4-G5 extrême":kp>=7?"G3 forte":kp>=6?"G2 modérée":kp>=5?"G1 tempête":kp>=4?"agité":"calme";
+  var col=kp>=7?"#ff5a4d":kp>=5?"#ffb84d":kp>=4?"#ffd24d":"#3ddc84";
+  var el=document.getElementById("sKp"),el2=document.getElementById("sKpL");
+  if(el){var s="Kp "+kp.toFixed(1);if(el.textContent!==s)el.textContent=s;el.style.color=col;}
+  if(el2){var s2="Soleil : "+lab;if(el2.textContent!==s2)el2.textContent=s2;}
+}catch(e){}}
+loadSpaceWx();setInterval(loadSpaceWx,600000);
 async function loadQuakes(){try{
   var d=await getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
   var f=(d&&d.features)||[];f.sort(function(a,b){return b.properties.time-a.properties.time;});
-  DL.quakes=f.map(function(x){var c=x.geometry.coordinates;return {lat:c[1],lon:c[0],mag:x.properties.mag||0,place:x.properties.place||"",depth:c[2]||0,time:x.properties.time||0};});if(_mapReady)drawQuakesMap();
+  DL.quakes=f.map(function(x){var c=x.geometry.coordinates;return {lat:c[1],lon:c[0],mag:x.properties.mag||0,place:x.properties.place||"",depth:c[2]||0,time:x.properties.time||0,alert:x.properties.alert||null,tsunami:x.properties.tsunami||0,felt:x.properties.felt||0};});if(_mapReady)drawQuakesMap();
   setText($("sQuakes"),String(f.length));setText($("quakeState"),f.length+" / 24h");setText($("globeState"),"en direct");
   var box=$("quakes");if(!f.length){setHTML(box,'<div class="empty">Aucun séisme. 🌍</div>');return;}
   setHTML(box,f.slice(0,30).map(function(x){var m=x.properties.mag||0,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d";
@@ -886,6 +923,7 @@ function initMap(){
   _stormLayer=LEAF.layerGroup().addTo(MAP);
   /* Les couches se pilotent par les puces sous la carte (pas de boîte sur la carte). */
   MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
+  MAP.on("zoomend",function(){drawShipsMap();});
   setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();loadSats();loadRadar();loadGdacs();loadAurora();loadAir();loadWaves();drawNight();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
   setInterval(loadShips,60000);
@@ -897,7 +935,30 @@ function initMap(){
   setInterval(function(){if(ON.night)drawNight();},60000);     /* terminateur solaire, maj 1 min */
   setInterval(function(){var el=document.getElementById("mapClock");if(!el)return;
     var s=new Date().toISOString().slice(11,19)+" UTC";if(el.textContent!==s)el.textContent=s;},1000);
+  /* 🧠 fond + vue mémorisés (fail-open) */
+  try{if(_wantBase&&_bases[_wantBase])setBase(_wantBase);if(_lastView)setMapView(_lastView);}catch(_e){}
+  /* 🌦 Météo en tout point (Kevin n°5) : tap sur la carte → météo live + 3 jours (Open-Meteo, gratuit sans clé) */
+  MAP.on("click",function(ev){
+    try{
+      var tgt=ev.originalEvent&&ev.originalEvent.target;
+      if(tgt&&tgt.closest&&tgt.closest("path,.leaflet-marker-icon,.leaflet-interactive,.leaflet-popup"))return; /* ne vole pas le tap des marqueurs */
+      var la=ev.latlng.lat,lo=ev.latlng.lng;
+      var pop=LEAF.popup({maxWidth:250}).setLatLng(ev.latlng).setContent('<div style="font-size:12px">🌦 météo de ce point…</div>').openOn(MAP);
+      fetch("https://api.open-meteo.com/v1/forecast?latitude="+la.toFixed(3)+"&longitude="+lo.toFixed(3)+"&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=3&timezone=auto")
+      .then(function(r){return r.json();}).then(function(d){
+        var c=d.current||{},dl=d.daily||{},days=["Aujourd\u2019hui","Demain","Après-demain"];
+        var rows="";for(var i=0;i<3;i++){if(!dl.time||!dl.time[i])break;
+          rows+='<div style="display:flex;justify-content:space-between;gap:8px"><span>'+days[i]+' '+_wxEmoji(dl.weather_code[i])+'</span><span>'+Math.round(dl.temperature_2m_min[i])+'° / <b>'+Math.round(dl.temperature_2m_max[i])+'°</b> · ☔'+(dl.precipitation_probability_max[i]==null?"—":dl.precipitation_probability_max[i]+"%")+'</span></div>';}
+        pop.setContent('<div style="font-size:12px;line-height:1.55;min-width:200px">'+
+          '<b style="font-size:15px">'+_wxEmoji(c.weather_code)+' '+Math.round(c.temperature_2m)+'°C</b> <span style="opacity:.75">(ressenti '+Math.round(c.apparent_temperature)+'°)</span><br>'+
+          '💨 '+Math.round(c.wind_speed_10m)+' km/h · 💧 '+c.relative_humidity_2m+'%<div style="border-top:1px solid rgba(120,150,210,.25);margin:6px 0 4px"></div>'+rows+
+          '<div style="opacity:.6;margin-top:4px">'+la.toFixed(2)+', '+lo.toFixed(2)+' · Open-Meteo live</div></div>');
+      }).catch(function(){pop.setContent('<div style="font-size:12px">🌦 météo indisponible ici — réessaie.</div>');});
+    }catch(_e){}
+  });
 }
+/* code météo WMO → emoji */
+function _wxEmoji(w){w=+w;if(w===0)return"☀️";if(w<3)return"🌤️";if(w===3)return"☁️";if(w<49)return"🌫️";if(w<58)return"🌦️";if(w<66)return"🌧️";if(w<78)return"🌨️";if(w<83)return"🌧️";if(w<87)return"🌨️";if(w>=95)return"⛈️";return"🌡️";}
 function planeIcon(track){
   var t=((track||0)-45); /* ✈️ pointe vers le NE */
   return LEAF.divIcon({className:"",html:'<div class="plane" style="transform:rotate('+t+'deg)">✈️</div>',iconSize:[16,16],iconAnchor:[8,8]});
@@ -919,17 +980,26 @@ async function loadPlanes(){
     var alt=(a.alt_baro==null||a.alt_baro==="ground")?"au sol":Math.round(a.alt_baro)+" ft";
     var spd=a.gs!=null?Math.round(a.gs)+" kt":"—";
     var fl=(a.flight||a.r||"?").trim();
-    LEAF.marker([a.lat,a.lon],{icon:planeIcon(a.track)}).bindPopup("<b>"+esc(fl)+"</b><br>Altitude "+esc(alt)+"<br>Vitesse "+esc(spd)+(a.t?"<br>Type "+esc(a.t):"")).addTo(_planeLayer);
+    var kmh=a.gs!=null?" ("+Math.round(a.gs*1.852)+" km/h)":"",mAlt=(a.alt_baro!=null&&a.alt_baro!=="ground")?" ("+Math.round(a.alt_baro*0.3048)+" m)":"";
+    LEAF.marker([a.lat,a.lon],{icon:planeIcon(a.track)}).bindPopup("<b>✈️ "+esc(fl)+"</b>"+(a.t?" · "+esc(a.t):"")+(a.r?"<br>Immat. "+esc(a.r):"")+"<br>Altitude "+esc(alt)+esc(mAlt)+"<br>Vitesse "+esc(spd)+esc(kmh)+(a.track!=null?"<br>Cap "+Math.round(a.track)+"°":"")+(a.desc?"<br><span style=\'opacity:.7\'>"+esc(a.desc)+"</span>":"")).addTo(_planeLayer);
   });
   setText($("mapHint"),"✈️ "+n+" avions en direct · 🔴 séismes · pince pour zoomer");
   setText($("sFlights"),String(n));
 }
+/* Impact estimé PAGER (USGS) : vert=aucun, jaune=limité, orange=sérieux, rouge=majeur */
+function _pagerHtml(q){var h="";
+  if(q.alert){var pc={green:"#3ddc84",yellow:"#ffd24d",orange:"#ffb84d",red:"#ff5a4d"}[q.alert]||"#9aa7c7";
+    var pl={green:"aucun dégât attendu",yellow:"impact limité possible",orange:"impact sérieux probable",red:"impact majeur probable"}[q.alert]||q.alert;
+    h+="<br>Impact estimé (PAGER) : <b style=\'color:"+pc+"\'>"+pl+"</b>";}
+  if(q.tsunami)h+="<br>🌊 <b style=\'color:#4db8ff\'>alerte tsunami possible</b>";
+  if(q.felt)h+="<br>👥 ressenti par "+q.felt+" personnes";
+  return h;}
 function drawQuakesMap(){
   if(!MAP||!_quakeLayer)return;
   _quakeLayer.clearLayers();
   (DL.quakes||[]).forEach(function(q){
     var m=q.mag||0,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d",r=Math.max(4,Math.min(16,m*2.4));
-    LEAF.circleMarker([q.lat,q.lon],{radius:r,color:col,weight:1,fillColor:col,fillOpacity:.35}).bindPopup("<b>Séisme M "+m.toFixed(1)+"</b><br>"+esc(q.place||"")+"<br>Profondeur "+((q.depth||0).toFixed(0))+" km"+(q.time?"<br>Il y a "+ago(q.time):"")).addTo(_quakeLayer);
+    LEAF.circleMarker([q.lat,q.lon],{radius:r,color:col,weight:1,fillColor:col,fillOpacity:.35}).bindPopup("<b>Séisme M "+m.toFixed(1)+"</b><br>"+esc(q.place||"")+"<br>Profondeur "+((q.depth||0).toFixed(0))+" km"+(q.time?"<br>Il y a "+ago(q.time):"")+_pagerHtml(q)).addTo(_quakeLayer);
   });
 }
 function drawFiresMap(){
@@ -1008,15 +1078,32 @@ function updateSats(){
   updateIssMap();
 }
 /* 🌧️ RADAR DE PRÉCIPITATIONS MONDIAL en direct — RainViewer (gratuit, sans clé, maj ~10 min) */
+var _radarFrames=null,_radarHost="";
 async function loadRadar(){
   try{
     var j=await getJSON("https://api.rainviewer.com/public/weather-maps.json",10000);
     var past=j&&j.radar&&j.radar.past;if(!past||!past.length||!_radarLayer)return;
-    var f=past[past.length-1],host=j.host||"https://tilecache.rainviewer.com";
-    _radarLayer.clearLayers();
-    LEAF.tileLayer(host+f.path+"/512/{z}/{x}/{y}/2/1_1.png",{opacity:.65,zIndex:5,maxZoom:18,
-      attribution:'&copy; RainViewer — radar pluie en direct'}).addTo(_radarLayer);
+    _radarFrames=past;_radarHost=j.host||"https://tilecache.rainviewer.com";
+    _radarShowFrame(past.length-1);
+    _radarBarSync();
   }catch(e){}
+}
+function _radarShowFrame(i){
+  if(!_radarFrames||!_radarFrames[i]||!_radarLayer)return;
+  var f=_radarFrames[i];
+  _radarLayer.clearLayers();
+  LEAF.tileLayer(_radarHost+f.path+"/512/{z}/{x}/{y}/2/1_1.png",{opacity:.65,zIndex:5,maxZoom:18,
+    attribution:'&copy; RainViewer — radar pluie en direct'}).addTo(_radarLayer);
+  var lb=document.getElementById("radarT");
+  if(lb){var d=new Date(f.time*1000),s=(i===_radarFrames.length-1?"maintenant":d.toTimeString().slice(0,5));if(lb.textContent!==s)lb.textContent=s;}
+  var rg=document.getElementById("radarRange");if(rg&&+rg.value!==i)rg.value=String(i);
+}
+/* ⏪ Replay pluie (Kevin n°8) : curseur sur les ~2 dernières heures de radar */
+function _radarBarSync(){
+  var bar=document.getElementById("radarBar");if(!bar)return;
+  var show=!!(ON.radar&&_radarFrames&&_radarFrames.length>1);
+  bar.style.display=show?"flex":"none";
+  if(show){var rg=document.getElementById("radarRange");rg.max=String(_radarFrames.length-1);}
 }
 /* 🖼️ IMAGES DES ACTUS EN DIRECT — GDELT DOC 2.0 artlist (images des articles publiés
    ces dernières heures : guerres, crises, breaking). Tout échappé, https seulement. */
@@ -1067,6 +1154,26 @@ function drawNight(){
   LEAF.polygon(pts,{stroke:false,fillColor:"#020614",fillOpacity:.42,interactive:false}).addTo(_nightLayer);
 }
 /* 🌍/📍 Recentrage 1 tap */
+(function(){var rg=document.getElementById("radarRange");if(rg)rg.addEventListener("input",function(){_radarShowFrame(+rg.value);});})();
+/* 🔍 Recherche de lieu (Kevin n°6) : Nominatim gratuit sans clé → vol vers le lieu */
+(function(){var q=document.getElementById("wmQ"),go=document.getElementById("wmGo"),st=document.getElementById("wmQState");if(!q||!go)return;
+  var mk=null;
+  function fly(){var v=(q.value||"").trim();if(!v)return;st.textContent="…";
+    fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=fr&q="+encodeURIComponent(v),{headers:{"Accept":"application/json"}})
+    .then(function(r){return r.json();}).then(function(a){
+      if(!a||!a[0]){st.textContent="introuvable";setTimeout(function(){st.textContent="";},2500);return;}
+      st.textContent="";var r0=a[0],la=+r0.lat,lo=+r0.lon;
+      if(!MAP){var vb=document.getElementById("vMap");if(vb)vb.click();}
+      if(!MAP)return;
+      var z=9;try{var bb=r0.boundingbox.map(Number);var span=Math.max(Math.abs(bb[1]-bb[0]),Math.abs(bb[3]-bb[2]));z=span>20?4:span>6?6:span>1.5?8:span>.3?10:12;}catch(_e){}
+      MAP.flyTo([la,lo],z,{duration:1.6});
+      if(mk)MAP.removeLayer(mk);
+      mk=LEAF.marker([la,lo]).addTo(MAP).bindPopup('<div style="font-size:12px;max-width:220px">📍 '+esc(r0.display_name||v)+'<br><span style="opacity:.6">tape ailleurs sur la carte pour la météo de ce point</span></div>');
+      setTimeout(function(){if(mk)mk.openPopup();},1700);
+    }).catch(function(){st.textContent="réseau ?";setTimeout(function(){st.textContent="";},2500);});}
+  go.addEventListener("click",fly);
+  q.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();fly();}});
+})();
 function setMapView(v){if(!MAP)return;if(v==="world")MAP.setView([25,10],2);else MAP.setView([43.74,7.42],7);}
 /* 🛰️ ISS SUR LA CARTE — position réelle (SGP4, TLE Celestrak) + orbite des 45 prochaines
    minutes en pointillés, maj toutes les 5 s avec les autres satellites. */
@@ -1212,9 +1319,26 @@ async function loadShips(){
     if(_mapReady)drawShipsMap();
   }catch(e){}
 }
+/* cellules trop petites (<4 navires) → points individuels même en vue monde */
+function _clusterRest(list,cellKey){
+  list.forEach(function(s){var k=Math.floor(s.lat/6)+"_"+Math.floor(s.lon/6);if(k!==cellKey)return;
+    LEAF.circleMarker([s.lat,s.lon],{radius:3,color:"#35d6e6",weight:1,fillColor:"#7ff0ff",fillOpacity:.8})
+      .bindPopup("<b>🚢 "+esc(s.name&&String(s.name).trim()?String(s.name).trim():"Navire")+"</b>"+(s.mmsi?"<br>MMSI "+esc(String(s.mmsi)):"")).addTo(_shipLayer);});}
 function drawShipsMap(){
   if(!MAP||!_shipLayer)return;_shipLayer.clearLayers();
-  var list=(DL.ships||[]).slice(0,800),arrows=list.length<=400; /* flèche orientée cap si raisonnable, cercle sinon (perf) */
+  var list=(DL.ships||[]).slice(0,800),arrows=list.length<=400;
+  /* 🫧 Regroupement (Kevin n°14) : à zoom monde, bulles chiffrées par cellule de 6° — tap = zoomer */
+  if(MAP.getZoom()<=3&&list.length>150){
+    var cells={};
+    list.forEach(function(s){var k=Math.floor(s.lat/6)+"_"+Math.floor(s.lon/6);(cells[k]=cells[k]||{n:0,la:0,lo:0}).n++;cells[k].la+=s.lat;cells[k].lo+=s.lon;});
+    Object.keys(cells).forEach(function(k){var c=cells[k];if(c.n<4)return _clusterRest(list,k);
+      var la=c.la/c.n,lo=c.lo/c.n,sz=Math.min(34,16+Math.round(Math.sqrt(c.n)*2));
+      LEAF.marker([la,lo],{icon:LEAF.divIcon({className:"",html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:rgba(53,214,230,.28);border:1.5px solid #35d6e6;color:#bffaff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">'+c.n+'</div>',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]})})
+        .on("click",function(){MAP.setView([la,lo],5);})
+        .bindTooltip(c.n+" navires — tape pour zoomer",{direction:"top"})
+        .addTo(_shipLayer);});
+    return;
+  } /* flèche orientée cap si raisonnable, cercle sinon (perf) */
   list.forEach(function(s){
     var pop="<b>🚢 "+esc(s.name&&String(s.name).trim()?String(s.name).trim():"Navire")+"</b>"+(s.mmsi?"<br>MMSI "+esc(String(s.mmsi)):"")+(s.sog!=null?"<br>Vitesse "+s.sog+" nds":"")+(s.cog!=null?"<br>Cap "+Math.round(s.cog)+"°":"");
     var m=(arrows&&s.cog!=null&&isFinite(+s.cog))
@@ -1238,7 +1362,7 @@ function setBase(name){
 function setSatBase(on){setBase(on?"sat":"dark");}
 /* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
 function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer}[k]||null;}
-function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
+function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
   document.getElementById("map").classList.toggle("hidden",!on);
@@ -1393,6 +1517,46 @@ setInterval(loadStorms,1800000);   /* tempêtes : 30 min */
 setInterval(loadBrief,900000);     /* synthèse IA : 15 min (cache worker) */
 document.addEventListener("visibilitychange",function(){if(!document.hidden)fast();});
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.22" data-color="#c9a227" defer></script>
+<div id="briefModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(4,7,14,.82);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:18px" role="dialog" aria-label="Brief IA">
+  <div style="max-width:560px;width:100%;max-height:80vh;overflow:auto;background:#0b1120;border:1px solid rgba(120,150,210,.35);border-radius:14px;padding:18px 18px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+      <b style="font-size:15px">🧠 Brief IA — situation mondiale</b>
+      <button id="briefClose" class="tg" style="min-height:36px" aria-label="Fermer">✕</button>
+    </div>
+    <div id="briefBody" style="font-size:13.5px;line-height:1.65;white-space:pre-wrap;color:var(--fg)">Chargement…</div>
+    <div id="briefMeta" style="margin-top:10px;font-size:11px;color:var(--dim)"></div>
+  </div>
+</div>
+<script>
+/* 🧠 Brief IA (Kevin n°4) : lu depuis Firebase /apex/ax_wm_brief (généré par IA toutes
+   les 6 h côté CI — la clé IA reste serveur). Lecture via auth anonyme Firebase
+   (clé Web PUBLIQUE, même pattern que la page Départs). Fail-open. */
+(function(){
+  var FBKEY="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs",FB="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+  var modal=document.getElementById("briefModal"),body=document.getElementById("briefBody"),meta=document.getElementById("briefMeta"),_tok="";
+  function anonTok(){
+    if(_tok)return Promise.resolve(_tok);
+    return fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+FBKEY,{method:"POST",headers:{"Content-Type":"application/json"},body:"{\"returnSecureToken\":true}"})
+      .then(function(r){return r.json();}).then(function(j){_tok=j.idToken||"";return _tok;}).catch(function(){return "";});
+  }
+  function openBrief(){
+    modal.style.display="flex";body.textContent="Chargement du brief…";meta.textContent="";
+    anonTok().then(function(tk){
+      return fetch(FB+"/apex/ax_wm_brief.json"+(tk?"?auth="+encodeURIComponent(tk):""));
+    }).then(function(r){return r.json();}).then(function(j){
+      if(!j||!j.text){body.textContent="Pas encore de brief généré — il arrive au prochain cycle (toutes les 6 h). Les données live de la page restent la source en temps réel.";return;}
+      body.textContent=j.text;
+      var age=j.ts?Math.round((Date.now()-j.ts)/60000):null;
+      meta.textContent="Généré par IA il y a "+(age==null?"?":(age<60?age+" min":Math.round(age/60)+" h"))+" · sources "+(j.sources||"live")+" · prochain brief ≤ 6 h · 🔔 alertes push actives (séisme M6+, alerte rouge ONU)";
+    }).catch(function(){body.textContent="Brief momentanément indisponible (réseau) — réessaie.";});
+  }
+  var b=document.getElementById("btnBrief");if(b)b.addEventListener("click",openBrief);
+  var c=document.getElementById("briefClose");if(c)c.addEventListener("click",function(){modal.style.display="none";});
+  modal.addEventListener("click",function(e){if(e.target===modal)modal.style.display="none";});
+  /* 📲 PWA : Service Worker (réseau d'abord, MAJ auto par le badge partagé) */
+  if("serviceWorker" in navigator){try{navigator.serviceWorker.register("sw.js").catch(function(){});}catch(_e){}}
+})();
+</script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.29" data-color="#c9a227" defer></script>
 </body>
 </html>
