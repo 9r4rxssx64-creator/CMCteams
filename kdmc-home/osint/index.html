@@ -279,5 +279,6 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 /* MAJ auto force (leçon #102) : badge cliquable = échappatoire garantie */
 $("ver").onclick=function(){if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});if(window.caches&&caches.keys)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n);});});location.replace(location.pathname+"?_force_upd_"+Date.now());};
 </script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.1" data-color="#c9a227" defer></script>
 </body>
 </html>
