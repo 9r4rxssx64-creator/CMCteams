@@ -41,16 +41,21 @@ try {
     const days = getDays(2026, 7), pl = gpl();
     const SEQS = { 2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],11:[1,6,4,9,2,11,7,3,8,5,10],12:[1,6,4,9,2,11,7,3,12,8,5,10],13:[1,6,4,9,2,11,7,3,13,8,5,10,12] };
     const sq = n => SEQS[n] || Array.from({length:n},(_,i)=>i+1);
-    // Algo PAGE (compute v1.11.1) — référence validée par Kevin (off=0)
+    // Algo PAGE (compute v1.26) — ROSTER STABLE : absence 1-3j = numéro mort (le chef reste
+    // dans le roster, N + rangs inchangés → autres inchangés) ; congé ≥4j = retiré → recompacte.
+    // Réplique exacte de calcDepPos (app). off=0.
+    function absRun(e,D){ if(isWork((pl[e.id]||{})[D]||''))return 0; let L=1,dd;
+      for(dd=D-1;dd>=1&&!isWork((pl[e.id]||{})[dd]||'');dd--)L++;
+      for(dd=D+1;dd<=days&&!isWork((pl[e.id]||{})[dd]||'');dd++)L++; return L; }
     function pageDeps(chefEmps) {
       const active = chefEmps.filter(e => { for(let d=1;d<=days;d++) if(isWork((pl[e.id]||{})[d]||'')) return true; return false; });
       const wd = []; for(let d=1;d<=days;d++){ for(const e of active){ if(isWork((pl[e.id]||{})[d]||'')){ wd.push(d); break; } } }
       const baseOf = {}; active.forEach((e,ai)=>baseOf[e.name]=ai);
       const deps = {}; active.forEach(e=>deps[e.name]={});
       for(let d=1;d<=days;d++){ const wi=wd.indexOf(d); if(wi<0) continue;
-        const present = active.filter(e=>isWork((pl[e.id]||{})[d]||'')).sort((a,b)=>baseOf[a.name]-baseOf[b.name]);
-        const pc=present.length; if(!pc) continue; const SEQd=sq(pc), rot=wi; // v9.851 : +1 par jour travaillé
-        present.forEach((e,j)=>deps[e.name][d]=SEQd[(((rot+j)%pc)+pc)%pc]); }
+        const eff = active.filter(e=>{const r=absRun(e,d);return r===0||r<4;}).sort((a,b)=>baseOf[a.name]-baseOf[b.name]);
+        const N=eff.length; if(!N) continue; const SEQd=sq(N), rot=wi;
+        eff.forEach((e,j)=>{ if(isWork((pl[e.id]||{})[d]||'')) deps[e.name][d]=SEQd[(((rot+j)%N)+N)%N]; }); }
       return deps;
     }
     let teamsChecked = 0, nullWorks = 0, phantom = 0, mismatch = 0, totalCells = 0, withNumber = 0;
@@ -61,10 +66,11 @@ try {
       const pg = pageDeps(chefEmps);
       chefEmps.forEach(e => { for (let d=1;d<=days;d++){ const c=(pl[e.id]||{})[d]||''; if(!isWork(c)) continue; totalCells++;
         A.year=2026; A.month=7; const ap = calcDepPos(e.name, tid, d); const pgv = pg[e.name] && pg[e.name][d];
-        const present = chefEmps.filter(x=>isWork((pl[x.id]||{})[d]||'')).length;
+        // v9.857 : le max valide est la TAILLE DU ROSTER (chefs actifs), pas les présents du jour
+        // — un présent peut porter le n° le plus haut avec un « numéro mort » ailleurs (absence courte).
         if (ap != null) withNumber++;
         if (ap == null && pgv != null) nullWorks++;
-        if (ap != null && ap > present) phantom++;
+        if (ap != null && ap > chefEmps.length) phantom++;
         if (ap != null && pgv != null && ap !== pgv) mismatch++;
       }});
     });
@@ -76,7 +82,7 @@ try {
   ok(out.teamsChecked >= 20, 'assez d’équipes vérifiées (' + out.teamsChecked + ' ≥ 20)');
   ok(out.totalCells > 1000, 'volume de cellules vérifié (' + out.totalCells + ' > 1000)');
   ok(out.nullWorks === 0, 'AUCUN chef travaillant sans numéro de départ (' + out.nullWorks + ') — bug « manque les départs à partir du 16 »');
-  ok(out.phantom === 0, 'AUCUN numéro fantôme > nb chefs présents (' + out.phantom + ')');
+  ok(out.phantom === 0, 'AUCUN numéro fantôme > taille du roster (' + out.phantom + ')');
   ok(out.mismatch === 0, 'app == page sur CHAQUE cellule (' + out.mismatch + ' écart)');
   ok(out.withNumber === out.totalCells, 'TOUT chef qui travaille a un numéro (' + out.withNumber + '/' + out.totalCells + ')');
 
