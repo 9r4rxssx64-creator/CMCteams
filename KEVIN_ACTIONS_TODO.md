@@ -5,6 +5,21 @@
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## ⚡ kdmc-live (foudre + cyclones + feux officiels) — SESSION 2026-07-07
+
+Nouveau worker `services/kdmc-live/` (modèle kdmc-ais, SANS Durable Object — leçons #132/#133) qui alimente World Monitor en 3 sources live bloquées côté navigateur : **foudre temps réel** (Blitzortung, WebSocket courte), **cyclones/ouragans** (NOAA NHC, relais CORS + cache 10 min) et **feux officiels NASA FIRMS** (VIIRS 24 h, GeoJSON).
+
+**✅ Foudre + cyclones marchent SANS AUCUNE clé, dès le déploiement.** La clé NASA ne sert qu'aux feux officiels (`/fires`) — sans elle, réponse vide propre (fail-open, rien ne casse).
+
+**Tes 2 actions 1-clic :**
+1. **Clé NASA FIRMS (gratuite, ~1 min)** : crée ta MAP_KEY sur https://firms.modaps.eosdis.nasa.gov/api/map_key/ puis ajoute-la en secret GitHub nommé **`FIRMS_MAP_KEY`** : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions
+2. **Déployer** : Actions → « **Deploy KDMC Live** » → Run workflow : https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-live.yml
+   (le smoke du workflow teste en live /health + /cyclones + /lightning + /fires et affiche les corps de réponse = cause exacte si souci)
+
+> Tu peux lancer le déploiement AVANT d'avoir la clé (foudre + cyclones actifs tout de suite) puis relancer le workflow une fois la clé ajoutée. URL prévue : `https://kdmc-live.9r4rxssx64.workers.dev` — la clé reste **secrète côté worker**, jamais exposée au navigateur.
+
+---
+
 ## 🔎 SESSION 2026-07-07 — Audit complet + amélioration extrême (« Go tout auto »)
 
 ### ✅ Fait, mergé & déployé en autonomie (aucune action Kevin)
@@ -26,7 +41,6 @@
 ---
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
-
 ## 🔎 SESSION 2026-07-05 — Ultra-audit du domaine kd-mc.com (crew 5 experts)
 
 ### ✅ Corrigé + mergé (aucune action) — PR #2167
