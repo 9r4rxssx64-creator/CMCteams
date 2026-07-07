@@ -96,9 +96,11 @@ jobs:
           # et le bot reprend les cryptos déjà détenues au démarrage (state éphémère Railway).
           # D) POLITIQUE DE SORTIE (demande Kevin) : HOLD_UNTIL_PROFIT=true → le bot ne vend
           #    JAMAIS à perte, il attend la remontée et ne sort qu'en profit (marge 0.5%).
-          #    Le plafond perte/jour ne solde plus (il PAUSE les achats). Garde-fou honnête :
-          #    CATASTROPHE_STOP_PCT=20 → si une position s'effondre de -20%, on coupe quand même
-          #    (mesuré : évite le piège de rester bloqué à -50% en marché baissier).
+          #    Le plafond perte/jour ne solde plus (il PAUSE les achats).
+          #    CATASTROPHE_STOP_PCT=0 → frein anti-catastrophe RETIRÉ (Kevin 2026-07-07
+          #    « On garde quoi qu'il arrive jusqu'à ce que ça remonte ») : le bot garde une
+          #    position même à -50%. Honnête : la perte latente n'est plus bornée (testnet,
+          #    faux argent). Pour remettre le frein : CATASTROPHE_STOP_PCT=20.
           OUT=$(railway variables --service "$SERVICE_NAME" --skip-deploys \
             --set "BINANCE_API_KEY=$BK" \
             --set "BINANCE_API_SECRET=$BS" \
@@ -115,7 +117,7 @@ jobs:
             --set "RSI_MAX=78" \
             --set "HOLD_UNTIL_PROFIT=true" \
             --set "MIN_PROFIT_PCT=0.5" \
-            --set "CATASTROPHE_STOP_PCT=20" 2>&1)
+            --set "CATASTROPHE_STOP_PCT=0" 2>&1)
           RC=$?
           # Ne jamais logger les valeurs — uniquement le code retour + erreurs
           echo "railway variables rc=$RC"
@@ -148,7 +150,7 @@ jobs:
             echo "- Cryptos : BTC, ETH, SOL, BNB, XRP (capital réparti à parts égales)"
             echo "- Réglage : EMA 8/21 + RSI 78 (mesuré meilleur ; la mean-reversion faisait moins bien)"
             echo "- 🟢 **Ne vend JAMAIS à perte** : attend la remontée, sort seulement en profit (+0,5%)"
-            echo "- 🛟 Frein catastrophe -20% : coupe quand même si une position s'effondre (anti-piège du -50%)"
+            echo "- 🚫 Frein anti-catastrophe RETIRÉ (choix Kevin) : on garde quoi qu'il arrive jusqu'à la remontée — perte latente non bornée (testnet)"
             echo "- Le plafond perte/jour ne solde plus : il met les ACHATS en pause (garde les positions)"
             echo "- Rythme : vérifs toutes les 30 s sur bougies 5 min"
             echo "- ⚠️ Honnête : « ne pas vendre à perte » affiche 100% de trades gagnants mais peut BLOQUER du capital en perte latente. Mesuré : rend moins que le stop classique. Pour revenir : HOLD_UNTIL_PROFIT=false."
