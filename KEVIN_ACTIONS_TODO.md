@@ -5,6 +5,28 @@
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔎 SESSION 2026-07-07 — Audit complet + amélioration extrême (« Go tout auto »)
+
+### ✅ Fait, mergé & déployé en autonomie (aucune action Kevin)
+- **Pannes stoppées** : mail d'échec Vercel quotidien (branche `kv-backups`) + runs rouges toutes les 5 min (todo-watcher lisait Firebase sans auth) → réparés, vérifiés verts.
+- **Sécu Firebase (décisions 1-2)** : verrou boutique `shops_admin_v1/access` fermé (`.read/.write:false`) · credentials Apex (`ax_admin_pin`/`ax_pin`/`ax_user`/`ax_uid`/`ax_admin_pass`) purgés du cloud partagé à chaque déploiement hardened. Déployé, probe comportementale verte.
+- **4 correctifs audit** : CSP Apex +4 hosts (PayPal/Google Photos/Vercel/géoloc débloqués) · badge MAJ auto ajouté à World Monitor + OSINT · sous-domaine mort `desarzens-kevin` corrigé · OTP Apex Chat en générateur cryptographique.
+- **Améliorations extrêmes livrées** : cœur d'auth Apex Chat remis dans la mesure de couverture (plancher dédié 80/74/86/80, plus caché) · blocage PIN Apex Chat honnête + temporisation 10 min (fin du lockout permanent) · toasts Apex v13 sans jargon (knowledge/innovation) · cron build Apex 30 min → 6 h (−44 runs/j) · cible tactile Départs 42→44px (v1.26).
+
+### 🟡 Actions / décisions qui t'attendent (notées pour plus tard)
+1. **« Go chiffrement »** — réactiver le vrai E2E bout-en-bout Apex Chat. Gros chantier risqué (les clés s'étaient désynchronisées → E2E coupé) : republier les clés au login + retirer le repli clair + tester 2 clients réels. À faire sur une session dédiée, pas à l'aveugle (risque de casser l'envoi de messages).
+2. **Durcissement per-user Apex** (positions/santé/réglages lisibles par tout visiteur anonyme) — exige d'abord de déployer les **custom-tokens par rôle** (`apex-auth-worker`) car le flux temps réel écoute l'arbre `/apex` entier avec un jeton anonyme. L'activer sans ça verrouillerait Apex (leçon #109). Chantier à planifier ensemble.
+3. **CSP des 2 dashboards live** (World Monitor / OSINT) — je ne peux pas la déployer à l'aveugle (une CSP incomplète casse les cartes, et je ne peux pas tester en live depuis ici). À faire avec la liste exacte des sources, vérifiée par un smoke CI.
+4. **Rappel — clé aisstream déjà faite** (navires mondiaux actifs). Rien à refaire.
+
+### ⚖️ Arbitrages laissés en l'état (ta règle prime)
+- **Jeton Apex Chat 30 j** : gardé tel quel — ta règle « reconnu auto après 1ère connexion » prime sur le risque théorique de jeton volé (Face ID + déconnexion forcée couvrent déjà). Dis si tu veux 7 j.
+- **Anti-clobber `cmc_features`** : non modifié — l'app n'a qu'un seul admin (toi), collision impossible ; le fix alourdirait un chemin admin chaud pour zéro gain réel.
+
+---
+
+# KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
+
 ## 🔎 SESSION 2026-07-05 — Ultra-audit du domaine kd-mc.com (crew 5 experts)
 
 ### ✅ Corrigé + mergé (aucune action) — PR #2167

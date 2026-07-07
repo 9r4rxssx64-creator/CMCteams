@@ -13718,6 +13718,7 @@ K._unlockWithBiometric = async function(silent){
     if(ok){
       ls('user_unlock_ts', Date.now());
       ls('user_pin_fails_' + K.user.id, 0);
+      ls('user_pin_lock_ts_' + K.user.id, 0);
       K._lockScreenOpen = false;
       const el = document.getElementById('apex-lock');
       if(el) el.remove();
@@ -13737,16 +13738,29 @@ K._unlockApp = async function(){
   if(pin.length !== 6) return toast('PIN 6 chiffres', 'err');
   const fails = lg('user_pin_fails_' + K.user.id, 0) || 0;
   if(fails >= 5){
-    return toast('5 erreurs — recharge la page (cmd+R) pour réessayer', 'err', 7000);
+    // Anti-lockout (règle « jamais de lockout ») : Face ID déverrouille tout de
+    // suite (il réinitialise le compteur), sinon temporisation 10 min puis on
+    // réautorise une série. L'ancien message « recharge la page » était faux —
+    // le compteur survit au reload.
+    const lockTs = lg('user_pin_lock_ts_' + K.user.id, 0) || 0;
+    if(!lockTs){ ls('user_pin_lock_ts_' + K.user.id, Date.now()); }
+    const waited = Date.now() - (lockTs || Date.now());
+    if(waited < 600000){
+      const mins = Math.max(1, Math.ceil((600000 - waited) / 60000));
+      return toast('5 erreurs — déverrouille avec Face ID 🔓, ou réessaie dans ' + mins + ' min', 'err', 7000);
+    }
+    ls('user_pin_fails_' + K.user.id, 0);
+    ls('user_pin_lock_ts_' + K.user.id, 0);
   }
   const ok = await K._userPinVerify(K.user.id, pin);
   if(!ok){
-    const f = fails + 1;
+    const f = (lg('user_pin_fails_' + K.user.id, 0) || 0) + 1;
     ls('user_pin_fails_' + K.user.id, f);
     if(pinEl) pinEl.value = '';
     return toast('PIN incorrect (' + f + '/5)', 'err');
   }
   ls('user_pin_fails_' + K.user.id, 0);
+  ls('user_pin_lock_ts_' + K.user.id, 0);
   ls('user_unlock_ts', Date.now());
   // Étape A E2E : le PIN est dispo ici → migrer la clé privée en clair vers wrappée,
   // puis charger les clés (déwrap si elles étaient en mode "defer"). Best-effort.
