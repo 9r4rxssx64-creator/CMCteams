@@ -509,7 +509,9 @@ export async function handleSendOtp(request, env) {
   ).bind(ipHash, hourKey, ipHash, hourKey).run();
 
   // ============ Génère OTP 6 chiffres ============
-  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  // CSPRNG (leçon audit) : un OTP à 6 chiffres tiré de Math.random() est
+  // prédictible si l'état du PRNG est deviné. getRandomValues = imprévisible.
+  const otp = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
   const otpHash = await sha256(otp + ':' + cleanPhone);
 
   // Stocke OTP hashé en D1 (TTL 5 min)

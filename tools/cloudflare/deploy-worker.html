@@ -334,7 +334,7 @@ async function deployWorker(){
       log('→ Created : ' + (result.result?.created_on || '?'));
       log('');
       log('🎉 Tu peux maintenant tester le worker :', 'ok');
-      log('https://apex-push-worker.desarzens-kevin.workers.dev/health');
+      log('https://apex-push-worker.9r4rxssx64.workers.dev/health');
       document.getElementById('btnTest').style.display = 'block';
       btn.innerHTML = '✅ Déployé avec succès';
     } else {
@@ -353,7 +353,7 @@ async function deployWorker(){
 async function testHealth(){
   log('→ Test /health...');
   try {
-    const r = await fetch('https://apex-push-worker.desarzens-kevin.workers.dev/health');
+    const r = await fetch('https://apex-push-worker.9r4rxssx64.workers.dev/health');
     const data = await r.json();
     log('Réponse : ' + JSON.stringify(data, null, 2));
     if(data.ok && data.configured){
