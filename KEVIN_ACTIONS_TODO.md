@@ -1,5 +1,11 @@
 <!-- Backlog Claude Code (audit Apex 2026-07-05, aucune action Kevin requise) :
 
+## 🧠 Mémoire intelligente d'Apex (RAG) — installée 2026-07-07, à DÉPLOYER (1 clic)
+- Nouveau worker `kdmc-rag` : Apex mémorise tes échanges et se rappelle des choses pertinentes automatiquement (embeddings dans Cloudflare = aucune clé externe ; vecteurs dans Vectorize). **Défaut ÉTEINT → 0 impact tant que pas déployé+activé** (fail-open : si absent, Apex marche comme avant).
+- **Déployer (1 clic)** : Actions → « Deploy KDMC RAG (mémoire Apex) » → Run workflow : https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-rag.yml (crée l'index + déploie + teste /health). Secrets déjà là (Cloudflare + PIN).
+- ⚠️ **Honnête** : Vectorize doit être dispo sur ton compte Cloudflare (les « Durable Objects » avaient été refusés — leçon #132). Le smoke du workflow te dira `hasVec:true` si OK. Si KO, la mémoire reste éteinte et Apex n'est pas affecté.
+- **Activer ensuite** : je confirmerai /health vert puis on l'allume (flag `apex_v13_rag_enabled`).
+
 ## ⚡ Cerebras (IA gratuite ultra-rapide) — installé 2026-07-07, 1 action OPTIONNELLE
 - Cerebras ajouté comme provider de secours dans Apex (~1M tokens/JOUR gratuit, le plus rapide). **Inerte tant que tu n'as pas de clé** (fail-open, rien ne casse ; Anthropic reste ton IA principale).
 - **Pour l'activer (gratuit, ~2 min, sans carte)** : crée une clé sur https://cloud.cerebras.ai/ → ajoute-la en secret GitHub **`CEREBRAS_API_KEY`** : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions → puis lance « Sync Apex Secrets » (le worker route Cerebras automatiquement). Ta clé Mistral (déjà là) sert aussi de secours.
