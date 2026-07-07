@@ -190,46 +190,28 @@ const NHC_URL = "https://www.nhc.noaa.gov/CurrentStorms.json";
 const CYCLONES_TTL = 600; // 10 min
 
 async function handleCyclones(request, origin) {
-  // Cache 10 min via caches.default (clé synthétique stable, indépendante des query params).
-  const cacheKey = new Request("https://kdmc-live.internal/cyclones-cache-v1", { method: "GET" });
-  const cache = caches.default;
+  // Fetch DIRECT de NHC (pas de caches.default ni d'options cf:{} — NHC est lui-même
+  // derrière Cloudflare, et un fetch Worker→zone-Cloudflare avec cacheEverything peut
+  // jeter une erreur edge 1104, cf. leçons #132/#133). Cache géré par le navigateur
+  // via Cache-Control. Tout échec = fail-open (structure NHC vide + cause exacte).
   try {
-    const hit = await cache.match(cacheKey);
-    if (hit) {
-      const body = await hit.text();
-      return new Response(body, {
-        status: 200,
-        headers: Object.assign(
-          { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=" + CYCLONES_TTL, "x-kdmc-cache": "hit" },
-          cors(origin)
-        ),
-      });
-    }
-  } catch (e) { /* cache indisponible → fetch direct */ }
-  try {
-    const r = await fetch(NHC_URL, { headers: { "user-agent": "kdmc-live-worker (kd-mc.com World Monitor)" }, cf: { cacheTtl: CYCLONES_TTL, cacheEverything: true } });
+    const r = await fetch(NHC_URL, { headers: { "user-agent": "kdmc-live-worker (kd-mc.com World Monitor)", "accept": "application/json" } });
     const txt = await r.text();
     if (!r.ok) {
       return json({ activeStorms: [], debug: { upstreamStatus: r.status, body: txt.slice(0, 300) } }, origin);
     }
-    // Valider que c'est bien du JSON avant de le relayer (un HTML d'erreur NHC ne doit pas passer pour des données).
     let parsed;
     try { parsed = JSON.parse(txt); } catch (e) {
       return json({ activeStorms: [], debug: { note: "NHC a renvoyé du non-JSON", firstRaw: txt.slice(0, 300) } }, origin);
     }
-    const out = JSON.stringify(parsed);
-    try {
-      await cache.put(cacheKey, new Response(out, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=" + CYCLONES_TTL } }));
-    } catch (e) { /* best-effort */ }
-    return new Response(out, {
+    return new Response(JSON.stringify(parsed), {
       status: 200,
       headers: Object.assign(
-        { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=" + CYCLONES_TTL, "x-kdmc-cache": "miss" },
+        { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=" + CYCLONES_TTL },
         cors(origin)
       ),
     });
   } catch (e) {
-    // FAIL-OPEN : structure NHC vide + cause exacte.
     return json({ activeStorms: [], debug: { error: String((e && e.message) || e) } }, origin);
   }
 }
@@ -314,9 +296,15 @@ export default {
     if (url.pathname === "/health") {
       return json({ ok: true, endpoints: ENDPOINTS, hasFirmsKey, mode: "no-do", ts: Date.now() }, origin);
     }
-    if (url.pathname === "/lightning") return handleLightning(url, origin);
-    if (url.pathname === "/cyclones") return handleCyclones(request, origin);
-    if (url.pathname === "/fires") return handleFires(url, origin, env);
+    // Chaque handler est enveloppé : toute exception → JSON fail-open (jamais une
+    // page d'erreur edge Cloudflare 11xx, cf. leçon #133 — toujours un objet).
+    try {
+      if (url.pathname === "/lightning") return await handleLightning(url, origin);
+      if (url.pathname === "/cyclones") return await handleCyclones(request, origin);
+      if (url.pathname === "/fires") return await handleFires(url, origin, env);
+    } catch (e) {
+      return json({ ok: false, error: "handler_threw", detail: String((e && e.message) || e), path: url.pathname }, origin);
+    }
 
     return json({ ok: false, error: "not_found", endpoints: ENDPOINTS }, origin, 404);
   },
