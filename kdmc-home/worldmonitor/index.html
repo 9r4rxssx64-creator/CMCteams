@@ -157,13 +157,22 @@
   footer{max-width:1220px; margin:16px auto 0; padding:0 14px; color:var(--dim); font-size:11px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
   .ver{border:1px solid var(--line); border-radius:20px; padding:4px 11px; color:var(--gold); letter-spacing:.05em; cursor:pointer}
   .src{opacity:.72; line-height:1.5}
+  .tgroup{border:1px solid var(--line);border-radius:10px;margin:5px 0;overflow:hidden;background:rgba(10,16,30,.35)}
+  .tgsum{list-style:none;cursor:pointer;padding:10px 12px;font-size:13px;font-weight:600;color:var(--fg);display:flex;align-items:center;gap:8px;min-height:44px;user-select:none}
+  .tgsum::-webkit-details-marker{display:none}
+  .tgsum::after{content:"▾";margin-left:auto;opacity:.55;transition:transform .18s}
+  .tgroup[open] .tgsum::after{transform:rotate(180deg)}
+  .tgsum:hover{background:rgba(120,150,210,.08)}
+  .tgn{font-size:11px;font-weight:500;color:var(--dim);background:rgba(120,150,210,.14);border-radius:20px;padding:1px 8px}
+  .tgwrap{display:flex;flex-wrap:wrap;gap:6px;padding:2px 10px 11px}
+  #btnInstall{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <div class="logo"><span class="dot"></span> 🌍 WORLD&nbsp;MONITOR</div>
-    <div style="display:flex;align-items:center;gap:10px"><button id="btnBrief" class="tg" style="min-height:38px" title="Résumé IA de la situation mondiale (généré toutes les 6 h : conflits, catastrophes, à surveiller)">🧠 Brief IA</button><div class="clock"><b id="utc">—</b><span id="local">—</span></div></div>
+    <div style="display:flex;align-items:center;gap:10px"><button id="btnInstall" class="tg" style="min-height:38px" title="Ajouter World Monitor à ton écran d'accueil">📲 Installer</button><button id="btnBrief" class="tg" style="min-height:38px" title="Résumé IA de la situation mondiale (généré toutes les 6 h : conflits, catastrophes, à surveiller)">🧠 Brief IA</button><div class="clock"><b id="utc">—</b><span id="local">—</span></div></div>
   </header>
 
   <div class="grid">
@@ -180,33 +189,13 @@
           <span id="wmQState" style="align-self:center;color:var(--dim);font-size:11px"></span>
         </div>
         <div class="toggles" id="toggles">
-          <button class="tg" data-layer="flights" aria-pressed="true"><span class="i" style="background:var(--green)"></span>✈️ Vols</button>
-          <button class="tg" data-layer="ships" aria-pressed="true"><span class="i" style="background:#35d6e6"></span>🚢 Navires</button>
-          <button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>🔴 Séismes</button>
-          <button class="tg" data-layer="fires" aria-pressed="true"><span class="i" style="background:var(--orange)"></span>🔥 Feux</button>
-          <button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>🌋 Volcans</button>
-          <button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>🌀 Tempêtes</button>
-          <button class="tg" data-layer="detroits" aria-pressed="true"><span class="i" style="background:#5aa9ff"></span>⚓ Détroits</button>
-          <button class="tg" data-layer="iss" aria-pressed="true"><span class="i" style="background:var(--cyan)"></span>🛰️ ISS</button>
-          <button class="tg" data-layer="sats" aria-pressed="true" title="Positions RÉELLES des ~150 satellites les plus brillants — données orbitales Celestrak, calcul SGP4 recalculé toutes les 5 s"><span class="i" style="background:#ffe9b8"></span>🛰️ Satellites</button>
-          <button class="tg" data-layer="radar" aria-pressed="false" title="Radar de précipitations MONDIAL en direct (RainViewer, maj ~10 min)"><span class="i" style="background:#61c8ff"></span>🌧️ Pluie radar</button>
-          <button class="tg" data-layer="firesat" aria-pressed="false" title="Détections thermiques VUES PAR SATELLITE — NASA VIIRS (image d'hier)"><span class="i" style="background:#ff8a5a"></span>🔥 Feux sat.</button>
-          <button class="tg" data-layer="gdacs" aria-pressed="true" title="Alertes catastrophes MONDIALES en direct (GDACS/ONU) : cyclones, inondations, séismes majeurs — niveau vert/orange/rouge, maj ~15 min"><span class="i" style="background:#ff5a4d"></span>🚨 Alertes ONU</button>
-          <button class="tg" data-layer="aurora" aria-pressed="false" title="Aurores boréales/australes EN DIRECT — prévision NOAA OVATION maj ~5 min (probabilité d'aurore visible)"><span class="i" style="background:#7fffc9"></span>🌌 Aurores</button>
-          <button class="tg" data-layer="air" aria-pressed="false" title="Qualité de l'air EN DIRECT dans ~34 grandes villes (Open-Meteo, indice européen) — Monaco inclus"><span class="i" style="background:#a8e05f"></span>🌫️ Air</button>
-          <button class="tg" data-layer="waves" aria-pressed="false" title="Vagues & houle EN DIRECT sur ~28 points d'océans et mers (Open-Meteo Marine) — Méditerranée/Monaco inclus"><span class="i" style="background:#4db8ff"></span>🌊 Vagues</button>
-          <button class="tg" data-layer="smoke" aria-pressed="false" title="Fumées & poussières VUES PAR SATELLITE — indice d'aérosols OMPS/NASA (feux, sable, éruptions ; image la plus récente)"><span class="i" style="background:#c9a06a"></span>🌫️ Fumées sat.</button>
-          <button class="tg" data-layer="lightning" aria-pressed="false" title="Foudre MONDIALE en temps réel — réseau Blitzortung (impacts des dernières minutes, maj ~40 s)"><span class="i" style="background:#ffe14d"></span>⚡ Foudre</button>
-          <button class="tg" data-layer="cyclones" aria-pressed="false" title="Cyclones/ouragans ACTIFS — trajectoires officielles NOAA/NHC (maj ~10 min)"><span class="i" style="background:#b992ff"></span>🌀 Cyclones NHC</button>
-          <button class="tg" data-layer="firms" aria-pressed="false" title="Feux ACTIFS vus par satellite — NASA FIRMS VIIRS (dernières 24 h ; nécessite la clé FIRMS)"><span class="i" style="background:#ff6a2a"></span>🔥 Feux FIRMS</button>
-          <button class="tg" data-layer="night" aria-pressed="true" title="Ombre jour/nuit RÉELLE — position du soleil calculée en direct (maj 1 min)"><span class="i" style="background:#26304a"></span>🌓 Jour/Nuit</button>
-          <button class="tg" data-base="dark" aria-pressed="true" title="Carte sombre (par défaut)"><span class="i" style="background:#5a6a8a"></span>🌙 Carte</button>
-          <button class="tg" data-base="sat" aria-pressed="false" title="Satellite haute résolution (Esri)"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite HD</button>
-          <button class="tg" data-base="live" aria-pressed="false" title="Vue satellite LIVE — VIIRS/NASA, image d'hier (nuages, feux, tempêtes vus de l'espace)"><span class="i" style="background:#7fd6ff"></span>🛰️ Live NASA</button>
-          <button class="tg" data-base="night" aria-pressed="false" title="Terre de nuit LIVE — VIIRS Day/Night Band (lumières des villes, image d'hier)"><span class="i" style="background:#ffd27f"></span>🌃 Terre nuit</button>
-          <button class="tg" data-base="geo" aria-pressed="false" title="Vue géostationnaire quasi TEMPS RÉEL (~10-20 min) — GOES-East/West GeoColor + Himawari IR (NASA GIBS, vérifiés CI) : nuages et tempêtes en continu"><span class="i" style="background:#9be47f"></span>🌎 Géo LIVE</button>
-          <button class="tg" data-view="world" aria-pressed="false" title="Recentrer sur le monde entier"><span class="i" style="background:#5aa9ff"></span>🌍 Monde</button>
-          <button class="tg" data-view="mc" aria-pressed="false" title="Recentrer sur Monaco"><span class="i" style="background:#e8b830"></span>📍 Monaco</button>
+          <details class="tgroup" open><summary class="tgsum">🚨 Alertes & catastrophes <span class="tgn">6</span></summary><div class="tgwrap"><button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>🔴 Séismes</button><button class="tg" data-layer="gdacs" aria-pressed="true" title="Alertes catastrophes MONDIALES en direct (GDACS/ONU) : cyclones, inondations, séismes majeurs — niveau vert/orange/rouge, maj ~15 min"><span class="i" style="background:#ff5a4d"></span>🚨 Alertes ONU</button><button class="tg" data-layer="cyclones" aria-pressed="false" title="Cyclones/ouragans ACTIFS — trajectoires officielles NOAA/NHC (maj ~10 min)"><span class="i" style="background:#b992ff"></span>🌀 Cyclones NHC</button><button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>🌀 Tempêtes</button><button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>🌋 Volcans</button><button class="tg" data-layer="lightning" aria-pressed="false" title="Foudre MONDIALE en temps réel — réseau Blitzortung (impacts des dernières minutes, maj ~40 s)"><span class="i" style="background:#ffe14d"></span>⚡ Foudre</button></div></details>
+          <details class="tgroup"><summary class="tgsum">🔥 Feux & fumées <span class="tgn">4</span></summary><div class="tgwrap"><button class="tg" data-layer="fires" aria-pressed="true"><span class="i" style="background:var(--orange)"></span>🔥 Feux</button><button class="tg" data-layer="firesat" aria-pressed="false" title="Détections thermiques VUES PAR SATELLITE — NASA VIIRS (image d'hier)"><span class="i" style="background:#ff8a5a"></span>🔥 Feux sat.</button><button class="tg" data-layer="firms" aria-pressed="false" title="Feux ACTIFS vus par satellite — NASA FIRMS VIIRS (dernières 24 h ; nécessite la clé FIRMS)"><span class="i" style="background:#ff6a2a"></span>🔥 Feux FIRMS</button><button class="tg" data-layer="smoke" aria-pressed="false" title="Fumées & poussières VUES PAR SATELLITE — indice d'aérosols OMPS/NASA (feux, sable, éruptions ; image la plus récente)"><span class="i" style="background:#c9a06a"></span>🌫️ Fumées sat.</button></div></details>
+          <details class="tgroup"><summary class="tgsum">✈️ Trafic <span class="tgn">3</span></summary><div class="tgwrap"><button class="tg" data-layer="flights" aria-pressed="true"><span class="i" style="background:var(--green)"></span>✈️ Vols</button><button class="tg" data-layer="ships" aria-pressed="true"><span class="i" style="background:#35d6e6"></span>🚢 Navires</button><button class="tg" data-layer="detroits" aria-pressed="true"><span class="i" style="background:#5aa9ff"></span>⚓ Détroits</button></div></details>
+          <details class="tgroup"><summary class="tgsum">🛰️ Espace <span class="tgn">2</span></summary><div class="tgwrap"><button class="tg" data-layer="iss" aria-pressed="true"><span class="i" style="background:var(--cyan)"></span>🛰️ ISS</button><button class="tg" data-layer="sats" aria-pressed="true" title="Positions RÉELLES des ~150 satellites les plus brillants — données orbitales Celestrak, calcul SGP4 recalculé toutes les 5 s"><span class="i" style="background:#ffe9b8"></span>🛰️ Satellites</button></div></details>
+          <details class="tgroup"><summary class="tgsum">🌦️ Météo & ciel <span class="tgn">5</span></summary><div class="tgwrap"><button class="tg" data-layer="radar" aria-pressed="false" title="Radar de précipitations MONDIAL en direct (RainViewer, maj ~10 min)"><span class="i" style="background:#61c8ff"></span>🌧️ Pluie radar</button><button class="tg" data-layer="aurora" aria-pressed="false" title="Aurores boréales/australes EN DIRECT — prévision NOAA OVATION maj ~5 min (probabilité d'aurore visible)"><span class="i" style="background:#7fffc9"></span>🌌 Aurores</button><button class="tg" data-layer="air" aria-pressed="false" title="Qualité de l'air EN DIRECT dans ~34 grandes villes (Open-Meteo, indice européen) — Monaco inclus"><span class="i" style="background:#a8e05f"></span>🌫️ Air</button><button class="tg" data-layer="waves" aria-pressed="false" title="Vagues & houle EN DIRECT sur ~28 points d'océans et mers (Open-Meteo Marine) — Méditerranée/Monaco inclus"><span class="i" style="background:#4db8ff"></span>🌊 Vagues</button><button class="tg" data-layer="night" aria-pressed="true" title="Ombre jour/nuit RÉELLE — position du soleil calculée en direct (maj 1 min)"><span class="i" style="background:#26304a"></span>🌓 Jour/Nuit</button></div></details>
+          <details class="tgroup"><summary class="tgsum">🗺️ Fond de carte <span class="tgn">5</span></summary><div class="tgwrap"><button class="tg" data-base="dark" aria-pressed="true" title="Carte sombre (par défaut)"><span class="i" style="background:#5a6a8a"></span>🌙 Carte</button><button class="tg" data-base="sat" aria-pressed="false" title="Satellite haute résolution (Esri)"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite HD</button><button class="tg" data-base="live" aria-pressed="false" title="Vue satellite LIVE — VIIRS/NASA, image d'hier (nuages, feux, tempêtes vus de l'espace)"><span class="i" style="background:#7fd6ff"></span>🛰️ Live NASA</button><button class="tg" data-base="night" aria-pressed="false" title="Terre de nuit LIVE — VIIRS Day/Night Band (lumières des villes, image d'hier)"><span class="i" style="background:#ffd27f"></span>🌃 Terre nuit</button><button class="tg" data-base="geo" aria-pressed="false" title="Vue géostationnaire quasi TEMPS RÉEL (~10-20 min) — GOES-East/West GeoColor + Himawari IR (NASA GIBS, vérifiés CI) : nuages et tempêtes en continu"><span class="i" style="background:#9be47f"></span>🌎 Géo LIVE</button></div></details>
+          <details class="tgroup"><summary class="tgsum">🎯 Aller à <span class="tgn">2</span></summary><div class="tgwrap"><button class="tg" data-view="world" aria-pressed="false" title="Recentrer sur le monde entier"><span class="i" style="background:#5aa9ff"></span>🌍 Monde</button><button class="tg" data-view="mc" aria-pressed="false" title="Recentrer sur Monaco"><span class="i" style="background:#e8b830"></span>📍 Monaco</button></div></details>
         </div>
         <div id="radarBar" style="display:none;align-items:center;gap:10px;margin:6px 0 2px;font-size:12px;color:var(--dim)">
           <span>⏪ Replay pluie 2h</span>
@@ -370,13 +359,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.30</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.31</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.30";
+var VER="v2.31";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -1615,8 +1604,30 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)fast
   modal.addEventListener("click",function(e){if(e.target===modal)modal.style.display="none";});
   /* 📲 PWA : Service Worker (réseau d'abord, MAJ auto par le badge partagé) */
   if("serviceWorker" in navigator){try{navigator.serviceWorker.register("sw.js").catch(function(){});}catch(_e){}}
+  /* 📲 Installer (Kevin « install ») : bouton visible seulement si pas déjà installé */
+  (function(){
+    var btn=document.getElementById("btnInstall");if(!btn)return;
+    var isStandalone=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;
+    if(isStandalone)return; /* déjà installé → rien */
+    var deferred=null,ua=navigator.userAgent||"";
+    var isIOS=/iPhone|iPad|iPod/.test(ua)&&!window.MSStream;
+    window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferred=e;btn.style.display="inline-block";});
+    if(isIOS)btn.style.display="inline-block"; /* iOS n\u2019a pas d\u2019invite auto → on guide */
+    btn.addEventListener("click",function(){
+      if(deferred){deferred.prompt();deferred.userChoice&&deferred.userChoice.then(function(){deferred=null;btn.style.display="none";});return;}
+      /* iOS / navigateurs sans invite : mini-guide */
+      var m=document.createElement("div");
+      m.style.cssText="position:fixed;inset:0;z-index:2100;background:rgba(4,7,14,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px";
+      m.innerHTML='<div style="max-width:340px;background:#0b1120;border:1px solid rgba(120,150,210,.35);border-radius:14px;padding:18px;font-size:14px;line-height:1.6;color:#e8eef8">'+
+        '<b style="font-size:15px">📲 Ajouter à l\u2019écran d\u2019accueil</b><div style="margin:10px 0">'+
+        (isIOS?'1. Touche <b>Partager</b> ⬆️ en bas de Safari<br>2. Choisis <b>« Sur l\u2019écran d\u2019accueil »</b> ➕<br>3. Touche <b>Ajouter</b>':'Ouvre le menu de ton navigateur puis <b>« Installer l\u2019application »</b> / <b>« Ajouter à l\u2019écran d\u2019accueil »</b>.')+
+        '</div><button style="width:100%;min-height:42px;background:linear-gradient(135deg,#c9a227,#e8b830);border:0;border-radius:9px;color:#1a1300;font-weight:700;font-size:14px">Compris</button></div>';
+      m.addEventListener("click",function(e){if(e.target===m||e.target.tagName==="BUTTON")document.body.removeChild(m);});
+      document.body.appendChild(m);
+    });
+  })();
 })();
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.30" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.31" data-color="#c9a227" defer></script>
 </body>
 </html>
