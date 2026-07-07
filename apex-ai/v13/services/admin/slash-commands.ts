@@ -115,6 +115,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'challenge', emoji: '🥊', description: 'Avocat du diable, attaque les hypothèses, stress-test l\'idée', argsHint: '<idée>', prefill: 'Joue l\'avocat du diable : attaque les hypothèses et stress-teste cette idée : ' },
   { name: 'expand', emoji: '🌱', description: 'Explore les implications, cas d\'usage et extensions', argsHint: '<sujet>', prefill: 'Explore les implications, les cas d\'usage et les extensions possibles de : ' },
   { name: 'systemize', emoji: '⚙️', description: 'Transforme un coup unique en système / workflow réutilisable', argsHint: '<sujet>', prefill: 'Transforme ceci en système / workflow réutilisable (étapes répétables) : ' },
+  { name: 'simplify', emoji: '🧒', description: 'Explique simplement, comme à un débutant (0 jargon)', argsHint: '<sujet>', prefill: 'Explique simplement, comme à un débutant, sans aucun jargon : ' },
 ];
 
 export interface SlashParseResult {
