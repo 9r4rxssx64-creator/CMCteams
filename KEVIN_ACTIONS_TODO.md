@@ -1,4 +1,9 @@
 <!-- Backlog Claude Code (audit Apex 2026-07-05, aucune action Kevin requise) :
+
+## 🔒 Strix (pentest IA autonome) — installé 2026-07-07
+- Outil de sécurité offensive (github.com/usestrix/strix) installé comme workflow **à la demande** `strix-scan.yml` (jamais auto = maîtrise coût). Clé LLM = `OPEN_AI_API_KEY` (déjà présente).
+- **Action optionnelle** : si un scan échoue sur « model not found », relance en passant un `model` litellm valide (input du workflow). Le défaut `openai/gpt-5.4` vient de la doc Strix.
+
      1. 15 lessons critical non résolues → tests de régression dédiés (session à venir).
      2. 6 boutons < 36px → enlarge_touch_targets (P2 UX, iOS HIG 44px).
      Les 2 escalades P1 de l'audit : « Aucun provider IA » = corrigé v13.4.340. -->
