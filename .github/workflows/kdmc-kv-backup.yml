@@ -109,7 +109,13 @@ jobs:
           cp /tmp/out/*.json.enc backups/kdmc-accounts/
           # Rétention : latest + 14 derniers dumps datés
           ls -1 backups/kdmc-accounts/2*.json.enc 2>/dev/null | sort | head -n -14 | xargs -r rm -f
-          git add backups/kdmc-accounts
+          # Anti-échec Vercel : le projet kdmc-agent-monaco (Root Directory tools/agent)
+          # tentait un preview deploy sur CHAQUE push de cette branche orpheline →
+          # « Root Directory does not exist » + mail d'échec quotidien à Kevin.
+          # Ce vercel.json fait ignorer la branche par Vercel (idempotent).
+          mkdir -p tools/agent
+          printf '%s\n' '{ "git": { "deploymentEnabled": false }, "ignoreCommand": "exit 0" }' > tools/agent/vercel.json
+          git add backups/kdmc-accounts tools/agent/vercel.json
           git commit -m "backup: registre KV kd-mc.com $(date -u +%Y-%m-%d) (chiffré) [skip ci]" || { echo "rien à committer"; exit 0; }
           git push -f origin kv-backups
 
