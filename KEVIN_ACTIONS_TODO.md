@@ -1,5 +1,9 @@
 <!-- Backlog Claude Code (audit Apex 2026-07-05, aucune action Kevin requise) :
 
+## ⚡ Cerebras (IA gratuite ultra-rapide) — installé 2026-07-07, 1 action OPTIONNELLE
+- Cerebras ajouté comme provider de secours dans Apex (~1M tokens/JOUR gratuit, le plus rapide). **Inerte tant que tu n'as pas de clé** (fail-open, rien ne casse ; Anthropic reste ton IA principale).
+- **Pour l'activer (gratuit, ~2 min, sans carte)** : crée une clé sur https://cloud.cerebras.ai/ → ajoute-la en secret GitHub **`CEREBRAS_API_KEY`** : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions → puis lance « Sync Apex Secrets » (le worker route Cerebras automatiquement). Ta clé Mistral (déjà là) sert aussi de secours.
+
 ## 🔒 Strix (pentest IA autonome) — installé 2026-07-07
 - Outil de sécurité offensive (github.com/usestrix/strix) installé comme workflow **à la demande** `strix-scan.yml` (jamais auto = maîtrise coût). Clé LLM = `OPEN_AI_API_KEY` (déjà présente).
 - **Action optionnelle** : si un scan échoue sur « model not found », relance en passant un `model` litellm valide (input du workflow). Le défaut `openai/gpt-5.4` vient de la doc Strix.

@@ -48,6 +48,9 @@ export const PROXY_PROVIDERS = [
   'finnhub',
   'pexels',
   'replicate',
+  /* v13.4.345 (Kevin « intègre les IA gratuites ») : Cerebras (~1M tok/jour gratuit,
+   * le plus rapide). Route via le proxy dès que le secret CEREBRAS_API_KEY est ajouté. */
+  'cerebras',
 ] as const;
 
 export type ProxyProvider = (typeof PROXY_PROVIDERS)[number];

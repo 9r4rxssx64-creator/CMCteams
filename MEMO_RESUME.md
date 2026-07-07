@@ -1,4 +1,7 @@
 
+## ⚡ Cerebras failover (TOP 8 #8) — Apex v13.4.345 (2026-07-07, Kevin « Go tout »)
+- Cerebras (~1M tok/jour gratuit, le plus rapide) ajouté comme provider de failover TARDIF dans ai-router (`Provider` type + `PROVIDERS.cerebras` OpenAI-compat + `DEFAULT_CHAIN` avant openclaw + `ALL_PROVIDERS_LOGICAL`) — **anthropic reste EN TÊTE** (premium admin intouché, leçon #124). Routable via proxy (`PROXY_PROVIDERS` + PROXY_MAP worker `sync-apex-secrets-to-cf-worker.yml` : upstream api.cerebras.ai, secret CEREBRAS_API_KEY). Inerte tant que Kevin n'ajoute pas la clé (fail-open, la chaîne saute cerebras → 0 régression). Test `v13_4_345` (4/4 : cerebras enregistré, anthropic 1er, proxy-routable, historiques présents). tsc 0, eslint 0, router 43/43 verts. Bump v13.4.345 (APP_VER+data-app-ver+sw). Action Kevin OPTIONNELLE = 1 clé gratuite (KEVIN_ACTIONS). NB #7 RAG Workers AI+Vectorize = passe dédiée (worker+deploy).
+
 ## 🌍 v2.32 + ⚡ Unlighthouse + /perf (2026-07-07, Kevin « tout ce qui est utile au domaine, va plus loin ») — intégration recherche TOP 8
 - **WM v2.32 🌊 Crues** (TOP 8 #1) : Open-Meteo Flood/GloFAS, 25 rivières mondiales, normalisé par rivière (débit jour vs pic 30 j + prévu 7 j), sans clé/CORS OK, patron air/waves, OFF défaut + charge à l'activation. Vérifié Playwright local 25/25, 0 erreur (leçon #126).
 - **perf-unlighthouse.yml** (TOP 8 #4) : audit Lighthouse multi-pages kd-mc.com sans quota PageSpeed (« mesurer pas estimer » #94), dispatch+cron mensuel, cible bornée kd-mc.com → Firebase ax_perf_last.

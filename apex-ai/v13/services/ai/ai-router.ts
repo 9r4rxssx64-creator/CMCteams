@@ -49,7 +49,7 @@ import { redactMessageContent, redactPII } from '../vault/pii-redaction.js';
 import { chatFallback } from './chat-fallback.js';
 
 
-export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'openclaw';
+export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'cerebras' | 'openclaw';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -369,6 +369,34 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     /* P0-2 fix : header x-goog-api-key au lieu de query string (anti leak proxy/log) */
     headers: (apiKey) => ({ 'content-type': 'application/json', 'x-goog-api-key': apiKey }),
   },
+  /* v13.4.345 (Kevin « intègre les IA gratuites — go tout ») : Cerebras = ~1M tokens/jour
+   * gratuit, ~2000 tok/s (le plus rapide en volume). API OpenAI-compatible. Ajouté comme
+   * failover TARDIF (jamais avant anthropic — le premium admin reste inchangé, leçon #124).
+   * Inerte tant que Kevin n'a pas ajouté le secret CEREBRAS_API_KEY (fail-open, la chaîne
+   * saute simplement cerebras) → aucune régression. */
+  cerebras: {
+    endpoint: 'https://api.cerebras.ai/v1/chat/completions',
+    keyName: 'ax_cerebras_key',
+    model: 'llama-3.3-70b',
+    buildBody: (messages, system) => ({
+      model: 'llama-3.3-70b',
+      stream: true,
+      messages: [{ role: 'system', content: system }, ...messages],
+    }),
+    parseSSE: (data) => {
+      try {
+        const j = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
+        const text = j.choices?.[0]?.delta?.content;
+        return typeof text === 'string' && text.length > 0 ? { kind: 'text', text } : null;
+      } catch {
+        return null;
+      }
+    },
+    headers: (apiKey) => ({
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    }),
+  },
   openclaw: {
     endpoint: 'https://api.openclaw.io/v1/chat/completions' /* placeholder, à confirmer quand Kevin fournit clé */,
     keyName: 'ax_openclaw_key',
@@ -659,7 +687,7 @@ const PROVIDERS_WITH_TOOLS: ReadonlySet<Provider> = new Set<Provider>(['anthropi
  *
  * Total effectif : 6 endpoints distincts → si 2 KO, reste 4 actifs minimum.
  */
-const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'openclaw'];
+const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'cerebras', 'openclaw'];
 
 /**
  * v13.3.74 H2 — Liste extensive des providers logiques supportés (incluant proxiés).
@@ -671,6 +699,7 @@ export const ALL_PROVIDERS_LOGICAL: readonly string[] = [
   'openrouter',
   'groq',
   'gemini',
+  'cerebras',
   'mistral',
   'cohere',
   'deepseek',
