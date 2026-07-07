@@ -116,6 +116,8 @@ const PROBES = [
   /* v2.27 — météo au tap + recherche lieu */
   ['Open-Meteo prévisions (météo au tap) (CORS)', 'https://api.open-meteo.com/v1/forecast?latitude=43.73&longitude=7.42&current=temperature_2m,weather_code&daily=temperature_2m_max&forecast_days=3&timezone=auto', 'cors'],
   ['Nominatim recherche lieu (CORS)', 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=Monaco', 'cors'],
+  /* v2.28 — météo spatiale */
+  ['NOAA SWPC indice Kp (météo spatiale) (CORS)', 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json', 'cors'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
 ];

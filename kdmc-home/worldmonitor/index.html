@@ -199,9 +199,15 @@
           <button class="tg" data-view="world" aria-pressed="false" title="Recentrer sur le monde entier"><span class="i" style="background:#5aa9ff"></span>🌍 Monde</button>
           <button class="tg" data-view="mc" aria-pressed="false" title="Recentrer sur Monaco"><span class="i" style="background:#e8b830"></span>📍 Monaco</button>
         </div>
+        <div id="radarBar" style="display:none;align-items:center;gap:10px;margin:6px 0 2px;font-size:12px;color:var(--dim)">
+          <span>⏪ Replay pluie 2h</span>
+          <input id="radarRange" type="range" min="0" max="12" value="12" step="1" style="flex:1;accent-color:#61c8ff">
+          <b id="radarT" style="color:var(--fg);font-variant-numeric:tabular-nums;min-width:72px">maintenant</b>
+        </div>
         <canvas id="globe" class="hidden" width="760" height="600" aria-label="Globe animé : séismes, feux, volcans, tempêtes, vols et ISS en direct"></canvas>
         <div class="stat-row" id="stats">
           <div class="stat"><div class="n" id="sQuakes">—</div><div class="l">Séismes 24h</div></div>
+          <div class="stat" title="Météo spatiale EN DIRECT — indice Kp NOAA (activité géomagnétique) : ≤3 calme · 4 agité · ≥5 tempête G1-G5 (aurores, radio)"><div class="n" id="sKp">—</div><div class="l" id="sKpL">Météo spatiale</div></div>
           <div class="stat"><div class="n" id="sEvents">—</div><div class="l">Événements</div></div>
           <div class="stat"><div class="n" id="sFlights">—</div><div class="l">Vols Europe</div></div>
           <div class="stat"><div class="n" id="sIss">—</div><div class="l">ISS km/h</div></div>
@@ -355,13 +361,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.27</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.28</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.27";
+var VER="v2.28";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -555,10 +561,21 @@ function loop(){if(spin)rot+=0.0021;drawGlobe();requestAnimationFrame(loop);}
 resizeGlobe();requestAnimationFrame(loop);
 
 /* ============ SÉISMES (USGS) ============ */
+/* ☀️ Météo spatiale (Kevin n°7) : indice Kp planétaire NOAA SWPC, live */
+async function loadSpaceWx(){try{
+  var a=await getJSON("https://services.swpc.noaa.gov/json/planetary_k_index_1m.json",12000);
+  if(!a||!a.length)return;
+  var kp=+a[a.length-1].kp_index,lab=kp>=8?"G4-G5 extrême":kp>=7?"G3 forte":kp>=6?"G2 modérée":kp>=5?"G1 tempête":kp>=4?"agité":"calme";
+  var col=kp>=7?"#ff5a4d":kp>=5?"#ffb84d":kp>=4?"#ffd24d":"#3ddc84";
+  var el=document.getElementById("sKp"),el2=document.getElementById("sKpL");
+  if(el){var s="Kp "+kp.toFixed(1);if(el.textContent!==s)el.textContent=s;el.style.color=col;}
+  if(el2){var s2="Soleil : "+lab;if(el2.textContent!==s2)el2.textContent=s2;}
+}catch(e){}}
+loadSpaceWx();setInterval(loadSpaceWx,600000);
 async function loadQuakes(){try{
   var d=await getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
   var f=(d&&d.features)||[];f.sort(function(a,b){return b.properties.time-a.properties.time;});
-  DL.quakes=f.map(function(x){var c=x.geometry.coordinates;return {lat:c[1],lon:c[0],mag:x.properties.mag||0,place:x.properties.place||"",depth:c[2]||0,time:x.properties.time||0};});if(_mapReady)drawQuakesMap();
+  DL.quakes=f.map(function(x){var c=x.geometry.coordinates;return {lat:c[1],lon:c[0],mag:x.properties.mag||0,place:x.properties.place||"",depth:c[2]||0,time:x.properties.time||0,alert:x.properties.alert||null,tsunami:x.properties.tsunami||0,felt:x.properties.felt||0};});if(_mapReady)drawQuakesMap();
   setText($("sQuakes"),String(f.length));setText($("quakeState"),f.length+" / 24h");setText($("globeState"),"en direct");
   var box=$("quakes");if(!f.length){setHTML(box,'<div class="empty">Aucun séisme. 🌍</div>');return;}
   setHTML(box,f.slice(0,30).map(function(x){var m=x.properties.mag||0,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d";
@@ -900,6 +917,7 @@ function initMap(){
   _stormLayer=LEAF.layerGroup().addTo(MAP);
   /* Les couches se pilotent par les puces sous la carte (pas de boîte sur la carte). */
   MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
+  MAP.on("zoomend",function(){drawShipsMap();});
   setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();loadSats();loadRadar();loadGdacs();loadAurora();loadAir();loadWaves();drawNight();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
   setInterval(loadShips,60000);
@@ -956,17 +974,26 @@ async function loadPlanes(){
     var alt=(a.alt_baro==null||a.alt_baro==="ground")?"au sol":Math.round(a.alt_baro)+" ft";
     var spd=a.gs!=null?Math.round(a.gs)+" kt":"—";
     var fl=(a.flight||a.r||"?").trim();
-    LEAF.marker([a.lat,a.lon],{icon:planeIcon(a.track)}).bindPopup("<b>"+esc(fl)+"</b><br>Altitude "+esc(alt)+"<br>Vitesse "+esc(spd)+(a.t?"<br>Type "+esc(a.t):"")).addTo(_planeLayer);
+    var kmh=a.gs!=null?" ("+Math.round(a.gs*1.852)+" km/h)":"",mAlt=(a.alt_baro!=null&&a.alt_baro!=="ground")?" ("+Math.round(a.alt_baro*0.3048)+" m)":"";
+    LEAF.marker([a.lat,a.lon],{icon:planeIcon(a.track)}).bindPopup("<b>✈️ "+esc(fl)+"</b>"+(a.t?" · "+esc(a.t):"")+(a.r?"<br>Immat. "+esc(a.r):"")+"<br>Altitude "+esc(alt)+esc(mAlt)+"<br>Vitesse "+esc(spd)+esc(kmh)+(a.track!=null?"<br>Cap "+Math.round(a.track)+"°":"")+(a.desc?"<br><span style=\'opacity:.7\'>"+esc(a.desc)+"</span>":"")).addTo(_planeLayer);
   });
   setText($("mapHint"),"✈️ "+n+" avions en direct · 🔴 séismes · pince pour zoomer");
   setText($("sFlights"),String(n));
 }
+/* Impact estimé PAGER (USGS) : vert=aucun, jaune=limité, orange=sérieux, rouge=majeur */
+function _pagerHtml(q){var h="";
+  if(q.alert){var pc={green:"#3ddc84",yellow:"#ffd24d",orange:"#ffb84d",red:"#ff5a4d"}[q.alert]||"#9aa7c7";
+    var pl={green:"aucun dégât attendu",yellow:"impact limité possible",orange:"impact sérieux probable",red:"impact majeur probable"}[q.alert]||q.alert;
+    h+="<br>Impact estimé (PAGER) : <b style=\'color:"+pc+"\'>"+pl+"</b>";}
+  if(q.tsunami)h+="<br>🌊 <b style=\'color:#4db8ff\'>alerte tsunami possible</b>";
+  if(q.felt)h+="<br>👥 ressenti par "+q.felt+" personnes";
+  return h;}
 function drawQuakesMap(){
   if(!MAP||!_quakeLayer)return;
   _quakeLayer.clearLayers();
   (DL.quakes||[]).forEach(function(q){
     var m=q.mag||0,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d",r=Math.max(4,Math.min(16,m*2.4));
-    LEAF.circleMarker([q.lat,q.lon],{radius:r,color:col,weight:1,fillColor:col,fillOpacity:.35}).bindPopup("<b>Séisme M "+m.toFixed(1)+"</b><br>"+esc(q.place||"")+"<br>Profondeur "+((q.depth||0).toFixed(0))+" km"+(q.time?"<br>Il y a "+ago(q.time):"")).addTo(_quakeLayer);
+    LEAF.circleMarker([q.lat,q.lon],{radius:r,color:col,weight:1,fillColor:col,fillOpacity:.35}).bindPopup("<b>Séisme M "+m.toFixed(1)+"</b><br>"+esc(q.place||"")+"<br>Profondeur "+((q.depth||0).toFixed(0))+" km"+(q.time?"<br>Il y a "+ago(q.time):"")+_pagerHtml(q)).addTo(_quakeLayer);
   });
 }
 function drawFiresMap(){
@@ -1045,15 +1072,32 @@ function updateSats(){
   updateIssMap();
 }
 /* 🌧️ RADAR DE PRÉCIPITATIONS MONDIAL en direct — RainViewer (gratuit, sans clé, maj ~10 min) */
+var _radarFrames=null,_radarHost="";
 async function loadRadar(){
   try{
     var j=await getJSON("https://api.rainviewer.com/public/weather-maps.json",10000);
     var past=j&&j.radar&&j.radar.past;if(!past||!past.length||!_radarLayer)return;
-    var f=past[past.length-1],host=j.host||"https://tilecache.rainviewer.com";
-    _radarLayer.clearLayers();
-    LEAF.tileLayer(host+f.path+"/512/{z}/{x}/{y}/2/1_1.png",{opacity:.65,zIndex:5,maxZoom:18,
-      attribution:'&copy; RainViewer — radar pluie en direct'}).addTo(_radarLayer);
+    _radarFrames=past;_radarHost=j.host||"https://tilecache.rainviewer.com";
+    _radarShowFrame(past.length-1);
+    _radarBarSync();
   }catch(e){}
+}
+function _radarShowFrame(i){
+  if(!_radarFrames||!_radarFrames[i]||!_radarLayer)return;
+  var f=_radarFrames[i];
+  _radarLayer.clearLayers();
+  LEAF.tileLayer(_radarHost+f.path+"/512/{z}/{x}/{y}/2/1_1.png",{opacity:.65,zIndex:5,maxZoom:18,
+    attribution:'&copy; RainViewer — radar pluie en direct'}).addTo(_radarLayer);
+  var lb=document.getElementById("radarT");
+  if(lb){var d=new Date(f.time*1000),s=(i===_radarFrames.length-1?"maintenant":d.toTimeString().slice(0,5));if(lb.textContent!==s)lb.textContent=s;}
+  var rg=document.getElementById("radarRange");if(rg&&+rg.value!==i)rg.value=String(i);
+}
+/* ⏪ Replay pluie (Kevin n°8) : curseur sur les ~2 dernières heures de radar */
+function _radarBarSync(){
+  var bar=document.getElementById("radarBar");if(!bar)return;
+  var show=!!(ON.radar&&_radarFrames&&_radarFrames.length>1);
+  bar.style.display=show?"flex":"none";
+  if(show){var rg=document.getElementById("radarRange");rg.max=String(_radarFrames.length-1);}
 }
 /* 🖼️ IMAGES DES ACTUS EN DIRECT — GDELT DOC 2.0 artlist (images des articles publiés
    ces dernières heures : guerres, crises, breaking). Tout échappé, https seulement. */
@@ -1104,6 +1148,7 @@ function drawNight(){
   LEAF.polygon(pts,{stroke:false,fillColor:"#020614",fillOpacity:.42,interactive:false}).addTo(_nightLayer);
 }
 /* 🌍/📍 Recentrage 1 tap */
+(function(){var rg=document.getElementById("radarRange");if(rg)rg.addEventListener("input",function(){_radarShowFrame(+rg.value);});})();
 /* 🔍 Recherche de lieu (Kevin n°6) : Nominatim gratuit sans clé → vol vers le lieu */
 (function(){var q=document.getElementById("wmQ"),go=document.getElementById("wmGo"),st=document.getElementById("wmQState");if(!q||!go)return;
   var mk=null;
@@ -1268,9 +1313,26 @@ async function loadShips(){
     if(_mapReady)drawShipsMap();
   }catch(e){}
 }
+/* cellules trop petites (<4 navires) → points individuels même en vue monde */
+function _clusterRest(list,cellKey){
+  list.forEach(function(s){var k=Math.floor(s.lat/6)+"_"+Math.floor(s.lon/6);if(k!==cellKey)return;
+    LEAF.circleMarker([s.lat,s.lon],{radius:3,color:"#35d6e6",weight:1,fillColor:"#7ff0ff",fillOpacity:.8})
+      .bindPopup("<b>🚢 "+esc(s.name&&String(s.name).trim()?String(s.name).trim():"Navire")+"</b>"+(s.mmsi?"<br>MMSI "+esc(String(s.mmsi)):"")).addTo(_shipLayer);});}
 function drawShipsMap(){
   if(!MAP||!_shipLayer)return;_shipLayer.clearLayers();
-  var list=(DL.ships||[]).slice(0,800),arrows=list.length<=400; /* flèche orientée cap si raisonnable, cercle sinon (perf) */
+  var list=(DL.ships||[]).slice(0,800),arrows=list.length<=400;
+  /* 🫧 Regroupement (Kevin n°14) : à zoom monde, bulles chiffrées par cellule de 6° — tap = zoomer */
+  if(MAP.getZoom()<=3&&list.length>150){
+    var cells={};
+    list.forEach(function(s){var k=Math.floor(s.lat/6)+"_"+Math.floor(s.lon/6);(cells[k]=cells[k]||{n:0,la:0,lo:0}).n++;cells[k].la+=s.lat;cells[k].lo+=s.lon;});
+    Object.keys(cells).forEach(function(k){var c=cells[k];if(c.n<4)return _clusterRest(list,k);
+      var la=c.la/c.n,lo=c.lo/c.n,sz=Math.min(34,16+Math.round(Math.sqrt(c.n)*2));
+      LEAF.marker([la,lo],{icon:LEAF.divIcon({className:"",html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:rgba(53,214,230,.28);border:1.5px solid #35d6e6;color:#bffaff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">'+c.n+'</div>',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]})})
+        .on("click",function(){MAP.setView([la,lo],5);})
+        .bindTooltip(c.n+" navires — tape pour zoomer",{direction:"top"})
+        .addTo(_shipLayer);});
+    return;
+  } /* flèche orientée cap si raisonnable, cercle sinon (perf) */
   list.forEach(function(s){
     var pop="<b>🚢 "+esc(s.name&&String(s.name).trim()?String(s.name).trim():"Navire")+"</b>"+(s.mmsi?"<br>MMSI "+esc(String(s.mmsi)):"")+(s.sog!=null?"<br>Vitesse "+s.sog+" nds":"")+(s.cog!=null?"<br>Cap "+Math.round(s.cog)+"°":"");
     var m=(arrows&&s.cog!=null&&isFinite(+s.cog))
@@ -1294,7 +1356,7 @@ function setBase(name){
 function setSatBase(on){setBase(on?"sat":"dark");}
 /* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
 function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer}[k]||null;}
-function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
+function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
   document.getElementById("map").classList.toggle("hidden",!on);
