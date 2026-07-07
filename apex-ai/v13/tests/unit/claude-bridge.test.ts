@@ -474,4 +474,70 @@ describe('claude-bridge (P0 coverage)', () => {
       expect(after).toBe(before);
     });
   });
+
+  describe('dispatchWorkflow() — arsenal sécurité (security-suite/strix/agent-reach)', () => {
+    let originalFetch: typeof globalThis.fetch;
+    beforeEach(() => {
+      originalFetch = globalThis.fetch;
+    });
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+      vi.restoreAllMocks();
+    });
+
+    it('skip si pas de github token (exec_id quand même)', async () => {
+      localStorage.removeItem('ax_github_token');
+      const fetchSpy = vi.fn();
+      globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
+      const r = await claudeBridge.dispatchWorkflow('security-suite', {});
+      expect(r.ok).toBe(false);
+      expect(r.reason).toBe('no_github_token');
+      expect(r.exec_id).toMatch(/^apex_/);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('POST repository_dispatch avec event_type + payload + exec_id', async () => {
+      localStorage.setItem('ax_github_token', 'ghp_disp_1');
+      const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 204 });
+      globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
+      const r = await claudeBridge.dispatchWorkflow('strix-scan', { target: 'kdmc-home/worldmonitor' });
+      expect(r.ok).toBe(true);
+      expect(r.attempts).toBe(1);
+      const [url, opts] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      expect(url).toContain('/dispatches');
+      expect((opts.headers as Record<string, string>)['Authorization']).toBe('Bearer ghp_disp_1');
+      expect((opts.headers as Record<string, string>)['X-GitHub-Api-Version']).toBe('2022-11-28');
+      const body = JSON.parse(String(opts.body)) as { event_type: string; client_payload: Record<string, unknown> };
+      expect(body.event_type).toBe('strix-scan');
+      expect(body.client_payload['target']).toBe('kdmc-home/worldmonitor');
+      expect(body.client_payload['exec_id']).toBe(r.exec_id);
+      expect(typeof body.client_payload['ts']).toBe('number');
+    });
+
+    it('retry puis all_retries_failed sur erreur réseau', async () => {
+      localStorage.setItem('ax_github_token', 'ghp_disp_retry');
+      const fetchSpy = vi.fn().mockRejectedValue(new Error('network'));
+      globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
+      vi.useFakeTimers();
+      const promise = claudeBridge.dispatchWorkflow('agent-reach', { channel: 'web', target: 'https://kd-mc.com' });
+      await vi.runAllTimersAsync();
+      const r = await promise;
+      vi.useRealTimers();
+      expect(r.ok).toBe(false);
+      expect(r.attempts).toBe(3);
+      expect(r.reason).toBe('all_retries_failed');
+      expect(fetchSpy).toHaveBeenCalledTimes(3);
+    });
+
+    it('stop sans retry sur 403', async () => {
+      localStorage.setItem('ax_github_token', 'ghp_disp_403');
+      const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 403 });
+      globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
+      const r = await claudeBridge.dispatchWorkflow('security-suite', {});
+      expect(r.ok).toBe(false);
+      expect(r.status).toBe(403);
+      expect(r.reason).toBe('auth_failed_403');
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    });
+  });
 });

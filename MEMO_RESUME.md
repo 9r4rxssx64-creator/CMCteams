@@ -1,4 +1,9 @@
 
+## 🛡️ Arsenal sécurité + commandes Apex (2026-07-07, Kevin « récupère les outils des hackers, installe dans Apex »)
+- `security-suite.yml` = outils OSS pentesters scellés au repo (gitleaks/TruffleHog secrets, OSV/Trivy deps, Semgrep XSS/SAST, zizmor workflows). continue-on-error, cron hebdo + dispatch. Résultat → artifact + Firebase `ax_security_last`. Skill `.claude/skills/security-suite/`.
+- **3 commandes Apex CÂBLÉES (pas de commande morte, règle #28)** : `/audit`→security-suite, `/pentest <cible>`→strix-scan (garde périmètre kd-mc.com), `/web <url|requête>`→agent-reach. Nouveau champ `dispatch?` sur SlashCommand + méthode `claudeBridge.dispatchWorkflow(eventType, payload)` (réutilise token/headers/retry d'escalateNow) + handler `handleDispatchCommand` dans chat-slash-dispatch. Résultat asynchrone dans Coffre (`ax_*_last`). tsc 0, eslint 0, tests 41+47 verts (dont 4 dispatchWorkflow + completeness 4/4).
+- Strix (`strix-scan.yml` + skill) installé la même session : pentest IA dynamique, dispatch-only, clé `OPEN_AI_API_KEY`, scope kd-mc.com.
+
 ## 🌍 v2.30 (2026-07-07, Kevin « Go ») — couches worker kdmc-live câblées sur la carte
 ⚡ Foudre Blitzortung (impacts qui s'estompent 10 min, maj 40 s ; worker a capté **32 éclairs réels** au smoke) · 🌀 Cyclones NHC (trajectoires officielles, maj 10 min ; /cyclones 1104 corrigé = fetch NHC direct + try/catch entrée) · 🔥 Feux FIRMS (bbox de la vue, maj 10 min + redraw moveend ; vide sans clé, fail-open). 3 puces OFF par défaut, timers gated ON.x, chargement à l'activation. Worker URL kdmc-live.9r4rxssx64.workers.dev. Test local 13/13 + sondes CI /health+/cyclones+/lightning. Reste optionnel : clé NASA FIRMS gratuite (KEVIN_ACTIONS).
 # v13.4.339 + v13.4.340 (2026-07-04/05) — saga « toujours openai » : CAUSE RACINE FINALE + diag

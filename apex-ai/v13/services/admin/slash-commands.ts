@@ -31,6 +31,13 @@ export interface SlashCommand {
    * expand/systemize.
    */
   prefill?: string;
+  /**
+   * Si défini, la commande déclenche un workflow CI via repository_dispatch
+   * (claudeBridge.dispatchWorkflow) — l'arsenal sécurité scellé kd-mc.com :
+   * 'security-suite' (/audit), 'strix-scan' (/pentest), 'agent-reach' (/web).
+   * Résultat asynchrone dans Firebase ax_*_last (Apex le lit ensuite).
+   */
+  dispatch?: string;
 }
 
 export const SLASH_COMMANDS: SlashCommand[] = [
@@ -55,6 +62,10 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'ultrareview', emoji: '🔍', description: 'Audit complet Apex — 8 axes, mode brutal', argsHint: '' },
   { name: 'diag', emoji: '🩺', description: 'Diagnostic runtime Apex (santé live)', argsHint: '' },
   { name: 'test', emoji: '🧪', description: 'Lance les auto-tests runtime', argsHint: '' },
+  /* Sécurité — arsenal hacker éthique, scellé aux apps kd-mc.com (déclenche les workflows CI) */
+  { name: 'audit', emoji: '🛡️', description: 'Suite sécurité (gitleaks/trufflehog/osv/trivy/semgrep/zizmor) sur le repo — résultat dans ax_security_last', argsHint: '', dispatch: 'security-suite' },
+  { name: 'pentest', emoji: '🕷️', description: 'Pentest IA autonome (Strix) sur une app kd-mc.com — résultat dans ax_strix_last', argsHint: '<cible=chemin|url kd-mc.com>', dispatch: 'strix-scan' },
+  { name: 'web', emoji: '🌐', description: 'Lit une page web / cherche via Agent-Reach (résultat dans ax_agent_reach_last)', argsHint: '<url|requête>', dispatch: 'agent-reach' },
   /* v13.4.250 — navigation : une commande par destination (Kevin "toutes les commandes /") */
   { name: 'vault', emoji: '🔐', description: 'Ouvre le Coffre (clés, secrets)', argsHint: '', route: 'vault' },
   { name: 'dashboard', emoji: '📊', description: 'Ouvre le tableau de bord', argsHint: '', route: 'dashboard' },

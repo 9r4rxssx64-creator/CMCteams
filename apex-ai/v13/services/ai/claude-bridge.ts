@@ -199,6 +199,72 @@ class ClaudeBridge {
   }
 
   /**
+   * Déclenche un workflow GitHub Actions via repository_dispatch (même canal
+   * que escalateNow — token ax_github_token du Coffre, retry 3× backoff).
+   *
+   * Utilisé par les slash-commands sécurité (/audit → security-suite,
+   * /pentest → strix-scan, /web → agent-reach). Le résultat arrive de façon
+   * asynchrone dans Firebase (ax_security_last / ax_strix_last / ax_agent_reach_last).
+   *
+   * @param eventType type de repository_dispatch (doit matcher `types:` du workflow)
+   * @param payload   client_payload (target/model/channel/query + exec_id auto)
+   */
+  async dispatchWorkflow(
+    eventType: string,
+    payload: Record<string, unknown> = {},
+  ): Promise<{ ok: boolean; status?: number; attempts: number; reason?: string; exec_id: string }> {
+    const exec_id = `apex_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    let token = '';
+    try {
+      token = await vault.readKey('ax_github_token');
+    } catch (err: unknown) {
+      logger.warn('claude-bridge', 'dispatchWorkflow: vault.readKey failed', { err });
+    }
+    if (!token) {
+      void auditLog.record('claude_bridge.dispatch_skipped', { details: { eventType, reason: 'no_github_token' } });
+      return { ok: false, attempts: 0, reason: 'no_github_token', exec_id };
+    }
+    const body = {
+      event_type: eventType,
+      client_payload: { ...payload, exec_id, ts: Date.now() },
+    };
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    for (let attempt = 0; attempt < ESCALATE_RETRIES; attempt++) {
+      try {
+        const res = await fetch(DISPATCH_URL, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (res.status === 204 || res.ok) {
+          void auditLog.record('claude_bridge.dispatch_ok', { details: { eventType, exec_id, attempt: attempt + 1 } });
+          logger.info('claude-bridge', `🚀 dispatchWorkflow OK (${eventType}, attempt ${attempt + 1})`);
+          return { ok: true, status: res.status, attempts: attempt + 1, exec_id };
+        }
+        if (res.status === 401 || res.status === 403) {
+          const reason = `auth_failed_${res.status}`;
+          void auditLog.record('claude_bridge.dispatch_auth_fail', { details: { eventType, status: res.status } });
+          return { ok: false, status: res.status, attempts: attempt + 1, reason, exec_id };
+        }
+        logger.warn('claude-bridge', `dispatchWorkflow HTTP ${res.status} (attempt ${attempt + 1})`);
+      } catch (err: unknown) {
+        logger.warn('claude-bridge', `dispatchWorkflow network error (attempt ${attempt + 1})`, { err });
+      }
+      if (attempt < ESCALATE_RETRIES - 1) {
+        await new Promise((resolve) => setTimeout(resolve, ESCALATE_BACKOFF_MS[attempt] ?? 5000));
+      }
+    }
+    void auditLog.record('claude_bridge.dispatch_failed', { details: { eventType, attempts: ESCALATE_RETRIES } });
+    return { ok: false, attempts: ESCALATE_RETRIES, reason: 'all_retries_failed', exec_id };
+  }
+
+  /**
    * Liste todos avec filtres.
    */
   listTodos(filters?: { status?: TodoStatus; severity?: ClaudeTodo['severity']; src?: string; limit?: number }): ClaudeTodo[] {
