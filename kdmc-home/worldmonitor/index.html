@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05070d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="World Monitor">
 <title>World Monitor — kd-mc.com</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -157,7 +163,7 @@
 <div class="wrap">
   <header class="top">
     <div class="logo"><span class="dot"></span> 🌍 WORLD&nbsp;MONITOR</div>
-    <div class="clock"><b id="utc">—</b><span id="local">—</span></div>
+    <div style="display:flex;align-items:center;gap:10px"><button id="btnBrief" class="tg" style="min-height:38px" title="Résumé IA de la situation mondiale (généré toutes les 6 h : conflits, catastrophes, à surveiller)">🧠 Brief IA</button><div class="clock"><b id="utc">—</b><span id="local">—</span></div></div>
   </header>
 
   <div class="grid">
@@ -361,13 +367,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.28</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.29</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.28";
+var VER="v2.29";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -1511,6 +1517,46 @@ setInterval(loadStorms,1800000);   /* tempêtes : 30 min */
 setInterval(loadBrief,900000);     /* synthèse IA : 15 min (cache worker) */
 document.addEventListener("visibilitychange",function(){if(!document.hidden)fast();});
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.22" data-color="#c9a227" defer></script>
+<div id="briefModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(4,7,14,.82);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:18px" role="dialog" aria-label="Brief IA">
+  <div style="max-width:560px;width:100%;max-height:80vh;overflow:auto;background:#0b1120;border:1px solid rgba(120,150,210,.35);border-radius:14px;padding:18px 18px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+      <b style="font-size:15px">🧠 Brief IA — situation mondiale</b>
+      <button id="briefClose" class="tg" style="min-height:36px" aria-label="Fermer">✕</button>
+    </div>
+    <div id="briefBody" style="font-size:13.5px;line-height:1.65;white-space:pre-wrap;color:var(--fg)">Chargement…</div>
+    <div id="briefMeta" style="margin-top:10px;font-size:11px;color:var(--dim)"></div>
+  </div>
+</div>
+<script>
+/* 🧠 Brief IA (Kevin n°4) : lu depuis Firebase /apex/ax_wm_brief (généré par IA toutes
+   les 6 h côté CI — la clé IA reste serveur). Lecture via auth anonyme Firebase
+   (clé Web PUBLIQUE, même pattern que la page Départs). Fail-open. */
+(function(){
+  var FBKEY="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs",FB="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+  var modal=document.getElementById("briefModal"),body=document.getElementById("briefBody"),meta=document.getElementById("briefMeta"),_tok="";
+  function anonTok(){
+    if(_tok)return Promise.resolve(_tok);
+    return fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+FBKEY,{method:"POST",headers:{"Content-Type":"application/json"},body:"{\"returnSecureToken\":true}"})
+      .then(function(r){return r.json();}).then(function(j){_tok=j.idToken||"";return _tok;}).catch(function(){return "";});
+  }
+  function openBrief(){
+    modal.style.display="flex";body.textContent="Chargement du brief…";meta.textContent="";
+    anonTok().then(function(tk){
+      return fetch(FB+"/apex/ax_wm_brief.json"+(tk?"?auth="+encodeURIComponent(tk):""));
+    }).then(function(r){return r.json();}).then(function(j){
+      if(!j||!j.text){body.textContent="Pas encore de brief généré — il arrive au prochain cycle (toutes les 6 h). Les données live de la page restent la source en temps réel.";return;}
+      body.textContent=j.text;
+      var age=j.ts?Math.round((Date.now()-j.ts)/60000):null;
+      meta.textContent="Généré par IA il y a "+(age==null?"?":(age<60?age+" min":Math.round(age/60)+" h"))+" · sources "+(j.sources||"live")+" · prochain brief ≤ 6 h · 🔔 alertes push actives (séisme M6+, alerte rouge ONU)";
+    }).catch(function(){body.textContent="Brief momentanément indisponible (réseau) — réessaie.";});
+  }
+  var b=document.getElementById("btnBrief");if(b)b.addEventListener("click",openBrief);
+  var c=document.getElementById("briefClose");if(c)c.addEventListener("click",function(){modal.style.display="none";});
+  modal.addEventListener("click",function(e){if(e.target===modal)modal.style.display="none";});
+  /* 📲 PWA : Service Worker (réseau d'abord, MAJ auto par le badge partagé) */
+  if("serviceWorker" in navigator){try{navigator.serviceWorker.register("sw.js").catch(function(){});}catch(_e){}}
+})();
+</script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.29" data-color="#c9a227" defer></script>
 </body>
 </html>
