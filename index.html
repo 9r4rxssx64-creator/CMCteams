@@ -5629,7 +5629,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.856";
+var APP_VER="v9.857";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17564,21 +17564,28 @@ function calcDepPos(empName,tid,day){
     for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWork((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
   }
   var wi=workDays.indexOf(day); if(wi<0) return null;
-  var present=chefEmps.filter(function(e){return isWork((pl[e.id]||{})[day]||'');})
-                      .sort(function(a,b){return baseOf[a.name]-baseOf[b.name];});
-  var pc=present.length; if(!pc) return null;
-  var j=present.findIndex(function(e){return e.name===empName;});
-  if(j<0) return null; // empName ne travaille pas ce jour-là → pas de numéro de départ
-  // v9.851 (Kevin 2026-07-03 capture CMC Éq.5 « il y a des erreurs ») — ROTATION = +1 par
-  // jour TRAVAILLÉ (rot=wi), plus l'ancienne (wi%4)+floor(wi/4) qui REMETTAIT la rotation à
-  // zéro tous les 4 jours → 2 jours à 3 jours d'écart avaient les MÊMES numéros (jeu6==dim9)
-  // et chaque chef restait bloqué sur 3-4 places au lieu de faire le tour des 7. Le 1er jour
-  // travaillé (wi=0) = la séquence dans l'ordre des chefs ; chaque jour suivant décale de 1 →
-  // tour complet en pc jours, aucune répétition dans la semaine. Vérifié : reproduit le cas
-  // validé par Kevin (FAUTRIER=4 le 25 : identique car pc=4 y annule l'écart) ET supprime la
-  // répétition sur les équipes à 7 chefs. Même formule dans la page Départs (compute, +off).
-  var SEQd=getSeqForSize(pc), rot=wi;
-  return SEQd[(((rot+j)%pc)+pc)%pc];
+  // v9.857 (Kevin 2026-07-04 « quand une personne manque 1,2,3 jours ne pas revoir l'algo,
+  // laisser le numéro mort ; revoir seulement quand départ en vacances/congé »).
+  // ROSTER STABLE : la rotation se calcule sur le ROSTER (chefs actifs MOINS ceux en congé
+  // LONG), PAS sur les seuls présents du jour. Un chef absent 1-3 jours consécutifs RESTE
+  // dans le roster → son numéro est « MORT » ce jour-là (rien affiché) et les AUTRES gardent
+  // exactement leur numéro (N et rangs inchangés). Un chef en congé/vacances (≥4 jours
+  // consécutifs d'absence) est RETIRÉ du roster ce jour-là → les numéros se recompactent
+  // (= « revoir »). Sur un jour où tout le monde est présent, effRoster == présents → numéros
+  // IDENTIQUES à avant (zéro régression sur les jours pleins ; ne touche QUE les jours d'absence
+  // courte). Rotation rot=wi (+1 par jour travaillé) conservée. Même logique dans compute (page).
+  function _absRun(id,D){ if(isWork((pl[id]||{})[D]||''))return 0; var L=1,dd;
+    for(dd=D-1;dd>=1&&!isWork((pl[id]||{})[dd]||'');dd--)L++;
+    for(dd=D+1;dd<=days&&!isWork((pl[id]||{})[dd]||'');dd++)L++; return L; }
+  var effRoster=chefEmps.filter(function(e){var r=_absRun(e.id,day);return r===0||r<4;})
+                        .sort(function(a,b){return baseOf[a.name]-baseOf[b.name];});
+  var N=effRoster.length; if(!N) return null;
+  var meEmp=effRoster.filter(function(e){return e.name===empName;})[0];
+  if(!meEmp) return null;                                 // en congé long OU hors équipe
+  if(!isWork((pl[meEmp.id]||{})[day]||'')) return null;   // absence courte → numéro MORT (rien affiché)
+  var j=effRoster.indexOf(meEmp);
+  var SEQd=getSeqForSize(N), rot=wi;
+  return SEQd[(((rot+j)%N)+N)%N];
 }
 
 // ── Commentaires sur un jour ──
