@@ -10,6 +10,7 @@
 import { APP_VER } from '../../core/bootstrap.js';
 import { store } from '../../core/store.js';
 import { parseSlashCommand, helpText, SLASH_COMMANDS } from '../../services/admin/slash-commands.js';
+import { claudeBridge } from '../../services/ai/claude-bridge.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -86,6 +87,13 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     } catch {
       toast.info('Ouvre la section depuis le menu');
     }
+    return true;
+  }
+  /* Sécurité — commandes qui déclenchent un workflow CI (repository_dispatch).
+     /audit → security-suite · /pentest → strix-scan · /web → agent-reach.
+     Périmètre borné : une cible URL doit être kd-mc.com (anti-scan d'un tiers). */
+  if (cmd.dispatch) {
+    void handleDispatchCommand(rootEl, cmd.dispatch, args);
     return true;
   }
   switch (cmd.name) {
@@ -296,4 +304,55 @@ function forkConversation(rootEl: HTMLElement): void {
   persistConversation(conversation);
   renderMessages(rootEl);
   toast.success('🌿 Nouvelle conversation démarrée');
+}
+
+/**
+ * Sécurité — déclenche un workflow CI (arsenal hacker éthique) via
+ * repository_dispatch. Scellé au périmètre kd-mc.com (une cible URL hors
+ * domaine est refusée). Le résultat arrive de façon asynchrone dans Firebase
+ * (ax_security_last / ax_strix_last / ax_agent_reach_last) — Apex le lira.
+ */
+async function handleDispatchCommand(rootEl: HTMLElement, dispatch: string, args: string): Promise<void> {
+  const target = (args || '').trim();
+  const payload: Record<string, unknown> = {};
+  let label = '';
+
+  if (dispatch === 'security-suite') {
+    label = '🛡️ Suite sécurité (secrets, deps, SAST, workflows)';
+    /* pas d'args : scanne le repo entier */
+  } else if (dispatch === 'strix-scan') {
+    /* Périmètre borné : une URL doit être kd-mc.com / github.io (anti-scan tiers). */
+    if (/^https?:\/\//i.test(target) && !/^https?:\/\/([a-z0-9-]+\.)*kd-mc\.com|9r4rxssx64-creator\.github\.io/i.test(target)) {
+      pushAssistantMessage(rootEl, '🚫 Pentest refusé : la cible doit être une app **kd-mc.com** (pas un tiers). Ex : `/pentest kdmc-home/worldmonitor` ou `/pentest https://kd-mc.com/worldmonitor/`.');
+      return;
+    }
+    payload['target'] = target || 'kdmc-home/worldmonitor';
+    label = `🕷️ Pentest IA (Strix) sur \`${payload['target'] as string}\``;
+  } else if (dispatch === 'agent-reach') {
+    if (!target) {
+      pushAssistantMessage(rootEl, '🌐 Précise une URL à lire ou une requête. Ex : `/web https://example.com` ou `/web actualité séisme`.');
+      return;
+    }
+    const isUrl = /^https?:\/\//i.test(target);
+    payload['channel'] = isUrl ? 'web' : 'search';
+    payload['target'] = target;
+    label = isUrl ? `🌐 Lecture de \`${target}\`` : `🔎 Recherche « ${target} »`;
+  } else {
+    pushAssistantMessage(rootEl, `Commande sécurité inconnue : ${dispatch}`);
+    return;
+  }
+
+  toast.info('🚀 Lancement en cours…');
+  try {
+    const r = await claudeBridge.dispatchWorkflow(dispatch, payload);
+    if (r.ok) {
+      pushAssistantMessage(rootEl, `${label}\n\n✅ Lancé (exec \`${r.exec_id}\`). Ça tourne sur le CI (quelques minutes). Le résultat arrivera dans le Coffre/Apex (\`ax_${dispatch === 'security-suite' ? 'security' : dispatch === 'strix-scan' ? 'strix' : 'agent_reach'}_last\`). Reviens dans un instant.`);
+    } else if (r.reason === 'no_github_token') {
+      pushAssistantMessage(rootEl, `${label}\n\n⚠️ Impossible de lancer : aucun **jeton GitHub** dans le Coffre (\`ax_github_token\`). Ajoute-le puis relance.`);
+    } else {
+      pushAssistantMessage(rootEl, `${label}\n\n⚠️ Échec du lancement (${r.reason ?? 'erreur'}${r.status ? ' HTTP ' + r.status : ''}). Réessaie dans un moment.`);
+    }
+  } catch (err: unknown) {
+    pushAssistantMessage(rootEl, `${label}\n\n⚠️ Erreur : ${String((err as Error)?.message ?? err)}`);
+  }
 }

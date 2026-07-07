@@ -4,6 +4,10 @@
 - Outil de sécurité offensive (github.com/usestrix/strix) installé comme workflow **à la demande** `strix-scan.yml` (jamais auto = maîtrise coût). Clé LLM = `OPEN_AI_API_KEY` (déjà présente).
 - **Action optionnelle** : si un scan échoue sur « model not found », relance en passant un `model` litellm valide (input du workflow). Le défaut `openai/gpt-5.4` vient de la doc Strix.
 
+## 🛡️ Arsenal sécurité (« outils des hackers ») — installé 2026-07-07
+- `security-suite.yml` = les outils OSS des pentesters, **scellés à ce repo (tes apps)** : gitleaks+TruffleHog (secrets), OSV+Trivy (dépendances), Semgrep (XSS/injections), zizmor (workflows). Non-bloquant, cron hebdo (dimanche 3h) + à la demande. Résultat dans le Coffre Apex (`ax_security_last`).
+- **Dans Apex** : `/audit` (suite sécu du repo), `/pentest <cible kd-mc.com>` (Strix), `/web <url|requête>` (Agent-Reach) — déclenchent le CI, réponse asynchrone dans le Coffre. Aucune action requise (utilisent `ax_github_token` déjà dans ton Coffre).
+
      1. 15 lessons critical non résolues → tests de régression dédiés (session à venir).
      2. 6 boutons < 36px → enlarge_touch_targets (P2 UX, iOS HIG 44px).
      Les 2 escalades P1 de l'audit : « Aucun provider IA » = corrigé v13.4.340. -->
