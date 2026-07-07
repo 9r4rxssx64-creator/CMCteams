@@ -110,6 +110,13 @@ async function autoExtractAndLearn(text: string): Promise<void> {
         );
       }
     }
+
+    /* v13.4.346 — RAG : mémorise le message dans la mémoire long terme sémantique
+     * (kdmc-rag/Vectorize). DÉFAUT OFF (flag) → no-op ; fail-open ; non-bloquant. */
+    try {
+      const { apexMemoryRag } = await import('../../services/ai/apex-memory-rag.js');
+      void apexMemoryRag.remember(text, { user: userId, ts: Date.now() });
+    } catch { /* fail-open */ }
   } catch (err: unknown) {
     logger.warn('chat', 'autoExtractAndLearn failed', { err });
   }
@@ -306,7 +313,15 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
   ) as ChatMessage[];
 
   /* v13.3.30 — Deep prompt avec docs + facts + lessons (Kevin règle mémoire long terme) */
-  const sysPrompt = await buildSystemPromptDeep();
+  let sysPrompt = await buildSystemPromptDeep();
+  /* v13.4.346 (Kevin « fais la mémoire Apex ») — RAG : injecte les souvenirs pertinents
+   * (Vectorize via kdmc-rag) pour le message courant. DÉFAUT OFF (flag apex_v13_rag_enabled)
+   * → recallBlock renvoie '' instantanément = 0 impact. Fail-open + timeout court (≤2.5 s). */
+  try {
+    const { apexMemoryRag } = await import('../../services/ai/apex-memory-rag.js');
+    const memBlock = await apexMemoryRag.recallBlock(text);
+    if (memBlock) sysPrompt = `${sysPrompt}\n\n${memBlock}`;
+  } catch { /* fail-open : prompt inchangé */ }
   /* v13.4.273 (Kevin "tout soit bien en place avec eco token") :
    * mesure latence client-side du premier au dernier chunk pour badge UI. */
   const streamT0 = Date.now();

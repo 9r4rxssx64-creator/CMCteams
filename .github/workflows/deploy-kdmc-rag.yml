@@ -1,0 +1,74 @@
+# Déploie kdmc-rag — mémoire intelligente (RAG) d'Apex : Workers AI (embeddings) + Vectorize.
+# Secrets requis : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, APEX_ADMIN_PIN_SHA256 (déjà là).
+# Dispatch manuel uniquement (pattern kdmc-live/kdmc-ais — leçons #130/#132).
+#
+# ⚠️ Vectorize doit être disponible sur le compte (comme les Durable Objects ont été
+# refusés — leçon #132). Si `wrangler deploy` échoue sur le binding VEC, le smoke le dira
+# en clair ; côté Apex la mémoire reste fail-open (l'app fonctionne sans).
+name: Deploy KDMC RAG (mémoire Apex)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    defaults:
+      run:
+        working-directory: services/kdmc-rag
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Vérifier les secrets (erreur exacte, pas silencieuse)
+        env:
+          PINSHA: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
+        run: |
+          MISSING=""
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && MISSING="$MISSING CLOUDFLARE_API_TOKEN"
+          [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && MISSING="$MISSING CLOUDFLARE_ACCOUNT_ID"
+          [ -z "$PINSHA" ] && MISSING="$MISSING APEX_ADMIN_PIN_SHA256"
+          if [ -n "$MISSING" ]; then echo "::error::Secrets manquants :$MISSING"; exit 1; fi
+          echo "Secrets OK"
+
+      - name: Syntax check worker
+        run: node --check worker.js
+
+      - name: Installer wrangler
+        run: npm i -g wrangler && wrangler --version
+
+      - name: Créer l'index Vectorize (idempotent)
+        run: |
+          # 1024 dims (bge-m3), cosine. Si l'index existe déjà → "already exists" → on continue.
+          wrangler vectorize create apex-memory --dimensions=1024 --metric=cosine 2>&1 | tee /tmp/vec.log || true
+          if grep -qiE "already exists|resource with the name" /tmp/vec.log; then echo "index déjà présent — OK"; fi
+
+      - name: Pousser le secret d'auth
+        env:
+          PINSHA: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
+        run: printf '%s' "$PINSHA" | wrangler secret put APEX_ADMIN_PIN_SHA256
+
+      - name: Déployer le worker
+        run: |
+          set -e
+          wrangler deploy 2>&1 | tee /tmp/deploy.log
+          grep -Eo 'https://[a-z0-9.-]+workers.dev' /tmp/deploy.log | head -1 > /tmp/url.txt || true
+          echo "URL déployée : $(cat /tmp/url.txt 2>/dev/null)"
+
+      - name: Smoke /health (preuve — leçon #95)
+        run: |
+          URL="$(cat /tmp/url.txt 2>/dev/null)"
+          [ -z "$URL" ] && URL="https://kdmc-rag.9r4rxssx64.workers.dev"
+          echo "GET $URL/health"
+          curl -sS "$URL/health" -H "Origin: https://kd-mc.com" | tee /tmp/health.txt; echo
+          grep -q '"ok":true' /tmp/health.txt && grep -q '"hasVec":true' /tmp/health.txt \
+            && echo "✅ RAG en ligne (Vectorize + AI bindings OK)" \
+            || echo "::warning::/health ne confirme pas hasVec:true — Vectorize peut-être indisponible sur le compte (mémoire Apex reste fail-open)."
