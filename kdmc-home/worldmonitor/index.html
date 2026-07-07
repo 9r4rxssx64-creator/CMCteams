@@ -189,7 +189,7 @@
           <span id="wmQState" style="align-self:center;color:var(--dim);font-size:11px"></span>
         </div>
         <div class="toggles" id="toggles">
-          <details class="tgroup" open><summary class="tgsum">🚨 Alertes & catastrophes <span class="tgn">6</span></summary><div class="tgwrap"><button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>🔴 Séismes</button><button class="tg" data-layer="gdacs" aria-pressed="true" title="Alertes catastrophes MONDIALES en direct (GDACS/ONU) : cyclones, inondations, séismes majeurs — niveau vert/orange/rouge, maj ~15 min"><span class="i" style="background:#ff5a4d"></span>🚨 Alertes ONU</button><button class="tg" data-layer="cyclones" aria-pressed="false" title="Cyclones/ouragans ACTIFS — trajectoires officielles NOAA/NHC (maj ~10 min)"><span class="i" style="background:#b992ff"></span>🌀 Cyclones NHC</button><button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>🌀 Tempêtes</button><button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>🌋 Volcans</button><button class="tg" data-layer="lightning" aria-pressed="false" title="Foudre MONDIALE en temps réel — réseau Blitzortung (impacts des dernières minutes, maj ~40 s)"><span class="i" style="background:#ffe14d"></span>⚡ Foudre</button></div></details>
+          <details class="tgroup" open><summary class="tgsum">🚨 Alertes & catastrophes <span class="tgn">7</span></summary><div class="tgwrap"><button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>🔴 Séismes</button><button class="tg" data-layer="gdacs" aria-pressed="true" title="Alertes catastrophes MONDIALES en direct (GDACS/ONU) : cyclones, inondations, séismes majeurs — niveau vert/orange/rouge, maj ~15 min"><span class="i" style="background:#ff5a4d"></span>🚨 Alertes ONU</button><button class="tg" data-layer="cyclones" aria-pressed="false" title="Cyclones/ouragans ACTIFS — trajectoires officielles NOAA/NHC (maj ~10 min)"><span class="i" style="background:#b992ff"></span>🌀 Cyclones NHC</button><button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>🌀 Tempêtes</button><button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>🌋 Volcans</button><button class="tg" data-layer="lightning" aria-pressed="false" title="Foudre MONDIALE en temps réel — réseau Blitzortung (impacts des dernières minutes, maj ~40 s)"><span class="i" style="background:#ffe14d"></span>⚡ Foudre</button><button class="tg" data-layer="crues" aria-pressed="false" title="Crues des grandes rivières du monde — débit du jour vs son pic des 30 j (Open-Meteo Flood/GloFAS, sans clé). Rouge = niveau de crue."><span class="i" style="background:#4db8ff"></span>🌊 Crues</button></div></details>
           <details class="tgroup"><summary class="tgsum">🔥 Feux & fumées <span class="tgn">4</span></summary><div class="tgwrap"><button class="tg" data-layer="fires" aria-pressed="true"><span class="i" style="background:var(--orange)"></span>🔥 Feux</button><button class="tg" data-layer="firesat" aria-pressed="false" title="Détections thermiques VUES PAR SATELLITE — NASA VIIRS (image d'hier)"><span class="i" style="background:#ff8a5a"></span>🔥 Feux sat.</button><button class="tg" data-layer="firms" aria-pressed="false" title="Feux ACTIFS vus par satellite — NASA FIRMS VIIRS (dernières 24 h ; nécessite la clé FIRMS)"><span class="i" style="background:#ff6a2a"></span>🔥 Feux FIRMS</button><button class="tg" data-layer="smoke" aria-pressed="false" title="Fumées & poussières VUES PAR SATELLITE — indice d'aérosols OMPS/NASA (feux, sable, éruptions ; image la plus récente)"><span class="i" style="background:#c9a06a"></span>🌫️ Fumées sat.</button></div></details>
           <details class="tgroup"><summary class="tgsum">✈️ Trafic <span class="tgn">3</span></summary><div class="tgwrap"><button class="tg" data-layer="flights" aria-pressed="true"><span class="i" style="background:var(--green)"></span>✈️ Vols</button><button class="tg" data-layer="ships" aria-pressed="true"><span class="i" style="background:#35d6e6"></span>🚢 Navires</button><button class="tg" data-layer="detroits" aria-pressed="true"><span class="i" style="background:#5aa9ff"></span>⚓ Détroits</button></div></details>
           <details class="tgroup"><summary class="tgsum">🛰️ Espace <span class="tgn">2</span></summary><div class="tgwrap"><button class="tg" data-layer="iss" aria-pressed="true"><span class="i" style="background:var(--cyan)"></span>🛰️ ISS</button><button class="tg" data-layer="sats" aria-pressed="true" title="Positions RÉELLES des ~150 satellites les plus brillants — données orbitales Celestrak, calcul SGP4 recalculé toutes les 5 s"><span class="i" style="background:#ffe9b8"></span>🛰️ Satellites</button></div></details>
@@ -365,7 +365,7 @@
 
 <script>
 "use strict";
-var VER="v2.31";
+var VER="v2.32";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -465,8 +465,8 @@ tickClock();setInterval(tickClock,1000);
 
 /* ============ GLOBE ============ */
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
-var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],waves:[],iss:null};
-var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1,lightning:0,cyclones:0,firms:0};
+var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],waves:[],crues:[],iss:null};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1,lightning:0,cyclones:0,firms:0,crues:0};
 /* 🧠 Mémoire des réglages (Kevin n°13) : couches/fond/vue persistés par appareil */
 var _PREFS_K="wm_prefs_v1",_lastView="",_wantBase="";
 try{var _pf=JSON.parse(localStorage.getItem(_PREFS_K)||"{}");
@@ -853,7 +853,7 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_smokeLayer=null,_nightLayer=null,_issLayer=null,_issMarker=null,_issTrack=null,_issRec=null,_mapReady=false,_planesTimer=null,_lightningLayer=null,_cyclonesLayer=null,_firmsLayer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_smokeLayer=null,_nightLayer=null,_issLayer=null,_issMarker=null,_issTrack=null,_issRec=null,_mapReady=false,_planesTimer=null,_lightningLayer=null,_cyclonesLayer=null,_firmsLayer=null,_floodLayer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
@@ -903,6 +903,7 @@ function initMap(){
   _nightLayer=LEAF.layerGroup().addTo(MAP); /* 🌓 ombre jour/nuit réelle, ON */
   _issLayer=LEAF.layerGroup().addTo(MAP);   /* 🛰️ ISS + orbite 45 min sur la carte, ON */
   _wavesLayer=LEAF.layerGroup(); /* 🌊 vagues/houle, OFF par défaut */
+  _floodLayer=LEAF.layerGroup(); /* 🌊 crues/débit rivières, OFF par défaut (charge à l'activation) */
   /* 🌫️ Fumées/poussières vues de l'espace — OMPS Aerosol Index (présent en WMTS 3857
      d'après GetCapabilities CI, mais TileMatrixSet incertain → WMS comme les feux sat.).
      NB : pas de FOUDRE live dans GIBS (les couches "Lightning" = archives DMSP années 90). */
@@ -930,6 +931,7 @@ function initMap(){
   setInterval(function(){if(ON.aurora)loadAurora();},600000); /* aurores maj NOAA ~5-10 min */
   setInterval(function(){if(ON.air)loadAir();},1800000);      /* air (données horaires) */
   setInterval(function(){if(ON.waves)loadWaves();},1800000);   /* vagues (données horaires) */
+  setInterval(function(){if(ON.crues)loadFloods();},1800000);  /* crues rivières (débit quotidien) */
   setInterval(function(){if(ON.night)drawNight();},60000);     /* terminateur solaire, maj 1 min */
   setInterval(function(){var el=document.getElementById("mapClock");if(!el)return;
     var s=new Date().toISOString().slice(11,19)+" UTC";if(el.textContent!==s)el.textContent=s;},1000);
@@ -1348,6 +1350,43 @@ async function loadWaves(){
     DL.waves=out;
   }catch(e){}
 }
+/* 🌊 CRUES / débit des grandes rivières — Open-Meteo Flood (GloFAS, sans clé, CORS OK).
+   Signal normalisé PAR rivière : débit du jour vs son pic des 30 derniers jours + pic prévu
+   sur 7 j → couleur (bleu normal / orange qui monte / rouge = au niveau de crue). Honnête :
+   « crue » = la rivière atteint/dépasse son propre haut récent, pas un seuil absolu mondial. */
+var _FLOOD_PTS=[["Rhône (Arles)",43.68,4.63],["Seine (Rouen)",49.44,1.10],["Rhin (Cologne)",50.94,6.96],["Danube (Budapest)",47.50,19.05],["Pô (Ferrare)",44.84,11.60],["Elbe (Dresde)",51.05,13.74],["Vistule (Varsovie)",52.25,21.00],["Tamise (Londres)",51.51,-0.12],["Nil (Le Caire)",30.05,31.23],["Niger (Niamey)",13.51,2.11],["Congo (Kinshasa)",-4.30,15.30],["Zambèze (Tete)",-16.16,33.60],["Gange (Patna)",25.61,85.14],["Brahmapoutre (Guwahati)",26.18,91.75],["Mékong (Phnom Penh)",11.56,104.92],["Yangtsé (Wuhan)",30.58,114.30],["Fleuve Jaune (Jinan)",36.65,117.00],["Indus (Hyderabad)",25.38,68.37],["Amazone (Manaus)",-3.13,-60.02],["Paraná (Rosario)",-32.95,-60.65],["Mississippi (Bâton-Rouge)",30.45,-91.19],["Amour (Khabarovsk)",48.48,135.08],["Volga (Volgograd)",48.72,44.50],["Ienisseï (Krasnoïarsk)",56.01,92.87],["Murray (Australie)",-34.10,141.90]];
+function _floodColor(r){return r>=1?"#ff3b30":r>=0.85?"#ff9500":r>=0.6?"#ffd166":"#4db8ff";}
+function _floodLabel(r){return r>=1?"Niveau de crue":r>=0.85?"Élevé (monte)":r>=0.6?"Modéré":"Normal";}
+async function loadFloods(){
+  try{
+    var lats=_FLOOD_PTS.map(function(c){return c[1];}).join(","),lons=_FLOOD_PTS.map(function(c){return c[2];}).join(",");
+    var j=await getJSON("https://flood-api.open-meteo.com/v1/flood?latitude="+lats+"&longitude="+lons+"&daily=river_discharge&past_days=31&forecast_days=7",15000);
+    var arr=Array.isArray(j)?j:[j];if(!_floodLayer)return;
+    _floodLayer.clearLayers();var out=[];
+    arr.forEach(function(rr,i){
+      var pt=_FLOOD_PTS[i];if(!pt||!rr||!rr.daily)return;
+      var disc=rr.daily.river_discharge||[],time=rr.daily.time||[];
+      if(!disc.length)return;
+      var today=new Date().toISOString().slice(0,10);
+      var idx=time.indexOf(today);if(idx<0)idx=Math.max(0,disc.length-8); /* repli : dernier jour "passé" */
+      var cur=+disc[idx];if(!isFinite(cur))return;
+      var past=disc.slice(0,idx+1).filter(function(v){return isFinite(+v);}).map(Number);
+      var fut=disc.slice(idx+1).filter(function(v){return isFinite(+v);}).map(Number);
+      var ref=past.length?Math.max.apply(null,past):cur;if(!(ref>0))ref=cur||1;
+      var futPeak=fut.length?Math.max.apply(null,fut):cur;
+      var ratio=Math.max(cur/ref,futPeak/ref); /* auto-normalisé par rivière */
+      var col=_floodColor(ratio);
+      out.push({name:pt[0],cur:cur,ratio:ratio});
+      LEAF.circleMarker([pt[1],pt[2]],{radius:Math.max(5,Math.min(13,4+ratio*7)),color:col,weight:2,fillColor:col,fillOpacity:.45})
+        .bindPopup("<b>🌊 "+esc(pt[0])+"</b><br>État : <b style='color:"+col+"'>"+_floodLabel(ratio)+"</b>"
+          +"<br>Débit actuel : "+Math.round(cur).toLocaleString("fr-FR")+" m³/s"
+          +"<br><span style='opacity:.75'>"+Math.round(ratio*100)+" % de son pic des 30 j"+(futPeak>cur?" · en hausse prévue":"")+"</span>"
+          +"<br><span style='opacity:.6'>Open-Meteo Flood (GloFAS) · maj ~quotidienne</span>")
+        .addTo(_floodLayer);
+    });
+    DL.crues=out;
+  }catch(e){}
+}
 /* 🚢 Navires en direct — Digitraffic (AIS mer Baltique/Finlande, ouvert sans clé, CORS OK) */
 /* Vide par défaut → navires Baltique (Digitraffic). Quand Kevin fournit une clé aisstream
    gratuite et déploie kdmc-ais-proxy, on renseigne cette URL → navires MONDIAUX (leçon #93). */
@@ -1410,8 +1449,8 @@ function setBase(name){
 /* Compat : ancien appel booléen (true=satellite HD, false=sombre). */
 function setSatBase(on){setBase(on?"sat":"dark");}
 /* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
-function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer,lightning:_lightningLayer,cyclones:_cyclonesLayer,firms:_firmsLayer}[k]||null;}
-function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(v){if(k==="lightning")loadLightning();else if(k==="cyclones")loadCyclones();else if(k==="firms")loadFirms();}if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
+function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer,lightning:_lightningLayer,cyclones:_cyclonesLayer,firms:_firmsLayer,crues:_floodLayer}[k]||null;}
+function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(v){if(k==="lightning")loadLightning();else if(k==="cyclones")loadCyclones();else if(k==="firms")loadFirms();else if(k==="crues")loadFloods();}if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
   document.getElementById("map").classList.toggle("hidden",!on);
@@ -1628,6 +1667,6 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)fast
   })();
 })();
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.31" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.32" data-color="#c9a227" defer></script>
 </body>
 </html>
