@@ -196,6 +196,9 @@
           <button class="tg" data-layer="air" aria-pressed="false" title="Qualité de l'air EN DIRECT dans ~34 grandes villes (Open-Meteo, indice européen) — Monaco inclus"><span class="i" style="background:#a8e05f"></span>🌫️ Air</button>
           <button class="tg" data-layer="waves" aria-pressed="false" title="Vagues & houle EN DIRECT sur ~28 points d'océans et mers (Open-Meteo Marine) — Méditerranée/Monaco inclus"><span class="i" style="background:#4db8ff"></span>🌊 Vagues</button>
           <button class="tg" data-layer="smoke" aria-pressed="false" title="Fumées & poussières VUES PAR SATELLITE — indice d'aérosols OMPS/NASA (feux, sable, éruptions ; image la plus récente)"><span class="i" style="background:#c9a06a"></span>🌫️ Fumées sat.</button>
+          <button class="tg" data-layer="lightning" aria-pressed="false" title="Foudre MONDIALE en temps réel — réseau Blitzortung (impacts des dernières minutes, maj ~40 s)"><span class="i" style="background:#ffe14d"></span>⚡ Foudre</button>
+          <button class="tg" data-layer="cyclones" aria-pressed="false" title="Cyclones/ouragans ACTIFS — trajectoires officielles NOAA/NHC (maj ~10 min)"><span class="i" style="background:#b992ff"></span>🌀 Cyclones NHC</button>
+          <button class="tg" data-layer="firms" aria-pressed="false" title="Feux ACTIFS vus par satellite — NASA FIRMS VIIRS (dernières 24 h ; nécessite la clé FIRMS)"><span class="i" style="background:#ff6a2a"></span>🔥 Feux FIRMS</button>
           <button class="tg" data-layer="night" aria-pressed="true" title="Ombre jour/nuit RÉELLE — position du soleil calculée en direct (maj 1 min)"><span class="i" style="background:#26304a"></span>🌓 Jour/Nuit</button>
           <button class="tg" data-base="dark" aria-pressed="true" title="Carte sombre (par défaut)"><span class="i" style="background:#5a6a8a"></span>🌙 Carte</button>
           <button class="tg" data-base="sat" aria-pressed="false" title="Satellite haute résolution (Esri)"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite HD</button>
@@ -367,13 +370,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.29</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.30</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.29";
+var VER="v2.30";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -474,7 +477,7 @@ tickClock();setInterval(tickClock,1000);
 /* ============ GLOBE ============ */
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
 var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],waves:[],iss:null};
-var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1,lightning:0,cyclones:0,firms:0};
 /* 🧠 Mémoire des réglages (Kevin n°13) : couches/fond/vue persistés par appareil */
 var _PREFS_K="wm_prefs_v1",_lastView="",_wantBase="";
 try{var _pf=JSON.parse(localStorage.getItem(_PREFS_K)||"{}");
@@ -861,7 +864,7 @@ $("tflShuffle").addEventListener("click",renderTfl);
 setInterval(renderTfl,30000); /* rafraîchit les vignettes (nouvelles images) */
 
 /* ============ VRAIE CARTE LIVE (Leaflet + OpenStreetMap sombre + avions ADS-B + séismes) ============ */
-var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_smokeLayer=null,_nightLayer=null,_issLayer=null,_issMarker=null,_issTrack=null,_issRec=null,_mapReady=false,_planesTimer=null;
+var LEAF=window.L;var MAP=null,_planeLayer=null,_shipLayer=null,_quakeLayer=null,_fireLayer=null,_chokeLayer=null,_volcanoLayer=null,_stormLayer=null,_darkBase=null,_satBase=null,_liveBase=null,_nightBase=null,_geoBase=null,_bases={},_satsLayer=null,_radarLayer=null,_fireSatLayer=null,_satRecs=null,_satMarkers={},_gdacsLayer=null,_auroraLayer=null,_airLayer=null,_wavesLayer=null,_smokeLayer=null,_nightLayer=null,_issLayer=null,_issMarker=null,_issTrack=null,_issRec=null,_mapReady=false,_planesTimer=null,_lightningLayer=null,_cyclonesLayer=null,_firmsLayer=null;
 function initMap(){
   if(_mapReady||!window.LEAF)return;
   _mapReady=true;
@@ -904,6 +907,9 @@ function initMap(){
   _satsLayer=LEAF.layerGroup().addTo(MAP); /* 🛰️ positions satellites, ON */
   _gdacsLayer=LEAF.layerGroup().addTo(MAP); /* 🚨 alertes GDACS, ON */
   _auroraLayer=LEAF.layerGroup(); /* 🌌 aurores, OFF par défaut */
+  _lightningLayer=LEAF.layerGroup(); /* ⚡ foudre, OFF par défaut */
+  _cyclonesLayer=LEAF.layerGroup(); /* 🌀 cyclones, OFF par défaut */
+  _firmsLayer=LEAF.layerGroup(); /* 🔥 feux FIRMS, OFF par défaut */
   _airLayer=LEAF.layerGroup(); /* 🌫️ qualité de l'air, OFF par défaut */
   _nightLayer=LEAF.layerGroup().addTo(MAP); /* 🌓 ombre jour/nuit réelle, ON */
   _issLayer=LEAF.layerGroup().addTo(MAP);   /* 🛰️ ISS + orbite 45 min sur la carte, ON */
@@ -922,13 +928,16 @@ function initMap(){
   _volcanoLayer=LEAF.layerGroup().addTo(MAP);
   _stormLayer=LEAF.layerGroup().addTo(MAP);
   /* Les couches se pilotent par les puces sous la carte (pas de boîte sur la carte). */
-  MAP.on("moveend",function(){loadPlanes();drawQuakesMap();});
+  MAP.on("moveend",function(){loadPlanes();drawQuakesMap();if(ON.firms)loadFirms();});
   MAP.on("zoomend",function(){drawShipsMap();});
   setTimeout(function(){MAP.invalidateSize();loadPlanes();loadShips();loadSats();loadRadar();loadGdacs();loadAurora();loadAir();loadWaves();drawNight();drawQuakesMap();drawFiresMap();drawChokeMap();drawVolcanoMap();drawStormsMap();},250);
   _planesTimer=setInterval(loadPlanes,15000);
   setInterval(loadShips,60000);
   setInterval(function(){if(ON.radar)loadRadar();},300000); /* radar rafraîchi ~10 min côté source */
   setInterval(loadGdacs,900000);                            /* alertes ONU ~15 min */
+  setInterval(function(){if(ON.lightning)loadLightning();},40000);   /* ⚡ foudre ~40 s */
+  setInterval(function(){if(ON.cyclones)loadCyclones();},600000);    /* 🌀 cyclones ~10 min */
+  setInterval(function(){if(ON.firms)loadFirms();},600000);          /* 🔥 feux FIRMS ~10 min */
   setInterval(function(){if(ON.aurora)loadAurora();},600000); /* aurores maj NOAA ~5-10 min */
   setInterval(function(){if(ON.air)loadAir();},1800000);      /* air (données horaires) */
   setInterval(function(){if(ON.waves)loadWaves();},1800000);   /* vagues (données horaires) */
@@ -1229,6 +1238,56 @@ async function loadGdacs(){
     DL.gdacs=out;
   }catch(e){}
 }
+/* ⚡ FOUDRE MONDIALE en direct — worker kdmc-live (réseau Blitzortung, WS courte côté serveur).
+   Impacts des dernières minutes. Point jaune = récent, s'estompe avec l'âge. */
+async function loadLightning(){
+  if(!_lightningLayer)return;
+  try{
+    var j=await getJSON(LIVE_URL+"/lightning?secs=4&limit=1500",12000);
+    var st=(j&&j.strikes)||[];_lightningLayer.clearLayers();
+    var now=Date.now();
+    st.forEach(function(s){
+      if(!isFinite(+s.lat)||!isFinite(+s.lon))return;
+      var age=Math.max(0,(now-(+s.time||now))/1000),op=Math.max(.25,1-age/600); /* s'estompe sur 10 min */
+      LEAF.circleMarker([+s.lat,+s.lon],{radius:3.2,color:"#fff3a0",weight:1,fillColor:"#ffe14d",fillOpacity:op})
+        .bindPopup("<b>⚡ Impact de foudre</b><br><span style='opacity:.75'>il y a "+(age<60?Math.round(age)+" s":Math.round(age/60)+" min")+" · "+(+s.lat).toFixed(2)+"°, "+(+s.lon).toFixed(2)+"°</span><br><span style='opacity:.6'>Blitzortung (temps réel)</span>")
+        .addTo(_lightningLayer);
+    });
+  }catch(e){}
+}
+/* 🌀 CYCLONES/OURAGANS ACTIFS — worker kdmc-live (relais NOAA/NHC CurrentStorms.json). */
+async function loadCyclones(){
+  if(!_cyclonesLayer)return;
+  try{
+    var j=await getJSON(LIVE_URL+"/cyclones",12000);
+    var st=(j&&j.activeStorms)||[];_cyclonesLayer.clearLayers();
+    st.forEach(function(s){
+      var la=parseFloat(s.latitudeNumeric!=null?s.latitudeNumeric:s.latitude),lo=parseFloat(s.longitudeNumeric!=null?s.longitudeNumeric:s.longitude);
+      if(!isFinite(la)||!isFinite(lo))return;
+      var nm=s.name||s.tcName||"Cyclone",cat=s.classification||s.intensity||"",wind=s.intensity||s.maxSustainedWind||"";
+      LEAF.marker([la,lo],{icon:LEAF.divIcon({className:"",html:'<div style="font-size:20px;filter:drop-shadow(0 0 3px #b992ff)">🌀</div>',iconSize:[22,22],iconAnchor:[11,11]})})
+        .bindPopup("<b>🌀 "+esc(String(nm))+"</b>"+(cat?"<br>"+esc(String(cat)):"")+(wind?"<br>Vent "+esc(String(wind))+(/\d$/.test(String(wind))?" nds":""):"")+"<br><span style='opacity:.6'>NOAA/NHC · "+la.toFixed(1)+"°, "+lo.toFixed(1)+"°</span>")
+        .addTo(_cyclonesLayer);
+    });
+  }catch(e){}
+}
+/* 🔥 FEUX ACTIFS vus par satellite — worker kdmc-live (NASA FIRMS VIIRS, 24 h) sur la vue courante.
+   Vide tant que la clé FIRMS n'est pas configurée (fail-open). */
+async function loadFirms(){
+  if(!_firmsLayer||!MAP)return;
+  try{
+    var b=MAP.getBounds(),bbox=[b.getWest().toFixed(2),b.getSouth().toFixed(2),b.getEast().toFixed(2),b.getNorth().toFixed(2)].join(",");
+    var j=await getJSON(LIVE_URL+"/fires?bbox="+bbox+"&limit=2000",12000);
+    var fs=(j&&j.features)||[];_firmsLayer.clearLayers();
+    fs.forEach(function(f){
+      var c=f.geometry&&f.geometry.coordinates;if(!c)return;var lo=+c[0],la=+c[1];if(!isFinite(la)||!isFinite(lo))return;
+      var pr=f.properties||{},frp=pr.frp!=null?" · "+Math.round(pr.frp)+" MW":"";
+      LEAF.circleMarker([la,lo],{radius:3.4,color:"#ff9a4d",weight:1,fillColor:"#ff5a1a",fillOpacity:.75})
+        .bindPopup("<b>🔥 Feu actif (satellite)</b><br><span style='opacity:.75'>"+(pr.date||"")+(pr.daynight==="N"?" · nuit":pr.daynight==="D"?" · jour":"")+frp+"</span><br><span style='opacity:.6'>NASA FIRMS VIIRS · "+la.toFixed(2)+"°, "+lo.toFixed(2)+"°</span>")
+        .addTo(_firmsLayer);
+    });
+  }catch(e){}
+}
 /* 🌌 AURORES BORÉALES/AUSTRALES en direct — NOAA SWPC OVATION (maj ~5 min, sans clé).
    Grille mondiale de probabilité d'aurore → points verts au-dessus de 30 %. */
 async function loadAurora(){
@@ -1304,6 +1363,7 @@ async function loadWaves(){
 /* Vide par défaut → navires Baltique (Digitraffic). Quand Kevin fournit une clé aisstream
    gratuite et déploie kdmc-ais-proxy, on renseigne cette URL → navires MONDIAUX (leçon #93). */
 var AIS_PROXY_URL="https://kdmc-ais.9r4rxssx64.workers.dev";
+var LIVE_URL="https://kdmc-live.9r4rxssx64.workers.dev"; /* worker kdmc-live : foudre + cyclones + feux (leçons #130/#133) */
 function mapFeats(f){return f.map(function(x){var c=x.geometry&&x.geometry.coordinates;if(!c)return null;
     var p=x.properties||{};return {lat:c[1],lon:c[0],mmsi:x.mmsi||p.mmsi,sog:p.sog,cog:p.cog,name:p.name};}).filter(Boolean);}
 async function loadShips(){
@@ -1361,8 +1421,8 @@ function setBase(name){
 /* Compat : ancien appel booléen (true=satellite HD, false=sombre). */
 function setSatBase(on){setBase(on?"sat":"dark");}
 /* Puces (sous la carte) → pilotent les couches Leaflet ET le globe */
-function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer}[k]||null;}
-function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
+function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer,lightning:_lightningLayer,cyclones:_cyclonesLayer,firms:_firmsLayer}[k]||null;}
+function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(v){if(k==="lightning")loadLightning();else if(k==="cyclones")loadCyclones();else if(k==="firms")loadFirms();}if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
   document.getElementById("map").classList.toggle("hidden",!on);
@@ -1557,6 +1617,6 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)fast
   if("serviceWorker" in navigator){try{navigator.serviceWorker.register("sw.js").catch(function(){});}catch(_e){}}
 })();
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.29" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.30" data-color="#c9a227" defer></script>
 </body>
 </html>

@@ -1,3 +1,6 @@
+
+## 🌍 v2.30 (2026-07-07, Kevin « Go ») — couches worker kdmc-live câblées sur la carte
+⚡ Foudre Blitzortung (impacts qui s'estompent 10 min, maj 40 s ; worker a capté **32 éclairs réels** au smoke) · 🌀 Cyclones NHC (trajectoires officielles, maj 10 min ; /cyclones 1104 corrigé = fetch NHC direct + try/catch entrée) · 🔥 Feux FIRMS (bbox de la vue, maj 10 min + redraw moveend ; vide sans clé, fail-open). 3 puces OFF par défaut, timers gated ON.x, chargement à l'activation. Worker URL kdmc-live.9r4rxssx64.workers.dev. Test local 13/13 + sondes CI /health+/cyclones+/lightning. Reste optionnel : clé NASA FIRMS gratuite (KEVIN_ACTIONS).
 # v13.4.339 + v13.4.340 (2026-07-04/05) — saga « toujours openai » : CAUSE RACINE FINALE + diag
 - **Preuve serveur (CI)** : anthropic 200 via proxy (simple + app-like stream/cache/tools + préflight CORS 204) ; 200 tools valides → serveur 100% innocenté. Workflow réutilisable `.github/workflows/apex-proxy-diag.yml` (dispatch-only).
 - **v339** : capture du DERNIER échec IA exact par provider (`last-ai-fail.ts`, wired ai-router) + ligne « 🧨 Derniers échecs IA » dans le Diagnostic Coffre (leçon #97) + self-heal DEAD quand proxy 🟢.

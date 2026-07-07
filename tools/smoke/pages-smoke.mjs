@@ -118,6 +118,10 @@ const PROBES = [
   ['Nominatim recherche lieu (CORS)', 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=Monaco', 'cors'],
   /* v2.28 — météo spatiale */
   ['NOAA SWPC indice Kp (météo spatiale) (CORS)', 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json', 'cors'],
+  /* v2.30 — worker kdmc-live câblé (foudre + cyclones + feux) */
+  ['kdmc-live /health (CORS)', 'https://kdmc-live.9r4rxssx64.workers.dev/health', 'cors'],
+  ['kdmc-live /cyclones NHC (CORS)', 'https://kdmc-live.9r4rxssx64.workers.dev/cyclones', 'cors'],
+  ['kdmc-live /lightning Blitzortung (CORS)', 'https://kdmc-live.9r4rxssx64.workers.dev/lightning?secs=3', 'cors'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
 ];
