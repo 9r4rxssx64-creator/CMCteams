@@ -8,6 +8,7 @@
  * conversation & queue sont des références const STABLES. Appelé par render().
  */
 import { logger } from '../../core/logger.js';
+import { detectToolIntent } from '../../services/ai/tool-intent.js';
 import { toast } from '../../ui/toast.js';
 
 import { detectPasteKind, pushPasteCard } from './chat-paste.js';
@@ -53,6 +54,18 @@ export function wireChatInput(rootEl: HTMLElement, ctx: ChatInputCtx): void {
         textarea.style.height = 'auto';
         hideSlashAutocomplete(rootEl);
         return;
+      }
+      /* v13.4.345 (Kevin « tous les outils utilisés auto suivant les questions ») :
+       * détecte une intention outil EXPLICITE (audit/pentest/web/perf) et la lance
+       * automatiquement. Conservateur (0 faux positif testé) + kill localStorage. */
+      {
+        const auto = detectToolIntent(value);
+        if (auto && handleSlashCommand(rootEl, auto)) {
+          textarea.value = '';
+          textarea.style.height = 'auto';
+          hideSlashAutocomplete(rootEl);
+          return;
+        }
       }
       /* v13.4.286 — Journal permanent : enregistre TOUT ce que Kevin dépose
        * (secrets masqués). Survit à « Effacer le chat » et aux MAJ. */
