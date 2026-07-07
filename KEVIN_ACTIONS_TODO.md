@@ -23,6 +23,15 @@
 - **Jeton Apex Chat 30 j** : gardé tel quel — ta règle « reconnu auto après 1ère connexion » prime sur le risque théorique de jeton volé (Face ID + déconnexion forcée couvrent déjà). Dis si tu veux 7 j.
 - **Anti-clobber `cmc_features`** : non modifié — l'app n'a qu'un seul admin (toi), collision impossible ; le fix alourdirait un chemin admin chaud pour zéro gain réel.
 
+### 🎨 Revue design — chaque app + chaque boutique (rendu réel iPhone 390px, 16 pages)
+J'ai rendu et critiqué les 16 surfaces contre le design system (5 piliers UX : pro/expert/futuriste/épuré/pratique, Apple HIG 44px, contraste WCAG).
+- **🔴 CRITIQUE (= ta décision, item 1 ci-dessus « Go chiffrement »)** — Apex Chat affiche partout « Chiffrement de bout en bout AES-256 / serveur aveugle » (splash, manifest, CGU, privacy, llms.txt, og-image) ET le composeur dit « Message chiffré… », **alors qu'à l'exécution `_E2E_ENABLED = false` et les messages partent en clair** (repli `ciphertext || text`). Le transport reste TLS + serveur qui stocke/lit. **Ce sont des affirmations fausses (marketing + politique de confidentialité + CGU = portée légale).** Deux issues possibles, à TOI de trancher : (a) réactiver le vrai E2E (chantier item 1), ou (b) adoucir la copie en « chiffré en transit, messagerie privée » (honnête). Je ne réécris pas la copie légale/CGU ni ne flippe le flag à l'aveugle sans ton feu vert.
+- **🟠 Cohérent avec (a/b)** — 2 nettoyages Apex Chat à faire dans la même passe : composeur `placeholder="Message chiffré…"` (index.html:7159) + ligne debug login `« ✅ Bouton activé (v… ) »` visible aux utilisateurs (index.html:6496, d'où le « vv » quand la version commence déjà par « v »).
+- **🟡 Transverse épurable (design, sûr, à faire sur session dédiée avec gates)** : contraste des placeholders des formulaires de connexion (portail + boutiques) un peu bas (accessibilité) · gabarit boutique partagé `shops/_shared/` = grille de stats déséquilibrée (« 24/7 » orphelin) + badges de confiance en emoji → 1 correctif propage à toutes les boutiques · bouton SMS Apex Chat au dégradé or-sombre peu lisible.
+- **✅ Bon niveau** : CMCteams (thème casino cohérent) · World Monitor / OSINT (dense, live, lisible) · portail kd-mc.com (dark/or). Rien de cassé, ce sont des polish.
+
+**Décision d'expert honnête** : je n'ai PAS appliqué les correctifs design dans cette session (compactée) — chaque app exige son gate (Apex Chat = couverture 100% + 6 points de version, Apex v13 = tsc+lint, CMCteams = test:ci, Départs = bump version) puis PR+merge vérifié ; les enchaîner à court budget risquait un merge à moitié fait (pire qu'un rapport propre, leçons #78/#111). Le rapport ci-dessus EST le livrable ; les fixes design 🟡 se font proprement à la prochaine session, l'issue 🔴 attend ta décision.
+
 ---
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
