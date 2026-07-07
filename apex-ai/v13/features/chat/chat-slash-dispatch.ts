@@ -337,6 +337,14 @@ async function handleDispatchCommand(rootEl: HTMLElement, dispatch: string, args
     payload['channel'] = isUrl ? 'web' : 'search';
     payload['target'] = target;
     label = isUrl ? `🌐 Lecture de \`${target}\`` : `🔎 Recherche « ${target} »`;
+  } else if (dispatch === 'perf-audit') {
+    /* Périmètre borné : audit perf d'une app kd-mc.com uniquement. */
+    if (target && !/^https:\/\/([a-z0-9-]+\.)*kd-mc\.com|9r4rxssx64-creator\.github\.io/i.test(target)) {
+      pushAssistantMessage(rootEl, '🚫 Audit refusé : la cible doit être une app **kd-mc.com**. Ex : `/perf https://kd-mc.com/worldmonitor/`.');
+      return;
+    }
+    payload['site'] = target || 'https://kd-mc.com/worldmonitor/';
+    label = `⚡ Audit perf (Unlighthouse) de \`${payload['site'] as string}\``;
   } else {
     pushAssistantMessage(rootEl, `Commande sécurité inconnue : ${dispatch}`);
     return;
@@ -346,7 +354,8 @@ async function handleDispatchCommand(rootEl: HTMLElement, dispatch: string, args
   try {
     const r = await claudeBridge.dispatchWorkflow(dispatch, payload);
     if (r.ok) {
-      pushAssistantMessage(rootEl, `${label}\n\n✅ Lancé (exec \`${r.exec_id}\`). Ça tourne sur le CI (quelques minutes). Le résultat arrivera dans le Coffre/Apex (\`ax_${dispatch === 'security-suite' ? 'security' : dispatch === 'strix-scan' ? 'strix' : 'agent_reach'}_last\`). Reviens dans un instant.`);
+      const resultKey = dispatch === 'security-suite' ? 'security' : dispatch === 'strix-scan' ? 'strix' : dispatch === 'perf-audit' ? 'perf' : 'agent_reach';
+      pushAssistantMessage(rootEl, `${label}\n\n✅ Lancé (exec \`${r.exec_id}\`). Ça tourne sur le CI (quelques minutes). Le résultat arrivera dans le Coffre/Apex (\`ax_${resultKey}_last\`). Reviens dans un instant.`);
     } else if (r.reason === 'no_github_token') {
       pushAssistantMessage(rootEl, `${label}\n\n⚠️ Impossible de lancer : aucun **jeton GitHub** dans le Coffre (\`ax_github_token\`). Ajoute-le puis relance.`);
     } else {
