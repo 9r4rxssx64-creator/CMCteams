@@ -113,6 +113,9 @@ const PROBES = [
   /* GDELT GEO 2.0 : endpoint MORT (404 Apache sur toutes les variantes, sondes 2026-07-05)
      → couche carte retirée (v2.26). Le DOC (ci-dessous) reste la source actus/images. */
   ['GDELT DOC images d\'articles (CORS)', 'https://api.gdeltproject.org/api/v2/doc/doc?query=breaking%20sourcelang:eng&mode=artlist&maxrecords=3&format=json&timespan=3h', 'cors'],
+  /* v2.27 — météo au tap + recherche lieu */
+  ['Open-Meteo prévisions (météo au tap) (CORS)', 'https://api.open-meteo.com/v1/forecast?latitude=43.73&longitude=7.42&current=temperature_2m,weather_code&daily=temperature_2m_max&forecast_days=3&timezone=auto', 'cors'],
+  ['Nominatim recherche lieu (CORS)', 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=Monaco', 'cors'],
   ['Celestrak TLE (satellites live)', 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle'],
   ['satellite.js UMD (unpkg)', 'https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js'],
 ];
