@@ -163,7 +163,8 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         toast.success(`✅ ${result.summary}`);
         await render(rootEl);
       } catch (err: unknown) {
-        toast.error('Scan failed: ' + (err instanceof Error ? err.message : String(err)));
+        console.error('[innovation] scan', err);
+        toast.error('Analyse impossible — réessaie dans un instant');
       }
     })();
   });

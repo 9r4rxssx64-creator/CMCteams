@@ -348,7 +348,8 @@ function attachHandlers(rootEl: HTMLElement, user: UserCtx | null, isAdmin: bool
       toast.show(`✅ Docs sync : ${res.synced} OK · ${res.failed} fails`, 'success');
       await loadDocs(rootEl);
     } catch (err: unknown) {
-      toast.show(`❌ Sync fail : ${String(err)}`, 'error');
+      console.error('[knowledge] resync docs', err);
+      toast.show('Synchronisation des docs impossible — réessaie dans un instant', 'error');
     } finally {
       btnResync.disabled = false;
       btnResync.textContent = '🔄 Force re-sync docs';
@@ -365,7 +366,8 @@ function attachHandlers(rootEl: HTMLElement, user: UserCtx | null, isAdmin: bool
       toast.show(`✅ ${result?.msg ?? 'Done'}`, 'success');
       await loadAll(rootEl, user, isAdmin);
     } catch (err: unknown) {
-      toast.show(`❌ Compress fail : ${String(err)}`, 'error');
+      console.error('[knowledge] compress memory', err);
+      toast.show('Compression de la mémoire impossible — réessaie plus tard', 'error');
     } finally {
       btnCompress.disabled = false;
     }

@@ -20,8 +20,11 @@ on:
   # v13.4.168 (Kevin 2026-05-15) : anti-récidive Erreur #54 — schedule cron 30 min
   # détecte drift source vs apex-ai-v13/ même si push trigger raté.
   # Étape "Sync dist/ to apex-ai-v13/" idempotente : skip si déjà à jour.
+  # Filet anti-dérive : le vrai déclencheur est le push apex-ai/v13/** (immédiat).
+  # Le cron n'attrape qu'une dérive résiduelle → 6h suffit (audit 2026-07-07,
+  # règle anti-spam : 48 runs/j → 4/j). Étape sync idempotente (skip si à jour).
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 permissions:
