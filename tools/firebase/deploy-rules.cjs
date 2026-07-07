@@ -173,4 +173,26 @@ async function getAccessToken(){
   }
   if (STATE !== 'open' && sCmc === 200) throw new Error('DANGER : /cmcteams lisible SANS auth malgré hardened, abort');
   console.log('✅ Vérif OK — /cmcteams ' + (STATE === 'open' ? 'ouvert' : 'fermé') + ' · /apex + /coffre_vault ' + (APEX_STATE === 'open' ? 'ouverts' : 'fermés (auth requise)'));
+
+  // PURGE credentials du cloud partagé (audit 2026-07-07) — SEULEMENT en hardened.
+  // ax_admin_pin/ax_pin/ax_user/ax_uid/ax_admin_pass sont FB_LOCAL (règle #40/#41) :
+  // ils ne doivent JAMAIS vivre dans la base partagée. Les règles bloquent déjà leur
+  // ÉCRITURE (.write:false), mais /apex .read:"auth != null" est nécessaire au SSE
+  // temps réel (/apex.json entier, firebase.ts:819) → on ne peut PAS révoquer la
+  // lecture d'une clé sous un parent qui l'accorde (cascade RTDB). On ferme donc la
+  // fuite À LA SOURCE : pas de donnée = rien à lire. DELETE service-account (bypass
+  // règles), idempotent (404/absent = no-op). N'affecte PAS ax_pin_<uid> per-user.
+  if (APEX_STATE !== 'open') {
+    const CREDS = ['ax_admin_pin', 'ax_pin', 'ax_user', 'ax_uid', 'ax_admin_pass'];
+    for (const k of CREDS) {
+      try {
+        const chk = await fetch(DB + '/apex/' + k + '.json?shallow=true&access_token=' + encodeURIComponent(token));
+        const had = chk.ok && (await chk.json().catch(() => null)) !== null;
+        const del = await fetch(DB + '/apex/' + k + '.json?access_token=' + encodeURIComponent(token), { method: 'DELETE' });
+        console.log('🧹 purge /apex/' + k + ' : ' + (had ? 'PRÉSENT → supprimé' : 'absent (no-op)') + ' (HTTP ' + del.status + ')');
+      } catch (e) {
+        console.log('⚠ purge /apex/' + k + ' échouée (non-bloquant) : ' + e.message);
+      }
+    }
+  }
 })().catch(e => { console.error('❌ ' + e.message); process.exit(1); });

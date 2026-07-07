@@ -128,9 +128,9 @@
         }
       },
       "access": {
-        ".read": true,
-        ".write": true,
-        ".validate": "!newData.exists() || newData.isString()==false || newData.val().length<20000"
+        "_comment": "Fermé (audit 2026-07-07) : world-read fuitait les empreintes admin boutique + world-write = un inconnu s'ajoutait admin. Le client chez-lolo retombe sur l'admin maître codé en dur (Kevin/Laurence) + cache local, aucune casse. Multi-admin futur = passer par /__admin authentifié.",
+        ".read": false,
+        ".write": false
       },
       "ld_wiped_v1": {
         ".read": true,
