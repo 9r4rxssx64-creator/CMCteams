@@ -1,4 +1,10 @@
 
+## 🌍 v2.32 + ⚡ Unlighthouse + /perf (2026-07-07, Kevin « tout ce qui est utile au domaine, va plus loin ») — intégration recherche TOP 8
+- **WM v2.32 🌊 Crues** (TOP 8 #1) : Open-Meteo Flood/GloFAS, 25 rivières mondiales, normalisé par rivière (débit jour vs pic 30 j + prévu 7 j), sans clé/CORS OK, patron air/waves, OFF défaut + charge à l'activation. Vérifié Playwright local 25/25, 0 erreur (leçon #126).
+- **perf-unlighthouse.yml** (TOP 8 #4) : audit Lighthouse multi-pages kd-mc.com sans quota PageSpeed (« mesurer pas estimer » #94), dispatch+cron mensuel, cible bornée kd-mc.com → Firebase ax_perf_last.
+- **Apex /perf** → perf-audit ; handleDispatchCommand généralisé (security-suite/strix-scan/agent-reach/perf-audit). tsc 0, eslint 0, completeness 4/4.
+- TOP 8 restants (passe dédiée, touchent l'IA sensible) : #7 Workers AI embeddings + Vectorize (RAG Apex), #8 routage multi-providers Cerebras/Mistral/OpenRouter. #2 sécurité = déjà livré (arsenal). #3 Launch Library = déjà en panneau WM. #5 GDELT GEO = retiré v2.26 (couche morte). #6 Cloudflare Radar outages = worker-proxy (moyen).
+
 ## 🛡️ Arsenal sécurité + commandes Apex (2026-07-07, Kevin « récupère les outils des hackers, installe dans Apex »)
 - `security-suite.yml` = outils OSS pentesters scellés au repo (gitleaks/TruffleHog secrets, OSV/Trivy deps, Semgrep XSS/SAST, zizmor workflows). continue-on-error, cron hebdo + dispatch. Résultat → artifact + Firebase `ax_security_last`. Skill `.claude/skills/security-suite/`.
 - **3 commandes Apex CÂBLÉES (pas de commande morte, règle #28)** : `/audit`→security-suite, `/pentest <cible>`→strix-scan (garde périmètre kd-mc.com), `/web <url|requête>`→agent-reach. Nouveau champ `dispatch?` sur SlashCommand + méthode `claudeBridge.dispatchWorkflow(eventType, payload)` (réutilise token/headers/retry d'escalateNow) + handler `handleDispatchCommand` dans chat-slash-dispatch. Résultat asynchrone dans Coffre (`ax_*_last`). tsc 0, eslint 0, tests 41+47 verts (dont 4 dispatchWorkflow + completeness 4/4).
