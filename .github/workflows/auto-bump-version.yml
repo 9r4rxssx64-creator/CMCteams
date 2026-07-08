@@ -86,7 +86,7 @@ jobs:
             MSG="chore: auto-bump APP_VER"
             [ "$cmc_bumped" = "true" ] && MSG="$MSG CMC->$cmc_new"
             [ "$apex_bumped" = "true" ] && MSG="$MSG Apex->$apex_new"
-            git commit -m "$MSG (Pages cache invalidation)"
+            git commit -m "$MSG (Pages cache invalidation) [skip ci]"
             git push origin HEAD || (sleep 3 && git pull --rebase origin main && git push origin HEAD)
           else
             echo "No bump needed"

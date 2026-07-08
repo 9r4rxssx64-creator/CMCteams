@@ -74,14 +74,13 @@
 
   /**
    * URLs conventionnelles à tester si proxy-config.json n'existe pas (encore).
-   * Le subdomain Cloudflare de Kevin est `desarzens-kevin` (cf NOTES_USER).
+   * Le subdomain Cloudflare de Kevin est `9r4rxssx64` (leçon #85 — `desarzens-kevin` n'a jamais existé).
    * On essaie aussi des variantes courantes — si /healthz répond, on adopte.
    */
   const CONVENTIONAL_URLS = [
     // Subdomain réel observé dans le workflow run : 9r4rxssx64 (username GitHub Kevin)
     "https://cmc-parser-proxy.9r4rxssx64.workers.dev",
     // Fallbacks éventuels au cas où Kevin reconfigure le subdomain Cloudflare
-    "https://cmc-parser-proxy.desarzens-kevin.workers.dev",
     "https://cmc-parser-proxy.kdmc.workers.dev",
   ];
 

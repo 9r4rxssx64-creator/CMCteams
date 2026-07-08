@@ -25,6 +25,32 @@
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🔬 SESSION 2026-07-08 — AUDIT EXTRÊME domaine complet (6 auditeurs // + gates mesurés + scans CI)
+
+### 📊 Scores MESURÉS (auditeurs indépendants, jamais estimés)
+Sécurité **11/20** · Architecture **13/20** · Infra-CI **13,5/20** · Apex v13 fonctionnalités **16/20** / UX **15/20** · Apex Chat fonctionnalités **13,5/20** / sécu-app **12/20** · Boutiques UX **11/20**. Stabilité mesurée : **0 scintillement** (3 vues au repos, 0 FAIL après fix). Gates : CMC test:ci ✅ · Apex v13 tsc+lint 0 ✅ · Apex Chat 941/941 + couverture ✅.
+
+### ✅ Corrigé en autonomie dans cette session (mergé)
+- **P0 sécu `vault-svc`** : le JWT n'était JAMAIS vérifié (n'importe qui forgeait un uid → écrire/supprimer le coffre d'autrui) → signature RS256 + expiration vérifiées, **fail-closed**. + `chat-svc` (proxy IA payant sans auth) → jeton de service requis, fail-closed. + 2 proxies legacy : l'Origin VIDE (curl) ne bypass plus la garde.
+- **P0 CSP CMCteams (v9.858)** : `apis.kd-mc.com` absent de connect-src → les jours fériés ne chargeaient jamais (FAIL mesuré par audit:stability, re-prouvé 0 FAIL après fix).
+- **Apex v13 (v13.4.349)** : CSP +`nominatim.openstreetmap.org` +`geocoding-api.open-meteo.com` → géocodage inverse + météo IA débloqués (cassés en prod, leçon #131) + test anti-régression.
+- **Apex Chat (v1.1.251)** : 🎙 **les messages vocaux ne partaient JAMAIS** (toast « envoyé » mensonger) → envoi réel via le pipeline média (E2E + outbox) · en-tête de groupe disait « 🛡 E2E » alors que les groupes partent en clair → « 🔒 chiffré (transit) » honnête · capsules « scellées » (simple base64) → « programmée » honnête · boutons d'en-tête 34→44px.
+- **Workflow `apex-chat-auto-force-update`** : 30/30 échecs depuis sa création (`secrets` dans un `if` = YAML invalide, 0 job) → réparé (la MAJ instantanée chez tous les users marche enfin + fin des mails d'échec).
+- **Anti-spam CI (ta règle)** : `claude-todo-watcher` 5 min→6 h (288→4 runs/j), `uptime-monitor` 15 min→6 h · `[skip ci]` ajouté aux 4 workflows de sync qui se re-déclenchaient · 2 path-triggers morts réparés (build iOS + coordinateur de branches) · `shops/vercel.json` durci (leçon #74) · drift version la-detente réaligné (v1.53.23).
+
+### 🔴 DÉCISIONS À TOI (business — je ne touche pas sans ton feu vert)
+1. **Boutiques démo (tech-hub, ecocraft, digital-vault, pawsome)** : avis clients FABRIQUÉS (« rating 4.9, 208 avis » codés en dur) + badge « Client vérifié » sur des avis non vérifiés + « Commande confirmée ! » affichée au CLIC sur le lien PayPal.me SANS preuve de paiement. **Risque juridique (pratiques commerciales trompeuses)** si présentées comme de vraies boutiques. Options : (a) bandeau « DÉMO » visible, (b) retirer avis/notes fabriqués, (c) dépublier les 4 démos.
+2. **chez-lolo + la-detente : catalogues VIDES** (0 produit en ligne) + Printify « My new store » déconnecté → aucune vente possible. Re-peupler (toi/Lolo) ou dépublier en attendant.
+3. **Paiement réel** : confirmer une commande seulement après retour de paiement vérifié (webhook) = chantier si tu veux vendre pour de vrai.
+
+### 🟡 Backlog technique (prochaines sessions, aucun bloquant)
+- Apex v13 : 15 services orphelins jamais câblés (dont anti-hallucination IA, optimiseur INP) → câbler ou supprimer · toasts techniques (String(err)) ×6 · inputs 14px (zoom iOS).
+- Apex Chat : E2E de GROUPE (pairwise seulement — libellé honnête fait, vrai chiffrement de groupe = chantier) · stories jamais envoyées au serveur (local-only) · sondages en clair + anonymat d'affichage seulement · cap localStorage par conversation · `ia-worker` non déployé = le gater AVANT tout déploiement.
+- Architecture : SW Apex Chat enregistre ses handlers après un `await` (risque install manqué) · calcDepPos dupliqué app↔page Départs (leçon #116, à factoriser) · 49 Mo de patch + 16 Mo de mp4 committés en git · `app 2.js` orphelin.
+- CSP absente sur worldmonitor/osint/clone + pages legal (à faire avec liste exacte des sources + smoke CI).
+- ⚠️ « Boutiques inscriptibles sans auth » (rapport sécu) = lecture du FICHIER de règles ; le LIVE est verrouillé (shops_lock=on prouvé 05/07, self-test nocturne vert). Pas d'action.
+
+
 ## ⚡ kdmc-live (foudre + cyclones + feux officiels) — SESSION 2026-07-07
 
 Nouveau worker `services/kdmc-live/` (modèle kdmc-ais, SANS Durable Object — leçons #132/#133) qui alimente World Monitor en 3 sources live bloquées côté navigateur : **foudre temps réel** (Blitzortung, WebSocket courte), **cyclones/ouragans** (NOAA NHC, relais CORS + cache 10 min) et **feux officiels NASA FIRMS** (VIIRS 24 h, GeoJSON).

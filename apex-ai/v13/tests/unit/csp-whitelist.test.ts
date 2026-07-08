@@ -43,6 +43,9 @@ const REQUIRED_HOSTS = [
   'api.brevo.com',
   'api.resend.com',
   'api.replicate.com',
+  /* Géoloc / météo (audit 2026-07-08 — leçon #131) */
+  'nominatim.openstreetmap.org',
+  'geocoding-api.open-meteo.com',
   /* Sentry monitoring */
   'ingest.sentry.io',
   /* Firebase RTDB (wildcard) */
