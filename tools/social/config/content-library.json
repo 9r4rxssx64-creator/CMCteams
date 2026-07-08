@@ -848,7 +848,7 @@
         "avg": 13
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "psychology-002",
