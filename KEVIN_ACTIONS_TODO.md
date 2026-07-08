@@ -30,17 +30,17 @@
 Rapport complet : https://claude.ai/code/artifact/97aa362e-730f-44eb-9a32-aede610b1954
 Toutes les propositions sont PROUVÉES fichier:ligne ; les 11 affirmations les plus lourdes re-vérifiées à la main (11/11 confirmées).
 
-### ⭐ TOP 10 valeur/effort (tous projets)
-1. **Apex v13 — allumer la mémoire RAG** (S) : construite + branchée dans le prompt mais flag `apex_v13_rag_enabled` OFF par défaut (`apex-memory-rag.ts:30`) → Apex n'a AUCUNE mémoire longue durée aujourd'hui.
-2. **CMCteams — rappels de shift dans l'ICS** (S) : 0 VALARM dans `exportMyICS()` → ajouter alarmes −12h/−2h = notif iPhone native avant chaque service, sans serveur.
-3. **Apex v13 — brancher la génération d'images** (M) : outil annoncé à l'IA, `case 'image_generate'` ABSENT du dispatch → « génère une image » ne fait rien. Pipeline Replicate/FLUX déjà là.
-4. **World Monitor — vrai moteur d'alertes** (S) : la page AFFICHE « 🔔 alertes push actives (séisme M6+) » (index.html:1638) mais 0 code de notification (mensonge d'UI).
-5. **Apex Chat — appels de groupe réellement branchés** (M) : `createVisioSession` = 0 appel dans l'app + mesh STUN-only (échec en 4G) alors que TURN existe côté serveur.
-6. **Apex Chat — compresser les images de message** (S) : brut base64 jusqu'à 5 Mo ; réutiliser `_compressAvatar`.
-7. **Domaine — monitoring des vraies URLs** (S) : uptime-monitor ping 3 URLs github.io, AUCUN sous-domaine kd-mc.com ni worker → panne routeur invisible.
-8. **Domaine — sauvegardes des ~10 KV non couverts** (M) : passkeys/sessions/coffre/billing irrécupérables en cas de perte (seuls RTDB + ACCOUNTS sauvegardés).
-9. **Apex v13 — modèles périmés** (S) : `claude-opus-4-7` (feature-deployment.ts:47) + `claude-sonnet-4-5` (ai.ts:37) → 4-8 / 4-6.
-10. **Boutiques — parité admin Printify chez-lolo** (M) : 0 réf blueprints/publication vs la-detente complet — bloquant pour le lancement Lolo.
+### ⭐ TOP 10 valeur/effort — ✅ TOUT LIVRÉ (« Go tout sans t'arrêter tout auto », 2026-07-08)
+1. ✅ **Apex v13 — mémoire RAG auto-ON** (v13.4.350) : sonde `/health` du worker RAG (cache 6h, fail-open, opt-out explicite respecté) → la mémoire longue durée s'active seule dès que le worker répond.
+2. ✅ **CMCteams — export ICS pro** (v9.859) : fuseau Europe/Monaco (VTIMEZONE), 3 mois de planning, **2 rappels natifs iPhone** (la veille 12h + 2h avant le service), horaires chefs/codes étendus. Testé navigateur 11/11.
+3. ✅ **Apex v13 — génération d'images branchée** (v13.4.350) : `image_generate` câblé registry + dispatch → Replicate FLUX schnell (clé `AX_REPLICATE_KEY` du Coffre). « Génère une image » fonctionne.
+4. ✅ **World Monitor — vraies alertes** (v2.33) : moteur local (séisme M6+, GDACS Rouge, Kp≥7) → notification navigateur + anti-doublon + libellé honnête 🔔/🔕. Testé navigateur 9/9 (notifs réellement tirées).
+5. ✅ **Apex Chat — appels de GROUPE** (v1.1.252) : mesh P2P `visio-mesh` enfin branché dans l'app (sonnerie, grille vidéo, mute/cam) + **TURN Cloudflare injecté** (fini le STUN-only qui échouait en 4G). 1:1 intouché.
+6. ✅ **Apex Chat — compression images** (v1.1.252) : photos de message compressées 1600px JPEG avant envoi (≈ −80 % de data), GIF préservés, fail-open.
+7. ✅ **Domaine — monitoring réel** : uptime-monitor ping les 13 sous-domaines kd-mc.com + 4 workers `/health` + l'origin github.io → une panne routeur/SSL est enfin VISIBLE.
+8. ✅ **Domaine — backup de TOUS les KV** : workflow quotidien qui énumère dynamiquement tous les namespaces Cloudflare (passkeys, sessions, coffre…), dump chiffré AES-256 → branche `kv-backups`.
+9. ✅ **Apex v13 — modèles à jour** : Opus 4.8 + Sonnet 4.6 partout.
+10. ✅ **Boutiques — parité admin Printify chez-lolo** : module partagé `shops/_shared/kdmc-printify-catalog.js` (blueprints → publication 1-clic, prix/nom éditables, port réel Printify, estimation port panier). Testé navigateur 11/11. **BONUS bug prod trouvé + corrigé** : le worker de commande n'autorisait PAS les origins kd-mc.com → `/order` et `/shipping` étaient CORS-bloqués depuis le domaine réel (seul github.io marchait) ; + chemins `/CMCteams/` absolus dans les 8 boutiques (les includes `../_shared/` 404aient sur le domaine, leçon #102).
 
 ### Autres gros lots (détail dans l'artifact)
 - Apex v13 : premier token ~3s plus vite (prompt+RAG en parallèle), routage Opus 4.8 sur les questions dures, conversations multiples + recherche globale, mode vocal temps réel, panneau Aperçu.
@@ -50,7 +50,9 @@ Toutes les propositions sont PROUVÉES fichier:ligne ; les 11 affirmations les p
 - Boutiques : filet réconciliation paiement, CGV exception rétractation personnalisé, /shipping chez-lolo, WebP, sitemap/llms.txt, avis masqués tant que vides.
 - World Monitor/PWA : squawk 7700, clustering avions, âge des données, VAAC, kdmc-push.js partagé, badges/shortcuts/Speculation Rules/View Transitions.
 
-**➡️ Prochain « Go » de Kevin = je commence par le Top 10 (les 6 « S » d'abord).**
+**✅ Top 10 : 10/10 livrés, testés (gates verts + tests navigateur réels), mergés.** Les « autres gros lots » ci-dessous restent le vivier pour les prochains « Go ».
+
+**1 clic Kevin (optionnel, quand tu veux)** : dans World Monitor, tape la puce « 🔔 Alertes » une fois pour autoriser les notifications (choix device, je ne peux pas le faire à ta place).
 
 ---
 
