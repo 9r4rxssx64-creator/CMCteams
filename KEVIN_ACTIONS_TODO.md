@@ -1,5 +1,20 @@
 <!-- Backlog Claude Code (audit Apex 2026-07-05, aucune action Kevin requise) :
 
+## 🤖 SESSION 2026-07-08 — AGENTS DE CODE INDÉPENDANTS qui CODENT (Kevin « tous »)
+
+Config prête pour que N'IMPORTE quel agent externe travaille bien sur ton repo sans rien casser :
+`AGENTS.md` (lu par Codex, Jules, Cursor) + `.github/copilot-instructions.md` (lu par Copilot).
+Chaque agent ouvre des PR → tes 3 reviewers (CodeRabbit + Qodo + Sonar) les vérifient → moi j'intègre.
+
+### 🖱️ Connecter les agents (1 clic chacun — TOI seul autorises, ta règle sécu). Fais ceux que tu veux :
+1. **Google Jules** (agent Gemini, GRATUIT) → https://jules.google.com → se connecter avec Google → « Connect GitHub » → choisir `CMCteams`. Puis tu lui donnes une tâche, il code + ouvre une PR.
+2. **OpenAI Codex** (agent GPT-5, tu as OpenAI) → https://chatgpt.com/codex → « Connect GitHub » → `CMCteams`. (inclus dans ton abo ChatGPT, sinon à l'usage).
+3. **GitHub Copilot agent** (assigne une tâche → il ouvre la PR) → https://github.com/settings/copilot → activer « Copilot coding agent » (abonnement Copilot requis).
+4. **v0** (créer des interfaces/apps neuves) → https://v0.dev (compte Vercel). **Bolt** (app complète front+back) → https://bolt.new. À utiliser pour LANCER une nouvelle app, pas améliorer l'existant.
+
+Tout est déjà cadré par `AGENTS.md` (branches, tests obligatoires par app, secrets, mobile iPhone, chemins /CMCteams/).
+
+
 ## 🔍 SESSION 2026-07-08 — EXPERTS DE CODE INDÉPENDANTS branchés (Kevin « outil extérieur indépendant »)
 
 Trois regards INDÉPENDANTS (modèle ≠ Claude / analyse déterministe) sur tout le domaine + chaque app.
