@@ -5629,7 +5629,7 @@ function _cmcApplyPlanningSeed(){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.858";
+var APP_VER="v9.859";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17601,38 +17601,70 @@ function saveComment(eid,day,txt){
 function getComments(){return lg('cmc_comments_'+A.year+'_'+A.month,{});}
 
 // ── Export ICS planning personnel ──
+// v9.859 (audit amélioration Top #2) : + VALARM (rappels -12h la veille et -2h avant
+// chaque service = notification iPhone NATIVE, sans serveur), + 3 MOIS dans un seul
+// export (mois affiché + 2 suivants, seuls les mois importés produisent des events),
+// + TZID Europe/Monaco (l'heure flottante était ambiguë aux changements d'heure),
+// + les codes CHEFS (20/5c, 19/4'c…) obtiennent leurs horaires (lookup suffixe strippé
+//   — le code AFFICHÉ reste identique au PDF, reproduction fidèle intacte).
 function exportMyICS(){
   if(!A.user) return;
-  var pl=gpl();
-  var myPl=pl[A.user.id]||{};
-  var days=getDays(A.year,A.month);
-  var lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//CMCteams//FR','CALSCALE:GREGORIAN'];
-  for(var d=1;d<=days;d++){
-    var code=myPl[d]||'';
-    if(!code||code==='R'||code==='RH') continue;
-    var times={'22/6':{s:'220000',e:'060000',next:1},'19/4':{s:'190000',e:'040000',next:1},
-      '16/3':{s:'160000',e:'030000',next:1},'14/19':{s:'140000',e:'190000',next:0},
-      '20/5':{s:'200000',e:'050000',next:1},'16/22':{s:'160000',e:'220000',next:0}};
-    var codeBase=code.replace('*','');
-    var dtStr=A.year+String(A.month+1).padStart(2,'0')+String(d).padStart(2,'0');
-    var t=times[codeBase];
-    if(t){
-      var dtEnd=new Date(A.year,A.month,d+(t.next?1:0));
-      var dtEndStr=dtEnd.getFullYear()+String(dtEnd.getMonth()+1).padStart(2,'0')+String(dtEnd.getDate()).padStart(2,'0');
-      lines.push('BEGIN:VEVENT');
-      lines.push('UID:cmc-'+A.user.id+'-'+dtStr+'@cmcteams');
-      lines.push('DTSTART:'+dtStr+'T'+t.s);
-      lines.push('DTEND:'+dtEndStr+'T'+t.e);
-      lines.push('SUMMARY:'+code+' \u2014 Casino de Monaco');
-      lines.push('DESCRIPTION:'+A.user.name+' \u00b7 '+code);
-      lines.push('END:VEVENT');
-    } else {
-      lines.push('BEGIN:VEVENT');
-      lines.push('UID:cmc-'+A.user.id+'-'+dtStr+'@cmcteams');
-      lines.push('DTSTART;VALUE=DATE:'+dtStr);
-      lines.push('DTEND;VALUE=DATE:'+dtStr);
-      lines.push('SUMMARY:'+code+' \u2014 Casino de Monaco');
-      lines.push('END:VEVENT');
+  var lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//CMCteams//FR','CALSCALE:GREGORIAN',
+    'BEGIN:VTIMEZONE','TZID:Europe/Monaco',
+    'BEGIN:DAYLIGHT','TZOFFSETFROM:+0100','TZOFFSETTO:+0200','TZNAME:CEST',
+    'DTSTART:19700329T020000','RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU','END:DAYLIGHT',
+    'BEGIN:STANDARD','TZOFFSETFROM:+0200','TZOFFSETTO:+0100','TZNAME:CET',
+    'DTSTART:19701025T030000','RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU','END:STANDARD',
+    'END:VTIMEZONE'];
+  var times={'22/6':{s:'220000',e:'060000',next:1},'19/4':{s:'190000',e:'040000',next:1},
+    '16/3':{s:'160000',e:'030000',next:1},'14/19':{s:'140000',e:'190000',next:0},
+    '20/5':{s:'200000',e:'050000',next:1},'16/22':{s:'160000',e:'220000',next:0},
+    '19/3':{s:'190000',e:'030000',next:1},'15/19':{s:'150000',e:'190000',next:0},
+    '16/20':{s:'160000',e:'200000',next:0}};
+  var nbEvents=0;
+  for(var mi=0;mi<3;mi++){
+    var mDate=new Date(A.year,A.month+mi,1);
+    var iy=mDate.getFullYear(),im=mDate.getMonth();
+    var myPl=(gpl(iy,im)||{})[A.user.id]||{};
+    var days=getDays(iy,im);
+    for(var d=1;d<=days;d++){
+      var code=myPl[d]||'';
+      if(!code||code==='R'||code==='RH') continue;
+      /* Lookup horaire : code exact sans *, puis sans suffixe chef/convention (c ' ").
+         On ne modifie JAMAIS le code affiché — seul le lookup est assoupli. */
+      var codeBase=code.replace(/\*/g,'');
+      var t=times[codeBase]||times[codeBase.replace(/[cC'"]+$/,'')];
+      var dtStr=iy+String(im+1).padStart(2,'0')+String(d).padStart(2,'0');
+      if(t){
+        var dtEnd=new Date(iy,im,d+(t.next?1:0));
+        var dtEndStr=dtEnd.getFullYear()+String(dtEnd.getMonth()+1).padStart(2,'0')+String(dtEnd.getDate()).padStart(2,'0');
+        lines.push('BEGIN:VEVENT');
+        lines.push('UID:cmc-'+A.user.id+'-'+dtStr+'@cmcteams');
+        lines.push('DTSTART;TZID=Europe/Monaco:'+dtStr+'T'+t.s);
+        lines.push('DTEND;TZID=Europe/Monaco:'+dtEndStr+'T'+t.e);
+        lines.push('SUMMARY:'+code+' — Casino de Monaco');
+        lines.push('DESCRIPTION:'+A.user.name+' · '+code);
+        lines.push('BEGIN:VALARM');
+        lines.push('TRIGGER:-PT12H');
+        lines.push('ACTION:DISPLAY');
+        lines.push('DESCRIPTION:Demain · service '+code+' — Casino de Monaco');
+        lines.push('END:VALARM');
+        lines.push('BEGIN:VALARM');
+        lines.push('TRIGGER:-PT2H');
+        lines.push('ACTION:DISPLAY');
+        lines.push('DESCRIPTION:Service '+code+' dans 2h — Casino de Monaco');
+        lines.push('END:VALARM');
+        lines.push('END:VEVENT');
+        nbEvents++;
+      } else {
+        lines.push('BEGIN:VEVENT');
+        lines.push('UID:cmc-'+A.user.id+'-'+dtStr+'@cmcteams');
+        lines.push('DTSTART;VALUE=DATE:'+dtStr);
+        lines.push('DTEND;VALUE=DATE:'+dtStr);
+        lines.push('SUMMARY:'+code+' — Casino de Monaco');
+        lines.push('END:VEVENT');
+        nbEvents++;
+      }
     }
   }
   lines.push('END:VCALENDAR');
@@ -17644,7 +17676,7 @@ function exportMyICS(){
   a.download='planning-'+A.user.name.replace(/\s+/g,'-')+'-'+MFR[A.month]+A.year+'.ics';
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  toast('Planning export\u00e9 en .ics \u2014 importez dans votre calendrier');
+  toast('📅 Planning exporté ('+nbEvents+' jours, 3 mois, rappels -12h/-2h inclus) — importez dans votre calendrier');
 }
 // v9.67 — Export PDF planning personnel (via window.print)
 // v9.67 — Système de demandes employés (congé, échange, modification)
@@ -22280,9 +22312,9 @@ function vMonPlanning(){
     +empAvatarHtml(emp,40,tcc)
     +'<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:800;color:#d0e8c0">'+esc(dispName)+'</div>'
     +'<div style="font-size:14px;color:'+tcc+'">'+esc(teamName)+' \u00b7 '+esc(emp.id)+'</div></div>'
-    +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udc64 '+t('myProfile')+'</button>'
-    +(isFeatureBlocked(emp.id,"ics")?'':'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#a0c8f0;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>')
-    +'<button onclick="exportMyPDF()" style="background:rgba(192,64,64,.12);border:1px solid rgba(192,64,64,.3);border-radius:7px;color:#e08080;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc4 PDF</button>'
+    +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:11px 13px;min-height:44px;cursor:pointer;flex-shrink:0">\ud83d\udc64 '+t('myProfile')+'</button>'
+    +(isFeatureBlocked(emp.id,"ics")?'':'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#a0c8f0;font-size:14px;padding:11px 13px;min-height:44px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>')
+    +'<button onclick="exportMyPDF()" style="background:rgba(192,64,64,.12);border:1px solid rgba(192,64,64,.3);border-radius:7px;color:#e08080;font-size:14px;padding:11px 13px;min-height:44px;cursor:pointer;flex-shrink:0">\ud83d\udcc4 PDF</button>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
     +'<button class="btn ghost" onclick="prevM()" style="padding:5px 14px;font-size:16px">\u2039</button>'
