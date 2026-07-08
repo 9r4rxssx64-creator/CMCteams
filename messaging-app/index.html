@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.250",
+  "softwareVersion": "v1.1.251",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -230,7 +230,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .chat-header{display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--ax-bg-2);
   border-bottom:1px solid var(--ax-border);position:sticky;top:0;z-index:50}
 .chat-header .avatar{width:32px;height:32px;font-size:.9em;flex-shrink:0}
-.chat-header .topbar-btn{width:34px;height:34px;flex-shrink:0}
+.chat-header .topbar-btn{width:44px;height:44px;flex-shrink:0}
 .chat-hname{font-weight:600;font-size:.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-messages{padding:6px 8px;display:flex;flex-direction:column;gap:2px}
 .chat-messages::before{content:"";margin-top:auto}
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.250';
+const __APEX_CHAT_VERSION__ = 'v1.1.251';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.250</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.251</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.250</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.251</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7130,7 +7130,7 @@ function renderChat(app){
       <div class="avatar">${esc((K._convName(conv) || '?')[0].toUpperCase())}</div>
       <div style="flex:1;min-width:0;cursor:pointer" onclick="${K._isGroup(conv) ? 'K._openGroupMenu()' : 'K._openSecurityVerification()'}" title="${K._isGroup(conv) ? 'Toucher pour gérer le groupe' : 'Toucher pour vérifier la sécurité E2E'}">
         <div class="chat-hname">${esc(K._convName(conv))}</div>
-        <div style="font-size:.68em;color:var(--ax-ok);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🛡 E2E` : K._presenceLabel(conv)}</div>
+        <div style="font-size:.68em;color:var(--ax-ok);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🔒 chiffré (transit)` : K._presenceLabel(conv)}</div>
       </div>
       <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
@@ -10392,10 +10392,10 @@ K._uploadMedia = async function(file){
     await K._sendMediaMessage({ url:d.url, mime:d.mime || file.type, name:d.name || file.name, size:d.size || file.size });
   }catch(e){ toast('❌ Envoi média : ' + ((e && e.message) || 'réseau'), 'err', 7000); }
 };
-K._sendMediaMessage = async function(media){
+K._sendMediaMessage = async function(media, captionOverride){
   const conv = K.viewData; if(!conv) return;
   const input = $('#msg-input');
-  const caption = (input && input.value.trim()) || '';
+  const caption = (typeof captionOverride === 'string') ? captionOverride : ((input && input.value.trim()) || '');
   const marker = 'APXMEDIA1:' + JSON.stringify({ u:media.url, m:media.mime, n:media.name, s:media.size, c:caption });
   let ciphertext = null;
   if(K._e2eOn()){ try{ await K._ensureSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); } }
@@ -10404,7 +10404,7 @@ K._sendMediaMessage = async function(media){
     media_url:media.url, media_type:media.mime, media_name:media.name, media_size:media.size, ts:Date.now(), encrypted:!!ciphertext };
   if(!K.messages[conv.id]) K.messages[conv.id] = [];
   K.messages[conv.id].push(msg); ls('messages_' + conv.id, K.messages[conv.id]);
-  if(input) input.value = '';
+  if(input && typeof captionOverride !== 'string') input.value = '';
   K.render();
   const wire = { type:'message', ciphertext: mediaPayload || marker, mime:'text/plain', ts:msg.ts, id:msg.id };
   if(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === conv.id){
@@ -10510,35 +10510,56 @@ K._sendVoiceMessage = async function(){
   const finalText = (ta?.value || pending.text || '').trim();
   if(!finalText){ toast('Texte vide, annulé', 'warn'); K._cancelVoicePreview(); return; }
   try {
-    // Convertit blob en data:URL pour persistance localStorage (best-effort, max 1MB)
-    let audioData = null;
-    if(pending.blob && pending.blob.size < 1024 * 1024){
-      audioData = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(pending.blob);
-      });
+    // FIX audit 2026-07-08 : avant, le vocal n'était JAMAIS envoyé (push local +
+    // toast « envoyé » mensonger). Maintenant : upload de l'audio → pipeline média
+    // éprouvé (_sendMediaMessage : marqueur APXMEDIA1, E2E si session, outbox).
+    let sent = false;
+    if(pending.blob && K.token){
+      try{
+        const up = await fetch(API_BASE + '/api/media', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + (K.token || ''), 'Content-Type': pending.blob.type || 'audio/webm', 'x-file-name': encodeURIComponent('vocal-' + Date.now() + '.webm') },
+          body: pending.blob,
+        });
+        const d = await up.json().catch(() => ({}));
+        if(up.ok && d.ok){
+          await K._sendMediaMessage({ url: d.url, mime: d.mime || pending.blob.type || 'audio/webm', name: d.name || 'vocal.webm', size: d.size || pending.blob.size }, '🎙️ ' + finalText);
+          sent = true;
+        }
+      }catch(e){ _safeCatch('voice-upload', e); }
     }
-    const msg = {
-      id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-      from: K.user.id,
-      text: '🎙️ ' + finalText,
-      voice_text: finalText,
-      voice_data: audioData,
-      voice_too_large: !audioData,
-      ts: Date.now(),
-      encrypted: false
-    };
-    if(!K.messages[conv.id]) K.messages[conv.id] = [];
-    K.messages[conv.id].push(msg);
-    ls('messages_' + conv.id, K.messages[conv.id]);
-    K.render();
+    if(!sent){
+      // Fail-open honnête : audio gardé sur CET appareil, l'utilisateur est prévenu.
+      let audioData = null;
+      if(pending.blob && pending.blob.size < 1024 * 1024){
+        audioData = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(pending.blob);
+        });
+      }
+      const msg = {
+        id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        from: K.user.id,
+        text: '🎙️ ' + finalText,
+        voice_text: finalText,
+        voice_data: audioData,
+        voice_too_large: !audioData,
+        ts: Date.now(),
+        encrypted: false
+      };
+      if(!K.messages[conv.id]) K.messages[conv.id] = [];
+      K.messages[conv.id].push(msg);
+      ls('messages_' + conv.id, K.messages[conv.id]);
+      K.render();
+      toast('⚠️ Réseau indisponible — vocal gardé sur cet appareil, renvoie-le quand la connexion revient', 'warn', 4000);
+    }
     if(pending.audioUrl){
       try { URL.revokeObjectURL(pending.audioUrl); } catch(_e){_safeCatch('silent',_e)}
     }
     K._voicePending = null;
-    toast('✅ Message vocal envoyé', 'ok');
+    if(sent) toast('✅ Message vocal envoyé', 'ok');
   } catch(e){
     _safeCatch('send-voice-msg', e);
     toast('Envoi vocal échoué', 'err');
@@ -12956,7 +12977,7 @@ K.openTimeCapsule = function(){
     <textarea id="tc-msg" class="input" rows="4" placeholder="Cher Toi, dans 1 an..."></textarea>
     <label class="label" style="margin-top:14px">Aperçu (visible avant ouverture)</label>
     <input id="tc-preview" class="input" placeholder="Ex: Une surprise pour ton anniversaire" maxlength="100">
-    <button class="btn btn-block" onclick="K._createTimeCapsule()" style="margin-top:14px">🔒 Sceller la capsule</button>
+    <button class="btn btn-block" onclick="K._createTimeCapsule()" style="margin-top:14px">⏰ Programmer la capsule</button>
   `);
 };
 
@@ -12983,7 +13004,7 @@ K._createTimeCapsule = async function(){
     });
     if(r.ok){
       K._closeModal();
-      toast('Capsule scellée jusqu\'au ' + new Date(openAt).toLocaleDateString('fr-FR'), 'ok', 4000);
+      toast('Capsule programmée pour le ' + new Date(openAt).toLocaleDateString('fr-FR'), 'ok', 4000);
     } else {
       toast(r.message || 'Erreur', 'err');
     }

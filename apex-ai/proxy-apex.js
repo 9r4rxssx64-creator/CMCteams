@@ -203,7 +203,7 @@ export default {
     // Vérification de l'origine (sécurité CORS)
     // ─────────────────────────────────────────────────────────────
     const origin = request.headers.get("Origin") || "";
-    if (!ALLOW_ORIGINS.includes(origin) && origin !== "") {
+    if (!ALLOW_ORIGINS.includes(origin)) { // FIX audit 2026-07-08 : Origin vide (curl) ne bypass plus
       return jsonError("Origin not allowed", 403, corsOrigin, { origin });
     }
 

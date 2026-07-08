@@ -64,7 +64,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
           git add apex-ai/sw.js
-          git commit -m "chore(v12): sync sw.js CACHE_VERSION -> ${{ steps.check.outputs.app_ver }} (auto)" || echo "Nothing to commit"
+          git commit -m "chore(v12): sync sw.js CACHE_VERSION -> ${{ steps.check.outputs.app_ver }} (auto) [skip ci]" || echo "Nothing to commit"
           git push origin main
 
   sync-v13:
@@ -126,5 +126,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
           git add apex-ai/v13/sw.js apex-ai/v13/index.html
-          git commit -m "chore(v13): sync sw.js + index.html -> ${{ steps.check.outputs.app_ver }} (auto)" || echo "Nothing to commit"
+          git commit -m "chore(v13): sync sw.js + index.html -> ${{ steps.check.outputs.app_ver }} (auto) [skip ci]" || echo "Nothing to commit"
           git push origin main

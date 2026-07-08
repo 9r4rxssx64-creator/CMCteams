@@ -18,7 +18,7 @@ on:
     branches:
       - 'claude/**'
     paths:
-      - 'apex-ai/v13/services/apex-multi-branch-coordinator.ts'
+      - 'apex-ai/v13/services/**/apex-multi-branch-coordinator.ts'
       - '.github/workflows/branch-coordinator.yml'
 
 # Anti-cascade : 1 run à la fois

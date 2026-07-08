@@ -74,6 +74,12 @@ export default {
     }
 
     if (url.pathname === "/v1/chat" && request.method === "POST") {
+      // FIX P1 audit 2026-07-08 : proxy IA payant SANS auth = abus financier.
+      // FAIL-CLOSED : jeton de service requis (SVC_TOKEN, wrangler secret put).
+      const auth = request.headers.get("Authorization") || "";
+      if (!env.SVC_TOKEN || auth !== "Bearer " + env.SVC_TOKEN) {
+        return json({ ok: false, error: "unauthorized" }, cors, 401);
+      }
       const body = await request.json().catch(() => ({}));
       const order = body.failover || ["anthropic", "openrouter", "groq", "gemini"];
 

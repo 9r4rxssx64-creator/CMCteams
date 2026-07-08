@@ -22,7 +22,7 @@ on:
     branches: [main]
     paths:
       - 'apex-ai/v13/capacitor.config.ts'
-      - 'apex-ai/v13/services/apex-ios-native*.ts'
+      - 'apex-ai/v13/services/**/apex-ios-native*.ts'
       - 'apex-ai/v13/IOS_NATIVE_PORT.md'
 
 # Garde-fou : un seul build iOS à la fois (signing + TestFlight upload)

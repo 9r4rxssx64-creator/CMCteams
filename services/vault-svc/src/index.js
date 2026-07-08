@@ -78,11 +78,24 @@ export default {
 };
 
 async function extractUidFromToken(token, env) {
-  // Stub Phase 5.1 : décode JWT payload sans verif full
+  // FIX P0 audit 2026-07-08 : l'ancien stub décodait le payload SANS vérifier la
+  // signature → n'importe qui forgeait un uid (écriture/suppression du coffre
+  // d'autrui). Désormais FAIL-CLOSED : sans clé de vérification déployée, AUCUN
+  // accès ; avec la clé, signature RS256 + exp vérifiées.
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (!env.JWT_VERIFY_KEY) return null; // fail-closed : pas de clé → pas d'accès
+    const b64u = (x) => Uint8Array.from(atob(x.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - x.length % 4) % 4)), c => c.charCodeAt(0));
+    const header = JSON.parse(new TextDecoder().decode(b64u(parts[0])));
+    if (header.alg !== "RS256") return null; // anti alg-confusion
+    const pem = env.JWT_VERIFY_KEY.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
+    const keyData = Uint8Array.from(atob(pem), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey("spki", keyData, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, b64u(parts[2]), new TextEncoder().encode(parts[0] + "." + parts[1]));
+    if (!ok) return null;
+    const payload = JSON.parse(new TextDecoder().decode(b64u(parts[1])));
+    if (payload.exp && payload.exp * 1000 < Date.now()) return null; // expiré
     return payload.uid || payload.sub || null;
   } catch { return null; }
 }

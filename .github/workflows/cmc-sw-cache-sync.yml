@@ -58,5 +58,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add sw.js
-          git commit -m "chore: sync sw.js CACHE -> ${{ steps.check.outputs.app_ver }} (auto)"
+          git commit -m "chore: sync sw.js CACHE -> ${{ steps.check.outputs.app_ver }} (auto) [skip ci]"
           git push origin main
