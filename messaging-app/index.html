@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.251",
+  "softwareVersion": "v1.1.252",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.251';
+const __APEX_CHAT_VERSION__ = 'v1.1.252';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.251</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.252</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.251</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.252</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3484,6 +3484,43 @@ K._compressAvatar = function(dataUrl){
     };
     img.onerror = () => reject(new Error('Format image non décodable (HEIC non converti par iOS ?)'));
     img.src = dataUrl;
+  });
+};
+
+// v1.1.252 (audit amélioration Top #6) — Compression des images de MESSAGE.
+// Avant : image envoyée/stockée en base64 BRUT jusqu'à 5 Mo (l'avatar, lui, était
+// déjà compressé). Ici : downscale proportionnel (pas de crop) à 1600px max côté
+// long, JPEG qualité 0.8 → ~5-10× moins de stockage localStorage et de réseau.
+// FAIL-OPEN : toute erreur → on renvoie l'original (jamais d'envoi bloqué).
+// Les GIF ne sont PAS recompressés (ça tuerait l'animation).
+K._compressMessageImage = function(dataUrl){
+  return new Promise((resolve) => {
+    try {
+      if (typeof dataUrl !== 'string' || dataUrl.startsWith('data:image/gif')) return resolve(dataUrl);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const w = img.naturalWidth || img.width;
+          const h = img.naturalHeight || img.height;
+          if (!w || !h) return resolve(dataUrl);
+          const MAX = 1600;
+          const scale = Math.min(1, MAX / Math.max(w, h));
+          // Déjà petite ET déjà compacte → garder telle quelle
+          if (scale === 1 && dataUrl.length < 300 * 1024) return resolve(dataUrl);
+          const c = document.createElement('canvas');
+          c.width = Math.round(w * scale);
+          c.height = Math.round(h * scale);
+          const ctx = c.getContext('2d');
+          if (!ctx) return resolve(dataUrl);
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          const out = c.toDataURL('image/jpeg', 0.8);
+          // Garde-fou : si la "compression" grossit le fichier (rare, ex PNG plat), garder l'original
+          resolve(out.length < dataUrl.length ? out : dataUrl);
+        } catch (e) { resolve(dataUrl); }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    } catch (e) { resolve(dataUrl); }
   });
 };
 
@@ -7955,20 +7992,41 @@ async function _handleWsMessage(data, convId){
       _logTelemetry('warn', 'ws-server-error', data);
       break;
     // Visio : signaling WebRTC relayé par ConversationDO
-    case 'webrtc-offer':
+    case 'webrtc-offer': {
+      /* v1.1.252 — mesh GROUPE : les offres mesh sont CIBLÉES (data.to).
+         Chemin 1:1 historique 100% intouché (offres sans `to`). */
+      if(K._meshSession && data.to === K.user?.id){ try{ await K._meshSession.onOffer(data.from, data.offer); }catch(e){ _safeCatch('mesh-offer', e); } break; }
+      if(data.to && K.user && data.to !== K.user.id) break; /* offre mesh destinée à un AUTRE membre du groupe */
+      if(data.to && K.user && data.to === K.user.id){
+        const gconv = K.conversations.find(c => c.id === (data.convId || K._wsConvId));
+        if(K._isGroupConv(gconv)){ K._onIncomingGroupCall(data, gconv); break; }
+      }
       // Quelqu'un nous appelle → modal incoming
       if(typeof K._onIncomingCall === 'function') K._onIncomingCall(data);
       break;
+    }
     case 'webrtc-answer':
+      if(K._meshSession){ if(data.to === K.user?.id){ try{ await K._meshSession.onAnswer(data.from, data.answer); }catch(e){ _safeCatch('mesh-answer', e); } } break; }
       // Le receiver a répondu à notre offer
       if(typeof K._onAnswer === 'function') await K._onAnswer(data);
       break;
     case 'webrtc-candidate':
+      if(K._meshSession){ if(!data.to || data.to === K.user?.id){ try{ await K._meshSession.onCandidate(data.from, data.candidate); }catch(e){ _safeCatch('mesh-cand', e); } } break; }
       // ICE candidate à ajouter
       if(typeof K._onIceCandidate === 'function') await K._onIceCandidate(data);
       break;
     case 'call-end':
     case 'call-busy':
+      if(K._meshSession){
+        try{ K._meshSession.removePeer(data.from); }catch(_e){}
+        if(!K._meshSession.state.peers.size){ toast('Appel de groupe terminé', 'info', 2000); K._endGroupCall(); }
+        break;
+      }
+      if(K._pendingGroupOffer && data.from === K._pendingGroupOffer.from){
+        K._pendingGroupOffer = null; try{ K._closeModal(); }catch(_e){}
+        toast('Appel manqué', 'info', 2000);
+        break;
+      }
       // Peer a raccroché / busy → cleanup local
       if(K._activeCall){
         toast(data.type === 'call-busy' ? 'Occupé' : 'Appel terminé', 'info', 2000);
@@ -8141,6 +8199,9 @@ K._call = async function(type, convId){
 
   const conv = K.conversations.find(c => c.id === convId);
   if(!conv) return;
+  /* v1.1.252 — GROUPE (3+) → mesh (une connexion PAR participant). Avant, l'offre
+     partait à tous mais l'unique peerConn 1:1 cassait dès la 2e réponse. */
+  if(K._isGroupConv(conv)) return K._callGroup(type, conv);
 
   K._activeCall = { type, convId, peerConn: null, localStream: null, remoteStream: null, startedAt: Date.now(), pendingRemoteCandidates: [] };
 
@@ -8338,6 +8399,144 @@ K._endCall = function(){
     K._activeCall = null;
   }
   K._closeModal();
+};
+
+// ============================================================================
+// v1.1.252 (audit amélioration Top #5) — APPELS DE GROUPE réellement branchés.
+// Le module mesh (lib/visio-mesh.js : une RTCPeerConnection PAR participant,
+// jusqu'à 4) existait mais n'était JAMAIS appelé — à 3+, la 2e réponse écrasait
+// la 1re sur l'unique peerConn du chemin 1:1. Ici : conversations de GROUPE
+// uniquement, le chemin 1:1 qui marche reste 100% intouché. TURN Cloudflare
+// injecté dans le mesh (il était STUN-only = échec garanti en 4G/NAT sym.).
+// ============================================================================
+K._meshSession = null;
+K._pendingGroupOffer = null;
+K._isGroupConv = function(c){
+  try{ return !!c && Array.isArray(c.members) && c.members.filter(Boolean).length > 2; }catch(_e){ return false; }
+};
+K._meshUI = function(type, conv){
+  const isVideo = type === 'video';
+  $('#modal-host').innerHTML = `
+    <div class="modal-back" style="background:#000">
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;color:white;position:relative">
+        <div style="padding:14px;text-align:center">
+          <div style="font-size:2em">${isVideo ? '📹' : '📞'} <span style="font-size:.55em;vertical-align:middle;color:var(--ax-text-3)">appel de groupe</span></div>
+          <div style="font-size:1.15em;margin-top:4px">${esc(conv.name || 'Groupe')}</div>
+          <div style="color:var(--ax-text-3);margin-top:4px;font-size:.85em" id="mesh-status">🛜 Connexion aux participants…</div>
+        </div>
+        <div id="mesh-grid" style="flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(45%,1fr));gap:8px;padding:8px;align-content:center;overflow:auto"></div>
+        ${isVideo ? '<video id="mesh-local" style="position:absolute;top:14px;right:14px;width:26%;border-radius:12px;z-index:2" autoplay playsinline muted></video>' : ''}
+        <div style="padding:16px calc(var(--ax-safe-bottom) + 16px);display:flex;gap:14px;justify-content:center">
+          <button class="btn btn-out" onclick="K._meshToggleMute(this)" style="border-radius:50%;width:56px;height:56px;font-size:1.3em" aria-label="Micro">🎙️</button>
+          ${isVideo ? '<button class="btn btn-out" onclick="K._meshToggleVideo(this)" style="border-radius:50%;width:56px;height:56px;font-size:1.3em" aria-label="Caméra">📹</button>' : ''}
+          <button class="btn btn-err" onclick="K._endGroupCall()" style="border-radius:50%;width:64px;height:64px;font-size:1.5em" aria-label="Raccrocher">📴</button>
+        </div>
+      </div>
+    </div>`;
+};
+K._meshAttach = function(uid, stream){
+  const grid = $('#mesh-grid'); if(!grid || !K._meshSession) return;
+  let cell = document.getElementById('mesh-p-' + uid);
+  if(!cell){
+    cell = document.createElement('div');
+    cell.id = 'mesh-p-' + uid;
+    cell.style.cssText = 'position:relative;background:#111;border-radius:12px;min-height:120px;display:flex;align-items:center;justify-content:center';
+    const conv = K.conversations.find(c => c.id === K._meshSession.state.convId);
+    const name = ((conv && conv.members_detail) || []).find(m => m && m.id === uid)?.name || String(uid).slice(0, 8);
+    cell.innerHTML = '<div style="position:absolute;bottom:6px;left:8px;font-size:.75em;color:#ddd;z-index:2">' + esc(name) + '</div>';
+    grid.appendChild(cell);
+  }
+  const isVideo = K._meshSession.state.type === 'video' && stream && stream.getVideoTracks().length;
+  const el = document.createElement(isVideo ? 'video' : 'audio');
+  el.autoplay = true; el.setAttribute('playsinline', '');
+  if(isVideo){ el.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:12px'; }
+  else { cell.insertAdjacentHTML('afterbegin', '<div style="font-size:2.5em">🎙️</div>'); }
+  try{ el.srcObject = stream; }catch(_e){}
+  cell.appendChild(el);
+  const st = $('#mesh-status'); if(st) st.textContent = '🟢 ' + K._meshSession.state.peers.size + ' participant(s)';
+};
+K._meshDetach = function(uid){
+  try{ const c = document.getElementById('mesh-p-' + uid); if(c) c.remove(); }catch(_e){}
+  const st = $('#mesh-status');
+  if(st && K._meshSession) st.textContent = K._meshSession.state.peers.size ? ('🟢 ' + K._meshSession.state.peers.size + ' participant(s)') : '📴 plus personne dans l\'appel';
+};
+K._meshToggleMute = function(btn){ if(!K._meshSession) return; const m = K._meshSession.toggleMute(); if(btn) btn.textContent = m ? '🔇' : '🎙️'; };
+K._meshToggleVideo = function(btn){ if(!K._meshSession) return; const off = K._meshSession.toggleVideo(); if(btn) btn.style.opacity = off ? .4 : 1; };
+K._meshCreate = async function(type, conv){
+  const ice = await K._ensureIceServers();
+  const s = ApexVisio.createVisioSession({
+    convId: conv.id, userId: K.user.id, type, ws: K.ws, iceServers: ice,
+    onRemoteStream: function(uid, stream){ K._meshAttach(uid, stream); },
+    onPeerLeave: function(uid){ K._meshDetach(uid); },
+  });
+  K._meshSession = s;
+  K._meshStartedAt = Date.now();
+  const local = await s.startLocalStream();
+  const lv = $('#mesh-local'); if(lv){ try{ lv.srcObject = local; }catch(_e){} }
+  return s;
+};
+K._callGroup = async function(type, conv){
+  if(!window.ApexVisio){ return toast('Module visio indisponible', 'err'); }
+  if(K._meshSession || K._activeCall){ return toast('Déjà en appel', 'warn'); }
+  try{
+    K._meshUI(type, conv);
+    const s = await K._meshCreate(type, conv);
+    for(const m of (conv.members || [])){
+      if(m && m !== K.user.id){ try{ await s.inviteUser(m); }catch(e){ _safeCatch('mesh-invite', e); } }
+    }
+  }catch(e){
+    toast('❌ Appel de groupe : ' + ((e && e.message) || 'micro/caméra refusé'), 'err', 6000);
+    K._endGroupCall(false);
+  }
+};
+K._onIncomingGroupCall = function(msg, conv){
+  if(K._meshSession || K._activeCall){
+    if(K.ws?.readyState === WebSocket.OPEN){ try{ K.ws.send(JSON.stringify({ type: 'call-busy', to: msg.from, convId: msg.convId })); }catch(_e){} }
+    return;
+  }
+  K._pendingGroupOffer = msg;
+  const isVideo = msg.callType === 'video';
+  const callerName = ((conv && conv.members_detail) || []).find(m => m && m.id === msg.from)?.name || msg.from || 'inconnu';
+  $('#modal-host').innerHTML = `
+    <div class="modal-back" role="dialog" aria-modal="true" style="background:rgba(0,0,0,.85)">
+      <div class="modal" role="document" style="text-align:center;padding:32px 20px">
+        <div style="font-size:4em;animation:pulse 1s ease-in-out infinite">${isVideo ? '📹' : '📞'}</div>
+        <h3 style="color:var(--ax-gold);margin:14px 0 6px">Appel de groupe ${isVideo ? 'vidéo' : 'audio'}</h3>
+        <p style="color:var(--ax-text-2)"><strong>${esc(callerName)}</strong> · ${esc((conv && conv.name) || 'Groupe')}</p>
+        <div style="display:flex;gap:14px;justify-content:center;margin-top:24px">
+          <button class="btn btn-err" onclick="K._pendingGroupOffer=null;K._closeModal()" aria-label="Refuser" style="border-radius:50%;width:64px;height:64px;font-size:1.8em">📴</button>
+          <button class="btn" onclick="K._answerGroupCall()" aria-label="Répondre" style="background:var(--ax-ok);border-radius:50%;width:64px;height:64px;font-size:1.8em">${isVideo ? '📹' : '📞'}</button>
+        </div>
+      </div>
+    </div>`;
+};
+K._answerGroupCall = async function(){
+  const msg = K._pendingGroupOffer; if(!msg) return;
+  K._pendingGroupOffer = null;
+  const conv = K.conversations.find(c => c.id === (msg.convId || K._wsConvId));
+  if(!conv || !window.ApexVisio){ K._closeModal(); return toast('Appel indisponible', 'err'); }
+  try{
+    K._meshUI(msg.callType === 'video' ? 'video' : 'audio', conv);
+    const s = await K._meshCreate(msg.callType === 'video' ? 'video' : 'audio', conv);
+    await s.onOffer(msg.from, msg.offer);
+  }catch(e){
+    toast('❌ Réponse impossible : ' + ((e && e.message) || 'micro/caméra refusé'), 'err', 6000);
+    K._endGroupCall(false);
+  }
+};
+K._endGroupCall = function(){
+  const s = K._meshSession;
+  if(s){
+    try{
+      K._logCall({ type: s.state.type, peer: 'Groupe', direction: 'out',
+        duration: K._meshStartedAt ? (Date.now() - K._meshStartedAt) : 0 });
+    }catch(_e){}
+    try{ s.end(); }catch(_e){}
+  }
+  K._meshSession = null;
+  K._meshStartedAt = null;
+  K._pendingGroupOffer = null;
+  try{ K._closeModal(); }catch(_e){}
 };
 
 // ============================================================================
@@ -10382,10 +10581,26 @@ K._uploadMedia = async function(file){
   const kind = (file.type||'').startsWith('video/') ? 'vidéo' : (file.type||'').startsWith('image/') ? 'image' : (file.type||'').startsWith('audio/') ? 'audio' : 'fichier';
   toast('📤 Envoi ' + kind + ' (' + K._fmtSize(file.size) + ')…', 'info', 3000);
   try{
+    /* v1.1.252 : les photos (caméra iPhone = plusieurs Mo) sont compressées AVANT
+       l'upload serveur (downscale 1600px JPEG 0.8, GIF exclus, fail-open → original). */
+    let body = file, ctype = file.type || 'application/octet-stream';
+    if ((file.type||'').startsWith('image/') && file.type !== 'image/gif') {
+      try {
+        const raw = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsDataURL(file); });
+        const comp = await K._compressMessageImage(raw);
+        if (typeof comp === 'string' && comp.length < raw.length) {
+          const bin = atob(comp.split(',')[1]);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          body = new Blob([arr], { type: 'image/jpeg' });
+          ctype = 'image/jpeg';
+        }
+      } catch(e) { _safeCatch('media-compress', e); }
+    }
     const r = await fetch(API_BASE + '/api/media', {
       method:'POST',
-      headers:{ 'Authorization':'Bearer ' + (K.token||''), 'Content-Type': file.type || 'application/octet-stream', 'x-file-name': encodeURIComponent(file.name || 'fichier') },
-      body: file,
+      headers:{ 'Authorization':'Bearer ' + (K.token||''), 'Content-Type': ctype, 'x-file-name': encodeURIComponent(file.name || 'fichier') },
+      body: body,
     });
     const d = await r.json().catch(()=>({}));
     if(!r.ok || !d.ok){ toast('❌ ' + (d.detail || d.message || d.error || ('HTTP ' + r.status)), 'err', 7000); return; }
@@ -10425,12 +10640,14 @@ K._uploadImage = async function(file){
   toast('📷 Analyse image...', 'info');
   try{
     // Lecture base64
-    const b64 = await new Promise((resolve, reject) => {
+    const b64raw = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
     });
+    // v1.1.252 : compression AVANT tout (IA + stockage + envoi) — fail-open
+    const b64 = await K._compressMessageImage(b64raw);
     // Appel IA pour alt-text
     let altText = '';
     try{
