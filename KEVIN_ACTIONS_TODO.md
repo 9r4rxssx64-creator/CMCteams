@@ -2472,3 +2472,5 @@ dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
 → Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
 toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
 **Claude doit me le rappeler.**
+
+<!-- Vérif relecteurs indépendants 2026-07-08 : Qodo (GPT-5) live + Security-suite (Semgrep/gitleaks) live. CodeRabbit = test sur cette PR. -->
