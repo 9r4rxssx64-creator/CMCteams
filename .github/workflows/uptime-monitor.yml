@@ -1,7 +1,10 @@
-name: Uptime monitor (15 min)
+name: Uptime monitor (6 h)
 
-# Ping toutes les 15 min les URLs critiques de production.
-# Si 2 echecs consecutifs -> ouvre issue + log dans uptime-history.json
+# Ping toutes les 6 h les VRAIES adresses de production (audit amélioration Top #7) :
+# les 14 sous-domaines kd-mc.com (= routeur Cloudflare + SSL + DNS, le chemin que
+# les utilisateurs empruntent réellement) + les /health des workers critiques.
+# Avant : 3 URLs github.io seulement → une panne du routeur/SSL était INVISIBLE.
+# Si 2 echecs consecutifs -> ouvre issue + log dans .uptime/history.json
 
 on:
   schedule:
@@ -37,16 +40,34 @@ jobs:
           RESULTS=""
           ALL_OK=true
 
+          # Domaine réel (routeur + SSL + DNS) — liste alignée sur ROUTES de
+          # services/kdmc-router/worker.js — + /health des workers critiques
+          # + l'origin GitHub Pages (pour distinguer panne routeur vs panne origin).
           for url in \
-            "https://9r4rxssx64-creator.github.io/CMCteams/" \
-            "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/" \
-            "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/"; do
+            "https://kd-mc.com/" \
+            "https://cmcteams.kd-mc.com/" \
+            "https://apex-ai.kd-mc.com/" \
+            "https://apex-chat.kd-mc.com/" \
+            "https://la-detente.kd-mc.com/" \
+            "https://chez-lolo.kd-mc.com/" \
+            "https://dashboard.kd-mc.com/" \
+            "https://sourcing.kd-mc.com/" \
+            "https://coffre.kd-mc.com/" \
+            "https://departs.kd-mc.com/" \
+            "https://cmcteams-light.kd-mc.com/" \
+            "https://bot.kd-mc.com/" \
+            "https://beatbot.kd-mc.com/" \
+            "https://apex-secrets-proxy.9r4rxssx64.workers.dev/health" \
+            "https://kdmc-ais.9r4rxssx64.workers.dev/health" \
+            "https://kdmc-live.9r4rxssx64.workers.dev/health" \
+            "https://kdmc-rag.9r4rxssx64.workers.dev/health" \
+            "https://9r4rxssx64-creator.github.io/CMCteams/"; do
             START=$(date +%s%3N)
             CODE=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "$url")
             END=$(date +%s%3N)
             MS=$((END - START))
             STATUS="ok"
-            if [ "$CODE" != "200" ]; then STATUS="fail"; ALL_OK=false; fi
+            case "$CODE" in 2*|3*) : ;; *) STATUS="fail"; ALL_OK=false ;; esac
             RESULTS="$RESULTS{\"url\":\"$url\",\"code\":\"$CODE\",\"ms\":$MS,\"status\":\"$STATUS\"},"
             echo "$url -> HTTP $CODE in ${MS}ms"
           done
