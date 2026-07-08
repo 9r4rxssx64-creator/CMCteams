@@ -358,13 +358,17 @@ Dès que Kevin dit « fais l'audit », « audit », « audite X », « fais ton 
 — quel que soit le projet — déclencher l'audit le PLUS COMPLET, jamais une
 version partielle ou rapide.
 
-### Les 9 axes obligatoires d'un audit complet (aucun ne doit manquer)
+### Les 10 axes obligatoires d'un audit complet (aucun ne doit manquer)
 
 0. **LIVE RÉEL** (axe n°1, exécuté sur le vrai domaine — cf. « PASSE LIVE RÉELLE »
    ci-dessous) : chaque surface kd-mc.com chargée dans un vrai navigateur (via CI,
    l'agent est walled-off), 0 requête projet bloquée/CORS/4xx-5xx, 0 exception JS,
    parcours critique (achat test, message, planning) réellement complété. Sans lui,
    l'audit est « à la lecture » = aveugle au runtime (leçon #131).
+0-bis. **SECOND AVIS INDÉPENDANT (non-Claude)** — cf. « SECOND AVIS INDÉPENDANT »
+   ci-dessous : au moins un expert ≠ Claude (Qodo PR-Agent OpenAI / CodeRabbit /
+   SonarCloud) a revu les MÊMES changements et ses findings sont triés. Sans lui,
+   c'est moi qui relis mon travail = biaisé (la frustration de fond de Kevin).
 1. **Architecture** — routes (doublons, orphelines, mortes), features non
    câblées (Declaration ≠ Deployment), organisation modules, imports cassés,
    doublons de code. (cf. règle ARCHITECTURE AUDITÉE EN PREMIER)
@@ -463,6 +467,34 @@ parcours critique EXÉCUTÉ dans un vrai navigateur, sur le vrai domaine.**
    findings triés P0/P1/P2, l'audit reste « lecture seule » = incomplet. Un achat de
    test doit avoir été réellement complété sur le vrai domaine avant de dire « ok ».
 
+### 🤝 SECOND AVIS INDÉPENDANT (NON-CLAUDE) — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-07-08, ABSOLUE)
+
+> **« Trouve un outil extérieur indépendant, expert… Intègre dans "fais ton audit". »** — Kevin 2026-07-08
+
+**Un audit où c'est MOI (Claude) qui relis mon propre travail est biaisé** — c'est la
+frustration de fond de Kevin (je passe à côté de bugs). Donc « fais ton audit » DOIT
+inclure le verdict d'AU MOINS UN expert de code **indépendant (modèle ≠ Claude / analyse
+déterministe)**, pas seulement ma revue. `auto-pr-review.yml` est un reviewer Claude (moi)
+→ NE compte PAS comme second avis.
+
+1. **Experts indépendants câblés** (le maillon « extérieur » de l'audit) :
+   - **Qodo PR-Agent** (`ai-review-independent.yml`) : dans la CI, **clé OpenAI de Kevin**
+     (`OPEN_AI_API_KEY`), modèle GPT (≠ Claude), isolé. Prouvé vivant (run gpt-5.5,
+     `publish_output`). Auto sur chaque vraie PR + à la demande via commentaire `/review`,
+     `/improve`, `/ask`.
+   - **CodeRabbit** (`.coderabbit.yaml`) : société externe, review ligne par ligne — une
+     fois l'appli GitHub installée (https://github.com/apps/coderabbitai).
+   - **SonarQube Cloud** (`sonar-project.properties`) : analyse statique déterministe,
+     bilan détaillé par app — une fois importé (sonarcloud.io, Automatic Analysis).
+2. **Comment l'intégrer** : pour un audit d'un changement → s'assurer que le reviewer
+   indépendant a tourné sur la PR (run `ai-review-independent.yml` = success + revue postée),
+   LIRE ses findings via GitHub MCP + les commentaires PR, et les TRIER (confirmer/écarter,
+   leçon #83 : vérifier avant d'agir). Pour un audit de tout le domaine → consulter les
+   tableaux SonarCloud par app + déclencher/relire le reviewer indépendant.
+3. **Règle de complétude** : un audit n'est PAS « fait » tant qu'un expert **non-Claude**
+   n'a pas donné son avis sur les mêmes changements ET que ses findings sont triés. Mon
+   analyse + un second avis indépendant qui converge = confiance ; s'ils divergent, creuser.
+
 ### Autonome + mesuré
 
 - Audit lancé en autonomie totale, multi-subagents en parallèle si besoin.
@@ -470,6 +502,7 @@ parcours critique EXÉCUTÉ dans un vrai navigateur, sur le vrai domaine.**
 - Findings priorisés P0/P1/P2 + actions concrètes.
 - Audit POST-FIX systématique (mesurer l'écart réel après correction).
 - **Passe LIVE réelle exécutée (audit-live.yml + e2e dédiés)** — sinon audit incomplet.
+- **Second avis INDÉPENDANT (non-Claude) obtenu + trié** (Qodo PR-Agent / CodeRabbit / SonarCloud) — sinon audit biaisé/incomplet.
 
 ### Intégration Apex
 
@@ -480,11 +513,13 @@ en continu avec les autres axes.
 
 ### Test mental obligatoire
 
-> *"Mon audit couvre-t-il les 9 axes ? **Ai-je CHARGÉ les vraies pages dans un
+> *"Mon audit couvre-t-il les 10 axes ? **Ai-je CHARGÉ les vraies pages dans un
 > navigateur (passe LIVE via CI) et complété un achat/message de test sur le vrai
-> domaine, ou seulement LU le code ?** Si j'ai vérifié les couleurs mais pas que
-> chaque bouton atterrit au bon endroit, ni que l'app tourne réellement en prod
-> sans requête bloquée — alors ce n'est PAS un audit, c'est un coup d'œil. Reprendre."*
+> domaine, ou seulement LU le code ? Ai-je un SECOND AVIS INDÉPENDANT (non-Claude —
+> Qodo/CodeRabbit/Sonar) sur les mêmes changements, ou est-ce moi qui relis mon
+> propre travail ?** Si j'ai vérifié les couleurs mais pas que chaque bouton atterrit
+> au bon endroit, ni que l'app tourne réellement en prod sans requête bloquée, ni
+> qu'un expert externe l'a validée — alors ce n'est PAS un audit, c'est un coup d'œil. Reprendre."*
 
 S'applique : Apex (priorité absolue), CMCteams, Remote, Apex Chat, e-KDMC, tous projets.
 
