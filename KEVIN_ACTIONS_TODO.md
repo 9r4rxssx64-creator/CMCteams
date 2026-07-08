@@ -25,6 +25,35 @@
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## 🚀 SESSION 2026-07-08 (suite) — AUDIT D'AMÉLIORATION EXTRÊME (84 améliorations prouvées, 6 auditeurs //)
+
+Rapport complet : https://claude.ai/code/artifact/97aa362e-730f-44eb-9a32-aede610b1954
+Toutes les propositions sont PROUVÉES fichier:ligne ; les 11 affirmations les plus lourdes re-vérifiées à la main (11/11 confirmées).
+
+### ⭐ TOP 10 valeur/effort (tous projets)
+1. **Apex v13 — allumer la mémoire RAG** (S) : construite + branchée dans le prompt mais flag `apex_v13_rag_enabled` OFF par défaut (`apex-memory-rag.ts:30`) → Apex n'a AUCUNE mémoire longue durée aujourd'hui.
+2. **CMCteams — rappels de shift dans l'ICS** (S) : 0 VALARM dans `exportMyICS()` → ajouter alarmes −12h/−2h = notif iPhone native avant chaque service, sans serveur.
+3. **Apex v13 — brancher la génération d'images** (M) : outil annoncé à l'IA, `case 'image_generate'` ABSENT du dispatch → « génère une image » ne fait rien. Pipeline Replicate/FLUX déjà là.
+4. **World Monitor — vrai moteur d'alertes** (S) : la page AFFICHE « 🔔 alertes push actives (séisme M6+) » (index.html:1638) mais 0 code de notification (mensonge d'UI).
+5. **Apex Chat — appels de groupe réellement branchés** (M) : `createVisioSession` = 0 appel dans l'app + mesh STUN-only (échec en 4G) alors que TURN existe côté serveur.
+6. **Apex Chat — compresser les images de message** (S) : brut base64 jusqu'à 5 Mo ; réutiliser `_compressAvatar`.
+7. **Domaine — monitoring des vraies URLs** (S) : uptime-monitor ping 3 URLs github.io, AUCUN sous-domaine kd-mc.com ni worker → panne routeur invisible.
+8. **Domaine — sauvegardes des ~10 KV non couverts** (M) : passkeys/sessions/coffre/billing irrécupérables en cas de perte (seuls RTDB + ACCOUNTS sauvegardés).
+9. **Apex v13 — modèles périmés** (S) : `claude-opus-4-7` (feature-deployment.ts:47) + `claude-sonnet-4-5` (ai.ts:37) → 4-8 / 4-6.
+10. **Boutiques — parité admin Printify chez-lolo** (M) : 0 réf blueprints/publication vs la-detente complet — bloquant pour le lancement Lolo.
+
+### Autres gros lots (détail dans l'artifact)
+- Apex v13 : premier token ~3s plus vite (prompt+RAG en parallèle), routage Opus 4.8 sur les questions dures, conversations multiples + recherche globale, mode vocal temps réel, panneau Aperçu.
+- Apex Chat : reconnexion d'appel (restartIce), débit adaptatif, recherche in-conv, coches honnêtes, virtualisation, aperçus de liens, messages programmés serveur, résumé IA des non-lus, traduction auto.
+- CMCteams : lazy-load des ~700 Ko de code admin parsés par les 258 employés (levier boot n°1), SEED 78 Ko à retirer, push « planning publié », prévision sous-effectif, webcal:// auto-sync, « qui travaille avec moi », échange pair-à-pair, offline page Départs.
+- Domaine : design-system adopté (1 page/20 aujourd'hui), CSP injectée par le routeur, workflow deploy réutilisable (24 copies), cache edge, SSO coffre-fort + SDK 1-ligne, status.kd-mc.com, alerte temps réel Cloudflare, nav inter-apps.
+- Boutiques : filet réconciliation paiement, CGV exception rétractation personnalisé, /shipping chez-lolo, WebP, sitemap/llms.txt, avis masqués tant que vides.
+- World Monitor/PWA : squawk 7700, clustering avions, âge des données, VAAC, kdmc-push.js partagé, badges/shortcuts/Speculation Rules/View Transitions.
+
+**➡️ Prochain « Go » de Kevin = je commence par le Top 10 (les 6 « S » d'abord).**
+
+---
+
 ## 🔬 SESSION 2026-07-08 — AUDIT EXTRÊME domaine complet (6 auditeurs // + gates mesurés + scans CI)
 
 ### 📊 Scores MESURÉS (auditeurs indépendants, jamais estimés)
