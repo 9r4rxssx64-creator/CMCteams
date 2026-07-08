@@ -38,10 +38,10 @@ Sécurité **11/20** · Architecture **13/20** · Infra-CI **13,5/20** · Apex v
 - **Workflow `apex-chat-auto-force-update`** : 30/30 échecs depuis sa création (`secrets` dans un `if` = YAML invalide, 0 job) → réparé (la MAJ instantanée chez tous les users marche enfin + fin des mails d'échec).
 - **Anti-spam CI (ta règle)** : `claude-todo-watcher` 5 min→6 h (288→4 runs/j), `uptime-monitor` 15 min→6 h · `[skip ci]` ajouté aux 4 workflows de sync qui se re-déclenchaient · 2 path-triggers morts réparés (build iOS + coordinateur de branches) · `shops/vercel.json` durci (leçon #74) · drift version la-detente réaligné (v1.53.23).
 
-### 🔴 DÉCISIONS À TOI (business — je ne touche pas sans ton feu vert)
-1. **Boutiques démo (tech-hub, ecocraft, digital-vault, pawsome)** : avis clients FABRIQUÉS (« rating 4.9, 208 avis » codés en dur) + badge « Client vérifié » sur des avis non vérifiés + « Commande confirmée ! » affichée au CLIC sur le lien PayPal.me SANS preuve de paiement. **Risque juridique (pratiques commerciales trompeuses)** si présentées comme de vraies boutiques. Options : (a) bandeau « DÉMO » visible, (b) retirer avis/notes fabriqués, (c) dépublier les 4 démos.
-2. **chez-lolo + la-detente : catalogues VIDES** (0 produit en ligne) + Printify « My new store » déconnecté → aucune vente possible. Re-peupler (toi/Lolo) ou dépublier en attendant.
-3. **Paiement réel** : confirmer une commande seulement après retour de paiement vérifié (webhook) = chantier si tu veux vendre pour de vrai.
+### 🔴 DÉCISIONS BUSINESS — TRANCHÉES par Kevin (2026-07-08 « Laisse comme ça les deux »)
+1. **Boutiques démo (tech-hub, ecocraft, digital-vault, pawsome)** → **DÉCISION : laisser tel quel, ce sont des PROJETS** (pas de vraies boutiques en exploitation). Aucune action. ⚠️ Rappel gravé : le jour où l'une passe en VRAIE boutique → retirer les avis fabriqués + brancher la vérification de paiement AVANT ouverture (risque pratiques commerciales trompeuses sinon).
+2. **chez-lolo + la-detente (catalogues vides, Printify déconnecté)** → **DÉCISION : laisser, mise en place EN COURS** (création des logos etc.). Aucune action. Quand les produits arrivent : reconnecter Printify + je peux brancher la confirmation de commande sur paiement vérifié (webhook) à la demande.
+3. **Paiement réel (webhook)** : chantier disponible quand une boutique ouvre pour de vrai — ne pas ouvrir sans.
 
 ### 🟡 Backlog technique (prochaines sessions, aucun bloquant)
 - Apex v13 : 15 services orphelins jamais câblés (dont anti-hallucination IA, optimiseur INP) → câbler ou supprimer · toasts techniques (String(err)) ×6 · inputs 14px (zoom iOS).
