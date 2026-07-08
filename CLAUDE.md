@@ -358,8 +358,13 @@ Dès que Kevin dit « fais l'audit », « audit », « audite X », « fais ton 
 — quel que soit le projet — déclencher l'audit le PLUS COMPLET, jamais une
 version partielle ou rapide.
 
-### Les 8 axes obligatoires d'un audit complet (aucun ne doit manquer)
+### Les 9 axes obligatoires d'un audit complet (aucun ne doit manquer)
 
+0. **LIVE RÉEL** (axe n°1, exécuté sur le vrai domaine — cf. « PASSE LIVE RÉELLE »
+   ci-dessous) : chaque surface kd-mc.com chargée dans un vrai navigateur (via CI,
+   l'agent est walled-off), 0 requête projet bloquée/CORS/4xx-5xx, 0 exception JS,
+   parcours critique (achat test, message, planning) réellement complété. Sans lui,
+   l'audit est « à la lecture » = aveugle au runtime (leçon #131).
 1. **Architecture** — routes (doublons, orphelines, mortes), features non
    câblées (Declaration ≠ Deployment), organisation modules, imports cassés,
    doublons de code. (cf. règle ARCHITECTURE AUDITÉE EN PREMIER)
@@ -418,12 +423,53 @@ Référence Playwright (session admin simulée) :
 `addInitScript(()=>{localStorage.setItem('cmc_uid','U11804');localStorage.setItem('cmc_lastact',String(Date.now()));})`
 puis MutationObserver sur `#topbar`, tally par `m.type+m.target.id`, top offenders + stack.
 
+### 🌐 PASSE LIVE RÉELLE — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-07-08, ABSOLUE)
+
+> **« Avec tes nouveaux outils tu es censé pouvoir accéder aux sites, les copier, etc. Intègre tout dans "fais ton audit". »** — Kevin 2026-07-08
+
+Un audit qui ne fait que LIRE le code est aveugle aux bugs de RUNTIME (le blocage
+CORS de la commande Printify, les liens `../_shared/` en 404 sur le domaine, une
+feature « construite mais éteinte » — leçons #28/#54/#95/#103/#131). **« Fais ton
+audit » N'EST PAS FINI tant que les vraies pages n'ont pas été CHARGÉES et le
+parcours critique EXÉCUTÉ dans un vrai navigateur, sur le vrai domaine.**
+
+1. **Contrainte honnête d'environnement (mesurée, pas supposée)** : dans Claude Code
+   web, le proxy egress n'autorise QUE `anthropic.com` + registres de paquets ;
+   **kd-mc.com / github.io / Firecrawl / Jina / WebFetch → 403 CONNECT**. Donc je NE
+   PEUX PAS atteindre les sites de Kevin depuis l'agent, avec AUCUN outil. Vérifier
+   avant de supposer : `curl -sS "$HTTPS_PROXY/__agentproxy/status"` (allowlist réelle).
+2. **La voie qui marche = le runner CI (réseau OUVERT)**. Le maillon live est câblé :
+   ```
+   Actions → « Audit LIVE (vraies pages kd-mc.com) » (audit-live.yml) → Run workflow
+   # = node tools/smoke/audit-live.mjs — Chromium réel, TOUTES les surfaces
+   ```
+   Il attrape la classe que la lecture ne voit pas : **requête réseau ÉCHOUÉE /
+   bloquée / CORS / 4xx-5xx vers un host projet** (worker/firebase/domaine) via
+   `page.on('requestfailed')` + `response` ≥400, **exception JS** (`pageerror`),
+   **page vide** (élément clé absent), + **capture d'écran par surface** (artifact).
+   Exit 1 si un échec bloquant. Lire le run via GitHub MCP (`actions_get`) + les
+   captures = « voir » réellement les sites (leçon #126 : ce que l'agent ne peut
+   atteindre, la CI le voit).
+3. **Copier / diff source↔live** : je ne peux pas fetch le rendu live depuis l'agent
+   → le smoke CI capture le DOM/console/réseau/écran ; je lis le résultat. Pour la
+   LOGIQUE en local (sandbox) : Playwright + libs du registre npm servies localement
+   + APIs externes mockées (leçon #126) — prouve rendu/handlers sans réseau.
+4. **Parcours critiques deep** (déjà câblés, à lancer aussi) : `la-detente-shop-selftest.yml`
+   + `la-detente-e2e.yml` (commande test Printify réelle), `apex-chat-e2e.yml`
+   (2 clients qui s'écrivent), `kdmc-sso-e2e.yml` (Face ID passkey), `pages-smoke.yml`
+   (cartes live). L'audit les déclenche et lit leurs conclusions — un « deploy success »
+   seul ne prouve rien (leçon #95).
+5. **Règle de complétude** : tant que la passe live n'a pas tourné (CI) ET ses
+   findings triés P0/P1/P2, l'audit reste « lecture seule » = incomplet. Un achat de
+   test doit avoir été réellement complété sur le vrai domaine avant de dire « ok ».
+
 ### Autonome + mesuré
 
 - Audit lancé en autonomie totale, multi-subagents en parallèle si besoin.
 - Scores RÉELS mesurés (jamais estimés — cf. règle JAMAIS ESTIMER).
 - Findings priorisés P0/P1/P2 + actions concrètes.
 - Audit POST-FIX systématique (mesurer l'écart réel après correction).
+- **Passe LIVE réelle exécutée (audit-live.yml + e2e dédiés)** — sinon audit incomplet.
 
 ### Intégration Apex
 
@@ -434,10 +480,11 @@ en continu avec les autres axes.
 
 ### Test mental obligatoire
 
-> *"Mon audit couvre-t-il les 8 axes ? Si j'ai vérifié les couleurs mais pas
-> que chaque bouton atterrit au bon endroit, ni que l'app ne scintille pas,
-> ni que l'architecture est saine — alors ce n'est PAS un audit, c'est un
-> coup d'œil. Reprendre."*
+> *"Mon audit couvre-t-il les 9 axes ? **Ai-je CHARGÉ les vraies pages dans un
+> navigateur (passe LIVE via CI) et complété un achat/message de test sur le vrai
+> domaine, ou seulement LU le code ?** Si j'ai vérifié les couleurs mais pas que
+> chaque bouton atterrit au bon endroit, ni que l'app tourne réellement en prod
+> sans requête bloquée — alors ce n'est PAS un audit, c'est un coup d'œil. Reprendre."*
 
 S'applique : Apex (priorité absolue), CMCteams, Remote, Apex Chat, e-KDMC, tous projets.
 
@@ -9765,3 +9812,5 @@ CMCteams, tous workflows GitHub Actions, tous projets futurs.
 133. **DURABLE OBJECT INDISPONIBLE SUR CE COMPTE CLOUDFLARE (1042 sur TOUT, plan FREE) → l'abandonner pour une WebSocket COURTE par requête ; puis aisstream envoie du BINAIRE en Blob → `binaryType="arraybuffer"` = navires MONDIAUX enfin réels (kdmc-ais, Kevin 2026-07-05 « trouve des solutions, ne me dis jamais que tu ne peux pas » → navires du monde entier livrés)** — Fin de la saga AIS mondial (#130 scaffold DO, #132 hostname synthétique). Après le fix #132, le worker rendait TOUJOURS `error code: 1042` sur `/health`. **Diagnostic par instrumentation (leçon #56, ne pas deviner)** : découplé `/health` du DO → `/health` marchait, mais TOUTE requête touchant le DO = 1042 → **le binding Durable Object empêche le worker de DÉMARRER** sur ce compte. Testé les 2 variantes de migration : `new_classes` (KV) exige le plan **PAYANT** ; `new_sqlite_classes` (SQLite, censé être FREE) → **1042 quand même** sur ce compte. Conclusion mesurée : sur ce compte, **aucun** DO ne démarre. **DÉCISION (règle « ne jamais dire je ne peux pas »)** : au lieu de conclure « il faut le plan payant », j'ai **retiré entièrement le DO** — nouveau worker `kdmc-ais` SANS `durable_objects`/`migrations`, `/ships` ouvre une **WebSocket COURTE vers aisstream par requête** (collecte ~6 s de positions puis ferme, renvoie du GeoJSON). Plus lent (~6 s/appel) mais robuste et 100 % compatible FREE. **2e bug caché derrière** : `/ships` renvoyait 0 navire avec `msgs:1004, firstRaw:""` → aisstream envoie les frames en **BINAIRE**, et dans un Worker CF le binaire arrive en **Blob par défaut** → `TextDecoder.decode(blob)` **throw**. **FIX** : `ws.binaryType="arraybuffer"` (recevoir de l'ArrayBuffer) + `toText()` robuste (string / ArrayBuffer / TypedArray) + repli async `blob.arrayBuffer()` + capture `debug.dataType` → smoke live : `dataType:"ArrayBuffer"`, navires RÉELS mondiaux (OCEAN GREG à Vancouver, Pays-Bas, Lettonie…). Puis câblage page (`AIS_PROXY_URL` renseigné, v2.16). **INSTRUMENTATION = la clé** : à chaque échec, le worker remontait `debug{msgs,firstRaw,dataType,closeCode}` dans la réponse `/ships` (jamais la clé) → chaque cause trouvée en 1 déploiement, pas devinée (`out._debug` sur un ARRAY est ignoré par `JSON.stringify` → toujours renvoyer un OBJET `{ships,debug}`, pas un array décoré). **OBLIGATIONS** : (1) un `error code: 1042` sur 100 % des requêtes d'un worker à binding DO = le DO empêche le démarrage (souvent plan/compte) → tester en découplant un endpoint du DO ; si confirmé, **une WS courte par requête** est une alternative FREE valable (pas de « il faut payer ») ; (2) toute WebSocket sortante d'un Worker CF qui reçoit du binaire DOIT poser `ws.binaryType="arraybuffer"` + décoder défensivement (Blob async en repli) — sinon 0 message décodé en silence ; (3) diagnostiquer par instrumentation remontée dans la réponse (msgs/premier-brut/type/code de fermeture), jamais par supposition ; un array JS décoré d'une propriété non-index perd cette propriété au `JSON.stringify` → renvoyer un objet. ✅(navires mondiaux réels, v2.16 déployé)
 
 134. **COUCHES DE TUILES EXTERNES (NASA GIBS…) : les IDs se PROUVENT par sonde CI (GetCapabilities greppé + GetMap avec check content-type), jamais supposés — et un GetMap 200+XML est un FAUX VERT (World Monitor v2.17→v2.19, Kevin 2026-07-05 « continue avec les vues lives, satellites »)** — En ajoutant les fonds satellites live (GOES/Himawari GeoColor, VIIRS Thermal Anomalies), j'ai câblé des IDs GIBS de mémoire → sondes CI (runner GitHub, réseau ouvert, leçon #126) : GOES-East/West ✅ 200 png, mais **Himawari GeoColor + VIIRS Thermal = 400 sur TOUS les candidats WMTS 3857** (matrice de 7 IDs/matrices/dates essayés). **MÉTHODE QUI A TRANCHÉ (2 sondes définitives)** : (1) **GetCapabilities WMTS 3857 greppé** (`<ows:Identifier>` matchant Himawari|Thermal|GeoColor) = la liste RÉELLE des couches de cette projection — fin des devinettes : `Himawari_AHI_GeoColor` **n'existe pas** en 3857 (seuls Air_Mass/Band13_Clean_Infrared/Band3_Red_Visible), les Thermal Anomalies existent mais pas au TileMatrixSet que je supposais ; (2) **GetMap WMS 3857** en secours : VIIRS Thermal ✅ **200 image/png** (→ feux sat. via `L.tileLayer.wms`), mais Himawari GeoColor a renvoyé **200 + ExceptionReport text/xml = FAUX VERT** (leçon #103 appliquée aux tuiles) — une sonde d'IMAGE doit exiger `content-type: image/*`, pas juste `r.ok`. **FIX FINAL** : Himawari → `Band13_Clean_Infrared` via WMS (nuages IR 24h/24, seul canal Himawari dispo en 3857) ; feux sat. → WMS Thermal vérifié ; sonde smoke durcie (200+xml ⇒ ⚠ FAUX VERT + corps exact affiché). **OBLIGATIONS** : (1) tout ID de couche tuile externe (GIBS, WMTS/WMS tiers) doit être PROUVÉ par sonde CI AVANT d'être considéré fiable — le câblage page peut précéder (fail-open : tuiles vides), mais jamais conclure « ça marche » sans la sonde ; (2) le WMTS epsg3857 GIBS n'expose qu'un SOUS-ENSEMBLE du catalogue (beaucoup de couches sont 4326-only) — le GetCapabilities greppé donne la liste exacte en 1 fetch, TOUJOURS le sonder avant une matrice de candidats à l'aveugle ; (3) toute sonde d'image vérifie le content-type (200+xml/html = faux vert) et affiche le CORPS d'erreur (l'ExceptionReport OGC dit la cause exacte) ; (4) le WMS est le REPLI naturel quand une couche manque au WMTS d'une projection (Leaflet `tileLayer.wms` natif, pas de TileMatrixSet à deviner). ✅(v2.19 : GOES vérifié, Himawari IR + feux sat. via WMS, sondes anti-faux-vert en CI)
+
+135. **L'AGENT CLAUDE CODE WEB EST TOTALEMENT WALLED-OFF DU WEB — Firecrawl/WebFetch/Jina tous 403 ; l'audit LIVE passe par la CI, jamais par l'agent (Kevin 2026-07-08 « avec tes nouveaux outils tu es censé accéder aux sites… intègre dans fais ton audit »)** — Kevin a raison sur le principe (les outils existent), mais MESURE AVANT DE SUPPOSER (leçon #93/#126) : `curl -sS "$HTTPS_PROXY/__agentproxy/status"` montre que le proxy egress de cet environnement n'autorise QUE `anthropic.com` + les registres de paquets (npm/pypi/crates/go) ; **TOUT autre host = 403 CONNECT au niveau de la passerelle**. Vérifié en direct : `firecrawl_scrape` kd-mc.com → 403, github.io → 403, example.com → 403 (donc c'est le MCP Firecrawl lui-même via `api.firecrawl.dev` bloqué, pas Cloudflare) ; `WebFetch` chez-lolo/github.io/`r.jina.ai`/`example.com` → tous 403 (egress agent bloqué pour TOUT host externe). Donc **aucun outil (Firecrawl, WebFetch, Jina/agent-reach, curl) ne peut atteindre les sites de Kevin depuis l'agent** — le mur est l'environnement, pas les outils, et re-tester à chaque session = temps perdu. **LA VOIE QUI MARCHE = le runner GitHub Actions (réseau OUVERT)** : c'est lui qui charge les vraies pages sur le vrai domaine. **INTÉGRATION LIVRÉE** dans « fais ton audit » (règle CLAUDE.md « PASSE LIVE RÉELLE » + axe n°0) : nouveau moteur `tools/smoke/audit-live.mjs` (Chromium réel, balaye les 13 surfaces kd-mc.com, échoue sur `requestfailed`/`response≥400` vers un host projet = la classe CORS/commande qui m'avait échappé, + `pageerror`, + capture d'écran/surface, + report.json) + workflow `audit-live.yml` (dispatch + hebdo). Un audit n'est PLUS « fini » tant que cette passe live n'a pas tourné en CI et ses findings triés. **OBLIGATIONS PERMANENTES** : (1) ne jamais promettre « je peux browser tes sites » depuis l'agent web — c'est faux dans cet environnement, le dire franchement ; (2) tout besoin de « voir/copier le rendu live » passe par un job CI qui capture (screenshot + DOM + console + réseau) et que je lis via GitHub MCP `actions_get` (leçon #96/#126 : ce que l'agent ne peut atteindre, la CI le voit) ; (3) la LOGIQUE se teste en local (sandbox) avec Playwright + libs du registre npm servies localement + APIs externes mockées (leçon #126) ; (4) lire l'allowlist du proxy AVANT de conclure « intestable » — certains registres SONT autorisés. ✅(règle gravée + moteur + workflow livrés)
