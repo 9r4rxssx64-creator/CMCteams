@@ -19,3 +19,5 @@ jobs:
           node-version: '22'
       - name: Vérifier les départs sur la base LIVE (anonymisé)
         run: node tests/live-verify-departs.mjs
+      - name: Vérifier ce que sert le déploiement LIVE (versions + correctif)
+        run: node tests/live-verify-deploy.mjs
