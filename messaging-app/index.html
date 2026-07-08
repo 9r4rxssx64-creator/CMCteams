@@ -13,9 +13,9 @@
 <meta name="apple-mobile-web-app-title" content="Apex Chat">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
-<meta name="description" content="Apex Chat — Messagerie privée ultra-sécurisée avec IA Apex intégrée. Chiffrement de bout en bout AES-256, serveur aveugle.">
+<meta name="description" content="Apex Chat — Messagerie privée sécurisée avec IA Apex intégrée. Chiffrée en transit (HTTPS), serveur privé.">
 <meta property="og:title" content="Apex Chat — Messagerie privée ultra-sécurisée">
-<meta property="og:description" content="Chiffrement de bout en bout AES-256. Serveur aveugle. IA Apex intégrée.">
+<meta property="og:description" content="Chiffrée en transit (HTTPS). Serveur privé. IA Apex intégrée.">
 <meta property="og:image" content="./og-image.svg">
 <meta property="og:url" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/">
 <!-- Sécurité : CSP + Referrer-Policy + X-Content-Type-Options + Permissions-Policy défense en profondeur -->
@@ -45,7 +45,7 @@
 <meta property="og:image:alt" content="Apex Chat — Messagerie privée ultra-sécurisée">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Apex Chat — Messagerie privée ultra-sécurisée">
-<meta name="twitter:description" content="Chiffrement de bout en bout AES-256. Serveur aveugle. IA Apex intégrée.">
+<meta name="twitter:description" content="Chiffrée en transit (HTTPS). Serveur privé. IA Apex intégrée.">
 <meta name="twitter:image" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/og-image.svg">
 <meta name="twitter:image:alt" content="Apex Chat — Messagerie privée ultra-sécurisée">
 <script type="application/ld+json">
@@ -55,11 +55,11 @@
   "name": "Apex Chat",
   "alternateName": "Apex Chat — Messagerie privée",
   "url": "https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/",
-  "description": "Messagerie privée ultra-sécurisée avec chiffrement de bout en bout (ECDH P-256 + AES-GCM 256). Serveur aveugle. IA Apex intégrée.",
+  "description": "Messagerie privée sécurisée, chiffrée en transit (HTTPS/TLS), stockée sur serveur privé. IA Apex intégrée.",
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.247",
+  "softwareVersion": "v1.1.248",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -72,9 +72,9 @@
     "url": "https://9r4rxssx64-creator.github.io/CMCteams/"
   },
   "featureList": [
-    "Chiffrement E2E (ECDH P-256 + AES-GCM 256)",
-    "Appels audio/vidéo P2P chiffrés",
-    "Notifications push chiffrées",
+    "Chiffrée en transit (HTTPS/TLS)",
+    "Appels audio/vidéo P2P chiffrés (WebRTC DTLS-SRTP)",
+    "Notifications push chiffrées (Web Push)",
     "Service Worker offline-ready",
     "Face ID / Touch ID WebAuthn",
     "Mode invitation par SMS",
@@ -86,7 +86,7 @@
 <script type="module" src="./lib/visio-mesh.js"></script>
 <script src="./crypto.js" defer></script>
 <!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
-<title>Apex Chat — Messagerie privée ultra-sécurisée (E2E)</title>
+<title>Apex Chat — Messagerie privée sécurisée</title>
 <style>
 :root{
   --ax-bg:#08080f;--ax-bg-2:#13131c;--ax-bg-3:#1a1a26;
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.247';
+const __APEX_CHAT_VERSION__ = 'v1.1.248';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -582,12 +582,12 @@ if('serviceWorker' in navigator){
 <div id="splash" class="splash">
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
-  <p class="splash-sub">Messagerie privée ultra-sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout AES-256</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.247</div>
+  <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🔒 Chiffrée en transit (HTTPS) · serveur privé</span></p>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.248</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
-  <p class="splash-cgu">🔒 Messagerie ultra-sécurisée — Tes données restent chiffrées de bout en bout.<br>En remplissant les champs, tu acceptes nos <a href="./cgu.html" target="_blank">conditions</a>.</p>
+  <p class="splash-cgu">🔒 Messagerie privée — Tes échanges sont chiffrés en transit (HTTPS).<br>En remplissant les champs, tu acceptes nos <a href="./cgu.html" target="_blank">conditions</a>.</p>
 </div>
 
 <div id="update-banner" class="update-banner h">
@@ -597,13 +597,13 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.247</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.248</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
 
 <div class="security-banner h" id="security-banner">
-  🛡 <span class="key">Chiffrement de bout en bout AES-256</span> · Serveur aveugle 🛰
+  🔒 <span class="key">Chiffrée en transit (HTTPS/TLS)</span> · serveur privé 🛰
 </div>
 
 <main id="app" tabindex="-1" role="main" aria-label="Application Apex Chat">
@@ -1006,7 +1006,7 @@ K._ensurePermsOnce = function(){
       if(localStorage.getItem('apex_chat_perms_v1')) return;
       if(typeof K._showModal !== 'function'){ K._grantPerms(); return; }
       K._showModal('🔓 Autorisations', `
-        <p style="color:var(--ax-text-2);line-height:1.6">Apex Chat a besoin de ton accord pour les <b>appels</b> (caméra + micro), <b>photos</b>, <b>position</b> et <b>notifications</b>. Tout reste <b>privé et chiffré de bout en bout</b>. C'est <b>obligatoire</b> pour utiliser l'app — on ne te le redemandera <b>jamais</b>.</p>
+        <p style="color:var(--ax-text-2);line-height:1.6">Apex Chat a besoin de ton accord pour les <b>appels</b> (caméra + micro), <b>photos</b>, <b>position</b> et <b>notifications</b>. Tes échanges restent <b>privés et chiffrés en transit (HTTPS)</b>. C'est <b>obligatoire</b> pour utiliser l'app — on ne te le redemandera <b>jamais</b>.</p>
         <button class="btn btn-block" style="margin-top:14px" onclick="K._grantPerms()">✅ Tout autoriser</button>
       `, { noClose: true });
     }catch(_e){ try{ _safeCatch('silent', _e); }catch(__){} }
@@ -5618,7 +5618,7 @@ K._computeSafetyNumber = async function(myPubB64, peerPubB64){
 K._openSecurityVerification = async function(){
   const conv = K.viewData;
   if(!conv){ toast('Pas de conversation', 'warn'); return; }
-  const sessionActive = window.ApexCrypto && ApexCrypto.getSessionKey?.(conv.id);
+  const sessionActive = K._E2E_ENABLED && window.ApexCrypto && ApexCrypto.getSessionKey?.(conv.id);
   const myPub = lg('crypto_pub', null);
   const peerPub = conv.peer_pubkey || null;
   let safetyNum = null;
@@ -6493,7 +6493,7 @@ function renderAuthStep(){
             $('#auth-debug').textContent = '❌ ' + (err.message || 'Erreur inconnue');
           }
         });
-        $('#auth-debug').textContent = '✅ Bouton activé (v' + __APEX_CHAT_VERSION__ + ')';
+        $('#auth-debug').textContent = '';
       } else {
         // Fallback ultime : le bouton n'existe pas, recharge
         location.reload();
@@ -6826,9 +6826,9 @@ K.render = function(){
     b.setAttribute('aria-current', on ? 'page' : 'false');
   });
 
-  // v1.1.177 — le bandeau « Chiffrement… Serveur aveugle » est MASQUÉ en vue
+  // v1.1.177 — le bandeau « Chiffrée en transit · serveur privé » est MASQUÉ en vue
   // conversation : il chevauchait le header collant de la conv (nom du contact)
-  // et était redondant avec l'indicateur « 🔒 Chiffré E2E · vérifier » du header.
+  // et était redondant avec l'indicateur « 🔒 chiffré · vérifier » du header.
   try {
     const sb = document.getElementById('security-banner');
     if (sb) sb.classList.toggle('h', K.view === 'chat');
@@ -7156,7 +7156,7 @@ function renderChat(app){
       <input id="chat-file-input" type="file" style="display:none" onchange="K._uploadMedia(this.files[0]);this.value=''">
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
       <div class="chat-input-row">
-        <textarea id="msg-input" rows="1" placeholder="Message chiffré..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft();K._autoResize&&K._autoResize(this)">${esc(K._loadDraft(conv.id) || '')}</textarea>
+        <textarea id="msg-input" rows="1" placeholder="Écris ton message…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();K._sendMsg()}" oninput="K._sendTyping(K.viewData?.id);K._saveDraft();K._autoResize&&K._autoResize(this)">${esc(K._loadDraft(conv.id) || '')}</textarea>
         <button class="chat-send" onclick="K._sendMsg()" aria-label="Envoyer">➤</button>
       </div>
     </div>
@@ -9164,7 +9164,7 @@ K.openPrivacyPrefs = function(){
       </select>
     </div>
     <p style="color:var(--ax-text-3);font-size:.78em;margin-top:14px;padding:10px;background:rgba(232,184,48,.08);border-radius:8px">
-      🛡 Le chiffrement bout-en-bout (E2E) est <strong>toujours actif</strong>. Personne, pas même nous, ne peut lire tes messages.
+      🔒 Tes échanges sont chiffrés en transit (HTTPS/TLS) et stockés sur un serveur privé. Le chiffrement de bout en bout est implémenté mais pas encore activé par défaut.
     </p>
     <button class="btn btn-block" onclick="K._savePrivacyPrefs()" style="margin-top:14px">💾 Sauvegarder</button>
   `);

@@ -1,7 +1,7 @@
 {
   "name": "Apex Chat — Messagerie Privée",
   "short_name": "Apex Chat",
-  "description": "Messagerie privée ultra-sécurisée avec IA Apex intégrée. Chiffrement militaire, serveur aveugle.",
+  "description": "Messagerie privée sécurisée avec IA Apex intégrée. Chiffrée en transit (HTTPS), serveur privé.",
   "start_url": "/CMCteams/messaging-app/",
   "id": "/CMCteams/messaging-app/",
   "display": "standalone",
