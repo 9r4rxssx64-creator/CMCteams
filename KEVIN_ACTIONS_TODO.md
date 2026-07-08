@@ -1,5 +1,24 @@
 <!-- Backlog Claude Code (audit Apex 2026-07-05, aucune action Kevin requise) :
 
+## 🔍 SESSION 2026-07-08 — EXPERTS DE CODE INDÉPENDANTS branchés (Kevin « outil extérieur indépendant »)
+
+Trois regards INDÉPENDANTS (modèle ≠ Claude / analyse déterministe) sur tout le domaine + chaque app.
+`auto-pr-review.yml` restait un reviewer Claude (moi) = pas indépendant → ces trois-là comblent ce biais.
+
+### ✅ Déjà LIVRÉ (0 action Kevin) — reviewer dans TA CI
+- `.github/workflows/ai-review-independent.yml` : **Qodo PR-Agent** avec **ta clé OpenAI** (secret `OPEN_AI_API_KEY`) = modèle non-Claude, 100% dans ton infra (aucune société externe n'a ton code). Review auto de chaque vraie PR (bots exclus = coût maîtrisé). Commandes : `/review`, `/improve`, `/ask` en commentaire de PR.
+
+### 🖱️ 2 actions « 1 clic » pour toi (obligatoires : TOI seul autorises l'accès — ta règle sécu)
+1. **CodeRabbit** (le meilleur reviewer IA indépendant, gratuit dépôt public) :
+   → https://github.com/apps/coderabbitai → **Install** → choisir le dépôt `CMCteams`.
+   Config déjà prête (`.coderabbit.yaml`, en français, bruit filtré). Ensuite il commente chaque PR tout seul.
+2. **SonarQube Cloud** (bilan santé détaillé par app, gratuit dépôt public) :
+   → https://sonarcloud.io → se connecter avec GitHub → **Analyze new project** → `CMCteams` → **Automatic Analysis**.
+   Config déjà prête (`sonar-project.properties`, artefacts exclus). Aucun token à créer.
+
+Après ces 2 clics : les 3 experts indépendants tournent en continu et détaillent chaque app.
+
+
 ## 🧠 Mémoire intelligente d'Apex (RAG) — DÉPLOYÉE ✅ 2026-07-08 (je l'ai déployée moi-même)
 - Worker `kdmc-rag` **déployé avec succès** (run #1 vert). **Vectorize EST dispo sur ton compte** (le déploiement aurait échoué sinon — contrairement aux Durable Objects refusés, leçon #132). Le serveur mémoire tourne : `https://kdmc-rag.9r4rxssx64.workers.dev`.
 - **Il reste 1 tap pour l'ALLUMER dans l'app** (défaut éteint par sécurité, per-appareil) : ouvre Apex → console/réglages → activer `apex_v13_rag_enabled`. (Je peux ajouter un vrai bouton Réglages « Mémoire long terme ON/OFF » si tu veux — dis-le.)

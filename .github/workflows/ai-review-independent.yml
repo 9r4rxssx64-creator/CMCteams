@@ -1,0 +1,54 @@
+name: Revue IA INDÉPENDANTE (modèle non-Claude · dans TA CI)
+
+# Kevin 2026-07-08 : « un outil extérieur indépendant, expert, pour vérifier/
+# corriger/améliorer chaque app ». auto-pr-review.yml = un reviewer CLAUDE (moi)
+# → PAS indépendant (le biais que Kevin dénonce). ICI : Qodo PR-Agent tourne dans
+# TA CI, avec TA clé OpenAI (secret OPEN_AI_API_KEY) = un modèle DIFFÉRENT de moi
+# → vrai second avis. 100% dans ton infra, aucune société externe n'a ton code
+# (respecte la règle ISOLATION MAX). Coût maîtrisé : pas sur les PR de bots.
+#
+# Commandes dans un commentaire de PR : /review (revue), /improve (suggestions de
+# code), /describe (résumé), /ask <question>.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ai-review-indep-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    # Coût maîtrisé (clé OpenAI de Kevin) : on saute les PR des bots (auto-deploy,
+    # auto-merge, kv-backup) et les [skip ci]. Les commentaires /review passent toujours.
+    if: >
+      ( github.event_name == 'issue_comment' && github.event.issue.pull_request ) ||
+      ( github.event_name == 'pull_request'
+        && github.event.pull_request.user.login != 'github-actions[bot]'
+        && !contains(github.event.pull_request.title, '[skip ci]')
+        && !startsWith(github.event.pull_request.title, 'Auto-deploy')
+        && !contains(github.event.pull_request.title, 'backup') )
+    steps:
+      - name: Qodo PR-Agent (OpenAI = indépendant de Claude)
+        uses: qodo-ai/pr-agent@main
+        continue-on-error: true   # un souci de config ne bloque JAMAIS une PR (fail-open)
+        env:
+          OPENAI_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Comportement : revue auto à l'ouverture, en français, focalisée bugs/sécu/fiabilité.
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "false"
+          github_action_config.auto_improve: "false"
+          PR_REVIEWER.EXTRA_INSTRUCTIONS: "Réponds en FRANÇAIS. Concentre-toi sur les bugs réels, la sécurité, la fiabilité runtime et les fuites de secrets. Sois concis et concret (fichier:ligne). Ignore le style cosmétique."
+          PR_REVIEWER.NUM_MAX_FINDINGS: "8"
