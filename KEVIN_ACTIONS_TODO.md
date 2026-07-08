@@ -46,8 +46,11 @@ Nouveau worker `services/kdmc-live/` (modèle kdmc-ais, SANS Durable Object — 
 - **4 correctifs audit** : CSP Apex +4 hosts (PayPal/Google Photos/Vercel/géoloc débloqués) · badge MAJ auto ajouté à World Monitor + OSINT · sous-domaine mort `desarzens-kevin` corrigé · OTP Apex Chat en générateur cryptographique.
 - **Améliorations extrêmes livrées** : cœur d'auth Apex Chat remis dans la mesure de couverture (plancher dédié 80/74/86/80, plus caché) · blocage PIN Apex Chat honnête + temporisation 10 min (fin du lockout permanent) · toasts Apex v13 sans jargon (knowledge/innovation) · cron build Apex 30 min → 6 h (−44 runs/j) · cible tactile Départs 42→44px (v1.26).
 
+### ✅ Chiffrement E2E Apex Chat — FAIT (2026-07-08, « fais le test 2 tel à ma place »)
+- **Test « 2 téléphones » automatique** livré (`tests/unit/e2e-two-phones.test.js`, 7 tests dans la CI) : simule 2 appareils indépendants avec le VRAI code crypto de prod → prouve round-trip A↔B chiffré/déchiffré, numéro de sécurité identique, média chiffré, intégrité (ciphertext altéré rejeté), tiers sans clé ne lit pas. Aucun iPhone requis.
+- **E2E activé PAR DÉFAUT** (v1.1.250, `_E2E_ENABLED=true`), sûr car défaillances gracieuses (envoi fail-open jamais bloqué + réception non-déchiffrable → note propre, jamais de charabia — ce qui manquait avant). Opt-out de secours par appareil (Réglages → Confidentialité). Copie CGU/confidentialité/marketing remise honnête (« bout-en-bout par défaut, repli transit si clé du pair absente »). Mergé + déployé.
+
 ### 🟡 Actions / décisions qui t'attendent (notées pour plus tard)
-1. **« Go chiffrement »** — réactiver le vrai E2E bout-en-bout Apex Chat. Gros chantier risqué (les clés s'étaient désynchronisées → E2E coupé) : republier les clés au login + retirer le repli clair + tester 2 clients réels. À faire sur une session dédiée, pas à l'aveugle (risque de casser l'envoi de messages).
 2. **Durcissement per-user Apex** (positions/santé/réglages lisibles par tout visiteur anonyme) — exige d'abord de déployer les **custom-tokens par rôle** (`apex-auth-worker`) car le flux temps réel écoute l'arbre `/apex` entier avec un jeton anonyme. L'activer sans ça verrouillerait Apex (leçon #109). Chantier à planifier ensemble.
 3. **CSP des 2 dashboards live** (World Monitor / OSINT) — je ne peux pas la déployer à l'aveugle (une CSP incomplète casse les cartes, et je ne peux pas tester en live depuis ici). À faire avec la liste exacte des sources, vérifiée par un smoke CI.
 4. **Rappel — clé aisstream déjà faite** (navires mondiaux actifs). Rien à refaire.
