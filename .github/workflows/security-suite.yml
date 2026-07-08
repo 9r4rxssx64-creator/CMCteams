@@ -78,14 +78,11 @@ jobs:
 
       - name: Trivy (filesystem + IaC + secrets)
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'json'
-          output: '/tmp/sec/trivy.json'
-          severity: 'CRITICAL,HIGH,MEDIUM'
-          exit-code: '0'
+        run: |
+          curl -sSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /tmp v0.58.1 2>&1 | tail -5 || true
+          /tmp/trivy fs --scanners vuln,misconfig,secret \
+            --severity CRITICAL,HIGH,MEDIUM --format json --output /tmp/sec/trivy.json \
+            --exit-code 0 --skip-dirs node_modules . 2>&1 | tail -15 | tee /tmp/sec/trivy.log || true
 
       # ── 🧬 CODE (SAST) ──────────────────────────────────────────
       - name: Semgrep (SAST JS/TS, règles OSS)
