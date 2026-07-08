@@ -59,6 +59,23 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
     const currentEl = rootEl.querySelector<HTMLDivElement>('#ax-voice-current');
     const listEl = rootEl.querySelector<HTMLDivElement>('#ax-voice-list');
     const catBtns = rootEl.querySelectorAll<HTMLButtonElement>('.ax-voice-cat-btn');
+
+    /* v13.4.346 — toggle Mémoire long terme (RAG). Avant le guard voix pour toujours wirer. */
+    const ragInput = rootEl.querySelector<HTMLInputElement>('#ax-settings-rag');
+    if (ragInput) {
+      void import('../../services/ai/apex-memory-rag.js').then(({ apexMemoryRag }) => {
+        ragInput.checked = apexMemoryRag.isEnabled();
+      });
+      activeSettingsScope!.bind(ragInput, 'change', () => {
+        void (async () => {
+          const { apexMemoryRag } = await import('../../services/ai/apex-memory-rag.js');
+          apexMemoryRag.enable(ragInput.checked);
+          const { toast } = await import('../../ui/toast.js');
+          toast.success(ragInput.checked ? '🧠 Mémoire long terme activée' : 'Mémoire long terme désactivée');
+        })();
+      });
+    }
+
     if (!listEl) return;
 
     /* Init auto-read toggle */
@@ -225,6 +242,10 @@ export function render(rootEl: HTMLElement): void {
         <p style="margin:0 0 10px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5">
           Backup mémoire vers Notion / GitHub Gist / Firebase. Tokens lus depuis le Coffre.
         </p>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;margin:0 0 10px;cursor:pointer">
+          <span class="ax-gs-164">Mémoire long terme — Apex se souvient de tes échanges</span>
+          <input type="checkbox" id="ax-settings-rag" aria-label="Activer la mémoire long terme d'Apex (RAG)" class="ax-gs-439">
+        </label>
         <div id="ax-memory-bridge-status" class="ax-gs-438"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-memory-bridge-sync" style="${btnFullWidthStyle};background:rgba(160,96,255,0.15);color:var(--ax-purple);border:1px solid rgba(160,96,255,0.3)">🔄 Sync maintenant</button>
       </section>
