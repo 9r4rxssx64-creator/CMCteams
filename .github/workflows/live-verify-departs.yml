@@ -1,0 +1,21 @@
+name: Vérif LIVE numéros de départ
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'claude/**'
+    paths:
+      - 'tests/live-verify-departs.mjs'
+      - '.github/workflows/live-verify-departs.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Vérifier les départs sur la base LIVE (anonymisé)
+        run: node tests/live-verify-departs.mjs
