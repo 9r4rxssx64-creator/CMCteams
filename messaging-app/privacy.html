@@ -59,9 +59,9 @@
 
 <h2>2. Comment tes données sont protégées</h2>
 <div class="info">
-Tes échanges sont <strong>chiffrés en transit</strong> (HTTPS/TLS) entre ton appareil et le serveur : personne ne peut les intercepter sur le réseau. Le contenu (messages texte, photos, vidéos, fichiers, notes vocales) est ensuite <strong>stocké sur un serveur privé</strong> (Cloudflare) sous accès restreint, afin d'être livré à ton correspondant et récupérable à la reconnexion.
+Tes messages sont chiffrés <strong>de bout en bout</strong> (WebCrypto ECDH P-256 + AES-GCM 256) <strong>par défaut</strong> : le contenu est chiffré sur ton appareil et seul ton correspondant peut le déchiffrer — le serveur ne voit qu'un blob chiffré qu'il ne peut pas lire. Le mécanisme est vérifié par un test automatique « 2 téléphones » dans notre intégration continue.
 <p style="margin-top:10px">
-<strong>Transparence :</strong> un chiffrement <em>de bout en bout</em> (WebCrypto ECDH P-256 + AES-GCM 256) est implémenté dans l'application mais <strong>n'est pas activé par défaut à ce jour</strong>. Tant qu'il n'est pas activé, le serveur — et l'administrateur (voir §3) — peut techniquement accéder au contenu stocké. Nous ne prétendons donc pas être un « serveur aveugle » aujourd'hui. Les <strong>appels audio/vidéo P2P</strong> restent chiffrés de bout en bout par WebRTC (DTLS-SRTP).
+<strong>Repli honnête :</strong> si le chiffrement de bout en bout ne peut pas s'établir avec un contact (sa clé n'est pas encore publiée), le message reste chiffré <strong>en transit</strong> (HTTPS/TLS) et le serveur le transporte/stocke ; l'administrateur peut alors techniquement y accéder (voir §3). L'indicateur en haut de chaque conversation (🛡 E2E / 🔒 transit) dit lequel s'applique. Les <strong>appels audio/vidéo P2P</strong> sont chiffrés de bout en bout par WebRTC (DTLS-SRTP).
 </p>
 </div>
 
@@ -74,7 +74,7 @@ Tes échanges sont <strong>chiffrés en transit</strong> (HTTPS/TLS) entre ton a
 
 <h3>L'administrateur (Kevin DESARZENS)</h3>
 <p>
-Pour des raisons de modération et de sécurité du service privé, l'administrateur peut accéder aux données de gestion (numéros, pseudos, vrais noms, devices, signalements, géoloc partagée). Tant que le chiffrement de bout en bout n'est pas activé (voir §2), il peut aussi techniquement accéder au contenu stocké ; il s'engage à ne le consulter qu'en cas de signalement justifié ou d'obligation légale.
+Pour des raisons de modération et de sécurité du service privé, l'administrateur peut accéder aux données de gestion (numéros, pseudos, vrais noms, devices, signalements, géoloc partagée). Le contenu des messages chiffrés de bout en bout ne lui est <strong>pas</strong> lisible ; seuls les messages retombés en chiffrement de transit (repli, voir §2) restent techniquement accessibles, et il s'engage à ne les consulter qu'en cas de signalement justifié ou d'obligation légale.
 </p>
 
 <h3>Sous-traitants techniques</h3>
