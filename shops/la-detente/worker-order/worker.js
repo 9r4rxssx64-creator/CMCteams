@@ -8,7 +8,10 @@ const API = 'https://api.printify.com/v1';
 const FIREBASE_URL = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
 const PUSH_SUB_PATH = '/ld_detente/push_sub.json';
 const IMG_BASE = 'https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/img/designs/';
-const ALLOW = ['https://9r4rxssx64-creator.github.io', 'http://localhost:8080', 'http://127.0.0.1:8080'];
+/* v2026-07-08 (audit amélioration Top #10) : le domaine réel kd-mc.com MANQUAIT de
+   l'allowlist → depuis chez-lolo.kd-mc.com / la-detente.kd-mc.com le préflight CORS
+   renvoyait l'origin github.io → navigateur bloquait /order ET /shipping (bug prod). */
+const ALLOW = ['https://9r4rxssx64-creator.github.io', 'https://chez-lolo.kd-mc.com', 'https://la-detente.kd-mc.com', 'https://kd-mc.com', 'http://localhost:8080', 'http://127.0.0.1:8080'];
 const APP_TAG = 'ld-order-v1';
 
 /* Rate-limit anti-spam/coût (gratuit, sans KV). Fenêtre glissante en mémoire
