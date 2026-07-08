@@ -49,7 +49,7 @@ import { redactMessageContent, redactPII } from '../vault/pii-redaction.js';
 import { chatFallback } from './chat-fallback.js';
 
 
-export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'cerebras' | 'openclaw';
+export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral' | 'cerebras' | 'openclaw';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -369,6 +369,33 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     /* P0-2 fix : header x-goog-api-key au lieu de query string (anti leak proxy/log) */
     headers: (apiKey) => ({ 'content-type': 'application/json', 'x-goog-api-key': apiKey }),
   },
+  /* v13.4.348 (Kevin « toujours tout auto ») : Mistral en provider PREMIÈRE CLASSE —
+   * Kevin a DÉJÀ la clé MISTRAL_API_KEY (aucune action requise) → 1 milliard de tokens/mois
+   * gratuits. API OpenAI-compatible, routée via le proxy (mistral déjà dans PROXY_MAP +
+   * PROXY_PROVIDERS). Failover TARDIF (jamais avant anthropic — premium admin inchangé #124). */
+  mistral: {
+    endpoint: 'https://api.mistral.ai/v1/chat/completions',
+    keyName: 'ax_mistral_key',
+    model: 'mistral-large-latest',
+    buildBody: (messages, system) => ({
+      model: 'mistral-large-latest',
+      stream: true,
+      messages: [{ role: 'system', content: system }, ...messages],
+    }),
+    parseSSE: (data) => {
+      try {
+        const j = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
+        const text = j.choices?.[0]?.delta?.content;
+        return typeof text === 'string' && text.length > 0 ? { kind: 'text', text } : null;
+      } catch {
+        return null;
+      }
+    },
+    headers: (apiKey) => ({
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    }),
+  },
   /* v13.4.345 (Kevin « intègre les IA gratuites — go tout ») : Cerebras = ~1M tokens/jour
    * gratuit, ~2000 tok/s (le plus rapide en volume). API OpenAI-compatible. Ajouté comme
    * failover TARDIF (jamais avant anthropic — le premium admin reste inchangé, leçon #124).
@@ -687,7 +714,7 @@ const PROVIDERS_WITH_TOOLS: ReadonlySet<Provider> = new Set<Provider>(['anthropi
  *
  * Total effectif : 6 endpoints distincts → si 2 KO, reste 4 actifs minimum.
  */
-const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'cerebras', 'openclaw'];
+const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'mistral', 'cerebras', 'openclaw'];
 
 /**
  * v13.3.74 H2 — Liste extensive des providers logiques supportés (incluant proxiés).
