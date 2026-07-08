@@ -358,6 +358,25 @@ export const MEDIA_TOOLS: readonly ApexTool[] = [
     impactLevel: 'A',
   },
   {
+    name: 'image_generate',
+    description:
+      'GÉNÈRE une image à partir d\'un texte (texte → image, FLUX schnell via Replicate). ' +
+      'À utiliser dès que l\'utilisateur demande de créer/générer/dessiner une image, un logo simple, une illustration. ' +
+      'Réponse : {success, outputUrl}. Clé Vault `ax_replicate_key` requise (sinon message clair vers le Coffre).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: {
+          type: 'string',
+          description: 'Description de l\'image à générer (en anglais de préférence pour de meilleurs résultats).',
+        },
+      },
+      required: ['prompt'],
+    },
+    minTier: 'family',
+    impactLevel: 'B',
+  },
+  {
     name: 'transform_image',
     description:
       'Transforme une image (URL https/data:/blob:) en cartoon, anime, vidéo animée, fond retiré, ou variation stylisée. ' +

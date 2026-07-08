@@ -313,6 +313,66 @@ class ImageTransform {
   }
 
   /**
+   * v13.4.350 (audit amélioration Top #3) — Génération TEXTE → IMAGE (FLUX schnell).
+   * L'outil `image_generate` était routé (feature-toggles + dispatch map) mais sans
+   * handler : « génère une image » ne faisait RIEN. Endpoint modèles officiels
+   * Replicate (pas de hash de version à maintenir), mêmes gardes que runReplicate
+   * (401/402/429) + poll existant.
+   */
+  async generateImage(prompt: string): Promise<TransformResult> {
+    const p = (prompt || '').trim();
+    if (!p) return { success: false, error: 'Prompt vide — décris l\'image à générer.' };
+    const apiKey = await vault.readKey('ax_replicate_key');
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'ax_replicate_key non configuré. Ouvre 🔐 Coffre pour ajouter ta clé Replicate.',
+      };
+    }
+    try {
+      void auditLog.record('image_generate.start', {
+        actor: 'apex_ia',
+        details: { prompt_len: p.length },
+      });
+    } catch { /* ignore audit fail */ }
+    let predictionId: string;
+    try {
+      const res = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input: { prompt: p.slice(0, 2000), output_format: 'webp' } }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.status === 401) return { success: false, error: 'Clé Replicate invalide (401). Vérifie dans Coffre.' };
+      if (res.status === 402) {
+        return { success: false, error: 'Crédit Replicate épuisé. Recharge sur https://replicate.com/account/billing' };
+      }
+      if (res.status === 429) return { success: false, error: 'Rate-limit Replicate. Réessaie dans quelques secondes.' };
+      if (!res.ok) return { success: false, error: `Replicate HTTP ${res.status}` };
+      const data = (await res.json()) as ReplicatePrediction;
+      predictionId = data.id;
+      if (!predictionId) return { success: false, error: 'Replicate n\'a pas retourné predictionId' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error('image-transform', 'generateImage POST failed', { err: msg });
+      return { success: false, error: `Génération impossible : ${msg}` };
+    }
+    const pollResult = await this.pollUntilComplete(predictionId, 90);
+    if (pollResult.success) {
+      try {
+        void auditLog.record('image_generate.success', {
+          actor: 'apex_ia',
+          details: { prediction_id: predictionId },
+        });
+      } catch { /* ignore */ }
+    }
+    return pollResult;
+  }
+
+  /**
    * Valide URL d'image (https://, data:image/, ou blob:).
    * Anti-pattern : pas de http://, pas de file://, pas d'URL relative.
    */

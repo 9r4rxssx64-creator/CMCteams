@@ -105,7 +105,7 @@ describe('apex-tools-handlers — AI + payments', () => {
       expect(headers['x-api-key']).toBe('sk-ant-secret');
       expect(headers['anthropic-version']).toBe('2023-06-01');
       const body = JSON.parse(init.body as string);
-      expect(body.model).toBe('claude-sonnet-4-5');
+      expect(body.model).toBe('claude-sonnet-4-6');
       expect(body.max_tokens).toBe(1024);
       expect(body.messages).toEqual([{ role: 'user', content: 'Hello Claude' }]);
     });

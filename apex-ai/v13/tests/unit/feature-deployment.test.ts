@@ -261,7 +261,7 @@ describe('Feature Deployment (boutons admin + AI modes)', () => {
     it('getAiModeConfig retourne provider + model + max_tokens', () => {
       const cfg = featureDeployment.getAiModeConfig('admin_optimal');
       expect(cfg.provider).toBe('anthropic');
-      expect(cfg.model).toBe('claude-opus-4-7');
+      expect(cfg.model).toBe('claude-opus-4-8');
       expect(cfg.max_tokens).toBe(8192);
     });
 

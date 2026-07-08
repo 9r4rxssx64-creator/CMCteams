@@ -74,4 +74,44 @@ describe('v13.4.346 — apexMemoryRag', () => {
     expect(await apexMemoryRag.remember('x')).toBe(false);
     expect(spy).not.toHaveBeenCalled();
   });
+
+  /* === v13.4.350 — AUTO-ON gated /health (audit amélioration Top #1) === */
+
+  it('AUTO-ON : sans choix explicite + health cache frais OK → mémoire ACTIVE', () => {
+    localStorage.setItem('apex_v13_rag_health_v1', JSON.stringify({ ok: true, ts: Date.now() }));
+    expect(apexMemoryRag.isEnabled()).toBe(true);
+  });
+
+  it('AUTO-ON : health cache PÉRIMÉ (>6h) → mémoire OFF (pas de latence à l\'aveugle)', () => {
+    localStorage.setItem('apex_v13_rag_health_v1', JSON.stringify({ ok: true, ts: Date.now() - 7 * 60 * 60 * 1000 }));
+    expect(apexMemoryRag.isEnabled()).toBe(false);
+  });
+
+  it('OPT-OUT explicite ("false") GAGNE sur un health OK', () => {
+    localStorage.setItem('apex_v13_rag_health_v1', JSON.stringify({ ok: true, ts: Date.now() }));
+    apexMemoryRag.enable(false);
+    expect(apexMemoryRag.isEnabled()).toBe(false);
+  });
+
+  it('probeHealth : worker répond → cache {ok:true} posé → isEnabled=true', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true }) as unknown as typeof globalThis.fetch;
+    expect(await apexMemoryRag.probeHealth()).toBe(true);
+    const cached = JSON.parse(localStorage.getItem('apex_v13_rag_health_v1') ?? '{}') as { ok?: boolean };
+    expect(cached.ok).toBe(true);
+    expect(apexMemoryRag.isEnabled()).toBe(true);
+  });
+
+  it('probeHealth FAIL-OPEN : réseau KO → cache {ok:false}, jamais throw, mémoire OFF', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('network')) as unknown as typeof globalThis.fetch;
+    expect(await apexMemoryRag.probeHealth()).toBe(false);
+    expect(apexMemoryRag.isEnabled()).toBe(false);
+  });
+
+  it('probeHealth : opt-out explicite → ne sonde même pas (0 fetch)', async () => {
+    apexMemoryRag.enable(false);
+    const spy = vi.fn();
+    globalThis.fetch = spy as unknown as typeof globalThis.fetch;
+    expect(await apexMemoryRag.probeHealth()).toBe(false);
+    expect(spy).not.toHaveBeenCalled();
+  });
 });

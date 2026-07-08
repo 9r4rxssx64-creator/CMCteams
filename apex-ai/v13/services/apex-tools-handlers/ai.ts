@@ -34,7 +34,7 @@ export async function handleAnthropicTask(task: string, params: Record<string, u
   if (!key) throw new Error('ax_anthropic_key non configuré');
   if (task === 'message' || task === 'chat' || task === 'ask') {
     const body = JSON.stringify({
-      model: params['model'] ?? 'claude-sonnet-4-5',
+      model: params['model'] ?? 'claude-sonnet-4-6',
       max_tokens: params['max_tokens'] ?? 1024,
       messages: Array.isArray(params['messages'])
         ? params['messages']
