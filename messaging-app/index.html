@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.248",
+  "softwareVersion": "v1.1.249",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.248';
+const __APEX_CHAT_VERSION__ = 'v1.1.249';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🔒 Chiffrée en transit (HTTPS) · serveur privé</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.248</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.249</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.248</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.249</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -4844,8 +4844,12 @@ K._sendLocationMsg = function(lat, lng, accuracy, expiresAt){
   (async () => {
     let ciphertext = marker;
     try{
-      if(K._E2E_ENABLED && window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
-        ciphertext = await ApexCrypto.encryptForConv(conv.id, marker);
+      if(K._e2eOn()){
+        await K._ensureSession(conv);
+        if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
+          const ct = await ApexCrypto.encryptForConv(conv.id, marker);
+          if(ct) ciphertext = K._E2E_TAG + ct;
+        }
       }
     }catch(e){ _safeCatch('loc-encrypt', e); }
     const wire = { type: 'message', ciphertext, mime: 'text/plain', ts: msg.ts, id: msg.id };
@@ -5222,6 +5226,18 @@ K._presenceState = K._presenceState || {};
 // Messages chiffrés en TRANSIT (HTTPS/WSS) + stockés serveur. Remettre à true
 // quand l'échange de clés sera fiable.
 K._E2E_ENABLED = false;
+// v1.1.249 — MODE E2E BÊTA PAR APPAREIL (canari). Kevin l'active sur ses 2
+// téléphones pour tester le VRAI bout-en-bout sans risque pour les autres :
+// chaque appareil chiffre seulement si le mode est ON localement. Fail-open
+// total (jamais de blocage d'envoi). Toggle dans Réglages → Confidentialité.
+K._e2eOn = function(){
+  if(K._E2E_ENABLED) return true;
+  try{ return localStorage.getItem('apex_chat_e2e_beta') === '1'; }catch(_){ return false; }
+};
+// Préfixe-sentinelle placé DANS le champ ciphertext (relayé/stocké tel quel par
+// le serveur) → le destinataire sait qu'un payload est chiffré, sans changer le
+// worker ni la base. Payload non-taggé = texte clair (transit). 100% rétro-compat.
+K._E2E_TAG = 'E2E1:';
 // Détecte un texte qui est en réalité du ciphertext base64 (anciens messages
 // chiffrés non déchiffrables après désync des clés) → on les masque proprement.
 K._looksCiphertext = function(t){
@@ -5229,7 +5245,7 @@ K._looksCiphertext = function(t){
     /^[A-Za-z0-9+/]+={0,2}$/.test(t) && t.indexOf(' ') < 0 && /[+/=]|[0-9]/.test(t);
 };
 K._e2eActive = function(conv){
-  if(!K._E2E_ENABLED) return false;
+  if(!K._e2eOn()) return false;
   try{
     return !!(conv && window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(conv.id));
   }catch(_e){ _safeCatch('e2e-active', _e); return false; }
@@ -5618,7 +5634,7 @@ K._computeSafetyNumber = async function(myPubB64, peerPubB64){
 K._openSecurityVerification = async function(){
   const conv = K.viewData;
   if(!conv){ toast('Pas de conversation', 'warn'); return; }
-  const sessionActive = K._E2E_ENABLED && window.ApexCrypto && ApexCrypto.getSessionKey?.(conv.id);
+  const sessionActive = K._e2eOn() && window.ApexCrypto && ApexCrypto.getSessionKey?.(conv.id);
   const myPub = lg('crypto_pub', null);
   const peerPub = conv.peer_pubkey || null;
   let safetyNum = null;
@@ -7243,10 +7259,10 @@ K._sendMsg = async function(){
   // de retomber silencieusement en clair.
   let ciphertext = null;
   let displayText = text;
-  // v1.1.189 — E2E désactivé (clés désynchronisées après fusion des comptes →
-  // messages illisibles). Les messages restent chiffrés EN TRANSIT (HTTPS/WSS).
-  // Réactivable via K._E2E_ENABLED quand l'échange de clés sera fiabilisé.
-  if(K._E2E_ENABLED){
+  // v1.1.249 — chiffre si le mode E2E est ON sur CET appareil (bêta par appareil
+  // ou global). Fail-open : si la session ne s'établit pas, on n'échoue jamais,
+  // le message part chiffré en TRANSIT (HTTPS/WSS) comme avant.
+  if(K._e2eOn()){
     try{
       await K._ensureSession(conv);
       if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
@@ -7254,12 +7270,14 @@ K._sendMsg = async function(){
       }
     }catch(e){ _safeCatch('encrypt-message', e); }
   }
+  // Payload transporté : taggé si chiffré (E2E1:…), sinon texte clair.
+  const payload = ciphertext ? (K._E2E_TAG + ciphertext) : null;
 
   const msg = {
     id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
     from: K.user.id,
     text: displayText,      // affichage local clair
-    ciphertext,             // envoyé au serveur (null si pas de session)
+    ciphertext: payload,    // envoyé au serveur (null si pas de session → clair)
     ts: Date.now(),
     encrypted: !!ciphertext
   };
@@ -7292,7 +7310,7 @@ K._sendMsg = async function(){
   K.render();
 
   // Phase 3 : envoyer via WebSocket (sinon mettre en outbox pour replay)
-  const wire = { type: 'message', ciphertext: ciphertext || text, mime: 'text/plain', ts: msg.ts, id: msg.id };
+  const wire = { type: 'message', ciphertext: payload || text, mime: 'text/plain', ts: msg.ts, id: msg.id };
   if(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === conv.id){
     try{
       K.ws.send(JSON.stringify(wire));
@@ -7643,11 +7661,15 @@ async function _handleWsMessage(data, convId){
       for(const sm of data.messages){
         if(!sm || !sm.id || seen.has(sm.id)) continue;
         let txt = sm.ciphertext || '';
-        try{
-          if(K._E2E_ENABLED && window.ApexCrypto && ApexCrypto.getSessionKey(convId) && sm.ciphertext){
-            txt = await ApexCrypto.decryptForConv(convId, sm.ciphertext);
+        if(txt.indexOf(K._E2E_TAG) === 0){
+          const ct = txt.slice(K._E2E_TAG.length);
+          if(K._e2eOn() && window.ApexCrypto && ApexCrypto.getSessionKey(convId)){
+            try{ txt = await ApexCrypto.decryptForConv(convId, ct); }
+            catch(e){ _safeCatch('history-decrypt', e); txt = '🔒 Message chiffré (E2E) — impossible à lire sur cet appareil'; }
+          }else{
+            txt = '🔒 Message chiffré (E2E) — active le mode E2E bêta sur cet appareil pour le lire';
           }
-        }catch(e){ _safeCatch('history-decrypt', e); }
+        }
         // v1.1.170 : dédup mes propres messages — l'historique serveur les
         // renvoie avec l'id officiel alors que je les ai en local avec id m_…
         // → on adopte l'id serveur sur le message local au lieu de doubler.
@@ -7700,15 +7722,22 @@ async function _handleWsMessage(data, convId){
       // v1.1.69 : trigger unread badge update après pousse du msg
       setTimeout(() => K._updateUnreadBadge && K._updateUnreadBadge(), 50);
       // Nouveau message reçu
-      let decryptedText = '(message chiffré)';
-      try{
-        if(K._E2E_ENABLED && window.ApexCrypto && ApexCrypto.getSessionKey(convId) && data.ciphertext){
-          decryptedText = await ApexCrypto.decryptForConv(convId, data.ciphertext);
-        } else if(data.ciphertext){
-          // Fallback : si c'est du texte clair (Phase 1 testing)
-          decryptedText = data.ciphertext;
+      let decryptedText = '';
+      {
+        const raw = data.ciphertext || '';
+        if(raw.indexOf(K._E2E_TAG) === 0){
+          // Payload chiffré (E2E). Déchiffre si session dispo, sinon note propre.
+          const ct = raw.slice(K._E2E_TAG.length);
+          if(K._e2eOn() && window.ApexCrypto && ApexCrypto.getSessionKey(convId)){
+            try{ decryptedText = await ApexCrypto.decryptForConv(convId, ct); }
+            catch(e){ _safeCatch('decrypt-message', e); decryptedText = '🔒 Message chiffré (E2E) — impossible à lire sur cet appareil'; }
+          }else{
+            decryptedText = '🔒 Message chiffré (E2E) — active le mode E2E bêta sur cet appareil pour le lire';
+          }
+        }else{
+          decryptedText = raw; // texte clair (chiffré en transit)
         }
-      }catch(e){ _safeCatch('decrypt-message', e); }
+      }
 
       const lmedia = K._parseMediaMarker(decryptedText);   // v1.1.186 : média reçu
       const lloc = K._parseLocationMarker(decryptedText);   // v1.1.246 : position reçue
@@ -9166,6 +9195,10 @@ K.openPrivacyPrefs = function(){
     <p style="color:var(--ax-text-3);font-size:.78em;margin-top:14px;padding:10px;background:rgba(232,184,48,.08);border-radius:8px">
       🔒 Tes échanges sont chiffrés en transit (HTTPS/TLS) et stockés sur un serveur privé. Le chiffrement de bout en bout est implémenté mais pas encore activé par défaut.
     </p>
+    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:12px;background:rgba(106,138,255,.08);border:1px solid rgba(106,138,255,.25);border-radius:10px;cursor:pointer">
+      <input type="checkbox" id="pv-e2eBeta" ${K._e2eOn()?'checked':''} onchange="K._toggleE2eBeta(this.checked)" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">
+      <span style="font-size:.85em;line-height:1.45"><strong>🔬 Chiffrement bout-en-bout (bêta — test 2 appareils)</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Active-le sur <strong>tes 2 téléphones</strong> pour tester le vrai E2E entre eux. Les messages deviennent illisibles pour le serveur. <em>Fail-open : n'empêche jamais l'envoi.</em> Vérifie le « numéro de sécurité » (icône 🛡 en haut d'une conversation) : il doit être <strong>identique</strong> sur les 2 téléphones.</span></span>
+    </label>
     <button class="btn btn-block" onclick="K._savePrivacyPrefs()" style="margin-top:14px">💾 Sauvegarder</button>
   `);
 };
@@ -9180,6 +9213,13 @@ K._savePrivacyPrefs = function(){
   ls('privacy_prefs', prefs);
   toast('Confidentialité sauvegardée', 'ok');
   K._closeModal();
+};
+// v1.1.249 — bascule le mode E2E bêta PAR APPAREIL (canari). S'applique tout de
+// suite (pas besoin de Sauvegarder). Fail-open : n'affecte que cet appareil.
+K._toggleE2eBeta = function(on){
+  try{ if(on) localStorage.setItem('apex_chat_e2e_beta','1'); else localStorage.removeItem('apex_chat_e2e_beta'); }catch(_e){ _safeCatch('e2e-beta-toggle', _e); }
+  toast(on ? '🔬 E2E bêta activé sur CET appareil — active-le aussi sur ton 2ᵉ téléphone' : '🔒 E2E bêta désactivé (messages chiffrés en transit)', 'ok', 3800);
+  if(typeof K.render === 'function') K.render();
 };
 
 // ============================================================================
@@ -10351,14 +10391,15 @@ K._sendMediaMessage = async function(media){
   const caption = (input && input.value.trim()) || '';
   const marker = 'APXMEDIA1:' + JSON.stringify({ u:media.url, m:media.mime, n:media.name, s:media.size, c:caption });
   let ciphertext = null;
-  if(K._E2E_ENABLED){ try{ await K._ensureSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); } }
+  if(K._e2eOn()){ try{ await K._ensureSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); } }
+  const mediaPayload = ciphertext ? (K._E2E_TAG + ciphertext) : null;
   const msg = { id:'m_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), from:K.user.id, text:caption,
     media_url:media.url, media_type:media.mime, media_name:media.name, media_size:media.size, ts:Date.now(), encrypted:!!ciphertext };
   if(!K.messages[conv.id]) K.messages[conv.id] = [];
   K.messages[conv.id].push(msg); ls('messages_' + conv.id, K.messages[conv.id]);
   if(input) input.value = '';
   K.render();
-  const wire = { type:'message', ciphertext: ciphertext || marker, mime:'text/plain', ts:msg.ts, id:msg.id };
+  const wire = { type:'message', ciphertext: mediaPayload || marker, mime:'text/plain', ts:msg.ts, id:msg.id };
   if(K.ws && K.ws.readyState === WebSocket.OPEN && K._wsConvId === conv.id){
     try{ K.ws.send(JSON.stringify(wire)); toast('📨 Envoyé', 'ok', 1000); }
     catch(e){ K._outboxAdd({ conv_id:conv.id, ciphertext:wire.ciphertext, mime:'text/plain', ts:msg.ts, id:msg.id }); }
