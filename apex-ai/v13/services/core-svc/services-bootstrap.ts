@@ -1077,6 +1077,17 @@ export async function bootstrapServices(uid: string | null): Promise<readonly In
       initProxyPinActivation();
     }),
 
+    /* v13.4.350 (audit amélioration Top #1) : sonde /health du worker kdmc-rag
+     * → sans choix explicite, la mémoire long terme s'active toute seule quand
+     * le worker est prouvé vivant (cache 6 h). Différé 8s hors du chemin de boot. */
+    safeInit('apex-memory-rag-health', async () => {
+      setTimeout(() => {
+        void import('../ai/apex-memory-rag.js')
+          .then(({ apexMemoryRag }) => apexMemoryRag.probeHealth())
+          .catch(() => { /* fail-open : mémoire reste OFF */ });
+      }, 8000);
+    }),
+
     /* v13.4.134 (Kevin "Apex retient les leçons mieux que moi") :
      * Sentinelle audit-honesty-watch : détecte patterns "score estimé/projeté"
      * dans réponses Apex IA et force re-mesure via nouveau audit. */

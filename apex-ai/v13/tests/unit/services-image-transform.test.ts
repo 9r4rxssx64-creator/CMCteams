@@ -298,4 +298,47 @@ describe('image-transform service', () => {
       expect(r.error).toMatch(/500/);
     });
   });
+
+  /* === v13.4.350 — generateImage (texte→image FLUX, audit amélioration Top #3) === */
+  describe('generateImage', () => {
+    it('prompt vide → erreur claire, 0 fetch', async () => {
+      const spy = vi.fn();
+      globalThis.fetch = spy as unknown as typeof fetch;
+      const r = await imageTransform.generateImage('   ');
+      expect(r.success).toBe(false);
+      expect(r.error).toMatch(/Prompt vide/);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('pas de clé Replicate → message actionnable vers le Coffre', async () => {
+      vi.spyOn(vault, 'readKey').mockResolvedValue('');
+      const r = await imageTransform.generateImage('un chat astronaute');
+      expect(r.success).toBe(false);
+      expect(r.error).toMatch(/ax_replicate_key/);
+    });
+
+    it('succès : POST endpoint modèles flux-schnell puis poll → outputUrl', async () => {
+      vi.spyOn(vault, 'readKey').mockResolvedValue('r8_test');
+      const calls: string[] = [];
+      globalThis.fetch = vi.fn((url: RequestInfo | URL) => {
+        calls.push(String(url));
+        if (String(url).includes('/models/black-forest-labs/flux-schnell/predictions')) {
+          return Promise.resolve({ ok: true, status: 201, json: () => Promise.resolve({ id: 'p_gen', status: 'starting' }) } as Response);
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 'p_gen', status: 'succeeded', output: ['https://replicate.delivery/img.webp'] }) } as Response);
+      }) as unknown as typeof fetch;
+      const r = await imageTransform.generateImage('a cat astronaut');
+      expect(r.success).toBe(true);
+      expect(r.outputUrl).toBe('https://replicate.delivery/img.webp');
+      expect(calls[0]).toContain('black-forest-labs/flux-schnell');
+    });
+
+    it('402 crédit épuisé → message recharge (fail-open, jamais throw)', async () => {
+      vi.spyOn(vault, 'readKey').mockResolvedValue('r8_test');
+      globalThis.fetch = vi.fn(() => Promise.resolve({ ok: false, status: 402, json: () => Promise.resolve({}) } as Response)) as unknown as typeof fetch;
+      const r = await imageTransform.generateImage('x y z');
+      expect(r.success).toBe(false);
+      expect(r.error).toMatch(/Crédit Replicate/);
+    });
+  });
 });

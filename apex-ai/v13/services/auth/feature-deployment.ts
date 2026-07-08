@@ -44,10 +44,10 @@ export interface FeatureFlag {
 const AI_MODE_CONFIGS: Record<AiMode, { provider: string; model: string; max_tokens: number; temperature: number; description: string }> = {
   admin_optimal: {
     provider: 'anthropic',
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
     max_tokens: 8192,
     temperature: 0.7,
-    description: 'Kevin admin : Opus 4.7 + max tokens (jamais bloqué)',
+    description: 'Kevin admin : Opus 4.8 + max tokens (jamais bloqué)',
   },
   performance: {
     provider: 'anthropic',

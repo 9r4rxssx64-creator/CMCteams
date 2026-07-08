@@ -1344,6 +1344,15 @@ class ApexToolsDispatcher {
         const { contacts } = await import('../integrations/contacts.js');
         return { ok: contacts.remove((params['id'] as string) ?? '') };
       }
+      /* === Image Generate — v13.4.350 (audit amélioration Top #3 : le case manquait,
+       * l'outil était routé mais « génère une image » ne faisait rien) === */
+      case 'image_generate':
+      case 'generate_image': {
+        const { imageTransform } = await import('./image-transform.js');
+        const prompt = String(params['prompt'] ?? params['text'] ?? params['description'] ?? '').trim();
+        if (!prompt) throw new Error('prompt requis — décris l\'image à générer');
+        return await imageTransform.generateImage(prompt);
+      }
       /* === Image Transform — Kevin "polyvalent créatif" 2026-05-07 === */
       case 'transform_image':
       case 'cartoonify':
