@@ -1249,6 +1249,11 @@ html[data-theme="light"] #topbar{
      (jamais d'écrasement, aucun push Firebase). Permet d'intégrer un nouveau mois sans
      que l'admin importe. Absent/404 → l'app fonctionne normalement (no-op). -->
 <script src="/CMCteams/tools/shared/planning-seed.js" onerror="window.__cmcSeedLoadErr=1"></script>
+<!-- v9.860 (Kevin 2026-07-08) : boards VALIDÉS (= source de la page Départs light).
+     Les DÉPARTS de l'app doivent utiliser les VRAIES équipes du mois (ex équipe de
+     Kevin = 6 chefs), pas la liste figée DEF_CHEFS_T (4 chefs). _cmcSyncChefsTFromBoards
+     reconstruit CHEFS_T + teamHistory + miroir depuis ces boards → app == light. -->
+<script src="/CMCteams/tools/departs/boards-gen.js" onerror="window.__cmcBoardsLoadErr=1"></script>
 <script>
 // v9.45 \u2014 Error boundary global renforc\u00e9 + unhandledrejection
 (function(){
@@ -5625,11 +5630,56 @@ function _cmcApplyPlanningSeed(){
     return applied;
   }catch(e){ try{console.warn("[v9.824 seed]",e&&e.message);}catch(_){} return 0; }
 }
+// v9.860 (Kevin 2026-07-08 « connecte-toi comme moi et corrige ») — Les DÉPARTS de
+// l'app lisaient CHEFS_T = DEF_CHEFS_T (liste FIGÉE : équipe de Kevin = 4 chefs) au
+// lieu des VRAIES équipes du mois (6 chefs), alors que la page Départs light utilise
+// les boards validés. D'où app ≠ light sur CHAQUE équipe (« algo pas respecté »).
+// Fix : reconstruire CHEFS_T + teamHistory[key] + libellés d'équipe + miroir depuis
+// les BOARDS committés (window.DEPARTS_GEN = MÊME source que la page light) pour le
+// mois (y,m). No-op si pas de boards pour ce mois (garde DEF_CHEFS_T). Idempotent
+// (caché par mois). NE TOUCHE JAMAIS les codes de cellules (reproduction fidèle).
+function _cmcSyncChefsTFromBoards(y,m){
+  try{
+    var G=window.DEPARTS_GEN; if(!G||!G.boards)return 0;
+    var key=y+"-"+m;
+    // v9.861 — INVARIANT (même que le seed) : les boards committés sont un REPLI pour un
+    // mois SANS données live (import/Firebase). Si un vrai import existe pour ce mois (au-delà
+    // du seed), il fait autorité → on ne touche NI CHEFS_T NI teamHistory (real import wins).
+    var cur=(A.overrides&&A.overrides[key])||{};
+    var seededMonth=!!(window.CMC_PLANNING_SEED&&CMC_PLANNING_SEED.months&&CMC_PLANNING_SEED.months[key]);
+    var hasLive=(!seededMonth)&&Object.keys(cur).some(function(id){return cur[id]&&Object.keys(cur[id]).length>0;});
+    if(hasLive)return 0;                              // vraie donnée importée (hors seed) → boards ignorés
+    var ct={}, found=0, byName={};
+    (A.employees||[]).forEach(function(e){ if(e&&e.name&&!byName[e.name])byName[e.name]=e; });
+    Object.keys(G.boards).forEach(function(bkey){
+      var b=G.boards[bkey];
+      if(!b||b.year!==y||b.monthIdx!==m||!b.people||!b.people.length)return;
+      ct[bkey]=b.people.map(function(p){return p.name;});
+      if(!gt(bkey)){ A.teams.push({id:bkey,name:b.label||bkey,color:"#c9a227",family:b.fam||"bj",_auto:true,_board:true}); }
+      b.people.forEach(function(p){ var e=byName[p.name]; if(e){ if(!e.teamHistory)e.teamHistory={}; e.teamHistory[key]=bkey; } });
+      found++;
+    });
+    if(found){
+      // v9.861 — IDÉMPOTENT + TOUJOURS ré-appliqué (PLUS de flag one-shot qui bloquait la
+      // réparation). Le seed (_cmcApplyPlanningSeed) et fbApplyData(cmc_ov) réécrivent
+      // cmc_team_mirror_<key> ; sans re-sync, le miroir board (Éq.12⇌Éq.2) était écrasé par
+      // un miroir vide/stale → « MA SECTION ⇌ BJ Éq.1 » faux. Comme dc()/vDeparts appellent
+      // cette fonction, le board redevient TOUJOURS le dernier écrivain → équipe + miroir de
+      // Kevin corrects (= page light). Coût = itération 85 boards, négligeable. NE TOUCHE
+      // JAMAIS les codes de cellules (reproduction fidèle).
+      CHEFS_T=ct;                                     // départs = VRAIES équipes du mois
+      var mm={}; if(G.mirror){ Object.keys(G.mirror).forEach(function(a){ var b2=G.mirror[a]; if(ct[a]&&ct[b2])mm[a]=b2; }); }
+      try{ls("cmc_team_mirror_"+key,mm);}catch(_){}   // écrit TOUJOURS (même vide) → écrase le stale
+      if(!window["_cmcBoardTeams_"+key]){ window["_cmcBoardTeams_"+key]=1; try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){} console.info("[v9.861 boards] "+found+" équipes réelles appliquées aux départs ("+key+")"); }
+    }
+    return found;
+  }catch(e){ try{console.warn("[v9.861 boards]",e&&e.message);}catch(_){} return 0; }
+}
 // (appliqué plus tard, après chargement d'état + purges boot — voir _cmcApplyPlanningSeed)
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.859";
+var APP_VER="v9.861";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9318,6 +9368,8 @@ try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontal
 // (donc après le chargement d'état). Idempotent (hasLive guard : n'écrase jamais un
 // mois live, jamais de push Firebase). Toujours exécuté (pas réservé à l'admin).
 try{if(typeof _cmcApplyPlanningSeed==="function")_cmcApplyPlanningSeed();}catch(_seedBoot){}
+// v9.860 : la sync boards→CHEFS_T est faite dans dc()/vDeparts (APRÈS l'init CHEFS_T=DEF_CHEFS_T
+// plus bas) ; l'appeler ICI la ferait écraser par cette init (+ pose le flag → dc() skip). Donc pas ici.
 /* v9.798 — Auto-login « compte unique » kd-mc.com (Face ID prouvé). ADDITIF + fail-open :
    n'agit QUE si AUCUNE session locale (cmc_uid) ET UNIQUEMENT pour le propriétaire admin
    PROUVÉ par Face ID (whoami.verified === true ET whoami.admin === true). Ne touche JAMAIS
@@ -11144,6 +11196,7 @@ function dc(){
   if(_dcRunning)return; // Protection anti-boucle
   _dcRunning=true;
   try{
+  try{if(typeof _cmcSyncChefsTFromBoards==="function")_cmcSyncChefsTFromBoards(A.year,A.month);}catch(_){} // v9.860 : départs = vraies équipes du mois (caché par mois, no-op après 1x)
   // v9.693 Kevin "L'app saute et scintille, surtout quand elle réfléchit" :
   // OPTIMISATION détection équipes — cache invalidé sur changement effectif.
   // Avant : wipe + re-detect à CHAQUE render → 100-200ms freeze (scintille).
@@ -25105,6 +25158,7 @@ function sCI(y,m,o){ls("cmc_ci_"+y+"_"+m,o);}
 
 function vDeparts(){
   var isAdm=A.user&&A.user.id===AID;
+  try{if(typeof _cmcSyncChefsTFromBoards==="function")_cmcSyncChefsTFromBoards(A.year,A.month);}catch(_){} // v9.860 : départs = vraies équipes du mois (= page light)
   var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
   // v9.644+646 (Kevin "on change tous d'équipe chaque mois" + "l'app scintille"): empty state si pas de planning
   // Skip empty state pendant load Firebase initial pour éviter flash vide→complet
