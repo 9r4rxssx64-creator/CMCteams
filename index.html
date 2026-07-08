@@ -5654,6 +5654,11 @@ function _cmcSyncChefsTFromBoards(y,m){
     Object.keys(G.boards).forEach(function(bkey){
       var b=G.boards[bkey];
       if(!b||b.year!==y||b.monthIdx!==m||!b.people||!b.people.length)return;
+      // v9.862 — SAUTER les boards d'ABSENCE (congés/maladie). vPlan/vDeparts déduisent
+      // les sections d'absence directement des CELLULES (codes CP/M/AF, _planAbsenceTeam),
+      // pas d'une équipe. Les inclure ici créerait une fausse équipe « 2026-07-conges »
+      // dans CHEFS_T (rotation de départ fantôme).
+      if(b.kind==="abs")return;
       ct[bkey]=b.people.map(function(p){return p.name;});
       if(!gt(bkey)){ A.teams.push({id:bkey,name:b.label||bkey,color:"#c9a227",family:b.fam||"bj",_auto:true,_board:true}); }
       b.people.forEach(function(p){ var e=byName[p.name]; if(e){ if(!e.teamHistory)e.teamHistory={}; e.teamHistory[key]=bkey; } });
@@ -5679,7 +5684,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.861";
+var APP_VER="v9.862";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11223,6 +11228,21 @@ function dc(){
         var _dkY=A.year,_dkM=A.month,_dkKm=_km,_dkHash=_hash;
         setTimeout(function(){
           window._cmcDetectScheduled=false;
+          // v9.862 (Kevin 2026-07-08 « l'affichage, les horaires, les départs, les équipes
+          // ne vont pas du tout ») — CAUSE RACINE : DEUX systèmes d'équipes se battaient.
+          // Les BOARDS validés (= page light) posent les vraies équipes (Éq.12 = 6 chefs)
+          // via _cmcSyncChefsTFromBoards, PUIS cette détection différée les WIPAIT (delete
+          // teamHistory + removeItem mirror) pour remettre les siennes (Éq.12 = 3). Résultat :
+          // départs=boards mais affichage/équipes=détection → tout se contredisait. FIX : si
+          // les boards s'appliquent pour ce mois (found>0 = données du SEED, pas un vrai import
+          // hors seed), ils font AUTORITÉ pour TOUT (affichage/horaires/équipes/départs, comme
+          // la page light) → on NE wipe PAS et on NE re-détecte PAS. Les sections d'absence
+          // (congés/maladie) restent déduites des CELLULES (_planAbsenceTeam), donc intactes.
+          // Un vrai import hors seed → board sync s'abstient (return 0) → détection normale.
+          try{
+            var _appliedB=(typeof _cmcSyncChefsTFromBoards==="function")?_cmcSyncChefsTFromBoards(_dkY,_dkM):0;
+            if(_appliedB>0){ try{if(typeof dc==="function")dc();}catch(_reB){} return; }
+          }catch(_bErr){}
           try{
             // purge UNE fois l'ancienne familyHistory (erronée par l'ancien 'c'→bj)
             // puis on la PRÉSERVE (section d'import = autorité, lesson #67 / v9.805).
