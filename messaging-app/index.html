@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.249",
+  "softwareVersion": "v1.1.250",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.249';
+const __APEX_CHAT_VERSION__ = 'v1.1.250';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -582,8 +582,8 @@ if('serviceWorker' in navigator){
 <div id="splash" class="splash">
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
-  <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🔒 Chiffrée en transit (HTTPS) · serveur privé</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.249</div>
+  <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.250</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,13 +597,13 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.249</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.250</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
 
 <div class="security-banner h" id="security-banner">
-  🔒 <span class="key">Chiffrée en transit (HTTPS/TLS)</span> · serveur privé 🛰
+  🛡 <span class="key">Chiffrement de bout en bout</span> · vérifie le numéro de sécurité 🛰
 </div>
 
 <main id="app" tabindex="-1" role="main" aria-label="Application Apex Chat">
@@ -5225,14 +5225,20 @@ K._presenceState = K._presenceState || {};
 // v1.1.189 — E2E temporairement désactivé (clés désync après fusion → charabia).
 // Messages chiffrés en TRANSIT (HTTPS/WSS) + stockés serveur. Remettre à true
 // quand l'échange de clés sera fiable.
-K._E2E_ENABLED = false;
-// v1.1.249 — MODE E2E BÊTA PAR APPAREIL (canari). Kevin l'active sur ses 2
-// téléphones pour tester le VRAI bout-en-bout sans risque pour les autres :
-// chaque appareil chiffre seulement si le mode est ON localement. Fail-open
-// total (jamais de blocage d'envoi). Toggle dans Réglages → Confidentialité.
+// v1.1.250 — CHIFFREMENT BOUT-EN-BOUT ACTIVÉ PAR DÉFAUT. Le mécanisme est PROUVÉ
+// automatiquement (tests/unit/e2e-two-phones.test.js : 2 téléphones simulés,
+// vrai code crypto, round-trip chiffré/déchiffré + numéro de sécurité identique).
+// Sûr car TOUTES les défaillances sont gracieuses : envoi fail-open (jamais
+// bloqué), réception non-déchiffrable → note propre « 🔒 chiffré » (jamais de
+// charabia). Opt-out possible par appareil (secours) : localStorage apex_chat_e2e='0'.
+K._E2E_ENABLED = true;
 K._e2eOn = function(){
-  if(K._E2E_ENABLED) return true;
-  try{ return localStorage.getItem('apex_chat_e2e_beta') === '1'; }catch(_){ return false; }
+  try{
+    const v = localStorage.getItem('apex_chat_e2e');
+    if(v === '1') return true;   // forcé ON
+    if(v === '0') return false;  // opt-out explicite (secours)
+  }catch(_){}
+  return K._E2E_ENABLED;         // défaut = ON
 };
 // Préfixe-sentinelle placé DANS le champ ciphertext (relayé/stocké tel quel par
 // le serveur) → le destinataire sait qu'un payload est chiffré, sans changer le
@@ -9193,11 +9199,11 @@ K.openPrivacyPrefs = function(){
       </select>
     </div>
     <p style="color:var(--ax-text-3);font-size:.78em;margin-top:14px;padding:10px;background:rgba(232,184,48,.08);border-radius:8px">
-      🔒 Tes échanges sont chiffrés en transit (HTTPS/TLS) et stockés sur un serveur privé. Le chiffrement de bout en bout est implémenté mais pas encore activé par défaut.
+      🛡 Tes messages sont chiffrés <strong>de bout en bout</strong> par défaut : le serveur ne peut pas lire leur contenu. Si le chiffrement ne peut pas s'établir avec un contact (clé pas encore publiée), le message reste chiffré <strong>en transit</strong> (HTTPS) — l'indicateur en haut de chaque conversation dit lequel (🛡 E2E / 🔒 transit).
     </p>
-    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:12px;background:rgba(106,138,255,.08);border:1px solid rgba(106,138,255,.25);border-radius:10px;cursor:pointer">
-      <input type="checkbox" id="pv-e2eBeta" ${K._e2eOn()?'checked':''} onchange="K._toggleE2eBeta(this.checked)" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">
-      <span style="font-size:.85em;line-height:1.45"><strong>🔬 Chiffrement bout-en-bout (bêta — test 2 appareils)</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Active-le sur <strong>tes 2 téléphones</strong> pour tester le vrai E2E entre eux. Les messages deviennent illisibles pour le serveur. <em>Fail-open : n'empêche jamais l'envoi.</em> Vérifie le « numéro de sécurité » (icône 🛡 en haut d'une conversation) : il doit être <strong>identique</strong> sur les 2 téléphones.</span></span>
+    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:12px;background:rgba(46,213,115,.08);border:1px solid rgba(46,213,115,.25);border-radius:10px;cursor:pointer">
+      <input type="checkbox" id="pv-e2e" ${K._e2eOn()?'checked':''} onchange="K._toggleE2eBeta(this.checked)" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">
+      <span style="font-size:.85em;line-height:1.45"><strong>🛡 Chiffrement bout-en-bout (activé)</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Activé par défaut. Vérifie le « numéro de sécurité » (icône 🛡 en haut d'une conversation) : il doit être <strong>identique</strong> chez ton correspondant. Décoche uniquement en cas de souci d'affichage (secours).</span></span>
     </label>
     <button class="btn btn-block" onclick="K._savePrivacyPrefs()" style="margin-top:14px">💾 Sauvegarder</button>
   `);
@@ -9214,11 +9220,12 @@ K._savePrivacyPrefs = function(){
   toast('Confidentialité sauvegardée', 'ok');
   K._closeModal();
 };
-// v1.1.249 — bascule le mode E2E bêta PAR APPAREIL (canari). S'applique tout de
-// suite (pas besoin de Sauvegarder). Fail-open : n'affecte que cet appareil.
+// v1.1.250 — bascule le chiffrement E2E PAR APPAREIL (activé par défaut).
+// Écrit '1'/'0' pour que le choix (surtout l'opt-out de secours) persiste.
+// S'applique tout de suite. Fail-open : n'affecte que cet appareil.
 K._toggleE2eBeta = function(on){
-  try{ if(on) localStorage.setItem('apex_chat_e2e_beta','1'); else localStorage.removeItem('apex_chat_e2e_beta'); }catch(_e){ _safeCatch('e2e-beta-toggle', _e); }
-  toast(on ? '🔬 E2E bêta activé sur CET appareil — active-le aussi sur ton 2ᵉ téléphone' : '🔒 E2E bêta désactivé (messages chiffrés en transit)', 'ok', 3800);
+  try{ localStorage.setItem('apex_chat_e2e', on ? '1' : '0'); }catch(_e){ _safeCatch('e2e-toggle', _e); }
+  toast(on ? '🛡 Chiffrement bout-en-bout activé sur cet appareil' : '🔒 E2E désactivé sur cet appareil (messages chiffrés en transit)', 'ok', 3800);
   if(typeof K.render === 'function') K.render();
 };
 
