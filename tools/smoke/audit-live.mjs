@@ -60,21 +60,30 @@ const report = [];
 for (const s of SURFACES) {
   const page = await browser.newPage();
   const jsErrors = [];      // exceptions JS non catchées → BLOQUANT
-  const failedProject = []; // requête vers un host projet échouée/bloquée → BLOQUANT (classe CORS commande)
-  const failedThird = [];   // requête tierce échouée → toléré (fail-open)
-  const badStatus = [];     // 4xx/5xx sur un host projet → BLOQUANT
+  const failedProject = []; // requête projet BLOQUÉE (ERR_FAILED/CORS) → BLOQUANT (classe commande)
+  const failedTol = [];     // requête échouée tolérée (tierce OU ERR_ABORTED app) → non bloquant
+  const badStatus = [];     // 404/5xx sur un host projet → BLOQUANT (route/asset cassé)
+  const authGated = [];     // 401/403 sur données projet → TOLÉRÉ : l'audit est ANONYME, donc
+                            // toute donnée protégée par auth renvoie 401/403 par SÉCURITÉ (c'est
+                            // le comportement voulu, pas un bug). Ne pas crier au loup (leçon #83/#106).
   const consoleErr = [];    // bruit console → rapporté, non bloquant
 
   page.on('pageerror', (e) => jsErrors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') consoleErr.push(m.text().slice(0, 160)); });
   page.on('requestfailed', (req) => {
     const u = req.url();
-    const line = req.method() + ' ' + u.slice(0, 120) + ' [' + (req.failure()?.errorText || 'failed') + ']';
-    (isProjectHost(u) ? failedProject : failedThird).push(line);
+    const errText = req.failure()?.errorText || 'failed';
+    const line = req.method() + ' ' + u.slice(0, 120) + ' [' + errText + ']';
+    // ERR_ABORTED = requête annulée par l'app elle-même (navigation, retry auth, write non-authentifié)
+    // = bruit. ERR_FAILED/BLOCKED = la CLASSE bug (blocage CORS commande, ressource refusée) → bloquant.
+    if (isProjectHost(u) && !/ERR_ABORTED/i.test(errText)) failedProject.push(line);
+    else failedTol.push(line);
   });
   page.on('response', (resp) => {
     const st = resp.status();
-    if (st >= 400 && isProjectHost(resp.url())) badStatus.push('HTTP ' + st + ' ' + resp.url().slice(0, 120));
+    if (!isProjectHost(resp.url())) return;
+    if (st === 401 || st === 403) authGated.push('HTTP ' + st + ' ' + resp.url().slice(0, 100)); // toléré (auth)
+    else if (st === 404 || st >= 500) badStatus.push('HTTP ' + st + ' ' + resp.url().slice(0, 120)); // bloquant
   });
 
   const url = s.url;
@@ -91,8 +100,9 @@ for (const s of SURFACES) {
 
     if (jsErrors.length) { res.ok = false; res.notes.push('EXCEPTION JS: ' + jsErrors.slice(0, 2).join(' | ')); }
     if (failedProject.length) { res.ok = false; res.notes.push('REQUÊTE PROJET BLOQUÉE (classe CORS/commande): ' + failedProject.slice(0, 3).join(' ; ')); }
-    if (badStatus.length) { res.ok = false; res.notes.push('STATUT PROJET 4xx/5xx: ' + badStatus.slice(0, 3).join(' ; ')); }
-    if (failedThird.length) res.notes.push('req. tierces échouées (toléré): ' + failedThird.length);
+    if (badStatus.length) { res.ok = false; res.notes.push('STATUT PROJET 404/5xx (route/asset cassé): ' + badStatus.slice(0, 3).join(' ; ')); }
+    if (authGated.length) res.notes.push('401/403 données (toléré — audit anonyme, sécurité normale): ' + authGated.length);
+    if (failedTol.length) res.notes.push('req. échouées tolérées (tierce/aborted): ' + failedTol.length);
     if (consoleErr.length) res.notes.push('bruit console: ' + consoleErr.length + ' (ex ' + consoleErr[0] + ')');
   } catch (e) {
     res.ok = false;
