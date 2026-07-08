@@ -21,6 +21,7 @@ import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync } from 'fs';
 
 const BASE = (process.argv[2] || 'https://kd-mc.com').replace(/\/$/, '');
+const ROOT = BASE.replace(/^https?:\/\//, '').replace(/^www\./, ''); // ex: kd-mc.com
 
 /* Hôtes « du projet » : une requête ÉCHOUÉE/bloquée vers l'un d'eux = bug bloquant
    (revenu/fonction cassé), pas du bruit tiers fail-open. C'est le filet qui aurait
@@ -28,22 +29,25 @@ const BASE = (process.argv[2] || 'https://kd-mc.com').replace(/\/$/, '');
 const PROJECT_HOSTS = [/\.workers\.dev$/, /firebasedatabase\.app$/, /(^|\.)kd-mc\.com$/, /9r4rxssx64-creator\.github\.io$/];
 const isProjectHost = (u) => { try { const h = new URL(u).hostname; return PROJECT_HOSTS.some((re) => re.test(h)); } catch { return false; } };
 
-/* Surfaces = miroir des ROUTES du routeur (services/kdmc-router/worker.js).
+/* Surfaces = miroir EXACT des ROUTES du routeur (services/kdmc-router/worker.js).
+   ⚠ Les APPS sont des SOUS-DOMAINES (chez-lolo.kd-mc.com), PAS des chemins
+   (kd-mc.com/chez-lolo/ → 404). SEULS worldmonitor/osint sont des chemins sur
+   l'accueil (kdmc-home). (bug attrapé par le 1er run live — le routeur mappe par host.)
    selKey = un élément qui PROUVE que la page a rendu (pas juste 200 vide). */
 const SURFACES = [
-  { path: '/', name: 'accueil', selKey: 'body' },
-  { path: '/cmcteams/', name: 'CMCteams', selKey: 'body' },
-  { path: '/apex-ai/', name: 'Apex AI', selKey: 'body' },
-  { path: '/apex-chat/', name: 'Apex Chat', selKey: 'body' },
-  { path: '/la-detente/', name: 'La Détente boutique', selKey: 'body' },
-  { path: '/chez-lolo/', name: 'Chez Lolo boutique', selKey: 'body' },
-  { path: '/dashboard/', name: 'Dashboard', selKey: 'body' },
-  { path: '/sourcing/', name: 'Sourcing', selKey: 'body' },
-  { path: '/coffre/', name: 'Coffre-fort', selKey: 'body' },
-  { path: '/departs/', name: 'Départs', selKey: 'body' },
-  { path: '/cmcteams-light/', name: 'CMCteams light', selKey: 'body' },
-  { path: '/worldmonitor/', name: 'World Monitor', selKey: '.leaflet-container' },
-  { path: '/osint/', name: 'OSINT', selKey: '.leaflet-container' },
+  { url: 'https://' + ROOT + '/', name: 'accueil', selKey: 'body' },
+  { url: 'https://cmcteams.' + ROOT + '/', name: 'CMCteams', selKey: 'body' },
+  { url: 'https://apex-ai.' + ROOT + '/', name: 'Apex AI', selKey: 'body' },
+  { url: 'https://apex-chat.' + ROOT + '/', name: 'Apex Chat', selKey: 'body' },
+  { url: 'https://la-detente.' + ROOT + '/', name: 'La Détente boutique', selKey: 'body' },
+  { url: 'https://chez-lolo.' + ROOT + '/', name: 'Chez Lolo boutique', selKey: 'body' },
+  { url: 'https://dashboard.' + ROOT + '/', name: 'Dashboard', selKey: 'body' },
+  { url: 'https://sourcing.' + ROOT + '/', name: 'Sourcing', selKey: 'body' },
+  { url: 'https://coffre.' + ROOT + '/', name: 'Coffre-fort', selKey: 'body' },
+  { url: 'https://departs.' + ROOT + '/', name: 'Départs', selKey: 'body' },
+  { url: 'https://cmcteams-light.' + ROOT + '/', name: 'CMCteams light', selKey: 'body' },
+  { url: BASE + '/worldmonitor/', name: 'World Monitor', selKey: '.leaflet-container' },
+  { url: BASE + '/osint/', name: 'OSINT', selKey: '.leaflet-container' },
 ];
 
 const SHOT_DIR = 'audit-live-shots';
@@ -73,7 +77,7 @@ for (const s of SURFACES) {
     if (st >= 400 && isProjectHost(resp.url())) badStatus.push('HTTP ' + st + ' ' + resp.url().slice(0, 120));
   });
 
-  const url = BASE + s.path;
+  const url = s.url;
   const res = { url, name: s.name, ok: true, notes: [] };
   try {
     const resp = await page.goto(url, { waitUntil: 'load', timeout: 45000 });
