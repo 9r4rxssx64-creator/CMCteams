@@ -5,9 +5,10 @@
 - **Il reste 1 tap pour l'ALLUMER dans l'app** (défaut éteint par sécurité, per-appareil) : ouvre Apex → console/réglages → activer `apex_v13_rag_enabled`. (Je peux ajouter un vrai bouton Réglages « Mémoire long terme ON/OFF » si tu veux — dis-le.)
 - Une fois allumée : Apex mémorise tes échanges et se rappelle des choses pertinentes tout seul. Fail-open (si souci → Apex marche comme avant).
 
-## ⚡ Cerebras (IA gratuite ultra-rapide) — installé 2026-07-07, 1 action OPTIONNELLE
-- Cerebras ajouté comme provider de secours dans Apex (~1M tokens/JOUR gratuit, le plus rapide). **Inerte tant que tu n'as pas de clé** (fail-open, rien ne casse ; Anthropic reste ton IA principale).
-- **Pour l'activer (gratuit, ~2 min, sans carte)** : crée une clé sur https://cloud.cerebras.ai/ → ajoute-la en secret GitHub **`CEREBRAS_API_KEY`** : https://github.com/9r4rxssx64-creator/cmcteams/settings/secrets/actions → puis lance « Sync Apex Secrets » (le worker route Cerebras automatiquement). Ta clé Mistral (déjà là) sert aussi de secours.
+## ⚡ IA de secours gratuite — RÉGLÉ AUTO (aucune action) 2026-07-08
+- « Toujours tout auto » : au lieu d'un signup Cerebras, j'ai activé **Mistral** en IA de secours (v13.4.348) — ta clé `MISTRAL_API_KEY` est **déjà** dans tes secrets et déjà poussée au worker → **1 milliard de tokens/mois gratuits, 0 action de ta part**. Anthropic reste ton IA principale ; Mistral prend le relais si besoin.
+- **Cerebras** (encore plus rapide) reste possible mais **OPTIONNEL** : il faut créer un compte (chose que je ne peux pas faire à ta place). Pas nécessaire — Mistral + 5 autres providers suffisent largement. Si un jour tu veux : colle juste la clé Cerebras dans le chat Apex, je fais le reste.
+- **NASA FIRMS** (feux satellite World Monitor) : idem OPTIONNEL — foudre + cyclones + couches feux satellite marchent déjà sans. Colle la clé dans Apex si tu la veux, je branche tout.
 
 ## 🔒 Strix (pentest IA autonome) — installé 2026-07-07
 - Outil de sécurité offensive (github.com/usestrix/strix) installé comme workflow **à la demande** `strix-scan.yml` (jamais auto = maîtrise coût). Clé LLM = `OPEN_AI_API_KEY` (déjà présente).
