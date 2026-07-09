@@ -5684,7 +5684,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.862";
+var APP_VER="v9.863";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -24555,6 +24555,11 @@ function vPlan(){
     // compact ci-dessous, _planAbsenceTeam). Règle #1 (nom→cellule) reste respectée :
     // ces emps restent visibles, dans leur groupe d'absence. « 0 travaillé + que des
     // RH/R » (parse cassé/fragmenté) reste masqué des équipes (v9.765).
+    // v9.863 (Kevin 2026-07-09 « il ne peut plus y avoir de cadre présent dans les
+    // plannings ») : les CADRES (Pit Boss/Sup/Insp, id P#####, 2e PDF séparé lesson #70)
+    // ne sont JAMAIS affichés dans le planning chefs/employés — filet d'affichage robuste
+    // quelle que soit la source (seed déjà nettoyé, mais aussi cloud/import résiduel).
+    if(e&&/^P\d/.test(e.id))return false;
     var r=pl[e.id]||{};
     var worked=0;
     for(var _wd=1;_wd<=days;_wd++){var c=r[_wd];if(!c)continue;var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");if(!_PLAN_ABS_CODES[u])worked++;}
@@ -24566,6 +24571,7 @@ function vPlan(){
   // ou null si l'emp travaille (≥1 jour) ou n'a aucun code d'absence reconnu.
   var _PLAN_ABS_TEAM={CP:"conges",CRH:"conges",CDP:"conges",CDH:"conges",M:"maladie",MAL:"maladie",AF:"formation",DEPL:"deplacement",DEP:"deplacement"};
   function _planAbsenceTeam(e){
+    if(e&&/^P\d/.test(e.id))return null; // v9.863 — cadres (P#####) jamais dans le planning
     var r=pl[e.id]||{};
     var worked=0,by={},tot=0;
     for(var _ad=1;_ad<=days;_ad++){var c=r[_ad];if(!c)continue;
