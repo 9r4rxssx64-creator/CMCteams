@@ -18,15 +18,11 @@
  *   5. OpenAI GPT-4o-mini (fallback)
  */
 
-import { corsHeaders } from './lib/cors.js';
+import { corsHeaders, makeJson } from './lib/cors.js';
 
 const CORS = corsHeaders('POST, OPTIONS', 'Content-Type, Authorization');
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status, headers: { 'Content-Type': 'application/json', ...CORS }
-  });
-}
+const json = makeJson(CORS);
 
 function err(message, status = 400) {
   return json({ error: 'error', message }, status);

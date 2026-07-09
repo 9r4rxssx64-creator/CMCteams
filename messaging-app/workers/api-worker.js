@@ -38,19 +38,14 @@ const ADMIN_KEVIN_ALIASES = [
   'kevin.desarzens', 'kevind@monaco.mc', 'kdmc', 'k desarzens'
 ];
 
-import { corsHeaders } from './lib/cors.js';
+import { corsHeaders, makeJson } from './lib/cors.js';
 
 const CORS_HEADERS = {
   ...corsHeaders('GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization, X-Apex-Token, x-file-name'),
   'Access-Control-Max-Age': '86400'
 };
 
-function json(data, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS, ...extraHeaders }
-  });
-}
+const json = makeJson(CORS_HEADERS);
 
 // err() — règle CLAUDE.md "détailler les erreurs partout" :
 // message = soft (user), detail = cause EXACTE (diagnostic). detail accepte string ou objet.
