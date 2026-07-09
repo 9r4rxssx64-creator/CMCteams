@@ -60,6 +60,11 @@ async function extract(browser, pdfRel, year, monthIdx) {
     const team = {}, fam = {}, emps = [], ecole = [];
     A.employees.forEach(e => {
       if (!e || !e.id) return;
+      // Kevin 2026-07-09 « il ne peut plus y avoir de cadre présent dans les plannings » :
+      // les CADRES (Pit Boss/Superviseur/Inspecteur, id P#####, 2e PDF séparé lesson #70)
+      // ne font PAS partie du planning chefs/employés → exclus du seed. Les homonymes
+      // CHEFS (LANDAU B/ENZA B/CAMPI PH, id U#####) sont conservés (préfixe distinct).
+      if (/^P\d/.test(e.id)) { delete ov[e.id]; delete meta[e.id]; return; }
       const t = (e.teamHistory || {})[key], f = (e.familyHistory || {})[key];
       if (ov[e.id]) { emps.push({ id: e.id, name: e.name, family: e.family || '' }); if (t) team[e.id] = t; if (f) fam[e.id] = f; if (e.ecoleRoulette && e.ecoleRoulette[key]) ecole.push(e.id); }
     });
