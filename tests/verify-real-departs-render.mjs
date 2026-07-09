@@ -91,37 +91,41 @@ for (const bd of boards) {
     kevinDump = { board: bd, grid, roster, workDays: workDays.map(d => d + 1) };
   }
 
-  // VÉRIF règle Kevin : entre 2 jours de travail CONSÉCUTIFS (adjacents dans workDays)
-  // à MÊME effectif présent (même ensemble + même N), pour chaque chef présent les 2 jours,
-  // l'index dans SEQ_N doit avancer d'EXACTEMENT +1 (mod N). C'est « le cycle glisse de 1 ».
-  for (let wi = 1; wi < workDays.length; wi++) {
-    const d1 = workDays[wi - 1], d2 = workDays[wi];
-    // effectif présent (dep non null) chaque jour
-    const pres1 = active.filter(p => p.cells[d1].dep != null).map(p => p.name);
-    const pres2 = active.filter(p => p.cells[d2].dep != null).map(p => p.name);
-    // N effectif du jour = nb de dep distincts rendus (roster présent+mort). On déduit N de la SEQ.
-    // On vérifie le glissement seulement quand l'effectif présent est identique (cas simple, majoritaire).
-    const same = pres1.length === pres2.length && pres1.every(n => pres2.includes(n));
-    if (!same) continue; // jour avec changement d'effectif (congé début/fin) : géré à part
-    const N = new Set(active.filter(p => p.cells[d1].dep != null || p.cells[d2].dep != null)
-      .map(p => p.cells[d1].dep).filter(x => x != null)).size;
-    // Trouver la taille de SEQ : la plus petite S telle que tous les dep du jour ∈ SEQS[S]
-    const depsDay = pres1.map(n => active.find(p => p.name === n).cells[d1].dep);
-    let seqN = null;
-    for (const s of Object.keys(SEQS).map(Number).sort((a, b) => a - b)) {
-      if (depsDay.every(x => SEQS[s].includes(x))) { seqN = s; break; }
+  // seqN d'un jour = plus petite taille S telle que tous les dep rendus ∈ SEQS[S]
+  const seqNof = d => {
+    const ds = active.map(p => p.cells[d].dep).filter(x => x != null);
+    if (!ds.length) return null;
+    for (const s of Object.keys(SEQS).map(Number).sort((a, b) => a - b)) if (ds.every(x => SEQS[s].includes(x))) return s;
+    return null;
+  };
+  // VÉRIF RÈGLE KEVIN (v9.865) : la fenêtre GLISSE de +1 à CHAQUE CYCLE de repos ET de +1 par jour
+  // DANS le cycle. Cycles = ceux de L'ÉQUIPE (trous dans workDays). Le glissement +1 n'est garanti
+  // que si le GROUPE présent est identique les 2 jours (sinon un congé change N + les rangs).
+  const teamCycleStart = new Set();
+  for (let i = 0; i < workDays.length; i++) { if (i === 0 || workDays[i] - workDays[i - 1] > 1) teamCycleStart.add(workDays[i]); }
+  const starts = [...teamCycleStart].sort((a, b) => a - b);
+  const presentSet = d => active.filter(p => p.cells[d].dep != null).map(p => p.name).sort().join('|');
+  for (const p of active) {
+    // (a) jours d'ÉQUIPE calendairement adjacents, MÊME groupe présent → index SEQ +1
+    for (let i = 1; i < workDays.length; i++) {
+      const d0 = workDays[i - 1], d1 = workDays[i];
+      if (d1 - d0 !== 1) continue;
+      if (p.cells[d0].dep == null || p.cells[d1].dep == null) continue;
+      if (presentSet(d0) !== presentSet(d1)) continue;
+      const s = seqNof(d0); if (s == null || seqNof(d1) !== s) continue;
+      const SEQ = SEQS[s]; const ia = SEQ.indexOf(p.cells[d0].dep), ib = SEQ.indexOf(p.cells[d1].dep);
+      if (ia < 0 || ib < 0) continue; totalChecks++;
+      if (ib !== (ia + 1) % s) fails.push(`${bd.label} | ${p.name} : DANS cycle j${d0 + 1}=${p.cells[d0].dep} → j${d1 + 1}=${p.cells[d1].dep} (jour ≠ +1)`);
     }
-    if (!seqN) continue;
-    const SEQ = SEQS[seqN];
-    for (const nm of pres1) {
-      const p = active.find(x => x.name === nm);
-      const a = p.cells[d1].dep, b = p.cells[d2].dep;
-      const ia = SEQ.indexOf(a), ib = SEQ.indexOf(b);
-      if (ia < 0 || ib < 0) continue;
-      totalChecks++;
-      if (ib !== (ia + 1) % seqN) {
-        fails.push(`${bd.label} | ${nm} : jour ${d1 + 1}=${a} → jour ${d2 + 1}=${b} (attendu ${SEQ[(ia + 1) % seqN]}, glissement ≠ +1)`);
-      }
+    // (b) 1er jour de 2 cycles d'équipe consécutifs, MÊME groupe présent → index SEQ +1
+    for (let ci = 1; ci < starts.length; ci++) {
+      const d0 = starts[ci - 1], d1 = starts[ci];
+      if (p.cells[d0].dep == null || p.cells[d1].dep == null) continue;
+      if (presentSet(d0) !== presentSet(d1)) continue;
+      const s = seqNof(d0); if (s == null || seqNof(d1) !== s) continue;
+      const SEQ = SEQS[s]; const ia = SEQ.indexOf(p.cells[d0].dep), ib = SEQ.indexOf(p.cells[d1].dep);
+      if (ia < 0 || ib < 0) continue; totalChecks++;
+      if (ib !== (ia + 1) % s) fails.push(`${bd.label} | ${p.name} : ENTRE cycles j${d0 + 1}=${p.cells[d0].dep} → j${d1 + 1}=${p.cells[d1].dep} (début de cycle ≠ +1)`);
     }
   }
 }

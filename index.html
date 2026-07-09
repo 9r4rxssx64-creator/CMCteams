@@ -5684,7 +5684,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.864";
+var APP_VER="v9.865";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -5735,6 +5735,36 @@ function forceRefresh(){
     }).then(clearCaches).then(go).catch(function(){clearCaches().then(go).catch(go);});
   } else {clearCaches().then(go).catch(go);}
 }
+// v9.865 (Kevin 2026-07-09 « CMCteams, pas de badge, impossible mettre à jour ») —
+// BADGE VERSION CLIQUABLE = bouton 1-tap GARANTI pour forcer la MAJ (le badge avait été
+// retiré ligne 1246 → plus aucun moyen manuel une fois connecté). Lesson #102 : la MAJ
+// auto iOS PWA n'est pas fiable → il FAUT un escape manuel visible. Bas-gauche, au-dessus
+// de la nav, respecte safe-area (PWA) / remonté en navigateur (lesson #103).
+(function _cmcInstallVerBadge(){
+  function mk(){
+    if(!document.body||document.getElementById("cmc-ver-badge"))return;
+    var v=(typeof APP_VER!=="undefined"?APP_VER:"v9");
+    var b=document.createElement("button");
+    b.id="cmc-ver-badge"; b.type="button"; b.textContent=v;
+    b.setAttribute("aria-label","Version "+v+" — toucher pour forcer la mise à jour");
+    b.title="Version "+v+" · toucher = forcer la mise à jour";
+    var standalone=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;
+    var bottom=standalone?"calc(env(safe-area-inset-bottom,0px) + 60px)":"calc(env(safe-area-inset-bottom,0px) + 70px)";
+    b.style.cssText="position:fixed;left:8px;bottom:"+bottom+";z-index:2147483640;padding:4px 9px;"
+      +"background:linear-gradient(135deg,rgba(201,162,39,.22),rgba(201,162,39,.12));"
+      +"border:1px solid rgba(201,162,39,.55);color:#c9a227;font:700 10px/1 ui-monospace,SF Mono,Menlo,monospace;"
+      +"border-radius:11px;opacity:.82;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer;"
+      +"-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;letter-spacing:.02em;";
+    b.addEventListener("click",function(){
+      if(!confirm("Version "+v+"\n\nForcer la mise à jour maintenant ?\n(vide le cache et recharge la dernière version)"))return;
+      try{ if(typeof forceRefresh==="function"){forceRefresh();return;} }catch(_){}
+      location.replace(location.pathname+"?_force_upd_"+Date.now());
+    });
+    document.body.appendChild(b);
+  }
+  if(document.body)mk(); else document.addEventListener("DOMContentLoaded",mk);
+  setTimeout(mk,3000);
+})();
 // ── PHOTOS : upload / resize / stockage (v9.34, v9.41 compression auto) ────
 // Resize image via canvas avant stockage base64 (réduit Firebase RTDB)
 // v9.41 : compression progressive jusqu'\u00e0 rentrer dans budget si pr\u00e9cis\u00e9
@@ -17637,6 +17667,15 @@ function calcDepPos(empName,tid,day){
     for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWork((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
   }
   var wi=workDays.indexOf(day); if(wi<0) return null;
+  // v9.865 (Kevin 2026-07-09 « corrige dans light les départs correctement » — la fenêtre
+  // GLISSE de +1 à chaque CYCLE de repos : ta ligne 6-4-2-3 → 4-2-3-5 → 2-3-5-1). rot NE
+  // continue PAS en continu : rot = index_de_cycle + position_dans_le_cycle. Un trou dans
+  // workDays (repos d'équipe) = nouveau cycle. Le jour 1 reste 1-6-4-2-3-5. Identique à compute().
+  var _rotByDay={}, _cyc=0, _kd=0, _prevWD=null;
+  for(var _iw=0;_iw<workDays.length;_iw++){ var _wd2=workDays[_iw];
+    if(_prevWD!==null){ if(_wd2-_prevWD>1){ _cyc++; _kd=0; } else { _kd++; } }
+    _rotByDay[_wd2]=_cyc+_kd; _prevWD=_wd2;
+  }
   // v9.857 (Kevin 2026-07-04 « quand une personne manque 1,2,3 jours ne pas revoir l'algo,
   // laisser le numéro mort ; revoir seulement quand départ en vacances/congé »).
   // ROSTER STABLE : la rotation se calcule sur le ROSTER (chefs actifs MOINS ceux en congé
@@ -17657,7 +17696,7 @@ function calcDepPos(empName,tid,day){
   if(!meEmp) return null;                                 // en congé long OU hors équipe
   if(!isWork((pl[meEmp.id]||{})[day]||'')) return null;   // absence courte → numéro MORT (rien affiché)
   var j=effRoster.indexOf(meEmp);
-  var SEQd=getSeqForSize(N), rot=wi;
+  var SEQd=getSeqForSize(N), rot=_rotByDay[day];
   return SEQd[(((rot+j)%N)+N)%N];
 }
 
