@@ -16,3 +16,17 @@ export function corsHeaders(methods, headers) {
     'Access-Control-Allow-Headers': headers,
   };
 }
+
+/**
+ * Fabrique de la réponse JSON standard des workers, liée à un objet CORS donné.
+ * Remplace la fonction `json()` dupliquée à l'identique dans chaque worker —
+ * SEULE la définition change (aucun site d'appel touché), sortie strictement
+ * identique : Content-Type JSON + en-têtes CORS + en-têtes optionnels (api).
+ */
+export function makeJson(cors) {
+  return (data, status = 200, extraHeaders = {}) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { 'Content-Type': 'application/json', ...cors, ...extraHeaders },
+    });
+}
