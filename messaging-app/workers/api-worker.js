@@ -38,10 +38,10 @@ const ADMIN_KEVIN_ALIASES = [
   'kevin.desarzens', 'kevind@monaco.mc', 'kdmc', 'k desarzens'
 ];
 
+import { corsHeaders } from './lib/cors.js';
+
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Apex-Token, x-file-name',
+  ...corsHeaders('GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization, X-Apex-Token, x-file-name'),
   'Access-Control-Max-Age': '86400'
 };
 
