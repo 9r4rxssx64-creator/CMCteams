@@ -15,11 +15,9 @@
 
 const VAPID_PUBLIC = 'BJ5XN-ZzchRPPDVO4aEkFkhUOQC8E0tScaTKFXFBDq3o8MATBdRW879hSTLCTfH5mo3S_i5JOf1E4pTDALETBsY';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Apex-Push-Token'
-};
+import { corsHeaders } from './lib/cors.js';
+
+const CORS_HEADERS = corsHeaders('GET, POST, OPTIONS', 'Content-Type, Authorization, X-Apex-Push-Token');
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
