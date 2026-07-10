@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.254",
+  "softwareVersion": "v1.1.255",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.254';
+const __APEX_CHAT_VERSION__ = 'v1.1.255';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.254</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.255</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.254</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.255</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7916,9 +7916,14 @@ async function _handleWsMessage(data, convId){
       break;
     }
     case 'edit_message': {
-      // v1.1.48 — Peer a édité un message
+      // v1.1.48 — Peer a édité un message. v1.1.255 : supporte l'édition E2E
+      // (data.ciphertext taggé E2E1:) en plus du legacy clair (data.new_text).
       const eMsgId = data.message_id;
-      const newText = data.new_text;
+      let newText = data.new_text;
+      if(eMsgId && !newText && typeof data.ciphertext === 'string' && data.ciphertext.indexOf(K._E2E_TAG) === 0){
+        try{ newText = await ApexCrypto.decryptForConv(convId, data.ciphertext.slice(K._E2E_TAG.length)); }
+        catch(e){ _safeCatch('edit-decrypt', e); }
+      }
       if(eMsgId && newText && K.messages[convId]){
         const m = K.messages[convId].find(x => x.id === eMsgId);
         if(m){
@@ -10286,7 +10291,7 @@ K._deleteMsg = function(msgId, scope){
   K._closeModal && K._closeModal();
 };
 
-K._saveEditMsg = function(msgId){
+K._saveEditMsg = async function(msgId){
   const conv = K.viewData;
   if(!conv) return;
   const ta = document.getElementById('edit-msg-input');
@@ -10303,8 +10308,24 @@ K._saveEditMsg = function(msgId){
   K.render();
   K._closeModal && K._closeModal();
   toast('✅ Message modifié', 'ok');
+  // v1.1.255 — l'édition suit le mode E2E du message : si E2E est ON on
+  // chiffre le nouveau texte (comme _sendMessage), sinon on retombe sur
+  // new_text (E2E OFF assumé). Plus de texte clair silencieux sous E2E.
+  let editCipher = null;
+  if(K._e2eOn()){
+    try{
+      await K._ensureSession(conv);
+      if(window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(conv.id)){
+        const ct = await ApexCrypto.encryptForConv(conv.id, newText);
+        if(ct) editCipher = K._E2E_TAG + ct;
+      }
+    }catch(e){ _safeCatch('edit-encrypt', e); }
+  }
   if(K.ws && K.ws.readyState === 1){
-    try { K.ws.send(JSON.stringify({ type: 'edit_message', message_id: msgId, new_text: newText, edited_at: m.edited_at })); } catch(_e){_safeCatch('silent',_e)}
+    const wire = editCipher
+      ? { type: 'edit_message', message_id: msgId, ciphertext: editCipher, edited_at: m.edited_at }
+      : { type: 'edit_message', message_id: msgId, new_text: newText, edited_at: m.edited_at };
+    try { K.ws.send(JSON.stringify(wire)); } catch(_e){_safeCatch('silent',_e)}
   }
 };
 

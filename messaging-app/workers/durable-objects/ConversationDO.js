@@ -446,6 +446,68 @@ export class ConversationDO {
         break;
       }
 
+      // v1.1.255 — Édition propagée serveur (parité WhatsApp « modifié »).
+      // Avant : le client envoyait `edit_message` mais le DO tombait dans
+      // `default` (« Type inconnu ») → l'édition ne se persistait NI ne se
+      // propageait aux autres appareils. SÉCU : seul l'AUTEUR édite (garde
+      // sender_id), scope conv_id (pas de message forgé d'une autre conv).
+      case 'edit_message': {
+        // Contenu = ciphertext (E2E ON, taggé E2E1:) OU new_text (E2E OFF, legacy).
+        // Le même champ `ciphertext` de la table stocke l'un ou l'autre selon le
+        // mode de la conversation (cohérent avec le case 'message').
+        const editContent = (msg.ciphertext != null) ? msg.ciphertext : msg.new_text;
+        if (!msg.message_id || editContent == null || editContent === '') {
+          return ws.send(JSON.stringify({ type: 'error', message: 'edit: message_id + contenu requis' }));
+        }
+        if (String(editContent).length > 100000) {
+          return ws.send(JSON.stringify({ type: 'error', message: 'contenu trop grand (max 100KB)' }));
+        }
+        const editedAt = Date.now();
+        await this.env.APEX_CHAT_DB.prepare(
+          'UPDATE messages SET ciphertext=?, edited_at=? WHERE id=? AND conv_id=? AND sender_id=? AND deleted_at IS NULL'
+        ).bind(editContent, editedAt, msg.message_id, session.convId, session.userId).run();
+        // Met aussi à jour un éventuel message encore en attente de flush.
+        const pend = this.pendingMessages.find(m => m.id === msg.message_id && m.sender_id === session.userId);
+        if (pend) { pend.ciphertext = editContent; pend.edited_at = editedAt; }
+        // Broadcast le delta à TOUS (dont l'expéditeur → sync multi-appareils).
+        // On rediffuse les DEUX champs pour que tout client (E2E on/off) applique.
+        this.broadcast({
+          type: 'edit_message',
+          message_id: msg.message_id,
+          ciphertext: (msg.ciphertext != null) ? msg.ciphertext : null,
+          new_text: (msg.ciphertext == null) ? msg.new_text : null,
+          edited_at: editedAt,
+          userId: session.userId,
+          ts: editedAt,
+        });
+        ws.send(JSON.stringify({ type: 'ack', id: msg.message_id, edited_at: editedAt }));
+        break;
+      }
+
+      // v1.1.255 — Suppression pour tous propagée serveur (parité WhatsApp).
+      // SÉCU : seul l'AUTEUR supprime (sender_id), scope conv_id. On efface le
+      // contenu en base (ciphertext=NULL) et on marque deleted_at → tombstone.
+      case 'delete_message': {
+        if (!msg.message_id) {
+          return ws.send(JSON.stringify({ type: 'error', message: 'delete: message_id requis' }));
+        }
+        const deletedAt = Date.now();
+        await this.env.APEX_CHAT_DB.prepare(
+          'UPDATE messages SET deleted_at=?, ciphertext=NULL WHERE id=? AND conv_id=? AND sender_id=?'
+        ).bind(deletedAt, msg.message_id, session.convId, session.userId).run();
+        const pendIdx = this.pendingMessages.findIndex(m => m.id === msg.message_id && m.sender_id === session.userId);
+        if (pendIdx >= 0) { this.pendingMessages[pendIdx].deleted_at = deletedAt; this.pendingMessages[pendIdx].ciphertext = null; }
+        this.broadcast({
+          type: 'delete_message',
+          message_id: msg.message_id,
+          deleted_at: deletedAt,
+          userId: session.userId,
+          ts: deletedAt,
+        });
+        ws.send(JSON.stringify({ type: 'ack', id: msg.message_id, deleted_at: deletedAt }));
+        break;
+      }
+
       case 'ping':
         ws.send(JSON.stringify({ type: 'pong', ts: Date.now() }));
         break;
