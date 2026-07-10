@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-app-ver="v1.2">
+<html lang="fr" data-app-ver="v1.3">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -93,6 +93,7 @@
 
   <div class="tabs">
     <div class="tab on" data-tab="pending">🔔 À autoriser <span id="cnt"></span></div>
+    <div class="tab" data-tab="account">🆕 Compte</div>
     <div class="tab" data-tab="vault">🗝 Coffre</div>
     <div class="tab" data-tab="sign">✍️ Signature</div>
     <div class="tab" data-tab="hist">📜 Historique</div>
@@ -117,6 +118,33 @@
         </select>
         <button class="b-ghost" id="sim-go" style="flex:0 0 auto">Créer</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ONGLET : créer un compte (je prépare tout, tu fais le geste anti-robot) -->
+  <div class="pane" id="pane-account" style="display:none">
+    <div class="card">
+      <div class="sec-t">🆕 Créer un compte</div>
+      <p class="muted">Je génère un mot de passe fort, prépare tout, et j'ouvre la page d'inscription. Le seul geste que toi seul peux faire (le CAPTCHA + le code reçu par SMS/email) reste à toi — c'est voulu par les sites (anti-robot). Tout est stocké chiffré ici.</p>
+      <label>Service (ex. « Google », « Notion »)</label>
+      <input id="ac-service" placeholder="Nom du service">
+      <label>Page d'inscription (optionnel)</label>
+      <input id="ac-url" inputmode="url" placeholder="https://… (laisser vide si tu ne l'as pas)">
+      <label>Email à utiliser (optionnel)</label>
+      <input id="ac-email" inputmode="email" placeholder="ton email pour ce compte">
+      <label>Identifiant / pseudo (optionnel)</label>
+      <input id="ac-user" placeholder="nom d'utilisateur">
+      <label>Mot de passe fort (généré)</label>
+      <div class="row" style="align-items:stretch">
+        <input id="ac-pass" type="text" readonly style="font:13px ui-monospace,Menlo,monospace">
+        <button class="b-ghost" id="ac-regen" style="flex:0 0 auto" title="Régénérer">🎲</button>
+      </div>
+      <button class="b-gold" id="ac-prepare" style="width:100%;margin-top:10px">🔐 Préparer + ouvrir l'inscription</button>
+      <div id="ac-status" class="muted" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <div class="sec-t">📇 Comptes préparés</div>
+      <div id="ac-list"><div class="empty">Aucun compte préparé.</div></div>
     </div>
   </div>
 
@@ -437,6 +465,7 @@
         var pane=$("pane-"+t.dataset.tab); if(pane) pane.style.display="";
         if(t.dataset.tab==="vault") loadVault();
         if(t.dataset.tab==="hist") loadHist();
+        if(t.dataset.tab==="account") loadAccounts();
         if(t.dataset.tab==="sign" && _sigResizeFn) _sigResizeFn(); /* canvas mesuré une fois visible (sinon 0×0) */
       };
     });
@@ -482,6 +511,58 @@
     };
   }
 
+  /* ---------- Créer un compte (générateur + kit pré-rempli, 0 tiers) ---------- */
+  var ACC_KEY="apx_appr_accounts_v1", _accCache=[];
+  function _rand(n){ var m=Math.floor(0xFFFFFFFF/n)*n,x; do{ x=crypto.getRandomValues(new Uint32Array(1))[0]; }while(x>=m); return x%n; }
+  function genPassword(len){
+    len=len||20;
+    var sets=["ABCDEFGHJKLMNPQRSTUVWXYZ","abcdefghijkmnpqrstuvwxyz","23456789","!@#$%^&*-_=+?."];
+    var all=sets.join(""), out=[];
+    sets.forEach(function(s){ out.push(s.charAt(_rand(s.length))); });
+    while(out.length<len) out.push(all.charAt(_rand(all.length)));
+    for(var i=out.length-1;i>0;i--){ var j=_rand(i+1),t=out[i]; out[i]=out[j]; out[j]=t; }
+    return out.join("");
+  }
+  async function copyText(s){
+    try{ if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(s); return true; } }catch(e){}
+    try{ var ta=document.createElement("textarea"); ta.value=s; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); var ok=document.execCommand("copy"); ta.remove(); return ok; }catch(e){ return false; }
+  }
+  async function accArr(){ var b=localStorage.getItem(ACC_KEY); var a= b?await decJSON(b):[]; return Array.isArray(a)?a:[]; }
+  async function accSave(a){ localStorage.setItem(ACC_KEY, await encJSON(a)); }
+  async function loadAccounts(){
+    var a=await accArr(); _accCache=a; var box=$("ac-list");
+    if(!a.length){ box.innerHTML='<div class="empty">Aucun compte préparé.</div>'; return; }
+    box.innerHTML=a.map(function(r,i){
+      var mask=r.pass?(r.pass.slice(0,3)+"•••••"):"—";
+      return '<div class="req"><div class="top"><div class="ico">🆕</div><div style="flex:1"><div class="ttl">'+esc(r.service)+'</div>'+
+        '<div class="muted">'+esc(r.email||r.user||"")+' · '+esc(mask)+'</div></div></div>'+
+        '<div class="btns" style="flex-wrap:wrap">'+
+        (r.email?'<button class="b-ghost" data-acc="email:'+i+'" style="min-height:40px">📋 Email</button>':'')+
+        '<button class="b-ghost" data-acc="pass:'+i+'" style="min-height:40px">📋 Mot de passe</button>'+
+        (r.url?'<button class="b-ghost" data-acc="open:'+i+'" style="min-height:40px">🌐 Ouvrir</button>':'')+
+        '<button class="b-no" data-acc="del:'+i+'" style="min-height:40px;max-width:60px">🗑</button>'+
+        '</div></div>';
+    }).join("");
+  }
+  function initAccount(){
+    var pf=$("ac-pass"); if(pf && !pf.value) pf.value=genPassword(20);
+    $("ac-regen") && ($("ac-regen").onclick=function(){ $("ac-pass").value=genPassword(20); });
+    $("ac-prepare") && ($("ac-prepare").onclick=async function(){
+      var service=$("ac-service").value.trim(); if(!service){ toast("Nom du service requis"); return; }
+      if(!$("ac-pass").value) $("ac-pass").value=genPassword(20);
+      var url=$("ac-url").value.trim();
+      var rec={ service:service, url:url, email:$("ac-email").value.trim(), user:$("ac-user").value.trim(), pass:$("ac-pass").value, ts:Date.now() };
+      var a=await accArr(); a.push(rec); await accSave(a);
+      await addHist({status:"approved",ts:Date.now(),proof:"",type:"custom",title:"Compte préparé : "+service});
+      loadAccounts();
+      var opened=false;
+      if(/^https?:\/\//i.test(url)){ try{ window.open(url,"_blank","noopener"); opened=true; }catch(e){} }
+      $("ac-status").textContent="✅ Préparé + stocké chiffré. "+(opened?"Page d'inscription ouverte — colle les infos (boutons « Comptes préparés »).":"Ajoute la page d'inscription pour l'ouvrir en 1 tap.");
+      $("ac-service").value="";$("ac-url").value="";$("ac-email").value="";$("ac-user").value="";$("ac-pass").value=genPassword(20);
+      toast("🆕 Compte préparé");
+    });
+  }
+
   /* ---------- PWA : installable iOS / Android / desktop ---------- */
   var _deferredPrompt=null;
   function isStandalone(){ return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone===true; }
@@ -505,6 +586,14 @@
     if(b){ decide(b.dataset.id, b.dataset.act==="ok"); return; }
     var vd=e.target.closest("[data-vdel]");
     if(vd){ var a=await vaultArr(); a.splice(+vd.dataset.vdel,1); await vaultSave(a); loadVault(); return; }
+    var ac=e.target.closest("[data-acc]");
+    if(ac){ var pp=ac.dataset.acc.split(":"), act=pp[0], idx=+pp[1], r=_accCache[idx]; if(!r) return;
+      if(act==="email"){ await copyText(r.email||""); toast("Email copié"); }
+      else if(act==="pass"){ await copyText(r.pass||""); toast("Mot de passe copié"); }
+      else if(act==="open"){ try{ window.open(r.url,"_blank","noopener"); }catch(e){} }
+      else if(act==="del"){ var aa=await accArr(); aa.splice(idx,1); await accSave(aa); loadAccounts(); }
+      return;
+    }
   });
   document.addEventListener("DOMContentLoaded", function(){
     $("v-add") && ($("v-add").onclick=async function(){
@@ -534,6 +623,7 @@
       toast("Menu du navigateur → « Installer l'application »",4500);
     });
     $("install-x") && ($("install-x").onclick=function(){ localStorage.setItem("apx_appr_install_dismissed","1"); var b=$("install-bar"); if(b) b.style.display="none"; });
+    initAccount();
     initPwa();
     initLock();
   });
