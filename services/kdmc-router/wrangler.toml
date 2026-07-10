@@ -25,6 +25,7 @@ routes = [
   { pattern = "cmcteams-light.kd-mc.com", custom_domain = true },
   { pattern = "bot.kd-mc.com", custom_domain = true },
   { pattern = "beatbot.kd-mc.com", custom_domain = true },
+  { pattern = "autorisations.kd-mc.com", custom_domain = true },
 ]
 
 # Registre fiches clients — KV à id FIGÉ (provisionné le 2026-06-09) pour un déploiement
