@@ -12,7 +12,12 @@ import { store } from '../../core/store.js';
 import { parseSlashCommand, helpText, SLASH_COMMANDS } from '../../services/admin/slash-commands.js';
 import { pickBestArtifact, setCanvasArtifact } from '../../services/ai/artifacts.js';
 import { claudeBridge } from '../../services/ai/claude-bridge.js';
-import { getReasoningEffort, setReasoningEffort } from '../../services/ai/reasoning-mode.js';
+import {
+  getReasoningEffort,
+  setReasoningEffort,
+  isNativeThinkingEnabled,
+  setNativeThinkingEnabled,
+} from '../../services/ai/reasoning-mode.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
@@ -131,6 +136,29 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
       setReasoningEffort(target);
       const labels = { auto: 'Auto', low: 'Direct', medium: 'Moyen', high: 'Élevé (montre la réflexion)' } as const;
       toast.success(`🧠 Effort : ${labels[target]}`);
+      return true;
+    }
+    case 'thinking': {
+      /* v13.4.355 : bascule le raisonnement NATIF Anthropic (extended thinking).
+       * OPT-IN — n'agit qu'en combinaison avec /effort élevé + provider Anthropic. */
+      const a = args.trim().toLowerCase();
+      if (a === 'on' || a === '1' || a === 'oui') {
+        setNativeThinkingEnabled(true);
+        if (getReasoningEffort() !== 'high') setReasoningEffort('high');
+        toast.success('🧠 Raisonnement natif Anthropic : ACTIVÉ (effort élevé)');
+      } else if (a === 'off' || a === '0' || a === 'non') {
+        setNativeThinkingEnabled(false);
+        toast.info('🧠 Raisonnement natif Anthropic : désactivé');
+      } else {
+        const st = isNativeThinkingEnabled() ? 'ACTIVÉ' : 'désactivé';
+        pushAssistantMessage(
+          rootEl,
+          `🧠 Raisonnement natif Anthropic : **${st}**.\n\nUsage : \`/thinking on|off\`. ` +
+            'Quand activé, avec un effort « élevé » (`/effort élevé`) et le provider Anthropic, ' +
+            'Apex expose sa VRAIE réflexion (extended thinking) dans un bloc repliable 🧠. ' +
+            'À tester sur ton iPhone.',
+        );
+      }
       return true;
     }
     case 'export':

@@ -21,11 +21,11 @@ import type { DisplayMessage } from './index.js';
 /* v13.4.352 — Affichage de la réflexion (parité "thinking display" flagship).
  * Sépare un bloc <thinking>…</thinking> de la réponse et le rend repliable.
  * S'applique UNIQUEMENT aux messages assistant ; additif (aucune surgery du stream). */
-function renderThinkingBlock(thinking: string, streaming: boolean): string {
+function renderThinkingBlock(thinking: string, streaming: boolean, label = '💭 Réflexion'): string {
   if (!thinking) return '';
   return (
     `<details class="ax-thinking"${streaming ? ' open' : ''}>` +
-    `<summary class="ax-thinking-sum">💭 Réflexion</summary>` +
+    `<summary class="ax-thinking-sum">${label}</summary>` +
     `<div class="ax-thinking-body">${escapeHtml(thinking)}</div></details>`
   );
 }
@@ -37,7 +37,11 @@ function renderAssistantBody(m: DisplayMessage): string {
   }
   const { thinking, answer } = extractThinking(m.text);
   const md = m.streaming ? renderMarkdownLight(answer) : renderMarkdownEnriched(answer);
-  return renderThinkingBlock(thinking, !!m.streaming) + md;
+  /* v13.4.355 : réflexion NATIVE Anthropic (extended thinking) — bloc dédié distinct
+   * du bloc prompt-based (extractThinking). Les deux coexistent : natif si présent,
+   * prompt-based sinon. Additif, aucune surgery du stream. */
+  const nativeBlock = renderThinkingBlock(m.nativeThinking ?? '', !!m.streaming, '🧠 Raisonnement (natif)');
+  return nativeBlock + renderThinkingBlock(thinking, !!m.streaming) + md;
 }
 
 /** Référence STABLE vers la conversation du module chat (fournie au boot). */

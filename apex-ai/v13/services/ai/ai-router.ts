@@ -47,6 +47,11 @@ import { tokensDashboard } from '../observability/tokens-dashboard.js';
 import { redactMessageContent, redactPII } from '../vault/pii-redaction.js';
 
 import { chatFallback } from './chat-fallback.js';
+import {
+  getReasoningEffort,
+  isNativeThinkingEnabled,
+  NATIVE_THINKING_BUDGET_TOKENS,
+} from './reasoning-mode.js';
 
 
 export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral' | 'cerebras' | 'openclaw';
@@ -62,12 +67,15 @@ export interface ChatMessage {
  * - `type: 'tool_use_start'`: début bloc tool_use Anthropic (UI affiche pill 🔧 [name])
  * - `type: 'tool_use_done'`: tools terminés (UI résume "✅ N opérations")
  *   `count` = nombre d'outils exécutés dans cette itération
+ * - `type: 'thinking'`: delta de réflexion NATIVE Anthropic (extended thinking).
+ *   Streamé SÉPARÉMENT du texte de réponse — l'UI l'affiche dans un bloc repliable
+ *   et ne l'ajoute PAS au contenu final. Émis seulement si le flag opt-in est ON.
  */
 export interface StreamChunk {
   text: string;
   done: boolean;
   provider: Provider;
-  type?: 'text' | 'tool_use_start' | 'tool_use_done';
+  type?: 'text' | 'tool_use_start' | 'tool_use_done' | 'thinking';
   toolName?: string;
   toolCount?: number;
 }
@@ -78,6 +86,7 @@ export interface StreamChunk {
  */
 type SSEEvent =
   | { kind: 'text'; text: string }
+  | { kind: 'thinking'; text: string }
   | { kind: 'tool_use_start'; index: number; id: string; name: string }
   | { kind: 'tool_use_delta'; index: number; partial_json: string }
   | { kind: 'content_block_stop'; index: number }
@@ -204,6 +213,22 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
         const tools = _apexTools.toAnthropicFormat(tier);
         if (tools.length > 0) body['tools'] = tools;
       }
+      /* v13.4.355 (Kevin « Go » — raisonnement natif Anthropic) : extended thinking
+       * NATIF, OPT-IN, OFF par défaut. Activé uniquement si flag `apex_v13_native_thinking`
+       * ON ET effort='high' → l'API renvoie des blocs thinking_delta streamés à part.
+       * Contraintes Anthropic : max_tokens DOIT être > budget_tokens ; temperature/top_p/
+       * top_k doivent rester par défaut (on ne les met jamais dans body → OK). On garantit
+       * max_tokens ≥ budget + 1024 (le mode économie peut avoir réduit max_tokens). */
+      try {
+        if (isNativeThinkingEnabled() && getReasoningEffort() === 'high') {
+          const budget = NATIVE_THINKING_BUDGET_TOKENS;
+          const curMax = typeof body['max_tokens'] === 'number' ? (body['max_tokens'] as number) : defaultMaxTokens;
+          if (curMax <= budget) body['max_tokens'] = budget + 1024;
+          body['thinking'] = { type: 'enabled', budget_tokens: budget };
+        }
+      } catch {
+        /* flag illisible → pas de thinking natif (fail-safe, zéro régression) */
+      }
       return body;
     },
     parseSSE: (data) => {
@@ -214,6 +239,7 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
           delta?: {
             type?: string;
             text?: string;
+            thinking?: string;
             partial_json?: string;
             stop_reason?: string;
           };
@@ -221,6 +247,7 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
             type?: string;
             id?: string;
             name?: string;
+            thinking?: string;
           };
         };
         const t = j.type;
@@ -234,13 +261,26 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
               name: cb.name,
             };
           }
-          /* content_block_start text → no event (la suite arrive via content_block_delta) */
+          /* v13.4.355 : bloc de réflexion NATIVE — le texte initial (souvent vide) arrive ici,
+           * la suite via content_block_delta(thinking_delta). Émet un event thinking si non-vide. */
+          if (cb.type === 'thinking' && typeof cb.thinking === 'string' && cb.thinking.length > 0) {
+            return { kind: 'thinking', text: cb.thinking };
+          }
+          /* content_block_start text/thinking-vide → no event (la suite arrive via content_block_delta) */
           return null;
         }
         if (t === 'content_block_delta' && j.delta) {
           const d = j.delta;
           if (d.type === 'text_delta' && typeof d.text === 'string') {
             return { kind: 'text', text: d.text };
+          }
+          /* v13.4.355 : delta de réflexion NATIVE Anthropic (streamé à part du texte). */
+          if (d.type === 'thinking_delta' && typeof d.thinking === 'string') {
+            return { kind: 'thinking', text: d.thinking };
+          }
+          /* signature_delta (signature crypto du bloc thinking) : ignoré côté UI. */
+          if (d.type === 'signature_delta') {
+            return null;
           }
           if (d.type === 'input_json_delta' && typeof d.partial_json === 'string') {
             return {
@@ -1835,6 +1875,11 @@ class AIRouter {
           case 'text':
             assistantText += ev.text;
             onChunk({ text: ev.text, done: false, provider, type: 'text' });
+            break;
+          case 'thinking':
+            /* v13.4.355 : réflexion NATIVE — NE PAS ajouter à assistantText (ce n'est pas
+             * la réponse). L'UI l'affiche dans un bloc repliable via type:'thinking'. */
+            onChunk({ text: ev.text, done: false, provider, type: 'thinking' });
             break;
           case 'tool_use_start':
             toolAccumulators.set(ev.index, {
