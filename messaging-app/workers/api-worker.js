@@ -39,6 +39,7 @@ const ADMIN_KEVIN_ALIASES = [
 ];
 
 import { corsHeaders, makeJson } from './lib/cors.js';
+import { giphySearchUrl, giphyTrendingUrl, mapGiphyResults } from '../lib/gif.js';
 
 const CORS_HEADERS = {
   ...corsHeaders('GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization, X-Apex-Token, x-file-name'),
@@ -5399,6 +5400,30 @@ async function handleSetTurnConfig(request, env) {
 }
 
 // ============================================================================
+//  GIF (Giphy) — proxy : la clé reste un secret worker (env.GIPHY_KEY), jamais
+//  exposée au navigateur. Auth requise (anti open-proxy = protège la clé/quota
+//  de Kevin). Fail-open : sans clé → { disabled:true } ; toute erreur réseau →
+//  { results:[] } en 200 (le sélecteur GIF se dégrade proprement, jamais un mur).
+// ============================================================================
+async function handleGifSearch(request, env) {
+  const user = await getAuthUser(request, env);
+  if (!user) return err('Non authentifié', 401, 'unauthorized');
+  const key = env.GIPHY_KEY;
+  if (!key) return json({ results: [], disabled: true, reason: 'no_key' });
+  let q = '';
+  try { q = new URL(request.url).searchParams.get('q') || ''; } catch (_) {}
+  const url = q.trim() ? giphySearchUrl(q, key) : giphyTrendingUrl(key);
+  try {
+    const r = await fetch(url, { headers: { accept: 'application/json' } });
+    if (!r.ok) return json({ results: [], disabled: false, error: 'giphy_http_' + r.status });
+    const data = await r.json();
+    return json({ results: mapGiphyResults(data), disabled: false });
+  } catch (e) {
+    return json({ results: [], disabled: false, error: 'giphy_fetch_failed', detail: String((e && e.message) || e) });
+  }
+}
+
+// ============================================================================
 //  Main fetch handler
 // ============================================================================
 
@@ -5436,6 +5461,7 @@ export default {
 
       // Médias R2 (photos/vidéos/fichiers tous formats) — v1.1.186
       if (path === '/api/media' && method === 'POST') return await handleMediaUpload(request, env);
+      if (path === '/api/gif' && method === 'GET') return await handleGifSearch(request, env);
       const mediaMatch = path.match(/^\/api\/media\/([a-zA-Z0-9_-]+)$/);
       if (mediaMatch && method === 'GET') return await handleMediaGet(mediaMatch[1], request, env);
 

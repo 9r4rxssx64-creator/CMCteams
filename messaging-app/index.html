@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.265",
+  "softwareVersion": "v1.1.266",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -86,6 +86,7 @@
 <script type="module" src="./lib/message-search.js"></script>
 <script type="module" src="./lib/media-gallery.js"></script>
 <script type="module" src="./lib/privacy-reciprocity.js"></script>
+<script type="module" src="./lib/gif.js"></script>
 <script type="module" src="./lib/visio-mesh.js"></script>
 <script src="./crypto.js" defer></script>
 <!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
@@ -243,6 +244,16 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .find-bar .topbar-btn{width:38px;height:38px;min-width:38px;min-height:38px;flex-shrink:0}
 .msg.find-hit{outline:2px solid rgba(232,184,48,.45);outline-offset:1px}
 .msg.find-active{outline:2px solid var(--ax-gold);background:rgba(232,184,48,.22)!important}
+#chat-gif-btn{font-size:.66em;font-weight:800;letter-spacing:.5px}
+#gif-picker{background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:12px;margin-top:6px;padding:8px}
+.gif-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.gif-head #gif-q{flex:1;min-width:0;background:var(--ax-bg-3,var(--ax-bg));border:1px solid var(--ax-border);
+  border-radius:18px;padding:8px 12px;color:var(--ax-text);font-size:16px}
+.gif-powered{font-size:.62em;font-weight:800;letter-spacing:1px;color:var(--ax-text-3);flex-shrink:0}
+.gif-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-height:38vh;overflow-y:auto}
+.gif-cell{padding:0;border:none;background:var(--ax-bg);border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1}
+.gif-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.gif-msg{grid-column:1/-1;text-align:center;color:var(--ax-text-2);padding:22px 10px;font-size:.9em}
 .gallery-tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:10px;scrollbar-width:none}
 .gallery-tabs::-webkit-scrollbar{display:none}
 .gallery-tab{flex-shrink:0;background:transparent;border:1px solid var(--ax-border);border-radius:16px;
@@ -433,7 +444,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.265';
+const __APEX_CHAT_VERSION__ = 'v1.1.266';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -618,7 +629,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.265</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.266</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -632,7 +643,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.265</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.266</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7523,6 +7534,7 @@ function renderChat(app){
         <button class="chat-attach" id="chat-mic-btn" onclick="K._toggleVoiceRecord()" aria-label="Message vocal" title="Enregistrer un message vocal">🎙️</button>
         <button class="chat-attach" onclick="document.getElementById('chat-media-input').click()" aria-label="Photo ou vidéo" title="Photo / vidéo (tous formats, jusqu'à 100 Mo)">📷</button>
         <button class="chat-attach" onclick="document.getElementById('chat-file-input').click()" aria-label="Joindre un fichier" title="Joindre un fichier (tous formats)">📎</button>
+        <button class="chat-attach" id="chat-gif-btn" onclick="K._toggleGifPicker()" aria-label="GIF" title="Envoyer un GIF">GIF</button>
         <button class="chat-attach" onclick="K._openScheduleMenu()" aria-label="Programmer un message" title="Programmer pour plus tard">⏰</button>
         <button class="chat-attach" id="chat-ephem-btn" onclick="K._openEphemeralMenu()" aria-label="Message éphémère" title="Message qui s'autodétruit">💣</button>
         <button class="chat-attach" onclick="K._openPollComposer()" aria-label="Créer sondage" title="Sondage / vote">📊</button>
@@ -7530,6 +7542,7 @@ function renderChat(app){
         <button class="chat-attach" onclick="K._openContactCardComposer()" aria-label="Partager un contact" title="Carte de contact">📇</button>
       </div>
       <div id="emoji-picker" style="display:none"></div>
+      <div id="gif-picker" style="display:none"></div>
       <input id="chat-media-input" type="file" accept="image/*,video/*" capture="environment" style="display:none" onchange="K._uploadMedia(this.files[0]);this.value=''">
       <input id="chat-file-input" type="file" style="display:none" onchange="K._uploadMedia(this.files[0]);this.value=''">
       <input id="chat-img-input" type="file" accept="image/*" style="display:none" onchange="K._uploadImage(this.files[0])">
@@ -10936,8 +10949,85 @@ K._EMOJI_CATS = [
 K._EMOJI_KW = { '😂':'rire lol mdr', '❤️':'coeur amour', '👍':'ok pouce bien', '🔥':'feu chaud top', '😍':'amour yeux', '🙏':'merci priere svp', '😭':'pleure triste', '🎉':'fete bravo', '😊':'sourire content', '🥰':'amour calin', '😘':'bisou', '👏':'bravo applaudir', '💪':'force muscle', '🤔':'reflechir', '😅':'gene rire', '🍕':'pizza', '☕':'cafe', '⚽':'foot ballon', '✈️':'avion voyage', '🚗':'voiture' };
 K._toggleEmojiPicker = function(){
   const el = document.getElementById('emoji-picker'); if(!el) return;
-  if(el.style.display === 'none'){ el.style.display = 'block'; K._renderEmojiPicker('recent'); }
+  if(el.style.display === 'none'){ el.style.display = 'block'; K._renderEmojiPicker('recent'); const g = document.getElementById('gif-picker'); if(g) g.style.display = 'none'; }
   else { el.style.display = 'none'; }
+};
+
+// ============================================================================
+//  v1.1.266 — Sélecteur de GIF (Giphy via worker-proxy, clé côté serveur).
+//  Fail-open : si la clé n'est pas configurée → panneau désactivé avec le lien
+//  pour l'obtenir gratuitement. GIF choisi → envoyé via le pipeline média
+//  existant (donc chiffré si le chiffrement média est actif). Parité WhatsApp.
+// ============================================================================
+K._toggleGifPicker = function(){
+  const el = document.getElementById('gif-picker'); if(!el) return;
+  const emo = document.getElementById('emoji-picker'); if(emo) emo.style.display = 'none';
+  if(el.style.display === 'none'){
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div class="gif-head">
+        <input id="gif-q" type="search" inputmode="search" autocomplete="off" placeholder="Rechercher un GIF…"
+               oninput="K._gifSearchInput(this.value)">
+        <span class="gif-powered">GIPHY</span>
+      </div>
+      <div id="gif-grid" class="gif-grid"></div>`;
+    K._loadGifs('');
+    setTimeout(() => { const i = document.getElementById('gif-q'); if(i) i.focus(); }, 30);
+  } else {
+    el.style.display = 'none';
+  }
+};
+
+K._gifSearchInput = function(val){
+  if(K._gifDebounce) clearTimeout(K._gifDebounce);
+  K._gifDebounce = setTimeout(() => K._loadGifs(val || ''), 300);
+};
+
+K._loadGifs = async function(q){
+  const grid = document.getElementById('gif-grid');
+  if(!grid) return;
+  grid.innerHTML = `<div class="gif-msg">⏳ Chargement…</div>`;
+  try{
+    const url = API_BASE + '/api/gif' + (q && q.trim() ? '?q=' + encodeURIComponent(q.trim()) : '');
+    const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + K.token } });
+    const data = await r.json().catch(() => ({}));
+    if(data.disabled){
+      grid.innerHTML = `<div class="gif-msg" style="line-height:1.5">
+        🎬 Les GIF ne sont pas encore activés.<br>
+        <span style="font-size:.85em;color:var(--ax-text-3)">Kevin doit ajouter une clé Giphy gratuite (une fois).</span>
+      </div>`;
+      return;
+    }
+    const results = (window.ApexGif && Array.isArray(data.results)) ? data.results : [];
+    if(results.length === 0){
+      grid.innerHTML = `<div class="gif-msg">🔭 Aucun GIF pour « ${esc(q || '')} »</div>`;
+      return;
+    }
+    grid.innerHTML = results.map(g =>
+      `<button class="gif-cell" onclick="K._pickGif('${esc(g.full)}','${esc((g.title||'GIF').replace(/'/g,''))}')" title="${esc(g.title||'GIF')}">
+        <img src="${esc(g.preview)}" alt="${esc(g.title||'GIF')}" loading="lazy">
+      </button>`).join('');
+  }catch(e){
+    grid.innerHTML = `<div class="gif-msg">⚠️ GIF indisponible (réseau). Réessaie.</div>`;
+    console.error('[gif] load failed', e && e.message);
+  }
+};
+
+K._pickGif = async function(fullUrl, title){
+  const picker = document.getElementById('gif-picker');
+  if(picker) picker.style.display = 'none';
+  if(!fullUrl){ return; }
+  toast('📤 Envoi du GIF…', 'info', 2500);
+  try{
+    const r = await fetch(fullUrl);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const blob = await r.blob();
+    const file = new File([blob], (String(title || 'gif').replace(/[^\w-]+/g,'_').slice(0,40) || 'gif') + '.gif', { type: 'image/gif' });
+    await K._uploadMedia(file); // pipeline média existant (chiffré si média E2E actif)
+  }catch(e){
+    toast('GIF : échec envoi — ' + ((e && e.message) || 'erreur'), 'err', 4000);
+    console.error('[gif] send failed', e && e.message);
+  }
 };
 K._emojiRecents = function(){ try{ return lg('emoji_recent', []); }catch(_){ return []; } };
 K._renderEmojiPicker = function(activeCat, query){

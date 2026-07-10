@@ -215,6 +215,10 @@ jobs:
           push_if_set "OPEN_AI_API_KEY" "${{ secrets.OPEN_AI_API_KEY }}"
           push_if_set "PERPLEXITI_API_KEY" "${{ secrets.PERPLEXITI_API_KEY }}"
 
+          # === GIF (Giphy) — clé gratuite, optionnelle. Sans elle, /api/gif
+          #     répond { disabled:true } et le sélecteur GIF se désactive proprement.
+          push_if_set "GIPHY_KEY" "${{ secrets.GIPHY_KEY }}"
+
           # === SMS Vonage ===
           push_if_set "VONAGE_API_KEY" "${{ secrets.VONAGE_API_KEY }}"
           push_if_set "VONAGE_API_SECRET" "${{ secrets.VONAGE_API_SECRET }}"
