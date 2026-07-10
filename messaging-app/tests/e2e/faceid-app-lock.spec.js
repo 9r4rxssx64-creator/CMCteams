@@ -7,6 +7,12 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Apex Chat — Face ID / verrou app (navigateur réel + authentificateur virtuel)', () => {
+  // L'authentificateur VIRTUEL passe par le protocole CDP → Chromium uniquement
+  // (WebKit/Firefox n'exposent pas newCDPSession). Sur les autres moteurs, la
+  // biométrie réelle n'est pas simulable en CI → on saute ce test spécifique.
+  test.skip(({ browserName }) => browserName !== 'chromium',
+    'Authentificateur virtuel WebAuthn = CDP (Chromium only)');
+
   test('supporté → enrôle → vérifie (round-trip WebAuthn plateforme)', async ({ page }) => {
     // Authentificateur biométrique VIRTUEL (Face ID/Touch ID simulé).
     const client = await page.context().newCDPSession(page);
