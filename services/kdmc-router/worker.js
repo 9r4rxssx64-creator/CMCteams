@@ -29,6 +29,7 @@ const ROUTES = {
   'cmcteams-light.kd-mc.com': '/CMCteams/tools/departs', // « CMCteams light » (Kevin 2026-07-01) — alias nommé de la page Départs (departs.kd-mc.com reste actif)
   'bot.kd-mc.com': '/CMCteams/tools/crypto-bot-dashboard', // Tableau de bord crypto-bot (Kevin 2026-07-03) — admin-gated via /__bot/*
   'beatbot.kd-mc.com': '/CMCteams/tools/poolrobot', // PoolPilot — app robot piscine Beatbot (Kevin 2026-07-05)
+  'autorisations.kd-mc.com': '/CMCteams/tools/approvals', // Coffre d'autorisations — admin only (Kevin 2026-07-10)
 };
 
 export default {
@@ -56,6 +57,14 @@ export default {
     if (host === 'beatbot.kd-mc.com' && env && env.KDMC_ADMIN_PIN_SHA256) {
       const meB = await adminSession(request, env);
       if (!meB) return beatbotLock();
+    }
+
+    // autorisations.kd-mc.com = COFFRE D'AUTORISATIONS — RÉSERVÉ ADMIN (Kevin).
+    // Session admin (Face ID/code, même grant que /__admin) requise pour VOIR l'app.
+    // Fail-open si le PIN admin n'est pas déployé (anti-lockout au rollout — leçons #99/#100).
+    if (host === 'autorisations.kd-mc.com' && env && env.KDMC_ADMIN_PIN_SHA256) {
+      const meA = await adminSession(request, env);
+      if (!meA) return approvalsLock();
     }
 
     let p = url.pathname;
@@ -873,6 +882,24 @@ function beatbotLock() {
   + 'button{width:100%;margin-top:12px;background:linear-gradient(135deg,#39c2ff,#0e88c9);color:#052034;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700}'
   + '.e{color:#f2b632;font-size:12.5px;margin-top:10px;min-height:16px}a{color:#39c2ff}</style></head><body>'
   + '<div class="c"><div class="lg">🔒🌊</div><h1>PoolPilot — espace privé</h1><p>Réservé à l\'administrateur. Déverrouille avec ton code (Face ID te reconnaît ensuite automatiquement).</p>'
+  + '<input id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="12">'
+  + '<button id="go">Déverrouiller</button><div class="e" id="err"></div>'
+  + '<p style="margin-top:18px;font-size:11.5px">Déjà connecté sur <a href="https://kd-mc.com">kd-mc.com</a> ? Recharge cette page.</p></div>'
+  + '<script>var b=document.getElementById("go"),pin=document.getElementById("pin"),err=document.getElementById("err");'
+  + 'function sub(){var c=(pin.value||"").trim();if(!c){err.textContent="Entre ton code.";return;}b.disabled=true;err.textContent="Vérification…";'
+  + 'fetch("/__admin/login",{method:"POST",headers:{"content-type":"application/json"},credentials:"include",body:JSON.stringify({code:c})}).then(function(r){return r.json();}).then(function(j){'
+  + 'if(j.ok){location.reload();}else{b.disabled=false;err.textContent=j.reason==="rate_limited"?("Trop d\'essais, attends "+Math.ceil((j.wait||0)/1000)+"s"):(j.reason==="code_invalide"?"Code incorrect.":"Erreur : "+(j.reason||"?"));}}).catch(function(e){b.disabled=false;err.textContent="Réseau : "+e;});}'
+  + 'b.onclick=sub;pin.addEventListener("keydown",function(e){if(e.key==="Enter")sub();});pin.focus();</script></body></html>';
+  return new Response(html, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' } });
+}
+function approvalsLock() {
+  const html = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0f0a"><title>Coffre d\'autorisations — privé</title>'
+  + '<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#0b0f0a,#05070a);color:#f2efe0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px}'
+  + '.c{width:100%;max-width:340px;text-align:center}.lg{font-size:44px}h1{font-size:19px;margin:10px 0 4px}p{color:#a9b39a;font-size:13px;margin:0 0 18px}'
+  + 'input{width:100%;background:#0b1108;border:1px solid #2a331f;color:#f2efe0;border-radius:12px;padding:14px;font-size:20px;text-align:center;letter-spacing:6px}'
+  + 'button{width:100%;margin-top:12px;background:linear-gradient(135deg,#e8c766,#c9a94a);color:#0b0f0a;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700}'
+  + '.e{color:#e0a83a;font-size:12.5px;margin-top:10px;min-height:16px}a{color:#e8c766}</style></head><body>'
+  + '<div class="c"><div class="lg">🔐🆔</div><h1>Coffre d\'autorisations — espace privé</h1><p>Réservé à l\'administrateur. Déverrouille avec ton code (Face ID te reconnaît ensuite automatiquement).</p>'
   + '<input id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="12">'
   + '<button id="go">Déverrouiller</button><div class="e" id="err"></div>'
   + '<p style="margin-top:18px;font-size:11.5px">Déjà connecté sur <a href="https://kd-mc.com">kd-mc.com</a> ? Recharge cette page.</p></div>'
