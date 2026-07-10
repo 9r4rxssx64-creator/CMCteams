@@ -226,6 +226,41 @@ export async function decryptForConv(convId, ciphertext) {
 }
 
 // ----------------------------------------------------------------------------
+//  Chiffrement des OCTETS d'un média (photo/fichier/vocal) — v1.1.256
+//  Même clé de session AES-GCM que les messages, mais sur du binaire : les
+//  octets chiffrés (iv‖ct) sont uploadés dans R2 → le serveur/R2 ne voit
+//  jamais le contenu réel (avant : bytes en clair). IV 12 octets aléatoire.
+// ----------------------------------------------------------------------------
+
+export async function encryptBytes(convId, arrayBuffer) {
+  const aesKey = sessionCache.get(convId);
+  if (!aesKey) throw new Error('Pas de session pour cette conversation');
+  const iv = randomBytes(12);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    aesKey,
+    arrayBuffer,
+  );
+  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(ciphertext), iv.length);
+  return combined.buffer;
+}
+
+export async function decryptBytes(convId, arrayBuffer) {
+  const aesKey = sessionCache.get(convId);
+  if (!aesKey) throw new Error('Pas de session pour cette conversation');
+  const combined = new Uint8Array(arrayBuffer);
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+  return crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    aesKey,
+    ciphertext,
+  );
+}
+
+// ----------------------------------------------------------------------------
 //  Fingerprint (safety number — vérification visuelle)
 // ----------------------------------------------------------------------------
 
@@ -294,6 +329,8 @@ if (typeof window !== 'undefined') {
     getSessionKey,
     encryptForConv,
     decryptForConv,
+    encryptBytes,
+    decryptBytes,
     encryptMessage,
     decryptMessage,
     wrapWithPin,

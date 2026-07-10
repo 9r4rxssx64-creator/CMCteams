@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.255",
+  "softwareVersion": "v1.1.256",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.255';
+const __APEX_CHAT_VERSION__ = 'v1.1.256';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.255</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.256</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.255</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.256</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -5281,6 +5281,15 @@ K._e2eOn = function(){
 // le serveur) → le destinataire sait qu'un payload est chiffré, sans changer le
 // worker ni la base. Payload non-taggé = texte clair (transit). 100% rétro-compat.
 K._E2E_TAG = 'E2E1:';
+// v1.1.256 — Chiffrement des OCTETS média (bytes dans R2). Le marqueur APXMEDIA
+// est déjà chiffré (URL/légende) mais les bytes du fichier étaient uploadés EN
+// CLAIR. Ce flag (OFF par défaut) active le chiffrement des bytes à l'upload +
+// le déchiffrement au rendu. OFF = médias inchangés (zéro régression) ; à passer
+// ON après validation iPhone réelle (envoi + réception photo entre 2 comptes).
+K._mediaE2eOn = function(){
+  try{ if(localStorage.getItem('apex_chat_media_e2e') === '1') return K._e2eOn(); }catch(_){}
+  return false;
+};
 // Détecte un texte qui est en réalité du ciphertext base64 (anciens messages
 // chiffrés non déchiffrables après désync des clés) → on les masque proprement.
 K._looksCiphertext = function(t){
@@ -7220,7 +7229,7 @@ function renderChat(app){
       </div>
     </div>
   `;
-  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();K._applyConvBackground&&K._applyConvBackground();}, 50);
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();K._applyConvBackground&&K._applyConvBackground();K._hydrateEncMedia&&K._hydrateEncMedia();}, 50);
   // v1.1.27 : Smart Reply chips si dernier message reçu
   try {
     const msgs = K.messages[K.viewData?.id] || [];
@@ -7739,7 +7748,7 @@ async function _handleWsMessage(data, convId){
         const hloc = K._parseLocationMarker(txt);   // v1.1.246 : position dans l'historique
         K.messages[convId].push({
           id: sm.id, from: sm.sender_id, text: (hmedia || hloc) ? (hmedia ? hmedia.text : '') : txt,
-          ...(hmedia ? { media_url: hmedia.media_url, media_type: hmedia.media_type, media_name: hmedia.media_name, media_size: hmedia.media_size } : {}),
+          ...(hmedia ? { media_url: hmedia.media_url, media_type: hmedia.media_type, media_name: hmedia.media_name, media_size: hmedia.media_size, media_enc: hmedia.media_enc } : {}),
           ...(hloc ? { location: hloc } : {}),
           ts: sm.ts || Date.now(), mime: sm.mime || 'text/plain',
           reply_to: replyTo || undefined,
@@ -7788,7 +7797,7 @@ async function _handleWsMessage(data, convId){
         id: data.id || 'm_' + Date.now(),
         from: data.sender_id,
         text: (lmedia || lloc) ? (lmedia ? lmedia.text : '') : decryptedText,
-        ...(lmedia ? { media_url: lmedia.media_url, media_type: lmedia.media_type, media_name: lmedia.media_name, media_size: lmedia.media_size } : {}),
+        ...(lmedia ? { media_url: lmedia.media_url, media_type: lmedia.media_type, media_name: lmedia.media_name, media_size: lmedia.media_size, media_enc: lmedia.media_enc } : {}),
         ...(lloc ? { location: lloc } : {}),
         ts: data.ts || Date.now(),
         encrypted: !!data.ciphertext
@@ -7916,7 +7925,7 @@ async function _handleWsMessage(data, convId){
       break;
     }
     case 'edit_message': {
-      // v1.1.48 — Peer a édité un message. v1.1.255 : supporte l'édition E2E
+      // v1.1.48 — Peer a édité un message. v1.1.256 : supporte l'édition E2E
       // (data.ciphertext taggé E2E1:) en plus du legacy clair (data.new_text).
       const eMsgId = data.message_id;
       let newText = data.new_text;
@@ -10308,7 +10317,7 @@ K._saveEditMsg = async function(msgId){
   K.render();
   K._closeModal && K._closeModal();
   toast('✅ Message modifié', 'ok');
-  // v1.1.255 — l'édition suit le mode E2E du message : si E2E est ON on
+  // v1.1.256 — l'édition suit le mode E2E du message : si E2E est ON on
   // chiffre le nouveau texte (comme _sendMessage), sinon on retombe sur
   // new_text (E2E OFF assumé). Plus de texte clair silencieux sous E2E.
   let editCipher = null;
@@ -10580,6 +10589,13 @@ K._renderMediaEl = function(m){
   const src = K._mediaSrc(m.media_url);
   const t = (m.media_type || '').toLowerCase();
   const cap = 'max-width:260px;max-height:300px;border-radius:10px;display:block;margin-bottom:4px';
+  // v1.1.256 — média chiffré (octets iv‖ct dans R2) : on ne peut PAS pointer
+  // <img src> sur du ciphertext. On rend un placeholder hydraté après render
+  // (fetch → decryptBytes → blob URL). Data-attrs pour K._hydrateEncMedia().
+  if(m.media_enc && K.viewData){
+    const kind = t.indexOf('image/') === 0 ? 'image' : t.indexOf('video/') === 0 ? 'video' : t.indexOf('audio/') === 0 ? 'audio' : 'file';
+    return `<div class="enc-media" data-enc-url="${esc(m.media_url)}" data-enc-mime="${esc(m.media_type||'')}" data-enc-kind="${kind}" data-enc-conv="${esc(K.viewData.id)}" data-enc-name="${esc(m.media_name||'fichier')}" style="min-width:120px;min-height:60px;display:flex;align-items:center;gap:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:8px 10px;margin-bottom:4px;color:var(--ax-text-3);font-size:.82em">🔒 <span>Média chiffré — déchiffrement…</span></div>`;
+  }
   if(t.indexOf('image/') === 0)
     return `<img src="${esc(src)}" alt="${esc(m.media_name || 'image')}" style="${cap};object-fit:cover;cursor:pointer" loading="lazy" onclick="window.open('${esc(src)}','_blank')">`;
   if(t.indexOf('video/') === 0)
@@ -10590,9 +10606,38 @@ K._renderMediaEl = function(m){
     <span style="font-size:1.4em">📎</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.media_name || 'fichier')}</span>
     <span style="font-size:.72em;color:var(--ax-text-3)">${esc(K._fmtSize(m.media_size))}</span></a>`;
 };
+// v1.1.256 — hydrate les médias chiffrés : fetch bytes R2 → decryptBytes →
+// blob URL. Idempotent (marque data-enc-done), fail-open (message d'erreur
+// discret si la clé de session n'est pas là). Un seul fetch par élément.
+K._hydrateEncMedia = async function(){
+  const els = document.querySelectorAll('.enc-media:not([data-enc-done])');
+  for(const el of els){
+    el.setAttribute('data-enc-done','1');
+    const url = el.getAttribute('data-enc-url'); const convId = el.getAttribute('data-enc-conv');
+    const mime = el.getAttribute('data-enc-mime') || ''; const kind = el.getAttribute('data-enc-kind');
+    const name = el.getAttribute('data-enc-name') || 'fichier';
+    try{
+      if(!(window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(convId))) throw new Error('no-session');
+      const res = await fetch(K._mediaSrc(url), { headers:{ 'Authorization':'Bearer ' + (K.token||'') } });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const encBuf = await res.arrayBuffer();
+      const clearBuf = await ApexCrypto.decryptBytes(convId, encBuf);
+      const blobUrl = URL.createObjectURL(new Blob([clearBuf], { type: mime || 'application/octet-stream' }));
+      const cap = 'max-width:260px;max-height:300px;border-radius:10px;display:block;margin-bottom:4px';
+      if(kind === 'image') el.innerHTML = `<img src="${esc(blobUrl)}" alt="${esc(name)}" style="${cap};object-fit:cover;cursor:pointer" onclick="window.open('${esc(blobUrl)}','_blank')">`;
+      else if(kind === 'video') el.innerHTML = `<video controls preload="metadata" playsinline src="${esc(blobUrl)}" style="${cap};background:#000"></video>`;
+      else if(kind === 'audio') el.innerHTML = `<audio controls preload="metadata" src="${esc(blobUrl)}" style="max-width:260px;display:block"></audio>`;
+      else el.innerHTML = `<a href="${esc(blobUrl)}" download="${esc(name)}" style="display:flex;align-items:center;gap:8px;color:var(--ax-text);text-decoration:none">📎 <span>${esc(name)}</span></a>`;
+      el.style.cssText = 'margin-bottom:4px';
+    }catch(e){
+      _safeCatch('enc-media-hydrate', e);
+      el.innerHTML = '🔒 <span style="opacity:.6">Média chiffré — indéchiffrable sur cet appareil</span>';
+    }
+  }
+};
 K._parseMediaMarker = function(txt){
   if(typeof txt !== 'string' || txt.indexOf('APXMEDIA1:') !== 0) return null;
-  try{ const j = JSON.parse(txt.slice(10)); return { media_url:j.u, media_type:j.m, media_name:j.n, media_size:j.s, text:j.c || '' }; }
+  try{ const j = JSON.parse(txt.slice(10)); return { media_url:j.u, media_type:j.m, media_name:j.n, media_size:j.s, text:j.c || '', media_enc:!!j.e }; }
   catch(_){ return null; }
 };
 K._uploadMedia = async function(file){
@@ -10618,6 +10663,22 @@ K._uploadMedia = async function(file){
         }
       } catch(e) { _safeCatch('media-compress', e); }
     }
+    // v1.1.256 — chiffrement des octets (flag OFF par défaut). Si ON + session :
+    // on upload iv‖ct (octet-stream) → R2 ne voit jamais le contenu réel. Le vrai
+    // mime + le flag `e:1` voyagent dans le marqueur APXMEDIA (lui-même chiffré).
+    let realMime = ctype, mediaEnc = false;
+    if(K._mediaE2eOn()){
+      try{
+        await K._ensureSession(conv);
+        if(window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(conv.id)){
+          const buf = await body.arrayBuffer();
+          const encBuf = await ApexCrypto.encryptBytes(conv.id, buf);
+          body = new Blob([encBuf], { type:'application/octet-stream' });
+          ctype = 'application/octet-stream';
+          mediaEnc = true;
+        }
+      }catch(e){ _safeCatch('media-bytes-encrypt', e); /* fail-open → clair */ }
+    }
     const r = await fetch(API_BASE + '/api/media', {
       method:'POST',
       headers:{ 'Authorization':'Bearer ' + (K.token||''), 'Content-Type': ctype, 'x-file-name': encodeURIComponent(file.name || 'fichier') },
@@ -10625,14 +10686,14 @@ K._uploadMedia = async function(file){
     });
     const d = await r.json().catch(()=>({}));
     if(!r.ok || !d.ok){ toast('❌ ' + (d.detail || d.message || d.error || ('HTTP ' + r.status)), 'err', 7000); return; }
-    await K._sendMediaMessage({ url:d.url, mime:d.mime || file.type, name:d.name || file.name, size:d.size || file.size });
+    await K._sendMediaMessage({ url:d.url, mime:(mediaEnc ? realMime : (d.mime || file.type)), name:d.name || file.name, size:d.size || file.size, enc:mediaEnc });
   }catch(e){ toast('❌ Envoi média : ' + ((e && e.message) || 'réseau'), 'err', 7000); }
 };
 K._sendMediaMessage = async function(media, captionOverride){
   const conv = K.viewData; if(!conv) return;
   const input = $('#msg-input');
   const caption = (typeof captionOverride === 'string') ? captionOverride : ((input && input.value.trim()) || '');
-  const marker = 'APXMEDIA1:' + JSON.stringify({ u:media.url, m:media.mime, n:media.name, s:media.size, c:caption });
+  const marker = 'APXMEDIA1:' + JSON.stringify({ u:media.url, m:media.mime, n:media.name, s:media.size, c:caption, e:media.enc ? 1 : 0 });
   let ciphertext = null;
   if(K._e2eOn()){ try{ await K._ensureSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); } }
   const mediaPayload = ciphertext ? (K._E2E_TAG + ciphertext) : null;

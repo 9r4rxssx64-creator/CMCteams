@@ -131,6 +131,35 @@ describe('ApexCrypto — Sessions par conversation', () => {
     await expect(api.decryptForConv('inexistant-' + Math.random(), 'cipher==')).rejects.toThrow();
   });
 
+  // v1.1.256 — chiffrement des octets média (bytes) sur la clé de session.
+  it('encryptBytes → decryptBytes round-trip binaire (média chiffré E2E)', async () => {
+    const alice = await api.generateIdentityKeys();
+    const bob = await api.generateIdentityKeys();
+    const cA = 'conv-media-a-' + Math.random();
+    const cB = 'conv-media-b-' + Math.random();
+    await api.establishSession(cA, alice.privateKey, bob.publicKey);
+    await api.establishSession(cB, bob.privateKey, alice.publicKey);
+
+    const original = new Uint8Array([0, 1, 2, 250, 128, 42, 255, 7]);
+    const encBuf = await api.encryptBytes(cA, original.buffer);
+    // Sortie chiffrée ≠ clair, préfixée d'un IV 12 octets.
+    expect(encBuf.byteLength).toBe(original.byteLength + 12 + 16); // +iv +tag GCM
+    const encView = new Uint8Array(encBuf);
+    expect(Array.from(encView.slice(12)).join(',')).not.toBe(Array.from(original).join(','));
+
+    // Bob (session ECDH symétrique) déchiffre les octets d'origine.
+    const decBuf = await api.decryptBytes(cB, encBuf);
+    expect(Array.from(new Uint8Array(decBuf))).toEqual(Array.from(original));
+  });
+
+  it('encryptBytes sans session établie → throw', async () => {
+    await expect(api.encryptBytes('inexistant-' + Math.random(), new Uint8Array([1]).buffer)).rejects.toThrow();
+  });
+
+  it('decryptBytes sans session établie → throw', async () => {
+    await expect(api.decryptBytes('inexistant-' + Math.random(), new Uint8Array([1]).buffer)).rejects.toThrow();
+  });
+
   it('chaque encryptForConv produit un ciphertext différent (IV unique)', async () => {
     const alice = await api.generateIdentityKeys();
     const bob = await api.generateIdentityKeys();
