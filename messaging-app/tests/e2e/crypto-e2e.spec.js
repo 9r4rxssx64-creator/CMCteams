@@ -56,6 +56,27 @@ test.describe('Apex Chat — chiffrement E2E (navigateur réel)', () => {
     expect(r.overhead).toBe(28);
   });
 
+  test('forward secrecy (ratchet) : 3 messages + clé détruite après usage', async ({ page }) => {
+    const r = await page.evaluate(async () => {
+      const A = window.ApexCrypto;
+      const alice = await A.generateIdentityKeys();
+      const bob = await A.generateIdentityKeys();
+      await A.ratchetInit('c', alice.privateKey, bob.publicKey);
+      await A.ratchetInit('cb', bob.privateKey, alice.publicKey);
+      const w0 = await A.ratchetEncrypt('c', 'm0');
+      const w1 = await A.ratchetEncrypt('c', 'm1');
+      const d0 = await A.ratchetDecrypt('cb', w0.n, w0.ct);
+      const d1 = await A.ratchetDecrypt('cb', w1.n, w1.ct);
+      let destroyed = false;
+      try { await A.ratchetDecrypt('cb', w0.n, w0.ct); } catch { destroyed = true; }
+      return { d0, d1, destroyed, distinct: w0.ct !== w1.ct };
+    });
+    expect(r.d0).toBe('m0');
+    expect(r.d1).toBe('m1');
+    expect(r.distinct).toBe(true);   // chaque message a sa clé
+    expect(r.destroyed).toBe(true);  // clé de m0 détruite → forward secrecy
+  });
+
   test('rendu média chiffré : placeholder → hydrate → <img blob:> déchiffré', async ({ page }) => {
     const r = await page.evaluate(async () => {
       const A = window.ApexCrypto, K = window.K;
