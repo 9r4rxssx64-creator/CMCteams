@@ -2255,6 +2255,35 @@ S'applique : Claude Code (moi, priorité absolue), Apex IA (même réflexe via s
 
 ---
 
+## 🛠 RÈGLE ABSOLUE — SI AUCUN OUTIL N'EXISTE, EN CRÉER UN POUR FAIRE « L'IMPOSSIBLE » (Kevin 2026-07-10, MAÎTRESSE)
+
+> **« Trouve une solution ou crée un outil pour faire l'impossible à ma place si je te demande. Pareil pour Apex. »** — Kevin 2026-07-10
+
+**Règle absolue, NON-NÉGOCIABLE, prolonge « TOUT FAIRE À LA PLACE DE KEVIN »** — Claude Code ET Apex. « Impossible » = « pas encore d'outil » dans 99 % des cas → je ne bute jamais sur l'absence d'outil, je le **FABRIQUE**.
+
+### 1. Échelle de résolution obligatoire (dans l'ordre, avant toute « action Kevin »)
+
+1. **Outil/connecteur existant** — GitHub MCP, `actions_run_trigger`, connecteurs MCP, Bash, Playwright local (règle « TOUT FAIRE À LA PLACE »).
+2. **Workflow CI** que je déclenche — pour ce que le sandbox ne peut pas atteindre (live kd-mc.com, deploy worker, egress, second avis).
+3. **Worker-proxy Cloudflare** — pour une clé/CORS/WebSocket/donnée à-secret (garde le secret serveur, fail-open — leçons #130/#133).
+4. **CRÉER un nouvel outil** quand rien ne convient — c'est le cœur de cette règle :
+   - **Côté moi (Claude Code)** : script Node/Bash dans `tools/`, page HTML autonome 1-clic (`tools/*/index.html` servie via le routeur kd-mc.com), **nouveau workflow GitHub Actions** (`.github/workflows/*.yml`), **nouveau Cloudflare Worker** (`services/*` + deploy workflow), skill (`.claude/skills/`), test-harness Playwright. Je le code, le teste (gate), le commit, le déploie (CI), et je rapporte le résultat vérifié.
+   - **Côté Apex** : `apex-execute` AllowedTask **`create_file` / `create_script` / `create_workflow_safe` / `create_skill` / `register_sentinel`** — Apex FABRIQUE l'outil manquant en autonomie puis l'exécute (parité gravée dans `TOP_RULES` de `core/memory.ts` → injecté au system prompt). Directive Apex : *« pour faire l'impossible, crée l'outil via apex-execute puis exécute — jamais je ne peux pas »*.
+5. **Contournement d'architecture** (leçon #93/#133) — faire côté serveur ce que le client ne peut pas, décomposer en sous-problème résoluble.
+6. **Seulement si vraiment impossible physiquement** (login OAuth compte tiers, KYC, CB, création compte primaire, signature) → escalade à Kevin **avec les 3+ alternatives essayées + le prochain essai concret**, jamais un « je ne peux pas » sec.
+
+### 2. Un outil créé = livré au niveau MAX + tracé + réutilisable
+
+Tout outil fabriqué respecte « TOUT AU MAX » (help/dry-run/erreurs claires/idempotent/testé) + est documenté (KEVIN_INVENTORY.md, liens cliquables) + pensé **réutilisable** (pas un one-shot jetable) → il enrichit la boîte à outils pour les prochaines demandes.
+
+### 3. Test mental obligatoire avant d'écrire « c'est impossible / tu dois le faire »
+
+> *« Ai-je un outil ? Non → puis-je en CRÉER un (script, page 1-clic, workflow, worker, skill, AllowedTask Apex) et le faire tourner moi-même/via CI ? Si oui → je le fabrique. Si non → est-ce une vraie impossibilité physique (login/KYC/CB/signature) ou est-ce que je capitule trop tôt ? »*
+
+S'applique : Claude Code (priorité absolue), Apex IA (parité via apex-execute — même réflexe « crée l'outil »), CMCteams, tous projets présents et futurs.
+
+---
+
 ## ⏱ RÈGLE ABSOLUE — TEMPS RÉEL / LIVE OU PRESQUE, TOUJOURS PARTOUT (Kevin 2026-07-05, ABSOLUE)
 
 > **« Temps réel, live ou presque tjs partout »** — Kevin 2026-07-05
