@@ -10,12 +10,14 @@
 import { APP_VER } from '../../core/bootstrap.js';
 import { store } from '../../core/store.js';
 import { parseSlashCommand, helpText, SLASH_COMMANDS } from '../../services/admin/slash-commands.js';
+import { pickBestArtifact, setCanvasArtifact } from '../../services/ai/artifacts.js';
 import { claudeBridge } from '../../services/ai/claude-bridge.js';
+import { getReasoningEffort, setReasoningEffort } from '../../services/ai/reasoning-mode.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
 import { isAutoReadEnabled, setAutoReadEnabled } from './chat-autoread.js';
-import { buildConversationMarkdown, buildExportFilename } from './chat-export.js';
+import { buildConversationMarkdown, buildExportFilename, buildConversationHtml, buildShareFilename } from './chat-export.js';
 import { clearConversationEverywhere, persistConversation } from './chat-persistence.js';
 import { renderMessages, pushAssistantMessage } from './chat-render-loop.js';
 import { renderSlashAutocomplete } from './chat-renderers.js';
@@ -26,7 +28,7 @@ import {
   handleResumeCommand, handleStatuslineCommand, handleOodaCommand,
   handleUltraReviewCommand, handleDiagCommand, handleTestCommand,
   handleLoopCommand, handlePlanCommand, handleRulesCommand,
-  handleAutonomousCommand, handleResearchCommand,
+  handleAutonomousCommand, handleResearchCommand, handleBriefCommand,
 } from './chat-slash-handlers.js';
 import { listCodeSnippets } from './chat-snippets.js';
 
@@ -113,9 +115,45 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
       toast.info(wasEnabled ? '🔇 Lecture vocale désactivée' : '🔊 Lecture vocale activée');
       return true;
     }
+    case 'effort': {
+      const lvl = args.trim().toLowerCase();
+      const map: Record<string, 'auto' | 'low' | 'medium' | 'high'> = {
+        auto: 'auto', direct: 'low', bas: 'low', low: 'low',
+        moyen: 'medium', medium: 'medium', med: 'medium',
+        élevé: 'high', eleve: 'high', high: 'high', max: 'high',
+      };
+      const target = map[lvl];
+      if (!target) {
+        const cur = getReasoningEffort();
+        pushAssistantMessage(rootEl, `🧠 Effort de raisonnement actuel : **${cur}**.\n\nUsage : \`/effort auto|direct|moyen|élevé\` — « élevé » affiche la réflexion 💭 avant la réponse.`);
+        return true;
+      }
+      setReasoningEffort(target);
+      const labels = { auto: 'Auto', low: 'Direct', medium: 'Moyen', high: 'Élevé (montre la réflexion)' } as const;
+      toast.success(`🧠 Effort : ${labels[target]}`);
+      return true;
+    }
     case 'export':
       void exportConversationMarkdown();
       return true;
+    case 'partager':
+      void shareConversation();
+      return true;
+    case 'canvas': {
+      const lastA = [...conversation].reverse().find((m) => m.role === 'assistant' && !m.streaming);
+      const art = lastA ? pickBestArtifact(lastA.text) : null;
+      if (!art) {
+        pushAssistantMessage(rootEl, '🎨 Aucun artifact à ouvrir. `/canvas` ouvre le dernier bloc de code/HTML/SVG généré par Apex en édition + aperçu live.');
+        return true;
+      }
+      setCanvasArtifact(art);
+      try {
+        store.set('view', 'canvas');
+      } catch {
+        toast.info('Ouvre le Canvas depuis le menu');
+      }
+      return true;
+    }
     case 'snippets': {
       /* v13.4.16 — Liste snippets sauvés via paste intelligent v13.4.14 */
       const snippets = listCodeSnippets();
@@ -189,6 +227,9 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     case 'recherche':
       void handleResearchCommand(slashCtx, args);
       return true;
+    case 'briefing':
+      void handleBriefCommand(slashCtx);
+      return true;
     /* v13.4.5 — Mode autonome Apex */
     case 'autonomous':
       void handleAutonomousCommand(slashCtx, args);
@@ -253,6 +294,41 @@ async function exportConversationMarkdown(): Promise<void> {
     /* Fallback clipboard */
     void navigator.clipboard?.writeText(md);
     toast.info('📋 Conversation copiée dans le presse-papiers');
+  }
+}
+
+/* v13.4.352 — /partager : partage la conversation en HTML autonome (feuille de
+ * partage iOS via Web Share API si dispo, sinon téléchargement du fichier). */
+async function shareConversation(): Promise<void> {
+  if (conversation.length === 0) {
+    toast.warn('Aucune conversation à partager');
+    return;
+  }
+  const now = new Date();
+  const html = buildConversationHtml(conversation, APP_VER, now);
+  const filename = buildShareFilename(now);
+  try {
+    const file = new File([html], filename, { type: 'text/html' });
+    const navShare = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+    if (navShare.share && navShare.canShare?.({ files: [file] })) {
+      await navShare.share({ files: [file], title: 'Conversation Apex' });
+      return;
+    }
+  } catch {
+    /* partage annulé/échoué → repli téléchargement */
+  }
+  try {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success('📤 Conversation prête à partager (fichier HTML)');
+  } catch {
+    void navigator.clipboard?.writeText(html);
+    toast.info('📋 Conversation copiée (HTML)');
   }
 }
 
