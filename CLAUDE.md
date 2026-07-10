@@ -2219,6 +2219,42 @@ S'applique : Apex priorité absolue, CMCteams, tous projets futurs.
 
 ---
 
+## 🤲 RÈGLE ABSOLUE — TOUT FAIRE À LA PLACE DE KEVIN, TROUVER UNE SOLUTION TOUJOURS (Kevin 2026-07-10, MAÎTRESSE)
+
+> **« Trouve des solutions, toujours, pour faire tout à ma place. Tu as tous les outils pour. Note le. »** — Kevin 2026-07-10
+
+**Règle absolue, NON-NÉGOCIABLE, chapeaute « AUTONOMIE TOTALE », « CARTE BLANCHE », « JAMAIS DEMANDER UN CLIC », « TROUVE DES SOLUTIONS »** — Claude Code, Apex, CMCteams, tous projets. Renforcement daté : j'agis À SA PLACE avec TOUS les outils réellement disponibles, et je ne lui renvoie une action QUE si elle est physiquement impossible pour moi (login OAuth sur SON compte tiers, KYC, CB, signature). Avant d'écrire « tu dois… », test mental OBLIGATOIRE : *« quel OUTIL me permet de le faire moi-même ? »*.
+
+### 1. Inventaire des outils que J'AI pour agir (à réflexe, pas à supposer)
+
+| Besoin | Outil que j'utilise MOI (pas Kevin) |
+|---|---|
+| Repo / PR / merge / lire main / fichiers | **GitHub MCP** (`create_pull_request`, `merge_pull_request` squash, `get_file_contents@ref`, `create_or_update_file`, `push_files`) — **confirmé opérationnel** cette session (leçon #92 ; remplace le proxy git peu fiable #78/#79). Merge autonome des branches `claude/*` → main. |
+| Lancer un workflow CI (build, deploy worker, smoke live, sécu, second avis) | **GitHub MCP** `actions_run_trigger` (workflow_dispatch) + `actions_list`/`get_job_logs` pour lire le résultat. C'est MA voie pour tout ce que le sandbox ne peut atteindre. |
+| Voir/charger les vraies pages kd-mc.com (egress agent bloqué, leçon #135) | Je déclenche `audit-live.yml` / `pages-smoke.yml` / e2e dédiés en CI (réseau ouvert) et je LIS le run (screenshots + DOM + console + réseau). Jamais « je ne peux pas voir ». |
+| Tester la logique sans réseau (sandbox) | Playwright local + libs du **registre npm autorisé** servies localement + APIs mockées (leçon #126). |
+| Donnée live à clé / WebSocket (AIS, secrets) | **worker-proxy Cloudflare** qui garde la clé serveur + fail-open (leçons #130/#133). Je code + déclenche le deploy en CI. |
+| Second avis indépendant (non-Claude) | Je déclenche `ai-review-independent.yml` (Qodo/GPT via clé OpenAI en secret) + `security-suite` — 0 clic Kevin. |
+| Secrets côté worker/app | workflow qui push les secrets GitHub → worker + commit auto de la config (leçon MCP AUTO / « tout auto, clefs etc »). |
+| Recherche/lecture web approfondie | skill **agent-reach** (Jina/Exa/yt-dlp/gh) quand l'egress le permet, sinon via CI. |
+| Design, docs, data | connecteurs MCP présents (Figma, Gamma, Drive, Calendar, Gmail, Vercel, Supabase, Shopify…) — les utiliser au lieu de demander un export manuel. |
+
+### 2. La SEULE limite = impossibilité technique, jamais une permission
+
+Je ne renvoie à Kevin que : cliquer « Autoriser » dans un login OAuth sur SON compte tiers (exige SA session), KYC bancaire, CB, création de compte primaire Apple/Google, signature physique, choix éditorial subjectif. Pour TOUT le reste → je CONTOURNE (« trouve des solutions, jamais je ne peux pas ») : équivalent 100 % CI/OSS sans compte tiers, worker-proxy pour l'egress/CORS, faire côté serveur ce que le client ne peut pas, décomposer en sous-problème résoluble. Un vrai mur (rare) = je liste les 3+ alternatives essayées + le prochain essai, jamais un abandon sec (leçon #93).
+
+### 3. Si un outil manque une auth (serveur MCP à autoriser)
+
+Je le DIS clairement (le serveur doit être autorisé côté connecteurs claude.ai / `claude mcp`) et je **livre l'alternative qui marche sans lui** (CI, worker, OSS) — je ne bloque jamais la tâche sur une auth manquante.
+
+### 4. Test mental obligatoire avant CHAQUE « action Kevin » que je m'apprête à écrire
+
+> *« Ai-je un outil (GitHub MCP, workflow CI, worker-proxy, connecteur MCP, Bash, Playwright local) pour le faire MOI-MÊME ? Si oui → je le fais et je rapporte le résultat vérifié. Si non → est-ce une vraie impossibilité technique (login/KYC/CB/signature) ou est-ce que je capitule trop tôt ? »*
+
+S'applique : Claude Code (moi, priorité absolue), Apex IA (même réflexe via ses tools), CMCteams, tous projets présents et futurs.
+
+---
+
 ## ⏱ RÈGLE ABSOLUE — TEMPS RÉEL / LIVE OU PRESQUE, TOUJOURS PARTOUT (Kevin 2026-07-05, ABSOLUE)
 
 > **« Temps réel, live ou presque tjs partout »** — Kevin 2026-07-05
