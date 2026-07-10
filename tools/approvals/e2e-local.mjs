@@ -1,0 +1,141 @@
+/**
+ * Vérif RÉELLE au navigateur (leçons #96/#98/#126) du coffre d'autorisations.
+ * Serveur HTTP local (map /CMCteams/* → repo, leçon #136) + Firebase mocké
+ * (identitytoolkit → idToken, RTDB → PUT ok / GET file) + Face ID virtuel (CDP
+ * addVirtualAuthenticator). Prouve : lock → déverrouillage → onglets → créer une
+ * demande → l'autoriser (WebAuthn) → passe en historique → 0 exception JS.
+ */
+import http from 'node:http';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import path from 'node:path';
+
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+/* Playwright n'est pas installé à la racine — on résout par chemin absolu (portable). */
+const PW = process.env.PW_PKG || path.join(REPO, 'apex-ai/v13/node_modules/playwright/index.js');
+const _pw = await import(pathToFileURL(PW).href);
+const chromium = _pw.chromium || (_pw.default && _pw.default.chromium);
+const MIME = { '.html':'text/html', '.js':'text/javascript', '.txt':'text/plain', '.json':'application/json', '.css':'text/css' };
+
+const server = http.createServer((req, res) => {
+  let p = decodeURIComponent(req.url.split('?')[0]);
+  if (p.startsWith('/CMCteams/')) p = p.slice('/CMCteams'.length);
+  let f = path.join(REPO, p);
+  if (existsSync(f) && statSync(f).isDirectory()) f = path.join(f, 'index.html');
+  if (!existsSync(f)) { res.writeHead(404); res.end('nf'); return; }
+  res.writeHead(200, { 'content-type': MIME[path.extname(f)] || 'application/octet-stream' });
+  res.end(readFileSync(f));
+});
+
+const fail = (m) => { console.error('❌ ' + m); process.exitCode = 1; };
+const ok = (m) => console.log('✅ ' + m);
+
+await new Promise((r) => server.listen(0, r));
+const PORT = server.address().port;
+const PAGE_URL = `http://localhost:${PORT}/CMCteams/tools/approvals/`;
+
+const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+const ctx = await browser.newContext();
+const page = await ctx.newPage();
+page.setDefaultTimeout(8000);
+
+/* Face ID virtuel (WebAuthn platform authenticator, UV) — leçon #98 — sur LA page testée */
+const cdp = await ctx.newCDPSession(page);
+await cdp.send('WebAuthn.enable');
+await cdp.send('WebAuthn.addVirtualAuthenticator', {
+  options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
+});
+
+const errors = [];
+page.on('pageerror', (e) => errors.push(String(e)));
+page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+
+/* Mock Firebase : auth anon + RTDB (état pending en mémoire) */
+const db = { pending: {}, resolved: {} };
+await page.route('**identitytoolkit.googleapis.com/**', (r) =>
+  r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ idToken: 'tok_test', localId: 'anon1' }) }));
+await page.route('**firebasedatabase.app/**', (route) => {
+  const u = new URL(route.request().url());
+  const seg = u.pathname.replace(/\.json$/, '').split('/').filter(Boolean); // apex_approvals/kdmc_admin/pending[/id]
+  const kind = seg[2]; const id = seg[3];
+  const m = route.request().method();
+  if (m === 'GET') {
+    const body = kind === 'pending' ? db.pending : (kind === 'resolved' ? db.resolved : null);
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(id ? (body?.[id] ?? null) : (body ?? null)) });
+  }
+  if (m === 'PUT') {
+    let val = null; try { val = JSON.parse(route.request().postData() || 'null'); } catch {}
+    const bag = kind === 'pending' ? db.pending : db.resolved;
+    if (id) { if (val === null) delete bag[id]; else bag[id] = val; }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: route.request().postData() || 'null' });
+  }
+  return route.fulfill({ status: 200, body: 'null' });
+});
+
+try {
+  await page.goto(PAGE_URL, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(300);
+
+  /* 1. Lock visible, app cachée */
+  if (await page.locator('#lock').isVisible() && !(await page.locator('#app').isVisible())) ok('écran de verrouillage affiché, app cachée');
+  else fail('lock/app initial state');
+
+  /* 2. Déverrouillage Face ID (virtuel) → app visible */
+  await page.click('#unlock');
+  await page.waitForTimeout(500);
+  if (await page.locator('#app').isVisible()) ok('déverrouillé via Face ID (WebAuthn virtuel) → app affichée');
+  else fail('unlock via Face ID');
+
+  /* 3. Créer une demande simulée (CB) → carte apparaît */
+  await page.selectOption('#sim-type', 'cb');
+  await page.click('#sim-go');
+  await page.waitForTimeout(300);
+  const reqCount = await page.locator('.req').count();
+  if (reqCount >= 1 && (await page.locator('#reqs').innerText()).includes('Paiement')) ok('demande CB créée + rendue dans la file (Firebase PUT mocké)');
+  else fail('création demande (' + reqCount + ' cartes)');
+
+  /* 4. Autoriser (Face ID) → disparaît de la file + Firebase resolved écrit */
+  await page.click('.req [data-act="ok"]');
+  await page.waitForTimeout(500);
+  const after = await page.locator('.req').count();
+  const resolvedKeys = Object.keys(db.resolved);
+  if (after === 0 && resolvedKeys.length === 1 && db.resolved[resolvedKeys[0]].status === 'approved') ok('autorisée → retirée de la file + resolved={approved} écrit avec preuve');
+  else fail('autorisation (cartes restantes ' + after + ', resolved ' + JSON.stringify(db.resolved) + ')');
+
+  /* 5. Historique contient la décision */
+  await page.click('.tab[data-tab="hist"]');
+  await page.waitForTimeout(200);
+  if ((await page.locator('#histlist').innerText()).includes('autorisé')) ok('journal des autorisations affiche la décision');
+  else fail('historique');
+
+  /* 6. Coffre : garde-fou anti-CB */
+  await page.click('.tab[data-tab="vault"]');
+  await page.fill('#v-name', 'Test');
+  await page.fill('#v-val', '4111 1111 1111 1111');
+  await page.click('#v-add');
+  await page.waitForTimeout(200);
+  const vaultTxt = await page.locator('#vlist').innerText();
+  if (!vaultTxt.includes('Test')) ok('garde-fou : numéro de carte REFUSÉ au stockage');
+  else fail('garde-fou CB non déclenché');
+
+  /* 7. Signature : dessin + enregistrement chiffré */
+  await page.click('.tab[data-tab="sign"]');
+  await page.waitForTimeout(150);
+  const box = await page.locator('#sig').boundingBox();
+  if (box) { await page.mouse.move(box.x + 20, box.y + 40); await page.mouse.down(); await page.mouse.move(box.x + 120, box.y + 90); await page.mouse.up(); }
+  await page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove())); /* toast fixed peut recouvrir */
+  await page.locator('#sig-save').scrollIntoViewIfNeeded();
+  await page.click('#sig-save');
+  await page.waitForTimeout(200);
+  if ((await page.locator('#sig-status').innerText()).includes('enregistrée')) ok('signature dessinée + enregistrée (chiffrée)');
+  else fail('signature');
+
+  if (errors.length) fail('exceptions JS : ' + errors.slice(0, 4).join(' | '));
+  else ok('0 exception JS');
+} catch (e) {
+  fail('exception test : ' + (e && e.message));
+} finally {
+  await browser.close();
+  server.close();
+}
+console.log(process.exitCode ? '\n=== ÉCHEC ===' : '\n=== OK : app broker vérifiée au navigateur ===');
