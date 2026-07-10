@@ -17,7 +17,12 @@ export default defineConfig({
   expect: { timeout: 8_000 },
 
   use: {
-    baseURL: 'http://localhost:4173',
+    // HTTPS en test = parité prod (apex-chat.kd-mc.com est HTTPS) → la CSP
+    // `upgrade-insecure-requests` n'a rien à upgrader. En HTTP, WebKit upgrade
+    // même localhost → tous les <script type="module"> échouent (voir
+    // tests/serve-https.sh). Certificat auto-signé → ignoreHTTPSErrors.
+    baseURL: 'https://localhost:4173',
+    ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -45,8 +50,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npx http-server -p 4173 -s -c-1',
-    port: 4173,
+    command: 'bash tests/serve-https.sh',
+    url: 'https://localhost:4173',
+    ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },
