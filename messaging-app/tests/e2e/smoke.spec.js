@@ -32,8 +32,13 @@ test.describe('Apex Chat — Boot smoke iPhone Safari PWA', () => {
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain('upgrade-insecure-requests');
     const permPolicy = await page.locator('meta[http-equiv="Permissions-Policy"]').getAttribute('content');
-    expect(permPolicy).toContain('camera=()');
+    // Messagerie avec appels vidéo : caméra/micro autorisés à SOI (self), jamais
+    // aux tiers. Les capacités non utilisées restent verrouillées ().
+    expect(permPolicy).toContain('camera=(self)');
+    expect(permPolicy).toContain('microphone=(self)');
     expect(permPolicy).toContain('geolocation=(self)');
+    expect(permPolicy).toContain('payment=()');
+    expect(permPolicy).toContain('interest-cohort=()');
   });
 
   test('skip-link accessible au focus clavier', async ({ page }) => {
