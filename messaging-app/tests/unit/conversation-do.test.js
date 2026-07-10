@@ -582,6 +582,106 @@ describe('ConversationDO — handleMessage', () => {
     // Pas d'erreur, broadcast envoyé aux autres
   });
 
+  // v1.1.255 — édition/suppression propagées serveur (parité WhatsApp).
+  function editEnv() {
+    const calls = [];
+    return {
+      calls,
+      env: ENV({
+        APEX_CHAT_DB: {
+          prepare: vi.fn((sql) => ({
+            bind: function (...args) { calls.push({ sql, args }); return this; },
+            first: async () => null,
+            run: async () => ({ success: true }),
+            all: async () => ({ results: [] }),
+          })),
+        },
+        JWT_SIGN_KEY: SECRET,
+      }),
+    };
+  }
+
+  it('edit_message (E2E ciphertext) → UPDATE D1 + broadcast ciphertext + ack', async () => {
+    const { env, calls } = editEnv();
+    _do.env = env;
+    const observer = new MockWebSocket();
+    _do.sessions.set(observer, { userId: 'other', convId: 'conv1' });
+    await _do.handleMessage(ws, { type: 'edit_message', message_id: 'm1', ciphertext: 'E2E1:abc' });
+    const upd = calls.find((c) => c.sql.includes('UPDATE messages SET ciphertext=?, edited_at=?'));
+    expect(upd).toBeTruthy();
+    expect(upd.args).toContain('E2E1:abc');
+    expect(upd.args).toContain('kdmc'); // garde sender_id
+    const bc = observer.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'edit_message');
+    expect(bc.ciphertext).toBe('E2E1:abc');
+    expect(bc.new_text).toBeNull();
+    const ack = ws.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'ack' && m.edited_at);
+    expect(ack).toBeTruthy();
+  });
+
+  it('edit_message (legacy new_text) → persiste new_text + rediffuse new_text', async () => {
+    const { env, calls } = editEnv();
+    _do.env = env;
+    const observer = new MockWebSocket();
+    _do.sessions.set(observer, { userId: 'other', convId: 'conv1' });
+    await _do.handleMessage(ws, { type: 'edit_message', message_id: 'm2', new_text: 'corrigé' });
+    const upd = calls.find((c) => c.sql.includes('UPDATE messages SET ciphertext=?, edited_at=?'));
+    expect(upd.args).toContain('corrigé');
+    const bc = observer.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'edit_message');
+    expect(bc.new_text).toBe('corrigé');
+    expect(bc.ciphertext).toBeNull();
+  });
+
+  it('edit_message met à jour un message encore en attente de flush', async () => {
+    const { env } = editEnv();
+    _do.env = env;
+    _do.pendingMessages.push({ id: 'mp', sender_id: 'kdmc', ciphertext: 'old' });
+    await _do.handleMessage(ws, { type: 'edit_message', message_id: 'mp', new_text: 'neuf' });
+    expect(_do.pendingMessages[0].ciphertext).toBe('neuf');
+    expect(_do.pendingMessages[0].edited_at).toBeTruthy();
+  });
+
+  it('edit_message sans contenu → erreur', async () => {
+    await _do.handleMessage(ws, { type: 'edit_message', message_id: 'm3' });
+    const e = JSON.parse(ws.sent[ws.sent.length - 1]);
+    expect(e.message).toContain('contenu requis');
+  });
+
+  it('edit_message contenu > 100KB → erreur', async () => {
+    await _do.handleMessage(ws, { type: 'edit_message', message_id: 'm4', ciphertext: 'x'.repeat(100001) });
+    const e = JSON.parse(ws.sent[ws.sent.length - 1]);
+    expect(e.message).toContain('trop grand');
+  });
+
+  it('delete_message → tombstone D1 (deleted_at + ciphertext NULL) + broadcast + ack', async () => {
+    const { env, calls } = editEnv();
+    _do.env = env;
+    const observer = new MockWebSocket();
+    _do.sessions.set(observer, { userId: 'other', convId: 'conv1' });
+    await _do.handleMessage(ws, { type: 'delete_message', message_id: 'm5', scope: 'everyone' });
+    const del = calls.find((c) => c.sql.includes('UPDATE messages SET deleted_at=?, ciphertext=NULL'));
+    expect(del).toBeTruthy();
+    expect(del.args).toContain('kdmc'); // garde sender_id
+    const bc = observer.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'delete_message');
+    expect(bc.message_id).toBe('m5');
+    const ack = ws.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'ack' && m.deleted_at);
+    expect(ack).toBeTruthy();
+  });
+
+  it('delete_message met à jour un message encore en attente de flush', async () => {
+    const { env } = editEnv();
+    _do.env = env;
+    _do.pendingMessages.push({ id: 'md', sender_id: 'kdmc', ciphertext: 'secret' });
+    await _do.handleMessage(ws, { type: 'delete_message', message_id: 'md' });
+    expect(_do.pendingMessages[0].deleted_at).toBeTruthy();
+    expect(_do.pendingMessages[0].ciphertext).toBeNull();
+  });
+
+  it('delete_message sans message_id → erreur', async () => {
+    await _do.handleMessage(ws, { type: 'delete_message' });
+    const e = JSON.parse(ws.sent[ws.sent.length - 1]);
+    expect(e.message).toContain('message_id requis');
+  });
+
   it('reaction → toggle add/remove', async () => {
     const env = ENV({
       APEX_CHAT_DB: {
