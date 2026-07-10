@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.353';
+export const APP_VER = 'v13.4.354';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -523,6 +523,8 @@ async function bootstrap(): Promise<void> {
   router.register('notes', { loader: () => import('@features/notes/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('assistants', { loader: () => import('@features/assistants/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('canvas', { loader: () => import('@features/canvas/index.js'), requiresAuth: true });
+  router.register('projects', { loader: () => import('@features/projects/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('scheduled', { loader: () => import('@features/scheduled/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('calendar', { loader: () => import('@features/calendar/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true, skeleton: 'vault-cards' });
   router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true, skeleton: 'feature-list' });

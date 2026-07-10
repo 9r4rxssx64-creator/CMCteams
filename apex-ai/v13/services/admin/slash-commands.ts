@@ -77,6 +77,8 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'dashboard', emoji: '📊', description: 'Ouvre le tableau de bord', argsHint: '', route: 'dashboard' },
   { name: 'notes', emoji: '📝', description: 'Ouvre les notes', argsHint: '', route: 'notes' },
   { name: 'assistants', emoji: '🎭', description: 'Mes assistants personnalisés (Gems)', argsHint: '', route: 'assistants' },
+  { name: 'projets', emoji: '📁', description: 'Mes projets / workspaces (instructions + connaissances)', argsHint: '', route: 'projects' },
+  { name: 'taches', emoji: '⏰', description: 'Tâches programmées (prompts récurrents)', argsHint: '', route: 'scheduled' },
   { name: 'calendar', emoji: '📅', description: 'Ouvre le calendrier', argsHint: '', route: 'calendar' },
   { name: 'legal', emoji: '⚖️', description: 'Ouvre le module juridique', argsHint: '', route: 'legal' },
   { name: 'browser', emoji: '🌐', description: 'Ouvre le navigateur intégré', argsHint: '', route: 'browser' },
