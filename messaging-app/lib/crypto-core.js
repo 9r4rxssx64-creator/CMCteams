@@ -226,6 +226,22 @@ export async function decryptForConv(convId, ciphertext) {
 }
 
 // ----------------------------------------------------------------------------
+//  Politique de mise sur le fil (anti repli texte-clair silencieux) — v1.1.257
+//  Décide ce qui part réellement sur le WebSocket / en base :
+//   - 'cipher'  : un payload chiffré (E2E1:…) existe → on l'envoie.
+//   - 'clear'   : E2E explicitement OFF (opt-out) → texte clair assumé.
+//   - 'pending' : E2E ON mais AUCUN chiffré (clé du contact absente) → on
+//                 N'ENVOIE RIEN en clair ; le message attend la clé (façon
+//                 Signal) puis part chiffré. Ferme la régression leçon #90.
+//  Fonction PURE (aucune crypto) → testée à 100% ; index.html ne fait qu'appeler.
+// ----------------------------------------------------------------------------
+export function decideWire({ ciphertextPayload, plaintext, e2eOn }) {
+  if (ciphertextPayload) return { mode: 'cipher', wire: ciphertextPayload };
+  if (!e2eOn) return { mode: 'clear', wire: plaintext };
+  return { mode: 'pending', wire: null };
+}
+
+// ----------------------------------------------------------------------------
 //  Chiffrement des OCTETS d'un média (photo/fichier/vocal) — v1.1.256
 //  Même clé de session AES-GCM que les messages, mais sur du binaire : les
 //  octets chiffrés (iv‖ct) sont uploadés dans R2 → le serveur/R2 ne voit
@@ -329,6 +345,7 @@ if (typeof window !== 'undefined') {
     getSessionKey,
     encryptForConv,
     decryptForConv,
+    decideWire,
     encryptBytes,
     decryptBytes,
     encryptMessage,
