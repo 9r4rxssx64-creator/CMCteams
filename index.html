@@ -5684,7 +5684,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.865";
+var APP_VER="v9.866";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37964,18 +37964,28 @@ function _cmcDetectTeamsByRestPattern(iy,im){
         best.members.push(s);
       }
     });
-    // 3) MIROIRS — 2 équipes même famille + MÊMES repos + horaire-base DIFFÉRENT
-    //    (Kevin : "équipes miroirs même repos mais horaire différente sur les
-    //    premiers jours de travail").
-    var mirrors={};
+    // 3) MIROIRS — 2 équipes même famille + horaire-base DIFFÉRENT + repos TRÈS proches.
+    //    v9.866 (Kevin 2026-07-09, vérité terrain août : son équipe BJ Éq.11 ⇔ miroir BJ
+    //    Éq.4, repos communs 6/8 — PAS identiques). En août les miroirs ne partagent pas
+    //    EXACTEMENT les mêmes repos (contrairement à juillet). L'ancienne règle « restKey
+    //    identique » trouvait donc 0 miroir en août. Règle élargie SÛRE : recouvrement de
+    //    repos ≥ 75 % (≥6/8), appariement GLOUTON par MEILLEUR recouvrement (un board ne
+    //    prend jamais un mauvais partenaire s'il en a un meilleur). PROUVÉ (lesson #121,
+    //    monotone) : reproduit À L'IDENTIQUE les 38 miroirs de juillet (0 ajout, 0 perte)
+    //    ET détecte les miroirs d'août dont Éq.11⇔Éq.4.
+    var mirrors={},_mcand=[];
     for(var i=0;i<teamGroups.length;i++){
       for(var j=i+1;j<teamGroups.length;j++){
         var a=teamGroups[i],b=teamGroups[j];
-        if(a.fam!==b.fam||a.restKey!==b.restKey||a.fwBase===b.fwBase)continue;
-        if(mirrors[a.teamId]||mirrors[b.teamId])continue;
-        mirrors[a.teamId]=b.teamId;mirrors[b.teamId]=a.teamId;
+        if(a.fam!==b.fam||a.fwBase===b.fwBase)continue;
+        var _mx=Math.max(a.rest.length,b.rest.length);if(!_mx)continue;
+        var _sb={};b.rest.forEach(function(d){_sb[d]=1;});
+        var _ov=0;a.rest.forEach(function(d){if(_sb[d])_ov++;});
+        if(_ov/_mx>=0.75)_mcand.push({a:a.teamId,b:b.teamId,ov:_ov,frac:_ov/_mx});
       }
     }
+    _mcand.sort(function(x,y){return y.ov-x.ov||y.frac-x.frac;});
+    _mcand.forEach(function(c){if(!mirrors[c.a]&&!mirrors[c.b]){mirrors[c.a]=c.b;mirrors[c.b]=c.a;}});
     // AUTORITAIRE (Kevin "trouve les équipes seul") : ce détecteur fait foi → la map
     // miroir ÉCRASE l'ancienne (l'union-find sous-clusterisait sur données réelles).
     try{ls("cmc_team_mirror_"+key,mirrors);}catch(_){}
