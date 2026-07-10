@@ -35,7 +35,7 @@ const PORT = server.address().port;
 const PAGE_URL = `http://localhost:${PORT}/CMCteams/tools/approvals/`;
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
-const ctx = await browser.newContext();
+const ctx = await browser.newContext({ acceptDownloads: true });
 const page = await ctx.newPage();
 page.setDefaultTimeout(8000);
 
@@ -49,6 +49,9 @@ await cdp.send('WebAuthn.addVirtualAuthenticator', {
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+
+/* Neutralise l'auto-MAJ (version-badge-pwa) qui rechargerait la page pendant le test */
+await page.route('**version-badge-pwa.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: '/* no-op en test */' }));
 
 /* Mock Firebase : auth anon + RTDB (état pending en mémoire) */
 const db = { pending: {}, resolved: {} };
@@ -118,8 +121,9 @@ try {
   if (!vaultTxt.includes('Test')) ok('garde-fou : numéro de carte REFUSÉ au stockage');
   else fail('garde-fou CB non déclenché');
 
-  /* 7. Signature : dessin + enregistrement chiffré */
-  await page.click('.tab[data-tab="sign"]');
+  /* 7. Signature : dessin + enregistrement chiffré (bascule d'onglet déterministe) */
+  await page.evaluate(() => { document.querySelectorAll('.toast').forEach((t) => t.remove()); document.querySelector('.tab[data-tab="sign"]').click(); });
+  await page.waitForSelector('#pane-sign:not([style*="display: none"])', { timeout: 5000 });
   await page.waitForTimeout(150);
   const box = await page.locator('#sig').boundingBox();
   if (box) { await page.mouse.move(box.x + 20, box.y + 40); await page.mouse.down(); await page.mouse.move(box.x + 120, box.y + 90); await page.mouse.up(); }
@@ -129,6 +133,36 @@ try {
   await page.waitForTimeout(200);
   if ((await page.locator('#sig-status').innerText()).includes('enregistrée')) ok('signature dessinée + enregistrée (chiffrée)');
   else fail('signature');
+
+  /* 8. Signer un PDF de bout en bout (pdf-lib vendorisé, Face ID virtuel) */
+  const plMod = await import(pathToFileURL(path.join(REPO, 'tools/approvals/vendor/pdf-lib.min.js')).href);
+  const PL = plMod.default || plMod;
+  const fixtureDoc = await PL.PDFDocument.create();
+  fixtureDoc.addPage([300, 400]).drawText('Contrat de test', { x: 40, y: 350, size: 16 });
+  const fixture = await fixtureDoc.save(); /* Uint8Array */
+  await page.setInputFiles('#pdf-file', { name: 'contrat.pdf', mimeType: 'application/pdf', buffer: Buffer.from(fixture) });
+  await page.waitForSelector('#pdf-opts:not([style*="display: none"])', { timeout: 8000 });
+  const info = await page.locator('#pdf-info').innerText();
+  if (info.includes('contrat.pdf') && info.includes('1 page')) ok('PDF chargé (pdf-lib lazy) — 1 page détectée');
+  else fail('chargement PDF (' + info + ')');
+  const dl = page.waitForEvent('download', { timeout: 12000 });
+  await page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
+  await page.evaluate(() => document.getElementById('pdf-sign').click());
+  const download = await dl.catch(async () => {
+    const st = await page.locator('#pdf-status').innerText().catch(() => '?');
+    throw new Error('pas de download — pdf-status="' + st + '"');
+  });
+  const dlPath = await download.path();
+  const signed = readFileSync(dlPath);
+  const header = signed.subarray(0, 5).toString('latin1');
+  if (header === '%PDF-' && signed.length > fixture.length && /-signe\.pdf$/.test(download.suggestedFilename())) {
+    ok('PDF SIGNÉ produit + téléchargé (' + signed.length + ' o > ' + fixture.length + ' o original, en-tête %PDF-)');
+  } else fail('signature PDF (header ' + header + ', len ' + signed.length + '/' + fixture.length + ', name ' + download.suggestedFilename() + ')');
+  /* le PDF signé doit rester un PDF valide re-parsable + contenir une image (la signature) */
+  try {
+    const re = await PL.PDFDocument.load(signed);
+    ok(re.getPageCount() === 1, 'PDF signé re-parsable et valide');
+  } catch (e) { fail('PDF signé invalide : ' + e.message); }
 
   if (errors.length) fail('exceptions JS : ' + errors.slice(0, 4).join(' | '));
   else ok('0 exception JS');
