@@ -214,6 +214,32 @@ export async function handleRulesCommand(ctx: SlashCtx, args: string): Promise<v
   }
 }
 
+/* v13.4.345 — /recherche : Recherche approfondie (Deep Research) — parité flagship.
+ * Décompose → recherche web multi-sources → rapport cité. Réutilise webSearch + aiRouter. */
+export async function handleResearchCommand(ctx: SlashCtx, query: string): Promise<void> {
+  const q = (query || '').trim();
+  if (!q) {
+    ctx.pushAssistant('🔬 Usage : `/recherche <sujet>` — recherche web multi-sources + rapport cité.');
+    return;
+  }
+  ctx.pushAssistant(
+    `🔬 **Recherche approfondie** — « ${q} »\n\n_Décomposition de la question, recherche web multi-sources et synthèse citée… (patiente ~30 s)_`,
+  );
+  try {
+    const { runDeepResearch, defaultDeepResearchDeps } = await import('../../services/ai/deep-research.js');
+    const deps = await defaultDeepResearchDeps();
+    const res = await runDeepResearch(q, {}, deps);
+    const sourcesTxt = res.sources.length
+      ? `\n\n---\n**🔗 Sources (${res.sources.length})**\n` +
+        res.sources.map((s) => `[${s.n}] [${s.title}](${s.url})`).join('\n')
+      : '';
+    ctx.pushAssistant((res.report || '_(Aucun rapport généré)_') + sourcesTxt);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    ctx.pushAssistant(`⚠️ Recherche approfondie impossible : ${msg}`);
+  }
+}
+
 /* v13.4.5 — Slash command /autonomous (mode autonome session-driven) */
 export async function handleAutonomousCommand(ctx: SlashCtx, args: string): Promise<void> {
   try {

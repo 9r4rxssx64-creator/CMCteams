@@ -26,7 +26,7 @@ import {
   handleResumeCommand, handleStatuslineCommand, handleOodaCommand,
   handleUltraReviewCommand, handleDiagCommand, handleTestCommand,
   handleLoopCommand, handlePlanCommand, handleRulesCommand,
-  handleAutonomousCommand,
+  handleAutonomousCommand, handleResearchCommand,
 } from './chat-slash-handlers.js';
 import { listCodeSnippets } from './chat-snippets.js';
 
@@ -185,6 +185,9 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
       return true;
     case 'rules':
       void handleRulesCommand(slashCtx, args);
+      return true;
+    case 'recherche':
+      void handleResearchCommand(slashCtx, args);
       return true;
     /* v13.4.5 — Mode autonome Apex */
     case 'autonomous':
