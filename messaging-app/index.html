@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.262",
+  "softwareVersion": "v1.1.263",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -83,6 +83,7 @@
 }
 </script>
 <script type="module" src="./lib/crypto-core.js"></script>
+<script type="module" src="./lib/message-search.js"></script>
 <script type="module" src="./lib/visio-mesh.js"></script>
 <script src="./crypto.js" defer></script>
 <!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
@@ -232,6 +233,14 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .chat-header .avatar{width:32px;height:32px;font-size:.9em;flex-shrink:0}
 .chat-header .topbar-btn{width:44px;height:44px;flex-shrink:0}
 .chat-hname{font-weight:600;font-size:.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.find-bar{display:flex;align-items:center;gap:4px;padding:6px 8px;background:var(--ax-bg-2);
+  border-bottom:1px solid var(--ax-border);position:sticky;top:0;z-index:49}
+.find-bar #find-input{flex:1;min-width:0;background:var(--ax-bg-3,var(--ax-bg));border:1px solid var(--ax-border);
+  border-radius:18px;padding:8px 12px;color:var(--ax-text);font-size:16px}
+.find-bar .find-count{font-size:.78em;color:var(--ax-text-3);min-width:34px;text-align:center;flex-shrink:0}
+.find-bar .topbar-btn{width:38px;height:38px;min-width:38px;min-height:38px;flex-shrink:0}
+.msg.find-hit{outline:2px solid rgba(232,184,48,.45);outline-offset:1px}
+.msg.find-active{outline:2px solid var(--ax-gold);background:rgba(232,184,48,.22)!important}
 .chat-messages{padding:6px 8px;display:flex;flex-direction:column;gap:2px}
 .chat-messages::before{content:"";margin-top:auto}
 .msg{max-width:84%;padding:6px 10px;border-radius:15px;word-wrap:break-word;
@@ -408,7 +417,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.262';
+const __APEX_CHAT_VERSION__ = 'v1.1.263';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -593,7 +602,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.262</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.263</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -607,7 +616,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.262</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.263</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6127,6 +6136,89 @@ K._scrollToMsg = function(msgId){
   }, 80);
 };
 
+// ============================================================================
+//  v1.1.263 — Recherche « dans cette conversation » (parité WhatsApp)
+//  100 % côté client, hors-ligne, instantané : surligne les messages qui
+//  contiennent le texte + navigation ↑/↓ entre résultats + compteur n/total.
+//  Complète la recherche IA (réseau) par une recherche littérale immédiate.
+// ============================================================================
+K._findBarOpen = false;
+K._findQuery = '';
+K._findIds = [];      // ids des messages qui matchent (ordre chrono)
+K._findTotal = 0;
+K._findPos = -1;      // index du résultat actif dans _findIds
+
+K._toggleFindBar = function(){
+  K._findBarOpen = !K._findBarOpen;
+  if(!K._findBarOpen){
+    K._findQuery = ''; K._findIds = []; K._findTotal = 0; K._findPos = -1;
+    K._clearFindHighlights();
+  }
+  K.render();
+  if(K._findBarOpen){
+    setTimeout(() => { const i = document.getElementById('find-input'); if(i) i.focus(); }, 30);
+  }
+};
+
+K._clearFindHighlights = function(){
+  document.querySelectorAll('.msg.find-hit, .msg.find-active').forEach(el => {
+    el.classList.remove('find-hit', 'find-active');
+  });
+};
+
+// Recalcule les résultats + surligne, SANS re-render complet (préserve le focus).
+K._findApply = function(resetPos){
+  const conv = K.viewData;
+  const search = window.ApexSearch;
+  if(!conv || !search){ return; }
+  const msgs = K.messages[conv.id] || [];
+  const res = search.findInMessages(msgs, K._findQuery, K._looksCiphertext);
+  K._findIds = res.ids;
+  K._findTotal = res.total;
+  if(resetPos || K._findPos >= K._findTotal) K._findPos = K._findTotal ? 0 : -1;
+  K._clearFindHighlights();
+  const idset = new Set(K._findIds);
+  document.querySelectorAll('.msg[data-msg-id]').forEach(el => {
+    if(idset.has(el.getAttribute('data-msg-id'))) el.classList.add('find-hit');
+  });
+  K._findMarkActive(false);
+  const cnt = document.getElementById('find-count');
+  if(cnt) cnt.textContent = K._findTotal ? (K._findPos + 1) + '/' + K._findTotal : (K._findQuery ? '0/0' : '');
+};
+
+// Marque le résultat actif + scroll vers lui.
+K._findMarkActive = function(doScroll){
+  document.querySelectorAll('.msg.find-active').forEach(el => el.classList.remove('find-active'));
+  if(K._findPos < 0 || K._findPos >= K._findIds.length) return;
+  const id = K._findIds[K._findPos];
+  const sel = (window.CSS && CSS.escape) ? CSS.escape(id) : id;
+  const el = document.querySelector('.msg[data-msg-id="' + sel + '"]');
+  if(el){
+    el.classList.add('find-active');
+    if(doScroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+};
+
+K._findInput = function(val){
+  K._findQuery = val || '';
+  if(K._findDebounce) clearTimeout(K._findDebounce);
+  K._findDebounce = setTimeout(() => {
+    K._findApply(true);
+    K._findMarkActive(true);
+  }, 120);
+};
+
+K._findStep = function(dir){
+  const search = window.ApexSearch;
+  if(!search) return;
+  if(!K._findTotal){ K._findApply(true); }
+  if(!K._findTotal) return;
+  K._findPos = search.nextMatchIndex(K._findPos, K._findTotal, dir);
+  const cnt = document.getElementById('find-count');
+  if(cnt) cnt.textContent = (K._findPos + 1) + '/' + K._findTotal;
+  K._findMarkActive(true);
+};
+
 // v1.1.34 — Reactions UI : picker + toggle
 K._REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🙏', '🔥', '👏'];
 
@@ -7283,11 +7375,22 @@ function renderChat(app){
         <div class="chat-hname">${esc(K._convName(conv))}</div>
         <div style="font-size:.68em;color:var(--ax-ok);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🔒 chiffré (transit)` : K._presenceLabel(conv)}</div>
       </div>
+      <button class="topbar-btn" onclick="K._toggleFindBar()" aria-label="Rechercher dans cette conversation">🔎</button>
       <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
       <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
       <button class="topbar-btn" onclick="K._openConvActionsMenu('${esc(conv.id)}', event)" aria-label="Actions">⋯</button>
     </div>
+    ${K._findBarOpen ? `<div class="find-bar" id="find-bar">
+      <input id="find-input" type="search" inputmode="search" autocomplete="off" placeholder="Rechercher dans le chat…"
+             value="${esc(K._findQuery || '')}"
+             oninput="K._findInput(this.value)"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();K._findStep(event.shiftKey?-1:1)}else if(event.key==='Escape'){event.preventDefault();K._toggleFindBar()}">
+      <span class="find-count" id="find-count">${K._findTotal ? `${K._findPos+1}/${K._findTotal}` : (K._findQuery ? '0/0' : '')}</span>
+      <button class="topbar-btn" onclick="K._findStep(-1)" aria-label="Résultat précédent" title="Précédent">↑</button>
+      <button class="topbar-btn" onclick="K._findStep(1)" aria-label="Résultat suivant" title="Suivant">↓</button>
+      <button class="topbar-btn" onclick="K._toggleFindBar()" aria-label="Fermer la recherche" title="Fermer">✕</button>
+    </div>` : ''}
     ${(() => {
       const lastRead = lg('lastread_' + conv.id, 0);
       const unread = msgs.filter(m => m.from !== K.user?.id && (m.ts || 0) > lastRead).length;
@@ -7336,7 +7439,7 @@ function renderChat(app){
       </div>
     </div>
   `;
-  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();K._applyConvBackground&&K._applyConvBackground();K._hydrateEncMedia&&K._hydrateEncMedia();}, 50);
+  setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();K._applyConvBackground&&K._applyConvBackground();K._hydrateEncMedia&&K._hydrateEncMedia();if(K._findBarOpen&&K._findQuery){K._findApply(false);}}, 50);
   // v1.1.27 : Smart Reply chips si dernier message reçu
   try {
     const msgs = K.messages[K.viewData?.id] || [];
