@@ -164,6 +164,29 @@ try {
     if (re.getPageCount() === 1) ok('PDF signé re-parsable et valide'); else fail('PDF signé : page count ' + re.getPageCount());
   } catch (e) { fail('PDF signé invalide : ' + e.message); }
 
+  /* 8b. Créer un compte : générateur mot de passe fort + kit préparé (chiffré) */
+  await page.evaluate(() => { document.querySelectorAll('.toast').forEach((t) => t.remove()); document.querySelector('.tab[data-tab="account"]').click(); });
+  await page.waitForSelector('#pane-account:not([style*="display: none"])', { timeout: 5000 });
+  const gen1 = await page.locator('#ac-pass').inputValue();
+  await page.click('#ac-regen');
+  const gen2 = await page.locator('#ac-pass').inputValue();
+  const strong = gen1.length >= 16 && /[A-Z]/.test(gen1) && /[a-z]/.test(gen1) && /[0-9]/.test(gen1) && /[^A-Za-z0-9]/.test(gen1);
+  if (strong && gen1 !== gen2) ok('mot de passe fort généré (≥16, 4 classes) + régénérable');
+  else fail('génération mot de passe (' + gen1 + ' / ' + gen2 + ')');
+  await page.fill('#ac-service', 'ServiceTest');
+  await page.fill('#ac-email', 'kevin+test@kd-mc.com');
+  const savedPass = await page.locator('#ac-pass').inputValue();
+  await page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
+  await page.click('#ac-prepare');
+  await page.waitForTimeout(300);
+  const listTxt = await page.locator('#ac-list').innerText();
+  if (listTxt.includes('ServiceTest') && listTxt.includes('kevin+test@kd-mc.com')) ok('compte préparé + rendu dans « Comptes préparés »');
+  else fail('compte préparé (' + listTxt.slice(0, 80) + ')');
+  /* stocké CHIFFRÉ : le localStorage ne contient pas le mot de passe en clair */
+  const clearLeak = await page.evaluate((pw) => { const raw = localStorage.getItem('apx_appr_accounts_v1') || ''; return raw.includes(pw); }, savedPass);
+  if (!clearLeak) ok('compte stocké CHIFFRÉ (mot de passe absent du localStorage en clair)');
+  else fail('fuite : mot de passe en clair dans localStorage');
+
   /* 9. PWA : manifest valide + service worker enregistré + métas installables */
   const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
   const mres = await page.request.get(new URL(manifestHref, PAGE_URL).href);
