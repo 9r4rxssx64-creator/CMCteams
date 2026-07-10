@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-app-ver="v1.0">
+<html lang="fr" data-app-ver="v1.1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -126,6 +126,25 @@
         <button class="b-gold" id="sig-save">💾 Enregistrer (chiffré)</button>
       </div>
       <div id="sig-status" class="muted" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-t">📄 Signer un PDF (à ta place)</div>
+      <p class="muted">Je pose ta signature enregistrée sur le document et te rends le PDF signé. Tu valides d'un Face ID — ton consentement reste le tien (eIDAS). Tout se passe sur ton iPhone, aucun document n'est envoyé ailleurs.</p>
+      <label>Document PDF</label>
+      <input id="pdf-file" type="file" accept="application/pdf,.pdf">
+      <div id="pdf-info" class="muted" style="margin-top:6px"></div>
+      <div id="pdf-opts" style="display:none">
+        <div class="row">
+          <div><label>Page</label><select id="pdf-page"></select></div>
+          <div><label>Position</label><select id="pdf-pos">
+            <option value="br">Bas droite</option><option value="bl">Bas gauche</option>
+            <option value="tr">Haut droite</option><option value="tl">Haut gauche</option>
+          </select></div>
+        </div>
+        <button class="b-gold" id="pdf-sign" style="width:100%;margin-top:10px">🆔 Signer le PDF (Face ID)</button>
+      </div>
+      <div id="pdf-status" class="muted" style="margin-top:8px"></div>
     </div>
   </div>
 
@@ -305,9 +324,11 @@
   async function vaultSave(arr){ localStorage.setItem(LS.vault, await encJSON(arr)); }
 
   /* ---------- Signature (canvas) ---------- */
+  var _sigResizeFn=null;
   function initSig(){
     var c=$("sig"); if(!c) return; var ctx=c.getContext("2d");
-    function resize(){ var r=c.getBoundingClientRect(); c.width=r.width*devicePixelRatio; c.height=r.height*devicePixelRatio; ctx.scale(devicePixelRatio,devicePixelRatio); ctx.lineWidth=2.4; ctx.lineCap="round"; ctx.strokeStyle="#f2efe0"; }
+    function resize(){ var r=c.getBoundingClientRect(); if(r.width<2) return; c.width=r.width*devicePixelRatio; c.height=r.height*devicePixelRatio; ctx.setTransform(1,0,0,1,0,0); ctx.scale(devicePixelRatio,devicePixelRatio); ctx.lineWidth=2.4; ctx.lineCap="round"; ctx.strokeStyle="#f2efe0"; }
+    _sigResizeFn=resize;
     resize();
     var drawing=false,last=null;
     function pos(e){ var r=c.getBoundingClientRect(); var t=e.touches?e.touches[0]:e; return {x:t.clientX-r.left,y:t.clientY-r.top}; }
@@ -322,6 +343,70 @@
         $("sig-status").textContent="✅ Signature enregistrée (chiffrée). Apex l'utilisera après ton Face ID."; toast("Signature enregistrée"); }
       catch(e){ $("sig-status").textContent="Erreur : "+e.message; }
     };
+    initPdfSign();
+  }
+
+  /* ---------- Signer un PDF (pdf-lib vendorisé, chargé à la demande, 0 tiers) ---------- */
+  var _pdfBytes=null, _pdfDoc=null, _pdfName="";
+  function loadPdfLib(){
+    return new Promise(function(res,rej){
+      if(window.PDFLib) return res(window.PDFLib);
+      var s=document.createElement("script"); s.src="vendor/pdf-lib.min.js";
+      s.onload=function(){ window.PDFLib ? res(window.PDFLib) : rej(new Error("pdf-lib KO")); };
+      s.onerror=function(){ rej(new Error("chargement pdf-lib échoué")); };
+      document.head.appendChild(s);
+    });
+  }
+  function initPdfSign(){
+    var fin=$("pdf-file"); if(!fin) return;
+    fin.onchange=async function(){
+      var f=fin.files&&fin.files[0]; if(!f) return;
+      $("pdf-status").textContent="Chargement du document…";
+      try{
+        var PDFLib=await loadPdfLib();
+        _pdfBytes=new Uint8Array(await f.arrayBuffer()); _pdfName=f.name||"document.pdf";
+        _pdfDoc=await PDFLib.PDFDocument.load(_pdfBytes,{ignoreEncryption:true});
+        var n=_pdfDoc.getPageCount();
+        var sel=$("pdf-page"); sel.innerHTML="";
+        for(var i=0;i<n;i++){ var o=document.createElement("option"); o.value=i; o.textContent="Page "+(i+1); sel.appendChild(o); }
+        sel.value=n-1; /* dernière page par défaut */
+        $("pdf-info").textContent="📄 "+esc(_pdfName)+" — "+n+" page"+(n>1?"s":"");
+        $("pdf-opts").style.display=""; $("pdf-status").textContent="";
+      }catch(e){ $("pdf-status").textContent="Erreur : "+e.message; $("pdf-opts").style.display="none"; }
+    };
+    $("pdf-sign").onclick=async function(){
+      if(!_pdfDoc){ toast("Choisis un PDF d'abord"); return; }
+      var sigBlob=localStorage.getItem(LS.sig); var sig= sigBlob?await decJSON(sigBlob):null;
+      if(!sig||!sig.png){ $("pdf-status").textContent="⚠️ Enregistre d'abord ta signature (ci-dessus)."; return; }
+      /* Autorisation FORTE : Face ID avant d'apposer la signature (consentement eIDAS = ton geste) */
+      try{ if(waSupported()) await waAssert(); }
+      catch(e){ toast("Signature annulée"); return; }
+      try{
+        var PDFLib=await loadPdfLib();
+        /* data URL → octets bruts (embedPng est fiable sur des bytes, pas sur la string data:) */
+        var sigBytes=unb64(String(sig.png).split(",")[1]||"");
+        var png=await _pdfDoc.embedPng(sigBytes);
+        var idx=parseInt($("pdf-page").value,10)||0; var page=_pdfDoc.getPages()[idx];
+        var ps=page.getSize(); var w=Math.min(150, ps.width*0.32); var h=w*(png.height/png.width);
+        var m=24, pos=$("pdf-pos").value;
+        var x = (pos==="br"||pos==="tr") ? ps.width-w-m : m;
+        var y = (pos==="br"||pos==="bl") ? m : ps.height-h-m;
+        page.drawImage(png,{x:x,y:y,width:w,height:h});
+        /* horodatage discret sous la signature */
+        try{ var font=await _pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+          page.drawText("Signé le "+new Date().toLocaleString("fr-FR"),{x:x,y:Math.max(4,y-11),size:7,font:font,color:PDFLib.rgb(0.4,0.4,0.4)}); }catch(_){}
+        var out=await _pdfDoc.save();
+        var blob=new Blob([out],{type:"application/pdf"});
+        var url=URL.createObjectURL(blob); var a=document.createElement("a");
+        a.href=url; a.download=_pdfName.replace(/\.pdf$/i,"")+"-signe.pdf"; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){URL.revokeObjectURL(url);},4000);
+        await addHist({status:"approved",ts:Date.now(),proof:"wa:pdf",type:"signature",title:"PDF signé : "+_pdfName});
+        $("pdf-status").textContent="✅ PDF signé et téléchargé. (Recharge le document pour re-signer.)";
+        toast("📄 PDF signé");
+        /* reset doc (le save() a pu détacher le buffer) */
+        _pdfDoc=null; $("pdf-opts").style.display="none"; $("pdf-file").value="";
+      }catch(e){ $("pdf-status").textContent="Erreur signature : "+(e&&(e.message||e.name)||String(e)); }
+    };
   }
 
   /* ---------- Onglets ---------- */
@@ -333,6 +418,7 @@
         var pane=$("pane-"+t.dataset.tab); if(pane) pane.style.display="";
         if(t.dataset.tab==="vault") loadVault();
         if(t.dataset.tab==="hist") loadHist();
+        if(t.dataset.tab==="sign" && _sigResizeFn) _sigResizeFn(); /* canvas mesuré une fois visible (sinon 0×0) */
       };
     });
   }
