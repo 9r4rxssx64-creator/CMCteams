@@ -1,10 +1,19 @@
 <!doctype html>
-<html lang="fr" data-app-ver="v1.1">
+<html lang="fr" data-app-ver="v1.2">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
 <title>Coffre d'autorisations — Apex</title>
+<!-- PWA installable : iOS + Android + desktop -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0f0a">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Autorisations">
 <style>
   :root{--bg:#0b0f0a;--card:#141b11;--card2:#1b2415;--gold:#e8c766;--gold2:#c9a94a;--txt:#f2efe0;--dim:#a9b39a;--ok:#3fbf6a;--no:#d8574e;--line:#2a331f;--warn:#e0a83a}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -71,6 +80,16 @@
 <div id="app" style="display:none">
   <h1><span class="g">Coffre d'autorisations</span> <span class="pill" id="who">Kevin</span></h1>
   <p class="sub">Je fais tout à ta place. Il ne reste que ton feu vert — 1 tap. <span id="conn" class="pill">…</span></p>
+
+  <!-- Bannière d'installation (Android : bouton natif ; iOS : instructions ; caché si déjà installé) -->
+  <div id="install-bar" class="card" style="display:none;border-color:var(--gold2)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:24px">📲</span>
+      <div style="flex:1"><b>Installer l'app</b><div class="muted" id="install-txt">Ajoute le Coffre à ton écran d'accueil (iOS + Android + ordi).</div></div>
+      <button class="b-gold" id="install-go" style="flex:0 0 auto">Installer</button>
+      <button class="b-no" id="install-x" style="flex:0 0 auto;max-width:44px">✕</button>
+    </div>
+  </div>
 
   <div class="tabs">
     <div class="tab on" data-tab="pending">🔔 À autoriser <span id="cnt"></span></div>
@@ -433,7 +452,7 @@
   }
   function openApp(){
     $("lock").style.display="none"; $("app").style.display="";
-    fbAuth().then(loadPending); loadHist(); initSig(); initTabs();
+    fbAuth().then(loadPending); loadHist(); initSig(); initTabs(); refreshInstallBar();
     /* rafraîchit la file toutes les 20 s + au focus (leçon temps réel) */
     setInterval(loadPending, 20000);
     window.addEventListener("focus", loadPending);
@@ -461,6 +480,23 @@
       else if(stored!==h){ toast("Code incorrect"); return; }
       if(await unlockWith("pin:"+h)) openApp(); else toast("Coffre illisible");
     };
+  }
+
+  /* ---------- PWA : installable iOS / Android / desktop ---------- */
+  var _deferredPrompt=null;
+  function isStandalone(){ return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone===true; }
+  function isIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream; }
+  function initPwa(){
+    if("serviceWorker" in navigator){ try{ navigator.serviceWorker.register("sw.js").catch(function(){}); }catch(e){} }
+    window.addEventListener("beforeinstallprompt", function(e){ e.preventDefault(); _deferredPrompt=e; refreshInstallBar(); });
+    window.addEventListener("appinstalled", function(){ _deferredPrompt=null; var b=$("install-bar"); if(b) b.style.display="none"; toast("✅ App installée"); });
+  }
+  function refreshInstallBar(){
+    var bar=$("install-bar"); if(!bar) return;
+    if(isStandalone() || localStorage.getItem("apx_appr_install_dismissed")==="1"){ bar.style.display="none"; return; }
+    if(_deferredPrompt){ $("install-txt").textContent="Ajoute le Coffre à ton écran d'accueil, en 1 tap."; bar.style.display=""; return; }
+    if(isIOS()){ $("install-txt").textContent="iPhone : bouton Partager ⬆️ puis « Sur l'écran d'accueil »."; $("install-go").textContent="Comment ?"; bar.style.display=""; return; }
+    bar.style.display="none"; /* desktop sans prompt dispo : rien */
   }
 
   /* ---------- Actions déléguées ---------- */
@@ -492,6 +528,13 @@
       await fbPut("apex_approvals/"+UID+"/pending/"+id, req);
       toast("Demande créée — autorise-la 👆");
     });
+    $("install-go") && ($("install-go").onclick=async function(){
+      if(_deferredPrompt){ _deferredPrompt.prompt(); try{ await _deferredPrompt.userChoice; }catch(e){} _deferredPrompt=null; refreshInstallBar(); return; }
+      if(isIOS()){ toast("Touche le bouton Partager ⬆️ en bas, puis « Sur l'écran d'accueil »",5000); return; }
+      toast("Menu du navigateur → « Installer l'application »",4500);
+    });
+    $("install-x") && ($("install-x").onclick=function(){ localStorage.setItem("apx_appr_install_dismissed","1"); var b=$("install-bar"); if(b) b.style.display="none"; });
+    initPwa();
     initLock();
   });
 })();

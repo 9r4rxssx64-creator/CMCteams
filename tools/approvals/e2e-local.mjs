@@ -161,8 +161,26 @@ try {
   /* le PDF signé doit rester un PDF valide re-parsable + contenir une image (la signature) */
   try {
     const re = await PL.PDFDocument.load(signed);
-    ok(re.getPageCount() === 1, 'PDF signé re-parsable et valide');
+    if (re.getPageCount() === 1) ok('PDF signé re-parsable et valide'); else fail('PDF signé : page count ' + re.getPageCount());
   } catch (e) { fail('PDF signé invalide : ' + e.message); }
+
+  /* 9. PWA : manifest valide + service worker enregistré + métas installables */
+  const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
+  const mres = await page.request.get(new URL(manifestHref, PAGE_URL).href);
+  const manifest = await mres.json().catch(() => null);
+  if (manifest && manifest.display === 'standalone' && Array.isArray(manifest.icons) && manifest.icons.length && manifest.start_url) {
+    ok('manifest.json valide (standalone, icône, start_url) — installable');
+  } else fail('manifest (' + JSON.stringify(manifest) + ')');
+  const swReg = await page.evaluate(async () => {
+    if (!('serviceWorker' in navigator)) return 'no-sw-api';
+    try { const r = await navigator.serviceWorker.ready; return r && r.active ? 'active' : 'registered'; } catch (e) { return 'err:' + e.message; }
+  });
+  if (swReg === 'active' || swReg === 'registered') ok('service worker enregistré (' + swReg + ') — offline + MAJ auto');
+  else fail('service worker : ' + swReg);
+  const iosMeta = await page.locator('meta[name="apple-mobile-web-app-capable"]').getAttribute('content');
+  const appleIcon = await page.locator('link[rel="apple-touch-icon"]').count();
+  if (iosMeta === 'yes' && appleIcon === 1) ok('métas iOS présentes (apple-mobile-web-app + apple-touch-icon)');
+  else fail('métas iOS (capable=' + iosMeta + ', appleIcon=' + appleIcon + ')');
 
   if (errors.length) fail('exceptions JS : ' + errors.slice(0, 4).join(' | '));
   else ok('0 exception JS');
