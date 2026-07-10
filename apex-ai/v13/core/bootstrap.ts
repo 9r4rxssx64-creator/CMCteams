@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.352';
+export const APP_VER = 'v13.4.353';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -96,6 +96,23 @@ async function bootstrap(): Promise<void> {
       logger.warn('boot', `Service init failed: ${label} (continuing degraded)`, { err });
     }
   };
+
+  /* v13.4.353 (leçon #61 — await sans timeout = écran blanc si le réseau HANG) :
+   * un `await` bloquant au boot (memory.init / firebase.init) doit être BORNÉ.
+   * Si l'init n'a pas résolu au bout de `ms`, on POURSUIT le boot (rendu de la
+   * vue login/landing) — l'init continue en arrière-plan. Ne rejette jamais :
+   * une panne réseau ne doit JAMAIS empêcher l'app de s'afficher (iPhone lent,
+   * TLS bloqué, Firebase injoignable, headless E2E). */
+  const bootStep = (p: Promise<unknown>, ms: number, label: string): Promise<void> =>
+    Promise.race([
+      Promise.resolve(p).then(() => undefined).catch(() => undefined),
+      new Promise<void>((res) =>
+        setTimeout(() => {
+          logger.warn('boot', `${label} lent (>${ms}ms) — boot poursuivi (init en arrière-plan)`);
+          res();
+        }, ms),
+      ),
+    ]);
 
   /* v13.3.71 PERF (LCP optim) : sentry + bodyguard MIS EN POST-RENDER.
    * Avant : 2 await sequentiels au boot = +200ms LCP.
@@ -372,10 +389,14 @@ async function bootstrap(): Promise<void> {
     appVer: APP_VER,
   });
 
-  /* 4. Memory module — auto-injection contexte */
-  await memory.init().catch((err: unknown) => {
-    logger.error('boot', 'Memory init failed (degraded)', { err });
-  });
+  /* 4. Memory module — auto-injection contexte (borné : ne bloque pas le rendu) */
+  await bootStep(
+    memory.init().catch((err: unknown) => {
+      logger.error('boot', 'Memory init failed (degraded)', { err });
+    }),
+    3000,
+    'memory.init',
+  );
 
   /* v13.4.37 — Economy Mode init (charge toggle persisté depuis localStorage).
    * Non-bloquant : si fail, mode économie reste inactif (default safe). */
@@ -412,9 +433,13 @@ async function bootstrap(): Promise<void> {
   /* 5. Services lazy-load (services/ chargés à la demande par router) */
   /* Pre-init seulement les services critiques */
   const { firebase } = await import('@services/storage/firebase.js');
-  await firebase.init().catch((err: unknown) => {
-    logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
-  });
+  await bootStep(
+    firebase.init().catch((err: unknown) => {
+      logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
+    }),
+    2500,
+    'firebase.init',
+  );
 
   /* Phase 5 — pont Firebase Auth (obtient un id_token au login via apex-auth-worker).
    * Fail-open : aucune régression si worker absent. Lazy import non-bloquant. */
