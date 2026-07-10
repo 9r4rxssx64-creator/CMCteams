@@ -1469,6 +1469,14 @@ async function handleUploadPrekeys(request, env) {
          prekey_signed=COALESCE(?, prekey_signed)
        WHERE id=?`
     ).bind(idk, pq, signed, auth.sub).run();
+    // v1.1.261 — capacités crypto (best-effort : une colonne absente NE casse
+    // JAMAIS la publication de clé). Le pair saura ainsi quel niveau on déchiffre.
+    if (typeof body.crypto_caps === 'string' && body.crypto_caps.length <= 200 && /^[a-z0-9,]+$/.test(body.crypto_caps)) {
+      try {
+        await env.APEX_CHAT_DB.prepare('UPDATE users SET crypto_caps=? WHERE id=?')
+          .bind(body.crypto_caps, auth.sub).run();
+      } catch (_capErr) { /* colonne pas encore migrée → ignoré */ }
+    }
     return json({ ok: true });
   } catch (e) {
     return err('Échec publication clé', 500, 'db_write_failed', {
@@ -1489,6 +1497,12 @@ async function handleKeyBundle(userId, request, env) {
   if (!idk || idk === 'PENDING_PQXDH' || idk === 'PENDING') {
     return err('Clé pas encore publiée par ce contact', 409, 'key_pending', { user_id: userId });
   }
+  // v1.1.261 — capacités crypto du pair (best-effort : colonne absente → null).
+  let caps = null;
+  try {
+    const c = await env.APEX_CHAT_DB.prepare('SELECT crypto_caps FROM users WHERE id=?').bind(userId).first();
+    caps = (c && typeof c.crypto_caps === 'string') ? c.crypto_caps : null;
+  } catch (_capErr) { caps = null; }
   return json({
     ok: true,
     bundle: {
@@ -1496,6 +1510,7 @@ async function handleKeyBundle(userId, request, env) {
       identity_key_pub: idk,
       pq_key_pub: row.pq_key_pub && !String(row.pq_key_pub).startsWith('PENDING') ? row.pq_key_pub : null,
       prekey_signed: row.prekey_signed && !String(row.prekey_signed).startsWith('PENDING') ? row.prekey_signed : null,
+      crypto_caps: caps,
     },
   });
 }

@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.260",
+  "softwareVersion": "v1.1.261",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.260';
+const __APEX_CHAT_VERSION__ = 'v1.1.261';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.260</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.261</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.260</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.261</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -5281,28 +5281,46 @@ K._e2eOn = function(){
 // le serveur) → le destinataire sait qu'un payload est chiffré, sans changer le
 // worker ni la base. Payload non-taggé = texte clair (transit). 100% rétro-compat.
 K._E2E_TAG = 'E2E1:';
-// v1.1.260 — Chiffrement des OCTETS média (bytes dans R2). Le marqueur APXMEDIA
+// v1.1.261 — Chiffrement des OCTETS média (bytes dans R2). Le marqueur APXMEDIA
 // est déjà chiffré (URL/légende) mais les bytes du fichier étaient uploadés EN
 // CLAIR. Ce flag (OFF par défaut) active le chiffrement des bytes à l'upload +
 // le déchiffrement au rendu. OFF = médias inchangés (zéro régression) ; à passer
 // ON après validation iPhone réelle (envoi + réception photo entre 2 comptes).
-K._mediaE2eOn = function(){
-  try{ if(localStorage.getItem('apex_chat_media_e2e') === '1') return K._e2eOn(); }catch(_){}
-  return false;
+// v1.1.261 — capacités que CET appareil sait déchiffrer (publiées au serveur).
+K._CRYPTO_CAPS = 'e2e2,media';
+K._peerSupports = function(conv, cap){
+  try{ return !!(conv && typeof conv._peer_caps === 'string' && conv._peer_caps.split(',').indexOf(cap) >= 0); }catch(_){ return false; }
 };
-// v1.1.260 — forward secrecy (ratchet). Flag OFF par défaut (nécessite E2E ON).
+// Média-E2E : ON forcé ('1'), OFF forcé ('0'), sinon AUTO = ON si le pair sait
+// le déchiffrer (négociation de capacités → sécurité par défaut, zéro casse).
+K._mediaE2eOn = function(conv){
+  if(!K._e2eOn()) return false;
+  let v = null; try{ v = localStorage.getItem('apex_chat_media_e2e'); }catch(_){}
+  if(v === '1') return true;
+  if(v === '0') return false;
+  return K._peerSupports(conv, 'media');
+};
+// v1.1.261 — forward secrecy (ratchet). Flag OFF par défaut (nécessite E2E ON).
 // Nouveau format de payload « E2E2:<n>:<ct> » ; ancien « E2E1: » toujours lu.
 K._RATCHET_TAG = 'E2E2:';
-K._ratchetOn = function(){
-  try{ if(localStorage.getItem('apex_chat_ratchet') === '1') return K._e2eOn(); }catch(_){}
-  return false;
+// Forward secrecy : ON forcé ('1'), OFF forcé ('0'), sinon AUTO = ON si le pair
+// supporte E2E2 (négociation de capacités → FS par défaut entre clients à jour).
+K._ratchetOn = function(conv){
+  if(!K._e2eOn()) return false;
+  let v = null; try{ v = localStorage.getItem('apex_chat_ratchet'); }catch(_){}
+  if(v === '1') return true;
+  if(v === '0') return false;
+  return K._peerSupports(conv, 'e2e2');
 };
 // Initialise/rappelle l'état ratchet d'une conversation (persisté localStorage
 // → survit au reload). Déterministe depuis l'ECDH (les 2 pairs partent du même
 // secret) ; fail-open : toute erreur → pas de ratchet (retombe sur E2E1).
-K._ensureRatchet = async function(conv){
+// force=true : on REÇOIT un message E2E2 → on DOIT initialiser pour le déchiffrer,
+// même si l'envoi ratchet n'est pas activé de notre côté.
+K._ensureRatchet = async function(conv, force){
   try{
-    if(!K._ratchetOn() || !window.ApexCrypto || !ApexCrypto.ratchetInit || !conv) return false;
+    if(!window.ApexCrypto || !ApexCrypto.ratchetInit || !conv) return false;
+    if(!force && !K._ratchetOn(conv)) return false;
     if(ApexCrypto.hasRatchet(conv.id)) return true;
     // 1) tente de restaurer l'état persisté
     try{
@@ -5330,7 +5348,7 @@ K._decryptRatchetPayload = async function(convId, raw){
     if(sep < 0) return '🔒 Message chiffré (E2E)';
     const n = parseInt(body.slice(0, sep), 10);
     const ct = body.slice(sep + 1);
-    await K._ensureRatchet({ id: convId, peer_pubkey: (K.viewData && K.viewData.id === convId ? K.viewData.peer_pubkey : null) });
+    await K._ensureRatchet(K.viewData && K.viewData.id === convId ? K.viewData : { id: convId }, true);
     if(window.ApexCrypto && ApexCrypto.hasRatchet(convId)){
       const txt = await ApexCrypto.ratchetDecrypt(convId, n, ct);
       K._persistRatchet(convId);
@@ -6415,7 +6433,9 @@ K._publishPubkey = async function(){
     const pub = lg('crypto_pub', null);
     if(!pub || !K.token) return;                       // besoin d'être authentifié
     if(lg('crypto_pub_published', null) === pub) return; // déjà publiée
-    const r = await K._api('POST', '/api/keys/prekeys', { identity_key_pub: pub });
+    // v1.1.261 — publie AUSSI les capacités crypto qu'on sait déchiffrer, pour
+    // que nos contacts activent auto le plus haut niveau commun.
+    const r = await K._api('POST', '/api/keys/prekeys', { identity_key_pub: pub, crypto_caps: K._CRYPTO_CAPS });
     if(r && r.ok){ ls('crypto_pub_published', pub); _logTelemetry('ok', 'pubkey-published', {}); }
   }catch(e){ _safeCatch('publish-pubkey', e); }  // jamais bloquant
 };
@@ -6423,7 +6443,7 @@ K._publishPubkey = async function(){
 // v1.1.173 FIX P0 (audit crew) — garantit une session E2E pour une conv (DM).
 // Établit depuis conv.peer_pubkey ; sinon récupère le bundle du pair just-in-time
 // via GET /api/keys/:peer_id/bundle. Retourne true si une session est active.
-// v1.1.260 — alerte de changement de clé (TOFU). Non-bloquant : informe l'user
+// v1.1.261 — alerte de changement de clé (TOFU). Non-bloquant : informe l'user
 // qu'il doit re-vérifier le numéro de sécurité (réinstallation du contact OU
 // tentative de MITM). Ne coupe jamais l'envoi.
 K._notifyKeyChange = function(conv){
@@ -6447,7 +6467,8 @@ K._ensureSession = async function(conv){
         if(r && r.ok && r.bundle && r.bundle.identity_key_pub){
           peerPub = r.bundle.identity_key_pub;
           conv.peer_pubkey = peerPub; // cache local
-          // v1.1.260 — détection de changement de clé (TOFU, parité Signal).
+          conv._peer_caps = (typeof r.bundle.crypto_caps === 'string') ? r.bundle.crypto_caps : ''; // v1.1.261
+          // v1.1.261 — détection de changement de clé (TOFU, parité Signal).
           try{
             const storeK = 'peerkey_' + conv.id;
             const stored = localStorage.getItem(storeK);
@@ -7391,9 +7412,9 @@ K._sendMsg = async function(){
   let ratchetPayload = null;
   if(K._e2eOn()){
     try{
-      // v1.1.260 — forward secrecy prioritaire si activée : chaque message a sa
+      // v1.1.261 — forward secrecy prioritaire si activée : chaque message a sa
       // clé jetable (E2E2:<n>:<ct>). Sinon E2E1 statique. Fail-open sur E2E1.
-      if(K._ratchetOn() && await K._ensureRatchet(conv)){
+      if(K._ratchetOn(conv) && await K._ensureRatchet(conv)){
         const rr = await ApexCrypto.ratchetEncrypt(conv.id, text);
         ratchetPayload = K._RATCHET_TAG + rr.n + ':' + rr.ct;
         K._persistRatchet(conv.id);
@@ -7444,7 +7465,7 @@ K._sendMsg = async function(){
   input.value = '';
   K.render();
 
-  // Phase 3 : politique de mise sur le fil (v1.1.260, leçon #90). JAMAIS de
+  // Phase 3 : politique de mise sur le fil (v1.1.261, leçon #90). JAMAIS de
   // texte clair silencieux quand E2E est ON : sans clé du contact, le message
   // passe « en attente de chiffrement » et part chiffré dès que la clé arrive.
   const decision = (window.ApexCrypto && ApexCrypto.decideWire)
@@ -7476,7 +7497,7 @@ K._sendMsg = async function(){
 };
 
 // ============================================================================
-//  File « en attente de chiffrement » — v1.1.260 (leçon #90)
+//  File « en attente de chiffrement » — v1.1.261 (leçon #90)
 //  Messages écrits alors que E2E est ON mais que la clé du contact n'est pas
 //  encore là. On ne transmet AUCUN clair : on retente le chiffrement dès qu'une
 //  session s'établit (ouverture WS / _ensureSession), puis on envoie chiffré.
@@ -7766,7 +7787,7 @@ K._openWs = async function(convId){
       // v1.1.173 FIX P0 (audit crew) : rejouer les messages écrits hors-ligne
       // pour cette conversation dès que le WS est (re)connecté.
       try{ K._flushOutboxFor(convId); }catch(_e){_safeCatch('silent',_e)}
-      // v1.1.260 — retente d'envoyer chiffrés les messages « en attente de clé ».
+      // v1.1.261 — retente d'envoyer chiffrés les messages « en attente de clé ».
       try{ K._flushPendingEncrypt && K._flushPendingEncrypt(convId); }catch(_e){_safeCatch('silent',_e)}
       if(K.view === 'chat' && K.viewData?.id === convId && typeof K._updatePresenceHeader === 'function'){
         try{ K._updatePresenceHeader(); }catch(_e){_safeCatch('silent',_e)}
@@ -8074,7 +8095,7 @@ async function _handleWsMessage(data, convId){
       break;
     }
     case 'edit_message': {
-      // v1.1.48 — Peer a édité un message. v1.1.260 : supporte l'édition E2E
+      // v1.1.48 — Peer a édité un message. v1.1.261 : supporte l'édition E2E
       // (data.ciphertext taggé E2E1:) en plus du legacy clair (data.new_text).
       const eMsgId = data.message_id;
       let newText = data.new_text;
@@ -9569,11 +9590,11 @@ K.openPrivacyPrefs = function(){
     </label>
     <label style="display:flex;align-items:flex-start;gap:10px;margin-top:10px;padding:12px;background:rgba(232,184,48,.08);border:1px solid rgba(232,184,48,.25);border-radius:10px;cursor:pointer">
       <input type="checkbox" id="pv-media-e2e" ${(function(){try{return localStorage.getItem('apex_chat_media_e2e')==='1'}catch(_){return false}})()?'checked':''} onchange="K._toggleMediaE2e(this.checked)" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">
-      <span style="font-size:.85em;line-height:1.45"><strong>🖼 Chiffrer aussi les photos/fichiers</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Chiffre le <strong>contenu</strong> des médias (pas seulement leur nom) : le serveur ne voit jamais l'image. À activer quand tes contacts ont la <strong>dernière version</strong> de l'app (une version ancienne ne pourrait pas afficher un média chiffré).</span></span>
+      <span style="font-size:.85em;line-height:1.45"><strong>🖼 Chiffrer aussi les photos/fichiers</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Chiffre le <strong>contenu</strong> des médias (pas seulement leur nom) : le serveur ne voit jamais l'image. <strong>Auto</strong> dès que le contact est à jour ; sans effet sur un contact en ancienne version (aucune casse). Coche pour forcer, décoche pour désactiver.</span></span>
     </label>
     <label style="display:flex;align-items:flex-start;gap:10px;margin-top:10px;padding:12px;background:rgba(120,90,255,.08);border:1px solid rgba(120,90,255,.28);border-radius:10px;cursor:pointer">
       <input type="checkbox" id="pv-ratchet" ${(function(){try{return localStorage.getItem('apex_chat_ratchet')==='1'}catch(_){return false}})()?'checked':''} onchange="K._toggleRatchet(this.checked)" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">
-      <span style="font-size:.85em;line-height:1.45"><strong>🔐 Forward secrecy (clés jetables)</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Chaque message a sa <strong>propre clé</strong>, détruite après usage : si une clé fuite un jour, elle ne déchiffre <strong>pas</strong> tes anciens messages. À activer quand tes contacts ont la <strong>dernière version</strong>.</span></span>
+      <span style="font-size:.85em;line-height:1.45"><strong>🔐 Forward secrecy (clés jetables)</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Chaque message a sa <strong>propre clé</strong>, détruite après usage : si une clé fuite un jour, elle ne déchiffre <strong>pas</strong> tes anciens messages. <strong>Auto</strong> dès que le contact est à jour ; coche pour forcer, décoche pour désactiver.</span></span>
     </label>
     <button class="btn btn-block" onclick="K._savePrivacyPrefs()" style="margin-top:14px">💾 Sauvegarder</button>
   `);
@@ -9598,14 +9619,14 @@ K._toggleE2eBeta = function(on){
   toast(on ? '🛡 Chiffrement bout-en-bout activé sur cet appareil' : '🔒 E2E désactivé sur cet appareil (messages chiffrés en transit)', 'ok', 3800);
   if(typeof K.render === 'function') K.render();
 };
-// v1.1.260 — active le chiffrement des OCTETS média (photos/fichiers) sur cet
+// v1.1.261 — active le chiffrement des OCTETS média (photos/fichiers) sur cet
 // appareil. OFF par défaut (compat : un contact sur une ancienne version ne
 // pourrait pas afficher un média chiffré). Nécessite E2E ON pour agir.
 K._toggleMediaE2e = function(on){
   try{ localStorage.setItem('apex_chat_media_e2e', on ? '1' : '0'); }catch(_e){ _safeCatch('media-e2e-toggle', _e); }
   toast(on ? '🖼 Médias chiffrés E2E activés (contenu invisible au serveur)' : '🖼 Chiffrement du contenu média désactivé', 'ok', 3600);
 };
-// v1.1.260 — active la forward secrecy (ratchet) sur cet appareil. OFF par
+// v1.1.261 — active la forward secrecy (ratchet) sur cet appareil. OFF par
 // défaut (compat : un contact sur ancienne version ne lirait pas E2E2:).
 K._toggleRatchet = function(on){
   try{ localStorage.setItem('apex_chat_ratchet', on ? '1' : '0'); }catch(_e){ _safeCatch('ratchet-toggle', _e); }
@@ -10487,7 +10508,7 @@ K._saveEditMsg = async function(msgId){
   K.render();
   K._closeModal && K._closeModal();
   toast('✅ Message modifié', 'ok');
-  // v1.1.260 — l'édition suit le mode E2E du message : si E2E est ON on
+  // v1.1.261 — l'édition suit le mode E2E du message : si E2E est ON on
   // chiffre le nouveau texte (comme _sendMessage), sinon on retombe sur
   // new_text (E2E OFF assumé). Plus de texte clair silencieux sous E2E.
   let editCipher = null;
@@ -10759,7 +10780,7 @@ K._renderMediaEl = function(m){
   const src = K._mediaSrc(m.media_url);
   const t = (m.media_type || '').toLowerCase();
   const cap = 'max-width:260px;max-height:300px;border-radius:10px;display:block;margin-bottom:4px';
-  // v1.1.260 — média chiffré (octets iv‖ct dans R2) : on ne peut PAS pointer
+  // v1.1.261 — média chiffré (octets iv‖ct dans R2) : on ne peut PAS pointer
   // <img src> sur du ciphertext. On rend un placeholder hydraté après render
   // (fetch → decryptBytes → blob URL). Data-attrs pour K._hydrateEncMedia().
   if(m.media_enc && K.viewData){
@@ -10776,7 +10797,7 @@ K._renderMediaEl = function(m){
     <span style="font-size:1.4em">📎</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.media_name || 'fichier')}</span>
     <span style="font-size:.72em;color:var(--ax-text-3)">${esc(K._fmtSize(m.media_size))}</span></a>`;
 };
-// v1.1.260 — hydrate les médias chiffrés : fetch bytes R2 → decryptBytes →
+// v1.1.261 — hydrate les médias chiffrés : fetch bytes R2 → decryptBytes →
 // blob URL. Idempotent (marque data-enc-done), fail-open (message d'erreur
 // discret si la clé de session n'est pas là). Un seul fetch par élément.
 K._hydrateEncMedia = async function(){
@@ -10833,11 +10854,11 @@ K._uploadMedia = async function(file){
         }
       } catch(e) { _safeCatch('media-compress', e); }
     }
-    // v1.1.260 — chiffrement des octets (flag OFF par défaut). Si ON + session :
+    // v1.1.261 — chiffrement des octets (flag OFF par défaut). Si ON + session :
     // on upload iv‖ct (octet-stream) → R2 ne voit jamais le contenu réel. Le vrai
     // mime + le flag `e:1` voyagent dans le marqueur APXMEDIA (lui-même chiffré).
     let realMime = ctype, mediaEnc = false;
-    if(K._mediaE2eOn()){
+    if(K._mediaE2eOn(conv)){
       try{
         await K._ensureSession(conv);
         if(window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(conv.id)){
@@ -10873,7 +10894,7 @@ K._sendMediaMessage = async function(media, captionOverride){
   K.messages[conv.id].push(msg); ls('messages_' + conv.id, K.messages[conv.id]);
   if(input && typeof captionOverride !== 'string') input.value = '';
   K.render();
-  // v1.1.260 — même politique anti-clair que le texte : le marqueur média
+  // v1.1.261 — même politique anti-clair que le texte : le marqueur média
   // (URL+légende) ne part JAMAIS en clair sous E2E ON sans clé du contact.
   const mDecision = (window.ApexCrypto && ApexCrypto.decideWire)
     ? ApexCrypto.decideWire({ ciphertextPayload: mediaPayload, plaintext: marker, e2eOn: K._e2eOn() })
