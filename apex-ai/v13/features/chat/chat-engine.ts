@@ -15,6 +15,7 @@ import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
 import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
 import { customAssistants } from '../../services/ai/custom-assistants.js';
+import { buildEffortInjection } from '../../services/ai/reasoning-mode.js';
 import { commerce } from '../../services/integrations/commerce.js';
 
 import { buildMessagesForApi } from './chat-api-format.js';
@@ -73,13 +74,21 @@ async function buildSystemPromptDeep(): Promise<string> {
 }
 
 /* v13.4.345 — Assistant personnalisé actif ("Gems" / Custom GPTs). Additif :
- * préfixe les instructions de l'assistant au prompt Apex, sans toucher au routage. */
+ * préfixe les instructions de l'assistant au prompt Apex, sans toucher au routage.
+ * v13.4.352 — + effort de raisonnement (nudge prompt, provider-agnostique). */
 function customAssistantInjection(): string {
+  let out = '';
   try {
-    return customAssistants.buildInjection();
+    out += customAssistants.buildInjection();
   } catch {
-    return '';
+    /* fail-open */
   }
+  try {
+    out += buildEffortInjection();
+  } catch {
+    /* fail-open */
+  }
+  return out;
 }
 
 /**

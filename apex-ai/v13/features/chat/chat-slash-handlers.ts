@@ -214,6 +214,22 @@ export async function handleRulesCommand(ctx: SlashCtx, args: string): Promise<v
   }
 }
 
+/* v13.4.352 — /brief : Briefing du jour (Pulse / Daily Brief) — parité flagship.
+ * Résumé proactif depuis la mémoire de l'utilisateur. Réutilise memory + aiRouter. */
+export async function handleBriefCommand(ctx: SlashCtx): Promise<void> {
+  ctx.pushAssistant('☀️ **Briefing du jour** — je prépare ton résumé personnalisé…');
+  try {
+    const { generateDailyBrief, defaultDailyBriefDeps, markShownToday } = await import('../../services/ai/daily-brief.js');
+    const deps = await defaultDailyBriefDeps();
+    const brief = await generateDailyBrief(deps);
+    markShownToday();
+    ctx.pushAssistant(brief || '_(Brief vide)_');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    ctx.pushAssistant(`⚠️ Briefing impossible : ${msg}`);
+  }
+}
+
 /* v13.4.345 — /recherche : Recherche approfondie (Deep Research) — parité flagship.
  * Décompose → recherche web multi-sources → rapport cité. Réutilise webSearch + aiRouter. */
 export async function handleResearchCommand(ctx: SlashCtx, query: string): Promise<void> {

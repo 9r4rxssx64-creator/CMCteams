@@ -203,6 +203,7 @@ const REGISTRY: readonly FeatureToggle[] = [
   { id: 'module.landing', category: 'module', description: 'Landing page publique', defaultEnabled: true },
   { id: 'module.notes', category: 'module', description: 'Bloc-notes / mémo', defaultEnabled: true },
   { id: 'module.assistants', category: 'module', description: 'Assistants personnalisés (Gems / Custom GPTs)', defaultEnabled: true },
+  { id: 'module.canvas', category: 'module', description: 'Canvas / Artifacts (édition + aperçu live)', defaultEnabled: true },
   { id: 'module.calendar', category: 'module', description: 'Calendrier intégré', defaultEnabled: true },
   { id: 'module.calculators', category: 'module', description: 'Calculateurs (impôts, crédit, IMC)', defaultEnabled: true },
   { id: 'module.archive', category: 'module', description: 'Archives projets', defaultEnabled: true },

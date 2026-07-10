@@ -44,7 +44,10 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'help', emoji: 'ℹ️', description: 'Liste toutes les commandes disponibles', argsHint: '' },
   { name: 'clear', emoji: '🧹', description: 'Efface la conversation courante', argsHint: '' },
   { name: 'voice', emoji: '🔊', description: 'Active/désactive lecture vocale auto', argsHint: '' },
+  { name: 'effort', emoji: '🧠', description: 'Effort de raisonnement (auto/direct/moyen/élevé) — élevé montre la réflexion', argsHint: '<auto|direct|moyen|élevé>' },
   { name: 'export', emoji: '📄', description: 'Exporte la conversation en Markdown', argsHint: '' },
+  { name: 'partager', emoji: '📤', description: 'Partage la conversation (fichier HTML autonome)', argsHint: '' },
+  { name: 'canvas', emoji: '🎨', description: 'Ouvre le dernier code/HTML/SVG en Canvas (édition + aperçu live)', argsHint: '' },
   { name: 'settings', emoji: '⚙️', description: 'Ouvre les réglages', argsHint: '' },
   { name: 'snippets', emoji: '💻', description: 'Liste les codes/snippets sauvés dans le Coffre', argsHint: '' },
   { name: 'regen', emoji: '🔄', description: 'Régénère la dernière réponse Apex', argsHint: '' },
@@ -56,6 +59,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'loop', emoji: '🔁', description: 'Queue tâche autonome (list/pause/resume/clear ou texte)', argsHint: '<task|list|pause|resume|clear>' },
   { name: 'plan', emoji: '🗺', description: 'Génère un plan structuré avant exécution', argsHint: '<objectif>', requiresArgs: true },
   { name: 'recherche', emoji: '🔬', description: 'Recherche approfondie web multi-sources + rapport cité', argsHint: '<sujet>', requiresArgs: true },
+  { name: 'briefing', emoji: '☀️', description: 'Briefing du jour personnalisé (Pulse) depuis ta mémoire', argsHint: '' },
   { name: 'rules', emoji: '📜', description: 'Affiche les règles permanentes Apex (filtre optionnel)', argsHint: '<keyword?>' },
   /* v13.4.5 — Mode autonome Apex (Kevin 2026-05-10) */
   { name: 'autonomous', emoji: '🤖', description: 'Mode autonome : Apex bosse seul jusqu\'à fin/quota (status/stop)', argsHint: '<objectif|status|stop>' },
