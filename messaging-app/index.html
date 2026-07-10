@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.263",
+  "softwareVersion": "v1.1.264",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -84,6 +84,7 @@
 </script>
 <script type="module" src="./lib/crypto-core.js"></script>
 <script type="module" src="./lib/message-search.js"></script>
+<script type="module" src="./lib/media-gallery.js"></script>
 <script type="module" src="./lib/visio-mesh.js"></script>
 <script src="./crypto.js" defer></script>
 <!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
@@ -241,6 +242,20 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .find-bar .topbar-btn{width:38px;height:38px;min-width:38px;min-height:38px;flex-shrink:0}
 .msg.find-hit{outline:2px solid rgba(232,184,48,.45);outline-offset:1px}
 .msg.find-active{outline:2px solid var(--ax-gold);background:rgba(232,184,48,.22)!important}
+.gallery-tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:10px;scrollbar-width:none}
+.gallery-tabs::-webkit-scrollbar{display:none}
+.gallery-tab{flex-shrink:0;background:transparent;border:1px solid var(--ax-border);border-radius:16px;
+  padding:6px 10px;color:var(--ax-text-2);font-size:.8em;cursor:pointer;white-space:nowrap}
+.gallery-tab.active{background:var(--ax-gold);border-color:var(--ax-gold);color:var(--ax-bg);font-weight:600}
+.gallery-badge{font-size:.85em;opacity:.75}
+.gallery-content{max-height:56vh;overflow-y:auto}
+.gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.gallery-tile{aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;background:var(--ax-bg-2);
+  border:1px solid var(--ax-border);display:flex;align-items:center;justify-content:center}
+.gallery-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.gallery-ph{font-size:1.6em}
+.gallery-row{display:flex;align-items:center;gap:10px;padding:9px 8px;border-bottom:1px solid var(--ax-border);cursor:pointer}
+.gallery-row:hover{background:var(--ax-bg-2)}
 .chat-messages{padding:6px 8px;display:flex;flex-direction:column;gap:2px}
 .chat-messages::before{content:"";margin-top:auto}
 .msg{max-width:84%;padding:6px 10px;border-radius:15px;word-wrap:break-word;
@@ -417,7 +432,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.263';
+const __APEX_CHAT_VERSION__ = 'v1.1.264';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -602,7 +617,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.263</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.264</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -616,7 +631,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.263</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.264</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -4163,6 +4178,7 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._copyConvDeepLink('${esc(convId)}')">🔗 Lien direct (copier / partager)</button>
       <button class="btn btn-out btn-block" onclick="K._openBgPicker('${esc(convId)}')">🎨 Fond de conversation${conv.bg_id ? ' (perso)' : ''}</button>
       <button class="btn btn-out btn-block" onclick="K._openSoundPicker('${esc(convId)}')">🔔 Son personnalisé pour cette conv</button>
+      <button class="btn btn-out btn-block" onclick="K._closeModal();K._openMediaGallery('${esc(convId)}')">📎 Médias, liens & docs</button>
       <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       <button class="btn btn-out btn-block" onclick="K._closeModal();K._openConvInfo('${esc(convId)}')">ℹ️ Infos & statistiques</button>
       <button class="btn btn-out btn-block" onclick="K._closeModal();K._openReactionStats('${esc(convId)}')">📊 Stats réactions</button>
@@ -4172,6 +4188,86 @@ K._openConvActionsMenu = function(convId, ev){
     </div>
     <button class="btn btn-block" style="margin-top:14px" onclick="K._closeModal()">← Fermer</button>
   `);
+};
+
+// ============================================================================
+//  v1.1.264 — Galerie « Médias, liens & docs » d'une conversation
+//  (parité WhatsApp/Signal). 100 % côté client : lit K.messages via
+//  ApexGallery (cœur pur testé). 4 onglets ; tap → saute au message.
+// ============================================================================
+K._galleryTab = 'media';
+K._openMediaGallery = function(convId){
+  const conv = K.conversations.find(c => c.id === convId);
+  if(!conv){ toast('Conversation introuvable', 'warn'); return; }
+  K._galleryConvId = convId;
+  K._galleryTab = 'media';
+  K._showModal('📎 Médias, liens & docs', `<div id="gallery-body"></div>`);
+  K._renderGallery();
+};
+
+K._galleryData = function(){
+  const g = window.ApexGallery;
+  const msgs = K.messages[K._galleryConvId] || [];
+  return g ? g.collectConversationMedia(msgs) : { media:[], files:[], voices:[], links:[], counts:{media:0,files:0,voices:0,links:0} };
+};
+
+K._setGalleryTab = function(tab){ K._galleryTab = tab; K._renderGallery(); };
+
+K._galleryJump = function(msgId){ K._closeModal && K._closeModal(); K._scrollToMsg(msgId); };
+
+K._renderGallery = function(){
+  const body = document.getElementById('gallery-body');
+  if(!body) return;
+  const d = K._galleryData();
+  const c = d.counts;
+  const tab = K._galleryTab;
+  const tabs = [
+    ['media', '🖼 Médias', c.media],
+    ['files', '📄 Fichiers', c.files],
+    ['voices', '🎙 Vocaux', c.voices],
+    ['links', '🔗 Liens', c.links],
+  ];
+  const dt = (ts) => ts ? new Date(ts).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'2-digit' }) : '';
+  let inner = '';
+  if(tab === 'media'){
+    inner = c.media === 0 ? K._galleryEmpty('Aucun média partagé') :
+      `<div class="gallery-grid">${d.media.map(m => `
+        <div class="gallery-tile" onclick="K._galleryJump('${esc(m.id)}')" title="${esc(m.name || m.kind)} · ${esc(dt(m.ts))}">
+          ${m.inline ? `<img src="${esc(m.inline)}" alt="${esc(m.name||'image')}" loading="lazy">`
+            : `<div class="gallery-ph">${m.kind === 'video' ? '🎬' : '🖼'}${m.enc ? '🔒' : ''}</div>`}
+        </div>`).join('')}</div>`;
+  } else if(tab === 'files'){
+    inner = c.files === 0 ? K._galleryEmpty('Aucun fichier partagé') :
+      d.files.map(f => `<div class="gallery-row" onclick="K._galleryJump('${esc(f.id)}')">
+        <span style="font-size:1.3em">📄</span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}${f.enc ? ' 🔒' : ''}</span>
+        <span style="font-size:.72em;color:var(--ax-text-3)">${esc(dt(f.ts))}</span>
+      </div>`).join('');
+  } else if(tab === 'voices'){
+    inner = c.voices === 0 ? K._galleryEmpty('Aucun message vocal') :
+      d.voices.map(v => `<div class="gallery-row" onclick="K._galleryJump('${esc(v.id)}')">
+        <span style="font-size:1.3em">🎙</span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.text ? v.text.slice(0,40) : 'Message vocal')}</span>
+        <span style="font-size:.72em;color:var(--ax-text-3)">${esc(dt(v.ts))}</span>
+      </div>`).join('');
+  } else {
+    inner = c.links === 0 ? K._galleryEmpty('Aucun lien partagé') :
+      d.links.map(l => `<div class="gallery-row">
+        <span style="font-size:1.1em">🔗</span>
+        <a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ax-gold)">${esc(l.url)}</a>
+        <span onclick="K._galleryJump('${esc(l.id)}')" style="cursor:pointer;font-size:.72em;color:var(--ax-text-3)">${esc(dt(l.ts))} ›</span>
+      </div>`).join('');
+  }
+  body.innerHTML = `
+    <div class="gallery-tabs">
+      ${tabs.map(([id, label, n]) => `<button class="gallery-tab${tab === id ? ' active' : ''}" onclick="K._setGalleryTab('${id}')">${label} <span class="gallery-badge">${n}</span></button>`).join('')}
+    </div>
+    <div class="gallery-content">${inner}</div>
+    <button class="btn btn-block" style="margin-top:12px" onclick="K._closeModal()">← Fermer</button>`;
+};
+
+K._galleryEmpty = function(msg){
+  return `<div style="text-align:center;color:var(--ax-text-3);padding:26px 10px">🗂️<br>${esc(msg)}</div>`;
 };
 
 // v1.1.170 — Kevin "Pas possible d'effacer les messages non plus ni
