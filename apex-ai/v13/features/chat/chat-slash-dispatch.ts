@@ -161,6 +161,20 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
       }
       return true;
     }
+    case 'approbations': {
+      /* v13.4.357 — Coffre d'autorisations : ouvre la PWA où Kevin valide d'un Face ID.
+       * Apex y dépose ses demandes (approval-broker) avant tout acte sensible. */
+      const url = 'https://cmcteams.kd-mc.com/tools/approvals/';
+      try { window.open(url, '_blank', 'noopener'); } catch { /* popup bloquée */ }
+      pushAssistantMessage(
+        rootEl,
+        '🔐 **Coffre d\'autorisations** ouvert.\n\nJe fais tout le travail à ta place (connexion, paiement, ' +
+          'signature, KYC) — il ne te reste que **ton feu vert, 1 geste Face ID**. Quand j\'ai besoin de ton ' +
+          `autorisation, une demande apparaît ici : [${url}](${url}).\n\n` +
+          '_Rien n\'est fait sans toi : ton Face ID est la preuve que c\'est bien toi qui autorises._',
+      );
+      return true;
+    }
     case 'export':
       void exportConversationMarkdown();
       return true;
