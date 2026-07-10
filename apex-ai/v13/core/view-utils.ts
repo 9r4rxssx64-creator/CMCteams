@@ -85,30 +85,3 @@ export async function preserveScroll<T>(
     });
   }
 }
-
-/**
- * Reset scroll to top — à utiliser EXPLICITEMENT quand on veut un scroll top
- * (navigation vers nouvelle route). NE PAS appeler dans les re-renders post-action.
- */
-export function scrollToTop(): void {
-  try {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
-  } catch {
-    /* ignore */
-  }
-}
-
-/**
- * Smart refresh : refresh une feature SANS re-render destructif si possible.
- * Pour l'instant délègue à `preserveScroll(rootEl, renderFn)` — extension future
- * possible vers diff DOM léger.
- *
- * @param rootEl Élément racine
- * @param renderFn Fonction qui re-render la feature
- */
-export async function smartRefresh(
-  rootEl: HTMLElement | null | undefined,
-  renderFn: () => void | Promise<void>,
-): Promise<void> {
-  await preserveScroll(rootEl, renderFn);
-}
