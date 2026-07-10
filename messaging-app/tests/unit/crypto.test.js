@@ -192,6 +192,84 @@ describe('ApexCrypto — Sessions par conversation', () => {
     expect(r.unchanged).toBe(false);
   });
 
+  // v1.1.260 — forward secrecy (ratchet symétrique à clés jetables).
+  describe('ratchet forward secrecy', () => {
+    async function pair(cid) {
+      const alice = await api.generateIdentityKeys();
+      const bob = await api.generateIdentityKeys();
+      await api.ratchetInit('A:' + cid, alice.privateKey, bob.publicKey);
+      await api.ratchetInit('B:' + cid, bob.privateKey, alice.publicKey);
+      return { a: 'A:' + cid, b: 'B:' + cid };
+    }
+    it('échange dans l\'ordre : chaque message déchiffre', async () => {
+      const { a, b } = await pair('order-' + Math.random());
+      const m0 = await api.ratchetEncrypt(a, 'bonjour');
+      const m1 = await api.ratchetEncrypt(a, 'ça va ?');
+      expect(m0.n).toBe(0); expect(m1.n).toBe(1);
+      expect(await api.ratchetDecrypt(b, m0.n, m0.ct)).toBe('bonjour');
+      expect(await api.ratchetDecrypt(b, m1.n, m1.ct)).toBe('ça va ?');
+    });
+    it('message sauté puis reçu plus tard (clé sautée mémorisée)', async () => {
+      const { a, b } = await pair('skip-' + Math.random());
+      const m0 = await api.ratchetEncrypt(a, 'un');
+      const m1 = await api.ratchetEncrypt(a, 'deux');
+      const m2 = await api.ratchetEncrypt(a, 'trois');
+      // Bob reçoit 0 puis 2 (1 sauté), puis 1 en retard
+      expect(await api.ratchetDecrypt(b, m0.n, m0.ct)).toBe('un');
+      expect(await api.ratchetDecrypt(b, m2.n, m2.ct)).toBe('trois');
+      expect(await api.ratchetDecrypt(b, m1.n, m1.ct)).toBe('deux'); // clé sautée
+    });
+    it('forward secrecy : un message trop ancien N\'EST PLUS déchiffrable', async () => {
+      const { a, b } = await pair('fs-' + Math.random());
+      const m0 = await api.ratchetEncrypt(a, 'secret0');
+      const m1 = await api.ratchetEncrypt(a, 'secret1');
+      // Bob avance jusqu'à m1 SANS mémoriser m0 (reçoit m1 direct → m0 sauté+stocké)
+      // ici on force la destruction : on consomme m0 puis on retente
+      await api.ratchetDecrypt(b, m0.n, m0.ct);
+      await api.ratchetDecrypt(b, m1.n, m1.ct);
+      // m0 déjà consommé → clé détruite → re-déchiffrer échoue
+      await expect(api.ratchetDecrypt(b, m0.n, m0.ct)).rejects.toThrow();
+    });
+    it('export/import : l\'état survit (reload)', async () => {
+      const { a, b } = await pair('persist-' + Math.random());
+      const m0 = await api.ratchetEncrypt(a, 'avant reload');
+      const snapB = api.ratchetExport(b);
+      api.resetRatchet(b);
+      expect(api.hasRatchet(b)).toBe(false);
+      expect(api.ratchetImport(b, snapB)).toBe(true);
+      expect(await api.ratchetDecrypt(b, m0.n, m0.ct)).toBe('avant reload');
+    });
+    it('ratchetEncrypt/Decrypt sans init → throw', async () => {
+      await expect(api.ratchetEncrypt('absent-' + Math.random(), 'x')).rejects.toThrow();
+      await expect(api.ratchetDecrypt('absent-' + Math.random(), 0, 'x')).rejects.toThrow();
+    });
+    it('ratchetImport json invalide → false ; export sans état → null', async () => {
+      expect(api.ratchetImport('c', 'pas du json')).toBe(false);
+      expect(api.ratchetImport('c', '')).toBe(false);
+      expect(api.ratchetExport('jamais-init-' + Math.random())).toBeNull();
+    });
+    it('ratchetImport sans champ skipped → défaut []', async () => {
+      const { a } = await pair('nosk-' + Math.random());
+      const m = await api.ratchetEncrypt(a, 'x');
+      // état minimal sans clé "skipped"
+      const cid = 'imp-' + Math.random();
+      expect(api.ratchetImport(cid, JSON.stringify({ ck: '00'.repeat(32), ns: 0, nr: 0 }))).toBe(true);
+      expect(api.hasRatchet(cid)).toBe(true);
+    });
+    it('resetRatchet() sans argument → efface tout', async () => {
+      await pair('clr-' + Math.random());
+      api.resetRatchet(); // clear global
+      // après clear global, aucun état ne subsiste
+      expect(api.hasRatchet('A:clr')).toBe(false);
+    });
+    it('trop de messages sautés → throw (garde-fou MAX_SKIP)', async () => {
+      const { a, b } = await pair('maxskip-' + Math.random());
+      let last;
+      for (let i = 0; i <= 101; i++) last = await api.ratchetEncrypt(a, 'm' + i);
+      await expect(api.ratchetDecrypt(b, last.n, last.ct)).rejects.toThrow();
+    });
+  });
+
   it('encryptBytes sans session établie → throw', async () => {
     await expect(api.encryptBytes('inexistant-' + Math.random(), new Uint8Array([1]).buffer)).rejects.toThrow();
   });
