@@ -374,6 +374,14 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
         updateAssistantBubble(rootEl, assistantMsg);
         return;
       }
+      /* v13.4.355 : réflexion NATIVE Anthropic (extended thinking) — streamée à part.
+       * On l'accumule dans un champ dédié et JAMAIS dans assistantMsg.text (ce n'est
+       * pas la réponse finale). Le rendu repliable est géré par updateAssistantBubble. */
+      if (chunk.type === 'thinking') {
+        assistantMsg.nativeThinking = (assistantMsg.nativeThinking ?? '') + chunk.text;
+        updateAssistantBubble(rootEl, assistantMsg);
+        return;
+      }
       if (chunk.text) {
         assistantMsg.text += chunk.text;
         updateAssistantBubble(rootEl, assistantMsg);

@@ -69,6 +69,9 @@ export interface DisplayMessage {
   modelUsed?: string;
   latencyMs?: number;
   costEur?: number;
+  /* v13.4.355 : réflexion NATIVE Anthropic (extended thinking) streamée à part du texte.
+   * Affichée dans un bloc repliable, JAMAIS concaténée au contenu de la réponse. */
+  nativeThinking?: string;
 }
 
 /* v13.4.11 — Queue attachments en attente de submit (vidée après chaque user message envoyé).

@@ -45,6 +45,44 @@ export function setReasoningEffort(effort: ReasoningEffort): boolean {
   }
 }
 
+/* =========================================================================
+ * Raisonnement NATIF Anthropic (extended thinking) — OPT-IN, OFF par défaut.
+ * =========================================================================
+ * Le mode ci-dessus (buildEffortInjection + extractThinking) est un nudge de
+ * prompt provider-agnostique : il marche partout mais la « réflexion » est
+ * simulée par le modèle dans le texte. Anthropic expose en plus un VRAI mode
+ * `thinking` (blocs thinking_delta streamés séparément du texte). On le câble
+ * derrière un flag SÉPARÉ (`apex_v13_native_thinking`), OFF par défaut, pour
+ * ne PAS déstabiliser le cœur du streaming (leçons #124/#129) tant que Kevin
+ * ne l'a pas testé sur son iPhone. Quand ON + effort='high' + provider
+ * anthropic → le body ajoute `thinking:{type:'enabled', budget_tokens}` et le
+ * parseSSE émet des events `thinking` distincts.
+ */
+const NATIVE_THINKING_KEY = 'apex_v13_native_thinking';
+/** Budget de tokens de réflexion native (doit rester < max_tokens output). */
+export const NATIVE_THINKING_BUDGET_TOKENS = 2000;
+
+/** true si le raisonnement NATIF Anthropic est activé (flag opt-in, OFF par défaut). */
+export function isNativeThinkingEnabled(): boolean {
+  try {
+    const v = localStorage.getItem(NATIVE_THINKING_KEY);
+    return v === 'true' || v === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Active/désactive le raisonnement NATIF Anthropic (persisté localStorage). */
+export function setNativeThinkingEnabled(on: boolean): boolean {
+  try {
+    if (on) localStorage.setItem(NATIVE_THINKING_KEY, 'true');
+    else localStorage.removeItem(NATIVE_THINKING_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Bloc à ajouter au system prompt selon l'effort choisi (vide si 'auto'). */
 export function buildEffortInjection(effort: ReasoningEffort = getReasoningEffort()): string {
   switch (effort) {
