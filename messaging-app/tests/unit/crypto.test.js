@@ -152,6 +152,23 @@ describe('ApexCrypto — Sessions par conversation', () => {
     expect(Array.from(new Uint8Array(decBuf))).toEqual(Array.from(original));
   });
 
+  // v1.1.257 — politique anti repli texte-clair silencieux.
+  it('decideWire : ciphertext présent → mode cipher', () => {
+    const r = api.decideWire({ ciphertextPayload: 'E2E1:abc', plaintext: 'salut', e2eOn: true });
+    expect(r.mode).toBe('cipher');
+    expect(r.wire).toBe('E2E1:abc');
+  });
+  it('decideWire : E2E OFF sans ciphertext → mode clear (opt-out assumé)', () => {
+    const r = api.decideWire({ ciphertextPayload: null, plaintext: 'salut', e2eOn: false });
+    expect(r.mode).toBe('clear');
+    expect(r.wire).toBe('salut');
+  });
+  it('decideWire : E2E ON sans ciphertext → mode pending (JAMAIS de clair)', () => {
+    const r = api.decideWire({ ciphertextPayload: null, plaintext: 'secret', e2eOn: true });
+    expect(r.mode).toBe('pending');
+    expect(r.wire).toBeNull();
+  });
+
   it('encryptBytes sans session établie → throw', async () => {
     await expect(api.encryptBytes('inexistant-' + Math.random(), new Uint8Array([1]).buffer)).rejects.toThrow();
   });
