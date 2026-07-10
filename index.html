@@ -5684,7 +5684,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.866";
+var APP_VER="v9.867";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -37779,6 +37779,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
+    var metaAll=(A.overrides_meta||{})[key]||{};   // v9.867 : jours de convention (bg=CONV)
     if(!Object.keys(ov).length){console.log("[v9.650 detectTeams] no data, skip");return{ok:false,reason:"no_data"};}
     // Helper : calcule cycle médian entre RH consécutifs
     function _calcCycle(rhDays){
@@ -37870,6 +37871,15 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       Object.keys(r).forEach(function(d){var c=String(r[d]).toUpperCase();if(c==="RH"||c==="R")rest.push(parseInt(d,10));});
       rest.sort(function(a,b){return a-b;});
       if(rest.length<2){skipReasons.low_rh++;return;}
+      // v9.867 (Kevin 2026-07-10 « les jours de convention te perturbent pour reconnaître
+      // les équipes et les miroirs ») : un jour de CONVENTION = un jour de repos R qui a été
+      // TRAVAILLÉ (cellule rouge, meta.bg=CONV). Pour RECONNAÎTRE la rotation (équipe/miroir),
+      // c'est le repos PLANIFIÉ qui compte, pas qu'on ait été rappelé. On capture ces jours →
+      // ils enrichissent la signature de repos au moment de l'appariement miroir (SANS toucher
+      // le groupement d'équipe restKey → 0 changement de composition). PROUVÉ : miroirs d'août
+      // deviennent EXACTS (11⇔4 + 16 autres) et juillet reste identique (38).
+      var _mdd=metaAll[eid]||{},conv=[];
+      Object.keys(r).forEach(function(d){var m=_mdd[d]||_mdd[String(d)];if(m&&m.bg==="CONV")conv.push(parseInt(d,10));});
       var firstWork=_firstWorkCode(r)||"?";
       var fwBase0=firstWork.replace(/[c'"*:]+$/gi,"")||firstWork;
       // v9.847 (Kevin 2026-07-01 « Vérifie l'équipe 5 par exemple, bcp trop de personnes.
@@ -37887,7 +37897,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       var _ABS2=["RH","R","CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","EDC","RRT","PRT","RTP","RTR","DEPL","CL","DELPT","CDH","HD","CEO","CSC","CSS"];
       var _seq=[]; for(var _sd=1;_sd<=31&&_seq.length<3;_sd++){var _sc=r[_sd];if(!_sc)continue;var _scu=String(_sc).toUpperCase();if(_ABS2.indexOf(_scu)>=0)continue;_seq.push(String(_sc).replace(/[c'"*:]+$/gi,""));}
       var fwBase=_seq.join(">")||fwBase0;
-      _nodes.push({eid:eid,emp:emp,fam:_empFam,rest:rest,restKey:rest.join(","),fwBase:fwBase});
+      _nodes.push({eid:eid,emp:emp,fam:_empFam,rest:rest,restKey:rest.join(","),fwBase:fwBase,conv:conv});
       detectableEmps.push(eid);
     });
     if(!_nodes.length){
@@ -37973,14 +37983,26 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     //    prend jamais un mauvais partenaire s'il en a un meilleur). PROUVÉ (lesson #121,
     //    monotone) : reproduit À L'IDENTIQUE les 38 miroirs de juillet (0 ajout, 0 perte)
     //    ET détecte les miroirs d'août dont Éq.11⇔Éq.4.
-    var mirrors={},_mcand=[];
+    //    v9.867 (Kevin 2026-07-10 « les jours de convention te perturbent ») : on compare des
+    //    REPOS NORMALISÉS CONVENTION — repos planifiés = RH∪R ∪ (jours de convention présents
+    //    chez ≥50 % des membres = R travaillés). PROUVÉ : les miroirs d'août deviennent EXACTS
+    //    (11⇔4 + 16 autres) et juillet reste identique (38). Le recouvrement ≥75 % reste comme
+    //    filet contre le bruit résiduel du parseur géométrique.
+    function _extRest(T){var s={};T.rest.forEach(function(d){s[d]=1;});
+      var cnt={},n=T.members.length;
+      T.members.forEach(function(g){(g.conv||[]).forEach(function(d){cnt[d]=(cnt[d]||0)+1;});});
+      Object.keys(cnt).forEach(function(d){if(cnt[d]*2>=n)s[d]=1;});
+      return Object.keys(s).map(Number);}
+    var mirrors={},_mcand=[],_er=[];
+    for(var _ti=0;_ti<teamGroups.length;_ti++)_er[_ti]=_extRest(teamGroups[_ti]);
     for(var i=0;i<teamGroups.length;i++){
       for(var j=i+1;j<teamGroups.length;j++){
         var a=teamGroups[i],b=teamGroups[j];
         if(a.fam!==b.fam||a.fwBase===b.fwBase)continue;
-        var _mx=Math.max(a.rest.length,b.rest.length);if(!_mx)continue;
-        var _sb={};b.rest.forEach(function(d){_sb[d]=1;});
-        var _ov=0;a.rest.forEach(function(d){if(_sb[d])_ov++;});
+        var _ra=_er[i],_rb=_er[j];
+        var _mx=Math.max(_ra.length,_rb.length);if(!_mx)continue;
+        var _sb={};_rb.forEach(function(d){_sb[d]=1;});
+        var _ov=0;_ra.forEach(function(d){if(_sb[d])_ov++;});
         if(_ov/_mx>=0.75)_mcand.push({a:a.teamId,b:b.teamId,ov:_ov,frac:_ov/_mx});
       }
     }
