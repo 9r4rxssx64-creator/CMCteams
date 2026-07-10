@@ -20,7 +20,7 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.350';
+export const APP_VER = 'v13.4.351';
 export const ADMIN_ID = 'kdmc_admin';
 
 /* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
@@ -496,6 +496,7 @@ async function bootstrap(): Promise<void> {
   router.register('workflow', { loader: () => import('@features/workflow/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('remote', { loader: () => import('@features/remote/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('notes', { loader: () => import('@features/notes/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('assistants', { loader: () => import('@features/assistants/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('calendar', { loader: () => import('@features/calendar/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true, skeleton: 'vault-cards' });
   router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true, skeleton: 'feature-list' });

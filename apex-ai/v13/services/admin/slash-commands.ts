@@ -55,6 +55,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   /* v13.4.3 — IA IRL TikTok */
   { name: 'loop', emoji: '🔁', description: 'Queue tâche autonome (list/pause/resume/clear ou texte)', argsHint: '<task|list|pause|resume|clear>' },
   { name: 'plan', emoji: '🗺', description: 'Génère un plan structuré avant exécution', argsHint: '<objectif>', requiresArgs: true },
+  { name: 'recherche', emoji: '🔬', description: 'Recherche approfondie web multi-sources + rapport cité', argsHint: '<sujet>', requiresArgs: true },
   { name: 'rules', emoji: '📜', description: 'Affiche les règles permanentes Apex (filtre optionnel)', argsHint: '<keyword?>' },
   /* v13.4.5 — Mode autonome Apex (Kevin 2026-05-10) */
   { name: 'autonomous', emoji: '🤖', description: 'Mode autonome : Apex bosse seul jusqu\'à fin/quota (status/stop)', argsHint: '<objectif|status|stop>' },
@@ -71,6 +72,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'vault', emoji: '🔐', description: 'Ouvre le Coffre (clés, secrets)', argsHint: '', route: 'vault' },
   { name: 'dashboard', emoji: '📊', description: 'Ouvre le tableau de bord', argsHint: '', route: 'dashboard' },
   { name: 'notes', emoji: '📝', description: 'Ouvre les notes', argsHint: '', route: 'notes' },
+  { name: 'assistants', emoji: '🎭', description: 'Mes assistants personnalisés (Gems)', argsHint: '', route: 'assistants' },
   { name: 'calendar', emoji: '📅', description: 'Ouvre le calendrier', argsHint: '', route: 'calendar' },
   { name: 'legal', emoji: '⚖️', description: 'Ouvre le module juridique', argsHint: '', route: 'legal' },
   { name: 'browser', emoji: '🌐', description: 'Ouvre le navigateur intégré', argsHint: '', route: 'browser' },
