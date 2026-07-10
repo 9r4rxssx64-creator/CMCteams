@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.264",
+  "softwareVersion": "v1.1.265",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -85,6 +85,7 @@
 <script type="module" src="./lib/crypto-core.js"></script>
 <script type="module" src="./lib/message-search.js"></script>
 <script type="module" src="./lib/media-gallery.js"></script>
+<script type="module" src="./lib/privacy-reciprocity.js"></script>
 <script type="module" src="./lib/visio-mesh.js"></script>
 <script src="./crypto.js" defer></script>
 <!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
@@ -432,7 +433,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.264';
+const __APEX_CHAT_VERSION__ = 'v1.1.265';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -617,7 +618,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.264</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.265</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -631,7 +632,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.264</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.265</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -5490,6 +5491,9 @@ K._presenceLabel = function(conv){
   const seal = e2e ? '🛡 E2E' : '🔒 chiffré';
   const idle = e2e ? '🛡 Chiffré E2E · vérifier' : '🔒 Chiffré (transit)';
   if(!conv) return idle;
+  // Réciprocité (parité Signal) : si J'AI masqué mon statut « en ligne / vu à… »,
+  // je ne vois pas non plus celui du contact → libellé neutre.
+  if(window.ApexPrivacy && !window.ApexPrivacy.canSeePresence(lg('privacy_prefs', {}))) return idle;
   const peerId = conv.peer_id || (Array.isArray(conv.members) ? conv.members.find(m => m !== K.user?.id) : null);
   if(!peerId) return idle;
   const p = K._presenceState[peerId];
@@ -8234,7 +8238,10 @@ async function _handleWsMessage(data, convId){
       break;
     }
     case 'typing':
-      // Phase 3 wire — DO envoie `userId`, client legacy `from`
+      // Phase 3 wire — DO envoie `userId`, client legacy `from`.
+      // Réciprocité (parité Signal) : si J'AI coupé mon indicateur de saisie,
+      // je ne vois pas non plus celui des autres.
+      if(window.ApexPrivacy && !window.ApexPrivacy.canSeeTyping(lg('privacy_prefs', {}))) break;
       K._typingState = K._typingState || {};
       K._typingState[convId] = K._typingState[convId] || {};
       const tFrom = data.userId || data.from;
@@ -8328,7 +8335,10 @@ async function _handleWsMessage(data, convId){
       break;
     }
     case 'read': {
-      // Read receipts — DO envoie userId + message_id
+      // Read receipts — DO envoie userId + message_id.
+      // Réciprocité (parité Signal) : si J'AI coupé mes accusés de lecture,
+      // je ne vois pas non plus ceux des autres.
+      if(window.ApexPrivacy && !window.ApexPrivacy.canSeeReadReceipts(lg('privacy_prefs', {}))) break;
       K._readState = K._readState || {};
       K._readState[convId] = K._readState[convId] || {};
       const rFrom = data.userId || data.from;
@@ -9756,21 +9766,21 @@ K.openPrivacyPrefs = function(){
       <label class="card-row" style="cursor:pointer">
         <div style="flex:1">
           <div style="font-weight:600">✓✓ Confirmation de lecture</div>
-          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Tes contacts voient quand tu as lu leurs messages</div>
+          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Tes contacts voient quand tu as lu leurs messages. Si tu coupes, tu ne vois plus les leurs non plus (réciproque, comme Signal).</div>
         </div>
         <input type="checkbox" id="pv-readReceipts" ${prefs.readReceipts?'checked':''} style="width:44px;height:26px;cursor:pointer">
       </label>
       <label class="card-row" style="cursor:pointer">
         <div style="flex:1">
           <div style="font-weight:600">🟢 Statut en ligne</div>
-          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Affiche "en ligne" quand tu utilises l'app</div>
+          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Affiche "en ligne" / "vu à…". Si tu coupes, tu ne vois plus celui des autres non plus (réciproque).</div>
         </div>
         <input type="checkbox" id="pv-onlineStatus" ${prefs.onlineStatus?'checked':''} style="width:44px;height:26px;cursor:pointer">
       </label>
       <label class="card-row" style="cursor:pointer">
         <div style="flex:1">
           <div style="font-weight:600">⌨ Indicateur "en train d'écrire"</div>
-          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Tes contacts voient les "..." quand tu tapes</div>
+          <div style="color:var(--ax-text-3);font-size:.78em;margin-top:2px">Tes contacts voient les "..." quand tu tapes. Si tu coupes, tu ne vois plus les leurs non plus (réciproque).</div>
         </div>
         <input type="checkbox" id="pv-typingIndicator" ${prefs.typingIndicator?'checked':''} style="width:44px;height:26px;cursor:pointer">
       </label>
