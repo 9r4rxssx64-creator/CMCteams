@@ -64,4 +64,25 @@ test.describe('Apex v13 — parité flagship (routes authentifiées réelles)', 
     const srcdoc = await iframe.getAttribute('srcdoc');
     expect(srcdoc ?? '').toContain('Bonjour Canvas');
   });
+
+  test('Projects : route rend + création via le vrai formulaire', async ({ page }) => {
+    await loginAdmin(page);
+    await page.evaluate(() => { location.hash = '#projects'; });
+    await expect(page.locator('#ax-proj-form')).toBeVisible({ timeout: 6000 });
+    await expect(page.locator('#apex-root')).toContainText('Mes projets');
+    await page.fill('#ax-proj-name', 'Projet E2E');
+    await page.fill('#ax-proj-instr', 'Instructions de test.');
+    await page.locator('#ax-proj-form button[type="submit"]').first().click();
+    await expect(page.locator('#apex-root')).toContainText('Projet E2E', { timeout: 4000 });
+  });
+
+  test('Tâches programmées : route rend + création', async ({ page }) => {
+    await loginAdmin(page);
+    await page.evaluate(() => { location.hash = '#scheduled'; });
+    await expect(page.locator('#ax-sched-form')).toBeVisible({ timeout: 6000 });
+    await expect(page.locator('#apex-root')).toContainText('Tâches programmées');
+    await page.fill('#ax-sched-prompt', 'Résume l\'actu du jour');
+    await page.locator('#ax-sched-form button[type="submit"]').first().click();
+    await expect(page.locator('#apex-root')).toContainText('Résume', { timeout: 4000 });
+  });
 });

@@ -15,6 +15,7 @@ import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
 import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
 import { customAssistants } from '../../services/ai/custom-assistants.js';
+import { projects } from '../../services/ai/projects.js';
 import { buildEffortInjection } from '../../services/ai/reasoning-mode.js';
 import { commerce } from '../../services/integrations/commerce.js';
 
@@ -78,6 +79,11 @@ async function buildSystemPromptDeep(): Promise<string> {
  * v13.4.352 — + effort de raisonnement (nudge prompt, provider-agnostique). */
 function customAssistantInjection(): string {
   let out = '';
+  try {
+    out += projects.buildInjection();
+  } catch {
+    /* fail-open */
+  }
   try {
     out += customAssistants.buildInjection();
   } catch {
