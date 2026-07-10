@@ -142,6 +142,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   <input id="teamSearch" placeholder="🔎 équipe / nom" oninput="fillSel()" autocomplete="off" title="Chercher une autre équipe ou une personne"
    style="min-width:110px;max-width:150px;min-height:40px;padding:8px 10px;border-radius:9px;border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);font-size:13px">
   <select id="boardSel" onchange="switchBoard(this.value)" title="Équipe du mois"></select>
+  <button class="btn" id="mirBtn" style="display:none" onclick="goMirror()" title="Basculer vers l'équipe miroir (mêmes repos, horaires décalés)">🔁 Équipe miroir</button>
   <button class="btn" id="lockBtn" onclick="toggleAdmin()">🔒 Admin</button>
 </header>
 
@@ -193,7 +194,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.28";
+var APP_VER="v1.29";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -525,6 +526,11 @@ function render(){
   // v1.17 — droits d'édition NR/5e : admin OU chef d'équipe (sur son board) → classe body
   try{ document.body.classList.toggle("canmark", canEditMark());
        document.body.classList.toggle("chefme", isChefMe() && !isAdmin()); }catch(_){}
+  // v1.29 — bouton « 🔁 Équipe miroir » d'en-tête : visible dès que l'équipe affichée a un miroir
+  // (indépendant de ME). Kevin « le bouton équipe miroir a disparu ».
+  try{ var _mb=document.getElementById("mirBtn"); if(_mb){ var _mm=mirrorBoardId(BID);
+    if(_mm&&BOARDS[_mm]){ _mb.style.display=""; _mb.title="Basculer vers "+(BOARDS[_mm].label||"l'équipe miroir"); }
+    else { _mb.style.display="none"; } } }catch(_){}
   var days=B.days, R=compute();
   var dow=["dim","lun","mar","mer","jeu","ven","sam"];
   var now=new Date(); var todayD=(now.getFullYear()===B.year&&now.getMonth()===B.monthIdx)?now.getDate():0;
@@ -678,6 +684,10 @@ function switchBoard(id){ if(!BOARDS[id])return; BID=id; CURMO=BOARDS[id].year+"
   try{if(window._depPullCfg)setTimeout(window._depPullCfg,50);}catch(_){} // v1.19 pull rotation partagée du nouveau board
   var mo=document.getElementById("moSel"); if(mo)mo.value=CURMO;
   fillSel(); load(); render(); }
+// v1.29 (Kevin 2026-07-09 « le bouton équipe miroir a disparu ») — bascule vers le miroir
+// de l'équipe AFFICHÉE, indépendant de la reconnaissance ME (le bouton d'en-tête #mirBtn
+// est visible dès qu'un miroir existe pour le board courant).
+function goMirror(){ var m=mirrorBoardId(BID); if(m&&BOARDS[m])switchBoard(m); }
 // v1.12.1 — liste des équipes SCOPÉE au mois choisi (CURMO), groupée par famille,
 // + recherche : si on tape qqch, on cherche dans TOUS les mois (autres équipes/personnes).
 function _famOf(k){ var b=BOARDS[k]; if(!b)return "bj"; if(b.kind==="abs")return "abs"; if(b.fam)return b.fam==="baccara"?"cmc":b.fam;
