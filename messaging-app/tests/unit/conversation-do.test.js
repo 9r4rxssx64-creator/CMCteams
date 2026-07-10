@@ -325,6 +325,41 @@ describe('ConversationDO — fetch WebSocket upgrade', () => {
     expect(server.sent.some((m) => JSON.parse(m).type === 'hello')).toBe(true);
   });
 
+  // v1.1.254 — présence live : le broadcast join/leave DOIT porter `status`
+  // (online/offline), sinon la garde client `if(pFrom && pStatus)` l'ignore.
+  it('join → présence online reçue par les membres présents (avec status)', async () => {
+    const _do = new ConversationDO(makeState(), ENV());
+    await new Promise((r) => setTimeout(r, 5));
+    // Observateur déjà connecté (autre membre de la conv)
+    const observer = new MockWebSocket();
+    _do.sessions.set(observer, { userId: 'other', server: observer });
+    const validJWT = await makeJWT({ sub: 'kdmc', exp: Math.floor(Date.now() / 1000) + 3600 }, SECRET);
+    const url = `https://x/ws?token=${validJWT}&uid=kdmc&conv=conv1`;
+    await _do.fetch(wsRequest(url));
+    const presence = observer.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'presence');
+    expect(presence).toBeTruthy();
+    expect(presence.userId).toBe('kdmc');
+    expect(presence.status).toBe('online'); // ← le champ qui manquait
+    expect(presence.action).toBe('join');   // rétrocompat conservée
+  });
+
+  it('leave → présence offline broadcastée (avec status + last_seen)', async () => {
+    const _do = new ConversationDO(makeState(), ENV());
+    await new Promise((r) => setTimeout(r, 5));
+    const observer = new MockWebSocket();
+    _do.sessions.set(observer, { userId: 'other', server: observer });
+    const validJWT = await makeJWT({ sub: 'kdmc', exp: Math.floor(Date.now() / 1000) + 3600 }, SECRET);
+    const url = `https://x/ws?token=${validJWT}&uid=kdmc&conv=conv1`;
+    await _do.fetch(wsRequest(url));
+    // Le nouveau client se déconnecte → close listener broadcast 'leave'
+    const joiner = [..._do.sessions.keys()].find((s) => _do.sessions.get(s).userId === 'kdmc');
+    joiner.triggerClose();
+    const leave = observer.sent.map((m) => JSON.parse(m)).find((m) => m.type === 'presence' && m.action === 'leave');
+    expect(leave).toBeTruthy();
+    expect(leave.status).toBe('offline');
+    expect(typeof leave.last_seen).toBe('number');
+  });
+
   it('upgrade success sans deviceId param → utilise random UUID', async () => {
     const _do = new ConversationDO(makeState(), ENV());
     await new Promise((r) => setTimeout(r, 5));

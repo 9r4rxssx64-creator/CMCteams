@@ -248,11 +248,16 @@ export class ConversationDO {
       console.error('[ConversationDO] history send failed:', e.message);
     }
 
-    // Notifier membres présents
+    // Notifier membres présents.
+    // v1.1.254 FIX présence live : le client lit `data.status` ('online'/'offline'),
+    // jamais `action`. Sans ce champ la garde client `if(pFrom && pStatus)` était
+    // toujours fausse → présence WS morte (le 🟢 « en ligne » ne dépendait que du
+    // heartbeat 3 min). On émet `status` EN PLUS de `action` (rétrocompat) → temps réel.
     this.broadcast({
       type: 'presence',
       userId,
       action: 'join',
+      status: 'online',
       ts: Date.now()
     }, server);
 
@@ -294,6 +299,8 @@ export class ConversationDO {
           type: 'presence',
           userId: session.userId,
           action: 'leave',
+          status: 'offline',
+          last_seen: Date.now(),
           ts: Date.now()
         });
       }
