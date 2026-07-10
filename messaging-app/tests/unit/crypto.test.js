@@ -169,6 +169,29 @@ describe('ApexCrypto — Sessions par conversation', () => {
     expect(r.wire).toBeNull();
   });
 
+  // v1.1.259 — détection de changement de clé (TOFU, parité Signal).
+  it('checkKeyChange : 1ʳᵉ vue → firstSight', () => {
+    const r = api.checkKeyChange(null, 'PUBKEY_A');
+    expect(r.firstSight).toBe(true);
+    expect(r.changed).toBe(false);
+  });
+  it('checkKeyChange : clé identique → unchanged', () => {
+    const r = api.checkKeyChange('PUBKEY_A', 'PUBKEY_A');
+    expect(r.unchanged).toBe(true);
+    expect(r.changed).toBe(false);
+  });
+  it('checkKeyChange : clé différente → changed (alerte MITM)', () => {
+    const r = api.checkKeyChange('PUBKEY_A', 'PUBKEY_B');
+    expect(r.changed).toBe(true);
+    expect(r.firstSight).toBe(false);
+  });
+  it('checkKeyChange : pas de nouvelle clé → aucun signal', () => {
+    const r = api.checkKeyChange('PUBKEY_A', null);
+    expect(r.changed).toBe(false);
+    expect(r.firstSight).toBe(false);
+    expect(r.unchanged).toBe(false);
+  });
+
   it('encryptBytes sans session établie → throw', async () => {
     await expect(api.encryptBytes('inexistant-' + Math.random(), new Uint8Array([1]).buffer)).rejects.toThrow();
   });

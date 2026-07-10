@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.258",
+  "softwareVersion": "v1.1.259",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -398,7 +398,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.258';
+const __APEX_CHAT_VERSION__ = 'v1.1.259';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -583,7 +583,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.258</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.259</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -597,7 +597,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.258</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.259</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -5281,7 +5281,7 @@ K._e2eOn = function(){
 // le serveur) → le destinataire sait qu'un payload est chiffré, sans changer le
 // worker ni la base. Payload non-taggé = texte clair (transit). 100% rétro-compat.
 K._E2E_TAG = 'E2E1:';
-// v1.1.258 — Chiffrement des OCTETS média (bytes dans R2). Le marqueur APXMEDIA
+// v1.1.259 — Chiffrement des OCTETS média (bytes dans R2). Le marqueur APXMEDIA
 // est déjà chiffré (URL/légende) mais les bytes du fichier étaient uploadés EN
 // CLAIR. Ce flag (OFF par défaut) active le chiffrement des bytes à l'upload +
 // le déchiffrement au rendu. OFF = médias inchangés (zéro régression) ; à passer
@@ -6374,6 +6374,17 @@ K._publishPubkey = async function(){
 // v1.1.173 FIX P0 (audit crew) — garantit une session E2E pour une conv (DM).
 // Établit depuis conv.peer_pubkey ; sinon récupère le bundle du pair just-in-time
 // via GET /api/keys/:peer_id/bundle. Retourne true si une session est active.
+// v1.1.259 — alerte de changement de clé (TOFU). Non-bloquant : informe l'user
+// qu'il doit re-vérifier le numéro de sécurité (réinstallation du contact OU
+// tentative de MITM). Ne coupe jamais l'envoi.
+K._notifyKeyChange = function(conv){
+  try{
+    const who = (conv && (conv.title || conv.peer_name)) || 'ce contact';
+    toast('⚠️ La clé de sécurité de ' + who + ' a changé — vérifie le numéro de sécurité (🛡) avant d\'envoyer du sensible', 'warn', 6000);
+    if(conv) conv._key_changed = true;
+    if(typeof K.render === 'function' && K.view === 'chat' && K.viewData?.id === conv.id) K.render();
+  }catch(_e){ _safeCatch('notify-keychange', _e); }
+};
 K._ensureSession = async function(conv){
   try{
     if(!window.ApexCrypto || !conv) return false;
@@ -6387,6 +6398,20 @@ K._ensureSession = async function(conv){
         if(r && r.ok && r.bundle && r.bundle.identity_key_pub){
           peerPub = r.bundle.identity_key_pub;
           conv.peer_pubkey = peerPub; // cache local
+          // v1.1.259 — détection de changement de clé (TOFU, parité Signal).
+          try{
+            const storeK = 'peerkey_' + conv.id;
+            const stored = localStorage.getItem(storeK);
+            const chk = (ApexCrypto.checkKeyChange)
+              ? ApexCrypto.checkKeyChange(stored, peerPub)
+              : { firstSight: !stored, changed: !!stored && stored !== peerPub };
+            if(chk.changed){
+              localStorage.setItem(storeK, peerPub); // mémorise la nouvelle (alerte 1×)
+              K._notifyKeyChange && K._notifyKeyChange(conv);
+            } else if(chk.firstSight){
+              localStorage.setItem(storeK, peerPub); // 1ʳᵉ vue → mémorise, pas d'alerte
+            }
+          }catch(_k){ _safeCatch('keychange', _k); }
         }
       }catch(e){ /* 409 key_pending = le pair n'a pas encore publié sa clé */ }
     }
@@ -7361,7 +7386,7 @@ K._sendMsg = async function(){
   input.value = '';
   K.render();
 
-  // Phase 3 : politique de mise sur le fil (v1.1.258, leçon #90). JAMAIS de
+  // Phase 3 : politique de mise sur le fil (v1.1.259, leçon #90). JAMAIS de
   // texte clair silencieux quand E2E est ON : sans clé du contact, le message
   // passe « en attente de chiffrement » et part chiffré dès que la clé arrive.
   const decision = (window.ApexCrypto && ApexCrypto.decideWire)
@@ -7393,7 +7418,7 @@ K._sendMsg = async function(){
 };
 
 // ============================================================================
-//  File « en attente de chiffrement » — v1.1.258 (leçon #90)
+//  File « en attente de chiffrement » — v1.1.259 (leçon #90)
 //  Messages écrits alors que E2E est ON mais que la clé du contact n'est pas
 //  encore là. On ne transmet AUCUN clair : on retente le chiffrement dès qu'une
 //  session s'établit (ouverture WS / _ensureSession), puis on envoie chiffré.
@@ -7683,7 +7708,7 @@ K._openWs = async function(convId){
       // v1.1.173 FIX P0 (audit crew) : rejouer les messages écrits hors-ligne
       // pour cette conversation dès que le WS est (re)connecté.
       try{ K._flushOutboxFor(convId); }catch(_e){_safeCatch('silent',_e)}
-      // v1.1.258 — retente d'envoyer chiffrés les messages « en attente de clé ».
+      // v1.1.259 — retente d'envoyer chiffrés les messages « en attente de clé ».
       try{ K._flushPendingEncrypt && K._flushPendingEncrypt(convId); }catch(_e){_safeCatch('silent',_e)}
       if(K.view === 'chat' && K.viewData?.id === convId && typeof K._updatePresenceHeader === 'function'){
         try{ K._updatePresenceHeader(); }catch(_e){_safeCatch('silent',_e)}
@@ -7987,7 +8012,7 @@ async function _handleWsMessage(data, convId){
       break;
     }
     case 'edit_message': {
-      // v1.1.48 — Peer a édité un message. v1.1.258 : supporte l'édition E2E
+      // v1.1.48 — Peer a édité un message. v1.1.259 : supporte l'édition E2E
       // (data.ciphertext taggé E2E1:) en plus du legacy clair (data.new_text).
       const eMsgId = data.message_id;
       let newText = data.new_text;
@@ -9507,7 +9532,7 @@ K._toggleE2eBeta = function(on){
   toast(on ? '🛡 Chiffrement bout-en-bout activé sur cet appareil' : '🔒 E2E désactivé sur cet appareil (messages chiffrés en transit)', 'ok', 3800);
   if(typeof K.render === 'function') K.render();
 };
-// v1.1.258 — active le chiffrement des OCTETS média (photos/fichiers) sur cet
+// v1.1.259 — active le chiffrement des OCTETS média (photos/fichiers) sur cet
 // appareil. OFF par défaut (compat : un contact sur une ancienne version ne
 // pourrait pas afficher un média chiffré). Nécessite E2E ON pour agir.
 K._toggleMediaE2e = function(on){
@@ -10390,7 +10415,7 @@ K._saveEditMsg = async function(msgId){
   K.render();
   K._closeModal && K._closeModal();
   toast('✅ Message modifié', 'ok');
-  // v1.1.258 — l'édition suit le mode E2E du message : si E2E est ON on
+  // v1.1.259 — l'édition suit le mode E2E du message : si E2E est ON on
   // chiffre le nouveau texte (comme _sendMessage), sinon on retombe sur
   // new_text (E2E OFF assumé). Plus de texte clair silencieux sous E2E.
   let editCipher = null;
@@ -10662,7 +10687,7 @@ K._renderMediaEl = function(m){
   const src = K._mediaSrc(m.media_url);
   const t = (m.media_type || '').toLowerCase();
   const cap = 'max-width:260px;max-height:300px;border-radius:10px;display:block;margin-bottom:4px';
-  // v1.1.258 — média chiffré (octets iv‖ct dans R2) : on ne peut PAS pointer
+  // v1.1.259 — média chiffré (octets iv‖ct dans R2) : on ne peut PAS pointer
   // <img src> sur du ciphertext. On rend un placeholder hydraté après render
   // (fetch → decryptBytes → blob URL). Data-attrs pour K._hydrateEncMedia().
   if(m.media_enc && K.viewData){
@@ -10679,7 +10704,7 @@ K._renderMediaEl = function(m){
     <span style="font-size:1.4em">📎</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.media_name || 'fichier')}</span>
     <span style="font-size:.72em;color:var(--ax-text-3)">${esc(K._fmtSize(m.media_size))}</span></a>`;
 };
-// v1.1.258 — hydrate les médias chiffrés : fetch bytes R2 → decryptBytes →
+// v1.1.259 — hydrate les médias chiffrés : fetch bytes R2 → decryptBytes →
 // blob URL. Idempotent (marque data-enc-done), fail-open (message d'erreur
 // discret si la clé de session n'est pas là). Un seul fetch par élément.
 K._hydrateEncMedia = async function(){
@@ -10736,7 +10761,7 @@ K._uploadMedia = async function(file){
         }
       } catch(e) { _safeCatch('media-compress', e); }
     }
-    // v1.1.258 — chiffrement des octets (flag OFF par défaut). Si ON + session :
+    // v1.1.259 — chiffrement des octets (flag OFF par défaut). Si ON + session :
     // on upload iv‖ct (octet-stream) → R2 ne voit jamais le contenu réel. Le vrai
     // mime + le flag `e:1` voyagent dans le marqueur APXMEDIA (lui-même chiffré).
     let realMime = ctype, mediaEnc = false;
@@ -10776,7 +10801,7 @@ K._sendMediaMessage = async function(media, captionOverride){
   K.messages[conv.id].push(msg); ls('messages_' + conv.id, K.messages[conv.id]);
   if(input && typeof captionOverride !== 'string') input.value = '';
   K.render();
-  // v1.1.258 — même politique anti-clair que le texte : le marqueur média
+  // v1.1.259 — même politique anti-clair que le texte : le marqueur média
   // (URL+légende) ne part JAMAIS en clair sous E2E ON sans clé du contact.
   const mDecision = (window.ApexCrypto && ApexCrypto.decideWire)
     ? ApexCrypto.decideWire({ ciphertextPayload: mediaPayload, plaintext: marker, e2eOn: K._e2eOn() })

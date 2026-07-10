@@ -241,6 +241,19 @@ export function decideWire({ ciphertextPayload, plaintext, e2eOn }) {
   return { mode: 'pending', wire: null };
 }
 
+// v1.1.259 — Détection de changement de clé (TOFU, parité Signal). Compare la
+// clé publique fraîchement reçue d'un contact à celle mémorisée à la 1ʳᵉ vue.
+//   - firstSight : jamais vue → à mémoriser (aucune alerte).
+//   - changed    : clé DIFFÉRENTE d'avant → alerter (MITM possible / réinstall).
+//   - unchanged  : identique → RAS.
+// Fonction PURE (aucune crypto, aucun I/O) → testée à 100% ; index.html appelle.
+export function checkKeyChange(storedPub, newPub) {
+  if (!newPub) return { firstSight: false, changed: false, unchanged: false };
+  if (!storedPub) return { firstSight: true, changed: false, unchanged: false };
+  const changed = storedPub !== newPub;
+  return { firstSight: false, changed, unchanged: !changed };
+}
+
 // ----------------------------------------------------------------------------
 //  Chiffrement des OCTETS d'un média (photo/fichier/vocal) — v1.1.256
 //  Même clé de session AES-GCM que les messages, mais sur du binaire : les
@@ -346,6 +359,7 @@ if (typeof window !== 'undefined') {
     encryptForConv,
     decryptForConv,
     decideWire,
+    checkKeyChange,
     encryptBytes,
     decryptBytes,
     encryptMessage,
