@@ -72,9 +72,11 @@ export async function render(rootEl: HTMLElement): Promise<void> {
       <div style="padding:40px;text-align:center;color:#c00">
         <h2>Erreur</h2>
         <p>Impossible de charger les providers IoT.</p>
-        <button onclick="location.reload()">Recharger</button>
+        <button id="ax-iot-reload" type="button">Recharger</button>
       </div>
     `;
+    /* CSP-safe : inline onclick bloqué par script-src nonce/strict-dynamic → addEventListener. */
+    rootEl.querySelector('#ax-iot-reload')?.addEventListener('click', () => location.reload());
   }
 }
 
