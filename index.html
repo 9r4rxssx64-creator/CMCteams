@@ -5684,7 +5684,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.867";
+var APP_VER="v9.868";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17446,7 +17446,9 @@ function vMain(){
     return '<div class="card" style="padding:20px;border:2px solid #e06060;background:rgba(224,96,96,.1);border-radius:12px">'
       +'<div style="font-size:18px;font-weight:800;color:#e06060;margin-bottom:8px">⚠ Vue temporairement indisponible</div>'
       +'<div style="color:#e0a0a0;margin-bottom:12px;font-size:14px">L\'écran "<b>'+(A.view||"?")+'</b>" a rencontré une erreur. L\'application reste fonctionnelle.</div>'
-      +'<div style="color:#a0a0a0;margin-bottom:16px;font-size:12px;font-family:monospace">'+_msg+'</div>'
+      /* Détail technique = ADMIN uniquement (diagnostic). Les employés voient un message clair,
+         pas de jargon brut (règle Kevin « JAMAIS message technique brut à l'utilisateur »). */
+      +((A.user&&A.user.id===AID)?'<div style="color:#a0a0a0;margin-bottom:16px;font-size:12px;font-family:monospace">'+_msg+'</div>':'')
       +'<button class="btn gold" onclick="sv(\'accueil\')" style="margin-right:8px">🏠 Accueil</button>'
       +'<button class="btn" onclick="goBack()">↩ Retour</button>'
       +'</div>';
