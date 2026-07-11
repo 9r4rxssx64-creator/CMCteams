@@ -1,0 +1,94 @@
+name: Apex Chat — Sauvegarde D1 (messages)
+
+# Sauvegarde QUOTIDIENNE et CHIFFRÉE de la base D1 `apex-chat-main` (id
+# afee673e-83e9-4ae3-a578-96fabbfdd023) : comptes, conversations, messages,
+# clés publiques E2E. Sans ce backup, une perte de la base = perte de TOUT
+# l'historique des messages (aucune autre copie).
+#
+# SÉCU : le repo est PUBLIC → le dump SQL (qui contient des données perso :
+# numéros, pseudos, messages) est chiffré AES-256 (openssl, PBKDF2 200k
+# itérations) AVANT tout commit. Jamais de données en clair dans le repo.
+# Poussé sur la branche dédiée `d1-backups` (non protégée — un workflow ne
+# peut pas pousser sur main).
+#
+# RESTAURATION (en cas de perte de la base) :
+#   git fetch origin d1-backups && git checkout origin/d1-backups -- backups/apex-chat-d1/latest.sql.enc
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in latest.sql.enc -pass pass:<BACKUP_PASS> > restore.sql
+#   cd messaging-app/workers && npx wrangler d1 execute apex-chat-main --remote --file ../../restore.sql
+#
+# Anti-spam mails (règle CLAUDE.md) : 1 cron/jour, commits [skip ci].
+on:
+  schedule:
+    - cron: '45 3 * * *' # 03:45 UTC, 1×/jour (décalé du KV-backup 03:30)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency: apex-chat-d1-backup
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 1 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+
+      - name: Export de la base D1 via wrangler
+        working-directory: messaging-app/workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID absents — backup impossible."
+            exit 1
+          fi
+          # Export complet (schéma + données) de la base distante.
+          npx --yes wrangler@3 d1 export apex-chat-main --remote --output /tmp/d1.sql
+          SZ=$(wc -c < /tmp/d1.sql | tr -d ' ')
+          echo "Dump SQL : $SZ octets"
+          if [ "$SZ" -lt 20 ]; then echo "::warning::dump quasi vide ($SZ octets) — base neuve ?"; fi
+
+      - name: Chiffre le dump (AES-256, PBKDF2 200k — repo public, jamais de clair)
+        env:
+          BACKUP_PASS: ${{ secrets.KDMC_SSO_SECRET != '' && secrets.KDMC_SSO_SECRET || (secrets.JWT_SECRET != '' && secrets.JWT_SECRET || secrets.APEX_CHAT_ADMIN_TOKEN) }}
+        run: |
+          set -e
+          if [ -z "${BACKUP_PASS:-}" ]; then
+            echo "::error::Aucun secret de chiffrement (KDMC_SSO_SECRET / JWT_SECRET / APEX_CHAT_ADMIN_TOKEN) — on ne committe JAMAIS le dump en clair. Abandon."
+            exit 1
+          fi
+          mkdir -p /tmp/out
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -in /tmp/d1.sql -out "/tmp/out/latest.sql.enc" -pass env:BACKUP_PASS
+          cp "/tmp/out/latest.sql.enc" "/tmp/out/$(date -u +%Y%m%d).sql.enc"
+          ls -la /tmp/out
+
+      - name: Pousse sur la branche d1-backups (rétention 14 jours datés + latest)
+        run: |
+          set -e
+          git config user.name "apex-chat-d1-backup[bot]"
+          git config user.email "actions@github.com"
+          git fetch origin d1-backups 2>/dev/null && git checkout -B d1-backups origin/d1-backups || git checkout --orphan d1-backups
+          if ! git rev-parse origin/d1-backups >/dev/null 2>&1; then git rm -rfq --cached . 2>/dev/null || true; git clean -fdq || true; fi
+          mkdir -p backups/apex-chat-d1
+          cp /tmp/out/*.sql.enc backups/apex-chat-d1/
+          ls -1 backups/apex-chat-d1/2*.sql.enc 2>/dev/null | sort | head -n -14 | xargs -r rm -f
+          # Anti-échec Vercel sur branche orpheline (idempotent, cf. kdmc-kv-backup).
+          mkdir -p tools/agent
+          printf '%s\n' '{ "git": { "deploymentEnabled": false }, "ignoreCommand": "exit 0" }' > tools/agent/vercel.json
+          git add backups/apex-chat-d1 tools/agent/vercel.json
+          git commit -m "backup: base D1 Apex Chat $(date -u +%Y-%m-%d) (chiffré) [skip ci]" || { echo "rien à committer"; exit 0; }
+          git push -f origin d1-backups
+
+      - name: Copie de secours en artifact (30 jours)
+        uses: actions/upload-artifact@v4
+        with:
+          name: apex-chat-d1-backup-${{ github.run_id }}
+          path: /tmp/out/latest.sql.enc
+          retention-days: 30
