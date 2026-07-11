@@ -4347,6 +4347,10 @@ export async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
 }
 
 async function handleIAChat(request, env) {
+  // SÉCU audit P1 — l'IA consomme les crédits API de Kevin (Anthropic/Groq/Gemini/DeepSeek).
+  // Sans auth, n'importe qui pouvait épuiser le quota/facturer. Réservé aux users connectés.
+  const user = await getAuthUser(request, env);
+  if (!user) return err('Unauthorized', 401);
   const { messages, systemPrompt, context } = await request.json();
   if (!Array.isArray(messages) || messages.length === 0) return err('messages required');
 
