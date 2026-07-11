@@ -5227,7 +5227,15 @@ function hashPwV2(pw,salt){
 }
 function verifyPw(pw,stored){
   if(!stored)return false;
-  if(typeof stored==="string")return hashPw(pw)===stored; // legacy DJB2
+  if(typeof stored==="string"){
+    // FIX audit — hashPwStrong()/hashPwV2() renvoient une CHAÎNE "s1:.."/"v2:salt:.."
+    // (ls("cmc_admin_pin",hashPwStrong(pin))). L'ancien code tombait sur le legacy DJB2
+    // qui ne matche jamais un préfixe "s1:"/"v2:" → PIN admin INVÉRIFIABLE (lockout au
+    // changement de PIN). Zéro-risque : un hash DJB2 legacy ne contient JAMAIS de ":".
+    if(stored.indexOf("v2:")===0){var _p=stored.split(":");return _p.length>=3&&hashPwV2(pw,_p[1])===stored;}
+    if(stored.indexOf("s1:")===0)return hashPwStrong(pw)===stored;
+    return hashPw(pw)===stored; // legacy DJB2
+  }
   if(stored.h){
     // v9.79 : hash v2 avec sel dynamique
     if(stored.h.indexOf("v2:")===0){
@@ -5684,7 +5692,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.868";
+var APP_VER="v9.869";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11546,7 +11554,7 @@ function adjDeparts(){
 }
 window.addEventListener("resize",adjGrid);
 
-var loginStep=0,loginUid="",tT=null;
+var loginStep=0,loginUid="",tT=null,_adminPinCreate=false;
 var _viewAs=null; // Impersonation admin : null = désactivé, sinon = objet user admin réel
 var _loginNom="",_loginPrenom="",_loginMat="";
 function genTempUid(nom,prenom){
@@ -13480,7 +13488,7 @@ function _sentinelSecurity(){
     if(A.user&&last&&Date.now()-last>SESSION_TTL){findings.push("Session expirée — logout auto");if(_sentinelCanHeal("sec-sentinel")&&typeof doLogout==="function"){doLogout();}_sentinelLogFinding("sec-sentinel","warn","Session TTL forced logout");}
     // PIN en clair / format invalide (v9.545 — validation stricte hash $iter$salt$hash)
     var pin=localStorage.getItem("cmc_admin_pin");
-    if(pin){var pinStr=String(pin||"");try{var pp=JSON.parse(pinStr);if(typeof pp==="string")pinStr=pp;}catch(_pe){}if(pinStr&&pinStr!=="null"&&(pinStr.indexOf("$")<0||pinStr.length<32)){findings.push("cmc_admin_pin format invalide (len="+pinStr.length+")");_sentinelLogFinding("sec-sentinel","err","PIN format invalide");try{if(typeof cmcSecurityLog==="function")cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+(pinStr.indexOf("$")>=0));}catch(_e1){}try{if(typeof _cmcEscalate==="function")_cmcEscalate({len:pinStr.length,hasSep:pinStr.indexOf("$")>=0},"PIN admin format invalide");}catch(_e2){}}}
+    if(pin){var pinStr=String(pin||"");try{var pp=JSON.parse(pinStr);if(typeof pp==="string")pinStr=pp;}catch(_pe){}if(pinStr&&pinStr!=="null"&&!(pinStr.indexOf("s1:")===0||pinStr.indexOf("v2:")===0||(pinStr.indexOf("$")>=0&&pinStr.length>=32))){findings.push("cmc_admin_pin format invalide (len="+pinStr.length+")");_sentinelLogFinding("sec-sentinel","err","PIN format invalide");try{if(typeof cmcSecurityLog==="function")cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+(pinStr.indexOf("$")>=0));}catch(_e1){}try{if(typeof _cmcEscalate==="function")_cmcEscalate({len:pinStr.length,hasSep:pinStr.indexOf("$")>=0},"PIN admin format invalide");}catch(_e2){}}}
     // CSP présente ?
     if(!document.querySelector('meta[http-equiv="Content-Security-Policy"]')){findings.push("CSP meta absente");_sentinelLogFinding("sec-sentinel","err","CSP absente");}
     if(findings.length){agentAppendReport("sec-sentinel","warn",findings.join(" · "));}
@@ -13872,7 +13880,7 @@ function _agentMetaCompletenessWatch(){
   }catch(e){agentAppendReport("meta-completeness","err",(e.message||"").slice(0,100));}
 }
 /* v9.530 — Sentinelle admin-pin-watch : valide format hash cmc_admin_pin (>=20 chars + $ separators) */
-function _agentAdminPinWatch(){try{var raw=localStorage.getItem("cmc_admin_pin");if(!raw||raw==="null"){agentAppendReport("cmc-admin-pin-watch","ok","Aucun PIN admin defini");return;}var pin;try{pin=JSON.parse(raw);}catch(_){pin=raw;}var pinStr=String(pin||"");var hasSep=(pinStr.indexOf("$")>=0);var lenOk=(pinStr.length>=20);if(!lenOk||!hasSep){agentAppendReport("cmc-admin-pin-watch","err","PIN admin format suspect (len="+pinStr.length+", sep="+hasSep+")");try{cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+hasSep);}catch(_){}try{_cmcEscalate({len:pinStr.length,sep:hasSep},"PIN admin hash format invalide");}catch(_){}}else{agentAppendReport("cmc-admin-pin-watch","ok","Hash PIN admin format OK ("+pinStr.length+" chars)");}}catch(e){agentAppendReport("cmc-admin-pin-watch","err",(e.message||"").slice(0,100));}}
+function _agentAdminPinWatch(){try{var raw=localStorage.getItem("cmc_admin_pin");if(!raw||raw==="null"){agentAppendReport("cmc-admin-pin-watch","ok","Aucun PIN admin defini");return;}var pin;try{pin=JSON.parse(raw);}catch(_){pin=raw;}var pinStr=String(pin||"");var hasSep=(pinStr.indexOf("$")>=0);var lenOk=(pinStr.length>=20);var fmtOk=(pinStr.indexOf("s1:")===0||pinStr.indexOf("v2:")===0||(lenOk&&hasSep));if(!fmtOk){agentAppendReport("cmc-admin-pin-watch","err","PIN admin format suspect (len="+pinStr.length+", sep="+hasSep+")");try{cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+hasSep);}catch(_){}try{_cmcEscalate({len:pinStr.length,sep:hasSep},"PIN admin hash format invalide");}catch(_){}}else{agentAppendReport("cmc-admin-pin-watch","ok","Hash PIN admin format OK ("+pinStr.length+" chars)");}}catch(e){agentAppendReport("cmc-admin-pin-watch","err",(e.message||"").slice(0,100));}}
 /* v9.605 (Kevin REGLE PERMANENTE 2026-05-07 ANTI-REGRESSION) : Sentinelle regression-watch
  * Tourne 1x/jour (24h interval), audit subset critical des fix proteges (CLAUDE.md liste).
  * Si regression detectee → push telemetry Apex + escalade Claude Code via ax_claude_todo.
@@ -16767,21 +16775,36 @@ function vLoginStepPin(){
     <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.65);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:40px;line-height:1">\ud83d\udd12</div>
-      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">Code d'acc\u00e8s admin</div>
+      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">${_adminPinCreate?"Cr\u00e9e ton code admin":"Code d'acc\u00e8s admin"}</div>
+      ${_adminPinCreate?'<div style="font-size:13px;color:#c8b070;margin-top:8px;line-height:1.4">Premi\u00e8re connexion sur cet appareil : choisis un code PIN. Il sera demand\u00e9 \u00e0 chaque connexion admin ici.</div>':''}
     </div>
-    <div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600">Code PIN</div>
+    <div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600">${_adminPinCreate?"Choisis ton code PIN":"Code PIN"}</div>
     <input id="pinIn" class="inp" type="password" inputmode="numeric" placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
       style="font-size:22px;letter-spacing:8px;text-align:center;margin-bottom:10px"
       onkeydown="if(event.key==='Enter')stepPin()">
     <div id="pinerr" style="color:#a04040;font-size:15px;min-height:16px;margin-bottom:8px">${(function(){var pf=lg("cmc_pin_fails",{count:0,until:0});return (pf.until&&Date.now()<pf.until)?"\ud83d\udd12 Verrouill\u00e9 — "+Math.ceil((pf.until-Date.now())/1000)+" s":"";})()}</div>
-    <button class="btn gold" onclick="stepPin()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">Acc\u00e9der \u2192</button>
-    <button class="btn ghost" onclick="loginStep=0;render()" style="width:100%;padding:10px;font-size:16px;justify-content:center;margin-top:8px">\u2190 Retour</button>
+    <button class="btn gold" onclick="stepPin()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">${_adminPinCreate?"Cr\u00e9er mon code \u2192":"Acc\u00e9der \u2192"}</button>
+    <button class="btn ghost" onclick="_adminPinCreate=false;loginStep=0;render()" style="width:100%;padding:10px;font-size:16px;justify-content:center;margin-top:8px">\u2190 Retour</button>
   </div></div>`;
 }
 function stepPin(){
   var pin=(document.getElementById("pinIn")||{}).value||"";
   var stored=lg("cmc_admin_pin",null);
   var er=document.getElementById("pinerr");
+  // SÉCU — mode CRÉATION du code admin (1ère connexion sans PIN). On DÉFINIT le
+  // code (pas de vérification/rate-limit ici), puis on connecte. Zéro lockout.
+  // Le format s1: est désormais vérifiable par verifyPw (fix hasher) → pas de lockout ultérieur.
+  if(_adminPinCreate){
+    if(!/^\d{4,}$/.test(pin)){if(er)er.textContent="Choisis un code d’au moins 4 chiffres";return;}
+    ls("cmc_admin_pin",hashPwStrong(pin));
+    _adminPinCreate=false;
+    ls("cmc_pin_fails",{count:0,until:0});
+    logAdminSession("success",{method:"pin_created"});
+    try{if(typeof cmcSecurityLog==="function")cmcSecurityLog("admin_pin_created","1ere connexion appareil");}catch(_){}
+    var empC=empById(AID);
+    if(empC){A.user=empC;ls("cmc_uid",empC.id);try{localStorage.setItem("cmc_last_uid",empC.id);}catch(_){}touchSession();loginStep=0;logUserLogin(empC);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}render();try{_cmcOfferFaceIdEnroll(empC.id);}catch(_){}}
+    return;
+  }
   // Rate-limiting : vérifier verrouillage
   var pf=lg("cmc_pin_fails",{count:0,until:0});
   if(pf.until&&Date.now()<pf.until){
@@ -16834,8 +16857,16 @@ function step1(){
   if(mat===AID){
     loginUid=AID;
     var pin=lg("cmc_admin_pin",null);
-    if(pin){loginStep=2;render();}
-    else{var empA=empById(AID);if(empA){logAdminSession("success",{method:"direct"});A.user=empA;ls("cmc_uid",empA.id);try{localStorage.setItem("cmc_last_uid",empA.id);}catch(_){}touchSession();loginStep=0;logUserLogin(empA);startPresenceHeartbeat();render();try{_cmcOfferFaceIdEnroll(empA.id);}catch(_){}}else{if(er)er.textContent="Admin non trouv\u00e9.";}}
+    if(pin){_adminPinCreate=false;loginStep=2;render();}
+    else{
+      // S\u00c9CU audit \u2014 appareil sans PIN admin : au lieu d'une connexion admin OUVERTE
+      // (n'importe qui tapant le matricule admin = admin), on FORCE la cr\u00e9ation d'un
+      // code PIN. Z\u00e9ro lockout : l'admin choisit son code puis entre ; le code est
+      // ensuite exig\u00e9 \u00e0 chaque connexion sur cet appareil + trac\u00e9 (anomalie visible).
+      var empA0=empById(AID);
+      if(empA0){_adminPinCreate=true;loginStep=2;render();}
+      else{if(er)er.textContent="Admin non trouv\u00e9.";}
+    }
     return;
   }
   // ── Visiteur U007 : bloqué si désactivé par admin ──
