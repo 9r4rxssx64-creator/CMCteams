@@ -166,23 +166,27 @@ class Router {
 
   private renderNotFound(target: string): void {
     if (!this.rootEl) return;
+    /* CSP-safe : pas d'inline onclick (bloqué par script-src nonce/strict-dynamic
+     * sans unsafe-inline → bouton mort). On câble via addEventListener post-render. */
     this.rootEl.innerHTML = `
       <div class="ax-empty">
         <h2>Page introuvable</h2>
         <p>Route "${this.escape(target)}" inconnue.</p>
-        <button class="ax-btn" onclick="location.hash='#chat'">Retour</button>
+        <button class="ax-btn" id="ax-nf-back" type="button">Retour</button>
       </div>
     `;
+    this.rootEl.querySelector('#ax-nf-back')?.addEventListener('click', () => { location.hash = '#chat'; });
   }
 
   private renderForbidden(): void {
     if (!this.rootEl) return;
     /* v13.4.38 Kevin screenshot bug : "Accès réservé" sans action utile.
-     * Kevin admin doit pouvoir se logger directement depuis cette page. */
+     * Kevin admin doit pouvoir se logger directement depuis cette page.
+     * CSP-safe : boutons câblés via addEventListener (pas d'inline onclick). */
     const isAuthed = store.get('user') !== null;
     const loginButton = isAuthed
       ? '' /* Déjà loggué = pas admin réel, juste afficher Retour */
-      : '<button class="ax-btn ax-btn-primary" onclick="location.hash=\'#login\'" style="margin-right:8px">Se connecter admin</button>';
+      : '<button class="ax-btn ax-btn-primary" id="ax-forbid-login" type="button" style="margin-right:8px">Se connecter admin</button>';
     this.rootEl.innerHTML = `
       <div class="ax-empty" style="padding:24px;text-align:center">
         <h2>Accès réservé</h2>
@@ -190,10 +194,12 @@ class Router {
         <p style="font-size:14px;color:var(--ax-muted);margin-top:8px">${isAuthed ? 'Tu es connecté mais sans droits admin.' : 'Connecte-toi avec ton compte admin pour accéder à cette section.'}</p>
         <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
           ${loginButton}
-          <button class="ax-btn" onclick="location.hash='#chat'">Retour au chat</button>
+          <button class="ax-btn" id="ax-forbid-back" type="button">Retour au chat</button>
         </div>
       </div>
     `;
+    this.rootEl.querySelector('#ax-forbid-login')?.addEventListener('click', () => { location.hash = '#login'; });
+    this.rootEl.querySelector('#ax-forbid-back')?.addEventListener('click', () => { location.hash = '#chat'; });
   }
 
   private renderError(msg: string): void {

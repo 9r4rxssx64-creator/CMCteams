@@ -63,6 +63,34 @@ describe('Router hash (core/router.ts)', () => {
     expect(rootEl.innerHTML).toContain('introuvable');
   });
 
+  it('notFound : bouton Retour CSP-safe (pas d\'inline onclick) + clic navigue vers #chat', async () => {
+    router.init();
+    location.hash = '#route-inconnue-csp-' + Date.now();
+    await new Promise((r) => setTimeout(r, 100));
+    const btn = rootEl.querySelector('#ax-nf-back') as HTMLButtonElement | null;
+    expect(btn).not.toBeNull();
+    expect(btn?.getAttribute('onclick')).toBeNull(); /* inline onclick = bloqué par CSP → interdit */
+    btn?.click();
+    expect(location.hash).toBe('#chat');
+  });
+
+  it('forbidden : boutons CSP-safe (pas d\'inline onclick) + clic Retour navigue vers #chat', async () => {
+    store.set('user', { id: 'u1', name: 'NotAdmin' });
+    store.set('isAdmin', false);
+    router.register('admin-only-csp', {
+      loader: async () => ({ render: () => undefined }),
+      requiresAdmin: true,
+    });
+    router.init();
+    location.hash = '#admin-only-csp';
+    await new Promise((r) => setTimeout(r, 100));
+    const back = rootEl.querySelector('#ax-forbid-back') as HTMLButtonElement | null;
+    expect(back).not.toBeNull();
+    expect(back?.getAttribute('onclick')).toBeNull();
+    back?.click();
+    expect(location.hash).toBe('#chat');
+  });
+
   it('route avec requiresAuth redirige vers login si pas user', async () => {
     let renderCalled = false;
     router.register('protected-route', {
