@@ -12,6 +12,8 @@ on:
   push:
     paths:
       - 'shops/la-detente/**'
+      - 'shops/_shared/firebase-orders.js'
+      - 'shops/_shared/firebase-orders-auth.test.mjs'
       - 'services/kdmc-router/fb-token.js'
       - '.github/workflows/la-detente-shop-selftest.yml'
   schedule:
@@ -33,6 +35,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: Client — le writer partagé attache le token admin (fail-open) + ordres/lectures anonymes
+        run: node shops/_shared/firebase-orders-auth.test.mjs
 
       - name: Sécurité boutique — lecture client / anon bloqué / admin autorisé
         env:
