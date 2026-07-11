@@ -23,8 +23,6 @@
 export const APP_VER = 'v13.4.357';
 export const ADMIN_ID = 'kdmc_admin';
 
-/* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
- * import { di } gardé pour rétrocompat __APEX__ window debug, mais c'est un alias service-locator. */
 import { logRedaction } from '../services/observability/log-redaction-wrapper.js';
 
 import { errors } from './errors.js';
@@ -33,7 +31,6 @@ import { safeSetHTML } from './html-safe.js';
 import { logger } from './logger.js';
 import { memory } from './memory.js';
 import { router } from './router.js';
-import { di } from './service-locator.js';
 import { store } from './store.js';
 
 /* v13.3.74 P0 sécu (audit OWASP ASVS L2 V7.1.1) — log redaction GLOBAL.
@@ -1009,15 +1006,16 @@ bootstrap().catch((err: unknown) => {
   if (sos) sos.style.display = 'flex';
 });
 
-/* DI registry exposed for debug (admin only via HUD) */
+/* v13.4.x SÉCU — n'expose PLUS `store` ni `di` sur window : un attaquant XSS/console
+ * pouvait faire `window.__APEX__.store.set('user', {id:'kdmc_admin'})` pour usurper l'admin
+ * (les guards router dérivent l'admin de `store.get('user')`). Aucun code prod/test ne lit
+ * `__APEX__.store`/`.di` → retrait sûr. On garde `ver`/`logger` (debug non sensible). */
 declare global {
   interface Window {
     __APEX__?: {
       ver: string;
-      di: typeof di;
-      store: typeof store;
       logger: typeof logger;
     };
   }
 }
-window.__APEX__ = { ver: APP_VER, di, store, logger };
+window.__APEX__ = { ver: APP_VER, logger };
