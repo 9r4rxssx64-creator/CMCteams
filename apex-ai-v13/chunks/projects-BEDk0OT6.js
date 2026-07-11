@@ -1,0 +1,14 @@
+import{l as u,b as A}from"./monitoring-DfV1jLgN.js";const v="apex_v13_projects_",I="apex_v13_active_project_",d=40,S=30,w=8e3,j=2e4,p=24e3;function h(o){return`${v}${o}`}function g(o){return`${I}${o}`}function i(){return A.get("user")?.id??"anon"}function y(o){if(!o||typeof o!="object")return!1;const e=o;return typeof e.id=="string"&&typeof e.name=="string"&&e.name.length>0&&typeof e.instructions=="string"&&Array.isArray(e.knowledge)&&typeof e.createdAt=="number"}class _{list(e=i()){try{const t=localStorage.getItem(h(e));if(!t)return[];const r=JSON.parse(t);return Array.isArray(r)?r.filter(y):[]}catch(t){return u.warn("projects","list failed",{err:t}),[]}}persist(e,t){try{localStorage.setItem(h(e),JSON.stringify(t.slice(0,d)))}catch(r){u.warn("projects","persist failed",{err:r})}}get(e,t=i()){return this.list(t).find(r=>r.id===e)??null}save(e,t=i()){const r=String(e.name??"").trim();if(!r)return null;const n=String(e.emoji??"").trim()||"📁",s=String(e.instructions??"").trim().slice(0,w),c=Date.now(),l=this.list(t),a=e.id?l.find(m=>m.id===e.id):null;if(a)return a.name=r,a.emoji=n,a.instructions=s,a.updatedAt=c,this.persist(t,l),a;if(l.length>=d)return null;const f={id:`proj_${c.toString(36)}_${Math.random().toString(36).slice(2,7)}`,name:r,emoji:n,instructions:s,knowledge:[],createdAt:c,updatedAt:c};return l.unshift(f),this.persist(t,l),f}remove(e,t=i()){const r=this.list(t),n=r.filter(s=>s.id!==e);return n.length===r.length?!1:(this.persist(t,n),this.getActiveId(t)===e&&this.setActive(null,t),!0)}addNote(e,t,r=i()){const n=this.list(r),s=n.find(a=>a.id===e);if(!s)return!1;const c=String(t.title??"").trim()||"Note",l=String(t.content??"").trim().slice(0,j);return!l||s.knowledge.length>=S?!1:(s.knowledge.push({title:c,content:l}),s.updatedAt=Date.now(),this.persist(r,n),!0)}removeNote(e,t,r=i()){const n=this.list(r),s=n.find(c=>c.id===e);return!s||t<0||t>=s.knowledge.length?!1:(s.knowledge.splice(t,1),s.updatedAt=Date.now(),this.persist(r,n),!0)}getActiveId(e=i()){try{return localStorage.getItem(g(e))||null}catch{return null}}getActive(e=i()){const t=this.getActiveId(e);return t?this.get(t,e):null}setActive(e,t=i()){try{e&&this.get(e,t)?localStorage.setItem(g(t),e):localStorage.removeItem(g(t))}catch(r){u.warn("projects","setActive failed",{err:r})}}buildInjection(e=i()){const t=this.getActive(e);if(!t)return"";let r=`
+
+=== PROJET ACTIF : ${t.emoji} ${t.name} ===
+`;if(t.instructions&&(r+=`Instructions du projet (prioritaires) :
+${t.instructions}
+`),t.knowledge.length){r+=`
+Base de connaissances du projet (source de vérité, ne rien inventer au-delà) :
+`;for(const n of t.knowledge)if(r+=`
+--- ${n.title} ---
+${n.content}
+`,r.length>p){r+=`
+[… base de connaissances tronquée pour tenir dans le contexte …]
+`;break}}return r+=`=== FIN PROJET ===
+`,r.slice(0,p)}}const $=new _;export{$ as p};
