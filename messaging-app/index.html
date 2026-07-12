@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.267",
+  "softwareVersion": "v1.1.268",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -444,7 +444,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.267';
+const __APEX_CHAT_VERSION__ = 'v1.1.268';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -629,7 +629,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.267</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.268</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.267</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.268</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -3685,13 +3685,20 @@ K._getAvatar = function(userId){
   return cache[userId] || '';
 };
 
-// v1.1.170 — fetch lazy avatar d'un peer si pas en cache. Asynchrone :
-// renvoie quand l'avatar est disponible (ou rien). Le caller fait
-// K.render() pour rafraîchir l'UI avec la nouvelle photo.
-K._fetchedPeerAvatars = K._fetchedPeerAvatars || {}; // dédupe inflight
-K._fetchPeerAvatar = async function(userId){
+// v1.1.170 — fetch lazy avatar d'un peer. v1.1.268 FIX (Kevin : « Lolo a changé
+// sa photo mais elle n'apparaît pas ») : le dédupe était DÉFINITIF (`if(fetched)
+// return`) → une photo changée n'était JAMAIS re-téléchargée. Désormais dédupe
+// par TTL (`peer_avatars_cache` = source instantanée ; on revérifie au-delà du
+// TTL) → la nouvelle photo d'un contact apparaît « presque en temps réel »
+// (règle Kevin). Le worker ne relaie pas `avatar_update` → on ne dépend PAS de
+// lui : on sonde /api/users/:id. Anti-scintillement (leçon #94) : on ne
+// re-render QUE si la photo a réellement changé.
+K._AVATAR_TTL_MS = 120000; // 2 min — au-delà on revérifie la photo d'un contact
+K._fetchedPeerAvatars = K._fetchedPeerAvatars || {}; // dernier fetch (ts) par user (mémoire)
+K._fetchPeerAvatar = async function(userId, force){
   if(!userId || userId === K.user?.id) return null;
-  if(K._fetchedPeerAvatars[userId]) return null; // déjà en cours / déjà tenté
+  const last = K._fetchedPeerAvatars[userId] || 0;
+  if(!force && (Date.now() - last) < K._AVATAR_TTL_MS) return null; // TTL (au lieu de définitif)
   K._fetchedPeerAvatars[userId] = Date.now();
   const apiBase = (typeof API_BASE !== 'undefined') ? API_BASE : '';
   if(!apiBase || !K.token || String(K.token).startsWith('local-')) return null;
@@ -3705,15 +3712,17 @@ K._fetchPeerAvatar = async function(userId){
     if(!u) return null;
     const cache = lg('peer_avatars_cache', {});
     if(u.avatar_url){
+      const changed = cache[userId] !== u.avatar_url;
       cache[userId] = u.avatar_url;
       ls('peer_avatars_cache', cache);
-      // Re-render si une vue est ouverte (UI affichera la photo maintenant)
-      try { K.render && K.render(); } catch(_) {}
+      // Re-render UNIQUEMENT si la photo a vraiment changé (anti-scintillement).
+      if(changed){ try { K.render && K.render(); } catch(_) {} }
       return u.avatar_url;
     } else if(cache[userId]){
-      // Avatar retiré côté serveur → nettoie le cache
+      // Avatar retiré côté serveur → nettoie le cache + rafraîchit.
       delete cache[userId];
       ls('peer_avatars_cache', cache);
+      try { K.render && K.render(); } catch(_) {}
     }
     return null;
   } catch (_) { return null; }
@@ -3722,12 +3731,14 @@ K._fetchPeerAvatar = async function(userId){
 K._renderAvatarHTML = function(name, userId, sizePx){
   const size = sizePx || 36;
   const avatar = K._getAvatar(userId);
-  if(avatar){
-    return `<img src="${esc(avatar)}" alt="${esc(name || '?')}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
-  }
-  // Pas en cache + peer connu → lazy fetch (sans bloquer le rendu)
+  // v1.1.268 : rafraîchit en tâche de fond pour TOUT peer (même avec une photo en
+  // cache) — TTL-gardé dans _fetchPeerAvatar → une photo changée apparaît au
+  // prochain rendu, sans re-fetch à chaque frame. Ne bloque jamais le rendu.
   if(userId && userId !== K.user?.id){
     try { K._fetchPeerAvatar(userId); } catch(_) {}
+  }
+  if(avatar){
+    return `<img src="${esc(avatar)}" alt="${esc(name || '?')}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
   }
   return `<div class="avatar" style="width:${size}px;height:${size}px;flex-shrink:0">${esc((name || '?')[0].toUpperCase())}</div>`;
 };
@@ -7615,6 +7626,10 @@ K.openConv = async function(convId){
   // Phase 2 : établir session E2E (peer_pubkey joint par le serveur OU bundle
   // récupéré just-in-time). v1.1.173 FIX P0 (audit crew).
   try{ await K._ensureSession(conv); }catch(e){ _safeCatch('establish-session', e); }
+
+  // v1.1.268 — force le rafraîchissement de la photo du contact à l'ouverture
+  // (une photo changée apparaît tout de suite, sans attendre le TTL).
+  try{ if(conv.peer_id) K._fetchPeerAvatar(conv.peer_id, true); }catch(_e){ _safeCatch('avatar-refresh-open', _e); }
 
   K.sv('chat', conv);
 };
