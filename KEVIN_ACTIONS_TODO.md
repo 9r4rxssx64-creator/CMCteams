@@ -59,6 +59,14 @@ Après ces 2 clics : les 3 experts indépendants tournent en continu et détaill
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## ✅ SESSION 2026-07-10 — Actions Kevin FAITES (« Tout fait »)
+Kevin a réalisé les 4 actions 1-clic optionnelles proposées :
+- ✅ **GIF (Giphy)** testé dans Apex Chat (secret `GIPHY_KEY` ajouté + worker déployé).
+- ✅ **Alertes World Monitor** autorisées (notifications device) → séisme M6+ / GDACS Rouge / Kp≥7 même app fermée.
+- ✅ **CodeRabbit** installé sur `CMCteams` → relecteur IA indépendant (≠ Claude) sur chaque future PR (config `.coderabbit.yaml` FR déjà prête).
+- ✅ **SonarCloud** connecté (Automatic Analysis) → bilan santé par app à chaque push (`sonar-project.properties` déjà prêt).
+> Ces 2 reviewers ne se déclenchent que sur les **prochaines** PR/commits — leurs premiers retours apparaîtront au prochain changement livré. Rien d'autre en attente côté Kevin (WebKit CI corrigé + mergé, leçon #140).
+
 ## 🚀 SESSION 2026-07-08 (suite) — AUDIT D'AMÉLIORATION EXTRÊME (84 améliorations prouvées, 6 auditeurs //)
 
 Rapport complet : https://claude.ai/code/artifact/97aa362e-730f-44eb-9a32-aede610b1954
