@@ -153,6 +153,18 @@ jobs:
             echo "::warning::Impossible de créer/trouver la PR pour $BRANCH — merger manuellement."
             exit 1
           fi
+          # v2026-07 (Kevin : « le retour coderabbit à chaque fois ») — l'auto-merge
+          # était trop rapide (~2 s) : CodeRabbit n'avait jamais le temps de reviewer.
+          # On lui laisse une fenêtre AVANT de merger (best-effort, early-exit dès
+          # qu'il a posté ; on merge quand même à la fin pour ne jamais bloquer).
+          echo "⏳ Fenêtre de revue CodeRabbit (max ~4 min, sort dès qu'il a posté)…"
+          gh pr comment "$PR" --body "@coderabbitai review" >/dev/null 2>&1 || true
+          for i in $(seq 1 12); do
+            CR=$(gh api "repos/${{ github.repository }}/issues/$PR/comments" \
+                   --jq '[.[] | select((.user.login // "") | test("coderabbit";"i"))] | length' 2>/dev/null || echo 0)
+            if [ "${CR:-0}" -gt 0 ]; then echo "✓ CodeRabbit a posté sa revue sur #$PR"; break; fi
+            sleep 20
+          done
           # Merge via PR (admin override si dispo, sinon merge normal). Si la règle
           # exige une review → laisse la PR ouverte + warning pour merge manuel.
           if gh pr merge "$PR" --merge --admin --delete-branch=false 2>/dev/null \

@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.268",
+  "softwareVersion": "v1.1.269",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -444,7 +444,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.268';
+const __APEX_CHAT_VERSION__ = 'v1.1.269';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -629,7 +629,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.268</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.269</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.268</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.269</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -8125,8 +8125,12 @@ async function _handleWsMessage(data, convId){
       let added = 0, merged = 0;
       for(const sm of data.messages){
         if(!sm || !sm.id || seen.has(sm.id)) continue;
+        if(K._isDeletedLocal(convId, sm.id)) continue; // v1.1.269 : supprimé pour moi → ne pas ressusciter
+        const _tomb = !sm.ciphertext;                   // v1.1.269 : contenu effacé serveur (suppr. pour tout le monde)
         let txt = sm.ciphertext || '';
-        if(txt.indexOf(K._RATCHET_TAG) === 0){
+        if(_tomb){
+          txt = '🗑 Message supprimé';
+        } else if(txt.indexOf(K._RATCHET_TAG) === 0){
           txt = await K._decryptRatchetPayload(convId, txt);
         } else if(txt.indexOf(K._E2E_TAG) === 0){
           const ct = txt.slice(K._E2E_TAG.length);
@@ -8167,7 +8171,8 @@ async function _handleWsMessage(data, convId){
           ...(hloc ? { location: hloc } : {}),
           ts: sm.ts || Date.now(), mime: sm.mime || 'text/plain',
           reply_to: replyTo || undefined,
-          encrypted: !!sm.ciphertext, from_history: true
+          encrypted: !!sm.ciphertext, from_history: true,
+          ...(_tomb ? { deleted: true } : {})   // v1.1.269 : tombstone (supprimé pour tout le monde)
         });
         seen.add(sm.id); added++;
       }
@@ -8186,6 +8191,8 @@ async function _handleWsMessage(data, convId){
         console.log('[ws] message dropped from blocked user', data.sender_id);
         break;
       }
+      // v1.1.269 : un message que j'ai supprimé ne doit pas revenir via un renvoi.
+      if(data.id && K._isDeletedLocal(convId, data.id)){ break; }
       // v1.1.69 : trigger unread badge update après pousse du msg
       setTimeout(() => K._updateUnreadBadge && K._updateUnreadBadge(), 50);
       // Nouveau message reçu
@@ -10718,6 +10725,27 @@ K._doForward = function(srcMsgId, targetConvId){
   toast(`↗ Transféré à ${targetConv.name || targetConv.pseudo}`, 'ok');
 };
 
+// v1.1.269 FIX (Kevin : « les messages reviennent après effacement ») — un
+// message supprimé revenait au reload car l'historique serveur (rejeu à la
+// reconnexion) le re-poussait : « supprimer pour moi » n'était que local (rien
+// côté serveur ni de trace durable). On tient donc un SET PERSISTANT d'ids
+// supprimés par conversation ; le rejeu `history` (et les messages temps réel)
+// sautent ces ids → un message supprimé NE REVIENT PLUS, même après reload /
+// nouvel appareil.
+K._deletedLocalKey = function(convId){ return 'deleted_msgs_' + convId; };
+K._isDeletedLocal = function(convId, msgId){
+  try{ return (lg(K._deletedLocalKey(convId), []) || []).indexOf(msgId) >= 0; }catch(_){ return false; }
+};
+K._markDeletedLocal = function(convId, msgId){
+  try{
+    const arr = lg(K._deletedLocalKey(convId), []) || [];
+    if(arr.indexOf(msgId) < 0){
+      arr.push(msgId);
+      if(arr.length > 1000) arr.splice(0, arr.length - 1000); // cap FIFO
+      ls(K._deletedLocalKey(convId), arr);
+    }
+  }catch(_e){ _safeCatch('mark-deleted-local', _e); }
+};
 K._deleteMsg = function(msgId, scope){
   const conv = K.viewData;
   if(!conv || !msgId) return;
@@ -10725,6 +10753,8 @@ K._deleteMsg = function(msgId, scope){
   const idx = msgs.findIndex(x => x.id === msgId);
   if(idx < 0){ toast('Message introuvable', 'warn'); return; }
   const m = msgs[idx];
+  // Trace DURABLE : ce message ne doit plus jamais revenir chez moi (les 2 scopes).
+  K._markDeletedLocal(conv.id, msgId);
   if(scope === 'everyone'){
     if(!K._canDeleteForEveryone(m)){ toast('Fenêtre 1h expirée', 'warn'); return; }
     m.deleted = true;
