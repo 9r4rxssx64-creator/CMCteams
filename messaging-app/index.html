@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.266",
+  "softwareVersion": "v1.1.267",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -444,7 +444,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.266';
+const __APEX_CHAT_VERSION__ = 'v1.1.267';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -629,7 +629,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.266</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.267</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.266</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.267</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -5414,7 +5414,9 @@ K._E2E_TAG = 'E2E1:';
 // le déchiffrement au rendu. OFF = médias inchangés (zéro régression) ; à passer
 // ON après validation iPhone réelle (envoi + réception photo entre 2 comptes).
 // v1.1.262 — capacités que CET appareil sait déchiffrer (publiées au serveur).
-K._CRYPTO_CAPS = 'e2e2,media';
+// v1.1.267 — 'e2e2' retiré : on n'annonce plus le ratchet (désync bidirectionnelle),
+// pour que les contacts à jour négocient vers l'bas sur E2E1 stateless (fiable).
+K._CRYPTO_CAPS = 'media';
 K._peerSupports = function(conv, cap){
   try{ return !!(conv && typeof conv._peer_caps === 'string' && conv._peer_caps.split(',').indexOf(cap) >= 0); }catch(_){ return false; }
 };
@@ -5427,18 +5429,20 @@ K._mediaE2eOn = function(conv){
   if(v === '0') return false;
   return K._peerSupports(conv, 'media');
 };
-// v1.1.262 — forward secrecy (ratchet). Flag OFF par défaut (nécessite E2E ON).
-// Nouveau format de payload « E2E2:<n>:<ct> » ; ancien « E2E1: » toujours lu.
+// v1.1.262 — forward secrecy (ratchet). Format de payload « E2E2:<n>:<ct> ».
+// v1.1.267 — DÉSACTIVÉ (bug « impossible à lire sur cet appareil », capture Kevin).
+// CAUSE RACINE : ratchetInit crée UNE seule chaîne `ck` partagée que l'ENVOI et la
+// RÉCEPTION font tous deux avancer (crypto-core.js). Dès que les DEUX
+// correspondants écrivent (cas normal d'une vraie conversation), chacun fait
+// avancer la chaîne partagée en chiffrant son propre message → la position de
+// déchiffrement de l'autre ne correspond plus → AES-GCM échoue → « impossible à
+// lire ». Un vrai Double Ratchet exige des chaînes d'envoi/réception SÉPARÉES
+// (refonte à venir). En attendant on retombe sur l'E2E1 SANS ÉTAT (clé partagée
+// ECDH + IV aléatoire par message) = vrai bout-en-bout, fiable dans n'importe
+// quel ordre / après reload. Le DÉCODAGE E2E2 reste (best-effort) pour les
+// messages E2E2 encore en vol tant que les 2 appareils ne sont pas à jour.
 K._RATCHET_TAG = 'E2E2:';
-// Forward secrecy : ON forcé ('1'), OFF forcé ('0'), sinon AUTO = ON si le pair
-// supporte E2E2 (négociation de capacités → FS par défaut entre clients à jour).
-K._ratchetOn = function(conv){
-  if(!K._e2eOn()) return false;
-  let v = null; try{ v = localStorage.getItem('apex_chat_ratchet'); }catch(_){}
-  if(v === '1') return true;
-  if(v === '0') return false;
-  return K._peerSupports(conv, 'e2e2');
-};
+K._ratchetOn = function(){ return false; };
 // Initialise/rappelle l'état ratchet d'une conversation (persisté localStorage
 // → survit au reload). Déterministe depuis l'ECDH (les 2 pairs partent du même
 // secret) ; fail-open : toute erreur → pas de ratchet (retombe sur E2E1).
@@ -9826,9 +9830,9 @@ K.openPrivacyPrefs = function(){
       <input type="checkbox" id="pv-media-e2e" ${(function(){try{return localStorage.getItem('apex_chat_media_e2e')==='1'}catch(_){return false}})()?'checked':''} onchange="K._toggleMediaE2e(this.checked)" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">
       <span style="font-size:.85em;line-height:1.45"><strong>🖼 Chiffrer aussi les photos/fichiers</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Chiffre le <strong>contenu</strong> des médias (pas seulement leur nom) : le serveur ne voit jamais l'image. <strong>Auto</strong> dès que le contact est à jour ; sans effet sur un contact en ancienne version (aucune casse). Coche pour forcer, décoche pour désactiver.</span></span>
     </label>
-    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:10px;padding:12px;background:rgba(120,90,255,.08);border:1px solid rgba(120,90,255,.28);border-radius:10px;cursor:pointer">
-      <input type="checkbox" id="pv-ratchet" ${(function(){try{return localStorage.getItem('apex_chat_ratchet')==='1'}catch(_){return false}})()?'checked':''} onchange="K._toggleRatchet(this.checked)" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">
-      <span style="font-size:.85em;line-height:1.45"><strong>🔐 Forward secrecy (clés jetables)</strong><br><span style="color:var(--ax-text-3);font-size:.92em">Chaque message a sa <strong>propre clé</strong>, détruite après usage : si une clé fuite un jour, elle ne déchiffre <strong>pas</strong> tes anciens messages. <strong>Auto</strong> dès que le contact est à jour ; coche pour forcer, décoche pour désactiver.</span></span>
+    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:10px;padding:12px;background:rgba(120,90,255,.06);border:1px solid rgba(120,90,255,.18);border-radius:10px;opacity:.6">
+      <input type="checkbox" id="pv-ratchet" disabled style="width:20px;height:20px;flex:0 0 auto;margin-top:2px">
+      <span style="font-size:.85em;line-height:1.45"><strong>🔐 Forward secrecy</strong> <span style="color:var(--ax-text-3);font-size:.8em">(temporairement désactivée)</span><br><span style="color:var(--ax-text-3);font-size:.92em">En refonte (chaînes d'envoi/réception séparées) après un bug d'affichage. <strong>Tes messages restent chiffrés bout-en-bout</strong> (le serveur ne les lit jamais) — sans cette couche « clés jetables » pour l'instant.</span></span>
     </label>
     <button class="btn btn-block" onclick="K._savePrivacyPrefs()" style="margin-top:14px">💾 Sauvegarder</button>
   `);
