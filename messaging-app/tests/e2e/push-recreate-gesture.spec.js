@@ -56,6 +56,14 @@ async function bootWithPushMock(page) {
 }
 
 test.describe('Recréation abonnement gesture-safe (v1.1.279)', () => {
+  // WebKit headless interdit de redéfinir `navigator.serviceWorker` (propriété
+  // non configurable) → le mock du pushManager ne peut pas s'installer. L'INVARIANT
+  // testé (subscribe() appelé AVANT tout fetch = ordre du flux JS) est
+  // engine-independent → sa preuve sur Chromium suffit. Le boot réel de l'app sur
+  // WebKit reste couvert par push-key-heal.spec.js (qui, lui, ne mocke pas le SW).
+  test.skip(({ browserName }) => browserName === 'webkit',
+    'navigator.serviceWorker non redéfinissable sur WebKit headless ; invariant d\'ordre prouvé sur Chromium');
+
   test('subscribe() est appelé AVANT tout fetch réseau (geste iOS préservé)', async ({ page }) => {
     await bootWithPushMock(page);
     const r = await page.evaluate(async () => {
