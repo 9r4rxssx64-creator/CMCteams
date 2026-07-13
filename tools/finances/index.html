@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.1.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.1.0">
+<!-- v0.2.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.2.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -117,7 +117,7 @@
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.1.0';
+  var APP_VER = 'v0.2.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -160,9 +160,12 @@
   }
 
   function blankVault(){
-    return { v:1, createdAt:Date.now(), docs:[], tx:[], accounts:[],
-      categories:DEFAULT_CATS.slice(), merchantMap:{}, budget:{}, aiPinHash:null, audit:[] };
+    return { v:1, createdAt:Date.now(), docs:[], tx:[], devis:[], accounts:[],
+      categories:DEFAULT_CATS.slice(), merchantMap:{}, budget:{}, aiPinHash:null, aiProvider:'gemini', audit:[] };
   }
+  function ensureFields(){ if(!VAULT)return; if(!VAULT.devis)VAULT.devis=[]; if(!VAULT.aiProvider)VAULT.aiProvider='gemini';
+    if(!VAULT.categories)VAULT.categories=DEFAULT_CATS.slice(); if(!VAULT.merchantMap)VAULT.merchantMap={};
+    if(!VAULT.budget)VAULT.budget={}; if(!VAULT.docs)VAULT.docs=[]; if(!VAULT.tx)VAULT.tx=[]; if(!VAULT.audit)VAULT.audit=[]; }
   /* Catégories PROVISOIRES (éditables) — se calent sur les vrais relevés de Kevin. */
   var DEFAULT_CATS=['Revenus','Logement','Énergie / Eau','Télécom / Internet','Alimentation',
     'Restaurants / Bars','Transport','Véhicule / Réparations','Santé','Assurances','Abonnements','Shopping',
@@ -193,20 +196,72 @@
       .replace(/\b[A-Z]{2}\d{2}[\sA-Z0-9]{11,30}\b/g,'[IBAN]')
       .replace(/\b(?:\d[ -]?){13,19}\b/g,'[CARTE]');
   }
-  /* Appel Anthropic via proxy. content = tableau de blocs (document/image/text). */
-  async function aiCall(contentBlocks, maxTokens){
-    var hash=await aiPinHash();
-    if(!hash) throw new Error('IA non activée (code admin requis)');
-    var body={ model:'claude-sonnet-4-6', max_tokens:maxTokens||4096,
-      messages:[{ role:'user', content:contentBlocks }] };
-    var r=await fetch(PROXY+'/anthropic/v1/messages',{ method:'POST',
-      headers:{ 'content-type':'application/json','anthropic-version':'2023-06-01','x-apex-pin':hash },
-      body:JSON.stringify(body) });
-    var txt=await r.text();
-    if(!r.ok){ var d=''; try{ d=(JSON.parse(txt).error&&JSON.parse(txt).error.message)||txt; }catch(e){ d=txt; } throw new Error('IA HTTP '+r.status+' : '+String(d).slice(0,180)); }
-    var j=JSON.parse(txt);
-    var out=''; (j.content||[]).forEach(function(b){ if(b.type==='text')out+=b.text; });
-    return out;
+  /* Moteur IA multi-fournisseur. parts = tableau neutre : {t:'texte'} ou {f:{mime,data}}.
+     Défaut = Gemini 2.0 Flash (GRATUIT, lit PDF+photos) → économie. Bascule Claude si échec. */
+  var AI_LABEL={ gemini:'Gemini (gratuit)', anthropic:'Claude (premium)' };
+  function errDetail(txt){ try{ var d=JSON.parse(txt); return String((d.error&&(d.error.message||d.error))||txt).slice(0,180); }catch(e){ return String(txt).slice(0,180); } }
+  async function aiCall(parts, maxTokens){
+    var prov=(VAULT&&VAULT.aiProvider)||'gemini';
+    try{ return await aiCallProvider(prov, parts, maxTokens); }
+    catch(e){
+      if(prov==='gemini'){ try{ var r=await aiCallProvider('anthropic', parts, maxTokens); toast('ℹ️ IA gratuite indispo — Claude utilisé'); return r; }catch(e2){ throw e; } }
+      throw e;
+    }
+  }
+  async function aiCallProvider(prov, parts, maxTokens){
+    var hash=await aiPinHash(); if(!hash) throw new Error('IA non activée (code admin requis)');
+    if(prov==='gemini'){
+      var gp=parts.map(function(p){ return p.t!==undefined?{text:p.t}:{inline_data:{mime_type:p.f.mime,data:p.f.data}}; });
+      var r=await fetch(PROXY+'/gemini/v1beta/models/gemini-2.0-flash:generateContent',{ method:'POST',
+        headers:{'content-type':'application/json','x-apex-pin':hash},
+        body:JSON.stringify({ contents:[{role:'user',parts:gp}], generationConfig:{temperature:0,maxOutputTokens:maxTokens||4096} }) });
+      var t=await r.text(); if(!r.ok) throw new Error('Gemini HTTP '+r.status+' : '+errDetail(t));
+      var j=JSON.parse(t); var out=''; ((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).forEach(function(p){ if(p.text)out+=p.text; });
+      if(!out && j.promptFeedback) throw new Error('Gemini a refusé : '+JSON.stringify(j.promptFeedback).slice(0,120));
+      return out;
+    }
+    var content=parts.map(function(p){ return p.t!==undefined?{type:'text',text:p.t}:{type:(p.f.mime==='application/pdf'?'document':'image'),source:{type:'base64',media_type:p.f.mime,data:p.f.data}}; });
+    var r2=await fetch(PROXY+'/anthropic/v1/messages',{ method:'POST',
+      headers:{'content-type':'application/json','anthropic-version':'2023-06-01','x-apex-pin':hash},
+      body:JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:maxTokens||4096, messages:[{role:'user',content:content}] }) });
+    var t2=await r2.text(); if(!r2.ok) throw new Error('Claude HTTP '+r2.status+' : '+errDetail(t2));
+    var j2=JSON.parse(t2); var o2=''; (j2.content||[]).forEach(function(b){ if(b.type==='text')o2+=b.text; }); return o2;
+  }
+
+  /* Originaux chiffrés (IndexedDB) → voir / imprimer le document tel quel. */
+  var _idb=null;
+  function idbDB(){ return new Promise(function(res,rej){ if(_idb)return res(_idb); var rq=indexedDB.open('fin_docs',1); rq.onupgradeneeded=function(){ try{rq.result.createObjectStore('docs');}catch(e){} }; rq.onsuccess=function(){ _idb=rq.result; res(_idb); }; rq.onerror=function(){ rej(rq.error); }; }); }
+  async function idbSet(k,v){ var db=await idbDB(); return new Promise(function(res,rej){ var tx=db.transaction('docs','readwrite'); tx.objectStore('docs').put(v,k); tx.oncomplete=function(){res();}; tx.onerror=function(){rej(tx.error);}; }); }
+  async function idbGet(k){ var db=await idbDB(); return new Promise(function(res,rej){ var tx=db.transaction('docs','readonly'); var rq=tx.objectStore('docs').get(k); rq.onsuccess=function(){res(rq.result||null);}; rq.onerror=function(){rej(rq.error);}; }); }
+  async function idbDel(k){ try{ var db=await idbDB(); return new Promise(function(res){ var tx=db.transaction('docs','readwrite'); tx.objectStore('docs').delete(k); tx.oncomplete=function(){res();}; tx.onerror=function(){res();}; }); }catch(e){} }
+  async function openDoc(docId){
+    try{ var pack=await idbGet('doc:'+docId); if(!pack){ toast('Original non stocké sur cet appareil',true); return; }
+      var d=await decWith(KEY,pack); var blob=new Blob([bufFromB64(d.data)],{type:d.mime}); var url=URL.createObjectURL(blob);
+      if(d.mime==='application/pdf'){ window.open(url,'_blank'); }
+      else { var w=window.open('','_blank'); if(w){ w.document.write('<title>'+esc(d.name)+'</title><body style="margin:0;background:#111"><img src="'+url+'" style="max-width:100%;display:block;margin:auto"><script>setTimeout(function(){window.print()},400)<\/script></body>'); } else window.open(url,'_blank'); }
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+    }catch(e){ toast('❌ '+(e.message||e),true); }
+  }
+  function markDocFile(docId){ var d=(VAULT.docs||[]).filter(function(x){return x.id===docId;})[0]; if(d)d.hasFile=true; }
+
+  /* Voix : micro (dictée) + haut-parleur (lecture). */
+  function startMic(cb){ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast('Micro non supporté sur ce navigateur',true); return null; }
+    var r=new SR(); r.lang='fr-FR'; r.interimResults=false; r.maxAlternatives=1;
+    r.onresult=function(e){ try{ cb(e.results[0][0].transcript); }catch(x){} }; r.onerror=function(){ toast('Micro : autorise l\'accès',true); };
+    try{ r.start(); }catch(e){} return r; }
+  function speak(txt){ try{ if(!window.speechSynthesis)return; speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(String(txt).slice(0,2000)); u.lang='fr-FR'; u.rate=1; speechSynthesis.speak(u); }catch(e){} }
+  function stopSpeak(){ try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(e){} }
+
+  /* Q&A : cherche dans TOUS les documents/opérations et répond. */
+  function buildDocContext(){
+    var L=['OPÉRATIONS (date | libellé | montant € | catégorie):'];
+    (VAULT.tx||[]).slice(0,700).forEach(function(t){ L.push(ymd(t.date)+' | '+stripSecrets(t.label)+' | '+t.amount.toFixed(2)+' | '+t.category); });
+    if((VAULT.devis||[]).length){ L.push(''); L.push('DEVIS non payés (date | libellé | montant €):'); VAULT.devis.forEach(function(d){ L.push(ymd(d.date)+' | '+stripSecrets(d.label)+' | '+Number(d.amount).toFixed(2)); }); }
+    if((VAULT.docs||[]).length){ L.push(''); L.push('DOCUMENTS: '+(VAULT.docs||[]).map(function(d){return d.name;}).slice(0,80).join(' · ')); }
+    return L.join('\n');
+  }
+  async function aiAnswer(q){
+    return aiCall([{ t:'Tu es mon assistant finances. Réponds à la QUESTION en te basant UNIQUEMENT sur mes données ci-dessous. Donne les montants et dates EXACTS, additionne si besoin, sois concis et clair en français. Si l\'info n\'y est pas, dis-le.\n\n'+buildDocContext()+'\n\nQUESTION : '+q }], 900);
   }
   function extractJson(s){ /* récupère le 1er tableau/objet JSON du texte IA */
     if(!s)return null;
@@ -217,60 +272,58 @@
     return null;
   }
   var EXTRACT_PROMPT =
-    'Tu es un extracteur de relevés bancaires, factures, tickets et fiches de paie (France/Monaco, EUR). '+
-    'Analyse le document fourni et renvoie UNIQUEMENT un JSON strict, sans texte autour, de la forme:\n'+
-    '{"meta":{"kind":"releve|facture|ticket|paie","bank":"","account_masked":"","period":"","opening":null,"closing":null},'+
+    'Tu es un extracteur de relevés bancaires, factures, tickets, fiches de paie ET devis (France/Monaco/Italie, EUR). '+
+    'Analyse le document et renvoie UNIQUEMENT un JSON strict, sans texte autour:\n'+
+    '{"meta":{"kind":"releve|facture|ticket|paie|devis","vendor":"","bank":"","account_masked":"","period":"","date":"YYYY-MM-DD","total":null,"opening":null,"closing":null},'+
     '"tx":[{"date":"YYYY-MM-DD","label":"libellé exact","amount":-12.34,"category":"une catégorie parmi la liste"}]}\n'+
     'Règles: amount NÉGATIF pour une dépense/débit, POSITIF pour un revenu/crédit. '+
     'Reproduis les montants EXACTEMENT (aucune invention; ligne illisible -> ne pas l\'inventer). '+
     'category ∈ ['+DEFAULT_CATS.map(function(c){return '"'+c+'"';}).join(',')+']. '+
-    'Une facture = une seule ligne (montant total, amount négatif). Un ticket = une ligne (total). '+
-    'Une fiche de paie = une ligne Revenus (salaire net, amount positif). '+
+    'Une facture/ticket = une seule ligne (montant TOTAL TTC, amount négatif). '+
+    'Une fiche de paie = une ligne Revenus (salaire net, positif). '+
+    'Un DEVIS / PREVENTIVO / estimation NON payé : meta.kind="devis", meta.total=montant total (positif), meta.vendor=émetteur, tx=[] (ne compte PAS une dépense). '+
     'Réponds en JSON seulement.';
 
   async function importFile(file){
-    var buf=await file.arrayBuffer();
-    var b64=b64FromBuf(buf);
-    var mt=file.type||'';
-    var block;
-    if(mt==='application/pdf'||/\.pdf$/i.test(file.name)){
-      block={ type:'document', source:{ type:'base64', media_type:'application/pdf', data:b64 } };
-    } else if(/^image\//.test(mt)){
-      block={ type:'image', source:{ type:'base64', media_type:mt, data:b64 } };
-    } else {
-      /* texte / csv : envoie le contenu texte */
-      var txt=await file.text();
-      return importText(stripSecrets(txt), file.name);
-    }
-    var out=await aiCall([ block, { type:'text', text:EXTRACT_PROMPT } ], 4096);
-    return finishImport(out, file.name, file.type||'pdf');
+    var buf=await file.arrayBuffer(); var b64=b64FromBuf(buf); var mt=file.type||'';
+    var isPdf=(mt==='application/pdf'||/\.pdf$/i.test(file.name));
+    var isImg=/^image\//.test(mt)||/\.(png|jpe?g|webp|heic|heif)$/i.test(file.name);
+    if(!isPdf && !isImg){ return importText(stripSecrets(await file.text()), file.name); }
+    var mime=isPdf?'application/pdf':(mt||'image/jpeg');
+    var out=await aiCall([ {f:{mime:mime,data:b64}}, {t:EXTRACT_PROMPT} ], 4096);
+    var res=finishImport(out, file.name, isPdf?'pdf':'image');
+    try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:file.name,data:b64})); markDocFile(res.docId); }catch(e){}
+    return res;
   }
   async function importText(text, name){
-    var out=await aiCall([ { type:'text', text:'DOCUMENT (texte):\n'+text.slice(0,60000)+'\n\n'+EXTRACT_PROMPT } ], 4096);
+    var out=await aiCall([ {t:'DOCUMENT (texte):\n'+text.slice(0,60000)+'\n\n'+EXTRACT_PROMPT} ], 4096);
     return finishImport(out, name||'texte', 'texte');
   }
   function finishImport(out, name, ftype){
-    var j=extractJson(out);
-    if(!j) throw new Error('Réponse IA illisible');
+    var j=extractJson(out); if(!j) throw new Error('Réponse IA illisible');
     var meta=j.meta||{}; var rows=j.tx||j.transactions||(Array.isArray(j)?j:[]);
-    var docId=uid();
-    var kind=meta.kind||'releve';
+    var docId=uid(); var kind=meta.kind||'releve';
     VAULT.docs.unshift({ id:docId, name:name, kind:kind, ftype:ftype, addedAt:Date.now(),
-      bank:meta.bank||'', account:meta.account_masked||'', period:meta.period||'',
-      opening:num(meta.opening), closing:num(meta.closing), count:rows.length });
+      bank:meta.bank||meta.vendor||'', account:meta.account_masked||'', period:meta.period||'',
+      opening:num(meta.opening), closing:num(meta.closing), count:(kind==='devis'?1:rows.length) });
+    if(kind==='devis'){
+      var damt=null, dl=name;
+      rows.forEach(function(r){ var a=num(r.amount); if(a!==null){ damt=(damt||0)+Math.abs(a); if(r.label)dl=r.label; } });
+      if(damt===null)damt=num(meta.total)||num(meta.amount)||0;
+      VAULT.devis.unshift({ id:uid(), date:parseFrDate(meta.date||meta.period||'')||ymd(Date.now()),
+        label:(meta.vendor?meta.vendor+' — ':'')+(dl||'Devis'), amount:Math.abs(damt||0), vendor:meta.vendor||meta.bank||'', docId:docId });
+      audit('devis', name); return { added:0, devis:1, docId:docId, kind:'devis' };
+    }
     var added=0;
     rows.forEach(function(r){
       var amt=num(r.amount); if(amt===null)return;
       var lb=String(r.label||'').trim(); if(!lb&&!amt)return;
-      var cat=cleanCat(r.category, amt);
-      var key=norm(lb);
-      if(VAULT.merchantMap[key]) cat=VAULT.merchantMap[key];       /* préférence apprise */
-      else if(cat) VAULT.merchantMap[key]=cat;
-      VAULT.tx.unshift({ id:uid(), date:ymd(r.date)||ymd(Date.now()), label:lb, amount:amt,
-        category:cat, docId:docId, kind:kind, addedAt:Date.now() });
+      var cat=cleanCat(r.category, amt); var key=norm(lb);
+      if(VAULT.merchantMap[key]) cat=VAULT.merchantMap[key]; else if(cat) VAULT.merchantMap[key]=cat;
+      VAULT.tx.unshift({ id:uid(), date:ymd(r.date)||ymd(Date.now()), label:lb, amount:amt, category:cat, docId:docId, kind:kind, addedAt:Date.now() });
       added++;
     });
-    audit('import', name+' — '+added+' opérations');
+    audit('import', name+' — '+added+' op.');
     return { added:added, docId:docId, kind:kind };
   }
   function num(v){ if(v===null||v===undefined||v==='')return null; if(typeof v==='number')return isFinite(v)?v:null;
@@ -302,19 +355,21 @@
     var ci={ date:col(['date']), label:col(['libell','descript','designation','intitul','objet','marchand']),
       amt:col(['montant','amount','ttc','debit','somme','prix']), cat:col(['categ']), type:col(['type','kind']) };
     if(ci.amt<0||ci.date<0) throw new Error('CSV : colonnes « Date » et « Montant » requises');
-    var docId=uid(), added=0;
+    var docId=uid(), added=0, dev=0;
     for(var r=1;r<lines.length;r++){ var c=csvCells(lines[r],delim); var amt=num(c[ci.amt]); if(amt===null)continue;
       var lb=(ci.label>=0?(c[ci.label]||''):'').trim()||'(sans libellé)';
+      var typ=(ci.type>=0?((c[ci.type]||'').trim().toLowerCase()):'');
+      if(typ==='devis'||typ==='preventivo'){ VAULT.devis.unshift({ id:uid(), date:parseFrDate(c[ci.date])||ymd(Date.now()), label:lb, amount:Math.abs(amt), vendor:'', docId:docId }); dev++; continue; }
       var rawCat=(ci.cat>=0?(c[ci.cat]||'').trim():''); var cat;
       if(rawCat){ if(VAULT.categories.indexOf(rawCat)<0)VAULT.categories.push(rawCat); cat=rawCat; }
       else cat=VAULT.merchantMap[norm(lb)]||cleanCat('',amt);
       VAULT.tx.unshift({ id:uid(), date:parseFrDate(c[ci.date])||ymd(Date.now()), label:lb, amount:amt,
-        category:cat, docId:docId, kind:(ci.type>=0?((c[ci.type]||'').trim()||'import'):'import'), addedAt:Date.now() });
+        category:cat, docId:docId, kind:(typ||'import'), addedAt:Date.now() });
       if(cat)VAULT.merchantMap[norm(lb)]=cat; added++;
     }
     VAULT.docs.unshift({ id:docId, name:name||'CSV', kind:'import', ftype:'csv', addedAt:Date.now(), bank:'Import CSV', account:'', period:'', count:added });
-    audit('import_csv', (name||'CSV')+' — '+added+' op.');
-    return { added:added, docId:docId, kind:'import' };
+    audit('import_csv', (name||'CSV')+' — '+added+' op.'+(dev?(' + '+dev+' devis'):''));
+    return { added:added, devis:dev, docId:docId, kind:'import' };
   }
 
   /* ============================ Sauvegarde EN LIGNE (E2E, admin, temps réel) ============================ */
@@ -437,6 +492,7 @@
 
   function render(){
     if(!VAULT){ return; }
+    ensureFields();
     var app=$('app');
     app.innerHTML=
       '<div class="top">'+
@@ -445,14 +501,16 @@
       '</div>'+
       '<div class="tabs" id="tabs"></div>'+
       '<div class="wrap" id="view"></div>';
-    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['tx','📋 Opérations'],['budget','🎯 Budget'],['set','⚙️ Réglages']];
+    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
     var tb=$('tabs');
     tabs.forEach(function(t){ var b=el('<button class="tab'+(STATE.tab===t[0]?' on':'')+'">'+t[1]+'</button>'); b.onclick=function(){ STATE.tab=t[0]; render(); }; tb.appendChild(b); });
     $('btn-lock').onclick=lockNow;
     var v=$('view');
     if(STATE.tab==='add') viewAdd(v);
     else if(STATE.tab==='dash') viewDash(v);
+    else if(STATE.tab==='ask') viewAsk(v);
     else if(STATE.tab==='tx') viewTx(v);
+    else if(STATE.tab==='devis') viewDevis(v);
     else if(STATE.tab==='budget') viewBudget(v);
     else if(STATE.tab==='set') viewSettings(v);
   }
@@ -503,9 +561,10 @@
       v.appendChild(c3);
       var dl=c3.querySelector('#doclist');
       VAULT.docs.slice(0,30).forEach(function(d){
-        var r=el('<div class="doc"><span>'+kindIcon(d.kind)+'</span><div class="grow" style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d.name)+'</div><div class="tiny">'+esc(d.bank||kindLabel(d.kind))+(d.period?' · '+esc(d.period):'')+' · '+d.count+' op.</div></div><button class="btn sm danger" data-del="'+d.id+'">✕</button></div>');
+        var r=el('<div class="doc"><span>'+kindIcon(d.kind)+'</span><div class="grow" style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d.name)+'</div><div class="tiny">'+esc(d.bank||kindLabel(d.kind))+(d.period?' · '+esc(d.period):'')+' · '+d.count+' '+(d.kind==='devis'?'devis':'op.')+'</div></div>'+(d.hasFile?'<button class="btn sm" data-open="'+d.id+'" title="Voir / imprimer l\'original">🖨️</button>':'')+'<button class="btn sm danger" data-del="'+d.id+'">✕</button></div>');
         dl.appendChild(r);
       });
+      dl.querySelectorAll('[data-open]').forEach(function(b){ b.onclick=function(){ openDoc(b.getAttribute('data-open')); }; });
       dl.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=function(){ delDoc(b.getAttribute('data-del')); }; });
     }
 
@@ -531,7 +590,7 @@
     var isText=function(f){ return /\.txt$/i.test(f.name); };
     var needAI=files.some(function(f){ return !isLocal(f); });
     if(needAI && !VAULT.aiPinHash){ toast('Active d\'abord le classement IA (Réglages)',true); STATE.tab='set'; render(); return; }
-    var stat=$('impstat'); var okc=0, err=0, lines=[];
+    var stat=$('impstat'); var okc=0, err=0, devc=0, lines=[];
     function draw(){ if(stat)stat.innerHTML=lines.join(''); }
     files.forEach(function(f,i){ lines[i]='<div class="doc" id="ip'+i+'"><span>⏳</span><div class="grow" style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(f.name)+'</div></div><span class="tiny">en file…</span></div>'; });
     draw();
@@ -543,12 +602,12 @@
         if(isLocal(f)){ r=parseCsvImport(await f.text(), f.name); }
         else if(isText(f)){ r=await importText(stripSecrets(await f.text()), f.name); }
         else { if(f.size>30*1024*1024) throw new Error('trop volumineux (>30 Mo) — scinde le PDF'); r=await importFile(f); }
-        okc+=r.added; setLine(i,'✅',r.added+' op.','var(--green)');
+        okc+=r.added; if(r.devis)devc+=r.devis; setLine(i,'✅',(r.devis?'1 devis':(r.added+' op.')),'var(--green)');
       }catch(e){ err++; setLine(i,'❌',(e.message||String(e)).slice(0,60),'var(--red)'); }
       await persist();
     }
-    toast('✅ '+okc+' opérations ajoutées'+(err?(' · '+err+' échec(s) — voir la liste'):''));
-    if(!err){ STATE.tab='dash'; render(); }
+    toast('✅ '+okc+' opérations'+(devc?(' · '+devc+' devis'):'')+' ajoutés'+(err?(' · '+err+' échec(s) — voir la liste'):''));
+    if(!err){ STATE.tab=(okc===0&&devc>0)?'devis':'dash'; render(); }
   }
   async function runImport(fn, label){
     if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
@@ -568,6 +627,8 @@
     if(!confirm('Supprimer ce document et ses opérations ?'))return;
     VAULT.docs=VAULT.docs.filter(function(d){return d.id!==id;});
     VAULT.tx=VAULT.tx.filter(function(t){return t.docId!==id;});
+    VAULT.devis=(VAULT.devis||[]).filter(function(d){return d.docId!==id;});
+    idbDel('doc:'+id);
     audit('suppr_doc',id); await persist(); render();
   }
 
@@ -665,6 +726,46 @@
     return r;
   }
 
+  /* ---------- Vue DEMANDER (Q&A vocal sur tous les docs) ---------- */
+  function viewAsk(v){
+    if(!VAULT.aiPinHash){ v.appendChild(el('<div class="card"><h2>💬 Demander</h2><p class="muted">Active d\'abord le classement IA (Réglages) pour interroger tes documents.</p><button class="btn gold" id="goai">Activer l\'IA</button></div>')); setTimeout(function(){var g=$('goai');if(g)g.onclick=function(){STATE.tab='set';render();};},0); return; }
+    var c=el('<div class="card"><h2>💬 Demander à mes finances</h2>'+
+      '<p class="tiny">Pose une question — je cherche dans TOUS tes documents, opérations et devis. Ex : « combien pour le Touareg ? », « total réparations 2025 ? », « mon plus gros abonnement ? »</p>'+
+      '<textarea id="q" placeholder="Ta question…" style="min-height:52px"></textarea>'+
+      '<div class="row" style="margin-top:8px"><button class="btn grow" id="mic">🎙️ Dicter</button><button class="btn gold grow" id="ask">Demander</button></div>'+
+      '<label class="toggle" style="justify-content:flex-start;margin-top:8px"><input type="checkbox" id="spk" '+(STATE.speak!==false?'checked':'')+'> 🔊 Lire la réponse à voix haute</label>'+
+      '<div id="ans" style="margin-top:12px"></div></div>');
+    v.appendChild(c);
+    var q=c.querySelector('#q'), ans=c.querySelector('#ans');
+    c.querySelector('#mic').onclick=function(){ startMic(function(t){ q.value=(q.value?q.value+' ':'')+t; toast('🎙️ « '+t+' »'); }); toast('🎙️ Parle…'); };
+    c.querySelector('#spk').onchange=function(e){ STATE.speak=e.target.checked; if(!e.target.checked)stopSpeak(); };
+    c.querySelector('#ask').onclick=async function(){ var text=(q.value||'').trim(); if(!text){toast('Pose une question',true);return;}
+      ans.innerHTML='<div class="muted">⏳ Recherche dans tes documents…</div>';
+      try{ var a=await aiAnswer(text);
+        ans.innerHTML='<div style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;white-space:pre-wrap">'+esc(a)+'</div><button class="btn sm" id="reread" style="margin-top:8px">🔊 Relire</button>';
+        var rr=$('reread'); if(rr)rr.onclick=function(){speak(a);}; if(STATE.speak!==false)speak(a);
+      }catch(e){ ans.innerHTML='<div style="color:var(--red)">❌ '+esc(e.message||e)+'</div>'; }
+    };
+    setTimeout(function(){ try{q.focus();}catch(e){} },0);
+  }
+
+  /* ---------- Vue DEVIS (classés à part, non comptés) ---------- */
+  function viewDevis(v){
+    var ds=VAULT.devis||[];
+    if(!ds.length){ v.appendChild(el('<div class="card" style="text-align:center;padding:30px"><div style="font-size:38px">🧾</div><h2 style="justify-content:center;margin-top:6px">Aucun devis</h2><p class="muted">Dépose un devis (PDF/photo) dans ➕ Ajouter : il sera rangé ici, séparé de tes dépenses.</p></div>')); return; }
+    var tot=ds.reduce(function(s,d){return s+Number(d.amount||0);},0);
+    var c=el('<div class="card"><h2>🧾 Devis en attente<span class="r">'+eur(tot)+' · non compté</span></h2><p class="tiny">Estimations non payées — jamais comptées dans tes dépenses. « ✅ Payé » bascule en dépense.</p></div>');
+    v.appendChild(c);
+    ds.slice().sort(function(a,b){return a.date<b.date?1:-1;}).forEach(function(d){
+      var row=el('<div class="tx"><div class="ic">🧾</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">'+esc(ymd(d.date))+(d.vendor?' · '+esc(d.vendor):'')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>');
+      var mid=row.querySelector('.mid'); var acts=el('<div class="row" style="margin-top:6px"></div>');
+      if((VAULT.docs||[]).some(function(x){return x.id===d.docId&&x.hasFile;})){ var op=el('<button class="btn sm">🖨️ Voir</button>'); op.onclick=function(){openDoc(d.docId);}; acts.appendChild(op); }
+      var pay=el('<button class="btn sm gold">✅ Payé</button>'); pay.onclick=async function(){ VAULT.tx.unshift({ id:uid(), date:d.date, label:d.label, amount:-Math.abs(d.amount), category:'Autres', docId:d.docId, kind:'facture', addedAt:Date.now() }); VAULT.devis=VAULT.devis.filter(function(x){return x.id!==d.id;}); await persist(); toast('Basculé en dépense (catégorie « Autres » à ajuster)'); render(); };
+      var del=el('<button class="btn sm danger">✕</button>'); del.onclick=async function(){ if(!confirm('Supprimer ce devis ?'))return; VAULT.devis=VAULT.devis.filter(function(x){return x.id!==d.id;}); await persist(); render(); };
+      acts.appendChild(pay); acts.appendChild(del); mid.appendChild(acts); c.appendChild(row);
+    });
+  }
+
   /* ---------- Vue BUDGET ---------- */
   function viewBudget(v){
     var mkeys=months();
@@ -700,10 +801,12 @@
   /* ---------- Vue RÉGLAGES ---------- */
   function viewSettings(v){
     var aiOn=!!VAULT.aiPinHash;
+    var prov=(VAULT.aiProvider||'gemini');
     /* IA */
-    var cAi=el('<div class="card"><h2>🤖 Classement IA<span class="r">'+(aiOn?'✅ activé':'inactif')+'</span></h2>'+
-      '<p class="tiny">Ton IA (tes clés, via ton proxy sécurisé) lit et classe tes documents. Les IBAN/cartes sont masqués avant envoi. Aucun code stocké en clair (seul le hash SHA-256 sert au proxy).</p>'+
-      (aiOn?'<button class="btn grow" id="ai-off">Désactiver le classement IA</button>':
+    var cAi=el('<div class="card"><h2>🤖 Classement IA<span class="r">'+(aiOn?('✅ '+AI_LABEL[prov]):'inactif')+'</span></h2>'+
+      '<p class="tiny">Lit et classe tes documents via ton proxy (tes clés). <b>Gemini est GRATUIT</b> et lit PDF+photos → économie. IBAN/cartes masqués. Aucun code en clair (seul le hash sert au proxy).</p>'+
+      '<label class="fld">Moteur IA</label><select id="ai-prov"><option value="gemini"'+(prov==='gemini'?' selected':'')+'>💸 Gratuit — Gemini (recommandé)</option><option value="anthropic"'+(prov==='anthropic'?' selected':'')+'>⭐ Premium — Claude</option></select>'+
+      (aiOn?'<button class="btn grow" id="ai-off" style="margin-top:8px">Désactiver le classement IA</button>':
         '<label class="fld">Code admin (Kevin)</label><input id="ai-pin" type="password" inputmode="numeric" placeholder="Ton code admin">'+
         '<button class="btn gold grow" id="ai-on" style="margin-top:8px">Activer le classement IA</button>')+
       '<div id="ai-msg" class="tiny" style="margin-top:8px"></div></div>');
@@ -750,19 +853,20 @@
     v.appendChild(cSec);
 
     /* wiring IA */
+    cAi.querySelector('#ai-prov').onchange=async function(e){ VAULT.aiProvider=e.target.value; await persist(); toast('Moteur : '+AI_LABEL[VAULT.aiProvider]); if(aiOn)render(); };
     if(aiOn){ cAi.querySelector('#ai-off').onclick=async function(){ VAULT.aiPinHash=null; await persist(); toast('IA désactivée'); render(); }; }
     else {
       cAi.querySelector('#ai-on').onclick=async function(){
         var pin=(cAi.querySelector('#ai-pin').value||'').trim(); var msg=cAi.querySelector('#ai-msg');
         if(!pin){ msg.textContent='Entre ton code admin.'; return; }
-        msg.textContent='⏳ Vérification du proxy…';
+        msg.style.color='var(--dim)'; msg.textContent='⏳ Vérification…';
         try{
           var h=await sha256Hex(pin);
           var r=await fetch(PROXY+'/health'); if(!r.ok) throw new Error('proxy injoignable ('+r.status+')');
-          /* test réel d\'auth : petit appel Anthropic */
           VAULT.aiPinHash=h;
-          try{ await aiCall([{type:'text',text:'Réponds juste: ok'}],16); msg.style.color='var(--green)'; msg.textContent='✅ IA activée et vérifiée.'; }
-          catch(e){ VAULT.aiPinHash=null; msg.style.color='var(--red)'; msg.textContent='❌ '+(e.message||e); await persist(); return; }
+          var pv=VAULT.aiProvider||'gemini';
+          try{ await aiCallProvider(pv,[{t:'Réponds juste: ok'}],16); msg.style.color='var(--green)'; msg.textContent='✅ IA activée ('+AI_LABEL[pv]+').'; }
+          catch(e){ VAULT.aiPinHash=null; await persist(); msg.style.color='var(--red)'; msg.textContent='❌ '+(e.message||e); return; }
           await persist(); toast('✅ Classement IA activé'); setTimeout(render,700);
         }catch(e){ msg.style.color='var(--red)'; msg.textContent='❌ '+(e.message||e); }
       };
