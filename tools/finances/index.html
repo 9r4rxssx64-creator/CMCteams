@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.5.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.5.0">
+<!-- v0.6.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.6.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -139,11 +139,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.5.0" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.6.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.5.0';
+  var APP_VER = 'v0.6.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -620,13 +620,14 @@
       '</div>'+
       '<div class="tabs" id="tabs"></div>'+
       '<div class="wrap" id="view"></div>';
-    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['comptes','🗃️ Comptes'],['compta','📒 Comptabilité'],['compare','💹 Comparateur'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
+    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['expert','👔 Expert'],['comptes','🗃️ Comptes'],['compta','📒 Comptabilité'],['compare','💹 Comparateur'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
     var tb=$('tabs');
     tabs.forEach(function(t){ var b=el('<button class="tab'+(STATE.tab===t[0]?' on':'')+'">'+t[1]+'</button>'); b.onclick=function(){ STATE.tab=t[0]; render(); }; tb.appendChild(b); });
     $('btn-lock').onclick=lockNow;
     var v=$('view');
     if(STATE.tab==='add') viewAdd(v);
     else if(STATE.tab==='dash') viewDash(v);
+    else if(STATE.tab==='expert') viewExpert(v);
     else if(STATE.tab==='comptes') viewComptes(v);
     else if(STATE.tab==='compta') viewCompta(v);
     else if(STATE.tab==='compare') viewComparateur(v);
@@ -845,6 +846,84 @@
       Math.abs(Math.abs(t.amount)-amt)<0.02 && Math.abs(new Date(t.date).getTime()-d)<=6*864e5; })
       .sort(function(a,b){return Math.abs(new Date(a.date)-d)-Math.abs(new Date(b.date)-d);})[0]||null;
   }
+  /* ---------- Vue EXPERT (cockpit expert-comptable : engagements, échéances, trésorerie, bilan IA) ---------- */
+  function monthlyAverages(){ var mk=months(); if(!mk.length)return {rev:0,dep:0,net:0,nm:0};
+    var rev=0,dep=0; mk.forEach(function(m){ var mm=analyze((VAULT.tx||[]).filter(function(t){return ym(t.date)===m;})); rev+=mm.rev; dep+=mm.dep; });
+    var nm=mk.length; return { rev:rev/nm, dep:dep/nm, net:(rev-dep)/nm, nm:nm }; }
+  function detectLoans(){ var g={};
+    (VAULT.tx||[]).forEach(function(t){ if(t.amount>=0)return; var n=norm(t.label);
+      if(!/pret|mensualit|echeance|credit|sogefinanc|expresso|franfinanc|emprunt/.test(n))return;
+      var k=n.split(' ').slice(0,4).join(' '); (g[k]=g[k]||[]).push(t); });
+    return Object.keys(g).map(function(k){ var arr=g[k]; var avg=arr.reduce(function(s,x){return s+Math.abs(x.amount);},0)/arr.length;
+      return { label:arr[0].label, avg:avg, n:arr.length, last:arr.map(function(x){return x.date;}).sort().pop() }; }).sort(function(a,b){return b.avg-a.avg;}); }
+  function nextDue(monthlyItem){ /* prochaine échéance estimée = même jour du mois prochain que la dernière occurrence */
+    if(!monthlyItem.last)return ''; var d=new Date(monthlyItem.last); var n=new Date(); var day=d.getDate();
+    var due=new Date(n.getFullYear(), n.getMonth(), day); if(due<n) due=new Date(n.getFullYear(), n.getMonth()+1, day); return ymd(due); }
+  function viewExpert(v){
+    var mk=months();
+    if(!mk.length && !(VAULT.devis||[]).length){ v.appendChild(el('<div class="card" style="text-align:center;padding:30px"><div style="font-size:38px">👔</div><h2 style="justify-content:center;margin-top:6px">Cockpit expert</h2><p class="muted">Importe tes relevés et factures : je te sors la situation, tes engagements, tes échéances récurrentes, ta trésorerie prévisionnelle et un bilan d\'expert-comptable.</p></div>')); return; }
+    var avg=monthlyAverages();
+    var subs=subscriptions(); var recMonthly=subs.reduce(function(s,x){return s+x.avg;},0);
+    var loans=detectLoans(); var loanMonthly=loans.reduce(function(s,x){return s+x.avg;},0);
+    var eng=devisEngaged();
+    /* Situation */
+    var c1=el('<div class="card"><h2>👔 Situation<span class="r">'+avg.nm+' mois analysés</span></h2>'+
+      '<div class="kpis"><div class="kpi"><div class="k">Revenus / mois</div><div class="v pos">'+eur0(avg.rev)+'</div></div>'+
+      '<div class="kpi"><div class="k">Dépenses / mois</div><div class="v neg">'+eur0(avg.dep)+'</div></div>'+
+      '<div class="kpi"><div class="k">Flux net / mois</div><div class="v '+(avg.net>=0?'pos':'neg')+'">'+eur0(avg.net)+'</div></div>'+
+      '<div class="kpi"><div class="k">Charges fixes / mois</div><div class="v">'+eur0(recMonthly)+'</div></div></div>'+
+      '<div class="tiny" style="margin-top:8px">Taux d\'endettement estimé (charges fixes / revenus) : <b>'+(avg.rev>0?Math.round(recMonthly/avg.rev*100):0)+'%</b>'+(avg.rev>0&&recMonthly/avg.rev>0.35?' — au-dessus du repère 35% (vigilance).':'.')+'</div></div>');
+    v.appendChild(c1);
+    /* Engagements (devis acceptés à payer) */
+    var accepts=(VAULT.devis||[]).filter(function(d){return devisStatus(d)==='accepte';});
+    var cE=el('<div class="card"><h2>📌 Engagements à décaisser<span class="r">'+eur(eng)+'</span></h2>'+
+      (accepts.length?'<p class="tiny">Devis acceptés, pas encore payés — provisionne-les.</p>':'<p class="muted" style="margin:0">Aucun engagement. Accepte un devis (onglet 🧾 Devis) pour le suivre ici.</p>')+'</div>');
+    accepts.forEach(function(d){ cE.appendChild(el('<div class="tx"><div class="ic">📌</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">'+esc(ymd(d.date))+(d.vendor?' · '+esc(d.vendor):'')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>')); });
+    v.appendChild(cE);
+    /* Prêts & crédits */
+    if(loans.length){ var cL=el('<div class="card"><h2>🏦 Prêts & crédits<span class="r">≈ '+eur(loanMonthly)+' / mois</span></h2></div>');
+      loans.slice(0,10).forEach(function(l){ cL.appendChild(el('<div class="tx"><div class="ic">🏦</div><div class="mid"><div class="lb">'+esc(l.label.slice(0,40))+'</div><div class="mt">'+l.n+' échéance(s) · prochaine ≈ '+esc(nextDue(l))+'</div></div><div class="am neg">'+eur(l.avg)+'</div></div>')); });
+      v.appendChild(cL);
+    }
+    /* Échéances récurrentes (assurances, abonnements, énergie) */
+    if(subs.length){ var cR=el('<div class="card"><h2>🔁 Charges fixes & échéances<span class="r">≈ '+eur(recMonthly)+' / mois</span></h2><p class="tiny">Prélèvements récurrents détectés — prochaine échéance estimée.</p></div>');
+      subs.slice(0,14).forEach(function(s){ var last=(VAULT.tx||[]).filter(function(t){return norm(t.label).split(' ').slice(0,4).join(' ')===s.label||norm(t.label).indexOf(norm(s.label))>=0;}).map(function(t){return t.date;}).sort().pop();
+        var nd=last?nextDue({last:last}):'';
+        cR.appendChild(el('<div class="tx"><div class="ic">'+catIcon(s.cat)+'</div><div class="mid"><div class="lb">'+esc(s.label)+'</div><div class="mt">'+esc(s.cat)+(nd?' · prochaine ≈ '+esc(nd):'')+'</div></div><div class="am neg">'+eur(s.avg)+'</div></div>')); });
+      v.appendChild(cR);
+    }
+    /* Trésorerie prévisionnelle 3 mois */
+    var cF=el('<div class="card"><h2>📈 Trésorerie prévisionnelle</h2>'+
+      '<p class="tiny">Projection sur 3 mois à partir de ton flux net moyen et de tes engagements.</p>'+
+      '<div class="kpis" style="grid-template-columns:repeat(3,1fr)">'+
+      [1,2,3].map(function(i){ var proj=avg.net*i - (i===1?eng:0); return '<div class="kpi"><div class="k">Mois +'+i+'</div><div class="v '+(proj>=0?'pos':'neg')+'">'+eur0(proj)+'</div></div>'; }).join('')+'</div>'+
+      '<div class="tiny" style="margin-top:8px">Mois +1 inclut tes engagements acceptés ('+eur0(eng)+') à décaisser.</div></div>');
+    v.appendChild(cF);
+    /* Bilan expert IA */
+    var cAI=el('<div class="card"><h2>🤖 Bilan de l\'expert-comptable</h2>'+
+      '<p class="tiny">Analyse complète (situation, risques, optimisations, conseils) par l\'IA la plus adéquate.</p>'+
+      '<button class="btn gold grow" id="exp-ai" style="margin-top:8px">📝 Générer mon bilan financier</button>'+
+      '<div id="exp-ai-out" style="margin-top:10px"></div></div>');
+    v.appendChild(cAI);
+    setTimeout(function(){ var b=$('exp-ai'); if(b)b.onclick=function(){ expertReport($('exp-ai-out')); }; },0);
+  }
+  async function expertReport(outEl){
+    if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA (Réglages)',true); STATE.tab='set'; render(); return; }
+    outEl.innerHTML='<div class="muted">⏳ L\'expert-comptable analyse tes comptes…</div>';
+    var avg=monthlyAverages(), subs=subscriptions(), loans=detectLoans(), eng=devisEngaged();
+    var a=analyze(VAULT.tx||[]);
+    var L=[];
+    L.push('Revenus/mois: '+avg.rev.toFixed(0)+' € · Dépenses/mois: '+avg.dep.toFixed(0)+' € · Flux net/mois: '+avg.net.toFixed(0)+' €');
+    L.push('Total sur '+avg.nm+' mois — Revenus: '+a.rev.toFixed(0)+' € · Dépenses: '+a.dep.toFixed(0)+' €');
+    L.push('Charges fixes récurrentes/mois: '+subs.reduce(function(s,x){return s+x.avg;},0).toFixed(0)+' €');
+    L.push('Prêts & crédits: '+loans.map(function(l){return stripSecrets(l.label.slice(0,30))+' ≈ '+l.avg.toFixed(0)+' €/mois';}).join(' ; ')||'aucun');
+    L.push('Engagements (devis acceptés à payer): '+eng.toFixed(0)+' €');
+    L.push('Dépenses par catégorie: '+Object.keys(a.byCat).sort(function(x,y){return a.byCat[y]-a.byCat[x];}).slice(0,12).map(function(c){return c+' '+a.byCat[c].toFixed(0)+' €';}).join(' · '));
+    try{ var r=await aiCallSmart([{ t:'Tu es un expert-comptable et conseiller financier avec 20 ans d\'expérience. Voici la situation financière de ton client (données anonymisées) :\n\n'+L.join('\n')+'\n\nRédige un BILAN clair et structuré en français : (1) Situation générale (2-3 phrases), (2) Points forts, (3) Points de vigilance / risques (endettement, dépenses qui dérapent, épargne), (4) 4-6 recommandations concrètes et chiffrées (économies possibles, renégociation prêts/assurances, budget), (5) Trésorerie prévisionnelle et conseil d\'épargne. Sois précis, chiffré, pédagogue et bienveillant. Pas de blabla.' }], 1400, 300);
+      outEl.innerHTML='<div style="background:var(--card2);border:1px solid var(--line2);border-radius:12px;padding:13px;white-space:pre-wrap;font-size:13.5px;line-height:1.5">'+esc(r)+'</div>';
+    }catch(e){ outEl.innerHTML='<div style="color:var(--red)">❌ '+esc(e.message||e)+'</div>'; }
+  }
+
   /* ---------- Vue COMPARATEUR (compare les prix d'un même travail/produit — factures ET devis) ---------- */
   var COMPARE_KEYWORDS=['batterie','vidange','pneu','frein','plaquette','disque','embrayage','courroie','distribution',
     'amortisseur','étanchéité','étancheité','verin','vérin','remorquage','dépannage','depannage','révision','revision','entretien',
@@ -1100,20 +1179,41 @@
   }
 
   /* ---------- Vue DEVIS (classés à part, non comptés) ---------- */
+  /* Engagements = devis ACCEPTÉS non encore payés (à décaisser). Jamais comptés en dépense
+     tant que non payés, mais suivis comme engagement (trésorerie prévisionnelle). */
+  function devisStatus(d){ return d.status||'attente'; }
+  function devisEngaged(){ return (VAULT.devis||[]).filter(function(d){return devisStatus(d)==='accepte';}).reduce(function(s,d){return s+Math.abs(d.amount||0);},0); }
+  async function devisAccept(id){ var d=(VAULT.devis||[]).filter(function(x){return x.id===id;})[0]; if(!d)return; d.status='accepte'; d.acceptedAt=Date.now(); audit('devis_accepte',d.label); await persist(); toast('✅ Devis accepté — engagement à payer'); render(); }
+  async function devisReset(id){ var d=(VAULT.devis||[]).filter(function(x){return x.id===id;})[0]; if(!d)return; d.status='attente'; await persist(); render(); }
+  async function devisPay(d){ VAULT.tx.unshift({ id:uid(), date:ymd(Date.now()), label:d.label, amount:-Math.abs(d.amount), category:d.category||'Autres', vendor:d.vendor||'', docId:d.docId, kind:'facture', ttc:Math.abs(d.amount), pro:false, addedAt:Date.now() }); VAULT.devis=VAULT.devis.filter(function(x){return x.id!==d.id;}); dedupeAll(); await persist(); toast('💳 Devis payé → passé en dépense (catégorie à ajuster)'); render(); }
+  async function devisRefuse(id){ if(!confirm('Refuser / supprimer ce devis ?'))return; VAULT.devis=(VAULT.devis||[]).filter(function(x){return x.id!==id;}); await persist(); render(); }
   function viewDevis(v){
     var ds=VAULT.devis||[];
     if(!ds.length){ v.appendChild(el('<div class="card" style="text-align:center;padding:30px"><div style="font-size:38px">🧾</div><h2 style="justify-content:center;margin-top:6px">Aucun devis</h2><p class="muted">Dépose un devis (PDF/photo) dans ➕ Ajouter : il sera rangé ici, séparé de tes dépenses.</p></div>')); return; }
-    var tot=ds.reduce(function(s,d){return s+Number(d.amount||0);},0);
-    var c=el('<div class="card"><h2>🧾 Devis en attente<span class="r">'+eur(tot)+' · non compté</span></h2><p class="tiny">Estimations non payées — jamais comptées dans tes dépenses. « ✅ Payé » bascule en dépense.</p></div>');
-    v.appendChild(c);
-    ds.slice().sort(function(a,b){return a.date<b.date?1:-1;}).forEach(function(d){
-      var row=el('<div class="tx"><div class="ic">🧾</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">'+esc(ymd(d.date))+(d.vendor?' · '+esc(d.vendor):'')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>');
-      var mid=row.querySelector('.mid'); var acts=el('<div class="row" style="margin-top:6px"></div>');
-      if((VAULT.docs||[]).some(function(x){return x.id===d.docId&&x.hasFile;})){ var op=el('<button class="btn sm">🖨️ Voir</button>'); op.onclick=function(){openDoc(d.docId);}; acts.appendChild(op); }
-      var pay=el('<button class="btn sm gold">✅ Payé</button>'); pay.onclick=async function(){ VAULT.tx.unshift({ id:uid(), date:d.date, label:d.label, amount:-Math.abs(d.amount), category:'Autres', docId:d.docId, kind:'facture', addedAt:Date.now() }); VAULT.devis=VAULT.devis.filter(function(x){return x.id!==d.id;}); await persist(); toast('Basculé en dépense (catégorie « Autres » à ajuster)'); render(); };
-      var del=el('<button class="btn sm danger">✕</button>'); del.onclick=async function(){ if(!confirm('Supprimer ce devis ?'))return; VAULT.devis=VAULT.devis.filter(function(x){return x.id!==d.id;}); await persist(); render(); };
-      acts.appendChild(pay); acts.appendChild(del); mid.appendChild(acts); c.appendChild(row);
-    });
+    var attente=ds.filter(function(d){return devisStatus(d)==='attente';}), acceptes=ds.filter(function(d){return devisStatus(d)==='accepte';});
+    var totA=attente.reduce(function(s,d){return s+Math.abs(d.amount||0);},0), totE=devisEngaged();
+    var head=el('<div class="card"><h2>🧾 Devis<span class="r">'+eur(totA+totE)+' · non compté</span></h2>'+
+      '<div class="kpis"><div class="kpi"><div class="k">En attente</div><div class="v">'+eur0(totA)+'</div></div>'+
+      '<div class="kpi"><div class="k">✅ Acceptés (engagés)</div><div class="v" style="color:var(--gold2)">'+eur0(totE)+'</div></div></div>'+
+      '<p class="tiny" style="margin-top:8px">Un devis n\'est <b>jamais</b> compté en dépense. <b>Accepté</b> = engagement à décaisser (suivi en trésorerie). <b>Payé</b> = bascule en dépense réelle.</p></div>');
+    v.appendChild(head);
+    function renderList(title, arr){
+      if(!arr.length)return;
+      var c=el('<div class="card"><h2>'+title+'</h2></div>'); v.appendChild(c);
+      arr.slice().sort(function(a,b){return a.date<b.date?1:-1;}).forEach(function(d){
+        var acc=devisStatus(d)==='accepte';
+        var row=el('<div class="tx"><div class="ic">'+(acc?'✅':'🧾')+'</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">'+esc(ymd(d.date))+(d.vendor?' · '+esc(d.vendor):'')+(acc?' · <span class="chip flag">accepté</span>':'')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>');
+        var mid=row.querySelector('.mid'); var acts=el('<div class="row" style="margin-top:6px"></div>');
+        if((VAULT.docs||[]).some(function(x){return x.id===d.docId&&x.hasFile;})){ var op=el('<button class="btn sm">🖨️ Voir</button>'); op.onclick=function(){openDoc(d.docId);}; acts.appendChild(op); }
+        if(!acc){ var ac=el('<button class="btn sm">✅ Accepter</button>'); ac.onclick=function(){ devisAccept(d.id); }; acts.appendChild(ac); }
+        else { var rb=el('<button class="btn sm">↩ En attente</button>'); rb.onclick=function(){ devisReset(d.id); }; acts.appendChild(rb); }
+        var pay=el('<button class="btn sm gold">💳 Payé</button>'); pay.onclick=function(){ devisPay(d); }; acts.appendChild(pay);
+        var del=el('<button class="btn sm danger">🗑</button>'); del.onclick=function(){ devisRefuse(d.id); }; acts.appendChild(del);
+        mid.appendChild(acts); c.appendChild(row);
+      });
+    }
+    renderList('✅ Acceptés — à payer (engagements)', acceptes);
+    renderList('⏳ En attente de décision', attente);
   }
 
   /* ---------- Vue BUDGET ---------- */
