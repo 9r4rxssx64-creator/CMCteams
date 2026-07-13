@@ -45,6 +45,7 @@ export default {
     // (même grant que /__admin). Le serveur ne stocke qu'un bloc illisible (AES-GCM
     // côté client) → même le worker/KV ne peut PAS lire. Cf. tools/finances/.
     if (url.pathname.startsWith('/__fin/')) return handleFin(request, url, env);
+    if (url.pathname.startsWith('/__mail/')) return handleMail(request, url, env);
     // Crypto-bot Railway (statut + kill switch). Réservé admin (même grant que /__admin).
     if (url.pathname.startsWith('/__bot/')) return handleBot(request, url, env);
     // Relais Beatbot (contrôle réel du robot piscine) — admin-gated, HTTPS public only, même origine que l'app beatbot.kd-mc.com.
@@ -827,6 +828,41 @@ async function handleFin(request, url, env) {
     return J({ ok: true, savedAt });
   }
   return new Response(JSON.stringify({ ok: false, reason: 'not_found' }), { status: 404, headers: { 'content-type': 'application/json' } });
+}
+
+/* Boîte factures@kd-mc.com : le worker "kdmc-mail" (Cloudflare Email Routing) dépose les
+   pièces jointes des mails reçus dans KV (mail:p:<id>). Ici, l'app admin les récupère,
+   les classe, puis les acquitte (supprime). E2E : l'app chiffre les originaux localement. */
+async function handleMail(request, url, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  const me = await adminSession(request, env);
+  if (!me) {
+    const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
+    return J({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }, null, 403);
+  }
+  if (!env.ACCOUNTS) return J({ ok: false, reason: 'kv_absent' });
+  const path = url.pathname;
+  if (path === '/__mail/scan' && request.method === 'GET') {
+    const items = []; let cursor;
+    do {
+      const l = await env.ACCOUNTS.list({ prefix: 'mail:p:', cursor });
+      for (const k of l.keys) {
+        if (items.length >= 40) break;
+        const raw = await env.ACCOUNTS.get(k.name); if (!raw) continue;
+        try { const it = JSON.parse(raw); it.id = k.name.slice('mail:p:'.length); items.push(it); } catch { /* */ }
+      }
+      cursor = l.list_complete ? null : l.cursor;
+    } while (cursor && items.length < 40);
+    return J({ ok: true, items });
+  }
+  if (path === '/__mail/ack' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    const ids = Array.isArray(b.ids) ? b.ids : [];
+    for (const id of ids) { try { await env.ACCOUNTS.delete('mail:p:' + String(id)); } catch { /* */ } }
+    await audLog(env, { ev: 'mail_ack', n: ids.length });
+    return J({ ok: true, deleted: ids.length });
+  }
+  return J({ ok: false, reason: 'not_found' }, null, 404);
 }
 
 async function handleBot(request, url, env) {
