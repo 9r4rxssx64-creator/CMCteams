@@ -73,3 +73,27 @@ jobs:
           URL="https://kdmc-monaco.9r4rxssx64.workers.dev/health"
           echo "GET $URL"
           curl -fsS "$URL" && echo "  ✅ kdmc-monaco vivant" || echo "::warning::/health non joignable (workers_dev désactivé ?)"
+
+      - name: Probe IMAP (SANS identifiants — prouve la socket CF 993 + le host)
+        env:
+          PIN: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
+        run: |
+          # Connexion seule à mails.monaco.mc:993 (TLS), lit le greeting « * OK … »,
+          # ferme. Aucun mot de passe. Prouve MOI-MÊME que Cloudflare autorise la
+          # socket IMAPS depuis un Worker + que le host est bon, avant de rendre la
+          # main à Kevin (leçon #97 : erreur exacte remontée).
+          URL="https://kdmc-monaco.9r4rxssx64.workers.dev/probe"
+          echo "POST $URL (mails.monaco.mc:993, sans identifiants)"
+          RESP=$(curl -sS -X POST -H "x-apex-pin: $PIN" -H "content-type: application/json" -d '{}' "$URL" || echo '{"ok":false,"reason":"curl_failed"}')
+          echo "=== PROBE RÉSULTAT ==="
+          echo "$RESP"
+          echo "======================"
+          # Repli 143 (non-SSL) si 993 échoue, pour distinguer « host faux » de « port bloqué »
+          if echo "$RESP" | grep -q '"ok":true'; then
+            echo "  ✅ Socket CF 993 + host mails.monaco.mc OK — il ne reste QUE le mot de passe côté Kevin."
+          else
+            echo "::warning::probe 993 KO — essai host alternatif imap.monaco.mc:993"
+            curl -sS -X POST -H "x-apex-pin: $PIN" -H "content-type: application/json" -d '{"host":"imap.monaco.mc","port":993}' "$URL" || true
+            echo ""
+            echo "::warning::si les deux échouent → CF bloque la socket 993 ou host faux → plan B (IMAP côté GitHub Action)."
+          fi
