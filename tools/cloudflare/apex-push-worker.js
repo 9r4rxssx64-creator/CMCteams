@@ -46,7 +46,14 @@ export default {
         ok: true,
         version: "v1.0",
         time: Date.now(),
-        configured: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.FIREBASE_URL && env.ADMIN_TOKEN)
+        configured: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.FIREBASE_URL && env.ADMIN_TOKEN),
+        // v1.1.278 — la clé VAPID PUBLIQUE est publique PAR DESIGN (elle voyage déjà
+        // dans le header VAPID de chaque envoi Web Push + est intégrée dans
+        // applicationServerKey côté navigateur). On l'expose ici pour que l'app
+        // S'ABONNE avec la clé qui SIGNE réellement les push — sinon Apple accepte
+        // (201) mais DROP en silence (applicationServerKey ≠ clé de signature).
+        // Cause exacte du « 201 mais rien reçu » (diag v1.1.276). Fin du hardcode.
+        vapidPublic: env.VAPID_PUBLIC_KEY || ""
       }, cors);
     }
 
