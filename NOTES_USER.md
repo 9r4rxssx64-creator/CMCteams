@@ -2062,3 +2062,16 @@ Sur l'import, le **lieu** vient de la **couleur de fond + suffixe du code** (cf.
 **En général seuls les horaires Café de Paris (`*`) changent.** La vue ✅ Vérifier ne doit
 PAS dire « 0 lieu » : le lieu EST encodé par la couleur/suffixe (la page Départs le rend
 déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomenclature couleur (CDP/CMC/CCDP).
+
+## 📧 MAILS DE KEVIN — récup factures Finances (établi 2026-07-13)
+
+- **Gmail** = `desarzenskevin@gmail.com` (connecteur dispo) — **quasi vide de factures** (2 reçus Anthropic). Pas la source.
+- **Outlook = `Kevind@monaco.mc`** = sa boîte **PERSO** où il reçoit **tout** → c'est là que sont ses vraies factures.
+  ⚠️ `monaco.mc` est un **compte Microsoft perso SANS annuaire Azure** → Microsoft **BLOQUE** l'enregistrement d'app
+  (« créer des applications hors d'un répertoire déconseillée »). Donc le worker `kdmc-outlook` (Graph OAuth) **ne
+  marche pas** pour lui sans créer un annuaire Azure/programme dév M365 (trop de friction, écarté).
+- **`factures@kd-mc.com` accepte n'importe quel mail** (Cloudflare Email Routing actif, route `factures@ → kdmc-mail`
+  créée par Kevin). Pipeline app `➕ Ajouter → 📥 Récupérer mes factures` opérationnel.
+- **DÉCISION (Kevin « décide pour moi »)** : approche **TRANSFERT** — Kevin transfère ses factures à
+  `factures@kd-mc.com` (nouvelles au fil de l'eau ; anciennes qui comptent en one-shot). Pas d'Azure.
+  Le worker `kdmc-outlook` reste déployé (inoffensif) au cas où il créerait un annuaire plus tard.
