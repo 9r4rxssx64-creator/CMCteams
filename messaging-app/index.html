@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.278",
+  "softwareVersion": "v1.1.279",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,7 +458,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.278';
+const __APEX_CHAT_VERSION__ = 'v1.1.279';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.278</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.279</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -657,7 +657,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.278</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.279</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -2771,6 +2771,45 @@ K._recreatePush = async function(){
     }
     ls('push_vapid_key', ''); // force un abonnement neuf avec la clé serveur
     return await K._subscribePush();
+  }catch(_e){ return false; }
+};
+
+// v1.1.279 — recréation GESTURE-SAFE de l'abonnement. iOS EXIGE un geste
+// utilisateur (tap) pour pushManager.subscribe() ; tout `await` réseau (fetch
+// /health) OU setTimeout AVANT subscribe consomme l'« activation transitoire »
+// → subscribe throw NotAllowedError (« recréation impossible »). Ici on
+// subscribe IMMÉDIATEMENT, sans fetch avant, avec la clé embarquée (prouvée ==
+// clé de signature du worker par le log de deploy). Les awaits réseau (purge +
+// register) viennent APRÈS subscribe (le geste n'est plus requis). À appeler
+// DIRECTEMENT depuis un handler de tap, jamais après un délai.
+K._recreatePushInGesture = async function(){
+  try{
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted') return false;
+    const reg = await navigator.serviceWorker.ready;
+    const old = await reg.pushManager.getSubscription();
+    let oldEp = null;
+    if(old){ oldEp = old.endpoint; try{ await old.unsubscribe(); }catch(_u){ /* best-effort */ } }
+    // subscribe MAINTENANT (aucun fetch avant → geste encore valide sur iOS).
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: K._urlBase64ToUint8Array(VAPID_PUBLIC)
+    });
+    ls('push_subscription', sub.toJSON());
+    ls('push_vapid_key', VAPID_PUBLIC);
+    // APRÈS subscribe : purge l'ancien endpoint + enregistre le neuf (réseau OK).
+    if(K.token && (typeof API_BASE !== 'undefined')){
+      if(oldEp){ try{ await fetch(API_BASE + '/api/push/unsubscribe', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+K.token},
+        body: JSON.stringify({ endpoint: oldEp })
+      }); }catch(_p){ /* best-effort */ } }
+      try{ await fetch(API_BASE + '/api/push/subscribe', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+K.token},
+        body: JSON.stringify({ subscription: sub.toJSON() })
+      }); }catch(_r){ /* best-effort */ }
+    }
+    return true;
   }catch(_e){ return false; }
 };
 
@@ -14028,7 +14067,14 @@ K._testServerPush = async function(){
       alert('⚠️ Les notifications ne sont pas autorisées sur ce téléphone.\n\nVa dans Réglages → Notifications et autorise-les (et l\'app doit être installée sur l\'écran d\'accueil).');
       return;
     }
-    toast('Envoi du test serveur…', 'info', 2000);
+    // v1.1.279 — RECRÉE l'abonnement DANS le geste (ce tap), AVANT tout await
+    // réseau : iOS exige un geste pour subscribe(), et le faire dans la branche
+    // 📭 (après le setTimeout de 4,8 s) échoue (« recréation impossible »). On
+    // repart donc TOUJOURS d'un abonnement neuf (endpoint + clés vivants) puis on
+    // teste CELUI-LÀ → répare le 201-drop d'abonnement périmé (les 2 doublons).
+    toast('Recréation de l\'abonnement…', 'info', 2500);
+    const freshOk = await K._recreatePushInGesture();
+    toast(freshOk ? 'Abonnement recréé — envoi du test…' : 'Envoi du test serveur…', 'info', 2000);
     const r = await K._api('POST', '/api/push/test', {});
     if(!r){ toast('Pas de réponse du serveur', 'err', 4000); return; }
     const subs = r.subs || 0;
@@ -14057,19 +14103,14 @@ K._testServerPush = async function(){
       if(got){
         msg += '\n\n📥 Ton téléphone A REÇU la notif (Service Worker OK).\nSi aucune bannière n\'apparaît → Réglages iPhone → Apex Chat → Notifications : vérifie « Autoriser », « Écran verrouillé » et « Bannières » ACTIVÉS.';
       } else {
-        // v1.1.278 — 201 mais rien reçu = clé/abonnement périmé. On DIAGNOSTIQUE
-        // (clé de signature du worker vs clé de l'abonnement) PUIS on AUTO-RÉPARE
-        // (recrée l'abonnement avec la bonne clé). Kevin n'a plus qu'à refaire le test.
-        const serverKey = await K._serverVapidKey();
-        const storedKey = lg('push_vapid_key', '');
-        const mismatch = serverKey && storedKey && serverKey !== storedKey;
-        msg += '\n\n📭 Apple a accepté (201) MAIS ton téléphone n\'a RIEN reçu (aucune trace côté app).';
-        if(mismatch){ msg += '\n🔑 Cause trouvée : la clé de ton abonnement ≠ la clé qui signe les notifs.'; }
-        toast('Réparation de l\'abonnement push…', 'info', 3000);
-        const fixed = await K._recreatePush();
-        msg += fixed
-          ? '\n\n🔧 Abonnement RECRÉÉ automatiquement avec la bonne clé. Refais « Tester une notif serveur » une fois — ça devrait arriver maintenant.'
-          : '\n\n⚠️ Recréation impossible (permission/refus). Réglages iPhone → Apex Chat → Notifications, puis réactive-les et refais le test. Si ça persiste, copie ce texte à Kevin.';
+        // v1.1.279 — l'abonnement a DÉJÀ été recréé au début (dans le geste),
+        // et le test a visé CE nouvel abonnement. Si l'iPhone n'a toujours rien
+        // reçu, ce n'est PLUS un abonnement périmé → c'est un réglage iOS
+        // (notifications de l'app coupées / mode Concentration / Ne pas déranger).
+        msg += '\n\n📭 Apple a accepté (201) MAIS ton téléphone n\'a RIEN reçu — MÊME avec un abonnement tout neuf.';
+        msg += freshOk
+          ? '\n\n➡️ L\'abonnement vient d\'être recréé (endpoint neuf) et ça ne passe toujours pas → c\'est un RÉGLAGE iPhone :\n① Réglages → Apex Chat → Notifications : « Autoriser » + « Bannières » + « Sur écran verrouillé » ACTIVÉS.\n② Vérifie qu\'aucun mode Concentration / Ne pas déranger n\'est actif.\n③ L\'app doit être ouverte depuis l\'ICÔNE de l\'écran d\'accueil (PWA installée), pas Safari.\nRefais le test après. Si ça persiste, copie ce texte à Kevin.'
+          : '\n\n⚠️ La recréation de l\'abonnement a échoué. Va dans Réglages → Apex Chat → Notifications, réactive-les, PUIS refais ce test (le fait de retaper le bouton relance la recréation). Si ça persiste, copie ce texte à Kevin.';
       }
     }
     alert('📡 Test notif serveur\n\n' + msg);
