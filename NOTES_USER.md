@@ -2099,3 +2099,13 @@ déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomencla
   GitHub-Action-IMAP n'est PAS nécessaire) ; (2) host `mails.monaco.mc` bon (Dovecot) ; (3) `AUTH=PLAIN
   AUTH=LOGIN` annoncés → le `LOGIN "user" "pass"` du worker marchera. **Il ne reste QUE le mot de passe
   côté Kevin sur /setup.** Le workflow `deploy-kdmc-monaco.yml` rejoue ce probe à chaque déploiement.
+- ✅ **CONNECTÉ + FONCTIONNE (2026-07-13)** : Kevin a saisi ses identifiants sur /setup → « 6 factures
+  récupérées, 15 mails scannés ». Le login IMAP marche. (Rappel : le « code admin » de /setup = son code
+  admin habituel ~200807, PAS un code Outlook ; le mot de passe = celui de la boîte monaco.mc.)
+- 📚 **Backfill COMPLET (tout l'historique)** : le connecteur ne faisait que du récent (15 derniers de 60 j).
+  Bouton **« 📚 Récupérer TOUT l'historique »** sur /setup → `POST /backfill` : `UID SEARCH ALL` → file
+  `mon:bf_queue` traitée **par lots** (40 msg ou 14 s), **résumable** (`mon:bf_active`/`bf_remaining`/`bf_max`),
+  respecte `MAX_PENDING` (attend que l'app draine), reprise auto par le cron 2 h + re-tap pour accélérer.
+  Filtre facture inchangé (PJ + corps). `/health` expose `bf_active/bf_total/bf_remaining`. Prouvé par harness
+  (13/13 : lot complet, file pleine, reprise, garde admin, corps capturé). N'écrit jamais tout d'un coup
+  (limites CPU Worker) → l'historique se remplit en arrière-plan sur plusieurs lots.
