@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  matchesInvoice, parseMimeAttachments, subjectOf, fromOf,
+  matchesInvoice, parseMimeAttachments, extractBodyText, decodeQP, htmlToText, subjectOf, fromOf,
   imapDate, parseSearchUids, parseTaggedResponse, imapQuote, adminOk, sha256Hex
 } from './lib.js';
 
@@ -50,6 +50,42 @@ test('parseMimeAttachments extrait le PDF et l\'image (2 pièces)', () => {
   assert.equal(pdf.filename, 'facture-juillet.pdf');
   assert.equal(pdf.b64, PDF_B64);
   assert.equal(img.b64, IMG_B64);
+});
+
+// La facture est parfois ÉCRITE dans le corps du mail (Kevin « vérifier partout, même des écrits »).
+test('extractBodyText : corps text/plain en quoted-printable (€ décodé)', () => {
+  const raw = [
+    'From: EDF <noreply@edf.fr>', 'Subject: Votre facture', 'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: quoted-printable', '',
+    'Bonjour,', 'Votre facture de janvier : montant 45,90=E2=82=AC TTC (dont TVA 7,65=E2=82=AC).', 'Merci.'
+  ].join('\r\n');
+  const body = extractBodyText(raw);
+  assert.match(body, /45,90€ TTC/);
+  assert.match(body, /TVA 7,65€/);
+  assert.ok(matchesInvoice(subjectOf(raw), body, fromOf(raw)), 'reconnu comme facture via le corps');
+});
+
+test('extractBodyText : préfère le text/plain, sinon nettoie le HTML', () => {
+  const html = [
+    'From: Shop <no@shop.com>', 'Subject: Reçu', 'Content-Type: text/html; charset=utf-8', '',
+    '<html><head><style>b{}</style></head><body><h1>Re&ccedil;u</h1><p>Total : 12,00&euro; TTC</p></body></html>'
+  ].join('\r\n');
+  const body = extractBodyText(html);
+  assert.match(body, /Total : 12,00€ TTC/);
+  assert.ok(!/</.test(body), 'plus de balises HTML');
+});
+
+test('extractBodyText : multipart (plain gagne, pièces jointes ignorées)', () => {
+  const raw = mimeMessage('Facture #123'); // a un text/plain + 2 pièces jointes
+  const body = extractBodyText(raw);
+  assert.match(body, /votre document en pièce jointe/i);
+  assert.ok(!/%PDF/.test(body) && !/PNG/.test(body), 'les pièces jointes ne polluent pas le texte');
+});
+
+test('decodeQP / htmlToText : bases', () => {
+  assert.equal(decodeQP('a=3Db'), 'a=b');
+  assert.equal(decodeQP('fin=\r\nsuite'), 'finsuite'); // soft line break
+  assert.match(htmlToText('<p>A</p><p>B</p>'), /A\nB/);
 });
 
 test('subjectOf / fromOf lisent l\'entête', () => {

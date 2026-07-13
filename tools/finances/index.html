@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.8.1 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.8.1">
+<!-- v0.8.2 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.8.2">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -140,11 +140,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.1" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.2" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.8.1';
+  var APP_VER = 'v0.8.2';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -372,14 +372,23 @@
     try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:file.name,data:b64})); markDocFile(res.docId); }catch(e){}
     return res;
   }
-  async function importText(text, name, hash){
-    var out=await aiCall([ {t:'DOCUMENT (texte):\n'+text.slice(0,60000)+'\n\n'+EXTRACT_PROMPT} ], 4096);
-    return finishImport(out, name||'texte', 'texte', hash||null);
+  async function importText(text, name, hash, srcMeta){
+    var out=await aiCall([ {t:'DOCUMENT (texte):\n'+String(text||'').slice(0,60000)+'\n\n'+EXTRACT_PROMPT} ], 4096);
+    return finishImport(out, name||'texte', 'texte', hash||null, srcMeta);
   }
-  /* Import d'une pièce jointe (bytes b64) — utilisé par la récupération auto des mails. */
+  /* Import d'une pièce jointe (bytes b64) — utilisé par la récupération auto des mails.
+     Gère aussi le CORPS du mail (mime text/plain) : parfois la facture est ÉCRITE dans le
+     message, pas en pièce jointe (Kevin « vérifier partout, même des écrits »). */
   async function importBytes(b64, mime, name, srcMeta){
-    var buf=bufFromB64(b64); var isPdf=(mime==='application/pdf'||/\.pdf$/i.test(name||''));
-    var hash=await sha256HexBuf(buf); if(docHashExists(hash)) return { added:0, devis:0, dup:true };
+    var isText=(/^text\//i.test(mime||'')|| /\.(txt|eml|html?)$/i.test(name||''));
+    var buf=bufFromB64(b64); var hash=await sha256HexBuf(buf); if(docHashExists(hash)) return { added:0, devis:0, dup:true };
+    if(isText){
+      var txt=''; try{ txt=new TextDecoder('utf-8').decode(buf); }catch(e){ txt=''; }
+      var rt=await importText(txt, name||'corps-du-mail', hash, srcMeta||{src:'mail'});
+      try{ if(rt&&rt.docId){ await idbSet('doc:'+rt.docId, await encWith(KEY,{mime:'text/plain',name:name||'corps-du-mail.txt',data:b64})); markDocFile(rt.docId); } }catch(e){}
+      return rt;
+    }
+    var isPdf=(mime==='application/pdf'||/\.pdf$/i.test(name||''));
     var out=await aiCall([ {f:{mime:mime,data:b64}}, {t:EXTRACT_PROMPT} ], 4096);
     var res=finishImport(out, name||'mail', isPdf?'pdf':'image', hash, srcMeta||{src:'mail'});
     try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:name||'mail',data:b64})); markDocFile(res.docId); }catch(e){}
