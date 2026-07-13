@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.271",
+  "softwareVersion": "v1.1.272",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -451,7 +451,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.271';
+const __APEX_CHAT_VERSION__ = 'v1.1.272';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -636,7 +636,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.271</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.272</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -650,7 +650,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.271</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.272</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6735,13 +6735,18 @@ K._notifyKeyChange = function(conv){
     if(typeof K.render === 'function' && K.view === 'chat' && K.viewData?.id === conv.id) K.render();
   }catch(_e){ _safeCatch('notify-keychange', _e); }
 };
-K._ensureSession = async function(conv){
+// v1.1.272 — param `force` : re-télécharge la clé ACTUELLE du pair et
+// ré-établit la session même si une session/clé est déjà en cache. Utilisé par
+// l'auto-réparation du déchiffrement (une clé de contact qui a tourné =
+// réinstallation → sans re-fetch, ses messages restaient « impossibles à lire »
+// pour toujours). Sans `force`, comportement inchangé (anti-régression).
+K._ensureSession = async function(conv, force){
   try{
     if(!window.ApexCrypto || !conv) return false;
-    if(ApexCrypto.getSessionKey(conv.id)) return true;
+    if(!force && ApexCrypto.getSessionKey(conv.id)) return true;
     if(!K._cryptoKeys) { try{ await _ensureCryptoKeys(); }catch(_){ } }
     if(!K._cryptoKeys) return false;
-    let peerPub = conv.peer_pubkey || null;
+    let peerPub = force ? null : (conv.peer_pubkey || null);
     if(!peerPub && conv.peer_id && K.token){
       try{
         const r = await K._api('GET', '/api/keys/' + encodeURIComponent(conv.peer_id) + '/bundle');
@@ -6766,11 +6771,45 @@ K._ensureSession = async function(conv){
         }
       }catch(e){ /* 409 key_pending = le pair n'a pas encore publié sa clé */ }
     }
+    // Repli : si le re-fetch forcé a échoué (réseau/409), on garde la clé en cache.
+    if(!peerPub) peerPub = conv.peer_pubkey || null;
     if(!peerPub) return false;
     const peerKey = await ApexCrypto.importPublicKey(peerPub);
     await ApexCrypto.establishSession(conv.id, K._cryptoKeys.privateKey, peerKey);
     return !!ApexCrypto.getSessionKey(conv.id);
   }catch(e){ _safeCatch('ensure-session', e); return false; }
+};
+
+// v1.1.272 — déchiffrement E2E AUTO-RÉPARANT (fin de « impossible à lire »).
+// 1ᵉʳ essai avec la session courante ; si échec (clé du pair qui a tourné, ou
+// session pas encore établie), on re-télécharge la clé ACTUELLE du pair, on
+// ré-établit la session et on réessaie 1×. N'affiche « impossible » qu'après.
+// Idempotent et borné (1 seul re-fetch) : pas de martèlement réseau.
+K._healFetchAt = K._healFetchAt || {};
+K._decryptE2EHeal = async function(convId, ct){
+  const dec = () => (window.ApexCrypto && ApexCrypto.getSessionKey(convId))
+    ? ApexCrypto.decryptForConv(convId, ct)
+    : Promise.reject(new Error('no-session'));
+  try{
+    return await dec();
+  }catch(e1){
+    try{
+      const conv = (K.viewData && K.viewData.id === convId)
+        ? K.viewData
+        : (K.conversations || []).find(c => c.id === convId);
+      if(conv){
+        // Anti-martèlement : un seul re-fetch de la clé du pair par conv / 15 s
+        // (utile lors d'un replay d'historique où plusieurs messages échouent).
+        const now = Date.now();
+        if(now - (K._healFetchAt[convId] || 0) > 15000){
+          K._healFetchAt[convId] = now;
+          await K._ensureSession(conv, true); // re-fetch clé du pair + ré-établit
+        }
+        return await dec();                   // 2ᵉ essai avec la clé fraîche
+      }
+    }catch(e2){ _safeCatch('decrypt-heal', e2); }
+    throw e1;
+  }
 };
 
 // Étape A E2E : migre une clé privée stockée EN CLAIR vers une forme wrappée par PIN.
@@ -8194,8 +8233,10 @@ async function _handleWsMessage(data, convId){
           txt = await K._decryptRatchetPayload(convId, txt);
         } else if(txt.indexOf(K._E2E_TAG) === 0){
           const ct = txt.slice(K._E2E_TAG.length);
-          if(K._e2eOn() && window.ApexCrypto && ApexCrypto.getSessionKey(convId)){
-            try{ txt = await ApexCrypto.decryptForConv(convId, ct); }
+          if(K._e2eOn() && window.ApexCrypto){
+            // v1.1.272 — auto-réparant (re-fetch clé du pair + retry) au lieu
+            // d'exiger une session déjà établie → fin des « impossible à lire ».
+            try{ txt = await K._decryptE2EHeal(convId, ct); }
             catch(e){ _safeCatch('history-decrypt', e); txt = '🔒 Message chiffré (E2E) — impossible à lire sur cet appareil'; }
           }else{
             txt = '🔒 Message chiffré (E2E) — active le mode E2E bêta sur cet appareil pour le lire';
@@ -8264,8 +8305,9 @@ async function _handleWsMessage(data, convId){
         } else if(raw.indexOf(K._E2E_TAG) === 0){
           // Payload chiffré (E2E). Déchiffre si session dispo, sinon note propre.
           const ct = raw.slice(K._E2E_TAG.length);
-          if(K._e2eOn() && window.ApexCrypto && ApexCrypto.getSessionKey(convId)){
-            try{ decryptedText = await ApexCrypto.decryptForConv(convId, ct); }
+          if(K._e2eOn() && window.ApexCrypto){
+            // v1.1.272 — auto-réparant (re-fetch clé du pair + retry).
+            try{ decryptedText = await K._decryptE2EHeal(convId, ct); }
             catch(e){ _safeCatch('decrypt-message', e); decryptedText = '🔒 Message chiffré (E2E) — impossible à lire sur cet appareil'; }
           }else{
             decryptedText = '🔒 Message chiffré (E2E) — active le mode E2E bêta sur cet appareil pour le lire';
@@ -8417,7 +8459,7 @@ async function _handleWsMessage(data, convId){
       const eMsgId = data.message_id;
       let newText = data.new_text;
       if(eMsgId && !newText && typeof data.ciphertext === 'string' && data.ciphertext.indexOf(K._E2E_TAG) === 0){
-        try{ newText = await ApexCrypto.decryptForConv(convId, data.ciphertext.slice(K._E2E_TAG.length)); }
+        try{ newText = await K._decryptE2EHeal(convId, data.ciphertext.slice(K._E2E_TAG.length)); }
         catch(e){ _safeCatch('edit-decrypt', e); }
       }
       if(eMsgId && newText && K.messages[convId]){
