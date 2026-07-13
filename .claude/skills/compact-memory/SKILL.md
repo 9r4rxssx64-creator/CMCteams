@@ -13,6 +13,15 @@ description: >
 Le problème : recharger un gros CLAUDE.md à chaque message coûte cher. La solution : stocker les
 faits durables dans un magasin séparé et n'en injecter que le strict pertinent, à la demande.
 
+## AUTO (Kevin 2026-07-10 « tout auto, que tu t'en serves auto »)
+
+- **Claude Code** : le hook `.claude/hooks/mem-context.sh` (SessionStart) injecte les 12 faits
+  les plus importants dans mon contexte à CHAQUE session — je m'en sers sans le chercher.
+  Réflexe : `search "<sujet>"` avant une tâche ; `add "<fait>" --imp N` après une décision durable,
+  puis `export-apex` + commit pour qu'Apex l'ait aussi.
+- **Apex** : flag `apex_v13_compact_mem` **ON par défaut** (gratuit → aucune raison de l'éteindre) ;
+  débrayable dans Réglages. `recallBlock` injecte les faits pertinents à chaque message.
+
 ## Côté Claude Code (CLI, `tools/memory/mem.cjs`)
 
 Node pur, **aucune dépendance, aucune clé, aucun réseau** → coût nul.

@@ -39,10 +39,21 @@ describe('compact-memory searchIn', () => {
   });
 });
 
-describe('compact-memory recallBlock (fail-open, flag OFF par défaut)', () => {
-  it('no-op quand le flag est absent → chaîne vide', async () => {
-    // pas de localStorage ici → isEnabled() renvoie false → recallBlock renvoie ''
-    const block = await compactMemory.recallBlock('vitest apex');
+describe('compact-memory recallBlock (ON par défaut, fail-open)', () => {
+  it('activée par défaut (gratuit → tout auto)', () => {
+    expect(compactMemory.isEnabled()).toBe(true);
+  });
+
+  it('requête trop courte → chaîne vide sans réseau', async () => {
+    const block = await compactMemory.recallBlock('ab');
     expect(block).toBe('');
+  });
+
+  it('désactivable explicitement', async () => {
+    compactMemory.enable(false);
+    expect(compactMemory.isEnabled()).toBe(false);
+    expect(await compactMemory.recallBlock('vitest apex')).toBe('');
+    compactMemory.enable(true);
+    expect(compactMemory.isEnabled()).toBe(true);
   });
 });

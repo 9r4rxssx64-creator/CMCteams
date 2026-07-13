@@ -67,7 +67,9 @@ export function searchIn(items: MemItem[], query: string, k = 4): MemItem[] {
 }
 
 function isEnabled(): boolean {
-  try { return localStorage.getItem(FLAG) === 'true'; } catch { return false; }
+  // ON par défaut (Kevin 2026-07-10 « tout auto ») : la mémoire compacte est gratuite
+  // (recherche locale, sans clé ni embedding) → active sauf si explicitement coupée.
+  try { return localStorage.getItem(FLAG) !== 'false'; } catch { return true; }
 }
 
 async function load(): Promise<MemItem[]> {

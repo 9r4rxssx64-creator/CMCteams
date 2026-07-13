@@ -118,6 +118,14 @@ function cmdRecent(args) {
   all.forEach(e => console.log(`• ${e.text}${(e.tags || []).length ? '  «' + e.tags.join(',') + '»' : ''}`));
 }
 
+function cmdBrief(args) {
+  // Top-N faits par importance, compact — pour injection auto au démarrage de session.
+  const n = parseInt(args.find(a => /^\d+$/.test(a)), 10) || 12;
+  const all = readStore().slice().sort((a, b) => (b.imp || 50) - (a.imp || 50)).slice(0, n);
+  if (!all.length) { console.log('(mémoire vide)'); return; }
+  all.forEach(e => console.log(`- ${e.text}`));
+}
+
 function cmdStats() {
   const all = readStore();
   const bytes = fs.existsSync(STORE) ? fs.statSync(STORE).size : 0;
@@ -140,6 +148,7 @@ try {
   if (cmd === 'add') cmdAdd(args);
   else if (cmd === 'search') cmdSearch(args);
   else if (cmd === 'recent') cmdRecent(args);
+  else if (cmd === 'brief') cmdBrief(args);
   else if (cmd === 'stats') cmdStats();
   else if (cmd === 'export-apex') cmdExportApex();
   else {
