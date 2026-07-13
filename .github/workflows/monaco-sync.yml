@@ -1,0 +1,28 @@
+name: KDMC — Synchro auto Monaco Telecom (récup factures)
+
+# Le worker kdmc-monaco ne peut PAS avoir de cron Cloudflare (compte déjà au max
+# de 5 crons, code 10072). On déclenche donc sa synchro IMAP toutes les 2 h ici,
+# en appelant son endpoint /sync (admin-gated par le code admin). Fail-open : un
+# souci n'échoue jamais le job (pas d'email). Si Kevin n'a pas encore saisi ses
+# identifiants sur /setup, /sync répond ok:false (200) → no-op silencieux.
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déclenche la récupération IMAP (kdmc-monaco /sync)
+        run: |
+          set +e
+          OUT=$(curl -sS -m 60 -X POST \
+            -H "x-apex-pin: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}" \
+            "https://kdmc-monaco.9r4rxssx64.workers.dev/sync")
+          echo "réponse /sync : $OUT"
+          echo "$OUT" | grep -q '"ok":true' && echo "✅ synchro OK" || echo "::notice::synchro non effectuée (pas connecté ou souci) — sans conséquence"
+          exit 0
