@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.273",
+  "softwareVersion": "v1.1.274",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -457,7 +457,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.273';
+const __APEX_CHAT_VERSION__ = 'v1.1.274';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -642,7 +642,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.273</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.274</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -656,7 +656,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.273</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.274</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6818,6 +6818,28 @@ K._decryptE2EHeal = async function(convId, ct){
   }
 };
 
+// v1.1.274 — session FRAÎCHE pour l'ENVOI. Le déchiffrement auto-réparant
+// (v1.1.272) corrige quand la clé du PAIR a tourné ; mais si c'est MA propre
+// clé qui a tourné (réinstallation), le pair continuait de chiffrer vers mon
+// ANCIENNE clé → « impossible à lire » chez moi, sans fin. Correctif : avant
+// d'ENVOYER, on re-récupère la clé ACTUELLE du destinataire (au plus 1×/90 s
+// par conv) → on chiffre TOUJOURS vers son identité courante (parité Signal).
+// Les deux appareils convergent en un aller-retour dès qu'ils sont à jour.
+K._sendRefreshAt = K._sendRefreshAt || {};
+K._ensureFreshSession = async function(conv){
+  try{
+    if(!conv) return false;
+    const now = Date.now();
+    if(conv.peer_id && K.token && now - (K._sendRefreshAt[conv.id] || 0) > 90000){
+      K._sendRefreshAt[conv.id] = now;
+      await K._ensureSession(conv, true);   // re-fetch la clé COURANTE du pair
+    } else {
+      await K._ensureSession(conv);          // session en cache si récente
+    }
+  }catch(e){ _safeCatch('fresh-session', e); }
+  return !!(window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(conv.id));
+};
+
 // Étape A E2E : migre une clé privée stockée EN CLAIR vers une forme wrappée par PIN.
 // Best-effort, ne bloque jamais ; en cas d'échec on garde le clair (zéro lockout).
 K._migrateKeyToPin = async function(pin){
@@ -7790,7 +7812,7 @@ K._sendMsg = async function(){
         ratchetPayload = K._RATCHET_TAG + rr.n + ':' + rr.ct;
         K._persistRatchet(conv.id);
       } else {
-        await K._ensureSession(conv);
+        await K._ensureFreshSession(conv);
         if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){
           ciphertext = await ApexCrypto.encryptForConv(conv.id, text);
         }
@@ -10924,7 +10946,7 @@ K._saveEditMsg = async function(msgId){
   let editCipher = null;
   if(K._e2eOn()){
     try{
-      await K._ensureSession(conv);
+      await K._ensureFreshSession(conv);
       if(window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(conv.id)){
         const ct = await ApexCrypto.encryptForConv(conv.id, newText);
         if(ct) editCipher = K._E2E_TAG + ct;
@@ -11433,7 +11455,7 @@ K._sendMediaMessage = async function(media, captionOverride){
   const caption = (typeof captionOverride === 'string') ? captionOverride : ((input && input.value.trim()) || '');
   const marker = 'APXMEDIA1:' + JSON.stringify({ u:media.url, m:media.mime, n:media.name, s:media.size, c:caption, e:media.enc ? 1 : 0 });
   let ciphertext = null;
-  if(K._e2eOn()){ try{ await K._ensureSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); } }
+  if(K._e2eOn()){ try{ await K._ensureFreshSession(conv); if(window.ApexCrypto && ApexCrypto.getSessionKey(conv.id)){ ciphertext = await ApexCrypto.encryptForConv(conv.id, marker); } }catch(e){ _safeCatch('media-encrypt', e); } }
   const mediaPayload = ciphertext ? (K._E2E_TAG + ciphertext) : null;
   const msg = { id:'m_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), from:K.user.id, text:caption,
     media_url:media.url, media_type:media.mime, media_name:media.name, media_size:media.size, ts:Date.now(), encrypted:!!ciphertext };
