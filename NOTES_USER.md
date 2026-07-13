@@ -2075,3 +2075,19 @@ déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomencla
 - **DÉCISION (Kevin « décide pour moi »)** : approche **TRANSFERT** — Kevin transfère ses factures à
   `factures@kd-mc.com` (nouvelles au fil de l'eau ; anciennes qui comptent en one-shot). Pas d'Azure.
   Le worker `kdmc-outlook` reste déployé (inoffensif) au cas où il créerait un annuaire plus tard.
+
+### Mail Kevin — Monaco Telecom + connecteur IMAP (2026-07-13)
+- **`Kevind@monaco.mc` est hébergé chez Monaco Telecom** (IMAP standard), **PAS** chez Microsoft.
+  Écarté un par un : Azure (compte perso sans annuaire → bloqué), outlook.live.com (compte MS « KD »
+  SANS boîte → proposait de créer une adresse), outlook.office.com (monaco.mc absent).
+- **Réglages IMAP Monaco Telecom** : `mails.monaco.mc` **port 993 SSL/TLS** (repli non-SSL
+  `imap.monaco.mc:143`). SMTP `smtps.monaco.mc:587` STARTTLS. ⚠️ Migration mail monaco.mc sept. 2025
+  → host à reconfirmer au runtime (le connecteur remonte l'erreur exacte).
+- **Connecteur livré : worker `services/kdmc-monaco/`** (IMAP via `cloudflare:sockets`) → récupère les
+  pièces jointes facture/devis et les dépose dans le **même KV `mail:p:<id>`** que kdmc-mail/outlook →
+  l'app Finances les récupère **sans aucune modif** (`mailAutoScan`). Cron 2 h = 100 % auto.
+  - Config Kevin (1 fois) : `https://kdmc-monaco.9r4rxssx64.workers.dev/setup` → code admin + email +
+    mot de passe monaco.mc → « Tester » puis « Récupérer ». Mot de passe chiffré AES-GCM au repos si le
+    secret `MONACO_ENC_KEY` est présent (sinon clair dans KV admin-gated).
+  - **Action Kevin restante** : entrer ses identifiants sur /setup. (Optionnel : ajouter le secret
+    GitHub `MONACO_ENC_KEY` = `openssl rand -base64 32` pour chiffrer le mot de passe.)

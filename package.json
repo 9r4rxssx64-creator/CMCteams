@@ -75,7 +75,8 @@
     "test:fiche": "node tests/runtime-audit-fiche.mjs",
     "test:pw-noclear": "node tests/runtime-audit-pw-noclear.mjs",
     "test:departs-render": "node tests/verify-real-departs-render.mjs",
-    "test:finances": "node tests/verify-finances-as-kevin.mjs"
+    "test:finances": "node tests/verify-finances-as-kevin.mjs",
+    "test:monaco": "node --test services/kdmc-monaco/worker.test.mjs"
   },
   "repository": {
     "type": "git",
