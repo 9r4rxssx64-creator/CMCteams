@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.274",
+  "softwareVersion": "v1.1.275",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -457,7 +457,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.274';
+const __APEX_CHAT_VERSION__ = 'v1.1.275';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -642,7 +642,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.274</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.275</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -656,7 +656,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.274</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.275</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7571,7 +7571,7 @@ K._renderBubble = function(m, conv, msgs){
             <div style="color:var(--ax-text-2);font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.reply_to.text || '')}</div>
           </div>` : ''}
           ${m.forwarded ? `<div class="forwarded-mark" title="Transféré depuis ${esc(m.forwarded_from_conv || '')}">↗ Transféré</div>` : ''}
-          ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="max-width:240px;max-height:240px;border-radius:10px;display:block;margin-bottom:4px" loading="lazy">` : ''}
+          ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="${K._MEDIA_STYLE};cursor:pointer" loading="lazy" onclick="window.open('${esc(m.image_data)}','_blank')">` : ''}
           ${m.media_url ? K._renderMediaEl(m) : ''}
           ${m.voice_data ? `<div class="voice-player" style="margin-bottom:4px">
             <audio id="aud-${esc(m.id)}" src="${esc(m.voice_data)}" preload="metadata" style="display:none"></audio>
@@ -11345,10 +11345,34 @@ K._fmtSize = function(b){
   if(b < 1048576) return (b/1024).toFixed(0) + ' Ko';
   return (b/1048576).toFixed(1) + ' Mo';
 };
+// v1.1.275 — média AGRANDI façon WhatsApp (image/GIF/vidéo remplissent la bulle,
+// aspect préservé, moins de place perdue). Style unique réutilisé partout.
+K._MEDIA_STYLE = 'max-width:min(76vw,340px);max-height:64vh;width:auto;height:auto;border-radius:12px;display:block;margin-bottom:3px';
+// v1.1.275 — déchiffrement média AUTO-RÉPARANT (mêmes ratés que le texte quand
+// une clé a tourné → le GIF/photo restait « indéchiffrable »). Re-fetch la clé
+// du pair + retry (throttle partagé 15 s), comme K._decryptE2EHeal pour le texte.
+K._decryptBytesHeal = async function(convId, encBuf){
+  try{
+    if(!(window.ApexCrypto && ApexCrypto.getSessionKey(convId))) throw new Error('no-session');
+    return await ApexCrypto.decryptBytes(convId, encBuf);
+  }catch(e1){
+    try{
+      const conv = (K.viewData && K.viewData.id === convId)
+        ? K.viewData : (K.conversations || []).find(c => c.id === convId);
+      if(conv){
+        const now = Date.now();
+        K._healFetchAt = K._healFetchAt || {};
+        if(now - (K._healFetchAt[convId] || 0) > 15000){ K._healFetchAt[convId] = now; await K._ensureSession(conv, true); }
+        if(window.ApexCrypto && ApexCrypto.getSessionKey(convId)) return await ApexCrypto.decryptBytes(convId, encBuf);
+      }
+    }catch(e2){ _safeCatch('decbytes-heal', e2); }
+    throw e1;
+  }
+};
 K._renderMediaEl = function(m){
   const src = K._mediaSrc(m.media_url);
   const t = (m.media_type || '').toLowerCase();
-  const cap = 'max-width:260px;max-height:300px;border-radius:10px;display:block;margin-bottom:4px';
+  const cap = K._MEDIA_STYLE;
   // v1.1.262 — média chiffré (octets iv‖ct dans R2) : on ne peut PAS pointer
   // <img src> sur du ciphertext. On rend un placeholder hydraté après render
   // (fetch → decryptBytes → blob URL). Data-attrs pour K._hydrateEncMedia().
@@ -11357,7 +11381,7 @@ K._renderMediaEl = function(m){
     return `<div class="enc-media" data-enc-url="${esc(m.media_url)}" data-enc-mime="${esc(m.media_type||'')}" data-enc-kind="${kind}" data-enc-conv="${esc(K.viewData.id)}" data-enc-name="${esc(m.media_name||'fichier')}" style="min-width:120px;min-height:60px;display:flex;align-items:center;gap:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:8px 10px;margin-bottom:4px;color:var(--ax-text-3);font-size:.82em">🔒 <span>Média chiffré — déchiffrement…</span></div>`;
   }
   if(t.indexOf('image/') === 0)
-    return `<img src="${esc(src)}" alt="${esc(m.media_name || 'image')}" style="${cap};object-fit:cover;cursor:pointer" loading="lazy" onclick="window.open('${esc(src)}','_blank')">`;
+    return `<img src="${esc(src)}" alt="${esc(m.media_name || 'image')}" style="${cap};cursor:pointer" loading="lazy" onclick="window.open('${esc(src)}','_blank')">`;
   if(t.indexOf('video/') === 0)
     return `<video controls preload="metadata" playsinline src="${esc(src)}" style="${cap};background:#000"></video>`;
   if(t.indexOf('audio/') === 0)
@@ -11377,14 +11401,15 @@ K._hydrateEncMedia = async function(){
     const mime = el.getAttribute('data-enc-mime') || ''; const kind = el.getAttribute('data-enc-kind');
     const name = el.getAttribute('data-enc-name') || 'fichier';
     try{
-      if(!(window.ApexCrypto && ApexCrypto.getSessionKey && ApexCrypto.getSessionKey(convId))) throw new Error('no-session');
       const res = await fetch(K._mediaSrc(url), { headers:{ 'Authorization':'Bearer ' + (K.token||'') } });
       if(!res.ok) throw new Error('HTTP ' + res.status);
       const encBuf = await res.arrayBuffer();
-      const clearBuf = await ApexCrypto.decryptBytes(convId, encBuf);
+      // v1.1.275 — auto-réparant : re-fetch la clé du pair + retry si la session
+      // a une mauvaise clé (même racine que « impossible à lire » pour le texte).
+      const clearBuf = await K._decryptBytesHeal(convId, encBuf);
       const blobUrl = URL.createObjectURL(new Blob([clearBuf], { type: mime || 'application/octet-stream' }));
-      const cap = 'max-width:260px;max-height:300px;border-radius:10px;display:block;margin-bottom:4px';
-      if(kind === 'image') el.innerHTML = `<img src="${esc(blobUrl)}" alt="${esc(name)}" style="${cap};object-fit:cover;cursor:pointer" onclick="window.open('${esc(blobUrl)}','_blank')">`;
+      const cap = K._MEDIA_STYLE;
+      if(kind === 'image') el.innerHTML = `<img src="${esc(blobUrl)}" alt="${esc(name)}" style="${cap};cursor:pointer" onclick="window.open('${esc(blobUrl)}','_blank')">`;
       else if(kind === 'video') el.innerHTML = `<video controls preload="metadata" playsinline src="${esc(blobUrl)}" style="${cap};background:#000"></video>`;
       else if(kind === 'audio') el.innerHTML = `<audio controls preload="metadata" src="${esc(blobUrl)}" style="max-width:260px;display:block"></audio>`;
       else el.innerHTML = `<a href="${esc(blobUrl)}" download="${esc(name)}" style="display:flex;align-items:center;gap:8px;color:var(--ax-text);text-decoration:none">📎 <span>${esc(name)}</span></a>`;
