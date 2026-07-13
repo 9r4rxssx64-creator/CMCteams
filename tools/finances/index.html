@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.3.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.3.0">
+<!-- v0.4.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.4.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -119,11 +119,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.3.0" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.4.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.3.0';
+  var APP_VER = 'v0.4.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -591,13 +591,14 @@
       '</div>'+
       '<div class="tabs" id="tabs"></div>'+
       '<div class="wrap" id="view"></div>';
-    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['compta','📒 Comptabilité'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
+    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['comptes','🗃️ Comptes'],['compta','📒 Comptabilité'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
     var tb=$('tabs');
     tabs.forEach(function(t){ var b=el('<button class="tab'+(STATE.tab===t[0]?' on':'')+'">'+t[1]+'</button>'); b.onclick=function(){ STATE.tab=t[0]; render(); }; tb.appendChild(b); });
     $('btn-lock').onclick=lockNow;
     var v=$('view');
     if(STATE.tab==='add') viewAdd(v);
     else if(STATE.tab==='dash') viewDash(v);
+    else if(STATE.tab==='comptes') viewComptes(v);
     else if(STATE.tab==='compta') viewCompta(v);
     else if(STATE.tab==='ask') viewAsk(v);
     else if(STATE.tab==='tx') viewTx(v);
@@ -814,6 +815,62 @@
       Math.abs(Math.abs(t.amount)-amt)<0.02 && Math.abs(new Date(t.date).getTime()-d)<=6*864e5; })
       .sort(function(a,b){return Math.abs(new Date(a.date)-d)-Math.abs(new Date(b.date)-d);})[0]||null;
   }
+  /* ---------- Vue COMPTES (classement auto par type de document, chacun géré pareil) ---------- */
+  var ACCOUNTS=[
+    {key:'releves', label:'Relevés bancaires', icon:'🏦', kinds:['releve','import']},
+    {key:'factures', label:'Factures fournisseurs', icon:'🧾', kinds:['facture']},
+    {key:'tickets', label:'Tickets / notes', icon:'🧾', kinds:['ticket']},
+    {key:'paie', label:'Fiches de paie', icon:'💼', kinds:['paie']},
+    {key:'devis', label:'Devis (non comptés)', icon:'📝', kinds:['devis']},
+    {key:'manuel', label:'Saisie manuelle', icon:'✍️', kinds:['manuel']}
+  ];
+  function accountForKind(kind){ for(var i=0;i<ACCOUNTS.length;i++){ if(ACCOUNTS[i].kinds.indexOf(kind)>=0) return ACCOUNTS[i]; }
+    return { key:'autres:'+(kind||'x'), label:'Autres — '+(kind||'document'), icon:'📄', kinds:[kind], auto:true }; }
+  function moveDoc(docId, newKind){ /* reclasse un document (et ses opérations) dans un autre compte */
+    var d=(VAULT.docs||[]).filter(function(x){return x.id===docId;})[0]; if(!d)return;
+    if(d.kind==='devis'||newKind==='devis'){ toast('Pour un devis, utilise l\'onglet Devis (✅ Payé)',true); return; }
+    d.kind=newKind; (VAULT.tx||[]).forEach(function(t){ if(t.docId===docId){ t.kind=newKind; if(newKind==='facture'||newKind==='ticket'){ if(t.ttc==null)t.ttc=Math.abs(t.amount); if(t.pro===undefined)t.pro=false; } } });
+    audit('reclasse', d.name+' → '+accountForKind(newKind).label); persist(); toast('📁 Rangé dans « '+accountForKind(newKind).label+' »'); render();
+  }
+  function viewComptes(v){
+    var groups={}, order=[];
+    function G(acc){ if(!groups[acc.key]){ groups[acc.key]={acc:acc, docs:[], ops:0, dep:0, rev:0}; order.push(acc.key); } return groups[acc.key]; }
+    (VAULT.docs||[]).forEach(function(d){ G(accountForKind(d.kind)).docs.push(d); });
+    (VAULT.tx||[]).forEach(function(t){ if(t.recDup)return; var g=G(accountForKind(t.kind)); g.ops++; if(t.category==='Virements internes')return; if(t.amount<0)g.dep+=(-t.amount); else g.rev+=t.amount; });
+    var devN=(VAULT.devis||[]).length; if(devN){ var gd=G(accountForKind('devis')); gd.devisN=devN; gd.devisTot=(VAULT.devis||[]).reduce(function(s,x){return s+Math.abs(x.amount||0);},0); }
+    if(!order.length){ v.appendChild(el('<div class="card" style="text-align:center;padding:30px"><div style="font-size:38px">🗃️</div><h2 style="justify-content:center;margin-top:6px">Comptes</h2><p class="muted">Chaque document importé est rangé AUTOMATIQUEMENT dans son compte : relevés bancaires, factures, devis, fiches de paie… Ajoute des documents pour commencer.</p></div>')); return; }
+    /* ordre : comptes connus d'abord (ordre ACCOUNTS), puis "autres" auto */
+    var known=ACCOUNTS.map(function(a){return a.key;});
+    order.sort(function(a,b){ var ia=known.indexOf(a), ib=known.indexOf(b); if(ia<0)ia=99; if(ib<0)ib=99; return ia-ib; });
+    /* bannière vérification */
+    var suspects=[]; (groups['factures']?groups['factures'].docs:[]).forEach(function(d){ if(/devis|preventivo|estimation/i.test(d.name||'')) suspects.push(d.name); });
+    var autresCount=order.filter(function(k){return k.indexOf('autres:')===0;}).length;
+    var bn=el('<div class="card"><h2>🗃️ Tes comptes<span class="r">'+order.length+' compte(s)</span></h2>'+
+      '<p class="tiny">✅ Chaque document est vérifié et rangé <b>automatiquement</b> dans le bon compte selon son type. Un type inconnu crée son propre compte. Tu peux déplacer un document d\'un compte à l\'autre.</p>'+
+      (suspects.length?'<div class="alert bad"><div>⚠️</div><div>'+suspects.length+' document(s) dans « Factures » ressemblent à des devis : '+esc(suspects.slice(0,3).join(', '))+'. Déplace-les vers « Devis » si besoin.</div></div>':'')+
+      (autresCount?'<div class="alert"><div>📄</div><div>'+autresCount+' compte(s) « Autres » créé(s) automatiquement pour des types non standard.</div></div>':'')+'</div>');
+    v.appendChild(bn);
+    order.forEach(function(k){ var g=groups[k]; var a=g.acc;
+      var meta=g.docs.length+' doc'+(g.docs.length>1?'s':'')+(g.ops?' · '+g.ops+' op.':'')+(g.devisN?' · '+g.devisN+' devis':'');
+      var amt=(a.key==='devis')?(g.devisTot?eur(g.devisTot)+' · non compté':''):(g.dep?eur(g.dep):(g.rev?'+'+eur(g.rev):''));
+      var c=el('<div class="card"><h2>'+a.icon+' '+esc(a.label)+'<span class="r">'+esc(amt)+'</span></h2><div class="tiny" style="margin-bottom:6px">'+meta+'</div><div class="acc-docs"></div></div>');
+      var box=c.querySelector('.acc-docs');
+      if(a.key==='devis'){ var b=el('<button class="btn grow">🧾 Ouvrir les devis</button>'); b.onclick=function(){ STATE.tab='devis'; render(); }; box.appendChild(b); }
+      g.docs.slice(0,40).forEach(function(d){
+        var row=el('<div class="doc"><span>'+kindIcon(d.kind)+'</span><div class="grow" style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d.name)+'</div><div class="tiny">'+esc(d.bank||d.vendor||kindLabel(d.kind))+(d.period?' · '+esc(d.period):'')+'</div></div>'+(d.hasFile?'<button class="btn sm" data-open="'+d.id+'" title="Voir / imprimer l\'original">🖨️</button>':'')+'</div>');
+        if(d.kind!=='devis'){
+          var sel=el('<select class="catsel" style="margin-left:6px" title="Déplacer vers un autre compte"><option value="">Déplacer…</option>'+
+            ACCOUNTS.filter(function(x){return x.key!=='devis'&&x.kinds[0]!==d.kind;}).map(function(x){return '<option value="'+x.kinds[0]+'">'+x.icon+' '+esc(x.label)+'</option>';}).join('')+'</select>');
+          sel.onchange=function(){ if(sel.value)moveDoc(d.id, sel.value); };
+          row.appendChild(sel);
+        }
+        box.appendChild(row);
+      });
+      box.querySelectorAll('[data-open]').forEach(function(b){ b.onclick=function(){ openDoc(b.getAttribute('data-open')); }; });
+      v.appendChild(c);
+    });
+  }
+
   function viewCompta(v){
     var years=comptaYears();
     if(!years.length){ v.appendChild(el('<div class="card" style="text-align:center;padding:30px"><div style="font-size:38px">📒</div><h2 style="justify-content:center;margin-top:6px">Comptabilité</h2><p class="muted">Ajoute des factures et relevés : TVA, fournisseurs, journal et rapprochement bancaire apparaîtront ici.</p></div>')); return; }
