@@ -9,18 +9,32 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = readFileSync(resolve(__dirname, 'firebase-orders.js'), 'utf8');
 
 /* Charge le fichier dans un contexte neuf avec window + fetch mockés.
-   tokenResp: réponse du POST /__admin/fbtoken. Renvoie { win, calls }. */
-function load(tokenResp) {
+   tokenResp: réponse du POST /__admin/fbtoken.
+   cfg (optionnel) : { blockUntilLogin, loginOk } pour simuler le verrou par rôle.
+   Renvoie { win, calls }. */
+function load(tokenResp, cfg) {
+  cfg = cfg || {};
   const calls = [];
+  let granted = false; // passe true après un /__admin/login réussi
   const fetchMock = (url, opts) => {
-    calls.push({ url: String(url), method: (opts && opts.method) || 'GET' });
-    if (String(url).indexOf('/__admin/fbtoken') >= 0) {
+    const u = String(url);
+    calls.push({ url: u, method: (opts && opts.method) || 'GET' });
+    if (u.indexOf('/__admin/login') >= 0) {
+      if (cfg.loginOk === false) return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+      granted = true;
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ grant: 'GRANT_SIGNED' }) });
+    }
+    if (u.indexOf('/__admin/fbtoken') >= 0) {
+      // après le grant, l'endpoint renvoie un vrai token (le retry sera authentifié)
+      if (granted) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true, id_token: 'GRANTTOK', expires_in: 3600 }) });
       return Promise.resolve({ ok: tokenResp.ok !== false, json: () => Promise.resolve(tokenResp.body) });
     }
-    return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    // écriture produit/logo : bloquée (401) tant que pas de grant si cfg.blockUntilLogin
+    if (cfg.blockUntilLogin && !granted) return Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({}) });
+    return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) });
   };
   const win = {};
-  const ctx = { window: win, fetch: fetchMock, Date, encodeURIComponent, Promise, String, Number, Object, isFinite, console };
+  const ctx = { window: win, fetch: fetchMock, Date, encodeURIComponent, Promise, String, Number, Object, isFinite, Error, console };
   vm.createContext(ctx);
   vm.runInContext(SRC, ctx);
   return { win, calls };
@@ -79,6 +93,41 @@ test('lecture catalogue (kdmcFetchProducts) = ANONYME (pas de token)', async () 
   const { win, calls } = load({ ok: true, body: { ok: true, id_token: 'TOKR', expires_in: 3600 } });
   await new Promise((r) => { win.kdmcFetchProducts('la-detente', () => r()); });
   if (calls.some((c) => c.url.indexOf('/__admin/fbtoken') >= 0)) throw new Error('la lecture ne doit PAS demander de token');
+  return true;
+});
+
+/* ── v10 SÉCURITÉ DU VERROU : le Studio ne doit JAMAIS croire « Publié » à tort,
+   et doit s'auto-récupérer (grant → retry) quand le verrou refuse. ───────────── */
+test('verrou ON + code fourni → grant (/__admin/login) + RETRY authentifié → succès', async () => {
+  const { win, calls } = load({ ok: false, body: { ok: false } }, { blockUntilLogin: true });
+  win.kdmcAdminPinPrompt = () => '200807'; // hook Studio simulé
+  const r = await win.kdmcPublishProduct('la-detente', { id: 'p1', name: 'X' });
+  if (!r || !r.ok) throw new Error('devrait résoudre sur succès du retry');
+  if (!calls.some((c) => c.url.indexOf('/__admin/login') >= 0)) throw new Error('aucun /__admin/login appelé');
+  // le SECOND PUT produit doit porter le token de grant
+  const puts = calls.filter((c) => c.method === 'PUT' && c.url.indexOf('/products/') >= 0);
+  if (puts.length !== 2) throw new Error('attendu 2 PUT (bloqué puis retry), obtenu ' + puts.length);
+  if (puts[1].url.indexOf('?auth=GRANTTOK') < 0) throw new Error('le retry doit être authentifié: ' + puts[1].url);
+  return true;
+});
+
+test('verrou ON + code REFUSÉ (annulé) → REJETTE (Studio .catch, pas de faux succès)', async () => {
+  const { win } = load({ ok: false, body: { ok: false } }, { blockUntilLogin: true });
+  win.kdmcAdminPinPrompt = () => null; // utilisateur annule
+  let rejected = false;
+  try { await win.kdmcPublishProduct('la-detente', { id: 'p2', name: 'Y' }); }
+  catch (e) { rejected = /admin_blocked_401/.test(e.message); }
+  if (!rejected) throw new Error('un write bloqué sans code doit REJETER (jamais résoudre)');
+  return true;
+});
+
+test('verrou ON + mauvais code (login KO) → REJETTE (jamais faux succès)', async () => {
+  const { win } = load({ ok: false, body: { ok: false } }, { blockUntilLogin: true, loginOk: false });
+  win.kdmcAdminPinPrompt = () => 'mauvais';
+  let rejected = false;
+  try { await win.kdmcDeleteLogo('la-detente', 'l9'); }
+  catch (e) { rejected = /admin_login_failed/.test(e.message); }
+  if (!rejected) throw new Error('login KO doit REJETER');
   return true;
 });
 
