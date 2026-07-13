@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
 
-      - name: Tests unitaires (logique pure : MIME + parseur IMAP + garde admin)
+      - name: Tests unitaires (logique pure - MIME + parseur IMAP + garde admin)
         run: node --test services/kdmc-monaco/worker.test.mjs
 
       - name: Install wrangler
@@ -67,7 +67,7 @@ jobs:
           set -e
           wrangler deploy 2>&1 | tee deploy.log
 
-      - name: Smoke /health (leçon #95 : un deploy vert ne prouve rien)
+      - name: Smoke /health (leçon #95 - un deploy vert ne prouve rien)
         run: |
           sleep 4
           URL="https://kdmc-monaco.9r4rxssx64.workers.dev/health"
