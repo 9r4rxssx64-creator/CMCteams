@@ -38,6 +38,8 @@ const MAX_PENDING = 200;
 const TTL = 60 * 60 * 24 * 60;       // 60 j
 const MAX_MSGS_PER_RUN = 15;
 const BACKFILL_DAYS = 60;
+const BACKFILL_BATCH = 40;           // messages max par lot de backfill
+const BACKFILL_BUDGET_MS = 14000;    // temps max par lot (sous IMAP_DEADLINE_MS)
 const IMAP_DEADLINE_MS = 20000;
 
 function J(o, status) { return new Response(JSON.stringify(o), { status: status || 200, headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' } }); }
@@ -112,6 +114,129 @@ async function imapClient(host, port) {
   return { readLine, cmd, close };
 }
 
+/* ---------- ingestion d'UN message (partagée incrémental + backfill) ---------- */
+// Extrait les factures d'un mail brut : pièces jointes filtrées facture, sinon le
+// CORPS du mail s'il ressemble à une facture. Dépose dans le KV. Renvoie le nb ajouté.
+async function ingestRaw(env, raw) {
+  if (!raw) return 0;
+  const subject = subjectOf(raw), from = fromOf(raw);
+  let added = 0, storedFile = 0;
+  for (const a of parseMimeAttachments(raw)) {
+    if (!matchesInvoice(subject, a.filename, from)) continue;
+    const approx = Math.floor(a.b64.length * 0.75);
+    if (approx > MAX_ATTACH) continue;
+    let hash = ''; try { hash = await sha256HexOfB64(a.b64); } catch { /* */ }
+    const id = hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+    if (await env.ACCOUNTS.get('mail:p:' + id)) continue;
+    const rec = { from, subject, date: new Date().toISOString(), filename: a.filename, mime: a.mime, b64: a.b64, size: approx, hash, ts: Date.now(), src: 'monaco' };
+    await env.ACCOUNTS.put('mail:p:' + id, JSON.stringify(rec), { expirationTtl: TTL });
+    added++; storedFile++;
+  }
+  if (!storedFile) {
+    const body = extractBodyText(raw);
+    if (body && body.length > 12 && matchesInvoice(subject, body, from)) {
+      let b64 = ''; try { b64 = btoa(latin1(new TextEncoder().encode(body))); } catch { /* */ }
+      if (b64) {
+        let hash = ''; try { hash = await sha256HexOfB64(b64); } catch { /* */ }
+        const id = hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+        if (!(await env.ACCOUNTS.get('mail:p:' + id))) {
+          const rec = { from, subject, date: new Date().toISOString(), filename: 'corps-du-mail.txt', mime: 'text/plain', b64, size: body.length, hash, ts: Date.now(), src: 'monaco', body: true };
+          await env.ACCOUNTS.put('mail:p:' + id, JSON.stringify(rec), { expirationTtl: TTL });
+          added++;
+        }
+      }
+    }
+  }
+  return added;
+}
+
+async function pendingCount(env) {
+  const p = await env.ACCOUNTS.list({ prefix: 'mail:p:' });
+  return (p.keys && p.keys.length) || 0;
+}
+
+/* ---------- backfill COMPLET (tout l'historique), résumable ---------- */
+// Démarre : cherche TOUS les UID et remplit la file de travail (du plus ancien au plus récent).
+async function backfillStart(env) {
+  if (!env || !env.ACCOUNTS) return { ok: false, reason: 'kv_absent' };
+  const user = await env.ACCOUNTS.get('mon:user');
+  const passStored = await env.ACCOUNTS.get('mon:pass');
+  if (!user || !passStored) return { ok: false, reason: 'not_connected' };
+  const pass = await decSecret(env, passStored);
+  const host = (await env.ACCOUNTS.get('mon:host')) || DEFAULT_HOST;
+  const port = parseInt((await env.ACCOUNTS.get('mon:port')) || String(DEFAULT_PORT), 10) || DEFAULT_PORT;
+  const c = await imapClient(host, port);
+  try {
+    await c.readLine();
+    let r = await c.cmd('LOGIN ' + imapQuote(user) + ' ' + imapQuote(pass));
+    if (r.status !== 'OK') throw new Error('login_refuse:' + r.line.slice(0, 120));
+    r = await c.cmd('SELECT INBOX');
+    if (r.status !== 'OK') throw new Error('select_refuse:' + r.line.slice(0, 120));
+    r = await c.cmd('UID SEARCH ALL');
+    if (r.status !== 'OK') throw new Error('search_refuse:' + r.line.slice(0, 120));
+    const all = parseSearchUids(r.untagged).sort((a, b) => a - b);
+    try { await c.cmd('LOGOUT'); } catch { /* */ }
+    await env.ACCOUNTS.put('mon:bf_queue', JSON.stringify(all));
+    await env.ACCOUNTS.put('mon:bf_total', String(all.length));
+    await env.ACCOUNTS.put('mon:bf_remaining', String(all.length));
+    await env.ACCOUNTS.put('mon:bf_max', String(all.length ? all[all.length - 1] : 0));
+    await env.ACCOUNTS.put('mon:bf_active', '1');
+    return { ok: true, total: all.length };
+  } finally { await c.close(); }
+}
+
+// Un lot : traite les plus anciens UID en tête de file, borné en temps + file KV.
+async function backfillStep(env) {
+  if (!env || !env.ACCOUNTS) return { ok: false, reason: 'kv_absent' };
+  if (!(await env.ACCOUNTS.get('mon:bf_active'))) return { ok: true, done: true, remaining: 0 };
+  let queue; try { queue = JSON.parse((await env.ACCOUNTS.get('mon:bf_queue')) || '[]'); } catch { queue = []; }
+  const total = parseInt((await env.ACCOUNTS.get('mon:bf_total')) || '0', 10) || 0;
+  async function finishIfEmpty() {
+    if (queue.length) return false;
+    await env.ACCOUNTS.delete('mon:bf_active');
+    await env.ACCOUNTS.put('mon:bf_remaining', '0');
+    const bfMax = parseInt((await env.ACCOUNTS.get('mon:bf_max')) || '0', 10) || 0;
+    const cur = parseInt((await env.ACCOUNTS.get('mon:lastuid')) || '0', 10) || 0;
+    if (bfMax > cur) await env.ACCOUNTS.put('mon:lastuid', String(bfMax)); // l'incrémental reprend proprement
+    return true;
+  }
+  if (await finishIfEmpty()) return { ok: true, done: true, remaining: 0, total, added: 0 };
+  if (await pendingCount(env) >= MAX_PENDING) return { ok: true, added: 0, remaining: queue.length, total, reason: 'file_pleine' };
+
+  const user = await env.ACCOUNTS.get('mon:user');
+  const passStored = await env.ACCOUNTS.get('mon:pass');
+  if (!user || !passStored) return { ok: false, reason: 'not_connected' };
+  const pass = await decSecret(env, passStored);
+  const host = (await env.ACCOUNTS.get('mon:host')) || DEFAULT_HOST;
+  const port = parseInt((await env.ACCOUNTS.get('mon:port')) || String(DEFAULT_PORT), 10) || DEFAULT_PORT;
+
+  const c = await imapClient(host, port);
+  let added = 0, processed = 0; const startedAt = Date.now();
+  try {
+    await c.readLine();
+    let r = await c.cmd('LOGIN ' + imapQuote(user) + ' ' + imapQuote(pass));
+    if (r.status !== 'OK') throw new Error('login_refuse:' + r.line.slice(0, 120));
+    r = await c.cmd('SELECT INBOX');
+    if (r.status !== 'OK') throw new Error('select_refuse:' + r.line.slice(0, 120));
+    while (queue.length && processed < BACKFILL_BATCH && (Date.now() - startedAt) < BACKFILL_BUDGET_MS) {
+      if (await pendingCount(env) >= MAX_PENDING) break;
+      const uid = queue.shift(); processed++;
+      if (await env.ACCOUNTS.get('mon:seen:' + uid)) continue;
+      try {
+        const fr = await c.cmd('UID FETCH ' + uid + ' BODY.PEEK[]');
+        added += await ingestRaw(env, (fr.literals && fr.literals[0]) || '');
+      } catch { /* message ignoré, jamais bloquant */ }
+      await env.ACCOUNTS.put('mon:seen:' + uid, '1', { expirationTtl: TTL });
+    }
+    try { await c.cmd('LOGOUT'); } catch { /* */ }
+  } finally { await c.close(); }
+  await env.ACCOUNTS.put('mon:bf_queue', JSON.stringify(queue));
+  await env.ACCOUNTS.put('mon:bf_remaining', String(queue.length));
+  await env.ACCOUNTS.put('mon:lastrun', new Date().toISOString());
+  const done = await finishIfEmpty();
+  return { ok: true, added, processed, remaining: queue.length, total, done };
+}
+
 /* ---------- synchro ---------- */
 async function syncOnce(env) {
   if (!env || !env.ACCOUNTS) return { ok: false, reason: 'kv_absent' };
@@ -150,39 +275,7 @@ async function syncOnce(env) {
       if (await env.ACCOUNTS.get('mon:seen:' + uid)) continue;
       try {
         const fr = await c.cmd('UID FETCH ' + uid + ' BODY.PEEK[]');
-        const raw = (fr.literals && fr.literals[0]) || '';
-        if (raw) {
-          const subject = subjectOf(raw), from = fromOf(raw);
-          let storedFile = 0;
-          for (const a of parseMimeAttachments(raw)) {
-            if (!matchesInvoice(subject, a.filename, from)) continue;
-            const approx = Math.floor(a.b64.length * 0.75);
-            if (approx > MAX_ATTACH) continue;
-            let hash = ''; try { hash = await sha256HexOfB64(a.b64); } catch { /* */ }
-            const id = hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
-            if (await env.ACCOUNTS.get('mail:p:' + id)) continue;
-            const rec = { from, subject, date: new Date().toISOString(), filename: a.filename, mime: a.mime, b64: a.b64, size: approx, hash, ts: Date.now(), src: 'monaco' };
-            await env.ACCOUNTS.put('mail:p:' + id, JSON.stringify(rec), { expirationTtl: TTL });
-            added++; storedFile++;
-          }
-          // La facture est parfois ÉCRITE dans le corps du mail (pas en pièce jointe).
-          // Si aucune pièce jointe utile ET le message ressemble à une facture → on garde le TEXTE.
-          if (!storedFile) {
-            const body = extractBodyText(raw);
-            if (body && body.length > 12 && matchesInvoice(subject, body, from)) {
-              let b64 = ''; try { b64 = btoa(latin1(new TextEncoder().encode(body))); } catch { /* */ }
-              if (b64) {
-                let hash = ''; try { hash = await sha256HexOfB64(b64); } catch { /* */ }
-                const id = hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
-                if (!(await env.ACCOUNTS.get('mail:p:' + id))) {
-                  const rec = { from, subject, date: new Date().toISOString(), filename: 'corps-du-mail.txt', mime: 'text/plain', b64, size: body.length, hash, ts: Date.now(), src: 'monaco', body: true };
-                  await env.ACCOUNTS.put('mail:p:' + id, JSON.stringify(rec), { expirationTtl: TTL });
-                  added++;
-                }
-              }
-            }
-          }
-        }
+        added += await ingestRaw(env, (fr.literals && fr.literals[0]) || '');
       } catch { /* message ignoré, jamais bloquant */ }
       await env.ACCOUNTS.put('mon:seen:' + uid, '1', { expirationTtl: TTL });
     }
@@ -250,6 +343,7 @@ function setupPage(host) {
 + '<button id="save">💾 Enregistrer</button>'
 + '<button class="sec" id="test">🔌 Tester la connexion</button>'
 + '<button class="sec" id="sync">📥 Récupérer mes factures maintenant</button>'
++ '<button class="sec" id="hist">📚 Récupérer TOUT l\'historique</button>'
 + '<button class="sec" id="disc">Déconnecter</button>'
 + '<div id="msg"></div></div>'
 + '<p class="muted">Ensuite, dans l\'app Finances → <b>➕ Ajouter</b> → <b>📥 Récupérer mes factures</b> : elles y seront (avec celles de factures@kd-mc.com).</p>'
@@ -261,6 +355,7 @@ function setupPage(host) {
 + '$("save").onclick=async function(){if(!$("pin").value.trim()||!$("user").value.trim()||!$("pass").value){say("Entre code admin + email + mot de passe.","err");return}say("⏳ Enregistrement…");try{var r=await fetch("/config",{method:"POST",headers:await hdr(),body:JSON.stringify({user:$("user").value.trim(),pass:$("pass").value,host:$("host").value.trim(),port:$("port").value.trim()})});var j=await r.json();say(j.ok?"✅ Enregistré. Teste la connexion.":"❌ "+(j.reason||"refusé")+" (code admin ?)",j.ok?"ok":"err")}catch(e){say("❌ "+e.message,"err")}};'
 + '$("test").onclick=async function(){if(!$("pin").value.trim()){say("Entre ton code admin.","err");return}say("⏳ Test de connexion IMAP…");try{var r=await fetch("/test",{method:"POST",headers:await hdr()});var j=await r.json();if(j.ok){say("✅ Connecté à "+j.host+":"+j.port+" — boîte "+(j.inbox?"OK":"?")+".\\n"+(j.greeting||""),"ok")}else{say("❌ "+(j.reason||"erreur")+(j.detail?(" — "+j.detail):""),"err")}}catch(e){say("❌ "+e.message,"err")}};'
 + '$("sync").onclick=async function(){if(!$("pin").value.trim()){say("Entre ton code admin.","err");return}say("⏳ Récupération en cours…");try{var r=await fetch("/sync",{method:"POST",headers:await hdr()});var j=await r.json();if(!j.ok){say("❌ "+(j.reason||"erreur")+(j.detail?(" — "+j.detail):"")+(j.reason==="not_connected"?" — enregistre d\'abord tes identifiants.":""),"err");return}say("✅ "+j.added+" facture(s) récupérée(s) ("+j.scanned+" mails scannés). Ouvre l\'app → 📥 Récupérer.","ok")}catch(e){say("❌ "+e.message,"err")}};'
++ '$("hist").onclick=async function(){if(!$("pin").value.trim()){say("Entre ton code admin.","err");return}say("⏳ Récupération de tout l\'historique…");try{var r=await fetch("/backfill",{method:"POST",headers:await hdr()});var j=await r.json();if(!j.ok){say("❌ "+(j.reason||"erreur")+(j.detail?(" — "+j.detail):"")+(j.reason==="not_connected"?" — enregistre d\'abord tes identifiants.":""),"err");return}var tot=j.total||0,rem=(j.remaining!==undefined?j.remaining:0),done=tot-rem;if(j.done){say("✅ Historique terminé : "+tot+" mails parcourus. Tout est dans l\'app Finances (📥 Récupérer).","ok");return}say("✅ Historique en cours : "+done+"/"+tot+" mails parcourus, "+(j.added||0)+" facture(s) ce lot.\\nJe continue tout seul (toutes les 2 h). Garde l\'app Finances OUVERTE pour vider la file — re-tape ce bouton pour accélérer.",(j.reason==="file_pleine"?"":"ok"))}catch(e){say("❌ "+e.message,"err")}};'
 + '$("disc").onclick=async function(){if(!$("pin").value.trim()){say("Entre ton code admin.","err");return}try{var r=await fetch("/disconnect",{method:"POST",headers:await hdr()});var j=await r.json();say(j.ok?"Déconnecté.":"❌ "+(j.reason||"erreur"),j.ok?"ok":"err")}catch(e){say("❌ "+e.message,"err")}};'
 + '</script></body></html>';
 }
@@ -272,8 +367,9 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'access-control-allow-headers': 'content-type,x-apex-pin,x-kdmc-pin' } });
     try {
       if (p === '/health') {
-        const connected = !!(env && env.ACCOUNTS && await env.ACCOUNTS.get('mon:user') && await env.ACCOUNTS.get('mon:pass'));
-        return J({ ok: true, worker: 'kdmc-monaco', connected, enc: !!(env && env.MONACO_ENC_KEY), lastrun: env && env.ACCOUNTS ? await env.ACCOUNTS.get('mon:lastrun') : null, lasterr: env && env.ACCOUNTS ? await env.ACCOUNTS.get('mon:lasterr') : null });
+        const kv = env && env.ACCOUNTS;
+        const connected = !!(kv && await env.ACCOUNTS.get('mon:user') && await env.ACCOUNTS.get('mon:pass'));
+        return J({ ok: true, worker: 'kdmc-monaco', connected, enc: !!(env && env.MONACO_ENC_KEY), lastrun: kv ? await env.ACCOUNTS.get('mon:lastrun') : null, lasterr: kv ? await env.ACCOUNTS.get('mon:lasterr') : null, bf_active: !!(kv && await env.ACCOUNTS.get('mon:bf_active')), bf_total: kv ? (parseInt(await env.ACCOUNTS.get('mon:bf_total') || '0', 10) || 0) : 0, bf_remaining: kv ? (parseInt(await env.ACCOUNTS.get('mon:bf_remaining') || '0', 10) || 0) : 0 });
       }
       if (p === '/' || p === '/setup') {
         return new Response(setupPage(env && env.ACCOUNTS ? await env.ACCOUNTS.get('mon:host') : null), { headers: { 'content-type': 'text/html; charset=utf-8' } });
@@ -307,16 +403,34 @@ export default {
       }
       if (p === '/sync' && request.method === 'POST') {
         if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
-        try { return J(await syncOnce(env)); }
-        catch (e) {
+        try {
+          // Si un backfill complet est en cours → on l'avance ; sinon récup incrémentale.
+          if (env && env.ACCOUNTS && await env.ACCOUNTS.get('mon:bf_active')) return J(await backfillStep(env));
+          return J(await syncOnce(env));
+        } catch (e) {
           const detail = String(e && e.message || e);
           try { if (env && env.ACCOUNTS) await env.ACCOUNTS.put('mon:lasterr', detail.slice(0, 200)); } catch { /* */ }
           return J({ ok: false, reason: 'sync_error', detail });
         }
       }
+      if (p === '/backfill' && request.method === 'POST') {
+        if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
+        try {
+          // Déjà en cours → on avance d'un lot (re-tap = accélère). Sinon on démarre + 1er lot.
+          if (env && env.ACCOUNTS && await env.ACCOUNTS.get('mon:bf_active')) return J(await backfillStep(env));
+          const s = await backfillStart(env);
+          if (!s.ok) return J(s);
+          const step = await backfillStep(env);
+          return J({ ...step, total: s.total });
+        } catch (e) {
+          const detail = String(e && e.message || e);
+          try { if (env && env.ACCOUNTS) await env.ACCOUNTS.put('mon:lasterr', detail.slice(0, 200)); } catch { /* */ }
+          return J({ ok: false, reason: 'backfill_error', detail });
+        }
+      }
       if (p === '/disconnect' && request.method === 'POST') {
         if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
-        try { for (const k of ['mon:user', 'mon:pass', 'mon:lastuid', 'mon:host', 'mon:port']) await env.ACCOUNTS.delete(k); } catch { /* */ }
+        try { for (const k of ['mon:user', 'mon:pass', 'mon:lastuid', 'mon:host', 'mon:port', 'mon:bf_active', 'mon:bf_queue', 'mon:bf_total', 'mon:bf_remaining', 'mon:bf_max']) await env.ACCOUNTS.delete(k); } catch { /* */ }
         return J({ ok: true });
       }
       return new Response('kdmc-monaco', { status: 200 });
@@ -325,9 +439,11 @@ export default {
     }
   },
 
-  // Cron : récupération incrémentale automatique (fail-safe, garde l'erreur exacte).
+  // Cron : avance le backfill si en cours, sinon récup incrémentale (fail-safe, erreur exacte).
   async scheduled(event, env) {
-    try { await syncOnce(env); }
-    catch (e) { try { if (env && env.ACCOUNTS) await env.ACCOUNTS.put('mon:lasterr', String(e && e.message || e).slice(0, 200)); } catch { /* */ } }
+    try {
+      if (env && env.ACCOUNTS && await env.ACCOUNTS.get('mon:bf_active')) await backfillStep(env);
+      else await syncOnce(env);
+    } catch (e) { try { if (env && env.ACCOUNTS) await env.ACCOUNTS.put('mon:lasterr', String(e && e.message || e).slice(0, 200)); } catch { /* */ } }
   }
 };
