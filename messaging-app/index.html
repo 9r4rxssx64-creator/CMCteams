@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.275",
+  "softwareVersion": "v1.1.276",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -457,7 +457,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.275';
+const __APEX_CHAT_VERSION__ = 'v1.1.276';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -642,7 +642,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.275</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.276</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -656,7 +656,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.275</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.276</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -13929,6 +13929,19 @@ K._adminAiAsk = async function(){
 // Règle CLAUDE.md : "AbortController sur tous les fetch (timeout 30s max)"
 // v1.1.239 : test des notifs SERVEUR (hors app). Envoie une vraie notif via le serveur et
 // affiche le statut de livraison → diagnostique « rien ne s'affiche app fermée/arrière-plan ».
+// v1.1.276 — lit la trace écrite par le Service Worker à la réception d'un push
+// (cache 'apex-push-debug' → '/last'). Permet de distinguer « Apple a accepté
+// (201) mais rien livré au téléphone » de « reçu par le SW mais iOS n'affiche
+// pas » (réglage système Notifications de l'app installée).
+K._readPushDebug = async function(){
+  try{
+    if(!('caches' in window)) return null;
+    const c = await caches.open('apex-push-debug');
+    const resp = await c.match('/last');
+    if(!resp) return null;
+    return await resp.json();
+  }catch(_){ return null; }
+};
 K._testServerPush = async function(){
   try{
     if(!K.token || String(K.token).startsWith('local-')){ toast('Reconnecte-toi d\'abord', 'err', 4000); return; }
@@ -13953,6 +13966,21 @@ K._testServerPush = async function(){
     else if((r.results||[]).some(function(x){ return x.status === 401; })){ msg += '\n\n❌ 401 = le serveur de notif refuse la clé. Copie ce texte à Kevin.'; }
     else if((r.results||[]).some(function(x){ return x.status === 404; })){ msg += '\n\n❌ 404 = la version corrigée du serveur n\'est pas encore en ligne. Réessaie dans 1 min. Si ça persiste, copie ce texte à Kevin.'; }
     else { msg += '\n\n❌ Le serveur n\'a pas pu livrer (voir le détail). Copie ce texte à Kevin.'; }
+    // v1.1.276 — sonde la RÉCEPTION RÉELLE par le Service Worker (trace cache).
+    // Réponse DÉCISIVE : Apple a 201 mais le téléphone a-t-il reçu, oui ou non ?
+    const accepted = (r.results||[]).some(function(x){ return x.status >= 200 && x.status < 300; });
+    if(accepted){
+      const before = await K._readPushDebug();
+      toast('Vérification de la réception… 5s', 'info', 4500);
+      await new Promise(function(res){ setTimeout(res, 4800); });
+      const after = await K._readPushDebug();
+      const got = after && (!before || (after.ts > before.ts)) && (Date.now() - after.ts < 20000);
+      if(got){
+        msg += '\n\n📥 Ton téléphone A REÇU la notif (Service Worker OK).\nSi aucune bannière n\'apparaît → Réglages iPhone → Apex Chat → Notifications : vérifie « Autoriser », « Écran verrouillé » et « Bannières » ACTIVÉS.';
+      } else {
+        msg += '\n\n📭 Apple a accepté (201) MAIS ton téléphone n\'a RIEN reçu (aucune trace côté app).\nCopie ce texte à Kevin : l\'abonnement push est à re-créer (je m\'en occupe).';
+      }
+    }
     alert('📡 Test notif serveur\n\n' + msg);
   }catch(e){
     // v1.1.253 : 401 = session serveur expirée (JWT). _api a déjà tenté de renouveler ;
