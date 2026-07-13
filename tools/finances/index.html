@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.8.3 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.8.3">
+<!-- v0.8.4 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.8.4">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -140,11 +140,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.3" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.4" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.8.3';
+  var APP_VER = 'v0.8.4';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -415,7 +415,7 @@
   /* Cœur partagé : récupère les pièces en attente, les importe, dédoublonne, acquitte. */
   async function _mailPull(onProgress){
     if(!VAULT||!VAULT.aiPinHash) return {ok:false,reason:'no_ai'};
-    var grant=adminGrantTok(); if(!grant) return {ok:false,reason:'no_grant'};
+    var grant=await ensureGrant(); if(!grant) return {ok:false,reason:'no_grant'};
     var list;
     try{ var r=await fetch('/__mail/scan',{ headers:{'x-kdmc-admin':grant}, cache:'no-store' });
       if(!r.ok) return {ok:false,reason:'http_'+r.status};
@@ -434,7 +434,7 @@
   }
   async function mailScan(statEl){
     if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
-    if(!adminGrantTok()){ toast('Active la sauvegarde en ligne (code admin) d\'abord',true); STATE.tab='set'; render(); return; }
+    if(!(await ensureGrant())){ toast('Connexion admin impossible — réessaie dans un instant',true); return; }
     function say(m){ if(statEl)statEl.textContent=m; }
     say('📧 Recherche de factures dans tes mails…');
     var res=await _mailPull(function(i,n,it){ say('⏳ '+i+'/'+n+' — '+(it.filename||'pièce jointe')); });
@@ -448,7 +448,7 @@
      Aucun geste requis — dès qu'une facture arrive à factures@kd-mc.com, elle rentre toute seule. */
   var _mailAutoTs=0, _mailAutoBusy=false;
   async function mailAutoScan(force){
-    if(_mailAutoBusy) return; if(!VAULT||!VAULT.aiPinHash||!adminGrantTok()) return;
+    if(_mailAutoBusy) return; if(!VAULT||!VAULT.aiPinHash) return;
     var now=Date.now(); if(!force && now-_mailAutoTs<120000) return; _mailAutoTs=now; _mailAutoBusy=true;
     try{ var res=await _mailPull(null);
       if(res && res.ok && (res.okc||res.devc)){
@@ -538,6 +538,32 @@
   /* ============================ Sauvegarde EN LIGNE (E2E, admin, temps réel) ============================ */
   var LS_GRANT='kdmc_admin_grant', _bkTimer=null, _backupState='';
   function adminGrantTok(){ try{ return localStorage.getItem(LS_GRANT)||''; }catch(e){ return ''; } }
+  /* Grant admin AUTO : si absent/expiré, on le ré-obtient tout seul à partir du hash déjà
+     stocké dans le coffre (VAULT.aiPinHash = sha256 du code admin = le secret du domaine).
+     → Kevin ne retape JAMAIS de code : une seule connexion (déverrouillage du coffre) suffit,
+     mails + sauvegarde s'authentifient seuls et se renouvellent seuls (fini « code requis »). */
+  var _ensureGrantBusy=false;
+  async function ensureGrant(){
+    var g=adminGrantTok(); if(g) return g;
+    var h=(VAULT&&VAULT.aiPinHash)||''; if(!h) return '';
+    if(_ensureGrantBusy) return '';
+    _ensureGrantBusy=true;
+    try{ var r=await fetch('/__admin/login',{ method:'POST', credentials:'include',
+        headers:{'content-type':'application/json'}, body:JSON.stringify({hash:h}) });
+      var j=await r.json().catch(function(){return{};});
+      if(j&&j.ok&&j.grant){ try{ localStorage.setItem(LS_GRANT,j.grant); }catch(e){} return j.grant; }
+    }catch(e){}finally{ _ensureGrantBusy=false; }
+    return '';
+  }
+  /* Au déverrouillage : si l'IA est activée et que la sauvegarde n'a pas été coupée
+     explicitement, on l'active toute seule (grant auto via le hash) — rien à taper, rien perdu. */
+  async function autoEnableCloud(){
+    try{ if(!VAULT||!VAULT.aiPinHash||VAULT.backupOff===true) return;
+      var g=await ensureGrant(); if(!g) return;
+      if(!VAULT.backupOnline){ VAULT.backupOnline=true; await persist(); }
+      backupPush();
+    }catch(e){}
+  }
   async function adminLoginCode(code){
     try{ var r=await fetch('/__admin/login',{ method:'POST', credentials:'include',
         headers:{'content-type':'application/json'}, body:JSON.stringify({code:String(code||'')}) });
@@ -548,7 +574,7 @@
   }
   function scheduleBackup(){ if(!VAULT||!VAULT.backupOnline)return; clearTimeout(_bkTimer); _bkTimer=setTimeout(backupPush,6000); }
   async function backupPush(){
-    if(!VAULT||!VAULT.backupOnline)return; var grant=adminGrantTok(); if(!grant){ _backupState='no_grant'; updateBackupBadge(); return; }
+    if(!VAULT||!VAULT.backupOnline)return; var grant=await ensureGrant(); if(!grant){ _backupState='no_grant'; updateBackupBadge(); return; }
     var raw=localStorage.getItem(LS_VAULT); if(!raw)return;
     try{ var pack=JSON.parse(raw);
       var r=await fetch('/__fin/vault',{ method:'PUT', credentials:'include',
@@ -559,7 +585,7 @@
     updateBackupBadge();
   }
   async function backupPull(){
-    var grant=adminGrantTok(); if(!grant) return {ok:false,reason:'no_grant'};
+    var grant=await ensureGrant(); if(!grant) return {ok:false,reason:'no_grant'};
     try{ var r=await fetch('/__fin/vault',{ credentials:'include', headers:{'x-kdmc-admin':grant}, cache:'no-store' });
       if(!r.ok) return {ok:false,reason:'http_'+r.status};
       var j=await r.json(); if(!j.ok) return {ok:false,reason:j.reason||'ko'}; if(j.empty) return {ok:false,reason:'empty'};
@@ -1418,11 +1444,11 @@
     var prov=(VAULT.aiProvider||'gemini');
     /* IA */
     var cAi=el('<div class="card"><h2>🤖 Classement IA<span class="r">'+(aiOn?('✅ '+AI_LABEL[prov]):'inactif')+'</span></h2>'+
-      '<p class="tiny">Lit et classe tes documents via ton proxy (tes clés). <b>Gemini est GRATUIT</b> et lit PDF+photos → économie. IBAN/cartes masqués. Aucun code en clair (seul le hash sert au proxy).</p>'+
+      '<p class="tiny">Lit et classe tes documents via ton proxy (tes clés). <b>Gemini est GRATUIT</b> et lit PDF+photos → économie. IBAN/cartes masqués. <b>Ton code une seule fois</b> : il active aussi la récupération des mails et la sauvegarde en ligne, et n\'est <b>jamais</b> redemandé (reconnu auto).</p>'+
       '<label class="fld">Moteur IA</label><select id="ai-prov"><option value="gemini"'+(prov==='gemini'?' selected':'')+'>💸 Gratuit — Gemini (recommandé)</option><option value="anthropic"'+(prov==='anthropic'?' selected':'')+'>⭐ Premium — Claude</option></select>'+
       (aiOn?'<button class="btn grow" id="ai-off" style="margin-top:8px">Désactiver le classement IA</button>':
-        '<label class="fld">Code admin (Kevin)</label><input id="ai-pin" type="password" inputmode="numeric" placeholder="Ton code admin">'+
-        '<button class="btn gold grow" id="ai-on" style="margin-top:8px">Activer le classement IA</button>')+
+        '<label class="fld">Code admin (une seule fois)</label><input id="ai-pin" type="password" inputmode="numeric" placeholder="Ton code admin">'+
+        '<button class="btn gold grow" id="ai-on" style="margin-top:8px">Activer (IA + mails + sauvegarde)</button>')+
       '<div id="ai-msg" class="tiny" style="margin-top:8px"></div></div>');
     v.appendChild(cAi);
     /* Catégories éditables */
@@ -1482,7 +1508,12 @@
           var pv=VAULT.aiProvider||'gemini';
           try{ await aiCallProvider(pv,[{t:'Réponds juste: ok'}],16); msg.style.color='var(--green)'; msg.textContent='✅ IA activée ('+AI_LABEL[pv]+').'; }
           catch(e){ VAULT.aiPinHash=null; await persist(); msg.style.color='var(--red)'; msg.textContent='❌ '+(e.message||e); return; }
-          await persist(); toast('✅ Classement IA activé'); setTimeout(render,700);
+          await persist();
+          /* Un SEUL code active TOUT : le même hash sert au domaine → mails + sauvegarde en
+             ligne s'activent SANS second code, et on récupère les factures tout de suite. */
+          try{ if(VAULT.backupOff!==true){ VAULT.backupOnline=true; await persist(); } await ensureGrant(); await backupPush(); }catch(_){}
+          toast('✅ IA + mails + sauvegarde activés'); try{ mailAutoScan(true); }catch(_){}
+          setTimeout(render,700);
         }catch(e){ msg.style.color='var(--red)'; msg.textContent='❌ '+(e.message||e); }
       };
     }
@@ -1494,7 +1525,7 @@
         m.textContent='⏳ restauration…';
         try{ var d=await restoreFromCloud(); toast('☁️ Restauré ('+(d.tx?d.tx.length:0)+' op.)'); render(); }
         catch(e){ if(e.needPass){ var p=prompt('Code du coffre de la sauvegarde en ligne :'); if(!p){m.textContent='';return;} try{ var d2=await restoreFromCloud(p); toast('☁️ Restauré'); render(); }catch(e2){ m.textContent='❌ '+(e2.message||'code incorrect'); } } else m.textContent='❌ '+(e.message||e); } };
-      cBk.querySelector('#bk-off').onclick=async function(){ VAULT.backupOnline=false; await persist(); toast('Sauvegarde en ligne désactivée'); render(); };
+      cBk.querySelector('#bk-off').onclick=async function(){ VAULT.backupOnline=false; VAULT.backupOff=true; await persist(); toast('Sauvegarde en ligne désactivée'); render(); };
     } else {
       cBk.querySelector('#bk-on').onclick=function(){
         var m=cBk.querySelector('#bk-msg');
@@ -1504,7 +1535,10 @@
         go.onclick=async function(){ var code=(inp.value||'').trim(); if(!code){return;} go.disabled=true; go.textContent='…';
           var lr=await adminLoginCode(code);
           if(!lr.ok){ go.disabled=false; go.textContent='OK'; m.insertAdjacentHTML('beforeend','<div style="color:var(--red);margin-top:6px">❌ '+esc(lr.reason==='code_invalide'?'code incorrect':lr.reason)+'</div>'); return; }
-          VAULT.backupOnline=true; await persist(); await backupPush(); toast('☁️ Sauvegarde en ligne activée'); render();
+          VAULT.backupOnline=true; VAULT.backupOff=false;
+          /* même code → sert aussi au renouvellement auto du grant + à l'IA (un seul code). */
+          try{ if(!VAULT.aiPinHash) VAULT.aiPinHash=await sha256Hex(code); }catch(_){}
+          await persist(); await backupPush(); toast('☁️ Sauvegarde + mails activés'); try{ mailAutoScan(true); }catch(_){} render();
         };
         inp.addEventListener('keydown',function(e){ if(e.key==='Enter')go.onclick(); });
       };
@@ -1625,7 +1659,7 @@
       var data=await decWith(key,{iv:pack.iv,ct:pack.ct}); /* throw si mauvais code */
       data._salt=pack.salt; VAULT=data; KEY=key;
       if($('g-rem').checked)localStorage.setItem(LS_REMEMBER,'1'); else { localStorage.setItem(LS_REMEMBER,'0'); localStorage.removeItem(LS_DEV); }
-      await persist(); toast('🔓 Déverrouillé'); render();
+      await persist(); toast('🔓 Déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true);
     }catch(e){ err.textContent='Code incorrect.'; }
   }
   async function tryAutoUnlock(){
@@ -1661,7 +1695,7 @@
   /* ============================ Boot ============================ */
   (async function boot(){
     if(!(window.crypto&&crypto.subtle)){ $('app').innerHTML='<div class="gate"><div class="card"><div class="ic">🔒</div><h2>Navigateur non sécurisé</h2><p>Ouvre cette page en HTTPS (chiffrement requis).</p></div></div>'; return; }
-    if(await tryAutoUnlock()){ render(); mailAutoScan(true); return; }
+    if(await tryAutoUnlock()){ render(); autoEnableCloud(); mailAutoScan(true); return; }
     showGate();
   })();
 

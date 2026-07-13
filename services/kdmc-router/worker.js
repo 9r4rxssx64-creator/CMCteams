@@ -638,8 +638,17 @@ async function handleAdmin(request, url, env) {
     if (wait) return J({ ok: false, reason: 'rate_limited', wait });
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     const code = String(b.code || '').trim();
-    if (!code) return J({ ok: false, reason: 'code_requis' });
-    if ((await sha256Hex(code)) !== adminHash) { await rlFail(env, ipHash); await audLog(env, { ev: 'admin_login_fail', ip: ipHash.slice(0, 12) }); return J({ ok: false, reason: 'code_invalide' }); }
+    /* Accepte le CODE (sha256(code)===secret) OU directement le HASH (=== secret).
+       Le hash est déjà l'équivalent porteur du PIN dans ce système (header x-apex-pin,
+       leçon #95) : il déverrouille déjà l'IA (capacité plus sensible), donc l'accepter
+       pour émettre le grant mail/sauvegarde n'ouvre aucune faille — et un hash 64-hex est
+       plus dur à forcer qu'un PIN à 6 chiffres. → une app qui a déjà le hash (Finances)
+       obtient le grant SANS redemander le code (« à la connexion ensuite plus besoin »). */
+    const hash = String(b.hash || '').trim().toLowerCase();
+    if (!code && !hash) return J({ ok: false, reason: 'code_requis' });
+    const okHash = !!hash && hash === String(adminHash).toLowerCase();
+    const okCode = !!code && (await sha256Hex(code)) === adminHash;
+    if (!okHash && !okCode) { await rlFail(env, ipHash); await audLog(env, { ev: 'admin_login_fail', ip: ipHash.slice(0, 12) }); return J({ ok: false, reason: 'code_invalide' }); }
     await rlReset(env, ipHash);
     await audLog(env, { ev: 'admin_login_ok', ip: ipHash.slice(0, 12) });
     const grant = await ssoSign(secret, '__kdmc_admin__', 'admin', 1);
