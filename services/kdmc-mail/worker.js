@@ -18,6 +18,12 @@
 const MAX_ATTACH = 15 * 1024 * 1024; // 15 Mo / pièce jointe
 const MAX_PENDING = 200;             // file d'attente max
 const TTL = 60 * 60 * 24 * 60;       // 60 jours si jamais l'app ne passe pas
+// Kevin fait suivre AUTOMATIQUEMENT *tous* ses mails monaco.mc → factures@kd-mc.com.
+// On ne garde que ce qui ressemble à une facture pour ne pas polluer l'app Finances :
+// un PDF est TOUJOURS gardé (les factures/devis sont des PDF — jamais de faux négatif),
+// une image n'est gardée que si le sujet/expéditeur/nom de fichier contient un mot-clé
+// facture (sinon = logo de signature, bannière newsletter, photo perso → écarté).
+const INVOICE_RE = /(facture|invoice|devis|quote|re[çc]u|receipt|quittance|ticket|comm?ande|order|paiement|payment|abonnement|[ée]ch[ée]ance|note d.honoraire|bon de commande|bill|statement|relev[ée])/i;
 
 /* ------- Parseur MIME minimal (multipart, base64) — pur & testable ------- */
 function headerValue(headers, name) {
@@ -90,9 +96,13 @@ export default {
       const from = (message.from || '').slice(0, 120);
       const subject = (message.headers && message.headers.get && message.headers.get('subject') || '').slice(0, 160);
       const atts = parseMimeAttachments(raw);
+      const invCtx = INVOICE_RE.test(subject + ' ' + from);
       for (const a of atts) {
         const approxBytes = Math.floor(a.b64.length * 0.75);
         if (approxBytes > MAX_ATTACH) continue;
+        // Filtre facture : PDF toujours gardé ; image seulement si mot-clé facture.
+        const isPdf = /pdf/i.test(a.mime || '') || /\.pdf$/i.test(a.filename || '');
+        if (!isPdf && !(invCtx || INVOICE_RE.test(a.filename || ''))) continue;
         let hash = ''; try { hash = await sha256Hex(a.b64); } catch { /* */ }
         const id = (hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)));
         const rec = { from, subject, date: new Date().toISOString(), filename: a.filename, mime: a.mime, b64: a.b64, size: approxBytes, hash, ts: Date.now() };
