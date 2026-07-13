@@ -2091,3 +2091,11 @@ déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomencla
     secret `MONACO_ENC_KEY` est présent (sinon clair dans KV admin-gated).
   - **Action Kevin restante** : entrer ses identifiants sur /setup. (Optionnel : ajouter le secret
     GitHub `MONACO_ENC_KEY` = `openssl rand -base64 32` pour chiffrer le mot de passe.)
+- ✅ **DÉ-RISQUÉ 2026-07-13 (probe SANS mot de passe, vérifié MOI-MÊME via CI, 0 action Kevin)** :
+  endpoint `/probe` (admin-gated) = connexion seule à `mails.monaco.mc:993` puis lecture du greeting.
+  Résultat prouvé dans les logs CI (run 29289156768) :
+  `{"ok":true,"host":"mails.monaco.mc","port":993,"greeting":"* OK [CAPABILITY IMAP4rev1 SASL-IR ... AUTH=PLAIN AUTH=LOGIN] Dovecot ready."}`.
+  ⇒ (1) **Cloudflare autorise la socket IMAPS 993 depuis un Worker** (1ʳᵉ preuve dans ce repo, le repli
+  GitHub-Action-IMAP n'est PAS nécessaire) ; (2) host `mails.monaco.mc` bon (Dovecot) ; (3) `AUTH=PLAIN
+  AUTH=LOGIN` annoncés → le `LOGIN "user" "pass"` du worker marchera. **Il ne reste QUE le mot de passe
+  côté Kevin sur /setup.** Le workflow `deploy-kdmc-monaco.yml` rejoue ce probe à chaque déploiement.
