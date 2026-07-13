@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.276",
+  "softwareVersion": "v1.1.277",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -457,7 +457,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.276';
+const __APEX_CHAT_VERSION__ = 'v1.1.277';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -642,7 +642,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.276</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.277</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -656,7 +656,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.276</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.277</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7571,7 +7571,7 @@ K._renderBubble = function(m, conv, msgs){
             <div style="color:var(--ax-text-2);font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.reply_to.text || '')}</div>
           </div>` : ''}
           ${m.forwarded ? `<div class="forwarded-mark" title="Transféré depuis ${esc(m.forwarded_from_conv || '')}">↗ Transféré</div>` : ''}
-          ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="${K._MEDIA_STYLE};cursor:pointer" loading="lazy" onclick="window.open('${esc(m.image_data)}','_blank')">` : ''}
+          ${m.image_data ? `<img src="${esc(m.image_data)}" alt="${esc(m.alt || 'Image')}" style="${K._MEDIA_STYLE};cursor:pointer" loading="lazy" onload="K._onMediaLoad()" onclick="window.open('${esc(m.image_data)}','_blank')">` : ''}
           ${m.media_url ? K._renderMediaEl(m) : ''}
           ${m.voice_data ? `<div class="voice-player" style="margin-bottom:4px">
             <audio id="aud-${esc(m.id)}" src="${esc(m.voice_data)}" preload="metadata" style="display:none"></audio>
@@ -7613,6 +7613,17 @@ K._renderBubble = function(m, conv, msgs){
 
 // Append incrémental d'une seule bulle dans #chat-msgs (sans re-render complet).
 // Renvoie true si l'append a réussi (vue chat de la bonne conv + conteneur présent).
+// v1.1.277 — garde la vue sur le DERNIER message. La grille défile en bas à
+// l'ouverture, mais les médias (GIF/photo, encore plus grands depuis v1.1.275)
+// finissent de charger APRÈS → le contenu grandit et on n'est plus tout en bas.
+// Solution : fenêtre de « pin » après ouverture + re-scroll à chaque média chargé
+// (et tant qu'on est proche du bas).
+K._pinBottomUntil = 0;
+K._chatToBottom = function(){ const b = document.getElementById('chat-msgs'); if(b) b.scrollTop = b.scrollHeight; };
+K._chatNearBottom = function(px){ const b = document.getElementById('chat-msgs'); return b ? (b.scrollHeight - b.scrollTop - b.clientHeight) < (px || 200) : true; };
+K._onMediaLoad = function(){
+  try{ if(Date.now() < K._pinBottomUntil || K._chatNearBottom(220)) K._chatToBottom(); }catch(_e){ /* best-effort */ }
+};
 K._appendBubble = function(conv, m){
   if(!(K.view === 'chat' && K.viewData?.id === conv.id)) return false;
   const box = document.getElementById('chat-msgs');
@@ -7621,7 +7632,11 @@ K._appendBubble = function(conv, m){
   const sysEmpty = box.querySelector('.msg.system');
   if(sysEmpty && (K.messages[conv.id] || []).length <= 1) sysEmpty.remove();
   if(box.querySelector(`[data-msg-id="${(window.CSS && CSS.escape) ? CSS.escape(m.id) : m.id}"]`)) return true; // déjà rendu
-  const nearBottom = (box.scrollHeight - box.scrollTop - box.clientHeight) < 120;
+  // v1.1.277 — mon propre message → toujours descendre au dernier ; message reçu
+  // → descendre si on lit déjà en bas (seuil élargi). + fenêtre de pin pour que
+  // le média du message reçu garde la vue collée en bas une fois chargé.
+  const isMine = m.from === K.user?.id;
+  const nearBottom = isMine || (box.scrollHeight - box.scrollTop - box.clientHeight) < 200;
   box.insertAdjacentHTML('beforeend', K._renderBubble(m, conv, K.messages[conv.id] || []));
   // v1.1.273 — groupage : si la nouvelle bulle CONTINUE la série (pas grp-start),
   // la bulle précédente n'est plus la dernière → on lui retire sa pointe (grp-end).
@@ -7630,7 +7645,7 @@ K._appendBubble = function(conv, m){
     const nEl = bubbles[bubbles.length-1], pEl = bubbles[bubbles.length-2];
     if(nEl && pEl && !nEl.classList.contains('grp-start')) pEl.classList.remove('grp-end');
   }catch(_g){ /* best-effort */ }
-  if(nearBottom){ box.scrollTop = box.scrollHeight; }   // ne saute pas si l'user lit plus haut
+  if(nearBottom){ box.scrollTop = box.scrollHeight; K._pinBottomUntil = Date.now() + 1200; }   // ne saute pas si l'user lit plus haut
   try{ K._renderStaticWaveforms && K._renderStaticWaveforms(); }catch(_e){_safeCatch('silent',_e)}
   return true;
 };
@@ -7713,7 +7728,11 @@ function renderChat(app){
       </div>
     </div>
   `;
+  K._pinBottomUntil = Date.now() + 1800; // v1.1.277 : garde la vue en bas pendant le chargement des médias
   setTimeout(()=>{const m=$('#chat-msgs');if(m)m.scrollTop=m.scrollHeight;K._renderReplyBanner&&K._renderReplyBanner();K._maybeOfferTldr&&K._maybeOfferTldr(conv.id);K._markConvAsRead&&K._markConvAsRead(conv.id);K._renderStaticWaveforms&&K._renderStaticWaveforms();K._applyConvBackground&&K._applyConvBackground();K._hydrateEncMedia&&K._hydrateEncMedia();if(K._findBarOpen&&K._findQuery){K._findApply(false);}}, 50);
+  // Ré-ancre en bas après le chargement des médias (plusieurs passes courtes).
+  setTimeout(()=>{ if(Date.now() < K._pinBottomUntil) K._chatToBottom && K._chatToBottom(); }, 500);
+  setTimeout(()=>{ if(Date.now() < K._pinBottomUntil) K._chatToBottom && K._chatToBottom(); }, 1200);
   // v1.1.27 : Smart Reply chips si dernier message reçu
   try {
     const msgs = K.messages[K.viewData?.id] || [];
@@ -11381,7 +11400,7 @@ K._renderMediaEl = function(m){
     return `<div class="enc-media" data-enc-url="${esc(m.media_url)}" data-enc-mime="${esc(m.media_type||'')}" data-enc-kind="${kind}" data-enc-conv="${esc(K.viewData.id)}" data-enc-name="${esc(m.media_name||'fichier')}" style="min-width:120px;min-height:60px;display:flex;align-items:center;gap:8px;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:8px 10px;margin-bottom:4px;color:var(--ax-text-3);font-size:.82em">🔒 <span>Média chiffré — déchiffrement…</span></div>`;
   }
   if(t.indexOf('image/') === 0)
-    return `<img src="${esc(src)}" alt="${esc(m.media_name || 'image')}" style="${cap};cursor:pointer" loading="lazy" onclick="window.open('${esc(src)}','_blank')">`;
+    return `<img src="${esc(src)}" alt="${esc(m.media_name || 'image')}" style="${cap};cursor:pointer" loading="lazy" onload="K._onMediaLoad()" onclick="window.open('${esc(src)}','_blank')">`;
   if(t.indexOf('video/') === 0)
     return `<video controls preload="metadata" playsinline src="${esc(src)}" style="${cap};background:#000"></video>`;
   if(t.indexOf('audio/') === 0)
@@ -11409,7 +11428,7 @@ K._hydrateEncMedia = async function(){
       const clearBuf = await K._decryptBytesHeal(convId, encBuf);
       const blobUrl = URL.createObjectURL(new Blob([clearBuf], { type: mime || 'application/octet-stream' }));
       const cap = K._MEDIA_STYLE;
-      if(kind === 'image') el.innerHTML = `<img src="${esc(blobUrl)}" alt="${esc(name)}" style="${cap};cursor:pointer" onclick="window.open('${esc(blobUrl)}','_blank')">`;
+      if(kind === 'image') el.innerHTML = `<img src="${esc(blobUrl)}" alt="${esc(name)}" style="${cap};cursor:pointer" onload="K._onMediaLoad()" onclick="window.open('${esc(blobUrl)}','_blank')">`;
       else if(kind === 'video') el.innerHTML = `<video controls preload="metadata" playsinline src="${esc(blobUrl)}" style="${cap};background:#000"></video>`;
       else if(kind === 'audio') el.innerHTML = `<audio controls preload="metadata" src="${esc(blobUrl)}" style="max-width:260px;display:block"></audio>`;
       else el.innerHTML = `<a href="${esc(blobUrl)}" download="${esc(name)}" style="display:flex;align-items:center;gap:8px;color:var(--ax-text);text-decoration:none">📎 <span>${esc(name)}</span></a>`;
