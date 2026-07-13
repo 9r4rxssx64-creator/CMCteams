@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.269",
+  "softwareVersion": "v1.1.270",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -88,6 +88,7 @@
 <script type="module" src="./lib/privacy-reciprocity.js"></script>
 <script type="module" src="./lib/gif.js"></script>
 <script type="module" src="./lib/visio-mesh.js"></script>
+<script type="module" src="./lib/gesture-core.js"></script>
 <script src="./crypto.js" defer></script>
 <!-- Leaflet (carte temps réel admin) — lazy chargé seulement si admin ouvre la map -->
 <title>Apex Chat — Messagerie privée sécurisée</title>
@@ -309,7 +310,12 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .emoji-cell:active{background:var(--ax-bg-3);transform:scale(.88)}
 .chat-attach.recording{background:#e63946;border-color:#e63946;color:#fff;animation:pulse-rec 1s infinite}
 @keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(230,57,70,.5)}50%{box-shadow:0 0 0 8px rgba(230,57,70,0)}}
-.msg{position:relative;user-select:none;-webkit-user-select:none}
+.msg{position:relative;user-select:none;-webkit-user-select:none;transition:transform .16s cubic-bezier(.2,.8,.3,1)}
+/* v1.1.270 — swipe-to-reply : bulle qui suit le doigt + indicateur ↩ (--sp = progression 0..1) */
+.msg.swiping{transition:none}
+.msg::before{content:'↩';position:absolute;left:-27px;top:50%;transform:translateY(-50%) scale(var(--sp,0));opacity:var(--sp,0);color:var(--ax-gold);font-size:1.05em;pointer-events:none;transition:opacity .12s ease}
+.msg.system::before,.msg.deleted-tombstone::before{content:none}
+@media (prefers-reduced-motion:reduce){.msg{transition:none}}
 .msg-status{font-size:.9em;margin-left:4px;opacity:.7;letter-spacing:-1px}
 .msg-edited{font-size:.85em;margin-left:4px;opacity:.6;font-style:italic}
 .msg.deleted-tombstone{opacity:.55;font-style:italic}
@@ -444,7 +450,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.269';
+const __APEX_CHAT_VERSION__ = 'v1.1.270';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -629,7 +635,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.269</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.270</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -643,7 +649,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.269</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.270</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -6524,15 +6530,31 @@ K._toggleReaction = function(msgId, emoji){
 };
 
 // v1.1.34 — Longpress detection iOS Safari (oncontextmenu pas fiable PWA)
+// v1.1.270 — + « balayer vers la droite pour répondre » (swipe-to-reply,
+// parité WhatsApp). La DÉCISION du geste vient du cœur pur window.ApexGesture
+// (lib/gesture-core.js, couvert 100 %). Ici : écouteurs tactiles + translation
+// de la bulle + indicateur ↩ (variable CSS --sp).
 K._installLongPressOnce = function(){
   if(K._longPressInstalled) return;
   K._longPressInstalled = true;
   let pressTimer = null;
-  let startedAt = 0;
+  let startX = 0, startY = 0, lastDx = 0, lastDy = 0;
+  let tgtEl = null, swiping = false;
+  const G = () => (typeof window !== 'undefined' ? window.ApexGesture : null);
+  const clearBubble = () => {
+    if(tgtEl){
+      tgtEl.classList.remove('swiping');
+      tgtEl.style.transform = '';
+      tgtEl.style.removeProperty('--sp');
+    }
+  };
   document.addEventListener('touchstart', (e) => {
     const tgt = e.target.closest('.msg[data-msg-id]');
     if(!tgt) return;
-    startedAt = Date.now();
+    const t = e.touches && e.touches[0];
+    startX = t ? t.clientX : 0;
+    startY = t ? t.clientY : 0;
+    lastDx = 0; lastDy = 0; tgtEl = tgt; swiping = false;
     pressTimer = setTimeout(() => {
       const id = tgt.getAttribute('data-msg-id');
       if(id){
@@ -6541,10 +6563,40 @@ K._installLongPressOnce = function(){
       }
     }, 500);
   }, { passive: true });
-  const cancel = () => { if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
-  document.addEventListener('touchmove', cancel, { passive: true });
-  document.addEventListener('touchend', cancel, { passive: true });
-  document.addEventListener('touchcancel', cancel, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if(!tgtEl) return;
+    const t = e.touches && e.touches[0];
+    if(t){ lastDx = t.clientX - startX; lastDy = t.clientY - startY; }
+    const g = G();
+    // Dès qu'on glisse (dans n'importe quel sens) → plus d'appui long.
+    if(pressTimer && g && g.shouldCancelLongPress(lastDx, lastDy)){ clearTimeout(pressTimer); pressTimer = null; }
+    if(!g) return;
+    const d = g.swipeReplyDecision(lastDx, lastDy);
+    if(d.rightward && d.horizontal){
+      if(!swiping){ swiping = true; tgtEl.classList.add('swiping'); }
+      tgtEl.style.transform = 'translateX(' + d.translate + 'px)';
+      tgtEl.style.setProperty('--sp', String(d.progress));
+    } else if(swiping){
+      swiping = false; clearBubble();
+    }
+  }, { passive: true });
+
+  const end = () => {
+    if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; }
+    const g = G();
+    if(swiping && tgtEl && g){
+      const d = g.swipeReplyDecision(lastDx, lastDy);
+      const id = tgtEl.getAttribute('data-msg-id');
+      if(d.trigger && id){
+        if('vibrate' in navigator){ try{ navigator.vibrate(12); } catch(_e){_safeCatch('silent',_e)} }
+        K._setReplyTo && K._setReplyTo(id);
+      }
+    }
+    clearBubble(); tgtEl = null; swiping = false;
+  };
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', end, { passive: true });
 };
 // Auto-install au boot
 if(typeof window !== 'undefined' && document.readyState !== 'loading'){
