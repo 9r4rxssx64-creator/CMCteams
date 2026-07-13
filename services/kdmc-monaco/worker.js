@@ -26,7 +26,7 @@
 
 import { connect } from 'cloudflare:sockets';
 import {
-  matchesInvoice, parseMimeAttachments, subjectOf, fromOf,
+  matchesInvoice, parseMimeAttachments, extractBodyText, subjectOf, fromOf,
   imapDate, parseSearchUids, parseTaggedResponse, latin1, imapQuote,
   sha256HexOfB64, sha256Hex, adminOk
 } from './lib.js';
@@ -153,6 +153,7 @@ async function syncOnce(env) {
         const raw = (fr.literals && fr.literals[0]) || '';
         if (raw) {
           const subject = subjectOf(raw), from = fromOf(raw);
+          let storedFile = 0;
           for (const a of parseMimeAttachments(raw)) {
             if (!matchesInvoice(subject, a.filename, from)) continue;
             const approx = Math.floor(a.b64.length * 0.75);
@@ -162,7 +163,24 @@ async function syncOnce(env) {
             if (await env.ACCOUNTS.get('mail:p:' + id)) continue;
             const rec = { from, subject, date: new Date().toISOString(), filename: a.filename, mime: a.mime, b64: a.b64, size: approx, hash, ts: Date.now(), src: 'monaco' };
             await env.ACCOUNTS.put('mail:p:' + id, JSON.stringify(rec), { expirationTtl: TTL });
-            added++;
+            added++; storedFile++;
+          }
+          // La facture est parfois ÉCRITE dans le corps du mail (pas en pièce jointe).
+          // Si aucune pièce jointe utile ET le message ressemble à une facture → on garde le TEXTE.
+          if (!storedFile) {
+            const body = extractBodyText(raw);
+            if (body && body.length > 12 && matchesInvoice(subject, body, from)) {
+              let b64 = ''; try { b64 = btoa(latin1(new TextEncoder().encode(body))); } catch { /* */ }
+              if (b64) {
+                let hash = ''; try { hash = await sha256HexOfB64(b64); } catch { /* */ }
+                const id = hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+                if (!(await env.ACCOUNTS.get('mail:p:' + id))) {
+                  const rec = { from, subject, date: new Date().toISOString(), filename: 'corps-du-mail.txt', mime: 'text/plain', b64, size: body.length, hash, ts: Date.now(), src: 'monaco', body: true };
+                  await env.ACCOUNTS.put('mail:p:' + id, JSON.stringify(rec), { expirationTtl: TTL });
+                  added++;
+                }
+              }
+            }
           }
         }
       } catch { /* message ignoré, jamais bloquant */ }
@@ -224,8 +242,8 @@ function setupPage(host) {
 + '<p class="muted">Tes factures/devis reçus sur <b>Kevind@monaco.mc</b> arriveront tout seuls dans l\'app Finances. Lecture seule, rien n\'est supprimé, rien ne passe par une IA. Le worker se relance seul toutes les 2 h.</p>'
 + '<div class="card"><h2>Tes identifiants Monaco Telecom</h2>'
 + '<label>Ton code admin</label><input id="pin" type="password" inputmode="numeric" placeholder="Code admin">'
-+ '<label>Adresse e-mail monaco.mc</label><input id="user" type="email" autocomplete="username" placeholder="Kevind@monaco.mc">'
-+ '<label>Mot de passe de la boîte mail</label><input id="pass" type="password" autocomplete="current-password" placeholder="mot de passe monaco.mc">'
++ '<label>Adresse e-mail monaco.mc <span style="color:#8aa07f">(à écrire ici)</span></label><input id="user" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ex : prenom@monaco.mc">'
++ '<label>Mot de passe de la boîte mail</label><input id="pass" type="password" autocomplete="current-password" placeholder="•••••• (ton mot de passe)">'
 + '<details><summary>Réglages avancés (serveur IMAP)</summary>'
 + '<label>Serveur IMAP (défaut : ' + H + ')</label><input id="host" placeholder="' + H + '">'
 + '<label>Port (défaut : 993 SSL)</label><input id="port" inputmode="numeric" placeholder="993"></details>'

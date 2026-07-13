@@ -60,6 +60,65 @@ export function parseMimeAttachments(raw) {
   if (boundary) walk(topHeaders, raw.slice(hi + sep.length));
   return out;
 }
+
+/* ---------- corps du mail (texte) — parfois la facture est ÉCRITE dans le message,
+   pas en pièce jointe (Kevin « vérifier partout, même des écrits »). ---------- */
+export function decodeQP(s) {
+  return String(s || '').replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+}
+function charsetOf(headers) { const m = headerValue(headers, 'Content-Type').match(/charset\s*=\s*"?([\w-]+)"?/i); return m ? m[1].toLowerCase() : 'utf-8'; }
+function bytesToStr(byteStr, charset) { try { const s = String(byteStr); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 0xff; return new TextDecoder(charset || 'utf-8', { fatal: false }).decode(u); } catch { return String(byteStr); } }
+function decodeBodyPart(headers, body) {
+  const cte = headerValue(headers, 'Content-Transfer-Encoding').toLowerCase();
+  const cs = charsetOf(headers);
+  if (cte.indexOf('base64') >= 0) { try { return bytesToStr(atob(String(body).replace(/\s/g, '')), cs); } catch { return ''; } }
+  if (cte.indexOf('quoted-printable') >= 0) return bytesToStr(decodeQP(body), cs);
+  return body; // 7bit/8bit : déjà en texte (message.raw décodé en UTF-8 en amont)
+}
+export function htmlToText(h) {
+  return String(h || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<head[\s\S]*?<\/head>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|tr|li|h[1-6]|table)>/gi, '\n').replace(/<\/td>/gi, '\t')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&euro;/gi, '€')
+    .replace(/&(ccedil|eacute|egrave|agrave|ecirc|acirc|icirc|ocirc|ucirc|ugrave|iuml|euml|Eacute|Egrave|Agrave|Ccedil|deg|hellip|rsquo|lsquo|laquo|raquo);/g, (m, e) => ({ ccedil: 'ç', eacute: 'é', egrave: 'è', agrave: 'à', ecirc: 'ê', acirc: 'â', icirc: 'î', ocirc: 'ô', ucirc: 'û', ugrave: 'ù', iuml: 'ï', euml: 'ë', Eacute: 'É', Egrave: 'È', Agrave: 'À', Ccedil: 'Ç', deg: '°', hellip: '…', rsquo: '’', lsquo: '‘', laquo: '«', raquo: '»' }[e] || m))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+    .replace(/[ \t]+/g, ' ').replace(/\n[ \t]+/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+/* Renvoie le texte lisible du corps (préfère text/plain, sinon HTML nettoyé). Ignore les pièces jointes. */
+export function extractBodyText(raw) {
+  raw = String(raw || '');
+  const sep = raw.indexOf('\r\n\r\n') >= 0 ? '\r\n\r\n' : '\n\n';
+  const hi = raw.indexOf(sep);
+  if (hi < 0) return '';
+  const topHeaders = raw.slice(0, hi);
+  let plain = '', html = '';
+  function walk(headers, body) {
+    const bnd = boundaryOf(headers);
+    if (bnd) {
+      for (let p of body.split('--' + bnd)) {
+        p = p.replace(/^\r?\n/, '');
+        if (!p || p === '--' || p.startsWith('--')) continue;
+        const s = p.indexOf('\r\n\r\n') >= 0 ? '\r\n\r\n' : '\n\n';
+        const h = p.indexOf(s);
+        if (h < 0) continue;
+        walk(p.slice(0, h), p.slice(h + s.length));
+      }
+      return;
+    }
+    const ct = headerValue(headers, 'Content-Type').toLowerCase();
+    const cd = headerValue(headers, 'Content-Disposition').toLowerCase();
+    if (cd.indexOf('attachment') >= 0) return; // pièce jointe → gérée ailleurs
+    if (/text\/plain/.test(ct)) plain += (plain ? '\n' : '') + decodeBodyPart(headers, body);
+    else if (/text\/html/.test(ct)) html += (html ? '\n' : '') + decodeBodyPart(headers, body);
+  }
+  const topCt = headerValue(topHeaders, 'Content-Type').toLowerCase();
+  if (boundaryOf(topHeaders)) walk(topHeaders, raw.slice(hi + sep.length));
+  else if (/text\/html/.test(topCt)) html = decodeBodyPart(topHeaders, raw.slice(hi + sep.length));
+  else plain = decodeBodyPart(topHeaders, raw.slice(hi + sep.length));
+  const txt = (plain.trim() || htmlToText(html)).trim();
+  return txt.slice(0, 50000);
+}
 export function topHeadersOf(raw) {
   raw = String(raw || '');
   const sep = raw.indexOf('\r\n\r\n') >= 0 ? '\r\n\r\n' : '\n\n';

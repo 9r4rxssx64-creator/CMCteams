@@ -78,6 +78,61 @@ function parseMimeAttachments(raw) {
   return out;
 }
 
+/* ---- Corps du mail : parfois la facture est ÉCRITE dans le message (pas en PJ) ---- */
+function decodeQP(s) { return String(s || '').replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16))); }
+function charsetOf(headers) { const m = headerValue(headers, 'Content-Type').match(/charset\s*=\s*"?([\w-]+)"?/i); return m ? m[1].toLowerCase() : 'utf-8'; }
+function bytesToStr(byteStr, charset) { try { const s = String(byteStr); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 0xff; return new TextDecoder(charset || 'utf-8', { fatal: false }).decode(u); } catch { return String(byteStr); } }
+function decodeBodyPart(headers, body) {
+  const cte = headerValue(headers, 'Content-Transfer-Encoding').toLowerCase();
+  const cs = charsetOf(headers);
+  if (cte.indexOf('base64') >= 0) { try { return bytesToStr(atob(String(body).replace(/\s/g, '')), cs); } catch { return ''; } }
+  if (cte.indexOf('quoted-printable') >= 0) return bytesToStr(decodeQP(body), cs);
+  return body;
+}
+function htmlToText(h) {
+  return String(h || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<head[\s\S]*?<\/head>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|tr|li|h[1-6]|table)>/gi, '\n').replace(/<\/td>/gi, '\t')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&euro;/gi, '€')
+    .replace(/&(ccedil|eacute|egrave|agrave|ecirc|acirc|icirc|ocirc|ucirc|ugrave|iuml|euml|Eacute|Egrave|Agrave|Ccedil|deg|hellip|rsquo|lsquo|laquo|raquo);/g, (m, e) => ({ ccedil: 'ç', eacute: 'é', egrave: 'è', agrave: 'à', ecirc: 'ê', acirc: 'â', icirc: 'î', ocirc: 'ô', ucirc: 'û', ugrave: 'ù', iuml: 'ï', euml: 'ë', Eacute: 'É', Egrave: 'È', Agrave: 'À', Ccedil: 'Ç', deg: '°', hellip: '…', rsquo: '’', lsquo: '‘', laquo: '«', raquo: '»' }[e] || m))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+    .replace(/[ \t]+/g, ' ').replace(/\n[ \t]+/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function extractBodyText(raw) {
+  raw = String(raw || '');
+  const sep = raw.indexOf('\r\n\r\n') >= 0 ? '\r\n\r\n' : '\n\n';
+  const hi = raw.indexOf(sep);
+  if (hi < 0) return '';
+  const topHeaders = raw.slice(0, hi);
+  let plain = '', html = '';
+  function walk(headers, body) {
+    const bnd = boundaryOf(headers);
+    if (bnd) {
+      for (let p of body.split('--' + bnd)) {
+        p = p.replace(/^\r?\n/, '');
+        if (!p || p === '--' || p.startsWith('--')) continue;
+        const s = p.indexOf('\r\n\r\n') >= 0 ? '\r\n\r\n' : '\n\n';
+        const h = p.indexOf(s);
+        if (h < 0) continue;
+        walk(p.slice(0, h), p.slice(h + s.length));
+      }
+      return;
+    }
+    const ct = headerValue(headers, 'Content-Type').toLowerCase();
+    const cd = headerValue(headers, 'Content-Disposition').toLowerCase();
+    if (cd.indexOf('attachment') >= 0) return;
+    if (/text\/plain/.test(ct)) plain += (plain ? '\n' : '') + decodeBodyPart(headers, body);
+    else if (/text\/html/.test(ct)) html += (html ? '\n' : '') + decodeBodyPart(headers, body);
+  }
+  const topCt = headerValue(topHeaders, 'Content-Type').toLowerCase();
+  if (boundaryOf(topHeaders)) walk(topHeaders, raw.slice(hi + sep.length));
+  else if (/text\/html/.test(topCt)) html = decodeBodyPart(topHeaders, raw.slice(hi + sep.length));
+  else plain = decodeBodyPart(topHeaders, raw.slice(hi + sep.length));
+  return (plain.trim() || htmlToText(html)).trim().slice(0, 50000);
+}
+function b64Utf8(s) { const u = new TextEncoder().encode(s); let bin = ''; for (let i = 0; i < u.length; i++) bin += String.fromCharCode(u[i]); return btoa(bin); }
+
 async function sha256Hex(b64) {
   const bin = atob(b64); const u = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
@@ -97,6 +152,7 @@ export default {
       const subject = (message.headers && message.headers.get && message.headers.get('subject') || '').slice(0, 160);
       const atts = parseMimeAttachments(raw);
       const invCtx = INVOICE_RE.test(subject + ' ' + from);
+      let storedFile = 0;
       for (const a of atts) {
         const approxBytes = Math.floor(a.b64.length * 0.75);
         if (approxBytes > MAX_ATTACH) continue;
@@ -107,6 +163,21 @@ export default {
         const id = (hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)));
         const rec = { from, subject, date: new Date().toISOString(), filename: a.filename, mime: a.mime, b64: a.b64, size: approxBytes, hash, ts: Date.now() };
         await env.ACCOUNTS.put('mail:p:' + id, JSON.stringify(rec), { expirationTtl: TTL });
+        storedFile++;
+      }
+      // Parfois la facture est ÉCRITE dans le corps du mail (pas en PJ) — Kevin « vérifier
+      // partout, même des écrits ». Si aucune PJ utile ET mail type facture → on garde le TEXTE.
+      if (!storedFile) {
+        const body = extractBodyText(raw);
+        if (body && body.length > 12 && (invCtx || INVOICE_RE.test(body))) {
+          let b64 = ''; try { b64 = b64Utf8(body); } catch { /* */ }
+          if (b64) {
+            let hash = ''; try { hash = await sha256Hex(b64); } catch { /* */ }
+            const id = (hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)));
+            const rec = { from, subject, date: new Date().toISOString(), filename: 'corps-du-mail.txt', mime: 'text/plain', b64, size: body.length, hash, ts: Date.now(), body: true };
+            await env.ACCOUNTS.put('mail:p:' + id, JSON.stringify(rec), { expirationTtl: TTL });
+          }
+        }
       }
     } catch { /* fail-safe : ne jamais rejeter le mail */ }
   },
