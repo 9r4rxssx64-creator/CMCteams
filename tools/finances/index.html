@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.6.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.6.0">
+<!-- v0.7.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.7.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -139,11 +139,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.6.0" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.7.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.6.0';
+  var APP_VER = 'v0.7.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -607,7 +607,7 @@
   }
 
   /* ============================ State / Router ============================ */
-  var STATE={ tab:'add', filter:{ month:'', kind:'' } };
+  var STATE={ tab:'add', filter:{ month:'', kind:'' }, bilanQ:'' };
 
   function render(){
     if(!VAULT){ return; }
@@ -620,13 +620,14 @@
       '</div>'+
       '<div class="tabs" id="tabs"></div>'+
       '<div class="wrap" id="view"></div>';
-    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['expert','👔 Expert'],['comptes','🗃️ Comptes'],['compta','📒 Comptabilité'],['compare','💹 Comparateur'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
+    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['bilan','🔎 Bilan'],['expert','👔 Expert'],['comptes','🗃️ Comptes'],['compta','📒 Comptabilité'],['compare','💹 Comparateur'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
     var tb=$('tabs');
     tabs.forEach(function(t){ var b=el('<button class="tab'+(STATE.tab===t[0]?' on':'')+'">'+t[1]+'</button>'); b.onclick=function(){ STATE.tab=t[0]; render(); }; tb.appendChild(b); });
     $('btn-lock').onclick=lockNow;
     var v=$('view');
     if(STATE.tab==='add') viewAdd(v);
     else if(STATE.tab==='dash') viewDash(v);
+    else if(STATE.tab==='bilan') viewBilan(v);
     else if(STATE.tab==='expert') viewExpert(v);
     else if(STATE.tab==='comptes') viewComptes(v);
     else if(STATE.tab==='compta') viewCompta(v);
@@ -920,6 +921,124 @@
     L.push('Engagements (devis acceptés à payer): '+eng.toFixed(0)+' €');
     L.push('Dépenses par catégorie: '+Object.keys(a.byCat).sort(function(x,y){return a.byCat[y]-a.byCat[x];}).slice(0,12).map(function(c){return c+' '+a.byCat[c].toFixed(0)+' €';}).join(' · '));
     try{ var r=await aiCallSmart([{ t:'Tu es un expert-comptable et conseiller financier avec 20 ans d\'expérience. Voici la situation financière de ton client (données anonymisées) :\n\n'+L.join('\n')+'\n\nRédige un BILAN clair et structuré en français : (1) Situation générale (2-3 phrases), (2) Points forts, (3) Points de vigilance / risques (endettement, dépenses qui dérapent, épargne), (4) 4-6 recommandations concrètes et chiffrées (économies possibles, renégociation prêts/assurances, budget), (5) Trésorerie prévisionnelle et conseil d\'épargne. Sois précis, chiffré, pédagogue et bienveillant. Pas de blabla.' }], 1400, 300);
+      outEl.innerHTML='<div style="background:var(--card2);border:1px solid var(--line2);border-radius:12px;padding:13px;white-space:pre-wrap;font-size:13.5px;line-height:1.5">'+esc(r)+'</div>';
+    }catch(e){ outEl.innerHTML='<div style="color:var(--red)">❌ '+esc(e.message||e)+'</div>'; }
+  }
+
+  /* ---------- Vue BILAN (bilan mensuel/annuel sur n'importe quoi : café, Nissan, crédit, lait…) ---------- */
+  var SUBJECT_SYN={
+    'cafe':['cafe','coffee','nespresso','starbucks','costa','columbus','malongo','segafredo','lavazza'],
+    'carburant':['carburant','essence','gasoil','gazole','diesel','sp95','sp98','station','total','esso','shell','avia','tamoil','q8','bp ','petrol'],
+    'courses':['carrefour','leclerc','monoprix','casino ','super u','hyper u','u express','lidl','aldi','intermarche','auchan','geant','supermarche','courses','franprix','spar','proxi','grande epicerie','picard','naturalia'],
+    'credit':['credit','pret','mensualit','echeance','emprunt','sogefinanc','franfinanc','expresso','cofidis','cetelem','financo','sofinco','banque de','remboursement'],
+    'assurance':['assurance','assur','axa','afi esca','maaf','matmut','gmf','allianz','mutuelle','maif','groupama','generali','swisslife','april'],
+    'restaurant':['restaurant','resto','brasserie','pizzeria','mcdo','mcdonald','burger','kfc','uber eats','deliveroo','sushi','snack','trattoria','bistro'],
+    'telephone':['telephone','mobile','forfait','orange','sfr','bouygues','free ','monaco telecom','sosh','red by'],
+    'energie':['edf','engie','energie','electricite','gaz ','smeg','sma ','eau ','veolia','suez'],
+    'sante':['pharmacie','medecin','docteur','dentiste','sante','hopital','clinique','labo','optic','opticien','kine','osteo','vidal'],
+    'nissan':['nissan','navara'],
+    'touareg':['touareg','volkswagen','vw '],
+    'voiture':['garage','pneu','vidange','batterie','frein','plaquette','carrosserie','revision','entretien','remorquage','depannage','auto','nissan','navara','touareg','controle technique','embrayage','courroie','amortisseur'],
+    'lait':['lait','milk','laitier','yaourt','fromage','laiterie'],
+    'loisirs':['loisir','cinema','netflix','spotify','disney','voyage','hotel','sport','abonnement','salle de sport','fitness','deezer','canal'],
+    'impots':['impot','impots','tresor public','fisc','taxe','dgfip','urssaf','contribution'],
+    'banque':['frais','commission','cotisation carte','agios','tenue de compte'],
+    'salaire':['salaire','paie','remuneration','virement salaire','traitement']
+  };
+  function bilanTerms(q){
+    var n=norm(q); if(!n)return [];
+    if(SUBJECT_SYN[n]) return SUBJECT_SYN[n].map(norm);
+    var words=n.split(' ').filter(Boolean), terms=[];
+    words.forEach(function(w){ if(SUBJECT_SYN[w]) terms=terms.concat(SUBJECT_SYN[w].map(norm)); terms.push(w); });
+    /* uniques */
+    var seen={},out=[]; terms.forEach(function(t){ t=t.trim(); if(t&&!seen[t]){seen[t]=1;out.push(t);} });
+    return out;
+  }
+  function bilanMatch(t,terms){ var h=norm((t.label||'')+' '+(t.vendor||'')+' '+(t.category||'')); return terms.some(function(x){ return x && h.indexOf(x)>=0; }); }
+  function bilanCompute(q){
+    var terms=bilanTerms(q);
+    var matched=(VAULT.tx||[]).filter(function(t){ if(t.recDup)return false; if(t.category==='Virements internes')return false; return bilanMatch(t,terms); });
+    var dev=(VAULT.devis||[]).filter(function(d){ return bilanMatch({label:d.label,vendor:d.vendor,category:d.category},terms); });
+    var exp=0,rev=0, byMonth={},byYear={},byVendor={}, units=[];
+    matched.forEach(function(t){ var a=t.amount||0, mk=ym(t.date), yk=ymd(t.date).slice(0,4);
+      if(a<0){ exp+=-a; byMonth[mk]=(byMonth[mk]||0)+(-a); byYear[yk]=(byYear[yk]||0)+(-a); units.push(-a);
+        var vn=t.vendor||t.label||'?'; byVendor[vn]=byVendor[vn]||{s:0,n:0}; byVendor[vn].s+=-a; byVendor[vn].n++; }
+      else rev+=a;
+    });
+    var mks=Object.keys(byMonth).sort(), yrs=Object.keys(byYear).sort();
+    var totalMonths=(months().length)||1;
+    var uMin=units.length?Math.min.apply(null,units):0, uMax=units.length?Math.max.apply(null,units):0, uAvg=units.length?exp/units.length:0;
+    return { q:q, terms:terms, matched:matched, dev:dev, exp:exp, rev:rev, cnt:matched.length,
+      byMonth:byMonth, byYear:byYear, byVendor:byVendor, mks:mks, yrs:yrs, totalMonths:totalMonths,
+      projAnnual:exp/totalMonths*12, uMin:uMin, uMax:uMax, uAvg:uAvg };
+  }
+  function bilanSuggest(){
+    var vend={};
+    (VAULT.tx||[]).forEach(function(t){ if(t.amount>=0||t.recDup||t.category==='Virements internes')return; var v=t.vendor||''; if(v){ vend[v]=vend[v]||{s:0,n:0}; vend[v].s+=-t.amount; vend[v].n++; } });
+    var chips=Object.keys(vend).sort(function(a,b){return vend[b].n-vend[a].n;}).slice(0,6);
+    ['Café','Carburant','Courses','Crédit','Assurance','Restaurant','Nissan','Lait','Santé','Loisirs'].forEach(function(g){ if(chips.map(norm).indexOf(norm(g))<0) chips.push(g); });
+    return chips.slice(0,14);
+  }
+  function barsSvg(entries,color){
+    var data=entries.slice(-12), max=1; data.forEach(function(d){max=Math.max(max,d.val);});
+    var bw=24,gap=16,W=Math.max(300,data.length*(bw+gap)+20),H=150,base=118, s='';
+    data.forEach(function(d,i){ var x=14+i*(bw+gap), h=d.val/max*90;
+      s+='<rect x="'+x+'" y="'+(base-h)+'" width="'+bw+'" height="'+h+'" fill="'+color+'" rx="3"/>';
+      s+='<text x="'+(x+bw/2)+'" y="'+(base+13)+'" text-anchor="middle" fill="#9fb59a" font-size="9">'+esc(d.label)+'</text>';
+      if(d.val>0) s+='<text x="'+(x+bw/2)+'" y="'+(base-h-4)+'" text-anchor="middle" fill="#cfe0c6" font-size="8.5">'+esc(eur0(d.val).replace(/[\s ]?€/,''))+'</text>';
+    });
+    return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Bilan par période"><line x1="10" y1="'+base+'" x2="'+(W-6)+'" y2="'+base+'" stroke="#22331f"/>'+s+'</svg>';
+  }
+  function viewBilan(v){
+    var hasData=(VAULT.tx||[]).length>0, q=STATE.bilanQ||'';
+    var head=el('<div class="card"><h2>🔎 Bilan sur n\'importe quoi<span class="r">café · Nissan · crédit · lait…</span></h2>'+
+      '<p class="tiny">Tape un mot (un fournisseur, un poste, un véhicule, un produit) : je sors le total, le coût par mois, par an, l\'évolution et qui te l\'a facturé.</p>'+
+      '<div class="row" style="margin-top:8px"><input id="bq" class="grow" placeholder="Ex : café, Nissan, crédit, carburant, lait…" value="'+esc(q)+'"><button class="btn gold" id="bgo">Faire le bilan</button></div>'+
+      '<div id="bchips" class="row" style="flex-wrap:wrap;gap:6px;margin-top:10px"></div></div>');
+    v.appendChild(head);
+    var chipsWrap=head.querySelector('#bchips');
+    if(hasData) bilanSuggest().forEach(function(c){ var b=el('<button class="btn sm">'+esc(c)+'</button>'); b.onclick=function(){ STATE.bilanQ=c; render(); }; chipsWrap.appendChild(b); });
+    setTimeout(function(){ var i=$('bq'),g=$('bgo'); if(g)g.onclick=function(){ STATE.bilanQ=(i.value||'').trim(); render(); }; if(i)i.onkeydown=function(e){ if(e.key==='Enter'){ STATE.bilanQ=(i.value||'').trim(); render(); } }; },0);
+    if(!q){ if(!hasData) v.appendChild(el('<div class="card muted" style="text-align:center;padding:24px">Ajoute des relevés / factures, puis fais un bilan sur ce que tu veux (café, voiture, crédit…).</div>')); return; }
+    var R=bilanCompute(q);
+    if(!R.cnt && !R.dev.length){ v.appendChild(el('<div class="card" style="text-align:center;padding:24px"><div style="font-size:32px">🤷</div><p class="muted">Rien trouvé pour « '+esc(q)+' ». Essaie un autre mot (fournisseur, catégorie, produit).</p></div>')); return; }
+    var perMonth=R.totalMonths?R.exp/R.totalMonths:0;
+    var k=el('<div class="card"><h2>📊 « '+esc(q)+' »<span class="r">'+R.cnt+' opération'+(R.cnt>1?'s':'')+'</span></h2>'+
+      '<div class="kpis"><div class="kpi"><div class="k">Total dépensé</div><div class="v neg">'+eur(R.exp)+'</div></div>'+
+      (R.rev>0?'<div class="kpi"><div class="k">Reçu</div><div class="v pos">'+eur(R.rev)+'</div></div>':'')+
+      '<div class="kpi"><div class="k">Par mois (moy.)</div><div class="v">'+eur0(perMonth)+'</div></div>'+
+      '<div class="kpi"><div class="k">Par an (au rythme)</div><div class="v">'+eur0(R.projAnnual)+'</div></div>'+
+      (R.uAvg>0?'<div class="kpi"><div class="k">Prix moyen</div><div class="v">'+eur(R.uAvg)+'</div></div>':'')+'</div>'+
+      '<div class="tiny" style="margin-top:8px">'+(R.uMin!==R.uMax?('Le moins cher : <b>'+eur(R.uMin)+'</b> · le plus cher : <b>'+eur(R.uMax)+'</b>. '):'')+
+      'Sur '+R.totalMonths+' mois de données. À ce rythme, « '+esc(q)+' » te coûte ≈ <b>'+eur0(R.projAnnual)+' / an</b>.</div></div>');
+    v.appendChild(k);
+    var mEntries=R.mks.slice(-12).map(function(m){ return {label:frMonth(m).split(' ')[0], val:R.byMonth[m]}; });
+    if(mEntries.length) v.appendChild(el('<div class="card"><h2>📅 Par mois</h2><div class="svgwrap">'+barsSvg(mEntries,'#e0b64a')+'</div></div>'));
+    if(R.yrs.length){ var yr=R.yrs.map(function(y,i){ var val=R.byYear[y], prev=i>0?R.byYear[R.yrs[i-1]]:null, d=(prev!=null&&prev>0)?((val-prev)/prev*100):null;
+        return '<div class="tx"><div class="ic">📆</div><div class="mid"><div class="lb">'+esc(y)+'</div>'+(d!=null?'<div class="mt">'+(d>=0?'▲ +':'▼ ')+d.toFixed(0)+'% vs '+R.yrs[i-1]+'</div>':'')+'</div><div class="am neg">'+eur(val)+'</div></div>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>📆 Par an</h2>'+yr+'</div>')); }
+    var vk=Object.keys(R.byVendor).sort(function(a,b){return R.byVendor[b].s-R.byVendor[a].s;}).slice(0,8);
+    if(vk.length){ var vr=vk.map(function(vn){ var o=R.byVendor[vn]; return '<div class="tx"><div class="ic">🏷️</div><div class="mid"><div class="lb">'+esc(vn)+'</div><div class="mt">'+o.n+' fois · '+eur0(o.s/o.n)+' en moyenne</div></div><div class="am neg">'+eur(o.s)+'</div></div>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>🏷️ Qui te l\'a facturé</h2>'+vr+'</div>')); }
+    if(R.dev.length){ var dr=R.dev.map(function(d){ return '<div class="tx"><div class="ic">🧾</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">devis '+(devisStatus(d)==='accepte'?'accepté (engagement)':'en attente')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>🧾 Devis liés<span class="r">non comptés</span></h2>'+dr+'</div>')); }
+    var lst=R.matched.slice().sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,20).map(function(t){ return '<div class="tx"><div class="ic">'+catIcon(t.category)+'</div><div class="mid"><div class="lb">'+esc(t.label)+'</div><div class="mt">'+esc(ymd(t.date))+(t.vendor?' · '+esc(t.vendor):'')+'</div></div><div class="am '+(t.amount<0?'neg':'pos')+'">'+eur(t.amount)+'</div></div>'; }).join('');
+    v.appendChild(el('<div class="card"><h2>📋 Les opérations ('+R.cnt+')</h2>'+lst+(R.cnt>20?'<div class="tiny" style="margin-top:6px">+ '+(R.cnt-20)+' autres…</div>':'')+'</div>'));
+    var cAI=el('<div class="card"><h2>🤖 Analyse & conseils</h2><p class="tiny">Un avis chiffré sur ce poste (rythme, est-ce cher, comment payer moins).</p><button class="btn gold grow" id="bai" style="margin-top:8px">💡 Analyser « '+esc(q)+' »</button><div id="bai-out" style="margin-top:10px"></div></div>');
+    v.appendChild(cAI);
+    setTimeout(function(){ var b=$('bai'); if(b)b.onclick=function(){ bilanAI(q,R,$('bai-out')); }; },0);
+  }
+  async function bilanAI(q,R,outEl){
+    if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA (Réglages)',true); STATE.tab='set'; render(); return; }
+    outEl.innerHTML='<div class="muted">⏳ Analyse…</div>';
+    var vk=Object.keys(R.byVendor).sort(function(a,b){return R.byVendor[b].s-R.byVendor[a].s;}).slice(0,6);
+    var L=[];
+    L.push('Sujet: '+q);
+    L.push('Total dépensé: '+R.exp.toFixed(0)+' € sur '+R.cnt+' opérations, '+R.totalMonths+' mois de données.');
+    L.push('Rythme: ≈ '+(R.totalMonths?(R.exp/R.totalMonths).toFixed(0):0)+' €/mois, soit ≈ '+R.projAnnual.toFixed(0)+' €/an. Prix moyen '+R.uAvg.toFixed(2)+' € (min '+R.uMin.toFixed(2)+' / max '+R.uMax.toFixed(2)+').');
+    if(R.yrs.length) L.push('Par an: '+R.yrs.map(function(y){return y+': '+R.byYear[y].toFixed(0)+' €';}).join(' · '));
+    if(vk.length) L.push('Fournisseurs: '+vk.map(function(vn){return stripSecrets(vn)+' '+R.byVendor[vn].s.toFixed(0)+' € ('+R.byVendor[vn].n+'x)';}).join(' ; '));
+    try{ var r=await aiCallSmart([{ t:'Tu es un expert-comptable/conseiller budget. Analyse ce poste de dépense d\'un particulier (données anonymisées) et donne un avis COURT, chiffré et actionnable en français :\n\n'+L.join('\n')+'\n\n1) Ce que ça représente (par mois / par an). 2) Est-ce cher / normal / à optimiser ? 3) 2 à 4 conseils concrets et chiffrés pour payer moins (négociation, regroupement, alternative, fréquence). Direct et bienveillant, sans blabla.' }], 900, 180);
       outEl.innerHTML='<div style="background:var(--card2);border:1px solid var(--line2);border-radius:12px;padding:13px;white-space:pre-wrap;font-size:13.5px;line-height:1.5">'+esc(r)+'</div>';
     }catch(e){ outEl.innerHTML='<div style="color:var(--red)">❌ '+esc(e.message||e)+'</div>'; }
   }
