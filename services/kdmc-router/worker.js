@@ -41,6 +41,10 @@ export default {
     if (url.pathname.startsWith('/__sso/')) return handleSso(request, url, env);
     // Admin domaine (fiches clients + fonctions communes). Réservé admin.
     if (url.pathname.startsWith('/__admin/')) return handleAdmin(request, url, env);
+    // Coffre Finances : sauvegarde EN LIGNE chiffrée de bout en bout. Réservé admin
+    // (même grant que /__admin). Le serveur ne stocke qu'un bloc illisible (AES-GCM
+    // côté client) → même le worker/KV ne peut PAS lire. Cf. tools/finances/.
+    if (url.pathname.startsWith('/__fin/')) return handleFin(request, url, env);
     // Crypto-bot Railway (statut + kill switch). Réservé admin (même grant que /__admin).
     if (url.pathname.startsWith('/__bot/')) return handleBot(request, url, env);
     // Relais Beatbot (contrôle réel du robot piscine) — admin-gated, HTTPS public only, même origine que l'app beatbot.kd-mc.com.
@@ -786,6 +790,45 @@ function botValidateConfig(b) {
   if (!Object.keys(set).length) return { err: 'aucun réglage fourni' };
   return { set };
 }
+/* Coffre Finances — sauvegarde en ligne CHIFFRÉE DE BOUT EN BOUT (admin only).
+   Le client (tools/finances/) chiffre tout en AES-GCM-256 avec le code du coffre AVANT
+   d'envoyer. Le serveur ne voit qu'un bloc {salt,iv,ct} illisible → confidentialité même
+   vis-à-vis du worker/KV. Réutilise le KV ACCOUNTS (clés fin:*) — aucun binding en plus.
+   Réservé admin (adminSession : grant prouvé via /__admin/login, cookie/x-kdmc-admin). */
+async function handleFin(request, url, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  const me = await adminSession(request, env);
+  if (!me) {
+    const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
+    return new Response(JSON.stringify({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }), { status: 403, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+  }
+  if (!env.ACCOUNTS) return J({ ok: false, reason: 'kv_absent' });
+  const path = url.pathname;
+  if (path === '/__fin/vault' && request.method === 'GET') {
+    const blob = await env.ACCOUNTS.get('fin:vault:main');
+    if (!blob) return J({ ok: true, empty: true });
+    let meta = null; try { meta = JSON.parse((await env.ACCOUNTS.get('fin:meta:main')) || 'null'); } catch { /* */ }
+    let parsed = null; try { parsed = JSON.parse(blob); } catch { return J({ ok: false, reason: 'corrupt' }); }
+    return J({ ok: true, blob: parsed, meta });
+  }
+  if (path === '/__fin/meta' && request.method === 'GET') {
+    let meta = null; try { meta = JSON.parse((await env.ACCOUNTS.get('fin:meta:main')) || 'null'); } catch { /* */ }
+    return J({ ok: true, meta });
+  }
+  if (path === '/__fin/vault' && request.method === 'PUT') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    if (!b || !b.blob || !b.blob.ct || !b.blob.salt || !b.blob.iv) return J({ ok: false, reason: 'blob_invalide' });
+    const s = JSON.stringify(b.blob);
+    if (s.length > 20 * 1024 * 1024) return J({ ok: false, reason: 'trop_gros' });
+    const savedAt = b.savedAt || Date.now();
+    await env.ACCOUNTS.put('fin:vault:main', s);
+    await env.ACCOUNTS.put('fin:meta:main', JSON.stringify({ savedAt, size: s.length, tx: b.tx || 0 }));
+    await audLog(env, { ev: 'fin_backup', size: s.length });
+    return J({ ok: true, savedAt });
+  }
+  return new Response(JSON.stringify({ ok: false, reason: 'not_found' }), { status: 404, headers: { 'content-type': 'application/json' } });
+}
+
 async function handleBot(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
   const me = await adminSession(request, env);

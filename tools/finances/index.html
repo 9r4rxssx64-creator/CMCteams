@@ -165,11 +165,11 @@
   }
   /* Catégories PROVISOIRES (éditables) — se calent sur les vrais relevés de Kevin. */
   var DEFAULT_CATS=['Revenus','Logement','Énergie / Eau','Télécom / Internet','Alimentation',
-    'Restaurants / Bars','Transport','Santé','Assurances','Abonnements','Shopping',
+    'Restaurants / Bars','Transport','Véhicule / Réparations','Santé','Assurances','Abonnements','Shopping',
     'Loisirs / Voyages','Retraits espèces','Frais bancaires','Impôts / Taxes',
     'Virements internes','Autres'];
   var CAT_ICON={'Revenus':'💶','Logement':'🏠','Énergie / Eau':'⚡','Télécom / Internet':'📶',
-    'Alimentation':'🛒','Restaurants / Bars':'🍽️','Transport':'🚗','Santé':'💊','Assurances':'🛡️',
+    'Alimentation':'🛒','Restaurants / Bars':'🍽️','Transport':'🚗','Véhicule / Réparations':'🔧','Santé':'💊','Assurances':'🛡️',
     'Abonnements':'🔁','Shopping':'🛍️','Loisirs / Voyages':'✈️','Retraits espèces':'💵',
     'Frais bancaires':'🏦','Impôts / Taxes':'🏛️','Virements internes':'↔️','Autres':'📎'};
   function catIcon(c){ return CAT_ICON[c]||'📎'; }
@@ -182,6 +182,7 @@
     var pack=await encWith(KEY,VAULT);
     localStorage.setItem(LS_VAULT, JSON.stringify({salt:salt, iv:pack.iv, ct:pack.ct, ver:1}));
     if(localStorage.getItem(LS_REMEMBER)==='1'){ try{ var raw=await crypto.subtle.exportKey('raw',KEY); localStorage.setItem(LS_DEV, JSON.stringify({salt:salt,key:b64FromBuf(raw)})); }catch(e){} }
+    scheduleBackup();
   }
   function audit(action,detail){ if(!VAULT)return; VAULT.audit=VAULT.audit||[]; VAULT.audit.unshift({t:Date.now(),a:action,d:detail||''}); if(VAULT.audit.length>300)VAULT.audit.length=300; }
 
@@ -284,6 +285,97 @@
     return (amt>0)?'Revenus':'Autres';
   }
 
+  /* ============================ Import CSV local (fidèle, sans IA) ============================ */
+  function parseFrDate(s){ s=String(s||'').trim();
+    var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+    m=s.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/); if(m){ var y=m[3].length===2?('20'+m[3]):m[3]; return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); }
+    return ymd(s); }
+  function csvCells(l,delim){ var out=[],cur='',q=false; for(var i=0;i<l.length;i++){ var c=l[i];
+    if(q){ if(c==='"'){ if(l[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else { if(c==='"')q=true; else if(c===delim){out.push(cur);cur='';} else cur+=c; } } out.push(cur); return out; }
+  function parseCsvImport(text, name){
+    var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+    if(!lines.length) throw new Error('CSV vide');
+    var delim=(lines[0].split(';').length>=lines[0].split(',').length)?';':',';
+    var header=csvCells(lines[0],delim).map(function(h){return norm(h);});
+    function col(names){ for(var i=0;i<header.length;i++){ for(var j=0;j<names.length;j++){ if(header[i].indexOf(names[j])>=0)return i; } } return -1; }
+    var ci={ date:col(['date']), label:col(['libell','descript','designation','intitul','objet','marchand']),
+      amt:col(['montant','amount','ttc','debit','somme','prix']), cat:col(['categ']), type:col(['type','kind']) };
+    if(ci.amt<0||ci.date<0) throw new Error('CSV : colonnes « Date » et « Montant » requises');
+    var docId=uid(), added=0;
+    for(var r=1;r<lines.length;r++){ var c=csvCells(lines[r],delim); var amt=num(c[ci.amt]); if(amt===null)continue;
+      var lb=(ci.label>=0?(c[ci.label]||''):'').trim()||'(sans libellé)';
+      var rawCat=(ci.cat>=0?(c[ci.cat]||'').trim():''); var cat;
+      if(rawCat){ if(VAULT.categories.indexOf(rawCat)<0)VAULT.categories.push(rawCat); cat=rawCat; }
+      else cat=VAULT.merchantMap[norm(lb)]||cleanCat('',amt);
+      VAULT.tx.unshift({ id:uid(), date:parseFrDate(c[ci.date])||ymd(Date.now()), label:lb, amount:amt,
+        category:cat, docId:docId, kind:(ci.type>=0?((c[ci.type]||'').trim()||'import'):'import'), addedAt:Date.now() });
+      if(cat)VAULT.merchantMap[norm(lb)]=cat; added++;
+    }
+    VAULT.docs.unshift({ id:docId, name:name||'CSV', kind:'import', ftype:'csv', addedAt:Date.now(), bank:'Import CSV', account:'', period:'', count:added });
+    audit('import_csv', (name||'CSV')+' — '+added+' op.');
+    return { added:added, docId:docId, kind:'import' };
+  }
+
+  /* ============================ Sauvegarde EN LIGNE (E2E, admin, temps réel) ============================ */
+  var LS_GRANT='kdmc_admin_grant', _bkTimer=null, _backupState='';
+  function adminGrantTok(){ try{ return localStorage.getItem(LS_GRANT)||''; }catch(e){ return ''; } }
+  async function adminLoginCode(code){
+    try{ var r=await fetch('/__admin/login',{ method:'POST', credentials:'include',
+        headers:{'content-type':'application/json'}, body:JSON.stringify({code:String(code||'')}) });
+      var j=await r.json().catch(function(){return{};});
+      if(j&&j.ok&&j.grant){ try{ localStorage.setItem(LS_GRANT,j.grant); }catch(e){} return {ok:true}; }
+      return {ok:false, reason:(j&&j.reason)||('http_'+r.status)};
+    }catch(e){ return {ok:false, reason:'neterr'}; }
+  }
+  function scheduleBackup(){ if(!VAULT||!VAULT.backupOnline)return; clearTimeout(_bkTimer); _bkTimer=setTimeout(backupPush,6000); }
+  async function backupPush(){
+    if(!VAULT||!VAULT.backupOnline)return; var grant=adminGrantTok(); if(!grant){ _backupState='no_grant'; updateBackupBadge(); return; }
+    var raw=localStorage.getItem(LS_VAULT); if(!raw)return;
+    try{ var pack=JSON.parse(raw);
+      var r=await fetch('/__fin/vault',{ method:'PUT', credentials:'include',
+        headers:{'content-type':'application/json','x-kdmc-admin':grant},
+        body:JSON.stringify({ blob:pack, savedAt:VAULT.savedAt||Date.now(), tx:(VAULT.tx||[]).length }) });
+      _backupState=r.ok?'ok':('http_'+r.status);
+    }catch(e){ _backupState='neterr'; }
+    updateBackupBadge();
+  }
+  async function backupPull(){
+    var grant=adminGrantTok(); if(!grant) return {ok:false,reason:'no_grant'};
+    try{ var r=await fetch('/__fin/vault',{ credentials:'include', headers:{'x-kdmc-admin':grant}, cache:'no-store' });
+      if(!r.ok) return {ok:false,reason:'http_'+r.status};
+      var j=await r.json(); if(!j.ok) return {ok:false,reason:j.reason||'ko'}; if(j.empty) return {ok:false,reason:'empty'};
+      return {ok:true, blob:j.blob, meta:j.meta};
+    }catch(e){ return {ok:false,reason:'neterr'}; }
+  }
+  async function restoreFromCloud(pass){
+    var pr=await backupPull(); if(!pr.ok) throw new Error(pr.reason==='empty'?'aucune sauvegarde en ligne':('cloud : '+pr.reason));
+    var pack=pr.blob; var key;
+    if(KEY && VAULT && VAULT._salt===pack.salt){ key=KEY; }   /* même appareil déjà déverrouillé */
+    else { if(!pass){ var er=new Error('need_pass'); er.needPass=true; throw er; } key=await deriveKey(pass, pack.salt); }
+    var data=await decWith(key,{iv:pack.iv,ct:pack.ct});
+    data._salt=pack.salt; data.backupOnline=true; VAULT=data; KEY=key;
+    localStorage.setItem(LS_VAULT, JSON.stringify({salt:pack.salt, iv:pack.iv, ct:pack.ct, ver:1}));
+    audit('restore_cloud',''); await persist(); return data;
+  }
+  function updateBackupBadge(){ var b=$('bk-state'); if(b)b.textContent=_backupState==='ok'?'🟢 synchronisé':(_backupState==='no_grant'?'🔒 code requis':(_backupState?('🟡 '+_backupState):'…')); }
+
+  /* ============================ Vérification par Claude (export redacté) ============================ */
+  function buildReviewText(){
+    var a=analyze(VAULT.tx||[]); var L=[];
+    L.push('=== VÉRIFICATION FINANCES (à envoyer à Claude) ===');
+    L.push('Opérations: '+(VAULT.tx||[]).length+' · Documents: '+(VAULT.docs||[]).length);
+    L.push('Revenus: '+a.rev.toFixed(2)+' € · Dépenses: '+a.dep.toFixed(2)+' € · Net: '+a.net.toFixed(2)+' € · Épargne: '+a.rate.toFixed(0)+'%');
+    L.push(''); L.push('-- Dépenses par catégorie --');
+    Object.keys(a.byCat).sort(function(x,y){return a.byCat[y]-a.byCat[x];}).forEach(function(c){ L.push(c+': '+a.byCat[c].toFixed(2)+' €'); });
+    L.push(''); L.push('-- Opérations (date | libellé | montant | catégorie) --');
+    (VAULT.tx||[]).slice().sort(function(x,y){return x.date<y.date?-1:1;}).forEach(function(t){ L.push(ymd(t.date)+' | '+stripSecrets(t.label)+' | '+t.amount.toFixed(2)+' € | '+t.category); });
+    return L.join('\n');
+  }
+  function verifyExport(){ var txt=buildReviewText(); dl('verification-finances-'+ymd(Date.now())+'.txt', txt, 'text/plain');
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).catch(function(){}); }
+    toast('🔎 Export vérification prêt (copié + téléchargé) — envoie-le à Claude'); }
+
   /* ============================ Analyse ============================ */
   function activeTx(){
     var f=STATE.filter;
@@ -380,8 +472,8 @@
   function viewAdd(v){
     var aiOn=!!(VAULT.aiPinHash);
     var c1=el('<div class="card"><h2>📎 Ajouter des documents<span class="r">'+(aiOn?'IA activée':'IA à activer')+'</span></h2>'+
-      '<div class="drop" id="drop"><div class="big">📥</div><div style="font-weight:700;color:var(--txt);margin-top:6px">Glisse tes fichiers ici</div>'+
-      '<div class="tiny" style="margin-top:4px">Relevés PDF · Factures · Tickets (photo) · Fiches de paie</div></div>'+
+      '<div class="drop" id="drop"><div class="big">📥</div><div style="font-weight:700;color:var(--txt);margin-top:6px">Glisse tes fichiers ici — plusieurs d\'un coup</div>'+
+      '<div class="tiny" style="margin-top:4px">Relevés PDF · Factures · Tickets (photo) · Fiches de paie · CSV — multi-format, multi-taille</div></div>'+
       '<input type="file" id="file" accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.csv,.txt" multiple style="display:none">'+
       '<div class="row" style="margin-top:10px"><button class="btn grow" id="pick">📄 Choisir des fichiers</button>'+
       '<button class="btn grow" id="cam">📷 Photo (ticket)</button></div>'+
@@ -434,18 +526,29 @@
   function catOptions(sel){ return (VAULT.categories||DEFAULT_CATS).map(function(c){return '<option value="'+esc(c)+'"'+(sel===c?' selected':'')+'>'+catIcon(c)+' '+esc(c)+'</option>';}).join(''); }
 
   async function handleFiles(list){
-    if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA (Réglages)',true); STATE.tab='set'; render(); return; }
-    var files=[].slice.call(list); var stat=$('impstat');
-    var okc=0, err=0;
+    var files=[].slice.call(list); if(!files.length)return;
+    var isLocal=function(f){ return /\.csv$/i.test(f.name); };
+    var isText=function(f){ return /\.txt$/i.test(f.name); };
+    var needAI=files.some(function(f){ return !isLocal(f); });
+    if(needAI && !VAULT.aiPinHash){ toast('Active d\'abord le classement IA (Réglages)',true); STATE.tab='set'; render(); return; }
+    var stat=$('impstat'); var okc=0, err=0, lines=[];
+    function draw(){ if(stat)stat.innerHTML=lines.join(''); }
+    files.forEach(function(f,i){ lines[i]='<div class="doc" id="ip'+i+'"><span>⏳</span><div class="grow" style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(f.name)+'</div></div><span class="tiny">en file…</span></div>'; });
+    draw();
+    function setLine(i,ic,msg,cls){ var e=$('ip'+i); if(e){ e.querySelector('span').textContent=ic; e.querySelector('.tiny').textContent=msg; if(cls)e.style.color=cls; } }
     for(var i=0;i<files.length;i++){
-      if(stat)stat.innerHTML='⏳ Lecture de <b>'+esc(files[i].name)+'</b> ('+(i+1)+'/'+files.length+')…';
-      try{ var r=await importFile(files[i]); okc+=r.added; }
-      catch(e){ err++; toast('❌ '+esc(files[i].name)+' : '+(e.message||e),true); }
+      var f=files[i]; setLine(i,'⏳','lecture…');
+      try{
+        var r;
+        if(isLocal(f)){ r=parseCsvImport(await f.text(), f.name); }
+        else if(isText(f)){ r=await importText(stripSecrets(await f.text()), f.name); }
+        else { if(f.size>30*1024*1024) throw new Error('trop volumineux (>30 Mo) — scinde le PDF'); r=await importFile(f); }
+        okc+=r.added; setLine(i,'✅',r.added+' op.','var(--green)');
+      }catch(e){ err++; setLine(i,'❌',(e.message||String(e)).slice(0,60),'var(--red)'); }
+      await persist();
     }
-    await persist();
-    if(stat)stat.innerHTML='';
-    toast('✅ '+okc+' opérations ajoutées'+(err?(' · '+err+' échec(s)'):''));
-    STATE.tab='dash'; render();
+    toast('✅ '+okc+' opérations ajoutées'+(err?(' · '+err+' échec(s) — voir la liste'):''));
+    if(!err){ STATE.tab='dash'; render(); }
   }
   async function runImport(fn, label){
     if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
@@ -618,12 +721,23 @@
     cl.querySelectorAll('[data-delcat]').forEach(function(b){ b.onclick=function(){ delCat(b.getAttribute('data-delcat')); }; });
     cCat.querySelector('#addcat').onclick=function(){ var n=(cCat.querySelector('#newcat').value||'').trim(); if(!n)return; if((VAULT.categories||DEFAULT_CATS).indexOf(n)<0){ VAULT.categories.push(n); persist(); render(); } };
 
-    /* Export / sauvegarde */
-    var cEx=el('<div class="card"><h2>📥 Export & sauvegarde chiffrée</h2>'+
+    /* Sauvegarde EN LIGNE (temps réel, E2E, admin) */
+    var boOn=!!VAULT.backupOnline;
+    var cBk=el('<div class="card"><h2>☁️ Sauvegarde en ligne<span class="r" id="bk-state">'+(boOn?'temps réel':'inactive')+'</span></h2>'+
+      '<p class="tiny">Chiffrée de bout en bout : le serveur ne stocke qu\'un bloc <b>illisible</b> (seul ton code de coffre déchiffre). Réservé admin. Se met à jour <b>automatiquement</b> à chaque changement → tu retrouves tout sur iPhone et ordi.</p>'+
+      (boOn
+        ? '<div class="row"><button class="btn grow" id="bk-now">↻ Sauvegarder maintenant</button><button class="btn grow" id="bk-pull">☁️ Restaurer depuis le cloud</button></div><button class="btn ghost grow danger" id="bk-off" style="margin-top:8px">Désactiver</button>'
+        : '<button class="btn gold grow" id="bk-on">Activer la sauvegarde en ligne</button>')+
+      '<div id="bk-msg" class="tiny" style="margin-top:8px"></div></div>');
+    v.appendChild(cBk);
+
+    /* Export / sauvegarde fichier + vérification Claude */
+    var cEx=el('<div class="card"><h2>📥 Export & vérification</h2>'+
       '<div class="row"><button class="btn grow" id="csv1">📊 CSV opérations</button><button class="btn grow" id="csv2">📅 CSV synthèse mensuelle</button></div>'+
+      '<button class="btn grow" id="verify" style="margin-top:8px">🔎 Vérifier avec Claude (export à m\'envoyer)</button>'+
       '<div class="sep"></div>'+
-      '<p class="tiny">Sauvegarde chiffrée (fichier <b>.kdmcfin</b>) — à ré-importer sur un autre appareil (chiffré de bout en bout, illisible sans ton code de coffre).</p>'+
-      '<div class="row"><button class="btn gold grow" id="backup">💾 Exporter la sauvegarde chiffrée</button><button class="btn grow" id="restore">📂 Restaurer</button></div>'+
+      '<p class="tiny">Sauvegarde chiffrée (fichier <b>.kdmcfin</b>) — à ré-importer sur un autre appareil (illisible sans ton code de coffre).</p>'+
+      '<div class="row"><button class="btn gold grow" id="backup">💾 Exporter la sauvegarde chiffrée</button><button class="btn grow" id="restore">📂 Restaurer un fichier</button></div>'+
       '<input type="file" id="restorefile" accept=".kdmcfin,application/json" style="display:none"></div>');
     v.appendChild(cEx);
 
@@ -653,9 +767,33 @@
         }catch(e){ msg.style.color='var(--red)'; msg.textContent='❌ '+(e.message||e); }
       };
     }
+    /* online backup wiring */
+    if(boOn){ updateBackupBadge();
+      cBk.querySelector('#bk-now').onclick=async function(){ var m=cBk.querySelector('#bk-msg'); m.textContent='⏳ envoi…'; await backupPush(); m.textContent=(_backupState==='ok'?'✅ sauvegardé en ligne':'⚠️ '+_backupState); };
+      cBk.querySelector('#bk-pull').onclick=async function(){ var m=cBk.querySelector('#bk-msg');
+        if(!confirm('Remplacer les données de cet appareil par la sauvegarde en ligne ?'))return;
+        m.textContent='⏳ restauration…';
+        try{ var d=await restoreFromCloud(); toast('☁️ Restauré ('+(d.tx?d.tx.length:0)+' op.)'); render(); }
+        catch(e){ if(e.needPass){ var p=prompt('Code du coffre de la sauvegarde en ligne :'); if(!p){m.textContent='';return;} try{ var d2=await restoreFromCloud(p); toast('☁️ Restauré'); render(); }catch(e2){ m.textContent='❌ '+(e2.message||'code incorrect'); } } else m.textContent='❌ '+(e.message||e); } };
+      cBk.querySelector('#bk-off').onclick=async function(){ VAULT.backupOnline=false; await persist(); toast('Sauvegarde en ligne désactivée'); render(); };
+    } else {
+      cBk.querySelector('#bk-on').onclick=function(){
+        var m=cBk.querySelector('#bk-msg');
+        m.innerHTML='<div class="row" style="margin-top:6px"><input id="bk-code" type="password" inputmode="numeric" placeholder="Ton code admin" class="grow"><button class="btn gold" id="bk-code-go">OK</button></div>';
+        var go=cBk.querySelector('#bk-code-go'), inp=cBk.querySelector('#bk-code');
+        inp.focus();
+        go.onclick=async function(){ var code=(inp.value||'').trim(); if(!code){return;} go.disabled=true; go.textContent='…';
+          var lr=await adminLoginCode(code);
+          if(!lr.ok){ go.disabled=false; go.textContent='OK'; m.insertAdjacentHTML('beforeend','<div style="color:var(--red);margin-top:6px">❌ '+esc(lr.reason==='code_invalide'?'code incorrect':lr.reason)+'</div>'); return; }
+          VAULT.backupOnline=true; await persist(); await backupPush(); toast('☁️ Sauvegarde en ligne activée'); render();
+        };
+        inp.addEventListener('keydown',function(e){ if(e.key==='Enter')go.onclick(); });
+      };
+    }
     /* export wiring */
     cEx.querySelector('#csv1').onclick=exportOpsCsv;
     cEx.querySelector('#csv2').onclick=exportMonthlyCsv;
+    cEx.querySelector('#verify').onclick=verifyExport;
     cEx.querySelector('#backup').onclick=exportBackup;
     var rf=cEx.querySelector('#restorefile');
     cEx.querySelector('#restore').onclick=function(){ rf.click(); };
@@ -738,11 +876,14 @@
       '<button class="btn gold" id="g-go" style="margin-top:12px;width:100%">'+(existing?'🔓 Déverrouiller':'Créer mon coffre')+'</button>'+
       '<div class="err" id="g-err"></div>'+
       '<label class="toggle"><input type="checkbox" id="g-rem" '+(localStorage.getItem(LS_REMEMBER)!=='0'?'checked':'')+'> Rester déverrouillé sur cet appareil</label>'+
+      '<div class="lk"><a href="#" id="g-cloud">☁️ Restaurer depuis la sauvegarde en ligne</a></div>'+
+      '<div id="g-cloudbox"></div>'+
       '</div></div>';
     var go=$('g-go');
     go.onclick=existing?unlock:createVault;
     $('g-pass').addEventListener('keydown',function(e){ if(e.key==='Enter')go.click(); });
     if(!existing){ $('g-pass2').addEventListener('keydown',function(e){ if(e.key==='Enter')go.click(); }); }
+    $('g-cloud').onclick=function(e){ e.preventDefault(); cloudRestoreFromGate(); };
     setTimeout(function(){ try{$('g-pass').focus();}catch(e){} },80);
   }
   async function createVault(){
@@ -780,12 +921,33 @@
     }catch(e){ return false; }
   }
 
+  async function cloudRestoreFromGate(){
+    var box=$('g-cloudbox'), err=$('g-err');
+    var pass=($('g-pass').value||'').trim();
+    if(!pass){ err.style.color='var(--red)'; err.textContent='Entre d\'abord ton code de coffre ci-dessus.'; return; }
+    box.innerHTML='<div class="row" style="margin-top:8px"><input id="g-acode" type="password" inputmode="numeric" placeholder="Ton code admin" class="grow" autocomplete="off"><button class="btn gold" id="g-acgo">Restaurer</button></div>';
+    var inp=$('g-acode'), b=$('g-acgo'); try{inp.focus();}catch(e){}
+    b.onclick=async function(){
+      var code=(inp.value||'').trim(); if(!code)return; b.disabled=true; b.textContent='…'; err.style.color='var(--dim)'; err.textContent='⏳ connexion…';
+      var lr=await adminLoginCode(code);
+      if(!lr.ok){ b.disabled=false; b.textContent='Restaurer'; err.style.color='var(--red)'; err.textContent='Code admin : '+(lr.reason==='code_invalide'?'incorrect':lr.reason); return; }
+      err.textContent='⏳ restauration…';
+      try{ await restoreFromCloud(pass); toast('☁️ Restauré depuis la sauvegarde en ligne'); render(); }
+      catch(e2){ b.disabled=false; b.textContent='Restaurer'; err.style.color='var(--red)'; err.textContent='❌ '+(e2.message==='need_pass'?'code de coffre incorrect':(e2.message||e2)); }
+    };
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter')b.onclick(); });
+  }
+
   /* ============================ Boot ============================ */
   (async function boot(){
     if(!(window.crypto&&crypto.subtle)){ $('app').innerHTML='<div class="gate"><div class="card"><div class="ic">🔒</div><h2>Navigateur non sécurisé</h2><p>Ouvre cette page en HTTPS (chiffrement requis).</p></div></div>'; return; }
     if(await tryAutoUnlock()){ render(); return; }
     showGate();
   })();
+
+  /* Sauvegarde en ligne « temps réel » : pousse aussi au retour au premier plan. */
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible' && VAULT && VAULT.backupOnline) backupPush(); });
+  window.addEventListener('focus',function(){ if(VAULT && VAULT.backupOnline) backupPush(); });
 })();
 </script>
 </body>
