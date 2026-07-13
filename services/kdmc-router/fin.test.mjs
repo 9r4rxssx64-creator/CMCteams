@@ -6,7 +6,12 @@
 import mod from './worker.js';
 import { createHash } from 'crypto';
 const store = new Map();
-const ACCOUNTS = { get: async (k) => (store.has(k) ? store.get(k) : null), put: async (k, v) => { store.set(k, v); }, delete: async (k) => { store.delete(k); } };
+const ACCOUNTS = {
+  get: async (k) => (store.has(k) ? store.get(k) : null),
+  put: async (k, v) => { store.set(k, v); },
+  delete: async (k) => { store.delete(k); },
+  list: async ({ prefix } = {}) => ({ keys: [...store.keys()].filter((k) => !prefix || k.startsWith(prefix)).map((name) => ({ name })), list_complete: true, cursor: null }),
+};
 const CODE = '200807';
 const HASH = createHash('sha256').update(CODE).digest('hex');
 const env = { KDMC_SSO_SECRET: 'sec', KDMC_ADMIN_PIN_SHA256: HASH, ACCOUNTS };
@@ -57,6 +62,27 @@ ok(r.status === 403, 'grant falsifié → 403');
 // 8. meta endpoint
 r = await mod.fetch(REQ({ path: '/__fin/meta', headers: H }), env); j = await r.json();
 ok(j.ok && j.meta && j.meta.tx === 42, 'GET /__fin/meta → méta');
+
+// ===== /__mail/* (récupération auto des factures par mail) =====
+// 9. Sans grant → 403
+r = await mod.fetch(REQ({ path: '/__mail/scan' }), env);
+ok(r.status === 403, 'GET /__mail/scan sans code → 403');
+
+// 10. scan vide
+r = await mod.fetch(REQ({ path: '/__mail/scan', headers: H }), env); j = await r.json();
+ok(j.ok && Array.isArray(j.items) && j.items.length === 0, 'scan (vide) → items:[]');
+
+// 11. le worker mail dépose une pièce jointe → scan la renvoie (avec id + b64)
+const ATT = { from: 'kevin@x.com', subject: 'Facture', filename: 'facture.pdf', mime: 'application/pdf', b64: 'JVBERi0=', hash: 'abc', ts: 1 };
+store.set('mail:p:abc', JSON.stringify(ATT));
+r = await mod.fetch(REQ({ path: '/__mail/scan', headers: H }), env); j = await r.json();
+ok(j.ok && j.items.length === 1 && j.items[0].id === 'abc' && j.items[0].b64 === 'JVBERi0=' && j.items[0].filename === 'facture.pdf', 'scan → pièce jointe restituée (id + b64 + nom)');
+
+// 12. ack supprime la pièce
+r = await mod.fetch(REQ({ path: '/__mail/ack', method: 'POST', headers: H, body: JSON.stringify({ ids: ['abc'] }) }), env); j = await r.json();
+ok(j.ok && j.deleted === 1 && !store.has('mail:p:abc'), 'ack → pièce supprimée du KV');
+r = await mod.fetch(REQ({ path: '/__mail/scan', headers: H }), env); j = await r.json();
+ok(j.ok && j.items.length === 0, 'après ack : file vide');
 
 console.log((fail ? '❌ ' + fail + ' échec(s)' : '✅ fin.test : ' + pass + ' OK'));
 process.exit(fail ? 1 : 0);
