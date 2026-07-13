@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.272",
+  "softwareVersion": "v1.1.273",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -276,6 +276,11 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
   line-height:1.28;font-size:.9em;position:relative}
 .msg.me{background:var(--ax-gold);color:var(--ax-bg);align-self:flex-end;border-bottom-right-radius:5px}
 .msg.them{background:var(--ax-bg-3);color:var(--ax-text);align-self:flex-start;border-bottom-left-radius:5px}
+/* v1.1.273 — groupage WhatsApp : espace avant une nouvelle série ; pointe (coin
+   biseauté) seulement sur la DERNIÈRE bulle d'une série d'un même expéditeur. */
+.msg.grp-start{margin-top:8px}
+.msg.me:not(.grp-end){border-bottom-right-radius:15px}
+.msg.them:not(.grp-end){border-bottom-left-radius:15px}
 .msg-time{color:var(--ax-text-3);font-size:.6em;margin-top:1px;text-align:right;line-height:1}
 .msg.them .msg-time{color:var(--ax-text-3)}
 .msg.system{align-self:center;background:rgba(106,138,255,.12);color:var(--ax-blue);
@@ -451,7 +456,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.272';
+const __APEX_CHAT_VERSION__ = 'v1.1.273';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -636,7 +641,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.272</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.273</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -650,7 +655,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.272</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.273</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7521,11 +7526,23 @@ function renderChats(app){
 // images base64 + re-parser tout le markdown de l'historique à chaque message.
 K._renderBubble = function(m, conv, msgs){
   const isMine = m.from === K.user.id;
+  // v1.1.273 — groupage des bulles façon WhatsApp : espace réduit entre messages
+  // consécutifs du même expéditeur, pointe (coin) seulement sur la DERNIÈRE.
+  let grpCls = '';
+  try{
+    if(window.ApexGrouping && Array.isArray(msgs)){
+      const i = msgs.indexOf(m);
+      let prev = null, next = null;
+      if(i >= 0){ prev = i > 0 ? msgs[i-1] : null; next = i < msgs.length-1 ? msgs[i+1] : null; }
+      else { prev = msgs.length ? msgs[msgs.length-1] : null; } // append : m arrive après tous
+      grpCls = window.ApexGrouping.groupClass(prev, m, next);
+    }
+  }catch(_g){ /* groupage best-effort, jamais bloquant */ }
   const readStatus = isMine ? K._isMsgRead(conv.id, m.id, msgs) : null;
   const foreignLang = !isMine && m.text ? K._detectLang(m.text) : null;
   const scamReason = !isMine && m.text ? K._detectScam(m.text) : null;
   return `
-        <div class="msg ${isMine ? 'me' : 'them'}${m.deleted ? ' deleted-tombstone' : ''}${K._selectedMsgs && K._selectedMsgs.has(m.id) ? ' msg-selected' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')" onclick="if(K._selectedMsgs && K._selectedMsgs.size > 0){event.stopPropagation();K._toggleSelectMsg('${esc(m.id)}')}">
+        <div class="msg ${isMine ? 'me' : 'them'}${grpCls}${m.deleted ? ' deleted-tombstone' : ''}${K._selectedMsgs && K._selectedMsgs.has(m.id) ? ' msg-selected' : ''}" data-msg-id="${esc(m.id)}" oncontextmenu="event.preventDefault();K._openReactionPicker('${esc(m.id)}')" onclick="if(K._selectedMsgs && K._selectedMsgs.size > 0){event.stopPropagation();K._toggleSelectMsg('${esc(m.id)}')}">
           ${m.reply_to ? `<div class="reply-quote" onclick="K._scrollToMsg('${esc(m.reply_to.id)}')">
             <div style="color:var(--ax-gold);font-size:.72em;font-weight:600">↩ ${esc(m.reply_to.from_name || '')}</div>
             <div style="color:var(--ax-text-2);font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.reply_to.text || '')}</div>
@@ -7583,6 +7600,13 @@ K._appendBubble = function(conv, m){
   if(box.querySelector(`[data-msg-id="${(window.CSS && CSS.escape) ? CSS.escape(m.id) : m.id}"]`)) return true; // déjà rendu
   const nearBottom = (box.scrollHeight - box.scrollTop - box.clientHeight) < 120;
   box.insertAdjacentHTML('beforeend', K._renderBubble(m, conv, K.messages[conv.id] || []));
+  // v1.1.273 — groupage : si la nouvelle bulle CONTINUE la série (pas grp-start),
+  // la bulle précédente n'est plus la dernière → on lui retire sa pointe (grp-end).
+  try{
+    const bubbles = box.querySelectorAll('.msg[data-msg-id]');
+    const nEl = bubbles[bubbles.length-1], pEl = bubbles[bubbles.length-2];
+    if(nEl && pEl && !nEl.classList.contains('grp-start')) pEl.classList.remove('grp-end');
+  }catch(_g){ /* best-effort */ }
   if(nearBottom){ box.scrollTop = box.scrollHeight; }   // ne saute pas si l'user lit plus haut
   try{ K._renderStaticWaveforms && K._renderStaticWaveforms(); }catch(_e){_safeCatch('silent',_e)}
   return true;
