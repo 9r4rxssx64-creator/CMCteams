@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.270",
+  "softwareVersion": "v1.1.271",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -224,11 +224,12 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
   border-bottom:1px solid var(--ax-border);cursor:pointer;border-radius:var(--ax-radius-sm)}
 .conv-list .conv-item:hover{background:var(--ax-bg-2)}
 .conv-list .conv-item:active{background:var(--ax-bg-3)}
-.conv-name{font-weight:600;color:var(--ax-text)}
+.conv-name{font-weight:600;color:var(--ax-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .conv-last{color:var(--ax-text-2);font-size:.85em;line-height:1.3;
   display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .conv-time{color:var(--ax-text-3);font-size:.72em;margin-left:auto;min-width:50px;text-align:right}
-.conv-unread{background:var(--ax-gold);color:var(--ax-bg);font-size:.7em;padding:2px 6px;border-radius:8px;font-weight:700}
+/* v1.1.271 — badge non-lus : pastille ronde propre (parité WhatsApp), accent doré (marque) */
+.conv-unread{display:inline-flex;align-items:center;justify-content:center;background:var(--ax-gold);color:var(--ax-bg);font-size:.72em;min-width:20px;height:20px;padding:0 6px;border-radius:10px;font-weight:700;margin-top:4px}
 
 /* ========== Chat view ========== */
 /* v1.1.186 — densité max : en-tête compact (nom sur 1 ligne), bulles serrées */
@@ -450,7 +451,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.270';
+const __APEX_CHAT_VERSION__ = 'v1.1.271';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -635,7 +636,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.270</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.271</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -649,7 +650,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.270</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.271</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -7440,13 +7441,20 @@ function renderChats(app){
       <div class="conv-list">
         ${convs.map(c => {
           const draft = K._loadDraft(c.id);
+          // v1.1.271 — photo réelle du contact dans la liste (parité WhatsApp).
+          // La machinerie d'avatar (cache + TTL) existe déjà (v1.1.268) : on la
+          // réutilise. Le fetch est dédupé par TTL → « presque temps réel »,
+          // sans rafales réseau ni scintillement (leçon #94).
+          const peerId = c.peer_id || (Array.isArray(c.members) ? c.members.find(m => m !== K.user?.id) : null);
+          if(peerId && K._fetchPeerAvatar) K._fetchPeerAvatar(peerId);
+          const av = (peerId && K._getAvatar) ? K._getAvatar(peerId) : '';
+          const online = (() => {
+            const p = peerId && K._presenceState && K._presenceState[peerId];
+            return (p && p.status === 'online') ? ' avatar-online' : '';
+          })();
           return `
           <div class="conv-item" onclick="K.openConv('${esc(c.id)}')" oncontextmenu="event.preventDefault();K._openConvActionsMenu('${esc(c.id)}',event)">
-            <div class="avatar${(() => {
-              const peerId = c.peer_id || (Array.isArray(c.members) ? c.members.find(m => m !== K.user?.id) : null);
-              const p = peerId && K._presenceState && K._presenceState[peerId];
-              return (p && p.status === 'online') ? ' avatar-online' : '';
-            })()}">${esc((K._convName(c) || '?')[0].toUpperCase())}</div>
+            <div class="avatar${online}">${av ? `<img src="${esc(av)}" alt="">` : esc((K._convName(c) || '?')[0].toUpperCase())}</div>
             <div style="flex:1;min-width:0">
               <div class="conv-name">${c.pinned ? '📌 ' : ''}${c.muted ? '🔕 ' : ''}${K._isSnoozed && K._isSnoozed(c.id) ? '💤 ' : ''}${esc(K._convName(c))}</div>
               <div class="conv-last">${(() => {
