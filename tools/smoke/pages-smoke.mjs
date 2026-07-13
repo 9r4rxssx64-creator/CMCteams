@@ -23,6 +23,16 @@ const TARGETS = [
     mustHave: ['#map', '.leaflet-container'],
     kpis: [],
   },
+  {
+    // App Finances de Kevin (coffre chiffré privé) — servie sur le sous-domaine cmcteams.
+    // Smoke = la page est bien déployée et BOOTE proprement : l'écran de coffre (gate)
+    // s'affiche, 0 exception JS. On ne déverrouille pas (aucun code en clair en CI).
+    url: 'https://cmcteams.kd-mc.com/tools/finances/',
+    title: /Finances/i,
+    mustHave: ['.gate', '#g-go'],
+    kpis: [],
+    map: false,
+  },
 ];
 
 const browser = await chromium.launch();
@@ -35,7 +45,7 @@ for (const t of TARGETS) {
   const warns = [];  // bruit console toléré (CORS de sources de repli optionnelles, etc.)
   page.on('pageerror', (e) => errs.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') warns.push(m.text()); });
-  const url = BASE + t.path;
+  const url = t.url || (BASE + t.path);
   const res = { url, ok: true, notes: [] };
   try {
     const resp = await page.goto(url, { waitUntil: 'load', timeout: 45000 });
@@ -50,14 +60,16 @@ for (const t of TARGETS) {
       if (!found) { res.ok = false; res.notes.push('MANQUE ' + sel); }
     }
 
-    // tuiles de carte réellement chargées (network réel sur le runner)
-    const tiles = await page.$$eval('.leaflet-tile-loaded, img.leaflet-tile', (els) => els.length).catch(() => 0);
-    res.notes.push('tuiles carte: ' + tiles);
-    if (tiles === 0) res.notes.push('⚠ aucune tuile chargée');
+    if (t.map !== false) {
+      // tuiles de carte réellement chargées (network réel sur le runner)
+      const tiles = await page.$$eval('.leaflet-tile-loaded, img.leaflet-tile', (els) => els.length).catch(() => 0);
+      res.notes.push('tuiles carte: ' + tiles);
+      if (tiles === 0) res.notes.push('⚠ aucune tuile chargée');
 
-    // marqueurs (circleMarkers = paths svg)
-    const markers = await page.$$eval('.leaflet-overlay-pane svg path', (els) => els.length).catch(() => 0);
-    res.notes.push('marqueurs: ' + markers);
+      // marqueurs (circleMarkers = paths svg)
+      const markers = await page.$$eval('.leaflet-overlay-pane svg path', (els) => els.length).catch(() => 0);
+      res.notes.push('marqueurs: ' + markers);
+    }
 
     // compteurs live peuplés (pas tous "—")
     const kvals = [];
