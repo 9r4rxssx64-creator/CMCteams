@@ -196,6 +196,18 @@ async function testConnect(env) {
   } finally { await c.close(); }
 }
 
+// Probe SANS identifiants : prouve que CF peut ouvrir la socket IMAPS + le host,
+// en lisant juste le greeting « * OK ... ». Sert à dé-risquer avant que Kevin
+// saisisse quoi que ce soit (leçon #97 : erreur exacte).
+async function probeConnect(host, port) {
+  const h = host || DEFAULT_HOST, pt = port || DEFAULT_PORT;
+  const c = await imapClient(h, pt);
+  try {
+    const greet = await c.readLine();
+    return { ok: /\*\s*(OK|PREAUTH)/i.test(greet), host: h, port: pt, greeting: greet.slice(0, 160) };
+  } finally { await c.close(); }
+}
+
 /* ---------- page /setup ---------- */
 function setupPage(host) {
   const H = host || DEFAULT_HOST;
@@ -266,6 +278,14 @@ export default {
         if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
         try { return J(await testConnect(env)); }
         catch (e) { return J({ ok: false, reason: 'socket', detail: String(e && e.message || e) }); }
+      }
+      if (p === '/probe' && request.method === 'POST') {
+        if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
+        let b = {}; try { b = await request.json(); } catch { /* body optionnel */ }
+        const host = String(b.host || '').trim() || undefined;
+        const port = parseInt(b.port, 10) || undefined;
+        try { return J(await probeConnect(host, port)); }
+        catch (e) { return J({ ok: false, reason: 'socket', detail: String(e && e.message || e), host: host || DEFAULT_HOST, port: port || DEFAULT_PORT }); }
       }
       if (p === '/sync' && request.method === 'POST') {
         if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
