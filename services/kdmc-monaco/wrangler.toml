@@ -10,10 +10,10 @@ workers_dev = true
 binding = "ACCOUNTS"
 id = "8cfa33a28ac045adb7b7a9556ca8a073"
 
-# Récupération automatique des nouvelles factures Monaco Telecom (IMAP incrémental)
-# toutes les 2 h.
-[triggers]
-crons = ["0 */2 * * *"]
+# NB : pas de [triggers] cron ici — le compte Cloudflare est déjà au max de 5 crons
+# (code 10072). La synchro automatique toutes les 2 h est déclenchée par la
+# GitHub Action .github/workflows/monaco-sync.yml (curl /sync), qui ne consomme
+# aucun cron Cloudflare. Le handler scheduled() du worker reste (inoffensif).
 
 # Secrets injectés par deploy-kdmc-monaco.yml :
 #   KDMC_ADMIN_PIN_SHA256 = sha256(code admin) → protège /setup, /config, /test, /sync
