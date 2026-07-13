@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.7.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.7.0">
+<!-- v0.8.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.8.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -139,11 +139,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.7.0" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.7.0';
+  var APP_VER = 'v0.8.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -389,28 +389,50 @@
   /* Le worker "kdmc-mail" reçoit les mails envoyés/transférés à factures@kd-mc.com (Cloudflare Email
      Routing), extrait les pièces jointes PDF/photo et les met en attente. Ici on les récupère (admin),
      on les classe (IA), on dédoublonne, puis on acquitte. Les originaux sont conservés (chiffrés). */
-  async function mailScan(statEl){
-    if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
-    var grant=adminGrantTok(); if(!grant){ toast('Active la sauvegarde en ligne (code admin) d\'abord',true); STATE.tab='set'; render(); return; }
-    function say(m){ if(statEl)statEl.textContent=m; }
-    say('📧 Recherche de factures dans tes mails…');
+  /* Cœur partagé : récupère les pièces en attente, les importe, dédoublonne, acquitte. */
+  async function _mailPull(onProgress){
+    if(!VAULT||!VAULT.aiPinHash) return {ok:false,reason:'no_ai'};
+    var grant=adminGrantTok(); if(!grant) return {ok:false,reason:'no_grant'};
     var list;
     try{ var r=await fetch('/__mail/scan',{ headers:{'x-kdmc-admin':grant}, cache:'no-store' });
-      if(!r.ok){ say('❌ mails : HTTP '+r.status); return; } var j=await r.json();
-      if(!j.ok){ say('❌ '+(j.reason||'erreur')); return; } list=j.items||[];
-    }catch(e){ say('❌ réseau'); return; }
-    if(!list.length){ say('✅ Aucune nouvelle pièce jointe (rien à importer).'); return; }
-    var okc=0, devc=0, dupc=0, err=0, ackIds=[];
-    for(var i=0;i<list.length;i++){ var it=list[i]; say('⏳ '+(i+1)+'/'+list.length+' — '+(it.filename||'pièce jointe'));
+      if(!r.ok) return {ok:false,reason:'http_'+r.status};
+      var j=await r.json(); if(!j.ok) return {ok:false,reason:j.reason||'erreur'}; list=j.items||[];
+    }catch(e){ return {ok:false,reason:'network'}; }
+    if(!list.length) return {ok:true,okc:0,devc:0,dupc:0,err:0,count:0};
+    var okc=0,devc=0,dupc=0,err=0,ackIds=[];
+    for(var i=0;i<list.length;i++){ var it=list[i]; if(onProgress)onProgress(i+1,list.length,it);
       try{ var res=await importBytes(it.b64, it.mime||'application/pdf', it.filename||('mail-'+(it.id||i)), {src:'mail:'+(it.from||'')});
         if(res.dup)dupc++; else { okc+=res.added; if(res.devis)devc+=res.devis; } ackIds.push(it.id); await persist();
       }catch(e){ err++; }
     }
     if(ackIds.length){ try{ await fetch('/__mail/ack',{ method:'POST', headers:{'content-type':'application/json','x-kdmc-admin':grant}, body:JSON.stringify({ids:ackIds}) }); }catch(e){} }
-    var rm=dedupeAll(); await persist();
-    say('✅ Mails importés : '+okc+' op.'+(devc?(' · '+devc+' devis'):'')+(dupc?(' · '+dupc+' doublon(s) ignoré(s)'):'')+(err?(' · '+err+' échec'):''));
-    toast('📧 '+okc+' opérations + '+devc+' devis depuis tes mails');
-    setTimeout(function(){ STATE.tab=(okc===0&&devc>0)?'devis':'dash'; render(); }, 1200);
+    dedupeAll(); await persist();
+    return {ok:true,okc:okc,devc:devc,dupc:dupc,err:err,count:list.length};
+  }
+  async function mailScan(statEl){
+    if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
+    if(!adminGrantTok()){ toast('Active la sauvegarde en ligne (code admin) d\'abord',true); STATE.tab='set'; render(); return; }
+    function say(m){ if(statEl)statEl.textContent=m; }
+    say('📧 Recherche de factures dans tes mails…');
+    var res=await _mailPull(function(i,n,it){ say('⏳ '+i+'/'+n+' — '+(it.filename||'pièce jointe')); });
+    if(!res.ok){ say('❌ '+(res.reason==='network'?'réseau':res.reason)); return; }
+    if(!res.count){ say('✅ Aucune nouvelle pièce jointe (rien à importer).'); return; }
+    say('✅ Mails importés : '+res.okc+' op.'+(res.devc?(' · '+res.devc+' devis'):'')+(res.dupc?(' · '+res.dupc+' doublon(s) ignoré(s)'):'')+(res.err?(' · '+res.err+' échec'):''));
+    toast('📧 '+res.okc+' opérations + '+res.devc+' devis depuis tes mails');
+    setTimeout(function(){ STATE.tab=(res.okc===0&&res.devc>0)?'devis':'dash'; render(); }, 1200);
+  }
+  /* Auto-récupération SILENCIEUSE : au boot, au retour au 1er plan, et toutes les 5 min.
+     Aucun geste requis — dès qu'une facture arrive à factures@kd-mc.com, elle rentre toute seule. */
+  var _mailAutoTs=0, _mailAutoBusy=false;
+  async function mailAutoScan(force){
+    if(_mailAutoBusy) return; if(!VAULT||!VAULT.aiPinHash||!adminGrantTok()) return;
+    var now=Date.now(); if(!force && now-_mailAutoTs<120000) return; _mailAutoTs=now; _mailAutoBusy=true;
+    try{ var res=await _mailPull(null);
+      if(res && res.ok && (res.okc||res.devc)){
+        toast('📧 '+res.okc+' facture(s)'+(res.devc?(' + '+res.devc+' devis'):'')+' récupérée(s) automatiquement');
+        render();
+      }
+    }catch(e){}finally{ _mailAutoBusy=false; }
   }
   function finishImport(out, name, ftype, hash, srcMeta){
     var j=extractJson(out); if(!j) throw new Error('Réponse IA illisible');
@@ -497,7 +519,7 @@
     try{ var r=await fetch('/__admin/login',{ method:'POST', credentials:'include',
         headers:{'content-type':'application/json'}, body:JSON.stringify({code:String(code||'')}) });
       var j=await r.json().catch(function(){return{};});
-      if(j&&j.ok&&j.grant){ try{ localStorage.setItem(LS_GRANT,j.grant); }catch(e){} return {ok:true}; }
+      if(j&&j.ok&&j.grant){ try{ localStorage.setItem(LS_GRANT,j.grant); }catch(e){} try{ setTimeout(function(){ mailAutoScan(true); },500); }catch(e){} return {ok:true}; }
       return {ok:false, reason:(j&&j.reason)||('http_'+r.status)};
     }catch(e){ return {ok:false, reason:'neterr'}; }
   }
@@ -663,9 +685,9 @@
     v.appendChild(c1);
 
     /* Récupération auto depuis les mails */
-    var cMail=el('<div class="card"><h2>📧 Mes factures par mail<span class="r">auto</span></h2>'+
-      '<p class="tiny">Transfère (ou fais suivre automatiquement) tes factures et devis à <b>factures@kd-mc.com</b> : je récupère les pièces jointes, je les classe et je les range — sans doublon.</p>'+
-      '<button class="btn grow" id="mail-scan">📥 Récupérer mes factures reçues par mail</button>'+
+    var cMail=el('<div class="card"><h2>📧 Mes factures par mail<span class="r">🟢 automatique</span></h2>'+
+      '<p class="tiny">Tout ce qui arrive à <b>factures@kd-mc.com</b> rentre <b>tout seul</b> : pièces jointes récupérées, classées, rangées, sans doublon — à l\'ouverture de l\'app et toutes les 5 min. Rien à faire.</p>'+
+      '<button class="btn grow" id="mail-scan">📥 Vérifier maintenant (facultatif)</button>'+
       '<div id="mail-stat" class="tiny" style="margin-top:8px"></div></div>');
     v.appendChild(cMail);
     setTimeout(function(){ var b=$('mail-scan'); if(b)b.onclick=function(){ mailScan($('mail-stat')); }; },0);
@@ -1616,13 +1638,15 @@
   /* ============================ Boot ============================ */
   (async function boot(){
     if(!(window.crypto&&crypto.subtle)){ $('app').innerHTML='<div class="gate"><div class="card"><div class="ic">🔒</div><h2>Navigateur non sécurisé</h2><p>Ouvre cette page en HTTPS (chiffrement requis).</p></div></div>'; return; }
-    if(await tryAutoUnlock()){ render(); return; }
+    if(await tryAutoUnlock()){ render(); mailAutoScan(true); return; }
     showGate();
   })();
 
-  /* Sauvegarde en ligne « temps réel » : pousse aussi au retour au premier plan. */
-  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible' && VAULT && VAULT.backupOnline) backupPush(); });
-  window.addEventListener('focus',function(){ if(VAULT && VAULT.backupOnline) backupPush(); });
+  /* Sauvegarde en ligne + récupération auto des factures : au retour au premier plan. */
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); } });
+  window.addEventListener('focus',function(){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); });
+  /* Filet : re-vérifie les nouvelles factures toutes les 5 min tant que l'app est ouverte. */
+  setInterval(function(){ if(document.visibilityState==='visible') mailAutoScan(); }, 5*60*1000);
 })();
 </script>
 </body>
