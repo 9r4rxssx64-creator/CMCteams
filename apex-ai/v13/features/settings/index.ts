@@ -76,6 +76,22 @@ export async function wireVoiceSection(rootEl: HTMLElement): Promise<void> {
       });
     }
 
+    /* 2026-07-10 — toggle Mémoire compacte (faits durables, sans clé ni coût IA). */
+    const cmemInput = rootEl.querySelector<HTMLInputElement>('#ax-settings-cmem');
+    if (cmemInput) {
+      void import('../../services/ai/compact-memory.js').then(({ compactMemory }) => {
+        cmemInput.checked = compactMemory.isEnabled();
+      });
+      activeSettingsScope!.bind(cmemInput, 'change', () => {
+        void (async () => {
+          const { compactMemory } = await import('../../services/ai/compact-memory.js');
+          compactMemory.enable(cmemInput.checked);
+          const { toast } = await import('../../ui/toast.js');
+          toast.success(cmemInput.checked ? '⚡ Mémoire compacte activée' : 'Mémoire compacte désactivée');
+        })();
+      });
+    }
+
     if (!listEl) return;
 
     /* Init auto-read toggle */
@@ -245,6 +261,10 @@ export function render(rootEl: HTMLElement): void {
         <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;margin:0 0 10px;cursor:pointer">
           <span class="ax-gs-164">Mémoire long terme — Apex se souvient de tes échanges</span>
           <input type="checkbox" id="ax-settings-rag" aria-label="Activer la mémoire long terme d'Apex (RAG)" class="ax-gs-439">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;margin:0 0 10px;cursor:pointer">
+          <span class="ax-gs-164">Mémoire compacte — faits durables, sans coût (0 clé, 0 token)</span>
+          <input type="checkbox" id="ax-settings-cmem" aria-label="Activer la mémoire compacte d'Apex" class="ax-gs-439">
         </label>
         <div id="ax-memory-bridge-status" class="ax-gs-438"></div>
         <button class="ax-btn ax-btn-secondary" id="ax-memory-bridge-sync" style="${btnFullWidthStyle};background:rgba(160,96,255,0.15);color:var(--ax-purple);border:1px solid rgba(160,96,255,0.3)">🔄 Sync maintenant</button>

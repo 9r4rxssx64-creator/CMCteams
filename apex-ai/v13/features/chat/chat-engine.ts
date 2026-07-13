@@ -322,6 +322,14 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
     const memBlock = await apexMemoryRag.recallBlock(text);
     if (memBlock) sysPrompt = `${sysPrompt}\n\n${memBlock}`;
   } catch { /* fail-open : prompt inchangé */ }
+  /* 2026-07-10 (Kevin « augmente au max ta mémoire en consommant le minimum ») — mémoire
+   * compacte : magasin illimité (GitHub raw, sans clé), on n'injecte que les faits durables
+   * pertinents. DÉFAUT OFF (flag apex_v13_compact_mem) → '' = 0 impact. Fail-open, sans coût IA. */
+  try {
+    const { compactMemory } = await import('../../services/ai/compact-memory.js');
+    const cBlock = await compactMemory.recallBlock(text);
+    if (cBlock) sysPrompt = `${sysPrompt}\n\n${cBlock}`;
+  } catch { /* fail-open : prompt inchangé */ }
   /* v13.4.273 (Kevin "tout soit bien en place avec eco token") :
    * mesure latence client-side du premier au dernier chunk pour badge UI. */
   const streamT0 = Date.now();
