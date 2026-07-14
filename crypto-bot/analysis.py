@@ -150,7 +150,8 @@ def rating(h, l, c):
 
 
 def main():
-    raw = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_SYMBOLS
+    # argv[1] peut être une chaîne VIDE (workflow_dispatch sans input) → repli défaut
+    raw = (sys.argv[1] if len(sys.argv) > 1 else "").strip() or DEFAULT_SYMBOLS
     symbols = [s.strip().upper() for s in raw.split(",") if s.strip()]
     print(f"══ ANALYSE EXPERT — {len(symbols)} cryptos, vraies bougies Binance ({BASE}) ══\n")
     for sym in symbols:
