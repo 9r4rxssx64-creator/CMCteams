@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.10.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.10.0">
+<!-- v0.11.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.11.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.10.0" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.11.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.10.0';
+  var APP_VER = 'v0.11.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -208,7 +208,7 @@
     VAULT.docs=(VAULT.docs||[]).filter(function(x){return x.id!==docId;});
     VAULT.tx=(VAULT.tx||[]).filter(function(t){return t.docId!==docId;});
     VAULT.devis=(VAULT.devis||[]).filter(function(x){return x.docId!==docId;});
-    try{ await idbDel('doc:'+docId); }catch(e){}
+    try{ await idbDel('doc:'+docId); await idbDel('thumb:'+docId); }catch(e){}
     audit('suppression', d.name); await persist(); toast('🗑 Supprimé — ne reviendra plus'); render();
   }
   /* Ménage en 1 tap : supprime d'un coup les documents qui ne portent AUCUNE opération ni devis
@@ -222,7 +222,7 @@
     if(!confirm('🧹 Supprimer '+list.length+' document(s) sans aucune opération ni devis (pubs, newsletters…) ?\n\nIls ne seront JAMAIS ré-importés.'))return;
     for(var i=0;i<list.length;i++){ var dd=list[i];
       if(dd.hash)skipHash(dd.hash);
-      try{ await idbDel('doc:'+dd.id); }catch(e){}
+      try{ await idbDel('doc:'+dd.id); await idbDel('thumb:'+dd.id); }catch(e){}
     }
     var ids={}; list.forEach(function(dd){ids[dd.id]=1;});
     VAULT.docs=(VAULT.docs||[]).filter(function(x){return !ids[x.id];});
@@ -393,6 +393,53 @@
     }
     if(pdf.numPages>maxPages) box.appendChild(el('<div class="tiny" style="text-align:center;padding:6px">… '+(pdf.numPages-maxPages)+' page(s) de plus — bouton Télécharger pour tout voir.</div>'));
   }
+
+  /* ===== MINIATURES de documents — un vrai visuel partout (image / 1ʳᵉ page du PDF),
+     générées à la demande, chiffrées et mises en cache (idb 'thumb:<id>'), file séquentielle. ===== */
+  var _thumbCache={}, _thumbQueue=Promise.resolve();
+  function _imgThumbFromBlob(blob){ return new Promise(function(res){ var u=URL.createObjectURL(blob); var im=new Image();
+    im.onload=function(){ try{ var w=Math.min(192,im.width||192), h=Math.max(1,Math.round((im.height||1)/(im.width||1)*w));
+      var cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(im,0,0,w,h);
+      res(cv.toDataURL('image/jpeg',0.72)); }catch(e){ res(null); } URL.revokeObjectURL(u); };
+    im.onerror=function(){ URL.revokeObjectURL(u); res(null); }; im.src=u; }); }
+  async function _pdfThumbFromBytes(bytes){
+    var lib=await _loadPdfjs();
+    var copy=(bytes instanceof Uint8Array)?bytes.slice(0):new Uint8Array(bytes.slice(0));
+    var pdf=await lib.getDocument({ data:copy }).promise;
+    var page=await pdf.getPage(1);
+    var v0=page.getViewport({scale:1}); var vp=page.getViewport({scale:192/v0.width});
+    var cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
+    await page.render({ canvasContext:cv.getContext('2d'), viewport:vp }).promise;
+    var out=cv.toDataURL('image/jpeg',0.75);
+    try{ pdf.destroy(); }catch(e){}
+    return out;
+  }
+  async function _makeDocThumb(docId){
+    if(_thumbCache[docId]!==undefined)return _thumbCache[docId];
+    try{ var pk=await idbGet('thumb:'+docId); if(pk){ var dt=await decWith(KEY,pk); _thumbCache[docId]=dt.data||null; return _thumbCache[docId]; } }catch(e){}
+    var out=null;
+    try{ var pack=await idbGet('doc:'+docId);
+      if(pack){ var d=await decWith(KEY,pack); var bytes=bufFromB64(d.data);
+        if(/^image\//.test(d.mime||'')) out=await _imgThumbFromBlob(new Blob([bytes],{type:d.mime}));
+        else if(d.mime==='application/pdf'||/\.pdf$/i.test(d.name||'')) out=await _pdfThumbFromBytes(bytes);
+      }
+    }catch(e){ out=null; }
+    _thumbCache[docId]=out;
+    if(out){ try{ await idbSet('thumb:'+docId, await encWith(KEY,{data:out})); }catch(e){} }
+    return out;
+  }
+  /* Vignette CLIQUABLE (tap → aperçu du document). size = largeur px. */
+  function docThumbEl(doc, size){
+    size=size||64;
+    var box=el('<div style="width:'+size+'px;height:'+Math.round(size*1.3)+'px;flex:0 0 '+size+'px;border-radius:9px;border:1px solid var(--line);background:#0c120c;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer" title="Voir le document"><span style="font-size:'+Math.round(size/2.4)+'px">'+kindIcon(doc.kind)+'</span></div>');
+    if(doc.hasFile){
+      box.onclick=function(e){ e.stopPropagation(); openDoc(doc.id); };
+      _thumbQueue=_thumbQueue.then(function(){ return _makeDocThumb(doc.id).then(function(durl){
+        if(durl && box.isConnected){ box.innerHTML='<img src="'+durl+'" style="width:100%;height:100%;object-fit:cover;object-position:top" alt="'+esc(doc.name||'document')+'">'; }
+      }); }).catch(function(){});
+    } else { box.style.cursor='default'; box.style.opacity='.55'; }
+    return box;
+  }
   function closeDocOverlay(){ var o=$('docov'); if(o)o.remove(); if(_docUrl){ try{URL.revokeObjectURL(_docUrl);}catch(e){} _docUrl=''; } }
   async function openDoc(docId){
     try{
@@ -445,10 +492,12 @@
     if(!list.length) box.appendChild(el('<div class="muted" style="text-align:center;padding:26px">Aucune opération.</div>'));
     list.slice(0,300).forEach(function(t){
       var doc=(VAULT.docs||[]).filter(function(d){return d.id===t.docId;})[0];
-      var row=el('<div class="tx" style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:7px"><div class="ic">'+catIcon(t.category)+'</div>'+
-        '<div class="mid" style="min-width:0"><div class="lb">'+esc(t.label)+'</div>'+
-        '<div class="mt">'+esc(ymd(t.date))+' · '+esc(t.category)+(doc?' · 📄 '+esc(String(doc.name).slice(0,24)):'')+'</div></div>'+
-        '<div class="am '+(t.amount<0?'neg':'pos')+'">'+(t.amount<0?'':'+')+eur(t.amount)+'</div></div>');
+      var row=el('<div class="tx" style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:7px;align-items:flex-start"></div>');
+      if(doc&&doc.hasFile){ row.appendChild(docThumbEl(doc,48)); }
+      else row.appendChild(el('<div class="ic">'+catIcon(t.category)+'</div>'));
+      row.appendChild(el('<div class="mid" style="min-width:0"><div class="lb">'+esc(t.label)+'</div>'+
+        '<div class="mt">'+esc(ymd(t.date))+' · '+esc(t.category)+(doc?' · 📄 '+esc(String(doc.name).slice(0,24)):'')+'</div></div>'));
+      row.appendChild(el('<div class="am '+(t.amount<0?'neg':'pos')+'">'+(t.amount<0?'':'+')+eur(t.amount)+'</div>'));
       var acts=el('<div class="row" style="margin-top:6px;gap:6px"></div>');
       if(doc&&doc.hasFile){ var vb=el('<button class="btn sm">🖨️ Voir la facture</button>'); vb.onclick=function(){ openDoc(t.docId); }; acts.appendChild(vb); }
       var db=el('<button class="btn sm danger">🗑</button>');
@@ -991,7 +1040,7 @@
     VAULT.docs=VAULT.docs.filter(function(d){return d.id!==id;});
     VAULT.tx=VAULT.tx.filter(function(t){return t.docId!==id;});
     VAULT.devis=(VAULT.devis||[]).filter(function(d){return d.docId!==id;});
-    idbDel('doc:'+id);
+    idbDel('doc:'+id); idbDel('thumb:'+id);
     audit('suppr_doc',id); await persist(); render();
   }
 
@@ -1030,13 +1079,16 @@
     }
     v.appendChild(filterBar());
     var txs=activeTx(); var a=analyze(txs);
-    /* KPIs */
+    /* KPIs — cliquables : le chiffre ouvre les opérations derrière */
     var k=el('<div class="card"><div class="kpis">'+
-      '<div class="kpi"><div class="k">Revenus</div><div class="v pos">'+eur(a.rev)+'</div></div>'+
-      '<div class="kpi"><div class="k">Dépenses</div><div class="v neg">'+eur(a.dep)+'</div></div>'+
+      '<div class="kpi" data-k="rev" style="cursor:pointer"><div class="k">Revenus 👆</div><div class="v pos">'+eur(a.rev)+'</div></div>'+
+      '<div class="kpi" data-k="dep" style="cursor:pointer"><div class="k">Dépenses 👆</div><div class="v neg">'+eur(a.dep)+'</div></div>'+
       '<div class="kpi"><div class="k">Solde net</div><div class="v '+(a.net>=0?'pos':'neg')+'">'+eur(a.net)+'</div></div>'+
       '<div class="kpi"><div class="k">Taux d\'épargne</div><div class="v '+(a.rate>=0?'pos':'neg')+'">'+(a.rate).toFixed(0)+'%</div></div>'+
       '</div>'+(a.internal>0?'<div class="tiny" style="margin-top:8px">↔️ '+eur(a.internal)+' de virements internes neutralisés (non comptés).</div>':'')+'</div>');
+    k.querySelectorAll('[data-k]').forEach(function(x){ x.onclick=function(){
+      var kind=x.getAttribute('data-k');
+      drillTx(kind==='rev'?'💰 Revenus':'💸 Dépenses', txs.filter(function(t){ if(t.recDup||t.category==='Virements internes')return false; return kind==='rev'?t.amount>0:t.amount<0; })); }; });
     v.appendChild(k);
     /* Alertes */
     var al=alerts(txs,a);
@@ -1044,9 +1096,11 @@
     /* Répartition catégories */
     var cats=Object.keys(a.byCat).sort(function(x,y){return a.byCat[y]-a.byCat[x];});
     if(cats.length){
-      var cc=el('<div class="card"><h2>🧩 Dépenses par catégorie<span class="r">'+eur0(a.dep)+'</span></h2>'+donutSvg(a.byCat,a.dep)+'</div>');
+      var cc=el('<div class="card"><h2>🧩 Dépenses par catégorie<span class="r">'+eur0(a.dep)+'</span></h2>'+donutSvg(a.byCat,a.dep)+'<div class="tiny" style="margin-bottom:6px">👆 Touche une catégorie pour voir ses opérations et factures.</div></div>');
       cats.forEach(function(c){ var val=a.byCat[c], pct=a.dep>0?(val/a.dep*100):0;
-        cc.appendChild(el('<div class="catrow"><div class="h"><b>'+catIcon(c)+' '+esc(c)+'</b><span class="amt">'+eur(val)+' · '+pct.toFixed(0)+'%</span></div><div class="bar"><i style="width:'+pct.toFixed(1)+'%;background:'+catColor(c)+'"></i></div></div>')); });
+        var cr=el('<div class="catrow" style="cursor:pointer"><div class="h"><b>'+catIcon(c)+' '+esc(c)+'</b><span class="amt">'+eur(val)+' · '+pct.toFixed(0)+'%</span></div><div class="bar"><i style="width:'+pct.toFixed(1)+'%;background:'+catColor(c)+'"></i></div></div>');
+        cr.onclick=function(){ drillTx(catIcon(c)+' '+c, txs.filter(function(t){return t.category===c&&t.amount<0&&!t.recDup;})); };
+        cc.appendChild(cr); });
       v.appendChild(cc);
     }
     /* Évolution mensuelle */
@@ -1055,14 +1109,15 @@
     /* Abonnements */
     var subs=subscriptions();
     if(subs.length){ var totm=subs.reduce(function(s,x){return s+x.avg;},0);
-      var cs=el('<div class="card"><h2>🔁 Abonnements & récurrences<span class="r">≈ '+eur(totm)+' / mois</span></h2></div>');
-      subs.slice(0,12).forEach(function(s){ cs.appendChild(el('<div class="tx"><div class="ic">'+catIcon(s.cat)+'</div><div class="mid"><div class="lb">'+esc(s.label)+'</div><div class="mt">'+esc(s.cat)+' · '+s.n+' fois / '+s.months+' mois</div></div><div class="am neg">'+eur(s.avg)+'</div></div>')); });
+      var cs=el('<div class="card"><h2>🔁 Abonnements & récurrences<span class="r">≈ '+eur(totm)+' / mois</span></h2><p class="tiny">👆 Touche une ligne pour chaque prélèvement et sa facture.</p></div>');
+      subs.slice(0,12).forEach(function(s){ var sr=el('<div class="tx" style="cursor:pointer"><div class="ic">'+catIcon(s.cat)+'</div><div class="mid"><div class="lb">'+esc(s.label)+'</div><div class="mt">'+esc(s.cat)+' · '+s.n+' fois / '+s.months+' mois</div></div><div class="am neg">'+eur(s.avg)+'</div></div>');
+        sr.onclick=function(){ drillByKey('🔁 '+s.label, s.key); }; cs.appendChild(sr); });
       v.appendChild(cs);
     }
-    /* Top dépenses */
+    /* Top dépenses — chaque ligne cliquable → facture */
     var top=topExpenses(txs,10);
-    if(top.length){ var ct=el('<div class="card"><h2>🔥 Top 10 des plus grosses dépenses</h2></div>');
-      top.forEach(function(t){ ct.appendChild(txRow(t,true)); }); v.appendChild(ct); }
+    if(top.length){ var ct=el('<div class="card"><h2>🔥 Top 10 des plus grosses dépenses</h2><p class="tiny">👆 Touche une dépense pour sa facture.</p></div>');
+      top.forEach(function(t){ var rr=txRow(t,true); rr.style.cursor='pointer'; rr.onclick=function(){ drillTx('🔥 '+(t.vendor||t.label), [t]); }; ct.appendChild(rr); }); v.appendChild(ct); }
   }
   function donutSvg(byCat,total){
     if(!total)return '';
@@ -1240,13 +1295,16 @@
       var p=$('sy-print'); if(p)p.onclick=function(){ try{window.print();}catch(e){ toast('Impression indisponible ici — utilise 📊 CSV',true); } };
       var c=$('sy-csv'); if(c)c.onclick=function(){ exportSynthese(yr); }; },0);
 
-    /* ---- Synthèse générale ---- */
-    v.appendChild(el('<div class="card"><h2>Σ Synthèse générale</h2>'+
-      '<div class="kpis"><div class="kpi"><div class="k">Revenus</div><div class="v pos">'+eur0(a.rev)+'</div></div>'+
-      '<div class="kpi"><div class="k">Dépenses</div><div class="v neg">'+eur0(a.dep)+'</div></div>'+
+    /* ---- Synthèse générale (KPIs cliquables) ---- */
+    var cG=el('<div class="card"><h2>Σ Synthèse générale</h2>'+
+      '<div class="kpis"><div class="kpi" data-k="rev" style="cursor:pointer"><div class="k">Revenus 👆</div><div class="v pos">'+eur0(a.rev)+'</div></div>'+
+      '<div class="kpi" data-k="dep" style="cursor:pointer"><div class="k">Dépenses 👆</div><div class="v neg">'+eur0(a.dep)+'</div></div>'+
       '<div class="kpi"><div class="k">Résultat</div><div class="v '+(a.net>=0?'pos':'neg')+'">'+eur0(a.net)+'</div></div>'+
       '<div class="kpi"><div class="k">Taux d\'épargne</div><div class="v '+(rate>=0?'pos':'neg')+'">'+rate+'%</div></div></div>'+
-      '<div class="tiny" style="margin-top:8px">Moyennes sur '+nm+' mois : revenus <b>'+eur0(a.rev/nm)+'</b>/mois · dépenses <b>'+eur0(a.dep/nm)+'</b>/mois · flux net <b>'+eur0(a.net/nm)+'</b>/mois. Virements internes neutralisés ('+eur0(a.internal)+').</div></div>'));
+      '<div class="tiny" style="margin-top:8px">Moyennes sur '+nm+' mois : revenus <b>'+eur0(a.rev/nm)+'</b>/mois · dépenses <b>'+eur0(a.dep/nm)+'</b>/mois · flux net <b>'+eur0(a.net/nm)+'</b>/mois. Virements internes neutralisés ('+eur0(a.internal)+').</div></div>');
+    cG.querySelectorAll('[data-k]').forEach(function(x){ x.onclick=function(){ var kk=x.getAttribute('data-k');
+      drillTx(kk==='rev'?'💰 Revenus — '+period:'💸 Dépenses — '+period, d.txs.filter(function(t){ if(t.recDup||t.category==='Virements internes')return false; return kk==='rev'?t.amount>0:t.amount<0; })); }; });
+    v.appendChild(cG);
 
     /* ---- Tableau MENSUEL (avec Δ dépenses, cumul, 👑/⚠️) ---- */
     var best=null,worst=null; mks.forEach(function(m){ var n=a.byMonth[m].rev-a.byMonth[m].dep; if(best===null||n>a.byMonth[best].rev-a.byMonth[best].dep)best=m; if(worst===null||n<a.byMonth[worst].rev-a.byMonth[worst].dep)worst=m; });
@@ -1281,12 +1339,18 @@
     var fixes=subs.filter(function(s){return !isLoanLbl(s);}); var loans=detectLoans();
     var fixesM=fixes.reduce(function(s,x){return s+x.avg;},0), loansM=loans.reduce(function(s,x){return s+x.avg;},0);
     var revM=a.rev/nm, resteVivre=revM-fixesM-loansM;
-    v.appendChild(el('<div class="card"><h2>⚖️ Fixe vs variable</h2>'+
-      '<div class="kpis"><div class="kpi"><div class="k">Charges fixes /mois</div><div class="v">'+eur0(fixesM)+'</div></div>'+
-      '<div class="kpi"><div class="k">Crédits /mois</div><div class="v">'+eur0(loansM)+'</div></div>'+
+    var cFV=el('<div class="card"><h2>⚖️ Fixe vs variable</h2>'+
+      '<div class="kpis"><div class="kpi" data-fv="fixes" style="cursor:pointer"><div class="k">Charges fixes /mois 👆</div><div class="v">'+eur0(fixesM)+'</div></div>'+
+      '<div class="kpi" data-fv="loans" style="cursor:pointer"><div class="k">Crédits /mois 👆</div><div class="v">'+eur0(loansM)+'</div></div>'+
       '<div class="kpi"><div class="k">Reste à vivre /mois</div><div class="v '+(resteVivre>=0?'pos':'neg')+'">'+eur0(resteVivre)+'</div></div>'+
       '<div class="kpi"><div class="k">Poids fixe+crédit</div><div class="v">'+(revM>0?Math.round((fixesM+loansM)/revM*100):0)+'%</div></div></div>'+
-      '<div class="tiny" style="margin-top:8px">Reste à vivre = revenus moyens − charges fixes − crédits. Repère expert : fixe+crédit ≤ 50% des revenus'+(revM>0&&(fixesM+loansM)/revM>0.5?' — <b style="color:var(--red)">dépassé, vigilance</b>.':' ✓.')+'</div></div>'));
+      '<div class="tiny" style="margin-top:8px">Reste à vivre = revenus moyens − charges fixes − crédits. Repère expert : fixe+crédit ≤ 50% des revenus'+(revM>0&&(fixesM+loansM)/revM>0.5?' — <b style="color:var(--red)">dépassé, vigilance</b>.':' ✓.')+'</div></div>');
+    cFV.querySelectorAll('[data-fv]').forEach(function(x){ x.onclick=function(){
+      var grp=x.getAttribute('data-fv')==='fixes'?fixes:loans;
+      var keys={}; grp.forEach(function(s){ keys[s.key]=1; });
+      drillTx(x.getAttribute('data-fv')==='fixes'?'⚖️ Charges fixes — chaque prélèvement':'🏦 Crédits — chaque échéance',
+        d.txs.filter(function(t){ return t.amount<0 && !t.recDup && keys[txKey4(t)]; })); }; });
+    v.appendChild(cFV);
 
     /* ---- Abonnements & charges fixes détaillés ---- */
     if(fixes.length){
@@ -1460,12 +1524,22 @@
         return '<div class="tx"><div class="ic">📆</div><div class="mid"><div class="lb">'+esc(y)+'</div>'+(d!=null?'<div class="mt">'+(d>=0?'▲ +':'▼ ')+d.toFixed(0)+'% vs '+R.yrs[i-1]+'</div>':'')+'</div><div class="am neg">'+eur(val)+'</div></div>'; }).join('');
       v.appendChild(el('<div class="card"><h2>📆 Par an</h2>'+yr+'</div>')); }
     var vk=Object.keys(R.byVendor).sort(function(a,b){return R.byVendor[b].s-R.byVendor[a].s;}).slice(0,8);
-    if(vk.length){ var vr=vk.map(function(vn){ var o=R.byVendor[vn]; return '<div class="tx"><div class="ic">🏷️</div><div class="mid"><div class="lb">'+esc(vn)+'</div><div class="mt">'+o.n+' fois · '+eur0(o.s/o.n)+' en moyenne</div></div><div class="am neg">'+eur(o.s)+'</div></div>'; }).join('');
-      v.appendChild(el('<div class="card"><h2>🏷️ Qui te l\'a facturé</h2>'+vr+'</div>')); }
-    if(R.dev.length){ var dr=R.dev.map(function(d){ return '<div class="tx"><div class="ic">🧾</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">devis '+(devisStatus(d)==='accepte'?'accepté (engagement)':'en attente')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>'; }).join('');
-      v.appendChild(el('<div class="card"><h2>🧾 Devis liés<span class="r">non comptés</span></h2>'+dr+'</div>')); }
-    var lst=R.matched.slice().sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,20).map(function(t){ return '<div class="tx"><div class="ic">'+catIcon(t.category)+'</div><div class="mid"><div class="lb">'+esc(t.label)+'</div><div class="mt">'+esc(ymd(t.date))+(t.vendor?' · '+esc(t.vendor):'')+'</div></div><div class="am '+(t.amount<0?'neg':'pos')+'">'+eur(t.amount)+'</div></div>'; }).join('');
-    v.appendChild(el('<div class="card"><h2>📋 Les opérations ('+R.cnt+')</h2>'+lst+(R.cnt>20?'<div class="tiny" style="margin-top:6px">+ '+(R.cnt-20)+' autres…</div>':'')+'</div>'));
+    if(vk.length){ var vr=vk.map(function(vn,i){ var o=R.byVendor[vn]; return '<div class="tx" data-bv="'+i+'" style="cursor:pointer"><div class="ic">🏷️</div><div class="mid"><div class="lb">'+esc(vn)+'</div><div class="mt">'+o.n+' fois · '+eur0(o.s/o.n)+' en moyenne</div></div><div class="am neg">'+eur(o.s)+'</div></div>'; }).join('');
+      var cVk=el('<div class="card"><h2>🏷️ Qui te l\'a facturé</h2>'+vr+'<div class="tiny" style="margin-top:6px">👆 Touche un fournisseur pour ses opérations et factures.</div></div>');
+      cVk.querySelectorAll('[data-bv]').forEach(function(x){ x.onclick=function(){ var vn=vk[+x.getAttribute('data-bv')];
+        drillTx('🏷️ '+vn+' — « '+q+' »', R.matched.filter(function(t){ return t.amount<0 && (t.vendor||t.label||'?')===vn; })); }; });
+      v.appendChild(cVk); }
+    if(R.dev.length){ var cDv=el('<div class="card"><h2>🧾 Devis liés<span class="r">non comptés</span></h2></div>');
+      R.dev.forEach(function(d){ var docD=(VAULT.docs||[]).filter(function(x){return x.id===d.docId;})[0];
+        var r=el('<div class="tx"'+(docD&&docD.hasFile?' style="cursor:pointer" title="Voir le devis"':'')+'><div class="ic">🧾</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">devis '+(devisStatus(d)==='accepte'?'accepté (engagement)':'en attente')+(docD&&docD.hasFile?' · 🖨️ toucher pour voir':'')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>');
+        if(docD&&docD.hasFile) r.onclick=function(){ openDoc(docD.id); };
+        cDv.appendChild(r); });
+      v.appendChild(cDv); }
+    var mSorted=R.matched.slice().sort(function(a,b){return a.date<b.date?1:-1;});
+    var cOps=el('<div class="card"><h2>📋 Les opérations ('+R.cnt+')</h2>'+(R.cnt>20?'':'')+'</div>');
+    mSorted.slice(0,20).forEach(function(t){ cOps.appendChild(txRow(t,true,false)); });
+    if(R.cnt>20) cOps.appendChild(el('<div class="tiny" style="margin-top:6px">+ '+(R.cnt-20)+' autres…</div>'));
+    v.appendChild(cOps);
     var cAI=el('<div class="card"><h2>🤖 Analyse & conseils</h2><p class="tiny">Un avis chiffré sur ce poste (rythme, est-ce cher, comment payer moins).</p><button class="btn gold grow" id="bai" style="margin-top:8px">💡 Analyser « '+esc(q)+' »</button><div id="bai-out" style="margin-top:10px"></div></div>');
     v.appendChild(cAI);
     setTimeout(function(){ var b=$('bai'); if(b)b.onclick=function(){ bilanAI(q,R,$('bai-out')); }; },0);
@@ -1591,24 +1665,37 @@
     order.forEach(function(k){ var g=groups[k]; var a=g.acc;
       var meta=g.docs.length+' doc'+(g.docs.length>1?'s':'')+(g.ops?' · '+g.ops+' op.':'')+(g.devisN?' · '+g.devisN+' devis':'');
       var amt=(a.key==='devis')?(g.devisTot?eur(g.devisTot)+' · non compté':''):(g.dep?eur(g.dep):(g.rev?'+'+eur(g.rev):''));
-      var c=el('<div class="card"><h2>'+a.icon+' '+esc(a.label)+'<span class="r">'+esc(amt)+'</span></h2><div class="tiny" style="margin-bottom:6px">'+meta+'</div><div class="acc-docs"></div></div>');
+      var c=el('<div class="card"><h2>'+a.icon+' '+esc(a.label)+'<span class="r">'+esc(amt)+'</span></h2><div class="tiny acc-meta" style="margin-bottom:6px'+(g.ops?';cursor:pointer':'')+'">'+meta+(g.ops?' 👆':'')+'</div><div class="acc-docs"></div></div>');
+      if(g.ops){ c.querySelector('.acc-meta').onclick=function(){
+        drillTx(a.icon+' '+a.label+' — opérations', (VAULT.tx||[]).filter(function(t){ return !t.recDup && accountForKind(t.kind).key===a.key; })); }; }
       var box=c.querySelector('.acc-docs');
       if(a.key==='devis'){ var b=el('<button class="btn grow">🧾 Ouvrir les devis</button>'); b.onclick=function(){ STATE.tab='devis'; render(); }; box.appendChild(b); }
       g.docs.slice(0,40).forEach(function(d){
-        /* nom lisible : un « corps-du-mail » s'affiche par son expéditeur, pas par son nom de fichier */
+        /* Carte document : GRANDE vignette (tap → aperçu) + QUOI c'est en clair + actions discrètes. */
         var isBody=/^corps[- ]?du[- ]?mail/i.test(d.name||'');
         var title=isBody?((d.vendor||d.bank||'Mail')+' — corps du mail'):d.name;
-        var sub=isBody?('reçu par mail'+(d.period?' · '+d.period:'')):((d.bank||d.vendor||kindLabel(d.kind))+(d.period?' · '+d.period:''));
-        var row=el('<div class="doc"><span>'+kindIcon(d.kind)+'</span><div class="grow" style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(title)+'</div><div class="tiny">'+esc(sub)+'</div></div>'+(d.hasFile?'<button class="btn sm" data-open="'+d.id+'" title="Voir / imprimer l\'original">🖨️</button>':'')+'</div>');
+        var docTx=(VAULT.tx||[]).filter(function(t){return t.docId===d.id;});
+        var docAmt=docTx.reduce(function(s,t){return s+(t.amount<0?-t.amount:0);},0);
+        var when=d.period||ymd(d.addedAt)||'';
+        var row=el('<div class="doc" style="align-items:flex-start;gap:10px;padding:10px 0"></div>');
+        row.appendChild(docThumbEl(d,64));
+        var mid=el('<div class="grow" style="min-width:0"></div>');
+        mid.appendChild(el('<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(title)+'</div>'));
+        mid.appendChild(el('<div class="tiny" style="margin-top:2px"><span class="chip">'+kindIcon(d.kind)+' '+esc(kindLabel(d.kind))+'</span>'+(d.vendor&&!isBody?' '+esc(d.vendor):'')+(when?' · '+esc(when):'')+(docAmt?' · <b>'+eur0(docAmt)+'</b>':'')+'</div>'));
+        var acts=el('<div class="row" style="margin-top:7px;gap:6px;flex-wrap:wrap"></div>');
+        if(d.hasFile){ var vb=el('<button class="btn sm" data-open="'+d.id+'">🖨️ Voir</button>'); acts.appendChild(vb); }
+        if(docTx.length){ var ob=el('<button class="btn sm">🔎 '+docTx.length+' op.</button>'); ob.onclick=function(){ drillTx('📄 '+title, docTx); }; acts.appendChild(ob); }
         if(d.kind!=='devis'){
-          var sel=el('<select class="catsel" style="margin-left:6px" title="Déplacer vers un autre compte"><option value="">Déplacer…</option>'+
+          var sel=el('<select class="catsel" style="max-width:118px;font-size:12px;padding:6px 4px;min-height:36px" title="Déplacer vers un autre compte"><option value="">📁 Déplacer</option>'+
             ACCOUNTS.filter(function(x){return x.key!=='devis'&&x.kinds[0]!==d.kind;}).map(function(x){return '<option value="'+x.kinds[0]+'">'+x.icon+' '+esc(x.label)+'</option>';}).join('')+'</select>');
           sel.onchange=function(){ if(sel.value)moveDoc(d.id, sel.value); };
-          row.appendChild(sel);
+          acts.appendChild(sel);
         }
-        var delb=el('<button class="btn sm danger" style="margin-left:6px" title="Supprimer ce document (pub, doublon, inutile) — ne sera jamais ré-importé">🗑</button>');
+        var delb=el('<button class="btn sm danger" title="Supprimer (pub, doublon, inutile) — ne reviendra jamais">🗑</button>');
         delb.onclick=function(){ deleteDoc(d.id); };
-        row.appendChild(delb);
+        acts.appendChild(delb);
+        mid.appendChild(acts);
+        row.appendChild(mid);
         box.appendChild(row);
       });
       box.querySelectorAll('[data-open]').forEach(function(b){ b.onclick=function(){ openDoc(b.getAttribute('data-open')); }; });
@@ -1637,18 +1724,23 @@
       '<div class="kpi"><div class="k">Dépenses</div><div class="v neg">'+eur0(a.dep)+'</div></div>'+
       '<div class="kpi"><div class="k">Résultat</div><div class="v '+(a.net>=0?'pos':'neg')+'">'+eur0(a.net)+'</div></div></div>'+
       '<table class="ctab" style="margin-top:10px"><tr><th>Trim.</th><th>Revenus</th><th>Dépenses</th><th>Résultat</th></tr>'+
-      q.map(function(x,i){return '<tr><td>T'+(i+1)+'</td><td class="pos">'+eur0(x[0])+'</td><td class="neg">'+eur0(x[1])+'</td><td>'+eur0(x[0]-x[1])+'</td></tr>';}).join('')+'</table></div>');
+      q.map(function(x,i){return '<tr data-dq="'+i+'" style="cursor:pointer"><td>T'+(i+1)+'</td><td class="pos">'+eur0(x[0])+'</td><td class="neg">'+eur0(x[1])+'</td><td>'+eur0(x[0]-x[1])+'</td></tr>';}).join('')+'</table>'+
+      '<div class="tiny" style="margin-top:6px">👆 Touche un trimestre pour voir chaque opération.</div></div>');
+    cRes.querySelectorAll('[data-dq]').forEach(function(tr){ tr.onclick=function(){ var qi=+tr.getAttribute('data-dq');
+      drillTx('📅 T'+(qi+1)+' '+yr, yTx.filter(function(t){ if(t.recDup||t.category==='Virements internes')return false; var m=+ymd(t.date).slice(5,7); return Math.floor((m-1)/3)===qi; })); }; });
     v.appendChild(cRes);
 
     /* TVA */
     var tvaAll=0,htAll=0,ttcAll=0,tvaPro=0,htPro=0;
     invs.forEach(function(t){ var p=vatParts(t); tvaAll+=p.tva; htAll+=p.ht; ttcAll+=p.ttc; if(t.pro){ tvaPro+=p.tva; htPro+=p.ht; } });
     var cTva=el('<div class="card"><h2>🧾 TVA '+yr+'<span class="r">'+invs.length+' factures</span></h2>'+
-      '<div class="kpis"><div class="kpi"><div class="k">Total HT</div><div class="v">'+eur0(htAll)+'</div></div>'+
-      '<div class="kpi"><div class="k">TVA</div><div class="v">'+eur0(tvaAll)+'</div></div>'+
-      '<div class="kpi"><div class="k">Total TTC</div><div class="v">'+eur0(ttcAll)+'</div></div>'+
-      '<div class="kpi"><div class="k">TVA déductible (pro)</div><div class="v pos">'+eur0(tvaPro)+'</div></div></div>'+
-      '<p class="tiny" style="margin-top:8px">Coche « pro » sur une facture (journal ci-dessous) pour la compter en TVA déductible. HT/TVA estimés à 20% si non lus sur la facture.</p></div>');
+      '<div class="kpis"><div class="kpi" data-tva="all" style="cursor:pointer"><div class="k">Total HT 👆</div><div class="v">'+eur0(htAll)+'</div></div>'+
+      '<div class="kpi" data-tva="all" style="cursor:pointer"><div class="k">TVA 👆</div><div class="v">'+eur0(tvaAll)+'</div></div>'+
+      '<div class="kpi" data-tva="all" style="cursor:pointer"><div class="k">Total TTC 👆</div><div class="v">'+eur0(ttcAll)+'</div></div>'+
+      '<div class="kpi" data-tva="pro" style="cursor:pointer"><div class="k">TVA déductible (pro) 👆</div><div class="v pos">'+eur0(tvaPro)+'</div></div></div>'+
+      '<p class="tiny" style="margin-top:8px">👆 Touche un montant pour voir les factures comptées. Coche « pro » sur une facture (journal ci-dessous) pour la compter en TVA déductible. HT/TVA estimés à 20% si non lus sur la facture.</p></div>');
+    cTva.querySelectorAll('[data-tva]').forEach(function(x){ x.onclick=function(){ var pro=x.getAttribute('data-tva')==='pro';
+      drillTx(pro?'🧾 Factures pro (TVA déductible) — '+yr:'🧾 Factures '+yr, pro?invs.filter(function(t){return t.pro;}):invs); }; });
     v.appendChild(cTva);
 
     /* Par fournisseur */
@@ -1679,10 +1771,15 @@
     var cJ=el('<div class="card"><h2>📓 Journal des factures '+yr+'</h2><div class="tiny" style="margin-bottom:6px">Coche « pro » = charge déductible (TVA récupérable).</div>'+
       '<div style="overflow-x:auto"><table class="ctab jt"><tr><th>Date</th><th>Fournisseur</th><th>HT</th><th>TVA</th><th>TTC</th><th>Pro</th></tr>'+
       invs.slice().sort(function(a,b){return a.date<b.date?1:-1;}).map(function(t){ var p=vatParts(t);
-        return '<tr><td>'+esc(ymd(t.date))+'</td><td>'+esc((t.vendor||t.label||'').slice(0,22))+'</td><td>'+eur0(p.ht)+'</td><td>'+eur0(p.tva)+(p.est?'*':'')+'</td><td class="neg">'+eur0(p.ttc)+'</td><td style="text-align:center"><input type="checkbox" data-pro="'+t.id+'"'+(t.pro?' checked':'')+'></td></tr>'; }).join('')+
+        return '<tr data-jrow="'+t.id+'" style="cursor:pointer"><td>'+esc(ymd(t.date))+'</td><td>'+esc((t.vendor||t.label||'').slice(0,22))+'</td><td>'+eur0(p.ht)+'</td><td>'+eur0(p.tva)+(p.est?'*':'')+'</td><td class="neg">'+eur0(p.ttc)+'</td><td style="text-align:center"><input type="checkbox" data-pro="'+t.id+'"'+(t.pro?' checked':'')+'></td></tr>'; }).join('')+
       '</table></div>'+(invs.length?'':'<p class="muted">Aucune facture cette année.</p>')+
+      '<div class="tiny" style="margin-top:6px">👆 Touche une ligne pour ouvrir la facture.</div>'+
       '<button class="btn grow" id="jexport" style="margin-top:10px">📊 Exporter le journal comptable (CSV)</button></div>');
     v.appendChild(cJ);
+    cJ.querySelectorAll('[data-jrow]').forEach(function(tr){ tr.onclick=function(ev){ if(ev.target&&ev.target.tagName==='INPUT')return;
+      var t=invs.filter(function(x){return x.id===tr.getAttribute('data-jrow');})[0]; if(!t)return;
+      var doc=(VAULT.docs||[]).filter(function(dd){return dd.id===t.docId;})[0];
+      if(doc&&doc.hasFile){ openDoc(doc.id); } else { drillTx('📓 '+((t.vendor||t.label||'Facture')),[t]); } }; });
     cJ.querySelectorAll('[data-pro]').forEach(function(cb){ cb.onchange=function(){ var t=VAULT.tx.filter(function(x){return x.id===cb.getAttribute('data-pro');})[0]; if(t){ t.pro=cb.checked; persist(); render(); } }; });
     setTimeout(function(){ var e=$('jexport'); if(e)e.onclick=function(){ exportJournal(yr); }; },0);
   }
