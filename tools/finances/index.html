@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.5 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.5">
+<!-- v0.13.6 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.6">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.5" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.6" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.5';
+  var APP_VER = 'v0.13.6';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -306,7 +306,7 @@
   }
   function ensureFields(){ if(!VAULT)return; if(!VAULT.devis)VAULT.devis=[]; if(!VAULT.aiProvider)VAULT.aiProvider='gemini';
     if(!VAULT.categories)VAULT.categories=DEFAULT_CATS.slice(); if(!VAULT.merchantMap)VAULT.merchantMap={};
-    if(!VAULT.budget)VAULT.budget={}; if(!VAULT.docs)VAULT.docs=[]; if(!VAULT.tx)VAULT.tx=[]; if(!VAULT.audit)VAULT.audit=[]; }
+    if(!VAULT.budget)VAULT.budget={}; if(!VAULT.docs)VAULT.docs=[]; if(!VAULT.tx)VAULT.tx=[]; if(!VAULT.audit)VAULT.audit=[]; if(!VAULT.pendingImports)VAULT.pendingImports=[]; }
   /* Catégories PROVISOIRES (éditables) — se calent sur les vrais relevés de Kevin. */
   var DEFAULT_CATS=['Revenus','Logement','Énergie / Eau','Télécom / Internet','Alimentation',
     'Restaurants / Bars','Transport','Véhicule / Réparations','Santé','Assurances','Abonnements','Shopping',
@@ -1024,6 +1024,16 @@
     v.appendChild(cMail);
     setTimeout(function(){ var b=$('mail-scan'); if(b)b.onclick=function(){ mailScan($('mail-stat')); }; },0);
 
+    /* Documents gardés faute de réseau → réimport auto (rien à faire pour Kevin) */
+    if(pendingCount()){
+      var pn=pendingCount();
+      var cPend=el('<div class="card" style="border-color:var(--gold)"><h2>⏳ En attente de réseau<span class="r">'+pn+'</span></h2>'+
+        '<p class="tiny">'+pn+' document(s) n\'ont pas pu être lus (réseau instable). Je les <b>réimporte tout seul</b> dès que la connexion revient — tu n\'as rien à faire.</p>'+
+        '<button class="btn grow" id="pend-retry">🔄 Réessayer maintenant</button></div>');
+      v.appendChild(cPend);
+      setTimeout(function(){ var b=$('pend-retry'); if(b)b.onclick=function(){ b.disabled=true; b.textContent='⏳ …'; retryPendingImports(false).then(function(){ try{ render(); }catch(e){} }); }; },0);
+    }
+
     if(!aiOn){
       var w=el('<div class="alert"><div>🔑</div><div>Pour que je lise et classe tes documents automatiquement, active le classement IA (ton code admin, tes clés — rien n\'est stocké ici en clair). <a href="#" id="go-ai">Activer maintenant →</a></div></div>');
       v.appendChild(w); setTimeout(function(){ var g=$('go-ai'); if(g)g.onclick=function(e){e.preventDefault();STATE.tab='set';render();}; },0);
@@ -1080,13 +1090,65 @@
     if(/401|invalid.*key|cl[ée]\s*(api|ia)?\s*(invalide|non)/i.test(m)) return 'Clé IA invalide — revérifie le code (Réglages)';
     if(/429|quota|rate.?limit|too many/i.test(m)) return 'Limite IA atteinte — patiente puis réessaie';
     return m.slice(0,60); }
+  /* ---- File d'attente d'import (réseau) : « toujours tout auto » (Kevin) ----
+     Un import qui échoue à cause du réseau (Load failed 4G) est GARDÉ (fichier chiffré en
+     IndexedDB) puis RÉIMPORTÉ tout seul dès que la connexion revient — zéro action de Kevin. */
+  function pendingCount(){ return ((VAULT&&VAULT.pendingImports)||[]).length; }
+  async function enqueuePending(f, isTextFlag){
+    try{
+      if(!KEY||!VAULT) return false;
+      VAULT.pendingImports=VAULT.pendingImports||[];
+      if(VAULT.pendingImports.length>=50) return false; /* file pleine — évite de gonfler le coffre à l'infini */
+      var buf=await f.arrayBuffer(); var b64=b64FromBuf(buf);
+      var id=uid();
+      await idbSet('pending:'+id, await encWith(KEY,{name:f.name,mime:f.type||(isTextFlag?'text/plain':'application/octet-stream'),b64:b64,isText:!!isTextFlag}));
+      VAULT.pendingImports.unshift({id:id,name:f.name,mime:f.type||'',isText:!!isTextFlag,ts:Date.now(),tries:0});
+      await persist();
+      return true;
+    }catch(e){ return false; }
+  }
+  var _retryBusy=false;
+  async function retryPendingImports(silent){
+    if(_retryBusy) return; if(!KEY||!VAULT) return;
+    var q=(VAULT.pendingImports||[]); if(!q.length) return;
+    if(typeof navigator!=='undefined' && navigator.onLine===false) return; /* toujours hors-ligne → on attend */
+    if(!VAULT.aiPinHash) return; /* le classement IA est requis pour lire le document */
+    _retryBusy=true;
+    var imported=0;
+    try{
+      var queue=q.slice();
+      for(var i=0;i<queue.length;i++){
+        var it=queue[i];
+        var raw=null;
+        try{ var pk=await idbGet('pending:'+it.id); if(pk) raw=await decWith(KEY,pk); }catch(e){}
+        if(!raw){ /* original perdu (cache vidé) → on retire proprement */
+          VAULT.pendingImports=VAULT.pendingImports.filter(function(x){return x.id!==it.id;}); try{ await idbDel('pending:'+it.id); }catch(e){} await persist(); continue; }
+        try{
+          if(raw.isText){ var txt=new TextDecoder('utf-8').decode(bufFromB64(raw.b64)); var h=await sha256Hex(txt); if(!docHashExists(h)) await importText(stripSecrets(txt), raw.name||'texte', h, {src:'file'}); }
+          else { await importBytes(raw.b64, raw.mime||'application/pdf', raw.name||'document', {src:'file'}); }
+          imported++;
+          VAULT.pendingImports=VAULT.pendingImports.filter(function(x){return x.id!==it.id;}); try{ await idbDel('pending:'+it.id); }catch(e){}
+          await persist();
+        }catch(e){
+          if(_isNetErr(e)){ /* toujours pas de réseau → on GARDE, on ré-essaiera plus tard */
+            var m=(VAULT.pendingImports||[]).filter(function(x){return x.id===it.id;})[0];
+            if(m){ m.tries=(m.tries||0)+1; if(m.tries>30){ VAULT.pendingImports=VAULT.pendingImports.filter(function(x){return x.id!==it.id;}); try{ await idbDel('pending:'+it.id); }catch(_){} } }
+          } else { /* erreur non réseau (fichier illisible…) → on retire pour ne pas boucler indéfiniment */
+            VAULT.pendingImports=VAULT.pendingImports.filter(function(x){return x.id!==it.id;}); try{ await idbDel('pending:'+it.id); }catch(_){} }
+          await persist();
+        }
+      }
+      if(imported){ dedupeAll(); await persist(); }
+    }finally{ _retryBusy=false; }
+    if(imported){ if(!silent) toast('✅ '+imported+' document(s) importé(s) automatiquement (réseau revenu)'); try{ render(); }catch(e){} }
+  }
   async function handleFiles(list){
     var files=[].slice.call(list); if(!files.length)return;
     var isLocal=function(f){ return /\.csv$/i.test(f.name); };
     var isText=function(f){ return /\.txt$/i.test(f.name); };
     var needAI=files.some(function(f){ return !isLocal(f); });
     if(needAI && !VAULT.aiPinHash){ toast('Active d\'abord le classement IA (Réglages)',true); STATE.tab='set'; render(); return; }
-    var stat=$('impstat'); var okc=0, err=0, devc=0, dupc=0, lines=[];
+    var stat=$('impstat'); var okc=0, err=0, devc=0, dupc=0, pendc=0, lines=[];
     function draw(){ if(stat)stat.innerHTML=lines.join(''); }
     files.forEach(function(f,i){ lines[i]='<div class="doc" id="ip'+i+'"><span>⏳</span><div class="grow" style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(f.name)+'</div></div><span class="tiny">en file…</span></div>'; });
     draw();
@@ -1115,12 +1177,18 @@
           else break;
         }
       }
-      if(!doneOk){ err++; setLine(i,'❌',_importErrMsg(lastErr),'var(--red)'); }
+      if(!doneOk){
+        /* Réseau KO après 3 essais → on GARDE le fichier et on le réimporte tout seul plus tard (0 action Kevin). */
+        if(_isNetErr(lastErr) && !isLocal(f) && await enqueuePending(f, isText(f))){
+          pendc++; setLine(i,'⏳','gardé — je le réimporte tout seul dès que le réseau revient','var(--gold)');
+        } else { err++; setLine(i,'❌',_importErrMsg(lastErr),'var(--red)'); }
+      }
       await persist();
     }
     var rm=dedupeAll(); if(rm){ await persist(); }
-    toast('✅ '+okc+' opérations'+(devc?(' · '+devc+' devis'):'')+' ajoutés'+(dupc?(' · '+dupc+' doublon(s) ignoré(s)'):'')+((rm)?(' · '+rm+' doublon(s) nettoyé(s)'):'')+(err?(' · '+err+' échec(s) — voir la liste'):''));
-    if(!err){ STATE.tab=(okc===0&&devc>0)?'devis':'dash'; render(); }
+    toast('✅ '+okc+' opérations'+(devc?(' · '+devc+' devis'):'')+' ajoutés'+(dupc?(' · '+dupc+' doublon(s) ignoré(s)'):'')+((rm)?(' · '+rm+' doublon(s) nettoyé(s)'):'')+(pendc?(' · '+pendc+' gardé(s) pour réimport auto'):'')+(err?(' · '+err+' échec(s) — voir la liste'):''));
+    if(!err && !pendc){ STATE.tab=(okc===0&&devc>0)?'devis':'dash'; render(); }
+    else if(pendc){ render(); }
   }
   async function runImport(fn, label){
     if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
@@ -2298,7 +2366,7 @@
       var data=await decWith(key,{iv:pack.iv,ct:pack.ct}); /* throw si mauvais code */
       data._salt=pack.salt; VAULT=data; KEY=key;
       if($('g-rem').checked)localStorage.setItem(LS_REMEMBER,'1'); else { localStorage.setItem(LS_REMEMBER,'0'); localStorage.removeItem(LS_DEV); }
-      await persist(); toast('🔓 Déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true);
+      await persist(); toast('🔓 Déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true);
       maybeOfferFaceId();
     }catch(e){ err.textContent='Code incorrect.'; }
   }
@@ -2355,7 +2423,7 @@
     /* Bouton du gate : Face ID → auto-déverrouillage avec la clé de l'appareil. */
     if(btn){ btn.disabled=true; btn.textContent='👤 Regarde ton iPhone…'; }
     var ok=await faceIdVerify();
-    if(ok && await tryAutoUnlock()){ toast('🔓 Reconnu — déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true); return true; }
+    if(ok && await tryAutoUnlock()){ toast('🔓 Reconnu — déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true); return true; }
     if(btn){ btn.disabled=false; btn.textContent='🔐 Déverrouiller avec Face ID'; }
     if(err){ err.style.color='var(--dim)'; err.textContent=ok?'Petit souci de déverrouillage — entre ton code ci-dessous.':'Face ID non reconnu — entre ton code ci-dessous.'; }
     return false;
@@ -2412,15 +2480,17 @@
     if(faceIdEnrolled() && faceIdSupported() && localStorage.getItem(LS_REMEMBER)==='1' && localStorage.getItem(LS_DEV) && localStorage.getItem(LS_VAULT)){
       showGate(); return;
     }
-    if(await tryAutoUnlock()){ render(); autoEnableCloud(); mailAutoScan(true); return; }
+    if(await tryAutoUnlock()){ render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true); return; }
     showGate();
   })();
 
   /* Sauvegarde en ligne + récupération auto des factures : au retour au premier plan. */
-  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); } });
-  window.addEventListener('focus',function(){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); });
-  /* Filet : re-vérifie les nouvelles factures toutes les 5 min tant que l'app est ouverte. */
-  setInterval(function(){ if(document.visibilityState==='visible') mailAutoScan(); }, 5*60*1000);
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); retryPendingImports(true); } });
+  window.addEventListener('focus',function(){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); retryPendingImports(true); });
+  /* Le réseau revient → on réimporte tout seul les documents gardés (message visible = « réseau revenu »). */
+  window.addEventListener('online',function(){ retryPendingImports(false); });
+  /* Filet : re-vérifie les nouvelles factures + réimport des documents en attente toutes les 5 min. */
+  setInterval(function(){ if(document.visibilityState==='visible'){ mailAutoScan(); retryPendingImports(true); } }, 5*60*1000);
 })();
 </script>
 </body>
