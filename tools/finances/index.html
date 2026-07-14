@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.12.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.12.0">
+<!-- v0.13.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.12.1" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.12.1';
+  var APP_VER = 'v0.13.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -228,6 +228,42 @@
     VAULT.docs=(VAULT.docs||[]).filter(function(x){return !ids[x.id];});
     audit('menage', list.length+' docs pub/vides supprimés'); await persist();
     toast('🧹 '+list.length+' document(s) supprimé(s) — ils ne reviendront plus'); render();
+  }
+
+  /* ============================ Chasse RÉTROACTIVE aux pubs ============================
+     Relit chaque CORPS DE MAIL déjà stocké (déchiffré depuis cet appareil), applique le même
+     filtre pub que les workers (fort OU ≥2 faibles) → liste les pubs qui sont déjà rentrées,
+     MÊME si elles portent des opérations (l'IA les avait mal classées). Jamais ré-importées. */
+  var _promoScanCache=null;
+  async function scanPromoDocs(){
+    if(_promoScanCache)return _promoScanCache;
+    var out=[];
+    var docs=(VAULT.docs||[]).filter(function(d){ return d.ftype==='texte'; });
+    for(var i=0;i<docs.length;i++){ var d=docs[i];
+      var txt='';
+      if(d.hasFile){ try{ var pack=await idbGet('doc:'+d.id); if(pack){ var dec=await decWith(KEY,pack); txt=new TextDecoder('utf-8').decode(bufFromB64(dec.data||'')); } }catch(e){} }
+      if(looksPromoLocal(d.name, (d.src||'')+' '+(d.vendor||''), txt)) out.push(d);
+    }
+    _promoScanCache=out; return out;
+  }
+  async function cleanPromoDocs(){
+    var list=await scanPromoDocs(); if(!list.length){ toast('📣 Aucune pub détectée dans tes documents'); return; }
+    var nTx=0,nDv=0, ids={};
+    list.forEach(function(dd){ ids[dd.id]=1;
+      nTx+=(VAULT.tx||[]).filter(function(t){return t.docId===dd.id;}).length;
+      nDv+=(VAULT.devis||[]).filter(function(x){return x.docId===dd.id;}).length; });
+    if(!confirm('📣 '+list.length+' pub(s) détectée(s) dans tes documents :\n\n'+list.slice(0,8).map(function(d){return '· '+String(d.name||'').slice(0,40);}).join('\n')+(list.length>8?'\n· …':'')+
+      '\n\n'+(nTx?nTx+' fausse(s) opération(s) et ':'')+(nDv?nDv+' devis liés ':'')+'Tout supprimer ? (jamais ré-importées)'))return;
+    for(var i=0;i<list.length;i++){ var dd=list[i];
+      if(dd.hash)skipHash(dd.hash);
+      try{ await idbDel('doc:'+dd.id); await idbDel('thumb:'+dd.id); }catch(e){}
+    }
+    VAULT.docs=(VAULT.docs||[]).filter(function(x){return !ids[x.id];});
+    VAULT.tx=(VAULT.tx||[]).filter(function(t){return !ids[t.docId];});
+    VAULT.devis=(VAULT.devis||[]).filter(function(x){return !ids[x.docId];});
+    _promoScanCache=null;
+    audit('menage_pub', list.length+' pubs supprimées'); await persist();
+    toast('📣 '+list.length+' pub(s) supprimée(s) — elles ne reviendront plus'); render();
   }
 
   /* ============================ Compta (HT / TVA / TTC) ============================ */
@@ -558,8 +594,22 @@
     'Une facture/ticket = une seule ligne (montant TOTAL TTC). '+
     'Une fiche de paie = une ligne Revenus (salaire net, positif). '+
     'Un DEVIS / PREVENTIVO / estimation NON payé : meta.kind="devis", meta.total=montant total (positif), meta.vendor=émetteur, tx=[] (ne compte PAS une dépense). '+
-    'IMPORTANT — PUBLICITÉ : si le document est une pub, newsletter, promotion, offre commerciale, code promo, vente flash, panier abandonné, deal (Groupon/Wish/AliExpress promo…) ou toute annonce SANS achat réellement effectué/facturé : meta.kind="pub", tx=[] — ce n\'est PAS une facture, ne rien extraire. En cas de doute entre pub et facture, choisis "pub" sauf si un numéro de facture/commande payée est visible. '+
+    'IMPORTANT — PUBLICITÉ : si le document est une pub, newsletter, promotion, offre commerciale, code promo, vente flash, panier abandonné, deal (Groupon/Wish/AliExpress promo…) ou toute annonce SANS achat réellement effectué/facturé : meta.kind="pub", tx=[] — ce n\'est PAS une facture, ne rien extraire. '+
+    'RÈGLE STRICTE pour un CORPS DE MAIL (texte, pas un PDF) : c\'est une pub par DÉFAUT. Ce n\'est une facture QUE si on voit à la fois (a) un numéro de facture ou de commande ET (b) un montant réellement payé/débité/prélevé (« total facturé », « payé le », « prélèvement de »). Un prix affiché, une offre, un pourcentage de réduction ne sont PAS un achat. En cas de doute : "pub". '+
     'Réponds en JSON seulement.';
+
+  /* Filtre pub LOCAL (couche app, AVANT l'IA) — même règle que les workers :
+     1 marqueur FORT (désabonner, newsletter, vente flash…) OU ≥2 marqueurs FAIBLES DISTINCTS.
+     Appliqué UNIQUEMENT aux corps de mail texte — jamais aux PDF (une vraie facture est un PDF). */
+  var PROMO_STRONG_RE=/(d[ée]sabonn|unsubscrib|newsletter|vente\s*(flash|priv[ée]e)|code\s*promo|panier\s+abandonn|black\s*friday|cyber\s*monday|jeu[\s-]*concours|gagnez\b|parrainage|cashback|offre\s+de\s+bienvenue|derni[èe]re\s+chance|derniers?\s+jours\s+pour)/i;
+  var PROMO_WEAK_RE=/(-\s?\d{1,2}\s?%|\d{1,2}\s?%\s*de\s*r[ée]duc|promotion\b|promo\b|r[ée]duction|remise\s+(de|exceptionnelle|imm[ée]diate)|soldes\b|offre\s+(sp[ée]ciale|limit[ée]e|exclusive|du\s+jour|exceptionnelle)|bons?\s+plans?|deal\s+du|jusqu.[àa]\s+-?\d{1,2}\s?%|profitez\s+de|d[ée]couvrez\s+(nos|notre|la\s+s[ée]lection)|exclusivit[ée]|s[ée]lection\s+pour\s+vous|meilleures?\s+offres?|ne\s+manquez\s+pas|[àa]\s+saisir|petits?\s+prix|expire\s+(bient[ôo]t|le)|top\s+ventes?|nouveaut[ée]s\s+de)/gi;
+  function looksPromoLocal(name, from, text){
+    var s=String(name||'')+' '+String(from||'')+' '+String(text||'').slice(0,4000);
+    if(PROMO_STRONG_RE.test(s)) return true;
+    var weak=s.match(PROMO_WEAK_RE)||[], seen={}, n=0;
+    for(var i=0;i<weak.length;i++){ var k=weak[i].toLowerCase().replace(/\s+/g,' ').trim(); if(!seen[k]){ seen[k]=1; n++; } }
+    return n>=2;
+  }
 
   async function importFile(file, srcMeta){
     var buf=await file.arrayBuffer(); var b64=b64FromBuf(buf); var mt=file.type||'';
@@ -586,6 +636,8 @@
     var buf=bufFromB64(b64); var hash=await sha256HexBuf(buf); if(docHashExists(hash)) return { added:0, devis:0, dup:true };
     if(isText){
       var txt=''; try{ txt=new TextDecoder('utf-8').decode(buf); }catch(e){ txt=''; }
+      /* Couche 4 anti-pub : filtre LOCAL avant l'IA — une pub évidente ne rentre jamais (et n'est jamais ré-importée). */
+      if(looksPromoLocal(name, srcMeta&&srcMeta.src, txt)){ skipHash(hash); audit('pub_ignoree_locale', name||'corps-du-mail'); return { added:0, devis:0, pub:true }; }
       var rt=await importText(txt, name||'corps-du-mail', hash, srcMeta||{src:'mail'});
       try{ if(rt&&rt.docId){ await idbSet('doc:'+rt.docId, await encWith(KEY,{mime:'text/plain',name:name||'corps-du-mail.txt',data:b64})); markDocFile(rt.docId); } }catch(e){}
       return rt;
@@ -664,6 +716,7 @@
       if(hash)skipHash(hash);
       audit('pub_ignoree', name); return { added:0, devis:0, pub:true };
     }
+    _promoScanCache=null;
     VAULT.docs.unshift({ id:docId, name:name, kind:kind, ftype:ftype, addedAt:Date.now(), hash:hash||null,
       bank:meta.bank||meta.vendor||'', vendor:meta.vendor||'', invoiceNo:meta.invoice_no||'', account:meta.account_masked||'', period:meta.period||'',
       opening:num(meta.opening), closing:num(meta.closing), src:(srcMeta&&srcMeta.src)||'', count:(kind==='devis'?1:rows.length) });
@@ -1191,7 +1244,11 @@
     var accepts=(VAULT.devis||[]).filter(function(d){return devisStatus(d)==='accepte';});
     var cE=el('<div class="card"><h2>📌 Engagements à décaisser<span class="r">'+eur(eng)+'</span></h2>'+
       (accepts.length?'<p class="tiny">Devis acceptés, pas encore payés — provisionne-les.</p>':'<p class="muted" style="margin:0">Aucun engagement. Accepte un devis (onglet 🧾 Devis) pour le suivre ici.</p>')+'</div>');
-    accepts.forEach(function(d){ cE.appendChild(el('<div class="tx"><div class="ic">📌</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">'+esc(ymd(d.date))+(d.vendor?' · '+esc(d.vendor):'')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>')); });
+    accepts.forEach(function(d){
+      var hasF=(VAULT.docs||[]).some(function(x){return x.id===d.docId&&x.hasFile;});
+      var r=el('<div class="tx"'+(hasF?' style="cursor:pointer" title="Voir le devis"':'')+'><div class="ic">📌</div><div class="mid"><div class="lb">'+esc(d.label)+'</div><div class="mt">'+esc(ymd(d.date))+(d.vendor?' · '+esc(d.vendor):'')+(hasF?' · 🖨️ toucher pour voir':'')+'</div></div><div class="am neg">'+eur(d.amount)+'</div></div>');
+      if(hasF)r.onclick=function(){ openDoc(d.docId); };
+      cE.appendChild(r); });
     v.appendChild(cE);
     /* Prêts & crédits */
     if(loans.length){ var cL=el('<div class="card"><h2>🏦 Prêts & crédits<span class="r">≈ '+eur(loanMonthly)+' / mois</span></h2></div>');
@@ -1522,8 +1579,11 @@
     var mEntries=R.mks.slice(-12).map(function(m){ return {label:frMonth(m).split(' ')[0], val:R.byMonth[m]}; });
     if(mEntries.length) v.appendChild(el('<div class="card"><h2>📅 Par mois</h2><div class="svgwrap">'+barsSvg(mEntries,'#e0b64a')+'</div></div>'));
     if(R.yrs.length){ var yr=R.yrs.map(function(y,i){ var val=R.byYear[y], prev=i>0?R.byYear[R.yrs[i-1]]:null, d=(prev!=null&&prev>0)?((val-prev)/prev*100):null;
-        return '<div class="tx"><div class="ic">📆</div><div class="mid"><div class="lb">'+esc(y)+'</div>'+(d!=null?'<div class="mt">'+(d>=0?'▲ +':'▼ ')+d.toFixed(0)+'% vs '+R.yrs[i-1]+'</div>':'')+'</div><div class="am neg">'+eur(val)+'</div></div>'; }).join('');
-      v.appendChild(el('<div class="card"><h2>📆 Par an</h2>'+yr+'</div>')); }
+        return '<div class="tx" data-by="'+esc(y)+'" style="cursor:pointer"><div class="ic">📆</div><div class="mid"><div class="lb">'+esc(y)+'</div>'+(d!=null?'<div class="mt">'+(d>=0?'▲ +':'▼ ')+d.toFixed(0)+'% vs '+R.yrs[i-1]+'</div>':'')+'</div><div class="am neg">'+eur(val)+'</div></div>'; }).join('');
+      var cYr=el('<div class="card"><h2>📆 Par an</h2>'+yr+'</div>');
+      cYr.querySelectorAll('[data-by]').forEach(function(x){ x.onclick=function(){ var y=x.getAttribute('data-by');
+        drillTx('📆 « '+q+' » — '+y, R.matched.filter(function(t){ return ymd(t.date).slice(0,4)===y; })); }; });
+      v.appendChild(cYr); }
     var vk=Object.keys(R.byVendor).sort(function(a,b){return R.byVendor[b].s-R.byVendor[a].s;}).slice(0,8);
     if(vk.length){ var vr=vk.map(function(vn,i){ var o=R.byVendor[vn]; return '<div class="tx" data-bv="'+i+'" style="cursor:pointer"><div class="ic">🏷️</div><div class="mid"><div class="lb">'+esc(vn)+'</div><div class="mt">'+o.n+' fois · '+eur0(o.s/o.n)+' en moyenne</div></div><div class="am neg">'+eur(o.s)+'</div></div>'; }).join('');
       var cVk=el('<div class="card"><h2>🏷️ Qui te l\'a facturé</h2>'+vr+'<div class="tiny" style="margin-top:6px">👆 Touche un fournisseur pour ses opérations et factures.</div></div>');
@@ -1568,8 +1628,8 @@
   var COMPARE_VEHICLES=['touareg','navara','nissan','volkswagen','vw','scooter','camion','moto','audi','renault','peugeot','citroen','bmw','mercedes','fiat'];
   function compareItems(){ /* facture/ticket + devis = éléments comparables (dépense réelle vs estimation) */
     var out=[];
-    (VAULT.tx||[]).forEach(function(t){ if((t.kind==='facture'||t.kind==='ticket') && t.amount<0) out.push({ label:t.label, amount:Math.abs(t.amount), vendor:t.vendor||'', date:t.date, kind:'facture' }); });
-    (VAULT.devis||[]).forEach(function(d){ out.push({ label:d.label||'', amount:Math.abs(d.amount||0), vendor:d.vendor||'', date:d.date, kind:'devis' }); });
+    (VAULT.tx||[]).forEach(function(t){ if((t.kind==='facture'||t.kind==='ticket') && t.amount<0) out.push({ label:t.label, amount:Math.abs(t.amount), vendor:t.vendor||'', date:t.date, kind:'facture', docId:t.docId||null }); });
+    (VAULT.devis||[]).forEach(function(d){ out.push({ label:d.label||'', amount:Math.abs(d.amount||0), vendor:d.vendor||'', date:d.date, kind:'devis', docId:d.docId||null }); });
     return out;
   }
   function detectVehicle(txt){ var n=norm(txt); for(var i=0;i<COMPARE_VEHICLES.length;i++){ if(n.indexOf(COMPARE_VEHICLES[i])>=0) return COMPARE_VEHICLES[i]; } return ''; }
@@ -1604,14 +1664,19 @@
         '<div class="kpi"><div class="k">Plus cher</div><div class="v neg">'+eur0(gr.max)+'</div></div></div></div>');
       gr.items.forEach(function(it,idx){ var pct=gr.max>0?(it.amount/gr.max*100):0; var veh=detectVehicle(it.label+' '+it.vendor);
         var best=idx===0;
-        c.appendChild(el('<div class="catrow"><div class="h"><b>'+(best?'🏆 ':'')+esc((it.vendor||it.label||'—').slice(0,30))+' <span class="chip'+(it.kind==='devis'?' flag':'')+'">'+(it.kind==='devis'?'devis':'facturé')+'</span>'+(veh?' <span class="chip">'+esc(veh)+'</span>':'')+'</b><span class="amt">'+eur(it.amount)+'</span></div><div class="bar"><i style="width:'+pct.toFixed(0)+'%;background:'+(best?'var(--green)':(idx===gr.items.length-1?'var(--red)':'var(--gold)'))+'"></i></div></div>'));
+        var hasF=!!(it.docId&&(VAULT.docs||[]).some(function(x){return x.id===it.docId&&x.hasFile;}));
+        var rowC=el('<div class="catrow"'+(hasF?' style="cursor:pointer" title="Voir le document"':'')+'><div class="h"><b>'+(best?'🏆 ':'')+esc((it.vendor||it.label||'—').slice(0,30))+' <span class="chip'+(it.kind==='devis'?' flag':'')+'">'+(it.kind==='devis'?'devis':'facturé')+'</span>'+(veh?' <span class="chip">'+esc(veh)+'</span>':'')+(hasF?' 🖨️':'')+'</b><span class="amt">'+eur(it.amount)+'</span></div><div class="bar"><i style="width:'+pct.toFixed(0)+'%;background:'+(best?'var(--green)':(idx===gr.items.length-1?'var(--red)':'var(--gold)'))+'"></i></div></div>');
+        if(hasF)rowC.onclick=function(){ openDoc(it.docId); };
+        c.appendChild(rowC);
       });
       v.appendChild(c);
     });
     /* Comparaison par fournisseur */
     var vt=vendorTotals();
-    if(vt.length>1){ var cv=el('<div class="card"><h2>🏢 Total payé par fournisseur</h2></div>');
-      vt.slice(0,15).forEach(function(x){ cv.appendChild(el('<div class="tx"><div class="ic">🏢</div><div class="mid"><div class="lb">'+esc(x.vendor)+'</div><div class="mt">'+x.n+' facture(s)</div></div><div class="am neg">'+eur(x.tot)+'</div></div>')); });
+    if(vt.length>1){ var cv=el('<div class="card"><h2>🏢 Total payé par fournisseur</h2><p class="tiny">👆 Touche un fournisseur pour ses factures.</p></div>');
+      vt.slice(0,15).forEach(function(x){ var rv=el('<div class="tx" style="cursor:pointer"><div class="ic">🏢</div><div class="mid"><div class="lb">'+esc(x.vendor)+'</div><div class="mt">'+x.n+' facture(s)</div></div><div class="am neg">'+eur(x.tot)+'</div></div>');
+        rv.onclick=function(){ drillTx('🏢 '+x.vendor, (VAULT.tx||[]).filter(function(t){ return (t.kind==='facture'||t.kind==='ticket')&&t.amount<0&&((t.vendor||t.label||'—').trim()===x.vendor); })); };
+        cv.appendChild(rv); });
       v.appendChild(cv);
     }
   }
@@ -1660,9 +1725,17 @@
       '<p class="tiny">✅ Chaque document est vérifié et rangé <b>automatiquement</b> dans le bon compte selon son type. Un type inconnu crée son propre compte. Tu peux déplacer un document d\'un compte à l\'autre.</p>'+
       (suspects.length?'<div class="alert bad"><div>⚠️</div><div>'+suspects.length+' document(s) dans « Factures » ressemblent à des devis : '+esc(suspects.slice(0,3).join(', '))+'. Déplace-les vers « Devis » si besoin.</div></div>':'')+
       (autresCount?'<div class="alert"><div>📄</div><div>'+autresCount+' compte(s) « Autres » créé(s) automatiquement pour des types non standard.</div></div>':'')+
-      (useless.length?'<div class="alert bad"><div>🧹</div><div><b>'+useless.length+' document(s) sans aucune opération ni devis</b> (souvent des pubs/newsletters — Groupon, Uber Eats…). Tu peux tout supprimer d\'un coup : ils ne reviendront plus.</div></div><button class="btn danger grow" id="clean-useless" style="margin-top:8px">🧹 Supprimer les '+useless.length+' documents inutiles</button>':'')+'</div>');
+      (useless.length?'<div class="alert bad"><div>🧹</div><div><b>'+useless.length+' document(s) sans aucune opération ni devis</b> (souvent des pubs/newsletters — Groupon, Uber Eats…). Tu peux tout supprimer d\'un coup : ils ne reviendront plus.</div></div><button class="btn danger grow" id="clean-useless" style="margin-top:8px">🧹 Supprimer les '+useless.length+' documents inutiles</button>':'')+
+      '<div id="pubhunt"></div></div>');
     v.appendChild(bn);
     setTimeout(function(){ var b=$('clean-useless'); if(b)b.onclick=cleanUselessDocs; },0);
+    /* Chasse rétroactive : relit les corps de mail stockés et signale les pubs qui sont déjà rentrées. */
+    scanPromoDocs().then(function(list){ var ph=$('pubhunt'); if(!ph)return;
+      if(!list.length){ ph.innerHTML='<div class="tiny" style="margin-top:6px">📣 Aucune pub détectée dans les documents stockés.</div>'; return; }
+      ph.innerHTML='<div class="alert bad" style="margin-top:8px"><div>📣</div><div><b>'+list.length+' pub(s) encore présente(s)</b> dans tes documents (mal classées à l\'import). Supprime-les d\'un coup — opérations liées comprises.</div></div>';
+      var b2=el('<button class="btn danger grow" style="margin-top:8px">📣 Supprimer les '+list.length+' pubs (et leurs fausses opérations)</button>');
+      b2.onclick=cleanPromoDocs; ph.appendChild(b2);
+    }).catch(function(){});
     order.forEach(function(k){ var g=groups[k]; var a=g.acc;
       var meta=g.docs.length+' doc'+(g.docs.length>1?'s':'')+(g.ops?' · '+g.ops+' op.':'')+(g.devisN?' · '+g.devisN+' devis':'');
       var amt=(a.key==='devis')?(g.devisTot?eur(g.devisTot)+' · non compté':''):(g.dep?eur(g.dep):(g.rev?'+'+eur(g.rev):''));
@@ -1758,13 +1831,17 @@
     if(pend.length){ var cR=el('<div class="card"><h2>🔗 Rapprochement bancaire<span class="r">'+pend.length+' à valider</span></h2><p class="tiny">Une facture ET sa ligne bancaire = la même dépense. Rapproche pour ne compter qu\'une fois.</p></div>');
       pend.slice(0,20).forEach(function(inv){ var m=suggestMatch(inv);
         var row=el('<div class="tx"><div class="ic">🔗</div><div class="mid"><div class="lb">'+esc(inv.vendor||inv.label)+'</div><div class="mt">Facture '+eur(inv.amount)+' · '+esc(ymd(inv.date))+' ↔ banque « '+esc(m.label)+' » '+esc(ymd(m.date))+'</div></div></div>');
-        var b=el('<button class="btn sm gold">Rapprocher</button>'); b.onclick=function(){ reconcile(inv.id, m.id); }; row.querySelector('.mid').appendChild(el('<div class="row" style="margin-top:6px"></div>')).appendChild(b); cR.appendChild(row); });
+        var ract=row.querySelector('.mid').appendChild(el('<div class="row" style="margin-top:6px"></div>'));
+        if((VAULT.docs||[]).some(function(x){return x.id===inv.docId&&x.hasFile;})){ var vb=el('<button class="btn sm">🖨️ Voir</button>'); vb.onclick=function(){ openDoc(inv.docId); }; ract.appendChild(vb); }
+        var b=el('<button class="btn sm gold">Rapprocher</button>'); b.onclick=function(){ reconcile(inv.id, m.id); }; ract.appendChild(b); cR.appendChild(row); });
       v.appendChild(cR);
     }
     var done=invs.filter(function(t){return t.recWith;});
     if(done.length){ var cD=el('<div class="card"><h2>✅ Rapprochées ('+done.length+')</h2></div>');
       done.slice(0,20).forEach(function(t){ var row=el('<div class="tx"><div class="ic">✅</div><div class="mid"><div class="lb">'+esc(t.vendor||t.label)+'</div><div class="mt">'+eur(t.amount)+' · comptée une fois</div></div></div>');
-        var b=el('<button class="btn sm danger">Annuler</button>'); b.onclick=function(){ unreconcile(t.id); }; row.querySelector('.mid').appendChild(el('<div class="row" style="margin-top:6px"></div>')).appendChild(b); cD.appendChild(row); });
+        var ract=row.querySelector('.mid').appendChild(el('<div class="row" style="margin-top:6px"></div>'));
+        if((VAULT.docs||[]).some(function(x){return x.id===t.docId&&x.hasFile;})){ var vb=el('<button class="btn sm">🖨️ Voir</button>'); vb.onclick=function(){ openDoc(t.docId); }; ract.appendChild(vb); }
+        var b=el('<button class="btn sm danger">Annuler</button>'); b.onclick=function(){ unreconcile(t.id); }; ract.appendChild(b); cD.appendChild(row); });
       v.appendChild(cD);
     }
 
@@ -1975,7 +2052,7 @@
       '<label class="toggle" style="justify-content:flex-start"><input type="checkbox" id="rem" '+(remember?'checked':'')+'> Rester déverrouillé sur cet appareil (reconnu auto)</label>'+
       '<label class="toggle" style="justify-content:flex-start;margin-top:6px"><input type="checkbox" id="fid" '+(fidOn?'checked':'')+'> 👤 Face ID — ouvrir le coffre d\'un regard (code en secours)</label>'+
       '<div class="tiny" id="fid-msg" style="margin-top:4px">'+(fidOn?'Face ID actif sur cet appareil. « Verrouiller » exigera Face ID (ou le code) à la réouverture.':'Active pour ne plus taper ton code à chaque ouverture.')+'</div>'+
-      '<div class="row" style="margin-top:8px"><button class="btn grow" id="dedup">🧹 Nettoyer les doublons</button></div>'+
+      '<div class="row" style="margin-top:8px"><button class="btn grow" id="dedup">🧹 Nettoyer les doublons</button><button class="btn grow" id="pubclean">📣 Chasser les pubs</button></div>'+
       '<div class="row" style="margin-top:8px"><button class="btn grow" id="lock2">🔒 Verrouiller maintenant</button><button class="btn danger grow" id="wipe">🗑️ Tout effacer</button></div>'+
       '<div class="tiny" style="margin-top:8px">Version '+APP_VER+' · '+(VAULT.audit?VAULT.audit.length:0)+' actions journalisées · 100% local + chiffré.</div></div>');
     v.appendChild(cSec);
@@ -2050,6 +2127,7 @@
     /* sec wiring */
     cSec.querySelector('#rem').onchange=async function(e){ if(e.target.checked){ localStorage.setItem(LS_REMEMBER,'1'); await persist(); toast('Cet appareil restera déverrouillé'); } else { localStorage.removeItem(LS_REMEMBER); localStorage.removeItem(LS_DEV); toast('Déverrouillage automatique désactivé'); } };
     cSec.querySelector('#dedup').onclick=async function(){ var n=dedupeAll(); await persist(); toast(n?('🧹 '+n+' doublon(s) retiré(s)'):'✅ Aucun doublon'); render(); };
+    cSec.querySelector('#pubclean').onclick=cleanPromoDocs;
     cSec.querySelector('#lock2').onclick=lockNow;
     cSec.querySelector('#wipe').onclick=wipeAll;
   }
