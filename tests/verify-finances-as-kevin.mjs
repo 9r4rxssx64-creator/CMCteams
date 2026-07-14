@@ -74,8 +74,25 @@ const TABS = [
   ['comptes','Comptes'], ['compta','Comptabilit'], ['compare','Comparateur'],
   ['ask','Demander'], ['tx','Op'], ['devis','Devis'], ['budget','Budget'], ['set','glages'],
 ];
+// Un clic sur un montant/chiffre ouvre un overlay drill-down (#drillov, feature légitime,
+// leçon #148) OU l'aperçu d'un document (#docov). Il couvre la page → il faut le fermer
+// avant l'action suivante, exactement comme closeDrill()/closeDocOverlay() (o.remove()).
+const dismissOverlays = () => page.evaluate(() => {
+  document.querySelectorAll('#drillov,#docov').forEach((e) => e.remove());
+}).catch(() => {});
 const gotoTab = async (label) => {
-  await page.locator('#tabs .tab', { hasText: label }).first().click();
+  await dismissOverlays();
+  // v0.11.0 a 2 onglets contenant « Bilan » (🔎 Bilan + 📑 Bilan complet). Les labels du test
+  // sont partiels (« Op », « glages »…) → on clique, parmi les .tab qui CONTIENNENT le label,
+  // celui au texte le PLUS COURT (🔎 Bilan < 📑 Bilan complet), via son vrai onclick.
+  const ok = await page.evaluate((lab) => {
+    const tabs = [...document.querySelectorAll('#tabs .tab')].filter((b) => (b.textContent || '').includes(lab));
+    if (!tabs.length) return false;
+    tabs.sort((a, b) => (a.textContent || '').length - (b.textContent || '').length);
+    tabs[0].click();
+    return true;
+  }, label);
+  if (!ok) await page.locator('#tabs .tab', { hasText: label }).first().click();
   await page.waitForTimeout(250);
 };
 
@@ -87,9 +104,25 @@ try {
   await page.waitForSelector('#tabs', { timeout: 5000 });
   rec(true, P0, 'coffre cree -> UI principale (12 onglets)');
   await page.waitForSelector('#ai-pin', { timeout: 3000 });
-  await page.fill('#ai-pin', '200807'); await page.click('#ai-on');
-  await page.waitForFunction(() => { const m=document.getElementById('ai-msg'); return m && /IA activ/.test(m.textContent); }, { timeout: 6000 });
-  await page.waitForTimeout(900);
+  // Activation robuste. Le handler #ai-on affiche « ✅ IA activée » dans #ai-msg PUIS
+  // fait setTimeout(render,700) qui RECONSTRUIT la carte → #ai-msg est transitoire (~700ms).
+  // Le signal STABLE d'activation = le bouton « Désactiver » (#ai-off, rendu uniquement quand
+  // aiOn=true après le re-render). On attend CE signal, pas le message fugace, et on re-clique
+  // si nécessaire (on re-remplit #ai-pin s'il est encore là). Rien n'est simulé à la place de
+  // l'app : c'est SON handler qui pose aiPinHash → SON render qui affiche #ai-off.
+  let aiActivated = false;
+  for (let attempt = 0; attempt < 6 && !aiActivated; attempt++) {
+    try {
+      if (await page.locator('#ai-pin').count()) {
+        await page.fill('#ai-pin', '200807');
+        await page.click('#ai-on');
+      }
+      await page.waitForSelector('#ai-off', { timeout: 3000 });
+      aiActivated = true;
+    } catch (_) { await page.waitForTimeout(300); }
+  }
+  if (!aiActivated) throw new Error('activation IA jamais confirmée (#ai-off absent) après 6 tentatives');
+  await page.waitForTimeout(500);
   rec(true, P0, 'classement IA active (proxy mocke)');
   await page.evaluate(() => { try { localStorage.setItem('kdmc_admin_grant', 'g1.g2.g3'); } catch(e){} });
   await gotoTab('Ajouter');
@@ -146,6 +179,7 @@ try {
       clicked++;
       try { await b.click({ timeout: 1200 }); } catch (_) {}
       await page.waitForTimeout(120);
+      await dismissOverlays(); // referme un drill/doc éventuel avant le bouton suivant
       const alive = await page.locator('#tabs').count();
       if (alive === 0) { blanked++; P0.push('bouton ' + (txt||('#'+i)) + ' (' + label + ') -> ecran blanc'); }
       if (errAt() !== before) { crashed++; P0.push('bouton ' + (txt||('#'+i)) + ' (' + label + ') -> exception JS'); }
