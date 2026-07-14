@@ -21,9 +21,15 @@ export function hasAmount(text) {
 /* Un mail PUBLICITAIRE (newsletter, promo, vente flash, deal Groupon…) contient souvent des
    montants → hasAmount ne suffit pas. Marqueurs promo forts → on N'ENREGISTRE PAS le corps.
    Les pièces jointes PDF restent TOUJOURS gardées (une vraie facture est un PDF). */
-export const PROMO_RE = /(d[ée]sabonn|unsubscrib|newsletter|vente\s*flash|code\s*promo|promotion\b|-\s?\d{1,2}\s?%|\d{1,2}\s?%\s*de\s*r[ée]duc|soldes\b|offre\s+(sp[ée]ciale|limit[ée]e|exclusive|du\s+jour)|panier\s+abandonn|derni[èe]res?\s+heures|bons?\s+plans?|deal\s+du|jusqu.[àa]\s+-?\d{1,2}\s?%|profitez\s+de|d[ée]couvrez\s+nos)/i;
+export const PROMO_STRONG_RE = /(d[ée]sabonn|unsubscrib|newsletter|vente\s*(flash|priv[ée]e)|code\s*promo|panier\s+abandonn|black\s*friday|cyber\s*monday|jeu[\s-]*concours|gagnez\b|parrainage|cashback|offre\s+de\s+bienvenue|derni[èe]re\s+chance|derniers?\s+jours\s+pour)/i;
+export const PROMO_WEAK_RE = /(-\s?\d{1,2}\s?%|\d{1,2}\s?%\s*de\s*r[ée]duc|promotion\b|promo\b|r[ée]duction|remise\s+(de|exceptionnelle|imm[ée]diate)|soldes\b|offre\s+(sp[ée]ciale|limit[ée]e|exclusive|du\s+jour|exceptionnelle)|bons?\s+plans?|deal\s+du|jusqu.[àa]\s+-?\d{1,2}\s?%|profitez\s+de|d[ée]couvrez\s+(nos|notre|la\s+s[ée]lection)|exclusivit[ée]|s[ée]lection\s+pour\s+vous|meilleures?\s+offres?|ne\s+manquez\s+pas|[àa]\s+saisir|petits?\s+prix|expire\s+(bient[ôo]t|le)|top\s+ventes?|nouveaut[ée]s\s+de)/gi;
 export function looksPromo(subject, from, body) {
-  return PROMO_RE.test(String(subject || '') + ' ' + String(from || '') + ' ' + String(body || '').slice(0, 4000));
+  // Pub = 1 marqueur FORT (désabonner, newsletter, vente flash…) OU >= 2 marqueurs faibles (-NN%, offre spéciale…).
+  const s = String(subject || '') + ' ' + String(from || '') + ' ' + String(body || '').slice(0, 4000);
+  if (PROMO_STRONG_RE.test(s)) return true;
+  const weak = s.match(PROMO_WEAK_RE) || [];
+  const distinct = new Set(weak.map(w => w.toLowerCase().replace(/\s+/g, ' ').trim()));
+  return distinct.size >= 2;
 }
 
 /* ---------- parseur MIME (multipart, base64) — repris de kdmc-mail ---------- */
