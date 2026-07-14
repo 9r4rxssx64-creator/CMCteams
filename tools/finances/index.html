@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.8.4 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.8.4">
+<!-- v0.8.5 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.8.5">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -140,11 +140,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.4" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.5" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.8.4';
+  var APP_VER = 'v0.8.5';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -446,16 +446,26 @@
   }
   /* Auto-récupération SILENCIEUSE : au boot, au retour au 1er plan, et toutes les 5 min.
      Aucun geste requis — dès qu'une facture arrive à factures@kd-mc.com, elle rentre toute seule. */
-  var _mailAutoTs=0, _mailAutoBusy=false;
+  var _mailAutoTs=0, _mailAutoBusy=false, _mailStatus='';
+  function _mailReasonFr(reason){
+    if(reason==='no_ai') return 'Active d\'abord le classement IA (Réglages).';
+    if(reason==='no_grant') return 'Connexion admin impossible — réessaie dans un instant.';
+    if(reason==='network') return 'Réseau indisponible — réessaie.';
+    if(/^http_40[13]$/.test(reason||'')) return 'Autorisation refusée — réessaie.';
+    if(/^http_/.test(reason||'')) return 'Serveur : '+String(reason).replace('http_','HTTP ')+'.';
+    return reason||'erreur';
+  }
   async function mailAutoScan(force){
-    if(_mailAutoBusy) return; if(!VAULT||!VAULT.aiPinHash) return;
+    if(_mailAutoBusy) return; if(!VAULT) return;
+    if(!VAULT.aiPinHash){ _mailStatus='ai'; return; }
     var now=Date.now(); if(!force && now-_mailAutoTs<120000) return; _mailAutoTs=now; _mailAutoBusy=true;
+    _mailStatus='scan';
     try{ var res=await _mailPull(null);
-      if(res && res.ok && (res.okc||res.devc)){
-        toast('📧 '+res.okc+' facture(s)'+(res.devc?(' + '+res.devc+' devis'):'')+' récupérée(s) automatiquement');
-        render();
-      }
-    }catch(e){}finally{ _mailAutoBusy=false; }
+      if(res && res.ok){
+        if(res.okc||res.devc){ _mailStatus='ok:'+res.okc+':'+(res.devc||0); toast('📧 '+res.okc+' facture(s)'+(res.devc?(' + '+res.devc+' devis'):'')+' récupérée(s) automatiquement'); render(); }
+        else { _mailStatus='none'; if(force)render(); }
+      } else { _mailStatus='err:'+_mailReasonFr(res&&res.reason); if(force)render(); }
+    }catch(e){ _mailStatus='err:'+(e.message||'erreur'); if(force)render(); }finally{ _mailAutoBusy=false; }
   }
   function finishImport(out, name, ftype, hash, srcMeta){
     var j=extractJson(out); if(!j) throw new Error('Réponse IA illisible');
@@ -842,7 +852,37 @@
 
   /* ---------- Vue TABLEAU DE BORD ---------- */
   function viewDash(v){
-    if(!VAULT.tx.length){ v.appendChild(el('<div class="card" style="text-align:center;padding:34px 16px"><div style="font-size:40px">📊</div><h2 style="justify-content:center;margin-top:8px">Aucune donnée</h2><p class="muted">Ajoute tes premiers relevés dans l\'onglet <b>➕ Ajouter</b>.</p><button class="btn gold" id="goadd" style="margin-top:8px">➕ Ajouter des documents</button></div>')); setTimeout(function(){var g=$('goadd');if(g)g.onclick=function(){STATE.tab='add';render();};},0); return; }
+    if(!VAULT.tx.length){
+      var aiOn=!!VAULT.aiPinHash, hasCloud=!!VAULT.backupOnline, st=_mailStatus;
+      var statHtml = st==='scan' ? '⏳ Je récupère tes factures par mail…'
+        : st==='none' ? '✅ Boîte à jour — aucune nouvelle facture en attente.'
+        : (st&&st.indexOf('ok:')===0) ? '✅ Factures importées.'
+        : (st&&st.indexOf('err:')===0) ? '⚠️ '+esc(st.slice(4))
+        : '';
+      var body='<div style="font-size:40px">📊</div><h2 style="justify-content:center;margin-top:8px">Rien à afficher pour l\'instant</h2>';
+      if(aiOn){
+        body+='<p class="muted">Je récupère <b>automatiquement</b> tes factures envoyées à <b>factures@kd-mc.com</b> — à l\'ouverture et toutes les 5 min. Tu n\'as rien à taper.</p>'+
+          (statHtml?'<div class="tiny" id="dash-mailstat" style="margin:4px 0 10px">'+statHtml+'</div>':'')+
+          '<button class="btn gold grow" id="dash-mailscan">🔄 Récupérer mes factures maintenant</button>'+
+          (hasCloud?'<button class="btn grow" id="dash-restore" style="margin-top:8px">☁️ Restaurer ma sauvegarde en ligne</button>':'')+
+          '<button class="btn grow" id="dash-add" style="margin-top:8px">➕ Ajouter un document à la main</button>';
+      } else {
+        body+='<p class="muted">Entre ton <b>code admin une seule fois</b> : il active la lecture IA + la récupération de tes factures + la sauvegarde. Ensuite, plus jamais de code.</p>'+
+          '<button class="btn gold grow" id="dash-ai">Activer (IA + mails + sauvegarde)</button>';
+      }
+      v.appendChild(el('<div class="card" style="text-align:center;padding:28px 16px">'+body+'</div>'));
+      setTimeout(function(){
+        var a=$('dash-add'); if(a)a.onclick=function(){STATE.tab='add';render();};
+        var ai=$('dash-ai'); if(ai)ai.onclick=function(){STATE.tab='set';render();};
+        var ms=$('dash-mailscan'); if(ms)ms.onclick=function(){ var s=$('dash-mailstat'); if(!s){ s=el('<div class="tiny" id="dash-mailstat" style="margin:8px 0"></div>'); ms.parentNode.insertBefore(s,ms); } mailScan(s); };
+        var rs=$('dash-restore'); if(rs)rs.onclick=async function(){ rs.disabled=true; rs.textContent='⏳ restauration…';
+          try{ var d=await restoreFromCloud(); toast('☁️ Restauré ('+(d.tx?d.tx.length:0)+' op.)'); render(); }
+          catch(e){ rs.disabled=false; rs.textContent='☁️ Restaurer ma sauvegarde en ligne';
+            if(e&&e.needPass){ var p=prompt('Code de ton coffre (pour déchiffrer la sauvegarde) :'); if(p){ try{ var d2=await restoreFromCloud(p); toast('☁️ Restauré ('+(d2.tx?d2.tx.length:0)+' op.)'); render(); }catch(e2){ toast('❌ '+(e2.message||'code incorrect'),true); } } }
+            else toast('❌ '+((e&&e.message)||'restauration impossible'),true); } };
+      },0);
+      return;
+    }
     v.appendChild(filterBar());
     var txs=activeTx(); var a=analyze(txs);
     /* KPIs */
