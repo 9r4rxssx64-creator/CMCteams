@@ -84,8 +84,16 @@ Kevin : « Fais tout ce que tu n'as pas pu faire dans ton audit ». J'ai repris 
 
 Gate `test:ci` **EXIT 0** avec les 2 nouveaux garde/test câblés.
 
-### Second avis (security-suite) — triage
-_(à compléter dès la fin du run 29350578034 ; findings déterministes non-Claude → confirmer/écarter, lecon #83)._
+### Second avis (security-suite) — triage ✅ VÉRIFIÉ (lecon #83 : je vérifie, je ne prends pas le compte brut)
+Run **29350578034**, scan de TOUT le monorepo + **6366 commits d'historique** (toutes les apps, pas seulement CMCteams). Totaux bruts : **1182** (gitleaks 92 · trufflehog 32 · osv 14 · trivy **0** · semgrep 455 · zizmor 589). Un compte brut n'est PAS un finding → triage :
+
+- **gitleaks 92 + trufflehog 32 « secrets » → 0 secret LIVE confirmé.** J'ai inspecté les correspondances du tree courant : ce sont (a) la **clé Web Firebase publique** `AIzaSy…` (publique PAR DESIGN, gated par les Security Rules — documentée `FIREBASE_WEB_API_KEY` dans CLAUDE.md), (b) des `/-----BEGIN PRIVATE KEY-----/` en **regex de nettoyage** (code qui MANIPULE une clé chargée d'un secret runtime — aucune matière de clé), (c) des artefacts `coverage/`, (d) l'historique git (fixtures/anciens commits). **L'outil non-Claude CONVERGE avec mon audit passe-1 (0 secret live).**
+- **trivy 0 = FAUX zéro** : l'install trivy a échoué (`/tmp/trivy: No such file`) → l'outil n'a pas tourné. **Corrigé** (garde `if [ -x /tmp/trivy ]` → saut propre, OSV couvre déjà les deps).
+- **Bug résumé Firebase (HTTP 400)** : la clé `trivy (vulns/secrets)` contenait un `/` (interdit en clé RTDB) → le PUT `ax_security_last` échouait → **le chat Apex ne voyait jamais l'état sécu**. **Corrigé** (`vulns-secrets`).
+- **osv 14 (deps)** : CVE de dépendances Python d'OUTILS (seo skill, crypto-bot, backend, broadlink) — non servies aux users. Backlog tooling, non bloquant CMCteams.
+- **semgrep 455 + zizmor 589** : repo-wide (toutes apps + 120+ workflows), majorité info/hardening (unpinned actions, permissions larges, `innerHTML`). Pour CMCteams, `test:xss-guard` (ratchet) tient déjà la dette `innerHTML`. Backlog de durcissement, pas des vulnérabilités exploitables.
+
+**Conclusion du second avis** : aucun P0/secret live ; il CONFIRME l'audit Claude. Les 2 seuls correctifs actionnables immédiats étaient des bugs de l'OUTIL lui-même (trivy install + clé Firebase `/`) → corrigés pour que le second-avis remonte enfin son état au chat de Kevin.
 
 ### Ce qui reste HONNÊTEMENT non fait après passe 4
 - **F-LIVE1 (Apex AI `rescue.js` 404)** : autre projet (Apex, pas CMCteams), dossier build-régénéré (patch manuel écrasé, lecon #128), non vérifiable en live depuis l'agent → **documenté, pas corrigé** (« ne rien casser » sur un build tiers non testable). Action = pipeline de build Apex.
