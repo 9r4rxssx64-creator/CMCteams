@@ -157,6 +157,23 @@ async function pendingCount(env) {
 
 /* ---------- backfill COMPLET (tout l'historique), résumable ---------- */
 // Démarre : cherche TOUS les UID et remplit la file de travail (du plus ancien au plus récent).
+// Sujets typiques d'une facture (sous-chaînes ASCII — IMAP SEARCH SUBJECT = « contient »,
+// insensible à la casse). But : NE PAS parcourir 61 000 mails ; ne rapatrier QUE les
+// candidats facture, côté serveur. ingestRaw re-filtre ensuite (matchesInvoice) → surcapture
+// sans risque (un « billet » écarté), sous-capture évitée en couvrant FR + EN. Sans accents
+// (IMAP SEARCH ASCII) : « factur » attrape facture/factures/facturation, etc.
+const INVOICE_SUBJECTS = ['factur', 'invoice', 'devis', 'receipt', 'paiement', 'payment', 'abonnement', 'quittance', 'commande', 'echeance', 'releve', 'statement', 'reglement', 'montant', 'ticket', 'order'];
+async function imapSearchInvoiceUids(c) {
+  const set = new Set();
+  for (const t of INVOICE_SUBJECTS) {
+    try {
+      const r = await c.cmd('UID SEARCH SUBJECT "' + t + '"');
+      if (r.status === 'OK') for (const u of parseSearchUids(r.untagged)) set.add(u);
+    } catch { /* un terme qui échoue n'empêche pas les autres */ }
+  }
+  return [...set];
+}
+
 async function backfillStart(env) {
   if (!env || !env.ACCOUNTS) return { ok: false, reason: 'kv_absent' };
   const user = await env.ACCOUNTS.get('mon:user');
@@ -172,16 +189,22 @@ async function backfillStart(env) {
     if (r.status !== 'OK') throw new Error('login_refuse:' + r.line.slice(0, 120));
     r = await c.cmd('SELECT INBOX');
     if (r.status !== 'OK') throw new Error('select_refuse:' + r.line.slice(0, 120));
-    r = await c.cmd('UID SEARCH ALL');
-    if (r.status !== 'OK') throw new Error('search_refuse:' + r.line.slice(0, 120));
-    const all = parseSearchUids(r.untagged).sort((a, b) => a - b);
+    // Recherche CIBLÉE facture (rapide sur 61k). Repli sur TOUT si rien trouvé (edge/serveur).
+    let uids = await imapSearchInvoiceUids(c);
+    if (!uids.length) {
+      const ra = await c.cmd('UID SEARCH ALL');
+      if (ra.status === 'OK') uids = parseSearchUids(ra.untagged);
+    }
+    uids.sort((a, b) => b - a); // PLUS RÉCENTS d'abord → les vraies factures récentes rentrent en premier
+    const maxUid = uids.length ? Math.max(...uids) : 0;
     try { await c.cmd('LOGOUT'); } catch { /* */ }
-    await env.ACCOUNTS.put('mon:bf_queue', JSON.stringify(all));
-    await env.ACCOUNTS.put('mon:bf_total', String(all.length));
-    await env.ACCOUNTS.put('mon:bf_remaining', String(all.length));
-    await env.ACCOUNTS.put('mon:bf_max', String(all.length ? all[all.length - 1] : 0));
+    await env.ACCOUNTS.put('mon:bf_queue', JSON.stringify(uids));
+    await env.ACCOUNTS.put('mon:bf_total', String(uids.length));
+    await env.ACCOUNTS.put('mon:bf_remaining', String(uids.length));
+    await env.ACCOUNTS.put('mon:bf_max', String(maxUid));
     await env.ACCOUNTS.put('mon:bf_active', '1');
-    return { ok: true, total: all.length };
+    await env.ACCOUNTS.put('mon:bf_ver', '2'); // marqueur : file « ciblée facture + récents d'abord »
+    return { ok: true, total: uids.length };
   } finally { await c.close(); }
 }
 
@@ -404,8 +427,12 @@ export default {
       if (p === '/sync' && request.method === 'POST') {
         if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
         try {
-          // Si un backfill complet est en cours → on l'avance ; sinon récup incrémentale.
-          if (env && env.ACCOUNTS && await env.ACCOUNTS.get('mon:bf_active')) return J(await backfillStep(env));
+          // Si un backfill est en cours → on l'avance ; sinon récup incrémentale.
+          // Ancien backfill (v1, 61k du plus ancien) détecté → on le REDÉMARRE en mode ciblé récent (migration auto).
+          if (env && env.ACCOUNTS && await env.ACCOUNTS.get('mon:bf_active')) {
+            if ((await env.ACCOUNTS.get('mon:bf_ver')) !== '2') await backfillStart(env);
+            return J(await backfillStep(env));
+          }
           return J(await syncOnce(env));
         } catch (e) {
           const detail = String(e && e.message || e);
@@ -416,8 +443,9 @@ export default {
       if (p === '/backfill' && request.method === 'POST') {
         if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
         try {
-          // Déjà en cours → on avance d'un lot (re-tap = accélère). Sinon on démarre + 1er lot.
-          if (env && env.ACCOUNTS && await env.ACCOUNTS.get('mon:bf_active')) return J(await backfillStep(env));
+          // Déjà en cours ET file « v2 » (ciblée récent) → on avance d'un lot (re-tap = accélère).
+          // Sinon (rien en cours OU ancienne file v1 de 61k) → on (re)démarre en mode ciblé récent + 1er lot.
+          if (env && env.ACCOUNTS && await env.ACCOUNTS.get('mon:bf_active') && (await env.ACCOUNTS.get('mon:bf_ver')) === '2') return J(await backfillStep(env));
           const s = await backfillStart(env);
           if (!s.ok) return J(s);
           const step = await backfillStep(env);
@@ -430,7 +458,7 @@ export default {
       }
       if (p === '/disconnect' && request.method === 'POST') {
         if (!(await adminOk(request, env))) return J({ ok: false, reason: 'need_admin_code' }, 403);
-        try { for (const k of ['mon:user', 'mon:pass', 'mon:lastuid', 'mon:host', 'mon:port', 'mon:bf_active', 'mon:bf_queue', 'mon:bf_total', 'mon:bf_remaining', 'mon:bf_max']) await env.ACCOUNTS.delete(k); } catch { /* */ }
+        try { for (const k of ['mon:user', 'mon:pass', 'mon:lastuid', 'mon:host', 'mon:port', 'mon:bf_active', 'mon:bf_queue', 'mon:bf_total', 'mon:bf_remaining', 'mon:bf_max', 'mon:bf_ver']) await env.ACCOUNTS.delete(k); } catch { /* */ }
         return J({ ok: true });
       }
       return new Response('kdmc-monaco', { status: 200 });
