@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.2 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.2">
+<!-- v0.13.3 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.3">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.2" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.3" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.2';
+  var APP_VER = 'v0.13.3';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -343,20 +343,28 @@
   function errDetail(txt){ try{ var d=JSON.parse(txt); return String((d.error&&(d.error.message||d.error))||txt).slice(0,180); }catch(e){ return String(txt).slice(0,180); } }
   async function aiCall(parts, maxTokens){
     var prov=(VAULT&&VAULT.aiProvider)||'gemini';
+    var alt=(prov==='gemini')?'anthropic':'gemini';
+    /* Repli BIDIRECTIONNEL : si le moteur choisi tombe (Claude premium indispo/quota OU Gemini KO),
+       on bascule AUTOMATIQUEMENT sur l'autre → l'import passe toujours (« impossible de rajouter »
+       était dû à l'absence de repli quand Claude était sélectionné et en panne). Tout auto. */
     try{ return await aiCallProvider(prov, parts, maxTokens); }
     catch(e){
-      if(prov==='gemini'){ try{ var r=await aiCallProvider('anthropic', parts, maxTokens); toast('ℹ️ IA gratuite indispo — Claude utilisé'); return r; }catch(e2){ throw e; } }
-      throw e;
+      try{ var r=await aiCallProvider(alt, parts, maxTokens);
+        toast(alt==='anthropic'?'ℹ️ IA gratuite indispo — Claude utilisé':'ℹ️ Claude indispo — IA gratuite utilisée'); return r;
+      }catch(e2){ throw e; }   /* les deux ont échoué → cause exacte du moteur choisi (leçon #97) */
     }
   }
   /* IA « la plus adéquate » : gratuite d'abord (économie) ; si sa réponse est vide/trop
      courte pour une vraie analyse → on monte sur Claude (compétence). Le meilleur des deux. */
   async function aiCallSmart(parts, maxTokens, minLen){
     var prov=(VAULT&&VAULT.aiProvider)||'gemini'; minLen=minLen||120;
+    var alt=(prov==='gemini')?'anthropic':'gemini';
     try{ var out=await aiCallProvider(prov, parts, maxTokens);
       if(prov==='gemini' && (out||'').trim().length<minLen){ try{ var o2=await aiCallProvider('anthropic', parts, maxTokens); if((o2||'').trim().length>(out||'').trim().length){ toast('⤴️ Analyse approfondie via Claude'); return o2; } }catch(_){} }
       return out;
-    }catch(e){ if(prov==='gemini'){ try{ var r=await aiCallProvider('anthropic', parts, maxTokens); toast('ℹ️ IA gratuite indispo — Claude utilisé'); return r; }catch(e2){ throw e; } } throw e; }
+    }catch(e){
+      try{ var r=await aiCallProvider(alt, parts, maxTokens); toast(alt==='anthropic'?'ℹ️ IA gratuite indispo — Claude utilisé':'ℹ️ Claude indispo — IA gratuite utilisée'); return r; }catch(e2){ throw e; }
+    }
   }
   async function aiCallProvider(prov, parts, maxTokens){
     var hash=await aiPinHash(); if(!hash) throw new Error('IA non activée (code admin requis)');
@@ -859,6 +867,16 @@
     if(KEY && VAULT && VAULT._salt===pack.salt){ key=KEY; }   /* même appareil déjà déverrouillé */
     else { if(!pass){ var er=new Error('need_pass'); er.needPass=true; throw er; } key=await deriveKey(pass, pack.salt); }
     var data=await decWith(key,{iv:pack.iv,ct:pack.ct});
+    /* Garde-fou anti-perte : si la sauvegarde en ligne contient MOINS de données que cet appareil
+       (sauvegarde plus ancienne), on ne l'applique JAMAIS en silence → on demande confirmation
+       (sinon des ajouts récents disparaîtraient). Restaurer une sauvegarde plus riche/égale = OK direct. */
+    var localN=((VAULT&&VAULT.tx||[]).length)+((VAULT&&VAULT.docs||[]).length);
+    var cloudN=((data.tx||[]).length)+((data.docs||[]).length);
+    if(VAULT && cloudN<localN){
+      if(!confirm('⚠️ La sauvegarde en ligne a MOINS de données ('+(data.tx||[]).length+' op.) que cet appareil ('+(VAULT.tx||[]).length+' op.).\n\nLa restaurer effacerait tes ajouts récents.\n\nRestaurer quand même ?')){
+        var ec=new Error('annulé'); ec.cancelled=true; throw ec;
+      }
+    }
     data._salt=pack.salt; data.backupOnline=true; VAULT=data; KEY=key;
     localStorage.setItem(LS_VAULT, JSON.stringify({salt:pack.salt, iv:pack.iv, ct:pack.ct, ver:1}));
     audit('restore_cloud',''); await persist(); return data;
