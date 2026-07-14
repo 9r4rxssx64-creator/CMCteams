@@ -8,6 +8,16 @@ export const INVOICE_RE = /(facture|invoice|devis|quote|re[çc]u|receipt|quittan
 export function matchesInvoice(subject, filename, from) {
   return INVOICE_RE.test(String(subject || '') + ' ' + String(filename || '') + ' ' + String(from || ''));
 }
+/* Un CORPS de mail n'est une vraie facture que s'il porte un MONTANT en euros
+   (ex « 45,90 € », « 1 234.56 EUR », « € 99,99 », « montant : 12,00€ »). Sinon c'est
+   une notification (« votre facture est disponible ») → on ne crée PAS de document vide.
+   Les pièces jointes PDF, elles, sont toujours gardées (le montant est dans le PDF). */
+export function hasAmount(text) {
+  const t = String(text || '');
+  // un nombre (séparateurs de milliers/centimes optionnels) collé à €/EUR, dans un sens ou l'autre.
+  return /\d[\d . \u00a0]*(?:[.,]\d{1,2})?\s*(?:€|eur\b|euros?\b)/i.test(t)
+      || /(?:€|eur\b|euros?\b)\s*\d/i.test(t);
+}
 
 /* ---------- parseur MIME (multipart, base64) — repris de kdmc-mail ---------- */
 export function headerValue(headers, name) {

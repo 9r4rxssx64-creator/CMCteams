@@ -24,6 +24,13 @@ const TTL = 60 * 60 * 24 * 60;       // 60 jours si jamais l'app ne passe pas
 // une image n'est gardée que si le sujet/expéditeur/nom de fichier contient un mot-clé
 // facture (sinon = logo de signature, bannière newsletter, photo perso → écarté).
 const INVOICE_RE = /(facture|invoice|devis|quote|re[çc]u|receipt|quittance|ticket|comm?ande|order|paiement|payment|abonnement|[ée]ch[ée]ance|note d.honoraire|bon de commande|bill|statement|relev[ée])/i;
+// Un CORPS de mail = vraie facture seulement s'il porte un MONTANT en euros (sinon = notification vide → pas de document).
+function hasAmount(text) {
+  const t = String(text || '');
+  // un nombre (séparateurs de milliers/centimes optionnels) collé à €/EUR, dans un sens ou l'autre.
+  return /\d[\d . \u00a0]*(?:[.,]\d{1,2})?\s*(?:€|eur\b|euros?\b)/i.test(t)
+      || /(?:€|eur\b|euros?\b)\s*\d/i.test(t);
+}
 
 /* ------- Parseur MIME minimal (multipart, base64) — pur & testable ------- */
 function headerValue(headers, name) {
@@ -169,7 +176,7 @@ export default {
       // partout, même des écrits ». Si aucune PJ utile ET mail type facture → on garde le TEXTE.
       if (!storedFile) {
         const body = extractBodyText(raw);
-        if (body && body.length > 12 && (invCtx || INVOICE_RE.test(body))) {
+        if (body && body.length > 12 && (invCtx || INVOICE_RE.test(body)) && hasAmount(body)) {
           let b64 = ''; try { b64 = b64Utf8(body); } catch { /* */ }
           if (b64) {
             let hash = ''; try { hash = await sha256Hex(b64); } catch { /* */ }
