@@ -746,6 +746,68 @@ async function botCtx(env) {
    crypto-bot/trade_stats.py) : appariement FIFO 🟢 ACHAT → 🔻 VENTE par paire,
    net = Σ qty×(prix_vente − prix_achat). Jamais d'estimation : uniquement les
    lignes réellement présentes dans les logs visibles. */
+/* ===== Indicateurs techniques (analyse expert style TradingView, Kevin 2026-07-10)
+   Formules STANDARD (EMA, RSI Wilder, MACD, Stochastique, CCI) calculées sur les
+   VRAIES bougies Binance publiques — jamais d'estimation, pas de clé requise. ===== */
+function taEmaSeries(v, p) {
+  const k = 2 / (p + 1); const out = []; let e = v[0];
+  for (let i = 0; i < v.length; i++) { e = i ? v[i] * k + e * (1 - k) : v[0]; out.push(e); }
+  return out;
+}
+function taRsi(c, p) {
+  if (c.length < p + 2) return null;
+  let g = 0, l = 0;
+  for (let i = 1; i <= p; i++) { const d = c[i] - c[i - 1]; if (d > 0) g += d; else l -= d; }
+  g /= p; l /= p;
+  for (let i = p + 1; i < c.length; i++) {
+    const d = c[i] - c[i - 1];
+    g = (g * (p - 1) + Math.max(d, 0)) / p;
+    l = (l * (p - 1) + Math.max(-d, 0)) / p;
+  }
+  return l === 0 ? 100 : 100 - 100 / (1 + g / l);
+}
+function taStoch(h, l, c, p, dP) {
+  if (c.length < p + dP) return null;
+  const ks = [];
+  for (let j = c.length - dP; j < c.length; j++) {
+    const hh = Math.max(...h.slice(j - p + 1, j + 1)), ll = Math.min(...l.slice(j - p + 1, j + 1));
+    ks.push(hh === ll ? 50 : ((c[j] - ll) / (hh - ll)) * 100);
+  }
+  return { k: ks[ks.length - 1], d: ks.reduce((a, b) => a + b, 0) / ks.length };
+}
+function taCci(h, l, c, p) {
+  if (c.length < p) return null;
+  const tp = c.map((_, i) => (h[i] + l[i] + c[i]) / 3);
+  const win = tp.slice(-p); const sma = win.reduce((a, b) => a + b, 0) / p;
+  const dev = win.reduce((a, b) => a + Math.abs(b - sma), 0) / p;
+  return dev === 0 ? 0 : (tp[tp.length - 1] - sma) / (0.015 * dev);
+}
+/* Notation façon TradingView : votes moyennes mobiles + oscillateurs → score −1..+1. */
+function taRating(h, l, c) {
+  const price = c[c.length - 1];
+  let maBuy = 0, maSell = 0, oscBuy = 0, oscSell = 0, oscNeu = 0;
+  [10, 20, 50, 100, 200].forEach((p) => {
+    if (c.length < p) return;
+    const e = taEmaSeries(c, p)[c.length - 1];
+    if (price > e) maBuy++; else maSell++;
+  });
+  const rsi = taRsi(c, 14);
+  if (rsi != null) { if (rsi < 30) oscBuy++; else if (rsi > 70) oscSell++; else oscNeu++; }
+  const macdS = taEmaSeries(c, 12).map((v, i) => v - taEmaSeries(c, 26)[i]);
+  const sig = taEmaSeries(macdS, 9);
+  const macd = macdS[macdS.length - 1], macdSig = sig[sig.length - 1];
+  if (macd > macdSig) oscBuy++; else oscSell++;
+  const st = taStoch(h, l, c, 14, 3);
+  if (st) { if (st.k < 20 && st.k > st.d) oscBuy++; else if (st.k > 80 && st.k < st.d) oscSell++; else oscNeu++; }
+  const cci = taCci(h, l, c, 20);
+  if (cci != null) { if (cci < -100) oscBuy++; else if (cci > 100) oscSell++; else oscNeu++; }
+  const mom = c.length > 10 ? price - c[c.length - 11] : 0;
+  if (mom > 0) oscBuy++; else if (mom < 0) oscSell++;
+  const buy = maBuy + oscBuy, sell = maSell + oscSell, total = buy + sell + oscNeu;
+  const score = total ? (buy - sell) / total : 0;
+  const label = score >= 0.5 ? 'Achat fort' : score >= 0.1 ? 'Achat' : score > -0.1 ? 'Neutre' : score > -0.5 ? 'Vente' : 'Vente forte';
+  return { price, score: Math.round(score * 100) / 100, label, rsi: rsi == null ? null : Math.round(rsi * 10) / 10, ma_buy: maBuy, ma_sell: maSell, osc_buy: oscBuy, osc_sell: oscSell, macd_up: macd > macdSig };
+}
 function fleetTradeStats(logs) {
   const fifo = {}; let buys = 0, sells = 0, wins = 0, losses = 0, net = 0;
   for (const l of logs) {
@@ -920,6 +982,32 @@ async function handleBot(request, url, env) {
     /* Tri par net réalisé décroissant ; les bots absents/sans logs en dernier. */
     bots.sort((a, b) => (((b.net == null) ? -1e9 : b.net) - ((a.net == null) ? -1e9 : a.net)));
     return J({ ok: true, bots });
+  }
+
+  /* ANALYSE EXPERT (Kevin 2026-07-10 « qu'il serve à faire des analyses ») :
+     notation Achat/Vente par crypto façon TradingView, calculée dans le worker
+     depuis les VRAIES bougies Binance publiques (data-api.binance.vision, sans clé —
+     api.binance.com renvoie HTTP 451 géo-bloqué hors UE). Timeframe validé (?tf=1h|4h|1d), symboles
+     lus depuis la config réelle du bot. Aucune promesse : c'est une photo technique. */
+  if (path === '/__bot/analysis' && request.method === 'GET') {
+    const TFS = { '1h': '1h', '4h': '4h', '1d': '1d' };
+    const tf = TFS[url.searchParams.get('tf') || '1h'] || '1h';
+    const vq = await railGql(env, `query { variables(projectId: "${ctx.projectId}", environmentId: "${ctx.environmentId}", serviceId: "${ctx.serviceId}") }`);
+    const vars = ((vq.j || {}).data || {}).variables || {};
+    const syms = String(vars.SYMBOLS || 'BTC/USDT,ETH/USDT,SOL/USDT,BNB/USDT,XRP/USDT')
+      .split(',').map((s) => s.trim().toUpperCase()).filter((s) => /^[A-Z0-9]{2,15}\/USDT$/.test(s)).slice(0, 8);
+    const out = await Promise.all(syms.map(async (sym) => {
+      const pair = sym.replace('/', '');
+      try {
+        const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=${tf}&limit=250`);
+        if (!r.ok) return { symbol: sym, err: 'binance HTTP ' + r.status };
+        const k = await r.json();
+        if (!Array.isArray(k) || k.length < 60) return { symbol: sym, err: 'bougies insuffisantes (' + (k.length || 0) + ')' };
+        const h = k.map((x) => Number(x[2])), l = k.map((x) => Number(x[3])), c = k.map((x) => Number(x[4]));
+        return Object.assign({ symbol: sym }, taRating(h, l, c));
+      } catch (e) { return { symbol: sym, err: String(e && e.message || e).slice(0, 120) }; }
+    }));
+    return J({ ok: true, tf, analysis: out });
   }
 
   /* Réglages (« gros réglages » choisis par Kevin ; le bot gère le reste).
