@@ -150,8 +150,8 @@ body > *:not([style*="position:fixed"]):not([style*="position:absolute"]) {
   opacity: 1;
 }
 #apex-rescue-toolbar button {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 50%;
   background: rgba(20, 20, 35, 0.82);
@@ -167,7 +167,7 @@ body > *:not([style*="position:fixed"]):not([style*="position:absolute"]) {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   transition: transform 120ms ease, background 120ms ease;
   -webkit-tap-highlight-color: transparent;
-  min-height: 32px; /* Confirmed touch target, atteint avec :active scale */
+  min-height: 44px; /* Apple HIG ≥44px (v13.4.359) */
 }
 #apex-rescue-toolbar button:active {
   transform: scale(0.92);
@@ -181,8 +181,8 @@ body > *:not([style*="position:fixed"]):not([style*="position:absolute"]) {
 }
 @media (max-width: 380px) {
   #apex-rescue-toolbar button {
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
     font-size: 12px;
   }
 }
