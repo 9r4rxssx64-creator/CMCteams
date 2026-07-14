@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.3 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.3">
+<!-- v0.13.4 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.4">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.3" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.4" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.3';
+  var APP_VER = 'v0.13.4';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -501,7 +501,10 @@
       if(isImg){ body='<img src="'+_docUrl+'" style="max-width:100%;height:auto;display:block;margin:0 auto;border-radius:10px">'; }
       else if(isPdf){ body='<div class="muted" style="text-align:center;padding:26px">⏳ Ouverture du PDF…</div>'; }
       else { var txt=''; try{ txt=new TextDecoder('utf-8').decode(bytes); }catch(e){ txt='(aperçu indisponible)'; }
-             body='<pre style="white-space:pre-wrap;word-break:break-word;background:#0c120c;border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;max-height:68vh;overflow:auto;color:var(--txt);font:13px/1.5 ui-monospace,Menlo,monospace">'+esc(txt)+'</pre>'; }
+             /* Doc TEXTE (corps de mail) : pas un « beau » PDF → on l'affiche LISIBLE + on explique
+                honnêtement qu'aucun fichier n'était joint et comment ajouter le vrai document. */
+             body='<div class="tiny" style="background:#12200f;border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:9px;line-height:1.5">📧 Ceci est le <b>texte reçu</b> (contenu du mail) — aucun fichier PDF/photo n\'était joint à ce document. Si tu as le vrai document d\'origine, ajoute-le via <b>➕ Ajouter → Choisir des fichiers</b> et il s\'ouvrira en entier.</div>'+
+                  '<div style="white-space:pre-wrap;word-break:break-word;background:#0c120c;border:1px solid var(--line);border-radius:10px;padding:13px;margin:0;max-height:62vh;overflow:auto;color:var(--txt);font:15px/1.6 -apple-system,system-ui,sans-serif">'+esc(txt)+'</div>'; }
       var ov=el('<div id="docov" style="position:fixed;inset:0;z-index:60;background:rgba(4,7,4,.95);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 12px)"></div>');
       var head=el('<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"></div>');
       var ttl=el('<div style="flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(name)+'</div>');

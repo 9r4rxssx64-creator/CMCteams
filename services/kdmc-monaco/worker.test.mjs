@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  matchesInvoice, parseMimeAttachments, extractBodyText, decodeQP, htmlToText, subjectOf, fromOf,
+  matchesInvoice, keepAttachment, parseMimeAttachments, extractBodyText, decodeQP, htmlToText, subjectOf, fromOf,
   imapDate, parseSearchUids, parseTaggedResponse, imapQuote, adminOk, sha256Hex
 } from './lib.js';
 
@@ -158,4 +158,23 @@ test('adminOk : hash client OU code en clair, sinon refus', async () => {
   assert.equal(await adminOk(req('mauvais'), env), false);
   assert.equal(await adminOk(req(secret), {}), false);   // pas de secret configuré → fail-closed
   assert.equal(await adminOk(req(''), env), false);
+});
+
+test('keepAttachment : garde le VRAI PDF du devis (Kevin « toujours doc origine »)', () => {
+  // (1) PDF à nom générique + sujet neutre, MAIS corps avec un montant € → gardé (c'est le vrai devis).
+  assert.equal(keepAttachment('Votre projet villa', 'contact@nive-bat.mc', 'scan001.pdf', 'application/pdf',
+    'Bonjour, veuillez trouver notre proposition. Total : 23 100,00 €'), true);
+  // (2) PDF dont le sujet dit « devis » → gardé même sans montant dans le corps.
+  assert.equal(keepAttachment('Devis rénovation', 'x@y.mc', 'doc.pdf', 'application/pdf', 'à bientôt'), true);
+  // (3) Image (logo de signature) sur un mail neutre → PAS gardée (évite le bruit).
+  assert.equal(keepAttachment('Votre projet villa', 'contact@nive-bat.mc', 'logo.png', 'image/png',
+    'Total : 23 100,00 €'), false);
+  // (4) PDF sur une PUB avec montant (promo) → PAS gardé (pub, pas facture).
+  assert.equal(keepAttachment('Offre spéciale -50% soldes', 'promo@shop.com', 'flyer.pdf', 'application/pdf',
+    'Vente flash ! -50% : à saisir 19,99 €'), false);
+  // (5) PDF sur mail neutre SANS montant ni mot-clé → PAS gardé (rien n'indique une facture).
+  assert.equal(keepAttachment('Photos week-end', 'ami@gmail.com', 'album.pdf', 'application/pdf',
+    'coucou voici les photos'), false);
+  // (6) Image AVEC mot-clé facture dans le nom → gardée (ticket photographié).
+  assert.equal(keepAttachment('reçu', 'caisse@magasin.fr', 'ticket-facture.jpg', 'image/jpeg', ''), true);
 });
