@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://kd-mc.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://kd-mc.com; frame-src https://s.tradingview.com https://www.tradingview-widget.com https://www.tradingview.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <title>🤖 Bot Crypto — kd-mc.com</title>
 <style>
   :root{--bg:#0b0e14;--card:#131826;--card2:#0f1420;--line:#232b3d;--txt:#e8ecf4;--mut:#8b94a8;
@@ -105,6 +105,27 @@
       <div class="coins" id="fleet"><div class="sub">Chargement…</div></div>
     </div>
 
+    <!-- Analyse expert (calculée serveur sur vraies bougies Binance) -->
+    <div class="card">
+      <h2>🔬 Analyse expert — avis par crypto</h2>
+      <div class="sub" style="margin:-4px 0 8px">Notation façon TradingView (moyennes mobiles + RSI + MACD + stochastique + CCI), calculée sur les vraies bougies Binance. <b>Photo technique du moment — pas une promesse.</b></div>
+      <div class="chips" id="tfChips">
+        <div class="chip on" data-tf="1h" onclick="setTf('1h')">1 heure</div>
+        <div class="chip" data-tf="4h" onclick="setTf('4h')">4 heures</div>
+        <div class="chip" data-tf="1d" onclick="setTf('1d')">1 jour</div>
+      </div>
+      <div class="coins" id="analysis"><div class="sub">Chargement…</div></div>
+    </div>
+
+    <!-- TradingView officiel (graphique + jauge) -->
+    <div class="card">
+      <h2>📈 TradingView en direct</h2>
+      <div class="sub" style="margin:-4px 0 8px">Le vrai TradingView, intégré ici (gratuit, sans compte). Choisis la crypto :</div>
+      <div class="chips" id="tvChips"></div>
+      <iframe id="tvChart" title="Graphique TradingView" style="width:100%;height:380px;border:0;border-radius:12px;background:var(--card2)" loading="lazy"></iframe>
+      <iframe id="tvGauge" title="Jauge analyse technique TradingView" style="width:100%;height:330px;border:0;border-radius:12px;background:var(--card2);margin-top:10px" loading="lazy"></iframe>
+    </div>
+
     <!-- Réglages -->
     <div class="card">
       <h2>⚙️ Réglages — tu choisis, le bot gère</h2>
@@ -155,7 +176,7 @@
         <button class="btn-kill" onclick="botCmd('kill')">🛑 Couper</button>
         <button class="btn-start" onclick="botCmd('start')">▶️ Relancer</button>
       </div>
-      <div style="margin-top:10px"><button class="btn-ghost" onclick="refresh(true);loadFleet()">🔄 Actualiser</button></div>
+      <div style="margin-top:10px"><button class="btn-ghost" onclick="refresh(true);loadFleet();loadAnalysis()">🔄 Actualiser</button></div>
       <div id="cmdErr" class="err hid"></div>
     </div>
 
@@ -165,7 +186,7 @@
   <div id="fatal" class="err hid"></div>
 </div>
 
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="crypto-bot" data-version="v1.1.0" data-color="#e8b830" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="crypto-bot" data-version="v1.2.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   var API = location.origin, GRANT_KEY = 'kdmc_admin_grant', SSO_KEY = 'kdmc_sso_pass', lastStatus = '';
@@ -211,7 +232,7 @@
       if(!x.j.ok) return;
       var c=x.j.config||{};
       selected={}; (c.SYMBOLS||'BTC/USDT').split(',').forEach(function(s){ var b=s.split('/')[0].trim().toUpperCase(); if(b){ selected[b]=1; if(COIN_LIST.indexOf(b)<0) COIN_LIST.push(b); } });
-      renderChips();
+      renderChips(); renderTvChips();
       document.getElementById('setTf').value = c.TIMEFRAME||'15m';
       document.getElementById('setRisk').value = c.RISK_PER_TRADE_PCT||'1';
       document.getElementById('setMaxpos').value = c.MAX_POSITION_PCT||'25';
@@ -263,6 +284,61 @@
         box.appendChild(row);
       });
     }).catch(function(){});
+  }
+
+  // ---- Analyse expert + TradingView ----
+  var curTf='1h', tvSym=null;
+  window.setTf = function(tf){
+    curTf=tf;
+    document.querySelectorAll('#tfChips .chip').forEach(function(c){ c.classList[c.getAttribute('data-tf')===tf?'add':'remove']('on'); });
+    loadAnalysis();
+  };
+  var LABEL_COL={'Achat fort':'var(--green)','Achat':'var(--green)','Neutre':'var(--mut)','Vente':'var(--orange)','Vente forte':'var(--red)'};
+  var LABEL_ICO={'Achat fort':'🟢🟢','Achat':'🟢','Neutre':'⚪','Vente':'🟠','Vente forte':'🔴'};
+  function adviceFr(a){
+    if(a.label==='Achat fort') return 'Signaux haussiers nets (au-dessus des moyennes, élan positif).';
+    if(a.label==='Achat') return 'Plutôt haussier — élan en train de se construire.';
+    if(a.label==='Neutre') return 'Pas de direction claire — patience.';
+    if(a.label==='Vente') return 'Plutôt baissier — ton bot garde et attend la remontée.';
+    return 'Nettement baissier — pas le moment d\'acheter, on attend.';
+  }
+  window.loadAnalysis = loadAnalysis;
+  function loadAnalysis(){
+    fetch(API+'/__bot/analysis?tf='+encodeURIComponent(curTf),{credentials:'include',headers:hdrs()})
+    .then(function(r){ return r.json(); }).then(function(j){
+      if(!j.ok||!j.analysis) return;
+      var box=document.getElementById('analysis'); box.innerHTML='';
+      j.analysis.forEach(function(a){
+        var row=document.createElement('div'); row.className='coin'; row.style.flexWrap='wrap';
+        if(a.err){ row.innerHTML='<span class="nm">'+esc(a.symbol)+'</span><span class="px">indisponible : '+esc(a.err)+'</span>'; box.appendChild(row); return; }
+        var col=LABEL_COL[a.label]||'var(--mut)';
+        row.innerHTML='<span class="nm">'+esc(a.symbol.split('/')[0])+' <span style="color:'+col+'">'+(LABEL_ICO[a.label]||'')+' '+esc(a.label)+'</span></span>'
+          +'<span class="px">'+Number(a.price).toLocaleString('fr-FR')+' $ · RSI '+(a.rsi!=null?a.rsi:'—')+' · MM '+a.ma_buy+'↑/'+a.ma_sell+'↓ · MACD '+(a.macd_up?'↑':'↓')+'</span>'
+          +'<span class="hint" style="width:100%;margin-top:2px">'+esc(adviceFr(a))+'</span>';
+        box.appendChild(row);
+      });
+    }).catch(function(){});
+  }
+  function tvUrls(base){
+    var sym='BINANCE%3A'+base+'USDT';
+    var chart='https://s.tradingview.com/widgetembed/?symbol='+sym+'&interval=60&theme=dark&style=1&locale=fr&hide_side_toolbar=1&allow_symbol_change=0&save_image=0&withdateranges=1';
+    var cfg={symbol:'BINANCE:'+base+'USDT',interval:'1h',colorTheme:'dark',isTransparent:true,width:'100%',height:310,showIntervalTabs:true,locale:'fr'};
+    var gauge='https://www.tradingview-widget.com/embed-widget/technical-analysis/?locale=fr#'+encodeURIComponent(JSON.stringify(cfg));
+    return {chart:chart,gauge:gauge};
+  }
+  function renderTvChips(){
+    var box=document.getElementById('tvChips'); box.innerHTML='';
+    var coins=Object.keys(selected); if(!coins.length) coins=['BTC'];
+    if(!tvSym||coins.indexOf(tvSym)<0) tvSym=coins[0];
+    coins.forEach(function(c){
+      var d=document.createElement('div'); d.className='chip'+(tvSym===c?' on':''); d.textContent=c;
+      d.onclick=function(){ tvSym=c; renderTvChips(); };
+      box.appendChild(d);
+    });
+    var u=tvUrls(tvSym);
+    var ch=document.getElementById('tvChart'), ga=document.getElementById('tvGauge');
+    if(ch.getAttribute('src')!==u.chart) ch.setAttribute('src',u.chart);
+    if(ga.getAttribute('src')!==u.gauge) ga.setAttribute('src',u.gauge);
   }
 
   // ---- Statut / logs ----
@@ -333,10 +409,11 @@
     }).catch(function(e){ var el=document.getElementById('cmdErr'); el.textContent='Réseau : '+e.message; show('cmdErr',true); });
   };
 
-  function boot(){ renderChips(); loadConfig(); refresh(true); loadFleet(); }
+  function boot(){ renderChips(); loadConfig(); refresh(true); loadFleet(); loadAnalysis(); renderTvChips(); }
   boot();
   setInterval(function(){ refresh(false); }, 60000);
   setInterval(function(){ loadFleet(); }, 120000); // flotte : 6 bots interrogés → toutes les 2 min suffit
+  setInterval(function(){ loadAnalysis(); }, 300000); // analyse expert : toutes les 5 min (bougies 1h+)
 })();
 </script>
 </body>
