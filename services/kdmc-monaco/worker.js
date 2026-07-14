@@ -26,7 +26,7 @@
 
 import { connect } from 'cloudflare:sockets';
 import {
-  matchesInvoice, hasAmount, looksPromo, parseMimeAttachments, extractBodyText, subjectOf, fromOf,
+  matchesInvoice, hasAmount, looksPromo, keepAttachment, parseMimeAttachments, extractBodyText, subjectOf, fromOf,
   imapDate, parseSearchUids, parseTaggedResponse, latin1, imapQuote,
   sha256HexOfB64, sha256Hex, adminOk
 } from './lib.js';
@@ -120,9 +120,12 @@ async function imapClient(host, port) {
 async function ingestRaw(env, raw) {
   if (!raw) return 0;
   const subject = subjectOf(raw), from = fromOf(raw);
+  const body = extractBodyText(raw);
   let added = 0, storedFile = 0;
   for (const a of parseMimeAttachments(raw)) {
-    if (!matchesInvoice(subject, a.filename, from)) continue;
+    /* Garde le VRAI document d'origine : PDF gardé dès que le mail est facture-like (même à nom
+       générique) ; image seulement si nom/sujet matche. Kevin « toujours doc origine ». */
+    if (!keepAttachment(subject, from, a.filename, a.mime, body)) continue;
     const approx = Math.floor(a.b64.length * 0.75);
     if (approx > MAX_ATTACH) continue;
     let hash = ''; try { hash = await sha256HexOfB64(a.b64); } catch { /* */ }
@@ -133,8 +136,7 @@ async function ingestRaw(env, raw) {
     added++; storedFile++;
   }
   if (!storedFile) {
-    const body = extractBodyText(raw);
-    // Corps gardé UNIQUEMENT si : facture + MONTANT + PAS une pub (newsletter/promo/deal → poubelle).
+    // (body déjà extrait plus haut) — corps gardé UNIQUEMENT si : facture + MONTANT + PAS une pub.
     if (body && body.length > 12 && matchesInvoice(subject, body, from) && hasAmount(body) && !looksPromo(subject, from, body)) {
       let b64 = ''; try { b64 = btoa(latin1(new TextEncoder().encode(body))); } catch { /* */ }
       if (b64) {

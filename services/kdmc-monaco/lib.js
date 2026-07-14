@@ -31,6 +31,17 @@ export function looksPromo(subject, from, body) {
   const distinct = new Set(weak.map(w => w.toLowerCase().replace(/\s+/g, ' ').trim()));
   return distinct.size >= 2;
 }
+/* Décide si on GARDE une pièce jointe (le VRAI document d'origine — Kevin « toujours doc origine »).
+   - PDF : gardé dès que le mail ressemble à une facture/devis — sujet/expéditeur matche OU le corps
+     porte un MONTANT en euros sans être une pub → on ne perd plus un devis à NOM générique (« doc.pdf »).
+   - Image : gardée seulement si le nom/sujet matche (évite les logos de signature, pixels de tracking). */
+export function keepAttachment(subject, from, filename, mime, body) {
+  if (matchesInvoice(subject, filename, from)) return true;
+  const isPdf = /pdf/i.test(String(mime || '')) || /\.pdf$/i.test(String(filename || ''));
+  if (!isPdf) return false;
+  const bodyInvoiceish = !!(body && hasAmount(body) && !looksPromo(subject, from, body));
+  return matchesInvoice(subject, '', from) || bodyInvoiceish;
+}
 
 /* ---------- parseur MIME (multipart, base64) — repris de kdmc-mail ---------- */
 export function headerValue(headers, name) {
