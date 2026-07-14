@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.1 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.1">
+<!-- v0.13.2 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.2">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.1" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.2" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.1';
+  var APP_VER = 'v0.13.2';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -385,7 +385,9 @@
     }
     var content=parts.map(function(p){ return p.t!==undefined?{type:'text',text:p.t}:{type:(p.f.mime==='application/pdf'?'document':'image'),source:{type:'base64',media_type:p.f.mime,data:p.f.data}}; });
     var r2=await fetch(PROXY+'/anthropic/v1/messages',{ method:'POST',
-      headers:{'content-type':'application/json','anthropic-version':'2023-06-01','x-apex-pin':hash},
+      /* anthropic-dangerous-direct-browser-access requis : le proxy transmet l'Origin du navigateur,
+         et l'API Claude exige ce header sinon 401 CORS (« must set anthropic-dangerous-direct-browser-access »). */
+      headers:{'content-type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','x-apex-pin':hash},
       body:JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:maxTokens||4096, messages:[{role:'user',content:content}] }) });
     var t2=await r2.text(); if(!r2.ok) throw new Error('Claude HTTP '+r2.status+' : '+errDetail(t2));
     var j2=JSON.parse(t2); var o2=''; (j2.content||[]).forEach(function(b){ if(b.type==='text')o2+=b.text; }); return o2;
