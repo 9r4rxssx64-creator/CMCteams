@@ -60,6 +60,23 @@
 - **Correctif** : hors périmètre de cet audit CMCteams (app différente) → **à traiter séparément** : réparer le sélecteur/flux, OU sortir `verify-finances-as-kevin` de `test:ci` s'il n'est pas fiable hors CI. Ne PAS le laisser rouge chronique (règle #109 : un gate rouge en permanence masque les vraies régressions).
 - **Effort** : M (côté équipe Finances). **Régression** : nulle sur CMCteams.
 
+## Mise à jour PASSE 4 (2026-07-14) — angles morts restants fermés (LIVE + second avis + runtime + dette)
+
+### 🌐 PASSE LIVE RÉELLE exécutée (le gros manquant des passes 1-3)
+`audit-live.yml` déclenché sur `main` → **vraies pages kd-mc.com dans un vrai Chromium** (runner CI, réseau ouvert — ce que l'agent ne peut pas atteindre, lecon #135). Run `29350567341`, 14 surfaces balayées. **Triage** :
+- **[P1] F-LIVE1 — `apex-ai.kd-mc.com` : `/assets/js/rescue.js` → HTTP 404** (188 erreurs console). ✅ VÉRIFIÉ (log CI). **Cause** : le build Apex déploie `rescue.js` dans `apex-ai-v13/js/` alors que le HTML référence `assets/js/rescue.js` (la SOURCE `apex-ai/v13/` est cohérente ; c'est l'étape de build qui déplace l'asset). **Hors périmètre CMCteams** (app Apex AI, dossier build-régénéré lecon #128 → un patch manuel serait écrasé ; `rescue.js` = script de secours, la page charge). **Action** : corriger le pipeline de build Apex (non fait ici : autre projet + non vérifiable en live depuis l'agent = « ne rien casser »).
+- **✅ Toléré / cosmétique** (pas des échecs) : CSP `frame-ancestors` via `<meta>` ignorée (bénin) ; Google Fonts bloqué par CSP → repli polices système ; World Monitor/OSINT CORS `adsb.lol`/Shodan (connu, lecon #127 — repli gratuit) ; CMCteams 356 req tierces/abortées (SSE/tuiles à la navigation) ; beacon Cloudflare CSP.
+- **CMCteams lui-même : ✅ chargé sans erreur bloquante** (aucune exception JS, aucun asset 404 propre au projet).
+
+### 🤝 SECOND AVIS INDÉPENDANT (non-Claude) exécuté
+`security-suite.yml` déclenché sur `main` (gitleaks + TruffleHog + OSV-Scanner + Trivy + **Semgrep** SAST + zizmor). Run `29350578034`. Findings triés dans `05-JOURNAL.md` (analyse déterministe indépendante de Claude = le second avis exigé par la règle « fais ton audit »).
+
+### F-C1 — preuve RUNTIME du routage (angle mort passe 3 fermé)
+`test:ia-proxy-routing` (Playwright) pilote `_cmcAiHandleIssue` (pattern `isProxy` partagé) : **proxy configuré ⇒ requête vers le proxy, 0 `x-api-key`, 0 appel direct Anthropic** ; sans proxy ⇒ repli direct assumé (documenté). **Prouvé discriminant** (retirer le garde `if(!isProxy)` → EXIT 1). Complète le garde statique `test:ia-key-privacy`.
+
+### F-D1 — `loading="lazy"` (dette P3 fermée, sans rien casser)
+7 `<img>` de CONTENU passés en `loading="lazy" decoding="async"`. Les **5 `<img>` `onerror`-hack** (`src="" … display:none … this.remove()` qui déclenchent Face ID/météo/carte) sont **volontairement exclus** : un `<img>` lazy en `display:none` peut ne jamais charger → le callback `onerror` ne se déclenche pas → **casse la feature** (piège du F-D1 naïf). ✅ VÉRIFIÉ (`test:check-syntax` OK).
+
 ## Mise à jour PASSE 3 (2026-07-14) — F-K1 + F-C1 fermés (code testé)
 - **F-K1 (gate rouge)** → **RÉSOLU** : `verify-finances-as-kevin` fiabilisé (fermeture drill/doc overlay entre actions, désambiguïsation onglet « Bilan », signal d'activation stable `#ai-off`). **3 runs → 47 OK / 0 P0** ; `npm run test:ci` **EXIT 0 end-to-end**. Bonus : bug réel corrigé (input `select.catsel` 12px→16px = plus de zoom iOS, +HIG 44px, Finances v0.12.1).
 - **F-C1 (clé IA en clair)** → **MITIGÉ par garde CI** : `test:ia-key-privacy` (statique, discriminant) VERROUILLE les 2 seuls vecteurs de fuite (cmc_ia_key ∈ FB_LOCAL, jamais dans FB_FIX ; `_adminCfgBackup` ne pousse pas la clé vers la DB Firebase ouverte) → interdit toute réintroduction du **P0 lecon #787**. Le chiffrement au repos (théâtre device-local, lecon #55) et le proxy-par-défaut (couperait l'IA sans proxy = « ne rien casser ») restent **écartés volontairement** — documentés au JOURNAL.

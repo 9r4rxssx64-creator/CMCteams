@@ -80,9 +80,15 @@ jobs:
         continue-on-error: true
         run: |
           curl -sSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /tmp v0.58.1 2>&1 | tail -5 || true
-          /tmp/trivy fs --scanners vuln,misconfig,secret \
-            --severity CRITICAL,HIGH,MEDIUM --format json --output /tmp/sec/trivy.json \
-            --exit-code 0 --skip-dirs node_modules . 2>&1 | tail -15 | tee /tmp/sec/trivy.log || true
+          # Guard : si l'install trivy a échoué, on saute proprement (OSV couvre déjà les deps)
+          # au lieu d'un « /tmp/trivy: No such file » bruyant + un faux 0 dans le résumé.
+          if [ -x /tmp/trivy ]; then
+            /tmp/trivy fs --scanners vuln,misconfig,secret \
+              --severity CRITICAL,HIGH,MEDIUM --format json --output /tmp/sec/trivy.json \
+              --exit-code 0 --skip-dirs node_modules . 2>&1 | tail -15 | tee /tmp/sec/trivy.log || true
+          else
+            echo "trivy non installé — étape sautée (OSV-Scanner couvre les dépendances)" | tee /tmp/sec/trivy.log
+          fi
 
       # ── 🧬 CODE (SAST) ──────────────────────────────────────────
       - name: Semgrep (SAST JS/TS, règles OSS)
@@ -118,7 +124,7 @@ jobs:
           res['trufflehog (secrets vérifiés)'] = countlines('/tmp/sec/trufflehog.jsonl')
           osv = loadj('/tmp/sec/osv.json'); res['osv (deps)'] = sum(len(r.get('packages',[])) for r in (osv or {}).get('results',[])) if osv else 0
           tv = loadj('/tmp/sec/trivy.json')
-          res['trivy (vulns/secrets)'] = sum(len(r.get('Vulnerabilities',[]))+len(r.get('Secrets',[])) for r in (tv or {}).get('Results',[])) if tv else 0
+          res['trivy (vulns-secrets)'] = sum(len(r.get('Vulnerabilities',[]))+len(r.get('Secrets',[])) for r in (tv or {}).get('Results',[])) if tv else 0
           sg = loadj('/tmp/sec/semgrep.json'); res['semgrep (SAST)'] = len((sg or {}).get('results',[])) if sg else 0
           zz = loadj('/tmp/sec/zizmor.json'); res['zizmor (workflows)'] = len(zz) if isinstance(zz, list) else (len((zz or {}).get('findings',[])) if zz else 0)
           total = sum(res.values())

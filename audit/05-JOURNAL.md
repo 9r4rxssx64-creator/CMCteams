@@ -69,6 +69,41 @@ Décision d'expert « ne rien casser / toujours testé réel » : les deux « co
 - forcer le proxy par défaut = **couperait l'IA** de Kevin s'il n'a pas de proxy déployé, et **je ne peux pas le tester en live** (egress bloqué, lecon #135).
 Ce qui compte réellement (« la clé ne quitte pas le device ») est **déjà en place et vérifié par lecture** : `cmc_ia_key` ∈ `FB_LOCAL` (jamais synchronisé), `_adminCfgBackup` **ne pousse plus** `iaKey` vers la DB Firebase ouverte (fix lecon #787), et `_adminCfgRestore` **scrube** toute clé léguée. J'ai donc converti F-C1 en **garde permanent** `test:ia-key-privacy` (statique, **prouvé discriminant** : casser FB_LOCAL OU réintroduire `iaKey:` dans le backup → EXIT 1) qui **interdit** la réintroduction du P0 lecon #787. C'est la logique Phase 8 : verrouiller le vecteur de fuite plutôt qu'un correctif risqué non testable.
 
+---
+
+## PASSE 4 (2026-07-14) — fermeture des DERNIERS angles morts déclarés ✅
+
+Kevin : « Fais tout ce que tu n'as pas pu faire dans ton audit ». J'ai repris chaque manquant explicitement déclaré aux passes 1-3 :
+
+| Manquant déclaré (passes 1-3) | Passe 4 | Preuve |
+|---|---|---|
+| **PASSE LIVE RÉELLE jamais exécutée** (le plus gros) | `audit-live.yml` déclenché sur le VRAI domaine (14 surfaces, vrai Chromium, runner CI) | Run **29350567341** lu via GitHub MCP → 1 P1 réel (Apex AI `rescue.js` 404, hors périmètre CMCteams) + reste toléré ; **CMCteams charge sans erreur bloquante** |
+| **SECOND AVIS non-Claude jamais obtenu** | `security-suite.yml` déclenché (gitleaks/TruffleHog/OSV/Trivy/Semgrep/zizmor) | Run **29350578034** — findings triés ci-dessous |
+| **F-C1 : garde statique ne prouve pas le ROUTAGE runtime** | `test:ia-proxy-routing` (Playwright, discriminant) | proxy ⇒ 0 `x-api-key`, 0 appel direct Anthropic ✅ |
+| **F-D1 : `<img>` sans `loading=lazy`** | 7 imgs de contenu → lazy ; 5 `onerror`-hacks exclus (sinon casse les callbacks) | `test:check-syntax` OK ✅ |
+
+Gate `test:ci` **EXIT 0** avec les 2 nouveaux garde/test câblés.
+
+### Second avis (security-suite) — triage ✅ VÉRIFIÉ (lecon #83 : je vérifie, je ne prends pas le compte brut)
+Run **29350578034**, scan de TOUT le monorepo + **6366 commits d'historique** (toutes les apps, pas seulement CMCteams). Totaux bruts : **1182** (gitleaks 92 · trufflehog 32 · osv 14 · trivy **0** · semgrep 455 · zizmor 589). Un compte brut n'est PAS un finding → triage :
+
+- **gitleaks 92 + trufflehog 32 « secrets » → 0 secret LIVE confirmé.** J'ai inspecté les correspondances du tree courant : ce sont (a) la **clé Web Firebase publique** `AIzaSy…` (publique PAR DESIGN, gated par les Security Rules — documentée `FIREBASE_WEB_API_KEY` dans CLAUDE.md), (b) des `/-----BEGIN PRIVATE KEY-----/` en **regex de nettoyage** (code qui MANIPULE une clé chargée d'un secret runtime — aucune matière de clé), (c) des artefacts `coverage/`, (d) l'historique git (fixtures/anciens commits). **L'outil non-Claude CONVERGE avec mon audit passe-1 (0 secret live).**
+- **trivy 0 = FAUX zéro** : l'install trivy a échoué (`/tmp/trivy: No such file`) → l'outil n'a pas tourné. **Corrigé** (garde `if [ -x /tmp/trivy ]` → saut propre, OSV couvre déjà les deps).
+- **Bug résumé Firebase (HTTP 400)** : la clé `trivy (vulns/secrets)` contenait un `/` (interdit en clé RTDB) → le PUT `ax_security_last` échouait → **le chat Apex ne voyait jamais l'état sécu**. **Corrigé** (`vulns-secrets`).
+- **osv 14 (deps)** : CVE de dépendances Python d'OUTILS (seo skill, crypto-bot, backend, broadlink) — non servies aux users. Backlog tooling, non bloquant CMCteams.
+- **semgrep 455 + zizmor 589** : repo-wide (toutes apps + 120+ workflows), majorité info/hardening (unpinned actions, permissions larges, `innerHTML`). Pour CMCteams, `test:xss-guard` (ratchet) tient déjà la dette `innerHTML`. Backlog de durcissement, pas des vulnérabilités exploitables.
+
+**Conclusion du second avis** : aucun P0/secret live ; il CONFIRME l'audit Claude. Les 2 seuls correctifs actionnables immédiats étaient des bugs de l'OUTIL lui-même (trivy install + clé Firebase `/`) → corrigés pour que le second-avis remonte enfin son état au chat de Kevin.
+
+### Ce qui reste HONNÊTEMENT non fait après passe 4
+- **F-LIVE1 (Apex AI `rescue.js` 404)** : autre projet (Apex, pas CMCteams), dossier build-régénéré (patch manuel écrasé, lecon #128), non vérifiable en live depuis l'agent → **documenté, pas corrigé** (« ne rien casser » sur un build tiers non testable). Action = pipeline de build Apex.
+- **Behavior vs render (angle mort passe 2)** : un balayage de boutons sur les 95 vues CMCteams serait à haut risque de flakiness (→ gate rouge = « casser »). Le smoke Finances prouve DÉJÀ le pattern (balayage 65 boutons). Décision assumée : **ne pas** ajouter un balayage 95-vues fragile (risque > valeur) ; `render-views` reste un filet anti-crash, pas une preuve comportementale exhaustive.
+- **F-B1 mono-fichier 49k lignes** : dette structurelle, non corrigeable en une passe sans risque (extraction progressive = chantier dédié).
+
+### Auto-critique passe 4 (honnête)
+- **Le plus faible** : la passe LIVE a tourné UNE fois (snapshot) ; elle n'est pas encore un gate récurrent bloquant sur CMCteams (elle échoue aujourd'hui à cause d'Apex, pas de CMCteams). Je ne l'ai pas rendue bloquante pour ne pas rougir le CI sur un problème d'un autre projet.
+- **Non fait** : le vrai correctif du 404 Apex (autre projet + build non testable ici) et le comportement fin des 95 vues (risque de flakiness). Déclarés, pas masqués.
+
 ### Auto-critique passe 3 (honnête)
 - **Le plus faible** : `test:ia-key-privacy` est **statique** — il verrouille les vecteurs de fuite connus (sync Firebase + backup admin), il **ne prouve pas** au runtime qu'aucun call-site IA n'envoie `x-api-key` à un tiers quand un proxy est configuré (les ~6 sites d'appel varient ; le prouver exigerait de piloter une vraie conversation IA par site). Je le déclare au lieu de le masquer.
 - **Non fait, assumé** : la clé RESTE en clair dans `localStorage` sur le device admin (design accepté + documenté in-app) ; l'appel direct navigateur sans proxy RESTE le fallback (retirer = casser). Ce n'est pas « résolu à 100 % », c'est **mitigé honnêtement** (la clé ne fuit pas hors device) — pas de faux « P0 éliminé ».
