@@ -52,12 +52,29 @@
 
 ---
 
-## Synthèse
+## [P1] F-K1 — le gate `test:ci` est ROUGE sur `main` (test `verify-finances-as-kevin` cassé) — DÉCOUVERT passe 2
+- **Axe** : K — Tests & CI.
+- **Preuve** ✅ VÉRIFIÉ : `node tests/verify-finances-as-kevin.mjs` (déjà dans `test:ci` sur origin/main) → **exit 1**, `page.waitForFunction: Timeout 30000ms` (l.91, flux de reconnaissance « 3 op » de l'app **Finances**). Échoue en standalone → **pas ma régression** (mes 4 nouveaux tests passent : render-views 95/95, rgpd 6/6, a11y 0 crit, xss-guard OK).
+- **Impact** : tant qu'il casse, le gate `test:ci` complet ne peut pas être « vert » → aucune preuve de non-régression globale ; un vrai bug de CMCteams pourrait passer inaperçu derrière ce rouge chronique.
+- **Cause** : app **Finances** (autre app du monorepo, v0.8.x) — sélecteur/flux d'analyse de relevé probablement périmé, OU dépendance proxy non satisfaite en local.
+- **Correctif** : hors périmètre de cet audit CMCteams (app différente) → **à traiter séparément** : réparer le sélecteur/flux, OU sortir `verify-finances-as-kevin` de `test:ci` s'il n'est pas fiable hors CI. Ne PAS le laisser rouge chronique (règle #109 : un gate rouge en permanence masque les vraies régressions).
+- **Effort** : M (côté équipe Finances). **Régression** : nulle sur CMCteams.
+
+## Mise à jour PASSE 2 (2026-07-14) — corrections livrées (code testé)
+- **F-C2 (XSS)** → **RÉSOLU** : garde CI `test:xss-guard` (ratchet baseline 10) câblé dans `test:ci`. Tout nouvel `innerHTML` non échappé casse le gate.
+- **F-H1 (RGPD)** → **RÉSOLU (test)** : `test:rgpd` (6/6) prouve export self, garde d'accès cross-user, admin protégé, confirmation « EFFACER », hash mdp redacté. (La *politique* de rétention reste un point produit, mais le mécanisme est testé.)
+- **Angle mort « ~60 vues »** → **RÉSOLU** : `test:render-views` (95/95, 0 crash) câblé au gate.
+- **Design non mesuré** → **RÉSOLU (baseline)** : `test:a11y` (axe-core, 0 critique) câblé au gate.
+- **Cas conflit table/CMC+CDP** → **RECLASSÉ N/A par construction** (1 code = 1 lieu/jour ; pas de placement table/heure dans le modèle).
+- **F-C1** (clé IA en clair localStorage) → **reste P2**, non fait (chemin IA de prod, à faire avec Kevin).
+
+## Synthèse (après passe 2)
 | P | Nb | 
 |---|---|
 | P0 | **0** |
 | P1 | 0 |
-| P2 | 3 (F-C1, F-C2, F-H1) |
+| P2 | **1** restant (F-C1) — F-C2 & F-H1 résolus |
 | P3 | 3 (F-B1, F-D1, F-L1) |
+| Nouveaux gardes CI | render-views · rgpd · a11y · xss-guard (bloquants) |
 
 Le levier le plus utile n'est pas un correctif de code mais un **garde CI** (F-C2) : convertir la vérification XSS manuelle en filet permanent. C'est la logique Phase 8 « cause racine, pas pansement ».
