@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.4 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.4">
+<!-- v0.13.5 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.5">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.4" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.5" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.4';
+  var APP_VER = 'v0.13.5';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -1070,6 +1070,16 @@
   function kindLabel(k){ return {releve:'Relevé',facture:'Facture',ticket:'Ticket',paie:'Fiche de paie'}[k]||'Document'; }
   function catOptions(sel){ return (VAULT.categories||DEFAULT_CATS).map(function(c){return '<option value="'+esc(c)+'"'+(sel===c?' selected':'')+'>'+catIcon(c)+' '+esc(c)+'</option>';}).join(''); }
 
+  function _sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+  /* « Load failed » (Safari) / « Failed to fetch » = fetch réseau échoué (4G instable, connexion
+     coupée, ou corps trop lourd). On distingue pour (a) RÉESSAYER auto et (b) message actionnable. */
+  function _isNetErr(e){ return /load failed|failed to fetch|networkerror|network error|the network connection was lost|connection (was )?lost|timed?\s?out|timeout|econn|abort/i.test((e&&e.message)||String(e)); }
+  function _importErrMsg(e){ var m=(e&&e.message)||String(e);
+    if(/volumineux|trop lourd|too large|payload|413|request entity/i.test(m)) return 'PDF trop lourd — scinde-le ou passe en Wi-Fi';
+    if(_isNetErr(e)) return 'Réseau instable — réessaie (plutôt en Wi-Fi)';
+    if(/401|invalid.*key|cl[ée]\s*(api|ia)?\s*(invalide|non)/i.test(m)) return 'Clé IA invalide — revérifie le code (Réglages)';
+    if(/429|quota|rate.?limit|too many/i.test(m)) return 'Limite IA atteinte — patiente puis réessaie';
+    return m.slice(0,60); }
   async function handleFiles(list){
     var files=[].slice.call(list); if(!files.length)return;
     var isLocal=function(f){ return /\.csv$/i.test(f.name); };
@@ -1083,18 +1093,29 @@
     function setLine(i,ic,msg,cls){ var e=$('ip'+i); if(e){ e.querySelector('span').textContent=ic; e.querySelector('.tiny').textContent=msg; if(cls)e.style.color=cls; } }
     for(var i=0;i<files.length;i++){
       var f=files[i]; setLine(i,'⏳','lecture…');
-      try{
-        var r;
-        if(isLocal(f)||isText(f)){
-          var txt=await f.text(); var h=await sha256Hex(txt);
-          if(docHashExists(h)){ r={added:0,devis:0,dup:true}; }
-          else r=isLocal(f)?parseCsvImport(txt, f.name, h):await importText(stripSecrets(txt), f.name, h);
+      var attempt=0, doneOk=false, lastErr=null;
+      while(attempt<3 && !doneOk){
+        attempt++;
+        try{
+          var r;
+          if(isLocal(f)||isText(f)){
+            var txt=await f.text(); var h=await sha256Hex(txt);
+            if(docHashExists(h)){ r={added:0,devis:0,dup:true}; }
+            else r=isLocal(f)?parseCsvImport(txt, f.name, h):await importText(stripSecrets(txt), f.name, h);
+          }
+          else { if(f.size>30*1024*1024) throw new Error('trop volumineux (>30 Mo) — scinde le PDF'); r=await importFile(f); }
+          if(r.dup){ dupc++; setLine(i,'⏭️','déjà importé (doublon ignoré)','var(--dim)'); }
+          else if(r.pub){ setLine(i,'📣','publicité — écartée','var(--dim)'); }
+          else { okc+=r.added; if(r.devis)devc+=r.devis; setLine(i,'✅',(r.devis?'1 devis':(r.added+' op.')),'var(--green)'); }
+          doneOk=true;
+        }catch(e){
+          lastErr=e;
+          /* Réseau instable (« Load failed » sur 4G) → on RÉESSAYE tout seul (2 fois) avant d'abandonner. */
+          if(_isNetErr(e) && attempt<3){ setLine(i,'🔄','réseau instable — nouvel essai '+attempt+'/2…','var(--dim)'); await _sleep(attempt*1500); }
+          else break;
         }
-        else { if(f.size>30*1024*1024) throw new Error('trop volumineux (>30 Mo) — scinde le PDF'); r=await importFile(f); }
-        if(r.dup){ dupc++; setLine(i,'⏭️','déjà importé (doublon ignoré)','var(--dim)'); }
-        else if(r.pub){ setLine(i,'📣','publicité — écartée','var(--dim)'); }
-        else { okc+=r.added; if(r.devis)devc+=r.devis; setLine(i,'✅',(r.devis?'1 devis':(r.added+' op.')),'var(--green)'); }
-      }catch(e){ err++; setLine(i,'❌',(e.message||String(e)).slice(0,60),'var(--red)'); }
+      }
+      if(!doneOk){ err++; setLine(i,'❌',_importErrMsg(lastErr),'var(--red)'); }
       await persist();
     }
     var rm=dedupeAll(); if(rm){ await persist(); }
