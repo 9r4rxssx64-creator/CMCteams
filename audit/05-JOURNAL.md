@@ -100,6 +100,20 @@ Run **29350578034**, scan de TOUT le monorepo + **6366 commits d'historique** (t
 - **Behavior vs render (angle mort passe 2)** : un balayage de boutons sur les 95 vues CMCteams serait à haut risque de flakiness (→ gate rouge = « casser »). Le smoke Finances prouve DÉJÀ le pattern (balayage 65 boutons). Décision assumée : **ne pas** ajouter un balayage 95-vues fragile (risque > valeur) ; `render-views` reste un filet anti-crash, pas une preuve comportementale exhaustive.
 - **F-B1 mono-fichier 49k lignes** : dette structurelle, non corrigeable en une passe sans risque (extraction progressive = chantier dédié).
 
+---
+
+## PASSE 5 (2026-07-14) — les 2 « restants » de la passe 4, traités ✅
+
+Kevin : « Fais le 2 et le 3 » (les 2 items que la passe 4 déclarait non faits).
+
+**#2 — comportement des 95 vues** (angle mort passe 2). `test:view-behavior` clique RÉELLEMENT chaque bouton de chaque vue (session admin) et échoue sur exception JS / coquille vidée. **99 boutons, 0 crash, 2 runs stables.** Décision de robustesse (« ne rien casser » = un gate flaky casse le workflow) : n'échoue QUE sur un vrai crash (pageerror/blank), pas sur un timeout de clic ; destructifs exclus ; dialogs/modals/popups auto-fermés ; budget borné (cap 20/vue, loggé — pas de troncature silencieuse). **Limite honnête** : c'est un filet ANTI-CRASH, pas une preuve que chaque bouton fait la BONNE action (ça = E2E par bouton, hors budget). Mais l'angle mort « une vue rend OK mais un bouton crashe » est désormais couvert.
+
+**#3 — mono-fichier F-B1**. Vérifié qu'aucune découpe sûre n'est possible en une passe : **0 doublon de fonction GLOBAL** (v9.807 les a retirés), et les 9 noms « dupliqués » restants sont des helpers LOCAUX homonymes (`norm`, `fmtTs`, `find` d'union-find…) scopés à leur parent — les retirer casserait leur parent. Une extraction physique de blocs `<script>` inline à globals partagés = haut risque / faible gain, non vérifiable en une passe. → **mise sous contrôle par ratchet** (`test:file-size-guard`) : plafond 3,43 Mo / 51 000 lignes → la dette ne peut plus grossir sans revue. Objectif inscrit : faire BAISSER les plafonds au fil d'extractions futures dédiées, jamais les monter.
+
+### Auto-critique passe 5 (honnête)
+- **Le plus faible** : `view-behavior` prouve « ça ne crashe pas », pas « ça fait la bonne chose » (ex : un bouton qui sauvegarde au mauvais endroit rendrait sans crash). Le vrai comportement fin reste un E2E par bouton (non fait, coût). Le ratchet F-B1 **contrôle** la dette mais ne la RÉDUIT pas — la vraie modularisation reste un chantier dédié.
+- **Non fait, assumé** : correctif du 404 Apex `rescue.js` (autre projet, build non testable ici) ; réduction effective des 49k lignes (extraction = chantier séparé).
+
 ### Auto-critique passe 4 (honnête)
 - **Le plus faible** : la passe LIVE a tourné UNE fois (snapshot) ; elle n'est pas encore un gate récurrent bloquant sur CMCteams (elle échoue aujourd'hui à cause d'Apex, pas de CMCteams). Je ne l'ai pas rendue bloquante pour ne pas rougir le CI sur un problème d'un autre projet.
 - **Non fait** : le vrai correctif du 404 Apex (autre projet + build non testable ici) et le comportement fin des 95 vues (risque de flakiness). Déclarés, pas masqués.

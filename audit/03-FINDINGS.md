@@ -60,6 +60,14 @@
 - **Correctif** : hors périmètre de cet audit CMCteams (app différente) → **à traiter séparément** : réparer le sélecteur/flux, OU sortir `verify-finances-as-kevin` de `test:ci` s'il n'est pas fiable hors CI. Ne PAS le laisser rouge chronique (règle #109 : un gate rouge en permanence masque les vraies régressions).
 - **Effort** : M (côté équipe Finances). **Régression** : nulle sur CMCteams.
 
+## Mise à jour PASSE 5 (2026-07-14) — 2 derniers « non fait » de la passe 4 traités
+
+### Comportement des 95 vues (angle mort passe 2 « rendu ≠ comportement ») → RÉSOLU (filet)
+`test:view-behavior` : session admin, monte CHAQUE vue (sv→dc) puis **clique chaque bouton** de `#content` (hors destructifs) → échoue si un clic lève une exception JS ou vide la coquille. **99 boutons cliqués sur 95 vues, 0 crash** (2 runs stables). Dialogs/modals/popups auto-fermés, budget borné (cap 20/vue, loggé). C'est un **filet anti-crash comportemental** (pas une preuve fonctionnelle exhaustive de chaque bouton — un bouton peut réagir sans crasher mais mal agir ; ça resterait un E2E par bouton). Câblé bloquant dans `test:ci`.
+
+### F-B1 mono-fichier (P3) → MIS SOUS CONTRÔLE (ratchet)
+Aucune découpe sûre possible en une passe (globals partagés ; **0 doublon de fonction global** — v9.807 les a supprimés ; les 9 « doublons » restants sont des helpers LOCAUX homonymes, pas du code mort — ✅ VÉRIFIÉ). → `test:file-size-guard` : plafond ratchet (3 430 000 o / 51 000 lignes, ~3 % de marge sur le baseline 3 330 288 o / 49 631 lignes) → **la dette ne peut plus EMPIRER**. Objectif = faire BAISSER les plafonds au fil des extractions, jamais les monter. Discriminant (✅ VÉRIFIÉ : plafond abaissé → EXIT 1). Câblé bloquant dans `test:ci`.
+
 ## Mise à jour PASSE 4 (2026-07-14) — angles morts restants fermés (LIVE + second avis + runtime + dette)
 
 ### 🌐 PASSE LIVE RÉELLE exécutée (le gros manquant des passes 1-3)
