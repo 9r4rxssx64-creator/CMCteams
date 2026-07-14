@@ -26,7 +26,7 @@
 
 import { connect } from 'cloudflare:sockets';
 import {
-  matchesInvoice, parseMimeAttachments, extractBodyText, subjectOf, fromOf,
+  matchesInvoice, hasAmount, parseMimeAttachments, extractBodyText, subjectOf, fromOf,
   imapDate, parseSearchUids, parseTaggedResponse, latin1, imapQuote,
   sha256HexOfB64, sha256Hex, adminOk
 } from './lib.js';
@@ -134,7 +134,8 @@ async function ingestRaw(env, raw) {
   }
   if (!storedFile) {
     const body = extractBodyText(raw);
-    if (body && body.length > 12 && matchesInvoice(subject, body, from)) {
+    // Corps gardé UNIQUEMENT s'il ressemble à une facture ET porte un MONTANT (sinon = notification vide).
+    if (body && body.length > 12 && matchesInvoice(subject, body, from) && hasAmount(body)) {
       let b64 = ''; try { b64 = btoa(latin1(new TextEncoder().encode(body))); } catch { /* */ }
       if (b64) {
         let hash = ''; try { hash = await sha256HexOfB64(b64); } catch { /* */ }
