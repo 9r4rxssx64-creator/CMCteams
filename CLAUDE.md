@@ -495,6 +495,22 @@ déterministe)**, pas seulement ma revue. `auto-pr-review.yml` est un reviewer C
    n'a pas donné son avis sur les mêmes changements ET que ses findings sont triés. Mon
    analyse + un second avis indépendant qui converge = confiance ; s'ils divergent, creuser.
 
+### 📋 PROTOCOLE DE PREUVE + LIVRABLES `audit/` — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-07-14, ABSOLU)
+
+> **« Intègre tout ça à "fais ton audit" sans rien oublier. Note le. Rappelle-toi. »** — Kevin 2026-07-14 (mission « AUDIT TOTAL & MISE SOUS CONTRÔLE », validée sur la passe-1 CMCteams)
+
+À CHAQUE « fais ton audit », en PLUS des 10 axes + stabilité + live + second avis :
+
+1. **PREUVE > DÉCLARATION — statut sur CHAQUE affirmation** : ✅ **VÉRIFIÉ** (commande exécutée, sortie brute collée) · 🟡 **DÉDUIT** (lecture code, sans exécution) · 🔴 **SUPPOSÉ** (hypothèse + action précise pour la confirmer). Jamais « ça fonctionne » sans avoir exécuté quelque chose.
+2. **NE RIEN SUPPOSER SUR LA STACK** : vérifier framework/bundler/backend/hébergeur par LECTURE RÉELLE (`package.json`, find, ls) avant tout — un brief peut décrire une stack FAUSSE (vécu : brief « React/JSX » sur CMCteams = SPA vanilla mono-fichier, 0 .jsx). Adapter l'audit au réel, ne pas installer une stack inutile (= ne rien casser).
+3. **P0 ABSOLU en tête : scan secrets** — `grep sk-ant-api/AIza/ghp_/xkeysib/PRIVATE KEY` hors tests. Clé trouvée dans le dépôt = P0 immédiat + rappel « la clé est compromise, à révoquer ». Absente = le DIRE avec la preuve (ne pas fabriquer un P0 pour faire riche).
+4. **CARTOGRAPHIE EXHAUSTIVE NUMÉROTÉE** : liste complète F01…Fnn de TOUT ce que l'app sait faire (vues/routes/fonctions), chacune avec son statut de couverture test. **Une fonction non listée est une fonction non testée.** Aucun « etc. ».
+5. **LIVRABLES FICHIERS dans `audit/`** (pas juste une réponse chat) : `00-INVENTAIRE.md` (stack réelle, build, secrets, deps) · `01-FONCTIONS.md` (F01…Fnn) · `02-RESULTATS.md` (matrice attendu/obtenu/statut + sorties réelles) · `03-FINDINGS.md` · `04-DESIGN.md` (mesures, pas au feeling) · `05-JOURNAL.md` (décisions, hypothèses, non-vérifié). Committés + mergés.
+6. **FORMAT FINDING OBLIGATOIRE** : `[P0-P3] Titre factuel` + Axe · Fichier:ligne · **Preuve** (sortie réelle) · Impact · **Cause racine** (pas le symptôme) · Correctif complet · Test qui prouve · Effort S/M/L · Régression possible. Priorités : P0 faille/crash · P1 dégrade fort · P2 net · P3 confort. Corriger P0→P3, un commit par correctif, gate relancé après chacun.
+7. **CAUSE RACINE → PRÉVENTION** (la partie la plus importante) : pour chaque bug, répondre à « pourquoi a-t-il pu naître, et qu'est-ce qui l'aurait attrapé automatiquement ? » → le correctif prioritaire est souvent un **garde CI** (grep bloquant, test régression), pas un pansement. Vérifier d'abord ce qui EXISTE déjà (CMCteams : 121 workflows, gitleaks/semgrep/strix/gate/audit-live) — ne pas réinstaller une prévention déjà en place.
+8. **RÈGLE DE FIN + AUTO-CRITIQUE OBLIGATOIRE** : ne pas s'arrêter tant qu'il reste une ligne non traitée de `01-FONCTIONS.md` (un blocage → consigné au `05-JOURNAL.md`, on passe au suivant, on ne s'arrête pas). Terminer TOUJOURS par : *« Le point le plus faible de mon audit est… · Ce que je n'ai pas pu vérifier est… · Ce dont je ne suis pas certain est… »* — déclarer les angles morts au lieu de les masquer.
+9. **AUTONOMIE** : zéro question avant la fin des phases d'exploration ; hypothèses écrites noir sur blanc ; jamais « veux-tu que je continue » ; livrer LE TRAVAIL, pas un plan. Branche dédiée `claude/audit-*`, zéro donnée réelle de personnel dans les tests, zéro touche à la prod.
+
 ### Autonome + mesuré
 
 - Audit lancé en autonomie totale, multi-subagents en parallèle si besoin.
@@ -519,7 +535,9 @@ en continu avec les autres axes.
 > Qodo/CodeRabbit/Sonar) sur les mêmes changements, ou est-ce moi qui relis mon
 > propre travail ?** Si j'ai vérifié les couleurs mais pas que chaque bouton atterrit
 > au bon endroit, ni que l'app tourne réellement en prod sans requête bloquée, ni
-> qu'un expert externe l'a validée — alors ce n'est PAS un audit, c'est un coup d'œil. Reprendre."*
+> qu'un expert externe l'a validée — alors ce n'est PAS un audit, c'est un coup d'œil. Reprendre.
+> **Et : chaque affirmation porte-t-elle son statut ✅/🟡/🔴 ? Les livrables `audit/00-05` sont-ils écrits et committés ?
+> Chaque fonction a-t-elle son ID F01…Fnn ? Ai-je fini par l'auto-critique (point faible / non vérifié / incertain) ?**"*
 
 S'applique : Apex (priorité absolue), CMCteams, Remote, Apex Chat, e-KDMC, tous projets.
 
