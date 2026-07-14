@@ -18,6 +18,13 @@ export function hasAmount(text) {
   return /\d[\d . \u00a0]*(?:[.,]\d{1,2})?\s*(?:€|eur\b|euros?\b)/i.test(t)
       || /(?:€|eur\b|euros?\b)\s*\d/i.test(t);
 }
+/* Un mail PUBLICITAIRE (newsletter, promo, vente flash, deal Groupon…) contient souvent des
+   montants → hasAmount ne suffit pas. Marqueurs promo forts → on N'ENREGISTRE PAS le corps.
+   Les pièces jointes PDF restent TOUJOURS gardées (une vraie facture est un PDF). */
+export const PROMO_RE = /(d[ée]sabonn|unsubscrib|newsletter|vente\s*flash|code\s*promo|promotion\b|-\s?\d{1,2}\s?%|\d{1,2}\s?%\s*de\s*r[ée]duc|soldes\b|offre\s+(sp[ée]ciale|limit[ée]e|exclusive|du\s+jour)|panier\s+abandonn|derni[èe]res?\s+heures|bons?\s+plans?|deal\s+du|jusqu.[àa]\s+-?\d{1,2}\s?%|profitez\s+de|d[ée]couvrez\s+nos)/i;
+export function looksPromo(subject, from, body) {
+  return PROMO_RE.test(String(subject || '') + ' ' + String(from || '') + ' ' + String(body || '').slice(0, 4000));
+}
 
 /* ---------- parseur MIME (multipart, base64) — repris de kdmc-mail ---------- */
 export function headerValue(headers, name) {

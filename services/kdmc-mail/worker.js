@@ -31,6 +31,12 @@ function hasAmount(text) {
   return /\d[\d . \u00a0]*(?:[.,]\d{1,2})?\s*(?:€|eur\b|euros?\b)/i.test(t)
       || /(?:€|eur\b|euros?\b)\s*\d/i.test(t);
 }
+// Mail PUBLICITAIRE (newsletter/promo/vente flash/deal) : porte souvent des montants → filtre dédié.
+// Marqueurs promo forts → on N'ENREGISTRE PAS le corps. Les PDF joints restent TOUJOURS gardés.
+const PROMO_RE = /(d[ée]sabonn|unsubscrib|newsletter|vente\s*flash|code\s*promo|promotion\b|-\s?\d{1,2}\s?%|\d{1,2}\s?%\s*de\s*r[ée]duc|soldes\b|offre\s+(sp[ée]ciale|limit[ée]e|exclusive|du\s+jour)|panier\s+abandonn|derni[èe]res?\s+heures|bons?\s+plans?|deal\s+du|jusqu.[àa]\s+-?\d{1,2}\s?%|profitez\s+de|d[ée]couvrez\s+nos)/i;
+function looksPromo(subject, from, body) {
+  return PROMO_RE.test(String(subject || '') + ' ' + String(from || '') + ' ' + String(body || '').slice(0, 4000));
+}
 
 /* ------- Parseur MIME minimal (multipart, base64) — pur & testable ------- */
 function headerValue(headers, name) {
@@ -176,7 +182,7 @@ export default {
       // partout, même des écrits ». Si aucune PJ utile ET mail type facture → on garde le TEXTE.
       if (!storedFile) {
         const body = extractBodyText(raw);
-        if (body && body.length > 12 && (invCtx || INVOICE_RE.test(body)) && hasAmount(body)) {
+        if (body && body.length > 12 && (invCtx || INVOICE_RE.test(body)) && hasAmount(body) && !looksPromo(subject, from, body)) {
           let b64 = ''; try { b64 = b64Utf8(body); } catch { /* */ }
           if (b64) {
             let hash = ''; try { hash = await sha256Hex(b64); } catch { /* */ }
