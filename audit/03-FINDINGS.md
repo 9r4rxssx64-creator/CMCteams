@@ -60,6 +60,10 @@
 - **Correctif** : hors périmètre de cet audit CMCteams (app différente) → **à traiter séparément** : réparer le sélecteur/flux, OU sortir `verify-finances-as-kevin` de `test:ci` s'il n'est pas fiable hors CI. Ne PAS le laisser rouge chronique (règle #109 : un gate rouge en permanence masque les vraies régressions).
 - **Effort** : M (côté équipe Finances). **Régression** : nulle sur CMCteams.
 
+## Mise à jour PASSE 3 (2026-07-14) — F-K1 + F-C1 fermés (code testé)
+- **F-K1 (gate rouge)** → **RÉSOLU** : `verify-finances-as-kevin` fiabilisé (fermeture drill/doc overlay entre actions, désambiguïsation onglet « Bilan », signal d'activation stable `#ai-off`). **3 runs → 47 OK / 0 P0** ; `npm run test:ci` **EXIT 0 end-to-end**. Bonus : bug réel corrigé (input `select.catsel` 12px→16px = plus de zoom iOS, +HIG 44px, Finances v0.12.1).
+- **F-C1 (clé IA en clair)** → **MITIGÉ par garde CI** : `test:ia-key-privacy` (statique, discriminant) VERROUILLE les 2 seuls vecteurs de fuite (cmc_ia_key ∈ FB_LOCAL, jamais dans FB_FIX ; `_adminCfgBackup` ne pousse pas la clé vers la DB Firebase ouverte) → interdit toute réintroduction du **P0 lecon #787**. Le chiffrement au repos (théâtre device-local, lecon #55) et le proxy-par-défaut (couperait l'IA sans proxy = « ne rien casser ») restent **écartés volontairement** — documentés au JOURNAL.
+
 ## Mise à jour PASSE 2 (2026-07-14) — corrections livrées (code testé)
 - **F-C2 (XSS)** → **RÉSOLU** : garde CI `test:xss-guard` (ratchet baseline 10) câblé dans `test:ci`. Tout nouvel `innerHTML` non échappé casse le gate.
 - **F-H1 (RGPD)** → **RÉSOLU (test)** : `test:rgpd` (6/6) prouve export self, garde d'accès cross-user, admin protégé, confirmation « EFFACER », hash mdp redacté. (La *politique* de rétention reste un point produit, mais le mécanisme est testé.)
@@ -68,13 +72,15 @@
 - **Cas conflit table/CMC+CDP** → **RECLASSÉ N/A par construction** (1 code = 1 lieu/jour ; pas de placement table/heure dans le modèle).
 - **F-C1** (clé IA en clair localStorage) → **reste P2**, non fait (chemin IA de prod, à faire avec Kevin).
 
-## Synthèse (après passe 2)
+## Synthèse (après passe 3)
 | P | Nb | 
 |---|---|
 | P0 | **0** |
-| P1 | 0 |
-| P2 | **1** restant (F-C1) — F-C2 & F-H1 résolus |
-| P3 | 3 (F-B1, F-D1, F-L1) |
-| Nouveaux gardes CI | render-views · rgpd · a11y · xss-guard (bloquants) |
+| P1 | **0** (F-K1 résolu) |
+| P2 | **0** restant (F-C1 mitigé par garde · F-C2 & F-H1 résolus) |
+| P3 | 3 (F-B1, F-D1, F-L1) — dette assumée, non bloquante |
+| Nouveaux gardes CI | render-views · rgpd · a11y · xss-guard · **ia-key-privacy** (bloquants) |
+
+Gate `test:ci` **VERT end-to-end** (EXIT 0). Tous les findings P0/P1/P2 sont soit résolus, soit mitigés par un garde CI permanent. Restent 3 P3 de dette (mono-fichier, `loading=lazy`, console.log) — cosmétiques, non bloquants.
 
 Le levier le plus utile n'est pas un correctif de code mais un **garde CI** (F-C2) : convertir la vérification XSS manuelle en filet permanent. C'est la logique Phase 8 « cause racine, pas pansement ».
