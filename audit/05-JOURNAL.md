@@ -51,3 +51,25 @@ Les 4 nouveaux tests sont **câblés dans `test:ci`** (gate bloquant). `axe-core
 ### Auto-critique passe 2 (honnête)
 - **Le point le plus faible reste** : `render-views` valide le RENDU, pas le COMPORTEMENT (un bouton d'une vue périphérique peut rendre OK mais mal agir). C'est un filet anti-crash/anti-vue-morte, pas une preuve fonctionnelle exhaustive.
 - **Non certain** : le a11y « 0 violation » sur contenu injecté peut sous-estimer le contraste réel (styles calculés partiels hors layout complet) — d'où le caveat live. Je ne survends pas un « a11y parfait ».
+
+---
+
+## PASSE 3 (2026-07-14) — F-K1 + F-C1 fermés ✅ VÉRIFIÉ
+
+### F-K1 — le gate `test:ci` était rouge (finances) → VERT
+Cause racine trouvée par exécution réelle (Loi 1), 3 défauts cumulés dans le TEST (pas le produit — l'app Finances marchait) :
+1. le balayage de boutons ouvrait le drill-down `#drillov` / aperçu `#docov` (feature légitime, lecon #148) qui interceptait les clics suivants → timeout 30 s → throw ;
+2. l'onglet « Bilan » est devenu ambigu en v0.12 (`🔎 Bilan` vs `📑 Bilan complet`) → `#bq` introuvable ;
+3. l'activation IA attendait un message `#ai-msg` **transitoire** (~700 ms avant re-render) = flaky.
+Corrections test (aucune simulation à la place de l'app) : `dismissOverlays()`, `gotoTab` clique le `.tab` au texte le plus court, attente du signal **stable** `#ai-off`. **Preuve : 3 runs → 47 OK / 0 P0 ; `npm run test:ci` EXIT 0.** Bonus produit : `select.catsel` 12px→16px (zoom iOS) + 44px (HIG), Finances v0.12.1.
+
+### F-C1 — clé IA en clair : garde CI (pas de code risqué)
+Décision d'expert « ne rien casser / toujours testé réel » : les deux « corrections » du finding sont **écartées** —
+- chiffrer `cmc_ia_key` au repos = **théâtre** (la clé de déchiffrement vit sur le même device ; lecon #55 : le XOR device-bound a déjà cassé le vault) ;
+- forcer le proxy par défaut = **couperait l'IA** de Kevin s'il n'a pas de proxy déployé, et **je ne peux pas le tester en live** (egress bloqué, lecon #135).
+Ce qui compte réellement (« la clé ne quitte pas le device ») est **déjà en place et vérifié par lecture** : `cmc_ia_key` ∈ `FB_LOCAL` (jamais synchronisé), `_adminCfgBackup` **ne pousse plus** `iaKey` vers la DB Firebase ouverte (fix lecon #787), et `_adminCfgRestore` **scrube** toute clé léguée. J'ai donc converti F-C1 en **garde permanent** `test:ia-key-privacy` (statique, **prouvé discriminant** : casser FB_LOCAL OU réintroduire `iaKey:` dans le backup → EXIT 1) qui **interdit** la réintroduction du P0 lecon #787. C'est la logique Phase 8 : verrouiller le vecteur de fuite plutôt qu'un correctif risqué non testable.
+
+### Auto-critique passe 3 (honnête)
+- **Le plus faible** : `test:ia-key-privacy` est **statique** — il verrouille les vecteurs de fuite connus (sync Firebase + backup admin), il **ne prouve pas** au runtime qu'aucun call-site IA n'envoie `x-api-key` à un tiers quand un proxy est configuré (les ~6 sites d'appel varient ; le prouver exigerait de piloter une vraie conversation IA par site). Je le déclare au lieu de le masquer.
+- **Non fait, assumé** : la clé RESTE en clair dans `localStorage` sur le device admin (design accepté + documenté in-app) ; l'appel direct navigateur sans proxy RESTE le fallback (retirer = casser). Ce n'est pas « résolu à 100 % », c'est **mitigé honnêtement** (la clé ne fuit pas hors device) — pas de faux « P0 éliminé ».
+- **Restent 3 P3** (mono-fichier 49k lignes, `loading=lazy`, console.log) : dette cosmétique non bloquante, non traitée cette passe.
