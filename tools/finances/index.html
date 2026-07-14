@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.8.6 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.8.6">
+<!-- v0.9.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.9.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -134,17 +134,25 @@
   table.ctab td.pos{ color:var(--green); } table.ctab td.neg{ color:var(--red); }
   table.ctab.jt th:nth-child(3),table.ctab.jt th:nth-child(4),table.ctab.jt th:nth-child(5),table.ctab.jt td:nth-child(3),table.ctab.jt td:nth-child(4),table.ctab.jt td:nth-child(5){ text-align:right; }
   table.ctab input[type=checkbox]{ width:18px; height:18px; }
+  table.ctab.syt th:not(:first-child),table.ctab.syt td:not(:first-child){ text-align:right; }
+  @media print{
+    .top,.tabs,#toast,button,.btn,select,input,.no-print,#bnav{ display:none !important; }
+    body{ background:#fff !important; color:#111 !important; }
+    .card{ background:#fff !important; border:1px solid #bbb !important; box-shadow:none !important; break-inside:avoid; color:#111 !important; }
+    .card h2,.kpi .v,.tiny,.muted,table.ctab td,table.ctab th{ color:#111 !important; }
+    table.ctab td.pos,.kpi .v.pos{ color:#0a7a3d !important; } table.ctab td.neg,.kpi .v.neg{ color:#b3261e !important; }
+  }
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.6" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.9.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.8.6';
+  var APP_VER = 'v0.9.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -320,9 +328,38 @@
   async function idbGet(k){ var db=await idbDB(); return new Promise(function(res,rej){ var tx=db.transaction('docs','readonly'); var rq=tx.objectStore('docs').get(k); rq.onsuccess=function(){res(rq.result||null);}; rq.onerror=function(){rej(rq.error);}; }); }
   async function idbDel(k){ try{ var db=await idbDB(); return new Promise(function(res){ var tx=db.transaction('docs','readwrite'); tx.objectStore('docs').delete(k); tx.oncomplete=function(){res();}; tx.onerror=function(){res();}; }); }catch(e){} }
   /* Aperçu EN-APP (pas window.open : iOS le bloque dans une PWA installée → « Voir » ne faisait rien).
-     Image → <img>, texte → <pre>, PDF → <iframe> + bouton « Télécharger / Ouvrir » (un vrai <a download>,
-     autorisé par iOS au tap → ouvre l'aperçu natif). Fermeture = retire l'overlay + révoque le blob. */
+     Image → <img>, texte → <pre>, PDF → rendu PAGES EN CANVAS via PDF.js vendored (iOS ne dessine PAS
+     un PDF dans une iframe → page blanche, capture Kevin IMG_3064) + bouton « Télécharger / Ouvrir »
+     (un vrai <a download>, autorisé par iOS au tap). Fermeture = retire l'overlay + révoque le blob. */
   var _docUrl='';
+  function _loadPdfjs(){
+    return new Promise(function(res,rej){
+      if(window.pdfjsLib){ res(window.pdfjsLib); return; }
+      var s=document.createElement('script'); s.src='/tools/shared/pdfjs/pdf.min.js';
+      s.onload=function(){ try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc='/tools/shared/pdfjs/pdf.worker.min.js'; res(window.pdfjsLib); }catch(e){ rej(e); } };
+      s.onerror=function(){ rej(new Error('PDF.js indisponible')); };
+      document.head.appendChild(s);
+    });
+  }
+  async function _renderPdfInto(box, bytes){
+    var lib=await _loadPdfjs();
+    var copy=(bytes instanceof Uint8Array)?bytes.slice(0):new Uint8Array(bytes.slice(0)); /* pdf.js détache le buffer (leçon #65) */
+    var pdf=await lib.getDocument({ data:copy }).promise;
+    box.innerHTML='';
+    var maxPages=Math.min(pdf.numPages,30);
+    var cw=Math.min(920,(box.clientWidth||window.innerWidth-24));
+    for(var p=1;p<=maxPages;p++){
+      var page=await pdf.getPage(p);
+      var v0=page.getViewport({scale:1});
+      var scale=cw/v0.width*(window.devicePixelRatio||1);
+      var vp=page.getViewport({scale:scale});
+      var cv=document.createElement('canvas'); cv.width=vp.width; cv.height=vp.height;
+      cv.style.cssText='width:100%;height:auto;display:block;border-radius:10px;background:#fff;margin:0 0 8px';
+      box.appendChild(cv);
+      await page.render({ canvasContext:cv.getContext('2d'), viewport:vp }).promise;
+    }
+    if(pdf.numPages>maxPages) box.appendChild(el('<div class="tiny" style="text-align:center;padding:6px">… '+(pdf.numPages-maxPages)+' page(s) de plus — bouton Télécharger pour tout voir.</div>'));
+  }
   function closeDocOverlay(){ var o=$('docov'); if(o)o.remove(); if(_docUrl){ try{URL.revokeObjectURL(_docUrl);}catch(e){} _docUrl=''; } }
   async function openDoc(docId){
     try{
@@ -335,7 +372,7 @@
       var isImg=/^image\//.test(d.mime||'')||/\.(png|jpe?g|webp|heic|heif|gif)$/i.test(name);
       var body;
       if(isImg){ body='<img src="'+_docUrl+'" style="max-width:100%;height:auto;display:block;margin:0 auto;border-radius:10px">'; }
-      else if(isPdf){ body='<iframe src="'+_docUrl+'" style="width:100%;height:68vh;border:0;border-radius:10px;background:#fff"></iframe>'; }
+      else if(isPdf){ body='<div class="muted" style="text-align:center;padding:26px">⏳ Ouverture du PDF…</div>'; }
       else { var txt=''; try{ txt=new TextDecoder('utf-8').decode(bytes); }catch(e){ txt='(aperçu indisponible)'; }
              body='<pre style="white-space:pre-wrap;word-break:break-word;background:#0c120c;border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;max-height:68vh;overflow:auto;color:var(--txt);font:13px/1.5 ui-monospace,Menlo,monospace">'+esc(txt)+'</pre>'; }
       var ov=el('<div id="docov" style="position:fixed;inset:0;z-index:60;background:rgba(4,7,4,.95);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 12px)"></div>');
@@ -349,6 +386,9 @@
       ov.appendChild(head); ov.appendChild(content); ov.appendChild(dla);
       ov.addEventListener('click', function(e){ if(e.target===ov)closeDocOverlay(); });
       document.body.appendChild(ov);
+      if(isPdf){ _renderPdfInto(content, bytes).catch(function(e){
+        content.innerHTML='<div class="muted" style="text-align:center;padding:24px">Aperçu PDF indisponible ici — '+esc(e&&e.message||e)+'.<br><br>👉 Utilise « ⬇️ Télécharger / Ouvrir » en bas : il ouvre le PDF en plein écran.</div>';
+      }); }
     }catch(e){ toast('❌ '+(e.message||e),true); }
   }
   function markDocFile(docId){ var d=(VAULT.docs||[]).filter(function(x){return x.id===docId;})[0]; if(d)d.hasFile=true; }
@@ -725,13 +765,14 @@
       '</div>'+
       '<div class="tabs" id="tabs"></div>'+
       '<div class="wrap" id="view"></div>';
-    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['bilan','🔎 Bilan'],['expert','👔 Expert'],['comptes','🗃️ Comptes'],['compta','📒 Comptabilité'],['compare','💹 Comparateur'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
+    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['synth','📑 Bilan complet'],['bilan','🔎 Bilan'],['expert','👔 Expert'],['comptes','🗃️ Comptes'],['compta','📒 Comptabilité'],['compare','💹 Comparateur'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
     var tb=$('tabs');
     tabs.forEach(function(t){ var b=el('<button class="tab'+(STATE.tab===t[0]?' on':'')+'">'+t[1]+'</button>'); b.onclick=function(){ STATE.tab=t[0]; render(); }; tb.appendChild(b); });
     $('btn-lock').onclick=lockNow;
     var v=$('view');
     if(STATE.tab==='add') viewAdd(v);
     else if(STATE.tab==='dash') viewDash(v);
+    else if(STATE.tab==='synth') viewSynthese(v);
     else if(STATE.tab==='bilan') viewBilan(v);
     else if(STATE.tab==='expert') viewExpert(v);
     else if(STATE.tab==='comptes') viewComptes(v);
@@ -1058,6 +1099,172 @@
     try{ var r=await aiCallSmart([{ t:'Tu es un expert-comptable et conseiller financier avec 20 ans d\'expérience. Voici la situation financière de ton client (données anonymisées) :\n\n'+L.join('\n')+'\n\nRédige un BILAN clair et structuré en français : (1) Situation générale (2-3 phrases), (2) Points forts, (3) Points de vigilance / risques (endettement, dépenses qui dérapent, épargne), (4) 4-6 recommandations concrètes et chiffrées (économies possibles, renégociation prêts/assurances, budget), (5) Trésorerie prévisionnelle et conseil d\'épargne. Sois précis, chiffré, pédagogue et bienveillant. Pas de blabla.' }], 1400, 300);
       outEl.innerHTML='<div style="background:var(--card2);border:1px solid var(--line2);border-radius:12px;padding:13px;white-space:pre-wrap;font-size:13.5px;line-height:1.5">'+esc(r)+'</div>';
     }catch(e){ outEl.innerHTML='<div style="color:var(--red)">❌ '+esc(e.message||e)+'</div>'; }
+  }
+
+  /* ---------- Vue BILAN COMPLET (relevé de situation style expert-comptable : mensuel, annuel,
+     abonnements, crédits, catégories, cashflow, projection — imprimable + export CSV) ---------- */
+  function frMonthShort(mk){ var M=['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc']; var p=String(mk).split('-'); return (M[(+p[1]||1)-1]||'')+' '+String(p[0]).slice(2); }
+  function _hbar(pct,color){ return '<div style="background:#14200f;border-radius:4px;height:8px;overflow:hidden;min-width:60px"><div style="width:'+Math.max(2,Math.min(100,pct))+'%;height:100%;background:'+color+';border-radius:4px"></div></div>'; }
+  function cumLineSvg(mks,byMonth){
+    if(mks.length<2)return '';
+    var cum=0, pts=mks.map(function(m){ cum+=(byMonth[m].rev-byMonth[m].dep); return cum; });
+    var W=Math.max(320,mks.length*34+30),H=130,pad=12,base=H-24;
+    var mn=Math.min(0,Math.min.apply(null,pts)), mx=Math.max(1,Math.max.apply(null,pts));
+    var Y=function(v){ return base-(v-mn)/(mx-mn)*(base-pad); };
+    var X=function(i){ return 16+i*((W-30)/Math.max(1,mks.length-1)); };
+    var line=mks.map(function(m,i){ return (i?'L':'M')+X(i).toFixed(1)+' '+Y(pts[i]).toFixed(1); }).join(' ');
+    var zero=(mn<0)?'<line x1="10" y1="'+Y(0).toFixed(1)+'" x2="'+(W-6)+'" y2="'+Y(0).toFixed(1)+'" stroke="#33452c" stroke-dasharray="4 4"/>':'';
+    var lbl=''; var step=Math.ceil(mks.length/8);
+    mks.forEach(function(m,i){ if(i%step===0||i===mks.length-1) lbl+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" fill="#9fb59a" font-size="9">'+esc(frMonthShort(m))+'</text>'; });
+    var last=pts[pts.length-1];
+    return '<div style="overflow-x:auto"><svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Trésorerie cumulée">'+zero+
+      '<path d="'+line+'" fill="none" stroke="'+(last>=0?'#4fce7c':'#ff7a6b')+'" stroke-width="2.2"/>'+
+      mks.map(function(m,i){ return '<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(pts[i]).toFixed(1)+'" r="2.4" fill="'+(pts[i]>=0?'#4fce7c':'#ff7a6b')+'"/>'; }).join('')+lbl+'</svg></div>';
+  }
+  function synthData(yr){
+    var txs=(VAULT.tx||[]).filter(function(t){ return yr==='all'||ymd(t.date).slice(0,4)===yr; });
+    var a=analyze(txs); var mks=Object.keys(a.byMonth).sort();
+    return { txs:txs, a:a, mks:mks, nm:mks.length||1 };
+  }
+  function exportSynthese(yr){
+    var d=synthData(yr), rows=[['BILAN COMPLET '+(yr==='all'?'toutes périodes':yr)]];
+    rows.push([]); rows.push(['SYNTHÈSE MENSUELLE']); rows.push(['Mois','Revenus','Dépenses','Résultat','Cumul']);
+    var cum=0; d.mks.forEach(function(m){ var x=d.a.byMonth[m]; cum+=x.rev-x.dep; rows.push([m,f2(x.rev),f2(x.dep),f2(x.rev-x.dep),f2(cum)]); });
+    rows.push([]); rows.push(['PAR CATÉGORIE']); rows.push(['Catégorie','Total','% des dépenses','Moyenne/mois']);
+    Object.keys(d.a.byCat).sort(function(x,y){return d.a.byCat[y]-d.a.byCat[x];}).forEach(function(c){ rows.push([c,f2(d.a.byCat[c]),(d.a.dep>0?(d.a.byCat[c]/d.a.dep*100).toFixed(1):'0')+'%',f2(d.a.byCat[c]/d.nm)]); });
+    var subs=subscriptions(); if(subs.length){ rows.push([]); rows.push(['ABONNEMENTS & CHARGES FIXES (détectés)']); rows.push(['Libellé','Catégorie','≈/mois','≈/an','Occurrences']);
+      subs.forEach(function(s){ rows.push([s.label,s.cat,f2(s.avg),f2(s.avg*12),s.n]); }); }
+    var loans=detectLoans(); if(loans.length){ rows.push([]); rows.push(['CRÉDITS & PRÊTS']); rows.push(['Libellé','Mensualité ≈','Échéances vues','Payé sur la période','Prochaine ≈']);
+      loans.forEach(function(l){ rows.push([l.label,f2(l.avg),l.n,f2(l.avg*l.n),nextDue(l)]); }); }
+    dl('bilan-complet-'+(yr==='all'?'tout':yr)+'.csv','﻿'+rows.map(function(r){return r.map(csvCell).join(';');}).join('\n'),'text/csv');
+  }
+  function viewSynthese(v){
+    if(!(VAULT.tx||[]).length){
+      v.appendChild(el('<div class="card" style="text-align:center;padding:30px"><div style="font-size:38px">📑</div><h2 style="justify-content:center;margin-top:6px">Bilan complet</h2><p class="muted">Dès que tes relevés et factures sont là, je te sors le bilan d\'expert-comptable : mensuel, annuel, abonnements, crédits, projection.</p><button class="btn gold" id="sy-go-add" style="margin-top:8px">➕ Ajouter / récupérer mes documents</button></div>'));
+      setTimeout(function(){ var b=$('sy-go-add'); if(b)b.onclick=function(){ STATE.tab='add'; render(); }; },0); return;
+    }
+    var years=comptaYears(); var yr=STATE.synthYear||'all'; if(yr!=='all'&&years.indexOf(yr)<0)yr='all';
+    var d=synthData(yr), a=d.a, mks=d.mks, nm=d.nm;
+    var period=(yr==='all')?(mks.length?frMonthShort(mks[0])+' → '+frMonthShort(mks[mks.length-1]):'—'):('année '+yr);
+    var rate=a.rev>0?Math.round(a.net/a.rev*100):0;
+
+    /* ---- En-tête + sélecteur + actions ---- */
+    var head=el('<div class="card"><h2>📑 Bilan complet<span class="r">'+esc(period)+' · '+d.txs.filter(function(t){return !t.recDup&&t.category!=='Virements internes';}).length+' opérations</span></h2>'+
+      '<div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px"><select id="sy-year" class="grow"><option value="all"'+(yr==='all'?' selected':'')+'>📆 Toutes les périodes</option>'+years.map(function(y){return '<option value="'+y+'"'+(y===yr?' selected':'')+'>Année '+y+'</option>';}).join('')+'</select>'+
+      '<button class="btn no-print" id="sy-print" title="Imprimer / enregistrer en PDF">🖨️ Imprimer</button>'+
+      '<button class="btn no-print" id="sy-csv" title="Exporter la synthèse en CSV">📊 CSV</button></div></div>');
+    v.appendChild(head);
+    setTimeout(function(){ var s=$('sy-year'); if(s)s.onchange=function(){ STATE.synthYear=s.value; render(); };
+      var p=$('sy-print'); if(p)p.onclick=function(){ try{window.print();}catch(e){ toast('Impression indisponible ici — utilise 📊 CSV',true); } };
+      var c=$('sy-csv'); if(c)c.onclick=function(){ exportSynthese(yr); }; },0);
+
+    /* ---- Synthèse générale ---- */
+    v.appendChild(el('<div class="card"><h2>Σ Synthèse générale</h2>'+
+      '<div class="kpis"><div class="kpi"><div class="k">Revenus</div><div class="v pos">'+eur0(a.rev)+'</div></div>'+
+      '<div class="kpi"><div class="k">Dépenses</div><div class="v neg">'+eur0(a.dep)+'</div></div>'+
+      '<div class="kpi"><div class="k">Résultat</div><div class="v '+(a.net>=0?'pos':'neg')+'">'+eur0(a.net)+'</div></div>'+
+      '<div class="kpi"><div class="k">Taux d\'épargne</div><div class="v '+(rate>=0?'pos':'neg')+'">'+rate+'%</div></div></div>'+
+      '<div class="tiny" style="margin-top:8px">Moyennes sur '+nm+' mois : revenus <b>'+eur0(a.rev/nm)+'</b>/mois · dépenses <b>'+eur0(a.dep/nm)+'</b>/mois · flux net <b>'+eur0(a.net/nm)+'</b>/mois. Virements internes neutralisés ('+eur0(a.internal)+').</div></div>'));
+
+    /* ---- Tableau MENSUEL (avec Δ dépenses, cumul, 👑/⚠️) ---- */
+    var best=null,worst=null; mks.forEach(function(m){ var n=a.byMonth[m].rev-a.byMonth[m].dep; if(best===null||n>a.byMonth[best].rev-a.byMonth[best].dep)best=m; if(worst===null||n<a.byMonth[worst].rev-a.byMonth[worst].dep)worst=m; });
+    var cum=0, prevDep=null;
+    var rowsM=mks.map(function(m){ var x=a.byMonth[m], net=x.rev-x.dep; cum+=net;
+      var delta=(prevDep!==null&&prevDep>0)?((x.dep-prevDep)/prevDep*100):null; prevDep=x.dep;
+      var dTxt=delta===null?'—':((delta>=0?'▲ +':'▼ ')+Math.abs(delta).toFixed(0)+'%');
+      var tag=(m===best&&mks.length>1?' 👑':'')+(m===worst&&mks.length>1?' ⚠️':'');
+      return '<tr><td>'+esc(frMonthShort(m))+tag+'</td><td class="pos">'+eur0(x.rev)+'</td><td class="neg">'+eur0(x.dep)+'</td><td class="'+(net>=0?'pos':'neg')+'">'+eur0(net)+'</td><td style="color:'+(delta===null?'var(--dim)':(delta>15?'var(--red)':(delta<-15?'var(--green)':'var(--dim)')))+'">'+dTxt+'</td><td class="'+(cum>=0?'pos':'neg')+'">'+eur0(cum)+'</td></tr>';
+    }).join('');
+    v.appendChild(el('<div class="card"><h2>📅 Mois par mois<span class="r">'+nm+' mois</span></h2>'+
+      '<div style="overflow-x:auto"><table class="ctab syt"><tr><th>Mois</th><th>Revenus</th><th>Dépenses</th><th>Résultat</th><th>Δ dép.</th><th>Cumul</th></tr>'+rowsM+'</table></div>'+
+      (mks.length>1?'<div class="tiny" style="margin-top:6px">👑 meilleur mois · ⚠️ mois le plus difficile · Δ dép. = variation des dépenses vs mois précédent.</div>':'')+'</div>'));
+
+    /* ---- Trésorerie cumulée ---- */
+    if(mks.length>1) v.appendChild(el('<div class="card"><h2>📈 Trésorerie cumulée</h2>'+cumLineSvg(mks,a.byMonth)+'<div class="tiny">Cumul des résultats mensuels sur la période (au-dessus du pointillé = positif).</div></div>'));
+
+    /* ---- Tableau ANNUEL ---- */
+    if(yr==='all'&&years.length>0){
+      var rowsY=years.slice().sort().map(function(y){ var ay=analyze((VAULT.tx||[]).filter(function(t){return ymd(t.date).slice(0,4)===y;}));
+        var ry=ay.rev>0?Math.round(ay.net/ay.rev*100):0;
+        return '<tr><td>'+y+'</td><td class="pos">'+eur0(ay.rev)+'</td><td class="neg">'+eur0(ay.dep)+'</td><td class="'+(ay.net>=0?'pos':'neg')+'">'+eur0(ay.net)+'</td><td>'+ry+'%</td></tr>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>🗓️ Année par année</h2><div style="overflow-x:auto"><table class="ctab syt"><tr><th>Année</th><th>Revenus</th><th>Dépenses</th><th>Résultat</th><th>Épargne</th></tr>'+rowsY+'</table></div></div>'));
+    }
+
+    /* ---- Charges fixes vs reste à vivre ---- */
+    var subs=subscriptions(); var isLoanLbl=function(s){ return /pret|credit|mensualit|echeance|emprunt/.test(norm(s.label)); };
+    var fixes=subs.filter(function(s){return !isLoanLbl(s);}); var loans=detectLoans();
+    var fixesM=fixes.reduce(function(s,x){return s+x.avg;},0), loansM=loans.reduce(function(s,x){return s+x.avg;},0);
+    var revM=a.rev/nm, resteVivre=revM-fixesM-loansM;
+    v.appendChild(el('<div class="card"><h2>⚖️ Fixe vs variable</h2>'+
+      '<div class="kpis"><div class="kpi"><div class="k">Charges fixes /mois</div><div class="v">'+eur0(fixesM)+'</div></div>'+
+      '<div class="kpi"><div class="k">Crédits /mois</div><div class="v">'+eur0(loansM)+'</div></div>'+
+      '<div class="kpi"><div class="k">Reste à vivre /mois</div><div class="v '+(resteVivre>=0?'pos':'neg')+'">'+eur0(resteVivre)+'</div></div>'+
+      '<div class="kpi"><div class="k">Poids fixe+crédit</div><div class="v">'+(revM>0?Math.round((fixesM+loansM)/revM*100):0)+'%</div></div></div>'+
+      '<div class="tiny" style="margin-top:8px">Reste à vivre = revenus moyens − charges fixes − crédits. Repère expert : fixe+crédit ≤ 50% des revenus'+(revM>0&&(fixesM+loansM)/revM>0.5?' — <b style="color:var(--red)">dépassé, vigilance</b>.':' ✓.')+'</div></div>'));
+
+    /* ---- Abonnements & charges fixes détaillés ---- */
+    if(fixes.length){
+      var rowsS=fixes.slice(0,20).map(function(s){ return '<tr><td>'+catIcon(s.cat)+' '+esc(s.label.slice(0,26))+'</td><td class="neg">'+eur0(s.avg)+'</td><td class="neg">'+eur0(s.avg*12)+'</td><td>'+s.n+'× / '+s.months+' mois</td></tr>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>🔁 Abonnements & charges fixes<span class="r">≈ '+eur0(fixesM)+'/mois · '+eur0(fixesM*12)+'/an</span></h2>'+
+        '<div style="overflow-x:auto"><table class="ctab syt"><tr><th>Libellé</th><th>/mois</th><th>/an</th><th>Vu</th></tr>'+rowsS+'</table></div>'+
+        '<div class="tiny" style="margin-top:6px">Prélèvements récurrents détectés automatiquement sur tout l\'historique. Résilier un abonnement inutile = économie immédiate ×12.</div></div>'));
+    }
+
+    /* ---- Crédits & prêts ---- */
+    if(loans.length){
+      var rowsL=loans.map(function(l){ return '<tr><td>🏦 '+esc(l.label.slice(0,26))+'</td><td class="neg">'+eur0(l.avg)+'</td><td>'+l.n+'</td><td class="neg">'+eur0(l.avg*l.n)+'</td><td>'+esc(nextDue(l))+'</td></tr>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>🏦 Crédits & prêts<span class="r">≈ '+eur0(loansM)+'/mois · '+eur0(loansM*12)+'/an</span></h2>'+
+        '<div style="overflow-x:auto"><table class="ctab syt"><tr><th>Crédit</th><th>Mensualité</th><th>Éch. vues</th><th>Payé</th><th>Prochaine ≈</th></tr>'+rowsL+'</table></div></div>'));
+    }
+
+    /* ---- Catégories (table pro + barres + budget si défini) ---- */
+    var cats=Object.keys(a.byCat).sort(function(x,y){return a.byCat[y]-a.byCat[x];});
+    if(cats.length){
+      var hasBudget=Object.keys(VAULT.budget||{}).some(function(k){return (VAULT.budget[k]||0)>0;});
+      var maxC=a.byCat[cats[0]]||1;
+      var rowsC=cats.map(function(c){ var val=a.byCat[c], pm=val/nm, bud=(VAULT.budget||{})[c]||0;
+        var over=hasBudget&&bud>0&&pm>bud;
+        return '<tr><td>'+catIcon(c)+' '+esc(c)+'</td><td class="neg">'+eur0(val)+'</td><td>'+(a.dep>0?(val/a.dep*100).toFixed(0):'0')+'%</td><td>'+eur0(pm)+'</td>'+(hasBudget?'<td style="color:'+(bud>0?(over?'var(--red)':'var(--green)'):'var(--dim)')+'">'+(bud>0?eur0(bud)+(over?' ⚠️':' ✓'):'—')+'</td>':'')+'<td style="min-width:70px">'+_hbar(val/maxC*100,over?'#ff7a6b':'#e8b830')+'</td></tr>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>🧩 Par catégorie<span class="r">'+eur0(a.dep)+' de dépenses</span></h2>'+
+        '<div style="overflow-x:auto"><table class="ctab syt"><tr><th>Catégorie</th><th>Total</th><th>%</th><th>/mois</th>'+(hasBudget?'<th>Budget/mois</th>':'')+'<th></th></tr>'+rowsC+'</table></div></div>'));
+    }
+
+    /* ---- Top dépenses + top fournisseurs ---- */
+    var tops=topExpenses(d.txs,10);
+    if(tops.length){
+      var rowsT=tops.map(function(t){ return '<tr><td>'+esc(ymd(t.date))+'</td><td>'+esc((t.vendor||t.label||'').slice(0,26))+'</td><td>'+esc(t.category)+'</td><td class="neg">'+eur(t.amount)+'</td></tr>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>💥 Top 10 des dépenses</h2><div style="overflow-x:auto"><table class="ctab syt"><tr><th>Date</th><th>Qui</th><th>Catégorie</th><th>Montant</th></tr>'+rowsT+'</table></div></div>'));
+    }
+    var byV={}; d.txs.forEach(function(t){ if(t.amount>=0||t.recDup||t.category==='Virements internes')return; var k=(t.vendor||'').trim(); if(!k)return; byV[k]=byV[k]||{s:0,n:0}; byV[k].s+=-t.amount; byV[k].n++; });
+    var vks=Object.keys(byV).sort(function(x,y){return byV[y].s-byV[x].s;}).slice(0,10);
+    if(vks.length){
+      var rowsV=vks.map(function(k){ return '<tr><td>🏢 '+esc(k.slice(0,28))+'</td><td>'+byV[k].n+'</td><td class="neg">'+eur0(byV[k].s)+'</td><td>'+eur0(byV[k].s/nm)+'</td></tr>'; }).join('');
+      v.appendChild(el('<div class="card"><h2>🏢 Top fournisseurs</h2><div style="overflow-x:auto"><table class="ctab syt"><tr><th>Fournisseur</th><th>Nb</th><th>Total</th><th>/mois</th></tr>'+rowsV+'</table></div></div>'));
+    }
+
+    /* ---- Projection fin d'année + engagements ---- */
+    var nowY=String(new Date().getFullYear());
+    if(yr==='all'||yr===nowY){
+      var ayC=analyze((VAULT.tx||[]).filter(function(t){return ymd(t.date).slice(0,4)===nowY;}));
+      var mkC=Object.keys(ayC.byMonth).sort(); var doneM=mkC.length;
+      if(doneM>0){
+        var avgNet=(ayC.rev-ayC.dep)/doneM, restM=12-(+((mkC[mkC.length-1]||'').slice(5,7))||12);
+        var eng=devisEngaged(); var proj=ayC.net+avgNet*restM-eng;
+        v.appendChild(el('<div class="card"><h2>🔮 Projection fin '+nowY+'</h2>'+
+          '<div class="kpis"><div class="kpi"><div class="k">Réalisé '+nowY+'</div><div class="v '+(ayC.net>=0?'pos':'neg')+'">'+eur0(ayC.net)+'</div></div>'+
+          '<div class="kpi"><div class="k">Mois restants</div><div class="v">'+restM+'</div></div>'+
+          '<div class="kpi"><div class="k">Engagements devis</div><div class="v neg">'+eur0(eng)+'</div></div>'+
+          '<div class="kpi"><div class="k">Fin d\'année ≈</div><div class="v '+(proj>=0?'pos':'neg')+'">'+eur0(proj)+'</div></div></div>'+
+          '<div class="tiny" style="margin-top:8px">Projection = réalisé + flux net moyen × mois restants − devis acceptés à payer. Estimation, pas une promesse.</div></div>'));
+      }
+    }
+
+    /* ---- Alertes de l'expert ---- */
+    var al=alerts(d.txs,a);
+    if(al.length){ var cA=el('<div class="card"><h2>🚨 Points de vigilance</h2></div>');
+      al.forEach(function(x){ cA.appendChild(el('<div class="tx"><div class="ic">'+(x.bad?'🔴':'🟡')+'</div><div class="mid"><div class="lb" style="white-space:normal;font-weight:500">'+x.txt+'</div></div></div>')); });
+      v.appendChild(cA);
+    }
   }
 
   /* ---------- Vue BILAN (bilan mensuel/annuel sur n'importe quoi : café, Nissan, crédit, lait…) ---------- */
