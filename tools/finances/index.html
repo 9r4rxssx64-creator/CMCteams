@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.12.0" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.12.1" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.12.0';
+  var APP_VER = 'v0.12.1';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -1687,7 +1687,7 @@
         if(d.hasFile){ var vb=el('<button class="btn sm" data-open="'+d.id+'">🖨️ Voir</button>'); acts.appendChild(vb); }
         if(docTx.length){ var ob=el('<button class="btn sm">🔎 '+docTx.length+' op.</button>'); ob.onclick=function(){ drillTx('📄 '+title, docTx); }; acts.appendChild(ob); }
         if(d.kind!=='devis'){
-          var sel=el('<select class="catsel" style="max-width:118px;font-size:12px;padding:6px 4px;min-height:36px" title="Déplacer vers un autre compte"><option value="">📁 Déplacer</option>'+
+          var sel=el('<select class="catsel" style="max-width:118px;font-size:16px;padding:6px 4px;min-height:44px" title="Déplacer vers un autre compte"><option value="">📁 Déplacer</option>'+
             ACCOUNTS.filter(function(x){return x.key!=='devis'&&x.kinds[0]!==d.kind;}).map(function(x){return '<option value="'+x.kinds[0]+'">'+x.icon+' '+esc(x.label)+'</option>';}).join('')+'</select>');
           sel.onchange=function(){ if(sel.value)moveDoc(d.id, sel.value); };
           acts.appendChild(sel);
