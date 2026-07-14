@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.8.5 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.8.5">
+<!-- v0.8.6 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.8.6">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -140,11 +140,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.5" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.8.6" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.8.5';
+  var APP_VER = 'v0.8.6';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -319,12 +319,36 @@
   async function idbSet(k,v){ var db=await idbDB(); return new Promise(function(res,rej){ var tx=db.transaction('docs','readwrite'); tx.objectStore('docs').put(v,k); tx.oncomplete=function(){res();}; tx.onerror=function(){rej(tx.error);}; }); }
   async function idbGet(k){ var db=await idbDB(); return new Promise(function(res,rej){ var tx=db.transaction('docs','readonly'); var rq=tx.objectStore('docs').get(k); rq.onsuccess=function(){res(rq.result||null);}; rq.onerror=function(){rej(rq.error);}; }); }
   async function idbDel(k){ try{ var db=await idbDB(); return new Promise(function(res){ var tx=db.transaction('docs','readwrite'); tx.objectStore('docs').delete(k); tx.oncomplete=function(){res();}; tx.onerror=function(){res();}; }); }catch(e){} }
+  /* Aperçu EN-APP (pas window.open : iOS le bloque dans une PWA installée → « Voir » ne faisait rien).
+     Image → <img>, texte → <pre>, PDF → <iframe> + bouton « Télécharger / Ouvrir » (un vrai <a download>,
+     autorisé par iOS au tap → ouvre l'aperçu natif). Fermeture = retire l'overlay + révoque le blob. */
+  var _docUrl='';
+  function closeDocOverlay(){ var o=$('docov'); if(o)o.remove(); if(_docUrl){ try{URL.revokeObjectURL(_docUrl);}catch(e){} _docUrl=''; } }
   async function openDoc(docId){
-    try{ var pack=await idbGet('doc:'+docId); if(!pack){ toast('Original non stocké sur cet appareil',true); return; }
-      var d=await decWith(KEY,pack); var blob=new Blob([bufFromB64(d.data)],{type:d.mime}); var url=URL.createObjectURL(blob);
-      if(d.mime==='application/pdf'){ window.open(url,'_blank'); }
-      else { var w=window.open('','_blank'); if(w){ w.document.write('<title>'+esc(d.name)+'</title><body style="margin:0;background:#111"><img src="'+url+'" style="max-width:100%;display:block;margin:auto"><script>setTimeout(function(){window.print()},400)<\/script></body>'); } else window.open(url,'_blank'); }
-      setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+    try{
+      var pack=await idbGet('doc:'+docId);
+      if(!pack){ toast('Ce document n\'est pas stocké sur cet appareil (il a été importé sur un autre). L\'aperçu n\'est dispo que là où il a été reçu.',true); return; }
+      var d=await decWith(KEY,pack); var bytes=bufFromB64(d.data);
+      closeDocOverlay(); _docUrl=URL.createObjectURL(new Blob([bytes],{type:d.mime||'application/octet-stream'}));
+      var name=d.name||'document';
+      var isPdf=(d.mime==='application/pdf')||/\.pdf$/i.test(name);
+      var isImg=/^image\//.test(d.mime||'')||/\.(png|jpe?g|webp|heic|heif|gif)$/i.test(name);
+      var body;
+      if(isImg){ body='<img src="'+_docUrl+'" style="max-width:100%;height:auto;display:block;margin:0 auto;border-radius:10px">'; }
+      else if(isPdf){ body='<iframe src="'+_docUrl+'" style="width:100%;height:68vh;border:0;border-radius:10px;background:#fff"></iframe>'; }
+      else { var txt=''; try{ txt=new TextDecoder('utf-8').decode(bytes); }catch(e){ txt='(aperçu indisponible)'; }
+             body='<pre style="white-space:pre-wrap;word-break:break-word;background:#0c120c;border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;max-height:68vh;overflow:auto;color:var(--txt);font:13px/1.5 ui-monospace,Menlo,monospace">'+esc(txt)+'</pre>'; }
+      var ov=el('<div id="docov" style="position:fixed;inset:0;z-index:60;background:rgba(4,7,4,.95);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 12px)"></div>');
+      var head=el('<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"></div>');
+      var ttl=el('<div style="flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(name)+'</div>');
+      var closeBtn=el('<button class="btn sm" style="min-height:44px">✕ Fermer</button>'); closeBtn.onclick=closeDocOverlay;
+      head.appendChild(ttl); head.appendChild(closeBtn);
+      var content=el('<div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch"></div>'); content.innerHTML=body;
+      var dla=el('<a class="btn" style="margin-top:10px;min-height:48px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700">⬇️ Télécharger / Ouvrir</a>');
+      dla.href=_docUrl; dla.setAttribute('download', name);
+      ov.appendChild(head); ov.appendChild(content); ov.appendChild(dla);
+      ov.addEventListener('click', function(e){ if(e.target===ov)closeDocOverlay(); });
+      document.body.appendChild(ov);
     }catch(e){ toast('❌ '+(e.message||e),true); }
   }
   function markDocFile(docId){ var d=(VAULT.docs||[]).filter(function(x){return x.id===docId;})[0]; if(d)d.hasFile=true; }
