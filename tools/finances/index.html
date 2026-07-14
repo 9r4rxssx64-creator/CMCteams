@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.11.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.11.0">
+<!-- v0.12.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.12.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.11.0" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.12.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.11.0';
+  var APP_VER = 'v0.12.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -244,6 +244,7 @@
 
   /* ============================ Crypto (coffre AES-GCM-256) ============================ */
   var LS_VAULT='fin_vault_v1', LS_DEV='fin_devkey_v1', LS_REMEMBER='fin_remember_v1';
+  var LS_FACEID='fin_faceid_v1', LS_FACEID_OFF='fin_faceid_offered_v1';
   var KEY=null;           /* CryptoKey en mémoire */
   var VAULT=null;         /* données déchiffrées */
 
@@ -1969,12 +1970,24 @@
 
     /* Sécurité */
     var remember=localStorage.getItem(LS_REMEMBER)==='1';
+    var fidOn=faceIdEnrolled();
     var cSec=el('<div class="card"><h2>🔐 Sécurité</h2>'+
       '<label class="toggle" style="justify-content:flex-start"><input type="checkbox" id="rem" '+(remember?'checked':'')+'> Rester déverrouillé sur cet appareil (reconnu auto)</label>'+
+      '<label class="toggle" style="justify-content:flex-start;margin-top:6px"><input type="checkbox" id="fid" '+(fidOn?'checked':'')+'> 👤 Face ID — ouvrir le coffre d\'un regard (code en secours)</label>'+
+      '<div class="tiny" id="fid-msg" style="margin-top:4px">'+(fidOn?'Face ID actif sur cet appareil. « Verrouiller » exigera Face ID (ou le code) à la réouverture.':'Active pour ne plus taper ton code à chaque ouverture.')+'</div>'+
       '<div class="row" style="margin-top:8px"><button class="btn grow" id="dedup">🧹 Nettoyer les doublons</button></div>'+
       '<div class="row" style="margin-top:8px"><button class="btn grow" id="lock2">🔒 Verrouiller maintenant</button><button class="btn danger grow" id="wipe">🗑️ Tout effacer</button></div>'+
       '<div class="tiny" style="margin-top:8px">Version '+APP_VER+' · '+(VAULT.audit?VAULT.audit.length:0)+' actions journalisées · 100% local + chiffré.</div></div>');
     v.appendChild(cSec);
+    cSec.querySelector('#fid').onchange=async function(e){
+      var msg=cSec.querySelector('#fid-msg');
+      if(e.target.checked){
+        if(!(await faceIdAvailable())){ e.target.checked=false; msg.textContent='Face ID indisponible ici (ouvre l\'app installée sur ton iPhone).'; return; }
+        if(localStorage.getItem(LS_REMEMBER)!=='1'){ localStorage.setItem(LS_REMEMBER,'1'); await persist(); }
+        try{ await faceIdEnroll(); toast('👤 Face ID activé'); msg.textContent='Face ID actif — la prochaine ouverture se fait d\'un regard.'; }
+        catch(err2){ e.target.checked=false; msg.textContent='Activation annulée — le code continue de marcher.'; }
+      } else { await faceIdDisable(); msg.textContent='Face ID désactivé — retour au code (ou ouverture auto si « Rester déverrouillé »).'; }
+    };
 
     /* wiring IA */
     cAi.querySelector('#ai-prov').onchange=async function(e){ VAULT.aiProvider=e.target.value; await persist(); toast('Moteur : '+AI_LABEL[VAULT.aiProvider]); if(aiOn)render(); };
@@ -2094,23 +2107,33 @@
   }
 
   /* ---------- Verrou / wipe ---------- */
-  function lockNow(){ KEY=null; VAULT=null; localStorage.removeItem(LS_DEV); showGate(); }
+  function lockNow(){
+    KEY=null; VAULT=null;
+    /* Face ID activé : on GARDE la clé appareil (le gate exigera Face ID pour la réutiliser).
+       Sans Face ID : comme avant, la clé part → code obligatoire. */
+    if(!faceIdEnrolled()) localStorage.removeItem(LS_DEV);
+    showGate();
+  }
   function wipeAll(){ if(!confirm('⚠️ EFFACER TOUT le coffre Finances de cet appareil ? Irréversible (sauf sauvegarde exportée).'))return;
     if(!confirm('Confirme une dernière fois : tout supprimer ?'))return;
     localStorage.removeItem(LS_VAULT); localStorage.removeItem(LS_DEV); localStorage.removeItem(LS_REMEMBER);
+    localStorage.removeItem(LS_FACEID); localStorage.removeItem(LS_FACEID_OFF);
     KEY=null; VAULT=null; toast('Coffre effacé'); showGate(); }
 
   /* ============================ Gate (déverrouillage) ============================ */
   function showGate(){
     var existing=!!localStorage.getItem(LS_VAULT);
+    /* Face ID dispo pour ce gate = enrôlé + clé appareil présente + WebAuthn supporté */
+    var canFace=existing && faceIdEnrolled() && faceIdSupported() && localStorage.getItem(LS_REMEMBER)==='1' && !!localStorage.getItem(LS_DEV);
     var app=$('app');
     app.innerHTML='<div class="gate"><div class="card">'+
       '<div class="ic">💰</div>'+
       '<h2>'+(existing?'Coffre Finances':'Nouveau coffre Finances')+'</h2>'+
-      '<p>'+(existing?'Entre ton code de coffre pour déverrouiller.':'Choisis un code de coffre. Il chiffre TOUT (personne ne peut lire sans lui).')+'</p>'+
+      '<p>'+(existing?(canFace?'Un regard suffit — ou entre ton code.':'Entre ton code de coffre pour déverrouiller.'):'Choisis un code de coffre. Il chiffre TOUT (personne ne peut lire sans lui).')+'</p>'+
+      (canFace?'<button class="btn gold" id="g-face" style="width:100%;margin-bottom:10px;min-height:48px">🔐 Déverrouiller avec Face ID</button>':'')+
       '<input id="g-pass" type="password" inputmode="numeric" placeholder="Code du coffre" autocomplete="off">'+
       (existing?'':'<input id="g-pass2" type="password" inputmode="numeric" placeholder="Confirme le code" autocomplete="off" style="margin-top:8px">')+
-      '<button class="btn gold" id="g-go" style="margin-top:12px;width:100%">'+(existing?'🔓 Déverrouiller':'Créer mon coffre')+'</button>'+
+      '<button class="btn '+(canFace?'':'gold')+'" id="g-go" style="margin-top:12px;width:100%">'+(existing?'🔓 Déverrouiller':'Créer mon coffre')+'</button>'+
       '<div class="err" id="g-err"></div>'+
       '<label class="toggle"><input type="checkbox" id="g-rem" '+(localStorage.getItem(LS_REMEMBER)!=='0'?'checked':'')+'> Rester déverrouillé sur cet appareil</label>'+
       '<div class="lk"><a href="#" id="g-cloud">☁️ Restaurer depuis la sauvegarde en ligne</a></div>'+
@@ -2121,7 +2144,14 @@
     $('g-pass').addEventListener('keydown',function(e){ if(e.key==='Enter')go.click(); });
     if(!existing){ $('g-pass2').addEventListener('keydown',function(e){ if(e.key==='Enter')go.click(); }); }
     $('g-cloud').onclick=function(e){ e.preventDefault(); cloudRestoreFromGate(); };
-    setTimeout(function(){ try{$('g-pass').focus();}catch(e){} },80);
+    if(canFace){
+      var fb=$('g-face');
+      fb.onclick=function(){ faceIdUnlockFlow(fb, $('g-err')); };
+      /* Tentative auto (si le navigateur l'autorise sans geste) — sinon le bouton reste, 1 tap. */
+      setTimeout(function(){ faceIdUnlockFlow(fb, null); },120);
+    } else {
+      setTimeout(function(){ try{$('g-pass').focus();}catch(e){} },80);
+    }
   }
   async function createVault(){
     var p=($('g-pass').value||'').trim(), p2=($('g-pass2').value||'').trim(), err=$('g-err');
@@ -2132,6 +2162,7 @@
     VAULT=blankVault(); VAULT._salt=salt;
     if($('g-rem').checked)localStorage.setItem(LS_REMEMBER,'1'); else localStorage.setItem(LS_REMEMBER,'0');
     audit('create','coffre créé'); await persist(); toast('🔐 Coffre créé'); STATE.tab='set'; render();
+    maybeOfferFaceId();
   }
   async function unlock(){
     var p=($('g-pass').value||'').trim(), err=$('g-err');
@@ -2143,6 +2174,7 @@
       data._salt=pack.salt; VAULT=data; KEY=key;
       if($('g-rem').checked)localStorage.setItem(LS_REMEMBER,'1'); else { localStorage.setItem(LS_REMEMBER,'0'); localStorage.removeItem(LS_DEV); }
       await persist(); toast('🔓 Déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true);
+      maybeOfferFaceId();
     }catch(e){ err.textContent='Code incorrect.'; }
   }
   async function tryAutoUnlock(){
@@ -2157,6 +2189,78 @@
       data._salt=pack.salt; VAULT=data; KEY=key; return true;
     }catch(e){ return false; }
   }
+
+  /* ============================ Face ID (WebAuthn plateforme) ============================
+     1ère connexion = code, ensuite reconnu d'un regard. Le code marche TOUJOURS en secours.
+     FAIL-OPEN : Face ID indisponible/refusé → on retombe sur le code, on n'efface JAMAIS rien. */
+  function faceIdSupported(){ return !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create && navigator.credentials.get); }
+  function faceIdCred(){ try{ var o=JSON.parse(localStorage.getItem(LS_FACEID)||'null'); return (o&&o.credId)?o:null; }catch(e){ return null; } }
+  function faceIdEnrolled(){ return !!faceIdCred(); }
+  async function faceIdAvailable(){
+    try{ return faceIdSupported() && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); }catch(e){ return false; }
+  }
+  async function faceIdEnroll(){
+    /* Crée la clé Face ID de CET appareil (rien ne quitte l'appareil). */
+    var uid=crypto.getRandomValues(new Uint8Array(16));
+    var cred=await navigator.credentials.create({ publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      rp:{ name:'Finances KDMC', id:location.hostname },
+      user:{ id:uid, name:'kevin@finances', displayName:'Mon coffre Finances' },
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{ authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred' },
+      timeout:60000, attestation:'none'
+    }});
+    if(!cred||!cred.rawId) throw new Error('enroll_failed');
+    localStorage.setItem(LS_FACEID, JSON.stringify({ credId:b64FromBuf(cred.rawId), ts:Date.now() }));
+    return true;
+  }
+  async function faceIdVerify(){
+    /* Demande Face ID / Touch ID. true = visage reconnu. false = refusé/annulé (pas d'effacement). */
+    var c=faceIdCred(); if(!c||!faceIdSupported())return false;
+    try{
+      var a=await navigator.credentials.get({ publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials:[{ type:'public-key', id:bufFromB64(c.credId), transports:['internal'] }],
+        userVerification:'required', timeout:60000
+      }});
+      return !!a;
+    }catch(e){ return false; }
+  }
+  async function faceIdUnlockFlow(btn, err){
+    /* Bouton du gate : Face ID → auto-déverrouillage avec la clé de l'appareil. */
+    if(btn){ btn.disabled=true; btn.textContent='👤 Regarde ton iPhone…'; }
+    var ok=await faceIdVerify();
+    if(ok && await tryAutoUnlock()){ toast('🔓 Reconnu — déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true); return true; }
+    if(btn){ btn.disabled=false; btn.textContent='🔐 Déverrouiller avec Face ID'; }
+    if(err){ err.style.color='var(--dim)'; err.textContent=ok?'Petit souci de déverrouillage — entre ton code ci-dessous.':'Face ID non reconnu — entre ton code ci-dessous.'; }
+    return false;
+  }
+  function maybeOfferFaceId(){
+    /* Proposé UNE fois par appareil, après un déverrouillage réussi PAR CODE. */
+    try{
+      if(faceIdEnrolled())return;
+      if(localStorage.getItem(LS_FACEID_OFF)==='no')return;
+      if(localStorage.getItem(LS_REMEMBER)!=='1')return; /* Face ID a besoin de la clé appareil */
+      faceIdAvailable().then(function(av){
+        if(!av)return;
+        var ov=el('<div style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:70;display:flex;align-items:center;justify-content:center;padding:20px">'+
+          '<div class="card" style="max-width:340px;text-align:center"><div style="font-size:40px">👤</div>'+
+          '<h2 style="justify-content:center">Activer Face ID ?</h2>'+
+          '<p class="tiny">La prochaine fois, ton coffre s\'ouvre d\'un regard — plus besoin de taper le code. Le code marche toujours en secours.</p>'+
+          '<button class="btn gold" id="fid-yes" style="width:100%;margin-top:10px">✅ Activer Face ID</button>'+
+          '<button class="btn" id="fid-later" style="width:100%;margin-top:8px">Plus tard</button>'+
+          '<button class="btn" id="fid-no" style="width:100%;margin-top:8px;opacity:.7">Non merci</button></div></div>');
+        document.body.appendChild(ov);
+        ov.querySelector('#fid-yes').onclick=async function(){
+          try{ await faceIdEnroll(); ov.remove(); toast('👤 Face ID activé — la prochaine fois, un regard suffit'); if(STATE.tab==='set')render(); }
+          catch(e){ ov.remove(); toast('Face ID non activé ('+((e&&e.name)||'refusé')+') — le code continue de marcher', true); }
+        };
+        ov.querySelector('#fid-later').onclick=function(){ ov.remove(); };
+        ov.querySelector('#fid-no').onclick=function(){ localStorage.setItem(LS_FACEID_OFF,'no'); ov.remove(); };
+      });
+    }catch(e){}
+  }
+  async function faceIdDisable(){ localStorage.removeItem(LS_FACEID); localStorage.removeItem(LS_FACEID_OFF); toast('Face ID désactivé — le code reste'); if(STATE.tab==='set')render(); }
 
   async function cloudRestoreFromGate(){
     var box=$('g-cloudbox'), err=$('g-err');
@@ -2178,6 +2282,11 @@
   /* ============================ Boot ============================ */
   (async function boot(){
     if(!(window.crypto&&crypto.subtle)){ $('app').innerHTML='<div class="gate"><div class="card"><div class="ic">🔒</div><h2>Navigateur non sécurisé</h2><p>Ouvre cette page en HTTPS (chiffrement requis).</p></div></div>'; return; }
+    /* Face ID activé sur cet appareil → l'ouverture auto passe par Face ID (gate avec bouton + tentative auto).
+       FAIL-OPEN : si WebAuthn n'existe pas ici (autre navigateur), on garde le comportement d'avant. */
+    if(faceIdEnrolled() && faceIdSupported() && localStorage.getItem(LS_REMEMBER)==='1' && localStorage.getItem(LS_DEV) && localStorage.getItem(LS_VAULT)){
+      showGate(); return;
+    }
     if(await tryAutoUnlock()){ render(); autoEnableCloud(); mailAutoScan(true); return; }
     showGate();
   })();
