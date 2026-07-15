@@ -8,11 +8,11 @@
 // supprimé » (401 = compte de service absent/invalide sur Vercel).
 // Aucune valeur secrète n'est exposée : uniquement des booléens + le status HTTP.
 //
-// build-marker 2026-07-15c : diag de mint granulaire (raison EXACTE du token_minted
-// false) + gauth durci. Aucune valeur secrète exposée (longueurs/booléens/erreur
-// Google seulement).
+// build-marker 2026-07-15d : gauth self-healing multi-format (répare la clé sans
+// armure -----BEGIN/END-----) + diag qui rapporte QUEL format de clé signe/mint.
+// Aucune valeur secrète exposée (longueurs/booléens/erreur Google seulement).
 import { createSign } from "node:crypto";
-import { getFirebaseAccessToken } from "../lib/gauth.js";
+import { getFirebaseAccessToken, pemCandidates } from "../lib/gauth.js";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const SCOPE =
@@ -25,24 +25,12 @@ function b64url(buf) {
     .replace(/=+$/, "");
 }
 
-// Mint diagnostique : rejoue l'échange JWT→access_token en rapportant CHAQUE étape
-// (format de clé, signature, corps d'erreur Google). Ne renvoie jamais la clé ni
-// le token — uniquement des métadonnées de diagnostic.
+// Mint diagnostique : essaie CHAQUE format de clé candidat et rapporte, par
+// candidat, si la signature OpenSSL passe et le status HTTP du mint Google.
+// Ne renvoie jamais la clé ni le token — uniquement des métadonnées de diagnostic.
 async function diagMint(clientEmail, privateKeyRaw) {
-  const d = {};
+  const d = { email_present: !!clientEmail, variants: [] };
   try {
-    let key = String(privateKeyRaw || "").trim();
-    if (
-      (key.startsWith('"') && key.endsWith('"')) ||
-      (key.startsWith("'") && key.endsWith("'"))
-    ) {
-      key = key.slice(1, -1);
-    }
-    key = key.replace(/\\r/g, "").replace(/\\n/g, "\n").replace(/\r/g, "");
-    d.key_len = key.length;
-    d.key_has_begin = key.includes("BEGIN PRIVATE KEY");
-    d.key_lines = key.split("\n").length;
-    d.email_present = !!clientEmail;
     const now = Math.floor(Date.now() / 1000);
     const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
     const claims = b64url(
@@ -55,32 +43,42 @@ async function diagMint(clientEmail, privateKeyRaw) {
       }),
     );
     const signingInput = `${header}.${claims}`;
-    let assertion;
-    try {
-      const signer = createSign("RSA-SHA256");
-      signer.update(signingInput);
-      signer.end();
-      assertion = `${signingInput}.${b64url(signer.sign(key))}`;
-      d.sign_ok = true;
-    } catch (se) {
-      d.sign_ok = false;
-      d.sign_error = String((se && se.message) || se).slice(0, 160);
-      return d; // clé invalide → inutile d'appeler Google
-    }
-    const r = await fetch(TOKEN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion,
-      }).toString(),
-    });
-    d.token_http = r.status;
-    if (!r.ok) {
-      // corps d'erreur Google = { error, error_description } → nomme la cause.
-      d.token_error = (await r.text()).slice(0, 200);
-    } else {
-      d.token_ok = true;
+    for (const cand of pemCandidates(privateKeyRaw)) {
+      const v = {
+        name: cand.name,
+        key_len: cand.key.length,
+        key_has_begin: cand.key.includes("BEGIN"),
+      };
+      let assertion;
+      try {
+        const signer = createSign("RSA-SHA256");
+        signer.update(signingInput);
+        signer.end();
+        assertion = `${signingInput}.${b64url(signer.sign(cand.key))}`;
+        v.sign_ok = true;
+      } catch (se) {
+        v.sign_ok = false;
+        v.sign_error = String((se && se.message) || se).slice(0, 120);
+        d.variants.push(v);
+        continue;
+      }
+      const r = await fetch(TOKEN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+          assertion,
+        }).toString(),
+      });
+      v.token_http = r.status;
+      if (r.ok) {
+        v.token_ok = true;
+        d.winner = cand.name;
+        d.variants.push(v);
+        break; // un format marche → inutile d'essayer les autres
+      }
+      v.token_error = (await r.text()).slice(0, 160);
+      d.variants.push(v);
     }
   } catch (e) {
     d.diag_error = String((e && e.message) || e).slice(0, 160);
