@@ -11,17 +11,11 @@
  * Anti-spam : max 50 invitations/user/jour
  */
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-};
+import { corsHeaders, makeJson } from './lib/cors.js';
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status, headers: { 'Content-Type': 'application/json', ...CORS }
-  });
-}
+const CORS = corsHeaders('POST, OPTIONS', 'Content-Type, Authorization');
+
+const json = makeJson(CORS);
 
 function err(message, status = 400) {
   return json({ error: 'error', message }, status);

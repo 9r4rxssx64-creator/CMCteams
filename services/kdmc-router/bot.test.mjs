@@ -27,6 +27,17 @@ const gqlCalls = [];
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (input, init) => {
   const u = typeof input === 'string' ? input : input.url;
+  /* Mock bougies Binance pour /__bot/analysis : BTC monte (48h de hausse régulière),
+     ETH descend — la notation doit refléter la tendance dans chaque sens. */
+  if (u.includes('data-api.binance.vision')) {
+    const up = u.includes('BTCUSDT');
+    const k = [];
+    for (let i = 0; i < 250; i++) {
+      const base = up ? 100 + i * 0.5 : 250 - i * 0.5;
+      k.push([0, String(base), String(base + 1), String(base - 1), String(base + (up ? 0.4 : -0.4)), '1']);
+    }
+    return new Response(JSON.stringify(k), { headers: { 'content-type': 'application/json' } });
+  }
   if (u.includes('backboard.railway.com')) {
     const q = JSON.parse(init.body).query;
     gqlCalls.push(q);
@@ -161,6 +172,26 @@ ok(alive.length === 2 && absent.length === 4, 'fleet → 2 déployés (crypto-bo
 ok(alive.every((b) => b.buys === 1 && b.sells === 1 && b.wins === 1 && b.losses === 0), 'fleet → trades FIFO comptés (1 achat, 1 vente gagnante)');
 ok(alive.every((b) => b.net === 5 && b.equity === 10005), 'fleet → net FIFO = 0.5×(110−100) = 5 $ + équité extraite');
 ok(j.bots[0].net === 5 && j.bots[5].status === 'absent', 'fleet → trié par net, absents en dernier');
+
+/* 19) ANALYSE EXPERT sans grant → 403 */
+r = await mod.fetch(REQ({ path: '/__bot/analysis' }), env);
+ok(r.status === 403, '/__bot/analysis sans grant → 403');
+
+/* 20) ANALYSE EXPERT : symboles depuis la config bot, notation cohérente avec la tendance */
+r = await mod.fetch(REQ({ path: '/__bot/analysis?tf=1h', headers: H }), env);
+j = await r.json();
+ok(j.ok === true && j.tf === '1h' && Array.isArray(j.analysis) && j.analysis.length === 2, 'analysis → 2 cryptos (SYMBOLS de la config)');
+const btc = j.analysis.find((a) => a.symbol === 'BTC/USDT');
+const eth = j.analysis.find((a) => a.symbol === 'ETH/USDT');
+ok(btc && !btc.err && btc.score > 0 && /^Achat/.test(btc.label), 'BTC en hausse → notation Achat (score ' + (btc && btc.score) + ')');
+ok(eth && !eth.err && eth.score < 0 && /^Vente/.test(eth.label), 'ETH en baisse → notation Vente (score ' + (eth && eth.score) + ')');
+ok(btc.rsi != null && btc.rsi > 50 && eth.rsi != null && eth.rsi < 50, 'RSI cohérent (hausse > 50 > baisse)');
+ok(btc.ma_buy === 5 && eth.ma_sell === 5, 'votes moyennes mobiles : 5/5 dans le sens de la tendance');
+
+/* 21) Timeframe invalide → replié sur 1h (pas d'injection) */
+r = await mod.fetch(REQ({ path: '/__bot/analysis?tf=;DROP', headers: H }), env);
+j = await r.json();
+ok(j.ok === true && j.tf === '1h', 'tf invalide → replié sur 1h');
 
 globalThis.fetch = realFetch;
 console.log(`bot.test.mjs : ${pass} OK / ${fail} FAIL`);

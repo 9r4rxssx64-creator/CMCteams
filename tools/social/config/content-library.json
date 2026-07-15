@@ -848,7 +848,7 @@
         "avg": 13
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "psychology-002",
@@ -867,7 +867,7 @@
         "avg": 12
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "psychology-003",
@@ -886,7 +886,7 @@
         "avg": 14
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "psychology-004",
@@ -905,7 +905,7 @@
         "avg": 12
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "psychology-005",
@@ -924,7 +924,7 @@
         "avg": 14
       },
       "duration_target": "medium",
-      "used": false
+      "used": true
     }
   ],
   "narrative_history": [
@@ -964,7 +964,7 @@
         "avg": 13
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     },
     {
       "id": "history-003",
@@ -983,7 +983,7 @@
         "avg": 16
       },
       "duration_target": "long",
-      "used": false
+      "used": true
     }
   ]
 }

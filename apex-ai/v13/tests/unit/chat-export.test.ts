@@ -12,6 +12,8 @@ import {
   type ExportableMessage,
   buildConversationMarkdown,
   buildExportFilename,
+  buildConversationHtml,
+  buildShareFilename,
 } from '../../features/chat/chat-export.js';
 
 describe('chat-export buildConversationMarkdown (v13.4.173)', () => {
@@ -104,5 +106,40 @@ describe('chat-export buildExportFilename (v13.4.173)', () => {
     /* `.` est OK pour l'extension finale, mais pas dans le timestamp */
     const withoutExt = filename.replace(/\.md$/, '');
     expect(withoutExt).not.toMatch(/[:.]/);
+  });
+});
+
+describe('chat-export buildConversationHtml (v13.4.352 — partage)', () => {
+  const D = new Date('2026-05-15T14:30:00Z');
+  const msgs: ExportableMessage[] = [
+    { role: 'user', text: 'Bonjour <b>xss</b>' },
+    { role: 'assistant', text: 'Salut !' },
+    { role: 'tool_card', text: 'IGNORÉ' },
+  ];
+
+  it('produit un document HTML autonome valide', () => {
+    const html = buildConversationHtml(msgs, 'v13.4.352', D);
+    expect(html.startsWith('<!doctype html>')).toBe(true);
+    expect(html).toContain('</html>');
+    expect(html).toContain('v13.4.352');
+  });
+  it('échappe le contenu utilisateur (anti-XSS)', () => {
+    const html = buildConversationHtml(msgs, 'v', D);
+    expect(html).toContain('&lt;b&gt;xss&lt;/b&gt;');
+    expect(html).not.toContain('<b>xss</b>');
+  });
+  it('filtre les tool_card', () => {
+    const html = buildConversationHtml(msgs, 'v', D);
+    expect(html).not.toContain('IGNORÉ');
+  });
+  it('inclut les deux rôles', () => {
+    const html = buildConversationHtml(msgs, 'v', D);
+    expect(html).toContain('👤 Toi');
+    expect(html).toContain('🤖 Apex');
+  });
+  it('buildShareFilename → .html sans caractère unsafe', () => {
+    const f = buildShareFilename(D);
+    expect(f).toMatch(/\.html$/);
+    expect(f.replace(/\.html$/, '')).not.toMatch(/[:.]/);
   });
 });

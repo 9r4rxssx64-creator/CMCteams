@@ -33,7 +33,7 @@
     "test:apex-messages": "node tests/smoke-apex-messages.mjs",
     "test:all": "node tests/runtime-audit.mjs && node tests/runtime-audit-encadres.mjs && node tests/runtime-audit-pitboss.mjs && node tests/runtime-audit-teamhistory.mjs && node tests/runtime-audit-v639-format.mjs && node tests/runtime-audit-v650-rh.mjs && node tests/runtime-audit-kevin-truth.mjs && node tests/runtime-audit-v663-badge.mjs && node tests/runtime-audit-scoped-wipe.mjs && node tests/runtime-audit-agents-sanity.mjs && node tests/runtime-audit-visual-bridge.mjs && node tests/runtime-audit-autoupdate.mjs && node tests/runtime-audit-admin-guards.mjs && node tests/runtime-audit-pin-security.mjs && node tests/runtime-audit-apex-handoff.mjs && node tests/runtime-audit-v702-avril.mjs && node tests/runtime-audit-v702-import-e2e.mjs && node tests/runtime-audit-v702-import-safety.mjs && node tests/runtime-audit-v719-pdf-column.mjs && node tests/runtime-audit-team-sizes.mjs && node tests/runtime-audit-master.mjs",
     "test:check-syntax": "python3 -c \"import re;html=open('index.html','r',encoding='utf-8').read();blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL);open('/tmp/cmc_combined.js','w',encoding='utf-8').write(''.join(blocks))\" && node --check /tmp/cmc_combined.js",
-    "test:ci": "npm run test:check-syntax && npm run test:all && npm run test:fidelity && npm run test:homonyms && npm run test:fidelity-pb && npm run test:coverage && npm run test:everyone-has-planning && npm run test:space-format && npm run test:v2-codes && npm run test:import-flicker && npm run test:validated-teams && npm run test:geometric && npm run test:v768 && npm run test:v784 && npm run test:v785 && npm run test:v787 && npm run test:v788 && npm run test:team-rule && npm run test:v808 && npm run test:v810b && npm run test:garro-cp && npm run test:vplan && npm run test:verify && npm run test:departs-sync && npm run test:seed && npm run test:faceid && npm run test:conv-colors && npm run test:departs-algo && npm run test:departs-live && npm run test:departs-cfg && npm run test:departs-gate && npm run test:ecole && npm run test:seed-ecole && npm run test:baccara-chef && npm run test:code-legends && npm run test:kevin-inbox && npm run test:fiche && npm run test:apex-messages && npm run test:pw-noclear",
+    "test:ci": "npm run test:check-syntax && npm run test:all && npm run test:fidelity && npm run test:homonyms && npm run test:fidelity-pb && npm run test:coverage && npm run test:everyone-has-planning && npm run test:space-format && npm run test:v2-codes && npm run test:import-flicker && npm run test:validated-teams && npm run test:geometric && npm run test:v768 && npm run test:v784 && npm run test:v785 && npm run test:v787 && npm run test:v788 && npm run test:team-rule && npm run test:v808 && npm run test:v810b && npm run test:garro-cp && npm run test:vplan && npm run test:verify && npm run test:departs-sync && npm run test:seed && npm run test:faceid && npm run test:conv-colors && npm run test:departs-algo && npm run test:departs-render && npm run test:departs-compare && npm run test:teams-compare && npm run test:no-cadres && npm run test:departs-live && npm run test:departs-cfg && npm run test:departs-gate && npm run test:ecole && npm run test:seed-ecole && npm run test:baccara-chef && npm run test:code-legends && npm run test:kevin-inbox && npm run test:fiche && npm run test:render-views && npm run test:view-behavior && npm run test:rgpd && npm run test:a11y && npm run test:xss-guard && npm run test:file-size-guard && npm run test:ia-key-privacy && npm run test:ia-proxy-routing && npm run test:apex-messages && npm run test:pw-noclear && npm run test:finances",
     "test:fidelity": "node tests/runtime-audit-reproduction-fidelity.mjs",
     "test:homonyms": "node tests/runtime-audit-homonyms.mjs",
     "test:fidelity-pb": "node tests/runtime-audit-fidelity-pitboss.mjs",
@@ -61,6 +61,9 @@
     "test:faceid": "node tests/runtime-audit-faceid.mjs",
     "test:conv-colors": "node tests/runtime-audit-conv-colors.mjs",
     "test:departs-algo": "node tests/runtime-audit-departs-algo.mjs",
+    "test:departs-compare": "node tests/compare-app-vs-light-departs.mjs",
+    "test:teams-compare": "node tests/compare-app-vs-light-teams.mjs",
+    "test:no-cadres": "node tests/no-cadres-in-seed.mjs",
     "test:departs-live": "node tests/runtime-audit-departs-live.mjs",
     "test:departs-cfg": "node tests/runtime-audit-departs-cfg.mjs",
     "test:departs-gate": "node tests/runtime-audit-departs-gate.mjs",
@@ -70,7 +73,18 @@
     "test:code-legends": "node tests/runtime-audit-code-legends.mjs",
     "test:kevin-inbox": "node tests/runtime-audit-kevin-inbox.mjs",
     "test:fiche": "node tests/runtime-audit-fiche.mjs",
-    "test:pw-noclear": "node tests/runtime-audit-pw-noclear.mjs"
+    "test:pw-noclear": "node tests/runtime-audit-pw-noclear.mjs",
+    "test:departs-render": "node tests/verify-real-departs-render.mjs",
+    "test:finances": "node tests/verify-finances-as-kevin.mjs",
+    "test:monaco": "node --test services/kdmc-monaco/worker.test.mjs",
+    "test:render-views": "node tests/runtime-audit-render-all-views.mjs",
+    "test:rgpd": "node tests/runtime-audit-rgpd.mjs",
+    "test:a11y": "node tests/runtime-audit-a11y.mjs",
+    "test:xss-guard": "node tests/runtime-audit-xss-guard.mjs",
+    "test:ia-key-privacy": "node tests/runtime-audit-ia-key-privacy.mjs",
+    "test:ia-proxy-routing": "node tests/runtime-audit-ia-proxy-routing.mjs",
+    "test:view-behavior": "node tests/runtime-audit-view-behavior.mjs",
+    "test:file-size-guard": "node tests/runtime-audit-file-size-guard.mjs"
   },
   "repository": {
     "type": "git",
@@ -93,6 +107,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.5",
+    "axe-core": "^4.12.1",
     "pdfjs-dist": "3.11.174",
     "playwright": "1.56.0",
     "terser": "^5.48.0"

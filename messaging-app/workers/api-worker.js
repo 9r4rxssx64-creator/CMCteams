@@ -38,19 +38,15 @@ const ADMIN_KEVIN_ALIASES = [
   'kevin.desarzens', 'kevind@monaco.mc', 'kdmc', 'k desarzens'
 ];
 
+import { corsHeaders, makeJson } from './lib/cors.js';
+import { giphySearchUrl, giphyTrendingUrl, mapGiphyResults } from '../lib/gif.js';
+
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Apex-Token, x-file-name',
+  ...corsHeaders('GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization, X-Apex-Token, x-file-name'),
   'Access-Control-Max-Age': '86400'
 };
 
-function json(data, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS, ...extraHeaders }
-  });
-}
+const json = makeJson(CORS_HEADERS);
 
 // err() — règle CLAUDE.md "détailler les erreurs partout" :
 // message = soft (user), detail = cause EXACTE (diagnostic). detail accepte string ou objet.
@@ -1474,6 +1470,14 @@ async function handleUploadPrekeys(request, env) {
          prekey_signed=COALESCE(?, prekey_signed)
        WHERE id=?`
     ).bind(idk, pq, signed, auth.sub).run();
+    // v1.1.261 — capacités crypto (best-effort : une colonne absente NE casse
+    // JAMAIS la publication de clé). Le pair saura ainsi quel niveau on déchiffre.
+    if (typeof body.crypto_caps === 'string' && body.crypto_caps.length <= 200 && /^[a-z0-9,]+$/.test(body.crypto_caps)) {
+      try {
+        await env.APEX_CHAT_DB.prepare('UPDATE users SET crypto_caps=? WHERE id=?')
+          .bind(body.crypto_caps, auth.sub).run();
+      } catch (_capErr) { /* colonne pas encore migrée → ignoré */ }
+    }
     return json({ ok: true });
   } catch (e) {
     return err('Échec publication clé', 500, 'db_write_failed', {
@@ -1494,6 +1498,12 @@ async function handleKeyBundle(userId, request, env) {
   if (!idk || idk === 'PENDING_PQXDH' || idk === 'PENDING') {
     return err('Clé pas encore publiée par ce contact', 409, 'key_pending', { user_id: userId });
   }
+  // v1.1.261 — capacités crypto du pair (best-effort : colonne absente → null).
+  let caps = null;
+  try {
+    const c = await env.APEX_CHAT_DB.prepare('SELECT crypto_caps FROM users WHERE id=?').bind(userId).first();
+    caps = (c && typeof c.crypto_caps === 'string') ? c.crypto_caps : null;
+  } catch (_capErr) { caps = null; }
   return json({
     ok: true,
     bundle: {
@@ -1501,6 +1511,7 @@ async function handleKeyBundle(userId, request, env) {
       identity_key_pub: idk,
       pq_key_pub: row.pq_key_pub && !String(row.pq_key_pub).startsWith('PENDING') ? row.pq_key_pub : null,
       prekey_signed: row.prekey_signed && !String(row.prekey_signed).startsWith('PENDING') ? row.prekey_signed : null,
+      crypto_caps: caps,
     },
   });
 }
@@ -4336,6 +4347,10 @@ export async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
 }
 
 async function handleIAChat(request, env) {
+  // SÉCU audit P1 — l'IA consomme les crédits API de Kevin (Anthropic/Groq/Gemini/DeepSeek).
+  // Sans auth, n'importe qui pouvait épuiser le quota/facturer. Réservé aux users connectés.
+  const user = await getAuthUser(request, env);
+  if (!user) return err('Unauthorized', 401);
   const { messages, systemPrompt, context } = await request.json();
   if (!Array.isArray(messages) || messages.length === 0) return err('messages required');
 
@@ -5389,6 +5404,30 @@ async function handleSetTurnConfig(request, env) {
 }
 
 // ============================================================================
+//  GIF (Giphy) — proxy : la clé reste un secret worker (env.GIPHY_KEY), jamais
+//  exposée au navigateur. Auth requise (anti open-proxy = protège la clé/quota
+//  de Kevin). Fail-open : sans clé → { disabled:true } ; toute erreur réseau →
+//  { results:[] } en 200 (le sélecteur GIF se dégrade proprement, jamais un mur).
+// ============================================================================
+async function handleGifSearch(request, env) {
+  const user = await getAuthUser(request, env);
+  if (!user) return err('Non authentifié', 401, 'unauthorized');
+  const key = env.GIPHY_KEY;
+  if (!key) return json({ results: [], disabled: true, reason: 'no_key' });
+  let q = '';
+  try { q = new URL(request.url).searchParams.get('q') || ''; } catch (_) {}
+  const url = q.trim() ? giphySearchUrl(q, key) : giphyTrendingUrl(key);
+  try {
+    const r = await fetch(url, { headers: { accept: 'application/json' } });
+    if (!r.ok) return json({ results: [], disabled: false, error: 'giphy_http_' + r.status });
+    const data = await r.json();
+    return json({ results: mapGiphyResults(data), disabled: false });
+  } catch (e) {
+    return json({ results: [], disabled: false, error: 'giphy_fetch_failed', detail: String((e && e.message) || e) });
+  }
+}
+
+// ============================================================================
 //  Main fetch handler
 // ============================================================================
 
@@ -5426,6 +5465,7 @@ export default {
 
       // Médias R2 (photos/vidéos/fichiers tous formats) — v1.1.186
       if (path === '/api/media' && method === 'POST') return await handleMediaUpload(request, env);
+      if (path === '/api/gif' && method === 'GET') return await handleGifSearch(request, env);
       const mediaMatch = path.match(/^\/api\/media\/([a-zA-Z0-9_-]+)$/);
       if (mediaMatch && method === 'GET') return await handleMediaGet(mediaMatch[1], request, env);
 

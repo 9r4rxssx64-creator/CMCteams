@@ -87,7 +87,7 @@ export default {
     }
 
     // Vérifier l'origine (sécurité)
-    if (!ALLOW_ORIGINS.includes(origin) && origin !== "") {
+    if (!ALLOW_ORIGINS.includes(origin)) { // FIX audit 2026-07-08 : Origin vide (curl) ne bypass plus
       return new Response(JSON.stringify({ error: "Origin not allowed", origin }), {
         status: 403,
         headers: { "Content-Type": "application/json" },

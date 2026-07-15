@@ -101,5 +101,5 @@ jobs:
             echo "Pas de changement (sed n'a rien matché)"
             exit 0
           fi
-          git commit -m "chore: sync Apex Chat CACHE_VERSION/badge → ${APP_VER} (sentinelle auto)"
+          git commit -m "chore: sync Apex Chat CACHE_VERSION/badge → ${APP_VER} (sentinelle auto) [skip ci]"
           git push

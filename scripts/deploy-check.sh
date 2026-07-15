@@ -73,11 +73,35 @@ if [ -f "apex-ai-v13/sw.js" ] && [ -n "$DEP_VER" ]; then
   fi
 fi
 
+# 5. Chaque asset local référencé (src/href ./…) DOIT exister dans le déployé.
+#    Attrape la classe de bug rescue.js 404 (v13.4.358) : un fichier PUBLIC non bundlé
+#    (publicDir='assets' → dist/js/…, pas dist/assets/js/…) référencé au mauvais chemin.
+DEP_DIR="$(dirname "$DEPLOYED_HTML")"
+MISSING_ASSETS=0
+REFS=$(grep -oE '(src|href)="[^"]+"' "$DEPLOYED_HTML" \
+  | sed -E 's/^(src|href)="//; s/"$//' \
+  | grep -vE '^(https?:|data:|blob:|mailto:|#|//)' \
+  | sed -E 's/[?#].*$//' \
+  | sort -u)
+for ref in $REFS; do
+  rel="${ref#./}"
+  [ -z "$rel" ] && continue
+  if [ ! -e "$DEP_DIR/$rel" ]; then
+    echo "❌ BLOCKER : asset référencé introuvable → $DEP_DIR/$rel (ref « $ref »)"
+    echo "   Cause probable : fichier public (publicDir='assets') copié à ./js|css|icons/… mais"
+    echo "   référencé sous ./assets/… — corrige le chemin dans index.html (cf 404 rescue.js v13.4.358)."
+    MISSING_ASSETS=$((MISSING_ASSETS + 1))
+  fi
+done
+if [ "$MISSING_ASSETS" -gt 0 ]; then
+  ERRORS=$((ERRORS + MISSING_ASSETS))
+fi
+
 if [ "$ERRORS" -gt 0 ]; then
   echo ""
   echo "$ERRORS blocker(s) détecté(s). Push refusé."
   exit 1
 fi
 
-echo "✅ Deploy check OK : nonce remplacé, hex 32 chars, versions cohérentes."
+echo "✅ Deploy check OK : nonce remplacé, hex 32 chars, versions cohérentes, assets locaux résolus."
 exit 0

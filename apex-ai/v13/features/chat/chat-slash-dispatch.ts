@@ -10,12 +10,19 @@
 import { APP_VER } from '../../core/bootstrap.js';
 import { store } from '../../core/store.js';
 import { parseSlashCommand, helpText, SLASH_COMMANDS } from '../../services/admin/slash-commands.js';
+import { pickBestArtifact, setCanvasArtifact } from '../../services/ai/artifacts.js';
 import { claudeBridge } from '../../services/ai/claude-bridge.js';
+import {
+  getReasoningEffort,
+  setReasoningEffort,
+  isNativeThinkingEnabled,
+  setNativeThinkingEnabled,
+} from '../../services/ai/reasoning-mode.js';
 import { haptic } from '../../ui/haptic.js';
 import { toast } from '../../ui/toast.js';
 
 import { isAutoReadEnabled, setAutoReadEnabled } from './chat-autoread.js';
-import { buildConversationMarkdown, buildExportFilename } from './chat-export.js';
+import { buildConversationMarkdown, buildExportFilename, buildConversationHtml, buildShareFilename } from './chat-export.js';
 import { clearConversationEverywhere, persistConversation } from './chat-persistence.js';
 import { renderMessages, pushAssistantMessage } from './chat-render-loop.js';
 import { renderSlashAutocomplete } from './chat-renderers.js';
@@ -26,7 +33,7 @@ import {
   handleResumeCommand, handleStatuslineCommand, handleOodaCommand,
   handleUltraReviewCommand, handleDiagCommand, handleTestCommand,
   handleLoopCommand, handlePlanCommand, handleRulesCommand,
-  handleAutonomousCommand,
+  handleAutonomousCommand, handleResearchCommand, handleBriefCommand,
 } from './chat-slash-handlers.js';
 import { listCodeSnippets } from './chat-snippets.js';
 
@@ -113,9 +120,82 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
       toast.info(wasEnabled ? '🔇 Lecture vocale désactivée' : '🔊 Lecture vocale activée');
       return true;
     }
+    case 'effort': {
+      const lvl = args.trim().toLowerCase();
+      const map: Record<string, 'auto' | 'low' | 'medium' | 'high'> = {
+        auto: 'auto', direct: 'low', bas: 'low', low: 'low',
+        moyen: 'medium', medium: 'medium', med: 'medium',
+        élevé: 'high', eleve: 'high', high: 'high', max: 'high',
+      };
+      const target = map[lvl];
+      if (!target) {
+        const cur = getReasoningEffort();
+        pushAssistantMessage(rootEl, `🧠 Effort de raisonnement actuel : **${cur}**.\n\nUsage : \`/effort auto|direct|moyen|élevé\` — « élevé » affiche la réflexion 💭 avant la réponse.`);
+        return true;
+      }
+      setReasoningEffort(target);
+      const labels = { auto: 'Auto', low: 'Direct', medium: 'Moyen', high: 'Élevé (montre la réflexion)' } as const;
+      toast.success(`🧠 Effort : ${labels[target]}`);
+      return true;
+    }
+    case 'thinking': {
+      /* v13.4.355 : bascule le raisonnement NATIF Anthropic (extended thinking).
+       * OPT-IN — n'agit qu'en combinaison avec /effort élevé + provider Anthropic. */
+      const a = args.trim().toLowerCase();
+      if (a === 'on' || a === '1' || a === 'oui') {
+        setNativeThinkingEnabled(true);
+        if (getReasoningEffort() !== 'high') setReasoningEffort('high');
+        toast.success('🧠 Raisonnement natif Anthropic : ACTIVÉ (effort élevé)');
+      } else if (a === 'off' || a === '0' || a === 'non') {
+        setNativeThinkingEnabled(false);
+        toast.info('🧠 Raisonnement natif Anthropic : désactivé');
+      } else {
+        const st = isNativeThinkingEnabled() ? 'ACTIVÉ' : 'désactivé';
+        pushAssistantMessage(
+          rootEl,
+          `🧠 Raisonnement natif Anthropic : **${st}**.\n\nUsage : \`/thinking on|off\`. ` +
+            'Quand activé, avec un effort « élevé » (`/effort élevé`) et le provider Anthropic, ' +
+            'Apex expose sa VRAIE réflexion (extended thinking) dans un bloc repliable 🧠. ' +
+            'À tester sur ton iPhone.',
+        );
+      }
+      return true;
+    }
+    case 'approbations': {
+      /* v13.4.357 — Coffre d'autorisations : ouvre la PWA où Kevin valide d'un Face ID.
+       * Apex y dépose ses demandes (approval-broker) avant tout acte sensible. */
+      const url = 'https://cmcteams.kd-mc.com/tools/approvals/';
+      try { window.open(url, '_blank', 'noopener'); } catch { /* popup bloquée */ }
+      pushAssistantMessage(
+        rootEl,
+        '🔐 **Coffre d\'autorisations** ouvert.\n\nJe fais tout le travail à ta place (connexion, paiement, ' +
+          'signature, KYC) — il ne te reste que **ton feu vert, 1 geste Face ID**. Quand j\'ai besoin de ton ' +
+          `autorisation, une demande apparaît ici : [${url}](${url}).\n\n` +
+          '_Rien n\'est fait sans toi : ton Face ID est la preuve que c\'est bien toi qui autorises._',
+      );
+      return true;
+    }
     case 'export':
       void exportConversationMarkdown();
       return true;
+    case 'partager':
+      void shareConversation();
+      return true;
+    case 'canvas': {
+      const lastA = [...conversation].reverse().find((m) => m.role === 'assistant' && !m.streaming);
+      const art = lastA ? pickBestArtifact(lastA.text) : null;
+      if (!art) {
+        pushAssistantMessage(rootEl, '🎨 Aucun artifact à ouvrir. `/canvas` ouvre le dernier bloc de code/HTML/SVG généré par Apex en édition + aperçu live.');
+        return true;
+      }
+      setCanvasArtifact(art);
+      try {
+        store.set('view', 'canvas');
+      } catch {
+        toast.info('Ouvre le Canvas depuis le menu');
+      }
+      return true;
+    }
     case 'snippets': {
       /* v13.4.16 — Liste snippets sauvés via paste intelligent v13.4.14 */
       const snippets = listCodeSnippets();
@@ -186,6 +266,12 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
     case 'rules':
       void handleRulesCommand(slashCtx, args);
       return true;
+    case 'recherche':
+      void handleResearchCommand(slashCtx, args);
+      return true;
+    case 'briefing':
+      void handleBriefCommand(slashCtx);
+      return true;
     /* v13.4.5 — Mode autonome Apex */
     case 'autonomous':
       void handleAutonomousCommand(slashCtx, args);
@@ -250,6 +336,41 @@ async function exportConversationMarkdown(): Promise<void> {
     /* Fallback clipboard */
     void navigator.clipboard?.writeText(md);
     toast.info('📋 Conversation copiée dans le presse-papiers');
+  }
+}
+
+/* v13.4.352 — /partager : partage la conversation en HTML autonome (feuille de
+ * partage iOS via Web Share API si dispo, sinon téléchargement du fichier). */
+async function shareConversation(): Promise<void> {
+  if (conversation.length === 0) {
+    toast.warn('Aucune conversation à partager');
+    return;
+  }
+  const now = new Date();
+  const html = buildConversationHtml(conversation, APP_VER, now);
+  const filename = buildShareFilename(now);
+  try {
+    const file = new File([html], filename, { type: 'text/html' });
+    const navShare = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+    if (navShare.share && navShare.canShare?.({ files: [file] })) {
+      await navShare.share({ files: [file], title: 'Conversation Apex' });
+      return;
+    }
+  } catch {
+    /* partage annulé/échoué → repli téléchargement */
+  }
+  try {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success('📤 Conversation prête à partager (fichier HTML)');
+  } catch {
+    void navigator.clipboard?.writeText(html);
+    toast.info('📋 Conversation copiée (HTML)');
   }
 }
 

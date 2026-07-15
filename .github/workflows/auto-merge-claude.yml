@@ -153,6 +153,26 @@ jobs:
             echo "::warning::Impossible de créer/trouver la PR pour $BRANCH — merger manuellement."
             exit 1
           fi
+          # v2026-07 (Kevin : « le retour coderabbit à chaque fois ») — l'auto-merge
+          # était trop rapide (~2 s) : CodeRabbit n'avait jamais le temps de reviewer.
+          # On lui laisse une fenêtre AVANT de merger (best-effort, early-exit dès
+          # qu'il a posté ; on merge quand même à la fin pour ne jamais bloquer).
+          # FIX 2026-07-13 (Kevin « vérifie tout ») : la boucle sortait sur le PREMIER
+          # message CodeRabbit — or son 1er message est un accusé rapide (« Review
+          # finished ») en réponse au « @coderabbitai review » qu'on postait nous-mêmes,
+          # AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR
+          # closed ». On NE reposte plus la commande (redondante, auto-review activé) et
+          # on attend le WALKTHROUGH substantiel (résumé + fichiers + effort), + un court
+          # buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge
+          # quand même à la fin pour ne JAMAIS bloquer un déploiement — leçon #33).
+          echo "⏳ Fenêtre de revue CodeRabbit (max ~6 min, sort sur la revue de fond)…"
+          for i in $(seq 1 18); do
+            CR=$(gh api "repos/${{ github.repository }}/issues/$PR/comments" \
+                   --jq '[.[] | select((.user.login // "") | test("coderabbit";"i"))
+                              | select((.body // "") | test("Walkthrough|Review effort|Actionable comments|nitpick";"i"))] | length' 2>/dev/null || echo 0)
+            if [ "${CR:-0}" -gt 0 ]; then echo "✓ CodeRabbit a posté sa revue de fond sur #$PR"; sleep 30; break; fi
+            sleep 20
+          done
           # Merge via PR (admin override si dispo, sinon merge normal). Si la règle
           # exige une review → laisse la PR ouverte + warning pour merge manuel.
           if gh pr merge "$PR" --merge --admin --delete-branch=false 2>/dev/null \

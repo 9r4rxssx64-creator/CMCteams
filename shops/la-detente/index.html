@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://images.unsplash.com">
 <link rel="manifest" href="manifest.json">
 <script src="/CMCteams/tools/shared/kdmc-fb-auth.js" defer></script>
-<script src="../_shared/firebase-orders.js" defer></script>
+<script src="/CMCteams/shops/_shared/firebase-orders.js" defer></script>
 <style>
 html,body{max-width:100%;overflow-x:hidden}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -380,7 +380,7 @@ return '<div class="hero"><h1>Vise juste, <em>entre amis</em></h1>'
 +'<p>T-shirts, sweats, polos & casquettes au motif AR15 + cœur rouge — tir, précision, chasse, ball-trap. Et ton propre design sur le textile de ton choix.</p>'
 +'<div class="hero-stats"><div class="hero-stat"><strong>'+P.length+'+</strong><span>Produits</span></div>'
 +'<div class="hero-stat"><strong>'+CATS.length+'</strong><span>Catégories</span></div>'
-+'<div class="hero-stat"><strong>4.7★</strong><span>Note moyenne</span></div>'
++'<div class="hero-stat"><strong>↩️30j</strong><span>Retours gratuits</span></div>'
 +'<div class="hero-stat"><strong>24/7</strong><span>Support</span></div></div></div>'
 +'<div class="trust"><div class="trust-item"><span class="trust-icon">🔒</span>Paiement sécurisé</div>'
 +'<div class="trust-item"><span class="trust-icon">🚚</span>Livraison rapide</div>'
@@ -422,7 +422,7 @@ if(S._pdpId!==p.id){S._pdpId=p.id;S.pdpSize=(p.sizes&&p.sizes.indexOf("M")>=0)?"
 var _BASE="https://9r4rxssx64-creator.github.io/CMCteams/shops/la-detente/";
 var _catNm=((CATS.find(function(c){return c.id===p.cat})||{}).name)||p.cat||"Produits";
 var _ldProd={"@context":"https://schema.org","@type":"Product",name:p.name,description:(p.desc||p.name),image:(/^https?:/.test(p.img||"")?p.img:_BASE+(p.img||"img/og.png")),sku:p.id,brand:{"@type":"Brand",name:"La Détente"},offers:{"@type":"Offer",price:Number(pPrice||p.price||0).toFixed(2),priceCurrency:"EUR",availability:"https://schema.org/InStock",url:_BASE+"?product="+p.id}};
-if(p.rating&&p.reviews)_ldProd.aggregateRating={"@type":"AggregateRating",ratingValue:String(p.rating),reviewCount:String(p.reviews)};
+var _rvReal=(typeof getReviews==="function")?getReviews(p.id):[];if(_rvReal.length)_ldProd.aggregateRating={"@type":"AggregateRating",ratingValue:String(reviewAvg(p.id)),reviewCount:String(_rvReal.length)};
 var _ldBc={"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"Accueil",item:_BASE},{"@type":"ListItem",position:2,name:_catNm,item:_BASE+"?cat="+p.cat},{"@type":"ListItem",position:3,name:p.name,item:_BASE+"?product="+p.id}]};
 var _ldJson=function(o){return JSON.stringify(o).replace(/<\/script>/gi,"<\\/script>")};
 return '<script type="application/ld+json">'+_ldJson(_ldProd)+'<\/script><script type="application/ld+json">'+_ldJson(_ldBc)+'<\/script>'
@@ -504,8 +504,8 @@ m.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;
 +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 style="font-size:22px;font-weight:800">Paiement</h2><span onclick="document.getElementById(\'payModal\').remove()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
 +'<div style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:20px;text-align:center"><span style="font-size:14px;color:var(--muted)">Total à payer</span><div style="font-size:32px;font-weight:800;color:var(--p);margin-top:4px">'+fmtP(total)+'</div></div>'
 +'<div style="display:flex;flex-direction:column;gap:12px">'
-+'<a href="https://paypal.me/kdmc/'+total.toFixed(2)+'" onclick="processOrder(\'PayPal\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0070ba22;border:1px solid #0070ba55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🅿️</span><div><div>PayPal</div><div style="font-size:12px;color:var(--muted)">Paiement sécurisé instantané</div></div></a>'
-+'<a href="https://revolut.me/kdmc" onclick="processOrder(\'Revolut\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0075eb22;border:1px solid #0075eb55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🔄</span><div><div>Revolut @kdmc</div><div style="font-size:12px;color:var(--muted)">Envoi instantané sans frais</div></div></a>'
++'<a rel="noopener noreferrer" href="https://paypal.me/kdmc/'+total.toFixed(2)+'" onclick="processOrder(\'PayPal\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0070ba22;border:1px solid #0070ba55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🅿️</span><div><div>PayPal</div><div style="font-size:12px;color:var(--muted)">Paiement sécurisé instantané</div></div></a>'
++'<a rel="noopener noreferrer" href="https://revolut.me/kdmc" onclick="processOrder(\'Revolut\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0075eb22;border:1px solid #0075eb55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🔄</span><div><div>Revolut @kdmc</div><div style="font-size:12px;color:var(--muted)">Envoi instantané sans frais</div></div></a>'
 +'<div onclick="showIBAN()" style="display:flex;align-items:center;gap:12px;padding:16px;background:#dc262622;border:1px solid #dc262655;border-radius:12px;cursor:pointer;font-weight:600"><span style="font-size:28px">🏦</span><div><div>Virement bancaire</div><div style="font-size:12px;color:var(--muted)">IBAN — délai 1-2 jours</div></div></div>'
 +'</div>'
 +'<p style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">🔒 Paiement sécurisé · Données protégées · KDMC Monaco</p>'
@@ -749,7 +749,7 @@ function showSizeGuide(){var rows=SIZE_GUIDE.map(function(r){return '<tr><td sty
 /* --- Avis clients --- */
 function seedReviews(p){var pool=[["Thomas B.","Top qualité, coton épais et motif super net. 🔥"],["Julien","Reçu vite, taille parfaite. On l'a tous pris au club !"],["Marie","Cadeau pour mon mari chasseur, il adore le design."],["Greg","Parfait pour le ball-trap du dimanche entre amis."],["Sophie","Très belle finition, la coupe taille bien."],["Laurent","Couleur kaki au top, exactement comme la photo."],["Nico","Hyper confortable, le cœur rouge claque sur le noir."],["Manu","Impression nickel après plusieurs lavages, je recommande."]];
  var h=0,i;for(i=0;i<p.id.length;i++)h=(h*31+p.id.charCodeAt(i))>>>0;var n=2+(h%2),out=[];
- for(var k=0;k<n;k++){var idx=(h+k*3)%pool.length;out.push({name:pool[idx][0],text:pool[idx][1],rating:(h+k)%5===0?4:5,ts:0,seed:true});}return out;}
+ void h;void n;void pool;return out;/* Avis semés retirés — plus de faux « Achat vérifié » (honnêteté commerciale) */}
 function getReviews(id){var p=P.find(function(x){return x.id===id})||{id:id},local=[];try{local=JSON.parse(localStorage.getItem("ld_reviews_"+id)||"[]")}catch(_){}return local.concat(seedReviews(p));}
 function reviewAvg(id){var r=getReviews(id);if(!r.length)return 0;var s=0;r.forEach(function(x){s+=x.rating||5});return Math.round(s/r.length*10)/10;}
 function rvSetStars(n){window._rvStars=n;var el=document.getElementById("rv_stars");if(el)el.innerHTML=rvStarsHtml(n,true);}
@@ -757,7 +757,7 @@ function rvStarsHtml(n,interactive){var s="";for(var i=1;i<=5;i++){s+='<span '+(
 function ldSubmitReview(id){var nm=document.getElementById("rv_name"),tx=document.getElementById("rv_text"),rt=window._rvStars||5;if(!tx||tx.value.trim().length<3)return toast("Écris ton avis (3 caractères min)","error");var arr=[];try{arr=JSON.parse(localStorage.getItem("ld_reviews_"+id)||"[]")}catch(_){}arr.unshift({name:((nm&&nm.value.trim())||"Anonyme").slice(0,30),text:tx.value.trim().slice(0,300),rating:rt,ts:Date.now()});localStorage.setItem("ld_reviews_"+id,JSON.stringify(arr.slice(0,50)));window._rvStars=5;toast("Merci pour ton avis ❤");dc();}
 function reviewsBlockHtml(id){var rv=getReviews(id),avg=reviewAvg(id);
  var list=rv.slice(0,6).map(function(r){return '<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">'+esc(r.name)+(r.seed?' <span style="font-size:10px;color:#22c55e">✓ Achat vérifié</span>':'')+'</b><span style="color:#f5b301;font-size:12px">'+"★★★★★".slice(0,r.rating)+'</span></div><div style="font-size:13px;color:var(--muted);margin-top:4px">'+esc(r.text)+'</div></div>';}).join("");
- return '<div class="section" style="max-width:760px;margin:8px auto 0"><div class="section-title">⭐ Avis clients — '+avg+'/5 ('+rv.length+')</div>'+list
+ return '<div class="section" style="max-width:760px;margin:8px auto 0"><div class="section-title">⭐ Avis clients'+(rv.length?' — '+avg+'/5 ('+rv.length+')':'')+'</div>'+(rv.length?list:'<p style="color:var(--muted);font-size:13px;margin:4px 0 8px">Sois le premier à donner ton avis ⭐</p>')
  +'<div style="margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-weight:700;margin-bottom:8px">Laisser un avis</div><div id="rv_stars" style="color:#f5b301;margin-bottom:8px">'+rvStarsHtml(window._rvStars||5,true)+'</div><input id="rv_name" placeholder="Ton prénom" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin-bottom:8px"><textarea id="rv_text" rows="3" placeholder="Ton avis…" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);resize:vertical"></textarea><button onclick="ldSubmitReview(\''+id+'\')" style="margin-top:8px;padding:11px 18px;background:var(--p);color:#fff;border:none;border-radius:var(--rs);font-weight:700;cursor:pointer">Publier mon avis</button></div></div>';}
 /* --- Récemment vus --- */
 function pushRecent(id){var a=[];try{a=JSON.parse(localStorage.getItem("ld_recent")||"[]")}catch(_){}a=a.filter(function(x){return x!==id});a.unshift(id);localStorage.setItem("ld_recent",JSON.stringify(a.slice(0,10)));}
@@ -1325,7 +1325,7 @@ function ldConsentRefuse(el){try{
 <!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
         data-project="la-detente"
-        data-version="v1.53.20"
+        data-version="v1.53.23"
         data-color="#e8b830"
         defer></script>
 

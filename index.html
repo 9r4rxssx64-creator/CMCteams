@@ -71,7 +71,7 @@
 <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1668 2388'%3E%3Crect width='1668' height='2388' fill='%230a1408'/%3E%3Ctext x='834' y='1100' text-anchor='middle' font-size='280' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='834' y='1300' text-anchor='middle' font-size='170' font-weight='800' fill='%23c9a227' letter-spacing='18' font-family='system-ui'%3ECMC%3C/text%3E%3Ctext x='834' y='1420' text-anchor='middle' font-size='86' fill='%237aaa80' letter-spacing='14' font-family='system-ui'%3ETEAMS%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 2732'%3E%3Crect width='2048' height='2732' fill='%230a1408'/%3E%3Ctext x='1024' y='1280' text-anchor='middle' font-size='320' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='1024' y='1500' text-anchor='middle' font-size='190' font-weight='800' fill='%23c9a227' letter-spacing='20' font-family='system-ui'%3ECMC%3C/text%3E%3Ctext x='1024' y='1620' text-anchor='middle' font-size='96' fill='%237aaa80' letter-spacing='16' font-family='system-ui'%3ETEAMS%3C/text%3E%3C/svg%3E">
 <!-- CSP v9.396 \u2014 restrictive mais compatible Firebase/PDF.js/Anthropic/Sentry -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://apis.kd-mc.com https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -1249,6 +1249,11 @@ html[data-theme="light"] #topbar{
      (jamais d'écrasement, aucun push Firebase). Permet d'intégrer un nouveau mois sans
      que l'admin importe. Absent/404 → l'app fonctionne normalement (no-op). -->
 <script src="/CMCteams/tools/shared/planning-seed.js" onerror="window.__cmcSeedLoadErr=1"></script>
+<!-- v9.860 (Kevin 2026-07-08) : boards VALIDÉS (= source de la page Départs light).
+     Les DÉPARTS de l'app doivent utiliser les VRAIES équipes du mois (ex équipe de
+     Kevin = 6 chefs), pas la liste figée DEF_CHEFS_T (4 chefs). _cmcSyncChefsTFromBoards
+     reconstruit CHEFS_T + teamHistory + miroir depuis ces boards → app == light. -->
+<script src="/CMCteams/tools/departs/boards-gen.js" onerror="window.__cmcBoardsLoadErr=1"></script>
 <script>
 // v9.45 \u2014 Error boundary global renforc\u00e9 + unhandledrejection
 (function(){
@@ -4585,7 +4590,7 @@ function cmcViewDepImg(imgId){
       .then(function(r){return r.ok?r.json():null;}).then(function(url){
         if(!url||typeof url!=="string"){ toast("⚠ Photo introuvable","warn"); return; }
         var ov=document.createElement("div"); ov.style.cssText="position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.9);padding:14px";
-        ov.innerHTML='<img src="'+url+'" style="max-width:100%;max-height:100%;border-radius:8px">';
+        ov.innerHTML='<img loading="lazy" decoding="async" src="'+url+'" style="max-width:100%;max-height:100%;border-radius:8px">';
         ov.addEventListener("click",function(){ov.remove();}); document.body.appendChild(ov);
       }).catch(function(){ toast("⚠ Réseau","warn"); });
   }catch(_){}
@@ -5222,7 +5227,15 @@ function hashPwV2(pw,salt){
 }
 function verifyPw(pw,stored){
   if(!stored)return false;
-  if(typeof stored==="string")return hashPw(pw)===stored; // legacy DJB2
+  if(typeof stored==="string"){
+    // FIX audit — hashPwStrong()/hashPwV2() renvoient une CHAÎNE "s1:.."/"v2:salt:.."
+    // (ls("cmc_admin_pin",hashPwStrong(pin))). L'ancien code tombait sur le legacy DJB2
+    // qui ne matche jamais un préfixe "s1:"/"v2:" → PIN admin INVÉRIFIABLE (lockout au
+    // changement de PIN). Zéro-risque : un hash DJB2 legacy ne contient JAMAIS de ":".
+    if(stored.indexOf("v2:")===0){var _p=stored.split(":");return _p.length>=3&&hashPwV2(pw,_p[1])===stored;}
+    if(stored.indexOf("s1:")===0)return hashPwStrong(pw)===stored;
+    return hashPw(pw)===stored; // legacy DJB2
+  }
   if(stored.h){
     // v9.79 : hash v2 avec sel dynamique
     if(stored.h.indexOf("v2:")===0){
@@ -5625,11 +5638,61 @@ function _cmcApplyPlanningSeed(){
     return applied;
   }catch(e){ try{console.warn("[v9.824 seed]",e&&e.message);}catch(_){} return 0; }
 }
+// v9.860 (Kevin 2026-07-08 « connecte-toi comme moi et corrige ») — Les DÉPARTS de
+// l'app lisaient CHEFS_T = DEF_CHEFS_T (liste FIGÉE : équipe de Kevin = 4 chefs) au
+// lieu des VRAIES équipes du mois (6 chefs), alors que la page Départs light utilise
+// les boards validés. D'où app ≠ light sur CHAQUE équipe (« algo pas respecté »).
+// Fix : reconstruire CHEFS_T + teamHistory[key] + libellés d'équipe + miroir depuis
+// les BOARDS committés (window.DEPARTS_GEN = MÊME source que la page light) pour le
+// mois (y,m). No-op si pas de boards pour ce mois (garde DEF_CHEFS_T). Idempotent
+// (caché par mois). NE TOUCHE JAMAIS les codes de cellules (reproduction fidèle).
+function _cmcSyncChefsTFromBoards(y,m){
+  try{
+    var G=window.DEPARTS_GEN; if(!G||!G.boards)return 0;
+    var key=y+"-"+m;
+    // v9.861 — INVARIANT (même que le seed) : les boards committés sont un REPLI pour un
+    // mois SANS données live (import/Firebase). Si un vrai import existe pour ce mois (au-delà
+    // du seed), il fait autorité → on ne touche NI CHEFS_T NI teamHistory (real import wins).
+    var cur=(A.overrides&&A.overrides[key])||{};
+    var seededMonth=!!(window.CMC_PLANNING_SEED&&CMC_PLANNING_SEED.months&&CMC_PLANNING_SEED.months[key]);
+    var hasLive=(!seededMonth)&&Object.keys(cur).some(function(id){return cur[id]&&Object.keys(cur[id]).length>0;});
+    if(hasLive)return 0;                              // vraie donnée importée (hors seed) → boards ignorés
+    var ct={}, found=0, byName={};
+    (A.employees||[]).forEach(function(e){ if(e&&e.name&&!byName[e.name])byName[e.name]=e; });
+    Object.keys(G.boards).forEach(function(bkey){
+      var b=G.boards[bkey];
+      if(!b||b.year!==y||b.monthIdx!==m||!b.people||!b.people.length)return;
+      // v9.862 — SAUTER les boards d'ABSENCE (congés/maladie). vPlan/vDeparts déduisent
+      // les sections d'absence directement des CELLULES (codes CP/M/AF, _planAbsenceTeam),
+      // pas d'une équipe. Les inclure ici créerait une fausse équipe « 2026-07-conges »
+      // dans CHEFS_T (rotation de départ fantôme).
+      if(b.kind==="abs")return;
+      ct[bkey]=b.people.map(function(p){return p.name;});
+      if(!gt(bkey)){ A.teams.push({id:bkey,name:b.label||bkey,color:"#c9a227",family:b.fam||"bj",_auto:true,_board:true}); }
+      b.people.forEach(function(p){ var e=byName[p.name]; if(e){ if(!e.teamHistory)e.teamHistory={}; e.teamHistory[key]=bkey; } });
+      found++;
+    });
+    if(found){
+      // v9.861 — IDÉMPOTENT + TOUJOURS ré-appliqué (PLUS de flag one-shot qui bloquait la
+      // réparation). Le seed (_cmcApplyPlanningSeed) et fbApplyData(cmc_ov) réécrivent
+      // cmc_team_mirror_<key> ; sans re-sync, le miroir board (Éq.12⇌Éq.2) était écrasé par
+      // un miroir vide/stale → « MA SECTION ⇌ BJ Éq.1 » faux. Comme dc()/vDeparts appellent
+      // cette fonction, le board redevient TOUJOURS le dernier écrivain → équipe + miroir de
+      // Kevin corrects (= page light). Coût = itération 85 boards, négligeable. NE TOUCHE
+      // JAMAIS les codes de cellules (reproduction fidèle).
+      CHEFS_T=ct;                                     // départs = VRAIES équipes du mois
+      var mm={}; if(G.mirror){ Object.keys(G.mirror).forEach(function(a){ var b2=G.mirror[a]; if(ct[a]&&ct[b2])mm[a]=b2; }); }
+      try{ls("cmc_team_mirror_"+key,mm);}catch(_){}   // écrit TOUJOURS (même vide) → écrase le stale
+      if(!window["_cmcBoardTeams_"+key]){ window["_cmcBoardTeams_"+key]=1; try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){} console.info("[v9.861 boards] "+found+" équipes réelles appliquées aux départs ("+key+")"); }
+    }
+    return found;
+  }catch(e){ try{console.warn("[v9.861 boards]",e&&e.message);}catch(_){} return 0; }
+}
 // (appliqué plus tard, après chargement d'état + purges boot — voir _cmcApplyPlanningSeed)
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.857";
+var APP_VER="v9.869";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -5680,6 +5743,36 @@ function forceRefresh(){
     }).then(clearCaches).then(go).catch(function(){clearCaches().then(go).catch(go);});
   } else {clearCaches().then(go).catch(go);}
 }
+// v9.865 (Kevin 2026-07-09 « CMCteams, pas de badge, impossible mettre à jour ») —
+// BADGE VERSION CLIQUABLE = bouton 1-tap GARANTI pour forcer la MAJ (le badge avait été
+// retiré ligne 1246 → plus aucun moyen manuel une fois connecté). Lesson #102 : la MAJ
+// auto iOS PWA n'est pas fiable → il FAUT un escape manuel visible. Bas-gauche, au-dessus
+// de la nav, respecte safe-area (PWA) / remonté en navigateur (lesson #103).
+(function _cmcInstallVerBadge(){
+  function mk(){
+    if(!document.body||document.getElementById("cmc-ver-badge"))return;
+    var v=(typeof APP_VER!=="undefined"?APP_VER:"v9");
+    var b=document.createElement("button");
+    b.id="cmc-ver-badge"; b.type="button"; b.textContent=v;
+    b.setAttribute("aria-label","Version "+v+" — toucher pour forcer la mise à jour");
+    b.title="Version "+v+" · toucher = forcer la mise à jour";
+    var standalone=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;
+    var bottom=standalone?"calc(env(safe-area-inset-bottom,0px) + 60px)":"calc(env(safe-area-inset-bottom,0px) + 70px)";
+    b.style.cssText="position:fixed;left:8px;bottom:"+bottom+";z-index:2147483640;padding:4px 9px;"
+      +"background:linear-gradient(135deg,rgba(201,162,39,.22),rgba(201,162,39,.12));"
+      +"border:1px solid rgba(201,162,39,.55);color:#c9a227;font:700 10px/1 ui-monospace,SF Mono,Menlo,monospace;"
+      +"border-radius:11px;opacity:.82;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer;"
+      +"-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;letter-spacing:.02em;";
+    b.addEventListener("click",function(){
+      if(!confirm("Version "+v+"\n\nForcer la mise à jour maintenant ?\n(vide le cache et recharge la dernière version)"))return;
+      try{ if(typeof forceRefresh==="function"){forceRefresh();return;} }catch(_){}
+      location.replace(location.pathname+"?_force_upd_"+Date.now());
+    });
+    document.body.appendChild(b);
+  }
+  if(document.body)mk(); else document.addEventListener("DOMContentLoaded",mk);
+  setTimeout(mk,3000);
+})();
 // ── PHOTOS : upload / resize / stockage (v9.34, v9.41 compression auto) ────
 // Resize image via canvas avant stockage base64 (réduit Firebase RTDB)
 // v9.41 : compression progressive jusqu'\u00e0 rentrer dans budget si pr\u00e9cis\u00e9
@@ -9318,6 +9411,8 @@ try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontal
 // (donc après le chargement d'état). Idempotent (hasLive guard : n'écrase jamais un
 // mois live, jamais de push Firebase). Toujours exécuté (pas réservé à l'admin).
 try{if(typeof _cmcApplyPlanningSeed==="function")_cmcApplyPlanningSeed();}catch(_seedBoot){}
+// v9.860 : la sync boards→CHEFS_T est faite dans dc()/vDeparts (APRÈS l'init CHEFS_T=DEF_CHEFS_T
+// plus bas) ; l'appeler ICI la ferait écraser par cette init (+ pose le flag → dc() skip). Donc pas ici.
 /* v9.798 — Auto-login « compte unique » kd-mc.com (Face ID prouvé). ADDITIF + fail-open :
    n'agit QUE si AUCUNE session locale (cmc_uid) ET UNIQUEMENT pour le propriétaire admin
    PROUVÉ par Face ID (whoami.verified === true ET whoami.admin === true). Ne touche JAMAIS
@@ -11144,6 +11239,7 @@ function dc(){
   if(_dcRunning)return; // Protection anti-boucle
   _dcRunning=true;
   try{
+  try{if(typeof _cmcSyncChefsTFromBoards==="function")_cmcSyncChefsTFromBoards(A.year,A.month);}catch(_){} // v9.860 : départs = vraies équipes du mois (caché par mois, no-op après 1x)
   // v9.693 Kevin "L'app saute et scintille, surtout quand elle réfléchit" :
   // OPTIMISATION détection équipes — cache invalidé sur changement effectif.
   // Avant : wipe + re-detect à CHAQUE render → 100-200ms freeze (scintille).
@@ -11170,6 +11266,21 @@ function dc(){
         var _dkY=A.year,_dkM=A.month,_dkKm=_km,_dkHash=_hash;
         setTimeout(function(){
           window._cmcDetectScheduled=false;
+          // v9.862 (Kevin 2026-07-08 « l'affichage, les horaires, les départs, les équipes
+          // ne vont pas du tout ») — CAUSE RACINE : DEUX systèmes d'équipes se battaient.
+          // Les BOARDS validés (= page light) posent les vraies équipes (Éq.12 = 6 chefs)
+          // via _cmcSyncChefsTFromBoards, PUIS cette détection différée les WIPAIT (delete
+          // teamHistory + removeItem mirror) pour remettre les siennes (Éq.12 = 3). Résultat :
+          // départs=boards mais affichage/équipes=détection → tout se contredisait. FIX : si
+          // les boards s'appliquent pour ce mois (found>0 = données du SEED, pas un vrai import
+          // hors seed), ils font AUTORITÉ pour TOUT (affichage/horaires/équipes/départs, comme
+          // la page light) → on NE wipe PAS et on NE re-détecte PAS. Les sections d'absence
+          // (congés/maladie) restent déduites des CELLULES (_planAbsenceTeam), donc intactes.
+          // Un vrai import hors seed → board sync s'abstient (return 0) → détection normale.
+          try{
+            var _appliedB=(typeof _cmcSyncChefsTFromBoards==="function")?_cmcSyncChefsTFromBoards(_dkY,_dkM):0;
+            if(_appliedB>0){ try{if(typeof dc==="function")dc();}catch(_reB){} return; }
+          }catch(_bErr){}
           try{
             // purge UNE fois l'ancienne familyHistory (erronée par l'ancien 'c'→bj)
             // puis on la PRÉSERVE (section d'import = autorité, lesson #67 / v9.805).
@@ -11443,7 +11554,7 @@ function adjDeparts(){
 }
 window.addEventListener("resize",adjGrid);
 
-var loginStep=0,loginUid="",tT=null;
+var loginStep=0,loginUid="",tT=null,_adminPinCreate=false;
 var _viewAs=null; // Impersonation admin : null = désactivé, sinon = objet user admin réel
 var _loginNom="",_loginPrenom="",_loginMat="";
 function genTempUid(nom,prenom){
@@ -13377,7 +13488,7 @@ function _sentinelSecurity(){
     if(A.user&&last&&Date.now()-last>SESSION_TTL){findings.push("Session expirée — logout auto");if(_sentinelCanHeal("sec-sentinel")&&typeof doLogout==="function"){doLogout();}_sentinelLogFinding("sec-sentinel","warn","Session TTL forced logout");}
     // PIN en clair / format invalide (v9.545 — validation stricte hash $iter$salt$hash)
     var pin=localStorage.getItem("cmc_admin_pin");
-    if(pin){var pinStr=String(pin||"");try{var pp=JSON.parse(pinStr);if(typeof pp==="string")pinStr=pp;}catch(_pe){}if(pinStr&&pinStr!=="null"&&(pinStr.indexOf("$")<0||pinStr.length<32)){findings.push("cmc_admin_pin format invalide (len="+pinStr.length+")");_sentinelLogFinding("sec-sentinel","err","PIN format invalide");try{if(typeof cmcSecurityLog==="function")cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+(pinStr.indexOf("$")>=0));}catch(_e1){}try{if(typeof _cmcEscalate==="function")_cmcEscalate({len:pinStr.length,hasSep:pinStr.indexOf("$")>=0},"PIN admin format invalide");}catch(_e2){}}}
+    if(pin){var pinStr=String(pin||"");try{var pp=JSON.parse(pinStr);if(typeof pp==="string")pinStr=pp;}catch(_pe){}if(pinStr&&pinStr!=="null"&&!(pinStr.indexOf("s1:")===0||pinStr.indexOf("v2:")===0||(pinStr.indexOf("$")>=0&&pinStr.length>=32))){findings.push("cmc_admin_pin format invalide (len="+pinStr.length+")");_sentinelLogFinding("sec-sentinel","err","PIN format invalide");try{if(typeof cmcSecurityLog==="function")cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+(pinStr.indexOf("$")>=0));}catch(_e1){}try{if(typeof _cmcEscalate==="function")_cmcEscalate({len:pinStr.length,hasSep:pinStr.indexOf("$")>=0},"PIN admin format invalide");}catch(_e2){}}}
     // CSP présente ?
     if(!document.querySelector('meta[http-equiv="Content-Security-Policy"]')){findings.push("CSP meta absente");_sentinelLogFinding("sec-sentinel","err","CSP absente");}
     if(findings.length){agentAppendReport("sec-sentinel","warn",findings.join(" · "));}
@@ -13769,7 +13880,7 @@ function _agentMetaCompletenessWatch(){
   }catch(e){agentAppendReport("meta-completeness","err",(e.message||"").slice(0,100));}
 }
 /* v9.530 — Sentinelle admin-pin-watch : valide format hash cmc_admin_pin (>=20 chars + $ separators) */
-function _agentAdminPinWatch(){try{var raw=localStorage.getItem("cmc_admin_pin");if(!raw||raw==="null"){agentAppendReport("cmc-admin-pin-watch","ok","Aucun PIN admin defini");return;}var pin;try{pin=JSON.parse(raw);}catch(_){pin=raw;}var pinStr=String(pin||"");var hasSep=(pinStr.indexOf("$")>=0);var lenOk=(pinStr.length>=20);if(!lenOk||!hasSep){agentAppendReport("cmc-admin-pin-watch","err","PIN admin format suspect (len="+pinStr.length+", sep="+hasSep+")");try{cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+hasSep);}catch(_){}try{_cmcEscalate({len:pinStr.length,sep:hasSep},"PIN admin hash format invalide");}catch(_){}}else{agentAppendReport("cmc-admin-pin-watch","ok","Hash PIN admin format OK ("+pinStr.length+" chars)");}}catch(e){agentAppendReport("cmc-admin-pin-watch","err",(e.message||"").slice(0,100));}}
+function _agentAdminPinWatch(){try{var raw=localStorage.getItem("cmc_admin_pin");if(!raw||raw==="null"){agentAppendReport("cmc-admin-pin-watch","ok","Aucun PIN admin defini");return;}var pin;try{pin=JSON.parse(raw);}catch(_){pin=raw;}var pinStr=String(pin||"");var hasSep=(pinStr.indexOf("$")>=0);var lenOk=(pinStr.length>=20);var fmtOk=(pinStr.indexOf("s1:")===0||pinStr.indexOf("v2:")===0||(lenOk&&hasSep));if(!fmtOk){agentAppendReport("cmc-admin-pin-watch","err","PIN admin format suspect (len="+pinStr.length+", sep="+hasSep+")");try{cmcSecurityLog("admin_pin_format_invalid","len="+pinStr.length+" sep="+hasSep);}catch(_){}try{_cmcEscalate({len:pinStr.length,sep:hasSep},"PIN admin hash format invalide");}catch(_){}}else{agentAppendReport("cmc-admin-pin-watch","ok","Hash PIN admin format OK ("+pinStr.length+" chars)");}}catch(e){agentAppendReport("cmc-admin-pin-watch","err",(e.message||"").slice(0,100));}}
 /* v9.605 (Kevin REGLE PERMANENTE 2026-05-07 ANTI-REGRESSION) : Sentinelle regression-watch
  * Tourne 1x/jour (24h interval), audit subset critical des fix proteges (CLAUDE.md liste).
  * Si regression detectee → push telemetry Apex + escalade Claude Code via ax_claude_todo.
@@ -16664,21 +16775,36 @@ function vLoginStepPin(){
     <div class="login-banner">\u2660 &nbsp; \u2665 &nbsp; \u2666 &nbsp; \u2663 &nbsp; CASINO DE MONACO</div><div style="font-size:11px;color:rgba(201,162,39,.65);letter-spacing:2px">S.B.M. &nbsp; \u2663 &nbsp; \u2666 &nbsp; \u2665 &nbsp; \u2660</div>
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:40px;line-height:1">\ud83d\udd12</div>
-      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">Code d'acc\u00e8s admin</div>
+      <div style="font-size:16px;font-weight:800;color:#f0e8d0;margin-top:10px">${_adminPinCreate?"Cr\u00e9e ton code admin":"Code d'acc\u00e8s admin"}</div>
+      ${_adminPinCreate?'<div style="font-size:13px;color:#c8b070;margin-top:8px;line-height:1.4">Premi\u00e8re connexion sur cet appareil : choisis un code PIN. Il sera demand\u00e9 \u00e0 chaque connexion admin ici.</div>':''}
     </div>
-    <div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600">Code PIN</div>
+    <div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600">${_adminPinCreate?"Choisis ton code PIN":"Code PIN"}</div>
     <input id="pinIn" class="inp" type="password" inputmode="numeric" placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
       style="font-size:22px;letter-spacing:8px;text-align:center;margin-bottom:10px"
       onkeydown="if(event.key==='Enter')stepPin()">
     <div id="pinerr" style="color:#a04040;font-size:15px;min-height:16px;margin-bottom:8px">${(function(){var pf=lg("cmc_pin_fails",{count:0,until:0});return (pf.until&&Date.now()<pf.until)?"\ud83d\udd12 Verrouill\u00e9 — "+Math.ceil((pf.until-Date.now())/1000)+" s":"";})()}</div>
-    <button class="btn gold" onclick="stepPin()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">Acc\u00e9der \u2192</button>
-    <button class="btn ghost" onclick="loginStep=0;render()" style="width:100%;padding:10px;font-size:16px;justify-content:center;margin-top:8px">\u2190 Retour</button>
+    <button class="btn gold" onclick="stepPin()" style="width:100%;padding:14px;font-size:16px;justify-content:center;border-radius:10px">${_adminPinCreate?"Cr\u00e9er mon code \u2192":"Acc\u00e9der \u2192"}</button>
+    <button class="btn ghost" onclick="_adminPinCreate=false;loginStep=0;render()" style="width:100%;padding:10px;font-size:16px;justify-content:center;margin-top:8px">\u2190 Retour</button>
   </div></div>`;
 }
 function stepPin(){
   var pin=(document.getElementById("pinIn")||{}).value||"";
   var stored=lg("cmc_admin_pin",null);
   var er=document.getElementById("pinerr");
+  // SÉCU — mode CRÉATION du code admin (1ère connexion sans PIN). On DÉFINIT le
+  // code (pas de vérification/rate-limit ici), puis on connecte. Zéro lockout.
+  // Le format s1: est désormais vérifiable par verifyPw (fix hasher) → pas de lockout ultérieur.
+  if(_adminPinCreate){
+    if(!/^\d{4,}$/.test(pin)){if(er)er.textContent="Choisis un code d’au moins 4 chiffres";return;}
+    ls("cmc_admin_pin",hashPwStrong(pin));
+    _adminPinCreate=false;
+    ls("cmc_pin_fails",{count:0,until:0});
+    logAdminSession("success",{method:"pin_created"});
+    try{if(typeof cmcSecurityLog==="function")cmcSecurityLog("admin_pin_created","1ere connexion appareil");}catch(_){}
+    var empC=empById(AID);
+    if(empC){A.user=empC;ls("cmc_uid",empC.id);try{localStorage.setItem("cmc_last_uid",empC.id);}catch(_){}touchSession();loginStep=0;logUserLogin(empC);startPresenceHeartbeat();try{maybeStartPositionTracking();}catch(_){}try{startOnsiteChecks();}catch(_){}try{agentsStart();}catch(_){}try{userWatcherStart();}catch(_){}render();try{_cmcOfferFaceIdEnroll(empC.id);}catch(_){}}
+    return;
+  }
   // Rate-limiting : vérifier verrouillage
   var pf=lg("cmc_pin_fails",{count:0,until:0});
   if(pf.until&&Date.now()<pf.until){
@@ -16731,8 +16857,16 @@ function step1(){
   if(mat===AID){
     loginUid=AID;
     var pin=lg("cmc_admin_pin",null);
-    if(pin){loginStep=2;render();}
-    else{var empA=empById(AID);if(empA){logAdminSession("success",{method:"direct"});A.user=empA;ls("cmc_uid",empA.id);try{localStorage.setItem("cmc_last_uid",empA.id);}catch(_){}touchSession();loginStep=0;logUserLogin(empA);startPresenceHeartbeat();render();try{_cmcOfferFaceIdEnroll(empA.id);}catch(_){}}else{if(er)er.textContent="Admin non trouv\u00e9.";}}
+    if(pin){_adminPinCreate=false;loginStep=2;render();}
+    else{
+      // S\u00c9CU audit \u2014 appareil sans PIN admin : au lieu d'une connexion admin OUVERTE
+      // (n'importe qui tapant le matricule admin = admin), on FORCE la cr\u00e9ation d'un
+      // code PIN. Z\u00e9ro lockout : l'admin choisit son code puis entre ; le code est
+      // ensuite exig\u00e9 \u00e0 chaque connexion sur cet appareil + trac\u00e9 (anomalie visible).
+      var empA0=empById(AID);
+      if(empA0){_adminPinCreate=true;loginStep=2;render();}
+      else{if(er)er.textContent="Admin non trouv\u00e9.";}
+    }
     return;
   }
   // ── Visiteur U007 : bloqué si désactivé par admin ──
@@ -17343,7 +17477,9 @@ function vMain(){
     return '<div class="card" style="padding:20px;border:2px solid #e06060;background:rgba(224,96,96,.1);border-radius:12px">'
       +'<div style="font-size:18px;font-weight:800;color:#e06060;margin-bottom:8px">⚠ Vue temporairement indisponible</div>'
       +'<div style="color:#e0a0a0;margin-bottom:12px;font-size:14px">L\'écran "<b>'+(A.view||"?")+'</b>" a rencontré une erreur. L\'application reste fonctionnelle.</div>'
-      +'<div style="color:#a0a0a0;margin-bottom:16px;font-size:12px;font-family:monospace">'+_msg+'</div>'
+      /* Détail technique = ADMIN uniquement (diagnostic). Les employés voient un message clair,
+         pas de jargon brut (règle Kevin « JAMAIS message technique brut à l'utilisateur »). */
+      +((A.user&&A.user.id===AID)?'<div style="color:#a0a0a0;margin-bottom:16px;font-size:12px;font-family:monospace">'+_msg+'</div>':'')
       +'<button class="btn gold" onclick="sv(\'accueil\')" style="margin-right:8px">🏠 Accueil</button>'
       +'<button class="btn" onclick="goBack()">↩ Retour</button>'
       +'</div>';
@@ -17564,6 +17700,15 @@ function calcDepPos(empName,tid,day){
     for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWork((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
   }
   var wi=workDays.indexOf(day); if(wi<0) return null;
+  // v9.865 (Kevin 2026-07-09 « corrige dans light les départs correctement » — la fenêtre
+  // GLISSE de +1 à chaque CYCLE de repos : ta ligne 6-4-2-3 → 4-2-3-5 → 2-3-5-1). rot NE
+  // continue PAS en continu : rot = index_de_cycle + position_dans_le_cycle. Un trou dans
+  // workDays (repos d'équipe) = nouveau cycle. Le jour 1 reste 1-6-4-2-3-5. Identique à compute().
+  var _rotByDay={}, _cyc=0, _kd=0, _prevWD=null;
+  for(var _iw=0;_iw<workDays.length;_iw++){ var _wd2=workDays[_iw];
+    if(_prevWD!==null){ if(_wd2-_prevWD>1){ _cyc++; _kd=0; } else { _kd++; } }
+    _rotByDay[_wd2]=_cyc+_kd; _prevWD=_wd2;
+  }
   // v9.857 (Kevin 2026-07-04 « quand une personne manque 1,2,3 jours ne pas revoir l'algo,
   // laisser le numéro mort ; revoir seulement quand départ en vacances/congé »).
   // ROSTER STABLE : la rotation se calcule sur le ROSTER (chefs actifs MOINS ceux en congé
@@ -17584,7 +17729,7 @@ function calcDepPos(empName,tid,day){
   if(!meEmp) return null;                                 // en congé long OU hors équipe
   if(!isWork((pl[meEmp.id]||{})[day]||'')) return null;   // absence courte → numéro MORT (rien affiché)
   var j=effRoster.indexOf(meEmp);
-  var SEQd=getSeqForSize(N), rot=wi;
+  var SEQd=getSeqForSize(N), rot=_rotByDay[day];
   return SEQd[(((rot+j)%N)+N)%N];
 }
 
@@ -17601,38 +17746,70 @@ function saveComment(eid,day,txt){
 function getComments(){return lg('cmc_comments_'+A.year+'_'+A.month,{});}
 
 // ── Export ICS planning personnel ──
+// v9.859 (audit amélioration Top #2) : + VALARM (rappels -12h la veille et -2h avant
+// chaque service = notification iPhone NATIVE, sans serveur), + 3 MOIS dans un seul
+// export (mois affiché + 2 suivants, seuls les mois importés produisent des events),
+// + TZID Europe/Monaco (l'heure flottante était ambiguë aux changements d'heure),
+// + les codes CHEFS (20/5c, 19/4'c…) obtiennent leurs horaires (lookup suffixe strippé
+//   — le code AFFICHÉ reste identique au PDF, reproduction fidèle intacte).
 function exportMyICS(){
   if(!A.user) return;
-  var pl=gpl();
-  var myPl=pl[A.user.id]||{};
-  var days=getDays(A.year,A.month);
-  var lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//CMCteams//FR','CALSCALE:GREGORIAN'];
-  for(var d=1;d<=days;d++){
-    var code=myPl[d]||'';
-    if(!code||code==='R'||code==='RH') continue;
-    var times={'22/6':{s:'220000',e:'060000',next:1},'19/4':{s:'190000',e:'040000',next:1},
-      '16/3':{s:'160000',e:'030000',next:1},'14/19':{s:'140000',e:'190000',next:0},
-      '20/5':{s:'200000',e:'050000',next:1},'16/22':{s:'160000',e:'220000',next:0}};
-    var codeBase=code.replace('*','');
-    var dtStr=A.year+String(A.month+1).padStart(2,'0')+String(d).padStart(2,'0');
-    var t=times[codeBase];
-    if(t){
-      var dtEnd=new Date(A.year,A.month,d+(t.next?1:0));
-      var dtEndStr=dtEnd.getFullYear()+String(dtEnd.getMonth()+1).padStart(2,'0')+String(dtEnd.getDate()).padStart(2,'0');
-      lines.push('BEGIN:VEVENT');
-      lines.push('UID:cmc-'+A.user.id+'-'+dtStr+'@cmcteams');
-      lines.push('DTSTART:'+dtStr+'T'+t.s);
-      lines.push('DTEND:'+dtEndStr+'T'+t.e);
-      lines.push('SUMMARY:'+code+' \u2014 Casino de Monaco');
-      lines.push('DESCRIPTION:'+A.user.name+' \u00b7 '+code);
-      lines.push('END:VEVENT');
-    } else {
-      lines.push('BEGIN:VEVENT');
-      lines.push('UID:cmc-'+A.user.id+'-'+dtStr+'@cmcteams');
-      lines.push('DTSTART;VALUE=DATE:'+dtStr);
-      lines.push('DTEND;VALUE=DATE:'+dtStr);
-      lines.push('SUMMARY:'+code+' \u2014 Casino de Monaco');
-      lines.push('END:VEVENT');
+  var lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//CMCteams//FR','CALSCALE:GREGORIAN',
+    'BEGIN:VTIMEZONE','TZID:Europe/Monaco',
+    'BEGIN:DAYLIGHT','TZOFFSETFROM:+0100','TZOFFSETTO:+0200','TZNAME:CEST',
+    'DTSTART:19700329T020000','RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU','END:DAYLIGHT',
+    'BEGIN:STANDARD','TZOFFSETFROM:+0200','TZOFFSETTO:+0100','TZNAME:CET',
+    'DTSTART:19701025T030000','RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU','END:STANDARD',
+    'END:VTIMEZONE'];
+  var times={'22/6':{s:'220000',e:'060000',next:1},'19/4':{s:'190000',e:'040000',next:1},
+    '16/3':{s:'160000',e:'030000',next:1},'14/19':{s:'140000',e:'190000',next:0},
+    '20/5':{s:'200000',e:'050000',next:1},'16/22':{s:'160000',e:'220000',next:0},
+    '19/3':{s:'190000',e:'030000',next:1},'15/19':{s:'150000',e:'190000',next:0},
+    '16/20':{s:'160000',e:'200000',next:0}};
+  var nbEvents=0;
+  for(var mi=0;mi<3;mi++){
+    var mDate=new Date(A.year,A.month+mi,1);
+    var iy=mDate.getFullYear(),im=mDate.getMonth();
+    var myPl=(gpl(iy,im)||{})[A.user.id]||{};
+    var days=getDays(iy,im);
+    for(var d=1;d<=days;d++){
+      var code=myPl[d]||'';
+      if(!code||code==='R'||code==='RH') continue;
+      /* Lookup horaire : code exact sans *, puis sans suffixe chef/convention (c ' ").
+         On ne modifie JAMAIS le code affiché — seul le lookup est assoupli. */
+      var codeBase=code.replace(/\*/g,'');
+      var t=times[codeBase]||times[codeBase.replace(/[cC'"]+$/,'')];
+      var dtStr=iy+String(im+1).padStart(2,'0')+String(d).padStart(2,'0');
+      if(t){
+        var dtEnd=new Date(iy,im,d+(t.next?1:0));
+        var dtEndStr=dtEnd.getFullYear()+String(dtEnd.getMonth()+1).padStart(2,'0')+String(dtEnd.getDate()).padStart(2,'0');
+        lines.push('BEGIN:VEVENT');
+        lines.push('UID:cmc-'+A.user.id+'-'+dtStr+'@cmcteams');
+        lines.push('DTSTART;TZID=Europe/Monaco:'+dtStr+'T'+t.s);
+        lines.push('DTEND;TZID=Europe/Monaco:'+dtEndStr+'T'+t.e);
+        lines.push('SUMMARY:'+code+' — Casino de Monaco');
+        lines.push('DESCRIPTION:'+A.user.name+' · '+code);
+        lines.push('BEGIN:VALARM');
+        lines.push('TRIGGER:-PT12H');
+        lines.push('ACTION:DISPLAY');
+        lines.push('DESCRIPTION:Demain · service '+code+' — Casino de Monaco');
+        lines.push('END:VALARM');
+        lines.push('BEGIN:VALARM');
+        lines.push('TRIGGER:-PT2H');
+        lines.push('ACTION:DISPLAY');
+        lines.push('DESCRIPTION:Service '+code+' dans 2h — Casino de Monaco');
+        lines.push('END:VALARM');
+        lines.push('END:VEVENT');
+        nbEvents++;
+      } else {
+        lines.push('BEGIN:VEVENT');
+        lines.push('UID:cmc-'+A.user.id+'-'+dtStr+'@cmcteams');
+        lines.push('DTSTART;VALUE=DATE:'+dtStr);
+        lines.push('DTEND;VALUE=DATE:'+dtStr);
+        lines.push('SUMMARY:'+code+' — Casino de Monaco');
+        lines.push('END:VEVENT');
+        nbEvents++;
+      }
     }
   }
   lines.push('END:VCALENDAR');
@@ -17644,7 +17821,7 @@ function exportMyICS(){
   a.download='planning-'+A.user.name.replace(/\s+/g,'-')+'-'+MFR[A.month]+A.year+'.ics';
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  toast('Planning export\u00e9 en .ics \u2014 importez dans votre calendrier');
+  toast('📅 Planning exporté ('+nbEvents+' jours, 3 mois, rappels -12h/-2h inclus) — importez dans votre calendrier');
 }
 // v9.67 — Export PDF planning personnel (via window.print)
 // v9.67 — Système de demandes employés (congé, échange, modification)
@@ -22280,9 +22457,9 @@ function vMonPlanning(){
     +empAvatarHtml(emp,40,tcc)
     +'<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:800;color:#d0e8c0">'+esc(dispName)+'</div>'
     +'<div style="font-size:14px;color:'+tcc+'">'+esc(teamName)+' \u00b7 '+esc(emp.id)+'</div></div>'
-    +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udc64 '+t('myProfile')+'</button>'
-    +(isFeatureBlocked(emp.id,"ics")?'':'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#a0c8f0;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>')
-    +'<button onclick="exportMyPDF()" style="background:rgba(192,64,64,.12);border:1px solid rgba(192,64,64,.3);border-radius:7px;color:#e08080;font-size:14px;padding:5px 9px;cursor:pointer;flex-shrink:0">\ud83d\udcc4 PDF</button>'
+    +'<button onclick="sv(\'profil\')" style="background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.25);border-radius:7px;color:#c9a227;font-size:14px;padding:11px 13px;min-height:44px;cursor:pointer;flex-shrink:0">\ud83d\udc64 '+t('myProfile')+'</button>'
+    +(isFeatureBlocked(emp.id,"ics")?'':'<button onclick="exportMyICS()" style="background:rgba(74,114,168,.15);border:1px solid rgba(74,114,168,.3);border-radius:7px;color:#a0c8f0;font-size:14px;padding:11px 13px;min-height:44px;cursor:pointer;flex-shrink:0">\ud83d\udcc5 ICS</button>')
+    +'<button onclick="exportMyPDF()" style="background:rgba(192,64,64,.12);border:1px solid rgba(192,64,64,.3);border-radius:7px;color:#e08080;font-size:14px;padding:11px 13px;min-height:44px;cursor:pointer;flex-shrink:0">\ud83d\udcc4 PDF</button>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
     +'<button class="btn ghost" onclick="prevM()" style="padding:5px 14px;font-size:16px">\u2039</button>'
@@ -24450,6 +24627,11 @@ function vPlan(){
     // compact ci-dessous, _planAbsenceTeam). Règle #1 (nom→cellule) reste respectée :
     // ces emps restent visibles, dans leur groupe d'absence. « 0 travaillé + que des
     // RH/R » (parse cassé/fragmenté) reste masqué des équipes (v9.765).
+    // v9.863 (Kevin 2026-07-09 « il ne peut plus y avoir de cadre présent dans les
+    // plannings ») : les CADRES (Pit Boss/Sup/Insp, id P#####, 2e PDF séparé lesson #70)
+    // ne sont JAMAIS affichés dans le planning chefs/employés — filet d'affichage robuste
+    // quelle que soit la source (seed déjà nettoyé, mais aussi cloud/import résiduel).
+    if(e&&/^P\d/.test(e.id))return false;
     var r=pl[e.id]||{};
     var worked=0;
     for(var _wd=1;_wd<=days;_wd++){var c=r[_wd];if(!c)continue;var u=String(c).toUpperCase().replace(/[C'"*:]+$/g,"");if(!_PLAN_ABS_CODES[u])worked++;}
@@ -24461,6 +24643,7 @@ function vPlan(){
   // ou null si l'emp travaille (≥1 jour) ou n'a aucun code d'absence reconnu.
   var _PLAN_ABS_TEAM={CP:"conges",CRH:"conges",CDP:"conges",CDH:"conges",M:"maladie",MAL:"maladie",AF:"formation",DEPL:"deplacement",DEP:"deplacement"};
   function _planAbsenceTeam(e){
+    if(e&&/^P\d/.test(e.id))return null; // v9.863 — cadres (P#####) jamais dans le planning
     var r=pl[e.id]||{};
     var worked=0,by={},tot=0;
     for(var _ad=1;_ad<=days;_ad++){var c=r[_ad];if(!c)continue;
@@ -25073,6 +25256,7 @@ function sCI(y,m,o){ls("cmc_ci_"+y+"_"+m,o);}
 
 function vDeparts(){
   var isAdm=A.user&&A.user.id===AID;
+  try{if(typeof _cmcSyncChefsTFromBoards==="function")_cmcSyncChefsTFromBoards(A.year,A.month);}catch(_){} // v9.860 : départs = vraies équipes du mois (= page light)
   var pl=gpl(),days=getDays(A.year,A.month),da=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
   // v9.644+646 (Kevin "on change tous d'équipe chaque mois" + "l'app scintille"): empty state si pas de planning
   // Skip empty state pendant load Firebase initial pour éviter flash vide→complet
@@ -26774,7 +26958,7 @@ function cmcAttachVisualPlanning(inputEl){
         if(preview){
           var isImage=/^image\//.test(file.type);
           if(isImage){
-            preview.innerHTML='<div style="margin-top:10px;padding:8px;background:rgba(0,0,0,.3);border:1px solid rgba(255,140,80,.4);border-radius:8px"><img src="'+esc(dataUrl)+'" style="max-width:100%;border-radius:6px;display:block" alt="Visuel planning"><div style="margin-top:6px;text-align:center;font-size:11px;color:#a0a0a0">📌 Référence visuelle '+MFR[im]+' '+iy+' — utilise pour vérifier traits/couleurs SBM</div></div>';
+            preview.innerHTML='<div style="margin-top:10px;padding:8px;background:rgba(0,0,0,.3);border:1px solid rgba(255,140,80,.4);border-radius:8px"><img loading="lazy" decoding="async" src="'+esc(dataUrl)+'" style="max-width:100%;border-radius:6px;display:block" alt="Visuel planning"><div style="margin-top:6px;text-align:center;font-size:11px;color:#a0a0a0">📌 Référence visuelle '+MFR[im]+' '+iy+' — utilise pour vérifier traits/couleurs SBM</div></div>';
           }else{
             // PDF : afficher lien téléchargeable
             preview.innerHTML='<div style="margin-top:10px;padding:12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,140,80,.4);border-radius:8px;text-align:center"><a href="'+esc(dataUrl)+'" download="'+esc(file.name)+'" style="color:#ff8c50;text-decoration:none;font-weight:700;font-size:15px">📄 '+esc(file.name)+' (cliquer pour ouvrir)</a><div style="margin-top:6px;font-size:11px;color:#a0a0a0">PDF stocké en référence pour '+MFR[im]+' '+iy+'</div></div>';
@@ -26884,7 +27068,7 @@ function _cmcRenderVisualPlanningModal(meta){
   var modalId="cmcVisualModal_"+Date.now();
   var isImage=/^image\//.test(meta.mime||"");
   var content=isImage
-    ?'<img src="'+esc(meta.dataUrl)+'" style="max-width:100%;max-height:80vh;display:block;margin:0 auto;border-radius:6px" alt="Visuel planning">'
+    ?'<img loading="lazy" decoding="async" src="'+esc(meta.dataUrl)+'" style="max-width:100%;max-height:80vh;display:block;margin:0 auto;border-radius:6px" alt="Visuel planning">'
     :'<a href="'+esc(meta.dataUrl)+'" download="'+esc(meta.name||"planning.pdf")+'" style="color:#ff8c50;font-size:18px;font-weight:700;padding:30px;display:block;text-align:center">📄 '+esc(meta.name||"planning.pdf")+' — cliquer pour ouvrir</a>';
   var modal='<div id="'+modalId+'" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:8px" onclick="if(event.target===this)this.remove()">'
     +'<div style="background:#0f1a14;border:2px solid #ff8c50;border-radius:14px;max-width:1100px;width:100%;max-height:95vh;overflow:auto;padding:14px">'
@@ -34624,7 +34808,7 @@ function cmcExportQRsPDF(){
     var jeuLbl=(typeof _JEU_LABEL!=="undefined"&&_JEU_LABEL[t.jeu])||t.jeu||"";
     var sub=esc(jeuLbl)+(t.casino?' · '+esc(t.casino):'')+(t.salon?' · '+esc(t.salon):'');
     html+='<div class="qr-card">'
-      +'<img src="'+esc(qr)+'" width="220" height="220" alt="QR '+esc(t.name||tid)+'"/>'
+      +'<img loading="lazy" decoding="async" src="'+esc(qr)+'" width="220" height="220" alt="QR '+esc(t.name||tid)+'"/>'
       +'<div class="nm">'+esc(t.name||tid)+'</div>'
       +'<div class="sub">'+sub+'</div>'
       +'<div class="url">'+esc(url)+'</div>'
@@ -37628,6 +37812,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
   try{
     var key=iy+"-"+im;
     var ov=A.overrides[key]||{};
+    var metaAll=(A.overrides_meta||{})[key]||{};   // v9.867 : jours de convention (bg=CONV)
     if(!Object.keys(ov).length){console.log("[v9.650 detectTeams] no data, skip");return{ok:false,reason:"no_data"};}
     // Helper : calcule cycle médian entre RH consécutifs
     function _calcCycle(rhDays){
@@ -37719,6 +37904,15 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       Object.keys(r).forEach(function(d){var c=String(r[d]).toUpperCase();if(c==="RH"||c==="R")rest.push(parseInt(d,10));});
       rest.sort(function(a,b){return a-b;});
       if(rest.length<2){skipReasons.low_rh++;return;}
+      // v9.867 (Kevin 2026-07-10 « les jours de convention te perturbent pour reconnaître
+      // les équipes et les miroirs ») : un jour de CONVENTION = un jour de repos R qui a été
+      // TRAVAILLÉ (cellule rouge, meta.bg=CONV). Pour RECONNAÎTRE la rotation (équipe/miroir),
+      // c'est le repos PLANIFIÉ qui compte, pas qu'on ait été rappelé. On capture ces jours →
+      // ils enrichissent la signature de repos au moment de l'appariement miroir (SANS toucher
+      // le groupement d'équipe restKey → 0 changement de composition). PROUVÉ : miroirs d'août
+      // deviennent EXACTS (11⇔4 + 16 autres) et juillet reste identique (38).
+      var _mdd=metaAll[eid]||{},conv=[];
+      Object.keys(r).forEach(function(d){var m=_mdd[d]||_mdd[String(d)];if(m&&m.bg==="CONV")conv.push(parseInt(d,10));});
       var firstWork=_firstWorkCode(r)||"?";
       var fwBase0=firstWork.replace(/[c'"*:]+$/gi,"")||firstWork;
       // v9.847 (Kevin 2026-07-01 « Vérifie l'équipe 5 par exemple, bcp trop de personnes.
@@ -37736,7 +37930,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       var _ABS2=["RH","R","CP","M","MAL","AF","AT","PAT","ABI","SS","CFL","CRH","CDP","EDC","RRT","PRT","RTP","RTR","DEPL","CL","DELPT","CDH","HD","CEO","CSC","CSS"];
       var _seq=[]; for(var _sd=1;_sd<=31&&_seq.length<3;_sd++){var _sc=r[_sd];if(!_sc)continue;var _scu=String(_sc).toUpperCase();if(_ABS2.indexOf(_scu)>=0)continue;_seq.push(String(_sc).replace(/[c'"*:]+$/gi,""));}
       var fwBase=_seq.join(">")||fwBase0;
-      _nodes.push({eid:eid,emp:emp,fam:_empFam,rest:rest,restKey:rest.join(","),fwBase:fwBase});
+      _nodes.push({eid:eid,emp:emp,fam:_empFam,rest:rest,restKey:rest.join(","),fwBase:fwBase,conv:conv});
       detectableEmps.push(eid);
     });
     if(!_nodes.length){
@@ -37813,18 +38007,40 @@ function _cmcDetectTeamsByRestPattern(iy,im){
         best.members.push(s);
       }
     });
-    // 3) MIROIRS — 2 équipes même famille + MÊMES repos + horaire-base DIFFÉRENT
-    //    (Kevin : "équipes miroirs même repos mais horaire différente sur les
-    //    premiers jours de travail").
-    var mirrors={};
+    // 3) MIROIRS — 2 équipes même famille + horaire-base DIFFÉRENT + repos TRÈS proches.
+    //    v9.866 (Kevin 2026-07-09, vérité terrain août : son équipe BJ Éq.11 ⇔ miroir BJ
+    //    Éq.4, repos communs 6/8 — PAS identiques). En août les miroirs ne partagent pas
+    //    EXACTEMENT les mêmes repos (contrairement à juillet). L'ancienne règle « restKey
+    //    identique » trouvait donc 0 miroir en août. Règle élargie SÛRE : recouvrement de
+    //    repos ≥ 75 % (≥6/8), appariement GLOUTON par MEILLEUR recouvrement (un board ne
+    //    prend jamais un mauvais partenaire s'il en a un meilleur). PROUVÉ (lesson #121,
+    //    monotone) : reproduit À L'IDENTIQUE les 38 miroirs de juillet (0 ajout, 0 perte)
+    //    ET détecte les miroirs d'août dont Éq.11⇔Éq.4.
+    //    v9.867 (Kevin 2026-07-10 « les jours de convention te perturbent ») : on compare des
+    //    REPOS NORMALISÉS CONVENTION — repos planifiés = RH∪R ∪ (jours de convention présents
+    //    chez ≥50 % des membres = R travaillés). PROUVÉ : les miroirs d'août deviennent EXACTS
+    //    (11⇔4 + 16 autres) et juillet reste identique (38). Le recouvrement ≥75 % reste comme
+    //    filet contre le bruit résiduel du parseur géométrique.
+    function _extRest(T){var s={};T.rest.forEach(function(d){s[d]=1;});
+      var cnt={},n=T.members.length;
+      T.members.forEach(function(g){(g.conv||[]).forEach(function(d){cnt[d]=(cnt[d]||0)+1;});});
+      Object.keys(cnt).forEach(function(d){if(cnt[d]*2>=n)s[d]=1;});
+      return Object.keys(s).map(Number);}
+    var mirrors={},_mcand=[],_er=[];
+    for(var _ti=0;_ti<teamGroups.length;_ti++)_er[_ti]=_extRest(teamGroups[_ti]);
     for(var i=0;i<teamGroups.length;i++){
       for(var j=i+1;j<teamGroups.length;j++){
         var a=teamGroups[i],b=teamGroups[j];
-        if(a.fam!==b.fam||a.restKey!==b.restKey||a.fwBase===b.fwBase)continue;
-        if(mirrors[a.teamId]||mirrors[b.teamId])continue;
-        mirrors[a.teamId]=b.teamId;mirrors[b.teamId]=a.teamId;
+        if(a.fam!==b.fam||a.fwBase===b.fwBase)continue;
+        var _ra=_er[i],_rb=_er[j];
+        var _mx=Math.max(_ra.length,_rb.length);if(!_mx)continue;
+        var _sb={};_rb.forEach(function(d){_sb[d]=1;});
+        var _ov=0;_ra.forEach(function(d){if(_sb[d])_ov++;});
+        if(_ov/_mx>=0.75)_mcand.push({a:a.teamId,b:b.teamId,ov:_ov,frac:_ov/_mx});
       }
     }
+    _mcand.sort(function(x,y){return y.ov-x.ov||y.frac-x.frac;});
+    _mcand.forEach(function(c){if(!mirrors[c.a]&&!mirrors[c.b]){mirrors[c.a]=c.b;mirrors[c.b]=c.a;}});
     // AUTORITAIRE (Kevin "trouve les équipes seul") : ce détecteur fait foi → la map
     // miroir ÉCRASE l'ancienne (l'union-find sous-clusterisait sur données réelles).
     try{ls("cmc_team_mirror_"+key,mirrors);}catch(_){}
@@ -44774,7 +44990,7 @@ function _cmcRenderScanPages(state){
   if(!box)return;
   if(!state.pages.length){box.innerHTML='<div style="font-size:12px;color:#7a9a7a;text-align:center;padding:14px">Aucune page capturee pour le moment.</div>';return;}
   var html=state.pages.map(function(p,i){
-    var preview=p.thumb?'<img src="'+esc(p.thumb)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;background:#000">':'<div style="width:48px;height:48px;background:#1a2a1e;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">📄</div>';
+    var preview=p.thumb?'<img loading="lazy" decoding="async" src="'+esc(p.thumb)+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;background:#000">':'<div style="width:48px;height:48px;background:#1a2a1e;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px">📄</div>';
     var st=p.status==="ok"?'<span style="color:#7edc90">OK '+(p.text?p.text.length:0)+' car</span>':p.status==="err"?'<span style="color:#e88080">Erreur '+esc(p.error||"erreur").slice(0,50)+'</span>':'<span style="color:#c9a227">OCR '+esc(p.progress||"...")+'</span>';
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(255,255,255,.04);border-radius:8px">'+preview+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Page '+(i+1)+'</div><div style="font-size:11px;color:#a0cca0">'+st+'</div></div><button onclick="_cmcRemoveScanPage('+i+')" style="min-width:44px;min-height:44px;background:transparent;border:none;color:#e88080;cursor:pointer;font-size:16px" title="Supprimer cette page">x</button></div>';
   }).join("");
@@ -44927,7 +45143,7 @@ function cmcScanDocument(){
           var modal=document.createElement("div");
           modal.id="cmcOcrModal";
           modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px";
-          modal.innerHTML='<div style="max-width:500px;width:100%;background:#0a1a0e;border:1px solid #c9a227;border-radius:14px;padding:20px;color:#a0cca0;max-height:90vh;overflow-y:auto"><h3 style="color:#c9a227;margin:0 0 12px">📄 Scanner OCR</h3><img src="'+esc(dataUrl)+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;background:#000;margin-bottom:12px"><div id="cmcOcrStatus" style="font-size:14px;padding:10px;background:rgba(201,162,39,.08);border-radius:6px;margin-bottom:10px">⏳ Analyse Claude Vision en cours...</div><div id="cmcOcrResult" style="font-size:13px;white-space:pre-wrap;background:#0a0a0a;padding:12px;border-radius:6px;max-height:300px;overflow-y:auto;display:none"></div><div style="display:flex;gap:6px;margin-top:12px"><button onclick="document.getElementById(\'cmcOcrModal\').remove()" style="flex:1;padding:12px;background:transparent;color:#a0cca0;border:1px solid #2a4030;border-radius:8px;cursor:pointer">Fermer</button><button id="cmcOcrCopy" onclick="(function(){var t=document.getElementById(\'cmcOcrResult\');if(!t||!t.textContent)return;navigator.clipboard&&navigator.clipboard.writeText(t.textContent);toast(\'✓ Copie\');})()" style="flex:1;padding:12px;background:#c9a227;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;display:none">📋 Copier</button><button id="cmcOcrSave" onclick="(function(){var t=document.getElementById(\'cmcOcrResult\');if(!t||!t.textContent)return;var d=lg(\'cmc_ocr_history\',[]);d.unshift({ts:Date.now(),text:t.textContent.slice(0,5000),size:'+Math.round(f.size/1024)+'});if(d.length>50)d=d.slice(0,50);ls(\'cmc_ocr_history\',d);try{fbWrite&&fbWrite(\'cmc_ocr_history\',d);}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("cmc-scan-document",_e);}catch(__){}}toast(\'✓ Sauvegardé\');})()" style="flex:1;padding:12px;background:#5aa8ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;display:none">💾 Sauver</button></div></div>';
+          modal.innerHTML='<div style="max-width:500px;width:100%;background:#0a1a0e;border:1px solid #c9a227;border-radius:14px;padding:20px;color:#a0cca0;max-height:90vh;overflow-y:auto"><h3 style="color:#c9a227;margin:0 0 12px">📄 Scanner OCR</h3><img loading="lazy" decoding="async" src="'+esc(dataUrl)+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;background:#000;margin-bottom:12px"><div id="cmcOcrStatus" style="font-size:14px;padding:10px;background:rgba(201,162,39,.08);border-radius:6px;margin-bottom:10px">⏳ Analyse Claude Vision en cours...</div><div id="cmcOcrResult" style="font-size:13px;white-space:pre-wrap;background:#0a0a0a;padding:12px;border-radius:6px;max-height:300px;overflow-y:auto;display:none"></div><div style="display:flex;gap:6px;margin-top:12px"><button onclick="document.getElementById(\'cmcOcrModal\').remove()" style="flex:1;padding:12px;background:transparent;color:#a0cca0;border:1px solid #2a4030;border-radius:8px;cursor:pointer">Fermer</button><button id="cmcOcrCopy" onclick="(function(){var t=document.getElementById(\'cmcOcrResult\');if(!t||!t.textContent)return;navigator.clipboard&&navigator.clipboard.writeText(t.textContent);toast(\'✓ Copie\');})()" style="flex:1;padding:12px;background:#c9a227;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;display:none">📋 Copier</button><button id="cmcOcrSave" onclick="(function(){var t=document.getElementById(\'cmcOcrResult\');if(!t||!t.textContent)return;var d=lg(\'cmc_ocr_history\',[]);d.unshift({ts:Date.now(),text:t.textContent.slice(0,5000),size:'+Math.round(f.size/1024)+'});if(d.length>50)d=d.slice(0,50);ls(\'cmc_ocr_history\',d);try{fbWrite&&fbWrite(\'cmc_ocr_history\',d);}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("cmc-scan-document",_e);}catch(__){}}toast(\'✓ Sauvegardé\');})()" style="flex:1;padding:12px;background:#5aa8ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;display:none">💾 Sauver</button></div></div>';
           document.body.appendChild(modal);
           /* Send to Claude API */
           var apiKey=iaApiKey||localStorage.getItem("cmc_ia_key")||"";
@@ -44989,7 +45205,7 @@ function cmcScanBadgeEmploye(){
         var mediaType=f.type||"image/jpeg";
         var modal=document.createElement("div");modal.id="cmcBadgeModal";
         modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px";
-        modal.innerHTML='<div style="max-width:520px;width:100%;background:#0a1a0e;border:1px solid #c9a227;border-radius:14px;padding:18px;color:#a0cca0;max-height:90vh;overflow-y:auto"><h3 style="color:#c9a227;margin:0 0 10px">📛 Scanner badge employé</h3><img src="'+esc(dataUrl)+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;background:#000;margin-bottom:10px"><div id="cmcBadgeStatus" style="font-size:13px;padding:9px;background:rgba(201,162,39,.08);border-radius:6px">⏳ Analyse Claude Vision...</div><div id="cmcBadgeResult" style="margin-top:8px;display:none"></div><div style="display:flex;gap:6px;margin-top:10px"><button onclick="document.getElementById(\'cmcBadgeModal\').remove()" style="flex:1;padding:10px;background:transparent;color:#a0cca0;border:1px solid #2a4030;border-radius:8px;cursor:pointer">Fermer</button></div></div>';
+        modal.innerHTML='<div style="max-width:520px;width:100%;background:#0a1a0e;border:1px solid #c9a227;border-radius:14px;padding:18px;color:#a0cca0;max-height:90vh;overflow-y:auto"><h3 style="color:#c9a227;margin:0 0 10px">📛 Scanner badge employé</h3><img loading="lazy" decoding="async" src="'+esc(dataUrl)+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;background:#000;margin-bottom:10px"><div id="cmcBadgeStatus" style="font-size:13px;padding:9px;background:rgba(201,162,39,.08);border-radius:6px">⏳ Analyse Claude Vision...</div><div id="cmcBadgeResult" style="margin-top:8px;display:none"></div><div style="display:flex;gap:6px;margin-top:10px"><button onclick="document.getElementById(\'cmcBadgeModal\').remove()" style="flex:1;padding:10px;background:transparent;color:#a0cca0;border:1px solid #2a4030;border-radius:8px;cursor:pointer">Fermer</button></div></div>';
         document.body.appendChild(modal);
         var apiKey=(typeof iaApiKey!=="undefined"&&iaApiKey)||localStorage.getItem("cmc_ia_key")||"";
         var backend=(localStorage.getItem("cmc_backend_url")||localStorage.getItem("ax_backend_url")||"").replace(/^"|"$/g,"").replace(/\/$/,"");

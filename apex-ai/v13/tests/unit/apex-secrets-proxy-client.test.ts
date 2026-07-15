@@ -184,8 +184,11 @@ describe('apex-secrets-proxy-client (v13.4.129 Kevin)', () => {
       });
     });
 
-    it('22 providers total (15 base + 7 ajoutés v13.4.278) — aligné sur la source', () => {
-      expect(apexSecretsProxy.PROXY_PROVIDERS.length).toBe(22);
+    it('23 providers total (15 base + 7 v13.4.278 + cerebras v13.4.345) — aligné sur la source', () => {
+      /* Leçon #83 : préférer toContain à un comptage sec — le compte reste pour
+         détecter une SUPPRESSION accidentelle, le toContain nomme le dernier ajout. */
+      expect(apexSecretsProxy.PROXY_PROVIDERS).toContain('cerebras');
+      expect(apexSecretsProxy.PROXY_PROVIDERS.length).toBe(23);
     });
   });
 });

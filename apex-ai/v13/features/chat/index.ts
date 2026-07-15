@@ -69,6 +69,9 @@ export interface DisplayMessage {
   modelUsed?: string;
   latencyMs?: number;
   costEur?: number;
+  /* v13.4.355 : réflexion NATIVE Anthropic (extended thinking) streamée à part du texte.
+   * Affichée dans un bloc repliable, JAMAIS concaténée au contenu de la réponse. */
+  nativeThinking?: string;
 }
 
 /* v13.4.11 — Queue attachments en attente de submit (vidée après chaque user message envoyé).
@@ -384,6 +387,27 @@ export { isAutoReadEnabled, setAutoReadEnabled, maybeAutoReadAssistant };
 export { renderProviderBadge, renderToolPills };
 
 
+/* v13.4.354 — Exécute les tâches programmées dues (throttle 5 min per session). */
+let _lastSchedCheck = 0;
+async function checkDueScheduledTasks(
+  rootEl: HTMLElement,
+  queue: string[],
+  runProcessQueue: (el: HTMLElement) => Promise<void>,
+): Promise<void> {
+  const now = Date.now();
+  if (now - _lastSchedCheck < 5 * 60 * 1000) return;
+  _lastSchedCheck = now;
+  try {
+    const { runDueTasks } = await import('../../services/ai/scheduled-tasks.js');
+    await runDueTasks((prompt) => {
+      queue.push(prompt);
+      void runProcessQueue(rootEl);
+    }, now, 3);
+  } catch {
+    /* fail-open : les tâches programmées ne doivent jamais casser le chat */
+  }
+}
+
 export function render(rootEl: HTMLElement): void {
   /* v13.4.13 fix memory leak Kevin : si Kevin upload photo puis quitte chat
    * sans submit, base64 reste en mémoire. Reset queues au remount = clean state.
@@ -488,6 +512,10 @@ export function render(rootEl: HTMLElement): void {
   });
 
   wireChatInput(rootEl, { conversation, queue, processQueue, renderMessages, handleSlashCommand, handleWakeWordTextTrigger, showSlashAutocomplete, hideSlashAutocomplete });
+
+  /* v13.4.354 — Tâches programmées : exécute les tâches DUES à l'ouverture du chat
+   * (une PWA ne tourne pas en fond → on rattrape à l'ouverture). Throttle 5 min. */
+  void checkDueScheduledTasks(rootEl, queue, processQueue);
 
   /* Kevin 2026-06-08 : commande cliquée dans la vue /commands → prefill l'input
    * (« /cmd ») puis Kevin complète la cible/args et envoie LUI-MÊME (pas d'auto-submit).

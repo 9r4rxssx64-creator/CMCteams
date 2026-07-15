@@ -76,6 +76,13 @@ jobs:
           # SW + manifest non bundlés par Vite
           cp apex-ai/v13/sw.js apex-ai-v13/sw.js
           cp apex-ai/v13/manifest.json apex-ai-v13/manifest.json
+          # rescue.js/css (v13.0.13, HORS bundle Vite pour CSP strict) : le HTML buildé
+          # référence ./assets/js/rescue.js MAIS Vite peut relocaliser l'asset vers js/
+          # → 404 live sur apex-ai.kd-mc.com/assets/js/rescue.js (trouvé par audit-live).
+          # On garantit que le chemin RÉFÉRENCÉ existe, depuis la source autoritative.
+          mkdir -p apex-ai-v13/assets/js apex-ai-v13/assets/css
+          cp apex-ai/v13/assets/js/rescue.js  apex-ai-v13/assets/js/rescue.js
+          cp apex-ai/v13/assets/css/rescue.css apex-ai-v13/assets/css/rescue.css
           # Verify version cohérence
           echo "=== Verification ==="
           grep -oE 'data-app-ver="[^"]*"' apex-ai-v13/index.html | head -1

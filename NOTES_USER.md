@@ -2062,3 +2062,50 @@ Sur l'import, le **lieu** vient de la **couleur de fond + suffixe du code** (cf.
 **En général seuls les horaires Café de Paris (`*`) changent.** La vue ✅ Vérifier ne doit
 PAS dire « 0 lieu » : le lieu EST encodé par la couleur/suffixe (la page Départs le rend
 déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomenclature couleur (CDP/CMC/CCDP).
+
+## 📧 MAILS DE KEVIN — récup factures Finances (établi 2026-07-13)
+
+- **Gmail** = `desarzenskevin@gmail.com` (connecteur dispo) — **quasi vide de factures** (2 reçus Anthropic). Pas la source.
+- **Outlook = `Kevind@monaco.mc`** = sa boîte **PERSO** où il reçoit **tout** → c'est là que sont ses vraies factures.
+  ⚠️ `monaco.mc` est un **compte Microsoft perso SANS annuaire Azure** → Microsoft **BLOQUE** l'enregistrement d'app
+  (« créer des applications hors d'un répertoire déconseillée »). Donc le worker `kdmc-outlook` (Graph OAuth) **ne
+  marche pas** pour lui sans créer un annuaire Azure/programme dév M365 (trop de friction, écarté).
+- **`factures@kd-mc.com` accepte n'importe quel mail** (Cloudflare Email Routing actif, route `factures@ → kdmc-mail`
+  créée par Kevin). Pipeline app `➕ Ajouter → 📥 Récupérer mes factures` opérationnel.
+- **DÉCISION (Kevin « décide pour moi »)** : approche **TRANSFERT** — Kevin transfère ses factures à
+  `factures@kd-mc.com` (nouvelles au fil de l'eau ; anciennes qui comptent en one-shot). Pas d'Azure.
+  Le worker `kdmc-outlook` reste déployé (inoffensif) au cas où il créerait un annuaire plus tard.
+
+### Mail Kevin — Monaco Telecom + connecteur IMAP (2026-07-13)
+- **`Kevind@monaco.mc` est hébergé chez Monaco Telecom** (IMAP standard), **PAS** chez Microsoft.
+  Écarté un par un : Azure (compte perso sans annuaire → bloqué), outlook.live.com (compte MS « KD »
+  SANS boîte → proposait de créer une adresse), outlook.office.com (monaco.mc absent).
+- **Réglages IMAP Monaco Telecom** : `mails.monaco.mc` **port 993 SSL/TLS** (repli non-SSL
+  `imap.monaco.mc:143`). SMTP `smtps.monaco.mc:587` STARTTLS. ⚠️ Migration mail monaco.mc sept. 2025
+  → host à reconfirmer au runtime (le connecteur remonte l'erreur exacte).
+- **Connecteur livré : worker `services/kdmc-monaco/`** (IMAP via `cloudflare:sockets`) → récupère les
+  pièces jointes facture/devis et les dépose dans le **même KV `mail:p:<id>`** que kdmc-mail/outlook →
+  l'app Finances les récupère **sans aucune modif** (`mailAutoScan`). Cron 2 h = 100 % auto.
+  - Config Kevin (1 fois) : `https://kdmc-monaco.9r4rxssx64.workers.dev/setup` → code admin + email +
+    mot de passe monaco.mc → « Tester » puis « Récupérer ». Mot de passe chiffré AES-GCM au repos si le
+    secret `MONACO_ENC_KEY` est présent (sinon clair dans KV admin-gated).
+  - **Action Kevin restante** : entrer ses identifiants sur /setup. (Optionnel : ajouter le secret
+    GitHub `MONACO_ENC_KEY` = `openssl rand -base64 32` pour chiffrer le mot de passe.)
+- ✅ **DÉ-RISQUÉ 2026-07-13 (probe SANS mot de passe, vérifié MOI-MÊME via CI, 0 action Kevin)** :
+  endpoint `/probe` (admin-gated) = connexion seule à `mails.monaco.mc:993` puis lecture du greeting.
+  Résultat prouvé dans les logs CI (run 29289156768) :
+  `{"ok":true,"host":"mails.monaco.mc","port":993,"greeting":"* OK [CAPABILITY IMAP4rev1 SASL-IR ... AUTH=PLAIN AUTH=LOGIN] Dovecot ready."}`.
+  ⇒ (1) **Cloudflare autorise la socket IMAPS 993 depuis un Worker** (1ʳᵉ preuve dans ce repo, le repli
+  GitHub-Action-IMAP n'est PAS nécessaire) ; (2) host `mails.monaco.mc` bon (Dovecot) ; (3) `AUTH=PLAIN
+  AUTH=LOGIN` annoncés → le `LOGIN "user" "pass"` du worker marchera. **Il ne reste QUE le mot de passe
+  côté Kevin sur /setup.** Le workflow `deploy-kdmc-monaco.yml` rejoue ce probe à chaque déploiement.
+- ✅ **CONNECTÉ + FONCTIONNE (2026-07-13)** : Kevin a saisi ses identifiants sur /setup → « 6 factures
+  récupérées, 15 mails scannés ». Le login IMAP marche. (Rappel : le « code admin » de /setup = son code
+  admin habituel ~200807, PAS un code Outlook ; le mot de passe = celui de la boîte monaco.mc.)
+- 📚 **Backfill COMPLET (tout l'historique)** : le connecteur ne faisait que du récent (15 derniers de 60 j).
+  Bouton **« 📚 Récupérer TOUT l'historique »** sur /setup → `POST /backfill` : `UID SEARCH ALL` → file
+  `mon:bf_queue` traitée **par lots** (40 msg ou 14 s), **résumable** (`mon:bf_active`/`bf_remaining`/`bf_max`),
+  respecte `MAX_PENDING` (attend que l'app draine), reprise auto par le cron 2 h + re-tap pour accélérer.
+  Filtre facture inchangé (PJ + corps). `/health` expose `bf_active/bf_total/bf_remaining`. Prouvé par harness
+  (13/13 : lot complet, file pleine, reprise, garde admin, corps capturé). N'écrit jamais tout d'un coup
+  (limites CPU Worker) → l'historique se remplit en arrière-plan sur plusieurs lots.

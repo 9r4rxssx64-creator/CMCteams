@@ -14,6 +14,9 @@ import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
 import { store } from '../../core/store.js';
 import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
+import { customAssistants } from '../../services/ai/custom-assistants.js';
+import { projects } from '../../services/ai/projects.js';
+import { buildEffortInjection } from '../../services/ai/reasoning-mode.js';
 import { commerce } from '../../services/integrations/commerce.js';
 
 import { buildMessagesForApi } from './chat-api-format.js';
@@ -60,14 +63,38 @@ async function buildSystemPromptDeep(): Promise<string> {
      * Avec timeout 1500ms, sur iPhone Safari PWA réseau lent, deep prompt timeout
      * trop souvent → fallback minimal sans contexte profond → IA hallucine
      * "es-tu admin ?". 3000ms = budget plus safe. */
-    return await Promise.race([
+    const base = await Promise.race([
       memory.buildSystemPromptDeep(user),
       new Promise<string>((_, rej) => setTimeout(() => rej(new Error('deep prompt timeout')), 3000)),
     ]);
+    return base + customAssistantInjection();
   } catch (err: unknown) {
     logger.warn('chat', 'buildSystemPromptDeep fallback (sync)', { err });
-    return buildSystemPrompt();
+    return buildSystemPrompt() + customAssistantInjection();
   }
+}
+
+/* v13.4.345 — Assistant personnalisé actif ("Gems" / Custom GPTs). Additif :
+ * préfixe les instructions de l'assistant au prompt Apex, sans toucher au routage.
+ * v13.4.352 — + effort de raisonnement (nudge prompt, provider-agnostique). */
+function customAssistantInjection(): string {
+  let out = '';
+  try {
+    out += projects.buildInjection();
+  } catch {
+    /* fail-open */
+  }
+  try {
+    out += customAssistants.buildInjection();
+  } catch {
+    /* fail-open */
+  }
+  try {
+    out += buildEffortInjection();
+  } catch {
+    /* fail-open */
+  }
+  return out;
 }
 
 /**
@@ -352,6 +379,14 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
           }
         }
         assistantMsg.toolBatchCount = (assistantMsg.toolBatchCount ?? 0) + (chunk.toolCount ?? 0);
+        updateAssistantBubble(rootEl, assistantMsg);
+        return;
+      }
+      /* v13.4.355 : réflexion NATIVE Anthropic (extended thinking) — streamée à part.
+       * On l'accumule dans un champ dédié et JAMAIS dans assistantMsg.text (ce n'est
+       * pas la réponse finale). Le rendu repliable est géré par updateAssistantBubble. */
+      if (chunk.type === 'thinking') {
+        assistantMsg.nativeThinking = (assistantMsg.nativeThinking ?? '') + chunk.text;
         updateAssistantBubble(rootEl, assistantMsg);
         return;
       }

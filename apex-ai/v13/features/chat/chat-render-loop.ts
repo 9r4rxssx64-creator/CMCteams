@@ -7,15 +7,42 @@
  * La conversation (référence STABLE const) est fournie une fois via
  * setRenderLoopConversation() ; les fonctions gardent leur signature (rootEl).
  */
+import { extractThinking } from '../../services/ai/reasoning-mode.js';
 import { generateFollowUps, isFollowUpsEnabled } from '../../services/ai/suggestions.js';
 import { renderMarkdownEnriched, wireMarkdownActions } from '../../ui/markdown.js';
 
 import { renderMessageActions } from './chat-actions-render.js';
 import { renderProviderBadge, renderToolPills } from './chat-badges.js';
-import { renderMarkdownLight } from './chat-markdown.js';
+import { renderMarkdownLight, escapeHtml } from './chat-markdown.js';
 import { renderFollowUps } from './chat-renderers.js';
 
 import type { DisplayMessage } from './index.js';
+
+/* v13.4.352 — Affichage de la réflexion (parité "thinking display" flagship).
+ * Sépare un bloc <thinking>…</thinking> de la réponse et le rend repliable.
+ * S'applique UNIQUEMENT aux messages assistant ; additif (aucune surgery du stream). */
+function renderThinkingBlock(thinking: string, streaming: boolean, label = '💭 Réflexion'): string {
+  if (!thinking) return '';
+  return (
+    `<details class="ax-thinking"${streaming ? ' open' : ''}>` +
+    `<summary class="ax-thinking-sum">${label}</summary>` +
+    `<div class="ax-thinking-body">${escapeHtml(thinking)}</div></details>`
+  );
+}
+
+/** Corps d'un message : réflexion repliable (assistant) + markdown de la réponse. */
+function renderAssistantBody(m: DisplayMessage): string {
+  if (m.role !== 'assistant') {
+    return m.streaming ? renderMarkdownLight(m.text) : renderMarkdownEnriched(m.text);
+  }
+  const { thinking, answer } = extractThinking(m.text);
+  const md = m.streaming ? renderMarkdownLight(answer) : renderMarkdownEnriched(answer);
+  /* v13.4.355 : réflexion NATIVE Anthropic (extended thinking) — bloc dédié distinct
+   * du bloc prompt-based (extractThinking). Les deux coexistent : natif si présent,
+   * prompt-based sinon. Additif, aucune surgery du stream. */
+  const nativeBlock = renderThinkingBlock(m.nativeThinking ?? '', !!m.streaming, '🧠 Raisonnement (natif)');
+  return nativeBlock + renderThinkingBlock(thinking, !!m.streaming) + md;
+}
 
 /** Référence STABLE vers la conversation du module chat (fournie au boot). */
 let _conv: DisplayMessage[] = [];
@@ -35,7 +62,7 @@ export function updateAssistantBubble(rootEl: HTMLElement, msg: DisplayMessage):
   const bubble = rootEl.querySelector(`[data-msg-id="${msg.id}"] .ax-msg-body`);
   if (bubble) {
     /* Pendant streaming → markdown light pour vitesse / hors → enrichi */
-    const md = msg.streaming ? renderMarkdownLight(msg.text) : renderMarkdownEnriched(msg.text);
+    const md = renderAssistantBody(msg);
     bubble.innerHTML =
       renderToolPills(msg) +
       md +
@@ -125,7 +152,7 @@ export function renderMessages(rootEl: HTMLElement): void {
         followUps = renderFollowUps(generateFollowUps(m.text, lastUser));
       }
       /* Pendant streaming : markdown light, hors : enrichi */
-      const md = m.streaming ? renderMarkdownLight(m.text) : renderMarkdownEnriched(m.text);
+      const md = renderAssistantBody(m);
       return `
         <div class="ax-msg ax-msg-${m.role} ax-modernized-msg ax-slide-up-fade" data-msg-id="${m.id}">
           <div class="ax-msg-body">${pills}${md}${trail}${providerBadge}${actions}${followUps}</div>

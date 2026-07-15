@@ -1,5 +1,39 @@
 <!-- Backlog Claude Code (audit Apex 2026-07-05, aucune action Kevin requise) :
 
+## 🤖 SESSION 2026-07-08 — AGENTS DE CODE INDÉPENDANTS qui CODENT (Kevin « tous »)
+
+Config prête pour que N'IMPORTE quel agent externe travaille bien sur ton repo sans rien casser :
+`AGENTS.md` (lu par Codex, Jules, Cursor) + `.github/copilot-instructions.md` (lu par Copilot).
+Chaque agent ouvre des PR → tes 3 reviewers (CodeRabbit + Qodo + Sonar) les vérifient → moi j'intègre.
+
+### 🖱️ Connecter les agents (1 clic chacun — TOI seul autorises, ta règle sécu). Fais ceux que tu veux :
+1. **Google Jules** (agent Gemini, GRATUIT) → https://jules.google.com → se connecter avec Google → « Connect GitHub » → choisir `CMCteams`. Puis tu lui donnes une tâche, il code + ouvre une PR.
+2. **OpenAI Codex** (agent GPT-5, tu as OpenAI) → https://chatgpt.com/codex → « Connect GitHub » → `CMCteams`. (inclus dans ton abo ChatGPT, sinon à l'usage).
+3. **GitHub Copilot agent** (assigne une tâche → il ouvre la PR) → https://github.com/settings/copilot → activer « Copilot coding agent » (abonnement Copilot requis).
+4. **v0** (créer des interfaces/apps neuves) → https://v0.dev (compte Vercel). **Bolt** (app complète front+back) → https://bolt.new. À utiliser pour LANCER une nouvelle app, pas améliorer l'existant.
+
+Tout est déjà cadré par `AGENTS.md` (branches, tests obligatoires par app, secrets, mobile iPhone, chemins /CMCteams/).
+
+
+## 🔍 SESSION 2026-07-08 — EXPERTS DE CODE INDÉPENDANTS branchés (Kevin « outil extérieur indépendant »)
+
+Trois regards INDÉPENDANTS (modèle ≠ Claude / analyse déterministe) sur tout le domaine + chaque app.
+`auto-pr-review.yml` restait un reviewer Claude (moi) = pas indépendant → ces trois-là comblent ce biais.
+
+### ✅ Déjà LIVRÉ (0 action Kevin) — reviewer dans TA CI
+- `.github/workflows/ai-review-independent.yml` : **Qodo PR-Agent** avec **ta clé OpenAI** (secret `OPEN_AI_API_KEY`) = modèle non-Claude, 100% dans ton infra (aucune société externe n'a ton code). Review auto de chaque vraie PR (bots exclus = coût maîtrisé). Commandes : `/review`, `/improve`, `/ask` en commentaire de PR.
+
+### 🖱️ 2 actions « 1 clic » pour toi (obligatoires : TOI seul autorises l'accès — ta règle sécu)
+1. **CodeRabbit** (le meilleur reviewer IA indépendant, gratuit dépôt public) :
+   → https://github.com/apps/coderabbitai → **Install** → choisir le dépôt `CMCteams`.
+   Config déjà prête (`.coderabbit.yaml`, en français, bruit filtré). Ensuite il commente chaque PR tout seul.
+2. **SonarQube Cloud** (bilan santé détaillé par app, gratuit dépôt public) :
+   → https://sonarcloud.io → se connecter avec GitHub → **Analyze new project** → `CMCteams` → **Automatic Analysis**.
+   Config déjà prête (`sonar-project.properties`, artefacts exclus). Aucun token à créer.
+
+Après ces 2 clics : les 3 experts indépendants tournent en continu et détaillent chaque app.
+
+
 ## 🧠 Mémoire intelligente d'Apex (RAG) — DÉPLOYÉE ✅ 2026-07-08 (je l'ai déployée moi-même)
 - Worker `kdmc-rag` **déployé avec succès** (run #1 vert). **Vectorize EST dispo sur ton compte** (le déploiement aurait échoué sinon — contrairement aux Durable Objects refusés, leçon #132). Le serveur mémoire tourne : `https://kdmc-rag.9r4rxssx64.workers.dev`.
 - **Il reste 1 tap pour l'ALLUMER dans l'app** (défaut éteint par sécurité, per-appareil) : ouvre Apex → console/réglages → activer `apex_v13_rag_enabled`. (Je peux ajouter un vrai bouton Réglages « Mémoire long terme ON/OFF » si tu veux — dis-le.)
@@ -25,6 +59,71 @@
 
 # KEVIN_ACTIONS_TODO.md — Tâches restantes par priorité
 
+## ✅ SESSION 2026-07-10 — Actions Kevin FAITES (« Tout fait »)
+Kevin a réalisé les 4 actions 1-clic optionnelles proposées :
+- ✅ **GIF (Giphy)** testé dans Apex Chat (secret `GIPHY_KEY` ajouté + worker déployé).
+- ✅ **Alertes World Monitor** autorisées (notifications device) → séisme M6+ / GDACS Rouge / Kp≥7 même app fermée.
+- ✅ **CodeRabbit** installé sur `CMCteams` → relecteur IA indépendant (≠ Claude) sur chaque future PR (config `.coderabbit.yaml` FR déjà prête).
+- ✅ **SonarCloud** connecté (Automatic Analysis) → bilan santé par app à chaque push (`sonar-project.properties` déjà prêt).
+> Ces 2 reviewers ne se déclenchent que sur les **prochaines** PR/commits — leurs premiers retours apparaîtront au prochain changement livré. Rien d'autre en attente côté Kevin (WebKit CI corrigé + mergé, leçon #140).
+
+## 🚀 SESSION 2026-07-08 (suite) — AUDIT D'AMÉLIORATION EXTRÊME (84 améliorations prouvées, 6 auditeurs //)
+
+Rapport complet : https://claude.ai/code/artifact/97aa362e-730f-44eb-9a32-aede610b1954
+Toutes les propositions sont PROUVÉES fichier:ligne ; les 11 affirmations les plus lourdes re-vérifiées à la main (11/11 confirmées).
+
+### ⭐ TOP 10 valeur/effort — ✅ TOUT LIVRÉ (« Go tout sans t'arrêter tout auto », 2026-07-08)
+1. ✅ **Apex v13 — mémoire RAG auto-ON** (v13.4.350) : sonde `/health` du worker RAG (cache 6h, fail-open, opt-out explicite respecté) → la mémoire longue durée s'active seule dès que le worker répond.
+2. ✅ **CMCteams — export ICS pro** (v9.859) : fuseau Europe/Monaco (VTIMEZONE), 3 mois de planning, **2 rappels natifs iPhone** (la veille 12h + 2h avant le service), horaires chefs/codes étendus. Testé navigateur 11/11.
+3. ✅ **Apex v13 — génération d'images branchée** (v13.4.350) : `image_generate` câblé registry + dispatch → Replicate FLUX schnell (clé `AX_REPLICATE_KEY` du Coffre). « Génère une image » fonctionne.
+4. ✅ **World Monitor — vraies alertes** (v2.33) : moteur local (séisme M6+, GDACS Rouge, Kp≥7) → notification navigateur + anti-doublon + libellé honnête 🔔/🔕. Testé navigateur 9/9 (notifs réellement tirées).
+5. ✅ **Apex Chat — appels de GROUPE** (v1.1.252) : mesh P2P `visio-mesh` enfin branché dans l'app (sonnerie, grille vidéo, mute/cam) + **TURN Cloudflare injecté** (fini le STUN-only qui échouait en 4G). 1:1 intouché.
+6. ✅ **Apex Chat — compression images** (v1.1.252) : photos de message compressées 1600px JPEG avant envoi (≈ −80 % de data), GIF préservés, fail-open.
+7. ✅ **Domaine — monitoring réel** : uptime-monitor ping les 13 sous-domaines kd-mc.com + 4 workers `/health` + l'origin github.io → une panne routeur/SSL est enfin VISIBLE.
+8. ✅ **Domaine — backup de TOUS les KV** : workflow quotidien qui énumère dynamiquement tous les namespaces Cloudflare (passkeys, sessions, coffre…), dump chiffré AES-256 → branche `kv-backups`.
+9. ✅ **Apex v13 — modèles à jour** : Opus 4.8 + Sonnet 4.6 partout.
+10. ✅ **Boutiques — parité admin Printify chez-lolo** : module partagé `shops/_shared/kdmc-printify-catalog.js` (blueprints → publication 1-clic, prix/nom éditables, port réel Printify, estimation port panier). Testé navigateur 11/11. **BONUS bug prod trouvé + corrigé** : le worker de commande n'autorisait PAS les origins kd-mc.com → `/order` et `/shipping` étaient CORS-bloqués depuis le domaine réel (seul github.io marchait) ; + chemins `/CMCteams/` absolus dans les 8 boutiques (les includes `../_shared/` 404aient sur le domaine, leçon #102).
+
+### Autres gros lots (détail dans l'artifact)
+- Apex v13 : premier token ~3s plus vite (prompt+RAG en parallèle), routage Opus 4.8 sur les questions dures, conversations multiples + recherche globale, mode vocal temps réel, panneau Aperçu.
+- Apex Chat : reconnexion d'appel (restartIce), débit adaptatif, recherche in-conv, coches honnêtes, virtualisation, aperçus de liens, messages programmés serveur, résumé IA des non-lus, traduction auto.
+- CMCteams : lazy-load des ~700 Ko de code admin parsés par les 258 employés (levier boot n°1), SEED 78 Ko à retirer, push « planning publié », prévision sous-effectif, webcal:// auto-sync, « qui travaille avec moi », échange pair-à-pair, offline page Départs.
+- Domaine : design-system adopté (1 page/20 aujourd'hui), CSP injectée par le routeur, workflow deploy réutilisable (24 copies), cache edge, SSO coffre-fort + SDK 1-ligne, status.kd-mc.com, alerte temps réel Cloudflare, nav inter-apps.
+- Boutiques : filet réconciliation paiement, CGV exception rétractation personnalisé, /shipping chez-lolo, WebP, sitemap/llms.txt, avis masqués tant que vides.
+- World Monitor/PWA : squawk 7700, clustering avions, âge des données, VAAC, kdmc-push.js partagé, badges/shortcuts/Speculation Rules/View Transitions.
+
+**✅ Top 10 : 10/10 livrés, testés (gates verts + tests navigateur réels), mergés.** Les « autres gros lots » ci-dessous restent le vivier pour les prochains « Go ».
+
+**1 clic Kevin (optionnel, quand tu veux)** : dans World Monitor, tape la puce « 🔔 Alertes » une fois pour autoriser les notifications (choix device, je ne peux pas le faire à ta place).
+
+---
+
+## 🔬 SESSION 2026-07-08 — AUDIT EXTRÊME domaine complet (6 auditeurs // + gates mesurés + scans CI)
+
+### 📊 Scores MESURÉS (auditeurs indépendants, jamais estimés)
+Sécurité **11/20** · Architecture **13/20** · Infra-CI **13,5/20** · Apex v13 fonctionnalités **16/20** / UX **15/20** · Apex Chat fonctionnalités **13,5/20** / sécu-app **12/20** · Boutiques UX **11/20**. Stabilité mesurée : **0 scintillement** (3 vues au repos, 0 FAIL après fix). Gates : CMC test:ci ✅ · Apex v13 tsc+lint 0 ✅ · Apex Chat 941/941 + couverture ✅.
+
+### ✅ Corrigé en autonomie dans cette session (mergé)
+- **P0 sécu `vault-svc`** : le JWT n'était JAMAIS vérifié (n'importe qui forgeait un uid → écrire/supprimer le coffre d'autrui) → signature RS256 + expiration vérifiées, **fail-closed**. + `chat-svc` (proxy IA payant sans auth) → jeton de service requis, fail-closed. + 2 proxies legacy : l'Origin VIDE (curl) ne bypass plus la garde.
+- **P0 CSP CMCteams (v9.858)** : `apis.kd-mc.com` absent de connect-src → les jours fériés ne chargeaient jamais (FAIL mesuré par audit:stability, re-prouvé 0 FAIL après fix).
+- **Apex v13 (v13.4.349)** : CSP +`nominatim.openstreetmap.org` +`geocoding-api.open-meteo.com` → géocodage inverse + météo IA débloqués (cassés en prod, leçon #131) + test anti-régression.
+- **Apex Chat (v1.1.251)** : 🎙 **les messages vocaux ne partaient JAMAIS** (toast « envoyé » mensonger) → envoi réel via le pipeline média (E2E + outbox) · en-tête de groupe disait « 🛡 E2E » alors que les groupes partent en clair → « 🔒 chiffré (transit) » honnête · capsules « scellées » (simple base64) → « programmée » honnête · boutons d'en-tête 34→44px.
+- **Workflow `apex-chat-auto-force-update`** : 30/30 échecs depuis sa création (`secrets` dans un `if` = YAML invalide, 0 job) → réparé (la MAJ instantanée chez tous les users marche enfin + fin des mails d'échec).
+- **Anti-spam CI (ta règle)** : `claude-todo-watcher` 5 min→6 h (288→4 runs/j), `uptime-monitor` 15 min→6 h · `[skip ci]` ajouté aux 4 workflows de sync qui se re-déclenchaient · 2 path-triggers morts réparés (build iOS + coordinateur de branches) · `shops/vercel.json` durci (leçon #74) · drift version la-detente réaligné (v1.53.23).
+
+### 🔴 DÉCISIONS BUSINESS — TRANCHÉES par Kevin (2026-07-08 « Laisse comme ça les deux »)
+1. **Boutiques démo (tech-hub, ecocraft, digital-vault, pawsome)** → **DÉCISION : laisser tel quel, ce sont des PROJETS** (pas de vraies boutiques en exploitation). Aucune action. ⚠️ Rappel gravé : le jour où l'une passe en VRAIE boutique → retirer les avis fabriqués + brancher la vérification de paiement AVANT ouverture (risque pratiques commerciales trompeuses sinon).
+2. **chez-lolo + la-detente (catalogues vides, Printify déconnecté)** → **DÉCISION : laisser, mise en place EN COURS** (création des logos etc.). Aucune action. Quand les produits arrivent : reconnecter Printify + je peux brancher la confirmation de commande sur paiement vérifié (webhook) à la demande.
+3. **Paiement réel (webhook)** : chantier disponible quand une boutique ouvre pour de vrai — ne pas ouvrir sans.
+
+### 🟡 Backlog technique (prochaines sessions, aucun bloquant)
+- Apex v13 : 15 services orphelins jamais câblés (dont anti-hallucination IA, optimiseur INP) → câbler ou supprimer · toasts techniques (String(err)) ×6 · inputs 14px (zoom iOS).
+- Apex Chat : E2E de GROUPE (pairwise seulement — libellé honnête fait, vrai chiffrement de groupe = chantier) · stories jamais envoyées au serveur (local-only) · sondages en clair + anonymat d'affichage seulement · cap localStorage par conversation · `ia-worker` non déployé = le gater AVANT tout déploiement.
+- Architecture : SW Apex Chat enregistre ses handlers après un `await` (risque install manqué) · calcDepPos dupliqué app↔page Départs (leçon #116, à factoriser) · 49 Mo de patch + 16 Mo de mp4 committés en git · `app 2.js` orphelin.
+- CSP absente sur worldmonitor/osint/clone + pages legal (à faire avec liste exacte des sources + smoke CI).
+- ⚠️ « Boutiques inscriptibles sans auth » (rapport sécu) = lecture du FICHIER de règles ; le LIVE est verrouillé (shops_lock=on prouvé 05/07, self-test nocturne vert). Pas d'action.
+
+
 ## ⚡ kdmc-live (foudre + cyclones + feux officiels) — SESSION 2026-07-07
 
 Nouveau worker `services/kdmc-live/` (modèle kdmc-ais, SANS Durable Object — leçons #132/#133) qui alimente World Monitor en 3 sources live bloquées côté navigateur : **foudre temps réel** (Blitzortung, WebSocket courte), **cyclones/ouragans** (NOAA NHC, relais CORS + cache 10 min) et **feux officiels NASA FIRMS** (VIIRS 24 h, GeoJSON).
@@ -48,8 +147,11 @@ Nouveau worker `services/kdmc-live/` (modèle kdmc-ais, SANS Durable Object — 
 - **4 correctifs audit** : CSP Apex +4 hosts (PayPal/Google Photos/Vercel/géoloc débloqués) · badge MAJ auto ajouté à World Monitor + OSINT · sous-domaine mort `desarzens-kevin` corrigé · OTP Apex Chat en générateur cryptographique.
 - **Améliorations extrêmes livrées** : cœur d'auth Apex Chat remis dans la mesure de couverture (plancher dédié 80/74/86/80, plus caché) · blocage PIN Apex Chat honnête + temporisation 10 min (fin du lockout permanent) · toasts Apex v13 sans jargon (knowledge/innovation) · cron build Apex 30 min → 6 h (−44 runs/j) · cible tactile Départs 42→44px (v1.26).
 
+### ✅ Chiffrement E2E Apex Chat — FAIT (2026-07-08, « fais le test 2 tel à ma place »)
+- **Test « 2 téléphones » automatique** livré (`tests/unit/e2e-two-phones.test.js`, 7 tests dans la CI) : simule 2 appareils indépendants avec le VRAI code crypto de prod → prouve round-trip A↔B chiffré/déchiffré, numéro de sécurité identique, média chiffré, intégrité (ciphertext altéré rejeté), tiers sans clé ne lit pas. Aucun iPhone requis.
+- **E2E activé PAR DÉFAUT** (v1.1.250, `_E2E_ENABLED=true`), sûr car défaillances gracieuses (envoi fail-open jamais bloqué + réception non-déchiffrable → note propre, jamais de charabia — ce qui manquait avant). Opt-out de secours par appareil (Réglages → Confidentialité). Copie CGU/confidentialité/marketing remise honnête (« bout-en-bout par défaut, repli transit si clé du pair absente »). Mergé + déployé.
+
 ### 🟡 Actions / décisions qui t'attendent (notées pour plus tard)
-1. **« Go chiffrement »** — réactiver le vrai E2E bout-en-bout Apex Chat. Gros chantier risqué (les clés s'étaient désynchronisées → E2E coupé) : republier les clés au login + retirer le repli clair + tester 2 clients réels. À faire sur une session dédiée, pas à l'aveugle (risque de casser l'envoi de messages).
 2. **Durcissement per-user Apex** (positions/santé/réglages lisibles par tout visiteur anonyme) — exige d'abord de déployer les **custom-tokens par rôle** (`apex-auth-worker`) car le flux temps réel écoute l'arbre `/apex` entier avec un jeton anonyme. L'activer sans ça verrouillerait Apex (leçon #109). Chantier à planifier ensemble.
 3. **CSP des 2 dashboards live** (World Monitor / OSINT) — je ne peux pas la déployer à l'aveugle (une CSP incomplète casse les cartes, et je ne peux pas tester en live depuis ici). À faire avec la liste exacte des sources, vérifiée par un smoke CI.
 4. **Rappel — clé aisstream déjà faite** (navires mondiaux actifs). Rien à refaire.
@@ -57,6 +159,15 @@ Nouveau worker `services/kdmc-live/` (modèle kdmc-ais, SANS Durable Object — 
 ### ⚖️ Arbitrages laissés en l'état (ta règle prime)
 - **Jeton Apex Chat 30 j** : gardé tel quel — ta règle « reconnu auto après 1ère connexion » prime sur le risque théorique de jeton volé (Face ID + déconnexion forcée couvrent déjà). Dis si tu veux 7 j.
 - **Anti-clobber `cmc_features`** : non modifié — l'app n'a qu'un seul admin (toi), collision impossible ; le fix alourdirait un chemin admin chaud pour zéro gain réel.
+
+### 🎨 Revue design — chaque app + chaque boutique (rendu réel iPhone 390px, 16 pages)
+J'ai rendu et critiqué les 16 surfaces contre le design system (5 piliers UX : pro/expert/futuriste/épuré/pratique, Apple HIG 44px, contraste WCAG).
+- **🔴 CRITIQUE (= ta décision, item 1 ci-dessus « Go chiffrement »)** — Apex Chat affiche partout « Chiffrement de bout en bout AES-256 / serveur aveugle » (splash, manifest, CGU, privacy, llms.txt, og-image) ET le composeur dit « Message chiffré… », **alors qu'à l'exécution `_E2E_ENABLED = false` et les messages partent en clair** (repli `ciphertext || text`). Le transport reste TLS + serveur qui stocke/lit. **Ce sont des affirmations fausses (marketing + politique de confidentialité + CGU = portée légale).** Deux issues possibles, à TOI de trancher : (a) réactiver le vrai E2E (chantier item 1), ou (b) adoucir la copie en « chiffré en transit, messagerie privée » (honnête). Je ne réécris pas la copie légale/CGU ni ne flippe le flag à l'aveugle sans ton feu vert.
+- **🟠 Cohérent avec (a/b)** — 2 nettoyages Apex Chat à faire dans la même passe : composeur `placeholder="Message chiffré…"` (index.html:7159) + ligne debug login `« ✅ Bouton activé (v… ) »` visible aux utilisateurs (index.html:6496, d'où le « vv » quand la version commence déjà par « v »).
+- **🟡 Transverse épurable (design, sûr, à faire sur session dédiée avec gates)** : contraste des placeholders des formulaires de connexion (portail + boutiques) un peu bas (accessibilité) · gabarit boutique partagé `shops/_shared/` = grille de stats déséquilibrée (« 24/7 » orphelin) + badges de confiance en emoji → 1 correctif propage à toutes les boutiques · bouton SMS Apex Chat au dégradé or-sombre peu lisible.
+- **✅ Bon niveau** : CMCteams (thème casino cohérent) · World Monitor / OSINT (dense, live, lisible) · portail kd-mc.com (dark/or). Rien de cassé, ce sont des polish.
+
+**Décision d'expert honnête** : je n'ai PAS appliqué les correctifs design dans cette session (compactée) — chaque app exige son gate (Apex Chat = couverture 100% + 6 points de version, Apex v13 = tsc+lint, CMCteams = test:ci, Départs = bump version) puis PR+merge vérifié ; les enchaîner à court budget risquait un merge à moitié fait (pire qu'un rapport propre, leçons #78/#111). Le rapport ci-dessus EST le livrable ; les fixes design 🟡 se font proprement à la prochaine session, l'issue 🔴 attend ta décision.
 
 ---
 

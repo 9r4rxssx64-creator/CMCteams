@@ -20,11 +20,9 @@
  * - Promesses .catch() systématique
  */
 
-export const APP_VER = 'v13.4.350';
+export const APP_VER = 'v13.4.359';
 export const ADMIN_ID = 'kdmc_admin';
 
-/* v13.3.89 P1.8 — di renommé en service-locator (0% prod usage, juste exposé via __APEX__ debug HUD).
- * import { di } gardé pour rétrocompat __APEX__ window debug, mais c'est un alias service-locator. */
 import { logRedaction } from '../services/observability/log-redaction-wrapper.js';
 
 import { errors } from './errors.js';
@@ -33,7 +31,6 @@ import { safeSetHTML } from './html-safe.js';
 import { logger } from './logger.js';
 import { memory } from './memory.js';
 import { router } from './router.js';
-import { di } from './service-locator.js';
 import { store } from './store.js';
 
 /* v13.3.74 P0 sécu (audit OWASP ASVS L2 V7.1.1) — log redaction GLOBAL.
@@ -96,6 +93,23 @@ async function bootstrap(): Promise<void> {
       logger.warn('boot', `Service init failed: ${label} (continuing degraded)`, { err });
     }
   };
+
+  /* v13.4.353 (leçon #61 — await sans timeout = écran blanc si le réseau HANG) :
+   * un `await` bloquant au boot (memory.init / firebase.init) doit être BORNÉ.
+   * Si l'init n'a pas résolu au bout de `ms`, on POURSUIT le boot (rendu de la
+   * vue login/landing) — l'init continue en arrière-plan. Ne rejette jamais :
+   * une panne réseau ne doit JAMAIS empêcher l'app de s'afficher (iPhone lent,
+   * TLS bloqué, Firebase injoignable, headless E2E). */
+  const bootStep = (p: Promise<unknown>, ms: number, label: string): Promise<void> =>
+    Promise.race([
+      Promise.resolve(p).then(() => undefined).catch(() => undefined),
+      new Promise<void>((res) =>
+        setTimeout(() => {
+          logger.warn('boot', `${label} lent (>${ms}ms) — boot poursuivi (init en arrière-plan)`);
+          res();
+        }, ms),
+      ),
+    ]);
 
   /* v13.3.71 PERF (LCP optim) : sentry + bodyguard MIS EN POST-RENDER.
    * Avant : 2 await sequentiels au boot = +200ms LCP.
@@ -372,10 +386,14 @@ async function bootstrap(): Promise<void> {
     appVer: APP_VER,
   });
 
-  /* 4. Memory module — auto-injection contexte */
-  await memory.init().catch((err: unknown) => {
-    logger.error('boot', 'Memory init failed (degraded)', { err });
-  });
+  /* 4. Memory module — auto-injection contexte (borné : ne bloque pas le rendu) */
+  await bootStep(
+    memory.init().catch((err: unknown) => {
+      logger.error('boot', 'Memory init failed (degraded)', { err });
+    }),
+    3000,
+    'memory.init',
+  );
 
   /* v13.4.37 — Economy Mode init (charge toggle persisté depuis localStorage).
    * Non-bloquant : si fail, mode économie reste inactif (default safe). */
@@ -412,9 +430,13 @@ async function bootstrap(): Promise<void> {
   /* 5. Services lazy-load (services/ chargés à la demande par router) */
   /* Pre-init seulement les services critiques */
   const { firebase } = await import('@services/storage/firebase.js');
-  await firebase.init().catch((err: unknown) => {
-    logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
-  });
+  await bootStep(
+    firebase.init().catch((err: unknown) => {
+      logger.error('boot', 'Firebase init failed (degraded offline mode)', { err });
+    }),
+    2500,
+    'firebase.init',
+  );
 
   /* Phase 5 — pont Firebase Auth (obtient un id_token au login via apex-auth-worker).
    * Fail-open : aucune régression si worker absent. Lazy import non-bloquant. */
@@ -496,6 +518,10 @@ async function bootstrap(): Promise<void> {
   router.register('workflow', { loader: () => import('@features/workflow/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('remote', { loader: () => import('@features/remote/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('notes', { loader: () => import('@features/notes/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('assistants', { loader: () => import('@features/assistants/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('canvas', { loader: () => import('@features/canvas/index.js'), requiresAuth: true });
+  router.register('projects', { loader: () => import('@features/projects/index.js'), requiresAuth: true, skeleton: 'feature-list' });
+  router.register('scheduled', { loader: () => import('@features/scheduled/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('calendar', { loader: () => import('@features/calendar/index.js'), requiresAuth: true, skeleton: 'feature-list' });
   router.register('billing', { loader: () => import('@features/billing/index.js'), requiresAuth: true, skeleton: 'vault-cards' });
   router.register('calculators', { loader: () => import('@features/calculators/index.js'), requiresAuth: true, skeleton: 'feature-list' });
@@ -980,15 +1006,16 @@ bootstrap().catch((err: unknown) => {
   if (sos) sos.style.display = 'flex';
 });
 
-/* DI registry exposed for debug (admin only via HUD) */
+/* v13.4.x SÉCU — n'expose PLUS `store` ni `di` sur window : un attaquant XSS/console
+ * pouvait faire `window.__APEX__.store.set('user', {id:'kdmc_admin'})` pour usurper l'admin
+ * (les guards router dérivent l'admin de `store.get('user')`). Aucun code prod/test ne lit
+ * `__APEX__.store`/`.di` → retrait sûr. On garde `ver`/`logger` (debug non sensible). */
 declare global {
   interface Window {
     __APEX__?: {
       ver: string;
-      di: typeof di;
-      store: typeof store;
       logger: typeof logger;
     };
   }
 }
-window.__APEX__ = { ver: APP_VER, di, store, logger };
+window.__APEX__ = { ver: APP_VER, logger };

@@ -69,6 +69,29 @@ async function main() {
       return window.verifyPw('wrong', { h: h }) === false;
     });
 
+    // Test 7b : verifyPw matche une CHAÎNE brute "s1:.." (format hashPwStrong stocké tel quel)
+    // RÉGRESSION du bug de lockout : ls("cmc_admin_pin",hashPwStrong(pin)) stocke une chaîne,
+    // l'ancien verifyPw tombait sur le legacy DJB2 → PIN admin INVÉRIFIABLE.
+    test('audit : verifyPw matche chaîne brute hashPwStrong "s1:"', () => {
+      return window.verifyPw('200807', window.hashPwStrong('200807')) === true;
+    });
+    test('audit : verifyPw rejette mauvais pwd sur chaîne "s1:"', () => {
+      return window.verifyPw('wrong', window.hashPwStrong('200807')) === false;
+    });
+    test('audit : verifyPw matche chaîne brute hashPwV2 "v2:salt:"', () => {
+      return window.verifyPw('pw', window.hashPwV2('pw', 'saltAbc12345')) === true;
+    });
+    test('audit : roundtrip ls/lg cmc_admin_pin (change PIN admin) NON lockout', () => {
+      window.ls('cmc_admin_pin', window.hashPwStrong('200807'));
+      const stored = window.lg('cmc_admin_pin', null);
+      const ok = window.verifyPw('200807', stored) === true && window.verifyPw('bad', stored) === false;
+      window.localStorage.removeItem('cmc_admin_pin');
+      return ok;
+    });
+    test('audit : verifyPw chaîne DJB2 legacy inchangée (rétro-compat)', () => {
+      return window.verifyPw('hello', window.hashPw('hello')) === true && window.verifyPw('x', window.hashPw('hello')) === false;
+    });
+
     // Test 8 : cmc_admin_pin dans FB_LOCAL (jamais sync Firebase, regle SECU)
     test('v9.670 : cmc_admin_pin dans FB_LOCAL (jamais sync)', () => {
       return window.FB_LOCAL.indexOf('cmc_admin_pin') >= 0;

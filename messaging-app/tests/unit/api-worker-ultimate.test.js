@@ -445,6 +445,95 @@ describe('Prekeys handlers POST + GET', () => {
     expect(r.status).toBe(409);
   });
 
+  // v1.1.261 — négociation de capacités crypto
+  it('POST prekeys avec crypto_caps valides → UPDATE caps (best-effort)', async () => {
+    const token = await userToken();
+    const env = ENV();
+    const seen = [];
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function (...a) { seen.push({ sql, a }); return this; },
+      first: async () => sql.includes('last_force_logout_at') ? { is_admin: 0, status: 'active', is_banned: 0 } : null,
+      all: async () => ({ results: [] }), run: async () => ({ success: true }),
+    }));
+    const r = await worker.fetch(
+      makeReq('POST', '/api/keys/prekeys', { identity_key_pub: 'pub-identity-abc', crypto_caps: 'e2e2,media' }, token),
+      env, { waitUntil: vi.fn() },
+    );
+    expect(r.status).toBe(200);
+    expect(seen.some((s) => s.sql.includes('SET crypto_caps=?') && s.a.includes('e2e2,media'))).toBe(true);
+  });
+
+  it('POST prekeys avec crypto_caps invalides (caractères interdits) → ignoré, pas d\'UPDATE caps', async () => {
+    const token = await userToken();
+    const env = ENV();
+    const seen = [];
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function (...a) { seen.push({ sql, a }); return this; },
+      first: async () => sql.includes('last_force_logout_at') ? { is_admin: 0, status: 'active', is_banned: 0 } : null,
+      all: async () => ({ results: [] }), run: async () => ({ success: true }),
+    }));
+    const r = await worker.fetch(
+      makeReq('POST', '/api/keys/prekeys', { identity_key_pub: 'pub-identity-abc', crypto_caps: 'DROP; TABLE' }, token),
+      env, { waitUntil: vi.fn() },
+    );
+    expect(r.status).toBe(200);
+    expect(seen.some((s) => s.sql.includes('SET crypto_caps=?'))).toBe(false);
+  });
+
+  it('POST prekeys : colonne caps absente (UPDATE caps throw) → publication clé OK quand même', async () => {
+    const token = await userToken();
+    const env = ENV();
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function () { return this; },
+      first: async () => sql.includes('last_force_logout_at') ? { is_admin: 0, status: 'active', is_banned: 0 } : null,
+      all: async () => ({ results: [] }),
+      run: async () => { if (sql.includes('SET crypto_caps=?')) throw new Error('no such column'); return { success: true }; },
+    }));
+    const r = await worker.fetch(
+      makeReq('POST', '/api/keys/prekeys', { identity_key_pub: 'pub-identity-abc', crypto_caps: 'e2e2' }, token),
+      env, { waitUntil: vi.fn() },
+    );
+    expect(r.status).toBe(200); // le throw sur les caps NE casse PAS la publication
+  });
+
+  it('GET bundle → renvoie crypto_caps du pair', async () => {
+    const token = await userToken();
+    const env = ENV();
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function () { return this; },
+      first: async () => {
+        if (sql.includes('last_force_logout_at')) return { is_admin: 0, status: 'active', is_banned: 0 };
+        if (sql.includes('crypto_caps FROM users')) return { crypto_caps: 'e2e2,media' };
+        if (sql.includes('FROM users WHERE id=?')) return { id: 'u1', identity_key_pub: 'REAL_PUB_XYZ' };
+        return null;
+      },
+      all: async () => ({ results: [] }), run: async () => ({ success: true }),
+    }));
+    const r = await worker.fetch(makeReq('GET', '/api/keys/u1/bundle', null, token), env, { waitUntil: vi.fn() });
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.bundle.crypto_caps).toBe('e2e2,media');
+  });
+
+  it('GET bundle : colonne caps absente (SELECT caps throw) → bundle OK, caps null', async () => {
+    const token = await userToken();
+    const env = ENV();
+    env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
+      bind: function () { return this; },
+      first: async () => {
+        if (sql.includes('last_force_logout_at')) return { is_admin: 0, status: 'active', is_banned: 0 };
+        if (sql.includes('crypto_caps FROM users')) throw new Error('no such column');
+        if (sql.includes('FROM users WHERE id=?')) return { id: 'u1', identity_key_pub: 'REAL_PUB_XYZ' };
+        return null;
+      },
+      all: async () => ({ results: [] }), run: async () => ({ success: true }),
+    }));
+    const r = await worker.fetch(makeReq('GET', '/api/keys/u1/bundle', null, token), env, { waitUntil: vi.fn() });
+    expect(r.status).toBe(200);
+    const j = await r.json();
+    expect(j.bundle.crypto_caps).toBeNull();
+  });
+
   it('POST prekeys → 400 si identity_key_pub = placeholder PENDING', async () => {
     const token = await userToken();
     const env = ENV();

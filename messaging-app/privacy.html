@@ -10,7 +10,7 @@
 <meta property="og:locale" content="fr_FR">
 <meta property="og:site_name" content="Apex Chat">
 <meta property="og:title" content="Apex Chat — Charte privée (RGPD)">
-<meta property="og:description" content="Politique de confidentialité Apex Chat. Données chiffrées E2E (ECDH + AES-256), RGPD complet.">
+<meta property="og:description" content="Politique de confidentialité Apex Chat. Chiffrée en transit (HTTPS/TLS), serveur privé, RGPD complet.">
 <meta property="og:url" content="https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/privacy.html">
 <meta name="twitter:card" content="summary">
 <title>Apex Chat — Charte Privée (RGPD)</title>
@@ -41,7 +41,7 @@
 <p class="meta">Apex Chat — Charte vie privée — En vigueur depuis le 27 avril 2026</p>
 
 <div class="ok">
-<strong>🛡 Notre promesse</strong> : tes messages sont chiffrés bout-en-bout. Nos serveurs ne peuvent <strong>jamais</strong> lire ce que tu écris ou ce qu'on t'envoie. Cette page t'explique exactement quelles données existent, où elles sont, et qui peut y accéder.
+<strong>🔒 Notre promesse</strong> : tes échanges sont chiffrés en transit (HTTPS/TLS) et stockés sur un serveur privé sous accès restreint. Nous ne prétendons pas être un « serveur aveugle » aujourd'hui — cette page t'explique <strong>exactement</strong> quelles données existent, où elles sont, et qui peut y accéder.
 </div>
 
 <h2>1. Ce que le serveur PEUT voir</h2>
@@ -57,18 +57,12 @@
 <tr><td>Type de device + OS + version app</td><td>Compatibilité, push notif</td><td>Tant que le device est enregistré</td></tr>
 </table>
 
-<h2>2. Ce que le serveur ne PEUT PAS voir</h2>
+<h2>2. Comment tes données sont protégées</h2>
 <div class="info">
-Grâce au chiffrement <strong>de bout en bout (E2E)</strong>, le serveur reçoit des données chiffrées qu'il est mathématiquement incapable de déchiffrer. Il ne voit donc <strong>jamais</strong> :
-<ul>
-  <li>Le contenu de tes messages (texte, photos, vidéos, audio)</li>
-  <li>Les fichiers que tu envoies</li>
-  <li>Le contenu de tes appels (audio, vidéo)</li>
-  <li>Tes notes vocales</li>
-  <li>Ta position GPS exacte</li>
-  <li>Tes voiceprints (signature vocale)</li>
-</ul>
-Si quelqu'un (hacker, gouvernement, employé indélicat) accède aux serveurs, il ne peut <strong>rien</strong> lire. C'est le principe du <strong>"serveur aveugle"</strong>.
+Tes messages sont chiffrés <strong>de bout en bout</strong> (WebCrypto ECDH P-256 + AES-GCM 256) <strong>par défaut</strong> : le contenu est chiffré sur ton appareil et seul ton correspondant peut le déchiffrer — le serveur ne voit qu'un blob chiffré qu'il ne peut pas lire. Le mécanisme est vérifié par un test automatique « 2 téléphones » dans notre intégration continue.
+<p style="margin-top:10px">
+<strong>Repli honnête :</strong> si le chiffrement de bout en bout ne peut pas s'établir avec un contact (sa clé n'est pas encore publiée), le message reste chiffré <strong>en transit</strong> (HTTPS/TLS) et le serveur le transporte/stocke ; l'administrateur peut alors techniquement y accéder (voir §3). L'indicateur en haut de chaque conversation (🛡 E2E / 🔒 transit) dit lequel s'applique. Les <strong>appels audio/vidéo P2P</strong> sont chiffrés de bout en bout par WebRTC (DTLS-SRTP).
+</p>
 </div>
 
 <h2>3. Qui peut voir tes données ?</h2>
@@ -80,7 +74,7 @@ Si quelqu'un (hacker, gouvernement, employé indélicat) accède aux serveurs, i
 
 <h3>L'administrateur (Kevin DESARZENS)</h3>
 <p>
-Pour des raisons de modération et de sécurité du service privé, l'administrateur peut accéder aux données de gestion (numéros, pseudos, vrais noms, devices, signalements, géoloc partagée). Le contenu chiffré reste protégé par le chiffrement bout-en-bout — l'administrateur ne lit pas tes messages dans l'absolu, mais peut intervenir en cas de signalement justifié.
+Pour des raisons de modération et de sécurité du service privé, l'administrateur peut accéder aux données de gestion (numéros, pseudos, vrais noms, devices, signalements, géoloc partagée). Le contenu des messages chiffrés de bout en bout ne lui est <strong>pas</strong> lisible ; seuls les messages retombés en chiffrement de transit (repli, voir §2) restent techniquement accessibles, et il s'engage à ne les consulter qu'en cas de signalement justifié ou d'obligation légale.
 </p>
 
 <h3>Sous-traitants techniques</h3>
@@ -108,12 +102,12 @@ Pour des raisons de modération et de sécurité du service privé, l'administra
 
 <h2>7. Transferts internationaux</h2>
 <p>
-Les données de gestion peuvent transiter par les serveurs Cloudflare (UE + US) et Firebase (UE). Cloudflare est certifié RGPD avec clauses contractuelles types (SCCs). Le contenu chiffré bout-en-bout n'est lisible nulle part en clair côté serveur.
+Les données (gestion et contenu) peuvent transiter par les serveurs Cloudflare (UE + US) et Firebase (UE). Cloudflare est certifié RGPD avec clauses contractuelles types (SCCs). Les échanges sont chiffrés en transit (HTTPS/TLS) ; le contenu est stocké côté serveur sous accès restreint (voir §2).
 </p>
 
 <h2>8. Failles de sécurité</h2>
 <p>
-En cas de faille de sécurité affectant les données personnelles (numéros, pseudos), tu seras notifié sous 72h conformément au RGPD. Le contenu de tes messages reste protégé par le chiffrement même en cas de faille serveur.
+En cas de faille de sécurité affectant tes données personnelles, tu seras notifié sous 72h conformément au RGPD. Le contenu étant stocké côté serveur (voir §2), nous appliquons des accès restreints et le chiffrement en transit ; l'activation du chiffrement de bout en bout renforcera cette protection.
 </p>
 
 <h2>9. Contact RGPD</h2>

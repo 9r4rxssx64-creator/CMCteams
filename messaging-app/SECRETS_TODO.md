@@ -213,3 +213,16 @@ Je vais :
 - **Audit log** : tu peux voir qui a accédé/modifié dans Settings → Audit log
 - **2FA obligatoire** sur ton compte GitHub recommandée (Settings → Password and authentication)
 - **Aucun workflow** ne peut leak un secret dans les logs (GitHub les masque automatiquement par `***`)
+
+---
+
+## 🎬 OPTIONNEL — `GIPHY_KEY` (pour envoyer des GIF, gratuit)
+
+### 🎬 `GIPHY_KEY`
+- **Status** : ⚪ À ajouter (optionnel — sans lui, le bouton GIF affiche « pas encore activé »)
+- **Où récupérer (gratuit, 2 min)** :
+  1. [developers.giphy.com/dashboard](https://developers.giphy.com/dashboard/) → **Create an App**
+  2. Choisis **"API"** (pas "SDK") → donne un nom (ex "Apex Chat") → **Create App**
+  3. Copie la clé **"API Key"** affichée
+- **Pour** : activer le sélecteur de GIF (recherche Giphy). La clé reste **secrète côté serveur** (jamais dans l'app). Une fois le secret ajouté, le déploiement l'active tout seul.
+- **Alternative** : Tenor (Google) — [developers.google.com/tenor/guides/quickstart](https://developers.google.com/tenor/guides/quickstart) (nécessite un projet Google Cloud, un peu plus long). Dis-moi si tu préfères Tenor, je bascule le proxy.

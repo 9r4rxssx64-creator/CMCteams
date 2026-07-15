@@ -189,7 +189,7 @@
           <span id="wmQState" style="align-self:center;color:var(--dim);font-size:11px"></span>
         </div>
         <div class="toggles" id="toggles">
-          <details class="tgroup" open><summary class="tgsum">🚨 Alertes & catastrophes <span class="tgn">7</span></summary><div class="tgwrap"><button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>🔴 Séismes</button><button class="tg" data-layer="gdacs" aria-pressed="true" title="Alertes catastrophes MONDIALES en direct (GDACS/ONU) : cyclones, inondations, séismes majeurs — niveau vert/orange/rouge, maj ~15 min"><span class="i" style="background:#ff5a4d"></span>🚨 Alertes ONU</button><button class="tg" data-layer="cyclones" aria-pressed="false" title="Cyclones/ouragans ACTIFS — trajectoires officielles NOAA/NHC (maj ~10 min)"><span class="i" style="background:#b992ff"></span>🌀 Cyclones NHC</button><button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>🌀 Tempêtes</button><button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>🌋 Volcans</button><button class="tg" data-layer="lightning" aria-pressed="false" title="Foudre MONDIALE en temps réel — réseau Blitzortung (impacts des dernières minutes, maj ~40 s)"><span class="i" style="background:#ffe14d"></span>⚡ Foudre</button><button class="tg" data-layer="crues" aria-pressed="false" title="Crues des grandes rivières du monde — débit du jour vs son pic des 30 j (Open-Meteo Flood/GloFAS, sans clé). Rouge = niveau de crue."><span class="i" style="background:#4db8ff"></span>🌊 Crues</button></div></details>
+          <details class="tgroup" open><summary class="tgsum">🚨 Alertes & catastrophes <span class="tgn">8</span></summary><div class="tgwrap"><button class="tg" id="alertsChip" data-alerts="1" aria-pressed="false" title="Alertes locales sur cet appareil : notification si séisme M6+, alerte GDACS ROUGE, ou tempête solaire Kp≥7 (app ouverte ou PWA installée). Anti-doublon automatique."><span class="i" style="background:#ffd24d"></span>🔔 Alertes</button><button class="tg" data-layer="quakes" aria-pressed="true"><span class="i" style="background:var(--amber)"></span>🔴 Séismes</button><button class="tg" data-layer="gdacs" aria-pressed="true" title="Alertes catastrophes MONDIALES en direct (GDACS/ONU) : cyclones, inondations, séismes majeurs — niveau vert/orange/rouge, maj ~15 min"><span class="i" style="background:#ff5a4d"></span>🚨 Alertes ONU</button><button class="tg" data-layer="cyclones" aria-pressed="false" title="Cyclones/ouragans ACTIFS — trajectoires officielles NOAA/NHC (maj ~10 min)"><span class="i" style="background:#b992ff"></span>🌀 Cyclones NHC</button><button class="tg" data-layer="storms" aria-pressed="true"><span class="i" style="background:var(--violet)"></span>🌀 Tempêtes</button><button class="tg" data-layer="volcano" aria-pressed="true"><span class="i" style="background:var(--red)"></span>🌋 Volcans</button><button class="tg" data-layer="lightning" aria-pressed="false" title="Foudre MONDIALE en temps réel — réseau Blitzortung (impacts des dernières minutes, maj ~40 s)"><span class="i" style="background:#ffe14d"></span>⚡ Foudre</button><button class="tg" data-layer="crues" aria-pressed="false" title="Crues des grandes rivières du monde — débit du jour vs son pic des 30 j (Open-Meteo Flood/GloFAS, sans clé). Rouge = niveau de crue."><span class="i" style="background:#4db8ff"></span>🌊 Crues</button></div></details>
           <details class="tgroup"><summary class="tgsum">🔥 Feux & fumées <span class="tgn">4</span></summary><div class="tgwrap"><button class="tg" data-layer="fires" aria-pressed="true"><span class="i" style="background:var(--orange)"></span>🔥 Feux</button><button class="tg" data-layer="firesat" aria-pressed="false" title="Détections thermiques VUES PAR SATELLITE — NASA VIIRS (image d'hier)"><span class="i" style="background:#ff8a5a"></span>🔥 Feux sat.</button><button class="tg" data-layer="firms" aria-pressed="false" title="Feux ACTIFS vus par satellite — NASA FIRMS VIIRS (dernières 24 h ; nécessite la clé FIRMS)"><span class="i" style="background:#ff6a2a"></span>🔥 Feux FIRMS</button><button class="tg" data-layer="smoke" aria-pressed="false" title="Fumées & poussières VUES PAR SATELLITE — indice d'aérosols OMPS/NASA (feux, sable, éruptions ; image la plus récente)"><span class="i" style="background:#c9a06a"></span>🌫️ Fumées sat.</button></div></details>
           <details class="tgroup"><summary class="tgsum">✈️ Trafic <span class="tgn">3</span></summary><div class="tgwrap"><button class="tg" data-layer="flights" aria-pressed="true"><span class="i" style="background:var(--green)"></span>✈️ Vols</button><button class="tg" data-layer="ships" aria-pressed="true"><span class="i" style="background:#35d6e6"></span>🚢 Navires</button><button class="tg" data-layer="detroits" aria-pressed="true"><span class="i" style="background:#5aa9ff"></span>⚓ Détroits</button></div></details>
           <details class="tgroup"><summary class="tgsum">🛰️ Espace <span class="tgn">2</span></summary><div class="tgwrap"><button class="tg" data-layer="iss" aria-pressed="true"><span class="i" style="background:var(--cyan)"></span>🛰️ ISS</button><button class="tg" data-layer="sats" aria-pressed="true" title="Positions RÉELLES des ~150 satellites les plus brillants — données orbitales Celestrak, calcul SGP4 recalculé toutes les 5 s"><span class="i" style="background:#ffe9b8"></span>🛰️ Satellites</button></div></details>
@@ -359,13 +359,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.31</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.33</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.32";
+var VER="v2.33";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -476,7 +476,42 @@ try{var _pf=JSON.parse(localStorage.getItem(_PREFS_K)||"{}");
 function _savePrefs(){try{localStorage.setItem(_PREFS_K,JSON.stringify({on:ON,base:_wantBase,view:_lastView}));}catch(_e){}}
 /* synchronise l'état visuel des puces couches avec ON restauré (idempotent) */
 (function(){var bs=document.querySelectorAll("[data-layer]");for(var i=0;i<bs.length;i++){var k=bs[i].getAttribute("data-layer"),w=String(!!ON[k]);if(bs[i].getAttribute("aria-pressed")!==w)bs[i].setAttribute("aria-pressed",w);}})();
+
+/* 🔔 v2.33 — MOTEUR D'ALERTES LOCAL (audit amélioration Top #4).
+   Avant : le brief affichait « alertes push actives » alors qu'AUCUN code d'alerte
+   n'existait (mensonge d'UI). Ici : vraies notifications LOCALES sur cet appareil,
+   déclenchées par les données déjà chargées (séisme M6+, GDACS ROUGE, Kp≥7),
+   anti-doublon persistant (200 IDs FIFO), opt-in via la puce 🔔 (permission notif).
+   Limite honnête : app ouverte (ou PWA installée) — le vrai push serveur app-fermée
+   est un chantier séparé (VAPID worker). iOS : notifications en PWA installée. */
+var _AL_ON="wm_alerts_on",_AL_SEEN="wm_alerts_seen_v1";
+function wmAlertsOn(){try{return localStorage.getItem(_AL_ON)==="1"&&typeof Notification!=="undefined"&&Notification.permission==="granted";}catch(e){return false;}}
+function _alMark(id){try{var s=JSON.parse(localStorage.getItem(_AL_SEEN)||"[]");if(s.indexOf(id)>=0)return false;s.push(id);if(s.length>200)s=s.slice(-200);localStorage.setItem(_AL_SEEN,JSON.stringify(s));return true;}catch(e){return false;}}
+function wmNotify(title,body,id){
+  if(!wmAlertsOn()||!_alMark(id))return;
+  var opts={body:body,tag:id,icon:"icons/icon-192.png"};
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){
+      navigator.serviceWorker.getRegistration().then(function(r){
+        if(r&&r.showNotification){r.showNotification(title,opts);}
+        else{try{new Notification(title,opts);}catch(e){}}
+      }).catch(function(){try{new Notification(title,opts);}catch(e){}});
+    }else{new Notification(title,opts);}
+  }catch(e){}
+}
+function wmAlertsSyncChip(){var b=document.getElementById("alertsChip");if(b){var w=String(wmAlertsOn());if(b.getAttribute("aria-pressed")!==w)b.setAttribute("aria-pressed",w);}}
+function wmToggleAlerts(b){
+  if(wmAlertsOn()){try{localStorage.setItem(_AL_ON,"0");}catch(e){}wmAlertsSyncChip();return;}
+  if(typeof Notification==="undefined"){b.title="Notifications non supportées par ce navigateur (iPhone : installe la page sur l'écran d'accueil).";b.setAttribute("aria-pressed","false");return;}
+  Notification.requestPermission().then(function(p){
+    if(p==="granted"){try{localStorage.setItem(_AL_ON,"1");}catch(e){}wmAlertsSyncChip();
+      wmNotify("🔔 Alertes World Monitor actives","Tu seras prévenu : séisme M6+, alerte GDACS rouge, tempête solaire Kp≥7.","al_on_"+new Date().toISOString().slice(0,10));}
+    else{try{localStorage.setItem(_AL_ON,"0");}catch(e){}wmAlertsSyncChip();}
+  }).catch(function(){wmAlertsSyncChip();});
+}
+wmAlertsSyncChip();
 $("toggles").addEventListener("click",function(e){var b=e.target.closest(".tg");if(!b)return;
+  if(b.dataset.alerts){wmToggleAlerts(b);return;}
   if(b.dataset.view){_lastView=b.dataset.view;_savePrefs();if(typeof setMapView==="function")setMapView(b.dataset.view);return;}
   var v=b.getAttribute("aria-pressed")==="true"?false:true;
   b.setAttribute("aria-pressed",String(v));
@@ -568,12 +603,14 @@ async function loadSpaceWx(){try{
   var el=document.getElementById("sKp"),el2=document.getElementById("sKpL");
   if(el){var s="Kp "+kp.toFixed(1);if(el.textContent!==s)el.textContent=s;el.style.color=col;}
   if(el2){var s2="Soleil : "+lab;if(el2.textContent!==s2)el2.textContent=s2;}
+  if(kp>=7)wmNotify("🌞 Tempête solaire "+lab+" (Kp "+kp.toFixed(1)+")","Aurores possibles à basse latitude · perturbations radio/GPS.","kp_"+Math.floor(kp)+"_"+new Date().toISOString().slice(0,13));
 }catch(e){}}
 loadSpaceWx();setInterval(loadSpaceWx,600000);
 async function loadQuakes(){try{
   var d=await getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
   var f=(d&&d.features)||[];f.sort(function(a,b){return b.properties.time-a.properties.time;});
   DL.quakes=f.map(function(x){var c=x.geometry.coordinates;return {lat:c[1],lon:c[0],mag:x.properties.mag||0,place:x.properties.place||"",depth:c[2]||0,time:x.properties.time||0,alert:x.properties.alert||null,tsunami:x.properties.tsunami||0,felt:x.properties.felt||0};});if(_mapReady)drawQuakesMap();
+  f.forEach(function(x){var m=x.properties.mag||0;if(m>=6)wmNotify("🌍 Séisme M"+m.toFixed(1),(x.properties.place||"")+(x.properties.tsunami?" · ⚠️ risque tsunami":""),"q_"+(x.id||x.properties.time));});
   setText($("sQuakes"),String(f.length));setText($("quakeState"),f.length+" / 24h");setText($("globeState"),"en direct");
   var box=$("quakes");if(!f.length){setHTML(box,'<div class="empty">Aucun séisme. 🌍</div>');return;}
   setHTML(box,f.slice(0,30).map(function(x){var m=x.properties.mag||0,col=m>=5?"#ff5a4d":m>=3?"#ffb84d":"#ffd24d";
@@ -1220,6 +1257,7 @@ async function loadGdacs(){
       var typ=_GDACS_TYPES[pr.eventtype]||("⚠️ "+(pr.eventtype||"Événement"));
       var name=pr.eventname||pr.name||"";
       out.push({lat:lat,lon:lon,lvl:lvl,typ:typ,name:name});
+      if(lvl==="Red")wmNotify("🔴 Alerte GDACS ROUGE — "+typ,(name||"Événement majeur")+" · niveau rouge ONU","g_"+(pr.eventid||pr.eventtype+"_"+name));
       LEAF.circleMarker([lat,lon],{radius:lvl==="Red"?9:lvl==="Orange"?7:5,color:col,weight:2,fillColor:col,fillOpacity:.35})
         .bindPopup("<b>"+typ+(name?" — "+esc(String(name)):"")+"</b><br>Niveau d'alerte : <b style='color:"+col+"'>"+esc(lvl)+"</b>"
           +(pr.fromdate?"<br>Depuis "+esc(String(pr.fromdate).slice(0,10)):"")
@@ -1635,7 +1673,7 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)fast
       if(!j||!j.text){body.textContent="Pas encore de brief généré — il arrive au prochain cycle (toutes les 6 h). Les données live de la page restent la source en temps réel.";return;}
       body.textContent=j.text;
       var age=j.ts?Math.round((Date.now()-j.ts)/60000):null;
-      meta.textContent="Généré par IA il y a "+(age==null?"?":(age<60?age+" min":Math.round(age/60)+" h"))+" · sources "+(j.sources||"live")+" · prochain brief ≤ 6 h · 🔔 alertes push actives (séisme M6+, alerte rouge ONU)";
+      meta.textContent="Généré par IA il y a "+(age==null?"?":(age<60?age+" min":Math.round(age/60)+" h"))+" · sources "+(j.sources||"live")+" · prochain brief ≤ 6 h · "+(typeof wmAlertsOn==="function"&&wmAlertsOn()?"🔔 alertes actives (M6+ · GDACS rouge · Kp≥7)":"🔕 alertes locales coupées — active la puce 🔔 Alertes");
     }).catch(function(){body.textContent="Brief momentanément indisponible (réseau) — réessaie.";});
   }
   var b=document.getElementById("btnBrief");if(b)b.addEventListener("click",openBrief);
@@ -1667,6 +1705,6 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)fast
   })();
 })();
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.32" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.33" data-color="#c9a227" defer></script>
 </body>
 </html>

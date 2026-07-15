@@ -31,6 +31,10 @@ export const ICE_SERVERS = [
  */
 export function createVisioSession(opts) {
   const { convId, userId, type, ws } = opts;
+  /* v1.1.252 (audit amélioration Top #5) : serveurs ICE INJECTABLES — le mesh était
+     STUN-only en dur = échec garanti en 4G/NAT symétrique. L'app passe désormais
+     STUN + TURN Cloudflare (K._ensureIceServers). Fallback : constantes STUN. */
+  const iceServers = (Array.isArray(opts.iceServers) && opts.iceServers.length) ? opts.iceServers : ICE_SERVERS;
   const RTCPeer = opts.deps?.RTCPeerConnection || (typeof RTCPeerConnection !== 'undefined' ? RTCPeerConnection : null);
   const getUserMedia = opts.deps?.getUserMedia ||
     ((c) => navigator.mediaDevices.getUserMedia(c));
@@ -75,7 +79,7 @@ export function createVisioSession(opts) {
   /** Crée une PeerConnection vers un user (initiator = on envoie offer) */
   async function inviteUser(remoteUserId) {
     if (peers.has(remoteUserId)) return peers.get(remoteUserId);
-    const pc = new RTCPeer({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeer({ iceServers });
     const peerState = { pc, remoteStream: null };
     peers.set(remoteUserId, peerState);
 
@@ -106,7 +110,7 @@ export function createVisioSession(opts) {
   async function onOffer(remoteUserId, offer) {
     let peerState = peers.get(remoteUserId);
     if (!peerState) {
-      const pc = new RTCPeer({ iceServers: ICE_SERVERS });
+      const pc = new RTCPeer({ iceServers });
       peerState = { pc, remoteStream: null };
       peers.set(remoteUserId, peerState);
       if (state.localStream) {

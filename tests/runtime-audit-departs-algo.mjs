@@ -52,9 +52,12 @@ try {
       const wd = []; for(let d=1;d<=days;d++){ for(const e of active){ if(isWork((pl[e.id]||{})[d]||'')){ wd.push(d); break; } } }
       const baseOf = {}; active.forEach((e,ai)=>baseOf[e.name]=ai);
       const deps = {}; active.forEach(e=>deps[e.name]={});
+      // v9.865 — rot glisse de +1 à chaque CYCLE de repos (bloc contigu de workDays) + par jour dans le cycle.
+      const rotByDay = {}; let _c = 0, _k = 0, _pv = null;
+      for (const _wd of wd) { if (_pv !== null) { if (_wd - _pv > 1) { _c++; _k = 0; } else { _k++; } } rotByDay[_wd] = _c + _k; _pv = _wd; }
       for(let d=1;d<=days;d++){ const wi=wd.indexOf(d); if(wi<0) continue;
         const eff = active.filter(e=>{const r=absRun(e,d);return r===0||r<4;}).sort((a,b)=>baseOf[a.name]-baseOf[b.name]);
-        const N=eff.length; if(!N) continue; const SEQd=sq(N), rot=wi;
+        const N=eff.length; if(!N) continue; const SEQd=sq(N), rot=rotByDay[d];
         eff.forEach((e,j)=>{ if(isWork((pl[e.id]||{})[d]||'')) deps[e.name][d]=SEQd[(((rot+j)%N)+N)%N]; }); }
       return deps;
     }
@@ -102,30 +105,32 @@ try {
       const active = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWork((pl[e.id]||{})[i+1]||'')));
       if (active.length < 5) return;
       const full = active.length; teamsBig++;
-      // jours de travail de l'équipe (union) + index wi
+      // jours de travail de l'équipe (union) + rot GLISSANT (v9.865) = index_cycle + position_cycle
       const wd = []; for (let d = 1; d <= days; d++) { if (active.some(e => isWork((pl[e.id]||{})[d]||''))) wd.push(d); }
-      // jours à roster complet (tous présents) + leur wi + vecteur de départ (ordre des chefs)
+      const rotByDay = {}; let _c = 0, _k = 0, _pv = null;
+      for (const _wd of wd) { if (_pv !== null) { if (_wd - _pv > 1) { _c++; _k = 0; } else { _k++; } } rotByDay[_wd] = _c + _k; _pv = _wd; }
+      // jours à roster complet (tous présents) + leur rot + vecteur de départ (ordre des chefs)
       const stable = [];
       for (let d = 1; d <= days; d++) {
         if (!active.every(e => isWork((pl[e.id]||{})[d]||''))) continue;
-        const wi = wd.indexOf(d);
         const vec = active.map(e => { A.year=2026; A.month=7; return calcDepPos(e.name, tid, d); });
-        stable.push({ d, wi, vec: JSON.stringify(vec) });
+        stable.push({ d, rot: rotByDay[d], vec: JSON.stringify(vec) });
       }
-      // PROPRIÉTÉ rot=wi : 2 jours à roster complet dont wi diffèrent de k avec 0<k<pc
-      // (donc PAS un cycle complet) DOIVENT avoir des vecteurs DIFFÉRENTS. C'est exactement
-      // ce que l'ancienne (wi%4)+floor(wi/4) violait (jeu6 wi3, dim9 wi6 : k=3<7 mais identiques).
+      // PROPRIÉTÉ du GLISSEMENT (v9.865) : l'ordre de l'équipe ne dépend QUE de rot (mod full).
+      // 2 jours à roster complet ont le MÊME vecteur SSI leurs rot sont congrus mod full.
+      // → violation si (même vecteur mais rot NON congrus) OU (rot congrus mais vecteurs différents).
       for (let a = 0; a < stable.length; a++) for (let b = a + 1; b < stable.length; b++) {
-        const k = Math.abs(stable[a].wi - stable[b].wi);
-        if (k % full !== 0 && stable[a].vec === stable[b].vec) badNear++;
+        const congru = (stable[a].rot - stable[b].rot) % full === 0;
+        const memeVec = stable[a].vec === stable[b].vec;
+        if (congru !== memeVec) badNear++;
       }
       checked++;
     });
     return { teamsBig, badNear, checked };
   });
-  console.log('  anti-répétition : ' + rot.teamsBig + ' équipes ≥5 chefs, ' + rot.checked + ' vérifiées');
+  console.log('  glissement : ' + rot.teamsBig + ' équipes ≥5 chefs, ' + rot.checked + ' vérifiées');
   ok(rot.checked >= 3, 'assez d’équipes ≥5 chefs pour tester la rotation (' + rot.checked + ' ≥ 3)');
-  ok(rot.badNear === 0, 'AUCUNE répétition à moins d’un cycle complet (' + rot.badNear + ') — bug jeu6==dim9 (rotation qui se réinitialise) corrigé');
+  ok(rot.badNear === 0, 'GLISSEMENT cohérent (' + rot.badNear + ' incohérences) — ordre équipe = fonction de rot (mod N), glisse de +1 par cycle');
 
   // v9.845 — DÉTERMINISME CROSS-SPECTATEUR (Kevin « les autres n'ont pas les mêmes départs
   // sur leurs app »). On calcule TOUS les numéros de départ successivement en tant que

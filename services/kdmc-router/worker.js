@@ -29,6 +29,7 @@ const ROUTES = {
   'cmcteams-light.kd-mc.com': '/CMCteams/tools/departs', // « CMCteams light » (Kevin 2026-07-01) — alias nommé de la page Départs (departs.kd-mc.com reste actif)
   'bot.kd-mc.com': '/CMCteams/tools/crypto-bot-dashboard', // Tableau de bord crypto-bot (Kevin 2026-07-03) — admin-gated via /__bot/*
   'beatbot.kd-mc.com': '/CMCteams/tools/poolrobot', // PoolPilot — app robot piscine Beatbot (Kevin 2026-07-05)
+  'autorisations.kd-mc.com': '/CMCteams/tools/approvals', // Coffre d'autorisations — admin only (Kevin 2026-07-10)
 };
 
 export default {
@@ -40,6 +41,11 @@ export default {
     if (url.pathname.startsWith('/__sso/')) return handleSso(request, url, env);
     // Admin domaine (fiches clients + fonctions communes). Réservé admin.
     if (url.pathname.startsWith('/__admin/')) return handleAdmin(request, url, env);
+    // Coffre Finances : sauvegarde EN LIGNE chiffrée de bout en bout. Réservé admin
+    // (même grant que /__admin). Le serveur ne stocke qu'un bloc illisible (AES-GCM
+    // côté client) → même le worker/KV ne peut PAS lire. Cf. tools/finances/.
+    if (url.pathname.startsWith('/__fin/')) return handleFin(request, url, env);
+    if (url.pathname.startsWith('/__mail/')) return handleMail(request, url, env);
     // Crypto-bot Railway (statut + kill switch). Réservé admin (même grant que /__admin).
     if (url.pathname.startsWith('/__bot/')) return handleBot(request, url, env);
     // Relais Beatbot (contrôle réel du robot piscine) — admin-gated, HTTPS public only, même origine que l'app beatbot.kd-mc.com.
@@ -56,6 +62,14 @@ export default {
     if (host === 'beatbot.kd-mc.com' && env && env.KDMC_ADMIN_PIN_SHA256) {
       const meB = await adminSession(request, env);
       if (!meB) return beatbotLock();
+    }
+
+    // autorisations.kd-mc.com = COFFRE D'AUTORISATIONS — RÉSERVÉ ADMIN (Kevin).
+    // Session admin (Face ID/code, même grant que /__admin) requise pour VOIR l'app.
+    // Fail-open si le PIN admin n'est pas déployé (anti-lockout au rollout — leçons #99/#100).
+    if (host === 'autorisations.kd-mc.com' && env && env.KDMC_ADMIN_PIN_SHA256) {
+      const meA = await adminSession(request, env);
+      if (!meA) return approvalsLock();
     }
 
     let p = url.pathname;
@@ -624,8 +638,17 @@ async function handleAdmin(request, url, env) {
     if (wait) return J({ ok: false, reason: 'rate_limited', wait });
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     const code = String(b.code || '').trim();
-    if (!code) return J({ ok: false, reason: 'code_requis' });
-    if ((await sha256Hex(code)) !== adminHash) { await rlFail(env, ipHash); await audLog(env, { ev: 'admin_login_fail', ip: ipHash.slice(0, 12) }); return J({ ok: false, reason: 'code_invalide' }); }
+    /* Accepte le CODE (sha256(code)===secret) OU directement le HASH (=== secret).
+       Le hash est déjà l'équivalent porteur du PIN dans ce système (header x-apex-pin,
+       leçon #95) : il déverrouille déjà l'IA (capacité plus sensible), donc l'accepter
+       pour émettre le grant mail/sauvegarde n'ouvre aucune faille — et un hash 64-hex est
+       plus dur à forcer qu'un PIN à 6 chiffres. → une app qui a déjà le hash (Finances)
+       obtient le grant SANS redemander le code (« à la connexion ensuite plus besoin »). */
+    const hash = String(b.hash || '').trim().toLowerCase();
+    if (!code && !hash) return J({ ok: false, reason: 'code_requis' });
+    const okHash = !!hash && hash === String(adminHash).toLowerCase();
+    const okCode = !!code && (await sha256Hex(code)) === adminHash;
+    if (!okHash && !okCode) { await rlFail(env, ipHash); await audLog(env, { ev: 'admin_login_fail', ip: ipHash.slice(0, 12) }); return J({ ok: false, reason: 'code_invalide' }); }
     await rlReset(env, ipHash);
     await audLog(env, { ev: 'admin_login_ok', ip: ipHash.slice(0, 12) });
     const grant = await ssoSign(secret, '__kdmc_admin__', 'admin', 1);
@@ -723,6 +746,68 @@ async function botCtx(env) {
    crypto-bot/trade_stats.py) : appariement FIFO 🟢 ACHAT → 🔻 VENTE par paire,
    net = Σ qty×(prix_vente − prix_achat). Jamais d'estimation : uniquement les
    lignes réellement présentes dans les logs visibles. */
+/* ===== Indicateurs techniques (analyse expert style TradingView, Kevin 2026-07-10)
+   Formules STANDARD (EMA, RSI Wilder, MACD, Stochastique, CCI) calculées sur les
+   VRAIES bougies Binance publiques — jamais d'estimation, pas de clé requise. ===== */
+function taEmaSeries(v, p) {
+  const k = 2 / (p + 1); const out = []; let e = v[0];
+  for (let i = 0; i < v.length; i++) { e = i ? v[i] * k + e * (1 - k) : v[0]; out.push(e); }
+  return out;
+}
+function taRsi(c, p) {
+  if (c.length < p + 2) return null;
+  let g = 0, l = 0;
+  for (let i = 1; i <= p; i++) { const d = c[i] - c[i - 1]; if (d > 0) g += d; else l -= d; }
+  g /= p; l /= p;
+  for (let i = p + 1; i < c.length; i++) {
+    const d = c[i] - c[i - 1];
+    g = (g * (p - 1) + Math.max(d, 0)) / p;
+    l = (l * (p - 1) + Math.max(-d, 0)) / p;
+  }
+  return l === 0 ? 100 : 100 - 100 / (1 + g / l);
+}
+function taStoch(h, l, c, p, dP) {
+  if (c.length < p + dP) return null;
+  const ks = [];
+  for (let j = c.length - dP; j < c.length; j++) {
+    const hh = Math.max(...h.slice(j - p + 1, j + 1)), ll = Math.min(...l.slice(j - p + 1, j + 1));
+    ks.push(hh === ll ? 50 : ((c[j] - ll) / (hh - ll)) * 100);
+  }
+  return { k: ks[ks.length - 1], d: ks.reduce((a, b) => a + b, 0) / ks.length };
+}
+function taCci(h, l, c, p) {
+  if (c.length < p) return null;
+  const tp = c.map((_, i) => (h[i] + l[i] + c[i]) / 3);
+  const win = tp.slice(-p); const sma = win.reduce((a, b) => a + b, 0) / p;
+  const dev = win.reduce((a, b) => a + Math.abs(b - sma), 0) / p;
+  return dev === 0 ? 0 : (tp[tp.length - 1] - sma) / (0.015 * dev);
+}
+/* Notation façon TradingView : votes moyennes mobiles + oscillateurs → score −1..+1. */
+function taRating(h, l, c) {
+  const price = c[c.length - 1];
+  let maBuy = 0, maSell = 0, oscBuy = 0, oscSell = 0, oscNeu = 0;
+  [10, 20, 50, 100, 200].forEach((p) => {
+    if (c.length < p) return;
+    const e = taEmaSeries(c, p)[c.length - 1];
+    if (price > e) maBuy++; else maSell++;
+  });
+  const rsi = taRsi(c, 14);
+  if (rsi != null) { if (rsi < 30) oscBuy++; else if (rsi > 70) oscSell++; else oscNeu++; }
+  const macdS = taEmaSeries(c, 12).map((v, i) => v - taEmaSeries(c, 26)[i]);
+  const sig = taEmaSeries(macdS, 9);
+  const macd = macdS[macdS.length - 1], macdSig = sig[sig.length - 1];
+  if (macd > macdSig) oscBuy++; else oscSell++;
+  const st = taStoch(h, l, c, 14, 3);
+  if (st) { if (st.k < 20 && st.k > st.d) oscBuy++; else if (st.k > 80 && st.k < st.d) oscSell++; else oscNeu++; }
+  const cci = taCci(h, l, c, 20);
+  if (cci != null) { if (cci < -100) oscBuy++; else if (cci > 100) oscSell++; else oscNeu++; }
+  const mom = c.length > 10 ? price - c[c.length - 11] : 0;
+  if (mom > 0) oscBuy++; else if (mom < 0) oscSell++;
+  const buy = maBuy + oscBuy, sell = maSell + oscSell, total = buy + sell + oscNeu;
+  const score = total ? (buy - sell) / total : 0;
+  const label = score >= 0.5 ? 'Achat fort' : score >= 0.1 ? 'Achat' : score > -0.1 ? 'Neutre' : score > -0.5 ? 'Vente' : 'Vente forte';
+  return { price, score: Math.round(score * 100) / 100, label, rsi: rsi == null ? null : Math.round(rsi * 10) / 10, ma_buy: maBuy, ma_sell: maSell, osc_buy: oscBuy, osc_sell: oscSell, macd_up: macd > macdSig };
+}
 function fleetTradeStats(logs) {
   const fifo = {}; let buys = 0, sells = 0, wins = 0, losses = 0, net = 0;
   for (const l of logs) {
@@ -777,6 +862,80 @@ function botValidateConfig(b) {
   if (!Object.keys(set).length) return { err: 'aucun réglage fourni' };
   return { set };
 }
+/* Coffre Finances — sauvegarde en ligne CHIFFRÉE DE BOUT EN BOUT (admin only).
+   Le client (tools/finances/) chiffre tout en AES-GCM-256 avec le code du coffre AVANT
+   d'envoyer. Le serveur ne voit qu'un bloc {salt,iv,ct} illisible → confidentialité même
+   vis-à-vis du worker/KV. Réutilise le KV ACCOUNTS (clés fin:*) — aucun binding en plus.
+   Réservé admin (adminSession : grant prouvé via /__admin/login, cookie/x-kdmc-admin). */
+async function handleFin(request, url, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  const me = await adminSession(request, env);
+  if (!me) {
+    const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
+    return new Response(JSON.stringify({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }), { status: 403, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+  }
+  if (!env.ACCOUNTS) return J({ ok: false, reason: 'kv_absent' });
+  const path = url.pathname;
+  if (path === '/__fin/vault' && request.method === 'GET') {
+    const blob = await env.ACCOUNTS.get('fin:vault:main');
+    if (!blob) return J({ ok: true, empty: true });
+    let meta = null; try { meta = JSON.parse((await env.ACCOUNTS.get('fin:meta:main')) || 'null'); } catch { /* */ }
+    let parsed = null; try { parsed = JSON.parse(blob); } catch { return J({ ok: false, reason: 'corrupt' }); }
+    return J({ ok: true, blob: parsed, meta });
+  }
+  if (path === '/__fin/meta' && request.method === 'GET') {
+    let meta = null; try { meta = JSON.parse((await env.ACCOUNTS.get('fin:meta:main')) || 'null'); } catch { /* */ }
+    return J({ ok: true, meta });
+  }
+  if (path === '/__fin/vault' && request.method === 'PUT') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    if (!b || !b.blob || !b.blob.ct || !b.blob.salt || !b.blob.iv) return J({ ok: false, reason: 'blob_invalide' });
+    const s = JSON.stringify(b.blob);
+    if (s.length > 20 * 1024 * 1024) return J({ ok: false, reason: 'trop_gros' });
+    const savedAt = b.savedAt || Date.now();
+    await env.ACCOUNTS.put('fin:vault:main', s);
+    await env.ACCOUNTS.put('fin:meta:main', JSON.stringify({ savedAt, size: s.length, tx: b.tx || 0 }));
+    await audLog(env, { ev: 'fin_backup', size: s.length });
+    return J({ ok: true, savedAt });
+  }
+  return new Response(JSON.stringify({ ok: false, reason: 'not_found' }), { status: 404, headers: { 'content-type': 'application/json' } });
+}
+
+/* Boîte factures@kd-mc.com : le worker "kdmc-mail" (Cloudflare Email Routing) dépose les
+   pièces jointes des mails reçus dans KV (mail:p:<id>). Ici, l'app admin les récupère,
+   les classe, puis les acquitte (supprime). E2E : l'app chiffre les originaux localement. */
+async function handleMail(request, url, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  const me = await adminSession(request, env);
+  if (!me) {
+    const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
+    return J({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }, null, 403);
+  }
+  if (!env.ACCOUNTS) return J({ ok: false, reason: 'kv_absent' });
+  const path = url.pathname;
+  if (path === '/__mail/scan' && request.method === 'GET') {
+    const items = []; let cursor;
+    do {
+      const l = await env.ACCOUNTS.list({ prefix: 'mail:p:', cursor });
+      for (const k of l.keys) {
+        if (items.length >= 40) break;
+        const raw = await env.ACCOUNTS.get(k.name); if (!raw) continue;
+        try { const it = JSON.parse(raw); it.id = k.name.slice('mail:p:'.length); items.push(it); } catch { /* */ }
+      }
+      cursor = l.list_complete ? null : l.cursor;
+    } while (cursor && items.length < 40);
+    return J({ ok: true, items });
+  }
+  if (path === '/__mail/ack' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    const ids = Array.isArray(b.ids) ? b.ids : [];
+    for (const id of ids) { try { await env.ACCOUNTS.delete('mail:p:' + String(id)); } catch { /* */ } }
+    await audLog(env, { ev: 'mail_ack', n: ids.length });
+    return J({ ok: true, deleted: ids.length });
+  }
+  return J({ ok: false, reason: 'not_found' }, null, 404);
+}
+
 async function handleBot(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
   const me = await adminSession(request, env);
@@ -823,6 +982,32 @@ async function handleBot(request, url, env) {
     /* Tri par net réalisé décroissant ; les bots absents/sans logs en dernier. */
     bots.sort((a, b) => (((b.net == null) ? -1e9 : b.net) - ((a.net == null) ? -1e9 : a.net)));
     return J({ ok: true, bots });
+  }
+
+  /* ANALYSE EXPERT (Kevin 2026-07-10 « qu'il serve à faire des analyses ») :
+     notation Achat/Vente par crypto façon TradingView, calculée dans le worker
+     depuis les VRAIES bougies Binance publiques (data-api.binance.vision, sans clé —
+     api.binance.com renvoie HTTP 451 géo-bloqué hors UE). Timeframe validé (?tf=1h|4h|1d), symboles
+     lus depuis la config réelle du bot. Aucune promesse : c'est une photo technique. */
+  if (path === '/__bot/analysis' && request.method === 'GET') {
+    const TFS = { '1h': '1h', '4h': '4h', '1d': '1d' };
+    const tf = TFS[url.searchParams.get('tf') || '1h'] || '1h';
+    const vq = await railGql(env, `query { variables(projectId: "${ctx.projectId}", environmentId: "${ctx.environmentId}", serviceId: "${ctx.serviceId}") }`);
+    const vars = ((vq.j || {}).data || {}).variables || {};
+    const syms = String(vars.SYMBOLS || 'BTC/USDT,ETH/USDT,SOL/USDT,BNB/USDT,XRP/USDT')
+      .split(',').map((s) => s.trim().toUpperCase()).filter((s) => /^[A-Z0-9]{2,15}\/USDT$/.test(s)).slice(0, 8);
+    const out = await Promise.all(syms.map(async (sym) => {
+      const pair = sym.replace('/', '');
+      try {
+        const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=${tf}&limit=250`);
+        if (!r.ok) return { symbol: sym, err: 'binance HTTP ' + r.status };
+        const k = await r.json();
+        if (!Array.isArray(k) || k.length < 60) return { symbol: sym, err: 'bougies insuffisantes (' + (k.length || 0) + ')' };
+        const h = k.map((x) => Number(x[2])), l = k.map((x) => Number(x[3])), c = k.map((x) => Number(x[4]));
+        return Object.assign({ symbol: sym }, taRating(h, l, c));
+      } catch (e) { return { symbol: sym, err: String(e && e.message || e).slice(0, 120) }; }
+    }));
+    return J({ ok: true, tf, analysis: out });
   }
 
   /* Réglages (« gros réglages » choisis par Kevin ; le bot gère le reste).
@@ -873,6 +1058,24 @@ function beatbotLock() {
   + 'button{width:100%;margin-top:12px;background:linear-gradient(135deg,#39c2ff,#0e88c9);color:#052034;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700}'
   + '.e{color:#f2b632;font-size:12.5px;margin-top:10px;min-height:16px}a{color:#39c2ff}</style></head><body>'
   + '<div class="c"><div class="lg">🔒🌊</div><h1>PoolPilot — espace privé</h1><p>Réservé à l\'administrateur. Déverrouille avec ton code (Face ID te reconnaît ensuite automatiquement).</p>'
+  + '<input id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="12">'
+  + '<button id="go">Déverrouiller</button><div class="e" id="err"></div>'
+  + '<p style="margin-top:18px;font-size:11.5px">Déjà connecté sur <a href="https://kd-mc.com">kd-mc.com</a> ? Recharge cette page.</p></div>'
+  + '<script>var b=document.getElementById("go"),pin=document.getElementById("pin"),err=document.getElementById("err");'
+  + 'function sub(){var c=(pin.value||"").trim();if(!c){err.textContent="Entre ton code.";return;}b.disabled=true;err.textContent="Vérification…";'
+  + 'fetch("/__admin/login",{method:"POST",headers:{"content-type":"application/json"},credentials:"include",body:JSON.stringify({code:c})}).then(function(r){return r.json();}).then(function(j){'
+  + 'if(j.ok){location.reload();}else{b.disabled=false;err.textContent=j.reason==="rate_limited"?("Trop d\'essais, attends "+Math.ceil((j.wait||0)/1000)+"s"):(j.reason==="code_invalide"?"Code incorrect.":"Erreur : "+(j.reason||"?"));}}).catch(function(e){b.disabled=false;err.textContent="Réseau : "+e;});}'
+  + 'b.onclick=sub;pin.addEventListener("keydown",function(e){if(e.key==="Enter")sub();});pin.focus();</script></body></html>';
+  return new Response(html, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' } });
+}
+function approvalsLock() {
+  const html = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0f0a"><title>Coffre d\'autorisations — privé</title>'
+  + '<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#0b0f0a,#05070a);color:#f2efe0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px}'
+  + '.c{width:100%;max-width:340px;text-align:center}.lg{font-size:44px}h1{font-size:19px;margin:10px 0 4px}p{color:#a9b39a;font-size:13px;margin:0 0 18px}'
+  + 'input{width:100%;background:#0b1108;border:1px solid #2a331f;color:#f2efe0;border-radius:12px;padding:14px;font-size:20px;text-align:center;letter-spacing:6px}'
+  + 'button{width:100%;margin-top:12px;background:linear-gradient(135deg,#e8c766,#c9a94a);color:#0b0f0a;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700}'
+  + '.e{color:#e0a83a;font-size:12.5px;margin-top:10px;min-height:16px}a{color:#e8c766}</style></head><body>'
+  + '<div class="c"><div class="lg">🔐🆔</div><h1>Coffre d\'autorisations — espace privé</h1><p>Réservé à l\'administrateur. Déverrouille avec ton code (Face ID te reconnaît ensuite automatiquement).</p>'
   + '<input id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="12">'
   + '<button id="go">Déverrouiller</button><div class="e" id="err"></div>'
   + '<p style="margin-top:18px;font-size:11.5px">Déjà connecté sur <a href="https://kd-mc.com">kd-mc.com</a> ? Recharge cette page.</p></div>'

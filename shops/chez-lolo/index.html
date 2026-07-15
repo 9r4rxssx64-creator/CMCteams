@@ -24,7 +24,8 @@
 <link rel="preconnect" href="https://images.unsplash.com">
 <link rel="manifest" href="manifest.json">
 <script src="/CMCteams/tools/shared/kdmc-fb-auth.js" defer></script>
-<script src="../_shared/firebase-orders.js" defer></script>
+<script src="/CMCteams/shops/_shared/firebase-orders.js" defer></script>
+<script src="/CMCteams/shops/_shared/kdmc-printify-catalog.js" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden;max-width:100vw}
@@ -557,13 +558,16 @@ m.innerHTML='<div style="background:var(--card);border-radius:16px;padding:32px;
 +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px"><h2 style="font-size:22px;font-weight:800">Paiement</h2><span onclick="closePayModal()" style="cursor:pointer;font-size:24px;color:var(--muted)">✕</span></div>'
 +'<div style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:20px;text-align:center"><span style="font-size:14px;color:var(--muted)">Total à payer</span><div style="font-size:32px;font-weight:800;color:var(--p);margin-top:4px">'+fmtP(total)+'</div></div>'
 +'<div style="display:flex;flex-direction:column;gap:12px">'
-+'<a href="https://paypal.me/kdmc/'+total.toFixed(2)+'" onclick="processOrder(\'PayPal\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0070ba22;border:1px solid #0070ba55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🅿️</span><div><div>PayPal</div><div style="font-size:12px;color:var(--muted)">Paiement sécurisé instantané</div></div></a>'
-+'<a href="https://revolut.me/kdmc" onclick="processOrder(\'Revolut\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0075eb22;border:1px solid #0075eb55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🔄</span><div><div>Revolut @kdmc</div><div style="font-size:12px;color:var(--muted)">Envoi instantané sans frais</div></div></a>'
++'<a rel="noopener noreferrer" href="https://paypal.me/kdmc/'+total.toFixed(2)+'" onclick="processOrder(\'PayPal\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0070ba22;border:1px solid #0070ba55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🅿️</span><div><div>PayPal</div><div style="font-size:12px;color:var(--muted)">Paiement sécurisé instantané</div></div></a>'
++'<a rel="noopener noreferrer" href="https://revolut.me/kdmc" onclick="processOrder(\'Revolut\')" target="_blank" style="display:flex;align-items:center;gap:12px;padding:16px;background:#0075eb22;border:1px solid #0075eb55;border-radius:12px;text-decoration:none;color:var(--text);font-weight:600"><span style="font-size:28px">🔄</span><div><div>Revolut @kdmc</div><div style="font-size:12px;color:var(--muted)">Envoi instantané sans frais</div></div></a>'
 +'<div onclick="showIBAN()" style="display:flex;align-items:center;gap:12px;padding:16px;background:#22c55e22;border:1px solid #22c55e55;border-radius:12px;cursor:pointer;font-weight:600"><span style="font-size:28px">🏦</span><div><div>Virement bancaire</div><div style="font-size:12px;color:var(--muted)">IBAN — délai 1-2 jours</div></div></div>'
 +'</div>'
++'<div id="kdmc_ship_est" style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:10px"></div>'
 +'<p style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">🔒 Paiement sécurisé · Données protégées · KDMC Monaco</p>'
 +'</div>';
-document.body.appendChild(m);notifyPayment(total);m.onclick=function(e){if(e.target===m)closePayModal()};
+document.body.appendChild(m);
+/* v2026-07-08 (audit amélioration) : PORT RÉEL Printify estimé au paiement (fail-open, purement informatif) */
+try{if(window.kdmcCatalog&&window.kdmcCatalog.cartShippingEstimate){kdmcCatalog.cartShippingEstimate(S.cart,"FR",function(e2){var b=document.getElementById("kdmc_ship_est");if(b&&e2)b.innerHTML="🚚 Port estimé (Printify réel, France) : <b>"+e2.total.toFixed(2)+" €</b> pour "+e2.items+" article(s) imprimé(s)";});}}catch(_e){}notifyPayment(total);m.onclick=function(e){if(e.target===m)closePayModal()};
 m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Paiement");
 document.addEventListener("keydown",_payEscHandler)}
 function _payEscHandler(e){if(e.key==="Escape"){closePayModal()}}
@@ -836,6 +840,7 @@ function clInstallAdminUI(){
   bar.style.cssText="position:fixed;left:10px;bottom:74px;z-index:9000;display:flex;gap:6px;flex-wrap:wrap;max-width:74vw";
   bar.innerHTML='<a href="studio.html" title="Studio de création" style="background:linear-gradient(135deg,#ff7eb3,#b5179e);color:#fff;font:700 12px system-ui;padding:9px 14px;border-radius:100px;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.35)">🎨 Studio</a>'
    +'<button onclick="clAddProductForm()" title="Ajouter un produit (textile, cosmétique, goodies…)" style="background:linear-gradient(135deg,#7c8c3c,#5d6b2a);color:#fff;border:none;border-radius:100px;font:700 12px system-ui;padding:9px 14px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)">➕ Produit</button>'
+   +'<button onclick="window.kdmcCatalog?kdmcCatalog.open():toast(\'Catalogue en chargement…\',\'error\')" title="Catalogue Printify : choisir un support, publier en boutique, prix + port réels" style="background:linear-gradient(135deg,#3c6e8c,#2a4d5d);color:#fff;border:none;border-radius:100px;font:700 12px system-ui;padding:9px 14px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)">🖨 Catalogue</button>'
    +'<button onclick="clShowPodOrders()" title="Commandes à imprimer" style="background:rgba(20,20,24,.92);color:#fff;border:1px solid #555;border-radius:100px;font:700 12px system-ui;padding:9px 12px;cursor:pointer">🖨️ À produire</button>'
    +'<button onclick="ldAccessPanel()" style="background:rgba(20,20,24,.92);color:#fff;border:1px solid #555;border-radius:100px;font:700 12px system-ui;padding:9px 12px;cursor:pointer">👥 Accès</button>'
    +'<button onclick="ldShowStorage()" title="Stockage" style="background:rgba(20,20,24,.92);color:#fff;border:1px solid #555;border-radius:100px;font:700 13px system-ui;padding:9px 12px;cursor:pointer">📦</button>'

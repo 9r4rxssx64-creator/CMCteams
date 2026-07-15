@@ -558,4 +558,25 @@ describe('createVisioSession — multi-user mesh (3-4 peers)', () => {
     const s = createVisioSession({ convId: 'c', userId: 'u', type: 'audio', ws: null, deps: baseDeps });
     expect(() => s.end()).not.toThrow();
   });
+
+  /* === v1.1.252 — serveurs ICE injectables (TURN, audit amélioration Top #5) === */
+  it('opts.iceServers fourni → utilisé pour CHAQUE peer (initiator ET receiver)', async () => {
+    const turn = [{ urls: 'turn:turn.cloudflare.com:3478', username: 'u', credential: 'c' }];
+    const ws = makeWS();
+    const s = createVisioSession({ convId: 'c', userId: 'me', type: 'audio', ws, deps: baseDeps, iceServers: turn });
+    const p1 = await s.inviteUser('alice');
+    expect(p1.pc.config.iceServers).toBe(turn);
+    await s.onOffer('bob', { type: 'offer', sdp: 'x' });
+    expect(s.state.peers.get('bob').pc.config.iceServers).toBe(turn);
+  });
+
+  it('opts.iceServers absent/vide → fallback STUN ICE_SERVERS', async () => {
+    const ws = makeWS();
+    const s1 = createVisioSession({ convId: 'c', userId: 'me', type: 'audio', ws, deps: baseDeps });
+    const p1 = await s1.inviteUser('alice');
+    expect(p1.pc.config.iceServers).toBe(ICE_SERVERS);
+    const s2 = createVisioSession({ convId: 'c', userId: 'me', type: 'audio', ws, deps: baseDeps, iceServers: [] });
+    const p2 = await s2.inviteUser('bob');
+    expect(p2.pc.config.iceServers).toBe(ICE_SERVERS);
+  });
 });

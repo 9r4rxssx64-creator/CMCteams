@@ -14,6 +14,7 @@
     "la-detente.kd-mc.com": { "name": "La Détente", "icon": "🌿" },
     "chez-lolo.kd-mc.com": { "name": "Chez Lolo", "icon": "🎨" },
     "bot.kd-mc.com": { "name": "Bot Crypto", "icon": "🤖" },
-    "beatbot.kd-mc.com": { "name": "PoolPilot", "icon": "🌊" }
+    "beatbot.kd-mc.com": { "name": "PoolPilot", "icon": "🌊" },
+    "autorisations.kd-mc.com": { "name": "Autorisations", "icon": "🆔" }
   }
 }

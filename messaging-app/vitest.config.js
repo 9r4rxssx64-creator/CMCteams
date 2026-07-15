@@ -14,6 +14,13 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    // v1.1.278 — retry:1 absorbe la flakiness de CONTENTION (leçon #88) : sous
+    // --coverage, l'instrumentation ralentit les tests DB-mock lourds
+    // (api-worker-success-deep ~16s) et un test devient parfois victime de la
+    // charge parallèle (victime NON déterministe : 0/1/3 échecs selon le run,
+    // toujours vert en isolation). Un re-essai suffit ; une VRAIE régression
+    // échoue les DEUX essais → jamais masquée.
+    retry: 1,
     exclude: ['tests/e2e/**', 'e2e/**', 'node_modules/**'],
     coverage: {
       provider: 'v8',

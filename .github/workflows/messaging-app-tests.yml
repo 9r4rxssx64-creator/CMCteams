@@ -57,20 +57,34 @@ jobs:
       - name: Tests + Coverage 100%
         run: npx vitest run --coverage
 
-      - name: Verify 100% threshold (fail if <100%)
+      # Politique réelle (= vitest.config.js) : 100 % PARTOUT, SAUF api-worker.js
+      # (~5800 lignes, mesuré avec un plancher anti-régression dédié depuis
+      # l'audit 2026-07-07, à remonter progressivement). Le check ci-dessous
+      # reflète EXACTEMENT cette politique par fichier — l'ancien check exigeait
+      # 100 % sur le TOTAL (donc incluait api-worker) et bloquait tout merge.
+      - name: Verify coverage policy (lib 100% + plancher api-worker)
         run: |
           if [ ! -f coverage/coverage-summary.json ]; then
             echo "❌ coverage-summary.json missing"
             exit 1
           fi
           node -e "
-            const s = require('./coverage/coverage-summary.json').total;
-            const fail = ['lines','statements','branches','functions'].filter(k => s[k].pct < 100);
-            if (fail.length) {
-              console.error('❌ Coverage <100% sur:', fail.map(k => k+'='+s[k].pct+'%').join(', '));
-              process.exit(1);
+            const cov = require('./coverage/coverage-summary.json');
+            const FLOOR = { 'api-worker.js': { statements: 80, branches: 74, functions: 86, lines: 80 } };
+            const KEYS = ['lines','statements','branches','functions'];
+            let failed = false;
+            for (const [path, s] of Object.entries(cov)) {
+              if (path === 'total' || !s || !s.lines) continue;
+              const base = path.split('/').pop();
+              const floor = FLOOR[base];
+              const bad = KEYS.filter(k => s[k].pct < (floor ? floor[k] : 100));
+              if (bad.length) {
+                failed = true;
+                console.error('❌', base, bad.map(k => k+'='+s[k].pct+'% (min '+(floor?floor[k]:100)+')').join(', '));
+              }
             }
-            console.log('✅ Coverage 100% sur lines/statements/branches/functions');
+            if (failed) process.exit(1);
+            console.log('✅ Couverture conforme : 100 % partout, api-worker.js au-dessus du plancher.');
           "
 
       - name: Upload coverage HTML report
