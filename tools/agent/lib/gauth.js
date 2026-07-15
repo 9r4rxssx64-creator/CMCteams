@@ -35,7 +35,16 @@ export async function getFirebaseAccessToken(clientEmail, privateKey) {
     if (cachedToken && cachedExp > Date.now() + 60_000) return cachedToken;
 
     // Les secrets GitHub/Vercel stockent souvent les \n littéraux → normaliser.
-    const key = String(privateKey).replace(/\\n/g, "\n");
+    // Normalisation robuste (Kevin 2026-07-15) : la clé peut arriver de Vercel/GitHub
+    // avec des guillemets encadrants, des \n LITTÉRAUX (JSON) et/ou des \r (Windows).
+    let key = String(privateKey).trim();
+    if (
+      (key.startsWith('"') && key.endsWith('"')) ||
+      (key.startsWith("'") && key.endsWith("'"))
+    ) {
+      key = key.slice(1, -1);
+    }
+    key = key.replace(/\\r/g, "").replace(/\\n/g, "\n").replace(/\r/g, "");
 
     const now = Math.floor(Date.now() / 1000);
     const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));

@@ -8,10 +8,85 @@
 // supprimé » (401 = compte de service absent/invalide sur Vercel).
 // Aucune valeur secrète n'est exposée : uniquement des booléens + le status HTTP.
 //
-// build-marker 2026-07-15b : force un build frais après le sync des env vars
-// FIREBASE_* sur Vercel (un redeploy-clone réutilise l'ancien snapshot d'env ;
-// seul un build depuis la source capte les vars à jour).
+// build-marker 2026-07-15c : diag de mint granulaire (raison EXACTE du token_minted
+// false) + gauth durci. Aucune valeur secrète exposée (longueurs/booléens/erreur
+// Google seulement).
+import { createSign } from "node:crypto";
 import { getFirebaseAccessToken } from "../lib/gauth.js";
+
+const TOKEN_URL = "https://oauth2.googleapis.com/token";
+const SCOPE =
+  "https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email";
+function b64url(buf) {
+  return Buffer.from(buf)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+// Mint diagnostique : rejoue l'échange JWT→access_token en rapportant CHAQUE étape
+// (format de clé, signature, corps d'erreur Google). Ne renvoie jamais la clé ni
+// le token — uniquement des métadonnées de diagnostic.
+async function diagMint(clientEmail, privateKeyRaw) {
+  const d = {};
+  try {
+    let key = String(privateKeyRaw || "").trim();
+    if (
+      (key.startsWith('"') && key.endsWith('"')) ||
+      (key.startsWith("'") && key.endsWith("'"))
+    ) {
+      key = key.slice(1, -1);
+    }
+    key = key.replace(/\\r/g, "").replace(/\\n/g, "\n").replace(/\r/g, "");
+    d.key_len = key.length;
+    d.key_has_begin = key.includes("BEGIN PRIVATE KEY");
+    d.key_lines = key.split("\n").length;
+    d.email_present = !!clientEmail;
+    const now = Math.floor(Date.now() / 1000);
+    const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+    const claims = b64url(
+      JSON.stringify({
+        iss: clientEmail,
+        scope: SCOPE,
+        aud: TOKEN_URL,
+        iat: now,
+        exp: now + 3600,
+      }),
+    );
+    const signingInput = `${header}.${claims}`;
+    let assertion;
+    try {
+      const signer = createSign("RSA-SHA256");
+      signer.update(signingInput);
+      signer.end();
+      assertion = `${signingInput}.${b64url(signer.sign(key))}`;
+      d.sign_ok = true;
+    } catch (se) {
+      d.sign_ok = false;
+      d.sign_error = String((se && se.message) || se).slice(0, 160);
+      return d; // clé invalide → inutile d'appeler Google
+    }
+    const r = await fetch(TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion,
+      }).toString(),
+    });
+    d.token_http = r.status;
+    if (!r.ok) {
+      // corps d'erreur Google = { error, error_description } → nomme la cause.
+      d.token_error = (await r.text()).slice(0, 200);
+    } else {
+      d.token_ok = true;
+    }
+  } catch (e) {
+    d.diag_error = String((e && e.message) || e).slice(0, 160);
+  }
+  return d;
+}
 
 export default async function handler(req, res) {
   const hasClientEmail = !!process.env.FIREBASE_CLIENT_EMAIL;
@@ -35,13 +110,17 @@ export default async function handler(req, res) {
       token_minted: !!token,
       read_status: r.status,
       read_ok: r.ok,
-      // 200 = auth Firebase OK (cause racine du crash 401 réparée).
-      // 401 = toujours KO (compte de service absent/invalide) → l'agent ne peut
-      //        pas lire l'état ; le flood Telegram reste supprimé (anti-spam).
       verdict: r.ok
         ? "OK — auth Firebase fonctionne (plus de crash 401)"
         : `HTTP ${r.status} — auth Firebase KO (compte de service manquant/invalide)`,
     };
+    // Si le mint a échoué mais les creds sont présents → diag granulaire.
+    if (!token && hasClientEmail && hasPrivateKey) {
+      firebase.mint_diag = await diagMint(
+        process.env.FIREBASE_CLIENT_EMAIL,
+        process.env.FIREBASE_PRIVATE_KEY,
+      );
+    }
   } catch (e) {
     firebase = { probe: "error", error: String((e && e.message) || e) };
   }
