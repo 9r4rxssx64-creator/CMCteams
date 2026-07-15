@@ -7,6 +7,10 @@
 // gauth que l'agent → distingue « cause racine réparée » (200) de « seul le spam
 // supprimé » (401 = compte de service absent/invalide sur Vercel).
 // Aucune valeur secrète n'est exposée : uniquement des booléens + le status HTTP.
+//
+// build-marker 2026-07-15b : force un build frais après le sync des env vars
+// FIREBASE_* sur Vercel (un redeploy-clone réutilise l'ancien snapshot d'env ;
+// seul un build depuis la source capte les vars à jour).
 import { getFirebaseAccessToken } from "../lib/gauth.js";
 
 export default async function handler(req, res) {
