@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.6 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.6">
+<!-- v0.13.7 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.7">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.6" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.7" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.6';
+  var APP_VER = 'v0.13.7';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -341,31 +341,57 @@
      Défaut = Gemini 2.0 Flash (GRATUIT, lit PDF+photos) → économie. Bascule Claude si échec. */
   var AI_LABEL={ gemini:'Gemini (gratuit)', anthropic:'Claude (premium)' };
   function errDetail(txt){ try{ var d=JSON.parse(txt); return String((d.error&&(d.error.message||d.error))||txt).slice(0,180); }catch(e){ return String(txt).slice(0,180); } }
-  async function aiCall(parts, maxTokens){
-    var prov=(VAULT&&VAULT.aiProvider)||'gemini';
-    var alt=(prov==='gemini')?'anthropic':'gemini';
-    /* Repli BIDIRECTIONNEL : si le moteur choisi tombe (Claude premium indispo/quota OU Gemini KO),
-       on bascule AUTOMATIQUEMENT sur l'autre → l'import passe toujours (« impossible de rajouter »
-       était dû à l'absence de repli quand Claude était sélectionné et en panne). Tout auto. */
-    try{ return await aiCallProvider(prov, parts, maxTokens); }
-    catch(e){
-      try{ var r=await aiCallProvider(alt, parts, maxTokens);
-        toast(alt==='anthropic'?'ℹ️ IA gratuite indispo — Claude utilisé':'ℹ️ Claude indispo — IA gratuite utilisée'); return r;
-      }catch(e2){ throw e; }   /* les deux ont échoué → cause exacte du moteur choisi (leçon #97) */
-    }
-  }
-  /* IA « la plus adéquate » : gratuite d'abord (économie) ; si sa réponse est vide/trop
-     courte pour une vraie analyse → on monte sur Claude (compétence). Le meilleur des deux. */
-  async function aiCallSmart(parts, maxTokens, minLen){
-    var prov=(VAULT&&VAULT.aiProvider)||'gemini'; minLen=minLen||120;
-    var alt=(prov==='gemini')?'anthropic':'gemini';
-    try{ var out=await aiCallProvider(prov, parts, maxTokens);
-      if(prov==='gemini' && (out||'').trim().length<minLen){ try{ var o2=await aiCallProvider('anthropic', parts, maxTokens); if((o2||'').trim().length>(out||'').trim().length){ toast('⤴️ Analyse approfondie via Claude'); return o2; } }catch(_){} }
+  /* ---- Santé des moteurs IA (anti-gaspillage + cause exacte, leçon #97) ----
+     Si un moteur tombe (ex : clé Gemini rejetée par Google), on le met « en pause »
+     ~10 min : les imports suivants du lot passent DIRECTEMENT sur l'autre moteur —
+     plus d'appel perdu ni de message répété à chaque document. La vraie erreur est
+     mémorisée (VAULT.aiLastErr) et affichée dans Réglages pour savoir quoi corriger. */
+  var _aiDown={};        /* prov -> {until, err} */
+  var _aiDownToast={};   /* prov -> bool (message montré 1× par fenêtre de panne) */
+  var AI_DOWN_MS=10*60*1000;
+  function _aiIsDown(p){ var d=_aiDown[p]; return !!(d && d.until>Date.now()); }
+  function _aiMarkDown(p,err){ err=String(err||'').slice(0,180); _aiDown[p]={until:Date.now()+AI_DOWN_MS,err:err};
+    if(VAULT){ VAULT.aiLastErr={prov:p,err:err,ts:Date.now()}; try{persist();}catch(_){} } }
+  function _aiClearDown(p){ delete _aiDown[p]; delete _aiDownToast[p]; }
+  function _aiRetryFree(){ _aiClearDown('gemini'); _aiClearDown('anthropic'); if(VAULT){ delete VAULT.aiLastErr; try{persist();}catch(_){} } }
+  /* Diagnostic Réglages : dit EXACTEMENT pourquoi un moteur est tombé + comment corriger (leçon #97). */
+  function _aiWhy(err){ var m=String(err||'');
+    if(/API key not valid|api_key_invalid|invalid.{0,12}key|401|403|PERMISSION_DENIED/i.test(m)) return {t:'La clé de l\'IA gratuite (Gemini) est refusée par Google — elle doit être renouvelée.', fix:true};
+    if(/429|quota|rate.?limit|RESOURCE_EXHAUSTED|too many/i.test(m)) return {t:'Limite gratuite du jour atteinte — ça repart tout seul plus tard.', fix:false};
+    if(/not configured|503/i.test(m)) return {t:'L\'IA gratuite n\'est pas configurée sur le serveur.', fix:true};
+    if(/load failed|failed to fetch|network|timeout/i.test(m)) return {t:'Réseau instable au moment de l\'appel.', fix:false};
+    return {t:m.slice(0,120), fix:false}; }
+  function _aiDiagHtml(){ var e=VAULT&&VAULT.aiLastErr; if(!e) return '';
+    var w=_aiWhy(e.err); var who=e.prov==='gemini'?'IA gratuite (Gemini)':'Claude';
+    return '<div class="tiny" style="margin-top:10px;background:#241a08;border:1px solid #5a4410;border-radius:10px;padding:10px 12px;color:#f2d98a">'+
+      '🔎 <b>'+esc(who)+' indisponible.</b> '+esc(w.t)+
+      (w.fix&&e.prov==='gemini'?'<br>Tes imports marchent quand même (Claude prend le relais). Pour réactiver le gratuit : crée une clé sur <b>aistudio.google.com</b> et ajoute-la — je te guide.':'')+
+      '<br><span style="opacity:.7">Détail technique : '+esc(String(e.err||'').slice(0,120))+'</span>'+
+      '<br><button class="btn sm" id="ai-retry-free" style="margin-top:6px">🔄 Retenter l\'IA gratuite</button></div>'; }
+  function _aiDownToastOnce(downProv){ if(_aiDownToast[downProv])return; _aiDownToast[downProv]=true;
+    toast(downProv==='gemini'?'ℹ️ IA gratuite indispo — Claude utilisé (je réessaie plus tard)':'ℹ️ Claude indispo — IA gratuite utilisée'); }
+  /* Cœur : essaie le moteur choisi (ou son remplaçant si le choisi est « en pause »),
+     bascule AUTOMATIQUEMENT sur l'autre en cas d'échec — l'import passe toujours. */
+  async function _aiTry(parts, maxTokens, smart, minLen){
+    var prov=(VAULT&&VAULT.aiProvider)||'gemini'; var alt=(prov==='gemini')?'anthropic':'gemini'; minLen=minLen||120;
+    /* si le moteur choisi est en pause et l'autre non → on attaque directement l'autre (0 appel perdu) */
+    var first=prov, second=alt; if(_aiIsDown(prov) && !_aiIsDown(alt)){ first=alt; second=prov; }
+    try{
+      var out=await aiCallProvider(first, parts, maxTokens); _aiClearDown(first);
+      if(smart && first==='gemini' && (out||'').trim().length<minLen){
+        try{ var o2=await aiCallProvider('anthropic', parts, maxTokens); _aiClearDown('anthropic'); if((o2||'').trim().length>(out||'').trim().length){ toast('⤴️ Analyse approfondie via Claude'); return o2; } }catch(_){}
+      }
+      if(first!==prov) _aiDownToastOnce(prov);   /* on a utilisé le remplaçant car le choisi était en pause */
       return out;
     }catch(e){
-      try{ var r=await aiCallProvider(alt, parts, maxTokens); toast(alt==='anthropic'?'ℹ️ IA gratuite indispo — Claude utilisé':'ℹ️ Claude indispo — IA gratuite utilisée'); return r; }catch(e2){ throw e; }
+      _aiMarkDown(first,(e&&e.message)||e);       /* mémorise la cause EXACTE (leçon #97) */
+      try{ var r=await aiCallProvider(second, parts, maxTokens); _aiClearDown(second); _aiDownToastOnce(first); return r; }
+      catch(e2){ _aiMarkDown(second,(e2&&e2.message)||e2); throw e; }   /* les deux KO → cause exacte du 1er */
     }
   }
+  async function aiCall(parts, maxTokens){ return _aiTry(parts, maxTokens, false); }
+  /* IA « la plus adéquate » : gratuite d'abord (économie) ; réponse trop courte → Claude (compétence). */
+  async function aiCallSmart(parts, maxTokens, minLen){ return _aiTry(parts, maxTokens, true, minLen); }
   async function aiCallProvider(prov, parts, maxTokens){
     var hash=await aiPinHash(); if(!hash) throw new Error('IA non activée (code admin requis)');
     if(prov==='gemini'){
@@ -2125,8 +2151,10 @@
       (aiOn?'<button class="btn grow" id="ai-off" style="margin-top:8px">Désactiver le classement IA</button>':
         '<label class="fld">Code admin (une seule fois)</label><input id="ai-pin" type="password" inputmode="numeric" placeholder="Ton code admin">'+
         '<button class="btn gold grow" id="ai-on" style="margin-top:8px">Activer (IA + mails + sauvegarde)</button>')+
-      '<div id="ai-msg" class="tiny" style="margin-top:8px"></div></div>');
+      '<div id="ai-msg" class="tiny" style="margin-top:8px"></div>'+
+      _aiDiagHtml()+'</div>');
     v.appendChild(cAi);
+    (function(){ var rb=cAi.querySelector('#ai-retry-free'); if(rb)rb.onclick=function(){ _aiRetryFree(); toast('🔄 Je retente l\'IA gratuite au prochain import'); render(); }; })();
     /* Catégories éditables */
     var cCat=el('<div class="card"><h2>🏷️ Mes catégories</h2><p class="tiny">Renomme, ajoute ou supprime. Les intitulés se calent sur tes vrais relevés.</p><div id="catlist"></div>'+
       '<div class="row" style="margin-top:8px"><input id="newcat" class="grow" placeholder="Nouvelle catégorie"><button class="btn" id="addcat">Ajouter</button></div></div>');
