@@ -8,11 +8,16 @@
 // supprimé » (401 = compte de service absent/invalide sur Vercel).
 // Aucune valeur secrète n'est exposée : uniquement des booléens + le status HTTP.
 //
-// build-marker 2026-07-15d : gauth self-healing multi-format (répare la clé sans
-// armure -----BEGIN/END-----) + diag qui rapporte QUEL format de clé signe/mint.
-// Aucune valeur secrète exposée (longueurs/booléens/erreur Google seulement).
+// build-marker 2026-07-15e : sonde structurelle de la clé (dit si le corps base64
+// décode en RSA valide ou si le secret est corrompu) + candidats KeyObject DER +
+// diag par variante. Aucune valeur secrète exposée (l'en-tête d'algo prefix16 est
+// identique pour toutes les clés RSA → non secret).
 import { createSign } from "node:crypto";
-import { getFirebaseAccessToken, pemCandidates } from "../lib/gauth.js";
+import {
+  getFirebaseAccessToken,
+  keyCandidates,
+  keyStructure,
+} from "../lib/gauth.js";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const SCOPE =
@@ -25,11 +30,15 @@ function b64url(buf) {
     .replace(/=+$/, "");
 }
 
-// Mint diagnostique : essaie CHAQUE format de clé candidat et rapporte, par
-// candidat, si la signature OpenSSL passe et le status HTTP du mint Google.
+// Mint diagnostique : sonde structurelle + essaie CHAQUE candidat de clé et
+// rapporte, par candidat, si la signature OpenSSL passe et le status HTTP du mint.
 // Ne renvoie jamais la clé ni le token — uniquement des métadonnées de diagnostic.
 async function diagMint(clientEmail, privateKeyRaw) {
-  const d = { email_present: !!clientEmail, variants: [] };
+  const d = {
+    email_present: !!clientEmail,
+    structure: keyStructure(privateKeyRaw),
+    variants: [],
+  };
   try {
     const now = Math.floor(Date.now() / 1000);
     const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
@@ -43,12 +52,8 @@ async function diagMint(clientEmail, privateKeyRaw) {
       }),
     );
     const signingInput = `${header}.${claims}`;
-    for (const cand of pemCandidates(privateKeyRaw)) {
-      const v = {
-        name: cand.name,
-        key_len: cand.key.length,
-        key_has_begin: cand.key.includes("BEGIN"),
-      };
+    for (const cand of keyCandidates(privateKeyRaw)) {
+      const v = { name: cand.name, key_type: typeof cand.key };
       let assertion;
       try {
         const signer = createSign("RSA-SHA256");
