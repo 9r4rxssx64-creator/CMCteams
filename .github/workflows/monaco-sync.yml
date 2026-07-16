@@ -17,12 +17,25 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Déclenche la récupération IMAP (kdmc-monaco /sync)
+      - name: Récupération IMAP en BOUCLE (kdmc-monaco /sync) — parcourt vite le gros historique
+        # Chaque /sync avance UN lot de backfill (~80 mails). On boucle jusqu'à 40 fois
+        # (≈ 3 200 mails/run) pour ne pas rester à 80/2h = des semaines. On s'arrête net si :
+        #  - le backfill est terminé ("done":true)
+        #  - la file est pleine ("file_pleine") → on attend que l'app Finances vide (rien à gagner à insister)
+        #  - pas connecté / erreur → no-op silencieux (fail-open, jamais d'email).
         run: |
           set +e
-          OUT=$(curl -sS -m 60 -X POST \
-            -H "x-apex-pin: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}" \
-            "https://kdmc-monaco.9r4rxssx64.workers.dev/sync")
-          echo "réponse /sync : $OUT"
-          echo "$OUT" | grep -q '"ok":true' && echo "✅ synchro OK" || echo "::notice::synchro non effectuée (pas connecté ou souci) — sans conséquence"
+          URL="https://kdmc-monaco.9r4rxssx64.workers.dev/sync"
+          PIN="${{ secrets.APEX_ADMIN_PIN_SHA256 }}"
+          done_total=0
+          for i in $(seq 1 40); do
+            OUT=$(curl -sS -m 60 -X POST -H "x-apex-pin: $PIN" "$URL")
+            echo "lot $i → $OUT"
+            echo "$OUT" | grep -q '"ok":true' || { echo "::notice::arrêt (pas connecté ou souci) — sans conséquence"; break; }
+            echo "$OUT" | grep -q '"done":true'   && { echo "✅ backfill TERMINÉ — tout l'historique parcouru."; break; }
+            echo "$OUT" | grep -q '"file_pleine"' && { echo "⏸ file pleine — j'attends que l'app Finances vide (ouvre-la)."; break; }
+            add=$(echo "$OUT" | grep -oE '"added":[0-9]+' | head -1 | grep -oE '[0-9]+'); done_total=$((done_total + ${add:-0}))
+            sleep 2
+          done
+          echo "🧾 total factures ajoutées ce run : $done_total"
           exit 0

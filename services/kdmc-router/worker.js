@@ -914,16 +914,17 @@ async function handleMail(request, url, env) {
   if (!env.ACCOUNTS) return J({ ok: false, reason: 'kv_absent' });
   const path = url.pathname;
   if (path === '/__mail/scan' && request.method === 'GET') {
+    const CAP = 120;   // vide plus vite (gros arriéré) ; l'app boucle en plus jusqu'à file vide
     const items = []; let cursor;
     do {
       const l = await env.ACCOUNTS.list({ prefix: 'mail:p:', cursor });
       for (const k of l.keys) {
-        if (items.length >= 40) break;
+        if (items.length >= CAP) break;
         const raw = await env.ACCOUNTS.get(k.name); if (!raw) continue;
         try { const it = JSON.parse(raw); it.id = k.name.slice('mail:p:'.length); items.push(it); } catch { /* */ }
       }
       cursor = l.list_complete ? null : l.cursor;
-    } while (cursor && items.length < 40);
+    } while (cursor && items.length < CAP);
     return J({ ok: true, items });
   }
   if (path === '/__mail/ack' && request.method === 'POST') {
