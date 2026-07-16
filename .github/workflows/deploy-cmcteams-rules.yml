@@ -39,6 +39,15 @@ on:
           - "keep"
           - "off"
           - "on"
+      orders_read:
+        description: "Verrou LECTURE des commandes clients (fuite orders/.read=true). keep = préserver l'état live (défaut) | on = lecture dashboard admin seul | off = rouvrir (rollback). L'écriture (checkout) reste anonyme."
+        required: true
+        default: "keep"
+        type: choice
+        options:
+          - "keep"
+          - "off"
+          - "on"
 
 permissions:
   contents: read
@@ -58,4 +67,5 @@ jobs:
           RULES_STATE: ${{ github.event.inputs.rules_state }}
           APEX_STATE: ${{ github.event.inputs.apex_state || 'hardened' }}
           SHOPS_LOCK: ${{ github.event.inputs.shops_lock || 'keep' }}
+          ORDERS_READ: ${{ github.event.inputs.orders_read || 'keep' }}
         run: node tools/firebase/deploy-rules.cjs

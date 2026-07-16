@@ -251,6 +251,8 @@
       "shops_admin_v1/products/$shop/$id": "auth != null && auth.token.role === 'admin' && (newData.hasChildren(['id']) || !newData.exists())",
       "shops_admin_v1/logos/$shop/$id": "auth != null && auth.token.role === 'admin'",
       "shops_sourcing_v1/selection/$id": "auth != null && auth.token.role === 'admin' && (newData.hasChildren(['id','supplier']) || !newData.exists())"
-    }
+    },
+    "orders_read_comment": "Verrou LECTURE des commandes clients (fuite : orders/.read=true = n'importe qui lit les commandes). Activé via input orders_read=on → seul le dashboard admin (id_token role:admin) peut lire. L'ÉCRITURE des commandes (checkout client) reste anonyme (jamais verrouillée). À activer SEULEMENT après que le dashboard v2.0.4+ lit avec ?auth= (canary iPhone Kevin validé). off = rollback (lecture publique).",
+    "orders_read": "auth != null && auth.token.role === 'admin'"
   }
 }

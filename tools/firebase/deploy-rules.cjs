@@ -26,6 +26,12 @@ const APEX_STATE = (process.env.APEX_STATE || 'hardened').toLowerCase();
 // 'keep' (défaut) = préserve l'état LIVE actuel du lock shops (lu avant publication)
 // → re-déclencher ce workflow pour /cmcteams ou /apex ne change JAMAIS les shops par accident.
 const SHOPS_LOCK = (process.env.SHOPS_LOCK || 'keep').toLowerCase();
+// Verrou LECTURE des commandes clients (fuite orders/.read=true) : 'on' → seul le
+// dashboard admin (id_token role:admin) lit ; 'off' → lecture publique (rollback) ;
+// 'keep' (défaut) = préserve l'état LIVE (lu avant publication) → un run pour une
+// autre raison ne (dé)verrouille JAMAIS la lecture des commandes par accident.
+// L'ÉCRITURE des commandes (checkout client) reste anonyme dans TOUS les cas.
+const ORDERS_READ = (process.env.ORDERS_READ || 'keep').toLowerCase();
 
 function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 
@@ -120,6 +126,33 @@ async function getAccessToken(){
   } else {
     console.log('🛟 SHOPS_LOCK=off : écriture shops anon+validation (inchangé)');
   }
+
+  // Verrou LECTURE des commandes clients (orders/.read). keep=préserver l'état live.
+  let ordersRead = ORDERS_READ;
+  if (ordersRead === 'keep') {
+    try {
+      const cur = await fetch(DB + '/.settings/rules.json?access_token=' + encodeURIComponent(token)).then(r => r.json());
+      const rr = cur && cur.rules && cur.rules.shops_admin_v1 && cur.rules.shops_admin_v1.orders
+        && cur.rules.shops_admin_v1.orders['.read'];
+      ordersRead = /role/.test(String(rr || '')) ? 'on' : 'off';
+      console.log('🔎 ORDERS_READ=keep → état live détecté : ' + ordersRead);
+    } catch (e) {
+      throw new Error('ORDERS_READ=keep : lecture des règles live impossible (' + e.message + '), abort');
+    }
+  }
+  if (ordersRead === 'on') {
+    const expr = doc._phase_shops_rolelock && doc._phase_shops_rolelock.orders_read;
+    if (!expr || !/role/.test(String(expr))) throw new Error('ORDERS_READ=on mais _phase_shops_rolelock.orders_read absent/invalide, abort');
+    rules.shops_admin_v1.orders['.read'] = expr;
+    console.log('🔒 ORDERS_READ=on : shops_admin_v1/orders .read = role:admin (dashboard seul)');
+  } else {
+    rules.shops_admin_v1.orders['.read'] = true;
+    console.log('🛟 ORDERS_READ=off : lecture des commandes publique (rollback/inchangé)');
+  }
+  // GARDE-FOU ABSOLU : l'écriture des commandes (checkout client) ne DOIT JAMAIS exiger role:admin.
+  if (/role/.test(String(rules.shops_admin_v1.orders.$shop.$orderId['.write']))) {
+    throw new Error('SECURITÉ : orders/.write ne doit PAS exiger role:admin (clients bloqués), abort');
+  }
   // /apex + /coffre_vault : hardened (défaut, état du fichier = auth != null) ou rollback open
   if (APEX_STATE === 'open') {
     rules.apex['.read'] = true;
@@ -173,6 +206,13 @@ async function getAccessToken(){
   }
   if (STATE !== 'open' && sCmc === 200) throw new Error('DANGER : /cmcteams lisible SANS auth malgré hardened, abort');
   console.log('✅ Vérif OK — /cmcteams ' + (STATE === 'open' ? 'ouvert' : 'fermé') + ' · /apex + /coffre_vault ' + (APEX_STATE === 'open' ? 'ouverts' : 'fermés (auth requise)'));
+
+  // Vérif COMPORTEMENTALE du verrou lecture commandes (lesson #95).
+  const sOrders = await anonProbe('/shops_admin_v1/orders');
+  console.log('🔬 Probe anonyme : /shops_admin_v1/orders=' + sOrders + ' (attendu ' + (ordersRead === 'on' ? '401 verrouillé' : '200 public') + ')');
+  if (ordersRead === 'on' && sOrders === 200) throw new Error('DANGER : commandes lisibles SANS auth malgré ORDERS_READ=on, abort');
+  if (ordersRead === 'off' && sOrders !== 200) throw new Error('Vérif KO : ORDERS_READ=off mais commandes non lisibles (HTTP ' + sOrders + '), abort');
+  console.log('✅ Commandes clients : lecture ' + (ordersRead === 'on' ? 'VERROUILLÉE (dashboard admin seul)' : 'publique (inchangé)'));
 
   // PURGE credentials du cloud partagé (audit 2026-07-07) — SEULEMENT en hardened.
   // ax_admin_pin/ax_pin/ax_user/ax_uid/ax_admin_pass sont FB_LOCAL (règle #40/#41) :
