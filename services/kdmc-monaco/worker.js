@@ -34,11 +34,11 @@ import {
 const DEFAULT_HOST = 'mails.monaco.mc';
 const DEFAULT_PORT = 993;
 const MAX_ATTACH = 15 * 1024 * 1024;
-const MAX_PENDING = 200;
+const MAX_PENDING = 1000;   // file d'attente factures (élargie : le backfill de gros historique ne stalle plus à 200)
 const TTL = 60 * 60 * 24 * 60;       // 60 j
 const MAX_MSGS_PER_RUN = 15;
 const BACKFILL_DAYS = 60;
-const BACKFILL_BATCH = 40;           // messages max par lot de backfill
+const BACKFILL_BATCH = 80;           // messages max par lot de backfill (plus par passage)
 const BACKFILL_BUDGET_MS = 14000;    // temps max par lot (sous IMAP_DEADLINE_MS)
 const IMAP_DEADLINE_MS = 20000;
 
@@ -83,12 +83,22 @@ async function imapClient(host, port) {
   let buf = new Uint8Array(0);
   const deadline = Date.now() + IMAP_DEADLINE_MS;
 
+  // FIX ReadableStream (lasterr « single pending read ») : une seule lecture peut être
+  // en cours à la fois. L'ancien code faisait Promise.race([reader.read(), timeout]) : quand
+  // le timeout gagnait, le reader.read() restait EN ATTENTE ; un fill() suivant (ex : la boucle
+  // backfill qui avale l'erreur par UID puis réessaie sur la même socket) rappelait reader.read()
+  // → 2 lectures concurrentes → crash → toute la synchro plantait. On GARDE la lecture en cours
+  // (_pendingRead) et on la réutilise au lieu d'en démarrer une seconde.
+  let _pendingRead = null;
   async function fill() {
     if (Date.now() > deadline) throw new Error('imap_timeout');
-    const to = new Promise((_, rej) => setTimeout(() => rej(new Error('imap_read_timeout')), Math.max(1, deadline - Date.now())));
-    const { value, done } = await Promise.race([reader.read(), to]);
-    if (done) throw new Error('imap_closed');
-    if (value && value.length) { const nb = new Uint8Array(buf.length + value.length); nb.set(buf); nb.set(value, buf.length); buf = nb; }
+    if (!_pendingRead) _pendingRead = reader.read();
+    const to = new Promise((res) => setTimeout(() => res('__IMAP_TO__'), Math.max(1, deadline - Date.now())));
+    const r = await Promise.race([_pendingRead, to]);
+    if (r === '__IMAP_TO__') throw new Error('imap_read_timeout'); // la lecture reste "pending", réutilisée au prochain fill (jamais 2 en //)
+    _pendingRead = null;
+    if (r.done) throw new Error('imap_closed');
+    if (r.value && r.value.length) { const nb = new Uint8Array(buf.length + r.value.length); nb.set(buf); nb.set(r.value, buf.length); buf = nb; }
   }
   function crlfFrom(pos) { for (let i = pos; i + 1 < buf.length; i++) if (buf[i] === 13 && buf[i + 1] === 10) return i; return -1; }
   async function readLine() { // greeting « * OK ... »

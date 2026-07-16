@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.13 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.13">
+<!-- v0.13.14 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.14">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.13" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.14" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.13';
+  var APP_VER = 'v0.13.14';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -874,27 +874,35 @@
   /* Le worker "kdmc-mail" reçoit les mails envoyés/transférés à factures@kd-mc.com (Cloudflare Email
      Routing), extrait les pièces jointes PDF/photo et les met en attente. Ici on les récupère (admin),
      on les classe (IA), on dédoublonne, puis on acquitte. Les originaux sont conservés (chiffrés). */
-  /* Cœur partagé : récupère les pièces en attente, les importe, dédoublonne, acquitte. */
+  /* Cœur partagé : récupère les pièces en attente, les importe, dédoublonne, acquitte.
+     BURST-DRAIN (gros arriéré) : on BOUCLE — on avale page après page jusqu'à ce que la file
+     soit vide (ou 12 pages max ~1440), au lieu de 40 puis attendre 5 min. Tu ouvres l'app une
+     fois et elle vide tout d'un coup. Persiste après chaque pièce (rien n'est perdu si coupure). */
   async function _mailPull(onProgress){
     if(!VAULT||!VAULT.aiPinHash) return {ok:false,reason:'no_ai'};
     var grant=await ensureGrant(); if(!grant) return {ok:false,reason:'no_grant'};
-    var list;
-    try{ var r=await fetch('/__mail/scan',{ headers:{'x-kdmc-admin':grant}, cache:'no-store' });
-      if(!r.ok) return {ok:false,reason:'http_'+r.status};
-      var j=await r.json(); if(!j.ok) return {ok:false,reason:j.reason||'erreur'}; list=j.items||[];
-    }catch(e){ return {ok:false,reason:'network'}; }
-    if(!list.length) return {ok:true,okc:0,devc:0,dupc:0,err:0,count:0};
-    var okc=0,devc=0,dupc=0,pubc=0,avc=0,err=0,ecc=0,ackIds=[];
-    for(var i=0;i<list.length;i++){ var it=list[i]; if(onProgress)onProgress(i+1,list.length,it);
-      try{ var res=await importBytes(it.b64, it.mime||'application/pdf', it.filename||('mail-'+(it.id||i)), {src:'mail:'+(it.from||'')});
-        if(res.dup)dupc++; else if(res.pub)pubc++; else if(res.aVerifier)avc++; else { okc+=res.added; if(res.devis)devc+=res.devis;
-          if(res.docId){ var _dr=(VAULT.docs||[]).filter(function(x){return x.id===res.docId;})[0]; if(_dr&&_dr.kind==='releve'&&_dr.reconc&&!_dr.reconc.ok)ecc++; } }
-        ackIds.push(it.id); await persist();
-      }catch(e){ err++; }
+    var okc=0,devc=0,dupc=0,pubc=0,avc=0,err=0,ecc=0,total=0;
+    var MAX_PAGES=12;
+    for(var pg=0; pg<MAX_PAGES; pg++){
+      var list;
+      try{ var r=await fetch('/__mail/scan',{ headers:{'x-kdmc-admin':grant}, cache:'no-store' });
+        if(!r.ok){ if(total) break; return {ok:false,reason:'http_'+r.status}; }
+        var j=await r.json(); if(!j.ok){ if(total) break; return {ok:false,reason:j.reason||'erreur'}; } list=j.items||[];
+      }catch(e){ if(total) break; return {ok:false,reason:'network'}; }
+      if(!list.length){ if(pg===0) return {ok:true,okc:0,devc:0,dupc:0,err:0,count:0}; break; }
+      var ackIds=[];
+      for(var i=0;i<list.length;i++){ var it=list[i]; if(onProgress)onProgress(total+i+1,total+list.length,it);
+        try{ var res=await importBytes(it.b64, it.mime||'application/pdf', it.filename||('mail-'+(it.id||i)), {src:'mail:'+(it.from||'')});
+          if(res.dup)dupc++; else if(res.pub)pubc++; else if(res.aVerifier)avc++; else { okc+=res.added; if(res.devis)devc+=res.devis;
+            if(res.docId){ var _dr=(VAULT.docs||[]).filter(function(x){return x.id===res.docId;})[0]; if(_dr&&_dr.kind==='releve'&&_dr.reconc&&!_dr.reconc.ok)ecc++; } }
+          ackIds.push(it.id); await persist();
+        }catch(e){ err++; }
+      }
+      if(ackIds.length){ try{ await fetch('/__mail/ack',{ method:'POST', headers:{'content-type':'application/json','x-kdmc-admin':grant}, body:JSON.stringify({ids:ackIds}) }); }catch(e){} }
+      total+=list.length;
     }
-    if(ackIds.length){ try{ await fetch('/__mail/ack',{ method:'POST', headers:{'content-type':'application/json','x-kdmc-admin':grant}, body:JSON.stringify({ids:ackIds}) }); }catch(e){} }
     dedupeAll(); await persist();
-    return {ok:true,okc:okc,devc:devc,dupc:dupc,pubc:pubc,avc:avc,err:err,ecc:ecc,count:list.length};
+    return {ok:true,okc:okc,devc:devc,dupc:dupc,pubc:pubc,avc:avc,err:err,ecc:ecc,count:total};
   }
   async function mailScan(statEl){
     if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
