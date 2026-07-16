@@ -54,6 +54,9 @@ await ctx.route(/apex-secrets-proxy\.9r4rxssx64\.workers\.dev/, async (route) =>
   else if (body.includes('Réponds juste: ok')) text = 'ok';
   else if (body.includes('QUESTION :')) text = 'D apres tes documents, tu as depense 120,00 EUR chez Garage Manuel.';
   else if (body.includes('FACTURE_TEST')) text = JSON.stringify({ meta:{kind:'facture',vendor:'Garage Manuel',invoice_no:'F-2026-42',date:'2026-06-15',ht:100,tva:20,tva_rate:20,total:120}, tx:[{date:'2026-06-15',label:'Reparation freins',amount:-120,category:'Vehicule / Reparations',vendor:'Garage Manuel',ht:100,tva:20,tva_rate:20}] });
+  // v0.13.15 — facture au montant POSITIF (l'IA a oublié le signe) : le filet de
+  // signe (audit P2) doit la compter en DÉPENSE, pas en revenu.
+  else if (body.includes('FACTURE_MISSIGNED')) text = JSON.stringify({ meta:{kind:'facture',vendor:'SignTest Garage',invoice_no:'F-2026-88',date:'2026-06-20',total:88}, tx:[{date:'2026-06-20',label:'Vidange SignTest',amount:88,category:'Vehicule / Reparations',vendor:'SignTest Garage'}] });
   else if (body.includes('BILAN') || body.includes('expert-comptable')) text = 'BILAN — revenus superieurs aux depenses, flux positif. Conseils : provisionner l engagement accepte, comparer 2 devis, epargner 10%.';
   else if (body.includes('negociateur') || body.includes('compar')) text = 'Analyse : compare 2 garages avant chaque intervention, economie possible ~400 EUR.';
   else { const n = ++releveN, dd = String(n).padStart(2,'0'); text = JSON.stringify({ meta:{kind:'releve',bank:'Banque Test',account_masked:'FR76****1234',period:'juin 2026',opening:1200,closing:3645.8}, tx:[ {date:'2026-06-'+dd,label:'VIREMENT SALAIRE CMC '+n,amount:2500,category:'Revenus'}, {date:'2026-06-'+dd,label:'CARREFOUR MONACO '+n,amount:-54.20,category:'Alimentation'}, {date:'2026-06-'+dd,label:'NETFLIX '+n,amount:-13.49,category:'Abonnements'} ] }); }
@@ -134,6 +137,33 @@ try {
   await gotoTab('Ajouter');
   await page.fill('#paste', 'FACTURE_TEST — Garage Manuel, freins, 120 EUR TTC'); await page.click('#paste-go');
   await page.waitForFunction(() => /4 op/.test(document.querySelector('.top h1 .sub')?.textContent||''), { timeout: 6000 });
+
+  // v0.13.15 — FILET DE SIGNE FACTURE (audit P2) : une facture au montant POSITIF
+  // renvoyée par l'IA (signe oublié) DOIT être stockée en DÉPENSE (montant négatif),
+  // jamais en revenu. On importe une facture +88 et on lit le SIGNE réel de l'op
+  // via le drill de sa catégorie (rendu propre de l'app : .am.neg si amount<0).
+  await gotoTab('Ajouter');
+  await page.fill('#paste', 'FACTURE_MISSIGNED — SignTest Garage, 88 EUR'); await page.click('#paste-go');
+  await page.waitForFunction(() => /5 op/.test(document.querySelector('.top h1 .sub')?.textContent||''), { timeout: 6000 });
+  await dismissOverlays();
+  await gotoTab('Tableau');
+  await page.waitForTimeout(300);
+  await page.evaluate(() => {
+    const row = [...document.querySelectorAll('#view .catrow')].find(r => /R[ée]parations/i.test(r.textContent));
+    if (row) row.click();
+  });
+  await page.waitForTimeout(300);
+  const sign = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('#drillov .tx, #view .tx')];
+    const r = rows.find(x => /Vidange SignTest/i.test(x.textContent));
+    if (!r) return null;
+    const am = r.querySelector('.am');
+    return am ? { neg: am.classList.contains('neg'), pos: am.classList.contains('pos'), txt: am.textContent.trim() } : null;
+  });
+  rec(!!sign && sign.neg && !sign.pos, P1,
+    'filet signe : facture +88 stockée en DÉPENSE (Vidange SignTest = ' + (sign ? sign.txt + ' .' + (sign.neg ? 'neg' : 'pos') : 'introuvable') + ')');
+  await dismissOverlays();
+
   await gotoTab('Ajouter');
   await page.setInputFiles('#file', { name:'devis.csv', mimeType:'text/csv', buffer: Buffer.from('Date;Libelle;Montant;Type\n2026-06-10;Devis peinture Touareg;1200,00;devis\n','utf8') });
   await page.waitForSelector('.card:has-text("attente de d")', { timeout: 6000 });

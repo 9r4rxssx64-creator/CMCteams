@@ -5692,7 +5692,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.869";
+var APP_VER="v9.870";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -13965,7 +13965,10 @@ function cmcDrillIntoModal(opts){
   if(Array.isArray(opts.items)){
     html += '<div style="display:flex;flex-direction:column;gap:6px">';
     opts.items.forEach(function(it){
-      var click = it.onClick ? 'onclick="('+it.onClick+')();"' : "";
+      // CMC-02 : escape " (et &) du handler → l'attribut onclick ne se tronque plus
+      // sur un " interne (ex showEmpQuickProfile("...")) qui rendait le bouton MORT.
+      // Le navigateur décode &quot;→" avant d'exécuter le JS → round-trip exact.
+      var click = it.onClick ? 'onclick="('+String(it.onClick).replace(/&/g,"&amp;").replace(/"/g,"&quot;")+')();"' : "";
       html += '<div role="button" tabindex="0" '+click+' style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;cursor:'+(click?"pointer":"default")+'">';
       if(it.icon) html += '<span style="font-size:20px">'+String(it.icon).replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];})+'</span>';
       html += '<div style="flex:1"><div style="font-size:14px;font-weight:600">'+String(it.label||"").replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];})+'</div>';
@@ -30421,7 +30424,10 @@ function cmcShowGenericStat(opts){
     body += '<div role="status" aria-live="polite" style="padding:30px;text-align:center;color:#8aa088"><div style="font-size:36px;margin-bottom:8px">'+icon+'</div><div>Aucun resultat</div></div>';
   } else {
     items.forEach(function(it){
-      var click = it.onClick ? 'onclick="('+it.onClick+')();document.getElementById(\'liveList\').remove();"' : '';
+      // CMC-02 : escape " (et &) du handler → l'attribut onclick ne se tronque plus
+      // sur un " interne (showLiveList("working"), showEmpQuickProfile("...")) qui
+      // rendait 6 boutons drill-down MORTS. Le navigateur décode &quot;→" avant JS.
+      var click = it.onClick ? 'onclick="('+String(it.onClick).replace(/&/g,"&amp;").replace(/"/g,"&quot;")+')();document.getElementById(\'liveList\').remove();"' : '';
       var cursor = click ? "pointer" : "default";
       body += '<div '+click+' style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(10,22,14,.5);border:1px solid '+color+'33;border-radius:8px;margin-bottom:5px;cursor:'+cursor+'">';
       if(it.icon) body += '<span style="font-size:18px;flex-shrink:0">'+(it.icon||"")+'</span>';
