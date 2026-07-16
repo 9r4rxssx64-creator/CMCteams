@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.7 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.7">
+<!-- v0.13.8 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.8">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.7" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.8" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.7';
+  var APP_VER = 'v0.13.8';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -338,56 +338,82 @@
       .replace(/\b(?:\d[ -]?){13,19}\b/g,'[CARTE]');
   }
   /* Moteur IA multi-fournisseur. parts = tableau neutre : {t:'texte'} ou {f:{mime,data}}.
-     Défaut = Gemini 2.0 Flash (GRATUIT, lit PDF+photos) → économie. Bascule Claude si échec. */
-  var AI_LABEL={ gemini:'Gemini (gratuit)', anthropic:'Claude (premium)' };
+     CHAÎNE GRATUITE d'abord (économie, Kevin « toutes mes IA gratuites avant Claude »),
+     Claude (payant) en DERNIER recours. Un moteur qui lit les images (PDF+photos) est
+     marqué vision:true ; les moteurs texte-seul sont SAUTÉS quand l'entrée contient un
+     document (sinon ils échouent). Tout passe par le proxy (tes clés, serveur). */
+  var AI_FREE_CHAIN=[
+    { id:'gemini',   label:'Gemini',   fmt:'gemini', vision:true },
+    { id:'mistral',  label:'Mistral',  fmt:'openai', vision:true,  path:'/mistral/v1/chat/completions',     models:['pixtral-12b-2409','mistral-small-latest'] },
+    { id:'groq',     label:'Groq',     fmt:'openai', vision:false, path:'/groq/openai/v1/chat/completions', models:['llama-3.3-70b-versatile'] },
+    { id:'cerebras', label:'Cerebras', fmt:'openai', vision:false, path:'/cerebras/v1/chat/completions',    models:['llama-3.3-70b','llama3.1-8b'] },
+    { id:'deepseek', label:'DeepSeek', fmt:'openai', vision:false, path:'/deepseek/v1/chat/completions',    models:['deepseek-chat'] }
+  ];
+  var AI_CLAUDE={ id:'anthropic', label:'Claude', fmt:'anthropic', vision:true };
+  function _aiSpec(id){ if(id==='anthropic')return AI_CLAUDE; for(var i=0;i<AI_FREE_CHAIN.length;i++)if(AI_FREE_CHAIN[i].id===id)return AI_FREE_CHAIN[i]; return null; }
+  var AI_LABEL={ gemini:'Gratuit d\'abord (économie)', anthropic:'Claude (premium)' };
   function errDetail(txt){ try{ var d=JSON.parse(txt); return String((d.error&&(d.error.message||d.error))||txt).slice(0,180); }catch(e){ return String(txt).slice(0,180); } }
   /* ---- Santé des moteurs IA (anti-gaspillage + cause exacte, leçon #97) ----
      Si un moteur tombe (ex : clé Gemini rejetée par Google), on le met « en pause »
-     ~10 min : les imports suivants du lot passent DIRECTEMENT sur l'autre moteur —
-     plus d'appel perdu ni de message répété à chaque document. La vraie erreur est
-     mémorisée (VAULT.aiLastErr) et affichée dans Réglages pour savoir quoi corriger. */
+     ~10 min : les imports suivants du lot passent DIRECTEMENT au moteur gratuit suivant
+     (puis Claude) — plus d'appel perdu ni de message répété à chaque document. La vraie
+     erreur est mémorisée (VAULT.aiLastErr) et affichée dans Réglages pour savoir quoi corriger. */
   var _aiDown={};        /* prov -> {until, err} */
-  var _aiDownToast={};   /* prov -> bool (message montré 1× par fenêtre de panne) */
+  var _aiFellToast=false;/* message « gratuit indispo — Claude utilisé » montré 1× par fenêtre */
   var AI_DOWN_MS=10*60*1000;
   function _aiIsDown(p){ var d=_aiDown[p]; return !!(d && d.until>Date.now()); }
   function _aiMarkDown(p,err){ err=String(err||'').slice(0,180); _aiDown[p]={until:Date.now()+AI_DOWN_MS,err:err};
     if(VAULT){ VAULT.aiLastErr={prov:p,err:err,ts:Date.now()}; try{persist();}catch(_){} } }
-  function _aiClearDown(p){ delete _aiDown[p]; delete _aiDownToast[p]; }
-  function _aiRetryFree(){ _aiClearDown('gemini'); _aiClearDown('anthropic'); if(VAULT){ delete VAULT.aiLastErr; try{persist();}catch(_){} } }
+  function _aiClearDown(p){ delete _aiDown[p]; }
+  function _aiRetryFree(){ _aiDown={}; _aiFellToast=false; if(VAULT){ delete VAULT.aiLastErr; try{persist();}catch(_){} } }
   /* Diagnostic Réglages : dit EXACTEMENT pourquoi un moteur est tombé + comment corriger (leçon #97). */
-  function _aiWhy(err){ var m=String(err||'');
-    if(/API key not valid|api_key_invalid|invalid.{0,12}key|401|403|PERMISSION_DENIED/i.test(m)) return {t:'La clé de l\'IA gratuite (Gemini) est refusée par Google — elle doit être renouvelée.', fix:true};
+  function _aiWhy(err,prov){ var m=String(err||'');
+    if(/API key not valid|api_key_invalid|invalid.{0,12}key|401|403|PERMISSION_DENIED|Unauthorized/i.test(m)) return {t:'La clé de cette IA gratuite est refusée par le fournisseur — elle doit être renouvelée.', fix:true};
     if(/429|quota|rate.?limit|RESOURCE_EXHAUSTED|too many/i.test(m)) return {t:'Limite gratuite du jour atteinte — ça repart tout seul plus tard.', fix:false};
-    if(/not configured|503/i.test(m)) return {t:'L\'IA gratuite n\'est pas configurée sur le serveur.', fix:true};
+    if(/not configured|503/i.test(m)) return {t:'Cette IA gratuite n\'est pas configurée sur le serveur.', fix:true};
     if(/load failed|failed to fetch|network|timeout/i.test(m)) return {t:'Réseau instable au moment de l\'appel.', fix:false};
     return {t:m.slice(0,120), fix:false}; }
   function _aiDiagHtml(){ var e=VAULT&&VAULT.aiLastErr; if(!e) return '';
-    var w=_aiWhy(e.err); var who=e.prov==='gemini'?'IA gratuite (Gemini)':'Claude';
+    var sp=_aiSpec(e.prov); var w=_aiWhy(e.err,e.prov); var who=(e.prov==='anthropic')?'Claude':('IA gratuite ('+((sp&&sp.label)||e.prov)+')');
+    var isGemini=(e.prov==='gemini');
     return '<div class="tiny" style="margin-top:10px;background:#241a08;border:1px solid #5a4410;border-radius:10px;padding:10px 12px;color:#f2d98a">'+
       '🔎 <b>'+esc(who)+' indisponible.</b> '+esc(w.t)+
-      (w.fix&&e.prov==='gemini'?'<br>Tes imports marchent quand même (Claude prend le relais). Pour réactiver le gratuit : crée une clé sur <b>aistudio.google.com</b> et ajoute-la — je te guide.':'')+
+      (w.fix&&e.prov!=='anthropic'?'<br>Tes imports marchent quand même (une autre IA gratuite ou Claude prend le relais).'+(isGemini?' Pour Gemini : crée une clé sur <b>aistudio.google.com</b> — je te guide.':''):'')+
       '<br><span style="opacity:.7">Détail technique : '+esc(String(e.err||'').slice(0,120))+'</span>'+
-      '<br><button class="btn sm" id="ai-retry-free" style="margin-top:6px">🔄 Retenter l\'IA gratuite</button></div>'; }
-  function _aiDownToastOnce(downProv){ if(_aiDownToast[downProv])return; _aiDownToast[downProv]=true;
-    toast(downProv==='gemini'?'ℹ️ IA gratuite indispo — Claude utilisé (je réessaie plus tard)':'ℹ️ Claude indispo — IA gratuite utilisée'); }
-  /* Cœur : essaie le moteur choisi (ou son remplaçant si le choisi est « en pause »),
-     bascule AUTOMATIQUEMENT sur l'autre en cas d'échec — l'import passe toujours. */
+      '<br><button class="btn sm" id="ai-retry-free" style="margin-top:6px">🔄 Retenter les IA gratuites</button></div>'; }
+  function _aiFellToastOnce(){ if(_aiFellToast)return; _aiFellToast=true;
+    toast('ℹ️ IA gratuite indispo — je bascule automatiquement (je réessaie plus tard)'); }
+  /* Ordre des moteurs à essayer pour cet appel :
+     - mode « gratuit d'abord » (défaut) : chaîne gratuite (filtrée vision) PUIS Claude ;
+     - mode « premium » : Claude d'abord, puis la chaîne gratuite en secours.
+     Les moteurs en pause sont repoussés en fin (tentés en dernier recours, jamais perdus). */
+  function _aiChainFor(needsVision){
+    var mode=(VAULT&&VAULT.aiProvider)||'gemini';
+    var free=AI_FREE_CHAIN.filter(function(p){ return !needsVision || p.vision; });
+    var chain=(mode==='anthropic') ? [AI_CLAUDE].concat(free) : free.concat([AI_CLAUDE]);
+    var live=chain.filter(function(p){ return !_aiIsDown(p.id); });
+    var down=chain.filter(function(p){ return _aiIsDown(p.id); });
+    return { order:live.concat(down), preferred:chain[0] };
+  }
+  /* Cœur : essaie la chaîne éligible dans l'ordre, bascule AUTOMATIQUEMENT au suivant en
+     cas d'échec — l'import passe toujours (au pire via Claude en dernier). */
   async function _aiTry(parts, maxTokens, smart, minLen){
-    var prov=(VAULT&&VAULT.aiProvider)||'gemini'; var alt=(prov==='gemini')?'anthropic':'gemini'; minLen=minLen||120;
-    /* si le moteur choisi est en pause et l'autre non → on attaque directement l'autre (0 appel perdu) */
-    var first=prov, second=alt; if(_aiIsDown(prov) && !_aiIsDown(alt)){ first=alt; second=prov; }
-    try{
-      var out=await aiCallProvider(first, parts, maxTokens); _aiClearDown(first);
-      if(smart && first==='gemini' && (out||'').trim().length<minLen){
-        try{ var o2=await aiCallProvider('anthropic', parts, maxTokens); _aiClearDown('anthropic'); if((o2||'').trim().length>(out||'').trim().length){ toast('⤴️ Analyse approfondie via Claude'); return o2; } }catch(_){}
-      }
-      if(first!==prov) _aiDownToastOnce(prov);   /* on a utilisé le remplaçant car le choisi était en pause */
-      return out;
-    }catch(e){
-      _aiMarkDown(first,(e&&e.message)||e);       /* mémorise la cause EXACTE (leçon #97) */
-      try{ var r=await aiCallProvider(second, parts, maxTokens); _aiClearDown(second); _aiDownToastOnce(first); return r; }
-      catch(e2){ _aiMarkDown(second,(e2&&e2.message)||e2); throw e; }   /* les deux KO → cause exacte du 1er */
+    minLen=minLen||120;
+    var needsVision=parts.some(function(p){ return p.f; });
+    var c=_aiChainFor(needsVision); var order=c.order, preferred=c.preferred;
+    var lastErr=null;
+    for(var i=0;i<order.length;i++){ var p=order[i];
+      try{
+        var out=await aiCallProvider(p.id, parts, maxTokens); _aiClearDown(p.id);
+        /* IA « la plus adéquate » : une IA gratuite a répondu trop court → on tente Claude (compétence). */
+        if(smart && p.id!=='anthropic' && (out||'').trim().length<minLen && !_aiIsDown('anthropic')){
+          try{ var o2=await aiCallProvider('anthropic', parts, maxTokens); _aiClearDown('anthropic'); if((o2||'').trim().length>(out||'').trim().length){ toast('⤴️ Analyse approfondie via Claude'); return o2; } }catch(_){}
+        }
+        if(p.id!==preferred.id) _aiFellToastOnce();   /* on n'a pas utilisé le moteur préféré */
+        return out;
+      }catch(e){ lastErr=e; _aiMarkDown(p.id,(e&&e.message)||e); }   /* cause EXACTE mémorisée (leçon #97) */
     }
+    throw lastErr||new Error('Aucun moteur IA disponible');
   }
   async function aiCall(parts, maxTokens){ return _aiTry(parts, maxTokens, false); }
   /* IA « la plus adéquate » : gratuite d'abord (économie) ; réponse trop courte → Claude (compétence). */
@@ -408,7 +434,8 @@
         t=await r.text();
         if(r.ok){
           var j=JSON.parse(t); var out=''; ((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).forEach(function(p){ if(p.text)out+=p.text; });
-          if(!out && j.promptFeedback) throw new Error('Gemini a refusé : '+JSON.stringify(j.promptFeedback).slice(0,120));
+          /* 200 mais rien d'exploitable → traité comme une panne pour que la chaîne passe au moteur suivant (jamais un import vide silencieux) */
+          if(!out) throw new Error('Gemini : réponse vide'+(j.promptFeedback?' ('+JSON.stringify(j.promptFeedback).slice(0,100)+')':''));
           return out;
         }
         lastErr='Gemini HTTP '+r.status+' : '+errDetail(t);
@@ -417,12 +444,34 @@
       }
       throw new Error(lastErr+' (aucun modèle Gemini disponible)');
     }
-    var content=parts.map(function(p){ return p.t!==undefined?{type:'text',text:p.t}:{type:(p.f.mime==='application/pdf'?'document':'image'),source:{type:'base64',media_type:p.f.mime,data:p.f.data}}; });
+    var sp=_aiSpec(prov);
+    if(sp && sp.fmt==='openai'){
+      /* Format OpenAI-compatible (Mistral/Groq/Cerebras/DeepSeek). Vision (Pixtral) = image_url data-URL. */
+      var hasFile=parts.some(function(p){ return p.f; });
+      var content = hasFile
+        ? parts.map(function(p){ return p.t!==undefined?{type:'text',text:p.t}:{type:'image_url',image_url:{url:'data:'+p.f.mime+';base64,'+p.f.data}}; })
+        : parts.map(function(p){ return p.t; }).join('\n');
+      var models=(sp.models&&sp.models.length)?sp.models:[null]; var last='';
+      for(var mo=0; mo<models.length; mo++){
+        var payload={ messages:[{role:'user',content:content}], temperature:0, max_tokens:maxTokens||4096 };
+        if(models[mo]) payload.model=models[mo];
+        var ro=await fetch(PROXY+sp.path,{ method:'POST', headers:{'content-type':'application/json','x-apex-pin':hash}, body:JSON.stringify(payload) });
+        var to=await ro.text();
+        if(ro.ok){ var jo=JSON.parse(to); var co=(jo.choices&&jo.choices[0]&&jo.choices[0].message&&jo.choices[0].message.content)||'';
+          if(!co) throw new Error(sp.label+' : réponse vide'); /* 200 mais vide → panne → moteur suivant (pas d'import vide silencieux) */
+          return co; }
+        last=sp.label+' HTTP '+ro.status+' : '+errDetail(to);
+        var gone=(ro.status===404)||/model|not found|not available|does not exist|decommission|deprecat/i.test(to);
+        if(!gone) throw new Error(last); /* quota/clé/refus → cause exacte, pas de repli aveugle */
+      }
+      throw new Error(last+' (aucun modèle '+sp.label+' disponible)');
+    }
+    var content2=parts.map(function(p){ return p.t!==undefined?{type:'text',text:p.t}:{type:(p.f.mime==='application/pdf'?'document':'image'),source:{type:'base64',media_type:p.f.mime,data:p.f.data}}; });
     var r2=await fetch(PROXY+'/anthropic/v1/messages',{ method:'POST',
       /* anthropic-dangerous-direct-browser-access requis : le proxy transmet l'Origin du navigateur,
          et l'API Claude exige ce header sinon 401 CORS (« must set anthropic-dangerous-direct-browser-access »). */
       headers:{'content-type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','x-apex-pin':hash},
-      body:JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:maxTokens||4096, messages:[{role:'user',content:content}] }) });
+      body:JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:maxTokens||4096, messages:[{role:'user',content:content2}] }) });
     var t2=await r2.text(); if(!r2.ok) throw new Error('Claude HTTP '+r2.status+' : '+errDetail(t2));
     var j2=JSON.parse(t2); var o2=''; (j2.content||[]).forEach(function(b){ if(b.type==='text')o2+=b.text; }); return o2;
   }
@@ -2146,8 +2195,8 @@
     var prov=(VAULT.aiProvider||'gemini');
     /* IA */
     var cAi=el('<div class="card"><h2>🤖 Classement IA<span class="r">'+(aiOn?('✅ '+AI_LABEL[prov]):'inactif')+'</span></h2>'+
-      '<p class="tiny">Lit et classe tes documents via ton proxy (tes clés). <b>Gemini est GRATUIT</b> et lit PDF+photos → économie. IBAN/cartes masqués. <b>Ton code une seule fois</b> : il active aussi la récupération des mails et la sauvegarde en ligne, et n\'est <b>jamais</b> redemandé (reconnu auto).</p>'+
-      '<label class="fld">Moteur IA</label><select id="ai-prov"><option value="gemini"'+(prov==='gemini'?' selected':'')+'>💸 Gratuit — Gemini (recommandé)</option><option value="anthropic"'+(prov==='anthropic'?' selected':'')+'>⭐ Premium — Claude</option></select>'+
+      '<p class="tiny">Lit et classe tes documents via ton proxy (tes clés). <b>Tes IA GRATUITES d\'abord</b> (Gemini, Mistral, Groq, Cerebras, DeepSeek) → économie ; <b>Claude (payant) seulement en dernier recours</b> si aucune gratuite ne répond. IBAN/cartes masqués. <b>Ton code une seule fois</b> : il active aussi la récupération des mails et la sauvegarde en ligne, et n\'est <b>jamais</b> redemandé (reconnu auto).</p>'+
+      '<label class="fld">Moteur IA</label><select id="ai-prov"><option value="gemini"'+(prov==='gemini'?' selected':'')+'>💸 Gratuit d\'abord — Gemini, Mistral, Groq… puis Claude (recommandé)</option><option value="anthropic"'+(prov==='anthropic'?' selected':'')+'>⭐ Premium — Claude d\'abord</option></select>'+
       (aiOn?'<button class="btn grow" id="ai-off" style="margin-top:8px">Désactiver le classement IA</button>':
         '<label class="fld">Code admin (une seule fois)</label><input id="ai-pin" type="password" inputmode="numeric" placeholder="Ton code admin">'+
         '<button class="btn gold grow" id="ai-on" style="margin-top:8px">Activer (IA + mails + sauvegarde)</button>')+
