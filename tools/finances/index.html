@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.8 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.8">
+<!-- v0.13.9 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.9">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.8" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.9" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.8';
+  var APP_VER = 'v0.13.9';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -211,9 +211,31 @@
     try{ await idbDel('doc:'+docId); await idbDel('thumb:'+docId); }catch(e){}
     audit('suppression', d.name); await persist(); toast('🗑 Supprimé — ne reviendra plus'); render();
   }
+  /* Doc « à vérifier » (2 IA en désaccord) → Kevin confirme que c'est une VRAIE facture : on crée
+     les opérations depuis l'extraction déjà mémorisée (aucun nouvel appel IA). */
+  async function confirmDocAsInvoice(docId){
+    var d=(VAULT.docs||[]).filter(function(x){return x.id===docId;})[0]; if(!d)return;
+    var p=d.pending||{rows:[]}; var added=0;
+    (p.rows||[]).forEach(function(r){
+      var amt=num(r.amount); if(amt===null)return; if(amt>0)amt=-amt;    /* une facture = une dépense */
+      var lb=String(r.label||d.vendor||d.name||'Facture').trim();
+      var cat=cleanCat(r.category, amt); var key=norm(lb);
+      if(VAULT.merchantMap[key])cat=VAULT.merchantMap[key]; else if(cat)VAULT.merchantMap[key]=cat;
+      var t={ id:uid(), date:ymd(r.date)||ymd(d.addedAt)||ymd(Date.now()), label:lb, amount:amt, category:cat, docId:docId, kind:'facture', addedAt:Date.now(), ttc:Math.abs(amt), pro:false };
+      var vd=r.vendor||p.vendor||d.vendor||''; if(vd)t.vendor=vd;
+      if(r.ht!=null)t.ht=Math.abs(num(r.ht)); if(r.tva!=null)t.tva=Math.abs(num(r.tva)); if(r.tva_rate!=null)t.tvaRate=num(r.tva_rate);
+      VAULT.tx.unshift(t); added++;
+    });
+    if(!added){ /* pas de ligne mémorisée → au moins basculer le type pour sortir de « à vérifier » */
+      d.kind='facture'; }
+    else { d.kind='facture'; d.count=added; }
+    delete d.pending; audit('a_verifier_confirme', d.name+' — '+added+' op.'); dedupeAll(); await persist();
+    toast('🧾 Compté comme facture'+(added?(' ('+added+' op.)'):'')); render();
+  }
   /* Ménage en 1 tap : supprime d'un coup les documents qui ne portent AUCUNE opération ni devis
      (typiquement les pubs/newsletters importées par erreur). Jamais ré-importés (hash mémorisé). */
   function uselessDocs(){ return (VAULT.docs||[]).filter(function(dd){
+    if(dd.kind==='a_verifier')return false;   /* à vérifier = en attente de décision Kevin, jamais balayé */
     if((VAULT.tx||[]).some(function(t){return t.docId===dd.id;}))return false;
     if((VAULT.devis||[]).some(function(x){return x.docId===dd.id;}))return false;
     return true; }); }
@@ -395,19 +417,22 @@
     var down=chain.filter(function(p){ return _aiIsDown(p.id); });
     return { order:live.concat(down), preferred:chain[0] };
   }
+  var _aiLastUsed=null;  /* id du dernier moteur qui a répondu → le 2e avis en prend un DIFFÉRENT (vérif indépendante) */
   /* Cœur : essaie la chaîne éligible dans l'ordre, bascule AUTOMATIQUEMENT au suivant en
-     cas d'échec — l'import passe toujours (au pire via Claude en dernier). */
-  async function _aiTry(parts, maxTokens, smart, minLen){
-    minLen=minLen||120;
+     cas d'échec — l'import passe toujours (au pire via Claude en dernier).
+     `exclude` = moteurs à repousser en fin (pour qu'un 2e/3e avis utilise un AUTRE modèle). */
+  async function _aiTry(parts, maxTokens, smart, minLen, exclude){
+    minLen=minLen||120; exclude=exclude||[];
     var needsVision=parts.some(function(p){ return p.f; });
     var c=_aiChainFor(needsVision); var order=c.order, preferred=c.preferred;
+    if(exclude.length){ var pref=order.filter(function(p){return exclude.indexOf(p.id)<0;}); var rest=order.filter(function(p){return exclude.indexOf(p.id)>=0;}); order=pref.concat(rest); }
     var lastErr=null;
     for(var i=0;i<order.length;i++){ var p=order[i];
       try{
-        var out=await aiCallProvider(p.id, parts, maxTokens); _aiClearDown(p.id);
+        var out=await aiCallProvider(p.id, parts, maxTokens); _aiClearDown(p.id); _aiLastUsed=p.id;
         /* IA « la plus adéquate » : une IA gratuite a répondu trop court → on tente Claude (compétence). */
         if(smart && p.id!=='anthropic' && (out||'').trim().length<minLen && !_aiIsDown('anthropic')){
-          try{ var o2=await aiCallProvider('anthropic', parts, maxTokens); _aiClearDown('anthropic'); if((o2||'').trim().length>(out||'').trim().length){ toast('⤴️ Analyse approfondie via Claude'); return o2; } }catch(_){}
+          try{ var o2=await aiCallProvider('anthropic', parts, maxTokens); _aiClearDown('anthropic'); _aiLastUsed='anthropic'; if((o2||'').trim().length>(out||'').trim().length){ toast('⤴️ Analyse approfondie via Claude'); return o2; } }catch(_){}
         }
         if(p.id!==preferred.id) _aiFellToastOnce();   /* on n'a pas utilisé le moteur préféré */
         return out;
@@ -416,6 +441,8 @@
     throw lastErr||new Error('Aucun moteur IA disponible');
   }
   async function aiCall(parts, maxTokens){ return _aiTry(parts, maxTokens, false); }
+  /* 2e avis indépendant : force un moteur DIFFÉRENT du dernier utilisé (vérif croisée, leçon « plusieurs vérifie »). */
+  async function aiCallSecond(parts, maxTokens, alsoExclude){ var ex=(_aiLastUsed?[_aiLastUsed]:[]).concat(alsoExclude||[]); return _aiTry(parts, maxTokens, false, 120, ex); }
   /* IA « la plus adéquate » : gratuite d'abord (économie) ; réponse trop courte → Claude (compétence). */
   async function aiCallSmart(parts, maxTokens, minLen){ return _aiTry(parts, maxTokens, true, minLen); }
   async function aiCallProvider(prov, parts, maxTokens){
@@ -673,7 +700,7 @@
   var EXTRACT_PROMPT =
     'Tu es un extracteur COMPTABLE de relevés bancaires, factures, tickets, fiches de paie ET devis (France/Monaco/Italie, EUR). '+
     'Analyse le document et renvoie UNIQUEMENT un JSON strict, sans texte autour:\n'+
-    '{"meta":{"kind":"releve|facture|ticket|paie|devis","vendor":"","invoice_no":"","bank":"","account_masked":"","period":"","date":"YYYY-MM-DD","total":null,"ht":null,"tva":null,"tva_rate":null,"opening":null,"closing":null},'+
+    '{"meta":{"kind":"releve|facture|ticket|paie|devis|pub","confidence":0.0,"vendor":"","invoice_no":"","bank":"","account_masked":"","period":"","date":"YYYY-MM-DD","total":null,"ht":null,"tva":null,"tva_rate":null,"opening":null,"closing":null},'+
     '"tx":[{"date":"YYYY-MM-DD","label":"libellé exact","amount":-12.34,"category":"une catégorie parmi la liste","vendor":"","ht":null,"tva":null,"tva_rate":null}]}\n'+
     'Règles: amount NÉGATIF pour une dépense/débit, POSITIF pour un revenu/crédit. '+
     'Reproduis les montants EXACTEMENT (aucune invention; ligne illisible -> ne pas l\'inventer). '+
@@ -684,7 +711,21 @@
     'Un DEVIS / PREVENTIVO / estimation NON payé : meta.kind="devis", meta.total=montant total (positif), meta.vendor=émetteur, tx=[] (ne compte PAS une dépense). '+
     'IMPORTANT — PUBLICITÉ : si le document est une pub, newsletter, promotion, offre commerciale, code promo, vente flash, panier abandonné, deal (Groupon/Wish/AliExpress promo…) ou toute annonce SANS achat réellement effectué/facturé : meta.kind="pub", tx=[] — ce n\'est PAS une facture, ne rien extraire. '+
     'RÈGLE STRICTE pour un CORPS DE MAIL (texte, pas un PDF) : c\'est une pub par DÉFAUT. Ce n\'est une facture QUE si on voit à la fois (a) un numéro de facture ou de commande ET (b) un montant réellement payé/débité/prélevé (« total facturé », « payé le », « prélèvement de »). Un prix affiché, une offre, un pourcentage de réduction ne sont PAS un achat. En cas de doute : "pub". '+
+    'DISTINCTION CLAIRE des types (ne PAS confondre) : '+
+    '• FACTURE/TICKET = un achat RÉELLEMENT payé ou dû (montant TTC + fournisseur, souvent un n° de facture). '+
+    '• DEVIS = une offre chiffrée de travaux/prestation NON encore payée (kind="devis", ne compte pas comme dépense). '+
+    '• PUB/OFFRE = publicité, newsletter, promotion, offre commerciale, code promo, deal — même si un PRIX ou une RÉDUCTION est affiché : kind="pub", ce n\'est NI une facture NI un devis, tx=[]. '+
+    'Ajoute meta.confidence entre 0 et 1 = ta certitude sur le type (kind). Mets une confidence BASSE (≤0.5) si le document est ambigu (pourrait être une pub OU une facture). '+
     'Réponds en JSON seulement.';
+  /* 2e avis indépendant (leçon « plusieurs vérifie ») : un AUTRE moteur tranche juste le TYPE,
+     sans ré-extraire — court, rapide, pas cher. Sert à ne JAMAIS compter une pub comme une dépense. */
+  var VERIFY_PROMPT =
+    'Tu es un vérificateur. Regarde ce document et dis STRICTEMENT s\'il doit compter dans des comptes personnels. '+
+    'Réponds UNIQUEMENT ce JSON : {"financial":true,"kind":"facture|ticket|paie|releve|avoir|devis|pub|offre","confidence":0.0,"reason":"court"}. '+
+    'financial=true SEULEMENT si c\'est un vrai document comptable : une FACTURE/TICKET réellement payé ou dû, un RELEVÉ bancaire, une FICHE DE PAIE, un AVOIR/remboursement. '+
+    'financial=false pour une PUB, une NEWSLETTER, une PROMOTION, une OFFRE commerciale, un code promo, un deal — MÊME si un prix ou une réduction est affiché. '+
+    'Un DEVIS (offre de travaux chiffrée non payée) = financial:false, kind="devis". '+
+    'confidence entre 0 et 1. En cas de doute réel → financial:false. JSON seulement.';
 
   /* Filtre pub LOCAL (couche app, AVANT l'IA) — même règle que les workers :
      1 marqueur FORT (désabonner, newsletter, vente flash…) OU ≥2 marqueurs FAIBLES DISTINCTS.
@@ -699,6 +740,44 @@
     return n>=2;
   }
 
+  /* 2e avis : un AUTRE moteur tranche juste le TYPE (financier ou pub/offre) — court, pas cher.
+     Retourne {financial,kind,confidence,reason,by} ou null (indispo → on ne bloque jamais). */
+  async function verifyKind(docParts, exclude){
+    try{
+      var vout=await aiCallSecond(docParts.concat([{t:VERIFY_PROMPT}]), 200, exclude||[]);
+      var j=extractJson(vout); if(!j) return null;
+      return { financial:(j.financial===true||j.financial==='true'), kind:String(j.kind||'').toLowerCase(),
+        confidence:num(j.confidence), reason:String(j.reason||'').slice(0,120), by:_aiLastUsed };
+    }catch(e){ return null; }
+  }
+  /* « Que plusieurs vérifient si il faut » (Kevin) : pour ne JAMAIS compter une pub/offre comme
+     une dépense, un 2e moteur INDÉPENDANT vérifie le type sur les cas à risque (corps de mail qui
+     crée une opération, faible confiance, ou conflit avec le filtre pub). Désaccord → 3e avis
+     (majorité) ; toujours pas tranché → "à vérifier" (le doc est gardé, 0 opération, Kevin décide). */
+  async function verifyClassification(out, ctx){
+    var j=extractJson(out); if(!j) return out;
+    var meta=j.meta||{}; var kind=meta.kind||'releve';
+    if(kind==='pub'||kind==='a_verifier') return out;                 /* déjà écarté / déjà à vérifier */
+    var conf=num(meta.confidence);
+    var creates=(kind==='facture'||kind==='ticket'||kind==='paie');
+    var lowConf=(conf!=null && conf<0.6);
+    var localPub=ctx.text && looksPromoLocal(ctx.name, ctx.from, ctx.text);
+    var need=(ctx.ftype==='texte' && creates) || lowConf || (localPub && creates);
+    if(!need) return out;                                             /* PDF facture net + confiant → pas de 2e appel (économie) */
+    var v=await verifyKind(ctx.docParts);
+    if(!v) return out;                                               /* 2e IA indispo → on garde le 1er avis (jamais de blocage) */
+    if(v.financial) return out;                                     /* 2e avis CONFIRME financier → on garde le 1er (type + montants) */
+    /* désaccord : 1er = financier, 2e = pub/offre */
+    if(v.confidence!=null && v.confidence>=0.7){                     /* 2e confiant que c'est une pub/offre → on écarte */
+      j.meta.kind=(v.kind==='devis')?'devis':'pub'; if(j.meta.kind==='pub')j.tx=[]; return JSON.stringify(j);
+    }
+    var v3=await verifyKind(ctx.docParts, v.by?[v.by]:[]);           /* 2e pas sûr → 3e avis (autre moteur), majorité */
+    if(!v3){ j.meta.kind='a_verifier'; return JSON.stringify(j); }   /* pas de 3e → prudence : à vérifier */
+    var yes=[true, !!v.financial, !!v3.financial].filter(Boolean).length;
+    if(yes>=2) return out;                                           /* majorité financier → on garde le 1er */
+    if(v.kind==='devis'||v3.kind==='devis'){ j.meta.kind='devis'; return JSON.stringify(j); }
+    j.meta.kind='pub'; j.tx=[]; return JSON.stringify(j);            /* majorité pub → écarté */
+  }
   async function importFile(file, srcMeta){
     var buf=await file.arrayBuffer(); var b64=b64FromBuf(buf); var mt=file.type||'';
     var isPdf=(mt==='application/pdf'||/\.pdf$/i.test(file.name));
@@ -708,12 +787,15 @@
     if(docHashExists(hash)){ return { added:0, devis:0, dup:true }; }   /* même fichier déjà importé */
     var mime=isPdf?'application/pdf':(mt||'image/jpeg');
     var out=await aiCall([ {f:{mime:mime,data:b64}}, {t:EXTRACT_PROMPT} ], 4096);
+    out=await verifyClassification(out, { docParts:[{f:{mime:mime,data:b64}}], ftype:isPdf?'pdf':'image', name:file.name, from:(srcMeta&&srcMeta.src)||'', text:'' });
     var res=finishImport(out, file.name, isPdf?'pdf':'image', hash, srcMeta);
-    try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:file.name,data:b64})); markDocFile(res.docId); }catch(e){}
+    try{ if(res.docId) await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:file.name,data:b64})); markDocFile(res.docId); }catch(e){}
     return res;
   }
   async function importText(text, name, hash, srcMeta){
-    var out=await aiCall([ {t:'DOCUMENT (texte):\n'+String(text||'').slice(0,60000)+'\n\n'+EXTRACT_PROMPT} ], 4096);
+    var body='DOCUMENT (texte):\n'+String(text||'').slice(0,60000);
+    var out=await aiCall([ {t:body+'\n\n'+EXTRACT_PROMPT} ], 4096);
+    out=await verifyClassification(out, { docParts:[{t:body}], ftype:'texte', name:name||'texte', from:(srcMeta&&srcMeta.src)||'', text:String(text||'') });
     var res=finishImport(out, name||'texte', 'texte', hash||null, srcMeta);
     /* Stocke le corps texte (chiffré) → document consultable (« Voir ») ET analysable rétroactivement (chasse aux pubs). */
     try{ if(res&&res.docId){ var b64=btoa(unescape(encodeURIComponent(String(text||'').slice(0,200000)))); await idbSet('doc:'+res.docId, await encWith(KEY,{mime:'text/plain',name:name||'texte.txt',data:b64})); markDocFile(res.docId); } }catch(e){}
@@ -735,6 +817,7 @@
     }
     var isPdf=(mime==='application/pdf'||/\.pdf$/i.test(name||''));
     var out=await aiCall([ {f:{mime:mime,data:b64}}, {t:EXTRACT_PROMPT} ], 4096);
+    out=await verifyClassification(out, { docParts:[{f:{mime:mime,data:b64}}], ftype:isPdf?'pdf':'image', name:name||'mail', from:(srcMeta&&srcMeta.src)||'mail', text:'' });
     var res=finishImport(out, name||'mail', isPdf?'pdf':'image', hash, srcMeta||{src:'mail'});
     try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:name||'mail',data:b64})); markDocFile(res.docId); }catch(e){}
     return res;
@@ -754,15 +837,15 @@
       var j=await r.json(); if(!j.ok) return {ok:false,reason:j.reason||'erreur'}; list=j.items||[];
     }catch(e){ return {ok:false,reason:'network'}; }
     if(!list.length) return {ok:true,okc:0,devc:0,dupc:0,err:0,count:0};
-    var okc=0,devc=0,dupc=0,pubc=0,err=0,ackIds=[];
+    var okc=0,devc=0,dupc=0,pubc=0,avc=0,err=0,ackIds=[];
     for(var i=0;i<list.length;i++){ var it=list[i]; if(onProgress)onProgress(i+1,list.length,it);
       try{ var res=await importBytes(it.b64, it.mime||'application/pdf', it.filename||('mail-'+(it.id||i)), {src:'mail:'+(it.from||'')});
-        if(res.dup)dupc++; else if(res.pub)pubc++; else { okc+=res.added; if(res.devis)devc+=res.devis; } ackIds.push(it.id); await persist();
+        if(res.dup)dupc++; else if(res.pub)pubc++; else if(res.aVerifier)avc++; else { okc+=res.added; if(res.devis)devc+=res.devis; } ackIds.push(it.id); await persist();
       }catch(e){ err++; }
     }
     if(ackIds.length){ try{ await fetch('/__mail/ack',{ method:'POST', headers:{'content-type':'application/json','x-kdmc-admin':grant}, body:JSON.stringify({ids:ackIds}) }); }catch(e){} }
     dedupeAll(); await persist();
-    return {ok:true,okc:okc,devc:devc,dupc:dupc,pubc:pubc,err:err,count:list.length};
+    return {ok:true,okc:okc,devc:devc,dupc:dupc,pubc:pubc,avc:avc,err:err,count:list.length};
   }
   async function mailScan(statEl){
     if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
@@ -772,7 +855,7 @@
     var res=await _mailPull(function(i,n,it){ say('⏳ '+i+'/'+n+' — '+(it.filename||'pièce jointe')); });
     if(!res.ok){ say('❌ '+(res.reason==='network'?'réseau':res.reason)); return; }
     if(!res.count){ say('✅ Aucune nouvelle pièce jointe (rien à importer).'); return; }
-    say('✅ Mails importés : '+res.okc+' op.'+(res.devc?(' · '+res.devc+' devis'):'')+(res.pubc?(' · 📣 '+res.pubc+' pub(s) écartée(s)'):'')+(res.dupc?(' · '+res.dupc+' doublon(s) ignoré(s)'):'')+(res.err?(' · '+res.err+' échec'):''));
+    say('✅ Mails importés : '+res.okc+' op.'+(res.devc?(' · '+res.devc+' devis'):'')+(res.pubc?(' · 📣 '+res.pubc+' pub(s) écartée(s)'):'')+(res.avc?(' · 🔎 '+res.avc+' à vérifier'):'')+(res.dupc?(' · '+res.dupc+' doublon(s) ignoré(s)'):'')+(res.err?(' · '+res.err+' échec'):''));
     toast('📧 '+res.okc+' opérations + '+res.devc+' devis depuis tes mails');
     setTimeout(function(){ STATE.tab=(res.okc===0&&res.devc>0)?'devis':'dash'; render(); }, 1200);
   }
@@ -810,7 +893,13 @@
     _promoScanCache=null;
     VAULT.docs.unshift({ id:docId, name:name, kind:kind, ftype:ftype, addedAt:Date.now(), hash:hash||null,
       bank:meta.bank||meta.vendor||'', vendor:meta.vendor||'', invoiceNo:meta.invoice_no||'', account:meta.account_masked||'', period:meta.period||'',
-      opening:num(meta.opening), closing:num(meta.closing), src:(srcMeta&&srcMeta.src)||'', count:(kind==='devis'?1:rows.length) });
+      opening:num(meta.opening), closing:num(meta.closing), src:(srcMeta&&srcMeta.src)||'', count:(kind==='devis'?1:(kind==='a_verifier'?0:rows.length)) });
+    if(kind==='a_verifier'){ /* 2 IA en désaccord : on garde le doc mais 0 opération — Kevin tranche (jamais compté à tort) */
+      var dref0=VAULT.docs[0]; if(dref0){ dref0.pending={ vendor:meta.vendor||'', invoice_no:meta.invoice_no||'', date:meta.date||meta.period||'',
+        ht:num(meta.ht), tva:num(meta.tva), tva_rate:num(meta.tva_rate),
+        rows:(rows||[]).map(function(r){ return { date:r.date, label:r.label, amount:num(r.amount), category:r.category, vendor:r.vendor, ht:num(r.ht), tva:num(r.tva), tva_rate:num(r.tva_rate) }; }) }; }
+      audit('a_verifier', name); dedupeAll(); return { added:0, devis:0, aVerifier:1, docId:docId, kind:'a_verifier' };
+    }
     if(kind==='devis'){
       var damt=null, dl=name;
       rows.forEach(function(r){ var a=num(r.amount); if(a!==null){ damt=(damt||0)+Math.abs(a); if(r.label)dl=r.label; } });
@@ -1072,7 +1161,7 @@
   function filterBar(){
     var ms=months();
     var opts='<option value="">Tous les mois</option>'+ms.map(function(m){return '<option value="'+m+'"'+(STATE.filter.month===m?' selected':'')+'>'+esc(frMonth(m))+'</option>';}).join('');
-    var kinds=[['','Tous types'],['releve','Relevés'],['facture','Factures'],['ticket','Tickets'],['paie','Fiches de paie']];
+    var kinds=[['','Tous types'],['releve','Relevés'],['facture','Factures'],['ticket','Tickets'],['paie','Fiches de paie'],['devis','Devis'],['a_verifier','À vérifier']];
     var kopts=kinds.map(function(k){return '<option value="'+k[0]+'"'+(STATE.filter.kind===k[0]?' selected':'')+'>'+k[1]+'</option>';}).join('');
     var c=el('<div class="row" style="margin-bottom:12px"><select id="f-month" class="grow">'+opts+'</select><select id="f-kind" class="grow">'+kopts+'</select></div>');
     setTimeout(function(){ var fm=$('f-month'),fk=$('f-kind'); if(fm)fm.onchange=function(){STATE.filter.month=fm.value;render();}; if(fk)fk.onchange=function(){STATE.filter.kind=fk.value;render();}; },0);
@@ -1151,8 +1240,8 @@
     c2.querySelector('#m-add').onclick=addManual;
     c2.querySelector('#paste-go').onclick=function(){ var t=(c2.querySelector('#paste').value||'').trim(); if(!t){toast('Colle d\'abord un texte',true);return;} runImport(function(){ return importText(stripSecrets(t),'Texte collé'); }, 'texte'); };
   }
-  function kindIcon(k){ return {releve:'🏦',facture:'🧾',ticket:'🧾',paie:'💼'}[k]||'📄'; }
-  function kindLabel(k){ return {releve:'Relevé',facture:'Facture',ticket:'Ticket',paie:'Fiche de paie'}[k]||'Document'; }
+  function kindIcon(k){ return {releve:'🏦',facture:'🧾',ticket:'🧾',paie:'💼',devis:'📝',a_verifier:'🔎'}[k]||'📄'; }
+  function kindLabel(k){ return {releve:'Relevé',facture:'Facture',ticket:'Ticket',paie:'Fiche de paie',devis:'Devis',a_verifier:'À vérifier'}[k]||'Document'; }
   function catOptions(sel){ return (VAULT.categories||DEFAULT_CATS).map(function(c){return '<option value="'+esc(c)+'"'+(sel===c?' selected':'')+'>'+catIcon(c)+' '+esc(c)+'</option>';}).join(''); }
 
   function _sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
@@ -1223,7 +1312,7 @@
     var isText=function(f){ return /\.txt$/i.test(f.name); };
     var needAI=files.some(function(f){ return !isLocal(f); });
     if(needAI && !VAULT.aiPinHash){ toast('Active d\'abord le classement IA (Réglages)',true); STATE.tab='set'; render(); return; }
-    var stat=$('impstat'); var okc=0, err=0, devc=0, dupc=0, pendc=0, lines=[];
+    var stat=$('impstat'); var okc=0, err=0, devc=0, dupc=0, pendc=0, avc=0, lines=[];
     function draw(){ if(stat)stat.innerHTML=lines.join(''); }
     files.forEach(function(f,i){ lines[i]='<div class="doc" id="ip'+i+'"><span>⏳</span><div class="grow" style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(f.name)+'</div></div><span class="tiny">en file…</span></div>'; });
     draw();
@@ -1243,6 +1332,7 @@
           else { if(f.size>30*1024*1024) throw new Error('trop volumineux (>30 Mo) — scinde le PDF'); r=await importFile(f); }
           if(r.dup){ dupc++; setLine(i,'⏭️','déjà importé (doublon ignoré)','var(--dim)'); }
           else if(r.pub){ setLine(i,'📣','publicité — écartée','var(--dim)'); }
+          else if(r.aVerifier){ avc++; setLine(i,'🔎','à vérifier (2 IA en désaccord) — je ne compte rien','var(--gold)'); }
           else { okc+=r.added; if(r.devis)devc+=r.devis; setLine(i,'✅',(r.devis?'1 devis':(r.added+' op.')),'var(--green)'); }
           doneOk=true;
         }catch(e){
@@ -1261,7 +1351,7 @@
       await persist();
     }
     var rm=dedupeAll(); if(rm){ await persist(); }
-    toast('✅ '+okc+' opérations'+(devc?(' · '+devc+' devis'):'')+' ajoutés'+(dupc?(' · '+dupc+' doublon(s) ignoré(s)'):'')+((rm)?(' · '+rm+' doublon(s) nettoyé(s)'):'')+(pendc?(' · '+pendc+' gardé(s) pour réimport auto'):'')+(err?(' · '+err+' échec(s) — voir la liste'):''));
+    toast('✅ '+okc+' opérations'+(devc?(' · '+devc+' devis'):'')+' ajoutés'+(avc?(' · 🔎 '+avc+' à vérifier'):'')+(dupc?(' · '+dupc+' doublon(s) ignoré(s)'):'')+((rm)?(' · '+rm+' doublon(s) nettoyé(s)'):'')+(pendc?(' · '+pendc+' gardé(s) pour réimport auto'):'')+(err?(' · '+err+' échec(s) — voir la liste'):''));
     if(!err && !pendc){ STATE.tab=(okc===0&&devc>0)?'devis':'dash'; render(); }
     else if(pendc){ render(); }
   }
@@ -1900,10 +1990,34 @@
   function viewComptes(v){
     var groups={}, order=[];
     function G(acc){ if(!groups[acc.key]){ groups[acc.key]={acc:acc, docs:[], ops:0, dep:0, rev:0}; order.push(acc.key); } return groups[acc.key]; }
-    (VAULT.docs||[]).forEach(function(d){ G(accountForKind(d.kind)).docs.push(d); });
+    (VAULT.docs||[]).forEach(function(d){ if(d.kind==='a_verifier')return; G(accountForKind(d.kind)).docs.push(d); });
     (VAULT.tx||[]).forEach(function(t){ if(t.recDup)return; var g=G(accountForKind(t.kind)); g.ops++; if(t.category==='Virements internes')return; if(t.amount<0)g.dep+=(-t.amount); else g.rev+=t.amount; });
     var devN=(VAULT.devis||[]).length; if(devN){ var gd=G(accountForKind('devis')); gd.devisN=devN; gd.devisTot=(VAULT.devis||[]).reduce(function(s,x){return s+Math.abs(x.amount||0);},0); }
-    if(!order.length){ v.appendChild(el('<div class="card" style="text-align:center;padding:30px"><div style="font-size:38px">🗃️</div><h2 style="justify-content:center;margin-top:6px">Comptes</h2><p class="muted">Chaque document importé est rangé AUTOMATIQUEMENT dans son compte : relevés bancaires, factures, devis, fiches de paie… Ajoute des documents pour commencer.</p></div>')); return; }
+    /* Section « À vérifier » : documents où 2 IA n'étaient pas d'accord (pub ? facture ?). 0 opération créée
+       tant que Kevin n'a pas tranché — jamais compté à tort (Kevin « pas d'erreur, plusieurs vérifient »). */
+    var averif=(VAULT.docs||[]).filter(function(d){return d.kind==='a_verifier';});
+    if(averif.length){
+      var cav=el('<div class="card" style="border:1px solid var(--gold)"><h2>🔎 À vérifier<span class="r">'+averif.length+'</span></h2>'+
+        '<p class="tiny">Ces documents sont <b>ambigus</b> : deux IA n\'étaient pas d\'accord (pub/offre ou vraie facture ?). Je n\'ai <b>rien compté</b> pour ne pas me tromper. Choisis pour chacun :</p></div>');
+      averif.forEach(function(d){
+        var isBody=/^corps[- ]?du[- ]?mail/i.test(d.name||'');
+        var title=isBody?((d.vendor||d.bank||'Mail')+' — corps du mail'):d.name;
+        var row=el('<div class="doc" style="align-items:flex-start;gap:10px;padding:10px 0"></div>');
+        row.appendChild(docThumbEl(d,64));
+        var mid=el('<div class="grow" style="min-width:0"></div>');
+        mid.appendChild(el('<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(title)+'</div>'));
+        var hint=(d.pending&&d.pending.rows&&d.pending.rows.length)?(' · montant vu : '+eur0((d.pending.rows.reduce(function(s,r){var a=num(r.amount);return s+(a?Math.abs(a):0);},0)))):'';
+        mid.appendChild(el('<div class="tiny" style="margin-top:2px"><span class="chip">🔎 À vérifier</span>'+(d.vendor?' '+esc(d.vendor):'')+esc(hint)+'</div>'));
+        var acts=el('<div class="row" style="margin-top:7px;gap:6px;flex-wrap:wrap"></div>');
+        if(d.hasFile){ var vb=el('<button class="btn sm" data-open="'+d.id+'">🖨️ Voir</button>'); acts.appendChild(vb); }
+        var yes=el('<button class="btn sm gold">🧾 C\'est une facture</button>'); yes.onclick=function(){ confirmDocAsInvoice(d.id); }; acts.appendChild(yes);
+        var no=el('<button class="btn sm danger">📣 C\'est une pub</button>'); no.onclick=function(){ deleteDoc(d.id); }; acts.appendChild(no);
+        mid.appendChild(acts); row.appendChild(mid); cav.appendChild(row);
+      });
+      cav.querySelectorAll('[data-open]').forEach(function(b){ b.onclick=function(){ openDoc(b.getAttribute('data-open')); }; });
+      v.appendChild(cav);
+    }
+    if(!order.length){ if(!averif.length) v.appendChild(el('<div class="card" style="text-align:center;padding:30px"><div style="font-size:38px">🗃️</div><h2 style="justify-content:center;margin-top:6px">Comptes</h2><p class="muted">Chaque document importé est rangé AUTOMATIQUEMENT dans son compte : relevés bancaires, factures, devis, fiches de paie… Ajoute des documents pour commencer.</p></div>')); return; }
     /* ordre : comptes connus d'abord (ordre ACCOUNTS), puis "autres" auto */
     var known=ACCOUNTS.map(function(a){return a.key;});
     order.sort(function(a,b){ var ia=known.indexOf(a), ib=known.indexOf(b); if(ia<0)ia=99; if(ib<0)ib=99; return ia-ib; });
