@@ -31,8 +31,14 @@ class PaperExchange(Exchange):
         return float(self.wallet.get(symbol.split("/")[0], 0.0))
 
     def equity_in_quote(self, prices: dict) -> float:
+        # Même garde-fou que le vrai Exchange : un prix manquant ce cycle réutilise
+        # le dernier prix connu au lieu de valoir 0 (pas de fausse coupure/liquidation).
         total = self.quote_balance()
         for sym, px in prices.items():
+            if px:
+                self._last_px[sym] = px
+            else:
+                px = self._last_px.get(sym)
             if not px:
                 continue
             total += float(self.wallet.get(sym.split("/")[0], 0.0)) * px

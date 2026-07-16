@@ -57,6 +57,19 @@ def _flatten_all(ex: Exchange, state: State, prices: dict, reason: str) -> None:
         _flatten_symbol(ex, state, sym, px, reason)
 
 
+def _equity_reliable(prices: dict, state: State) -> bool:
+    """L'équité est fiable si CHAQUE position OUVERTE a un prix ce cycle.
+
+    Si une position ouverte n'a pas de prix (raté réseau sur son ticker),
+    l'équité est sous-évaluée → on NE déclenche PAS de coupure de risque /
+    liquidation sur des données incomplètes (un simple hoquet réseau ne doit
+    jamais solder le compte). Aucune position ouverte → juste du cash → fiable.
+    """
+    return all(
+        prices.get(sym) for sym, p in state.positions.items() if p.in_position
+    )
+
+
 def _reconcile_positions(ex: Exchange, strat: Strategy, risk: RiskManager,
                          state: State, cfg: Config) -> None:
     """Adopte les cryptos DÉJÀ détenues sur le compte comme positions gérées.
@@ -82,13 +95,30 @@ def _reconcile_positions(ex: Exchange, strat: Strategy, risk: RiskManager,
             sig = strat.evaluate(highs, lows, closes, True)
             stop = risk.compute_stop(price, sig.atr) if sig.atr else price * 0.9
             pos.in_position = True
-            pos.entry_price = price  # entrée réelle inconnue → prix courant (neutre)
+            # Prix d'entrée RÉEL reconstruit depuis l'historique de trades du compte
+            # (coût moyen des achats couvrant la quantité détenue). Sans ça
+            # (state.json éphémère sur Railway) on remettait l'entrée au prix
+            # COURANT → en mode « ne jamais vendre à perte » le bot pouvait vendre
+            # dès un petit rebond au-dessus du prix courant, donc EN DESSOUS du vrai
+            # prix d'achat = vente à perte. Repli sur le prix courant SEULEMENT si
+            # l'historique est indisponible (dernier recours, comportement d'avant).
+            est_entry = None
+            _entry_fn = getattr(ex, "average_entry_from_trades", None)
+            if _entry_fn:
+                try:
+                    est_entry = _entry_fn(symbol, held)
+                except Exception:  # noqa: BLE001
+                    est_entry = None
+            pos.entry_price = est_entry if (est_entry and est_entry > 0) else price
             pos.qty = held
             pos.stop_price = stop
-            audit.log("RECONCILE", symbol=symbol, qty=held, price=price, stop=stop)
+            _basis = ("coût réel historique" if (est_entry and est_entry > 0)
+                      else "prix courant (historique indispo)")
+            audit.log("RECONCILE", symbol=symbol, qty=held, price=price, stop=stop,
+                      entry=pos.entry_price, entry_basis=_basis)
             audit.console(
-                f"🔄 {symbol} position reprise du compte : qty={held} @ ~{price:.2f} "
-                f"(stop {stop:.2f}) — sera gérée/revendue normalement")
+                f"🔄 {symbol} position reprise du compte : qty={held} @ entrée ~{pos.entry_price:.2f} "
+                f"({_basis}, stop {stop:.2f}) — gérée/revendue normalement")
         except Exception as exc:  # noqa: BLE001 — la reprise d'une paire ne bloque pas les autres
             audit.log("ERROR", where="reconcile", symbol=symbol, detail=str(exc))
             audit.console(f"⚠️ {symbol} reprise impossible : {exc}")
@@ -163,9 +193,18 @@ def _cycle(ex: Exchange, strat: Strategy, risk: RiskManager,
         audit.console("🛑 KILL détecté — tout soldé, arrêt.")
         raise SystemExit(0)
 
-    # 2) Coupures de risque (sur le capital TOTAL)
+    # 2) Coupures de risque (sur le capital TOTAL) — seulement si l'équité est
+    #    fiable ce cycle (sinon un prix manquant sous-évalue l'équité et
+    #    déclencherait une fausse coupure/liquidation).
     risk.mark_equity(state, equity)
-    halted, reason = risk.check_halts(state, equity)
+    if _equity_reliable(prices, state):
+        halted, reason = risk.check_halts(state, equity)
+    else:
+        halted, reason = False, ""
+        audit.log("EQUITY_UNRELIABLE", equity=round(equity, 2))
+        audit.console(
+            "… équité incomplète (prix manquant sur une position ouverte) — "
+            "coupures de risque ignorées ce cycle")
     pause_buys = False
     if halted:
         if cfg.hold_until_profit:
