@@ -199,6 +199,32 @@ jobs:
             && echo "✅ Déploiement Pages déclenché automatiquement" \
             || echo "::warning::dispatch deploy.yml échoué — Pages sera déployé au prochain push main"
 
+      - name: Déploiements WORKERS auto selon les chemins modifiés
+        # Même piège que Pages : un merge par GITHUB_TOKEN ne déclenche PAS les deploy-*.yml
+        # (on:push paths). Les workers Cloudflare restaient donc sur l'ancien code après un
+        # merge qui les modifie (vécu : connecteur Monaco jamais redéployé). On dispatche ICI
+        # chaque deploy-<worker>.yml dont un chemin services/<x>/ surveillé a changé dans le merge.
+        if: steps.mergepr.outputs.merged == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch origin main --quiet 2>/dev/null || true
+          CH=$(git diff --name-only "origin/main~1" origin/main 2>/dev/null || true)
+          [ -z "$CH" ] && { echo "aucun fichier modifié détecté — rien à déployer"; exit 0; }
+          echo "Fichiers modifiés par le merge :"; echo "$CH" | sed 's/^/  /'
+          for wf in .github/workflows/deploy-*.yml; do
+            [ -f "$wf" ] || continue
+            # chemins services/<x> surveillés par ce workflow (bloc paths:)
+            svcs=$(awk '/^ *paths:/{p=1;next} p&&/services\//{print} p&&/^[A-Za-z]/{p=0}' "$wf" | grep -oE "services/[a-z0-9-]+" | sort -u)
+            [ -z "$svcs" ] && continue
+            hit=0; for s in $svcs; do echo "$CH" | grep -q "^$s/" && hit=1; done
+            if [ "$hit" = "1" ]; then
+              name=$(basename "$wf")
+              gh workflow run "$name" --ref main && echo "✅ déclenché $name (worker modifié)" || echo "::warning::dispatch $name échoué"
+            fi
+          done
+          echo "done"
+
       - name: Notify on failure
         if: failure()
         run: |
