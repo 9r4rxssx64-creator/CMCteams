@@ -38,14 +38,12 @@ const MAX_PENDING = 1000;   // file d'attente factures (élargie : le backfill d
 const TTL = 60 * 60 * 24 * 60;       // 60 j
 const MAX_MSGS_PER_RUN = 15;
 const BACKFILL_DAYS = 60;
-const BACKFILL_BATCH = 20;           // messages max par lot. PETIT exprès : parser 80 e-mails
-                                     // (MIME + base64 + sha256 + ~3 lectures KV chacun) dans UNE
-                                     // invocation Worker dépassait le budget CPU Cloudflare →
-                                     // « error code: 1102 » sur ~la moitié des lots, et la file
-                                     // (persistée seulement en fin de lot RÉUSSI, l.~269) n'avançait
-                                     // pas. À 20/lot le lot TIENT dans le budget → il réussit → la
-                                     // file avance → la boucle GH (60 lots/run) déroule vraiment ses
-                                     // lots au lieu de les cramer en 1102. 60×20 ≈ 1200 mails/run.
+const BACKFILL_BATCH = 40;           // messages max par lot. La boucle backfill ne fait plus AUCUN
+                                     // KV list()/write() par message (dédup = 1 GET hash dans
+                                     // ingestRaw), donc le CPU par lot est léger (I/O FETCH) → plus
+                                     // de « 1102 » ; et un lot plus grand amortit le SEUL list() +
+                                     // write() par lot → moins de lots = moins de list()/jour (le
+                                     // plafond KV gratuit ~1000/jour). 40 = bon compromis CPU/budget.
 const BACKFILL_BUDGET_MS = 14000;    // temps max par lot (sous IMAP_DEADLINE_MS)
 const IMAP_DEADLINE_MS = 20000;
 
@@ -261,18 +259,22 @@ async function backfillStep(env) {
     if (r.status !== 'OK') throw new Error('login_refuse:' + r.line.slice(0, 120));
     r = await c.cmd('SELECT INBOX');
     if (r.status !== 'OK') throw new Error('select_refuse:' + r.line.slice(0, 120));
+    // KV FRUGAL (leçon : « KV list() limit exceeded » + « http_500 » sur le drain de l'app).
+    // Le plan Cloudflare KV gratuit plafonne list()/write()/delete() à ~1000/JOUR sur le
+    // namespace PARTAGÉ (ACCOUNTS). L'ancienne boucle faisait, PAR MESSAGE : 1 list()
+    // (pendingCount) + 1 read (seen) + 1 write (seen) → un seul run (60 lots × 20) = ~1260
+    // list + ~1200 write → budget explosé → (a) backfill en erreur, (b) le drain de l'app
+    // (/__mail/scan, qui list() aussi) tombe en http_500 faute de budget. Ici : ZÉRO list()
+    // et ZÉRO write() par message dans la boucle. La dédup se fait dans ingestRaw via un
+    // GET mail:p:<hash> (une LECTURE — 100k/jour, abondant). La file avance et n'est
+    // persistée qu'à la fin du lot (l.~279) : 1 seul write de file par lot. Un crash re-FETCH
+    // (lectures, pas cher) et ingestRaw saute les hash déjà présents (aucun doublon).
     while (queue.length && processed < BACKFILL_BATCH && (Date.now() - startedAt) < BACKFILL_BUDGET_MS) {
-      if (await pendingCount(env) >= MAX_PENDING) break;
       const uid = queue.shift(); processed++;
-      if (await env.ACCOUNTS.get('mon:seen:' + uid)) continue;
       try {
         const fr = await c.cmd('UID FETCH ' + uid + ' BODY.PEEK[]');
         added += await ingestRaw(env, (fr.literals && fr.literals[0]) || '');
       } catch { /* message ignoré, jamais bloquant */ }
-      await env.ACCOUNTS.put('mon:seen:' + uid, '1', { expirationTtl: TTL });
-      // Checkpoint incrémental de la file : si un lot crashe (1102 CPU) après ce point,
-      // la file persistée a quand même avancé → on ne re-parcourt pas tout au lot suivant.
-      if (processed % 10 === 0) await env.ACCOUNTS.put('mon:bf_queue', JSON.stringify(queue));
     }
     try { await c.cmd('LOGOUT'); } catch { /* */ }
   } finally { await c.close(); }
@@ -404,7 +406,7 @@ function setupPage(host) {
 + 'function memLoad(){try{var o=JSON.parse(localStorage.getItem(LS)||"{}");if(o.pin)$("pin").value=o.pin;if(o.user)$("user").value=o.user;if(o.host)$("host").value=o.host;if(o.port)$("port").value=o.port;}catch(e){}}'
 + 'function memSave(){try{localStorage.setItem(LS,JSON.stringify({pin:$("pin").value.trim(),user:$("user").value.trim(),host:$("host").value.trim(),port:$("port").value.trim()}));}catch(e){}}'
 + 'async function refresh(){try{var r=await fetch("/health",{cache:"no-store"});var j=await r.json();var s=$("status");if(j.connected){$("pass").placeholder="•••••••• déjà enregistré — laisse vide pour ne pas changer";var parts=["✅ Connecté"];if(j.pending)parts.push("📥 "+j.pending+" en attente (ouvre l\\u0027app Finances pour les faire rentrer)");if(j.bf_active){var done=(j.bf_total||0)-(j.bf_remaining||0);parts.push("📚 historique "+done+"/"+(j.bf_total||0));}if(j.lasterr)parts.push("⚠ dernier souci : "+j.lasterr);s.className="ok";s.textContent=parts.join(" · ");}else{s.className="muted";s.textContent="Pas encore connecté — remplis les champs puis Enregistrer.";}}catch(e){}}'
-+ 'memLoad();refresh();setInterval(refresh,20000);'
++ 'memLoad();refresh();setInterval(refresh,60000);' /* 60s (pas 20s) : chaque /health fait 1 list() KV — budget gratuit ~1000/jour partagé */
 + '$("save").onclick=async function(){if(!$("pin").value.trim()||!$("user").value.trim()){say("Entre au moins ton code admin + ton email.","err");return}memSave();say("⏳ Enregistrement…");try{var r=await fetch("/config",{method:"POST",headers:await hdr(),body:JSON.stringify({user:$("user").value.trim(),pass:$("pass").value,host:$("host").value.trim(),port:$("port").value.trim()})});var j=await r.json();if(j.ok){$("pass").value="";say("✅ Enregistré et mémorisé sur cet appareil. Teste la connexion.","ok");refresh();}else{say("❌ "+(j.reason==="mot_de_passe_vide"?"entre ton mot de passe la 1ère fois":j.reason||"refusé")+" (code admin ?)","err");}}catch(e){say("❌ "+e.message,"err")}};'
 + '$("test").onclick=async function(){if(!$("pin").value.trim()){say("Entre ton code admin.","err");return}memSave();say("⏳ Test de connexion IMAP…");try{var r=await fetch("/test",{method:"POST",headers:await hdr()});var j=await r.json();if(j.ok){say("✅ Connecté à "+j.host+":"+j.port+" — boîte "+(j.inbox?"OK":"?")+".\\n"+(j.greeting||""),"ok")}else{say("❌ "+(j.reason||"erreur")+(j.detail?(" — "+j.detail):""),"err")}}catch(e){say("❌ "+e.message,"err")}};'
 + '$("sync").onclick=async function(){if(!$("pin").value.trim()){say("Entre ton code admin.","err");return}memSave();say("⏳ Récupération en cours…");try{var r=await fetch("/sync",{method:"POST",headers:await hdr()});var j=await r.json();if(!j.ok){say("❌ "+(j.reason||"erreur")+(j.detail?(" — "+j.detail):"")+(j.reason==="not_connected"?" — enregistre d\'abord tes identifiants.":""),"err");return}say("✅ "+j.added+" facture(s) récupérée(s) ("+j.scanned+" mails scannés). Ouvre l\'app → 📥 Récupérer.","ok")}catch(e){say("❌ "+e.message,"err")}};'
