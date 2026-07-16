@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.11 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.11">
+<!-- v0.13.12 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.12">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.11" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.12" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.11';
+  var APP_VER = 'v0.13.12';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -365,11 +365,14 @@
      marqué vision:true ; les moteurs texte-seul sont SAUTÉS quand l'entrée contient un
      document (sinon ils échouent). Tout passe par le proxy (tes clés, serveur). */
   var AI_FREE_CHAIN=[
-    { id:'gemini',   label:'Gemini',   fmt:'gemini', vision:true },
-    { id:'mistral',  label:'Mistral',  fmt:'openai', vision:true,  path:'/mistral/v1/chat/completions',     models:['pixtral-12b-2409','mistral-small-latest'] },
-    { id:'groq',     label:'Groq',     fmt:'openai', vision:false, path:'/groq/openai/v1/chat/completions', models:['llama-3.3-70b-versatile'] },
-    { id:'cerebras', label:'Cerebras', fmt:'openai', vision:false, path:'/cerebras/v1/chat/completions',    models:['llama-3.3-70b','llama3.1-8b'] },
-    { id:'deepseek', label:'DeepSeek', fmt:'openai', vision:false, path:'/deepseek/v1/chat/completions',    models:['deepseek-chat'] }
+    /* GRATUITES d'abord (Groq/Cerebras/Mistral = vrai tier gratuit). Mistral lit AUSSI les images
+       (Pixtral) → seule gratuite pour les PDF/photos. Gemini est la clé de Kevin mais son compte
+       est FACTURÉ → on le met en REPLI (après les gratuites, avant Claude), jamais en défaut. */
+    { id:'groq',     label:'Groq',     fmt:'openai', free:true,  vision:false, path:'/groq/openai/v1/chat/completions', models:['llama-3.3-70b-versatile'] },
+    { id:'mistral',  label:'Mistral',  fmt:'openai', free:true,  vision:true,  path:'/mistral/v1/chat/completions',     models:['pixtral-12b-2409','mistral-small-latest'] },
+    { id:'cerebras', label:'Cerebras', fmt:'openai', free:true,  vision:false, path:'/cerebras/v1/chat/completions',    models:['llama-3.3-70b','llama3.1-8b'] },
+    { id:'gemini',   label:'Gemini',   fmt:'gemini', free:false, vision:true },
+    { id:'deepseek', label:'DeepSeek', fmt:'openai', free:false, vision:false, path:'/deepseek/v1/chat/completions',    models:['deepseek-chat'] }
   ];
   var AI_CLAUDE={ id:'anthropic', label:'Claude', fmt:'anthropic', vision:true };
   function _aiSpec(id){ if(id==='anthropic')return AI_CLAUDE; for(var i=0;i<AI_FREE_CHAIN.length;i++)if(AI_FREE_CHAIN[i].id===id)return AI_FREE_CHAIN[i]; return null; }
