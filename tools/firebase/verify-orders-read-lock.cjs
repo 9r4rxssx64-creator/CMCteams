@@ -101,6 +101,32 @@ async function run(env) {
   // Garde-fou : si la source _phase_shops_rolelock.orders_read contenait role dans .write → abort
   ok(/auth\.token\.role === 'admin'/.test(ORDERS_ADMIN), 'expression armée = role:admin (fichier)');
 
+  // ── CMC_ADMIN_LOCK=on → restructure /cmcteams correctement (config admin role:admin) ──
+  {
+    const r = await run({ CMC_ADMIN_LOCK: 'on' });
+    const c = r.put && r.put.rules.cmcteams;
+    ok(c && c['.write'] == null, 'cmclock-on/ write PARENT retiré (descendu au $key, révocable)');
+    ok(c && c.$key && c.$key['.write'] === 'auth != null', 'cmclock-on/ $key .write = auth!=null (tous les autres keys)');
+    ok(c && c.cmc_admin_cfg && /role/.test(String(c.cmc_admin_cfg['.write'])), 'cmclock-on/ cmc_admin_cfg .write = role:admin');
+    ok(c && c.cmc_motd && /role/.test(String(c.cmc_motd['.write'])), 'cmclock-on/ cmc_motd .write = role:admin');
+    ok(c && ['cmc_e', 'cmc_ov', 'cmc_pw'].every((k) => c[k] && c[k]['.write'] === 'auth != null'), 'cmclock-on/ cmc_e/cmc_ov/cmc_pw écrivables par TOUS (employés OK)');
+    ok(c && c.cmc_admin_pin['.write'] === false && c.cmc_ia_key['.write'] === false, 'cmclock-on/ secrets restent .write:false');
+    ok(c && c['.read'] === 'auth != null', 'cmclock-on/ LECTURE /cmcteams inchangée (auth!=null)');
+  }
+  // CMC_ADMIN_LOCK=off → write parent auth!=null (rollback, pas de restructure)
+  {
+    const r = await run({ CMC_ADMIN_LOCK: 'off' });
+    const c = r.put && r.put.rules.cmcteams;
+    ok(c && c['.write'] === 'auth != null', 'cmclock-off/ write parent = auth!=null (inchangé/rollback)');
+    ok(c && (!c.cmc_admin_cfg || c.cmc_admin_cfg['.write'] == null), 'cmclock-off/ cmc_admin_cfg pas verrouillé');
+  }
+  // défaut (absent) = keep, live ouvert → reste ouvert
+  {
+    const r = await run({});
+    const c = r.put && r.put.rules.cmcteams;
+    ok(c && c['.write'] === 'auth != null', 'cmclock-défaut/ keep live ouvert → reste ouvert (0 régression au merge)');
+  }
+
   console.log(`\nverify-orders-read-lock : ${pass} OK / ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 })();

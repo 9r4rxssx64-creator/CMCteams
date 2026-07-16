@@ -71,7 +71,7 @@
 <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1668 2388'%3E%3Crect width='1668' height='2388' fill='%230a1408'/%3E%3Ctext x='834' y='1100' text-anchor='middle' font-size='280' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='834' y='1300' text-anchor='middle' font-size='170' font-weight='800' fill='%23c9a227' letter-spacing='18' font-family='system-ui'%3ECMC%3C/text%3E%3Ctext x='834' y='1420' text-anchor='middle' font-size='86' fill='%237aaa80' letter-spacing='14' font-family='system-ui'%3ETEAMS%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 2732'%3E%3Crect width='2048' height='2732' fill='%230a1408'/%3E%3Ctext x='1024' y='1280' text-anchor='middle' font-size='320' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='1024' y='1500' text-anchor='middle' font-size='190' font-weight='800' fill='%23c9a227' letter-spacing='20' font-family='system-ui'%3ECMC%3C/text%3E%3Ctext x='1024' y='1620' text-anchor='middle' font-size='96' fill='%237aaa80' letter-spacing='16' font-family='system-ui'%3ETEAMS%3C/text%3E%3C/svg%3E">
 <!-- CSP v9.396 \u2014 restrictive mais compatible Firebase/PDF.js/Anthropic/Sentry -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://apis.kd-mc.com https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://apis.kd-mc.com https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apex-auth-worker.9r4rxssx64.workers.dev https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -4066,6 +4066,9 @@ var FB_PRE=["cmc_ref_","cmc_ci_","cmc_comments_","cmc_verif_","cmc_day_notes_","
 var FB_LOCAL=["cmc_uid","cmc_last_uid","cmc_lastact","cmc_lastread","cmc_lastread_dm","cmc_admin_sessions","cmc_admin_pin","cmc_ia_enabled","cmc_ia_websearch","cmc_ia_key","cmc_ia_proxy","cmc_backend_url","cmc_fb_url","cmc_sync_queue","cmc_notif_ts","cmc_emailjs_config","cmc_last_seen_ver","cmc_a11y","cmc_err_log","cmc_theme","cmc_last_auto_backup","cmc_tts_enabled","cmc_lang","cmc_ghost_log","cmc_auto_rotation_off","cmc_auto_assign_gps","cmc_pit_ai_mode","cmc_pit_ai_shift_mode","cmc_qr_checkin_enabled","cmc_login_geo_log","cmc_import_anomalies",
 // v9.399 — Statut onsite local (ne sert que sur l'appareil courant)
 "cmc_onsite_last",
+// v9.871 — refresh_token du token Firebase par RÔLE (Chantier 2 Phase B). Credential
+// per-device : JAMAIS synchronisé (impersonation cross-device). Fail-open à l'anon.
+"cmc_fb_role_refresh",
 // v9.401 — Agents internes permanents (reports + toggles admin local)
 "cmc_agent_reports","cmc_agents_state",
 // v9.515 — Pattern 12 agents critiques universel + IA superviseure
@@ -4889,12 +4892,71 @@ function cmcFbAnonAuth(cb){
    })
    .catch(function(e){_fbAuthToken=null;_fbAuthErr="reseau KO : "+((e&&e.message)||"?");try{console.warn("[fb anon auth]",_fbAuthErr);}catch(_){}if(cb)cb(false);});
 }
+
+// ── v9.871 — Auth Firebase par RÔLE (Chantier 2 Phase B, canary admin) ────────────
+// Mint un id_token qui porte le claim role:admin (U11804) via apex-auth-worker
+// /login-cmc, puis échange custom_token → id_token CÔTÉ CLIENT (même clé Web publique
+// que l'anon). Le token rôle REMPLACE le token anonyme → les écritures admin
+// (cmc_admin_cfg, cmc_motd) passeront le verrou role:admin une fois posé.
+// FAIL-OPEN TOTAL : toute erreur → auth anonyme (comportement actuel, 0 régression).
+// Réservé à l'appareil admin (canary) ; les employés restent en anonyme (ils n'écrivent
+// jamais la config admin). Le refresh_token caché (FB_LOCAL) rafraîchit le token rôle
+// au boot / Face ID SANS re-saisir le PIN (claims préservés par Firebase).
+var CMC_AUTH_WORKER="https://apex-auth-worker.9r4rxssx64.workers.dev";
+var _fbRoleRefresh=null;
+function _cmcSetRoleToken(idToken,refreshToken,expiresIn){
+  _fbAuthToken=idToken;_fbAuthErr="";
+  if(refreshToken){_fbRoleRefresh=refreshToken;try{localStorage.setItem("cmc_fb_role_refresh",refreshToken);}catch(_){}}
+  var ms=(parseInt(expiresIn||"3600",10)*1000)-120000;
+  if(_fbAuthTimer)clearTimeout(_fbAuthTimer);
+  _fbAuthTimer=setTimeout(function(){cmcFbRoleRefresh();},Math.max(60000,ms));
+  try{if(typeof _fbEs!=="undefined"&&_fbEs){fbStop();fbStartListening();}}catch(_){}
+}
+function _cmcExchangeCustomToken(customToken,cb){
+  var key=(localStorage.getItem("cmc_fb_apikey")||FB_WEB_APIKEY||"").trim();
+  if(!key||!customToken){if(cb)cb(false);return;}
+  fetch("https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key="+encodeURIComponent(key),
+    {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:customToken,returnSecureToken:true})})
+   .then(function(r){return r.json().catch(function(){return null;});})
+   .then(function(d){ if(d&&d.idToken){_cmcSetRoleToken(d.idToken,d.refreshToken,d.expiresIn);if(cb)cb(true);} else{if(cb)cb(false);} })
+   .catch(function(){if(cb)cb(false);});
+}
+/** Mint un token RÔLE via /login-cmc (PIN). Fail-open → anon. @param {Function} [cb] called(ok). */
+function cmcFbRoleAuth(uid,pin,cb){
+  if(!uid||!pin){cmcFbAnonAuth(cb);return;}
+  fetch(CMC_AUTH_WORKER+"/login-cmc",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({uid:uid,password:String(pin)})})
+   .then(function(r){return r.json().catch(function(){return null;});})
+   .then(function(d){
+     if(d&&d.ok&&d.id_token){_cmcSetRoleToken(d.id_token,d.refresh_token,d.expires_in);if(cb)cb(true);return;}
+     if(d&&d.ok&&d.custom_token){_cmcExchangeCustomToken(d.custom_token,function(ok){ if(ok){if(cb)cb(true);} else{cmcFbAnonAuth(cb);} });return;}
+     _fbAuthErr="role KO : "+((d&&(d.error||d.detail))||("HTTP "+"?"));cmcFbAnonAuth(cb); // mismatch / worker KO → anon
+   }).catch(function(e){_fbAuthErr="role reseau KO : "+((e&&e.message)||"?");cmcFbAnonAuth(cb);});
+}
+/** Rafraîchit le token RÔLE via le refresh_token caché (SANS PIN). Fail-open → anon. */
+function cmcFbRoleRefresh(cb){
+  var rt=_fbRoleRefresh||(function(){try{return localStorage.getItem("cmc_fb_role_refresh");}catch(_){return null;}})();
+  var key=(localStorage.getItem("cmc_fb_apikey")||FB_WEB_APIKEY||"").trim();
+  if(!rt||!key){cmcFbAnonAuth(cb);return;}
+  fetch("https://securetoken.googleapis.com/v1/token?key="+encodeURIComponent(key),
+    {method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"grant_type=refresh_token&refresh_token="+encodeURIComponent(rt)})
+   .then(function(r){return r.json().catch(function(){return null;});})
+   .then(function(d){
+     if(d&&(d.id_token||d.idToken)){_cmcSetRoleToken(d.id_token||d.idToken,d.refresh_token||d.refreshToken,d.expires_in||d.expiresIn);if(cb)cb(true);}
+     else{_fbRoleRefresh=null;try{localStorage.removeItem("cmc_fb_role_refresh");}catch(_){}cmcFbAnonAuth(cb);} // refresh expiré → anon
+   }).catch(function(){cmcFbAnonAuth(cb);});
+}
+/** true si un token rôle (refresh caché) est armé sur cet appareil. */
+function cmcHasRoleAuth(){try{return !!(localStorage.getItem("cmc_fb_role_refresh"));}catch(_){return false;}}
+
 /** Initialize Firebase: load all + start SSE listener. @returns {void} */
 function fbInit(){
   FB_URL=(localStorage.getItem("cmc_fb_url")||FB_DEFAULT).trim().replace(/\/$/,"");
   if(!FB_URL)return;
-  // v9.784 — tente l'auth anonyme d'abord (no-op sans clé → fallback), puis charge/écoute
-  cmcFbAnonAuth(function(){fbLoadAll();fbStartListening();});
+  // v9.784 — auth d'abord (no-op sans clé → fallback), puis charge/écoute.
+  // v9.871 — appareil admin avec token rôle armé → refresh du rôle (claims préservés,
+  // sans PIN) ; sinon anonyme (comportement actuel). Fail-open dans les deux cas.
+  var authFn=cmcHasRoleAuth()?cmcFbRoleRefresh:cmcFbAnonAuth;
+  authFn(function(){fbLoadAll();fbStartListening();});
 }
 
 function fbSaveUrl(){
@@ -4925,6 +4987,27 @@ function cmcSaveFbApiKey(){
       dc();
     });
   }
+}
+// v9.871 — Canary admin : active le jeton role:admin sur CET appareil (1 tap + PIN).
+// Fail-open : indispo → reste anonyme, l'app fonctionne comme avant. Admin uniquement.
+function cmcActivateRoleAuth(){
+  if(!A.user||A.user.id!==AID){if(typeof toast==="function")toast("Réservé à l'admin","err");return;}
+  var pin=null;try{pin=window.prompt("Ton code admin (PIN) pour activer l'accès admin sécurisé :");}catch(_){}
+  if(!pin){return;}
+  if(typeof toast==="function")toast("🔐 Activation du rôle admin…","info",3000);
+  cmcFbRoleAuth(AID,pin,function(ok){
+    // ok=true ne garantit pas le rôle (fail-open a pu retomber en anon) → on vérifie le refresh caché.
+    var armed=cmcHasRoleAuth();
+    if(typeof toast==="function")toast(armed?"👑 Rôle admin ARMÉ sur ce device ✓ (les écritures config admin passeront le verrou)":("⚠ Rôle non armé — "+(_fbAuthErr||"cause inconnue")+" (app OK, encore en anonyme)"),armed?"ok":"err",9000);
+    try{if(typeof _fbEs!=="undefined"&&_fbEs){fbStop();fbStartListening();}}catch(_){}
+    dc();
+  });
+}
+function cmcDisableRoleAuth(){
+  if(!A.user||A.user.id!==AID)return;
+  _fbRoleRefresh=null;try{localStorage.removeItem("cmc_fb_role_refresh");}catch(_){}
+  if(typeof cmcFbAnonAuth==="function")cmcFbAnonAuth(function(){try{if(typeof _fbEs!=="undefined"&&_fbEs){fbStop();fbStartListening();}}catch(_){}dc();});
+  if(typeof toast==="function")toast("Rôle admin désactivé sur ce device (retour anonyme)","info");
 }
 // ── Fin bloc Firebase ────────────────────────────────────────────────────────
 
@@ -5692,7 +5775,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.870";
+var APP_VER="v9.871";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -31530,6 +31613,17 @@ function vAdminV10(){
       +'<div style="display:flex;gap:6px;align-items:center">'
       +'<input id="fbApiKeyIn" class="inp" placeholder="AIza… (clé Web API publique)" autocomplete="off" style="flex:1;font-size:14px;font-family:monospace;padding:6px 8px;margin-bottom:0" value="'+esc(localStorage.getItem("cmc_fb_apikey")||"")+'">'
       +'<button class="btn gold" onclick="cmcSaveFbApiKey()" style="padding:7px 12px;font-size:14px;white-space:nowrap">Activer</button>'
+      +'</div></div>'
+
+    // v9.871 — Auth par RÔLE (Chantier 2 Phase B, canary admin). 1 tap : mint un token
+    // role:admin (via /login-cmc + PIN) → prérequis du verrou écriture config admin.
+    // Fail-open : échec → reste en anonyme. Réservé à l'appareil admin.
+    +'<div style="padding:10px 14px;background:rgba(200,160,60,.06);border:1px solid rgba(200,160,60,.25);border-radius:10px;margin-bottom:12px">'
+      +'<div style="font-size:14px;font-weight:700;color:#c9a227;margin-bottom:4px">👑 Accès admin sécurisé (rôle) '+(cmcHasRoleAuth()?'<span style="color:#5aff90">— ARMÉ sur ce device ✓</span>':'<span style="color:#9ab">— inactif</span>')+'</div>'
+      +'<div style="font-size:12px;color:#9ab;margin-bottom:6px">Active un jeton <b>role:admin</b> sur cet appareil (une fois). Prérequis pour verrouiller l\'écriture de la config admin / du message du jour. Fail-open : si indisponible, l\'app reste normale.</div>'
+      +'<div style="display:flex;gap:6px;align-items:center">'
+      +'<button class="btn gold" onclick="cmcActivateRoleAuth()" style="padding:7px 12px;font-size:14px;white-space:nowrap">👑 '+(cmcHasRoleAuth()?'Réactiver':'Activer')+' le rôle admin</button>'
+      +(cmcHasRoleAuth()?'<button class="btn" onclick="cmcDisableRoleAuth()" style="padding:7px 12px;font-size:13px;white-space:nowrap">Désactiver</button>':'')
       +'</div></div>'
 
     // MOTD admin (publication message du jour)

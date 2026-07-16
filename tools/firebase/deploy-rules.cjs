@@ -32,6 +32,11 @@ const SHOPS_LOCK = (process.env.SHOPS_LOCK || 'keep').toLowerCase();
 // autre raison ne (dé)verrouille JAMAIS la lecture des commandes par accident.
 // L'ÉCRITURE des commandes (checkout client) reste anonyme dans TOUS les cas.
 const ORDERS_READ = (process.env.ORDERS_READ || 'keep').toLowerCase();
+// Verrou ÉCRITURE config admin /cmcteams (cmc_admin_cfg, cmc_motd) par rôle : 'on'
+// restructure /cmcteams (write parent → $key, +.write aux enfants validate-only,
+// role:admin sur cmc_admin_cfg/cmc_motd) ; 'off' = write parent auth!=null (rollback) ;
+// 'keep' (défaut) = préserve l'état LIVE. LECTURE /cmcteams inchangée dans tous les cas.
+const CMC_ADMIN_LOCK = (process.env.CMC_ADMIN_LOCK || 'keep').toLowerCase();
 
 function b64url(buf){ return Buffer.from(buf).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 
@@ -153,6 +158,42 @@ async function getAccessToken(){
   if (/role/.test(String(rules.shops_admin_v1.orders.$shop.$orderId['.write']))) {
     throw new Error('SECURITÉ : orders/.write ne doit PAS exiger role:admin (clients bloqués), abort');
   }
+
+  // Verrou ÉCRITURE config admin /cmcteams (cmc_admin_cfg, cmc_motd) par rôle.
+  // Restructure suivant le patron /apex (write parent → $key + .write aux enfants).
+  // Jamais quand STATE=open (rollback = tout ouvert, le lock n'a pas de sens).
+  let cmcLock = CMC_ADMIN_LOCK;
+  if (STATE === 'open') { cmcLock = 'off'; }
+  else if (cmcLock === 'keep') {
+    try {
+      const cur = await fetch(DB + '/.settings/rules.json?access_token=' + encodeURIComponent(token)).then(r => r.json());
+      const c = cur && cur.rules && cur.rules.cmcteams;
+      const parentW = c && c['.write'];
+      const keyW = c && c.$key && c.$key['.write'];
+      // 'on' = write descendu ($key a un .write) ET pas de write parent + cmc_motd verrouillé role
+      cmcLock = (keyW && parentW == null && c.cmc_motd && /role/.test(String(c.cmc_motd['.write'] || ''))) ? 'on' : 'off';
+      console.log('🔎 CMC_ADMIN_LOCK=keep → état live détecté : ' + cmcLock);
+    } catch (e) {
+      throw new Error('CMC_ADMIN_LOCK=keep : lecture des règles live impossible (' + e.message + '), abort');
+    }
+  }
+  if (cmcLock === 'on') {
+    const A = doc._phase_cmc_adminlock;
+    if (!A || !/role/.test(String(A.role_admin)) || A.any_auth !== 'auth != null') throw new Error('CMC_ADMIN_LOCK=on mais _phase_cmc_adminlock invalide, abort');
+    const c = rules.cmcteams;
+    delete c['.write'];                                   // le write parent descend au $key (révocable plus bas)
+    c.$key = Object.assign({}, c.$key, { '.write': A.any_auth });
+    ['cmc_e', 'cmc_ov', 'cmc_pw'].forEach((k) => { c[k] = Object.assign({}, c[k]); c[k]['.write'] = A.any_auth; }); // enfants validate-only : garder writable pour tous
+    c.cmc_motd = Object.assign({}, c.cmc_motd); c.cmc_motd['.write'] = A.role_admin;                                 // config admin → role:admin
+    c.cmc_admin_cfg = Object.assign({}, c.cmc_admin_cfg, { '.write': A.role_admin });
+    // GARDE-FOUS : (a) lecture inchangée ; (b) secrets restent .write:false ; (c) aucun enfant writable perdu.
+    if (c['.read'] !== 'auth != null') throw new Error('SECURITÉ : /cmcteams .read doit rester "auth != null", abort');
+    if (c.cmc_admin_pin['.write'] !== false || c.cmc_ia_key['.write'] !== false) throw new Error('SECURITÉ : cmc_admin_pin/cmc_ia_key doivent rester .write:false, abort');
+    ['cmc_e', 'cmc_ov', 'cmc_pw', 'cmc_motd', 'cmc_admin_cfg'].forEach((k) => { if (c[k]['.write'] == null) throw new Error('SECURITÉ : ' + k + ' perd son .write (écritures cassées), abort'); });
+    console.log('🔒 CMC_ADMIN_LOCK=on : cmc_admin_cfg + cmc_motd .write = role:admin ; cmc_e/cmc_ov/cmc_pw/$key .write = auth!=null (inchangé pour tous)');
+  } else {
+    console.log('🛟 CMC_ADMIN_LOCK=off : écriture /cmcteams = auth!=null au parent (inchangé)');
+  }
   // /apex + /coffre_vault : hardened (défaut, état du fichier = auth != null) ou rollback open
   if (APEX_STATE === 'open') {
     rules.apex['.read'] = true;
@@ -213,6 +254,18 @@ async function getAccessToken(){
   if (ordersRead === 'on' && sOrders === 200) throw new Error('DANGER : commandes lisibles SANS auth malgré ORDERS_READ=on, abort');
   if (ordersRead === 'off' && sOrders !== 200) throw new Error('Vérif KO : ORDERS_READ=off mais commandes non lisibles (HTTP ' + sOrders + '), abort');
   console.log('✅ Commandes clients : lecture ' + (ordersRead === 'on' ? 'VERROUILLÉE (dashboard admin seul)' : 'publique (inchangé)'));
+
+  // Vérif STRUCTURELLE du verrou config admin (write authentifié non testable sans token).
+  const lc = live && live.rules && live.rules.cmcteams;
+  if (cmcLock === 'on') {
+    const okLock = lc && lc['.write'] == null && lc.$key && lc.$key['.write'] === 'auth != null'
+      && lc.cmc_motd && /role/.test(String(lc.cmc_motd['.write'] || '')) && lc.cmc_admin_cfg && /role/.test(String(lc.cmc_admin_cfg['.write'] || ''))
+      && ['cmc_e', 'cmc_ov', 'cmc_pw'].every((k) => lc[k] && lc[k]['.write'] === 'auth != null');
+    if (!okLock) throw new Error('Vérif KO : structure verrou config admin incorrecte en live, abort');
+    console.log('🔒 Config admin /cmcteams : cmc_admin_cfg + cmc_motd = role:admin (employés écrivent le reste, lecture inchangée)');
+  } else {
+    console.log('🛟 Config admin /cmcteams : écriture parent auth!=null (inchangé)');
+  }
 
   // PURGE credentials du cloud partagé (audit 2026-07-07) — SEULEMENT en hardened.
   // ax_admin_pin/ax_pin/ax_user/ax_uid/ax_admin_pass sont FB_LOCAL (règle #40/#41) :
