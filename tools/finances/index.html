@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.9 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.9">
+<!-- v0.13.10 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.10">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.9" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.10" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.9';
+  var APP_VER = 'v0.13.10';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -700,22 +700,22 @@
   var EXTRACT_PROMPT =
     'Tu es un extracteur COMPTABLE de relevés bancaires, factures, tickets, fiches de paie ET devis (France/Monaco/Italie, EUR). '+
     'Analyse le document et renvoie UNIQUEMENT un JSON strict, sans texte autour:\n'+
-    '{"meta":{"kind":"releve|facture|ticket|paie|devis|pub","confidence":0.0,"vendor":"","invoice_no":"","bank":"","account_masked":"","period":"","date":"YYYY-MM-DD","total":null,"ht":null,"tva":null,"tva_rate":null,"opening":null,"closing":null},'+
+    '{"meta":{"kind":"releve|facture|ticket|paie|devis|avoir|pub","confidence":0.0,"vendor":"","invoice_no":"","bank":"","account_masked":"","period":"","date":"YYYY-MM-DD","total":null,"ht":null,"tva":null,"tva_rate":null,"opening":null,"closing":null},'+
     '"tx":[{"date":"YYYY-MM-DD","label":"libellé exact","amount":-12.34,"category":"une catégorie parmi la liste","vendor":"","ht":null,"tva":null,"tva_rate":null}]}\n'+
     'Règles: amount NÉGATIF pour une dépense/débit, POSITIF pour un revenu/crédit. '+
     'Reproduis les montants EXACTEMENT (aucune invention; ligne illisible -> ne pas l\'inventer). '+
     'category ∈ ['+DEFAULT_CATS.map(function(c){return '"'+c+'"';}).join(',')+']. '+
-    'Pour une FACTURE/TICKET: renseigne ht (montant hors taxes), tva (montant de TVA) et tva_rate (taux %, ex 20) si visibles; amount = TTC négatif; vendor = nom du fournisseur/commerçant. '+
-    'Une facture/ticket = une seule ligne (montant TOTAL TTC). '+
-    'Une fiche de paie = une ligne Revenus (salaire net, positif). '+
-    'Un DEVIS / PREVENTIVO / estimation NON payé : meta.kind="devis", meta.total=montant total (positif), meta.vendor=émetteur, tx=[] (ne compte PAS une dépense). '+
-    'IMPORTANT — PUBLICITÉ : si le document est une pub, newsletter, promotion, offre commerciale, code promo, vente flash, panier abandonné, deal (Groupon/Wish/AliExpress promo…) ou toute annonce SANS achat réellement effectué/facturé : meta.kind="pub", tx=[] — ce n\'est PAS une facture, ne rien extraire. '+
-    'RÈGLE STRICTE pour un CORPS DE MAIL (texte, pas un PDF) : c\'est une pub par DÉFAUT. Ce n\'est une facture QUE si on voit à la fois (a) un numéro de facture ou de commande ET (b) un montant réellement payé/débité/prélevé (« total facturé », « payé le », « prélèvement de »). Un prix affiché, une offre, un pourcentage de réduction ne sont PAS un achat. En cas de doute : "pub". '+
-    'DISTINCTION CLAIRE des types (ne PAS confondre) : '+
-    '• FACTURE/TICKET = un achat RÉELLEMENT payé ou dû (montant TTC + fournisseur, souvent un n° de facture). '+
-    '• DEVIS = une offre chiffrée de travaux/prestation NON encore payée (kind="devis", ne compte pas comme dépense). '+
-    '• PUB/OFFRE = publicité, newsletter, promotion, offre commerciale, code promo, deal — même si un PRIX ou une RÉDUCTION est affiché : kind="pub", ce n\'est NI une facture NI un devis, tx=[]. '+
-    'Ajoute meta.confidence entre 0 et 1 = ta certitude sur le type (kind). Mets une confidence BASSE (≤0.5) si le document est ambigu (pourrait être une pub OU une facture). '+
+    '--- LES 7 TYPES (choisis LE bon, ne les confonds JAMAIS) ---\n'+
+    '1) "releve" = RELEVÉ BANCAIRE (plusieurs opérations, solde ouverture/clôture, IBAN masqué). Chaque ligne = une tx avec son signe réel.\n'+
+    '2) "facture" = FACTURE réellement due/payée d\'un fournisseur (n° de facture + montant TTC), Y COMPRIS une facture d\'ABONNEMENT ou un PRÉLÈVEMENT récurrent (Netflix, SFR, EDF, assurance, loyer…). 1 ligne, amount = TTC NÉGATIF ; ht/tva/tva_rate si visibles ; vendor = émetteur.\n'+
+    '3) "ticket" = TICKET DE CAISSE / reçu d\'un achat DÉJÀ payé (magasin, resto, carburant, péage…). 1 ligne, amount NÉGATIF.\n'+
+    '4) "paie" = FICHE DE PAIE / bulletin de salaire. 1 ligne Revenus, salaire NET POSITIF.\n'+
+    '5) "devis" = DEVIS / PROFORMA / BON DE COMMANDE / PRÉVENTIVO / estimation NON encore payée (offre chiffrée de prestation/travaux). meta.kind="devis", meta.total=montant (positif), tx=[] — NE COMPTE PAS une dépense.\n'+
+    '6) "avoir" = AVOIR / REMBOURSEMENT / NOTE DE CRÉDIT (le commerçant te REND de l\'argent : retour produit remboursé, geste commercial). 1 ligne, amount POSITIF (argent qui revient), vendor = émetteur.\n'+
+    '7) "pub" = PUBLICITÉ / NEWSLETTER / PROMOTION / OFFRE commerciale / code promo / vente flash / panier abandonné / deal (Groupon/Wish/AliExpress…). meta.kind="pub", tx=[]. C\'est une pub MÊME si un prix, une réduction ou « -50% » est affiché.\n'+
+    'NE CONFONDS PAS : un DEVIS/PROFORMA/bon de commande (pas encore payé) ≠ une FACTURE (due/payée) ; une OFFRE/PROMO (pub) ≠ un achat facturé ; un AVOIR (argent rendu, POSITIF) ≠ une facture (dépense, NÉGATIVE). '+
+    'RÈGLE STRICTE pour un CORPS DE MAIL (texte, pas un PDF) : c\'est une "pub" par DÉFAUT. Ce n\'est une "facture" QUE si on voit à la fois (a) un n° de facture/commande ET (b) un montant réellement payé/débité/prélevé (« total facturé », « payé le », « prélèvement de »). Un prix affiché, une offre, un % de réduction ne sont PAS un achat. En cas de doute : "pub". '+
+    'Ajoute meta.confidence (0 à 1) = ta certitude sur le kind ; BASSE (≤0.5) si le document est ambigu (pub OU facture ?). '+
     'Réponds en JSON seulement.';
   /* 2e avis indépendant (leçon « plusieurs vérifie ») : un AUTRE moteur tranche juste le TYPE,
      sans ré-extraire — court, rapide, pas cher. Sert à ne JAMAIS compter une pub comme une dépense. */
@@ -759,7 +759,7 @@
     var meta=j.meta||{}; var kind=meta.kind||'releve';
     if(kind==='pub'||kind==='a_verifier') return out;                 /* déjà écarté / déjà à vérifier */
     var conf=num(meta.confidence);
-    var creates=(kind==='facture'||kind==='ticket'||kind==='paie');
+    var creates=(kind==='facture'||kind==='ticket'||kind==='paie'||kind==='avoir');
     var lowConf=(conf!=null && conf<0.6);
     var localPub=ctx.text && looksPromoLocal(ctx.name, ctx.from, ctx.text);
     var need=(ctx.ftype==='texte' && creates) || lowConf || (localPub && creates);
@@ -1161,7 +1161,7 @@
   function filterBar(){
     var ms=months();
     var opts='<option value="">Tous les mois</option>'+ms.map(function(m){return '<option value="'+m+'"'+(STATE.filter.month===m?' selected':'')+'>'+esc(frMonth(m))+'</option>';}).join('');
-    var kinds=[['','Tous types'],['releve','Relevés'],['facture','Factures'],['ticket','Tickets'],['paie','Fiches de paie'],['devis','Devis'],['a_verifier','À vérifier']];
+    var kinds=[['','Tous types'],['releve','Relevés'],['facture','Factures'],['ticket','Tickets'],['paie','Fiches de paie'],['avoir','Avoirs'],['devis','Devis'],['a_verifier','À vérifier']];
     var kopts=kinds.map(function(k){return '<option value="'+k[0]+'"'+(STATE.filter.kind===k[0]?' selected':'')+'>'+k[1]+'</option>';}).join('');
     var c=el('<div class="row" style="margin-bottom:12px"><select id="f-month" class="grow">'+opts+'</select><select id="f-kind" class="grow">'+kopts+'</select></div>');
     setTimeout(function(){ var fm=$('f-month'),fk=$('f-kind'); if(fm)fm.onchange=function(){STATE.filter.month=fm.value;render();}; if(fk)fk.onchange=function(){STATE.filter.kind=fk.value;render();}; },0);
@@ -1240,8 +1240,8 @@
     c2.querySelector('#m-add').onclick=addManual;
     c2.querySelector('#paste-go').onclick=function(){ var t=(c2.querySelector('#paste').value||'').trim(); if(!t){toast('Colle d\'abord un texte',true);return;} runImport(function(){ return importText(stripSecrets(t),'Texte collé'); }, 'texte'); };
   }
-  function kindIcon(k){ return {releve:'🏦',facture:'🧾',ticket:'🧾',paie:'💼',devis:'📝',a_verifier:'🔎'}[k]||'📄'; }
-  function kindLabel(k){ return {releve:'Relevé',facture:'Facture',ticket:'Ticket',paie:'Fiche de paie',devis:'Devis',a_verifier:'À vérifier'}[k]||'Document'; }
+  function kindIcon(k){ return {releve:'🏦',facture:'🧾',ticket:'🧾',paie:'💼',avoir:'↩️',devis:'📝',a_verifier:'🔎'}[k]||'📄'; }
+  function kindLabel(k){ return {releve:'Relevé',facture:'Facture',ticket:'Ticket',paie:'Fiche de paie',avoir:'Avoir / remboursement',devis:'Devis',a_verifier:'À vérifier'}[k]||'Document'; }
   function catOptions(sel){ return (VAULT.categories||DEFAULT_CATS).map(function(c){return '<option value="'+esc(c)+'"'+(sel===c?' selected':'')+'>'+catIcon(c)+' '+esc(c)+'</option>';}).join(''); }
 
   function _sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
@@ -1976,6 +1976,7 @@
     {key:'factures', label:'Factures fournisseurs', icon:'🧾', kinds:['facture']},
     {key:'tickets', label:'Tickets / notes', icon:'🧾', kinds:['ticket']},
     {key:'paie', label:'Fiches de paie', icon:'💼', kinds:['paie']},
+    {key:'avoirs', label:'Avoirs / remboursements', icon:'↩️', kinds:['avoir']},
     {key:'devis', label:'Devis (non comptés)', icon:'📝', kinds:['devis']},
     {key:'manuel', label:'Saisie manuelle', icon:'✍️', kinds:['manuel']}
   ];
