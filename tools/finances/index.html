@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.14 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.14">
+<!-- v0.13.15 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.15">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.14" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.15" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.14';
+  var APP_VER = 'v0.13.15';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -968,6 +968,12 @@
     var added=0, isInvoice=(kind==='facture'||kind==='ticket');
     rows.forEach(function(r){
       var amt=num(r.amount); if(amt===null)return;
+      // Filet de signe (audit P2) : une facture/ticket est TOUJOURS une dépense →
+      // on force le montant NÉGATIF, même si l'IA a oublié le signe (sinon elle
+      // serait comptée en REVENU en silence). Sûr : n'affecte NI avoir (crédit,
+      // positif — lesson #158), NI paie (positif), NI releve (signes réels) —
+      // kinds distincts où isInvoice=false. Appliqué avant cleanCat (cohérence).
+      if(isInvoice) amt=-Math.abs(amt);
       var lb=String(r.label||'').trim(); if(!lb&&!amt)return;
       var cat=cleanCat(r.category, amt); var key=norm(lb);
       if(VAULT.merchantMap[key]) cat=VAULT.merchantMap[key]; else if(cat) VAULT.merchantMap[key]=cat;
