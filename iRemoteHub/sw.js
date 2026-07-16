@@ -1,7 +1,7 @@
 // iRemoteHub - Service Worker
 // Cache offline + background sync pour les commandes hors-ligne
 
-const CACHE_VERSION = 'iremotehub-v0.1';
+const CACHE_VERSION = 'iremotehub-v0.1.1';
 const CORE_ASSETS = [
   './',
   './index.html',

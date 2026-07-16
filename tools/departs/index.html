@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.28</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.31</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.30";
+var APP_VER="v1.31";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -540,7 +540,7 @@ function render(){
   html+="<th class='cNR'>NR</th><th class='cCq'>5e</th></tr></thead><tbody>";
   ST.order.forEach(function(nm,idx){
     var nr=ST.nr[nm]||"", cq=ST.cq[nm]||"";
-    html+="<tr"+(nm===ME?" class='me'":"")+"><td class='cNom"+(isChef(nm)?" ischef":"")+"' onclick=\"nameClick('"+esc(nm)+"')\">"+(isChef(nm)?"⭐ ":"")+esc(nm)+"</td>";
+    html+="<tr"+(nm===ME?" class='me'":"")+"><td class='cNom"+(isChef(nm)?" ischef":"")+"' data-act='name' data-nm=\""+esc(nm)+"\">"+(isChef(nm)?"⭐ ":"")+esc(nm)+"</td>";
     for(var d=1;d<=days;d++){ var c=ST.codes[nm][d]||"", dep=R.deps[nm][d], stl=codeStyle(c);
       // v1.14.0 — reproduction identique des couleurs PDF : fond rouge (convention,
       // jour de R travaillé) ou écriture rouge / fond clair (horaire modifié).
@@ -549,11 +549,11 @@ function render(){
       else if(_mk==="modh")stl={bg:"#fbfaf3",fg:"#cc0000"}; // fond blanc + écriture rouge (≠ convention)
       html+="<td class='cell"+(dep?"":" off")+(d===todayD?" today":"")+"'"
         +(stl?(" style='background:"+stl.bg+";color:"+stl.fg+"'"):"")
-        +" onclick=\"editCell('"+esc(nm)+"',"+d+")\">"+esc(c||"·")+(dep?"<span class='dep'>"+dep+"</span>":"")+"</td>"; }
-    html+="<td class='cNR mark' onclick=\"addCross('nr','"+esc(nm)+"')\">"+esc(nr)
-      +"<span class='ed' onclick=\"event.stopPropagation();editMark('nr','"+esc(nm)+"')\">✎</span></td>";
-    html+="<td class='cCq mark' onclick=\"addCross('cq','"+esc(nm)+"')\">"+esc(cq)
-      +"<span class='ed' onclick=\"event.stopPropagation();editMark('cq','"+esc(nm)+"')\">✎</span></td></tr>";
+        +" data-act='cell' data-nm=\""+esc(nm)+"\" data-d='"+d+"'>"+esc(c||"·")+(dep?"<span class='dep'>"+dep+"</span>":"")+"</td>"; }
+    html+="<td class='cNR mark' data-act='crossnr' data-nm=\""+esc(nm)+"\">"+esc(nr)
+      +"<span class='ed' data-act='editnr' data-nm=\""+esc(nm)+"\">✎</span></td>";
+    html+="<td class='cCq mark' data-act='crosscq' data-nm=\""+esc(nm)+"\">"+esc(cq)
+      +"<span class='ed' data-act='editcq' data-nm=\""+esc(nm)+"\">✎</span></td></tr>";
   });
   var cx=function(o){var t=0;ST.order.forEach(function(nm){t+=((o[nm]||"").match(/✗/g)||[]).length;});return t;};
   html+="<tr class='tot'><td class='cNom'>TOTAL ✗</td>";
@@ -599,6 +599,35 @@ function render(){
   }
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+
+// Sécurité (audit XSS) : les actions de la grille / du panneau de positions passent
+// par la DÉLÉGATION d'événements (attributs data-act/data-nm, nom lu via getAttribute
+// → JAMAIS exécuté comme code), au lieu de onclick="fn('...')" où un nom contenant '
+// pouvait injecter du JS (esc() échappe le HTML mais le parseur décode &#39; AVANT
+// l'exécution JS → esc est insuffisant pour du JS-dans-attribut). Attaché UNE fois :
+// #grid / #posPanel persistent, seul leur innerHTML change à chaque render().
+function _depWireDelegation(){
+  var grid=document.getElementById("grid");
+  if(grid && !grid._wired){ grid._wired=true;
+    grid.addEventListener("click",function(e){
+      var el=e.target.closest("[data-act]"); if(!el||!grid.contains(el))return;
+      var nm=el.getAttribute("data-nm")||"", act=el.getAttribute("data-act");
+      if(act==="name") nameClick(nm);
+      else if(act==="cell") editCell(nm, parseInt(el.getAttribute("data-d"),10));
+      else if(act==="crossnr") addCross("nr", nm);
+      else if(act==="crosscq") addCross("cq", nm);
+      else if(act==="editnr") editMark("nr", nm);
+      else if(act==="editcq") editMark("cq", nm);
+    });
+  }
+  var pp=document.getElementById("posPanel");
+  if(pp && !pp._wired){ pp._wired=true;
+    pp.addEventListener("click",function(e){
+      var el=e.target.closest("[data-act='setpos']"); if(!el||!pp.contains(el))return;
+      setPos(el.getAttribute("data-nm")||"", parseInt(el.getAttribute("data-p"),10));
+    });
+  }
+}
 
 function isAdmin(){return document.body.classList.contains("admin");}
 function guard(){ if(!isAdmin()){toast("Lecture seule — déverrouille en admin");return false;} return true; }
@@ -672,7 +701,7 @@ function positionsPanelHTML(R){
   var h="<div class='posp'><div class='posp-t'>⚙️ Ordre de départ du "+day+" — touche un n° pour ÉCHANGER deux personnes (les lignes ne bougent pas) · <button class='posp-b' style='width:auto;padding:2px 9px' onclick=\"replaceLine()\">♻︎ Remplacement</button></div>";
   R.active.forEach(function(nm){ var cur=R.deps[nm][day];
     h+="<div class='posp-row'><span class='posp-nm'>"+esc(nm)+(cur?"":" <span style='color:#888'>(absent)</span>")+"</span><span class='posp-btns'>";
-    for(var p=1;p<=sl;p++){ h+="<button class='posp-b"+(cur===p?" sel":"")+"' onclick=\"setPos('"+esc(nm)+"',"+p+")\">"+p+"</button>"; }
+    for(var p=1;p<=sl;p++){ h+="<button class='posp-b"+(cur===p?" sel":"")+"' data-act='setpos' data-nm=\""+esc(nm)+"\" data-p='"+p+"'>"+p+"</button>"; }
     h+="</span></div>"; });
   return h+"</div>"; }
 function resetCounters(){ if(!guard())return; if(!confirm("Vider NR et 5e ?"))return; ST.nr={};ST.cq={};save();render();toast("Vidé"); }
@@ -802,6 +831,7 @@ try{ var _mq=new URLSearchParams(location.search).get("me");
 BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
   try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
 CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
+_depWireDelegation();
 fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
 if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
 // v1.20 — GATE 1ère connexion : si pas d'identité stockée sur cet appareil, on demande
