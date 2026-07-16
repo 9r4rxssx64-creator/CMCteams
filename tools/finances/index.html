@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.12 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.12">
+<!-- v0.13.13 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.13">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.12" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.13" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.12';
+  var APP_VER = 'v0.13.13';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -884,15 +884,17 @@
       var j=await r.json(); if(!j.ok) return {ok:false,reason:j.reason||'erreur'}; list=j.items||[];
     }catch(e){ return {ok:false,reason:'network'}; }
     if(!list.length) return {ok:true,okc:0,devc:0,dupc:0,err:0,count:0};
-    var okc=0,devc=0,dupc=0,pubc=0,avc=0,err=0,ackIds=[];
+    var okc=0,devc=0,dupc=0,pubc=0,avc=0,err=0,ecc=0,ackIds=[];
     for(var i=0;i<list.length;i++){ var it=list[i]; if(onProgress)onProgress(i+1,list.length,it);
       try{ var res=await importBytes(it.b64, it.mime||'application/pdf', it.filename||('mail-'+(it.id||i)), {src:'mail:'+(it.from||'')});
-        if(res.dup)dupc++; else if(res.pub)pubc++; else if(res.aVerifier)avc++; else { okc+=res.added; if(res.devis)devc+=res.devis; } ackIds.push(it.id); await persist();
+        if(res.dup)dupc++; else if(res.pub)pubc++; else if(res.aVerifier)avc++; else { okc+=res.added; if(res.devis)devc+=res.devis;
+          if(res.docId){ var _dr=(VAULT.docs||[]).filter(function(x){return x.id===res.docId;})[0]; if(_dr&&_dr.kind==='releve'&&_dr.reconc&&!_dr.reconc.ok)ecc++; } }
+        ackIds.push(it.id); await persist();
       }catch(e){ err++; }
     }
     if(ackIds.length){ try{ await fetch('/__mail/ack',{ method:'POST', headers:{'content-type':'application/json','x-kdmc-admin':grant}, body:JSON.stringify({ids:ackIds}) }); }catch(e){} }
     dedupeAll(); await persist();
-    return {ok:true,okc:okc,devc:devc,dupc:dupc,pubc:pubc,avc:avc,err:err,count:list.length};
+    return {ok:true,okc:okc,devc:devc,dupc:dupc,pubc:pubc,avc:avc,err:err,ecc:ecc,count:list.length};
   }
   async function mailScan(statEl){
     if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
@@ -902,8 +904,8 @@
     var res=await _mailPull(function(i,n,it){ say('⏳ '+i+'/'+n+' — '+(it.filename||'pièce jointe')); });
     if(!res.ok){ say('❌ '+(res.reason==='network'?'réseau':res.reason)); return; }
     if(!res.count){ say('✅ Aucune nouvelle pièce jointe (rien à importer).'); return; }
-    say('✅ Mails importés : '+res.okc+' op.'+(res.devc?(' · '+res.devc+' devis'):'')+(res.pubc?(' · 📣 '+res.pubc+' pub(s) écartée(s)'):'')+(res.avc?(' · 🔎 '+res.avc+' à vérifier'):'')+(res.dupc?(' · '+res.dupc+' doublon(s) ignoré(s)'):'')+(res.err?(' · '+res.err+' échec'):''));
-    toast('📧 '+res.okc+' opérations + '+res.devc+' devis depuis tes mails');
+    say('✅ Mails importés : '+res.okc+' op.'+(res.devc?(' · '+res.devc+' devis'):'')+(res.ecc?(' · ⚠️ '+res.ecc+' relevé(s) avec écart'):'')+(res.pubc?(' · 📣 '+res.pubc+' pub(s) écartée(s)'):'')+(res.avc?(' · 🔎 '+res.avc+' à vérifier'):'')+(res.dupc?(' · '+res.dupc+' doublon(s) ignoré(s)'):'')+(res.err?(' · '+res.err+' échec'):''));
+    toast('📧 '+res.okc+' opérations + '+res.devc+' devis depuis tes mails'+(res.ecc?(' · ⚠️ '+res.ecc+' relevé(s) : écart, à vérifier'):''), !!res.ecc);
     setTimeout(function(){ STATE.tab=(res.okc===0&&res.devc>0)?'devis':'dash'; render(); }, 1200);
   }
   /* Auto-récupération SILENCIEUSE : au boot, au retour au 1er plan, et toutes les 5 min.
@@ -924,7 +926,7 @@
     _mailStatus='scan';
     try{ var res=await _mailPull(null);
       if(res && res.ok){
-        if(res.okc||res.devc){ _mailStatus='ok:'+res.okc+':'+(res.devc||0); toast('📧 '+res.okc+' facture(s)'+(res.devc?(' + '+res.devc+' devis'):'')+' récupérée(s) automatiquement'); render(); }
+        if(res.okc||res.devc){ _mailStatus='ok:'+res.okc+':'+(res.devc||0); toast('📧 '+res.okc+' facture(s)'+(res.devc?(' + '+res.devc+' devis'):'')+' récupérée(s) automatiquement'+(res.ecc?(' · ⚠️ '+res.ecc+' relevé(s) : écart'):''), !!res.ecc); render(); }
         else { _mailStatus='none'; if(force)render(); }
       } else { _mailStatus='err:'+_mailReasonFr(res&&res.reason); if(force)render(); }
     }catch(e){ _mailStatus='err:'+(e.message||'erreur'); if(force)render(); }finally{ _mailAutoBusy=false; }
@@ -1370,6 +1372,7 @@
     var needAI=files.some(function(f){ return !isLocal(f); });
     if(needAI && !VAULT.aiPinHash){ toast('Active d\'abord le classement IA (Réglages)',true); STATE.tab='set'; render(); return; }
     var stat=$('impstat'); var okc=0, err=0, devc=0, dupc=0, pendc=0, avc=0, lines=[];
+    var _lastDocId=null, _contentDocs=0, _ecartDoc=null;   /* analyse auto (Kevin « tout auto aussi les analyses doc ») */
     function draw(){ if(stat)stat.innerHTML=lines.join(''); }
     files.forEach(function(f,i){ lines[i]='<div class="doc" id="ip'+i+'"><span>⏳</span><div class="grow" style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(f.name)+'</div></div><span class="tiny">en file…</span></div>'; });
     draw();
@@ -1390,7 +1393,10 @@
           if(r.dup){ dupc++; setLine(i,'⏭️','déjà importé (doublon ignoré)','var(--dim)'); }
           else if(r.pub){ setLine(i,'📣','publicité — écartée','var(--dim)'); }
           else if(r.aVerifier){ avc++; setLine(i,'🔎','à vérifier (2 IA en désaccord) — je ne compte rien','var(--gold)'); }
-          else { okc+=r.added; if(r.devis)devc+=r.devis; setLine(i,'✅',(r.devis?'1 devis':(r.added+' op.')),'var(--green)'); }
+          else { okc+=r.added; if(r.devis)devc+=r.devis; setLine(i,'✅',(r.devis?'1 devis':(r.added+' op.')),'var(--green)');
+            if(r.docId){ _lastDocId=r.docId; _contentDocs++;
+              var _dr=(VAULT.docs||[]).filter(function(x){return x.id===r.docId;})[0];
+              if(_dr&&_dr.kind==='releve'&&_dr.reconc&&!_dr.reconc.ok)_ecartDoc=r.docId; } }
           doneOk=true;
         }catch(e){
           lastErr=e;
@@ -1411,6 +1417,11 @@
     toast('✅ '+okc+' opérations'+(devc?(' · '+devc+' devis'):'')+' ajoutés'+(avc?(' · 🔎 '+avc+' à vérifier'):'')+(dupc?(' · '+dupc+' doublon(s) ignoré(s)'):'')+((rm)?(' · '+rm+' doublon(s) nettoyé(s)'):'')+(pendc?(' · '+pendc+' gardé(s) pour réimport auto'):'')+(err?(' · '+err+' échec(s) — voir la liste'):''));
     if(!err && !pendc){ STATE.tab=(okc===0&&devc>0)?'devis':'dash'; render(); }
     else if(pendc){ render(); }
+    /* Analyse AUTO (Kevin « tout auto aussi les analyses doc etc ») : sans avoir à taper 🔎.
+       - Un relevé qui ne boucle pas = alerte honnête + ouverture directe de l'analyse (« il manque des lignes »).
+       - Un seul document importé = j'ouvre son analyse (bouclage + ce qu'il contient) automatiquement. */
+    if(_ecartDoc){ toast('⚠️ Relevé : écart détecté — il manque peut-être des lignes. J\'ouvre l\'analyse.',true); docAnalysis(_ecartDoc); }
+    else if(!err && _contentDocs===1 && _lastDocId){ docAnalysis(_lastDocId); }
   }
   async function runImport(fn, label){
     if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); STATE.tab='set'; render(); return; }
