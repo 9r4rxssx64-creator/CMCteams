@@ -219,6 +219,7 @@ pe = PaperExchange.__new__(PaperExchange)  # sans réseau (pas de load_markets)
 pe.cfg = c_pap
 pe.wallet = {"USDT": 1000.0}
 pe.last_price = lambda s: 100.0
+pe._last_px = {}  # normalement posé par __init__ (ici on court-circuite le réseau)
 o = pe.market_buy("BTC/USDT", 2.0)
 ok(o["filled"] == 2.0 and abs(pe.wallet["USDT"] - (1000 - 2 * 100 * 1.001)) < 1e-6,
    "achat papier débite le cash + frais 0.1%")
@@ -251,6 +252,60 @@ fx6 = FakeEx(); fx6.bases = {"BTC": 1, "ETH": 2}
 bot._flatten_all(fx6, st6, {"BTC/USDT": 100, "ETH/USDT": 100}, "kill switch")
 ok(not st6.pos("BTC/USDT").in_position and not st6.pos("ETH/USDT").in_position, "kill solde toutes les paires")
 ok(len([o for o in fx6.orders if o[0] == "SELL"]) == 2, "kill -> 2 ventes")
+
+# ---- 7) Équité fiable : pas de coupure/liquidation sur prix manquant ----
+st_rel = State()
+st_rel.pos("BTC/USDT").in_position = True
+st_rel.pos("ETH/USDT").in_position = True
+ok(bot._equity_reliable({"BTC/USDT": 100.0, "ETH/USDT": 200.0}, st_rel),
+   "toutes positions ouvertes ont un prix -> équité fiable")
+ok(not bot._equity_reliable({"BTC/USDT": 100.0, "ETH/USDT": None}, st_rel),
+   "prix manquant sur une position ouverte -> équité NON fiable (pas de coupure)")
+st_rel2 = State()  # aucune position
+ok(bot._equity_reliable({"BTC/USDT": None}, st_rel2),
+   "aucune position ouverte -> fiable (juste du cash)")
+st_rel3 = State()
+st_rel3.pos("BTC/USDT").in_position = True
+st_rel3.pos("ETH/USDT")  # ETH connue mais plate (pas de position)
+ok(bot._equity_reliable({"BTC/USDT": 100.0, "ETH/USDT": None}, st_rel3),
+   "prix manquant sur une paire NON tenue -> reste fiable")
+
+# ---- 8) Reconcile : prix d'entrée = coût réel de l'historique (anti vente à perte) ----
+c8 = cfg_with(SYMBOLS="BTC/USDT")
+st8 = State(); fx8 = FakeEx(); fx8.bases = {"BTC": 1.0}
+fx8.average_entry_from_trades = lambda sym, qty: 120.0  # vrai coût 120 > prix courant 100
+bot._reconcile_positions(fx8, StubStrat("HOLD"), RiskManager(c8), st8, c8)
+ok(abs(st8.pos("BTC/USDT").entry_price - 120.0) < 1e-9,
+   "reconcile: entrée = coût réel historique (120), pas le prix courant (100)")
+st8b = State(); fx8b = FakeEx(); fx8b.bases = {"BTC": 1.0}
+fx8b.average_entry_from_trades = lambda sym, qty: None  # historique indispo
+bot._reconcile_positions(fx8b, StubStrat("HOLD"), RiskManager(c8), st8b, c8)
+ok(abs(st8b.pos("BTC/USDT").entry_price - 100.0) < 1e-9,
+   "reconcile: historique indispo -> repli sur prix courant (100)")
+st8c = State(); fx8c = FakeEx(); fx8c.bases = {"BTC": 1.0}  # FakeEx SANS la méthode
+bot._reconcile_positions(fx8c, StubStrat("HOLD"), RiskManager(c8), st8c, c8)
+ok(abs(st8c.pos("BTC/USDT").entry_price - 100.0) < 1e-9,
+   "reconcile: exchange sans historique -> repli prix courant (pas d'erreur)")
+
+# ---- 9) equity_in_quote : prix manquant réutilise le dernier prix connu ----
+from exchange import Exchange  # noqa: E402
+class PxEx(Exchange):  # noqa: E402 — sonde le repli last_px sans réseau
+    def __init__(self):
+        self._last_px = {}
+        self._bal = {"BTC": {"free": 2.0}}
+    def quote_balance(self):
+        return 1000.0
+    def fetch_balance(self):  # override du client réseau
+        return self._bal
+    @property
+    def client(self):
+        return self
+px = PxEx()
+e1 = Exchange.equity_in_quote(px, {"BTC/USDT": 100.0})  # 1000 + 2*100 = 1200
+ok(abs(e1 - 1200.0) < 1e-9, "equity_in_quote: prix présent -> 1200")
+e2 = Exchange.equity_in_quote(px, {"BTC/USDT": None})   # prix manquant -> dernier connu 100
+ok(abs(e2 - 1200.0) < 1e-9,
+   "equity_in_quote: prix manquant réutilise le dernier prix connu (pas d'effondrement)")
 
 print(f"test_multi.py : {P['p']} OK / {P['f']} FAIL")
 sys.exit(1 if P["f"] else 0)
