@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.10 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.10">
+<!-- v0.13.11 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.11">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.10" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.11" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.10';
+  var APP_VER = 'v0.13.11';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -668,6 +668,50 @@
   function txKey4(t){ return norm(t.label).split(' ').slice(0,4).join(' '); }
   function drillByKey(title, key){ drillTx(title, (VAULT.tx||[]).filter(function(t){ return t.amount<0 && txKey4(t)===key; })); }
 
+  /* ANALYSE d'UN document (« analyser ce qu'il y a sur le document ») : bouclage du relevé,
+     total dépenses/entrées, top catégories, + accès à l'original et à ses opérations. */
+  function docAnalysis(docId){
+    closeDrill();
+    var d=(VAULT.docs||[]).filter(function(x){return x.id===docId;})[0]; if(!d)return;
+    var txs=(VAULT.tx||[]).filter(function(t){return t.docId===docId;});
+    var a=analyze(txs); var dev=(VAULT.devis||[]).filter(function(x){return x.docId===docId;});
+    var ov=el('<div id="drillov" style="position:fixed;inset:0;z-index:55;background:rgba(4,7,4,.96);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 12px)"></div>');
+    var head=el('<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"></div>');
+    head.appendChild(el('<div style="flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+kindIcon(d.kind)+' '+esc(String(d.name).slice(0,40))+'</div>'));
+    var cB=el('<button class="btn sm" style="min-height:44px">✕ Fermer</button>'); cB.onclick=closeDrill; head.appendChild(cB);
+    ov.appendChild(head);
+    var box=el('<div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch"></div>'); ov.appendChild(box);
+    box.appendChild(el('<div class="tiny" style="margin-bottom:10px">'+esc(kindLabel(d.kind))+(d.bank?' · '+esc(d.bank):'')+(d.period?' · '+esc(d.period):'')+(d.invoiceNo?' · n° '+esc(d.invoiceNo):'')+'</div>'));
+    if(d.kind==='releve'){
+      if(d.reconc){ var rc=d.reconc;
+        if(rc.ok) box.appendChild(el('<div class="card" style="border-color:var(--green);background:rgba(40,180,90,.10)"><b style="color:var(--green)">✅ Relevé bouclé — rien oublié</b><div class="tiny" style="margin-top:4px">Solde de début '+eur(rc.opening)+' + toutes les opérations = solde de fin '+eur(rc.closing)+'. Chaque ligne a été prise en compte.</div></div>'));
+        else box.appendChild(el('<div class="card" style="border-color:var(--red);background:rgba(220,60,50,.10)"><b style="color:var(--red)">⚠️ Écart de '+eur(Math.abs(rc.diff))+' — il manque peut-être des lignes</b><div class="tiny" style="margin-top:4px">Solde début '+eur(rc.opening)+' + opérations ('+(rc.sum<0?'':'+')+eur(rc.sum)+') = '+eur(rc.opening+rc.sum)+', mais le solde de fin indiqué est '+eur(rc.closing)+'. Vérifie le PDF (ligne illisible ?) ou ré-importe.</div></div>'));
+      } else box.appendChild(el('<div class="card muted"><div class="tiny">ℹ️ Le solde de début/fin n\'a pas été lu sur ce relevé → impossible de vérifier automatiquement que rien n\'a été oublié.</div></div>'));
+    }
+    if(txs.length){
+      box.appendChild(el('<div class="kpis"><div class="kpi"><div class="k">Opérations</div><div class="v">'+txs.length+'</div></div>'+
+        (a.dep?'<div class="kpi"><div class="k">Dépenses</div><div class="v neg">'+eur0(a.dep)+'</div></div>':'')+
+        (a.rev?'<div class="kpi"><div class="k">Entrées</div><div class="v pos">+'+eur0(a.rev)+'</div></div>':'')+'</div>'));
+    }
+    if(dev.length){ box.appendChild(el('<div class="card"><b>📝 Devis</b><div class="tiny" style="margin-top:4px">'+dev.map(function(x){return esc(x.label||'Devis')+' — '+eur(Math.abs(x.amount||0));}).join('<br>')+' <span class="muted">(non compté)</span></div></div>')); }
+    var cats=Object.keys(a.byCat).sort(function(x,y){return a.byCat[y]-a.byCat[x];});
+    if(cats.length){
+      var cc=el('<div class="card"><h2>📊 Ce que contient ce document</h2></div>');
+      var max=a.byCat[cats[0]]||1;
+      cats.slice(0,8).forEach(function(c){ var val=a.byCat[c]; var pct=Math.min(100,val/max*100);
+        var r=el('<div class="catrow" style="cursor:pointer" title="Voir ces opérations"><div class="h"><b>'+catIcon(c)+' '+esc(c)+'</b><span class="amt">'+eur0(val)+'</span></div><div class="bar"><i style="width:'+pct.toFixed(0)+'%;background:'+catColor(c)+'"></i></div></div>');
+        r.onclick=function(){ drillTx(catIcon(c)+' '+c+' — '+String(d.name).slice(0,20), txs.filter(function(t){return t.category===c&&t.amount<0;})); };
+        cc.appendChild(r); });
+      box.appendChild(cc);
+    }
+    var acts=el('<div class="row" style="gap:8px;margin-top:6px"></div>');
+    if(d.hasFile){ var vo=el('<button class="btn gold grow">🖨️ Voir l\'original</button>'); vo.onclick=function(){ openDoc(d.id); }; acts.appendChild(vo); }
+    if(txs.length){ var vt=el('<button class="btn grow">📋 Voir ses opérations</button>'); vt.onclick=function(){ drillTx('📄 '+String(d.name).slice(0,24), txs); }; acts.appendChild(vt); }
+    box.appendChild(acts);
+    ov.addEventListener('click', function(e){ if(e.target===ov)closeDrill(); });
+    document.body.appendChild(ov);
+  }
+
   /* Voix : micro (dictée) + haut-parleur (lecture). */
   function startMic(cb){ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast('Micro non supporté sur ce navigateur',true); return null; }
     var r=new SR(); r.lang='fr-FR'; r.interimResults=false; r.maxAlternatives=1;
@@ -706,7 +750,7 @@
     'Reproduis les montants EXACTEMENT (aucune invention; ligne illisible -> ne pas l\'inventer). '+
     'category ∈ ['+DEFAULT_CATS.map(function(c){return '"'+c+'"';}).join(',')+']. '+
     '--- LES 7 TYPES (choisis LE bon, ne les confonds JAMAIS) ---\n'+
-    '1) "releve" = RELEVÉ BANCAIRE (plusieurs opérations, solde ouverture/clôture, IBAN masqué). Chaque ligne = une tx avec son signe réel.\n'+
+    '1) "releve" = RELEVÉ BANCAIRE (plusieurs opérations, solde ouverture/clôture, IBAN masqué). Chaque ligne = une tx avec son signe réel. Renseigne TOUJOURS meta.opening (solde de DÉBUT) et meta.closing (solde de FIN) si visibles — ils servent à vérifier que RIEN n\'a été oublié. Ne saute AUCUNE ligne (frais bancaires, prélèvements, virements inclus).\n'+
     '2) "facture" = FACTURE réellement due/payée d\'un fournisseur (n° de facture + montant TTC), Y COMPRIS une facture d\'ABONNEMENT ou un PRÉLÈVEMENT récurrent (Netflix, SFR, EDF, assurance, loyer…). 1 ligne, amount = TTC NÉGATIF ; ht/tva/tva_rate si visibles ; vendor = émetteur.\n'+
     '3) "ticket" = TICKET DE CAISSE / reçu d\'un achat DÉJÀ payé (magasin, resto, carburant, péage…). 1 ligne, amount NÉGATIF.\n'+
     '4) "paie" = FICHE DE PAIE / bulletin de salaire. 1 ligne Revenus, salaire NET POSITIF.\n'+
@@ -923,6 +967,14 @@
       added++;
     });
     audit('import', name+' — '+added+' op.'); dedupeAll();
+    /* BOUCLAGE relevé (« tout prendre en compte ») : solde début + somme des opérations = solde fin ?
+       Si non → écart signalé HONNÊTEMENT (il manque peut-être des lignes illisibles). Jamais masqué. */
+    if(kind==='releve'){ var _op=num(meta.opening), _cl=num(meta.closing);
+      if(_op!=null && _cl!=null){ var _sum=0; (VAULT.tx||[]).forEach(function(t){ if(t.docId===docId)_sum+=t.amount; });
+        var _diff=Math.round((_op+_sum-_cl)*100)/100; var _dref=(VAULT.docs||[])[0];
+        if(_dref)_dref.reconc={ opening:_op, closing:_cl, sum:Math.round(_sum*100)/100, diff:_diff, ok:(Math.abs(_diff)<0.02) };
+      }
+    }
     return { added:added, docId:docId, kind:kind };
   }
   function num(v){ if(v===null||v===undefined||v==='')return null; if(typeof v==='number')return isFinite(v)?v:null;
@@ -1221,9 +1273,11 @@
       v.appendChild(c3);
       var dl=c3.querySelector('#doclist');
       VAULT.docs.slice(0,30).forEach(function(d){
-        var r=el('<div class="doc"><span>'+kindIcon(d.kind)+'</span><div class="grow" style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d.name)+'</div><div class="tiny">'+esc(d.bank||kindLabel(d.kind))+(d.period?' · '+esc(d.period):'')+' · '+d.count+' '+(d.kind==='devis'?'devis':'op.')+'</div></div>'+(d.hasFile?'<button class="btn sm" data-open="'+d.id+'" title="Voir / imprimer l\'original">🖨️</button>':'')+'<button class="btn sm danger" data-del="'+d.id+'">✕</button></div>');
+        var _rc=(d.kind==='releve'&&d.reconc)?(d.reconc.ok?' · <span style="color:var(--green)">✅ bouclé</span>':' · <span style="color:var(--red)">⚠️ écart '+eur0(Math.abs(d.reconc.diff))+'</span>'):'';
+        var r=el('<div class="doc"><span>'+kindIcon(d.kind)+'</span><div class="grow" style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d.name)+'</div><div class="tiny">'+esc(d.bank||kindLabel(d.kind))+(d.period?' · '+esc(d.period):'')+' · '+d.count+' '+(d.kind==='devis'?'devis':'op.')+_rc+'</div></div><button class="btn sm" data-ana="'+d.id+'" title="Analyser ce document">🔎</button>'+(d.hasFile?'<button class="btn sm" data-open="'+d.id+'" title="Voir / imprimer l\'original">🖨️</button>':'')+'<button class="btn sm danger" data-del="'+d.id+'">✕</button></div>');
         dl.appendChild(r);
       });
+      dl.querySelectorAll('[data-ana]').forEach(function(b){ b.onclick=function(){ docAnalysis(b.getAttribute('data-ana')); }; });
       dl.querySelectorAll('[data-open]').forEach(function(b){ b.onclick=function(){ openDoc(b.getAttribute('data-open')); }; });
       dl.querySelectorAll('[data-del]').forEach(function(b){ b.onclick=function(){ delDoc(b.getAttribute('data-del')); }; });
     }
@@ -2060,10 +2114,11 @@
         row.appendChild(docThumbEl(d,64));
         var mid=el('<div class="grow" style="min-width:0"></div>');
         mid.appendChild(el('<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(title)+'</div>'));
-        mid.appendChild(el('<div class="tiny" style="margin-top:2px"><span class="chip">'+kindIcon(d.kind)+' '+esc(kindLabel(d.kind))+'</span>'+(d.vendor&&!isBody?' '+esc(d.vendor):'')+(when?' · '+esc(when):'')+(docAmt?' · <b>'+eur0(docAmt)+'</b>':'')+'</div>'));
+        var _rcB=(d.kind==='releve'&&d.reconc)?(d.reconc.ok?' · <span style="color:var(--green)">✅ bouclé</span>':' · <span style="color:var(--red)">⚠️ écart '+eur0(Math.abs(d.reconc.diff))+'</span>'):'';
+        mid.appendChild(el('<div class="tiny" style="margin-top:2px"><span class="chip">'+kindIcon(d.kind)+' '+esc(kindLabel(d.kind))+'</span>'+(d.vendor&&!isBody?' '+esc(d.vendor):'')+(when?' · '+esc(when):'')+(docAmt?' · <b>'+eur0(docAmt)+'</b>':'')+_rcB+'</div>'));
         var acts=el('<div class="row" style="margin-top:7px;gap:6px;flex-wrap:wrap"></div>');
         if(d.hasFile){ var vb=el('<button class="btn sm" data-open="'+d.id+'">🖨️ Voir</button>'); acts.appendChild(vb); }
-        if(docTx.length){ var ob=el('<button class="btn sm">🔎 '+docTx.length+' op.</button>'); ob.onclick=function(){ drillTx('📄 '+title, docTx); }; acts.appendChild(ob); }
+        if(docTx.length||d.kind==='releve'){ var ob=el('<button class="btn sm">🔎 Analyser</button>'); ob.onclick=function(){ docAnalysis(d.id); }; acts.appendChild(ob); }
         if(d.kind!=='devis'){
           var sel=el('<select class="catsel" style="max-width:118px;font-size:16px;padding:6px 4px;min-height:44px" title="Déplacer vers un autre compte"><option value="">📁 Déplacer</option>'+
             ACCOUNTS.filter(function(x){return x.key!=='devis'&&x.kinds[0]!==d.kind;}).map(function(x){return '<option value="'+x.kinds[0]+'">'+x.icon+' '+esc(x.label)+'</option>';}).join('')+'</select>');
