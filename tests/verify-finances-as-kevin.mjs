@@ -48,7 +48,10 @@ await ctx.route(/apex-secrets-proxy\.9r4rxssx64\.workers\.dev/, async (route) =>
   const isGemini = url.includes('/gemini/');
   const body = route.request().postData() || '';
   let text;
-  if (body.includes('Réponds juste: ok')) text = 'ok';
+  // v0.13.9 : 2e avis indépendant (VERIFY_PROMPT) — un doc-facture texte déclenche une vérif du type.
+  // Le mock confirme « financier » pour que la vraie facture soit bien comptée.
+  if (/vérificateur|"financial"/i.test(body)) text = JSON.stringify({ financial:true, kind: body.includes('FACTURE_TEST')?'facture':'facture', confidence:0.9, reason:'facture réelle' });
+  else if (body.includes('Réponds juste: ok')) text = 'ok';
   else if (body.includes('QUESTION :')) text = 'D apres tes documents, tu as depense 120,00 EUR chez Garage Manuel.';
   else if (body.includes('FACTURE_TEST')) text = JSON.stringify({ meta:{kind:'facture',vendor:'Garage Manuel',invoice_no:'F-2026-42',date:'2026-06-15',ht:100,tva:20,tva_rate:20,total:120}, tx:[{date:'2026-06-15',label:'Reparation freins',amount:-120,category:'Vehicule / Reparations',vendor:'Garage Manuel',ht:100,tva:20,tva_rate:20}] });
   else if (body.includes('BILAN') || body.includes('expert-comptable')) text = 'BILAN — revenus superieurs aux depenses, flux positif. Conseils : provisionner l engagement accepte, comparer 2 devis, epargner 10%.';
