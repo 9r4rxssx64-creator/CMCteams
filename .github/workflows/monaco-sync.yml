@@ -27,15 +27,21 @@ jobs:
           set +e
           URL="https://kdmc-monaco.9r4rxssx64.workers.dev/sync"
           PIN="${{ secrets.APEX_ADMIN_PIN_SHA256 }}"
-          done_total=0
-          for i in $(seq 1 40); do
+          done_total=0; miss=0
+          for i in $(seq 1 60); do
             OUT=$(curl -sS -m 60 -X POST -H "x-apex-pin: $PIN" "$URL")
             echo "lot $i → $OUT"
-            echo "$OUT" | grep -q '"ok":true' || { echo "::notice::arrêt (pas connecté ou souci) — sans conséquence"; break; }
-            echo "$OUT" | grep -q '"done":true'   && { echo "✅ backfill TERMINÉ — tout l'historique parcouru."; break; }
-            echo "$OUT" | grep -q '"file_pleine"' && { echo "⏸ file pleine — j'attends que l'app Finances vide (ouvre-la)."; break; }
-            add=$(echo "$OUT" | grep -oE '"added":[0-9]+' | head -1 | grep -oE '[0-9]+'); done_total=$((done_total + ${add:-0}))
-            sleep 2
+            # Arrêts DÉFINITIFS : terminé, file pleine (attendre le drain), ou vraiment pas connecté.
+            echo "$OUT" | grep -q '"done":true'      && { echo "✅ backfill TERMINÉ — tout l'historique parcouru."; break; }
+            echo "$OUT" | grep -q '"file_pleine"'    && { echo "⏸ file pleine — j'attends que l'app Finances vide (ouvre-la)."; break; }
+            echo "$OUT" | grep -qiE 'not_connected|need_admin_code' && { echo "::notice::pas connecté — enregistre tes identifiants sur /setup."; break; }
+            if echo "$OUT" | grep -q '"ok":true'; then
+              add=$(echo "$OUT" | grep -oE '"added":[0-9]+' | head -1 | grep -oE '[0-9]+'); done_total=$((done_total + ${add:-0})); miss=0; sleep 2
+            else
+              # Erreur TRANSITOIRE (ex : « error code: 1102 » CPU worker, timeout réseau) → on réessaie
+              # le même lot au lieu de s'arrêter. Abandon seulement après 4 échecs d'affilée.
+              miss=$((miss+1)); echo "::notice::lot transitoire ($miss/4) — nouvel essai"; [ "$miss" -ge 4 ] && { echo "::notice::4 échecs d'affilée — le cron reprendra."; break; }; sleep 5
+            fi
           done
           echo "🧾 total factures ajoutées ce run : $done_total"
           exit 0
