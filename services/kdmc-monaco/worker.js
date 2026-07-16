@@ -38,7 +38,14 @@ const MAX_PENDING = 1000;   // file d'attente factures (élargie : le backfill d
 const TTL = 60 * 60 * 24 * 60;       // 60 j
 const MAX_MSGS_PER_RUN = 15;
 const BACKFILL_DAYS = 60;
-const BACKFILL_BATCH = 80;           // messages max par lot de backfill (plus par passage)
+const BACKFILL_BATCH = 20;           // messages max par lot. PETIT exprès : parser 80 e-mails
+                                     // (MIME + base64 + sha256 + ~3 lectures KV chacun) dans UNE
+                                     // invocation Worker dépassait le budget CPU Cloudflare →
+                                     // « error code: 1102 » sur ~la moitié des lots, et la file
+                                     // (persistée seulement en fin de lot RÉUSSI, l.~269) n'avançait
+                                     // pas. À 20/lot le lot TIENT dans le budget → il réussit → la
+                                     // file avance → la boucle GH (60 lots/run) déroule vraiment ses
+                                     // lots au lieu de les cramer en 1102. 60×20 ≈ 1200 mails/run.
 const BACKFILL_BUDGET_MS = 14000;    // temps max par lot (sous IMAP_DEADLINE_MS)
 const IMAP_DEADLINE_MS = 20000;
 
@@ -263,6 +270,9 @@ async function backfillStep(env) {
         added += await ingestRaw(env, (fr.literals && fr.literals[0]) || '');
       } catch { /* message ignoré, jamais bloquant */ }
       await env.ACCOUNTS.put('mon:seen:' + uid, '1', { expirationTtl: TTL });
+      // Checkpoint incrémental de la file : si un lot crashe (1102 CPU) après ce point,
+      // la file persistée a quand même avancé → on ne re-parcourt pas tout au lot suivant.
+      if (processed % 10 === 0) await env.ACCOUNTS.put('mon:bf_queue', JSON.stringify(queue));
     }
     try { await c.cmd('LOGOUT'); } catch { /* */ }
   } finally { await c.close(); }
