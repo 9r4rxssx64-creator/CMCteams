@@ -916,15 +916,24 @@ async function handleMail(request, url, env) {
   if (path === '/__mail/scan' && request.method === 'GET') {
     const CAP = 120;   // vide plus vite (gros arriéré) ; l'app boucle en plus jusqu'à file vide
     const items = []; let cursor;
-    do {
-      const l = await env.ACCOUNTS.list({ prefix: 'mail:p:', cursor });
-      for (const k of l.keys) {
-        if (items.length >= CAP) break;
-        const raw = await env.ACCOUNTS.get(k.name); if (!raw) continue;
-        try { const it = JSON.parse(raw); it.id = k.name.slice('mail:p:'.length); items.push(it); } catch { /* */ }
-      }
-      cursor = l.list_complete ? null : l.cursor;
-    } while (cursor && items.length < CAP);
+    // Le plan KV gratuit plafonne list() à ~1000/jour (namespace PARTAGÉ). Si le budget est
+    // épuisé, list() lève → on renvoie la CAUSE EXACTE (leçon #97) au lieu d'un http_500 opaque,
+    // pour que l'app affiche « budget du jour atteint, ça reprend demain » au lieu d'une erreur.
+    try {
+      do {
+        const l = await env.ACCOUNTS.list({ prefix: 'mail:p:', cursor });
+        for (const k of l.keys) {
+          if (items.length >= CAP) break;
+          const raw = await env.ACCOUNTS.get(k.name); if (!raw) continue;
+          try { const it = JSON.parse(raw); it.id = k.name.slice('mail:p:'.length); items.push(it); } catch { /* */ }
+        }
+        cursor = l.list_complete ? null : l.cursor;
+      } while (cursor && items.length < CAP);
+    } catch (e) {
+      const detail = String(e && e.message || e);
+      const quota = /limit exceeded|rate limit|429|quota/i.test(detail);
+      return J({ ok: false, reason: quota ? 'kv_quota_jour' : 'scan_error', detail }, null, 200);
+    }
     return J({ ok: true, items });
   }
   if (path === '/__mail/ack' && request.method === 'POST') {
