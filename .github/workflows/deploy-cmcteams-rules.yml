@@ -48,6 +48,15 @@ on:
           - "keep"
           - "off"
           - "on"
+      cmc_admin_lock:
+        description: "Verrou ÉCRITURE config admin /cmcteams (cmc_admin_cfg + cmc_motd = role:admin). keep = préserver l'état live (défaut) | on = verrouiller (appareil admin role:admin seul) | off = rouvrir (rollback). Employés/lecture inchangés. Activer APRÈS canary iPhone Kevin."
+        required: true
+        default: "keep"
+        type: choice
+        options:
+          - "keep"
+          - "off"
+          - "on"
 
 permissions:
   contents: read
@@ -68,4 +77,5 @@ jobs:
           APEX_STATE: ${{ github.event.inputs.apex_state || 'hardened' }}
           SHOPS_LOCK: ${{ github.event.inputs.shops_lock || 'keep' }}
           ORDERS_READ: ${{ github.event.inputs.orders_read || 'keep' }}
+          CMC_ADMIN_LOCK: ${{ github.event.inputs.cmc_admin_lock || 'keep' }}
         run: node tools/firebase/deploy-rules.cjs

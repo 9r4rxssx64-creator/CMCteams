@@ -254,5 +254,10 @@
     },
     "orders_read_comment": "Verrou LECTURE des commandes clients (fuite : orders/.read=true = n'importe qui lit les commandes). Activé via input orders_read=on → seul le dashboard admin (id_token role:admin) peut lire. L'ÉCRITURE des commandes (checkout client) reste anonyme (jamais verrouillée). À activer SEULEMENT après que le dashboard v2.0.4+ lit avec ?auth= (canary iPhone Kevin validé). off = rollback (lecture publique).",
     "orders_read": "auth != null && auth.token.role === 'admin'"
+  },
+  "_phase_cmc_adminlock": {
+    "_comment": "Verrou ÉCRITURE config admin /cmcteams (cmc_admin_cfg, cmc_motd) par RÔLE. Activé via deploy-cmcteams-rules.yml input cmc_admin_lock=on. Suit le patron /apex : le .write PARENT de /cmcteams descend au niveau $key (sinon, en RTDB, un .write parent ne se révoque pas plus bas). Les enfants .validate-only (cmc_e/cmc_ov/cmc_pw) reçoivent .write=auth!=null (inchangé pour tous). cmc_admin_cfg + cmc_motd → .write=role:admin (seul l'appareil admin avec un token role:admin, minté par apex-auth-worker /login-cmc, peut écrire). Les employés (token anonyme) continuent d'écrire cmc_ov/cmc_chat/etc. (auth!=null) mais NE peuvent plus écraser la config admin / le message du jour. LECTURE inchangée (auth!=null). À activer SEULEMENT après canary iPhone Kevin (rôle admin armé + écriture MOTD confirmée + sync employé confirmée). off = rollback (write parent auth!=null).",
+    "role_admin": "auth != null && auth.token.role === 'admin'",
+    "any_auth": "auth != null"
   }
 }
