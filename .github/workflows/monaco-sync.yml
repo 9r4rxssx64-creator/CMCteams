@@ -28,7 +28,7 @@ jobs:
           URL="https://kdmc-monaco.9r4rxssx64.workers.dev/sync"
           PIN="${{ secrets.APEX_ADMIN_PIN_SHA256 }}"
           done_total=0; miss=0
-          for i in $(seq 1 60); do
+          for i in $(seq 1 30); do   # 30 lots max/run (petits lots de 12) : limite le CPU cumulé du Worker (tier gratuit) → moins de « 1102 » ; le cron 2h + les runs suivants finissent l'arriéré
             OUT=$(curl -sS -m 60 -X POST -H "x-apex-pin: $PIN" "$URL")
             echo "lot $i → $OUT"
             # Arrêts DÉFINITIFS : terminé, file pleine (attendre le drain), ou vraiment pas connecté.

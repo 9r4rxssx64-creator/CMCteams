@@ -38,12 +38,13 @@ const MAX_PENDING = 1000;   // file d'attente factures (élargie : le backfill d
 const TTL = 60 * 60 * 24 * 60;       // 60 j
 const MAX_MSGS_PER_RUN = 15;
 const BACKFILL_DAYS = 60;
-const BACKFILL_BATCH = 40;           // messages max par lot. La boucle backfill ne fait plus AUCUN
-                                     // KV list()/write() par message (dédup = 1 GET hash dans
-                                     // ingestRaw), donc le CPU par lot est léger (I/O FETCH) → plus
-                                     // de « 1102 » ; et un lot plus grand amortit le SEUL list() +
-                                     // write() par lot → moins de lots = moins de list()/jour (le
-                                     // plafond KV gratuit ~1000/jour). 40 = bon compromis CPU/budget.
+const BACKFILL_BATCH = 12;           // messages max par lot. PETIT exprès : sur le tier gratuit,
+                                     // le CPU par requête Worker est plafonné et le buffer IMAP
+                                     // grandit en O(n²) → un lot trop gros (ou 1 mail géant) fait
+                                     // « error code: 1102 ». 12 petits mails/lot tient dans le budget.
+const MAX_MSG_BYTES = 1000000;       // on SONDE la taille (RFC822.SIZE) avant de tirer le corps : un
+                                     // e-mail > 1 Mo (grosse PJ) fait exploser le buffer IMAP O(n²)
+                                     // → 1102. On le SAUTE (compté) au lieu de bloquer toute la file.
 const BACKFILL_BUDGET_MS = 14000;    // temps max par lot (sous IMAP_DEADLINE_MS)
 const IMAP_DEADLINE_MS = 20000;
 
@@ -257,7 +258,7 @@ async function backfillStep(env) {
   const port = parseInt((await env.ACCOUNTS.get('mon:port')) || String(DEFAULT_PORT), 10) || DEFAULT_PORT;
 
   const c = await imapClient(host, port);
-  let added = 0, processed = 0; const startedAt = Date.now();
+  let added = 0, processed = 0, skippedBig = 0; const startedAt = Date.now();
   try {
     await c.readLine();
     let r = await c.cmd('LOGIN ' + imapQuote(user) + ' ' + imapQuote(pass));
@@ -277,6 +278,18 @@ async function backfillStep(env) {
     while (queue.length && processed < BACKFILL_BATCH && (Date.now() - startedAt) < BACKFILL_BUDGET_MS) {
       const uid = queue.shift(); processed++;
       try {
+        // Sonde la TAILLE d'abord (RFC822.SIZE, réponse minuscule) : un e-mail géant (>1 Mo, grosse
+        // PJ) fait exploser le buffer IMAP O(n²) du Worker → « error code: 1102 ». On le SAUTE
+        // (compté) au lieu de bloquer TOUTE la file dessus. Le uid est déjà retiré de la file → on
+        // avance ; ces gros mails restent récupérables via l'app (➕ Ajouter) ou le plan payant.
+        let big = false;
+        try {
+          const sr = await c.cmd('UID FETCH ' + uid + ' (RFC822.SIZE)');
+          const hay = Array.isArray(sr.untagged) ? sr.untagged.join(' ') : String(sr.line || '');
+          const m = /RFC822\.SIZE\s+(\d+)/i.exec(hay);
+          if (m && parseInt(m[1], 10) > MAX_MSG_BYTES) big = true;
+        } catch { /* sonde ratée → on tente le fetch normal */ }
+        if (big) { skippedBig++; continue; }
         const fr = await c.cmd('UID FETCH ' + uid + ' BODY.PEEK[]');
         added += await ingestRaw(env, (fr.literals && fr.literals[0]) || '');
       } catch { /* message ignoré, jamais bloquant */ }
@@ -287,7 +300,7 @@ async function backfillStep(env) {
   await env.ACCOUNTS.put('mon:bf_remaining', String(queue.length));
   await env.ACCOUNTS.put('mon:lastrun', new Date().toISOString());
   const done = await finishIfEmpty();
-  return { ok: true, added, processed, remaining: queue.length, total, done };
+  return { ok: true, added, processed, skippedBig, remaining: queue.length, total, done };
 }
 
 /* ---------- synchro ---------- */
