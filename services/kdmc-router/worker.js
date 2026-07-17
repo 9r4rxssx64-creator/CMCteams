@@ -95,6 +95,9 @@ export default {
     if (!outHeaders.has('strict-transport-security')) outHeaders.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers: outHeaders });
   },
+  /* Cron 5 min (wrangler.toml [triggers]) : sentinelle « robot en surface » — no-op tant
+     que Tuya n'est pas lié ; notifie Kevin à CHAQUE remontée du robot (transition seule). */
+  async scheduled(event, env, ctx) { ctx.waitUntil(tuyaSurfaceCheck(env)); },
 };
 
 function rewriteLocation(loc, base, host) {
@@ -984,8 +987,14 @@ async function handleTuya(request, path, env) {
     return J({ ok: true, device_id: id });
   }
   if (seg === 'unlink' && request.method === 'POST') {
-    try { await env.ACCOUNTS.delete('tuya:cfg'); await env.ACCOUNTS.delete('tuya:token'); } catch { /* */ }
+    try { await env.ACCOUNTS.delete('tuya:cfg'); await env.ACCOUNTS.delete('tuya:token'); await env.ACCOUNTS.delete('tuya:online'); } catch { /* */ }
     return J({ ok: true, linked: false });
+  }
+  /* état de surface (sentinelle) : dernier état connu + check live à la demande */
+  if (seg === 'surface' && request.method === 'GET') {
+    const r = await tuyaSurfaceCheck(env);
+    let last = null; try { last = JSON.parse((await env.ACCOUNTS.get('tuya:online')) || 'null'); } catch { /* */ }
+    return J({ ok: true, check: r, last });
   }
   /* les routes suivantes ont besoin d'un robot choisi */
   if (!cfg.device_id) return J({ ok: false, reason: 'no_device', detail: 'Choisis d\'abord ton robot (découverte).' });
@@ -1014,6 +1023,38 @@ async function handleTuya(request, path, env) {
   return J({ ok: false, reason: 'not_found' });
 }
 
+/* ---- Sentinelle « robot en surface » (le robot n'émet pas sous l'eau) ----
+   Le robot ne redevient joignable QUE quand il remonte (surface/base) — fenêtre de
+   quelques minutes. Cron Cloudflare toutes les 5 min : lit l'état Tuya, détecte la
+   transition hors-ligne → EN LIGNE, et pousse une notif iPhone à Kevin (« 🌊 Robot en
+   surface — batterie X% ») via l'infra push existante. S'active AUTOMATIQUEMENT dès que
+   les clés Tuya sont liées ; sans liaison → no-op (1 lecture KV). ANTI-SPAM : notifie
+   UNIQUEMENT à la transition + throttle 15 min. Fail-open total (jamais d'exception). */
+async function tuyaSurfaceCheck(env) {
+  try {
+    if (!env || !env.ACCOUNTS) return { ok: true, skip: 'no_kv' };
+    const cfg = await tuyaCfg(env);
+    if (!cfg || !cfg.device_id) return { ok: true, skip: 'not_linked' };
+    const idp = encodeURIComponent(cfg.device_id);
+    const info = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp, null);
+    if (!info.ok) return { ok: false, reason: info.msg || info.reason || ('code ' + info.code) };
+    const online = !!(info.result && info.result.online);
+    let prev = null; try { prev = JSON.parse((await env.ACCOUNTS.get('tuya:online')) || 'null'); } catch { /* */ }
+    await env.ACCOUNTS.put('tuya:online', JSON.stringify({ online, ts: Date.now() }));
+    if (!(online && prev && prev.online === false)) return { ok: true, online, notified: false };
+    /* transition plongée → SURFACE : notif (throttle 15 min) */
+    const lastN = Number((await env.ACCOUNTS.get('tuya:surf_notif')) || 0);
+    if (Date.now() - lastN < 15 * 60 * 1000) return { ok: true, online, notified: false, throttled: true };
+    let batt = null;
+    const st = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/status', null);
+    if (st.ok) (st.result || []).forEach((s) => { const k = String(s.code || '').toLowerCase(); if (batt == null && /electric|battery|soc|residual/.test(k) && typeof s.value === 'number' && s.value >= 0 && s.value <= 100) batt = Math.round(s.value); });
+    await notifyPush(env, '🌊 Robot en surface', 'Ton robot piscine est joignable' + (batt != null ? ' — batterie ' + batt + '%' : '') + '. Fenêtre pour commandes et données.', { tag: 'poolpilot-surface', url: 'https://beatbot.kd-mc.com/' });
+    await env.ACCOUNTS.put('tuya:surf_notif', String(Date.now()), { expirationTtl: 86400 });
+    try { await audLog(env, { ev: 'tuya_surface_notif', batt }); } catch { /* */ }
+    return { ok: true, online, notified: true, batt };
+  } catch (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 200) }; }
+}
+
 /* Grant admin MACHINE : produit le même jeton signé que /__admin/login, mais à
    partir du SECRET SSO (pas du code PIN). Sert à l'agent de contrôle GitHub Actions
    pour s'authentifier en admin et vérifier le bot À LA PLACE de Kevin, sans jamais
@@ -1022,4 +1063,4 @@ async function handleTuya(request, path, env) {
 async function adminGrant(secret) { return ssoSign(secret, '__kdmc_admin__', 'admin', 1); }
 
 /* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
-export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex };
+export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck };

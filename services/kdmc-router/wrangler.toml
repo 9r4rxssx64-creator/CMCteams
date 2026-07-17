@@ -42,3 +42,10 @@ id = "8cfa33a28ac045adb7b7a9556ca8a073"
 # l'alerte no-op (le journal admin reste la trace) — fail-open total.
 [vars]
 KDMC_PUSH_URL = "https://apex-push-worker.9r4rxssx64.workers.dev"
+
+# Sentinelle « robot en surface » (PoolPilot) : le robot piscine n'émet pas sous l'eau,
+# il ne redevient joignable qu'en remontant. Cron 5 min → check Tuya → notif push Kevin
+# à la TRANSITION hors-ligne→en-ligne uniquement (throttle 15 min). No-op tant que les
+# clés Tuya ne sont pas liées (1 lecture KV) — aucun mail, aucune action GitHub.
+[triggers]
+crons = ["*/5 * * * *"]
