@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.10.0 -->
+<!-- v0.11.0 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -112,6 +112,17 @@
   #d3[hidden]{display:none}
   #lv{position:fixed;inset:0;z-index:60;background:#04101c;display:flex;flex-direction:column}
   #lv[hidden]{display:none}
+  #cam{position:fixed;inset:0;z-index:70;background:#000;display:flex;flex-direction:column}
+  #cam[hidden]{display:none}
+  #camtop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;background:#04101c}
+  #camtop button{background:#0d1c2c;border:1px solid #1f3d5a;color:#e8f1fa;border-radius:10px;min-width:44px;min-height:44px;font-size:17px}
+  #cambadge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;border:1px solid var(--line)}
+  #camwrap{position:relative;flex:1;overflow:hidden;background:#000}
+  #camv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  #camc{position:absolute;inset:0;width:100%;height:100%;touch-action:manipulation}
+  #camhint{padding:9px 14px;font-size:12.5px;color:#93b0c8;background:#04101c;text-align:center;min-height:20px}
+  #camctl{display:flex;gap:10px;padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 12px);background:#04101c}
+  #camctl button{flex:1;min-height:48px;border-radius:12px;border:1px solid #1f3d5a;background:#0d1c2c;color:#e8f1fa;font-size:14px;font-weight:600}
   #lvtop{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--safe-t)) 14px 10px;border-bottom:1px solid var(--line)}
   #lvtop b{font-size:15px;flex:1}
   #lvbadge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;border:1px solid var(--line)}
@@ -153,7 +164,17 @@
   </div>
   <div id="lvctl">
     <button id="lvReal" class="pri" onclick="lvStartReal()">▶️ Démarrer le robot</button>
+    <button onclick="openCam()">📷 Suivi caméra</button>
     <button onclick="lvPollNow()">🔄 Actualiser la position réelle</button>
+  </div>
+</div>
+<div id="cam" hidden>
+  <div id="camtop"><b>📷 Robot sous l'eau</b><span id="cambadge">🎯 CALIBRAGE</span><button onclick="closeCam()" aria-label="Fermer">✕</button></div>
+  <div id="camwrap"><video id="camv" playsinline muted></video><canvas id="camc"></canvas></div>
+  <div id="camhint">La lumière traverse l'eau — la caméra voit ton robot au fond.</div>
+  <div id="camctl">
+    <button onclick="camRecal()">🎯 Recalibrer</button>
+    <button onclick="camOpenPlan()">🗺️ Voir dans le plan</button>
   </div>
 </div>
 <div id="d3" hidden>
@@ -167,7 +188,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.10.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.0" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -175,7 +196,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.10.0";
+var APP_VER="v0.11.0";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -707,6 +728,16 @@ function vTuyaCard(){
 }
 function vPilotage(){
   var out=vTuyaCard();
+  out+=card("📷 Voir le robot SOUS l'eau (caméra)",
+    "La radio ne traverse pas l'eau — la lumière oui. Ton iPhone filme le bassin, PoolPilot détecte le robot à travers l'eau et le suit en direct dans le plan.",
+    '<ol class="clean" style="font-size:12.5px;line-height:1.55">'+
+      '<li>Pose l\'iPhone <b>stable et en hauteur</b> (rebord, muret, trépied) avec <b>tout le bassin</b> dans l\'image.</li>'+
+      '<li>Calibre en touchant les <b>4 coins de l\'eau</b> (une seule fois, mémorisé).</li>'+
+      '<li>Le robot apparaît en direct dans le plan + la carte de couverture se remplit.</li>'+
+    '</ol>'+
+    '<div class="mut" style="font-size:12px;margin-bottom:10px">Honnête : eau agitée ou nuit sans éclairage = détection difficile — l\'app affiche alors « robot non détecté », jamais une position inventée. Tout reste sur ton téléphone.</div>'+
+    '<button class="btn" onclick="openCam()">📷 Lancer le suivi caméra</button>'
+  );
   /* La capture .har est bloquée par l'app Beatbot (certificate pinning) → méthode
      avancée, repliée. Tuya (ci-dessus) est le chemin réel recommandé. */
   var har=vPilotageHar();
@@ -1194,7 +1225,7 @@ function tuyaPollLive(){
     if(m.state&&/clean|work/.test(String(m.state).toLowerCase()))LV.lastData=performance.now();
   });
 }
-function closeLive(){var o=$("#lv");if(o)o.hidden=true;cancelAnimationFrame(LV.raf);if(LV.pollTimer){clearInterval(LV.pollTimer);LV.pollTimer=0;}}
+function closeLive(){var o=$("#lv");if(o){o.hidden=true;if(o.dataset.fromCam){o.dataset.fromCam="";var c=$("#cam");if(c)c.style.zIndex="";}}cancelAnimationFrame(LV.raf);if(LV.pollTimer){clearInterval(LV.pollTimer);LV.pollTimer=0;}}
 function resizeLive(){var cv=$("#lvc");if(!cv)return;var dpr=Math.min(2,window.devicePixelRatio||1);cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;cv._dpr=dpr;}
 function lvStartReal(){ if(!beatbotClient.configured()){toast("Configure d'abord le pilotage (onglet 🎮)");return;} beatbotClient.send("start"); toast("▶️ Commande Démarrer envoyée au robot"); }
 function lvPollNow(){
@@ -1261,7 +1292,7 @@ function drawLive(ts){
     var msg=linked?"En attente de la position réelle du robot…":"Position réelle non configurée";
     g.fillText(msg,W/2,H/2-10);
     g.fillStyle="rgba(147,176,200,.7)";g.font="12px -apple-system";
-    var sub=tuyaLive()?"Batterie/état lus en direct via Tuya. La position n'est affichée que si ton robot la publie.":(beatbot.statusUrl?"Le robot n'émet pas sous l'eau — dispo quand il est connecté (surface/base).":"Lie ton robot via Tuya (onglet 🎮) pour le suivi réel.");
+    var sub=camActive()?"📷 Caméra active — la position s'affichera dès que le robot est détecté dans l'image.":(tuyaLive()?"Batterie/état lus via Tuya. Pour la position sous l'eau : lance le 📷 suivi caméra.":(beatbot.statusUrl?"Le robot n'émet pas sous l'eau — dispo quand il est connecté (surface/base).":"Lie ton robot via Tuya (onglet 🎮) ou lance le 📷 suivi caméra."));
     g.fillText(sub,W/2,H/2+12);
   }
   g.textBaseline="alphabetic";
@@ -1274,10 +1305,156 @@ function updateLiveStats(ts){
   setTxt("lvBatt",LV.batt!=null?LV.batt+"%":"—");
   var fresh=hasData&&(performance.now()-LV.lastData<15000);
   setTxt("lvSpeed",LV.state?String(LV.state).slice(0,10):(fresh?"connecté":"hors ligne"));
-  var bd=$("#lvbadge");if(bd){var t=fresh?"🔴 LIVE":((tuyaLive()||beatbot.statusUrl)?"⏳ EN ATTENTE":"⚙️ À CONFIGURER");if(bd.textContent!==t)bd.textContent=t;bd.style.color=fresh?"#ff5a5a":"#93b0c8";}
+  var bd=$("#lvbadge");if(bd){var t=fresh?"🔴 LIVE":((camActive()||tuyaLive()||beatbot.statusUrl)?"⏳ EN ATTENTE":"⚙️ À CONFIGURER");if(bd.textContent!==t)bd.textContent=t;bd.style.color=fresh?"#ff5a5a":"#93b0c8";}
 }
 function setTxt(id,t){var el=$("#"+id);if(el&&el.textContent!==t)el.textContent=t;}
 window.addEventListener("resize",function(){if($("#lv")&&!$("#lv").hidden)resizeLive();});
+
+/* ============ SUIVI CAMÉRA — voir le robot SOUS l'eau ============
+   La radio ne traverse pas l'eau, la LUMIÈRE oui : l'iPhone (posé en hauteur) filme le
+   bassin, on détecte le robot (tache sombre mobile) À TRAVERS l'eau et on le projette
+   en direct dans le plan. 100% RÉEL : la position vient de la vraie vidéo ; si rien
+   n'est détecté → « robot non détecté » (jamais de position inventée).
+   Pipeline : calibrage 4 coins → homographie caméra→bassin ; modèle de fond (moyenne
+   mobile) sur grille 96×54 ; plus grosse composante connexe sombre DANS le bassin ;
+   centroïde → homographie → plan + carte de couverture (LV). Tout en local, rien envoyé. */
+var CAM={stream:null,raf:0,corners:[],H:null,mask:null,maskN:0,bg:null,GW:96,GH:54,frames:0,lock:null,lastDet:0,calStep:0,det:null,thresh:16};
+var camCal=lg("camcal",null);
+function camActive(){return !!CAM.stream;}
+/* Homographie 4 points (src vidéo normalisée → carré unité = coords bassin) */
+function camGauss(A,b){var n=8,i,j,k,M=[];for(i=0;i<n;i++)M.push(A[i].concat([b[i]]));
+  for(i=0;i<n;i++){var p=i;for(j=i+1;j<n;j++)if(Math.abs(M[j][i])>Math.abs(M[p][i]))p=j;
+    if(Math.abs(M[p][i])<1e-12)return null;var t=M[i];M[i]=M[p];M[p]=t;
+    for(j=i+1;j<n;j++){var f=M[j][i]/M[i][i];for(k=i;k<=n;k++)M[j][k]-=f*M[i][k];}}
+  var x=new Array(n);for(i=n-1;i>=0;i--){var s=M[i][n];for(j=i+1;j<n;j++)s-=M[i][j]*x[j];x[i]=s/M[i][i];}return x;}
+function camSolveH(src,dst){var A=[],b=[];
+  for(var i=0;i<4;i++){var x=src[i].x,y=src[i].y,u=dst[i].x,v=dst[i].y;
+    A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);
+    A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v);}
+  var h=camGauss(A,b);if(!h)return null;
+  return [h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7],1];}
+function camMap(H,x,y){var w=H[6]*x+H[7]*y+H[8];if(Math.abs(w)<1e-9)return null;return {x:(H[0]*x+H[1]*y+H[2])/w,y:(H[3]*x+H[4]*y+H[5])/w};}
+/* Détection : ImageData (GW×GH) → {x,y,size} en coords vidéo normalisées, ou null (honnête) */
+function camProcessFrame(im,W,Hh){
+  var d=im.data,n=W*Hh,i;
+  var lum=CAM._lum&&CAM._lum.length===n?CAM._lum:(CAM._lum=new Float32Array(n));
+  for(i=0;i<n;i++){var o=i*4;lum[i]=d[o]*0.299+d[o+1]*0.587+d[o+2]*0.114;}
+  if(!CAM.bg||CAM.bg.length!==n){CAM.bg=new Float32Array(n);CAM.bg.set(lum);return null;}
+  var bg=CAM.bg,mask=CAM.mask,cand=CAM._cand&&CAM._cand.length===n?CAM._cand:(CAM._cand=new Uint8Array(n));
+  var th=CAM.thresh,cnt=0,inMask=CAM.maskN||n;
+  for(i=0;i<n;i++){cand[i]=0;
+    if(mask&&!mask[i]){bg[i]+=(lum[i]-bg[i])*0.05;continue;}
+    var diff=bg[i]-lum[i];
+    if(diff>th){cand[i]=1;cnt++;}else bg[i]+=(lum[i]-bg[i])*0.03;} /* n'apprend jamais le robot dans le fond */
+  if(!cnt)return null;
+  if(cnt>inMask*0.3){for(i=0;i<n;i++)bg[i]+=(lum[i]-bg[i])*0.3;return null;} /* changement global de lumière → réapprend, pas de fausse détection */
+  /* plus grosse composante connexe */
+  var seen=CAM._seen&&CAM._seen.length===n?CAM._seen:(CAM._seen=new Uint8Array(n));seen.fill(0);
+  var best=0,bx=0,by=0,stack=[];
+  for(i=0;i<n;i++){
+    if(!cand[i]||seen[i])continue;
+    var size=0,sx=0,sy=0;stack.length=0;stack.push(i);seen[i]=1;
+    while(stack.length){var c=stack.pop(),cx=c%W,cy=(c/W)|0;size++;sx+=cx;sy+=cy;
+      if(cx>0&&cand[c-1]&&!seen[c-1]){seen[c-1]=1;stack.push(c-1);}
+      if(cx<W-1&&cand[c+1]&&!seen[c+1]){seen[c+1]=1;stack.push(c+1);}
+      if(cy>0&&cand[c-W]&&!seen[c-W]){seen[c-W]=1;stack.push(c-W);}
+      if(cy<Hh-1&&cand[c+W]&&!seen[c+W]){seen[c+W]=1;stack.push(c+W);}}
+    if(size>best){best=size;bx=sx/size;by=sy/size;}}
+  if(best<3||best>inMask*0.15)return null; /* trop petit = bruit, trop gros = ombre/nuage */
+  return {x:(bx+0.5)/W,y:(by+0.5)/Hh,size:best};}
+/* Détection (coords vidéo) → position bassin + alimentation du plan Live */
+function camApplyDetection(det){
+  if(!det||!CAM.H)return null;
+  var p=camMap(CAM.H,det.x,det.y);if(!p)return null;
+  if(p.x<-0.06||p.x>1.06||p.y<-0.06||p.y>1.06)return null;
+  var px=Math.max(0,Math.min(1,p.x)),py=Math.max(0,Math.min(1,p.y));
+  if(!pointInPoly(px,py,poolPoly())&&distToPoly(px,py,poolPoly())>0.05)return null;
+  CAM.det={vx:det.x,vy:det.y,x:px,y:py};CAM.lastDet=performance.now();
+  LV.realPos={x:px,y:py};LV.lastData=performance.now();if(LV.grid)markVisited(px,py);
+  return {x:px,y:py};}
+function camBuildMask(){
+  if(!CAM.H){CAM.mask=null;CAM.maskN=0;return;}
+  var W=CAM.GW,Hh=CAM.GH,m=new Uint8Array(W*Hh),n=0,poly=poolPoly();
+  for(var y=0;y<Hh;y++)for(var x=0;x<W;x++){
+    var p=camMap(CAM.H,(x+0.5)/W,(y+0.5)/Hh);
+    if(p&&p.x>-0.03&&p.x<1.03&&p.y>-0.03&&p.y<1.03){
+      var cx=Math.max(0,Math.min(1,p.x)),cy=Math.max(0,Math.min(1,p.y));
+      if(pointInPoly(cx,cy,poly)||distToPoly(cx,cy,poly)<0.03){m[y*W+x]=1;n++;}}}
+  CAM.mask=m;CAM.maskN=n;}
+var CAM_CORNER_LABELS=["coin AVANT-GAUCHE","coin AVANT-DROIT","coin ARRIÈRE-DROIT","coin ARRIÈRE-GAUCHE"];
+function camRecal(){CAM.corners=[];CAM.H=null;CAM.mask=null;CAM.bg=null;CAM.calStep=0;CAM.det=null;camHint();}
+function camHint(){var el=$("#camhint");if(!el)return;
+  if(CAM.calStep<4)el.textContent="Calibrage "+(CAM.calStep+1)+"/4 — touche le "+CAM_CORNER_LABELS[CAM.calStep]+" de l'eau dans l'image.";
+  else el.textContent="Calibré ✓ — pose le téléphone stable. Le robot est détecté à travers l'eau (eau calme = meilleur suivi).";}
+function camFinishCal(){
+  CAM.H=camSolveH(CAM.corners,[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}]);
+  if(!CAM.H){toast("Coins invalides, recommence le calibrage");camRecal();return;}
+  camCal=CAM.corners.slice();ls("camcal",camCal);
+  camBuildMask();CAM.bg=null;CAM.calStep=4;camHint();}
+function camTapToFrame(ev){
+  var v=$("#camv"),r=$("#camwrap").getBoundingClientRect();
+  var vw=v.videoWidth||1280,vh=v.videoHeight||720;
+  var sc=Math.min(r.width/vw,r.height/vh),dw=vw*sc,dh=vh*sc,ox=(r.width-dw)/2,oy=(r.height-dh)/2;
+  var x=(ev.clientX-r.left-ox)/dw,y=(ev.clientY-r.top-oy)/dh;
+  if(x<0||x>1||y<0||y>1)return null;return {x:x,y:y};}
+function camFrameToCss(p,r,v){
+  var vw=v.videoWidth||1280,vh=v.videoHeight||720;
+  var sc=Math.min(r.width/vw,r.height/vh),dw=vw*sc,dh=vh*sc,ox=(r.width-dw)/2,oy=(r.height-dh)/2;
+  return {x:ox+p.x*dw,y:oy+p.y*dh};}
+function openCam(){
+  var o=$("#cam");if(!o)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Caméra non disponible sur ce navigateur");return;}
+  o.hidden=false;
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280}},audio:false}).then(function(st){
+    CAM.stream=st;var v=$("#camv");v.srcObject=st;var pl=v.play();if(pl&&pl.catch)pl.catch(function(){});
+    if(camCal&&camCal.length===4){CAM.corners=camCal.slice();camFinishCal();}else camRecal();
+    if(!LV.grid)buildLiveGrid();if(!LV.startedTs)LV.startedTs=performance.now();
+    if(navigator.wakeLock&&navigator.wakeLock.request)navigator.wakeLock.request("screen").then(function(l){CAM.lock=l;}).catch(function(){});
+    cancelAnimationFrame(CAM.raf);CAM.raf=requestAnimationFrame(camLoop);
+  }).catch(function(e){o.hidden=true;
+    var msg=(e&&e.name==="NotAllowedError")?"Autorise la caméra : Réglages iPhone → Safari (ou l'app) → Caméra":"Caméra : "+String(e&&e.message||e).slice(0,120);
+    toast(msg);});}
+function closeCam(){var o=$("#cam");if(o)o.hidden=true;cancelAnimationFrame(CAM.raf);
+  if(CAM.stream){CAM.stream.getTracks().forEach(function(t){t.stop();});CAM.stream=null;}
+  if(CAM.lock){try{CAM.lock.release();}catch(e){}CAM.lock=null;}}
+function camOpenPlan(){openLive();var c=$("#cam");if(c)c.style.zIndex="50";var o=$("#lv");if(o)o.dataset.fromCam="1";}
+function camLoop(){
+  var o=$("#cam");if(!o||o.hidden)return;
+  var v=$("#camv");
+  if(v&&v.readyState>=2&&CAM.calStep>=4){
+    var pc=CAM._pc||(CAM._pc=document.createElement("canvas"));
+    if(pc.width!==CAM.GW){pc.width=CAM.GW;pc.height=CAM.GH;}
+    var g=pc.getContext("2d",{willReadFrequently:true});
+    try{g.drawImage(v,0,0,CAM.GW,CAM.GH);
+      var det=camProcessFrame(g.getImageData(0,0,CAM.GW,CAM.GH),CAM.GW,CAM.GH);
+      CAM.frames++;if(det)camApplyDetection(det);}catch(e){}
+  }
+  camDraw();
+  CAM.raf=requestAnimationFrame(camLoop);}
+function camDraw(){
+  var cv=$("#camc"),v=$("#camv");if(!cv||!v)return;
+  var r=$("#camwrap").getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv.width!==Math.round(r.width*dpr)){cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);}
+  var g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,r.width,r.height);
+  /* contour du bassin calibré */
+  if(CAM.corners.length){g.strokeStyle="rgba(91,200,255,.9)";g.lineWidth=2;g.beginPath();
+    for(var i=0;i<CAM.corners.length;i++){var s=camFrameToCss(CAM.corners[i],r,v);i?g.lineTo(s.x,s.y):g.moveTo(s.x,s.y);}
+    if(CAM.corners.length===4)g.closePath();g.stroke();
+    g.fillStyle="#5bc8ff";CAM.corners.forEach(function(c,idx){var s=camFrameToCss(c,r,v);g.beginPath();g.arc(s.x,s.y,7,0,7);g.fill();g.fillStyle="#04101c";g.font="700 10px -apple-system";g.textAlign="center";g.textBaseline="middle";g.fillText(String(idx+1),s.x,s.y);g.fillStyle="#5bc8ff";});}
+  /* détection */
+  var fresh=CAM.lastDet&&(performance.now()-CAM.lastDet<4000);
+  if(fresh&&CAM.det){var dpx=camFrameToCss({x:CAM.det.vx,y:CAM.det.vy},r,v);
+    g.strokeStyle="rgba(255,90,90,.85)";g.lineWidth=3;g.beginPath();g.arc(dpx.x,dpx.y,16,0,7);g.stroke();
+    g.fillStyle="#39c2ff";g.beginPath();g.arc(dpx.x,dpx.y,6,0,7);g.fill();}
+  var bd=$("#cambadge");if(bd){
+    var t=CAM.calStep<4?("🎯 CALIBRAGE "+(CAM.calStep+1)+"/4"):(fresh?"🔴 SUIVI":"👀 ROBOT NON DÉTECTÉ");
+    if(bd.textContent!==t)bd.textContent=t;bd.style.color=fresh?"#ff5a5a":"#93b0c8";}}
+(function(){var c=$("#camc");if(!c)return;
+  c.addEventListener("click",function(ev){
+    if(CAM.calStep>=4)return;
+    var p=camTapToFrame(ev);if(!p)return;
+    CAM.corners.push(p);CAM.calStep++;
+    if(CAM.calStep===4)camFinishCal();else camHint();});})();
 
 
 /* ============ render ============ */
