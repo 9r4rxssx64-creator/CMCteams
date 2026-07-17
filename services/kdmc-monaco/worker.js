@@ -143,7 +143,12 @@ async function ingestRaw(env, raw) {
     if (!keepAttachment(subject, from, a.filename, a.mime, body)) continue;
     const approx = Math.floor(a.b64.length * 0.75);
     if (approx > MAX_ATTACH) continue;
-    let hash = ''; try { hash = await sha256HexOfB64(a.b64); } catch { /* */ }
+    // Dédup par SIGNATURE LÉGÈRE (métadonnées + tête/queue du contenu) au lieu du sha256 de TOUTE
+    // la pièce jointe : hasher un PDF de plusieurs Mo en base64 à CHAQUE message faisait exploser le
+    // budget CPU du Worker (« error code: 1102 » qui coupait chaque run à ~19 lots). from|subject|
+    // nom|taille + 128 car. début/fin = quasi 0 CPU et discrimine deux pièces différentes de façon
+    // fiable (même expéditeur + sujet + nom + taille exacte + mêmes bornes = quasi sûrement le même).
+    let hash = ''; try { hash = await sha256Hex(from + '|' + subject + '|' + (a.filename || '') + '|' + approx + '|' + a.b64.slice(0, 128) + a.b64.slice(-128)); } catch { /* */ }
     const id = hash || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
     if (await env.ACCOUNTS.get('mail:p:' + id)) continue;
     const rec = { from, subject, date: new Date().toISOString(), filename: a.filename, mime: a.mime, b64: a.b64, size: approx, hash, ts: Date.now(), src: 'monaco' };
