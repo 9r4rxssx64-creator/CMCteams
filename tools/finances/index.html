@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.17 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.17">
+<!-- v0.13.18 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.18">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.17" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.18" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.17';
+  var APP_VER = 'v0.13.18';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -211,6 +211,42 @@
     VAULT.devis=(VAULT.devis||[]).filter(function(x){return x.docId!==docId;});
     try{ await idbDel('doc:'+docId); await idbDel('thumb:'+docId); }catch(e){}
     audit('suppression', d.name); await persist(); toast('🗑 Supprimé — ne reviendra plus'); render();
+  }
+  /* Relevés mal lus (opérations manquantes) : peu d'opérations OU bouclage en écart. On garde
+     l'original chiffré → ré-analyse possible sans re-télécharger. */
+  function incompleteStatements(){ return (VAULT.docs||[]).filter(function(d){
+    if(!d.hasFile || d.kind!=='releve') return false;
+    var n=(VAULT.tx||[]).filter(function(t){return t.docId===d.id;}).length;
+    return n<3 || (d.reconc && d.reconc.ok===false); }); }
+  async function reanalyzeIncompleteStatements(statEl){
+    if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); return; }
+    function say(m){ if(statEl)statEl.textContent=m; }
+    var targets=incompleteStatements();
+    if(!targets.length){ say('✅ Aucun relevé à ré-analyser.'); toast('✅ Rien à ré-analyser'); return; }
+    var fixed=0, fail=0;
+    for(var i=0;i<targets.length;i++){ var d=targets[i]; say('🔄 Ré-analyse '+(i+1)+'/'+targets.length+' — '+docTitle(d));
+      try{
+        var pack=await idbGet('doc:'+d.id); if(!pack){ fail++; continue; }
+        var dec=await decWith(KEY,pack); var mime=dec.mime||'application/pdf'; var name=dec.name||d.name; var src=d.src?{src:d.src}:{src:'reanalyse'};
+        /* retire l'ancien doc + ses opérations SANS bloquer la ré-importation (pas de skipHash), garde les bytes */
+        VAULT.docs=(VAULT.docs||[]).filter(function(x){return x.id!==d.id;});
+        VAULT.tx=(VAULT.tx||[]).filter(function(t){return t.docId!==d.id;});
+        VAULT.devis=(VAULT.devis||[]).filter(function(x){return x.docId!==d.id;});
+        var isPdf=(mime==='application/pdf'||/\.pdf$/i.test(name));
+        /* si c'est du texte (corps de mail) on relit le texte, sinon le fichier (PDF/photo) — lecture corrigée v0.13.18 */
+        var out;
+        if(/^text\//i.test(mime)){ var txt=''; try{ txt=new TextDecoder('utf-8').decode(bufFromB64(dec.data)); }catch(e){} out=await aiCall([ {t:txt+'\n\n'+EXTRACT_PROMPT} ], 8192); }
+        else { out=await aiCall([ {f:{mime:mime,data:dec.data}}, {t:EXTRACT_PROMPT} ], 8192);
+          out=await verifyClassification(out, { docParts:[{f:{mime:mime,data:dec.data}}], ftype:isPdf?'pdf':'image', name:name, from:(src.src||''), text:'' }); }
+        var res=finishImport(out, name, isPdf?'pdf':'image', d.hash||null, src);
+        if(res && res.docId){ try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:name,data:dec.data})); markDocFile(res.docId); }catch(e){} }
+        try{ await idbDel('doc:'+d.id); await idbDel('thumb:'+d.id); }catch(e){}
+        fixed++; await persist();
+      }catch(e){ fail++; }
+    }
+    dedupeAll(); await persist();
+    say('✅ '+fixed+' relevé(s) ré-analysé(s)'+(fail?(' · '+fail+' échec'):''));
+    toast('🔄 '+fixed+' relevé(s) ré-analysé(s) — opérations à jour'); audit('reanalyse_releves', fixed+' relevés'); render();
   }
   /* Doc « à vérifier » (2 IA en désaccord) → Kevin confirme que c'est une VRAIE facture : on crée
      les opérations depuis l'extraction déjà mémorisée (aucun nouvel appel IA). */
@@ -366,16 +402,17 @@
      marqué vision:true ; les moteurs texte-seul sont SAUTÉS quand l'entrée contient un
      document (sinon ils échouent). Tout passe par le proxy (tes clés, serveur). */
   var AI_FREE_CHAIN=[
-    /* GRATUITES d'abord (Groq/Cerebras/Mistral = vrai tier gratuit). Mistral lit AUSSI les images
-       (Pixtral) → seule gratuite pour les PDF/photos. Gemini est la clé de Kevin mais son compte
-       est FACTURÉ → on le met en REPLI (après les gratuites, avant Claude), jamais en défaut. */
-    { id:'groq',     label:'Groq',     fmt:'openai', free:true,  vision:false, path:'/groq/openai/v1/chat/completions', models:['llama-3.3-70b-versatile'] },
-    { id:'mistral',  label:'Mistral',  fmt:'openai', free:true,  vision:true,  path:'/mistral/v1/chat/completions',     models:['pixtral-12b-2409','mistral-small-latest'] },
-    { id:'cerebras', label:'Cerebras', fmt:'openai', free:true,  vision:false, path:'/cerebras/v1/chat/completions',    models:['llama-3.3-70b','llama3.1-8b'] },
-    { id:'gemini',   label:'Gemini',   fmt:'gemini', free:false, vision:true },
-    { id:'deepseek', label:'DeepSeek', fmt:'openai', free:false, vision:false, path:'/deepseek/v1/chat/completions',    models:['deepseek-chat'] }
+    /* GRATUITES d'abord (Groq/Cerebras/Mistral = vrai tier gratuit). vision = lit les IMAGES (photos/tickets) ;
+       pdf = lit un PDF directement. Mistral/Pixtral lit les images mais PAS un PDF (il renvoie HTTP 422 sur un
+       application/pdf) → pdf:false. Seuls Gemini et Claude lisent un PDF nativement. Gemini est la clé de Kevin
+       mais son compte est FACTURÉ → REPLI (après les gratuites, avant Claude), jamais en défaut. */
+    { id:'groq',     label:'Groq',     fmt:'openai', free:true,  vision:false, pdf:false, path:'/groq/openai/v1/chat/completions', models:['llama-3.3-70b-versatile'] },
+    { id:'mistral',  label:'Mistral',  fmt:'openai', free:true,  vision:true,  pdf:false, path:'/mistral/v1/chat/completions',     models:['pixtral-12b-2409','mistral-small-latest'] },
+    { id:'cerebras', label:'Cerebras', fmt:'openai', free:true,  vision:false, pdf:false, path:'/cerebras/v1/chat/completions',    models:['llama-3.3-70b','llama3.1-8b'] },
+    { id:'gemini',   label:'Gemini',   fmt:'gemini', free:false, vision:true,  pdf:true },
+    { id:'deepseek', label:'DeepSeek', fmt:'openai', free:false, vision:false, pdf:false, path:'/deepseek/v1/chat/completions',    models:['deepseek-chat'] }
   ];
-  var AI_CLAUDE={ id:'anthropic', label:'Claude', fmt:'anthropic', vision:true };
+  var AI_CLAUDE={ id:'anthropic', label:'Claude', fmt:'anthropic', vision:true, pdf:true };
   function _aiSpec(id){ if(id==='anthropic')return AI_CLAUDE; for(var i=0;i<AI_FREE_CHAIN.length;i++)if(AI_FREE_CHAIN[i].id===id)return AI_FREE_CHAIN[i]; return null; }
   var AI_LABEL={ gemini:'Gratuit d\'abord (économie)', anthropic:'Claude (premium)' };
   function errDetail(txt){ try{ var d=JSON.parse(txt); return String((d.error&&(d.error.message||d.error))||txt).slice(0,180); }catch(e){ return String(txt).slice(0,180); } }
@@ -413,9 +450,11 @@
      - mode « gratuit d'abord » (défaut) : chaîne gratuite (filtrée vision) PUIS Claude ;
      - mode « premium » : Claude d'abord, puis la chaîne gratuite en secours.
      Les moteurs en pause sont repoussés en fin (tentés en dernier recours, jamais perdus). */
-  function _aiChainFor(needsVision){
+  function _aiChainFor(needsVision, needsPdf){
     var mode=(VAULT&&VAULT.aiProvider)||'gemini';
-    var free=AI_FREE_CHAIN.filter(function(p){ return !needsVision || p.vision; });
+    /* Un PDF exige un moteur pdf:true (Gemini/Claude) — sinon Mistral 422, Groq/Cerebras texte-seul.
+       Une image (photo/ticket) exige vision:true (Pixtral OK). Sinon (texte) : tous éligibles. */
+    var free=AI_FREE_CHAIN.filter(function(p){ return needsPdf ? p.pdf : (needsVision ? p.vision : true); });
     var chain=(mode==='anthropic') ? [AI_CLAUDE].concat(free) : free.concat([AI_CLAUDE]);
     var live=chain.filter(function(p){ return !_aiIsDown(p.id); });
     var down=chain.filter(function(p){ return _aiIsDown(p.id); });
@@ -428,7 +467,8 @@
   async function _aiTry(parts, maxTokens, smart, minLen, exclude){
     minLen=minLen||120; exclude=exclude||[];
     var needsVision=parts.some(function(p){ return p.f; });
-    var c=_aiChainFor(needsVision); var order=c.order, preferred=c.preferred;
+    var needsPdf=parts.some(function(p){ return p.f && p.f.mime==='application/pdf'; });
+    var c=_aiChainFor(needsVision, needsPdf); var order=c.order, preferred=c.preferred;
     if(exclude.length){ var pref=order.filter(function(p){return exclude.indexOf(p.id)<0;}); var rest=order.filter(function(p){return exclude.indexOf(p.id)>=0;}); order=pref.concat(rest); }
     var lastErr=null;
     for(var i=0;i<order.length;i++){ var p=order[i];
@@ -735,6 +775,25 @@
   async function aiAnswer(q){
     return aiCall([{ t:'Tu es mon assistant finances. Réponds à la QUESTION en te basant UNIQUEMENT sur mes données ci-dessous. Donne les montants et dates EXACTS, additionne si besoin, sois concis et clair en français. Si l\'info n\'y est pas, dis-le.\n\n'+buildDocContext()+'\n\nQUESTION : '+q }], 900);
   }
+  /* Extrait tous les objets {...} complets (niveau haut) d'un fragment, en respectant les chaînes. */
+  function _balancedObjs(str){ var out=[],depth=0,start=-1,inStr=false,esc=false;
+    for(var i=0;i<str.length;i++){ var ch=str[i];
+      if(inStr){ if(esc)esc=false; else if(ch==='\\')esc=true; else if(ch==='"')inStr=false; continue; }
+      if(ch==='"'){ inStr=true; continue; }
+      if(ch==='{'){ if(depth===0)start=i; depth++; }
+      else if(ch==='}'){ if(depth>0){ depth--; if(depth===0&&start>=0){ out.push(str.slice(start,i+1)); start=-1; } } } }
+    return out; }
+  /* SAUVETAGE d'une réponse TRONQUÉE (relevé dense coupé par la limite de tokens) : on récupère meta
+     + toutes les opérations COMPLÈTES au lieu de tout jeter (« Réponse IA illisible »). Leçon : ne jamais
+     perdre 25 opérations parce que la 26e est coupée. */
+  function _salvageObj(t){ var res={};
+    var mi=t.indexOf('"meta"');
+    if(mi>=0){ var m0=t.indexOf('{',mi); if(m0>=0){ var objs=_balancedObjs(t.slice(m0)); if(objs.length){ try{ res.meta=JSON.parse(objs[0]); }catch(e){} } } }
+    var ti=t.search(/"(?:tx|transactions)"/); var arr=[];
+    if(ti>=0){ var br=t.indexOf('[',ti); if(br>=0){ _balancedObjs(t.slice(br+1)).forEach(function(o){ try{ arr.push(JSON.parse(o)); }catch(e){} }); } }
+    else { _balancedObjs(t).forEach(function(o){ try{ var x=JSON.parse(o); if(x&&(x.amount!=null||x.label))arr.push(x); }catch(e){} }); }
+    if(arr.length)res.tx=arr;
+    return (res.meta||res.tx)?res:null; }
   function extractJson(s){ /* récupère l'objet JSON du texte IA (objet PRIORITAIRE : garde meta.kind/ht/tva/vendor) */
     if(!s)return null;
     var t=String(s).trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
@@ -743,7 +802,7 @@
     if(c>=0&&d>c){ try{ return JSON.parse(t.slice(c,d+1)); }catch(e){} }
     var a=t.indexOf('['), b=t.lastIndexOf(']');            /* sinon tableau nu */
     if(a>=0&&b>a){ try{ return JSON.parse(t.slice(a,b+1)); }catch(e){} }
-    return null;
+    return _salvageObj(t);                                 /* dernier recours : réponse tronquée → on sauve ce qui est complet */
   }
   var EXTRACT_PROMPT =
     'Tu es un extracteur COMPTABLE de relevés bancaires, factures, tickets, fiches de paie ET devis (France/Monaco/Italie, EUR). '+
@@ -754,7 +813,7 @@
     'Reproduis les montants EXACTEMENT (aucune invention; ligne illisible -> ne pas l\'inventer). '+
     'category ∈ ['+DEFAULT_CATS.map(function(c){return '"'+c+'"';}).join(',')+']. '+
     '--- LES 7 TYPES (choisis LE bon, ne les confonds JAMAIS) ---\n'+
-    '1) "releve" = RELEVÉ BANCAIRE (plusieurs opérations, solde ouverture/clôture, IBAN masqué). Chaque ligne = une tx avec son signe réel. Renseigne TOUJOURS meta.opening (solde de DÉBUT) et meta.closing (solde de FIN) si visibles — ils servent à vérifier que RIEN n\'a été oublié. Ne saute AUCUNE ligne (frais bancaires, prélèvements, virements inclus).\n'+
+    '1) "releve" = RELEVÉ BANCAIRE (plusieurs opérations, solde ouverture/clôture, IBAN masqué). Un relevé contient SOUVENT 20 à 60 opérations sur le mois — retourne-les TOUTES, une par une, dans tx[] ; ne RÉSUME JAMAIS en une seule ligne. Inclus IMPÉRATIVEMENT les CRÉDITS/entrées en POSITIF : SALAIRE, VIREMENT REÇU, PENSION, REMBOURSEMENT, ALLOCATION — ne liste pas que les débits. Chaque ligne = une tx avec son signe réel. Renseigne TOUJOURS meta.opening (solde de DÉBUT) et meta.closing (solde de FIN) si visibles — ils servent à vérifier que RIEN n\'a été oublié. Ne saute AUCUNE ligne (frais bancaires, prélèvements, virements inclus).\n'+
     '2) "facture" = FACTURE réellement due/payée d\'un fournisseur (n° de facture + montant TTC), Y COMPRIS une facture d\'ABONNEMENT ou un PRÉLÈVEMENT récurrent (Netflix, SFR, EDF, assurance, loyer…). 1 ligne, amount = TTC NÉGATIF ; ht/tva/tva_rate si visibles ; vendor = émetteur.\n'+
     '3) "ticket" = TICKET DE CAISSE / reçu d\'un achat DÉJÀ payé (magasin, resto, carburant, péage…). 1 ligne, amount NÉGATIF.\n'+
     '4) "paie" = FICHE DE PAIE / bulletin de salaire. 1 ligne Revenus, salaire NET POSITIF.\n'+
@@ -807,7 +866,7 @@
      (majorité) ; toujours pas tranché → "à vérifier" (le doc est gardé, 0 opération, Kevin décide). */
   async function verifyClassification(out, ctx){
     var j=extractJson(out); if(!j) return out;
-    var meta=j.meta||{}; var kind=meta.kind||'releve';
+    var meta=j.meta||{}; var kind=meta.kind||'a_verifier';
     if(kind==='pub'||kind==='a_verifier') return out;                 /* déjà écarté / déjà à vérifier */
     var conf=num(meta.confidence);
     var creates=(kind==='facture'||kind==='ticket'||kind==='paie'||kind==='avoir');
@@ -837,7 +896,7 @@
     var hash=await sha256HexBuf(buf);
     if(docHashExists(hash)){ return { added:0, devis:0, dup:true }; }   /* même fichier déjà importé */
     var mime=isPdf?'application/pdf':(mt||'image/jpeg');
-    var out=await aiCall([ {f:{mime:mime,data:b64}}, {t:EXTRACT_PROMPT} ], 4096);
+    var out=await aiCall([ {f:{mime:mime,data:b64}}, {t:EXTRACT_PROMPT} ], 8192);
     out=await verifyClassification(out, { docParts:[{f:{mime:mime,data:b64}}], ftype:isPdf?'pdf':'image', name:file.name, from:(srcMeta&&srcMeta.src)||'', text:'' });
     var res=finishImport(out, file.name, isPdf?'pdf':'image', hash, srcMeta);
     try{ if(res.docId) await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:file.name,data:b64})); markDocFile(res.docId); }catch(e){}
@@ -845,7 +904,7 @@
   }
   async function importText(text, name, hash, srcMeta){
     var body='DOCUMENT (texte):\n'+String(text||'').slice(0,60000);
-    var out=await aiCall([ {t:body+'\n\n'+EXTRACT_PROMPT} ], 4096);
+    var out=await aiCall([ {t:body+'\n\n'+EXTRACT_PROMPT} ], 8192);
     out=await verifyClassification(out, { docParts:[{t:body}], ftype:'texte', name:name||'texte', from:(srcMeta&&srcMeta.src)||'', text:String(text||'') });
     var res=finishImport(out, name||'texte', 'texte', hash||null, srcMeta);
     /* Stocke le corps texte (chiffré) → document consultable (« Voir ») ET analysable rétroactivement (chasse aux pubs). */
@@ -867,7 +926,7 @@
       return rt;
     }
     var isPdf=(mime==='application/pdf'||/\.pdf$/i.test(name||''));
-    var out=await aiCall([ {f:{mime:mime,data:b64}}, {t:EXTRACT_PROMPT} ], 4096);
+    var out=await aiCall([ {f:{mime:mime,data:b64}}, {t:EXTRACT_PROMPT} ], 8192);
     out=await verifyClassification(out, { docParts:[{f:{mime:mime,data:b64}}], ftype:isPdf?'pdf':'image', name:name||'mail', from:(srcMeta&&srcMeta.src)||'mail', text:'' });
     var res=finishImport(out, name||'mail', isPdf?'pdf':'image', hash, srcMeta||{src:'mail'});
     try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:name||'mail',data:b64})); markDocFile(res.docId); }catch(e){}
@@ -946,7 +1005,15 @@
   function finishImport(out, name, ftype, hash, srcMeta){
     var j=extractJson(out); if(!j) throw new Error('Réponse IA illisible');
     var meta=j.meta||{}; var rows=j.tx||j.transactions||(Array.isArray(j)?j:[]);
-    var docId=uid(); var kind=meta.kind||'releve';
+    var docId=uid(); var kind=meta.kind||'a_verifier';   /* type inconnu → « à vérifier » (JAMAIS un faux relevé par défaut) */
+    /* GARDE STRUCTURELLE anti-faux-relevé (Kevin « crois des relevés qui ne le sont pas ») :
+       un vrai relevé bancaire a un solde (ouverture/clôture) OU plusieurs opérations. Si l'IA dit
+       « releve » mais qu'il n'y a NI solde NI ≥2 opérations, ce n'en est pas un → 1 opération = facture/ticket
+       selon le signe, 0 opération = à vérifier (Kevin tranche). */
+    if(kind==='releve' && meta.opening==null && meta.closing==null && rows.length<2){
+      if(rows.length===1){ kind=(num(rows[0].amount)>0)?'paie':'facture'; }
+      else { kind='a_verifier'; rows=[]; }
+    }
     if(kind==='pub'){ /* publicité/newsletter : rien à garder, et on bloque sa ré-importation */
       if(hash)skipHash(hash);
       audit('pub_ignoree', name); return { added:0, devis:0, pub:true };
@@ -1274,6 +1341,18 @@
         '<button class="btn grow" id="pend-retry">🔄 Réessayer maintenant</button></div>');
       v.appendChild(cPend);
       setTimeout(function(){ var b=$('pend-retry'); if(b)b.onclick=function(){ b.disabled=true; b.textContent='⏳ …'; retryPendingImports(false).then(function(){ try{ render(); }catch(e){} }); }; },0);
+    }
+
+    /* Relevés mal lus par une ancienne version (opérations manquantes) → ré-analyse en 1 tap,
+       sans rien re-télécharger (les originaux sont gardés chiffrés). Tes autres documents ne bougent pas. */
+    var _incompl=incompleteStatements();
+    if(aiOn && _incompl.length){
+      var cRe=el('<div class="card" style="border-color:var(--gold)"><h2>🔄 Relevés à ré-analyser<span class="r">'+_incompl.length+'</span></h2>'+
+        '<p class="tiny">'+_incompl.length+' relevé(s) ont été mal lus (opérations/salaire manquants). Je peux les <b>ré-analyser</b> avec la lecture corrigée — sans rien re-télécharger.</p>'+
+        '<button class="btn gold grow" id="reanalyze">🔄 Ré-analyser mes relevés incomplets</button>'+
+        '<div id="reanalyze-stat" class="tiny" style="margin-top:8px"></div></div>');
+      v.appendChild(cRe);
+      setTimeout(function(){ var b=$('reanalyze'); if(b)b.onclick=function(){ b.disabled=true; b.textContent='⏳ …'; reanalyzeIncompleteStatements($('reanalyze-stat')).then(function(){ try{render();}catch(e){} }); }; },0);
     }
 
     if(!aiOn){
