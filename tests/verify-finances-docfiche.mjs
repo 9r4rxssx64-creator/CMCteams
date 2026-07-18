@@ -47,7 +47,7 @@ await ctx.route(/apex-secrets-proxy\.9r4rxssx64\.workers\.dev/, async (route) =>
   let text;
   if (url.endsWith('/health')) return route.fulfill({ status:200, contentType:'application/json', body: JSON.stringify({ ok:true, total:22 }) });
   if (/vérificateur|"financial"/i.test(body)) text = JSON.stringify({ financial:true, kind:'facture', confidence:0.95, reason:'reel' });
-  else if (body.includes('EDFBODY')) text = JSON.stringify({ meta:{ kind:'facture', vendor:'EDF', invoice_no:'F-2026-777', date:'2026-07-05', due_date:'2026-07-30', payment_method:'Prélèvement', ht:70.42, tva:14.08, tva_rate:20, total:84.50 }, tx:[{ date:'2026-07-05', label:'Facture EDF électricité', amount:-84.50, category:'Énergie / Eau', vendor:'EDF', ht:70.42, tva:14.08, tva_rate:20 }] });
+  else if (body.includes('EDFBODY')) text = JSON.stringify({ meta:{ kind:'facture', vendor:'EDF', vendor_id:'FR 03 552081317', vendor_addr:'22 Av. de Wagram, 75008 Paris', client:'Kevin Desarzens', invoice_no:'F-2026-777', date:'2026-07-05', due_date:'2026-07-30', payment_method:'Prélèvement', ht:70.42, tva:14.08, tva_rate:20, total:84.50 }, tx:[{ date:'2026-07-05', label:'Abonnement électricité', amount:-84.50, category:'Énergie / Eau', vendor:'EDF', qty:2, unit_price:42.25, ht:70.42, tva:14.08, tva_rate:20 }] });
   else if (body.includes('RELEVEBODY')) text = JSON.stringify({ meta:{ kind:'releve', bank:'', account_masked:'', period:'', opening:1200, closing:1345.30 }, tx:[{ date:'2026-07-02', label:'VIREMENT SALAIRE', amount:2500, category:'Revenus' }, { date:'2026-07-03', label:'LOYER', amount:-1100, category:'Logement' }, { date:'2026-07-04', label:'COURSES', amount:-254.70, category:'Alimentation' }] });
   else text = JSON.stringify({ meta:{ kind:'releve' }, tx:[] });
   const respBody = isGemini ? JSON.stringify({ candidates:[{ content:{ parts:[{ text }] } }] }) : JSON.stringify({ content:[{ type:'text', text }] });
@@ -113,7 +113,11 @@ try {
     const ov = document.getElementById('drillov') || document.querySelector('.docfiche')?.closest('.ov') || document.body;
     return (ov.innerText || '');
   });
-  rec(/🏢 Émetteur/.test(fiche) && /EDF/.test(fiche), 'Fiche : Émetteur = EDF');
+  rec(/🏪 Vendeur/.test(fiche) && /EDF/.test(fiche), 'Fiche : Vendeur = EDF (libellé selon le type)');
+  rec(/🧾 SIRET \/ TVA/.test(fiche) && /552081317/.test(fiche), 'Fiche : SIRET/TVA du vendeur');
+  rec(/📍 Adresse/.test(fiche) && /Wagram/.test(fiche), 'Fiche : adresse du vendeur');
+  rec(/👤 Client/.test(fiche) && /Kevin Desarzens/.test(fiche), 'Fiche : client (acheteur)');
+  rec(/2×/.test(fiche) && /42,25/.test(fiche), 'Fiche : article avec quantité × prix unitaire');
   rec(/#️⃣ N° facture/.test(fiche) && /F-2026-777/.test(fiche), 'Fiche : N° facture affiché');
   rec(/⏰ Échéance/.test(fiche) && /30\/07\/2026/.test(fiche), 'Fiche : échéance au 30/07/2026 (va plus loin)');
   rec(/🧮 Hors taxe/.test(fiche), 'Fiche : Hors taxe présent');
