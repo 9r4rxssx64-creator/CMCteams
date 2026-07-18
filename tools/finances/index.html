@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.15 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.15">
+<!-- v0.13.16 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.16">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.15" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.16" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.15';
+  var APP_VER = 'v0.13.16';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -168,6 +168,7 @@
   function b64FromBuf(buf){ var u=new Uint8Array(buf),s='',CH=0x8000; for(var i=0;i<u.length;i+=CH){ s+=String.fromCharCode.apply(null,u.subarray(i,i+CH)); } return btoa(s); }
   function bufFromB64(b){ var bin=atob(b),u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return u.buffer; }
   function ymd(d){ try{ var x=new Date(d); if(isNaN(x))return ''; return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }catch(e){ return ''; } }
+  function frDate(s){ s=String(s||'').trim(); var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s); return m?(m[3]+'/'+m[2]+'/'+m[1]):s; }
   function ym(d){ var s=ymd(d); return s?s.slice(0,7):''; }
   function frMonth(k){ if(!k)return '—'; var p=k.split('-'); var m=['','janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc']; return (m[+p[1]]||p[1])+' '+p[0]; }
 
@@ -651,7 +652,7 @@
       if(doc&&doc.hasFile){ row.appendChild(docThumbEl(doc,48)); }
       else row.appendChild(el('<div class="ic">'+catIcon(t.category)+'</div>'));
       row.appendChild(el('<div class="mid" style="min-width:0"><div class="lb">'+esc(t.label)+'</div>'+
-        '<div class="mt">'+esc(ymd(t.date))+' · '+esc(t.category)+(doc?' · 📄 '+esc(String(doc.name).slice(0,24)):'')+'</div></div>'));
+        '<div class="mt">'+esc(ymd(t.date))+' · '+esc(t.category)+(doc?' · 📄 '+esc(String(docTitle(doc)).slice(0,24)):'')+'</div></div>'));
       row.appendChild(el('<div class="am '+(t.amount<0?'neg':'pos')+'">'+(t.amount<0?'':'+')+eur(t.amount)+'</div>'));
       var acts=el('<div class="row" style="margin-top:6px;gap:6px"></div>');
       if(doc&&doc.hasFile){ var vb=el('<button class="btn sm">🖨️ Voir la facture</button>'); vb.onclick=function(){ openDoc(t.docId); }; acts.appendChild(vb); }
@@ -680,11 +681,11 @@
     var a=analyze(txs); var dev=(VAULT.devis||[]).filter(function(x){return x.docId===docId;});
     var ov=el('<div id="drillov" style="position:fixed;inset:0;z-index:55;background:rgba(4,7,4,.96);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 12px)"></div>');
     var head=el('<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"></div>');
-    head.appendChild(el('<div style="flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+kindIcon(d.kind)+' '+esc(String(d.name).slice(0,40))+'</div>'));
+    head.appendChild(el('<div style="flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+kindIcon(d.kind)+' '+esc(docTitle(d))+'</div>'));
     var cB=el('<button class="btn sm" style="min-height:44px">✕ Fermer</button>'); cB.onclick=closeDrill; head.appendChild(cB);
     ov.appendChild(head);
     var box=el('<div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch"></div>'); ov.appendChild(box);
-    box.appendChild(el('<div class="tiny" style="margin-bottom:10px">'+esc(kindLabel(d.kind))+(d.bank?' · '+esc(d.bank):'')+(d.period?' · '+esc(d.period):'')+(d.invoiceNo?' · n° '+esc(d.invoiceNo):'')+'</div>'));
+    box.appendChild(docFiche(d));   /* fiche complète : type · émetteur · date · montant · n° · HT/TVA · articles */
     if(d.kind==='releve'){
       if(d.reconc){ var rc=d.reconc;
         if(rc.ok) box.appendChild(el('<div class="card" style="border-color:var(--green);background:rgba(40,180,90,.10)"><b style="color:var(--green)">✅ Relevé bouclé — rien oublié</b><div class="tiny" style="margin-top:4px">Solde de début '+eur(rc.opening)+' + toutes les opérations = solde de fin '+eur(rc.closing)+'. Chaque ligne a été prise en compte.</div></div>'));
@@ -703,13 +704,13 @@
       var max=a.byCat[cats[0]]||1;
       cats.slice(0,8).forEach(function(c){ var val=a.byCat[c]; var pct=Math.min(100,val/max*100);
         var r=el('<div class="catrow" style="cursor:pointer" title="Voir ces opérations"><div class="h"><b>'+catIcon(c)+' '+esc(c)+'</b><span class="amt">'+eur0(val)+'</span></div><div class="bar"><i style="width:'+pct.toFixed(0)+'%;background:'+catColor(c)+'"></i></div></div>');
-        r.onclick=function(){ drillTx(catIcon(c)+' '+c+' — '+String(d.name).slice(0,20), txs.filter(function(t){return t.category===c&&t.amount<0;})); };
+        r.onclick=function(){ drillTx(catIcon(c)+' '+c+' — '+docTitle(d), txs.filter(function(t){return t.category===c&&t.amount<0;})); };
         cc.appendChild(r); });
       box.appendChild(cc);
     }
     var acts=el('<div class="row" style="gap:8px;margin-top:6px"></div>');
     if(d.hasFile){ var vo=el('<button class="btn gold grow">🖨️ Voir l\'original</button>'); vo.onclick=function(){ openDoc(d.id); }; acts.appendChild(vo); }
-    if(txs.length){ var vt=el('<button class="btn grow">📋 Voir ses opérations</button>'); vt.onclick=function(){ drillTx('📄 '+String(d.name).slice(0,24), txs); }; acts.appendChild(vt); }
+    if(txs.length){ var vt=el('<button class="btn grow">📋 Voir ses opérations</button>'); vt.onclick=function(){ drillTx('📄 '+docTitle(d), txs); }; acts.appendChild(vt); }
     box.appendChild(acts);
     ov.addEventListener('click', function(e){ if(e.target===ov)closeDrill(); });
     document.body.appendChild(ov);
@@ -728,7 +729,7 @@
     var L=['OPÉRATIONS (date | libellé | montant € | catégorie):'];
     (VAULT.tx||[]).slice(0,700).forEach(function(t){ L.push(ymd(t.date)+' | '+stripSecrets(t.label)+' | '+t.amount.toFixed(2)+' | '+t.category); });
     if((VAULT.devis||[]).length){ L.push(''); L.push('DEVIS non payés (date | libellé | montant €):'); VAULT.devis.forEach(function(d){ L.push(ymd(d.date)+' | '+stripSecrets(d.label)+' | '+Number(d.amount).toFixed(2)); }); }
-    if((VAULT.docs||[]).length){ L.push(''); L.push('DOCUMENTS: '+(VAULT.docs||[]).map(function(d){return d.name;}).slice(0,80).join(' · ')); }
+    if((VAULT.docs||[]).length){ L.push(''); L.push('DOCUMENTS: '+(VAULT.docs||[]).map(function(d){return docTitle(d);}).slice(0,80).join(' · ')); }
     return L.join('\n');
   }
   async function aiAnswer(q){
@@ -747,7 +748,7 @@
   var EXTRACT_PROMPT =
     'Tu es un extracteur COMPTABLE de relevés bancaires, factures, tickets, fiches de paie ET devis (France/Monaco/Italie, EUR). '+
     'Analyse le document et renvoie UNIQUEMENT un JSON strict, sans texte autour:\n'+
-    '{"meta":{"kind":"releve|facture|ticket|paie|devis|avoir|pub","confidence":0.0,"vendor":"","invoice_no":"","bank":"","account_masked":"","period":"","date":"YYYY-MM-DD","total":null,"ht":null,"tva":null,"tva_rate":null,"opening":null,"closing":null},'+
+    '{"meta":{"kind":"releve|facture|ticket|paie|devis|avoir|pub","confidence":0.0,"vendor":"","invoice_no":"","bank":"","account_masked":"","period":"","date":"YYYY-MM-DD","due_date":"YYYY-MM-DD","payment_method":"","total":null,"ht":null,"tva":null,"tva_rate":null,"opening":null,"closing":null},'+
     '"tx":[{"date":"YYYY-MM-DD","label":"libellé exact","amount":-12.34,"category":"une catégorie parmi la liste","vendor":"","ht":null,"tva":null,"tva_rate":null}]}\n'+
     'Règles: amount NÉGATIF pour une dépense/débit, POSITIF pour un revenu/crédit. '+
     'Reproduis les montants EXACTEMENT (aucune invention; ligne illisible -> ne pas l\'inventer). '+
@@ -762,6 +763,7 @@
     '7) "pub" = PUBLICITÉ / NEWSLETTER / PROMOTION / OFFRE commerciale / code promo / vente flash / panier abandonné / deal (Groupon/Wish/AliExpress…). meta.kind="pub", tx=[]. C\'est une pub MÊME si un prix, une réduction ou « -50% » est affiché.\n'+
     'NE CONFONDS PAS : un DEVIS/PROFORMA/bon de commande (pas encore payé) ≠ une FACTURE (due/payée) ; une OFFRE/PROMO (pub) ≠ un achat facturé ; un AVOIR (argent rendu, POSITIF) ≠ une facture (dépense, NÉGATIVE). '+
     'RÈGLE STRICTE pour un CORPS DE MAIL (texte, pas un PDF) : c\'est une "pub" par DÉFAUT. Ce n\'est une "facture" QUE si on voit à la fois (a) un n° de facture/commande ET (b) un montant réellement payé/débité/prélevé (« total facturé », « payé le », « prélèvement de »). Un prix affiché, une offre, un % de réduction ne sont PAS un achat. En cas de doute : "pub". '+
+    'meta.date = date du document ; meta.due_date = date d\'ÉCHÉANCE / limite de paiement d\'une facture si visible ; meta.payment_method = moyen de paiement (carte, prélèvement, virement, espèces…) si visible. '+
     'Ajoute meta.confidence (0 à 1) = ta certitude sur le kind ; BASSE (≤0.5) si le document est ambigu (pub OU facture ?). '+
     'Réponds en JSON seulement.';
   /* 2e avis indépendant (leçon « plusieurs vérifie ») : un AUTRE moteur tranche juste le TYPE,
@@ -950,6 +952,7 @@
     _promoScanCache=null;
     VAULT.docs.unshift({ id:docId, name:name, kind:kind, ftype:ftype, addedAt:Date.now(), hash:hash||null,
       bank:meta.bank||meta.vendor||'', vendor:meta.vendor||'', invoiceNo:meta.invoice_no||'', account:meta.account_masked||'', period:meta.period||'',
+      date:meta.date||'', dueDate:meta.due_date||'', payMethod:meta.payment_method||'',
       opening:num(meta.opening), closing:num(meta.closing), src:(srcMeta&&srcMeta.src)||'', count:(kind==='devis'?1:(kind==='a_verifier'?0:rows.length)) });
     if(kind==='a_verifier'){ /* 2 IA en désaccord : on garde le doc mais 0 opération — Kevin tranche (jamais compté à tort) */
       var dref0=VAULT.docs[0]; if(dref0){ dref0.pending={ vendor:meta.vendor||'', invoice_no:meta.invoice_no||'', date:meta.date||meta.period||'',
@@ -1293,7 +1296,8 @@
       var dl=c3.querySelector('#doclist');
       VAULT.docs.slice(0,30).forEach(function(d){
         var _rc=(d.kind==='releve'&&d.reconc)?(d.reconc.ok?' · <span style="color:var(--green)">✅ bouclé</span>':' · <span style="color:var(--red)">⚠️ écart '+eur0(Math.abs(d.reconc.diff))+'</span>'):'';
-        var r=el('<div class="doc"><span>'+kindIcon(d.kind)+'</span><div class="grow" style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d.name)+'</div><div class="tiny">'+esc(d.bank||kindLabel(d.kind))+(d.period?' · '+esc(d.period):'')+' · '+d.count+' '+(d.kind==='devis'?'devis':'op.')+_rc+'</div></div><button class="btn sm" data-ana="'+d.id+'" title="Analyser ce document">🔎</button>'+(d.hasFile?'<button class="btn sm" data-open="'+d.id+'" title="Voir / imprimer l\'original">🖨️</button>':'')+'<button class="btn sm danger" data-del="'+d.id+'">✕</button></div>');
+        var _dw=docWhen(d); var _da=docAmount(d); var _damt=(d.kind==='releve')?'':(_da.ttc?eur0(_da.ttc):'');
+        var r=el('<div class="doc"><span>'+kindIcon(d.kind)+'</span><div class="grow" style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(docTitle(d))+'</div><div class="tiny"><span class="chip">'+esc(kindLabel(d.kind))+'</span>'+(_dw?' · '+esc(_dw):'')+(d.invoiceNo?' · n°'+esc(d.invoiceNo):'')+' · '+d.count+' '+(d.kind==='devis'?'devis':'op.')+(_damt?' · <b>'+esc(_damt)+'</b>':'')+_rc+'</div></div><button class="btn sm" data-ana="'+d.id+'" title="Analyser ce document">🔎</button>'+(d.hasFile?'<button class="btn sm" data-open="'+d.id+'" title="Voir / imprimer l\'original">🖨️</button>':'')+'<button class="btn sm danger" data-del="'+d.id+'">✕</button></div>');
         dl.appendChild(r);
       });
       dl.querySelectorAll('[data-ana]').forEach(function(b){ b.onclick=function(){ docAnalysis(b.getAttribute('data-ana')); }; });
@@ -1314,7 +1318,55 @@
     c2.querySelector('#paste-go').onclick=function(){ var t=(c2.querySelector('#paste').value||'').trim(); if(!t){toast('Colle d\'abord un texte',true);return;} runImport(function(){ return importText(stripSecrets(t),'Texte collé'); }, 'texte'); };
   }
   function kindIcon(k){ return {releve:'🏦',facture:'🧾',ticket:'🧾',paie:'💼',avoir:'↩️',devis:'📝',a_verifier:'🔎'}[k]||'📄'; }
-  function kindLabel(k){ return {releve:'Relevé',facture:'Facture',ticket:'Ticket',paie:'Fiche de paie',avoir:'Avoir / remboursement',devis:'Devis',a_verifier:'À vérifier'}[k]||'Document'; }
+  function kindLabel(k){ return {releve:'Relevé bancaire',facture:'Facture',ticket:'Ticket',paie:'Fiche de paie',avoir:'Avoir / remboursement',devis:'Devis',a_verifier:'À vérifier'}[k]||'Document'; }
+  /* ——— Présentation intelligente d'un document — fini « corps-du-mail.txt » partout (Kevin 2026-07-17) ——— */
+  function docEmitter(d){ return (d&&(d.vendor||d.bank||''))||''; }
+  function docTitle(d){ if(!d)return 'Document';
+    var em=docEmitter(d); if(em)return em;                                   /* émetteur = titre le + parlant */
+    var n=String(d.name||'').trim();
+    /* jamais un nom technique/placeholder : corps-du-mail, mail-123, texte, document, pièce jointe, CSV, *.txt/eml/html */
+    if(!n||/^(corps[- ]?du[- ]?mail|mail([- ]?\d+)?$|mail[- ]|texte|document|pi[eè]ce|sans[- ]?nom|csv)/i.test(n)||/\.(txt|eml|html?)$/i.test(n)) return kindLabel(d.kind);
+    return n.replace(/\.[a-z0-9]{2,5}$/i,''); }                             /* vrai fichier : nom sans extension */
+  function docTxs(d){ return d?(VAULT.tx||[]).filter(function(t){return t.docId===d.id;}):[]; }
+  function docWhen(d,txs){ if(d&&d.period)return d.period; txs=txs||docTxs(d);
+    var ds=txs.map(function(t){return t.date;}).filter(Boolean).sort();
+    if(ds.length)return ds[0]===ds[ds.length-1]?frDate(ds[0]):(frDate(ds[0])+' → '+frDate(ds[ds.length-1]));
+    if(d&&d.date)return frDate(d.date);
+    return (d&&d.addedAt?frDate(ymd(d.addedAt)):'')||''; }
+  function docAmount(d,txs){ txs=txs||docTxs(d); var dep=0,rev=0,ttc=0;
+    txs.forEach(function(t){ if(t.amount<0)dep+=-t.amount; else rev+=t.amount; ttc+=(t.ttc!=null?Math.abs(t.ttc):Math.abs(t.amount)); });
+    return {dep:dep,rev:rev,net:rev-dep,ttc:ttc}; }
+  function docHtTva(d,txs){ txs=txs||docTxs(d); var ht=0,tva=0,has=false;
+    txs.forEach(function(t){ if(t.ht!=null){ht+=Math.abs(t.ht);has=true;} if(t.tva!=null){tva+=Math.abs(t.tva);has=true;} });
+    return has?{ht:ht,tva:tva}:null; }
+  function docSrcLabel(s){ return s==='mail'||s==='monaco'?'Reçu par mail':(s==='factures'?'factures@kd-mc.com':(s==='csv'?'Import CSV':(s||''))); }
+  /* Fiche document = TOUTES les infos en clair (type · émetteur · date · montant · n° · HT/TVA · articles). */
+  function docFiche(d){
+    var txs=docTxs(d); var amt=docAmount(d,txs); var htv=docHtTva(d,txs); var when=docWhen(d,txs);
+    var c=el('<div class="card docfiche"></div>');
+    var big=(d.kind==='releve')?(amt.net!==0?((amt.net<0?'':'+')+eur(amt.net)):''):(amt.ttc?eur(amt.ttc):'');
+    c.appendChild(el('<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:15px">'+kindIcon(d.kind)+' '+esc(kindLabel(d.kind))+'</b><b style="font-size:19px'+((d.kind!=='releve'&&amt.ttc)?';color:var(--red)':'')+'">'+esc(big)+'</b></div>'));
+    var rows=[]; var em=docEmitter(d);
+    if(em)rows.push(['🏢 Émetteur',em]);
+    if(when)rows.push(['📅 Date',when]);
+    if(d.dueDate)rows.push(['⏰ Échéance',frDate(d.dueDate)]);
+    if(d.invoiceNo)rows.push(['#️⃣ N° facture',d.invoiceNo]);
+    if(d.account)rows.push(['🏦 Compte',d.account]);
+    if(htv&&htv.ht)rows.push(['🧮 Hors taxe',eur(htv.ht)]);
+    if(htv&&htv.tva)rows.push(['➕ TVA',eur(htv.tva)]);
+    if(d.kind!=='releve'&&amt.ttc)rows.push(['💶 Montant TTC',eur(amt.ttc)]);
+    if(d.payMethod)rows.push(['💳 Paiement',d.payMethod]);
+    if(d.src)rows.push(['📩 Source',docSrcLabel(d.src)]);
+    if(rows.length){ var g=el('<div style="margin-top:8px;display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:13.5px"></div>');
+      rows.forEach(function(r){ g.appendChild(el('<div class="muted" style="white-space:nowrap">'+esc(r[0])+'</div>')); g.appendChild(el('<div style="text-align:right;font-weight:600;word-break:break-word">'+esc(r[1])+'</div>')); });
+      c.appendChild(g); }
+    if(txs.length){ var li=el('<div style="margin-top:10px"></div>');
+      li.appendChild(el('<div class="muted" style="font-size:12.5px;margin-bottom:2px">📋 Lignes / articles ('+txs.length+')</div>'));
+      txs.slice(0,8).forEach(function(t){ li.appendChild(el('<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0;border-top:1px solid rgba(255,255,255,.06)"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.label||'—')+'</span><span style="font-weight:600;white-space:nowrap" class="'+(t.amount<0?'neg':'pos')+'">'+eur(t.amount)+'</span></div>')); });
+      if(txs.length>8)li.appendChild(el('<div class="tiny" style="margin-top:3px">… +'+(txs.length-8)+' autres (voir ses opérations)</div>'));
+      c.appendChild(li); }
+    return c;
+  }
   function catOptions(sel){ return (VAULT.categories||DEFAULT_CATS).map(function(c){return '<option value="'+esc(c)+'"'+(sel===c?' selected':'')+'>'+catIcon(c)+' '+esc(c)+'</option>';}).join(''); }
 
   function _sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
@@ -2083,8 +2135,7 @@
       var cav=el('<div class="card" style="border:1px solid var(--gold)"><h2>🔎 À vérifier<span class="r">'+averif.length+'</span></h2>'+
         '<p class="tiny">Ces documents sont <b>ambigus</b> : deux IA n\'étaient pas d\'accord (pub/offre ou vraie facture ?). Je n\'ai <b>rien compté</b> pour ne pas me tromper. Choisis pour chacun :</p></div>');
       averif.forEach(function(d){
-        var isBody=/^corps[- ]?du[- ]?mail/i.test(d.name||'');
-        var title=isBody?((d.vendor||d.bank||'Mail')+' — corps du mail'):d.name;
+        var title=docTitle(d);
         var row=el('<div class="doc" style="align-items:flex-start;gap:10px;padding:10px 0"></div>');
         row.appendChild(docThumbEl(d,64));
         var mid=el('<div class="grow" style="min-width:0"></div>');
@@ -2105,7 +2156,7 @@
     var known=ACCOUNTS.map(function(a){return a.key;});
     order.sort(function(a,b){ var ia=known.indexOf(a), ib=known.indexOf(b); if(ia<0)ia=99; if(ib<0)ib=99; return ia-ib; });
     /* bannière vérification */
-    var suspects=[]; (groups['factures']?groups['factures'].docs:[]).forEach(function(d){ if(/devis|preventivo|estimation/i.test(d.name||'')) suspects.push(d.name); });
+    var suspects=[]; (groups['factures']?groups['factures'].docs:[]).forEach(function(d){ if(/devis|preventivo|estimation/i.test(d.name||'')) suspects.push(docTitle(d)); });
     var autresCount=order.filter(function(k){return k.indexOf('autres:')===0;}).length;
     var useless=uselessDocs();
     var bn=el('<div class="card"><h2>🗃️ Tes comptes<span class="r">'+order.length+' compte(s)</span></h2>'+
@@ -2133,17 +2184,16 @@
       if(a.key==='devis'){ var b=el('<button class="btn grow">🧾 Ouvrir les devis</button>'); b.onclick=function(){ STATE.tab='devis'; render(); }; box.appendChild(b); }
       g.docs.slice(0,40).forEach(function(d){
         /* Carte document : GRANDE vignette (tap → aperçu) + QUOI c'est en clair + actions discrètes. */
-        var isBody=/^corps[- ]?du[- ]?mail/i.test(d.name||'');
-        var title=isBody?((d.vendor||d.bank||'Mail')+' — corps du mail'):d.name;
+        var title=docTitle(d);
         var docTx=(VAULT.tx||[]).filter(function(t){return t.docId===d.id;});
-        var docAmt=docTx.reduce(function(s,t){return s+(t.amount<0?-t.amount:0);},0);
-        var when=d.period||ymd(d.addedAt)||'';
+        var _aB=docAmount(d,docTx); var docAmt=(d.kind==='releve')?0:(_aB.ttc||_aB.dep);
+        var when=docWhen(d,docTx);
         var row=el('<div class="doc" style="align-items:flex-start;gap:10px;padding:10px 0"></div>');
         row.appendChild(docThumbEl(d,64));
         var mid=el('<div class="grow" style="min-width:0"></div>');
         mid.appendChild(el('<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(title)+'</div>'));
         var _rcB=(d.kind==='releve'&&d.reconc)?(d.reconc.ok?' · <span style="color:var(--green)">✅ bouclé</span>':' · <span style="color:var(--red)">⚠️ écart '+eur0(Math.abs(d.reconc.diff))+'</span>'):'';
-        mid.appendChild(el('<div class="tiny" style="margin-top:2px"><span class="chip">'+kindIcon(d.kind)+' '+esc(kindLabel(d.kind))+'</span>'+(d.vendor&&!isBody?' '+esc(d.vendor):'')+(when?' · '+esc(when):'')+(docAmt?' · <b>'+eur0(docAmt)+'</b>':'')+_rcB+'</div>'));
+        mid.appendChild(el('<div class="tiny" style="margin-top:2px"><span class="chip">'+kindIcon(d.kind)+' '+esc(kindLabel(d.kind))+'</span>'+(when?' · 📅 '+esc(when):'')+(d.invoiceNo?' · n°'+esc(d.invoiceNo):'')+(docAmt?' · <b>'+eur0(docAmt)+'</b>':'')+_rcB+'</div>'));
         var acts=el('<div class="row" style="margin-top:7px;gap:6px;flex-wrap:wrap"></div>');
         if(d.hasFile){ var vb=el('<button class="btn sm" data-open="'+d.id+'">🖨️ Voir</button>'); acts.appendChild(vb); }
         if(docTx.length||d.kind==='releve'){ var ob=el('<button class="btn sm">🔎 Analyser</button>'); ob.onclick=function(){ docAnalysis(d.id); }; acts.appendChild(ob); }
@@ -2539,7 +2589,7 @@
   function exportOpsCsv(){
     var rows=[['Date','Libellé','Montant','Catégorie','Type','Document']];
     VAULT.tx.slice().sort(function(a,b){return a.date<b.date?-1:1;}).forEach(function(t){
-      var doc=(VAULT.docs.find(function(d){return d.id===t.docId;})||{}).name||t.kind||'';
+      var _dd=VAULT.docs.find(function(d){return d.id===t.docId;}); var doc=_dd?docTitle(_dd):(t.kind?kindLabel(t.kind):'');
       rows.push([ymd(t.date),t.label,String(t.amount).replace('.',','),t.category,kindLabel(t.kind),doc]);
     });
     dl('operations_classees.csv','﻿'+rows.map(function(r){return r.map(csvCell).join(';');}).join('\n'),'text/csv');
