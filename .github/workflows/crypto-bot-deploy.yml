@@ -101,6 +101,11 @@ jobs:
           #    « On garde quoi qu'il arrive jusqu'à ce que ça remonte ») : le bot garde une
           #    position même à -50%. Honnête : la perte latente n'est plus bornée (testnet,
           #    faux argent). Pour remettre le frein : CATASTROPHE_STOP_PCT=20.
+          # E) STRATÉGIE = style du CHAMPION P3 du tournoi (Kevin « Go » 2026-07-20) :
+          #    dipup = acheter les CREUX quand la tendance de fond est HAUSSIÈRE
+          #    (prix > EMA50 + RSI < 40), encaisser sur rebond (RSI > 65). Mêmes réglages
+          #    que crypto-bot-p3, seul bot au-dessus de 10 000 après 2 semaines de tournoi.
+          #    La sortie reste gérée par la politique D (jamais à perte). Rollback : STRATEGY=ema.
           OUT=$(railway variables --service "$SERVICE_NAME" --skip-deploys \
             --set "BINANCE_API_KEY=$BK" \
             --set "BINANCE_API_SECRET=$BS" \
@@ -110,7 +115,10 @@ jobs:
             --set "SYMBOL=BTC/USDT" \
             --set "TIMEFRAME=5m" \
             --set "LOOP_SECONDS=30" \
-            --set "STRATEGY=ema" \
+            --set "STRATEGY=dipup" \
+            --set "DU_TREND_PERIOD=50" \
+            --set "DU_RSI_BUY=40" \
+            --set "DU_RSI_SELL=65" \
             --set "EMA_FAST=8" \
             --set "EMA_SLOW=21" \
             --set "ATR_STOP_MULT=2.0" \
@@ -148,7 +156,7 @@ jobs:
             echo ""
             echo "- Mode : 🧪 TESTNET (faux argent) — TESTNET=true, BOT_KILL=0"
             echo "- Cryptos : BTC, ETH, SOL, BNB, XRP (capital réparti à parts égales)"
-            echo "- Réglage : EMA 8/21 + RSI 78 (mesuré meilleur ; la mean-reversion faisait moins bien)"
+            echo "- 🏆 Stratégie : style du champion P3 du tournoi — achète les CREUX en tendance haussière (dipup 50/40/65)"
             echo "- 🟢 **Ne vend JAMAIS à perte** : attend la remontée, sort seulement en profit (+0,5%)"
             echo "- 🚫 Frein anti-catastrophe RETIRÉ (choix Kevin) : on garde quoi qu'il arrive jusqu'à la remontée — perte latente non bornée (testnet)"
             echo "- Le plafond perte/jour ne solde plus : il met les ACHATS en pause (garde les positions)"
