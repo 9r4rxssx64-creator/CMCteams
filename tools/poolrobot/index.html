@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.0 -->
+<!-- v0.11.1 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -188,7 +188,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.0" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.1" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -196,7 +196,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.0";
+var APP_VER="v0.11.1";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -621,7 +621,11 @@ function tuyaLoadDevices(){
   tuyaApi("devices").then(function(j){
     if(!el)return;
     if(!j.ok){el.innerHTML='<div class="note warn">'+esc(j.detail||j.reason||"Erreur")+'</div>';return;}
-    if(!j.devices.length){el.innerHTML='<div class="note warn">Aucun appareil trouvé. Vérifie que ton compte Smart Life est bien lié au projet Tuya (voir étapes).</div>';return;}
+    if(!j.devices.length){
+      var diag="";
+      if(j.tried&&j.tried.length){diag='<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--mut)">Diagnostic (zones testées)</summary><div style="font-size:11px;color:var(--mut);font-family:ui-monospace,monospace;margin-top:4px">'+j.tried.map(function(t){return esc(t.host)+(t.path?" "+t.path.split("/").slice(-2).join("/"):"")+" → "+(t.error?("⚠ "+t.error):(t.count+" robot(s)"));}).join("<br>")+'</div></details>';}
+      el.innerHTML='<div class="note warn">Aucun robot rattaché trouvé (toutes zones Europe testées). Vérifie dans la console Tuya que <b>« Link App Account »</b> affiche bien <b>1 device linked</b> après le scan.'+diag+'</div>';return;
+    }
     el.innerHTML=j.devices.map(function(d){return '<button class="btn ghost sm" style="width:100%;text-align:left;margin-top:6px" onclick="tuyaSelect(\''+esc(d.id)+'\',\''+esc((d.name||"").replace(/\x27/g,""))+'\')">'+(d.online?"🟢":"⚪")+' '+esc(d.name||d.id)+' <span class="mut">· '+esc(d.category||"")+'</span></button>';}).join("");
   });
 }

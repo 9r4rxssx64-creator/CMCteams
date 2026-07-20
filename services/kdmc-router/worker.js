@@ -1181,6 +1181,34 @@ async function tuyaSign(clientId, secret, token, t, s2s) {
   return tuyaHmacHex(secret, clientId + (token || '') + t + '' + s2s);
 }
 const TUYA_HOSTS = { eu: 'openapi.tuyaeu.com', us: 'openapi.tuyaus.com', cn: 'openapi.tuyacn.com', in: 'openapi.tuyain.com' };
+/* Chaque zone Tuya a parfois 2 data centers (ex Europe : Central + Western/Azure). Un
+   compte France peut être sur l'un OU l'autre → on essaie tous les hôtes de la zone à la
+   découverte, et on retient celui qui renvoie le robot (leçon : mesurer, pas deviner). */
+const TUYA_ALT_HOSTS = {
+  eu: ['openapi.tuyaeu.com', 'openapi-weaz.tuyaeu.com'],
+  us: ['openapi.tuyaus.com', 'openapi-ueaz.tuyaus.com'],
+  cn: ['openapi.tuyacn.com'],
+  in: ['openapi.tuyain.com'],
+};
+function tuyaCandidateHosts(region, current) {
+  const list = (TUYA_ALT_HOSTS[region] || TUYA_ALT_HOSTS.eu).slice();
+  if (current && !list.includes(current)) list.unshift(current);
+  const i = current ? list.indexOf(current) : -1;
+  if (i > 0) { list.splice(i, 1); list.unshift(current); } /* hôte courant d'abord */
+  return list;
+}
+/* Appel Tuya signé sur un hôte + token DONNÉS (pas de cache) — utilisé pour tester
+   chaque data center à la découverte. Retourne {ok, http, result, msg, code}. */
+async function tuyaFetchSigned(host, clientId, secret, token, method, pathWithQuery, bodyObj) {
+  const bodyStr = bodyObj ? JSON.stringify(bodyObj) : '';
+  const t = Date.now();
+  const sign = await tuyaSign(clientId, secret, token, t, await tuyaStringToSign(method, pathWithQuery, bodyStr));
+  let r; try {
+    r = await fetch('https://' + host + pathWithQuery, { method, headers: { client_id: clientId, access_token: token, sign, t: String(t), sign_method: 'HMAC-SHA256', 'Content-Type': 'application/json' }, body: bodyStr || undefined });
+  } catch (e) { return { ok: false, reason: 'fetch_fail', detail: String((e && e.message) || e).slice(0, 200) }; }
+  const j = await r.json().catch(() => ({}));
+  return { ok: j && j.success === true, http: r.status, result: j && j.result, msg: j && j.msg, code: j && j.code };
+}
 async function tuyaCfg(env) { if (!env || !env.ACCOUNTS) return null; try { return JSON.parse((await env.ACCOUNTS.get('tuya:cfg')) || 'null'); } catch { return null; } }
 async function tuyaSaveCfg(env, cfg) { if (env && env.ACCOUNTS) await env.ACCOUNTS.put('tuya:cfg', JSON.stringify(cfg)); }
 async function tuyaMintToken(host, clientId, secret) {
@@ -1237,12 +1265,29 @@ async function handleTuya(request, path, env) {
   }
   const cfg = await tuyaCfg(env);
   if (!cfg) return need();
-  /* découverte des robots liés au projet Tuya */
+  /* découverte des robots : essaie TOUS les data centers de la zone, retient celui qui
+     renvoie le robot, et remonte le diagnostic brut par hôte (compte/erreur) pour qu'on
+     voie la vérité si c'est encore vide (leçon #56/#97 : mesurer + détailler). */
   if (seg === 'devices' && request.method === 'GET') {
-    const r = await tuyaBiz(env, cfg, 'GET', '/v1.0/iot-01/associated-users/devices', null);
-    if (!r.ok) return J({ ok: false, reason: 'tuya_error', detail: r.detail || r.msg || ('code ' + r.code) });
-    const devs = ((r.result && r.result.devices) || []).map((d) => ({ id: d.id, name: d.name, category: d.category, product_name: d.product_name, online: d.online }));
-    return J({ ok: true, devices: devs });
+    const map = (d) => ({ id: d.id, name: d.name, category: d.category, product_name: d.product_name, online: d.online });
+    const paths = ['/v1.0/iot-01/associated-users/devices', '/v2.0/cloud/thing/space/devices'];
+    const tried = [];
+    for (const host of tuyaCandidateHosts(cfg.region, cfg.host)) {
+      const m = await tuyaMintToken(host, cfg.access_id, cfg.access_secret);
+      if (!m.ok) { tried.push({ host, error: m.detail || 'auth_fail' }); continue; }
+      for (const p of paths) {
+        const r = await tuyaFetchSigned(host, cfg.access_id, cfg.access_secret, m.token, 'GET', p, null);
+        const devs = (r.result && (r.result.devices || (Array.isArray(r.result) ? r.result : null))) || [];
+        if (!r.ok) { tried.push({ host, path: p, error: r.msg || ('code ' + r.code) }); continue; }
+        tried.push({ host, path: p, count: devs.length });
+        if (devs.length) {
+          if (host !== cfg.host) { cfg.host = host; await tuyaSaveCfg(env, cfg); }
+          await env.ACCOUNTS.put('tuya:token', JSON.stringify({ token: m.token, exp: m.exp }), { expirationTtl: 7200 });
+          return J({ ok: true, devices: devs.map(map), host, tried });
+        }
+      }
+    }
+    return J({ ok: true, devices: [], tried }); /* honnête : rien trouvé + diag par hôte */
   }
   /* choisir le robot actif */
   if (seg === 'select' && request.method === 'POST') {
