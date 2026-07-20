@@ -149,7 +149,7 @@ jobs:
           echo "::notice::5 Queues OK"
 
       - name: Deploy api-worker (official Cloudflare action)
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
