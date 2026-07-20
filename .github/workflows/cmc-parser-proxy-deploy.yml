@@ -138,7 +138,7 @@ jobs:
       - name: Create PR pour auto-sync proxy-config.json (best-effort)
         id: cpr
         continue-on-error: true
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.APEX_GITHUB_PAT || secrets.GITHUB_TOKEN }}
           add-paths: tools/planning-parser-tester/proxy-config.json
