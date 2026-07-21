@@ -1,0 +1,79 @@
+/* Tests du collecteur d'HISTORIQUE AUTO PoolPilot : détection des cycles terminés
+   (clean_time/clean_area), anti-doublon, référence gelée pendant un nettoyage,
+   endpoint /stats. Déterministe. node tuya-stats.test.mjs */
+import mod from './worker.js';
+import { tuyaHistoryTick } from './worker.js';
+import { createHash, createHmac } from 'crypto';
+
+let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : (fail++, console.log('  ✗ ' + m)); };
+
+const CFG = { access_id: 'cid', access_secret: 'sec', host: 'openapi.tuyaeu.com', region: 'eu', device_id: 'bf62' };
+function mkEnv() { const m = new Map([['tuya:cfg', JSON.stringify(CFG)]]); return { ACCOUNTS: { get: async (k) => (m.has(k) ? m.get(k) : null), put: async (k, v) => m.set(k, String(v)), delete: async (k) => m.delete(k) }, _m: m }; }
+
+/* Simulateur cloud Tuya : status + compteurs de session paramétrables */
+const realFetch = globalThis.fetch;
+function setRobot({ status = 'standby', ct = 0, ca = 0, batt = 100 } = {}) {
+  globalThis.fetch = async (input) => {
+    const u = typeof input === 'string' ? input : input.url; const url = new URL(u);
+    if (url.pathname === '/v1.0/token') return new Response(JSON.stringify({ success: true, result: { access_token: 'tok', expire_time: 7200 } }), { status: 200 });
+    if (/\/devices\/[^/]+\/status$/.test(url.pathname)) return new Response(JSON.stringify({ success: true, result: [{ code: 'status', value: status }, { code: 'battery_percentage', value: batt }, { code: 'clean_time', value: ct }, { code: 'clean_area', value: ca }] }), { status: 200 });
+    if (/\/devices\/[^/]+$/.test(url.pathname)) return new Response(JSON.stringify({ success: true, result: { online: true, name: 'AquaSense 2 Ultra' } }), { status: 200 });
+    return realFetch(input);
+  };
+}
+const getJ = async (e, k) => { const v = await e.ACCOUNTS.get(k); return v ? JSON.parse(v) : null; };
+
+try {
+  const e = mkEnv();
+
+  /* 1) première observation : référence mémorisée, AUCUNE session inventée */
+  setRobot({ status: 'standby', ct: 120, ca: 30 });
+  let r = await tuyaHistoryTick(e);
+  ok(r.ok === true && r.first === true && !(await getJ(e, 'tuya:sessions')), 'premier tick = référence seulement, rien d\'enregistré');
+
+  /* 2) valeurs identiques → rien */
+  r = await tuyaHistoryTick(e);
+  ok(r.ok === true && r.recorded === false, 'valeurs inchangées → pas de session');
+
+  /* 3) nettoyage EN COURS avec compteurs qui bougent → pas encore enregistré, référence GELÉE */
+  setRobot({ status: 'cleaning', ct: 40, ca: 12, batt: 70 });
+  r = await tuyaHistoryTick(e);
+  const refPendant = await getJ(e, 'tuya:lastdp');
+  ok(r.recorded === false && refPendant.ct === 120, 'pendant le nettoyage : rien enregistré, référence gelée');
+
+  /* 4) fin de cycle (standby, compteurs finaux ≠ référence) → session RÉELLE enregistrée */
+  setRobot({ status: 'standby', ct: 95, ca: 22, batt: 41 });
+  r = await tuyaHistoryTick(e);
+  let sess = await getJ(e, 'tuya:sessions'); let stats = await getJ(e, 'tuya:stats');
+  ok(r.recorded === true && sess.length === 1 && sess[0].dur === 95 && sess[0].area === 22 && sess[0].batt === 41, 'cycle terminé → session {95 min, 22 m², 41%}');
+  ok(stats && stats.count === 1 && stats.minutes === 95 && stats.m2 === 22, 'compteurs cumulés à jour (1 cycle, 95 min, 22 m²)');
+
+  /* 5) re-tick mêmes valeurs → PAS de doublon */
+  r = await tuyaHistoryTick(e);
+  sess = await getJ(e, 'tuya:sessions');
+  ok(r.recorded === false && sess.length === 1, 'anti-doublon : mêmes compteurs → pas de 2e session');
+
+  /* 6) cycle RATÉ (robot sous l\'eau hors wifi, jamais vu « cleaning ») : les compteurs
+     ont changé entre 2 ticks → cycle quand même détecté */
+  setRobot({ status: 'charging', ct: 130, ca: 31, batt: 15 });
+  r = await tuyaHistoryTick(e);
+  sess = await getJ(e, 'tuya:sessions'); stats = await getJ(e, 'tuya:stats');
+  ok(r.recorded === true && sess.length === 2 && sess[0].dur === 130 && stats.count === 2 && stats.minutes === 225, 'cycle raté (hors wifi) détecté par le changement des compteurs');
+
+  /* 7) reset compteur à 0 (début de session) → jamais enregistré comme cycle */
+  setRobot({ status: 'standby', ct: 0, ca: 0 });
+  r = await tuyaHistoryTick(e);
+  sess = await getJ(e, 'tuya:sessions');
+  ok(r.recorded === false && sess.length === 2, 'compteur remis à 0 → pas une session');
+
+  /* 8) endpoint GET /stats (admin) renvoie sessions + compteurs */
+  const b64u = (b) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const signSso = (s, uid) => { const p = b64u(JSON.stringify({ u: uid, n: uid, c: 1, v: 1, iat: Date.now(), exp: Date.now() + 1e9 })); return p + '.' + b64u(createHmac('sha256', s).update(p).digest()); };
+  e.KDMC_SSO_SECRET = 'sso'; e.KDMC_ADMIN_PIN_SHA256 = createHash('sha256').update('200807').digest('hex');
+  const req = new Request('https://beatbot.kd-mc.com/__beatbot/tuya/stats', { headers: { 'x-kdmc-admin': signSso('sso', '__kdmc_admin__') } });
+  const res = await mod.fetch(req, e); const jj = await res.json();
+  ok(jj.ok === true && jj.stats.count === 2 && jj.sessions.length === 2 && jj.sessions[0].dur === 130, 'endpoint /stats : compteurs + sessions renvoyés');
+} finally { globalThis.fetch = realFetch; }
+
+console.log(`Tuya history/stats test: ${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

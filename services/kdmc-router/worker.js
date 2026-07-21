@@ -97,7 +97,7 @@ export default {
   },
   /* Cron 5 min (wrangler.toml [triggers]) : sentinelle « robot en surface » — no-op tant
      que Tuya n'est pas lié ; notifie Kevin à CHAQUE remontée du robot (transition seule). */
-  async scheduled(event, env, ctx) { ctx.waitUntil(Promise.all([tuyaSurfaceCheck(env), tuyaScheduleTick(env)])); },
+  async scheduled(event, env, ctx) { ctx.waitUntil(Promise.all([tuyaSurfaceCheck(env), tuyaScheduleTick(env), tuyaHistoryTick(env)])); },
 };
 
 function rewriteLocation(loc, base, host) {
@@ -1000,6 +1000,13 @@ async function handleTuya(request, path, env) {
   }
   const cfg = await tuyaCfg(env);
   if (!cfg) return need();
+  /* HISTORIQUE AUTO : compteurs cumulés + dernières sessions détectées côté serveur */
+  if (seg === 'stats' && request.method === 'GET') {
+    let stats = null, sessions = [];
+    try { stats = JSON.parse((await env.ACCOUNTS.get('tuya:stats')) || 'null'); } catch { /* */ }
+    try { sessions = JSON.parse((await env.ACCOUNTS.get('tuya:sessions')) || '[]'); } catch { /* */ }
+    return J({ ok: true, stats, sessions: sessions.slice(0, 60) });
+  }
   /* découverte des robots : essaie TOUS les data centers de la zone, retient celui qui
      renvoie le robot, et remonte le diagnostic brut par hôte (compte/erreur) pour qu'on
      voie la vérité si c'est encore vide (leçon #56/#97 : mesurer + détailler). */
@@ -1127,6 +1134,51 @@ async function tuyaSurfaceCheck(env) {
   } catch (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 200) }; }
 }
 
+/* ---- HISTORIQUE AUTO (comme l'app d'origine) : le robot remonte clean_time /
+   clean_area / batterie via Tuya → à chaque tick cron (5 min) on détecte les cycles
+   TERMINÉS et on les enregistre côté serveur (KV), même app fermée. Aucune invention :
+   uniquement les valeurs RÉELLES remontées par le robot. Astuce fiabilité : sous l'eau
+   le robot est hors wifi → on peut rater le passage « cleaning » ; mais les DP gardent
+   les compteurs de la DERNIÈRE session → tout CHANGEMENT de clean_time/clean_area
+   (hors nettoyage en cours) = un cycle réel qui vient de finir. */
+async function tuyaHistoryTick(env) {
+  try {
+    if (!env || !env.ACCOUNTS) return { ok: true, skip: 'no_kv' };
+    const cfg = await tuyaCfg(env);
+    if (!cfg || !cfg.device_id) return { ok: true, skip: 'not_linked' };
+    const idp = encodeURIComponent(cfg.device_id);
+    const st = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/status', null);
+    if (!st.ok) return { ok: false, reason: st.msg || st.reason || ('code ' + st.code) };
+    let ct = null, ca = null, batt = null, status = '';
+    (st.result || []).forEach((s) => {
+      const k = String(s.code || '').toLowerCase(), v = s.value;
+      if (k === 'status') status = String(v);
+      if (ct == null && /clean_time|work_time/.test(k) && typeof v === 'number') ct = v;
+      if (ca == null && /clean_area|^area$/.test(k) && typeof v === 'number') ca = v;
+      if (batt == null && /battery|electric|residual|soc/.test(k) && typeof v === 'number' && v >= 0 && v <= 100) batt = Math.round(v);
+    });
+    let last = null; try { last = JSON.parse((await env.ACCOUNTS.get('tuya:lastdp')) || 'null'); } catch { /* */ }
+    const cur = { ct, ca, batt, status, ts: Date.now() };
+    if (!last) { await env.ACCOUNTS.put('tuya:lastdp', JSON.stringify(cur)); return { ok: true, first: true }; }
+    const changed = (ct != null && ct !== last.ct) || (ca != null && ca !== last.ca);
+    const finished = changed && !/cleaning/.test(status) && ct != null && ct >= 3;
+    if (finished) {
+      let sessions = []; try { sessions = JSON.parse((await env.ACCOUNTS.get('tuya:sessions')) || '[]'); } catch { /* */ }
+      sessions.unshift({ ts: Date.now(), dur: ct, area: ca, batt, src: 'auto' });
+      if (sessions.length > 300) sessions = sessions.slice(0, 300);
+      await env.ACCOUNTS.put('tuya:sessions', JSON.stringify(sessions));
+      let stats = null; try { stats = JSON.parse((await env.ACCOUNTS.get('tuya:stats')) || 'null'); } catch { /* */ }
+      if (!stats) stats = { count: 0, minutes: 0, m2: 0, since: Date.now() };
+      stats.count += 1; stats.minutes += ct; stats.m2 += (ca || 0);
+      await env.ACCOUNTS.put('tuya:stats', JSON.stringify(stats));
+      try { await audLog(env, { ev: 'tuya_session_logged', dur: ct, area: ca, batt }); } catch { /* */ }
+    }
+    /* la référence n'avance PAS pendant un nettoyage en cours (sinon on rate la fin) */
+    if (!/cleaning/.test(status)) await env.ACCOUNTS.put('tuya:lastdp', JSON.stringify(cur));
+    return { ok: true, recorded: !!finished };
+  } catch (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 200) }; }
+}
+
 /* Grant admin MACHINE : produit le même jeton signé que /__admin/login, mais à
    partir du SECRET SSO (pas du code PIN). Sert à l'agent de contrôle GitHub Actions
    pour s'authentifier en admin et vérifier le bot À LA PLACE de Kevin, sans jamais
@@ -1208,4 +1260,4 @@ async function tuyaScheduleTick(env) {
 }
 
 /* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
-export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck, tuyaScheduleTick, tuyaStartClean };
+export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck, tuyaScheduleTick, tuyaStartClean, tuyaHistoryTick };
