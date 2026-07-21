@@ -111,7 +111,7 @@ export default {
   },
   /* Cron 5 min (wrangler.toml [triggers]) : sentinelle « robot en surface » — no-op tant
      que Tuya n'est pas lié ; notifie Kevin à CHAQUE remontée du robot (transition seule). */
-  async scheduled(event, env, ctx) { ctx.waitUntil(tuyaSurfaceCheck(env)); },
+  async scheduled(event, env, ctx) { ctx.waitUntil(Promise.all([tuyaSurfaceCheck(env), tuyaScheduleTick(env)])); },
 };
 
 function rewriteLocation(loc, base, host) {
@@ -1306,9 +1306,29 @@ async function handleTuya(request, path, env) {
     let last = null; try { last = JSON.parse((await env.ACCOUNTS.get('tuya:online')) || 'null'); } catch { /* */ }
     return J({ ok: true, check: r, last });
   }
+  /* PROGRAMMATION (planning horaire + auto-relance après charge) — lit/écrit la config KV.
+     N'exige pas de robot choisi pour LIRE, mais le moteur cron n'agit que si device choisi. */
+  if (seg === 'schedule' && request.method === 'GET') {
+    let s = null; try { s = JSON.parse((await env.ACCOUNTS.get('tuya:schedule')) || 'null'); } catch { /* */ }
+    return J({ ok: true, schedule: s || { enabled: false, tz: 'Europe/Monaco', slots: [], suction: 'strong', autoResume: false, minBatt: 20 } });
+  }
+  if (seg === 'schedule' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    const slots = Array.isArray(b.slots) ? b.slots.slice(0, 21).filter((x) => x && /^[0-6]$/.test(String(x.dow)) && /^\d{1,2}:\d{2}$/.test(String(x.hm))).map((x) => ({ dow: +x.dow, hm: String(x.hm) })) : [];
+    const s = { enabled: !!b.enabled, tz: 'Europe/Monaco', slots, suction: ['strong', 'normal', 'gentle'].includes(b.suction) ? b.suction : 'strong', autoResume: !!b.autoResume, minBatt: Math.max(0, Math.min(90, Number(b.minBatt) || 20)) };
+    await env.ACCOUNTS.put('tuya:schedule', JSON.stringify(s));
+    try { await audLog(env, { ev: 'tuya_schedule_set', slots: slots.length, enabled: s.enabled, autoResume: s.autoResume }); } catch { /* */ }
+    return J({ ok: true, schedule: s });
+  }
   /* les routes suivantes ont besoin d'un robot choisi */
   if (!cfg.device_id) return J({ ok: false, reason: 'no_device', detail: 'Choisis d\'abord ton robot (découverte).' });
   const idp = encodeURIComponent(cfg.device_id);
+  /* démarrage serveur d'un cycle complet (bouton « Lancer maintenant » côté app) */
+  if (seg === 'start' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { /* */ }
+    const r = await tuyaStartClean(env, cfg, { suction: b && b.suction, src: 'manual' });
+    return J(r);
+  }
   if (seg === 'status' && request.method === 'GET') {
     const info = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp, null);
     const st = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/status', null);
@@ -1379,5 +1399,78 @@ async function tuyaSurfaceCheck(env) {
    Utilise le MÊME ssoSign que le worker → zéro dérive (le jeton est forcément accepté). */
 async function adminGrant(secret) { return ssoSign(secret, '__kdmc_admin__', 'admin', 1); }
 
+/* ---- Moteur « programme » PoolPilot (par-dessus les 4 vraies commandes) ----
+   Le firmware du robot est fermé/signé : on ne le modifie PAS. À la place, on lui ajoute
+   des capacités par orchestration serveur des commandes réelles : planning horaire +
+   auto-relance après charge. Garde-fous stricts (jamais de démarrage à l'aveugle). */
+async function tuyaStartClean(env, cfg, opts) {
+  opts = opts || {};
+  const idp = encodeURIComponent(cfg.device_id);
+  const info = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp, null);
+  if (!info.ok) return { ok: false, reason: info.msg || info.reason || ('code ' + info.code) };
+  if (!(info.result && info.result.online)) return { ok: false, reason: 'offline' };
+  const st = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/status', null);
+  let status = '', batt = null;
+  if (st.ok) (st.result || []).forEach((s) => { const k = String(s.code || '').toLowerCase(); if (k === 'status') status = String(s.value); if (batt == null && /battery|electric|residual|soc/.test(k) && typeof s.value === 'number') batt = s.value; });
+  if (/cleaning/.test(status)) return { ok: false, reason: 'already_cleaning' };
+  const minB = typeof opts.minBatt === 'number' ? opts.minBatt : 20;
+  if (batt != null && batt < minB) return { ok: false, reason: 'low_batt', batt };
+  const suc = ['strong', 'normal', 'gentle'].includes(opts.suction) ? opts.suction : 'strong';
+  const r = await tuyaBiz(env, cfg, 'POST', '/v1.0/devices/' + idp + '/commands', { commands: [{ code: 'suction', value: suc }, { code: 'switch', value: true }, { code: 'switch_go', value: true }] });
+  if (r.ok) { try { await audLog(env, { ev: 'tuya_autostart', src: opts.src || 'sched', batt, suction: suc }); } catch { /* */ } }
+  return { ok: r.ok, reason: r.ok ? null : (r.detail || r.msg || ('code ' + r.code)), batt };
+}
+/* Tick cron (toutes les 5 min) : auto-relance après charge + déclenchements planifiés
+   (Europe/Monaco, DST-safe via Intl). Fail-open total ; no-op si non lié / non activé. */
+async function tuyaScheduleTick(env) {
+  try {
+    if (!env || !env.ACCOUNTS) return { ok: true, skip: 'no_kv' };
+    const cfg = await tuyaCfg(env);
+    if (!cfg || !cfg.device_id) return { ok: true, skip: 'not_linked' };
+    let sched = null; try { sched = JSON.parse((await env.ACCOUNTS.get('tuya:schedule')) || 'null'); } catch { /* */ }
+    if (!sched) return { ok: true, skip: 'no_schedule' };
+    const idp = encodeURIComponent(cfg.device_id);
+    /* AUTO-RELANCE : mémorise le statut ; si on a nettoyé puis chargé, relance à charge_done */
+    if (sched.autoResume) {
+      const st = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/status', null);
+      let status = '';
+      if (st.ok) (st.result || []).forEach((s) => { if (String(s.code || '').toLowerCase() === 'status') status = String(s.value); });
+      let prev = ''; try { prev = (await env.ACCOUNTS.get('tuya:laststatus')) || ''; } catch { /* */ }
+      if (status) await env.ACCOUNTS.put('tuya:laststatus', status);
+      if (/cleaning/.test(prev) && /goto_charge|charging/.test(status)) await env.ACCOUNTS.put('tuya:resume_pending', '1', { expirationTtl: 86400 });
+      let want = false; try { want = (await env.ACCOUNTS.get('tuya:resume_pending')) === '1'; } catch { /* */ }
+      if (want && /charge_done/.test(status)) {
+        const r = await tuyaStartClean(env, cfg, { suction: sched.suction, minBatt: sched.minBatt, src: 'resume' });
+        await env.ACCOUNTS.delete('tuya:resume_pending');
+        if (r.ok) await notifyPush(env, '🔁 Robot relancé', 'Rechargé — je relance le nettoyage pour finir la piscine.', { tag: 'poolpilot-resume', url: 'https://beatbot.kd-mc.com/' });
+      }
+    }
+    /* PLANNING HORAIRE */
+    if (sched.enabled && Array.isArray(sched.slots) && sched.slots.length) {
+      const tz = sched.tz || 'Europe/Monaco';
+      const parts = new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
+      const wk = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      let dow = -1, hh = 0, mm = 0;
+      parts.forEach((p) => { if (p.type === 'weekday') dow = wk[p.value]; if (p.type === 'hour') hh = +p.value; if (p.type === 'minute') mm = +p.value; });
+      const nowMin = hh * 60 + mm;
+      const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
+      for (const sl of sched.slots) {
+        if (+sl.dow !== dow) continue;
+        const m = /^(\d{1,2}):(\d{2})$/.exec(String(sl.hm || ''));
+        if (!m) continue;
+        const slotMin = (+m[1]) * 60 + (+m[2]);
+        if (slotMin < nowMin || slotMin >= nowMin + 5) continue; /* fenêtre du tick (cron 5 min) */
+        const firedKey = 'tuya:fired:' + dateKey + ':' + sl.dow + ':' + sl.hm;
+        let already = false; try { already = (await env.ACCOUNTS.get(firedKey)) === '1'; } catch { /* */ }
+        if (already) continue;
+        await env.ACCOUNTS.put(firedKey, '1', { expirationTtl: 172800 });
+        const r = await tuyaStartClean(env, cfg, { suction: sched.suction, minBatt: sched.minBatt, src: 'sched' });
+        await notifyPush(env, r.ok ? '🗓️ Nettoyage programmé lancé' : '🗓️ Nettoyage non lancé', r.ok ? ('Le robot démarre (aspiration ' + (sched.suction || 'strong') + ').') : ('Impossible : ' + (r.reason || '?') + '. Vérifie qu\'il est dans l\'eau et chargé.'), { tag: 'poolpilot-sched', url: 'https://beatbot.kd-mc.com/' });
+      }
+    }
+    return { ok: true };
+  } catch (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 200) }; }
+}
+
 /* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
-export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck };
+export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck, tuyaScheduleTick, tuyaStartClean };
