@@ -57,9 +57,21 @@ async function main() {
 
     const fnR = await fetch(BASE + '/__beatbot/tuya/functions', { headers: H });
     const fnJ = await fnR.json().catch(() => ({}));
-    console.log('\n— Commandes RÉELLES pilotables —  HTTP', fnR.status);
+    console.log('\n— Commandes RÉELLES pilotables (/functions) —  HTTP', fnR.status);
     if (fnJ.ok) (fnJ.functions || []).forEach((f) => console.log('   • ' + f.code + ' (' + f.type + ') ' + (f.values || '')));
     else console.log('  ⚠', fnJ.detail || fnJ.reason || '(pas de functions)');
+
+    // 4) MODÈLE COMPLET (/specifications) : toutes les capacités réelles du robot
+    const spR = await fetch(BASE + '/__beatbot/tuya/spec', { headers: H });
+    const spJ = await spR.json().catch(() => ({}));
+    console.log('\n— MODÈLE COMPLET du robot (/specifications) —  HTTP', spR.status);
+    if (spJ.ok) {
+      console.log('  catégorie :', spJ.category);
+      console.log('  COMMANDES écrivables (' + (spJ.functions || []).length + ') :');
+      (spJ.functions || []).forEach((f) => console.log('   ⚙ ' + f.code + ' (' + f.type + ') ' + (f.values || '')));
+      console.log('  CAPTEURS lisibles (' + (spJ.status || []).length + ') :');
+      (spJ.status || []).forEach((s) => console.log('   📊 ' + s.code + ' (' + s.type + ') ' + (s.values || '')));
+    } else console.log('  ⚠', spJ.detail || spJ.reason || '(pas de spec)');
   }
 
   // Verdict lisible pour les logs
