@@ -85,6 +85,16 @@ async function main() {
     } else console.log('\n— TEST PILOTAGE — aspiration non lisible → test sauté (jamais d\'écriture à l\'aveugle).');
   }
 
+  // 6) HISTORIQUE AUTO (collecteur serveur, cron 5 min) : compteurs + dernières sessions
+  const hsR = await fetch(BASE + '/__beatbot/tuya/stats', { headers: H });
+  const hsJ = await hsR.json().catch(() => ({}));
+  console.log('\n— HISTORIQUE AUTO (sessions détectées côté serveur) —  HTTP', hsR.status);
+  if (hsJ.ok) {
+    if (hsJ.stats) console.log('  compteurs cumulés : ' + hsJ.stats.count + ' cycle(s) · ' + hsJ.stats.minutes + ' min · ' + Math.round(hsJ.stats.m2 || 0) + ' m²');
+    else console.log('  compteurs : (aucun cycle détecté encore — le collecteur démarre au prochain cron)');
+    (hsJ.sessions || []).slice(0, 5).forEach((s) => console.log('   • ' + new Date(s.ts).toISOString() + ' — ' + s.dur + ' min' + (s.area != null ? ' · ' + s.area + ' m²' : '') + (s.batt != null ? ' · 🔋' + s.batt + '%' : '')));
+  } else console.log('  ⚠', hsJ.detail || hsJ.reason || '(pas de stats)');
+
   // Verdict lisible pour les logs
   console.log('\n=== VERDICT ===');
   if ((dj.devices || []).length) console.log('✅ Robot trouvé sur ' + dj.host + ' — la sélection va marcher dans l\'app.');
