@@ -72,6 +72,17 @@ async function main() {
       console.log('  CAPTEURS lisibles (' + (spJ.status || []).length + ') :');
       (spJ.status || []).forEach((s) => console.log('   📊 ' + s.code + ' (' + s.type + ') ' + (s.values || '')));
     } else console.log('  ⚠', spJ.detail || spJ.reason || '(pas de spec)');
+
+    // 5) TEST PILOTAGE inoffensif : réécrit l'aspiration sur sa valeur ACTUELLE (idempotent
+    //    → le robot NE BOUGE PAS, reste en veille). Prouve seulement que l'écriture passe.
+    let curSuction = null;
+    (stJ.status || []).forEach((s) => { if (String(s.code).toLowerCase() === 'suction') curSuction = s.value; });
+    if (curSuction != null) {
+      const cmR = await fetch(BASE + '/__beatbot/tuya/command', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, H), body: JSON.stringify({ commands: [{ code: 'suction', value: curSuction }] }) });
+      const cmJ = await cmR.json().catch(() => ({}));
+      console.log('\n— TEST PILOTAGE (écriture inoffensive : suction=' + curSuction + ', robot en veille) —  HTTP', cmR.status);
+      console.log(cmJ.ok ? '  ✅ Commande ACCEPTÉE par le robot → le pilotage (écriture) FONCTIONNE.' : ('  ⚠ Échec écriture : ' + (cmJ.detail || cmJ.reason || '?')));
+    } else console.log('\n— TEST PILOTAGE — aspiration non lisible → test sauté (jamais d\'écriture à l\'aveugle).');
   }
 
   // Verdict lisible pour les logs
