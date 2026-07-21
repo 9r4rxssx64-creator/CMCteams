@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.4 -->
+<!-- v0.11.5 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -188,7 +188,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.4" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.5" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -196,7 +196,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.4";
+var APP_VER="v0.11.5";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -771,6 +771,49 @@ function tuyaUltra(){
     } else if(el)el.innerHTML='<div class="note warn">Échec : '+esc(j.detail||j.reason||"?")+'</div>';
   });
 }
+/* ---- Programmation & auto-pilote (moteur serveur : démarre le robot même app fermée) ---- */
+var TSCHED=null,DOWFR=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+function vTuyaSchedule(){
+  if(!onBeatbotHost()||!tuya.linked||!tuya.device_id)return "";
+  setTimeout(tuyaSchedLoad,60);
+  return card("🗓️ Programmation & auto-pilote","Le robot démarre tout seul aux horaires choisis, même app fermée. (Suppose qu'il reste dans la piscine.)",
+    '<div id="tySched"><div class="mut">Chargement…</div></div>');
+}
+function tuyaSchedLoad(){tuyaApi("schedule","GET").then(function(j){TSCHED=(j&&j.schedule)||{enabled:false,slots:[],suction:"strong",autoResume:false,minBatt:20};tuyaSchedRender();});}
+function tuyaSchedRender(){
+  var el=$("#tySched");if(!el||!TSCHED)return;var s=TSCHED;
+  var slots=(s.slots||[]).map(function(sl,i){return '<div class="row" style="justify-content:space-between;align-items:center;padding:4px 0"><span>🕒 <b>'+DOWFR[sl.dow]+'</b> à <b>'+esc(sl.hm)+'</b></span><button class="btn ghost sm" onclick="tuyaSchedDel('+i+')">🗑</button></div>';}).join("")||'<div class="mut" style="font-size:12px">Aucun créneau. Ajoute-en un 👇</div>';
+  var daySel='<select id="tsD">'+DOWFR.map(function(d,i){return '<option value="'+i+'">'+d+'</option>';}).join("")+'</select>';
+  var sucOpt=[["strong","Forte"],["normal","Normale"],["gentle","Douce"]].map(function(p){return '<option value="'+p[0]+'" '+(s.suction===p[0]?"selected":"")+'>'+p[1]+'</option>';}).join("");
+  el.innerHTML=
+    '<label class="row" style="gap:8px;align-items:center"><input type="checkbox" id="tsEn" '+(s.enabled?"checked":"")+' onchange="tuyaSchedFlag(\'enabled\',this.checked)"> <b>Activer la programmation</b></label>'+
+    '<label class="row" style="gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="tsAR" '+(s.autoResume?"checked":"")+' onchange="tuyaSchedFlag(\'autoResume\',this.checked)"> 🔁 Auto-relance après charge (grande piscine)</label>'+
+    '<div class="row" style="gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:12px">Aspiration</span><select id="tsS" onchange="tuyaSchedFlag(\'suction\',this.value)">'+sucOpt+'</select>'+
+      '<span class="mut" style="font-size:12px">Batterie mini</span><input id="tsB" type="number" min="0" max="90" value="'+esc(s.minBatt)+'" style="max-width:66px" onchange="tuyaSchedFlag(\'minBatt\',+this.value)"> %</div>'+
+    '<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.08);padding-top:8px">'+slots+'</div>'+
+    '<div class="row" style="gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">'+daySel+'<input id="tsT" type="time" value="09:00"><button class="btn ghost sm" onclick="tuyaSchedAdd()">➕ Ajouter</button></div>'+
+    '<div class="grid2" style="margin-top:10px"><button class="btn" onclick="tuyaSchedSave()">💾 Enregistrer</button><button class="btn ghost" onclick="tuyaSchedStartNow()">▶️ Lancer maintenant</button></div>'+
+    '<div id="tsOut" style="margin-top:8px"></div>';
+}
+function tuyaSchedFlag(k,v){if(TSCHED)TSCHED[k]=v;}
+function tuyaSchedAdd(){if(!TSCHED)return;var d=+$("#tsD").value,t=$("#tsT").value;if(!/^\d{1,2}:\d{2}$/.test(t))return;TSCHED.slots=TSCHED.slots||[];if(TSCHED.slots.length>=21)return;TSCHED.slots.push({dow:d,hm:t});tuyaSchedRender();}
+function tuyaSchedDel(i){if(!TSCHED)return;TSCHED.slots.splice(i,1);tuyaSchedRender();}
+function tuyaSchedSave(){
+  if(!TSCHED)return;var o=$("#tsOut");if(o)o.innerHTML='<span class="mut">Enregistrement…</span>';
+  tuyaApi("schedule","POST",TSCHED).then(function(j){
+    if(j&&j.ok){TSCHED=j.schedule;if(o)o.innerHTML='<div class="note" style="border-color:#5fd38a;color:#cfeee0">✅ Programmation enregistrée'+(TSCHED.enabled?" — <b>active</b>. Le robot démarrera tout seul aux créneaux.":" (désactivée).")+'</div>';}
+    else if(o)o.innerHTML='<div class="note warn">Échec : '+esc((j&&(j.detail||j.reason))||"?")+'</div>';
+  });
+}
+function tuyaSchedStartNow(){
+  if(!confirm("▶️ Lancer un nettoyage complet maintenant ?\n\nLe robot démarre à pleine puissance. Vérifie qu'il est dans l'eau."))return;
+  var o=$("#tsOut");if(o)o.innerHTML='<span class="mut">Démarrage…</span>';
+  tuyaApi("start","POST",{suction:(TSCHED&&TSCHED.suction)||"strong"}).then(function(j){
+    if(j&&j.ok){if(o)o.innerHTML='<div class="note" style="border-color:#5fd38a;color:#cfeee0">✅ Robot démarré'+(j.batt!=null?" (batterie "+j.batt+"%)":"")+'.</div>';setTimeout(tuyaRefresh,1800);}
+    else if(o)o.innerHTML='<div class="note warn">Non lancé : '+esc(tuyaStartReason(j&&j.reason))+'</div>';
+  });
+}
+function tuyaStartReason(r){var m={offline:"robot hors ligne (peut-être sous l'eau)",already_cleaning:"déjà en train de nettoyer",low_batt:"batterie trop faible",no_device:"robot non choisi",token_fail:"clés Tuya refusées"};return m[r]||r||"?";}
 function vTuyaCard(){
   if(!onBeatbotHost())return card("🌊 Contrôle réel du robot (Tuya / Smart Life)","","<div class=\"note warn\">Ouvre l'app sur <b>beatbot.kd-mc.com</b> (ton espace privé) pour piloter — sécurité admin même-origine.</div>");
   if(!tuya.linked){
@@ -810,6 +853,7 @@ function vTuyaCard(){
 }
 function vPilotage(){
   var out=vTuyaCard();
+  out+=vTuyaSchedule();
   out+=card("📷 Voir le robot SOUS l'eau (caméra)",
     "La radio ne traverse pas l'eau — la lumière oui. Ton iPhone filme le bassin, PoolPilot détecte le robot à travers l'eau et le suit en direct dans le plan.",
     '<ol class="clean" style="font-size:12.5px;line-height:1.55">'+
