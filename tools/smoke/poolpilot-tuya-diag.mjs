@@ -114,6 +114,16 @@ async function main() {
     console.log(modeDp.length ? ('  🎯 DP mode potentiels : ' + modeDp.map((d) => d.code).join(', ') + ' → à câbler dans le Mode Ultra si écrivables.') : '  (aucun DP « mode/surface » exposé par Tuya → la surface se lance depuis l\'app Beatbot ; PoolPilot relève quand même le cycle)');
   } else console.log('  ⚠', mdJ.detail || mdJ.reason || '(pas de model)');
 
+  // 8bis) PROPRIÉTÉS LIVE complètes (shadow properties) : température d'eau, litres filtrés…
+  const prR = await fetch(BASE + '/__beatbot/tuya/props', { headers: H });
+  const prJ = await prR.json().catch(() => ({}));
+  console.log('\n— PROPRIÉTÉS LIVE (tous les DP, valeurs réelles) —  HTTP', prR.status);
+  if (prJ.ok) {
+    const interesting = /water_temp|filtered|mode|status|battery|clean_|dust|clarif|robot_pos|work_stat|delay|ai_clean|fill_light|volume|dock|bt_connect/i;
+    (prJ.properties || []).filter((p) => interesting.test(p.code)).forEach((p) => console.log('   • ' + p.code + ' = ' + JSON.stringify(p.value)));
+    console.log('   (total DP renvoyés : ' + (prJ.properties || []).length + ')');
+  } else console.log('  ⚠', prJ.detail || prJ.reason || '(pas de props)');
+
   // 9) BASELINE officielle (option PP_BASELINE="cycles:minutes") : cale les totaux sur la Fiche Beatbot
   const BL = process.env.PP_BASELINE || '';
   if (/^\d+:\d+$/.test(BL)) {
