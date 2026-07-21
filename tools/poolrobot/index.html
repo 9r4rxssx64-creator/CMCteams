@@ -1,16 +1,19 @@
 <!doctype html>
-<!-- v0.11.7 -->
+<!-- v0.11.8 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
-<meta name="theme-color" content="#0a1622">
+<meta name="theme-color" content="#0a1622" id="metaTheme">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PoolPilot">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>PoolPilot — Beatbot+</title>
+<script>/* thème avant premier rendu (pas de flash) */
+try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentElement.setAttribute("data-theme","light");}}catch(e){}</script>
 <style>
   :root{
     --bg:#08131f; --bg2:#0e2032; --card:#11263a; --card2:#183753;
@@ -22,6 +25,39 @@
     --sh:0 10px 30px -16px rgba(0,0,0,.75); --sh-btn:0 8px 20px -8px rgba(14,136,201,.55);
     --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
   }
+  /* ---- thème clair (☀️, opt-in, persistant) ---- */
+  html[data-theme="light"]{
+    --bg:#eef6fc; --bg2:#dfecf7; --card:#ffffff; --card2:#eef5fb;
+    --line:#c9dded; --line2:#aecbe2; --txt:#0b2334; --dim:#48708f; --dim2:#5f83a1;
+    --gold:#0e88c9; --gold2:#0a6ba0; --acc:#0e88c9; --deep:#1d68c0;
+    --sh:0 10px 26px -18px rgba(21,72,110,.45); --sh-btn:0 8px 18px -8px rgba(14,136,201,.45);
+  }
+  html[data-theme="light"] body{
+    background:
+      radial-gradient(120% 60% at 50% -10%,rgba(14,136,201,.10),transparent 60%),
+      radial-gradient(90% 50% at 100% 0%,rgba(58,208,255,.12),transparent 55%),
+      linear-gradient(180deg,#eaf4fc,#dcebf7 55%);
+    color:var(--txt);
+  }
+  html[data-theme="light"] #top{background:rgba(240,247,253,.78)}
+  html[data-theme="light"] #nav{background:rgba(240,247,253,.86)}
+  html[data-theme="light"] .card{background:linear-gradient(180deg,#ffffff,#f4f9fd);box-shadow:var(--sh),inset 0 1px 0 rgba(255,255,255,.8)}
+  html[data-theme="light"] input,html[data-theme="light"] select,html[data-theme="light"] textarea{background:#fff;color:var(--txt)}
+  html[data-theme="light"] .btn{color:#fff}
+  html[data-theme="light"] .btn.ghost{background:#eaf3fb;color:var(--txt)}
+  html[data-theme="light"] .stat{background:linear-gradient(180deg,#fff,#eef5fb)}
+  html[data-theme="light"] .pill,html[data-theme="light"] .hero-state,html[data-theme="light"] .chipzone{background:#eaf3fb;color:var(--txt)}
+  html[data-theme="light"] .chip-robot,html[data-theme="light"] #top .robot{background:#eaf3fb;color:var(--txt)}
+  html[data-theme="light"] .tool{background:#eaf3fb}
+  html[data-theme="light"] .tool.on{background:rgba(14,136,201,.14);color:#0b2334}
+  html[data-theme="light"] canvas{background:#dfeefa}
+  html[data-theme="light"] code{background:#eaf3fb}
+  html[data-theme="light"] .note{color:#0d3752;background:linear-gradient(180deg,rgba(14,136,201,.10),rgba(14,136,201,.04))}
+  html[data-theme="light"] .warn{color:#6b4d05;background:linear-gradient(180deg,rgba(242,182,50,.16),rgba(242,182,50,.06))}
+  html[data-theme="light"] #nav button.on{background:rgba(14,136,201,.12)}
+  html[data-theme="light"] .ring .rt{stroke:rgba(11,35,52,.12)}
+  html[data-theme="light"] .hero-bg{opacity:.55}
+  html[data-theme="light"] #top h1 span{-webkit-text-fill-color:transparent}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;max-width:100vw;overflow-x:hidden}
   body{
@@ -43,7 +79,7 @@
   }
   #top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(58,208,255,.55),transparent)}
   #top .logo{font-size:21px;filter:drop-shadow(0 2px 6px rgba(58,208,255,.4))}
-  #top h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px;flex:1}
+  #top h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px;flex:1;line-height:1.15}
   #top h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   #top .robot{font-size:11px;font-weight:600;color:var(--dim);background:rgba(24,55,83,.6);padding:5px 11px 5px 9px;border-radius:20px;border:1px solid var(--line2);white-space:nowrap}
   #app{padding:16px;max-width:640px;margin:0 auto}
@@ -175,6 +211,18 @@
   .hero-bg{position:absolute;inset:0;pointer-events:none;background:
     radial-gradient(120% 90% at 12% -10%,rgba(58,208,255,.20),transparent 58%),
     radial-gradient(90% 80% at 110% 120%,rgba(14,136,201,.16),transparent 55%)}
+  /* eau animée (discrète) : caustiques qui dérivent + vague en bas du hero */
+  .hero-bg::before{content:"";position:absolute;inset:-45%;
+    background:
+      radial-gradient(32% 26% at 28% 42%,rgba(58,208,255,.13),transparent 70%),
+      radial-gradient(26% 22% at 68% 58%,rgba(14,136,201,.12),transparent 70%),
+      radial-gradient(20% 18% at 50% 30%,rgba(120,220,255,.08),transparent 70%);
+    animation:heroDrift 16s ease-in-out infinite alternate;will-change:transform}
+  .hero-bg::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:38px;opacity:.5;
+    background:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 34' preserveAspectRatio='none'%3E%3Cpath d='M0 22 Q 27 8 55 22 T 110 22 T 165 22 T 220 22 V34 H0 Z' fill='%233ad0ff' fill-opacity='.16'/%3E%3Cpath d='M0 27 Q 27 15 55 27 T 110 27 T 165 27 T 220 27 V34 H0 Z' fill='%230e88c9' fill-opacity='.20'/%3E%3C/svg%3E") repeat-x bottom/220px 34px;
+    animation:heroWave 11s linear infinite;will-change:background-position}
+  @keyframes heroDrift{from{transform:translate3d(-2.5%,-2%,0) rotate(-1.5deg)}to{transform:translate3d(2.5%,2%,0) rotate(1.5deg)}}
+  @keyframes heroWave{from{background-position-x:0}to{background-position-x:-220px}}
   .hero-row{position:relative;display:flex;gap:16px;align-items:center}
   .hero-live{display:flex;flex-direction:column;align-items:center;gap:9px;flex:0 0 auto}
   .ring{position:relative;width:90px;height:90px}
@@ -200,6 +248,34 @@
   .tool:active{transform:scale(.96)}
   .pill,.chipzone{transition:border-color .15s}
   ::-webkit-scrollbar{width:0;height:0}
+  /* ---- bouton thème (☀️/🌙) ---- */
+  #themeBtn{flex:0 0 auto;width:40px;height:40px;border-radius:12px;border:1px solid var(--line2);
+    background:rgba(24,55,83,.55);color:var(--txt);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:transform .12s,background .15s}
+  #themeBtn:active{transform:scale(.92)}
+  html[data-theme="light"] #themeBtn{background:#eaf3fb}
+  /* ---- jauge circulaire (score) ---- */
+  .gauge{position:relative;width:190px;margin:2px auto 6px}
+  .gauge svg{width:100%;display:block}
+  .gauge .gt{fill:none;stroke:rgba(255,255,255,.09);stroke-width:13;stroke-linecap:round}
+  html[data-theme="light"] .gauge .gt{stroke:rgba(11,35,52,.10)}
+  .gauge .gp{fill:none;stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)}
+  .gauge-c{position:absolute;left:0;right:0;top:56%;text-align:center}
+  .gauge-n{font-size:33px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+  .gauge-l{font-size:11px;color:var(--dim);margin-top:3px;font-weight:600}
+  .gauge-minmax{display:flex;justify-content:space-between;font-size:10px;color:var(--dim2);padding:0 8px;margin-top:-8px}
+  /* ---- splash de lancement ---- */
+  #splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    background:radial-gradient(120% 70% at 50% -10%,rgba(58,208,255,.14),transparent 60%),linear-gradient(180deg,#0a1826,#050c14 70%);
+    transition:opacity .45s ease,visibility .45s}
+  html[data-theme="light"] #splash{background:radial-gradient(120% 70% at 50% -10%,rgba(14,136,201,.12),transparent 60%),linear-gradient(180deg,#eaf4fc,#dcebf7 70%)}
+  #splash.off{opacity:0;visibility:hidden;pointer-events:none}
+  #splash img{width:96px;height:96px;border-radius:24px;box-shadow:0 18px 44px -14px rgba(14,136,201,.55);animation:splashIn .6s cubic-bezier(.2,.8,.3,1.2) both}
+  #splash b{font-size:19px;font-weight:800;letter-spacing:.3px;animation:splashIn .6s .08s cubic-bezier(.2,.8,.3,1.2) both}
+  #splash b span{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  #splash .ld{width:34px;height:34px;border-radius:50%;border:3px solid rgba(58,208,255,.18);border-top-color:var(--gold);animation:splashSpin .8s linear infinite}
+  @keyframes splashIn{from{opacity:0;transform:translateY(10px) scale(.92)}to{opacity:1;transform:none}}
+  @keyframes splashSpin{to{transform:rotate(360deg)}}
   @media(min-width:560px){#nav button{font-size:10.5px}}
   @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
@@ -208,10 +284,16 @@
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <img src="icon.svg" alt="">
+  <b>PoolPilot <span>Beatbot+</span></b>
+  <div class="ld"></div>
+</div>
 <div id="top">
   <span class="logo">🌊</span>
   <h1>PoolPilot <span style="color:var(--gold)">Beatbot+</span></h1>
   <span class="robot" id="robotTag">…</span>
+  <button id="themeBtn" onclick="toggleTheme()" aria-label="Changer de thème" title="Thème clair / sombre">☀️</button>
 </div>
 <div id="app"></div>
 <nav id="nav"></nav>
@@ -251,7 +333,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.7" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.8" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -259,7 +341,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.7";
+var APP_VER="v0.11.8";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -540,9 +622,9 @@ function vJournal(){
   )+
   card("📊 Tendances","",
     '<div class="grid2">'+stat(sessions.length,"Sessions")+stat(avg+" min","Durée moyenne")+'</div>'+
-    (sessions.length>1?'<canvas id="trendCanvas" height="150" style="margin-top:12px"></canvas>':'')
+    (sessions.length>1?'<canvas id="trendCanvas" height="176" style="margin-top:12px"></canvas>':'')
   )+
-  card("🗂️ Historique",""+rows);
+  card("🗂️ Historique","",rows);
 }
 
 function vEntretien(){
@@ -1023,7 +1105,7 @@ function vReglage(){
     '<button class="btn" style="margin-top:12px" onclick="applyReco()">🎯 Appliquer ce mode au plan</button>'
   )+
   card("📈 Score d'efficacité estimé","",
-    '<div style="text-align:center;margin:4px 0 10px"><span style="font-size:40px;font-weight:800;color:'+effCol+'">'+eff+'%</span><div class="mut">couverture estimée avec le mode conseillé</div></div>'+
+    gaugeSvg(eff,effCol,"couverture estimée · mode conseillé")+
     (tips.length?'<b style="font-size:13px">Pour gagner des points :</b><ol class="clean">'+tips.map(function(t){return '<li>'+esc(t)+'</li>'}).join("")+'</ol>':'<div class="note">👍 Bien réglé. Continue à loguer tes sessions pour affiner.</div>')+
     '<div class="note">⚠️ Estimation d\'après le comportement type + tes zones marquées, pas une mesure du robot.</div>'
   )+
@@ -1268,18 +1350,61 @@ function heat(c){
   return "rgba("+r+","+gc+","+b+",.82)";
 }
 
-/* ============ trend chart ============ */
+/* ============ trend chart (data-viz pro : courbe lissée + aire dégradée + grille) ============ */
 function drawTrend(){
   var cv=$("#trendCanvas");if(!cv)return;
-  var dpr=Math.min(2,window.devicePixelRatio||1);var cssW=cv.clientWidth||300;
-  cv.width=cssW*dpr;cv.height=150*dpr;var g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);
-  var W=cssW,H=150;g.clearRect(0,0,W,H);
+  var dpr=Math.min(2,window.devicePixelRatio||1);var cssW=cv.clientWidth||300,cssH=176;
+  cv.width=cssW*dpr;cv.height=cssH*dpr;var g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);
+  var W=cssW,H=cssH;g.clearRect(0,0,W,H);
   var data=sessions.slice(0,14).reverse().map(function(s){return +s.dur||0});if(data.length<2)return;
-  var mx=Math.max.apply(null,data)*1.1||1,pad=10;
-  g.strokeStyle="#39c2ff";g.lineWidth=2;g.beginPath();
-  data.forEach(function(v,i){var x=pad+i/(data.length-1)*(W-pad*2),y=H-pad-v/mx*(H-pad*2);i?g.lineTo(x,y):g.moveTo(x,y)});
-  g.stroke();g.fillStyle="rgba(57,194,255,.15)";g.lineTo(W-pad,H-pad);g.lineTo(pad,H-pad);g.closePath();g.fill();
-  g.fillStyle="#93b0c8";g.font="10px -apple-system";g.fillText("Durée des "+data.length+" dernières sessions (min)",pad,12);
+  var light=isLight();
+  var cGrid=light?"rgba(11,35,52,.10)":"rgba(255,255,255,.07)";
+  var cTxt=light?"#48708f":"#93b0c8";
+  var cLine=light?"#0e88c9":"#39c2ff";
+  var mx=Math.max.apply(null,data)*1.15||1;
+  var padL=34,padR=14,padT=24,padB=16,iw=W-padL-padR,ih=H-padT-padB;
+  function X(i){return padL+i/(data.length-1)*iw}
+  function Y(v){return padT+ih-(v/mx)*ih}
+  /* grille horizontale + échelle */
+  g.font="10px -apple-system";g.lineWidth=1;g.textAlign="right";
+  [0,0.5,1].forEach(function(f){var v=Math.round(mx*f),y=Y(v);
+    g.strokeStyle=cGrid;g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();
+    g.fillStyle=cTxt;g.fillText(String(v),padL-6,y+3)});
+  /* ligne de moyenne (pointillés) */
+  var avg=data.reduce(function(a,b){return a+b},0)/data.length;
+  g.save();g.setLineDash([4,4]);g.strokeStyle=light?"rgba(14,136,201,.45)":"rgba(58,208,255,.35)";
+  g.beginPath();g.moveTo(padL,Y(avg));g.lineTo(W-padR,Y(avg));g.stroke();g.restore();
+  /* courbe lissée (bézier par points milieux) + aire dégradée */
+  function curve(){
+    g.beginPath();g.moveTo(X(0),Y(data[0]));
+    for(var i=1;i<data.length;i++){var xm=(X(i-1)+X(i))/2;g.bezierCurveTo(xm,Y(data[i-1]),xm,Y(data[i]),X(i),Y(data[i]))}
+  }
+  var lg=g.createLinearGradient(0,padT,0,H-padB);
+  lg.addColorStop(0,light?"rgba(14,136,201,.26)":"rgba(58,208,255,.28)");lg.addColorStop(1,"rgba(58,208,255,0)");
+  curve();g.lineTo(X(data.length-1),H-padB);g.lineTo(X(0),H-padB);g.closePath();g.fillStyle=lg;g.fill();
+  curve();g.strokeStyle=cLine;g.lineWidth=2.5;g.lineJoin="round";g.stroke();
+  /* points + dernier point mis en avant avec sa valeur */
+  g.fillStyle=cLine;
+  data.forEach(function(v,i){g.beginPath();g.arc(X(i),Y(v),i===data.length-1?4.5:2.4,0,6.3);g.fill()});
+  var lx=X(data.length-1),ly=Y(data[data.length-1]);
+  g.strokeStyle=light?"#ffffff":"#071726";g.lineWidth=2;g.beginPath();g.arc(lx,ly,4.5,0,6.3);g.stroke();
+  g.textAlign="right";g.font="700 11px -apple-system";g.fillStyle=light?"#0a6ba0":"#7fdcff";
+  g.fillText(data[data.length-1]+" min",Math.min(W-padR,lx+4),Math.max(padT+9,ly-9));
+  /* titre + repère moyenne */
+  g.textAlign="left";g.font="10px -apple-system";g.fillStyle=cTxt;
+  g.fillText("Durée des "+data.length+" dernières sessions (min)",padL,13);
+  g.fillText("moy "+Math.round(avg),padL+2,Y(avg)-4);
+}
+/* jauge circulaire réutilisable (score, %) */
+function gaugeSvg(pct,col,label){
+  pct=Math.max(0,Math.min(100,Math.round(pct)));
+  var R=80,len=Math.PI*R,off=len*(1-pct/100);
+  return '<div class="gauge"><svg viewBox="0 0 190 108" aria-hidden="true">'+
+    '<path class="gt" d="M15 95 A80 80 0 0 1 175 95"/>'+
+    '<path class="gp" d="M15 95 A80 80 0 0 1 175 95" style="stroke:'+col+'" stroke-dasharray="'+len.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/>'+
+    '</svg><div class="gauge-c"><div class="gauge-n" style="color:'+col+'">'+pct+'<small style="font-size:15px">%</small></div></div></div>'+
+    '<div class="gauge-minmax" style="max-width:190px;margin:-6px auto 0"><span>0</span><span>100</span></div>'+
+    '<div class="gauge-l" style="text-align:center;margin:4px 0 10px">'+esc(label)+'</div>';
 }
 
 /* ============ VUE 3D (canvas, projection maison — pas de WebGL) ============ */
@@ -1702,9 +1827,30 @@ document.addEventListener("click",function(e){
 });
 window.addEventListener("resize",function(){if(S.view==="bassin")drawPool();if(S.view==="plan")drawCoverage()});
 
+/* ============ thème clair/sombre ============ */
+function isLight(){return document.documentElement.getAttribute("data-theme")==="light"}
+function applyThemeUi(){
+  var b=$("#themeBtn");if(b)b.textContent=isLight()?"🌙":"☀️";
+  var m=document.getElementById("metaTheme");if(m)m.setAttribute("content",isLight()?"#eaf4fc":"#0a1622");
+}
+function toggleTheme(){
+  var toLight=!isLight();
+  if(toLight)document.documentElement.setAttribute("data-theme","light");
+  else document.documentElement.removeAttribute("data-theme");
+  try{localStorage.setItem("pp_theme",toLight?"light":"dark")}catch(e){}
+  applyThemeUi();
+  /* redessiner les canvas avec la bonne palette */
+  if(S.view==="plan")setTimeout(drawCoverage,30);
+  if(S.view==="journal"&&sessions.length>1)setTimeout(drawTrend,30);
+  if(S.view==="bassin")setTimeout(function(){if(typeof drawPool==="function")drawPool()},30);
+}
+
 /* boot */
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){})}
-renderRobotTag();render();
+renderRobotTag();render();applyThemeUi();
+/* splash : on le laisse le temps du premier rendu puis fondu */
+setTimeout(function(){var s=$("#splash");if(s)s.classList.add("off")},500);
+setTimeout(function(){var s=$("#splash");if(s&&s.parentNode)s.parentNode.removeChild(s)},1400);
 </script>
 </body>
 </html>
