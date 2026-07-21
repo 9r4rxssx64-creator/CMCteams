@@ -119,14 +119,16 @@ try {
   rec(/LOYER/.test(ops) && /CARREFOUR/.test(ops), 'Relevé A lu en ENTIER (loyer + courses présents, pas « 1 op »)');
   rec(/LOYER MAI/.test(ops), 'Relevé B tronqué : opérations SAUVÉES (pas « illisible »)');
 
-  // 3) Ré-analyse : le relevé B (tronqué, 2 op) doit être relu en ENTIER
-  await gotoTab('Ajouter'); await page.waitForTimeout(300);
-  const hasReBtn = await page.locator('#reanalyze').count();
-  rec(hasReBtn > 0, 'Ajouter : bouton « Ré-analyser mes relevés incomplets » proposé');
-  if (hasReBtn) { await page.click('#reanalyze'); await page.waitForTimeout(3000); }
+  // 3) AUTO (aucun clic) : le relevé B (tronqué, 2 op) est ré-analysé TOUT SEUL via le cycle auto
+  await gotoTab('Ajouter'); await page.waitForTimeout(200);
+  const cardTxt = await page.evaluate(() => document.getElementById('view')?.innerText || '');
+  rec(/automatiquement/i.test(cardTxt), 'Ajouter : la ré-analyse est annoncée AUTOMATIQUE (pas un bouton obligatoire)');
+  // déclenche le cycle auto comme au retour dans l'app (focus) — aucun clic sur « ré-analyser »
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.waitForTimeout(4000);
   await gotoTab('Op'); await page.waitForTimeout(300);
   const ops2 = await page.evaluate(() => document.getElementById('view')?.innerText || '');
-  rec(/PRIME MAI/.test(ops2), 'Ré-analyse : le relevé tronqué est relu en entier (PRIME MAI apparaît)');
+  rec(/PRIME MAI/.test(ops2), 'AUTO : le relevé tronqué est ré-analysé TOUT SEUL (PRIME MAI apparaît, 0 clic)');
 
   rec(errs.length === 0, 'aucune exception JS (' + (errs[0]||'') + ')');
 } catch (e) {

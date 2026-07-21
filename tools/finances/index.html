@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.18 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.18">
+<!-- v0.13.19 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.13.19">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.18" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.19" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.18';
+  var APP_VER = 'v0.13.19';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -214,15 +214,17 @@
   }
   /* Relevés mal lus (opérations manquantes) : peu d'opérations OU bouclage en écart. On garde
      l'original chiffré → ré-analyse possible sans re-télécharger. */
-  function incompleteStatements(){ return (VAULT.docs||[]).filter(function(d){
+  function incompleteStatements(includeTried){ return (VAULT.docs||[]).filter(function(d){
     if(!d.hasFile || d.kind!=='releve') return false;
+    if(!includeTried && d.reanaTried) return false;   /* déjà ré-analysé auto → ne pas boucler (mois vraiment peu fourni) */
     var n=(VAULT.tx||[]).filter(function(t){return t.docId===d.id;}).length;
     return n<3 || (d.reconc && d.reconc.ok===false); }); }
-  async function reanalyzeIncompleteStatements(statEl){
-    if(!VAULT.aiPinHash){ toast('Active d\'abord le classement IA',true); return; }
+  async function reanalyzeIncompleteStatements(statEl, opts){
+    opts=opts||{};
+    if(!VAULT.aiPinHash){ if(!opts.silent)toast('Active d\'abord le classement IA',true); return; }
     function say(m){ if(statEl)statEl.textContent=m; }
-    var targets=incompleteStatements();
-    if(!targets.length){ say('✅ Aucun relevé à ré-analyser.'); toast('✅ Rien à ré-analyser'); return; }
+    var targets=incompleteStatements(!!opts.force);
+    if(!targets.length){ if(!opts.silent){ say('✅ Aucun relevé à ré-analyser.'); toast('✅ Rien à ré-analyser'); } return; }
     var fixed=0, fail=0;
     for(var i=0;i<targets.length;i++){ var d=targets[i]; say('🔄 Ré-analyse '+(i+1)+'/'+targets.length+' — '+docTitle(d));
       try{
@@ -233,20 +235,31 @@
         VAULT.tx=(VAULT.tx||[]).filter(function(t){return t.docId!==d.id;});
         VAULT.devis=(VAULT.devis||[]).filter(function(x){return x.docId!==d.id;});
         var isPdf=(mime==='application/pdf'||/\.pdf$/i.test(name));
-        /* si c'est du texte (corps de mail) on relit le texte, sinon le fichier (PDF/photo) — lecture corrigée v0.13.18 */
+        /* si c'est du texte (corps de mail) on relit le texte, sinon le fichier (PDF/photo) — lecture corrigée v0.13.19 */
         var out;
         if(/^text\//i.test(mime)){ var txt=''; try{ txt=new TextDecoder('utf-8').decode(bufFromB64(dec.data)); }catch(e){} out=await aiCall([ {t:txt+'\n\n'+EXTRACT_PROMPT} ], 8192); }
         else { out=await aiCall([ {f:{mime:mime,data:dec.data}}, {t:EXTRACT_PROMPT} ], 8192);
           out=await verifyClassification(out, { docParts:[{f:{mime:mime,data:dec.data}}], ftype:isPdf?'pdf':'image', name:name, from:(src.src||''), text:'' }); }
         var res=finishImport(out, name, isPdf?'pdf':'image', d.hash||null, src);
-        if(res && res.docId){ try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:name,data:dec.data})); markDocFile(res.docId); }catch(e){} }
+        if(res && res.docId){ try{ await idbSet('doc:'+res.docId, await encWith(KEY,{mime:mime,name:name,data:dec.data})); markDocFile(res.docId); }catch(e){}
+          var nd=(VAULT.docs||[]).filter(function(x){return x.id===res.docId;})[0]; if(nd)nd.reanaTried=true; }  /* évite la boucle si le mois est vraiment peu fourni */
         try{ await idbDel('doc:'+d.id); await idbDel('thumb:'+d.id); }catch(e){}
         fixed++; await persist();
       }catch(e){ fail++; }
     }
     dedupeAll(); await persist();
-    say('✅ '+fixed+' relevé(s) ré-analysé(s)'+(fail?(' · '+fail+' échec'):''));
-    toast('🔄 '+fixed+' relevé(s) ré-analysé(s) — opérations à jour'); audit('reanalyse_releves', fixed+' relevés'); render();
+    if(!opts.silent){ say('✅ '+fixed+' relevé(s) ré-analysé(s)'+(fail?(' · '+fail+' échec'):'')); toast('🔄 '+fixed+' relevé(s) ré-analysé(s) — opérations à jour'); }
+    if(fixed)audit('reanalyse_releves', fixed+' relevés'); if(fixed)render();
+  }
+  /* AUTO (aucun clic Kevin) : dès que l'app est ouverte, ré-analyse silencieusement les relevés mal lus.
+     Throttle 1×/15 min, ne tourne pas pendant un scan mail, ne re-tente pas un relevé déjà auto-tenté. */
+  var _reanaTs=0,_reanaBusy=false;
+  async function autoReanalyze(){
+    if(_reanaBusy||_mailAutoBusy) return; if(!VAULT||!VAULT.aiPinHash) return;
+    if(Date.now()-_reanaTs<15*60*1000) return;
+    if(!incompleteStatements(false).length) return;
+    _reanaTs=Date.now(); _reanaBusy=true;
+    try{ await reanalyzeIncompleteStatements(null,{silent:true}); }catch(e){}finally{ _reanaBusy=false; }
   }
   /* Doc « à vérifier » (2 IA en désaccord) → Kevin confirme que c'est une VRAIE facture : on crée
      les opérations depuis l'extraction déjà mémorisée (aucun nouvel appel IA). */
@@ -1001,6 +1014,7 @@
         else { _mailStatus='none'; if(force)render(); }
       } else { _mailStatus='err:'+_mailReasonFr(res&&res.reason); if(force)render(); }
     }catch(e){ _mailStatus='err:'+(e.message||'erreur'); if(force)render(); }finally{ _mailAutoBusy=false; }
+    try{ autoReanalyze(); }catch(e){}   /* enchaîne : les relevés fraîchement rentrés mais mal lus sont ré-analysés tout seuls */
   }
   function finishImport(out, name, ftype, hash, srcMeta){
     var j=extractJson(out); if(!j) throw new Error('Réponse IA illisible');
@@ -1327,7 +1341,8 @@
 
     /* Récupération auto depuis les mails */
     var cMail=el('<div class="card"><h2>📧 Mes factures par mail<span class="r">🟢 automatique</span></h2>'+
-      '<p class="tiny">Tout ce qui arrive à <b>factures@kd-mc.com</b> rentre <b>tout seul</b> : pièces jointes récupérées, classées, rangées, sans doublon — à l\'ouverture de l\'app et toutes les 5 min. Rien à faire.</p>'+
+      '<p class="tiny">Tout ce qui arrive à <b>factures@kd-mc.com</b> rentre <b>tout seul</b> : récupéré, classé, rangé, ré-analysé si besoin, sans doublon — dès l\'ouverture de l\'app et toutes les 5 min. Aucun bouton à toucher.</p>'+
+      '<p class="tiny" style="opacity:.75">💡 iPhone : l\'app ne peut travailler que <b>pendant qu\'elle est ouverte</b> (tes données restent chiffrées sur ton téléphone — c\'est plus sûr). Laisse-la ouverte quelques minutes le temps que le premier gros lot rentre ; ensuite tout est instantané.</p>'+
       '<button class="btn grow" id="mail-scan">📥 Vérifier maintenant (facultatif)</button>'+
       '<div id="mail-stat" class="tiny" style="margin-top:8px"></div></div>');
     v.appendChild(cMail);
@@ -1343,16 +1358,16 @@
       setTimeout(function(){ var b=$('pend-retry'); if(b)b.onclick=function(){ b.disabled=true; b.textContent='⏳ …'; retryPendingImports(false).then(function(){ try{ render(); }catch(e){} }); }; },0);
     }
 
-    /* Relevés mal lus par une ancienne version (opérations manquantes) → ré-analyse en 1 tap,
-       sans rien re-télécharger (les originaux sont gardés chiffrés). Tes autres documents ne bougent pas. */
-    var _incompl=incompleteStatements();
+    /* Relevés mal lus (opérations manquantes) → ré-analysés AUTOMATIQUEMENT dès que l'app est ouverte
+       (silencieux, sans rien re-télécharger). Le bouton n'est qu'un « forcer maintenant » facultatif. */
+    var _incompl=incompleteStatements(true);
     if(aiOn && _incompl.length){
-      var cRe=el('<div class="card" style="border-color:var(--gold)"><h2>🔄 Relevés à ré-analyser<span class="r">'+_incompl.length+'</span></h2>'+
-        '<p class="tiny">'+_incompl.length+' relevé(s) ont été mal lus (opérations/salaire manquants). Je peux les <b>ré-analyser</b> avec la lecture corrigée — sans rien re-télécharger.</p>'+
-        '<button class="btn gold grow" id="reanalyze">🔄 Ré-analyser mes relevés incomplets</button>'+
+      var cRe=el('<div class="card"><h2>🔄 Relevés en cours de ré-analyse<span class="r">'+_incompl.length+'</span></h2>'+
+        '<p class="tiny">'+_incompl.length+' relevé(s) sont relus <b>automatiquement</b> (opérations/salaire manquants) — rien à faire, laisse juste l\'app ouverte quelques instants. Tu peux forcer maintenant si tu veux :</p>'+
+        '<button class="btn grow" id="reanalyze">🔄 Forcer la ré-analyse maintenant</button>'+
         '<div id="reanalyze-stat" class="tiny" style="margin-top:8px"></div></div>');
       v.appendChild(cRe);
-      setTimeout(function(){ var b=$('reanalyze'); if(b)b.onclick=function(){ b.disabled=true; b.textContent='⏳ …'; reanalyzeIncompleteStatements($('reanalyze-stat')).then(function(){ try{render();}catch(e){} }); }; },0);
+      setTimeout(function(){ var b=$('reanalyze'); if(b)b.onclick=function(){ b.disabled=true; b.textContent='⏳ …'; reanalyzeIncompleteStatements($('reanalyze-stat'),{force:true}).then(function(){ try{render();}catch(e){} }); }; },0);
     }
 
     if(!aiOn){
@@ -2782,7 +2797,7 @@
       var data=await decWith(key,{iv:pack.iv,ct:pack.ct}); /* throw si mauvais code */
       data._salt=pack.salt; VAULT=data; KEY=key;
       if($('g-rem').checked)localStorage.setItem(LS_REMEMBER,'1'); else { localStorage.setItem(LS_REMEMBER,'0'); localStorage.removeItem(LS_DEV); }
-      await persist(); toast('🔓 Déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true);
+      await persist(); toast('🔓 Déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true); autoReanalyze();
       maybeOfferFaceId();
     }catch(e){ err.textContent='Code incorrect.'; }
   }
@@ -2839,7 +2854,7 @@
     /* Bouton du gate : Face ID → auto-déverrouillage avec la clé de l'appareil. */
     if(btn){ btn.disabled=true; btn.textContent='👤 Regarde ton iPhone…'; }
     var ok=await faceIdVerify();
-    if(ok && await tryAutoUnlock()){ toast('🔓 Reconnu — déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true); return true; }
+    if(ok && await tryAutoUnlock()){ toast('🔓 Reconnu — déverrouillé'); render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true); autoReanalyze(); return true; }
     if(btn){ btn.disabled=false; btn.textContent='🔐 Déverrouiller avec Face ID'; }
     if(err){ err.style.color='var(--dim)'; err.textContent=ok?'Petit souci de déverrouillage — entre ton code ci-dessous.':'Face ID non reconnu — entre ton code ci-dessous.'; }
     return false;
@@ -2896,17 +2911,17 @@
     if(faceIdEnrolled() && faceIdSupported() && localStorage.getItem(LS_REMEMBER)==='1' && localStorage.getItem(LS_DEV) && localStorage.getItem(LS_VAULT)){
       showGate(); return;
     }
-    if(await tryAutoUnlock()){ render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true); return; }
+    if(await tryAutoUnlock()){ render(); autoEnableCloud(); mailAutoScan(true); retryPendingImports(true); autoReanalyze(); return; }
     showGate();
   })();
 
   /* Sauvegarde en ligne + récupération auto des factures : au retour au premier plan. */
-  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); retryPendingImports(true); } });
-  window.addEventListener('focus',function(){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); retryPendingImports(true); });
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); retryPendingImports(true); autoReanalyze(); } });
+  window.addEventListener('focus',function(){ if(VAULT && VAULT.backupOnline) backupPush(); mailAutoScan(); retryPendingImports(true); autoReanalyze(); });
   /* Le réseau revient → on réimporte tout seul les documents gardés (message visible = « réseau revenu »). */
   window.addEventListener('online',function(){ retryPendingImports(false); });
   /* Filet : re-vérifie les nouvelles factures + réimport des documents en attente toutes les 5 min. */
-  setInterval(function(){ if(document.visibilityState==='visible'){ mailAutoScan(); retryPendingImports(true); } }, 5*60*1000);
+  setInterval(function(){ if(document.visibilityState==='visible'){ mailAutoScan(); retryPendingImports(true); autoReanalyze(); } }, 5*60*1000);
 })();
 </script>
 </body>
