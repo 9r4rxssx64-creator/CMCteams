@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.1 -->
+<!-- v0.11.2 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -188,7 +188,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.1" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.2" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -196,7 +196,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.1";
+var APP_VER="v0.11.2";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -662,27 +662,45 @@ function tuyaStateHtml(){
   h+='<details style="margin-top:10px"><summary class="mut" style="font-size:12px">Voir les données brutes du robot</summary><div style="font-size:11.5px;color:var(--mut);margin-top:6px;font-family:ui-monospace,monospace;word-break:break-all">'+(TUYA.status||[]).map(function(s){return esc(s.code)+" = "+esc(JSON.stringify(s.value));}).join("<br>")+'</div></details>';
   return h;
 }
-/* boutons de commande dérivés des fonctions écrivables réelles + raccourcis start/stop */
+/* libellés FR pour codes/valeurs réels du robot (fallback = valeur brute, jamais inventé) */
+var TUYA_VLAB={forward:"⬆️ Avancer",backward:"⬇️ Reculer",turn_left:"⬅️ Gauche",turn_right:"➡️ Droite",stop:"⏹️ Stop",strong:"Forte",normal:"Normale",gentle:"Douce"};
+var TUYA_CLAB={suction:"💨 Aspiration",fan:"💨 Aspiration",direction_control:"🕹️ Direction",mode:"Mode",work_mode:"Mode",clean_mode:"Mode"};
+function tuyaEnumRange(f){var r=[];try{r=(JSON.parse(f.values||"{}").range)||[];}catch(e){}return r;}
+function tuyaVlab(v){return TUYA_VLAB[String(v).toLowerCase()]||String(v);}
+/* boutons de commande dérivés des fonctions écrivables RÉELLES du robot */
 function tuyaCmdButtons(){
   var fns=TUYA.funcs||[];if(!fns.length)return '<div class="mut" style="font-size:12px">Aucune commande exposée par ce robot.</div>';
-  var sw=fns.filter(function(f){return f.type==="Boolean"&&/switch|power|start|go|clean|work|pause/.test(String(f.code).toLowerCase());});
+  var lc=function(f){return String(f.code).toLowerCase();};
   var out="";
+  /* marche/arrêt (Boolean start/go/clean) */
+  var sw=fns.filter(function(f){return f.type==="Boolean"&&/switch|power|start|go|clean|work|pause/.test(lc(f));});
   if(sw.length){var c=sw[0].code;
     out+='<div class="grid2" style="margin-bottom:10px">'+
       '<button class="btn" onclick="tuyaCmd(\''+esc(c)+'\',true)">▶️ Démarrer</button>'+
       '<button class="btn ghost" onclick="tuyaCmd(\''+esc(c)+'\',false)">⏹️ Stop</button></div>';
   }
-  /* retour base */
-  var home=fns.filter(function(f){return f.type==="Boolean"&&/seek|home|dock|charge|back/.test(String(f.code).toLowerCase());});
-  /* modes */
-  var modes=fns.filter(function(f){return f.type==="Enum"&&/mode/.test(String(f.code).toLowerCase());});
+  /* pavé directionnel (Enum direction_control : forward/backward/turn_left/turn_right/stop) */
+  var dir=fns.filter(function(f){return f.type==="Enum"&&/direction|move|joystick/.test(lc(f));});
+  if(dir.length){var dc=dir[0].code,r=tuyaEnumRange(dir[0]),has=function(v){return r.indexOf(v)>=0;};
+    out+='<div class="mut" style="font-size:12px;margin:2px 0 6px">'+esc(TUYA_CLAB[lc(dir[0])]||"Direction (pilotage manuel)")+'</div>';
+    var b=function(v,lab){return has(v)?'<button class="btn ghost sm" onclick="tuyaCmd(\''+esc(dc)+'\',\''+esc(v)+'\')">'+lab+'</button>':'<span></span>';};
+    out+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:230px;margin-bottom:10px">'+
+      '<span></span>'+b("forward","⬆️")+'<span></span>'+
+      b("turn_left","⬅️")+b("stop","⏹️")+b("turn_right","➡️")+
+      '<span></span>'+b("backward","⬇️")+'<span></span></div>';
+  }
+  /* tous les Enum restants (aspiration, mode…) → sélecteur libellé */
+  var enums=fns.filter(function(f){return f.type==="Enum"&&!/direction|move|joystick/.test(lc(f));});
   var extra="";
+  var home=fns.filter(function(f){return f.type==="Boolean"&&/seek|home|dock|charge|back/.test(lc(f));});
   if(home.length)extra+='<button class="btn ghost sm" onclick="tuyaCmd(\''+esc(home[0].code)+'\',true)">🏠 Base</button>';
-  modes.forEach(function(md){var vals=[];try{vals=(JSON.parse(md.values||"{}").range)||[];}catch(e){}
-    if(vals.length){extra+='<select id="tyMode_'+esc(md.code)+'" style="max-width:150px">'+vals.map(function(v){return '<option value="'+esc(v)+'">'+esc(v)+'</option>';}).join("")+'</select>'+
-      '<button class="btn ghost sm" onclick="tuyaCmd(\''+esc(md.code)+'\',$(\'#tyMode_'+esc(md.code)+'\').value)">🔁 Mode</button>';}
+  enums.forEach(function(en){var vals=tuyaEnumRange(en);if(!vals.length)return;var id="tyEn_"+esc(en.code);
+    extra+='<span style="display:inline-flex;align-items:center;gap:6px">'+
+      '<span class="mut" style="font-size:12px">'+esc(TUYA_CLAB[lc(en)]||en.code)+'</span>'+
+      '<select id="'+id+'" style="max-width:150px">'+vals.map(function(v){return '<option value="'+esc(v)+'">'+esc(tuyaVlab(v))+'</option>';}).join("")+'</select>'+
+      '<button class="btn ghost sm" onclick="tuyaCmd(\''+esc(en.code)+'\',$(\'#'+id+'\').value)">✅</button></span>';
   });
-  if(extra)out+='<div class="row" style="gap:8px;flex-wrap:wrap">'+extra+'</div>';
+  if(extra)out+='<div class="row" style="gap:10px;flex-wrap:wrap;align-items:center">'+extra+'</div>';
   out+='<div id="tyCmdOut" style="margin-top:8px"></div>';
   return out;
 }
