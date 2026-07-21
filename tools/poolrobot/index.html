@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.2 -->
+<!-- v0.11.3 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -188,7 +188,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.2" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.3" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -196,7 +196,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.2";
+var APP_VER="v0.11.3";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -658,7 +658,7 @@ function tuyaStateHtml(){
   if(m.fault)h+='<div class="note warn" style="margin-top:8px">⚠️ Défaut : '+esc(m.fault)+'</div>';
   /* commandes réelles construites à partir des vraies fonctions du robot */
   var cmds=tuyaCmdButtons();
-  h+='<div style="margin-top:12px">'+cmds+'</div>';
+  h+='<div style="margin-top:12px">'+tuyaUltraBtn()+cmds+'</div>';
   h+='<details style="margin-top:10px"><summary class="mut" style="font-size:12px">Voir les données brutes du robot</summary><div style="font-size:11.5px;color:var(--mut);margin-top:6px;font-family:ui-monospace,monospace;word-break:break-all">'+(TUYA.status||[]).map(function(s){return esc(s.code)+" = "+esc(JSON.stringify(s.value));}).join("<br>")+'</div></details>';
   return h;
 }
@@ -709,6 +709,42 @@ function tuyaCmd(code,value){
   tuyaApi("command","POST",{commands:[{code:code,value:value}]}).then(function(j){
     if(el)el.innerHTML=j.ok?'<span style="color:#5fd38a">✅ Commande envoyée au robot</span>':'<div class="note warn">'+esc(j.detail||j.reason||"Échec")+'</div>';
     if(j.ok)setTimeout(tuyaRefresh,1500);
+  });
+}
+/* Mode Ultra « la totale » : aspiration MAX + démarrage du cycle complet du robot.
+   100% dérivé des VRAIES fonctions Tuya (aucun code inventé). Tuya n'expose PAS de
+   sélection de zone (fond/paroi/ligne d'eau/surface) — le cycle complet standard du
+   robot couvre déjà fond + parois + ligne d'eau ; on le lance à pleine puissance. */
+function tuyaUltraBtn(){
+  var fns=TUYA.funcs||[];
+  var canStart=fns.some(function(f){return f.type==="Boolean"&&/switch|power|start|go|clean|work/.test(String(f.code).toLowerCase());});
+  if(!canStart)return "";
+  return '<button class="btn" style="width:100%;margin-bottom:6px;background:linear-gradient(135deg,#0a6bd6,#39c2ff);border:none;font-weight:700;font-size:15px" onclick="tuyaUltra()">🌊 Mode Ultra — la totale</button>'+
+    '<div class="mut" style="font-size:11.5px;margin:0 0 12px">Aspiration MAX + cycle complet du robot (fond · parois · ligne d\'eau). Tourne jusqu\'à fin de cycle ou batterie faible.</div>';
+}
+function tuyaUltra(){
+  var fns=TUYA.funcs||[],lc=function(f){return String(f.code).toLowerCase();},cmds=[];
+  /* aspiration à sa valeur MAX réelle (strong/max/turbo…), sinon 1re du range */
+  var suc=fns.filter(function(f){return f.type==="Enum"&&/suction|fan|power/.test(lc(f));})[0];
+  if(suc){var r=[];try{r=(JSON.parse(suc.values||"{}").range)||[];}catch(e){}
+    var mx=r.filter(function(v){return /strong|max|super|ultra|high|turbo/.test(String(v).toLowerCase());})[0]||r[0];
+    if(mx)cmds.push({code:suc.code,value:mx});}
+  /* interrupteur principal + démarrage nettoyage (toutes les vraies fonctions marche/go) */
+  var sw=fns.filter(function(f){return f.type==="Boolean"&&/^switch$|power/.test(lc(f));})[0];
+  if(sw)cmds.push({code:sw.code,value:true});
+  fns.filter(function(f){return f.type==="Boolean"&&/go|clean|work|start/.test(lc(f));}).forEach(function(g){
+    if(!cmds.some(function(c){return c.code===g.code;}))cmds.push({code:g.code,value:true});});
+  var el=$("#tyCmdOut");
+  if(!cmds.length){if(el)el.innerHTML='<div class="note warn">Ce robot n\'expose pas de démarrage via Tuya.</div>';return;}
+  if(!confirm("🌊 Lancer le mode Ultra ?\n\nLe robot DÉMARRE à pleine puissance pour un cycle complet (fond, parois, ligne d'eau).\n\n⚠️ Vérifie qu'il est bien dans l'eau."))return;
+  if(el)el.innerHTML='<span class="mut">Lancement Ultra…</span>';
+  tuyaApi("command","POST",{commands:cmds}).then(function(j){
+    if(j.ok){
+      sessions.unshift({id:uid(),ts:Date.now(),mode:"Ultra 🌊",dur:0,batt:tuyaMap(TUYA.status).batt});
+      if(sessions.length>300)sessions=sessions.slice(0,300);save();
+      if(el)el.innerHTML='<div class="note" style="border-color:#5fd38a;color:#cfeee0">✅ Mode Ultra lancé — aspiration max + cycle complet ('+esc(cmds.map(function(c){return c.code+"="+c.value;}).join(" · "))+'). Session notée.</div>';
+      setTimeout(tuyaRefresh,1800);
+    } else if(el)el.innerHTML='<div class="note warn">Échec : '+esc(j.detail||j.reason||"?")+'</div>';
   });
 }
 function vTuyaCard(){
