@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.3 -->
+<!-- v0.11.4 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -188,7 +188,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.3" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.4" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -196,7 +196,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.3";
+var APP_VER="v0.11.4";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -596,16 +596,18 @@ function tuyaApi(seg,method,body){
 }
 /* mappe un tableau Tuya [{code,value}] vers batterie/état lisibles */
 function tuyaMap(status){
-  var o={batt:null,state:null,mode:null,fault:null};
+  var o={batt:null,state:null,mode:null,fault:null,area:null,time:null};
   (status||[]).forEach(function(s){var k=String(s.code||"").toLowerCase(),v=s.value;
     if(o.batt==null&&/electric|battery|soc|elec_left|residual/.test(k)&&typeof v==="number"&&v>=0&&v<=100)o.batt=Math.round(v);
     if(o.mode==null&&/^mode$|work_mode|clean_mode/.test(k))o.mode=String(v);
     if(o.fault==null&&/fault|error|alarm/.test(k)&&v&&v!=="0"&&v!=="no_fault")o.fault=String(v);
     if(o.state==null&&/status|state|work_state|working/.test(k))o.state=String(v);
+    if(o.area==null&&/clean_area|^area$/.test(k)&&typeof v==="number")o.area=v;
+    if(o.time==null&&/clean_time|work_time/.test(k)&&typeof v==="number")o.time=v;
   });
   return o;
 }
-function tuyaLabelState(st){var m={standby:"En veille",charging:"En charge",cleaning:"Nettoyage",paused:"En pause",fault:"Défaut",sleep:"Veille",going_home:"Retour base",smart:"Auto"};return m[String(st||"").toLowerCase()]||st||"—";}
+function tuyaLabelState(st){var m={standby:"En veille",goto_charge:"Retour charge",charging:"En charge",charge_done:"Charge finie",paused:"En pause",cleaning:"🧹 Nettoyage",sleep:"Sommeil",fault:"Défaut",going_home:"Retour base",smart:"Auto"};return m[String(st||"").toLowerCase()]||st||"—";}
 function tuyaLink(){
   var id=($("#tyId").value||"").trim(),sec=($("#tySec").value||"").trim(),reg=($("#tyReg").value||"eu");
   if(!id||!sec){toast("Colle Access ID et Access Secret");return;}
@@ -654,6 +656,8 @@ function tuyaStateHtml(){
   var h='<div class="row" style="gap:14px;flex-wrap:wrap">';
   h+='<div><b style="font-size:22px">'+(m.batt!=null?m.batt+"%":"—")+'</b><br><span class="mut">🔋 Batterie</span></div>';
   h+='<div><b style="font-size:15px">'+esc(tuyaLabelState(m.state||m.mode))+'</b><br><span class="mut">'+(TUYA.online?"🟢 En ligne":"⚪ Hors ligne")+'</span></div>';
+  if(m.area!=null)h+='<div><b style="font-size:15px">'+esc(m.area)+' ㎡</b><br><span class="mut">🧭 Surface</span></div>';
+  if(m.time!=null)h+='<div><b style="font-size:15px">'+esc(m.time)+' min</b><br><span class="mut">⏱️ Durée</span></div>';
   h+='</div>';
   if(m.fault)h+='<div class="note warn" style="margin-top:8px">⚠️ Défaut : '+esc(m.fault)+'</div>';
   /* commandes réelles construites à partir des vraies fonctions du robot */
@@ -719,8 +723,28 @@ function tuyaUltraBtn(){
   var fns=TUYA.funcs||[];
   var canStart=fns.some(function(f){return f.type==="Boolean"&&/switch|power|start|go|clean|work/.test(String(f.code).toLowerCase());});
   if(!canStart)return "";
+  var canDir=fns.some(function(f){return f.type==="Enum"&&/direction|move|joystick/.test(String(f.code).toLowerCase());});
   return '<button class="btn" style="width:100%;margin-bottom:6px;background:linear-gradient(135deg,#0a6bd6,#39c2ff);border:none;font-weight:700;font-size:15px" onclick="tuyaUltra()">🌊 Mode Ultra — la totale</button>'+
-    '<div class="mut" style="font-size:11.5px;margin:0 0 12px">Aspiration MAX + cycle complet du robot (fond · parois · ligne d\'eau). Tourne jusqu\'à fin de cycle ou batterie faible.</div>';
+    '<div class="mut" style="font-size:11.5px;margin:0 0 10px">Aspiration MAX + cycle complet du robot (fond · parois · ligne d\'eau). Tourne jusqu\'à fin de cycle ou batterie faible.</div>'+
+    (canDir?'<button class="btn ghost" style="width:100%;margin-bottom:4px;font-weight:600" onclick="tuyaStairs()">🪜 Escaliers — aspi max + guidage</button>'+
+      '<div class="mut" style="font-size:11.5px;margin:0 0 12px">Le robot n\'a pas de programme « escaliers » via Tuya. Je règle l\'aspiration au MAX et tu l\'amènes sur tes marches (escalier roman) avec le pavé 🕹️ ci-dessous — il brosse à fond.</div>':'');
+}
+/* Escaliers : aspiration max réelle + guidage manuel (seule voie réelle — Tuya n'expose
+   pas de programme escaliers ; le robot ignore la position de tes marches). */
+function tuyaStairs(){
+  var fns=TUYA.funcs||[],lc=function(f){return String(f.code).toLowerCase();};
+  var suc=fns.filter(function(f){return f.type==="Enum"&&/suction|fan|power/.test(lc(f));})[0];
+  var el=$("#tyCmdOut"),send=[];
+  if(suc){var r=[];try{r=(JSON.parse(suc.values||"{}").range)||[];}catch(e){}
+    var mx=r.filter(function(v){return /strong|max|super|ultra|high|turbo/.test(String(v).toLowerCase());})[0]||r[0];
+    if(mx)send.push({code:suc.code,value:mx});}
+  var done=function(ok,detail){
+    if(!el)return;
+    el.innerHTML=(ok===false?'<div class="note warn">Échec réglage aspiration : '+esc(detail||"?")+'</div>':'')+
+      '<div class="note" style="border-color:#39c2ff;color:#cfeee0">🪜 <b>Mode Escaliers</b> — aspiration réglée au MAX'+(ok===false?' (échec, réessaie)':'')+'.<br>Utilise le pavé 🕹️ <b>ci-dessous</b> pour amener le robot sur tes marches (escalier roman, lobe avant-droit), puis laisse-le brosser. C\'est toi qui le guides : le robot ne connaît pas la position des marches.</div>';
+  };
+  if(send.length){tuyaApi("command","POST",{commands:send}).then(function(j){done(j.ok,j.detail||j.reason);if(j.ok)setTimeout(tuyaRefresh,1500);});}
+  else done(true);
 }
 function tuyaUltra(){
   var fns=TUYA.funcs||[],lc=function(f){return String(f.code).toLowerCase();},cmds=[];
