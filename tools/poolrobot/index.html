@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.14 -->
+<!-- v0.11.15 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -333,7 +333,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.14" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.15" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -341,7 +341,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.14";
+var APP_VER="v0.11.15";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -627,6 +627,17 @@ function vJournal(){
     autoStatsHtml()+
     (sessions.length>1?'<canvas id="trendCanvas" height="176" style="margin-top:12px"></canvas>':'')
   )+
+  (function(){
+    if(!onBeatbotHost()||!tuya.linked)return "";
+    var sp=S._tuyaSnaps||[];
+    return card("📡 Pendant le travail (relevés auto)","Un point archivé à chaque changement observé sur le robot (remontée, progression, température) — même app fermée.",
+      (sp.length>1?'<canvas id="snapCanvas" height="150"></canvas>':'')+
+      (sp.length?('<div style="margin-top:8px">'+sp.slice(0,6).map(function(s){
+        var d=new Date(s.ts),hm=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+        return '<div class="kv"><b>'+hm+' · '+esc(tuyaLabelState(s.st))+'</b><span>'+(s.batt!=null?'🔋'+s.batt+'% ':'')+(s.ct?s.ct+' min ':'')+(s.ca?s.ca+' m² ':'')+(s.temp!=null?'🌡️'+s.temp+'°':'')+'</span></div>';
+      }).join("")+'</div>'):'<div class="mut" style="font-size:12px">En attente du premier relevé (le serveur regarde toutes les 5 min).</div>')
+    );
+  })()+
   card("🗂️ Historique","",rows);
 }
 
@@ -803,6 +814,8 @@ function tuyaStatsSync(){
   tuyaApi("stats").then(function(j){
     if(!j||j.ok!==true){S._statsAt=0;return;} /* réseau KO → on retentera */
     S._tuyaStats=j.stats||null;
+    var prevSnaps=(S._tuyaSnaps||[]).length;
+    S._tuyaSnaps=j.snaps||[]; /* instantanés « pendant le travail » archivés côté serveur */
     var added=0,addH=0;
     (j.sessions||[]).forEach(function(sv){
       var id="auto_"+sv.ts;
@@ -816,8 +829,39 @@ function tuyaStatsSync(){
       cfg.runHours=Math.round((cfg.runHours+addH)*10)/10;
       ["filter","brush","seal","clearwater"].forEach(function(k){maint[k]=Math.round(((maint[k]||0)+addH)*10)/10});
       save();render();toast("🤖 "+added+" cycle(s) du robot ajoutés au journal automatiquement");
-    }else if(S.view==="journal"){var el=$("#autoStats");if(el)el.outerHTML=autoStatsHtml();}
+    }else if(S.view==="journal"){
+      if((S._tuyaSnaps||[]).length!==prevSnaps)render(); /* nouveaux relevés → carte + graphe à jour */
+      else{var el=$("#autoStats");if(el)el.outerHTML=autoStatsHtml();setTimeout(drawSnaps,40);}
+    }
   });
+}
+/* graphe des relevés pendant le travail : batterie (0-100) + température (échelle propre) */
+function drawSnaps(){
+  var cv=$("#snapCanvas");if(!cv)return;
+  var snaps=(S._tuyaSnaps||[]).slice(0,48).reverse();if(snaps.length<2)return;
+  var dpr=Math.min(2,window.devicePixelRatio||1),cssW=cv.clientWidth||300,cssH=150;
+  cv.width=cssW*dpr;cv.height=cssH*dpr;var g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);
+  var W=cssW,H=cssH;g.clearRect(0,0,W,H);
+  var light=isLight(),cTxt=light?"#48708f":"#93b0c8",cGrid=light?"rgba(11,35,52,.10)":"rgba(255,255,255,.07)";
+  var padL=30,padR=34,padT=20,padB=12,iw=W-padL-padR,ih=H-padT-padB;
+  function X(i){return padL+i/(snaps.length-1)*iw}
+  g.font="9px -apple-system";g.lineWidth=1;
+  [0,50,100].forEach(function(v){var y=padT+ih-(v/100)*ih;g.strokeStyle=cGrid;g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();g.fillStyle=cTxt;g.textAlign="right";g.fillText(String(v),padL-4,y+3);});
+  /* batterie */
+  g.strokeStyle=light?"#0e88c9":"#39c2ff";g.lineWidth=2;g.lineJoin="round";g.beginPath();var st1=false;
+  snaps.forEach(function(s,i){if(s.batt==null)return;var y=padT+ih-(s.batt/100)*ih;st1?g.lineTo(X(i),y):g.moveTo(X(i),y);st1=true;});
+  g.stroke();
+  /* température (échelle min/max dédiée, repères à droite) */
+  var temps=snaps.map(function(s){return s.temp}).filter(function(v){return v!=null});
+  if(temps.length>1){
+    var tmin=Math.min.apply(null,temps)-1,tmax=Math.max.apply(null,temps)+1;
+    g.strokeStyle="#3ddc84";g.lineWidth=2;g.beginPath();var st2=false;
+    snaps.forEach(function(s,i){if(s.temp==null)return;var y=padT+ih-((s.temp-tmin)/(tmax-tmin))*ih;st2?g.lineTo(X(i),y):g.moveTo(X(i),y);st2=true;});
+    g.stroke();
+    g.fillStyle="#3ddc84";g.textAlign="left";g.fillText(tmax.toFixed(0)+"°",W-padR+4,padT+8);g.fillText(tmin.toFixed(0)+"°",W-padR+4,padT+ih);
+  }
+  g.fillStyle=cTxt;g.textAlign="left";g.font="10px -apple-system";
+  g.fillText("— batterie %    — température eau",padL,12);
 }
 /* bloc « compteurs réels » (Journal) — honnête : construit depuis l'activation,
    le cloud privé Beatbot ne partage pas l'historique antérieur */
@@ -905,9 +949,21 @@ function tuyaDock(){
   if(!confirm("🏠 Renvoyer le robot à sa base / plateforme ?"))return;
   tuyaSetDp("dock",1,"Retour base demandé");
 }
+/* enregistre le cycle Perso (mode custom) : réglages par zone envoyés tels quels
+   (unités internes du robot — Beatbot ne les documente pas, on n'invente pas) */
+function tuyaCustomSave(){
+  var codes=["clean_floor","clean_wall","clean_line","clean_surface"];
+  var cmds=codes.map(function(c){return {code:c,value:Math.max(0,Math.round(+($("#ty_"+c).value||0)))};});
+  cmds.push({code:"mode",value:"custom"});
+  tuyaApi("command","POST",{commands:cmds}).then(function(j){
+    if(j.ok){toast("🎚️ Cycle Perso enregistré (mode « custom ») — démarre avec ▶️");setTimeout(tuyaRefresh,1200);}
+    else toast("Échec cycle Perso : "+(j.detail||j.reason||"?"));
+  });
+}
 /* carte Réglages embarqués : uniquement des DP rw MESURÉS sur ce robot */
 function vTuyaGear(){
   if(!onBeatbotHost()||!tuya.linked||!tuya.device_id)return "";
+  var P=TUYA.props||{};
   return card("🔧 Réglages embarqués du robot","Fonctions natives découvertes dans le modèle profond de TON robot (rien d'inventé).",
     '<div class="mut" style="font-size:11px;margin-bottom:4px">⏰ Départ différé natif (le robot part tout seul, même sans réseau)</div>'+
     '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">'+
@@ -927,6 +983,18 @@ function vTuyaGear(){
       '<button class="btn ghost sm" onclick="tuyaClarify()">💧 Diffuser le clarifiant</button>'+
       '<button class="btn ghost sm" onclick="tuyaDock()">🏠 Retour base</button>'+
     '</div>'+
+    '<div class="mut" style="font-size:11px;margin:12px 0 4px">🔊 Volume des bips (0-100)</div>'+
+    '<div class="row" style="gap:8px;align-items:center">'+
+      '<input id="tyVol" type="range" min="0" max="100" value="'+esc(String(P.volume_value!=null?P.volume_value:100))+'" style="flex:1">'+
+      '<button class="btn ghost sm" onclick="tuyaSetDp(\'volume_value\',+$(\'#tyVol\').value,\'Volume réglé\')">OK</button>'+
+    '</div>'+
+    '<div class="mut" style="font-size:11px;margin:12px 0 4px">🎚️ Cycle Perso par zone (valeurs internes du robot, pré-remplies avec ses réglages actuels)</div>'+
+    '<div class="row" style="gap:8px;flex-wrap:wrap">'+
+      [["clean_floor","Fond"],["clean_wall","Parois"],["clean_line","Ligne d\'eau"],["clean_surface","Surface"]].map(function(z){
+        return '<div style="flex:1 1 40%"><label style="font-size:11px">'+z[1]+'</label><input id="ty_'+z[0]+'" type="number" min="0" value="'+esc(String(P[z[0]]!=null?P[z[0]]:0))+'"></div>';
+      }).join("")+
+    '</div>'+
+    '<button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="tuyaCustomSave()">💾 Enregistrer le cycle Perso (mode « custom »)</button>'+
     '<div class="mut" style="font-size:11px;margin-top:8px">L\'état courant (lampe, IA, volume…) est visible dans « données brutes du robot » au-dessus. Commandes acceptées seulement robot en surface (wifi).</div>'
   );
 }
@@ -1985,7 +2053,7 @@ function render(){
     },30);
   }
   if(v==="plan")setTimeout(drawCoverage,40);
-  if(v==="journal"){if(sessions.length>1)setTimeout(drawTrend,40);setTimeout(tuyaStatsSync,120);}
+  if(v==="journal"){if(sessions.length>1)setTimeout(drawTrend,40);setTimeout(drawSnaps,50);setTimeout(tuyaStatsSync,120);}
   if(v==="reglage"){
     var bind={rgEnv:"env",rgUse:"usage",rgDeb:"debris",rgFoc:"focus"};
     Object.keys(bind).forEach(function(id){var el=$("#"+id);if(el)el.addEventListener("change",function(){setPerf(bind[id],this.value)})});
