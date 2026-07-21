@@ -73,6 +73,13 @@ try {
   const req = new Request('https://beatbot.kd-mc.com/__beatbot/tuya/stats', { headers: { 'x-kdmc-admin': signSso('sso', '__kdmc_admin__') } });
   const res = await mod.fetch(req, e); const jj = await res.json();
   ok(jj.ok === true && jj.stats.count === 2 && jj.sessions.length === 2 && jj.sessions[0].dur === 130, 'endpoint /stats : compteurs + sessions renvoyés');
+
+  /* 9) BASELINE officielle (fiche Beatbot 26 cycles / 148.3 h) : POST puis totaux = base + auto */
+  const bReq = new Request('https://beatbot.kd-mc.com/__beatbot/tuya/stats', { method: 'POST', headers: { 'x-kdmc-admin': signSso('sso', '__kdmc_admin__'), 'content-type': 'application/json' }, body: JSON.stringify({ baseCount: 26, baseMinutes: 8898, source: 'Fiche de Nettoyage Beatbot' }) });
+  const bRes = await mod.fetch(bReq, e); const bj = await bRes.json();
+  ok(bj.ok === true && bj.stats.baseCount === 26 && bj.stats.baseMinutes === 8898 && bj.stats.count === 2, 'baseline posée SANS écraser les relevés auto (26 base + 2 auto)');
+  const res2 = await mod.fetch(req, e); const j2 = await res2.json();
+  ok(j2.ok === true && j2.stats.baseCount === 26 && j2.stats.count === 2, 'GET /stats renvoie base + auto (totaux app = 28 cycles)');
 } finally { globalThis.fetch = realFetch; }
 
 console.log(`Tuya history/stats test: ${pass} passed, ${fail} failed`);

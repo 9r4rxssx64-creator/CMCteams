@@ -95,6 +95,34 @@ async function main() {
     (hsJ.sessions || []).slice(0, 5).forEach((s) => console.log('   • ' + new Date(s.ts).toISOString() + ' — ' + s.dur + ' min' + (s.area != null ? ' · ' + s.area + ' m²' : '') + (s.batt != null ? ' · 🔋' + s.batt + '%' : '')));
   } else console.log('  ⚠', hsJ.detail || hsJ.reason || '(pas de stats)');
 
+  // 7) QUI PILOTE ? état du programme PoolPilot (répond à « PoolPilot ou programme d'origine ? »)
+  const scR = await fetch(BASE + '/__beatbot/tuya/schedule', { headers: H });
+  const scJ = await scR.json().catch(() => ({}));
+  console.log('\n— PROGRAMME PoolPilot —  HTTP', scR.status);
+  if (scJ.ok) { const s = scJ.schedule || {}; console.log('  programmation PoolPilot : ' + (s.enabled ? ('ACTIVÉE — ' + (s.slots || []).length + ' créneau(x)') : 'désactivée') + ' · auto-relance : ' + (s.autoResume ? 'ON' : 'off') + ' → si le robot tourne sans créneau PoolPilot ni ▶️ manuel, c\'est son programme/app d\'origine.'); }
+
+  // 8) MODÈLE PROFOND (thing model v2.0) : cherche un DP « mode/surface » caché
+  const mdR = await fetch(BASE + '/__beatbot/tuya/model', { headers: H });
+  const mdJ = await mdR.json().catch(() => ({}));
+  console.log('\n— MODÈLE PROFOND (tous les DP du produit) —  HTTP', mdR.status);
+  if (mdJ.ok && mdJ.model) {
+    let m = mdJ.model; try { if (typeof m.model === 'string') m = JSON.parse(m.model); } catch { /* */ }
+    const dps = [];
+    (m.services || []).forEach((sv) => (sv.properties || []).forEach((p) => dps.push({ code: p.code, type: (p.typeSpec && p.typeSpec.type) || '?', access: p.accessMode || '?', values: (p.typeSpec && p.typeSpec.range) ? p.typeSpec.range.join('/') : '' })));
+    dps.forEach((d) => console.log('   • ' + d.code + ' (' + d.type + ', ' + d.access + ')' + (d.values ? ' [' + d.values + ']' : '')));
+    const modeDp = dps.filter((d) => /mode|scene|water|surface|wall/i.test(d.code));
+    console.log(modeDp.length ? ('  🎯 DP mode potentiels : ' + modeDp.map((d) => d.code).join(', ') + ' → à câbler dans le Mode Ultra si écrivables.') : '  (aucun DP « mode/surface » exposé par Tuya → la surface se lance depuis l\'app Beatbot ; PoolPilot relève quand même le cycle)');
+  } else console.log('  ⚠', mdJ.detail || mdJ.reason || '(pas de model)');
+
+  // 9) BASELINE officielle (option PP_BASELINE="cycles:minutes") : cale les totaux sur la Fiche Beatbot
+  const BL = process.env.PP_BASELINE || '';
+  if (/^\d+:\d+$/.test(BL)) {
+    const [c, mn] = BL.split(':').map(Number);
+    const bR = await fetch(BASE + '/__beatbot/tuya/stats', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, H), body: JSON.stringify({ baseCount: c, baseMinutes: mn, source: 'Fiche de Nettoyage app Beatbot (fournie par Kevin)' }) });
+    const bJ = await bR.json().catch(() => ({}));
+    console.log('\n— BASELINE officielle — ' + (bJ.ok ? ('✅ calée : ' + c + ' cycles · ' + Math.round(mn / 60 * 10) / 10 + ' h → totaux app = base + relevés auto') : ('⚠ ' + (bJ.detail || bJ.reason || '?'))));
+  }
+
   // Verdict lisible pour les logs
   console.log('\n=== VERDICT ===');
   if ((dj.devices || []).length) console.log('✅ Robot trouvé sur ' + dj.host + ' — la sélection va marcher dans l\'app.');
