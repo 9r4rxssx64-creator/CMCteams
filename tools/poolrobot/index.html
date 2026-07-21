@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.8 -->
+<!-- v0.11.9 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -333,7 +333,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.8" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.9" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -341,7 +341,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.8";
+var APP_VER="v0.11.9";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -770,6 +770,25 @@ function tuyaMap(status){
   return o;
 }
 function tuyaLabelState(st){var m={standby:"En veille",goto_charge:"Retour charge",charging:"En charge",charge_done:"Charge finie",paused:"En pause",cleaning:"🧹 Nettoyage",sleep:"Sommeil",fault:"Défaut",going_home:"Retour base",smart:"Auto"};return m[String(st||"").toLowerCase()]||st||"—";}
+/* RE-LIAISON AUTO : les clés (ID/Secret) + le robot choisi vivent CÔTÉ SERVEUR (KV).
+   Le drapeau « lié » local (localStorage) peut disparaître (réinstall PWA, purge iOS)
+   → au boot on redemande la vérité au serveur et on se re-lie tout seul. Fail-open :
+   réseau KO → on garde l'état local, jamais de casse (règle #55/#81). */
+function tuyaBootSync(){
+  if(!onBeatbotHost()||S._tuyaSyncing)return;S._tuyaSyncing=1;
+  tuyaApi("state").then(function(j){
+    S._tuyaSyncing=0;S._tuyaSynced=1;
+    if(!j||j.ok!==true){if(S._tuyaNeedRender){S._tuyaNeedRender=0;render();}return;} /* réseau KO → état local conservé, formulaire de secours affiché */
+    var was=tuya.linked,changed=false;
+    if(j.linked){
+      if(!tuya.linked){tuya.linked=true;changed=true;}
+      if(j.region&&tuya.region!==j.region){tuya.region=j.region;changed=true;}
+      if(j.device_id&&tuya.device_id!==j.device_id){tuya.device_id=j.device_id;changed=true;}
+    }else if(tuya.linked){tuya.linked=false;tuya.device_id="";tuya.device_name="";changed=true;}
+    if(changed||S._tuyaNeedRender){S._tuyaNeedRender=0;save();render();
+      if(!was&&tuya.linked)toast("🔗 Liaison robot retrouvée sur le serveur — rien à re-coller");}
+  });
+}
 function tuyaLink(){
   var id=($("#tyId").value||"").trim(),sec=($("#tySec").value||"").trim(),reg=($("#tyReg").value||"eu");
   if(!id||!sec){toast("Colle Access ID et Access Secret");return;}
@@ -806,7 +825,8 @@ function tuyaRefresh(){
   var el=$("#tyState");if(el)el.innerHTML='<div class="mut">Lecture du robot…</div>';
   Promise.all([tuyaApi("status"),tuyaApi("functions")]).then(function(r){
     var st=r[0],fn=r[1];
-    if(st.ok){TUYA.status=st.status;TUYA.online=st.online;TUYA.name=st.name||"";}
+    if(st.ok){TUYA.status=st.status;TUYA.online=st.online;TUYA.name=st.name||"";
+      if(TUYA.name&&!tuya.device_name){tuya.device_name=TUYA.name;save();}}
     if(fn.ok)TUYA.funcs=fn.functions;
     TUYA.lastErr=(!st.ok&&(st.detail||st.reason))||(!fn.ok&&(fn.detail||fn.reason))||"";
     if(el)el.innerHTML=tuyaStateHtml();
@@ -979,6 +999,13 @@ function tuyaSchedStartNow(){
 function tuyaStartReason(r){var m={offline:"robot hors ligne (peut-être sous l'eau)",already_cleaning:"déjà en train de nettoyer",low_batt:"batterie trop faible",no_device:"robot non choisi",token_fail:"clés Tuya refusées"};return m[r]||r||"?";}
 function vTuyaCard(){
   if(!onBeatbotHost())return card("🌊 Contrôle réel du robot (Tuya / Smart Life)","","<div class=\"note warn\">Ouvre l'app sur <b>beatbot.kd-mc.com</b> (ton espace privé) pour piloter — sécurité admin même-origine.</div>");
+  if(!tuya.linked&&!S._tuyaSynced){
+    /* on ne montre PAS le formulaire à clés avant d'avoir demandé au serveur :
+       9 fois sur 10 la liaison existe déjà côté serveur (rien n'est perdu) */
+    S._tuyaNeedRender=1;setTimeout(tuyaBootSync,30);
+    return card("🌊 Contrôle réel du robot (Tuya / Smart Life)","",
+      '<div class="note">🔎 Vérification de la liaison sur le serveur… (tes clés y sont gardées en mémoire, même après une réinstallation)</div>');
+  }
   if(!tuya.linked){
     return card("🌊 Contrôle réel du robot (Tuya / Smart Life)",
       "Ton robot passe par le cloud Tuya. Lie-le une fois — accès officiel, garantie intacte.",
@@ -1848,6 +1875,7 @@ function toggleTheme(){
 /* boot */
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){})}
 renderRobotTag();render();applyThemeUi();
+tuyaBootSync(); /* re-liaison auto depuis le serveur (clés jamais perdues) */
 /* splash : on le laisse le temps du premier rendu puis fondu */
 setTimeout(function(){var s=$("#splash");if(s)s.classList.add("off")},500);
 setTimeout(function(){var s=$("#splash");if(s&&s.parentNode)s.parentNode.removeChild(s)},1400);
