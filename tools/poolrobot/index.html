@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.6 -->
+<!-- v0.11.7 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -170,6 +170,28 @@
   #d3hint{position:absolute;top:calc(60px + var(--safe-t));left:0;right:0;text-align:center;color:var(--dim);font-size:11.5px;pointer-events:none}
   #d3ctl{display:flex;gap:8px;padding:10px 14px calc(10px + var(--safe-b));border-top:1px solid var(--line)}
   #d3ctl button{flex:1;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:12px;font-size:13px;font-weight:700}
+  /* ---- hero accueil ---- */
+  .hero{position:relative;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;pointer-events:none;background:
+    radial-gradient(120% 90% at 12% -10%,rgba(58,208,255,.20),transparent 58%),
+    radial-gradient(90% 80% at 110% 120%,rgba(14,136,201,.16),transparent 55%)}
+  .hero-row{position:relative;display:flex;gap:16px;align-items:center}
+  .hero-live{display:flex;flex-direction:column;align-items:center;gap:9px;flex:0 0 auto}
+  .ring{position:relative;width:90px;height:90px}
+  .ring svg{width:90px;height:90px;transform:rotate(-90deg);display:block}
+  .ring .rt{fill:none;stroke:rgba(255,255,255,.08);stroke-width:7}
+  .ring .rp{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1)}
+  .ring-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring-n{font-size:23px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+  .ring-n small{font-size:12px;font-weight:700;color:var(--dim)}
+  .ring-l{font-size:12px;margin-top:2px;opacity:.85}
+  .hero-state{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--dim);background:rgba(8,19,31,.55);border:1px solid var(--line2);padding:5px 11px;border-radius:20px}
+  .hero-state .dot{width:7px;height:7px;border-radius:50%}
+  .hero-info{flex:1;min-width:0}
+  .hero-eyebrow{font-size:10.5px;letter-spacing:1.4px;font-weight:800;color:var(--acc)}
+  .hero-title{font-size:33px;font-weight:800;line-height:1.02;margin:4px 0 8px;letter-spacing:-.6px}
+  .hero-title small{font-size:16px;font-weight:700;color:var(--dim);letter-spacing:0}
+  .chip-robot{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:rgba(24,55,83,.55);border:1px solid var(--line2);padding:5px 11px;border-radius:20px;color:var(--txt)}
   /* ---- finitions expert ---- */
   .card>.btn+.btn,.card>.btn+.row,.card>.row+.btn{margin-top:10px}
   .kv b{font-weight:700}
@@ -229,7 +251,7 @@
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.6" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.7" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -237,7 +259,7 @@
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.6";
+var APP_VER="v0.11.7";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -359,26 +381,43 @@ function warrantyInfo(){
 }
 
 /* ============ VIEWS ============ */
+/* Anneau de batterie + état live du robot pour le hero d'accueil (données réelles Tuya
+   si dispo, dégradé gracieux sinon). Idempotent : réinjecté par tuyaRefresh. */
+function heroLiveInner(){
+  var m=(typeof tuyaMap==="function")?tuyaMap(TUYA.status):{batt:null};
+  var batt=m.batt,online=TUYA.online;
+  var R=32,C=2*Math.PI*R,pct=(batt!=null?Math.max(0,Math.min(100,batt)):0),off=C*(1-pct/100);
+  var col=batt==null?"#5a7fa0":(batt<20?"#f0674d":(batt<50?"#f2b632":"#3ddc84"));
+  var lbl=TUYA.status?tuyaLabelState(m.state||m.mode):(tuya.linked?"Prêt":(onBeatbotHost()?"À lier":"Companion"));
+  var dc=online===true?"#3ddc84":(online===false?"#8ba9c4":"#5a7fa0");
+  return '<div class="ring"><svg viewBox="0 0 80 80">'+
+      '<circle class="rt" cx="40" cy="40" r="'+R+'"></circle>'+
+      '<circle class="rp" cx="40" cy="40" r="'+R+'" stroke="'+col+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"></circle>'+
+    '</svg><div class="ring-c"><div class="ring-n">'+(batt!=null?batt:"—")+'<small>'+(batt!=null?"%":"")+'</small></div><div class="ring-l">🔋</div></div></div>'+
+    '<div class="hero-state"><span class="dot" style="background:'+dc+';box-shadow:0 0 6px '+dc+'"></span>'+esc(lbl)+'</div>';
+}
+function heroLiveUpdate(){var el=$("#heroLive");if(el)el.innerHTML=heroLiveInner();}
 function vAccueil(){
   var m=MODELS[cfg.model]||MODELS.autre;
   var nStairs=pool.markers.filter(function(x){return x.type==="escalier"}).length;
   var alerts=maintAlerts();
   var w=warrantyInfo();
-  return card("👋 Bonjour Kevin","",
-    '<div class="grid2" style="margin-bottom:12px">'+
-      stat(poolAreaM2().toFixed(1)+" m²","Surface bassin")+
-      stat(nStairs||"0","Escaliers marqués")+
-      stat(sessions.length,"Sessions")+
-      stat(cfg.runHours+" h","Heures cumulées")+
-    '</div>'+
-    (alerts.length?'<div class="note warn">🔧 '+alerts.length+' entretien(s) à prévoir — <a href="#" onclick="go(\'entretien\');return false">voir</a></div>':'')+
-    '<button class="btn" onclick="go(\'plan\')">🎯 Générer mon plan de nettoyage optimisé</button>'+
-    '<div class="row" style="margin-top:10px">'+
-      '<button class="btn ghost sm" style="flex:1" onclick="go(\'bassin\')">🗺️ Cartographier</button>'+
-      '<button class="btn ghost sm" style="flex:1" onclick="go(\'journal\')">➕ Loguer</button>'+
-    '</div>'+
-    '<button class="btn" style="margin-top:10px" onclick="openLive()">📡 Voir le robot en direct</button>'
-  )+
+  if(onBeatbotHost()&&tuya.linked&&tuya.device_id&&!TUYA.status&&!S._heroFetch){S._heroFetch=1;setTimeout(tuyaRefresh,80);}
+  return '<div class="card hero"><div class="hero-bg"></div>'+
+    '<div class="hero-row"><div id="heroLive" class="hero-live">'+heroLiveInner()+'</div>'+
+      '<div class="hero-info"><div class="hero-eyebrow">MA PISCINE · HARICOT</div>'+
+        '<div class="hero-title">'+poolAreaM2().toFixed(1)+' <small>m²</small></div>'+
+        '<span class="chip-robot">🤖 '+esc(m.name)+'</span></div></div>'+
+    '<button class="btn" style="margin-top:15px" onclick="openLive()">📡 Voir le robot en direct</button>'+
+    '<div class="grid2" style="margin-top:10px">'+
+      '<button class="btn ghost" onclick="go(\'plan\')">🎯 Mon plan</button>'+
+      '<button class="btn ghost" onclick="go(\'bassin\')">🗺️ Cartographier</button></div>'+
+    (alerts.length?'<div class="note warn" style="margin-top:12px">🔧 '+alerts.length+' entretien(s) à prévoir — <a href="#" onclick="go(\'entretien\');return false">voir</a></div>':'')+
+  '</div>'+
+  '<div class="grid2" style="margin-bottom:14px">'+
+    stat(nStairs||"0","Escaliers")+stat(sessions.length,"Sessions")+
+    stat(cfg.runHours+" h","Heures")+stat(volumeM3().toFixed(0)+" m³","Volume")+
+  '</div>'+
   card("🤖 Mon robot","",
     '<div class="kv"><b>'+esc(m.name)+'</b><span>Réf. '+esc(cfg.reference)+'</span></div>'+
     '<div class="kv"><b>N° série</b><span><code>'+esc(cfg.serial.slice(0,6)+"…"+cfg.serial.slice(-4))+'</code></span></div>'+
@@ -689,6 +728,7 @@ function tuyaRefresh(){
     if(fn.ok)TUYA.funcs=fn.functions;
     TUYA.lastErr=(!st.ok&&(st.detail||st.reason))||(!fn.ok&&(fn.detail||fn.reason))||"";
     if(el)el.innerHTML=tuyaStateHtml();
+    if(typeof heroLiveUpdate==="function")heroLiveUpdate();
   });
 }
 function tuyaStateHtml(){

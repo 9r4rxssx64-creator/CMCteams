@@ -1,5 +1,5 @@
 /* PoolPilot SW — network-first, offline fallback. Skip version-check URLs. */
-var CACHE="poolpilot-v0.11.6";
+var CACHE="poolpilot-v0.11.7";
 var ASSETS=["./","./index.html","./manifest.json","./icon.svg"];
 self.addEventListener("install",function(e){
   self.skipWaiting();
