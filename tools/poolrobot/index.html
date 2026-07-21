@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.10 -->
+<!-- v0.11.11 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -333,7 +333,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.10" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.11" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -341,7 +341,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.10";
+var APP_VER="v0.11.11";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -823,9 +823,11 @@ function autoStatsHtml(){
   if(!onBeatbotHost()||!tuya.linked)return '<span id="autoStats"></span>';
   var st=S._tuyaStats;
   if(!st)return '<div id="autoStats" class="mut" style="font-size:12px;margin-top:10px">🤖 Compteurs robot : en attente du premier cycle détecté (relevé automatique toutes les 5 min, même app fermée).</div>';
+  var totC=(st.count||0)+(st.baseCount||0);
+  var totH=Math.round(((st.minutes||0)+(st.baseMinutes||0))/60*10)/10;
   return '<div id="autoStats" style="margin-top:10px"><div class="grid2">'+
-    stat(st.count,"Cycles robot (réels)")+stat((Math.round(st.minutes/60*10)/10)+" h","Temps total (réel)")+
-    '</div><div class="mut" style="font-size:11.5px;margin-top:6px">🤖 Relevés automatiquement sur le robot'+(st.m2?' · surface cumulée '+Math.round(st.m2)+' m²':'')+' — à jour même app fermée (historique construit depuis l\'activation).</div></div>';
+    stat(totC,"Nettoyages (total)")+stat(totH+" h","Durée totale")+
+    '</div><div class="mut" style="font-size:11.5px;margin-top:6px">🤖 '+(st.baseCount?st.baseCount+' cycles repris de la Fiche Beatbot + ':'')+(st.count||0)+' relevé(s) auto PoolPilot'+(st.m2?' · '+Math.round(st.m2)+' m² relevés':'')+' — à jour même app fermée.</div></div>';
 }
 function tuyaLink(){
   var id=($("#tyId").value||"").trim(),sec=($("#tySec").value||"").trim(),reg=($("#tyReg").value||"eu");
@@ -946,7 +948,7 @@ function tuyaUltraBtn(){
   if(!canStart)return "";
   var canDir=fns.some(function(f){return f.type==="Enum"&&/direction|move|joystick/.test(String(f.code).toLowerCase());});
   return '<button class="btn" style="width:100%;margin-bottom:6px;background:linear-gradient(135deg,#0a6bd6,#39c2ff);border:none;font-weight:700;font-size:15px" onclick="tuyaUltra()">🌊 Mode Ultra — la totale</button>'+
-    '<div class="mut" style="font-size:11.5px;margin:0 0 10px">Aspiration MAX + cycle complet du robot (fond · parois · ligne d\'eau). Tourne jusqu\'à fin de cycle ou batterie faible.</div>'+
+    '<div class="mut" style="font-size:11.5px;margin:0 0 10px">Aspiration MAX + cycle complet du robot (fond · parois · ligne d\'eau · surface si le robot expose le mode via Tuya — sinon lance « Surface » dans l\'app Beatbot, le cycle sera quand même relevé au journal).</div>'+
     (canDir?'<button class="btn ghost" style="width:100%;margin-bottom:4px;font-weight:600" onclick="tuyaStairs()">🪜 Escaliers — aspi max + guidage</button>'+
       '<div class="mut" style="font-size:11.5px;margin:0 0 12px">Le robot n\'a pas de programme « escaliers » via Tuya. Je règle l\'aspiration au MAX et tu l\'amènes sur tes marches (escalier roman) avec le pavé 🕹️ ci-dessous — il brosse à fond.</div>':'');
 }
@@ -974,6 +976,14 @@ function tuyaUltra(){
   if(suc){var r=[];try{r=(JSON.parse(suc.values||"{}").range)||[];}catch(e){}
     var mx=r.filter(function(v){return /strong|max|super|ultra|high|turbo/.test(String(v).toLowerCase());})[0]||r[0];
     if(mx)cmds.push({code:suc.code,value:mx});}
+  /* MODE DE CYCLE (surface incluse) : utilisé UNIQUEMENT si le robot expose un DP mode
+     via Tuya — les valeurs viennent de SON catalogue déclaré, jamais inventées.
+     Préférence : cycle TOTAL (smart/multi/full), sinon surface/ligne d'eau. */
+  var md=fns.filter(function(f){return f.type==="Enum"&&/^mode$|work_mode|clean_mode|scene|water/.test(lc(f));})[0];
+  if(md){var mr=[];try{mr=(JSON.parse(md.values||"{}").range)||[];}catch(e){}
+    var pick=mr.filter(function(v){return /smart|auto|multi|all|full|total/.test(String(v).toLowerCase());})[0]
+          ||mr.filter(function(v){return /surface|water|wall/.test(String(v).toLowerCase());})[0]||null;
+    if(pick)cmds.push({code:md.code,value:pick});}
   /* interrupteur principal + démarrage nettoyage (toutes les vraies fonctions marche/go) */
   var sw=fns.filter(function(f){return f.type==="Boolean"&&/^switch$|power/.test(lc(f));})[0];
   if(sw)cmds.push({code:sw.code,value:true});

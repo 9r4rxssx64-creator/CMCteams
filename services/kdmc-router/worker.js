@@ -1007,6 +1007,28 @@ async function handleTuya(request, path, env) {
     try { sessions = JSON.parse((await env.ACCOUNTS.get('tuya:sessions')) || '[]'); } catch { /* */ }
     return J({ ok: true, stats, sessions: sessions.slice(0, 60) });
   }
+  /* BASELINE officielle (fiche de nettoyage de l'app Beatbot, fournie par Kevin) :
+     totaux affichés = base + relevés auto → l'app colle aux compteurs d'origine */
+  if (seg === 'stats' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    let stats = null; try { stats = JSON.parse((await env.ACCOUNTS.get('tuya:stats')) || 'null'); } catch { /* */ }
+    if (!stats) stats = { count: 0, minutes: 0, m2: 0, since: Date.now() };
+    if (Number.isFinite(+b.baseCount)) stats.baseCount = Math.max(0, Math.round(+b.baseCount));
+    if (Number.isFinite(+b.baseMinutes)) stats.baseMinutes = Math.max(0, Math.round(+b.baseMinutes));
+    if (Number.isFinite(+b.baseM2)) stats.baseM2 = Math.max(0, Math.round(+b.baseM2));
+    stats.baseSource = String(b.source || 'app Beatbot').slice(0, 120);
+    stats.baseAt = Date.now();
+    await env.ACCOUNTS.put('tuya:stats', JSON.stringify(stats));
+    try { await audLog(env, { ev: 'tuya_stats_baseline', c: stats.baseCount, m: stats.baseMinutes }); } catch { /* */ }
+    return J({ ok: true, stats });
+  }
+  /* MODÈLE PROFOND (thing model v2.0) : TOUS les DP du produit, y compris ceux absents
+     de /specifications — pour vérifier s'il existe un DP « mode/surface » caché. Lecture seule. */
+  if (seg === 'model' && request.method === 'GET') {
+    if (!cfg.device_id) return J({ ok: false, reason: 'no_device' });
+    const r = await tuyaBiz(env, cfg, 'GET', '/v2.0/cloud/thing/' + encodeURIComponent(cfg.device_id) + '/model', null);
+    return J({ ok: r.ok, model: r.result || null, detail: r.ok ? undefined : (r.msg || ('code ' + r.code)) });
+  }
   /* découverte des robots : essaie TOUS les data centers de la zone, retient celui qui
      renvoie le robot, et remonte le diagnostic brut par hôte (compte/erreur) pour qu'on
      voie la vérité si c'est encore vide (leçon #56/#97 : mesurer + détailler). */
