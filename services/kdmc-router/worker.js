@@ -1055,6 +1055,13 @@ async function handleTuya(request, path, env) {
     if (!r.ok) return J({ ok: false, reason: 'tuya_error', detail: r.detail || r.msg || ('code ' + r.code) });
     return J({ ok: true, functions: (r.result && r.result.functions) || [] });
   }
+  /* modèle COMPLET du robot : toutes les commandes écrivables + tous les capteurs (le
+     data model Tuya, souvent plus riche que /functions). Sert à exploiter le MAX réel. */
+  if (seg === 'spec' && request.method === 'GET') {
+    const r = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/specifications', null);
+    if (!r.ok) return J({ ok: false, reason: 'tuya_error', detail: r.detail || r.msg || ('code ' + r.code) });
+    return J({ ok: true, category: r.result && r.result.category, functions: (r.result && r.result.functions) || [], status: (r.result && r.result.status) || [] });
+  }
   if (seg === 'command' && request.method === 'POST') {
     let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
     const cmds = Array.isArray(b.commands) ? b.commands : null;
