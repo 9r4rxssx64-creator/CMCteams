@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.13 -->
+<!-- v0.11.14 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -333,7 +333,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.13" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.14" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -341,7 +341,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.13";
+var APP_VER="v0.11.14";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -476,9 +476,11 @@ function heroLiveInner(){
       '<circle class="rt" cx="40" cy="40" r="'+R+'"></circle>'+
       '<circle class="rp" cx="40" cy="40" r="'+R+'" stroke="'+col+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"></circle>'+
     '</svg><div class="ring-c"><div class="ring-n">'+(batt!=null?batt:"—")+'<small>'+(batt!=null?"%":"")+'</small></div><div class="ring-l">🔋</div></div></div>'+
-    '<div class="hero-state"><span class="dot" style="background:'+dc+';box-shadow:0 0 6px '+dc+'"></span>'+esc(lbl)+'</div>';
+    '<div class="hero-state"><span class="dot" style="background:'+dc+';box-shadow:0 0 6px '+dc+'"></span>'+esc(lbl)+'</div>'+
+    ((TUYA.props&&TUYA.props.water_temperature!=null)?'<div class="hero-state">🌡️ '+esc(String(TUYA.props.water_temperature))+' °C</div>':'');
 }
-function heroLiveUpdate(){var el=$("#heroLive");if(el)el.innerHTML=heroLiveInner();}
+/* idempotent (règle #94) : ne touche le DOM que si le contenu change réellement */
+function heroLiveUpdate(){var el=$("#heroLive");if(!el)return;var h=heroLiveInner();if(el._pp!==h){el._pp=h;el.innerHTML=h;}}
 function vAccueil(){
   var m=MODELS[cfg.model]||MODELS.autre;
   var nStairs=pool.markers.filter(function(x){return x.type==="escalier"}).length;
@@ -862,7 +864,8 @@ function tuyaUnlink(){ if(!confirm("Délier le compte Tuya ? (clés effacées du
   tuyaApi("unlink","POST",{}).then(function(){tuya.linked=false;tuya.device_id="";tuya.device_name="";TUYA.status=null;TUYA.funcs=null;save();render();});
 }
 function tuyaRefresh(){
-  var el=$("#tyState");if(el)el.innerHTML='<div class="mut">Lecture du robot…</div>';
+  var el=$("#tyState");
+  if(el&&!TUYA.status)el.innerHTML='<div class="mut">Lecture du robot…</div>'; /* pas de flash au refresh 30 s */
   Promise.all([tuyaApi("status"),tuyaApi("functions"),tuyaApi("props")]).then(function(r){
     var st=r[0],fn=r[1],pr=r[2];
     if(st.ok){TUYA.status=st.status;TUYA.online=st.online;TUYA.name=st.name||"";
@@ -871,9 +874,61 @@ function tuyaRefresh(){
     /* propriétés COMPLÈTES (shadow) : température d'eau, litres filtrés, mode courant… */
     if(pr&&pr.ok){var P={};(pr.properties||[]).forEach(function(x){P[String(x.code||"").toLowerCase()]=x.value;});TUYA.props=P;}
     TUYA.lastErr=(!st.ok&&(st.detail||st.reason))||(!fn.ok&&(fn.detail||fn.reason))||"";
-    if(el)el.innerHTML=tuyaStateHtml();
+    /* idempotent (règle #94) : pas de réécriture DOM si rien n'a changé (refresh 30 s) */
+    if(el){var h=tuyaStateHtml();if(el._pp!==h){el._pp=h;el.innerHTML=h;}}
     if(typeof heroLiveUpdate==="function")heroLiveUpdate();
   });
+}
+/* envoi générique d'un DP écrivable RÉEL (mesuré dans le thing model — jamais inventé) */
+function tuyaSetDp(code,value,label){
+  tuyaApi("command","POST",{commands:[{code:code,value:value}]}).then(function(j){
+    if(j.ok){toast("✅ "+label);setTimeout(tuyaRefresh,1200);}
+    else toast("Échec — "+label+" : "+(j.detail||j.reason||"?"));
+  });
+}
+/* départ différé NATIF du robot (DP delay_start + delay_repeat mesurés) : le robot
+   démarre TOUT SEUL après N minutes, même sans réseau ni app — minuterie embarquée */
+function tuyaDelay(){
+  var n=Math.max(0,Math.round(+($("#tyDelayMin").value||0))),rep=$("#tyDelayRep").value;
+  if(!n){toast("Indique un délai en minutes (ex : 120)");return;}
+  tuyaApi("command","POST",{commands:[{code:"delay_start",value:n},{code:"delay_repeat",value:rep}]}).then(function(j){
+    if(j.ok)toast("⏰ Départ différé réglé : dans "+n+" min ("+(rep==="every_time"?"répété à chaque fois":"une seule fois")+")");
+    else toast("Échec départ différé : "+(j.detail||j.reason||"?"));
+  });
+}
+/* diffusion du clarifiant ClearWater (DP clarify_agent_spread mesuré) — action physique → confirm */
+function tuyaClarify(){
+  if(!confirm("💧 Diffuser le clarifiant ClearWater maintenant ?\n\nLe robot libère une dose de clarifiant dans l'eau."))return;
+  tuyaSetDp("clarify_agent_spread",1,"Clarifiant diffusé");
+}
+function tuyaDock(){
+  if(!confirm("🏠 Renvoyer le robot à sa base / plateforme ?"))return;
+  tuyaSetDp("dock",1,"Retour base demandé");
+}
+/* carte Réglages embarqués : uniquement des DP rw MESURÉS sur ce robot */
+function vTuyaGear(){
+  if(!onBeatbotHost()||!tuya.linked||!tuya.device_id)return "";
+  return card("🔧 Réglages embarqués du robot","Fonctions natives découvertes dans le modèle profond de TON robot (rien d'inventé).",
+    '<div class="mut" style="font-size:11px;margin-bottom:4px">⏰ Départ différé natif (le robot part tout seul, même sans réseau)</div>'+
+    '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">'+
+      '<input id="tyDelayMin" type="number" min="1" max="1440" placeholder="minutes" style="max-width:110px">'+
+      '<select id="tyDelayRep" style="max-width:150px"><option value="once">Une fois</option><option value="every_time">À chaque fois</option></select>'+
+      '<button class="btn ghost sm" onclick="tuyaDelay()">⏰ Régler</button>'+
+    '</div>'+
+    '<div class="grid2" style="gap:8px">'+
+      '<button class="btn ghost sm" onclick="tuyaSetDp(\'fill_light_switch\',1,\'Lampe allumée\')">💡 Lampe ON</button>'+
+      '<button class="btn ghost sm" onclick="tuyaSetDp(\'fill_light_switch\',0,\'Lampe éteinte\')">💡 Lampe OFF</button>'+
+      '<button class="btn ghost sm" onclick="tuyaSetDp(\'ai_clean_switch\',1,\'Nettoyage IA activé\')">🤖 IA ON</button>'+
+      '<button class="btn ghost sm" onclick="tuyaSetDp(\'ai_clean_switch\',0,\'Nettoyage IA coupé\')">🤖 IA OFF</button>'+
+      '<button class="btn ghost sm" onclick="tuyaSetDp(\'volume_switch\',1,\'Sons activés\')">🔊 Sons ON</button>'+
+      '<button class="btn ghost sm" onclick="tuyaSetDp(\'volume_switch\',0,\'Sons coupés\')">🔇 Sons OFF</button>'+
+    '</div>'+
+    '<div class="grid2" style="gap:8px;margin-top:8px">'+
+      '<button class="btn ghost sm" onclick="tuyaClarify()">💧 Diffuser le clarifiant</button>'+
+      '<button class="btn ghost sm" onclick="tuyaDock()">🏠 Retour base</button>'+
+    '</div>'+
+    '<div class="mut" style="font-size:11px;margin-top:8px">L\'état courant (lampe, IA, volume…) est visible dans « données brutes du robot » au-dessus. Commandes acceptées seulement robot en surface (wifi).</div>'
+  );
 }
 /* règle le mode de cycle RÉEL du robot (range mesuré : fast/surface/custom/standard/pro/cec/multi) */
 function tuyaSetMode(v){
@@ -1131,6 +1186,7 @@ function vTuyaCard(){
 }
 function vPilotage(){
   var out=vTuyaCard();
+  out+=vTuyaGear();
   out+=vTuyaSchedule();
   out+=card("📷 Voir le robot SOUS l'eau (caméra)",
     "La radio ne traverse pas l'eau — la lumière oui. Ton iPhone filme le bassin, PoolPilot détecte le robot à travers l'eau et le suit en direct dans le plan.",
@@ -1963,7 +2019,19 @@ function toggleTheme(){
 /* boot */
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){})}
 renderRobotTag();render();applyThemeUi();
-tuyaBootSync(); /* re-liaison auto depuis le serveur (clés jamais perdues) */
+tuyaBootSync(); /* connexion auto : re-liaison depuis le serveur (clés jamais perdues) */
+/* MAJ TEMPS RÉEL AUTO : relit le robot toutes les 30 s quand l'app est visible
+   (accueil + pilotage), + au retour sur l'app. Updaters idempotents (règle #94). */
+setInterval(function(){
+  if(document.visibilityState!=="visible")return;
+  if(!onBeatbotHost()||!tuya.linked||!tuya.device_id)return;
+  if(S.view!=="accueil"&&S.view!=="pilotage")return;
+  tuyaRefresh();
+},30000);
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState!=="visible"||!onBeatbotHost()||!tuya.linked)return;
+  tuyaRefresh();S._statsAt=0;tuyaStatsSync();
+});
 /* splash : on le laisse le temps du premier rendu puis fondu */
 setTimeout(function(){var s=$("#splash");if(s)s.classList.add("off")},500);
 setTimeout(function(){var s=$("#splash");if(s&&s.parentNode)s.parentNode.removeChild(s)},1400);

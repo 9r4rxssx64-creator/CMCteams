@@ -1267,10 +1267,11 @@ async function handleTuya(request, path, env) {
   if (!cfg) return need();
   /* HISTORIQUE AUTO : compteurs cumulés + dernières sessions détectées côté serveur */
   if (seg === 'stats' && request.method === 'GET') {
-    let stats = null, sessions = [];
+    let stats = null, sessions = [], snaps = [];
     try { stats = JSON.parse((await env.ACCOUNTS.get('tuya:stats')) || 'null'); } catch { /* */ }
     try { sessions = JSON.parse((await env.ACCOUNTS.get('tuya:sessions')) || '[]'); } catch { /* */ }
-    return J({ ok: true, stats, sessions: sessions.slice(0, 60) });
+    try { snaps = JSON.parse((await env.ACCOUNTS.get('tuya:snaps')) || '[]'); } catch { /* */ }
+    return J({ ok: true, stats, sessions: sessions.slice(0, 60), snaps: snaps.slice(0, 48) });
   }
   /* BASELINE officielle (fiche de nettoyage de l'app Beatbot, fournie par Kevin) :
      totaux affichés = base + relevés auto → l'app colle aux compteurs d'origine */
@@ -1443,16 +1444,36 @@ async function tuyaHistoryTick(env) {
     const cfg = await tuyaCfg(env);
     if (!cfg || !cfg.device_id) return { ok: true, skip: 'not_linked' };
     const idp = encodeURIComponent(cfg.device_id);
-    const st = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/status', null);
-    if (!st.ok) return { ok: false, reason: st.msg || st.reason || ('code ' + st.code) };
-    let ct = null, ca = null, batt = null, status = '';
-    (st.result || []).forEach((s) => {
+    /* shadow properties = TOUTES les valeurs (status/compteurs + température d'eau,
+       litres filtrés, mode…) en UN appel — repli sur /status si indisponible */
+    let dps = null;
+    const sh = await tuyaBiz(env, cfg, 'GET', '/v2.0/cloud/thing/' + idp + '/shadow/properties', null);
+    if (sh.ok && sh.result && Array.isArray(sh.result.properties)) dps = sh.result.properties;
+    if (!dps) {
+      const st = await tuyaBiz(env, cfg, 'GET', '/v1.0/devices/' + idp + '/status', null);
+      if (!st.ok) return { ok: false, reason: st.msg || st.reason || ('code ' + st.code) };
+      dps = st.result || [];
+    }
+    let ct = null, ca = null, batt = null, status = '', temp = null, fw = null, mode = null;
+    (dps || []).forEach((s) => {
       const k = String(s.code || '').toLowerCase(), v = s.value;
       if (k === 'status') status = String(v);
+      if (k === 'mode') mode = String(v);
+      if (k === 'water_temperature' && typeof v === 'number') temp = v;
+      if (k === 'filtered_water' && typeof v === 'number') fw = v;
       if (ct == null && /clean_time|work_time/.test(k) && typeof v === 'number') ct = v;
       if (ca == null && /clean_area|^area$/.test(k) && typeof v === 'number') ca = v;
       if (batt == null && /battery|electric|residual|soc/.test(k) && typeof v === 'number' && v >= 0 && v <= 100) batt = Math.round(v);
     });
+    /* INSTANTANÉS pendant le travail : à CHAQUE changement observé (remontée, progression,
+       température…), on archive un point {ts,…} → « toutes les infos, auto, temps réel » */
+    try {
+      let snaps = []; try { snaps = JSON.parse((await env.ACCOUNTS.get('tuya:snaps')) || '[]'); } catch { /* */ }
+      const lastSnap = snaps[0] || {};
+      const snap = { ts: Date.now(), st: status, batt, ct, ca, temp, fw, mode };
+      const moved = ['st', 'batt', 'ct', 'ca', 'temp', 'fw', 'mode'].some((k) => snap[k] !== lastSnap[k]);
+      if (moved) { snaps.unshift(snap); if (snaps.length > 288) snaps = snaps.slice(0, 288); await env.ACCOUNTS.put('tuya:snaps', JSON.stringify(snaps)); }
+    } catch { /* jamais bloquant */ }
     let last = null; try { last = JSON.parse((await env.ACCOUNTS.get('tuya:lastdp')) || 'null'); } catch { /* */ }
     const cur = { ct, ca, batt, status, ts: Date.now() };
     if (!last) { await env.ACCOUNTS.put('tuya:lastdp', JSON.stringify(cur)); return { ok: true, first: true }; }
