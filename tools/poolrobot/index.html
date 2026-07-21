@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.11 -->
+<!-- v0.11.12 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -333,7 +333,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.11" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.12" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -341,7 +341,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.11";
+var APP_VER="v0.11.12";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -770,7 +770,7 @@ function tuyaMap(status){
   });
   return o;
 }
-function tuyaLabelState(st){var m={standby:"En veille",goto_charge:"Retour charge",charging:"En charge",charge_done:"Charge finie",paused:"En pause",cleaning:"🧹 Nettoyage",sleep:"Sommeil",fault:"Défaut",going_home:"Retour base",smart:"Auto"};return m[String(st||"").toLowerCase()]||st||"—";}
+function tuyaLabelState(st){var m={standby:"En veille",goto_charge:"Retour charge",charging:"En charge",charge_done:"Charge finie",paused:"En pause",cleaning:"🧹 Nettoyage",sleep:"Sommeil",fault:"Défaut",going_home:"Retour base",smart:"Auto",diving:"🤿 En plongée",emerge:"🌊 Remonte en surface",return_trip:"↩️ Retour",clean_done:"✅ Nettoyage fini",clean_wait:"⏳ En attente",remote_control:"🕹️ Télécommande",wifi_connect:"📶 Connexion wifi",multi:"Multizone",surface:"Surface",pro:"Pro",fast:"Rapide",standard:"Standard",custom:"Perso",cec:"CEC"};return m[String(st||"").toLowerCase()]||st||"—";}
 /* RE-LIAISON AUTO : les clés (ID/Secret) + le robot choisi vivent CÔTÉ SERVEUR (KV).
    Le drapeau « lié » local (localStorage) peut disparaître (réinstall PWA, purge iOS)
    → au boot on redemande la vérité au serveur et on se re-lie tout seul. Fail-open :
@@ -948,9 +948,25 @@ function tuyaUltraBtn(){
   if(!canStart)return "";
   var canDir=fns.some(function(f){return f.type==="Enum"&&/direction|move|joystick/.test(String(f.code).toLowerCase());});
   return '<button class="btn" style="width:100%;margin-bottom:6px;background:linear-gradient(135deg,#0a6bd6,#39c2ff);border:none;font-weight:700;font-size:15px" onclick="tuyaUltra()">🌊 Mode Ultra — la totale</button>'+
-    '<div class="mut" style="font-size:11.5px;margin:0 0 10px">Aspiration MAX + cycle complet du robot (fond · parois · ligne d\'eau · surface si le robot expose le mode via Tuya — sinon lance « Surface » dans l\'app Beatbot, le cycle sera quand même relevé au journal).</div>'+
+    '<div class="mut" style="font-size:11.5px;margin:0 0 10px">Aspiration MAX + <b>mode Multizone</b> du robot (fond · parois · ligne d\'eau · surface) — le vrai mode complet, mesuré sur ton robot.</div>'+
+    '<button class="btn ghost" style="width:100%;margin-bottom:4px;font-weight:600" onclick="tuyaSurface()">🌅 Surface — écumage (feuilles, pollen)</button>'+
+    '<div class="mut" style="font-size:11.5px;margin:0 0 10px">Lance le mode « surface » du robot : il écume le plan d\'eau. Cycle relevé au journal automatiquement.</div>'+
     (canDir?'<button class="btn ghost" style="width:100%;margin-bottom:4px;font-weight:600" onclick="tuyaStairs()">🪜 Escaliers — aspi max + guidage</button>'+
       '<div class="mut" style="font-size:11.5px;margin:0 0 12px">Le robot n\'a pas de programme « escaliers » via Tuya. Je règle l\'aspiration au MAX et tu l\'amènes sur tes marches (escalier roman) avec le pavé 🕹️ ci-dessous — il brosse à fond.</div>':'');
+}
+/* Surface : mode « surface » RÉEL du robot (mesuré dans son thing model 2026-07-21,
+   range mode = fast/surface/custom/standard/pro/cec/multi) — écumage du plan d'eau. */
+function tuyaSurface(){
+  if(!confirm("🌅 Lancer le nettoyage de SURFACE ?\n\nLe robot écume le plan d'eau (feuilles, pollen, gras).\n\n⚠️ Vérifie qu'il est bien dans l'eau."))return;
+  var el=$("#tyCmdOut");if(el)el.innerHTML='<span class="mut">Lancement Surface…</span>';
+  tuyaApi("command","POST",{commands:[{code:"mode",value:"surface"},{code:"switch",value:true},{code:"switch_go",value:true}]}).then(function(j){
+    if(j.ok){
+      sessions.unshift({id:uid(),ts:Date.now(),mode:"Surface 🌅",dur:0,batt:tuyaMap(TUYA.status).batt});
+      if(sessions.length>300)sessions=sessions.slice(0,300);save();
+      if(el)el.innerHTML='<div class="note" style="border-color:#5fd38a;color:#cfeee0">✅ Mode Surface lancé — le robot écume le plan d\'eau. Cycle relevé au journal à la fin.</div>';
+      setTimeout(tuyaRefresh,1800);
+    } else if(el)el.innerHTML='<div class="note warn">Échec : '+esc(j.detail||j.reason||"?")+'</div>';
+  });
 }
 /* Escaliers : aspiration max réelle + guidage manuel (seule voie réelle — Tuya n'expose
    pas de programme escaliers ; le robot ignore la position de tes marches). */
@@ -984,6 +1000,10 @@ function tuyaUltra(){
     var pick=mr.filter(function(v){return /smart|auto|multi|all|full|total/.test(String(v).toLowerCase());})[0]
           ||mr.filter(function(v){return /surface|water|wall/.test(String(v).toLowerCase());})[0]||null;
     if(pick)cmds.push({code:md.code,value:pick});}
+  /* MESURÉ (thing model 2026-07-21) : le DP « mode » du robot est écrivable, range
+     [fast/surface/custom/standard/pro/cec/multi] — « multi » = le Mode multizone
+     de l'app Beatbot (fond+parois+ligne d'eau+surface). On l'envoie si pas déjà posé. */
+  if(!cmds.some(function(c){return c.code==="mode";}))cmds.push({code:"mode",value:"multi"});
   /* interrupteur principal + démarrage nettoyage (toutes les vraies fonctions marche/go) */
   var sw=fns.filter(function(f){return f.type==="Boolean"&&/^switch$|power/.test(lc(f));})[0];
   if(sw)cmds.push({code:sw.code,value:true});

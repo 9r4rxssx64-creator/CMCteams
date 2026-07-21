@@ -1447,8 +1447,12 @@ async function tuyaHistoryTick(env) {
     let last = null; try { last = JSON.parse((await env.ACCOUNTS.get('tuya:lastdp')) || 'null'); } catch { /* */ }
     const cur = { ct, ca, batt, status, ts: Date.now() };
     if (!last) { await env.ACCOUNTS.put('tuya:lastdp', JSON.stringify(cur)); return { ok: true, first: true }; }
+    /* états « cycle EN COURS » mesurés via thing model (2026-07-21) : le robot peut faire
+       surface mi-cycle (emerge/diving/return_trip) → ne PAS finaliser sur ces états,
+       sinon on compterait une session partielle + une complète (double comptage) */
+    const inProgress = /cleaning|diving|emerge|clean_wait|return_trip/.test(status);
     const changed = (ct != null && ct !== last.ct) || (ca != null && ca !== last.ca);
-    const finished = changed && !/cleaning/.test(status) && ct != null && ct >= 3;
+    const finished = changed && !inProgress && ct != null && ct >= 3;
     if (finished) {
       let sessions = []; try { sessions = JSON.parse((await env.ACCOUNTS.get('tuya:sessions')) || '[]'); } catch { /* */ }
       sessions.unshift({ ts: Date.now(), dur: ct, area: ca, batt, src: 'auto' });
@@ -1460,8 +1464,8 @@ async function tuyaHistoryTick(env) {
       await env.ACCOUNTS.put('tuya:stats', JSON.stringify(stats));
       try { await audLog(env, { ev: 'tuya_session_logged', dur: ct, area: ca, batt }); } catch { /* */ }
     }
-    /* la référence n'avance PAS pendant un nettoyage en cours (sinon on rate la fin) */
-    if (!/cleaning/.test(status)) await env.ACCOUNTS.put('tuya:lastdp', JSON.stringify(cur));
+    /* la référence n'avance PAS pendant un cycle en cours (sinon on rate la fin) */
+    if (!inProgress) await env.ACCOUNTS.put('tuya:lastdp', JSON.stringify(cur));
     return { ok: true, recorded: !!finished };
   } catch (e) { return { ok: false, reason: String((e && e.message) || e).slice(0, 200) }; }
 }

@@ -66,20 +66,31 @@ try {
   sess = await getJ(e, 'tuya:sessions');
   ok(r.recorded === false && sess.length === 2, 'compteur remis à 0 → pas une session');
 
+  /* 7bis) robot qui fait SURFACE mi-cycle (emerge, compteurs partiels) → PAS de session
+     partielle, référence gelée ; puis clean_done → UNE seule session complète */
+  setRobot({ status: 'emerge', ct: 40, ca: 9, batt: 70 });
+  r = await tuyaHistoryTick(e);
+  const refEmerge = await getJ(e, 'tuya:lastdp');
+  ok(r.recorded === false && refEmerge.ct === 0, 'mi-cycle (emerge) : pas de session partielle, référence gelée');
+  setRobot({ status: 'clean_done', ct: 110, ca: 25, batt: 30 });
+  r = await tuyaHistoryTick(e);
+  sess = await getJ(e, 'tuya:sessions');
+  ok(r.recorded === true && sess.length === 3 && sess[0].dur === 110, 'clean_done → UNE session complète (110 min, pas 40+110)');
+
   /* 8) endpoint GET /stats (admin) renvoie sessions + compteurs */
   const b64u = (b) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const signSso = (s, uid) => { const p = b64u(JSON.stringify({ u: uid, n: uid, c: 1, v: 1, iat: Date.now(), exp: Date.now() + 1e9 })); return p + '.' + b64u(createHmac('sha256', s).update(p).digest()); };
   e.KDMC_SSO_SECRET = 'sso'; e.KDMC_ADMIN_PIN_SHA256 = createHash('sha256').update('200807').digest('hex');
   const req = new Request('https://beatbot.kd-mc.com/__beatbot/tuya/stats', { headers: { 'x-kdmc-admin': signSso('sso', '__kdmc_admin__') } });
   const res = await mod.fetch(req, e); const jj = await res.json();
-  ok(jj.ok === true && jj.stats.count === 2 && jj.sessions.length === 2 && jj.sessions[0].dur === 130, 'endpoint /stats : compteurs + sessions renvoyés');
+  ok(jj.ok === true && jj.stats.count === 3 && jj.sessions.length === 3 && jj.sessions[0].dur === 110, 'endpoint /stats : compteurs + sessions renvoyés');
 
   /* 9) BASELINE officielle (fiche Beatbot 26 cycles / 148.3 h) : POST puis totaux = base + auto */
   const bReq = new Request('https://beatbot.kd-mc.com/__beatbot/tuya/stats', { method: 'POST', headers: { 'x-kdmc-admin': signSso('sso', '__kdmc_admin__'), 'content-type': 'application/json' }, body: JSON.stringify({ baseCount: 26, baseMinutes: 8898, source: 'Fiche de Nettoyage Beatbot' }) });
   const bRes = await mod.fetch(bReq, e); const bj = await bRes.json();
-  ok(bj.ok === true && bj.stats.baseCount === 26 && bj.stats.baseMinutes === 8898 && bj.stats.count === 2, 'baseline posée SANS écraser les relevés auto (26 base + 2 auto)');
+  ok(bj.ok === true && bj.stats.baseCount === 26 && bj.stats.baseMinutes === 8898 && bj.stats.count === 3, 'baseline posée SANS écraser les relevés auto (26 base + 3 auto)');
   const res2 = await mod.fetch(req, e); const j2 = await res2.json();
-  ok(j2.ok === true && j2.stats.baseCount === 26 && j2.stats.count === 2, 'GET /stats renvoie base + auto (totaux app = 28 cycles)');
+  ok(j2.ok === true && j2.stats.baseCount === 26 && j2.stats.count === 3, 'GET /stats renvoie base + auto (totaux app = 29 cycles)');
 } finally { globalThis.fetch = realFetch; }
 
 console.log(`Tuya history/stats test: ${pass} passed, ${fail} failed`);
