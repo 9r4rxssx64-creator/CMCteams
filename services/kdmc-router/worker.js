@@ -1029,6 +1029,15 @@ async function handleTuya(request, path, env) {
     const r = await tuyaBiz(env, cfg, 'GET', '/v2.0/cloud/thing/' + encodeURIComponent(cfg.device_id) + '/model', null);
     return J({ ok: r.ok, model: r.result || null, detail: r.ok ? undefined : (r.msg || ('code ' + r.code)) });
   }
+  /* PROPRIÉTÉS COMPLÈTES (shadow properties v2.0) : les VALEURS live de TOUS les DP
+     (température d'eau, litres filtrés, position, mode courant…) — /status n'en
+     renvoie qu'un sous-ensemble. Lecture seule. */
+  if (seg === 'props' && request.method === 'GET') {
+    if (!cfg.device_id) return J({ ok: false, reason: 'no_device' });
+    const r = await tuyaBiz(env, cfg, 'GET', '/v2.0/cloud/thing/' + encodeURIComponent(cfg.device_id) + '/shadow/properties', null);
+    const props = (r.result && r.result.properties) || [];
+    return J({ ok: r.ok, properties: props.map((p) => ({ code: p.code, value: p.value, time: p.time })), detail: r.ok ? undefined : (r.msg || ('code ' + r.code)) });
+  }
   /* découverte des robots : essaie TOUS les data centers de la zone, retient celui qui
      renvoie le robot, et remonte le diagnostic brut par hôte (compte/erreur) pour qu'on
      voie la vérité si c'est encore vide (leçon #56/#97 : mesurer + détailler). */

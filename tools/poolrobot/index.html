@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v0.11.12 -->
+<!-- v0.11.13 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -333,7 +333,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
 </div>
 
 <script src="/CMCteams/tools/shared/version-badge-pwa.js"
-        data-project="poolrobot" data-version="v0.11.12" data-color="#39c2ff" defer></script>
+        data-project="poolrobot" data-version="v0.11.13" data-color="#39c2ff" defer></script>
 <script>
 "use strict";
 /* ============ PoolPilot — Beatbot+ companion (v0.2.0) ============
@@ -341,7 +341,7 @@ try{var _t=localStorage.getItem("pp_theme");if(_t==="light"){document.documentEl
    Couche stratégie/cartographie/analytics AUTOUR du robot.
    Pré-réglé pour Kevin : AquaSense 2 Ultra + Waterair Céline 7 (haricot).
 ================================================================= */
-var APP_VER="v0.11.12";
+var APP_VER="v0.11.13";
 function $(s,el){return (el||document).querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function lg(k,d){try{var v=localStorage.getItem("pr_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}}
@@ -863,14 +863,23 @@ function tuyaUnlink(){ if(!confirm("Délier le compte Tuya ? (clés effacées du
 }
 function tuyaRefresh(){
   var el=$("#tyState");if(el)el.innerHTML='<div class="mut">Lecture du robot…</div>';
-  Promise.all([tuyaApi("status"),tuyaApi("functions")]).then(function(r){
-    var st=r[0],fn=r[1];
+  Promise.all([tuyaApi("status"),tuyaApi("functions"),tuyaApi("props")]).then(function(r){
+    var st=r[0],fn=r[1],pr=r[2];
     if(st.ok){TUYA.status=st.status;TUYA.online=st.online;TUYA.name=st.name||"";
       if(TUYA.name&&!tuya.device_name){tuya.device_name=TUYA.name;save();}}
     if(fn.ok)TUYA.funcs=fn.functions;
+    /* propriétés COMPLÈTES (shadow) : température d'eau, litres filtrés, mode courant… */
+    if(pr&&pr.ok){var P={};(pr.properties||[]).forEach(function(x){P[String(x.code||"").toLowerCase()]=x.value;});TUYA.props=P;}
     TUYA.lastErr=(!st.ok&&(st.detail||st.reason))||(!fn.ok&&(fn.detail||fn.reason))||"";
     if(el)el.innerHTML=tuyaStateHtml();
     if(typeof heroLiveUpdate==="function")heroLiveUpdate();
+  });
+}
+/* règle le mode de cycle RÉEL du robot (range mesuré : fast/surface/custom/standard/pro/cec/multi) */
+function tuyaSetMode(v){
+  tuyaApi("command","POST",{commands:[{code:"mode",value:v}]}).then(function(j){
+    if(j.ok){toast("🎛️ Mode « "+tuyaLabelState(v)+" » réglé — démarre avec ▶️ ou 🌊 Ultra");setTimeout(tuyaRefresh,1200);}
+    else toast("Échec réglage mode : "+(j.detail||j.reason||"?"));
   });
 }
 function tuyaStateHtml(){
@@ -882,6 +891,13 @@ function tuyaStateHtml(){
   if(m.area!=null)h+='<div><b style="font-size:15px">'+esc(m.area)+' ㎡</b><br><span class="mut">🧭 Surface</span></div>';
   if(m.time!=null)h+='<div><b style="font-size:15px">'+esc(m.time)+' min</b><br><span class="mut">⏱️ Durée</span></div>';
   h+='</div>';
+  /* capteurs riches (shadow properties — mesurés sur ce robot) */
+  var P=TUYA.props||{},ex="";
+  if(P.water_temperature!=null)ex+='<div class="kv"><b>🌡️ Température de l\'eau</b><span>'+esc(String(P.water_temperature))+' °C</span></div>';
+  if(P.filtered_water!=null)ex+='<div class="kv"><b>💧 Eau filtrée</b><span>'+esc(String(P.filtered_water))+' '+esc(String(P.water_unit||"m3"))+'</span></div>';
+  if(P.mode!=null)ex+='<div class="kv"><b>🎛️ Mode courant</b><span>'+esc(tuyaLabelState(P.mode))+'</span></div>';
+  if(P.dust_box!=null)ex+='<div class="kv"><b>🧺 Panier / bac</b><span>'+esc(String(P.dust_box))+'</span></div>';
+  if(ex)h+='<div style="margin-top:10px">'+ex+'</div>';
   if(m.fault)h+='<div class="note warn" style="margin-top:8px">⚠️ Défaut : '+esc(m.fault)+'</div>';
   /* commandes réelles construites à partir des vraies fonctions du robot */
   var cmds=tuyaCmdButtons();
@@ -951,6 +967,10 @@ function tuyaUltraBtn(){
     '<div class="mut" style="font-size:11.5px;margin:0 0 10px">Aspiration MAX + <b>mode Multizone</b> du robot (fond · parois · ligne d\'eau · surface) — le vrai mode complet, mesuré sur ton robot.</div>'+
     '<button class="btn ghost" style="width:100%;margin-bottom:4px;font-weight:600" onclick="tuyaSurface()">🌅 Surface — écumage (feuilles, pollen)</button>'+
     '<div class="mut" style="font-size:11.5px;margin:0 0 10px">Lance le mode « surface » du robot : il écume le plan d\'eau. Cycle relevé au journal automatiquement.</div>'+
+    '<div class="mut" style="font-size:11px;margin:2px 0 4px">🎛️ Mode de cycle (les vrais modes de ton robot) :</div>'+
+    '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">'+
+      ["fast","standard","pro","multi","surface"].map(function(v){return '<button class="btn ghost sm" style="flex:1 1 30%" onclick="tuyaSetMode(\''+v+'\')">'+esc(tuyaLabelState(v))+'</button>';}).join("")+
+    '</div>'+
     (canDir?'<button class="btn ghost" style="width:100%;margin-bottom:4px;font-weight:600" onclick="tuyaStairs()">🪜 Escaliers — aspi max + guidage</button>'+
       '<div class="mut" style="font-size:11.5px;margin:0 0 12px">Le robot n\'a pas de programme « escaliers » via Tuya. Je règle l\'aspiration au MAX et tu l\'amènes sur tes marches (escalier roman) avec le pavé 🕹️ ci-dessous — il brosse à fond.</div>':'');
 }
