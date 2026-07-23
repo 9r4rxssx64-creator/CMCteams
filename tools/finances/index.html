@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v0.13.19 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
-<html lang="fr" data-app-ver="v0.13.19">
+<!-- v0.14.0 · 💰 Finances KDMC — coffre chiffré perso (Kevin). Privé, admin, local. -->
+<html lang="fr" data-app-ver="v0.14.0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
@@ -148,11 +148,11 @@
 <div id="app"></div>
 <div id="toast"></div>
 
-<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.13.19" data-color="#e8b830" defer></script>
+<script src="/tools/shared/version-badge-pwa.js" data-project="finances" data-version="v0.14.0" data-color="#e8b830" defer></script>
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.13.19';
+  var APP_VER = 'v0.14.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -378,7 +378,8 @@
   }
   function ensureFields(){ if(!VAULT)return; if(!VAULT.devis)VAULT.devis=[]; if(!VAULT.aiProvider)VAULT.aiProvider='gemini';
     if(!VAULT.categories)VAULT.categories=DEFAULT_CATS.slice(); if(!VAULT.merchantMap)VAULT.merchantMap={};
-    if(!VAULT.budget)VAULT.budget={}; if(!VAULT.docs)VAULT.docs=[]; if(!VAULT.tx)VAULT.tx=[]; if(!VAULT.audit)VAULT.audit=[]; if(!VAULT.pendingImports)VAULT.pendingImports=[]; }
+    if(!VAULT.budget)VAULT.budget={}; if(!VAULT.docs)VAULT.docs=[]; if(!VAULT.tx)VAULT.tx=[]; if(!VAULT.audit)VAULT.audit=[]; if(!VAULT.pendingImports)VAULT.pendingImports=[];
+    if(!VAULT.assets)VAULT.assets=[]; if(!VAULT.assetMemory)VAULT.assetMemory={}; }
   /* Catégories PROVISOIRES (éditables) — se calent sur les vrais relevés de Kevin. */
   var DEFAULT_CATS=['Revenus','Logement','Énergie / Eau','Télécom / Internet','Alimentation',
     'Restaurants / Bars','Transport','Véhicule / Réparations','Santé','Assurances','Abonnements','Shopping',
@@ -686,6 +687,64 @@
      avec la FACTURE (🖨️ Voir) et l'option EFFACER (Kevin « je veux la facture quand je clique
      sur une info ou un montant »). z-index 55 < aperçu document 60 → Voir s'ouvre PAR-DESSUS. ============ */
   function closeDrill(){ var o=$('drillov'); if(o)o.remove(); }
+  /* ——— ENGINS / VÉHICULES (« range mes dépenses par machine », Kevin 2026-07-23) ———
+     Chaque opération peut porter t.asset = nom de l'engin (Komatsu PC35-R8, Piaggio Porter…).
+     Registre VAULT.assets (liste + icône) + mémoire VAULT.assetMemory (norm(label)->engin) pour
+     re-ranger tout seul une ligne déjà connue. Détection AUTO par l'IA quand la machine est nommée,
+     + rangement manuel en 1 tap sinon (cas où la machine n'est pas écrite sur la facture). */
+  function assetIcon(name){ var s=norm(name);
+    if(/pelle|komatsu|caterpillar|\bcat\b|hitachi|kubota|excav|tractopelle|mini.?pelle|jcb|volvo|liebherr/.test(s))return '🚜';
+    if(/porter|piaggio|camion|benne|utilitaire|fourgon|trafic|master|kangoo|transit|iveco|renault|peugeot|citroen|ducato|jumper|boxer/.test(s))return '🚚';
+    if(/moto|scooter|quad/.test(s))return '🏍️';
+    if(/bateau|zodiac|semi.?rigide|hors.?bord/.test(s))return '⛵';
+    if(/remorque|plateau/.test(s))return '🛻';
+    if(/voiture|auto|\bvl\b|berline|4x4|suv/.test(s))return '🚗';
+    if(/groupe|compresseur|pompe|nacelle|chariot|transpalette|generateur|machine|engin/.test(s))return '⚙️';
+    return '🔧'; }
+  function assetList(){ return (VAULT.assets||[]).slice(); }
+  function registerAsset(name){ name=String(name||'').trim(); if(!name)return;
+    var ex=(VAULT.assets||[]).some(function(a){return norm(a.name)===norm(name);});
+    if(!ex){ VAULT.assets=VAULT.assets||[]; VAULT.assets.push({name:name}); } }
+  function removeAsset(name){ VAULT.assets=(VAULT.assets||[]).filter(function(a){return norm(a.name)!==norm(name);}); }
+  /* total dépensé + nb opérations + dernière date, par engin (les opérations, pas les devis). */
+  function assetTotals(){ var m={};
+    (VAULT.tx||[]).forEach(function(t){ if(!t.asset)return; var k=t.asset; if(!m[k])m[k]={name:k,dep:0,rev:0,n:0,last:''};
+      if(t.amount<0)m[k].dep+=-t.amount; else m[k].rev+=t.amount; m[k].n++; var d=ymd(t.date); if(d>m[k].last)m[k].last=d; });
+    /* engins déclarés mais sans opération encore → visibles quand même (0 €) */
+    (VAULT.assets||[]).forEach(function(a){ if(!m[a.name])m[a.name]={name:a.name,dep:0,rev:0,n:0,last:''}; });
+    return Object.keys(m).map(function(k){return m[k];}).sort(function(x,y){return y.dep-x.dep;}); }
+  /* Sélecteur d'engin (chips) — assigne 1 opération OU tout un document à une machine, en 1 tap. */
+  function assetPick(cb){
+    closeAssetPick();
+    var ov=el('<div id="assetpick" style="position:fixed;inset:0;z-index:60;background:rgba(4,7,4,.97);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 12px) 14px calc(env(safe-area-inset-bottom,0px) + 14px)"></div>');
+    var h=el('<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="flex:1;font-weight:700;font-size:16px">🚜 Ranger sous quel engin ?</div></div>');
+    var cx=el('<button class="btn sm" style="min-height:44px">✕</button>'); cx.onclick=closeAssetPick; h.appendChild(cx); ov.appendChild(h);
+    var wrap=el('<div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch"></div>'); ov.appendChild(wrap);
+    var chips=el('<div style="display:flex;flex-wrap:wrap;gap:8px"></div>');
+    assetList().forEach(function(a){ var c=el('<button class="btn" style="min-height:44px">'+assetIcon(a.name)+' '+esc(a.name)+'</button>');
+      c.onclick=function(){ closeAssetPick(); cb(a.name); }; chips.appendChild(c); });
+    var none=el('<button class="btn" style="min-height:44px;opacity:.85">🚫 Aucun engin</button>'); none.onclick=function(){ closeAssetPick(); cb(''); }; chips.appendChild(none);
+    wrap.appendChild(chips);
+    var addBox=el('<div class="card" style="margin-top:12px"><b>➕ Nouvel engin</b><div class="tiny muted" style="margin:3px 0 6px">Ex : Komatsu PC35-R8, Piaggio Porter, Renault Master AB-123-CD…</div></div>');
+    var inp=el('<input id="asset-new" placeholder="Nom de l\'engin / véhicule" style="width:100%">');
+    var addBtn=el('<button class="btn gold" style="margin-top:8px;width:100%;min-height:46px">Créer et ranger dessous</button>');
+    addBtn.onclick=function(){ var nm=(inp.value||'').trim(); if(!nm){ toast('Écris un nom d\'engin',true); return; } registerAsset(nm); closeAssetPick(); cb(nm); };
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter')addBtn.click(); });
+    addBox.appendChild(inp); addBox.appendChild(addBtn); wrap.appendChild(addBox);
+    ov.addEventListener('click',function(e){ if(e.target===ov)closeAssetPick(); });
+    document.body.appendChild(ov); setTimeout(function(){ try{ inp.focus(); }catch(e){} },60);
+  }
+  function closeAssetPick(){ var o=$('assetpick'); if(o)o.remove(); }
+  /* Assigner UNE opération à un engin (retient aussi la ligne → re-rangée toute seule si ré-importée). */
+  function assignAsset(txId){ var t=(VAULT.tx||[]).filter(function(x){return x.id===txId;})[0]; if(!t)return;
+    assetPick(function(name){ if(name){ t.asset=name; registerAsset(name); VAULT.assetMemory[norm(t.label)]=name; }
+      else { delete t.asset; delete VAULT.assetMemory[norm(t.label)]; }
+      persist(); audit('engin', (name||'(aucun)')+' — '+String(t.label).slice(0,40)); closeDrill(); render(); toast(name?('🚜 Rangé sous '+name):'Engin retiré'); }); }
+  /* Ranger TOUT un document sous un engin (facture d'une seule machine). */
+  function assignDocAsset(docId){ var txs=(VAULT.tx||[]).filter(function(t){return t.docId===docId;}); if(!txs.length){ toast('Aucune opération à ranger',true); return; }
+    assetPick(function(name){ txs.forEach(function(t){ if(name){ t.asset=name; VAULT.assetMemory[norm(t.label)]=name; } else { delete t.asset; delete VAULT.assetMemory[norm(t.label)]; } }); if(name)registerAsset(name);
+      persist(); audit('engin_doc', (name||'(aucun)')+' — '+txs.length+' op.'); closeDrill(); render(); toast(name?('🚜 '+txs.length+' opérations rangées sous '+name):'Engin retiré'); }); }
+
   function drillTx(title, txs){
     closeDrill();
     var list=(txs||[]).slice().sort(function(a,b){return a.date<b.date?1:-1;});
@@ -705,9 +764,11 @@
       if(doc&&doc.hasFile){ row.appendChild(docThumbEl(doc,48)); }
       else row.appendChild(el('<div class="ic">'+catIcon(t.category)+'</div>'));
       row.appendChild(el('<div class="mid" style="min-width:0"><div class="lb">'+esc(t.label)+'</div>'+
-        '<div class="mt">'+esc(ymd(t.date))+' · '+esc(t.category)+(doc?' · 📄 '+esc(String(docTitle(doc)).slice(0,24)):'')+'</div></div>'));
+        '<div class="mt">'+esc(ymd(t.date))+' · '+esc(t.category)+(t.asset?' · '+assetIcon(t.asset)+' '+esc(t.asset):'')+(doc?' · 📄 '+esc(String(docTitle(doc)).slice(0,24)):'')+'</div></div>'));
       row.appendChild(el('<div class="am '+(t.amount<0?'neg':'pos')+'">'+(t.amount<0?'':'+')+eur(t.amount)+'</div>'));
       var acts=el('<div class="row" style="margin-top:6px;gap:6px"></div>');
+      var eb=el('<button class="btn sm">'+(t.asset?assetIcon(t.asset)+' '+esc(String(t.asset).slice(0,18)):'🚜 Ranger sous un engin')+'</button>');
+      eb.onclick=function(){ assignAsset(t.id); }; acts.appendChild(eb);
       if(doc&&doc.hasFile){ var vb=el('<button class="btn sm">🖨️ Voir la facture</button>'); vb.onclick=function(){ openDoc(t.docId); }; acts.appendChild(vb); }
       var db=el('<button class="btn sm danger">🗑</button>');
       db.onclick=function(){ if(!confirm('Supprimer cette opération ?'))return;
@@ -765,6 +826,10 @@
     if(d.hasFile){ var vo=el('<button class="btn gold grow">🖨️ Voir l\'original</button>'); vo.onclick=function(){ openDoc(d.id); }; acts.appendChild(vo); }
     if(txs.length){ var vt=el('<button class="btn grow">📋 Voir ses opérations</button>'); vt.onclick=function(){ drillTx('📄 '+docTitle(d), txs); }; acts.appendChild(vt); }
     box.appendChild(acts);
+    if(txs.length){ var e2=el('<div class="row" style="gap:8px;margin-top:6px"></div>');
+      var eb1=el('<button class="btn grow">🚜 Ranger par engin (ligne par ligne)</button>'); eb1.onclick=function(){ drillTx('📄 '+docTitle(d)+' — range chaque ligne', txs); }; e2.appendChild(eb1);
+      var eb2=el('<button class="btn grow">🚜 Tout sous un seul engin</button>'); eb2.onclick=function(){ assignDocAsset(d.id); }; e2.appendChild(eb2);
+      box.appendChild(e2); }
     ov.addEventListener('click', function(e){ if(e.target===ov)closeDrill(); });
     document.body.appendChild(ov);
   }
@@ -821,7 +886,7 @@
     'Tu es un extracteur COMPTABLE de relevés bancaires, factures, tickets, fiches de paie ET devis (France/Monaco/Italie, EUR). '+
     'Analyse le document et renvoie UNIQUEMENT un JSON strict, sans texte autour:\n'+
     '{"meta":{"kind":"releve|facture|ticket|paie|devis|avoir|pub","confidence":0.0,"vendor":"","vendor_id":"","vendor_addr":"","client":"","invoice_no":"","bank":"","account_masked":"","period":"","date":"YYYY-MM-DD","due_date":"YYYY-MM-DD","payment_method":"","total":null,"ht":null,"tva":null,"tva_rate":null,"opening":null,"closing":null},'+
-    '"tx":[{"date":"YYYY-MM-DD","label":"désignation exacte de l\'article/ligne","amount":-12.34,"category":"une catégorie parmi la liste","vendor":"","qty":null,"unit_price":null,"ht":null,"tva":null,"tva_rate":null}]}\n'+
+    '"tx":[{"date":"YYYY-MM-DD","label":"désignation exacte de l\'article/ligne","amount":-12.34,"category":"une catégorie parmi la liste","vendor":"","asset":"","qty":null,"unit_price":null,"ht":null,"tva":null,"tva_rate":null}]}\n'+
     'Règles: amount NÉGATIF pour une dépense/débit, POSITIF pour un revenu/crédit. '+
     'Reproduis les montants EXACTEMENT (aucune invention; ligne illisible -> ne pas l\'inventer). '+
     'category ∈ ['+DEFAULT_CATS.map(function(c){return '"'+c+'"';}).join(',')+']. '+
@@ -837,6 +902,7 @@
     'RÈGLE STRICTE pour un CORPS DE MAIL (texte, pas un PDF) : c\'est une "pub" par DÉFAUT. Ce n\'est une "facture" QUE si on voit à la fois (a) un n° de facture/commande ET (b) un montant réellement payé/débité/prélevé (« total facturé », « payé le », « prélèvement de »). Un prix affiché, une offre, un % de réduction ne sont PAS un achat. En cas de doute : "pub". '+
     'meta.vendor = nom du VENDEUR / marchand / fournisseur (l\'émetteur qui te vend/facture) ; meta.vendor_id = son SIRET ou n° de TVA si visible ; meta.vendor_addr = son adresse si visible ; meta.client = nom de l\'ACHETEUR/destinataire (toi) si visible. '+
     'Pour CHAQUE article/ligne : label = la désignation exacte de l\'article, qty = quantité et unit_price = prix unitaire si visibles (sinon null). '+
+    'asset = le NOM de l\'ENGIN / VÉHICULE / MACHINE concerné par cette ligne UNIQUEMENT s\'il est clairement écrit (marque+modèle « Komatsu PC35 », « Piaggio Porter », une immatriculation « AB-123-CD », « pelle », « camion »…) — sinon "" (ne devine JAMAIS un engin qui n\'est pas écrit). '+
     'meta.date = date du document ; meta.due_date = date d\'ÉCHÉANCE / limite de paiement d\'une facture si visible ; meta.payment_method = moyen de paiement (carte, prélèvement, virement, espèces…) si visible. '+
     'Ajoute meta.confidence (0 à 1) = ta certitude sur le kind ; BASSE (≤0.5) si le document est ambigu (pub OU facture ?). '+
     'Réponds en JSON seulement.';
@@ -1069,6 +1135,9 @@
       var ht=num(r.ht!=null?r.ht:(isInvoice?meta.ht:null)), tva=num(r.tva!=null?r.tva:(isInvoice?meta.tva:null)), tr=num(r.tva_rate!=null?r.tva_rate:(isInvoice?meta.tva_rate:null));
       if(ht!=null)t.ht=Math.abs(ht); if(tva!=null)t.tva=Math.abs(tva); if(tr!=null)t.tvaRate=tr;
       var _q=num(r.qty), _pu=num(r.unit_price); if(_q!=null)t.qty=_q; if(_pu!=null)t.unitPrice=Math.abs(_pu);
+      /* ENGIN : détecté par l'IA (r.asset / meta.asset) OU re-rangé tout seul depuis la mémoire d'une ligne déjà connue. */
+      var _as=String(r.asset||meta.asset||'').trim(); if(!_as && VAULT.assetMemory && VAULT.assetMemory[key]) _as=VAULT.assetMemory[key];
+      if(_as){ t.asset=_as; registerAsset(_as); VAULT.assetMemory=VAULT.assetMemory||{}; VAULT.assetMemory[key]=_as; }
       if(isInvoice){ t.ttc=Math.abs(amt); if(t.pro===undefined)t.pro=false; }
       VAULT.tx.unshift(t);
       added++;
@@ -1296,7 +1365,7 @@
       '</div>'+
       '<div class="tabs" id="tabs"></div>'+
       '<div class="wrap" id="view"></div>';
-    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['synth','📑 Bilan complet'],['bilan','🔎 Bilan'],['expert','👔 Expert'],['comptes','🗃️ Comptes'],['compta','📒 Comptabilité'],['compare','💹 Comparateur'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
+    var tabs=[['add','➕ Ajouter'],['dash','📊 Tableau'],['synth','📑 Bilan complet'],['bilan','🔎 Bilan'],['expert','👔 Expert'],['comptes','🗃️ Comptes'],['engins','🚜 Engins'+((VAULT.assets||[]).length?' ('+VAULT.assets.length+')':'')],['compta','📒 Comptabilité'],['compare','💹 Comparateur'],['ask','💬 Demander'],['tx','📋 Opérations'],['devis','🧾 Devis'+((VAULT.devis||[]).length?' ('+VAULT.devis.length+')':'')],['budget','🎯 Budget'],['set','⚙️ Réglages']];
     var tb=$('tabs');
     tabs.forEach(function(t){ var b=el('<button class="tab'+(STATE.tab===t[0]?' on':'')+'">'+t[1]+'</button>'); b.onclick=function(){ STATE.tab=t[0]; render(); }; tb.appendChild(b); });
     $('btn-lock').onclick=lockNow;
@@ -1307,6 +1376,7 @@
     else if(STATE.tab==='bilan') viewBilan(v);
     else if(STATE.tab==='expert') viewExpert(v);
     else if(STATE.tab==='comptes') viewComptes(v);
+    else if(STATE.tab==='engins') viewEngins(v);
     else if(STATE.tab==='compta') viewCompta(v);
     else if(STATE.tab==='compare') viewComparateur(v);
     else if(STATE.tab==='ask') viewAsk(v);
@@ -1451,6 +1521,8 @@
     if(d.vendorId)rows.push(['🧾 SIRET / TVA',d.vendorId]);
     if(d.vendorAddr)rows.push(['📍 Adresse',d.vendorAddr]);
     if(d.client)rows.push(['👤 Client',d.client]);
+    var _asset={}; txs.forEach(function(t){ if(t.asset)_asset[t.asset]=1; }); var _al=Object.keys(_asset);
+    if(_al.length)rows.push(['🚜 Engin',_al.map(function(n){return assetIcon(n)+' '+n;}).join(', ')]);
     if(when)rows.push(['📅 Date',when]);
     if(d.dueDate)rows.push(['⏰ Échéance',frDate(d.dueDate)]);
     if(d.invoiceNo)rows.push(['#️⃣ N° facture',d.invoiceNo]);
@@ -2319,6 +2391,57 @@
       box.querySelectorAll('[data-open]').forEach(function(b){ b.onclick=function(){ openDoc(b.getAttribute('data-open')); }; });
       v.appendChild(c);
     });
+  }
+
+  /* ——— Vue ENGINS : combien tu dépenses PAR machine/véhicule, d'un coup d'œil (Kevin) ——— */
+  function viewEngins(v){
+    var tot=assetTotals();
+    var untagged=(VAULT.tx||[]).filter(function(t){ return !t.asset && t.amount<0; });
+    var head=el('<div class="card"><h2>🚜 Mes engins / véhicules</h2>'+
+      '<p class="muted" style="margin:2px 0 0">Chaque réparation/achat rangé sous sa machine. Total dépensé par engin, en un coup d\'œil.</p></div>');
+    var addBtn=el('<button class="btn gold" style="margin-top:10px;width:100%;min-height:46px">➕ Ajouter un engin</button>');
+    addBtn.onclick=function(){ var box=el('<div class="card" style="margin-top:8px"></div>');
+      var inp=el('<input id="eng-new" placeholder="Ex : Komatsu PC35-R8" style="width:100%">');
+      var go=el('<button class="btn gold" style="margin-top:8px;width:100%;min-height:46px">Créer</button>');
+      go.onclick=function(){ var nm=(inp.value||'').trim(); if(!nm){ toast('Écris un nom',true); return; } registerAsset(nm); persist(); audit('engin_new',nm); render(); toast('🚜 '+nm+' ajouté'); };
+      inp.addEventListener('keydown',function(e){ if(e.key==='Enter')go.click(); });
+      box.appendChild(inp); box.appendChild(go); head.appendChild(box); setTimeout(function(){ try{inp.focus();}catch(e){} },50); };
+    head.appendChild(addBtn);
+    v.appendChild(head);
+
+    if(!tot.length){
+      v.appendChild(el('<div class="card muted" style="text-align:center;padding:22px">'+
+        '<div style="font-size:30px">🚜</div><div style="margin-top:6px">Aucun engin pour l\'instant.</div>'+
+        '<div class="tiny" style="margin-top:6px">Ouvre une facture (onglet 🗃️ Comptes → 🔎 Analyser → 📋 ses opérations), puis tape <b>🚜 Ranger sous un engin</b> sur chaque ligne. Ou ajoute un engin ci-dessus.</div></div>'));
+    } else {
+      var maxDep=Math.max.apply(null,tot.map(function(a){return a.dep;}).concat([1]));
+      tot.forEach(function(a){
+        var pct=Math.min(100,a.dep/maxDep*100);
+        var c=el('<div class="card" style="cursor:pointer"></div>');
+        c.appendChild(el('<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">'+
+          '<b style="font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+assetIcon(a.name)+' '+esc(a.name)+'</b>'+
+          '<b style="font-size:18px;color:var(--red);white-space:nowrap">'+(a.dep?eur0(a.dep):'0 €')+'</b></div>'));
+        c.appendChild(el('<div class="bar" style="margin-top:6px"><i style="width:'+pct.toFixed(0)+'%;background:'+(a.dep?'var(--gold)':'var(--line2)')+'"></i></div>'));
+        c.appendChild(el('<div class="tiny muted" style="margin-top:5px">'+a.n+' opération(s)'+(a.rev?' · '+eur0(a.rev)+' reçus':'')+(a.last?' · dernière '+frDate(a.last):'')+'</div>'));
+        c.onclick=function(){ drillTx(assetIcon(a.name)+' '+a.name, (VAULT.tx||[]).filter(function(t){return t.asset===a.name;})); };
+        var actions=el('<div class="row" style="margin-top:8px;gap:6px"></div>');
+        var del=el('<button class="btn sm danger">🗑 Retirer l\'engin</button>');
+        del.onclick=function(e){ e.stopPropagation(); if(!confirm('Retirer l\'engin « '+a.name+' » ?\n\nLes opérations restent, elles ne seront juste plus rangées sous cet engin.'))return;
+          (VAULT.tx||[]).forEach(function(t){ if(t.asset===a.name)delete t.asset; }); Object.keys(VAULT.assetMemory||{}).forEach(function(k){ if(VAULT.assetMemory[k]===a.name)delete VAULT.assetMemory[k]; }); removeAsset(a.name); persist(); render(); toast('Engin retiré'); };
+        actions.appendChild(del);
+        c.appendChild(actions);
+        v.appendChild(c);
+      });
+      var grand=tot.reduce(function(s,a){return s+a.dep;},0);
+      if(grand)v.appendChild(el('<div class="card" style="text-align:center"><div class="muted tiny">Total dépensé sur tous les engins rangés</div><b style="font-size:20px;color:var(--red)">'+eur(grand)+'</b></div>'));
+    }
+
+    if(untagged.length){
+      var u=el('<div class="card"><h2>📥 À ranger ('+untagged.length+')</h2><p class="muted" style="margin:2px 0 8px">Dépenses pas encore rangées sous un engin. Tape pour les affecter à une machine.</p></div>');
+      var b=el('<button class="btn grow" style="width:100%;min-height:46px">🚜 Ranger ces '+untagged.length+' dépenses</button>');
+      b.onclick=function(){ drillTx('📥 Dépenses à ranger sous un engin', untagged); };
+      u.appendChild(b); v.appendChild(u);
+    }
   }
 
   function viewCompta(v){
