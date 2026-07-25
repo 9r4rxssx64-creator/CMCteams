@@ -5775,7 +5775,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.872";
+var APP_VER="v9.873";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -6456,7 +6456,7 @@ function _cmcOpenApexPendingList(){
           +'<div style="font-size:11px;color:#788878">'+esc(id.slice(-8))+'</div></div>'
           +'<div style="font-family:monospace;font-size:11px;color:#b8c8a8;background:rgba(0,0,0,.3);padding:8px;border-radius:6px;max-height:80px;overflow:hidden;margin-bottom:8px;line-height:1.4">'+preview+'</div>'
           +'<div style="display:flex;gap:6px">'
-          +'<button onclick="try{localStorage.setItem(\'_apex_pending_'+id+'\','+JSON.stringify(rawText)+');}catch(_){};_cmcImportApexPlanning(\''+id+'\');document.getElementById(\'apexPendingListModal\').remove();" style="flex:1;background:linear-gradient(135deg,#c9a227,#9a7810);border:none;color:#040c04;border-radius:8px;padding:9px;font-weight:800;cursor:pointer;font-size:13px">✅ Importer</button>'
+          +'<button onclick="try{localStorage.setItem(\'_apex_pending_'+id+'\','+JSON.stringify(rawText).replace(/"/g,'&quot;')+');}catch(_){};_cmcImportApexPlanning(\''+id+'\');document.getElementById(\'apexPendingListModal\').remove();" style="flex:1;background:linear-gradient(135deg,#c9a227,#9a7810);border:none;color:#040c04;border-radius:8px;padding:9px;font-weight:800;cursor:pointer;font-size:13px">✅ Importer</button>'
           +'<button onclick="_cmcDismissApexPlanning(\''+id+'\');setTimeout(function(){_cmcOpenApexPendingList();},120);" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.15);color:#a0cca0;border-radius:8px;padding:9px 12px;cursor:pointer;font-size:13px">❌ Ignorer</button>'
           +'</div></div>';
       });
@@ -25742,7 +25742,7 @@ function renderCIPanel(tid){
       <div style="display:flex;gap:4px">`;
     for(var si=0;si<emps.length;si++){
       var pos=SEQCI[si],col=DCOL[pos-1],sel=cur===si;
-      h+=`<div onclick='setCI(${JSON.stringify(emp.name)},${si})' style="width:28px;height:28px;border-radius:5px;background:${sel?col+"30":"#162818"};border:2px solid ${sel?col:"#1e3020"};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:${sel?col:"#2a4028"};cursor:pointer">${pos}</div>`;
+      h+=`<div onclick='setCI(${JSON.stringify(emp.name).replace(/'/g,"&#39;")},${si})' style="width:28px;height:28px;border-radius:5px;background:${sel?col+"30":"#162818"};border:2px solid ${sel?col:"#1e3020"};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:${sel?col:"#2a4028"};cursor:pointer">${pos}</div>`;
     }
     h+=`</div></div>`;
   });
