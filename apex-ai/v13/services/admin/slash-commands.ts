@@ -71,6 +71,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'test', emoji: '🧪', description: 'Lance les auto-tests runtime', argsHint: '' },
   /* Sécurité — arsenal hacker éthique, scellé aux apps kd-mc.com (déclenche les workflows CI) */
   { name: 'audit', emoji: '🛡️', description: 'Suite sécurité (gitleaks/trufflehog/osv/trivy/semgrep/zizmor) sur le repo — résultat dans ax_security_last', argsHint: '', dispatch: 'security-suite' },
+  { name: 'scanfix', emoji: '🛠️', description: 'Scanne le code ET applique les corrections vérifiées (via Claude Code, sans rien casser) — équivalent « scan and fix your codebase »', argsHint: '', dispatch: 'security-suite' },
   { name: 'pentest', emoji: '🕷️', description: 'Pentest IA autonome (Strix) sur une app kd-mc.com — résultat dans ax_strix_last', argsHint: '<cible=chemin|url kd-mc.com>', dispatch: 'strix-scan' },
   { name: 'web', emoji: '🌐', description: 'Lit une page web / cherche via Agent-Reach (résultat dans ax_agent_reach_last)', argsHint: '<url|requête>', dispatch: 'agent-reach' },
   { name: 'perf', emoji: '⚡', description: 'Audit perf (Unlighthouse) d\'une app kd-mc.com — résultat dans ax_perf_last', argsHint: '<url kd-mc.com?>', dispatch: 'perf-audit' },

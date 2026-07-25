@@ -367,12 +367,29 @@ async function handleEmbed(request, env) {
 //  Main fetch
 // ============================================================================
 
+// SÉCU (scan-and-fix 2026) — ce worker proxifie les clés IA PAYANTES de Kevin.
+// La logique live est fusionnée dans api-worker (handleIAChat, déjà gardé par getAuthUser) ;
+// ce worker autonome n'est plus déployé. Mais s'il l'était nu, /ia/* = abus financier
+// anonyme. FAIL-CLOSED : les endpoints payants exigent le jeton de service interne
+// (même modèle que sms-worker X-Apex-Sms-Token et l'appel DO /admin/inject-message).
+function _requireInternal(request, env) {
+  const secret = (env.APEX_CHAT_ADMIN_TOKEN || '').trim();
+  if (!secret) return false; // mal configuré → fail-closed
+  const got = (request.headers.get('X-Apex-Internal') || '').trim();
+  return got === secret;
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
     const url = new URL(request.url);
     const path = url.pathname;
+
+    // Endpoints IA payants → jeton de service obligatoire (health/info restent ouverts).
+    const isPaidIA = request.method === 'POST' &&
+      (path === '/ia/chat' || path === '/ia/translate' || path === '/ia/summarize' || path === '/ia/embed');
+    if (isPaidIA && !_requireInternal(request, env)) return err('Unauthorized', 401);
 
     try {
       if (path === '/ia/chat' && request.method === 'POST') return await handleChat(request, env);
