@@ -28,14 +28,17 @@ const ENV = (overrides = {}) => ({
   OPENAI_API_KEY: 'oai-key',
   DEEPSEEK_API_KEY: 'ds-key',
   PERPLEXITI_API_KEY: 'pplx-key',
+  APEX_CHAT_ADMIN_TOKEN: 'admin-tok',
   APEX_CHAT_CACHE: makeKV(),
   ...overrides,
 });
 
-function makeRequest({ method = 'POST', path = '/ia/chat', body = {} } = {}) {
+function makeRequest({ method = 'POST', path = '/ia/chat', body = {}, auth = true } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) headers['X-Apex-Internal'] = 'admin-tok'; // jeton de service interne (fail-closed)
   return new Request('https://ia.apex/' + path.replace(/^\//, ''), {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: method === 'GET' || method === 'OPTIONS' ? undefined : JSON.stringify(body),
   });
 }
@@ -95,9 +98,24 @@ describe('ia-worker — routing', () => {
   });
 
   it('exception → 500', async () => {
-    const badReq = new Request('https://ia.apex/ia/chat', { method: 'POST', body: 'not-json' });
+    const badReq = new Request('https://ia.apex/ia/chat', { method: 'POST', body: 'not-json', headers: { 'X-Apex-Internal': 'admin-tok' } });
     const r = await worker.fetch(badReq, ENV());
     expect(r.status).toBe(500);
+  });
+
+  it('POST /ia/chat sans X-Apex-Internal → 401 (proxy IA payant fail-closed)', async () => {
+    const r = await worker.fetch(makeRequest({ auth: false }), ENV());
+    expect(r.status).toBe(401);
+  });
+
+  it('POST /ia/embed sans jeton → 401 (tous les endpoints payants gardés)', async () => {
+    const r = await worker.fetch(makeRequest({ path: '/ia/embed', auth: false }), ENV());
+    expect(r.status).toBe(401);
+  });
+
+  it('env sans APEX_CHAT_ADMIN_TOKEN → 401 (fail-closed si mal configuré)', async () => {
+    const r = await worker.fetch(makeRequest({}), { APEX_CHAT_CACHE: makeKV() });
+    expect(r.status).toBe(401);
   });
 });
 
@@ -174,7 +192,7 @@ describe('ia-worker — POST /ia/chat', () => {
   });
 
   it('aucune clé provider → 503 (Aucun provider configuré)', async () => {
-    const env = { APEX_CHAT_CACHE: makeKV() };
+    const env = { APEX_CHAT_ADMIN_TOKEN: 'admin-tok', APEX_CHAT_CACHE: makeKV() };
     const r = await worker.fetch(
       makeRequest({ body: { messages: [{ role: 'user', content: 'X' }] } }),
       env,
