@@ -39,6 +39,11 @@ Tape `/` dans Claude Code pour les voir et les lancer. Chaque commande applique 
 | `/steal` | 🆕 Reverse-engineer ce qui marche (et comment le reproduire) |
 | `/systemize` | 🆕 Transforme un coup unique en système / workflow réutilisable |
 
+## 🛡️ Sécurité
+| Commande | Définition |
+|---|---|
+| `/scan-and-fix` | 🆕 Scanne tout le code (arsenal security-suite + passe statique) **et applique les corrections** tout auto, sans rien casser — équivalent « Scan and fix your codebase » |
+
 ---
 
 🆕 = ajouté le 2026-06-19 (les « 10 Claude Commands »).
