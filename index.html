@@ -12023,7 +12023,7 @@ function cmcReplyDepModal(dkey,name){
       +'<div style="font-size:13px;color:#a8c4b8;margin-bottom:10px">Ta réponse s\'affiche dans son app CMCteams light.</div>'
       +'<textarea id="cmcRdTxt" rows="4" placeholder="Ta réponse…" style="width:100%;box-sizing:border-box;padding:11px;font-size:16px;border-radius:10px;border:1px solid rgba(74,160,120,.35);background:rgba(5,16,10,.4);color:#f0e8d0;resize:vertical;margin-bottom:10px"></textarea>'
       +'<div style="display:flex;gap:8px">'
-      +'<button onclick="(function(){var t=(document.getElementById(&quot;cmcRdTxt&quot;)||{}).value||&quot;&quot;;if(!t.trim()){toast(&quot;Écris ta réponse&quot;,&quot;warn&quot;);return;}var ok=cmcReplyToDep(&quot;'+esc(dkey)+'&quot;,t);var o=document.getElementById(&quot;cmcReplyDep&quot;);if(o)o.remove();toast(ok?&quot;✅ Réponse envoyée&quot;:&quot;⚠ Échec&quot;,ok?&quot;ok&quot;:&quot;warn&quot;);})()" style="flex:1;min-height:50px;padding:13px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:11px;font-weight:800;font-size:15px;cursor:pointer">Envoyer</button>'
+      +'<button onclick="(function(){var t=(document.getElementById(&quot;cmcRdTxt&quot;)||{}).value||&quot;&quot;;if(!t.trim()){toast(&quot;Écris ta réponse&quot;,&quot;warn&quot;);return;}var ok=cmcReplyToDep(&quot;'+String(dkey||"").replace(/[^A-Z0-9_]/g,"")+'&quot;,t);var o=document.getElementById(&quot;cmcReplyDep&quot;);if(o)o.remove();toast(ok?&quot;✅ Réponse envoyée&quot;:&quot;⚠ Échec&quot;,ok?&quot;ok&quot;:&quot;warn&quot;);})()" style="flex:1;min-height:50px;padding:13px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:11px;font-weight:800;font-size:15px;cursor:pointer">Envoyer</button>'
       +'<button onclick="var o=document.getElementById(\'cmcReplyDep\');if(o)o.remove()" style="min-height:50px;padding:13px 18px;background:transparent;border:1px solid rgba(160,200,150,.3);color:#9fb89f;border-radius:11px;font-size:15px;cursor:pointer">Annuler</button>'
       +'</div></div>';
     document.body.appendChild(ov);
@@ -12078,7 +12078,7 @@ function vKevinInbox(){
       +'<span style="margin-left:auto;font-size:11px;color:#8a8a8a">'+_cmcRelTime(m.ts)+'</span></div>'
       +'<div style="font-size:14px;color:#e8e8e0;white-space:pre-wrap;line-height:1.5">'+esc(m.text||"")+'</div>'
       +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
-      +(m.dkey?'<button onclick="cmcReplyDepModal(\''+esc(m.dkey)+'\',\''+esc((m.name||"").replace(/\x27/g,""))+'\')" class="btn" style="font-size:12px;padding:5px 10px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:8px">↩️ Répondre</button>':'')
+      +(m.dkey?'<button onclick="cmcReplyDepModal(\''+String(m.dkey||"").replace(/[^A-Z0-9_]/g,"")+'\',\''+esc((m.name||"").replace(/[\\\x27]/g,""))+'\')" class="btn" style="font-size:12px;padding:5px 10px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:8px">↩️ Répondre</button>':'')
       +((m.hasImg&&m.imgId)?'<button onclick="cmcViewDepImg(\''+esc(m.imgId)+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📷 Voir la photo</button>':'')
       +'<button onclick="cmcOpenFiche(\''+esc(m.from||"")+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📇 Voir la fiche complète</button>'
       +'<button onclick="cmcDeleteInboxMsg(\''+esc(m.id||"")+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px;color:#e88">🗑</button>'

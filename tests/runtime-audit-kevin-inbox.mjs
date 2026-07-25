@@ -47,6 +47,20 @@ ok(await page.evaluate(()=>{A.user=A.employees.find(e=>e.id!=='U11804');return /
 const modal = await page.evaluate(()=>{A.user=A.employees.find(e=>e.id!=='U11804');cmcOpenContactKevin();return !!document.getElementById('cmcContactKevin')&&!!document.getElementById('cmcCkTxt');});
 ok(modal,'modale Écrire à Kevin s\'ouvre (textarea présent)');
 
+// 7) SÉCU (scan-and-fix 2026) — un dkey EMPOISONNÉ (write Firebase direct) est neutralisé
+//    au rendu : esc() ne protège PAS dans un contexte JS-string-dans-attribut (les entités
+//    &#39;/&quot; sont redécodées avant l'exécution JS). Le rendu whiteliste dkey → [A-Z0-9_].
+const xss = await page.evaluate(()=>{
+  A.user=A.employees.find(e=>e.id==='U11804');
+  const poison="AB'));alert(document.cookie);//\"";
+  localStorage.setItem('cmc_kevin_inbox',JSON.stringify([{id:'p1',from:'X',name:'Emp',text:'hi',ts:Date.now(),status:'new',dkey:poison}]));
+  const html=vKevinInbox();
+  const m=html.match(/cmcReplyDepModal\('([^']*)'/);
+  return { arg:m?m[1]:null, htmlHasAlert:/alert\(document\.cookie\)/.test(html) };
+});
+ok(xss.arg!==null && !/['"()\\;]/.test(xss.arg) && /^[A-Z0-9_]*$/.test(xss.arg),'dkey empoisonné → whitelisté [A-Z0-9_], zéro breakout dans onclick (arg="'+xss.arg+'")');
+ok(xss.htmlHasAlert===false,'la charge alert(document.cookie) n\'apparaît nulle part dans le rendu');
+
 await browser.close();
 console.log('\nKEVIN INBOX : '+pass+' OK / '+fail+' KO');
 process.exit(fail?1:0);
