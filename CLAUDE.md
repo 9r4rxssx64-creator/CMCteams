@@ -380,7 +380,7 @@ version partielle ou rapide.
    et atterrit au BON endroit (pas de route cassée, pas de vue blanche).
 5. **Fluidité** — l'app ne saute pas, ne scintille pas, ne freeze pas ;
    animations 60fps, pas de reflow massif, pas de layout shift (CLS).
-6. **Sécurité** — XSS, secrets exposés, CSP, guards admin, auth.
+6. **Sécurité** — XSS, secrets exposés, CSP, guards admin, auth. **→ exécuter la PASSE SÉCU scan-and-fix (arsenal + passe vérifiée) ET appliquer les correctifs sûrs** (cf. section dédiée ci-dessous — lire le code ne suffit pas).
 7. **Performance** — bundle, LCP/INP/CLS, intervals zombies, memory leaks.
 8. **UX / accessibilité** — touch targets ≥44px, contraste, aria, mobile 375px.
 
@@ -512,6 +512,18 @@ déterministe)**, pas seulement ma revue. `auto-pr-review.yml` est un reviewer C
 9. **AUTONOMIE** : zéro question avant la fin des phases d'exploration ; hypothèses écrites noir sur blanc ; jamais « veux-tu que je continue » ; livrer LE TRAVAIL, pas un plan. Branche dédiée `claude/audit-*`, zéro donnée réelle de personnel dans les tests, zéro touche à la prod.
 10. **PASSE 2 — FERMER CHAQUE ANGLE MORT DE L'AUTO-CRITIQUE (par du CODE, pas de la prose)** : quand on relance un audit (« passe 2 », « corrige ton auto-critique »), CHAQUE manquant listé au `05-JOURNAL.md` doit être fermé par l'UN de ces trois moyens, jamais laissé en texte : (a) **un test** qui le prouve (ex : `render-views` = smoke qui rend LES N vues d'une app multi-vues en session admin → attrape crash/vue-morte/pageerror ; c'est la couverture la moins chère et la plus haute pour une app à beaucoup de vues) ; (b) **un garde ratchet/baseline** pour la dette legacy (compter l'existant, échouer seulement si ça AUGMENTE → bloque le NOUVEAU sans faux-rouge sur l'ancien — ex garde XSS `innerHTML` sans `esc()`, baseline figé) ; (c) **une reclassification honnête AVEC preuve** si ce n'était pas un bug (ex : « 2 croupiers même table » = N/A car le modèle est jour-par-code, 1 lieu/jour par construction — vérifié par lecture, pas supposé). **Tout nouveau test/garde est câblé dans le gate (`test:ci`)** = la correction devient permanente. Puis **refaire l'auto-critique de la passe 2** (le rendu ≠ le comportement : un smoke de rendu attrape les crashes, pas les bugs de logique de chaque bouton — le dire).
 
+### 🛡️ PASSE SÉCU — SCAN & CORRECTIONS (scan-and-fix) — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-07-25, ABSOLUE)
+
+> **« Ajoute ce qu'il manque à "fais ton audit" »** — Kevin 2026-07-25 (après avoir installé le flux « Scan and fix your codebase » / `/claude-security`).
+
+L'axe Sécurité ne se contente PLUS de « lire le code » : à CHAQUE « fais l'audit », lancer le pipeline **scan-and-fix** ET **appliquer les corrections sûres**. Un audit sécu n'est PAS fini tant que les correctifs sûrs ne sont pas appliqués + prouvés + mergés.
+
+1. **SCAN réel (l'arsenal, pas une lecture)** : déclencher `security-suite.yml` (gitleaks + TruffleHog = secrets ; OSV + Trivy = dépendances ; Semgrep = SAST XSS/injections ; zizmor = workflows → résultat artifact + Firebase `ax_security_last`) + `strix-scan.yml` (pentest IA) via `actions_run_trigger`. EN PARALLÈLE, passe statique **VÉRIFIÉE** (subagents scopés par app) sur : XSS (`innerHTML`/template de donnée user sans `esc()`/`escapeHtml`/textContent), **JS-in-attribut** (`onclick="f('${userdata}')"` — `esc()` NE protège PAS, les entités `&#39;`/`&quot;` se redécodent avant l'exécution JS → whitelist charset ou délégation d'événement), secrets en clair, **CSP** (host `fetch`/`EventSource`/`WebSocket` absent de `connect-src`), côté worker (secret renvoyé au client, CORS `*` sur endpoint sensible, endpoint admin/write sans auth, SSRF/open-proxy).
+2. **TRIAGE — vérifier CHAQUE finding AVANT d'agir (règle #59/#83/#131, le plus important)** : un sous-agent sur-cote. Confirmer que la donnée est vraiment attaquant-contrôlée. Écarter les faux positifs AVEC preuve : HTML statique / `onclick` sans interpolation, contenu échappé/`textContent`, **clé Firebase Web publique ≠ secret**, relais public read-only (AIS/feeds) en CORS `*` = intentionnel, endpoint qui vérifie déjà token/PIN/grant/HMAC, **code legacy non déployé** (footgun, pas exposition live — le prouver via `wrangler.toml main` + workflows). Distinguer **FAILLE** (à patcher) de **MANQUE FONCTIONNEL** : ajouter un host à la CSP = OUVRIR l'egress = **fonctionnalité, PAS sécurité** → ne jamais « ouvrir » sous bannière sécu ; laisser en reco.
+3. **CORRECTIONS appliquées (« corrections comprises »)** : sur branche dédiée, appliquer les correctifs SÛRS + faible risque AVEC preuve : `esc()`/whitelist charset pour XSS (identité pour toute valeur légitime = 0 régression de comportement), délégation d'événement pour le JS-in-attribut, **fail-closed** (jeton/PIN/grant, même modèle que l'existant) sur endpoint sensible, retrait/rotation de secret + passage serveur, host ajouté à `connect-src` SEULEMENT si la fonction est réellement utilisée. Un secret ACTIF dans le dépôt = P0 + prévenir Kevin qu'il est à révoquer (je ne peux pas révoquer sa clé tierce). **Chaque correctif = un test de non-régression câblé dans le gate** (ex vécu : dkey empoisonné → 0 breakout dans l'`onclick`). Un correctif architectural/risqué sans preuve = reco, pas un patch aveugle.
+4. **Rejouable + Apex** : `/scan-and-fix` (Claude Code) et `/scanfix` (Apex, dispatch `security-suite`). Apex SCANNE (`/audit` → `ax_security_last`) ; les CORRECTIONS vérifiées sont appliquées par Claude Code — JAMAIS de patch aveugle depuis un bot CI (règle never-break).
+5. **Règle de complétude** : tant que le scan (CI + passe vérifiée) n'a pas tourné ET que les correctifs sûrs ne sont pas appliqués + prouvés + mergés (propagation vérifiée sur `main`), l'axe Sécurité reste « lecture seule » = incomplet.
+
 ### Autonome + mesuré
 
 - Audit lancé en autonomie totale, multi-subagents en parallèle si besoin.
@@ -520,6 +532,7 @@ déterministe)**, pas seulement ma revue. `auto-pr-review.yml` est un reviewer C
 - Audit POST-FIX systématique (mesurer l'écart réel après correction).
 - **Passe LIVE réelle exécutée (audit-live.yml + e2e dédiés)** — sinon audit incomplet.
 - **Second avis INDÉPENDANT (non-Claude) obtenu + trié** (Qodo PR-Agent / CodeRabbit / SonarCloud) — sinon audit biaisé/incomplet.
+- **Passe SÉCU scan-and-fix exécutée (security-suite + strix + passe VÉRIFIÉE) ET correctifs sûrs appliqués + prouvés + mergés** — sinon axe sécurité incomplet.
 
 ### Intégration Apex
 
@@ -538,7 +551,8 @@ en continu avec les autres axes.
 > au bon endroit, ni que l'app tourne réellement en prod sans requête bloquée, ni
 > qu'un expert externe l'a validée — alors ce n'est PAS un audit, c'est un coup d'œil. Reprendre.
 > **Et : chaque affirmation porte-t-elle son statut ✅/🟡/🔴 ? Les livrables `audit/00-05` sont-ils écrits et committés ?
-> Chaque fonction a-t-elle son ID F01…Fnn ? Ai-je fini par l'auto-critique (point faible / non vérifié / incertain) ?**"*
+> Chaque fonction a-t-elle son ID F01…Fnn ? Ai-je fini par l'auto-critique (point faible / non vérifié / incertain) ?
+> Ai-je lancé la PASSE SÉCU scan-and-fix (arsenal security-suite + strix + passe VÉRIFIÉE anti-faux-positif) ET appliqué+prouvé+mergé les correctifs sûrs (XSS, fail-closed, secrets), ou seulement LU le code sécu ?**"*
 
 S'applique : Apex (priorité absolue), CMCteams, Remote, Apex Chat, e-KDMC, tous projets.
 
