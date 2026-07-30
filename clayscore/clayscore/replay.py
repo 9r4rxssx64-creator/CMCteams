@@ -21,13 +21,50 @@ from .vision.detector import DetectorConfig, MotionDetector
 
 _FONT = cv2.FONT_HERSHEY_SIMPLEX
 
-# Couleurs BGR + libellés (ASCII : cv2 ne rend pas les accents).
+# Couleurs BGR + libellés + pictogramme. Le texte accenté est rendu via Pillow
+# quand disponible ; sinon repli ASCII (cv2 ne gère pas les accents).
 _STYLE = {
-    "casse":  ((80, 200, 80),  "CASSE",     "check"),
-    "manque": ((60, 60, 230),  "MANQUE",    "cross"),
-    "nobird": ((40, 170, 240), "NO BIRD",   "repeat"),
-    "ambigu": ((60, 200, 240), "A VERIFIER", "quest"),
+    "casse":  ((80, 200, 80),  "CASSÉ",      "CASSE",      "check"),
+    "manque": ((60, 60, 230),  "MANQUÉ",     "MANQUE",     "cross"),
+    "nobird": ((40, 170, 240), "NO BIRD",    "NO BIRD",    "repeat"),
+    "ambigu": ((60, 200, 240), "À VÉRIFIER", "A VERIFIER", "quest"),
 }
+
+# Police TrueType pour le texte accenté (optionnelle, repli ASCII si absente).
+_FONT_TTF_CANDIDATES = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+]
+
+
+def _pil_font(size: int):
+    """Retourne une police Pillow accentuée, ou None si indisponible."""
+    try:
+        from PIL import ImageFont
+    except Exception:  # noqa: BLE001 - Pillow absent
+        return None
+    import os
+    for path in _FONT_TTF_CANDIDATES:
+        if os.path.exists(path):
+            try:
+                return ImageFont.truetype(path, size)
+            except Exception:  # noqa: BLE001
+                continue
+    return None
+
+
+def _put_text_unicode(img, text: str, org, size: int, color_bgr) -> bool:
+    """Écrit `text` (accents OK) via Pillow. Retourne False si indisponible."""
+    font = _pil_font(size)
+    if font is None:
+        return False
+    from PIL import Image, ImageDraw
+    pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(pil)
+    draw.text(org, text, font=font,
+              fill=(color_bgr[2], color_bgr[1], color_bgr[0]))
+    img[:, :, :] = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
+    return True
 
 
 def _clay_centroids(images: List[np.ndarray], fps: float,
@@ -67,10 +104,10 @@ def _draw_symbol(img, kind: str, cx: int, cy: int, s: int) -> None:
 
 
 def _draw_badge(img, verdict: str) -> None:
-    color, label, sym = _STYLE.get(verdict, _STYLE["ambigu"])
+    color, label_uni, label_ascii, sym = _STYLE.get(verdict, _STYLE["ambigu"])
     H, W = img.shape[:2]
     scale = max(0.7, W / 640.0)
-    (tw, th), _ = cv2.getTextSize(label, _FONT, scale, 2)
+    (tw, th), _ = cv2.getTextSize(label_ascii, _FONT, scale, 2)
     pad = int(14 * scale)
     sym_w = int(46 * scale)
     bw = tw + 2 * pad + sym_w
@@ -81,8 +118,13 @@ def _draw_badge(img, verdict: str) -> None:
     cv2.rectangle(overlay, (x, y), (x + bw, y + bh), color, -1)
     cv2.addWeighted(overlay, 0.85, img, 0.15, 0, img)
     _draw_symbol(img, sym, x + pad + sym_w // 2, y + bh // 2, int(10 * scale))
-    cv2.putText(img, label, (x + pad + sym_w, y + pad + th),
-                _FONT, scale, (255, 255, 255), 2, cv2.LINE_AA)
+    # Texte accenté (Pillow) si possible, sinon repli ASCII (cv2).
+    ok = _put_text_unicode(img, label_uni,
+                           (x + pad + sym_w, y + int(pad * 0.4)),
+                           int(30 * scale), (255, 255, 255))
+    if not ok:
+        cv2.putText(img, label_ascii, (x + pad + sym_w, y + pad + th),
+                    _FONT, scale, (255, 255, 255), 2, cv2.LINE_AA)
 
 
 def render_overlay_clip(

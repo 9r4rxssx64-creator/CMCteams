@@ -4,6 +4,7 @@
 numpy>=1.24
 opencv-python-headless>=4.8
 pyyaml>=6.0
+Pillow>=10.0          # texte accenté du badge de l'export ralenti (repli ASCII si absent)
 
 # Serveur + PWA (jalon 5)
 fastapi>=0.110
