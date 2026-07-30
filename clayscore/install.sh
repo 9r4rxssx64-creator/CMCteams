@@ -72,7 +72,20 @@ if [ "$WITH_HW" -eq 1 ]; then
   else
     echo "ATTENTION : apt-get introuvable — installez Aravis/PortAudio manuellement." >&2
   fi
-  echo "==> Composants matériel installés. Configurez source.video.type: aravis"
+
+  # Service systemd du hub (watchdog + reprise d'état).
+  if command -v systemctl >/dev/null 2>&1; then
+    echo "==> Installation du service systemd clayscore"
+    sudo cp "$HERE/deploy/clayscore.service" /etc/systemd/system/clayscore.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable clayscore || true
+    echo "    (démarrer : sudo systemctl start clayscore)"
+  fi
+
+  echo "==> Composants matériel installés."
+  echo "    - Caméras : config.yaml -> source.video.type: aravis"
+  echo "    - Micro   : config.yaml -> source.audio.type: mic"
+  echo "    - Hotspot WiFi local : sudo IFACE=wlan0 ./deploy/setup_hotspot.sh"
 fi
 
 echo ""

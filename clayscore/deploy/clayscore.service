@@ -1,0 +1,23 @@
+# Service systemd du hub ClayScore (jalon 7).
+# Installation : sudo cp deploy/clayscore.service /etc/systemd/system/
+#                sudo systemctl enable --now clayscore
+# (fait automatiquement par ./install.sh --hardware)
+[Unit]
+Description=ClayScore — hub de comptage ball-trap (PWA + API + WebSocket)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/clayscore
+ExecStart=/opt/clayscore/.venv/bin/python -m clayscore.server --host 0.0.0.0 --port 8000
+# Watchdog : redémarre en cas de crash ; l'état du match est rejoué depuis
+# data/match_state.json au boot (aucune partie interrompue).
+Restart=always
+RestartSec=3
+# Robustesse
+KillSignal=SIGINT
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -10,12 +10,14 @@ continu segmenté par lancement — même interface `next_plateau()`.
 """
 from __future__ import annotations
 
+import json
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from .game.state_machine import Partie
+from .labeling import LabeledStore
 from .sources.audio_file import read_wav_mono
 from .sources.video_file import FileVideoSource
 from .vision.verdict import VerdictConfig, decide_verdict
@@ -92,12 +94,22 @@ class SimulationSource:
 class MatchEngine:
     """État global d'un match (une ligne de tir) + pipeline de simulation."""
 
-    def __init__(self, clips_dir: str = "data/clips"):
+    def __init__(self, clips_dir: str = "data/clips", source=None,
+                 state_path: Optional[str] = None,
+                 labeled_dir: Optional[str] = None):
         self._lock = threading.Lock()
-        self.sim = SimulationSource(clips_dir)
+        # `source` : objet exposant next_plateau() (SimulationSource par défaut,
+        # ou LiveMatchSource en mode réel/fichier continu — jalon 7).
+        self.sim = source if source is not None else SimulationSource(clips_dir)
         self.partie: Optional[Partie] = None
         self.pending: Optional[Analysis] = None
         self.auto_mode = False   # si True : valide seul les verdicts sûrs
+        # Reprise d'état après crash (watchdog) : on journalise chaque verdict.
+        self.state_path = state_path
+        self._cfg: Optional[Dict] = None
+        self._log: List[Dict] = []
+        # Collecte des cas arbitrés par l'humain -> data/labeled/ (IA v2).
+        self._labeled = LabeledStore(labeled_dir) if labeled_dir else None
 
     # --- cycle de vie du match --------------------------------------- #
     def new_game(self, discipline: str, shooters: List[str],
@@ -107,6 +119,11 @@ class MatchEngine:
             self.partie = Partie(discipline, shooters, serie, cartouches)
             self.pending = None
             self.auto_mode = bool(auto_mode)
+            self._cfg = {"discipline": discipline, "shooters": shooters,
+                         "serie": serie, "cartouches": cartouches,
+                         "auto_mode": bool(auto_mode)}
+            self._log = []
+            self._persist()
             return self._state_locked()
 
     def _require(self) -> Partie:
@@ -121,6 +138,8 @@ class MatchEngine:
             if p.finished:
                 raise RuntimeError("La partie est terminée.")
             analysis = self.sim.next_plateau()
+            if analysis is None:
+                raise RuntimeError("Plus de plateaux disponibles dans le flux.")
             self.pending = analysis
             committed = None
             # Auto-validation seulement si activée ET verdict sûr (non ambigu).
@@ -138,8 +157,22 @@ class MatchEngine:
             p = self._require()
             if self.pending is None and verdict is None:
                 raise RuntimeError("Aucun plateau à valider.")
+            pending = self.pending
             v = verdict if verdict is not None else (
-                self.pending.best_guess if self.pending else "manque")
+                pending.best_guess if pending else "manque")
+            # Archive les cas arbitrés par l'humain (ambigu, ou correction de
+            # l'auto) -> data/labeled/ pour l'entraînement futur de l'IA v2.
+            if self._labeled is not None and pending is not None:
+                overridden = verdict is not None and verdict != pending.best_guess
+                if pending.ambiguous or overridden:
+                    try:
+                        self._labeled.add_sample(
+                            v, clip_url=pending.clip_url,
+                            auto_verdict=pending.auto_verdict,
+                            confidence=pending.confidence,
+                            meta={"plateau_id": pending.plateau_id})
+                    except Exception:  # noqa: BLE001 - ne jamais bloquer le jeu
+                        pass
             outcome = self._commit_locked(v, cartridge)
             return {"outcome": outcome, "state": self._state_locked()}
 
@@ -147,12 +180,52 @@ class MatchEngine:
         p = self._require()
         out = p.submit_verdict(verdict, cartridge)
         self.pending = None
+        self._log.append({"verdict": verdict, "cartridge": cartridge})
+        self._persist()
         return {
             "kind": out.kind,
             "shooter": out.shooter,
             "post": out.post,
             "message": out.message,
         }
+
+    # --- reprise d'état (watchdog / crash) --------------------------- #
+    def _persist(self) -> None:
+        if not self.state_path or self._cfg is None:
+            return
+        try:
+            Path(self.state_path).parent.mkdir(parents=True, exist_ok=True)
+            data = {"cfg": self._cfg, "log": self._log,
+                    "finished": bool(self.partie and self.partie.finished)}
+            with open(self.state_path, "w", encoding="utf-8") as fh:
+                json.dump(data, fh, ensure_ascii=False)
+        except Exception:  # noqa: BLE001 - la persistance ne doit jamais planter le jeu
+            pass
+
+    def restore_from_disk(self) -> bool:
+        """Rejoue le journal pour reconstruire un match interrompu. True si repris."""
+        if not self.state_path or not Path(self.state_path).exists():
+            return False
+        try:
+            with open(self.state_path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+        except Exception:  # noqa: BLE001
+            return False
+        cfg = data.get("cfg")
+        if not cfg or data.get("finished"):
+            return False
+        with self._lock:
+            self.partie = Partie(cfg["discipline"], cfg["shooters"],
+                                 cfg["serie"], cfg["cartouches"])
+            self.auto_mode = bool(cfg.get("auto_mode"))
+            self._cfg = cfg
+            self._log = []
+            # Rejoue chaque verdict validé (no-bird compris) -> état exact.
+            for entry in data.get("log", []):
+                self.partie.submit_verdict(entry["verdict"], entry["cartridge"])
+                self._log.append(entry)
+            self.pending = None
+            return True
 
     # --- lecture ------------------------------------------------------ #
     def state(self) -> Dict:

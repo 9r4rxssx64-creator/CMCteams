@@ -32,6 +32,13 @@ source:
     # device: null
     # sample_rate: 44100
 
+# Détecteur (jalon 8) : classique (MOG2) par défaut, ou IA YOLO si un modèle
+# entraîné est présent. Repli automatique sur le classique si absent.
+detector:
+  type: classic          # classic | yolo
+  weights: models/clayscore-yolo.pt   # .pt (PyTorch) ou .engine (TensorRT/Jetson)
+  conf: 0.25
+
 # Fenêtre d'analyse du verdict après le coup de feu.
 verdict:
   window_ms: 800

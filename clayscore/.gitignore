@@ -17,6 +17,9 @@ dist/
 data/labeled/
 data/clips/
 data/out/
+data/yolo/
+data/match_state.json
+models/
 *.db
 *.sqlite
 *.log
