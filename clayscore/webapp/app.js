@@ -80,6 +80,20 @@ $("#throw").onclick = async () => {
 };
 $$('#throw-card [data-v]').forEach((b) => b.onclick = () => submitVerdict(b.dataset.v));
 $("#validate-auto").onclick = () => submitVerdict(null);
+$("#export-overlay").onclick = async () => {
+  const b = $("#export-overlay"); b.disabled = true; b.textContent = "Habillage…";
+  try {
+    const r = await api("/api/game/overlay", { method: "POST" });
+    const rv = $("#replay");
+    rv.dataset.src = r.clip_url; rv.src = r.clip_url; rv.playbackRate = 1;
+    rv.play().catch(() => {});
+    toast("🎬 Ralenti habillé prêt (" + r.verdict + ")");
+    // Lien de téléchargement pour la vidéo de démo.
+    const a = document.createElement("a"); a.href = r.clip_url;
+    a.download = r.clip_url.split("/").pop(); a.click();
+  } catch (e) { toast(e.message); }
+  finally { b.disabled = false; b.textContent = "🎬 Ralenti habillé (démo)"; }
+};
 $$('#cart-row [data-cart]').forEach((b) => b.onclick = () => {
   CART = parseInt(b.dataset.cart, 10);
   $$('#cart-row [data-cart]').forEach((x) => x.classList.toggle("gold", x === b));

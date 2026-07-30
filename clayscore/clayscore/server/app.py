@@ -165,6 +165,30 @@ def create_app(clips_dir: Optional[str] = None,
             raise HTTPException(404, "Partie introuvable.")
         return rec
 
+    @app.post("/api/game/overlay")
+    async def game_overlay():
+        """Exporte le ralenti HABILLÉ (trajectoire + badge) du plateau courant.
+
+        Sert la vidéo de démonstration (surimpressions gravées). Utilise le
+        plateau en attente ; renvoie l'URL du clip habillé.
+        """
+        from ..replay import render_overlay_from_file
+        eng = engine()
+        if eng.pending is None:
+            raise HTTPException(400, "Aucun plateau à habiller.")
+        name = Path(eng.pending.clip_url).name
+        src = clips / name
+        if not src.exists():
+            raise HTTPException(404, "Clip source introuvable.")
+        out_name = src.stem + "_overlay.mp4"
+        verdict = eng.pending.best_guess
+        try:
+            render_overlay_from_file(str(src), str(clips / out_name), verdict,
+                                     slowmo=4.0)
+        except Exception as e:  # noqa: BLE001
+            raise HTTPException(500, f"Habillage impossible : {e}")
+        return {"clip_url": f"/clips/{out_name}", "verdict": verdict}
+
     # --- ralentis (mp4) -------------------------------------------------- #
     @app.get("/clips/{name}")
     def clip(name: str):
