@@ -135,7 +135,9 @@ def _make_fragments(
     frags = []
     for _ in range(n):
         ang = rng.uniform(0, 2 * math.pi)
-        speed = rng.uniform(60.0, 170.0)
+        # Éclats rapides : ils se séparent nettement dès la 1re trame après le bris
+        # (un plateau cassé projette une gerbe d'éclats bien visible).
+        speed = rng.uniform(90.0, 230.0)
         vx = inherit_v[0] * 0.4 + math.cos(ang) * speed
         vy = inherit_v[1] * 0.4 + math.sin(ang) * speed
         frags.append(
@@ -144,9 +146,9 @@ def _make_fragments(
                 "y0": origin[1],
                 "vx": vx,
                 "vy": vy,
-                "r0": rng.uniform(2.0, 5.0),
+                "r0": rng.uniform(3.5, 7.5),
                 "birth": birth_frame,
-                "life": rng.uniform(0.30, 0.60),  # secondes
+                "life": rng.uniform(0.40, 0.75),  # secondes
                 "g": g,
             }
         )
@@ -189,7 +191,7 @@ def simulate(params: SynthParams) -> Scenario:
         bx, by = clay_pos(max(t_break, 0.0))
         vbx = vx
         vby = vy + g * max(t_break, 0.0)
-        n_frag = int(rng.integers(11, 17))
+        n_frag = int(rng.integers(16, 24))
         fragments = _make_fragments(
             rng, (bx, by), (vbx, vby), break_frame, fps, g, n_frag
         )
