@@ -81,14 +81,26 @@ erreur explicite (matériel absent) — c'est attendu et testé.
 ## Feuille de route (jalons)
 
 - [x] **0. Simulation** — sources abstraites + synthétiseur + 3 clips de référence
-- [ ] 1. Détection des lancements (≥ 99 % sur jeux synthétiques)
-- [ ] 2. Détection des coups de feu (faux positifs < 1 %)
-- [ ] 3. Verdicts cassé/manqué/no-bird (≥ 98 %, ambigus routés vers l'humain)
-- [ ] 4. Machine à états de la partie (toutes disciplines, no-bird, doublés)
-- [ ] 5. Serveur FastAPI + PWA (partie jouable au navigateur, ralentis)
+- [x] **1. Détection des lancements** — 100 % mesuré sur jeux synthétiques
+- [x] **2. Détection des coups de feu** — 0 % faux positifs mesuré
+- [x] **3. Verdicts cassé/manqué/no-bird** — 100 % mesuré, ambigus routés vers l'humain
+- [x] **4. Machine à états de la partie** — 5 disciplines, no-bird, doublés (tests exhaustifs)
+- [x] **5. Serveur FastAPI + PWA** — partie jouable au navigateur, WebSocket temps réel, ralentis
 - [ ] 6. Multi-caméras (fusion, calibration auto)
 - [ ] 7. Intégration matériel (Aravis/GigE, micro, systemd, hotspot WiFi)
 - [ ] 8. IA v2 (entraînement YOLO, export TensorRT pour Jetson)
+
+### Lancer le système (simulation)
+
+```bash
+python -m clayscore.server          # démarre le hub (PWA + API + WebSocket) sur :8000
+# puis, depuis une tablette sur le même WiFi : http://<ip-du-hub>:8000
+```
+
+La PWA permet de configurer une partie (discipline, tireurs, série), de lancer
+chaque plateau (analysé automatiquement par le pipeline vision/audio), de voir
+le **ralenti** et d'un tap valider CASSÉ / MANQUÉ / NO BIRD. Scores en direct
+(WebSocket), historique (SQLite), export CSV, mode TV plein écran.
 
 ## Licence
 
