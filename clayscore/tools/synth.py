@@ -304,11 +304,17 @@ def _draw_fragments(img: np.ndarray, frags: List[FragState]) -> None:
         img[y0:y1, x0:x1] = np.clip(blended, 0, 255).astype(np.uint8)
 
 
-def render_frames(scenario: Scenario) -> List[np.ndarray]:
-    """Produit la liste des images BGR (avec bruit capteur léger)."""
+def render_frames(scenario: Scenario,
+                  bg: Optional[np.ndarray] = None) -> List[np.ndarray]:
+    """Produit la liste des images BGR (avec bruit capteur léger).
+
+    `bg` : fond imposé (partagé). Si None, un fond est généré depuis les params
+    (cas d'un clip isolé). Un fond partagé sert aux flux continus (jalon 7).
+    """
     params = scenario.params
     rng = np.random.default_rng(params.seed + 777)
-    bg = _make_background(params, np.random.default_rng(params.seed + 1))
+    if bg is None:
+        bg = _make_background(params, np.random.default_rng(params.seed + 1))
     images: List[np.ndarray] = []
     for st in scenario.frames:
         img = bg.copy()
@@ -321,6 +327,63 @@ def render_frames(scenario: Scenario) -> List[np.ndarray]:
             _draw_fragments(img, st.frags)
         images.append(img)
     return images
+
+
+def render_sequence(
+    specs: List[Tuple[str, int]],
+    background: str = "ciel",
+    gap_s: float = 0.8,
+    width: int = 240,
+    height: int = 180,
+    fps: float = 30.0,
+    duration_s: float = 2.0,
+    seed0: int = 0,
+):
+    """Construit un FLUX CONTINU de plateaux (jalon 7).
+
+    `specs` : liste de (scénario, graine). Un même fond est partagé par tout le
+    flux (une caméra, une scène) et des intervalles vides séparent les plateaux
+    (le détecteur se ré-arme). Retourne (frames, audio, sample_rate, verdicts,
+    launch_frames) — audio aligné temps sur la vidéo.
+    """
+    bgp = SynthParams(background=background, width=width, height=height,
+                      fps=fps, seed=seed0)
+    bg = _make_background(bgp, np.random.default_rng(seed0 + 1))
+    sr = bgp.sample_rate
+    frames: List[np.ndarray] = []
+    audio_parts: List[np.ndarray] = []
+    verdicts: List[str] = []
+    launch_frames: List[int] = []
+    gap_n = int(round(gap_s * fps))
+    gap_samples = int(round(gap_s * sr))
+    grng = np.random.default_rng(seed0 + 123)
+
+    def add_gap():
+        for _ in range(gap_n):
+            noise = grng.normal(0, 3.0, bg.shape).astype(np.float32)
+            frames.append(np.clip(bg.astype(np.float32) + noise, 0, 255).astype(np.uint8))
+        audio_parts.append(np.zeros(gap_samples, dtype=np.float32))
+
+    for scenario, seed in specs:
+        add_gap()
+        params = SynthParams(scenario=scenario, background=background,
+                             width=width, height=height, fps=fps,
+                             duration_s=duration_s, seed=seed)
+        sc = simulate(params)
+        start = len(frames)
+        imgs = render_frames(sc, bg=bg)
+        launch_frames.append(start + sc.events.launch_frame)
+        frames.extend(imgs)
+        a = render_audio(sc)
+        want = int(round(len(imgs) / fps * sr))
+        if len(a) < want:
+            a = np.concatenate([a, np.zeros(want - len(a), dtype=np.float32)])
+        else:
+            a = a[:want]
+        audio_parts.append(a)
+        verdicts.append(sc.events.verdict)
+    add_gap()
+    return frames, np.concatenate(audio_parts), sr, verdicts, launch_frames
 
 
 # --------------------------------------------------------------------------- #

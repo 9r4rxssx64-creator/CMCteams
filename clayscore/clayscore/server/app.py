@@ -75,12 +75,19 @@ class WSManager:
 
 
 def create_app(clips_dir: Optional[str] = None,
-               db_path: Optional[str] = None) -> FastAPI:
-    app = FastAPI(title="ClayScore", version="0.5.0")
+               db_path: Optional[str] = None,
+               state_path: Optional[str] = None) -> FastAPI:
+    app = FastAPI(title="ClayScore", version="0.7.0")
     clips = Path(clips_dir) if clips_dir else CLIPS_DIR
     clips.mkdir(parents=True, exist_ok=True)
+    statep = state_path or str(_PKG_ROOT / "data" / "match_state.json")
 
-    app.state.engine = MatchEngine(clips_dir=str(clips))
+    app.state.engine = MatchEngine(clips_dir=str(clips), state_path=statep)
+    # Reprise après crash / redémarrage (watchdog systemd) : rejoue le match.
+    try:
+        app.state.engine.restore_from_disk()
+    except Exception:  # noqa: BLE001
+        pass
     app.state.storage = Storage(db_path or str(DB_PATH))
     app.state.ws = WSManager()
 

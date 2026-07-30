@@ -10,7 +10,8 @@ from clayscore.server.app import create_app
 @pytest.fixture()
 def client(tmp_path):
     app = create_app(clips_dir=str(tmp_path / "clips"),
-                     db_path=str(tmp_path / "test.db"))
+                     db_path=str(tmp_path / "test.db"),
+                     state_path=str(tmp_path / "state.json"))
     with TestClient(app) as c:
         yield c
 

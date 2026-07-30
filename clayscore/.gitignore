@@ -17,6 +17,7 @@ dist/
 data/labeled/
 data/clips/
 data/out/
+data/match_state.json
 *.db
 *.sqlite
 *.log

@@ -87,7 +87,7 @@ erreur explicite (matériel absent) — c'est attendu et testé.
 - [x] **4. Machine à états de la partie** — 5 disciplines, no-bird, doublés (tests exhaustifs)
 - [x] **5. Serveur FastAPI + PWA** — partie jouable au navigateur, WebSocket temps réel, ralentis
 - [x] **6. Multi-caméras** — fusion stéréo, triangulation 3D grossière, calibration auto des corridors
-- [ ] 7. Intégration matériel (Aravis/GigE, micro, systemd, hotspot WiFi)
+- [x] **7. Intégration matériel** — capture pilotée par la source (segmentation live), Aravis/micro branchés, systemd + hotspot WiFi, reprise d'état après crash
 - [ ] 8. IA v2 (entraînement YOLO, export TensorRT pour Jetson)
 
 ### Lancer le système (simulation)
