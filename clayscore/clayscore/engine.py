@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from .game.state_machine import Partie
+from .labeling import LabeledStore
 from .sources.audio_file import read_wav_mono
 from .sources.video_file import FileVideoSource
 from .vision.verdict import VerdictConfig, decide_verdict
@@ -94,7 +95,8 @@ class MatchEngine:
     """État global d'un match (une ligne de tir) + pipeline de simulation."""
 
     def __init__(self, clips_dir: str = "data/clips", source=None,
-                 state_path: Optional[str] = None):
+                 state_path: Optional[str] = None,
+                 labeled_dir: Optional[str] = None):
         self._lock = threading.Lock()
         # `source` : objet exposant next_plateau() (SimulationSource par défaut,
         # ou LiveMatchSource en mode réel/fichier continu — jalon 7).
@@ -106,6 +108,8 @@ class MatchEngine:
         self.state_path = state_path
         self._cfg: Optional[Dict] = None
         self._log: List[Dict] = []
+        # Collecte des cas arbitrés par l'humain -> data/labeled/ (IA v2).
+        self._labeled = LabeledStore(labeled_dir) if labeled_dir else None
 
     # --- cycle de vie du match --------------------------------------- #
     def new_game(self, discipline: str, shooters: List[str],
@@ -153,8 +157,22 @@ class MatchEngine:
             p = self._require()
             if self.pending is None and verdict is None:
                 raise RuntimeError("Aucun plateau à valider.")
+            pending = self.pending
             v = verdict if verdict is not None else (
-                self.pending.best_guess if self.pending else "manque")
+                pending.best_guess if pending else "manque")
+            # Archive les cas arbitrés par l'humain (ambigu, ou correction de
+            # l'auto) -> data/labeled/ pour l'entraînement futur de l'IA v2.
+            if self._labeled is not None and pending is not None:
+                overridden = verdict is not None and verdict != pending.best_guess
+                if pending.ambiguous or overridden:
+                    try:
+                        self._labeled.add_sample(
+                            v, clip_url=pending.clip_url,
+                            auto_verdict=pending.auto_verdict,
+                            confidence=pending.confidence,
+                            meta={"plateau_id": pending.plateau_id})
+                    except Exception:  # noqa: BLE001 - ne jamais bloquer le jeu
+                        pass
             outcome = self._commit_locked(v, cartridge)
             return {"outcome": outcome, "state": self._state_locked()}
 
