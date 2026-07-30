@@ -8,6 +8,15 @@ from .detector import (
     MotionDetector,
     count_launches,
 )
+from .multicam import (
+    Camera,
+    Detection2D,
+    MultiCameraFusion,
+    Point3D,
+    Track3D,
+    associate,
+    triangulate_stereo,
+)
 from .tracker import KalmanClayTracker, TrackPoint, exited_frame
 from .verdict import (
     VerdictConfig,
@@ -27,6 +36,13 @@ __all__ = [
     "KalmanClayTracker",
     "TrackPoint",
     "exited_frame",
+    "Camera",
+    "Detection2D",
+    "MultiCameraFusion",
+    "Point3D",
+    "Track3D",
+    "associate",
+    "triangulate_stereo",
     "VerdictConfig",
     "VerdictEvidence",
     "VerdictResult",

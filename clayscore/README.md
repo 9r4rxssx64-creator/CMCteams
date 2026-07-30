@@ -86,7 +86,7 @@ erreur explicite (matériel absent) — c'est attendu et testé.
 - [x] **3. Verdicts cassé/manqué/no-bird** — 100 % mesuré, ambigus routés vers l'humain
 - [x] **4. Machine à états de la partie** — 5 disciplines, no-bird, doublés (tests exhaustifs)
 - [x] **5. Serveur FastAPI + PWA** — partie jouable au navigateur, WebSocket temps réel, ralentis
-- [ ] 6. Multi-caméras (fusion, calibration auto)
+- [x] **6. Multi-caméras** — fusion stéréo, triangulation 3D grossière, calibration auto des corridors
 - [ ] 7. Intégration matériel (Aravis/GigE, micro, systemd, hotspot WiFi)
 - [ ] 8. IA v2 (entraînement YOLO, export TensorRT pour Jetson)
 
