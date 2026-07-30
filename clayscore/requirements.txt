@@ -1,9 +1,15 @@
-# Dépendances runtime du jalon 0 (Mode Simulation).
-# Les jalons suivants ajouteront : fastapi/uvicorn (serveur), sounddevice
-# (micro réel), pygobject+aravis (caméras GigE), ultralytics (IA v2).
+# Dépendances runtime (jalons 0-5 : simulation, vision, audio, partie, serveur).
+# Les jalons matériel ajouteront : sounddevice (micro), pygobject+aravis
+# (caméras GigE) ; l'IA v2 ajoutera ultralytics.
 numpy>=1.24
 opencv-python-headless>=4.8
 pyyaml>=6.0
 
+# Serveur + PWA (jalon 5)
+fastapi>=0.110
+uvicorn[standard]>=0.27
+websockets>=12.0
+
 # Développement / tests
 pytest>=7.4
+httpx>=0.27          # requis par le TestClient FastAPI

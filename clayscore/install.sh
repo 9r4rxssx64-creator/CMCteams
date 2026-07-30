@@ -77,6 +77,8 @@ fi
 
 echo ""
 echo "==> Installation terminée."
+echo "    Serveur : python -m clayscore.server   (puis ouvrir http://<ip-hub>:8000 sur la tablette)"
 echo "    Tests   : source .venv/bin/activate && pytest"
 echo "    Démo    : python -m tools.synth --scenario casse --background ciel --out /tmp/demo"
+echo "    Bancs   : python -m tools.bench --all"
 echo "    Config  : config/config.yaml (source.video.type: file|webcam|aravis)"
