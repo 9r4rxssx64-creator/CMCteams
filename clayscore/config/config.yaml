@@ -1,0 +1,49 @@
+# Configuration ClayScore.
+#
+# C'est le SEUL endroit qui décide réel vs simulation. Le reste du code ne
+# connaît que les interfaces de sources. Passer au matériel = changer `type`.
+
+source:
+  video:
+    # type: file    -> rejoue un fichier (mode simulation)
+    # type: webcam  -> webcam USB (repli de dev)
+    # type: aravis  -> caméra GigE Vision Hikrobot (matériel réel)
+    type: file
+    path: data/samples/casse_ciel.mp4
+    loop: false
+    # Paramètres webcam (si type: webcam)
+    # index: 0
+    # width: 1280
+    # height: 720
+    # fps: 30
+    # Paramètres aravis (si type: aravis)
+    # camera_id: null          # null = première caméra détectée
+    # width: 1440
+    # height: 1080
+    # fps: 50
+    # pixel_format: Mono8
+
+  audio:
+    # type: file -> rejoue un .wav (simulation) | type: mic -> micro USB réel
+    type: file
+    path: data/samples/casse_ciel.wav
+    chunk_size: 1024
+    # Paramètres micro (si type: mic)
+    # device: null
+    # sample_rate: 44100
+
+# Fenêtre d'analyse du verdict après le coup de feu.
+verdict:
+  window_ms: 800
+  confidence_threshold: 0.6   # sous ce seuil -> AMBIGU (arbitrage humain)
+
+# Détection des coups de feu (jalon 2).
+audio_detection:
+  min_gap_s: 0.15
+  double_window_s: 1.5        # 2 coups < 1.5 s = doublé / 2e cartouche
+
+# Partie (jalon 4).
+game:
+  discipline: fosse_universelle
+  serie: 25
+  cartouches: 2
