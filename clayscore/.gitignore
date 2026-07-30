@@ -1,0 +1,22 @@
+# Environnement Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Les 3 clips de RÉFÉRENCE (data/samples/) sont VOLONTAIREMENT versionnés :
+# ils constituent le livrable "3 vidéos synthétiques de référence" du jalon 0
+# (visualisables + regénérables via `python -m tools.synth --make-reference-set`).
+
+# Sorties runtime des jalons suivants (non versionnées)
+data/labeled/
+data/clips/
+data/out/
+*.db
+*.sqlite
+*.log

@@ -1,0 +1,701 @@
+{
+  "meta": {
+    "scenario": "manque",
+    "background": "foret",
+    "width": 640,
+    "height": 480,
+    "fps": 30.0,
+    "duration_s": 2.5,
+    "n_frames": 75,
+    "sample_rate": 22050,
+    "seed": 43
+  },
+  "events": {
+    "launch_frame": 9,
+    "gunshot_frame": 21,
+    "break_frame": null
+  },
+  "verdict_truth": "manque",
+  "frames": [
+    {
+      "i": 0,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 1,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 2,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 3,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 4,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 5,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 6,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 7,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 8,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 9,
+      "clay": {
+        "x": 76.8,
+        "y": 422.4,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 10,
+      "clay": {
+        "x": 89.6,
+        "y": 403.04,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 11,
+      "clay": {
+        "x": 102.4,
+        "y": 384.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 12,
+      "clay": {
+        "x": 115.2,
+        "y": 366.24,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 13,
+      "clay": {
+        "x": 128.0,
+        "y": 348.8,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 14,
+      "clay": {
+        "x": 140.8,
+        "y": 332.0,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 15,
+      "clay": {
+        "x": 153.6,
+        "y": 315.84,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 16,
+      "clay": {
+        "x": 166.4,
+        "y": 300.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 17,
+      "clay": {
+        "x": 179.2,
+        "y": 285.44,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 18,
+      "clay": {
+        "x": 192.0,
+        "y": 271.2,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 19,
+      "clay": {
+        "x": 204.8,
+        "y": 257.6,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 20,
+      "clay": {
+        "x": 217.6,
+        "y": 244.64,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 21,
+      "clay": {
+        "x": 230.4,
+        "y": 232.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 22,
+      "clay": {
+        "x": 243.2,
+        "y": 220.64,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 23,
+      "clay": {
+        "x": 256.0,
+        "y": 209.6,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 24,
+      "clay": {
+        "x": 268.8,
+        "y": 199.2,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 25,
+      "clay": {
+        "x": 281.6,
+        "y": 189.44,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 26,
+      "clay": {
+        "x": 294.4,
+        "y": 180.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 27,
+      "clay": {
+        "x": 307.2,
+        "y": 171.84,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 28,
+      "clay": {
+        "x": 320.0,
+        "y": 164.0,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 29,
+      "clay": {
+        "x": 332.8,
+        "y": 156.8,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 30,
+      "clay": {
+        "x": 345.6,
+        "y": 150.24,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 31,
+      "clay": {
+        "x": 358.4,
+        "y": 144.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 32,
+      "clay": {
+        "x": 371.2,
+        "y": 139.04,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 33,
+      "clay": {
+        "x": 384.0,
+        "y": 134.4,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 34,
+      "clay": {
+        "x": 396.8,
+        "y": 130.4,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 35,
+      "clay": {
+        "x": 409.6,
+        "y": 127.04,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 36,
+      "clay": {
+        "x": 422.4,
+        "y": 124.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 37,
+      "clay": {
+        "x": 435.2,
+        "y": 122.24,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 38,
+      "clay": {
+        "x": 448.0,
+        "y": 120.8,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 39,
+      "clay": {
+        "x": 460.8,
+        "y": 120.0,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 40,
+      "clay": {
+        "x": 473.6,
+        "y": 119.84,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 41,
+      "clay": {
+        "x": 486.4,
+        "y": 120.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 42,
+      "clay": {
+        "x": 499.2,
+        "y": 121.44,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 43,
+      "clay": {
+        "x": 512.0,
+        "y": 123.2,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 44,
+      "clay": {
+        "x": 524.8,
+        "y": 125.6,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 45,
+      "clay": {
+        "x": 537.6,
+        "y": 128.64,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 46,
+      "clay": {
+        "x": 550.4,
+        "y": 132.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 47,
+      "clay": {
+        "x": 563.2,
+        "y": 136.64,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 48,
+      "clay": {
+        "x": 576.0,
+        "y": 141.6,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 49,
+      "clay": {
+        "x": 588.8,
+        "y": 147.2,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 50,
+      "clay": {
+        "x": 601.6,
+        "y": 153.44,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 51,
+      "clay": {
+        "x": 614.4,
+        "y": 160.32,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 52,
+      "clay": {
+        "x": 627.2,
+        "y": 167.84,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 53,
+      "clay": {
+        "x": 640.0,
+        "y": 176.0,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 54,
+      "clay": {
+        "x": 652.8,
+        "y": 184.8,
+        "r": 9.6,
+        "visible": true
+      },
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 55,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 56,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 57,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 58,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 59,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 60,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 61,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 62,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 63,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 64,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 65,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 66,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 67,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 68,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 69,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 70,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 71,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 72,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 73,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    },
+    {
+      "i": 74,
+      "clay": null,
+      "n_frags": 0,
+      "frags": []
+    }
+  ]
+}
