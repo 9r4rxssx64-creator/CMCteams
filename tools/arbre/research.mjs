@@ -37,6 +37,15 @@ const QUERIES = [
   { id: 'vandenbosch_beaulieu',  note: 'VAN DEN BOSCH nés à Beaulieu-sur-Mer (rameau de Léonie Maiffret)', p: { lastName: 'VAN DEN BOSCH', birthCity: 'Beaulieu-sur-Mer', size: 50 } },
   { id: 'molinario_nice',        note: 'MOLINARIO nés à Nice (piste mariage 1865)', p: { lastName: 'MOLINARIO', birthCity: 'Nice', size: 50 } },
   { id: 'dentau_tous',           note: 'DENTAU — nom rare (piste Marie-Marguerite, mariage 1865)', p: { lastName: 'DENTAU', size: 50 } },
+  /* — v2 (2026-08-03) : angles supplémentaires pour couvrir TOUTES les familles — */
+  { id: 'sauvaigo_ne_monaco',    note: 'SAUVAIGO nés en principauté de MONACO (par pays — la ville renvoyait 422)', p: { lastName: 'SAUVAIGO', birthCountry: 'Monaco', size: 100 } },
+  { id: 'maiffret_ne_monaco',    note: 'MAIFFRET nés en principauté de MONACO (par pays, complément)', p: { lastName: 'MAIFFRET', birthCountry: 'Monaco', size: 100 } },
+  { id: 'desarzens_ne_suisse',   note: 'DESARZENS nés en SUISSE (berceau vaudois du nom) décédés en France', p: { lastName: 'DESARZENS', birthCountry: 'Suisse', size: 100 } },
+  { id: 'desarzens_marseille',   note: 'DESARZENS nés à Marseille (fratrie possible de Claude Alain 1941)', p: { lastName: 'DESARZENS', birthCity: 'Marseille', size: 50 } },
+  { id: 'maiffret_villefr2',     note: 'MAIFFRET nés à Villefranche (libellé INSEE court)', p: { lastName: 'MAIFFRET', birthCity: 'Villefranche', size: 50 } },
+  { id: 'vandenbosch_nice',      note: 'VAN DEN BOSCH nés à Nice (rameau de Léonie, suite)', p: { lastName: 'VAN DEN BOSCH', birthCity: 'Nice', size: 50 } },
+  { id: 'maiffret_recents06',    note: 'MAIFFRET nés dans le 06, décédés 2010→2026 (génération la plus proche des vivants)', p: { lastName: 'MAIFFRET', birthDepartment: '06', deathDate: '2010-2026', size: 100 } },
+  { id: 'sauvaigo_recents06',    note: 'SAUVAIGO nés dans le 06, décédés 2010→2026 (génération la plus proche des vivants)', p: { lastName: 'SAUVAIGO', birthDepartment: '06', deathDate: '2010-2026', size: 100 } },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
