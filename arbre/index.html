@@ -73,9 +73,9 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 #stageWrap{position:relative;height:66vh;min-height:420px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(130% 80% at 50% 102%,rgba(120,150,86,.22),transparent),radial-gradient(100% 60% at 50% -4%,rgba(206,168,98,.22),transparent),linear-gradient(180deg,#efe4c8,#e3d1a8);touch-action:none;box-shadow:var(--sh)}
 #treeBg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 #treeArt{position:absolute;inset:0;opacity:.8}#treeArt svg{width:100%;height:100%;display:block}
-#treePhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 78%;opacity:0;transition:opacity .6s}
-#treePhoto.on{opacity:.6}#treePhoto.on ~ #treeScrim{opacity:1}
-#treeScrim{position:absolute;inset:0;opacity:0;background:linear-gradient(180deg,rgba(233,217,186,.30),rgba(233,217,186,.5) 55%,rgba(227,209,168,.72))}
+#treePhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 62%;opacity:0;transition:opacity .6s}
+#treePhoto.on{opacity:.95}#treePhoto.on ~ #treeScrim{opacity:1}
+#treeScrim{position:absolute;inset:0;opacity:0;background:radial-gradient(135% 80% at 50% 42%,rgba(0,0,0,0),rgba(18,28,10,.16)),linear-gradient(180deg,rgba(16,24,8,.14),rgba(16,24,8,0) 26%,rgba(14,18,6,.20))}
 #stage{position:absolute;left:0;top:0;z-index:1;transform-origin:0 0;will-change:transform}
 #stage svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .tnode{position:absolute;transform:translate(-50%,-50%);width:170px;padding:11px 12px;border-radius:14px;background:linear-gradient(180deg,#fffdf4,#f2e6c8);border:1.5px solid #b8912f;display:flex;gap:11px;align-items:center;box-shadow:0 6px 16px rgba(74,54,22,.4),inset 0 1px 0 rgba(255,255,255,.7);cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s}
@@ -180,7 +180,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.10";
+var APP_VER="v2.11";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
