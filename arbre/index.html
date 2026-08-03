@@ -345,17 +345,47 @@ function doImport(e){var f=e.target.files[0];if(!f)return;var r=new FileReader()
 function setMe(){var n=prompt("Ton prénom (apparaîtra sur tes ajouts/commentaires) :",ME||"");if(n!=null){ME=n.trim();localStorage.setItem("arbre_me",ME);if(VIEW==="tools")render();}}
 async function changeCode(){var c=prompt("Nouveau code famille :");if(!c)return;var c2=prompt("Confirme :");if(c!==c2){toast("Codes différents");return;}CODEHASH=await sha256("arbre::"+c.trim());localStorage.setItem("arbre_codehash",CODEHASH);await cloudPushAll();toast("🔑 Code changé — repartage-le");}
 
-/* ---------- seed ---------- */
+/* ---------- seed (pré-rempli + recherches sourcées 2026-08-03) ---------- */
+var SRC={
+  gMaiffret:{label:"Geneanet · nom MAIFFRET",url:"https://www.geneanet.org/nom-de-famille/MAIFFRET"},
+  gSauvaigo:{label:"Geneanet · nom SAUVAIGO",url:"https://www.geneanet.org/nom-de-famille/SAUVAIGO"},
+  beaulieu1:{label:"Relevé Beaulieu-sur-Mer 1814–1904",url:"https://www.geneanet.org/releves-collaboratifs/view/46334"},
+  beaulieu2:{label:"Relevé Beaulieu mariages 1905–1940",url:"https://www.geneanet.org/releves-collaboratifs/view/49327"},
+  monacoTree:{label:"Arbre « Généalogies Monaco » (Sauvaigo)",url:"https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"},
+  marieclaire:{label:"Arbre marieclaire1 (Maiffret)",url:"https://gw.geneanet.org/marieclaire1?lang=fr&m=N&v=MAIFFRET"},
+  acteMaiffret:{label:"Décès INSEE · famille Maiffret",url:"https://www.acte-deces.fr/recherche-deces-famille-maiffret"},
+  acteVdb:{label:"Décès INSEE · famille Van den Bosch",url:"https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"},
+  monaco1900:{label:"Archives Monaco (base ≥1900)",url:"https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"},
+  matchid:{label:"Fichier INSEE (matchID)",url:"https://deces.matchid.io"},
+  ad06:{label:"Archives 06 (Nice/Villefranche)",url:"https://archives06.fr"},
+  cimBeaulieu:{label:"Cimetière de Beaulieu-sur-Mer",url:"https://en.geneanet.org/cemetery/collection/17161-cimetiere-communal-de-beaulieu-sur-mer"}
+};
 function seed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
-  add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. À compléter."});
-  add({id:"seed_mt_maiffret",prenom:"Marie-Thérèse",nom:"MAIFFRET",sexe:"F",naissance:{date:"23.10.1911"},deces:{},conjoints:["seed_victor_sauvaigo"],notes:"Née le 23.10.1911 (document). Épouse de Victor Sauvaigo."});
+  /* — Lignée directe (donnée par Kevin, fiable) — */
+  add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
+  add({id:"seed_mt_maiffret",prenom:"Marie-Thérèse",nom:"MAIFFRET",sexe:"F",naissance:{date:"23.10.1911"},deces:{},conjoints:["seed_victor_sauvaigo"],notes:"Née le 23.10.1911 (document). Épouse de Victor Sauvaigo. MAIFFRET = nom provençal d'origine germanique (Mathfrid : force + paix), rameau Meiffren/Meiffret. Décès (si ≥1970) vérifiable à l'INSEE.",sources:[SRC.gMaiffret,SRC.beaulieu1,SRC.matchid]});
   add({id:"seed_marienoel",prenom:"Marie-Noël",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Mère de Kevin, née à Monaco."});
-  add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{lieu:"Monaco"},mere:"seed_marienoel",notes:"Né à Monaco. Côté paternel (de Sarzance / Salon-de-Provence) à ajouter."});
-  add({prenom:"Victor",nom:"MAIFFRET",sexe:"M",naissance:{date:"10.12.1860 ?"},deces:{date:"1.07.1943 ?"},notes:"Document (branche Maiffret). Lien exact à confirmer."});
-  add({prenom:"Alexandre",nom:"MAIFFRET",sexe:"M",naissance:{date:"14.10.1856 ?"},deces:{date:"3.05.1926 ?"},notes:"Document. À rattacher."});
-  add({prenom:"Léonie",nom:"MAIFFRET",sexe:"F",naissance:{date:"19.03.1895 ?"},deces:{date:"30.01.1952 ?"},notes:"Épouse VAN DEN BOSCH (document). À rattacher."});
-  add({prenom:"Jules",nom:"SAUVAIGO",sexe:"M",naissance:{date:"1858 ?"},notes:"Marié en 1883 à Victorine MAIFFRET (relevé public). Lien à confirmer."});
-  add({prenom:"Victorine",nom:"MAIFFRET",sexe:"F",naissance:{date:"1860 ?"},notes:"Mariage 1883 avec Jules Sauvaigo. À rattacher."});
+  add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{lieu:"Monaco"},mere:"seed_marienoel",notes:"Né à Monaco. Côté paternel (de Sarzance / Salon-de-Provence, Bouches-du-Rhône) encore à ajouter."});
+  /* — Jonction Sauvaigo ⇄ Maiffret (confirmée, index Geneanet) — */
+  add({prenom:"Jules",nom:"SAUVAIGO",sexe:"M",naissance:{date:"1858 ?"},conjoints:[],notes:"✅ Marié en 1883 à Victorine MAIFFRET (index Geneanet). Lien exact à la lignée de Victor Sauvaigo à confirmer.",sources:[SRC.gSauvaigo,SRC.monacoTree]});
+  add({prenom:"Victorine",nom:"MAIFFRET",sexe:"F",naissance:{date:"1860 ?"},notes:"✅ Mariage 1883 avec Jules Sauvaigo (index Geneanet) — conforme au document. À rattacher.",sources:[SRC.gMaiffret,SRC.marieclaire]});
+  add({prenom:"Julie",nom:"SAUVAIGO",sexe:"F",naissance:{date:"1893 ?"},deces:{date:"1912 ?"},notes:"Fille probable de Jules & Victorine (document). À confirmer.",sources:[SRC.monacoTree]});
+  add({prenom:"Micheline",nom:"SAUVAIGO",sexe:"F",naissance:{date:"1892 ?"},notes:"Document (décédée en bas âge). À confirmer.",sources:[SRC.monacoTree]});
+  /* — Branche MAIFFRET (document + pistes) — */
+  add({prenom:"Victor",nom:"MAIFFRET",sexe:"M",naissance:{date:"10.12.1860 ?"},deces:{date:"1.07.1943 ?"},notes:"Document (branche Maiffret de Beaulieu-sur-Mer / Nice). Lien exact à confirmer.",sources:[SRC.beaulieu1,SRC.marieclaire]});
+  add({prenom:"Alexandre",nom:"MAIFFRET",sexe:"M",naissance:{date:"14.10.1856 ?"},deces:{date:"3.05.1926 ?"},notes:"Document. Actes avant ~1891 à chercher à VILLEFRANCHE-sur-Mer (Beaulieu en dépendait avant sa création).",sources:[SRC.ad06,SRC.beaulieu1]});
+  add({prenom:"Joseph-Alexandre",nom:"MAIFFRET",sexe:"M",naissance:{date:"22.08.1836 ?"},deces:{date:"24.07.1931 ?"},notes:"Document (sans postérité). À rattacher.",sources:[SRC.ad06]});
+  add({prenom:"Louis",nom:"MAIFFRET",sexe:"M",naissance:{date:"16.06.1860 ?"},deces:{date:"24.05.1932 ?"},notes:"Document (sans postérité). À rattacher.",sources:[SRC.beaulieu1]});
+  add({prenom:"Léonie",nom:"MAIFFRET",sexe:"F",naissance:{date:"19.03.1895 ?"},deces:{date:"30.01.1952 ?"},notes:"Épouse VAN DEN BOSCH (document). Sa fille probable : Lucette Thérèse Van den Bosch (née à Beaulieu). À rattacher.",sources:[SRC.beaulieu2,SRC.acteVdb]});
+  add({prenom:"Marguerite-Rose",nom:"MAIFFRET",sexe:"F",naissance:{date:"6.03.1907 ?"},deces:{date:"2.08.1983 ?"},notes:"Document (sans postérité). Décès 1983 → figure au fichier INSEE, vérifiable.",sources:[SRC.matchid,SRC.acteMaiffret]});
+  /* — Personnes CONFIRMÉES à l'INSEE (recherche 2026-08-03) — même famille de Beaulieu, à rattacher — */
+  add({prenom:"Michel",nom:"MAIFFRET",sexe:"M",naissance:{date:"19.08.1937",lieu:"Nice"},deces:{date:"18.03.2005",lieu:"Beaulieu-sur-Mer"},notes:"✅ CONFIRMÉ (fichier INSEE) — correspond au « Michel 1937–2005 » du document. À rattacher à la bonne branche.",sources:[SRC.acteMaiffret,SRC.matchid]});
+  add({prenom:"Léon",nom:"MAIFFRET",sexe:"M",naissance:{date:"25.04.1910",lieu:"Beaulieu-sur-Mer"},deces:{date:"13.03.1994",lieu:"Nice"},notes:"✅ CONFIRMÉ (fichier INSEE). Né à Beaulieu-sur-Mer. À rattacher.",sources:[SRC.acteMaiffret,SRC.matchid]});
+  add({prenom:"Josette",nom:"MAIFFRET",sexe:"F",naissance:{date:"31.01.1922",lieu:"Beaulieu-sur-Mer"},deces:{date:"11.05.1994",lieu:"Nice"},notes:"✅ CONFIRMÉ (fichier INSEE). Née à Beaulieu-sur-Mer. À rattacher.",sources:[SRC.acteMaiffret,SRC.matchid]});
+  add({prenom:"Lucette Thérèse",nom:"VAN DEN BOSCH",sexe:"F",naissance:{date:"~1920 ? (doc: 1926)",lieu:"Beaulieu-sur-Mer"},deces:{date:"16.12.2010",lieu:"Ramatuelle"},notes:"✅ CONFIRMÉ (INSEE, †2010 à 90 ans). Née à Beaulieu-sur-Mer → chaînon Maiffret ⇄ Van den Bosch (fille probable de Léonie). ⚠️ Date de naissance à trancher : INSEE ~1920 vs document ~1926.",sources:[SRC.acteVdb,SRC.matchid]});
+  /* — Piste MOLINARIO ⇄ DENTAU (rien de public trouvé, à chercher aux AD06 année 1865) — */
+  add({prenom:"Marius-Antoine",nom:"MOLINARIO",sexe:"M",naissance:{},conjoints:[],notes:"Document : marié le 11.06.1865 à Marie-Marguerite DENTAU (région niçoise). 🔎 Non retrouvé en ligne — chercher registre AD06 (Nice) année 1865.",sources:[SRC.ad06]});
+  add({prenom:"Marie-Marguerite",nom:"DENTAU",sexe:"F",naissance:{},notes:"Document : mariage 11.06.1865 avec Marius-Antoine Molinario. Variantes possibles du nom : Dentaud, Dentu.",sources:[SRC.ad06]});
   DB.persons=s;DB.meta={updatedAt:now()};}
 
 /* ---------- boot ---------- */
