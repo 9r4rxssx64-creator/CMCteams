@@ -180,7 +180,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.11";
+var APP_VER="v2.12";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -375,7 +375,9 @@ function layoutAscendance(rootId){
   var nodes=[],links=[];
   gens.forEach(function(row,gi){var y=PAD+(depth-1-gi)*ROWH;row.forEach(function(cell){cell._x=xOf(cell.slot,gi);cell._y=y;nodes.push({id:cell.id,x:cell._x,y:cell._y,root:cell.id===root});});});
   for(var gi=1;gi<depth;gi++){gens[gi].forEach(function(cell){var cs=Math.floor(cell.slot/2);var child=gens[gi-1].filter(function(c){return c.slot===cs;})[0];if(child)links.push({x1:cell._x,y1:cell._y+36,x2:child._x,y2:child._y-36});if(cell.slot%2===0){var mate=gens[gi].filter(function(c){return c.slot===cell.slot+1;})[0];if(mate)links.push({couple:1,x1:cell._x,y1:cell._y,x2:mate._x,y2:mate._y});}});}
-  return {nodes:nodes,links:links,bands:[],w:totalW,h:PAD+depth*ROWH};
+  var minx=1e9,maxx=-1e9;nodes.forEach(function(n){if(n.x<minx)minx=n.x;if(n.x>maxx)maxx=n.x;});
+  var dx=PAD+BOXW/2-minx;nodes.forEach(function(n){n.x+=dx;});links.forEach(function(l){l.x1+=dx;l.x2+=dx;});
+  return {nodes:nodes,links:links,bands:[],w:(maxx-minx)+BOXW+PAD*2,h:PAD+depth*ROWH};
 }
 var TREEMODE="famille";
 function safeLayout(){
