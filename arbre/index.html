@@ -181,7 +181,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.14";
+var APP_VER="v2.15";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -238,6 +238,57 @@ var VIEWST={tx:40,ty:40,sc:1};
    Fini la longue bande minuscule dans le coin. */
 var TREE={ROWH:150,BOXW:198,COUPLEGAP:16,UNITGAP:26,PAD:34,COMPGAP:64,CARD:184};
 function compLabel(ids){var cnt={};ids.forEach(function(x){var nm=(P(x).nom||"").trim().toUpperCase();if(nm)cnt[nm]=(cnt[nm]||0)+1;});var top=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];}).slice(0,2);return top.length?("Famille "+top.join(" · ")):"Famille";}
+/* Agencement « propre » d'une famille : les PARENTS en haut, chaque enfant
+   DIRECTEMENT EN DESSOUS de ses parents (couple centré au-dessus de ses enfants).
+   Les plus jeunes descendent tout en bas (ex : Ronan au pied du tronc). */
+function tidyTree(ids){
+  var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP;
+  var set={};ids.forEach(function(x){set[x]=1;});
+  var placed={},nodes=[],links=[],cursor=0,depthMax=0;
+  function members(x){var pp=P(x);var m=[x];(pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&m.indexOf(c)<0)m.push(c);});return m;}
+  function unit(x,depth){
+    if(placed[x])return null;
+    var mem=members(x);mem.forEach(function(z){placed[z]=1;});if(depth>depthMax)depthMax=depth;
+    var kidset={};mem.forEach(function(z){childrenOf(z).forEach(function(k){if(set[k]&&!placed[k])kidset[k]=1;});});
+    var kids=Object.keys(kidset).sort(function(a,b){return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
+    var cc=[];kids.forEach(function(k){var c=unit(k,depth+1);if(c!=null)cc.push(c);});
+    var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP,center;
+    if(cc.length)center=(Math.min.apply(null,cc)+Math.max.apply(null,cc))/2;else{center=cursor+uW/2;cursor+=uW+UNITGAP;}
+    var sx=center-uW/2+BOXW/2,y=depth*ROWH;
+    mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z==="seed_kevin"});});
+    for(var i=0;i<mem.length-1;i++)links.push({couple:1,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});
+    cc.forEach(function(x2){links.push({x1:center,y1:y+36,x2:x2,y2:(depth+1)*ROWH-36});});
+    return center;
+  }
+  var roots=ids.filter(function(x){var pp=P(x);return !(pp.pere&&set[pp.pere])&&!(pp.mere&&set[pp.mere]);});
+  roots.sort(function(a,b){return childrenOf(b).length-childrenOf(a).length;});
+  roots.forEach(function(x){if(!placed[x])unit(x,0);});
+  ids.forEach(function(x){if(!placed[x])unit(x,0);});
+  var minx=1e9,maxx=-1e9;nodes.forEach(function(n){if(n.x<minx)minx=n.x;if(n.x>maxx)maxx=n.x;});
+  return {nodes:nodes,links:links,minx:minx,w:(maxx-minx)+BOXW,h:(depthMax+1)*ROWH};
+}
+/* Composant familial connecté qui contient Ronan (à défaut Kevin, à défaut le plus grand). */
+function mainFamilyIds(){
+  var persons=DB.persons,par={};
+  function find(a){while(par[a]!==a){par[a]=par[par[a]];a=par[a];}return a;}
+  function uni(a,b){if(!a||!b||!P(a)||!P(b))return;var ra=find(a),rb=find(b);if(ra!==rb)par[ra]=rb;}
+  for(var id in persons)par[id]=id;
+  for(var id in persons){var p=persons[id];if(p.pere&&P(p.pere))uni(id,p.pere);if(p.mere&&P(p.mere))uni(id,p.mere);(p.conjoints||[]).forEach(function(c){uni(id,c);});}
+  var comps={};for(var k in persons){var r=find(k);(comps[r]=comps[r]||[]).push(k);}
+  var seed=P("seed_ronan")?"seed_ronan":(P("seed_kevin")?"seed_kevin":null);
+  if(seed){var rr=find(seed);if(comps[rr]&&comps[rr].length>1)return comps[rr];}
+  var best=null;Object.keys(comps).forEach(function(c){if(comps[c].length>1&&(!best||comps[c].length>best.length))best=comps[c];});
+  return best||Object.keys(persons);
+}
+/* Vue ARBRE : la famille de Ronan en descendance propre (enfants sous les parents). */
+function layoutMainFamily(){
+  var ids=mainFamilyIds();if(!ids||!ids.length)return null;
+  var t=tidyTree(ids);if(!t.nodes.length)return null;
+  var PAD=TREE.PAD,BOXW=TREE.BOXW,totalW=t.w+PAD*2,offx=PAD - t.minx + BOXW/2;
+  var nodes=t.nodes.map(function(n){return {id:n.id,x:n.x+offx,y:n.y+PAD,root:n.root};});
+  var links=t.links.map(function(l){return l.couple?{couple:1,x1:l.x1+offx,y1:l.y1+PAD,x2:l.x2+offx,y2:l.y2+PAD}:{x1:l.x1+offx,y1:l.y1+PAD,x2:l.x2+offx,y2:l.y2+PAD};});
+  return {nodes:nodes,links:links,bands:[],w:totalW,h:t.h+PAD*2};
+}
 function layoutForest(){
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP,PAD=T.PAD,COMPGAP=T.COMPGAP;
   var persons=DB.persons;
@@ -252,32 +303,7 @@ function layoutForest(){
   var trees=[],singleIds=[];
   arr.forEach(function(ids){if(hasEdge(ids))trees.push(ids);else ids.forEach(function(x){singleIds.push(x);});});
   trees.sort(function(a,b){var ka=a.indexOf("seed_kevin")>=0?1:0,kb=b.indexOf("seed_kevin")>=0?1:0;if(ka!==kb)return kb-ka;return b.length-a.length;});
-  function layoutTree(ids){
-    var set={};ids.forEach(function(x){set[x]=1;});
-    var placed={},nodes=[],links=[],cursor=0,depthMax=0;
-    function members(x){var pp=P(x);var m=[x];(pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&m.indexOf(c)<0)m.push(c);});return m;}
-    function unit(x,depth){
-      if(placed[x])return null;
-      var mem=members(x);mem.forEach(function(z){placed[z]=1;});if(depth>depthMax)depthMax=depth;
-      var kidset={};mem.forEach(function(z){childrenOf(z).forEach(function(k){if(set[k]&&!placed[k])kidset[k]=1;});});
-      var kids=Object.keys(kidset).sort(function(a,b){return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
-      var cc=[];kids.forEach(function(k){var c=unit(k,depth+1);if(c!=null)cc.push(c);});
-      var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP,center;
-      if(cc.length)center=(Math.min.apply(null,cc)+Math.max.apply(null,cc))/2;else{center=cursor+uW/2;cursor+=uW+UNITGAP;}
-      var sx=center-uW/2+BOXW/2,y=depth*ROWH;
-      mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z==="seed_kevin"});});
-      for(var i=0;i<mem.length-1;i++)links.push({couple:1,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});
-      cc.forEach(function(x2){links.push({x1:center,y1:y+36,x2:x2,y2:(depth+1)*ROWH-36});});
-      return center;
-    }
-    var roots=ids.filter(function(x){var pp=P(x);return !(pp.pere&&set[pp.pere])&&!(pp.mere&&set[pp.mere]);});
-    roots.sort(function(a,b){return childrenOf(b).length-childrenOf(a).length;});
-    roots.forEach(function(x){if(!placed[x])unit(x,0);});
-    ids.forEach(function(x){if(!placed[x])unit(x,0);});
-    var minx=1e9,maxx=-1e9;nodes.forEach(function(n){if(n.x<minx)minx=n.x;if(n.x>maxx)maxx=n.x;});
-    return {nodes:nodes,links:links,minx:minx,w:(maxx-minx)+BOXW,h:(depthMax+1)*ROWH};
-  }
-  var laid=trees.map(layoutTree),maxW=0;laid.forEach(function(t){if(t.w>maxW)maxW=t.w;});
+  var laid=trees.map(tidyTree),maxW=0;laid.forEach(function(t){if(t.w>maxW)maxW=t.w;});
   singleIds.sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
   if(singleIds.length)maxW=Math.max(maxW,BOXW*Math.min(4,singleIds.length));
   var totalW=Math.max(maxW,BOXW*2)+PAD*2;
@@ -390,7 +416,7 @@ try{var _vs=localStorage.getItem("arbre_viewstyle");if(_vs==="arbre"||_vs==="pla
 function syncMode(){TREEMODE=(VIEWSTYLE==="arbre"?"asc":"famille");}
 syncMode();
 function safeLayout(){
-  if(TREEMODE==="asc"){try{var A=layoutAscendance();if(A&&A.nodes&&A.nodes.length&&isFinite(A.w)&&isFinite(A.h))return A;}catch(e){}}
+  if(VIEWSTYLE==="arbre"){try{var A=layoutMainFamily();if(A&&A.nodes&&A.nodes.length&&isFinite(A.w)&&isFinite(A.h))return A;}catch(e){}}
   try{var L=layoutForest();if(L&&L.nodes&&L.nodes.length&&isFinite(L.w)&&isFinite(L.h)&&L.w>0&&L.h>0)return L;}catch(e){try{console.error("layoutForest",e);}catch(_){}}
   return layoutGridAll();
 }
