@@ -1,0 +1,31 @@
+name: Arbre — recherche généalogique auto (INSEE matchID)
+# Lance tools/arbre/research.mjs sur le runner (réseau OUVERT — l'agent Claude
+# ne peut pas atteindre matchid.io, egress bloqué). Interroge le fichier officiel
+# des décès INSEE pour chaque nom de la famille et commite un rapport lisible
+# (arbre/research/RAPPORT.md) + le brut. Dispatch manuel + 1×/mois (anti-spam :
+# cron mensuel, bien au-dessus du minimum 6h).
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 3 5 * *" # le 5 de chaque mois à 03:00 UTC — veille très basse fréquence
+permissions:
+  contents: write
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Recherche INSEE (tous les noms de la famille)
+        run: node tools/arbre/research.mjs
+      - name: Commit rapport
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research
+          git commit -m "Arbre: rapport recherche genealogique auto (INSEE matchID) [skip ci]" || { echo "aucun changement"; exit 0; }
+          git push

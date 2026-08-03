@@ -58,10 +58,10 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 /* person card */
 .pc{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;gap:12px;align-items:center;backdrop-filter:blur(10px);transition:transform .12s,border-color .2s}
 .pc:active{transform:scale(.99);border-color:var(--gold)}
-.av{width:52px;height:52px;border-radius:15px;flex:none;background:linear-gradient(135deg,#1b2740,#111a2c);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;overflow:hidden;position:relative}
-.av img{width:100%;height:100%;object-fit:cover}
-.av.M{box-shadow:inset 0 0 0 2px var(--male),0 0 14px rgba(125,184,255,.25)}
-.av.F{box-shadow:inset 0 0 0 2px var(--female),0 0 14px rgba(255,158,199,.25)}
+.av{width:52px;height:52px;border-radius:50%;flex:none;background:radial-gradient(circle at 36% 30%,#fffbef,#e7d4a6);color:#7a5427;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;font-family:Georgia,"Times New Roman",serif;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(120,84,36,.3)}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av.M{box-shadow:0 0 0 2px rgba(63,107,176,.55),inset 0 0 0 1px rgba(120,84,36,.25)}
+.av.F{box-shadow:0 0 0 2px rgba(201,111,158,.55),inset 0 0 0 1px rgba(120,84,36,.25)}
 .pc .nm{font-weight:700}.pc .sub{font-size:12.5px;color:var(--mut);margin-top:2px}
 .badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:999px;background:#22304a;color:var(--mut);margin-left:6px;vertical-align:middle}
 .badge.alive{background:rgba(99,230,163,.16);color:var(--ok)}
@@ -70,15 +70,16 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 #treeCtl .seg{display:flex;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 #treeCtl .seg button{padding:9px 13px;font-size:13px;font-weight:600;color:var(--mut)}
 #treeCtl .seg button.on{background:linear-gradient(135deg,var(--cyan),#39b9ff);color:#04222a}
-#stageWrap{position:relative;height:66vh;min-height:420px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(130% 80% at 50% 102%,rgba(120,150,86,.22),transparent),radial-gradient(100% 60% at 50% -4%,rgba(206,168,98,.22),transparent),linear-gradient(180deg,#efe4c8,#e3d1a8);touch-action:none;box-shadow:var(--sh)}
-#treeBg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-#treeArt{position:absolute;inset:0;opacity:.8}#treeArt svg{width:100%;height:100%;display:block}
-#treePhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 62%;opacity:0;transition:opacity .6s}
-#treePhoto.on{opacity:.95}#treePhoto.on ~ #treeScrim{opacity:1}
-#treeScrim{position:absolute;inset:0;opacity:0;background:radial-gradient(135% 80% at 50% 42%,rgba(0,0,0,0),rgba(18,28,10,.16)),linear-gradient(180deg,rgba(16,24,8,.14),rgba(16,24,8,0) 26%,rgba(14,18,6,.20))}
+#stageWrap{position:relative;height:74vh;min-height:480px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(130% 80% at 50% 102%,rgba(120,150,86,.22),transparent),radial-gradient(100% 60% at 50% -4%,rgba(206,168,98,.22),transparent),linear-gradient(180deg,#efe4c8,#e3d1a8);touch-action:none;box-shadow:var(--sh)}
+#treeBg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;transition:opacity .5s}
+#treeArt{position:absolute;inset:0;opacity:.8;transition:opacity .6s}#treeArt svg{width:100%;height:100%;display:block}
+#treePhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center 46%;opacity:0;transition:opacity .6s}
+#treePhoto.on{opacity:1}#treePhoto.on ~ #treeScrim{opacity:1}
+#treeScrim{position:absolute;inset:0;opacity:0;background:linear-gradient(180deg,rgba(16,24,8,.10),rgba(16,24,8,0) 24%,rgba(14,18,6,.12))}
+#stageWrap.plan #treeBg{opacity:0}
 #stage{position:absolute;left:0;top:0;z-index:1;transform-origin:0 0;will-change:transform}
 #stage svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-.tnode{position:absolute;transform:translate(-50%,-50%);width:170px;padding:11px 12px;border-radius:14px;background:linear-gradient(180deg,#fffdf4,#f2e6c8);border:1.5px solid #b8912f;display:flex;gap:11px;align-items:center;box-shadow:0 6px 16px rgba(74,54,22,.4),inset 0 1px 0 rgba(255,255,255,.7);cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s}
+.tnode{position:absolute;transform:translate(-50%,-50%);width:186px;padding:12px 13px;border-radius:14px;background:linear-gradient(180deg,#fffdf4,#f2e6c8);border:1.5px solid #b8912f;display:flex;gap:11px;align-items:center;box-shadow:0 6px 16px rgba(74,54,22,.4),inset 0 1px 0 rgba(255,255,255,.7);cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s}
 .tnode:active{transform:translate(-50%,-50%) scale(.97)}
 .tnode.root{border-color:var(--gold);box-shadow:0 0 0 1.5px var(--gold),0 12px 34px rgba(240,200,116,.3)}
 .tnode.sM{border-top:2px solid rgba(93,159,214,.6)}
@@ -89,7 +90,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .tnode.root .av{box-shadow:0 0 0 2px var(--gold),0 2px 8px rgba(176,132,44,.4)}
 .tnode .tn{font-weight:700;font-size:14px;line-height:1.16;overflow:hidden;text-overflow:ellipsis;color:#2c2010;font-family:Georgia,"Times New Roman",serif}
 .tnode .ty{font-size:11.5px;color:#856a3a;margin-top:1px}
-.av.M{background:linear-gradient(135deg,#1f3c66,#122036)}.av.F{background:linear-gradient(135deg,#552a4e,#2c1428)}
+.av.M,.av.F{background:radial-gradient(circle at 36% 30%,#fffbef,#e7d4a6)}
 .bandlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#f3e6c2;background:rgba(74,54,26,.9);padding:5px 14px;border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .couplebadge{position:absolute;transform:translate(-50%,-50%);font-size:15px;background:rgba(255,248,230,.96);border:1px solid var(--gold);border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(240,200,116,.35)}
 .treemode{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:4px;background:rgba(74,54,26,.9);border:1px solid var(--gold);border-radius:999px;padding:3px;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.3)}
@@ -103,7 +104,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 /* modal */
 .ov{position:fixed;inset:0;z-index:60;background:rgba(4,7,12,.72);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-.sheet{background:linear-gradient(180deg,#f8f1dd,#efe3c6);width:100%;max-width:680px;max-height:93vh;overflow:auto;border-radius:24px 24px 0 0;border:1px solid var(--line);border-bottom:0;padding:16px 16px calc(env(safe-area-inset-bottom) + 26px);animation:up .28s cubic-bezier(.2,.9,.3,1)}
+.sheet{position:relative;background:linear-gradient(180deg,#f8f1dd,#efe3c6);width:100%;max-width:680px;max-height:93vh;overflow:auto;border-radius:24px 24px 0 0;border:1px solid var(--line);border-bottom:0;padding:16px 16px calc(env(safe-area-inset-bottom) + 26px);animation:up .28s cubic-bezier(.2,.9,.3,1)}
 @keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:translateY(0);opacity:1}}
 .grab{width:46px;height:5px;border-radius:3px;background:#33405a;margin:2px auto 12px}
 .sheet h2{margin:2px 0}
@@ -128,7 +129,8 @@ a{color:var(--cyan);text-decoration:none}
 .irow{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
 .irow:last-child{border:0}.irow .ic{font-size:18px;width:24px;text-align:center;flex:none}
 .irow .lab{color:var(--mut);font-size:12px}.irow .val{font-weight:600}
-.bkbtn{position:absolute;left:14px;top:14px;width:40px;height:40px;border-radius:12px;background:var(--glass2);border:1px solid var(--line);font-size:20px;display:flex;align-items:center;justify-content:center;z-index:3}
+.bkbtn{position:absolute;left:14px;top:14px;width:44px;height:44px;border-radius:12px;background:linear-gradient(180deg,#fffdf4,#f0e2c2);color:#7a5427;border:1px solid var(--gold);font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;z-index:5;box-shadow:0 3px 10px rgba(74,54,22,.25)}
+.bkbtn:active{transform:scale(.94)}
 .cmt{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:13px;padding:10px 11px;margin:8px 0}
 .cmt .h{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);margin-bottom:3px}
 .cmt .x{color:var(--danger);font-weight:800}
@@ -180,7 +182,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.12";
+var APP_VER="v2.19";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -235,8 +237,59 @@ var VIEWST={tx:40,ty:40,sc:1};
 /* Arbre COMPLET : chaque FAMILLE reliée = un bloc-arbre soigné (couples + enfants),
    empilés et centrés ; les personnes pas encore reliées = une grille propre en bas.
    Fini la longue bande minuscule dans le coin. */
-var TREE={ROWH:140,BOXW:184,COUPLEGAP:14,UNITGAP:26,PAD:34,COMPGAP:74,CARD:170};
+var TREE={ROWH:150,BOXW:198,COUPLEGAP:16,UNITGAP:26,PAD:34,COMPGAP:64,CARD:184};
 function compLabel(ids){var cnt={};ids.forEach(function(x){var nm=(P(x).nom||"").trim().toUpperCase();if(nm)cnt[nm]=(cnt[nm]||0)+1;});var top=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];}).slice(0,2);return top.length?("Famille "+top.join(" · ")):"Famille";}
+/* Agencement « propre » d'une famille : les PARENTS en haut, chaque enfant
+   DIRECTEMENT EN DESSOUS de ses parents (couple centré au-dessus de ses enfants).
+   Les plus jeunes descendent tout en bas (ex : Ronan au pied du tronc). */
+function tidyTree(ids){
+  var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP;
+  var set={};ids.forEach(function(x){set[x]=1;});
+  var placed={},nodes=[],links=[],cursor=0,depthMax=0;
+  function members(x){var pp=P(x);var m=[x];(pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&m.indexOf(c)<0)m.push(c);});return m;}
+  function unit(x,depth){
+    if(placed[x])return null;
+    var mem=members(x);mem.forEach(function(z){placed[z]=1;});if(depth>depthMax)depthMax=depth;
+    var kidset={};mem.forEach(function(z){childrenOf(z).forEach(function(k){if(set[k]&&!placed[k])kidset[k]=1;});});
+    var kids=Object.keys(kidset).sort(function(a,b){return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
+    var cc=[];kids.forEach(function(k){var c=unit(k,depth+1);if(c!=null)cc.push(c);});
+    var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP,center;
+    if(cc.length)center=(Math.min.apply(null,cc)+Math.max.apply(null,cc))/2;else{center=cursor+uW/2;cursor+=uW+UNITGAP;}
+    var sx=center-uW/2+BOXW/2,y=depth*ROWH;
+    mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z==="seed_kevin"});});
+    for(var i=0;i<mem.length-1;i++)links.push({couple:1,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});
+    cc.forEach(function(x2){links.push({x1:center,y1:y+36,x2:x2,y2:(depth+1)*ROWH-36});});
+    return center;
+  }
+  var roots=ids.filter(function(x){var pp=P(x);return !(pp.pere&&set[pp.pere])&&!(pp.mere&&set[pp.mere]);});
+  roots.sort(function(a,b){return childrenOf(b).length-childrenOf(a).length;});
+  roots.forEach(function(x){if(!placed[x])unit(x,0);});
+  ids.forEach(function(x){if(!placed[x])unit(x,0);});
+  var minx=1e9,maxx=-1e9;nodes.forEach(function(n){if(n.x<minx)minx=n.x;if(n.x>maxx)maxx=n.x;});
+  return {nodes:nodes,links:links,minx:minx,w:(maxx-minx)+BOXW,h:(depthMax+1)*ROWH};
+}
+/* Composant familial connecté qui contient Ronan (à défaut Kevin, à défaut le plus grand). */
+function mainFamilyIds(){
+  var persons=DB.persons,par={};
+  function find(a){while(par[a]!==a){par[a]=par[par[a]];a=par[a];}return a;}
+  function uni(a,b){if(!a||!b||!P(a)||!P(b))return;var ra=find(a),rb=find(b);if(ra!==rb)par[ra]=rb;}
+  for(var id in persons)par[id]=id;
+  for(var id in persons){var p=persons[id];if(p.pere&&P(p.pere))uni(id,p.pere);if(p.mere&&P(p.mere))uni(id,p.mere);(p.conjoints||[]).forEach(function(c){uni(id,c);});}
+  var comps={};for(var k in persons){var r=find(k);(comps[r]=comps[r]||[]).push(k);}
+  var seed=P("seed_ronan")?"seed_ronan":(P("seed_kevin")?"seed_kevin":null);
+  if(seed){var rr=find(seed);if(comps[rr]&&comps[rr].length>1)return comps[rr];}
+  var best=null;Object.keys(comps).forEach(function(c){if(comps[c].length>1&&(!best||comps[c].length>best.length))best=comps[c];});
+  return best||Object.keys(persons);
+}
+/* Vue ARBRE : la famille de Ronan en descendance propre (enfants sous les parents). */
+function layoutMainFamily(){
+  var ids=mainFamilyIds();if(!ids||!ids.length)return null;
+  var t=tidyTree(ids);if(!t.nodes.length)return null;
+  var PAD=TREE.PAD,BOXW=TREE.BOXW,totalW=t.w+PAD*2,offx=PAD - t.minx + BOXW/2;
+  var nodes=t.nodes.map(function(n){return {id:n.id,x:n.x+offx,y:n.y+PAD,root:n.root};});
+  var links=t.links.map(function(l){return l.couple?{couple:1,x1:l.x1+offx,y1:l.y1+PAD,x2:l.x2+offx,y2:l.y2+PAD}:{x1:l.x1+offx,y1:l.y1+PAD,x2:l.x2+offx,y2:l.y2+PAD};});
+  return {nodes:nodes,links:links,bands:[],w:totalW,h:t.h+PAD*2};
+}
 function layoutForest(){
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP,PAD=T.PAD,COMPGAP=T.COMPGAP;
   var persons=DB.persons;
@@ -251,32 +304,7 @@ function layoutForest(){
   var trees=[],singleIds=[];
   arr.forEach(function(ids){if(hasEdge(ids))trees.push(ids);else ids.forEach(function(x){singleIds.push(x);});});
   trees.sort(function(a,b){var ka=a.indexOf("seed_kevin")>=0?1:0,kb=b.indexOf("seed_kevin")>=0?1:0;if(ka!==kb)return kb-ka;return b.length-a.length;});
-  function layoutTree(ids){
-    var set={};ids.forEach(function(x){set[x]=1;});
-    var placed={},nodes=[],links=[],cursor=0,depthMax=0;
-    function members(x){var pp=P(x);var m=[x];(pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&m.indexOf(c)<0)m.push(c);});return m;}
-    function unit(x,depth){
-      if(placed[x])return null;
-      var mem=members(x);mem.forEach(function(z){placed[z]=1;});if(depth>depthMax)depthMax=depth;
-      var kidset={};mem.forEach(function(z){childrenOf(z).forEach(function(k){if(set[k]&&!placed[k])kidset[k]=1;});});
-      var kids=Object.keys(kidset).sort(function(a,b){return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
-      var cc=[];kids.forEach(function(k){var c=unit(k,depth+1);if(c!=null)cc.push(c);});
-      var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP,center;
-      if(cc.length)center=(Math.min.apply(null,cc)+Math.max.apply(null,cc))/2;else{center=cursor+uW/2;cursor+=uW+UNITGAP;}
-      var sx=center-uW/2+BOXW/2,y=depth*ROWH;
-      mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z==="seed_kevin"});});
-      for(var i=0;i<mem.length-1;i++)links.push({couple:1,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});
-      cc.forEach(function(x2){links.push({x1:center,y1:y+36,x2:x2,y2:(depth+1)*ROWH-36});});
-      return center;
-    }
-    var roots=ids.filter(function(x){var pp=P(x);return !(pp.pere&&set[pp.pere])&&!(pp.mere&&set[pp.mere]);});
-    roots.sort(function(a,b){return childrenOf(b).length-childrenOf(a).length;});
-    roots.forEach(function(x){if(!placed[x])unit(x,0);});
-    ids.forEach(function(x){if(!placed[x])unit(x,0);});
-    var minx=1e9,maxx=-1e9;nodes.forEach(function(n){if(n.x<minx)minx=n.x;if(n.x>maxx)maxx=n.x;});
-    return {nodes:nodes,links:links,minx:minx,w:(maxx-minx)+BOXW,h:(depthMax+1)*ROWH};
-  }
-  var laid=trees.map(layoutTree),maxW=0;laid.forEach(function(t){if(t.w>maxW)maxW=t.w;});
+  var laid=trees.map(tidyTree),maxW=0;laid.forEach(function(t){if(t.w>maxW)maxW=t.w;});
   singleIds.sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
   if(singleIds.length)maxW=Math.max(maxW,BOXW*Math.min(4,singleIds.length));
   var totalW=Math.max(maxW,BOXW*2)+PAD*2;
@@ -332,12 +360,13 @@ function treeBgSVG(){
 function renderTree(){
   var w=$("#wrap");var n=Object.keys(DB.persons).length;
   if(!n){w.innerHTML='<div class="empty">Ton arbre est vide.<br>Touche ＋ pour ajouter la 1ʳᵉ personne.</div>';return;}
-  w.innerHTML='<div id="stageWrap"><div id="treeBg"><div id="treeArt">'+treeBgSVG()+'</div><img id="treePhoto" src="tree.jpg?v='+APP_VER+'" alt="" onload="this.classList.add(\'on\')" onerror="this.style.display=\'none\'"><div id="treeScrim"></div></div><div id="stage"></div>'
-    +'<div class="treemode"><button data-mode="famille"'+(TREEMODE==="famille"?' class="on"':'')+'>🌳 Famille</button><button data-mode="asc"'+(TREEMODE==="asc"?' class="on"':'')+'>⬆️ Ascendance</button></div>'
+  syncMode();
+  w.innerHTML='<div id="stageWrap"'+(VIEWSTYLE==="plan"?' class="plan"':'')+'><div id="treeBg"><div id="treeArt">'+treeBgSVG()+'</div><img id="treePhoto" src="tree.jpg?v='+APP_VER+'" alt="" onload="this.classList.add(\'on\');var a=document.getElementById(\'treeArt\');if(a)a.style.opacity=0" onerror="this.style.display=\'none\'"><div id="treeScrim"></div></div><div id="stage"></div>'
+    +'<div class="treemode"><button data-style="arbre"'+(VIEWSTYLE==="arbre"?' class="on"':'')+'>🌳 Arbre</button><button data-style="plan"'+(VIEWSTYLE==="plan"?' class="on"':'')+'>📋 Plan</button></div>'
     +'<div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button></div>'
-    +'<div class="hintpan">🌳 '+n+' personnes · glisse pour bouger · pince pour zoomer · touche une fiche</div></div>';
+    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?"📋 Plan familial · ":"🌳 ")+n+' personnes · glisse · pince pour zoomer · touche une fiche</div></div>';
   var zb=document.querySelectorAll(".zoomBtns [data-z]");zb.forEach(function(b){b.onclick=function(){if(b.dataset.z==="fit")fitStage();else zoomAt(0.5,0.5,b.dataset.z==="1"?1.25:1/1.25);};});
-  document.querySelectorAll(".treemode [data-mode]").forEach(function(b){b.onclick=function(){if(TREEMODE===b.dataset.mode)return;TREEMODE=b.dataset.mode;document.querySelectorAll(".treemode [data-mode]").forEach(function(x){x.classList.toggle("on",x.dataset.mode===TREEMODE);});drawStage(true);};});
+  document.querySelectorAll(".treemode [data-style]").forEach(function(b){b.onclick=function(){if(VIEWSTYLE===b.dataset.style)return;VIEWSTYLE=b.dataset.style;syncMode();try{localStorage.setItem("arbre_viewstyle",VIEWSTYLE);}catch(e){}document.querySelectorAll(".treemode [data-style]").forEach(function(x){x.classList.toggle("on",x.dataset.style===VIEWSTYLE);});var wr=$("#stageWrap");if(wr)wr.classList.toggle("plan",VIEWSTYLE==="plan");drawStage(true);};});
   setupPanZoom();drawStage(true);
 }
 var _lay=null;
@@ -380,16 +409,31 @@ function layoutAscendance(rootId){
   return {nodes:nodes,links:links,bands:[],w:(maxx-minx)+BOXW+PAD*2,h:PAD+depth*ROWH};
 }
 var TREEMODE="famille";
+/* 2 styles de vue (demande Kevin) :
+   • "arbre" = belle photo d'olivier, fils au pied du tronc, liens courbes dorés (ascendance)
+   • "plan"  = schéma clair et lisible façon arbre généalogique (descendance, traits d'équerre) */
+var VIEWSTYLE="arbre";
+try{var _vs=localStorage.getItem("arbre_viewstyle");if(_vs==="arbre"||_vs==="plan")VIEWSTYLE=_vs;}catch(e){}
+function syncMode(){TREEMODE=(VIEWSTYLE==="arbre"?"asc":"famille");}
+syncMode();
 function safeLayout(){
-  if(TREEMODE==="asc"){try{var A=layoutAscendance();if(A&&A.nodes&&A.nodes.length&&isFinite(A.w)&&isFinite(A.h))return A;}catch(e){}}
+  if(VIEWSTYLE==="arbre"){try{var A=layoutMainFamily();if(A&&A.nodes&&A.nodes.length&&isFinite(A.w)&&isFinite(A.h))return A;}catch(e){}}
   try{var L=layoutForest();if(L&&L.nodes&&L.nodes.length&&isFinite(L.w)&&isFinite(L.h)&&L.w>0&&L.h>0)return L;}catch(e){try{console.error("layoutForest",e);}catch(_){}}
   return layoutGridAll();
 }
 function drawStage(fit){
   var stage=$("#stage");if(!stage)return;_lay=safeLayout();var W=_lay.w,PADX=TREE.PAD;
   var rules=(_lay.bands||[]).map(function(b){return '<line x1="'+PADX+'" y1="'+b.y+'" x2="'+(W-PADX)+'" y2="'+b.y+'" stroke="rgba(122,84,39,.28)" stroke-width="1.4" stroke-dasharray="2 9"/>';}).join("");
+  var plan=(VIEWSTYLE==="plan");
   var couples=[];
-  var paths=_lay.links.map(function(l){if(l.couple){var x=Math.min(l.x1,l.x2)-96,w=Math.abs(l.x2-l.x1)+192,y=l.y1-46;couples.push({x:(l.x1+l.x2)/2,y:l.y1-46});return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="92" rx="24" fill="rgba(176,132,44,.10)" stroke="url(#gold)" stroke-width="1.8"/>';}var my=(l.y1+l.y2)/2;return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="url(#cyan)" stroke-width="2.6" stroke-linecap="round"/>';}).join("");
+  var paths=_lay.links.map(function(l){
+    if(l.couple){var midx=(l.x1+l.x2)/2;
+      if(plan){couples.push({x:midx,y:l.y1});return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="url(#cyan)" stroke-width="2.6" stroke-linecap="round"/>';}
+      var x=Math.min(l.x1,l.x2)-96,w=Math.abs(l.x2-l.x1)+192,y=l.y1-46;couples.push({x:midx,y:l.y1-46});
+      return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="92" rx="24" fill="rgba(176,132,44,.10)" stroke="url(#gold)" stroke-width="1.8"/>';}
+    var my=(l.y1+l.y2)/2;
+    if(plan)return '<path d="M'+l.x1+' '+l.y1+' V '+my+' H '+l.x2+' V '+l.y2+'" fill="none" stroke="url(#cyan)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>';
+    return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="url(#cyan)" stroke-width="2.6" stroke-linecap="round"/>';}).join("");
   var defs='<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b0842c"/><stop offset="1" stop-color="#8a6420"/></linearGradient><linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5427"/><stop offset="1" stop-color="#5a3d18"/></linearGradient></defs>';
   var svg='<svg width="'+W+'" height="'+_lay.h+'">'+defs+rules+paths+'</svg>';
   var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+b.y+'px">'+esc(b.label)+'</div>';}).join("");
@@ -399,7 +443,7 @@ function drawStage(fit){
   if(fit)fitStage();
 }
 function applyST(){var s=$("#stage");if(s)s.style.transform="translate("+VIEWST.tx+"px,"+VIEWST.ty+"px) scale("+VIEWST.sc+")";}
-function fitStage(){var wr=$("#stageWrap");if(!wr||!_lay)return;var W=wr.clientWidth,H=wr.clientHeight;var sc=Math.min((W-14)/_lay.w,(H-14)/_lay.h,1.0);sc=Math.max(sc,0.34);VIEWST.sc=sc;VIEWST.tx=(W-_lay.w*sc)/2;var sh=_lay.h*sc;VIEWST.ty=sh<=H?Math.max(52,(H-sh)/2):52;applyST();}
+function fitStage(){var wr=$("#stageWrap");if(!wr||!_lay)return;var W=wr.clientWidth,H=wr.clientHeight;var sc=Math.min((W-10)/_lay.w,(H-10)/_lay.h,1.25);sc=Math.max(sc,0.24);VIEWST.sc=sc;VIEWST.tx=(W-_lay.w*sc)/2;var sh=_lay.h*sc;VIEWST.ty=sh<=H?Math.max(52,(H-sh)/2):52;applyST();}
 function zoomAt(fx,fy,factor){var wr=$("#stageWrap");if(!wr)return;var W=wr.clientWidth,H=wr.clientHeight;var cx=fx*W,cy=fy*H;var ns=Math.min(2.5,Math.max(0.2,VIEWST.sc*factor));VIEWST.tx=cx-(cx-VIEWST.tx)*(ns/VIEWST.sc);VIEWST.ty=cy-(cy-VIEWST.ty)*(ns/VIEWST.sc);VIEWST.sc=ns;applyST();}
 function setupPanZoom(){
   var wr=$("#stageWrap");if(!wr||wr._pz)return;wr._pz=1;var drag=null,pts={},pinch=null;
@@ -416,9 +460,9 @@ function guessRoot(){var best=null,bs=-1;for(var id in DB.persons){var p=DB.pers
 
 /* ---------- list / search ---------- */
 function renderList(){var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});var w=$("#wrap");if(!ids.length){w.innerHTML='<div class="empty">Aucune personne.</div>';return;}var q=(renderList._q||"").toLowerCase();var html='<div style="margin:6px 0 10px"><input id="qbox" placeholder="🔎 Filtrer..." value="'+esc(renderList._q||"")+'"></div><div class="grid">';var n=0;ids.forEach(function(id){var p=P(id);if(q&&full(p).toLowerCase().indexOf(q)<0&&String(p.notes||"").toLowerCase().indexOf(q)<0)return;html+=personCardHTML(id);n++;});html+='</div>';if(!n)html+='<div class="empty">Aucun résultat.</div>';w.innerHTML=html;var qb=$("#qbox");if(qb)qb.oninput=function(){renderList._q=qb.value;var s=qb.selectionStart;renderList();var nn=$("#qbox");if(nn){nn.focus();try{nn.setSelectionRange(s,s);}catch(e){}}};}
-function searchLinks(p){var nom=encodeURIComponent(p.nom||""),pre=encodeURIComponent(p.prenom||""),lieu=encodeURIComponent((p.naissance&&p.naissance.lieu)||(p.deces&&p.deces.lieu)||"");var g=full(p);return [{t:"🏛️ Archives Monaco",u:"https://archives.mairie.mc/"},{t:"🌿 Archives 06 (Beaulieu/Nice)",u:"https://archives06.fr/"},{t:"☀️ Archives 13 (Salon-de-Provence)",u:"https://www.archives13.fr/"},{t:"🌳 Geneanet",u:"https://www.geneanet.org/fonds/individus/?go=1&nom="+nom+"&prenom="+pre+(lieu?"&place__0__="+lieu:"")},{t:"📇 Filae",u:"https://www.filae.com/search/results/?lastname="+nom+"&firstname="+pre},{t:"🔵 FamilySearch",u:"https://www.familysearch.org/search/record/results?q.surname="+nom+"&q.givenName="+pre},{t:"🔎 Google",u:"https://www.google.com/search?q="+encodeURIComponent('"'+g+'" généalogie '+((p.naissance&&p.naissance.lieu)||""))}];}
+function searchLinks(p){var nom=encodeURIComponent(p.nom||""),pre=encodeURIComponent(p.prenom||""),lieu=encodeURIComponent((p.naissance&&p.naissance.lieu)||(p.deces&&p.deces.lieu)||"");var g=full(p);return [{t:"🏛️ Archives Monaco",u:"https://archives.mairie.mc/"},{t:"🌿 Archives 06 (Beaulieu/Nice)",u:"https://archives06.fr/"},{t:"☀️ Archives 13 (Salon-de-Provence)",u:"https://www.archives13.fr/"},{t:"🌳 Geneanet",u:"https://www.geneanet.org/fonds/individus/?go=1&nom="+nom+"&prenom="+pre+(lieu?"&place__0__="+lieu:"")},{t:"📇 Filae",u:"https://www.filae.com/search/results/?lastname="+nom+"&firstname="+pre},{t:"🔵 FamilySearch",u:"https://www.familysearch.org/search/record/results?q.surname="+nom+"&q.givenName="+pre},{t:"⚰️ Fichier décès INSEE (1970→auj.)",u:"https://deces.matchid.io/search?q="+pre+"+"+nom},{t:"🪦 Décès par famille (acte-deces.fr)",u:"https://www.acte-deces.fr/recherche-deces-famille-"+encodeURIComponent(String(p.nom||"").toLowerCase().replace(/\s+/g,"-"))},{t:"🔎 Google",u:"https://www.google.com/search?q="+encodeURIComponent('"'+g+'" généalogie '+((p.naissance&&p.naissance.lieu)||""))}];}
 function renderSearch(){var w=$("#wrap");var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});var body=ids.map(function(id){var p=P(id);return '<div class="pc" data-search="'+id+'">'+avatarHTML(p)+'<div style="flex:1"><div class="nm">'+esc(full(p))+'</div><div class="sub">Rechercher / actualiser les actes</div></div><span>🔎</span></div>';}).join("");w.innerHTML='<div class="sec"><h3>Chercher les actes (compte gratuit)</h3><p class="mut" style="font-size:13px;margin:0 0 10px">Touche une personne → j\'ouvre les bonnes recherches pré-remplies (Monaco, Geneanet, AD06/AD13, Filae, FamilySearch). Valable aussi pour les vivants.</p><div class="grid">'+(body||'<div class="empty">Ajoute des personnes.</div>')+'</div></div>';}
-function openSearch(id){var p=P(id);var h='<div class="sheet"><div class="grab"></div><h2>🔎 '+esc(full(p))+'</h2><p class="mut" style="margin:2px 0 12px;font-size:13px">Ouvre chaque source, confirme la date, puis reviens la saisir sur la fiche.</p>'+searchLinks(p).map(function(l){return '<a class="btn" style="width:100%;margin:6px 0;justify-content:space-between" target="_blank" rel="noopener" href="'+esc(l.u)+'">'+esc(l.t)+' <span class="mut">↗</span></a>';}).join("")+'<button class="btn ghost" data-close style="width:100%;margin-top:10px">Fermer</button></div>';showOverlay(h);}
+function openSearch(id){var p=P(id);var h='<div class="sheet"><button class="bkbtn" data-close aria-label="Fermer">✕</button><div class="grab"></div><h2 style="padding-left:48px">🔎 '+esc(full(p))+'</h2><p class="mut" style="margin:2px 0 12px;font-size:13px">Ouvre chaque source, confirme la date, puis reviens la saisir sur la fiche.</p>'+searchLinks(p).map(function(l){return '<a class="btn" style="width:100%;margin:6px 0;justify-content:space-between" target="_blank" rel="noopener" href="'+esc(l.u)+'">'+esc(l.t)+' <span class="mut">↗</span></a>';}).join("")+'<button class="btn ghost" data-close style="width:100%;margin-top:10px">Fermer</button></div>';showOverlay(h);}
 
 /* ---------- tools ---------- */
 function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.innerHTML=
@@ -447,8 +491,9 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var relHtml=relItems.map(function(it){var q=P(it[0]);return '<button class="relchip" data-open="'+it[0]+'">'+avatarHTML(q)+'<span>'+esc(full(q))+' <small>'+it[1]+'</small></span></button>';}).join("");
   var sources=(p.sources||[]).map(function(s){return '<a class="srcbtn" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label||"acte")+' ↗</a>';}).join(" ");
   var comments=(p.comments||[]).slice().sort(function(a,b){return a.ts-b.ts;}).map(function(c){return '<div class="cmt"><div class="h"><span>'+esc(c.by||"famille")+' · '+relTime(c.ts)+'</span><button class="x" data-delc="'+c.id+'">✕</button></div><div style="white-space:pre-wrap">'+esc(c.text)+'</div></div>';}).join("");
-  var back=_pStack.length?'<button class="bkbtn" id="pBack" aria-label="Retour">‹</button>':"";
-  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;'+(back?"padding-left:46px":"")+'">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div></div></div>'+caro+
+  var canBack=_pStack.length>0;
+  var back='<button class="bkbtn" id="pBack" aria-label="'+(canBack?"Retour":"Fermer")+'">'+(canBack?"‹":"✕")+'</button>';
+  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div></div></div>'+caro+
     '<div class="sec">'+info+(relHtml?'<div style="padding-top:12px"><div style="color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Famille</div><div class="chips">'+relHtml+'</div></div>':"")+(p.notes?'<div style="padding:12px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+'</div>'+
     (sources?'<div class="sec"><h3>Actes / sources</h3><div class="chips">'+sources+'</div></div>':"")+
     '<div class="sec"><h3>💬 Commentaires & infos</h3><div id="cmtList">'+(comments||'<p class="mut" style="font-size:13px;margin:0">Aucun commentaire. Ajoute une info, une anecdote, une question…</p>')+'</div><div style="display:flex;gap:8px;margin-top:10px"><input id="cmtIn" placeholder="Écris un commentaire…"><button class="btn gold sm" id="cmtAdd">Envoyer</button></div></div>'+
@@ -456,7 +501,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
     '<div class="row2"><button class="btn" data-searchp="'+id+'">🔎 Rechercher</button><button class="btn gold" data-edit="'+id+'">✏️ Modifier</button></div>'+
     '<button class="btn ghost" data-close style="width:100%;margin-top:8px">Fermer</button></div>';
   showOverlay(h);
-  var bb=$("#pBack");if(bb)bb.onclick=function(){var prev=_pStack.pop();if(prev)openPerson(prev,true);};
+  var bb=$("#pBack");if(bb)bb.onclick=function(){if(_pStack.length){var prev=_pStack.pop();if(prev){openPerson(prev,true);return;}}closeOverlay();};
   if(photos.length>1){var box=$("#caroBox");_caro.timer=setInterval(function(){caroGo(1);},3200);box.querySelectorAll("[data-caro]").forEach(function(b){b.onclick=function(){caroGo(+b.dataset.caro);};});}
   var ov=$(".ov");
   $("#cmtAdd").onclick=async function(){var t=$("#cmtIn").value.trim();if(!t)return;var pp=P(id);pp.comments=pp.comments||[];pp.comments.push({id:uid(),text:t,by:ME||"famille",ts:now()});pp.updatedAt=now();await persist(id);$("#cmtIn").value="";openPerson(id,true);};
@@ -480,7 +525,7 @@ function openEdit(id,link){_editLink=null;var p;
   _draftPhotos=(p.photos||[]).slice();
   var others=Object.keys(DB.persons).filter(function(k){return k!==id;}).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
   function sel(name,cur){return '<select data-f="'+name+'"><option value="">— aucun —</option>'+others.map(function(k){return '<option value="'+k+'"'+(cur===k?" selected":"")+'>'+esc(full(P(k)))+'</option>';}).join("")+'</select>';}
-  var h='<div class="sheet"><div class="grab"></div><h2>'+(id?"Modifier":"Nouvelle personne")+'</h2>'+
+  var h='<div class="sheet"><button class="bkbtn" data-close aria-label="Fermer">✕</button><div class="grab"></div><h2 style="padding-left:48px">'+(id?"Modifier":"Nouvelle personne")+'</h2>'+
     '<div class="row2"><div><label class="fl">Prénom</label><input data-f="prenom" value="'+esc(p.prenom)+'"></div><div><label class="fl">Nom</label><input data-f="nom" value="'+esc(p.nom)+'"></div></div>'+
     '<label class="fl">Sexe</label><select data-f="sexe"><option value="">—</option><option value="M"'+(p.sexe==="M"?" selected":"")+'>Homme</option><option value="F"'+(p.sexe==="F"?" selected":"")+'>Femme</option></select>'+
     '<label class="fl"><input type="checkbox" data-f="vivant" style="width:auto;vertical-align:middle" '+(p.vivant?"checked":"")+'> Personne vivante</label>'+
@@ -536,7 +581,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=9;
+var SEED_VERSION=10;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -551,8 +596,9 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_marie_joe",prenom:"Marie-Joe",nom:"SAUVAIGO",sexe:"F",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Prénom peut-être « Marie-Josée » — à confirmer. Date/lieu à compléter."});
   add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique)."});
   /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
-  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",conjoints:["seed_marienoel"],naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). Prochaine étape : ses parents (grands-parents paternels de Kevin) — acte de naissance 1944 à Salon aux Archives 13, puis remontée vers le Vaud (Sarzens/Lucens) si le grand-père était suisse.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
-  add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",notes:"Frère de Gérard (oncle paternel de Kevin). À relier aux grands-parents paternels dès qu'ils seront connus.",sources:[SRC.gDesarzens]});
+  add({id:"seed_guy",prenom:"Guy",nom:"DESARZENS",sexe:"M",deces:{},notes:"Grand-père paternel de Kevin (père de Gérard et d'Émile) — prénom donné par Kevin (2026-08-03), « il me semble » : à confirmer sur l'acte de naissance de Gérard (1944, Salon-de-Provence, Archives 13). Dates/lieux à compléter. Piste suisse : Sarzens/Lucens (Vaud) si Guy ou son père était suisse.",sources:[SRC.ad13,SRC.gDesarzens,SRC.davel,SRC.sarzens]});
+  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",pere:"seed_guy",conjoints:["seed_marienoel"],naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Fils de Guy DESARZENS (à confirmer). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). L'acte de naissance 1944 à Salon (Archives 13) confirmera le prénom de Guy + donnera la grand-mère paternelle.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
+  add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",pere:"seed_guy",notes:"Frère de Gérard (oncle paternel de Kevin). Fils de Guy DESARZENS (à confirmer).",sources:[SRC.gDesarzens]});
   add({id:"seed_loic",prenom:"Loïc",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",notes:"Fils d'Émile (cousin de Kevin). Date à compléter."});
   add({id:"seed_yann",prenom:"Yann",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",notes:"Fils d'Émile (cousin de Kevin). Date à compléter."});
   /* — Jonction Sauvaigo ⇄ Maiffret (confirmée, index Geneanet) — */
