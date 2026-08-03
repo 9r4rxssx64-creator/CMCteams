@@ -86,6 +86,8 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .tnode .ty{font-size:11.5px;color:var(--mut);margin-top:1px}
 .av.M{background:linear-gradient(135deg,#1f3c66,#122036)}.av.F{background:linear-gradient(135deg,#552a4e,#2c1428)}
 .bandlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--gold);background:rgba(10,14,23,.72);padding:5px 14px;border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.couplebadge{position:absolute;transform:translate(-50%,-50%);font-size:15px;background:rgba(10,14,23,.85);border:1px solid var(--gold);border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(240,200,116,.35)}
+.addrel{display:flex;gap:8px;flex-wrap:wrap}.addrel .btn{flex:1;min-width:calc(50% - 4px)}
 .tnode .rt{position:absolute;top:-8px;left:9px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#04222a;background:var(--cyan);padding:1px 6px;border-radius:999px}
 .zoomBtns{position:absolute;right:12px;bottom:12px;z-index:5;display:flex;flex-direction:column;gap:8px}
 .zoomBtns button{width:44px;height:44px;border-radius:13px;background:var(--glass2);border:1px solid var(--line);font-size:20px;font-weight:800;backdrop-filter:blur(10px);box-shadow:var(--sh)}
@@ -170,7 +172,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.5";
+var APP_VER="v2.6";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -314,12 +316,14 @@ function safeLayout(){
 function drawStage(fit){
   var stage=$("#stage");if(!stage)return;_lay=safeLayout();var W=_lay.w,PADX=TREE.PAD;
   var rules=(_lay.bands||[]).map(function(b){return '<line x1="'+PADX+'" y1="'+b.y+'" x2="'+(W-PADX)+'" y2="'+b.y+'" stroke="rgba(148,166,196,.16)" stroke-width="1.4" stroke-dasharray="2 9"/>';}).join("");
-  var paths=_lay.links.map(function(l){if(l.couple)return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="url(#gold)" stroke-width="3.5" stroke-linecap="round"/>';var my=(l.y1+l.y2)/2;return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="url(#cyan)" stroke-width="2.6" stroke-linecap="round"/>';}).join("");
+  var couples=[];
+  var paths=_lay.links.map(function(l){if(l.couple){var x=Math.min(l.x1,l.x2)-96,w=Math.abs(l.x2-l.x1)+192,y=l.y1-46;couples.push({x:(l.x1+l.x2)/2,y:l.y1-46});return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="92" rx="24" fill="rgba(240,200,116,.06)" stroke="url(#gold)" stroke-width="1.5"/>';}var my=(l.y1+l.y2)/2;return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="url(#cyan)" stroke-width="2.6" stroke-linecap="round"/>';}).join("");
   var defs='<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f0c874"/><stop offset="1" stop-color="#ffe6a3"/></linearGradient><linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5be0d6"/><stop offset="1" stop-color="#7d9fd6"/></linearGradient></defs>';
   var svg='<svg width="'+W+'" height="'+_lay.h+'">'+defs+rules+paths+'</svg>';
   var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+b.y+'px">'+esc(b.label)+'</div>';}).join("");
+  var rings=couples.map(function(c){return '<div class="couplebadge" style="left:'+c.x+'px;top:'+c.y+'px">💍</div>';}).join("");
   stage.style.width=W+"px";stage.style.height=_lay.h+"px";
-  stage.innerHTML=svg+labels+_lay.nodes.map(tnodeHTML).join("");
+  stage.innerHTML=svg+labels+rings+_lay.nodes.map(tnodeHTML).join("");
   if(fit)fitStage();
 }
 function applyST(){var s=$("#stage");if(s)s.style.transform="translate("+VIEWST.tx+"px,"+VIEWST.ty+"px) scale("+VIEWST.sc+")";}
@@ -376,6 +380,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
     '<div class="sec">'+info+(relHtml?'<div style="padding-top:12px"><div style="color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Famille</div><div class="chips">'+relHtml+'</div></div>':"")+(p.notes?'<div style="padding:12px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+'</div>'+
     (sources?'<div class="sec"><h3>Actes / sources</h3><div class="chips">'+sources+'</div></div>':"")+
     '<div class="sec"><h3>💬 Commentaires & infos</h3><div id="cmtList">'+(comments||'<p class="mut" style="font-size:13px;margin:0">Aucun commentaire. Ajoute une info, une anecdote, une question…</p>')+'</div><div style="display:flex;gap:8px;margin-top:10px"><input id="cmtIn" placeholder="Écris un commentaire…"><button class="btn gold sm" id="cmtAdd">Envoyer</button></div></div>'+
+    '<div class="sec"><h3>➕ Ajouter un proche</h3><div class="addrel"><button class="btn sm" data-add="pere:'+id+'">👴 Père</button><button class="btn sm" data-add="mere:'+id+'">👵 Mère</button><button class="btn sm" data-add="conj:'+id+'">💍 Conjoint(e)</button><button class="btn sm" data-add="child:'+id+'">👶 Enfant</button></div></div>'+
     '<div class="row2"><button class="btn" data-searchp="'+id+'">🔎 Rechercher</button><button class="btn gold" data-edit="'+id+'">✏️ Modifier</button></div>'+
     '<button class="btn ghost" data-close style="width:100%;margin-top:8px">Fermer</button></div>';
   showOverlay(h);
@@ -390,7 +395,17 @@ function caroGo(d){var box=$("#caroBox");if(!box)return;var sl=box.querySelector
 
 /* ---------- add / edit + photo import (any format) ---------- */
 var _draftPhotos=[];
-function openEdit(id){var p=id?P(id):{prenom:"",nom:"",sexe:"",naissance:{},deces:{},conjoints:[],photos:[],sources:[],vivant:false};_draftPhotos=(p.photos||[]).slice();
+var _editLink=null;
+function openEdit(id,link){_editLink=null;var p;
+  if(id){p=P(id);}
+  else{p={prenom:"",nom:"",sexe:"",naissance:{},deces:{},conjoints:[],photos:[],sources:[],vivant:false};
+    if(link){
+      if(link.conj&&P(link.conj)){var sp=P(link.conj);p.conjoints=[link.conj];p.sexe=sp.sexe==="M"?"F":(sp.sexe==="F"?"M":"");p.nom=sp.nom||"";}
+      else if(link.childOf&&P(link.childOf)){var par=P(link.childOf);if(par.sexe==="F")p.mere=link.childOf;else p.pere=link.childOf;var s2=(par.conjoints||[])[0];if(s2&&P(s2)){if(P(s2).sexe==="F")p.mere=s2;else p.pere=s2;}p.nom=par.nom||"";}
+      else if(link.parentType&&link.childId){_editLink={parentType:link.parentType,childId:link.childId};p.sexe=link.parentType==="pere"?"M":"F";var ch=P(link.childId);p.nom=(ch&&ch.nom)||"";}
+    }
+  }
+  _draftPhotos=(p.photos||[]).slice();
   var others=Object.keys(DB.persons).filter(function(k){return k!==id;}).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
   function sel(name,cur){return '<select data-f="'+name+'"><option value="">— aucun —</option>'+others.map(function(k){return '<option value="'+k+'"'+(cur===k?" selected":"")+'>'+esc(full(P(k)))+'</option>';}).join("")+'</select>';}
   var h='<div class="sheet"><div class="grab"></div><h2>'+(id?"Modifier":"Nouvelle personne")+'</h2>'+
@@ -408,7 +423,7 @@ function openEdit(id){var p=id?P(id):{prenom:"",nom:"",sexe:"",naissance:{},dece
   sheet.addEventListener("click",function(e){var n=e.target.closest("[data-rmph]");if(n){_draftPhotos.splice(+n.dataset.rmph,1);rt();}});
   $("#addPhoto").onclick=function(){$("#photoIn").click();};
   $("#photoIn").onchange=async function(e){var files=Array.prototype.slice.call(e.target.files||[]);toast("Conversion des photos…");for(var i=0;i<files.length;i++){if(_draftPhotos.length>=10){toast("Maximum 10 photos");break;}try{var d=await importPhoto(files[i]);_draftPhotos.push(d);rt();}catch(err){toast("Photo ignorée ("+(files[i].name||"?")+")");}}e.target.value="";};
-  $("#saveP").onclick=async function(){var g=function(f){var n=sheet.querySelector('[data-f="'+f+'"]');return n?(n.type==="checkbox"?n.checked:n.value.trim()):"";};var np=id?P(id):{id:uid(),comments:[]};np.prenom=g("prenom");np.nom=g("nom");np.sexe=g("sexe");np.vivant=g("vivant");np.naissance={date:g("ndate"),lieu:g("nlieu")};np.deces={date:g("ddate"),lieu:g("dlieu")};np.pere=g("pere")||null;np.mere=g("mere")||null;var conj=g("conj");var conjNew=g("conjNew");np.conjoints=conj?[conj]:[];np.notes=g("notes");np.photos=_draftPhotos.slice();np.sources=np.sources||[];np.comments=np.comments||[];np.updatedAt=now();np.updatedBy=ME||"famille";if(!np.prenom&&!np.nom){toast("Mets au moins un prénom ou un nom");return;}DB.persons[np.id]=np;if(conj&&P(conj)){var c=P(conj);c.conjoints=c.conjoints||[];if(c.conjoints.indexOf(np.id)<0){c.conjoints.push(np.id);c.updatedAt=now();cloudPush(conj);}}else if(!conj&&conjNew){var toks=conjNew.split(/\s+/);var sp={id:uid(),prenom:toks[0]||conjNew,nom:toks.slice(1).join(" "),sexe:np.sexe==="M"?"F":(np.sexe==="F"?"M":""),conjoints:[np.id],photos:[],sources:[],comments:[],notes:"Conjoint(e) de "+full(np)+" (ajouté(e) à la main).",updatedAt:now(),updatedBy:ME||"famille"};DB.persons[sp.id]=sp;np.conjoints=[sp.id];cloudPush(sp.id);}await persist(np.id);ROOT=ROOT||np.id;closeOverlay();render();toast("💾 Enregistré");};
+  $("#saveP").onclick=async function(){var g=function(f){var n=sheet.querySelector('[data-f="'+f+'"]');return n?(n.type==="checkbox"?n.checked:n.value.trim()):"";};var np=id?P(id):{id:uid(),comments:[]};np.prenom=g("prenom");np.nom=g("nom");np.sexe=g("sexe");np.vivant=g("vivant");np.naissance={date:g("ndate"),lieu:g("nlieu")};np.deces={date:g("ddate"),lieu:g("dlieu")};np.pere=g("pere")||null;np.mere=g("mere")||null;var conj=g("conj");var conjNew=g("conjNew");np.conjoints=conj?[conj]:[];np.notes=g("notes");np.photos=_draftPhotos.slice();np.sources=np.sources||[];np.comments=np.comments||[];np.updatedAt=now();np.updatedBy=ME||"famille";if(!np.prenom&&!np.nom){toast("Mets au moins un prénom ou un nom");return;}DB.persons[np.id]=np;if(conj&&P(conj)){var c=P(conj);c.conjoints=c.conjoints||[];if(c.conjoints.indexOf(np.id)<0){c.conjoints.push(np.id);c.updatedAt=now();cloudPush(conj);}}else if(!conj&&conjNew){var toks=conjNew.split(/\s+/);var sp={id:uid(),prenom:toks[0]||conjNew,nom:toks.slice(1).join(" "),sexe:np.sexe==="M"?"F":(np.sexe==="F"?"M":""),conjoints:[np.id],photos:[],sources:[],comments:[],notes:"Conjoint(e) de "+full(np)+" (ajouté(e) à la main).",updatedAt:now(),updatedBy:ME||"famille"};DB.persons[sp.id]=sp;np.conjoints=[sp.id];cloudPush(sp.id);}if(_editLink&&_editLink.childId&&P(_editLink.childId)){var ch2=P(_editLink.childId);ch2[_editLink.parentType]=np.id;ch2.updatedAt=now();cloudPush(_editLink.childId);}await persist(np.id);ROOT=ROOT||np.id;closeOverlay();render();toast("💾 Enregistré");};
   var del=$("#delP");if(del)del.onclick=async function(){if(!confirm("Supprimer "+full(P(id))+" ?"))return;for(var k in DB.persons){var c=DB.persons[k],ch=false;if(c.pere===id){c.pere=null;ch=true;}if(c.mere===id){c.mere=null;ch=true;}var ci=(c.conjoints||[]).indexOf(id);if(ci>=0){c.conjoints.splice(ci,1);ch=true;}if(ch){c.updatedAt=now();cloudPush(k);}}delete DB.persons[id];await saveLocal();var t=await anonAuth();if(t){try{fetch(cloudBase()+"/persons/"+id+".json?auth="+t,{method:"DELETE"});}catch(e){}}closeOverlay();render();toast("Supprimé");};
 }
 function importPhoto(file){return new Promise(function(res,rej){
@@ -421,7 +436,7 @@ function importPhoto(file){return new Promise(function(res,rej){
 
 /* ---------- overlay ---------- */
 function _removeOv(){clearInterval(_caro.timer);var ov=$(".ov");if(ov)ov.remove();}
-function showOverlay(html){_removeOv();var ov=el('<div class="ov">'+html+'</div>');document.body.appendChild(ov);ov.addEventListener("click",function(e){if(e.target===ov)closeOverlay();});ov.querySelectorAll("[data-close]").forEach(function(b){b.onclick=closeOverlay;});ov.addEventListener("click",function(e){var o=e.target.closest("[data-open]");if(o){openPerson(o.dataset.open);return;}var ed=e.target.closest("[data-edit]");if(ed){openEdit(ed.dataset.edit);return;}var s=e.target.closest("[data-searchp]");if(s){openSearch(s.dataset.searchp);}});}
+function showOverlay(html){_removeOv();var ov=el('<div class="ov">'+html+'</div>');document.body.appendChild(ov);ov.addEventListener("click",function(e){if(e.target===ov)closeOverlay();});ov.querySelectorAll("[data-close]").forEach(function(b){b.onclick=closeOverlay;});ov.addEventListener("click",function(e){var a=e.target.closest("[data-add]");if(a){var pr=a.dataset.add.split(":"),rel=pr[0],pid=pr[1];if(rel==="conj")openEdit(null,{conj:pid});else if(rel==="child")openEdit(null,{childOf:pid});else openEdit(null,{parentType:rel,childId:pid});return;}var o=e.target.closest("[data-open]");if(o){openPerson(o.dataset.open);return;}var ed=e.target.closest("[data-edit]");if(ed){openEdit(ed.dataset.edit);return;}var s=e.target.closest("[data-searchp]");if(s){openSearch(s.dataset.searchp);}});}
 function closeOverlay(){_removeOv();_pStack=[];_curPerson=null;}
 
 /* ---------- export/import + name + code ---------- */
@@ -449,12 +464,12 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=8;
+var SEED_VERSION=9;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
   add({id:"seed_mt_maiffret",prenom:"Marie-Thérèse",nom:"MAIFFRET",sexe:"F",naissance:{date:"23.10.1911"},deces:{},conjoints:["seed_victor_sauvaigo"],notes:"Née le 23.10.1911 (document). Épouse de Victor Sauvaigo. MAIFFRET = nom provençal d'origine germanique (Mathfrid : force + paix), rameau Meiffren/Meiffret. Décès (si ≥1970) vérifiable à l'INSEE.",sources:[SRC.gMaiffret,SRC.beaulieu1,SRC.matchid]});
-  add({id:"seed_marienoel",prenom:"Marie-Noël",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Mère de Kevin, née à Monaco."});
+  add({id:"seed_marienoel",prenom:"Marie-Noël",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",conjoints:["seed_gerard"],notes:"Mère de Kevin, née à Monaco. Épouse de Gérard DESARZENS."});
   add({id:"seed_sabrina",prenom:"Sabrina",nom:"DESARZENS",sexe:"F",vivant:true,naissance:{date:"22.03.1971",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Sœur de Kevin. Née le 22 mars 1971 à Monaco."});
   add({id:"seed_ronan",prenom:"Ronan",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_kevin",notes:"Fils de Kevin. Date/lieu à compléter."});
   add({id:"seed_theo",prenom:"Théo",nom:"",sexe:"M",vivant:true,mere:"seed_sabrina",notes:"Fils de Sabrina (neveu de Kevin). Nom/date à compléter."});
@@ -464,7 +479,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_marie_joe",prenom:"Marie-Joe",nom:"SAUVAIGO",sexe:"F",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Prénom peut-être « Marie-Josée » — à confirmer. Date/lieu à compléter."});
   add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique)."});
   /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
-  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). Prochaine étape : ses parents (grands-parents paternels de Kevin) — acte de naissance 1944 à Salon aux Archives 13, puis remontée vers le Vaud (Sarzens/Lucens) si le grand-père était suisse.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
+  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",conjoints:["seed_marienoel"],naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). Prochaine étape : ses parents (grands-parents paternels de Kevin) — acte de naissance 1944 à Salon aux Archives 13, puis remontée vers le Vaud (Sarzens/Lucens) si le grand-père était suisse.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
   add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",notes:"Frère de Gérard (oncle paternel de Kevin). À relier aux grands-parents paternels dès qu'ils seront connus.",sources:[SRC.gDesarzens]});
   add({id:"seed_loic",prenom:"Loïc",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",notes:"Fils d'Émile (cousin de Kevin). Date à compléter."});
   add({id:"seed_yann",prenom:"Yann",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",notes:"Fils d'Émile (cousin de Kevin). Date à compléter."});
@@ -495,7 +510,26 @@ function mergeSeed(){var s=buildSeed();for(var id in s){var loc=DB.persons[id];i
 
 /* ---------- boot ---------- */
 function bindApp(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.onclick=function(){VIEW=t.dataset.view;render();};});$("#fab").onclick=function(){openEdit(null);};document.body.addEventListener("click",function(e){if(e.target.closest(".ov"))return;var n=e.target.closest("#wrap [data-open]");if(n){openPerson(n.dataset.open);return;}var s=e.target.closest("#wrap [data-search]");if(s)openSearch(s.dataset.search);});document.addEventListener("visibilitychange",function(){if(!document.hidden&&sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});window.addEventListener("focus",function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});setInterval(function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);},8000);}
-async function startApp(){$("#gate").classList.add("hidden");$("#app").classList.remove("hidden");ME=localStorage.getItem("arbre_me")||"";var had=await loadLocal();if(!had||!Object.keys(DB.persons).length){seed();await saveLocal();}else if(!DB.meta||DB.meta.seedVersion!==SEED_VERSION){mergeSeed();await saveLocal();}render();setPill();cloudPull(false);}
+/* Nettoyage doublons : même prénom+nom+dates → on garde la fiche la plus riche,
+   on re-pointe les liens vers elle, on supprime les copies VIDES (sans photo ni
+   commentaire) pour ne rien perdre. */
+function dedupePersons(){
+  var persons=DB.persons,by={};
+  function key(p){return ((p.prenom||"")+"|"+(p.nom||"")+"|"+((p.naissance&&p.naissance.date)||"")+"|"+((p.deces&&p.deces.date)||"")).toLowerCase().replace(/\s+/g," ").trim();}
+  function score(p){return (p.photos&&p.photos.length?p.photos.length*10:0)+(p.comments&&p.comments.length?p.comments.length*6:0)+(p.pere?1:0)+(p.mere?1:0)+((p.conjoints||[]).length)+childrenOf(p.id).length+(String(p.id).indexOf("seed_")===0?3:0)+(p.notes?1:0);}
+  for(var id in persons){var k=key(persons[id]);if(!k||k.replace(/\|/g,"").trim()==="")continue;(by[k]=by[k]||[]).push(id);}
+  var map={},removed=[];
+  Object.keys(by).forEach(function(k){var ids=by[k];if(ids.length<2)return;ids.sort(function(a,b){return score(P(b))-score(P(a));});var keep=ids[0];for(var i=1;i<ids.length;i++){var d=P(ids[i]);if((d.photos&&d.photos.length)||(d.comments&&d.comments.length))continue;map[ids[i]]=keep;removed.push(ids[i]);}});
+  if(!removed.length)return removed;
+  for(var id2 in persons){var p=persons[id2];if(map[p.pere])p.pere=map[p.pere];if(map[p.mere])p.mere=map[p.mere];if(p.conjoints)p.conjoints=p.conjoints.map(function(c){return map[c]||c;}).filter(function(c,i,a){return c&&c!==id2&&a.indexOf(c)===i;});}
+  removed.forEach(function(dupId){delete persons[dupId];});
+  return removed;
+}
+async function startApp(){$("#gate").classList.add("hidden");$("#app").classList.remove("hidden");ME=localStorage.getItem("arbre_me")||"";var had=await loadLocal();var seedChanged=false;if(!had||!Object.keys(DB.persons).length){seed();await saveLocal();seedChanged=true;}else if(!DB.meta||DB.meta.seedVersion!==SEED_VERSION){mergeSeed();await saveLocal();seedChanged=true;}
+  var dups=dedupePersons();
+  render();setPill();                 /* AFFICHE L'ARBRE TOUT DE SUITE — jamais bloqué par le réseau */
+  if(seedChanged||dups.length){saveLocal();cloudPushAll().catch(function(){});if(dups.length)toast("🧹 "+dups.length+" doublon(s) nettoyé(s)");}
+  cloudPull(false);}
 async function boot(){await idbOpen();if(!localStorage.getItem("arbre_codehash"))localStorage.setItem("arbre_codehash",DEFAULT_CODEHASH);var stored=localStorage.getItem("arbre_codehash");$("#gateHint").textContent="Astuce : le code de ta famille a été défini. Reconnu automatiquement ensuite.";bindApp();
   if(sessionStorage.getItem("arbre_unlocked")&&localStorage.getItem("arbre_trust")==="1"){CODEHASH=stored;return startApp();}
   async function tryGate(){var c=$("#gateCode").value;if(!c){toast("Entre le code");return;}var h=await sha256("arbre::"+c.trim());if(h===stored){CODEHASH=h;sessionStorage.setItem("arbre_unlocked","1");localStorage.setItem("arbre_trust","1");startApp();}else{toast("Code incorrect");$("#gateCode").value="";}}
