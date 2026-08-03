@@ -1,0 +1,20 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "DESARZENS",
+  "birthDepartment": "13"
+ },
+ "response": {
+  "total": 0,
+  "maxScoreES": null,
+  "size": 100,
+  "page": 1,
+  "delay": 8,
+  "persons": []
+ }
+}

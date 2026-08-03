@@ -1,0 +1,20 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "firstName": "Emile",
+  "lastName": "DESARZENS"
+ },
+ "response": {
+  "total": 0,
+  "maxScoreES": null,
+  "size": 30,
+  "page": 1,
+  "delay": 5,
+  "persons": []
+ }
+}

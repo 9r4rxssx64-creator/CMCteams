@@ -1,0 +1,138 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "firstName": "Guy",
+  "lastName": "DESARZENS"
+ },
+ "response": {
+  "total": 2,
+  "maxScoreES": 19.02349,
+  "size": 30,
+  "page": 1,
+  "delay": 5,
+  "persons": [
+   {
+    "score": 0.85,
+    "source": "2005",
+    "sourceLine": 497149,
+    "scores": {
+     "name": {
+      "score": 1,
+      "first": 1,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.85,
+     "es": 0.1,
+     "multiMatchPenalty": 0.9,
+     "multiMatch": 2
+    },
+    "id": "osfHYMnAF3_Y",
+    "name": {
+     "first": [
+      "Guy",
+      "Edouard"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19180307",
+     "location": {
+      "city": "Poissy",
+      "code": "78498",
+      "codePostal": [
+       "78300"
+      ],
+      "codeHistory": "78498",
+      "departmentCode": "78",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9232743,
+      "longitude": 2.0271841
+     }
+    },
+    "death": {
+     "date": "20051114",
+     "certificateId": "256",
+     "age": 87,
+     "location": {
+      "city": "Nemours",
+      "code": "77333",
+      "codePostal": [
+       "77140"
+      ],
+      "codeHistory": "77333",
+      "departmentCode": "77",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.2589486,
+      "longitude": 2.7110177
+     }
+    }
+   },
+   {
+    "score": 0.85,
+    "source": "1998",
+    "sourceLine": 68102,
+    "scores": {
+     "name": {
+      "score": 1,
+      "first": 1,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.85,
+     "es": 0.1,
+     "multiMatchPenalty": 0.9,
+     "multiMatch": 2
+    },
+    "id": "6PYNw2iuD95G",
+    "name": {
+     "first": [
+      "Guy",
+      "Henri"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19311001",
+     "location": {
+      "city": "Coucy-le-Château-Auffrique",
+      "code": "02217",
+      "codePostal": [
+       "02380"
+      ],
+      "codeHistory": "02217",
+      "departmentCode": "02",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.5169027,
+      "longitude": 3.3240511
+     }
+    },
+    "death": {
+     "date": "19971220",
+     "certificateId": "0",
+     "age": 66,
+     "location": {
+      "code": "99131",
+      "codeHistory": "99131",
+      "country": "Belgique",
+      "countryCode": "BEL"
+     }
+    }
+   }
+  ]
+ }
+}

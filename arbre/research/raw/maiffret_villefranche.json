@@ -1,0 +1,20 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "MAIFFRET",
+  "birthCity": "Villefranche-sur-Mer"
+ },
+ "response": {
+  "total": 0,
+  "maxScoreES": null,
+  "size": 100,
+  "page": 1,
+  "delay": 15,
+  "persons": []
+ }
+}

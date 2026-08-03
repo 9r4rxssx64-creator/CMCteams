@@ -1,0 +1,5458 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "MAIFFRET",
+  "birthCity": "Nice"
+ },
+ "response": {
+  "total": 80,
+  "maxScoreES": 18.636082,
+  "size": 100,
+  "page": 1,
+  "delay": 476,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 15361,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "HcglQf-CjLyC",
+    "name": {
+     "first": [
+      "Josephine",
+      "Pauline"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19000706",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19741207",
+     "certificateId": "5460",
+     "age": 74,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 16228,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "VQymkyK2OEbV",
+    "name": {
+     "first": [
+      "Francis",
+      "Marius",
+      "Pascal"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19110415",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19760909",
+     "certificateId": "26",
+     "age": 65,
+     "location": {
+      "city": "Saint-Jean-Cap-Ferrat",
+      "code": "06121",
+      "codePostal": [
+       "06230"
+      ],
+      "codeHistory": "06121",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6881655,
+      "longitude": 7.3323713
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 16805,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "hbnR4c2hZdq9",
+    "name": {
+     "first": [
+      "Marguerite",
+      "Baptistine",
+      "Catherine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18941117",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19761204",
+     "certificateId": "924",
+     "age": 82,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 16148,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "kHaU_f5LWNWq",
+    "name": {
+     "first": [
+      "Constantin",
+      "Pierre"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19230906",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19750113",
+     "certificateId": "275",
+     "age": 51,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 16550,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "P-GmyvURzWuW",
+    "name": {
+     "first": [
+      "Madeleine",
+      "Pierrette"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18970425",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19750416",
+     "certificateId": "1807",
+     "age": 77,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1979",
+    "sourceLine": 16899,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "gtpL-jIV-Qic",
+    "name": {
+     "first": [
+      "Laurent"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18940509",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19791224",
+     "certificateId": "5804",
+     "age": 85,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1982",
+    "sourceLine": 18746,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "9tUilCyrfS1q",
+    "name": {
+     "first": [
+      "Charles",
+      "Joseph"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19300614",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19821130",
+     "certificateId": "56",
+     "age": 52,
+     "location": {
+      "city": "La Trinité",
+      "code": "06149",
+      "codePostal": [
+       "06340"
+      ],
+      "codeHistory": "06149",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.74536,
+      "longitude": 7.3394342
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1987",
+    "sourceLine": 18400,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "aclExz_v4oAd",
+    "name": {
+     "first": [
+      "Henri"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19250824",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19870916",
+     "certificateId": "1   3",
+     "age": 62,
+     "location": {
+      "city": "Couloumé-Mondebat",
+      "code": "32109",
+      "codePostal": [
+       "32160"
+      ],
+      "codeHistory": "32109",
+      "departmentCode": "32",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6341673,
+      "longitude": 0.1152744
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1989",
+    "sourceLine": 18623,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "pKarQ8IXnK5k",
+    "name": {
+     "first": [
+      "Jacques",
+      "Max"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19251219",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19891001",
+     "certificateId": "4463",
+     "age": 63,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1992",
+    "sourceLine": 77039,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "IQpvqtpqgfTb",
+    "name": {
+     "first": [
+      "Loius",
+      "Ange"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19190511",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19920130",
+     "certificateId": "11",
+     "age": 72,
+     "location": {
+      "city": "Cantaron",
+      "code": "06031",
+      "codePostal": [
+       "06340"
+      ],
+      "codeHistory": "06031",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7692107,
+      "longitude": 7.3138395
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 15719,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "-MoF4-A_ZSPi",
+    "name": {
+     "first": [
+      "Pierre",
+      "Jean"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19031026",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19751123",
+     "certificateId": "50",
+     "age": 72,
+     "location": {
+      "city": "Château-Landon",
+      "code": "77099",
+      "codePostal": [
+       "77570"
+      ],
+      "codeHistory": "77099",
+      "departmentCode": "77",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.1471349,
+      "longitude": 2.6970938
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1977",
+    "sourceLine": 17161,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "TgLzV6SUMriI",
+    "name": {
+     "first": [
+      "Angele",
+      "Philomene",
+      "Baptistine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18950807",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19770403",
+     "certificateId": "1623",
+     "age": 81,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 15368,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "DdnDAQZ9bFOV",
+    "name": {
+     "first": [
+      "Antoinette",
+      "Josephine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19000929",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19740601",
+     "certificateId": "2538",
+     "age": 73,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1978",
+    "sourceLine": 17400,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "5ccqrXQPjgBR",
+    "name": {
+     "first": [
+      "Pierre",
+      "Benoit"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19061221",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19781208",
+     "certificateId": "5466",
+     "age": 71,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1978",
+    "sourceLine": 17052,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "_0CcaiZOQXO5",
+    "name": {
+     "first": [
+      "Lucrece",
+      "Philippine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18970710",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19780614",
+     "certificateId": "2752",
+     "age": 80,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1971",
+    "sourceLine": 8041,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "ud2ezm5ZOb5c",
+    "name": {
+     "first": [
+      "Charles",
+      "Joseph"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18910803",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19711018",
+     "certificateId": "2321",
+     "age": 80,
+     "location": {
+      "city": "Lyon",
+      "code": "69123",
+      "codeHistory": [
+       "69123",
+       "69232"
+      ],
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 14658,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "OvUGb7nsIkma",
+    "name": {
+     "first": [
+      "Marius",
+      "Pierre"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18921216",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19720829",
+     "certificateId": "73",
+     "age": 79,
+     "location": {
+      "city": "Golbey",
+      "code": "88209",
+      "codePostal": [
+       "88190"
+      ],
+      "codeHistory": "88209",
+      "departmentCode": "88",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.1984456,
+      "longitude": 6.4244435
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1992",
+    "sourceLine": 24294,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "M5yNYs6Qx-gk",
+    "name": {
+     "first": [
+      "Jean",
+      "Bapiste"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19211001",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19911205",
+     "certificateId": "5611",
+     "age": 70,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1992",
+    "sourceLine": 317844,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "ohktbJKfZYec",
+    "name": {
+     "first": [
+      "Jeanne",
+      "Pierrette"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19060110",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19920530",
+     "certificateId": "27",
+     "age": 86,
+     "location": {
+      "city": "Puget-Théniers",
+      "code": "06099",
+      "codePostal": [
+       "06260"
+      ],
+      "codeHistory": "06099",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.9526463,
+      "longitude": 6.9055765
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1991",
+    "sourceLine": 24554,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "6rO4qxGYluux",
+    "name": {
+     "first": [
+      "Louise",
+      "Mathilde",
+      "Marie"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19061208",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19901219",
+     "certificateId": "1518",
+     "age": 84,
+     "location": {
+      "city": "Cannes",
+      "code": "06029",
+      "codePostal": [
+       "06150",
+       "06400"
+      ],
+      "codeHistory": "06029",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5395643,
+      "longitude": 7.0173828
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1990",
+    "sourceLine": 387192,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "CAYTl3aXNm2K",
+    "name": {
+     "first": [
+      "Genevieve"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19200421",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19900731",
+     "certificateId": "3606",
+     "age": 70,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1987",
+    "sourceLine": 17681,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "f6ALpW-2qnYB",
+    "name": {
+     "first": [
+      "Jeanne",
+      "Claire"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19031125",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19870527",
+     "certificateId": "2562",
+     "age": 83,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1985",
+    "sourceLine": 18474,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "nHuEYdEbokYv",
+    "name": {
+     "first": [
+      "Henri",
+      "Fortune"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19001216",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19850126",
+     "certificateId": "530",
+     "age": 84,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1990",
+    "sourceLine": 77168,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "GDnWoAVsDvqv",
+    "name": {
+     "first": [
+      "Catherine",
+      "Louise"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19030719",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19900110",
+     "certificateId": "200",
+     "age": 86,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1997",
+    "sourceLine": 544264,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "UuNAI58cv4sn",
+    "name": {
+     "first": [
+      "Therese",
+      "Marie",
+      "Honorine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19030112",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19971125",
+     "certificateId": "04896",
+     "age": 94,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1982",
+    "sourceLine": 18744,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "dmNHdrSCYOF7",
+    "name": {
+     "first": [
+      "Adolphe",
+      "Andre",
+      "Jean"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19300116",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19820625",
+     "certificateId": "26",
+     "age": 52,
+     "location": {
+      "city": "Carros",
+      "code": "06033",
+      "codePostal": [
+       "06510"
+      ],
+      "codeHistory": "06033",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7804449,
+      "longitude": 7.1759355
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1981",
+    "sourceLine": 18200,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "uUp8ZagqCQfN",
+    "name": {
+     "first": [
+      "Marie-Louise"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18991211",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19810118",
+     "certificateId": "62",
+     "age": 81,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1983",
+    "sourceLine": 18854,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "PQhh8d5FxJSU",
+    "name": {
+     "first": [
+      "Marguerite",
+      "Rose"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19070306",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19830802",
+     "certificateId": "3616",
+     "age": 76,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1987",
+    "sourceLine": 17572,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "QLu4HfU22dXI",
+    "name": {
+     "first": [
+      "Etienne",
+      "Marius"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19010420",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19870109",
+     "certificateId": "1",
+     "age": 85,
+     "location": {
+      "city": "Aspremont",
+      "code": "06006",
+      "codePostal": [
+       "06790"
+      ],
+      "codeHistory": "06006",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7788751,
+      "longitude": 7.2433056
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1987",
+    "sourceLine": 17747,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "GDXfib9z8T3X",
+    "name": {
+     "first": [
+      "Francois"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19050704",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19870525",
+     "certificateId": "503  59",
+     "age": 81,
+     "location": {
+      "city": "Marseille",
+      "code": "13055",
+      "codeHistory": "13055",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2599669,
+      "longitude": 5.3707409
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1986",
+    "sourceLine": 19773,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "khoM8gG5m555",
+    "name": {
+     "first": [
+      "Apollonie",
+      "Benoite",
+      "Alexandrine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18970928",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19861228",
+     "certificateId": "6082",
+     "age": 89,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1994",
+    "sourceLine": 337361,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "4wxhRle8lKaS",
+    "name": {
+     "first": [
+      "Antoine",
+      "Rene",
+      "Clement"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19160604",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19940617",
+     "certificateId": "2805    N",
+     "age": 78,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1996",
+    "sourceLine": 106538,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "869UWFbkuHgi",
+    "name": {
+     "first": [
+      "Jean",
+      "Baptiste",
+      "Marius"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19090618",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19960106",
+     "certificateId": "3",
+     "age": 86,
+     "location": {
+      "city": "Jeumont",
+      "code": "59324",
+      "codePostal": [
+       "59460"
+      ],
+      "codeHistory": "59324",
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.2899302,
+      "longitude": 4.0994933
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1993",
+    "sourceLine": 418262,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "bgTntZ_xZhJs",
+    "name": {
+     "first": [
+      "Eugenie"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19020121",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19930913",
+     "certificateId": "04011",
+     "age": 91,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1983",
+    "sourceLine": 18689,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "j_AP58lL8lb5",
+    "name": {
+     "first": [
+      "Marguerite",
+      "Jeanne"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19030801",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19831218",
+     "certificateId": "1281",
+     "age": 80,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1984",
+    "sourceLine": 18595,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "jNW54g66T7_q",
+    "name": {
+     "first": [
+      "Louis",
+      "Jean"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19010908",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19840128",
+     "certificateId": "509",
+     "age": 82,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1998",
+    "sourceLine": 90185,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "NfuWxc4TI9Cs",
+    "name": {
+     "first": [
+      "Jean",
+      "Theresius"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19110113",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19980301",
+     "certificateId": "01055",
+     "age": 87,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1998",
+    "sourceLine": 309510,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "QRjAV0DQptI0",
+    "name": {
+     "first": [
+      "Paul"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19201203",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19980815",
+     "certificateId": "03677",
+     "age": 77,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1993",
+    "sourceLine": 375528,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "ljmzSSx-t1aX",
+    "name": {
+     "first": [
+      "Paulette",
+      "Assomption"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19070203",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19930819",
+     "certificateId": "38",
+     "age": 86,
+     "location": {
+      "city": "Roquebillière",
+      "code": "06103",
+      "codePostal": [
+       "06450"
+      ],
+      "codeHistory": "06103",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.0249907,
+      "longitude": 7.2937095
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2003",
+    "sourceLine": 451909,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "z2VmP1SopyVe",
+    "name": {
+     "first": [
+      "Yvonne",
+      "Honorine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19080802",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20031004",
+     "certificateId": "4300",
+     "age": 95,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2005",
+    "sourceLine": 208802,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "8K3SODdfjBZm",
+    "name": {
+     "first": [
+      "Michel",
+      "Jean-Marie"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19370819",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20050318",
+     "certificateId": "06",
+     "age": 67,
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2005",
+    "sourceLine": 506060,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "d2PALA-Zz2sJ",
+    "name": {
+     "first": [
+      "Louis",
+      "Honore",
+      "Marie"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19220702",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20051125",
+     "certificateId": "4567",
+     "age": 83,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2002",
+    "sourceLine": 18877,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "WE5vGm8HGryp",
+    "name": {
+     "first": [
+      "Fortune",
+      "Pierre",
+      "Antoine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19240515",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20011224",
+     "certificateId": "67",
+     "age": 77,
+     "location": {
+      "city": [
+       "Saint-André",
+       "Saint-André-de-la-Roche"
+      ],
+      "code": "06114",
+      "codePostal": [
+       "06730"
+      ],
+      "codeHistory": "06114",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7465923,
+      "longitude": 7.2870895
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2000",
+    "sourceLine": 113607,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "50UZUgMMtNwH",
+    "name": {
+     "first": [
+      "Marie",
+      "Therese"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19141023",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20000219",
+     "certificateId": "0",
+     "age": 85,
+     "location": {
+      "code": "99138",
+      "codeHistory": "99138",
+      "country": "Monaco",
+      "countryCode": "MCO"
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2002",
+    "sourceLine": 400903,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "fQNTQxv20lNb",
+    "name": {
+     "first": [
+      "Seraphine",
+      "Francoise"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19230322",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20020920",
+     "certificateId": "4067",
+     "age": 79,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2004",
+    "sourceLine": 292345,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "YrHpw4XMCkxZ",
+    "name": {
+     "first": [
+      "Francine",
+      "Marie"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19171112",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20040624",
+     "certificateId": "225",
+     "age": 86,
+     "location": {
+      "city": "Saint-Laurent-du-Var",
+      "code": "06123",
+      "codePostal": [
+       "06700"
+      ],
+      "codeHistory": "06123",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6780224,
+      "longitude": 7.1791754
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2009",
+    "sourceLine": 378530,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "qSVyFOermekB",
+    "name": {
+     "first": [
+      "Louise",
+      "Gabrielle"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19351009",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20090829",
+     "certificateId": "3438",
+     "age": 73,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2007",
+    "sourceLine": 138622,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "qUx-TiSrn81F",
+    "name": {
+     "first": [
+      "Lucien",
+      "Maurice",
+      "Paul"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19270208",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20070326",
+     "certificateId": "1369",
+     "age": 80,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2010",
+    "sourceLine": 276828,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "EhUhl1FNrv5t",
+    "name": {
+     "first": [
+      "Jerome",
+      "Julien"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19120127",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20100720",
+     "certificateId": "677",
+     "age": 98,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2009",
+    "sourceLine": 127676,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "-Elz0sgLQ-7A",
+    "name": {
+     "first": [
+      "Jean-Barthelemy"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19551204",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20090308",
+     "certificateId": "1028",
+     "age": 53,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2009",
+    "sourceLine": 205631,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "8odS8EMJKpMO",
+    "name": {
+     "first": [
+      "Antoinette",
+      "Louise"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19100519",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20090428",
+     "certificateId": "1720",
+     "age": 98,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2017",
+    "sourceLine": 2579,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "8aGjgKf30z0M",
+    "name": {
+     "first": [
+      "Alice",
+      "Paule",
+      "Pierrine"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19310705",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20161228",
+     "certificateId": "5373",
+     "age": 85,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2015",
+    "sourceLine": 179607,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "VbHqAPrjP5aC",
+    "name": {
+     "first": [
+      "Pierre",
+      "Jean-Marie",
+      "Louis"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19411214",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20150403",
+     "certificateId": "1632",
+     "age": 73,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2014",
+    "sourceLine": 193130,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "QhVZAbYTpl68",
+    "name": {
+     "first": [
+      "Ginette",
+      "Gabrielle",
+      "Josette"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19320114",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20140419",
+     "certificateId": "93",
+     "age": 82,
+     "location": {
+      "city": "Évry",
+      "code": "91228",
+      "codePostal": [
+       "91000"
+      ],
+      "codeHistory": [
+       "78228",
+       "91228"
+      ],
+      "departmentCode": "91",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.6288503,
+      "longitude": 2.4385022
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 307904,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "kFuEqz-eSnAK",
+    "name": {
+     "first": [
+      "Andre",
+      "Ernest",
+      "Etienne"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19320622",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20160722",
+     "certificateId": "3069",
+     "age": 84,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2011",
+    "sourceLine": 150665,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "MQS0uOfVJH0B",
+    "name": {
+     "first": [
+      "Marie",
+      "Therese"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19240307",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20110421",
+     "certificateId": "1666",
+     "age": 87,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2009",
+    "sourceLine": 397457,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "Rgcj9wtH5eTU",
+    "name": {
+     "first": [
+      "Mireille",
+      "Paulette",
+      "Odile"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19311021",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20090823",
+     "certificateId": "56",
+     "age": 77,
+     "location": {
+      "city": "Tende",
+      "code": "06163",
+      "codePostal": [
+       "06430"
+      ],
+      "codeHistory": "06163",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.1005309,
+      "longitude": 7.5451071
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2011",
+    "sourceLine": 503083,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "jI3ULppNlNMu",
+    "name": {
+     "first": [
+      "Maurice",
+      "Alexandre",
+      "Pierre"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19300129",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20111120",
+     "certificateId": "47",
+     "age": 81,
+     "location": {
+      "city": "Tourrettes-sur-Loup",
+      "code": "06148",
+      "codePostal": [
+       "06140"
+      ],
+      "codeHistory": "06148",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7119013,
+      "longitude": 7.0463411
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2011",
+    "sourceLine": 326571,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "xZULrWN9TB6R",
+    "name": {
+     "first": [
+      "Fernand",
+      "Joseph"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19290321",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20110731",
+     "certificateId": "2952",
+     "age": 82,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2011",
+    "sourceLine": 454711,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "z6c83OGdDth3",
+    "name": {
+     "first": [
+      "Suzanne",
+      "Marthe",
+      "Marie"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19270314",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20111117",
+     "certificateId": "1060",
+     "age": 84,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 353528,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "tFvOMeN0WWzM",
+    "name": {
+     "first": [
+      "Antoine",
+      "Louis",
+      "Jean"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19250426",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20160820",
+     "certificateId": "864",
+     "age": 91,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2015",
+    "sourceLine": 370863,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "Ck-BousXGviB",
+    "name": {
+     "first": [
+      "Henri",
+      "Eugene",
+      "Joseph"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19221203",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20150826",
+     "certificateId": "45",
+     "age": 92,
+     "location": {
+      "city": "Gattières",
+      "code": "06064",
+      "codePostal": [
+       "06510"
+      ],
+      "codeHistory": "06064",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7730098,
+      "longitude": 7.1592508
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2015",
+    "sourceLine": 463562,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "Fs8gf7rdn3KG",
+    "name": {
+     "first": [
+      "Vincent",
+      "Christian"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19950331",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20151013",
+     "certificateId": "4257",
+     "age": 20,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2014",
+    "sourceLine": 56201,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "CUQe7YKVglRy",
+    "name": {
+     "first": [
+      "Jean-Marc",
+      "Henri",
+      "Francis"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19560711",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20140224",
+     "certificateId": "234",
+     "age": 57,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2017",
+    "sourceLine": 55337,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "gcwa6sTPxXVs",
+    "name": {
+     "first": [
+      "Pierre",
+      "Antoine",
+      "Joseph"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19250727",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20161224",
+     "certificateId": "211",
+     "age": 91,
+     "location": {
+      "city": "Nans-les-Pins",
+      "code": "83087",
+      "codePostal": [
+       "83860"
+      ],
+      "codeHistory": "83087",
+      "departmentCode": "83",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.3871915,
+      "longitude": 5.7883346
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2017",
+    "sourceLine": 224239,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "NrdLkNxm8bf4",
+    "name": {
+     "first": [
+      "Colette",
+      "Therese",
+      "Paulette"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19290714",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20170520",
+     "certificateId": "2190",
+     "age": 87,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 327783,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "xFhxtXzKCeFA",
+    "name": {
+     "first": [
+      "Henri",
+      "Jean",
+      "Marie",
+      "Francois"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19500420",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20180712",
+     "certificateId": "41",
+     "age": 68,
+     "location": {
+      "city": "Sospel",
+      "code": "06136",
+      "codePostal": [
+       "06380"
+      ],
+      "codeHistory": "06136",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.888011,
+      "longitude": 7.4428447
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 118004,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "kBmqNgJl6V2-",
+    "name": {
+     "first": [
+      "Marie-Pierre"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19600714",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20180223",
+     "certificateId": "1036",
+     "age": 57,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 230244,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "G2U4tYTN0e-N",
+    "name": {
+     "first": [
+      "Robert",
+      "Jean"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19220212",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20180429",
+     "certificateId": "1962",
+     "age": 96,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 66070,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "niE-Ne4cejkz",
+    "name": {
+     "first": [
+      "Marie",
+      "Andrea"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19201120",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20180211",
+     "certificateId": "789",
+     "age": 97,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2019",
+    "sourceLine": 228256,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "56csamgTArx1",
+    "name": {
+     "first": [
+      "Arthur",
+      "Andre"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19340412",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20190501",
+     "certificateId": "1876",
+     "age": 85,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2019",
+    "sourceLine": 424144,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "sIt9FdB7XXOE",
+    "name": {
+     "first": [
+      "Michel",
+      "Paul",
+      "Marius"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19430206",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20190918",
+     "certificateId": "3704",
+     "age": 76,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2025-m08",
+    "sourceLine": 2054,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "OB8lxiKkFrYM",
+    "name": {
+     "first": [
+      "Huguette",
+      "Henriette"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19320406",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20250814",
+     "certificateId": "3169",
+     "age": 93,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2024",
+    "sourceLine": 114817,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "GmMrdL2iVhDl",
+    "name": {
+     "first": [
+      "Pierrette",
+      "Eugenie"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19290926",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20240113",
+     "certificateId": "4",
+     "age": 94,
+     "location": {
+      "city": "Tourrettes",
+      "code": "83138",
+      "codePostal": [
+       "83440"
+      ],
+      "codeHistory": "83138",
+      "departmentCode": "83",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.613899,
+      "longitude": 6.7251713
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2021",
+    "sourceLine": 426134,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "Lcw4mTpBeeQ2",
+    "name": {
+     "first": [
+      "Emilie"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19180327",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20210731",
+     "certificateId": "100",
+     "age": 103,
+     "location": {
+      "city": "Billère",
+      "code": "64129",
+      "codePostal": [
+       "64140"
+      ],
+      "codeHistory": "64129",
+      "departmentCode": "64",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.3040691,
+      "longitude": -0.3970724
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2023",
+    "sourceLine": 280835,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "72FyBM0Ubs6T",
+    "name": {
+     "first": [
+      "Maryse",
+      "Jenny"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19280820",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20230531",
+     "certificateId": "706",
+     "age": 94,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2022",
+    "sourceLine": 617007,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "NnNZImriEbPf",
+    "name": {
+     "first": [
+      "Francis",
+      "Antonin",
+      "Jacques"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19391010",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20221207",
+     "certificateId": "5018",
+     "age": 83,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2022",
+    "sourceLine": 188198,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "AnjLNLGwOj2d",
+    "name": {
+     "first": [
+      "Henry",
+      "Emmanuel"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19360922",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20220418",
+     "certificateId": "13",
+     "age": 85,
+     "location": {
+      "city": "Tourrettes-sur-Loup",
+      "code": "06148",
+      "codePostal": [
+       "06140"
+      ],
+      "codeHistory": "06148",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7119013,
+      "longitude": 7.0463411
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2022",
+    "sourceLine": 617363,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "sa-az48Tuh9G",
+    "name": {
+     "first": [
+      "Alain",
+      "Louis",
+      "Roland"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19480329",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20221212",
+     "certificateId": "5099",
+     "age": 74,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2024",
+    "sourceLine": 126155,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.09,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 80
+    },
+    "id": "b5cvwHt74HxT",
+    "name": {
+     "first": [
+      "Honore",
+      "Eugene",
+      "Francis"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19270620",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20240304",
+     "certificateId": "13",
+     "age": 96,
+     "location": {
+      "city": "Gattières",
+      "code": "06064",
+      "codePostal": [
+       "06510"
+      ],
+      "codeHistory": "06064",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7730098,
+      "longitude": 7.1592508
+     }
+    }
+   }
+  ]
+ }
+}

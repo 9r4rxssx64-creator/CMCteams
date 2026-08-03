@@ -1,0 +1,2712 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "DESARZENS"
+ },
+ "response": {
+  "total": 42,
+  "maxScoreES": 13.706564,
+  "size": 100,
+  "page": 1,
+  "delay": 274,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 335,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "RijUv5Ke4Czq",
+    "name": {
+     "first": [
+      "Lea"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19001218",
+     "location": {
+      "city": "La Boisse",
+      "code": "01049",
+      "codePostal": [
+       "01120"
+      ],
+      "codeHistory": "01049",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8486167,
+      "longitude": 5.0218599
+     }
+    },
+    "death": {
+     "date": "19720125",
+     "certificateId": "48",
+     "age": 71,
+     "location": {
+      "city": [
+       "Bourg",
+       "Bourg-en-Bresse"
+      ],
+      "code": "01053",
+      "codePostal": [
+       "01000"
+      ],
+      "codeHistory": "01053",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.2067562,
+      "longitude": 5.2450803
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1985",
+    "sourceLine": 446,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "KeeIhk9BI4Do",
+    "name": {
+     "first": [
+      "Marguerite"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19030917",
+     "location": {
+      "city": "La Boisse",
+      "code": "01049",
+      "codePostal": [
+       "01120"
+      ],
+      "codeHistory": "01049",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8486167,
+      "longitude": 5.0218599
+     }
+    },
+    "death": {
+     "date": "19850616",
+     "certificateId": "353",
+     "age": 81,
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 4e Arrondissement"
+      ],
+      "code": "69384",
+      "codePostal": [
+       "69004"
+      ],
+      "codeHistory": "69384",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1992",
+    "sourceLine": 927,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 0.75,
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "ml1AsJaK9qWy",
+    "name": {
+     "first": [
+      "Paul",
+      "Robert"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19081001",
+     "location": {
+      "city": "Lausanne",
+      "code": "99140",
+      "codeHistory": "99140",
+      "country": "Suisse",
+      "countryCode": "CHE"
+     }
+    },
+    "death": {
+     "date": "19911217",
+     "certificateId": "25",
+     "age": 83,
+     "location": {
+      "city": "Charnay-lès-Mâcon",
+      "code": "71105",
+      "codePostal": [
+       "71850"
+      ],
+      "codeHistory": "71105",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.302207,
+      "longitude": 4.7811353
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1977",
+    "sourceLine": 300213,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "IUAQJOfnte5h",
+    "name": {
+     "first": [
+      "Marius",
+      "Louis"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19240727",
+     "location": {
+      "city": "Germolles-sur-Grosne",
+      "code": "71217",
+      "codePostal": [
+       "71520"
+      ],
+      "codeHistory": "71217",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.2794702,
+      "longitude": 4.5946417
+     }
+    },
+    "death": {
+     "date": "19770618",
+     "certificateId": "61",
+     "age": 52,
+     "location": {
+      "city": "Belleville",
+      "code": "69019",
+      "codePostal": [
+       "69220"
+      ],
+      "codeHistory": "69019",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.1001891,
+      "longitude": 4.7278413
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1980",
+    "sourceLine": 370,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "IwEEA5kd0etH",
+    "name": {
+     "first": [
+      "Arnold"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19051001",
+     "location": {
+      "city": "La Boisse",
+      "code": "01049",
+      "codePostal": [
+       "01120"
+      ],
+      "codeHistory": "01049",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8486167,
+      "longitude": 5.0218599
+     }
+    },
+    "death": {
+     "date": "19801214",
+     "certificateId": "17",
+     "age": 75,
+     "location": {
+      "city": "La Boisse",
+      "code": "01049",
+      "codePostal": [
+       "01120"
+      ],
+      "codeHistory": "01049",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8486167,
+      "longitude": 5.0218599
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1990",
+    "sourceLine": 171380,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "7sSSbRrSeSu0",
+    "name": {
+     "first": [
+      "Henri",
+      "Alexandre"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19010119",
+     "location": {
+      "city": "Dole",
+      "code": "39198",
+      "codePostal": [
+       "39100"
+      ],
+      "codeHistory": [
+       "39033",
+       "39198",
+       "39256",
+       "39496"
+      ],
+      "departmentCode": "39",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.0799766,
+      "longitude": 5.489366
+     }
+    },
+    "death": {
+     "date": "19900312",
+     "certificateId": "75",
+     "age": 89,
+     "location": {
+      "city": "Saint-Julien-en-Genevois",
+      "code": "74243",
+      "codePostal": [
+       "74160"
+      ],
+      "codeHistory": [
+       "74243",
+       "74277"
+      ],
+      "departmentCode": "74",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.1343234,
+      "longitude": 6.0821215
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1987",
+    "sourceLine": 339281,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "1B2rTZP6Bbn2",
+    "name": {
+     "first": [
+      "Josette"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19330105",
+     "location": {
+      "city": [
+       "Roche-Vineuse",
+       "La Roche-Vineuse"
+      ],
+      "code": "71371",
+      "codePostal": [
+       "71960"
+      ],
+      "codeHistory": "71371",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.3502081,
+      "longitude": 4.744796
+     }
+    },
+    "death": {
+     "date": "19870622",
+     "certificateId": "5",
+     "age": 54,
+     "location": {
+      "city": "Dracé",
+      "code": "69077",
+      "codePostal": [
+       "69220"
+      ],
+      "codeHistory": "69077",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.155822,
+      "longitude": 4.7770414
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1988",
+    "sourceLine": 324171,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "YAzJLf1v0li8",
+    "name": {
+     "first": [
+      "Anna",
+      "Benoite"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19260712",
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 2e Arrondissement"
+      ],
+      "code": "69382",
+      "codePostal": [
+       "69002"
+      ],
+      "codeHistory": "69382",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    },
+    "death": {
+     "date": "19881129",
+     "certificateId": "5537",
+     "age": 62,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1995",
+    "sourceLine": 130440,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 0.75,
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "1KDObSfkmnRL",
+    "name": {
+     "first": [
+      "Roger",
+      "Ulysse"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19090303",
+     "location": {
+      "city": "Villeret",
+      "code": "99140",
+      "codeHistory": "99140",
+      "country": "Suisse",
+      "countryCode": "CHE"
+     }
+    },
+    "death": {
+     "date": "19950301",
+     "certificateId": "113",
+     "age": 85,
+     "location": {
+      "city": "Laon",
+      "code": "02408",
+      "codePostal": [
+       "02000"
+      ],
+      "codeHistory": "02408",
+      "departmentCode": "02",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.5751842,
+      "longitude": 3.6182566
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1995",
+    "sourceLine": 48801,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "4Wso0tO3FKNR",
+    "name": {
+     "first": [
+      "Pierre",
+      "Marcel",
+      "Edouard"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19220802",
+     "location": {
+      "city": "Bérou-la-Mulotière",
+      "code": "28037",
+      "codePostal": [
+       "28270"
+      ],
+      "codeHistory": "28037",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7427659,
+      "longitude": 1.0778866
+     }
+    },
+    "death": {
+     "date": "19950116",
+     "certificateId": "1",
+     "age": 72,
+     "location": {
+      "city": "Montcaret",
+      "code": "24289",
+      "codePostal": [
+       "24230"
+      ],
+      "codeHistory": "24289",
+      "departmentCode": "24",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.8644441,
+      "longitude": 0.0647993
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1997",
+    "sourceLine": 156769,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "7KBUm1GAx7h1",
+    "name": {
+     "first": [
+      "Irene",
+      "Raymonde"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19370619",
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 4e Arrondissement"
+      ],
+      "code": "69384",
+      "codePostal": [
+       "69004"
+      ],
+      "codeHistory": "69384",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    },
+    "death": {
+     "date": "19960827",
+     "certificateId": "16",
+     "age": 59,
+     "location": {
+      "city": "La Boisse",
+      "code": "01049",
+      "codePostal": [
+       "01120"
+      ],
+      "codeHistory": "01049",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8486167,
+      "longitude": 5.0218599
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 87635,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "CuV8EzGNQkTh",
+    "name": {
+     "first": [
+      "Suzanne",
+      "Hermance"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18931010",
+     "location": {
+      "city": "Bessèges",
+      "code": "30037",
+      "codePostal": [
+       "30160"
+      ],
+      "codeHistory": [
+       "30037",
+       "30118"
+      ],
+      "departmentCode": "30",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.2917237,
+      "longitude": 4.109065
+     }
+    },
+    "death": {
+     "date": "19720517",
+     "certificateId": "5",
+     "age": 78,
+     "location": {
+      "city": [
+       "Bédouès",
+       "Bédouès-Cocurès"
+      ],
+      "code": "48022",
+      "codePostal": [
+       "48400"
+      ],
+      "codeHistory": [
+       "48022",
+       "48050"
+      ],
+      "departmentCode": "48",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.3484509,
+      "longitude": 3.6332254
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1987",
+    "sourceLine": 117090,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "pCh_Vt9BdNB8",
+    "name": {
+     "first": [
+      "Regina",
+      "Rose"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18970913",
+     "location": {
+      "city": "Bessèges",
+      "code": "30037",
+      "codePostal": [
+       "30160"
+      ],
+      "codeHistory": [
+       "30037",
+       "30118"
+      ],
+      "departmentCode": "30",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.2917237,
+      "longitude": 4.109065
+     }
+    },
+    "death": {
+     "date": "19870205",
+     "certificateId": "110",
+     "age": 89,
+     "location": {
+      "city": "Alès",
+      "code": "30007",
+      "codePostal": [
+       "30100"
+      ],
+      "codeHistory": "30007",
+      "departmentCode": "30",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.1238566,
+      "longitude": 4.0895004
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1999",
+    "sourceLine": 379760,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "aOl7gi98SXfR",
+    "name": {
+     "first": [
+      "Nadine",
+      "Joelle"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19500118",
+     "location": {
+      "city": "Mâcon",
+      "code": "71270",
+      "codePostal": [
+       "71000"
+      ],
+      "codeHistory": [
+       "71197",
+       "71260",
+       "71270",
+       "71432",
+       "71511"
+      ],
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.3135441,
+      "longitude": 4.8112168
+     }
+    },
+    "death": {
+     "date": "19990508",
+     "certificateId": "6",
+     "age": 49,
+     "location": {
+      "city": "Grièges",
+      "code": "01179",
+      "codePostal": [
+       "01290"
+      ],
+      "codeHistory": "01179",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.2639673,
+      "longitude": 4.8533446
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2005",
+    "sourceLine": 497149,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "osfHYMnAF3_Y",
+    "name": {
+     "first": [
+      "Guy",
+      "Edouard"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19180307",
+     "location": {
+      "city": "Poissy",
+      "code": "78498",
+      "codePostal": [
+       "78300"
+      ],
+      "codeHistory": "78498",
+      "departmentCode": "78",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9232743,
+      "longitude": 2.0271841
+     }
+    },
+    "death": {
+     "date": "20051114",
+     "certificateId": "256",
+     "age": 87,
+     "location": {
+      "city": "Nemours",
+      "code": "77333",
+      "codePostal": [
+       "77140"
+      ],
+      "codeHistory": "77333",
+      "departmentCode": "77",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.2589486,
+      "longitude": 2.7110177
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2005",
+    "sourceLine": 73768,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "93hsNwtDwFJ1",
+    "name": {
+     "first": [
+      "Eugenie",
+      "Louise"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19310627",
+     "location": {
+      "city": "Romans-sur-Isère",
+      "code": "26281",
+      "codePostal": [
+       "26100"
+      ],
+      "codeHistory": "26281",
+      "departmentCode": "26",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.0618123,
+      "longitude": 5.0332534
+     }
+    },
+    "death": {
+     "date": "20050125",
+     "certificateId": "000000045",
+     "age": 73,
+     "location": {
+      "city": "Romans-sur-Isère",
+      "code": "26281",
+      "codePostal": [
+       "26100"
+      ],
+      "codeHistory": "26281",
+      "departmentCode": "26",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.0618123,
+      "longitude": 5.0332534
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1999",
+    "sourceLine": 441160,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "x8dv0-NWG10m",
+    "name": {
+     "first": [
+      "Bernard",
+      "Aime"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19290324",
+     "location": {
+      "city": "Chauny",
+      "code": "02173",
+      "codePostal": [
+       "02300"
+      ],
+      "codeHistory": "02173",
+      "departmentCode": "02",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.6151424,
+      "longitude": 3.2208954
+     }
+    },
+    "death": {
+     "date": "19990726",
+     "certificateId": "000000933",
+     "age": 70,
+     "location": {
+      "city": "Quimper",
+      "code": "29232",
+      "codePostal": [
+       "29000"
+      ],
+      "codeHistory": [
+       "29050",
+       "29088",
+       "29157",
+       "29232"
+      ],
+      "departmentCode": "29",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.9900754,
+      "longitude": -4.0915275
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1998",
+    "sourceLine": 68102,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "6PYNw2iuD95G",
+    "name": {
+     "first": [
+      "Guy",
+      "Henri"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19311001",
+     "location": {
+      "city": "Coucy-le-Château-Auffrique",
+      "code": "02217",
+      "codePostal": [
+       "02380"
+      ],
+      "codeHistory": "02217",
+      "departmentCode": "02",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.5169027,
+      "longitude": 3.3240511
+     }
+    },
+    "death": {
+     "date": "19971220",
+     "certificateId": "0",
+     "age": 66,
+     "location": {
+      "code": "99131",
+      "codeHistory": "99131",
+      "country": "Belgique",
+      "countryCode": "BEL"
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2006",
+    "sourceLine": 383293,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "XwB0lTBF-3oV",
+    "name": {
+     "first": [
+      "Christiane",
+      "Angele"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19370719",
+     "location": {
+      "city": [
+       "Fleury La Vallee",
+       "Fleury-Vallée-d'Aillant",
+       "Fleury-la-Vallée"
+      ],
+      "code": "89167",
+      "codePostal": [
+       "89113"
+      ],
+      "codeHistory": "89167",
+      "departmentCode": "89",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.8699646,
+      "longitude": 3.444316
+     }
+    },
+    "death": {
+     "date": "20060915",
+     "certificateId": "56",
+     "age": 69,
+     "location": {
+      "city": "Claye-Souilly",
+      "code": "77118",
+      "codePostal": [
+       "77410"
+      ],
+      "codeHistory": "77118",
+      "departmentCode": "77",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9406456,
+      "longitude": 2.6770947
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2009",
+    "sourceLine": 55922,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "Ik2oTuhUYqHV",
+    "name": {
+     "first": [
+      "Gilles"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19561007",
+     "location": {
+      "city": "Mâcon",
+      "code": "71270",
+      "codePostal": [
+       "71000"
+      ],
+      "codeHistory": [
+       "71197",
+       "71260",
+       "71270",
+       "71432",
+       "71511"
+      ],
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.3135441,
+      "longitude": 4.8112168
+     }
+    },
+    "death": {
+     "date": "20090128",
+     "certificateId": "116",
+     "age": 52,
+     "location": {
+      "city": "Lorient",
+      "code": "56121",
+      "codePostal": [
+       "56100"
+      ],
+      "codeHistory": [
+       "56095",
+       "56121"
+      ],
+      "departmentCode": "56",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.7466198,
+      "longitude": -3.378465
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2009",
+    "sourceLine": 277137,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "FvVIrmTmOKWH",
+    "name": {
+     "first": [
+      "Marcel",
+      "Marius"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19340102",
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 2e Arrondissement"
+      ],
+      "code": "69382",
+      "codePostal": [
+       "69002"
+      ],
+      "codeHistory": "69382",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    },
+    "death": {
+     "date": "20090603",
+     "certificateId": "2",
+     "age": 75,
+     "location": {
+      "city": "Sainte-Croix",
+      "code": "01342",
+      "codePostal": [
+       "01120"
+      ],
+      "codeHistory": "01342",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8977206,
+      "longitude": 5.0474705
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2017",
+    "sourceLine": 395088,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "k6N1M4nl8IHG",
+    "name": {
+     "first": [
+      "Paul",
+      "Edmond"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19351106",
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 4e Arrondissement"
+      ],
+      "code": "69384",
+      "codePostal": [
+       "69004"
+      ],
+      "codeHistory": "69384",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    },
+    "death": {
+     "date": "20170729",
+     "certificateId": "122",
+     "age": 81,
+     "location": {
+      "city": [
+       "Albigny",
+       "Albigny-sur-Saône"
+      ],
+      "code": "69003",
+      "codePostal": [
+       "69250"
+      ],
+      "codeHistory": "69003",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8666192,
+      "longitude": 4.8283026
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 499286,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "xQVn9wIIAZrs",
+    "name": {
+     "first": [
+      "Andree",
+      "Marcelle",
+      "Jeanne"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19280219",
+     "location": {
+      "city": "Neyron",
+      "code": "01275",
+      "codePostal": [
+       "01700"
+      ],
+      "codeHistory": "01275",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.822603,
+      "longitude": 4.9290234
+     }
+    },
+    "death": {
+     "date": "20161121",
+     "certificateId": "71",
+     "age": 88,
+     "location": {
+      "city": "Sénas",
+      "code": "13105",
+      "codePostal": [
+       "13560"
+      ],
+      "codeHistory": "13105",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7438517,
+      "longitude": 5.0623571
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2017",
+    "sourceLine": 255605,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "bYy4Zbrmn75J",
+    "name": {
+     "first": [
+      "Gilbert",
+      "Pierre"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19341230",
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 2e Arrondissement"
+      ],
+      "code": "69382",
+      "codePostal": [
+       "69002"
+      ],
+      "codeHistory": "69382",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    },
+    "death": {
+     "date": "20170526",
+     "certificateId": "110",
+     "age": 82,
+     "location": {
+      "city": [
+       "Rillieux",
+       "Rillieux-la-Pape"
+      ],
+      "code": "69286",
+      "codePostal": [
+       "69140"
+      ],
+      "codeHistory": [
+       "01326",
+       "69286"
+      ],
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8240567,
+      "longitude": 4.8988062
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2013",
+    "sourceLine": 180760,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "WwojlQUZJQRX",
+    "name": {
+     "first": [
+      "Jean-Pierre",
+      "Georges",
+      "Marcel"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19420303",
+     "location": {
+      "city": "Conches-en-Ouche",
+      "code": "27165",
+      "codePostal": [
+       "27190"
+      ],
+      "codeHistory": "27165",
+      "departmentCode": "27",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9602493,
+      "longitude": 0.9411144
+     }
+    },
+    "death": {
+     "date": "20130408",
+     "certificateId": "321",
+     "age": 71,
+     "location": {
+      "city": "Libourne",
+      "code": "33243",
+      "codePostal": [
+       "33500"
+      ],
+      "codeHistory": "33243",
+      "departmentCode": "33",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.919812,
+      "longitude": -0.2339647
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2014",
+    "sourceLine": 230008,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "WcNLTHfe7imM",
+    "name": {
+     "first": [
+      "Paul"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19350531",
+     "location": {
+      "city": "Mâcon",
+      "code": "71270",
+      "codePostal": [
+       "71000"
+      ],
+      "codeHistory": [
+       "71197",
+       "71260",
+       "71270",
+       "71432",
+       "71511"
+      ],
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.3135441,
+      "longitude": 4.8112168
+     }
+    },
+    "death": {
+     "date": "20140507",
+     "certificateId": "2",
+     "age": 78,
+     "location": {
+      "city": "Crêches-sur-Saône",
+      "code": "71150",
+      "codePostal": [
+       "71680"
+      ],
+      "codeHistory": "71150",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.2367629,
+      "longitude": 4.7804247
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2012",
+    "sourceLine": 229623,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "OuQSRAlM9kqi",
+    "name": {
+     "first": [
+      "Jacques"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19320501",
+     "location": {
+      "city": "Saint-Quentin",
+      "code": "02691",
+      "codePostal": [
+       "02100"
+      ],
+      "codeHistory": "02691",
+      "departmentCode": "02",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.8463987,
+      "longitude": 3.28834
+     }
+    },
+    "death": {
+     "date": "20120428",
+     "certificateId": "16",
+     "age": 79,
+     "location": {
+      "city": "Esternay",
+      "code": "51237",
+      "codePostal": [
+       "51310"
+      ],
+      "codeHistory": "51237",
+      "departmentCode": "51",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7188208,
+      "longitude": 3.5842311
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2010",
+    "sourceLine": 355727,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "nurq_hvAbbEv",
+    "name": {
+     "first": [
+      "Germaine"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19400513",
+     "location": {
+      "city": "La Boisse",
+      "code": "01049",
+      "codePostal": [
+       "01120"
+      ],
+      "codeHistory": "01049",
+      "departmentCode": "01",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8486167,
+      "longitude": 5.0218599
+     }
+    },
+    "death": {
+     "date": "20100819",
+     "certificateId": "57",
+     "age": 70,
+     "location": {
+      "city": "Charnay-lès-Mâcon",
+      "code": "71105",
+      "codePostal": [
+       "71850"
+      ],
+      "codeHistory": "71105",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.302207,
+      "longitude": 4.7811353
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2010",
+    "sourceLine": 439813,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "p_5V6OS8zB4x",
+    "name": {
+     "first": [
+      "Evan"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "20100421",
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 4e Arrondissement"
+      ],
+      "code": "69384",
+      "codePostal": [
+       "69004"
+      ],
+      "codeHistory": "69384",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    },
+    "death": {
+     "date": "20100627",
+     "certificateId": "538",
+     "age": 0,
+     "location": {
+      "city": "Bron",
+      "code": "69029",
+      "codePostal": [
+       "69500"
+      ],
+      "codeHistory": "69029",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7351372,
+      "longitude": 4.9077915
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2014",
+    "sourceLine": 504569,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 0.75,
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "EjqpBwFfbPPr",
+    "name": {
+     "first": [
+      "Roland",
+      "Olivier",
+      "Louis"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19380116",
+     "location": {
+      "city": "Lausanne",
+      "code": "99140",
+      "codeHistory": "99140",
+      "country": "Suisse",
+      "countryCode": "CHE"
+     }
+    },
+    "death": {
+     "date": "20141109",
+     "certificateId": "7",
+     "age": 76,
+     "location": {
+      "city": "Saint-Bonnet-en-Bresse",
+      "code": "71396",
+      "codePostal": [
+       "71310"
+      ],
+      "codeHistory": "71396",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.8582939,
+      "longitude": 5.1835095
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2020",
+    "sourceLine": 473291,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "05U3MPFA8JSu",
+    "name": {
+     "first": [
+      "Denise"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19330505",
+     "location": {
+      "city": "La Roche-Vineuse",
+      "code": "71371",
+      "codePostal": [
+       "71960"
+      ],
+      "codeHistory": "71371",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.3502081,
+      "longitude": 4.744796
+     }
+    },
+    "death": {
+     "date": "20200913",
+     "certificateId": "25",
+     "age": 87,
+     "location": {
+      "city": "La Roche-Vineuse",
+      "code": "71371",
+      "codePostal": [
+       "71960"
+      ],
+      "codeHistory": "71371",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.3502081,
+      "longitude": 4.744796
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 498571,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 0.75,
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "XzCilx4Y84Ww",
+    "name": {
+     "first": [
+      "Jacqueline",
+      "Marie",
+      "Therese"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19370305",
+     "location": {
+      "city": "Tizi-Ouzou",
+      "code": "99352",
+      "codeHistory": "99352",
+      "country": "Algerie",
+      "countryCode": "DZA"
+     }
+    },
+    "death": {
+     "date": "20161112",
+     "certificateId": "1662",
+     "age": 79,
+     "location": {
+      "city": "Aix-en-Provence",
+      "code": "13001",
+      "codePostal": [
+       "13090",
+       "13290",
+       "13080",
+       "13540",
+       "13100"
+      ],
+      "codeHistory": "13001",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.513621,
+      "longitude": 5.3813525
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 183093,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 0.75,
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "HoWVFFVtXTLu",
+    "name": {
+     "first": [
+      "Maurice",
+      "Rene",
+      "Joseph"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19340510",
+     "location": {
+      "city": "Sfax",
+      "code": "99351",
+      "codeHistory": "99351",
+      "country": "Tunisie",
+      "countryCode": "TUN"
+     }
+    },
+    "death": {
+     "date": "20180327",
+     "certificateId": "39",
+     "age": 83,
+     "location": {
+      "city": "Châteauneuf-les-Martigues",
+      "code": "13026",
+      "codePostal": [
+       "13220"
+      ],
+      "codeHistory": "13026",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.3836953,
+      "longitude": 5.1369845
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 354762,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "Wp9BeCikbifh",
+    "name": {
+     "first": [
+      "Jeanne",
+      "Alice"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19240412",
+     "location": {
+      "city": "Dole",
+      "code": "39198",
+      "codePostal": [
+       "39100"
+      ],
+      "codeHistory": [
+       "39033",
+       "39198",
+       "39256",
+       "39496"
+      ],
+      "departmentCode": "39",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.0799766,
+      "longitude": 5.489366
+     }
+    },
+    "death": {
+     "date": "20180704",
+     "certificateId": "39",
+     "age": 94,
+     "location": {
+      "city": [
+       "Amélie-les-Bains",
+       "Amélie-les-Bains-Palalda"
+      ],
+      "code": "66003",
+      "codePostal": [
+       "66110"
+      ],
+      "codeHistory": [
+       "66003",
+       "66110"
+      ],
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4509914,
+      "longitude": 2.6776082
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2022",
+    "sourceLine": 565701,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "flmgvgHMovb3",
+    "name": {
+     "first": [
+      "Roland",
+      "Robert"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19260412",
+     "location": {
+      "city": "Angoulême",
+      "code": "16015",
+      "codePostal": [
+       "16000"
+      ],
+      "codeHistory": "16015",
+      "departmentCode": "16",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.6478474,
+      "longitude": 0.1513308
+     }
+    },
+    "death": {
+     "date": "20221115",
+     "certificateId": "1043",
+     "age": 96,
+     "location": {
+      "city": "Saintes",
+      "code": "17415",
+      "codePostal": [
+       "17100"
+      ],
+      "codeHistory": "17415",
+      "departmentCode": "17",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7420021,
+      "longitude": -0.6538454
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2024",
+    "sourceLine": 119855,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 0.75,
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "eZjPk9Z7rZji",
+    "name": {
+     "first": [
+      "Claude",
+      "Jean",
+      "Jacques"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19410114",
+     "location": {
+      "city": "Departement D'Alger",
+      "code": "91352",
+      "codeHistory": [
+       "99352",
+       "91352"
+      ],
+      "country": "Algerie",
+      "countryCode": "DZA"
+     }
+    },
+    "death": {
+     "date": "20240130",
+     "certificateId": "66",
+     "age": 83,
+     "location": {
+      "city": "Bondy",
+      "code": "93010",
+      "codePostal": [
+       "93140"
+      ],
+      "codeHistory": [
+       "75010",
+       "93010"
+      ],
+      "departmentCode": "93",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9036652,
+      "longitude": 2.4860696
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2024",
+    "sourceLine": 162012,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "4P1x0vtazbl9",
+    "name": {
+     "first": [
+      "Lina",
+      "Marie"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19251210",
+     "location": {
+      "city": "Verzé",
+      "code": "71574",
+      "codePostal": [
+       "71960"
+      ],
+      "codeHistory": "71574",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.378151,
+      "longitude": 4.7363907
+     }
+    },
+    "death": {
+     "date": "20240317",
+     "certificateId": "258",
+     "age": 98,
+     "location": {
+      "city": "Mâcon",
+      "code": "71270",
+      "codePostal": [
+       "71000"
+      ],
+      "codeHistory": [
+       "71197",
+       "71260",
+       "71270",
+       "71432",
+       "71511"
+      ],
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.3135441,
+      "longitude": 4.8112168
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2021",
+    "sourceLine": 145853,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "swl3V10ffTxT",
+    "name": {
+     "first": [
+      "Georgette",
+      "Josette"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19300318",
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 2e Arrondissement"
+      ],
+      "code": "69382",
+      "codePostal": [
+       "69002"
+      ],
+      "codeHistory": "69382",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    },
+    "death": {
+     "date": "20210305",
+     "certificateId": "22",
+     "age": 90,
+     "location": {
+      "city": "Crémieu",
+      "code": "38138",
+      "codePostal": [
+       "38460"
+      ],
+      "codeHistory": "38138",
+      "departmentCode": "38",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7312124,
+      "longitude": 5.2631087
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2023",
+    "sourceLine": 262471,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "pJ5uiMi6HZKh",
+    "name": {
+     "first": [
+      "Jordan"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "20040509",
+     "location": {
+      "city": [
+       "Rillieux-La-Pape",
+       "Rillieux"
+      ],
+      "code": "69286",
+      "codePostal": [
+       "69140"
+      ],
+      "codeHistory": [
+       "01326",
+       "69286"
+      ],
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.8240567,
+      "longitude": 4.8988062
+     }
+    },
+    "death": {
+     "date": "20230503",
+     "certificateId": "152",
+     "age": 18,
+     "location": {
+      "city": "Villefranche-sur-Saône",
+      "code": "69264",
+      "codePostal": [
+       "69400"
+      ],
+      "codeHistory": "69264",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.987266,
+      "longitude": 4.7209771
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2024",
+    "sourceLine": 243790,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "WB6fFtxHSwHI",
+    "name": {
+     "first": [
+      "Denise",
+      "Michelle",
+      "Palmyre"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19280510",
+     "location": {
+      "city": "Versailles",
+      "code": "78646",
+      "codePostal": [
+       "78000"
+      ],
+      "codeHistory": "78646",
+      "departmentCode": "78",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8018949,
+      "longitude": 2.1305746
+     }
+    },
+    "death": {
+     "date": "20240510",
+     "certificateId": "1103",
+     "age": 96,
+     "location": {
+      "city": "Nîmes",
+      "code": "30189",
+      "codePostal": [
+       "30900",
+       "30000"
+      ],
+      "codeHistory": "30189",
+      "departmentCode": "30",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8412695,
+      "longitude": 4.352839
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2026-m04",
+    "sourceLine": 36446,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "rALyj6on03J0",
+    "name": {
+     "first": [
+      "Yvette",
+      "Victoire"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19270318",
+     "location": {
+      "city": "La Roche-Vineuse",
+      "code": "71371",
+      "codePostal": [
+       "71960"
+      ],
+      "codeHistory": "71371",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.3502081,
+      "longitude": 4.744796
+     }
+    },
+    "death": {
+     "date": "20260410",
+     "certificateId": "36",
+     "age": 99,
+     "location": {
+      "city": "Cluny",
+      "code": "71137",
+      "codePostal": [
+       "71250"
+      ],
+      "codeHistory": "71137",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.4346474,
+      "longitude": 4.6678338
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2024",
+    "sourceLine": 447899,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.07,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 42
+    },
+    "id": "rBb-aEykUkwP",
+    "name": {
+     "first": [
+      "Christiane",
+      "Jeannine"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19300927",
+     "location": {
+      "city": "Amiens",
+      "code": "80021",
+      "codePostal": [
+       "80080",
+       "80000",
+       "80090"
+      ],
+      "codeHistory": "80021",
+      "departmentCode": "80",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.893894,
+      "longitude": 2.2939655
+     }
+    },
+    "death": {
+     "date": "20240831",
+     "certificateId": "9",
+     "age": 93,
+     "location": {
+      "city": "Antichan-de-Frontignes",
+      "code": "31009",
+      "codePostal": [
+       "31510"
+      ],
+      "codeHistory": "31009",
+      "departmentCode": "31",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.9741315,
+      "longitude": 0.6721376
+     }
+    }
+   }
+  ]
+ }
+}
