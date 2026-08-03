@@ -23,6 +23,11 @@
   "rules": {
     ".read": false,
     ".write": false,
+    "arbre": {
+      "_comment": "Arbre généalogique familial (arbre.kd-mc.com). Données sous /arbre/<codehash>/... — le code famille (MAIFFRET) fait office de secret partagé (seuls ceux qui l'ont connaissent le chemin). auth != null = client authentifié anonymement par l'app (Identity Toolkit signUp). Partage temps réel famille : lecture + écriture pour tout client anonyme, le cloisonnement se fait par le codehash du chemin.",
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
     "cmcteams": {
       ".read": "auth != null",
       ".write": "auth != null",
