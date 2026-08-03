@@ -184,7 +184,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.23";
+var APP_VER="v2.24";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -606,7 +606,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=12;
+var SEED_VERSION=13;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -618,7 +618,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_marie_brigitte",prenom:"Marie-Brigitte",nom:"SAUVAIGO",sexe:"F",conjoints:["seed_christian"],pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Épouse de Christian. Date/lieu à compléter."});
   add({id:"seed_christian",prenom:"Christian",nom:"",sexe:"M",conjoints:["seed_marie_brigitte"],notes:"Mari de Marie-Brigitte. Nom/date à compléter."});
   add({id:"seed_cecile",prenom:"Cécile",nom:"",sexe:"F",vivant:true,pere:"seed_christian",mere:"seed_marie_brigitte",notes:"Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter."});
-  add({id:"seed_marie_joe",prenom:"Marie-Joe",nom:"SAUVAIGO",sexe:"F",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Prénom peut-être « Marie-Josée » — à confirmer. Date/lieu à compléter."});
+  add({id:"seed_marie_joe",prenom:"Marie-Joe",nom:"SAUVAIGO",sexe:"F",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"11.11.1943",lieu:"Monaco"},deces:{date:"26.11.2021",lieu:"République tchèque"},notes:"✅ TRÈS PROBABLE (fichier INSEE) : « Marie José SAUVAIGO », née le 11.11.1943 à MONACO — la SEULE Sauvaigo née à Monaco de tout le fichier des décès — † 26.11.2021 en République tchèque (78 ans). Sœur de Marie-Noël (tante maternelle de Kevin). À confirmer par la famille.",sources:[SRC.matchid,SRC.gSauvaigo,SRC.monacoTree]});
   add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique)."});
   /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
   add({id:"seed_guy",prenom:"Guy",nom:"DESARZENS",sexe:"M",deces:{},notes:"Grand-père paternel de Kevin (père de Gérard et d'Émile) — prénom donné par Kevin (2026-08-03), « il me semble » : à confirmer sur l'acte de naissance de Gérard (1944, Salon-de-Provence, Archives 13). 🔎 Recherche INSEE auto 2026-08-03 : AUCUN Guy DESARZENS du Sud dans le fichier des décès (1970→auj.) → Guy est probablement décédé AVANT 1970, ou à Monaco/à l'étranger. Piste suisse : Sarzens/Lucens (Vaud). Voir aussi Claude Alain DE SARZENS (1941 Marseille, †2022 Suisse) — parent possible.",sources:[SRC.ad13,SRC.gDesarzens,SRC.davel,SRC.sarzens]});

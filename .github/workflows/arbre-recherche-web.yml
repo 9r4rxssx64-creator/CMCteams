@@ -1,0 +1,27 @@
+name: Arbre — recherche web élargie (Geneanet public / Wikipédia / avis)
+# Complète la recherche INSEE : arbres publics Geneanet (ancêtres lointains),
+# Wikipédia (notables, berceau Sarzens), avis de décès récents. Dispatch manuel
+# uniquement (respect des sites — pas de cron).
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Recherche web (sources publiques)
+        run: node tools/arbre/research-web.mjs
+      - name: Commit rapport
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research
+          git commit -m "Arbre: rapport recherche web (Geneanet/Wikipedia/avis) [skip ci]" || { echo "aucun changement"; exit 0; }
+          git push
