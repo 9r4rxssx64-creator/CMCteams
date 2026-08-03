@@ -96,6 +96,8 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .treemode{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:4px;background:rgba(74,54,26,.9);border:1px solid var(--gold);border-radius:999px;padding:3px;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .treemode button{font-size:12px;font-weight:700;color:#f3e6c2;padding:7px 12px;border-radius:999px;white-space:nowrap}
 .treemode button.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#3a2708}
+.fampick{top:56px}
+#stageWrap.plan .fampick{display:none}
 .addrel{display:flex;gap:8px;flex-wrap:wrap}.addrel .btn{flex:1;min-width:calc(50% - 4px)}
 .tnode .rt{position:absolute;top:-8px;left:9px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#04222a;background:var(--cyan);padding:1px 6px;border-radius:999px}
 .zoomBtns{position:absolute;right:12px;bottom:12px;z-index:5;display:flex;flex-direction:column;gap:8px}
@@ -182,7 +184,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.21";
+var APP_VER="v2.22";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -237,7 +239,21 @@ var VIEWST={tx:40,ty:40,sc:1};
 /* Arbre COMPLET : chaque FAMILLE reliée = un bloc-arbre soigné (couples + enfants),
    empilés et centrés ; les personnes pas encore reliées = une grille propre en bas.
    Fini la longue bande minuscule dans le coin. */
-var TREE={ROWH:150,BOXW:198,COUPLEGAP:16,UNITGAP:26,PAD:34,COMPGAP:64,CARD:184};
+var TREE={ROWH:158,BOXW:198,COUPLEGAP:24,UNITGAP:64,PAD:34,COMPGAP:64,CARD:184};
+/* ---------- 2 FAMILLES = 2 ARBRES (demande Kevin 2026-08-03) ----------
+   🫒 "o" = famille SAUVAIGO · MAIFFRET (côté maman — olivier, Nice/Monaco)
+   🌳 "c" = famille DESARZENS (côté papa — chêne, racines suisses/Vaud)
+   "oc" = dans les DEUX arbres (Gérard, Kevin, Sabrina, Ronan, Théo = sang des deux). */
+var FAM_OVERRIDE={seed_gerard:"oc",seed_kevin:"oc",seed_sabrina:"oc",seed_ronan:"oc",seed_theo:"oc",
+  seed_christian:"o",seed_cecile:"o",seed_marienoel:"o",
+  seed_guy:"c",seed_emile:"c",seed_loic:"c",seed_yann:"c",seed_claude_desarzens:"c"};
+function famOf(p){if(!p)return "oc";var ov=FAM_OVERRIDE[p.id];if(ov)return ov;var n=(p.nom||"").toUpperCase();
+  if(/SARZENS|SARZANCE/.test(n))return "c";
+  if(/SAUVAIGO|MAIFFRET|BOSCH|MOLINARIO|DENTAU/.test(n))return "o";
+  return "oc";}
+var FAMKEY="o";try{var _fk=localStorage.getItem("arbre_fam");if(_fk==="o"||_fk==="c")FAMKEY=_fk;}catch(e){}
+function famLabel(k){return k==="c"?"🌳 Desarzens":"🫒 Sauvaigo · Maiffret";}
+function famPhoto(k){return k==="c"?"tree-oak.jpg":"tree.jpg";}
 function compLabel(ids){var cnt={};ids.forEach(function(x){var nm=(P(x).nom||"").trim().toUpperCase();if(nm)cnt[nm]=(cnt[nm]||0)+1;});var top=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];}).slice(0,2);return top.length?("Famille "+top.join(" · ")):"Famille";}
 /* Agencement « propre » d'une famille : les PARENTS en haut, chaque enfant
    DIRECTEMENT EN DESSOUS de ses parents (couple centré au-dessus de ses enfants).
@@ -245,7 +261,7 @@ function compLabel(ids){var cnt={};ids.forEach(function(x){var nm=(P(x).nom||"")
 function tidyTree(ids){
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP;
   var set={};ids.forEach(function(x){set[x]=1;});
-  var placed={},nodes=[],links=[],cursor=0,depthMax=0;
+  var placed={},nodes=[],links=[],rowCur={},depthMax=0;
   function members(x){var pp=P(x);var m=[x];(pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&m.indexOf(c)<0)m.push(c);});return m;}
   function unit(x,depth){
     if(placed[x])return null;
@@ -253,8 +269,14 @@ function tidyTree(ids){
     var kidset={};mem.forEach(function(z){childrenOf(z).forEach(function(k){if(set[k]&&!placed[k])kidset[k]=1;});});
     var kids=Object.keys(kidset).sort(function(a,b){return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
     var cc=[];kids.forEach(function(k){var c=unit(k,depth+1);if(c!=null)cc.push(c);});
-    var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP,center;
-    if(cc.length)center=(Math.min.apply(null,cc)+Math.max.apply(null,cc))/2;else{center=cursor+uW/2;cursor+=uW+UNITGAP;}
+    var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP;
+    /* curseur PAR RANGÉE : deux unités d'une même ligne ne peuvent JAMAIS se
+       chevaucher (bug vu par Kevin : couples Gérard/Marie-Brigitte superposés),
+       tout en gardant chaque couple centré au-dessus de ses enfants quand possible. */
+    var minC=(rowCur[depth]!==undefined?rowCur[depth]:0)+uW/2,center;
+    if(cc.length){center=(Math.min.apply(null,cc)+Math.max.apply(null,cc))/2;if(center<minC)center=minC;}
+    else center=minC;
+    rowCur[depth]=center+uW/2+UNITGAP;
     var sx=center-uW/2+BOXW/2,y=depth*ROWH;
     mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z==="seed_kevin"});});
     for(var i=0;i<mem.length-1;i++)links.push({couple:1,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});
@@ -268,20 +290,21 @@ function tidyTree(ids){
   var minx=1e9,maxx=-1e9;nodes.forEach(function(n){if(n.x<minx)minx=n.x;if(n.x>maxx)maxx=n.x;});
   return {nodes:nodes,links:links,minx:minx,w:(maxx-minx)+BOXW,h:(depthMax+1)*ROWH};
 }
-/* Composant familial connecté qui contient Ronan (à défaut Kevin, à défaut le plus grand). */
+/* Membres de la famille FAMKEY, composant relié qui contient l'ancre de la famille. */
 function mainFamilyIds(){
-  var persons=DB.persons,par={};
+  var persons=DB.persons,par={},inFam={};
+  for(var id0 in persons){if(famOf(persons[id0]).indexOf(FAMKEY)>=0)inFam[id0]=1;}
   function find(a){while(par[a]!==a){par[a]=par[par[a]];a=par[a];}return a;}
-  function uni(a,b){if(!a||!b||!P(a)||!P(b))return;var ra=find(a),rb=find(b);if(ra!==rb)par[ra]=rb;}
-  for(var id in persons)par[id]=id;
-  for(var id in persons){var p=persons[id];if(p.pere&&P(p.pere))uni(id,p.pere);if(p.mere&&P(p.mere))uni(id,p.mere);(p.conjoints||[]).forEach(function(c){uni(id,c);});}
-  var comps={};for(var k in persons){var r=find(k);(comps[r]=comps[r]||[]).push(k);}
-  var seed=P("seed_ronan")?"seed_ronan":(P("seed_kevin")?"seed_kevin":null);
-  if(seed){var rr=find(seed);if(comps[rr]&&comps[rr].length>1)return comps[rr];}
+  function uni(a,b){if(!a||!b||!inFam[a]||!inFam[b])return;var ra=find(a),rb=find(b);if(ra!==rb)par[ra]=rb;}
+  for(var id in inFam)par[id]=id;
+  for(var id in inFam){var p=persons[id];if(p.pere)uni(id,p.pere);if(p.mere)uni(id,p.mere);(p.conjoints||[]).forEach(function(c){uni(id,c);});}
+  var comps={};for(var k in inFam){var r=find(k);(comps[r]=comps[r]||[]).push(k);}
+  var anchors=FAMKEY==="c"?["seed_gerard","seed_guy","seed_kevin"]:["seed_marienoel","seed_victor_sauvaigo","seed_kevin"];
+  for(var i=0;i<anchors.length;i++){var a=anchors[i];if(inFam[a]){var rr=find(a);if(comps[rr]&&comps[rr].length>1)return comps[rr];}}
   var best=null;Object.keys(comps).forEach(function(c){if(comps[c].length>1&&(!best||comps[c].length>best.length))best=comps[c];});
-  return best||Object.keys(persons);
+  return best||Object.keys(inFam);
 }
-/* Vue ARBRE : la famille de Ronan en descendance propre (enfants sous les parents). */
+/* Vue ARBRE : la famille choisie en descendance propre (enfants sous les parents). */
 function layoutMainFamily(){
   var ids=mainFamilyIds();if(!ids||!ids.length)return null;
   var t=tidyTree(ids);if(!t.nodes.length)return null;
@@ -361,12 +384,14 @@ function renderTree(){
   var w=$("#wrap");var n=Object.keys(DB.persons).length;
   if(!n){w.innerHTML='<div class="empty">Ton arbre est vide.<br>Touche ＋ pour ajouter la 1ʳᵉ personne.</div>';return;}
   syncMode();
-  w.innerHTML='<div id="stageWrap"'+(VIEWSTYLE==="plan"?' class="plan"':'')+'><div id="treeBg"><div id="treeArt">'+treeBgSVG()+'</div><img id="treePhoto" src="tree.jpg?v='+APP_VER+'" alt="" onload="this.classList.add(\'on\');var a=document.getElementById(\'treeArt\');if(a)a.style.opacity=0" onerror="this.style.display=\'none\'"><div id="treeScrim"></div></div><div id="stage"></div>'
+  w.innerHTML='<div id="stageWrap"'+(VIEWSTYLE==="plan"?' class="plan"':'')+'><div id="treeBg"><div id="treeArt">'+treeBgSVG()+'</div><img id="treePhoto" src="'+famPhoto(FAMKEY)+'?v='+APP_VER+'" alt="" onload="this.classList.add(\'on\');var a=document.getElementById(\'treeArt\');if(a)a.style.opacity=0" onerror="if(this.src.indexOf(\'tree-oak\')>=0){this.src=\'tree.jpg?v='+APP_VER+'\';}else{this.style.display=\'none\';}"><div id="treeScrim"></div></div><div id="stage"></div>'
     +'<div class="treemode"><button data-style="arbre"'+(VIEWSTYLE==="arbre"?' class="on"':'')+'>🌳 Arbre</button><button data-style="plan"'+(VIEWSTYLE==="plan"?' class="on"':'')+'>📋 Plan</button></div>'
+    +'<div class="treemode fampick"><button data-fam="o"'+(FAMKEY==="o"?' class="on"':'')+'>🫒 Sauvaigo · Maiffret</button><button data-fam="c"'+(FAMKEY==="c"?' class="on"':'')+'>🌳 Desarzens</button></div>'
     +'<div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button></div>'
-    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?"📋 Plan familial · ":"🌳 ")+n+' personnes · glisse · pince pour zoomer · touche une fiche</div></div>';
+    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?"📋 Plan familial · ":famLabel(FAMKEY)+" · ")+n+' personnes · glisse · pince · touche une fiche</div></div>';
   var zb=document.querySelectorAll(".zoomBtns [data-z]");zb.forEach(function(b){b.onclick=function(){if(b.dataset.z==="fit")fitStage();else zoomAt(0.5,0.5,b.dataset.z==="1"?1.25:1/1.25);};});
-  document.querySelectorAll(".treemode [data-style]").forEach(function(b){b.onclick=function(){if(VIEWSTYLE===b.dataset.style)return;VIEWSTYLE=b.dataset.style;syncMode();try{localStorage.setItem("arbre_viewstyle",VIEWSTYLE);}catch(e){}document.querySelectorAll(".treemode [data-style]").forEach(function(x){x.classList.toggle("on",x.dataset.style===VIEWSTYLE);});var wr=$("#stageWrap");if(wr)wr.classList.toggle("plan",VIEWSTYLE==="plan");drawStage(true);};});
+  document.querySelectorAll(".treemode [data-style]").forEach(function(b){b.onclick=function(){if(VIEWSTYLE===b.dataset.style)return;VIEWSTYLE=b.dataset.style;syncMode();try{localStorage.setItem("arbre_viewstyle",VIEWSTYLE);}catch(e){}renderTree();};});
+  document.querySelectorAll(".fampick [data-fam]").forEach(function(b){b.onclick=function(){if(FAMKEY===b.dataset.fam)return;FAMKEY=b.dataset.fam;try{localStorage.setItem("arbre_fam",FAMKEY);}catch(e){}renderTree();};});
   setupPanZoom();drawStage(true);
 }
 var _lay=null;
@@ -443,7 +468,7 @@ function drawStage(fit){
   if(fit)fitStage();
 }
 function applyST(){var s=$("#stage");if(s)s.style.transform="translate("+VIEWST.tx+"px,"+VIEWST.ty+"px) scale("+VIEWST.sc+")";}
-function fitStage(){var wr=$("#stageWrap");if(!wr||!_lay)return;var W=wr.clientWidth,H=wr.clientHeight;var sc=Math.min((W-10)/_lay.w,(H-10)/_lay.h,1.25);sc=Math.max(sc,0.24);VIEWST.sc=sc;VIEWST.tx=(W-_lay.w*sc)/2;var sh=_lay.h*sc;VIEWST.ty=sh<=H?Math.max(52,(H-sh)/2):52;applyST();}
+function fitStage(){var wr=$("#stageWrap");if(!wr||!_lay)return;var W=wr.clientWidth,H=wr.clientHeight;var top=(VIEWSTYLE==="plan")?52:104;var sc=Math.min((W-10)/_lay.w,(H-8-top)/_lay.h,1.25);sc=Math.max(sc,0.24);VIEWST.sc=sc;VIEWST.tx=(W-_lay.w*sc)/2;var sh=_lay.h*sc;VIEWST.ty=sh<=H-top?Math.max(top,top+(H-top-sh)/2):top;applyST();}
 function zoomAt(fx,fy,factor){var wr=$("#stageWrap");if(!wr)return;var W=wr.clientWidth,H=wr.clientHeight;var cx=fx*W,cy=fy*H;var ns=Math.min(2.5,Math.max(0.2,VIEWST.sc*factor));VIEWST.tx=cx-(cx-VIEWST.tx)*(ns/VIEWST.sc);VIEWST.ty=cy-(cy-VIEWST.ty)*(ns/VIEWST.sc);VIEWST.sc=ns;applyST();}
 function setupPanZoom(){
   var wr=$("#stageWrap");if(!wr||wr._pz)return;wr._pz=1;var drag=null,pts={},pinch=null;
