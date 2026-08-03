@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="theme-color" content="#0e1116">
+<title>Arbre généalogique — Famille</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.firebasedatabase.app https://identitytoolkit.googleapis.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<style>
+:root{
+  --bg:#0e1116; --bg2:#151a22; --card:#1b222c; --card2:#222b37; --line:#2c3644;
+  --txt:#e8edf3; --mut:#9fb0c3; --gold:#d9b45a; --gold2:#f0d488; --danger:#e5637a; --ok:#5fbf8f;
+  --f:#e19bb4; --m:#8ec5ff;
+  --r:16px; --sh:0 6px 22px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif}
+body{padding:calc(env(safe-area-inset-top) + 0px) 0 calc(env(safe-area-inset-bottom) + 76px)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,select,textarea{font:inherit;color:var(--txt);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%}
+input:focus,select,textarea:focus,select:focus{outline:2px solid var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:7px;justify-content:center;min-height:44px;padding:10px 15px;border-radius:12px;background:var(--card2);border:1px solid var(--line);font-weight:600}
+.btn:active{transform:translateY(1px)}
+.btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#20170a;border:0}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:38px;padding:7px 11px;font-size:13px;border-radius:10px}
+.btn.dng{color:var(--danger);border-color:#5a2a34}
+.hidden{display:none!important}
+.mut{color:var(--mut)}.gold{color:var(--gold)}
+/* topbar */
+#top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;background:linear-gradient(180deg,#0e1116,#0e1116f0);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+#top h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#top .tree-ic{font-size:20px}
+#syncdot{width:11px;height:11px;border-radius:50%;background:#6b7686;flex:none}
+#syncdot.on{background:var(--ok)}#syncdot.off{background:#e5a05f}
+/* tabs */
+#tabs{display:flex;gap:6px;padding:10px 12px 4px;overflow-x:auto}
+#tabs .tab{white-space:nowrap;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-weight:600;color:var(--mut)}
+#tabs .tab.act{background:var(--gold);color:#20170a;border-color:var(--gold)}
+#wrap{padding:8px 12px 20px;max-width:820px;margin:0 auto}
+/* person card */
+.pc{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;gap:12px;align-items:center;box-shadow:var(--sh)}
+.pc:active{border-color:var(--gold)}
+.av{width:52px;height:52px;border-radius:14px;flex:none;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;border:1px solid var(--line)}
+.av img{width:100%;height:100%;object-fit:cover}
+.av.F{box-shadow:inset 0 0 0 2px var(--f)}.av.M{box-shadow:inset 0 0 0 2px var(--m)}
+.pc .nm{font-weight:700}.pc .sub{font-size:12.5px;color:var(--mut);margin-top:2px}
+.badge{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:999px;background:#2a3340;color:var(--mut);margin-left:6px;vertical-align:middle}
+.badge.alive{background:#1d3a2c;color:var(--ok)}
+/* tree */
+.node{margin:6px 0}
+.node .row{display:flex;align-items:center;gap:8px}
+.node .toggle{width:34px;height:34px;flex:none;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-weight:800;color:var(--gold)}
+.kids{margin-left:20px;border-left:2px dashed var(--line);padding-left:12px;margin-top:4px}
+.reltag{font-size:10.5px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.grid{display:grid;gap:10px}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:10px 0}
+.sec h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+/* modal */
+.ov{position:fixed;inset:0;z-index:60;background:#060a0fd0;backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;padding:16px 16px calc(env(safe-area-inset-bottom) + 26px)}
+.sheet .grab{width:44px;height:5px;border-radius:3px;background:#3a4552;margin:2px auto 12px}
+.sheet h2{margin:2px 0 2px;font-size:20px}
+/* carousel */
+.caro{position:relative;border-radius:16px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);aspect-ratio:4/3;margin:10px 0}
+.caro .slide{position:absolute;inset:0;opacity:0;transition:opacity .5s;display:flex;align-items:center;justify-content:center}
+.caro .slide.on{opacity:1}
+.caro img{width:100%;height:100%;object-fit:cover}
+.caro .dots{position:absolute;left:0;right:0;bottom:8px;display:flex;gap:6px;justify-content:center;z-index:2}
+.caro .dots i{width:7px;height:7px;border-radius:50%;background:#ffffff70}
+.caro .dots i.on{background:#fff}
+.caro .nav{position:absolute;top:0;bottom:0;width:38%;z-index:2}
+.caro .nav.l{left:0}.caro .nav.r{right:0}
+.caro .ph-empty{color:var(--mut);font-size:13px;text-align:center;padding:20px}
+.caro .del{position:absolute;top:8px;right:8px;z-index:3;background:#000000a0;border-radius:10px;width:34px;height:34px}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.thumbs .t{width:46px;height:46px;border-radius:9px;overflow:hidden;border:1px solid var(--line);position:relative}
+.thumbs .t img{width:100%;height:100%;object-fit:cover}
+.thumbs .t b{position:absolute;top:-2px;right:1px;color:var(--danger);font-weight:900}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border:0}.kv .k{color:var(--mut);font-size:13px}
+.linkbtn{color:var(--m);text-decoration:none;font-weight:600}
+/* fab */
+#fab{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom) + 16px);z-index:50;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#20170a;font-size:30px;font-weight:800;box-shadow:0 8px 26px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+#ver{position:fixed;left:10px;bottom:calc(env(safe-area-inset-bottom) + 8px);z-index:50;font-size:10px;color:#5f6b7a;background:#0e1116c0;padding:3px 7px;border-radius:8px;border:1px solid var(--line)}
+/* gate */
+#gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+#gate .box{max-width:380px;width:100%;text-align:center}
+#gate .logo{font-size:52px}
+#gate h2{margin:8px 0 4px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 88px);z-index:120;background:#0b1220;border:1px solid var(--line);color:var(--txt);padding:11px 16px;border-radius:12px;box-shadow:var(--sh);max-width:88%;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none}
+#toast.on{opacity:1}
+.row2{display:flex;gap:8px}.row2>*{flex:1}
+label.fl{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+.empty{text-align:center;color:var(--mut);padding:40px 12px}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="box">
+    <div class="logo">🌳</div>
+    <h2>Arbre généalogique</h2>
+    <p class="mut" id="gateMsg">Entre le code famille pour accéder à l'arbre.</p>
+    <input id="gateCode" type="password" inputmode="text" autocomplete="off" placeholder="Code famille" style="text-align:center;letter-spacing:2px">
+    <div id="gateConfirmWrap" class="hidden"><input id="gateCode2" type="password" autocomplete="off" placeholder="Confirme le code" style="text-align:center;letter-spacing:2px;margin-top:8px"></div>
+    <button class="btn gold" id="gateBtn" style="width:100%;margin-top:12px">Entrer</button>
+    <p class="mut" id="gateHint" style="font-size:12px;margin-top:14px"></p>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div id="top">
+    <span class="tree-ic">🌳</span>
+    <h1 id="ttl">Arbre familial</h1>
+    <span id="syncdot" title="Synchronisation"></span>
+    <button class="btn sm ghost" id="menuBtn" aria-label="Menu">⋯</button>
+  </div>
+  <div id="tabs">
+    <button class="tab act" data-view="tree">🌳 Arbre</button>
+    <button class="tab" data-view="list">👥 Personnes</button>
+    <button class="tab" data-view="search">🔎 Rechercher</button>
+    <button class="tab" data-view="tools">⚙️ Outils</button>
+  </div>
+  <div id="wrap"></div>
+  <button id="fab" aria-label="Ajouter une personne">＋</button>
+  <div id="ver"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+var APP_VER="v1.0";
+/* ---------------- utils ---------------- */
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function $(s,r){return (r||document).querySelector(s);}
+function el(html){var d=document.createElement("div");d.innerHTML=html.trim();return d.firstChild;}
+function uid(){return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function now(){return Date.now();}
+function toast(m){var t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove("on");},2600);}
+async function sha256(s){var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");}
+
+/* ---------------- storage (IndexedDB + localStorage mirror) ---------------- */
+var IDB=null;
+function idbOpen(){return new Promise(function(res){try{var r=indexedDB.open("arbreDB",1);r.onupgradeneeded=function(){r.result.createObjectStore("kv");};r.onsuccess=function(){IDB=r.result;res(IDB);};r.onerror=function(){res(null);};}catch(e){res(null);}});}
+function idbGet(k){return new Promise(function(res){if(!IDB)return res(null);try{var t=IDB.transaction("kv","readonly").objectStore("kv").get(k);t.onsuccess=function(){res(t.result||null);};t.onerror=function(){res(null);};}catch(e){res(null);}});}
+function idbSet(k,v){return new Promise(function(res){if(!IDB)return res(false);try{var t=IDB.transaction("kv","readwrite").objectStore("kv").put(v,k);t.onsuccess=function(){res(true);};t.onerror=function(){res(false);};}catch(e){res(false);}});}
+
+var DB={persons:{},meta:{title:"Arbre familial",updatedAt:0}};
+var CODEHASH="";           // hash of family code (namespaces cloud + gates)
+var VIEW="tree";
+var ROOT=null;             // current tree root person id
+var EXP={};                // expanded nodes in tree
+
+function textOnly(db){var c={persons:{},meta:db.meta};for(var id in db.persons){var p=db.persons[id],q={};for(var k in p)if(k!=="photos")q[k]=p[k];q.photoCount=(p.photos||[]).length;c.persons[id]=q;}return c;}
+
+async function saveLocal(){
+  DB.meta.updatedAt=now();
+  await idbSet("tree",DB);
+  try{localStorage.setItem("arbre_v1_text",JSON.stringify(textOnly(DB)));}catch(e){}
+}
+async function loadLocal(){
+  var d=await idbGet("tree");
+  if(d&&d.persons){DB=d;return true;}
+  try{var t=JSON.parse(localStorage.getItem("arbre_v1_text")||"null");if(t&&t.persons){DB=t;return true;}}catch(e){}
+  return false;
+}
+
+/* ---------------- cloud sync (anon Firebase, fail-open) ---------------- */
+var FB="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+var FB_KEY="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs";
+var _tok=null,_tokExp=0,_cloudOK=false;
+function setDot(){var d=$("#syncdot");if(!d)return;d.className=_cloudOK?"on":"off";d.title=_cloudOK?"Synchronisé avec la famille":"Hors-ligne (local uniquement)";}
+async function anonAuth(){
+  if(_tok&&now()<_tokExp-60000)return _tok;
+  try{
+    var r=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+FB_KEY,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({returnSecureToken:true})});
+    if(!r.ok)throw 0;var j=await r.json();_tok=j.idToken;_tokExp=now()+((+j.expiresIn||3600)*1000);return _tok;
+  }catch(e){_tok=null;return null;}
+}
+function cloudBase(){return FB+"/arbre/"+CODEHASH;}
+async function cloudPush(id){
+  var t=await anonAuth();if(!t)return false;
+  try{
+    var p=DB.persons[id];
+    var r=await fetch(cloudBase()+"/persons/"+id+".json?auth="+t,{method:"PUT",body:JSON.stringify(p||null)});
+    if(!r.ok)throw 0;_cloudOK=true;setDot();return true;
+  }catch(e){_cloudOK=false;setDot();return false;}
+}
+async function cloudPushAll(){
+  var t=await anonAuth();if(!t)return false;
+  try{var r=await fetch(cloudBase()+".json?auth="+t,{method:"PUT",body:JSON.stringify({persons:DB.persons,meta:DB.meta})});if(!r.ok)throw 0;_cloudOK=true;setDot();return true;}
+  catch(e){_cloudOK=false;setDot();return false;}
+}
+async function cloudPull(silent){
+  var t=await anonAuth();if(!t){_cloudOK=false;setDot();return;}
+  try{
+    var r=await fetch(cloudBase()+".json?auth="+t);
+    if(!r.ok)throw 0;
+    var rem=await r.json();_cloudOK=true;setDot();
+    if(!rem||!rem.persons){if(Object.keys(DB.persons).length){await cloudPushAll();}return;}
+    var changed=false;
+    for(var id in rem.persons){var rp=rem.persons[id];if(!rp)continue;var lp=DB.persons[id];
+      if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;changed=true;}}
+    if(changed){await idbSet("tree",DB);try{localStorage.setItem("arbre_v1_text",JSON.stringify(textOnly(DB)));}catch(e){}
+      if(!silent)toast("🔄 Mis à jour depuis la famille");render();}
+  }catch(e){_cloudOK=false;setDot();}
+}
+
+/* ---------------- model helpers ---------------- */
+function P(id){return DB.persons[id]||null;}
+function full(p){if(!p)return "?";return ((p.prenom||"")+" "+(p.nom||"")).trim()||"(sans nom)";}
+function yr(d){if(!d)return "";var m=String(d).match(/\d{4}/);return m?m[0]:"";}
+function lifespan(p){var a=yr(p.naissance&&p.naissance.date),b=yr(p.deces&&p.deces.date);if(!a&&!b)return p.vivant?"":"";return (a||"?")+(p.vivant?" · vivant":(b?"–"+b:(p.vivant?"":"")));}
+function childrenOf(id){var r=[];for(var k in DB.persons){var p=DB.persons[k];if(p.pere===id||p.mere===id)r.push(k);}return r;}
+function spouseNames(p){return (p.conjoints||[]).map(function(id){return full(P(id));}).filter(Boolean);}
+function initials(p){return ((p.prenom||"?")[0]||"?").toUpperCase();}
+
+/* ---------------- render ---------------- */
+function avatarHTML(p,big){var cls=p.sexe==="F"?"F":p.sexe==="M"?"M":"";var ph=(p.photos&&p.photos[0]);return '<div class="av '+cls+'" style="'+(big?"width:64px;height:64px;font-size:26px":"")+'">'+(ph?'<img src="'+ph+'" alt="">':esc(initials(p))+'</div>').replace("</div>","")+'</div>';}
+function personCardHTML(id){var p=P(id);if(!p)return "";
+  var sub=[lifespan(p),(p.naissance&&p.naissance.lieu)||""].filter(Boolean).join(" · ");
+  var b=p.vivant?'<span class="badge alive">vivant</span>':'';
+  return '<div class="pc" data-open="'+id+'">'+avatarHTML(p)+
+    '<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+b+'</div><div class="sub">'+esc(sub)+'</div></div>'+
+    '<span class="mut">›</span></div>';
+}
+
+function renderList(){
+  var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
+  var w=$("#wrap");
+  if(!ids.length){w.innerHTML='<div class="empty">Aucune personne.<br>Touche ＋ pour en ajouter.</div>';return;}
+  var q=(renderList._q||"").toLowerCase();
+  var html='<div style="margin:6px 0 10px"><input id="qbox" placeholder="🔎 Filtrer par nom..." value="'+esc(renderList._q||"")+'"></div><div class="grid">';
+  var n=0;
+  ids.forEach(function(id){if(q&&full(P(id)).toLowerCase().indexOf(q)<0&&String((P(id).notes||"")).toLowerCase().indexOf(q)<0)return;html+=personCardHTML(id);n++;});
+  html+='</div>';
+  if(!n)html+='<div class="empty">Personne ne correspond.</div>';
+  w.innerHTML=html;
+  var qb=$("#qbox");if(qb)qb.oninput=function(){renderList._q=qb.value;var s=qb.selectionStart;renderList();var n=$("#qbox");if(n){n.focus();try{n.setSelectionRange(s,s);}catch(e){}}};
+}
+
+function treeNodeHTML(id,rel,depth){
+  var p=P(id);if(!p)return "";
+  var par=[p.pere,p.mere].filter(Boolean);
+  var open=EXP[id]!==false && depth<3 || EXP[id]===true;
+  var tog=par.length?'<button class="toggle" data-tog="'+id+'">'+(open?"−":"+")+'</button>':'<span style="width:34px;flex:none"></span>';
+  var relhtml=rel?'<div class="reltag">'+esc(rel)+'</div>':'';
+  var sp=spouseNames(p);var sph=sp.length?'<div class="sub">⚭ '+esc(sp.join(", "))+'</div>':'';
+  var sub=[lifespan(p),(p.naissance&&p.naissance.lieu)||""].filter(Boolean).join(" · ");
+  var h='<div class="node"><div class="row">'+tog+
+    '<div class="pc" style="flex:1" data-open="'+id+'">'+avatarHTML(p)+
+    '<div style="flex:1;min-width:0">'+relhtml+'<div class="nm">'+esc(full(p))+(p.vivant?' <span class="badge alive">vivant</span>':'')+'</div><div class="sub">'+esc(sub)+'</div>'+sph+'</div><span class="mut">›</span></div></div>';
+  if(par.length&&open){
+    h+='<div class="kids">';
+    if(p.pere)h+=treeNodeHTML(p.pere,"père",depth+1);
+    if(p.mere)h+=treeNodeHTML(p.mere,"mère",depth+1);
+    h+='</div>';
+  }
+  return h+'</div>';
+}
+function renderTree(){
+  var w=$("#wrap");
+  var ids=Object.keys(DB.persons);
+  if(!ids.length){w.innerHTML='<div class="empty">Ton arbre est vide.<br>Touche ＋ pour ajouter la 1ʳᵉ personne.</div>';return;}
+  if(!ROOT||!P(ROOT)){ROOT=guessRoot();}
+  var opts=ids.slice().sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));}).map(function(id){return '<option value="'+id+'"'+(id===ROOT?" selected":"")+'>'+esc(full(P(id)))+'</option>';}).join("");
+  var kids=childrenOf(ROOT);
+  var kidsHtml="";
+  if(kids.length){kidsHtml='<div class="sec"><h3>Enfants de '+esc(full(P(ROOT)))+'</h3><div class="grid">'+kids.map(personCardHTML).join("")+'</div></div>';}
+  w.innerHTML='<div class="sec" style="padding:11px 12px"><label class="fl" style="margin:0 0 6px">Personne racine (l\'ascendance s\'affiche au-dessus d\'elle)</label><select id="rootSel">'+opts+'</select></div>'+
+    '<div class="sec"><h3>Ascendance</h3>'+treeNodeHTML(ROOT,"",0)+'</div>'+kidsHtml;
+  $("#rootSel").onchange=function(){ROOT=this.value;render();};
+}
+function guessRoot(){
+  // person with most ancestors depth / prefer "vivant" youngest; default: one that is child but has parents
+  var best=null,bestScore=-1;
+  for(var id in DB.persons){var p=DB.persons[id];var s=(p.pere?1:0)+(p.mere?1:0)+(p.vivant?2:0);if(s>bestScore){bestScore=s;best=id;}}
+  return best||Object.keys(DB.persons)[0];
+}
+
+/* -------- search launchers (works for everyone incl. living) -------- */
+function searchLinks(p){
+  var nom=encodeURIComponent(p.nom||"");var pre=encodeURIComponent(p.prenom||"");
+  var lieu=encodeURIComponent((p.naissance&&p.naissance.lieu)||(p.deces&&p.deces.lieu)||"");
+  var g=full(p);
+  return [
+    {t:"Geneanet",u:"https://www.geneanet.org/fonds/individus/?go=1&nom="+nom+"&prenom="+pre+(lieu?"&place__0__="+lieu:"")},
+    {t:"Archives Monaco",u:"https://archives.mairie.mc/"},
+    {t:"Archives 06 (Beaulieu/Nice)",u:"https://archives06.fr/"},
+    {t:"Archives 13 (Salon-de-Provence)",u:"https://www.archives13.fr/"},
+    {t:"Filae",u:"https://www.filae.com/search/results/?lastname="+nom+"&firstname="+pre},
+    {t:"FamilySearch",u:"https://www.familysearch.org/search/record/results?q.surname="+nom+"&q.givenName="+pre},
+    {t:"Google",u:"https://www.google.com/search?q="+encodeURIComponent('"'+g+'" généalogie '+((p.naissance&&p.naissance.lieu)||""))}
+  ];
+}
+function renderSearch(){
+  var w=$("#wrap");
+  var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
+  var body=ids.map(function(id){var p=P(id);
+    return '<div class="pc" data-search="'+id+'" style="cursor:pointer">'+avatarHTML(p)+'<div style="flex:1"><div class="nm">'+esc(full(p))+'</div><div class="sub">Rechercher / actualiser dans les archives</div></div><span>🔎</span></div>';
+  }).join("");
+  w.innerHTML='<div class="sec"><h3>Chercher les actes (compte gratuit)</h3><p class="mut" style="font-size:13px;margin:0 0 10px">Touche une personne : j\'ouvre les bonnes recherches pré-remplies (Monaco, Geneanet, AD06/AD13, Filae, FamilySearch). Valable aussi pour les vivants.</p><div class="grid">'+(body||'<div class="empty">Ajoute d\'abord des personnes.</div>')+'</div></div>';
+}
+function openSearch(id){var p=P(id);var links=searchLinks(p);
+  var h='<div class="sheet"><div class="grab"></div><h2>🔎 '+esc(full(p))+'</h2><p class="mut" style="margin:2px 0 12px;font-size:13px">Ouvre chaque source (compte gratuit requis sur certaines). Confirme la date puis reviens la saisir sur la fiche.</p>'+
+    links.map(function(l){return '<a class="btn" style="width:100%;margin:6px 0;justify-content:space-between" target="_blank" rel="noopener" href="'+esc(l.u)+'">'+esc(l.t)+' <span class="mut">↗</span></a>';}).join("")+
+    '<button class="btn ghost" style="width:100%;margin-top:10px" data-close>Fermer</button></div>';
+  showOverlay(h);
+}
+
+function renderTools(){
+  var w=$("#wrap");var n=Object.keys(DB.persons).length;
+  w.innerHTML=
+    '<div class="sec"><h3>Synchronisation famille</h3><div class="kv"><span class="k">État</span><span>'+(_cloudOK?'🟢 Synchronisé':'🟠 Hors-ligne (local)')+'</span></div>'+
+      '<div class="kv"><span class="k">Personnes</span><span>'+n+'</span></div>'+
+      '<div class="row2" style="margin-top:10px"><button class="btn" id="btnSync">🔄 Synchroniser</button><button class="btn" id="btnPush">☁️ Tout envoyer</button></div></div>'+
+    '<div class="sec"><h3>Sauvegarde</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Exporte l\'arbre (fichier) pour le partager ou le garder en sécurité. Importe pour fusionner.</p>'+
+      '<div class="row2"><button class="btn" id="btnExport">⬇️ Exporter</button><button class="btn" id="btnImport">⬆️ Importer</button></div>'+
+      '<input type="file" id="fileImport" accept="application/json" class="hidden"></div>'+
+    '<div class="sec"><h3>Sécurité</h3><button class="btn" id="btnCode" style="width:100%">🔑 Changer le code famille</button>'+
+      '<button class="btn ghost" id="btnLock" style="width:100%;margin-top:8px">🔒 Verrouiller maintenant</button></div>'+
+    '<div class="sec"><h3>À propos</h3><p class="mut" style="font-size:13px;margin:0">Arbre généalogique familial '+APP_VER+'. Données chez toi + synchro chiffrée par le code famille. Ajoute/corrige librement, tout le monde avec le code voit les mises à jour.</p></div>';
+  $("#btnSync").onclick=function(){toast("Synchronisation…");cloudPull(false);};
+  $("#btnPush").onclick=async function(){toast("Envoi…");var ok=await cloudPushAll();toast(ok?"✅ Envoyé à la famille":"🟠 Cloud indispo — gardé en local");};
+  $("#btnExport").onclick=doExport;
+  $("#btnImport").onclick=function(){$("#fileImport").click();};
+  $("#fileImport").onchange=doImport;
+  $("#btnCode").onclick=changeCode;
+  $("#btnLock").onclick=function(){sessionStorage.removeItem("arbre_unlocked");location.reload();};
+}
+function render(){
+  document.querySelectorAll("#tabs .tab").forEach(function(t){t.classList.toggle("act",t.dataset.view===VIEW);});
+  if(VIEW==="tree")renderTree();
+  else if(VIEW==="list")renderList();
+  else if(VIEW==="search")renderSearch();
+  else renderTools();
+  $("#ver").textContent=APP_VER+" · "+Object.keys(DB.persons).length+" pers.";
+}
+
+/* ---------------- person detail + carousel ---------------- */
+var _caro={i:0,timer:0};
+function openPerson(id){
+  var p=P(id);if(!p)return;
+  clearInterval(_caro.timer);_caro.i=0;
+  var photos=p.photos||[];
+  var caro='<div class="caro" id="caroBox">'+(photos.length?
+      photos.map(function(src,i){return '<div class="slide'+(i===0?" on":"")+'"><img src="'+src+'" alt=""></div>';}).join("")+
+      '<button class="nav l" data-caro="-1" aria-label="précédent"></button><button class="nav r" data-caro="1" aria-label="suivant"></button>'+
+      '<div class="dots">'+photos.map(function(_,i){return '<i class="'+(i===0?"on":"")+'"></i>';}).join("")+'</div>'
+      : '<div class="ph-empty">Aucune photo.<br>Modifie la fiche pour en ajouter (jusqu\'à 10).</div>')+'</div>';
+  function line(k,v){return v?'<div class="kv"><span class="k">'+k+'</span><span>'+esc(v)+'</span></div>':"";}
+  var rel="";
+  function relLink(lbl,pid){if(!pid||!P(pid))return "";return '<div class="kv"><span class="k">'+lbl+'</span><a class="linkbtn" data-open="'+pid+'">'+esc(full(P(pid)))+' ›</a></div>';}
+  rel+=relLink("Père",p.pere)+relLink("Mère",p.mere);
+  (p.conjoints||[]).forEach(function(cid){rel+=relLink("Conjoint",cid);});
+  childrenOf(id).forEach(function(cid){rel+=relLink("Enfant",cid);});
+  var sources=(p.sources||[]).map(function(s){return '<a class="btn sm" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label||"acte")+' ↗</a>';}).join(" ");
+  var h='<div class="sheet"><div class="grab"></div>'+
+    '<div style="display:flex;gap:12px;align-items:center">'+avatarHTML(p,true)+'<div style="flex:1"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div></div></div>'+
+    caro+
+    '<div class="sec" style="margin-top:12px">'+
+      line("Naissance",[(p.naissance&&p.naissance.date)||"",(p.naissance&&p.naissance.lieu)?"à "+p.naissance.lieu:""].filter(Boolean).join(" "))+
+      (p.vivant?'<div class="kv"><span class="k">Statut</span><span class="gold">Vivant</span></div>':line("Décès",[(p.deces&&p.deces.date)||"",(p.deces&&p.deces.lieu)?"à "+p.deces.lieu:""].filter(Boolean).join(" ")))+
+      (rel||"")+
+      (p.notes?'<div style="padding:10px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+
+    '</div>'+
+    (sources?'<div class="sec"><h3>Actes / sources</h3><div class="chips">'+sources+'</div></div>':"")+
+    '<div class="row2"><button class="btn" data-searchp="'+id+'">🔎 Rechercher</button><button class="btn gold" data-edit="'+id+'">✏️ Modifier</button></div>'+
+    '<button class="btn ghost" data-close style="width:100%;margin-top:8px">Fermer</button></div>';
+  showOverlay(h);
+  if(photos.length>1){
+    var box=$("#caroBox");
+    _caro.timer=setInterval(function(){caroGo(1);},3200);
+    box.querySelectorAll("[data-caro]").forEach(function(b){b.onclick=function(){caroGo(+b.dataset.caro);};});
+  }
+}
+function caroGo(d){var box=$("#caroBox");if(!box)return;var sl=box.querySelectorAll(".slide");if(sl.length<2)return;var dots=box.querySelectorAll(".dots i");
+  sl[_caro.i].classList.remove("on");if(dots[_caro.i])dots[_caro.i].classList.remove("on");
+  _caro.i=(_caro.i+d+sl.length)%sl.length;
+  sl[_caro.i].classList.add("on");if(dots[_caro.i])dots[_caro.i].classList.add("on");}
+
+/* ---------------- add / edit ---------------- */
+var _draftPhotos=[];
+function openEdit(id){
+  var p=id?P(id):{prenom:"",nom:"",sexe:"",naissance:{},deces:{},conjoints:[],photos:[],sources:[],vivant:false};
+  _draftPhotos=(p.photos||[]).slice();
+  var others=Object.keys(DB.persons).filter(function(k){return k!==id;}).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
+  function sel(name,cur){return '<select data-f="'+name+'"><option value="">— aucun —</option>'+others.map(function(k){return '<option value="'+k+'"'+(cur===k?" selected":"")+'>'+esc(full(P(k)))+'</option>';}).join("")+'</select>';}
+  var h='<div class="sheet"><div class="grab"></div><h2>'+(id?"Modifier":"Nouvelle personne")+'</h2>'+
+    '<div class="row2"><div><label class="fl">Prénom</label><input data-f="prenom" value="'+esc(p.prenom)+'"></div><div><label class="fl">Nom</label><input data-f="nom" value="'+esc(p.nom)+'"></div></div>'+
+    '<label class="fl">Sexe</label><select data-f="sexe"><option value="">—</option><option value="M"'+(p.sexe==="M"?" selected":"")+'>Homme</option><option value="F"'+(p.sexe==="F"?" selected":"")+'>Femme</option></select>'+
+    '<label class="fl"><input type="checkbox" data-f="vivant" style="width:auto;vertical-align:middle" '+(p.vivant?"checked":"")+'> Personne vivante</label>'+
+    '<div class="row2"><div><label class="fl">Naissance (date)</label><input data-f="ndate" placeholder="ex. 23.10.1911" value="'+esc((p.naissance&&p.naissance.date)||"")+'"></div><div><label class="fl">Lieu</label><input data-f="nlieu" placeholder="ex. Monaco" value="'+esc((p.naissance&&p.naissance.lieu)||"")+'"></div></div>'+
+    '<div class="row2" data-deces><div><label class="fl">Décès (date)</label><input data-f="ddate" value="'+esc((p.deces&&p.deces.date)||"")+'"></div><div><label class="fl">Lieu</label><input data-f="dlieu" value="'+esc((p.deces&&p.deces.lieu)||"")+'"></div></div>'+
+    '<label class="fl">Père</label>'+sel("pere",p.pere)+
+    '<label class="fl">Mère</label>'+sel("mere",p.mere)+
+    '<label class="fl">Conjoint(e)</label>'+sel("conj",(p.conjoints||[])[0])+
+    '<label class="fl">Photos (jusqu\'à 10, défilent sur la fiche)</label>'+
+    '<div id="thumbs" class="thumbs"></div><button class="btn sm" id="addPhoto" style="margin-top:6px">📷 Ajouter des photos</button><input type="file" id="photoIn" accept="image/*" multiple class="hidden">'+
+    '<label class="fl">Notes</label><textarea data-f="notes" rows="3" placeholder="métier, anecdotes, à vérifier…">'+esc(p.notes||"")+'</textarea>'+
+    '<div class="row2" style="margin-top:14px"><button class="btn gold" id="saveP">💾 Enregistrer</button>'+(id?'<button class="btn dng" id="delP">🗑 Supprimer</button>':'<button class="btn ghost" data-close>Annuler</button>')+'</div>'+
+    (id?'<button class="btn ghost" data-close style="width:100%;margin-top:8px">Annuler</button>':'')+'</div>';
+  showOverlay(h);
+  var sheet=$(".sheet");
+  function refreshThumbs(){var t=$("#thumbs");t.innerHTML=_draftPhotos.map(function(src,i){return '<div class="t" data-rmph="'+i+'"><img src="'+src+'"><b>×</b></div>';}).join("")||'<span class="mut" style="font-size:12px">Aucune photo</span>';}
+  refreshThumbs();
+  t_delegate(sheet,"[data-rmph]",function(node){_draftPhotos.splice(+node.dataset.rmph,1);refreshThumbs();});
+  $("#addPhoto").onclick=function(){$("#photoIn").click();};
+  $("#photoIn").onchange=async function(e){var files=Array.prototype.slice.call(e.target.files||[]);
+    for(var i=0;i<files.length;i++){if(_draftPhotos.length>=10){toast("Maximum 10 photos");break;}
+      try{var d=await compress(files[i]);_draftPhotos.push(d);}catch(err){toast("Image ignorée");}}
+    refreshThumbs();e.target.value="";};
+  $("#saveP").onclick=async function(){
+    var g=function(f){var n=sheet.querySelector('[data-f="'+f+'"]');return n?(n.type==="checkbox"?n.checked:n.value.trim()):"";};
+    var np=id?P(id):{id:uid()};
+    np.prenom=g("prenom");np.nom=g("nom");np.sexe=g("sexe");np.vivant=g("vivant");
+    np.naissance={date:g("ndate"),lieu:g("nlieu")};np.deces={date:g("ddate"),lieu:g("dlieu")};
+    np.pere=g("pere")||null;np.mere=g("mere")||null;
+    var conj=g("conj");np.conjoints=conj?[conj]:[];
+    np.notes=g("notes");np.photos=_draftPhotos.slice();np.sources=np.sources||[];
+    np.updatedAt=now();np.updatedBy=CODEHASH.slice(0,6);
+    if(!np.prenom&&!np.nom){toast("Mets au moins un prénom ou un nom");return;}
+    DB.persons[np.id]=np;
+    // reciprocal spouse link
+    if(conj&&P(conj)){var c=P(conj);c.conjoints=c.conjoints||[];if(c.conjoints.indexOf(np.id)<0){c.conjoints.push(np.id);c.updatedAt=now();cloudPush(conj);}}
+    await saveLocal();closeOverlay();ROOT=ROOT||np.id;render();
+    toast("💾 Enregistré");cloudPush(np.id);
+  };
+  var del=$("#delP");if(del)del.onclick=async function(){if(!confirm("Supprimer "+full(P(id))+" ? Cette personne sera retirée de l'arbre."))return;
+    // detach children
+    for(var k in DB.persons){var c=DB.persons[k];var ch=false;if(c.pere===id){c.pere=null;ch=true;}if(c.mere===id){c.mere=null;ch=true;}var ci=(c.conjoints||[]).indexOf(id);if(ci>=0){c.conjoints.splice(ci,1);ch=true;}if(ch){c.updatedAt=now();cloudPush(k);}}
+    delete DB.persons[id];await saveLocal();
+    var t=await anonAuth();if(t){try{fetch(cloudBase()+"/persons/"+id+".json?auth="+t,{method:"DELETE"});}catch(e){}}
+    closeOverlay();render();toast("Supprimé");};
+}
+function compress(file){return new Promise(function(res,rej){
+  var r=new FileReader();r.onload=function(){var img=new Image();img.onload=function(){
+    var max=1000,w=img.width,h=img.height;if(w>h&&w>max){h=h*max/w;w=max;}else if(h>max){w=w*max/h;h=max;}
+    var cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);
+    res(cv.toDataURL("image/jpeg",0.72));
+  };img.onerror=rej;img.src=r.result;};r.onerror=rej;r.readAsDataURL(file);});}
+
+/* ---------------- overlay ---------------- */
+function showOverlay(html){closeOverlay();var ov=el('<div class="ov">'+html+'</div>');document.body.appendChild(ov);
+  ov.addEventListener("click",function(e){if(e.target===ov)closeOverlay();});
+  ov.querySelectorAll("[data-close]").forEach(function(b){b.onclick=closeOverlay;});
+  t_delegate(ov,"[data-open]",function(n){openPerson(n.dataset.open);});
+  t_delegate(ov,"[data-edit]",function(n){openEdit(n.dataset.edit);});
+  t_delegate(ov,"[data-searchp]",function(n){openSearch(n.dataset.searchp);});
+}
+function closeOverlay(){clearInterval(_caro.timer);var ov=$(".ov");if(ov)ov.remove();}
+function t_delegate(root,sel,fn){root.addEventListener("click",function(e){var n=e.target.closest(sel);if(n&&root.contains(n)){e.preventDefault();fn(n);}});}
+
+/* ---------------- export / import ---------------- */
+function doExport(){var blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="arbre-familial-"+new Date().toISOString().slice(0,10)+".json";a.click();toast("⬇️ Exporté");}
+function doImport(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=async function(){try{var d=JSON.parse(r.result);if(!d.persons)throw 0;var add=0;for(var id in d.persons){var rp=d.persons[id];var lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;add++;}}await saveLocal();render();cloudPushAll();toast("⬆️ Importé ("+add+" fiches)");}catch(err){toast("Fichier invalide");}};r.readAsText(f);e.target.value="";}
+
+/* ---------------- code gate ---------------- */
+async function changeCode(){
+  var c=prompt("Nouveau code famille (partagé avec ceux qui doivent voir/modifier) :");if(!c)return;
+  var c2=prompt("Confirme le nouveau code :");if(c!==c2){toast("Les codes diffèrent");return;}
+  var oldHash=CODEHASH;CODEHASH=await sha256("arbre::"+c.trim());
+  localStorage.setItem("arbre_codehash",CODEHASH);sessionStorage.setItem("arbre_unlocked","1");
+  await cloudPushAll();toast("🔑 Code changé — repartage-le à la famille");
+}
+async function unlock(codeInput){
+  var h=await sha256("arbre::"+codeInput.trim());
+  var stored=localStorage.getItem("arbre_codehash");
+  if(!stored){ // first run: create
+    localStorage.setItem("arbre_codehash",h);CODEHASH=h;sessionStorage.setItem("arbre_unlocked","1");
+    return true;
+  }
+  if(h===stored){CODEHASH=h;sessionStorage.setItem("arbre_unlocked","1");return true;}
+  return false;
+}
+
+/* ---------------- seed (only if empty) ---------------- */
+function seed(){
+  // Lignée directe donnée par Kevin (fiable) + éléments déchiffrés du document (dates ? = à confirmer).
+  var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=[];o.sources=o.sources||[];s[o.id]=o;return o.id;}
+  var vsauv=add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{date:"",lieu:""},deces:{},notes:"Grand-père maternel de Kevin. À compléter."});
+  var mt=add({id:"seed_mt_maiffret",prenom:"Marie-Thérèse",nom:"MAIFFRET",sexe:"F",naissance:{date:"23.10.1911",lieu:""},deces:{},conjoints:["seed_victor_sauvaigo"],notes:"Épouse de Victor Sauvaigo. Née le 23.10.1911 (document)."});
+  DB.persons=s;DB.persons[vsauv].conjoints=[mt];
+  var mn=add({id:"seed_marienoel",prenom:"Marie-Noël",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{date:"",lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Mère de Kevin, née à Monaco."});
+  add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{date:"",lieu:"Monaco"},mere:"seed_marienoel",notes:"Né à Monaco. Côté paternel (de Sarzance / Salon-de-Provence) à ajouter."});
+  // Ancêtres MAIFFRET déchiffrés (non reliés — à rattacher par la famille). Dates ? = à confirmer.
+  add({prenom:"Victor",nom:"MAIFFRET",sexe:"M",naissance:{date:"10.12.1860 ?"},deces:{date:"1.07.1943 ?"},notes:"Document (branche Maiffret). Lien exact à confirmer."});
+  add({prenom:"Alexandre",nom:"MAIFFRET",sexe:"M",naissance:{date:"14.10.1856 ?"},deces:{date:"3.05.1926 ?"},notes:"Document. À rattacher."});
+  add({prenom:"Léonie",nom:"MAIFFRET",sexe:"F",naissance:{date:"19.03.1895 ?"},deces:{date:"30.01.1952 ?"},notes:"Épouse VAN DEN BOSCH (document). À rattacher."});
+  add({prenom:"Jules",nom:"SAUVAIGO",sexe:"M",naissance:{date:"1858 ?"},notes:"Marié en 1883 à Victorine MAIFFRET (relevé public). Lien à la lignée à confirmer."});
+  add({prenom:"Victorine",nom:"MAIFFRET",sexe:"F",naissance:{date:"1860 ?"},conjoints:[],notes:"Mariage 1883 avec Jules Sauvaigo (relevé public). À rattacher."});
+  DB.meta={title:"Arbre familial",updatedAt:now()};
+}
+
+/* ---------------- boot ---------------- */
+function bindApp(){
+  document.querySelectorAll("#tabs .tab").forEach(function(t){t.onclick=function(){VIEW=t.dataset.view;render();};});
+  $("#fab").onclick=function(){openEdit(null);};
+  $("#menuBtn").onclick=function(){VIEW="tools";render();};
+  document.body.addEventListener("click",function(e){var n=e.target.closest("#wrap [data-open]");if(n){openPerson(n.dataset.open);return;}var s=e.target.closest("#wrap [data-search]");if(s){openSearch(s.dataset.search);}});
+  document.body.addEventListener("click",function(e){var n=e.target.closest("#wrap [data-tog]");if(n){var id=n.dataset.tog;EXP[id]=!(EXP[id]!==false);render();}});
+  document.addEventListener("visibilitychange",function(){if(!document.hidden&&sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});
+  setInterval(function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);},22000);
+}
+async function startApp(){
+  $("#gate").classList.add("hidden");$("#app").classList.remove("hidden");
+  var had=await loadLocal();
+  if(!had||!Object.keys(DB.persons).length){seed();await saveLocal();}
+  render();setDot();
+  cloudPull(false); // merge with family cloud (fail-open)
+}
+async function boot(){
+  await idbOpen();
+  var stored=localStorage.getItem("arbre_codehash");
+  var gm=$("#gateMsg"),gh=$("#gateHint"),gcw=$("#gateConfirmWrap"),gbtn=$("#gateBtn");
+  if(!stored){gm.textContent="Première ouverture : crée le code famille (à partager avec ta mère, ta sœur, la famille).";gcw.classList.remove("hidden");gh.textContent="Ce code protège l'arbre ET relie tous vos appareils.";gbtn.textContent="Créer l'arbre";}
+  else{gh.textContent="Reconnu automatiquement après la 1ʳᵉ fois sur cet appareil.";}
+  // auto-unlock if trusted this session already
+  if(stored&&sessionStorage.getItem("arbre_unlocked")&&localStorage.getItem("arbre_trust")==="1"){CODEHASH=stored;bindApp();return startApp();}
+  bindApp();
+  async function tryGate(){
+    var c=$("#gateCode").value;if(!c){toast("Entre le code");return;}
+    if(!stored){var c2=$("#gateCode2").value;if(c!==c2){toast("Les deux codes doivent être identiques");return;}}
+    var ok=await unlock(c);
+    if(ok){localStorage.setItem("arbre_trust","1");startApp();}
+    else{toast("Code incorrect");$("#gateCode").value="";}
+  }
+  $("#gateBtn").onclick=tryGate;
+  $("#gateCode").addEventListener("keydown",function(e){if(e.key==="Enter"&&stored)tryGate();});
+  $("#gateCode2")&&$("#gateCode2").addEventListener("keydown",function(e){if(e.key==="Enter")tryGate();});
+}
+boot();
+</script>
+</body>
+</html>
