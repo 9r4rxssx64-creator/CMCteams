@@ -184,7 +184,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.26";
+var APP_VER="v2.27";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -291,42 +291,34 @@ function tidyTree(ids){
   return {nodes:nodes,links:links,minx:minx,w:(maxx-minx)+BOXW,h:(depthMax+1)*ROWH};
 }
 /* Membres de la famille FAMKEY, composant relié qui contient l'ancre de la famille. */
-function mainFamilyIds(){
-  var persons=DB.persons,par={},inFam={};
-  for(var id0 in persons){if(famOf(persons[id0]).indexOf(FAMKEY)>=0)inFam[id0]=1;}
-  function find(a){while(par[a]!==a){par[a]=par[par[a]];a=par[a];}return a;}
-  function uni(a,b){if(!a||!b||!inFam[a]||!inFam[b])return;var ra=find(a),rb=find(b);if(ra!==rb)par[ra]=rb;}
-  for(var id in inFam)par[id]=id;
-  for(var id in inFam){var p=persons[id];if(p.pere)uni(id,p.pere);if(p.mere)uni(id,p.mere);(p.conjoints||[]).forEach(function(c){uni(id,c);});}
-  var comps={};for(var k in inFam){var r=find(k);(comps[r]=comps[r]||[]).push(k);}
-  var anchors=FAMKEY==="c"?["seed_gerard","seed_guy","seed_kevin"]:["seed_marienoel","seed_victor_sauvaigo","seed_kevin"];
-  for(var i=0;i<anchors.length;i++){var a=anchors[i];if(inFam[a]){var rr=find(a);if(comps[rr]&&comps[rr].length>1)return comps[rr];}}
-  var best=null;Object.keys(comps).forEach(function(c){if(comps[c].length>1&&(!best||comps[c].length>best.length))best=comps[c];});
-  return best||Object.keys(inFam);
-}
-/* Vue ARBRE : la famille choisie en descendance propre (enfants sous les parents). */
+/* Vue ARBRE : TOUTE la famille choisie — le tronc relié en premier, puis les
+   branches encore « à relier » en sections dessous (personne ne manque). */
 function layoutMainFamily(){
-  var ids=mainFamilyIds();if(!ids||!ids.length)return null;
-  var t=tidyTree(ids);if(!t.nodes.length)return null;
-  var PAD=TREE.PAD,BOXW=TREE.BOXW,totalW=t.w+PAD*2,offx=PAD - t.minx + BOXW/2;
-  var nodes=t.nodes.map(function(n){return {id:n.id,x:n.x+offx,y:n.y+PAD,root:n.root};});
-  var links=t.links.map(function(l){return l.couple?{couple:1,x1:l.x1+offx,y1:l.y1+PAD,x2:l.x2+offx,y2:l.y2+PAD}:{x1:l.x1+offx,y1:l.y1+PAD,x2:l.x2+offx,y2:l.y2+PAD};});
-  return {nodes:nodes,links:links,bands:[],w:totalW,h:t.h+PAD*2};
+  var filter={},n=0;
+  for(var id in DB.persons){if(famOf(DB.persons[id]).indexOf(FAMKEY)>=0){filter[id]=1;n++;}}
+  if(!n)return null;
+  var anchors=FAMKEY==="c"?["seed_gerard","seed_guy","seed_kevin"]:["seed_marienoel","seed_victor_sauvaigo","seed_kevin"];
+  return layoutForest(filter,anchors);
 }
-function layoutForest(){
+function layoutForest(filter,anchors){
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP,PAD=T.PAD,COMPGAP=T.COMPGAP;
   var persons=DB.persons;
-  /* union-find : regroupe par famille reliée (père/mère/conjoint) */
+  /* union-find : regroupe par famille reliée (père/mère/conjoint).
+     filter (optionnel) = ne considérer QUE ces ids (vue par famille) ;
+     anchors (optionnel) = le composant qui les contient passe en premier. */
+  function inSet(id){return !filter||filter[id];}
   var par={};function find(a){while(par[a]!==a){par[a]=par[par[a]];a=par[a];}return a;}
-  function uni(a,b){if(!a||!b||!P(a)||!P(b))return;var ra=find(a),rb=find(b);if(ra!==rb)par[ra]=rb;}
-  for(var id in persons)par[id]=id;
-  for(var id in persons){var p=persons[id];if(p.pere&&P(p.pere))uni(id,p.pere);if(p.mere&&P(p.mere))uni(id,p.mere);(p.conjoints||[]).forEach(function(c){uni(id,c);});}
-  var comps={};for(var id in persons){var r=find(id);(comps[r]=comps[r]||[]).push(id);}
+  function uni(a,b){if(!a||!b||!P(a)||!P(b)||!inSet(a)||!inSet(b))return;var ra=find(a),rb=find(b);if(ra!==rb)par[ra]=rb;}
+  for(var id in persons){if(inSet(id))par[id]=id;}
+  for(var id in persons){if(!inSet(id))continue;var p=persons[id];if(p.pere&&P(p.pere))uni(id,p.pere);if(p.mere&&P(p.mere))uni(id,p.mere);(p.conjoints||[]).forEach(function(c){uni(id,c);});}
+  var comps={};for(var id in persons){if(!inSet(id))continue;var r=find(id);(comps[r]=comps[r]||[]).push(id);}
   var arr=Object.keys(comps).map(function(r){return comps[r];});
   function hasEdge(ids){var s={};ids.forEach(function(x){s[x]=1;});for(var i=0;i<ids.length;i++){var pp=P(ids[i]);if((pp.pere&&s[pp.pere])||(pp.mere&&s[pp.mere]))return true;}return false;}
   var trees=[],singleIds=[];
   arr.forEach(function(ids){if(hasEdge(ids))trees.push(ids);else ids.forEach(function(x){singleIds.push(x);});});
-  trees.sort(function(a,b){var ka=a.indexOf("seed_kevin")>=0?1:0,kb=b.indexOf("seed_kevin")>=0?1:0;if(ka!==kb)return kb-ka;return b.length-a.length;});
+  var anch=anchors&&anchors.length?anchors:["seed_kevin"];
+  function hasAnchor(ids){for(var i=0;i<anch.length;i++)if(ids.indexOf(anch[i])>=0)return 1;return 0;}
+  trees.sort(function(a,b){var ka=hasAnchor(a),kb=hasAnchor(b);if(ka!==kb)return kb-ka;return b.length-a.length;});
   var laid=trees.map(tidyTree),maxW=0;laid.forEach(function(t){if(t.w>maxW)maxW=t.w;});
   singleIds.sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
   if(singleIds.length)maxW=Math.max(maxW,BOXW*Math.min(4,singleIds.length));
@@ -388,7 +380,7 @@ function renderTree(){
     +'<div class="treemode"><button data-style="arbre"'+(VIEWSTYLE==="arbre"?' class="on"':'')+'>🌳 Arbre</button><button data-style="plan"'+(VIEWSTYLE==="plan"?' class="on"':'')+'>📋 Plan</button></div>'
     +'<div class="treemode fampick"><button data-fam="o"'+(FAMKEY==="o"?' class="on"':'')+'>🫒 Sauvaigo · Maiffret</button><button data-fam="c"'+(FAMKEY==="c"?' class="on"':'')+'>🌳 Desarzens</button></div>'
     +'<div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button></div>'
-    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?"📋 Plan familial · ":famLabel(FAMKEY)+" · ")+n+' personnes · glisse · pince · touche une fiche</div></div>';
+    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?("📋 Plan familial · "+n):(famLabel(FAMKEY)+" · "+Object.keys(DB.persons).filter(function(x){return famOf(DB.persons[x]).indexOf(FAMKEY)>=0;}).length))+' personnes · glisse · pince · touche une fiche</div></div>';
   var zb=document.querySelectorAll(".zoomBtns [data-z]");zb.forEach(function(b){b.onclick=function(){if(b.dataset.z==="fit")fitStage();else zoomAt(0.5,0.5,b.dataset.z==="1"?1.25:1/1.25);};});
   document.querySelectorAll(".treemode [data-style]").forEach(function(b){b.onclick=function(){if(VIEWSTYLE===b.dataset.style)return;VIEWSTYLE=b.dataset.style;syncMode();try{localStorage.setItem("arbre_viewstyle",VIEWSTYLE);}catch(e){}renderTree();};});
   document.querySelectorAll(".fampick [data-fam]").forEach(function(b){b.onclick=function(){if(FAMKEY===b.dataset.fam)return;FAMKEY=b.dataset.fam;try{localStorage.setItem("arbre_fam",FAMKEY);}catch(e){}renderTree();};});
