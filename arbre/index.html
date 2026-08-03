@@ -71,7 +71,11 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 #treeCtl .seg button{padding:9px 13px;font-size:13px;font-weight:600;color:var(--mut)}
 #treeCtl .seg button.on{background:linear-gradient(135deg,var(--cyan),#39b9ff);color:#04222a}
 #stageWrap{position:relative;height:66vh;min-height:420px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(130% 80% at 50% 102%,rgba(120,150,86,.22),transparent),radial-gradient(100% 60% at 50% -4%,rgba(206,168,98,.22),transparent),linear-gradient(180deg,#efe4c8,#e3d1a8);touch-action:none;box-shadow:var(--sh)}
-#treeBg{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.8}#treeBg svg{width:100%;height:100%;display:block}
+#treeBg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#treeArt{position:absolute;inset:0;opacity:.8}#treeArt svg{width:100%;height:100%;display:block}
+#treePhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 78%;opacity:0;transition:opacity .6s}
+#treePhoto.on{opacity:.6}#treePhoto.on ~ #treeScrim{opacity:1}
+#treeScrim{position:absolute;inset:0;opacity:0;background:linear-gradient(180deg,rgba(233,217,186,.30),rgba(233,217,186,.5) 55%,rgba(227,209,168,.72))}
 #stage{position:absolute;left:0;top:0;z-index:1;transform-origin:0 0;will-change:transform}
 #stage svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .tnode{position:absolute;transform:translate(-50%,-50%);width:170px;padding:11px 12px;border-radius:14px;background:linear-gradient(180deg,#fffdf4,#f2e6c8);border:1.5px solid #b8912f;display:flex;gap:11px;align-items:center;box-shadow:0 6px 16px rgba(74,54,22,.4),inset 0 1px 0 rgba(255,255,255,.7);cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s}
@@ -176,7 +180,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.9";
+var APP_VER="v2.10";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -328,7 +332,7 @@ function treeBgSVG(){
 function renderTree(){
   var w=$("#wrap");var n=Object.keys(DB.persons).length;
   if(!n){w.innerHTML='<div class="empty">Ton arbre est vide.<br>Touche ＋ pour ajouter la 1ʳᵉ personne.</div>';return;}
-  w.innerHTML='<div id="stageWrap"><div id="treeBg">'+treeBgSVG()+'</div><div id="stage"></div>'
+  w.innerHTML='<div id="stageWrap"><div id="treeBg"><div id="treeArt">'+treeBgSVG()+'</div><img id="treePhoto" src="tree.jpg?v='+APP_VER+'" alt="" onload="this.classList.add(\'on\')" onerror="this.style.display=\'none\'"><div id="treeScrim"></div></div><div id="stage"></div>'
     +'<div class="treemode"><button data-mode="famille"'+(TREEMODE==="famille"?' class="on"':'')+'>🌳 Famille</button><button data-mode="asc"'+(TREEMODE==="asc"?' class="on"':'')+'>⬆️ Ascendance</button></div>'
     +'<div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button></div>'
     +'<div class="hintpan">🌳 '+n+' personnes · glisse pour bouger · pince pour zoomer · touche une fiche</div></div>';
@@ -350,9 +354,18 @@ function layoutGridAll(){
 }
 /* Vue ASCENDANCE (comme l'image « Our Family Tree ») : la personne au pied du
    tronc, ses parents au-dessus, puis grands-parents… qui montent dans les branches. */
+/* Le « dernier de l'arbre » = le plus jeune descendant de la lignée de Kevin
+   (son fils Ronan en priorité) : c'est lui au pied du tronc. */
+function ascendanceRoot(){
+  if(P("seed_ronan"))return "seed_ronan";
+  var start=P("seed_kevin")?"seed_kevin":guessRoot();
+  var cur=start,guard=0;
+  while(guard++<12){var kids=childrenOf(cur);if(!kids.length)break;kids.sort(function(a,b){return ((yr(P(b).naissance&&P(b).naissance.date))||0)-((yr(P(a).naissance&&P(a).naissance.date))||0);});cur=kids[0];}
+  return cur||start;
+}
 function layoutAscendance(rootId){
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,PAD=T.PAD;
-  var root=(rootId&&P(rootId))?rootId:(P("seed_kevin")?"seed_kevin":guessRoot());
+  var root=(rootId&&P(rootId))?rootId:ascendanceRoot();
   if(!root)return {nodes:[],links:[],bands:[],w:BOXW*2+PAD*2,h:ROWH+PAD*2};
   var gens=[[{id:root,slot:0}]],depth=1;
   while(depth<6){var next=[],any=false;gens[depth-1].forEach(function(cell){var pp=P(cell.id);var f=pp&&pp.pere&&P(pp.pere)?pp.pere:null,m=pp&&pp.mere&&P(pp.mere)?pp.mere:null;if(f){next.push({id:f,slot:cell.slot*2});any=true;}if(m){next.push({id:m,slot:cell.slot*2+1});any=true;}});if(!any)break;gens.push(next);depth++;}
