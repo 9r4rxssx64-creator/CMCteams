@@ -184,7 +184,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.28";
+var APP_VER="v2.29";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -219,6 +219,7 @@ function _fail(){_cloudOK=false;setPill();return false;}
 async function cloudPushAll(){var t=await anonAuth();if(!t)return _fail();try{var r=await fetch(cloudBase()+".json?auth="+t,{method:"PUT",body:JSON.stringify({persons:DB.persons,meta:DB.meta})});if(!r.ok)throw 0;_cloudOK=true;setPill();return true;}catch(e){return _fail();}}
 async function cloudPull(silent){var t=await anonAuth();if(!t)return _fail();try{var r=await fetch(cloudBase()+".json?auth="+t);if(!r.ok)throw 0;var rem=await r.json();_cloudOK=true;setPill();if(!rem||!rem.persons){if(Object.keys(DB.persons).length)await cloudPushAll();return;}var changed=false;for(var id in rem.persons){var rp=rem.persons[id];if(!rp)continue;var lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;changed=true;}}
   // deletions: remote tombstone
+  if(changed){var sh=purgeSeedShadows();if(sh.length)cloudPushAll().catch(function(){});}
   if(changed){await idbSet("tree",DB);try{localStorage.setItem("arbre_v2_text",JSON.stringify(textOnly(DB)));}catch(e){}if(!silent)toast("🔄 Mis à jour depuis la famille");if(!$(".ov"))render();}
 }catch(e){return _fail();}}
 async function persist(id){await saveLocal();setPill("sav");setTimeout(setPill,1100);if(id)cloudPush(id);else cloudPushAll();}
@@ -633,7 +634,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=16;
+var SEED_VERSION=17;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -748,8 +749,29 @@ var LEGACY_OBSOLETE=[
 ];
 function purgeLegacy(){var rm=[];for(var id in DB.persons){var p=DB.persons[id];if(String(id).indexOf("seed_")===0)continue;if((p.photos&&p.photos.length)||(p.comments&&p.comments.length))continue;for(var i=0;i<LEGACY_OBSOLETE.length;i++){var o=LEGACY_OBSOLETE[i];if((p.prenom||"")===o.prenom&&(p.nom||"")===o.nom&&((p.naissance&&p.naissance.date)||"")===o.nd){rm.push(id);break;}}}
   rm.forEach(function(id){delete DB.persons[id];});return rm;}
+/* Fantômes du cloud : anciennes copies (id aléatoire, versions précédentes de
+   l'app) d'une personne du seed — même prénom+nom mais liens périmés (ex :
+   Yann/Loïc rattachés à Christian & Marie-Brigitte alors que le document dit
+   fils d'Émile). On supprime la copie VIDE (jamais si elle porte photos ou
+   commentaires) et on re-pointe TOUS les liens (père/mère/conjoints) vers la
+   fiche seed officielle. Prénom ambigu (2 seeds homonymes, ex : Jean MAIFFRET
+   1852 et 1888) → jamais touché. Tourne au boot ET à chaque cloudPull. */
+function purgeSeedShadows(){
+  function nrm(p){return ((p.prenom||"")+" "+(p.nom||"")).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();}
+  var seedBy={},amb={};
+  for(var id in DB.persons){if(String(id).indexOf("seed_")!==0)continue;var k=nrm(DB.persons[id]);if(!k)continue;if(seedBy[k]&&seedBy[k]!==id)amb[k]=true;else seedBy[k]=id;}
+  var map={},rm=[];
+  for(var id2 in DB.persons){var p=DB.persons[id2];if(String(id2).indexOf("seed_")===0)continue;if((p.photos&&p.photos.length)||(p.comments&&p.comments.length))continue;var k2=nrm(p);if(!k2||amb[k2]||!seedBy[k2])continue;map[id2]=seedBy[k2];rm.push(id2);}
+  if(!rm.length)return rm;
+  for(var id3 in DB.persons){var q=DB.persons[id3],ch=false;
+    if(map[q.pere]){q.pere=map[q.pere];ch=true;}
+    if(map[q.mere]){q.mere=map[q.mere];ch=true;}
+    if(q.conjoints&&q.conjoints.length){var nc=q.conjoints.map(function(c){return map[c]||c;}).filter(function(c,i,a){return c&&c!==id3&&a.indexOf(c)===i;});if(nc.join(",")!==(q.conjoints||[]).join(",")){q.conjoints=nc;ch=true;}}
+    if(ch)q.updatedAt=now();}
+  rm.forEach(function(x){delete DB.persons[x];});
+  return rm;}
 async function startApp(){$("#gate").classList.add("hidden");$("#app").classList.remove("hidden");ME=localStorage.getItem("arbre_me")||"";var had=await loadLocal();var seedChanged=false;if(!had||!Object.keys(DB.persons).length){seed();await saveLocal();seedChanged=true;}else if(!DB.meta||DB.meta.seedVersion!==SEED_VERSION){mergeSeed();await saveLocal();seedChanged=true;}
-  var dups=dedupePersons();var legacy=purgeLegacy();if(legacy.length)seedChanged=true;
+  var dups=dedupePersons();var legacy=purgeLegacy();var shadows=purgeSeedShadows();if(legacy.length||shadows.length)seedChanged=true;
   render();setPill();                 /* AFFICHE L'ARBRE TOUT DE SUITE — jamais bloqué par le réseau */
   if(seedChanged||dups.length){saveLocal();cloudPushAll().catch(function(){});if(dups.length)toast("🧹 "+dups.length+" doublon(s) nettoyé(s)");}
   cloudPull(false);}
