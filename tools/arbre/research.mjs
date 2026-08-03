@@ -50,14 +50,14 @@ let md = '# 🔎 Recherche généalogique automatique — fichier des décès IN
 
 let totalHits = 0, okQ = 0;
 for (const q of QUERIES) {
-  const params = new URLSearchParams({ ...q.p, size: String(q.p.size || 50) });
+  const params = new URLSearchParams({ ...q.p, fuzzy: 'false', size: String(q.p.size || 50) });
   let js = null, err = '';
   for (let attempt = 0; attempt < 3 && !js; attempt++) {
     try {
       const r = await fetch(API + '?' + params, { headers: { 'User-Agent': 'arbre-familial-kdmc/1.0 (recherche familiale privee)' } });
-      if (!r.ok) { err = 'HTTP ' + r.status; await sleep(2500); continue; }
+      if (!r.ok) { err = 'HTTP ' + r.status; await sleep(10000); continue; }
       js = await r.json();
-    } catch (e) { err = String(e && e.message || e); await sleep(2500); }
+    } catch (e) { err = String(e && e.message || e); await sleep(10000); }
   }
   writeFileSync(OUT + '/raw/' + q.id + '.json', JSON.stringify(js || { error: err }, null, 1));
   const persons = (js && js.response && js.response.persons) || [];
@@ -74,7 +74,7 @@ for (const q of QUERIES) {
     totalHits++;
   }
   md += '\n';
-  await sleep(1300); // politesse API
+  await sleep(4000); // politesse API (422 = rate-limit vu au 1er run)
 }
 md += '---\n' + okQ + '/' + QUERIES.length + ' requêtes OK · ' + totalHits + ' actes listés.\n';
 writeFileSync(OUT + '/RAPPORT.md', md);
