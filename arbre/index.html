@@ -170,7 +170,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.4";
+var APP_VER="v2.5";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -296,8 +296,23 @@ function renderTree(){
   setupPanZoom();drawStage(true);
 }
 var _lay=null;
+/* Repli infaillible : si l'agencement fancy plante sur une donnée bizarre,
+   on affiche QUAND MÊME tout le monde en grille. L'arbre n'est JAMAIS vide. */
+function layoutGridAll(){
+  var T=TREE,BOXW=T.BOXW,ROWH=T.ROWH,PAD=T.PAD;
+  var ids=Object.keys(DB.persons);ids.sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
+  if(!ids.length)return {nodes:[],links:[],bands:[],w:BOXW*2+PAD*2,h:ROWH+PAD*2};
+  var cols=Math.max(1,Math.min(ids.length,4));
+  var totalW=Math.max(cols*BOXW,BOXW*2)+PAD*2,gx0=(totalW-cols*BOXW)/2+BOXW/2;
+  var nodes=ids.map(function(x,i){var r=Math.floor(i/cols),c=i%cols;return {id:x,x:gx0+c*BOXW,y:PAD+r*ROWH,root:x==="seed_kevin"};});
+  return {nodes:nodes,links:[],bands:[{y:PAD-16,label:"Toute la famille"}],w:totalW,h:PAD+Math.ceil(ids.length/cols)*ROWH+PAD};
+}
+function safeLayout(){
+  try{var L=layoutForest();if(L&&L.nodes&&L.nodes.length&&isFinite(L.w)&&isFinite(L.h)&&L.w>0&&L.h>0)return L;}catch(e){try{console.error("layoutForest",e);}catch(_){}}
+  return layoutGridAll();
+}
 function drawStage(fit){
-  var stage=$("#stage");if(!stage)return;_lay=layoutForest();var W=_lay.w,PADX=TREE.PAD;
+  var stage=$("#stage");if(!stage)return;_lay=safeLayout();var W=_lay.w,PADX=TREE.PAD;
   var rules=(_lay.bands||[]).map(function(b){return '<line x1="'+PADX+'" y1="'+b.y+'" x2="'+(W-PADX)+'" y2="'+b.y+'" stroke="rgba(148,166,196,.16)" stroke-width="1.4" stroke-dasharray="2 9"/>';}).join("");
   var paths=_lay.links.map(function(l){if(l.couple)return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="url(#gold)" stroke-width="3.5" stroke-linecap="round"/>';var my=(l.y1+l.y2)/2;return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="url(#cyan)" stroke-width="2.6" stroke-linecap="round"/>';}).join("");
   var defs='<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f0c874"/><stop offset="1" stop-color="#ffe6a3"/></linearGradient><linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5be0d6"/><stop offset="1" stop-color="#7d9fd6"/></linearGradient></defs>';
@@ -493,7 +508,13 @@ async function checkUpdate(){
   try{
     var r=await fetch("index.html?_v="+Date.now(),{cache:"reload"});if(!r.ok)return;
     var t=await r.text();var m=t.match(/APP_VER\s*=\s*"([^"]+)"/);
-    if(m&&m[1]&&m[1]!==APP_VER){
+    function verNum(s){var g=String(s).match(/(\d+)\.(\d+)/);return g?(+g[1]*1000+ +g[2]):0;}
+    /* On ne recharge QUE vers une version strictement plus récente → jamais de boucle
+       si le CDN sert temporairement une ancienne version sur un de ses points. */
+    if(m&&m[1]&&verNum(m[1])>verNum(APP_VER)){
+      var last=+(localStorage.getItem("arbre_upd_ts")||0);
+      if(Date.now()-last<90000)return; /* + garde temporelle : 1 rechargement max / 90 s */
+      localStorage.setItem("arbre_upd_ts",String(Date.now()));
       try{if("serviceWorker"in navigator){var rs=await navigator.serviceWorker.getRegistrations();for(var i=0;i<rs.length;i++){try{await rs[i].unregister();}catch(e){}}}}catch(e){}
       try{if(window.caches){var ks=await caches.keys();for(var j=0;j<ks.length;j++){try{await caches.delete(ks[j]);}catch(e){}}}}catch(e){}
       location.replace(location.pathname+"?_upd="+Date.now());
