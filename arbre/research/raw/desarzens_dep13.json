@@ -5,64 +5,16 @@
     "score": "desc"
    }
   ],
+  "fuzzy": "false",
   "lastName": "DESARZENS",
   "birthDepartment": "13"
  },
  "response": {
-  "total": 1,
-  "maxScoreES": 17.973938,
+  "total": 0,
+  "maxScoreES": null,
   "size": 100,
   "page": 1,
-  "delay": 65,
-  "persons": [
-   {
-    "score": 0,
-    "source": "2022",
-    "sourceLine": 397658,
-    "scores": {
-     "name": {
-      "score": 0.45,
-      "first": 0.5,
-      "last": 0.93,
-      "fuzz": 0.34
-     },
-     "score": 0,
-     "es": 0.09
-    },
-    "id": "NFlPwJbkB0SI",
-    "name": {
-     "first": [
-      "Claude",
-      "Alain"
-     ],
-     "last": "De Sarzens"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19410319",
-     "location": {
-      "city": "Marseille",
-      "code": "13055",
-      "codeHistory": "13055",
-      "departmentCode": "13",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.2599669,
-      "longitude": 5.3707409
-     }
-    },
-    "death": {
-     "date": "20220510",
-     "certificateId": "2701",
-     "age": 81,
-     "location": {
-      "code": "99140",
-      "codeHistory": "99140",
-      "country": "Suisse",
-      "countryCode": "CHE"
-     }
-    }
-   }
-  ]
+  "delay": 8,
+  "persons": []
  }
 }

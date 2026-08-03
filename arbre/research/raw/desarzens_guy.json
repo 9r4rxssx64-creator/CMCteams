@@ -5,18 +5,19 @@
     "score": "desc"
    }
   ],
+  "fuzzy": "false",
   "firstName": "Guy",
   "lastName": "DESARZENS"
  },
  "response": {
-  "total": 4,
-  "maxScoreES": 138.55743,
+  "total": 2,
+  "maxScoreES": 19.02349,
   "size": 30,
   "page": 1,
-  "delay": 87,
+  "delay": 5,
   "persons": [
    {
-    "score": 0.75,
+    "score": 0.85,
     "source": "2005",
     "sourceLine": 497149,
     "scores": {
@@ -28,10 +29,10 @@
      "birthLocation": {
       "score": 0.75
      },
-     "score": 0.75,
-     "es": 0.69,
-     "multiMatchPenalty": 0.8,
-     "multiMatch": 3
+     "score": 0.85,
+     "es": 0.1,
+     "multiMatchPenalty": 0.9,
+     "multiMatch": 2
     },
     "id": "osfHYMnAF3_Y",
     "name": {
@@ -78,7 +79,7 @@
     }
    },
    {
-    "score": 0.75,
+    "score": 0.85,
     "source": "1998",
     "sourceLine": 68102,
     "scores": {
@@ -90,10 +91,10 @@
      "birthLocation": {
       "score": 0.75
      },
-     "score": 0.75,
-     "es": 0.69,
-     "multiMatchPenalty": 0.8,
-     "multiMatch": 3
+     "score": 0.85,
+     "es": 0.1,
+     "multiMatchPenalty": 0.9,
+     "multiMatch": 2
     },
     "id": "6PYNw2iuD95G",
     "name": {
@@ -129,125 +130,6 @@
       "codeHistory": "99131",
       "country": "Belgique",
       "countryCode": "BEL"
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1994",
-    "sourceLine": 431858,
-    "scores": {
-     "name": {
-      "score": 0.57,
-      "first": 1,
-      "last": 0.69
-     },
-     "birthLocation": {
-      "score": 0.75
-     },
-     "score": 0.34,
-     "es": 0.5,
-     "multiMatchPenalty": 0.45,
-     "multiMatch": 3
-    },
-    "id": "o7jtPDOO9uHo",
-    "name": {
-     "first": [
-      "Guy",
-      "Andre",
-      "Roger"
-     ],
-     "last": "Darzens"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19240406",
-     "location": {
-      "city": "Toulouse",
-      "code": "31555",
-      "codePostal": [
-       "31000",
-       "31100",
-       "31500",
-       "31400",
-       "31300",
-       "31200"
-      ],
-      "codeHistory": "31555",
-      "departmentCode": "31",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.6080207,
-      "longitude": 1.4382266
-     }
-    },
-    "death": {
-     "date": "19940730",
-     "certificateId": "0",
-     "age": 70,
-     "location": {
-      "code": "99417",
-      "codeHistory": "99417",
-      "country": "Chili",
-      "countryCode": "CHL"
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "2022",
-    "sourceLine": 171970,
-    "scores": {
-     "name": {
-      "score": 0.03,
-      "first": 0.05,
-      "last": 0.69
-     },
-     "score": 0,
-     "es": 0.19
-    },
-    "id": "LBtvgflacFGR",
-    "name": {
-     "first": [
-      "Maurice",
-      "Jean",
-      "Guy"
-     ],
-     "last": "Desablens"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19520711",
-     "location": {
-      "city": "Versailles",
-      "code": "78646",
-      "codePostal": [
-       "78000"
-      ],
-      "codeHistory": "78646",
-      "departmentCode": "78",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 48.8018949,
-      "longitude": 2.1305746
-     }
-    },
-    "death": {
-     "date": "20220310",
-     "certificateId": "247",
-     "age": 69,
-     "location": {
-      "city": "Melun",
-      "code": "77288",
-      "codePostal": [
-       "77000"
-      ],
-      "codeHistory": "77288",
-      "departmentCode": "77",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 48.5408444,
-      "longitude": 2.658603
      }
     }
    }

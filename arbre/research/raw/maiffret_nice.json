@@ -5,15 +5,16 @@
     "score": "desc"
    }
   ],
+  "fuzzy": "false",
   "lastName": "MAIFFRET",
   "birthCity": "Nice"
  },
  "response": {
-  "total": 113,
-  "maxScoreES": 56.541916,
+  "total": 80,
+  "maxScoreES": 18.636082,
   "size": 100,
   "page": 1,
-  "delay": 787,
+  "delay": 476,
   "persons": [
    {
     "score": 0,
@@ -30,7 +31,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -99,7 +100,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -166,7 +167,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -234,7 +235,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -303,7 +304,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -372,7 +373,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -440,7 +441,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -506,7 +507,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -571,7 +572,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -640,7 +641,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -706,7 +707,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -772,7 +773,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -842,7 +843,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -911,7 +912,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -980,7 +981,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1049,7 +1050,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1115,7 +1116,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1181,7 +1182,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1250,7 +1251,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1316,7 +1317,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1384,7 +1385,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1452,7 +1453,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1521,7 +1522,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1590,7 +1591,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1659,7 +1660,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1729,7 +1730,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1796,7 +1797,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1862,7 +1863,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1931,7 +1932,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -1997,7 +1998,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2059,7 +2060,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2129,7 +2130,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2199,7 +2200,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2266,7 +2267,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2334,7 +2335,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2401,7 +2402,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2470,7 +2471,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2539,7 +2540,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2607,7 +2608,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2673,7 +2674,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2742,7 +2743,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2808,7 +2809,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2878,7 +2879,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -2948,7 +2949,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3007,7 +3008,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3076,7 +3077,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3142,7 +3143,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3211,7 +3212,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3281,7 +3282,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3348,7 +3349,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3416,7 +3417,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3485,7 +3486,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3555,7 +3556,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3625,7 +3626,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3695,7 +3696,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3765,7 +3766,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3834,7 +3835,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3901,7 +3902,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -3968,7 +3969,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4037,7 +4038,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4105,7 +4106,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4173,7 +4174,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4240,7 +4241,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4309,7 +4310,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4377,7 +4378,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4444,7 +4445,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4514,7 +4515,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4582,7 +4583,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4650,7 +4651,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4719,7 +4720,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4788,7 +4789,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4857,7 +4858,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4927,7 +4928,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -4996,7 +4997,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -5062,7 +5063,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -5127,7 +5128,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -5194,7 +5195,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -5264,7 +5265,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -5330,7 +5331,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -5400,7 +5401,7 @@
       "score": 1
      },
      "score": 0.32,
-     "es": 0.28,
+     "es": 0.09,
      "multiMatchPenalty": 0.51,
      "multiMatch": 80
     },
@@ -5449,1245 +5450,6 @@
       "countryCode": "FRA",
       "latitude": 43.7730098,
       "longitude": 7.1592508
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1982",
-    "sourceLine": 18892,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "qxdbE4vutNtZ",
-    "name": {
-     "first": [
-      "Pierre-Jean",
-      "Philippe",
-      "Michel"
-     ],
-     "last": "Meiffret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19570928",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19820608",
-     "certificateId": "886",
-     "age": 24,
-     "location": {
-      "city": "Besançon",
-      "code": "25056",
-      "codePostal": [
-       "25000"
-      ],
-      "codeHistory": "25056",
-      "departmentCode": "25",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 47.259369,
-      "longitude": 6.0271553
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "2023",
-    "sourceLine": 230595,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "W0rrdovtxLIg",
-    "name": {
-     "first": [
-      "Emmanuel"
-     ],
-     "last": "Meiffret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19890106",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "20230420",
-     "certificateId": "97",
-     "age": 34,
-     "location": {
-      "city": "Vence",
-      "code": "06157",
-      "codePostal": [
-       "06140"
-      ],
-      "codeHistory": "06157",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.734113,
-      "longitude": 7.1087933
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1979",
-    "sourceLine": 17141,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "xLj3eqjg_MvW",
-    "name": {
-     "first": [
-      "Elisa",
-      "Francine"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "F",
-    "birth": {
-     "date": "19000430",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19790802",
-     "certificateId": "125",
-     "age": 79,
-     "location": {
-      "city": "Cantaron",
-      "code": "06031",
-      "codePostal": [
-       "06340"
-      ],
-      "codeHistory": "06031",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7692107,
-      "longitude": 7.3138395
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1988",
-    "sourceLine": 18879,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "9bmh4oQeOV2P",
-    "name": {
-     "first": [
-      "Charles",
-      "Daniel",
-      "Pierre"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19240308",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19880531",
-     "certificateId": "2660",
-     "age": 64,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1992",
-    "sourceLine": 77135,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "rxXfLTMOUr9T",
-    "name": {
-     "first": [
-      "Francoise",
-      "Pauline"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "F",
-    "birth": {
-     "date": "19080709",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19920124",
-     "certificateId": "486",
-     "age": 83,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1975",
-    "sourceLine": 16408,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "bx6R7MV5kUyT",
-    "name": {
-     "first": [
-      "Emilie"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "F",
-    "birth": {
-     "date": "18920904",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19750626",
-     "certificateId": "2869",
-     "age": 82,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1992",
-    "sourceLine": 24953,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "M4WryQ_W55hY",
-    "name": {
-     "first": [
-      "Theodore"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19040101",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19911210",
-     "certificateId": "5680",
-     "age": 87,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1990",
-    "sourceLine": 129009,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "NEAQhZAbrOgy",
-    "name": {
-     "first": [
-      "Emmanuel",
-      "Joseph",
-      "Antoine"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19070806",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19900215",
-     "certificateId": "242",
-     "age": 82,
-     "location": {
-      "city": "Antibes",
-      "code": "06004",
-      "codePostal": [
-       "06600",
-       "06160"
-      ],
-      "codeHistory": "06004",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.5723846,
-      "longitude": 7.1192195
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1997",
-    "sourceLine": 24730,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "bl5OGO2hSGoq",
-    "name": {
-     "first": [
-      "Claude",
-      "Victor"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19470726",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19961201",
-     "certificateId": "00164",
-     "age": 49,
-     "location": {
-      "city": "Contes",
-      "code": "06048",
-      "codePostal": [
-       "06390"
-      ],
-      "codeHistory": "06048",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.8094473,
-      "longitude": 7.3244859
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1993",
-    "sourceLine": 18634,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "jSNq8PqOde3I",
-    "name": {
-     "first": [
-      "Rose",
-      "Angele",
-      "Emilie"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "F",
-    "birth": {
-     "date": "19100604",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19921220",
-     "certificateId": "64",
-     "age": 82,
-     "location": {
-      "city": "Biot",
-      "code": "06018",
-      "codePostal": [
-       "06410"
-      ],
-      "codeHistory": "06018",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.6245015,
-      "longitude": 7.082168
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1983",
-    "sourceLine": 18229,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "prZtb-oBfEHh",
-    "name": {
-     "first": [
-      "Pauline"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "F",
-    "birth": {
-     "date": "18910428",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19830306",
-     "certificateId": "1215",
-     "age": 91,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "2007",
-    "sourceLine": 258955,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "6Bv9JP9yr0GU",
-    "name": {
-     "first": [
-      "Josephine",
-      "Charlotte"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "F",
-    "birth": {
-     "date": "19091008",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "20070620",
-     "certificateId": "2459",
-     "age": 97,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1999",
-    "sourceLine": 217196,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "DkoRAreooOdb",
-    "name": {
-     "first": [
-      "Therese"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "F",
-    "birth": {
-     "date": "19190915",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19980324",
-     "certificateId": "000001489",
-     "age": 78,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "2004",
-    "sourceLine": 320559,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "rmaGdZtAsJ-F",
-    "name": {
-     "first": [
-      "Raymond",
-      "Jean",
-      "Baptiste"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19141106",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "20040723",
-     "certificateId": "288",
-     "age": 89,
-     "location": {
-      "city": "Mougins",
-      "code": "06085",
-      "codePostal": [
-       "06250"
-      ],
-      "codeHistory": "06085",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.5904206,
-      "longitude": 6.9990622
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "2014",
-    "sourceLine": 2592,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "GOc3HbMolcns",
-    "name": {
-     "first": [
-      "Rose",
-      "Charlotte",
-      "Emmanuelle"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "F",
-    "birth": {
-     "date": "19180809",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "20140122",
-     "certificateId": "349",
-     "age": 95,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "2018",
-    "sourceLine": 573179,
-    "scores": {
-     "name": {
-      "score": 0.44,
-      "first": 0.5,
-      "last": 0.92
-     },
-     "score": 0,
-     "es": 0.15
-    },
-    "id": "plLLPxRWIdVy",
-    "name": {
-     "first": [
-      "Edouard"
-     ],
-     "last": "Maifret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19250920",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "20181207",
-     "certificateId": "4952",
-     "age": 93,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1977",
-    "sourceLine": 16947,
-    "scores": {
-     "name": {
-      "score": 0.38,
-      "first": 0.5,
-      "last": 0.83
-     },
-     "score": 0,
-     "es": 0.14
-    },
-    "id": "zB-YDqXkd69h",
-    "name": {
-     "first": [
-      "Thierry",
-      "Joseph",
-      "Auguste"
-     ],
-     "last": "Meyffret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19691018",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19770111",
-     "certificateId": "01",
-     "age": 7,
-     "location": {
-      "city": "Saint-Antonin",
-      "code": "06115",
-      "codePostal": [
-       "06260"
-      ],
-      "codeHistory": "06115",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.9085511,
-      "longitude": 6.9771944
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "1996",
-    "sourceLine": 383951,
-    "scores": {
-     "name": {
-      "score": 0.26,
-      "first": 0.5,
-      "last": 0.65
-     },
-     "score": 0,
-     "es": 0.14
-    },
-    "id": "U07VwePDq50Y",
-    "name": {
-     "first": [
-      "Georges",
-      "Jean"
-     ],
-     "last": "Maindret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19210306",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "19960616",
-     "certificateId": "02746",
-     "age": 75,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "2003",
-    "sourceLine": 187504,
-    "scores": {
-     "name": {
-      "score": 0.39,
-      "first": 0.5,
-      "last": 0.85
-     },
-     "score": 0,
-     "es": 0.14
-    },
-    "id": "7mVrkvEav1Pe",
-    "name": {
-     "first": [
-      "Lucien",
-      "Cesar"
-     ],
-     "last": "Maiffredi"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19340703",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "20030423",
-     "certificateId": "1739",
-     "age": 68,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    }
-   },
-   {
-    "score": 0,
-    "source": "2015",
-    "sourceLine": 179355,
-    "scores": {
-     "name": {
-      "score": 0.26,
-      "first": 0.5,
-      "last": 0.65
-     },
-     "score": 0,
-     "es": 0.14
-    },
-    "id": "bsAp-oNq2WSu",
-    "name": {
-     "first": [
-      "Joe",
-      "Jean",
-      "Max"
-     ],
-     "last": "Jauffret"
-    },
-    "sex": "M",
-    "birth": {
-     "date": "19251007",
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
-     }
-    },
-    "death": {
-     "date": "20150414",
-     "certificateId": "1751",
-     "age": 89,
-     "location": {
-      "city": "Nice",
-      "code": "06088",
-      "codePostal": [
-       "06300",
-       "06200",
-       "06100",
-       "06000"
-      ],
-      "codeHistory": "06088",
-      "departmentCode": "06",
-      "country": "France",
-      "countryCode": "FRA",
-      "latitude": 43.7105459,
-      "longitude": 7.2681887
      }
     }
    }

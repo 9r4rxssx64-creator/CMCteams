@@ -1,3 +1,477 @@
 {
- "error": "HTTP 422"
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "MAIFFRET",
+  "birthCity": "Beaulieu-sur-Mer"
+ },
+ "response": {
+  "total": 7,
+  "maxScoreES": 23.851017,
+  "size": 100,
+  "page": 1,
+  "delay": 21,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 13072,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.12,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 7
+    },
+    "id": "_Wu2WjLd77ex",
+    "name": {
+     "first": [
+      "Leonie",
+      "Rosa",
+      "Desiree"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18950919",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "19720130",
+     "certificateId": "9",
+     "age": 76,
+     "location": {
+      "city": [
+       "Villefranche",
+       "Villefranche-sur-Mer"
+      ],
+      "code": "06159",
+      "codePostal": [
+       "06230"
+      ],
+      "codeHistory": "06159",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7062163,
+      "longitude": 7.31776
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1982",
+    "sourceLine": 16517,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.12,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 7
+    },
+    "id": "3CQSYx2qCq7V",
+    "name": {
+     "first": [
+      "Victor",
+      "Jules"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19140302",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "19820821",
+     "certificateId": "3784",
+     "age": 68,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1988",
+    "sourceLine": 16535,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.12,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 7
+    },
+    "id": "MJFr5Qf9L0so",
+    "name": {
+     "first": [
+      "Jacqueline",
+      "Justine",
+      "Pierrette"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19261222",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "19881121",
+     "certificateId": "5401",
+     "age": 61,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1994",
+    "sourceLine": 336563,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.12,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 7
+    },
+    "id": "e6vSw47xZ_FH",
+    "name": {
+     "first": [
+      "Josette",
+      "Cesarine",
+      "Henriette"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19220131",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "19940511",
+     "certificateId": "2261    N",
+     "age": 72,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1994",
+    "sourceLine": 185577,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.12,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 7
+    },
+    "id": "2ts_aJpuJzWm",
+    "name": {
+     "first": [
+      "Leon",
+      "Blaise",
+      "Theresius"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19100425",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "19940313",
+     "certificateId": "1367    N",
+     "age": 83,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1993",
+    "sourceLine": 118216,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.12,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 7
+    },
+    "id": "ui0xCEDHknll",
+    "name": {
+     "first": [
+      "Alexandre"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19060710",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "19930225",
+     "certificateId": "19",
+     "age": 86,
+     "location": {
+      "city": [
+       "Villefranche",
+       "Villefranche-sur-Mer"
+      ],
+      "code": "06159",
+      "codePostal": [
+       "06230"
+      ],
+      "codeHistory": "06159",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7062163,
+      "longitude": 7.31776
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2010",
+    "sourceLine": 102868,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.32,
+     "es": 0.12,
+     "multiMatchPenalty": 0.51,
+     "multiMatch": 7
+    },
+    "id": "BPQPjNWdUD-q",
+    "name": {
+     "first": [
+      "Jean",
+      "Antoine",
+      "Pierre"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19250518",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "20100122",
+     "certificateId": "00224",
+     "age": 84,
+     "location": {
+      "code": "99138",
+      "codeHistory": "99138",
+      "country": "Monaco",
+      "countryCode": "MCO"
+     }
+    }
+   }
+  ]
+ }
 }
