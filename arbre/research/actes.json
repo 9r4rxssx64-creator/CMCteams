@@ -1,0 +1,145 @@
+{
+ "seed_mt_maiffret": {
+  "acteUrl": "https://deces.matchid.io/id/50UZUgMMtNwH",
+  "nom": "Maiffret",
+  "prenoms": "Marie Therese",
+  "naissance": "19141023",
+  "lieuNaissance": "Nice",
+  "deces": "20000219",
+  "lieuDeces": "",
+  "certificateId": "0"
+ },
+ "seed_leonie": {
+  "acteUrl": "https://deces.matchid.io/id/_Wu2WjLd77ex",
+  "nom": "Maiffret",
+  "prenoms": "Leonie Rosa Desiree",
+  "naissance": "18950919",
+  "lieuNaissance": "Beaulieu-sur-Mer",
+  "deces": "19720130",
+  "lieuDeces": [
+   "Villefranche",
+   "Villefranche-sur-Mer"
+  ],
+  "certificateId": "9"
+ },
+ "seed_lucette_vdb": {
+  "acteUrl": "https://deces.matchid.io/id/rO5QX3w6sFnW",
+  "nom": "Van Den Bosch",
+  "prenoms": "Lucette Therese",
+  "naissance": "19200212",
+  "lieuNaissance": "Beaulieu-sur-Mer",
+  "deces": "20101216",
+  "lieuDeces": "Ramatuelle",
+  "certificateId": "18"
+ },
+ "seed_alex_vdb": {
+  "acteUrl": "https://deces.matchid.io/id/1X2L5T-fjruX",
+  "nom": "Van Den Bosch",
+  "prenoms": "Alexandre Robert Victor",
+  "naissance": "19210725",
+  "lieuNaissance": "Beaulieu-sur-Mer",
+  "deces": "20221013",
+  "lieuDeces": "Beaulieu-sur-Mer",
+  "certificateId": "36"
+ },
+ "seed_francois_mc": {
+  "acteUrl": "https://deces.matchid.io/id/lmAX_0gFBqZe",
+  "nom": "Maiffret",
+  "prenoms": "Francois Joseph Philippe",
+  "naissance": "19121209",
+  "lieuNaissance": "Monaco",
+  "deces": "20041106",
+  "lieuDeces": "Nice",
+  "certificateId": "4541"
+ },
+ "seed_myriam_mc": {
+  "acteUrl": "https://deces.matchid.io/id/x4kL8TBj4RML",
+  "nom": "Maiffret",
+  "prenoms": "Myriam Augusta Olga",
+  "naissance": "19350305",
+  "lieuNaissance": "Monaco",
+  "deces": "20241006",
+  "lieuDeces": "Nice",
+  "certificateId": "3870"
+ },
+ "seed_jap_maiffret": {
+  "acteUrl": "https://deces.matchid.io/id/BPQPjNWdUD-q",
+  "nom": "Maiffret",
+  "prenoms": "Jean Antoine Pierre",
+  "naissance": "19250518",
+  "lieuNaissance": "Beaulieu-sur-Mer",
+  "deces": "20100122",
+  "lieuDeces": "",
+  "certificateId": "00224"
+ },
+ "seed_victorj_maiffret": {
+  "acteUrl": "https://deces.matchid.io/id/3CQSYx2qCq7V",
+  "nom": "Maiffret",
+  "prenoms": "Victor Jules",
+  "naissance": "19140302",
+  "lieuNaissance": "Beaulieu-sur-Mer",
+  "deces": "19820821",
+  "lieuDeces": "Nice",
+  "certificateId": "3784"
+ },
+ "seed_claude_desarzens": {
+  "acteUrl": "https://deces.matchid.io/id/NFlPwJbkB0SI",
+  "nom": "De Sarzens",
+  "prenoms": "Claude Alain",
+  "naissance": "19410319",
+  "lieuNaissance": "Marseille",
+  "deces": "20220510",
+  "lieuDeces": "",
+  "certificateId": "2701"
+ },
+ "seed_jmv_sauvaigo": {
+  "acteUrl": "https://deces.matchid.io/id/TRUO05b-SzgQ",
+  "nom": "Sauvaigo",
+  "prenoms": "Jean Marius Victor",
+  "naissance": "19120712",
+  "lieuNaissance": "Nice",
+  "deces": "19990909",
+  "lieuDeces": "Nice",
+  "certificateId": "000004103"
+ },
+ "seed_marie_joe": {
+  "acteUrl": "https://deces.matchid.io/id/-Gi6moX8QES8",
+  "nom": "Sauvaigo",
+  "prenoms": "Marie Jose",
+  "naissance": "19431111",
+  "lieuNaissance": "Monaco",
+  "deces": "20211126",
+  "lieuDeces": "",
+  "certificateId": "52"
+ },
+ "seed_michel_maiffret": {
+  "acteUrl": "https://deces.matchid.io/id/8K3SODdfjBZm",
+  "nom": "Maiffret",
+  "prenoms": "Michel Jean-Marie",
+  "naissance": "19370819",
+  "lieuNaissance": "Nice",
+  "deces": "20050318",
+  "lieuDeces": "Beaulieu-sur-Mer",
+  "certificateId": "06"
+ },
+ "seed_leon_maiffret": {
+  "acteUrl": "https://deces.matchid.io/id/2ts_aJpuJzWm",
+  "nom": "Maiffret",
+  "prenoms": "Leon Blaise Theresius",
+  "naissance": "19100425",
+  "lieuNaissance": "Beaulieu-sur-Mer",
+  "deces": "19940313",
+  "lieuDeces": "Nice",
+  "certificateId": "1367    N"
+ },
+ "seed_josette_maiffret": {
+  "acteUrl": "https://deces.matchid.io/id/e6vSw47xZ_FH",
+  "nom": "Maiffret",
+  "prenoms": "Josette Cesarine Henriette",
+  "naissance": "19220131",
+  "lieuNaissance": "Beaulieu-sur-Mer",
+  "deces": "19940511",
+  "lieuDeces": "Nice",
+  "certificateId": "2261    N"
+ }
+}
