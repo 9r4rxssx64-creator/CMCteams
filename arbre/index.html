@@ -358,14 +358,20 @@ var SRC={
   monaco1900:{label:"Archives Monaco (base ≥1900)",url:"https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"},
   matchid:{label:"Fichier INSEE (matchID)",url:"https://deces.matchid.io"},
   ad06:{label:"Archives 06 (Nice/Villefranche)",url:"https://archives06.fr"},
-  cimBeaulieu:{label:"Cimetière de Beaulieu-sur-Mer",url:"https://en.geneanet.org/cemetery/collection/17161-cimetiere-communal-de-beaulieu-sur-mer"}
+  cimBeaulieu:{label:"Cimetière de Beaulieu-sur-Mer",url:"https://en.geneanet.org/cemetery/collection/17161-cimetiere-communal-de-beaulieu-sur-mer"},
+  ad13:{label:"Archives 13 · état civil Salon-de-Provence",url:"https://www.archives13.fr/archive/recherche/etatcivil/n:64"},
+  davel:{label:"Archives vaudoises (Sarzens/Lucens, Suisse)",url:"https://davel-vd.ch/eb"},
+  gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
+  sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
 function seed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
   add({id:"seed_mt_maiffret",prenom:"Marie-Thérèse",nom:"MAIFFRET",sexe:"F",naissance:{date:"23.10.1911"},deces:{},conjoints:["seed_victor_sauvaigo"],notes:"Née le 23.10.1911 (document). Épouse de Victor Sauvaigo. MAIFFRET = nom provençal d'origine germanique (Mathfrid : force + paix), rameau Meiffren/Meiffret. Décès (si ≥1970) vérifiable à l'INSEE.",sources:[SRC.gMaiffret,SRC.beaulieu1,SRC.matchid]});
   add({id:"seed_marienoel",prenom:"Marie-Noël",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Mère de Kevin, née à Monaco."});
-  add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{lieu:"Monaco"},mere:"seed_marienoel",notes:"Né à Monaco. Côté paternel (de Sarzance / Salon-de-Provence, Bouches-du-Rhône) encore à ajouter."});
+  add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique)."});
+  /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
+  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). Prochaine étape : ses parents (grands-parents paternels de Kevin) — acte de naissance 1944 à Salon aux Archives 13, puis remontée vers le Vaud (Sarzens/Lucens) si le grand-père était suisse.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
   /* — Jonction Sauvaigo ⇄ Maiffret (confirmée, index Geneanet) — */
   add({prenom:"Jules",nom:"SAUVAIGO",sexe:"M",naissance:{date:"1858 ?"},conjoints:[],notes:"✅ Marié en 1883 à Victorine MAIFFRET (index Geneanet). Lien exact à la lignée de Victor Sauvaigo à confirmer.",sources:[SRC.gSauvaigo,SRC.monacoTree]});
   add({prenom:"Victorine",nom:"MAIFFRET",sexe:"F",naissance:{date:"1860 ?"},notes:"✅ Mariage 1883 avec Jules Sauvaigo (index Geneanet) — conforme au document. À rattacher.",sources:[SRC.gMaiffret,SRC.marieclaire]});
