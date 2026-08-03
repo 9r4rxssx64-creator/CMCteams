@@ -1,0 +1,193 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "DESARZENS",
+  "birthCountry": "Suisse"
+ },
+ "response": {
+  "total": 3,
+  "maxScoreES": 20.236326,
+  "size": 100,
+  "page": 1,
+  "delay": 7,
+  "persons": [
+   {
+    "score": 0.44,
+    "source": "1992",
+    "sourceLine": 927,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 1,
+      "score": 1
+     },
+     "score": 0.44,
+     "es": 0.1,
+     "multiMatchPenalty": 0.7,
+     "multiMatch": 3
+    },
+    "id": "ml1AsJaK9qWy",
+    "name": {
+     "first": [
+      "Paul",
+      "Robert"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19081001",
+     "location": {
+      "city": "Lausanne",
+      "code": "99140",
+      "codeHistory": "99140",
+      "country": "Suisse",
+      "countryCode": "CHE"
+     }
+    },
+    "death": {
+     "date": "19911217",
+     "certificateId": "25",
+     "age": 83,
+     "location": {
+      "city": "Charnay-lès-Mâcon",
+      "code": "71105",
+      "codePostal": [
+       "71850"
+      ],
+      "codeHistory": "71105",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.302207,
+      "longitude": 4.7811353
+     }
+    }
+   },
+   {
+    "score": 0.44,
+    "source": "1995",
+    "sourceLine": 130440,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 1,
+      "score": 1
+     },
+     "score": 0.44,
+     "es": 0.1,
+     "multiMatchPenalty": 0.7,
+     "multiMatch": 3
+    },
+    "id": "1KDObSfkmnRL",
+    "name": {
+     "first": [
+      "Roger",
+      "Ulysse"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19090303",
+     "location": {
+      "city": "Villeret",
+      "code": "99140",
+      "codeHistory": "99140",
+      "country": "Suisse",
+      "countryCode": "CHE"
+     }
+    },
+    "death": {
+     "date": "19950301",
+     "certificateId": "113",
+     "age": 85,
+     "location": {
+      "city": "Laon",
+      "code": "02408",
+      "codePostal": [
+       "02000"
+      ],
+      "codeHistory": "02408",
+      "departmentCode": "02",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.5751842,
+      "longitude": 3.6182566
+     }
+    }
+   },
+   {
+    "score": 0.44,
+    "source": "2014",
+    "sourceLine": 504569,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 1,
+      "score": 1
+     },
+     "score": 0.44,
+     "es": 0.1,
+     "multiMatchPenalty": 0.7,
+     "multiMatch": 3
+    },
+    "id": "EjqpBwFfbPPr",
+    "name": {
+     "first": [
+      "Roland",
+      "Olivier",
+      "Louis"
+     ],
+     "last": "Desarzens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19380116",
+     "location": {
+      "city": "Lausanne",
+      "code": "99140",
+      "codeHistory": "99140",
+      "country": "Suisse",
+      "countryCode": "CHE"
+     }
+    },
+    "death": {
+     "date": "20141109",
+     "certificateId": "7",
+     "age": 76,
+     "location": {
+      "city": "Saint-Bonnet-en-Bresse",
+      "code": "71396",
+      "codePostal": [
+       "71310"
+      ],
+      "codeHistory": "71396",
+      "departmentCode": "71",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.8582939,
+      "longitude": 5.1835095
+     }
+    }
+   }
+  ]
+ }
+}
