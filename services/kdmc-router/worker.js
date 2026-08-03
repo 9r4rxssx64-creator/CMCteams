@@ -30,6 +30,7 @@ const ROUTES = {
   'bot.kd-mc.com': '/CMCteams/tools/crypto-bot-dashboard', // Tableau de bord crypto-bot (Kevin 2026-07-03) — admin-gated via /__bot/*
   'beatbot.kd-mc.com': '/CMCteams/tools/poolrobot', // PoolPilot — app robot piscine Beatbot (Kevin 2026-07-05)
   'autorisations.kd-mc.com': '/CMCteams/tools/approvals', // Coffre d'autorisations — admin only (Kevin 2026-07-10)
+  'arbre.kd-mc.com': '/CMCteams/arbre', // Arbre généalogique familial — protégé par code famille (Kevin 2026-08-03)
 };
 
 export default {
