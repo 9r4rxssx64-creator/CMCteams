@@ -22,6 +22,8 @@ jobs:
           node-version: 20
       - name: Recherche INSEE (tous les noms de la famille)
         run: node tools/arbre/research.mjs
+      - name: Actes officiels par personne (liens directs)
+        run: node tools/arbre/research-actes.mjs
       - name: Commit rapport
         run: |
           git config user.name "arbre-bot"
