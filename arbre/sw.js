@@ -1,5 +1,5 @@
 /* Arbre familial — Service Worker : réseau d'abord (toujours à jour), repli cache hors-ligne. */
-var CACHE = "arbre-v2.2";
+var CACHE = "arbre-v2.3";
 var ASSETS = ["./", "index.html", "manifest.json", "icon.svg"];
 self.addEventListener("install", function (e) {
   self.skipWaiting();
@@ -15,6 +15,7 @@ self.addEventListener("fetch", function (e) {
   if (req.method !== "GET") return;
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // ne touche pas Firebase/API
+  if (url.search.indexOf("_v=") >= 0 || url.search.indexOf("_upd=") >= 0) return; // MAJ auto : réseau direct
   e.respondWith(
     fetch(req).then(function (r) {
       if (r && r.ok) { var cp = r.clone(); caches.open(CACHE).then(function (c) { c.put(req, cp); }); }

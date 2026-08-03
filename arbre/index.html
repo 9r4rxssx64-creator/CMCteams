@@ -163,7 +163,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.2";
+var APP_VER="v2.3";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -439,8 +439,27 @@ async function boot(){await idbOpen();if(!localStorage.getItem("arbre_codehash")
   if(sessionStorage.getItem("arbre_unlocked")&&localStorage.getItem("arbre_trust")==="1"){CODEHASH=stored;return startApp();}
   async function tryGate(){var c=$("#gateCode").value;if(!c){toast("Entre le code");return;}var h=await sha256("arbre::"+c.trim());if(h===stored){CODEHASH=h;sessionStorage.setItem("arbre_unlocked","1");localStorage.setItem("arbre_trust","1");startApp();}else{toast("Code incorrect");$("#gateCode").value="";}}
   $("#gateBtn").onclick=tryGate;$("#gateCode").addEventListener("keydown",function(e){if(e.key==="Enter")tryGate();});$("#gateCode").focus();}
+/* ---------- MAJ auto FORCÉE : toujours la dernière version, sans rien faire ---------- */
+var _updTs=0;
+async function checkUpdate(){
+  if(Date.now()-_updTs<25000)return;_updTs=Date.now();
+  if(document.querySelector(".ov"))return; /* ne coupe pas une saisie en cours */
+  try{
+    var r=await fetch("index.html?_v="+Date.now(),{cache:"reload"});if(!r.ok)return;
+    var t=await r.text();var m=t.match(/APP_VER\s*=\s*"([^"]+)"/);
+    if(m&&m[1]&&m[1]!==APP_VER){
+      try{if("serviceWorker"in navigator){var rs=await navigator.serviceWorker.getRegistrations();for(var i=0;i<rs.length;i++){try{await rs[i].unregister();}catch(e){}}}}catch(e){}
+      try{if(window.caches){var ks=await caches.keys();for(var j=0;j<ks.length;j++){try{await caches.delete(ks[j]);}catch(e){}}}}catch(e){}
+      location.replace(location.pathname+"?_upd="+Date.now());
+    }
+  }catch(e){}
+}
 boot();
 if("serviceWorker"in navigator){navigator.serviceWorker.register("sw.js").catch(function(){});var _rl=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(_rl)return;_rl=true;location.reload();});}
+setTimeout(checkUpdate,2500);
+window.addEventListener("focus",checkUpdate);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)checkUpdate();});
+setInterval(checkUpdate,60000);
 </script>
 </body>
 </html>
