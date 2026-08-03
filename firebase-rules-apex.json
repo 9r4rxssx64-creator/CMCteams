@@ -2,6 +2,7 @@
   "_comment": "Firebase Realtime Database Security Rules — projet cmcteams-c16ab (Apex + CMCteams + Shops)",
   "_database": "cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
   "_phase": "4.2 (2026-07-04) : /apex + /coffre_vault exigent auth != null (comme /cmcteams depuis 2026-06-12). Prérequis livrés : repli anonyme Apex v13 (firebase-auth-bridge) + coffre-fort anon auth + push-worker/handoff/backup en service account. Le .write de /apex passe au niveau $key pour que les .write:false des clés secrètes (ax_pin, ax_user…) soient réellement effectifs (un .write parent ne peut pas être révoqué plus bas en RTDB). Regex $key élargie : apex_v13_* + vault_backup + users (chemins réellement écrits par l'app).",
+  "_note_arbre": "/arbre = arbre généalogique familial (arbre.kd-mc.com). Données sous /arbre/<codehash>/... — le code famille (MAIFFRET) fait office de secret partagé (seuls ceux qui le connaissent trouvent le chemin). auth != null R/W = tout client authentifié anonymement (Identity Toolkit signUp) → partage temps réel famille. Note hors 'rules' (Firebase rejette un _comment DANS un nœud de règle : 'Expected {').",
   "_published_by": "Kevin DESARZENS",
   "_published_at": "2026-07-04",
   "_rollback": "deploy-cmcteams-rules.yml input apex_state=open (remet /apex + /coffre_vault en lecture/écriture libres) ; rules_state=open pour rouvrir /cmcteams. Le reste est inchangé.",
@@ -24,7 +25,6 @@
     ".read": false,
     ".write": false,
     "arbre": {
-      "_comment": "Arbre généalogique familial (arbre.kd-mc.com). Données sous /arbre/<codehash>/... — le code famille (MAIFFRET) fait office de secret partagé (seuls ceux qui l'ont connaissent le chemin). auth != null = client authentifié anonymement par l'app (Identity Toolkit signUp). Partage temps réel famille : lecture + écriture pour tout client anonyme, le cloisonnement se fait par le codehash du chemin.",
       ".read": "auth != null",
       ".write": "auth != null"
     },
