@@ -182,7 +182,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.17";
+var APP_VER="v2.18";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -443,7 +443,7 @@ function drawStage(fit){
   if(fit)fitStage();
 }
 function applyST(){var s=$("#stage");if(s)s.style.transform="translate("+VIEWST.tx+"px,"+VIEWST.ty+"px) scale("+VIEWST.sc+")";}
-function fitStage(){var wr=$("#stageWrap");if(!wr||!_lay)return;var W=wr.clientWidth,H=wr.clientHeight;var sc=Math.min((W-10)/_lay.w,(H-10)/_lay.h,1.25);sc=Math.max(sc,0.34);VIEWST.sc=sc;VIEWST.tx=(W-_lay.w*sc)/2;var sh=_lay.h*sc;VIEWST.ty=sh<=H?Math.max(52,(H-sh)/2):52;applyST();}
+function fitStage(){var wr=$("#stageWrap");if(!wr||!_lay)return;var W=wr.clientWidth,H=wr.clientHeight;var sc=Math.min((W-10)/_lay.w,(H-10)/_lay.h,1.25);sc=Math.max(sc,0.24);VIEWST.sc=sc;VIEWST.tx=(W-_lay.w*sc)/2;var sh=_lay.h*sc;VIEWST.ty=sh<=H?Math.max(52,(H-sh)/2):52;applyST();}
 function zoomAt(fx,fy,factor){var wr=$("#stageWrap");if(!wr)return;var W=wr.clientWidth,H=wr.clientHeight;var cx=fx*W,cy=fy*H;var ns=Math.min(2.5,Math.max(0.2,VIEWST.sc*factor));VIEWST.tx=cx-(cx-VIEWST.tx)*(ns/VIEWST.sc);VIEWST.ty=cy-(cy-VIEWST.ty)*(ns/VIEWST.sc);VIEWST.sc=ns;applyST();}
 function setupPanZoom(){
   var wr=$("#stageWrap");if(!wr||wr._pz)return;wr._pz=1;var drag=null,pts={},pinch=null;
@@ -581,7 +581,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=9;
+var SEED_VERSION=10;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -596,8 +596,9 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_marie_joe",prenom:"Marie-Joe",nom:"SAUVAIGO",sexe:"F",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Prénom peut-être « Marie-Josée » — à confirmer. Date/lieu à compléter."});
   add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique)."});
   /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
-  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",conjoints:["seed_marienoel"],naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). Prochaine étape : ses parents (grands-parents paternels de Kevin) — acte de naissance 1944 à Salon aux Archives 13, puis remontée vers le Vaud (Sarzens/Lucens) si le grand-père était suisse.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
-  add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",notes:"Frère de Gérard (oncle paternel de Kevin). À relier aux grands-parents paternels dès qu'ils seront connus.",sources:[SRC.gDesarzens]});
+  add({id:"seed_guy",prenom:"Guy",nom:"DESARZENS",sexe:"M",deces:{},notes:"Grand-père paternel de Kevin (père de Gérard et d'Émile) — prénom donné par Kevin (2026-08-03), « il me semble » : à confirmer sur l'acte de naissance de Gérard (1944, Salon-de-Provence, Archives 13). Dates/lieux à compléter. Piste suisse : Sarzens/Lucens (Vaud) si Guy ou son père était suisse.",sources:[SRC.ad13,SRC.gDesarzens,SRC.davel,SRC.sarzens]});
+  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",pere:"seed_guy",conjoints:["seed_marienoel"],naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Fils de Guy DESARZENS (à confirmer). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). L'acte de naissance 1944 à Salon (Archives 13) confirmera le prénom de Guy + donnera la grand-mère paternelle.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
+  add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",pere:"seed_guy",notes:"Frère de Gérard (oncle paternel de Kevin). Fils de Guy DESARZENS (à confirmer).",sources:[SRC.gDesarzens]});
   add({id:"seed_loic",prenom:"Loïc",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",notes:"Fils d'Émile (cousin de Kevin). Date à compléter."});
   add({id:"seed_yann",prenom:"Yann",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",notes:"Fils d'Émile (cousin de Kevin). Date à compléter."});
   /* — Jonction Sauvaigo ⇄ Maiffret (confirmée, index Geneanet) — */
