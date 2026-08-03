@@ -46,7 +46,17 @@ const SURFACES = [
   { url: 'https://coffre.' + ROOT + '/', name: 'Coffre-fort', selKey: 'body' },
   { url: 'https://departs.' + ROOT + '/', name: 'Départs', selKey: 'body' },
   { url: 'https://cmcteams-light.' + ROOT + '/', name: 'CMCteams light', selKey: 'body' },
-  { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate' },
+  { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
+      // Déverrouille (code famille MAIFFRET déjà par défaut) et VÉRIFIE que l'arbre rend
+      // vraiment des nœuds — un arbre vide (bug d'agencement) échoue ici. (bug « tjs pas d'arbre » v2.4)
+      try { await page.evaluate(() => { sessionStorage.setItem('arbre_unlocked','1'); localStorage.setItem('arbre_trust','1'); }); } catch {}
+      await page.reload({ waitUntil: 'load' }).catch(()=>{});
+      await page.waitForTimeout(4500);
+      const r = await page.evaluate(() => ({ ver: (document.querySelector('#ver')||{}).textContent||'', nodes: document.querySelectorAll('.tnode').length, gate: !!(document.querySelector('#gate') && !document.querySelector('#gate').classList.contains('hidden')) }));
+      if (r.gate) return { ok:false, note:'reste bloqué sur le code (gate)' };
+      if (r.nodes < 1) return { ok:false, note:'AUCUN nœud rendu — arbre vide ('+r.ver+')' };
+      return { ok:true, note: r.nodes+' nœuds · '+r.ver };
+    } },
   { url: BASE + '/worldmonitor/', name: 'World Monitor', selKey: '.leaflet-container' },
   { url: BASE + '/osint/', name: 'OSINT', selKey: '.leaflet-container' },
 ];
@@ -96,6 +106,8 @@ for (const s of SURFACES) {
     await page.waitForTimeout(5000); // laisse le JS/live faire ses appels réseau
 
     if (!(await page.$(s.selKey))) { res.ok = false; res.notes.push('élément clé absent: ' + s.selKey); }
+
+    if (s.deep) { try { const d = await s.deep(page); res.notes.push('deep: ' + d.note); if (!d.ok) res.ok = false; } catch (e) { res.ok = false; res.notes.push('deep KO: ' + (e && e.message ? e.message : e)); } }
 
     await page.screenshot({ path: SHOT_DIR + '/' + s.name.replace(/[^\w]+/g, '_') + '.png' }).catch(() => {});
 
