@@ -1,0 +1,3078 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "lastName": "VAN DEN BOSCH",
+  "birthCity": "Beaulieu-sur-Mer"
+ },
+ "response": {
+  "total": 2172,
+  "maxScoreES": 77.89949,
+  "size": 50,
+  "page": 1,
+  "delay": 596,
+  "persons": [
+   {
+    "score": 0.44,
+    "source": "2010",
+    "sourceLine": 543432,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.44,
+     "es": 0.39,
+     "multiMatchPenalty": 0.7,
+     "multiMatch": 3
+    },
+    "id": "rO5QX3w6sFnW",
+    "name": {
+     "first": [
+      "Lucette",
+      "Therese"
+     ],
+     "last": "Van Den Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19200212",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "20101216",
+     "certificateId": "18",
+     "age": 90,
+     "location": {
+      "city": "Ramatuelle",
+      "code": "83101",
+      "codePostal": [
+       "83350"
+      ],
+      "codeHistory": "83101",
+      "departmentCode": "83",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2017957,
+      "longitude": 6.6497107
+     }
+    }
+   },
+   {
+    "score": 0.44,
+    "source": "2022",
+    "sourceLine": 505482,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.44,
+     "es": 0.39,
+     "multiMatchPenalty": 0.7,
+     "multiMatch": 3
+    },
+    "id": "1X2L5T-fjruX",
+    "name": {
+     "first": [
+      "Alexandre",
+      "Robert",
+      "Victor"
+     ],
+     "last": "Van Den Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19210725",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "20221013",
+     "certificateId": "36",
+     "age": 101,
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    }
+   },
+   {
+    "score": 0.12,
+    "source": "2003",
+    "sourceLine": 392792,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 0.38,
+      "code": 0.7,
+      "score": 0.27
+     },
+     "score": 0.12,
+     "es": 0.28
+    },
+    "id": "CM-xPKrO5kQs",
+    "name": {
+     "first": [
+      "Raymond",
+      "Fernand"
+     ],
+     "last": "Van Den Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19140712",
+     "location": {
+      "city": "Fresnes-sur-Escaut",
+      "code": "59253",
+      "codePostal": [
+       "59970"
+      ],
+      "codeHistory": "59253",
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.4340782,
+      "longitude": 3.5768907
+     }
+    },
+    "death": {
+     "date": "20030830",
+     "certificateId": "1381",
+     "age": 89,
+     "location": {
+      "city": "Valenciennes",
+      "code": "59606",
+      "codePostal": [
+       "59300"
+      ],
+      "codeHistory": "59606",
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.362145,
+      "longitude": 3.5150528
+     }
+    }
+   },
+   {
+    "score": 0.12,
+    "source": "2012",
+    "sourceLine": 80038,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 0.38,
+      "code": 0.7,
+      "score": 0.27
+     },
+     "score": 0.12,
+     "es": 0.28
+    },
+    "id": "9wffCibzR_MA",
+    "name": {
+     "first": [
+      "Georget",
+      "Jules"
+     ],
+     "last": "Van Den Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19290413",
+     "location": {
+      "city": "Fresnes-sur-Escaut",
+      "code": "59253",
+      "codePostal": [
+       "59970"
+      ],
+      "codeHistory": "59253",
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.4340782,
+      "longitude": 3.5768907
+     }
+    },
+    "death": {
+     "date": "20120210",
+     "certificateId": "267",
+     "age": 82,
+     "location": {
+      "city": "Valenciennes",
+      "code": "59606",
+      "codePostal": [
+       "59300"
+      ],
+      "codeHistory": "59606",
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.362145,
+      "longitude": 3.5150528
+     }
+    }
+   },
+   {
+    "score": 0.12,
+    "source": "2011",
+    "sourceLine": 274162,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 0.38,
+      "code": 0.7,
+      "score": 0.27
+     },
+     "score": 0.12,
+     "es": 0.28
+    },
+    "id": "tFL7fiD6FTEt",
+    "name": {
+     "first": [
+      "Claude",
+      "Maurice"
+     ],
+     "last": "Van Den Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19540928",
+     "location": {
+      "city": "Fresnes-sur-Escaut",
+      "code": "59253",
+      "codePostal": [
+       "59970"
+      ],
+      "codeHistory": "59253",
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.4340782,
+      "longitude": 3.5768907
+     }
+    },
+    "death": {
+     "date": "20110604",
+     "certificateId": "457",
+     "age": 56,
+     "location": {
+      "city": "Fréjus",
+      "code": "83061",
+      "codePostal": [
+       "83600",
+       "83370"
+      ],
+      "codeHistory": "83061",
+      "departmentCode": "83",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.4554865,
+      "longitude": 6.7671138
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2022",
+    "sourceLine": 673622,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 0.75,
+      "score": 0.75
+     },
+     "score": 0.09,
+     "es": 0.29,
+     "multiMatchPenalty": 0.18,
+     "multiMatch": 3
+    },
+    "id": "gMAB_YheHOkf",
+    "name": {
+     "first": [
+      "Jackie",
+      "Alphonse",
+      "Francois"
+     ],
+     "last": "Van Den Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19290316",
+     "location": {
+      "city": [
+       "Beauvoir-Sur-Mer",
+       "Beauvoir"
+      ],
+      "code": "85018",
+      "codePostal": [
+       "85230"
+      ],
+      "codeHistory": "85018",
+      "departmentCode": "85",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.9013586,
+      "longitude": -2.0611786
+     }
+    },
+    "death": {
+     "date": "20221230",
+     "certificateId": "626",
+     "age": 93,
+     "location": {
+      "city": "Challans",
+      "code": "85047",
+      "codePostal": [
+       "85300"
+      ],
+      "codeHistory": "85047",
+      "departmentCode": "85",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.8355816,
+      "longitude": -1.8482152
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2009",
+    "sourceLine": 349054,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.2
+     },
+     "score": 0,
+     "es": 0.18
+    },
+    "id": "zlxJ8LrfcRzW",
+    "name": {
+     "first": [
+      "Rolande",
+      "Gabrielle",
+      "Alice"
+     ],
+     "last": "Van Gucht"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19210309",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "20090807",
+     "certificateId": "3102",
+     "age": 88,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2001",
+    "sourceLine": 122818,
+    "scores": {
+     "name": {
+      "score": 0.1,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.22
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "Tf37IO92hgFW",
+    "name": {
+     "first": [
+      "Roland",
+      "Alphonse",
+      "Eugene"
+     ],
+     "last": "Dan"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19121122",
+     "location": {
+      "city": [
+       "Longues Sur Mer",
+       "Longues-sur-Mer"
+      ],
+      "code": "14377",
+      "codePostal": [
+       "14400"
+      ],
+      "codeHistory": "14377",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.328664,
+      "longitude": -0.6943834
+     }
+    },
+    "death": {
+     "date": "20010219",
+     "certificateId": "000000133",
+     "age": 88,
+     "location": {
+      "city": "Eaubonne",
+      "code": "95203",
+      "codePostal": [
+       "95600"
+      ],
+      "codeHistory": [
+       "78203",
+       "95203"
+      ],
+      "departmentCode": "95",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9907757,
+      "longitude": 2.2781542
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1991",
+    "sourceLine": 346735,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.15
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "067OeA0X8wi-",
+    "name": {
+     "first": [
+      "Bernadette",
+      "Angele",
+      "Adolphine"
+     ],
+     "last": "Dan"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19080112",
+     "location": {
+      "city": "Longues-sur-Mer",
+      "code": "14377",
+      "codePostal": [
+       "14400"
+      ],
+      "codeHistory": "14377",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.328664,
+      "longitude": -0.6943834
+     }
+    },
+    "death": {
+     "date": "19910720",
+     "certificateId": "184",
+     "age": 83,
+     "location": {
+      "city": "Bayeux",
+      "code": "14047",
+      "codePostal": [
+       "14400"
+      ],
+      "codeHistory": "14047",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.2771893,
+      "longitude": -0.7021654
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2000",
+    "sourceLine": 556904,
+    "scores": {
+     "name": {
+      "score": 0.1,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.11
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "uZkaIPkHIPZh",
+    "name": {
+     "first": [
+      "Gerard",
+      "Auguste",
+      "Alexandre"
+     ],
+     "last": "Dan"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19151208",
+     "location": {
+      "city": "Longues-sur-Mer",
+      "code": "14377",
+      "codePostal": [
+       "14400"
+      ],
+      "codeHistory": "14377",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.328664,
+      "longitude": -0.6943834
+     }
+    },
+    "death": {
+     "date": "20001208",
+     "certificateId": "2566",
+     "age": 85,
+     "location": {
+      "city": "Caen",
+      "code": "14118",
+      "codePostal": [
+       "14000"
+      ],
+      "codeHistory": [
+       "14118",
+       "14736"
+      ],
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1812497,
+      "longitude": -0.3724994
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2005",
+    "sourceLine": 323737,
+    "scores": {
+     "name": {
+      "score": 0.1,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.13
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "i2QOrY7FaBxd",
+    "name": {
+     "first": [
+      "Serge",
+      "Roland",
+      "Bernard",
+      "Gerard"
+     ],
+     "last": "Dan"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19280123",
+     "location": {
+      "city": "Longues-sur-Mer",
+      "code": "14377",
+      "codePostal": [
+       "14400"
+      ],
+      "codeHistory": "14377",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.328664,
+      "longitude": -0.6943834
+     }
+    },
+    "death": {
+     "date": "20050717",
+     "certificateId": "000000389",
+     "age": 77,
+     "location": {
+      "city": "Lisieux",
+      "code": "14366",
+      "codePostal": [
+       "14100"
+      ],
+      "codeHistory": [
+       "14366",
+       "14594"
+      ],
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1440534,
+      "longitude": 0.2381489
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2019",
+    "sourceLine": 526336,
+    "scores": {
+     "name": {
+      "score": 0.1,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.13
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "YJXOirI0qvsH",
+    "name": {
+     "first": [
+      "Claude",
+      "Georges",
+      "Marcel"
+     ],
+     "last": "Dan"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19270820",
+     "location": {
+      "city": "Hermanville-sur-Mer",
+      "code": "14325",
+      "codePostal": [
+       "14880"
+      ],
+      "codeHistory": "14325",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.2812368,
+      "longitude": -0.3223593
+     }
+    },
+    "death": {
+     "date": "20191117",
+     "certificateId": "2743",
+     "age": 92,
+     "location": {
+      "city": "Caen",
+      "code": "14118",
+      "codePostal": [
+       "14000"
+      ],
+      "codeHistory": [
+       "14118",
+       "14736"
+      ],
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1812497,
+      "longitude": -0.3724994
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2003",
+    "sourceLine": 93182,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.35
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "G5LUzFXBsRsR",
+    "name": {
+     "first": [
+      "Andre",
+      "Jean",
+      "Henri"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19340824",
+     "location": {
+      "city": [
+       "Banyuls Sur Mer",
+       "Banyuls-sur-Mer"
+      ],
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "20030131",
+     "certificateId": "10/001",
+     "age": 68,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2003",
+    "sourceLine": 31284,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.25
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "CdJLeKlcBWCR",
+    "name": {
+     "first": [
+      "Marguerite",
+      "Madeleine",
+      "Raymonde"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19090407",
+     "location": {
+      "city": [
+       "Argeles Sur Mer",
+       "Argelès-sur-Mer"
+      ],
+      "code": "66008",
+      "codePostal": [
+       "66700"
+      ],
+      "codeHistory": "66008",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.5230397,
+      "longitude": 3.0302203
+     }
+    },
+    "death": {
+     "date": "20030102",
+     "certificateId": "1",
+     "age": 93,
+     "location": {
+      "city": "Argelès-sur-Mer",
+      "code": "66008",
+      "codePostal": [
+       "66700"
+      ],
+      "codeHistory": "66008",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.5230397,
+      "longitude": 3.0302203
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1982",
+    "sourceLine": 303110,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.24
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "z_unFEmq3JEp",
+    "name": {
+     "first": [
+      "Edouard",
+      "Louis",
+      "Paul"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18970312",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "19820404",
+     "certificateId": "19",
+     "age": 85,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1978",
+    "sourceLine": 282884,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.21
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "qRTQfze29A6K",
+    "name": {
+     "first": [
+      "Jacques",
+      "Francois",
+      "Paul"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18950529",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "19780515",
+     "certificateId": "21",
+     "age": 82,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1983",
+    "sourceLine": 316342,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.23
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "Psr_eorsvmJO",
+    "name": {
+     "first": [
+      "Sauveur",
+      "Francois",
+      "Edouard"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19211118",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "19830625",
+     "certificateId": "10",
+     "age": 61,
+     "location": {
+      "city": [
+       "Randonnai",
+       "Tourouvre au Perche"
+      ],
+      "code": "61343",
+      "codePostal": [
+       "61190"
+      ],
+      "codeHistory": [
+       "61343",
+       "61491"
+      ],
+      "departmentCode": "61",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.6014,
+      "longitude": 0.6465391
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1988",
+    "sourceLine": 302981,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.25
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "TWAZxG8a3Gpe",
+    "name": {
+     "first": [
+      "Jean",
+      "Bonaventure",
+      "Raymond"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19180305",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "19880511",
+     "certificateId": "27/001",
+     "age": 70,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 228866,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.22
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "e_kz5X9M8yJI",
+    "name": {
+     "first": [
+      "Therese",
+      "Marie",
+      "Louise"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19000219",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "19720411",
+     "certificateId": "16",
+     "age": 72,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1977",
+    "sourceLine": 272334,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.28
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "f5UOR1Q5NUwA",
+    "name": {
+     "first": [
+      "Paul",
+      "Jacques",
+      "Henri"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19040312",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "19770607",
+     "certificateId": "30",
+     "age": 73,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1986",
+    "sourceLine": 317285,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.25
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "U1jLqRiPZ5AQ",
+    "name": {
+     "first": [
+      "Paul",
+      "Victor",
+      "Jules"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18890317",
+     "location": {
+      "city": "Argelès-sur-Mer",
+      "code": "66008",
+      "codePostal": [
+       "66700"
+      ],
+      "codeHistory": "66008",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.5230397,
+      "longitude": 3.0302203
+     }
+    },
+    "death": {
+     "date": "19860322",
+     "certificateId": "N",
+     "age": 97,
+     "location": {
+      "city": "Fontainebleau",
+      "code": "77186",
+      "codePostal": [
+       "77300"
+      ],
+      "codeHistory": "77186",
+      "departmentCode": "77",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.4209828,
+      "longitude": 2.6908049
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1996",
+    "sourceLine": 473548,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.25
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "yLViL5LvBipk",
+    "name": {
+     "first": [
+      "Paul",
+      "Honore",
+      "Louis"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19310902",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "19961004",
+     "certificateId": "00090/001",
+     "age": 65,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1977",
+    "sourceLine": 272343,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.29
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "npQBZHWGKel_",
+    "name": {
+     "first": [
+      "Jean",
+      "Raymond",
+      "Joachim"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18910820",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "19770417",
+     "certificateId": "19",
+     "age": 85,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 527675,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.27
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "nz2mNYqqCLP-",
+    "name": {
+     "first": [
+      "Rosine",
+      "Marie",
+      "Louise"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19450401",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "20161118",
+     "certificateId": "2484",
+     "age": 71,
+     "location": {
+      "city": "Perpignan",
+      "code": "66136",
+      "codePostal": [
+       "66000",
+       "66100"
+      ],
+      "codeHistory": "66136",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.7011353,
+      "longitude": 2.8969482
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2020",
+    "sourceLine": 149036,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.19
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "AoFc6ZwaeS6p",
+    "name": {
+     "first": [
+      "Armand",
+      "Zacharie",
+      "Narcisse"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19351109",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "20200315",
+     "certificateId": "19",
+     "age": 84,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2025-m02",
+    "sourceLine": 36639,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.35
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "amT7UZ_wJ0mg",
+    "name": {
+     "first": [
+      "Claude",
+      "Paul",
+      "Jean"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19280502",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "20250131",
+     "certificateId": "309",
+     "age": 96,
+     "location": {
+      "city": "Perpignan",
+      "code": "66136",
+      "codePostal": [
+       "66000",
+       "66100"
+      ],
+      "codeHistory": "66136",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.7011353,
+      "longitude": 2.8969482
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2025-m12",
+    "sourceLine": 38396,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.31
+     },
+     "score": 0,
+     "es": 0.13
+    },
+    "id": "T8KHhvvIJVak",
+    "name": {
+     "first": [
+      "Claude",
+      "Bernard",
+      "Jean"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19591031",
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    },
+    "death": {
+     "date": "20251218",
+     "certificateId": "109",
+     "age": 66,
+     "location": {
+      "city": "Banyuls-sur-Mer",
+      "code": "66016",
+      "codePostal": [
+       "66650"
+      ],
+      "codeHistory": "66016",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4706187,
+      "longitude": 3.1228577
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2005",
+    "sourceLine": 171105,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.37
+     },
+     "score": 0,
+     "es": 0.12
+    },
+    "id": "cAhKHdfuV0qY",
+    "name": {
+     "first": [
+      "Marie-Jeanne"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19131105",
+     "location": {
+      "city": [
+       "La Seyne Sur Mer",
+       "La Seyne-sur-Mer"
+      ],
+      "code": "83126",
+      "codePostal": [
+       "83500"
+      ],
+      "codeHistory": "83126",
+      "departmentCode": "83",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.0845733,
+      "longitude": 5.8848954
+     }
+    },
+    "death": {
+     "date": "20041125",
+     "certificateId": "259",
+     "age": 91,
+     "location": {
+      "city": "Allauch",
+      "code": "13002",
+      "codePostal": [
+       "13190"
+      ],
+      "codeHistory": "13002",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.3498224,
+      "longitude": 5.5029388
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2000",
+    "sourceLine": 502865,
+    "scores": {
+     "name": {
+      "score": 0.37,
+      "first": 0.5,
+      "last": 0.74,
+      "fuzz": 0.13
+     },
+     "score": 0,
+     "es": 0.12
+    },
+    "id": "pELWAx5qp_n5",
+    "name": {
+     "first": [
+      "Michelle",
+      "Marguerite",
+      "Marthe",
+      "Louise"
+     ],
+     "last": "Van Den Brande"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19250422",
+     "location": {
+      "city": [
+       "Boulogne Sur Mer",
+       "Boulogne-sur-Mer"
+      ],
+      "code": "62160",
+      "codePostal": [
+       "62200"
+      ],
+      "codeHistory": "62160",
+      "departmentCode": "62",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.727355,
+      "longitude": 1.6113942
+     }
+    },
+    "death": {
+     "date": "20001030",
+     "certificateId": "103",
+     "age": 75,
+     "location": {
+      "city": "Saint-Hilaire",
+      "code": "38395",
+      "codePostal": [
+       "38660"
+      ],
+      "codeHistory": "38395",
+      "departmentCode": "38",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.3110174,
+      "longitude": 5.8813377
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1996",
+    "sourceLine": 8315,
+    "scores": {
+     "name": {
+      "score": 0.36,
+      "first": 0.5,
+      "last": 0.73,
+      "fuzz": 0.16
+     },
+     "score": 0,
+     "es": 0.12
+    },
+    "id": "Qnhb0L10VmwT",
+    "name": {
+     "first": [
+      "Simone",
+      "Gabrielle"
+     ],
+     "last": "Van Den Haute"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19330717",
+     "location": {
+      "city": "Saulieu",
+      "code": "21584",
+      "codePostal": [
+       "21210"
+      ],
+      "codeHistory": "21584",
+      "departmentCode": "21",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.2852397,
+      "longitude": 4.2340797
+     }
+    },
+    "death": {
+     "date": "19951228",
+     "certificateId": "83",
+     "age": 62,
+     "location": {
+      "city": "Saulieu",
+      "code": "21584",
+      "codePostal": [
+       "21210"
+      ],
+      "codeHistory": "21584",
+      "departmentCode": "21",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.2852397,
+      "longitude": 4.2340797
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2022",
+    "sourceLine": 73923,
+    "scores": {
+     "name": {
+      "score": 0.36,
+      "first": 0.5,
+      "last": 0.73,
+      "fuzz": 0.13
+     },
+     "score": 0,
+     "es": 0.12
+    },
+    "id": "Gq5kr04I6LJ-",
+    "name": {
+     "first": [
+      "Andree",
+      "Marie",
+      "Lucienne"
+     ],
+     "last": "Van Den Haute"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19320608",
+     "location": {
+      "city": "Saulieu",
+      "code": "21584",
+      "codePostal": [
+       "21210"
+      ],
+      "codeHistory": "21584",
+      "departmentCode": "21",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.2852397,
+      "longitude": 4.2340797
+     }
+    },
+    "death": {
+     "date": "20220128",
+     "certificateId": "12",
+     "age": 89,
+     "location": {
+      "city": "Montbard",
+      "code": "21425",
+      "codePostal": [
+       "21500"
+      ],
+      "codeHistory": "21425",
+      "departmentCode": "21",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.6612349,
+      "longitude": 4.3530755
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 13176,
+    "scores": {
+     "name": {
+      "score": 0.37,
+      "first": 0.5,
+      "last": 0.74,
+      "fuzz": 0.12
+     },
+     "score": 0,
+     "es": 0.12
+    },
+    "id": "j-8E6f4yVctj",
+    "name": {
+     "first": [
+      "Valerie",
+      "Nicole",
+      "Veronique"
+     ],
+     "last": "Van Den Torren"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19720323",
+     "location": {
+      "city": "Cagnes-sur-Mer",
+      "code": "06027",
+      "codePostal": [
+       "06800"
+      ],
+      "codeHistory": "06027",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6695124,
+      "longitude": 7.1541175
+     }
+    },
+    "death": {
+     "date": "19720326",
+     "certificateId": "1487",
+     "age": 0,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2004",
+    "sourceLine": 113638,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.17,
+      "fuzz": 0.29
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "S-iwpj9rzLML",
+    "name": {
+     "first": [
+      "Odette"
+     ],
+     "last": "Hosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19060506",
+     "location": {
+      "city": [
+       "Isigny Sur Mer",
+       "Isigny-sur-Mer"
+      ],
+      "code": "14342",
+      "codePostal": [
+       "14230"
+      ],
+      "codeHistory": "14342",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.308283,
+      "longitude": -1.090663
+     }
+    },
+    "death": {
+     "date": "20040309",
+     "certificateId": "000000063",
+     "age": 97,
+     "location": {
+      "city": "Bernay",
+      "code": "27056",
+      "codePostal": [
+       "27300"
+      ],
+      "codeHistory": "27056",
+      "departmentCode": "27",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.0900198,
+      "longitude": 0.5971103
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2023",
+    "sourceLine": 144903,
+    "scores": {
+     "name": {
+      "score": 0.1,
+      "first": 0.5,
+      "last": 0.17,
+      "fuzz": 0.23
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "WeI2X7lwFL9_",
+    "name": {
+     "first": [
+      "Alain",
+      "Joel"
+     ],
+     "last": "Bosche"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19600824",
+     "location": {
+      "city": "Montmartin-sur-Mer",
+      "code": "50349",
+      "codePostal": [
+       "50590"
+      ],
+      "codeHistory": "50349",
+      "departmentCode": "50",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9914186,
+      "longitude": -1.5259423
+     }
+    },
+    "death": {
+     "date": "20230227",
+     "certificateId": "141",
+     "age": 62,
+     "location": {
+      "city": "Saint-Lô",
+      "code": "50502",
+      "codePostal": [
+       "50000"
+      ],
+      "codeHistory": [
+       "50459",
+       "50502",
+       "50560"
+      ],
+      "departmentCode": "50",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.105617,
+      "longitude": -1.0869919
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1983",
+    "sourceLine": 49943,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.18
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "aZeEZT9wilZb",
+    "name": {
+     "first": [
+      "Charlotte",
+      "Suzanne",
+      "Madeleine"
+     ],
+     "last": "Dan"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19100113",
+     "location": {
+      "city": "Fleury-sur-Orne",
+      "code": "14271",
+      "codePostal": [
+       "14123"
+      ],
+      "codeHistory": "14271",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1490873,
+      "longitude": -0.3780097
+     }
+    },
+    "death": {
+     "date": "19830214",
+     "certificateId": "322",
+     "age": 73,
+     "location": {
+      "city": "Caen",
+      "code": "14118",
+      "codePostal": [
+       "14000"
+      ],
+      "codeHistory": [
+       "14118",
+       "14736"
+      ],
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1812497,
+      "longitude": -0.3724994
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 42540,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.09
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "Jp3mwJ-JHlhO",
+    "name": {
+     "first": [
+      "Juliette",
+      "Marie"
+     ],
+     "last": "Dan"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18950321",
+     "location": {
+      "city": "Fleury-sur-Orne",
+      "code": "14271",
+      "codePostal": [
+       "14123"
+      ],
+      "codeHistory": "14271",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1490873,
+      "longitude": -0.3780097
+     }
+    },
+    "death": {
+     "date": "19760208",
+     "certificateId": "3",
+     "age": 80,
+     "location": {
+      "city": "May-sur-Orne",
+      "code": "14408",
+      "codePostal": [
+       "14320"
+      ],
+      "codeHistory": "14408",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.093557,
+      "longitude": -0.3835684
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1982",
+    "sourceLine": 48161,
+    "scores": {
+     "name": {
+      "score": 0.1,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.1
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "MOZVXQ4LG9NP",
+    "name": {
+     "first": [
+      "Georges",
+      "Robert",
+      "Andre"
+     ],
+     "last": "Dan"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18970213",
+     "location": {
+      "city": "Fleury-sur-Orne",
+      "code": "14271",
+      "codePostal": [
+       "14123"
+      ],
+      "codeHistory": "14271",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1490873,
+      "longitude": -0.3780097
+     }
+    },
+    "death": {
+     "date": "19820713",
+     "certificateId": "9",
+     "age": 85,
+     "location": {
+      "city": "Saint-Désir",
+      "code": "14574",
+      "codePostal": [
+       "14100"
+      ],
+      "codeHistory": "14574",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1448962,
+      "longitude": 0.1932708
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1996",
+    "sourceLine": 538306,
+    "scores": {
+     "name": {
+      "score": 0.1,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.14
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "12vfcRIUZbi6",
+    "name": {
+     "first": [
+      "Robert",
+      "Andre"
+     ],
+     "last": "Dan"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19220915",
+     "location": {
+      "city": "Fleury-sur-Orne",
+      "code": "14271",
+      "codePostal": [
+       "14123"
+      ],
+      "codeHistory": "14271",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1490873,
+      "longitude": -0.3780097
+     }
+    },
+    "death": {
+     "date": "19961004",
+     "certificateId": "00501",
+     "age": 74,
+     "location": {
+      "city": "Lisieux",
+      "code": "14366",
+      "codePostal": [
+       "14100"
+      ],
+      "codeHistory": [
+       "14366",
+       "14594"
+      ],
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1440534,
+      "longitude": 0.2381489
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1980",
+    "sourceLine": 46228,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.15
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "MUmuhultdOch",
+    "name": {
+     "first": [
+      "Jeanne",
+      "Ernestine"
+     ],
+     "last": "Dan"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18990802",
+     "location": {
+      "city": "Fleury-sur-Orne",
+      "code": "14271",
+      "codePostal": [
+       "14123"
+      ],
+      "codeHistory": "14271",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1490873,
+      "longitude": -0.3780097
+     }
+    },
+    "death": {
+     "date": "19800723",
+     "certificateId": "9",
+     "age": 80,
+     "location": {
+      "city": "Marseille",
+      "code": "13055",
+      "codeHistory": "13055",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2599669,
+      "longitude": 5.3707409
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2004",
+    "sourceLine": 441923,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.12
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "KJW8r1p_9Xdw",
+    "name": {
+     "first": [
+      "Marcelle",
+      "Andree"
+     ],
+     "last": "Dan"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19260309",
+     "location": {
+      "city": "Fleury-sur-Orne",
+      "code": "14271",
+      "codePostal": [
+       "14123"
+      ],
+      "codeHistory": "14271",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1490873,
+      "longitude": -0.3780097
+     }
+    },
+    "death": {
+     "date": "20041021",
+     "certificateId": "2231",
+     "age": 78,
+     "location": {
+      "city": "Caen",
+      "code": "14118",
+      "codePostal": [
+       "14000"
+      ],
+      "codeHistory": [
+       "14118",
+       "14736"
+      ],
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.1812497,
+      "longitude": -0.3724994
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2021",
+    "sourceLine": 152173,
+    "scores": {
+     "name": {
+      "score": 0.41,
+      "first": 0.5,
+      "last": 0.81,
+      "fuzz": 0.2
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "KS-qtXG0bfaw",
+    "name": {
+     "first": [
+      "Yvonne",
+      "Jeanne",
+      "Fernande"
+     ],
+     "last": "Van Den Broccke"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19200807",
+     "location": {
+      "city": [
+       "Barneville-Carteret",
+       "Barneville",
+       "Barneville-sur-Mer"
+      ],
+      "code": "50031",
+      "codePostal": [
+       "50270"
+      ],
+      "codeHistory": "50031",
+      "departmentCode": "50",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.3822211,
+      "longitude": -1.7598479
+     }
+    },
+    "death": {
+     "date": "20210327",
+     "certificateId": "19",
+     "age": 100,
+     "location": {
+      "city": "Saint-Vaast-la-Hougue",
+      "code": "50562",
+      "codePostal": [
+       "50550"
+      ],
+      "codeHistory": "50562",
+      "departmentCode": "50",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.595101,
+      "longitude": -1.2678911
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2000",
+    "sourceLine": 252548,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.06,
+      "fuzz": 0.09
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "qD-7FU5EEBMH",
+    "name": {
+     "first": [
+      "Yvette",
+      "Hortense",
+      "Eugenie"
+     ],
+     "last": "Dan"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19401008",
+     "location": {
+      "city": [
+       "Torigni Sur Vire",
+       "Torigni-sur-Vire",
+       "Torigny-les-Villes"
+      ],
+      "code": "50601",
+      "codePostal": [
+       "50160"
+      ],
+      "codeHistory": "50601",
+      "departmentCode": "50",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.0046944,
+      "longitude": -0.9806668
+     }
+    },
+    "death": {
+     "date": "20000524",
+     "certificateId": "000000249",
+     "age": 59,
+     "location": {
+      "city": "Saint-Lô",
+      "code": "50502",
+      "codePostal": [
+       "50000"
+      ],
+      "codeHistory": [
+       "50459",
+       "50502",
+       "50560"
+      ],
+      "departmentCode": "50",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.105617,
+      "longitude": -1.0869919
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1979",
+    "sourceLine": 361424,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.23
+     },
+     "score": 0,
+     "es": 0.11
+    },
+    "id": "SbDhSbnfPesd",
+    "name": {
+     "first": [
+      "Robert",
+      "Georges"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19011231",
+     "location": {
+      "city": [
+       "Vitry Sur Seine",
+       "Vitry-sur-Seine"
+      ],
+      "code": "75081",
+      "codePostal": [
+       "94400"
+      ],
+      "codeHistory": [
+       "75081",
+       "94081"
+      ],
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7903856,
+      "longitude": 2.3905038
+     }
+    },
+    "death": {
+     "date": "19791119",
+     "certificateId": "3427",
+     "age": 77,
+     "location": {
+      "city": [
+       "Paris",
+       "Paris 14e Arrondissement"
+      ],
+      "code": "75114",
+      "codePostal": [
+       "75014"
+      ],
+      "codeHistory": "75114",
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8449537,
+      "longitude": 2.3760859
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2012",
+    "sourceLine": 373834,
+    "scores": {
+     "name": {
+      "score": 0.36,
+      "first": 0.5,
+      "last": 0.73,
+      "fuzz": 0.18
+     },
+     "score": 0,
+     "es": 0.1
+    },
+    "id": "GgMNMV_mlHN3",
+    "name": {
+     "first": [
+      "Patrick"
+     ],
+     "last": "Van Den Heede"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19640418",
+     "location": {
+      "city": "Méru",
+      "code": "60395",
+      "codePostal": [
+       "60110"
+      ],
+      "codeHistory": [
+       "60349",
+       "60395"
+      ],
+      "departmentCode": "60",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.247573,
+      "longitude": 2.1350058
+     }
+    },
+    "death": {
+     "date": "20120718",
+     "certificateId": "4",
+     "age": 48,
+     "location": {
+      "city": "Le Déluge",
+      "code": "60196",
+      "codePostal": [
+       "60790"
+      ],
+      "codeHistory": "60196",
+      "departmentCode": "60",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.2961295,
+      "longitude": 2.1091454
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 187618,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.29
+     },
+     "score": 0,
+     "es": 0.1
+    },
+    "id": "BYXL-_PH7lAr",
+    "name": {
+     "first": [
+      "Sylvie"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19721114",
+     "location": {
+      "city": "Dompierre-sur-Helpe",
+      "code": "59177",
+      "codePostal": [
+       "59440"
+      ],
+      "codeHistory": "59177",
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.1426297,
+      "longitude": 3.8527121
+     }
+    },
+    "death": {
+     "date": "19721115",
+     "certificateId": "929",
+     "age": 0,
+     "location": {
+      "city": "Saint-Quentin",
+      "code": "02691",
+      "codePostal": [
+       "02100"
+      ],
+      "codeHistory": "02691",
+      "departmentCode": "02",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.8463987,
+      "longitude": 3.28834
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1990",
+    "sourceLine": 540996,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.37
+     },
+     "score": 0,
+     "es": 0.1
+    },
+    "id": "Am0YPXV5lYo-",
+    "name": {
+     "first": [
+      "Madeleine",
+      "Marie"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18980528",
+     "location": {
+      "city": "Vitry-sur-Seine",
+      "code": "94081",
+      "codePostal": [
+       "94400"
+      ],
+      "codeHistory": [
+       "75081",
+       "94081"
+      ],
+      "departmentCode": "94",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7903856,
+      "longitude": 2.3905038
+     }
+    },
+    "death": {
+     "date": "19901122",
+     "certificateId": "248",
+     "age": 92,
+     "location": {
+      "city": [
+       "Roissy",
+       "Roissy-en-Brie"
+      ],
+      "code": "77390",
+      "codePostal": [
+       "77680"
+      ],
+      "codeHistory": "77390",
+      "departmentCode": "77",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7895751,
+      "longitude": 2.6515002
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1989",
+    "sourceLine": 316663,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.29
+     },
+     "score": 0,
+     "es": 0.1
+    },
+    "id": "3hP3gWGFwSqM",
+    "name": {
+     "first": [
+      "Louise"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18950730",
+     "location": {
+      "city": "Wingen-sur-Moder",
+      "code": "67538",
+      "codePostal": [
+       "67290"
+      ],
+      "codeHistory": "67538",
+      "departmentCode": "67",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9228226,
+      "longitude": 7.3734709
+     }
+    },
+    "death": {
+     "date": "19890224",
+     "certificateId": "606",
+     "age": 93,
+     "location": {
+      "city": "Strasbourg",
+      "code": "67482",
+      "codePostal": [
+       "67100",
+       "67200",
+       "67000"
+      ],
+      "codeHistory": "67482",
+      "departmentCode": "67",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.5732064,
+      "longitude": 7.7531707
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 228812,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.2
+     },
+     "score": 0,
+     "es": 0.1
+    },
+    "id": "uSun5h6SbSdf",
+    "name": {
+     "first": [
+      "Marie",
+      "Jeanne",
+      "Anna",
+      "Francoise"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19331005",
+     "location": {
+      "city": "Arles-sur-Tech",
+      "code": "66009",
+      "codePostal": [
+       "66150"
+      ],
+      "codeHistory": "66009",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.4553019,
+      "longitude": 2.6186138
+     }
+    },
+    "death": {
+     "date": "19721010",
+     "certificateId": "1200",
+     "age": 39,
+     "location": {
+      "city": "Perpignan",
+      "code": "66136",
+      "codePostal": [
+       "66000",
+       "66100"
+      ],
+      "codeHistory": "66136",
+      "departmentCode": "66",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.7011353,
+      "longitude": 2.8969482
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1996",
+    "sourceLine": 348315,
+    "scores": {
+     "name": {
+      "score": 0.12,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.25
+     },
+     "score": 0,
+     "es": 0.1
+    },
+    "id": "n6lPt8Gi1l4s",
+    "name": {
+     "first": [
+      "Roland",
+      "Robert",
+      "Charles"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19230114",
+     "location": {
+      "city": "Vitry-sur-Seine",
+      "code": "94081",
+      "codePostal": [
+       "94400"
+      ],
+      "codeHistory": [
+       "75081",
+       "94081"
+      ],
+      "departmentCode": "94",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7903856,
+      "longitude": 2.3905038
+     }
+    },
+    "death": {
+     "date": "19960625",
+     "certificateId": "1375",
+     "age": 73,
+     "location": {
+      "city": [
+       "Paris",
+       "Paris 15e Arrondissement"
+      ],
+      "code": "75115",
+      "codePostal": [
+       "75015"
+      ],
+      "codeHistory": "75115",
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8449537,
+      "longitude": 2.3760859
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2013",
+    "sourceLine": 74305,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.22
+     },
+     "score": 0,
+     "es": 0.1
+    },
+    "id": "taaKy2uPcTw_",
+    "name": {
+     "first": [
+      "Christiane",
+      "Madeleine",
+      "Germaine"
+     ],
+     "last": "Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19240503",
+     "location": {
+      "city": "Vitry-sur-Seine",
+      "code": "75081",
+      "codePostal": [
+       "94400"
+      ],
+      "codeHistory": [
+       "75081",
+       "94081"
+      ],
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7903856,
+      "longitude": 2.3905038
+     }
+    },
+    "death": {
+     "date": "20130124",
+     "certificateId": "2",
+     "age": 88,
+     "location": {
+      "city": "Sainte-Terre",
+      "code": "33485",
+      "codePostal": [
+       "33350"
+      ],
+      "codeHistory": "33485",
+      "departmentCode": "33",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.8365035,
+      "longitude": -0.1266083
+     }
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,144 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "lastName": "MAIFFRET",
+  "birthCity": "Monaco"
+ },
+ "response": {
+  "total": 2,
+  "maxScoreES": 63.688072,
+  "size": 50,
+  "page": 1,
+  "delay": 55,
+  "persons": [
+   {
+    "score": 0.54,
+    "source": "2004",
+    "sourceLine": 479473,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 1,
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.54,
+     "es": 0.32,
+     "multiMatchPenalty": 0.86,
+     "multiMatch": 2
+    },
+    "id": "lmAX_0gFBqZe",
+    "name": {
+     "first": [
+      "Francois",
+      "Joseph",
+      "Philippe"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19121209",
+     "location": {
+      "city": "Monaco",
+      "code": "99138",
+      "codeHistory": "99138",
+      "country": "Monaco",
+      "countryCode": "MCO"
+     }
+    },
+    "death": {
+     "date": "20041106",
+     "certificateId": "4541",
+     "age": 91,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0.54,
+    "source": "2024",
+    "sourceLine": 488084,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 1,
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.54,
+     "es": 0.32,
+     "multiMatchPenalty": 0.86,
+     "multiMatch": 2
+    },
+    "id": "x4kL8TBj4RML",
+    "name": {
+     "first": [
+      "Myriam",
+      "Augusta",
+      "Olga"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19350305",
+     "location": {
+      "city": "Monaco",
+      "code": "99138",
+      "codeHistory": "99138",
+      "country": "Monaco",
+      "countryCode": "MCO"
+     }
+    },
+    "death": {
+     "date": "20241006",
+     "certificateId": "3870",
+     "age": 89,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   }
+  ]
+ }
+}

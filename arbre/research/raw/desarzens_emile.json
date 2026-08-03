@@ -1,0 +1,85 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "firstName": "Emile",
+  "lastName": "DESARZENS"
+ },
+ "response": {
+  "total": 1,
+  "maxScoreES": 38.174774,
+  "size": 30,
+  "page": 1,
+  "delay": 68,
+  "persons": [
+   {
+    "score": 0,
+    "source": "2000",
+    "sourceLine": 295992,
+    "scores": {
+     "name": {
+      "score": 0.4,
+      "first": 0.7,
+      "last": 0.69
+     },
+     "score": 0,
+     "es": 0.19
+    },
+    "id": "eAY_NeRR6KdL",
+    "name": {
+     "first": [
+      "Hubert",
+      "Emile"
+     ],
+     "last": "Desablens"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19281106",
+     "location": {
+      "city": "Lille",
+      "code": "59350",
+      "codePostal": [
+       "59000",
+       "59777",
+       "59160",
+       "59260",
+       "59800"
+      ],
+      "codeHistory": [
+       "59298",
+       "59350",
+       "59355"
+      ],
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.6344894,
+      "longitude": 3.0515459
+     }
+    },
+    "death": {
+     "date": "20000719",
+     "certificateId": "000000228",
+     "age": 71,
+     "location": {
+      "city": "Marcq-en-Barœul",
+      "code": "59378",
+      "codePostal": [
+       "59700"
+      ],
+      "codeHistory": "59378",
+      "departmentCode": "59",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 50.6759008,
+      "longitude": 3.1032216
+     }
+    }
+   }
+  ]
+ }
+}

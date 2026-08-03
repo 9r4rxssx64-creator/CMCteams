@@ -1,0 +1,3072 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "lastName": "DENTAU"
+ },
+ "response": {
+  "total": 4150,
+  "maxScoreES": 49.254883,
+  "size": 50,
+  "page": 1,
+  "delay": 131,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 15671,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "az06oPi5Ko3L",
+    "name": {
+     "first": [
+      "Honore"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18960318",
+     "location": {
+      "city": "Saint-Laurent-du-Var",
+      "code": "06123",
+      "codePostal": [
+       "06700"
+      ],
+      "codeHistory": "06123",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6780224,
+      "longitude": 7.1791754
+     }
+    },
+    "death": {
+     "date": "19730914",
+     "certificateId": "4183",
+     "age": 77,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1977",
+    "sourceLine": 16210,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "9jMz-jzGJ4V2",
+    "name": {
+     "first": [
+      "Honore"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19000922",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19770724",
+     "certificateId": "3238",
+     "age": 76,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1978",
+    "sourceLine": 17714,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "gcr3vN43im3x",
+    "name": {
+     "first": [
+      "Francois",
+      "Andre"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19220107",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19781219",
+     "certificateId": "5690",
+     "age": 56,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1985",
+    "sourceLine": 18502,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "S3ayWpCnjGYB",
+    "name": {
+     "first": [
+      "Andre",
+      "Charles"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19010703",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19851103",
+     "certificateId": "5194",
+     "age": 84,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2004",
+    "sourceLine": 349087,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "d_VqwQjFOqak",
+    "name": {
+     "first": [
+      "Joseph"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19071013",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20040806",
+     "certificateId": "51",
+     "age": 96,
+     "location": {
+      "city": "Tourrette-Levens",
+      "code": "06147",
+      "codePostal": [
+       "06690"
+      ],
+      "codeHistory": "06147",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7876885,
+      "longitude": 7.2734687
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2002",
+    "sourceLine": 185330,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "dpzGlPupSd2a",
+    "name": {
+     "first": [
+      "Anne",
+      "Honorine"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19140107",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20020411",
+     "certificateId": "1788",
+     "age": 88,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2005",
+    "sourceLine": 227123,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "H23CQKuCida4",
+    "name": {
+     "first": [
+      "Marie",
+      "Veronique"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19060430",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20050328",
+     "certificateId": "9",
+     "age": 98,
+     "location": {
+      "city": "Drap",
+      "code": "06054",
+      "codePostal": [
+       "06340"
+      ],
+      "codeHistory": "06054",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7582665,
+      "longitude": 7.3400921
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 160757,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "M3n5QLHfYFSG",
+    "name": {
+     "first": [
+      "Jeannine"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19350103",
+     "location": {
+      "city": [
+       "Villefranche-Sur-Mer",
+       "Villefranche"
+      ],
+      "code": "06159",
+      "codePostal": [
+       "06230"
+      ],
+      "codeHistory": "06159",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7062163,
+      "longitude": 7.31776
+     }
+    },
+    "death": {
+     "date": "20160405",
+     "certificateId": "1499",
+     "age": 81,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2014",
+    "sourceLine": 246487,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "rqh7MISnEbHa",
+    "name": {
+     "first": [
+      "Marie",
+      "Therese",
+      "Eliane"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19290928",
+     "location": {
+      "city": "Saint-Laurent-du-Var",
+      "code": "06123",
+      "codePostal": [
+       "06700"
+      ],
+      "codeHistory": "06123",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6780224,
+      "longitude": 7.1791754
+     }
+    },
+    "death": {
+     "date": "20140604",
+     "certificateId": "2238",
+     "age": 84,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 213836,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.25,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "GItyD416YCbe",
+    "name": {
+     "first": [
+      "Josette",
+      "Francine",
+      "Marie"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19410709",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20160509",
+     "certificateId": "1958",
+     "age": 74,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 159042,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "p9Zq61j2CalJ",
+    "name": {
+     "first": [
+      "Louise",
+      "Marie"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18910619",
+     "location": {
+      "city": "Chalonnes-sur-Loire",
+      "code": "49063",
+      "codePostal": [
+       "49290"
+      ],
+      "codeHistory": "49063",
+      "departmentCode": "49",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.3411402,
+      "longitude": -0.773216
+     }
+    },
+    "death": {
+     "date": "19731117",
+     "certificateId": "56",
+     "age": 82,
+     "location": {
+      "city": "Chalonnes-sur-Loire",
+      "code": "49063",
+      "codePostal": [
+       "49290"
+      ],
+      "codeHistory": "49063",
+      "departmentCode": "49",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.3411402,
+      "longitude": -0.773216
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 162338,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "B2VftEtHr8tS",
+    "name": {
+     "first": [
+      "Renee",
+      "Louise",
+      "Marie"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19310319",
+     "location": {
+      "city": "Vautorte",
+      "code": "53269",
+      "codePostal": [
+       "53500"
+      ],
+      "codeHistory": "53269",
+      "departmentCode": "53",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.305494,
+      "longitude": -0.8371982
+     }
+    },
+    "death": {
+     "date": "19720318",
+     "certificateId": "51",
+     "age": 41,
+     "location": {
+      "city": "Mayenne",
+      "code": "53147",
+      "codePostal": [
+       "53100"
+      ],
+      "codeHistory": "53147",
+      "departmentCode": "53",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.309404,
+      "longitude": -0.6132309
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 81622,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "mqW06HZYmzuQ",
+    "name": {
+     "first": [
+      "Marie",
+      "Louise"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18910608",
+     "location": {
+      "city": "Authon-du-Perche",
+      "code": "28018",
+      "codePostal": [
+       "28330"
+      ],
+      "codeHistory": "28018",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.20232,
+      "longitude": 0.8894866
+     }
+    },
+    "death": {
+     "date": "19730109",
+     "certificateId": "76",
+     "age": 81,
+     "location": {
+      "city": "Créteil",
+      "code": "94028",
+      "codePostal": [
+       "94000"
+      ],
+      "codeHistory": [
+       "75028",
+       "94028"
+      ],
+      "departmentCode": "94",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7806384,
+      "longitude": 2.4549015
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1971",
+    "sourceLine": 107451,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "jn-VFNs4640l",
+    "name": {
+     "first": [
+      "Samuel",
+      "Yves",
+      "Marie"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19710314",
+     "location": {
+      "city": "Flers",
+      "code": "61169",
+      "codePostal": [
+       "61100"
+      ],
+      "codeHistory": "61169",
+      "departmentCode": "61",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.740523,
+      "longitude": -0.5668493
+     }
+    },
+    "death": {
+     "date": "19710316",
+     "certificateId": "68",
+     "age": 0,
+     "location": {
+      "city": "Flers",
+      "code": "61169",
+      "codePostal": [
+       "61100"
+      ],
+      "codeHistory": "61169",
+      "departmentCode": "61",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.740523,
+      "longitude": -0.5668493
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 322541,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "vyufjcRQ1God",
+    "name": {
+     "first": [
+      "Janine",
+      "Odette"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19260608",
+     "location": {
+      "city": "Buxeuil",
+      "code": "86042",
+      "codePostal": [
+       "37160"
+      ],
+      "codeHistory": "86042",
+      "departmentCode": "86",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.970167,
+      "longitude": 0.660934
+     }
+    },
+    "death": {
+     "date": "19720913",
+     "certificateId": "100",
+     "age": 46,
+     "location": {
+      "city": "Loches",
+      "code": "37132",
+      "codePostal": [
+       "37600"
+      ],
+      "codeHistory": "37132",
+      "departmentCode": "37",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.1259025,
+      "longitude": 0.9880372
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 378910,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "oJ5MwL9qS5FW",
+    "name": {
+     "first": [
+      "Eugene",
+      "Auguste",
+      "Julien"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18960121",
+     "location": {
+      "city": "Le Boupère",
+      "code": "85031",
+      "codePostal": [
+       "85510"
+      ],
+      "codeHistory": "85031",
+      "departmentCode": "85",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.7832096,
+      "longitude": -0.9283728
+     }
+    },
+    "death": {
+     "date": "19750224",
+     "certificateId": "2",
+     "age": 79,
+     "location": {
+      "city": "Le Boupère",
+      "code": "85031",
+      "codePostal": [
+       "85510"
+      ],
+      "codeHistory": "85031",
+      "departmentCode": "85",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.7832096,
+      "longitude": -0.9283728
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 84799,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "MDd6Xjt9vmZm",
+    "name": {
+     "first": [
+      "Jacqueline",
+      "Charlotte"
+     ],
+     "last": "Deneau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19180409",
+     "location": {
+      "city": "Coltainville",
+      "code": "28104",
+      "codePostal": [
+       "28300"
+      ],
+      "codeHistory": "28104",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.4971067,
+      "longitude": 1.5959209
+     }
+    },
+    "death": {
+     "date": "19741007",
+     "certificateId": "823",
+     "age": 56,
+     "location": {
+      "city": "Chartres",
+      "code": "28085",
+      "codePostal": [
+       "28000"
+      ],
+      "codeHistory": "28085",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.4486531,
+      "longitude": 1.4999161
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 173409,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "VGEMzC3GLpDa",
+    "name": {
+     "first": [
+      "Adelaide",
+      "Marie",
+      "Louise"
+     ],
+     "last": "Denuau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18960506",
+     "location": {
+      "city": [
+       "L Huisserie",
+       "L'Huisserie"
+      ],
+      "code": "53119",
+      "codePostal": [
+       "53970"
+      ],
+      "codeHistory": "53119",
+      "departmentCode": "53",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.0115116,
+      "longitude": -0.7696503
+     }
+    },
+    "death": {
+     "date": "19730103",
+     "certificateId": "1",
+     "age": 76,
+     "location": {
+      "city": "Fel",
+      "code": "61161",
+      "codePostal": [
+       "61160"
+      ],
+      "codeHistory": "61161",
+      "departmentCode": "61",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.796988,
+      "longitude": 0.1134182
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 311596,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "PyWTDJegwJuY",
+    "name": {
+     "first": [
+      "Alice",
+      "Marie"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19230205",
+     "location": {
+      "city": [
+       "Paris",
+       "Paris 19e Arrondissement"
+      ],
+      "code": "75119",
+      "codePostal": [
+       "75019"
+      ],
+      "codeHistory": "75119",
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8449537,
+      "longitude": 2.3760859
+     }
+    },
+    "death": {
+     "date": "19730426",
+     "certificateId": "781",
+     "age": 50,
+     "location": {
+      "city": "Clichy",
+      "code": "92024",
+      "codePostal": [
+       "92110"
+      ],
+      "codeHistory": [
+       "75024",
+       "92024"
+      ],
+      "departmentCode": "92",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9052663,
+      "longitude": 2.3093027
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 302522,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "EKXmUM6jliRK",
+    "name": {
+     "first": [
+      "Claude",
+      "Emile"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19170515",
+     "location": {
+      "city": "Villemomble",
+      "code": "75077",
+      "codePostal": [
+       "93250"
+      ],
+      "codeHistory": [
+       "75077",
+       "93077"
+      ],
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.884613,
+      "longitude": 2.5090294
+     }
+    },
+    "death": {
+     "date": "19741208",
+     "certificateId": "53",
+     "age": 57,
+     "location": {
+      "city": "Moirans",
+      "code": "38239",
+      "codePostal": [
+       "38430"
+      ],
+      "codeHistory": "38239",
+      "departmentCode": "38",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.3240905,
+      "longitude": 5.5584551
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 85150,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "dSRlDLpZeMr_",
+    "name": {
+     "first": [
+      "Jacques"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19010827",
+     "location": {
+      "city": "Flacey",
+      "code": "28153",
+      "codePostal": [
+       "28800"
+      ],
+      "codeHistory": "28153",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.152552,
+      "longitude": 1.332428
+     }
+    },
+    "death": {
+     "date": "19740213",
+     "certificateId": "254",
+     "age": 72,
+     "location": {
+      "city": "Orléans",
+      "code": "45234",
+      "codePostal": [
+       "45100",
+       "45000"
+      ],
+      "codeHistory": "45234",
+      "departmentCode": "45",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.8797438,
+      "longitude": 1.917774
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 181781,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "q5ef0Rktpkka",
+    "name": {
+     "first": [
+      "France"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19160624",
+     "location": {
+      "city": "Lanty",
+      "code": "58139",
+      "codePostal": [
+       "58250"
+      ],
+      "codeHistory": "58139",
+      "departmentCode": "58",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.8039091,
+      "longitude": 3.8322326
+     }
+    },
+    "death": {
+     "date": "19721130",
+     "certificateId": "10",
+     "age": 56,
+     "location": {
+      "city": [
+       "Châteauneuf",
+       "Châteauneuf-Val-de-Bargis"
+      ],
+      "code": "58064",
+      "codePostal": [
+       "58350"
+      ],
+      "codeHistory": "58064",
+      "departmentCode": "58",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.2832556,
+      "longitude": 3.2205148
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 308904,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "0341MM8NdTSM",
+    "name": {
+     "first": [
+      "Louise"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19250718",
+     "location": {
+      "city": [
+       "Paris",
+       "Paris 10e Arrondissement"
+      ],
+      "code": "75110",
+      "codePostal": [
+       "75010"
+      ],
+      "codeHistory": "75110",
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8449537,
+      "longitude": 2.3760859
+     }
+    },
+    "death": {
+     "date": "19740312",
+     "certificateId": "5",
+     "age": 48,
+     "location": {
+      "city": "Traînel",
+      "code": "10382",
+      "codePostal": [
+       "10400"
+      ],
+      "codeHistory": "10382",
+      "departmentCode": "10",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.4115945,
+      "longitude": 3.4453184
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 156429,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "NHhvxyAeIjmS",
+    "name": {
+     "first": [
+      "Gregory",
+      "Kurt",
+      "Alain"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19740623",
+     "location": {
+      "city": "Orléans",
+      "code": "45234",
+      "codePostal": [
+       "45100",
+       "45000"
+      ],
+      "codeHistory": "45234",
+      "departmentCode": "45",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.8797438,
+      "longitude": 1.917774
+     }
+    },
+    "death": {
+     "date": "19740711",
+     "certificateId": "727",
+     "age": 0,
+     "location": {
+      "city": [
+       "Paris",
+       "Paris 7e Arrondissement"
+      ],
+      "code": "75107",
+      "codePostal": [
+       "75007"
+      ],
+      "codeHistory": "75107",
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8449537,
+      "longitude": 2.3760859
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1971",
+    "sourceLine": 32519,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "mh8NtD4nQ5JB",
+    "name": {
+     "first": [
+      "Jules",
+      "Georges"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19100718",
+     "location": {
+      "city": "Saint-Pantaléon-de-Larche",
+      "code": "19229",
+      "codePostal": [
+       "19600"
+      ],
+      "codeHistory": "19229",
+      "departmentCode": "19",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.1514363,
+      "longitude": 1.4343829
+     }
+    },
+    "death": {
+     "date": "19711126",
+     "certificateId": "3576",
+     "age": 61,
+     "location": {
+      "city": [
+       "Paris",
+       "Paris 13e Arrondissement"
+      ],
+      "code": "75113",
+      "codePostal": [
+       "75013"
+      ],
+      "codeHistory": "75113",
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8449537,
+      "longitude": 2.3760859
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 384435,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "Djfg2L533Tz8",
+    "name": {
+     "first": [
+      "Gabrielle",
+      "Armandine"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18931017",
+     "location": {
+      "city": "Lencloître",
+      "code": "86128",
+      "codePostal": [
+       "86140"
+      ],
+      "codeHistory": "86128",
+      "departmentCode": "86",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.8061047,
+      "longitude": 0.3053335
+     }
+    },
+    "death": {
+     "date": "19750112",
+     "certificateId": "1",
+     "age": 81,
+     "location": {
+      "city": "Doussay",
+      "code": "86096",
+      "codePostal": [
+       "86140"
+      ],
+      "codeHistory": "86096",
+      "departmentCode": "86",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.8346147,
+      "longitude": 0.2830567
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 385543,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "ffY7lIv5rZh-",
+    "name": {
+     "first": [
+      "Louise"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19150301",
+     "location": {
+      "city": [
+       "Saint-Genest-D'Ambiere",
+       "Saint-Genest"
+      ],
+      "code": "86221",
+      "codePostal": [
+       "86140"
+      ],
+      "codeHistory": "86221",
+      "departmentCode": "86",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.8238133,
+      "longitude": 0.3566
+     }
+    },
+    "death": {
+     "date": "19750311",
+     "certificateId": "1",
+     "age": 60,
+     "location": {
+      "city": "Usseau",
+      "code": "86275",
+      "codePostal": [
+       "86230"
+      ],
+      "codeHistory": "86275",
+      "departmentCode": "86",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.887852,
+      "longitude": 0.4973195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1971",
+    "sourceLine": 22324,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "6PmSYwmdwNDa",
+    "name": {
+     "first": [
+      "Olivier",
+      "Janick",
+      "Regis"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19710531",
+     "location": {
+      "city": "Falaise",
+      "code": "14258",
+      "codePostal": [
+       "14700"
+      ],
+      "codeHistory": "14258",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8928773,
+      "longitude": -0.1941782
+     }
+    },
+    "death": {
+     "date": "19710716",
+     "certificateId": "7",
+     "age": 0,
+     "location": {
+      "city": "Ouilly-le-Tesson",
+      "code": "14486",
+      "codePostal": [
+       "14190"
+      ],
+      "codeHistory": "14486",
+      "departmentCode": "14",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.989304,
+      "longitude": -0.2163853
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 90962,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "6WyyYXKDaiYX",
+    "name": {
+     "first": [
+      "Jean-Francois",
+      "Bernard"
+     ],
+     "last": "Deneau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19581027",
+     "location": {
+      "city": "Janville",
+      "code": "28199",
+      "codePostal": [
+       "28310"
+      ],
+      "codeHistory": "28199",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.2014525,
+      "longitude": 1.8879416
+     }
+    },
+    "death": {
+     "date": "19761024",
+     "certificateId": "1744",
+     "age": 17,
+     "location": {
+      "city": "Orléans",
+      "code": "45234",
+      "codePostal": [
+       "45100",
+       "45000"
+      ],
+      "codeHistory": "45234",
+      "departmentCode": "45",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.8797438,
+      "longitude": 1.917774
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 17093,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "meytcjvofBSo",
+    "name": {
+     "first": [
+      "Josephine",
+      "Marie"
+     ],
+     "last": "Dental"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18950308",
+     "location": {
+      "city": "Sainte-Agnès",
+      "code": "06113",
+      "codePostal": [
+       "06500"
+      ],
+      "codeHistory": "06113",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8065452,
+      "longitude": 7.4626332
+     }
+    },
+    "death": {
+     "date": "19760106",
+     "certificateId": "90",
+     "age": 80,
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 3e Arrondissement"
+      ],
+      "code": "69383",
+      "codePostal": [
+       "69003"
+      ],
+      "codeHistory": "69383",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 165513,
+    "scores": {
+     "name": {
+      "score": 0.41,
+      "first": 0.5,
+      "last": 0.88
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "rbLx9qK8n2u7",
+    "name": {
+     "first": [
+      "Simonne",
+      "Julie",
+      "Alexandrine"
+     ],
+     "last": "Denthu"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19020321",
+     "location": {
+      "city": "Chaussy",
+      "code": "45088",
+      "codePostal": [
+       "45480"
+      ],
+      "codeHistory": "45088",
+      "departmentCode": "45",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.1633532,
+      "longitude": 1.9886357
+     }
+    },
+    "death": {
+     "date": "19760919",
+     "certificateId": "20",
+     "age": 74,
+     "location": {
+      "city": "Pannes",
+      "code": "45247",
+      "codePostal": [
+       "45700"
+      ],
+      "codeHistory": "45247",
+      "departmentCode": "45",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.0067358,
+      "longitude": 2.674552
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 17091,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "YLh0SKJzgInE",
+    "name": {
+     "first": [
+      "Auguste",
+      "Charles"
+     ],
+     "last": "Dental"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19110324",
+     "location": {
+      "city": "Sainte-Agnès",
+      "code": "06113",
+      "codePostal": [
+       "06500"
+      ],
+      "codeHistory": "06113",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8065452,
+      "longitude": 7.4626332
+     }
+    },
+    "death": {
+     "date": "19760911",
+     "certificateId": "4173",
+     "age": 65,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 258470,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "43U4tKAIsfUt",
+    "name": {
+     "first": [
+      "Maurice",
+      "Emilien",
+      "Joseph"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19120131",
+     "location": {
+      "city": "Juigné-sur-Sarthe",
+      "code": "72151",
+      "codePostal": [
+       "72300"
+      ],
+      "codeHistory": "72151",
+      "departmentCode": "72",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.8690316,
+      "longitude": -0.293163
+     }
+    },
+    "death": {
+     "date": "19720630",
+     "certificateId": "11",
+     "age": 60,
+     "location": {
+      "city": "Solesmes",
+      "code": "72336",
+      "codePostal": [
+       "72300"
+      ],
+      "codeHistory": "72336",
+      "departmentCode": "72",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.8404327,
+      "longitude": -0.2892819
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 316482,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "fMGl2MM-VT6u",
+    "name": {
+     "first": [
+      "Georgette",
+      "Marie",
+      "Augustine"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19080715",
+     "location": {
+      "city": [
+       "Saint Maur Des Fosses",
+       "Saint-Maur-des-Fossés"
+      ],
+      "code": "75068",
+      "codePostal": [
+       "94210",
+       "94100"
+      ],
+      "codeHistory": [
+       "75068",
+       "94068"
+      ],
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8011075,
+      "longitude": 2.4928606
+     }
+    },
+    "death": {
+     "date": "19750725",
+     "certificateId": "1719",
+     "age": 67,
+     "location": {
+      "city": "Créteil",
+      "code": "94028",
+      "codePostal": [
+       "94000"
+      ],
+      "codeHistory": [
+       "75028",
+       "94028"
+      ],
+      "departmentCode": "94",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7806384,
+      "longitude": 2.4549015
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 314732,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "fAgUSTEE5yUf",
+    "name": {
+     "first": [
+      "Lucien",
+      "Jules"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19131026",
+     "location": {
+      "city": [
+       "Nogent Sur Marne",
+       "Nogent-sur-Marne"
+      ],
+      "code": "75052",
+      "codePostal": [
+       "94130"
+      ],
+      "codeHistory": [
+       "75052",
+       "94052"
+      ],
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.8367065,
+      "longitude": 2.4770862
+     }
+    },
+    "death": {
+     "date": "19750130",
+     "certificateId": "4",
+     "age": 61,
+     "location": {
+      "city": "Breuillet",
+      "code": "17064",
+      "codePostal": [
+       "17920"
+      ],
+      "codeHistory": "17064",
+      "departmentCode": "17",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7012403,
+      "longitude": -1.0537672
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 172778,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "j54scnpBgtrJ",
+    "name": {
+     "first": [
+      "Marcelle",
+      "Marie"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19071103",
+     "location": {
+      "city": "Les Ponts-de-Cé",
+      "code": "49246",
+      "codePostal": [
+       "49130"
+      ],
+      "codeHistory": "49246",
+      "departmentCode": "49",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.4253559,
+      "longitude": -0.5110628
+     }
+    },
+    "death": {
+     "date": "19750519",
+     "certificateId": "9",
+     "age": 67,
+     "location": {
+      "city": [
+       "Saint-Sylvain-d'Anjou",
+       "Verrières-en-Anjou"
+      ],
+      "code": "49323",
+      "codePostal": [
+       "49112",
+       "49480"
+      ],
+      "codeHistory": "49323",
+      "departmentCode": "49",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.5169429,
+      "longitude": -0.4735732
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 92182,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "ArHKiB5DW4mO",
+    "name": {
+     "first": [
+      "Marie",
+      "Therese"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18950331",
+     "location": {
+      "city": "Yèvres",
+      "code": "28424",
+      "codePostal": [
+       "28160"
+      ],
+      "codeHistory": "28424",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.1876833,
+      "longitude": 1.195671
+     }
+    },
+    "death": {
+     "date": "19761120",
+     "certificateId": "46",
+     "age": 81,
+     "location": {
+      "city": "Névez",
+      "code": "29153",
+      "codePostal": [
+       "29920"
+      ],
+      "codeHistory": "29153",
+      "departmentCode": "29",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.8121564,
+      "longitude": -3.7668881
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 90948,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "gx_h6I0eIg3s",
+    "name": {
+     "first": [
+      "Gilbert",
+      "Louis",
+      "Jacques"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19020205",
+     "location": {
+      "city": "Jallans",
+      "code": "28198",
+      "codePostal": [
+       "28200"
+      ],
+      "codeHistory": "28198",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.0770067,
+      "longitude": 1.3841061
+     }
+    },
+    "death": {
+     "date": "19761209",
+     "certificateId": "192",
+     "age": 74,
+     "location": {
+      "city": "L'Haÿ-les-Roses",
+      "code": "94038",
+      "codePostal": [
+       "94240"
+      ],
+      "codeHistory": [
+       "75038",
+       "94038"
+      ],
+      "departmentCode": "94",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.776683,
+      "longitude": 2.3376329
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 81640,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "NriKdioX5kD6",
+    "name": {
+     "first": [
+      "Pierre",
+      "Andre",
+      "Raymond"
+     ],
+     "last": "Deneau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19020317",
+     "location": {
+      "city": "Bailleau-l'Évêque",
+      "code": "28022",
+      "codePostal": [
+       "28300"
+      ],
+      "codeHistory": "28022",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.488146,
+      "longitude": 1.3886721
+     }
+    },
+    "death": {
+     "date": "19730430",
+     "certificateId": "27",
+     "age": 71,
+     "location": {
+      "city": "Maule",
+      "code": "78380",
+      "codePostal": [
+       "78580"
+      ],
+      "codeHistory": "78380",
+      "departmentCode": "78",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9105628,
+      "longitude": 1.8475666
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 302354,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "rO2E1z3ZkpTw",
+    "name": {
+     "first": [
+      "Wilfrid",
+      "Lucien"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19180416",
+     "location": {
+      "city": "Thiais",
+      "code": "75074",
+      "codePostal": [
+       "94320"
+      ],
+      "codeHistory": [
+       "75074",
+       "94073"
+      ],
+      "departmentCode": "75",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7604242,
+      "longitude": 2.3871077
+     }
+    },
+    "death": {
+     "date": "19740607",
+     "certificateId": "147",
+     "age": 56,
+     "location": {
+      "city": "Choisy-le-Roi",
+      "code": "94022",
+      "codePostal": [
+       "94600"
+      ],
+      "codeHistory": [
+       "75022",
+       "94022"
+      ],
+      "departmentCode": "94",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.764756,
+      "longitude": 2.4223484
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 183194,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "VBRh6_25c_-V",
+    "name": {
+     "first": [
+      "Lucette"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19290622",
+     "location": {
+      "city": "Commune Fictive",
+      "code": "58990",
+      "codeHistory": [
+       "XXXXX",
+       "58990"
+      ],
+      "departmentCode": "58",
+      "country": "France",
+      "countryCode": "FRA"
+     }
+    },
+    "death": {
+     "date": "19720303",
+     "certificateId": "161",
+     "age": 42,
+     "location": {
+      "city": "Nevers",
+      "code": "58194",
+      "codePostal": [
+       "58000"
+      ],
+      "codeHistory": "58194",
+      "departmentCode": "58",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.9881976,
+      "longitude": 3.1605012
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 114018,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "tEcp_sRJwlvH",
+    "name": {
+     "first": [
+      "Vincent"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19720525",
+     "location": {
+      "city": "Tours",
+      "code": "37261",
+      "codePostal": [
+       "37200",
+       "37100",
+       "37000"
+      ],
+      "codeHistory": [
+       "37235",
+       "37239",
+       "37261"
+      ],
+      "departmentCode": "37",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.3943626,
+      "longitude": 0.6939782
+     }
+    },
+    "death": {
+     "date": "19720527",
+     "certificateId": "1008/1",
+     "age": 0,
+     "location": {
+      "city": "Tours",
+      "code": "37261",
+      "codePostal": [
+       "37200",
+       "37100",
+       "37000"
+      ],
+      "codeHistory": [
+       "37235",
+       "37239",
+       "37261"
+      ],
+      "departmentCode": "37",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.3943626,
+      "longitude": 0.6939782
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1976",
+    "sourceLine": 160195,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "RA8i5BLLum1J",
+    "name": {
+     "first": [
+      "Alain",
+      "Georges",
+      "Andre"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19301210",
+     "location": {
+      "city": "Montbert",
+      "code": "44102",
+      "codePostal": [
+       "44140"
+      ],
+      "codeHistory": "44102",
+      "departmentCode": "44",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.0703319,
+      "longitude": -1.4728045
+     }
+    },
+    "death": {
+     "date": "19761111",
+     "certificateId": "3/684",
+     "age": 45,
+     "location": {
+      "city": "Nantes",
+      "code": "44109",
+      "codePostal": [
+       "44100",
+       "44300",
+       "44000",
+       "44200"
+      ],
+      "codeHistory": "44109",
+      "departmentCode": "44",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.2354569,
+      "longitude": -1.5498349
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 121961,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "xWUW-BDFGLLT",
+    "name": {
+     "first": [
+      "Desire"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18930325",
+     "location": {
+      "city": "Saint-Nicolas-des-Motets",
+      "code": "37229",
+      "codePostal": [
+       "37110"
+      ],
+      "codeHistory": "37229",
+      "departmentCode": "37",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.5805655,
+      "longitude": 1.0296904
+     }
+    },
+    "death": {
+     "date": "19730621",
+     "certificateId": "58",
+     "age": 80,
+     "location": {
+      "city": "Château-Renault",
+      "code": "37063",
+      "codePostal": [
+       "37110"
+      ],
+      "codeHistory": "37063",
+      "departmentCode": "37",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.5911473,
+      "longitude": 0.9073666
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 332567,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "SumOONin8ScZ",
+    "name": {
+     "first": [
+      "Georgette",
+      "Celina",
+      "Louise"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18980923",
+     "location": {
+      "city": [
+       "Noirlieu",
+       "Bressuire"
+      ],
+      "code": "79192",
+      "codePostal": [
+       "79300"
+      ],
+      "codeHistory": [
+       "79049",
+       "79192"
+      ],
+      "departmentCode": "79",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.8584942,
+      "longitude": -0.4784841
+     }
+    },
+    "death": {
+     "date": "19730520",
+     "certificateId": "9",
+     "age": 74,
+     "location": {
+      "city": "Massais",
+      "code": "79168",
+      "codePostal": [
+       "79150"
+      ],
+      "codeHistory": "79168",
+      "departmentCode": "79",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.0024711,
+      "longitude": -0.3584288
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 304205,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "UEq2QFBzVdlG",
+    "name": {
+     "first": [
+      "Maurice",
+      "Germain"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19240128",
+     "location": {
+      "city": [
+       "Verron",
+       "La Flèche"
+      ],
+      "code": "72371",
+      "codePostal": [
+       "72200"
+      ],
+      "codeHistory": [
+       "72154",
+       "72371"
+      ],
+      "departmentCode": "72",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.6932007,
+      "longitude": -0.0816521
+     }
+    },
+    "death": {
+     "date": "19750610",
+     "certificateId": "29",
+     "age": 51,
+     "location": {
+      "city": "Saint-Hilaire-du-Harcouët",
+      "code": "50484",
+      "codePostal": [
+       "50600",
+       "50730"
+      ],
+      "codeHistory": "50484",
+      "departmentCode": "50",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.5659753,
+      "longitude": -1.1415634
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 303095,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "2fJrFP9s2aeO",
+    "name": {
+     "first": [
+      "Adrienne",
+      "Fernande",
+      "Augustine"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19100616",
+     "location": {
+      "city": "Poillé-sur-Vègre",
+      "code": "72239",
+      "codePostal": [
+       "72350"
+      ],
+      "codeHistory": "72239",
+      "departmentCode": "72",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.9198804,
+      "longitude": -0.2711131
+     }
+    },
+    "death": {
+     "date": "19750517",
+     "certificateId": "7",
+     "age": 64,
+     "location": {
+      "city": "Avessé",
+      "code": "72019",
+      "codePostal": [
+       "72350"
+      ],
+      "codeHistory": "72019",
+      "departmentCode": "72",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.9581253,
+      "longitude": -0.2654752
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1972",
+    "sourceLine": 124237,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "1tvd4Qd2sMzn",
+    "name": {
+     "first": [
+      "Alice",
+      "Henriette"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18930727",
+     "location": {
+      "city": "Le Gault-Perche",
+      "code": "41096",
+      "codePostal": [
+       "41270"
+      ],
+      "codeHistory": "41096",
+      "departmentCode": "41",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.0984617,
+      "longitude": 0.9907344
+     }
+    },
+    "death": {
+     "date": "19720906",
+     "certificateId": "76",
+     "age": 79,
+     "location": {
+      "city": "Brest",
+      "code": "29019",
+      "codePostal": [
+       "29200"
+      ],
+      "codeHistory": [
+       "29019",
+       "29096",
+       "29253",
+       "29258"
+      ],
+      "departmentCode": "29",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.402586,
+      "longitude": -4.5018361
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1975",
+    "sourceLine": 90122,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "3F9RKwXfqk_f",
+    "name": {
+     "first": [
+      "Marie",
+      "Yvonne"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19000622",
+     "location": {
+      "city": "Saint-Hilaire-sur-Yerre",
+      "code": "28340",
+      "codePostal": [
+       "28220"
+      ],
+      "codeHistory": "28340",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.0337926,
+      "longitude": 1.2184909
+     }
+    },
+    "death": {
+     "date": "19750120",
+     "certificateId": "28",
+     "age": 74,
+     "location": {
+      "city": "Châteaudun",
+      "code": "28088",
+      "codePostal": [
+       "28200"
+      ],
+      "codeHistory": "28088",
+      "departmentCode": "28",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.0790475,
+      "longitude": 1.3173078
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 340532,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.76
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "HIpbcA6pImge",
+    "name": {
+     "first": [
+      "Marcelle",
+      "Isabelle",
+      "Christiane"
+     ],
+     "last": "Deniau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19200303",
+     "location": {
+      "city": "Maisons-Laffitte",
+      "code": "78358",
+      "codePostal": [
+       "78600"
+      ],
+      "codeHistory": "78358",
+      "departmentCode": "78",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9521578,
+      "longitude": 2.1446313
+     }
+    },
+    "death": {
+     "date": "19740905",
+     "certificateId": "634",
+     "age": 54,
+     "location": {
+      "city": "Saint-Germain-en-Laye",
+      "code": "78551",
+      "codePostal": [
+       "78100"
+      ],
+      "codeHistory": "78551",
+      "departmentCode": "78",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9275436,
+      "longitude": 2.0935033
+     }
+    }
+   }
+  ]
+ }
+}

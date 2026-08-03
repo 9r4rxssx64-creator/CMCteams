@@ -1,0 +1,197 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "lastName": "DESARZENS",
+  "birthCity": "Salon-de-Provence"
+ },
+ "response": {
+  "total": 3,
+  "maxScoreES": 23.56202,
+  "size": 50,
+  "page": 1,
+  "delay": 453,
+  "persons": [
+   {
+    "score": 0,
+    "source": "2006",
+    "sourceLine": 163115,
+    "scores": {
+     "name": {
+      "score": 0.29,
+      "first": 0.5,
+      "last": 0.69
+     },
+     "score": 0,
+     "es": 0.12
+    },
+    "id": "rjQNrqDXZ8CK",
+    "name": {
+     "first": [
+      "Camille"
+     ],
+     "last": "Desarmes"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19240103",
+     "location": {
+      "city": "Fort-de-France",
+      "code": "97209",
+      "codePostal": [
+       "97200",
+       "97234"
+      ],
+      "codeHistory": "97209",
+      "departmentCode": "972",
+      "country": "France, Martinique",
+      "countryCode": "FRA",
+      "latitude": 14.6415045,
+      "longitude": -61.0683098
+     }
+    },
+    "death": {
+     "date": "20060411",
+     "certificateId": "000000406",
+     "age": 82,
+     "location": {
+      "city": "Saint-Nazaire",
+      "code": "44184",
+      "codePostal": [
+       "44600"
+      ],
+      "codeHistory": "44184",
+      "departmentCode": "44",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.2730896,
+      "longitude": -2.2494895
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2006",
+    "sourceLine": 220293,
+    "scores": {
+     "name": {
+      "score": 0.29,
+      "first": 0.5,
+      "last": 0.69
+     },
+     "score": 0,
+     "es": 0.12
+    },
+    "id": "_DimEDQgkgCI",
+    "name": {
+     "first": [
+      "Marcel",
+      "Theodore"
+     ],
+     "last": "Desarmes"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19320420",
+     "location": {
+      "city": "Fort-de-France",
+      "code": "97209",
+      "codePostal": [
+       "97200",
+       "97234"
+      ],
+      "codeHistory": "97209",
+      "departmentCode": "972",
+      "country": "France, Martinique",
+      "countryCode": "FRA",
+      "latitude": 14.6415045,
+      "longitude": -61.0683098
+     }
+    },
+    "death": {
+     "date": "20060520",
+     "certificateId": "000000217",
+     "age": 74,
+     "location": {
+      "city": "Gonesse",
+      "code": "95277",
+      "codePostal": [
+       "95500"
+      ],
+      "codeHistory": [
+       "78277",
+       "95277"
+      ],
+      "departmentCode": "95",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.9884594,
+      "longitude": 2.4589163
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2024",
+    "sourceLine": 483955,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.69
+     },
+     "score": 0,
+     "es": 0.12
+    },
+    "id": "0eRRoR3FUuIG",
+    "name": {
+     "first": [
+      "Irene",
+      "Antoinette"
+     ],
+     "last": "Desarmes"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19300117",
+     "location": {
+      "city": "Fort-de-France",
+      "code": "97209",
+      "codePostal": [
+       "97200",
+       "97234"
+      ],
+      "codeHistory": "97209",
+      "departmentCode": "972",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 14.6415045,
+      "longitude": -61.0683098
+     }
+    },
+    "death": {
+     "date": "20240904",
+     "certificateId": "1393",
+     "age": 94,
+     "location": {
+      "city": "Fort-de-France",
+      "code": "97209",
+      "codePostal": [
+       "97200",
+       "97234"
+      ],
+      "codeHistory": "97209",
+      "departmentCode": "972",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 14.6415045,
+      "longitude": -61.0683098
+     }
+    }
+   }
+  ]
+ }
+}
