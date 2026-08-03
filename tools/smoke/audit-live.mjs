@@ -46,6 +46,7 @@ const SURFACES = [
   { url: 'https://coffre.' + ROOT + '/', name: 'Coffre-fort', selKey: 'body' },
   { url: 'https://departs.' + ROOT + '/', name: 'Départs', selKey: 'body' },
   { url: 'https://cmcteams-light.' + ROOT + '/', name: 'CMCteams light', selKey: 'body' },
+  { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate' },
   { url: BASE + '/worldmonitor/', name: 'World Monitor', selKey: '.leaflet-container' },
   { url: BASE + '/osint/', name: 'OSINT', selKey: '.leaflet-container' },
 ];
