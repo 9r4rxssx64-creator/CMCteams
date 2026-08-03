@@ -40,7 +40,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--gold)}
 /* topbar */
 #top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;background:linear-gradient(180deg,rgba(10,14,23,.92),rgba(10,14,23,.55));backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 #top .logo{font-size:22px;filter:drop-shadow(0 2px 6px rgba(240,200,116,.5))}
-#top h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.2px;flex:1;background:linear-gradient(90deg,var(--gold2),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#top h1{font-size:19px;margin:0;font-weight:700;font-family:Georgia,"Times New Roman",serif;font-style:italic;letter-spacing:.2px;flex:1;background:linear-gradient(90deg,var(--gold2),#7fc98a);-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #syncPill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:5px 9px;background:rgba(12,18,30,.6)}
 #syncPill i{width:9px;height:9px;border-radius:50%;background:#6b7686;transition:background .3s}
 #syncPill.on i{background:var(--ok);box-shadow:0 0 10px var(--ok)}#syncPill.off i{background:#f0b45f}
@@ -70,10 +70,11 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 #treeCtl .seg{display:flex;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 #treeCtl .seg button{padding:9px 13px;font-size:13px;font-weight:600;color:var(--mut)}
 #treeCtl .seg button.on{background:linear-gradient(135deg,var(--cyan),#39b9ff);color:#04222a}
-#stageWrap{position:relative;height:66vh;min-height:420px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(90% 70% at 50% 0,rgba(90,120,220,.10),transparent),rgba(10,14,23,.5);touch-action:none;box-shadow:var(--sh)}
-#stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#stageWrap{position:relative;height:66vh;min-height:420px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(120% 75% at 50% 100%,rgba(80,140,84,.12),transparent),radial-gradient(90% 60% at 50% 0,rgba(210,168,96,.10),transparent),rgba(14,12,9,.62);touch-action:none;box-shadow:var(--sh)}
+#treeBg{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.55}#treeBg svg{width:100%;height:100%;display:block}
+#stage{position:absolute;left:0;top:0;z-index:1;transform-origin:0 0;will-change:transform}
 #stage svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-.tnode{position:absolute;transform:translate(-50%,-50%);width:170px;padding:11px 12px;border-radius:17px;background:linear-gradient(180deg,var(--glass2),rgba(16,23,38,.92));border:1px solid var(--line);display:flex;gap:11px;align-items:center;box-shadow:0 10px 26px rgba(0,0,0,.42);cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s}
+.tnode{position:absolute;transform:translate(-50%,-50%);width:170px;padding:11px 12px;border-radius:15px;background:linear-gradient(180deg,#f8efd9,#ead9b6);border:1px solid #c8a765;display:flex;gap:11px;align-items:center;box-shadow:0 10px 26px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5);cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s}
 .tnode:active{transform:translate(-50%,-50%) scale(.97)}
 .tnode.root{border-color:var(--gold);box-shadow:0 0 0 1.5px var(--gold),0 12px 34px rgba(240,200,116,.3)}
 .tnode.sM{border-top:2px solid rgba(93,159,214,.6)}
@@ -82,8 +83,8 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .tnode.sM .av{box-shadow:0 0 0 2px rgba(93,159,214,.45),0 3px 10px rgba(0,0,0,.35)}
 .tnode.sF .av{box-shadow:0 0 0 2px rgba(255,158,199,.45),0 3px 10px rgba(0,0,0,.35)}
 .tnode.root .av{box-shadow:0 0 0 2px var(--gold),0 3px 12px rgba(240,200,116,.4)}
-.tnode .tn{font-weight:700;font-size:14px;line-height:1.16;overflow:hidden;text-overflow:ellipsis}
-.tnode .ty{font-size:11.5px;color:var(--mut);margin-top:1px}
+.tnode .tn{font-weight:700;font-size:14px;line-height:1.16;overflow:hidden;text-overflow:ellipsis;color:#2c2010;font-family:Georgia,"Times New Roman",serif}
+.tnode .ty{font-size:11.5px;color:#856a3a;margin-top:1px}
 .av.M{background:linear-gradient(135deg,#1f3c66,#122036)}.av.F{background:linear-gradient(135deg,#552a4e,#2c1428)}
 .bandlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--gold);background:rgba(10,14,23,.72);padding:5px 14px;border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .couplebadge{position:absolute;transform:translate(-50%,-50%);font-size:15px;background:rgba(10,14,23,.85);border:1px solid var(--gold);border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(240,200,116,.35)}
@@ -172,7 +173,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.6";
+var APP_VER="v2.7";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -290,10 +291,24 @@ function layoutForest(){
   return {nodes:nodes,links:links,bands:bands,w:totalW,h:y+PAD};
 }
 function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||(p.vivant?"vivant":"");return '<div class="tnode s'+(p.sexe||"X")+(n.root?" root":"")+'" style="left:'+n.x+'px;top:'+n.y+'px" data-open="'+n.id+'">'+avatarHTML(p,48)+'<div style="min-width:0"><div class="tn">'+esc(full(p))+'</div><div class="ty">'+esc(sub)+'</div></div></div>';}
+/* Arbre illustré (décor heirloom « Our Family Tree ») — fond fixe du cadre,
+   racines en bas, tronc central, branches qui montent, feuillage doré/vert. */
+function treeBgSVG(){return '<svg viewBox="0 0 400 580" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">'
+  +'<defs>'
+  +'<radialGradient id="leaf" cx="50%" cy="42%" r="62%"><stop offset="0" stop-color="#4d8a5c" stop-opacity=".55"/><stop offset=".6" stop-color="#2c5a3a" stop-opacity=".32"/><stop offset="1" stop-color="#16301f" stop-opacity="0"/></radialGradient>'
+  +'<linearGradient id="bark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8b06a"/><stop offset="1" stop-color="#6a4a26"/></linearGradient>'
+  +'</defs>'
+  +'<g>'
+  +'<ellipse cx="200" cy="150" rx="168" ry="120" fill="url(#leaf)"/><ellipse cx="112" cy="182" rx="98" ry="86" fill="url(#leaf)"/><ellipse cx="292" cy="176" rx="100" ry="86" fill="url(#leaf)"/><ellipse cx="200" cy="104" rx="86" ry="74" fill="url(#leaf)"/>'
+  +'</g>'
+  +'<path d="M186 580 C 186 440 176 350 197 250 C 208 300 214 430 216 580 Z" fill="url(#bark)" opacity=".72"/>'
+  +'<g stroke="url(#bark)" stroke-width="7" fill="none" stroke-linecap="round" opacity=".6"><path d="M198 300 C 152 272 122 224 100 182"/><path d="M201 292 C 250 262 286 216 302 182"/><path d="M199 332 C 180 302 162 274 152 244"/><path d="M201 332 C 226 302 246 274 256 248"/></g>'
+  +'<g stroke="url(#bark)" stroke-width="6" fill="none" stroke-linecap="round" opacity=".42"><path d="M193 578 C 158 588 120 590 78 598"/><path d="M207 578 C 246 588 284 590 322 598"/><path d="M200 578 C 200 592 200 598 200 604"/></g>'
+  +'</svg>';}
 function renderTree(){
   var w=$("#wrap");var n=Object.keys(DB.persons).length;
   if(!n){w.innerHTML='<div class="empty">Ton arbre est vide.<br>Touche ＋ pour ajouter la 1ʳᵉ personne.</div>';return;}
-  w.innerHTML='<div id="stageWrap"><div id="stage"></div><div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button></div><div class="hintpan">👨‍👩‍👧‍👦 '+n+' personnes · glisse pour bouger · pince pour zoomer · touche une fiche</div></div>';
+  w.innerHTML='<div id="stageWrap"><div id="treeBg">'+treeBgSVG()+'</div><div id="stage"></div><div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button></div><div class="hintpan">🌳 '+n+' personnes · glisse pour bouger · pince pour zoomer · touche une fiche</div></div>';
   var zb=document.querySelectorAll(".zoomBtns [data-z]");zb.forEach(function(b){b.onclick=function(){if(b.dataset.z==="fit")fitStage();else zoomAt(0.5,0.5,b.dataset.z==="1"?1.25:1/1.25);};});
   setupPanZoom();drawStage(true);
 }
