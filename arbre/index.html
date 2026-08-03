@@ -182,7 +182,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.20";
+var APP_VER="v2.21";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -581,7 +581,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=11;
+var SEED_VERSION=12;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -611,7 +611,10 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({prenom:"Alexandre",nom:"MAIFFRET",sexe:"M",naissance:{date:"14.10.1856 ?"},deces:{date:"3.05.1926 ?"},notes:"Document. Actes avant ~1891 à chercher à VILLEFRANCHE-sur-Mer (Beaulieu en dépendait avant sa création).",sources:[SRC.ad06,SRC.beaulieu1]});
   add({prenom:"Joseph-Alexandre",nom:"MAIFFRET",sexe:"M",naissance:{date:"22.08.1836 ?"},deces:{date:"24.07.1931 ?"},notes:"Document (sans postérité). À rattacher.",sources:[SRC.ad06]});
   add({prenom:"Louis",nom:"MAIFFRET",sexe:"M",naissance:{date:"16.06.1860 ?"},deces:{date:"24.05.1932 ?"},notes:"Document (sans postérité). À rattacher.",sources:[SRC.beaulieu1]});
-  add({prenom:"Léonie",nom:"MAIFFRET",sexe:"F",naissance:{date:"19.03.1895 ?"},deces:{date:"30.01.1952 ?"},notes:"Épouse VAN DEN BOSCH (document). Ses enfants probables (nés à Beaulieu, ✅ INSEE) : Lucette Thérèse (1920) et Alexandre Robert Victor (1921–2022). À rattacher.",sources:[SRC.beaulieu2,SRC.acteVdb]});
+  add({id:"seed_leonie",prenom:"Léonie Rosa Désirée",nom:"MAIFFRET",sexe:"F",naissance:{date:"19.09.1895",lieu:"Beaulieu-sur-Mer"},deces:{date:"30.01.1972",lieu:"Villefranche-sur-Mer"},notes:"✅ CONFIRMÉE au fichier INSEE : née le 19.09.1895 à Beaulieu-sur-Mer, † 30.01.1972 à Villefranche-sur-Mer (76 ans). ⚠️ Le document familial disait 19.03.1895 et †1952 — l'acte corrige (septembre, et 1972). Épouse VAN DEN BOSCH. Ses enfants probables (nés à Beaulieu, ✅ INSEE) : Lucette Thérèse (1920) et Alexandre Robert Victor (1921–2022). À rattacher.",sources:[SRC.matchid,SRC.beaulieu2,SRC.acteVdb]});
+  add({id:"seed_jap_maiffret",prenom:"Jean Antoine Pierre",nom:"MAIFFRET",sexe:"M",naissance:{date:"18.05.1925",lieu:"Beaulieu-sur-Mer"},deces:{date:"22.01.2010",lieu:"Monaco"},notes:"✅ DÉCOUVERT au fichier INSEE : né le 18.05.1925 à Beaulieu-sur-Mer, † 22.01.2010 à MONACO (84 ans). Un MAIFFRET de Beaulieu mort à Monaco → lien probable avec la branche monégasque de Marie-Thérèse. À rattacher.",sources:[SRC.matchid,SRC.beaulieu1,SRC.monaco1900]});
+  add({id:"seed_victorj_maiffret",prenom:"Victor Jules",nom:"MAIFFRET",sexe:"M",naissance:{date:"2.03.1914",lieu:"Beaulieu-sur-Mer"},deces:{date:"21.08.1982",lieu:"Nice"},notes:"✅ DÉCOUVERT au fichier INSEE : né le 2.03.1914 à Beaulieu-sur-Mer, † 21.08.1982 à Nice (68 ans). Même génération que Marie-Thérèse (1914) — cousin/frère possible, et prénom Victor qui court dans la famille. À rattacher.",sources:[SRC.matchid,SRC.beaulieu1]});
+  add({id:"seed_alex1906_maiffret",prenom:"Alexandre",nom:"MAIFFRET",sexe:"M",naissance:{date:"10.07.1906",lieu:"Beaulieu-sur-Mer"},deces:{date:"25.02.1993",lieu:"Villefranche-sur-Mer"},notes:"✅ DÉCOUVERT au fichier INSEE : né le 10.07.1906 à Beaulieu-sur-Mer, † 25.02.1993 à Villefranche-sur-Mer (86 ans). À ne pas confondre avec Alexandre 1856–1926 (probable grand-oncle/aïeul). À rattacher.",sources:[SRC.matchid,SRC.beaulieu1]});
   add({id:"seed_marg_rose",prenom:"Marguerite-Rose",nom:"MAIFFRET",sexe:"F",naissance:{date:"6.03.1907",lieu:"Nice"},deces:{date:"2.08.1983",lieu:"Nice"},notes:"✅ CONFIRMÉE au fichier INSEE : née le 6.03.1907 à Nice, † 2.08.1983 à Nice (76 ans). Document : sans postérité.",sources:[SRC.matchid,SRC.acteMaiffret]});
   /* — Personnes CONFIRMÉES à l'INSEE (recherche 2026-08-03) — même famille de Beaulieu, à rattacher — */
   add({prenom:"Michel",nom:"MAIFFRET",sexe:"M",naissance:{date:"19.08.1937",lieu:"Nice"},deces:{date:"18.03.2005",lieu:"Beaulieu-sur-Mer"},notes:"✅ CONFIRMÉ (fichier INSEE) — correspond au « Michel 1937–2005 » du document. À rattacher à la bonne branche.",sources:[SRC.acteMaiffret,SRC.matchid]});
@@ -653,7 +656,8 @@ function dedupePersons(){
    chaque boot (idempotent) — cloudPushAll (PUT complet) propage la purge. */
 var LEGACY_OBSOLETE=[
   {prenom:"Lucette Thérèse",nom:"VAN DEN BOSCH",nd:"~1920 ? (doc: 1926)"},
-  {prenom:"Marguerite-Rose",nom:"MAIFFRET",nd:"6.03.1907 ?"}
+  {prenom:"Marguerite-Rose",nom:"MAIFFRET",nd:"6.03.1907 ?"},
+  {prenom:"Léonie",nom:"MAIFFRET",nd:"19.03.1895 ?"}
 ];
 function purgeLegacy(){var rm=[];for(var id in DB.persons){var p=DB.persons[id];if(String(id).indexOf("seed_")===0)continue;if((p.photos&&p.photos.length)||(p.comments&&p.comments.length))continue;for(var i=0;i<LEGACY_OBSOLETE.length;i++){var o=LEGACY_OBSOLETE[i];if((p.prenom||"")===o.prenom&&(p.nom||"")===o.nom&&((p.naissance&&p.naissance.date)||"")===o.nd){rm.push(id);break;}}}
   rm.forEach(function(id){delete DB.persons[id];});return rm;}
