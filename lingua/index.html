@@ -113,8 +113,22 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .tabbar{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;display:flex;
   background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:30}
 .tab{flex:1;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--tx2)}
-.tab span{font-size:22px}.tab i{font-size:11px;font-style:normal;font-weight:700}
+.tab span{font-size:21px}.tab i{font-size:10px;font-style:normal;font-weight:700}
 .tab.active{color:var(--green)}
+
+/* ---- Traducteur ---- */
+.tr-bar{margin-bottom:10px}
+#trSrc{width:100%;background:var(--card2);color:var(--tx);border:2px solid var(--line);border-radius:12px;padding:12px;font-size:15px}
+.tr-in{position:relative;margin-bottom:14px}
+.tr-in .txt{margin-bottom:0;padding-right:52px}
+.tr-mic{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:10px;background:var(--card2);font-size:18px}
+.tr-out{display:flex;flex-direction:column;gap:10px}
+.tr-hint{color:var(--tx2);font-size:14px;text-align:center;padding:24px 10px;background:var(--card);border:1px dashed var(--line);border-radius:14px}
+.tr-card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.tr-card .trflag{font-size:26px}
+.tr-card .trtxt{flex:1;display:flex;flex-direction:column}
+.tr-card .trtxt b{font-size:17px}.tr-card .trtxt i{font-style:normal;color:var(--tx2);font-size:12px}
+.tr-card .trspk{width:40px;height:40px;border-radius:10px;background:var(--card2);font-size:18px}
 
 /* Leçon */
 .lesson{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
