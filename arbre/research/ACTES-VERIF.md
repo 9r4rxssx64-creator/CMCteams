@@ -1,6 +1,6 @@
 # 📜 Vérification des actes — personne par personne (2026-08-04)
 
-**75 personnes.** Naissances trouvées : **3** · Décès trouvés (INSEE) : **22** · Vivants : 17 · Naissances verrouillées par la loi des 100 ans : 12 · Bloquées par le mur AD06 : 13
+**76 personnes.** Naissances trouvées : **3** · Décès trouvés (INSEE) : **22** · Vivants : 18 · Naissances verrouillées par la loi des 100 ans : 12 · Bloquées par le mur AD06 : 13
 
 Légende : ✅ acte obtenu · 🔎 robot/base en cours · 🚧 base bloquée pour les robots (accessible depuis un téléphone) · 🔒 acte trop récent, verrouillé par la loi (demande par courrier — bouton 📋 dans chaque fiche) · 💚 vivant(e) · ❔ info manquante
 
@@ -12,6 +12,7 @@ Légende : ✅ acte obtenu · 🔎 robot/base en cours · 🚧 base bloquée pou
 | **Philippe** | ? | ❔ date inconnue | — | 💚 vivant(e) | demander à la famille (année + lieu) pour cibler la bonne base |
 | **Laura** | ? | ❔ date inconnue | — | 💚 vivant(e) | demander à la famille (année + lieu) pour cibler la bonne base |
 | **Théo BRUNO** | ? | ❔ date inconnue | — | 💚 vivant(e) | demander à la famille (année + lieu) pour cibler la bonne base |
+| **Stephan BRUNO** | ? | ❔ date inconnue | — | 💚 vivant(e) | demander à la famille (année + lieu) pour cibler la bonne base |
 | **Pauline Caroline CARLIN** | ? | ❔ date inconnue | ? | ❔ inconnu | demander à la famille (année + lieu) pour cibler la bonne base |
 | **Joséphine Angèle CIAIS** | ~1886 à La Turbie (Alpes-Maritimes) | 🔎 à localiser | ? | ❔ inconnu | lieu hors bases connues — préciser la commune |
 | **Pierre DANIEL** | 12.05.1881 à Sospel (Alpes-Maritimes) | 🔎 à localiser | ? | ❔ inconnu | lieu hors bases connues — préciser la commune |
