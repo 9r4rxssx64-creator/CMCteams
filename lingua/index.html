@@ -113,9 +113,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .coach-input:focus{border-color:var(--green)}
 .coach-send{flex:0 0 auto;width:50px;height:50px;border:0;border-radius:14px;background:linear-gradient(90deg,var(--green),var(--green-d));color:#fff;font-size:20px;cursor:pointer}
 .coach-mascot .mascot{transform-origin:center bottom}
-@keyframes linoTalk{0%{transform:translateY(0) scale(1) rotate(0)}20%{transform:translateY(-5px) scale(1.05) rotate(-2deg)}45%{transform:translateY(0) scale(1) rotate(0)}70%{transform:translateY(-4px) scale(1.04) rotate(2deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
-.coach-mascot.talking .mascot{animation:linoTalk .55s ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){.coach-mascot.talking .mascot{animation:none}}
+@keyframes beeTalk{0%{transform:translateY(0) scale(1) rotate(0)}20%{transform:translateY(-5px) scale(1.05) rotate(-2deg)}45%{transform:translateY(0) scale(1) rotate(0)}70%{transform:translateY(-4px) scale(1.04) rotate(2deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
+.coach-mascot.talking .mascot{animation:beeTalk .55s ease-in-out infinite}
+@keyframes beeWing{0%,100%{transform:rotate(0deg) scaleY(1)}50%{transform:rotate(6deg) scaleY(.72)}}
+.mascot .wing{transform-box:fill-box;transform-origin:center bottom;animation:beeWing 1.4s ease-in-out infinite}
+.mascot .wing-l{animation-delay:.2s}
+.coach-mascot.talking .mascot .wing{animation-duration:.3s}
+@media (prefers-reduced-motion:reduce){.coach-mascot.talking .mascot{animation:none}.mascot .wing{animation:none}}
 .goal-top{display:flex;justify-content:space-between;font-size:14px;color:var(--tx2);margin-bottom:8px}
 .goal-top b{color:var(--tx)}
 .bar{height:12px;background:var(--card2);border-radius:99px;overflow:hidden}

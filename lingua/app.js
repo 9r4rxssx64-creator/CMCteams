@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.13.0";
+var APP_VER="v2.14.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -488,18 +488,18 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
 /* ============ Coach IA (conversation interactive, mémoire PAR COMPTE) ============ */
 var _coachThinking=false,_coachPose="wave";
 function coachLangMeta(){ return S.course?COURSES[S.course]:null; }
-/* Lino réagit selon ce qu'il dit : félicite → fête, question → curieux, salut → coucou. */
+/* Bee réagit selon ce qu'il dit : félicite → fête, question → curieux, salut → coucou. */
 function coachPoseFor(t){ t=(" "+String(t||"")+" ").toLowerCase();
   if(/(bravo|super|parfait|excellent|g[eé]nial|tr[eè]s bien|bien jou|f[eé]licit|complimenti|bravissim|muy bien|perfecto|sehr gut|toll|[oó]timo|muito bem|goed zo|knap)/.test(t)) return "party";
   if(/\?/.test(t)) return "point";
   if(/(bonjour|salut|coucou|\bciao\b|buongiorno|\bhola\b|buenos|\bhallo\b|guten tag|\bol[aá]\b|bom dia|\bhi\b|hello|goededag)/.test(t)) return "wave";
   return "point";
 }
-/* Lino PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
+/* Bee PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
 function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang);
   var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
 function coachGreeting(c){ var me=accMeta(ACC)||{}; var n=me.name||"toi"; var hi=(DICT["salut"]&&DICT["salut"][c.id])||"Salut";
-  return hi+" "+n+" ! 😊 Je suis ton coach de "+c.nom.toLowerCase()+". On papote un peu pour progresser vers le bilingue ? Écris-moi, ou touche une suggestion ci-dessous."; }
+  return hi+" "+n+" ! 🐝 Moi c'est Bee, ton abeille coach de "+c.nom.toLowerCase()+" ! On butine quelques mots ensemble vers le bilingue ? Écris-moi, ou touche une suggestion ci-dessous."; }
 function coachSuggestions(c){ var hello=(DICT["comment ça va"]&&DICT["comment ça va"][c.id])||"Bonjour";
   return [hello, "Apprends-moi 3 mots utiles", "Corrige ma phrase (j'écris ensuite)", "Donne-moi un mini-défi 🎯"]; }
 function coachOffline(){ return "Je ne peux pas discuter à l'instant (coach momentanément indisponible). En attendant, fais une leçon 🧠 — je garde en mémoire où tu en es et on reprend juste après !"; }
@@ -731,7 +731,7 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
 function toast(msg){ var t=el("div","toast"); t.textContent=msg; document.body.appendChild(t); setTimeout(function(){t.classList.add("show");},10); setTimeout(function(){t.classList.remove("show");setTimeout(function(){t.remove();},300);},2400); }
 function modal(){ var ov=el("div","overlay"),box=el("div","modal"); ov.appendChild(box); document.body.appendChild(ov); setTimeout(function(){ov.classList.add("show");},10); return {body:box,close:function(){ov.classList.remove("show");setTimeout(function(){ov.remove();},250);}}; }
 
-/* ============ Mascotte « Lino » (SVG original animé, création KDMC) ============ */
+/* ============ Mascotte « Bee » 🐝 (abeille rigolote — SVG original animé, création KDMC) ============ */
 function MASCOT(pose,size){ size=size||100;
   var mouth,eyes,arms="",props="",cls="mascot pose-"+pose;
   var blush='<ellipse cx="30" cy="70" rx="8" ry="5" fill="#ff7eb3" opacity=".55"/><ellipse cx="90" cy="70" rx="8" ry="5" fill="#ff7eb3" opacity=".55"/>';
@@ -746,14 +746,20 @@ function MASCOT(pose,size){ size=size||100;
     mouth='<path d="M50 74 Q62 84 74 74" stroke="#20303a" stroke-width="3.2" fill="none" stroke-linecap="round"/>'; arms='<g class="arm arm-r point"><ellipse cx="110" cy="66" rx="8" ry="12" fill="url(#body)"/><circle cx="118" cy="60" r="5" fill="url(#body)"/></g>'; }
   else { /* wave / idle */ eyes='<g class="eyes"><ellipse cx="45" cy="54" rx="9.5" ry="11" fill="#fff"/><ellipse cx="79" cy="54" rx="9.5" ry="11" fill="#fff"/><circle cx="46" cy="56" r="4.8" fill="#20303a"/><circle cx="80" cy="56" r="4.8" fill="#20303a"/></g>'+eyeShine;
     mouth='<path d="M48 74 Q62 86 76 74" stroke="#20303a" stroke-width="3.4" fill="none" stroke-linecap="round"/>'; arms='<g class="arm arm-l"><ellipse cx="16" cy="66" rx="8" ry="12" fill="url(#body)"/></g><g class="arm arm-r wave"><ellipse cx="108" cy="58" rx="8" ry="12" fill="url(#body)"/></g>'; }
+  var wings='<g class="wing wing-l"><ellipse cx="36" cy="26" rx="13" ry="22" fill="#e3f4ff" opacity=".85" stroke="#a8d8f0" stroke-width="2" transform="rotate(-32 36 26)"/></g>'+
+            '<g class="wing wing-r"><ellipse cx="88" cy="26" rx="13" ry="22" fill="#e3f4ff" opacity=".85" stroke="#a8d8f0" stroke-width="2" transform="rotate(32 88 26)"/></g>';
   return '<svg class="'+cls+'" viewBox="0 0 124 124" width="'+size+'" height="'+size+'" aria-hidden="true">'+
-    '<defs><linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34e3c4"/><stop offset=".55" stop-color="#14c79a"/><stop offset="1" stop-color="#0e9c6e"/></linearGradient>'+
-    '<radialGradient id="belly" cx="50%" cy="62%" r="45%"><stop offset="0" stop-color="#eafff7"/><stop offset="1" stop-color="#eafff7" stop-opacity="0"/></radialGradient></defs>'+
-    arms+
-    '<g class="body"><ellipse cx="46" cy="112" rx="10" ry="5" fill="#0e9c6e"/><ellipse cx="78" cy="112" rx="10" ry="5" fill="#0e9c6e"/>'+
+    '<defs><linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset=".55" stop-color="#ffc93c"/><stop offset="1" stop-color="#f0a41f"/></linearGradient>'+
+    '<radialGradient id="belly" cx="50%" cy="62%" r="45%"><stop offset="0" stop-color="#fff6da"/><stop offset="1" stop-color="#fff6da" stop-opacity="0"/></radialGradient>'+
+    '<clipPath id="bclip"><path d="M62 12 C88 12 104 34 104 62 C104 92 86 110 62 110 C38 110 20 92 20 62 C20 34 36 12 62 12 Z"/></clipPath></defs>'+
+    wings+arms+
+    '<g class="body"><ellipse cx="46" cy="112" rx="10" ry="5" fill="#d98f16"/><ellipse cx="78" cy="112" rx="10" ry="5" fill="#d98f16"/>'+
+    '<path d="M55 102 L62 122 L69 102 Z" fill="#2b2530"/>'+
     '<path d="M62 12 C88 12 104 34 104 62 C104 92 86 110 62 110 C38 110 20 92 20 62 C20 34 36 12 62 12 Z" fill="url(#body)"/>'+
-    '<ellipse cx="62" cy="74" rx="30" ry="26" fill="url(#belly)"/>'+
-    '<line x1="62" y1="12" x2="62" y2="2" stroke="#0e9c6e" stroke-width="3"/><circle cx="62" cy="2" r="5" fill="#f6b73c"/>'+
+    '<g clip-path="url(#bclip)" opacity=".92"><path d="M14 62 Q62 74 110 62 L110 76 Q62 88 14 76 Z" fill="#2b2530"/><path d="M14 88 Q62 100 110 88 L110 102 Q62 114 14 102 Z" fill="#2b2530"/></g>'+
+    '<ellipse cx="62" cy="70" rx="30" ry="22" fill="url(#belly)" opacity=".6"/>'+
+    '<path d="M50 15 Q44 7 37 4" stroke="#2b2530" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="36" cy="4" r="4.5" fill="#2b2530"/>'+
+    '<path d="M74 15 Q80 7 87 4" stroke="#2b2530" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="88" cy="4" r="4.5" fill="#2b2530"/>'+
     blush+eyes+eyeShine+mouth+props+'</g></svg>';
 }
 
