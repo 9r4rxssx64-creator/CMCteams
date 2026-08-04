@@ -98,7 +98,7 @@ await probe('ad13-salon.html', 'https://www.archives13.fr/archive/resultats/etat
 const pwNotes = [];
 try {
   const { chromium } = await import('playwright');
-  const b = await chromium.launch();
+  const b = await chromium.launch({ args: ['--disable-blink-features=AutomationControlled'] });
   const ctx = await b.newContext({ userAgent: UA['user-agent'], locale: 'fr-FR', viewport: { width: 1280, height: 900 } });
   const pg = await ctx.newPage();
   async function browse(name, url, waitMs) {
@@ -126,8 +126,50 @@ try {
     const ec = home.links.find(l => /tat[- ]civil/i.test(l));
     if (ec) { const href = ec.split(' || ')[0]; const u = href.startsWith('http') ? href : 'https://archives06.fr' + (href.startsWith('/') ? '' : '/') + href; await browse('pw-ad06-etatcivil', u, 8000); }
   }
-  await browse('pw-monaco', 'https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/', 6000);
-  await browse('pw-monaco-api', 'https://archives.mairie.mc/api/items?fulltext_search=MAIFFRET&per_page=25', 3000);
+  /* MONACO (Arkothèque) : les bases ont des LISTES ALPHABÉTIQUES d'actes —
+     on va directement aux lettres M (Maiffret), S (Sauvaigo), D (Desarzens)
+     des 2 bases (≥1900 et <1900) et on extrait chaque ligne + son lien. */
+  const MC_HITS = [];
+  async function monacoLists(tag, baseUrl) {
+    const basePg = await browse(tag, baseUrl, 5000);
+    if (!basePg) return;
+    try {
+      const forms = await pg.evaluate(() => [...document.querySelectorAll('form')].map(f => f.outerHTML.slice(0, 3000)).join('\n\n====\n\n'));
+      fs.writeFileSync(path.join(rawDir, tag + '.form.html'), forms);
+    } catch (e) {}
+    const listes = (basePg.links || []).filter(l => /arkotheque_liste_aide\.php/.test(l)).map(l => l.split(' || ')[0]);
+    let li = 0;
+    for (const lu of [...new Set(listes)]) {
+      li++;
+      const u0 = lu.startsWith('http') ? lu : 'https://archives.mairie.mc' + lu;
+      const lp = await browse(tag + '-liste' + li, u0, 4000);
+      if (!lp) continue;
+      // navigation par lettre : liens dont le texte est exactement M / S / D
+      for (const letter of ['M', 'S', 'D']) {
+        const cand = (lp.links || []).find(l => l.split(' || ')[1] === letter);
+        if (!cand) continue;
+        const href = cand.split(' || ')[0];
+        const u = href.startsWith('http') ? href : 'https://archives.mairie.mc' + (href.startsWith('/') ? '' : '/') + href;
+        const pgL = await browse(tag + '-liste' + li + '-' + letter, u, 4000);
+        if (!pgL) continue;
+        // lignes MAIFFRET / SAUVAIGO / DESARZENS / SARZENS avec leur lien
+        const rows = await pg.evaluate(() => [...document.querySelectorAll('a[href], tr, li')].map(e => {
+          const t = (e.textContent || '').replace(/\s+/g, ' ').trim();
+          const h = e.getAttribute ? (e.getAttribute('href') || '') : '';
+          return { t: t.slice(0, 200), h };
+        }).filter(r => /MAIFFRET|SAUVAIGO|SARZENS|MOLINARIO|VIRGILI|VAN DEN BOSCH/i.test(r.t)));
+        if (rows.length) {
+          console.log('  ' + tag + ' liste' + li + ' lettre ' + letter + ' :', rows.length, 'ligne(s) famille');
+          rows.slice(0, 60).forEach(r => MC_HITS.push({ liste: tag + '·liste' + li + '·' + letter, texte: r.t, href: r.h ? (r.h.startsWith('http') ? r.h : 'https://archives.mairie.mc' + (r.h.startsWith('/') ? '' : '/') + r.h) : '' }));
+        }
+        await sleep(900);
+      }
+    }
+  }
+  await monacoLists('pw-monaco1900', 'https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/');
+  await monacoLists('pw-monaco-av1900', 'https://archives.mairie.mc/r/4/base-des-registres-anterieurs-a-1900/');
+  await browse('pw-monaco-indexe', 'https://archives.mairie.mc/a/5/rechercher-par-acte-indexe/', 5000);
+  fs.writeFileSync(path.join(rawDir, 'monaco-hits.json'), JSON.stringify(MC_HITS, null, 1));
   await browse('pw-ad13', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64', 6000);
   await b.close();
 } catch (e) {
@@ -173,6 +215,14 @@ L.push('## Passe navigateur réel (Playwright — franchit le mur anti-robot TSP
 L.push('');
 pwNotes.forEach(n => L.push(n));
 L.push('');
+try {
+  const hits = JSON.parse(fs.readFileSync(path.join(rawDir, 'monaco-hits.json'), 'utf8'));
+  L.push('## 🎯 Monaco — lignes FAMILLE trouvées dans les listes d\'actes');
+  L.push('');
+  if (hits.length) { for (const h of hits) L.push('- **' + h.texte + '**' + (h.href ? ' — [ouvrir](' + h.href + ')' : '') + ' _(' + h.liste + ')_'); }
+  else L.push('_Aucune ligne famille dans les lettres M/S/D à ce run — voir les dumps pw-monaco*-liste*.html pour adapter._');
+  L.push('');
+} catch (e) {}
 fs.writeFileSync(path.join(outDir, 'REGISTRES.md'), L.join('\n') + '\n');
 fs.writeFileSync(path.join(rawDir, 'targets.json'), JSON.stringify(targets, null, 1));
 console.log('REGISTRES.md écrit — ' + targets.length + ' cibles, Monaco: ' + mk.length + ' nom(s) avec résultats.');
