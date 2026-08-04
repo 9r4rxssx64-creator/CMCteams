@@ -32,6 +32,9 @@ const buildSeed = new Function('uid', 'now', seedSrc + '\nreturn buildSeed();');
 let _u = 0;
 const SEED = buildSeed(() => 'tmp' + (++_u), () => 0);
 const SEED_VERSION = +g(/var SEED_VERSION=(\d+);/) || 0;
+// Anciennes signatures exactes remplacées par une fiche seed (même liste que l'app)
+const legacyM = HTML.match(/var LEGACY_OBSOLETE=\[[\s\S]*?\];/);
+const LEGACY_OBSOLETE = legacyM ? new Function(legacyM[0] + '\nreturn LEGACY_OBSOLETE;')() : [];
 
 const nrm = p => ((p.prenom || '') + ' ' + (p.nom || '')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 const fullName = p => ((p.prenom || '') + ' ' + (p.nom || '')).trim() || '(sans nom)';
@@ -125,6 +128,14 @@ if (linkProblems.length) {
 }
 L('');
 
+// ---- Legacy exacts (mêmes signatures que purgeLegacy dans l'app) ----
+const legacyIds = [];
+for (const id of otherIds) {
+  const p = persons[id];
+  if (!p || enriched(p)) continue;
+  if (LEGACY_OBSOLETE.some(o => (p.prenom || '') === o.prenom && (p.nom || '') === o.nom && ((p.naissance && p.naissance.date) || '') === o.nd)) legacyIds.push(id);
+}
+
 // ---- 2) Fiches hors-seed : fantômes vs vrais ajouts ----
 const shadows = [], additions = [];
 for (const id of otherIds) {
@@ -158,7 +169,7 @@ if (additions.length) {
     if (p.pere) links.push('père=' + name(p.pere));
     if (p.mere) links.push('mère=' + name(p.mere));
     if (p.conjoints && p.conjoints.length) links.push('conjoints=[' + p.conjoints.map(name).join(', ') + ']');
-    L('- ' + fullName(p) + ' (`' + id + '`)' + (enriched(p) ? ' 📷/💬' : '') + (links.length ? ' — ' + links.join(' · ') : ''));
+    L('- ' + fullName(p) + ' (`' + id + '`)' + (enriched(p) ? ' 📷/💬' : '') + (legacyIds.includes(id) ? ' 🗂 vieille copie aux dates périmées (sera supprimée en mode FIX)' : '') + (links.length ? ' — ' + links.join(' · ') : ''));
   }
   L('');
 }
@@ -192,9 +203,12 @@ for (const id of christianLike) {
 if (!yannLoic.length && !christianLike.length) L('- (aucune fiche Yann/Loïc/Christian dans le cloud)');
 L('');
 
+// ---- Fiches seed manquantes dans le cloud ----
+const missingSeed = Object.keys(SEED).filter(id => !persons[id]);
+
 // ---- FIX ----
 const doFix = String(process.env.FIX ?? '1') !== '0';
-const needsFix = shadows.length || linkProblems.some(lp => persons[lp.id]);
+const needsFix = shadows.length || legacyIds.length || missingSeed.length || linkProblems.some(lp => persons[lp.id]);
 L('## 4) Correction automatique');
 L('');
 if (!doFix) {
@@ -202,17 +216,19 @@ if (!doFix) {
 } else if (!needsFix) {
   L('✅ Rien à corriger — le cloud est déjà propre, aucune écriture faite.');
 } else {
-  // a) supprime les fantômes + re-pointe les liens vers la fiche seed
+  // a) supprime les fantômes (re-pointés vers la fiche seed) + copies legacy exactes (liens scrubés)
   const map = {};
   for (const s of shadows) map[s.id] = s.seed;
   for (const s of shadows) delete persons[s.id];
+  for (const id of legacyIds) delete persons[id];
+  const gone = id => !!id && !persons[id] && !map[id] && !SEED[id];
   const NOW = Date.now();
   for (const id of Object.keys(persons)) {
     const p = persons[id]; let ch = false;
-    if (map[p.pere]) { p.pere = map[p.pere]; ch = true; }
-    if (map[p.mere]) { p.mere = map[p.mere]; ch = true; }
+    if (map[p.pere]) { p.pere = map[p.pere]; ch = true; } else if (gone(p.pere)) { p.pere = null; ch = true; }
+    if (map[p.mere]) { p.mere = map[p.mere]; ch = true; } else if (gone(p.mere)) { p.mere = null; ch = true; }
     if (p.conjoints && p.conjoints.length) {
-      const nc = p.conjoints.map(c => map[c] || c).filter((c, i, a) => c && c !== id && a.indexOf(c) === i);
+      const nc = p.conjoints.map(c => map[c] || c).filter((c, i, a) => c && c !== id && a.indexOf(c) === i && !gone(c));
       if (nc.join(',') !== p.conjoints.join(',')) { p.conjoints = nc; ch = true; }
     }
     if (ch) p.updatedAt = NOW;
@@ -224,7 +240,9 @@ if (!doFix) {
     p.pere = exp.pere || null; p.mere = exp.mere || null; p.conjoints = (exp.conjoints || []).slice();
     p.updatedAt = NOW;
   }
-  const putR = await fetch(base + '.json?auth=' + tok, { method: 'PUT', body: JSON.stringify({ persons, meta: cloud.meta || { updatedAt: NOW, seedVersion: SEED_VERSION } }) });
+  // c) pousse les fiches seed MANQUANTES (le cloud reflète enfin tout le document)
+  for (const id of missingSeed) persons[id] = Object.assign({}, SEED[id], { updatedAt: NOW });
+  const putR = await fetch(base + '.json?auth=' + tok, { method: 'PUT', body: JSON.stringify({ persons, meta: { updatedAt: NOW, seedVersion: SEED_VERSION } }) });
   if (!putR.ok) {
     L('❌ Écriture refusée : HTTP ' + putR.status + ' — ' + (await putR.text()).slice(0, 300));
   } else {
@@ -232,7 +250,10 @@ if (!doFix) {
     fs.writeFileSync(path.join(rawDir, 'cloud-after.json'), JSON.stringify(after, null, 1));
     L('✅ **Cloud corrigé et vérifié** :');
     L('- 👻 ' + shadows.length + ' fiche(s)-fantôme(s) supprimée(s), liens re-pointés vers les fiches officielles.');
-    L('- 🔗 ' + linkProblems.filter(lp => persons[lp.id]).length + ' fiche(s) seed ré-alignée(s) sur le document familial.');
+    L('- 🗂 ' + legacyIds.length + ' vieille(s) copie(s) aux dates périmées supprimée(s) (mêmes signatures que purgeLegacy).');
+    L('- ➕ ' + missingSeed.length + ' fiche(s) officielle(s) manquante(s) poussée(s) — le cloud reflète maintenant TOUT le document.');
+    L('- 🔗 ' + linkProblems.filter(lp => SEED[lp.id] && persons[lp.id]).length + ' fiche(s) seed ré-alignée(s) sur le document familial.');
+    L('- ☁️ Total après correction : **' + Object.keys(after.persons || {}).length + ' personnes** · seedVersion ' + ((after.meta && after.meta.seedVersion) || '—') + '.');
     L('- 📦 Sauvegardes : `cloudraw/cloud-before.json` (avant) et `cloudraw/cloud-after.json` (après) — retour en arrière possible.');
     L('- 📱 Les téléphones de la famille récupèrent la correction automatiquement (synchro toutes les 8 s).');
   }
