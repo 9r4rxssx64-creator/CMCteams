@@ -1,0 +1,405 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fullText": "Rose Angeline FRACCHIA"
+ },
+ "response": {
+  "total": 194957,
+  "maxScoreES": 54.84452,
+  "size": 8,
+  "page": 1,
+  "delay": 173,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1983",
+    "sourceLine": 16952,
+    "scores": {
+     "score": 0,
+     "es": 0.27
+    },
+    "id": "cPM-hsAthbkQ",
+    "name": {
+     "first": [
+      "Rose",
+      "Simone"
+     ],
+     "last": "Fracchia"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19010701",
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    },
+    "death": {
+     "date": "19830117",
+     "certificateId": "76",
+     "age": 81,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1990",
+    "sourceLine": 528099,
+    "scores": {
+     "score": 0,
+     "es": 0.21
+    },
+    "id": "eJxaVJryekPm",
+    "name": {
+     "first": [
+      "Francoise",
+      "Rose"
+     ],
+     "last": "Fracchia"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19101223",
+     "location": {
+      "city": "Marseille",
+      "code": "13055",
+      "codeHistory": "13055",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2599669,
+      "longitude": 5.3707409
+     }
+    },
+    "death": {
+     "date": "19901026",
+     "certificateId": "90/002",
+     "age": 79,
+     "location": {
+      "city": "Marseille",
+      "code": "13055",
+      "codeHistory": "13055",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2599669,
+      "longitude": 5.3707409
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1995",
+    "sourceLine": 21400,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "jlSlTuMbkdaG",
+    "name": {
+     "first": [
+      "Christophe"
+     ],
+     "last": "Fracchia"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19310306",
+     "location": {
+      "city": "Marseille",
+      "code": "13055",
+      "codeHistory": "13055",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2599669,
+      "longitude": 5.3707409
+     }
+    },
+    "death": {
+     "date": "19950101",
+     "certificateId": "13",
+     "age": 63,
+     "location": {
+      "city": "Toulon",
+      "code": "83137",
+      "codePostal": [
+       "83200",
+       "83100",
+       "83000"
+      ],
+      "codeHistory": "83137",
+      "departmentCode": "83",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.1235808,
+      "longitude": 5.9300884
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1994",
+    "sourceLine": 389057,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "OH9endYZSNJ_",
+    "name": {
+     "first": [
+      "Armando"
+     ],
+     "last": "Fracchia"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19170423",
+     "location": {
+      "city": "Sainte Anne In Fosseto",
+      "code": "99127",
+      "codeHistory": "99127",
+      "country": "Italie",
+      "countryCode": "ITA"
+     }
+    },
+    "death": {
+     "date": "19940416",
+     "certificateId": "1    N",
+     "age": 76,
+     "location": {
+      "city": "Lagraulet-Saint-Nicolas",
+      "code": "31265",
+      "codePostal": [
+       "31480"
+      ],
+      "codeHistory": "31265",
+      "departmentCode": "31",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7894599,
+      "longitude": 1.0715037
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1994",
+    "sourceLine": 183385,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "2ns3L1crOxPI",
+    "name": {
+     "first": [
+      "Marcel"
+     ],
+     "last": "Fracchia"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19250517",
+     "location": {
+      "city": [
+       "Mandelieu-La-Napoule",
+       "Mandelieu"
+      ],
+      "code": "06079",
+      "codePostal": [
+       "06210"
+      ],
+      "codeHistory": "06079",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5301261,
+      "longitude": 6.9288154
+     }
+    },
+    "death": {
+     "date": "19940228",
+     "certificateId": "47/BOCN",
+     "age": 68,
+     "location": {
+      "city": "Cannes",
+      "code": "06029",
+      "codePostal": [
+       "06150",
+       "06400"
+      ],
+      "codeHistory": "06029",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5395643,
+      "longitude": 7.0173828
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1996",
+    "sourceLine": 560808,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "RUCYpFasZLI7",
+    "name": {
+     "first": [
+      "Dante"
+     ],
+     "last": "Fracchia"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19051226",
+     "location": {
+      "city": "Coni",
+      "code": "99127",
+      "codeHistory": "99127",
+      "country": "Italie",
+      "countryCode": "ITA"
+     }
+    },
+    "death": {
+     "date": "19961104",
+     "certificateId": "01262",
+     "age": 90,
+     "location": {
+      "city": "Cannes",
+      "code": "06029",
+      "codePostal": [
+       "06150",
+       "06400"
+      ],
+      "codeHistory": "06029",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5395643,
+      "longitude": 7.0173828
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1993",
+    "sourceLine": 45117,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "WAMr8GEoNI44",
+    "name": {
+     "first": [
+      "Otello"
+     ],
+     "last": "Fracchia"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19101126",
+     "location": {
+      "city": "Dinslaken",
+      "code": "99109",
+      "codeHistory": "99109",
+      "country": "Allemagne",
+      "countryCode": "DEU"
+     }
+    },
+    "death": {
+     "date": "19930106",
+     "certificateId": "32",
+     "age": 82,
+     "location": {
+      "city": "Dijon",
+      "code": "21231",
+      "codePostal": [
+       "21000"
+      ],
+      "codeHistory": "21231",
+      "departmentCode": "21",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.3252623,
+      "longitude": 5.0354326
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1995",
+    "sourceLine": 428248,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "S1ROWyNcdZ0N",
+    "name": {
+     "first": [
+      "Cornelie"
+     ],
+     "last": "Fracchia"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19080423",
+     "location": {
+      "city": "Gorzegno",
+      "code": "99127",
+      "codeHistory": "99127",
+      "country": "Italie",
+      "countryCode": "ITA"
+     }
+    },
+    "death": {
+     "date": "19951011",
+     "certificateId": "84",
+     "age": 87,
+     "location": {
+      "city": "Mouans-Sartoux",
+      "code": "06084",
+      "codePostal": [
+       "06370"
+      ],
+      "codeHistory": "06084",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6238725,
+      "longitude": 6.9678624
+     }
+    }
+   }
+  ]
+ }
+}

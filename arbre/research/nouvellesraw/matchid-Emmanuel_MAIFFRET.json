@@ -1,0 +1,449 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fullText": "Emmanuel MAIFFRET"
+ },
+ "response": {
+  "total": 25,
+  "maxScoreES": 98.268845,
+  "size": 8,
+  "page": 1,
+  "delay": 291,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1994",
+    "sourceLine": 135551,
+    "scores": {
+     "score": 0,
+     "es": 0.49
+    },
+    "id": "-Uhd32-PpdwK",
+    "name": {
+     "first": [
+      "Emmanuel",
+      "Joseph"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19090106",
+     "location": {
+      "city": "Beausoleil",
+      "code": "06012",
+      "codePostal": [
+       "06240"
+      ],
+      "codeHistory": "06012",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7472884,
+      "longitude": 7.4197724
+     }
+    },
+    "death": {
+     "date": "19940226",
+     "certificateId": "26    N",
+     "age": 85,
+     "location": {
+      "city": [
+       "Villefranche",
+       "Villefranche-sur-Mer"
+      ],
+      "code": "06159",
+      "codePostal": [
+       "06230"
+      ],
+      "codeHistory": "06159",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7062163,
+      "longitude": 7.31776
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2023",
+    "sourceLine": 230595,
+    "scores": {
+     "score": 0,
+     "es": 0.35
+    },
+    "id": "W0rrdovtxLIg",
+    "name": {
+     "first": [
+      "Emmanuel"
+     ],
+     "last": "Meiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19890106",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20230420",
+     "certificateId": "97",
+     "age": 34,
+     "location": {
+      "city": "Vence",
+      "code": "06157",
+      "codePostal": [
+       "06140"
+      ],
+      "codeHistory": "06157",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.734113,
+      "longitude": 7.1087933
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2022",
+    "sourceLine": 188198,
+    "scores": {
+     "score": 0,
+     "es": 0.35
+    },
+    "id": "AnjLNLGwOj2d",
+    "name": {
+     "first": [
+      "Henry",
+      "Emmanuel"
+     ],
+     "last": "Maiffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19360922",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20220418",
+     "certificateId": "13",
+     "age": 85,
+     "location": {
+      "city": "Tourrettes-sur-Loup",
+      "code": "06148",
+      "codePostal": [
+       "06140"
+      ],
+      "codeHistory": "06148",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7119013,
+      "longitude": 7.0463411
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1979",
+    "sourceLine": 73321,
+    "scores": {
+     "score": 0,
+     "es": 0.33
+    },
+    "id": "iZHMN-HNp1hj",
+    "name": {
+     "first": [
+      "Emmanuel"
+     ],
+     "last": "Auffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19041106",
+     "location": {
+      "city": "Paule",
+      "code": "22163",
+      "codePostal": [
+       "22340"
+      ],
+      "codeHistory": "22163",
+      "departmentCode": "22",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.2262293,
+      "longitude": -3.4680888
+     }
+    },
+    "death": {
+     "date": "19790625",
+     "certificateId": "173",
+     "age": 74,
+     "location": {
+      "city": [
+       "Carhaix",
+       "Carhaix-Plouguer"
+      ],
+      "code": "29024",
+      "codePostal": [
+       "29270"
+      ],
+      "codeHistory": "29024",
+      "departmentCode": "29",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.2695867,
+      "longitude": -3.5610969
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1982",
+    "sourceLine": 79376,
+    "scores": {
+     "score": 0,
+     "es": 0.33
+    },
+    "id": "Y-0bh_ZG7uls",
+    "name": {
+     "first": [
+      "Emmanuel"
+     ],
+     "last": "Auffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19091124",
+     "location": {
+      "city": "Plévin",
+      "code": "22202",
+      "codePostal": [
+       "22340"
+      ],
+      "codeHistory": "22202",
+      "departmentCode": "22",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.2272717,
+      "longitude": -3.5155671
+     }
+    },
+    "death": {
+     "date": "19821121",
+     "certificateId": "845",
+     "age": 72,
+     "location": {
+      "city": "Compiègne",
+      "code": "60159",
+      "codePostal": [
+       "60200"
+      ],
+      "codeHistory": "60159",
+      "departmentCode": "60",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 49.4183734,
+      "longitude": 2.8628907
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1990",
+    "sourceLine": 129009,
+    "scores": {
+     "score": 0,
+     "es": 0.32
+    },
+    "id": "NEAQhZAbrOgy",
+    "name": {
+     "first": [
+      "Emmanuel",
+      "Joseph",
+      "Antoine"
+     ],
+     "last": "Maifret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19070806",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19900215",
+     "certificateId": "242",
+     "age": 82,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1995",
+    "sourceLine": 507780,
+    "scores": {
+     "score": 0,
+     "es": 0.31
+    },
+    "id": "BuKEPFwy8xtK",
+    "name": {
+     "first": [
+      "Emmanuel",
+      "Marcel"
+     ],
+     "last": "Jauffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19080303",
+     "location": {
+      "city": "Maubec",
+      "code": "84071",
+      "codePostal": [
+       "84660"
+      ],
+      "codeHistory": "84071",
+      "departmentCode": "84",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8393365,
+      "longitude": 5.1364067
+     }
+    },
+    "death": {
+     "date": "19951122",
+     "certificateId": "50",
+     "age": 87,
+     "location": {
+      "city": "Robion",
+      "code": "84099",
+      "codePostal": [
+       "84440"
+      ],
+      "codeHistory": "84099",
+      "departmentCode": "84",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8442306,
+      "longitude": 5.1145864
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1982",
+    "sourceLine": 113850,
+    "scores": {
+     "score": 0,
+     "es": 0.31
+    },
+    "id": "1PEspy63li7q",
+    "name": {
+     "first": [
+      "Emmanuel",
+      "Charles"
+     ],
+     "last": "Auffret"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18940522",
+     "location": {
+      "city": "Saint-Ségal",
+      "code": "29263",
+      "codePostal": [
+       "29590"
+      ],
+      "codeHistory": "29263",
+      "departmentCode": "29",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.2332845,
+      "longitude": -4.0794549
+     }
+    },
+    "death": {
+     "date": "19820808",
+     "certificateId": "130",
+     "age": 88,
+     "location": {
+      "city": "Carquefou",
+      "code": "44026",
+      "codePostal": [
+       "44470"
+      ],
+      "codeHistory": "44026",
+      "departmentCode": "44",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 47.3108446,
+      "longitude": -1.4645789
+     }
+    }
+   }
+  ]
+ }
+}

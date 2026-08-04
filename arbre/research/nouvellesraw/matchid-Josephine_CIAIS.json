@@ -1,0 +1,447 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fullText": "Josephine CIAIS"
+ },
+ "response": {
+  "total": 40,
+  "maxScoreES": 91.838646,
+  "size": 8,
+  "page": 1,
+  "delay": 88,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1991",
+    "sourceLine": 169800,
+    "scores": {
+     "score": 0,
+     "es": 0.46
+    },
+    "id": "4ikom6eZFmnd",
+    "name": {
+     "first": [
+      "Josephine"
+     ],
+     "last": "Ciais"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19161028",
+     "location": {
+      "city": "Lantosque",
+      "code": "06074",
+      "codePostal": [
+       "06450"
+      ],
+      "codeHistory": "06074",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.9678262,
+      "longitude": 7.3019587
+     }
+    },
+    "death": {
+     "date": "19910301",
+     "certificateId": "1201",
+     "age": 74,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1984",
+    "sourceLine": 18160,
+    "scores": {
+     "score": 0,
+     "es": 0.46
+    },
+    "id": "Z-ygvrb19-ee",
+    "name": {
+     "first": [
+      "Josephine"
+     ],
+     "last": "Ciais"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19000704",
+     "location": {
+      "city": "Mouans-Sartoux",
+      "code": "06084",
+      "codePostal": [
+       "06370"
+      ],
+      "codeHistory": "06084",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6238725,
+      "longitude": 6.9678624
+     }
+    },
+    "death": {
+     "date": "19840110",
+     "certificateId": "5",
+     "age": 83,
+     "location": {
+      "city": "Mougins",
+      "code": "06085",
+      "codePostal": [
+       "06250"
+      ],
+      "codeHistory": "06085",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5904206,
+      "longitude": 6.9990622
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1974",
+    "sourceLine": 15191,
+    "scores": {
+     "score": 0,
+     "es": 0.46
+    },
+    "id": "ckwgc6WQIPzh",
+    "name": {
+     "first": [
+      "Josephine"
+     ],
+     "last": "Ciais"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18920527",
+     "location": {
+      "city": "Lantosque",
+      "code": "06074",
+      "codePostal": [
+       "06450"
+      ],
+      "codeHistory": "06074",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.9678262,
+      "longitude": 7.3019587
+     }
+    },
+    "death": {
+     "date": "19740806",
+     "certificateId": "366",
+     "age": 82,
+     "location": {
+      "city": "Limeil-Brévannes",
+      "code": "94044",
+      "codePostal": [
+       "94450"
+      ],
+      "codeHistory": [
+       "78336",
+       "94044"
+      ],
+      "departmentCode": "94",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7464125,
+      "longitude": 2.4912978
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1989",
+    "sourceLine": 19469,
+    "scores": {
+     "score": 0,
+     "es": 0.44
+    },
+    "id": "JSAqhKfZBQGN",
+    "name": {
+     "first": [
+      "Josephine",
+      "Louise"
+     ],
+     "last": "Ciais"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19020612",
+     "location": {
+      "city": "Saint-Martin-Vésubie",
+      "code": "06127",
+      "codePostal": [
+       "06450"
+      ],
+      "codeHistory": "06127",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.1002839,
+      "longitude": 7.303217
+     }
+    },
+    "death": {
+     "date": "19890111",
+     "certificateId": "1",
+     "age": 86,
+     "location": {
+      "city": "Saint-Martin-Vésubie",
+      "code": "06127",
+      "codePostal": [
+       "06450"
+      ],
+      "codeHistory": "06127",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.1002839,
+      "longitude": 7.303217
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1987",
+    "sourceLine": 19326,
+    "scores": {
+     "score": 0,
+     "es": 0.44
+    },
+    "id": "L2KQZ8D-73tP",
+    "name": {
+     "first": [
+      "Josephine",
+      "Marcelle"
+     ],
+     "last": "Ciais"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19091023",
+     "location": {
+      "city": "Valdeblore",
+      "code": "06153",
+      "codePostal": [
+       "06420"
+      ],
+      "codeHistory": "06153",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.116968,
+      "longitude": 7.1933933
+     }
+    },
+    "death": {
+     "date": "19871121",
+     "certificateId": "5375",
+     "age": 78,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1978",
+    "sourceLine": 16437,
+    "scores": {
+     "score": 0,
+     "es": 0.44
+    },
+    "id": "IUPeLs_MBCm5",
+    "name": {
+     "first": [
+      "Josephine",
+      "Marie"
+     ],
+     "last": "Ciais"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18911231",
+     "location": {
+      "city": [
+       "L Escarene",
+       "L'Escarène"
+      ],
+      "code": "06057",
+      "codePostal": [
+       "06440"
+      ],
+      "codeHistory": "06057",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8351911,
+      "longitude": 7.3620391
+     }
+    },
+    "death": {
+     "date": "19780424",
+     "certificateId": "14",
+     "age": 86,
+     "location": {
+      "city": "L'Escarène",
+      "code": "06057",
+      "codePostal": [
+       "06440"
+      ],
+      "codeHistory": "06057",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8351911,
+      "longitude": 7.3620391
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1983",
+    "sourceLine": 18672,
+    "scores": {
+     "score": 0,
+     "es": 0.44
+    },
+    "id": "UeAesFJP17H2",
+    "name": {
+     "first": [
+      "Josephine",
+      "Madeleine"
+     ],
+     "last": "Ciais"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19030616",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19830607",
+     "certificateId": "9/69",
+     "age": 79,
+     "location": {
+      "city": "Marseille",
+      "code": "13055",
+      "codeHistory": "13055",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2599669,
+      "longitude": 5.3707409
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2010",
+    "sourceLine": 378601,
+    "scores": {
+     "score": 0,
+     "es": 0.44
+    },
+    "id": "kMIRV1uiox82",
+    "name": {
+     "first": [
+      "Josephine",
+      "Huguette"
+     ],
+     "last": "Ciais"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19190107",
+     "location": {
+      "city": [
+       "Lyon",
+       "Lyon 2e Arrondissement"
+      ],
+      "code": "69382",
+      "codePostal": [
+       "69002"
+      ],
+      "codeHistory": "69382",
+      "departmentCode": "69",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.7677418,
+      "longitude": 4.8242148
+     }
+    },
+    "death": {
+     "date": "20100810",
+     "certificateId": "22",
+     "age": 91,
+     "location": {
+      "city": "Saussens",
+      "code": "31534",
+      "codePostal": [
+       "31460"
+      ],
+      "codeHistory": "31534",
+      "departmentCode": "31",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5904163,
+      "longitude": 1.7256844
+     }
+    }
+   }
+  ]
+ }
+}
