@@ -13,7 +13,12 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # NE PAS annuler un déploiement en cours (recommandation GitHub Pages).
+  # Vécu 2026-08-04 : avec cancel-in-progress:true, une série de merges rapprochés
+  # annulait CHAQUE déploiement avant publication (5 runs "cancelled" d'affilée)
+  # → plus rien n'était publié sur kd-mc.com et les nouveautés restaient invisibles.
+  # En file d'attente, chaque run publie et le dernier gagne. Ne pas remettre true.
+  cancel-in-progress: false
 
 jobs:
   deploy:
