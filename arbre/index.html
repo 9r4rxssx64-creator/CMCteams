@@ -75,7 +75,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 #stageWrap{position:relative;height:74vh;min-height:480px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:radial-gradient(130% 80% at 50% 102%,rgba(120,150,86,.22),transparent),radial-gradient(100% 60% at 50% -4%,rgba(206,168,98,.22),transparent),linear-gradient(180deg,#efe4c8,#e3d1a8);touch-action:none;box-shadow:var(--sh)}
 #treeBg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;transition:opacity .5s}
 #treeArt{position:absolute;inset:0;opacity:.8;transition:opacity .6s}#treeArt svg{width:100%;height:100%;display:block}
-#treePhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center 46%;opacity:0;transition:opacity .6s}
+#treePhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;opacity:0;transition:opacity .6s}
 #treePhoto.on{opacity:1}#treePhoto.on ~ #treeScrim{opacity:1}
 #treeScrim{position:absolute;inset:0;opacity:0;background:linear-gradient(180deg,rgba(16,24,8,.10),rgba(16,24,8,0) 24%,rgba(14,18,6,.12))}
 #stageWrap.plan #treeBg{opacity:0}
@@ -90,6 +90,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .tnode.sM .av{box-shadow:0 0 0 2px rgba(63,107,176,.55),inset 0 0 0 1px rgba(120,84,36,.25)}
 .tnode.sF .av{box-shadow:0 0 0 2px rgba(201,111,158,.55),inset 0 0 0 1px rgba(120,84,36,.25)}
 .tnode.root .av{box-shadow:0 0 0 2px var(--gold),0 2px 8px rgba(176,132,44,.4)}
+.tnf{font-weight:800;font-size:12.5px;letter-spacing:.4px;line-height:1.15}
 .tnode .tn{font-weight:700;font-size:14px;line-height:1.16;overflow:hidden;text-overflow:ellipsis;color:#2c2010;font-family:Georgia,"Times New Roman",serif}
 .tnode .ty{font-size:11.5px;color:#856a3a;margin-top:1px}
 .av.M,.av.F{background:radial-gradient(circle at 36% 30%,#fffbef,#e7d4a6)}
@@ -215,7 +216,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.39";
+var APP_VER="v2.40";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -389,16 +390,17 @@ var BRANCHES=[
   {re:/VIRGILI/i,c:"#3c6ca8",lab:"Virgili"},
   {re:/PACHIAUDI/i,c:"#8a7a55",lab:"Pachiaudi"}
 ];
+function hexA(h,a){var r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return "rgba("+r+","+g+","+b+","+a+")";}
 function branchOf(p){var n=(p&&p.nom)||"";for(var i=0;i<BRANCHES.length;i++)if(BRANCHES[i].re.test(n))return BRANCHES[i];return {c:"#9a8c66",lab:"Autre"};}
 var _RENDERSTYLE="card";
 function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||(p.vivant?"vivant":"");
   var blood=(window._LSET&&_LSET[n.id]&&!n.root);var bc=branchOf(p).c;
   if(_RENDERSTYLE==="med"){
     return '<div class="tmed'+(n.root?" root":"")+(blood?" blood":"")+'" style="left:'+n.x+'px;top:'+n.y+'px" data-open="'+n.id+'">'
-      +'<span class="tma" style="box-shadow:0 0 0 3px '+bc+', 0 4px 12px rgba(30,20,5,.45)'+((blood||n.root)?', 0 0 0 6px rgba(201,153,47,.65)':'')+'">'+avatarHTML(p,n.root?62:52)+'</span>'
-      +'<span class="tmn">'+esc(full(p))+(sub?'<small>'+esc(sub)+'</small>':'')+'</span></div>';
+      +'<span class="tma" style="box-shadow:0 0 0 4px '+bc+', 0 5px 14px rgba(20,14,4,.55)'+((blood||n.root)?', 0 0 0 8px rgba(233,185,74,.75)':'')+'">'+avatarHTML(p,n.root?62:52)+'</span>'
+      +'<span class="tmn" style="border:2px solid '+bc+'">'+esc(p.prenom||full(p))+(p.nom?'<b style="color:'+bc+';filter:brightness(1.85)">'+esc(p.nom)+'</b>':'')+(sub?'<small>'+esc(sub)+'</small>':'')+'</span></div>';
   }
-  return '<div class="tnode s'+(p.sexe||"X")+(n.root?" root":"")+(blood?" blood":"")+'" style="left:'+n.x+'px;top:'+n.y+'px;border-left:6px solid '+bc+'" data-open="'+n.id+'">'+avatarHTML(p,48)+'<div style="min-width:0"><div class="tn">'+esc(full(p))+'</div><div class="ty">'+esc(sub)+'</div></div></div>';}
+  return '<div class="tnode s'+(p.sexe||"X")+(n.root?" root":"")+(blood?" blood":"")+'" style="left:'+n.x+'px;top:'+n.y+'px;border-left:8px solid '+bc+';background:linear-gradient(135deg,#fffef8 55%,'+hexA(bc,.16)+')" data-open="'+n.id+'">'+avatarHTML(p,48)+'<div style="min-width:0"><div class="tn">'+esc(p.prenom||full(p))+'</div>'+(p.nom?'<div class="tnf" style="color:'+bc+'">'+esc(p.nom)+'</div>':'')+'<div class="ty">'+esc(sub)+'</div></div></div>';}
 /* Arbre illustré (décor heirloom « Our Family Tree ») — fond fixe du cadre,
    racines en bas, tronc central, branches qui montent, feuillage doré/vert. */
 function treeBgSVG(){
@@ -507,20 +509,19 @@ function drawStage(fit){
   {var rowsY={};_lay.nodes.forEach(function(n){var k=Math.round(n.y/10)*10;rowsY[k]=Math.min(rowsY[k]||1e9,n.y);});
     var _b2=(_lay.bands&&_lay.bands.length>1)?_lay.bands[1].y:Infinity;
     var ys=Object.keys(rowsY).map(Number).sort(function(a,b){return a-b;}).filter(function(y){return rowsY[y]<_b2;});
-    if(plan)ys.forEach(function(y,i){if(i%2===1)zebra+='<rect x="0" y="'+(rowsY[y]-79)+'" width="'+W+'" height="158" fill="rgba(122,84,39,.05)"/>';});
-    ys.forEach(function(y,i){if(plan)rules+='<line x1="0" y1="'+(rowsY[y]-76)+'" x2="'+W+'" y2="'+(rowsY[y]-76)+'" stroke="rgba(122,84,39,.16)" stroke-width="1.2" stroke-dasharray="3 10"/>';
-      genLabels+='<div class="genlab'+(plan?'':' soft')+'" style="top:'+Math.max(4,rowsY[y]-70)+'px">Gén. '+(i+1)+'</div>';});}
+    if(plan)ys.forEach(function(y,i){if(i%2===1)zebra+='<rect x="0" y="'+(rowsY[y]-79)+'" width="'+W+'" height="158" fill="rgba(122,84,39,.07)"/>';});
+    ys.forEach(function(y,i){genLabels+='<div class="genlab'+(plan?'':' soft')+'" style="top:'+Math.max(4,rowsY[y]-70)+'px">Gén. '+(i+1)+'</div>';});}
   var couples=[];
   function elbow(l){var r=12,my=(l.y1+l.y2)/2;if(Math.abs(l.x2-l.x1)<3)return 'M'+l.x1+' '+l.y1+' L '+l.x2+' '+l.y2;var sg=l.x2>l.x1?1:-1;
     return 'M'+l.x1+' '+l.y1+' L '+l.x1+' '+(my-r)+' Q '+l.x1+' '+my+' '+(l.x1+sg*r)+' '+my+' L '+(l.x2-sg*r)+' '+my+' Q '+l.x2+' '+my+' '+l.x2+' '+(my+r)+' L '+l.x2+' '+l.y2;}
   var paths=_lay.links.map(function(l){
     if(l.couple){var midx=(l.x1+l.x2)/2;couples.push({x:midx,y:l.y1});
-      return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="'+(plan?'#b0842c':'#d9c48f')+'" stroke-width="2.4" stroke-linecap="round"'+(plan?'':' opacity=".9"')+'/>';}
+      return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="'+(plan?'#b0842c':'#ffd977')+'" stroke-width="'+(plan?2.4:3)+'" stroke-linecap="round" opacity=".95"/>';}
     var my=(l.y1+l.y2)/2;var gold=goldLink(l);
-    if(plan){var st=gold?'#c9992f':'#9b7b45';var sw=gold?3.4:1.9;
-      return '<path d="'+elbow(l)+'" fill="none" stroke="'+st+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round"'+(gold?'':' opacity=".75"')+'/>';}
-    var st2=gold?'#e9b94a':'#d9c48f';var sw2=gold?3.6:2.2;
-    return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="'+st2+'" stroke-width="'+sw2+'" stroke-linecap="round" opacity=".92"/>';}).join("");
+    if(plan){var st=gold?'#c9992f':'#8a6134';var sw=gold?3.8:2.6;
+      return '<path d="'+elbow(l)+'" fill="none" stroke="'+st+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>';}
+    var st2=gold?'#ffd977':'#f3e2b6';var sw2=gold?4:2.8;
+    return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="'+st2+'" stroke-width="'+sw2+'" stroke-linecap="round" opacity=".95"/>';}).join("");
   var defs='<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b0842c"/><stop offset="1" stop-color="#8a6420"/></linearGradient><linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5427"/><stop offset="1" stop-color="#5a3d18"/></linearGradient></defs>';
   var svg='<svg width="'+W+'" height="'+_lay.h+'">'+defs+zebra+rules+paths+'</svg>';
   var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+(b.y-(plan?0:30))+'px">'+esc(b.label)+'</div>';}).join("");
