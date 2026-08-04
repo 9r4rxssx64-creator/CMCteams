@@ -1,7 +1,7 @@
 /**
  * Tests session-logger.ts (39.66% → 95%+).
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { sessionLogger } from '../../services/auth/session-logger.js';
 
 describe('session-logger (P0 coverage)', () => {
@@ -246,6 +246,28 @@ describe('session-logger (P0 coverage)', () => {
       const sessions = sessionLogger.list();
       const found = sessions.filter((s) => s.id === id);
       expect(found.length).toBe(1);
+    });
+  });
+
+  describe('journal domaine kdmc-access (prod-only, fail-open)', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('POST admin.kd-mc.com à la connexion sur *.kd-mc.com', async () => {
+      const calls: Array<{ url: string; body: Record<string, unknown> }> = [];
+      vi.stubGlobal('location', { hostname: 'apex-ai.kd-mc.com' });
+      vi.stubGlobal('fetch', (url: string, opts: { body: string }) => { calls.push({ url: String(url), body: JSON.parse(opts.body) }); return Promise.resolve({ ok: true }); });
+      await sessionLogger.startSession('U11804', 'Kevin DESARZENS', true);
+      const admin = calls.filter((c) => c.url.includes('admin.kd-mc.com/log'));
+      expect(admin.length).toBe(1);
+      expect(admin[0].body).toMatchObject({ app: 'apex', uid: 'U11804', event: 'connexion', tier: 'admin' });
+    });
+
+    it('INERTE hors kd-mc.com (aucun POST domaine)', async () => {
+      const calls: string[] = [];
+      vi.stubGlobal('location', { hostname: 'localhost' });
+      vi.stubGlobal('fetch', (url: string) => { calls.push(String(url)); return Promise.resolve({ ok: true }); });
+      await sessionLogger.startSession('u1', 'X', false);
+      expect(calls.filter((u) => u.includes('admin.kd-mc.com')).length).toBe(0);
     });
   });
 });
