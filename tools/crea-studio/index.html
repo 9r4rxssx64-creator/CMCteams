@@ -495,7 +495,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v8.0.0';
+var APP_VER='v8.0.1';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -520,7 +520,7 @@ async function shareOrSave(blob,name,title){
 }
 
 /* ---------- IA (worker Cloudflare → Replicate) ---------- */
-var AI_URL=(window.CREA_AI_URL||localStorage.getItem('crea_ai_url')||'https://crea-ai.kd-mc.com').replace(/\/$/,'');
+var AI_URL=(window.CREA_AI_URL||localStorage.getItem('crea_ai_url')||'https://kdmc-crea-ai.9r4rxssx64.workers.dev').replace(/\/$/,'');
 function aiShow(msg){$('aiMsg').textContent=msg||'IA en cours…';$('aiLoad').classList.remove('hidden');}
 function aiHide(){$('aiLoad').classList.add('hidden');}
 
