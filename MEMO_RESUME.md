@@ -3602,3 +3602,15 @@ push réparé, quotas KV, system_config NOT NULL, hash OTP, Letters/Time Capsule
 read-receipt, outbox offline+replay, Stripe revocation, dédup DM, fuite localStorage inter-comptes,
 clavier qui se ferme (focus preserve + append incrémental bulles), WCAG/aria-live, couverture honnête.
 **Action Kevin en attente** : flip `ALLOW_TEST_OTP=false` une fois Vonage confirmé (cf. KEVIN_ACTIONS_TODO.md).
+
+## Session 2026-08-04 — Arbre v2.29 : fix lien fantôme Yann/Loïc + audit cloud RÉEL
+
+Kevin signalait « Yann et Loïc n'ont pas de lien avec Christian et Marie-Brigitte » (arbre Desarzens).
+Cause racine : le seed était correct, mais le cloud Firebase partagé (resté à seedVersion 9, 31 pers.)
+contenait 11 fiches-fantômes + 5 copies legacy des anciennes versions, re-fusionnées par les téléphones.
+Livré : `purgeSeedShadows()` dans l'app (boot + chaque cloudPull, fiches enrichies jamais supprimées),
+`tools/arbre/cloud-audit.mjs` + workflow `arbre-cloud-audit.yml` (CI réseau ouvert, auth anonyme identique
+à l'app, vérifie CHAQUE lien contre le seed extrait du vrai index.html, mode FIX avec sauvegardes
+avant/après commitées, cron mensuel le 5 à 04:00 UTC). Run 1 : 11 fantômes purgés + 3 liens ré-alignés.
+Un téléphone famille a auto-updaté v2.29 et poussé la base complète. Run 2 vérifie : **62/62 fiches
+conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CLOUD.md.
