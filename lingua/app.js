@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.3.0";
+var APP_VER="v2.4.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -42,23 +42,62 @@ function loadS(){
   S.today=lg("today",{day:today(),xp:0,lessons:0,reviews:0,perfect:0,combo:0});
   S.qClaim=lg("qClaim",{}); S.qDay=lg("qDay",today());
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay"].forEach(function(k){ ls(k,S[k]); }); }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} }
 
 /* ============ Comptes (CRUD) ============ */
 var AVATARS=["🦊","🐼","🐨","🦁","🐵","🐸","🦄","🐙","🐯","🐧","🐷","🐰","🐻","🐮","🐲","🦖"];
 function accounts(){ return gg("accounts",[]); }
-function createAccount(name,avatar){
+function createAccount(name,avatar,code){
   var id="acc_"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
-  var a=accounts(); a.push({id:id,name:name||"Joueur",avatar:avatar||"🦊",created:Date.now()}); gs("accounts",a);
+  var a=accounts(); a.push({id:id,name:name||"Joueur",avatar:avatar||"🦊",code:code||"",created:Date.now()}); gs("accounts",a);
   return id;
 }
-function switchAccount(id){ ACC=id; gs("current",id); loadS(); ensureLeague(); PICK=false; }
+function switchAccount(id){ ACC=id; gs("current",id); loadS(); ensureLeague(); PICK=false; try{ cloudRestoreInto(id); }catch(e){} }
 function deleteAccount(id){
   gs("accounts", accounts().filter(function(x){return x.id!==id;}));
   Object.keys(localStorage).forEach(function(k){ if(k.indexOf("lingua_a_"+id+"_")===0) localStorage.removeItem(k); });
   if(ACC===id){ ACC=null; gs("current",null); }
 }
 function accMeta(id){ return accounts().filter(function(a){return a.id===id;})[0]; }
+function setAccountCode(id,code){ var accs=accounts(); for(var i=0;i<accs.length;i++){ if(accs[i].id===id){ accs[i].code=String(code||""); } } gs("accounts",accs); }
+function findLocalAccount(name,code){ var n=norm(name); var accs=accounts(); for(var i=0;i<accs.length;i++){ if(norm(accs[i].name)===n && String(accs[i].code||"")===String(code)) return accs[i].id; } return null; }
+
+/* ===== Mémoire cloud (ne rien perdre — tous comptes, tous appareils) =====
+   Chaque compte a un CODE. La progression est sauvegardée dans le cloud sous
+   hash(nom+code) (accès par capacité, données non sensibles). Sur n'importe quel
+   appareil : nom+code → tout revient. FAIL-OPEN : si le cloud est indispo, la
+   mémoire locale continue (rien perdu localement). */
+var SYNC_BASE="https://lingua.kd-mc.com/__lingua";
+var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs"];
+var _cloudState="";        // "ok" | "off" | ""
+function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
+function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
+function _rawGet(id,k){ try{ return localStorage.getItem("lingua_a_"+id+"_"+k); }catch(e){ return null; } }
+function _acctSnapshot(id){ var m=accMeta(id)||{}; var data={}; SYNC_KEYS.forEach(function(k){ var v=_rawGet(id,k); if(v!=null) data[k]=v; }); var ts=_rawGet(id,"syncTs"); return {v:2,name:m.name,avatar:m.avatar,syncTs:ts?JSON.parse(ts):0,data:data}; }
+function _applySnapshot(id,snap){ var d=(snap&&snap.data)||{}; Object.keys(d).forEach(function(k){ try{ localStorage.setItem("lingua_a_"+id+"_"+k, d[k]); }catch(e){} }); var accs=accounts(); for(var i=0;i<accs.length;i++){ if(accs[i].id===id){ if(snap.name)accs[i].name=snap.name; if(snap.avatar)accs[i].avatar=snap.avatar; } } gs("accounts",accs); }
+var _syncT=null;
+function scheduleCloudSave(){ if(!ACC)return; var m=accMeta(ACC); if(!m||!m.code)return; if(_syncT)clearTimeout(_syncT); _syncT=setTimeout(cloudSaveNow,1500); }
+function cloudSaveNow(){ if(!ACC)return; var m=accMeta(ACC); if(!m||!m.code)return; var id=ACC;
+  try{ localStorage.setItem("lingua_a_"+id+"_syncTs", JSON.stringify(Date.now())); }catch(e){}
+  cloudKeyFor(m.name,m.code).then(function(k){ return fetch(SYNC_BASE+"/save",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({k:k,data:_acctSnapshot(id)})}); })
+    .then(function(r){ return r&&r.json(); }).then(function(j){ _cloudState=(j&&j.ok)?"ok":"off"; }).catch(function(){ _cloudState="off"; }); }
+function cloudRestoreInto(id){ var m=accMeta(id); if(!m||!m.code) return Promise.resolve(false);
+  return cloudKeyFor(m.name,m.code).then(function(k){ return fetch(SYNC_BASE+"/load?k="+encodeURIComponent(k)); })
+    .then(function(r){ return r&&r.json(); }).then(function(j){ if(!j||!j.ok){ _cloudState="off"; return false; } _cloudState="ok"; if(!j.data) return false;
+      var cloud=j.data, localTs=(function(){ var t=_rawGet(id,"syncTs"); return t?JSON.parse(t):0; })();
+      if((cloud.syncTs||0)>localTs){ _applySnapshot(id,cloud); if(ACC===id){ loadS(); render(); } return true; } return false;
+    }).catch(function(){ _cloudState="off"; return false; }); }
+/* Nom+code → entre dans le compte : restaure depuis le cloud si trouvé, sinon crée (option). */
+function enterWithCredentials(name,avatar,code,createIfMissing){
+  var existing=findLocalAccount(name,code);
+  if(existing){ switchAccount(existing); if(createIfMissing) cloudSaveNow(); return Promise.resolve({ok:true,local:true}); }
+  return cloudKeyFor(name,code).then(function(k){ return fetch(SYNC_BASE+"/load?k="+encodeURIComponent(k)); })
+    .then(function(r){ return r&&r.json(); }).then(function(j){
+      var cloud=(j&&j.ok)?j.data:null;
+      if(cloud){ var id=createAccount(cloud.name||name, cloud.avatar||avatar, String(code)); _applySnapshot(id,cloud); switchAccount(id); return {ok:true,restored:true}; }
+      if(createIfMissing){ var id2=createAccount(name,avatar,String(code)); switchAccount(id2); cloudSaveNow(); return {ok:true,created:true}; }
+      return {ok:false,none:true};
+    }).catch(function(){ if(createIfMissing){ var id3=createAccount(name,avatar,String(code)); switchAccount(id3); return {ok:true,created:true,offline:true}; } return {ok:false,error:true}; }); }
 
 /* ============ Cœurs / jours / série ============ */
 function regenHearts(){ if(S.hearts>=HEART_MAX){S.heartTs=Date.now();return;}
@@ -204,20 +243,50 @@ function vAccounts(){
   var add=el("button","acc-card add"); add.innerHTML='<span class="av">➕</span><span class="an">Nouveau compte</span>';
   add.onclick=openCreate; var addc=el("div","acc-cell"); addc.appendChild(add); grid.appendChild(addc);
   d.appendChild(grid);
+  var login=el("button","btn-ghost small"); login.innerHTML="🔑 J'ai déjà un compte"; login.onclick=openLogin; d.appendChild(login);
   if(ACC){ var back=el("button","btn-ghost small"); back.textContent="← Revenir"; back.onclick=function(){ PICK=false; render(); }; d.appendChild(back); }
   var note=el("div","legal-note"); note.textContent="Application originale KDMC — non affiliée à un tiers."; d.appendChild(note);
   return d;
 }
 function openCreate(){
   var m=modal(); var av=AVATARS[Math.floor(Math.random()*AVATARS.length)];
-  m.body.innerHTML='<h3>Nouveau compte</h3><input id="acName" class="txt" placeholder="Ton prénom" maxlength="18" autocomplete="off"><p class="mini">Choisis ton avatar</p>';
+  m.body.innerHTML='<h3>Nouveau compte</h3>'+
+    '<input id="acName" class="txt" placeholder="Ton prénom" maxlength="18" autocomplete="off">'+
+    '<input id="acCode" class="txt" placeholder="Un code secret (4 chiffres min)" inputmode="numeric" maxlength="10" autocomplete="off">'+
+    '<p class="mini">🔒 Ce code sauvegarde ta progression <b>en ligne</b>. Note-le bien : avec ton prénom + ce code, tu retrouves TOUT sur n\'importe quel téléphone.</p>'+
+    '<p class="mini">Choisis ton avatar</p>';
   var g=el("div","av-pick");
   AVATARS.forEach(function(a){ var b=el("button","av-opt"+(a===av?" sel":"")); b.textContent=a; b.onclick=function(){ av=a; g.querySelectorAll(".av-opt").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); }; g.appendChild(b); });
   m.body.appendChild(g);
   var ok=el("button","btn-main"); ok.textContent="Créer mon compte";
-  ok.onclick=function(){ var n=(m.body.querySelector("#acName").value||"").trim()||"Joueur"; var id=createAccount(n,av); m.close(); switchAccount(id); VIEW="home"; render(); };
+  ok.onclick=function(){ var n=(m.body.querySelector("#acName").value||"").trim()||"Joueur"; var c=(m.body.querySelector("#acCode").value||"").trim();
+    if(c.length<4){ toast("Choisis un code d'au moins 4 chiffres 🔒"); return; }
+    ok.disabled=true; ok.textContent="…";
+    enterWithCredentials(n,av,c,true).then(function(res){ m.close(); VIEW="home"; render(); if(res&&res.restored) toast("👋 Compte retrouvé — bienvenue "+esc(n)+" !"); }); };
   m.body.appendChild(ok);
   setTimeout(function(){ var i=m.body.querySelector("#acName"); if(i)i.focus(); },100);
+}
+function openLogin(){
+  var m=modal();
+  m.body.innerHTML='<h3>🔑 Se connecter</h3><p class="mini">Entre le <b>prénom</b> et le <b>code</b> que tu avais choisis pour retrouver ta progression (même sur un nouveau téléphone).</p>'+
+    '<input id="lgName" class="txt" placeholder="Ton prénom" maxlength="18" autocomplete="off">'+
+    '<input id="lgCode" class="txt" placeholder="Ton code" inputmode="numeric" maxlength="10" autocomplete="off">';
+  var ok=el("button","btn-main"); ok.textContent="Retrouver mon compte";
+  ok.onclick=function(){ var n=(m.body.querySelector("#lgName").value||"").trim(); var c=(m.body.querySelector("#lgCode").value||"").trim();
+    if(!n||c.length<4){ toast("Entre ton prénom et ton code 🔑"); return; }
+    ok.disabled=true; ok.textContent="…";
+    enterWithCredentials(n,"🦊",c,false).then(function(res){ if(res&&res.ok){ m.close(); VIEW="home"; render(); toast("👋 Bienvenue "+esc(n)+" !"); } else { ok.disabled=false; ok.textContent="Retrouver mon compte"; toast("Aucune sauvegarde pour ce prénom + code 🤔"); } }); };
+  m.body.appendChild(ok);
+  setTimeout(function(){ var i=m.body.querySelector("#lgName"); if(i)i.focus(); },100);
+}
+function openEnableCloud(){
+  var m=modal();
+  m.body.innerHTML='<h3>☁️ Activer la mémoire en ligne</h3><p class="mini">Choisis un code secret. Avec ton prénom + ce code, ta progression est sauvegardée et récupérable partout.</p>'+
+    '<input id="ecCode" class="txt" placeholder="Code (4 chiffres min)" inputmode="numeric" maxlength="10" autocomplete="off">';
+  var ok=el("button","btn-main"); ok.textContent="Activer";
+  ok.onclick=function(){ var c=(m.body.querySelector("#ecCode").value||"").trim(); if(c.length<4){ toast("Code trop court (4 min)"); return; } setAccountCode(ACC,c); cloudSaveNow(); m.close(); toast("☁️ Mémoire en ligne activée !"); render(); };
+  m.body.appendChild(ok);
+  setTimeout(function(){ var i=m.body.querySelector("#ecCode"); if(i)i.focus(); },100);
 }
 
 /* ---------- Topbar ---------- */
@@ -301,6 +370,11 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   var ac=el("div","achv-wrap"); ac.innerHTML='<div class="sec-h">🏅 Succès ('+Object.keys(S.achv).length+'/'+ACHV.length+')</div>'; var ag=el("div","achv-grid");
   ACHV.forEach(function(a){ var got=S.achv[a.id]; var b=el("div","achv"+(got?" got":"")); b.innerHTML='<span class="ai">'+a.i+'</span><span class="at">'+a.t+'</span>'; b.title=a.d; ag.appendChild(b); });
   ac.appendChild(ag); d.appendChild(ac);
+  // mémoire en ligne
+  var cloud=el("div","freeze-card");
+  if(me.code){ cloud.innerHTML='<div><b>☁️ Mémoire en ligne active</b><span> — ta progression est sauvegardée. Retrouve-la partout avec ton prénom + ton code.</span></div><div class="fx">'+(_cloudState==="off"?"⚠️":"✓")+'</div>'; }
+  else { cloud.innerHTML='<div><b>☁️ Mémoire en ligne</b><span> — inactive (progression seulement sur cet appareil).</span></div>'; var eb=el("button","btn-buy"); eb.textContent="Activer"; eb.onclick=openEnableCloud; cloud.appendChild(eb); }
+  d.appendChild(cloud);
   // gel de série
   var freeze=el("div","freeze-card"); freeze.innerHTML='<div><b>🧊 Gel de série</b><span> — protège 1 jour manqué</span></div><div class="fx">x'+S.freeze+'</div>';
   var fb=el("button","btn-buy"); fb.textContent="Acheter (200 💎)"; fb.onclick=function(){ if(S.gems>=200){ S.gems-=200; S.freeze++; save(); toast("🧊 Gel ajouté !"); render(); } else toast("Pas assez de gemmes 💎"); };

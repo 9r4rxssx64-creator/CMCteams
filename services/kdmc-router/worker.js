@@ -55,6 +55,10 @@ export default {
     if (url.pathname.startsWith('/__beatbot/')) return handleBeatbot(request, url, env);
     // Push « message CMCteams light » → Kevin même app fermée (token serveur, anti-spam KV).
     if (url.pathname === '/__notify-kevin' && request.method === 'POST') return handleNotifyKevin(request, env);
+    // Mémoire cloud KDMC Lingua : sauvegarde/restauration de la progression par « clé
+    // de compte » (hash nom+code = capacité). Données NON sensibles (XP/série/nom choisi).
+    // ISOLÉ (préfixe KV lingua:), FAIL-OPEN (jamais throw → la mémoire locale reste).
+    if (url.pathname.startsWith('/__lingua/')) return handleLingua(request, url, env);
 
     const base = ROUTES[host];
     if (!base) return Response.redirect('https://kd-mc.com/', 302);
@@ -196,6 +200,40 @@ function J(o, setCookie, status) {
     status: status || 200,
     headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store', 'x-kdmc-sso': '1', 'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin' }, setCookie ? { 'set-cookie': setCookie } : {}),
   });
+}
+
+/* ===== Mémoire cloud KDMC Lingua (progression apprenants) =====
+   Stocke/restaure un blob par « clé de compte » = hash(nom+code) fourni par le client
+   (accès par CAPACITÉ : il faut connaître nom+code). Données NON sensibles (XP, série,
+   prénom choisi). Isolé par préfixe KV `lingua:`. FAIL-OPEN : ne jette jamais → si KV
+   absent/erreur, l'app garde sa mémoire locale. Même origine (lingua.kd-mc.com) mais on
+   autorise le CORS en lecture large (endpoints par capacité, non sensibles). */
+async function handleLingua(request, url, env) {
+  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'access-control-allow-headers': 'content-type' };
+  const JL = (o, s) => new Response(JSON.stringify(o), { status: s || 200, headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }, cors) });
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (!env || !env.ACCOUNTS) return JL({ ok: false, reason: 'kv_absent' }); // fail-open (200)
+  try {
+    const okKey = (k) => /^[a-f0-9]{16,64}$/.test(k);
+    if (url.pathname === '/__lingua/load' && request.method === 'GET') {
+      const k = url.searchParams.get('k') || '';
+      if (!okKey(k)) return JL({ ok: false, reason: 'bad_key' }, 400);
+      const blob = await env.ACCOUNTS.get('lingua:' + k);
+      return JL({ ok: true, data: blob ? JSON.parse(blob) : null });
+    }
+    if (url.pathname === '/__lingua/save' && request.method === 'POST') {
+      let b; try { b = await request.json(); } catch { return JL({ ok: false, reason: 'bad_json' }, 400); }
+      const k = String(b && b.k || '');
+      if (!okKey(k)) return JL({ ok: false, reason: 'bad_key' }, 400);
+      const s = JSON.stringify(b && b.data || {});
+      if (s.length > 200000) return JL({ ok: false, reason: 'too_big' }, 413);
+      await env.ACCOUNTS.put('lingua:' + k, s, { expirationTtl: 60 * 60 * 24 * 400 }); // ~400 j, renouvelé à chaque save
+      return JL({ ok: true });
+    }
+    return JL({ ok: false, reason: 'bad_route' }, 404);
+  } catch (e) {
+    return JL({ ok: false, reason: 'error', detail: String((e && e.message) || e).slice(0, 120) }); // fail-open (200)
+  }
 }
 
 /* Garde anti-rejeu WebAuthn : deny-list des challenges DÉJÀ consommés (KV).
