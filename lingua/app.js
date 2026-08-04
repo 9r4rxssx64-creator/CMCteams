@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.14.0";
+var APP_VER="v2.16.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -731,8 +731,14 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
 function toast(msg){ var t=el("div","toast"); t.textContent=msg; document.body.appendChild(t); setTimeout(function(){t.classList.add("show");},10); setTimeout(function(){t.classList.remove("show");setTimeout(function(){t.remove();},300);},2400); }
 function modal(){ var ov=el("div","overlay"),box=el("div","modal"); ov.appendChild(box); document.body.appendChild(ov); setTimeout(function(){ov.classList.add("show");},10); return {body:box,close:function(){ov.classList.remove("show");setTimeout(function(){ov.remove();},250);}}; }
 
-/* ============ Mascotte « Bee » 🐝 (abeille rigolote — SVG original animé, création KDMC) ============ */
-function MASCOT(pose,size){ size=size||100;
+/* ============ Mascotte « Bee » 🐝 (abeille rigolote — création originale KDMC) ============
+   Illustrations IA en médaillon rond (bee/*.webp) + repli SVG animé si l'image manque. */
+var BEE_IMG={wave:"wave",point:"wave",party:"party",read:"read",sad:"read"};
+function MASCOT(pose,size){ size=size||100; var f=BEE_IMG[pose]||"wave";
+  return '<img class="mascot bee-img pose-'+pose+'" src="bee/'+f+'.webp" width="'+size+'" height="'+size+'" alt="" data-pose="'+pose+'" data-size="'+size+'" onerror="window._beeFallback&&window._beeFallback(this)">';
+}
+window._beeFallback=function(el){ try{ var d=document.createElement("span"); d.innerHTML=MASCOT_SVG((el.dataset&&el.dataset.pose)||"wave", parseInt(el.dataset&&el.dataset.size,10)||100); el.replaceWith(d.firstChild); }catch(_){} };
+function MASCOT_SVG(pose,size){ size=size||100;
   var mouth,eyes,arms="",props="",cls="mascot pose-"+pose;
   var blush='<ellipse cx="30" cy="70" rx="8" ry="5" fill="#ff7eb3" opacity=".55"/><ellipse cx="90" cy="70" rx="8" ry="5" fill="#ff7eb3" opacity=".55"/>';
   var eyeShine='<circle cx="42" cy="54" r="2.6" fill="#fff"/><circle cx="82" cy="54" r="2.6" fill="#fff"/>';
