@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.0.0";
+var APP_VER="v2.1.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -143,9 +143,13 @@ function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course)
   return shuffle(ex).slice(0,Math.min(ex.length,12));
 }
 function makeMC(w,pool,mode){ var asT=mode!=="mc_fr",correct=asT?w.t:w.fr;
-  var d=sample(pool,3,w).map(function(x){return asT?x.t:x.fr;});
+  /* distracteurs : chaînes DISTINCTES de la réponse et entre elles (anti-collision de traductions) */
+  var seen={}; seen[norm(correct)]=1; var d=[];
+  shuffle(pool).forEach(function(x){ if(d.length>=3)return; var s=asT?x.t:x.fr; if(!seen[norm(s)]){ seen[norm(s)]=1; d.push(s); } });
   return {kind:"mc",mode:mode,w:w,prompt:mode==="mc_fr"?w.t:w.fr,answer:correct,opts:shuffle([correct].concat(d)),audio:mode==="listen"}; }
-function makeMatch(ws){ return {kind:"match",w:ws[0],pairs:ws.map(function(w){return{fr:w.fr,t:w.t,w:w};})}; }
+function makeMatch(ws){ /* garde des paires à cible UNIQUE (évite 2 tuiles identiques) */
+  var seen={},uniq=[]; ws.forEach(function(w){ if(!seen[norm(w.t)]){ seen[norm(w.t)]=1; uniq.push(w); } });
+  return {kind:"match",w:uniq[0],pairs:uniq.map(function(w){return{fr:w.fr,t:w.t,w:w};})}; }
 function makeBank(p,pool){ var toks=p.t.split(" "),ex=sample(allWords(S.course),3).map(function(x){return x.t.split(" ")[0];});
   return {kind:"bank",w:{fr:p.fr,t:p.t},prompt:p.fr,answer:p.t,tokens:toks,bank:shuffle(toks.concat(ex))}; }
 
@@ -172,6 +176,7 @@ function render(){
   if(VIEW==="home") app.appendChild(vHome());
   else if(VIEW==="review") app.appendChild(vReview());
   else if(VIEW==="dict") app.appendChild(vDict());
+  else if(VIEW==="translate") app.appendChild(vTranslate());
   else if(VIEW==="league") app.appendChild(vLeague());
   else if(VIEW==="profile") app.appendChild(vProfile());
   app.appendChild(vTabbar());
@@ -310,7 +315,48 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
 }
 
 /* ---------- Tabbar ---------- */
-function vTabbar(){ var t=el("div","tabbar"); [["home","🏠","Accueil"],["review","🧠","Réviser"],["league","🏆","Ligue"],["profile","🙂","Profil"]].forEach(function(x){ var b=el("button","tab"+(VIEW===x[0]||(x[0]==="review"&&VIEW==="dict")?" active":"")); b.innerHTML='<span>'+x[1]+'</span><i>'+x[2]+'</i>'; b.onclick=function(){go(x[0]);}; t.appendChild(b); }); return t; }
+function vTabbar(){ var t=el("div","tabbar"); [["home","🏠","Accueil"],["review","🧠","Réviser"],["translate","🌐","Traduire"],["league","🏆","Ligue"],["profile","🙂","Profil"]].forEach(function(x){ var b=el("button","tab"+(VIEW===x[0]||(x[0]==="review"&&VIEW==="dict")?" active":"")); b.innerHTML='<span>'+x[1]+'</span><i>'+x[2]+'</i>'; b.onclick=function(){go(x[0]);}; t.appendChild(b); }); return t; }
+
+/* ============ Traducteur multilingue (hors-ligne, basé sur le dictionnaire) ============ */
+var REV=null;
+function buildRev(){ REV={fr:{}}; LANGS.forEach(function(l){REV[l]={};});
+  Object.keys(DICT).forEach(function(fr){ REV.fr[norm(fr)]=fr; LANGS.forEach(function(l){ var v=DICT[fr][l]; if(v)REV[l][norm(v)]=fr; }); }); }
+function translateQ(q,src){ if(!REV)buildRev(); var nq=norm(q); if(!nq)return null; var order=src==="auto"?["fr"].concat(LANGS):[src];
+  var fr=null;
+  for(var i=0;i<order.length&&!fr;i++){ var m=REV[order[i]]; if(m&&m[nq])fr=m[nq]; }
+  if(!fr){ // approché : commence par / contient
+    for(var j=0;j<order.length&&!fr;j++){ var mm=REV[order[j]]; if(!mm)continue; var keys=Object.keys(mm);
+      for(var k=0;k<keys.length;k++){ if(keys[k].indexOf(nq)===0||nq.indexOf(keys[k])===0){ fr=mm[keys[k]]; break; } } } }
+  if(!fr)return null; var out={fr:fr}; LANGS.forEach(function(l){ out[l]=DICT[fr][l]||"—"; }); return out;
+}
+var TR={src:"auto", q:"", res:null};
+function vTranslate(){ var d=el("div","screen");
+  d.innerHTML='<h2 class="ttl">🌐 Traducteur</h2><p class="sub2">7 langues, hors-ligne. Tape un mot ou une phrase.</p>';
+  var bar=el("div","tr-bar");
+  var langsOpt=[["auto","🔎 Auto"],["fr","🇫🇷 Français"]].concat(LANGS.map(function(l){return [l,LMETA[l].drapeau+" "+LMETA[l].nom];}));
+  bar.innerHTML='<select id="trSrc">'+langsOpt.map(function(o){return '<option value="'+o[0]+'"'+(TR.src===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("")+'</select>';
+  var input=el("div","tr-in");
+  input.innerHTML='<input id="trQ" class="txt" placeholder="ex : bonjour, chat, je t\'aime…" value="'+esc(TR.q)+'" autocomplete="off">'+
+    '<button class="tr-mic" id="trMic" title="Dicter">🎤</button>';
+  d.appendChild(bar); d.appendChild(input);
+  var out=el("div","tr-out"); out.id="trOut"; d.appendChild(out);
+  function run(){ var q=(d.querySelector("#trQ").value||""); TR.q=q; TR.src=d.querySelector("#trSrc").value; TR.res=translateQ(q,TR.src); paint(); }
+  function paint(){ var o=d.querySelector("#trOut"); o.innerHTML="";
+    if(!TR.q.trim()){ o.innerHTML='<div class="tr-hint">💡 Essaie « bonjour », « chat », « où sont les toilettes »…</div>'; return; }
+    if(!TR.res){ o.innerHTML='<div class="tr-hint">🤔 Mot introuvable dans le dictionnaire ('+Object.keys(DICT).length+' entrées). Essaie un autre mot.</div>'; return; }
+    var langsAll=[["fr","🇫🇷","Français"]].concat(LANGS.map(function(l){return [l,LMETA[l].drapeau,LMETA[l].nom];}));
+    langsAll.forEach(function(l){ var val=TR.res[l[0]]; if(!val||val==="—")return; var card=el("div","tr-card");
+      card.innerHTML='<span class="trflag">'+l[1]+'</span><span class="trtxt"><b>'+esc(val)+'</b><i>'+l[2]+'</i></span>'+(l[0]!=="fr"?'<button class="trspk" data-l="'+l[0]+'" data-t="'+esc(val)+'">🔊</button>':'');
+      o.appendChild(card); });
+    o.querySelectorAll(".trspk").forEach(function(b){ b.onclick=function(){ speakLang(b.getAttribute("data-t"), LMETA[b.getAttribute("data-l")].tts); }; });
+  }
+  setTimeout(function(){ var i=d.querySelector("#trQ"); if(i){ i.oninput=run; i.focus(); } d.querySelector("#trSrc").onchange=run;
+    var mic=d.querySelector("#trMic"); if(mic)mic.onclick=function(){ dictate(function(txt){ d.querySelector("#trQ").value=txt; run(); }); };
+    paint(); },0);
+  return d;
+}
+function speakLang(text,lang){ if(!S.sound)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;}); if(vs[0])u.voice=vs[0]; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+function dictate(cb){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Dictée non dispo sur ce navigateur"); return; } var r=new SR(); r.lang="fr-FR"; r.onresult=function(e){ cb(e.results[0][0].transcript); }; r.onerror=function(){}; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Dictée indisponible"); } }
 
 /* ============ LEÇON ============ */
 function startLesson(ui,li,rev){ if(S.hearts<=0){ outOfHearts(); return; }

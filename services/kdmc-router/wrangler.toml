@@ -27,6 +27,7 @@ routes = [
   { pattern = "beatbot.kd-mc.com", custom_domain = true },
   { pattern = "autorisations.kd-mc.com", custom_domain = true },
   { pattern = "arbre.kd-mc.com", custom_domain = true },
+  { pattern = "lingua.kd-mc.com", custom_domain = true },
 ]
 
 # Registre fiches clients — KV à id FIGÉ (provisionné le 2026-06-09) pour un déploiement
