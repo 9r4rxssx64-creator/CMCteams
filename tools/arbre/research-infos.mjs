@@ -41,7 +41,9 @@ const R = { gallica: {}, ia: {}, jdm: [] };
 
 // ---- 1) Gallica SRU (API officielle ouverte de la BnF) ----
 for (const { q, tag } of QUERIES) {
-  const url = 'https://gallica.bnf.fr/SRU?operation=searchRetrieve&version=1.2&maximumRecords=15&query=' + encodeURIComponent('gallica all ' + q);
+  const terms = [...q.matchAll(/"([^"]+)"/g)].map(m => m[1]);
+  const cql = terms.map(t => '(gallica all "' + t + '")').join(' and ') || ('gallica all ' + q);
+  const url = 'https://gallica.bnf.fr/SRU?operation=searchRetrieve&version=1.2&maximumRecords=15&query=' + encodeURIComponent(cql);
   try {
     const r = await fetch(url, { headers: UA });
     const xml = await r.text();
