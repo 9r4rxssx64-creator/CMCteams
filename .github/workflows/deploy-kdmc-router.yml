@@ -139,6 +139,27 @@ jobs:
             echo "::warning::OPEN_AI_API_KEY absente → voix Lingua en repli navigateur (Web Speech)."
           fi
 
+      - name: Groq + Gemini — clés pour le Coach IA KDMC Lingua (/__lingua/ai, fail-open si absentes)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GROQ_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -n "${GROQ_KEY:-}" ]; then
+            printf '%s' "$GROQ_KEY" | wrangler secret put GROQ_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GROQ_API_KEY non posée (Coach IA en repli Gemini/hors-ligne)"
+          else
+            echo "::warning::GROQ_API_KEY absente → Coach IA tentera Gemini, sinon message hors-ligne."
+          fi
+          if [ -n "${GEMINI_KEY:-}" ]; then
+            printf '%s' "$GEMINI_KEY" | wrangler secret put GEMINI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GEMINI_API_KEY non posée (repli Coach IA indisponible)"
+          else
+            echo "::warning::GEMINI_API_KEY absente → pas de repli Gemini pour le Coach IA."
+          fi
+
       - name: Health check des belles adresses
         run: |
           for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \
