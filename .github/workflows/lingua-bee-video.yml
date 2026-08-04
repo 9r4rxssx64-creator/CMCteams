@@ -58,7 +58,11 @@ jobs:
           OK=0
           gen_vid "idle"  "$KEEP The cute bee hovers gently in place, wings fluttering fast, she blinks naturally, breathes softly, tiny head tilts, subtle seamless idle loop, nothing else changes" && OK=$((OK+1))
           gen_vid "hello" "$KEEP The cute bee waves hello warmly with her raised hand, wings fluttering, blinking, joyful, subtle seamless loop" && OK=$((OK+1))
-          echo "Vidéos générées : $OK/2"
+          gen_vid "dance" "$KEEP The cute bee dances happily in place, swaying side to side with rhythm, bouncing, wings fluttering, joyful expression, fun dance loop" && OK=$((OK+1))
+          gen_vid "jump"  "$KEEP The cute bee jumps up with excitement and lands softly, then jumps again, celebratory hops, wings fluttering, happy, seamless loop" && OK=$((OK+1))
+          gen_vid "fly"   "$KEEP The cute bee flies in a small playful circle, swooping gently up and down like a figure eight, wings fluttering fast, returns to center, seamless flying loop" && OK=$((OK+1))
+          gen_vid "walk"  "$KEEP The cute bee walks cheerfully in place with a bouncy little march, arms swinging, wings fluttering, adorable strut, seamless loop" && OK=$((OK+1))
+          echo "Vidéos générées : $OK/6"
           [ "$OK" -ge 1 ] || { echo "::error::aucune vidéo générée"; exit 1; }
 
       - name: Commit sur la branche d'art
