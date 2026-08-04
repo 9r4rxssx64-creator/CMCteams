@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.22.0";
+var APP_VER="v2.23.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -868,7 +868,7 @@ function modal(){ var ov=el("div","overlay"),box=el("div","modal"); ov.appendChi
 
 /* ============ Mascotte « Bee » 🐝 (abeille rigolote — création originale KDMC) ============
    Illustrations IA en médaillon rond (bee/*.webp) + repli SVG animé si l'image manque. */
-var BEE_IMG={wave:"wave",point:"wave",party:"party",read:"read",sad:"read"};
+var BEE_IMG={wave:"wave",point:"point",party:"party",read:"read",sad:"read"};
 function MASCOT(pose,size){ size=size||100; var f=BEE_IMG[pose]||"wave";
   return '<img class="mascot bee-img pose-'+pose+'" src="bee/'+f+'.webp" width="'+size+'" height="'+size+'" alt="" data-pose="'+pose+'" data-size="'+size+'" onerror="window._beeFallback&&window._beeFallback(this)">';
 }
