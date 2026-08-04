@@ -304,6 +304,47 @@ var PHRASEBOOK_X = {
 };
 Object.keys(PHRASEBOOK_X).forEach(function(k){ PHRASEBOOK[k]=PHRASEBOOK_X[k]; });
 
+/* --- Phrases du quotidien (parcours) --- */
+var PHRASEBOOK_X2 = {
+  "où est":{en:"where is",it:"dov'è",es:"dónde está",de:"wo ist",pt:"onde fica",nl:"waar is"},
+  "je cherche":{en:"i am looking for",it:"sto cercando",es:"estoy buscando",de:"ich suche",pt:"estou à procura",nl:"ik zoek"},
+  "à droite":{en:"to the right",it:"a destra",es:"a la derecha",de:"nach rechts",pt:"à direita",nl:"naar rechts"},
+  "à gauche":{en:"to the left",it:"a sinistra",es:"a la izquierda",de:"nach links",pt:"à esquerda",nl:"naar links"},
+  "tout droit":{en:"straight ahead",it:"dritto",es:"todo recto",de:"geradeaus",pt:"em frente",nl:"rechtdoor"},
+  "je suis désolé":{en:"i am sorry",it:"mi dispiace",es:"lo siento",de:"es tut mir leid",pt:"lamento",nl:"het spijt me"},
+  "pas de problème":{en:"no problem",it:"nessun problema",es:"no hay problema",de:"kein Problem",pt:"sem problema",nl:"geen probleem"},
+  "un moment":{en:"one moment",it:"un momento",es:"un momento",de:"einen Moment",pt:"um momento",nl:"een moment"},
+  "je voudrais un café":{en:"i would like a coffee",it:"vorrei un caffè",es:"quería un café",de:"ich möchte einen Kaffee",pt:"queria um café",nl:"ik wil graag een koffie"},
+  "au secours":{en:"help",it:"aiuto",es:"socorro",de:"Hilfe",pt:"socorro",nl:"help"}
+};
+Object.keys(PHRASEBOOK_X2).forEach(function(k){ PHRASEBOOK[k]=PHRASEBOOK_X2[k]; });
+
+/* --- Parcours : jalons de niveau (par nombre de mots maîtrisés) + conseils du prof (100% original) --- */
+var LEVELS = [
+  {code:"Débutant", min:0},
+  {code:"A1",  min:40},
+  {code:"A1+", min:90},
+  {code:"A2",  min:160},
+  {code:"A2+", min:240}
+];
+var TEACHER_TIPS = [
+  "Révise 5 minutes juste avant de dormir : ton cerveau fixe les mots pendant la nuit. 🌙",
+  "Dis les mots à voix haute — parler ancre mieux que lire. 🗣️",
+  "Mieux vaut 10 min chaque jour qu'une heure le dimanche : la régularité gagne. 📆",
+  "Associe chaque mot à une image dans ta tête, pas à sa traduction. 🖼️",
+  "Refais les révisions proposées : revoir au bon moment, c'est 80% de la mémoire. 🔁",
+  "Compte, cuisine, range… en pensant dans ta nouvelle langue. 🧠",
+  "N'aie pas peur de te tromper : une erreur t'apprend plus qu'une bonne réponse. 💪",
+  "Écoute la prononciation et répète juste après, comme un écho. 🎧",
+  "Apprends d'abord les mots que TU utilises tous les jours. 🎯",
+  "Un mini-objectif atteignable : 1 leçon par jour suffit pour progresser. ✅",
+  "Relie chaque nouveau mot à ceux que tu connais déjà (même thème). 🔗",
+  "Fais une leçon dans les transports ou la file d'attente : le temps mort devient utile. ⏳",
+  "Termine toujours sur une réussite : ça donne envie de revenir demain. 🌟",
+  "Le soir, raconte ta journée en 3 petites phrases dans ta nouvelle langue. 📝",
+  "Passe l'examen de l'unité : ce qui résiste, c'est exactement ce qu'il faut revoir. 🏆"
+];
+
 /* --- Génération des cours + dictionnaire de traduction --- */
 var COURSES = {};
 LANGS.forEach(function(l){
