@@ -1,19 +1,78 @@
 {
  "meta": {
-  "seedVersion": 9,
-  "updatedAt": 1785759054846
+  "seedVersion": 17,
+  "updatedAt": 1785801675258
  },
  "persons": {
-  "pmsd1ujz61iq18": {
+  "seed_alex1906_maiffret": {
    "deces": {
-    "date": "3.05.1926 ?"
+    "date": "25.02.1993",
+    "lieu": "Villefranche-sur-Mer"
    },
-   "id": "pmsd1ujz61iq18",
+   "id": "seed_alex1906_maiffret",
    "naissance": {
-    "date": "14.10.1856 ?"
+    "date": "10.07.1906",
+    "lieu": "Beaulieu-sur-Mer"
    },
    "nom": "MAIFFRET",
-   "notes": "Document. Actes avant ~1891 à chercher à VILLEFRANCHE-sur-Mer (Beaulieu en dépendait avant sa création).",
+   "notes": "✅ DÉCOUVERT au fichier INSEE : né le 10.07.1906 à Beaulieu-sur-Mer, † 25.02.1993 à Villefranche-sur-Mer (86 ans). À ne pas confondre avec Alexandre 1856–1926 (probable grand-oncle/aïeul). À rattacher.",
+   "pere": "seed_jean1888",
+   "prenom": "Alexandre",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_alex_vdb": {
+   "deces": {
+    "date": "13.10.2022",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "id": "seed_alex_vdb",
+   "mere": "seed_leonie",
+   "naissance": {
+    "date": "25.07.1921",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "nom": "VAN DEN BOSCH",
+   "notes": "✅ DÉCOUVERT au fichier INSEE (recherche auto 2026-08-03) : né le 25.07.1921 à Beaulieu-sur-Mer, † 13.10.2022 à Beaulieu-sur-Mer — à 101 ANS. Frère probable de Lucette Thérèse (autre enfant probable de Léonie MAIFFRET). Toute sa vie à Beaulieu. À rattacher.",
+   "prenom": "Alexandre Robert Victor",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/1X2L5T-fjruX"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Décès INSEE · famille Van den Bosch",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_alexandre_1856": {
+   "deces": {
+    "date": "3.05.1926"
+   },
+   "id": "seed_alexandre_1856",
+   "naissance": {
+    "date": "14.10.1856"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils de Jean-Baptiste. Né le 14.10.1856, † 3.05.1926. Père de 7 enfants : Louis, Joseph-Alexandre, Jean, Marius, Léonie, Pierre et Charles. C'est l'AÏEUL direct de Kevin (arrière-arrière-grand-père). Actes avant ~1891 à chercher à VILLEFRANCHE-sur-Mer.",
+   "pere": "seed_jb_maiffret",
    "prenom": "Alexandre",
    "sexe": "M",
    "sources": [
@@ -26,322 +85,20 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785750680994
+   "updatedAt": 1785801669340
   },
-  "pmsd1ujz63yw4s": {
+  "seed_alexandre_bebe": {
    "deces": {
-    "date": "13.03.1994",
-    "lieu": "Nice"
+    "date": "14.05.1912"
    },
-   "id": "pmsd1ujz63yw4s",
+   "id": "seed_alexandre_bebe",
    "naissance": {
-    "date": "25.04.1910",
-    "lieu": "Beaulieu-sur-Mer"
+    "date": "29.07.1910"
    },
    "nom": "MAIFFRET",
-   "notes": "✅ CONFIRMÉ (fichier INSEE). Né à Beaulieu-sur-Mer. À rattacher.",
-   "prenom": "Léon",
-   "sexe": "M",
-   "sources": [
-    {
-     "label": "Décès INSEE · famille Maiffret",
-     "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
-    },
-    {
-     "label": "Fichier INSEE (matchID)",
-     "url": "https://deces.matchid.io"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz64cy30": {
-   "id": "pmsd1ujz64cy30",
-   "nom": "DENTAU",
-   "notes": "Document : mariage 11.06.1865 avec Marius-Antoine Molinario. Variantes possibles du nom : Dentaud, Dentu.",
-   "prenom": "Marie-Marguerite",
-   "sexe": "F",
-   "sources": [
-    {
-     "label": "Archives 06 (Nice/Villefranche)",
-     "url": "https://archives06.fr"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz64zqpp": {
-   "id": "pmsd1ujz64zqpp",
-   "naissance": {
-    "date": "1858 ?"
-   },
-   "nom": "SAUVAIGO",
-   "notes": "✅ Marié en 1883 à Victorine MAIFFRET (index Geneanet). Lien exact à la lignée de Victor Sauvaigo à confirmer.",
-   "prenom": "Jules",
-   "sexe": "M",
-   "sources": [
-    {
-     "label": "Geneanet · nom SAUVAIGO",
-     "url": "https://www.geneanet.org/nom-de-famille/SAUVAIGO"
-    },
-    {
-     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
-     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz65pudi": {
-   "id": "pmsd1ujz65pudi",
-   "nom": "MOLINARIO",
-   "notes": "Document : marié le 11.06.1865 à Marie-Marguerite DENTAU (région niçoise). 🔎 Non retrouvé en ligne — chercher registre AD06 (Nice) année 1865.",
-   "prenom": "Marius-Antoine",
-   "sexe": "M",
-   "sources": [
-    {
-     "label": "Archives 06 (Nice/Villefranche)",
-     "url": "https://archives06.fr"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz696wqc": {
-   "deces": {
-    "date": "2.08.1983 ?"
-   },
-   "id": "pmsd1ujz696wqc",
-   "naissance": {
-    "date": "6.03.1907 ?"
-   },
-   "nom": "MAIFFRET",
-   "notes": "Document (sans postérité). Décès 1983 → figure au fichier INSEE, vérifiable.",
-   "prenom": "Marguerite-Rose",
-   "sexe": "F",
-   "sources": [
-    {
-     "label": "Fichier INSEE (matchID)",
-     "url": "https://deces.matchid.io"
-    },
-    {
-     "label": "Décès INSEE · famille Maiffret",
-     "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6cwl9n": {
-   "id": "pmsd1ujz6cwl9n",
-   "naissance": {
-    "date": "1860 ?"
-   },
-   "nom": "MAIFFRET",
-   "notes": "✅ Mariage 1883 avec Jules Sauvaigo (index Geneanet) — conforme au document. À rattacher.",
-   "prenom": "Victorine",
-   "sexe": "F",
-   "sources": [
-    {
-     "label": "Geneanet · nom MAIFFRET",
-     "url": "https://www.geneanet.org/nom-de-famille/MAIFFRET"
-    },
-    {
-     "label": "Arbre marieclaire1 (Maiffret)",
-     "url": "https://gw.geneanet.org/marieclaire1?lang=fr&m=N&v=MAIFFRET"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6dvpfx": {
-   "deces": {
-    "date": "30.01.1952 ?"
-   },
-   "id": "pmsd1ujz6dvpfx",
-   "naissance": {
-    "date": "19.03.1895 ?"
-   },
-   "nom": "MAIFFRET",
-   "notes": "Épouse VAN DEN BOSCH (document). Sa fille probable : Lucette Thérèse Van den Bosch (née à Beaulieu). À rattacher.",
-   "prenom": "Léonie",
-   "sexe": "F",
-   "sources": [
-    {
-     "label": "Relevé Beaulieu mariages 1905–1940",
-     "url": "https://www.geneanet.org/releves-collaboratifs/view/49327"
-    },
-    {
-     "label": "Décès INSEE · famille Van den Bosch",
-     "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6dwaq2": {
-   "deces": {
-    "date": "18.03.2005",
-    "lieu": "Beaulieu-sur-Mer"
-   },
-   "id": "pmsd1ujz6dwaq2",
-   "naissance": {
-    "date": "19.08.1937",
-    "lieu": "Nice"
-   },
-   "nom": "MAIFFRET",
-   "notes": "✅ CONFIRMÉ (fichier INSEE) — correspond au « Michel 1937–2005 » du document. À rattacher à la bonne branche.",
-   "prenom": "Michel",
-   "sexe": "M",
-   "sources": [
-    {
-     "label": "Décès INSEE · famille Maiffret",
-     "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
-    },
-    {
-     "label": "Fichier INSEE (matchID)",
-     "url": "https://deces.matchid.io"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6h9hkh": {
-   "id": "pmsd1ujz6h9hkh",
-   "naissance": {
-    "date": "1892 ?"
-   },
-   "nom": "SAUVAIGO",
-   "notes": "Document (décédée en bas âge). À confirmer.",
-   "prenom": "Micheline",
-   "sexe": "F",
-   "sources": [
-    {
-     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
-     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6lbgjr": {
-   "deces": {
-    "date": "1.07.1943 ?"
-   },
-   "id": "pmsd1ujz6lbgjr",
-   "naissance": {
-    "date": "10.12.1860 ?"
-   },
-   "nom": "MAIFFRET",
-   "notes": "Document (branche Maiffret de Beaulieu-sur-Mer / Nice). Lien exact à confirmer.",
-   "prenom": "Victor",
-   "sexe": "M",
-   "sources": [
-    {
-     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
-     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
-    },
-    {
-     "label": "Arbre marieclaire1 (Maiffret)",
-     "url": "https://gw.geneanet.org/marieclaire1?lang=fr&m=N&v=MAIFFRET"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6lddi5": {
-   "deces": {
-    "date": "1912 ?"
-   },
-   "id": "pmsd1ujz6lddi5",
-   "naissance": {
-    "date": "1893 ?"
-   },
-   "nom": "SAUVAIGO",
-   "notes": "Fille probable de Jules & Victorine (document). À confirmer.",
-   "prenom": "Julie",
-   "sexe": "F",
-   "sources": [
-    {
-     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
-     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6n0z6q": {
-   "deces": {
-    "date": "11.05.1994",
-    "lieu": "Nice"
-   },
-   "id": "pmsd1ujz6n0z6q",
-   "naissance": {
-    "date": "31.01.1922",
-    "lieu": "Beaulieu-sur-Mer"
-   },
-   "nom": "MAIFFRET",
-   "notes": "✅ CONFIRMÉ (fichier INSEE). Née à Beaulieu-sur-Mer. À rattacher.",
-   "prenom": "Josette",
-   "sexe": "F",
-   "sources": [
-    {
-     "label": "Décès INSEE · famille Maiffret",
-     "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
-    },
-    {
-     "label": "Fichier INSEE (matchID)",
-     "url": "https://deces.matchid.io"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6oegt0": {
-   "deces": {
-    "date": "16.12.2010",
-    "lieu": "Ramatuelle"
-   },
-   "id": "pmsd1ujz6oegt0",
-   "naissance": {
-    "date": "~1920 ? (doc: 1926)",
-    "lieu": "Beaulieu-sur-Mer"
-   },
-   "nom": "VAN DEN BOSCH",
-   "notes": "✅ CONFIRMÉ (INSEE, †2010 à 90 ans). Née à Beaulieu-sur-Mer → chaînon Maiffret ⇄ Van den Bosch (fille probable de Léonie). ⚠️ Date de naissance à trancher : INSEE ~1920 vs document ~1926.",
-   "prenom": "Lucette Thérèse",
-   "sexe": "F",
-   "sources": [
-    {
-     "label": "Décès INSEE · famille Van den Bosch",
-     "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
-    },
-    {
-     "label": "Fichier INSEE (matchID)",
-     "url": "https://deces.matchid.io"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6qbnls": {
-   "deces": {
-    "date": "24.07.1931 ?"
-   },
-   "id": "pmsd1ujz6qbnls",
-   "naissance": {
-    "date": "22.08.1836 ?"
-   },
-   "nom": "MAIFFRET",
-   "notes": "Document (sans postérité). À rattacher.",
-   "prenom": "Joseph-Alexandre",
-   "sexe": "M",
-   "sources": [
-    {
-     "label": "Archives 06 (Nice/Villefranche)",
-     "url": "https://archives06.fr"
-    }
-   ],
-   "updatedAt": 1785750680994
-  },
-  "pmsd1ujz6xwq9k": {
-   "deces": {
-    "date": "24.05.1932 ?"
-   },
-   "id": "pmsd1ujz6xwq9k",
-   "naissance": {
-    "date": "16.06.1860 ?"
-   },
-   "nom": "MAIFFRET",
-   "notes": "Document (sans postérité). À rattacher.",
-   "prenom": "Louis",
+   "notes": "📜 DOCUMENT FAMILIAL : fils de Marius, frère aîné de Marie-Thérèse. Né le 29.07.1910, décédé bébé le 14.05.1912.",
+   "pere": "seed_marius1890",
+   "prenom": "Alexandre",
    "sexe": "M",
    "sources": [
     {
@@ -349,7 +106,47 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785750680994
+   "updatedAt": 1785801669341
+  },
+  "seed_andre_maiffret": {
+   "conjoints": [
+    "seed_elisabeth_molinario"
+   ],
+   "deces": {
+    "date": "18.10.1961"
+   },
+   "id": "seed_andre_maiffret",
+   "naissance": {
+    "date": "19.10.1879 ?"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils de Jean (1852). † 18.10.1961. Marié le 17.12.1934 à Élisabeth MOLINARIO. Père de Marguerite-Rose. ⚠️ Année de naissance difficile à lire sur le manuscrit (1879 probable — 1819 impossible, son père étant né en 1852).",
+   "pere": "seed_jean1852",
+   "prenom": "André",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_brigitte_m": {
+   "id": "seed_brigitte_m",
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT (stylo) : enfant de Jean Maiffret (1925). À confirmer.",
+   "pere": "seed_jap_maiffret",
+   "prenom": "Brigitte",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669341,
+   "vivant": true
   },
   "seed_cecile": {
    "id": "seed_cecile",
@@ -359,8 +156,29 @@
    "pere": "seed_christian",
    "prenom": "Cécile",
    "sexe": "F",
-   "updatedAt": 1785759054784,
+   "updatedAt": 1785801669340,
    "vivant": true
+  },
+  "seed_charles1904": {
+   "deces": {
+    "date": "24.02.1969"
+   },
+   "id": "seed_charles1904",
+   "naissance": {
+    "date": "9.02.1904"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 9.02.1904, † 24.02.1969. Père de Michel (1937–2005).",
+   "pere": "seed_alexandre_1856",
+   "prenom": "Charles",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669340
   },
   "seed_christian": {
    "conjoints": [
@@ -371,12 +189,119 @@
    "notes": "Mari de Marie-Brigitte. Nom/date à compléter.",
    "prenom": "Christian",
    "sexe": "M",
-   "updatedAt": 1785759054784
+   "updatedAt": 1785801669340
+  },
+  "seed_christine_vdb": {
+   "id": "seed_christine_vdb",
+   "mere": "seed_lucette_vdb",
+   "nom": "",
+   "notes": "📜 DOCUMENT (stylo) : enfant de Lucette Van den Bosch. Nom de famille à compléter.",
+   "prenom": "Christine",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Décès INSEE · famille Van den Bosch",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
+    }
+   ],
+   "updatedAt": 1785801669341,
+   "vivant": true
+  },
+  "seed_christophe_m": {
+   "id": "seed_christophe_m",
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT (stylo) : enfant de Jean Maiffret (1925). À confirmer.",
+   "pere": "seed_jap_maiffret",
+   "prenom": "Christophe",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669341,
+   "vivant": true
+  },
+  "seed_claude_desarzens": {
+   "deces": {
+    "date": "10.05.2022",
+    "lieu": "Suisse"
+   },
+   "id": "seed_claude_desarzens",
+   "naissance": {
+    "date": "19.03.1941",
+    "lieu": "Marseille"
+   },
+   "nom": "DE SARZENS",
+   "notes": "✅ DÉCOUVERT au fichier INSEE : « DE SARZENS Claude Alain », né le 19.03.1941 à MARSEILLE, † 10.05.2022 en SUISSE (81 ans). Piste FORTE branche paternelle : né dans les Bouches-du-Rhône (comme Gérard, 1944 à Salon) et décédé en Suisse (berceau du nom). Frère ou cousin de Gérard ? À vérifier avec la famille.",
+   "prenom": "Claude Alain",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/NFlPwJbkB0SI"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Geneanet · nom DESARZENS",
+     "url": "https://www.geneanet.org/nom-de-famille/DESARZENS"
+    },
+    {
+     "label": "Sarzens (Vaud) — berceau du nom",
+     "url": "https://fr.wikipedia.org/wiki/Sarzens"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_dentau_mm": {
+   "conjoints": [
+    "seed_molinario_marius"
+   ],
+   "id": "seed_dentau_mm",
+   "nom": "DENTAU",
+   "notes": "📜 DOCUMENT FAMILIAL : mariage 22.06.1865 avec Marius-Antoine Molinario. Mère d'Élisabeth et Marguerite. ✅ La famille DENTAU est bien réelle et niçoise (INSEE XXᵉ s. : Nice, Saint-Laurent-du-Var, Villefranche). Variantes : Dentaud, Dentu.",
+   "prenom": "Marie-Marguerite",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_elisabeth_molinario": {
+   "conjoints": [
+    "seed_andre_maiffret"
+   ],
+   "id": "seed_elisabeth_molinario",
+   "mere": "seed_dentau_mm",
+   "nom": "MOLINARIO",
+   "notes": "📜 DOCUMENT FAMILIAL : fille de Marius-Antoine Molinario et Marie-Marguerite Dentau. Mariée le 17.12.1934 à André MAIFFRET.",
+   "pere": "seed_molinario_marius",
+   "prenom": "Élisabeth",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669340
   },
   "seed_emile": {
    "id": "seed_emile",
    "nom": "DESARZENS",
-   "notes": "Frère de Gérard (oncle paternel de Kevin). À relier aux grands-parents paternels dès qu'ils seront connus.",
+   "notes": "Frère de Gérard (oncle paternel de Kevin). Fils de Guy DESARZENS (à confirmer).",
+   "pere": "seed_guy",
    "prenom": "Émile",
    "sexe": "M",
    "sources": [
@@ -385,7 +310,37 @@
      "url": "https://www.geneanet.org/nom-de-famille/DESARZENS"
     }
    ],
-   "updatedAt": 1785759054784
+   "updatedAt": 1785801669340
+  },
+  "seed_francois_mc": {
+   "deces": {
+    "date": "6.11.2004",
+    "lieu": "Nice"
+   },
+   "id": "seed_francois_mc",
+   "naissance": {
+    "date": "9.12.1912",
+    "lieu": "Monaco"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ DÉCOUVERT au fichier INSEE : MAIFFRET né à MONACO le 9.12.1912, † 6.11.2004 à Nice (91 ans). Né à Monaco comme la famille de Marie-Thérèse → parent proche probable (frère ? cousin ?). À rattacher.",
+   "prenom": "François Joseph Philippe",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/lmAX_0gFBqZe"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Archives Monaco (base ≥1900)",
+     "url": "https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785801669341
   },
   "seed_gerard": {
    "conjoints": [
@@ -397,7 +352,8 @@
     "lieu": "Salon-de-Provence"
    },
    "nom": "DESARZENS",
-   "notes": "Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). Prochaine étape : ses parents (grands-parents paternels de Kevin) — acte de naissance 1944 à Salon aux Archives 13, puis remontée vers le Vaud (Sarzens/Lucens) si le grand-père était suisse.",
+   "notes": "Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Fils de Guy DESARZENS (à confirmer). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). L'acte de naissance 1944 à Salon (Archives 13) confirmera le prénom de Guy + donnera la grand-mère paternelle.",
+   "pere": "seed_guy",
    "prenom": "Gérard",
    "sexe": "M",
    "sources": [
@@ -418,89 +374,71 @@
      "url": "https://davel-vd.ch/eb"
     }
    ],
-   "updatedAt": 1785759054784
+   "updatedAt": 1785801669340
   },
-  "seed_kevin": {
-   "id": "seed_kevin",
-   "mere": "seed_marienoel",
-   "naissance": {
-    "lieu": "Monaco"
+  "seed_germaine": {
+   "deces": {
+    "date": "13.03.1929"
    },
-   "nom": "de Sarzance",
-   "notes": "Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique).",
-   "pere": "seed_gerard",
-   "prenom": "Kevin",
-   "sexe": "M",
-   "updatedAt": 1785759054784,
-   "vivant": true
-  },
-  "seed_loic": {
-   "id": "seed_loic",
-   "nom": "DESARZENS",
-   "notes": "Fils d'Émile (cousin de Kevin). Date à compléter.",
-   "pere": "seed_emile",
-   "prenom": "Loïc",
-   "sexe": "M",
-   "updatedAt": 1785759054784,
-   "vivant": true
-  },
-  "seed_marie_brigitte": {
-   "conjoints": [
-    "seed_christian"
-   ],
-   "id": "seed_marie_brigitte",
-   "mere": "seed_mt_maiffret",
-   "nom": "SAUVAIGO",
-   "notes": "Sœur de Marie-Noël (tante maternelle de Kevin). Épouse de Christian. Date/lieu à compléter.",
-   "pere": "seed_victor_sauvaigo",
-   "prenom": "Marie-Brigitte",
-   "sexe": "F",
-   "updatedAt": 1785759054784
-  },
-  "seed_marie_joe": {
-   "id": "seed_marie_joe",
-   "mere": "seed_mt_maiffret",
-   "nom": "SAUVAIGO",
-   "notes": "Sœur de Marie-Noël (tante maternelle de Kevin). Prénom peut-être « Marie-Josée » — à confirmer. Date/lieu à compléter.",
-   "pere": "seed_victor_sauvaigo",
-   "prenom": "Marie-Joe",
-   "sexe": "F",
-   "updatedAt": 1785759054784
-  },
-  "seed_marienoel": {
-   "conjoints": [
-    "seed_gerard"
-   ],
-   "id": "seed_marienoel",
-   "mere": "seed_mt_maiffret",
+   "id": "seed_germaine",
    "naissance": {
-    "lieu": "Monaco"
-   },
-   "nom": "SAUVAIGO",
-   "notes": "Mère de Kevin, née à Monaco. Épouse de Gérard DESARZENS.",
-   "pere": "seed_victor_sauvaigo",
-   "prenom": "Marie-Noël",
-   "sexe": "F",
-   "updatedAt": 1785759054784,
-   "vivant": true
-  },
-  "seed_mt_maiffret": {
-   "conjoints": [
-    "seed_victor_sauvaigo"
-   ],
-   "id": "seed_mt_maiffret",
-   "naissance": {
-    "date": "23.10.1911"
+    "date": "25.09.1924"
    },
    "nom": "MAIFFRET",
-   "notes": "Née le 23.10.1911 (document). Épouse de Victor Sauvaigo. MAIFFRET = nom provençal d'origine germanique (Mathfrid : force + paix), rameau Meiffren/Meiffret. Décès (si ≥1970) vérifiable à l'INSEE.",
-   "prenom": "Marie-Thérèse",
+   "notes": "📜 DOCUMENT FAMILIAL : fille de Marius, petite sœur de Marie-Thérèse. Née le 25.09.1924, décédée enfant le 13.03.1929.",
+   "pere": "seed_marius1890",
+   "prenom": "Germaine",
    "sexe": "F",
    "sources": [
     {
-     "label": "Geneanet · nom MAIFFRET",
-     "url": "https://www.geneanet.org/nom-de-famille/MAIFFRET"
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_guy": {
+   "id": "seed_guy",
+   "nom": "DESARZENS",
+   "notes": "Grand-père paternel de Kevin (père de Gérard et d'Émile) — prénom donné par Kevin (2026-08-03), « il me semble » : à confirmer sur l'acte de naissance de Gérard (1944, Salon-de-Provence, Archives 13). 🔎 Recherche INSEE auto 2026-08-03 : AUCUN Guy DESARZENS du Sud dans le fichier des décès (1970→auj.) → Guy est probablement décédé AVANT 1970, ou à Monaco/à l'étranger. Piste suisse : SARZENS = hameau de la commune de Lucens (Vaud, district Broye-Vully), cité dès l'an 996, ~82 habitants — berceau du nom. Porteurs vaudois célèbres : Victor Desarzens (1908–1986, chef d'orchestre né à Château-d'Œx), Corinne et Fanny Desarzens (écrivaines). Voir aussi Claude Alain DE SARZENS (1941 Marseille, †2022 Suisse) — parent possible.",
+   "prenom": "Guy",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives 13 · état civil Salon-de-Provence",
+     "url": "https://www.archives13.fr/archive/recherche/etatcivil/n:64"
     },
+    {
+     "label": "Geneanet · nom DESARZENS",
+     "url": "https://www.geneanet.org/nom-de-famille/DESARZENS"
+    },
+    {
+     "label": "Archives vaudoises (Sarzens/Lucens, Suisse)",
+     "url": "https://davel-vd.ch/eb"
+    },
+    {
+     "label": "Sarzens (Vaud) — berceau du nom",
+     "url": "https://fr.wikipedia.org/wiki/Sarzens"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_jacqueline": {
+   "deces": {
+    "date": "21.11.1988",
+    "lieu": "Nice"
+   },
+   "id": "seed_jacqueline",
+   "naissance": {
+    "date": "22.12.1926",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL + INSEE : fille de Pierre (1900). Née le 22.12.1926 à Beaulieu-sur-Mer, † 21.11.1988 à Nice.",
+   "pere": "seed_pierre1900",
+   "prenom": "Jacqueline",
+   "sexe": "F",
+   "sources": [
     {
      "label": "Relevé Beaulieu-sur-Mer 1814–1904",
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
@@ -510,7 +448,813 @@
      "url": "https://deces.matchid.io"
     }
    ],
-   "updatedAt": 1785759054784
+   "updatedAt": 1785801669341
+  },
+  "seed_jap_maiffret": {
+   "deces": {
+    "date": "22.01.2010",
+    "lieu": "Monaco"
+   },
+   "id": "seed_jap_maiffret",
+   "naissance": {
+    "date": "18.05.1925",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ DÉCOUVERT au fichier INSEE : né le 18.05.1925 à Beaulieu-sur-Mer, † 22.01.2010 à MONACO (84 ans). Un MAIFFRET de Beaulieu mort à Monaco → lien probable avec la branche monégasque de Marie-Thérèse. À rattacher.",
+   "pere": "seed_pierre1900",
+   "prenom": "Jean Antoine Pierre",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/BPQPjNWdUD-q"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    },
+    {
+     "label": "Archives Monaco (base ≥1900)",
+     "url": "https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_jb_maiffret": {
+   "deces": {
+    "date": "9.04.1903"
+   },
+   "id": "seed_jb_maiffret",
+   "naissance": {
+    "date": "1815"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 RACINE de l'arbre MAIFFRET (document familial) : né en 1815, décédé le 9 avril 1903 (~88 ans). Père de Jean (1852), Alexandre (1856), Michel (1857) et Victoire (1860). 7 générations le séparent de Ronan.",
+   "prenom": "Jean-Baptiste",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    },
+    {
+     "label": "Geneanet · nom MAIFFRET",
+     "url": "https://www.geneanet.org/nom-de-famille/MAIFFRET"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_jean1852": {
+   "deces": {
+    "date": "30.03.1881"
+   },
+   "id": "seed_jean1852",
+   "naissance": {
+    "date": "10.03.1852"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils aîné de Jean-Baptiste. Né le 10.03.1852, † 30.03.1881 (29 ans). Père d'André.",
+   "pere": "seed_jb_maiffret",
+   "prenom": "Jean",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_jean1888": {
+   "deces": {
+    "date": "16.01.1954"
+   },
+   "id": "seed_jean1888",
+   "naissance": {
+    "date": "12.12.1888"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 12.12.1888, † 16.01.1954. Père d'Alexandre (1906), Léon (1910) et Victor (1914).",
+   "pere": "seed_alexandre_1856",
+   "prenom": "Jean",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_jmv_sauvaigo": {
+   "deces": {
+    "date": "9.09.1999",
+    "lieu": "Nice"
+   },
+   "id": "seed_jmv_sauvaigo",
+   "naissance": {
+    "date": "12.07.1912",
+    "lieu": "Nice"
+   },
+   "nom": "SAUVAIGO",
+   "notes": "✅ DÉCOUVERT au fichier INSEE : SAUVAIGO né le 12.07.1912 à Nice, † 9.09.1999 à Nice (87 ans) — porte « Victor » en 3ᵉ prénom, même génération que le grand-père Victor. Parent probable (frère ? cousin ?) de la branche niçoise. À vérifier avec la famille.",
+   "prenom": "Jean Marius Victor",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/TRUO05b-SzgQ"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Geneanet · nom SAUVAIGO",
+     "url": "https://www.geneanet.org/nom-de-famille/SAUVAIGO"
+    },
+    {
+     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
+     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_josephalex": {
+   "deces": {
+    "date": "24.07.1931"
+   },
+   "id": "seed_josephalex",
+   "naissance": {
+    "date": "22.08.1886"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 22.08.1886 (une copie antérieure disait 1836 — impossible, corrigé), † 24.07.1931. Sans postérité.",
+   "pere": "seed_alexandre_1856",
+   "prenom": "Joseph-Alexandre",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_josette_maiffret": {
+   "deces": {
+    "date": "11.05.1994",
+    "lieu": "Nice"
+   },
+   "id": "seed_josette_maiffret",
+   "naissance": {
+    "date": "31.01.1922",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ CONFIRMÉ (fichier INSEE). Née à Beaulieu-sur-Mer. À rattacher.",
+   "pere": "seed_marius1890",
+   "prenom": "Josette",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/e6vSw47xZ_FH"
+    },
+    {
+     "label": "Décès INSEE · famille Maiffret",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_jules_sauvaigo": {
+   "conjoints": [
+    "seed_victoire"
+   ],
+   "id": "seed_jules_sauvaigo",
+   "naissance": {
+    "date": "1858 ?"
+   },
+   "nom": "SAUVAIGO",
+   "notes": "📜 DOCUMENT FAMILIAL + index Geneanet : marié en 1883 à Victoire MAIFFRET (fille de Jean-Baptiste). Leurs filles : Julie (1893–1912) et Micheline (1892–1907). 1ʳᵉ alliance Sauvaigo ⇄ Maiffret — la 2ᵉ sera Victor × Marie-Thérèse en 1939. Lien exact avec Victor Sauvaigo à établir.",
+   "prenom": "Jules",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Geneanet · nom SAUVAIGO",
+     "url": "https://www.geneanet.org/nom-de-famille/SAUVAIGO"
+    },
+    {
+     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
+     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_julie_sauvaigo": {
+   "deces": {
+    "date": "15.06.1912"
+   },
+   "id": "seed_julie_sauvaigo",
+   "mere": "seed_victoire",
+   "naissance": {
+    "date": "13.03.1893"
+   },
+   "nom": "SAUVAIGO",
+   "notes": "📜 DOCUMENT FAMILIAL : née le 13.03.1893, † 15.06.1912 (19 ans), sans postérité. Fille de Jules Sauvaigo et Victoire Maiffret.",
+   "pere": "seed_jules_sauvaigo",
+   "prenom": "Julie",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
+     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_jyf_maiffret": {
+   "id": "seed_jyf_maiffret",
+   "mere": "seed_virgili",
+   "naissance": {
+    "date": "1.12.1943"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils de Victor MAIFFRET et Madeleine-Caroline VIRGILI. Né le 1.12.1943 (jour à confirmer sur le manuscrit).",
+   "pere": "seed_victorj_maiffret",
+   "prenom": "Jean-Yves-François",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669341,
+   "vivant": true
+  },
+  "seed_kevin": {
+   "id": "seed_kevin",
+   "mere": "seed_marienoel",
+   "naissance": {
+    "date": "5.02.1979",
+    "lieu": "Monaco"
+   },
+   "nom": "de Sarzance",
+   "notes": "Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique).",
+   "pere": "seed_gerard",
+   "prenom": "Kevin",
+   "sexe": "M",
+   "updatedAt": 1785801669340,
+   "vivant": true
+  },
+  "seed_laura_vdb": {
+   "id": "seed_laura_vdb",
+   "mere": "seed_lucette_vdb",
+   "nom": "",
+   "notes": "📜 DOCUMENT (stylo) : enfant de Lucette Van den Bosch. Nom à compléter.",
+   "prenom": "Laura",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Décès INSEE · famille Van den Bosch",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
+    }
+   ],
+   "updatedAt": 1785801669341,
+   "vivant": true
+  },
+  "seed_leon_maiffret": {
+   "deces": {
+    "date": "13.03.1994",
+    "lieu": "Nice"
+   },
+   "id": "seed_leon_maiffret",
+   "naissance": {
+    "date": "25.04.1910",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ CONFIRMÉ (fichier INSEE). Né à Beaulieu-sur-Mer. À rattacher.",
+   "pere": "seed_jean1888",
+   "prenom": "Léon",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/2ts_aJpuJzWm"
+    },
+    {
+     "label": "Décès INSEE · famille Maiffret",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_leonie": {
+   "deces": {
+    "date": "30.01.1972",
+    "lieu": "Villefranche-sur-Mer"
+   },
+   "id": "seed_leonie",
+   "naissance": {
+    "date": "19.09.1895",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ CONFIRMÉE au fichier INSEE : née le 19.09.1895 à Beaulieu-sur-Mer, † 30.01.1972 à Villefranche-sur-Mer (76 ans). ⚠️ Le document familial disait 19.03.1895 et †1952 — l'acte corrige (septembre, et 1972). Épouse VAN DEN BOSCH. Ses enfants probables (nés à Beaulieu, ✅ INSEE) : Lucette Thérèse (1920) et Alexandre Robert Victor (1921–2022). À rattacher.",
+   "pere": "seed_alexandre_1856",
+   "prenom": "Léonie Rosa Désirée",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/_Wu2WjLd77ex"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Relevé Beaulieu mariages 1905–1940",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/49327"
+    },
+    {
+     "label": "Décès INSEE · famille Van den Bosch",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_loic": {
+   "id": "seed_loic",
+   "nom": "DESARZENS",
+   "notes": "Fils d'Émile (cousin de Kevin). Date à compléter.",
+   "pere": "seed_emile",
+   "prenom": "Loïc",
+   "sexe": "M",
+   "updatedAt": 1785801669340,
+   "vivant": true
+  },
+  "seed_louis_maiffret": {
+   "deces": {
+    "date": "14.05.1932"
+   },
+   "id": "seed_louis_maiffret",
+   "naissance": {
+    "date": "16.06.1880"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 16.06.1880, † 14.05.1932. Sans postérité.",
+   "pere": "seed_alexandre_1856",
+   "prenom": "Louis",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_lucette_vdb": {
+   "deces": {
+    "date": "16.12.2010",
+    "lieu": "Ramatuelle"
+   },
+   "id": "seed_lucette_vdb",
+   "mere": "seed_leonie",
+   "naissance": {
+    "date": "12.02.1920",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "nom": "VAN DEN BOSCH",
+   "notes": "✅ CONFIRMÉE au fichier INSEE : née le 12.02.1920 à Beaulieu-sur-Mer, † 16.12.2010 à Ramatuelle (90 ans) — l'écart 1920/1926 du document est TRANCHÉ par l'acte : 1920. Fille probable de Léonie MAIFFRET (chaînon Maiffret ⇄ Van den Bosch). Frère probable : Alexandre (1921–2022, † à 101 ans à Beaulieu).",
+   "prenom": "Lucette Thérèse",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/rO5QX3w6sFnW"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Décès INSEE · famille Van den Bosch",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_marg_rose": {
+   "deces": {
+    "date": "2.08.1983",
+    "lieu": "Nice"
+   },
+   "id": "seed_marg_rose",
+   "naissance": {
+    "date": "6.03.1907",
+    "lieu": "Nice"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ CONFIRMÉE au fichier INSEE : née le 6.03.1907 à Nice, † 2.08.1983 à Nice (76 ans). Document : sans postérité.",
+   "pere": "seed_andre_maiffret",
+   "prenom": "Marguerite-Rose",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Décès INSEE · famille Maiffret",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_marguerite_molinario": {
+   "deces": {
+    "date": "21.10.1951"
+   },
+   "id": "seed_marguerite_molinario",
+   "mere": "seed_dentau_mm",
+   "naissance": {
+    "date": "13.03.1868"
+   },
+   "nom": "MOLINARIO",
+   "notes": "📜 DOCUMENT FAMILIAL : née le 13.03.1868, † 21.10.1951. Sans postérité. Sœur d'Élisabeth.",
+   "pere": "seed_molinario_marius",
+   "prenom": "Marguerite",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_marie_brigitte": {
+   "conjoints": [
+    "seed_christian"
+   ],
+   "id": "seed_marie_brigitte",
+   "mere": "seed_mt_maiffret",
+   "naissance": {
+    "date": "31.12.1954"
+   },
+   "nom": "SAUVAIGO",
+   "notes": "Sœur de Marie-Noël (tante maternelle de Kevin). Épouse de Christian. 📜 DOCUMENT (stylo) : née le 31.12.1954 (« Brigou »).",
+   "pere": "seed_victor_sauvaigo",
+   "prenom": "Marie-Brigitte",
+   "sexe": "F",
+   "updatedAt": 1785801669340,
+   "vivant": true
+  },
+  "seed_marie_joe": {
+   "deces": {
+    "date": "26.11.2021",
+    "lieu": "République tchèque"
+   },
+   "id": "seed_marie_joe",
+   "mere": "seed_mt_maiffret",
+   "naissance": {
+    "date": "11.11.1943",
+    "lieu": "Monaco"
+   },
+   "nom": "SAUVAIGO",
+   "notes": "✅ TRÈS PROBABLE (fichier INSEE) : « Marie José SAUVAIGO », née le 11.11.1943 à MONACO — la SEULE Sauvaigo née à Monaco de tout le fichier des décès — † 26.11.2021 en République tchèque (78 ans). Sœur de Marie-Noël (tante maternelle de Kevin). À confirmer par la famille.",
+   "pere": "seed_victor_sauvaigo",
+   "prenom": "Marie-Joe",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/-Gi6moX8QES8"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Geneanet · nom SAUVAIGO",
+     "url": "https://www.geneanet.org/nom-de-famille/SAUVAIGO"
+    },
+    {
+     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
+     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_marienoel": {
+   "conjoints": [
+    "seed_gerard"
+   ],
+   "id": "seed_marienoel",
+   "mere": "seed_mt_maiffret",
+   "naissance": {
+    "date": "25.09.1950",
+    "lieu": "Monaco"
+   },
+   "nom": "SAUVAIGO",
+   "notes": "Mère de Kevin, née à Monaco. Épouse de Gérard DESARZENS.",
+   "pere": "seed_victor_sauvaigo",
+   "prenom": "Marie-Noël",
+   "sexe": "F",
+   "updatedAt": 1785801669340,
+   "vivant": true
+  },
+  "seed_marius1890": {
+   "deces": {
+    "date": "11.04.1968"
+   },
+   "id": "seed_marius1890",
+   "naissance": {
+    "date": "11.03.1890"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 11.03.1890, † 11.04.1968. ARRIÈRE-GRAND-PÈRE de Kevin : père de Marie-Thérèse (grand-mère de Kevin), d'Alexandre (1910–1912, bébé), de Josette (1922) et de Germaine (1924–1929).",
+   "pere": "seed_alexandre_1856",
+   "prenom": "Marius",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_michel1857": {
+   "deces": {
+    "date": "2.01.1919"
+   },
+   "id": "seed_michel1857",
+   "naissance": {
+    "date": "21.02.1857"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils de Jean-Baptiste. Né le 21.02.1857, † 2.01.1919. Sans postérité.",
+   "pere": "seed_jb_maiffret",
+   "prenom": "Michel",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_michel_maiffret": {
+   "deces": {
+    "date": "18.03.2005",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "id": "seed_michel_maiffret",
+   "naissance": {
+    "date": "19.08.1937",
+    "lieu": "Nice"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ CONFIRMÉ (fichier INSEE) — correspond au « Michel 1937–2005 » du document. À rattacher à la bonne branche.",
+   "pere": "seed_charles1904",
+   "prenom": "Michel",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/8K3SODdfjBZm"
+    },
+    {
+     "label": "Décès INSEE · famille Maiffret",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_micheline_sauvaigo": {
+   "deces": {
+    "date": "2.02.1907"
+   },
+   "id": "seed_micheline_sauvaigo",
+   "mere": "seed_victoire",
+   "naissance": {
+    "date": "1892"
+   },
+   "nom": "SAUVAIGO",
+   "notes": "📜 DOCUMENT FAMILIAL : née en 1892, † 2.02.1907 à l'âge de 14 ans. Fille de Jules Sauvaigo et Victoire Maiffret.",
+   "pere": "seed_jules_sauvaigo",
+   "prenom": "Micheline",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
+     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_molinario_marius": {
+   "conjoints": [
+    "seed_dentau_mm"
+   ],
+   "id": "seed_molinario_marius",
+   "nom": "MOLINARIO",
+   "notes": "📜 DOCUMENT FAMILIAL : marié le 22.06.1865 à Marie-Marguerite DENTAU (région niçoise). Père d'Élisabeth (épouse d'André Maiffret) et de Marguerite (1868–1951). Registre AD06 (Nice) année 1865 à consulter.",
+   "prenom": "Marius-Antoine",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_monique_maiffret": {
+   "id": "seed_monique_maiffret",
+   "mere": "seed_josette_maiffret",
+   "naissance": {
+    "date": "16.08.1955"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fille de Josette (1922). Née le 16.08.1955. Annotation voisine « Murielle 27/3/63 » — possible sœur, à confirmer.",
+   "prenom": "Monique",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669341,
+   "vivant": true
+  },
+  "seed_mt_maiffret": {
+   "conjoints": [
+    "seed_victor_sauvaigo"
+   ],
+   "deces": {
+    "date": "19.02.2000",
+    "lieu": "Monaco"
+   },
+   "id": "seed_mt_maiffret",
+   "naissance": {
+    "date": "23.10.1914",
+    "lieu": "Nice"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ CONFIRMÉE au fichier INSEE (recherche auto 2026-08-03) : née le 23.10.1914 à NICE, décédée le 19.02.2000 à MONACO (85 ans). ⚠️ Le document familial disait 23.10.1911 — même jour et mois, l'acte officiel dit 1914. Épouse de Victor Sauvaigo. MAIFFRET = nom provençal d'origine germanique (Mathfrid : force + paix), rameau Meiffren/Meiffret. 📜 DOCUMENT FAMILIAL : fille de Marius MAIFFRET (1890–1968), mariée le 3.05.1939 à Victor SAUVAIGO ; enfants : Marie-Jo (1943), Patrick (1945, décédé bébé), Marie-Noël (1950), Marie-Brigitte (1954) — le manuscrit note aussi des grossesses perdues et une « Hélène 20/01/49 » incertaine. Notable niçois du nom, contemporain de la famille : Charles MAIFFRET (1877–1958), industriel confiseur, conseiller du canton de Nice-4 (1919–1922) — lien à explorer.",
+   "pere": "seed_marius1890",
+   "prenom": "Marie-Thérèse",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/50UZUgMMtNwH"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Geneanet · nom MAIFFRET",
+     "url": "https://www.geneanet.org/nom-de-famille/MAIFFRET"
+    },
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669340
+  },
+  "seed_myriam_mc": {
+   "deces": {
+    "date": "6.10.2024",
+    "lieu": "Nice"
+   },
+   "id": "seed_myriam_mc",
+   "naissance": {
+    "date": "5.03.1935",
+    "lieu": "Monaco"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ DÉCOUVERTE au fichier INSEE : MAIFFRET née à MONACO le 5.03.1935, † 6.10.2024 à Nice (89 ans). Génération suivante de la branche monégasque — à rattacher (fille de François ?).",
+   "prenom": "Myriam Augusta Olga",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/x4kL8TBj4RML"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Archives Monaco (base ≥1900)",
+     "url": "https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_olivier_m": {
+   "id": "seed_olivier_m",
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT (stylo) : enfant de Jean Maiffret (1925). À confirmer.",
+   "pere": "seed_jap_maiffret",
+   "prenom": "Olivier",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669341,
+   "vivant": true
+  },
+  "seed_patrick_sauvaigo": {
+   "deces": {
+    "date": "29.08.1945"
+   },
+   "id": "seed_patrick_sauvaigo",
+   "mere": "seed_mt_maiffret",
+   "naissance": {
+    "date": "12.01.1945"
+   },
+   "nom": "SAUVAIGO",
+   "notes": "📜 DOCUMENT FAMILIAL (annotation au stylo) : fils de Victor Sauvaigo et Marie-Thérèse Maiffret, né le 12.01.1945, décédé bébé le 29.08.1945. Frère de Marie-Jo, Marie-Noël et Marie-Brigitte.",
+   "pere": "seed_victor_sauvaigo",
+   "prenom": "Patrick",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Archives Monaco (base ≥1900)",
+     "url": "https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_philippe_vdb": {
+   "id": "seed_philippe_vdb",
+   "mere": "seed_lucette_vdb",
+   "nom": "",
+   "notes": "📜 DOCUMENT (stylo) : enfant de Lucette Van den Bosch. Nom à compléter.",
+   "prenom": "Philippe",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Décès INSEE · famille Van den Bosch",
+     "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
+    }
+   ],
+   "updatedAt": 1785801669341,
+   "vivant": true
+  },
+  "seed_pierre1900": {
+   "deces": {
+    "date": "15.01.1982"
+   },
+   "id": "seed_pierre1900",
+   "naissance": {
+    "date": "26.01.1900"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 26.01.1900, † 15.01.1982. Père de Jean (1925) et Jacqueline (1926).",
+   "pere": "seed_alexandre_1856",
+   "prenom": "Pierre",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669340
   },
   "seed_ronan": {
    "id": "seed_ronan",
@@ -519,7 +1263,7 @@
    "pere": "seed_kevin",
    "prenom": "Ronan",
    "sexe": "M",
-   "updatedAt": 1785759054784,
+   "updatedAt": 1785801669340,
    "vivant": true
   },
   "seed_sabrina": {
@@ -534,7 +1278,7 @@
    "pere": "seed_gerard",
    "prenom": "Sabrina",
    "sexe": "F",
-   "updatedAt": 1785759054784,
+   "updatedAt": 1785801669340,
    "vivant": true
   },
   "seed_theo": {
@@ -544,8 +1288,40 @@
    "notes": "Fils de Sabrina (neveu de Kevin). Nom/date à compléter.",
    "prenom": "Théo",
    "sexe": "M",
-   "updatedAt": 1785759054784,
+   "updatedAt": 1785801669340,
    "vivant": true
+  },
+  "seed_victoire": {
+   "conjoints": [
+    "seed_jules_sauvaigo"
+   ],
+   "deces": {
+    "date": "2.07.1943"
+   },
+   "id": "seed_victoire",
+   "naissance": {
+    "date": "10.12.1860"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 DOCUMENT FAMILIAL : fille de Jean-Baptiste MAIFFRET. Née le 10.12.1860, † 2.07.1943. Épouse de Jules SAUVAIGO (mariage 1883 — l'index Geneanet l'appelle « Victorine »). Mère de Julie et Micheline SAUVAIGO.",
+   "pere": "seed_jb_maiffret",
+   "prenom": "Victoire",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Geneanet · nom MAIFFRET",
+     "url": "https://www.geneanet.org/nom-de-famille/MAIFFRET"
+    },
+    {
+     "label": "Arbre marieclaire1 (Maiffret)",
+     "url": "https://gw.geneanet.org/marieclaire1?lang=fr&m=N&v=MAIFFRET"
+    },
+    {
+     "label": "Arbre « Généalogies Monaco » (Sauvaigo)",
+     "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
+    }
+   ],
+   "updatedAt": 1785801669340
   },
   "seed_victor_sauvaigo": {
    "conjoints": [
@@ -556,7 +1332,7 @@
     "lieu": ""
    },
    "nom": "SAUVAIGO",
-   "notes": "Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Dates à compléter (probablement encore sous délai de communicabilité).",
+   "notes": "Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",
    "prenom": "Victor",
    "sexe": "M",
    "sources": [
@@ -573,7 +1349,58 @@
      "url": "https://deces.matchid.io"
     }
    ],
-   "updatedAt": 1785759054784
+   "updatedAt": 1785801669340
+  },
+  "seed_victorj_maiffret": {
+   "conjoints": [
+    "seed_virgili"
+   ],
+   "deces": {
+    "date": "21.08.1982",
+    "lieu": "Nice"
+   },
+   "id": "seed_victorj_maiffret",
+   "naissance": {
+    "date": "2.03.1914",
+    "lieu": "Beaulieu-sur-Mer"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ DÉCOUVERT au fichier INSEE : né le 2.03.1914 à Beaulieu-sur-Mer, † 21.08.1982 à Nice (68 ans). Même génération que Marie-Thérèse (1914) — cousin/frère possible, et prénom Victor qui court dans la famille. À rattacher.",
+   "pere": "seed_jean1888",
+   "prenom": "Victor Jules",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès officiel (INSEE)",
+     "url": "https://deces.matchid.io/id/3CQSYx2qCq7V"
+    },
+    {
+     "label": "Fichier INSEE (matchID)",
+     "url": "https://deces.matchid.io"
+    },
+    {
+     "label": "Relevé Beaulieu-sur-Mer 1814–1904",
+     "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
+    }
+   ],
+   "updatedAt": 1785801669341
+  },
+  "seed_virgili": {
+   "conjoints": [
+    "seed_victorj_maiffret"
+   ],
+   "id": "seed_virgili",
+   "nom": "VIRGILI",
+   "notes": "📜 DOCUMENT FAMILIAL : épouse de Victor MAIFFRET (1914–1982). Mère de Jean-Yves-François.",
+   "prenom": "Madeleine-Caroline",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "Archives 06 (Nice/Villefranche)",
+     "url": "https://archives06.fr"
+    }
+   ],
+   "updatedAt": 1785801669341
   },
   "seed_yann": {
    "id": "seed_yann",
@@ -582,7 +1409,7 @@
    "pere": "seed_emile",
    "prenom": "Yann",
    "sexe": "M",
-   "updatedAt": 1785759054784,
+   "updatedAt": 1785801669340,
    "vivant": true
   }
  }
