@@ -227,7 +227,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.48";
+var APP_VER="v2.49";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -404,7 +404,8 @@ var BRANCHES=[
   {re:/PACHIAUDI/i,c:"#8a7a55",lab:"Pachiaudi"},
   {re:/BRUNO/i,c:"#a3403a",lab:"Bruno"},
   {re:/VERVLOET/i,c:"#1f7a8c",lab:"Vervloet"},
-  {re:/CRESTO/i,c:"#8e3b8e",lab:"Cresto"}
+  {re:/CRESTO/i,c:"#8e3b8e",lab:"Cresto"},
+  {re:/PIZZIO/i,c:"#c27b2c",lab:"Pizzio"}
 ];
 function hexA(h,a){var r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return "rgba("+r+","+g+","+b+","+a+")";}
 function branchOf(p){var n=(p&&p.nom)||"";for(var i=0;i<BRANCHES.length;i++)if(BRANCHES[i].re.test(n))return BRANCHES[i];return {c:"#9a8c66",lab:"Autre"};}
@@ -830,7 +831,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=27;
+var SEED_VERSION=28;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -843,7 +844,9 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_stephan_bruno",prenom:"Stephan",nom:"BRUNO",sexe:"M",vivant:true,conjoints:["seed_sabrina"],notes:"Stephan BRUNO — père de Théo. DIVORCÉ de Sabrina DESARZENS (précisé par Kevin le 4.08.2026). Dates et lieu de naissance à compléter. 🎯 ROBOT : 24 actes BRUNO à Monaco (1901-1912) sauvegardés en images (familles BRUNO monégasques anciennes) — ascendance de Stephan à explorer quand ses dates seront connues."});
   add({id:"seed_marie_brigitte",prenom:"Marie-Brigitte",nom:"SAUVAIGO",sexe:"F",vivant:true,conjoints:["seed_christian"],pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"31.12.1954"},notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Épouse de Christian. 📜 DOCUMENT (stylo) : née le 31.12.1954 (« Brigou »)."});
   add({id:"seed_christian",prenom:"Christian",nom:"CRESTO",sexe:"M",conjoints:["seed_marie_brigitte"],notes:"Christian CRESTO — mari de Marie-Brigitte (nom précisé par Kevin le 4.08.2026). CRESTO = nom bien implanté dans les Alpes-Maritimes. Date à compléter."});
-  add({id:"seed_cecile",prenom:"Cécile",nom:"CRESTO",sexe:"F",vivant:true,pere:"seed_christian",mere:"seed_marie_brigitte",notes:"Nom CRESTO = celui de son père Christian. Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter."});
+  add({id:"seed_cecile",prenom:"Cécile",nom:"CRESTO",sexe:"F",vivant:true,conjoints:["seed_henry_pizzio"],pere:"seed_christian",mere:"seed_marie_brigitte",notes:"Nom CRESTO = celui de son père Christian. Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter."});
+  add({id:"seed_henry_pizzio",prenom:"Henry",nom:"PIZZIO",sexe:"M",vivant:true,conjoints:["seed_cecile"],notes:"Henry PIZZIO — mari de Cécile, papa de Paloma (précisé par Kevin le 4.08.2026). PIZZIO = nom du pays niçois. Dates à compléter."});
+  add({id:"seed_paloma_pizzio",prenom:"Paloma",nom:"PIZZIO",sexe:"F",vivant:true,pere:"seed_henry_pizzio",mere:"seed_cecile",notes:"Paloma PIZZIO — fille d'Henry et de Cécile (précisé par Kevin le 4.08.2026). Date à compléter."});
   add({id:"seed_marie_joe",prenom:"Marie-Joe",nom:"SAUVAIGO",sexe:"F",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"11.11.1943",lieu:"Monaco"},deces:{date:"26.11.2021",lieu:"République tchèque"},notes:"✅ TRÈS PROBABLE (fichier INSEE) : « Marie José SAUVAIGO », née le 11.11.1943 à MONACO — la SEULE Sauvaigo née à Monaco de tout le fichier des décès — † 26.11.2021 en République tchèque (78 ans). Sœur de Marie-Noël (tante maternelle de Kevin). À confirmer par la famille.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/-Gi6moX8QES8"},SRC.matchid,SRC.gSauvaigo,SRC.monacoTree]});
   add({id:"seed_kevin",prenom:"Kevin",nom:"DESARZENS",sexe:"M",vivant:true,naissance:{date:"5.02.1979",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. « de Sarzance » est la forme phonétique du nom officiel DESARZENS."});
   /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
