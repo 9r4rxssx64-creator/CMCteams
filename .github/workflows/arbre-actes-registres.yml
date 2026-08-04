@@ -26,6 +26,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Recherche registres numérisés (Monaco / AD06 / AD13)
         run: node tools/arbre/research-registres.mjs
+      - name: Infos max (Gallica presse ancienne / archive.org / Journal de Monaco)
+        run: node tools/arbre/research-infos.mjs
       - name: Nettoyage node_modules (pas de commit)
         run: rm -rf node_modules package.json package-lock.json
       - name: Commit rapport

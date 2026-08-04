@@ -130,7 +130,7 @@ try {
      (champ nom form_rech_9 + cases naissance/mariage/décès) et on soumet
      Valider('rechercher') — comme un humain — pour chaque nom de famille. */
   const MC_HITS = [];
-  const NAMES = ['MAIFFRET', 'SAUVAIGO', 'DESARZENS', 'VAN DEN BOSCH', 'MOLINARIO', 'VIRGILI'];
+  const NAMES = ['MAIFFRET', 'SAUVAIGO', 'DESARZENS', 'VAN DEN BOSCH', 'MOLINARIO', 'VIRGILI', 'DENTAU'];
   async function monacoSearch(tag, baseUrl) {
     for (const nm of NAMES) {
       const t = tag + '-' + nm.replace(/\s+/g, '_');
@@ -140,7 +140,9 @@ try {
         const forms = await pg.evaluate(() => [...document.querySelectorAll('form')].map(f => f.outerHTML.slice(0, 20000)).join('\n\n====\n\n'));
         if (nm === NAMES[0]) fs.writeFileSync(path.join(rawDir, tag + '.form.html'), forms);
         const submitted = await pg.evaluate((nom) => {
-          var inp = document.querySelector('#form_rech_9') || document.querySelector('input[name^=form_rech][type=text]');
+          /* champ NOM réel : form_rech_12 (base ≥1900 — form_rech_9 = numéro d'acte !)
+             ou r_nom (base <1900 / actes indexés) */
+          var inp = document.querySelector('#form_rech_12') || document.querySelector('#r_nom') || document.querySelector('input.yui-ac-input');
           if (!inp) return 'champ nom introuvable';
           inp.value = nom;
           document.querySelectorAll('input[type=checkbox][name^=form_rech_type_acte]').forEach(function(c) { c.checked = true; });
@@ -177,7 +179,7 @@ try {
   pwNotes.push('- ❌ Playwright indisponible : ' + e.message.slice(0, 140));
 }
 // lecteur Jina (texte) en secours pour les hôtes qui refusent la connexion directe
-for (const [nm, u] of [['jina-monaco', 'https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/'], ['jina-ad13', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64']]) {
+for (const [nm, u] of [['jina-ad06', 'https://archives06.fr/archives-en-ligne/etat-civil'], ['jina-ad06-home', 'https://archives06.fr/'], ['jina-ad13', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64']]) {
   await probe(nm + '.txt', 'https://r.jina.ai/' + u);
   await sleep(1500);
 }
