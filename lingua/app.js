@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.16.0";
+var APP_VER="v2.17.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -495,6 +495,17 @@ function coachPoseFor(t){ t=(" "+String(t||"")+" ").toLowerCase();
   if(/(bonjour|salut|coucou|\bciao\b|buongiorno|\bhola\b|buenos|\bhallo\b|guten tag|\bol[aá]\b|bom dia|\bhi\b|hello|goededag)/.test(t)) return "wave";
   return "point";
 }
+/* Bee VIVANTE : elle flotte, et quand on la touche → pirouette/saut + étincelles + petit mot gentil. */
+function beeSparkles(el,n){ try{ var r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,em=["✨","⭐","💛","🐝","❤️","🌟"];
+  for(var i=0;i<(n||8);i++){ var s=document.createElement("span"); s.className="bee-spark"; s.textContent=em[Math.floor(Math.random()*em.length)];
+    var a=Math.random()*Math.PI*2,d=40+Math.random()*55;
+    s.style.left=cx+"px"; s.style.top=cy+"px"; s.style.setProperty("--dx",(Math.cos(a)*d)+"px"); s.style.setProperty("--dy",(Math.sin(a)*d-24)+"px");
+    document.body.appendChild(s); (function(sp){ setTimeout(function(){ sp.remove(); },950); })(s); } }catch(_){} }
+function beeAnimate(el,cls){ try{ el.classList.remove("pop","spin","hop","shake"); void el.offsetWidth; el.classList.add(cls); setTimeout(function(){ el.classList.remove(cls); },850); }catch(_){} }
+function beeCheer(){ try{ var c=S.course?COURSES[S.course]:null; if(!c)return; var words=["bravo","merci","bonjour","salut","oui"];
+  var fr=words[Math.floor(Math.random()*words.length)]; var t=(DICT[fr]&&DICT[fr][c.id])||fr; speakLang(t,c.ttsLang); }catch(_){} }
+document.addEventListener("click",function(e){ var el=e.target&&e.target.closest?e.target.closest(".bee-img"):null; if(!el)return;
+  beeAnimate(el, Math.random()<0.5?"spin":"hop"); beeSparkles(el,8); vibrate(12); tone([760,980],.22); beeCheer(); });
 /* Bee PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
 function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang);
   var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
@@ -521,7 +532,9 @@ function vCoach(){ var d=el("div","screen coach");
   var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>'; d.appendChild(head);
   var pct=Math.min(100,Math.round(masteredCount()/240*100));
   var pb=el("div","coach-prog"); pb.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+pct+'%"></div></div><span>'+pct+'% vers le bilingue</span>'; d.appendChild(pb);
-  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),100); d.appendChild(mas);
+  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),100);
+  var mimg=mas.querySelector(".bee-img"); if(mimg&&!S.coachMsgs.length)mimg.classList.add("pop");
+  d.appendChild(mas);
   var box=el("div","coach-box");
   if(!S.coachMsgs.length){ var intro=el("div","coach-msg bot"); intro.innerHTML='<div class="cm-av">'+MASCOT("wave",38)+'</div>'; var it=el("div","cm-txt"); it.textContent=coachGreeting(c); intro.appendChild(it); box.appendChild(intro); }
   S.coachMsgs.slice(-40).forEach(function(m){ var row=el("div","coach-msg "+(m.role==="user"?"user":"bot"));
@@ -710,6 +723,8 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
     if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")setTimeout(function(){speak(ex.w.t);},140); }
   else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]); }
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
+  setTimeout(function(){ var m=document.querySelector(".lesson .bee-img"); if(!m)return;
+    if(ok){ beeAnimate(m,"hop"); if(L.combo>=2)beeSparkles(m,6); } else { beeAnimate(m,"shake"); } },40);
 }
 function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol="";
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
@@ -725,6 +740,7 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
   VIEW="home"; render();
   var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",120)+'</div><h3>'+(L.wrong===0?"Sans faute ! 🎉":"Leçon terminée ✅")+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+(L.wrong===0?3:1)+'</b><i>Gemmes</i></div></div>';
   var b=el("button","btn-main"); b.textContent="Continuer"; b.onclick=function(){ m.close(); render(); }; m.body.appendChild(b);
+  setTimeout(function(){ var mi=m.body.querySelector(".bee-img"); if(mi){ beeAnimate(mi,"hop"); if(L.wrong===0)beeSparkles(mi,10); } },200);
 }
 
 /* ---------- Toast / modal ---------- */

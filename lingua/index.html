@@ -115,7 +115,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .coach-mascot .mascot{transform-origin:center bottom}
 @keyframes beeTalk{0%{transform:translateY(0) scale(1) rotate(0)}20%{transform:translateY(-5px) scale(1.05) rotate(-2deg)}45%{transform:translateY(0) scale(1) rotate(0)}70%{transform:translateY(-4px) scale(1.04) rotate(2deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
 .coach-mascot.talking .mascot{animation:beeTalk .55s ease-in-out infinite}
-.mascot.bee-img{border-radius:50%;object-fit:cover;background:#182430;box-shadow:0 0 0 3px rgba(246,183,60,.55),0 4px 14px rgba(0,0,0,.35)}
+.mascot.bee-img{border-radius:50%;object-fit:cover;background:#182430;box-shadow:0 0 0 3px rgba(246,183,60,.55),0 4px 14px rgba(0,0,0,.35);cursor:pointer;animation:beeFloat 3.2s ease-in-out infinite}
+@keyframes beeFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
+@keyframes beePop{0%{transform:scale(.25);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.bee-img.pop{animation:beePop .55s cubic-bezier(.34,1.56,.64,1),beeFloat 3.2s .55s ease-in-out infinite}
+@keyframes beeSpinA{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.18)}100%{transform:rotate(360deg) scale(1)}}
+.bee-img.spin{animation:beeSpinA .7s ease-in-out}
+@keyframes beeHopA{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-16px) scale(1.12) rotate(-5deg)}60%{transform:translateY(0) scale(.95)}80%{transform:translateY(-7px) scale(1.05)}100%{transform:translateY(0) scale(1)}}
+.bee-img.hop{animation:beeHopA .6s ease-in-out}
+@keyframes beeShakeA{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.bee-img.shake{animation:beeShakeA .5s ease-in-out}
+.bee-spark{position:fixed;z-index:9999;pointer-events:none;font-size:16px;animation:sparkFly .9s ease-out forwards}
+@keyframes sparkFly{0%{transform:translate(0,0) scale(.6);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.25);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mascot.bee-img,.bee-img.pop,.bee-img.spin,.bee-img.hop,.bee-img.shake{animation:none}.bee-spark{display:none}}
 @keyframes beeWing{0%,100%{transform:rotate(0deg) scaleY(1)}50%{transform:rotate(6deg) scaleY(.72)}}
 .mascot .wing{transform-box:fill-box;transform-origin:center bottom;animation:beeWing 1.4s ease-in-out infinite}
 .mascot .wing-l{animation-delay:.2s}
