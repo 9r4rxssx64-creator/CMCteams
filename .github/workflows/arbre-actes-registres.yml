@@ -19,8 +19,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Installer Playwright (navigateur réel — franchit le mur anti-robot AD06)
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm install playwright >/dev/null 2>&1
+          npx playwright install --with-deps chromium
       - name: Recherche registres numérisés (Monaco / AD06 / AD13)
         run: node tools/arbre/research-registres.mjs
+      - name: Nettoyage node_modules (pas de commit)
+        run: rm -rf node_modules package.json package-lock.json
       - name: Commit rapport
         run: |
           git config user.name "arbre-bot"

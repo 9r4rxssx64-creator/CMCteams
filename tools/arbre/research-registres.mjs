@@ -92,6 +92,54 @@ await probe('ad06-old-ec2.html', 'http://www.basesdocumentaires-cg06.fr/archives
 await probe('ad13-etatcivil.html', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64');
 await probe('ad13-salon.html', 'https://www.archives13.fr/archive/resultats/etatcivil/n:64?RECH_commune=SALON-DE-PROVENCE&type=etatcivil');
 
+// ---- 4) PASSE NAVIGATEUR RÉEL (Playwright) — AD06 est derrière un mur
+//        anti-robot (TSPD/F5) que seul un vrai navigateur franchit ; Monaco/AD13
+//        refusent la connexion http simple du runner. ----
+const pwNotes = [];
+try {
+  const { chromium } = await import('playwright');
+  const b = await chromium.launch();
+  const ctx = await b.newContext({ userAgent: UA['user-agent'], locale: 'fr-FR', viewport: { width: 1280, height: 900 } });
+  const pg = await ctx.newPage();
+  async function browse(name, url, waitMs) {
+    try {
+      await pg.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+      await pg.waitForTimeout(waitMs || 6000);
+      const html = await pg.content();
+      fs.writeFileSync(path.join(rawDir, name + '.html'), html.slice(0, 500000));
+      const links = await pg.evaluate(() => [...document.querySelectorAll('a[href]')].map(a => (a.getAttribute('href') || '') + ' || ' + (a.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 90)).filter(x => x.length > 6));
+      fs.writeFileSync(path.join(rawDir, name + '.links.txt'), links.join('\n'));
+      await pg.screenshot({ path: path.join(rawDir, name + '.png') });
+      const title = await pg.title();
+      console.log('[browse]', name, '«' + title + '»', links.length + ' liens');
+      pwNotes.push('- **' + name + '** : « ' + title + ' » — ' + links.length + ' liens ([html](registresraw/' + name + '.html) · [liens](registresraw/' + name + '.links.txt) · [capture](registresraw/' + name + '.png))');
+      return { title, links, html };
+    } catch (e) {
+      console.log('[browse]', name, 'ERREUR', e.message.slice(0, 120));
+      pwNotes.push('- **' + name + '** : ❌ ' + e.message.slice(0, 120));
+      return null;
+    }
+  }
+  const home = await browse('pw-ad06-home', 'https://archives06.fr/', 8000);
+  // suit le lien « état civil » détecté sur la page rendue
+  if (home && home.links) {
+    const ec = home.links.find(l => /tat[- ]civil/i.test(l));
+    if (ec) { const href = ec.split(' || ')[0]; const u = href.startsWith('http') ? href : 'https://archives06.fr' + (href.startsWith('/') ? '' : '/') + href; await browse('pw-ad06-etatcivil', u, 8000); }
+  }
+  await browse('pw-monaco', 'https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/', 6000);
+  await browse('pw-monaco-api', 'https://archives.mairie.mc/api/items?fulltext_search=MAIFFRET&per_page=25', 3000);
+  await browse('pw-ad13', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64', 6000);
+  await b.close();
+} catch (e) {
+  console.log('Playwright indisponible :', e.message.slice(0, 140));
+  pwNotes.push('- ❌ Playwright indisponible : ' + e.message.slice(0, 140));
+}
+// lecteur Jina (texte) en secours pour les hôtes qui refusent la connexion directe
+for (const [nm, u] of [['jina-monaco', 'https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/'], ['jina-ad13', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64']]) {
+  await probe(nm + '.txt', 'https://r.jina.ai/' + u);
+  await sleep(1500);
+}
+
 // ---- Rapport ----
 const L = [];
 L.push('# 📜 Récupération AUTO des actes — registres numérisés officiels');
@@ -120,6 +168,10 @@ L.push('');
 L.push('## AD06 / AD13 — état des probes');
 L.push('');
 L.push('_Voir `registresraw/ad06-*.html` et `registresraw/ad13-*.html` (structure des formulaires / visionneuses) — le prochain run ciblera les bons endpoints détectés dedans._');
+L.push('');
+L.push('## Passe navigateur réel (Playwright — franchit le mur anti-robot TSPD)');
+L.push('');
+pwNotes.forEach(n => L.push(n));
 L.push('');
 fs.writeFileSync(path.join(outDir, 'REGISTRES.md'), L.join('\n') + '\n');
 fs.writeFileSync(path.join(rawDir, 'targets.json'), JSON.stringify(targets, null, 1));
