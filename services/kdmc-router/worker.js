@@ -255,6 +255,60 @@ async function handleLingua(request, url, env) {
       try { await env.ACCOUNTS.put(ckey, buf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* cache best-effort */ }
       return new Response(buf, { status: 200, headers: audioHdr });
     }
+    // Coach IA (conversation) : IA gratuite via clé serveur (jamais exposée). FAIL-OPEN.
+    if (url.pathname === '/__lingua/ai' && request.method === 'POST') {
+      let b; try { b = await request.json(); } catch { return JL({ ok: false, reason: 'bad_json' }, 400); }
+      const langName = String((b && b.langName) || 'la langue cible').slice(0, 40);
+      const level = String((b && b.level) || 'Débutant').slice(0, 30);
+      const lvi = Math.max(0, Math.min(4, parseInt((b && b.levelIndex), 10) || 0));
+      const weak = Array.isArray(b && b.weak) ? b.weak.slice(0, 15).map((x) => String(x).slice(0, 60)) : [];
+      const msgs = Array.isArray(b && b.messages) ? b.messages.slice(-12) : [];
+      const share = ['surtout en français, avec seulement quelques mots simples de ' + langName,
+                     'moitié français, moitié ' + langName + ' (phrases très simples)',
+                     'surtout en ' + langName + ', et en français uniquement si besoin',
+                     'presque entièrement en ' + langName,
+                     'entièrement en ' + langName][lvi];
+      const sys = 'Tu es un professeur de ' + langName + ' expert et bienveillant, spécialisé dans l\'enseignement aux francophones, 20 ans d\'expérience. '
+        + "Niveau actuel de l'apprenant : " + level + '. Parle ' + share + '. '
+        + 'Style : conversation orale NATURELLE, réponses COURTES (1 à 3 phrases), chaleureuses, jamais scolaires ni robotiques. '
+        + "Fais parler l'apprenant : termine presque toujours par une petite question adaptée à son niveau. "
+        + "CORRECTION EXPERTE ET DOUCE : si l'apprenant fait une faute (grammaire, orthographe, conjugaison, syntaxe, accord, genre, préposition, temps), reformule d'abord correctement de façon naturelle, puis explique l'erreur en UNE phrase simple en français, sans le décourager ; valorise ce qui est juste. "
+        + "Enseigne la langue VIVANTE : au bon moment, glisse une expression idiomatique, une tournure familière ou un mot de jargon courant, en précisant le registre (familier / courant / soutenu) et quand l'employer. "
+        + "Progression : introduis peu à peu du vocabulaire et des structures un cran au-dessus de son niveau pour le tirer vers le haut, sans le noyer. Objectif : l'amener au BILINGUE, pas à pas. "
+        + (weak.length ? ('Points à retravailler en priorité avec lui : ' + weak.join(', ') + '. ') : '')
+        + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
+      const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
+      if (!chat.some((m) => m.role === 'user')) chat.push({ role: 'user', content: 'Bonjour !' });
+      if (env.GROQ_API_KEY) {
+        try {
+          const rr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST', headers: { 'authorization': 'Bearer ' + env.GROQ_API_KEY, 'content-type': 'application/json' },
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: chat, max_tokens: 220, temperature: 0.7 }),
+          });
+          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'groq' }); }
+        } catch (_) { /* repli */ }
+      }
+      if (env.MISTRAL_API_KEY) {
+        try {
+          const rr = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST', headers: { 'authorization': 'Bearer ' + env.MISTRAL_API_KEY, 'content-type': 'application/json' },
+            body: JSON.stringify({ model: 'mistral-small-latest', messages: chat, max_tokens: 220, temperature: 0.7 }),
+          });
+          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'mistral' }); }
+        } catch (_) { /* repli */ }
+      }
+      if (env.GEMINI_API_KEY) {
+        try {
+          const contents = chat.filter((m) => m.role !== 'system').map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }));
+          const rr = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + env.GEMINI_API_KEY, {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: contents, generationConfig: { maxOutputTokens: 220, temperature: 0.7 } }),
+          });
+          if (rr.ok) { const j = await rr.json(); const reply = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'gemini' }); }
+        } catch (_) { /* repli */ }
+      }
+      return JL({ ok: false, reason: 'ai_absent' }); // aucune clé/erreur → message hors-ligne côté client (fail-open)
+    }
     return JL({ ok: false, reason: 'bad_route' }, 404);
   } catch (e) {
     return JL({ ok: false, reason: 'error', detail: String((e && e.message) || e).slice(0, 120) }); // fail-open (200)

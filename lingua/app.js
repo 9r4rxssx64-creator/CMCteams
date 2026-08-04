@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.10.0";
+var APP_VER="v2.14.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -42,8 +42,10 @@ function loadS(){
   S.today=lg("today",{day:today(),xp:0,lessons:0,reviews:0,perfect:0,combo:0});
   S.qClaim=lg("qClaim",{}); S.qDay=lg("qDay",today());
   S.diff=lg("diff",null);   // difficulté des exercices : null = Auto (dérivée du niveau), 0..4 = fixée (test de niveau / profil)
+  S.coachMsgs=lg("coachMsgs",[]);                                   // mémoire du Coach IA — PAR COMPTE (historique de conversation)
+  S.coachProfile=lg("coachProfile",{objectif:"bilingue",weak:[],notes:""}); // profil d'apprentissage suivi par le Coach
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} }
 
 /* ============ Comptes (CRUD) ============ */
 var AVATARS=["🦊","🐼","🐨","🦁","🐵","🐸","🦄","🐙","🐯","🐧","🐷","🐰","🐻","🐮","🐲","🦖"];
@@ -69,7 +71,7 @@ function findLocalAccount(name,code){ var n=norm(name); var accs=accounts(); for
    appareil : nom+code → tout revient. FAIL-OPEN : si le cloud est indispo, la
    mémoire locale continue (rien perdu localement). */
 var SYNC_BASE="https://lingua.kd-mc.com/__lingua";
-var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs"];
+var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
 function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
@@ -194,6 +196,7 @@ function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course)
   shuffle(words).forEach(function(w,i){ ex.push(exForWord(w,pool,tier,i)); });
   if(words.length>=4 && tier<=2) ex.splice(1,0,makeMatch(shuffle(words).slice(0,Math.min(5,words.length))));
   phr.forEach(function(p){ ex.push(makeBank(p,pool)); if(tier>=3) ex.push(makeType({fr:p.fr,t:p.t},"toT")); });
+  if(tier>=2 && _srOk() && words.length){ shuffle(words).slice(0,Math.min(2,words.length)).forEach(function(w){ ex.push(makeSpeak(w)); }); } // prononciation à partir du niveau « assez difficile »
   return shuffle(ex).slice(0,Math.min(ex.length, 12+tier*2)); // 12 → 20 selon le niveau
 }
 function makeMC(w,pool,mode){ var asT=mode!=="mc_fr",correct=asT?w.t:w.fr;
@@ -210,6 +213,8 @@ function makeBank(p,pool){ var toks=p.t.split(" "),ex=sample(allWords(S.course),
    dir : "toT" écris dans la langue · "toFr" écris en français · "listen" écoute puis écris. */
 function makeType(w,dir){ var toT=dir!=="toFr", answer=toT?w.t:w.fr;
   return {kind:"type",w:w,dir:dir,prompt:dir==="listen"?"":(toT?w.fr:w.t),answer:answer,audio:dir==="listen"}; }
+/* Exercice de PRONONCIATION (parler au micro) — reconnaissance vocale, indulgent. */
+function makeSpeak(w){ return {kind:"speak",w:w,prompt:w.t,answer:w.t}; }
 
 /* ============ Voix + sons ============ */
 /* Catalogue de voix : 6 voix naturelles (cloud, HD) + la voix du téléphone (hors-ligne). */
@@ -223,15 +228,16 @@ var VOICES=[
   {id:"device", name:"Voix du téléphone (hors-ligne)", cloud:false}
 ];
 function _isCloudVoice(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===id) return VOICES[i].cloud; } return false; }
-var _ttsAudio=null;
-function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova";
+var _ttsAudio=null,_ttsReq=0;
+function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var myReq=++_ttsReq;
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){}   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
   if(_isCloudVoice(vid)){
-    try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} }
+    try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
       var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
-      a.onerror=function(){ _webSpeak(text); };
-      var p=a.play(); if(p&&p.catch) p.catch(function(){ _webSpeak(text); });
+      a.onerror=function(){ if(myReq===_ttsReq) _webSpeak(text); };   // ne parle que si c'est TOUJOURS la dernière demande
+      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq) _webSpeak(text); });
       return;
-    }catch(e){ _webSpeak(text); return; }
+    }catch(e){ if(myReq===_ttsReq)_webSpeak(text); return; }
   }
   _webSpeak(text);
 }
@@ -255,11 +261,12 @@ function render(){
   if(VIEW==="lesson"){ app.appendChild(vLesson()); return; }
   if(!S.course){ app.appendChild(vTopbar()); app.appendChild(vCoursePick()); app.appendChild(vTabbar()); return; }
   app.appendChild(vTopbar());
-  if(VIEW==="home") app.appendChild(vHome());
+  if(VIEW==="home"){ app.appendChild(vHome()); maybeOfferPlacement(); }
   else if(VIEW==="review") app.appendChild(vReview());
   else if(VIEW==="dict") app.appendChild(vDict());
   else if(VIEW==="translate") app.appendChild(vTranslate());
   else if(VIEW==="league") app.appendChild(vLeague());
+  else if(VIEW==="coach") app.appendChild(vCoach());
   else if(VIEW==="profile") app.appendChild(vProfile());
   app.appendChild(vTabbar());
 }
@@ -478,7 +485,61 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
 }
 
 /* ---------- Tabbar ---------- */
-function vTabbar(){ var t=el("div","tabbar"); [["home","🏠","Accueil"],["review","🧠","Réviser"],["translate","🌐","Traduire"],["league","🏆","Ligue"],["profile","🙂","Profil"]].forEach(function(x){ var b=el("button","tab"+(VIEW===x[0]||(x[0]==="review"&&VIEW==="dict")?" active":"")); b.innerHTML='<span>'+x[1]+'</span><i>'+x[2]+'</i>'; b.onclick=function(){go(x[0]);}; t.appendChild(b); }); return t; }
+/* ============ Coach IA (conversation interactive, mémoire PAR COMPTE) ============ */
+var _coachThinking=false,_coachPose="wave";
+function coachLangMeta(){ return S.course?COURSES[S.course]:null; }
+/* Bee réagit selon ce qu'il dit : félicite → fête, question → curieux, salut → coucou. */
+function coachPoseFor(t){ t=(" "+String(t||"")+" ").toLowerCase();
+  if(/(bravo|super|parfait|excellent|g[eé]nial|tr[eè]s bien|bien jou|f[eé]licit|complimenti|bravissim|muy bien|perfecto|sehr gut|toll|[oó]timo|muito bem|goed zo|knap)/.test(t)) return "party";
+  if(/\?/.test(t)) return "point";
+  if(/(bonjour|salut|coucou|\bciao\b|buongiorno|\bhola\b|buenos|\bhallo\b|guten tag|\bol[aá]\b|bom dia|\bhi\b|hello|goededag)/.test(t)) return "wave";
+  return "point";
+}
+/* Bee PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
+function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang);
+  var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
+function coachGreeting(c){ var me=accMeta(ACC)||{}; var n=me.name||"toi"; var hi=(DICT["salut"]&&DICT["salut"][c.id])||"Salut";
+  return hi+" "+n+" ! 🐝 Moi c'est Bee, ton abeille coach de "+c.nom.toLowerCase()+" ! On butine quelques mots ensemble vers le bilingue ? Écris-moi, ou touche une suggestion ci-dessous."; }
+function coachSuggestions(c){ var hello=(DICT["comment ça va"]&&DICT["comment ça va"][c.id])||"Bonjour";
+  return [hello, "Apprends-moi 3 mots utiles", "Corrige ma phrase (j'écris ensuite)", "Donne-moi un mini-défi 🎯"]; }
+function coachOffline(){ return "Je ne peux pas discuter à l'instant (coach momentanément indisponible). En attendant, fais une leçon 🧠 — je garde en mémoire où tu en es et on reprend juste après !"; }
+function coachAsk(){ var c=coachLangMeta();
+  var payload={ lang:c.id, langName:c.nom, level:diffLabel(), levelIndex:diffTier(), words:masteredCount(),
+    weak:dueWords().slice(0,15).map(function(w){ return w.fr+" = "+w.t; }),
+    messages:S.coachMsgs.slice(-12).map(function(m){ return {role:m.role,text:String(m.text||"").slice(0,500)}; }) };
+  return fetch(SYNC_BASE+"/ai",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)})
+    .then(function(r){ return r.json(); })
+    .then(function(j){ return (j&&j.ok&&j.reply)?String(j.reply):coachOffline(); })
+    .catch(function(){ return coachOffline(); }); }
+function coachSend(text){ if(_coachThinking||!text) return; var c=coachLangMeta(); if(!c) return;
+  S.coachMsgs.push({role:"user",text:text}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
+  _coachThinking=true; render();
+  coachAsk().then(function(reply){ _coachThinking=false; if(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); _coachPose=coachPoseFor(reply); } save(); render();
+    setTimeout(function(){ if(reply) coachSpeak(reply); },260); }); }
+function vCoach(){ var d=el("div","screen coach");
+  var c=coachLangMeta(); if(!c){ d.innerHTML='<h2 class="ttl">💬 Coach</h2><p class="sub2">Choisis d\'abord une langue 🌍 dans l\'onglet 🏠.</p>'; return d; }
+  var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>'; d.appendChild(head);
+  var pct=Math.min(100,Math.round(masteredCount()/240*100));
+  var pb=el("div","coach-prog"); pb.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+pct+'%"></div></div><span>'+pct+'% vers le bilingue</span>'; d.appendChild(pb);
+  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),100); d.appendChild(mas);
+  var box=el("div","coach-box");
+  if(!S.coachMsgs.length){ var intro=el("div","coach-msg bot"); intro.innerHTML='<div class="cm-av">'+MASCOT("wave",38)+'</div>'; var it=el("div","cm-txt"); it.textContent=coachGreeting(c); intro.appendChild(it); box.appendChild(intro); }
+  S.coachMsgs.slice(-40).forEach(function(m){ var row=el("div","coach-msg "+(m.role==="user"?"user":"bot"));
+    if(m.role!=="user") row.innerHTML='<div class="cm-av">'+MASCOT("point",38)+'</div>';
+    var t=el("div","cm-txt"); t.textContent=m.text; row.appendChild(t);
+    if(m.role!=="user"){ var say=el("button","cm-say"); say.textContent="🔊"; say.title="Écouter"; say.onclick=function(){ coachSpeak(m.text); }; row.appendChild(say); }
+    box.appendChild(row); });
+  if(_coachThinking){ var tp=el("div","coach-msg bot"); tp.innerHTML='<div class="cm-av">'+MASCOT("read",38)+'</div><div class="cm-txt typing">•  •  •</div>'; box.appendChild(tp); }
+  d.appendChild(box);
+  var chips=el("div","coach-chips"); coachSuggestions(c).forEach(function(s){ var b=el("button","coach-chip"); b.textContent=s; b.onclick=function(){ coachSend(s); }; chips.appendChild(b); }); d.appendChild(chips);
+  var bar=el("div","coach-inbar"); var inp=el("input","coach-input"); inp.type="text"; inp.placeholder="Écris au coach…"; inp.setAttribute("autocomplete","off"); inp.setAttribute("autocapitalize","sentences");
+  inp.onkeydown=function(e){ if(e.key==="Enter"&&inp.value.trim()){ coachSend(inp.value.trim()); } };
+  var snd=el("button","coach-send"); snd.textContent="➤"; snd.title="Envoyer"; snd.onclick=function(){ if(inp.value.trim()) coachSend(inp.value.trim()); };
+  bar.appendChild(inp); bar.appendChild(snd); d.appendChild(bar);
+  setTimeout(function(){ var b=d.querySelector(".coach-box"); if(b)b.scrollTop=b.scrollHeight; },40);
+  return d;
+}
+function vTabbar(){ var t=el("div","tabbar"); [["home","🏠","Accueil"],["review","🧠","Réviser"],["coach","💬","Coach"],["translate","🌐","Traduire"],["league","🏆","Ligue"],["profile","🙂","Profil"]].forEach(function(x){ var b=el("button","tab"+(VIEW===x[0]||(x[0]==="review"&&VIEW==="dict")?" active":"")); b.innerHTML='<span>'+x[1]+'</span><i>'+x[2]+'</i>'; b.onclick=function(){go(x[0]);}; t.appendChild(b); }); return t; }
 
 /* ============ Traducteur multilingue (hors-ligne, basé sur le dictionnaire) ============ */
 var REV=null;
@@ -522,7 +583,8 @@ function speakLang(text,lang){ if(!S.sound||!text)return; var vid=S.voice||"nova
   if(_isCloudVoice(vid)){ try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); a.onerror=function(){ _webSpeakLang(text,lang); }; var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang); }); return; }catch(e){} }
   _webSpeakLang(text,lang); }
 function _webSpeakLang(text,lang){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;}); var best=vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
-function dictate(cb){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Dictée non dispo sur ce navigateur"); return; } var r=new SR(); r.lang="fr-FR"; r.onresult=function(e){ cb(e.results[0][0].transcript); }; r.onerror=function(){}; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Dictée indisponible"); } }
+function _srOk(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
+function dictate(cb,lang){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Micro non dispo sur ce navigateur"); cb&&cb(""); return; } var r=new SR(); r.lang=lang||"fr-FR"; r.interimResults=false; r.maxAlternatives=3; r.onresult=function(e){ var best=""; try{ best=e.results[0][0].transcript; }catch(_){} cb&&cb(best); }; r.onerror=function(){ cb&&cb(""); }; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Micro indisponible"); cb&&cb(""); } }
 
 /* ============ LEÇON ============ */
 function startLesson(ui,li,rev){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
@@ -555,6 +617,14 @@ function openDiff(){ var m=modal();
   var g=el("div","diff-pick"); names.forEach(function(nm,idx){ var b=el("button","diff-opt"+(S.diff===idx?" sel":"")); b.textContent=nm; b.onclick=function(){ S.diff=idx; save(); m.close(); render(); toast("Difficulté : "+nm+" 🎚️"); }; g.appendChild(b); }); m.body.appendChild(g);
   var t=el("button","btn-main"); t.textContent="📊 Faire le test de niveau"; t.onclick=function(){ m.close(); startPlacement(); }; m.body.appendChild(t);
   var a=el("button","btn-ghost"); a.textContent="Laisser en Auto (selon ma progression)"; a.onclick=function(){ S.diff=null; save(); m.close(); render(); toast("Difficulté : Auto"); }; m.body.appendChild(a); }
+/* Au tout début : on propose automatiquement d'ÉVALUER le niveau pour adapter le programme. */
+function maybeOfferPlacement(){
+  if(!S.course || S.diff!=null || masteredCount()>0 || lg("placeAsked",false)) return;
+  ls("placeAsked",true);
+  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT("point",110)+'</div><h3>📊 Évaluons ton niveau</h3><p class="mini">Un mini-test d\'une minute pour <b>adapter les leçons à ton niveau</b> et t\'emmener vers le <b>bilingue</b> au plus vite. (Tu pourras le refaire quand tu veux.)</p>';
+  var b1=el("button","btn-main"); b1.textContent="🚀 Faire le test (1 min)"; b1.onclick=function(){ m.close(); startPlacement(); }; m.body.appendChild(b1);
+  var b2=el("button","btn-ghost"); b2.textContent="Je débute — commencer simple"; b2.onclick=function(){ S.diff=0; save(); m.close(); render(); }; m.body.appendChild(b2);
+}
 function startExam(ui){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   LESSON={ui:ui,li:null,exam:true,review:false,ex:buildExam(ui),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render(); }
 function outOfHearts(){ VIEW="home"; render(); var m=modal();
@@ -567,7 +637,7 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
   var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
   top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ?")){ VIEW="home"; render(); } }; d.appendChild(top);
   var body=el("div","lesson-body");
-  if(ex.kind==="mc")body.appendChild(exMC(ex)); else if(ex.kind==="match")body.appendChild(exMatch(ex)); else if(ex.kind==="bank")body.appendChild(exBank(ex)); else if(ex.kind==="type")body.appendChild(exType(ex));
+  if(ex.kind==="mc")body.appendChild(exMC(ex)); else if(ex.kind==="match")body.appendChild(exMatch(ex)); else if(ex.kind==="bank")body.appendChild(exBank(ex)); else if(ex.kind==="type")body.appendChild(exType(ex)); else if(ex.kind==="speak")body.appendChild(exSpeak(ex));
   d.appendChild(body);
   var foot=el("div","lesson-foot"+(L.answered?(L.ok?" ok":" ko"):""));
   if(L.answered){ var fb=el("div","feedback"); fb.innerHTML=L.ok?'<b>✅ Correct !</b>'+(L.combo>=3?' <span class="cb">🔥 combo x'+L.combo+' (+1 XP)</span>':''):'<b>❌ Bonne réponse :</b> '+esc(L._sol||""); foot.appendChild(fb); }
@@ -615,19 +685,33 @@ function exType(ex){ var w=el("div","ex");
   setTimeout(function(){ try{inp.focus();}catch(_){} var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },30);
   return w;
 }
+function exSpeak(ex){ var w=el("div","ex");
+  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div><div class="q-word">'+esc(ex.prompt)+' <button class="say" id="spSay">🔊</button></div><div class="speak-hint" id="spHint">Écoute (🔊) puis touche le micro et répète.</div>';
+  var mic=el("button","mic-btn"); mic.innerHTML="🎤 Parler";
+  mic.onclick=function(){ mic.innerHTML="🎤 …j'écoute"; dictate(function(txt){
+    var a=norm(ex.answer),t=norm(txt); var ok=!!t&&(t===a||t.indexOf(a)>=0||a.indexOf(t)>=0);
+    var h=document.getElementById("spHint"); if(h) h.textContent=(txt?('Entendu : « '+txt+' »'):"Je n'ai pas bien entendu")+(ok?' ✅ bravo !':' — réessaie, ou passe.');
+    LESSON._speakOk=ok; LESSON._can=true; mic.innerHTML=ok?"✅ Bien prononcé":"🎤 Réessayer"; syncMain();
+  }, COURSES[S.course].ttsLang); };
+  w.appendChild(mic);
+  var pass=el("button","btn-ghost skip"); pass.textContent="Passer (sans micro)"; pass.onclick=function(){ LESSON._speakOk=true; LESSON._can=true; syncMain(); }; w.appendChild(pass);
+  setTimeout(function(){ var sb=document.getElementById("spSay"); if(sb)sb.onclick=function(){speak(ex.answer);}; speak(ex.answer); },200);
+  return w;
+}
 function syncMain(){ var m=document.getElementById("mainBtn"); if(m)m.disabled=!(LESSON.answered||LESSON._can); }
 function checkEx(ex){ var L=LESSON,ok=false,sol="";
   if(ex.kind==="mc"){ ok=L._pick===ex.answer; sol=ex.answer; }
   else if(ex.kind==="match"){ ok=!!L._matchOk; }
   else if(ex.kind==="bank"){ ok=norm(L._bankVal)===norm(ex.answer); sol=ex.answer; }
   else if(ex.kind==="type"){ ok=norm(L._typeVal)===norm(ex.answer); sol=ex.answer; }
+  else if(ex.kind==="speak"){ ok=!!L._speakOk; sol=ex.answer; }   // prononciation : indulgent (bien prononcé OU passé)
   L.answered=true; L.ok=ok; L._sol=sol;
   if(ok){ L.correct++; L.combo++; L.comboMax=Math.max(L.comboMax,L.combo); S.today.combo=Math.max(S.today.combo,L.combo);
     if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")setTimeout(function(){speak(ex.w.t);},140); }
   else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]); }
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
 }
-function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._sol="";
+function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol="";
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
   if(L.i>=L.ex.length){ finishLesson(); return; } if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; } render();
 }
@@ -647,7 +731,7 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
 function toast(msg){ var t=el("div","toast"); t.textContent=msg; document.body.appendChild(t); setTimeout(function(){t.classList.add("show");},10); setTimeout(function(){t.classList.remove("show");setTimeout(function(){t.remove();},300);},2400); }
 function modal(){ var ov=el("div","overlay"),box=el("div","modal"); ov.appendChild(box); document.body.appendChild(ov); setTimeout(function(){ov.classList.add("show");},10); return {body:box,close:function(){ov.classList.remove("show");setTimeout(function(){ov.remove();},250);}}; }
 
-/* ============ Mascotte « Lino » (SVG original animé, création KDMC) ============ */
+/* ============ Mascotte « Bee » 🐝 (abeille rigolote — SVG original animé, création KDMC) ============ */
 function MASCOT(pose,size){ size=size||100;
   var mouth,eyes,arms="",props="",cls="mascot pose-"+pose;
   var blush='<ellipse cx="30" cy="70" rx="8" ry="5" fill="#ff7eb3" opacity=".55"/><ellipse cx="90" cy="70" rx="8" ry="5" fill="#ff7eb3" opacity=".55"/>';
@@ -662,14 +746,20 @@ function MASCOT(pose,size){ size=size||100;
     mouth='<path d="M50 74 Q62 84 74 74" stroke="#20303a" stroke-width="3.2" fill="none" stroke-linecap="round"/>'; arms='<g class="arm arm-r point"><ellipse cx="110" cy="66" rx="8" ry="12" fill="url(#body)"/><circle cx="118" cy="60" r="5" fill="url(#body)"/></g>'; }
   else { /* wave / idle */ eyes='<g class="eyes"><ellipse cx="45" cy="54" rx="9.5" ry="11" fill="#fff"/><ellipse cx="79" cy="54" rx="9.5" ry="11" fill="#fff"/><circle cx="46" cy="56" r="4.8" fill="#20303a"/><circle cx="80" cy="56" r="4.8" fill="#20303a"/></g>'+eyeShine;
     mouth='<path d="M48 74 Q62 86 76 74" stroke="#20303a" stroke-width="3.4" fill="none" stroke-linecap="round"/>'; arms='<g class="arm arm-l"><ellipse cx="16" cy="66" rx="8" ry="12" fill="url(#body)"/></g><g class="arm arm-r wave"><ellipse cx="108" cy="58" rx="8" ry="12" fill="url(#body)"/></g>'; }
+  var wings='<g class="wing wing-l"><ellipse cx="36" cy="26" rx="13" ry="22" fill="#e3f4ff" opacity=".85" stroke="#a8d8f0" stroke-width="2" transform="rotate(-32 36 26)"/></g>'+
+            '<g class="wing wing-r"><ellipse cx="88" cy="26" rx="13" ry="22" fill="#e3f4ff" opacity=".85" stroke="#a8d8f0" stroke-width="2" transform="rotate(32 88 26)"/></g>';
   return '<svg class="'+cls+'" viewBox="0 0 124 124" width="'+size+'" height="'+size+'" aria-hidden="true">'+
-    '<defs><linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34e3c4"/><stop offset=".55" stop-color="#14c79a"/><stop offset="1" stop-color="#0e9c6e"/></linearGradient>'+
-    '<radialGradient id="belly" cx="50%" cy="62%" r="45%"><stop offset="0" stop-color="#eafff7"/><stop offset="1" stop-color="#eafff7" stop-opacity="0"/></radialGradient></defs>'+
-    arms+
-    '<g class="body"><ellipse cx="46" cy="112" rx="10" ry="5" fill="#0e9c6e"/><ellipse cx="78" cy="112" rx="10" ry="5" fill="#0e9c6e"/>'+
+    '<defs><linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset=".55" stop-color="#ffc93c"/><stop offset="1" stop-color="#f0a41f"/></linearGradient>'+
+    '<radialGradient id="belly" cx="50%" cy="62%" r="45%"><stop offset="0" stop-color="#fff6da"/><stop offset="1" stop-color="#fff6da" stop-opacity="0"/></radialGradient>'+
+    '<clipPath id="bclip"><path d="M62 12 C88 12 104 34 104 62 C104 92 86 110 62 110 C38 110 20 92 20 62 C20 34 36 12 62 12 Z"/></clipPath></defs>'+
+    wings+arms+
+    '<g class="body"><ellipse cx="46" cy="112" rx="10" ry="5" fill="#d98f16"/><ellipse cx="78" cy="112" rx="10" ry="5" fill="#d98f16"/>'+
+    '<path d="M55 102 L62 122 L69 102 Z" fill="#2b2530"/>'+
     '<path d="M62 12 C88 12 104 34 104 62 C104 92 86 110 62 110 C38 110 20 92 20 62 C20 34 36 12 62 12 Z" fill="url(#body)"/>'+
-    '<ellipse cx="62" cy="74" rx="30" ry="26" fill="url(#belly)"/>'+
-    '<line x1="62" y1="12" x2="62" y2="2" stroke="#0e9c6e" stroke-width="3"/><circle cx="62" cy="2" r="5" fill="#f6b73c"/>'+
+    '<g clip-path="url(#bclip)" opacity=".92"><path d="M14 62 Q62 74 110 62 L110 76 Q62 88 14 76 Z" fill="#2b2530"/><path d="M14 88 Q62 100 110 88 L110 102 Q62 114 14 102 Z" fill="#2b2530"/></g>'+
+    '<ellipse cx="62" cy="70" rx="30" ry="22" fill="url(#belly)" opacity=".6"/>'+
+    '<path d="M50 15 Q44 7 37 4" stroke="#2b2530" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="36" cy="4" r="4.5" fill="#2b2530"/>'+
+    '<path d="M74 15 Q80 7 87 4" stroke="#2b2530" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="88" cy="4" r="4.5" fill="#2b2530"/>'+
     blush+eyes+eyeShine+mouth+props+'</g></svg>';
 }
 
