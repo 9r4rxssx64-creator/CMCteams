@@ -89,9 +89,9 @@ D'après le tour du web des tendances TikTok / Reels / CapCut, ajoutés en quali
 
 ## 🔒 Confidentialité & technique
 
-- **Tout se passe sur ton téléphone.** Aucune photo/vidéo n'est envoyée sur Internet. Aucun serveur, aucun compte, aucune pub.
-- **Hors-ligne** : une fois ouverte, l'app marche même sans connexion (service worker).
-- **Aucune dépendance externe** : un seul fichier HTML autonome (respecte la règle d'isolation max du projet — ne touche aucune autre app).
+- **Retouche / montage / dessin : tout se passe sur ton téléphone.** Rien n'est envoyé sur Internet, aucun compte, aucune pub, marche hors-ligne.
+- **Fonctions IA uniquement** (🤖 Détourage / Cartoon / Améliorer, 🕺 Danse IA) : la photo est envoyée à **ton worker sécurisé** puis à Replicate le temps du traitement (nécessaire — l'IA ne tourne pas sur le téléphone). Ta clé reste côté serveur. Si tu ne cliques pas ces boutons, rien ne part.
+- **Aucune dépendance externe** dans l'app : un seul fichier HTML autonome (respecte la règle d'isolation max — ne touche aucune autre app).
 
 ### Sous le capot (pour info)
 - Moteur image : pipeline pixel Canvas 2D (aperçu WYSIWYG + export plein résolution).
