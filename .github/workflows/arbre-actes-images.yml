@@ -30,7 +30,12 @@ jobs:
       - name: Vague 5 — L'Écho de Beausoleil (Gallica) + cimetières Monaco + JdM formulaire
         run: node tools/arbre/research-echo-cimetieres.mjs || echo "vague 5 partielle"
       - name: Nettoyage node_modules (pas de commit)
-        run: rm -rf node_modules package.json package-lock.json
+        # npm install modifie le package.json RACINE du repo → restaurer les
+        # fichiers suivis, sinon le rebase de secours échoue (« unstaged changes »)
+        run: |
+          rm -rf node_modules
+          git checkout -- package.json package-lock.json 2>/dev/null || true
+          git status --short | head
       - name: Commit images + rapport
         run: |
           git config user.name "arbre-bot"
