@@ -17,7 +17,7 @@ Call log:
 
 ## 📰 Journal de Monaco — mars 1935 (naissance Myriam 5.03.1935 + état civil MAIFFRET)
 - **jdm-recherche-maiffret** : HTTP ok, 101 Ko — rien pour « /MAIFFRET/ » ([txt](isolesraw/jdm-recherche-maiffret.txt) · [capture](isolesraw/jdm-recherche-maiffret.png))
-- **jdm-archives-1935** : HTTP ok, 172 Ko — 🎯 TROUVÉ « 1935 » ([txt](isolesraw/jdm-archives-1935.txt) · [capture](isolesraw/jdm-archives-1935.png))
+- **jdm-archives-1935** : HTTP ok, 170 Ko — 🎯 TROUVÉ « 1935 » ([txt](isolesraw/jdm-archives-1935.txt) · [capture](isolesraw/jdm-archives-1935.png))
 
 ## 🌐 Jean Marius Victor SAUVAIGO (n. 12.07.1912 Nice) — pistes publiques
 - **geneanet-sauvaigo-nice** : HTTP ok, 27 Ko — rien pour « /SAUVAIGO/ » ([txt](isolesraw/geneanet-sauvaigo-nice.txt) · [capture](isolesraw/geneanet-sauvaigo-nice.png))
