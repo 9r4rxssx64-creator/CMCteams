@@ -495,7 +495,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v8.0.2';
+var APP_VER='v8.1.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -1682,7 +1682,12 @@ var Anim=(function(){
    ========================================================= */
 var AiVid=(function(){
   var img=$('aividPhoto'),vid=$('aividVideo');
-  var photoData=null,vibe='dance',model='standard',pollT=null,startTs=0,out=null,busy=false,pendingVUrl=null;
+  var photoData=null,vibe='dance',model='standard',pollT=null,startTs=0,out=null,busy=false,pendingVUrl=null,freeBlobUrl=null;
+  /* Récupère la vidéo, qu'elle vienne d'ici (blob: = gratuit) ou du serveur (https). */
+  function fetchVideoBlob(u){
+    return (String(u).indexOf('blob:')===0) ? fetch(u).then(function(r){return r.blob();})
+      : fetch(AI_URL+'/proxy?url='+encodeURIComponent(u)).then(function(r){return r.blob();});
+  }
   var VIBES=[
     {id:'dance',emoji:'🕺',label:'Danse',prompt:'dancing happily, funny energetic full-body dance, lively motion, trending tiktok style'},
     {id:'floss',emoji:'🌀',label:'Floss',prompt:'doing the floss dance, arms swinging quickly side to side, funny'},
@@ -1702,7 +1707,7 @@ var AiVid=(function(){
       photoData=c.toDataURL('image/jpeg',0.9);out=null;
       img.src=photoData;img.classList.remove('hidden');vid.classList.add('hidden');vid.removeAttribute('src');
       $('aividEmpty').classList.add('hidden');$('aividPanel').classList.remove('hidden');
-      hint('⏱️ Choisis une ambiance puis « Générer ». Ça prend ~1 à 3 min.');
+      hint('⏱️ Choisis une ambiance puis « Générer ». Gratuit, ~30 à 60 s.');
       URL.revokeObjectURL(im.src);toast('Photo prête — choisis une ambiance',1600);
     };im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);}
   function generate(){
@@ -1710,12 +1715,72 @@ var AiVid=(function(){
     if(!photoData){toast('Choisis une photo d\'abord');return;}
     var v=VIBES.find(function(x){return x.id===vibe;});var extra=$('aiPrompt').value.trim();
     var prompt=(v?v.prompt:'')+(extra?(', '+extra):'');
-    busy=true;out=null;$('aiGenBtn').disabled=true;startTs=Date.now();hint('⏳ Génération lancée…');
+    busy=true;out=null;$('aiGenBtn').disabled=true;startTs=Date.now();
     img.classList.remove('hidden');vid.classList.add('hidden');
-    fetch(AI_URL+'/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,prompt:prompt,model:model})})
+    /* 1) D'ABORD LA VOIE GRATUITE : l'IA dessine les poses de danse, la vidéo est
+          montée ici dans le téléphone. Aucun crédit, aucune carte. */
+    hint('⏳ L\'IA dessine les poses de danse… (gratuit, ~30-60 s) 🕺');
+    fetch(AI_URL+'/frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,prompt:prompt,n:5})})
       .then(function(r){return r.json();})
-      .then(function(j){if(j.error||!j.id)throw new Error(j.error||'no_id');poll(j.id);})
-      .catch(fail);
+      .then(function(j){
+        if(!j||!j.frames||j.frames.length<2)throw new Error((j&&j.error)||'frames_failed');
+        hint('🎬 Montage de la vidéo… ('+j.frames.length+' poses)');
+        return buildDanceVideo(j.frames).then(function(blob){
+          if(freeBlobUrl)URL.revokeObjectURL(freeBlobUrl);
+          freeBlobUrl=URL.createObjectURL(blob);
+          done(freeBlobUrl);
+        });
+      })
+      .catch(function(e1){
+        /* 2) SECOURS : le vrai modèle vidéo (Replicate) si du crédit est dispo. */
+        hint('⏳ Passage sur le moteur vidéo avancé…');
+        fetch(AI_URL+'/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,prompt:prompt,model:model})})
+          .then(function(r){return r.json();})
+          .then(function(j){if(j.error||!j.id)throw new Error(j.error||'no_id');startTs=Date.now();poll(j.id);})
+          .catch(function(e2){fail(new Error(String(e1&&e1.message||e1)+' | '+String(e2&&e2.message||e2)));});
+      });
+  }
+  /* Monte les poses IA en vidéo qui danse, dans le navigateur (aller-retour +
+     petit rebond rythmé = effet « danse » des vidéos tendance). 100% local. */
+  function buildDanceVideo(urls){
+    return new Promise(function(resolve,reject){
+      var imgs=[],loaded=0,failed=0;
+      urls.forEach(function(u,i){var im=new Image();im.onload=function(){imgs[i]=im;if(++loaded+failed===urls.length)start();};
+        im.onerror=function(){failed++;if(loaded+failed===urls.length)start();};im.src=u;});
+      function start(){
+        imgs=imgs.filter(Boolean);
+        if(imgs.length<2){reject(new Error('frames_unreadable'));return;}
+        var MAXW=720,w=imgs[0].naturalWidth||720,hh=imgs[0].naturalHeight||1280;
+        if(w>MAXW){hh=Math.round(hh*MAXW/w);w=MAXW;}
+        var cv=document.createElement('canvas');cv.width=w;cv.height=hh;var cx=cv.getContext('2d');
+        /* ordre aller-retour : 1,2,3,…,n,…,3,2 → boucle fluide sans saut */
+        var order=[];for(var i=0;i<imgs.length;i++)order.push(i);
+        for(var k=imgs.length-2;k>0;k--)order.push(k);
+        var HOLD=130;                               /* ms par pose (~7,7 im/s) */
+        var CYCLE=order.length*HOLD, TOTAL=Math.max(4800,Math.min(9000,CYCLE*3));
+        var mime=pickVideoMime();
+        var rec;try{rec=new MediaRecorder(cv.captureStream(30),mime?{mimeType:mime,videoBitsPerSecond:6000000}:undefined);}
+        catch(e){reject(new Error('recorder_unavailable'));return;}
+        var chunks=[];rec.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
+        rec.onstop=function(){var b=new Blob(chunks,{type:mime||'video/webm'});
+          if(b.size)resolve(b);else reject(new Error('empty_video'));};
+        var t0=performance.now(),done2=false;
+        function draw(){
+          var el=performance.now()-t0;
+          if(el>=TOTAL){if(!done2){done2=true;try{rec.stop();}catch(e){}}return;}
+          var idx=order[Math.floor(el/HOLD)%order.length];
+          var im=imgs[idx];
+          /* petit rebond + balancement : donne le rythme de la danse */
+          var ph=(el/HOLD),bounce=Math.abs(Math.sin(ph*Math.PI))*0.018,tilt=Math.sin(ph*Math.PI)*0.012;
+          var s=1.02+bounce;
+          cx.fillStyle='#000';cx.fillRect(0,0,w,hh);
+          cx.save();cx.translate(w/2,hh/2);cx.rotate(tilt);cx.scale(s,s);
+          cx.drawImage(im,-w/2,-hh/2,w,hh);cx.restore();
+          requestAnimationFrame(draw);
+        }
+        rec.start(200);requestAnimationFrame(draw);
+      }
+    });
   }
   function poll(id){
     clearTimeout(pollT);
@@ -1735,9 +1800,11 @@ var AiVid=(function(){
       {label:'🔁 Regénérer',ghost:true,fn:function(){closeSheet();generate();}}
     ]);
   }
-  function save(u){aiShow('Préparation de la vidéo…');fetch(AI_URL+'/proxy?url='+encodeURIComponent(u)).then(function(r){return r.blob();}).then(function(b){aiHide();shareOrSave(b,'danse-ia.mp4','Ma vidéo IA');closeSheet();}).catch(function(){aiHide();window.open(u,'_blank');closeSheet();});}
+  function save(u){aiShow('Préparation de la vidéo…');
+    fetchVideoBlob(u).then(function(b){aiHide();var ext=(b.type&&b.type.indexOf('webm')>=0)?'webm':'mp4';shareOrSave(b,'danse-ia.'+ext,'Ma vidéo IA');closeSheet();})
+      .catch(function(){aiHide();window.open(u,'_blank');closeSheet();});}
   function addMusic(u){aiShow('Préparation de la vidéo… 🎵');
-    fetch(AI_URL+'/proxy?url='+encodeURIComponent(u)).then(function(r){return r.blob();}).then(function(b){aiHide();if(pendingVUrl)URL.revokeObjectURL(pendingVUrl);pendingVUrl=URL.createObjectURL(b);$('fileAiMusic').click();}).catch(function(){aiHide();toast('Impossible de préparer la vidéo');});}
+    fetchVideoBlob(u).then(function(b){aiHide();if(pendingVUrl)URL.revokeObjectURL(pendingVUrl);pendingVUrl=URL.createObjectURL(b);$('fileAiMusic').click();}).catch(function(){aiHide();toast('Impossible de préparer la vidéo');});}
   function muxMusic(audioFile){
     if(!pendingVUrl){toast('Génère d\'abord une vidéo');return;}
     var v=document.createElement('video');v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.src=pendingVUrl;
@@ -1758,9 +1825,10 @@ var AiVid=(function(){
   }
   function fail(e){busy=false;clearTimeout(pollT);$('aiGenBtn').disabled=false;
     var msg=String(e&&e.message||e);
-    if(/not_configured|503/.test(msg)){hint('⚠️ IA vidéo pas encore active (serveur en cours de déploiement). Réessaie dans quelques minutes.');toast('IA vidéo bientôt prête',2600);}
-    else if(/credit|payment|402|insufficient|billing/i.test(msg)){hint('⚠️ Crédit IA épuisé — recharge le compte Replicate (quelques €) pour activer la vidéo depuis photo.');toast('Crédit IA à recharger',3000);}
-    else if(/429|rate/i.test(msg)){hint('⚠️ IA très demandée à l\'instant — réessaie dans 1 min.');toast('IA occupée, réessaie',2600);}
+    if(/gemini_no_key|not_configured|503/.test(msg)){hint('⚠️ IA vidéo pas encore active (serveur en cours de déploiement). Réessaie dans quelques minutes.');toast('IA vidéo bientôt prête',2600);}
+    else if(/quota|RESOURCE_EXHAUSTED|429|rate/i.test(msg)){hint('⚠️ L\'IA gratuite a atteint sa limite du moment — réessaie dans 1 à 2 min (elle se recharge toute seule).');toast('IA occupée, réessaie dans 1 min',3000);}
+    else if(/credit|payment|402|insufficient|billing/i.test(msg)){hint('⚠️ Le moteur avancé (payant) n\'a plus de crédit — mais la version gratuite doit marcher : réessaie.');toast('Réessaie (version gratuite)',3000);}
+    else if(/SAFETY|blocked|no_image/i.test(msg)){hint('⚠️ L\'IA a refusé cette photo (règles de sécurité). Essaie une autre photo, de préférence une personne entière bien visible.');toast('Photo refusée par l\'IA — essaie-en une autre',3200);}
     else{hint('❌ Génération impossible pour l\'instant — réessaie.');toast('Génération impossible, réessaie',2600);}
   }
   return {init:buildVibes,pick:function(){$('fileAiPhoto').click();},camera:function(){$('fileAiPhotoCam').click();},_load:loadPhoto,generate:generate,_mux:muxMusic,
