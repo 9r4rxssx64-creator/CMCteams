@@ -1,0 +1,60 @@
+name: KDMC — Déploie le worker IA de Créa Studio (autonome)
+
+# Déploie "kdmc-crea-ai" (proxy Replicate : détourage / cartoon / upscale IA)
+# et injecte le secret REPLICATE_API_TOKEN depuis AX_REPLICATE_KEY.
+# 100% auto. Servi sur kdmc-crea-ai.9r4rxssx64.workers.dev (clé jamais exposée client).
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'services/kdmc-crea-ai/**'
+      - '.github/workflows/deploy-kdmc-crea-ai.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-kdmc-crea-ai
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 1 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      - name: Install wrangler
+        run: npm i -g wrangler@3
+
+      - name: Déploiement du worker IA
+        working-directory: services/kdmc-crea-ai
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          wrangler deploy 2>&1 | tee deploy.log
+
+      - name: Injecte la clé Replicate (depuis AX_REPLICATE_KEY)
+        working-directory: services/kdmc-crea-ai
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
+        run: |
+          if [ -n "${REPLICATE_KEY:-}" ]; then
+            printf '%s' "$REPLICATE_KEY" | wrangler secret put REPLICATE_API_TOKEN 2>&1 | tail -3 \
+              || echo "::warning::clé Replicate non posée (les fonctions IA renverront not_configured → l'app bascule sur le mode hors-ligne)"
+          else
+            echo "::warning::AX_REPLICATE_KEY absent → IA désactivée côté worker (l'app garde ses versions hors-ligne)."
+          fi
+
+      - name: Smoke test /health
+        run: |
+          sleep 5
+          curl -sS https://kdmc-crea-ai.9r4rxssx64.workers.dev/health || echo "::warning::health non joignable tout de suite (propagation)"

@@ -34,6 +34,18 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ## 🎬 Ce que tu peux faire
 
+### 🤖 IA (qualité pro) — nouveau
+Branchée sur un **worker serveur sécurisé** (ta clé Replicate reste côté serveur, jamais exposée). Repli automatique sur la version hors-ligne si l'IA n'est pas joignable — **l'app marche toujours**.
+- **🤖 Détourage IA** — isole automatiquement le sujet (personne / objet), fond transparent parfait (bien mieux que la gomme couleur).
+- **🤖 Cartoon IA** — transforme la photo en dessin animé de qualité (vrai style, pas juste posterize).
+- **✨ Améliorer (IA)** — upscale ×2 + netteté + amélioration des visages.
+
+### 🎬 Pack créateur pro *(le plus viral 2026)*
+- **🎤 Sous-titres karaoké mot-par-mot** (vidéo) — le mot dit est surligné en jaune et agrandi (style TikTok/Hormozi). Styles **Simple / Karaoké / Pop**. Le texte se répartit tout seul sur la durée.
+- **🥁 Zoom automatique sur le rythme** (vidéo) — détecte les temps forts de ta musique et fait un punch-in zoom sur le beat.
+- **🩹 Tampon correcteur** (photo) — touche une zone saine (source) puis dessine sur le défaut : enlève un bouton, un objet, une tache.
+- **😂 Texte meme** (photo) — style Impact blanc contour noir, haut/bas, en 1 tap.
+
 ### 🔥 Effets viraux & formats réseaux *(tendances 2026)*
 D'après le tour du web des tendances TikTok / Reels / CapCut, ajoutés en qualité max :
 - **🔥 Effets Tendance (photo)** : Ciné (teal & orange), **Flou d'arrière-plan** (bokeh portrait), Glow, Light leak, **Duotone**, **Glitch / RGB split**, **VHS / Y2K**, Chroma, Polaroïd — avec **intensité réglable**.
@@ -97,12 +109,19 @@ L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné :
 - **v1** : chargement photo, filtres, sliders, cartoonize, bascule des 3 studios, dessin (encre détectée), timeline de frames, feuille d'export — **0 erreur JS**.
 - **v2** : Niveaux, **détourage → transparence confirmée**, dessin, stickers, redimensionnement, **export PNG transparent détecté** — **0 erreur JS**.
 - **v3** : effets tendance (glitch/ciné/bokeh changent bien l'image), **export vidéo viral 9:16 + grain + fondu → MP4 produit** — **0 erreur JS**.
+- **v4** : **texte meme** (encre rendue), **tampon correcteur** (clone), **export vidéo karaoké + zoom sur le beat + 9:16 + musique → MP4** — **0 erreur JS**.
+- **v5** : **IA** — succès (image remplacée) + **repli automatique** vérifiés (worker simulé), overlay de chargement OK — **0 exception JS**.
 - Cohérence domaine : `apps-consistency` **7/7**.
 
 Captures d'écran de preuve générées à chaque test.
 
-## 🔭 Honnêteté & prochaines étapes
-- Les effets **génératifs IA** viraux (squish, morphing, cartoonize « vrai », détourage IA auto du sujet) **ne sont pas faisables 100 % hors-ligne** sans modèle. Créa Studio en donne des **approximations** solides (cartoonize posterize+contours, bokeh par masque radial, détourage par couleur). Un détourage IA du sujet est possible en prochaine étape (worker distant, si on relâche le 100 % hors-ligne).
-- À venir si tu veux : **sous-titres karaoké mot-par-mot**, **zoom sur le beat** (détection audio), **speed-ramp**, **export GIF**, **calques complets**, **tampon correcteur**.
+## 🤖 Comment marche l'IA (technique)
+- Worker Cloudflare **`kdmc-crea-ai`** (isolé, `services/kdmc-crea-ai/`) qui relaie vers **Replicate** — ta clé `AX_REPLICATE_KEY` est injectée en secret serveur par `deploy-kdmc-crea-ai.yml`, **jamais côté client**.
+- Modèles : détourage `cjwbw/rembg`, cartoon `catacolabs/cartoonify`, upscale `nightmareai/real-esrgan` (résolus à leur dernière version au runtime — faciles à changer si besoin).
+- CORS limité à `*.kd-mc.com` + GitHub Pages + localhost. Le worker rapatrie l'image → le client la reçoit en même origine (pas de canvas « tainté »).
+- **Repli automatique** : réseau/IA KO → l'app applique la version hors-ligne + toast honnête. Zéro blocage.
 
-*Version 3.0.0 — Studio créatif tout-en-un + pack viral pour kd-mc.com (studio.kd-mc.com).*
+## 🔭 Prochaines étapes possibles
+Déjà livré : IA (détourage/cartoon/upscale), karaoké, zoom-beat, tampon correcteur, meme, effets tendance, formats réseaux. À venir si tu veux : **remplacement de fond IA** (mettre un décor), **speed-ramp**, **export GIF**, **calques complets multi-photos**, **cartoon IA sur vidéo**.
+
+*Version 5.0.0 — Studio créatif tout-en-un + pack viral + pack créateur pro + IA serveur, pour kd-mc.com (studio.kd-mc.com).*
