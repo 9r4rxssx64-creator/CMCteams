@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.20.0";
+var APP_VER="v2.21.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -619,12 +619,23 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
   DISC.open=true; var ov=el("div","disc-overlay");
   ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
     '<div class="disc-title">🐝 Bee · '+esc(c.nom)+'</div>'+
-    '<div class="disc-stage"><img class="disc-bee" src="bee/bee-src.webp" alt="Bee"><div class="disc-mouth"></div></div>'+
+    '<div class="disc-stage"><div class="disc-bee bee-rig">'+
+      '<img class="rig-base" src="bee/rig/base.webp" alt="Bee">'+
+      '<img class="rig-piece rig-wl" src="bee/rig/wing-l.webp" alt="" onerror="this.remove()">'+
+      '<img class="rig-piece rig-wr" src="bee/rig/wing-r.webp" alt="" onerror="this.remove()">'+
+      '<img class="rig-piece rig-arm" src="bee/rig/arm.webp" alt="" onerror="this.remove()">'+
+      '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
+      '<div class="disc-mouth"></div></div></div>'+
     '<div class="disc-sub"></div>'+
     '<div class="disc-chips"></div>'+
     '<div class="disc-inbar"><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle ou écris à Bee…" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
   document.body.appendChild(ov);
-  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
+  /* Elle VIT : clignement des yeux à intervalles naturels (aléatoires) */
+  function blinkLoop(){ if(!DISC.open)return; var rig=ov.querySelector(".bee-rig");
+    if(rig){ rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150); }
+    DISC.blinkT=setTimeout(blinkLoop, 2200+Math.random()*3200); }
+  DISC.blinkT=setTimeout(blinkLoop,1800);
+  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; if(DISC.blinkT)clearTimeout(DISC.blinkT); try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
   ov.querySelector(".disc-send").onclick=discSend;
   ov.querySelector(".disc-input").onkeydown=function(e){ if(e.key==="Enter")discSend(); };
   ov.querySelector(".disc-mic").onclick=discListen;
