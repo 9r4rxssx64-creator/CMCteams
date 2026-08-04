@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.8.0";
+var APP_VER="v2.9.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -276,16 +276,17 @@ function openCreate(){
   var m=modal(); var av=AVATARS[Math.floor(Math.random()*AVATARS.length)];
   m.body.innerHTML='<h3>Nouveau compte</h3>'+
     '<input id="acName" class="txt" placeholder="Ton prénom" maxlength="18" autocomplete="off">'+
-    '<input id="acCode" class="txt" placeholder="Un code secret (4 chiffres min)" inputmode="numeric" maxlength="10" autocomplete="off">'+
-    '<p class="mini">🔒 Ce code sauvegarde ta progression <b>en ligne</b>. Note-le bien : avec ton prénom + ce code, tu retrouves TOUT sur n\'importe quel téléphone.</p>'+
+    '<input id="acCode" class="txt" placeholder="Code secret (facultatif)" inputmode="numeric" maxlength="10" autocomplete="off">'+
+    '<p class="mini">🔒 <b>Facultatif</b> : un code sauvegarde ta progression <b>en ligne</b> (prénom + code = tout revient sur n\'importe quel téléphone). Tu peux commencer <b>sans</b>, et l\'ajouter plus tard.</p>'+
     '<p class="mini">Choisis ton avatar</p>';
   var g=el("div","av-pick");
   AVATARS.forEach(function(a){ var b=el("button","av-opt"+(a===av?" sel":"")); b.textContent=a; b.onclick=function(){ av=a; g.querySelectorAll(".av-opt").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); }; g.appendChild(b); });
   m.body.appendChild(g);
   var ok=el("button","btn-main"); ok.textContent="Créer mon compte";
   ok.onclick=function(){ var n=(m.body.querySelector("#acName").value||"").trim()||"Joueur"; var c=(m.body.querySelector("#acCode").value||"").trim();
-    if(c.length<4){ toast("Choisis un code d'au moins 4 chiffres 🔒"); return; }
+    if(c && c.length<4){ toast("Le code doit faire au moins 4 chiffres (ou laisse-le vide) 🔒"); return; }
     ok.disabled=true; ok.textContent="…";
+    if(!c){ var id=createAccount(n,av,""); switchAccount(id); m.close(); VIEW="home"; render(); return; } // sans code = on démarre direct (mémoire cloud = bonus optionnel)
     enterWithCredentials(n,av,c,true).then(function(res){ m.close(); VIEW="home"; render(); if(res&&res.restored) toast("👋 Compte retrouvé — bienvenue "+esc(n)+" !"); }); };
   m.body.appendChild(ok);
   setTimeout(function(){ var i=m.body.querySelector("#acName"); if(i)i.focus(); },100);
