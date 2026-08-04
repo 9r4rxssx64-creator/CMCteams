@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.5.0";
+var APP_VER="v2.6.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -338,6 +338,8 @@ function vCoursePick(){ var d=el("div","screen"); d.innerHTML='<h2 class="ttl">�
 /* ---------- Accueil ---------- */
 function unitDone(ui,li){ return (S.prog[S.course]["u"+ui+"-"+li]||0); }
 function unitUnlocked(ui,li){ if(ui===0&&li===0)return true; var c=COURSES[S.course],pu=ui,pl=li-1; if(pl<0){pu=ui-1;pl=c.units[pu].lessons.length-1;} return unitDone(pu,pl)>0; }
+function unitLessonsAllDone(ui){ var c=COURSES[S.course]; for(var li=0;li<c.units[ui].lessons.length;li++){ if(!(unitDone(ui,li)>0))return false; } return true; }
+function examDone(ui){ return (S.prog[S.course]["ex"+ui]||0); }
 function vHome(){ var w=el("div","screen tree");
   var gp=Math.min(100,Math.round(S.dailyXP/S.goal*100));
   var goal=el("div","goal-card");
@@ -356,6 +358,14 @@ function vHome(){ var w=el("div","screen tree");
       node.style.marginLeft=(Math.sin(li*1.1)*54+54)+"px"; node.innerHTML=done>0?'<span class="ncrown">👑</span>':(unl?'⭐':'🔒'); node.title=esc(l.titre);
       node.onclick= unl?function(){startLesson(ui,li);}:function(){toast("Termine la leçon précédente 🔒");};
       var lab=el("div","node-lab"); lab.textContent=l.titre; var cell=el("div","cell"); cell.appendChild(node); cell.appendChild(lab); path.appendChild(cell); });
+    // Examen de l'unité (débloqué quand toutes les leçons sont finies)
+    var exUnl=unitLessonsAllDone(ui),exd=examDone(ui);
+    var enode=el("button","node exam"+(exd>0?" done":"")+(exUnl?"":" locked"));
+    enode.style.marginLeft=(Math.sin(u.lessons.length*1.1)*54+54)+"px";
+    enode.innerHTML=exd>0?'<span class="ncrown">🏆</span>':(exUnl?'📝':'🔒');
+    enode.title="Examen de l'unité";
+    enode.onclick= exUnl?function(){startExam(ui);}:function(){toast("Termine toutes les leçons de l'unité pour l'examen 🔒");};
+    var elab=el("div","node-lab"); elab.textContent="Examen"; var ecell=el("div","cell"); ecell.appendChild(enode); ecell.appendChild(elab); path.appendChild(ecell);
     sec.appendChild(path); w.appendChild(sec); });
   return w;
 }
@@ -475,6 +485,15 @@ function dictate(cb){ try{ var SR=window.SpeechRecognition||window.webkitSpeechR
 /* ============ LEÇON ============ */
 function startLesson(ui,li,rev){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   LESSON={ui:ui,li:li,review:!!rev,ex:buildLesson(ui,li,rev),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render(); }
+function unitAllWords(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.forEach(function(l){ o=o.concat(l.words); }); return o; }
+function unitAllPhrases(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.forEach(function(l){ o=o.concat(l.phrases||[]); }); return o; }
+function buildExam(ui){ var pool=allWords(S.course),ws=shuffle(unitAllWords(ui)),ex=[];
+  ws.forEach(function(w,i){ var m=i%3===0?"mc_fr":(i%3===1?"listen":"mc_t"); if(m==="listen"&&!S.sound)m="mc_t"; ex.push(makeMC(w,pool,m)); });
+  if(ws.length>=4) ex.splice(2,0,makeMatch(shuffle(ws).slice(0,Math.min(5,ws.length))));
+  unitAllPhrases(ui).forEach(function(p){ ex.push(makeBank(p,pool)); });
+  return shuffle(ex).slice(0,Math.min(ex.length,15)); }
+function startExam(ui){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
+  LESSON={ui:ui,li:null,exam:true,review:false,ex:buildExam(ui),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render(); }
 function outOfHearts(){ VIEW="home"; render(); var m=modal();
   m.body.innerHTML='<div class="mascot-mini">'+MASCOT("sad",90)+'</div><h3>Plus de vies ❤️</h3><p>Tes cœurs reviennent seuls (1 / 30 min).</p>';
   var b1=el("button","btn-main"); b1.textContent="Recharger (350 💎)"; b1.onclick=function(){ if(S.gems>=350){S.gems-=350;S.hearts=HEART_MAX;S.heartTs=Date.now();save();m.close();render();} else toast("Pas assez de gemmes 💎"); };
@@ -536,11 +555,12 @@ function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._b
   if(!L.ok){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
   if(L.i>=L.ex.length){ finishLesson(); return; } if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; } render();
 }
-function finishLesson(){ var L=LESSON; var base=L.review?10:15,bonus=L.wrong===0?5:0,combo=Math.max(0,L.comboMax-2); var xp=base+bonus+combo;
-  S.xp+=xp; S.dailyXP+=xp; S.gems+=(L.wrong===0?3:1);
+function finishLesson(){ var L=LESSON; var base=L.exam?25:(L.review?10:15),bonus=L.wrong===0?5:0,combo=Math.max(0,L.comboMax-2); var xp=base+bonus+combo;
+  S.xp+=xp; S.dailyXP+=xp; S.gems+=(L.exam?(L.wrong===0?8:5):(L.wrong===0?3:1));
   S.today.xp+=xp; if(L.review)S.today.reviews++; else S.today.lessons++; if(L.wrong===0){S.today.perfect++; ls("hadPerfect",true);}
   if(L.heal){ S.hearts=Math.min(HEART_MAX,S.hearts+1); if(S.hearts>=HEART_MAX)S.heartTs=Date.now(); }
-  if(L.ui!=null&&!L.review){ var k="u"+L.ui+"-"+L.li; S.prog[S.course][k]=Math.min(5,(S.prog[S.course][k]||0)+1); }
+  if(L.exam){ var ek="ex"+L.ui; var wasNew=!(S.prog[S.course][ek]>0); S.prog[S.course][ek]=Math.min(5,(S.prog[S.course][ek]||0)+1); if(wasNew)setTimeout(function(){toast("🏆 Examen de l'unité réussi !");},400); }
+  else if(L.ui!=null&&L.li!=null&&!L.review){ var k="u"+L.ui+"-"+L.li; S.prog[S.course][k]=Math.min(5,(S.prog[S.course][k]||0)+1); }
   bumpStreak(); leagueAdd(xp); save(); checkAchv(); checkQuests();
   VIEW="home"; render();
   var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",120)+'</div><h3>'+(L.wrong===0?"Sans faute ! 🎉":"Leçon terminée ✅")+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+(L.wrong===0?3:1)+'</b><i>Gemmes</i></div></div>';
