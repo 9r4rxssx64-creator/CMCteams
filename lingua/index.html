@@ -142,12 +142,28 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .disc-close{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:12px;width:44px;height:44px;border-radius:50%;background:var(--card2);color:#fff;font-size:18px;border:1px solid var(--line);cursor:pointer;z-index:2}
 .disc-title{font-weight:900;font-size:16px;margin:2px 0 8px;color:#ffd067}
 .disc-stage{position:relative;width:min(78vw,330px);height:min(78vw,330px);margin-top:2vh}
-.disc-bee{width:100%;height:100%;object-fit:cover;border-radius:26px;box-shadow:0 0 0 4px rgba(246,183,60,.5),0 18px 50px rgba(0,0,0,.55);animation:beeFloat 3.4s ease-in-out infinite}
+.disc-bee{position:relative;width:100%;height:100%;border-radius:26px;overflow:hidden;background:#fdf7e7;box-shadow:0 0 0 4px rgba(246,183,60,.5),0 18px 50px rgba(0,0,0,.55);animation:beeFloat 3.4s ease-in-out infinite}
 .disc-bee.talk{animation:beeTalk .5s ease-in-out infinite}
 .disc-bee.think{filter:saturate(.75) brightness(.9)}
-.disc-mouth{position:absolute;left:50%;top:45.5%;width:15%;height:9%;transform:translate(-50%,-50%) scaleY(.6);border-radius:38% 38% 50% 50%/34% 34% 66% 66%;background:radial-gradient(60% 55% at 50% 68%,#ff5d6c 0%,#7a2c16 62%,#4c1d0f 100%);border:3px solid #3a1c10;opacity:0;pointer-events:none}
-.disc-mouth.talking{opacity:1;animation:discMouth .26s ease-in-out infinite alternate}
-@keyframes discMouth{0%{transform:translate(-50%,-50%) scaleY(.5) scaleX(.92)}100%{transform:translate(-50%,-50%) scaleY(1.06) scaleX(1.05)}}
+/* Marionnette : couches animées découpées de SON image */
+.rig-base,.rig-piece{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.rig-wl{transform-origin:34% 46%;animation:wingFlapL 1.15s ease-in-out infinite}
+.rig-wr{transform-origin:66% 44%;animation:wingFlapR 1.15s ease-in-out infinite}
+@keyframes wingFlapL{0%,100%{transform:rotate(0)}50%{transform:rotate(-6deg)}}
+@keyframes wingFlapR{0%,100%{transform:rotate(0)}50%{transform:rotate(6deg)}}
+.bee-rig.talk .rig-wl{animation:wingFlapL .32s ease-in-out infinite}
+.bee-rig.talk .rig-wr{animation:wingFlapR .32s ease-in-out infinite}
+.rig-arm{transform-origin:72% 53%}
+.bee-rig.talk .rig-arm{animation:armWave .55s ease-in-out infinite}
+@keyframes armWave{0%,100%{transform:rotate(0)}40%{transform:rotate(-13deg)}70%{transform:rotate(5deg)}}
+.rig-lid{position:absolute;background:rgb(253,225,87);border:0;border-radius:46%;opacity:0;pointer-events:none;transition:opacity .05s}
+.rig-lid.ll{left:32.2%;top:27.4%;width:18.2%;height:15%}
+.rig-lid.lr{left:51.3%;top:27.2%;width:17.4%;height:15.2%}
+.bee-rig.blink .rig-lid{opacity:1}
+@media (prefers-reduced-motion:reduce){.rig-wl,.rig-wr,.bee-rig.talk .rig-wl,.bee-rig.talk .rig-wr,.bee-rig.talk .rig-arm{animation:none}}
+.disc-mouth{position:absolute;left:52.4%;top:42.6%;width:6.6%;height:5.2%;transform:translate(-50%,-50%) scale(1);border-radius:42% 42% 50% 50%/36% 36% 64% 64%;background:radial-gradient(60% 55% at 50% 66%,#ff5d6c 0%,#8a3018 60%,#53200f 100%);border:2px solid #3a1c10;opacity:0;pointer-events:none}
+.disc-mouth.talking{opacity:1;animation:discMouth .27s ease-in-out infinite alternate}
+@keyframes discMouth{0%{transform:translate(-50%,-50%) scale(1.02,.96)}100%{transform:translate(-50%,-50%) scale(1.38,1.52)}}
 .disc-sub{margin-top:14px;min-height:52px;max-height:96px;overflow-y:auto;max-width:min(86vw,420px);text-align:center;font-size:16.5px;line-height:1.5;color:#eaf2f8;font-weight:600}
 .disc-chips{display:flex;gap:8px;overflow-x:auto;max-width:100%;padding:10px 2px;-webkit-overflow-scrolling:touch;margin-top:auto}
 .disc-inbar{display:flex;gap:8px;width:100%;max-width:460px;align-items:center}

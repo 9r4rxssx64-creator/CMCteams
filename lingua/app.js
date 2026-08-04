@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.19.0";
+var APP_VER="v2.21.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -504,7 +504,7 @@ function beeSparkles(el,n){ try{ var r=el.getBoundingClientRect(),cx=r.left+r.wi
     document.body.appendChild(s); (function(sp){ setTimeout(function(){ sp.remove(); },950); })(s); } }catch(_){} }
 function beeAnimate(el,cls){ try{ el.classList.remove("pop","spin","hop","shake"); void el.offsetWidth; el.classList.add(cls); setTimeout(function(){ el.classList.remove(cls); },850); }catch(_){} }
 function beeCheer(){ try{ var c=S.course?COURSES[S.course]:null; if(!c)return; var words=["bravo","merci","bonjour","salut","oui"];
-  var fr=words[Math.floor(Math.random()*words.length)]; var t=(DICT[fr]&&DICT[fr][c.id])||fr; speakLang(t,c.ttsLang); }catch(_){} }
+  var fr=words[Math.floor(Math.random()*words.length)]; var t=(DICT[fr]&&DICT[fr][c.id])||fr; speakLang(t,c.ttsLang,BEE_VOICE,true); }catch(_){} }
 document.addEventListener("click",function(e){ var el=e.target&&e.target.closest?e.target.closest(".bee-img"):null; if(!el)return;
   beeAnimate(el, Math.random()<0.5?"spin":"hop"); beeSparkles(el,8); vibrate(12); tone([760,980],.22); beeCheer(); });
 /* Bee GÈRE TOUT : compagnon présent sur chaque écran, consciente de l'état de l'app
@@ -529,11 +529,11 @@ function beeCompanion(){ var w=el("div","bee-companion");
   w.innerHTML=MASCOT("wave",58);
   w.onclick=function(ev){ ev.stopPropagation(); var img=w.querySelector(".bee-img");
     if(img){ beeAnimate(img, Math.random()<0.5?"spin":"hop"); beeSparkles(img,7); } vibrate(10);
-    var t=beeLine(); beeBubble(t,7000); speakLang(t,"fr-FR"); };
+    var t=beeLine(); beeBubble(t,7000); speakLang(t,"fr-FR",BEE_VOICE,true); };
   if(!_beeSaid[VIEW]){ _beeSaid[VIEW]=true; setTimeout(function(){ beeBubble(beeLine(),6000); },600); }
   return w; }
 /* Bee PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
-function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang);
+function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang,BEE_VOICE,true);
   var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
 function coachGreeting(c){ var me=accMeta(ACC)||{}; var n=me.name||"toi"; var hi=(DICT["salut"]&&DICT["salut"][c.id])||"Salut";
   return hi+" "+n+" ! 🐝 Moi c'est Bee, ton abeille coach de "+c.nom.toLowerCase()+" ! On butine quelques mots ensemble vers le bilingue ? Écris-moi, ou touche une suggestion ci-dessous."; }
@@ -594,13 +594,13 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à m
     if(DISC.handsFree&&DISC.open){ setTimeout(function(){ discListen(); },500); } }
   if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop,dur);
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
-  var vid=S.voice||"nova";
+  var vid=BEE_VOICE; /* Bee : voix douce, tendre, féminine — toujours */
   if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
     var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
     a.onended=function(){ if(DISC.timer)clearTimeout(DISC.timer); stop(); };
-    a.onerror=function(){ _webSpeakLang(text,lang); };
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang); });
-  }catch(e){ _webSpeakLang(text,lang); } } else if(S.sound){ _webSpeakLang(text,lang); }
+    a.onerror=function(){ _webSpeakLang(text,lang,true); };
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang,true); });
+  }catch(e){ _webSpeakLang(text,lang,true); } } else if(S.sound){ _webSpeakLang(text,lang,true); }
 }
 function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
   var mic=overlay.querySelector(".disc-mic"); if(mic)mic.classList.add("rec");
@@ -619,12 +619,23 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
   DISC.open=true; var ov=el("div","disc-overlay");
   ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
     '<div class="disc-title">🐝 Bee · '+esc(c.nom)+'</div>'+
-    '<div class="disc-stage"><img class="disc-bee" src="bee/bee-src.webp" alt="Bee"><div class="disc-mouth"></div></div>'+
+    '<div class="disc-stage"><div class="disc-bee bee-rig">'+
+      '<img class="rig-base" src="bee/rig/base.webp" alt="Bee">'+
+      '<img class="rig-piece rig-wl" src="bee/rig/wing-l.webp" alt="" onerror="this.remove()">'+
+      '<img class="rig-piece rig-wr" src="bee/rig/wing-r.webp" alt="" onerror="this.remove()">'+
+      '<img class="rig-piece rig-arm" src="bee/rig/arm.webp" alt="" onerror="this.remove()">'+
+      '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
+      '<div class="disc-mouth"></div></div></div>'+
     '<div class="disc-sub"></div>'+
     '<div class="disc-chips"></div>'+
     '<div class="disc-inbar"><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle ou écris à Bee…" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
   document.body.appendChild(ov);
-  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
+  /* Elle VIT : clignement des yeux à intervalles naturels (aléatoires) */
+  function blinkLoop(){ if(!DISC.open)return; var rig=ov.querySelector(".bee-rig");
+    if(rig){ rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150); }
+    DISC.blinkT=setTimeout(blinkLoop, 2200+Math.random()*3200); }
+  DISC.blinkT=setTimeout(blinkLoop,1800);
+  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; if(DISC.blinkT)clearTimeout(DISC.blinkT); try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
   ov.querySelector(".disc-send").onclick=discSend;
   ov.querySelector(".disc-input").onkeydown=function(e){ if(e.key==="Enter")discSend(); };
   ov.querySelector(".disc-mic").onclick=discListen;
@@ -673,10 +684,15 @@ function vTranslate(){ var d=el("div","screen");
     paint(); },0);
   return d;
 }
-function speakLang(text,lang){ if(!S.sound||!text)return; var vid=S.voice||"nova";
-  if(_isCloudVoice(vid)){ try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); a.onerror=function(){ _webSpeakLang(text,lang); }; var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang); }); return; }catch(e){} }
-  _webSpeakLang(text,lang); }
-function _webSpeakLang(text,lang){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;}); var best=vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+/* Voix de BEE : toujours douce, tendre et féminine (nova), quel que soit le choix de voix des leçons. */
+var BEE_VOICE="nova";
+function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voice||"nova";
+  if(_isCloudVoice(vid)){ try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); a.onerror=function(){ _webSpeakLang(text,lang,fem); }; var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang,fem); }); return; }catch(e){} }
+  _webSpeakLang(text,lang,fem); }
+function _webSpeakLang(text,lang,fem){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=fem?.95:.9; if(fem)u.pitch=1.15;
+  var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
+  var femV=fem?vs.filter(function(v){return /am[eé]lie|audrey|aur[eé]lie|c[eé]line|chantal|julie|marie|virginie|alice|elsa|paulina|monica|petra|anna|female|femme|woman/i.test(v.name);})[0]:null;
+  var best=femV||vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
 function _srOk(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
 function dictate(cb,lang){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Micro non dispo sur ce navigateur"); cb&&cb(""); return; } var r=new SR(); r.lang=lang||"fr-FR"; r.interimResults=false; r.maxAlternatives=3; r.onresult=function(e){ var best=""; try{ best=e.results[0][0].transcript; }catch(_){} cb&&cb(best); }; r.onerror=function(){ cb&&cb(""); }; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Micro indisponible"); cb&&cb(""); } }
 
@@ -722,7 +738,7 @@ function maybeOfferPlacement(){
 function startExam(ui){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   LESSON={ui:ui,li:null,exam:true,review:false,ex:buildExam(ui),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render();
   var msg="C'est Bee qui te fait passer l'examen ! Concentre-toi, je suis avec toi 🐝";
-  setTimeout(function(){ beeBubble(msg,5000); speakLang(msg,"fr-FR"); },350); }
+  setTimeout(function(){ beeBubble(msg,5000); speakLang(msg,"fr-FR",BEE_VOICE,true); },350); }
 function outOfHearts(){ VIEW="home"; render(); var m=modal();
   m.body.innerHTML='<div class="mascot-mini">'+MASCOT("sad",90)+'</div><h3>Plus de vies ❤️</h3><p>Tes cœurs reviennent seuls (1 / 30 min).</p>';
   var b1=el("button","btn-main"); b1.textContent="Recharger (350 💎)"; b1.onclick=function(){ if(S.gems>=350){S.gems-=350;S.hearts=HEART_MAX;S.heartTs=Date.now();save();m.close();render();} else toast("Pas assez de gemmes 💎"); };
