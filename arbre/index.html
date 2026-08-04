@@ -160,6 +160,12 @@ a{color:var(--cyan);text-decoration:none}
 .acterow{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch}
 .actecard{flex:0 0 auto;width:120px;cursor:pointer;text-align:center}
 .actecard img{width:120px;height:150px;object-fit:cover;object-position:top;border:2px solid var(--gold);border-radius:10px;background:#fffef8;box-shadow:0 3px 10px rgba(60,40,10,.25)}
+.docrow{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
+.docitem{display:flex;align-items:center;gap:10px;background:#fffef8;border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;min-height:44px;cursor:pointer}
+.docitem .dic{font-size:22px}
+.docitem .dnm{flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.docitem .dsz{font-size:11px;color:var(--mut);white-space:nowrap}
+.docitem .ddel{width:30px;height:30px;line-height:28px;text-align:center;border-radius:50%;background:#a3403a;color:#fff;font-size:15px;flex:0 0 auto}
 .actecard{position:relative}
 .actedel{position:absolute;top:-6px;right:-6px;z-index:2;width:26px;height:26px;line-height:24px;text-align:center;border-radius:50%;background:#a3403a;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .actecard .alab{font-size:10.5px;line-height:1.25;color:var(--ink);opacity:.85;margin-top:4px;word-break:break-word}
@@ -230,7 +236,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.51";
+var APP_VER="v2.52";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -742,7 +748,10 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var back='<button class="bkbtn" id="pBack" aria-label="'+(canBack?"Retour":"Fermer")+'">'+(canBack?"‹":"✕")+'</button>';
   var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div></div>'+caro+
     '<div class="sec">'+info+(relHtml?'<div style="padding-top:12px"><div style="color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Famille</div><div class="chips">'+relHtml+'</div></div>':"")+(p.notes?'<div style="padding:12px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+'</div>'+
-    (function(){var acts=(p.actes||[]);return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3>'+(acts.length?'<div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'">'+(a.by?'<b class="actedel" data-rmacte="'+i+'" title="Supprimer">×</b>':'')+'<img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun acte pour l\'instant.</p>')+'<button class="btn sm" id="addActe">➕ Ajouter un acte (photo / scan)</button><input type="file" id="acteIn" accept="image/*,.pdf" hidden></div>';})()+
+    (function(){var acts=(p.actes||[]);return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3>'+(acts.length?'<div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'">'+(a.by?'<b class="actedel" data-rmacte="'+i+'" title="Supprimer">×</b>':'')+'<img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun acte pour l\'instant.</p>')+'<button class="btn sm" id="addActe">➕ Ajouter un acte (photo / scan)</button><input type="file" id="acteIn" accept="image/*" hidden></div>';})()+
+    (function(){var docs=(p.docs||[]);function ico(ty,nm){nm=(nm||"").toLowerCase();if(/pdf/.test(ty)||/\.pdf$/.test(nm))return "📕";if(/image/.test(ty))return "🖼";if(/\.(doc|docx|odt|rtf)$/.test(nm))return "📘";if(/\.(xls|xlsx|csv|numbers)$/.test(nm))return "📗";if(/\.(zip|rar|7z)$/.test(nm))return "🗂";if(/audio|\.(mp3|m4a|wav)$/.test(ty+nm))return "🎙";if(/video|\.(mp4|mov)$/.test(ty+nm))return "🎞";return "📄";}
+    function ksz(n){return n>1048576?(n/1048576).toFixed(1)+" Mo":Math.max(1,Math.round(n/1024))+" Ko";}
+    return '<div class="sec"><h3>📎 Documents & dossiers — tous formats</h3>'+(docs.length?'<div class="docrow">'+docs.map(function(d,i){return '<div class="docitem" data-doc="'+i+'"><span class="dic">'+ico(d.type,d.name)+'</span><span class="dnm">'+esc(d.label||d.name||"document")+'</span><span class="dsz">'+ksz(d.size||0)+'</span>'+(d.by?'<b class="ddel" data-rmdoc="'+i+'">×</b>':'')+'</div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun document. PDF, Word, tableur, zip, audio… tout passe.</p>')+'<button class="btn sm" id="addDoc">➕ Ajouter des documents (multi-sélection)</button><input type="file" id="docIn" multiple hidden></div>';})()+
     (sources?'<div class="sec"><h3>Actes / sources</h3><div class="chips">'+sources+'</div></div>':"")+
     '<div class="sec"><h3>💬 Commentaires & infos</h3><div id="cmtList">'+(comments||'<p class="mut" style="font-size:13px;margin:0">Aucun commentaire. Ajoute une info, une anecdote, une question…</p>')+'</div><div style="display:flex;gap:8px;margin-top:10px"><input id="cmtIn" placeholder="Écris un commentaire…"><button class="btn gold sm" id="cmtAdd">Envoyer</button></div></div>'+
     '<div class="sec"><h3>➕ Ajouter un proche</h3><div class="addrel"><button class="btn sm" data-add="pere:'+id+'">👴 Père</button><button class="btn sm" data-add="mere:'+id+'">👵 Mère</button><button class="btn sm" data-add="conj:'+id+'">💍 Conjoint(e)</button><button class="btn sm" data-add="child:'+id+'">👶 Enfant</button></div></div>'+
@@ -752,6 +761,22 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   showOverlay(h);
   ov0=$(".ov");if(ov0){ov0.querySelectorAll("[data-acte]").forEach(function(c){c.onclick=function(e){if(e.target.closest("[data-rmacte]"))return;var a=(P(id).actes||[])[+c.dataset.acte];if(a)openActe(a);};});
   ov0.querySelectorAll("[data-rmacte]").forEach(function(b){b.onclick=async function(){if(!confirm("Supprimer cet acte ajouté par la famille ?"))return;var pp=P(id);pp.actes=(pp.actes||[]).filter(function(_,i){return i!==+b.dataset.rmacte;});pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("🗑 Acte retiré");};});
+  ov0.querySelectorAll("[data-doc]").forEach(function(c){c.onclick=function(e){if(e.target.closest("[data-rmdoc]"))return;var d=(P(id).docs||[])[+c.dataset.doc];if(!d)return;
+    if(/^image\//.test(d.type||"")){openActe({label:d.label||d.name,img:d.data});return;}
+    try{var bin=atob((d.data.split(",")[1]||""));var arr=new Uint8Array(bin.length);for(var k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);var bl=new Blob([arr],{type:d.type||"application/octet-stream"});var u=URL.createObjectURL(bl);var a=document.createElement("a");a.href=u;if(/pdf/.test(d.type||"")){a.target="_blank";}else{a.download=d.name||"document";}document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},30000);}catch(err){toast("Ouverture impossible sur cet appareil");}};});
+  ov0.querySelectorAll("[data-rmdoc]").forEach(function(b){b.onclick=async function(){if(!confirm("Supprimer ce document ?"))return;var pp=P(id);pp.docs=(pp.docs||[]).filter(function(_,i){return i!==+b.dataset.rmdoc;});pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("🗑 Document retiré");};});
+  var db2=$("#addDoc");if(db2)db2.onclick=function(){$("#docIn").click();};
+  var di2=$("#docIn");if(di2)di2.onchange=async function(e){var files=Array.prototype.slice.call(e.target.files||[]);e.target.value="";if(!files.length)return;
+    var pp=P(id);pp.docs=pp.docs||[];var ok=0,skip=0;
+    for(var i2=0;i2<files.length;i2++){var f=files[i2];
+      try{
+        if(/^image\//.test(f.type)){var img=await importActe(f);pp.docs.push({label:f.name,name:f.name,type:f.type,size:Math.round(img.length*0.75),data:img,by:ME||"famille",ts:now()});ok++;}
+        else if(f.size<=2621440){var data=await new Promise(function(rs,rj){var r=new FileReader();r.onload=function(){rs(r.result);};r.onerror=rj;r.readAsDataURL(f);});pp.docs.push({label:f.name,name:f.name,type:f.type||"",size:f.size,data:data,by:ME||"famille",ts:now()});ok++;}
+        else{skip++;toast("⚠️ "+(f.name||"fichier")+" dépasse 2,5 Mo — photographie les pages ou compresse-le");}
+      }catch(err){skip++;}
+    }
+    if(ok){pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("📎 "+ok+" document(s) ajouté(s)"+(skip?" · "+skip+" ignoré(s)":""));}
+    else if(!skip)toast("Aucun fichier lisible");};
   var ab=$("#addActe");if(ab)ab.onclick=function(){$("#acteIn").click();};
   var ai=$("#acteIn");if(ai)ai.onchange=async function(e){var f=(e.target.files||[])[0];e.target.value="";if(!f)return;
     var lab=window.prompt("Titre de l'acte (ex : 🍼 Acte de naissance 1952, mairie de Nice)","📜 Acte — "+full(P(id)));if(lab===null)return;
@@ -939,7 +964,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   return s;}
 function seed(){DB.persons=buildSeed();DB.meta={updatedAt:now(),seedVersion:SEED_VERSION};}
 /* Fusion des personnes « officielles » sans écraser les ajouts/édits perso (photos/commentaires conservés). Tourne 1× par version. */
-function mergeSeed(){var s=buildSeed();for(var id in s){var loc=DB.persons[id];if(!loc){DB.persons[id]=s[id];}else if(id.indexOf("seed_")===0){var ph=(loc.photos&&loc.photos.length)?loc.photos:s[id].photos;var cm=(loc.comments&&loc.comments.length)?loc.comments:s[id].comments;var ua=(loc.actes||[]).filter(function(a){return a&&a.by;});var ac=(s[id].actes||[]).concat(ua);DB.persons[id]=Object.assign({},s[id],{photos:ph,comments:cm},ac.length?{actes:ac}:{});}}DB.meta=DB.meta||{};DB.meta.seedVersion=SEED_VERSION;}
+function mergeSeed(){var s=buildSeed();for(var id in s){var loc=DB.persons[id];if(!loc){DB.persons[id]=s[id];}else if(id.indexOf("seed_")===0){var ph=(loc.photos&&loc.photos.length)?loc.photos:s[id].photos;var cm=(loc.comments&&loc.comments.length)?loc.comments:s[id].comments;var ua=(loc.actes||[]).filter(function(a){return a&&a.by;});var ac=(s[id].actes||[]).concat(ua);var dc2=(loc.docs||[]).filter(function(d){return d&&d.by;});DB.persons[id]=Object.assign({},s[id],{photos:ph,comments:cm},ac.length?{actes:ac}:{},dc2.length?{docs:dc2}:{});}}DB.meta=DB.meta||{};DB.meta.seedVersion=SEED_VERSION;}
 
 /* ---------- boot ---------- */
 function bindApp(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.onclick=function(){VIEW=t.dataset.view;render();};});$("#fab").onclick=function(){openEdit(null);};document.body.addEventListener("click",function(e){if(e.target.closest(".ov"))return;var n=e.target.closest("#wrap [data-open]");if(n){openPerson(n.dataset.open);return;}var s=e.target.closest("#wrap [data-search]");if(s)openSearch(s.dataset.search);});document.addEventListener("visibilitychange",function(){if(!document.hidden&&sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});window.addEventListener("focus",function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});setInterval(function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);},8000);}
