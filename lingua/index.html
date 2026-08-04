@@ -125,6 +125,15 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .bee-img.hop{animation:beeHopA .6s ease-in-out}
 @keyframes beeShakeA{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 .bee-img.shake{animation:beeShakeA .5s ease-in-out}
+.bee-companion{position:fixed;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:60;cursor:pointer}
+.bee-companion .bee-img{width:58px;height:58px}
+.bee-bubble{position:fixed;right:14px;bottom:calc(162px + env(safe-area-inset-bottom));z-index:61;max-width:240px;
+  background:var(--card2);border:1px solid rgba(246,183,60,.6);border-radius:16px 16px 4px 16px;padding:10px 13px;
+  font-size:13.5px;line-height:1.45;color:#eaf2f8;box-shadow:0 6px 18px rgba(0,0,0,.4);cursor:pointer;
+  animation:bubblePop .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bubblePop{0%{transform:scale(.5) translateY(10px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}
+.bee-bubble.bye{opacity:0;transform:translateY(8px);transition:all .4s}
+@media (prefers-reduced-motion:reduce){.bee-bubble{animation:none}}
 .bee-spark{position:fixed;z-index:9999;pointer-events:none;font-size:16px;animation:sparkFly .9s ease-out forwards}
 @keyframes sparkFly{0%{transform:translate(0,0) scale(.6);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.25);opacity:0}}
 @media (prefers-reduced-motion:reduce){.mascot.bee-img,.bee-img.pop,.bee-img.spin,.bee-img.hop,.bee-img.shake{animation:none}.bee-spark{display:none}}
