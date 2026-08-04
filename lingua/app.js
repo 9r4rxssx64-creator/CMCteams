@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.16.0";
+var APP_VER="v2.19.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -269,6 +269,7 @@ function render(){
   else if(VIEW==="coach") app.appendChild(vCoach());
   else if(VIEW==="profile") app.appendChild(vProfile());
   app.appendChild(vTabbar());
+  if(VIEW!=="coach"&&S.course) app.appendChild(beeCompanion());  // Bee gère tout : présente sur chaque écran (le Coach l'a déjà en grand)
 }
 function go(v){ VIEW=v; window.scrollTo(0,0); render(); }
 function el(t,c){ var e=document.createElement(t); if(c)e.className=c; return e; }
@@ -495,6 +496,42 @@ function coachPoseFor(t){ t=(" "+String(t||"")+" ").toLowerCase();
   if(/(bonjour|salut|coucou|\bciao\b|buongiorno|\bhola\b|buenos|\bhallo\b|guten tag|\bol[aá]\b|bom dia|\bhi\b|hello|goededag)/.test(t)) return "wave";
   return "point";
 }
+/* Bee VIVANTE : elle flotte, et quand on la touche → pirouette/saut + étincelles + petit mot gentil. */
+function beeSparkles(el,n){ try{ var r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,em=["✨","⭐","💛","🐝","❤️","🌟"];
+  for(var i=0;i<(n||8);i++){ var s=document.createElement("span"); s.className="bee-spark"; s.textContent=em[Math.floor(Math.random()*em.length)];
+    var a=Math.random()*Math.PI*2,d=40+Math.random()*55;
+    s.style.left=cx+"px"; s.style.top=cy+"px"; s.style.setProperty("--dx",(Math.cos(a)*d)+"px"); s.style.setProperty("--dy",(Math.sin(a)*d-24)+"px");
+    document.body.appendChild(s); (function(sp){ setTimeout(function(){ sp.remove(); },950); })(s); } }catch(_){} }
+function beeAnimate(el,cls){ try{ el.classList.remove("pop","spin","hop","shake"); void el.offsetWidth; el.classList.add(cls); setTimeout(function(){ el.classList.remove(cls); },850); }catch(_){} }
+function beeCheer(){ try{ var c=S.course?COURSES[S.course]:null; if(!c)return; var words=["bravo","merci","bonjour","salut","oui"];
+  var fr=words[Math.floor(Math.random()*words.length)]; var t=(DICT[fr]&&DICT[fr][c.id])||fr; speakLang(t,c.ttsLang); }catch(_){} }
+document.addEventListener("click",function(e){ var el=e.target&&e.target.closest?e.target.closest(".bee-img"):null; if(!el)return;
+  beeAnimate(el, Math.random()<0.5?"spin":"hop"); beeSparkles(el,8); vibrate(12); tone([760,980],.22); beeCheer(); });
+/* Bee GÈRE TOUT : compagnon présent sur chaque écran, consciente de l'état de l'app
+   (révisions dues, série, ligue, niveau) — elle commente, guide, et parle si on la touche. */
+var _beeSaid={};
+function beeLine(){ try{
+  if(VIEW==="home"){ var nx=nextLessonToDo(),due=dueWords().length;
+    var s="Bzzz ! "+(nx?("On fait « "+nx.titre+" » ?"):"Tout est ouvert, champion !");
+    if(due>0)s+=" Et "+due+" mot"+(due>1?"s":"")+" à réviser 🧠"; if(S.streak>0)s+=" · série 🔥"+S.streak; return s; }
+  if(VIEW==="review"){ var d2=dueWords().length; return d2>0?("J'ai "+d2+" mot"+(d2>1?"s":"")+" à te faire réviser — on s'y met ?"):"Rien d'urgent ! Une révision libre pour le plaisir ?"; }
+  if(VIEW==="dict") return "Cherche un mot, je te dis tout ce que je sais !";
+  if(VIEW==="translate") return "Dis-moi un mot ou une phrase, je te la traduis dans mes 6 langues !";
+  if(VIEW==="league"){ var rows=leagueRows(),p=0; for(var i=0;i<rows.length;i++){ if(rows[i].you){p=i+1;break;} }
+    return p===1?"Tu es PREMIER ! 🏆 On garde la couronne ?":("Tu es "+p+"ᵉ ! Quelques leçons et on double tout le monde 😼"); }
+  if(VIEW==="profile") return "Niveau "+diffLabel()+" · "+masteredCount()+" mots appris. Je suis fière de toi !";
+  return "Bzzz ! On apprend quelque chose ?"; }catch(_){ return "Bzzz !"; } }
+function beeBubble(text,ms){ try{ var old=document.querySelector(".bee-bubble"); if(old)old.remove();
+  var b=document.createElement("div"); b.className="bee-bubble"; b.textContent=text;
+  b.onclick=function(){ b.remove(); }; document.body.appendChild(b);
+  setTimeout(function(){ try{ b.classList.add("bye"); setTimeout(function(){b.remove();},400); }catch(_){} }, ms||6000); }catch(_){} }
+function beeCompanion(){ var w=el("div","bee-companion");
+  w.innerHTML=MASCOT("wave",58);
+  w.onclick=function(ev){ ev.stopPropagation(); var img=w.querySelector(".bee-img");
+    if(img){ beeAnimate(img, Math.random()<0.5?"spin":"hop"); beeSparkles(img,7); } vibrate(10);
+    var t=beeLine(); beeBubble(t,7000); speakLang(t,"fr-FR"); };
+  if(!_beeSaid[VIEW]){ _beeSaid[VIEW]=true; setTimeout(function(){ beeBubble(beeLine(),6000); },600); }
+  return w; }
 /* Bee PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
 function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang);
   var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
@@ -518,10 +555,14 @@ function coachSend(text){ if(_coachThinking||!text) return; var c=coachLangMeta(
     setTimeout(function(){ if(reply) coachSpeak(reply); },260); }); }
 function vCoach(){ var d=el("div","screen coach");
   var c=coachLangMeta(); if(!c){ d.innerHTML='<h2 class="ttl">💬 Coach</h2><p class="sub2">Choisis d\'abord une langue 🌍 dans l\'onglet 🏠.</p>'; return d; }
-  var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>'; d.appendChild(head);
+  var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>';
+  var cine=el("button","coach-cine"); cine.innerHTML="🎬<span>Discussion</span>"; cine.title="Mode discussion plein écran"; cine.onclick=openDiscussion; head.appendChild(cine);
+  d.appendChild(head);
   var pct=Math.min(100,Math.round(masteredCount()/240*100));
   var pb=el("div","coach-prog"); pb.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+pct+'%"></div></div><span>'+pct+'% vers le bilingue</span>'; d.appendChild(pb);
-  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),100); d.appendChild(mas);
+  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),100);
+  var mimg=mas.querySelector(".bee-img"); if(mimg&&!S.coachMsgs.length)mimg.classList.add("pop");
+  d.appendChild(mas);
   var box=el("div","coach-box");
   if(!S.coachMsgs.length){ var intro=el("div","coach-msg bot"); intro.innerHTML='<div class="cm-av">'+MASCOT("wave",38)+'</div>'; var it=el("div","cm-txt"); it.textContent=coachGreeting(c); intro.appendChild(it); box.appendChild(intro); }
   S.coachMsgs.slice(-40).forEach(function(m){ var row=el("div","coach-msg "+(m.role==="user"?"user":"bot"));
@@ -538,6 +579,59 @@ function vCoach(){ var d=el("div","screen coach");
   bar.appendChild(inp); bar.appendChild(snd); d.appendChild(bar);
   setTimeout(function(){ var b=d.querySelector(".coach-box"); if(b)b.scrollTop=b.scrollHeight; },40);
   return d;
+}
+/* ============ MODE DISCUSSION 🎬 — Bee en gros plan, bouche animée, elle DIT son texte ============ */
+var DISC={open:false,talking:false,handsFree:false,timer:null};
+function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à mot, robuste même sans événements audio */
+  var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
+  var mouth=overlay.querySelector(".disc-mouth"), sub=overlay.querySelector(".disc-sub"), img=overlay.querySelector(".disc-bee");
+  var words=String(text||"").split(/\s+/).filter(Boolean);
+  var dur=Math.min(12000, 900+text.length*68);
+  DISC.talking=true; if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
+  if(sub){ sub.textContent=""; var wi=0; var step=Math.max(120, Math.min(300, dur/Math.max(1,words.length)));
+    var si=setInterval(function(){ if(wi>=words.length||!DISC.open){ clearInterval(si); return; } sub.textContent+=(wi?" ":"")+words[wi++]; sub.scrollTop=sub.scrollHeight; }, step); }
+  function stop(){ DISC.talking=false; try{ if(mouth)mouth.classList.remove("talking"); if(img)img.classList.remove("talk"); }catch(_){}
+    if(DISC.handsFree&&DISC.open){ setTimeout(function(){ discListen(); },500); } }
+  if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop,dur);
+  try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
+  var vid=S.voice||"nova";
+  if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
+    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+    a.onended=function(){ if(DISC.timer)clearTimeout(DISC.timer); stop(); };
+    a.onerror=function(){ _webSpeakLang(text,lang); };
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang); });
+  }catch(e){ _webSpeakLang(text,lang); } } else if(S.sound){ _webSpeakLang(text,lang); }
+}
+function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
+  var mic=overlay.querySelector(".disc-mic"); if(mic)mic.classList.add("rec");
+  dictate(function(txt){ if(mic)mic.classList.remove("rec"); if(txt){ var inp=overlay.querySelector(".disc-input"); if(inp)inp.value=txt; discSend(); } },"fr-FR"); }
+function discSend(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay||DISC.talking)return;
+  var inp=overlay.querySelector(".disc-input"); var text=(inp&&inp.value||"").trim(); if(!text)return; inp.value="";
+  var c=coachLangMeta(); if(!c)return;
+  S.coachMsgs.push({role:"user",text:text}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
+  var sub=overlay.querySelector(".disc-sub"); if(sub)sub.textContent="…";
+  var img=overlay.querySelector(".disc-bee"); if(img)img.classList.add("think");
+  coachAsk().then(function(reply){ if(!DISC.open)return; if(img)img.classList.remove("think");
+    S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
+    if(/(bravo|super|parfait|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(reply)){ var bi=overlay.querySelector(".disc-bee"); if(bi){ beeSparkles(bi,10); } }
+    discSpeak(reply, c.ttsLang); }); }
+function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ toast("Choisis d'abord une langue 🌍"); return; }
+  DISC.open=true; var ov=el("div","disc-overlay");
+  ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
+    '<div class="disc-title">🐝 Bee · '+esc(c.nom)+'</div>'+
+    '<div class="disc-stage"><img class="disc-bee" src="bee/bee-src.webp" alt="Bee"><div class="disc-mouth"></div></div>'+
+    '<div class="disc-sub"></div>'+
+    '<div class="disc-chips"></div>'+
+    '<div class="disc-inbar"><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle ou écris à Bee…" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
+  document.body.appendChild(ov);
+  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
+  ov.querySelector(".disc-send").onclick=discSend;
+  ov.querySelector(".disc-input").onkeydown=function(e){ if(e.key==="Enter")discSend(); };
+  ov.querySelector(".disc-mic").onclick=discListen;
+  var hf=ov.querySelector(".disc-hf"); hf.onclick=function(){ DISC.handsFree=!DISC.handsFree; hf.classList.toggle("on",DISC.handsFree); toast(DISC.handsFree?"🙌 Mains libres : je t'écoute après chaque réponse":"Mains libres coupé"); };
+  var chips=ov.querySelector(".disc-chips"); coachSuggestions(c).forEach(function(s){ var b=el("button","coach-chip"); b.textContent=s; b.onclick=function(){ var inp=ov.querySelector(".disc-input"); inp.value=s; discSend(); }; chips.appendChild(b); });
+  var last=null; for(var i=S.coachMsgs.length-1;i>=0;i--){ if(S.coachMsgs[i].role==="bot"){ last=S.coachMsgs[i].text; break; } }
+  setTimeout(function(){ discSpeak(last||coachGreeting(c), c.ttsLang); },450);
 }
 function vTabbar(){ var t=el("div","tabbar"); [["home","🏠","Accueil"],["review","🧠","Réviser"],["coach","💬","Coach"],["translate","🌐","Traduire"],["league","🏆","Ligue"],["profile","🙂","Profil"]].forEach(function(x){ var b=el("button","tab"+(VIEW===x[0]||(x[0]==="review"&&VIEW==="dict")?" active":"")); b.innerHTML='<span>'+x[1]+'</span><i>'+x[2]+'</i>'; b.onclick=function(){go(x[0]);}; t.appendChild(b); }); return t; }
 
@@ -626,7 +720,9 @@ function maybeOfferPlacement(){
   var b2=el("button","btn-ghost"); b2.textContent="Je débute — commencer simple"; b2.onclick=function(){ S.diff=0; save(); m.close(); render(); }; m.body.appendChild(b2);
 }
 function startExam(ui){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
-  LESSON={ui:ui,li:null,exam:true,review:false,ex:buildExam(ui),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render(); }
+  LESSON={ui:ui,li:null,exam:true,review:false,ex:buildExam(ui),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render();
+  var msg="C'est Bee qui te fait passer l'examen ! Concentre-toi, je suis avec toi 🐝";
+  setTimeout(function(){ beeBubble(msg,5000); speakLang(msg,"fr-FR"); },350); }
 function outOfHearts(){ VIEW="home"; render(); var m=modal();
   m.body.innerHTML='<div class="mascot-mini">'+MASCOT("sad",90)+'</div><h3>Plus de vies ❤️</h3><p>Tes cœurs reviennent seuls (1 / 30 min).</p>';
   var b1=el("button","btn-main"); b1.textContent="Recharger (350 💎)"; b1.onclick=function(){ if(S.gems>=350){S.gems-=350;S.hearts=HEART_MAX;S.heartTs=Date.now();save();m.close();render();} else toast("Pas assez de gemmes 💎"); };
@@ -640,7 +736,11 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
   if(ex.kind==="mc")body.appendChild(exMC(ex)); else if(ex.kind==="match")body.appendChild(exMatch(ex)); else if(ex.kind==="bank")body.appendChild(exBank(ex)); else if(ex.kind==="type")body.appendChild(exType(ex)); else if(ex.kind==="speak")body.appendChild(exSpeak(ex));
   d.appendChild(body);
   var foot=el("div","lesson-foot"+(L.answered?(L.ok?" ok":" ko"):""));
-  if(L.answered){ var fb=el("div","feedback"); fb.innerHTML=L.ok?'<b>✅ Correct !</b>'+(L.combo>=3?' <span class="cb">🔥 combo x'+L.combo+' (+1 XP)</span>':''):'<b>❌ Bonne réponse :</b> '+esc(L._sol||""); foot.appendChild(fb); }
+  if(L.answered){ var fb=el("div","feedback");
+    var PRAISE=["✅ Super !","✅ Bien joué !","✅ Bzzz… parfait ! 🐝","✅ Exact !","✅ Bee est fière de toi !","✅ Impeccable !"];
+    var CONSOLE_=["❌ Presque ! La bonne réponse :","❌ Pas grave, on retient :","❌ Bee te souffle la réponse :"];
+    fb.innerHTML=L.ok?('<b>'+PRAISE[(L.i+L.correct)%PRAISE.length]+'</b>'+(L.combo>=3?' <span class="cb">🔥 combo x'+L.combo+' (+1 XP)</span>':'')):('<b>'+CONSOLE_[L.i%CONSOLE_.length]+'</b> '+esc(L._sol||""));
+    foot.appendChild(fb); }
   var main=el("button","btn-main check"); main.id="mainBtn"; main.textContent=L.answered?"Continuer":"Vérifier"; main.disabled=!L.answered&&!L._can; main.onclick=function(){ L.answered?nextEx():checkEx(ex); }; foot.appendChild(main);
   d.appendChild(foot); return d;
 }
@@ -710,6 +810,8 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
     if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")setTimeout(function(){speak(ex.w.t);},140); }
   else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]); }
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
+  setTimeout(function(){ var m=document.querySelector(".lesson .bee-img"); if(!m)return;
+    if(ok){ beeAnimate(m,"hop"); if(L.combo>=2)beeSparkles(m,6); } else { beeAnimate(m,"shake"); } },40);
 }
 function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol="";
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
@@ -725,6 +827,7 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
   VIEW="home"; render();
   var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",120)+'</div><h3>'+(L.wrong===0?"Sans faute ! 🎉":"Leçon terminée ✅")+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+(L.wrong===0?3:1)+'</b><i>Gemmes</i></div></div>';
   var b=el("button","btn-main"); b.textContent="Continuer"; b.onclick=function(){ m.close(); render(); }; m.body.appendChild(b);
+  setTimeout(function(){ var mi=m.body.querySelector(".bee-img"); if(mi){ beeAnimate(mi,"hop"); if(L.wrong===0)beeSparkles(mi,10); } },200);
 }
 
 /* ---------- Toast / modal ---------- */
