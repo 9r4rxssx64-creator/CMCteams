@@ -160,7 +160,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .rig-lid.ll{left:32.2%;top:27.4%;width:18.2%;height:15%}
 .rig-lid.lr{left:51.3%;top:27.2%;width:17.4%;height:15.2%}
 .bee-rig.blink .rig-lid{opacity:1}
-@media (prefers-reduced-motion:reduce){.rig-wl,.rig-wr,.bee-rig.talk .rig-wl,.bee-rig.talk .rig-wr,.bee-rig.talk .rig-arm{animation:none}}
+/* Mouvements du corps ENTIER — 100% locaux et gratuits (aucune API) : danse, saut, vol, marche.
+   Placés APRÈS .disc-bee.talk pour gagner la cascade : pendant un mouvement, le petit bob de
+   parole s'efface mais les ailes/bras (enfants) continuent. */
+.disc-bee.mv-dance{animation:rigDance 1.05s ease-in-out infinite}
+.disc-bee.mv-jump{animation:rigJump .85s cubic-bezier(.36,.07,.19,.97) infinite}
+.disc-bee.mv-fly{animation:rigFly 3.6s ease-in-out infinite}
+.disc-bee.mv-walk{animation:rigWalk .8s ease-in-out infinite}
+.disc-bee.mv-dance .rig-wl,.disc-bee.mv-fly .rig-wl{animation:wingFlapL .3s ease-in-out infinite}
+.disc-bee.mv-dance .rig-wr,.disc-bee.mv-fly .rig-wr{animation:wingFlapR .3s ease-in-out infinite}
+.disc-bee.mv-dance .rig-arm{animation:armWave .5s ease-in-out infinite}
+@keyframes rigDance{0%,100%{transform:rotate(0) translate(0,0)}20%{transform:rotate(-7deg) translate(-4%,-3%)}40%{transform:rotate(6deg) translate(4%,0)}60%{transform:rotate(-6deg) translate(-3%,-4%)}80%{transform:rotate(7deg) translate(3%,0)}}
+@keyframes rigJump{0%,100%{transform:translateY(0) scale(1,1)}18%{transform:translateY(2%) scale(1.05,.9)}45%{transform:translateY(-16%) scale(.97,1.06)}70%{transform:translateY(0) scale(1.04,.94)}85%{transform:translateY(-1%) scale(1,1)}}
+@keyframes rigFly{0%,100%{transform:translate(0,0) rotate(0)}12%{transform:translate(7%,-9%) rotate(5deg)}30%{transform:translate(13%,2%) rotate(-3deg)}50%{transform:translate(0,6%) rotate(0)}70%{transform:translate(-13%,-4%) rotate(4deg)}88%{transform:translate(-6%,-10%) rotate(-4deg)}}
+@keyframes rigWalk{0%,100%{transform:translateY(0) rotate(-2.5deg)}25%{transform:translateY(-3%) rotate(0)}50%{transform:translateY(0) rotate(2.5deg)}75%{transform:translateY(-3%) rotate(0)}}
+.disc-moves{display:flex;gap:10px;margin-top:10px}
+.disc-moves button{width:46px;height:46px;border-radius:14px;background:var(--card2);border:1px solid var(--line);font-size:22px;cursor:pointer}
+.disc-moves button:active{transform:scale(.92)}
+@media (prefers-reduced-motion:reduce){.rig-wl,.rig-wr,.bee-rig.talk .rig-wl,.bee-rig.talk .rig-wr,.bee-rig.talk .rig-arm,.disc-bee.mv-dance,.disc-bee.mv-jump,.disc-bee.mv-fly,.disc-bee.mv-walk{animation:none}}
 .disc-mouth{position:absolute;left:52.4%;top:42.6%;width:6.6%;height:5.2%;transform:translate(-50%,-50%) scale(1);border-radius:42% 42% 50% 50%/36% 36% 64% 64%;background:radial-gradient(60% 55% at 50% 66%,#ff5d6c 0%,#8a3018 60%,#53200f 100%);border:2px solid #3a1c10;opacity:0;pointer-events:none}
 .disc-mouth.talking{opacity:1;animation:discMouth .27s ease-in-out infinite alternate}
 @keyframes discMouth{0%{transform:translate(-50%,-50%) scale(1.02,.96)}100%{transform:translate(-50%,-50%) scale(1.38,1.52)}}
