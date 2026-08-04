@@ -81,7 +81,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 #stageWrap.plan #treeBg{opacity:0}
 #stage{position:absolute;left:0;top:0;z-index:1;transform-origin:0 0;will-change:transform}
 #stage svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
-.tnode{position:absolute;transform:translate(-50%,-50%);width:186px;padding:12px 13px;border-radius:14px;background:linear-gradient(180deg,#fffdf4,#f2e6c8);border:1.5px solid #b8912f;display:flex;gap:11px;align-items:center;box-shadow:0 6px 16px rgba(74,54,22,.4),inset 0 1px 0 rgba(255,255,255,.7);cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s}
+.tnode{position:absolute;transform:translate(-50%,-50%);width:186px;padding:12px 13px;border-radius:16px;background:linear-gradient(180deg,#fffef8,#f6ecd3);border:1px solid #cbb684;display:flex;gap:11px;align-items:center;box-shadow:0 6px 16px rgba(74,54,22,.4),inset 0 1px 0 rgba(255,255,255,.7);cursor:pointer;transition:transform .12s,border-color .2s,box-shadow .2s}
 .tnode:active{transform:translate(-50%,-50%) scale(.97)}
 .tnode.root{border-color:var(--gold);box-shadow:0 0 0 1.5px var(--gold),0 12px 34px rgba(240,200,116,.3)}
 .tnode.sM{border-top:2px solid rgba(93,159,214,.6)}
@@ -113,6 +113,12 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
   #printArea .pr-foot{font-size:11px;color:#8a7a55;margin-top:8px;text-align:center}
   @page{size:A4 landscape;margin:10mm}
 }
+.tmed{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:7px;width:158px;cursor:pointer}
+.tmed .tma{border-radius:999px;display:inline-flex}
+.tmed .tma img,.tmed .tma div{border-radius:999px}
+.tmn{display:inline-flex;flex-direction:column;align-items:center;gap:1px;background:rgba(52,36,12,.82);color:#f7ecce;font-weight:700;font-size:12.5px;line-height:1.25;padding:5px 12px;border-radius:11px;text-align:center;max-width:158px;box-shadow:0 3px 9px rgba(20,12,2,.35);backdrop-filter:blur(3px)}
+.tmn small{font-weight:600;font-size:10.5px;color:#d9c48f}
+.tmed.root .tmn{background:linear-gradient(135deg,#b0842c,#8a6420);color:#fff8e6}
 .relkev{color:var(--gold);font-weight:700;font-size:13.5px;margin-top:2px}
 .tnode.blood{border-color:#c9992f;box-shadow:0 6px 16px rgba(74,54,22,.4),0 0 0 2.5px rgba(201,153,47,.55),inset 0 1px 0 rgba(255,255,255,.7)}
 .brchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
@@ -209,7 +215,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.38";
+var APP_VER="v2.39";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -384,7 +390,15 @@ var BRANCHES=[
   {re:/PACHIAUDI/i,c:"#8a7a55",lab:"Pachiaudi"}
 ];
 function branchOf(p){var n=(p&&p.nom)||"";for(var i=0;i<BRANCHES.length;i++)if(BRANCHES[i].re.test(n))return BRANCHES[i];return {c:"#9a8c66",lab:"Autre"};}
-function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||(p.vivant?"vivant":"");return '<div class="tnode s'+(p.sexe||"X")+(n.root?" root":"")+((window._LSET&&_LSET[n.id]&&!n.root)?" blood":"")+'" style="left:'+n.x+'px;top:'+n.y+'px;border-left:6px solid '+branchOf(p).c+'" data-open="'+n.id+'">'+avatarHTML(p,48)+'<div style="min-width:0"><div class="tn">'+esc(full(p))+'</div><div class="ty">'+esc(sub)+'</div></div></div>';}
+var _RENDERSTYLE="card";
+function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||(p.vivant?"vivant":"");
+  var blood=(window._LSET&&_LSET[n.id]&&!n.root);var bc=branchOf(p).c;
+  if(_RENDERSTYLE==="med"){
+    return '<div class="tmed'+(n.root?" root":"")+(blood?" blood":"")+'" style="left:'+n.x+'px;top:'+n.y+'px" data-open="'+n.id+'">'
+      +'<span class="tma" style="box-shadow:0 0 0 3px '+bc+', 0 4px 12px rgba(30,20,5,.45)'+((blood||n.root)?', 0 0 0 6px rgba(201,153,47,.65)':'')+'">'+avatarHTML(p,n.root?62:52)+'</span>'
+      +'<span class="tmn">'+esc(full(p))+(sub?'<small>'+esc(sub)+'</small>':'')+'</span></div>';
+  }
+  return '<div class="tnode s'+(p.sexe||"X")+(n.root?" root":"")+(blood?" blood":"")+'" style="left:'+n.x+'px;top:'+n.y+'px;border-left:6px solid '+bc+'" data-open="'+n.id+'">'+avatarHTML(p,48)+'<div style="min-width:0"><div class="tn">'+esc(full(p))+'</div><div class="ty">'+esc(sub)+'</div></div></div>';}
 /* Arbre illustré (décor heirloom « Our Family Tree ») — fond fixe du cadre,
    racines en bas, tronc central, branches qui montent, feuillage doré/vert. */
 function treeBgSVG(){
@@ -487,25 +501,29 @@ function drawStage(fit){
   window._LSET=_lineageSet();
   function goldLink(l){if(!l.child||!_LSET[l.child])return false;var c=P(l.child);return !!(c&&((c.pere&&_LSET[c.pere])||(c.mere&&_LSET[c.mere])));}
   var rules=(_lay.bands||[]).map(function(b){return '<line x1="'+PADX+'" y1="'+b.y+'" x2="'+(W-PADX)+'" y2="'+b.y+'" stroke="rgba(122,84,39,.28)" stroke-width="1.4" stroke-dasharray="2 9"/>';}).join("");
-  var plan=(VIEWSTYLE==="plan");
+  var plan=(VIEWSTYLE==="plan");_RENDERSTYLE=plan?"card":"med";
   var genLabels="";
+  var zebra="";
   {var rowsY={};_lay.nodes.forEach(function(n){var k=Math.round(n.y/10)*10;rowsY[k]=Math.min(rowsY[k]||1e9,n.y);});
     var _b2=(_lay.bands&&_lay.bands.length>1)?_lay.bands[1].y:Infinity;
     var ys=Object.keys(rowsY).map(Number).sort(function(a,b){return a-b;}).filter(function(y){return rowsY[y]<_b2;});
+    if(plan)ys.forEach(function(y,i){if(i%2===1)zebra+='<rect x="0" y="'+(rowsY[y]-79)+'" width="'+W+'" height="158" fill="rgba(122,84,39,.05)"/>';});
     ys.forEach(function(y,i){if(plan)rules+='<line x1="0" y1="'+(rowsY[y]-76)+'" x2="'+W+'" y2="'+(rowsY[y]-76)+'" stroke="rgba(122,84,39,.16)" stroke-width="1.2" stroke-dasharray="3 10"/>';
       genLabels+='<div class="genlab'+(plan?'':' soft')+'" style="top:'+Math.max(4,rowsY[y]-70)+'px">Gén. '+(i+1)+'</div>';});}
   var couples=[];
+  function elbow(l){var r=12,my=(l.y1+l.y2)/2;if(Math.abs(l.x2-l.x1)<3)return 'M'+l.x1+' '+l.y1+' L '+l.x2+' '+l.y2;var sg=l.x2>l.x1?1:-1;
+    return 'M'+l.x1+' '+l.y1+' L '+l.x1+' '+(my-r)+' Q '+l.x1+' '+my+' '+(l.x1+sg*r)+' '+my+' L '+(l.x2-sg*r)+' '+my+' Q '+l.x2+' '+my+' '+l.x2+' '+(my+r)+' L '+l.x2+' '+l.y2;}
   var paths=_lay.links.map(function(l){
-    if(l.couple){var midx=(l.x1+l.x2)/2;
-      if(plan){couples.push({x:midx,y:l.y1});return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="url(#cyan)" stroke-width="2.6" stroke-linecap="round"/>';}
-      var x=Math.min(l.x1,l.x2)-96,w=Math.abs(l.x2-l.x1)+192,y=l.y1-46;couples.push({x:midx,y:l.y1-46});
-      return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="92" rx="24" fill="rgba(176,132,44,.10)" stroke="url(#gold)" stroke-width="1.8"/>';}
-    var my=(l.y1+l.y2)/2;var gold=goldLink(l);var st=gold?'#c9992f':'url(#cyan)';var sw=gold?(plan?3.6:3.8):(plan?2.3:2.6);
-    if(plan)return '<path d="M'+l.x1+' '+l.y1+' V '+my+' H '+l.x2+' V '+l.y2+'" fill="none" stroke="'+st+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round"/>';
-    return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="'+st+'" stroke-width="'+sw+'" stroke-linecap="round"/>';}).join("");
+    if(l.couple){var midx=(l.x1+l.x2)/2;couples.push({x:midx,y:l.y1});
+      return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="'+(plan?'#b0842c':'#d9c48f')+'" stroke-width="2.4" stroke-linecap="round"'+(plan?'':' opacity=".9"')+'/>';}
+    var my=(l.y1+l.y2)/2;var gold=goldLink(l);
+    if(plan){var st=gold?'#c9992f':'#9b7b45';var sw=gold?3.4:1.9;
+      return '<path d="'+elbow(l)+'" fill="none" stroke="'+st+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round"'+(gold?'':' opacity=".75"')+'/>';}
+    var st2=gold?'#e9b94a':'#d9c48f';var sw2=gold?3.6:2.2;
+    return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="'+st2+'" stroke-width="'+sw2+'" stroke-linecap="round" opacity=".92"/>';}).join("");
   var defs='<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b0842c"/><stop offset="1" stop-color="#8a6420"/></linearGradient><linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5427"/><stop offset="1" stop-color="#5a3d18"/></linearGradient></defs>';
-  var svg='<svg width="'+W+'" height="'+_lay.h+'">'+defs+rules+paths+'</svg>';
-  var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+b.y+'px">'+esc(b.label)+'</div>';}).join("");
+  var svg='<svg width="'+W+'" height="'+_lay.h+'">'+defs+zebra+rules+paths+'</svg>';
+  var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+(b.y-(plan?0:30))+'px">'+esc(b.label)+'</div>';}).join("");
   var rings=couples.map(function(c){return '<div class="couplebadge" style="left:'+c.x+'px;top:'+c.y+'px">💍</div>';}).join("");
   stage.style.width=W+"px";stage.style.height=_lay.h+"px";
   stage.innerHTML=svg+genLabels+labels+rings+_lay.nodes.map(tnodeHTML).join("");
@@ -563,7 +581,7 @@ function exportPrint(){
     var lay=layoutMainFamily();if(!lay||!lay.nodes.length){toast("Rien à imprimer");return;}
     var W=lay.w,H=lay.h;
     var sc=Math.min(1100/W,720/H,1);
-    window._LSET=_lineageSet();
+    window._LSET=_lineageSet();_RENDERSTYLE="card";
     var svg='<svg width="'+W+'" height="'+H+'" style="position:absolute;left:0;top:0">'+lay.links.map(function(l){
       var gold=l.child&&_LSET[l.child]&&(function(){var c=P(l.child);return c&&((c.pere&&_LSET[c.pere])||(c.mere&&_LSET[c.mere]));})();
       if(l.couple)return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="#7a5427" stroke-width="2.6" stroke-linecap="round"/>';
