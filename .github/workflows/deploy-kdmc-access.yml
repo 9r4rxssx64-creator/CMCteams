@@ -1,0 +1,107 @@
+name: Deploy kdmc-access (journal « qui se connecte »)
+
+# Worker central + isolé du journal unifié des connexions/actions du domaine
+# (page admin PIN-gated + POST /log depuis les apps + GET /history agrégé).
+# Sous-domaine dédié admin.kd-mc.com (custom_domain auto-provisionné).
+#
+# AUTO-TRIGGER : push main sur services/kdmc-access/** OU ce workflow, + manuel.
+# Secrets requis (déjà présents dans le repo) :
+#   CLOUDFLARE_API_TOKEN, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, APEX_ADMIN_PIN_SHA256.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'services/kdmc-access/**'
+      - '.github/workflows/deploy-kdmc-access.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-kdmc-access
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Tests unitaires worker
+        working-directory: services/kdmc-access
+        run: node --test
+
+      - name: Install wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Pre-flight secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          APEX_ADMIN_PIN_SHA256: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
+        run: |
+          set -e
+          MISSING=""
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && MISSING="$MISSING CLOUDFLARE_API_TOKEN"
+          [ -z "$FIREBASE_PRIVATE_KEY" ] && MISSING="$MISSING FIREBASE_PRIVATE_KEY"
+          [ -z "$FIREBASE_CLIENT_EMAIL" ] && MISSING="$MISSING FIREBASE_CLIENT_EMAIL"
+          [ -z "$APEX_ADMIN_PIN_SHA256" ] && MISSING="$MISSING APEX_ADMIN_PIN_SHA256"
+          if [ -n "$MISSING" ]; then echo "::error::Secrets GitHub manquants :$MISSING"; exit 1; fi
+          echo "::notice::Secrets OK"; wrangler --version
+
+      - name: Push secrets to worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          APEX_ADMIN_PIN_SHA256: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
+        working-directory: services/kdmc-access
+        run: |
+          set -e
+          printf '%s' "$FIREBASE_PRIVATE_KEY"  | wrangler secret put FIREBASE_PRIVATE_KEY
+          printf '%s' "$FIREBASE_CLIENT_EMAIL" | wrangler secret put FIREBASE_CLIENT_EMAIL
+          printf '%s' "$APEX_ADMIN_PIN_SHA256" | wrangler secret put APEX_ADMIN_PIN_SHA256
+          echo "::notice::Secrets poussés au worker."
+
+      - name: Deploy worker
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        working-directory: services/kdmc-access
+        run: |
+          set -e
+          DEPLOY_OUT=$(wrangler deploy 2>&1); echo "$DEPLOY_OUT"
+          WORKER_URL=$(echo "$DEPLOY_OUT" | grep -oE 'https://kdmc-access\.[a-z0-9-]+\.workers\.dev' | head -1)
+          [ -n "$WORKER_URL" ] && echo "worker_url=$WORKER_URL" >> $GITHUB_OUTPUT
+
+      - name: Health check
+        if: ${{ steps.deploy.outputs.worker_url != '' }}
+        run: |
+          set -e
+          for i in 1 2 3; do
+            if curl -fsS "${{ steps.deploy.outputs.worker_url }}/health" > /tmp/h.json; then cat /tmp/h.json; echo; echo "::notice::Health OK"; exit 0; fi
+            echo "retry $i"; sleep 5
+          done
+          echo "::error::Health KO"; exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Deploy kdmc-access"
+            echo "| Étape | Statut |"
+            echo "|---|---|"
+            echo "| Tests | ✅ |"
+            echo "| Deploy | ${{ steps.deploy.outcome == 'success' && '✅' || '❌' }} |"
+            echo ""
+            echo "Page admin : **https://admin.kd-mc.com** (custom_domain) ou l'URL workers.dev ci-dessous."
+            [ -n "${{ steps.deploy.outputs.worker_url }}" ] && echo "\`${{ steps.deploy.outputs.worker_url }}\`"
+          } >> $GITHUB_STEP_SUMMARY

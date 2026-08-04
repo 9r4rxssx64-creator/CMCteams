@@ -131,11 +131,16 @@ jobs:
                    apex-chat.kd-mc.com la-detente.kd-mc.com chez-lolo.kd-mc.com \
                    dashboard.kd-mc.com sourcing.kd-mc.com coffre.kd-mc.com bot.kd-mc.com \
                    departs.kd-mc.com cmcteams-light.kd-mc.com \
-                   autorisations.kd-mc.com arbre.kd-mc.com; do
+                   autorisations.kd-mc.com arbre.kd-mc.com lingua.kd-mc.com \
+                   studio.kd-mc.com; do
             echo "== https://$H =="
             curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
               || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"
           done
+          echo "== CONTENU studio.kd-mc.com (l'app se charge-t-elle vraiment ?) =="
+          curl -fsS -m 20 -L "https://studio.kd-mc.com/" 2>/dev/null | grep -o "Créa Studio" | head -1 \
+            && echo "  ✅ l'app Créa Studio est bien servie sur le domaine" \
+            || echo "  ::warning:: studio.kd-mc.com ne renvoie pas encore l'app (cert/DNS en cours, ou routage à vérifier)"
 
       - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
         # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,
