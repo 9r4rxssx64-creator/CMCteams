@@ -27,6 +27,8 @@ jobs:
         run: node tools/arbre/probe-isoles.mjs || echo "sonde isolés partielle"
       - name: Toutes villes & pays — nouvelles pistes (INSEE, presse CH, Gallica, JdM, Vaud, AD13)
         run: node tools/arbre/research-nouvelles-pistes.mjs || echo "nouvelles pistes partielles"
+      - name: Vague 5 — L'Écho de Beausoleil (Gallica) + cimetières Monaco + JdM formulaire
+        run: node tools/arbre/research-echo-cimetieres.mjs || echo "vague 5 partielle"
       - name: Nettoyage node_modules (pas de commit)
         run: rm -rf node_modules package.json package-lock.json
       - name: Commit images + rapport
