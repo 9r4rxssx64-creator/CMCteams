@@ -26,9 +26,11 @@ function log(s) { console.log(s); L.push(s); }
 
 /* Cibles : (base, nom recherché, filtre de ligne → dossier de sortie)
    On capture TOUTES les lignes de chaque nom — chaque acte peut prouver un lien. */
+const NOMS = ['MAIFFRET', 'SAUVAIGO', 'MOLINARIO', 'PACHIAUDI', 'BRUNO', 'VIRGILI', 'DENTAU', 'VAN DEN BOSCH', 'DESARZENS', 'DE SARZENS'];
+const MAXROWS = 12; /* plafond par nom (BRUNO est très courant à Monaco) */
 const TARGETS = [
-  { tag: 'mc1900', base: 'https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/', noms: ['MAIFFRET', 'SAUVAIGO', 'MOLINARIO', 'PACHIAUDI'] },
-  { tag: 'mcav1900', base: 'https://archives.mairie.mc/a/5/rechercher-par-acte-indexe/', noms: ['MAIFFRET', 'SAUVAIGO', 'MOLINARIO', 'PACHIAUDI'] },
+  { tag: 'mc1900', base: 'https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/', noms: NOMS },
+  { tag: 'mcav1900', base: 'https://archives.mairie.mc/a/5/rechercher-par-acte-indexe/', noms: NOMS },
 ];
 
 function slug(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 90); }
@@ -87,7 +89,8 @@ for (const t of TARGETS) {
         });
         return out;
       });
-      log('- ' + rows.length + ' acte(s) avec Visualiser');
+      log('- ' + rows.length + ' acte(s) avec Visualiser' + (rows.length > MAXROWS ? ' (plafonné à ' + MAXROWS + ')' : ''));
+      if (rows.length > MAXROWS) rows.length = MAXROWS;
       if (!rows.length) { await pg.close(); continue; }
 
       /* Ouvrir chaque visionneuse dans la MÊME session (cookie requis) */

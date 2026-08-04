@@ -3630,3 +3630,25 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
   tombes+photos, avis de décès DuckDuckGo par défunt ≥1990, archives vaudoises Desarzens).
   In-app : chip « 📋 Copier la demande d'acte » (lettre pré-remplie avec filiation) sur chaque fiche.
 - Rapports : arbre/research/CLOUD.md · REGISTRES.md · INFOS.md (+ brut registresraw/, infosraw/).
+
+### Suite session 2026-08-04 — v2.32→v2.40 : audit complet + visuel familles + « raccorde les isolés »
+
+- **v2.32/v2.33** : audit 10 axes mesuré (audit/arbre-2026-08-04.md) — favicon+icône iPhone, touch
+  targets 44px, badge 📜 acte ✓ par personne + compteur couverture, chips filtre famille dans
+  Personnes/Actes, section « 🤖 Recherches automatiques » dans Réglages. 0 mutation DOM au repos.
+- **v2.34→v2.37** : export PDF A4 paysage (window.print, CSP-safe), étiquettes Gén. vue photo,
+  point de vue PAR MEMBRE (« C'est moi » → lignée or + liens de parenté depuis SOI, `relationToKevin`),
+  vue NEUTRE par défaut si personne n'est choisi, légende ❓.
+- **v2.38→v2.40** (retours captures Kevin « pas beau ni clair ») : photo `object-fit:cover` (pleine),
+  NOM de famille EN COULEUR sur chaque carte/médaillon (8 branches `BRANCHES`, fond teinté, anneau
+  avatar 4px), traits nets arrondis (elbow r=12 ; plan brun 2.6px, photo crème 2.8px, lignée or),
+  pointillés par génération supprimés (zébrure .07 seule). Vérifié Playwright : 57 médaillons photo
+  pleine, 51 noms colorés au plan, 0 erreur JS.
+- **« Recorde les membres qui restent »** : 4 isolés identifiés (François MAIFFRET n.1912 Monaco †2004
+  Nice — acte n°71/1912 trouvé ; Myriam MAIFFRET n.1935 Monaco †2024 Nice ; Claude Alain DE SARZENS
+  n.1941 Marseille †2022 Suisse ; Jean Marius Victor SAUVAIGO n.1912 Nice †1999 Nice). AUCUN lien
+  inventé (leçon lien fantôme). Livré : `tools/arbre/fetch-actes-images.mjs` + workflow
+  `arbre-actes-images.yml` (CI télécharge les IMAGES scannées des actes Monaco — l'acte de naissance
+  porte les noms des parents = preuve) + `tools/arbre/probe-isoles.mjs` (avis de décès hommages.ch /
+  Nice-Matin / Dans Nos Cœurs / Libra Memoria + Journal de Monaco 1935). Viewer Arkothèque =
+  `ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=BASE64')` dans le href.
