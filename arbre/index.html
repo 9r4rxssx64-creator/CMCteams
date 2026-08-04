@@ -209,7 +209,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.37";
+var APP_VER="v2.38";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -228,8 +228,8 @@ function idbGet(k){return new Promise(function(res){if(!IDB)return res(null);try
 function idbSet(k,v){return new Promise(function(res){if(!IDB)return res(false);try{var t=IDB.transaction("kv","readwrite").objectStore("kv").put(v,k);t.onsuccess=function(){res(true);};t.onerror=function(){res(false);};}catch(e){res(false);}});}
 var DB={persons:{},meta:{updatedAt:0}};
 var CODEHASH="",VIEW="tree",ROOT=null,TREEMODE="asc",EXP={},ME="";
-var VIEWER="seed_kevin";try{var _vw=localStorage.getItem("arbre_viewer");if(_vw)VIEWER=_vw;}catch(e){}
-function viewerId(){return P(VIEWER)?VIEWER:"seed_kevin";}
+var VIEWER="";try{var _vw=localStorage.getItem("arbre_viewer");if(_vw)VIEWER=_vw;}catch(e){}
+function viewerId(){return (VIEWER&&P(VIEWER))?VIEWER:null;}
 function setViewer(id){VIEWER=id;try{localStorage.setItem("arbre_viewer",id);}catch(e){}}
 function textOnly(db){var c={persons:{},meta:db.meta};for(var id in db.persons){var p=db.persons[id],q={};for(var k in p)if(k!=="photos")q[k]=p[k];q.photoCount=(p.photos||[]).length;c.persons[id]=q;}return c;}
 async function saveLocal(){DB.meta.updatedAt=now();await idbSet("tree",DB);try{localStorage.setItem("arbre_v2_text",JSON.stringify(textOnly(DB)));}catch(e){}}
@@ -585,13 +585,14 @@ function exportPrint(){
   }catch(e){toast("Impression impossible : "+e.message);}
 }
 function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.innerHTML=
-  '<div class="sec"><h3>Temps réel</h3><div class="kv"><span class="k">Synchro famille</span><span>'+(_cloudOK?'🟢 Active':'🟠 Local (hors-ligne)')+'</span></div><div class="kv"><span class="k">Ton nom (auteur des ajouts)</span><span>'+esc(ME||"—")+'</span></div><div class="kv"><span class="k">🙋 « Moi » dans l\'arbre</span><span>'+esc(full(P(viewerId()))||"—")+'</span></div><div class="kv"><span class="k">Personnes</span><span>'+n+'</span></div><div class="row2" style="margin-top:11px"><button class="btn" id="btnSync">🔄 Synchroniser</button><button class="btn" id="btnName">✏️ Mon nom</button></div></div>'+
+  '<div class="sec"><h3>Temps réel</h3><div class="kv"><span class="k">Synchro famille</span><span>'+(_cloudOK?'🟢 Active':'🟠 Local (hors-ligne)')+'</span></div><div class="kv"><span class="k">Ton nom (auteur des ajouts)</span><span>'+esc(ME||"—")+'</span></div><div class="kv"><span class="k">🙋 « Moi » dans l\'arbre</span><span>'+(viewerId()?esc(full(P(viewerId()))):"vue neutre")+'</span></div>'+(viewerId()?'<button class="btn ghost sm" id="btnNeutre" style="width:100%;margin-top:8px">↺ Revenir à la vue neutre (aucun « moi »)</button>':'<p class="mut" style="font-size:12.5px;margin:6px 0 0">Ouvre TA fiche → « 🙋 C\'est moi » pour voir l\'arbre de ton point de vue.</p>')+'<div class="kv"><span class="k">Personnes</span><span>'+n+'</span></div><div class="row2" style="margin-top:11px"><button class="btn" id="btnSync">🔄 Synchroniser</button><button class="btn" id="btnName">✏️ Mon nom</button></div></div>'+
   '<div class="sec"><h3>Sauvegarde</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Auto-sauvegardé en continu. Tu peux aussi exporter/importer un fichier.</p><div class="row2"><button class="btn" id="btnExport">⬇️ Exporter</button><button class="btn" id="btnImport">⬆️ Importer</button></div><button class="btn gold" id="btnPrint" style="width:100%;margin-top:8px">🖨 Imprimer / PDF de l\'arbre ('+famLabel(FAMKEY)+')</button><input type="file" id="fileImport" accept="application/json" class="hidden"></div>'+
   '<div class="sec"><h3>Sécurité</h3><button class="btn" id="btnCode" style="width:100%">🔑 Changer le code famille</button><button class="btn ghost" id="btnLock" style="width:100%;margin-top:8px">🔒 Verrouiller</button></div>'+
   '<div class="sec"><h3>🤖 Recherches automatiques</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Le robot cherche chaque mois : actes INSEE, registres de Monaco, presse ancienne, et vérifie le nuage familial.</p><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/REGISTRES.md">📜 Actes &amp; registres trouvés <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md">📚 Infos presse &amp; sources <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/CLOUD.md">☁️ Vérification du nuage familial <span class="mut">↗</span></a></div>'+
   '<div class="sec"><h3>À propos</h3><p class="mut" style="font-size:13px;margin:0">Arbre familial '+APP_VER+'. Auto-save + synchro temps réel (code famille). Photos tous formats converties automatiquement. Ajoute/corrige/commente librement.</p></div>';
   $("#btnSync").onclick=function(){toast("Synchronisation…");cloudPull(false);};
   $("#btnName").onclick=setMe;
+  var bn=$("#btnNeutre");if(bn)bn.onclick=function(){setViewer("");toast("↺ Vue neutre — personne n'est « moi »");render();};
   var bp=$("#btnPrint");if(bp)bp.onclick=exportPrint;
   $("#btnExport").onclick=doExport;$("#btnImport").onclick=function(){$("#fileImport").click();};$("#fileImport").onchange=doImport;
   $("#btnCode").onclick=changeCode;$("#btnLock").onclick=function(){sessionStorage.removeItem("arbre_unlocked");localStorage.removeItem("arbre_trust");location.reload();};
@@ -642,7 +643,7 @@ function buildActRequest(p,type){
 }
 /* Légende : comment lire l'arbre (1 tap sur ❓). */
 function showLegend(){showOverlay('<div class="sheet"><button class="bkbtn" data-close aria-label="Fermer">✕</button><div class="grab"></div><h2 style="padding-left:48px">❓ Comment lire l\'arbre</h2>'
- +'<div class="sec"><div class="legrow"><span class="legico">⭐</span><div><b>La carte encadrée d\'or épais</b> = « moi » ('+esc(full(P(viewerId())))+'). Chacun choisit la sienne : ouvre TA fiche → « 🙋 C\'est moi ».</div></div>'
+ +'<div class="sec"><div class="legrow"><span class="legico">⭐</span><div>'+(viewerId()?'<b>La carte encadrée d\'or épais</b> = « moi » ('+esc(full(P(viewerId())))+'). Chacun choisit la sienne sur son téléphone.':'<b>Vue neutre</b> — personne n\'est « moi ». Ouvre TA fiche → « 🙋 C\'est moi » pour voir TA lignée en or et les parentés depuis toi.')+'</div></div>'
  +'<div class="legrow"><span class="legico">🟡</span><div><b>Cartes et traits dorés</b> = ta lignée directe : tes ancêtres au-dessus ⬆️, tes descendants en dessous ⬇️.</div></div>'
  +'<div class="legrow"><span class="legico">⬆️</span><div><b>Gén. 1</b> en haut = l\'ancêtre le plus ancien. Chaque rangée = une génération.</div></div>'
  +'<div class="legrow"><span class="legico">🎨</span><div><b>Le liseré de couleur à gauche de chaque carte = sa famille de naissance :</b><div class="brchips">'+BRANCHES.slice(0,7).map(function(b){return '<span class="brchip"><i style="background:'+b.c+'"></i>'+b.lab+'</span>';}).join("")+'</div></div></div>'
@@ -653,11 +654,11 @@ function showLegend(){showOverlay('<div class="sheet"><button class="bkbtn" data
  +'<button class="btn ghost" data-close style="width:100%;margin-top:8px">Fermer</button></div>');}
 /* Lien de parenté par rapport à Kevin (racine de l'arbre) — libellés FR clairs. */
 function _upMap(start){var m={},q=[[start,0]];while(q.length){var it=q.shift(),x=it[0],d=it[1],p=P(x);if(!p)continue;[p.pere,p.mere].forEach(function(par){if(par&&P(par)&&m[par]===undefined){m[par]=d+1;q.push([par,d+1]);}});}return m;}
-function _lineageSet(){var K=viewerId();var set={};set[K]=1;var up=_upMap(K);for(var a in up)set[a]=1;
+function _lineageSet(){var K=viewerId();var set={};if(!K)return set;set[K]=1;var up=_upMap(K);for(var a in up)set[a]=1;
   var q=[K];while(q.length){var x=q.shift();childrenOf(x).forEach(function(c){if(!set[c]){set[c]=1;q.push(c);}});}
   return set;}
 function relationToKevin(id,noAlliance){
-  var K=viewerId();if(!P(K)||!P(id))return "";if(id===K)return "⭐ toi";
+  var K=viewerId();if(!K||!P(id))return "";if(id===K)return "⭐ toi";
   var g=P(id).sexe==="F";
   if(((P(id).conjoints)||[]).indexOf(K)>=0)return g?"ta femme":"ton mari";
   var ak=_upMap(K);ak[K]=0;var ap=_upMap(id);ap[id]=0;
