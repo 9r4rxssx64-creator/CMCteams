@@ -1,0 +1,30 @@
+name: Arbre — récupération auto des actes (registres numérisés)
+# Lance tools/arbre/research-registres.mjs sur le runner (réseau OUVERT — l'agent
+# Claude a l'egress bloqué). Interroge les bases officielles de registres scannés
+# (Monaco archives.mairie.mc, AD06, AD13) pour chaque personne du seed et commite
+# un rapport + le brut des réponses (itération). Dispatch manuel + 1×/mois.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 5 5 * *" # le 5 de chaque mois à 05:00 UTC (après INSEE 03:00 et cloud 04:00)
+permissions:
+  contents: write
+jobs:
+  registres:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Recherche registres numérisés (Monaco / AD06 / AD13)
+        run: node tools/arbre/research-registres.mjs
+      - name: Commit rapport
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research
+          git commit -m "Arbre: registres numerises (recuperation actes auto) [skip ci]" || { echo "aucun changement"; exit 0; }
+          git push
