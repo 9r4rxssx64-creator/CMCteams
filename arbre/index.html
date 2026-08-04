@@ -227,7 +227,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.43";
+var APP_VER="v2.44";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -826,15 +826,16 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=22;
+var SEED_VERSION=23;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
   add({id:"seed_mt_maiffret",prenom:"Marie-Thérèse",nom:"MAIFFRET",sexe:"F",pere:"seed_marius1890",naissance:{date:"23.10.1914",lieu:"Nice"},deces:{date:"19.02.2000",lieu:"Monaco"},conjoints:["seed_victor_sauvaigo"],notes:"✅ CONFIRMÉE au fichier INSEE (recherche auto 2026-08-03) : née le 23.10.1914 à NICE, décédée le 19.02.2000 à MONACO (85 ans). ⚠️ Le document familial disait 23.10.1911 — même jour et mois, l'acte officiel dit 1914. Épouse de Victor Sauvaigo. MAIFFRET = nom provençal d'origine germanique (Mathfrid : force + paix), rameau Meiffren/Meiffret. 📜 DOCUMENT FAMILIAL : fille de Marius MAIFFRET (1890–1968), mariée le 3.05.1939 à Victor SAUVAIGO ; enfants : Marie-Jo (1943), Patrick (1945, décédé bébé), Marie-Noël (1950), Marie-Brigitte (1954) — le manuscrit note aussi des grossesses perdues et une « Hélène 20/01/49 » incertaine. Notable niçois du nom, contemporain de la famille : Charles MAIFFRET (1877–1958), industriel confiseur, conseiller du canton de Nice-4 (1919–1922) — lien à explorer.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/50UZUgMMtNwH"},SRC.matchid,SRC.gMaiffret,SRC.beaulieu1]});
   add({id:"seed_marienoel",prenom:"Marie-Noël",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{date:"25.09.1950",lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",conjoints:["seed_gerard"],notes:"Mère de Kevin, née à Monaco. Épouse de Gérard DESARZENS."});
-  add({id:"seed_sabrina",prenom:"Sabrina",nom:"DESARZENS",sexe:"F",vivant:true,naissance:{date:"22.03.1971",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Sœur de Kevin. Née le 22 mars 1971 à Monaco."});
+  add({id:"seed_sabrina",conjoints:["seed_stephan_bruno"],prenom:"Sabrina",nom:"DESARZENS",sexe:"F",vivant:true,naissance:{date:"22.03.1971",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Sœur de Kevin. Née le 22 mars 1971 à Monaco."});
   add({id:"seed_ronan",prenom:"Ronan",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_kevin",notes:"Fils de Kevin. Date/lieu à compléter."});
-  add({id:"seed_theo",prenom:"Théo",nom:"BRUNO",sexe:"M",vivant:true,mere:"seed_sabrina",notes:"Théo BRUNO — fils de Sabrina DESARZENS, neveu de Kevin (nom confirmé par Kevin le 4.08.2026). Père : famille BRUNO, prénom à compléter. Date de naissance à compléter. 🎯 ROBOT : 24 actes BRUNO à Monaco (1901-1912) sauvegardés en images — familles BRUNO monégasques anciennes ; le lien éventuel passera par le père de Théo (préciser son prénom pour cibler)."});
+  add({id:"seed_theo",prenom:"Théo",nom:"BRUNO",sexe:"M",vivant:true,pere:"seed_stephan_bruno",mere:"seed_sabrina",notes:"Théo BRUNO — fils de Stephan BRUNO et de Sabrina DESARZENS, neveu de Kevin (confirmé par Kevin le 4.08.2026). Date de naissance à compléter."});
+  add({id:"seed_stephan_bruno",prenom:"Stephan",nom:"BRUNO",sexe:"M",vivant:true,conjoints:["seed_sabrina"],notes:"Stephan BRUNO — père de Théo, avec Sabrina DESARZENS (confirmé par Kevin le 4.08.2026). Dates et lieu de naissance à compléter. 🎯 ROBOT : 24 actes BRUNO à Monaco (1901-1912) sauvegardés en images (familles BRUNO monégasques anciennes) — ascendance de Stephan à explorer quand ses dates seront connues."});
   add({id:"seed_marie_brigitte",prenom:"Marie-Brigitte",nom:"SAUVAIGO",sexe:"F",vivant:true,conjoints:["seed_christian"],pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"31.12.1954"},notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Épouse de Christian. 📜 DOCUMENT (stylo) : née le 31.12.1954 (« Brigou »)."});
   add({id:"seed_christian",prenom:"Christian",nom:"",sexe:"M",conjoints:["seed_marie_brigitte"],notes:"Mari de Marie-Brigitte. Nom/date à compléter."});
   add({id:"seed_cecile",prenom:"Cécile",nom:"",sexe:"F",vivant:true,pere:"seed_christian",mere:"seed_marie_brigitte",notes:"Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter."});
