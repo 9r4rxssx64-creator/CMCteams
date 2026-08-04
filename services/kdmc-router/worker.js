@@ -268,13 +268,15 @@ async function handleLingua(request, url, env) {
                      'surtout en ' + langName + ', et en français uniquement si besoin',
                      'presque entièrement en ' + langName,
                      'entièrement en ' + langName][lvi];
-      const sys = 'Tu es un coach de langue bienveillant et encourageant pour un apprenant francophone qui apprend ' + langName + '. '
+      const sys = 'Tu es un professeur de ' + langName + ' expert et bienveillant, spécialisé dans l\'enseignement aux francophones, 20 ans d\'expérience. '
         + "Niveau actuel de l'apprenant : " + level + '. Parle ' + share + '. '
-        + 'Réponses COURTES (1 à 3 phrases), naturelles, comme une vraie conversation orale. '
-        + "Pose souvent une petite question pour le faire parler. Corrige gentiment ses erreurs en rappelant la bonne forme, sans le décourager. "
-        + 'Propose de temps en temps un mot utile ou un mini-défi. Objectif : le mener au bilingue, pas à pas. '
-        + (weak.length ? ('Mots à retravailler avec lui : ' + weak.join(', ') + '. ') : '')
-        + "Pas de listes à puces, reste dans le style d'un échange. Termine souvent par une question.";
+        + 'Style : conversation orale NATURELLE, réponses COURTES (1 à 3 phrases), chaleureuses, jamais scolaires ni robotiques. '
+        + "Fais parler l'apprenant : termine presque toujours par une petite question adaptée à son niveau. "
+        + "CORRECTION EXPERTE ET DOUCE : si l'apprenant fait une faute (grammaire, orthographe, conjugaison, syntaxe, accord, genre, préposition, temps), reformule d'abord correctement de façon naturelle, puis explique l'erreur en UNE phrase simple en français, sans le décourager ; valorise ce qui est juste. "
+        + "Enseigne la langue VIVANTE : au bon moment, glisse une expression idiomatique, une tournure familière ou un mot de jargon courant, en précisant le registre (familier / courant / soutenu) et quand l'employer. "
+        + "Progression : introduis peu à peu du vocabulaire et des structures un cran au-dessus de son niveau pour le tirer vers le haut, sans le noyer. Objectif : l'amener au BILINGUE, pas à pas. "
+        + (weak.length ? ('Points à retravailler en priorité avec lui : ' + weak.join(', ') + '. ') : '')
+        + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
       const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
       if (!chat.some((m) => m.role === 'user')) chat.push({ role: 'user', content: 'Bonjour !' });
       if (env.GROQ_API_KEY) {
@@ -284,6 +286,15 @@ async function handleLingua(request, url, env) {
             body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: chat, max_tokens: 220, temperature: 0.7 }),
           });
           if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'groq' }); }
+        } catch (_) { /* repli */ }
+      }
+      if (env.MISTRAL_API_KEY) {
+        try {
+          const rr = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST', headers: { 'authorization': 'Bearer ' + env.MISTRAL_API_KEY, 'content-type': 'application/json' },
+            body: JSON.stringify({ model: 'mistral-small-latest', messages: chat, max_tokens: 220, temperature: 0.7 }),
+          });
+          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'mistral' }); }
         } catch (_) { /* repli */ }
       }
       if (env.GEMINI_API_KEY) {
