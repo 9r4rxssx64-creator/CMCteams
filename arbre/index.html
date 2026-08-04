@@ -185,7 +185,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.30";
+var APP_VER="v2.31";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -538,7 +538,27 @@ function actLinks(p){
   var dy=yr(p.deces&&p.deces.date)||0;
   var hasActe=(p.sources||[]).some(function(s){return /matchid\.io\/id\//.test(s.url||"");});
   if(dy>=1970&&!hasActe)out.push({label:"📜 Acte de décès — fichier INSEE",url:"https://deces.matchid.io/search?q="+encodeURIComponent(((p.prenom||"")+" "+(p.nom||"")).trim())});
+  /* Actes récents = protégés par la loi (seul un proche peut les demander) →
+     demande officielle PRÉ-RÉDIGÉE, copiée en 1 clic, à coller dans un email. */
+  if(mc)out.push({label:"🏛 Mairie de Monaco (envoyer la demande)",url:"https://mairie.mc"});
+  if(p.naissance&&(p.naissance.date||p.naissance.lieu))out.push({copy:"naissance",label:"📋 Copier la demande d'acte de naissance"});
+  if(!p.vivant&&p.deces&&(p.deces.date||p.deces.lieu))out.push({copy:"décès",label:"📋 Copier la demande d'acte de décès"});
   return out;
+}
+/* Lettre de demande d'acte, pré-remplie avec l'identité et la filiation. */
+function buildActRequest(p,type){
+  var eF=p.sexe==="F"?"e":"";
+  var l=type==="naissance"?(p.naissance||{}):(p.deces||{});
+  var fil=[];if(p.pere&&P(p.pere))fil.push(full(P(p.pere)));if(p.mere&&P(p.mere))fil.push(full(P(p.mere)));
+  return "Objet : Demande de copie intégrale d'acte de "+type+"\n\n"
+    +"Madame, Monsieur,\n\n"
+    +"Je vous prie de bien vouloir me délivrer une copie intégrale de l'acte de "+type+" de :\n"
+    +"• "+full(p)+(p.naissance&&p.naissance.date?", né"+eF+" le "+p.naissance.date:"")+(p.naissance&&p.naissance.lieu?" à "+p.naissance.lieu:"")
+    +(type==="décès"&&l.date?", décédé"+eF+" le "+l.date+(l.lieu?" à "+l.lieu:""):"")+"\n"
+    +(fil.length?"• Filiation : "+(p.sexe==="F"?"fille":"fils")+" de "+fil.join(" et de ")+"\n":"")
+    +"\nJe suis [TON PRÉNOM ET NOM], [lien de parenté : fils / petit-fils / arrière-petit-fils…] de la personne concernée.\n"
+    +"Merci de me l'adresser par courriel ou par courrier à :\n[TON ADRESSE]\n[TON EMAIL / TÉLÉPHONE]\n\n"
+    +"Cordialement,\n[TON NOM]";
 }
 /* ---------- person sheet + carousel + comments ---------- */
 var _caro={i:0,timer:0};
@@ -553,7 +573,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var relItems=[];if(p.pere&&P(p.pere))relItems.push([p.pere,"père"]);if(p.mere&&P(p.mere))relItems.push([p.mere,"mère"]);(p.conjoints||[]).forEach(function(c){if(P(c))relItems.push([c,"conjoint"]);});childrenOf(id).forEach(function(c){relItems.push([c,"enfant"]);});
   var relHtml=relItems.map(function(it){var q=P(it[0]);return '<button class="relchip" data-open="'+it[0]+'">'+avatarHTML(q)+'<span>'+esc(full(q))+' <small>'+it[1]+'</small></span></button>';}).join("");
   var sources=(p.sources||[]).map(function(s){return '<a class="srcbtn" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label||"acte")+' ↗</a>';}).join(" ")
-    +actLinks(p).map(function(s){return '<a class="srcbtn" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label)+' ↗</a>';}).join(" ");
+    +actLinks(p).map(function(s){if(s.copy)return '<button class="srcbtn" data-copyreq="'+s.copy+'">'+esc(s.label)+'</button>';return '<a class="srcbtn" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label)+' ↗</a>';}).join(" ");
   var comments=(p.comments||[]).slice().sort(function(a,b){return a.ts-b.ts;}).map(function(c){return '<div class="cmt"><div class="h"><span>'+esc(c.by||"famille")+' · '+relTime(c.ts)+'</span><button class="x" data-delc="'+c.id+'">✕</button></div><div style="white-space:pre-wrap">'+esc(c.text)+'</div></div>';}).join("");
   var canBack=_pStack.length>0;
   var back='<button class="bkbtn" id="pBack" aria-label="'+(canBack?"Retour":"Fermer")+'">'+(canBack?"‹":"✕")+'</button>';
@@ -571,6 +591,8 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   $("#cmtAdd").onclick=async function(){var t=$("#cmtIn").value.trim();if(!t)return;var pp=P(id);pp.comments=pp.comments||[];pp.comments.push({id:uid(),text:t,by:ME||"famille",ts:now()});pp.updatedAt=now();await persist(id);$("#cmtIn").value="";openPerson(id,true);};
   $("#cmtIn").addEventListener("keydown",function(e){if(e.key==="Enter")$("#cmtAdd").click();});
   ov.querySelectorAll("[data-delc]").forEach(function(b){b.onclick=async function(){var pp=P(id);pp.comments=(pp.comments||[]).filter(function(c){return c.id!==b.dataset.delc;});pp.updatedAt=now();await persist(id);openPerson(id,true);};});
+  ov.querySelectorAll("[data-copyreq]").forEach(function(b){b.onclick=function(){var pp=P(id);var t=b.dataset.copyreq;var txt=buildActRequest(pp,t);var lieu=(t==="naissance"?(pp.naissance&&pp.naissance.lieu):(pp.deces&&pp.deces.lieu))||"";var ok=function(){toast("📋 Demande copiée — colle-la dans un email à la mairie"+(lieu?" de "+lieu:""));};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,function(){window.prompt("Copie ce texte :",txt);});else window.prompt("Copie ce texte :",txt);};});
 }
 function caroGo(d){var box=$("#caroBox");if(!box)return;var sl=box.querySelectorAll(".slide");if(sl.length<2)return;var dots=box.querySelectorAll(".dots i");sl[_caro.i].classList.remove("on");if(dots[_caro.i])dots[_caro.i].classList.remove("on");_caro.i=(_caro.i+d+sl.length)%sl.length;sl[_caro.i].classList.add("on");if(dots[_caro.i])dots[_caro.i].classList.add("on");}
 
