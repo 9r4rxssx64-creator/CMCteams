@@ -2,34 +2,32 @@
 <srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <srw:version>1.2</srw:version>
     <srw:echoedSearchRetrieveRequest>
-        <srw:query>gallica all "VAN DEN BOSCH" "Beaulieu"</srw:query>
+        <srw:query>(gallica all "VAN DEN BOSCH") and (gallica all "Beaulieu")</srw:query>
         <srw:version>1.2</srw:version>
     </srw:echoedSearchRetrieveRequest>
-    <srw:numberOfRecords>23259</srw:numberOfRecords>
-    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;455536&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:numberOfRecords>5409</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;50175&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
     <srw:records>
         <srw:record>
             <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:contributor>Marboutin, Fernand. Expert</dc:contributor>
-                    <dc:date>1913</dc:date>
-                    <dc:description>[Vente. Art. 1913-06-13. Paris]</dc:description>
-                    <dc:description>Référence bibliographique : Lugt, 72942</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : VenteEST2</dc:description>
+                    <dc:creator>Poten, Bernhard von. Auteur du texte</dc:creator>
+                    <dc:date>1877-1880</dc:date>
                     <dc:description>Avec mode texte</dc:description>
-                    <dc:format>31 p.-[2] f. de pl. : ill. ; 24 cm</dc:format>
-                    <dc:format>Nombre total de vues : 45</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m</dc:identifier>
-                    <dc:identifier>NUMM-1249094</dc:identifier>
-                    <dc:language>fre</dc:language>
-                    <dc:publisher>[s.n.]</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb41537661n</dc:relation>
+                    <dc:format>9 vol. in-8°</dc:format>
+                    <dc:format>Nombre total de vues : 502</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t5784360f</dc:identifier>
+                    <dc:identifier>NUMS-100784360</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>Velhagen und Klasing (Bielefeld und Leipzig)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb311399886</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb311399886</dc:relation>
                     <dc:rights>domaine public</dc:rights>
                     <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Estampes et photographie, YD-1 (1913-06-13)-8</dc:source>
-                    <dc:title>Catalogue des tableaux, aquarelles, dessins, pastels, anciens et modernes par ou attribués à Bailly, Van den Bosch, Delacroix... [et al.]..., importantes estampes anciennes du XVIIIe siècle..., meubles anciens... / [expert] F. Marboutin</dc:title>
+                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, 8-V-1499 (1)</dc:source>
+                    <dc:title>Handwörterbuch der gesamten Militärwissenschaften, mit erläuternden Abbildungen, herausgegeben... von B. Poten,.... II. Bergen bis Döbeln </dc:title>
                     <dc:type>text</dc:type>
                     <dc:type>monographie imprimée</dc:type>
                     <dc:type>printed monograph</dc:type>
@@ -39,16 +37,16 @@
             <srw:recordPosition>0</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t5784360f.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m.medres</medres>
-                <nqamoyen>93.54</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/bd6t5784360f</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t5784360f.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t5784360f.medres</medres>
+                <nqamoyen>89.32</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m.thumbnail</thumbnail>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t5784360f.thumbnail</thumbnail>
                 <typedoc>monographies</typedoc>
-                <uri>bpt6k1249094m</uri>
+                <uri>bd6t5784360f</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -56,22 +54,20 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Escaut. Auteur du texte</dc:creator>
-                    <dc:date>1796-1797</dc:date>
-                    <dc:description>Contient une table des matières</dc:description>
+                    <dc:creator>Mündel, Curt (1852-1906). Auteur du texte</dc:creator>
+                    <dc:date>1906</dc:date>
                     <dc:description>Avec mode texte</dc:description>
-                    <dc:format>4 vol. ; in-4</dc:format>
-                    <dc:format>Nombre total de vues : 244</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k96298931</dc:identifier>
+                    <dc:format>[In-16, XXXVI-743 p., fig., 2 pl., 15 cartes?]</dc:format>
+                    <dc:format>Nombre total de vues : 837</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t5411967t</dc:identifier>
+                    <dc:identifier>NUMS-100411967</dc:identifier>
                     <dc:language>fre</dc:language>
-                    <dc:publisher>J. F. Vander Schueren (Gand)</dc:publisher>
-                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb33755296n</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb33755296n</dc:relation>
+                    <dc:publisher>K. J. Trübner (Strassburg)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34097899k</dc:relation>
                     <dc:rights>domaine public</dc:rights>
                     <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, F-21613</dc:source>
-                    <dc:subject>Escaut (Actes Administratifs)</dc:subject>
-                    <dc:title>Recueil de toutes les sentences, rendues au définitif par le tribunal civil du departement de l'Escaut, depuis son installation. Partie 1</dc:title>
+                    <dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, 8-LK1-178 (C)</dc:source>
+                    <dc:title>Die Vogesen. Reisehandbuch für Elsass-Lothringen und augrenzende Gebiete , von Curt Mündel, unter Mitwirkung von Prof. Dr. Julius Euting,... und Pr. Dr. Otto Bechstein,...</dc:title>
                     <dc:type>text</dc:type>
                     <dc:type>monographie imprimée</dc:type>
                     <dc:type>printed monograph</dc:type>
@@ -81,16 +77,16 @@
             <srw:recordPosition>1</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k96298931.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t5411967t.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k96298931</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k96298931.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k96298931.medres</medres>
-                <nqamoyen>96.29</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/bd6t5411967t</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t5411967t.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t5411967t.medres</medres>
+                <nqamoyen>86.56</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k96298931.thumbnail</thumbnail>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t5411967t.thumbnail</thumbnail>
                 <typedoc>monographies</typedoc>
-                <uri>bpt6k96298931</uri>
+                <uri>bd6t5411967t</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -98,41 +94,47 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:contributor>F. Soennecken. Ancien possesseur</dc:contributor>
-                    <dc:creator>Jean Van Den Bosch. Auteur du texte</dc:creator>
-                    <dc:date>1401-1900</dc:date>
-                    <dc:description>Numérisation effectuée à partir d'un document original.</dc:description>
-                    <dc:description>Appartient à l'ensemble documentaire : BNUStras1</dc:description>
-                    <dc:description>Appartient à l'ensemble documentaire : BNUStr029</dc:description>
-                    <dc:description>Appartient à l'ensemble documentaire : BNUStr000</dc:description>
-                    <dc:description>Fol. 2 : portrait de Felix A. Sambix (mort en 1619) gravé sur cuivre.</dc:description>
-                    <dc:format>Papier. - Reliure parchemin. - 30 ff. - 145 x 200 mm</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b10234821t</dc:identifier>
-                    <dc:language>dut</dc:language>
-                    <dc:relation>Notice du catalogue : http://archivesetmanuscrits.bnf.fr/ark:/12148/cc96693h/cd0e871</dc:relation>
+                    <dc:contributor>Schlenker, Max (1883-1967). Éditeur scientifique</dc:contributor>
+                    <dc:contributor>Wolfram, Georg (1858-1940). Éditeur scientifique</dc:contributor>
+                    <dc:date>1931-1938</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr000</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr011</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>4 vol. : ill., plans, ports. ; In-5 (30 cm)</dc:format>
+                    <dc:format>Nombre total de vues : 563</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k32156711</dc:identifier>
+                    <dc:identifier>NUMM-3215671</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>Selbstverlag des Elsass-Lothringischen Instituts (Frankfurt am Main)</dc:publisher>
+                    <dc:publisher>Verlag für Sozialpolitik, Wirtschaft und Statistik (Berlin)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb456277994</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb456277994</dc:relation>
                     <dc:rights>domaine public</dc:rights>
                     <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg. Ms.5.529</dc:source>
-                    <dc:subject>Felix A. Sambix</dc:subject>
-                    <dc:title>Manuscrits de la Bibliothèque nationale et universitaire de Strasbourg. Manuscrits allemands acquis entre 1950 et 2007. Manuscrits du "Schriftmuseum F. Soennecken" de Bonn. "Monsieur Jean Van Den Bosch. Il me possèdera autant de temps ici que l'Eternel plaira. Adi XX Augusti Anno MDICXXXI".Album calligraphié entre 1603 et 1631 par "F.V.S.".</dc:title>
-                    <dc:type>manuscript</dc:type>
-                    <dc:type>manuscrit</dc:type>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, 2019-112616</dc:source>
+                    <dc:subject>Alsace-Lorraine -- 1871-1918</dc:subject>
+                    <dc:subject>Alsace (France) -- 1871-1918 (Période allemande)</dc:subject>
+                    <dc:subject>Moselle (France) -- 1871-1918 (Période allemande)</dc:subject>
+                    <dc:title>Das Reichsland Elsass-Lothringen 1871-1918</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>2</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/btv1b10234821t.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k32156711.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/btv1b10234821t</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b10234821t.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/btv1b10234821t.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k32156711</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k32156711.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k32156711.medres</medres>
+                <nqamoyen>89.16</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b10234821t.thumbnail</thumbnail>
-                <typedoc>manuscrits</typedoc>
-                <uri>btv1b10234821t</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k32156711.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k32156711</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -140,50 +142,39 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:coverage>23 juillet 1924</dc:coverage>
-                    <dc:creator>Agence Rol. Agence photographique (commanditaire)</dc:creator>
-                    <dc:date>1924</dc:date>
-                    <dc:description>Référence bibliographique : Rol, 94034</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : Pho20Rol</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : HNormand1</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : MnS000</dc:description>
-                    <dc:description>Image de presse</dc:description>
-                    <dc:format>1 photogr. nég. sur verre ; 13 x 18 cm (sup.)</dc:format>
-                    <dc:format>image/jpeg</dc:format>
-                    <dc:format>Nombre total de vues : 1</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b53134061q</dc:identifier>
+                    <dc:creator>Goovaerts, Alphonse (1847-1922). Auteur du texte</dc:creator>
+                    <dc:date>1879</dc:date>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>1 vol. (179 p.-8 pl.) ; in-8</dc:format>
+                    <dc:format>Nombre total de vues : 202</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k312045n</dc:identifier>
+                    <dc:identifier>NUMM-312045</dc:identifier>
                     <dc:language>fre</dc:language>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb45118479v</dc:relation>
+                    <dc:publisher>impr. G. Van Merlen (Anvers)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb305229567</dc:relation>
                     <dc:rights>domaine public</dc:rights>
                     <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Estampes et photographie, EI-13 (1133)</dc:source>
-                    <dc:subject>Van den Bosch, Jean (1898-1985)</dc:subject>
-                    <dc:subject>Schiltz, Georges (1901-1981)</dc:subject>
-                    <dc:subject>Courses cyclistes -- Gisors (Eure, France)</dc:subject>
-                    <dc:subject>Gisors (Eure, France)</dc:subject>
-                    <dc:subject>Jeux olympiques (08 ; 1924 ; Paris)</dc:subject>
-                    <dc:title>Gisors, 23/7/24, Vandenbosh [i.e. Van den Bosch], Belgique [devant], Schultz [i.e. Schiltz, course cycliste sur route comptant pour les Jeux Olympiques] : [photographie de presse] / [Agence Rol]</dc:title>
-                    <dc:type>image fixe</dc:type>
-                    <dc:type>image</dc:type>
-                    <dc:type>still image</dc:type>
-                    <dc:type>photographie</dc:type>
-                    <dc:type>photograph</dc:type>
+                    <dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, 8-M-2405</dc:source>
+                    <dc:title>Généalogie de la famille Wouters, dite de Westphalie / par Alphonse Goovaerts,...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>3</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/btv1b53134061q.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k312045n.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/btv1b53134061q</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b53134061q.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/btv1b53134061q.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k312045n</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k312045n.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k312045n.medres</medres>
+                <nqamoyen>86.52</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b53134061q.thumbnail</thumbnail>
-                <typedoc>images</typedoc>
-                <uri>btv1b53134061q</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k312045n.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k312045n</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -191,38 +182,49 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Levaillant, François (1753-1824). Auteur du texte</dc:creator>
-                    <dc:description>Avec mode texte</dc:description>
-                    <dc:format>In-fol., VI-48 p., pl. en coul.</dc:format>
-                    <dc:format>Nombre total de vues : 63</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t57501511</dc:identifier>
-                    <dc:identifier>NUMS-100750151</dc:identifier>
-                    <dc:language>dut</dc:language>
-                    <dc:publisher>J. C. Sepp en zoon (Amsterdam)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb30808070v</dc:relation>
-                    <dc:rights>domaine public</dc:rights>
-                    <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, S-2332</dc:source>
-                    <dc:title>Natuurlyke historie der africaansche vogelen, door François Levaillant, uit het fransch vertaalt. 1ste uitgave</dc:title>
+                    <dc:date>1908-1940</dc:date>
+                    <dc:description>Variante(s) de titre : Courrier de la Basse-Alsace</dc:description>
+                    <dc:description>Variante(s) de titre : Unterländer (1908)</dc:description>
+                    <dc:description>Variante(s) de titre : Tageszeitung für den Kreis Haguenau</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPNOUV</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr017</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Alsace1</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr000</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr014</dc:description>
+                    <dc:format>Nombre total de vues : 6156</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32886381s/date</dc:identifier>
+                    <dc:identifier>NUMP-12854</dc:identifier>
+                    <dc:identifier>ISSN 12778869</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>[s.n.] (Haguenau)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32886381s</dc:relation>
+                    <dc:relation>A pour reproduction : Unterländer Kurier (Haguenau. Reproduction numérique) = ISSN 2419-5901 (https://gallica.bnf.fr/ark:/12148/cb32886381s/date)</dc:relation>
+                    <dc:relation>A pour reproduction : Unterländer Kurier (Haguenau. Reproduction numérique) = ISSN 2419-5901 (http://www.numistral.fr/ark:/12148/cb32886381s/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, M.600.014</dc:source>
+                    <dc:title>Unterländer Kurier (Haguenau)</dc:title>
+                    <dc:title>Unterländer Kurier</dc:title>
+                    <dc:title>Le Courrier de la Basse-Alsace</dc:title>
                     <dc:type>text</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
-                    <dc:type>printed monograph</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>4</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bd6t57501511.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k3145157m.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bd6t57501511</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t57501511.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bd6t57501511.medres</medres>
-                <nqamoyen>86.03</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32886381s/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k3145157m.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k3145157m.medres</medres>
+                <nqamoyen>74.19</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t57501511.thumbnail</thumbnail>
-                <typedoc>monographies</typedoc>
-                <uri>bd6t57501511</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k3145157m.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k3145157m</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -230,40 +232,43 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Huizinga, Johan (1872-1945). Auteur du texte</dc:creator>
-                    <dc:date>1903</dc:date>
-                    <dc:description>Collection : Verhandelingen der koninklijke Akademie van wetenschappen te Amsterdam. Afdeeling letterkunde. Nieuwe reeks, V. 3</dc:description>
-                    <dc:description>Avec mode texte</dc:description>
-                    <dc:format>17 p. ; in-4</dc:format>
-                    <dc:format>Nombre total de vues : 22</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q</dc:identifier>
-                    <dc:language>dut</dc:language>
-                    <dc:language>néerlandais </dc:language>
-                    <dc:publisher>J. Müller (Amsterdam)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb306269222</dc:relation>
-                    <dc:rights>domaine public</dc:rights>
-                    <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 4-Z-14 (5,3)</dc:source>
-                    <dc:title>Van den vogel Charadrius / door J. Huizinga</dc:title>
+                    <dc:date>1924-1928</dc:date>
+                    <dc:description>Variante(s) de titre : Le Réveil de Beaulieu et du littoral</dc:description>
+                    <dc:description>Périodicité : Hebdomadaire ; irrégulier</dc:description>
+                    <dc:description>Etat de collection : Jusqu'à : 16 juil. 1925 (2e année, n° 71). 10 août 1927-28 avr. 1928 (5e année, n° 77)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32853923x/date</dc:identifier>
+                    <dc:identifier>NUMP-21277</dc:identifier>
+                    <dc:identifier>ISSN 21367353</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Beaulieu-sur-Mer)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32853923x</dc:relation>
+                    <dc:relation>A pour reproduction : Le Réveil de Beaulieu (Reproduction numérique) = ISSN 2728-266X (https://gallica.bnf.fr/ark:/12148/cb32853923x/date)</dc:relation>
+                    <dc:relation>Première de couverture : 462514</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-20345</dc:source>
+                    <dc:title>Le Réveil de Beaulieu : républicain, politique, littéraire : organe des cantons de Villefranche-sur-Mer et Beausoleil et de la Principauté de Monaco ["puis" économique, politique, mondain]</dc:title>
                     <dc:type>text</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>5</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6603060v.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q.medres</medres>
-                <nqamoyen>100.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32853923x/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6603060v.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6603060v.medres</medres>
+                <nqamoyen>89.05</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q.thumbnail</thumbnail>
-                <typedoc>monographies</typedoc>
-                <uri>bpt6k9816106q</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6603060v.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k6603060v</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -271,42 +276,36 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:contributor>Kervyn de Lettenhove, Joseph-Bruno-Marie-Constantin (1817-1891). Éditeur scientifique</dc:contributor>
-                    <dc:creator>Dadizeele, Jean de (1431-1481). Auteur du texte</dc:creator>
-                    <dc:date>1850</dc:date>
-                    <dc:description>Collection : Recueil de chroniques, chartes et autres documents concernant l'histoire et les antiquités de la Flandre occidentale. IIIe série, Documents isolés, chartes et keuren</dc:description>
-                    <dc:format>1 vol. (VI-199 p.) ; in-4</dc:format>
-                    <dc:format>Nombre total de vues : 217</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k112053t</dc:identifier>
-                    <dc:identifier>NUMM-112053</dc:identifier>
-                    <dc:language>dut</dc:language>
-                    <dc:publisher>impr. de Vandecasteele-Werbrouck (Bruges)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb30294568j</dc:relation>
-                    <dc:rights>domaine public</dc:rights>
-                    <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, M-8079 (4)</dc:source>
-                    <dc:subject>Flandre -- 1384-1482 (Maison de Bourgogne) -- Sources</dc:subject>
-                    <dc:title>Mémoires de Jean de Dadizeele : souverain-bailli de Flandre, haut-bailli de Gand, capitaine-général de l'armée flamande, conseiller, chambellan et maître d'hôtel de Maximilien d'Autriche et de Marie de Bourgogne, ambassadeur en Angleterre, etc. / publiés pour la première fois d'après le manuscrit original [par le baron Kervyn de Lettenhove]</dc:title>
-                    <dc:title>Gedenckschriften van Mer Jan, heere van Dadizeele : dit es : een registre beghinnen maken in't jaer duust vier honderd ende tachtentig, aengaende Jan, heere van Dadiselle... / door de eerste mael uytgegeven naer het oorsponkelyk handschrift</dc:title>
+                    <dc:date>1962-196.</dc:date>
+                    <dc:description>Périodicité : Quotidien</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34485398v/date</dc:identifier>
+                    <dc:identifier>NUMP-31372</dc:identifier>
+                    <dc:identifier>ISSN 2650085X</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Metz)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34485398v</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, GR FOL-JO-4436</dc:source>
+                    <dc:title>Le Courrier de Metz, France-journal</dc:title>
                     <dc:type>text</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
-                    <dc:type>printed monograph</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>6</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k112053t.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t515948908.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k112053t</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k112053t.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k112053t.medres</medres>
-                <nqamoyen>87.62</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34485398v/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t515948908.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t515948908.medres</medres>
+                <nqamoyen>87.43</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k112053t.thumbnail</thumbnail>
-                <typedoc>monographies</typedoc>
-                <uri>bpt6k112053t</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t515948908.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t515948908</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -314,26 +313,24 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:contributor>Bourgey, Étienne (1864-1942). Expert</dc:contributor>
-                    <dc:contributor>Maison Bourgey (Paris). Expert</dc:contributor>
-                    <dc:date>1939</dc:date>
-                    <dc:description>[Vente. Art. 1939. Paris]</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : VenteMMA</dc:description>
+                    <dc:creator>Nagler, Georg Kaspar (1801-1866). Auteur du texte / Autrice du texte</dc:creator>
+                    <dc:date>1835-1852</dc:date>
+                    <dc:description>[Neues allgemeines Künstler-Lexicon, oder Nachrichten von dem Leben und den Werken der Maler, Bildhauer, Baumeister, Kupferstecher, Formschneider, Lithographen, Zeichner, Medailleure, Elfenbeinarbeiter, etc., bearbeitet von Dr G. K. Nagler (allemand)]</dc:description>
+                    <dc:description>Comprend : Vol. 1, A-Boe, 1835 ; Vol. 2, Bor-Cle, 1835 ; Vol. 3, Cle-Dum, 1836 ; Vol. 4, Dum-Gal, 1837 ; Vol. 5, Gal-Has, 1837 ; Vol. 6, Has-Key, 1838 ; Vol. 7, Key-Lod : Vol. 8, Lod-Meg, 1839, Vol. 9, Meg-Mul, 1840 ; Vol. 10, Mul-Pas, 1841 ; Vol. 11, Pas-Pow, 1841 ; Vol. 12, Poy-Ren, 1842 ; Vol. 13, Rhe-Rub, 1843 ; Vol. 14, Rub-San, 1845 ; Vol. 15, San-Sch, 1845 ; Vol. 16, Sch-Sol, 1846 ; Vol. 17, Sol-Sur, 1847 ; Vol. 18, Sur-Tor, 1848 ; Vol. 19, Tor-Vei, 1849 ; Vol. 20, Vei-Vou, 1850 ; Vol. 21, Vou-Wit, 1851 ; Vol. 22, Wit-Zyx, 1852</dc:description>
                     <dc:description>Avec mode texte</dc:description>
-                    <dc:description>Catalogues de vente</dc:description>
-                    <dc:format>4 vol. (8; 8; 8; 8 p.) ; 28 cm</dc:format>
-                    <dc:format>Nombre total de vues : 8</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n</dc:identifier>
-                    <dc:identifier>NUMM-9778465</dc:identifier>
-                    <dc:language>fre</dc:language>
-                    <dc:publisher>Etienne Bourgey (Paris)</dc:publisher>
-                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb45181644h</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb45181644h</dc:relation>
+                    <dc:format>22 vol. in-8°</dc:format>
+                    <dc:format>Nombre total de vues : 580</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t5935637g</dc:identifier>
+                    <dc:identifier>NUMS-100935637</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>E. A. Fleischmann (München)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb31002173g</dc:relation>
+                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb82897521f</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb31002173g</dc:relation>
                     <dc:rights>domaine public</dc:rights>
                     <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Monnaies, médailles et antiques, VENTE BOU-1939 (1939-LISTE)</dc:source>
-                    <dc:subject>Numismatique</dc:subject>
-                    <dc:title>Ventes à l'amiable. Numéro 27 / Etienne Bourgey</dc:title>
+                    <dc:source>Bibliothèque nationale de France, département Philosophie, Histoire, Sciences de l'homme, G-33092 (7)</dc:source>
+                    <dc:title>Neues allgemeines Künstler-Lexicon, oder Nachrichten von dem Leben und den Werken der Maler, Bildhauer, Baumeister, Kupferstecher, Formschneider, Lithographen, Zeichner, Medailleure, Elfenbeinarbeiter, etc., bearbeitet von Dr G. K. Nagler. Volume 8</dc:title>
                     <dc:type>text</dc:type>
                     <dc:type>monographie imprimée</dc:type>
                     <dc:type>printed monograph</dc:type>
@@ -343,16 +340,16 @@
             <srw:recordPosition>7</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t5935637g.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n.medres</medres>
-                <nqamoyen>95.99</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/bd6t5935637g</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t5935637g.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t5935637g.medres</medres>
+                <nqamoyen>89.05</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n.thumbnail</thumbnail>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t5935637g.thumbnail</thumbnail>
                 <typedoc>monographies</typedoc>
-                <uri>bpt6k9778465n</uri>
+                <uri>bd6t5935637g</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -360,44 +357,40 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:date>1910</dc:date>
-                    <dc:description>Vendeur : R.W.P. de Vries (Firme). Vendeur</dc:description>
-                    <dc:description>[Vente. Numismatique. 1910-03-16. Amsterdam]</dc:description>
-                    <dc:description>[Collection. Numismatique. Meijer, D. C.. 1910]</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : VenteMMA</dc:description>
-                    <dc:description>Avec mode texte</dc:description>
-                    <dc:format>1 vol. (50 p., IV pl.) : ill. ; 28 cm</dc:format>
-                    <dc:format>Nombre total de vues : 88</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t54179489w</dc:identifier>
-                    <dc:identifier>NUMS-104179489</dc:identifier>
-                    <dc:language>dut</dc:language>
-                    <dc:publisher>R. W. P. De Vries (Amsterdam)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb40902367m</dc:relation>
-                    <dc:rights>domaine public</dc:rights>
-                    <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Monnaies, médailles et antiques, MMA DEV-1910-MARS-16</dc:source>
-                    <dc:subject>Numismatique</dc:subject>
-                    <dc:subject>Catalogues de vente</dc:subject>
-                    <dc:title>Gedenkpenningen betreffende Amsterdam. Gildepenningen. Loodjes. Toegangsbewijzen tot den schouwburg. Huwelijkspenningen. Penningen betreffende. Luther en de Luthersche gemeenten : 16 mars 1910 / R. W. P. De Vries</dc:title>
+                    <dc:date>1921-1940</dc:date>
+                    <dc:description>Variante(s) de titre : Dernières nouvelles de Colmar (Ed. bilingue)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr014</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPNOUV</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb344400938/date</dc:identifier>
+                    <dc:identifier>NUMP-20959</dc:identifier>
+                    <dc:identifier>ISSN 11440554</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>[s.n.] (Colmar)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb344400938</dc:relation>
+                    <dc:relation>A pour reproduction : Colmarer neueste Nachrichten (Reproduction numérique) = ISSN 2727-0254 (https://gallica.bnf.fr/ark:/12148/cb344400938/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, M.600.051</dc:source>
+                    <dc:title>Colmarer neueste Nachrichten</dc:title>
                     <dc:type>text</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
-                    <dc:type>printed monograph</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>8</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bd6t54179489w.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k31315636.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bd6t54179489w</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t54179489w.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bd6t54179489w.medres</medres>
-                <nqamoyen>84.38</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb344400938/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k31315636.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k31315636.medres</medres>
+                <nqamoyen>75.0</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t54179489w.thumbnail</thumbnail>
-                <typedoc>monographies</typedoc>
-                <uri>bd6t54179489w</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k31315636.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k31315636</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -405,41 +398,46 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:contributor>Cammaert, Joannes Franciscus (1699-1780). Traducteur</dc:contributor>
-                    <dc:creator>Sedaine, Michel-Jean (1719-1797). Auteur du texte</dc:creator>
-                    <dc:date>1764</dc:date>
-                    <dc:description>Avec mode texte</dc:description>
-                    <dc:description>Opéras-comiques</dc:description>
-                    <dc:format>In-8° , pièces limin., 72 p.</dc:format>
-                    <dc:format>Nombre total de vues : 90</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t54191812s</dc:identifier>
-                    <dc:identifier>NUMS-104191812</dc:identifier>
-                    <dc:language>dut</dc:language>
-                    <dc:publisher>F. t'Serstevens (Brussel)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb31343724h</dc:relation>
-                    <dc:rights>domaine public</dc:rights>
-                    <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 8-YTH-68803</dc:source>
-                    <dc:title>Den Koning en den Pachter, Blyspel in 3 Deelen, gemengt met Sangen, uyt het Frans [door Sedaine] vertaelt ende gerymt door Joannes Franciscus Cammaert</dc:title>
+                    <dc:contributor>Schies, Julien (1875-1957). Directeur de publication</dc:contributor>
+                    <dc:date>1885-1939</dc:date>
+                    <dc:description>Variante(s) de titre : L'Alsacien (Strasbourg)</dc:description>
+                    <dc:description>Périodicité : Quotidien</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr017</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Alsace1</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr000</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr014</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPNOUV</dc:description>
+                    <dc:format>Nombre total de vues : 7264</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34396439w/date</dc:identifier>
+                    <dc:identifier>NUMP-12873</dc:identifier>
+                    <dc:identifier>ISSN 0767774X</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>[s.n.] (Strasbourg)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34396439w</dc:relation>
+                    <dc:relation>A pour reproduction : Der Elsässer (Reproduction numérique) = ISSN 2419-8897 (https://gallica.bnf.fr/ark:/12148/cb34396439w/date)</dc:relation>
+                    <dc:relation>A pour reproduction : Der Elsässer (Reproduction numérique) = ISSN 2419-8897 (http://www.numistral.fr/ark:/12148/cb34396439w/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, M600057</dc:source>
+                    <dc:title>Der Elsässer</dc:title>
                     <dc:type>text</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
-                    <dc:type>printed monograph</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>9</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bd6t54191812s.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k3135595d.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bd6t54191812s</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t54191812s.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bd6t54191812s.medres</medres>
-                <nqamoyen>77.89</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34396439w/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k3135595d.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k3135595d.medres</medres>
+                <nqamoyen>74.19</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t54191812s.thumbnail</thumbnail>
-                <typedoc>monographies</typedoc>
-                <uri>bd6t54191812s</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k3135595d.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k3135595d</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -447,40 +445,43 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Denucé, Jan (1878-1944). Auteur du texte</dc:creator>
-                    <dc:date>1930</dc:date>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:description>Avec mode texte</dc:description>
-                    <dc:format>316 p. ; in-8</dc:format>
-                    <dc:format>Nombre total de vues : 348</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b</dc:identifier>
-                    <dc:language>fre</dc:language>
-                    <dc:language>français</dc:language>
-                    <dc:publisher>"de Sikkel" (Anvers)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb42778215x</dc:relation>
-                    <dc:rights>domaine public</dc:rights>
-                    <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque de l'INHA / coll. J. Doucet, 2012-295798</dc:source>
-                    <dc:title>Exportation d'oeuvres d'art au XVIIe siècle à Anvers : La firme Forchoudt / par J. Denucé,...</dc:title>
+                    <dc:creator>Ligue d'Alsace de football-association. Auteur du texte</dc:creator>
+                    <dc:creator>Ligue d'Alsace d'athlétisme. Auteur du texte</dc:creator>
+                    <dc:creator>Ligue d'Alsace de basket-ball. Auteur du texte</dc:creator>
+                    <dc:date>1920-1939</dc:date>
+                    <dc:description>Variante(s) de titre : Le Sport alsacien : organe officiel de la Ligue d'Alsace de Football-association (LAFA), Ligue d'Alsace d'athlétisme (LAA), Ligue d'Alsace de basket-ball (LABB)...</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr014</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MnS000</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32871862g/date</dc:identifier>
+                    <dc:identifier>NUMP-22718</dc:identifier>
+                    <dc:identifier>ISSN 12563595</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>(s.n.] (Strasbourg)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32871862g</dc:relation>
+                    <dc:relation>A pour reproduction : Le Sport alsacien (Strasbourg. Reproduction numérique) = ISSN 2742-4278 (https://gallica.bnf.fr/ark:/12148/cb32871862g/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, M.600.069</dc:source>
+                    <dc:title>Le Sport alsacien (Strasbourg)</dc:title>
+                    <dc:title>Le Sport alsacien : organe pour tous les sports en Alsace et en Lorraine...</dc:title>
                     <dc:type>text</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>10</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k3148421z.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b.medres</medres>
-                <nqamoyen>99.96</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32871862g/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k3148421z.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k3148421z.medres</medres>
+                <nqamoyen>76.5</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b.thumbnail</thumbnail>
-                <typedoc>monographies</typedoc>
-                <uri>bpt6k6463412b</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k3148421z.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k3148421z</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -488,42 +489,39 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Denucé, Jan (1878-1944). Auteur du texte</dc:creator>
-                    <dc:date>1934</dc:date>
-                    <dc:description>Collection : Sources pour l'histoire de l'art flamand ; III</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:description>Avec mode texte</dc:description>
-                    <dc:format>1 vol. (173 p.) : tabl. ; in-4</dc:format>
-                    <dc:format>Nombre total de vues : 208</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m</dc:identifier>
-                    <dc:language>fre</dc:language>
-                    <dc:language>français</dc:language>
-                    <dc:publisher>De Sikkel (Anvers)</dc:publisher>
-                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb32017000j</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32017000j</dc:relation>
-                    <dc:rights>domaine public</dc:rights>
-                    <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque de l'INHA / coll. J. Doucet, 2012-295799</dc:source>
-                    <dc:title>Lettres et documents concernant Jan Breugel I et II / par J. Denucé,...</dc:title>
+                    <dc:date>1919-1939</dc:date>
+                    <dc:description>Variante(s) de titre : Journal de Wissembourg : quotidien indépendant de l'arrondissement</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr014</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPNOUV</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb327990524/date</dc:identifier>
+                    <dc:identifier>NUMP-23672</dc:identifier>
+                    <dc:identifier>ISSN 20152299</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>[s.n.] (Wissembourg)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb327990524</dc:relation>
+                    <dc:relation>A pour reproduction : Journal de Wissembourg (Reproduction numérique) = ISSN 2781-1174 (https://gallica.bnf.fr/ark:/12148/cb327990524/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, M.600.047</dc:source>
+                    <dc:title>Journal de Wissembourg : anct Weissenburger Zeitung</dc:title>
                     <dc:type>text</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
-                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>11</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k30356305.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m.medres</medres>
-                <nqamoyen>99.96</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb327990524/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k30356305.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k30356305.medres</medres>
+                <nqamoyen>86.27</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m.thumbnail</thumbnail>
-                <typedoc>monographies</typedoc>
-                <uri>bpt6k6477123m</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k30356305.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k30356305</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -531,14 +529,24 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:date>19??</dc:date>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32829464z/date</dc:identifier>
-                    <dc:identifier>NUMP-17232</dc:identifier>
-                    <dc:language>dut</dc:language>
-                    <dc:publisher>[s.n.?] (S. l.)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32829464z</dc:relation>
-                    <dc:source>Bibliothèque nationale de France, département Réserve des livres rares, RES-G-1479 (PAY,41)</dc:source>
-                    <dc:title>Oranje-bulletin. Uitgegeven door Samenwerking van de Ondergrondsche Pers. ["puis" door : De Gens, Je maintiendrai, Ons Volk...]</dc:title>
+                    <dc:date>1871-1918</dc:date>
+                    <dc:description>Variante(s) de titre : Metzer Zeitung : verbreiteste Tageszeitung in Lothringen</dc:description>
+                    <dc:description>Périodicité : Six fois par semaine</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG57</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb41091172v/date</dc:identifier>
+                    <dc:identifier>NUMP-25177</dc:identifier>
+                    <dc:identifier>ISSN 19605900</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>[s.n.] (Metz)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb41091172v</dc:relation>
+                    <dc:relation>A pour reproduction : Metzer Zeitung (Metz. Reproduction numérique) = ISSN 2796-213X (https://kiosque.limedia.fr/titres-presse/metzer-zeitung/)</dc:relation>
+                    <dc:relation>A pour reproduction : Metzer Zeitung (Metz. Reproduction numérique) = ISSN 2796-213X (https://sammlungen.ub.uni-frankfurt.de/varia/periodical/titleinfo/8754611)</dc:relation>
+                    <dc:relation>A pour reproduction : Metzer Zeitung (Metz. Reproduction numérique) = ISSN 2796-213X (https://gallica.bnf.fr/ark:/12148/cb41091172v/date)</dc:relation>
+                    <dc:relation>Première de couverture : 599513</dc:relation>
+                    <dc:source>Bibliothèques-Médiathèques de Metz, P REV 15</dc:source>
+                    <dc:title>Metzer Zeitung (Metz)</dc:title>
+                    <dc:title>Metzer Zeitung</dc:title>
                     <dc:type>text</dc:type>
                     <dc:type>texte</dc:type>
                     <dc:type>publication en série imprimée</dc:type>
@@ -549,16 +557,16 @@
             <srw:recordPosition>12</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k1177478v.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k82526287.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/cb32829464z/date</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k1177478v.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k1177478v.medres</medres>
-                <nqamoyen>88.6</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb41091172v/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k82526287.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k82526287.medres</medres>
+                <nqamoyen>99.17</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k1177478v.thumbnail</thumbnail>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k82526287.thumbnail</thumbnail>
                 <typedoc>periodiques</typedoc>
-                <uri>bpt6k1177478v</uri>
+                <uri>bpt6k82526287</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -566,14 +574,21 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:date>19??</dc:date>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32881888c/date</dc:identifier>
-                    <dc:identifier>NUMP-17142</dc:identifier>
-                    <dc:language>dut</dc:language>
-                    <dc:publisher>[s.n.?] (S' Gravenhage)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32881888c</dc:relation>
-                    <dc:source>Bibliothèque nationale de France, département Réserve des livres rares, RES-G-1479 (PAY,63)</dc:source>
-                    <dc:title>Trouw. Speciale uitgave voor's Gravenhage en Omstreken. Verschijnt voorloopig wekelijke</dc:title>
+                    <dc:date>1919-1939</dc:date>
+                    <dc:description>Variante(s) de titre : La Presse libre</dc:description>
+                    <dc:description>Périodicité : Quotidien</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPNOUV</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr014</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb42485891n/date</dc:identifier>
+                    <dc:identifier>NUMP-21279</dc:identifier>
+                    <dc:identifier>ISSN 21179700</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>[s.n.] (Strasbourg)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb42485891n</dc:relation>
+                    <dc:relation>A pour reproduction : Freie Presse (Strasbourg. Reproduction numérique) = ISSN 2728-3003 (https://gallica.bnf.fr/ark:/12148/cb42485891n/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, M.600.058</dc:source>
+                    <dc:title>Freie Presse (Strasbourg)</dc:title>
+                    <dc:title>Freie Presse : sozialistisches Organ für den Nieder-Rhein und für Lothringen ["puis" sozialistisches Organ für das Département des Nieder-Rheins]</dc:title>
                     <dc:type>text</dc:type>
                     <dc:type>texte</dc:type>
                     <dc:type>publication en série imprimée</dc:type>
@@ -584,16 +599,16 @@
             <srw:recordPosition>13</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k11775007.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k3122398r.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/cb32881888c/date</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k11775007.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k11775007.medres</medres>
-                <nqamoyen>88.4</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb42485891n/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k3122398r.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k3122398r.medres</medres>
+                <nqamoyen>75.6</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k11775007.thumbnail</thumbnail>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k3122398r.thumbnail</thumbnail>
                 <typedoc>periodiques</typedoc>
-                <uri>bpt6k11775007</uri>
+                <uri>bpt6k3122398r</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -601,24 +616,26 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:contributor>Kreutzberger, Charles (1829-1909). Illustrateur</dc:contributor>
-                    <dc:contributor>Michel, Henri-François (1846-1925). Illustrateur</dc:contributor>
-                    <dc:creator>Wauters, Alphonse-Jules (1845-1916). Auteur du texte</dc:creator>
-                    <dc:date>1883</dc:date>
-                    <dc:description>Collection : Bibliothèque de l'enseignement des beaux-arts</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : GTextes1</dc:description>
-                    <dc:format>416 p. : fig. et pl. par C. Kreutzberger, fac-sim., frontisp. par Marius Michel, cartonnage ill. ; in-8</dc:format>
-                    <dc:format>Nombre total de vues : 414</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k205824f</dc:identifier>
-                    <dc:identifier>NUMM-205824</dc:identifier>
-                    <dc:language>fre</dc:language>
-                    <dc:publisher>May et Motteroz (Paris)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb31626310j</dc:relation>
+                    <dc:contributor>Allemagne (1871-1945). Kaiserliches Ministerium für Elsass-Lothringen. Éditeur scientifique</dc:contributor>
+                    <dc:creator>Kraus, Franz Xaver (1840-1901). Auteur du texte</dc:creator>
+                    <dc:date>1876-1892</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr000</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr011</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>4 vol. (XXIV-705 p., fig., pl., plans ; IX-719 p., fig., pl. ; XX-1049 p., fig., pl. et plans ; III-181 p.) ; in-8 °</dc:format>
+                    <dc:format>Nombre total de vues : 1151</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k32161380</dc:identifier>
+                    <dc:identifier>NUMM-3216138</dc:identifier>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>C. F. Schmidt (Strassburg)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb36475998k</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb36475998k</dc:relation>
                     <dc:rights>domaine public</dc:rights>
                     <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France</dc:source>
-                    <dc:subject>Peinture flamande</dc:subject>
-                    <dc:title>La peinture flamande (3e éd. corr. et complétée) / par A. J. Wauters</dc:title>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, 2019-115642</dc:source>
+                    <dc:subject>Antiquités -- Moselle (France)</dc:subject>
+                    <dc:subject>Antiquités -- Alsace (France)</dc:subject>
+                    <dc:title>Kunst und Alterthum in Elsass-Lothringen : beschreibende Statistik im Auftrage des kaiserlichen Ministeriums für Elsass-Lothringen / herausgegeben von Dr Franz Xaver Kraus,... ; mit zahlreichen Illustrationen</dc:title>
                     <dc:type>text</dc:type>
                     <dc:type>monographie imprimée</dc:type>
                     <dc:type>printed monograph</dc:type>
@@ -628,16 +645,16 @@
             <srw:recordPosition>14</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k205824f.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k32161380.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k205824f</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k205824f.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k205824f.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k32161380</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k32161380.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k32161380.medres</medres>
+                <nqamoyen>86.38</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k205824f.thumbnail</thumbnail>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k32161380.thumbnail</thumbnail>
                 <typedoc>monographies</typedoc>
-                <uri>bpt6k205824f</uri>
+                <uri>bpt6k32161380</uri>
             </srw:extraRecordData>
         </srw:record>
     </srw:records>

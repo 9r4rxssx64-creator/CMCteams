@@ -2,59 +2,52 @@
 <srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <srw:version>1.2</srw:version>
     <srw:echoedSearchRetrieveRequest>
-        <srw:query>gallica all "DESARZENS" "Monaco"</srw:query>
+        <srw:query>(gallica all "DESARZENS") and (gallica all "Monaco")</srw:query>
         <srw:version>1.2</srw:version>
     </srw:echoedSearchRetrieveRequest>
-    <srw:numberOfRecords>234</srw:numberOfRecords>
-    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;1012&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:numberOfRecords>107</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;426&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
     <srw:records>
         <srw:record>
             <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Beethoven, Ludwig van (1770-1827). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Beethoven, Ludwig van (1770-1827). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Kraus, Lili (1903-1986). Piano</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Staatsoper (Vienne). Orchester. Orchestre</dc:creator>
-                    <dc:date>1961</dc:date>
-                    <dc:description>Titre uniforme : [Rondos. Piano, orchestre. WoO 6. Si bémol majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Concertos. Piano, orchestre. No 4. Op. 58. Sol majeur]</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 8</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8814031m</dc:identifier>
-                    <dc:identifier>Numéro commercial : Guilde internationale du disque MMS2192</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14821029g</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13908224m</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb37900766r</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-11144</dc:source>
-                    <dc:title>CONCERTO N °4 EN SOL MAJEUR POUR PIANO ET ORCHESTRE, OPUS 58 ; RONDO EN SI BEMOL MAJEUR" POUR PIANO ET ORCHESTRE / Ludwig Van BEETHOVEN ; Lili KRAUS, piano, et l'Orchestre de l'Opéra de Vienne dir. Victor DESARZENS</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:date>1907-1940</dc:date>
+                    <dc:description>Variante(s) de titre : Les Tablettes laonnoises et de l'Aisne</dc:description>
+                    <dc:description>Variante(s) de titre : Les Tablettes de l'Aisne</dc:description>
+                    <dc:description>Périodicité : Hebdomadaire ; Bi-hebdomadaire</dc:description>
+                    <dc:description>Etat de collection : Jusqu'à : 14 juin 1914 [VIII, n° 907], 1er juin 1919-10 mai 1940 [XIII-XXXII, n° 922-2780], inc.</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPNOUV</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328755571/date</dc:identifier>
+                    <dc:identifier>NUMP-24067</dc:identifier>
+                    <dc:identifier>ISSN 28022955</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Laon)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328755571</dc:relation>
+                    <dc:relation>A pour reproduction : Les Tablettes laonnoises (Reproduction numérique) = ISSN 2802-2947 (https://gallica.bnf.fr/ark:/12148/cb328755571/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-90464</dc:source>
+                    <dc:title>Les Tablettes laonnoises : journal hebdomadaire indépendant, littéraire, scientifique, commercial et agricole</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>0</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8814031m.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6660524f.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8814031m</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8814031m.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8814031m.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb328755571/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6660524f.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6660524f.medres</medres>
+                <nqamoyen>88.23</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8814031m.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8814031m</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6660524f.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k6660524f</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -62,50 +55,43 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Schumann, Robert (1810-1856). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Schumann, Robert (1810-1856). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Parisot, Aldo (1918-2018). Violoncelle</dc:creator>
-                    <dc:creator>Le Conte, Pierre-Michel (1921-2000). Direction d'orchestre</dc:creator>
-                    <dc:creator>Kraus, Lili (1903-1986). Piano</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Staatsoper (Vienne). Orchester. Orchestre</dc:creator>
-                    <dc:date>1961</dc:date>
-                    <dc:description>Titre uniforme : [Concertos. Violoncelle, orchestre. Op. 129. La mineur]</dc:description>
-                    <dc:description>Titre uniforme : [Concertos. Piano, orchestre. Op. 54. La mineur]</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 10</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k88140306</dc:identifier>
-                    <dc:identifier>Numéro commercial : Guilde internationale du disque MMS2190</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13918929g</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139190115</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb37900765d</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-11143</dc:source>
-                    <dc:title>CONCERTO POUR PIANO ET ORCHESTRE EN LA MINEUR, opus 54 / Robert SCHUMANN ; Lili KRAUS, piano, et Orchestre de l'Opéra de Vienne dir. Victor DESARZENS. CONCERTO POUR VIOLONCELLE ET ORCHESTRE EN LA MINEUR, opus 129 / Robert SCHUMANN ; Aldo PARISOT, violoncelle et l'Orchestre de l'Opéra de Vienne dir. Pierre Michel LE CONTE</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:date>1870-1889</dc:date>
+                    <dc:description>Variante(s) de titre : The Nice times and Swiss herald</dc:description>
+                    <dc:description>Périodicité : Hebdomadaire</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32823691z/date</dc:identifier>
+                    <dc:identifier>NUMP-6985</dc:identifier>
+                    <dc:identifier>ISSN 21328102</dc:identifier>
+                    <dc:language>eng</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32823691z</dc:relation>
+                    <dc:relation>A pour reproduction : The Nice times (Nice. Reproduction numérique) = ISSN 2505-5577 (https://archives06.fr/archive/resultats/presse2?RECH_titre_Libel=Nice%20(The)%20Times%20(I)%20(1880-1908)&amp;RECH_titre_Md5=3d5e56e807a9f1a0ca6e8376cb5be877|&amp;type=presse2)</dc:relation>
+                    <dc:relation>A pour reproduction : The Nice times (Nice. Reproduction numérique) = ISSN 2505-5577 (https://gallica.bnf.fr/ark:/12148/cb32823691z/date)</dc:relation>
+                    <dc:relation>Première de couverture : 236283</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-8103</dc:source>
+                    <dc:title>The Nice times (Nice)</dc:title>
+                    <dc:title>The Nice times : a weekly fashionable newspaper : a special supplement every Monday containing a list of latest arrivals ["puis" the society journal of the Riviera]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>1</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k88140306.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k4546437c.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k88140306</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k88140306.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k88140306.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32823691z/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k4546437c.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k4546437c.medres</medres>
+                <nqamoyen>86.33</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k88140306.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k88140306</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k4546437c.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k4546437c</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -113,49 +99,39 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Mozart, Wolfgang Amadeus (1756-1791). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mozart, Wolfgang Amadeus (1756-1791). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Caratgé, Fernand (1902-1991). Flûte</dc:creator>
-                    <dc:creator>Orchestre de chambre de Lausanne. Interprète</dc:creator>
-                    <dc:date>1960</dc:date>
-                    <dc:description>Titre uniforme : [Concertos. Flûte, orchestre. KV 285d. Ré majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Concertos. Flûte, orchestre. KV 285c. Sol majeur]</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 10</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8812827v</dc:identifier>
-                    <dc:identifier>NUMAUD-8812827</dc:identifier>
-                    <dc:identifier>Numéro commercial : Chant du Monde LDXA8224</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13915045h</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14785156p</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb37814138v</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-5301</dc:source>
-                    <dc:title>Concerto pour flûte et orchestre en sol majeur, K. 313 ; Concerto pour flûte et orchestre en ré majeur, K. 314 / Wolfgang-Amadeus Mozart ; l'Orchestre de Chambre de Lausanne, dir. Victor Desarzens ; Flûte : Fernand Caratge</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:creator>Parti communiste français. Section (Nice). Auteur du texte</dc:creator>
+                    <dc:date>1945-1967</dc:date>
+                    <dc:description>Etat de collection : |12 oct. 1946 [II, n° 766]- n° spéciaux ; 1946-1948, 1951-1953, inc.</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34442303s/date</dc:identifier>
+                    <dc:identifier>NUMP-26518</dc:identifier>
+                    <dc:identifier>ISSN 11537485</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34442303s</dc:relation>
+                    <dc:relation>A pour reproduction : Le Patriote de Nice et du Sud-Est (Nice. Reproduction numérique) = ISSN 2999-8050 (https://gallica.bnf.fr/ark:/12148/cb34442303s/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, GR FOL-JO-4299</dc:source>
+                    <dc:title>Le Patriote de Nice et du Sud-Est (Nice)</dc:title>
+                    <dc:title>Le Patriote de Nice et du Sud-Est : grand quotidien d'information de la démocratie</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>2</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8812827v.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t51276831r.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8812827v</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8812827v.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8812827v.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34442303s/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t51276831r.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t51276831r.medres</medres>
+                <nqamoyen>87.52</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8812827v.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8812827v</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t51276831r.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t51276831r</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -163,51 +139,41 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Rimski-Korsakov, Nikolaï Andreïvitch (1844-1908). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Rimski-Korsakov, Nikolaï Andreïvitch (1844-1908). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Moussorgski, Modeste (1839-1881). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Musikkollegium Winterthur (Orchester). Interprète</dc:creator>
-                    <dc:date>1955</dc:date>
-                    <dc:description>Titre uniforme : [Zolotoj petušok]</dc:description>
-                    <dc:description>Titre uniforme : [Kapriscio na ispanskije temy. Op. 34]</dc:description>
-                    <dc:description>Titre uniforme : [Hovanscina]. Extrait</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 25 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 12</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8816007k</dc:identifier>
-                    <dc:identifier>NUMAUD-8816007</dc:identifier>
-                    <dc:identifier>Numéro commercial : Guilde internationale du disque MMS57</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139179355</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13917921g</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13916597c</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb37900600j</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, C-20641</dc:source>
-                    <dc:title>CAPRICCIO ESPAGNOL ; COQ D'OR (Introduction et Marcha) / Nicolai RIMSKY-KORSAKOFF - Prélude à "KHOVANTCHINA" de Modeste MOUSSORGSKY ; Orchestre Symphonique de Winterthur, Dir. Victor Desarzens</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:date>1920-1931</dc:date>
+                    <dc:description>Variante(s) de titre : L'Éclaireur du dimanche</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb327640738/date</dc:identifier>
+                    <dc:identifier>NUMP-17091</dc:identifier>
+                    <dc:identifier>ISSN 12497649</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb327640738</dc:relation>
+                    <dc:relation>A pour reproduction : L'Éclaireur du dimanche et "La Vie pratique, Courrier des étrangers" (Reproduction numérique) = ISSN 2592-3102 (https://gallica.bnf.fr/ark:/12148/cb327640738/date)</dc:relation>
+                    <dc:relation>Première de couverture : 276984</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-61279</dc:source>
+                    <dc:title>L'Éclaireur du dimanche et "La Vie pratique, Courrier des étrangers" : paraît tous les dimanches</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>3</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8816007k.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9802745c.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8816007k</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8816007k.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8816007k.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb327640738/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9802745c.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9802745c.medres</medres>
+                <nqamoyen>98.37</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8816007k.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8816007k</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9802745c.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k9802745c</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -215,51 +181,52 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Bach, Johann Sebastian (1685-1750). Compositeur</dc:creator>
-                    <dc:creator>Gerlin, Ruggero (1899-1983). Clavecin</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Caratgé, Fernand (1902-1991). Flûte</dc:creator>
-                    <dc:creator>Alès, Georges (1903-1996). Violon</dc:creator>
-                    <dc:creator>Société des concerts symphoniques (Paris). Orchestre. Interprète</dc:creator>
-                    <dc:date>1958</dc:date>
-                    <dc:description>Titre uniforme : Bach, Johann Sebastian (1685-1750). Compositeur. [Ouvertures. Flûte, orchestre. BWV 1067. Badinerie. Si mineur]</dc:description>
-                    <dc:description>Titre uniforme : Bach, Johann Sebastian (1685-1750). Compositeur. [Concertos. Flûte, violon, clavecin, orchestre à cordes, basse continue. BWV 1044. La mineur]</dc:description>
-                    <dc:description>Comprend : Concerto en la mineur, BWV 1044, pour flûte, violon, clavecin et orchestre - Suite N ° 2, en Si mineur, BWV 1067, pour flûte et orchestre</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 14</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8802264s</dc:identifier>
-                    <dc:identifier>NUMAUD-8802264</dc:identifier>
-                    <dc:identifier>Numéro commercial : Chant du Monde LDXA8206</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13974521w</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13909431p</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb378141245</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-2851</dc:source>
-                    <dc:title>L'Oeuvre pour flûte, vol. 3 / Johann Sebastian Bach ; Fernand Caratgé, flûte, Georges Alès, violon, Ruggero Gerlin, clavecin, Orchestre Philharmonique de Paris, dir. Victor Desarzens</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:creator>Parti social français. Auteur du texte</dc:creator>
+                    <dc:date>1863-1944</dc:date>
+                    <dc:description>Périodicité : Quotidien</dc:description>
+                    <dc:description>Etat de collection : N° 1 (01/01/1863)-n° 29616 (27/08/1944)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG63</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG64</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : GCFeTra</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : GCGen1</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BnPlCo00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BnPlCo01</dc:description>
+                    <dc:format>Nombre total de vues : 146118</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32895690j/date</dc:identifier>
+                    <dc:identifier>NUMP-2182</dc:identifier>
+                    <dc:identifier>ISSN 12560464</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Paris)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Clermont-Ferrand)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Pau)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32895690j</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit journal (Paris. 1863. Reproduction numérique) = ISSN 2419-6215 (https://gallica.bnf.fr/ark:/12148/cb32895690j/date)</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit journal (Paris. 1863. Reproduction numérique) = ISSN 2419-6215 (https://www.retronews.fr/ark:/12148/cb32895690j/notice)</dc:relation>
+                    <dc:relation>Première de couverture : 199685</dc:relation>
+                    <dc:source>Bibliothèque nationale de France</dc:source>
+                    <dc:title>Le Petit journal (Paris. 1863)</dc:title>
+                    <dc:title>Le Petit journal</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>4</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8802264s.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k5902062.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8802264s</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8802264s.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8802264s.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32895690j/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k5902062.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k5902062.medres</medres>
+                <nqamoyen>99.61</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8802264s.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8802264s</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5902062.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k5902062</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -267,53 +234,43 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Roussel, Albert (1869-1937). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Ibert, Jacques (1890-1962). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Honegger, Arthur (1892-1955). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Swoboda, Henry (1897-1990). Direction d'orchestre</dc:creator>
-                    <dc:creator>Graf, Peter-Lukas (1929-2026). Flûte</dc:creator>
-                    <dc:creator>Goehr, Walter (1903-1960). Direction d'orchestre</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Musikkollegium Winterthur (Orchester). Interprète</dc:creator>
-                    <dc:creator>Orchestre des concerts de Paris. Interprète</dc:creator>
-                    <dc:creator>Wiener Philharmoniker. Interprète</dc:creator>
-                    <dc:date>1961</dc:date>
-                    <dc:description>Titre uniforme : [Pastorale d'été. H 31]</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : BmLHav000</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 11</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8814059p</dc:identifier>
-                    <dc:identifier>NUMAUD-8814059</dc:identifier>
-                    <dc:identifier>Numéro commercial : Concert hall A17</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139135980</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb378354010</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-11172</dc:source>
-                    <dc:title>Concerto pour flûte et orchestre / Jacques IBERT ; Peter Lukas GRAF, flûte et l'Orchestre Symphonique de Winterthur dir. Victor DESARZENS. Concerto pour petit orchestre / Albert ROUSSEL ; l'Orchestre de l'Opéra de Vienne dir. Henry SWOBODA. Pastorale d'été / Arthur HONEGGER ; l'Orchestre des Concerts de Paris dir. Walter GOEHR</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:contributor>Seurre, Jules (1804-1874). Directeur de publication</dc:contributor>
+                    <dc:date>1840-1947</dc:date>
+                    <dc:description>Périodicité : Bihebdomadaire ; trihebdomadaire ; quotidien</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG71</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG71</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34366345x/date</dc:identifier>
+                    <dc:identifier>NUMP-16138</dc:identifier>
+                    <dc:identifier>ISSN 02472732</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Chalon-sur-Saône)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34366345x</dc:relation>
+                    <dc:relation>A pour reproduction : Le Courrier de Saône-et-Loire (Reproduction numérique) = ISSN 2540-3133 (http://gallicaintramuros.bnf.fr/ark:/12148/cb34366345x/date)</dc:relation>
+                    <dc:relation>A pour reproduction : Le Courrier de Saône-et-Loire (Reproduction numérique) = ISSN 2540-3133 (https://www.retronews.fr/ark:/12148/cb34366345x/notice)</dc:relation>
+                    <dc:relation>Première de couverture : 225654</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, MICR D-15085</dc:source>
+                    <dc:title>Le Courrier de Saône-et-Loire : journal politique et judiciaire</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>5</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8814059p.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k4402225w.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8814059p</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8814059p.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8814059p.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34366345x/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k4402225w.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k4402225w.medres</medres>
+                <nqamoyen>98.51</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8814059p.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8814059p</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k4402225w.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k4402225w</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -321,256 +278,39 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Waldteufel, Émile (1837-1915). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Wagner, Richard (1813-1883). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Wagner, Richard (1813-1883). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Wagner, Richard (1813-1883). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Verdi, Giuseppe (1813-1901). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Verdi, Giuseppe (1813-1901). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Suppé, Franz von (1819-1895). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Sullivan, Sir Arthur. Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1804-1849). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Smetana, Bedřich (1824-1884). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Schubert, Franz (1797-1828). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Schubert, Franz (1797-1828). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Sarasate, Pablo de (1844-1908). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Saint-Saëns, Camille (1835-1921). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Rubinstein, Anton (1829-1894). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Rossini, Gioachino (1792-1868). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Rossini, Gioachino (1792-1868). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Ravel, Maurice (1875-1937). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Ravel, Maurice (1875-1937). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Puccini, Giacomo (1858-1924). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Ponchielli, Amilcare (1834-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Pierné, Gabriel (1863-1937). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Paganini, Niccolò (1782-1840). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Offenbach, Jacques (1819-1880). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Offenbach, Jacques (1819-1880). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Moussorgski, Modeste (1839-1881). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mozart, Wolfgang Amadeus (1756-1791). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mozart, Wolfgang Amadeus (1756-1791). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mendelssohn Bartholdy, Felix (1809-1847). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mascagni, Pietro (1863-1945). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Lehár, Franz (1870-1948). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Humperdinck, Engelbert (1854-1921). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Herold, Ferdinand (1791-1833). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Händel, Georg Friedrich (1685-1759). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Grieg, Edvard (1843-1907). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Gounod, Charles (1818-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Gounod, Charles (1818-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Glinka, Mikhail Ivanovitch (1804-1857). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Flotow, Friedrich von (1812-1883). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Elgar, Edward (1857-1934). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Dukas, Paul (1865-1935). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Debussy, Claude (1862-1918). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Brahms, Johannes (1833-1897). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Borodine, Alexandre Porfiriévitch (1833-1887). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Bizet, Georges (1838-1875). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Berlioz, Hector (1803-1869). Compositeur</dc:creator>
-                    <dc:creator>Berlioz, Hector (1803-1869). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Auber, Daniel-François-Esprit (1782-1871). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Leibowitz, René (1913-1972). Direction d'orchestre</dc:creator>
-                    <dc:creator>Gruber, Josef Leo. Direction d'orchestre</dc:creator>
-                    <dc:creator>Gibson, Alexander Drummond (1926-1995). Direction d'orchestre</dc:creator>
-                    <dc:creator>Freccia, Massimo (1906-2004). Direction d'orchestre</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Boult, Adrian (1889-1983). Direction d'orchestre</dc:creator>
-                    <dc:creator>Société des concerts symphoniques (Paris). Orchestre. Interprète</dc:creator>
-                    <dc:creator>New symphony orchestra of London. Interprète</dc:creator>
-                    <dc:creator>Radiotelevisione Italiana (Rome). Orchestra. Interprète</dc:creator>
-                    <dc:creator>Wiener Philharmoniker. Interprète</dc:creator>
-                    <dc:date>19..</dc:date>
-                    <dc:description>Titre uniforme : [Estudiantina. Op. 191]</dc:description>
-                    <dc:description>Titre uniforme : [Der Ritt der Walküren]</dc:description>
-                    <dc:description>Titre uniforme : [Lohengrin. WWV 75]. Extrait</dc:description>
-                    <dc:description>Titre uniforme : [Götterdämmerung. WWV 86D. Siegfrieds Tod und Trauermarsch]</dc:description>
-                    <dc:description>Titre uniforme : [La traviata]. Choix</dc:description>
-                    <dc:description>Titre uniforme : [Aida]. Extrait</dc:description>
-                    <dc:description>Titre uniforme : [Leichte Kavallerie]. Extrait orch.</dc:description>
-                    <dc:description>Titre uniforme : [Unter Donner und Blitz. RV 324AB/C]</dc:description>
-                    <dc:description>Titre uniforme : [Tritsch-Tratsch Polka. RV 214]</dc:description>
-                    <dc:description>Titre uniforme : [Künstlerleben. RV 316]</dc:description>
-                    <dc:description>Titre uniforme : [Geschichten aus dem Wienerwald. RV 325]</dc:description>
-                    <dc:description>Titre uniforme : [An der schönen blauen Donau. Orchestre. RV 314]</dc:description>
-                    <dc:description>Titre uniforme : [Radetzky-Marsch. Op. 228]</dc:description>
-                    <dc:description>Titre uniforme : [Vltava. JB 1.112/2]</dc:description>
-                    <dc:description>Titre uniforme : [Rosamunde, Fürstin von Zypern. D 797]. Choix orch.</dc:description>
-                    <dc:description>Titre uniforme : [Marche militaire. Piano (4 mains). D 733, no 1. Ré majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Airs bohémiens]</dc:description>
-                    <dc:description>Titre uniforme : [Danse macabre. R 171 (Poème symphonique)]</dc:description>
-                    <dc:description>Titre uniforme : [Semiramide]. Extrait orchestral</dc:description>
-                    <dc:description>Titre uniforme : [Guillaume Tell]. Extrait orchestral</dc:description>
-                    <dc:description>Titre uniforme : [La Valse. Orchestre. O 72]</dc:description>
-                    <dc:description>Titre uniforme : [Boléro. Orchestre. O 81]</dc:description>
-                    <dc:description>Titre uniforme : [Manon Lescaut]</dc:description>
-                    <dc:description>Titre uniforme : [La Gioconda. Ballo delle ore]</dc:description>
-                    <dc:description>Titre uniforme : [Sonates. Violon, orchestre. MS 66. Do majeur]. Adapt.</dc:description>
-                    <dc:description>Titre uniforme : [Orphée aux Enfers. Ouverture]</dc:description>
-                    <dc:description>Titre uniforme : [Les contes d'Hoffmann. Acte 4. Belle nuit, ô nuit d'amour]</dc:description>
-                    <dc:description>Titre uniforme : [Ivanova noc' na Lysoj gore (1867)]</dc:description>
-                    <dc:description>Titre uniforme : [Sérénades. Cordes. KV 525. Sol majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Le nozze di Figaro. KV 492. Ouverture]</dc:description>
-                    <dc:description>Titre uniforme : [Die Hebriden. Op. 26]</dc:description>
-                    <dc:description>Titre uniforme : [Cavalleria rusticana]. Extr. orch.</dc:description>
-                    <dc:description>Titre uniforme : [Ungarische Rhapsodien. Orchestre. No 6. LW G21, no 6. Mi bémol majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Ungarische Rhapsodien. Orchestre. No 2. LW G21, no 2. Do dièse mineur]</dc:description>
-                    <dc:description>Titre uniforme : [Les préludes. Orchestre. LW G3]</dc:description>
-                    <dc:description>Titre uniforme : [O lieb, so lang du lieben kannst. Piano. LW A103, no 3]. Adapt.</dc:description>
-                    <dc:description>Titre uniforme : [Gold und Silber. Op. 79]</dc:description>
-                    <dc:description>Titre uniforme : [Hänsel und Gretel. Ouvertüre]</dc:description>
-                    <dc:description>Titre uniforme : [Zampa ou la fiancée de marbre]. Extr.</dc:description>
-                    <dc:description>Titre uniforme : [Serse. HWV 40. Ombra mai fu]</dc:description>
-                    <dc:description>Titre uniforme : [Norwegische Tänze. Piano. Op. 35, no 2]</dc:description>
-                    <dc:description>Titre uniforme : [Faust. CG 4. Ballet]</dc:description>
-                    <dc:description>Titre uniforme : [Ruslan i Lûdmila. Uvertûra]</dc:description>
-                    <dc:description>Titre uniforme : [Martha]. Extrait</dc:description>
-                    <dc:description>Titre uniforme : [Pomp and circumstance march. Op. 39, no 1. Ré majeur]</dc:description>
-                    <dc:description>Titre uniforme : [L'apprenti sorcier]</dc:description>
-                    <dc:description>Titre uniforme : [1812 god. Orchestre. ČS 46]</dc:description>
-                    <dc:description>Titre uniforme : [Spâŝaâ krasavica. ČS 13 (Ballet)]. Extr.</dc:description>
-                    <dc:description>Titre uniforme : [Slavânskij marš. Orchestre. ČS 42]</dc:description>
-                    <dc:description>Titre uniforme : [Ŝelkunčik. ČS 32 (Suite)]</dc:description>
-                    <dc:description>Titre uniforme : [Quatuors. Cordes. No 1. ČS 90. Ré majeur]. Arr.</dc:description>
-                    <dc:description>Titre uniforme : [Lebedinoe ozero. ČS 12 (Ballet)]. Choix</dc:description>
-                    <dc:description>Titre uniforme : [Italʹânskoe kapriččio. Orchestre. ČS 44]</dc:description>
-                    <dc:description>Titre uniforme : [Akademische Festouvertüre. Op. 80]</dc:description>
-                    <dc:description>Titre uniforme : [Knâzʹ Igorʹ]. Choix</dc:description>
-                    <dc:description>Titre uniforme : [Carmen. GB 9]. Extr. orch.</dc:description>
-                    <dc:description>Titre uniforme : [L'invitation à la valse. H 90]</dc:description>
-                    <dc:description>Titre uniforme : [La damnation de Faust. H 111]. Choix</dc:description>
-                    <dc:description>Titre uniforme : [Les diamants de la couronne. AWV 34]. Extr.</dc:description>
-                    <dc:description>Comprend : CAPRICCIO ITALIEN OP. 45 / TCHAIKOVSKY - LA DAMNATION DE FAUST : Menuet des follets ; ballet des sylphes, marche hongroise / BERLIOZ - UNTER DONNER UND BLITZ : polka OP. 324 / STRAUSS fils - MA PATRIE : La Moldau, Ma patrie / SMETANA - QUATUOR EN RE MAJEUR, OP. 11 / TCHAIKOVSKY - LA CHEVAUCHEE DES WALKYRIES / WAGNER ; NEW SYMPHONY ORCHESTRA OF LONDON ; Dir. Alexander GIBSON - HAENSEL ET GRETEL (ouverture) / Engelbert HUMPERDINK - ROSAMUNDE (entr'acte n °2 en si bemol) / Franz SCHUBERT - AIRS BOHEMIENS : "ZIGEUNERWEISEN, OP. 20 N °1 pour violon et orchestre" / Pablo de SARASATE - RHAPSODIE HONGROISE N °2 en fa diese et si Bémol / F. LISZT - LE SONGE D'UNE NUIT D'ETE : Nocturne de l'acte III / MENDELSSOHN - L'OR ET L'ARGENT, valse / Franz LEHAR ; ORCHESTRE SYMPHONIQUE DE L'OPERA NATIONAL DE VIENNE ; Dir. Victor DESARZENS - SEMIRAMIS (ouverture) / ROSSINI - LA BELLE AU BOIS DORMANT : valse, OP. 66 / TCHAIKOVSKY - MARCHE SLAVE, OP. 31 / TCHAIKOVSKY - ZAMPA (ouverture) / Louis HEROLD - AIDA : grande marche de l'acte II / VERDI - SERSE, largo / HAENDEL - LA GIOCONDA : danse des heures, acte III / PONCHIELLI ; ORCHESTRE PHILHARMONIQUE DE ROME ; Dir. Massimo FRECCIA - CARMEN : prelude, aragonaise, les dragons d'Alcala, la garde montante, intermezzo, les Toreadors, danse boheme (suite d'orchestre) / BIZET - LES CONTES D'HOFFMAN : barcarolles de l'acte II / OFFENBACH - BOLERO / RAVEL - FAUST, ballet du 5éme acte : LA NUIT DE VALPURGIS / GOUNOD ; ORCHESTRE DE LA SOCIETE DES CONCERTS SYMPHONIQUES DE PARIS ; Dir. Rene LEIBOWITZ - POETE ET PAYSAN (ouverture) / Franz von SUPPE - INVITATION A LA VALSE, rondo OP. 65 / WEBER - MOUVEMENT PERPETUEL, OP. 11 / PAGANINI - TRITSCH-TRATSCH, OP. 214 / STRAUSS, fils - LOHENGRIN : prelude de l'acte III / WAGNER - DANSE NORVEGIENNE N °2 / GRIEG - OUVERTURE SOLENNELLE 1812, OP. 49 / TCHAIKOVSKY ; NEW ORCHESTRA OF LONDON ; Dir. Alexander GIBSON - LES NOCES DE FIGARO (ouverture) / MOZART - MANON LESCAUT : intermezzo / PUCCINI - LE PRINCE IGOR (ouverture) / BORODINE - L'APPRENTI SORCIER / DUKAS - PETITE SUITE, en bateau / DEBUSSY - ORPHEE AUX ENFERS (ouverture) / OFFENBACH ; ORCHESTRE DE LA SOCIETE DES CONCERTS SYMPHONIQUES DE PARIS ; Dir. Rene LEIBOWITZ - LA GROTTE DE FINGAL / MENDELSSOHN - LES PRELUDES / LISZT - POMP AND CIRCUMSTANCE : marche n °1 en RE, OP. 39 / E. ELGAR - UNE NUIT SUR LE MONT CHAUVE / MOUSSORGSKY - DI BALLO / SULLIVAN ; NEW SYMPHONY ORCHESTRA OF LONDON ; Dir. Sir Adrian BOULT - CAVALERIE LEGERE / Von SUPPE - HISTOIRES DE LA FORET VIENNOISE / STRAUSS, fils - REVE D'AMOUR N °3 / LISZT - MARCHE DE RADETZKY, OP. 228 / STRAUSS, pere - MARTHA (ouverture) / VON FLOTOW - VIE D'ARTISTE : valse, OP. 316 / STRAUSS, fils - MARCHE MILITAIRE N °1 EN RE MAJEUR (OP. 51) / SCHUBERT - ESTUDIANTINA, valse / WALDTEUFEL ; ORCHESTRE SYMPHONIQUE DE L'OPERA DE VIENNE ; Dir. Josef Leo GRUBER - ROUSSLAN ET LUDMILLA (ouverture) / GLINKA - KAMENNOI-OSTROW / Antoine RUBINSTEIN - GUILLAUME TELL : ouverture / ROSSINI - LA TRAVIATA : preludes acte I et III, OP. 19 / VERDI - CAVALLERIA RUSTICANA : intermezzo / MASCAGNI - LE CREPUSCULE DES DIEUX : voyage de SIEGFRIED / WAGNER ; ORCHESTRE PHILHARMONIQUE DE ROME ; Dir. Massimo FRECCIA - PETITE MUSIQUE DE NUIT, serenade n °13 en sol majeur, K. 525 / MOZART - LE BEAU DANUBE BLEU, valse OP. 314 / STRAUSS, fils - OUVERTURE POUR UNE FETE ACADEMIQUE, OP. 80 / J. BRAHMS - RHAPSODIE HONGROISE N °9 : EN MI BEMOL (CARNAVAL DE PESTH) / F. LISZT ; l'ORCHESTRE SYMPHONIQUE NATIONAL DE VIENNE ; Dir. Victor DESARZENS - LES DIAMANTS DE LA COURONNE, ouverture / Daniel François AUBER - MARCHE FUNEBRE D'UNE MARIONNETTE / GOUNOD - MARCHE DES PETITS SOLDATS DE PLOMB / PIERNE - DANSE MACABRE : OP. 40 / SAINT-SAENS - LA VALSE / RAVEL - LE PRINCE IGOR, danses polovtsiennes, acte II / BORODINE ; l'ORCHESTRE DE LA SOCIETE DES CONCERTS SYMPHONIQUES DE PARIS ; Dir. Rene LEIBOWITZ - CASSE NOISETTE : suite d'orchestre OP. 71 / TCHAIKOVSKY - LE LAC DES CYGNES, ballet OP. 20 / TCHAIKOVSKY ; NEW SYMPHONY ORCHESTRA OF LONDON ; Dir. Sir Adrian BOULT</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>12 disques : 33 t, stéréo ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 121</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k88239783</dc:identifier>
-                    <dc:identifier>NUMAUD-8823978</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6501 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6502 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6503 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6504 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6505 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6506 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6507 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6508 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6509 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6510 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6511 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6512 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6513 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6514 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6515 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6516 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6517 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6518 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6519 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6520 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6521 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6522 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6523 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP6524 (n °de face)</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139207950</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13983174b</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13920766d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139831730</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13920589h</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13920545w</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb138714164</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919697c</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14797096b</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919690z</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919698q</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919689r</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139196334</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919386w</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13911166s</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14832731d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13869547d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13918545m</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139180604</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13918026z</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13917775v</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13917708q</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13917251g</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13989637z</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13916805q</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14013920r</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb140120383</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb140107198</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139152541</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139933476</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13930414j</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13916018v</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139704569</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13970451k</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13918508d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13976948h</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13949751z</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb140185189</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13913046c</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139136926</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139127311</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13912624g</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139125455</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13912159r</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13911875p</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139117204</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13910193f</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139102090</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13910164v</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13997441c</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139101536</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139101598</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13910187h</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139090307</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13908744m</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb12241834c</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13908477r</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13908492n</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13925567d</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb38023643j</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, ABS/62-44</dc:source>
-                    <dc:title>FESTIVAL DE MUSIQUE CLASSIQUE LEGERE</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:date>1919-1933</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPNOUV</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BNUStr014</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb41947606d/date</dc:identifier>
+                    <dc:identifier>NUMP-21911</dc:identifier>
+                    <dc:identifier>ISSN 20154119</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>ger</dc:language>
+                    <dc:publisher>[s.n.] (Guebwiller)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb41947606d</dc:relation>
+                    <dc:relation>A pour reproduction : Journal de Guebwiller (Reproduction numérique) = ISSN 2739-8684 (https://gallica.bnf.fr/ark:/12148/cb41947606d/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg, M.600.012</dc:source>
+                    <dc:title>Journal de Guebwiller / Landwirtschaftlicher Kreisverein Gebweiler</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>6</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k88239783.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k3151267c.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k88239783</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k88239783.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k88239783.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb41947606d/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k3151267c.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k3151267c.medres</medres>
+                <nqamoyen>75.3</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k88239783.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k88239783</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k3151267c.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k3151267c</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -578,258 +318,44 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Waldteufel, Émile (1837-1915). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Wagner, Richard (1813-1883). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Wagner, Richard (1813-1883). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Wagner, Richard (1813-1883). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Verdi, Giuseppe (1813-1901). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Verdi, Giuseppe (1813-1901). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Suppé, Franz von (1819-1895). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1825-1899). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Strauss, Johann (1804-1849). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Smetana, Bedřich (1824-1884). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Schubert, Franz (1797-1828). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Schubert, Franz (1797-1828). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Sarasate, Pablo de (1844-1908). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Rossini, Gioachino (1792-1868). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Ravel, Maurice (1875-1937). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Ravel, Maurice (1875-1937). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Puccini, Giacomo (1858-1924). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Ponchielli, Amilcare (1834-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Paganini, Niccolò (1782-1840). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Offenbach, Jacques (1819-1880). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Offenbach, Jacques (1819-1880). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Moussorgski, Modeste (1839-1881). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mozart, Wolfgang Amadeus (1756-1791). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mozart, Wolfgang Amadeus (1756-1791). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mendelssohn Bartholdy, Felix (1809-1847). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Mascagni, Pietro (1863-1945). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Liszt, Franz (1811-1886). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Lehár, Franz (1870-1948). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Humperdinck, Engelbert (1854-1921). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Herold, Ferdinand (1791-1833). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Händel, Georg Friedrich (1685-1759). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Grieg, Edvard (1843-1907). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Gounod, Charles (1818-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Glinka, Mikhail Ivanovitch (1804-1857). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Flotow, Friedrich von (1812-1883). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Elgar, Edward (1857-1934). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Dukas, Paul (1865-1935). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Tchaïkovski, Petr Ilitch (1840-1893). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Brahms, Johannes (1833-1897). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Borodine, Alexandre Porfiriévitch (1833-1887). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Bizet, Georges (1838-1875). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Berlioz, Hector (1803-1869). Compositeur</dc:creator>
-                    <dc:creator>Berlioz, Hector (1803-1869). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Auber, Daniel-François-Esprit (1782-1871). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Sullivan, Sir Arthur. Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Saint-Saëns, Camille (1835-1921). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Rubinstein, Anton (1829-1894). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Rossini, Gioachino (1792-1868). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Pierné, Gabriel (1863-1937). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Debussy, Claude (1862-1918). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Leibowitz, René (1913-1972). Direction d'orchestre</dc:creator>
-                    <dc:creator>Gruber, Josef Leo. Direction d'orchestre</dc:creator>
-                    <dc:creator>Gibson, Alexander Drummond (1926-1995). Direction d'orchestre</dc:creator>
-                    <dc:creator>Freccia, Massimo (1906-2004). Direction d'orchestre</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Boult, Adrian (1889-1983). Direction d'orchestre</dc:creator>
-                    <dc:creator>Société des concerts symphoniques (Paris). Orchestre. Interprète</dc:creator>
-                    <dc:creator>New symphony orchestra of London. Interprète</dc:creator>
-                    <dc:creator>Radiotelevisione Italiana (Rome). Orchestra. Interprète</dc:creator>
-                    <dc:creator>Wiener Philharmoniker. Interprète</dc:creator>
-                    <dc:date>1960</dc:date>
-                    <dc:description>Titre uniforme : [Estudiantina. Op. 191]</dc:description>
-                    <dc:description>Titre uniforme : [Der Ritt der Walküren]</dc:description>
-                    <dc:description>Titre uniforme : [Lohengrin. WWV 75]. Extrait</dc:description>
-                    <dc:description>Titre uniforme : [Götterdämmerung. WWV 86D. Siegfrieds Tod und Trauermarsch]</dc:description>
-                    <dc:description>Titre uniforme : [La traviata]. Choix</dc:description>
-                    <dc:description>Titre uniforme : [Aida]. Extrait</dc:description>
-                    <dc:description>Titre uniforme : [Leichte Kavallerie]. Extrait orch.</dc:description>
-                    <dc:description>Titre uniforme : [Unter Donner und Blitz. RV 324AB/C]</dc:description>
-                    <dc:description>Titre uniforme : [Tritsch-Tratsch Polka. RV 214]</dc:description>
-                    <dc:description>Titre uniforme : [Künstlerleben. RV 316]</dc:description>
-                    <dc:description>Titre uniforme : [Geschichten aus dem Wienerwald. RV 325]</dc:description>
-                    <dc:description>Titre uniforme : [An der schönen blauen Donau. Orchestre. RV 314]</dc:description>
-                    <dc:description>Titre uniforme : [Radetzky-Marsch. Op. 228]</dc:description>
-                    <dc:description>Titre uniforme : [Vltava. JB 1.112/2]</dc:description>
-                    <dc:description>Titre uniforme : [Rosamunde, Fürstin von Zypern. D 797]. Choix orch.</dc:description>
-                    <dc:description>Titre uniforme : [Marche militaire. Piano (4 mains). D 733, no 1. Ré majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Airs bohémiens]</dc:description>
-                    <dc:description>Titre uniforme : [Semiramide]. Extrait orchestral</dc:description>
-                    <dc:description>Titre uniforme : [La Valse. Orchestre. O 72]</dc:description>
-                    <dc:description>Titre uniforme : [Boléro. Orchestre. O 81]</dc:description>
-                    <dc:description>Titre uniforme : [Manon Lescaut]</dc:description>
-                    <dc:description>Titre uniforme : [La Gioconda. Ballo delle ore]</dc:description>
-                    <dc:description>Titre uniforme : [Sonates. Violon, orchestre. MS 66. Do majeur]. Adapt.</dc:description>
-                    <dc:description>Titre uniforme : [Orphée aux Enfers. Ouverture]</dc:description>
-                    <dc:description>Titre uniforme : [Les contes d'Hoffmann. Acte 4. Belle nuit, ô nuit d'amour]</dc:description>
-                    <dc:description>Titre uniforme : [Ivanova noc' na Lysoj gore (1867)]</dc:description>
-                    <dc:description>Titre uniforme : [Sérénades. Cordes. KV 525. Sol majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Le nozze di Figaro. KV 492. Ouverture]</dc:description>
-                    <dc:description>Titre uniforme : [Die Hebriden. Op. 26]</dc:description>
-                    <dc:description>Titre uniforme : [Cavalleria rusticana]. Extr. orch.</dc:description>
-                    <dc:description>Titre uniforme : [Ungarische Rhapsodien. Orchestre. No 6. LW G21, no 6. Mi bémol majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Ungarische Rhapsodien. Orchestre. No 2. LW G21, no 2. Do dièse mineur]</dc:description>
-                    <dc:description>Titre uniforme : [Les préludes. Orchestre. LW G3]</dc:description>
-                    <dc:description>Titre uniforme : [Paraphrases. Mendelssohn-Bartholdy, Felix. A Midsummer Night's Dream. Wedding March and dance of the Elves. Piano. LW A166]</dc:description>
-                    <dc:description>Titre uniforme : [O lieb, so lang du lieben kannst. Piano. LW A103, no 3]. Adapt.</dc:description>
-                    <dc:description>Titre uniforme : [Gold und Silber. Op. 79]</dc:description>
-                    <dc:description>Titre uniforme : [Hänsel und Gretel. Ouvertüre]</dc:description>
-                    <dc:description>Titre uniforme : [Zampa ou la fiancée de marbre]. Extr.</dc:description>
-                    <dc:description>Titre uniforme : [Serse. HWV 40. Ombra mai fu]</dc:description>
-                    <dc:description>Titre uniforme : [Norwegische Tänze. Piano. Op. 35, no 2]</dc:description>
-                    <dc:description>Titre uniforme : [Faust. CG 4. Ballet]</dc:description>
-                    <dc:description>Titre uniforme : [Ruslan i Lûdmila. Uvertûra]</dc:description>
-                    <dc:description>Titre uniforme : [Martha]. Extrait</dc:description>
-                    <dc:description>Titre uniforme : [Pomp and circumstance march. Op. 39, no 1. Ré majeur]</dc:description>
-                    <dc:description>Titre uniforme : [L'apprenti sorcier]</dc:description>
-                    <dc:description>Titre uniforme : [1812 god. Orchestre. ČS 46]</dc:description>
-                    <dc:description>Titre uniforme : [Spâŝaâ krasavica. ČS 13 (Ballet)]. Extr.</dc:description>
-                    <dc:description>Titre uniforme : [Slavânskij marš. Orchestre. ČS 42]</dc:description>
-                    <dc:description>Titre uniforme : [Ŝelkunčik. ČS 32 (Suite)]</dc:description>
-                    <dc:description>Titre uniforme : [Quatuors. Cordes. No 1. ČS 90. Ré majeur]. Arr.</dc:description>
-                    <dc:description>Titre uniforme : [Lebedinoe ozero. ČS 12 (Ballet)]. Choix</dc:description>
-                    <dc:description>Titre uniforme : [Italʹânskoe kapriččio. Orchestre. ČS 44]</dc:description>
-                    <dc:description>Titre uniforme : [Akademische Festouvertüre. Op. 80]</dc:description>
-                    <dc:description>Titre uniforme : [Knâzʹ Igorʹ]. Choix</dc:description>
-                    <dc:description>Titre uniforme : [Carmen. GB 9]. Extr. orch.</dc:description>
-                    <dc:description>Titre uniforme : [L'invitation à la valse. H 90]</dc:description>
-                    <dc:description>Titre uniforme : [La damnation de Faust. H 111]. Choix</dc:description>
-                    <dc:description>Titre uniforme : [Les diamants de la couronne. AWV 34]. Extr.</dc:description>
-                    <dc:description>Titre uniforme : [Danse macabre. R 171 (Poème symphonique)]</dc:description>
-                    <dc:description>Titre uniforme : [Guillaume Tell]. Extrait orchestral</dc:description>
-                    <dc:description>Comprend : Capriccio italien op. 45 / Tchaikovsky - La damnation de Faust : Menuet des follets ; ballet des sylphes, marche hongroise / Berlioz - Unter Donner und Blitz : polka op. 324 / Strauss fils - Ma patrie : La Moldau, Ma patrie / Smetana - Quatuor en ré majeur, op. 11 / Tchaikovsky - La chevauchée des Walkyries / Wagner ; New symphony orchestra of London ; Dir. Alexander Gibson - Haensel et Gretel (ouverture) / Engelbert Humperdinck - Rosamunde (entr'acte n °2 en si bémol) / Franz Schubert - Airs bohémiens : "Zigeunerweisen, op. 20 n °1 pour violon et orchestre" / Pablo de Sarasate - Rhapsodie hongroise n °2 en fa diese et si bémol / F. Liszt - Le songe d'une nuit d'été : Nocturne de l'acte III / Mendelssohn - L'or et l'argent, valse / Franz Lehar ; Orchestre symphonique de l'Opéra national de Vienne ; Dir. Victor Desarzens - Sémiramis (ouverture) / Rossini - La belle au bois dormant : valse, op. 66 / Tchaikovsky - Marche slave, op. 31 / Tchaikovsky - Zampa (ouverture) / Louis Herold - Aida : grande marche de l'acte II / Verdi - Serse, largo / Haendel - La Gioconda : danse des heures, acte III / Ponchielli ; Orchestre philharmonique de Rome ; Dir. Massimo Freccia - Carmen : prelude, aragonaise, les dragons d'Alcala, la garde montante, intermezzo, les Toreadors, danse boheme (suite d'orchestre) / Bizet - Les contes d'Hoffman : barcarolles de l'acte II / Offznbach - Boléro / Ravel - Faust, ballet du 5ème acte : La nuit de Valpurgis / Gounod ; Orchetsre de la Société des concerts symphoniques de Paris ; Dir. René Leibowitz - Poète et paysan (ouverture) / Franz von Suppe - Invitation à la valse, rondo op. 65 / Weber - Mouvement perpétuel, op. 11 / Paganini - Tritsch-tratsch, op. 214 / Strauss, fils - Lohengrin : prélude de l'acte III / Wagner - Danse norvégienne n °2 / Grieg - Ouverture solennelle 1812, op. 49 / Tchaikovsky ; New orchestra of London ; Dir. Alexander Gibson - Les noces de Figaro (ouverture) / Mozart - Manon Lescaut : intermezzo / Puccini - Le Prince Igor (ouverture) / Borodine - L'apprenti sorcier / Dukas - Petite suite, en bateau / Debussy - Orphée aux enfers (ouverture) / Offenbach ; Orchestre de la Société des concerts symphoniques de paris ; Dir. René Leibowitz - La grotte de Fingal / Mendellsohn - Les préludes / Liszt - Pomp and circumstance : marche n °1 en ré, op. 39 / E. Elgar - Une nuit sur le Mont Chauve / Moussorgsky - Di ballo / Sullivan ; New symphony orchestra of London ; Dir. Sir Adrian Boult - Cavalerie légère / Von Suppe - Histoires de la forêt viennoise / Strauss, fils - Rêve d'amour n °3 / Liszt - Marche de Radetzky, op. 228 / Strauss, père - Martha (ouverture) / Von Flotow - Vie d'artiste : valse, op. 316 / Strauss, fils - Marche militaire n °1 en ré majeur (op. 51) / Schubert - Estudiantina, valse / Waldteufel ; Orchestre symphonique de l'Opéra de Vienne ; Dir. Josef Leo Gruber - Rousslan et Ludmilla (ouverture) / Glinka - Kamennoi-Ostrow / Antoine Rubinstein - Guillaume Tell : ouverture / Rossini - La traviata : préludes acte I et III, op. 19 / Verdi - Cavalleria rusticana : intermezzo / Mascagni - Le crépuscule des dieux : voyage de Siegfried / Wagner ; Orchestre philharmonique de Rome ; Dir. Massimo Freccia - Petite musique de nuit, sérénade n °13 en sol majeur, K. 525 / Mozart - Le beau Danube bleu, valse op. 314 / Strauss, fils - Ouverture pour une fête académique, op. 80 / J. Brahms - Rhapsodie hongroise n °9 : en mi bémol (Carnaval de Pesth) / F. Liszt ; l'Orchestre symphonique national de Vienne ; Dir. Victor Desarzens - Les diamants de la couronne, ouverture / Daniel François Auber - Marche funèbre d'une marionnette / Gounod - Marche des petits soldats de plomb / Pierné - Danse macabre : op. 40 / Saint-Saëns - La valse / Ravel - Le Prince Igor, danses polovtsiennes, acte II / Borodine ; l'Orchestre de la Société des concerts symphoniques de Paris ; Dir. René Leibowitz - Casse noisette : suite d'orchestre op. 71 / Tchaikovsky - Le lac des cygnes, ballet op. 20 / Tchaikovsky ; New symphony orchestra of London ; Dir. Sir Adrian Boult</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>12 disques : 33 t ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 121</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8823966w</dc:identifier>
-                    <dc:identifier>NUMAUD-8823966</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5501 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5502 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5503 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5504 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5505 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5506 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5507 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5508 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5509 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5510 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5511 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5512 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5513 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5514 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5515 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5516 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5517 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5518 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5519 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5520 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5521 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5522 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5523 (n °de face)</dc:identifier>
-                    <dc:identifier>Numéro commercial : Sélection du reader's digest L7OP5524 (n °de face)</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139207950</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13983174b</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13920766d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139831730</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13920589h</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13920545w</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb138714164</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919697c</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14797096b</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919690z</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919698q</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919689r</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139196334</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13919386w</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13911166s</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14832731d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13869547d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139180604</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13917775v</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13917708q</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13917251g</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13989637z</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13916805q</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14013920r</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb140120383</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb140107198</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139152541</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139933476</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13930414j</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13916018v</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139704569</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13970451k</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13918508d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139533988</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13976948h</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13949751z</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb140185189</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13913046c</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139136926</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139127311</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13912624g</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139125455</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13912159r</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13911875p</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139117204</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13910193f</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139102090</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13910164v</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13997441c</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139101536</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139101598</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13910187h</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139090307</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13908744m</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb12241834c</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13908477r</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13908492n</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13925567d</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13918545m</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13918026z</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb38023641v</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, AB/60-31</dc:source>
-                    <dc:title>Festival de musique classique légère</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:date>1870-1965</dc:date>
+                    <dc:description>Variante(s) de titre : Le Programme</dc:description>
+                    <dc:description>Périodicité : Bihebdomadaire ; hebdomadaire ou bihebdomadaire en hiver, quotidien pendant la saison</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG03</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG03</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb327990226/date</dc:identifier>
+                    <dc:identifier>NUMP-27837</dc:identifier>
+                    <dc:identifier>ISSN 2130677X</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Vichy)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb327990226</dc:relation>
+                    <dc:relation>A pour reproduction : Journal de Vichy (Vichy. 1870. Reproduction numérique) = ISSN 2796-6461 (https://archives.allier.fr/rechercher/archives-numerisees/presse) (JOURNAL DE VICHY (Programme du Casino))</dc:relation>
+                    <dc:relation>A pour reproduction : Journal de Vichy (Vichy. 1870. Reproduction numérique) = ISSN 2796-6461 (https://gallica.bnf.fr/ark:/12148/cb327990226/date)</dc:relation>
+                    <dc:relation>Première de couverture : 682418</dc:relation>
+                    <dc:source>Médiathèque Valéry-Larbaud / ville de Vichy, NUM CV</dc:source>
+                    <dc:title>Journal de Vichy (Vichy. 1870)</dc:title>
+                    <dc:title>Journal de Vichy : ancien Hebdomadaire de Vichy : ce journal, politique, littéraire et commercial, est désigné pour l'insertion des annonces judiciaires de l'arrondissement et paraît deux fois par semaine</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>7</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8823966w.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t52695096r.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8823966w</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8823966w.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8823966w.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb327990226/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t52695096r.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t52695096r.medres</medres>
+                <nqamoyen>88.5</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8823966w.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8823966w</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t52695096r.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t52695096r</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -837,53 +363,38 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Rimski-Korsakov, Nikolaï Andreïvitch (1844-1908). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Kabalevski, Dimitri (1904-1987). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Khatchaturian, Aram (1903-1978). Auteur ou responsable intellectuel</dc:creator>
-                    <dc:creator>Golschmann, Vladimir (1893-1972). Direction d'orchestre</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Musikkollegium Winterthur (Orchester). Interprète</dc:creator>
-                    <dc:creator>Wiener Philharmoniker. Interprète</dc:creator>
-                    <dc:date>1961</dc:date>
-                    <dc:description>Titre uniforme : [Zolotoj petušok]</dc:description>
-                    <dc:description>Titre uniforme : [Komedianty. Op. 26]</dc:description>
-                    <dc:description>Titre uniforme : [Gaânè]. Choix</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 22</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k88140447</dc:identifier>
-                    <dc:identifier>NUMAUD-8814044</dc:identifier>
-                    <dc:identifier>Numéro commercial : Guilde internationale du disque MMS2212</dc:identifier>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb139179355</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13914645x</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb14817711k</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb379007820</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-11157</dc:source>
-                    <dc:title>GAYANEH / Aram KHATCHATOURIAN ; l'Orchestre de l'Opéra de Vienne dir. Vladimir GOLSCHMANN. LES COMEDIENS / Dimitri KABALEVSKI ; l'Orchestre de l'Opéra de Vienne dir. Vladimir GOLSCHMANN. LE COQ D'OR - "Introduction" et "Marche" / Nicolas RIMSKY-KORSAKOV ; l'Orchestre Symphonique de Winterthur dir. Victor DESARZENS</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:date>1944-1957</dc:date>
+                    <dc:description>Périodicité : Hebdomadaire</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb344219807/date</dc:identifier>
+                    <dc:identifier>NUMP-27735</dc:identifier>
+                    <dc:identifier>ISSN 11441224</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb344219807</dc:relation>
+                    <dc:relation>A pour reproduction : Radio (Paris. Reproduction numérique) = ISSN 3036-7441 (https://gallica.bnf.fr/ark:/12148/cb344219807/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, FOL-V-7205</dc:source>
+                    <dc:title>Radio ... (Paris)</dc:title>
+                    <dc:title>Radio ...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>8</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k88140447.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t54317252c.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k88140447</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k88140447.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k88140447.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb344219807/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t54317252c.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t54317252c.medres</medres>
+                <nqamoyen>86.92</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k88140447.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k88140447</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t54317252c.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t54317252c</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -891,51 +402,43 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Bach, Johann Sebastian (1685-1750). Compositeur</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Gerlin, Ruggero (1899-1983). Clavecin</dc:creator>
-                    <dc:creator>Orchestre des Cento Soli. Orchestre</dc:creator>
-                    <dc:date>1959</dc:date>
-                    <dc:description>Titre uniforme : Bach, Johann Sebastian (1685-1750). Compositeur. [Concertos. Clavier, orchestre à cordes, basse continue. BWV 1055. La majeur]</dc:description>
-                    <dc:description>Titre uniforme : Bach, Johann Sebastian (1685-1750). Compositeur. [Concertos. Clavier, orchestre à cordes, basse continue. BWV 1052. Ré mineur]</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t, stéréo ; 30 cm + 2 f. de f.</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 10</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8800916h</dc:identifier>
-                    <dc:identifier>Numéro commercial : Club français du disque 124</dc:identifier>
-                    <dc:language>Sans contenu linguistique</dc:language>
-                    <dc:publisher> (Paris)</dc:publisher>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13909443p</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13909439f</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb38088865v</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-4593</dc:source>
-                    <dc:subject>musique baroque (1600-1750)</dc:subject>
-                    <dc:subject>musique instrumentale orchestrale</dc:subject>
-                    <dc:title>Concerto pour clavecin et orchestre en ré mineur ; Concerto pour clavecin et orchestre en la majeur / Jean-Sebastien Bach, comp. ; Ruggero Gerlin, clav. ; orchestre des Cento soli ; Victor Desarzens, dir.</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:date>1889-1968</dc:date>
+                    <dc:description>Périodicité : Bihebdomadaire ; quotidien</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG59</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : NordPdeC1</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32753198f/date</dc:identifier>
+                    <dc:identifier>NUMP-17355</dc:identifier>
+                    <dc:identifier>ISSN 2125298X</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Lille)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32753198f</dc:relation>
+                    <dc:relation>A pour reproduction : La Croix du Nord (Reproduction numérique) = ISSN 2507-5446 (https://gallica.bnf.fr/ark:/12148/cb32753198f/date)</dc:relation>
+                    <dc:relation>A pour reproduction : La Croix du Nord (Reproduction numérique) = ISSN 2507-5446 (https://bm-lille.fr/patrimoine/doc/SYRACUSE/67436)</dc:relation>
+                    <dc:relation>A pour reproduction : La Croix du Nord (Reproduction numérique) = ISSN 2507-5446 (https://www.bn-r.fr/presse_ancienne_resultats.php?type_rech=pr&amp;q_fulltext=&amp;code[]=La+Croix+de+Roubaix-Tourcoing&amp;pr_jour=&amp;pr_mois=&amp;pr_annee=&amp;date_debut=13-08-1914&amp;date_fin=09-10-1914&amp;sort=tri_titre+asc%2Cdate_formated+asc&amp;from=presse) (13 août-9 oct. 1914)</dc:relation>
+                    <dc:relation>Première de couverture : 236075</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-13077</dc:source>
+                    <dc:title>La Croix du Nord : supplément régional à la Croix de Paris ["puis" grand journal quotidien du Nord de la France]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>9</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8800916h.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k50615777.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8800916h</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8800916h.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8800916h.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32753198f/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k50615777.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k50615777.medres</medres>
+                <nqamoyen>82.63</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8800916h.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8800916h</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k50615777.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k50615777</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -943,52 +446,36 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Bach, Johann Sebastian (1685-1750). Compositeur</dc:creator>
-                    <dc:creator>Bach, Johann Sebastian (1685-1750). Compositeur</dc:creator>
-                    <dc:creator>Bach, Johann Sebastian (1685-1750). Compositeur</dc:creator>
-                    <dc:creator>Nef, Isabelle (1898-1976). Clavecin</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Defrancesco, Edmond. Flûte</dc:creator>
-                    <dc:creator>Wachsmuth-Loew, Andrée (1911-....). Violon</dc:creator>
-                    <dc:creator>Orchestre de chambre de Lausanne. Orchestre</dc:creator>
-                    <dc:date>1951</dc:date>
-                    <dc:description>Titre uniforme : Bach, Johann Sebastian (1685-1750). Compositeur. [Brandenburgische Konzerte. No 5. BWV 1050 (1719 ?). Ré majeur]</dc:description>
-                    <dc:description>Titre uniforme : [Concertos. Clavier, orchestre à cordes, basse continue. BWV 1055. La majeur]</dc:description>
-                    <dc:description>Comprend : Cinquième concerto brandebourgeois ; Concerto en la majeur</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 30 cm</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 10</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8812949s</dc:identifier>
-                    <dc:identifier>Numéro commercial : L'Oiseau-lyre OLLD5</dc:identifier>
-                    <dc:language>Sans contenu linguistique</dc:language>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb38249691m</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-8060</dc:source>
-                    <dc:subject>musique instrumentale orchestrale</dc:subject>
-                    <dc:title>Cinquième concerto brandebourgeois / J. S. Bach, comp. ; Isabelle Nef, clav. ; Edmond Defrancesco, fl. ; Andrée Wachsmuth-Loew, vl ; Orchestre de chambre de Lausanne ; Victor Desarzens, dir.. Concerto en la majeur / J. S. Bach, comp. ; Isabelle Nef, clav. ; Orchestre de chambre de Lausanne ; Victor Desarzens, dir.</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:date>1934-1957</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328822372/date</dc:identifier>
+                    <dc:identifier>NUMP-21157</dc:identifier>
+                    <dc:identifier>ISSN 03306003</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Tunis)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328822372</dc:relation>
+                    <dc:relation>A pour reproduction : Tunis-soir (Reproduction numérique) = ISSN 2811-6607 (https://gallica.bnf.fr/ark:/12148/cb328822372/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, GR FOL-JO-10034</dc:source>
+                    <dc:title>Tunis-soir : quotidien politique et d'information</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>10</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8812949s.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k95666382.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8812949s</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8812949s.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8812949s.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb328822372/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k95666382.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k95666382.medres</medres>
+                <nqamoyen>87.03</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8812949s.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8812949s</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k95666382.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k95666382</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -996,50 +483,42 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:creator>Bach, Johann Sebastian (1685-1750). Compositeur</dc:creator>
-                    <dc:creator>Desarzens, Victor (1908-1986). Direction d'orchestre</dc:creator>
-                    <dc:creator>Gerlin, Ruggero (1899-1983). Clavecin</dc:creator>
-                    <dc:creator>Orchestre des Cento Soli. Orchestre</dc:creator>
-                    <dc:date>1958</dc:date>
-                    <dc:description>Titre uniforme : Bach, Johann Sebastian (1685-1750). Compositeur. [Concertos. Clavier, orchestre à cordes, basse continue. BWV 1052. Ré mineur]</dc:description>
-                    <dc:description>Titre uniforme : Bach, Johann Sebastian (1685-1750). Compositeur. [Concertos. Clavier, orchestre à cordes, basse continue. BWV 1055. La majeur]</dc:description>
-                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
-                    <dc:description>Contient une table des matières</dc:description>
-                    <dc:format>1 disque : 33 t ; 25 cm + 2 f. de pl.</dc:format>
-                    <dc:format>disc</dc:format>
-                    <dc:format>disque microsillon</dc:format>
-                    <dc:format>multipart/mixed</dc:format>
-                    <dc:format>Nombre total de vues : 10</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8844451k</dc:identifier>
-                    <dc:identifier>Numéro commercial : Club français du disque I 24</dc:identifier>
-                    <dc:language>Sans contenu linguistique</dc:language>
-                    <dc:publisher>Club français du disque (Paris)</dc:publisher>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13909439f</dc:relation>
-                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13909443p</dc:relation>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb380906558</dc:relation>
-                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
-                    <dc:rights>restricted use</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, C-12614</dc:source>
-                    <dc:subject>musique instrumentale orchestrale</dc:subject>
-                    <dc:title>Concerto pour clavecin et orchestre en ré mineur, BWV 1052 ; Concerto pour clavecin et orchestre en la majeur, BWV 1055 / Bach, comp. ; Ruggero Gerlin, clav. ; orchestre desCento solic ; Victor Desarzens, dir.</dc:title>
-                    <dc:type>sound</dc:type>
-                    <dc:type>document sonore</dc:type>
+                    <dc:contributor>Gros, Jules (1838-1919). Directeur de publication</dc:contributor>
+                    <dc:date>1883-1944</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG25</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34410688q/date</dc:identifier>
+                    <dc:identifier>NUMP-25558</dc:identifier>
+                    <dc:identifier>ISSN 09916601</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Besançon)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34410688q</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit Comtois (Reproduction numérique) = ISSN 2461-4599 (https://memoirevive.besancon.fr/ark:/48565/5dpzsjt43h18)</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit Comtois (Reproduction numérique) = ISSN 2461-4599 (http://adcost-elliadd.univ-fcomte.fr/petit-comtois/)</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit Comtois (Reproduction numérique) = ISSN 2461-4599 (https://gallica.bnf.fr/ark:/12148/cb34410688q/date)</dc:relation>
+                    <dc:relation>Première de couverture : 236486</dc:relation>
+                    <dc:source>Bibliothèque municipale de Besançon, Per 4001</dc:source>
+                    <dc:title>Le Petit Comtois : journal républicain démocratique quotidien</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>11</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8844451k.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9317947h.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8844451k</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8844451k.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8844451k.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34410688q/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9317947h.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9317947h.medres</medres>
+                <nqamoyen>99.44</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8844451k.thumbnail</thumbnail>
-                <typedoc>sonores</typedoc>
-                <uri>bpt6k8844451k</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9317947h.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k9317947h</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -1047,43 +526,42 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:date>1920</dc:date>
-                    <dc:description>Appartient à l’ensemble documentaire : IconMUS1</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : IconMUSNum</dc:description>
-                    <dc:description>Appartient à l’ensemble documentaire : IconMUS0</dc:description>
-                    <dc:format>1 reprod. photomécanique ; 17 x 12,5 cm</dc:format>
-                    <dc:format>image/jpeg</dc:format>
-                    <dc:format>Nombre total de vues : 1</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b8417194x</dc:identifier>
-                    <dc:identifier>IFN-8417194</dc:identifier>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb39604337s</dc:relation>
-                    <dc:rights>domaine public</dc:rights>
-                    <dc:rights>public domain</dc:rights>
-                    <dc:source>Bibliothèque nationale de France, département Musique, Est. Desarzens 001</dc:source>
-                    <dc:subject>Desarzens, Victor (1908-1986) -- Portraits</dc:subject>
-                    <dc:subject>Portraits</dc:subject>
-                    <dc:title>Victor et Georges Desarzens</dc:title>
-                    <dc:type>image fixe</dc:type>
-                    <dc:type>image</dc:type>
-                    <dc:type>still image</dc:type>
-                    <dc:type>estampe</dc:type>
-                    <dc:type>engraving</dc:type>
+                    <dc:date>1882-1944</dc:date>
+                    <dc:description>Périodicité : Quotidien ; bihebdomadaire</dc:description>
+                    <dc:description>Etat de collection : 5e année, n° 2465 : 1er avr. 1884-15 août 1884. 1er janv. 1885-11 mai 1940. 4 janv. 1941-2 sept. 1944, inc.</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG71</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328846009/date</dc:identifier>
+                    <dc:identifier>NUMP-27401</dc:identifier>
+                    <dc:identifier>ISSN 21394962</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Mâcon)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328846009</dc:relation>
+                    <dc:relation>A pour reproduction : L'Union républicaine (Mâcon. Reproduction numérique) = ISSN 3003-1141 (https://gallica.bnf.fr/ark:/12148/cb328846009/date)</dc:relation>
+                    <dc:relation>Première de couverture : 843185</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-91063</dc:source>
+                    <dc:title>L'Union républicaine (Mâcon)</dc:title>
+                    <dc:title>L'Union républicaine : journal de la démocratie radicale de Saône-et-Loire ["puis" journal de la démocratie de Saône-et-Loire "puis plus de sous-titre"]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
                 </oai_dc:dc>
             </srw:recordData>
             <srw:recordIdentifier>ark</srw:recordIdentifier>
             <srw:recordPosition>12</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/btv1b8417194x.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t52184059p.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/btv1b8417194x</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b8417194x.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/btv1b8417194x.medres</medres>
-                <nqamoyen>0.0</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb328846009/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t52184059p.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t52184059p.medres</medres>
+                <nqamoyen>87.75</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b8417194x.thumbnail</thumbnail>
-                <typedoc>images</typedoc>
-                <uri>btv1b8417194x</uri>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t52184059p.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t52184059p</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -1091,19 +569,18 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:date>1874-1955</dc:date>
-                    <dc:description>Périodicité : Hebdomadaire ; bihebdomadaire ; 3 fois par semaine</dc:description>
-                    <dc:description>Avec mode texte</dc:description>
-                    <dc:format>Nombre total de vues : 106691</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32701198x/date</dc:identifier>
-                    <dc:identifier>NUMP-4530</dc:identifier>
-                    <dc:identifier>ISSN 20202954</dc:identifier>
+                    <dc:date>1946-1961</dc:date>
+                    <dc:description>Périodicité : Quotidien</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb327562675/date</dc:identifier>
+                    <dc:identifier>NUMP-21504</dc:identifier>
+                    <dc:identifier>ISSN 29725593</dc:identifier>
                     <dc:language>fre</dc:language>
-                    <dc:publisher>[s.n.] (Paris)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32701198x</dc:relation>
-                    <dc:relation>A pour reproduction : Archives commerciales de la France (Reproduction numérique) = ISSN 2400-197X (https://gallica.bnf.fr/ark:/12148/cb32701198x/date)</dc:relation>
-                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, 4-V-295</dc:source>
-                    <dc:title>Archives commerciales de la France : journal hebdomadaire...</dc:title>
+                    <dc:publisher>[s.n.] (Alger)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb327562675</dc:relation>
+                    <dc:relation>A pour reproduction : Dernière heure (Alger. Reproduction numérique) = ISSN 2999-8530 (https://gallica.bnf.fr/ark:/12148/cb327562675/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, GR FOL-JO-4563</dc:source>
+                    <dc:title>Dernière heure (Alger)</dc:title>
+                    <dc:title>Dernière heure</dc:title>
                     <dc:type>text</dc:type>
                     <dc:type>texte</dc:type>
                     <dc:type>publication en série imprimée</dc:type>
@@ -1114,16 +591,16 @@
             <srw:recordPosition>13</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k5665454k.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k95937886.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/cb32701198x/date</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k5665454k.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k5665454k.medres</medres>
-                <nqamoyen>69.11</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb327562675/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k95937886.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k95937886.medres</medres>
+                <nqamoyen>87.46</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5665454k.thumbnail</thumbnail>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k95937886.thumbnail</thumbnail>
                 <typedoc>periodiques</typedoc>
-                <uri>bpt6k5665454k</uri>
+                <uri>bpt6k95937886</uri>
             </srw:extraRecordData>
         </srw:record>
         <srw:record>
@@ -1131,19 +608,20 @@
             <srw:recordPacking>xml</srw:recordPacking>
             <srw:recordData>
                 <oai_dc:dc>
-                    <dc:date>1896-189.</dc:date>
-                    <dc:description>Variante(s) de titre : Nouvelles pour rire : journal humoristique, satirique, fantaisiste, amusant</dc:description>
-                    <dc:description>Périodicité : Hebdomadaire</dc:description>
-                    <dc:description>Avec mode texte</dc:description>
-                    <dc:format>Nombre total de vues : 325</dc:format>
-                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328268750/date</dc:identifier>
-                    <dc:identifier>ISSN 24258660</dc:identifier>
+                    <dc:date>1944-1999</dc:date>
+                    <dc:description>Variante(s) de titre : Écho du Centre, La Marseillaise</dc:description>
+                    <dc:description>Variante(s) de titre : Écho-Marseillaise du Centre</dc:description>
+                    <dc:description>Périodicité : Quotidien</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb343510899/date</dc:identifier>
+                    <dc:identifier>NUMP-24194</dc:identifier>
+                    <dc:identifier>ISSN 01518224</dc:identifier>
                     <dc:language>fre</dc:language>
-                    <dc:language>français</dc:language>
-                    <dc:publisher> (Paris)</dc:publisher>
-                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328268750</dc:relation>
-                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 8-Y2-18872</dc:source>
-                    <dc:title>Nouvelles pour rire</dc:title>
+                    <dc:publisher>Écho du Centre (Limoges)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb343510899</dc:relation>
+                    <dc:relation>A pour reproduction : Écho du Centre (Limoges. Reproduction numérique) = ISSN 2800-180X (https://gallica.bnf.fr/ark:/12148/cb343510899/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Collections numérisées, NUM LIM 58420</dc:source>
+                    <dc:title>Écho du Centre (Limoges)</dc:title>
+                    <dc:title>Écho du Centre</dc:title>
                     <dc:type>text</dc:type>
                     <dc:type>texte</dc:type>
                     <dc:type>publication en série imprimée</dc:type>
@@ -1154,16 +632,16 @@
             <srw:recordPosition>14</srw:recordPosition>
             <srw:extraRecordData>
                 <epubFile></epubFile>
-                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6156880g.highres</highres>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t5436610c.highres</highres>
                 <infoSupModifiable></infoSupModifiable>
-                <link>https://gallica.bnf.fr/ark:/12148/cb328268750/date</link>
-                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6156880g.lowres</lowres>
-                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6156880g.medres</medres>
-                <nqamoyen>69.78</nqamoyen>
+                <link>https://gallica.bnf.fr/ark:/12148/cb343510899/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t5436610c.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t5436610c.medres</medres>
+                <nqamoyen>85.9</nqamoyen>
                 <provenance>Gallica</provenance>
-                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6156880g.thumbnail</thumbnail>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t5436610c.thumbnail</thumbnail>
                 <typedoc>periodiques</typedoc>
-                <uri>bpt6k6156880g</uri>
+                <uri>bd6t5436610c</uri>
             </srw:extraRecordData>
         </srw:record>
     </srw:records>

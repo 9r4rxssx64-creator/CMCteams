@@ -1,6 +1,6 @@
 # 📜 Récupération AUTO des actes — registres numérisés officiels
 
-_Généré le 2026-08-04 00:46 UTC par `tools/arbre/research-registres.mjs` (CI, réseau ouvert). Brut complet dans `registresraw/` pour itération._
+_Généré le 2026-08-04 00:58 UTC par `tools/arbre/research-registres.mjs` (CI, réseau ouvert). Brut complet dans `registresraw/` pour itération._
 
 ## Cibles (actes assez anciens pour être consultables en ligne)
 
