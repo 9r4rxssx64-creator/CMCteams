@@ -25,6 +25,8 @@ jobs:
         run: node tools/arbre/fetch-actes-images.mjs
       - name: Sonde membres isolés (avis de décès CH/Nice + Journal de Monaco)
         run: node tools/arbre/probe-isoles.mjs || echo "sonde isolés partielle"
+      - name: Toutes villes & pays — nouvelles pistes (INSEE, presse CH, Gallica, JdM, Vaud, AD13)
+        run: node tools/arbre/research-nouvelles-pistes.mjs || echo "nouvelles pistes partielles"
       - name: Nettoyage node_modules (pas de commit)
         run: rm -rf node_modules package.json package-lock.json
       - name: Commit images + rapport
