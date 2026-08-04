@@ -97,7 +97,8 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .treemode button{font-size:12px;font-weight:700;color:#f3e6c2;padding:7px 12px;border-radius:999px;white-space:nowrap}
 .treemode button.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#3a2708}
 .fampick{top:56px}
-#stageWrap.plan .fampick{display:none}
+.genlab{position:absolute;left:10px;font-size:30px;font-weight:800;color:rgba(122,84,39,.55);letter-spacing:.4px;pointer-events:none}
+
 .addrel{display:flex;gap:8px;flex-wrap:wrap}.addrel .btn{flex:1;min-width:calc(50% - 4px)}
 .tnode .rt{position:absolute;top:-8px;left:9px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#04222a;background:var(--cyan);padding:1px 6px;border-radius:999px}
 .zoomBtns{position:absolute;right:12px;bottom:12px;z-index:5;display:flex;flex-direction:column;gap:8px}
@@ -184,7 +185,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.29";
+var APP_VER="v2.30";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -285,7 +286,11 @@ function tidyTree(ids){
     return center;
   }
   var roots=ids.filter(function(x){var pp=P(x);return !(pp.pere&&set[pp.pere])&&!(pp.mere&&set[pp.mere]);});
-  roots.sort(function(a,b){return childrenOf(b).length-childrenOf(a).length;});
+  /* L'aïeul avec la lignée la plus PROFONDE d'abord (Jean-Baptiste avant Victor) :
+     sinon un conjoint-racine « capture » son épouse en Gén. 1 et coupe la chaîne
+     des ancêtres (bug vu par Kevin : plan Maiffret fragmenté, Victor au sommet). */
+  var _sd={};function subDepth(x){if(_sd[x]!==undefined)return _sd[x];_sd[x]=0;var d=0;childrenOf(x).forEach(function(k){if(set[k]){var v=1+subDepth(k);if(v>d)d=v;}});_sd[x]=d;return d;}
+  roots.sort(function(a,b){var da=subDepth(a),db=subDepth(b);if(da!==db)return db-da;return childrenOf(b).length-childrenOf(a).length;});
   roots.forEach(function(x){if(!placed[x])unit(x,0);});
   ids.forEach(function(x){if(!placed[x])unit(x,0);});
   var minx=1e9,maxx=-1e9;nodes.forEach(function(n){if(n.x<minx)minx=n.x;if(n.x>maxx)maxx=n.x;});
@@ -381,7 +386,7 @@ function renderTree(){
     +'<div class="treemode"><button data-style="arbre"'+(VIEWSTYLE==="arbre"?' class="on"':'')+'>🌳 Arbre</button><button data-style="plan"'+(VIEWSTYLE==="plan"?' class="on"':'')+'>📋 Plan</button></div>'
     +'<div class="treemode fampick"><button data-fam="o"'+(FAMKEY==="o"?' class="on"':'')+'>🫒 Sauvaigo · Maiffret</button><button data-fam="c"'+(FAMKEY==="c"?' class="on"':'')+'>🌳 Desarzens</button></div>'
     +'<div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button></div>'
-    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?("📋 Plan familial · "+n):(famLabel(FAMKEY)+" · "+Object.keys(DB.persons).filter(function(x){return famOf(DB.persons[x]).indexOf(FAMKEY)>=0;}).length))+' personnes · glisse · pince · touche une fiche</div></div>';
+    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?"📋 ":"")+famLabel(FAMKEY)+" · "+Object.keys(DB.persons).filter(function(x){return famOf(DB.persons[x]).indexOf(FAMKEY)>=0;}).length+' personnes · glisse · pince · touche une fiche</div></div>';
   var zb=document.querySelectorAll(".zoomBtns [data-z]");zb.forEach(function(b){b.onclick=function(){if(b.dataset.z==="fit")fitStage(true);else zoomAt(0.5,0.5,b.dataset.z==="1"?1.25:1/1.25);};});
   document.querySelectorAll(".treemode [data-style]").forEach(function(b){b.onclick=function(){if(VIEWSTYLE===b.dataset.style)return;VIEWSTYLE=b.dataset.style;syncMode();try{localStorage.setItem("arbre_viewstyle",VIEWSTYLE);}catch(e){}renderTree();};});
   document.querySelectorAll(".fampick [data-fam]").forEach(function(b){b.onclick=function(){if(FAMKEY===b.dataset.fam)return;FAMKEY=b.dataset.fam;try{localStorage.setItem("arbre_fam",FAMKEY);}catch(e){}renderTree();};});
@@ -435,7 +440,7 @@ try{var _vs=localStorage.getItem("arbre_viewstyle");if(_vs==="arbre"||_vs==="pla
 function syncMode(){TREEMODE=(VIEWSTYLE==="arbre"?"asc":"famille");}
 syncMode();
 function safeLayout(){
-  if(VIEWSTYLE==="arbre"){try{var A=layoutMainFamily();if(A&&A.nodes&&A.nodes.length&&isFinite(A.w)&&isFinite(A.h))return A;}catch(e){}}
+  try{var A=layoutMainFamily();if(A&&A.nodes&&A.nodes.length&&isFinite(A.w)&&isFinite(A.h))return A;}catch(e){}
   try{var L=layoutForest();if(L&&L.nodes&&L.nodes.length&&isFinite(L.w)&&isFinite(L.h)&&L.w>0&&L.h>0)return L;}catch(e){try{console.error("layoutForest",e);}catch(_){}}
   return layoutGridAll();
 }
@@ -443,6 +448,12 @@ function drawStage(fit){
   var stage=$("#stage");if(!stage)return;_lay=safeLayout();var W=_lay.w,PADX=TREE.PAD;
   var rules=(_lay.bands||[]).map(function(b){return '<line x1="'+PADX+'" y1="'+b.y+'" x2="'+(W-PADX)+'" y2="'+b.y+'" stroke="rgba(122,84,39,.28)" stroke-width="1.4" stroke-dasharray="2 9"/>';}).join("");
   var plan=(VIEWSTYLE==="plan");
+  var genLabels="";
+  if(plan){var rowsY={};_lay.nodes.forEach(function(n){var k=Math.round(n.y/10)*10;rowsY[k]=Math.min(rowsY[k]||1e9,n.y);});
+    var _b2=(_lay.bands&&_lay.bands.length>1)?_lay.bands[1].y:Infinity;
+    var ys=Object.keys(rowsY).map(Number).sort(function(a,b){return a-b;}).filter(function(y){return rowsY[y]<_b2;});
+    ys.forEach(function(y,i){rules+='<line x1="0" y1="'+(rowsY[y]-76)+'" x2="'+W+'" y2="'+(rowsY[y]-76)+'" stroke="rgba(122,84,39,.16)" stroke-width="1.2" stroke-dasharray="3 10"/>';
+      genLabels+='<div class="genlab" style="top:'+(rowsY[y]-70)+'px">Gén. '+(i+1)+'</div>';});}
   var couples=[];
   var paths=_lay.links.map(function(l){
     if(l.couple){var midx=(l.x1+l.x2)/2;
@@ -457,13 +468,13 @@ function drawStage(fit){
   var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+b.y+'px">'+esc(b.label)+'</div>';}).join("");
   var rings=couples.map(function(c){return '<div class="couplebadge" style="left:'+c.x+'px;top:'+c.y+'px">💍</div>';}).join("");
   stage.style.width=W+"px";stage.style.height=_lay.h+"px";
-  stage.innerHTML=svg+labels+rings+_lay.nodes.map(tnodeHTML).join("");
+  stage.innerHTML=svg+genLabels+labels+rings+_lay.nodes.map(tnodeHTML).join("");
   if(fit)fitStage();
 }
 function applyST(){var s=$("#stage");if(s)s.style.transform="translate("+VIEWST.tx+"px,"+VIEWST.ty+"px) scale("+VIEWST.sc+")";}
-function fitStage(full){var wr=$("#stageWrap");if(!wr||!_lay)return;var W=wr.clientWidth,H=wr.clientHeight;var top=(VIEWSTYLE==="plan")?52:104;
+function fitStage(full){var wr=$("#stageWrap");if(!wr||!_lay)return;var W=wr.clientWidth,H=wr.clientHeight;var top=104;
   var fitSc=Math.min((W-10)/_lay.w,(H-8-top)/_lay.h,1.25);
-  if(full||fitSc>=0.30){var sc=Math.max(fitSc,0.09);VIEWST.sc=sc;VIEWST.tx=(W-_lay.w*sc)/2;var sh=_lay.h*sc;VIEWST.ty=sh<=H-top?top+(H-top-sh)/2:top;applyST();return;}
+  if(full||fitSc>=(VIEWSTYLE==="plan"?0.20:0.30)){var sc=Math.max(fitSc,0.09);VIEWST.sc=sc;VIEWST.tx=(W-_lay.w*sc)/2;var sh=_lay.h*sc;VIEWST.ty=sh<=H-top?top+(H-top-sh)/2:top;applyST();return;}
   /* arbre très large : vue par défaut LISIBLE centrée sur la lignée (carte racine),
      on glisse pour explorer ; le bouton ⤢ donne la vue d ensemble complète. */
   var sc2=0.34;VIEWST.sc=sc2;
@@ -634,7 +645,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=17;
+var SEED_VERSION=18;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -647,7 +658,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_christian",prenom:"Christian",nom:"",sexe:"M",conjoints:["seed_marie_brigitte"],notes:"Mari de Marie-Brigitte. Nom/date à compléter."});
   add({id:"seed_cecile",prenom:"Cécile",nom:"",sexe:"F",vivant:true,pere:"seed_christian",mere:"seed_marie_brigitte",notes:"Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter."});
   add({id:"seed_marie_joe",prenom:"Marie-Joe",nom:"SAUVAIGO",sexe:"F",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"11.11.1943",lieu:"Monaco"},deces:{date:"26.11.2021",lieu:"République tchèque"},notes:"✅ TRÈS PROBABLE (fichier INSEE) : « Marie José SAUVAIGO », née le 11.11.1943 à MONACO — la SEULE Sauvaigo née à Monaco de tout le fichier des décès — † 26.11.2021 en République tchèque (78 ans). Sœur de Marie-Noël (tante maternelle de Kevin). À confirmer par la famille.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/-Gi6moX8QES8"},SRC.matchid,SRC.gSauvaigo,SRC.monacoTree]});
-  add({id:"seed_kevin",prenom:"Kevin",nom:"de Sarzance",sexe:"M",vivant:true,naissance:{date:"5.02.1979",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique)."});
+  add({id:"seed_kevin",prenom:"Kevin",nom:"DESARZENS",sexe:"M",vivant:true,naissance:{date:"5.02.1979",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. « de Sarzance » est la forme phonétique du nom officiel DESARZENS."});
   /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
   add({id:"seed_guy",prenom:"Guy",nom:"DESARZENS",sexe:"M",deces:{},notes:"Grand-père paternel de Kevin (père de Gérard et d'Émile) — prénom donné par Kevin (2026-08-03), « il me semble » : à confirmer sur l'acte de naissance de Gérard (1944, Salon-de-Provence, Archives 13). 🔎 Recherche INSEE auto 2026-08-03 : AUCUN Guy DESARZENS du Sud dans le fichier des décès (1970→auj.) → Guy est probablement décédé AVANT 1970, ou à Monaco/à l'étranger. Piste suisse : SARZENS = hameau de la commune de Lucens (Vaud, district Broye-Vully), cité dès l'an 996, ~82 habitants — berceau du nom. Porteurs vaudois célèbres : Victor Desarzens (1908–1986, chef d'orchestre né à Château-d'Œx), Corinne et Fanny Desarzens (écrivaines). Voir aussi Claude Alain DE SARZENS (1941 Marseille, †2022 Suisse) — parent possible.",sources:[SRC.ad13,SRC.gDesarzens,SRC.davel,SRC.sarzens]});
   add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",pere:"seed_guy",conjoints:["seed_marienoel"],naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Fils de Guy DESARZENS (à confirmer). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). L'acte de naissance 1944 à Salon (Archives 13) confirmera le prénom de Guy + donnera la grand-mère paternelle.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
