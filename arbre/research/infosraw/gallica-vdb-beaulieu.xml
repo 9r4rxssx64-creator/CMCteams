@@ -1,0 +1,645 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <srw:version>1.2</srw:version>
+    <srw:echoedSearchRetrieveRequest>
+        <srw:query>gallica all "VAN DEN BOSCH" "Beaulieu"</srw:query>
+        <srw:version>1.2</srw:version>
+    </srw:echoedSearchRetrieveRequest>
+    <srw:numberOfRecords>23259</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;455536&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:records>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Marboutin, Fernand. Expert</dc:contributor>
+                    <dc:date>1913</dc:date>
+                    <dc:description>[Vente. Art. 1913-06-13. Paris]</dc:description>
+                    <dc:description>Référence bibliographique : Lugt, 72942</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : VenteEST2</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>31 p.-[2] f. de pl. : ill. ; 24 cm</dc:format>
+                    <dc:format>Nombre total de vues : 45</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m</dc:identifier>
+                    <dc:identifier>NUMM-1249094</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.]</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb41537661n</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Estampes et photographie, YD-1 (1913-06-13)-8</dc:source>
+                    <dc:title>Catalogue des tableaux, aquarelles, dessins, pastels, anciens et modernes par ou attribués à Bailly, Van den Bosch, Delacroix... [et al.]..., importantes estampes anciennes du XVIIIe siècle..., meubles anciens... / [expert] F. Marboutin</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>0</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m.medres</medres>
+                <nqamoyen>93.54</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k1249094m.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k1249094m</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Escaut. Auteur du texte</dc:creator>
+                    <dc:date>1796-1797</dc:date>
+                    <dc:description>Contient une table des matières</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>4 vol. ; in-4</dc:format>
+                    <dc:format>Nombre total de vues : 244</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k96298931</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>J. F. Vander Schueren (Gand)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb33755296n</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb33755296n</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, F-21613</dc:source>
+                    <dc:subject>Escaut (Actes Administratifs)</dc:subject>
+                    <dc:title>Recueil de toutes les sentences, rendues au définitif par le tribunal civil du departement de l'Escaut, depuis son installation. Partie 1</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>1</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k96298931.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k96298931</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k96298931.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k96298931.medres</medres>
+                <nqamoyen>96.29</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k96298931.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k96298931</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>F. Soennecken. Ancien possesseur</dc:contributor>
+                    <dc:creator>Jean Van Den Bosch. Auteur du texte</dc:creator>
+                    <dc:date>1401-1900</dc:date>
+                    <dc:description>Numérisation effectuée à partir d'un document original.</dc:description>
+                    <dc:description>Appartient à l'ensemble documentaire : BNUStras1</dc:description>
+                    <dc:description>Appartient à l'ensemble documentaire : BNUStr029</dc:description>
+                    <dc:description>Appartient à l'ensemble documentaire : BNUStr000</dc:description>
+                    <dc:description>Fol. 2 : portrait de Felix A. Sambix (mort en 1619) gravé sur cuivre.</dc:description>
+                    <dc:format>Papier. - Reliure parchemin. - 30 ff. - 145 x 200 mm</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b10234821t</dc:identifier>
+                    <dc:language>dut</dc:language>
+                    <dc:relation>Notice du catalogue : http://archivesetmanuscrits.bnf.fr/ark:/12148/cc96693h/cd0e871</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale et universitaire de Strasbourg. Ms.5.529</dc:source>
+                    <dc:subject>Felix A. Sambix</dc:subject>
+                    <dc:title>Manuscrits de la Bibliothèque nationale et universitaire de Strasbourg. Manuscrits allemands acquis entre 1950 et 2007. Manuscrits du "Schriftmuseum F. Soennecken" de Bonn. "Monsieur Jean Van Den Bosch. Il me possèdera autant de temps ici que l'Eternel plaira. Adi XX Augusti Anno MDICXXXI".Album calligraphié entre 1603 et 1631 par "F.V.S.".</dc:title>
+                    <dc:type>manuscript</dc:type>
+                    <dc:type>manuscrit</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>2</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b10234821t.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b10234821t</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b10234821t.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b10234821t.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b10234821t.thumbnail</thumbnail>
+                <typedoc>manuscrits</typedoc>
+                <uri>btv1b10234821t</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:coverage>23 juillet 1924</dc:coverage>
+                    <dc:creator>Agence Rol. Agence photographique (commanditaire)</dc:creator>
+                    <dc:date>1924</dc:date>
+                    <dc:description>Référence bibliographique : Rol, 94034</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Pho20Rol</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : HNormand1</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MnS000</dc:description>
+                    <dc:description>Image de presse</dc:description>
+                    <dc:format>1 photogr. nég. sur verre ; 13 x 18 cm (sup.)</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 1</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b53134061q</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb45118479v</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Estampes et photographie, EI-13 (1133)</dc:source>
+                    <dc:subject>Van den Bosch, Jean (1898-1985)</dc:subject>
+                    <dc:subject>Schiltz, Georges (1901-1981)</dc:subject>
+                    <dc:subject>Courses cyclistes -- Gisors (Eure, France)</dc:subject>
+                    <dc:subject>Gisors (Eure, France)</dc:subject>
+                    <dc:subject>Jeux olympiques (08 ; 1924 ; Paris)</dc:subject>
+                    <dc:title>Gisors, 23/7/24, Vandenbosh [i.e. Van den Bosch], Belgique [devant], Schultz [i.e. Schiltz, course cycliste sur route comptant pour les Jeux Olympiques] : [photographie de presse] / [Agence Rol]</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                    <dc:type>photographie</dc:type>
+                    <dc:type>photograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>3</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b53134061q.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b53134061q</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b53134061q.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b53134061q.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b53134061q.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b53134061q</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Levaillant, François (1753-1824). Auteur du texte</dc:creator>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>In-fol., VI-48 p., pl. en coul.</dc:format>
+                    <dc:format>Nombre total de vues : 63</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t57501511</dc:identifier>
+                    <dc:identifier>NUMS-100750151</dc:identifier>
+                    <dc:language>dut</dc:language>
+                    <dc:publisher>J. C. Sepp en zoon (Amsterdam)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb30808070v</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, S-2332</dc:source>
+                    <dc:title>Natuurlyke historie der africaansche vogelen, door François Levaillant, uit het fransch vertaalt. 1ste uitgave</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>4</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t57501511.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bd6t57501511</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t57501511.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t57501511.medres</medres>
+                <nqamoyen>86.03</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t57501511.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bd6t57501511</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Huizinga, Johan (1872-1945). Auteur du texte</dc:creator>
+                    <dc:date>1903</dc:date>
+                    <dc:description>Collection : Verhandelingen der koninklijke Akademie van wetenschappen te Amsterdam. Afdeeling letterkunde. Nieuwe reeks, V. 3</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>17 p. ; in-4</dc:format>
+                    <dc:format>Nombre total de vues : 22</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q</dc:identifier>
+                    <dc:language>dut</dc:language>
+                    <dc:language>néerlandais </dc:language>
+                    <dc:publisher>J. Müller (Amsterdam)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb306269222</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 4-Z-14 (5,3)</dc:source>
+                    <dc:title>Van den vogel Charadrius / door J. Huizinga</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>5</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q.medres</medres>
+                <nqamoyen>100.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9816106q.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k9816106q</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Kervyn de Lettenhove, Joseph-Bruno-Marie-Constantin (1817-1891). Éditeur scientifique</dc:contributor>
+                    <dc:creator>Dadizeele, Jean de (1431-1481). Auteur du texte</dc:creator>
+                    <dc:date>1850</dc:date>
+                    <dc:description>Collection : Recueil de chroniques, chartes et autres documents concernant l'histoire et les antiquités de la Flandre occidentale. IIIe série, Documents isolés, chartes et keuren</dc:description>
+                    <dc:format>1 vol. (VI-199 p.) ; in-4</dc:format>
+                    <dc:format>Nombre total de vues : 217</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k112053t</dc:identifier>
+                    <dc:identifier>NUMM-112053</dc:identifier>
+                    <dc:language>dut</dc:language>
+                    <dc:publisher>impr. de Vandecasteele-Werbrouck (Bruges)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb30294568j</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, M-8079 (4)</dc:source>
+                    <dc:subject>Flandre -- 1384-1482 (Maison de Bourgogne) -- Sources</dc:subject>
+                    <dc:title>Mémoires de Jean de Dadizeele : souverain-bailli de Flandre, haut-bailli de Gand, capitaine-général de l'armée flamande, conseiller, chambellan et maître d'hôtel de Maximilien d'Autriche et de Marie de Bourgogne, ambassadeur en Angleterre, etc. / publiés pour la première fois d'après le manuscrit original [par le baron Kervyn de Lettenhove]</dc:title>
+                    <dc:title>Gedenckschriften van Mer Jan, heere van Dadizeele : dit es : een registre beghinnen maken in't jaer duust vier honderd ende tachtentig, aengaende Jan, heere van Dadiselle... / door de eerste mael uytgegeven naer het oorsponkelyk handschrift</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>6</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k112053t.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k112053t</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k112053t.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k112053t.medres</medres>
+                <nqamoyen>87.62</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k112053t.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k112053t</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Bourgey, Étienne (1864-1942). Expert</dc:contributor>
+                    <dc:contributor>Maison Bourgey (Paris). Expert</dc:contributor>
+                    <dc:date>1939</dc:date>
+                    <dc:description>[Vente. Art. 1939. Paris]</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : VenteMMA</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:description>Catalogues de vente</dc:description>
+                    <dc:format>4 vol. (8; 8; 8; 8 p.) ; 28 cm</dc:format>
+                    <dc:format>Nombre total de vues : 8</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n</dc:identifier>
+                    <dc:identifier>NUMM-9778465</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Etienne Bourgey (Paris)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb45181644h</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb45181644h</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Monnaies, médailles et antiques, VENTE BOU-1939 (1939-LISTE)</dc:source>
+                    <dc:subject>Numismatique</dc:subject>
+                    <dc:title>Ventes à l'amiable. Numéro 27 / Etienne Bourgey</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>7</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n.medres</medres>
+                <nqamoyen>95.99</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9778465n.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k9778465n</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1910</dc:date>
+                    <dc:description>Vendeur : R.W.P. de Vries (Firme). Vendeur</dc:description>
+                    <dc:description>[Vente. Numismatique. 1910-03-16. Amsterdam]</dc:description>
+                    <dc:description>[Collection. Numismatique. Meijer, D. C.. 1910]</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : VenteMMA</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>1 vol. (50 p., IV pl.) : ill. ; 28 cm</dc:format>
+                    <dc:format>Nombre total de vues : 88</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t54179489w</dc:identifier>
+                    <dc:identifier>NUMS-104179489</dc:identifier>
+                    <dc:language>dut</dc:language>
+                    <dc:publisher>R. W. P. De Vries (Amsterdam)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb40902367m</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Monnaies, médailles et antiques, MMA DEV-1910-MARS-16</dc:source>
+                    <dc:subject>Numismatique</dc:subject>
+                    <dc:subject>Catalogues de vente</dc:subject>
+                    <dc:title>Gedenkpenningen betreffende Amsterdam. Gildepenningen. Loodjes. Toegangsbewijzen tot den schouwburg. Huwelijkspenningen. Penningen betreffende. Luther en de Luthersche gemeenten : 16 mars 1910 / R. W. P. De Vries</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>8</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t54179489w.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bd6t54179489w</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t54179489w.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t54179489w.medres</medres>
+                <nqamoyen>84.38</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t54179489w.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bd6t54179489w</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Cammaert, Joannes Franciscus (1699-1780). Traducteur</dc:contributor>
+                    <dc:creator>Sedaine, Michel-Jean (1719-1797). Auteur du texte</dc:creator>
+                    <dc:date>1764</dc:date>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:description>Opéras-comiques</dc:description>
+                    <dc:format>In-8° , pièces limin., 72 p.</dc:format>
+                    <dc:format>Nombre total de vues : 90</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bd6t54191812s</dc:identifier>
+                    <dc:identifier>NUMS-104191812</dc:identifier>
+                    <dc:language>dut</dc:language>
+                    <dc:publisher>F. t'Serstevens (Brussel)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb31343724h</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 8-YTH-68803</dc:source>
+                    <dc:title>Den Koning en den Pachter, Blyspel in 3 Deelen, gemengt met Sangen, uyt het Frans [door Sedaine] vertaelt ende gerymt door Joannes Franciscus Cammaert</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>9</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t54191812s.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bd6t54191812s</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t54191812s.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t54191812s.medres</medres>
+                <nqamoyen>77.89</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t54191812s.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bd6t54191812s</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Denucé, Jan (1878-1944). Auteur du texte</dc:creator>
+                    <dc:date>1930</dc:date>
+                    <dc:description>Contient une table des matières</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>316 p. ; in-8</dc:format>
+                    <dc:format>Nombre total de vues : 348</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>français</dc:language>
+                    <dc:publisher>"de Sikkel" (Anvers)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb42778215x</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque de l'INHA / coll. J. Doucet, 2012-295798</dc:source>
+                    <dc:title>Exportation d'oeuvres d'art au XVIIe siècle à Anvers : La firme Forchoudt / par J. Denucé,...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>10</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b.medres</medres>
+                <nqamoyen>99.96</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6463412b.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k6463412b</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Denucé, Jan (1878-1944). Auteur du texte</dc:creator>
+                    <dc:date>1934</dc:date>
+                    <dc:description>Collection : Sources pour l'histoire de l'art flamand ; III</dc:description>
+                    <dc:description>Contient une table des matières</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>1 vol. (173 p.) : tabl. ; in-4</dc:format>
+                    <dc:format>Nombre total de vues : 208</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>français</dc:language>
+                    <dc:publisher>De Sikkel (Anvers)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb32017000j</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32017000j</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque de l'INHA / coll. J. Doucet, 2012-295799</dc:source>
+                    <dc:title>Lettres et documents concernant Jan Breugel I et II / par J. Denucé,...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>11</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m.medres</medres>
+                <nqamoyen>99.96</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6477123m.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k6477123m</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>19??</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32829464z/date</dc:identifier>
+                    <dc:identifier>NUMP-17232</dc:identifier>
+                    <dc:language>dut</dc:language>
+                    <dc:publisher>[s.n.?] (S. l.)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32829464z</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Réserve des livres rares, RES-G-1479 (PAY,41)</dc:source>
+                    <dc:title>Oranje-bulletin. Uitgegeven door Samenwerking van de Ondergrondsche Pers. ["puis" door : De Gens, Je maintiendrai, Ons Volk...]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>12</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k1177478v.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32829464z/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k1177478v.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k1177478v.medres</medres>
+                <nqamoyen>88.6</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k1177478v.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k1177478v</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>19??</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32881888c/date</dc:identifier>
+                    <dc:identifier>NUMP-17142</dc:identifier>
+                    <dc:language>dut</dc:language>
+                    <dc:publisher>[s.n.?] (S' Gravenhage)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32881888c</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Réserve des livres rares, RES-G-1479 (PAY,63)</dc:source>
+                    <dc:title>Trouw. Speciale uitgave voor's Gravenhage en Omstreken. Verschijnt voorloopig wekelijke</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>13</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k11775007.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32881888c/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k11775007.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k11775007.medres</medres>
+                <nqamoyen>88.4</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k11775007.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k11775007</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Kreutzberger, Charles (1829-1909). Illustrateur</dc:contributor>
+                    <dc:contributor>Michel, Henri-François (1846-1925). Illustrateur</dc:contributor>
+                    <dc:creator>Wauters, Alphonse-Jules (1845-1916). Auteur du texte</dc:creator>
+                    <dc:date>1883</dc:date>
+                    <dc:description>Collection : Bibliothèque de l'enseignement des beaux-arts</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : GTextes1</dc:description>
+                    <dc:format>416 p. : fig. et pl. par C. Kreutzberger, fac-sim., frontisp. par Marius Michel, cartonnage ill. ; in-8</dc:format>
+                    <dc:format>Nombre total de vues : 414</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k205824f</dc:identifier>
+                    <dc:identifier>NUMM-205824</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>May et Motteroz (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb31626310j</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France</dc:source>
+                    <dc:subject>Peinture flamande</dc:subject>
+                    <dc:title>La peinture flamande (3e éd. corr. et complétée) / par A. J. Wauters</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>14</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k205824f.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k205824f</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k205824f.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k205824f.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k205824f.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k205824f</uri>
+            </srw:extraRecordData>
+        </srw:record>
+    </srw:records>
+    <srw:nextRecordPosition>16</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

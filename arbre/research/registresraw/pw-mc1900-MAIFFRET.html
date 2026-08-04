@@ -35,7 +35,7 @@
     <script type="text/javascript">
         //<!--
         $(document).ready(function () {
-            $('.fiframe').fancybox({
+            $('.wikitagframe').fancybox({
                 type: 'iframe',
                 autoSize: false,
                 width: 700,
@@ -43,49 +43,15 @@
                 padding: 0,
                 title: ' '
             });
-            $('#lien_carto_gmap').fancybox({
-                type: 'iframe',
-                width: '90%',
-                height: '80%',
-                padding: 0,
-                title: ' '
-            });
+
         });
-        function Valider(val_todo, autre_champ) {
-            window.document.form1.action.value = 1;
-            window.document.form1.todo.value = val_todo;
-            if (autre_champ != "")    window.document.form1.autre_champ.value = autre_champ;
-            window.document.form1.submit();
-        }
 
-        function ArkoAideIndex(datas) {
-            frm = "/arkotheque/arkotheque_liste_aide.php?arko=" + datas;
-            fts = "width=750,height=550,scrollbars=1,location=no,status=0";
-            child = window.open(frm, "popupaie", fts);
-        }
-
-        function panier_requete(val_mode, val_param) {
-            var ajax_page = "/arkotheque/ajax_panier_ajout_requete.php";
-            var jqxhr = $.ajax({
-                type: "POST",
-                url: ajax_page,
-                data: {mode: val_mode, ref: val_param}
-            }).done(function (datarecept) {
-                $("#panier_requete_infos").html(datarecept);
-            });
-        }
 
         //-->
     </script>
-
-
-    <!--<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/fonts/fonts-min.css" />
-<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/autocomplete/assets/skins/sam/autocomplete.css" /> -->
-    <script type="text/javascript" src="/lib/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script><script type="text/javascript" src="/lib/yui/build/connection/connection-min.js"></script><script type="text/javascript" src="/lib/yui/build/animation/animation-min.js"></script><script type="text/javascript" src="/lib/yui/build/datasource/datasource-min.js"></script><script type="text/javascript" src="/lib/yui/build/autocomplete/autocomplete-min.js"></script><link rel="stylesheet" type="text/css" media="screen" href="/lib/yui/build/fonts/fonts-min.css"><link rel="stylesheet" type="text/css" media="screen" href="/lib/yui/build/autocomplete/assets/skins/sam/autocomplete.css">
-
     <!-- InstanceEndEditable -->
 </head>
-<body onkeypress="if (event.keyCode == 13) Valider('rechercher')">
+<body class="xxl resultat_recherche">
 <div id="conteneur_global">
     <div id="bandeau" role="banner"><ul id="liens_annexes">
 			<li><a href="http://www.mairie.mc" title="Accéder au site de la Mairie de Monaco" target="blank">Mairie de Monaco</a></li>
@@ -105,127 +71,169 @@
         <div id="conteneur_interieur">
             <p class="filrouge"><span>
                 <a href="https://archives.mairie.mc/">Accueil</a>
-                &gt; <!-- InstanceBeginEditable name="fil_rouge" --><a href="https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/">Base de registres à partir de 1900</a> &gt; Recherches à partir de 1900<!-- InstanceEndEditable --></span></p>
+                &gt; <!-- InstanceBeginEditable name="fil_rouge" --> <a href="https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/">Base de registres à partir de 1900</a> &gt; <a href="/s/3/base-de-registres-a-partir-de-1900/?">Recherches à partir de 1900</a>                &gt; Résultat de la recherche                <!-- InstanceEndEditable --></span></p>
             <p class="titre_rubrique"><a href="https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"><span>Base de registres à partir de 1900</span></a></p>
             <div id="colonne1">
-                <ul id="menu_rubrique" role="navigation" aria-label="Menu secondaire"><li id="page_en_cours"><a class="page_en_cours" href="/a/3/recherches-a-partir-de-1900/"><span>Recherches à partir de 1900</span></a></li></ul>  <div id="colonne_fin">&nbsp;</div>                <!-- InstanceBeginEditable name="colonne1" --><!-- InstanceEndEditable --> </div>
+                                <!-- InstanceBeginEditable name="colonne1" --><!-- InstanceEndEditable --> </div>
                         <div id="central" role="main">
-                <p class="alerte"><span>Aucun résultat pour cette recherche</span></p>                
+                                
                 <!-- InstanceBeginEditable name="central" -->
-                                <div id="contenu_central">
-                    <div id="article_haut"></div>
-                                        <h1 class="titre_page">Recherches à partir de 1900</h1>
-                                                                            <div class="vignette_cartouche"><img src="../../_depot_ammonaco/_depot_arko/articles/9/vign_registres-a-partir-de-1900_img.jpg" alt="Registres à partir de 1900" title="Registres à partir de 1900">                                </div>
-                                                                                                            <p></p><p>A partir de 1900, tous les actes sont indexés et les recherches sont possibles par le type d'acte, le nom, le prénom, et/ou la date de l'évènement.<br>Certains actes d'Etat Civil contenant des informations confidentielles ne sont pas consultables via le site Internet. Il s'agit d'actes qui font apparaître la transcription d'un jugement (jugement de rectification, jugement d'adoption, etc...). Dans ce cas, la recherche aboutira et la personne sera invitée via un message à prendre l'attache auprès de la Mairie de Monaco pour la consultation de l'acte.</p>
-<p><span>Tous les actes sont répertoriés dans des tables alphabétiques.</span><br><span>Ces tables indiquent les nom, prénoms, numéro de l'acte ou numéro de folio. Elles sont consultables dans les registres en fin d'année.</span>&nbsp;</p>
-<p><span>Nos actes sont payants, le coût d'un acte d'état civil à partir de 1900 est :</span><br><span>- Naissance, décès : 1,00€ ;</span><br><span>- Mariage : 1,50€.</span><br><span>Ensuite, il faut ajouter les frais postaux à ce montant d'actes.<br></span>Si vous souhaitez, merci de prendre contact avec le Service Etat Civil :<br>- soit par appel téléphonique - Tel n° +377.93.15.28.51 ;<br>- soit nous adresser un courrier accompagné d'un chèque à l'ordre de la "Mairie de Monaco".</p>
-<p><span>Pour faciliter vos recherches, nous avons mis à votre disposition un mode d'emploi que vous trouverez dans la <a href="https://archives.mairie.mc/article.php?laref=9&amp;titre=faq">Foire aux Questions</a>.</span></p><p></p>
-                                            <form action="/s/3/base-de-registres-a-partir-de-1900/?" method="POST" name="form1" class="formulaires_recherche_et_annotations">
-                        <input type="hidden" name="action" value="1">
-                        <input type="hidden" name="todo" value="rechercher">
+                <div id="contenu_central">
+                                        <form action="/s/3/base-de-registres-a-partir-de-1900/resultats/?" method="POST" name="form1">
+                        <input type="hidden" name="action" value="">
+                        <input type="hidden" name="todo" value="">
                         <input type="hidden" name="ref_fonds" value="3">
-                        <input type="hidden" name="autre_champ" value="">
-                                                    <fieldset>
 
-                                                                        <div class="champ_formulaire">
-                                                    <label>Type d'acte</label>
-                                                    <span class="formulaire_a_cocher formulaire_a_cocher_trois">                                                    <span class="post_label">
-                        <span class="case_et_intitule"><input type="checkbox" name="form_rech_type_acte_1" id="id_form_rech_type_acte_1" value="1" checked=""><label class="label_second" for="id_form_rech_type_acte_1">Naissance</label></span><span class="case_et_intitule"><input type="checkbox" name="form_rech_type_acte_3" id="id_form_rech_type_acte_3" value="1" checked=""><label class="label_second" for="id_form_rech_type_acte_3">Mariage</label></span><span class="case_et_intitule"><input type="checkbox" name="form_rech_type_acte_4" id="id_form_rech_type_acte_4" value="1" checked=""><label class="label_second" for="id_form_rech_type_acte_4">Décès</label></span>                        </span>
-                                                    </span>                                                </div>
-                                                <div class="cartouche_formulaire">                                                                                                <div class="champ_formulaire">
-                                                    <label for="form_rech_9">Numéro d'acte</label>
-                                                                                                                                                                <input name="form_rech_9" id="form_rech_9" type="text" value="MAIFFRET">
-                                                                                                                                                                                                                    </div>
-
-                                                                                                </div><div class="cartouche_formulaire">                                                <div id="myAutoComplete12" class="yui-ac">                                                <div class="champ_formulaire">
-                                                    <label for="form_rech_12">Nom</label>
-                                                                                                                                                                <input name="form_rech_12" id="form_rech_12" type="text" value="" class="yui-ac-input" autocomplete="off"><span class="fiche_detail"><a class="fiframe" href="/arkotheque/arkotheque_liste_aide.php?arko=YTo2OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO3M6MTU6ImZvcm11bGFpcmVfYXV0byI7czo0OiJyZWYyIjtpOjM7czo0OiJyZWYzIjtzOjI6IjEyIjtzOjE4OiJsZXR0cmVfcGFyX2RlZmF1bHQiO3M6MToiQSI7fQ==" title="Liste"><span>Liste</span></a>
-                                                            </span>
-                                                                                                                                                                                                                    </div>
-
-                                                                                                    <div id="myContainer12" class="yui-ac-container"><div class="yui-ac-content" style="display: none;"><div class="yui-ac-hd" style="display: none;"></div><div class="yui-ac-bd"><ul><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li></ul></div><div class="yui-ac-ft" style="display: none;"></div></div></div>
-
-                                                    <script type="text/javascript">
-                                                        $(document).ready(function () {
-                                                            YAHOO.example.BasicRemote = function () {
-                                                                var oDS = new YAHOO.util.XHRDataSource("/arkotheque/arko_auto_complete.php");
-                                                                oDS.scriptQueryParam = "ref0=3&ref1=arko&ref2=3&ref3=form_rech_12&ref4=&trunc=0&ref5";
-                                                                oDS.responseType = YAHOO.util.XHRDataSource.TYPE_TEXT;
-                                                                oDS.responseSchema = {
-                                                                    recordDelim: "\n",
-                                                                    fieldDelim: "\t"
-                                                                };
-                                                                oDS.maxCacheEntries = 10;
-                                                                var oAC = new YAHOO.widget.AutoComplete("form_rech_12", "myContainer12", oDS);
-                                                                oAC.minQueryLength = 3;
-                                                                oAC.maxResultsDisplayed = 15;
-                                                                oAC.alwaysShowContainer = false;
-                                                                return {
-                                                                    oDS: oDS,
-                                                                    oAC: oAC
-                                                                };
-                                                            }();
-                                                        });
-                                                    </script>
-                                                    </div>
-                                                                                                    </div><div class="cartouche_formulaire">                                                <div id="myAutoComplete13" class="yui-ac">                                                <div class="champ_formulaire">
-                                                    <label for="form_rech_13">Prénom</label>
-                                                                                                                                                                <input name="form_rech_13" id="form_rech_13" type="text" value="" class="yui-ac-input" autocomplete="off"><span class="fiche_detail"><a class="fiframe" href="/arkotheque/arkotheque_liste_aide.php?arko=YTo2OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO3M6MTU6ImZvcm11bGFpcmVfYXV0byI7czo0OiJyZWYyIjtpOjM7czo0OiJyZWYzIjtzOjI6IjEzIjtzOjE4OiJsZXR0cmVfcGFyX2RlZmF1bHQiO3M6MToiQSI7fQ==" title="Liste"><span>Liste</span></a>
-                                                            </span>
-                                                                                                                                                                                                                    </div>
-
-                                                                                                    <div id="myContainer13" class="yui-ac-container"><div class="yui-ac-content" style="display: none;"><div class="yui-ac-hd" style="display: none;"></div><div class="yui-ac-bd"><ul><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li></ul></div><div class="yui-ac-ft" style="display: none;"></div></div></div>
-
-                                                    <script type="text/javascript">
-                                                        $(document).ready(function () {
-                                                            YAHOO.example.BasicRemote = function () {
-                                                                var oDS = new YAHOO.util.XHRDataSource("/arkotheque/arko_auto_complete.php");
-                                                                oDS.scriptQueryParam = "ref0=3&ref1=arko&ref2=3&ref3=form_rech_13&ref4=&trunc=0&ref5";
-                                                                oDS.responseType = YAHOO.util.XHRDataSource.TYPE_TEXT;
-                                                                oDS.responseSchema = {
-                                                                    recordDelim: "\n",
-                                                                    fieldDelim: "\t"
-                                                                };
-                                                                oDS.maxCacheEntries = 10;
-                                                                var oAC = new YAHOO.widget.AutoComplete("form_rech_13", "myContainer13", oDS);
-                                                                oAC.minQueryLength = 3;
-                                                                oAC.maxResultsDisplayed = 15;
-                                                                oAC.alwaysShowContainer = false;
-                                                                return {
-                                                                    oDS: oDS,
-                                                                    oAC: oAC
-                                                                };
-                                                            }();
-                                                        });
-                                                    </script>
-                                                    </div>
-                                                                                                    </div>                    <div class="champ_formulaire">
-                    <label for="form_rech_13">Date ou Période de l'évènement</label>
-                                        <span class="texte_intervalle" style="visibility: hidden;">De&nbsp;</span><input class="trescourt" type="text" id="id_r_date_22_jj_debut" value="" placeholder="jour" name="r_date_22_jj_debut"><input class="trescourt" type="text" value="" placeholder="mois" name="r_date_22_mm_debut"><input class="trescourt" type="text" value="" placeholder="année" name="r_date_22_yyyy_debut"><span class="texte_intervalle" style="visibility: hidden;">à </span><div id="id_r_date_22" class="intervalle_fin_conteneur" style="display: none;"><input class="trescourt" type="text" value="" placeholder="jour" name="r_date_22_jj_fin"><input class="trescourt" type="text" value="" placeholder="mois" name="r_date_22_mm_fin"><input class="trescourt" type="text" value="" placeholder="année" name="r_date_22_yyyy_fin"></div><a href="Javascript:;" id="date_id_r_date_22" class="btn_intervalle options_cache"><span>Intervalle</span></a><script type="text/javascript">
-                                $(function(){
-                                    $(".texte_intervalle").css("visibility","hidden");
-                                    $(".intervalle_fin_conteneur").css("display","inline").hide();
-                                    $("#date_id_r_date_22").on("click",function(){
-                                        if($(this).hasClass("options_cache")) {
-                                            $("#id_r_date_22").fadeIn();
-                                            $(".texte_intervalle",$(this).parents(".champ_formulaire")).css("visibility","visible");
-                                        }
-                                        else {
-                                            $("#id_r_date_22").fadeOut();
-                                            $(".texte_intervalle",$(this).parents(".champ_formulaire")).css("visibility","hidden");
-                                        }
-                                        $(this).toggleClass("options_cache");
-                                    });});</script>                                                                                                 </div>
-                                                    <div class="bouton"><a href="javascript:Valider('rechercher','');" class="rechercher" title="Rechercher"><span>Rechercher</span></a>
-                        </div>
-                                </fieldset>
-
+                        <h1 class="titre_page">Résultat de la recherche                            <small>&nbsp;(Recherches à partir de 1900)</small>
+                        </h1>
+                        <div id="abecedaire"></div>
                         
-                                                                    </form>
+                                                    <div class="boutons_modifier_recherche boutons_repetes_haut bouton"><a href="/s/3/base-de-registres-a-partir-de-1900/?&amp;action=1&amp;todo=modif_recherche"><span>Modifier la recherche</span></a>&nbsp;&nbsp;<a href="/s/3/base-de-registres-a-partir-de-1900/?"><span>Nouvelle recherche</span></a>
+                            </div>
+                                                                                <table border="0" cellspacing="0" cellpadding="0">
+                                    <tbody><tr>
+                                                                                    <th scope="col">Registre&nbsp;</th>
+                                                                                        <th scope="col">Année&nbsp;</th>
+                                                                                        <th scope="col">Numéro d'acte&nbsp;</th>
+                                                                                        <th scope="col">Nom&nbsp;</th>
+                                                                                        <th scope="col">Date de l'évènement&nbsp;</th>
+                                                                                        <th scope="col">Date de l'acte&nbsp;</th>
+                                                                                        <th scope="col">&nbsp;</th>
+                                                                                </tr>
+                                                                                <tr valign="top">
+                                                                                                    <td class="tableau_ligne0">
+                                                        Décès                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        1912                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        58                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        <strong>MAIFFRET François, Louis</strong>                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        23/10/1912                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        23/10/1912                                                    </td>
+                                                                                                        <td class="tableau_ligne0 cellule_insecable">
+                                                        <span class="visualiser  histo-arko_seriel-3-35530"><a href="javascript:ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=YTo0OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO2k6MztzOjQ6InJlZjIiO2k6MzU1MzA7fQ==' );" title="Visualiser les images"><span>Visualiser</span></a></span><span class="nombre_images">(1 image)</span>                                                    </td>
+                                                                                                </tr>
+                                                                                        <tr valign="top">
+                                                                                                    <td class="tableau_ligne1">
+                                                        Décès                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        1907                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        56                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        <strong>MAIFFRET Pauline, Elisabeth</strong>                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        01/02/1907                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        02/02/1907                                                    </td>
+                                                                                                        <td class="tableau_ligne1 cellule_insecable">
+                                                        <span class="visualiser  histo-arko_seriel-3-37133"><a href="javascript:ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=YTo0OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO2k6MztzOjQ6InJlZjIiO2k6MzcxMzM7fQ==' );" title="Visualiser les images"><span>Visualiser</span></a></span><span class="nombre_images">(1 image)</span>                                                    </td>
+                                                                                                </tr>
+                                                                                        <tr valign="top">
+                                                                                                    <td class="tableau_ligne0">
+                                                        Décès                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        1905                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        306                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        <strong>MAIFFRET Philippe</strong>                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        20/11/1905                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        20/11/1905                                                    </td>
+                                                                                                        <td class="tableau_ligne0 cellule_insecable">
+                                                        <span class="visualiser  histo-arko_seriel-3-37493"><a href="javascript:ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=YTo0OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO2k6MztzOjQ6InJlZjIiO2k6Mzc0OTM7fQ==' );" title="Visualiser les images"><span>Visualiser</span></a></span><span class="nombre_images">(1 image)</span>                                                    </td>
+                                                                                                </tr>
+                                                                                        <tr valign="top">
+                                                                                                    <td class="tableau_ligne1">
+                                                        Mariage                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        1900                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        64                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        <span class="epoux_epouse">Epoux : </span><strong>MAIFFRET Jean - Baptiste, Justin</strong><br><span class="epoux_epouse">Epouse : </span><strong>PACHIAUDI Marie - Magdeleine, Catherine</strong>                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        20/12/1900                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                                                                            </td>
+                                                                                                        <td class="tableau_ligne1 cellule_insecable">
+                                                        <span class="visualiser  histo-arko_seriel-3-39104"><a href="javascript:ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=YTo0OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO2k6MztzOjQ6InJlZjIiO2k6MzkxMDQ7fQ==' );" title="Visualiser les images"><span>Visualiser</span></a></span><span class="nombre_images">(3 images)</span>                                                    </td>
+                                                                                                </tr>
+                                                                                        <tr valign="top">
+                                                                                                    <td class="tableau_ligne0">
+                                                        Mariage                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        1906                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        39                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        <span class="epoux_epouse">Epoux : </span><strong>DANIEL Pierre</strong><br><span class="epoux_epouse">Epouse : </span><strong>MAIFFRET Julie, Joséphine, Marie</strong>                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        16/06/1906                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                                                                            </td>
+                                                                                                        <td class="tableau_ligne0 cellule_insecable">
+                                                        <span class="visualiser  histo-arko_seriel-3-39514"><a href="javascript:ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=YTo0OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO2k6MztzOjQ6InJlZjIiO2k6Mzk1MTQ7fQ==' );" title="Visualiser les images"><span>Visualiser</span></a></span><span class="nombre_images">(4 images)</span>                                                    </td>
+                                                                                                </tr>
+                                                                                        <tr valign="top">
+                                                                                                    <td class="tableau_ligne1">
+                                                        Naissance                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        1905                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        313                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        <strong>MAIFFRET Pauline, Elisabeth</strong>                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        26/10/1905                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        29/10/1905                                                    </td>
+                                                                                                        <td class="tableau_ligne1 cellule_insecable">
+                                                        <span class="visualiser  histo-arko_seriel-3-42691"><a href="javascript:ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=YTo0OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO2k6MztzOjQ6InJlZjIiO2k6NDI2OTE7fQ==' );" title="Visualiser les images"><span>Visualiser</span></a></span><span class="nombre_images">(1 image)</span>                                                    </td>
+                                                                                                </tr>
+                                                                                        <tr valign="top">
+                                                                                                    <td class="tableau_ligne0">
+                                                        Naissance                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        1910                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        254                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        <strong>MAIFFRET Paula, Françoise</strong>                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        14/09/1910                                                    </td>
+                                                                                                        <td class="tableau_ligne0">
+                                                        14/09/1910                                                    </td>
+                                                                                                        <td class="tableau_ligne0 cellule_insecable">
+                                                        <span class="visualiser  histo-arko_seriel-3-44595"><a href="javascript:ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=YTo0OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO2k6MztzOjQ6InJlZjIiO2k6NDQ1OTU7fQ==' );" title="Visualiser les images"><span>Visualiser</span></a></span><span class="nombre_images">(1 image)</span>                                                    </td>
+                                                                                                </tr>
+                                                                                        <tr valign="top">
+                                                                                                    <td class="tableau_ligne1">
+                                                        Naissance                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        1912                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        71                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        <strong>MAIFFRET François, Joseph, Philippe</strong>                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        09/12/1912                                                    </td>
+                                                                                                        <td class="tableau_ligne1">
+                                                        10/12/1912                                                    </td>
+                                                                                                        <td class="tableau_ligne1 cellule_insecable">
+                                                        <span class="visualiser  histo-arko_seriel-3-45438"><a href="javascript:ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=YTo0OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDQiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO2k6MztzOjQ6InJlZjIiO2k6NDU0Mzg7fQ==' );" title="Visualiser les images"><span>Visualiser</span></a></span><span class="nombre_images">(1 image)</span>                                                    </td>
+                                                                                                </tr>
+                                                                            </tbody></table>
+                                                        <div id="abecedaire"></div>
+                                                    <div class="boutons_modifier_recherche bouton"><a href="/s/3/base-de-registres-a-partir-de-1900/?&amp;action=1&amp;todo=modif_recherche"><span>Modifier la recherche</span></a>&nbsp;&nbsp;<a href="/s/3/base-de-registres-a-partir-de-1900/?"><span>Nouvelle recherche</span></a>
+                            </div>
+                    </form>
                 </div>
-                <script type="text/javascript">
-
-                </script>
                 <!-- InstanceEndEditable -->
                 
                 
@@ -253,5 +261,6 @@
 		</li></ul></div>
 	</div>
 </div></div>
+
 
 </body><!-- InstanceEnd --></html>

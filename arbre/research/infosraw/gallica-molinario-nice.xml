@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <srw:version>1.2</srw:version>
+    <srw:echoedSearchRetrieveRequest>
+        <srw:query>gallica all "MOLINARIO" "Nice"</srw:query>
+        <srw:version>1.2</srw:version>
+    </srw:echoedSearchRetrieveRequest>
+    <srw:numberOfRecords>5307</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;47317&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:records>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1883-190.</dc:date>
+                    <dc:description>Périodicité : Hebdomadaire</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>Nombre total de vues : 5332</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32875625p/date</dc:identifier>
+                    <dc:identifier>NUMP-6525</dc:identifier>
+                    <dc:identifier>ISSN 29732387</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Tlemcen)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32875625p</dc:relation>
+                    <dc:relation>A pour reproduction : La Tafna (Reproduction numérique) = ISSN 2974-0827 (https://gallica.bnf.fr/ark:/12148/cb32875625p/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-90469</dc:source>
+                    <dc:title>La Tafna : journal de l'arrondissement de Tlemcen, paraissant tous les mercredis</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>0</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k71634790.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32875625p/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k71634790.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k71634790.medres</medres>
+                <nqamoyen>85.55</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k71634790.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k71634790</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Union internationale pour la protection de la propriété industrielle. Auteur du texte</dc:creator>
+                    <dc:creator>Bureaux internationaux réunis pour la protection de la propriété intellectuelle. Auteur du texte</dc:creator>
+                    <dc:creator>Organisation mondiale de la propriété intellectuelle. Auteur du texte</dc:creator>
+                    <dc:date>1885-1994</dc:date>
+                    <dc:description>Périodicité : Mensuel</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>Nombre total de vues : 13009</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34469942f/date</dc:identifier>
+                    <dc:identifier>NUMP-3801</dc:identifier>
+                    <dc:identifier>ISSN 00331430</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Bureau international de l'Union pour la protection de la propriété industrielle (Berne)</dc:publisher>
+                    <dc:publisher>Bureaux internationaux réunis pour la protection de la propriété intellectuelleBureaux internationaux réunis pour la protection de la propriété intellectuelle (Genève)</dc:publisher>
+                    <dc:publisher>Organisation mondiale de la propriété industrielleOrganisation mondiale de la propriété industrielle (Genève)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34469942f</dc:relation>
+                    <dc:relation>A pour reproduction : La Propriété industrielle (Genève. En ligne) = ISSN 2662-8317 (https://gallica.bnf.fr/ark:/12148/cb34469942f/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Collections numérisées, 2008-199141</dc:source>
+                    <dc:title>La Propriété industrielle (Genève)</dc:title>
+                    <dc:title>La Propriété industrielle : organe officiel du Bureau international de l'Union pour la protection de la propriété industrielle</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>1</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k54976636.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34469942f/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k54976636.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k54976636.medres</medres>
+                <nqamoyen>99.98</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k54976636.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k54976636</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1927-1927</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32680921s/date</dc:identifier>
+                    <dc:identifier>ISSN 26507978</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher> (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32680921s</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-30894 (BIS)</dc:source>
+                    <dc:title>L'Abonné de Paris-Matin : journal mensuel des abonnés de "Paris-Matin"</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>2</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k23748839.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32680921s/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k23748839.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k23748839.medres</medres>
+                <nqamoyen>85.68</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k23748839.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k23748839</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1926-1931</dc:date>
+                    <dc:description>Variante(s) de titre : Biarritz Côte basque-Pyrénées</dc:description>
+                    <dc:description>Etat de collection : n° 11 (1926, 11 juil.)-a. 7, n° 4 (1931, 22 sept.)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG64</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Aquit1</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MidiPyren1</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32711647m/date</dc:identifier>
+                    <dc:identifier>NUMP-17442</dc:identifier>
+                    <dc:identifier>ISSN 21219435</dc:identifier>
+                    <dc:language>eng</dc:language>
+                    <dc:language>fre</dc:language>
+                    <dc:language>spa</dc:language>
+                    <dc:publisher>[s.n.] (Biarritz)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Biarritz)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32711647m</dc:relation>
+                    <dc:relation>A pour reproduction : Biarritz illustré et Côte basque-Pyrénées (Reproduction numérique) = ISSN 2592-4192 (https://gallica.bnf.fr/ark:/12148/cb32711647m/date)</dc:relation>
+                    <dc:relation>Première de couverture : 285667</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-20355</dc:source>
+                    <dc:title>Biarritz illustré et Côte basque-Pyrénées : liste officielle des étrangers publiée sous le haut patronage de la Fédération des syndicats d'initiative des Pyrénées, Côte basque et Gascogne : programme officiel des fêtes de ces régions</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>3</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k4564131s.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32711647m/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k4564131s.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k4564131s.medres</medres>
+                <nqamoyen>84.82</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k4564131s.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k4564131s</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>19..</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : IconMUS2</dc:description>
+                    <dc:format>1 photographie positive ; 18 x 13 cm</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 2</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b100267398</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.]</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb43701068z</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Musique, VM EST-8 (135)</dc:source>
+                    <dc:subject>Danco, Suzanne (1911-2000) -- Portraits</dc:subject>
+                    <dc:subject>Molinari Pradelli, Francesco (1911-1996) -- Portraits</dc:subject>
+                    <dc:title>[Suzanne Danco avec Francesco Molinari-Pradelli]</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                    <dc:type>photographie</dc:type>
+                    <dc:type>photograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>4</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b100267398.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b100267398</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b100267398.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b100267398.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b100267398.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b100267398</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Boecler, Johann Heinrich (1679-1732). Fonction indéterminée</dc:contributor>
+                    <dc:creator>Faber, Wilhelm Lorenz. Auteur du texte</dc:creator>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>In-4° , pièces liminaires, 48 p.</dc:format>
+                    <dc:format>Nombre total de vues : 60</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k9772106w</dc:identifier>
+                    <dc:language>lat</dc:language>
+                    <dc:language>latin</dc:language>
+                    <dc:publisher>literis D. Maagii (Argentorati)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb30413041k</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, F-8602</dc:source>
+                    <dc:title>Disputatio juridica de jure molendinorum, quam... praeside... Johanne Henrico Boeclero,... defendet Wilh. Laurent. Faber,... d. 4. mart. ... 1713...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>5</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9772106w.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k9772106w</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9772106w.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9772106w.medres</medres>
+                <nqamoyen>100.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9772106w.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k9772106w</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Debussy, Emma (1862-1934). Destinataire de lettres</dc:contributor>
+                    <dc:contributor>Molinari, Bernardino (1880-1952). Auteur de lettres</dc:contributor>
+                    <dc:creator>Debussy, Claude (1862-1918). Auteur de lettres</dc:creator>
+                    <dc:date>1914</dc:date>
+                    <dc:description>Lettre autographe manuscrite datée et signée, à l'encre noire, sur papier à l'en-tête du Grand Hôtel de Russie à Rome. - Dates : 21, 22, 23 et 26 février 1914. - Le télégramme de Bernardino Molinari date du 26 février 1914, Gustave Doret a organisé les concerts que dirige Claude Debussy, en Hollande à partir du 26 février, dès son retour de Rome. - Bernardino Molinari était le directeur artistique de l'Augusteo à Rome. - "Bertault" : financier, voir Lesure et Lockspeiser. - Don de Tinan (27 avril 1966, communication réservée sur trente ans)</dc:description>
+                    <dc:description>Correspondance</dc:description>
+                    <dc:format>4 télégrammes et 1 lettre (1 double f.) ; 17,5 x 23 et 21 x 13,5 cm + 1 enveloppe</dc:format>
+                    <dc:format>Nombre total de vues : 12</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b530311449</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb39619498p</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Fonds du service reproduction, NLA-32 (41 A 45)</dc:source>
+                    <dc:subject>Debussy, Emma (1862-1934)</dc:subject>
+                    <dc:subject>Debussy, Claude-Emma (1905-1919)</dc:subject>
+                    <dc:subject>Doret, Gustave (1866-1943)</dc:subject>
+                    <dc:title>[Lettre et télégrammes de Claude Debussy à Emma Debussy, Rome, du 21 au 26 février 1914] (manuscrit autographe)</dc:title>
+                    <dc:type>manuscript</dc:type>
+                    <dc:type>manuscrit</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>6</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b530311449.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b530311449</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b530311449.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b530311449.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b530311449.thumbnail</thumbnail>
+                <typedoc>manuscrits</typedoc>
+                <uri>btv1b530311449</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Corporation des coiffeurs et des spécialités connexes. Auteur du texte</dc:creator>
+                    <dc:date>1908-1959</dc:date>
+                    <dc:description>Variante(s) de titre : Le Capilartiste et Paris-coiffure réunis</dc:description>
+                    <dc:description>Variante(s) de titre : Le Capilartiste et Paris-coiffure réunis</dc:description>
+                    <dc:description>Variante(s) de titre : Le Capilartiste : journal hebdomadaire illustré des coiffeurs : publié tous les samedis par la société du "capilartiste"</dc:description>
+                    <dc:description>Variante(s) de titre : Le Capilartiste : journal mensuel de techniques professionnelles et d'informations corporatives : pour les coiffeurs, parfumeurs, posticheurs, instituts de beauté</dc:description>
+                    <dc:description>Etat de collection : Jusqu'à : 1935 (n° 294), juin-oct. 1937 (n° 313-316), juil. 1947-janv. 1959 (n° 342-445), inc.</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32737248q/date</dc:identifier>
+                    <dc:identifier>NUMP-28771</dc:identifier>
+                    <dc:identifier>ISSN 2023855X</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Paris)</dc:publisher>
+                    <dc:publisher>Les Éditions du capilartisteLes Éditions du capilartiste (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32737248q</dc:relation>
+                    <dc:relation>A pour reproduction : Le Capilartiste (Reproduction numérique) = ISSN 3040-8105 (https://gallica.bnf.fr/ark:/12148/cb32737248q/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-55656</dc:source>
+                    <dc:title>Le Capilartiste : organe hebdomadaire de la Corporation des coiffeurs et des spécialités connexes</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>7</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t541975591.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32737248q/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t541975591.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t541975591.medres</medres>
+                <nqamoyen>89.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t541975591.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t541975591</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Quartieri, F.. Auteur du texte</dc:creator>
+                    <dc:creator>Molinari, Ettore (Dr). Auteur du texte</dc:creator>
+                    <dc:date>1913</dc:date>
+                    <dc:format>In-4° , XIX-306 p., fig., 37 pl., plans</dc:format>
+                    <dc:format>Nombre total de vues : 432</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k3414479t</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>français</dc:language>
+                    <dc:publisher>U. Hoepli (Milan)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb31161402z</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, 4-V-7801</dc:source>
+                    <dc:title>Notices sur les explosifs en Italie... / E. Molinari et F. Quartieri</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>8</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k3414479t.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k3414479t</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k3414479t.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k3414479t.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k3414479t.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k3414479t</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>19..</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : IconMUS2</dc:description>
+                    <dc:format>1 photographie positive ; 18 x 13 cm</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 2</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b10026740n</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.]</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb43701056z</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Musique, VM EST-8 (134)</dc:source>
+                    <dc:subject>Danco, Suzanne (1911-2000) -- Portraits</dc:subject>
+                    <dc:subject>Molinari Pradelli, Francesco (1911-1996) -- Portraits</dc:subject>
+                    <dc:title>[Suzanne Danco avec Francesco Molinari-Pradelli]</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                    <dc:type>photographie</dc:type>
+                    <dc:type>photograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>9</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b10026740n.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b10026740n</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b10026740n.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b10026740n.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b10026740n.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b10026740n</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1508</dc:date>
+                    <dc:description>Numérisation effectuée à partir d'un document original : Latin 4845.</dc:description>
+                    <dc:format>Papier. - 15 ff. - 200 x 130 mm</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b525100784</dc:identifier>
+                    <dc:language>lat</dc:language>
+                    <dc:relation>Notice du catalogue : http://archivesetmanuscrits.bnf.fr/ark:/12148/cc63720s</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France. Département des Manuscrits. Latin 4845</dc:source>
+                    <dc:title>compendiaria Italiae descriptio, ad Joannem Ganayensem, Franciae Cancellarium : authore Joanne Molinari, Tornacensi.</dc:title>
+                    <dc:type>manuscript</dc:type>
+                    <dc:type>manuscrit</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>10</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b525100784.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b525100784</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b525100784.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b525100784.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b525100784.thumbnail</thumbnail>
+                <typedoc>manuscrits</typedoc>
+                <uri>btv1b525100784</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1900-1936</dc:date>
+                    <dc:description>Variante(s) de titre : Il Risveglio italiano : periodico settimanale : organo delle colonie italiane in Francia</dc:description>
+                    <dc:description>Etat de collection : Jusqu'à : août 1901 (n° 65), 1907-1908, 1910-1932, 1934, inc.</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32862077b/date</dc:identifier>
+                    <dc:identifier>ISSN 2650636X</dc:identifier>
+                    <dc:language>ita</dc:language>
+                    <dc:publisher> (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32862077b</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-15043</dc:source>
+                    <dc:title>Il Risveglio italiano (Paris)</dc:title>
+                    <dc:title>Il Risveglio italiano : periodico settimanale : politico, artistico, letterario, commerciale</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>11</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k23563827.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32862077b/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k23563827.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k23563827.medres</medres>
+                <nqamoyen>87.97</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k23563827.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k23563827</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1924-1931</dc:date>
+                    <dc:description>Périodicité : Hebdomadaire</dc:description>
+                    <dc:description>Etat de collection : 1924-1931</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG64</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG64</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32749405p/date</dc:identifier>
+                    <dc:identifier>NUMP-19139</dc:identifier>
+                    <dc:identifier>ISSN 20232063</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Saint-Jean-de-Luz)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Bayonne)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32749405p</dc:relation>
+                    <dc:relation>A pour reproduction : La Côte basque (Reproduction numérique) = ISSN 2725-2213 (https://gallica.bnf.fr/ark:/12148/cb32749405p/date)</dc:relation>
+                    <dc:relation>Première de couverture : 396172</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-61187</dc:source>
+                    <dc:title>La Côte basque : revue illustrée de l'Euzkalerria ["puis" de l'Eskual-herria]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>12</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k3065583s.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32749405p/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k3065583s.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k3065583s.medres</medres>
+                <nqamoyen>86.73</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k3065583s.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k3065583s</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1932-1933</dc:date>
+                    <dc:description>Variante(s) de titre : Les Heures nouvelles de l'école et de la famille</dc:description>
+                    <dc:description>Variante(s) de titre : Les Heures nouvelles de l'école et de la famille : revue illustrée</dc:description>
+                    <dc:description>Variante(s) de titre : Les Heures nouvelles de l'école et de la famille : revue illustrée de défense et de propagande des œuvres laïques scolaires, post-scolaires et péri-scolaires</dc:description>
+                    <dc:description>Variante(s) de titre : Les Heures nouvelles de l'école et de la famille : revue illustrée de défense et de propagande des œuvres scolaires, post-scolaires et péri-scolaires</dc:description>
+                    <dc:description>Périodicité : Bimensuel</dc:description>
+                    <dc:description>Etat de collection : Jusqu'à : 10 oct. 1933 [II, n° 18] ; mq n° 5</dc:description>
+                    <dc:format>Nombre total de vues : 614</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32786608c/date</dc:identifier>
+                    <dc:identifier>NUMP-10780</dc:identifier>
+                    <dc:identifier>ISSN 20208405</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32786608c</dc:relation>
+                    <dc:relation>A pour reproduction : Les Heures nouvelles (Reproduction numérique) = ISSN 2547-4162 (https://gallica.bnf.fr/ark:/12148/cb32786608c/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-74502</dc:source>
+                    <dc:title>Les Heures nouvelles : journal illustré bi-mensuel de l'école et de la famille</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>13</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k959516p.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32786608c/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k959516p.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k959516p.medres</medres>
+                <nqamoyen>85.55</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k959516p.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k959516p</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Département des monnaies, médailles et antiques</dc:contributor>
+                    <dc:contributor>Lesouëf, Auguste (1829-1906). Ancien possesseur</dc:contributor>
+                    <dc:contributor>Lesouëf (famille). Ancien possesseur</dc:contributor>
+                    <dc:contributor>Bibliothèque Smith-Lesouëf de Nogent-sur-Marne</dc:contributor>
+                    <dc:date>1701-1800</dc:date>
+                    <dc:description>Numérisation effectuée à partir d'un document de substitution : R 187135.</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b100866940</dc:identifier>
+                    <dc:language>lat</dc:language>
+                    <dc:language>fre</dc:language>
+                    <dc:relation>Notice du catalogue : http://archivesetmanuscrits.bnf.fr/ark:/12148/cc1018398/ca59805090573526</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France. Département des Manuscrits. Smith-Lesouëf 50 (2)</dc:source>
+                    <dc:title>Catalogue de la collection de médailles de Molinari, consul de Suède à Tunis. Smith-Lesouëf 50 (2)</dc:title>
+                    <dc:type>manuscript</dc:type>
+                    <dc:type>manuscrit</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>14</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b100866940.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b100866940</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b100866940.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b100866940.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b100866940.thumbnail</thumbnail>
+                <typedoc>manuscrits</typedoc>
+                <uri>btv1b100866940</uri>
+            </srw:extraRecordData>
+        </srw:record>
+    </srw:records>
+    <srw:nextRecordPosition>16</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

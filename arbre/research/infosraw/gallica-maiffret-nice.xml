@@ -1,0 +1,1677 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <srw:version>1.2</srw:version>
+    <srw:echoedSearchRetrieveRequest>
+        <srw:query>gallica all "MAIFFRET" "Nice"</srw:query>
+        <srw:version>1.2</srw:version>
+    </srw:echoedSearchRetrieveRequest>
+    <srw:numberOfRecords>1261</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;12663&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:records>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Société d'horticulture pratique de Nice et des Alpes-Maritimes. Auteur du texte</dc:creator>
+                    <dc:date>1908-192.</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32869587q/date</dc:identifier>
+                    <dc:identifier>NUMP-28117</dc:identifier>
+                    <dc:identifier>ISSN 30390567</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32869587q</dc:relation>
+                    <dc:relation>A pour reproduction : Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes) = ISSN 3039-0559 (https://gallica.bnf.fr/ark:/12148/cb32869587q/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, 8-S-13587</dc:source>
+                    <dc:title>Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)</dc:title>
+                    <dc:title>Bulletin trimestriel / Société d'horticulture pratique de Nice et des Alpes-Maritimes</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>0</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t54305110s.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32869587q/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t54305110s.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t54305110s.medres</medres>
+                <nqamoyen>88.25</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t54305110s.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t54305110s</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1907-1940</dc:date>
+                    <dc:description>Variante(s) de titre : Les Tablettes laonnoises et de l'Aisne</dc:description>
+                    <dc:description>Variante(s) de titre : Les Tablettes de l'Aisne</dc:description>
+                    <dc:description>Périodicité : Hebdomadaire ; Bi-hebdomadaire</dc:description>
+                    <dc:description>Etat de collection : Jusqu'à : 14 juin 1914 [VIII, n° 907], 1er juin 1919-10 mai 1940 [XIII-XXXII, n° 922-2780], inc.</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPNOUV</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328755571/date</dc:identifier>
+                    <dc:identifier>NUMP-24067</dc:identifier>
+                    <dc:identifier>ISSN 28022955</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Laon)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328755571</dc:relation>
+                    <dc:relation>A pour reproduction : Les Tablettes laonnoises (Reproduction numérique) = ISSN 2802-2947 (https://gallica.bnf.fr/ark:/12148/cb328755571/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-90464</dc:source>
+                    <dc:title>Les Tablettes laonnoises : journal hebdomadaire indépendant, littéraire, scientifique, commercial et agricole</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>1</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k66595988.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb328755571/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k66595988.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k66595988.medres</medres>
+                <nqamoyen>88.05</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k66595988.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k66595988</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1895-1895</dc:date>
+                    <dc:description>Etat de collection : 14 mars 1895 [I, n° 1]</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG69</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG98</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32783858r/date</dc:identifier>
+                    <dc:identifier>NUMP-14949</dc:identifier>
+                    <dc:identifier>ISSN 21289972</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32783858r</dc:relation>
+                    <dc:relation>A pour reproduction : Le Gratis-journal illustré (Reproduction numérique) = ISSN 2506-3030 (https://gallica.bnf.fr/ark:/12148/cb32783858r/date)</dc:relation>
+                    <dc:relation>Première de couverture : 212086</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-7391</dc:source>
+                    <dc:title>Le Gratis-journal illustré</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>2</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k1033459x.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32783858r/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k1033459x.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k1033459x.medres</medres>
+                <nqamoyen>88.7</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k1033459x.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k1033459x</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1881-1944</dc:date>
+                    <dc:description>Périodicité : Quotidien ; six fois par semaine (23 mars 1920-1944)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG10</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : ChArdenn1</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32837632m/date</dc:identifier>
+                    <dc:identifier>NUMP-15922</dc:identifier>
+                    <dc:identifier>ISSN 22638873</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Troyes)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32837632m</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit Troyen (Reproduction numérique) = ISSN 2534-0891 (https://www.archives-aube.fr/recherches/documents-numerises/presse-ancienne-microfilmee-avant-1944?arko_default_6229ab0363933--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_6229ac163cd22%5D%5Bop%5D=AND&amp;arko_default_6229ab0363933--filtreGroupes%5Bgroupes%5D%5B0%5D%5Barko_default_6229ac163cd22%5D%5Bq%5D%5B%5D=Le%20Petit%20Troyen)</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit Troyen (Reproduction numérique) = ISSN 2534-0891 (https://gallica.bnf.fr/ark:/12148/cb32837632m/date)</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit Troyen (Reproduction numérique) = ISSN 2534-0891 (https://www.retronews.fr/ark:/12148/cb32837632m/notice)</dc:relation>
+                    <dc:relation>Première de couverture : 296945</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-87978</dc:source>
+                    <dc:title>Le Petit Troyen : journal démocratique régional ["puis" journal quotidien de la démocratie de l'Est "puis" grand quotidien de la Champagne]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>3</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k43243433.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32837632m/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k43243433.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k43243433.medres</medres>
+                <nqamoyen>98.51</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k43243433.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k43243433</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1832-1927</dc:date>
+                    <dc:description>Périodicité : Hebdomadaire ; bihebdomadaire (6 mars-11 décembre 1898)</dc:description>
+                    <dc:description>Etat de collection : 1849, 14 mars-1914, 14 juil. ; 1922, 9 mars-1927, 27 janv. &lt;inc.&gt;</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG62</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG62</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328563606/date</dc:identifier>
+                    <dc:identifier>NUMP-26498</dc:identifier>
+                    <dc:identifier>ISSN 21372500</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Béthune)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Arras)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Béthune)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328563606</dc:relation>
+                    <dc:relation>A pour reproduction : La Revue artésienne (Reproduction numérique) = ISSN 2999-7844 (https://gallica.bnf.fr/ark:/12148/cb328563606/date)</dc:relation>
+                    <dc:relation>Première de couverture : 285760</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-89942</dc:source>
+                    <dc:title>La Revue artésienne : journal agricole, commercial et littéraire de l'arrondissement de Béthune ["puis" journal de l'arrondissement de Béthune, commercial et littéraire, suivi d'une feuille d'annonces]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>4</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t512531751.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb328563606/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t512531751.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t512531751.medres</medres>
+                <nqamoyen>85.4</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t512531751.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t512531751</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1919-1940</dc:date>
+                    <dc:description>Périodicité : Bihebdomadaire (2 août 1919-25 févr. 1922) ; hebdomadaire</dc:description>
+                    <dc:description>Etat de collection : 1re année, n° 1 (2 août 1919)-n° 23 (7 juin 1940) &lt;inc.&gt; +n° spécial du 7 mai 1924 ; n° 18 BIS du 4 mai 1929</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG27</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328242468/date</dc:identifier>
+                    <dc:identifier>NUMP-28077</dc:identifier>
+                    <dc:identifier>ISSN 22592830</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Évreux)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328242468</dc:relation>
+                    <dc:relation>Première de couverture : 984751</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-12653</dc:source>
+                    <dc:title>La Normandie (Évreux)</dc:title>
+                    <dc:title>La Normandie : Le Courrier de l'Eure et La Liberté réunis : organe de l'entente républicaine dans le département de l'Eure</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>5</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t51406174n.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb328242468/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t51406174n.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t51406174n.medres</medres>
+                <nqamoyen>86.78</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t51406174n.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t51406174n</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1815-1914</dc:date>
+                    <dc:description>Périodicité : Quotidien ; trihebdomadaire ; quotidien</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG59</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb326832745/date</dc:identifier>
+                    <dc:identifier>NUMP-30238</dc:identifier>
+                    <dc:identifier>ISSN 21203121</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Lille)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb326832745</dc:relation>
+                    <dc:relation>A pour reproduction : Affiches et annonces judiciaires, administratives et commerciales du département du Nord (Reproduction numérique) = ISSN 3077-4659 (https://gallica.bnf.fr/ark:/12148/cb326832745/date)</dc:relation>
+                    <dc:relation>Première de couverture : 1074724</dc:relation>
+                    <dc:source>Bibliothèque municipale de Lille, Jx.28</dc:source>
+                    <dc:title>Affiches et annonces judiciaires, administratives et commerciales du département du Nord : ["puis" collection complète des annonces de ventes et mises à prix d'immeubles,... avis administratifs, etc. "puis" journal de Lille]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>6</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t54519060b.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb326832745/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t54519060b.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t54519060b.medres</medres>
+                <nqamoyen>88.25</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t54519060b.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t54519060b</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1894-1900</dc:date>
+                    <dc:description>Périodicité : Irrégulier</dc:description>
+                    <dc:description>Etat de collection : 1re année, n° 5-6 (mai-déc. 1894) ; 3e année, n° 15 (mars 1896)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG69</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG98</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG76</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32802277n/date</dc:identifier>
+                    <dc:identifier>NUMP-19540</dc:identifier>
+                    <dc:identifier>ISSN 21310149</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32802277n</dc:relation>
+                    <dc:relation>A pour reproduction : Le Journal pour rien (Nice. Reproduction numérique) = ISSN 2698-0118 (https://gallica.bnf.fr/ark:/12148/cb32802277n/date)</dc:relation>
+                    <dc:relation>Première de couverture : 415590</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Centre technique du livre, FOL-Z-593</dc:source>
+                    <dc:title>Le Journal pour rien (Nice)</dc:title>
+                    <dc:title>Le Journal pour rien : illustré du littoral, des villes d'eaux et des bains de mer : Monte-Carlo, Menton, Beaulieu, Nice, Cannes, St-Raphaël, Aix-les-Bains, Royat, Vichy, Trouville, Cabourg, Dieppe, Ste-Adresse</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>7</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k7048273k.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32802277n/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k7048273k.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k7048273k.medres</medres>
+                <nqamoyen>89.36</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k7048273k.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k7048273k</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Paroisse Notre-Dame (Nice). Auteur du texte</dc:creator>
+                    <dc:date>1904-19..</dc:date>
+                    <dc:description>Variante(s) de titre : Bulletin paroissial de Notre-Dame de Nice</dc:description>
+                    <dc:description>Périodicité : Mensuel</dc:description>
+                    <dc:description>Etat de collection : Jan. à juin 1914 ; août à déc. 1915 ; 1916 (lac.) ; 1917 ; 1918 (mq. mars) ; 1919</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : GG14182</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:format>Nombre total de vues : 604</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb36137733k/date</dc:identifier>
+                    <dc:identifier>NUMP-13184</dc:identifier>
+                    <dc:identifier>ISSN 29995078</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>J. Ventre (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb36137733k</dc:relation>
+                    <dc:relation>A pour reproduction : Bulletin paroissial (Nice, Paroisse Notre-Dame. Reproduction numérique) = ISSN 2999-506X (https://gallica.bnf.fr/ark:/12148/cb36137733k/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, BP-1 (NICE, NOTRE-DAME)</dc:source>
+                    <dc:title>Bulletin paroissial (Nice, Paroisse Notre-Dame)</dc:title>
+                    <dc:title>Notre-Dame de Nice : bulletin paroissial mensuel</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>8</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k1154684s.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb36137733k/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k1154684s.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k1154684s.medres</medres>
+                <nqamoyen>88.11</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k1154684s.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k1154684s</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1934</dc:date>
+                    <dc:description>Etat de collection : 1934/10/26-1958/11/22</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MAEDI013</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MAEDIGen0</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32791838v/date</dc:identifier>
+                    <dc:identifier>NUMP-19181</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.?] (Casablanca)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32791838v</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-96159</dc:source>
+                    <dc:title>Information marocaine. Hebdomadaire indépendant ["puis" Organe de défense de la colonisation française au Maroc]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>9</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k5112921d.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32791838v/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k5112921d.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k5112921d.medres</medres>
+                <nqamoyen>87.26</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5112921d.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k5112921d</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1902-1902</dc:date>
+                    <dc:description>Etat de collection : Jusqu'à : 19 oct. 1902 [I, n° 5]</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32708744b/date</dc:identifier>
+                    <dc:identifier>NUMP-13780</dc:identifier>
+                    <dc:identifier>ISSN 21216169</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32708744b</dc:relation>
+                    <dc:relation>A pour reproduction : L'Avenir du paysan de Nice et des Alpes-Maritimes (Reproduction numérique) = ISSN 2437-2668 (https://gallica.bnf.fr/ark:/12148/cb32708744b/date)</dc:relation>
+                    <dc:relation>Première de couverture : 211988</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-11746</dc:source>
+                    <dc:title>L'Avenir du paysan de Nice et des Alpes-Maritimes : journal hebdomadaire indépendant, agricole, économique, sociologique, politique et industriel</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>10</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k974828t.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32708744b/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k974828t.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k974828t.medres</medres>
+                <nqamoyen>88.67</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k974828t.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k974828t</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Action catholique des enfants (France). Auteur du texte</dc:creator>
+                    <dc:date>1945-1969</dc:date>
+                    <dc:description>Variante(s) de titre : Fripounet Marisette</dc:description>
+                    <dc:description>Variante(s) de titre : Belles histoires de vaillance</dc:description>
+                    <dc:description>Variante(s) de titre : Belles histoires de vaillance pour CV et AV préj.</dc:description>
+                    <dc:description>Variante(s) de titre : Belles histoires de vaillance pour Coeurs Vaillants et Ames Vaillantes préjacistes</dc:description>
+                    <dc:description>Variante(s) de titre : Fripounet Marisette. Édition rurale</dc:description>
+                    <dc:description>Variante(s) de titre : Fripounet Marisette</dc:description>
+                    <dc:description>Périodicité : Bi-mensuel ; Hebdomadaire</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34411110n/date</dc:identifier>
+                    <dc:identifier>NUMP-27634</dc:identifier>
+                    <dc:identifier>ISSN 09927891</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Fripounet et Marisette (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34411110n</dc:relation>
+                    <dc:relation>A pour reproduction : Fripounet et Marisette (Reproduction numérique) = ISSN 3003-7271 (https://gallica.bnf.fr/ark:/12148/cb34411110n/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, FOL-JO-4447</dc:source>
+                    <dc:title>Fripounet et Marisette : message aux CV AV préj.</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>11</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k7016813x.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34411110n/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k7016813x.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k7016813x.medres</medres>
+                <nqamoyen>86.6</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k7016813x.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k7016813x</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1895-1955</dc:date>
+                    <dc:description>Etat de collection : Jusqu'à : 9 juil. 1939, 1947-1950, 1954 jusqu'à la fin, inc.</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG69</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb344267352/date</dc:identifier>
+                    <dc:identifier>NUMP-26502</dc:identifier>
+                    <dc:identifier>ISSN 11492759</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Lyon)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb344267352</dc:relation>
+                    <dc:relation>A pour reproduction : Le Tout Lyon (Reproduction numérique) = ISSN 2999-7992 (https://gallica.bnf.fr/ark:/12148/cb344267352)</dc:relation>
+                    <dc:relation>Première de couverture : 810301</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-7875</dc:source>
+                    <dc:title>Le Tout Lyon : littéraire, artistique et mondain...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>12</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t52171505n.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb344267352/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t52171505n.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t52171505n.medres</medres>
+                <nqamoyen>87.07</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t52171505n.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t52171505n</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:description>Numérisation effectuée à partir d'un document original.</dc:description>
+                    <dc:description>Magneval, B. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneval, Gabriel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneval, Gabriel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville, Henri-David-Désiré de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville, Henri-David-Désiré . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville, Lucien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magni, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnian, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magniant . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, Blaise . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, Joseph-Gabriel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, aîné, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, aîné, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier (ou Magnières) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Ambroise . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Ambroise-Pierre-Victor . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Antoine-Louis-Bernard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Antoine-Pierre-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Edmond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Edmond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Edmond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Edmond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Georges . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Hyacinthe . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Jules . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Marc . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Victor . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier de Gondreville, Louis-Marcou . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier de Gondreville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier de Gondreville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier-Grandprez, Jean-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier-Maisonneuve, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier-Maisonneuve, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnière . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magniez, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Benoît . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, David . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, David . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Eugène-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Hyacinthe-Louis (ou Henri) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Hyacinthe-Henri . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Hyacinthe-Henri . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Hyacinthe-Henri . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Pierre-Fn . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Thomas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Thomas-Bernard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin-Besson, Jean-Hugues . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magninat, Charles-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnitot, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnitot, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnol, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnole . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnus, Félix . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnusson, Edward . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, J.-L.-Ad. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, François-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, Pierre-Eloy . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnyer, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnytot, L.-Maurice de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magol, René-Marguerite . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magon, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magontier ou Masgontier, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magontier, Jean-M. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magontier, Jean-M. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magonty, L. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magord, Daniel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magory, Jules . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot, Gustav . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot, Jean-Baptiste-Etienne . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot, Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot-Pichancourt, Gabriel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magouet, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magré, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magron, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magron, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguain . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mague, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguerie, Léopold . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguero, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguet, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguet, Jean-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magui . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguié . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguin, Joseph-Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguin, Etienne . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguis, Isidore . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguis, Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magy, Joseph-Frédéric . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magy, J.-Paul . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahault, Narcisse . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut-Berton, Gilbert . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Adrien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Jean-François-Laurent . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Jean-Michel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, fils, Marc . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Michel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahe, Pierre-Théodore . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé de La Bourdonnais, Louis-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé de Villeneuve, fils, Armand-Constant-François-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahelin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahelin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahelin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahelin, Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheo, Reine-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheust . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheux . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheux, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahias, Jules . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahière, Félix . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu, Gervais . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu, Louis-Toussaint . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieux, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieux, Ernest . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieux, Blaise-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieux . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahmadou-Racine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahmoud Chebo . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahon, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahotière . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahou, L. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahou . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahun, J.-P. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy, François-Césaire de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy, François-Césaire de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy, H.-? de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy des Montils, Joseph-Henry de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Louis-Marie (duc de) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maia . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maichain . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maichain . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maidier, aîné . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maidy, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maietonave . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maiffret, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maige, Marc . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maige, Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maige . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignal . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignan, Louis de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignan (ou Magnan), Germain . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignant, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignant . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Henri . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Louis-Alphonse . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Louis-Jules-Julien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigné de Salanauve, Jacques de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignée de Saint Martin, Charles-Raimond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignes . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignes, Etienne . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignes, Jean-Laurent-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigneux (de Nons), de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigniat . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignien, Charles-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrat, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrat, Pierre-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrat, Théophile . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigre, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Henry-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Henri-Gasse . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Henry-Jules . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, jeune, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Jean-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, P.-M.-Toussaint . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrot, Eumond-Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrot, Jean-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrot, Pierre-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maihol, Paul . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maijonade, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailfait, Jean-Chrisostome . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailfert, François-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhal, Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhat, Louis-Fidèle . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhat, Louis-Fidel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhat, Louis-Fidel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhat . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe (ou Maille) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe, Albert . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhes, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhes, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhos, Clément . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhot, Pierre-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillan, André . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillan, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Aimé-Modeste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Aimé-Modeste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Amand-Désiré-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, André . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, André-Flavien-François-Xavier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, André-Flavien-François-Xavier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Angélique-Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Anne-Charlotte Gervaise, épouse du frère . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Anthime-Maxime . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Alexandre-Philippe . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Angélique-Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Canon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Charles-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Charles-René . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Eugène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Eugène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Fidel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Fortuné . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, François-René . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Gustave-Edouard-Paul-Émile . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Henry-Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, J.-N.-A. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Léon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Nicolas-Victor . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Pierre-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Pierre-Maxime-Ossian . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, René-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Stanislas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillardoz, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillat, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillat, Jean-Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Antoine-Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, George . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Georges . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Georges . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Guillaume . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Vincent . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillé, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillé de La Tour-Landry, Armand-Ch.-François de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillé de La Tour-Landry, Armand-Charles-François de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillé de La Tour-Landry, Armand-Charles-François de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillebois, Jean-Melchior . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillée, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefer . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefer, Antoine-Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefer, Antoine-Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefert, François-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefert, Gustave . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailler, Nicolas-Charles-Jean-Chrysostome . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailleres, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, André-Eugène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Barthélémy . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Barthélémy-Sébastien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Barthélémy-Sébastien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Gustave . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, J.-B. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet-Maugis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillette . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailley . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailliard, Louis-Gabriel-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillier, Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillier, Nicolas-Victor . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailliet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailliochon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailliot, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailloc . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillol, Paul . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Pierre-Giroux . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, G. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Jean-Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Jean-Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Louis-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Nicolas-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Pierre-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillotte . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly d'Haucourt (duc de) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Alexandre-Louis-Henry . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly (Chateau Renaud), Eugène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Jean-Baptiste-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Jean-Baptiste-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Jean-Baptiste-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maimbourg, père . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Main, Alexandre-Jacob . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Main, Louis-Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainbourg, Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainbourg, L.-A. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maindestre, César . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maindrault . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine, Amédée . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, Pierre-François-Marie Gonthier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, Pierre-François-Marie Gonthier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, Pierre-François-Marie Gonthier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, Pierre-François-Marie Gonthier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, François-Pierre Gontier de Biran, dit . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, François-Pierre Gontier de Biran, dit . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine Biran, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine-Glatigny, Fr.-Ach. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine-Glatigny . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maingault, Louis-Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainglet, Martin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainglet, Martin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainglet, Martin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainglet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maingonnat, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maingot, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maingot, Barthélémy . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainguet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainguy, Félix . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainguy, Félix . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintenant . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintenay . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintien, Ant. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintigneux, César . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainville, Charles-Emmanuel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainy, Jean-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mair, Alexandre-François-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mair (ou Maire) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mair (ou Maire) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairan, Jean-Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairan . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Arsène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Arsène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Augustin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Célestin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Charles-Alexis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Charles-Melchior . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Claude-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Denis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, François (ou Vincent) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Jean-Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Joseph-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Philippe-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Pierre-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Simon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Xavier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire de Bouligney . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairelle, Claude-Sébastien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairesse, Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairesse, Jacques-Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairesse de Prouville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, Ariste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, fils, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, Charles-Frédéric . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, Julien-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairot, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairot, Charles-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maiseau . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maiseaux . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison, Jean-Baptiste-Pascal . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison, Paul . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison, Pierre-Petit de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonade . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisoncelle, Alexandre de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisondieu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonfort (marquis de) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonfort (marquis de) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonnave, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneufve . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, jeune . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, jeune . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonnier, Amédée-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonnier, Amédée-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonseule . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonval, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonval, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisse, Pierre-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisse, M. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneval, B. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneval, Gabriel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneval, Gabriel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville, Henri-David-Désiré de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville, Henri-David-Désiré . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magneville, Lucien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magni, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnian, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magniant . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, Blaise . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, Joseph-Gabriel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, aîné, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnien, aîné, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier (ou Magnières) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Ambroise . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Ambroise-Pierre-Victor . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Antoine-Louis-Bernard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Antoine-Pierre-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Edmond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Edmond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Edmond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Edmond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Georges . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Hyacinthe . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Jules . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Marc . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier, Victor . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier de Gondreville, Louis-Marcou . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier de Gondreville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier de Gondreville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier-Grandprez, Jean-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier-Maisonneuve, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnier-Maisonneuve, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnière . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magniez, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Benoît . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, David . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, David . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Eugène-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Hyacinthe-Louis (ou Henri) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Hyacinthe-Henri . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Hyacinthe-Henri . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Hyacinthe-Henri . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Pierre-Fn . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Thomas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin, Thomas-Bernard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnin-Besson, Jean-Hugues . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magninat, Charles-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnitot, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnitot, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnol, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnole . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnus, Félix . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnusson, Edward . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, J.-L.-Ad. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, François-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, Pierre-Eloy . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magny, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnyer, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magnytot, L.-Maurice de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magol, René-Marguerite . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magon, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magontier ou Masgontier, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magontier, Jean-M. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magontier, Jean-M. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magonty, L. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magord, Daniel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magory, Jules . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot, Gustav . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot, Jean-Baptiste-Etienne . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot, Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magot-Pichancourt, Gabriel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magouet, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magré, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magron, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magron, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguain . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mague, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguerie, Léopold . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguero, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguet, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguet, Jean-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magui . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguié . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguin, Joseph-Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguin, Etienne . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguis, Isidore . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maguis, Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magy, Joseph-Frédéric . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Magy, J.-Paul . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahault, Narcisse . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahaut-Berton, Gilbert . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Adrien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Jean-François-Laurent . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Jean-Michel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, fils, Marc . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé, Michel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahe, Pierre-Théodore . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé de La Bourdonnais, Louis-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahé de Villeneuve, fils, Armand-Constant-François-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahelin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahelin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahelin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahelin, Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheo, Reine-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheust . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheux . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maheux, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahias, Jules . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahière, Félix . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu, Gervais . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu, Louis-Toussaint . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieu, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieux, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieux, Ernest . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieux, Blaise-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahieux . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahmadou-Racine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahmoud Chebo . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahon, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahotière . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahou, L. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahou . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahul, cadet, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahun, J.-P. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy, François-Césaire de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy, François-Césaire de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy, H.-? de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy des Montils, Joseph-Henry de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mahy, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Louis-Marie (duc de) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maia . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maichain . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maichain . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maidier, aîné . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maidy, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maietonave . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maiffret, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maige, Marc . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maige, Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maige . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignal . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignan, Louis de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignan (ou Magnan), Germain . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignant, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignant . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Henri . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Louis-Alphonse . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Louis-Jules-Julien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigne, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigné de Salanauve, Jacques de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignée de Saint Martin, Charles-Raimond . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignes . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignes, Etienne . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignes, Jean-Laurent-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigneux (de Nons), de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigniat . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maignien, Charles-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrat, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrat, Pierre-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrat, Théophile . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigre, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Henry-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Henri-Gasse . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Henry-Jules . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, jeune, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Jean-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, P.-M.-Toussaint . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigret, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrot, Eumond-Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrot, Jean-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maigrot, Pierre-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maihol, Paul . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maijonade, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailfait, Jean-Chrisostome . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailfert, François-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhal, Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhat, Louis-Fidèle . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhat, Louis-Fidel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhat, Louis-Fidel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhat . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe (ou Maille) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe, Albert . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhe, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhes, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhes, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhol . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhos, Clément . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailhot, Pierre-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillan, André . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillan, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Aimé-Modeste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Aimé-Modeste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Amand-Désiré-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, André . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, André-Flavien-François-Xavier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, André-Flavien-François-Xavier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Angélique-Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Anne-Charlotte Gervaise, épouse du frère . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Anthime-Maxime . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Alexandre-Philippe . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Angélique-Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Canon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Charles-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Charles-René . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Eugène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Eugène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Fidel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Fortuné . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, François-René . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Gustave-Edouard-Paul-Émile . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Henry-Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jacques . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, J.-N.-A. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Léon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Nicolas-Victor . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Pierre-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Pierre-Maxime-Ossian . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, René-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillard, Stanislas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillardoz, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillat, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillat, Jean-Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Antoine-Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, George . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Georges . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Georges . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Guillaume . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maille, Vincent . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillé, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillé de La Tour-Landry, Armand-Ch.-François de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillé de La Tour-Landry, Armand-Charles-François de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillé de La Tour-Landry, Armand-Charles-François de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillebois, Jean-Melchior . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillée, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefer . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefer, Antoine-Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefer, Antoine-Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefert, François-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillefert, Gustave . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailler, Nicolas-Charles-Jean-Chrysostome . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailleres, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, André-Eugène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Barthélémy . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Barthélémy-Sébastien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Barthélémy-Sébastien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, Gustave . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet, J.-B. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillet-Maugis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillette . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailley . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailliard, Louis-Gabriel-Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillier, Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillier, Nicolas-Victor . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailliet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailliochon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailliot, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailloc . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillol, Paul . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Pierre-Giroux . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, G. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Jean-Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Jean-Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Louis-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Nicolas-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillot, Pierre-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maillotte . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly d'Haucourt (duc de) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Alexandre-Louis-Henry . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly (Chateau Renaud), Eugène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Jean-Baptiste-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Jean-Baptiste-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mailly, Jean-Baptiste-Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maimbourg, père . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Main, Alexandre-Jacob . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Main, Louis-Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainbourg, Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainbourg, L.-A. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maindestre, César . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maindrault . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine, Amédée . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, Pierre-François-Marie Gonthier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, Pierre-François-Marie Gonthier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, Pierre-François-Marie Gonthier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, Pierre-François-Marie Gonthier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, François-Pierre Gontier de Biran, dit . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine de Biran, François-Pierre Gontier de Biran, dit . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine Biran, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine-Glatigny, Fr.-Ach. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maine-Glatigny . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maingault, Louis-Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainglet, Martin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainglet, Martin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainglet, Martin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainglet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maingonnat, François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maingot, Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maingot, Barthélémy . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainguet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainguy, Félix . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainguy, Félix . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintenant . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintenay . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintien, Ant. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maintigneux, César . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainville, Charles-Emmanuel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mainy, Jean-Antoine . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mair, Alexandre-François-Marie . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mair (ou Maire) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mair (ou Maire) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairan, Jean-Pierre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairan . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Arsène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Arsène . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Augustin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Célestin . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Charles-Alexis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Charles-Melchior . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Claude-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Denis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, François (ou Vincent) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Jean-Baptiste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Jean-Claude . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Joseph-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Philippe-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Pierre-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Simon . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire, Xavier . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maire de Bouligney . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairel . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairelle, Claude-Sébastien . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairesse, Alexandre . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairesse, Jacques-Nicolas . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairesse de Prouville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, Ariste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, fils, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, Charles-Frédéric . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairet, Julien-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairot . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairot, Charles . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Mairot, Charles-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maiseau . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maiseaux . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison, Jean-Baptiste-Pascal . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison, Paul . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison, Pierre-Petit de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maison . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonade . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisoncelle, Alexandre de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisondieu . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonfort (marquis de) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonfort (marquis de) . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonnave, Jean . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, Auguste . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, Jean-François . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneufve . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, jeune . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, jeune . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonneuve, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonnier, Amédée-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonnier, Amédée-Louis . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonseule . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonval, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonval, de . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisonville . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisse, Pierre-Joseph . Visualiser la fiche correspondante. </dc:description>
+                    <dc:description>Maisse, M. . Visualiser la fiche correspondante. </dc:description>
+                    <dc:format>500 fiches</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b10000172t</dc:identifier>
+                    <dc:relation>Notice du catalogue : http://archivesetmanuscrits.bnf.fr/ark:/12148/cc992347</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France. Département des Manuscrits. FM Fichier Bossu (206)</dc:source>
+                    <dc:title>Magneval-Maisse</dc:title>
+                    <dc:type>manuscript</dc:type>
+                    <dc:type>manuscrit</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>13</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b10000172t.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b10000172t</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b10000172t.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b10000172t.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b10000172t.thumbnail</thumbnail>
+                <typedoc>manuscrits</typedoc>
+                <uri>btv1b10000172t</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1854-1929</dc:date>
+                    <dc:description>Périodicité : Bihebdomadaire ; trihebdomadaire ; quotidien (janv. 1885-1929)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG11</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32750336q/date</dc:identifier>
+                    <dc:identifier>NUMP-28160</dc:identifier>
+                    <dc:identifier>ISSN 2124720X</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Carcassonne)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32750336q</dc:relation>
+                    <dc:relation>A pour reproduction : Le Courrier de l'Aude (Reproduction numérique) = ISSN 2506-0015 (https://ressourcespatrimoines.laregion.fr/ark:/46855/FRB110696201_7150.locale=fr)</dc:relation>
+                    <dc:relation>Première de couverture : 228377</dc:relation>
+                    <dc:source>Médiathèque de Carcassonne Agglo, 7150</dc:source>
+                    <dc:title>Le Courrier de l'Aude : journal politique, administratif, littéraire, commercial et agricole</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>14</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t53677986r.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32750336q/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t53677986r.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t53677986r.medres</medres>
+                <nqamoyen>99.9</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t53677986r.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t53677986r</uri>
+            </srw:extraRecordData>
+        </srw:record>
+    </srw:records>
+    <srw:nextRecordPosition>16</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

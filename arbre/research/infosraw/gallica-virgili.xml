@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <srw:version>1.2</srw:version>
+    <srw:echoedSearchRetrieveRequest>
+        <srw:query>gallica all "VIRGILI" "Beaulieu"</srw:query>
+        <srw:version>1.2</srw:version>
+    </srw:echoedSearchRetrieveRequest>
+    <srw:numberOfRecords>63926</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;371309&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:records>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Simi. Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Nutile, Emanuele (1862-1932). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Neri, Ennio (1891-1985). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Nardella, Evemero (1878-1950). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Mario, E. A. (1884-1961). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Mari, Astro (1911-1988). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Lama, Gaetano (1886-1950). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Galdieri, Michele (1902-1965). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Furno, D.. Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Di Lazzaro, Eldo (1902-1968). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>De Curtis, Ernesto (1875-1937). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Capurro, Giovanni (1859-1920). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Buti, C.. Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Buongiovanni, Francesco (1872-1940). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Bovio, Libero (1883-1942). Auteur du texte</dc:creator>
+                    <dc:creator>Bixio, Cesare Andrea (1896-1978). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Virgili, Luciano (1922-1986). Chant</dc:creator>
+                    <dc:date>1957</dc:date>
+                    <dc:description>Titre uniforme : [Non ti scordar di me]</dc:description>
+                    <dc:description>Titre uniforme : [Non ti scordar di me]</dc:description>
+                    <dc:description>Comprend : Addio, Signora - Piccola santa - Cara piccina - Amor di pastorello - Non ti scordardi me - Vivere - Ladra - Portami tante rose - Chiove - Primo Amore - Balochei e profumi</dc:description>
+                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
+                    <dc:description>Contient une table des matières</dc:description>
+                    <dc:format>1 disque : 33 t ; 30 cm</dc:format>
+                    <dc:format>disc</dc:format>
+                    <dc:format>disque microsillon</dc:format>
+                    <dc:format>multipart/mixed</dc:format>
+                    <dc:format>Nombre total de vues : 16</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8812301w</dc:identifier>
+                    <dc:identifier>NUMAUD-8812301</dc:identifier>
+                    <dc:identifier>Numéro commercial : La voix de son maître FELP176S</dc:identifier>
+                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb13861553d</dc:relation>
+                    <dc:relation>Notice d’oeuvre : http://catalogue.bnf.fr/ark:/12148/cb140098394</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb380621145</dc:relation>
+                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
+                    <dc:rights>restricted use</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, B-2336</dc:source>
+                    <dc:title>FESTIVAL DE LA CHANSON POPULAIRE ITALIENNE / Luciano VIRGILI et l'orchestre de Dino OLIVIERI</dc:title>
+                    <dc:type>sound</dc:type>
+                    <dc:type>document sonore</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>0</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8812301w.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8812301w</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8812301w.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8812301w.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8812301w.thumbnail</thumbnail>
+                <typedoc>sonores</typedoc>
+                <uri>bpt6k8812301w</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Virgili. Auteur ou responsable intellectuel</dc:creator>
+                    <dc:creator>Olaizola, Gabriel de (1891-1973). Auteur ou responsable intellectuel</dc:creator>
+                    <dc:date>1957</dc:date>
+                    <dc:description>BnF-Partenariats, Collection sonore - Believe</dc:description>
+                    <dc:description>Contient une table des matières</dc:description>
+                    <dc:format>1 disque : 33 t ; 25 cm</dc:format>
+                    <dc:format>disc</dc:format>
+                    <dc:format>disque microsillon</dc:format>
+                    <dc:format>multipart/mixed</dc:format>
+                    <dc:format>Nombre total de vues : 10</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k8810075j</dc:identifier>
+                    <dc:identifier>Numéro commercial : Erato LDEV2011</dc:identifier>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb37874104s</dc:relation>
+                    <dc:rights>conditions spécifiques d'utilisation - BnF-Partenariats, Collection sonore - Believe</dc:rights>
+                    <dc:rights>restricted use</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Audiovisuel, C-2953</dc:source>
+                    <dc:title>CHANSONS POPULAIRES SLAVES ; CHANSONS POPULAIRES BASQUES / les Petits Chanteurs de St laurent dir. Abbé ZURFLUH</dc:title>
+                    <dc:type>sound</dc:type>
+                    <dc:type>document sonore</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>1</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8810075j.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k8810075j</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8810075j.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8810075j.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8810075j.thumbnail</thumbnail>
+                <typedoc>sonores</typedoc>
+                <uri>bpt6k8810075j</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:description>Appartient à l’ensemble documentaire : IconEST2</dc:description>
+                    <dc:format>1 doc. iconogr.</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 1</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b10334811p</dc:identifier>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb418715184</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Estampes et photographie, N-2 (ANGELA VIRGILI, Maria)</dc:source>
+                    <dc:subject>Angela Virgili, Maria (1661-1734) -- Portraits</dc:subject>
+                    <dc:subject>Portraits</dc:subject>
+                    <dc:title>[Recueil. Portraits de Maria Angela Virgili]</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>2</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b10334811p.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b10334811p</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b10334811p.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b10334811p.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b10334811p.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b10334811p</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:coverage>.. février 1931</dc:coverage>
+                    <dc:creator>Agence Rol. Agence photographique (commanditaire)</dc:creator>
+                    <dc:date>1931</dc:date>
+                    <dc:description>Référence bibliographique : Rol, 152019</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Pho20Rol</dc:description>
+                    <dc:description>Image de presse</dc:description>
+                    <dc:format>1 photogr. nég. sur verre : contretype ; 18 x 13 cm (sup.)</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 1</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b53239547g</dc:identifier>
+                    <dc:identifier>IFN-53239547</dc:identifier>
+                    <dc:identifier>Numéro commercial : Agence Rol 152019</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb46947536r</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Estampes et photographie, EI-13 (1745)</dc:source>
+                    <dc:subject>Rovira i Virgili, A. (1882-1949) -- Portraits</dc:subject>
+                    <dc:subject>Guerau de Liost (1878-1933) -- Portraits</dc:subject>
+                    <dc:subject>Politique et gouvernement -- Espagne -- 1931-1939</dc:subject>
+                    <dc:subject>Madrid (Espagne)</dc:subject>
+                    <dc:subject>Portraits collectifs -- 1914-1945</dc:subject>
+                    <dc:title>[De g. à d.] Bofill Matas de l'action catalane, Rovira Virgili de l'action rép[ublicaine] (Consorcio) : [photographie de presse] / [Agence Rol] ; [d'après une photographie originale de] Consorcio</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                    <dc:type>photographie</dc:type>
+                    <dc:type>photograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>3</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b53239547g.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b53239547g</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b53239547g.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b53239547g.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b53239547g.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b53239547g</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1757</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : 3M000</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : 3M009</dc:description>
+                    <dc:format>1 estampe : Xylographie ; 310 x 210 mm</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 1</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b10491141c</dc:identifier>
+                    <dc:language>spa</dc:language>
+                    <dc:publisher>Canals, Magi (Tarragone (Catalogne, Espagne))</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb459268076</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Montpellier Méditerranée Métropole, V10479_03_065</dc:source>
+                    <dc:subject>Margarida,santa</dc:subject>
+                    <dc:title>Goigs de la gloriosa verge y martyr Santa Margarida patrona de la Riera y Virgili</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                    <dc:type>estampe</dc:type>
+                    <dc:type>engraving</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>4</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b10491141c.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b10491141c</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b10491141c.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b10491141c.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b10491141c.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b10491141c</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1757</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : 3M000</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : 3M009</dc:description>
+                    <dc:format>1 estampe : Xylographie ; 308 x 205 mm</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 1</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b10489842x</dc:identifier>
+                    <dc:language>spa</dc:language>
+                    <dc:publisher>Canals, Magi (Tarragone (Catalogne, Espagne))</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb45924104r</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Montpellier Méditerranée Métropole, V10478_07_238</dc:source>
+                    <dc:subject>Margarida, santa</dc:subject>
+                    <dc:title>Goigs de la gloriosa verge, y martyr Santa Margarida patrona de la Riera, y Virgili</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                    <dc:type>estampe</dc:type>
+                    <dc:type>engraving</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>5</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b10489842x.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b10489842x</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b10489842x.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b10489842x.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b10489842x.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b10489842x</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:coverage> 1931</dc:coverage>
+                    <dc:creator>Agence Rol. Agence photographique (commanditaire)</dc:creator>
+                    <dc:date>1931</dc:date>
+                    <dc:description>Référence bibliographique : Rol, 152020</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Pho20Rol</dc:description>
+                    <dc:description>Image de presse</dc:description>
+                    <dc:format>1 photogr. nég. sur verre : contretype ; 13 x 18 cm (sup.)</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 1</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b53239548x</dc:identifier>
+                    <dc:identifier>IFN-53239548</dc:identifier>
+                    <dc:identifier>Numéro commercial : Agence Rol 152020</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb469475582</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Estampes et photographie, EI-13 (1745)</dc:source>
+                    <dc:subject>Rovira i Virgili, A. (1882-1949) -- Portraits</dc:subject>
+                    <dc:subject>Guerau de Liost (1878-1933) -- Portraits</dc:subject>
+                    <dc:subject>Politique et gouvernement -- Catalogne (Espagne) -- 1931-1939</dc:subject>
+                    <dc:subject>Barcelone (Espagne)</dc:subject>
+                    <dc:subject>Portraits collectifs -- 1914-1945</dc:subject>
+                    <dc:title>Barcelone, réunion de dirigeants de l'action catalane et de l'action républicaine pour une fusion (Consorcio) : [photographie de presse] / [Agence Rol] ; [d'après une photographie originale de] Consorcio</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                    <dc:type>photographie</dc:type>
+                    <dc:type>photograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>6</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b53239548x.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b53239548x</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b53239548x.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b53239548x.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b53239548x.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b53239548x</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Servius, Maurus Honoratus (0363?-03..). Ancien possesseur</dc:contributor>
+                    <dc:contributor>Paroisse cathédrale Notre-Dame de Paris. Ancien possesseur</dc:contributor>
+                    <dc:contributor>Vespasiano da Bisticci (1421-1498)</dc:contributor>
+                    <dc:contributor>Joly, Claude (1607-1700). Ancien possesseur</dc:contributor>
+                    <dc:contributor>Bibliothèque du chapitre de la cathédrale Notre-Dame de Paris. Ancien possesseur</dc:contributor>
+                    <dc:date>1450-1475</dc:date>
+                    <dc:description>Numérisation effectuée à partir d'un document original : Latin 17896.</dc:description>
+                    <dc:description>Au f. 2, le médaillon devant accueillir les armoiries du possesseur a été laissé en blanc. Au contreplat inf., l'inscription à l'encre rouge "Vespasianus Florentinus fecit transcribi et vendidit" indique que ce ms. a été exécuté dans l'officine du libraire florentin Vespasiano da Bisticci, actif jusqu'en 1479. Ce ms. a appartenu à Claude Joly, chantre de Notre-Dame de Paris, qui légua ses mss. à la bibliothèque du chapitre de la cathédrale Notre-Dame de Paris en 1680 (signature de Claude Joly, suivie de la date "dec. 1666" au contreplat sup. et mention "Ce livre appartient à Mr Joly, chantre en l'Eglise de Nostre Dame" au f. 1v, XVIIe s.). L'ex-libris "A la bibliothèque de l'Eglise de Paris" figure sur le f. 1 (XVIIe s.).</dc:description>
+                    <dc:format>Italie (Florence). - Parchemin. - 179 ff. - Atelier de Francesco d'Antonio del Cherico. Encadrement à bianchi girari contenant une initiale dorée et, dans la partie inf., un médaillon (laissé blanc) soutenu par cinq putti (1). - 315 × 215 mm. - Reliure parchemin vert. Titre doré au dos sur pièce de peau rouge: "VIRGILI SERVII"</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b108406475</dc:identifier>
+                    <dc:language>lat</dc:language>
+                    <dc:relation>Notice du catalogue : http://archivesetmanuscrits.bnf.fr/ark:/12148/cc68883m</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France. Département des Manuscrits. Latin 17896</dc:source>
+                    <dc:title>Honoratus Servius, Commentarius in Virgilium.</dc:title>
+                    <dc:type>manuscript</dc:type>
+                    <dc:type>manuscrit</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>7</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b108406475.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b108406475</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b108406475.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b108406475.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b108406475.thumbnail</thumbnail>
+                <typedoc>manuscrits</typedoc>
+                <uri>btv1b108406475</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Girolamo Sanseverino. Ancien possesseur</dc:contributor>
+                    <dc:contributor>rois Aragonais de Naples. Ancien possesseur</dc:contributor>
+                    <dc:contributor>Charles VIII (1470-1498 ; roi de France). Ancien possesseur</dc:contributor>
+                    <dc:contributor>Librairie royale de Blois</dc:contributor>
+                    <dc:creator>Homère. Auteur du texte</dc:creator>
+                    <dc:creator>Virgile (0070-0019 av. J.-C.). Auteur du texte</dc:creator>
+                    <dc:creator>Iacobiti, Aurelio Simmaco de. Traducteur</dc:creator>
+                    <dc:creator>Virgile. Auteur du texte</dc:creator>
+                    <dc:date>1401-1500</dc:date>
+                    <dc:description>Numérisation effectuée à partir d'un document de substitution : R 20896.</dc:description>
+                    <dc:description>Traduction en italien, en "ottava rima", de la Batracomiomachia d'Homèreet du sixième livre de l'Eneide de Virgile.F. A : titre du XVe siècle, « Aurelius ... com. del Vergilio ».F. A : " Batracominiomachie Homeri poete permaximi, nec non sexti libri publii Maronis Virgili Eneidos vulgari rhithimo traductio per Aurelium de Jacobutis de Tussicia ad peticionem et instantiam magnifici viri et domini Jachetti Maglabeti et multorum aliorum peanum et rhithimorum compilatio...". F. Iv : titre du XVIe siècle, « Italien italie de la bataille des genoilles et des ratz et aultres ». F. 1-13v : " Diva Elicona che sempre piatosa / Esser solivi con quil sacro choro / De sancte muse, lieta e gratiosa / Alli mie preghi senza alcun dimoro / Forza porgendo sempre valerosa / All intellecto mio del tuo tesoro / Tanto donasti, ben che fosse indegno / Gustare il cibo del tuo sacro legno ... -... Curria l'anni mille et quattrocento / De Iesu Christo nostro salvatore / Ancora cinquanta sei il complemento / Del mese de Augusto, in Partenope ancore / Quando Jachecto Sire de Valimento / Fece cio fare allo suo servitore / Aurelio fidele de Tusticia / Per quisti pregate la matre Maria ". F. 14-20v : sonnets en "quarta rima" : "Io non foi mai in cielo né in paradiso... " (f. 14) ; "Oymè lasso chi vego vingire... " (f. 14) ; "Almo confessore tu berardino..." (f. 14v) ; "Se de justicia la spata superna..." (15-18) ; "Signore in cui è volto ogni disio... " (f. 18-20v).F. 22-53v : traduction en "ottava rima" du livre VI de l'Enéide, "Se mai de Latona et sacro filgio ...-... Da punto in punto como Vergilio apersi. Jacobus [...] Vai comprendare como se rimare semper in prosa per lectera et vulgare. Finis". F. 61-64 : poèmes en "terza rima", "O muse che dal Monte de Parnaso..." (f. 61-64) ; "Epitaphium suprascripti Petri turditani. Hoc habet obscurum turdanus demonis antrum..."(f. 64) . F. 65-67v : poème à la gloire d'Alphonse Ier d'Aragon, "Ay Napoli excellente / Si nel mondo piu zentile ...-... et la lira sua decente. Per Alfonso".</dc:description>
+                    <dc:format>Ce manuscrit a été copié en. - Italie. - Ecriture humanistique cursive. - Les f. 81 et f. 82 sont suivis chacun d'un feuillet papier non folioté. Un feuillet de parchemin est intercalé après la troisième garde au début du manuscrit. Trois feuillets (f. A-C) précédent le f. 1.F. 21rv, 54-60v, 64v, 68-114 : blancs. - Papier. - 114 feuillets précédés et suivis de trois gardes. - 225 x 150 mm. - Reliure de maroquin rouge aux armes et chiffre royaux de la fin du XVIIe siècle ou du début du XVIIIe siècle. Tranches dorées et ciselées ; titre doré au dos : « DIVERSE POESIES ITALIEN ». Traces de la reliure ancienne de cuir noir : mention de reliure et de classement du XVe siècle, «[Rey] delle ranocchie ale vurgale o ranabette » (f. Iv des gardes finales). - Estampille de la Bibliothèque royale (avant 1735) sur le modèle de Josserand-Bruno, type 7</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b10076273w</dc:identifier>
+                    <dc:language>ita</dc:language>
+                    <dc:relation>Notice du catalogue : http://archivesetmanuscrits.bnf.fr/ark:/12148/cc101908</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France. Département des Manuscrits. italien 1097</dc:source>
+                    <dc:title>Homère, Batracomiomachia ;Virgile, Eneide, traduit par Aurelius de Jacobutis de Tussicia.</dc:title>
+                    <dc:type>manuscript</dc:type>
+                    <dc:type>manuscrit</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>8</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b10076273w.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b10076273w</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b10076273w.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b10076273w.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b10076273w.thumbnail</thumbnail>
+                <typedoc>manuscrits</typedoc>
+                <uri>btv1b10076273w</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Gaubert, Ernest (1880-1945). Auteur du texte</dc:creator>
+                    <dc:date>1913</dc:date>
+                    <dc:description>Collection : Collection "Les Proses"</dc:description>
+                    <dc:description>Contient une table des matières</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>1 vol. (308 p.) ; in-16</dc:format>
+                    <dc:format>Nombre total de vues : 332</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k9770062j</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>français</dc:language>
+                    <dc:publisher>G. Grès (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32149090m</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 8-Y2-25086</dc:source>
+                    <dc:title>L'amour marié : roman espagnol / par Ernest Gaubert</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>9</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9770062j.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k9770062j</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9770062j.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9770062j.medres</medres>
+                <nqamoyen>99.19</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9770062j.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k9770062j</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Cité internationale universitaire (Paris). Auteur du texte</dc:creator>
+                    <dc:date>1987-1988</dc:date>
+                    <dc:description>Périodicité : Mensuel</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb45264282f/date</dc:identifier>
+                    <dc:identifier>ISSN 2558524X</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>français</dc:language>
+                    <dc:publisher> (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb45264282f</dc:relation>
+                    <dc:source>Cité Internationale Universitaire de Paris, 2017-111676</dc:source>
+                    <dc:title>Cité internationale</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>10</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k97858283.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb45264282f/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k97858283.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k97858283.medres</medres>
+                <nqamoyen>98.51</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k97858283.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k97858283</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Commissariat régional de la République à Montpellier. Auteur du texte</dc:creator>
+                    <dc:date>1944-19..</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32732384n/date</dc:identifier>
+                    <dc:identifier>ISSN 27393631</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Montpellier)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32732384n</dc:relation>
+                    <dc:relation>A pour reproduction : Bulletin officiel du Commissariat régional de la République à Montpellier (Reproduction numérique) = ISSN 2796-4892 (https://archives-pierresvives.herault.fr/archive/resultats/bibliotheque/n:27?RECH_type_Md5=91d98a89c6947f7cbc96e83f3e186186)</dc:relation>
+                    <dc:relation>A pour reproduction : Bulletin officiel du Commissariat régional de la République à Montpellier (Reproduction numérique) = ISSN 2796-4892 (https://gallica.bnf.fr/ark:/12148/cb32732384n/date)</dc:relation>
+                    <dc:source>Archives départementales de l'Hérault, PAR 3215</dc:source>
+                    <dc:title>Bulletin officiel du Commissariat régional de la République à Montpellier</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>11</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t51038526f.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32732384n/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t51038526f.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t51038526f.medres</medres>
+                <nqamoyen>99.44</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t51038526f.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t51038526f</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Girolamo Sanseverino. Ancien possesseur</dc:contributor>
+                    <dc:contributor>rois Aragonais de Naples. Ancien possesseur</dc:contributor>
+                    <dc:contributor>Charles VIII (1470-1498 ; roi de France). Ancien possesseur</dc:contributor>
+                    <dc:contributor>Librairie royale de Blois</dc:contributor>
+                    <dc:creator>Homère. Auteur du texte</dc:creator>
+                    <dc:creator>Virgile (0070-0019 av. J.-C.). Auteur du texte</dc:creator>
+                    <dc:creator>Iacobiti, Aurelio Simmaco de. Traducteur</dc:creator>
+                    <dc:creator>Virgile. Auteur du texte</dc:creator>
+                    <dc:date>1401-1500</dc:date>
+                    <dc:description>Numérisation effectuée à partir d'un document original.</dc:description>
+                    <dc:description>Appartient à l'ensemble documentaire : RegiaAragon</dc:description>
+                    <dc:description>Traduction en italien, en "ottava rima", de la Batracomiomachia d'Homèreet du sixième livre de l'Eneide de Virgile.F. A : titre du XVe siècle, « Aurelius ... com. del Vergilio ».F. A : " Batracominiomachie Homeri poete permaximi, nec non sexti libri publii Maronis Virgili Eneidos vulgari rhithimo traductio per Aurelium de Jacobutis de Tussicia ad peticionem et instantiam magnifici viri et domini Jachetti Maglabeti et multorum aliorum peanum et rhithimorum compilatio...". F. Iv : titre du XVIe siècle, « Italien italie de la bataille des genoilles et des ratz et aultres ». F. 1-13v : " Diva Elicona che sempre piatosa / Esser solivi con quil sacro choro / De sancte muse, lieta e gratiosa / Alli mie preghi senza alcun dimoro / Forza porgendo sempre valerosa / All intellecto mio del tuo tesoro / Tanto donasti, ben che fosse indegno / Gustare il cibo del tuo sacro legno ... -... Curria l'anni mille et quattrocento / De Iesu Christo nostro salvatore / Ancora cinquanta sei il complemento / Del mese de Augusto, in Partenope ancore / Quando Jachecto Sire de Valimento / Fece cio fare allo suo servitore / Aurelio fidele de Tusticia / Per quisti pregate la matre Maria ". F. 14-20v : sonnets en "quarta rima" : "Io non foi mai in cielo né in paradiso... " (f. 14) ; "Oymè lasso chi vego vingire... " (f. 14) ; "Almo confessore tu berardino..." (f. 14v) ; "Se de justicia la spata superna..." (15-18) ; "Signore in cui è volto ogni disio... " (f. 18-20v).F. 22-53v : traduction en "ottava rima" du livre VI de l'Enéide, "Se mai de Latona et sacro filgio ...-... Da punto in punto como Vergilio apersi. Jacobus [...] Vai comprendare como se rimare semper in prosa per lectera et vulgare. Finis". F. 61-64 : poèmes en "terza rima", "O muse che dal Monte de Parnaso..." (f. 61-64) ; "Epitaphium suprascripti Petri turditani. Hoc habet obscurum turdanus demonis antrum..."(f. 64) . F. 65-67v : poème à la gloire d'Alphonse Ier d'Aragon, "Ay Napoli excellente / Si nel mondo piu zentile ...-... et la lira sua decente. Per Alfonso".</dc:description>
+                    <dc:format>Ce manuscrit a été copié en. - Italie. - Ecriture humanistique cursive. - Les f. 81 et f. 82 sont suivis chacun d'un feuillet papier non folioté. Un feuillet de parchemin est intercalé après la troisième garde au début du manuscrit. Trois feuillets (f. A-C) précédent le f. 1.F. 21rv, 54-60v, 64v, 68-114 : blancs. - Papier. - 114 feuillets précédés et suivis de trois gardes. - 225 x 150 mm. - Reliure de maroquin rouge aux armes et chiffre royaux de la fin du XVIIe siècle ou du début du XVIIIe siècle. Tranches dorées et ciselées ; titre doré au dos : « DIVERSE POESIES ITALIEN ». Traces de la reliure ancienne de cuir noir : mention de reliure et de classement du XVe siècle, «[Rey] delle ranocchie ale vurgale o ranabette » (f. Iv des gardes finales). - Estampille de la Bibliothèque royale (avant 1735) sur le modèle de Josserand-Bruno, type 7</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b84333174</dc:identifier>
+                    <dc:language>ita</dc:language>
+                    <dc:relation>Notice du catalogue : http://archivesetmanuscrits.bnf.fr/ark:/12148/cc101908</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France. Département des Manuscrits. italien 1097</dc:source>
+                    <dc:title>Homère, Batracomiomachia ;Virgile, Eneide, traduit par Aurelius de Jacobutis de Tussicia.</dc:title>
+                    <dc:type>manuscript</dc:type>
+                    <dc:type>manuscrit</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>12</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b84333174.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b84333174</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b84333174.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b84333174.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b84333174.thumbnail</thumbnail>
+                <typedoc>manuscrits</typedoc>
+                <uri>btv1b84333174</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Alliance internationale de la Cité universitaire de Paris. Auteur du texte</dc:creator>
+                    <dc:date>19..-199.</dc:date>
+                    <dc:description>Périodicité : Trimest</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34402107s/date</dc:identifier>
+                    <dc:identifier>ISSN 09849300</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Alliance internationale des anciens de la cité universitaire de Paris (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34402107s</dc:relation>
+                    <dc:relation>A pour reproduction : Bulletin de l'Alliance internationale des anciens de la cité universitaire de Paris (Reproduction numérique) = ISSN 2547-2666 (https://gallica.bnf.fr/ark:/12148/cb34402107s/date)</dc:relation>
+                    <dc:source>Cité Internationale Universitaire de Paris, 2017-108362</dc:source>
+                    <dc:title>Bulletin de l'Alliance internationale des anciens de la cité universitaire de Paris</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>13</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k97833421.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34402107s/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k97833421.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k97833421.medres</medres>
+                <nqamoyen>98.68</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k97833421.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k97833421</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Colegio de España (Paris). Auteur du texte</dc:creator>
+                    <dc:date>2005-200.</dc:date>
+                    <dc:description>Périodicité : Mensuel</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb45264468f/date</dc:identifier>
+                    <dc:identifier>ISSN 25585568</dc:identifier>
+                    <dc:language>spa</dc:language>
+                    <dc:language>espagnol </dc:language>
+                    <dc:publisher> (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb45264468f</dc:relation>
+                    <dc:source>Cité Internationale Universitaire de Paris, 2017-111486</dc:source>
+                    <dc:title>Clé (Paris. 2005)</dc:title>
+                    <dc:title>Clé : revista del Colegio de España en París</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>14</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9783049w.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb45264468f/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9783049w.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9783049w.medres</medres>
+                <nqamoyen>99.86</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9783049w.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k9783049w</uri>
+            </srw:extraRecordData>
+        </srw:record>
+    </srw:records>
+    <srw:nextRecordPosition>16</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

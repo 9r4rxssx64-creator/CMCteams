@@ -1,0 +1,1601 @@
+{
+ "gallica": {
+  "maiffret-beaulieu": {
+   "q": "\"MAIFFRET\" \"Beaulieu\"",
+   "total": 1261,
+   "recs": [
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "Les Tablettes laonnoises : journal hebdomadaire indépendant, littéraire, scientifique, commercial et agricole",
+     "date": "1907-1940",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328755571/date"
+    },
+    {
+     "titre": "Le Gratis-journal illustré",
+     "date": "1895-1895",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32783858r/date"
+    },
+    {
+     "titre": "Le Petit Troyen : journal démocratique régional [\"puis\" journal quotidien de la démocratie de l'Est \"puis\" grand quotidien de la Champagne]",
+     "date": "1881-1944",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32837632m/date"
+    },
+    {
+     "titre": "La Revue artésienne : journal agricole, commercial et littéraire de l'arrondissement de Béthune [\"puis\" journal de l'arrondissement de Béthune, commercial et littéraire, suivi d'une feuille d'annonces",
+     "date": "1832-1927",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328563606/date"
+    },
+    {
+     "titre": "La Normandie (Évreux)",
+     "date": "1919-1940",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328242468/date"
+    },
+    {
+     "titre": "Affiches et annonces judiciaires, administratives et commerciales du département du Nord : [\"puis\" collection complète des annonces de ventes et mises à prix d'immeubles,... avis administratifs, etc.",
+     "date": "1815-1914",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb326832745/date"
+    },
+    {
+     "titre": "Le Journal pour rien (Nice)",
+     "date": "1894-1900",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32802277n/date"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse Notre-Dame)",
+     "date": "1904-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb36137733k/date"
+    },
+    {
+     "titre": "Information marocaine. Hebdomadaire indépendant [\"puis\" Organe de défense de la colonisation française au Maroc]",
+     "date": "1934",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32791838v/date"
+    },
+    {
+     "titre": "L'Avenir du paysan de Nice et des Alpes-Maritimes : journal hebdomadaire indépendant, agricole, économique, sociologique, politique et industriel",
+     "date": "1902-1902",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32708744b/date"
+    },
+    {
+     "titre": "Fripounet et Marisette : message aux CV AV préj.",
+     "date": "1945-1969",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb34411110n/date"
+    },
+    {
+     "titre": "Le Tout Lyon : littéraire, artistique et mondain...",
+     "date": "1895-1955",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb344267352/date"
+    },
+    {
+     "titre": "Magneval-Maisse",
+     "date": "",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10000172t"
+    },
+    {
+     "titre": "Le Courrier de l'Aude : journal politique, administratif, littéraire, commercial et agricole",
+     "date": "1854-1929",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32750336q/date"
+    }
+   ]
+  },
+  "maiffret-nice": {
+   "q": "\"MAIFFRET\" \"Nice\"",
+   "total": 1261,
+   "recs": [
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "Les Tablettes laonnoises : journal hebdomadaire indépendant, littéraire, scientifique, commercial et agricole",
+     "date": "1907-1940",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328755571/date"
+    },
+    {
+     "titre": "Le Gratis-journal illustré",
+     "date": "1895-1895",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32783858r/date"
+    },
+    {
+     "titre": "Le Petit Troyen : journal démocratique régional [\"puis\" journal quotidien de la démocratie de l'Est \"puis\" grand quotidien de la Champagne]",
+     "date": "1881-1944",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32837632m/date"
+    },
+    {
+     "titre": "La Revue artésienne : journal agricole, commercial et littéraire de l'arrondissement de Béthune [\"puis\" journal de l'arrondissement de Béthune, commercial et littéraire, suivi d'une feuille d'annonces",
+     "date": "1832-1927",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328563606/date"
+    },
+    {
+     "titre": "La Normandie (Évreux)",
+     "date": "1919-1940",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328242468/date"
+    },
+    {
+     "titre": "Affiches et annonces judiciaires, administratives et commerciales du département du Nord : [\"puis\" collection complète des annonces de ventes et mises à prix d'immeubles,... avis administratifs, etc.",
+     "date": "1815-1914",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb326832745/date"
+    },
+    {
+     "titre": "Le Journal pour rien (Nice)",
+     "date": "1894-1900",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32802277n/date"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse Notre-Dame)",
+     "date": "1904-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb36137733k/date"
+    },
+    {
+     "titre": "Information marocaine. Hebdomadaire indépendant [\"puis\" Organe de défense de la colonisation française au Maroc]",
+     "date": "1934",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32791838v/date"
+    },
+    {
+     "titre": "L'Avenir du paysan de Nice et des Alpes-Maritimes : journal hebdomadaire indépendant, agricole, économique, sociologique, politique et industriel",
+     "date": "1902-1902",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32708744b/date"
+    },
+    {
+     "titre": "Fripounet et Marisette : message aux CV AV préj.",
+     "date": "1945-1969",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb34411110n/date"
+    },
+    {
+     "titre": "Le Tout Lyon : littéraire, artistique et mondain...",
+     "date": "1895-1955",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb344267352/date"
+    },
+    {
+     "titre": "Magneval-Maisse",
+     "date": "",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10000172t"
+    },
+    {
+     "titre": "Le Courrier de l'Aude : journal politique, administratif, littéraire, commercial et agricole",
+     "date": "1854-1929",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32750336q/date"
+    }
+   ]
+  },
+  "maiffret-monaco": {
+   "q": "\"MAIFFRET\" \"Monaco\"",
+   "total": 1261,
+   "recs": [
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "Les Tablettes laonnoises : journal hebdomadaire indépendant, littéraire, scientifique, commercial et agricole",
+     "date": "1907-1940",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328755571/date"
+    },
+    {
+     "titre": "Le Gratis-journal illustré",
+     "date": "1895-1895",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32783858r/date"
+    },
+    {
+     "titre": "Le Petit Troyen : journal démocratique régional [\"puis\" journal quotidien de la démocratie de l'Est \"puis\" grand quotidien de la Champagne]",
+     "date": "1881-1944",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32837632m/date"
+    },
+    {
+     "titre": "La Revue artésienne : journal agricole, commercial et littéraire de l'arrondissement de Béthune [\"puis\" journal de l'arrondissement de Béthune, commercial et littéraire, suivi d'une feuille d'annonces",
+     "date": "1832-1927",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328563606/date"
+    },
+    {
+     "titre": "La Normandie (Évreux)",
+     "date": "1919-1940",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328242468/date"
+    },
+    {
+     "titre": "Affiches et annonces judiciaires, administratives et commerciales du département du Nord : [\"puis\" collection complète des annonces de ventes et mises à prix d'immeubles,... avis administratifs, etc.",
+     "date": "1815-1914",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb326832745/date"
+    },
+    {
+     "titre": "Le Journal pour rien (Nice)",
+     "date": "1894-1900",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32802277n/date"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse Notre-Dame)",
+     "date": "1904-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb36137733k/date"
+    },
+    {
+     "titre": "Information marocaine. Hebdomadaire indépendant [\"puis\" Organe de défense de la colonisation française au Maroc]",
+     "date": "1934",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32791838v/date"
+    },
+    {
+     "titre": "L'Avenir du paysan de Nice et des Alpes-Maritimes : journal hebdomadaire indépendant, agricole, économique, sociologique, politique et industriel",
+     "date": "1902-1902",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32708744b/date"
+    },
+    {
+     "titre": "Fripounet et Marisette : message aux CV AV préj.",
+     "date": "1945-1969",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb34411110n/date"
+    },
+    {
+     "titre": "Le Tout Lyon : littéraire, artistique et mondain...",
+     "date": "1895-1955",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb344267352/date"
+    },
+    {
+     "titre": "Magneval-Maisse",
+     "date": "",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10000172t"
+    },
+    {
+     "titre": "Le Courrier de l'Aude : journal politique, administratif, littéraire, commercial et agricole",
+     "date": "1854-1929",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32750336q/date"
+    }
+   ]
+  },
+  "sauvaigo-monaco": {
+   "q": "\"SAUVAIGO\" \"Monaco\"",
+   "total": 2612,
+   "recs": [
+    {
+     "titre": "Les cultures sur le littoral de la Méditerranée : Provence, Ligurie, Algérie / Dr Émile Sauvaigo,... ; introduction par Ch. Naudin,...",
+     "date": "1894",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k3040532c"
+    },
+    {
+     "titre": "Les cultures sur le littoral de la Méditerranée : Provence, Ligurie, Algérie (2e édition) / Dr Émile Sauvaigo,...",
+     "date": "1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6373190j"
+    },
+    {
+     "titre": "\"Flora mediterranea exotica\". Énumération des plantes cultivées dans les jardins de la Provence et de la Ligurie, avec un tableau des collections botaniques les plus importantes de Marseille à Gênes,",
+     "date": "1899",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6414440k"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse de la Madeleine. 1904?-)",
+     "date": "1904",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb43511061d/date"
+    },
+    {
+     "titre": "Bulletin mensuel des naturalistes des Alpes-Maritimes",
+     "date": "1911-1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb42746404q/date"
+    },
+    {
+     "titre": "Bulletin trimestriel (Association des artistes professionnels de la Côte d'Azur)",
+     "date": "1933-1934",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32705065n/date"
+    },
+    {
+     "titre": "Annuaire de la Librairie française",
+     "date": "1894-1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32696458d/date"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse Notre-Dame)",
+     "date": "1904-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb36137733k/date"
+    },
+    {
+     "titre": "Le Cians, Beuil et le Monnier, par le chevalier V / de Cessole",
+     "date": "1893",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k15094669"
+    },
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "Le Petit Niçois. Supplément illustré hebdomadaire",
+     "date": "1894-1924",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32837064k/date"
+    },
+    {
+     "titre": "L'Avenir des Hautes-Pyrénées",
+     "date": "1883-1944",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32708594b/date"
+    },
+    {
+     "titre": "La Dépêche de Saint-Maur : journal hebdomadaire d'informations locales et régionales / directeur Salomon Hirsch",
+     "date": "1922-1929",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb327560428/date"
+    },
+    {
+     "titre": "Catalogue-guide : peintures, mars 1929 / Musée national du Luxembourg",
+     "date": "1929",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k62266643"
+    },
+    {
+     "titre": "Bulletin d'information et recueil des actes administratifs de la Préfecture des Alpes-Maritimes",
+     "date": "1860",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb343854023/date"
+    }
+   ]
+  },
+  "sauvaigo-nice": {
+   "q": "\"SAUVAIGO\" \"Nice\"",
+   "total": 2612,
+   "recs": [
+    {
+     "titre": "Les cultures sur le littoral de la Méditerranée : Provence, Ligurie, Algérie / Dr Émile Sauvaigo,... ; introduction par Ch. Naudin,...",
+     "date": "1894",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k3040532c"
+    },
+    {
+     "titre": "Les cultures sur le littoral de la Méditerranée : Provence, Ligurie, Algérie (2e édition) / Dr Émile Sauvaigo,...",
+     "date": "1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6373190j"
+    },
+    {
+     "titre": "\"Flora mediterranea exotica\". Énumération des plantes cultivées dans les jardins de la Provence et de la Ligurie, avec un tableau des collections botaniques les plus importantes de Marseille à Gênes,",
+     "date": "1899",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6414440k"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse de la Madeleine. 1904?-)",
+     "date": "1904",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb43511061d/date"
+    },
+    {
+     "titre": "Bulletin mensuel des naturalistes des Alpes-Maritimes",
+     "date": "1911-1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb42746404q/date"
+    },
+    {
+     "titre": "Bulletin trimestriel (Association des artistes professionnels de la Côte d'Azur)",
+     "date": "1933-1934",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32705065n/date"
+    },
+    {
+     "titre": "Annuaire de la Librairie française",
+     "date": "1894-1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32696458d/date"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse Notre-Dame)",
+     "date": "1904-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb36137733k/date"
+    },
+    {
+     "titre": "Le Cians, Beuil et le Monnier, par le chevalier V / de Cessole",
+     "date": "1893",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k15094669"
+    },
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "Le Petit Niçois. Supplément illustré hebdomadaire",
+     "date": "1894-1924",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32837064k/date"
+    },
+    {
+     "titre": "L'Avenir des Hautes-Pyrénées",
+     "date": "1883-1944",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32708594b/date"
+    },
+    {
+     "titre": "La Dépêche de Saint-Maur : journal hebdomadaire d'informations locales et régionales / directeur Salomon Hirsch",
+     "date": "1922-1929",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb327560428/date"
+    },
+    {
+     "titre": "Catalogue-guide : peintures, mars 1929 / Musée national du Luxembourg",
+     "date": "1929",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k62266643"
+    },
+    {
+     "titre": "Bulletin d'information et recueil des actes administratifs de la Préfecture des Alpes-Maritimes",
+     "date": "1860",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb343854023/date"
+    }
+   ]
+  },
+  "desarzens-monaco": {
+   "q": "\"DESARZENS\" \"Monaco\"",
+   "total": 234,
+   "recs": [
+    {
+     "titre": "CONCERTO N °4 EN SOL MAJEUR POUR PIANO ET ORCHESTRE, OPUS 58 ; RONDO EN SI BEMOL MAJEUR\" POUR PIANO ET ORCHESTRE / Ludwig Van BEETHOVEN ; Lili KRAUS, piano, et l'Orchestre de l'Opéra de Vienne dir. Vi",
+     "date": "1961",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8814031m"
+    },
+    {
+     "titre": "CONCERTO POUR PIANO ET ORCHESTRE EN LA MINEUR, opus 54 / Robert SCHUMANN ; Lili KRAUS, piano, et Orchestre de l'Opéra de Vienne dir. Victor DESARZENS. CONCERTO POUR VIOLONCELLE ET ORCHESTRE EN LA MINE",
+     "date": "1961",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k88140306"
+    },
+    {
+     "titre": "Concerto pour flûte et orchestre en sol majeur, K. 313 ; Concerto pour flûte et orchestre en ré majeur, K. 314 / Wolfgang-Amadeus Mozart ; l'Orchestre de Chambre de Lausanne, dir. Victor Desarzens ; F",
+     "date": "1960",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8812827v"
+    },
+    {
+     "titre": "CAPRICCIO ESPAGNOL ; COQ D'OR (Introduction et Marcha) / Nicolai RIMSKY-KORSAKOFF - Prélude à \"KHOVANTCHINA\" de Modeste MOUSSORGSKY ; Orchestre Symphonique de Winterthur, Dir. Victor Desarzens",
+     "date": "1955",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8816007k"
+    },
+    {
+     "titre": "L'Oeuvre pour flûte, vol. 3 / Johann Sebastian Bach ; Fernand Caratgé, flûte, Georges Alès, violon, Ruggero Gerlin, clavecin, Orchestre Philharmonique de Paris, dir. Victor Desarzens",
+     "date": "1958",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8802264s"
+    },
+    {
+     "titre": "Concerto pour flûte et orchestre / Jacques IBERT ; Peter Lukas GRAF, flûte et l'Orchestre Symphonique de Winterthur dir. Victor DESARZENS. Concerto pour petit orchestre / Albert ROUSSEL ; l'Orchestre",
+     "date": "1961",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8814059p"
+    },
+    {
+     "titre": "FESTIVAL DE MUSIQUE CLASSIQUE LEGERE",
+     "date": "19..",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k88239783"
+    },
+    {
+     "titre": "Festival de musique classique légère",
+     "date": "1960",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8823966w"
+    },
+    {
+     "titre": "GAYANEH / Aram KHATCHATOURIAN ; l'Orchestre de l'Opéra de Vienne dir. Vladimir GOLSCHMANN. LES COMEDIENS / Dimitri KABALEVSKI ; l'Orchestre de l'Opéra de Vienne dir. Vladimir GOLSCHMANN. LE COQ D'OR -",
+     "date": "1961",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k88140447"
+    },
+    {
+     "titre": "Concerto pour clavecin et orchestre en ré mineur ; Concerto pour clavecin et orchestre en la majeur / Jean-Sebastien Bach, comp. ; Ruggero Gerlin, clav. ; orchestre des Cento soli ; Victor Desarzens,",
+     "date": "1959",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8800916h"
+    },
+    {
+     "titre": "Cinquième concerto brandebourgeois / J. S. Bach, comp. ; Isabelle Nef, clav. ; Edmond Defrancesco, fl. ; Andrée Wachsmuth-Loew, vl ; Orchestre de chambre de Lausanne ; Victor Desarzens, dir.. Concerto",
+     "date": "1951",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8812949s"
+    },
+    {
+     "titre": "Concerto pour clavecin et orchestre en ré mineur, BWV 1052 ; Concerto pour clavecin et orchestre en la majeur, BWV 1055 / Bach, comp. ; Ruggero Gerlin, clav. ; orchestre desCento solic ; Victor Desarz",
+     "date": "1958",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8844451k"
+    },
+    {
+     "titre": "Victor et Georges Desarzens",
+     "date": "1920",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b8417194x"
+    },
+    {
+     "titre": "Archives commerciales de la France : journal hebdomadaire...",
+     "date": "1874-1955",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32701198x/date"
+    },
+    {
+     "titre": "Nouvelles pour rire",
+     "date": "1896-189.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328268750/date"
+    }
+   ]
+  },
+  "desarzens": {
+   "q": "\"DESARZENS\"",
+   "total": 234,
+   "recs": [
+    {
+     "titre": "CONCERTO N °4 EN SOL MAJEUR POUR PIANO ET ORCHESTRE, OPUS 58 ; RONDO EN SI BEMOL MAJEUR\" POUR PIANO ET ORCHESTRE / Ludwig Van BEETHOVEN ; Lili KRAUS, piano, et l'Orchestre de l'Opéra de Vienne dir. Vi",
+     "date": "1961",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8814031m"
+    },
+    {
+     "titre": "CONCERTO POUR PIANO ET ORCHESTRE EN LA MINEUR, opus 54 / Robert SCHUMANN ; Lili KRAUS, piano, et Orchestre de l'Opéra de Vienne dir. Victor DESARZENS. CONCERTO POUR VIOLONCELLE ET ORCHESTRE EN LA MINE",
+     "date": "1961",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k88140306"
+    },
+    {
+     "titre": "Concerto pour flûte et orchestre en sol majeur, K. 313 ; Concerto pour flûte et orchestre en ré majeur, K. 314 / Wolfgang-Amadeus Mozart ; l'Orchestre de Chambre de Lausanne, dir. Victor Desarzens ; F",
+     "date": "1960",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8812827v"
+    },
+    {
+     "titre": "CAPRICCIO ESPAGNOL ; COQ D'OR (Introduction et Marcha) / Nicolai RIMSKY-KORSAKOFF - Prélude à \"KHOVANTCHINA\" de Modeste MOUSSORGSKY ; Orchestre Symphonique de Winterthur, Dir. Victor Desarzens",
+     "date": "1955",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8816007k"
+    },
+    {
+     "titre": "L'Oeuvre pour flûte, vol. 3 / Johann Sebastian Bach ; Fernand Caratgé, flûte, Georges Alès, violon, Ruggero Gerlin, clavecin, Orchestre Philharmonique de Paris, dir. Victor Desarzens",
+     "date": "1958",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8802264s"
+    },
+    {
+     "titre": "Concerto pour flûte et orchestre / Jacques IBERT ; Peter Lukas GRAF, flûte et l'Orchestre Symphonique de Winterthur dir. Victor DESARZENS. Concerto pour petit orchestre / Albert ROUSSEL ; l'Orchestre",
+     "date": "1961",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8814059p"
+    },
+    {
+     "titre": "FESTIVAL DE MUSIQUE CLASSIQUE LEGERE",
+     "date": "19..",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k88239783"
+    },
+    {
+     "titre": "Festival de musique classique légère",
+     "date": "1960",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8823966w"
+    },
+    {
+     "titre": "GAYANEH / Aram KHATCHATOURIAN ; l'Orchestre de l'Opéra de Vienne dir. Vladimir GOLSCHMANN. LES COMEDIENS / Dimitri KABALEVSKI ; l'Orchestre de l'Opéra de Vienne dir. Vladimir GOLSCHMANN. LE COQ D'OR -",
+     "date": "1961",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k88140447"
+    },
+    {
+     "titre": "Concerto pour clavecin et orchestre en ré mineur ; Concerto pour clavecin et orchestre en la majeur / Jean-Sebastien Bach, comp. ; Ruggero Gerlin, clav. ; orchestre des Cento soli ; Victor Desarzens,",
+     "date": "1959",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8800916h"
+    },
+    {
+     "titre": "Cinquième concerto brandebourgeois / J. S. Bach, comp. ; Isabelle Nef, clav. ; Edmond Defrancesco, fl. ; Andrée Wachsmuth-Loew, vl ; Orchestre de chambre de Lausanne ; Victor Desarzens, dir.. Concerto",
+     "date": "1951",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8812949s"
+    },
+    {
+     "titre": "Concerto pour clavecin et orchestre en ré mineur, BWV 1052 ; Concerto pour clavecin et orchestre en la majeur, BWV 1055 / Bach, comp. ; Ruggero Gerlin, clav. ; orchestre desCento solic ; Victor Desarz",
+     "date": "1958",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8844451k"
+    },
+    {
+     "titre": "Victor et Georges Desarzens",
+     "date": "1920",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b8417194x"
+    },
+    {
+     "titre": "Archives commerciales de la France : journal hebdomadaire...",
+     "date": "1874-1955",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32701198x/date"
+    },
+    {
+     "titre": "Nouvelles pour rire",
+     "date": "1896-189.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328268750/date"
+    }
+   ]
+  },
+  "vdb-beaulieu": {
+   "q": "\"VAN DEN BOSCH\" \"Beaulieu\"",
+   "total": 23259,
+   "recs": [
+    {
+     "titre": "Catalogue des tableaux, aquarelles, dessins, pastels, anciens et modernes par ou attribués à Bailly, Van den Bosch, Delacroix... [et al.]..., importantes estampes anciennes du XVIIIe siècle..., meuble",
+     "date": "1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k1249094m"
+    },
+    {
+     "titre": "Recueil de toutes les sentences, rendues au définitif par le tribunal civil du departement de l'Escaut, depuis son installation. Partie 1",
+     "date": "1796-1797",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k96298931"
+    },
+    {
+     "titre": "Manuscrits de la Bibliothèque nationale et universitaire de Strasbourg. Manuscrits allemands acquis entre 1950 et 2007. Manuscrits du \"Schriftmuseum F. Soennecken\" de Bonn. \"Monsieur Jean Van Den Bosc",
+     "date": "1401-1900",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10234821t"
+    },
+    {
+     "titre": "Gisors, 23/7/24, Vandenbosh [i.e. Van den Bosch], Belgique [devant], Schultz [i.e. Schiltz, course cycliste sur route comptant pour les Jeux Olympiques] : [photographie de presse] / [Agence Rol]",
+     "date": "1924",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b53134061q"
+    },
+    {
+     "titre": "Natuurlyke historie der africaansche vogelen, door François Levaillant, uit het fransch vertaalt. 1ste uitgave",
+     "date": "",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bd6t57501511"
+    },
+    {
+     "titre": "Van den vogel Charadrius / door J. Huizinga",
+     "date": "1903",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k9816106q"
+    },
+    {
+     "titre": "Mémoires de Jean de Dadizeele : souverain-bailli de Flandre, haut-bailli de Gand, capitaine-général de l'armée flamande, conseiller, chambellan et maître d'hôtel de Maximilien d'Autriche et de Marie d",
+     "date": "1850",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k112053t"
+    },
+    {
+     "titre": "Ventes à l'amiable. Numéro 27 / Etienne Bourgey",
+     "date": "1939",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k9778465n"
+    },
+    {
+     "titre": "Gedenkpenningen betreffende Amsterdam. Gildepenningen. Loodjes. Toegangsbewijzen tot den schouwburg. Huwelijkspenningen. Penningen betreffende. Luther en de Luthersche gemeenten : 16 mars 1910 / R. W.",
+     "date": "1910",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bd6t54179489w"
+    },
+    {
+     "titre": "Den Koning en den Pachter, Blyspel in 3 Deelen, gemengt met Sangen, uyt het Frans [door Sedaine] vertaelt ende gerymt door Joannes Franciscus Cammaert",
+     "date": "1764",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bd6t54191812s"
+    },
+    {
+     "titre": "Exportation d'oeuvres d'art au XVIIe siècle à Anvers : La firme Forchoudt / par J. Denucé,...",
+     "date": "1930",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6463412b"
+    },
+    {
+     "titre": "Lettres et documents concernant Jan Breugel I et II / par J. Denucé,...",
+     "date": "1934",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6477123m"
+    },
+    {
+     "titre": "Oranje-bulletin. Uitgegeven door Samenwerking van de Ondergrondsche Pers. [\"puis\" door : De Gens, Je maintiendrai, Ons Volk...]",
+     "date": "19??",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32829464z/date"
+    },
+    {
+     "titre": "Trouw. Speciale uitgave voor's Gravenhage en Omstreken. Verschijnt voorloopig wekelijke",
+     "date": "19??",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32881888c/date"
+    },
+    {
+     "titre": "La peinture flamande (3e éd. corr. et complétée) / par A. J. Wauters",
+     "date": "1883",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k205824f"
+    }
+   ]
+  },
+  "molinario-nice": {
+   "q": "\"MOLINARIO\" \"Nice\"",
+   "total": 5307,
+   "recs": [
+    {
+     "titre": "La Tafna : journal de l'arrondissement de Tlemcen, paraissant tous les mercredis",
+     "date": "1883-190.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32875625p/date"
+    },
+    {
+     "titre": "La Propriété industrielle (Genève)",
+     "date": "1885-1994",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb34469942f/date"
+    },
+    {
+     "titre": "L'Abonné de Paris-Matin : journal mensuel des abonnés de \"Paris-Matin\"",
+     "date": "1927-1927",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32680921s/date"
+    },
+    {
+     "titre": "Biarritz illustré et Côte basque-Pyrénées : liste officielle des étrangers publiée sous le haut patronage de la Fédération des syndicats d'initiative des Pyrénées, Côte basque et Gascogne : programme",
+     "date": "1926-1931",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32711647m/date"
+    },
+    {
+     "titre": "[Suzanne Danco avec Francesco Molinari-Pradelli]",
+     "date": "19..",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b100267398"
+    },
+    {
+     "titre": "Disputatio juridica de jure molendinorum, quam... praeside... Johanne Henrico Boeclero,... defendet Wilh. Laurent. Faber,... d. 4. mart. ... 1713...",
+     "date": "",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k9772106w"
+    },
+    {
+     "titre": "[Lettre et télégrammes de Claude Debussy à Emma Debussy, Rome, du 21 au 26 février 1914] (manuscrit autographe)",
+     "date": "1914",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b530311449"
+    },
+    {
+     "titre": "Le Capilartiste : organe hebdomadaire de la Corporation des coiffeurs et des spécialités connexes",
+     "date": "1908-1959",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32737248q/date"
+    },
+    {
+     "titre": "Notices sur les explosifs en Italie... / E. Molinari et F. Quartieri",
+     "date": "1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k3414479t"
+    },
+    {
+     "titre": "[Suzanne Danco avec Francesco Molinari-Pradelli]",
+     "date": "19..",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10026740n"
+    },
+    {
+     "titre": "compendiaria Italiae descriptio, ad Joannem Ganayensem, Franciae Cancellarium : authore Joanne Molinari, Tornacensi.",
+     "date": "1508",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b525100784"
+    },
+    {
+     "titre": "Il Risveglio italiano (Paris)",
+     "date": "1900-1936",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32862077b/date"
+    },
+    {
+     "titre": "La Côte basque : revue illustrée de l'Euzkalerria [\"puis\" de l'Eskual-herria]",
+     "date": "1924-1931",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32749405p/date"
+    },
+    {
+     "titre": "Les Heures nouvelles : journal illustré bi-mensuel de l'école et de la famille",
+     "date": "1932-1933",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32786608c/date"
+    },
+    {
+     "titre": "Catalogue de la collection de médailles de Molinari, consul de Suède à Tunis. Smith-Lesouëf 50 (2)",
+     "date": "1701-1800",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b100866940"
+    }
+   ]
+  },
+  "virgili": {
+   "q": "\"VIRGILI\" \"Beaulieu\"",
+   "total": 63926,
+   "recs": [
+    {
+     "titre": "FESTIVAL DE LA CHANSON POPULAIRE ITALIENNE / Luciano VIRGILI et l'orchestre de Dino OLIVIERI",
+     "date": "1957",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8812301w"
+    },
+    {
+     "titre": "CHANSONS POPULAIRES SLAVES ; CHANSONS POPULAIRES BASQUES / les Petits Chanteurs de St laurent dir. Abbé ZURFLUH",
+     "date": "1957",
+     "type": "sound",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k8810075j"
+    },
+    {
+     "titre": "[Recueil. Portraits de Maria Angela Virgili]",
+     "date": "",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10334811p"
+    },
+    {
+     "titre": "[De g. à d.] Bofill Matas de l'action catalane, Rovira Virgili de l'action rép[ublicaine] (Consorcio) : [photographie de presse] / [Agence Rol] ; [d'après une photographie originale de] Consorcio",
+     "date": "1931",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b53239547g"
+    },
+    {
+     "titre": "Goigs de la gloriosa verge y martyr Santa Margarida patrona de la Riera y Virgili",
+     "date": "1757",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10491141c"
+    },
+    {
+     "titre": "Goigs de la gloriosa verge, y martyr Santa Margarida patrona de la Riera, y Virgili",
+     "date": "1757",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10489842x"
+    },
+    {
+     "titre": "Barcelone, réunion de dirigeants de l'action catalane et de l'action républicaine pour une fusion (Consorcio) : [photographie de presse] / [Agence Rol] ; [d'après une photographie originale de] Consor",
+     "date": "1931",
+     "type": "image fixe",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b53239548x"
+    },
+    {
+     "titre": "Honoratus Servius, Commentarius in Virgilium.",
+     "date": "1450-1475",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b108406475"
+    },
+    {
+     "titre": "Homère, Batracomiomachia ;Virgile, Eneide, traduit par Aurelius de Jacobutis de Tussicia.",
+     "date": "1401-1500",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10076273w"
+    },
+    {
+     "titre": "L'amour marié : roman espagnol / par Ernest Gaubert",
+     "date": "1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k9770062j"
+    },
+    {
+     "titre": "Cité internationale",
+     "date": "1987-1988",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb45264282f/date"
+    },
+    {
+     "titre": "Bulletin officiel du Commissariat régional de la République à Montpellier",
+     "date": "1944-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32732384n/date"
+    },
+    {
+     "titre": "Homère, Batracomiomachia ;Virgile, Eneide, traduit par Aurelius de Jacobutis de Tussicia.",
+     "date": "1401-1500",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b84333174"
+    },
+    {
+     "titre": "Bulletin de l'Alliance internationale des anciens de la cité universitaire de Paris",
+     "date": "19..-199.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb34402107s/date"
+    },
+    {
+     "titre": "Clé (Paris. 2005)",
+     "date": "2005-200.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb45264468f/date"
+    }
+   ]
+  },
+  "dentau": {
+   "q": "\"DENTAU\"",
+   "total": 4338,
+   "recs": [
+    {
+     "titre": "Feuilleton (Chambre des députés)",
+     "date": "1876-1942",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb435153678/date"
+    },
+    {
+     "titre": "Lettres patentes du Roy, pour tenir les Grands Jours en la ville de Clermont en Auvergne, en la présente année 1582, avec l'arrest de la court de parlement de Paris (du 31 juillet 1582), intervenu sur",
+     "date": "1582",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k9692356s"
+    },
+    {
+     "titre": "France-Afrique. Journal quotidien d'information",
+     "date": "1932",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32777344f/date"
+    },
+    {
+     "titre": "Science progrès découverte : publié avec la participation du Palais de la découverte",
+     "date": "1969-1972",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb343492558/date"
+    },
+    {
+     "titre": "La Tafna : journal de l'arrondissement de Tlemcen, paraissant tous les mercredis",
+     "date": "1883-190.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32875625p/date"
+    },
+    {
+     "titre": "Le Réveil de Beaulieu : républicain, politique, littéraire : organe des cantons de Villefranche-sur-Mer et Beausoleil et de la Principauté de Monaco [\"puis\" économique, politique, mondain]",
+     "date": "1924-1928",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32853923x/date"
+    },
+    {
+     "titre": "La Voix de la montagne : petite feuille religieuse du Tarn...",
+     "date": "1885-1949",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328909200/date"
+    },
+    {
+     "titre": "Le Patriote de Nice et du Sud-Est (Nice)",
+     "date": "1945-1967",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb34442303s/date"
+    },
+    {
+     "titre": "La Vie montpelliéraine : gazette littéraire, théâtrale, humoristique, mondaine",
+     "date": "1894-1930",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32889171n/date"
+    },
+    {
+     "titre": "L'Écho de la montagne (Tence. 1909)",
+     "date": "1909-1948",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb327605145/date"
+    },
+    {
+     "titre": "Le Pays cévenol (Alais)",
+     "date": "1904-1908",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb410966624/date"
+    },
+    {
+     "titre": "Le Petit Oranais : petit africain, colon oranais : journal politique, littéraire, mondain, sportif, agricole, commercial et maritime",
+     "date": "1902-1939",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32837115n/date"
+    },
+    {
+     "titre": "Écho de Céret &amp; de l'arrondissement : journal républicain hebdomadaire, publiant régulièrement la liste des étrangers d'Amélie-les-Bains &amp; de la Fontaine du Boulou",
+     "date": "1882-1918",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb327598844/date"
+    },
+    {
+     "titre": "Courrier de Tarn-et-Garonne : journal politique, littéraire, judiciaire, d'annonces et avis divers [\"puis\" journal des intérêts conservateurs \"puis\" journal monarchiste constitutionnel]",
+     "date": "1840-1904",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32750811r/date"
+    },
+    {
+     "titre": "Luchon-thermal : revue hebdomadaire, scientifique et littéraire [\"puis\" organe de la Reine des Pyrénées ...]",
+     "date": "1876-1922",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32809536k/date"
+    }
+   ]
+  },
+  "p-marius": {
+   "q": "\"Marius MAIFFRET\"",
+   "total": 552,
+   "recs": [
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "Historique du 67e bataillon de chasseurs alpins, campagne 1914-1918",
+     "date": "1920",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6353667g"
+    },
+    {
+     "titre": "Historique du 27è bataillon alpin de chasseurs à pied pendant la guerre 1914-1918",
+     "date": "1937",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6235163x"
+    },
+    {
+     "titre": "Historique du 111e régiment d'infanterie depuis le 2 août 1914 jusqu'au 1 juillet 1916",
+     "date": "1920",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6235197q"
+    },
+    {
+     "titre": "Guide des propriétaires de Marseille... : liste des propriétés avec noms et adresses des propriétaires",
+     "date": "1907-1908",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32784916b/date"
+    },
+    {
+     "titre": "Indicateur du Var : annuaire du département : commercial, industriel, etc...",
+     "date": "1892-1978",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb34425560g/date"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse Notre-Dame)",
+     "date": "1904-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb36137733k/date"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse de la Madeleine)",
+     "date": "19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb427442547/date"
+    },
+    {
+     "titre": "Annuaire de Marseille : pour l'année ... : contenant tous les renseignements que l'on peut désirer dans les ouvrages de ce genre ... / par Ferdinand Blanc",
+     "date": "1866-1869",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32784665q/date"
+    },
+    {
+     "titre": "Nice artistique : journal littéraire, industriel et financier",
+     "date": "1878-1898",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32823624t/date"
+    },
+    {
+     "titre": "Le Tout Lyon : littéraire, artistique et mondain...",
+     "date": "1895-1955",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb344267352/date"
+    },
+    {
+     "titre": "Indicateur marseillais (Marseille)",
+     "date": "1852-1979",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32790730k/date"
+    },
+    {
+     "titre": "Historique du 34e régiment d'infanterie coloniale 1914-1918",
+     "date": "1920",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k63587147"
+    },
+    {
+     "titre": "Affiches, annonces et avis divers du département des Hautes-Alpes",
+     "date": "1813-1838",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb326832776/date"
+    },
+    {
+     "titre": "La Recherche des disparus : organe de l'Association française pour la recherche des disparus",
+     "date": "1915-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32848956w/date"
+    }
+   ]
+  },
+  "p-victor": {
+   "q": "\"Victor SAUVAIGO\" \"Monaco\"",
+   "total": 1830,
+   "recs": [
+    {
+     "titre": "Les cultures sur le littoral de la Méditerranée : Provence, Ligurie, Algérie / Dr Émile Sauvaigo,... ; introduction par Ch. Naudin,...",
+     "date": "1894",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k3040532c"
+    },
+    {
+     "titre": "Les cultures sur le littoral de la Méditerranée : Provence, Ligurie, Algérie (2e édition) / Dr Émile Sauvaigo,...",
+     "date": "1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6373190j"
+    },
+    {
+     "titre": "Bulletin paroissial (Nice, Paroisse de la Madeleine. 1904?-)",
+     "date": "1904",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb43511061d/date"
+    },
+    {
+     "titre": "Annuaire de la Librairie française",
+     "date": "1894-1913",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32696458d/date"
+    },
+    {
+     "titre": "Correspondance entre Victor Hugo et Paul Meurice . Préface de Jules Claretie,...",
+     "date": "1909",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k5586679q"
+    },
+    {
+     "titre": "Le Cians, Beuil et le Monnier, par le chevalier V / de Cessole",
+     "date": "1893",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k15094669"
+    },
+    {
+     "titre": "Nouvelle et vieille histoire",
+     "date": "1876",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k58044617"
+    },
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "L'Union syndicale (Nice)",
+     "date": "1900-1914",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328848643/date"
+    },
+    {
+     "titre": "Bulletin d'information et recueil des actes administratifs de la Préfecture des Alpes-Maritimes",
+     "date": "1860",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb343854023/date"
+    },
+    {
+     "titre": "Istanboul",
+     "date": "1934-1964",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb327941766/date"
+    },
+    {
+     "titre": "Nice artistique : journal littéraire, industriel et financier",
+     "date": "1878-1898",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32823624t/date"
+    },
+    {
+     "titre": "Catalogue-guide : peintures, mars 1929 / Musée national du Luxembourg",
+     "date": "1929",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k62266643"
+    },
+    {
+     "titre": "Bulletin annuel (Société Fragonard)",
+     "date": "1925-1932",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32724522x/date"
+    },
+    {
+     "titre": "Une affaire embrouillée / par Henri Conscience ; traduction Coveliers",
+     "date": "1878",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k58044847"
+    }
+   ]
+  },
+  "p-jb": {
+   "q": "\"Jean-Baptiste MAIFFRET\"",
+   "total": 796,
+   "recs": [
+    {
+     "titre": "Liste arrêtée par le roi, des officiers militaires commposant le corps de la marine, à l'époque du 1er août 1816",
+     "date": "1816",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6548084p"
+    },
+    {
+     "titre": "Les combattants français de la guerre américaine, 1778-1783 : listes établies d'après les documents authentiques déposés aux Archives Nationales et aux Archives du Ministère de la guerre / publiées pa",
+     "date": "1903",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k5525402h"
+    },
+    {
+     "titre": "Mayer-Mejean",
+     "date": "",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b100001827"
+    },
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "Historique du 27è bataillon alpin de chasseurs à pied pendant la guerre 1914-1918",
+     "date": "1937",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6235163x"
+    },
+    {
+     "titre": "Magneval-Maisse",
+     "date": "",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10000172t"
+    },
+    {
+     "titre": "Comptes rendus de l'Académie des sciences. Série 2. Mécanique, physique, chimie, astronomie",
+     "date": "1994-1997",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb344988416/date"
+    },
+    {
+     "titre": "Historique du 67e bataillon de chasseurs alpins, campagne 1914-1918",
+     "date": "1920",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6353667g"
+    },
+    {
+     "titre": "Annuaire officiel de l'Armée française, troupes métropolitaines et troupes coloniales pour ... / Ministère de la guerre",
+     "date": "1906-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32698403m/date"
+    },
+    {
+     "titre": "État général de la marine",
+     "date": "1804-1851",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb327698056/date"
+    },
+    {
+     "titre": "Liste des pépiniéristes établie conformément à l'article 9, § 6 de la Convention phylloxérique de Berne : rendue exécutoire en France par le décret du 15 mai 1882 / Ministère de l'agriculture",
+     "date": "188.-191.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb437523384/date"
+    },
+    {
+     "titre": "Anciennes corporations des arts et métiers de Chambéry et de quelques autres localités de la Savoie : personnel ecclésiastique du diocèse de Chambéry de 1802 à 1893 / par J. Morand,...",
+     "date": "1893",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k54789363"
+    },
+    {
+     "titre": "Journal militaire : contenant... les ordonnances... les nominations... l'annonce ou extrait des ouvrages...",
+     "date": "1790-1912",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328016138/date"
+    },
+    {
+     "titre": "Comptes rendus de l'Académie des sciences. Série 2, Sciences de la terre et des planètes / dir. publ. Paul Germain",
+     "date": "1994-2001",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb344988776/date"
+    },
+    {
+     "titre": "Le Guide marseillois : contenant la liste alphabétique des noms, raisons de commerce, &amp; demeures de MM. les négocians, commerçans, marchands, manufacturiers &amp; fabricans de la ville de Marseill",
+     "date": "1779-180.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32785168m/date"
+    }
+   ]
+  },
+  "p-charles": {
+   "q": "\"Charles MAIFFRET\" \"Nice\"",
+   "total": 1177,
+   "recs": [
+    {
+     "titre": "Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)",
+     "date": "1908-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32869587q/date"
+    },
+    {
+     "titre": "Liste arrêtée par le roi, des officiers militaires commposant le corps de la marine, à l'époque du 1er août 1816",
+     "date": "1816",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6548084p"
+    },
+    {
+     "titre": "Magneval-Maisse",
+     "date": "",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b10000172t"
+    },
+    {
+     "titre": "Annuaire officiel de l'Armée française, troupes métropolitaines et troupes coloniales pour ... / Ministère de la guerre",
+     "date": "1906-192.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32698403m/date"
+    },
+    {
+     "titre": "Hommage des artistes à Picquart : album de 12 [douze] lithographies / préface d'Octave Mirbeau. Liste des protestataires ; [introduction de Henri Rainaldy] ; publié sous la direction de Paul Brenet et",
+     "date": "1899",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k15215585"
+    },
+    {
+     "titre": "Annuaire de l'Armée française pour l'année ... : publié sur les documents communiqués par le Ministère de la guerre",
+     "date": "1873-1905",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32695910j/date"
+    },
+    {
+     "titre": "Journal militaire : contenant... les ordonnances... les nominations... l'annonce ou extrait des ouvrages...",
+     "date": "1790-1912",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328016138/date"
+    },
+    {
+     "titre": "Les Tablettes laonnoises : journal hebdomadaire indépendant, littéraire, scientifique, commercial et agricole",
+     "date": "1907-1940",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb328755571/date"
+    },
+    {
+     "titre": "Liste des pépiniéristes établie conformément à l'article 9, § 6 de la Convention phylloxérique de Berne : rendue exécutoire en France par le décret du 15 mai 1882 / Ministère de l'agriculture",
+     "date": "188.-191.",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb437523384/date"
+    },
+    {
+     "titre": "Mayer-Mejean",
+     "date": "",
+     "type": "manuscript",
+     "url": "https://gallica.bnf.fr/ark:/12148/btv1b100001827"
+    },
+    {
+     "titre": "Historique du 27è bataillon alpin de chasseurs à pied pendant la guerre 1914-1918",
+     "date": "1937",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k6235163x"
+    },
+    {
+     "titre": "Le Gratis-journal illustré",
+     "date": "1895-1895",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32783858r/date"
+    },
+    {
+     "titre": "État général de la marine",
+     "date": "1804-1851",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb327698056/date"
+    },
+    {
+     "titre": "Société de secours aux familles nécessiteuses des militaires et marins de Nice sous les drapeaux. Année 1870-1871",
+     "date": "1872",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/bpt6k63720541"
+    },
+    {
+     "titre": "La Recherche des disparus : organe de l'Association française pour la recherche des disparus",
+     "date": "1915-19..",
+     "type": "text",
+     "url": "https://gallica.bnf.fr/ark:/12148/cb32848956w/date"
+    }
+   ]
+  }
+ },
+ "ia": {
+  "maiffret-beaulieu": {
+   "q": "\"MAIFFRET\" \"Beaulieu\"",
+   "total": 1,
+   "recs": [
+    {
+     "titre": "Genealogia & Historica : FRANCHI DA CEVA - FRANCHI DA LA BRIGA - FRANCO - FRANCO BORA # Piemonte Nice Falicon Torino Paris",
+     "year": 2003,
+     "url": "https://archive.org/details/Genealogia_Piemonte_Nissa_Paris_Famiglia_Franco-Bora"
+    }
+   ]
+  },
+  "maiffret-nice": {
+   "q": "\"MAIFFRET\" \"Nice\"",
+   "total": 1,
+   "recs": [
+    {
+     "titre": "Genealogia & Historica : FRANCHI DA CEVA - FRANCHI DA LA BRIGA - FRANCO - FRANCO BORA # Piemonte Nice Falicon Torino Paris",
+     "year": 2003,
+     "url": "https://archive.org/details/Genealogia_Piemonte_Nissa_Paris_Famiglia_Franco-Bora"
+    }
+   ]
+  },
+  "maiffret-monaco": {
+   "q": "\"MAIFFRET\" \"Monaco\"",
+   "total": 1,
+   "recs": [
+    {
+     "titre": "Genealogia & Historica : FRANCHI DA CEVA - FRANCHI DA LA BRIGA - FRANCO - FRANCO BORA # Piemonte Nice Falicon Torino Paris",
+     "year": 2003,
+     "url": "https://archive.org/details/Genealogia_Piemonte_Nissa_Paris_Famiglia_Franco-Bora"
+    }
+   ]
+  },
+  "sauvaigo-monaco": {
+   "q": "\"SAUVAIGO\" \"Monaco\"",
+   "total": 0,
+   "recs": []
+  },
+  "sauvaigo-nice": {
+   "q": "\"SAUVAIGO\" \"Nice\"",
+   "total": 0,
+   "recs": []
+  },
+  "desarzens-monaco": {
+   "q": "\"DESARZENS\" \"Monaco\"",
+   "total": 0,
+   "recs": []
+  },
+  "desarzens": {
+   "q": "\"DESARZENS\"",
+   "total": 37,
+   "recs": [
+    {
+     "titre": "USB cover for Legrand Mosaic bloc (4742433)",
+     "year": 2021,
+     "url": "https://archive.org/details/thingiverse-4742433"
+    },
+    {
+     "titre": "Metamorphosen / Le Bourgeois Gentilhomme",
+     "year": 1964,
+     "url": "https://archive.org/details/lp_metamorphosen-le-bourgeois-gentilhomme_richard-strauss-orchestre-de-chambre-de-la"
+    },
+    {
+     "titre": "Beethoven: Klavierkonzert Nr. 4 B-Dur op. 58",
+     "year": "",
+     "url": "https://archive.org/details/mms-2192-lily-kraus"
+    },
+    {
+     "titre": "Variations On A Theme By Frank Bridge, Op. 10 / Concerto Accademico",
+     "year": 1952,
+     "url": "https://archive.org/details/lp_variations-on-a-theme-by-frank-bridge-op-1_benjamin-britten-ralph-vaughan-williams-or"
+    },
+    {
+     "titre": "Tasso (Symphonic Poem) / Symphony For Small Wind Orchestra",
+     "year": 1952,
+     "url": "https://archive.org/details/lp_tasso-symphonic-poem-symphony-for-smal_franz-liszt-charles-gounod-winterthur-s"
+    },
+    {
+     "titre": "Rameau - Desarzens Victor, Sack Theodor (MMS-86)",
+     "year": "",
+     "url": "https://archive.org/details/01-rameau-platee-ballet-suite-1"
+    },
+    {
+     "titre": "Resfest Swissmix / Interview with Monica Pozzi",
+     "year": "",
+     "url": "https://archive.org/details/Resfest_Swissmix__Interview_with_Monica_Pozzi"
+    },
+    {
+     "titre": "Ces femmes musulmanes qui pourfendent lʹislam politique",
+     "year": 2019,
+     "url": "https://archive.org/details/hautes-frequences_20190414_standard_ces-femmes-musulmanes-qui-pourfendent-l_b613"
+    },
+    {
+     "titre": "Musikkollegium Winterthur | 15. Hausabend",
+     "year": 1953,
+     "url": "https://archive.org/details/19530429-ktp-ab-mkw-15-hausabend"
+    },
+    {
+     "titre": "Sinfonia Concertante in E-flat K.364 and K. Anhang9",
+     "year": "",
+     "url": "https://archive.org/details/lp_sinfonia-concertante-in-e-flat-k364-and-k_victor-desarzens-orchestre-de-chambre-de-l"
+    }
+   ]
+  },
+  "vdb-beaulieu": {
+   "q": "\"VAN DEN BOSCH\" \"Beaulieu\"",
+   "total": 0,
+   "recs": []
+  },
+  "molinario-nice": {
+   "q": "\"MOLINARIO\" \"Nice\"",
+   "total": 0,
+   "recs": []
+  },
+  "virgili": {
+   "q": "\"VIRGILI\" \"Beaulieu\"",
+   "total": 0,
+   "recs": []
+  },
+  "dentau": {
+   "q": "\"DENTAU\"",
+   "total": 0,
+   "recs": []
+  }
+ },
+ "jdm": [
+  "jdm-home : HTTP 200 (951576 o)",
+  "jdm-search-maiffret : HTTP 404 (103320 o)",
+  "jdm-search-sauvaigo : HTTP 404 (103320 o)",
+  "jdm-jina-maiffret : HTTP 403 (5891 o)"
+ ],
+ "mil": [
+  "gm-home : HTTP 500 (0 o)",
+  "gm-maiffret : HTTP 200 (526 o)",
+  "mdh-maiffret : ❌ fetch failed",
+  "mdh-sauvaigo : ❌ fetch failed",
+  "jina-gm-maiffret : HTTP 403 (6126 o)"
+ ],
+ "graves": [],
+ "avis": [
+  {
+   "personne": "Jean Antoine Pierre MAIFFRET",
+   "annee": 2010,
+   "links": [
+    {
+     "u": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.acte%2Ddeces.fr%2Frecherche%2Ddeces%2Dfamille%2Dmaiffret&amp;rut=c2b6f1bd85fbab11ca18fa8e6424129823e2a4c4edac85e78b4d044cff1ca6c6",
+     "t": "Acte de décès Familles Maiffret"
+    }
+   ]
+  }
+ ],
+ "suisse": [
+  "vd-davel-desarzens : HTTP 200 (715 o)",
+  "hls-sarzens : HTTP 403 (5861 o)",
+  "jina-davel : HTTP 403 (5864 o)"
+ ]
+}
