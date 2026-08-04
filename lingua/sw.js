@@ -1,10 +1,14 @@
-/* KDMC Lingua — Service Worker (cache app shell pour usage hors-ligne) */
-var CACHE = "lingua-v2.7.0";
+/* KDMC Lingua — Service Worker.
+   Stratégie « réseau d'abord » : on sert TOUJOURS la dernière version quand on est
+   en ligne (plus jamais bloqué sur une ancienne page « collée » en mémoire), et on
+   garde une copie en cache pour marcher hors-ligne. Aligné sur la règle « MAJ auto
+   forcée toujours » : une nouvelle version publiée s'affiche dès la prochaine ouverture. */
+var CACHE = "lingua-v2.8.0";
 var ASSETS = ["./","./index.html","./app.js","./data.js","./manifest.webmanifest","./icon.svg"];
 
 self.addEventListener("install", function(e){
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ASSETS); }));
+  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ASSETS).catch(function(){}); }));
 });
 self.addEventListener("activate", function(e){
   e.waitUntil(caches.keys().then(function(keys){
@@ -14,15 +18,13 @@ self.addEventListener("activate", function(e){
 self.addEventListener("fetch", function(e){
   var req=e.request;
   if(req.method!=="GET") return;
-  // Laisse passer la synthèse vocale et autres schémas non-http
-  if(req.url.indexOf("http")!==0) return;
+  if(req.url.indexOf("http")!==0) return;               // laisse passer les schémas non-http
+  if(req.url.indexOf("/__lingua/")>=0) return;          // API cloud (voix/mémoire) : jamais mise en cache
+  // RÉSEAU D'ABORD : dernière version en ligne, cache en repli hors-ligne.
   e.respondWith(
-    caches.match(req).then(function(cached){
-      var net=fetch(req).then(function(r){
-        if(r && r.status===200 && r.type==="basic"){ var cp=r.clone(); caches.open(CACHE).then(function(c){ c.put(req,cp); }); }
-        return r;
-      }).catch(function(){ return cached; });
-      return cached || net;
-    })
+    fetch(req).then(function(r){
+      if(r && r.status===200 && r.type==="basic"){ var cp=r.clone(); caches.open(CACHE).then(function(c){ c.put(req,cp); }); }
+      return r;
+    }).catch(function(){ return caches.match(req); })
   );
 });
