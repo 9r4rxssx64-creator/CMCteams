@@ -64,7 +64,7 @@
     background-size:22px 22px;background-position:0 0,0 11px,11px -11px,-11px 0;
     overflow:hidden;min-height:0;
   }
-  canvas.viewer,video.viewer{max-width:100%;max-height:100%;display:block;border-radius:8px;
+  canvas.viewer,video.viewer,img.viewer{max-width:100%;max-height:100%;display:block;border-radius:8px;
     box-shadow:0 10px 40px rgba(0,0,0,.5)}
   #photoCanvas,#animCanvas{touch-action:none}
   .empty{
@@ -414,6 +414,28 @@
     </div>
   </section>
 
+  <!-- ============ DANSE IA (photo → vidéo) ============ -->
+  <section class="studio" id="s-aivid">
+    <div class="canvas-wrap" id="aividWrap">
+      <div class="empty" id="aividEmpty">
+        <div class="big">🕺</div>
+        <h2>Danse IA</h2>
+        <p>Mets une photo → l'IA crée une petite vidéo où le sujet bouge / danse, façon vidéos virales du moment (comme Viggle / Kling / Hailuo).</p>
+        <button class="bigbtn" onclick="AiVid.pick()">📂 Choisir une photo</button>
+        <button class="bigbtn ghost" onclick="AiVid.camera()">📷 Prendre une photo</button>
+      </div>
+      <img class="viewer hidden" id="aividPhoto" alt="">
+      <video class="viewer hidden" id="aividVideo" playsinline webkit-playsinline controls loop></video>
+    </div>
+    <div class="panel hidden" id="aividPanel">
+      <div class="hint">Choisis une ambiance (tu peux préciser en texte) :</div>
+      <div class="toolrow" id="aivibes"></div>
+      <div class="textedit"><input id="aiPrompt" placeholder="Optionnel : précise (ex: danse hip-hop, saut de joie…)" maxlength="120"></div>
+      <div style="padding:2px 14px"><button class="bigbtn" id="aiGenBtn" onclick="AiVid.generate()">🪄 Générer la vidéo</button></div>
+      <div class="hint" id="aiVidHint">⏱️ La génération prend ~1 à 3 minutes. Tu peux attendre sur cet écran.</div>
+    </div>
+  </section>
+
 </div>
 
 <!-- BOTTOM NAV -->
@@ -421,6 +443,7 @@
   <button class="on" data-go="photo"><span class="ic">📸</span>Photo</button>
   <button data-go="video"><span class="ic">🎬</span>Vidéo</button>
   <button data-go="anim"><span class="ic">✏️</span>Cartoon</button>
+  <button data-go="aivid"><span class="ic">🕺</span>Danse IA</button>
 </div>
 
 <div id="vbadge">v1.0.0</div>
@@ -447,6 +470,8 @@
 <input type="file" id="fileAudio" accept="audio/*" class="hidden">
 <input type="file" id="fileImgAnim" accept="image/*" class="hidden">
 <input type="file" id="fileOverlay" accept="image/*" class="hidden">
+<input type="file" id="fileAiPhoto" accept="image/*" class="hidden">
+<input type="file" id="fileAiPhotoCam" accept="image/*" capture="user" class="hidden">
 
 <script>
 /* ============================================================
@@ -454,7 +479,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v5.0.0';
+var APP_VER='v6.0.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -479,7 +504,7 @@ async function shareOrSave(blob,name,title){
 }
 
 /* ---------- IA (worker Cloudflare → Replicate) ---------- */
-var AI_URL='https://kdmc-crea-ai.9r4rxssx64.workers.dev';
+var AI_URL=(window.CREA_AI_URL||localStorage.getItem('crea_ai_url')||'https://kdmc-crea-ai.9r4rxssx64.workers.dev').replace(/\/$/,'');
 function aiShow(msg){$('aiMsg').textContent=msg||'IA en cours…';$('aiLoad').classList.remove('hidden');}
 function aiHide(){$('aiLoad').classList.add('hidden');}
 
@@ -497,12 +522,14 @@ function go(name){
 $('btnNew').onclick=function(){
   if(CUR==='photo')Photo.pick();
   else if(CUR==='video')Vid.pick();
-  else Anim.start();
+  else if(CUR==='anim')Anim.start();
+  else if(CUR==='aivid')AiVid.pick();
 };
 $('btnExport').onclick=function(){
   if(CUR==='photo')Photo.export();
   else if(CUR==='video')Vid.export();
-  else Anim.export();
+  else if(CUR==='anim')Anim.export();
+  else if(CUR==='aivid')AiVid.export();
 };
 
 /* generic tab switching within a studio panel */
@@ -1603,6 +1630,69 @@ var Anim=(function(){
   }
 })();
 
+/* =========================================================
+   DANSE IA — photo → vidéo (génération IA asynchrone)
+   ========================================================= */
+var AiVid=(function(){
+  var img=$('aividPhoto'),vid=$('aividVideo');
+  var photoData=null,vibe='dance',pollT=null,startTs=0,out=null,busy=false;
+  var VIBES=[
+    {id:'dance',emoji:'🕺',label:'Danse',prompt:'the subject is dancing, funny happy energetic dance, lively motion, trending tiktok style'},
+    {id:'jump',emoji:'🤾',label:'Saut de joie',prompt:'the subject jumping for joy and celebrating, excited and funny'},
+    {id:'funny',emoji:'🤪',label:'Rigolo',prompt:'the subject making funny exaggerated comedic movements, goofy and hilarious'},
+    {id:'wave',emoji:'👋',label:'Coucou',prompt:'the subject waving hello and smiling warmly at the camera'},
+    {id:'cine',emoji:'🎬',label:'Ciné',prompt:'subtle cinematic motion, hair and clothes gently moving, alive portrait'}
+  ];
+  function hint(t){var el=$('aiVidHint');if(el)el.textContent=t;}
+  function buildVibes(){var c=$('aivibes');c.innerHTML='';VIBES.forEach(function(v){var b=document.createElement('button');b.className='chip'+(v.id===vibe?' on':'');b.innerHTML='<span class="ic">'+v.emoji+'</span>'+v.label;b.onclick=function(){vibe=v.id;c.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};c.appendChild(b);});}
+  function loadPhoto(file){var im=new Image();im.onload=function(){
+      var MAX=1024,sc=Math.min(MAX/im.width,MAX/im.height,1);var c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      photoData=c.toDataURL('image/jpeg',0.9);out=null;
+      img.src=photoData;img.classList.remove('hidden');vid.classList.add('hidden');vid.removeAttribute('src');
+      $('aividEmpty').classList.add('hidden');$('aividPanel').classList.remove('hidden');
+      hint('⏱️ Choisis une ambiance puis « Générer ». Ça prend ~1 à 3 min.');
+      URL.revokeObjectURL(im.src);toast('Photo prête — choisis une ambiance',1600);
+    };im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);}
+  function generate(){
+    if(busy){toast('Génération déjà en cours…');return;}
+    if(!photoData){toast('Choisis une photo d\'abord');return;}
+    var v=VIBES.find(function(x){return x.id===vibe;});var extra=$('aiPrompt').value.trim();
+    var prompt=(v?v.prompt:'')+(extra?(', '+extra):'');
+    busy=true;out=null;$('aiGenBtn').disabled=true;startTs=Date.now();hint('⏳ Génération lancée…');
+    img.classList.remove('hidden');vid.classList.add('hidden');
+    fetch(AI_URL+'/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,prompt:prompt})})
+      .then(function(r){return r.json();})
+      .then(function(j){if(j.error||!j.id)throw new Error(j.error||'no_id');poll(j.id);})
+      .catch(fail);
+  }
+  function poll(id){
+    clearTimeout(pollT);
+    if(Date.now()-startTs>300000){fail(new Error('timeout'));return;}
+    hint('⏳ Génération en cours… '+Math.round((Date.now()-startTs)/1000)+'s (≈ 1 à 3 min) 🕺');
+    fetch(AI_URL+'/job?id='+encodeURIComponent(id)).then(function(r){return r.json();}).then(function(j){
+      if(j.status==='succeeded'&&j.output){done(j.output);return;}
+      if(j.status==='failed'||j.status==='canceled'||j.error){fail(new Error(j.error||j.status));return;}
+      pollT=setTimeout(function(){poll(id);},3500);
+    }).catch(function(){pollT=setTimeout(function(){poll(id);},4500);});
+  }
+  function done(url){busy=false;out=url;$('aiGenBtn').disabled=false;hint('✅ Vidéo prête ! Appuie sur Exporter pour l\'enregistrer.');
+    img.classList.add('hidden');vid.src=url;vid.classList.remove('hidden');vid.muted=true;vid.play().catch(function(){});toast('Vidéo prête 🎉',2200);
+    openExport('Vidéo IA prête 🎉','Ta photo a pris vie ! Enregistre-la ou regénère.',[
+      {label:'📤 Enregistrer / Partager',fn:function(){save(url);}},
+      {label:'🔁 Regénérer',ghost:true,fn:function(){closeSheet();generate();}}
+    ]);
+  }
+  function save(u){aiShow('Préparation de la vidéo…');fetch(AI_URL+'/proxy?url='+encodeURIComponent(u)).then(function(r){return r.blob();}).then(function(b){aiHide();shareOrSave(b,'danse-ia.mp4','Ma vidéo IA');closeSheet();}).catch(function(){aiHide();window.open(u,'_blank');closeSheet();});}
+  function fail(e){busy=false;clearTimeout(pollT);$('aiGenBtn').disabled=false;
+    var msg=String(e&&e.message||e);
+    if(/not_configured/.test(msg)){hint('⚠️ IA vidéo pas encore active (serveur en cours de déploiement). Réessaie dans quelques minutes.');toast('IA vidéo bientôt prête',2600);}
+    else if(/credit|payment|402|insufficient|billing/i.test(msg)){hint('⚠️ Crédit IA épuisé — à recharger sur Replicate.');toast('Crédit IA à recharger',2800);}
+    else{hint('❌ Génération impossible pour l\'instant — réessaie.');toast('Génération impossible, réessaie',2600);}
+  }
+  return {init:buildVibes,pick:function(){$('fileAiPhoto').click();},camera:function(){$('fileAiPhotoCam').click();},_load:loadPhoto,generate:generate,
+    export:function(){if(out)save(out);else toast('Génère d\'abord une vidéo');}};
+})();
+
 /* flood fill (bucket) */
 function floodFill(canvas,sx,sy,hex){
   var ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
@@ -1657,9 +1747,11 @@ $('fileVidCam').onchange=function(e){if(e.target.files[0]){go('video');Vid._load
 $('fileAudio').onchange=function(e){if(e.target.files[0])Vid._loadMusic(e.target.files[0]);e.target.value='';};
 $('fileImgAnim').onchange=function(e){if(e.target.files[0]){go('anim');Anim._fromImage(e.target.files[0]);}e.target.value='';};
 $('fileOverlay').onchange=function(e){if(e.target.files[0])Photo._addOverlayImage(e.target.files[0]);e.target.value='';};
+$('fileAiPhoto').onchange=function(e){if(e.target.files[0]){go('aivid');AiVid._load(e.target.files[0]);}e.target.value='';};
+$('fileAiPhotoCam').onchange=function(e){if(e.target.files[0]){go('aivid');AiVid._load(e.target.files[0]);}e.target.value='';};
 
 /* init all */
-Photo.init();Vid.init();Anim.init();
+Photo.init();Vid.init();Anim.init();AiVid.init();
 
 /* handle resize */
 window.addEventListener('resize',function(){

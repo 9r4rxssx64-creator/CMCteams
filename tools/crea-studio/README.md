@@ -34,6 +34,12 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ## 🎬 Ce que tu peux faire
 
+### 🕺 Danse IA — photo → vidéo *(la tendance du moment)*
+Comme **Viggle / Kling / Hailuo** : tu mets **une photo**, l'app génère une **petite vidéo où le sujet bouge / danse**, façon vidéos virales.
+- Ambiances en 1 tap : **Danse**, **Saut de joie**, **Rigolo**, **Coucou**, **Ciné** (+ texte libre).
+- Génération asynchrone (≈ 1 à 3 min), aperçu qui se lance tout seul, **Enregistrer / Partager** ou **Regénérer**.
+- 100 % serveur (ta clé Replicate), modèle image→vidéo `minimax/video-01-live`. Rien sur le téléphone.
+
 ### 🤖 IA (qualité pro) — nouveau
 Branchée sur un **worker serveur sécurisé** (ta clé Replicate reste côté serveur, jamais exposée). Repli automatique sur la version hors-ligne si l'IA n'est pas joignable — **l'app marche toujours**.
 - **🤖 Détourage IA** — isole automatiquement le sujet (personne / objet), fond transparent parfait (bien mieux que la gomme couleur).
@@ -111,17 +117,20 @@ L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné :
 - **v3** : effets tendance (glitch/ciné/bokeh changent bien l'image), **export vidéo viral 9:16 + grain + fondu → MP4 produit** — **0 erreur JS**.
 - **v4** : **texte meme** (encre rendue), **tampon correcteur** (clone), **export vidéo karaoké + zoom sur le beat + 9:16 + musique → MP4** — **0 erreur JS**.
 - **v5** : **IA** — succès (image remplacée) + **repli automatique** vérifiés (worker simulé), overlay de chargement OK — **0 exception JS**.
+- **v6** : **Danse IA** — photo → génération async → vidéo affichée + feuille d'export, vérifié bout-en-bout (backend simulé) — **0 exception JS**.
 - Cohérence domaine : `apps-consistency` **7/7**.
 
 Captures d'écran de preuve générées à chaque test.
 
 ## 🤖 Comment marche l'IA (technique)
 - Worker Cloudflare **`kdmc-crea-ai`** (isolé, `services/kdmc-crea-ai/`) qui relaie vers **Replicate** — ta clé `AX_REPLICATE_KEY` est injectée en secret serveur par `deploy-kdmc-crea-ai.yml`, **jamais côté client**.
-- Modèles : détourage `cjwbw/rembg`, cartoon `catacolabs/cartoonify`, upscale `nightmareai/real-esrgan` (résolus à leur dernière version au runtime — faciles à changer si besoin).
-- CORS limité à `*.kd-mc.com` + GitHub Pages + localhost. Le worker rapatrie l'image → le client la reçoit en même origine (pas de canvas « tainté »).
-- **Repli automatique** : réseau/IA KO → l'app applique la version hors-ligne + toast honnête. Zéro blocage.
+- Modèles : détourage `cjwbw/rembg`, cartoon `catacolabs/cartoonify`, upscale `nightmareai/real-esrgan`, **photo→vidéo `minimax/video-01-live`** (résolus à leur dernière version au runtime — faciles à changer).
+- Endpoints : images rapides `POST /cutout|/cartoon|/enhance` (réponse image) ; vidéo `POST /animate` → `GET /job?id=` (async) → `GET /proxy?url=` (enregistrement même-origine).
+- CORS limité à `*.kd-mc.com` + GitHub Pages + localhost. `/proxy` n'accepte que `replicate.delivery`.
+- **Repli automatique** (images) : réseau/IA KO → version hors-ligne + toast honnête. **Danse IA** ne peut pas se faire hors-ligne (génération) → message clair si indispo.
+- URL du worker configurable côté app (`window.CREA_AI_URL` / `localStorage.crea_ai_url`) pour pointer une autre IA sans changer le code.
 
 ## 🔭 Prochaines étapes possibles
 Déjà livré : IA (détourage/cartoon/upscale), karaoké, zoom-beat, tampon correcteur, meme, effets tendance, formats réseaux. À venir si tu veux : **remplacement de fond IA** (mettre un décor), **speed-ramp**, **export GIF**, **calques complets multi-photos**, **cartoon IA sur vidéo**.
 
-*Version 5.0.0 — Studio créatif tout-en-un + pack viral + pack créateur pro + IA serveur, pour kd-mc.com (studio.kd-mc.com).*
+*Version 6.0.0 — Studio créatif tout-en-un + pack viral + créateur pro + IA serveur + Danse IA (photo→vidéo), pour kd-mc.com (studio.kd-mc.com).*
