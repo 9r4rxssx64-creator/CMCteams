@@ -91,72 +91,6 @@ for (const [nm, u] of [
   await sleep(1200);
 }
 
-// ---- 4) VA PLUS LOIN — registres officiels supplémentaires + photos ----
-// Personnes du seed (extraites du vrai index.html) pour les requêtes par personne
-const HTML2 = fs.readFileSync('arbre/index.html', 'utf8');
-const _st = HTML2.indexOf('var SRC={'); const _en = HTML2.indexOf('function seed(){');
-let SEED = {};
-try { let _u = 0; SEED = new Function('uid', 'now', HTML2.slice(_st, _en) + '\nreturn buildSeed();')(() => 't' + (++_u), () => 0); } catch (e) { console.log('seed extract:', e.message); }
-const yr2 = d => { const m = String(d || '').match(/(\d{4})/); return m ? +m[1] : 0; };
-
-R.mil = []; R.graves = []; R.avis = []; R.suisse = [];
-
-// 4a) Registres MILITAIRES (matricules : profession, signalement, domiciles)
-//     Grand Mémorial (culture.gouv) + Mémoire des hommes (morts 14-18 / 39-45)
-for (const [nm, u] of [
-  ['gm-home', 'https://www.culture.gouv.fr/Espace-documentation/Moteurs-Collections/Grand-Memorial'],
-  ['gm-maiffret', 'https://www.culture.gouv.fr/public/mistral/memorial_fr?ACTION=CHERCHER&FIELD_1=NOM&VALUE_1=MAIFFRET'],
-  ['mdh-maiffret', 'https://www.memoiredeshommes.sga.defense.gouv.fr/fr/arkotheque/client/mdh/recherche_globale/resu_rech.php?titre=MAIFFRET'],
-  ['mdh-sauvaigo', 'https://www.memoiredeshommes.sga.defense.gouv.fr/fr/arkotheque/client/mdh/recherche_globale/resu_rech.php?titre=SAUVAIGO'],
-  ['jina-gm-maiffret', 'https://r.jina.ai/https://www.culture.gouv.fr/public/mistral/memorial_fr?ACTION=CHERCHER&FIELD_1=NOM&VALUE_1=MAIFFRET']
-]) {
-  try { const r = await fetch(u, { headers: UA }); const t = await r.text(); fs.writeFileSync(path.join(rawDir, nm + '.html'), t.slice(0, 300000)); console.log('[mil]', nm, r.status, t.length + 'o'); R.mil.push(nm + ' : HTTP ' + r.status + ' (' + t.length + ' o)'); } catch (e) { R.mil.push(nm + ' : ❌ ' + e.message); }
-  await sleep(1200);
-}
-
-// 4b) TOMBES + PHOTOS (Findagrave — photos de sépultures, souvent portraits)
-for (const nom of ['MAIFFRET', 'SAUVAIGO', 'DESARZENS', 'VAN+DEN+BOSCH']) {
-  const nm = 'fg-' + nom.replace(/\+/g, '');
-  try {
-    const r = await fetch('https://www.findagrave.com/memorial/search?lastname=' + nom + '&countryId=France', { headers: UA });
-    const t = await r.text();
-    fs.writeFileSync(path.join(rawDir, nm + '.html'), t.slice(0, 300000));
-    const hits = [...t.matchAll(/href="(\/memorial\/\d+\/[^"]+)"[^>]*>[\s\S]{0,200}?<h2[^>]*>([^<]{3,80})/g)].slice(0, 12);
-    hits.forEach(h => R.graves.push({ nom: h[2].trim(), url: 'https://www.findagrave.com' + h[1] }));
-    console.log('[findagrave]', nm, r.status, hits.length + ' tombe(s)');
-  } catch (e) { console.log('[findagrave]', nm, 'ERREUR', e.message); }
-  await sleep(1500);
-}
-
-// 4c) AVIS DE DÉCÈS AVEC PHOTOS (défunts récents ≥1990, toutes familles)
-const recent = Object.values(SEED).filter(p => yr2(p.deces && p.deces.date) >= 1990).slice(0, 14);
-for (const p of recent) {
-  const full = ((p.prenom || '') + ' ' + (p.nom || '')).trim();
-  const q = '"' + full + '" avis de décès ' + yr2(p.deces.date);
-  const nm = 'avis-' + full.toLowerCase().replace(/[^a-z]+/g, '-').slice(0, 30);
-  try {
-    const r = await fetch('https://html.duckduckgo.com/html/?q=' + encodeURIComponent(q), { headers: UA });
-    const t = await r.text();
-    fs.writeFileSync(path.join(rawDir, nm + '.html'), t.slice(0, 200000));
-    const links = [...t.matchAll(/<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]{3,140}?)<\/a>/g)]
-      .map(m => ({ u: m[1], t: m[2].replace(/<[^>]+>/g, '').trim() }))
-      .filter(l => /dansnoscoeurs|libramemoria|avis-deces|deces|obseque|pompes|simplifia|inmemoriam/i.test(l.u + l.t)).slice(0, 4);
-    if (links.length) { R.avis.push({ personne: full, annee: yr2(p.deces.date), links }); console.log('[avis]', full, links.length + ' piste(s)'); }
-    else console.log('[avis]', full, '0');
-  } catch (e) { console.log('[avis]', full, 'ERREUR', e.message); }
-  await sleep(2000);
-}
-
-// 4d) SUISSE (Desarzens — canton de Vaud, berceau Sarzens)
-for (const [nm, u] of [
-  ['vd-davel-desarzens', 'https://davel-vd.ch/results?query=DESARZENS'],
-  ['hls-sarzens', 'https://hls-dhs-dss.ch/fr/search/?f_hls.lexicofacet_string=2%2F006800.006900.&q=Sarzens'],
-  ['jina-davel', 'https://r.jina.ai/https://davel-vd.ch/results?query=DESARZENS']
-]) {
-  try { const r = await fetch(u, { headers: UA }); const t = await r.text(); fs.writeFileSync(path.join(rawDir, nm + '.html'), t.slice(0, 300000)); console.log('[suisse]', nm, r.status, t.length + 'o'); R.suisse.push(nm + ' : HTTP ' + r.status + ' (' + t.length + ' o)'); } catch (e) { R.suisse.push(nm + ' : ❌ ' + e.message); }
-  await sleep(1200);
-}
-
 // ---- Rapport ----
 const L = [];
 L.push('# 📚 INFOS MAX — presse ancienne & sources ouvertes (toutes les familles)');
@@ -184,24 +118,6 @@ for (const tag in R.ia) {
 L.push('## 🏛 Journal de Monaco (gazette officielle) — état des probes');
 L.push('');
 R.jdm.forEach(x => L.push('- ' + x));
-L.push('');
-L.push('## 🎖 Registres militaires (matricules / morts pour la France)');
-L.push('');
-(R.mil || []).forEach(x => L.push('- ' + x));
-L.push('');
-L.push('## 🪦 Tombes & photos (Findagrave)');
-L.push('');
-if ((R.graves || []).length) R.graves.forEach(g => L.push('- [' + g.nom + '](' + g.url + ')'));
-else L.push('_Aucune tombe trouvée à ce run (voir infosraw/fg-*.html)._');
-L.push('');
-L.push('## 🕯 Avis de décès (photos possibles) — défunts récents, toutes familles');
-L.push('');
-if ((R.avis || []).length) { for (const a of R.avis) { L.push('### ' + a.personne + ' († ' + a.annee + ')'); a.links.forEach(l => L.push('- [' + (l.t || l.u).slice(0, 100) + '](' + l.u + ')')); L.push(''); } }
-else L.push('_Aucune piste à ce run (voir infosraw/avis-*.html)._');
-L.push('');
-L.push('## 🇨🇭 Suisse (Desarzens — Vaud / Sarzens)');
-L.push('');
-(R.suisse || []).forEach(x => L.push('- ' + x));
 L.push('');
 fs.writeFileSync(path.join(outDir, 'INFOS.md'), L.join('\n') + '\n');
 fs.writeFileSync(path.join(rawDir, 'infos.json'), JSON.stringify(R, null, 1));
