@@ -5775,7 +5775,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.873";
+var APP_VER="v9.874";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9476,13 +9476,14 @@ try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontal
   if(uid){
     var lastAct=parseInt(localStorage.getItem("cmc_lastact")||"0");
     var expired=lastAct>0&&(Date.now()-lastAct)>SESSION_TTL;
-    if(expired){
-      localStorage.removeItem("cmc_uid");
-      localStorage.removeItem("cmc_lastact");
-      console.info("Session expirée après inactivité.");
-    } else {
+    /* v9.874 — RECONNAISSANCE AUTO après 1ʳᵉ connexion (Kevin 2026-08-04 « pour toutes
+       les apps toujours ») : l'appareil est reconnu dès le 1er login réussi → la session
+       est restaurée MÊME après 8h d'inactivité. Le TTL ne délogue plus personne ; seule
+       la déconnexion explicite (bouton ✕) redemande les identifiants. */
+    {
       var e=A.employees.find(function(x){return x.id===uid;});
       if(e){A.user=e;localStorage.setItem("cmc_lastact",String(Date.now()));startPresenceHeartbeat();
+        if(expired){try{if(typeof _audit==="function")_audit("session_auto_renewed",e.id,e.name,"","reconnu auto après "+Math.round((Date.now()-lastAct)/3600000)+"h d'inactivité");}catch(_){}}
         // Restaurer les préférences de l'employé depuis A.reg
         var _pr=A.reg[e.id]||{};
         if(_pr.prefLang&&_pr.prefLang!==_lang){_lang=_pr.prefLang;localStorage.setItem("cmc_lang",_lang);_ttsLang=_lang==="it"?"it-IT":_lang==="en"?"en-US":"fr-FR";}
@@ -9536,7 +9537,9 @@ function touchSession(){if(A.user)localStorage.setItem("cmc_lastact",String(Date
 // Sans ca, la session expire malgre l'app ouverte. Sentinelle TTL 5 min ci-dessous.
 (function(){try{var _evts=["click","keydown","touchstart","scroll"];var _lastTouch=0;function _onAct(){var n=Date.now();if(n-_lastTouch>30000){_lastTouch=n;touchSession();}}_evts.forEach(function(ev){try{document.addEventListener(ev,_onAct,{passive:true,capture:true});}catch(_){document.addEventListener(ev,_onAct,true);}});}catch(_){}
 // v9.545 — Sentinelle TTL 8h enforce : check toutes 5 min, doLogout si expire
-try{setInterval(function(){try{if(!A.user)return;var lastAct=parseInt(localStorage.getItem("cmc_lastact")||"0",10);if(lastAct>0&&Date.now()-lastAct>SESSION_TTL){console.info("[TTL] session 8h expiree -> logout auto");try{if(typeof toast==="function")toast("Session expiree apres 8h d'inactivite","warn");}catch(_){}doLogout();}}catch(_){}},5*60*1000);}catch(_){}
+/* v9.874 — le logout auto TTL 8h est RETIRÉ (règle « reconnaissance auto après 1ère
+   connexion, toutes les apps toujours ») : un appareil connu reste connecté ; seule la
+   déconnexion explicite (✕) revoque. Le TTL ne sert plus qu'à l'audit (session_auto_renewed). */
 })();
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);_rebuildIndexes();}
 // v9.67 — Firebase et sync queue différés APRÈS premier render (perf: first paint rapide)
@@ -13206,7 +13209,7 @@ window._tool_check_ram=function(){try{if(performance&&performance.memory){var mb
 window._tool_check_storage_size=function(){try{var t=0;for(var k in localStorage){if(localStorage.hasOwnProperty(k))t+=(localStorage[k]||"").length;}var pct=Math.round(t/(5*1048576)*100);return pct>80?{finding:"localStorage "+pct+"%"}:null;}catch(_){}return null;};
 window._tool_count_dom_nodes=function(){try{var n=document.getElementsByTagName("*").length;return n>10000?{finding:"DOM "+n+" noeuds"}:null;}catch(_){}return null;};
 window._tool_scan_doublons=function(){try{var seen={},dup=0;(A.employees||[]).forEach(function(e){if(seen[e.id])dup++;seen[e.id]=1;});return dup>0?{finding:dup+" IDs dupliques"}:null;}catch(_){}return null;};
-window._tool_check_session_health=function(){try{var last=+lg("cmc_lastact",0);if(A.user&&last&&Date.now()-last>8*3600000)return {finding:"Session expiree"};}catch(_){}return null;};
+window._tool_check_session_health=function(){/* v9.874 : la session n'expire plus (reconnaissance auto, toutes apps) — plus de finding TTL */return null;};
 // ═══════════════════════════════════════════════════════════════════════
 // SENTINELLES EXPERT (v9.438, 2026-04-20) — voir SENTINELS.md
 // 7 sentinelles universelles à dupliquer dans tous projets Kevin.
