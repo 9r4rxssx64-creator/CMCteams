@@ -34,6 +34,12 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ## 🎬 Ce que tu peux faire
 
+### 🔥 Effets viraux & formats réseaux *(tendances 2026)*
+D'après le tour du web des tendances TikTok / Reels / CapCut, ajoutés en qualité max :
+- **🔥 Effets Tendance (photo)** : Ciné (teal & orange), **Flou d'arrière-plan** (bokeh portrait), Glow, Light leak, **Duotone**, **Glitch / RGB split**, **VHS / Y2K**, Chroma, Polaroïd — avec **intensité réglable**.
+- **📱 Formats réseaux** (photo **et** vidéo) : **9:16** (TikTok/Reels/Shorts), **1:1**, **4:5**, **16:9**, avec **fond flou** tendance (plus de bandes noires), noir ou blanc.
+- **🔥 Pack Viral vidéo** : **format vertical 9:16**, **ambiance Grain / VHS / Light leak**, **fondu entrée/sortie**, **sous-titre stylé** (gros, contour épais, style viral).
+
 ### 📸 Studio Photo *(niveau Photoshop / GIMP)*
 - **Réglages** : exposition, contraste, saturation, vibrance, température, teinte, hautes lumières, ombres, **Niveaux (noirs / gamma / blancs)**, couleur (°), netteté, vignette, grain.
 - **20 filtres** en 1 tap : Éclat, Ciné, N&B, Sépia, Chaud/Froid, Vintage, HDR, Pop, Noir, Sunset, Menthe, Drama, Insta, Pastel, Or, Cyber…
@@ -90,8 +96,13 @@ L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné :
 
 - **v1** : chargement photo, filtres, sliders, cartoonize, bascule des 3 studios, dessin (encre détectée), timeline de frames, feuille d'export — **0 erreur JS**.
 - **v2** : Niveaux, **détourage → transparence confirmée**, dessin, stickers, redimensionnement, **export PNG transparent détecté** — **0 erreur JS**.
+- **v3** : effets tendance (glitch/ciné/bokeh changent bien l'image), **export vidéo viral 9:16 + grain + fondu → MP4 produit** — **0 erreur JS**.
 - Cohérence domaine : `apps-consistency` **7/7**.
 
 Captures d'écran de preuve générées à chaque test.
 
-*Version 2.0.0 — Studio créatif tout-en-un pour kd-mc.com (studio.kd-mc.com).*
+## 🔭 Honnêteté & prochaines étapes
+- Les effets **génératifs IA** viraux (squish, morphing, cartoonize « vrai », détourage IA auto du sujet) **ne sont pas faisables 100 % hors-ligne** sans modèle. Créa Studio en donne des **approximations** solides (cartoonize posterize+contours, bokeh par masque radial, détourage par couleur). Un détourage IA du sujet est possible en prochaine étape (worker distant, si on relâche le 100 % hors-ligne).
+- À venir si tu veux : **sous-titres karaoké mot-par-mot**, **zoom sur le beat** (détection audio), **speed-ramp**, **export GIF**, **calques complets**, **tampon correcteur**.
+
+*Version 3.0.0 — Studio créatif tout-en-un + pack viral pour kd-mc.com (studio.kd-mc.com).*
