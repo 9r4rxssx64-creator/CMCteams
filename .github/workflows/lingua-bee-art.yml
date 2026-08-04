@@ -1,0 +1,80 @@
+name: "KDMC Lingua — Génère la mascotte Bee (images IA, à la demande)"
+
+# Génère la mascotte abeille « Bee » (personnage 100% ORIGINAL, création KDMC — aucun
+# personnage existant) avec l'API images OpenAI (clé secret OPEN_AI_API_KEY, la même que
+# la voix). Manuel uniquement (workflow_dispatch) — zéro cron, zéro mail (règle anti-spam).
+# Les images sont committées sur la branche claude/bee-mascot-art ([skip ci]) pour que
+# l'agent puisse les récupérer, choisir et intégrer.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (branche de travail)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Génère Bee (3 poses, fond transparent si possible)
+        env:
+          OPENAI_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+        run: |
+          set -e
+          if [ -z "${OPENAI_KEY:-}" ]; then echo "::error::OPEN_AI_API_KEY absente"; exit 1; fi
+          mkdir -p lingua/bee
+          BASE="Original cute cartoon bee mascot character, an entirely original design (not based on any existing character): a chubby round little bee with a fluffy honey-yellow body, rounded chocolate-brown stripes, big sparkling friendly eyes with light reflections, tiny happy smile, rosy blush cheeks, two bouncy antennae ending in little balls, small translucent blue-tinted wings, tiny stubby arms and feet. Soft rounded 3D animated-movie sticker style, clean bold outlines, vibrant warm colors, utterly adorable, endearing, funny and pretty, high quality, centered, full body"
+          gen_one () {
+            NAME="$1"; ACTION="$2"
+            PROMPT="$BASE, $ACTION, plain transparent background"
+            echo "== $NAME =="
+            # 1) gpt-image-1 (fond transparent natif)
+            HTTP=$(curl -sS -o /tmp/img.json -w "%{http_code}" https://api.openai.com/v1/images/generations \
+              -H "Authorization: Bearer $OPENAI_KEY" -H "Content-Type: application/json" \
+              -d "$(jq -n --arg p "$PROMPT" '{model:"gpt-image-1",prompt:$p,size:"1024x1024",background:"transparent",quality:"high",n:1}')" ) || HTTP=000
+            if [ "$HTTP" = "200" ] && jq -e '.data[0].b64_json' /tmp/img.json >/dev/null 2>&1; then
+              jq -r '.data[0].b64_json' /tmp/img.json | base64 -d > "lingua/bee/$NAME.png"
+              echo "  gpt-image-1 OK ($(wc -c < lingua/bee/$NAME.png) octets)"
+              return 0
+            fi
+            echo "  gpt-image-1 KO (http=$HTTP) : $(jq -r '.error.message // "?"' /tmp/img.json 2>/dev/null | head -c 200)"
+            # 2) repli dall-e-3 (fond blanc uni — sera détouré côté agent)
+            PROMPT2="$BASE, $ACTION, isolated on a pure plain white background, nothing else"
+            HTTP=$(curl -sS -o /tmp/img.json -w "%{http_code}" https://api.openai.com/v1/images/generations \
+              -H "Authorization: Bearer $OPENAI_KEY" -H "Content-Type: application/json" \
+              -d "$(jq -n --arg p "$PROMPT2" '{model:"dall-e-3",prompt:$p,size:"1024x1024",response_format:"b64_json",n:1}')" ) || HTTP=000
+            if [ "$HTTP" = "200" ] && jq -e '.data[0].b64_json' /tmp/img.json >/dev/null 2>&1; then
+              jq -r '.data[0].b64_json' /tmp/img.json | base64 -d > "lingua/bee/$NAME.png"
+              echo "  dall-e-3 OK ($(wc -c < lingua/bee/$NAME.png) octets)"
+              return 0
+            fi
+            echo "::warning::$NAME non générée (http=$HTTP) : $(jq -r '.error.message // "?"' /tmp/img.json 2>/dev/null | head -c 200)"
+            return 1
+          }
+          OK=0
+          gen_one "wave"  "cheerfully waving hello with one tiny arm raised" && OK=$((OK+1))
+          gen_one "party" "jumping for joy and celebrating with both tiny arms up, little confetti and stars around her" && OK=$((OK+1))
+          gen_one "read"  "sitting and adorably reading a small purple book, focused" && OK=$((OK+1))
+          echo "Images générées : $OK/3"
+          [ "$OK" -ge 1 ] || { echo "::error::aucune image générée"; exit 1; }
+
+      - name: Commit sur la branche d'art (récupérée par l'agent)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B claude/bee-mascot-art
+          git add lingua/bee/
+          git commit -m "art(lingua): mascotte Bee générée par IA (3 poses, création originale) [skip ci]" || { echo "rien à committer"; exit 0; }
+          git push -f origin claude/bee-mascot-art
+
+      - name: Artefact (trace)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bee-mascot-art
+          path: lingua/bee/
+          retention-days: 30
