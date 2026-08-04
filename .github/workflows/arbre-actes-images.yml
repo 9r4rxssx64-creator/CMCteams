@@ -1,0 +1,34 @@
+name: Arbre — images des actes (Monaco)
+# Télécharge les IMAGES scannées des actes Monaco (visionneuse Arkothèque) pour
+# lire les noms des parents et raccorder les membres isolés avec preuve.
+# Réseau ouvert côté runner (l'agent Claude a l'egress bloqué). Dispatch manuel.
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Installer Playwright
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm install playwright >/dev/null 2>&1
+          npx playwright install --with-deps chromium
+      - name: Télécharger les images d'actes
+        run: node tools/arbre/fetch-actes-images.mjs
+      - name: Nettoyage node_modules (pas de commit)
+        run: rm -rf node_modules package.json package-lock.json
+      - name: Commit images + rapport
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research
+          git commit -m "Arbre: images des actes Monaco (preuves filiation) [skip ci]" || { echo "aucun changement"; exit 0; }
+          git push
