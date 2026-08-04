@@ -69,14 +69,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B claude/bee-mascot-art
+          BR="claude/bee-video-${GITHUB_RUN_ID}"
+          git checkout -B "$BR"
           mkdir -p lingua/bee-live
           cp /tmp/vid/*.mp4 lingua/bee-live/ 2>/dev/null || true
           git add lingua/bee-live/
           git commit -m "art(lingua): boucles vidéo animées de Bee (Replicate) [skip ci]" || { echo "rien à committer"; exit 0; }
-          git push -f origin claude/bee-mascot-art
+          git push origin "$BR"
 
       - name: Artefact (trace)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bee-video

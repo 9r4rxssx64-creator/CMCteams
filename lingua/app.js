@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.21.0";
+var APP_VER="v2.22.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -582,12 +582,21 @@ function vCoach(){ var d=el("div","screen coach");
 }
 /* ============ MODE DISCUSSION 🎬 — Bee en gros plan, bouche animée, elle DIT son texte ============ */
 var DISC={open:false,talking:false,handsFree:false,timer:null};
+function discMove(kind,dur){ /* Bee bouge de tout son corps — 100% local et gratuit (CSS, aucune API) */
+  var rig=document.querySelector(".disc-overlay .bee-rig"); if(!rig)return;
+  ["mv-dance","mv-jump","mv-fly","mv-walk"].forEach(function(c){rig.classList.remove(c);});
+  if(!kind)return; rig.classList.add("mv-"+kind);
+  if(DISC.moveEnd)clearTimeout(DISC.moveEnd);
+  DISC.moveEnd=setTimeout(function(){ try{rig.classList.remove("mv-"+kind);}catch(_){} }, dur||2800);
+}
 function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à mot, robuste même sans événements audio */
   var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
   var mouth=overlay.querySelector(".disc-mouth"), sub=overlay.querySelector(".disc-sub"), img=overlay.querySelector(".disc-bee");
   var words=String(text||"").split(/\s+/).filter(Boolean);
   var dur=Math.min(12000, 900+text.length*68);
   DISC.talking=true; if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
+  /* Chorégraphie auto : compliment → elle danse ou saute de joie */
+  if(/(bravo|super|parfait|génial|excellent|top|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(text)) discMove(Math.random()<.5?"dance":"jump", Math.min(dur,4200));
   if(sub){ sub.textContent=""; var wi=0; var step=Math.max(120, Math.min(300, dur/Math.max(1,words.length)));
     var si=setInterval(function(){ if(wi>=words.length||!DISC.open){ clearInterval(si); return; } sub.textContent+=(wi?" ":"")+words[wi++]; sub.scrollTop=sub.scrollHeight; }, step); }
   function stop(){ DISC.talking=false; try{ if(mouth)mouth.classList.remove("talking"); if(img)img.classList.remove("talk"); }catch(_){}
@@ -627,6 +636,7 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
       '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
       '<div class="disc-mouth"></div></div></div>'+
     '<div class="disc-sub"></div>'+
+    '<div class="disc-moves"><button data-mv="dance" title="Danse">💃</button><button data-mv="jump" title="Saute">🦘</button><button data-mv="fly" title="Vole">🕊️</button><button data-mv="walk" title="Marche">🚶</button></div>'+
     '<div class="disc-chips"></div>'+
     '<div class="disc-inbar"><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle ou écris à Bee…" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
   document.body.appendChild(ov);
@@ -635,7 +645,13 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
     if(rig){ rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150); }
     DISC.blinkT=setTimeout(blinkLoop, 2200+Math.random()*3200); }
   DISC.blinkT=setTimeout(blinkLoop,1800);
-  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; if(DISC.blinkT)clearTimeout(DISC.blinkT); try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
+  /* Elle VIT aussi entre deux phrases : de temps en temps elle vole, marche ou danse toute seule */
+  function moveLoop(){ if(!DISC.open)return;
+    if(!DISC.talking){ var ks=["fly","walk","dance"]; discMove(ks[Math.floor(Math.random()*ks.length)], 2600+Math.random()*1800); }
+    DISC.moveT=setTimeout(moveLoop, 9000+Math.random()*7000); }
+  DISC.moveT=setTimeout(moveLoop,6000);
+  ov.querySelectorAll(".disc-moves button").forEach(function(b){ b.onclick=function(){ var bee=ov.querySelector(".disc-bee"); if(bee)beeSparkles(bee,6); discMove(b.getAttribute("data-mv"), 3400); }; });
+  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; if(DISC.blinkT)clearTimeout(DISC.blinkT); if(DISC.moveT)clearTimeout(DISC.moveT); if(DISC.moveEnd)clearTimeout(DISC.moveEnd); try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
   ov.querySelector(".disc-send").onclick=discSend;
   ov.querySelector(".disc-input").onkeydown=function(e){ if(e.key==="Enter")discSend(); };
   ov.querySelector(".disc-mic").onclick=discListen;
