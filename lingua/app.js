@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.1.0";
+var APP_VER="v2.2.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -24,6 +24,9 @@ function vibrate(m){ try{ if(navigator.vibrate) navigator.vibrate(m);}catch(e){}
 function dayHash(s){ var h=7; for(var i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))%100000; return h; }
 
 /* ============ État par-compte ============ */
+/* App GRATUITE d'apprentissage → AUCUN blocage : pratique illimitée, jamais arrêté,
+   rien perdu. Les cœurs sont infinis (aucune leçon bloquée, aucune erreur ne coûte). */
+var UNLIMITED=true;
 var HEART_MAX=5, HEART_REGEN_MS=30*60*1000;
 var S={};
 function loadS(){
@@ -222,7 +225,7 @@ function vTopbar(){ var t=el("div","topbar"); var c=S.course?COURSES[S.course]:n
   t.innerHTML='<button class="tb-flag" id="tbFlag" title="Langues">'+(c?c.drapeau:"🌍")+'</button>'+
     '<div class="tb-stat streak"><span>🔥</span>'+S.streak+'</div>'+
     '<div class="tb-stat gems"><span>💎</span>'+S.gems+'</div>'+
-    '<div class="tb-stat hearts"><span>❤️</span>'+S.hearts+'</div>'+
+    '<div class="tb-stat hearts"><span>❤️</span>'+(UNLIMITED?'∞':S.hearts)+'</div>'+
     '<button class="tb-av" id="tbAv" title="Comptes">'+me.avatar+'</button>';
   t.querySelector("#tbFlag").onclick=function(){ S.course=null; VIEW="home"; save(); render(); };
   t.querySelector("#tbAv").onclick=function(){ PICK=true; render(); };
@@ -359,7 +362,7 @@ function speakLang(text,lang){ if(!S.sound)return; try{ var u=new SpeechSynthesi
 function dictate(cb){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Dictée non dispo sur ce navigateur"); return; } var r=new SR(); r.lang="fr-FR"; r.onresult=function(e){ cb(e.results[0][0].transcript); }; r.onerror=function(){}; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Dictée indisponible"); } }
 
 /* ============ LEÇON ============ */
-function startLesson(ui,li,rev){ if(S.hearts<=0){ outOfHearts(); return; }
+function startLesson(ui,li,rev){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   LESSON={ui:ui,li:li,review:!!rev,ex:buildLesson(ui,li,rev),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render(); }
 function outOfHearts(){ VIEW="home"; render(); var m=modal();
   m.body.innerHTML='<div class="mascot-mini">'+MASCOT("sad",90)+'</div><h3>Plus de vies ❤️</h3><p>Tes cœurs reviennent seuls (1 / 30 min).</p>';
@@ -368,7 +371,7 @@ function outOfHearts(){ VIEW="home"; render(); var m=modal();
   m.body.appendChild(b1); m.body.appendChild(b2);
 }
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
-  var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+S.hearts+'</div>';
+  var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
   top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ?")){ VIEW="home"; render(); } }; d.appendChild(top);
   var body=el("div","lesson-body");
   if(ex.kind==="mc")body.appendChild(exMC(ex)); else if(ex.kind==="match")body.appendChild(exMatch(ex)); else if(ex.kind==="bank")body.appendChild(exBank(ex));
@@ -415,12 +418,12 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
   L.answered=true; L.ok=ok; L._sol=sol;
   if(ok){ L.correct++; L.combo++; L.comboMax=Math.max(L.comboMax,L.combo); S.today.combo=Math.max(S.today.combo,L.combo);
     if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")setTimeout(function(){speak(ex.w.t);},140); }
-  else{ L.wrong++; L.combo=0; S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); beep(false); vibrate([30,40,30]); }
+  else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]); }
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
 }
 function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._sol="";
   if(!L.ok){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
-  if(L.i>=L.ex.length){ finishLesson(); return; } if(S.hearts<=0){ outOfHearts(); return; } render();
+  if(L.i>=L.ex.length){ finishLesson(); return; } if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; } render();
 }
 function finishLesson(){ var L=LESSON; var base=L.review?10:15,bonus=L.wrong===0?5:0,combo=Math.max(0,L.comboMax-2); var xp=base+bonus+combo;
   S.xp+=xp; S.dailyXP+=xp; S.gems+=(L.wrong===0?3:1);
