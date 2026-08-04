@@ -1,6 +1,6 @@
 # 📜 Récupération AUTO des actes — registres numérisés officiels
 
-_Généré le 2026-08-04 00:30 UTC par `tools/arbre/research-registres.mjs` (CI, réseau ouvert). Brut complet dans `registresraw/` pour itération._
+_Généré le 2026-08-04 00:38 UTC par `tools/arbre/research-registres.mjs` (CI, réseau ouvert). Brut complet dans `registresraw/` pour itération._
 
 ## Cibles (actes assez anciens pour être consultables en ligne)
 
@@ -31,17 +31,18 @@ _Voir `registresraw/ad06-*.html` et `registresraw/ad13-*.html` (structure des fo
 ## Passe navigateur réel (Playwright — franchit le mur anti-robot TSPD)
 
 - **pw-ad06-home** : « Request Rejected » — 1 liens ([html](registresraw/pw-ad06-home.html) · [liens](registresraw/pw-ad06-home.links.txt) · [capture](registresraw/pw-ad06-home.png))
-- **pw-monaco1900** : « Base de registres à partir de 1900 - Recherches à partir de 1900 - Archives de la ville de Monaco » — 35 liens ([html](registresraw/pw-monaco1900.html) · [liens](registresraw/pw-monaco1900.links.txt) · [capture](registresraw/pw-monaco1900.png))
-- **pw-monaco1900-liste1** : « Liste d'aide » — 377 liens ([html](registresraw/pw-monaco1900-liste1.html) · [liens](registresraw/pw-monaco1900-liste1.links.txt) · [capture](registresraw/pw-monaco1900-liste1.png))
-- **pw-monaco1900-liste1-M** : « Page introuvable - Archives de la ville de Monaco » — 29 liens ([html](registresraw/pw-monaco1900-liste1-M.html) · [liens](registresraw/pw-monaco1900-liste1-M.links.txt) · [capture](registresraw/pw-monaco1900-liste1-M.png))
-- **pw-monaco1900-liste1-S** : « Page introuvable - Archives de la ville de Monaco » — 29 liens ([html](registresraw/pw-monaco1900-liste1-S.html) · [liens](registresraw/pw-monaco1900-liste1-S.links.txt) · [capture](registresraw/pw-monaco1900-liste1-S.png))
-- **pw-monaco1900-liste1-D** : « Page introuvable - Archives de la ville de Monaco » — 29 liens ([html](registresraw/pw-monaco1900-liste1-D.html) · [liens](registresraw/pw-monaco1900-liste1-D.links.txt) · [capture](registresraw/pw-monaco1900-liste1-D.png))
-- **pw-monaco1900-liste2** : « Liste d'aide » — 1504 liens ([html](registresraw/pw-monaco1900-liste2.html) · [liens](registresraw/pw-monaco1900-liste2.links.txt) · [capture](registresraw/pw-monaco1900-liste2.png))
-- **pw-monaco1900-liste2-M** : « Page introuvable - Archives de la ville de Monaco » — 29 liens ([html](registresraw/pw-monaco1900-liste2-M.html) · [liens](registresraw/pw-monaco1900-liste2-M.links.txt) · [capture](registresraw/pw-monaco1900-liste2-M.png))
-- **pw-monaco1900-liste2-S** : « Page introuvable - Archives de la ville de Monaco » — 29 liens ([html](registresraw/pw-monaco1900-liste2-S.html) · [liens](registresraw/pw-monaco1900-liste2-S.links.txt) · [capture](registresraw/pw-monaco1900-liste2-S.png))
-- **pw-monaco1900-liste2-D** : « Page introuvable - Archives de la ville de Monaco » — 29 liens ([html](registresraw/pw-monaco1900-liste2-D.html) · [liens](registresraw/pw-monaco1900-liste2-D.links.txt) · [capture](registresraw/pw-monaco1900-liste2-D.png))
-- **pw-monaco-av1900** : « Base des registres antérieurs à 1900 - Recherches antérieures à 1900 - Archives de la ville de Monaco » — 34 liens ([html](registresraw/pw-monaco-av1900.html) · [liens](registresraw/pw-monaco-av1900.links.txt) · [capture](registresraw/pw-monaco-av1900.png))
-- **pw-monaco-indexe** : « Base des registres antérieurs à 1900 - Rechercher par acte indexé - Archives de la ville de Monaco » — 34 liens ([html](registresraw/pw-monaco-indexe.html) · [liens](registresraw/pw-monaco-indexe.links.txt) · [capture](registresraw/pw-monaco-indexe.png))
+- **pw-mc1900-MAIFFRET** : 0 ligne(s) résultat ([html](registresraw/pw-mc1900-MAIFFRET.html) · [capture](registresraw/pw-mc1900-MAIFFRET.png))
+- **pw-mc1900-SAUVAIGO** : 0 ligne(s) résultat ([html](registresraw/pw-mc1900-SAUVAIGO.html) · [capture](registresraw/pw-mc1900-SAUVAIGO.png))
+- **pw-mc1900-DESARZENS** : 0 ligne(s) résultat ([html](registresraw/pw-mc1900-DESARZENS.html) · [capture](registresraw/pw-mc1900-DESARZENS.png))
+- **pw-mc1900-VAN_DEN_BOSCH** : 0 ligne(s) résultat ([html](registresraw/pw-mc1900-VAN_DEN_BOSCH.html) · [capture](registresraw/pw-mc1900-VAN_DEN_BOSCH.png))
+- **pw-mc1900-MOLINARIO** : 0 ligne(s) résultat ([html](registresraw/pw-mc1900-MOLINARIO.html) · [capture](registresraw/pw-mc1900-MOLINARIO.png))
+- **pw-mc1900-VIRGILI** : 0 ligne(s) résultat ([html](registresraw/pw-mc1900-VIRGILI.html) · [capture](registresraw/pw-mc1900-VIRGILI.png))
+- **pw-mc-av1900-MAIFFRET** : ❌ champ nom introuvable
+- **pw-mc-av1900-SAUVAIGO** : ❌ champ nom introuvable
+- **pw-mc-av1900-DESARZENS** : ❌ champ nom introuvable
+- **pw-mc-av1900-VAN_DEN_BOSCH** : ❌ champ nom introuvable
+- **pw-mc-av1900-MOLINARIO** : ❌ champ nom introuvable
+- **pw-mc-av1900-VIRGILI** : ❌ champ nom introuvable
 - **pw-ad13** : « Registres paroissiaux et état civil - Archives départementales des Bouches-du-Rhône » — 73 liens ([html](registresraw/pw-ad13.html) · [liens](registresraw/pw-ad13.links.txt) · [capture](registresraw/pw-ad13.png))
 
 ## 🎯 Monaco — lignes FAMILLE trouvées dans les listes d'actes
