@@ -1,6 +1,6 @@
 # 📜 Récupération AUTO des actes — registres numérisés officiels
 
-_Généré le 2026-08-04 00:18 UTC par `tools/arbre/research-registres.mjs` (CI, réseau ouvert). Brut complet dans `registresraw/` pour itération._
+_Généré le 2026-08-04 00:23 UTC par `tools/arbre/research-registres.mjs` (CI, réseau ouvert). Brut complet dans `registresraw/` pour itération._
 
 ## Cibles (actes assez anciens pour être consultables en ligne)
 
@@ -27,4 +27,11 @@ _Aucun résultat JSON exploitable à ce run — voir `registresraw/monaco-*.json
 ## AD06 / AD13 — état des probes
 
 _Voir `registresraw/ad06-*.html` et `registresraw/ad13-*.html` (structure des formulaires / visionneuses) — le prochain run ciblera les bons endpoints détectés dedans._
+
+## Passe navigateur réel (Playwright — franchit le mur anti-robot TSPD)
+
+- **pw-ad06-home** : « Request Rejected » — 1 liens ([html](registresraw/pw-ad06-home.html) · [liens](registresraw/pw-ad06-home.links.txt) · [capture](registresraw/pw-ad06-home.png))
+- **pw-monaco** : « Base de registres à partir de 1900 - Recherches à partir de 1900 - Archives de la ville de Monaco » — 35 liens ([html](registresraw/pw-monaco.html) · [liens](registresraw/pw-monaco.links.txt) · [capture](registresraw/pw-monaco.png))
+- **pw-monaco-api** : « Page introuvable - Archives de la ville de Monaco » — 29 liens ([html](registresraw/pw-monaco-api.html) · [liens](registresraw/pw-monaco-api.links.txt) · [capture](registresraw/pw-monaco-api.png))
+- **pw-ad13** : « Registres paroissiaux et état civil - Archives départementales des Bouches-du-Rhône » — 73 liens ([html](registresraw/pw-ad13.html) · [liens](registresraw/pw-ad13.links.txt) · [capture](registresraw/pw-ad13.png))
 
