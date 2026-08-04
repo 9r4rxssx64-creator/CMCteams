@@ -126,49 +126,49 @@ try {
     const ec = home.links.find(l => /tat[- ]civil/i.test(l));
     if (ec) { const href = ec.split(' || ')[0]; const u = href.startsWith('http') ? href : 'https://archives06.fr' + (href.startsWith('/') ? '' : '/') + href; await browse('pw-ad06-etatcivil', u, 8000); }
   }
-  /* MONACO (Arkothèque) : les bases ont des LISTES ALPHABÉTIQUES d'actes —
-     on va directement aux lettres M (Maiffret), S (Sauvaigo), D (Desarzens)
-     des 2 bases (≥1900 et <1900) et on extrait chaque ligne + son lien. */
+  /* MONACO (Arkothèque) : on remplit le VRAI formulaire de recherche
+     (champ nom form_rech_9 + cases naissance/mariage/décès) et on soumet
+     Valider('rechercher') — comme un humain — pour chaque nom de famille. */
   const MC_HITS = [];
-  async function monacoLists(tag, baseUrl) {
-    const basePg = await browse(tag, baseUrl, 5000);
-    if (!basePg) return;
-    try {
-      const forms = await pg.evaluate(() => [...document.querySelectorAll('form')].map(f => f.outerHTML.slice(0, 3000)).join('\n\n====\n\n'));
-      fs.writeFileSync(path.join(rawDir, tag + '.form.html'), forms);
-    } catch (e) {}
-    const listes = (basePg.links || []).filter(l => /arkotheque_liste_aide\.php/.test(l)).map(l => l.split(' || ')[0]);
-    let li = 0;
-    for (const lu of [...new Set(listes)]) {
-      li++;
-      const u0 = lu.startsWith('http') ? lu : 'https://archives.mairie.mc' + lu;
-      const lp = await browse(tag + '-liste' + li, u0, 4000);
-      if (!lp) continue;
-      // navigation par lettre : liens dont le texte est exactement M / S / D
-      for (const letter of ['M', 'S', 'D']) {
-        const cand = (lp.links || []).find(l => l.split(' || ')[1] === letter);
-        if (!cand) continue;
-        const href = cand.split(' || ')[0];
-        const u = href.startsWith('http') ? href : 'https://archives.mairie.mc' + (href.startsWith('/') ? '' : '/') + href;
-        const pgL = await browse(tag + '-liste' + li + '-' + letter, u, 4000);
-        if (!pgL) continue;
-        // lignes MAIFFRET / SAUVAIGO / DESARZENS / SARZENS avec leur lien
-        const rows = await pg.evaluate(() => [...document.querySelectorAll('a[href], tr, li')].map(e => {
-          const t = (e.textContent || '').replace(/\s+/g, ' ').trim();
-          const h = e.getAttribute ? (e.getAttribute('href') || '') : '';
-          return { t: t.slice(0, 200), h };
-        }).filter(r => /MAIFFRET|SAUVAIGO|SARZENS|MOLINARIO|VIRGILI|VAN DEN BOSCH/i.test(r.t)));
-        if (rows.length) {
-          console.log('  ' + tag + ' liste' + li + ' lettre ' + letter + ' :', rows.length, 'ligne(s) famille');
-          rows.slice(0, 60).forEach(r => MC_HITS.push({ liste: tag + '·liste' + li + '·' + letter, texte: r.t, href: r.h ? (r.h.startsWith('http') ? r.h : 'https://archives.mairie.mc' + (r.h.startsWith('/') ? '' : '/') + r.h) : '' }));
-        }
-        await sleep(900);
-      }
+  const NAMES = ['MAIFFRET', 'SAUVAIGO', 'DESARZENS', 'VAN DEN BOSCH', 'MOLINARIO', 'VIRGILI'];
+  async function monacoSearch(tag, baseUrl) {
+    for (const nm of NAMES) {
+      const t = tag + '-' + nm.replace(/\s+/g, '_');
+      try {
+        await pg.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+        await pg.waitForTimeout(2500);
+        const forms = await pg.evaluate(() => [...document.querySelectorAll('form')].map(f => f.outerHTML.slice(0, 20000)).join('\n\n====\n\n'));
+        if (nm === NAMES[0]) fs.writeFileSync(path.join(rawDir, tag + '.form.html'), forms);
+        const submitted = await pg.evaluate((nom) => {
+          var inp = document.querySelector('#form_rech_9') || document.querySelector('input[name^=form_rech][type=text]');
+          if (!inp) return 'champ nom introuvable';
+          inp.value = nom;
+          document.querySelectorAll('input[type=checkbox][name^=form_rech_type_acte]').forEach(function(c) { c.checked = true; });
+          if (typeof Valider === 'function') { Valider('rechercher', ''); return 'ok'; }
+          var f = inp.form; if (f) { f.submit(); return 'ok-submit'; }
+          return 'pas de Valider ni form';
+        }, nm);
+        if (submitted !== 'ok' && submitted !== 'ok-submit') { pwNotes.push('- **' + t + '** : ❌ ' + submitted); continue; }
+        await pg.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+        await pg.waitForTimeout(2500);
+        const html = await pg.content();
+        fs.writeFileSync(path.join(rawDir, t + '.html'), html.slice(0, 500000));
+        await pg.screenshot({ path: path.join(rawDir, t + '.png') });
+        const rows = await pg.evaluate(() => [...document.querySelectorAll('tr, .resultat, li, a[href]')].map(e => ({
+          t: (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 220),
+          h: e.getAttribute ? (e.getAttribute('href') || '') : ''
+        })).filter(r => /MAIFFRET|SAUVAIGO|SARZENS|MOLINARIO|VIRGILI|BOSCH/i.test(r.t) && r.t.length > 10));
+        const uniq = []; const seen = new Set();
+        for (const r of rows) { const k = r.t; if (!seen.has(k)) { seen.add(k); uniq.push(r); } }
+        console.log('  ' + t + ' :', uniq.length, 'ligne(s)');
+        pwNotes.push('- **' + t + '** : ' + uniq.length + ' ligne(s) résultat ([html](registresraw/' + t + '.html) · [capture](registresraw/' + t + '.png))');
+        uniq.slice(0, 80).forEach(r => MC_HITS.push({ base: tag, nom: nm, texte: r.t, href: r.h && r.h !== '#' && !/^javascript/i.test(r.h) ? (r.h.startsWith('http') ? r.h : 'https://archives.mairie.mc' + (r.h.startsWith('/') ? '' : '/') + r.h) : '' }));
+        await sleep(1500);
+      } catch (e) { pwNotes.push('- **' + t + '** : ❌ ' + e.message.slice(0, 110)); }
     }
   }
-  await monacoLists('pw-monaco1900', 'https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/');
-  await monacoLists('pw-monaco-av1900', 'https://archives.mairie.mc/r/4/base-des-registres-anterieurs-a-1900/');
-  await browse('pw-monaco-indexe', 'https://archives.mairie.mc/a/5/rechercher-par-acte-indexe/', 5000);
+  await monacoSearch('pw-mc1900', 'https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/');
+  await monacoSearch('pw-mc-av1900', 'https://archives.mairie.mc/a/5/rechercher-par-acte-indexe/');
   fs.writeFileSync(path.join(rawDir, 'monaco-hits.json'), JSON.stringify(MC_HITS, null, 1));
   await browse('pw-ad13', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64', 6000);
   await b.close();
