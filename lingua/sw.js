@@ -1,5 +1,5 @@
 /* KDMC Lingua — Service Worker (cache app shell pour usage hors-ligne) */
-var CACHE = "lingua-v2.1.0";
+var CACHE = "lingua-v2.2.0";
 var ASSETS = ["./","./index.html","./app.js","./data.js","./manifest.webmanifest","./icon.svg"];
 
 self.addEventListener("install", function(e){
