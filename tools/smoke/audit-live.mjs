@@ -57,6 +57,24 @@ const SURFACES = [
       if (r.nodes < 1) return { ok:false, note:'AUCUN nœud rendu — arbre vide ('+r.ver+')' };
       return { ok:true, note: r.nodes+' nœuds · '+r.ver };
     } },
+  { url: 'https://lingua.' + ROOT + '/', name: 'KDMC Lingua', selKey: '.brand', deep: async (page) => {
+      // App d'apprentissage : écran comptes (anonyme) → créer un compte → vérifier
+      // 6 langues + arbre de leçons rendus + onglets. Un écran vide ou <6 langues échoue.
+      try {
+        await page.waitForTimeout(1200);
+        if (!(await page.$('.acc-card.add'))) return { ok:false, note:'écran comptes absent' };
+        await page.click('.acc-card.add'); await page.waitForTimeout(600);
+        await page.fill('#acName', 'Audit'); await page.click('.modal .btn-main'); await page.waitForTimeout(700);
+        const langs = await page.$$eval('.course-card', els => els.length).catch(() => 0);
+        if (langs < 6) return { ok:false, note:'langues attendues ≥6, vues ' + langs };
+        await page.click('.course-card'); await page.waitForTimeout(700);
+        const units = await page.$$eval('.unit', els => els.length).catch(() => 0);
+        const tabs = await page.$$eval('.tab', els => els.length).catch(() => 0);
+        const hearts = (await page.textContent('.tb-stat.hearts').catch(() => '')).replace(/\s/g, '');
+        if (units < 1) return { ok:false, note:'aucune unité rendue' };
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · vies ' + hearts };
+      } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
+    } },
   { url: BASE + '/worldmonitor/', name: 'World Monitor', selKey: '.leaflet-container' },
   { url: BASE + '/osint/', name: 'OSINT', selKey: '.leaflet-container' },
 ];
