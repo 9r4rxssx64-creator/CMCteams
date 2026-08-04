@@ -2109,3 +2109,18 @@ déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomencla
   Filtre facture inchangé (PJ + corps). `/health` expose `bf_active/bf_total/bf_remaining`. Prouvé par harness
   (13/13 : lot complet, file pleine, reprise, garde admin, corps capturé). N'écrit jamais tout d'un coup
   (limites CPU Worker) → l'historique se remplit en arrière-plan sur plusieurs lots.
+
+## 🌳 FAMILLE / GÉNÉALOGIE (arbre.kd-mc.com) — vérifié 2026-08-04
+
+- **Nom officiel de Kevin = DESARZENS** ; « de Sarzance » = forme phonétique (à afficher en note, jamais comme nom).
+- **Lignée maternelle (document familial manuscrit = source de vérité)** : Jean-Baptiste MAIFFRET (1815–1903)
+  → Alexandre (1856–1926) → Marius (1890–1968) → Marie-Thérèse MAIFFRET (1914–2000, ×Victor SAUVAIGO 3.05.1939)
+  → Marie-Noël SAUVAIGO (25.09.1950 Monaco) → Kevin (5.02.1979 Monaco) → Ronan. 7 générations, 62 fiches seed.
+- **Côté Desarzens** : Guy → Gérard (1944) + Émile ; Loïc et Yann = fils d'ÉMILE (jamais de Christian) ;
+  Christian = mari de Marie-Brigitte SAUVAIGO, fille unique : Cécile. Origine suisse : village de Sarzens (Vaud).
+- **2 arbres dans l'app** : 🫒 Sauvaigo·Maiffret (fam «o») / 🌳 Desarzens (fam «c») ; «oc» = les deux sangs
+  (Gérard, Kevin, Sabrina, Ronan, Théo). Code famille MAIFFRET.
+- **Bases d'actes** : Monaco archives.mairie.mc (Arkothèque : champ nom = form_rech_12 (≥1900) / r_nom (<1900) ;
+  form_rech_9 = NUMÉRO d'acte, piège) ; AD06 bloqué aux IP datacenter (mur TSPD) — passe depuis l'iPhone de
+  Kevin ; INSEE matchid = 14 actes de décès exacts intégrés aux fiches.
+- Les actes récents sont protégés (loi) : la clé pour remonter côté Desarzens = acte de naissance de Gérard (1944).
