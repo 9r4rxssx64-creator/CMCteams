@@ -289,7 +289,19 @@ f) **`untrust` explicite au logout** : `localStorage.removeItem('<projet>_device
 - **Apex v13.4.263** : `services/auth/auth.ts` (await trustCurrentDevice +
   loginTrusted) + `features/landing/index.ts` (tryAutoLogin avec auto-recovery
   pour TOUS users)
+- **Arbre v2.56** (2026-08-04) : `arbre/index.html` boot — le trust persistant
+  `localStorage.arbre_trust==="1"` SEUL suffit à auto-entrer (le flag de session
+  est re-semé) ; le code n'est redemandé qu'après déconnexion explicite (🔒).
+  **Anti-pattern corrigé** : conditionner l'auto-login à `sessionStorage` =
+  code redemandé à CHAQUE réouverture d'app (sessionStorage s'efface à la
+  fermeture) — INTERDIT.
 - À auditer / aligner : CMCteams, Apex Chat, e-KDMC, Télécommande, CrackPass.
+
+### 6. RENFORCEMENT Kevin 2026-08-04 — « Pour toutes les app toujours. Note le »
+
+Cette règle s'applique à CHAQUE app existante ET future, sans exception, dès sa
+1ʳᵉ version. Toute nouvelle app avec code/PIN/lockscreen DOIT livrer le trust
+persistant (localStorage) dès le départ — jamais « on l'ajoutera après ».
 
 ---
 
