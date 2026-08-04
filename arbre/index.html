@@ -244,7 +244,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.56";
+var APP_VER="v2.57";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -894,7 +894,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=29;
+var SEED_VERSION=30;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"🛣 Monaco honore le nom : une ALLÉE LAZARE SAUVAIGO existe en Principauté, et une Fondation « Christiane et Lazare Sauvaigo » a été autorisée par Ordonnance Souveraine (Journal de Monaco n°6864, 14.04.1989) — lien éventuel avec la famille à explorer. Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -915,7 +915,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
   add({id:"seed_guy",prenom:"Guy",nom:"DESARZENS",sexe:"M",deces:{},notes:"Grand-père paternel de Kevin (père de Gérard et d'Émile) — prénom donné par Kevin (2026-08-03), « il me semble » : à confirmer sur l'acte de naissance de Gérard (1944, Salon-de-Provence, Archives 13). 🔎 Recherche INSEE auto 2026-08-03 : AUCUN Guy DESARZENS du Sud dans le fichier des décès (1970→auj.) → Guy est probablement décédé AVANT 1970, ou à Monaco/à l'étranger. Piste suisse : SARZENS = hameau de la commune de Lucens (Vaud, district Broye-Vully), cité dès l'an 996, ~82 habitants — berceau du nom. Porteurs vaudois célèbres : Victor Desarzens (1908–1986, chef d'orchestre né à Château-d'Œx), Corinne et Fanny Desarzens (écrivaines). Voir aussi Claude Alain DE SARZENS (1941 Marseille, †2022 Suisse) — parent possible.",sources:[SRC.ad13,SRC.gDesarzens,SRC.davel,SRC.sarzens]});
   add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",pere:"seed_guy",conjoints:["seed_marienoel"],naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Fils de Guy DESARZENS (à confirmer). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). L'acte de naissance 1944 à Salon (Archives 13) confirmera le prénom de Guy + donnera la grand-mère paternelle.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
-  add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",pere:"seed_guy",notes:"Frère de Gérard (oncle paternel de Kevin). Fils de Guy DESARZENS (à confirmer).",sources:[SRC.gDesarzens]});
+  add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",pere:"seed_guy",conjoints:["seed_charlotte","seed_mariefrance"],notes:"Frère de Gérard (oncle paternel de Kevin). Fils de Guy DESARZENS (à confirmer). Deux unions : Charlotte (mère de Loïc) et Marie-France (mère de Yann) — lien réciproque rétabli 2026-08-04.",sources:[SRC.gDesarzens]});
   add({id:"seed_charlotte",prenom:"Charlotte",nom:"",sexe:"F",vivant:true,conjoints:["seed_emile"],notes:"Charlotte — maman de Loïc, avec Émile (précisé par Kevin le 4.08.2026). Nom de famille à compléter."});
   add({id:"seed_mariefrance",prenom:"Marie-France",nom:"",sexe:"F",vivant:true,conjoints:["seed_emile"],notes:"Marie-France — maman de Yann, avec Émile (précisé par Kevin le 4.08.2026). Nom de famille à compléter."});
   add({id:"seed_loic",prenom:"Loïc",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",mere:"seed_charlotte",notes:"Fils d'Émile et de Charlotte (cousin de Kevin — mamans différentes pour Loïc et Yann, précisé par Kevin). Date à compléter."});
