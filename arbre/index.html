@@ -216,7 +216,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.41";
+var APP_VER="v2.42";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -806,7 +806,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=20;
+var SEED_VERSION=21;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -814,7 +814,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_marienoel",prenom:"Marie-Noël",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{date:"25.09.1950",lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",conjoints:["seed_gerard"],notes:"Mère de Kevin, née à Monaco. Épouse de Gérard DESARZENS."});
   add({id:"seed_sabrina",prenom:"Sabrina",nom:"DESARZENS",sexe:"F",vivant:true,naissance:{date:"22.03.1971",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Sœur de Kevin. Née le 22 mars 1971 à Monaco."});
   add({id:"seed_ronan",prenom:"Ronan",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_kevin",notes:"Fils de Kevin. Date/lieu à compléter."});
-  add({id:"seed_theo",prenom:"Théo",nom:"BRUNO",sexe:"M",vivant:true,mere:"seed_sabrina",notes:"Théo BRUNO — fils de Sabrina DESARZENS, neveu de Kevin (nom confirmé par Kevin le 4.08.2026). Père : famille BRUNO, prénom à compléter. Date de naissance à compléter."});
+  add({id:"seed_theo",prenom:"Théo",nom:"BRUNO",sexe:"M",vivant:true,mere:"seed_sabrina",notes:"Théo BRUNO — fils de Sabrina DESARZENS, neveu de Kevin (nom confirmé par Kevin le 4.08.2026). Père : famille BRUNO, prénom à compléter. Date de naissance à compléter. 🎯 ROBOT : 24 actes BRUNO à Monaco (1901-1912) sauvegardés en images — familles BRUNO monégasques anciennes ; le lien éventuel passera par le père de Théo (préciser son prénom pour cibler)."});
   add({id:"seed_marie_brigitte",prenom:"Marie-Brigitte",nom:"SAUVAIGO",sexe:"F",vivant:true,conjoints:["seed_christian"],pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"31.12.1954"},notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Épouse de Christian. 📜 DOCUMENT (stylo) : née le 31.12.1954 (« Brigou »)."});
   add({id:"seed_christian",prenom:"Christian",nom:"",sexe:"M",conjoints:["seed_marie_brigitte"],notes:"Mari de Marie-Brigitte. Nom/date à compléter."});
   add({id:"seed_cecile",prenom:"Cécile",nom:"",sexe:"F",vivant:true,pere:"seed_christian",mere:"seed_marie_brigitte",notes:"Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter."});
@@ -888,8 +888,8 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_pierre_daniel",prenom:"Pierre",nom:"DANIEL",sexe:"M",conjoints:["seed_julie_mc"],naissance:{date:"12.05.1881",lieu:"Sospel (Alpes-Maritimes)"},deces:{},notes:"💍 Époux de Julie MAIFFRET (acte n°39/1906) : sapeur-pompier, fils de Joseph DANIEL, maçon, et d’Ursule TOESCA, blanchisseuse. Témoin de la naissance de Paula en 1910 (beau-frère d’Emmanuel).",sources:[{label:"💍 Acte de mariage n°39/1906 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_madeleine_mathieu",prenom:"Madeleine Marie Clémence",nom:"MATHIEU",sexe:"F",conjoints:["seed_francois_mc"],naissance:{},deces:{},notes:"💍 Épouse de François MAIFFRET — mariage à Monaco le 25.04.1957 (mention marginale de l’acte de naissance n°71/1912 de François).",sources:[{label:"🍼 Mention marginale de l’acte n°71/1912 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   /* — Piste MOLINARIO ⇄ DENTAU (rien de public trouvé, à chercher aux AD06 année 1865) — */
-  add({id:"seed_molinario_marius",prenom:"Marius-Antoine",nom:"MOLINARIO",sexe:"M",naissance:{},conjoints:["seed_dentau_mm"],notes:"📜 DOCUMENT FAMILIAL : marié le 22.06.1865 à Marie-Marguerite DENTAU (région niçoise). Père d'Élisabeth (épouse d'André Maiffret) et de Marguerite (1868–1951). Registre AD06 (Nice) année 1865 à consulter.",sources:[SRC.ad06]});
-  add({id:"seed_dentau_mm",prenom:"Marie-Marguerite",nom:"DENTAU",sexe:"F",naissance:{},conjoints:["seed_molinario_marius"],notes:"📜 DOCUMENT FAMILIAL : mariage 22.06.1865 avec Marius-Antoine Molinario. Mère d'Élisabeth et Marguerite. ✅ La famille DENTAU est bien réelle et niçoise (INSEE XXᵉ s. : Nice, Saint-Laurent-du-Var, Villefranche). Variantes : Dentaud, Dentu.",sources:[SRC.ad06,SRC.matchid]});
+  add({id:"seed_molinario_marius",prenom:"Marius-Antoine",nom:"MOLINARIO",sexe:"M",naissance:{},conjoints:["seed_dentau_mm"],notes:"📜 DOCUMENT FAMILIAL : marié le 22.06.1865 à Marie-Marguerite DENTAU (région niçoise). Père d'Élisabeth (épouse d'André Maiffret) et de Marguerite (1868–1951). Registre AD06 (Nice) année 1865 à consulter. 🎯 ACTES MONACO LUS (2026-08-04) : MOLINARIO de Monaco = famille de Jacques MOLINARIO × Catherine BERTHOLDO (fils Henri, ferblantier, né Monaco 19.05.1881, marié 1904 à Marie BELTRAME — fille de Jacques BELTRAME, EMPLOYÉ AU CASINO, × Marie CORNAGLIA) ; registres <1900 : Christine (n. 1883), Pierre-Antoine (n. 1891), Marie-Jeanne (m. 1894). Parenté avec Marius-Antoine possible mais non prouvée.",sources:[SRC.ad06]});
+  add({id:"seed_dentau_mm",prenom:"Marie-Marguerite",nom:"DENTAU",sexe:"F",naissance:{},conjoints:["seed_molinario_marius"],notes:"🎯 ACTE MONACO LU (décès n°31 du 6.12.1911, Monte-Carlo) : une Marie Anne DENTAU, 65 ans, NATIVE DE NICE, veuve de Jean MARINELLI, FILLE DES DÉFUNTS JULES DENTAU ET CLAIRE RAINAUT, † rue des Oliviers n°10 (déclarée par ses fils Sébastien et Raoul MARINELLI). DENTAU est un nom rare : la famille niçoise Jules DENTAU × Claire RAINAUT est très probablement la sienne (sœur ? cousine ? fille de Jules ?) — registres Nice 1840-1850 (AD06) à consulter pour trancher. 📜 DOCUMENT FAMILIAL : mariage 22.06.1865 avec Marius-Antoine Molinario. Mère d'Élisabeth et Marguerite. ✅ La famille DENTAU est bien réelle et niçoise (INSEE XXᵉ s. : Nice, Saint-Laurent-du-Var, Villefranche). Variantes : Dentaud, Dentu.",sources:[SRC.ad06,SRC.matchid]});
   return s;}
 function seed(){DB.persons=buildSeed();DB.meta={updatedAt:now(),seedVersion:SEED_VERSION};}
 /* Fusion des personnes « officielles » sans écraser les ajouts/édits perso (photos/commentaires conservés). Tourne 1× par version. */

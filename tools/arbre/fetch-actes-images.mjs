@@ -114,7 +114,9 @@ for (const t of TARGETS) {
           } catch (_) {}
         });
         try {
-          await vp.goto('https://archives.mairie.mc' + row.visu, { waitUntil: 'domcontentloaded', timeout: 45000 });
+          /* base <1900 : href déjà absolu ; base ≥1900 : chemin relatif */
+          const visuUrl = /^https?:\/\//.test(row.visu) ? row.visu : ('https://archives.mairie.mc' + row.visu);
+          await vp.goto(visuUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
           await vp.waitForTimeout(4000);
           /* La visionneuse Arkothèque charge l'image en grand — tenter le plein écran/zoom */
           await vp.evaluate(function () {
