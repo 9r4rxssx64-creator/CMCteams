@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.12.0";
+var APP_VER="v2.13.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -486,8 +486,18 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
 
 /* ---------- Tabbar ---------- */
 /* ============ Coach IA (conversation interactive, mémoire PAR COMPTE) ============ */
-var _coachThinking=false;
+var _coachThinking=false,_coachPose="wave";
 function coachLangMeta(){ return S.course?COURSES[S.course]:null; }
+/* Lino réagit selon ce qu'il dit : félicite → fête, question → curieux, salut → coucou. */
+function coachPoseFor(t){ t=(" "+String(t||"")+" ").toLowerCase();
+  if(/(bravo|super|parfait|excellent|g[eé]nial|tr[eè]s bien|bien jou|f[eé]licit|complimenti|bravissim|muy bien|perfecto|sehr gut|toll|[oó]timo|muito bem|goed zo|knap)/.test(t)) return "party";
+  if(/\?/.test(t)) return "point";
+  if(/(bonjour|salut|coucou|\bciao\b|buongiorno|\bhola\b|buenos|\bhallo\b|guten tag|\bol[aá]\b|bom dia|\bhi\b|hello|goededag)/.test(t)) return "wave";
+  return "point";
+}
+/* Lino PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
+function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang);
+  var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
 function coachGreeting(c){ var me=accMeta(ACC)||{}; var n=me.name||"toi"; var hi=(DICT["salut"]&&DICT["salut"][c.id])||"Salut";
   return hi+" "+n+" ! 😊 Je suis ton coach de "+c.nom.toLowerCase()+". On papote un peu pour progresser vers le bilingue ? Écris-moi, ou touche une suggestion ci-dessous."; }
 function coachSuggestions(c){ var hello=(DICT["comment ça va"]&&DICT["comment ça va"][c.id])||"Bonjour";
@@ -504,20 +514,20 @@ function coachAsk(){ var c=coachLangMeta();
 function coachSend(text){ if(_coachThinking||!text) return; var c=coachLangMeta(); if(!c) return;
   S.coachMsgs.push({role:"user",text:text}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
   _coachThinking=true; render();
-  coachAsk().then(function(reply){ _coachThinking=false; if(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); } save(); render();
-    setTimeout(function(){ if(reply) speakLang(reply,c.ttsLang); },200); }); }
+  coachAsk().then(function(reply){ _coachThinking=false; if(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); _coachPose=coachPoseFor(reply); } save(); render();
+    setTimeout(function(){ if(reply) coachSpeak(reply); },260); }); }
 function vCoach(){ var d=el("div","screen coach");
   var c=coachLangMeta(); if(!c){ d.innerHTML='<h2 class="ttl">💬 Coach</h2><p class="sub2">Choisis d\'abord une langue 🌍 dans l\'onglet 🏠.</p>'; return d; }
   var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>'; d.appendChild(head);
   var pct=Math.min(100,Math.round(masteredCount()/240*100));
   var pb=el("div","coach-prog"); pb.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+pct+'%"></div></div><span>'+pct+'% vers le bilingue</span>'; d.appendChild(pb);
-  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":"wave",100); d.appendChild(mas);
+  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),100); d.appendChild(mas);
   var box=el("div","coach-box");
   if(!S.coachMsgs.length){ var intro=el("div","coach-msg bot"); intro.innerHTML='<div class="cm-av">'+MASCOT("wave",38)+'</div>'; var it=el("div","cm-txt"); it.textContent=coachGreeting(c); intro.appendChild(it); box.appendChild(intro); }
   S.coachMsgs.slice(-40).forEach(function(m){ var row=el("div","coach-msg "+(m.role==="user"?"user":"bot"));
     if(m.role!=="user") row.innerHTML='<div class="cm-av">'+MASCOT("point",38)+'</div>';
     var t=el("div","cm-txt"); t.textContent=m.text; row.appendChild(t);
-    if(m.role!=="user"){ var say=el("button","cm-say"); say.textContent="🔊"; say.title="Écouter"; say.onclick=function(){ speakLang(m.text,c.ttsLang); }; row.appendChild(say); }
+    if(m.role!=="user"){ var say=el("button","cm-say"); say.textContent="🔊"; say.title="Écouter"; say.onclick=function(){ coachSpeak(m.text); }; row.appendChild(say); }
     box.appendChild(row); });
   if(_coachThinking){ var tp=el("div","coach-msg bot"); tp.innerHTML='<div class="cm-av">'+MASCOT("read",38)+'</div><div class="cm-txt typing">•  •  •</div>'; box.appendChild(tp); }
   d.appendChild(box);
