@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.6.0";
+var APP_VER="v2.7.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -340,7 +340,30 @@ function unitDone(ui,li){ return (S.prog[S.course]["u"+ui+"-"+li]||0); }
 function unitUnlocked(ui,li){ if(ui===0&&li===0)return true; var c=COURSES[S.course],pu=ui,pl=li-1; if(pl<0){pu=ui-1;pl=c.units[pu].lessons.length-1;} return unitDone(pu,pl)>0; }
 function unitLessonsAllDone(ui){ var c=COURSES[S.course]; for(var li=0;li<c.units[ui].lessons.length;li++){ if(!(unitDone(ui,li)>0))return false; } return true; }
 function examDone(ui){ return (S.prog[S.course]["ex"+ui]||0); }
+function masteredCount(){ return Object.keys((S.words&&S.words[S.course])||{}).length; }
+function currentLevel(){ var m=masteredCount(),cur=LEVELS[0],next=null;
+  for(var i=0;i<LEVELS.length;i++){ if(m>=LEVELS[i].min)cur=LEVELS[i]; else { next=LEVELS[i]; break; } }
+  var pct=100,remain=0; if(next){ var span=next.min-cur.min; remain=Math.max(0,next.min-m); pct=span>0?Math.round((m-cur.min)/span*100):0; }
+  return {cur:cur,next:next,pct:Math.max(0,Math.min(100,pct)),remain:remain,words:m}; }
+function nextLessonToDo(){ var c=COURSES[S.course]; for(var ui=0;ui<c.units.length;ui++){ for(var li=0;li<c.units[ui].lessons.length;li++){ if(unitUnlocked(ui,li) && !(unitDone(ui,li)>0)) return {ui:ui,li:li,titre:c.units[ui].lessons[li].titre,unitTitre:c.units[ui].titre}; } } return null; }
+function teacherTip(){ return TEACHER_TIPS[dayHash(today())%TEACHER_TIPS.length]; }
+function phraseOfDayEntry(){ var ks=Object.keys(PHRASEBOOK); if(!ks.length)return null; var fr=ks[dayHash(today()+"p")%ks.length]; var e=PHRASEBOOK[fr]; return {fr:fr,t:(e&&e[COURSES[S.course].id])||fr}; }
 function vHome(){ var w=el("div","screen tree");
+  // ---- Parcours d'apprentissage (mode prof) ----
+  var lv=currentLevel(), nx=nextLessonToDo(), dueN=dueWords().length, pod=phraseOfDayEntry();
+  var plan=el("div","plan-card");
+  var ph=el("div","plan-head"); ph.innerHTML='<span class="plan-ttl">📚 Ton parcours</span><span class="plan-lvl">'+esc(lv.cur.code)+'</span>'; plan.appendChild(ph);
+  var lb=el("div","plan-lvlbar"); lb.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+lv.pct+'%"></div></div><div class="plan-lvlsub">'+(lv.next?('Encore <b>'+lv.remain+'</b> mots pour '+esc(lv.next.code)):'Niveau max atteint 🎉')+'</div>'; plan.appendChild(lb);
+  var acts=el("div","plan-acts");
+  var b1=el("button","plan-btn primary");
+  if(nx){ b1.innerHTML='▶️ Leçon conseillée<span>'+esc(nx.titre)+'</span>'; b1.onclick=function(){ startLesson(nx.ui,nx.li); }; }
+  else { b1.innerHTML='🏆 Bravo !<span>Tout est ouvert — révise</span>'; b1.onclick=function(){ go('review'); }; }
+  acts.appendChild(b1);
+  var b2=el("button","plan-btn"); b2.innerHTML='🧠 Réviser<span>'+dueN+' mot'+(dueN>1?'s':'')+'</span>'; b2.onclick=function(){ go('review'); }; acts.appendChild(b2);
+  plan.appendChild(acts);
+  if(pod){ var phr=el("div","plan-phrase"); phr.innerHTML='💬 <b>'+esc(pod.t)+'</b> <span class="pod-fr">'+esc(pod.fr)+'</span>'; var sp=el("button","pod-say"); sp.textContent='🔊'; sp.setAttribute("aria-label","Écouter"); sp.onclick=function(){ speak(pod.t); }; phr.appendChild(sp); plan.appendChild(phr); }
+  var tip=el("div","plan-tip"); tip.textContent='👩‍🏫 '+teacherTip(); plan.appendChild(tip);
+  w.appendChild(plan);
   var gp=Math.min(100,Math.round(S.dailyXP/S.goal*100));
   var goal=el("div","goal-card");
   goal.innerHTML='<div class="goal-top"><b>🎯 Objectif du jour</b><span>'+S.dailyXP+' / '+S.goal+' XP</span></div><div class="bar"><div class="bar-fill" style="width:'+gp+'%"></div></div>'+(gp>=100?'<div class="goal-done">✅ Objectif atteint !</div>':'');
