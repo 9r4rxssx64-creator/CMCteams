@@ -1,9 +1,10 @@
 # 🎨 Créa Studio — Vidéo · Photo · Cartoon
 
-**Une seule app** qui réunit **montage vidéo**, **retouche photo** et **création de dessins animés**.
+**Une seule app** qui réunit **montage vidéo**, **retouche photo (niveau Photoshop/GIMP)** et **création de dessins animés**.
 100 % dans le navigateur, **hors-ligne**, **sans compte**, **sans pub**, installable sur iPhone (PWA).
 
-👉 **Ouvre-la ici :** https://9r4rxssx64-creator.github.io/CMCteams/tools/crea-studio/
+👉 **Sur ton domaine :** https://studio.kd-mc.com
+👉 **Lien direct GitHub Pages :** https://9r4rxssx64-creator.github.io/CMCteams/tools/crea-studio/
 
 Sur iPhone : ouvre le lien dans Safari → bouton **Partager** → **« Sur l'écran d'accueil »** → l'app s'installe comme une vraie appli.
 
@@ -24,6 +25,8 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 | **Lightroom / VSCO** | Presets « film » | 20 filtres pros (Ciné, N&B, Vintage, HDR, Sunset, Cyber…) |
 | **CapCut / VN** | Vitesse, musique, sous-titres, filtres | Vitesse (ralenti/accéléré), musique de fond, filtres, sous-titres |
 | **Krita / FlipaClip** | Dessin animé, onion skin, timeline | Pinceau/gomme/pot, palette, timeline de frames, lecture fluide |
+| **Adobe Photoshop** | Détourage, calques, dessin, niveaux | **Détourage → fond transparent** (gomme magique / fond auto / gomme / restaurer), **Niveaux** (noirs/gamma/blancs), **dessin sur la photo**, **stickers/logo** (calques-lite), **redimensionner** |
+| **GIMP** | Alternative libre de Photoshop | Mêmes outils avancés ci-dessus, 100 % gratuits et hors-ligne |
 
 **Le plus (« va plus loin ») :** un effet **Cartoonize** (photo → dessin animé) qui n'existe nulle part réuni comme ça sur mobile : posterisation des couleurs + détection de contours (Sobel) + lissage. Et la passerelle **« Partir d'une image »** dans le studio Cartoon : ta photo est transformée en croquis pour dessiner par-dessus.
 
@@ -31,13 +34,16 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ## 🎬 Ce que tu peux faire
 
-### 📸 Studio Photo
-- **Réglages** : exposition, contraste, saturation, vibrance, température, teinte, hautes lumières, ombres, couleur (°), netteté, vignette, grain.
+### 📸 Studio Photo *(niveau Photoshop / GIMP)*
+- **Réglages** : exposition, contraste, saturation, vibrance, température, teinte, hautes lumières, ombres, **Niveaux (noirs / gamma / blancs)**, couleur (°), netteté, vignette, grain.
 - **20 filtres** en 1 tap : Éclat, Ciné, N&B, Sépia, Chaud/Froid, Vintage, HDR, Pop, Noir, Sunset, Menthe, Drama, Insta, Pastel, Or, Cyber…
-- **Cadrer** : recadrage libre / 1:1 / 4:3 / 16:9, rotation ±90°, miroir.
-- **Cartoon** : transforme la photo en dessin animé (contours + aplats), réglable.
-- **Texte** : ajoute un texte, couleur + taille, glisse-le où tu veux.
-- **Export** : JPG haute qualité ou PNG. Partage direct (Instagram, Messages…).
+- **✂️ Cadrer + Redimensionner** : recadrage libre / 1:1 / 4:3 / 16:9, rotation ±90°, miroir, taille en pixels (720/1080/1920/Max).
+- **🪄 Détourer** *(le gros ajout Photoshop/GIMP)* : **rends le fond transparent** — gomme magique (touche une couleur), fond auto (efface le contour), gomme et restaurer au doigt. → **export PNG transparent**.
+- **🖌️ Dessin** : pinceau / feutre / gomme directement sur la photo (couleur + taille).
+- **😀 Stickers** : bibliothèque d'emojis + **import de logo/image** ; déplaçables, taille réglable (calques-lite).
+- **🖍️ Cartoon** : transforme la photo en dessin animé (contours + aplats), réglable.
+- **🅣 Texte** : couleur + taille, glisse-le où tu veux.
+- **Export** : PNG **transparent** (si détouré) ou JPG haute qualité. Partage direct (Instagram, Messages…).
 
 ### 🎬 Studio Vidéo
 - **Découpe** : choisis le début et la fin de l'extrait.
@@ -76,8 +82,16 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ---
 
-## ✅ Vérifié (test navigateur réel, viewport iPhone)
+## 🌐 Intégré à ton domaine
 
-Chargement photo, filtre, slider, cartoonize, bascule des 3 studios, dessin (encre détectée), ajout de frame (timeline), feuille d'export — **0 erreur JavaScript**. Captures d'écran de preuve générées pendant le test.
+L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné : DNS + certificat SSL automatiques via le routeur Cloudflare `kdmc-router`, **zéro action manuelle**). Elle apparaît aussi dans le **Portail kd-mc.com** (tuile 🎬 Créa Studio). Le test anti-dérive `apps-consistency` garantit la cohérence (apps.json ⇔ routeur ⇔ wrangler ⇔ portail ⇔ admin).
 
-*Version 1.0.0 — première version. Studio créatif tout-en-un pour kd-mc.com.*
+## ✅ Vérifié (tests navigateur réels, viewport iPhone)
+
+- **v1** : chargement photo, filtres, sliders, cartoonize, bascule des 3 studios, dessin (encre détectée), timeline de frames, feuille d'export — **0 erreur JS**.
+- **v2** : Niveaux, **détourage → transparence confirmée**, dessin, stickers, redimensionnement, **export PNG transparent détecté** — **0 erreur JS**.
+- Cohérence domaine : `apps-consistency` **7/7**.
+
+Captures d'écran de preuve générées à chaque test.
+
+*Version 2.0.0 — Studio créatif tout-en-un pour kd-mc.com (studio.kd-mc.com).*
