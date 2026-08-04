@@ -117,6 +117,17 @@ for (const t of TARGETS) {
           /* base <1900 : href déjà absolu ; base ≥1900 : chemin relatif */
           const visuUrl = /^https?:\/\//.test(row.visu) ? row.visu : ('https://archives.mairie.mc' + row.visu);
           await vp.goto(visuUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+          /* base <1900 : mur de licence « vous devez accepter » → cliquer puis revenir à l'acte */
+          const licenced = await vp.evaluate(function () {
+            var b = [...document.querySelectorAll('a,button,input[type=submit]')].find(function (x) {
+              return /J'ACCEPTE|ACCEPTE LES CONDITIONS/i.test(x.innerText || x.value || '');
+            });
+            if (b) { b.click(); return true; } return false;
+          }).catch(() => false);
+          if (licenced) {
+            await vp.waitForTimeout(2500);
+            await vp.goto(visuUrl, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+          }
           await vp.waitForTimeout(4000);
           /* La visionneuse Arkothèque charge l'image en grand — tenter le plein écran/zoom */
           await vp.evaluate(function () {

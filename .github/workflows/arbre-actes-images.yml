@@ -35,4 +35,9 @@ jobs:
           git config user.email "noreply@anthropic.com"
           git add arbre/research
           git commit -m "Arbre: images des actes Monaco (preuves filiation) [skip ci]" || { echo "aucun changement"; exit 0; }
-          git push
+          # main peut avoir bougé pendant les ~30 min de scraping → rebase avant push (3 essais)
+          for i in 1 2 3; do
+            git push && break
+            git fetch origin "${GITHUB_REF_NAME}" && git rebase "origin/${GITHUB_REF_NAME}" && continue
+            sleep 5
+          done
