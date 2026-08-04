@@ -23,6 +23,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Télécharger les images d'actes
         run: node tools/arbre/fetch-actes-images.mjs
+      - name: Sonde membres isolés (avis de décès CH/Nice + Journal de Monaco)
+        run: node tools/arbre/probe-isoles.mjs || echo "sonde isolés partielle"
       - name: Nettoyage node_modules (pas de commit)
         run: rm -rf node_modules package.json package-lock.json
       - name: Commit images + rapport
