@@ -22,6 +22,7 @@
         { ic: '📅', nm: 'CMCteams', ds: 'Plannings & équipes — Casino de Monaco', url: 'https://cmcteams.kd-mc.com/' },
         { ic: '🤖', nm: 'Apex AI', ds: 'Assistant IA — chat, studios, coffre', url: 'https://apex-ai.kd-mc.com/' },
         { ic: '💬', nm: 'Apex Chat', ds: 'Messagerie chiffrée de bout en bout', url: 'https://apex-chat.kd-mc.com/' },
+        { ic: '🎬', nm: 'Créa Studio', ds: 'Montage vidéo, retouche photo, cartoon & photo→vidéo', url: 'https://studio.kd-mc.com/' },
         { ic: '🏠', nm: 'Portail KDMC', ds: 'Page d’accueil du domaine', url: 'https://kd-mc.com/' }
       ]
     },
