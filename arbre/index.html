@@ -159,6 +159,8 @@ a{color:var(--cyan);text-decoration:none}
 .acterow{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch}
 .actecard{flex:0 0 auto;width:120px;cursor:pointer;text-align:center}
 .actecard img{width:120px;height:150px;object-fit:cover;object-position:top;border:2px solid var(--gold);border-radius:10px;background:#fffef8;box-shadow:0 3px 10px rgba(60,40,10,.25)}
+.actecard{position:relative}
+.actedel{position:absolute;top:-6px;right:-6px;z-index:2;width:26px;height:26px;line-height:24px;text-align:center;border-radius:50%;background:#a3403a;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .actecard .alab{font-size:10.5px;line-height:1.25;color:var(--ink);opacity:.85;margin-top:4px;word-break:break-word}
 .acteov{position:fixed;inset:0;z-index:9999;background:rgba(20,14,6,.96);display:flex;flex-direction:column}
 .acteov .bar{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));color:#f3e2b6;font-size:14px}
@@ -227,7 +229,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.49";
+var APP_VER="v2.50";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -739,7 +741,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var back='<button class="bkbtn" id="pBack" aria-label="'+(canBack?"Retour":"Fermer")+'">'+(canBack?"‹":"✕")+'</button>';
   var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div></div>'+caro+
     '<div class="sec">'+info+(relHtml?'<div style="padding-top:12px"><div style="color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Famille</div><div class="chips">'+relHtml+'</div></div>':"")+(p.notes?'<div style="padding:12px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+'</div>'+
-    (function(){var acts=(p.actes||[]);if(!acts.length)return "";return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3><div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'"><img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div></div>';})()+
+    (function(){var acts=(p.actes||[]);return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3>'+(acts.length?'<div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'">'+(a.by?'<b class="actedel" data-rmacte="'+i+'" title="Supprimer">×</b>':'')+'<img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun acte pour l\'instant.</p>')+'<button class="btn sm" id="addActe">➕ Ajouter un acte (photo / scan)</button><input type="file" id="acteIn" accept="image/*,.pdf" hidden></div>';})()+
     (sources?'<div class="sec"><h3>Actes / sources</h3><div class="chips">'+sources+'</div></div>':"")+
     '<div class="sec"><h3>💬 Commentaires & infos</h3><div id="cmtList">'+(comments||'<p class="mut" style="font-size:13px;margin:0">Aucun commentaire. Ajoute une info, une anecdote, une question…</p>')+'</div><div style="display:flex;gap:8px;margin-top:10px"><input id="cmtIn" placeholder="Écris un commentaire…"><button class="btn gold sm" id="cmtAdd">Envoyer</button></div></div>'+
     '<div class="sec"><h3>➕ Ajouter un proche</h3><div class="addrel"><button class="btn sm" data-add="pere:'+id+'">👴 Père</button><button class="btn sm" data-add="mere:'+id+'">👵 Mère</button><button class="btn sm" data-add="conj:'+id+'">💍 Conjoint(e)</button><button class="btn sm" data-add="child:'+id+'">👶 Enfant</button></div></div>'+
@@ -747,7 +749,14 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
     (id!==viewerId()?'<button class="btn ghost" id="btnMoi" style="width:100%;margin-top:8px">🙋 C\'est moi — voir l\'arbre de mon point de vue</button>':'<p class="mut" style="text-align:center;font-size:13px;margin:8px 0 0">⭐ L\'arbre est vu de TON point de vue sur cet appareil.</p>')+
     '<button class="btn ghost" data-close style="width:100%;margin-top:8px">Fermer</button></div>';
   showOverlay(h);
-  ov0=$(".ov");if(ov0)ov0.querySelectorAll("[data-acte]").forEach(function(c){c.onclick=function(){var a=(P(id).actes||[])[+c.dataset.acte];if(a)openActe(a);};});
+  ov0=$(".ov");if(ov0){ov0.querySelectorAll("[data-acte]").forEach(function(c){c.onclick=function(e){if(e.target.closest("[data-rmacte]"))return;var a=(P(id).actes||[])[+c.dataset.acte];if(a)openActe(a);};});
+  ov0.querySelectorAll("[data-rmacte]").forEach(function(b){b.onclick=async function(){if(!confirm("Supprimer cet acte ajouté par la famille ?"))return;var pp=P(id);pp.actes=(pp.actes||[]).filter(function(_,i){return i!==+b.dataset.rmacte;});pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("🗑 Acte retiré");};});
+  var ab=$("#addActe");if(ab)ab.onclick=function(){$("#acteIn").click();};
+  var ai=$("#acteIn");if(ai)ai.onchange=async function(e){var f=(e.target.files||[])[0];e.target.value="";if(!f)return;
+    var lab=window.prompt("Titre de l'acte (ex : 🍼 Acte de naissance 1952, mairie de Nice)","📜 Acte — "+full(P(id)));if(lab===null)return;
+    toast("Conversion de l'acte…");
+    try{var img=await importActe(f);var pp=P(id);pp.actes=pp.actes||[];pp.actes.push({label:(lab||"📜 Acte").slice(0,140),img:img,by:ME||"famille",ts:now()});pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("📜 Acte ajouté à la fiche");}
+    catch(err){toast("Fichier illisible — prends une photo nette de l'acte");}};}
   var bm=$("#btnMoi");if(bm)bm.onclick=function(){setViewer(id);toast("⭐ L'arbre est maintenant vu de TON point de vue ("+full(P(id))+")");closeOverlay();render();};
   var bb=$("#pBack");if(bb)bb.onclick=function(){if(_pStack.length){var prev=_pStack.pop();if(prev){openPerson(prev,true);return;}}closeOverlay();};
   if(photos.length>1){var box=$("#caroBox");_caro.timer=setInterval(function(){caroGo(1);},3200);box.querySelectorAll("[data-caro]").forEach(function(b){b.onclick=function(){caroGo(+b.dataset.caro);};});}
@@ -793,6 +802,11 @@ function openEdit(id,link){_editLink=null;var p;
   $("#saveP").onclick=async function(){var g=function(f){var n=sheet.querySelector('[data-f="'+f+'"]');return n?(n.type==="checkbox"?n.checked:n.value.trim()):"";};var np=id?P(id):{id:uid(),comments:[]};np.prenom=g("prenom");np.nom=g("nom");np.sexe=g("sexe");np.vivant=g("vivant");np.naissance={date:g("ndate"),lieu:g("nlieu")};np.deces={date:g("ddate"),lieu:g("dlieu")};np.pere=g("pere")||null;np.mere=g("mere")||null;var conj=g("conj");var conjNew=g("conjNew");np.conjoints=conj?[conj]:[];np.notes=g("notes");np.photos=_draftPhotos.slice();np.sources=np.sources||[];np.comments=np.comments||[];np.updatedAt=now();np.updatedBy=ME||"famille";if(!np.prenom&&!np.nom){toast("Mets au moins un prénom ou un nom");return;}DB.persons[np.id]=np;if(conj&&P(conj)){var c=P(conj);c.conjoints=c.conjoints||[];if(c.conjoints.indexOf(np.id)<0){c.conjoints.push(np.id);c.updatedAt=now();cloudPush(conj);}}else if(!conj&&conjNew){var toks=conjNew.split(/\s+/);var sp={id:uid(),prenom:toks[0]||conjNew,nom:toks.slice(1).join(" "),sexe:np.sexe==="M"?"F":(np.sexe==="F"?"M":""),conjoints:[np.id],photos:[],sources:[],comments:[],notes:"Conjoint(e) de "+full(np)+" (ajouté(e) à la main).",updatedAt:now(),updatedBy:ME||"famille"};DB.persons[sp.id]=sp;np.conjoints=[sp.id];cloudPush(sp.id);}if(_editLink&&_editLink.childId&&P(_editLink.childId)){var ch2=P(_editLink.childId);ch2[_editLink.parentType]=np.id;ch2.updatedAt=now();cloudPush(_editLink.childId);}await persist(np.id);ROOT=ROOT||np.id;closeOverlay();render();toast("💾 Enregistré");};
   var del=$("#delP");if(del)del.onclick=async function(){if(!confirm("Supprimer "+full(P(id))+" ?"))return;for(var k in DB.persons){var c=DB.persons[k],ch=false;if(c.pere===id){c.pere=null;ch=true;}if(c.mere===id){c.mere=null;ch=true;}var ci=(c.conjoints||[]).indexOf(id);if(ci>=0){c.conjoints.splice(ci,1);ch=true;}if(ch){c.updatedAt=now();cloudPush(k);}}delete DB.persons[id];await saveLocal();var t=await anonAuth();if(t){try{fetch(cloudBase()+"/persons/"+id+".json?auth="+t,{method:"DELETE"});}catch(e){}}closeOverlay();render();toast("Supprimé");};
 }
+function importActe(file){return new Promise(function(res,rej){
+  function fromImg(){return new Promise(function(rs,rj){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){rs(im);};im.onerror=rj;im.src=r.result;};r.onerror=rj;r.readAsDataURL(file);});}
+  var get=("createImageBitmap"in window)?createImageBitmap(file,{imageOrientation:"from-image"}).catch(fromImg):fromImg();
+  get.then(function(src){var w=src.width||src.naturalWidth,h=src.height||src.naturalHeight;var MAX=2000;var s=Math.min(1,MAX/Math.max(w,h));var cv=document.createElement("canvas");cv.width=Math.round(w*s);cv.height=Math.round(h*s);cv.getContext("2d").drawImage(src,0,0,cv.width,cv.height);res(cv.toDataURL("image/jpeg",0.82));}).catch(rej);
+});}
 function importPhoto(file){return new Promise(function(res,rej){
   var MAX=1400;
   function fromBitmap(){return createImageBitmap(file,{imageOrientation:"from-image"}).then(function(bm){return draw(bm,bm.width,bm.height);});}
@@ -924,7 +938,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   return s;}
 function seed(){DB.persons=buildSeed();DB.meta={updatedAt:now(),seedVersion:SEED_VERSION};}
 /* Fusion des personnes « officielles » sans écraser les ajouts/édits perso (photos/commentaires conservés). Tourne 1× par version. */
-function mergeSeed(){var s=buildSeed();for(var id in s){var loc=DB.persons[id];if(!loc){DB.persons[id]=s[id];}else if(id.indexOf("seed_")===0){var ph=(loc.photos&&loc.photos.length)?loc.photos:s[id].photos;var cm=(loc.comments&&loc.comments.length)?loc.comments:s[id].comments;DB.persons[id]=Object.assign({},s[id],{photos:ph,comments:cm});}}DB.meta=DB.meta||{};DB.meta.seedVersion=SEED_VERSION;}
+function mergeSeed(){var s=buildSeed();for(var id in s){var loc=DB.persons[id];if(!loc){DB.persons[id]=s[id];}else if(id.indexOf("seed_")===0){var ph=(loc.photos&&loc.photos.length)?loc.photos:s[id].photos;var cm=(loc.comments&&loc.comments.length)?loc.comments:s[id].comments;var ua=(loc.actes||[]).filter(function(a){return a&&a.by;});var ac=(s[id].actes||[]).concat(ua);DB.persons[id]=Object.assign({},s[id],{photos:ph,comments:cm},ac.length?{actes:ac}:{});}}DB.meta=DB.meta||{};DB.meta.seedVersion=SEED_VERSION;}
 
 /* ---------- boot ---------- */
 function bindApp(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.onclick=function(){VIEW=t.dataset.view;render();};});$("#fab").onclick=function(){openEdit(null);};document.body.addEventListener("click",function(e){if(e.target.closest(".ov"))return;var n=e.target.closest("#wrap [data-open]");if(n){openPerson(n.dataset.open);return;}var s=e.target.closest("#wrap [data-search]");if(s)openSearch(s.dataset.search);});document.addEventListener("visibilitychange",function(){if(!document.hidden&&sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});window.addEventListener("focus",function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});setInterval(function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);},8000);}
