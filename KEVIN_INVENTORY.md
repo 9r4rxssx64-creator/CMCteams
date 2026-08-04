@@ -1669,3 +1669,19 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 - Générateur PDF : [tools/memo-pdf/generate_pdfs.py](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/memo-pdf/generate_pdfs.py)
 - Worker R2 : [services/coffre-r2/src/index.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/coffre-r2/src/index.js) · Workflow : `.github/workflows/deploy-coffre-r2.yml`
 - Test réel : [tests/coffre/e2e.test.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/coffre/e2e.test.mjs) (9/9 ✅)
+
+## 🌳 Arbre généalogique (arbre.kd-mc.com) — session 2026-08-03/04
+
+| Fichier | Description | Liens |
+|---|---|---|
+| arbre/index.html | L'app complète (v2.31 : 2 arbres par famille, Plan par générations, actes, demandes 1 clic) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/index.html) · [Live](https://arbre.kd-mc.com) |
+| tools/arbre/cloud-audit.mjs | Audit + correction du cloud familial (vérifie chaque lien vs le document) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/cloud-audit.mjs) |
+| tools/arbre/research.mjs | Recherche INSEE décès (25 angles) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/research.mjs) |
+| tools/arbre/research-actes.mjs | Liens d'actes INSEE exacts par personne | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/research-actes.mjs) |
+| tools/arbre/research-registres.mjs | Registres scannés : Monaco (formulaire réel), AD06, AD13 | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/research-registres.mjs) |
+| tools/arbre/research-infos.mjs | Infos max : Gallica presse, militaire, tombes/photos, avis de décès, Suisse | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/research-infos.mjs) |
+| arbre/research/CLOUD.md | Audit réel du cloud (ce que voient les téléphones) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/CLOUD.md) |
+| arbre/research/REGISTRES.md | Actes / registres numérisés trouvés | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/REGISTRES.md) |
+| arbre/research/INFOS.md | Infos presse ancienne & sources ouvertes | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md) |
+| arbre/research/RAPPORT.md | Recherche INSEE (~800 actes balayés) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/RAPPORT.md) |
+| Workflows | arbre-cloud-audit.yml (cron 5/mois 04:00) · arbre-recherche.yml (03:00) · arbre-actes-registres.yml (05:00) · arbre-recherche-web.yml | [Actions](https://github.com/9r4rxssx64-creator/cmcteams/actions) |

@@ -158,13 +158,14 @@ try {
         await pg.screenshot({ path: path.join(rawDir, t + '.png') });
         const rows = await pg.evaluate(() => [...document.querySelectorAll('tr, .resultat, li, a[href]')].map(e => ({
           t: (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 220),
-          h: e.getAttribute ? (e.getAttribute('href') || '') : ''
+          h: e.getAttribute ? (e.getAttribute('href') || '') : '',
+          v: (e.querySelector && e.querySelector('a[onclick]')) ? (e.querySelector('a[onclick]').getAttribute('onclick') || '').slice(0, 300) : (e.getAttribute ? (e.getAttribute('onclick') || '').slice(0, 300) : '')
         })).filter(r => /MAIFFRET|SAUVAIGO|SARZENS|MOLINARIO|VIRGILI|BOSCH/i.test(r.t) && r.t.length > 10));
         const uniq = []; const seen = new Set();
         for (const r of rows) { const k = r.t; if (!seen.has(k)) { seen.add(k); uniq.push(r); } }
         console.log('  ' + t + ' :', uniq.length, 'ligne(s)');
         pwNotes.push('- **' + t + '** : ' + uniq.length + ' ligne(s) résultat ([html](registresraw/' + t + '.html) · [capture](registresraw/' + t + '.png))');
-        uniq.slice(0, 80).forEach(r => MC_HITS.push({ base: tag, nom: nm, texte: r.t, href: r.h && r.h !== '#' && !/^javascript/i.test(r.h) ? (r.h.startsWith('http') ? r.h : 'https://archives.mairie.mc' + (r.h.startsWith('/') ? '' : '/') + r.h) : '' }));
+        uniq.slice(0, 80).forEach(r => MC_HITS.push({ base: tag, nom: nm, texte: r.t, visualiser: r.v || '', href: r.h && r.h !== '#' && !/^javascript/i.test(r.h) ? (r.h.startsWith('http') ? r.h : 'https://archives.mairie.mc' + (r.h.startsWith('/') ? '' : '/') + r.h) : '' }));
         await sleep(1500);
       } catch (e) { pwNotes.push('- **' + t + '** : ❌ ' + e.message.slice(0, 110)); }
     }

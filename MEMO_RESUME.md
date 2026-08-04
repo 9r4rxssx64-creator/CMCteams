@@ -3614,3 +3614,19 @@ Livré : `purgeSeedShadows()` dans l'app (boot + chaque cloudPull, fiches enrich
 avant/après commitées, cron mensuel le 5 à 04:00 UTC). Run 1 : 11 fantômes purgés + 3 liens ré-alignés.
 Un téléphone famille a auto-updaté v2.29 et poussé la base complète. Run 2 vérifie : **62/62 fiches
 conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CLOUD.md.
+
+### Suite session 2026-08-04 — v2.30/v2.31 : Plan par famille, nom, actes & infos MAX
+
+- **v2.30** (retours captures Kevin) : Plan filtré PAR FAMILLE + barre 🫒/🌳 visible en Plan ;
+  nom corrigé **Kevin DESARZENS** (« de Sarzance » = forme phonétique en note) ; CAUSE RACINE du
+  fouillis = racines triées par nb d'enfants (Victor capturait Marie-Thérèse en Gén.1) → tri par
+  PROFONDEUR de lignée (`subDepth`) : JB Gén.1 → Victor+MT Gén.4 → Kevin Gén.6 → Ronan Gén.7 ;
+  repères « Gén. n » en Plan (limités à la lignée principale). SEED_VERSION 18.
+- **v2.31** : « récupérer tous les actes auto » — pipeline CI `arbre-actes-registres.yml` :
+  `research-registres.mjs` (Monaco Arkothèque : vrai formulaire soumis par nom — ⚠️ champ nom =
+  `form_rech_12` (≥1900) / `r_nom` (<1900), `form_rech_9` = NUMÉRO d'acte ; AD06 = mur TSPD qui
+  rejette même Chromium depuis IP datacenter ; AD13 accessible) + `research-infos.mjs` (Gallica SRU,
+  archive.org, Journal de Monaco, Grand Mémorial/matricules, Mémoire des hommes, Findagrave
+  tombes+photos, avis de décès DuckDuckGo par défunt ≥1990, archives vaudoises Desarzens).
+  In-app : chip « 📋 Copier la demande d'acte » (lettre pré-remplie avec filiation) sur chaque fiche.
+- Rapports : arbre/research/CLOUD.md · REGISTRES.md · INFOS.md (+ brut registresraw/, infosraw/).
