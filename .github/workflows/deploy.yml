@@ -4,6 +4,19 @@ on:
   push:
     branches:
       - main
+    # Ne déclencher que sur ce qui change VRAIMENT le site publié.
+    # Vécu 2026-08-04 : chaque push main lançait un déploiement complet ; avec des
+    # merges toutes les ~1 min et une attente de machine de plusieurs minutes, chaque
+    # déploiement en attente était remplacé par le suivant → AUCUN n'arrivait à
+    # démarrer, donc plus rien n'était publié (page figée sur une vieille version).
+    # Ces chemins ne font pas partie du site → inutile de republier pour eux.
+    paths-ignore:
+      - '.github/**'
+      - 'services/**'
+      - 'tests/**'
+      - 'tools/memory/**'
+      - 'audit/**'
+      - '**/*.md'
   workflow_dispatch:
 
 permissions:
