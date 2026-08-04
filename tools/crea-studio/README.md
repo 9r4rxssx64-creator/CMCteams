@@ -1,9 +1,10 @@
 # 🎨 Créa Studio — Vidéo · Photo · Cartoon
 
-**Une seule app** qui réunit **montage vidéo**, **retouche photo** et **création de dessins animés**.
+**Une seule app** qui réunit **montage vidéo**, **retouche photo (niveau Photoshop/GIMP)** et **création de dessins animés**.
 100 % dans le navigateur, **hors-ligne**, **sans compte**, **sans pub**, installable sur iPhone (PWA).
 
-👉 **Ouvre-la ici :** https://9r4rxssx64-creator.github.io/CMCteams/tools/crea-studio/
+👉 **Sur ton domaine :** https://studio.kd-mc.com
+👉 **Lien direct GitHub Pages :** https://9r4rxssx64-creator.github.io/CMCteams/tools/crea-studio/
 
 Sur iPhone : ouvre le lien dans Safari → bouton **Partager** → **« Sur l'écran d'accueil »** → l'app s'installe comme une vraie appli.
 
@@ -24,6 +25,8 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 | **Lightroom / VSCO** | Presets « film » | 20 filtres pros (Ciné, N&B, Vintage, HDR, Sunset, Cyber…) |
 | **CapCut / VN** | Vitesse, musique, sous-titres, filtres | Vitesse (ralenti/accéléré), musique de fond, filtres, sous-titres |
 | **Krita / FlipaClip** | Dessin animé, onion skin, timeline | Pinceau/gomme/pot, palette, timeline de frames, lecture fluide |
+| **Adobe Photoshop** | Détourage, calques, dessin, niveaux | **Détourage → fond transparent** (gomme magique / fond auto / gomme / restaurer), **Niveaux** (noirs/gamma/blancs), **dessin sur la photo**, **stickers/logo** (calques-lite), **redimensionner** |
+| **GIMP** | Alternative libre de Photoshop | Mêmes outils avancés ci-dessus, 100 % gratuits et hors-ligne |
 
 **Le plus (« va plus loin ») :** un effet **Cartoonize** (photo → dessin animé) qui n'existe nulle part réuni comme ça sur mobile : posterisation des couleurs + détection de contours (Sobel) + lissage. Et la passerelle **« Partir d'une image »** dans le studio Cartoon : ta photo est transformée en croquis pour dessiner par-dessus.
 
@@ -31,13 +34,34 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ## 🎬 Ce que tu peux faire
 
-### 📸 Studio Photo
-- **Réglages** : exposition, contraste, saturation, vibrance, température, teinte, hautes lumières, ombres, couleur (°), netteté, vignette, grain.
+### 🤖 IA (qualité pro) — nouveau
+Branchée sur un **worker serveur sécurisé** (ta clé Replicate reste côté serveur, jamais exposée). Repli automatique sur la version hors-ligne si l'IA n'est pas joignable — **l'app marche toujours**.
+- **🤖 Détourage IA** — isole automatiquement le sujet (personne / objet), fond transparent parfait (bien mieux que la gomme couleur).
+- **🤖 Cartoon IA** — transforme la photo en dessin animé de qualité (vrai style, pas juste posterize).
+- **✨ Améliorer (IA)** — upscale ×2 + netteté + amélioration des visages.
+
+### 🎬 Pack créateur pro *(le plus viral 2026)*
+- **🎤 Sous-titres karaoké mot-par-mot** (vidéo) — le mot dit est surligné en jaune et agrandi (style TikTok/Hormozi). Styles **Simple / Karaoké / Pop**. Le texte se répartit tout seul sur la durée.
+- **🥁 Zoom automatique sur le rythme** (vidéo) — détecte les temps forts de ta musique et fait un punch-in zoom sur le beat.
+- **🩹 Tampon correcteur** (photo) — touche une zone saine (source) puis dessine sur le défaut : enlève un bouton, un objet, une tache.
+- **😂 Texte meme** (photo) — style Impact blanc contour noir, haut/bas, en 1 tap.
+
+### 🔥 Effets viraux & formats réseaux *(tendances 2026)*
+D'après le tour du web des tendances TikTok / Reels / CapCut, ajoutés en qualité max :
+- **🔥 Effets Tendance (photo)** : Ciné (teal & orange), **Flou d'arrière-plan** (bokeh portrait), Glow, Light leak, **Duotone**, **Glitch / RGB split**, **VHS / Y2K**, Chroma, Polaroïd — avec **intensité réglable**.
+- **📱 Formats réseaux** (photo **et** vidéo) : **9:16** (TikTok/Reels/Shorts), **1:1**, **4:5**, **16:9**, avec **fond flou** tendance (plus de bandes noires), noir ou blanc.
+- **🔥 Pack Viral vidéo** : **format vertical 9:16**, **ambiance Grain / VHS / Light leak**, **fondu entrée/sortie**, **sous-titre stylé** (gros, contour épais, style viral).
+
+### 📸 Studio Photo *(niveau Photoshop / GIMP)*
+- **Réglages** : exposition, contraste, saturation, vibrance, température, teinte, hautes lumières, ombres, **Niveaux (noirs / gamma / blancs)**, couleur (°), netteté, vignette, grain.
 - **20 filtres** en 1 tap : Éclat, Ciné, N&B, Sépia, Chaud/Froid, Vintage, HDR, Pop, Noir, Sunset, Menthe, Drama, Insta, Pastel, Or, Cyber…
-- **Cadrer** : recadrage libre / 1:1 / 4:3 / 16:9, rotation ±90°, miroir.
-- **Cartoon** : transforme la photo en dessin animé (contours + aplats), réglable.
-- **Texte** : ajoute un texte, couleur + taille, glisse-le où tu veux.
-- **Export** : JPG haute qualité ou PNG. Partage direct (Instagram, Messages…).
+- **✂️ Cadrer + Redimensionner** : recadrage libre / 1:1 / 4:3 / 16:9, rotation ±90°, miroir, taille en pixels (720/1080/1920/Max).
+- **🪄 Détourer** *(le gros ajout Photoshop/GIMP)* : **rends le fond transparent** — gomme magique (touche une couleur), fond auto (efface le contour), gomme et restaurer au doigt. → **export PNG transparent**.
+- **🖌️ Dessin** : pinceau / feutre / gomme directement sur la photo (couleur + taille).
+- **😀 Stickers** : bibliothèque d'emojis + **import de logo/image** ; déplaçables, taille réglable (calques-lite).
+- **🖍️ Cartoon** : transforme la photo en dessin animé (contours + aplats), réglable.
+- **🅣 Texte** : couleur + taille, glisse-le où tu veux.
+- **Export** : PNG **transparent** (si détouré) ou JPG haute qualité. Partage direct (Instagram, Messages…).
 
 ### 🎬 Studio Vidéo
 - **Découpe** : choisis le début et la fin de l'extrait.
@@ -76,8 +100,28 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ---
 
-## ✅ Vérifié (test navigateur réel, viewport iPhone)
+## 🌐 Intégré à ton domaine
 
-Chargement photo, filtre, slider, cartoonize, bascule des 3 studios, dessin (encre détectée), ajout de frame (timeline), feuille d'export — **0 erreur JavaScript**. Captures d'écran de preuve générées pendant le test.
+L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné : DNS + certificat SSL automatiques via le routeur Cloudflare `kdmc-router`, **zéro action manuelle**). Elle apparaît aussi dans le **Portail kd-mc.com** (tuile 🎬 Créa Studio). Le test anti-dérive `apps-consistency` garantit la cohérence (apps.json ⇔ routeur ⇔ wrangler ⇔ portail ⇔ admin).
 
-*Version 1.0.0 — première version. Studio créatif tout-en-un pour kd-mc.com.*
+## ✅ Vérifié (tests navigateur réels, viewport iPhone)
+
+- **v1** : chargement photo, filtres, sliders, cartoonize, bascule des 3 studios, dessin (encre détectée), timeline de frames, feuille d'export — **0 erreur JS**.
+- **v2** : Niveaux, **détourage → transparence confirmée**, dessin, stickers, redimensionnement, **export PNG transparent détecté** — **0 erreur JS**.
+- **v3** : effets tendance (glitch/ciné/bokeh changent bien l'image), **export vidéo viral 9:16 + grain + fondu → MP4 produit** — **0 erreur JS**.
+- **v4** : **texte meme** (encre rendue), **tampon correcteur** (clone), **export vidéo karaoké + zoom sur le beat + 9:16 + musique → MP4** — **0 erreur JS**.
+- **v5** : **IA** — succès (image remplacée) + **repli automatique** vérifiés (worker simulé), overlay de chargement OK — **0 exception JS**.
+- Cohérence domaine : `apps-consistency` **7/7**.
+
+Captures d'écran de preuve générées à chaque test.
+
+## 🤖 Comment marche l'IA (technique)
+- Worker Cloudflare **`kdmc-crea-ai`** (isolé, `services/kdmc-crea-ai/`) qui relaie vers **Replicate** — ta clé `AX_REPLICATE_KEY` est injectée en secret serveur par `deploy-kdmc-crea-ai.yml`, **jamais côté client**.
+- Modèles : détourage `cjwbw/rembg`, cartoon `catacolabs/cartoonify`, upscale `nightmareai/real-esrgan` (résolus à leur dernière version au runtime — faciles à changer si besoin).
+- CORS limité à `*.kd-mc.com` + GitHub Pages + localhost. Le worker rapatrie l'image → le client la reçoit en même origine (pas de canvas « tainté »).
+- **Repli automatique** : réseau/IA KO → l'app applique la version hors-ligne + toast honnête. Zéro blocage.
+
+## 🔭 Prochaines étapes possibles
+Déjà livré : IA (détourage/cartoon/upscale), karaoké, zoom-beat, tampon correcteur, meme, effets tendance, formats réseaux. À venir si tu veux : **remplacement de fond IA** (mettre un décor), **speed-ramp**, **export GIF**, **calques complets multi-photos**, **cartoon IA sur vidéo**.
+
+*Version 5.0.0 — Studio créatif tout-en-un + pack viral + pack créateur pro + IA serveur, pour kd-mc.com (studio.kd-mc.com).*
