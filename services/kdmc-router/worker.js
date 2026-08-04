@@ -230,6 +230,31 @@ async function handleLingua(request, url, env) {
       await env.ACCOUNTS.put('lingua:' + k, s, { expirationTtl: 60 * 60 * 24 * 400 }); // ~400 j, renouvelé à chaque save
       return JL({ ok: true });
     }
+    // Voix naturelle : synthèse OpenAI TTS, mise en CACHE KV (1 mot = 1 synthèse à vie).
+    // FAIL-OPEN : si clé absente ou erreur → le client repasse en voix navigateur.
+    if (url.pathname === '/__lingua/tts' && request.method === 'GET') {
+      const text = (url.searchParams.get('t') || '').slice(0, 200);
+      const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+      let voice = (url.searchParams.get('v') || 'nova').toLowerCase();
+      if (VOICES.indexOf(voice) < 0) voice = 'nova';
+      if (!text.trim()) return JL({ ok: false, reason: 'no_text' }, 400);
+      const hbuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(voice + ':' + text));
+      const hash = Array.prototype.map.call(new Uint8Array(hbuf), (b) => ('0' + b.toString(16)).slice(-2)).join('');
+      const ckey = 'ltts:' + hash;
+      const audioHdr = Object.assign({ 'content-type': 'audio/mpeg', 'cache-control': 'public, max-age=31536000' }, cors);
+      const cached = await env.ACCOUNTS.get(ckey, 'arrayBuffer');
+      if (cached) return new Response(cached, { status: 200, headers: audioHdr });
+      if (!env.OPEN_AI_API_KEY) return JL({ ok: false, reason: 'tts_absent' }); // fail-open (200) → repli navigateur
+      const rr = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: { 'authorization': 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({ model: 'tts-1', voice: voice, input: text, response_format: 'mp3' }),
+      });
+      if (!rr.ok) return JL({ ok: false, reason: 'tts_err', status: rr.status }); // fail-open (200)
+      const buf = await rr.arrayBuffer();
+      try { await env.ACCOUNTS.put(ckey, buf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* cache best-effort */ }
+      return new Response(buf, { status: 200, headers: audioHdr });
+    }
     return JL({ ok: false, reason: 'bad_route' }, 404);
   } catch (e) {
     return JL({ ok: false, reason: 'error', detail: String((e && e.message) || e).slice(0, 120) }); // fail-open (200)

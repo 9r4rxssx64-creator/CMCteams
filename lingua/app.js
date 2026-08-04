@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.4.0";
+var APP_VER="v2.5.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -36,13 +36,13 @@ function loadS(){
   S.streak=lg("streak",0); S.lastDay=lg("lastDay",null); S.freeze=lg("freeze",0);
   S.dailyXP=lg("dailyXP",0); S.dailyDay=lg("dailyDay",today()); S.goal=lg("goal",30);
   S.prog=lg("prog",{}); S.srs=lg("srs",{});
-  S.sound=lg("sound",true);
+  S.sound=lg("sound",true); S.voice=lg("voice","nova");
   S.league=lg("league",null); S.leagueWeek=lg("leagueWeek",null);
   S.achv=lg("achv",{}); S.words=lg("words",{});        // words[course][key]=true (mots vus)
   S.today=lg("today",{day:today(),xp:0,lessons:0,reviews:0,perfect:0,combo:0});
   S.qClaim=lg("qClaim",{}); S.qDay=lg("qDay",today());
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} }
 
 /* ============ Comptes (CRUD) ============ */
 var AVATARS=["🦊","🐼","🐨","🦁","🐵","🐸","🦄","🐙","🐯","🐧","🐷","🐰","🐻","🐮","🐲","🦖"];
@@ -196,9 +196,33 @@ function makeBank(p,pool){ var toks=p.t.split(" "),ex=sample(allWords(S.course),
   return {kind:"bank",w:{fr:p.fr,t:p.t},prompt:p.fr,answer:p.t,tokens:toks,bank:shuffle(toks.concat(ex))}; }
 
 /* ============ Voix + sons ============ */
-function speak(text){ if(!S.sound)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=COURSES[S.course].ttsLang; u.rate=.9;
-  var base=COURSES[S.course].ttsLang.split("-")[0], vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;}); if(vs[0])u.voice=vs[0];
-  speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+/* Catalogue de voix : 6 voix naturelles (cloud, HD) + la voix du téléphone (hors-ligne). */
+var VOICES=[
+  {id:"nova",   name:"Nova — douce",       cloud:true},
+  {id:"shimmer",name:"Shimmer — claire",   cloud:true},
+  {id:"fable",  name:"Fable — chaleureuse",cloud:true},
+  {id:"alloy",  name:"Alloy — neutre",     cloud:true},
+  {id:"echo",   name:"Echo — posée",       cloud:true},
+  {id:"onyx",   name:"Onyx — grave",       cloud:true},
+  {id:"device", name:"Voix du téléphone (hors-ligne)", cloud:false}
+];
+function _isCloudVoice(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===id) return VOICES[i].cloud; } return false; }
+var _ttsAudio=null;
+function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova";
+  if(_isCloudVoice(vid)){
+    try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} }
+      var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+      a.onerror=function(){ _webSpeak(text); };
+      var p=a.play(); if(p&&p.catch) p.catch(function(){ _webSpeak(text); });
+      return;
+    }catch(e){ _webSpeak(text); return; }
+  }
+  _webSpeak(text);
+}
+function _webSpeak(text){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=COURSES[S.course]?COURSES[S.course].ttsLang:"fr-FR"; u.rate=.92;
+  var base=(u.lang).split("-")[0], vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
+  var best=vs.filter(function(v){return /premium|enhanced|siri|natural/i.test(v.name);})[0] || vs.filter(function(v){return v.localService;})[0] || vs[0];
+  if(best)u.voice=best; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
 var AC=null;
 function tone(freqs,dur){ if(!S.sound)return; try{ AC=AC||new(window.AudioContext||window.webkitAudioContext)(); var o=AC.createOscillator(),g=AC.createGain(); o.connect(g);g.connect(AC.destination);o.type="sine";
   freqs.forEach(function(f,i){ o.frequency.setValueAtTime(f,AC.currentTime+i*0.08); });
@@ -379,6 +403,16 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   var freeze=el("div","freeze-card"); freeze.innerHTML='<div><b>🧊 Gel de série</b><span> — protège 1 jour manqué</span></div><div class="fx">x'+S.freeze+'</div>';
   var fb=el("button","btn-buy"); fb.textContent="Acheter (200 💎)"; fb.onclick=function(){ if(S.gems>=200){ S.gems-=200; S.freeze++; save(); toast("🧊 Gel ajouté !"); render(); } else toast("Pas assez de gemmes 💎"); };
   freeze.appendChild(fb); d.appendChild(freeze);
+  // voix (large choix, testables)
+  var vc=el("div","voice-card");
+  vc.innerHTML='<div class="sec-h">🔊 Voix</div><p class="mini">Choisis ta voix. Touche ▶ pour l\'écouter. Les voix « HD » sont naturelles (en ligne) ; « téléphone » marche hors-ligne.</p>';
+  var sampleWord = S.course ? ((allWords(S.course)[0]||{}).t||"bonjour") : "bonjour";
+  VOICES.forEach(function(v){ var row=el("div","voice-row"+(S.voice===v.id?" sel":""));
+    var lab=el("span","vn"); lab.innerHTML=esc(v.name)+(v.cloud?' <i class="vbadge">HD</i>':''); row.appendChild(lab);
+    var test=el("button","vtest"); test.textContent="▶"; test.title="Écouter"; test.onclick=function(ev){ ev.stopPropagation(); var prev=S.voice; S.voice=v.id; speak(sampleWord); S.voice=prev; };
+    var pick=el("button","vpick"+(S.voice===v.id?" on":"")); pick.textContent=S.voice===v.id?"✓ Choisie":"Choisir"; pick.onclick=function(){ S.voice=v.id; save(); toast("Voix : "+v.name); render(); };
+    row.appendChild(test); row.appendChild(pick); vc.appendChild(row); });
+  d.appendChild(vc);
   // réglages
   var st=el("div","settings");
   st.innerHTML='<label class="row"><span>🔊 Son & voix</span><input type="checkbox" id="setSound" '+(S.sound?"checked":"")+'></label>'+
@@ -432,7 +466,10 @@ function vTranslate(){ var d=el("div","screen");
     paint(); },0);
   return d;
 }
-function speakLang(text,lang){ if(!S.sound)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;}); if(vs[0])u.voice=vs[0]; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+function speakLang(text,lang){ if(!S.sound||!text)return; var vid=S.voice||"nova";
+  if(_isCloudVoice(vid)){ try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); a.onerror=function(){ _webSpeakLang(text,lang); }; var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang); }); return; }catch(e){} }
+  _webSpeakLang(text,lang); }
+function _webSpeakLang(text,lang){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;}); var best=vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
 function dictate(cb){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Dictée non dispo sur ce navigateur"); return; } var r=new SR(); r.lang="fr-FR"; r.onresult=function(e){ cb(e.results[0][0].transcript); }; r.onerror=function(){}; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Dictée indisponible"); } }
 
 /* ============ LEÇON ============ */
