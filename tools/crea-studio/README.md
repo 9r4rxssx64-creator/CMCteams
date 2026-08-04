@@ -34,6 +34,12 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ## 🎬 Ce que tu peux faire
 
+### 🤖 IA (qualité pro) — nouveau
+Branchée sur un **worker serveur sécurisé** (ta clé Replicate reste côté serveur, jamais exposée). Repli automatique sur la version hors-ligne si l'IA n'est pas joignable — **l'app marche toujours**.
+- **🤖 Détourage IA** — isole automatiquement le sujet (personne / objet), fond transparent parfait (bien mieux que la gomme couleur).
+- **🤖 Cartoon IA** — transforme la photo en dessin animé de qualité (vrai style, pas juste posterize).
+- **✨ Améliorer (IA)** — upscale ×2 + netteté + amélioration des visages.
+
 ### 🎬 Pack créateur pro *(le plus viral 2026)*
 - **🎤 Sous-titres karaoké mot-par-mot** (vidéo) — le mot dit est surligné en jaune et agrandi (style TikTok/Hormozi). Styles **Simple / Karaoké / Pop**. Le texte se répartit tout seul sur la durée.
 - **🥁 Zoom automatique sur le rythme** (vidéo) — détecte les temps forts de ta musique et fait un punch-in zoom sur le beat.
@@ -104,12 +110,18 @@ L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné :
 - **v2** : Niveaux, **détourage → transparence confirmée**, dessin, stickers, redimensionnement, **export PNG transparent détecté** — **0 erreur JS**.
 - **v3** : effets tendance (glitch/ciné/bokeh changent bien l'image), **export vidéo viral 9:16 + grain + fondu → MP4 produit** — **0 erreur JS**.
 - **v4** : **texte meme** (encre rendue), **tampon correcteur** (clone), **export vidéo karaoké + zoom sur le beat + 9:16 + musique → MP4** — **0 erreur JS**.
+- **v5** : **IA** — succès (image remplacée) + **repli automatique** vérifiés (worker simulé), overlay de chargement OK — **0 exception JS**.
 - Cohérence domaine : `apps-consistency` **7/7**.
 
 Captures d'écran de preuve générées à chaque test.
 
-## 🔭 Honnêteté & prochaines étapes
-- Les effets **100 % génératifs IA** (squish, morphing, cartoonize « photoréaliste », détourage IA automatique du sujet) **ne sont pas faisables 100 % hors-ligne** sans modèle. Créa Studio en donne des **approximations** solides (cartoonize posterize + contours Sobel, bokeh par masque radial, détourage par couleur, tampon correcteur). Le **vrai détourage IA du sujet** peut être branché en prochaine étape sur un petit worker (on garde le reste hors-ligne).
-- Déjà livré : karaoké, zoom-beat, tampon correcteur, meme. À venir possible : **speed-ramp**, **export GIF**, **calques complets multi-photos**, **détourage IA serveur**.
+## 🤖 Comment marche l'IA (technique)
+- Worker Cloudflare **`kdmc-crea-ai`** (isolé, `services/kdmc-crea-ai/`) qui relaie vers **Replicate** — ta clé `AX_REPLICATE_KEY` est injectée en secret serveur par `deploy-kdmc-crea-ai.yml`, **jamais côté client**.
+- Modèles : détourage `cjwbw/rembg`, cartoon `catacolabs/cartoonify`, upscale `nightmareai/real-esrgan` (résolus à leur dernière version au runtime — faciles à changer si besoin).
+- CORS limité à `*.kd-mc.com` + GitHub Pages + localhost. Le worker rapatrie l'image → le client la reçoit en même origine (pas de canvas « tainté »).
+- **Repli automatique** : réseau/IA KO → l'app applique la version hors-ligne + toast honnête. Zéro blocage.
 
-*Version 4.0.0 — Studio créatif tout-en-un + pack viral + pack créateur pro, pour kd-mc.com (studio.kd-mc.com).*
+## 🔭 Prochaines étapes possibles
+Déjà livré : IA (détourage/cartoon/upscale), karaoké, zoom-beat, tampon correcteur, meme, effets tendance, formats réseaux. À venir si tu veux : **remplacement de fond IA** (mettre un décor), **speed-ramp**, **export GIF**, **calques complets multi-photos**, **cartoon IA sur vidéo**.
+
+*Version 5.0.0 — Studio créatif tout-en-un + pack viral + pack créateur pro + IA serveur, pour kd-mc.com (studio.kd-mc.com).*

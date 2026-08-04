@@ -176,6 +176,12 @@
 
   .hint{font-size:11.5px;color:var(--muted);text-align:center;padding:2px 14px 6px}
   .hint b{color:var(--gold2)}
+  #aiLoad{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+  .ai-card{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:24px 28px;text-align:center;max-width:82vw;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .ai-card .spin{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.14);border-top-color:var(--gold);margin:0 auto 14px;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ai-card #aiMsg{font-weight:700;font-size:14.5px;margin-bottom:3px}
+  .ai-card .sub{font-size:11.5px;color:var(--muted)}
   .stickergrid{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;max-height:120px;overflow-y:auto;justify-content:center}
   .stickergrid button{width:44px;height:44px;border-radius:11px;background:var(--card);border:1px solid var(--line);font-size:24px;display:flex;align-items:center;justify-content:center}
   .stickergrid button:active{transform:scale(.9);background:var(--card2)}
@@ -246,6 +252,7 @@
           <button class="chip" onclick="Photo.resize(1920)"><span class="ic">🖥️</span>1920</button>
           <button class="chip" onclick="Photo.resize(2400)"><span class="ic">⬆️</span>Max</button>
         </div>
+        <div style="padding:6px 14px 0"><button class="bigbtn ghost" onclick="Photo.aiEnhance()">✨ Améliorer (IA) — netteté + résolution ×2</button></div>
         <div class="hint" style="margin-top:6px">📱 Format d'export (réseaux — TikTok / Reels / Insta) :</div>
         <div class="toolrow" id="fmtRatios" style="justify-content:center"></div>
         <div class="toolrow" id="fmtBg" style="justify-content:center">
@@ -263,7 +270,8 @@
           <button class="chip" data-cut="restore"><span class="ic">↩︎</span>Restaurer</button>
         </div>
         <div class="sliders" id="cutoutSliders"></div>
-        <div class="hint">« Gomme magique » : touche une zone → efface la couleur similaire. « Fond auto » : efface le contour. Puis exporte en <b>PNG transparent</b>.</div>
+        <div style="padding:2px 14px"><button class="bigbtn" onclick="Photo.aiCutout()">🤖 Détourage IA — sujet parfait (fond auto)</button></div>
+        <div class="hint">« Détourage IA » = l'intelligence artificielle isole le sujet (personne/objet) automatiquement, qualité pro. Sinon, gomme magique / fond auto en local. Export en <b>PNG transparent</b>.</div>
       </div>
       <div id="photoPaint" class="hidden">
         <div class="toolrow" id="paintTools" style="justify-content:center">
@@ -285,7 +293,8 @@
       <div id="photoCartoon" class="hidden">
         <div class="hint">Transforme ta photo en dessin animé (contours + aplats de couleur).</div>
         <div class="sliders" id="cartoonSliders"></div>
-        <div style="padding:0 14px"><button class="bigbtn" onclick="Photo.cartoonize()">🖍️ Cartooniser</button></div>
+        <div style="padding:0 14px"><button class="bigbtn" onclick="Photo.aiCartoon()">🤖 Cartoon IA — qualité max</button></div>
+        <div style="padding:6px 14px 0"><button class="bigbtn ghost" onclick="Photo.cartoonize()">🖍️ Cartooniser (rapide, hors-ligne)</button></div>
       </div>
       <div id="photoText" class="hidden">
         <div class="textedit"><input id="photoTextInput" placeholder="Ton texte…" maxlength="60"></div>
@@ -416,6 +425,7 @@
 
 <div id="vbadge">v1.0.0</div>
 <div id="toast"></div>
+<div id="aiLoad" class="hidden"><div class="ai-card"><div class="spin"></div><div id="aiMsg">IA en cours…</div><div class="sub">Traitement sur serveur sécurisé — quelques secondes</div></div></div>
 
 <!-- Export sheet -->
 <div class="sheet" id="exportSheet">
@@ -444,7 +454,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v4.0.0';
+var APP_VER='v5.0.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -467,6 +477,11 @@ async function shareOrSave(blob,name,title){
   }
   download(blob,name); return false;
 }
+
+/* ---------- IA (worker Cloudflare → Replicate) ---------- */
+var AI_URL='https://kdmc-crea-ai.9r4rxssx64.workers.dev';
+function aiShow(msg){$('aiMsg').textContent=msg||'IA en cours…';$('aiLoad').classList.remove('hidden');}
+function aiHide(){$('aiLoad').classList.add('hidden');}
 
 /* ---------- navigation studios ---------- */
 var CUR='photo';
@@ -869,6 +884,26 @@ var Photo=(function(){
       b.onclick=function(){exportRatio=rt.id;c.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');toast(rt.id?('Export '+rt.name):'Format original',900);};c.appendChild(b);});
     $('fmtBg').querySelectorAll('[data-bg]').forEach(function(b){b.onclick=function(){exportBg=b.dataset.bg;b.parentNode.querySelectorAll('[data-bg]').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};});
   }
+  function aiRun(kind,okMsg,fallback){
+    if(!loaded){toast('Ouvre une photo d\'abord');return;}
+    var lng=Math.max(srcCanvas.width,srcCanvas.height),ds=Math.min(1024/lng,1);
+    var tmp=document.createElement('canvas');tmp.width=Math.max(1,Math.round(srcCanvas.width*ds));tmp.height=Math.max(1,Math.round(srcCanvas.height*ds));
+    tmp.getContext('2d').drawImage(srcCanvas,0,0,tmp.width,tmp.height);
+    var dataUrl=tmp.toDataURL('image/jpeg',0.9);
+    aiShow('IA en cours… 🤖');
+    function fb(){aiHide();toast('IA indisponible — version rapide appliquée',2200);if(fallback)fallback();}
+    var ctrl,to=setTimeout(function(){if(ctrl)try{ctrl.abort();}catch(e){}},65000);
+    try{ctrl=new AbortController();}catch(e){}
+    fetch(AI_URL+'/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl}),signal:ctrl?ctrl.signal:undefined})
+      .then(function(r){var ct=r.headers.get('content-type')||'';if(!r.ok||ct.indexOf('image')<0){return r.json().then(function(j){throw new Error(j&&j.error||('http_'+r.status));},function(){throw new Error('http_'+r.status);});}return r.blob();})
+      .then(function(blob){var img=new Image();img.onload=function(){clearTimeout(to);
+        srcCanvas.width=img.naturalWidth||img.width;srcCanvas.height=img.naturalHeight||img.height;
+        sctx.clearRect(0,0,srcCanvas.width,srcCanvas.height);sctx.drawImage(img,0,0);
+        snapshotOriginal();adj=defaultAdjust();curPreset='orig';fx='none';fitView();buildSliders();buildFilters();buildTrend();render();
+        aiHide();toast(okMsg+' ✅',1800);URL.revokeObjectURL(img.src);
+      };img.onerror=function(){clearTimeout(to);fb();};img.src=URL.createObjectURL(blob);})
+      .catch(function(){clearTimeout(to);fb();});
+  }
 
   return {
     init:function(){
@@ -939,6 +974,9 @@ var Photo=(function(){
         buildSliders();buildFilters();render();toast('Cartoon appliqué 🖍️',1400);
       },40);
     },
+    aiCutout:function(){aiRun('cutout','Sujet détouré (IA)',function(){autoBg();});},
+    aiCartoon:function(){aiRun('cartoon','Cartoon IA',function(){cartoonize(srcCanvas,sctx,cartoonP);adj=defaultAdjust();buildSliders();buildFilters();render();});},
+    aiEnhance:function(){aiRun('enhance','Image améliorée (IA)',function(){adj.sharpen=Math.max(adj.sharpen||0,45);buildSliders();render();});},
     addText:function(){
       var v=$('photoTextInput').value.trim();if(!v){toast('Écris un texte');return;}
       texts.push({txt:v,color:Photo._tc,size:Photo._ts,x:0.5,y:0.5});
