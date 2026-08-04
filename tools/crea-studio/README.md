@@ -122,12 +122,13 @@ L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné :
 - **v5** : **IA** — succès (image remplacée) + **repli automatique** vérifiés (worker simulé), overlay de chargement OK — **0 exception JS**.
 - **v6** : **Danse IA** — photo → génération async → vidéo affichée + feuille d'export, vérifié bout-en-bout (backend simulé) — **0 exception JS**.
 - **v7** : **danses guidées + choix du modèle + musique** sur la vidéo + **remplacement de fond (couleur/dégradé/flou/image/IA)** — vérifiés (backend simulé) — **0 exception JS**.
+- **v8** : IA déplacée sur **crea-ai.kd-mc.com** (custom_domain, corrige l'« IA indisponible » liée à workers.dev) + **modèle de secours** détourage + **auto-test CI** des vrais modèles.
 - Cohérence domaine : `apps-consistency` **7/7**.
 
 Captures d'écran de preuve générées à chaque test.
 
 ## 🤖 Comment marche l'IA (technique)
-- Worker Cloudflare **`kdmc-crea-ai`** (isolé, `services/kdmc-crea-ai/`) qui relaie vers **Replicate** — ta clé `AX_REPLICATE_KEY` est injectée en secret serveur par `deploy-kdmc-crea-ai.yml`, **jamais côté client**.
+- Worker Cloudflare **`kdmc-crea-ai`** servi sur **`https://crea-ai.kd-mc.com`** (custom_domain = DNS+SSL auto sur ta zone, plus fiable que workers.dev) — relaie vers **Replicate** — ta clé `AX_REPLICATE_KEY` est injectée en secret serveur par `deploy-kdmc-crea-ai.yml`, **jamais côté client**.
 - Modèles : détourage `cjwbw/rembg`, cartoon `catacolabs/cartoonify`, upscale `nightmareai/real-esrgan`, photo→vidéo `minimax/video-01-live` & `video-01`, **fond IA `black-forest-labs/flux-schnell`** (résolus à leur dernière version au runtime — faciles à changer).
 - Endpoints : images `POST /cutout|/cartoon|/enhance` ; fond IA `POST /bg` ; vidéo `POST /animate` (choix `model`) → `GET /job?id=` (async) → `GET /proxy?url=` (enregistrement même-origine).
 - CORS limité à `*.kd-mc.com` + GitHub Pages + localhost. `/proxy` n'accepte que `replicate.delivery`.

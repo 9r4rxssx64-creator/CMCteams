@@ -39,7 +39,8 @@ function json(obj, headers, status) {
 
 /* Modèles Replicate (résolus à leur dernière version au runtime, pas de hash figé). */
 const MODELS = {
-  cutout:  { owner: 'cjwbw',       name: 'rembg',       input: (img) => ({ image: img }) },
+  cutout:  { owner: 'cjwbw',       name: 'rembg',       input: (img) => ({ image: img }),
+             fb: { owner: '851-labs', name: 'background-remover', input: (img) => ({ image: img }) } },
   cartoon: { owner: 'catacolabs',  name: 'cartoonify',  input: (img) => ({ image: img }) },
   enhance: { owner: 'nightmareai', name: 'real-esrgan', input: (img) => ({ image: img, scale: 2, face_enhance: true }) }
 };
@@ -166,7 +167,12 @@ export default {
       const image = body && body.image;
       if (!image || typeof image !== 'string' || image.length > 12 * 1024 * 1024) return json({ error: 'bad_image' }, h, 400);
       const m = MODELS[kind];
-      return await runImageModel(m, m.input(image), token, h);
+      try {
+        return await runImageModel(m, m.input(image), token, h);
+      } catch (e1) {
+        if (m.fb) return await runImageModel(m.fb, m.fb.input(image), token, h); // modèle de secours
+        throw e1;
+      }
     } catch (e) {
       return json({ error: String((e && e.message) || e) }, h, 502);
     }
