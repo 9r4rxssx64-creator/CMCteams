@@ -43,11 +43,14 @@ const MODELS = {
   cartoon: { owner: 'catacolabs',  name: 'cartoonify',  input: (img) => ({ image: img }) },
   enhance: { owner: 'nightmareai', name: 'real-esrgan', input: (img) => ({ image: img, scale: 2, face_enhance: true }) }
 };
-/* Image → vidéo (photo qui « prend vie » / danse) — minimax video-01-live est conçu pour animer une image. */
+/* Image → vidéo (photo qui « prend vie » / danse). Plusieurs modèles au choix. */
+const DEF_MOTION = 'the subject is dancing, funny energetic happy dance, lively motion';
 const I2V = {
-  owner: 'minimax', name: 'video-01-live',
-  input: (img, prompt) => ({ first_frame_image: img, prompt: prompt || 'the subject is dancing, funny energetic happy dance, lively motion' })
+  standard: { owner: 'minimax', name: 'video-01-live', input: (img, p) => ({ first_frame_image: img, prompt: p || DEF_MOTION }) },
+  quality:  { owner: 'minimax', name: 'video-01',      input: (img, p) => ({ first_frame_image: img, prompt: p || DEF_MOTION }) }
 };
+/* Texte → image (fond IA à mettre derrière un sujet détouré). */
+const BG = { owner: 'black-forest-labs', name: 'flux-schnell', input: (prompt, ratio) => ({ prompt: prompt, aspect_ratio: ratio || '1:1', num_outputs: 1, output_format: 'png' }) };
 
 async function latestVersion(owner, name, token) {
   const r = await fetch(`https://api.replicate.com/v1/models/${owner}/${name}`, { headers: { Authorization: `Token ${token}` } });
@@ -73,11 +76,7 @@ function pickOutput(pred) {
   return (out && typeof out === 'string') ? out : null;
 }
 
-/* Sync (images rapides) : crée + attend + renvoie l'URL du résultat. */
-async function runModelSync(kind, image, token) {
-  const m = MODELS[kind];
-  const version = await latestVersion(m.owner, m.name, token);
-  let pred = await createPrediction(version, m.input(image), token);
+async function pollUntilDone(pred, token) {
   const started = Date.now();
   while (pred.status === 'starting' || pred.status === 'processing') {
     if (Date.now() - started > 58000) throw new Error('timeout');
@@ -88,6 +87,16 @@ async function runModelSync(kind, image, token) {
   const out = pickOutput(pred);
   if (!out) throw new Error('no_output');
   return out;
+}
+/* Sync : crée + attend + rapatrie les octets du résultat (image). */
+async function runImageModel(cfg, buildInput, token, h) {
+  const version = await latestVersion(cfg.owner, cfg.name, token);
+  const pred = await createPrediction(version, buildInput, token);
+  const outUrl = await pollUntilDone(pred, token);
+  const img = await fetch(outUrl);
+  if (!img.ok) throw new Error('fetch_out_' + img.status);
+  const ct = img.headers.get('content-type') || 'image/png';
+  return new Response(img.body, { status: 200, headers: Object.assign({ 'content-type': ct, 'cache-control': 'no-store' }, h) });
 }
 
 export default {
@@ -132,9 +141,20 @@ export default {
         const image = body && body.image;
         if (!image || typeof image !== 'string' || image.length > 12 * 1024 * 1024) return json({ error: 'bad_image' }, h, 400);
         const prompt = (body && typeof body.prompt === 'string') ? body.prompt.slice(0, 400) : '';
-        const version = await latestVersion(I2V.owner, I2V.name, token);
-        const pred = await createPrediction(version, I2V.input(image, prompt), token);
+        const cfg = I2V[(body && body.model) || 'standard'] || I2V.standard;
+        const version = await latestVersion(cfg.owner, cfg.name, token);
+        const pred = await createPrediction(version, cfg.input(image, prompt), token);
         return json({ id: pred.id, status: pred.status }, h);
+      } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
+    }
+
+    // --- fond IA (texte → image) ---
+    if (url.pathname === '/bg') {
+      try {
+        const body = await req.json();
+        const prompt = (body && typeof body.prompt === 'string') ? body.prompt.slice(0, 400) : '';
+        if (!prompt) return json({ error: 'no_prompt' }, h, 400);
+        return await runImageModel(BG, BG.input(prompt, body && body.ratio), token, h);
       } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
     }
 
@@ -145,11 +165,8 @@ export default {
       const body = await req.json();
       const image = body && body.image;
       if (!image || typeof image !== 'string' || image.length > 12 * 1024 * 1024) return json({ error: 'bad_image' }, h, 400);
-      const outUrl = await runModelSync(kind, image, token);
-      const img = await fetch(outUrl);
-      if (!img.ok) throw new Error('fetch_out_' + img.status);
-      const ct = img.headers.get('content-type') || 'image/png';
-      return new Response(img.body, { status: 200, headers: Object.assign({ 'content-type': ct, 'cache-control': 'no-store' }, h) });
+      const m = MODELS[kind];
+      return await runImageModel(m, m.input(image), token, h);
     } catch (e) {
       return json({ error: String((e && e.message) || e) }, h, 502);
     }
