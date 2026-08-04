@@ -130,7 +130,7 @@ try {
      (champ nom form_rech_9 + cases naissance/mariage/décès) et on soumet
      Valider('rechercher') — comme un humain — pour chaque nom de famille. */
   const MC_HITS = [];
-  const NAMES = ['MAIFFRET', 'SAUVAIGO', 'DESARZENS', 'VAN DEN BOSCH', 'MOLINARIO', 'VIRGILI'];
+  const NAMES = ['MAIFFRET', 'SAUVAIGO', 'DESARZENS', 'VAN DEN BOSCH', 'MOLINARIO', 'VIRGILI', 'DENTAU'];
   async function monacoSearch(tag, baseUrl) {
     for (const nm of NAMES) {
       const t = tag + '-' + nm.replace(/\s+/g, '_');
@@ -177,7 +177,7 @@ try {
   pwNotes.push('- ❌ Playwright indisponible : ' + e.message.slice(0, 140));
 }
 // lecteur Jina (texte) en secours pour les hôtes qui refusent la connexion directe
-for (const [nm, u] of [['jina-monaco', 'https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/'], ['jina-ad13', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64']]) {
+for (const [nm, u] of [['jina-ad06', 'https://archives06.fr/archives-en-ligne/etat-civil'], ['jina-ad06-home', 'https://archives06.fr/'], ['jina-ad13', 'https://www.archives13.fr/archive/recherche/etatcivil/n:64']]) {
   await probe(nm + '.txt', 'https://r.jina.ai/' + u);
   await sleep(1500);
 }
