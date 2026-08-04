@@ -3652,3 +3652,24 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
   porte les noms des parents = preuve) + `tools/arbre/probe-isoles.mjs` (avis de décès hommages.ch /
   Nice-Matin / Dans Nos Cœurs / Libra Memoria + Journal de Monaco 1935). Viewer Arkothèque =
   `ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=BASE64')` dans le href.
+
+### Suite 2026-08-04 (soir) — v2.41→v2.47 : actes LUS, branche Monaco raccordée, actes DANS les fiches
+
+- **4 vagues robot CI** (arbre-actes-images.yml) : 100+ images d'actes/registres Monaco téléchargées
+  (pleine résolution img_prot.php). Pièges vaincus : champ nom form_rech_12, href <1900 déjà absolu,
+  MUR DE LICENCE <1900 (« J'accepte » cliqué par le robot), push CI avec rebase-retry.
+- **12 actes lus lettre à lettre** → branche MAIFFRET Monaco PROUVÉE 4 générations (Jérôme×ORSELLI →
+  Philippe×CARLIN → Emmanuel×CIAIS, François-Louis×FRACCHIA, Julie×DANIEL → Pauline/Paula/François
+  ×MATHIEU) ; SAUVAIGO Monaco 2 familles niçoises (Joseph×BOUFFA : François-Arnulphe 1857 +
+  Barthélemi 1860 ; Louis-Étienne fils de Dominique ×THIBAUD : Jacques-Adolphe 1860) ; DENTAU
+  (Jules×Claire RAINAUT) ; MOLINARIO (Jacques×BERTHOLDO).
+- **v2.43 : actes VISIBLES dans les fiches** (champ actes:[{label,img}], vignettes + visionneuse
+  plein écran zoom ＋/－, images servies par le même site depuis arbre/research/) — 18+ fiches équipées.
+- **Théo BRUNO** (fils de Sabrina) + **Stephan BRUNO** père, DIVORCÉ de Sabrina (étiquette
+  ex-conjoint, registre DIVORCED) + couleur famille BRUNO #a3403a.
+- **Pistes INSEE intégrées** : Emmanuel Joseph MAIFFRET (n. Beausoleil 6.01.1909, †1994 —
+  4ᵉ enfant probable), Henry Emmanuel (n. Nice 1936, †2022 — génération Myriam).
+- **actes-verif.mjs** → ACTES-VERIF.md (76 personnes, statut naissance+décès+action).
+- Restent isolés (0 invention) : Myriam (acte 1935 verrouillé), Claude DE SARZENS, Jean-Marius
+  SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
+  DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.
