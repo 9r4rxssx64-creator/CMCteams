@@ -30,8 +30,12 @@ import { PAGE_HTML } from './page.js';
 
 const FB_URL = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app';
 const LOG_PATH = 'kdmc_access/events';
-const MAX_EVENTS_READ = 4000;        // fenêtre d'agrégation
 const ONLINE_MS = 5 * 60 * 1000;     // « en ligne » = vu il y a < 5 min
+const RETENTION_DAYS = 120;          // rétention (RGPD : minimisation) — purge auto des jours plus vieux
+// Stockage par JOUR : /kdmc_access/events/<YYYY-MM-DD>/<pushid>. Évite l'index RTDB
+// (orderBy REST exige .indexOn, absent sur ce chemin deny) ET permet la purge par
+// bucket-jour. Lecture = GET du nœud complet (borné par la rétention), tri en mémoire.
+const day = () => new Date().toISOString().slice(0, 10);
 
 // Allowlist CORS pour /log (les apps de Kevin uniquement).
 const ORIGIN_OK = [
@@ -109,6 +113,26 @@ async function getAccessToken(env) {
 
 function clip(v, n) { return v == null ? '' : String(v).slice(0, n); }
 
+// Purge auto (RGPD minimisation) : ~1 log sur 40 supprime les buckets-jour trop vieux.
+let _pruneN = 0;
+async function maybePrune(env, token) {
+  _pruneN++;
+  if (_pruneN % 40 !== 1) return;
+  try {
+    const r = await fetch(`${FB_URL}/${LOG_PATH}.json?shallow=true&access_token=${encodeURIComponent(token)}`);
+    const days = await r.json();
+    if (!days || typeof days !== 'object') return;
+    const cutoff = new Date(Date.now() - RETENTION_DAYS * 86400000).toISOString().slice(0, 10);
+    const patch = {};
+    for (const d of Object.keys(days)) if (d < cutoff) patch[d] = null; // YYYY-MM-DD → comparaison lexicographique = chronologique
+    if (Object.keys(patch).length) {
+      await fetch(`${FB_URL}/${LOG_PATH}.json?access_token=${encodeURIComponent(token)}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch),
+      });
+    }
+  } catch (_) { /* fail-open */ }
+}
+
 // ── POST /log : append d'un évènement (fail-open) ──
 async function handleLog(request, env, origin) {
   let body;
@@ -129,9 +153,10 @@ async function handleLog(request, env, origin) {
   const token = await getAccessToken(env);
   if (!token) return new Response(null, { status: 204, headers: corsHeaders(origin) }); // fail-open
   try {
-    await fetch(`${FB_URL}/${LOG_PATH}.json?access_token=${encodeURIComponent(token)}`, {
+    await fetch(`${FB_URL}/${LOG_PATH}/${day()}.json?access_token=${encodeURIComponent(token)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ev),
     });
+    await maybePrune(env, token);
   } catch (_) { /* fail-open : ne jamais bloquer l'app appelante */ }
   return new Response(null, { status: 204, headers: corsHeaders(origin) });
 }
@@ -146,10 +171,17 @@ async function handleHistory(request, env, origin) {
   if (!token) return json({ ok: false, error: 'fb_unavailable' }, 503, origin);
   let raw;
   try {
-    const r = await fetch(`${FB_URL}/${LOG_PATH}.json?access_token=${encodeURIComponent(token)}&orderBy=%22ts%22&limitToLast=${MAX_EVENTS_READ}`);
+    // Pas d'orderBy (exigerait un index RTDB, absent sur ce chemin) : on lit le nœud
+    // complet (borné par la rétention) et on aplatit les buckets-jour.
+    const r = await fetch(`${FB_URL}/${LOG_PATH}.json?access_token=${encodeURIComponent(token)}`);
     raw = await r.json();
   } catch (e) { return json({ ok: false, error: 'fb_read_failed', detail: String(e && e.message || e) }, 502, origin); }
-  const events = raw && typeof raw === 'object' ? Object.values(raw) : [];
+  const events = [];
+  if (raw && typeof raw === 'object') {
+    for (const dayNode of Object.values(raw)) {
+      if (dayNode && typeof dayNode === 'object') for (const ev of Object.values(dayNode)) if (ev && typeof ev === 'object' && ev.ts) events.push(ev);
+    }
+  }
   const now = Date.now();
   const people = {};
   for (const e of events) {
