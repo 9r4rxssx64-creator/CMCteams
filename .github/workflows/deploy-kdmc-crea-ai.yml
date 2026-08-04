@@ -45,7 +45,32 @@ jobs:
           set -e
           wrangler deploy 2>&1 | tee deploy.log
 
-      - name: Injecte la clé Replicate (depuis AX_REPLICATE_KEY)
+      # IA GRATUITE EN PREMIER (Gemini 2.5 Flash Image + Together FLUX-Free).
+      # Ces clés existent déjà dans les secrets de Kevin → aucune carte, aucun crédit.
+      - name: Injecte les clés IA GRATUITES (Gemini + Together)
+        working-directory: services/kdmc-crea-ai
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          TOGETHER_KEY: ${{ secrets.TOGETHER_API_KEY }}
+        run: |
+          if [ -n "${GEMINI_KEY:-}" ]; then
+            printf '%s' "$GEMINI_KEY" | wrangler secret put GEMINI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GEMINI_API_KEY non posée"
+          elif [ -n "${GOOGLE_KEY:-}" ]; then
+            printf '%s' "$GOOGLE_KEY" | wrangler secret put GEMINI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GOOGLE_API_KEY non posée"
+          else
+            echo "::warning::Ni GEMINI_API_KEY ni GOOGLE_API_KEY → l'IA gratuite est indisponible."
+          fi
+          if [ -n "${TOGETHER_KEY:-}" ]; then
+            printf '%s' "$TOGETHER_KEY" | wrangler secret put TOGETHER_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::TOGETHER_API_KEY non posée (repli gratuit texte→image absent)"
+          fi
+
+      - name: Injecte la clé Replicate (SECOURS payant, depuis AX_REPLICATE_KEY)
         working-directory: services/kdmc-crea-ai
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -54,9 +79,9 @@ jobs:
         run: |
           if [ -n "${REPLICATE_KEY:-}" ]; then
             printf '%s' "$REPLICATE_KEY" | wrangler secret put REPLICATE_API_TOKEN 2>&1 | tail -3 \
-              || echo "::warning::clé Replicate non posée (les fonctions IA renverront not_configured → l'app bascule sur le mode hors-ligne)"
+              || echo "::warning::clé Replicate non posée (secours payant absent — l'IA gratuite reste active)"
           else
-            echo "::warning::AX_REPLICATE_KEY absent → IA désactivée côté worker (l'app garde ses versions hors-ligne)."
+            echo "::warning::AX_REPLICATE_KEY absent → secours payant désactivé (l'IA gratuite reste active)."
           fi
 
       - name: Smoke /health (custom domain + workers.dev, avec attente propagation)
@@ -75,20 +100,71 @@ jobs:
           if [ -z "$ok" ]; then echo "::warning::/health pas encore OK (propagation DNS/SSL du custom domain peut prendre quelques minutes)"; else echo "HEALTH OK via $ok"; fi
           echo "HEALTH_BASE=$ok" >> "$GITHUB_ENV"
 
-      - name: Auto-test IA approfondi (optionnel — appelle les vrais modèles)
+      - name: Auto-test IA approfondi (appelle réellement les modèles gratuits)
         if: ${{ inputs.selftest == true }}
         run: |
           set +e
           BASE="${HEALTH_BASE:-https://crea-ai.kd-mc.com}"
           echo "== Base testée : $BASE =="
-          # 1x1 png rouge en base64
-          PNG="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-          echo "----- /cutout -----"
-          curl -sS -m 120 -X POST "$BASE/cutout" -H 'content-type: application/json' \
-            -d "{\"image\":\"$PNG\"}" -o /tmp/out.bin -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
-          head -c 300 /tmp/out.bin | tr -d '\0'; echo
-          echo "----- /bg -----"
-          curl -sS -m 120 -X POST "$BASE/bg" -H 'content-type: application/json' \
-            -d '{"prompt":"a blue sky, minimal","ratio":"1:1"}' -o /tmp/bg.bin -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
-          head -c 300 /tmp/bg.bin | tr -d '\0'; echo
-          echo "== Fin auto-test (une réponse image = OK ; un JSON error = cause exacte ci-dessus) =="
+          echo "----- /health (quelles IA sont dispo) -----"
+          curl -sS -m 20 "$BASE/health"; echo
+          # Vraie image de test 96x96 (sujet clair sur fond uni) — un pixel 1x1 ne prouve rien.
+          python3 - <<'PY' > /tmp/img.txt
+          import zlib, struct, base64
+          W=H=96
+          rows=b''
+          for y in range(H):
+              row=b'\x00'
+              for x in range(W):
+                  dx,dy=x-W/2,y-H/2
+                  inside = dx*dx+dy*dy < (W*0.3)**2
+                  row += bytes((230,80,60) if inside else (30,90,200))
+              rows+=row
+          def chunk(t,d):
+              c=struct.pack('>I',len(d))+t+d
+              return c+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
+          png=(b'\x89PNG\r\n\x1a\n'
+               +chunk(b'IHDR',struct.pack('>IIBBBBB',W,H,8,2,0,0,0))
+               +chunk(b'IDAT',zlib.compress(rows,9))
+               +chunk(b'IEND',b''))
+          print('data:image/png;base64,'+base64.b64encode(png).decode())
+          PY
+          PNG=$(cat /tmp/img.txt)
+          echo "image de test : ${#PNG} caractères"
+          for EP in cutout cartoon; do
+            echo "----- /$EP -----"
+            curl -sS -m 150 -X POST "$BASE/$EP" -H 'content-type: application/json' \
+              -d "{\"image\":\"$PNG\"}" -o /tmp/out.bin -D /tmp/out.hdr \
+              -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
+            grep -i "^x-crea-provider" /tmp/out.hdr 2>/dev/null || true
+            case "$(file -b --mime-type /tmp/out.bin 2>/dev/null)" in
+              image/*) echo "  ✅ IMAGE reçue → l'IA fonctionne";;
+              *) echo "  ❌ pas une image :"; head -c 400 /tmp/out.bin | tr -d '\0'; echo;;
+            esac
+          done
+          echo "----- /bg (texte → image) -----"
+          curl -sS -m 150 -X POST "$BASE/bg" -H 'content-type: application/json' \
+            -d '{"prompt":"a calm blue sky with soft clouds","ratio":"1:1"}' -o /tmp/bg.bin -D /tmp/bg.hdr \
+            -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
+          grep -i "^x-crea-provider" /tmp/bg.hdr 2>/dev/null || true
+          case "$(file -b --mime-type /tmp/bg.bin 2>/dev/null)" in
+            image/*) echo "  ✅ IMAGE reçue → fond IA gratuit fonctionne";;
+            *) echo "  ❌ pas une image :"; head -c 400 /tmp/bg.bin | tr -d '\0'; echo;;
+          esac
+          echo "----- /frames (photo → poses de danse, GRATUIT) -----"
+          curl -sS -m 220 -X POST "$BASE/frames" -H 'content-type: application/json' \
+            -d "{\"image\":\"$PNG\",\"n\":2}" -o /tmp/fr.json \
+            -w "HTTP %{http_code} | size=%{size_download}\n"
+          python3 - <<'PY'
+          import json
+          try:
+              d=json.load(open('/tmp/fr.json'))
+          except Exception as e:
+              print('  ❌ réponse illisible:',e); raise SystemExit
+          if d.get('frames'):
+              print('  ✅ %d pose(s) générée(s) par %s → photo→vidéo GRATUITE OK'%(len(d['frames']),d.get('provider')))
+              if d.get('errors'): print('  (erreurs partielles:',d['errors'],')')
+          else:
+              print('  ❌ pas de poses — cause exacte:',str(d)[:400])
+          PY
+          echo "== Fin auto-test =="

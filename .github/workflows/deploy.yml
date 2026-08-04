@@ -4,6 +4,19 @@ on:
   push:
     branches:
       - main
+    # Ne déclencher que sur ce qui change VRAIMENT le site publié.
+    # Vécu 2026-08-04 : chaque push main lançait un déploiement complet ; avec des
+    # merges toutes les ~1 min et une attente de machine de plusieurs minutes, chaque
+    # déploiement en attente était remplacé par le suivant → AUCUN n'arrivait à
+    # démarrer, donc plus rien n'était publié (page figée sur une vieille version).
+    # Ces chemins ne font pas partie du site → inutile de republier pour eux.
+    paths-ignore:
+      - '.github/**'
+      - 'services/**'
+      - 'tests/**'
+      - 'tools/memory/**'
+      - 'audit/**'
+      - '**/*.md'
   workflow_dispatch:
 
 permissions:
@@ -13,7 +26,12 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # NE PAS annuler un déploiement en cours (recommandation GitHub Pages).
+  # Vécu 2026-08-04 : avec cancel-in-progress:true, une série de merges rapprochés
+  # annulait CHAQUE déploiement avant publication (5 runs "cancelled" d'affilée)
+  # → plus rien n'était publié sur kd-mc.com et les nouveautés restaient invisibles.
+  # En file d'attente, chaque run publie et le dernier gagne. Ne pas remettre true.
+  cancel-in-progress: false
 
 jobs:
   deploy:

@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.280",
+  "softwareVersion": "v1.1.281",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,7 +458,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.280';
+const __APEX_CHAT_VERSION__ = 'v1.1.281';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.280</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.281</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -1095,10 +1095,28 @@ K._grantPerms = async function(){
   try{ if(typeof toast === 'function') toast('✅ Autorisations enregistrées', 'ok', 1500); }catch(_){}
 };
 
+/* v1.1.281 — Journal unifié domaine « qui se connecte » (worker kdmc-access).
+   Fail-open, throttlé : n'affecte JAMAIS l'app. Métadonnées seulement. */
+K._accessSeen = {};
+K._accessLog = function(event, meta){
+  try{
+    var u = K.user; if(!u || !u.id) return;
+    var k = String(event||''); var t = Date.now();
+    if(K._accessSeen[k] && t - K._accessSeen[k] < 5000) return;
+    K._accessSeen[k] = t;
+    var ua = navigator.userAgent || '';
+    var dev = /iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':/Android/.test(ua)?'Android':/Macintosh|Mac OS X/.test(ua)?'Mac':/Windows/.test(ua)?'PC Windows':/Linux/.test(ua)?'Linux':'Autre';
+    var name = u.real_name || u.display_name || u.pseudo || ((u.first_name||'')+' '+(u.last_name||'')).trim() || u.name || '';
+    fetch('https://admin.kd-mc.com/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app:'apex-chat',uid:u.id,name:name,event:k,device:dev,tier:(u.is_admin?'admin':'client'),meta:meta||undefined}),keepalive:true,mode:'cors'}).catch(function(){});
+  }catch(_){}
+};
+try{ document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') K._accessLog('ouvre'); }); }catch(_){}
+
 K.login = async function(user, token){
   K.user = user;
   K.token = token;
   ls('user', user);
+  try{ K._accessLog('connexion'); }catch(_){}
   ls('token', token);
   // Enregistrement auto dans le domaine kd-mc.com (compte unique transverse).
   // Additif + fail-open : si le domaine SSO n'est pas joignable, la connexion de
@@ -15788,6 +15806,7 @@ async function _boot(){
   // au lieu de redemander une connexion complète.
   if(user && (token || user.phone)){
     K.user = user; K.token = token || null;
+    try{ K._accessLog && K._accessLog('connexion'); }catch(_){}
     if(isKevinAdmin(user.real_name || user.pseudo)){
       K.user.is_admin = true;
       $('#bnav-admin').classList.remove('h');
