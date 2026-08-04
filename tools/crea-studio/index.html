@@ -271,7 +271,16 @@
         </div>
         <div class="sliders" id="cutoutSliders"></div>
         <div style="padding:2px 14px"><button class="bigbtn" onclick="Photo.aiCutout()">🤖 Détourage IA — sujet parfait (fond auto)</button></div>
-        <div class="hint">« Détourage IA » = l'intelligence artificielle isole le sujet (personne/objet) automatiquement, qualité pro. Sinon, gomme magique / fond auto en local. Export en <b>PNG transparent</b>.</div>
+        <div class="hint">« Détourage IA » = l'IA isole le sujet automatiquement. Sinon, gomme magique / fond auto en local. Export en <b>PNG transparent</b>.</div>
+        <div class="hint" style="margin-top:4px">🌆 Remplacer le fond (après avoir détouré) :</div>
+        <div class="palette" id="bgColors"></div>
+        <div class="toolrow" id="bgTools" style="justify-content:center">
+          <button class="chip" data-bg="gradient"><span class="ic">🌈</span>Dégradé</button>
+          <button class="chip" data-bg="blur"><span class="ic">🫧</span>Flou d'origine</button>
+          <button class="chip" onclick="Photo.bgImage()"><span class="ic">🖼️</span>Ton image</button>
+        </div>
+        <div class="textedit"><input id="bgPrompt" placeholder="Fond IA : décris le décor (ex: plage coucher de soleil)" maxlength="100"></div>
+        <div style="padding:0 14px 4px"><button class="bigbtn ghost" onclick="Photo.aiBg()">🤖 Générer le fond (IA)</button></div>
       </div>
       <div id="photoPaint" class="hidden">
         <div class="toolrow" id="paintTools" style="justify-content:center">
@@ -428,9 +437,14 @@
       <video class="viewer hidden" id="aividVideo" playsinline webkit-playsinline controls loop></video>
     </div>
     <div class="panel hidden" id="aividPanel">
-      <div class="hint">Choisis une ambiance (tu peux préciser en texte) :</div>
+      <div class="hint">Choisis un pas de danse / une ambiance :</div>
       <div class="toolrow" id="aivibes"></div>
-      <div class="textedit"><input id="aiPrompt" placeholder="Optionnel : précise (ex: danse hip-hop, saut de joie…)" maxlength="120"></div>
+      <div class="hint">Qualité du modèle IA :</div>
+      <div class="toolrow" id="aiModels" style="justify-content:center">
+        <button class="chip on" data-model="standard"><span class="ic">⚡</span>Standard</button>
+        <button class="chip" data-model="quality"><span class="ic">💎</span>Qualité max</button>
+      </div>
+      <div class="textedit"><input id="aiPrompt" placeholder="Optionnel : précise (ex: danse hip-hop…)" maxlength="120"></div>
       <div style="padding:2px 14px"><button class="bigbtn" id="aiGenBtn" onclick="AiVid.generate()">🪄 Générer la vidéo</button></div>
       <div class="hint" id="aiVidHint">⏱️ La génération prend ~1 à 3 minutes. Tu peux attendre sur cet écran.</div>
     </div>
@@ -472,6 +486,8 @@
 <input type="file" id="fileOverlay" accept="image/*" class="hidden">
 <input type="file" id="fileAiPhoto" accept="image/*" class="hidden">
 <input type="file" id="fileAiPhotoCam" accept="image/*" capture="user" class="hidden">
+<input type="file" id="fileAiMusic" accept="audio/*" class="hidden">
+<input type="file" id="fileBg" accept="image/*" class="hidden">
 
 <script>
 /* ============================================================
@@ -479,7 +495,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v6.0.0';
+var APP_VER='v8.0.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -504,7 +520,7 @@ async function shareOrSave(blob,name,title){
 }
 
 /* ---------- IA (worker Cloudflare → Replicate) ---------- */
-var AI_URL=(window.CREA_AI_URL||localStorage.getItem('crea_ai_url')||'https://kdmc-crea-ai.9r4rxssx64.workers.dev').replace(/\/$/,'');
+var AI_URL=(window.CREA_AI_URL||localStorage.getItem('crea_ai_url')||'https://crea-ai.kd-mc.com').replace(/\/$/,'');
 function aiShow(msg){$('aiMsg').textContent=msg||'IA en cours…';$('aiLoad').classList.remove('hidden');}
 function aiHide(){$('aiLoad').classList.add('hidden');}
 
@@ -888,6 +904,8 @@ var Photo=(function(){
   function buildCutout(){
     $('cutoutTools').querySelectorAll('[data-cut]').forEach(function(b){b.onclick=function(){curCut=b.dataset.cut;setBrush(b.dataset.cut);b.parentNode.querySelectorAll('[data-cut]').forEach(function(x){x.classList.remove('on')});b.classList.add('on');if(b.dataset.cut==='auto'){toast('Détourage du fond…',700);setTimeout(function(){autoBg();toast('Fond détouré 🪄',1200);},30);}};});
     var c=$('cutoutSliders');c.innerHTML='';var w=document.createElement('div');w.className='sld';w.innerHTML='<label>Tolérance / Taille <b id="cutv">'+cutTol+'</b></label>';var r=document.createElement('input');r.type='range';r.min=8;r.max=120;r.value=cutTol;r.oninput=function(){cutTol=+r.value;brushSize=Math.max(10,cutTol/2);$('cutv').textContent=cutTol;};w.appendChild(r);c.appendChild(w);
+    buildPalette($('bgColors'),'#5b9dff',function(col){setBgColor(col);});
+    $('bgTools').querySelectorAll('[data-bg]').forEach(function(b){b.onclick=function(){if(b.dataset.bg==='gradient')setBgGradient();else if(b.dataset.bg==='blur')setBgBlur();};});
   }
   function buildPaint(){
     buildPalette($('paintColors'),brushColor,function(col){brushColor=col;});
@@ -911,6 +929,16 @@ var Photo=(function(){
       b.onclick=function(){exportRatio=rt.id;c.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');toast(rt.id?('Export '+rt.name):'Format original',900);};c.appendChild(b);});
     $('fmtBg').querySelectorAll('[data-bg]').forEach(function(b){b.onclick=function(){exportBg=b.dataset.bg;b.parentNode.querySelectorAll('[data-bg]').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};});
   }
+  function compositeBg(drawBg){
+    if(!loaded)return;var w=srcCanvas.width,h=srcCanvas.height;
+    var tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;var tx=tmp.getContext('2d');
+    drawBg(tx,w,h);tx.drawImage(srcCanvas,0,0);
+    sctx.clearRect(0,0,w,h);sctx.drawImage(tmp,0,0);snapshotOriginal();buildFilters();render();
+  }
+  function setBgColor(col){compositeBg(function(tx,w,h){tx.fillStyle=col;tx.fillRect(0,0,w,h);});toast('Fond appliqué',1000);}
+  function setBgGradient(){compositeBg(function(tx,w,h){var g=tx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#5b9dff');g.addColorStop(.5,'#a06bff');g.addColorStop(1,'#ff6ea9');tx.fillStyle=g;tx.fillRect(0,0,w,h);});toast('Fond dégradé',1000);}
+  function setBgBlur(){compositeBg(function(tx,w,h){var cs=Math.max(w/originalCanvas.width,h/originalCanvas.height);tx.filter='blur('+Math.round(Math.max(w,h)*0.04)+'px)';tx.drawImage(originalCanvas,(w-originalCanvas.width*cs)/2,(h-originalCanvas.height*cs)/2,originalCanvas.width*cs,originalCanvas.height*cs);tx.filter='none';});toast('Fond flou',1000);}
+  function setBgImage(imgEl){compositeBg(function(tx,w,h){var cs=Math.max(w/imgEl.width,h/imgEl.height);tx.drawImage(imgEl,(w-imgEl.width*cs)/2,(h-imgEl.height*cs)/2,imgEl.width*cs,imgEl.height*cs);});toast('Fond remplacé',1200);}
   function aiRun(kind,okMsg,fallback){
     if(!loaded){toast('Ouvre une photo d\'abord');return;}
     var lng=Math.max(srcCanvas.width,srcCanvas.height),ds=Math.min(1024/lng,1);
@@ -1004,6 +1032,17 @@ var Photo=(function(){
     aiCutout:function(){aiRun('cutout','Sujet détouré (IA)',function(){autoBg();});},
     aiCartoon:function(){aiRun('cartoon','Cartoon IA',function(){cartoonize(srcCanvas,sctx,cartoonP);adj=defaultAdjust();buildSliders();buildFilters();render();});},
     aiEnhance:function(){aiRun('enhance','Image améliorée (IA)',function(){adj.sharpen=Math.max(adj.sharpen||0,45);buildSliders();render();});},
+    bgImage:function(){$('fileBg').click();},
+    _loadBg:function(file){var im=new Image();im.onload=function(){setBgImage(im);URL.revokeObjectURL(im.src);};im.src=URL.createObjectURL(file);},
+    aiBg:function(){
+      if(!loaded){toast('Ouvre une photo d\'abord');return;}
+      var p=$('bgPrompt').value.trim();if(!p){toast('Décris le décor voulu');return;}
+      aiShow('Création du fond IA… 🌆');
+      fetch(AI_URL+'/bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p,ratio:(srcCanvas.width>=srcCanvas.height?'16:9':'9:16')})})
+        .then(function(r){var ct=r.headers.get('content-type')||'';if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||'http');});return r.blob();})
+        .then(function(b){var im=new Image();im.onload=function(){aiHide();setBgImage(im);toast('Fond IA appliqué 🌆',1600);URL.revokeObjectURL(im.src);};im.onerror=function(){aiHide();toast('Fond illisible');};im.src=URL.createObjectURL(b);})
+        .catch(function(){aiHide();toast('Fond IA indisponible — réessaie',2200);});
+    },
     addText:function(){
       var v=$('photoTextInput').value.trim();if(!v){toast('Écris un texte');return;}
       texts.push({txt:v,color:Photo._tc,size:Photo._ts,x:0.5,y:0.5});
@@ -1635,16 +1674,21 @@ var Anim=(function(){
    ========================================================= */
 var AiVid=(function(){
   var img=$('aividPhoto'),vid=$('aividVideo');
-  var photoData=null,vibe='dance',pollT=null,startTs=0,out=null,busy=false;
+  var photoData=null,vibe='dance',model='standard',pollT=null,startTs=0,out=null,busy=false,pendingVUrl=null;
   var VIBES=[
-    {id:'dance',emoji:'🕺',label:'Danse',prompt:'the subject is dancing, funny happy energetic dance, lively motion, trending tiktok style'},
-    {id:'jump',emoji:'🤾',label:'Saut de joie',prompt:'the subject jumping for joy and celebrating, excited and funny'},
-    {id:'funny',emoji:'🤪',label:'Rigolo',prompt:'the subject making funny exaggerated comedic movements, goofy and hilarious'},
-    {id:'wave',emoji:'👋',label:'Coucou',prompt:'the subject waving hello and smiling warmly at the camera'},
+    {id:'dance',emoji:'🕺',label:'Danse',prompt:'dancing happily, funny energetic full-body dance, lively motion, trending tiktok style'},
+    {id:'floss',emoji:'🌀',label:'Floss',prompt:'doing the floss dance, arms swinging quickly side to side, funny'},
+    {id:'robot',emoji:'🤖',label:'Robot',prompt:'doing the robot dance, stiff mechanical funny movements'},
+    {id:'moonwalk',emoji:'🌙',label:'Moonwalk',prompt:'doing a smooth moonwalk, gliding backwards like Michael Jackson'},
+    {id:'gangnam',emoji:'🐎',label:'Gangnam',prompt:'doing the gangnam style horse dance, funny bouncing'},
+    {id:'break',emoji:'💥',label:'Break',prompt:'breakdancing energetically with dynamic funny moves'},
+    {id:'jump',emoji:'🤾',label:'Saut de joie',prompt:'jumping for joy and celebrating, excited and funny'},
+    {id:'wave',emoji:'👋',label:'Coucou',prompt:'waving hello and smiling warmly at the camera'},
     {id:'cine',emoji:'🎬',label:'Ciné',prompt:'subtle cinematic motion, hair and clothes gently moving, alive portrait'}
   ];
   function hint(t){var el=$('aiVidHint');if(el)el.textContent=t;}
-  function buildVibes(){var c=$('aivibes');c.innerHTML='';VIBES.forEach(function(v){var b=document.createElement('button');b.className='chip'+(v.id===vibe?' on':'');b.innerHTML='<span class="ic">'+v.emoji+'</span>'+v.label;b.onclick=function(){vibe=v.id;c.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};c.appendChild(b);});}
+  function buildVibes(){var c=$('aivibes');c.innerHTML='';VIBES.forEach(function(v){var b=document.createElement('button');b.className='chip'+(v.id===vibe?' on':'');b.innerHTML='<span class="ic">'+v.emoji+'</span>'+v.label;b.onclick=function(){vibe=v.id;c.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};c.appendChild(b);});
+    $('aiModels').querySelectorAll('[data-model]').forEach(function(b){b.onclick=function(){model=b.dataset.model;b.parentNode.querySelectorAll('[data-model]').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};});}
   function loadPhoto(file){var im=new Image();im.onload=function(){
       var MAX=1024,sc=Math.min(MAX/im.width,MAX/im.height,1);var c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));c.getContext('2d').drawImage(im,0,0,c.width,c.height);
       photoData=c.toDataURL('image/jpeg',0.9);out=null;
@@ -1660,7 +1704,7 @@ var AiVid=(function(){
     var prompt=(v?v.prompt:'')+(extra?(', '+extra):'');
     busy=true;out=null;$('aiGenBtn').disabled=true;startTs=Date.now();hint('⏳ Génération lancée…');
     img.classList.remove('hidden');vid.classList.add('hidden');
-    fetch(AI_URL+'/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,prompt:prompt})})
+    fetch(AI_URL+'/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,prompt:prompt,model:model})})
       .then(function(r){return r.json();})
       .then(function(j){if(j.error||!j.id)throw new Error(j.error||'no_id');poll(j.id);})
       .catch(fail);
@@ -1677,21 +1721,43 @@ var AiVid=(function(){
   }
   function done(url){busy=false;out=url;$('aiGenBtn').disabled=false;hint('✅ Vidéo prête ! Appuie sur Exporter pour l\'enregistrer.');
     img.classList.add('hidden');vid.src=url;vid.classList.remove('hidden');vid.muted=true;vid.play().catch(function(){});toast('Vidéo prête 🎉',2200);
-    openExport('Vidéo IA prête 🎉','Ta photo a pris vie ! Enregistre-la ou regénère.',[
+    openExport('Vidéo IA prête 🎉','Ta photo a pris vie ! Ajoute une musique, enregistre ou regénère.',[
       {label:'📤 Enregistrer / Partager',fn:function(){save(url);}},
+      {label:'🎵 Ajouter une musique',ghost:true,fn:function(){closeSheet();addMusic(url);}},
       {label:'🔁 Regénérer',ghost:true,fn:function(){closeSheet();generate();}}
     ]);
   }
   function save(u){aiShow('Préparation de la vidéo…');fetch(AI_URL+'/proxy?url='+encodeURIComponent(u)).then(function(r){return r.blob();}).then(function(b){aiHide();shareOrSave(b,'danse-ia.mp4','Ma vidéo IA');closeSheet();}).catch(function(){aiHide();window.open(u,'_blank');closeSheet();});}
+  function addMusic(u){aiShow('Préparation de la vidéo… 🎵');
+    fetch(AI_URL+'/proxy?url='+encodeURIComponent(u)).then(function(r){return r.blob();}).then(function(b){aiHide();if(pendingVUrl)URL.revokeObjectURL(pendingVUrl);pendingVUrl=URL.createObjectURL(b);$('fileAiMusic').click();}).catch(function(){aiHide();toast('Impossible de préparer la vidéo');});}
+  function muxMusic(audioFile){
+    if(!pendingVUrl){toast('Génère d\'abord une vidéo');return;}
+    var v=document.createElement('video');v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.src=pendingVUrl;
+    v.onloadedmetadata=function(){
+      var w=v.videoWidth||720,hh=v.videoHeight||1280;var cv=document.createElement('canvas');cv.width=w;cv.height=hh;var cx=cv.getContext('2d');
+      var mime=pickVideoMime();var stream=cv.captureStream(30);var ended=false;
+      var ac,aud;try{ac=new(window.AudioContext||window.webkitAudioContext)();var dest=ac.createMediaStreamDestination();aud=new Audio(URL.createObjectURL(audioFile));aud.loop=true;var sn=ac.createMediaElementSource(aud);var g=ac.createGain();g.gain.value=0.9;sn.connect(g);g.connect(dest);dest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});}catch(e){}
+      var rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:6000000}:undefined);var chunks=[];rec.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
+      rec.onstop=function(){try{if(ac)ac.close();}catch(e){}try{if(aud)aud.pause();}catch(e){}aiHide();var ext=(mime&&mime.indexOf('mp4')>=0)?'mp4':'webm';var blob=new Blob(chunks,{type:mime||'video/webm'});if(blob.size)shareOrSave(blob,'danse-ia-musique.'+ext,'Ma vidéo IA');else toast('Rendu vide, réessaie');};
+      function finish(){if(ended)return;ended=true;if(rec.state!=='inactive')rec.stop();}
+      aiShow('Ajout de la musique… 🎵');
+      if(ac&&ac.state==='suspended')ac.resume();
+      v.currentTime=0;rec.start(200);v.play();if(aud)try{aud.currentTime=0;aud.play();}catch(e){}
+      (function draw(){if(ended)return;if(v.ended){finish();return;}cx.drawImage(v,0,0,w,hh);requestAnimationFrame(draw);})();
+      v.onended=finish;setTimeout(finish,(v.duration||6)*1000+2500);
+    };
+    v.onerror=function(){toast('Vidéo illisible');};
+  }
   function fail(e){busy=false;clearTimeout(pollT);$('aiGenBtn').disabled=false;
     var msg=String(e&&e.message||e);
     if(/not_configured/.test(msg)){hint('⚠️ IA vidéo pas encore active (serveur en cours de déploiement). Réessaie dans quelques minutes.');toast('IA vidéo bientôt prête',2600);}
     else if(/credit|payment|402|insufficient|billing/i.test(msg)){hint('⚠️ Crédit IA épuisé — à recharger sur Replicate.');toast('Crédit IA à recharger',2800);}
     else{hint('❌ Génération impossible pour l\'instant — réessaie.');toast('Génération impossible, réessaie',2600);}
   }
-  return {init:buildVibes,pick:function(){$('fileAiPhoto').click();},camera:function(){$('fileAiPhotoCam').click();},_load:loadPhoto,generate:generate,
+  return {init:buildVibes,pick:function(){$('fileAiPhoto').click();},camera:function(){$('fileAiPhotoCam').click();},_load:loadPhoto,generate:generate,_mux:muxMusic,
     export:function(){if(out)save(out);else toast('Génère d\'abord une vidéo');}};
 })();
+function pickVideoMime(){var l=['video/mp4;codecs=h264','video/mp4','video/webm;codecs=vp9','video/webm'];for(var i=0;i<l.length;i++){if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(l[i]))return l[i];}return '';}
 
 /* flood fill (bucket) */
 function floodFill(canvas,sx,sy,hex){
@@ -1749,6 +1815,8 @@ $('fileImgAnim').onchange=function(e){if(e.target.files[0]){go('anim');Anim._fro
 $('fileOverlay').onchange=function(e){if(e.target.files[0])Photo._addOverlayImage(e.target.files[0]);e.target.value='';};
 $('fileAiPhoto').onchange=function(e){if(e.target.files[0]){go('aivid');AiVid._load(e.target.files[0]);}e.target.value='';};
 $('fileAiPhotoCam').onchange=function(e){if(e.target.files[0]){go('aivid');AiVid._load(e.target.files[0]);}e.target.value='';};
+$('fileAiMusic').onchange=function(e){if(e.target.files[0])AiVid._mux(e.target.files[0]);e.target.value='';};
+$('fileBg').onchange=function(e){if(e.target.files[0])Photo._loadBg(e.target.files[0]);e.target.value='';};
 
 /* init all */
 Photo.init();Vid.init();Anim.init();AiVid.init();

@@ -35,14 +35,17 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 ## 🎬 Ce que tu peux faire
 
 ### 🕺 Danse IA — photo → vidéo *(la tendance du moment)*
-Comme **Viggle / Kling / Hailuo** : tu mets **une photo**, l'app génère une **petite vidéo où le sujet bouge / danse**, façon vidéos virales.
-- Ambiances en 1 tap : **Danse**, **Saut de joie**, **Rigolo**, **Coucou**, **Ciné** (+ texte libre).
-- Génération asynchrone (≈ 1 à 3 min), aperçu qui se lance tout seul, **Enregistrer / Partager** ou **Regénérer**.
-- 100 % serveur (ta clé Replicate), modèle image→vidéo `minimax/video-01-live`. Rien sur le téléphone.
+Comme **Viggle / Kling / Hailuo** : tu mets **une photo**, l'app génère une **petite vidéo où le sujet danse**, façon vidéos virales.
+- **Pas de danse guidés en 1 tap** : Danse, **Floss**, **Robot**, **Moonwalk**, **Gangnam**, **Break**, Saut de joie, Coucou, Ciné (+ texte libre).
+- **Choix du modèle** : ⚡ Standard (rapide) ou 💎 Qualité max.
+- **🎵 Ajouter une musique** sur la vidéo générée (elle est réencodée avec ton son).
+- Génération asynchrone (≈ 1 à 3 min), aperçu auto, **Enregistrer / Partager** / **Regénérer**.
+- 100 % serveur (ta clé Replicate), modèles image→vidéo `minimax/video-01-live` & `video-01`.
 
 ### 🤖 IA (qualité pro) — nouveau
 Branchée sur un **worker serveur sécurisé** (ta clé Replicate reste côté serveur, jamais exposée). Repli automatique sur la version hors-ligne si l'IA n'est pas joignable — **l'app marche toujours**.
 - **🤖 Détourage IA** — isole automatiquement le sujet (personne / objet), fond transparent parfait (bien mieux que la gomme couleur).
+- **🌆 Remplacement de fond** — après détourage : couleur, dégradé, flou d'origine, **ton image**, ou **🤖 Fond IA** (décris le décor → l'IA le génère et le met derrière le sujet).
 - **🤖 Cartoon IA** — transforme la photo en dessin animé de qualité (vrai style, pas juste posterize).
 - **✨ Améliorer (IA)** — upscale ×2 + netteté + amélioration des visages.
 
@@ -118,14 +121,16 @@ L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné :
 - **v4** : **texte meme** (encre rendue), **tampon correcteur** (clone), **export vidéo karaoké + zoom sur le beat + 9:16 + musique → MP4** — **0 erreur JS**.
 - **v5** : **IA** — succès (image remplacée) + **repli automatique** vérifiés (worker simulé), overlay de chargement OK — **0 exception JS**.
 - **v6** : **Danse IA** — photo → génération async → vidéo affichée + feuille d'export, vérifié bout-en-bout (backend simulé) — **0 exception JS**.
+- **v7** : **danses guidées + choix du modèle + musique** sur la vidéo + **remplacement de fond (couleur/dégradé/flou/image/IA)** — vérifiés (backend simulé) — **0 exception JS**.
+- **v8** : IA déplacée sur **crea-ai.kd-mc.com** (custom_domain, corrige l'« IA indisponible » liée à workers.dev) + **modèle de secours** détourage + **auto-test CI** des vrais modèles.
 - Cohérence domaine : `apps-consistency` **7/7**.
 
 Captures d'écran de preuve générées à chaque test.
 
 ## 🤖 Comment marche l'IA (technique)
-- Worker Cloudflare **`kdmc-crea-ai`** (isolé, `services/kdmc-crea-ai/`) qui relaie vers **Replicate** — ta clé `AX_REPLICATE_KEY` est injectée en secret serveur par `deploy-kdmc-crea-ai.yml`, **jamais côté client**.
-- Modèles : détourage `cjwbw/rembg`, cartoon `catacolabs/cartoonify`, upscale `nightmareai/real-esrgan`, **photo→vidéo `minimax/video-01-live`** (résolus à leur dernière version au runtime — faciles à changer).
-- Endpoints : images rapides `POST /cutout|/cartoon|/enhance` (réponse image) ; vidéo `POST /animate` → `GET /job?id=` (async) → `GET /proxy?url=` (enregistrement même-origine).
+- Worker Cloudflare **`kdmc-crea-ai`** servi sur **`https://crea-ai.kd-mc.com`** (custom_domain = DNS+SSL auto sur ta zone, plus fiable que workers.dev) — relaie vers **Replicate** — ta clé `AX_REPLICATE_KEY` est injectée en secret serveur par `deploy-kdmc-crea-ai.yml`, **jamais côté client**.
+- Modèles : détourage `cjwbw/rembg`, cartoon `catacolabs/cartoonify`, upscale `nightmareai/real-esrgan`, photo→vidéo `minimax/video-01-live` & `video-01`, **fond IA `black-forest-labs/flux-schnell`** (résolus à leur dernière version au runtime — faciles à changer).
+- Endpoints : images `POST /cutout|/cartoon|/enhance` ; fond IA `POST /bg` ; vidéo `POST /animate` (choix `model`) → `GET /job?id=` (async) → `GET /proxy?url=` (enregistrement même-origine).
 - CORS limité à `*.kd-mc.com` + GitHub Pages + localhost. `/proxy` n'accepte que `replicate.delivery`.
 - **Repli automatique** (images) : réseau/IA KO → version hors-ligne + toast honnête. **Danse IA** ne peut pas se faire hors-ligne (génération) → message clair si indispo.
 - URL du worker configurable côté app (`window.CREA_AI_URL` / `localStorage.crea_ai_url`) pour pointer une autre IA sans changer le code.

@@ -4,7 +4,12 @@ name: KDMC — Déploie le worker IA de Créa Studio (autonome)
 # et injecte le secret REPLICATE_API_TOKEN depuis AX_REPLICATE_KEY.
 # 100% auto. Servi sur kdmc-crea-ai.9r4rxssx64.workers.dev (clé jamais exposée client).
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      selftest:
+        description: "Auto-test approfondi (appelle réellement l'IA — coûte quelques crédits Replicate)"
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -54,7 +59,36 @@ jobs:
             echo "::warning::AX_REPLICATE_KEY absent → IA désactivée côté worker (l'app garde ses versions hors-ligne)."
           fi
 
-      - name: Smoke test /health
+      - name: Smoke /health (custom domain + workers.dev, avec attente propagation)
         run: |
-          sleep 5
-          curl -sS https://kdmc-crea-ai.9r4rxssx64.workers.dev/health || echo "::warning::health non joignable tout de suite (propagation)"
+          set +e
+          BASE="https://crea-ai.kd-mc.com"
+          ALT="https://kdmc-crea-ai.9r4rxssx64.workers.dev"
+          ok=""
+          for i in $(seq 1 20); do
+            R=$(curl -sS -m 15 "$BASE/health"); echo "[$i] $BASE/health -> $R"
+            echo "$R" | grep -q '"ok":true' && { ok="$BASE"; break; }
+            R2=$(curl -sS -m 15 "$ALT/health"); echo "[$i] $ALT/health -> $R2"
+            echo "$R2" | grep -q '"ok":true' && { ok="$ALT"; break; }
+            sleep 15
+          done
+          if [ -z "$ok" ]; then echo "::warning::/health pas encore OK (propagation DNS/SSL du custom domain peut prendre quelques minutes)"; else echo "HEALTH OK via $ok"; fi
+          echo "HEALTH_BASE=$ok" >> "$GITHUB_ENV"
+
+      - name: Auto-test IA approfondi (optionnel — appelle les vrais modèles)
+        if: ${{ inputs.selftest == true }}
+        run: |
+          set +e
+          BASE="${HEALTH_BASE:-https://crea-ai.kd-mc.com}"
+          echo "== Base testée : $BASE =="
+          # 1x1 png rouge en base64
+          PNG="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+          echo "----- /cutout -----"
+          curl -sS -m 120 -X POST "$BASE/cutout" -H 'content-type: application/json' \
+            -d "{\"image\":\"$PNG\"}" -o /tmp/out.bin -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
+          head -c 300 /tmp/out.bin | tr -d '\0'; echo
+          echo "----- /bg -----"
+          curl -sS -m 120 -X POST "$BASE/bg" -H 'content-type: application/json' \
+            -d '{"prompt":"a blue sky, minimal","ratio":"1:1"}' -o /tmp/bg.bin -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
+          head -c 300 /tmp/bg.bin | tr -d '\0'; echo
+          echo "== Fin auto-test (une réponse image = OK ; un JSON error = cause exacte ci-dessus) =="
