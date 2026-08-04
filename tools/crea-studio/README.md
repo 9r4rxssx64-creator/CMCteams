@@ -34,6 +34,12 @@ Le point de départ (photo Google) listait les logiciels pros. J'ai décortiqué
 
 ## 🎬 Ce que tu peux faire
 
+### 🎬 Pack créateur pro *(le plus viral 2026)*
+- **🎤 Sous-titres karaoké mot-par-mot** (vidéo) — le mot dit est surligné en jaune et agrandi (style TikTok/Hormozi). Styles **Simple / Karaoké / Pop**. Le texte se répartit tout seul sur la durée.
+- **🥁 Zoom automatique sur le rythme** (vidéo) — détecte les temps forts de ta musique et fait un punch-in zoom sur le beat.
+- **🩹 Tampon correcteur** (photo) — touche une zone saine (source) puis dessine sur le défaut : enlève un bouton, un objet, une tache.
+- **😂 Texte meme** (photo) — style Impact blanc contour noir, haut/bas, en 1 tap.
+
 ### 🔥 Effets viraux & formats réseaux *(tendances 2026)*
 D'après le tour du web des tendances TikTok / Reels / CapCut, ajoutés en qualité max :
 - **🔥 Effets Tendance (photo)** : Ciné (teal & orange), **Flou d'arrière-plan** (bokeh portrait), Glow, Light leak, **Duotone**, **Glitch / RGB split**, **VHS / Y2K**, Chroma, Polaroïd — avec **intensité réglable**.
@@ -97,12 +103,13 @@ L'app est branchée sur **`studio.kd-mc.com`** (sous-domaine auto-provisionné :
 - **v1** : chargement photo, filtres, sliders, cartoonize, bascule des 3 studios, dessin (encre détectée), timeline de frames, feuille d'export — **0 erreur JS**.
 - **v2** : Niveaux, **détourage → transparence confirmée**, dessin, stickers, redimensionnement, **export PNG transparent détecté** — **0 erreur JS**.
 - **v3** : effets tendance (glitch/ciné/bokeh changent bien l'image), **export vidéo viral 9:16 + grain + fondu → MP4 produit** — **0 erreur JS**.
+- **v4** : **texte meme** (encre rendue), **tampon correcteur** (clone), **export vidéo karaoké + zoom sur le beat + 9:16 + musique → MP4** — **0 erreur JS**.
 - Cohérence domaine : `apps-consistency` **7/7**.
 
 Captures d'écran de preuve générées à chaque test.
 
 ## 🔭 Honnêteté & prochaines étapes
-- Les effets **génératifs IA** viraux (squish, morphing, cartoonize « vrai », détourage IA auto du sujet) **ne sont pas faisables 100 % hors-ligne** sans modèle. Créa Studio en donne des **approximations** solides (cartoonize posterize+contours, bokeh par masque radial, détourage par couleur). Un détourage IA du sujet est possible en prochaine étape (worker distant, si on relâche le 100 % hors-ligne).
-- À venir si tu veux : **sous-titres karaoké mot-par-mot**, **zoom sur le beat** (détection audio), **speed-ramp**, **export GIF**, **calques complets**, **tampon correcteur**.
+- Les effets **100 % génératifs IA** (squish, morphing, cartoonize « photoréaliste », détourage IA automatique du sujet) **ne sont pas faisables 100 % hors-ligne** sans modèle. Créa Studio en donne des **approximations** solides (cartoonize posterize + contours Sobel, bokeh par masque radial, détourage par couleur, tampon correcteur). Le **vrai détourage IA du sujet** peut être branché en prochaine étape sur un petit worker (on garde le reste hors-ligne).
+- Déjà livré : karaoké, zoom-beat, tampon correcteur, meme. À venir possible : **speed-ramp**, **export GIF**, **calques complets multi-photos**, **détourage IA serveur**.
 
-*Version 3.0.0 — Studio créatif tout-en-un + pack viral pour kd-mc.com (studio.kd-mc.com).*
+*Version 4.0.0 — Studio créatif tout-en-un + pack viral + pack créateur pro, pour kd-mc.com (studio.kd-mc.com).*
