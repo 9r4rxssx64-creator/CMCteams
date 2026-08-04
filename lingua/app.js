@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.18.0";
+var APP_VER="v2.19.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -555,7 +555,9 @@ function coachSend(text){ if(_coachThinking||!text) return; var c=coachLangMeta(
     setTimeout(function(){ if(reply) coachSpeak(reply); },260); }); }
 function vCoach(){ var d=el("div","screen coach");
   var c=coachLangMeta(); if(!c){ d.innerHTML='<h2 class="ttl">💬 Coach</h2><p class="sub2">Choisis d\'abord une langue 🌍 dans l\'onglet 🏠.</p>'; return d; }
-  var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>'; d.appendChild(head);
+  var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>';
+  var cine=el("button","coach-cine"); cine.innerHTML="🎬<span>Discussion</span>"; cine.title="Mode discussion plein écran"; cine.onclick=openDiscussion; head.appendChild(cine);
+  d.appendChild(head);
   var pct=Math.min(100,Math.round(masteredCount()/240*100));
   var pb=el("div","coach-prog"); pb.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+pct+'%"></div></div><span>'+pct+'% vers le bilingue</span>'; d.appendChild(pb);
   var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),100);
@@ -577,6 +579,59 @@ function vCoach(){ var d=el("div","screen coach");
   bar.appendChild(inp); bar.appendChild(snd); d.appendChild(bar);
   setTimeout(function(){ var b=d.querySelector(".coach-box"); if(b)b.scrollTop=b.scrollHeight; },40);
   return d;
+}
+/* ============ MODE DISCUSSION 🎬 — Bee en gros plan, bouche animée, elle DIT son texte ============ */
+var DISC={open:false,talking:false,handsFree:false,timer:null};
+function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à mot, robuste même sans événements audio */
+  var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
+  var mouth=overlay.querySelector(".disc-mouth"), sub=overlay.querySelector(".disc-sub"), img=overlay.querySelector(".disc-bee");
+  var words=String(text||"").split(/\s+/).filter(Boolean);
+  var dur=Math.min(12000, 900+text.length*68);
+  DISC.talking=true; if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
+  if(sub){ sub.textContent=""; var wi=0; var step=Math.max(120, Math.min(300, dur/Math.max(1,words.length)));
+    var si=setInterval(function(){ if(wi>=words.length||!DISC.open){ clearInterval(si); return; } sub.textContent+=(wi?" ":"")+words[wi++]; sub.scrollTop=sub.scrollHeight; }, step); }
+  function stop(){ DISC.talking=false; try{ if(mouth)mouth.classList.remove("talking"); if(img)img.classList.remove("talk"); }catch(_){}
+    if(DISC.handsFree&&DISC.open){ setTimeout(function(){ discListen(); },500); } }
+  if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop,dur);
+  try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
+  var vid=S.voice||"nova";
+  if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
+    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+    a.onended=function(){ if(DISC.timer)clearTimeout(DISC.timer); stop(); };
+    a.onerror=function(){ _webSpeakLang(text,lang); };
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang); });
+  }catch(e){ _webSpeakLang(text,lang); } } else if(S.sound){ _webSpeakLang(text,lang); }
+}
+function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
+  var mic=overlay.querySelector(".disc-mic"); if(mic)mic.classList.add("rec");
+  dictate(function(txt){ if(mic)mic.classList.remove("rec"); if(txt){ var inp=overlay.querySelector(".disc-input"); if(inp)inp.value=txt; discSend(); } },"fr-FR"); }
+function discSend(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay||DISC.talking)return;
+  var inp=overlay.querySelector(".disc-input"); var text=(inp&&inp.value||"").trim(); if(!text)return; inp.value="";
+  var c=coachLangMeta(); if(!c)return;
+  S.coachMsgs.push({role:"user",text:text}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
+  var sub=overlay.querySelector(".disc-sub"); if(sub)sub.textContent="…";
+  var img=overlay.querySelector(".disc-bee"); if(img)img.classList.add("think");
+  coachAsk().then(function(reply){ if(!DISC.open)return; if(img)img.classList.remove("think");
+    S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
+    if(/(bravo|super|parfait|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(reply)){ var bi=overlay.querySelector(".disc-bee"); if(bi){ beeSparkles(bi,10); } }
+    discSpeak(reply, c.ttsLang); }); }
+function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ toast("Choisis d'abord une langue 🌍"); return; }
+  DISC.open=true; var ov=el("div","disc-overlay");
+  ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
+    '<div class="disc-title">🐝 Bee · '+esc(c.nom)+'</div>'+
+    '<div class="disc-stage"><img class="disc-bee" src="bee/bee-src.webp" alt="Bee"><div class="disc-mouth"></div></div>'+
+    '<div class="disc-sub"></div>'+
+    '<div class="disc-chips"></div>'+
+    '<div class="disc-inbar"><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle ou écris à Bee…" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
+  document.body.appendChild(ov);
+  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
+  ov.querySelector(".disc-send").onclick=discSend;
+  ov.querySelector(".disc-input").onkeydown=function(e){ if(e.key==="Enter")discSend(); };
+  ov.querySelector(".disc-mic").onclick=discListen;
+  var hf=ov.querySelector(".disc-hf"); hf.onclick=function(){ DISC.handsFree=!DISC.handsFree; hf.classList.toggle("on",DISC.handsFree); toast(DISC.handsFree?"🙌 Mains libres : je t'écoute après chaque réponse":"Mains libres coupé"); };
+  var chips=ov.querySelector(".disc-chips"); coachSuggestions(c).forEach(function(s){ var b=el("button","coach-chip"); b.textContent=s; b.onclick=function(){ var inp=ov.querySelector(".disc-input"); inp.value=s; discSend(); }; chips.appendChild(b); });
+  var last=null; for(var i=S.coachMsgs.length-1;i>=0;i--){ if(S.coachMsgs[i].role==="bot"){ last=S.coachMsgs[i].text; break; } }
+  setTimeout(function(){ discSpeak(last||coachGreeting(c), c.ttsLang); },450);
 }
 function vTabbar(){ var t=el("div","tabbar"); [["home","🏠","Accueil"],["review","🧠","Réviser"],["coach","💬","Coach"],["translate","🌐","Traduire"],["league","🏆","Ligue"],["profile","🙂","Profil"]].forEach(function(x){ var b=el("button","tab"+(VIEW===x[0]||(x[0]==="review"&&VIEW==="dict")?" active":"")); b.innerHTML='<span>'+x[1]+'</span><i>'+x[2]+'</i>'; b.onclick=function(){go(x[0]);}; t.appendChild(b); }); return t; }
 

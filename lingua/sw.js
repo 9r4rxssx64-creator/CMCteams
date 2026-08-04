@@ -3,7 +3,7 @@
    en ligne (plus jamais bloqué sur une ancienne page « collée » en mémoire), et on
    garde une copie en cache pour marcher hors-ligne. Aligné sur la règle « MAJ auto
    forcée toujours » : une nouvelle version publiée s'affiche dès la prochaine ouverture. */
-var CACHE = "lingua-v2.18.0";
+var CACHE = "lingua-v2.19.0";
 var ASSETS = ["./","./index.html","./app.js","./data.js","./manifest.webmanifest","./icon.svg","./bee/wave.webp","./bee/party.webp","./bee/read.webp"];
 
 self.addEventListener("install", function(e){

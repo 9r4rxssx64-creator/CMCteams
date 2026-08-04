@@ -134,6 +134,32 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 @keyframes bubblePop{0%{transform:scale(.5) translateY(10px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}
 .bee-bubble.bye{opacity:0;transform:translateY(8px);transition:all .4s}
 @media (prefers-reduced-motion:reduce){.bee-bubble{animation:none}}
+/* Mode discussion 🎬 : Bee en gros plan, bouche animée quand elle parle */
+.coach-cine{margin-left:auto;display:flex;flex-direction:column;align-items:center;gap:1px;background:linear-gradient(90deg,var(--violet),#9333ea);border-radius:12px;padding:8px 12px;color:#fff;font-size:17px;font-weight:800;cursor:pointer;min-height:48px}
+.coach-cine span{font-size:10px;font-weight:700}
+.disc-overlay{position:fixed;inset:0;z-index:1000;background:radial-gradient(120% 90% at 50% 28%,#243447 0%,#0f1720 62%,#0a1016 100%);display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 12px);animation:discIn .3s ease-out}
+@keyframes discIn{0%{opacity:0}100%{opacity:1}}
+.disc-close{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:12px;width:44px;height:44px;border-radius:50%;background:var(--card2);color:#fff;font-size:18px;border:1px solid var(--line);cursor:pointer;z-index:2}
+.disc-title{font-weight:900;font-size:16px;margin:2px 0 8px;color:#ffd067}
+.disc-stage{position:relative;width:min(78vw,330px);height:min(78vw,330px);margin-top:2vh}
+.disc-bee{width:100%;height:100%;object-fit:cover;border-radius:26px;box-shadow:0 0 0 4px rgba(246,183,60,.5),0 18px 50px rgba(0,0,0,.55);animation:beeFloat 3.4s ease-in-out infinite}
+.disc-bee.talk{animation:beeTalk .5s ease-in-out infinite}
+.disc-bee.think{filter:saturate(.75) brightness(.9)}
+.disc-mouth{position:absolute;left:50%;top:45.5%;width:15%;height:9%;transform:translate(-50%,-50%) scaleY(.6);border-radius:38% 38% 50% 50%/34% 34% 66% 66%;background:radial-gradient(60% 55% at 50% 68%,#ff5d6c 0%,#7a2c16 62%,#4c1d0f 100%);border:3px solid #3a1c10;opacity:0;pointer-events:none}
+.disc-mouth.talking{opacity:1;animation:discMouth .26s ease-in-out infinite alternate}
+@keyframes discMouth{0%{transform:translate(-50%,-50%) scaleY(.5) scaleX(.92)}100%{transform:translate(-50%,-50%) scaleY(1.06) scaleX(1.05)}}
+.disc-sub{margin-top:14px;min-height:52px;max-height:96px;overflow-y:auto;max-width:min(86vw,420px);text-align:center;font-size:16.5px;line-height:1.5;color:#eaf2f8;font-weight:600}
+.disc-chips{display:flex;gap:8px;overflow-x:auto;max-width:100%;padding:10px 2px;-webkit-overflow-scrolling:touch;margin-top:auto}
+.disc-inbar{display:flex;gap:8px;width:100%;max-width:460px;align-items:center}
+.disc-input{flex:1;padding:13px 15px;font-size:16px;border-radius:14px;border:2px solid var(--line);background:var(--card2);color:#fff;outline:none}
+.disc-input:focus{border-color:var(--violet)}
+.disc-send{flex:0 0 auto;width:48px;height:48px;border:0;border-radius:14px;background:linear-gradient(90deg,var(--violet),#9333ea);color:#fff;font-size:19px;cursor:pointer}
+.disc-mic{flex:0 0 auto;width:48px;height:48px;border:0;border-radius:14px;background:linear-gradient(90deg,#e11d48,#f43f5e);color:#fff;font-size:19px;cursor:pointer}
+.disc-mic.rec{animation:micPulse .8s ease-in-out infinite}
+@keyframes micPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12);box-shadow:0 0 0 8px rgba(244,63,94,.25)}}
+.disc-hf{flex:0 0 auto;width:48px;height:48px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:#9fb2c2;font-size:19px;cursor:pointer}
+.disc-hf.on{background:linear-gradient(90deg,var(--green),var(--green-d));color:#fff;border-color:transparent}
+@media (prefers-reduced-motion:reduce){.disc-bee,.disc-bee.talk,.disc-mouth.talking,.disc-mic.rec{animation:none}}
 .bee-spark{position:fixed;z-index:9999;pointer-events:none;font-size:16px;animation:sparkFly .9s ease-out forwards}
 @keyframes sparkFly{0%{transform:translate(0,0) scale(.6);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.25);opacity:0}}
 @media (prefers-reduced-motion:reduce){.mascot.bee-img,.bee-img.pop,.bee-img.spin,.bee-img.hop,.bee-img.shake{animation:none}.bee-spark{display:none}}
