@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.23.0";
+var APP_VER="v2.24.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -525,10 +525,28 @@ function beeBubble(text,ms){ try{ var old=document.querySelector(".bee-bubble");
   var b=document.createElement("div"); b.className="bee-bubble"; b.textContent=text;
   b.onclick=function(){ b.remove(); }; document.body.appendChild(b);
   setTimeout(function(){ try{ b.classList.add("bye"); setTimeout(function(){b.remove();},400); }catch(_){} }, ms||6000); }catch(_){} }
+/* Marionnette réutilisable : les couches animées découpées de SON image (ailes+bras+paupières) */
+function beeRigHTML(){ return '<img class="rig-base" src="bee/rig/base.webp" alt="Bee">'+
+  '<img class="rig-piece rig-wl" src="bee/rig/wing-l.webp" alt="" onerror="this.remove()">'+
+  '<img class="rig-piece rig-wr" src="bee/rig/wing-r.webp" alt="" onerror="this.remove()">'+
+  '<img class="rig-piece rig-arm" src="bee/rig/arm.webp" alt="" onerror="this.remove()">'+
+  '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'; }
+function beeMove(rig,kind,dur){ if(!rig)return; ["mv-dance","mv-jump","mv-fly","mv-walk"].forEach(function(c){rig.classList.remove(c);});
+  if(!kind)return; rig.classList.add("mv-"+kind);
+  setTimeout(function(){ try{rig.classList.remove("mv-"+kind);}catch(_){} }, dur||2400); }
+/* Elle VIT en permanence : clignements + micro-mouvements aléatoires, s'arrête seule si l'élément disparaît */
+function beeLifeStart(rig){
+  (function blink(){ if(!document.contains(rig))return;
+    rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150);
+    setTimeout(blink, 2400+Math.random()*3400); })();
+  (function idle(){ if(!document.contains(rig))return;
+    var ks=["fly","walk","dance"]; beeMove(rig, ks[Math.floor(Math.random()*ks.length)], 2200+Math.random()*1400);
+    setTimeout(idle, 11000+Math.random()*9000); })(); }
 function beeCompanion(){ var w=el("div","bee-companion");
-  w.innerHTML=MASCOT("wave",58);
-  w.onclick=function(ev){ ev.stopPropagation(); var img=w.querySelector(".bee-img");
-    if(img){ beeAnimate(img, Math.random()<0.5?"spin":"hop"); beeSparkles(img,7); } vibrate(10);
+  var rig=el("div","bee-live bee-rig"); rig.innerHTML=beeRigHTML(); w.appendChild(rig);
+  setTimeout(function(){ beeLifeStart(rig); }, 900+Math.random()*600);
+  w.onclick=function(ev){ ev.stopPropagation();
+    beeMove(rig, ["dance","jump","fly","walk"][Math.floor(Math.random()*4)], 2600); beeSparkles(rig,7); vibrate(10);
     var t=beeLine(); beeBubble(t,7000); speakLang(t,"fr-FR",BEE_VOICE,true); };
   if(!_beeSaid[VIEW]){ _beeSaid[VIEW]=true; setTimeout(function(){ beeBubble(beeLine(),6000); },600); }
   return w; }
@@ -842,8 +860,11 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
     if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")setTimeout(function(){speak(ex.w.t);},140); }
   else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]); }
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
-  setTimeout(function(){ var m=document.querySelector(".lesson .bee-img"); if(!m)return;
-    if(ok){ beeAnimate(m,"hop"); if(L.combo>=2)beeSparkles(m,6); } else { beeAnimate(m,"shake"); } },40);
+  setTimeout(function(){ var m=document.querySelector(".lesson .bee-img");
+    if(m){ if(ok){ beeAnimate(m,"hop"); if(L.combo>=2)beeSparkles(m,6); } else { beeAnimate(m,"shake"); } }
+    /* Le compagnon vivant réagit AUSSI en direct : danse/saute quand c'est bon */
+    var cr=document.querySelector(".bee-companion .bee-rig");
+    if(cr&&ok){ beeMove(cr, Math.random()<0.5?"dance":"jump", 1900); if(L.combo>=3)beeSparkles(cr,5); } },40);
 }
 function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol="";
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
@@ -859,7 +880,9 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
   VIEW="home"; render();
   var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",120)+'</div><h3>'+(L.wrong===0?"Sans faute ! 🎉":"Leçon terminée ✅")+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+(L.wrong===0?3:1)+'</b><i>Gemmes</i></div></div>';
   var b=el("button","btn-main"); b.textContent="Continuer"; b.onclick=function(){ m.close(); render(); }; m.body.appendChild(b);
-  setTimeout(function(){ var mi=m.body.querySelector(".bee-img"); if(mi){ beeAnimate(mi,"hop"); if(L.wrong===0)beeSparkles(mi,10); } },200);
+  setTimeout(function(){ var mi=m.body.querySelector(".bee-img"); if(mi){ beeAnimate(mi,"hop"); if(L.wrong===0)beeSparkles(mi,10); }
+    /* Fin de leçon : le compagnon fait la fête aussi */
+    var cr=document.querySelector(".bee-companion .bee-rig"); if(cr)beeMove(cr, L.wrong===0?"dance":"jump", 3200); },200);
 }
 
 /* ---------- Toast / modal ---------- */
