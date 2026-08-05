@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.27.0";
+var APP_VER="v2.27.1";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -461,7 +461,7 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
     var b=el("button","voice-opt"+((S.beeVoice||"fillette")===v.id?" sel":""));
     b.innerHTML='<b>'+v.nom+'</b><span>'+v.desc+'</span>';
     b.onclick=function(){ S.beeVoice=v.id; save(); vibrate(10);
-      speakLang("Bonjour ! Moi c'est Bee, ta petite abeille !","fr-FR","bee",true);
+      speakLang(v.phrase||"Bzzz ! Moi c'est Bee !","fr-FR","bee",true);
       render(); toast("Voix de Bee : "+v.nom); };
     vw.appendChild(b); });
   d.appendChild(vw);
@@ -774,11 +774,11 @@ var BEE_VOICE="bee"; /* marqueur : la voix de Bee est CHOISIE par l'utilisateur 
    différentes ») : base cloud + vitesse de lecture SANS préservation du pitch → plus rapide
    = plus aigu = voix de petite fille. rate=vitesse audio cloud ; wsPitch/wsRate = repli local. */
 var BEE_VOICES=[
-  {id:"fillette",  nom:"🎀 Fillette mignonne", desc:"petite voix aiguë et adorable — LA voix de la petite abeille", tts:"nova",    rate:1.24, wsPitch:1.7, wsRate:1.05},
-  {id:"minibee",   nom:"🐝 Mini-Bee rigolote", desc:"encore plus aiguë, façon dessin animé",                        tts:"nova",    rate:1.45, wsPitch:2,   wsRate:1.15},
-  {id:"douce",     nom:"🌸 Douce et tendre",   desc:"calme, posée, rassurante",                                     tts:"shimmer", rate:1,    wsPitch:1.15,wsRate:.95},
-  {id:"petillante",nom:"☀️ Pétillante",        desc:"énergique et chaleureuse",                                     tts:"nova",    rate:1,    wsPitch:1.2, wsRate:1},
-  {id:"conteuse",  nom:"📖 Conteuse",          desc:"expressive, comme une histoire du soir",                       tts:"fable",   rate:.96,  wsPitch:1.1, wsRate:.9}
+  {id:"fillette",  nom:"🎀 Petite Bee",        desc:"la petite abeille au miel — voix de fillette aiguë et adorable", phrase:"Bzzz ! Moi c'est Bee, ta petite abeille au miel !",          tts:"nova",    rate:1.24, wsPitch:1.7, wsRate:1.05},
+  {id:"minibee",   nom:"🐝 Bee rigolote",      desc:"l'abeille espiègle de la ruche, encore plus aiguë",              phrase:"Bzzz bzzz ! On fait la course jusqu'à la ruche ?",           tts:"nova",    rate:1.45, wsPitch:2,   wsRate:1.15},
+  {id:"douce",     nom:"🌸 Bee des fleurs",    desc:"douce et tendre comme un champ de fleurs",                       phrase:"Bonjour… viens, on va butiner de nouveaux mots ensemble.",   tts:"shimmer", rate:1,    wsPitch:1.15,wsRate:.95},
+  {id:"petillante",nom:"☀️ Bee du soleil",     desc:"pétillante comme un matin d'été au rucher",                      phrase:"Bzzz ! Quelle belle journée pour apprendre, on y va ?",      tts:"nova",    rate:1,    wsPitch:1.2, wsRate:1},
+  {id:"conteuse",  nom:"🍯 Mamie Bee",         desc:"la conteuse de la ruche, comme une histoire au coin du miel",    phrase:"Approche… je vais te raconter les secrets de la ruche.",     tts:"fable",   rate:.96,  wsPitch:1.1, wsRate:.9}
 ];
 function beeVoiceCfg(){ var id=S.beeVoice||"fillette"; for(var i=0;i<BEE_VOICES.length;i++){ if(BEE_VOICES[i].id===id)return BEE_VOICES[i]; } return BEE_VOICES[0]; }
 function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voice||"nova";
