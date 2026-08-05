@@ -244,7 +244,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.60";
+var APP_VER="v2.61";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -330,10 +330,20 @@ function tidyTree(ids){
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP;
   var set={};ids.forEach(function(x){set[x]=1;});
   var placed={},nodes=[],links=[],rowCur={},depthMax=0;
+  /* ── GÉNÉRATION GLOBALE par propagation de contraintes (union-find pondéré) ──
+     Deux époux = MÊME étage ; un enfant = étage parent+1. Corrige le défaut vu par
+     Kevin : un conjoint « marié dans la famille » (Victor, Gérard, Pascale…) ne
+     flotte plus au mauvais niveau — il partage la rangée de son époux/épouse. */
+  var uf={},pot={};
+  function ufFind(x){if(uf[x]===undefined){uf[x]=x;pot[x]=0;return x;}if(uf[x]===x)return x;var r=ufFind(uf[x]);pot[x]+=pot[uf[x]];uf[x]=r;return r;}
+  function ufUnion(a,b,diff){/* impose niveau[b]-niveau[a]=diff */var ra=ufFind(a),rb=ufFind(b);if(ra===rb)return (pot[b]-pot[a])===diff;uf[rb]=ra;pot[rb]=diff+pot[a]-pot[b];return true;}
+  ids.forEach(function(x){var pp=P(x);[pp.pere,pp.mere].forEach(function(par){if(par&&set[par])ufUnion(par,x,1);});(pp.conjoints||[]).forEach(function(c){if(set[c])ufUnion(x,c,0);});});
+  var glevel={},gmin=1e9;ids.forEach(function(x){ufFind(x);if(pot[x]<gmin)gmin=pot[x];});
+  ids.forEach(function(x){glevel[x]=pot[x]-gmin;});
   function members(x){var pp=P(x);var m=[x];(pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&m.indexOf(c)<0)m.push(c);});return m;}
   function unit(x,depth){
     if(placed[x])return null;
-    var mem=members(x);mem.forEach(function(z){placed[z]=1;});if(depth>depthMax)depthMax=depth;
+    var mem=members(x);mem.forEach(function(z){placed[z]=1;});var d=glevel[x]||0;if(d>depthMax)depthMax=d;
     var kidset={};mem.forEach(function(z){childrenOf(z).forEach(function(k){if(set[k]&&!placed[k])kidset[k]=1;});});
     var kids=Object.keys(kidset).sort(function(a,b){return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
     var nStart=nodes.length,lStart=links.length;   /* pour décaler le sous-arbre enfants EN BLOC si besoin */
@@ -341,7 +351,7 @@ function tidyTree(ids){
     var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP;
     /* curseur PAR RANGÉE : deux unités d'une même ligne ne se chevauchent JAMAIS,
        ET chaque couple reste centré PILE au-dessus de ses enfants. */
-    var minC=(rowCur[depth]!==undefined?rowCur[depth]:0)+uW/2,center;
+    var minC=(rowCur[d]!==undefined?rowCur[d]:0)+uW/2,center;
     if(cc.length){
       var xs=cc.map(function(o){return o.x;});center=(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2;
       if(center<minC){
@@ -352,15 +362,15 @@ function tidyTree(ids){
         for(var ni=nStart;ni<nodes.length;ni++)nodes[ni].x+=delta;
         for(var li=lStart;li<links.length;li++){links[li].x1+=delta;links[li].x2+=delta;}
         cc.forEach(function(o){o.x+=delta;});
-        for(var dk in rowCur){if(+dk>depth)rowCur[dk]+=delta;}
+        for(var dk in rowCur){if(+dk>d)rowCur[dk]+=delta;}
         center=minC;
       }
     } else center=minC;
-    rowCur[depth]=center+uW/2+UNITGAP;
-    var sx=center-uW/2+BOXW/2,y=depth*ROWH;
+    rowCur[d]=center+uW/2+UNITGAP;
+    var sx=center-uW/2+BOXW/2,y=d*ROWH;
     mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z===viewerId()});});
     for(var i=0;i<mem.length-1;i++)links.push({couple:1,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});
-    cc.forEach(function(o){links.push({x1:center,y1:y+36,x2:o.x,y2:(depth+1)*ROWH-36,child:o.id});});
+    cc.forEach(function(o){links.push({x1:center,y1:y+36,x2:o.x,y2:(glevel[o.id]||d+1)*ROWH-36,child:o.id});});
     return center;
   }
   var roots=ids.filter(function(x){var pp=P(x);return !(pp.pere&&set[pp.pere])&&!(pp.mere&&set[pp.mere]);});
