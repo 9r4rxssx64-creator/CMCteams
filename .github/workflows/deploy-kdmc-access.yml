@@ -87,10 +87,28 @@ jobs:
         run: |
           set -e
           for i in 1 2 3; do
-            if curl -fsS "${{ steps.deploy.outputs.worker_url }}/health" > /tmp/h.json; then cat /tmp/h.json; echo; echo "::notice::Health OK"; exit 0; fi
+            if curl -fsS "${{ steps.deploy.outputs.worker_url }}/health" > /tmp/h.json; then cat /tmp/h.json; echo; echo "::notice::Health OK (workers.dev)"; exit 0; fi
             echo "retry $i"; sleep 5
           done
           echo "::error::Health KO"; exit 1
+
+      # PREUVE que le SOUS-DOMAINE admin.kd-mc.com lui-même répond (custom_domain
+      # auto-provisionné : DNS + SSL peuvent prendre ~1-2 min au 1er déploiement).
+      # Non-bloquant (le worker est déjà vivant sur workers.dev) mais le résultat
+      # RÉEL est écrit dans le résumé → on ne déclare « joignable » qu'après lecture.
+      - name: Verify custom domain (admin.kd-mc.com)
+        id: cdom
+        continue-on-error: true
+        run: |
+          OK=false; CODE=""
+          for i in $(seq 1 12); do
+            CODE=$(curl -m 10 -s -o /tmp/c.json -w '%{http_code}' "https://admin.kd-mc.com/health" || echo "000")
+            if [ "$CODE" = "200" ]; then OK=true; cat /tmp/c.json; echo; echo "::notice::admin.kd-mc.com JOIGNABLE (HTTP 200)"; break; fi
+            echo "tentative $i → HTTP $CODE (propagation DNS/SSL possible)"; sleep 15
+          done
+          echo "ok=$OK"   >> $GITHUB_OUTPUT
+          echo "code=$CODE" >> $GITHUB_OUTPUT
+          [ "$OK" = "true" ] || echo "::warning::admin.kd-mc.com pas encore joignable (dernier HTTP $CODE) — worker vivant sur workers.dev"
 
       - name: Summary
         if: always()
@@ -101,6 +119,7 @@ jobs:
             echo "|---|---|"
             echo "| Tests | ✅ |"
             echo "| Deploy | ${{ steps.deploy.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| admin.kd-mc.com joignable | ${{ steps.cdom.outputs.ok == 'true' && '✅ HTTP 200' || format('❌ HTTP {0}', steps.cdom.outputs.code) }} |"
             echo ""
             echo "Page admin : **https://admin.kd-mc.com** (custom_domain) ou l'URL workers.dev ci-dessous."
             [ -n "${{ steps.deploy.outputs.worker_url }}" ] && echo "\`${{ steps.deploy.outputs.worker_url }}\`"
