@@ -95,6 +95,50 @@ test('les fiches fusionnées ne réapparaissent PAS comme des personnes', async 
   assert.ok(!noms.includes('vieux_kevin'), 'le doublon a disparu de la liste');
 });
 
+test('UN COMPTE PAR PERSONNE : vaut pour tout le monde, pas seulement l\'admin', async () => {
+  const { store, env } = mkEnv();
+  /* Laurence arrive par 3 apps avec 3 identifiants différents. */
+  await issue(env, 'lau_cmc', 'Laurence Saint-Polit');
+  await issue(env, 'lau_apex', 'laurence saint polit');   /* casse + tiret différents */
+  await issue(env, 'lau_lingua', 'LAURENCE SAINT-POLIT');
+  const idx = JSON.parse(store.get('idx:uids') || '[]');
+  const vivants = idx.filter((u) => { const a = acc(store, u); return a && !a.merged_into; });
+  assert.deepEqual(vivants, ['lau_cmc'], 'UN SEUL dossier pour Laurence, malgré 3 identifiants');
+  assert.equal(acc(store, 'lau_apex'), null, 'aucune fiche séparée créée');
+  assert.equal(acc(store, 'lau_lingua'), null, 'aucune fiche séparée créée');
+});
+
+test('les fiches déjà éparpillées d\'un EMPLOYÉ sont fusionnées comme celles de Kevin', async () => {
+  const { store, env } = mkEnv();
+  store.set('idx:uids', JSON.stringify(['vieux_marc']));
+  store.set('acc:vieux_marc', JSON.stringify({
+    uid: 'vieux_marc', name: 'Marc Dupont', hits: 47, created: 500, last_seen: 900,
+    devices: ['mobile·Android'], places: ['Monaco, MC'], apps: {}, history: [{ ts: 700, end: 800, app: 'cmcteams.kd-mc.com' }],
+  }));
+  await issue(env, 'marc_apex', 'MARC DUPONT');
+  /* Ce qui compte : il ne reste QU'UN dossier vivant, et il contient tout son passé.
+     (Peu importe lequel des deux identifiants le porte — l'autre devient un renvoi.) */
+  const idx = JSON.parse(store.get('idx:uids') || '[]');
+  const vivants = idx.map((u) => acc(store, u)).filter((a) => a && !a.merged_into);
+  assert.equal(vivants.length, 1, 'un seul dossier vivant pour Marc, got ' + vivants.length);
+  const canon = vivants[0];
+  assert.ok(canon.hits >= 48, 'ses 47 connexions sont conservées, got ' + canon.hits);
+  assert.ok((canon.places || []).includes('Monaco, MC'), 'ses lieux sont conservés');
+  assert.equal(canon.created, 500, 'sa « 1re fois » d\'origine est conservée');
+  assert.ok((canon.history || []).length >= 1, 'son historique est conservé');
+});
+
+test('deux personnes DIFFÉRENTES ne sont JAMAIS fusionnées', async () => {
+  const { store, env } = mkEnv();
+  await issue(env, 'a1', 'Marc Dupont');
+  await issue(env, 'b1', 'Marc Durand');   /* nom différent */
+  await issue(env, 'c1', 'Sophie Dupont'); /* prénom différent */
+  ['a1', 'b1', 'c1'].forEach((u) => {
+    const a = acc(store, u);
+    assert.ok(a && !a.merged_into, u + ' garde son propre dossier');
+  });
+});
+
 test('un prénom seul auto-déclaré ne se range PAS dans le dossier admin', async () => {
   const { store, env } = mkEnv();
   await issue(env, 'inconnu_1', 'Kevin');       /* prénom seul */
