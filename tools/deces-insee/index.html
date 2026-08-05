@@ -154,6 +154,22 @@ async function search(){
 }
 const q = s => "'"+String(s).replace(/'/g,"''")+"'";
 
+// archive compétente d'après le lieu (naissance/mariage/décès)
+function archiveFor(place){
+  const p=(place||"").toUpperCase();
+  if(/MONACO|MONTE.?CARLO/.test(p)) return {n:"État-civil de Monaco", u:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"};
+  if(/NICE|BEAULIEU|VILLEFRANCHE|ANTIBES|CANNES|CAGNES|MENTON|GRASSE/.test(p)) return {n:"Archives 06 (⚠️ ouvrir depuis le téléphone)", u:"https://archives06.fr/"};
+  if(/MARSEILLE|SALON|AIX|ARLES|AUBAGNE/.test(p)) return {n:"Archives 13 (Bouches-du-Rhône)", u:"https://www.archives13.fr/archive/recherche/etatcivil/n:88"};
+  if(/RAMATUELLE|TOULON|HYERES|DRAGUIGNAN/.test(p)) return {n:"Archives 83 (Var)", u:"https://archives.var.fr/"};
+  return {n:"Service-public / mairie du lieu", u:"https://www.service-public.fr/particuliers/vosdroits/N359"};
+}
+function demande(kind, r, extra){
+  const subj=encodeURIComponent("Demande d'acte de "+kind+" — "+r.prenoms+" "+r.nom);
+  const body=encodeURIComponent("Bonjour,\n\nJe sollicite une copie de l'acte de "+kind+" de :\n"
+    +"Nom : "+r.nom+"\nPrénom(s) : "+r.prenoms+"\n"+(extra||"")+"\nJe vous remercie.\nCordialement.");
+  return "mailto:?subject="+subj+"&body="+body;
+}
+
 function render(rows, secs){
   if(!rows.length){ setSt("Aucun résultat. Vérifie l'orthographe, enlève le prénom, ou élargis les années.", ""); return; }
   setSt("<b>"+rows.length+"</b> résultat(s) · "+secs.toFixed(1)+" s"+(rows.length>=300?" (limité à 300 — précise le prénom)":""));
@@ -161,18 +177,25 @@ function render(rows, secs){
     const nn = fdate(r.date_naissance), dd = fdate(r.date_deces);
     const lieuN = [r.commune_naissance, (r.pays_naissance&&r.pays_naissance!=="FRANCE"?r.pays_naissance:"")].filter(Boolean).join(", ");
     const sx = r.sexe==="1"?"♂":r.sexe==="2"?"♀":"";
-    const subj = encodeURIComponent("Demande d'acte de décès — "+r.prenoms+" "+r.nom);
-    const body = encodeURIComponent("Bonjour,\n\nJe souhaite obtenir une copie de l'acte de décès de :\n"
-      +"Nom : "+r.nom+"\nPrénom(s) : "+r.prenoms+"\nNé(e) le : "+nn+(lieuN?(" à "+lieuN):"")
-      +"\nDécédé(e) le : "+dd+"\nN° d'acte INSEE : "+(r.num_acte||"—")+"\nCommune du décès (code INSEE) : "+(r.code_lieu_deces||"—")
-      +"\n\nJe vous remercie.\nCordialement.");
+    const bplace = r.commune_naissance||"";
+    // 3 actes : décès (n° INSEE connu), naissance (commune de naissance connue), mariage (lieu à confirmer)
+    const mDeces = demande("décès", r, "Né(e) le : "+nn+(lieuN?(" à "+lieuN):"")+"\nDécédé(e) le : "+dd
+      +"\nN° d'acte INSEE : "+(r.num_acte||"—")+"\nCommune du décès (code INSEE) : "+(r.code_lieu_deces||"—")+"\n");
+    const mNaiss = demande("naissance", r, "Né(e) le : "+nn+(bplace?(" à "+bplace):"")+"\n");
+    const mMar   = demande("mariage", r, "Époux/épouse né(e) : "+r.prenoms+" "+r.nom+" ("+nn+")\nLieu du mariage : à confirmer (souvent la commune de l'épouse)\n");
+    const aN = archiveFor(bplace);
     return '<div class="hit">'
       + '<div class="nm">'+esc(r.nom)+' <span class="pr">'+esc(r.prenoms)+'</span> <span class="badge">'+sx+'</span></div>'
       + '<div class="li">🎂 Né(e) : <b>'+esc(nn)+'</b>'+(lieuN?(' à <b>'+esc(lieuN)+'</b>'):'')+'</div>'
       + '<div class="li">🕯️ Décès : <b>'+esc(dd)+'</b>'+(r.code_lieu_deces?(' · commune INSEE <b>'+esc(r.code_lieu_deces)+'</b>'):'')+(r.num_acte?(' · acte n°'+esc(r.num_acte)):'')+'</div>'
+      + '<div class="li" style="margin-top:6px;color:var(--gold)">📥 Demander les actes :</div>'
       + '<div class="acts">'
-      +   '<a href="https://www.service-public.fr/particuliers/vosdroits/R1406" target="_blank" rel="noopener">📄 Demander l\'acte</a>'
-      +   '<a href="mailto:?subject='+subj+'&body='+body+'">✉️ Modèle de courrier</a>'
+      +   '<a href="'+mDeces+'">🕯️ Décès (n°'+esc(r.num_acte||"?")+')</a>'
+      +   '<a href="'+mNaiss+'">🍼 Naissance</a>'
+      +   '<a href="'+mMar+'">💍 Mariage</a>'
+      + '</div>'
+      + '<div class="acts">'
+      +   '<a href="'+esc(aN.u)+'" target="_blank" rel="noopener">🏛️ '+esc(aN.n)+'</a>'
       +   '<button data-nom="'+esc(r.nom)+'" data-by="'+esc((r.date_naissance||"").slice(0,4))+'" class="rem">⬆️ Génération d\'avant</button>'
       + '</div></div>';
   }).join("");
