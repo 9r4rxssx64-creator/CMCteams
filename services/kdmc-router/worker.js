@@ -36,10 +36,33 @@ const ROUTES = {
   'deces.kd-mc.com': '/CMCteams/tools/deces-insee', // Recherche décès INSEE 100% privée (DuckDB-WASM sur R2) — le nom ne quitte pas le navigateur (Kevin 2026-08-05)
 };
 
+// Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,
+// lecture seule. L'API matchID ne renvoie PAS d'en-tête CORS → un appel direct
+// depuis arbre.kd-mc.com est bloqué par le navigateur (Kevin « je ne vois rien »).
+// Ici arbre.kd-mc.com/__deces?q=… reste same-origin → 0 CORS, marche sur iPhone.
+async function handleDeces(request, url) {
+  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,OPTIONS', 'Access-Control-Allow-Headers': '*' };
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  const q = (url.searchParams.get('q') || '').trim();
+  let size = parseInt(url.searchParams.get('size') || '25', 10); if (!(size > 0)) size = 25; if (size > 50) size = 50;
+  if (q.length < 2) return new Response(JSON.stringify({ response: { persons: [] } }), { headers: { 'content-type': 'application/json', ...cors } });
+  const api = 'https://deces.matchid.io/deces/api/v1/search?q=' + encodeURIComponent(q) + '&size=' + size;
+  try {
+    const r = await fetch(api, { headers: { accept: 'application/json' } });
+    const body = await r.text();
+    return new Response(body, { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300', ...cors } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'proxy', message: String((e && e.message) || e) }), { status: 502, headers: { 'content-type': 'application/json', ...cors } });
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
+
+    // Recherche décès INSEE (proxy same-origin, public read-only) — pour l'arbre.
+    if (url.pathname === '/__deces') return handleDeces(request, url);
 
     // SSO transverse (session unique + CGU). Même origine par sous-domaine.
     if (url.pathname.startsWith('/__sso/')) return handleSso(request, url, env);
