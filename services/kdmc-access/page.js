@@ -78,7 +78,13 @@ export const PAGE_HTML = `<!doctype html>
       var m=slot(norm(p.name)||p.uid,p.name);
       m.conns=p.hits||0;m.hist=p.history||[];m.places=p.places||[];
       m.lastSeen=Math.max(m.lastSeen,p.lastSeen||0);
-      Object.keys(p.apps||{}).forEach(function(a){m.apps[a]=1});(p.devices||[]).forEach(function(d){m.devices[d]=1});
+      /* Renseignements fins : appareil complet, opérateur, VPN, fuseau, géo, 1re fois. */
+      m.dev=p.device||'';m.isp=p.isp||'';m.vpn=!!p.vpn;m.tz=p.tz||'';m.geo=p.geo||null;
+      m.place=p.place||'';m.lastApp=p.lastApp||'';m.created=p.created||0;m.anomaly=p.anomaly||null;
+      m.appStats=p.apps||{};
+      /* Temps réellement passé, par app et au total. */
+      m.totalMs=0;Object.keys(p.apps||{}).forEach(function(a){m.apps[a]=1;m.totalMs+=(p.apps[a]&&p.apps[a].ms)||0});
+      (p.devices||[]).forEach(function(d){m.devices[d]=1});
     });
     ((DATA&&DATA.people)||[]).forEach(function(p){
       var m=slot(norm(p.name)||p.key,p.name);
@@ -153,19 +159,41 @@ export const PAGE_HTML = `<!doctype html>
       var byDay={},order=[];
       (p.hist||[]).forEach(function(e){var k=dayKey(e.ts);if(!byDay[k]){byDay[k]={ts:e.ts,items:[]};order.push(byDay[k])}byDay[k].items.push(e)});
       var folders=order.map(function(g,i){
-        var rows=g.items.map(function(e){return '<div class="ev"><span class="t">'+esc(hm(e.ts))+'</span><span class="e">'+esc(appNm(e.app))+' · ⏱ '+esc(dur((e.end||e.ts)-e.ts))+(e.place?' · '+esc(e.place):'')+'</span></div>'}).join('');
+        var rows=g.items.map(function(e){
+        /* Chaque connexion porte SON contexte : appareil exact, opérateur, VPN, lieu. */
+        var det=[appNm(e.app),'⏱ '+dur((e.end||e.ts)-e.ts)];
+        if(e.dev)det.push(e.dev);
+        if(e.place)det.push('📍 '+e.place);
+        if(e.isp)det.push((e.vpn?'🕵️ ':'📶 ')+e.isp);
+        var map=(e.lat&&e.lon)?' <a href="https://www.openstreetmap.org/?mlat='+encodeURIComponent(e.lat)+'&mlon='+encodeURIComponent(e.lon)+'#map=12/'+encodeURIComponent(e.lat)+'/'+encodeURIComponent(e.lon)+'" target="_blank" rel="noopener">🗺</a>':'';
+        return '<div class="ev"><span class="t">'+esc(hm(e.ts))+'</span><span class="e">'+esc(det.join(' · '))+map+'</span></div>';
+      }).join('');
         return '<details class="fold"'+(i===0?' open':'')+'><summary>📅 '+esc(dayLabel(g.ts))+' · '+g.items.length+' connexion'+(g.items.length>1?'s':'')+'</summary>'+rows+'</details>';
+      }).join('');
+      /* Détail « travail » : par app, nb de sessions + temps passé + dernière fois. */
+      var appsDetail=Object.keys(p.appStats||{}).sort(function(a,b){return ((p.appStats[b]&&p.appStats[b].ms)||0)-((p.appStats[a]&&p.appStats[a].ms)||0)}).map(function(a){
+        var s=p.appStats[a]||{};
+        return '<div class="ev"><span class="t">'+esc(appNm(a))+'</span><span class="e">'+(s.sessions||0)+' session'+((s.sessions||0)>1?'s':'')+(s.ms?' · ⏱ '+esc(dur(s.ms)):'')+(s.last?' · dernière '+ago(s.last):'')+'</span></div>';
       }).join('');
       var acts=(p.recent||[]).map(function(e){return '<div class="ev"><span class="t">'+dt(e.ts)+'</span><span class="e">'+esc(e.event||'')+(e.app?' · '+esc(appNm(e.app)):'')+(e.device?' · '+esc(e.device):'')+'</span></div>'}).join('');
       h+='<div class="card"><div class="pers" data-k="'+esc(p.key)+'">'
         +'<span class="dot" style="background:'+(isOn?'var(--on)':'var(--off)')+'"></span>'
         +'<span class="nm">'+esc(p.name||'—')+' '+tiers+'</span>'
         +'<span class="when">'+ago(p.lastSeen)+'</span></div>'
-        +'<div class="chips">'+apps+dev
+        +'<div class="chips">'
+        +(p.dev?'<span class="chip">📱 '+esc(p.dev)+'</span>':dev)
+        +(p.place?'<span class="chip">📍 '+esc(p.place)+'</span>':((p.places&&p.places.length)?'<span class="chip">📍 '+esc(p.places[0])+'</span>':''))
+        +(p.isp?'<span class="chip">'+(p.vpn?'🕵️ ':'📶 ')+esc(p.isp)+'</span>':'')
+        +(p.vpn?'<span class="chip" style="border-color:var(--off)">VPN / serveur</span>':'')
+        +(p.tz?'<span class="chip">🕓 '+esc(p.tz)+'</span>':'')
         +(p.conns?'<span class="chip g">'+p.conns+' connexions</span>':'')
+        +(p.totalMs?'<span class="chip g">⏱ '+esc(dur(p.totalMs))+' au total</span>':'')
         +(p.actions?'<span class="chip g">'+p.actions+' actions</span>':'')
-        +((p.places&&p.places.length)?'<span class="chip">📍 '+esc(p.places[0])+'</span>':'')+'</div>'
+        +(p.created?'<span class="chip">1re fois '+dt(p.created)+'</span>':'')
+        +'</div>'
+        +(p.anomaly?'<div class="ev" style="color:var(--off)">⚠️ Déplacement impossible : '+esc(p.anomaly.from)+' → '+esc(p.anomaly.to)+' en '+esc(String(p.anomaly.mins))+' min (compte partagé ou VPN ?)</div>':'')
         +'<div class="tl'+(opened?' open':'')+'" data-tl="'+esc(p.key)+'">'
+        +(appsDetail?'<div class="sect">Temps par app</div>'+appsDetail:'')
         +(folders?'<div class="sect">Connexions</div>'+folders:'')
         +(acts?'<div class="sect">Actions dans les apps</div>'+acts:'')
         +((!folders&&!acts)?'<div class="ev">—</div>':'')

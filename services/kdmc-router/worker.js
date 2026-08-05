@@ -429,6 +429,41 @@ async function audLog(env, entry) {
     await env.ACCOUNTS.put('aud:log', JSON.stringify(log.slice(0, 200)));
   } catch { /* fail-open */ }
 }
+/* Lecture FINE de l'appareil depuis l'User-Agent : modèle, OS + version, navigateur
+   + version. Côté SERVEUR → ni CSP ni bloqueur ne peut l'empêcher, et ça marche même
+   si l'app ne coopère pas. Tolérant : tout champ inconnu reste vide (jamais d'erreur). */
+function uaParse(ua) {
+  const s = String(ua || '');
+  let model = 'Autre';
+  if (/iPhone/i.test(s)) model = 'iPhone';
+  else if (/iPad/i.test(s)) model = 'iPad';
+  else if (/Android/i.test(s)) { const m = s.match(/;\s*([^;()]+?)\s*(?:Build\/|\))/); model = (m && m[1] && m[1].trim()) || 'Android'; }
+  else if (/Macintosh|Mac OS X/i.test(s)) model = 'Mac';
+  else if (/Windows/i.test(s)) model = 'PC Windows';
+  else if (/Linux/i.test(s)) model = 'Linux';
+  let os = '', osv = '', m;
+  if ((m = s.match(/(?:iPhone |CPU )?OS (\d+[._]\d+)/))) { os = 'iOS'; osv = m[1].replace(/_/g, '.'); }
+  else if ((m = s.match(/Android (\d+(?:\.\d+)?)/))) { os = 'Android'; osv = m[1]; }
+  else if ((m = s.match(/Mac OS X (\d+[._]\d+)/))) { os = 'macOS'; osv = m[1].replace(/_/g, '.'); }
+  else if (/Windows NT 10/.test(s)) { os = 'Windows'; osv = '10/11'; }
+  else if (/Windows/i.test(s)) { os = 'Windows'; }
+  else if (/Linux/i.test(s)) { os = 'Linux'; }
+  let br = '', brv = '';
+  if ((m = s.match(/Edg\/(\d+)/))) { br = 'Edge'; brv = m[1]; }
+  else if ((m = s.match(/OPR\/(\d+)/))) { br = 'Opera'; brv = m[1]; }
+  else if (/Chrome\//.test(s) && !/Edg\//.test(s)) { m = s.match(/Chrome\/(\d+)/); br = 'Chrome'; brv = m ? m[1] : ''; }
+  else if ((m = s.match(/Firefox\/(\d+)/))) { br = 'Firefox'; brv = m[1]; }
+  else if ((m = s.match(/Version\/(\d+)[^)]*Safari/))) { br = 'Safari'; brv = m[1]; }
+  else if (/Safari/i.test(s)) { br = 'Safari'; }
+  return { model, os, osv, br, brv };
+}
+/* Opérateur/hébergeur → distingue 4G, box maison, WiFi public… et signale un
+   VPN/serveur (quelqu'un qui masque sa provenance). Signal de sécurité utile. */
+function ispInfo(cf) {
+  const isp = String((cf && cf.asOrganization) || '');
+  const vpn = /vpn|proxy|host|server|cloud|data ?cent|ovh|hetzner|digitalocean|linode|vultr|amazon|aws|google|azure|m247|nordvpn|surfshark|expressvpn|mullvad|cloudflare warp/i.test(isp);
+  return { isp, vpn };
+}
 /* Enrichit (ou crée) la fiche à chaque connexion : MAX de renseignements. */
 async function enrich(env, request, uid, name, cgu, pre) {
   if (!env || !env.ACCOUNTS) return;
@@ -437,6 +472,10 @@ async function enrich(env, request, uid, name, cgu, pre) {
   const ua = request.headers.get('user-agent') || '';
   const device = /mobile|iphone|android/i.test(ua) ? 'mobile' : 'desktop';
   const os = /iphone|ipad|ios/i.test(ua) ? 'iOS' : /android/i.test(ua) ? 'Android' : /mac/i.test(ua) ? 'macOS' : /windows/i.test(ua) ? 'Windows' : /linux/i.test(ua) ? 'Linux' : '';
+  /* Détail « espion » : modèle + versions + opérateur + géo fine + fuseau. */
+  const D = uaParse(ua);
+  const NET = ispInfo(cf);
+  const devFull = [D.model, D.os + (D.osv ? ' ' + D.osv : ''), D.br + (D.brv ? ' ' + D.brv : '')].filter(function (x) { return x && x.trim(); }).join(' · ');
   const place = [cf.city, cf.region, cf.country].filter(Boolean).join(', ');
   const now = Date.now();
   const rawHost = (request.headers.get('host') || '').toLowerCase().replace(/:.*$/, '');
@@ -458,8 +497,14 @@ async function enrich(env, request, uid, name, cgu, pre) {
   acc.last_seen = now;
   acc.last_ip_hash = ipHash;
   acc.last_place = place;
-  acc.last_device = device + (os ? ' · ' + os : '');
+  acc.last_device = devFull || (device + (os ? ' · ' + os : ''));
   acc.last_app = host || acc.last_app || '';
+  /* Renseignements fins conservés sur la fiche (dernier état connu). */
+  acc.last_isp = NET.isp; acc.last_vpn = !!NET.vpn;
+  acc.last_tz = cf.timezone || acc.last_tz || '';
+  acc.last_geo = { city: cf.city || '', postal: cf.postalCode || '', lat: cf.latitude || '', lon: cf.longitude || '' };
+  /* devKey VOLONTAIREMENT sans version : sinon chaque mise à jour d'iOS/navigateur
+     compterait comme un « nouvel appareil » → alerte push à chaque update (spam). */
   const devKey = device + (os ? '·' + os : '');
   const newDevice = (acc.devices || []).indexOf(devKey) < 0;
   if (newDevice) structural = true;
@@ -484,16 +529,25 @@ async function enrich(env, request, uid, name, cgu, pre) {
   acc.history = acc.history || [];
   if (host) {
     const a = acc.apps[host] || { first: now, last: 0, sessions: 0 };
-    const cont = a.sessions > 0 && (now - (a.last || 0)) <= SESSION_GAP; /* session encore en cours ? */
+    const prevLast = a.last || 0;
+    const cont = a.sessions > 0 && (now - prevLast) <= SESSION_GAP; /* session encore en cours ? */
     a.last = now;
     let cur = null; /* la session la plus récente pour CE site */
     for (let i = 0; i < acc.history.length; i++) { if (acc.history[i].app === host) { cur = acc.history[i]; break; } }
     if (cont && cur) {
       cur.end = now; /* prolonge la session ouverte → la durée grandit */
+      /* TEMPS CUMULÉ réellement passé sur cette app (somme des prolongations). */
+      a.ms = (a.ms || 0) + Math.max(0, now - prevLast);
     } else {
       a.sessions = (a.sessions || 0) + 1;
       acc.hits = (acc.hits || 0) + 1;
-      acc.history.unshift({ ts: now, end: now, app: host, device: devKey, place: place });
+      /* Chaque session garde SON contexte (appareil détaillé, opérateur, VPN, coords)
+         → on voit l'évolution dans le temps, pas seulement le dernier état. */
+      acc.history.unshift({
+        ts: now, end: now, app: host, device: devKey, place: place,
+        dev: devFull, isp: NET.isp, vpn: NET.vpn ? 1 : 0,
+        lat: cf.latitude || '', lon: cf.longitude || '', tz: cf.timezone || '',
+      });
       if (acc.history.length > 80) acc.history = acc.history.slice(0, 80);
       structural = true;
     }
@@ -749,7 +803,12 @@ async function adminSession(request, env) {
   return null;
 }
 async function handleAdmin(request, url, env) {
-  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  /* `domain-log` est le SEUL endpoint admin lu depuis un autre sous-domaine
+     (admin.kd-mc.com) : son préflight a besoin des en-têtes CORS, donc il ne doit
+     PAS être avalé par ce 204 générique — sinon le navigateur bloque la lecture et
+     la page « Qui se connecte » reste vide sans le moindre message (bug attrapé par
+     domain-log.test.mjs avant la mise en ligne). */
+  if (request.method === 'OPTIONS' && url.pathname !== '/__admin/domain-log') return new Response(null, { status: 204 });
   const secret = env && env.KDMC_SSO_SECRET;
   const path = url.pathname;
   /* Login admin (preuve du code) — AVANT le gate, sinon poule-œuf. */
@@ -816,6 +875,12 @@ async function handleAdmin(request, url, env) {
       uid: a.uid, name: a.name || '', hits: a.hits || 0, lastSeen: a.last_seen || 0,
       devices: (a.devices || []).slice(0, 8), places: (a.places || []).slice(0, 8),
       apps: a.apps || {}, history: (a.history || []).slice(0, 80),
+      /* Renseignements fins (dernier état) : appareil complet, opérateur, VPN,
+         fuseau, géo approximative, 1re fois, anomalie de déplacement détectée. */
+      device: a.last_device || '', isp: a.last_isp || '', vpn: !!a.last_vpn,
+      tz: a.last_tz || '', geo: a.last_geo || null, place: a.last_place || '',
+      lastApp: a.last_app || '', created: a.created || 0, cguAt: a.cgu_at || 0,
+      anomaly: a.anomaly || null,
     })).sort((x, y) => (y.lastSeen || 0) - (x.lastSeen || 0));
     return jc({ ok: true, people, count: people.length, ts: Date.now() });
   }
