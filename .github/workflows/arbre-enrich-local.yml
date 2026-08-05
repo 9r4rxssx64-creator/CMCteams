@@ -1,0 +1,32 @@
+name: Arbre — enrichissement INSEE v2 (dataset local complet)
+# Kevin 2026-08-05 : une fois les documents INSEE sur R2, vérifier chaque personne
+# contre le fichier COMPLET (DuckDB + httpfs), bien meilleur rappel que l'API matchid.
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python3 -m pip install --quiet duckdb
+      - name: Enrichissement INSEE local
+        run: python3 tools/arbre/enrich-insee-local.py
+      - name: Commit rapport
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research/ENRICH-INSEE-LOCAL.md
+          git commit -m "Arbre: enrichissement INSEE v2 (dataset local complet) [skip ci]" || { echo "aucun changement"; exit 0; }
+          for i in 1 2 3 4; do
+            git push && break
+            git fetch origin "${GITHUB_REF_NAME}"; git rebase "origin/${GITHUB_REF_NAME}" || git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+          git push || { echo "::error::push impossible"; exit 1; }
