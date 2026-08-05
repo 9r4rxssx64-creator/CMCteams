@@ -140,6 +140,25 @@ jobs:
             echo "::error::LE JOURNAL N'ENREGISTRE RIEN (écriture Firebase perdue en silence) — c'est la cause d'un historique vide"; exit 1
           fi
 
+      # Le journal ne peut se remplir QUE si les apps réellement PUBLIÉES contiennent
+      # l'envoi + autorisent admin.kd-mc.com dans leur CSP. Vécu 2026-08-05 : worker OK
+      # mais journal à 0 évènement → le code des apps n'était pas encore en ligne.
+      # Non bloquant : c'est un diagnostic qui dit QUELLE app ne nourrit pas le journal.
+      - name: Les apps alimentent-elles le journal ? (pages LIVE)
+        continue-on-error: true
+        run: |
+          check() {
+            B=$(curl -m 25 -sL "$1" || true)
+            [ -z "$B" ] && { echo "$1 → ❌ page injoignable"; return; }
+            echo "$B" | grep -q 'admin\.kd-mc\.com/log' && E=OK || E=ABSENT
+            echo "$B" | grep -q 'connect-src[^>]*admin\.kd-mc\.com' && C=OK || C=ABSENT
+            echo "$1 → envoi:$E | autorisation-réseau(CSP):$C"
+          }
+          check "https://cmcteams.kd-mc.com/"
+          check "https://apex-chat.kd-mc.com/"
+          # Apex v13 : l'envoi est dans un fichier JS compilé, seule la CSP est dans la page.
+          check "https://apex-ai.kd-mc.com/"
+
       - name: Summary
         if: always()
         run: |
