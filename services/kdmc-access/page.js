@@ -93,6 +93,11 @@ export const PAGE_HTML = `<!doctype html>
         m.dev=p.device||m.dev||'';m.isp=p.isp||m.isp||'';m.vpn=!!p.vpn;m.tz=p.tz||m.tz||'';
         m.geo=p.geo||m.geo||null;m.place=p.place||m.place||'';m.lastApp=p.lastApp||m.lastApp||'';
       }
+      /* Renseignements réseau / entrée / rythme. */
+      m.lang=p.lang||m.lang||'';m.net=p.net||m.net||null;m.from=p.from||m.from||'';
+      m.path=p.path||m.path||'';m.passkey=m.passkey||!!p.passkey;
+      m.aliases=(m.aliases||[]).concat(p.aliases||[]);
+      m.hours=m.hours||{};Object.keys(p.hours||{}).forEach(function(h){m.hours[h]=(m.hours[h]||0)+(p.hours[h]||0)});
       if(p.created&&(!m.created||p.created<m.created))m.created=p.created; /* la 1re fois = la PLUS ANCIENNE */
       if(p.anomaly)m.anomaly=p.anomaly;
       /* Temps réellement passé, cumulé par app sur TOUS les comptes de la personne. */
@@ -111,6 +116,7 @@ export const PAGE_HTML = `<!doctype html>
          Générique — toute app qui envoie event:"progression" + meta apparaît ici,
          sans rien changer à cette page. */
       (p.recent||[]).forEach(function(e){
+        if(e.meta&&e.meta.appareil&&(!m._uaTs||e.ts>m._uaTs)){m._uaTs=e.ts;m.ua=e.meta.appareil}
         if(e.event!=='progression'||!e.meta)return;
         m.prog=m.prog||{};
         if(!m.prog[e.app]||m.prog[e.app].ts<e.ts)m.prog[e.app]={ts:e.ts,meta:e.meta};
@@ -221,6 +227,38 @@ export const PAGE_HTML = `<!doctype html>
         var s=p.appStats[a]||{};
         return '<div class="ev"><span class="t">'+esc(appNm(a))+'</span><span class="e">'+(s.sessions||0)+' session'+((s.sessions||0)>1?'s':'')+(s.ms?' · ⏱ '+esc(dur(s.ms)):'')+(s.last?' · dernière '+ago(s.last):'')+'</span></div>';
       }).join('');
+      /* ANALYSES CALCULÉES (aucune donnée supplémentaire à collecter — tout se déduit
+         de l'historique déjà là) : durée moyenne, app préférée, assiduité, heure de
+         prédilection. C'est ce qui transforme une liste en renseignement. */
+      var infos=[];
+      var nS=0,sumS=0;(p.hist||[]).forEach(function(e){var d=(e.end||e.ts)-e.ts;if(d>0){nS++;sumS+=d}});
+      if(nS)infos.push('⏱ Session moyenne ' + dur(Math.round(sumS/nS)));
+      var best='',bestMs=0;Object.keys(p.appStats||{}).forEach(function(a){var ms=(p.appStats[a]||{}).ms||0;if(ms>bestMs){bestMs=ms;best=a}});
+      if(best)infos.push('❤️ App préférée ' + appNm(best));
+      var jours={};(p.hist||[]).forEach(function(e){jours[dayKey(e.ts)]=1});
+      var nj=Object.keys(jours).length;if(nj)infos.push('📆 ' + nj + ' jour' + (nj>1?'s':'') + ' actif' + (nj>1?'s':''));
+      var hs=p.hours||{},hb='',hbn=0;Object.keys(hs).forEach(function(h){if(hs[h]>hbn){hbn=hs[h];hb=h}});
+      if(hb!=='')infos.push('🕓 Surtout vers ' + hb + 'h');
+      if(p.lang)infos.push('🗣 ' + p.lang);
+      if(p.from)infos.push('↩️ Arrivé depuis ' + appNm(p.from));
+      if(p.passkey)infos.push('🔐 Face ID activé');
+      if(p.aliases&&p.aliases.length)infos.push('🔗 ' + p.aliases.length + ' ancien' + (p.aliases.length>1?'s':'') + ' identifiant' + (p.aliases.length>1?'s':'') + ' rattaché' + (p.aliases.length>1?'s':''));
+      var ua=p.ua||null;
+      if(ua){
+        if(ua.ecran)infos.push('🖥 Écran ' + ua.ecran + (ua.dpr?' @'+ua.dpr+'x':''));
+        if(ua.pwa!==undefined)infos.push(ua.pwa?'📲 App installée':'🌐 Dans le navigateur');
+        if(ua.coeurs)infos.push('⚙️ ' + ua.coeurs + ' cœurs');
+        if(ua.fuseau)infos.push('🕓 ' + ua.fuseau);
+        if(ua.reseau)infos.push('📶 ' + ua.reseau);
+        if(ua.sombre!==undefined)infos.push(ua.sombre?'🌙 Thème sombre':'☀️ Thème clair');
+      }
+      var n2=p.net||null;
+      if(n2){
+        if(n2.colo)infos.push('🌍 Via ' + n2.colo + (n2.continent?' ('+n2.continent+')':''));
+        if(n2.asn)infos.push('🛰 Réseau AS' + n2.asn);
+        if(n2.http||n2.tls)infos.push('🔒 ' + [n2.http,n2.tls].filter(Boolean).join(' · '));
+      }
+      var infoDetail=infos.length?'<div class="ev"><span class="e">'+infos.map(esc).join(' · ')+'</span></div>':'';
       /* Progression, lisible : « XP 1240 · série 12 j · mots 340 · aujourd'hui 3 leçons ».
          Rendu générique (parcourt le meta) → marche pour Lingua et toute app future. */
       var LBL={xp:'⭐ XP',serie:'🔥 Série',gemmes:'💎 Gemmes',mots:'📚 Mots',cours:'🎓 Cours',niveau:'📈 Niveau',lecons:'Leçons',parfaits:'Parfaits',aujourdhui:"Aujourd'hui"};
@@ -249,6 +287,7 @@ export const PAGE_HTML = `<!doctype html>
         +'</div>'
         +(p.anomaly?'<div class="ev" style="color:var(--off)">⚠️ Déplacement impossible : '+esc(p.anomaly.from)+' → '+esc(p.anomaly.to)+' en '+esc(String(p.anomaly.mins))+' min (compte partagé ou VPN ?)</div>':'')
         +'<div class="tl'+(opened?' open':'')+'" data-tl="'+esc(p.key)+'">'
+        +(infoDetail?'<div class="sect">Renseignements</div>'+infoDetail:'')
         +(progDetail?'<div class="sect">Progression</div>'+progDetail:'')
         +(appsDetail?'<div class="sect">Temps par app</div>'+appsDetail:'')
         +(folders?'<div class="sect">Connexions</div>'+folders:'')
