@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.26.0";
+var APP_VER="v2.27.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -44,8 +44,9 @@ function loadS(){
   S.diff=lg("diff",null);   // difficulté des exercices : null = Auto (dérivée du niveau), 0..4 = fixée (test de niveau / profil)
   S.coachMsgs=lg("coachMsgs",[]);                                   // mémoire du Coach IA — PAR COMPTE (historique de conversation)
   S.coachProfile=lg("coachProfile",{objectif:"bilingue",weak:[],notes:""}); // profil d'apprentissage suivi par le Coach
+  S.beeVoice=lg("beeVoice","fillette"); // voix de Bee choisie (catalogue BEE_VOICES) — fillette mignonne par défaut
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} }
 
 /* ============ Comptes (CRUD) ============ */
 var AVATARS=["🦊","🐼","🐨","🦁","🐵","🐸","🦄","🐙","🐯","🐧","🐷","🐰","🐻","🐮","🐲","🦖"];
@@ -71,7 +72,7 @@ function findLocalAccount(name,code){ var n=norm(name); var accs=accounts(); for
    appareil : nom+code → tout revient. FAIL-OPEN : si le cloud est indispo, la
    mémoire locale continue (rien perdu localement). */
 var SYNC_BASE="https://lingua.kd-mc.com/__lingua";
-var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile"];
+var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
 function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
@@ -454,6 +455,16 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   var ac=el("div","achv-wrap"); ac.innerHTML='<div class="sec-h">🏅 Succès ('+Object.keys(S.achv).length+'/'+ACHV.length+')</div>'; var ag=el("div","achv-grid");
   ACHV.forEach(function(a){ var got=S.achv[a.id]; var b=el("div","achv"+(got?" got":"")); b.innerHTML='<span class="ai">'+a.i+'</span><span class="at">'+a.t+'</span>'; b.title=a.d; ag.appendChild(b); });
   ac.appendChild(ag); d.appendChild(ac);
+  // 🔊 Voix de Bee — choix par compte, aperçu parlé à chaque tap
+  var vw=el("div","voice-wrap"); vw.innerHTML='<div class="sec-h">🔊 Voix de Bee</div>';
+  BEE_VOICES.forEach(function(v){
+    var b=el("button","voice-opt"+((S.beeVoice||"fillette")===v.id?" sel":""));
+    b.innerHTML='<b>'+v.nom+'</b><span>'+v.desc+'</span>';
+    b.onclick=function(){ S.beeVoice=v.id; save(); vibrate(10);
+      speakLang("Bonjour ! Moi c'est Bee, ta petite abeille !","fr-FR","bee",true);
+      render(); toast("Voix de Bee : "+v.nom); };
+    vw.appendChild(b); });
+  d.appendChild(vw);
   // mémoire en ligne
   var cloud=el("div","freeze-card");
   if(me.code){ cloud.innerHTML='<div><b>☁️ Mémoire en ligne active</b><span> — ta progression est sauvegardée. Retrouve-la partout avec ton prénom + ton code.</span></div><div class="fx">'+(_cloudState==="off"?"⚠️":"✓")+'</div>'; }
@@ -646,13 +657,14 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à m
     if(DISC.handsFree&&DISC.open){ setTimeout(function(){ discListen(); },500); } }
   if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop,dur);
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
-  var vid=BEE_VOICE; /* Bee : voix douce, tendre, féminine — toujours */
+  var vcfg=beeVoiceCfg(), vid=vcfg.tts; /* Bee : la voix CHOISIE par l'utilisateur (fillette par défaut) */
   if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
     var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+    if(vcfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vcfg.rate; }catch(_){} }
     a.onended=function(){ if(DISC.timer)clearTimeout(DISC.timer); stop(); };
-    a.onerror=function(){ _webSpeakLang(text,lang,true); };
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang,true); });
-  }catch(e){ _webSpeakLang(text,lang,true); } } else if(S.sound){ _webSpeakLang(text,lang,true); }
+    a.onerror=function(){ _webSpeakLang(text,lang,true,vcfg); };
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang,true,vcfg); });
+  }catch(e){ _webSpeakLang(text,lang,true,vcfg); } } else if(S.sound){ _webSpeakLang(text,lang,true,vcfg); }
 }
 function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
   var mic=overlay.querySelector(".disc-mic"); if(mic)mic.classList.add("rec");
@@ -757,11 +769,25 @@ function vTranslate(){ var d=el("div","screen");
   return d;
 }
 /* Voix de BEE : toujours douce, tendre et féminine (nova), quel que soit le choix de voix des leçons. */
-var BEE_VOICE="nova";
+var BEE_VOICE="bee"; /* marqueur : la voix de Bee est CHOISIE par l'utilisateur (S.beeVoice) */
+/* Catalogue de voix de Bee — chacune sonne RÉELLEMENT différente (règle « voix réellement
+   différentes ») : base cloud + vitesse de lecture SANS préservation du pitch → plus rapide
+   = plus aigu = voix de petite fille. rate=vitesse audio cloud ; wsPitch/wsRate = repli local. */
+var BEE_VOICES=[
+  {id:"fillette",  nom:"🎀 Fillette mignonne", desc:"petite voix aiguë et adorable — LA voix de la petite abeille", tts:"nova",    rate:1.24, wsPitch:1.7, wsRate:1.05},
+  {id:"minibee",   nom:"🐝 Mini-Bee rigolote", desc:"encore plus aiguë, façon dessin animé",                        tts:"nova",    rate:1.45, wsPitch:2,   wsRate:1.15},
+  {id:"douce",     nom:"🌸 Douce et tendre",   desc:"calme, posée, rassurante",                                     tts:"shimmer", rate:1,    wsPitch:1.15,wsRate:.95},
+  {id:"petillante",nom:"☀️ Pétillante",        desc:"énergique et chaleureuse",                                     tts:"nova",    rate:1,    wsPitch:1.2, wsRate:1},
+  {id:"conteuse",  nom:"📖 Conteuse",          desc:"expressive, comme une histoire du soir",                       tts:"fable",   rate:.96,  wsPitch:1.1, wsRate:.9}
+];
+function beeVoiceCfg(){ var id=S.beeVoice||"fillette"; for(var i=0;i<BEE_VOICES.length;i++){ if(BEE_VOICES[i].id===id)return BEE_VOICES[i]; } return BEE_VOICES[0]; }
 function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voice||"nova";
-  if(_isCloudVoice(vid)){ try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); a.onerror=function(){ _webSpeakLang(text,lang,fem); }; var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang,fem); }); return; }catch(e){} }
-  _webSpeakLang(text,lang,fem); }
-function _webSpeakLang(text,lang,fem){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=fem?.95:.9; if(fem)u.pitch=1.15;
+  var cfg=null; if(vid==="bee"){ cfg=beeVoiceCfg(); vid=cfg.tts; }
+  if(_isCloudVoice(vid)){ try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text));
+    if(cfg&&cfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=cfg.rate; }catch(_){} }
+    a.onerror=function(){ _webSpeakLang(text,lang,fem,cfg); }; var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang,fem,cfg); }); return; }catch(e){} }
+  _webSpeakLang(text,lang,fem,cfg); }
+function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=cfg?cfg.wsRate:(fem?.95:.9); u.pitch=cfg?cfg.wsPitch:(fem?1.15:1);
   var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var femV=fem?vs.filter(function(v){return /am[eé]lie|audrey|aur[eé]lie|c[eé]line|chantal|julie|marie|virginie|alice|elsa|paulina|monica|petra|anna|female|femme|woman/i.test(v.name);})[0]:null;
   var best=femV||vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
