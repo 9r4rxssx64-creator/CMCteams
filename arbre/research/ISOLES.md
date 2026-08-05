@@ -1,4 +1,4 @@
-# 🔗 Sonde « membres isolés » — 2026-08-04
+# 🔗 Sonde « membres isolés » — 2026-08-05
 
 ## 🇨🇭 Claude Alain DE SARZENS († 10.05.2022, Suisse)
 - **hommages-sarzens** : HTTP ok, 7 Ko — rien pour « /SARZENS|Sarzens/ » ([txt](isolesraw/hommages-sarzens.txt) · [capture](isolesraw/hommages-sarzens.png))
