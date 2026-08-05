@@ -90,7 +90,11 @@ async function boot(){
   try{
     setSt("Chargement du moteur de recherche…");
     const {duckdb} = await import(ENGINE+"/duckdb-bundle.mjs");
-    const worker = new Worker(ENGINE+"/duckdb-browser-mvp.worker.js");
+    // Worker cross-origine interdit en construction directe → enveloppe blob same-origin
+    // qui importScripts() le worker distant (importScripts autorise le cross-origine).
+    const workerBlob = URL.createObjectURL(new Blob(
+      ['importScripts("'+ENGINE+'/duckdb-browser-mvp.worker.js");'], {type:"text/javascript"}));
+    const worker = new Worker(workerBlob);
     db = new duckdb.AsyncDuckDB(new duckdb.VoidLogger(), worker);
     await db.instantiate(ENGINE+"/duckdb-mvp.wasm");
     conn = await db.connect();

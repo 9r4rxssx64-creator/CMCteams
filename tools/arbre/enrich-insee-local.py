@@ -28,9 +28,11 @@ def yr(s):
     m = re.search(r"(1[6-9]\d\d|20\d\d)", s or "")
     return int(m.group(1)) if m else None
 
-# 1) config.json (manifeste des partitions)
+# 1) config.json (manifeste des partitions) — UA navigateur (r2.dev bloque Python-urllib)
+UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36"
 try:
-    cfg = json.load(urllib.request.urlopen(BASE+"/config.json", timeout=30))
+    req = urllib.request.Request(BASE+"/config.json", headers={"User-Agent": UA, "Accept": "*/*"})
+    cfg = json.load(urllib.request.urlopen(req, timeout=30))
 except Exception as e:
     print("::error::config.json introuvable sur R2 —", e); sys.exit(1)
 PARTS = cfg.get("parts", {})
@@ -55,6 +57,9 @@ for b in blocks:
 con = duckdb.connect()
 con.execute("INSTALL httpfs; LOAD httpfs;")
 con.execute("SET enable_http_metadata_cache=true;")
+# UA navigateur pour httpfs aussi (r2.dev bloque les UA scriptés)
+try: con.execute("SET http_user_agent='"+UA+"'")
+except Exception as e: print("note: http_user_agent non supporté —", str(e)[:60])
 
 out = ["# 🔎 Enrichissement INSEE v2 — dataset LOCAL complet ("+__import__('datetime').date.today().isoformat()+")",
        "", "Fichier des décès INSEE COMPLET (Parquet sur R2), correspondance robuste. "
