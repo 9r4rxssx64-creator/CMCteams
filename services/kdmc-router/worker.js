@@ -553,6 +553,23 @@ async function enrich(env, request, uid, name, cgu, pre) {
   acc.last_isp = NET.isp; acc.last_vpn = !!NET.vpn;
   acc.last_tz = cf.timezone || acc.last_tz || '';
   acc.last_geo = { city: cf.city || '', postal: cf.postalCode || '', lat: cf.latitude || '', lon: cf.longitude || '' };
+  /* MAX DE RENSEIGNEMENTS — tout ce que le réseau nous donne déjà, gratuitement,
+     côté serveur (impossible à bloquer par le navigateur ou un bloqueur de pub). */
+  acc.last_lang = (request.headers.get('accept-language') || '').split(',')[0].trim().slice(0, 12) || acc.last_lang || '';
+  acc.last_net = {
+    asn: cf.asn || '', colo: cf.colo || '', continent: cf.continent || '',
+    region: cf.regionCode || '', http: cf.httpProtocol || '', tls: cf.tlsVersion || '',
+  };
+  /* Par où il est entré (app d'origine) et sur quelle page il est tombé. */
+  try {
+    const ref = request.headers.get('referer') || '';
+    acc.last_from = ref ? new URL(ref).hostname : acc.last_from || '';
+  } catch { /* referer illisible */ }
+  try { acc.last_path = new URL(request.url).pathname.slice(0, 80) || acc.last_path || ''; } catch { /* url illisible */ }
+  /* RYTHME : à quelles heures cette personne se connecte (histogramme 24 h, cumulatif). */
+  acc.hours = acc.hours || {};
+  const hh = String(new Date(now).getUTCHours());
+  acc.hours[hh] = (acc.hours[hh] || 0) + 1;
   /* devKey VOLONTAIREMENT sans version : sinon chaque mise à jour d'iOS/navigateur
      compterait comme un « nouvel appareil » → alerte push à chaque update (spam). */
   const devKey = device + (os ? '·' + os : '');
@@ -985,6 +1002,10 @@ async function handleAdmin(request, url, env) {
       tz: a.last_tz || '', geo: a.last_geo || null, place: a.last_place || '',
       lastApp: a.last_app || '', created: a.created || 0, cguAt: a.cgu_at || 0,
       anomaly: a.anomaly || null,
+      /* Renseignements réseau/entrée + rythme + appareil déclaré par l'app. */
+      lang: a.last_lang || '', net: a.last_net || null, from: a.last_from || '',
+      path: a.last_path || '', hours: a.hours || null, ua: a.last_ua || null,
+      aliases: a.aliases || [], passkey: !!a.passkey,
     })).sort((x, y) => (y.lastSeen || 0) - (x.lastSeen || 0));
     return jc({ ok: true, people, count: people.length, ts: Date.now() });
   }

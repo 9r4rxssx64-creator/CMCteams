@@ -1107,6 +1107,19 @@ K._accessLog = function(event, meta){
     var ua = navigator.userAgent || '';
     var dev = /iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':/Android/.test(ua)?'Android':/Macintosh|Mac OS X/.test(ua)?'Mac':/Windows/.test(ua)?'PC Windows':/Linux/.test(ua)?'Linux':'Autre';
     var name = u.real_name || u.display_name || u.pseudo || ((u.first_name||'')+' '+(u.last_name||'')).trim() || u.name || '';
+    /* Ce que seule l'app voit : écran (→ modèle), app installée ou navigateur, cœurs,
+       thème, langue et fuseau réels. Joint à la connexion. Tolérant, jamais bloquant. */
+    if(k==='connexion'){try{var s=window.screen||{},d={};
+      if(s.width&&s.height)d.ecran=Math.round(s.width)+'x'+Math.round(s.height);
+      if(window.devicePixelRatio)d.dpr=Math.round(window.devicePixelRatio*100)/100;
+      try{d.pwa=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;}catch(_e){}
+      if(navigator.hardwareConcurrency)d.coeurs=navigator.hardwareConcurrency;
+      if(navigator.language)d.langue=navigator.language;
+      try{d.fuseau=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(_e){}
+      try{d.sombre=!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(_e){}
+      try{var c=navigator.connection;if(c&&c.effectiveType)d.reseau=c.effectiveType;}catch(_e){}
+      meta=Object.assign({},meta||{},{appareil:d});
+    }catch(_e){}}
     fetch('https://admin.kd-mc.com/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app:'apex-chat',uid:u.id,name:name,event:k,device:dev,tier:(u.is_admin?'admin':'client'),meta:meta||undefined}),keepalive:true,mode:'cors'}).catch(function(){});
   }catch(_){}
 };

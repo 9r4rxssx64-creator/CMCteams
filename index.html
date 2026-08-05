@@ -17108,6 +17108,25 @@ function _renderTutoStep(){
    MÉTADONNÉES d'action (jamais de contenu privé) au worker central. */
 var _kdmcAccessSeen={};
 function kdmcAccessDevice(){var u=navigator.userAgent||"";if(/iPhone/.test(u))return"iPhone";if(/iPad/.test(u))return"iPad";if(/Android/.test(u))return"Android";if(/Macintosh|Mac OS X/.test(u))return"Mac";if(/Windows/.test(u))return"PC Windows";if(/Linux/.test(u))return"Linux";return"Autre";}
+/* Ce que SEULE l'app peut voir (le serveur n'y a pas accès) : taille d'écran (→ modèle
+   d'iPhone), app installée sur l'écran d'accueil ou simple navigateur, cœurs, thème,
+   langue et fuseau RÉELS du téléphone. Envoyé une fois à la connexion. Tolérant :
+   chaque champ absent est simplement omis, jamais d'erreur. */
+function kdmcAccessUA(){
+  try{
+    var s=window.screen||{},d={};
+    if(s.width&&s.height)d.ecran=Math.round(s.width)+"x"+Math.round(s.height);
+    if(window.devicePixelRatio)d.dpr=Math.round(window.devicePixelRatio*100)/100;
+    try{d.pwa=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}catch(_){}
+    if(navigator.hardwareConcurrency)d.coeurs=navigator.hardwareConcurrency;
+    if(navigator.language)d.langue=navigator.language;
+    try{d.fuseau=Intl.DateTimeFormat().resolvedOptions().timeZone||"";}catch(_){}
+    try{d.sombre=!!(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);}catch(_){}
+    try{var c=navigator.connection;if(c&&c.effectiveType)d.reseau=c.effectiveType;}catch(_){}
+    try{if(navigator.maxTouchPoints)d.tactile=navigator.maxTouchPoints;}catch(_){}
+    return d;
+  }catch(_){return null;}
+}
 function kdmcAccessLog(event,meta,who){
   try{
     var u=who||(typeof A!=="undefined"&&A.user);if(!u||!u.id)return;
@@ -17115,7 +17134,8 @@ function kdmcAccessLog(event,meta,who){
     if(_kdmcAccessSeen[k]&&t-_kdmcAccessSeen[k]<5000)return; // anti-spam : 5s entre évènements identiques
     _kdmcAccessSeen[k]=t;
     var tier=(u.id===AID)?"admin":"employe";
-    var body=JSON.stringify({app:"cmcteams",uid:u.id,name:u.name||"",event:k,device:kdmcAccessDevice(),tier:tier,meta:meta||undefined});
+    var _m=meta;if(k==="connexion"){var _ua=kdmcAccessUA();if(_ua)_m=Object.assign({},meta||{},{appareil:_ua});}
+    var body=JSON.stringify({app:"cmcteams",uid:u.id,name:u.name||"",event:k,device:kdmcAccessDevice(),tier:tier,meta:_m||undefined});
     fetch("https://admin.kd-mc.com/log",{method:"POST",headers:{"Content-Type":"application/json"},body:body,keepalive:true,mode:"cors"}).catch(function(){});
   }catch(_){}
 }
