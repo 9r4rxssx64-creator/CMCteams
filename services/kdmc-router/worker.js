@@ -781,6 +781,45 @@ async function handleAdmin(request, url, env) {
   if (path === '/__admin/logout' && request.method === 'POST') {
     return J({ ok: true }, 'kdmc_admin=; Domain=.kd-mc.com; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax');
   }
+
+  /* « Qui se connecte » (admin.kd-mc.com) — SOURCE UNIQUE des connexions du domaine.
+     Le journal des connexions existe DÉJÀ ici (KV ACCOUNTS : hits, history[], devices,
+     places, apps). Kevin 2026-08-05 : « enlève ça et intègre le dedans » → plutôt qu'un
+     2e journal en parallèle (doublon interdit par « zéro doublon, source unique »), la
+     page admin lit CETTE donnée — la vraie, déjà peuplée (191 connexions).
+     AUTH PAR EN-TÊTE, pas par cookie : `x-apex-pin` = sha256(code admin), déjà équivalent
+     -porteur ailleurs (leçon #95 ; /__admin/login l'accepte tel quel). Sans cookie → aucune
+     autorité ambiante → AUCUNE surface CSRF ajoutée (en-tête personnalisé = préflight
+     obligatoire, non forgeable par un site tiers). CORS limité à admin.kd-mc.com. Lecture seule. */
+  if (path === '/__admin/domain-log' && (request.method === 'GET' || request.method === 'OPTIONS')) {
+    const origin = request.headers.get('origin') || '';
+    const cors = {
+      'Access-Control-Allow-Origin': origin === 'https://admin.kd-mc.com' ? origin : 'https://admin.kd-mc.com',
+      'Access-Control-Allow-Methods': 'GET,OPTIONS',
+      'Access-Control-Allow-Headers': 'x-apex-pin',
+      'Access-Control-Max-Age': '86400',
+      Vary: 'Origin',
+    };
+    const jc = (o, st) => new Response(JSON.stringify(o), { status: st || 200, headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store' }, cors) });
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+    const expected = env && env.KDMC_ADMIN_PIN_SHA256;
+    const given = request.headers.get('x-apex-pin') || '';
+    /* Comparaison en temps constant + fail-closed si le code n'est pas configuré. */
+    let same = !!expected && given.length === expected.length;
+    if (same) { let d = 0; for (let i = 0; i < expected.length; i++) d |= expected.charCodeAt(i) ^ given.charCodeAt(i); same = d === 0; }
+    if (!same) return jc({ ok: false, reason: 'unauthorized' }, 401);
+    if (!env.ACCOUNTS) return jc({ ok: true, people: [], kv: false });
+    const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
+    const accs = (await Promise.all(idx.slice(-500).map((uid) => accGet(env, uid)))).filter(Boolean);
+    /* Projection MINIMALE (RGPD : le nécessaire — ni e-mail, ni jeton, ni contenu privé). */
+    const people = accs.map((a) => ({
+      uid: a.uid, name: a.name || '', hits: a.hits || 0, lastSeen: a.last_seen || 0,
+      devices: (a.devices || []).slice(0, 8), places: (a.places || []).slice(0, 8),
+      apps: a.apps || {}, history: (a.history || []).slice(0, 80),
+    })).sort((x, y) => (y.lastSeen || 0) - (x.lastSeen || 0));
+    return jc({ ok: true, people, count: people.length, ts: Date.now() });
+  }
+
   const me = await adminSession(request, env);
   if (!me) {
     const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);

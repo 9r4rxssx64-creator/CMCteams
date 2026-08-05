@@ -143,11 +143,20 @@
     _ssUid = s.uid;
     _ssVerified = !!(s && s.verified);
     box.hidden = false;
-    box.innerHTML = '<h2 class="cat">🔐 Mes appareils &amp; connexions</h2>'
+    /* ADMIN : plus de « Mes connexions » ICI — c'était un DOUBLON de la page
+       « Qui se connecte » (qui montre tout le monde, lui compris, à partir de la
+       MÊME donnée). Règle « zéro doublon, source unique » (Kevin 2026-08-05 :
+       « enlève ça et intègre le dedans. Je suis admin. »).
+       Les NON-admins gardent leur historique perso ici : c'est leur seul accès
+       (ils n'entrent pas dans la page admin) → retirer pour tous serait une régression. */
+    var isAdmin = !!(s && s.admin);
+    box.innerHTML = '<h2 class="cat">🔐 Mes appareils' + (isAdmin ? '' : ' &amp; connexions') + '</h2>'
       + '<div id="ss-pk" class="ss-card">Chargement…</div>'
-      + '<div id="ss-hist" class="ss-card"></div>';
+      + (isAdmin
+        ? '<div class="ss-card ss-mut">🕘 Tes connexions sont dans <a href="https://admin.kd-mc.com/">Qui se connecte</a> — avec celles de tout le monde.</div>'
+        : '<div id="ss-hist" class="ss-card"></div>');
     loadMyPasskeys();
-    loadMyHistory();
+    if (!isAdmin) loadMyHistory();
   }
   function loadMyPasskeys() {
     var el = document.getElementById('ss-pk');

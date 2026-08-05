@@ -32,6 +32,12 @@ export const PAGE_HTML = `<!doctype html>
   .chip.app{color:#dfe9d6;border-color:#2a3d29}
   .chip.g{color:var(--gold);border-color:#3a3216}
   .tier{font-size:10.5px;padding:2px 7px;border-radius:6px;background:#1a2416;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px}
+  .fold{margin-top:6px;border-top:1px solid rgba(255,255,255,.05)}
+  .fold>summary{cursor:pointer;list-style:none;padding:7px 0;font-size:13px;color:var(--txt);min-height:34px;display:flex;align-items:center}
+  .fold>summary::-webkit-details-marker{display:none}
+  .fold>summary::before{content:'▸';margin-right:7px;color:var(--txt2)}
+  .fold[open]>summary::before{content:'▾'}
+  .sect{margin-top:10px;font-size:12px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em}
   .tl{margin-top:11px;border-top:1px solid var(--bd);padding-top:9px;display:none}
   .tl.open{display:block}
   .ev{display:flex;gap:9px;font-size:12.5px;padding:5px 0;color:var(--txt2);border-bottom:1px solid rgba(255,255,255,.03)}
@@ -52,7 +58,37 @@ export const PAGE_HTML = `<!doctype html>
 <script>
 (function(){
   var $=function(s,r){return (r||document).querySelector(s)};
-  var app=$('#app');var KEY='kdmc_access_pinhash';var DATA=null;var TIMER=null;
+  var app=$('#app');var KEY='kdmc_access_pinhash';var DATA=null;var CONN=null;var TIMER=null;
+  /* CONN = les VRAIES connexions du domaine (source unique : KV du routeur, déjà peuplée).
+     DATA = le détail des actions dans les apps. Les deux sont fusionnés par personne :
+     une seule page, plus de doublon avec « Mes connexions » du portail (Kevin 2026-08-05). */
+  var DOMAIN_LOG='https://kd-mc.com/__admin/domain-log';
+  function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+  function hm(ts){var d=new Date(ts);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+  function dayKey(ts){var d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+  function dayLabel(ts){var k=dayKey(ts);if(k===dayKey(Date.now()))return "Aujourd'hui";if(k===dayKey(Date.now()-86400000))return 'Hier';return new Date(ts).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}
+  function dur(ms){if(!ms||ms<60000)return '< 1 min';var m=Math.round(ms/60000);if(m<60)return m+' min';var h=Math.floor(m/60);return h+' h'+(m%60?' '+(m%60)+' min':'')}
+  var APPNM={'kd-mc.com':'🏠 Portail','www.kd-mc.com':'🏠 Portail','cmcteams.kd-mc.com':'📅 CMCteams','apex-ai.kd-mc.com':'🤖 Apex','apex-chat.kd-mc.com':'💬 Apex Chat','coffre.kd-mc.com':'🔐 Coffre','dashboard.kd-mc.com':'📊 Dashboard','sourcing.kd-mc.com':'📦 Sourcing','beatbot.kd-mc.com':'🌊 PoolPilot','arbre.kd-mc.com':'🌳 Arbre','lingua.kd-mc.com':'🐝 Lingua','studio.kd-mc.com':'🎬 Studio','bot.kd-mc.com':'🤖 Bot','la-detente.kd-mc.com':'🛍 La Détente','chez-lolo.kd-mc.com':'🛍 Chez Lolo','departs.kd-mc.com':'🚪 Départs','autorisations.kd-mc.com':'🆔 Autorisations'};
+  function appNm(h){return APPNM[h]||String(h||'')}
+  /* Fusionne connexions (CONN) + actions (DATA) en UNE liste de personnes. */
+  function people(){
+    var map={};
+    function slot(k,nm){if(!map[k])map[k]={key:k,name:nm||'',actions:0,recent:[],apps:{},devices:{},places:[],conns:0,hist:[],lastSeen:0,firstSeen:0,tiers:{}};if(!map[k].name&&nm)map[k].name=nm;return map[k]}
+    ((CONN&&CONN.people)||[]).forEach(function(p){
+      var m=slot(norm(p.name)||p.uid,p.name);
+      m.conns=p.hits||0;m.hist=p.history||[];m.places=p.places||[];
+      m.lastSeen=Math.max(m.lastSeen,p.lastSeen||0);
+      Object.keys(p.apps||{}).forEach(function(a){m.apps[a]=1});(p.devices||[]).forEach(function(d){m.devices[d]=1});
+    });
+    ((DATA&&DATA.people)||[]).forEach(function(p){
+      var m=slot(norm(p.name)||p.key,p.name);
+      m.actions=p.count||0;m.recent=p.recent||[];m.tiers=p.tiers||m.tiers;
+      m.lastSeen=Math.max(m.lastSeen,p.lastSeen||0);
+      m.firstSeen=m.firstSeen?Math.min(m.firstSeen,p.firstSeen||0):(p.firstSeen||0);
+      (p.appsList||[]).forEach(function(a){m.apps[a]=1});(p.devicesList||[]).forEach(function(d){m.devices[d]=1});
+    });
+    return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return (b.lastSeen||0)-(a.lastSeen||0)});
+  }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   async function sha(t){var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')}
   function ago(ts){if(!ts)return '';var s=Math.floor((Date.now()-ts)/1000);if(s<60)return 'à l\\'instant';var m=Math.floor(s/60);if(m<60)return 'il y a '+m+' min';var h=Math.floor(m/60);if(h<24)return 'il y a '+h+' h';var d=Math.floor(h/24);return 'il y a '+d+' j'}
@@ -82,36 +118,58 @@ export const PAGE_HTML = `<!doctype html>
       var r=await fetch('/history',{headers:{'x-apex-pin':hash}});
       if(r.status===401){renderLock('Code incorrect.');return false}
       if(!r.ok){renderLock('Souci serveur ('+r.status+'), réessaie.');return false}
-      DATA=await r.json();window._pinhash=hash;renderMain();startAuto();return true;
+      DATA=await r.json();window._pinhash=hash;await loadConn(hash);renderMain();startAuto();return true;
     }catch(e){renderLock('Réseau indisponible, réessaie.');return false}
   }
+  /* Vraies connexions du domaine — fail-open : si indisponible, on affiche quand même
+     les actions (ne JAMAIS montrer une page vide à cause d'une source secondaire). */
+  async function loadConn(hash){
+    try{var r=await fetch(DOMAIN_LOG,{headers:{'x-apex-pin':hash}});if(r.ok)CONN=await r.json()}catch(e){}
+  }
   function startAuto(){if(TIMER)clearInterval(TIMER);TIMER=setInterval(function(){if(window._pinhash&&document.visibilityState==='visible')refresh()},30000)}
-  async function refresh(){try{var r=await fetch('/history',{headers:{'x-apex-pin':window._pinhash}});if(r.ok){DATA=await r.json();renderMain(true)}}catch(e){}}
+  async function refresh(){try{var r=await fetch('/history',{headers:{'x-apex-pin':window._pinhash}});if(r.ok)DATA=await r.json();await loadConn(window._pinhash);renderMain(true)}catch(e){}}
 
   var Q='';var OPEN={};
   function renderMain(keepScroll){
     var y=keepScroll?window.scrollY:0;
-    var people=(DATA&&DATA.people)||[];
-    var online=people.filter(function(p){return p.online}).length;
+    var list=people();
+    var ONLINE_MS=5*60*1000;
+    var online=list.filter(function(p){return Date.now()-(p.lastSeen||0)<ONLINE_MS}).length;
+    var totalConns=list.reduce(function(a,p){return a+(p.conns||0)},0);
     var q=Q.toLowerCase();
-    var shown=q?people.filter(function(p){return (p.name||'').toLowerCase().indexOf(q)>=0||(p.appsList||[]).join(' ').toLowerCase().indexOf(q)>=0}):people;
+    var shown=q?list.filter(function(p){return (p.name||'').toLowerCase().indexOf(q)>=0||Object.keys(p.apps||{}).join(' ').toLowerCase().indexOf(q)>=0}):list;
     var h='<header><div class="wrap"><div class="row"><div style="flex:1"><h1>Qui se connecte <span class="g">·</span> mon domaine</h1>'
-      +'<div class="kpi"><span><b>'+people.length+'</b> personnes</span><span><b>'+online+'</b> en ligne</span><span><b>'+((DATA&&DATA.totalEvents)||0)+'</b> évènements</span></div></div>'
+      +'<div class="kpi"><span><b>'+list.length+'</b> personnes</span><span><b>'+online+'</b> en ligne</span><span><b>'+totalConns+'</b> connexions</span><span><b>'+((DATA&&DATA.totalEvents)||0)+'</b> actions</span></div></div>'
       +'<button class="btn" id="rf">↻</button></div>'
       +'<input class="search" id="q" placeholder="🔎 Rechercher une personne, une app…" value="'+esc(Q)+'"></div></header><div class="wrap" id="list">';
-    if(!shown.length){h+='<div class="empty">📭 '+(q?'Aucun résultat.':'Aucune connexion enregistrée pour le moment.<br>Les apps commenceront à alimenter ce journal.')+'</div>'}
+    if(!shown.length){h+='<div class="empty">📭 '+(q?'Aucun résultat.':'Aucune connexion enregistrée pour le moment.')+'</div>'}
     shown.forEach(function(p){
-      var dev=(p.devicesList||[]).map(function(d){return '<span class="chip">'+esc(d)+'</span>'}).join('');
-      var apps=(p.appsList||[]).map(function(a){return '<span class="chip app">'+esc(a)+'</span>'}).join('');
+      var isOn=Date.now()-(p.lastSeen||0)<ONLINE_MS;
+      var dev=Object.keys(p.devices||{}).map(function(d){return '<span class="chip">'+esc(d)+'</span>'}).join('');
+      var apps=Object.keys(p.apps||{}).map(function(a){return '<span class="chip app">'+esc(appNm(a))+'</span>'}).join('');
       var tiers=Object.keys(p.tiers||{}).map(function(t){return '<span class="tier">'+esc(t)+'</span>'}).join(' ');
       var opened=OPEN[p.key];
-      var tl=(p.recent||[]).map(function(e){return '<div class="ev"><span class="t">'+dt(e.ts)+'</span><span class="e">'+esc(e.event||'')+(e.app?' · '+esc(e.app):'')+(e.device?' · '+esc(e.device):'')+(e.country?' · '+esc(e.country):'')+'</span></div>'}).join('');
+      /* Connexions groupées PAR JOUR (comme « Mes connexions » du portail, désormais ici). */
+      var byDay={},order=[];
+      (p.hist||[]).forEach(function(e){var k=dayKey(e.ts);if(!byDay[k]){byDay[k]={ts:e.ts,items:[]};order.push(byDay[k])}byDay[k].items.push(e)});
+      var folders=order.map(function(g,i){
+        var rows=g.items.map(function(e){return '<div class="ev"><span class="t">'+esc(hm(e.ts))+'</span><span class="e">'+esc(appNm(e.app))+' · ⏱ '+esc(dur((e.end||e.ts)-e.ts))+(e.place?' · '+esc(e.place):'')+'</span></div>'}).join('');
+        return '<details class="fold"'+(i===0?' open':'')+'><summary>📅 '+esc(dayLabel(g.ts))+' · '+g.items.length+' connexion'+(g.items.length>1?'s':'')+'</summary>'+rows+'</details>';
+      }).join('');
+      var acts=(p.recent||[]).map(function(e){return '<div class="ev"><span class="t">'+dt(e.ts)+'</span><span class="e">'+esc(e.event||'')+(e.app?' · '+esc(appNm(e.app)):'')+(e.device?' · '+esc(e.device):'')+'</span></div>'}).join('');
       h+='<div class="card"><div class="pers" data-k="'+esc(p.key)+'">'
-        +'<span class="dot" style="background:'+(p.online?'var(--on)':'var(--off)')+'"></span>'
-        +'<span class="nm">'+esc(p.name)+' '+tiers+'</span>'
+        +'<span class="dot" style="background:'+(isOn?'var(--on)':'var(--off)')+'"></span>'
+        +'<span class="nm">'+esc(p.name||'—')+' '+tiers+'</span>'
         +'<span class="when">'+ago(p.lastSeen)+'</span></div>'
-        +'<div class="chips">'+apps+dev+'<span class="chip g">'+p.count+' actions</span><span class="chip">1re fois '+dt(p.firstSeen)+'</span></div>'
-        +'<div class="tl'+(opened?' open':'')+'" data-tl="'+esc(p.key)+'">'+(tl||'<div class="ev">—</div>')+'</div></div>';
+        +'<div class="chips">'+apps+dev
+        +(p.conns?'<span class="chip g">'+p.conns+' connexions</span>':'')
+        +(p.actions?'<span class="chip g">'+p.actions+' actions</span>':'')
+        +((p.places&&p.places.length)?'<span class="chip">📍 '+esc(p.places[0])+'</span>':'')+'</div>'
+        +'<div class="tl'+(opened?' open':'')+'" data-tl="'+esc(p.key)+'">'
+        +(folders?'<div class="sect">Connexions</div>'+folders:'')
+        +(acts?'<div class="sect">Actions dans les apps</div>'+acts:'')
+        +((!folders&&!acts)?'<div class="ev">—</div>':'')
+        +'</div></div>';
     });
     h+='</div>';
     app.innerHTML=h;
