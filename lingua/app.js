@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.27.1";
+var APP_VER="v2.27.2";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -683,12 +683,13 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à m
   if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop,dur);
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
   var vcfg=beeVoiceCfg(), vid=vcfg.tts; /* Bee : la voix CHOISIE par l'utilisateur (fillette par défaut) */
+  var myReq=++_ttsReq; /* anti-décalage : un ancien son ne peut plus partir en retard */
   if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
     var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
     if(vcfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vcfg.rate; }catch(_){} }
     a.onended=function(){ if(DISC.timer)clearTimeout(DISC.timer); stop(); };
-    a.onerror=function(){ _webSpeakLang(text,lang,true,vcfg); };
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang,true,vcfg); });
+    a.onerror=function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,true,vcfg); };
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,true,vcfg); });
   }catch(e){ _webSpeakLang(text,lang,true,vcfg); } } else if(S.sound){ _webSpeakLang(text,lang,true,vcfg); }
 }
 function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
@@ -808,9 +809,16 @@ var BEE_VOICES=[
 function beeVoiceCfg(){ var id=S.beeVoice||"fillette"; for(var i=0;i<BEE_VOICES.length;i++){ if(BEE_VOICES[i].id===id)return BEE_VOICES[i]; } return BEE_VOICES[0]; }
 function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voice||"nova";
   var cfg=null; if(vid==="bee"){ cfg=beeVoiceCfg(); vid=cfg.tts; }
-  if(_isCloudVoice(vid)){ try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text));
+  /* ANTI-DÉCALAGE (même protection que speak()) : coupe tout son en cours + jeton de requête
+     → jamais deux voix qui se chevauchent, jamais un ancien son qui part en retard */
+  var myReq=++_ttsReq;
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){}
+  if(_isCloudVoice(vid)){ try{
+    if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
+    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
     if(cfg&&cfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=cfg.rate; }catch(_){} }
-    a.onerror=function(){ _webSpeakLang(text,lang,fem,cfg); }; var p=a.play(); if(p&&p.catch)p.catch(function(){ _webSpeakLang(text,lang,fem,cfg); }); return; }catch(e){} }
+    a.onerror=function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); };
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); }); return; }catch(e){} }
   _webSpeakLang(text,lang,fem,cfg); }
 function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=cfg?cfg.wsRate:(fem?.95:.9); u.pitch=cfg?cfg.wsPitch:(fem?1.15:1);
   var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
