@@ -1,0 +1,32 @@
+name: Arbre — registre d'actes (naissance/mariage/décès, autonome)
+# Kevin 2026-08-05 « récupère tous les actes autonome, naissance et mariage aussi ».
+# Décès 1970+ = références INSEE auto ; naissances/mariages = demandes pré-remplies.
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  actes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python3 -m pip install --quiet duckdb
+      - name: Registre d'actes
+        run: python3 tools/arbre/actes-register.py
+      - name: Commit registre
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research/ACTES-REGISTRE.md arbre/research/actes.json
+          git commit -m "Arbre: registre d'actes (décès INSEE auto + demandes naissance/mariage) [skip ci]" || { echo "aucun changement"; exit 0; }
+          for i in 1 2 3 4; do
+            git push && break
+            git fetch origin "${GITHUB_REF_NAME}"; git rebase "origin/${GITHUB_REF_NAME}" || git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+          git push || { echo "::error::push impossible"; exit 1; }
