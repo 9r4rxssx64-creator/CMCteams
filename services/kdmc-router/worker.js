@@ -33,6 +33,7 @@ const ROUTES = {
   'arbre.kd-mc.com': '/CMCteams/arbre', // Arbre généalogique familial — protégé par code famille (Kevin 2026-08-03)
   'lingua.kd-mc.com': '/CMCteams/lingua', // KDMC Lingua — app d'apprentissage de langues (Kevin 2026-08-04)
   'studio.kd-mc.com': '/CMCteams/tools/crea-studio', // Créa Studio — montage vidéo + retouche photo (niveau Photoshop/GIMP) + dessin animé, 100% client-side (Kevin 2026-08-04)
+  'deces.kd-mc.com': '/CMCteams/tools/deces-insee', // Recherche décès INSEE 100% privée (DuckDB-WASM sur R2) — le nom ne quitte pas le navigateur (Kevin 2026-08-05)
 };
 
 export default {

@@ -36,4 +36,11 @@ put engine/duckdb-bundle.mjs                                  "engine/duckdb-bun
 put engine/duckdb-mvp.wasm                                    "engine/duckdb-mvp.wasm"                                    application/wasm
 put engine/duckdb-browser-mvp.worker.js                      "engine/duckdb-browser-mvp.worker.js"                      text/javascript
 put engine/ext/v1.1.1/wasm_mvp/parquet.duckdb_extension.wasm "engine/ext/v1.1.1/wasm_mvp/parquet.duckdb_extension.wasm" application/wasm
+
+echo "== 5) CORS public (données ouvertes INSEE : GET/HEAD + Range depuis n'importe quelle origine) =="
+if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+  curl -sS -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+    "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets/$BUCKET/cors" \
+    --data '{"rules":[{"allowed":{"origins":["*"],"methods":["GET","HEAD"],"headers":["range","content-type"]},"exposeHeaders":["Content-Range","Accept-Ranges","Content-Length","ETag"],"maxAgeSeconds":86400}]}' | head -c 300; echo
+fi
 echo "OK — moteur sur https://pub-1a8025a4d1634431908305a40060beda.r2.dev/engine/"

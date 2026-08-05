@@ -101,6 +101,9 @@ async function boot(){
     ready = true;
     const n = (CFG.letters||[]).length;
     setSt("✅ Prêt. Base "+ (CFG.built? ("du "+CFG.built.slice(0,10)):"") +" · "+n+" index. Tape un nom.");
+    // préremplissage depuis l'arbre : ?nom=MAIFFRET&prenom=Jean (+ lance si nom fourni)
+    const qs = new URLSearchParams(location.search);
+    if(qs.get('nom')){ document.getElementById('nom').value = qs.get('nom'); document.getElementById('prenom').value = qs.get('prenom')||""; search(); }
   }catch(e){
     setSt("Moteur indisponible : "+esc(e.message||String(e))+". Réessaie dans un instant.", "err");
   }
