@@ -361,6 +361,38 @@ async function rlReset(env, ipHash) {
   try { await env.ACCOUNTS.delete('al:' + ipHash); } catch { /* fail-open */ }
 }
 
+/* ===== COMPTE UNIQUE PAR PERSONNE (Kevin 2026-08-05 : « Je ne veux pas plusieurs
+   comptes, qu'ils soient tous reliés à mon compte admin ») =====
+   CAUSE RACINE : /__sso/issue accepte l'uid envoyé par CHAQUE app (CMCteams → U11804,
+   Apex → kdmc_admin, Lingua → lingua_xxx…) → une fiche par app pour la MÊME personne,
+   donc des connexions éparpillées (« 2 » affichées au lieu de ~191).
+   RÈGLE ABSOLUE déjà écrite dans CLAUDE.md (« COMPTE ADMIN UNIQUE KEVIN ») : tous les
+   alias de Kevin désignent UN SEUL compte. On applique la même idée à la fiche. */
+const CANON_UID = 'kdmc_admin';
+function normName(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+/* Le nom est-il celui de l'admin ? Exige 2 tokens OU un alias explicite — jamais un
+   prénom seul auto-déclaré (règle « login = prénom + nom », leçon #99 : un nom
+   auto-déclaré n'accorde AUCUN droit ; ici il ne fait que RANGER la fiche au bon
+   endroit, il ne donne aucun privilège). */
+function isAdminName(name) {
+  const n = normName(name);
+  if (!n) return false;
+  if (n === 'kdmc' || n === 'kdmc admin') return true;
+  const t = n.split(' ').filter(Boolean);
+  const hasK = t.indexOf('kevin') >= 0, hasD = t.indexOf('desarzens') >= 0;
+  return (hasK && hasD) || (hasD && t.length >= 2);
+}
+/* Identifiant CANONIQUE : toutes les fiches d'une même personne pointent vers un
+   seul dossier. Ne change JAMAIS l'uid de session (les apps s'en servent pour leur
+   propre logique) — uniquement l'endroit où le dossier est rangé. */
+function canonUid(uid, name) {
+  if (uid === CANON_UID) return uid;
+  if (isAdminName(name)) return CANON_UID;
+  return uid;
+}
 /* Registre des fiches clients (Cloudflare KV ACCOUNTS). Fail-open si absent. */
 async function accGet(env, uid) {
   if (!env || !env.ACCOUNTS) return null;
@@ -467,6 +499,10 @@ function ispInfo(cf) {
 /* Enrichit (ou crée) la fiche à chaque connexion : MAX de renseignements. */
 async function enrich(env, request, uid, name, cgu, pre) {
   if (!env || !env.ACCOUNTS) return;
+  /* Toutes les apps de la même personne alimentent UN SEUL dossier. */
+  const inUid = uid;
+  uid = canonUid(uid, name);
+  if (uid !== inUid) pre = undefined; /* la fiche préchargée était celle de l'ancien uid */
   const cf = request.cf || {};
   const ipHash = await sha256Hex((request.headers.get('CF-Connecting-IP') || '') + '|kdmc');
   const ua = request.headers.get('user-agent') || '';
@@ -573,6 +609,49 @@ async function enrich(env, request, uid, name, cgu, pre) {
       (acc.name || uid) + ' : ' + prevCountry + ' → ' + curCountry + ' en ' + acc.anomaly.mins + ' min (déplacement impossible).');
   }
   await accPut(env, acc, !isNew);
+  /* Fusion AUTOMATIQUE des anciennes fiches éparpillées, UNE SEULE FOIS (drapeau
+     `merged_v1`), sans aucune action de Kevin. Rien n'est perdu : les connexions
+     s'additionnent, les historiques se concatènent, appareils/lieux/apps s'unissent.
+     L'ancienne fiche n'est pas effacée : elle devient un renvoi (`merged_into`). */
+  if (uid === CANON_UID && !acc.merged_v1) { try { await mergeIntoCanon(env, acc); } catch { /* fail-open */ } }
+}
+
+/* Absorbe dans la fiche canonique toutes les fiches de la MÊME personne (autres uid). */
+async function mergeIntoCanon(env, acc) {
+  const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
+  const others = [];
+  for (const u of idx) {
+    if (u === CANON_UID) continue;
+    const o = await accGet(env, u);
+    if (!o || o.merged_into) continue;
+    if (isAdminName(o.name)) others.push(o);
+  }
+  if (!others.length) { acc.merged_v1 = 1; await accPut(env, acc, true); return; }
+  for (const o of others) {
+    acc.hits = (acc.hits || 0) + (o.hits || 0);
+    acc.history = (acc.history || []).concat(o.history || [])
+      .sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 80);
+    acc.devices = Array.from(new Set([...(acc.devices || []), ...(o.devices || [])])).slice(-10);
+    acc.places = Array.from(new Set([...(acc.places || []), ...(o.places || [])])).slice(-20);
+    acc.apps = acc.apps || {};
+    for (const [h, s] of Object.entries(o.apps || {})) {
+      const t = acc.apps[h] || { first: s.first || 0, last: 0, sessions: 0, ms: 0 };
+      t.sessions = (t.sessions || 0) + (s.sessions || 0);
+      t.ms = (t.ms || 0) + (s.ms || 0);
+      t.last = Math.max(t.last || 0, s.last || 0);
+      t.first = Math.min(t.first || s.first || 0, s.first || t.first || 0) || t.first;
+      acc.apps[h] = t;
+    }
+    if (o.created && (!acc.created || o.created < acc.created)) acc.created = o.created;
+    if (o.cgu_at && !acc.cgu_at) acc.cgu_at = o.cgu_at;
+    if ((o.last_seen || 0) > (acc.last_seen || 0)) acc.last_seen = o.last_seen;
+    acc.aliases = Array.from(new Set([...(acc.aliases || []), o.uid])).slice(-20);
+    /* L'ancienne fiche devient un RENVOI (jamais supprimée : traçabilité + réversible). */
+    await env.ACCOUNTS.put('acc:' + o.uid, JSON.stringify({ uid: o.uid, name: o.name, merged_into: CANON_UID, merged_at: Date.now() }));
+  }
+  acc.merged_v1 = 1;
+  await accPut(env, acc, true);
+  await audLog(env, { ev: 'accounts_merged', uid: CANON_UID, detail: others.map((o) => o.uid).join(', ') + ' → ' + CANON_UID });
 }
 
 async function handleSso(request, url, env) {
@@ -734,7 +813,9 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/history' && request.method === 'GET') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
-    const acc = await accGet(env, s.uid);
+    /* Lire le dossier CANONIQUE (sinon on afficherait la fiche partielle de l'app
+       d'où vient la session, au lieu de l'historique complet de la personne). */
+    const acc = await accGet(env, canonUid(s.uid, s.name));
     if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
     return J({
       ok: true, uid: s.uid, name: s.name,
@@ -869,7 +950,10 @@ async function handleAdmin(request, url, env) {
     if (!same) return jc({ ok: false, reason: 'unauthorized' }, 401);
     if (!env.ACCOUNTS) return jc({ ok: true, people: [], kv: false });
     const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
-    const accs = (await Promise.all(idx.slice(-500).map((uid) => accGet(env, uid)))).filter(Boolean);
+    /* Les fiches FUSIONNÉES ne sont que des renvois → jamais listées comme personnes
+       (sinon les doublons que Kevin veut supprimer réapparaîtraient dans la page). */
+    const accs = (await Promise.all(idx.slice(-500).map((uid) => accGet(env, uid))))
+      .filter(Boolean).filter((a) => !a.merged_into);
     /* Projection MINIMALE (RGPD : le nécessaire — ni e-mail, ni jeton, ni contenu privé). */
     const people = accs.map((a) => ({
       uid: a.uid, name: a.name || '', hits: a.hits || 0, lastSeen: a.last_seen || 0,
