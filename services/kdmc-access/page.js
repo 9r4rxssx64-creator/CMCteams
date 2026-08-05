@@ -49,6 +49,8 @@ export const PAGE_HTML = `<!doctype html>
   .pin{width:100%;margin-top:18px;padding:14px;border-radius:12px;border:1px solid var(--bd);background:var(--bg2);color:var(--txt);font-size:22px;text-align:center;letter-spacing:10px}
   .err{color:#e8736b;font-size:13px;margin-top:10px;min-height:18px}
   .badge{position:fixed;left:calc(env(safe-area-inset-left) + 8px);bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:10px;color:var(--txt3);background:rgba(0,0,0,.5);padding:3px 7px;border-radius:6px;border:1px solid var(--bd);z-index:9}
+  .ss-bots{margin-top:8px}
+  .ss-bots .btn{width:100%;font-size:13px;color:var(--txt2)}
   .kpi{display:flex;gap:14px;margin-top:8px}
   .kpi b{color:var(--gold)}
 </style></head>
@@ -76,14 +78,30 @@ export const PAGE_HTML = `<!doctype html>
     function slot(k,nm){if(!map[k])map[k]={key:k,name:nm||'',actions:0,recent:[],apps:{},devices:{},places:[],conns:0,hist:[],lastSeen:0,firstSeen:0,tiers:{}};if(!map[k].name&&nm)map[k].name=nm;return map[k]}
     ((CONN&&CONN.people)||[]).forEach(function(p){
       var m=slot(norm(p.name)||p.uid,p.name);
-      m.conns=p.hits||0;m.hist=p.history||[];m.places=p.places||[];
+      /* ADDITIONNER, jamais écraser : une même personne peut avoir PLUSIEURS comptes
+         (uid différents pour le même nom). Vécu 2026-08-05 : Kevin affichait « 2
+         connexions » au lieu de ~191 — le 2e compte écrasait le 1er (affectation simple au lieu d'un cumul).
+         Idem pour l'historique (concaténé puis retrié) et le temps par app (cumulé). */
+      m.conns=(m.conns||0)+(p.hits||0);
+      m.hist=(m.hist||[]).concat(p.history||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0)}).slice(0,120);
+      (p.places||[]).forEach(function(pl){if(m.places.indexOf(pl)<0)m.places.push(pl)});
       m.lastSeen=Math.max(m.lastSeen,p.lastSeen||0);
-      /* Renseignements fins : appareil complet, opérateur, VPN, fuseau, géo, 1re fois. */
-      m.dev=p.device||'';m.isp=p.isp||'';m.vpn=!!p.vpn;m.tz=p.tz||'';m.geo=p.geo||null;
-      m.place=p.place||'';m.lastApp=p.lastApp||'';m.created=p.created||0;m.anomaly=p.anomaly||null;
-      m.appStats=p.apps||{};
-      /* Temps réellement passé, par app et au total. */
-      m.totalMs=0;Object.keys(p.apps||{}).forEach(function(a){m.apps[a]=1;m.totalMs+=(p.apps[a]&&p.apps[a].ms)||0});
+      m.uids=(m.uids||[]).concat([p.uid]);
+      /* Renseignements fins : on garde ceux du compte vu le PLUS RÉCEMMENT. */
+      if((p.lastSeen||0)>=(m._detTs||0)){
+        m._detTs=p.lastSeen||0;
+        m.dev=p.device||m.dev||'';m.isp=p.isp||m.isp||'';m.vpn=!!p.vpn;m.tz=p.tz||m.tz||'';
+        m.geo=p.geo||m.geo||null;m.place=p.place||m.place||'';m.lastApp=p.lastApp||m.lastApp||'';
+      }
+      if(p.created&&(!m.created||p.created<m.created))m.created=p.created; /* la 1re fois = la PLUS ANCIENNE */
+      if(p.anomaly)m.anomaly=p.anomaly;
+      /* Temps réellement passé, cumulé par app sur TOUS les comptes de la personne. */
+      m.appStats=m.appStats||{};m.totalMs=m.totalMs||0;
+      Object.keys(p.apps||{}).forEach(function(a){
+        var s=p.apps[a]||{},t=m.appStats[a]||{sessions:0,ms:0,last:0};
+        t.sessions=(t.sessions||0)+(s.sessions||0);t.ms=(t.ms||0)+(s.ms||0);t.last=Math.max(t.last||0,s.last||0);
+        m.appStats[a]=t;m.apps[a]=1;m.totalMs+=(s.ms||0);
+      });
       (p.devices||[]).forEach(function(d){m.devices[d]=1});
     });
     ((DATA&&DATA.people)||[]).forEach(function(p){
@@ -102,6 +120,17 @@ export const PAGE_HTML = `<!doctype html>
       (p.appsList||[]).forEach(function(a){m.apps[a]=1});(p.devicesList||[]).forEach(function(d){m.devices[d]=1});
     });
     return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return (b.lastSeen||0)-(a.lastSeen||0)});
+  }
+  /* ROBOTS & TESTS ≠ PERSONNES. Les smoke-tests CI (runners GitHub, souvent aux USA)
+     et mes évènements de vérification créent de vraies fiches : sans les séparer, ils
+     ÉCRASENT la lecture (vécu : « 187 connexions » dont 167 d'un robot, et les vraies
+     personnes noyées). On les masque par défaut, sans les supprimer — un clic les montre. */
+  function isBot(p){
+    var n=norm(p.name||''), u=(p.uids||[]).join(' ')+' '+(p.key||'');
+    return !!(/^(ci |ci$|smoke|test|bot|verification|verif|monitor|uptime|healthcheck|playwright|headless)/.test(n)
+      || /\b(smoke|healthcheck|uptime)\b/.test(n)
+      || /__verif__|^ci_|_ci$|\bci\b/.test(u)
+      || (p.tiers&&p.tiers.test));
   }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   async function sha(t){var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')}
@@ -144,18 +173,27 @@ export const PAGE_HTML = `<!doctype html>
   async function refresh(){try{var r=await fetch('/history',{headers:{'x-apex-pin':window._pinhash}});if(r.ok)DATA=await r.json();await loadConn(window._pinhash);renderMain(true)}catch(e){}}
 
   var Q='';var OPEN={};
+  /* Robots masqués par défaut (choix mémorisé sur l'appareil). */
+  var SHOWBOTS=false;try{SHOWBOTS=localStorage.getItem('kdmc_access_bots')==='1'}catch(e){}
   function renderMain(keepScroll){
     var y=keepScroll?window.scrollY:0;
-    var list=people();
+    var all=people();
+    /* Vraies personnes d'un côté, robots/tests de l'autre — les compteurs ne
+       comptent QUE les personnes (sinon un robot à 167 connexions fausse tout). */
+    var bots=all.filter(isBot), list=SHOWBOTS?all:all.filter(function(p){return !isBot(p)});
+    var humans=all.filter(function(p){return !isBot(p)});
     var ONLINE_MS=5*60*1000;
-    var online=list.filter(function(p){return Date.now()-(p.lastSeen||0)<ONLINE_MS}).length;
-    var totalConns=list.reduce(function(a,p){return a+(p.conns||0)},0);
+    var online=humans.filter(function(p){return Date.now()-(p.lastSeen||0)<ONLINE_MS}).length;
+    var totalConns=humans.reduce(function(a,p){return a+(p.conns||0)},0);
+    var totalActs=humans.reduce(function(a,p){return a+(p.actions||0)},0);
     var q=Q.toLowerCase();
     var shown=q?list.filter(function(p){return (p.name||'').toLowerCase().indexOf(q)>=0||Object.keys(p.apps||{}).join(' ').toLowerCase().indexOf(q)>=0}):list;
     var h='<header><div class="wrap"><div class="row"><div style="flex:1"><h1>Qui se connecte <span class="g">·</span> mon domaine</h1>'
-      +'<div class="kpi"><span><b>'+list.length+'</b> personnes</span><span><b>'+online+'</b> en ligne</span><span><b>'+totalConns+'</b> connexions</span><span><b>'+((DATA&&DATA.totalEvents)||0)+'</b> actions</span></div></div>'
+      +'<div class="kpi"><span><b>'+humans.length+'</b> personnes</span><span><b>'+online+'</b> en ligne</span><span><b>'+totalConns+'</b> connexions</span><span><b>'+totalActs+'</b> actions</span></div></div>'
       +'<button class="btn" id="rf">↻</button></div>'
-      +'<input class="search" id="q" placeholder="🔎 Rechercher une personne, une app…" value="'+esc(Q)+'"></div></header><div class="wrap" id="list">';
+      +'<input class="search" id="q" placeholder="🔎 Rechercher une personne, une app…" value="'+esc(Q)+'">'
+      +(bots.length?'<div class="ss-bots"><button class="btn" id="tb" type="button">'+(SHOWBOTS?'🙈 Masquer':'🤖 Voir')+' les robots &amp; tests ('+bots.length+')</button></div>':'')
+      +'</div></header><div class="wrap" id="list">';
     if(!shown.length){h+='<div class="empty">📭 '+(q?'Aucun résultat.':'Aucune connexion enregistrée pour le moment.')+'</div>'}
     shown.forEach(function(p){
       var isOn=Date.now()-(p.lastSeen||0)<ONLINE_MS;
@@ -223,6 +261,7 @@ export const PAGE_HTML = `<!doctype html>
     if(keepScroll)window.scrollTo(0,y);
     var qi=$('#q');qi.oninput=function(){Q=qi.value;var pos=qi.selectionStart;renderMain(true);var n=$('#q');n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}};
     $('#rf').onclick=refresh;
+    var tb=$('#tb');if(tb)tb.onclick=function(){SHOWBOTS=!SHOWBOTS;try{localStorage.setItem('kdmc_access_bots',SHOWBOTS?'1':'0')}catch(e){}renderMain(true)};
     Array.prototype.forEach.call(document.querySelectorAll('.pers'),function(el){el.onclick=function(){var k=el.getAttribute('data-k');OPEN[k]=!OPEN[k];var t=document.querySelector('[data-tl="'+CSS.escape(k)+'"]');if(t)t.classList.toggle('open',OPEN[k])}});
   }
 
