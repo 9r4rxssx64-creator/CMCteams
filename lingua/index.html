@@ -135,6 +135,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   animation:bubblePop .35s cubic-bezier(.34,1.56,.64,1)}
 @keyframes bubblePop{0%{transform:scale(.5) translateY(10px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}
 .bee-bubble.bye{opacity:0;transform:translateY(8px);transition:all .4s}
+.bb-act{margin-top:8px}
+.bb-yes{width:100%;padding:10px 12px;border:0;border-radius:11px;background:linear-gradient(90deg,var(--green),var(--green-d));color:#fff;font-weight:800;font-size:14px;cursor:pointer;min-height:44px}
+.bb-yes:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){.bee-bubble{animation:none}}
 /* Mode discussion 🎬 : Bee en gros plan, bouche animée quand elle parle */
 .coach-cine{margin-left:auto;display:flex;flex-direction:column;align-items:center;gap:1px;background:linear-gradient(90deg,var(--violet),#9333ea);border-radius:12px;padding:8px 12px;color:#fff;font-size:17px;font-weight:800;cursor:pointer;min-height:48px}
@@ -180,6 +183,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .disc-moves button{width:46px;height:46px;border-radius:14px;background:var(--card2);border:1px solid var(--line);font-size:22px;cursor:pointer}
 .disc-moves button:active{transform:scale(.92)}
 @media (prefers-reduced-motion:reduce){.rig-wl,.rig-wr,.bee-rig.talk .rig-wl,.bee-rig.talk .rig-wr,.bee-rig.talk .rig-arm,.disc-bee.mv-dance,.disc-bee.mv-jump,.disc-bee.mv-fly,.bee-rig.mv-walk{animation:none}}
+/* VRAIE VIDÉO de Bee (générée depuis SON image) : prioritaire quand elle se charge ;
+   sinon la marionnette reste — repli automatique, jamais d'écran vide. */
+.disc-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.disc-bee.vid .disc-vid{display:block}
+.disc-bee.vid .rig-piece,.disc-bee.vid .rig-lid,.disc-bee.vid .disc-mouth{display:none!important}
 .disc-mouth{position:absolute;left:52.4%;top:42.6%;width:6.6%;height:5.2%;transform:translate(-50%,-50%) scale(1);border-radius:42% 42% 50% 50%/36% 36% 64% 64%;background:radial-gradient(60% 55% at 50% 66%,#ff5d6c 0%,#8a3018 60%,#53200f 100%);border:2px solid #3a1c10;opacity:0;pointer-events:none}
 .disc-mouth.talking{opacity:1;animation:discMouth .27s ease-in-out infinite alternate}
 @keyframes discMouth{0%{transform:translate(-50%,-50%) scale(1.02,.96)}100%{transform:translate(-50%,-50%) scale(1.38,1.52)}}
