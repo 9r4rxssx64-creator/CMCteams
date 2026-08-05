@@ -93,6 +93,11 @@
          qui vise l'ACCÈS, pas l'affichage d'un raccourci vers une page déjà verrouillée). */
       var botZone = document.getElementById('bot-zone');
       if (botZone) botZone.hidden = !(isPriv || named);
+      /* « Qui se connecte » : même règle que le bot — la page admin.kd-mc.com a son PROPRE
+         code (200807) donc afficher le raccourci n'accorde aucun accès. Sans ça, la tuile
+         restait invisible sur l'iPhone de Kevin (Face ID non prouvé) = fonction inexistante. */
+      var accessZone = document.getElementById('access-zone');
+      if (accessZone) accessZone.hidden = !(isPriv || named);
       renderSelfService(s); /* « Mes appareils / connexions » — pour TOUT connecté */
     };
     if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }
