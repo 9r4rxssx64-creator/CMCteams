@@ -1,0 +1,68 @@
+name: Décès INSEE — préflight R2 (test accès Cloudflare)
+# Kevin 2026-08-05 « Go tout » : avant de traiter 579 Mo, vérifier que la clé
+# Cloudflare peut créer un bucket R2, y écrire, l'ouvrir en public + CORS Range,
+# et le relire. Diagnostic clair (aucune donnée réelle : un simple test.txt).
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+env:
+  BUCKET: kdmc-deces-insee
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+jobs:
+  r2check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier les secrets présents
+        run: |
+          [ -n "$CLOUDFLARE_API_TOKEN" ] && echo "✓ CLOUDFLARE_API_TOKEN présent" || { echo "::error::CLOUDFLARE_API_TOKEN manquant"; exit 1; }
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && echo "✓ CLOUDFLARE_ACCOUNT_ID présent (${CLOUDFLARE_ACCOUNT_ID:0:6}…)" || { echo "::error::CLOUDFLARE_ACCOUNT_ID manquant"; exit 1; }
+      - name: Portée du token (a-t-il les droits R2 ?)
+        run: |
+          echo "== /user/tokens/verify =="
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify" | head -c 800; echo
+          echo "== liste buckets R2 (droit R2 read ?) =="
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets" | head -c 800; echo
+      - name: Créer le bucket R2 (via wrangler)
+        id: mk
+        run: |
+          npx --yes wrangler@3 r2 bucket create "$BUCKET" 2>&1 | tee mk.log || true
+          grep -qiE "created|already|exists" mk.log && echo "ok=1" >> "$GITHUB_OUTPUT" || echo "ok=0" >> "$GITHUB_OUTPUT"
+      - name: Écrire un objet test
+        run: |
+          echo "hello kdmc $(date -u +%FT%TZ)" > test.txt
+          npx --yes wrangler@3 r2 object put "$BUCKET/test.txt" --file=test.txt --content-type=text/plain 2>&1 | tee put.log || true
+      - name: Ouvrir l'accès public (r2.dev) via API
+        id: pub
+        run: |
+          echo "== enable managed public dev url =="
+          RES=$(curl -sS -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets/$BUCKET/domains/managed" \
+            --data '{"enabled":true}')
+          echo "$RES" | head -c 600; echo
+          DOMAIN=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);print((d.get('result') or {}).get('domain',''))" 2>/dev/null || true)
+          echo "domain=$DOMAIN" >> "$GITHUB_OUTPUT"
+          echo "PUBLIC_DOMAIN=$DOMAIN"
+      - name: Poser une règle CORS (Range depuis kd-mc.com)
+        run: |
+          curl -sS -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets/$BUCKET/cors" \
+            --data '{"rules":[{"allowed":{"origins":["https://arbre.kd-mc.com","https://kd-mc.com","http://127.0.0.1:8080"],"methods":["GET","HEAD"],"headers":["range","content-type"]},"exposeHeaders":["Content-Range","Accept-Ranges","Content-Length","ETag"],"maxAgeSeconds":3600}]}' | head -c 500; echo
+      - name: Relire l'objet public avec Range (preuve CORS/Range)
+        run: |
+          DOMAIN="${{ steps.pub.outputs.domain }}"
+          if [ -z "$DOMAIN" ]; then echo "::warning::pas de domaine public retourné — accès public non activé par le token"; else
+            URL="https://$DOMAIN/test.txt"
+            echo "GET $URL (bytes 0-4)"
+            curl -sS -D - -H "Range: bytes=0-4" -o body.txt "$URL" | grep -iE "HTTP/|content-range|accept-ranges|access-control" || true
+            echo "corps partiel: $(cat body.txt)"
+          fi
+      - name: Verdict
+        run: |
+          echo "=== RÉSUMÉ ==="
+          echo "Si tu vois 'created/already', un PUBLIC_DOMAIN en *.r2.dev, et un 206 + Content-Range ci-dessus →"
+          echo "ta clé Cloudflare suffit : je lance le pipeline complet (INSEE 579 Mo → R2)."
+          echo "Sinon, le message d'erreur ci-dessus dit exactement quel droit R2 ajouter au token."
