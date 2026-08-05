@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Recherche décès INSEE — 100% privé</title>
+<style>
+  :root{--bg:#0e1116;--card:#171c24;--line:#232b36;--txt:#e7edf5;--mut:#8b97a7;--gold:#d8b45a;--ok:#3fb27f;--bad:#e0666a}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 14px calc(28px + env(safe-area-inset-bottom))}
+  h1{font-size:19px;margin:2px 0 2px}
+  .sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
+  label{display:block;font-size:12px;color:var(--mut);margin:0 0 4px}
+  input,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0f141b;color:var(--txt);font-size:16px}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  button{font:inherit}
+  .go{width:100%;margin-top:12px;padding:14px;border:0;border-radius:12px;background:var(--gold);color:#20170a;font-weight:700;font-size:16px}
+  .go:disabled{opacity:.5}
+  .st{font-size:12.5px;color:var(--mut);margin:10px 2px}
+  .st b{color:var(--txt)}
+  .res{margin-top:6px}
+  .hit{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 10px}
+  .hit .nm{font-weight:700;font-size:15.5px}
+  .hit .pr{color:var(--gold)}
+  .hit .li{color:var(--mut);font-size:13px;margin-top:3px}
+  .hit .li b{color:var(--txt);font-weight:600}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .acts a,.acts button{flex:1;min-width:130px;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0f141b;color:var(--txt);text-decoration:none;font-size:13px}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--mut);margin-left:6px}
+  .priv{background:#12251c;border:1px solid #1e3b2c;border-radius:12px;padding:10px 12px;color:#bfe6d2;font-size:12.5px;margin:0 0 12px}
+  .err{color:var(--bad)}
+  a.lnk{color:var(--gold)}
+  footer{color:var(--mut);font-size:11.5px;text-align:center;margin-top:18px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔎 Recherche décès (INSEE)</h1>
+  <p class="sub">Fichier officiel des personnes décédées en France depuis 1970 · source INSEE / data.gouv (Licence Ouverte).</p>
+
+  <div class="priv">🔒 <b>100% privé.</b> La recherche tourne <b>dans ton téléphone</b>. Le nom cherché ne part sur aucun serveur — seuls quelques Ko du fichier sont téléchargés à la demande.</div>
+
+  <div class="card">
+    <div class="row">
+      <div><label>Nom de famille</label><input id="nom" autocomplete="off" autocapitalize="characters" placeholder="ex : MAIFFRET"></div>
+      <div><label>Prénom (optionnel)</label><input id="prenom" autocomplete="off" placeholder="ex : Jean"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div><label>Décès de l'année</label><input id="dmin" inputmode="numeric" placeholder="1970"></div>
+      <div><label>à l'année</label><input id="dmax" inputmode="numeric" placeholder="2024"></div>
+      <div><label>Sexe</label><select id="sexe"><option value="">Tous</option><option value="1">Homme</option><option value="2">Femme</option></select></div>
+    </div>
+    <button class="go" id="go">Rechercher</button>
+    <div class="st" id="st">Prépare le moteur…</div>
+  </div>
+
+  <div class="res" id="res"></div>
+
+  <footer>
+    Données © INSEE, réutilisées sous Licence Ouverte 2.0 · les personnes ayant fait opposition sont exclues par l'INSEE.<br>
+    Un décès manquant ? Il peut être trop récent (mis à jour chaque mois) ou hors périmètre INSEE.
+  </footer>
+</div>
+
+<script type="module">
+const BASE = "https://pub-1a8025a4d1634431908305a40060beda.r2.dev";
+const ENGINE = BASE + "/engine";
+const st = document.getElementById('st');
+const res = document.getElementById('res');
+const go = document.getElementById('go');
+let db=null, conn=null, CFG=null, ready=false;
+
+function setSt(h, cls){ st.className = "st"+(cls?(" "+cls):""); st.innerHTML = h; }
+const up = s => (s||"").toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Z \-']/g,' ').replace(/\s+/g,' ').trim();
+const esc = s => (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fdate = s => { s=(s||"").replace(/\D/g,''); if(s.length!==8) return s||"?"; const a=s.slice(0,4),m=s.slice(4,6),j=s.slice(6,8); return (j==="00"?"":j+"/")+(m==="00"?"":m+"/")+a; };
+
+async function boot(){
+  try{
+    setSt("Chargement de la liste (config)…");
+    const r = await fetch(BASE+"/config.json", {cache:"no-store"});
+    if(!r.ok) throw new Error("config "+r.status);
+    CFG = await r.json();
+  }catch(e){
+    setSt("⏳ La base est <b>en cours de construction</b>. Reviens dans un moment — la recherche s'activera toute seule.", "err");
+    return;
+  }
+  try{
+    setSt("Chargement du moteur de recherche…");
+    const {duckdb} = await import(ENGINE+"/duckdb-bundle.mjs");
+    const worker = new Worker(ENGINE+"/duckdb-browser-mvp.worker.js");
+    db = new duckdb.AsyncDuckDB(new duckdb.VoidLogger(), worker);
+    await db.instantiate(ENGINE+"/duckdb-mvp.wasm");
+    conn = await db.connect();
+    // extension parquet auto-chargée depuis notre dépôt R2 (self-host)
+    await conn.query("SET custom_extension_repository='"+ENGINE+"/ext'");
+    await conn.query("SET autoinstall_known_extensions=true");
+    await conn.query("SET autoload_known_extensions=true");
+    ready = true;
+    const n = (CFG.letters||[]).length;
+    setSt("✅ Prêt. Base "+ (CFG.built? ("du "+CFG.built.slice(0,10)):"") +" · "+n+" index. Tape un nom.");
+  }catch(e){
+    setSt("Moteur indisponible : "+esc(e.message||String(e))+". Réessaie dans un instant.", "err");
+  }
+}
+
+function partsFor(letter){
+  const m = CFG.parts||{};
+  if(m[letter]) return m[letter];
+  if(m["AUTRE"]) return m["AUTRE"];
+  return null;
+}
+
+async function search(){
+  if(!ready){ return; }
+  const nom = up(document.getElementById('nom').value);
+  const pre = up(document.getElementById('prenom').value).split(' ')[0];
+  const dmin = (document.getElementById('dmin').value||"").replace(/\D/g,'').slice(0,4);
+  const dmax = (document.getElementById('dmax').value||"").replace(/\D/g,'').slice(0,4);
+  const sexe = document.getElementById('sexe').value;
+  res.innerHTML = "";
+  if(nom.length<2){ setSt("Écris au moins 2 lettres de nom.", "err"); return; }
+  const letter = nom[0];
+  const parts = partsFor(letter);
+  if(!parts){ setSt("Aucune donnée pour la lettre « "+esc(letter)+" ».", "err"); return; }
+  const urls = parts.map(p => "'"+BASE+"/"+p+"'").join(",");
+  const conds = ["nom = "+q(nom)];
+  if(pre) conds.push("(prenoms = "+q(pre)+" OR prenoms LIKE "+q(pre+" %")+" OR prenoms LIKE "+q("% "+pre)+" OR prenoms LIKE "+q("% "+pre+" %")+")");
+  if(dmin) conds.push("substr(date_deces,1,4) >= '"+dmin+"'");
+  if(dmax) conds.push("substr(date_deces,1,4) <= '"+dmax+"'");
+  if(sexe) conds.push("sexe = '"+sexe+"'");
+  const sql = "SELECT nom,prenoms,sexe,date_naissance,commune_naissance,pays_naissance,date_deces,code_lieu_deces,num_acte "
+    + "FROM read_parquet(["+urls+"]) WHERE "+conds.join(" AND ")
+    + " ORDER BY date_deces DESC LIMIT 300";
+  setSt("Recherche « <b>"+esc(nom)+(pre?(" "+esc(pre)):"")+"</b> » dans le fichier… (téléchargement à la demande)");
+  go.disabled = true;
+  const t0 = performance.now();
+  try{
+    const out = await conn.query(sql);
+    const rows = out.toArray().map(r=>Object.fromEntries(Object.entries(r).map(([k,v])=>[k, v==null?"":String(v)])));
+    render(rows, (performance.now()-t0)/1000);
+  }catch(e){
+    setSt("Erreur de recherche : "+esc(e.message||String(e)), "err");
+  }finally{ go.disabled=false; }
+}
+const q = s => "'"+String(s).replace(/'/g,"''")+"'";
+
+function render(rows, secs){
+  if(!rows.length){ setSt("Aucun résultat. Vérifie l'orthographe, enlève le prénom, ou élargis les années.", ""); return; }
+  setSt("<b>"+rows.length+"</b> résultat(s) · "+secs.toFixed(1)+" s"+(rows.length>=300?" (limité à 300 — précise le prénom)":""));
+  res.innerHTML = rows.map(r=>{
+    const nn = fdate(r.date_naissance), dd = fdate(r.date_deces);
+    const lieuN = [r.commune_naissance, (r.pays_naissance&&r.pays_naissance!=="FRANCE"?r.pays_naissance:"")].filter(Boolean).join(", ");
+    const sx = r.sexe==="1"?"♂":r.sexe==="2"?"♀":"";
+    const subj = encodeURIComponent("Demande d'acte de décès — "+r.prenoms+" "+r.nom);
+    const body = encodeURIComponent("Bonjour,\n\nJe souhaite obtenir une copie de l'acte de décès de :\n"
+      +"Nom : "+r.nom+"\nPrénom(s) : "+r.prenoms+"\nNé(e) le : "+nn+(lieuN?(" à "+lieuN):"")
+      +"\nDécédé(e) le : "+dd+"\nN° d'acte INSEE : "+(r.num_acte||"—")+"\nCommune du décès (code INSEE) : "+(r.code_lieu_deces||"—")
+      +"\n\nJe vous remercie.\nCordialement.");
+    return '<div class="hit">'
+      + '<div class="nm">'+esc(r.nom)+' <span class="pr">'+esc(r.prenoms)+'</span> <span class="badge">'+sx+'</span></div>'
+      + '<div class="li">🎂 Né(e) : <b>'+esc(nn)+'</b>'+(lieuN?(' à <b>'+esc(lieuN)+'</b>'):'')+'</div>'
+      + '<div class="li">🕯️ Décès : <b>'+esc(dd)+'</b>'+(r.code_lieu_deces?(' · commune INSEE <b>'+esc(r.code_lieu_deces)+'</b>'):'')+(r.num_acte?(' · acte n°'+esc(r.num_acte)):'')+'</div>'
+      + '<div class="acts">'
+      +   '<a href="https://www.service-public.fr/particuliers/vosdroits/R1406" target="_blank" rel="noopener">📄 Demander l\'acte</a>'
+      +   '<a href="mailto:?subject='+subj+'&body='+body+'">✉️ Modèle de courrier</a>'
+      +   '<button data-nom="'+esc(r.nom)+'" data-by="'+esc((r.date_naissance||"").slice(0,4))+'" class="rem">⬆️ Génération d\'avant</button>'
+      + '</div></div>';
+  }).join("");
+  res.querySelectorAll('.rem').forEach(b=>b.addEventListener('click',()=>{
+    const by = parseInt(b.getAttribute('data-by'),10);
+    document.getElementById('nom').value = b.getAttribute('data-nom');
+    document.getElementById('prenom').value = "";
+    document.getElementById('dmin').value = "1970";
+    document.getElementById('dmax').value = (by && by>1900) ? String(by) : "";
+    window.scrollTo({top:0,behavior:'smooth'});
+    search();
+  }));
+}
+
+go.addEventListener('click', search);
+['nom','prenom','dmin','dmax'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter') search(); }));
+boot();
+</script>
+</body>
+</html>
