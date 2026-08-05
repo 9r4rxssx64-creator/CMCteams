@@ -110,6 +110,36 @@ jobs:
           echo "code=$CODE" >> $GITHUB_OUTPUT
           [ "$OK" = "true" ] || echo "::warning::admin.kd-mc.com pas encore joignable (dernier HTTP $CODE) — worker vivant sur workers.dev"
 
+      # PREUVE DE BOUT EN BOUT EN PRODUCTION (le maillon qui manquait).
+      # /log répond 204 MÊME si l'écriture Firebase échoue (fail-open volontaire : ne
+      # jamais bloquer une app de Kevin). Conséquence : un journal DÉFINITIVEMENT VIDE
+      # passerait totalement inaperçu. Ici on écrit un évènement réel puis on le
+      # RELIT via /history — seul moyen de prouver que « qui se connecte » enregistre.
+      - name: Preuve réelle — le journal enregistre et relit
+        id: e2e
+        env:
+          PIN_SHA: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
+        run: |
+          MARK="verif-auto-$GITHUB_RUN_ID"
+          CODE=$(curl -m 15 -s -o /dev/null -w '%{http_code}' -X POST "https://admin.kd-mc.com/log" \
+            -H 'Content-Type: application/json' -H 'Origin: https://kd-mc.com' \
+            -d "{\"app\":\"verification\",\"uid\":\"__verif__\",\"name\":\"Vérification automatique\",\"event\":\"$MARK\",\"device\":\"CI\",\"tier\":\"test\"}")
+          echo "POST /log → HTTP $CODE"
+          OK=false
+          for i in 1 2 3 4 5 6; do
+            sleep 5
+            curl -m 20 -s "https://admin.kd-mc.com/history" -H "x-apex-pin: $PIN_SHA" -o /tmp/hist.json || true
+            if grep -q "$MARK" /tmp/hist.json 2>/dev/null; then OK=true; break; fi
+            echo "relecture $i : pas encore visible"
+          done
+          node -e "const d=require('/tmp/hist.json');console.log('Journal LIVE → personnes:',d.totalPeople,'| évènements:',d.totalEvents)" 2>/dev/null || { echo "Réponse /history brute :"; head -c 400 /tmp/hist.json; echo; }
+          echo "ok=$OK" >> $GITHUB_OUTPUT
+          if [ "$OK" = "true" ]; then
+            echo "::notice::PREUVE OK — l'évènement écrit est bien relu dans le journal"
+          else
+            echo "::error::LE JOURNAL N'ENREGISTRE RIEN (écriture Firebase perdue en silence) — c'est la cause d'un historique vide"; exit 1
+          fi
+
       - name: Summary
         if: always()
         run: |
@@ -120,6 +150,7 @@ jobs:
             echo "| Tests | ✅ |"
             echo "| Deploy | ${{ steps.deploy.outcome == 'success' && '✅' || '❌' }} |"
             echo "| admin.kd-mc.com joignable | ${{ steps.cdom.outputs.ok == 'true' && '✅ HTTP 200' || format('❌ HTTP {0}', steps.cdom.outputs.code) }} |"
+            echo "| Journal enregistre + relit (preuve réelle) | ${{ steps.e2e.outputs.ok == 'true' && '✅ prouvé' || '❌ RIEN ENREGISTRÉ' }} |"
             echo ""
             echo "Page admin : **https://admin.kd-mc.com** (custom_domain) ou l'URL workers.dev ci-dessous."
             [ -n "${{ steps.deploy.outputs.worker_url }}" ] && echo "\`${{ steps.deploy.outputs.worker_url }}\`"
