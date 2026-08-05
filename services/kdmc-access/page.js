@@ -89,6 +89,14 @@ export const PAGE_HTML = `<!doctype html>
     ((DATA&&DATA.people)||[]).forEach(function(p){
       var m=slot(norm(p.name)||p.key,p.name);
       m.actions=p.count||0;m.recent=p.recent||[];m.tiers=p.tiers||m.tiers;
+      /* PROGRESSION : dernier état envoyé par chaque app (Lingua : XP/série/mots…).
+         Générique — toute app qui envoie event:"progression" + meta apparaît ici,
+         sans rien changer à cette page. */
+      (p.recent||[]).forEach(function(e){
+        if(e.event!=='progression'||!e.meta)return;
+        m.prog=m.prog||{};
+        if(!m.prog[e.app]||m.prog[e.app].ts<e.ts)m.prog[e.app]={ts:e.ts,meta:e.meta};
+      });
       m.lastSeen=Math.max(m.lastSeen,p.lastSeen||0);
       m.firstSeen=m.firstSeen?Math.min(m.firstSeen,p.firstSeen||0):(p.firstSeen||0);
       (p.appsList||[]).forEach(function(a){m.apps[a]=1});(p.devicesList||[]).forEach(function(d){m.devices[d]=1});
@@ -175,6 +183,16 @@ export const PAGE_HTML = `<!doctype html>
         var s=p.appStats[a]||{};
         return '<div class="ev"><span class="t">'+esc(appNm(a))+'</span><span class="e">'+(s.sessions||0)+' session'+((s.sessions||0)>1?'s':'')+(s.ms?' · ⏱ '+esc(dur(s.ms)):'')+(s.last?' · dernière '+ago(s.last):'')+'</span></div>';
       }).join('');
+      /* Progression, lisible : « XP 1240 · série 12 j · mots 340 · aujourd'hui 3 leçons ».
+         Rendu générique (parcourt le meta) → marche pour Lingua et toute app future. */
+      var LBL={xp:'⭐ XP',serie:'🔥 Série',gemmes:'💎 Gemmes',mots:'📚 Mots',cours:'🎓 Cours',niveau:'📈 Niveau',lecons:'Leçons',parfaits:'Parfaits',aujourdhui:"Aujourd'hui"};
+      function flat(o,pre){var out=[];Object.keys(o||{}).forEach(function(k){var v=o[k];
+        if(v&&typeof v==='object'){out=out.concat(flat(v,(LBL[k]||k)+' '))}
+        else if(v!==''&&v!==null&&v!==undefined){out.push((pre||'')+(LBL[k]||k)+' '+v)}});return out}
+      var progDetail=Object.keys(p.prog||{}).map(function(a){
+        var pr=p.prog[a];
+        return '<div class="ev"><span class="t">'+esc(appNm(a))+'</span><span class="e">'+esc(flat(pr.meta).join(' · '))+' <span class="g">· '+ago(pr.ts)+'</span></span></div>';
+      }).join('');
       var acts=(p.recent||[]).map(function(e){return '<div class="ev"><span class="t">'+dt(e.ts)+'</span><span class="e">'+esc(e.event||'')+(e.app?' · '+esc(appNm(e.app)):'')+(e.device?' · '+esc(e.device):'')+'</span></div>'}).join('');
       h+='<div class="card"><div class="pers" data-k="'+esc(p.key)+'">'
         +'<span class="dot" style="background:'+(isOn?'var(--on)':'var(--off)')+'"></span>'
@@ -193,6 +211,7 @@ export const PAGE_HTML = `<!doctype html>
         +'</div>'
         +(p.anomaly?'<div class="ev" style="color:var(--off)">⚠️ Déplacement impossible : '+esc(p.anomaly.from)+' → '+esc(p.anomaly.to)+' en '+esc(String(p.anomaly.mins))+' min (compte partagé ou VPN ?)</div>':'')
         +'<div class="tl'+(opened?' open':'')+'" data-tl="'+esc(p.key)+'">'
+        +(progDetail?'<div class="sect">Progression</div>'+progDetail:'')
         +(appsDetail?'<div class="sect">Temps par app</div>'+appsDetail:'')
         +(folders?'<div class="sect">Connexions</div>'+folders:'')
         +(acts?'<div class="sect">Actions dans les apps</div>'+acts:'')

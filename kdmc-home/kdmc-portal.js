@@ -149,14 +149,19 @@
        « enlève ça et intègre le dedans. Je suis admin. »).
        Les NON-admins gardent leur historique perso ici : c'est leur seul accès
        (ils n'entrent pas dans la page admin) → retirer pour tous serait une régression. */
-    var isAdmin = !!(s && s.admin);
-    box.innerHTML = '<h2 class="cat">🔐 Mes appareils' + (isAdmin ? '' : ' &amp; connexions') + '</h2>'
+    /* MÊME RÈGLE QUE LA TUILE « Qui se connecte » (admin OU nom reconnu).
+       Vécu 2026-08-05 : tester `s.admin` SEUL ne suffisait pas — la session de Kevin
+       le reconnaît par son NOM sans être « admin prouvé » (Face ID), donc il voyait la
+       tuile MAIS gardait l'historique en double en bas du portail. Les deux gates
+       doivent être IDENTIQUES, sinon le doublon revient pour celui qui voit la tuile. */
+    var hasUnified = !!(s && s.admin) || /kevin|desarzens|laurence|lolo|saint.?polit/.test(norm(s && s.name || ''));
+    box.innerHTML = '<h2 class="cat">🔐 Mes appareils' + (hasUnified ? '' : ' &amp; connexions') + '</h2>'
       + '<div id="ss-pk" class="ss-card">Chargement…</div>'
-      + (isAdmin
-        ? '<div class="ss-card ss-mut">🕘 Tes connexions sont dans <a href="https://admin.kd-mc.com/">Qui se connecte</a> — avec celles de tout le monde.</div>'
+      + (hasUnified
+        ? '<div class="ss-card ss-mut">🕘 Ton historique complet est dans <a href="https://admin.kd-mc.com/">Qui se connecte</a> — avec celui de tout le monde.</div>'
         : '<div id="ss-hist" class="ss-card"></div>');
     loadMyPasskeys();
-    if (!isAdmin) loadMyHistory();
+    if (!hasUnified) loadMyHistory();
   }
   function loadMyPasskeys() {
     var el = document.getElementById('ss-pk');
