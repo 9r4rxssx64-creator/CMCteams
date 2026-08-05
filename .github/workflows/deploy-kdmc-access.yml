@@ -136,6 +136,17 @@ jobs:
           echo "ok=$OK" >> $GITHUB_OUTPUT
           if [ "$OK" = "true" ]; then
             echo "::notice::PREUVE OK — l'évènement écrit est bien relu dans le journal"
+            # SOURCE UNIQUE : les VRAIES connexions viennent du routeur (KV ACCOUNTS,
+            # déjà peuplé). On prouve que la page peut les lire — sinon Kevin verrait
+            # une page « vide » alors que son historique existe (le doublon corrigé).
+            curl -m 20 -s "https://kd-mc.com/__admin/domain-log" -H "x-apex-pin: $PIN_SHA" -H 'Origin: https://admin.kd-mc.com' -o /tmp/conn.json || true
+            node -e "
+              let d={};try{d=require('/tmp/conn.json')}catch(e){}
+              if(!d.ok){console.log('::warning::Connexions réelles NON lisibles →',JSON.stringify(d).slice(0,200));process.exit(0)}
+              const tot=(d.people||[]).reduce((a,p)=>a+(p.hits||0),0);
+              console.log('Connexions RÉELLES lisibles →',(d.people||[]).length,'personnes |',tot,'connexions au total');
+              (d.people||[]).slice(0,3).forEach(p=>console.log('  ·',p.name||p.uid,'—',p.hits||0,'connexions,',(p.history||[]).length,'détaillées'));
+            "
           else
             echo "::error::LE JOURNAL N'ENREGISTRE RIEN (écriture Firebase perdue en silence) — c'est la cause d'un historique vide"; exit 1
           fi
