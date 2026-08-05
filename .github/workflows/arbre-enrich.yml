@@ -1,0 +1,32 @@
+name: Arbre — enrichissement INSEE (personne par personne)
+# Kevin 2026-08-05 : vérifier/enrichir chaque personne via le fichier des décès INSEE.
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enrichissement INSEE
+        run: node tools/arbre/enrich-insee.mjs
+      - name: Commit rapport
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research/ENRICH-INSEE.md
+          git commit -m "Arbre: enrichissement INSEE personne par personne [skip ci]" || { echo "aucun changement"; exit 0; }
+          for i in 1 2 3 4; do
+            git push && break
+            git fetch origin "${GITHUB_REF_NAME}"
+            git checkout -- . 2>/dev/null || true
+            git rebase "origin/${GITHUB_REF_NAME}" || { git rebase --abort 2>/dev/null; git pull --rebase -X ours origin "${GITHUB_REF_NAME}" || true; }
+            sleep 5
+          done
+          git push || { echo "::error::push impossible"; git log --oneline -2; exit 1; }
