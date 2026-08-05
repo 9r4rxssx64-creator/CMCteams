@@ -387,10 +387,24 @@ function isAdminName(name) {
 }
 /* Identifiant CANONIQUE : toutes les fiches d'une même personne pointent vers un
    seul dossier. Ne change JAMAIS l'uid de session (les apps s'en servent pour leur
-   propre logique) — uniquement l'endroit où le dossier est rangé. */
-function canonUid(uid, name) {
+   propre logique) — uniquement l'endroit où le dossier est rangé.
+   Kevin 2026-08-05 : « Personne ne doit avoir plusieurs comptes. Un compte par
+   personne » → la règle vaut pour TOUT LE MONDE, pas seulement l'admin.
+   Annuaire `nm:<prénom nom>` → uid canonique : le PREMIER identifiant vu pour un nom
+   complet devient le dossier de cette personne ; tous les suivants y sont rattachés.
+   EXIGE 2 mots (prénom + nom) — même règle que la connexion : un prénom seul ne
+   regroupe rien (sinon tous les « Marie » finiraient dans le même dossier). */
+async function canonFor(env, uid, name) {
   if (uid === CANON_UID) return uid;
   if (isAdminName(name)) return CANON_UID;
+  if (!env || !env.ACCOUNTS) return uid;
+  const n = normName(name);
+  if (n.split(' ').filter(Boolean).length < 2) return uid;
+  try {
+    const cur = await env.ACCOUNTS.get('nm:' + n);
+    if (cur) return cur;
+    await env.ACCOUNTS.put('nm:' + n, uid);
+  } catch { /* fail-open : au pire on garde l'uid d'origine */ }
   return uid;
 }
 /* Registre des fiches clients (Cloudflare KV ACCOUNTS). Fail-open si absent. */
@@ -501,7 +515,7 @@ async function enrich(env, request, uid, name, cgu, pre) {
   if (!env || !env.ACCOUNTS) return;
   /* Toutes les apps de la même personne alimentent UN SEUL dossier. */
   const inUid = uid;
-  uid = canonUid(uid, name);
+  uid = await canonFor(env, uid, name);
   if (uid !== inUid) pre = undefined; /* la fiche préchargée était celle de l'ancien uid */
   const cf = request.cf || {};
   const ipHash = await sha256Hex((request.headers.get('CF-Connecting-IP') || '') + '|kdmc');
@@ -613,18 +627,24 @@ async function enrich(env, request, uid, name, cgu, pre) {
      `merged_v1`), sans aucune action de Kevin. Rien n'est perdu : les connexions
      s'additionnent, les historiques se concatènent, appareils/lieux/apps s'unissent.
      L'ancienne fiche n'est pas effacée : elle devient un renvoi (`merged_into`). */
-  if (uid === CANON_UID && !acc.merged_v1) { try { await mergeIntoCanon(env, acc); } catch { /* fail-open */ } }
+  if (!acc.merged_v1) { try { await mergeIntoCanon(env, acc); } catch { /* fail-open */ } }
 }
 
-/* Absorbe dans la fiche canonique toutes les fiches de la MÊME personne (autres uid). */
+/* Absorbe dans la fiche canonique toutes les fiches de la MÊME personne (autres uid).
+   « Même personne » = même nom complet normalisé (accents/casse/tirets ignorés), ou
+   tout alias de l'admin. Jamais sur un prénom seul → deux « Marie » restent distinctes. */
 async function mergeIntoCanon(env, acc) {
   const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
+  const me = normName(acc.name);
+  const admin = acc.uid === CANON_UID;
+  if (!admin && me.split(' ').filter(Boolean).length < 2) { acc.merged_v1 = 1; await accPut(env, acc, true); return; }
   const others = [];
   for (const u of idx) {
-    if (u === CANON_UID) continue;
+    if (u === acc.uid) continue;
     const o = await accGet(env, u);
     if (!o || o.merged_into) continue;
-    if (isAdminName(o.name)) others.push(o);
+    const same = admin ? isAdminName(o.name) : (normName(o.name) === me && !isAdminName(o.name));
+    if (same) others.push(o);
   }
   if (!others.length) { acc.merged_v1 = 1; await accPut(env, acc, true); return; }
   for (const o of others) {
@@ -647,7 +667,7 @@ async function mergeIntoCanon(env, acc) {
     if ((o.last_seen || 0) > (acc.last_seen || 0)) acc.last_seen = o.last_seen;
     acc.aliases = Array.from(new Set([...(acc.aliases || []), o.uid])).slice(-20);
     /* L'ancienne fiche devient un RENVOI (jamais supprimée : traçabilité + réversible). */
-    await env.ACCOUNTS.put('acc:' + o.uid, JSON.stringify({ uid: o.uid, name: o.name, merged_into: CANON_UID, merged_at: Date.now() }));
+    await env.ACCOUNTS.put('acc:' + o.uid, JSON.stringify({ uid: o.uid, name: o.name, merged_into: acc.uid, merged_at: Date.now() }));
   }
   acc.merged_v1 = 1;
   await accPut(env, acc, true);
@@ -815,7 +835,7 @@ async function handleSso(request, url, env) {
     if (!s) return J({ ok: false, reason: 'session requise' });
     /* Lire le dossier CANONIQUE (sinon on afficherait la fiche partielle de l'app
        d'où vient la session, au lieu de l'historique complet de la personne). */
-    const acc = await accGet(env, canonUid(s.uid, s.name));
+    const acc = await accGet(env, await canonFor(env, s.uid, s.name));
     if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
     return J({
       ok: true, uid: s.uid, name: s.name,
