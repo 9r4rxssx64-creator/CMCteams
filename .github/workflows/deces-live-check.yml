@@ -1,0 +1,23 @@
+name: Décès — vérif LIVE /__deces (arbre.kd-mc.com)
+# Prouve que le proxy same-origin est déployé et répond depuis le vrai domaine.
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GET arbre.kd-mc.com/__deces?q=MAIFFRET
+        run: |
+          echo "== En-têtes =="
+          curl -sS -D - -o /tmp/d.json "https://arbre.kd-mc.com/__deces?q=MAIFFRET&size=3" | grep -iE "HTTP/|content-type|access-control-allow-origin" || true
+          echo "== Corps (400 car.) =="; head -c 400 /tmp/d.json; echo
+          echo "== Verdict =="
+          if grep -q '"persons"' /tmp/d.json; then
+            N=$(grep -o '"total":[0-9]*' /tmp/d.json | head -1)
+            echo "✅ /__deces LIVE renvoie des résultats INSEE ($N) → recherche in-arbre OK sur iPhone."
+          else
+            echo "⚠️ Pas de 'persons' — routeur peut-être pas encore déployé, ou endpoint à corriger."
+            exit 1
+          fi
