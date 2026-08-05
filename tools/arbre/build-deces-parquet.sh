@@ -40,71 +40,71 @@ echo "== 2) Téléchargement =="
 i=0; while read -r u; do [ -z "$u" ] && continue; i=$((i+1)); curl -fsSL "$u" -o "raw/f_$i.txt" || echo "  (échec $u)"; done < urls.txt
 ls -la raw | tail -3; du -sh raw
 
-echo "== 3) DuckDB : parse largeur fixe → nettoyage → tri → partition Parquet =="
+echo "== 3a) DuckDB : parse largeur fixe → nettoyage → staging.parquet (streaming, sans tri) =="
 pip install --quiet duckdb >/dev/null 2>&1 || true
+mkdir -p _tmp
 python3 - <<'PY'
-import duckdb, glob, os
+import duckdb, glob
 con=duckdb.connect()
 con.execute("PRAGMA memory_limit='5GB'"); con.execute("PRAGMA temp_directory='_tmp'")
+con.execute("PRAGMA preserve_insertion_order=false")
 files=[f.replace('\\','/') for f in glob.glob('raw/*.txt')]
 assert files, "aucun fichier brut"
-# lit chaque ligne entière (délimiteur improbable) puis découpe par positions INSEE
+# chaque ligne entière (délimiteur improbable), tolérant : strict_mode=false + ignore_errors
 con.execute(f"""
 CREATE VIEW src AS
-SELECT l FROM read_csv({files!r}, columns={{'l':'VARCHAR'}}, delim='\x1f', header=false, quote='', escape='', ignore_errors=true);
+SELECT l FROM read_csv({files!r}, columns={{'l':'VARCHAR'}}, delim='\x1f',
+  header=false, quote='', escape='', strict_mode=false, ignore_errors=true, null_padding=true);
 """)
+# écrit un parquet intermédiaire non trié (streaming → faible mémoire/disque)
 con.execute("""
-CREATE TABLE d AS
-WITH p AS (
-  SELECT
-    trim(split_part(substr(l,1,80),'*',1))                         AS nom,
-    trim(replace(split_part(substr(l,1,80),'*',2),'/',' '))        AS prenoms,
-    substr(l,81,1)                                                  AS sexe,
-    substr(l,82,8)                                                  AS date_naissance,
-    substr(l,90,5)                                                  AS code_lieu_naissance,
-    trim(substr(l,95,30))                                          AS commune_naissance,
-    trim(substr(l,125,30))                                         AS pays_naissance,
-    substr(l,155,8)                                                 AS date_deces,
-    substr(l,163,5)                                                 AS code_lieu_deces,
-    trim(substr(l,168,9))                                          AS num_acte
-  FROM src
-  WHERE length(l)>=176
-)
-SELECT * FROM p
-WHERE nom <> '' AND date_deces ~ '^(19[7-9]\\d|20\\d\\d)[0-1]\\d[0-3]\\d$'
+COPY (
+  WITH p AS (
+    SELECT
+      trim(split_part(substr(l,1,80),'*',1))                  AS nom,
+      trim(replace(split_part(substr(l,1,80),'*',2),'/',' '))  AS prenoms,
+      substr(l,81,1)                                           AS sexe,
+      substr(l,82,8)                                           AS date_naissance,
+      substr(l,90,5)                                           AS code_lieu_naissance,
+      trim(substr(l,95,30))                                    AS commune_naissance,
+      trim(substr(l,125,30))                                   AS pays_naissance,
+      substr(l,155,8)                                          AS date_deces,
+      substr(l,163,5)                                          AS code_lieu_deces,
+      trim(substr(l,168,9))                                    AS num_acte
+    FROM src WHERE length(l)>=176
+  )
+  SELECT nom,prenoms,sexe,date_naissance,code_lieu_naissance,commune_naissance,pays_naissance,
+         date_deces,code_lieu_deces,num_acte,
+         CASE WHEN upper(substr(nom,1,1)) BETWEEN 'A' AND 'Z' THEN upper(substr(nom,1,1)) ELSE 'AUTRE' END AS lettre
+  FROM p
+  WHERE nom <> '' AND date_deces ~ '^(19[7-9]\\d|20\\d\\d)[0-1]\\d[0-3]\\d$'
+) TO 'staging.parquet' (FORMAT PARQUET, COMPRESSION ZSTD);
 """)
-n=con.execute("SELECT count(*) FROM d").fetchone()[0]
-print("lignes valides:", n)
+n=con.execute("SELECT count(*) FROM read_parquet('staging.parquet')").fetchone()[0]
+print("lignes valides (staging):", n)
+PY
+echo "  staging.parquet : $(du -h staging.parquet | cut -f1)"
+echo "== 3b) Libère le brut (disque) puis tri global → partition par lettre =="
+rm -rf raw && echo "  raw supprimé"
+python3 - <<'PY'
+import duckdb, os
+con=duckdb.connect()
+con.execute("PRAGMA memory_limit='5GB'"); con.execute("PRAGMA temp_directory='_tmp'")
+con.execute("PRAGMA preserve_insertion_order=false")
 os.makedirs('parts',exist_ok=True)
+# input désormais petit (~0.6 Go) → tri (nom,prénoms) puis partition (chaque fichier lettre reste trié)
 con.execute("""
-COPY (SELECT nom,prenoms,sexe,date_naissance,code_lieu_naissance,commune_naissance,pays_naissance,
-             date_deces,code_lieu_deces,num_acte,
-             CASE WHEN upper(substr(nom,1,1)) BETWEEN 'A' AND 'Z' THEN upper(substr(nom,1,1)) ELSE 'AUTRE' END AS lettre
-      FROM d ORDER BY nom, prenoms)
+COPY (SELECT * FROM read_parquet('staging.parquet') ORDER BY nom, prenoms)
 TO 'parts' (FORMAT PARQUET, PARTITION_BY (lettre), COMPRESSION ZSTD, OVERWRITE_OR_IGNORE);
 """)
 print("partitions écrites")
 PY
+rm -f staging.parquet
 echo "  taille des parts : $(du -sh parts | cut -f1)"
 find parts -name '*.parquet' | head -5
 
-echo "== 4) Moteur DuckDB-WASM + extension parquet (self-host) =="
-mkdir -p engine/ext/v1.1.1/wasm_mvp
-BASE="https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@${DUCKDB_WASM_VER}/dist"
-curl -fsSL "$BASE/duckdb-mvp.wasm" -o engine/duckdb-mvp.wasm
-curl -fsSL "$BASE/duckdb-browser-mvp.worker.js" -o engine/duckdb-browser-mvp.worker.js
-# extension parquet officielle (version alignée au wasm mvp)
-curl -fsSL "https://extensions.duckdb.org/v1.1.1/wasm_mvp/parquet.duckdb_extension.wasm" \
-  -o engine/ext/v1.1.1/wasm_mvp/parquet.duckdb_extension.wasm || echo "  (extension parquet : à vérifier version)"
-ls -la engine engine/ext/v1.1.1/wasm_mvp
-
-echo "== 5) Upload R2 (partitions + moteur) =="
+echo "== 4) Upload R2 (partitions) — le moteur est géré par le workflow deces-insee-engine =="
 put(){ npx --yes wrangler@3 r2 object put "$BUCKET/$2" --file="$1" ${3:+--content-type=$3} >/dev/null 2>&1 && echo "  ↑ $2" || echo "  ✘ $2"; }
-# moteur
-put engine/duckdb-mvp.wasm "engine/duckdb-mvp.wasm" application/wasm
-put engine/duckdb-browser-mvp.worker.js "engine/duckdb-browser-mvp.worker.js" text/javascript
-put engine/ext/v1.1.1/wasm_mvp/parquet.duckdb_extension.wasm "engine/ext/v1.1.1/wasm_mvp/parquet.duckdb_extension.wasm" application/wasm
-# partitions
 while IFS= read -r f; do rel="${f#parts/}"; put "$f" "parts/$rel" application/octet-stream; done < <(find parts -name '*.parquet')
 
 echo "== 6) Config publique + manifeste des partitions =="
