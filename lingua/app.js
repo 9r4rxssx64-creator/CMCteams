@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.24.0";
+var APP_VER="v2.26.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -542,13 +542,35 @@ function beeLifeStart(rig){
   (function idle(){ if(!document.contains(rig))return;
     var ks=["fly","walk","dance"]; beeMove(rig, ks[Math.floor(Math.random()*ks.length)], 2200+Math.random()*1400);
     setTimeout(idle, 11000+Math.random()*9000); })(); }
+/* Bee PREND LA PAROLE : bulle + VOIX (sans les emojis dans l'audio) */
+function beeSay(text,ms){ beeBubble(text,ms||7000);
+  speakLang(String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}·]/gu," "),"fr-FR",BEE_VOICE,true); }
+/* Bee INTERAGIT vraiment : elle propose, tu acceptes d'un tap, elle LANCE l'action */
+function beeAsk(text,yes,fn,ms){ try{ var old=document.querySelector(".bee-bubble"); if(old)old.remove();
+  var b=el("div","bee-bubble"); b.textContent=text;
+  var act=el("div","bb-act"); var y=el("button","bb-yes"); y.textContent=yes;
+  y.onclick=function(ev){ ev.stopPropagation(); b.remove(); vibrate(12); fn(); };
+  act.appendChild(y); b.appendChild(act);
+  b.onclick=function(){ b.remove(); };
+  document.body.appendChild(b);
+  speakLang(String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}·]/gu," "),"fr-FR",BEE_VOICE,true);
+  setTimeout(function(){ try{ b.classList.add("bye"); setTimeout(function(){b.remove();},400); }catch(_){} }, ms||14000); }catch(_){} }
 function beeCompanion(){ var w=el("div","bee-companion");
   var rig=el("div","bee-live bee-rig"); rig.innerHTML=beeRigHTML(); w.appendChild(rig);
   setTimeout(function(){ beeLifeStart(rig); }, 900+Math.random()*600);
   w.onclick=function(ev){ ev.stopPropagation();
     beeMove(rig, ["dance","jump","fly","walk"][Math.floor(Math.random()*4)], 2600); beeSparkles(rig,7); vibrate(10);
-    var t=beeLine(); beeBubble(t,7000); speakLang(t,"fr-FR",BEE_VOICE,true); };
-  if(!_beeSaid[VIEW]){ _beeSaid[VIEW]=true; setTimeout(function(){ beeBubble(beeLine(),6000); },600); }
+    beeSay(beeLine(),7000); };
+  if(!_beeSaid[VIEW]){ _beeSaid[VIEW]=true; setTimeout(function(){
+    /* 1re arrivée sur l'accueil : elle t'accueille par ton prénom ET te propose l'étape suivante — un tap et elle la lance */
+    if(VIEW==="home"&&!window._beeHello){ window._beeHello=true;
+      var me=accMeta(ACC)||{}; var hi="Bonjour "+(me.name||"toi")+" ! ";
+      var nx=nextLessonToDo(), due=dueWords().length;
+      if(nx) beeAsk(hi+"On fait la leçon « "+nx.titre+" » ?","🚀 C'est parti !",function(){ startLesson(nx.ui,nx.li); });
+      else if(due>0) beeAsk(hi+due+" mot"+(due>1?"s":"")+" à réviser — on s'y met ?","🧠 Réviser",function(){ startLesson(null,null,dueWords().slice(0,10)); });
+      else beeSay(hi+beeLine());
+    } else beeSay(beeLine());
+  },600); }
   return w; }
 /* Bee PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
 function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang,BEE_VOICE,true);
@@ -600,7 +622,8 @@ function vCoach(){ var d=el("div","screen coach");
 }
 /* ============ MODE DISCUSSION 🎬 — Bee en gros plan, bouche animée, elle DIT son texte ============ */
 var DISC={open:false,talking:false,handsFree:false,timer:null};
-function discMove(kind,dur){ /* Bee bouge de tout son corps — 100% local et gratuit (CSS, aucune API) */
+function discMove(kind,dur){ /* Bee bouge de tout son corps. VRAIE VIDÉO si dispo, sinon marionnette CSS. */
+  if(DISC.vid&&DISC.clip&&kind){ DISC.clip(kind,(dur||2800)/1000); return; }
   var rig=document.querySelector(".disc-overlay .bee-rig"); if(!rig)return;
   ["mv-dance","mv-jump","mv-fly","mv-walk"].forEach(function(c){rig.classList.remove(c);});
   if(!kind)return; rig.classList.add("mv-"+kind);
@@ -613,8 +636,10 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à m
   var words=String(text||"").split(/\s+/).filter(Boolean);
   var dur=Math.min(12000, 900+text.length*68);
   DISC.talking=true; if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
-  /* Chorégraphie auto : compliment → elle danse ou saute de joie */
-  if(/(bravo|super|parfait|génial|excellent|top|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(text)) discMove(Math.random()<.5?"dance":"jump", Math.min(dur,4200));
+  /* Chorégraphie auto : compliment → elle danse ou saute de joie ; sinon en mode vidéo elle salue en parlant */
+  var praise=/(bravo|super|parfait|génial|excellent|top|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(text);
+  if(praise) discMove(Math.random()<.5?"dance":"jump", Math.min(dur,4200));
+  else if(DISC.vid&&DISC.clip) DISC.clip("hello", Math.min(dur/1000,6));
   if(sub){ sub.textContent=""; var wi=0; var step=Math.max(120, Math.min(300, dur/Math.max(1,words.length)));
     var si=setInterval(function(){ if(wi>=words.length||!DISC.open){ clearInterval(si); return; } sub.textContent+=(wi?" ":"")+words[wi++]; sub.scrollTop=sub.scrollHeight; }, step); }
   function stop(){ DISC.talking=false; try{ if(mouth)mouth.classList.remove("talking"); if(img)img.classList.remove("talk"); }catch(_){}
@@ -652,7 +677,8 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
       '<img class="rig-piece rig-wr" src="bee/rig/wing-r.webp" alt="" onerror="this.remove()">'+
       '<img class="rig-piece rig-arm" src="bee/rig/arm.webp" alt="" onerror="this.remove()">'+
       '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
-      '<div class="disc-mouth"></div></div></div>'+
+      '<div class="disc-mouth"></div>'+
+      '<video class="disc-vid" src="bee/live/idle.mp4" autoplay loop muted playsinline></video></div></div>'+
     '<div class="disc-sub"></div>'+
     '<div class="disc-moves"><button data-mv="dance" title="Danse">💃</button><button data-mv="jump" title="Saute">🦘</button><button data-mv="fly" title="Vole">🕊️</button><button data-mv="walk" title="Marche">🚶</button></div>'+
     '<div class="disc-chips"></div>'+
@@ -663,13 +689,25 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
     if(rig){ rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150); }
     DISC.blinkT=setTimeout(blinkLoop, 2200+Math.random()*3200); }
   DISC.blinkT=setTimeout(blinkLoop,1800);
+  /* VRAIE VIDÉO de Bee (Replicate, générée depuis SON image) : activée dès qu'elle se charge.
+     Si le navigateur ne la lit pas (erreur/codec) → repli marionnette, sans écran vide. */
+  var dv=ov.querySelector(".disc-vid"), db=ov.querySelector(".disc-bee");
+  DISC.vid=false;
+  if(dv){
+    dv.addEventListener("canplay",function(){ if(!DISC.open)return; DISC.vid=true; db.classList.add("vid"); },{once:true});
+    dv.onerror=function(){ DISC.vid=false; try{db.classList.remove("vid");}catch(_){} try{dv.remove();}catch(_){} };
+    DISC.clip=function(name,secs){ if(!DISC.vid||!dv||!DISC.open)return;
+      try{ dv.src="bee/live/"+name+".mp4"; dv.loop=true; var p=dv.play(); if(p&&p.catch)p.catch(function(){}); }catch(_){}
+      if(DISC.clipT)clearTimeout(DISC.clipT);
+      if(name!=="idle"){ DISC.clipT=setTimeout(function(){ if(DISC.open&&DISC.vid&&dv){ try{ dv.src="bee/live/idle.mp4"; var q=dv.play(); if(q&&q.catch)q.catch(function(){}); }catch(_){} } }, Math.max(2,(secs||4))*1000); } };
+  }
   /* Elle VIT aussi entre deux phrases : de temps en temps elle vole, marche ou danse toute seule */
   function moveLoop(){ if(!DISC.open)return;
     if(!DISC.talking){ var ks=["fly","walk","dance"]; discMove(ks[Math.floor(Math.random()*ks.length)], 2600+Math.random()*1800); }
     DISC.moveT=setTimeout(moveLoop, 9000+Math.random()*7000); }
   DISC.moveT=setTimeout(moveLoop,6000);
   ov.querySelectorAll(".disc-moves button").forEach(function(b){ b.onclick=function(){ var bee=ov.querySelector(".disc-bee"); if(bee)beeSparkles(bee,6); discMove(b.getAttribute("data-mv"), 3400); }; });
-  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; if(DISC.blinkT)clearTimeout(DISC.blinkT); if(DISC.moveT)clearTimeout(DISC.moveT); if(DISC.moveEnd)clearTimeout(DISC.moveEnd); try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
+  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; DISC.vid=false; DISC.clip=null; if(DISC.blinkT)clearTimeout(DISC.blinkT); if(DISC.moveT)clearTimeout(DISC.moveT); if(DISC.moveEnd)clearTimeout(DISC.moveEnd); if(DISC.clipT)clearTimeout(DISC.clipT); try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
   ov.querySelector(".disc-send").onclick=discSend;
   ov.querySelector(".disc-input").onkeydown=function(e){ if(e.key==="Enter")discSend(); };
   ov.querySelector(".disc-mic").onclick=discListen;
@@ -732,7 +770,10 @@ function dictate(cb,lang){ try{ var SR=window.SpeechRecognition||window.webkitSp
 
 /* ============ LEÇON ============ */
 function startLesson(ui,li,rev){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
-  LESSON={ui:ui,li:li,review:!!rev,ex:buildLesson(ui,li,rev),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render(); }
+  LESSON={ui:ui,li:li,review:!!rev,ex:buildLesson(ui,li,rev),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render();
+  /* Bee annonce la leçon à voix haute (court, pour ne pas gêner le 1er exercice) */
+  try{ var intro=rev?"C'est parti pour la révision !":"C'est parti ! Écoute bien.";
+    setTimeout(function(){ speakLang(intro,"fr-FR",BEE_VOICE,true); },250); }catch(_){} }
 function unitAllWords(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.forEach(function(l){ o=o.concat(l.words); }); return o; }
 function unitAllPhrases(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.forEach(function(l){ o=o.concat(l.phrases||[]); }); return o; }
 function buildExam(ui){ var pool=allWords(S.course),tier=Math.min(4,diffTier()+1),ws=shuffle(unitAllWords(ui)),ex=[];
@@ -864,7 +905,11 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
     if(m){ if(ok){ beeAnimate(m,"hop"); if(L.combo>=2)beeSparkles(m,6); } else { beeAnimate(m,"shake"); } }
     /* Le compagnon vivant réagit AUSSI en direct : danse/saute quand c'est bon */
     var cr=document.querySelector(".bee-companion .bee-rig");
-    if(cr&&ok){ beeMove(cr, Math.random()<0.5?"dance":"jump", 1900); if(L.combo>=3)beeSparkles(cr,5); } },40);
+    if(cr&&ok){ beeMove(cr, Math.random()<0.5?"dance":"jump", 1900); if(L.combo>=3)beeSparkles(cr,5); }
+    /* Bee PARLE : encouragement à voix haute quand il n'y a pas déjà le mot à écouter (priorité au contenu) */
+    var wordWillPlay = ok && ex.w && ex.kind!=="match";
+    if(ok && !wordWillPlay && L.combo>=2){ speakLang(["Bravo !","Super !","Parfait !","Bien joué !"][L.combo%4],"fr-FR",BEE_VOICE,true); }
+    else if(!ok && Math.random()<0.5){ speakLang(["Pas grave, on retient !","Presque ! On continue.","Courage, tu y es presque !"][L.wrong%3],"fr-FR",BEE_VOICE,true); } },40);
 }
 function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol="";
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
@@ -881,8 +926,11 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
   var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",120)+'</div><h3>'+(L.wrong===0?"Sans faute ! 🎉":"Leçon terminée ✅")+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+(L.wrong===0?3:1)+'</b><i>Gemmes</i></div></div>';
   var b=el("button","btn-main"); b.textContent="Continuer"; b.onclick=function(){ m.close(); render(); }; m.body.appendChild(b);
   setTimeout(function(){ var mi=m.body.querySelector(".bee-img"); if(mi){ beeAnimate(mi,"hop"); if(L.wrong===0)beeSparkles(mi,10); }
-    /* Fin de leçon : le compagnon fait la fête aussi */
-    var cr=document.querySelector(".bee-companion .bee-rig"); if(cr)beeMove(cr, L.wrong===0?"dance":"jump", 3200); },200);
+    /* Fin de leçon : le compagnon fait la fête aussi ET Bee annonce le résultat à voix haute */
+    var cr=document.querySelector(".bee-companion .bee-rig"); if(cr)beeMove(cr, L.wrong===0?"dance":"jump", 3200);
+    var me=accMeta(ACC)||{};
+    speakLang(L.wrong===0?("Sans faute "+(me.name||"")+" ! Je suis trop fière de toi ! Plus "+xp+" points !")
+      :("Leçon terminée ! Plus "+xp+" points. On continue ?"),"fr-FR",BEE_VOICE,true); },200);
 }
 
 /* ---------- Toast / modal ---------- */
