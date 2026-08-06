@@ -192,6 +192,39 @@ async function geminiImage(env, prompt, imgDataUrl, extraImg) {
   throw new Error(lastErr);
 }
 
+/* ---------------- Fournisseur 1bis : Cloudflare Workers AI (GRATUIT, même compte) -------
+   Free tier quotidien, binding direct (aucune clé). Sert de vrai secours ET de
+   renfort parallèle. FLUX pour l'image, MeloTTS pour la voix chantée du Studio. */
+const CF_IMG = '@cf/black-forest-labs/flux-1-schnell';
+const CF_TTS = '@cf/myshell-ai/melotts';
+async function cfImage(env, prompt) {
+  if (!env.AI) throw new Error('cf_no_binding');
+  let r;
+  try { r = await env.AI.run(CF_IMG, { prompt: String(prompt).slice(0, 1800), steps: 4 }); }
+  catch (e) { throw new Error('cf_' + String((e && e.message) || e).slice(0, 120)); }
+  /* flux-1-schnell renvoie { image: "<base64 jpeg>" } ; certains modèles renvoient un flux */
+  if (r && typeof r.image === 'string') return { mime: 'image/jpeg', b64: r.image, provider: 'cloudflare:flux' };
+  if (r instanceof ReadableStream) {
+    const buf = await new Response(r).arrayBuffer();
+    const u = new Uint8Array(buf); let s = '';
+    for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+    return { mime: 'image/png', b64: btoa(s), provider: 'cloudflare:flux' };
+  }
+  throw new Error('cf_no_image');
+}
+async function cfSpeech(env, text, lang) {
+  if (!env.AI) throw new Error('cf_no_binding');
+  const r = await env.AI.run(CF_TTS, { prompt: String(text).slice(0, 1800), lang: lang || 'fr' });
+  if (r && typeof r.audio === 'string') return { mime: 'audio/mpeg', b64: r.audio };
+  if (r instanceof ReadableStream) {
+    const buf = await new Response(r).arrayBuffer();
+    const u = new Uint8Array(buf); let s = '';
+    for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+    return { mime: 'audio/mpeg', b64: btoa(s) };
+  }
+  throw new Error('cf_no_audio');
+}
+
 /* ---------------- Fournisseur 2 : Together FLUX.1-schnell-Free (GRATUIT, texte→image) ---- */
 async function togetherImage(env, prompt, ratio) {
   const key = env.TOGETHER_API_KEY;
@@ -299,16 +332,37 @@ async function editImageChain(env, kind, imgDataUrl, h) {
   throw new Error(errs.join(' | '));
 }
 
-async function textToImageChain(env, prompt, ratio, h) {
+/* Course : plusieurs moteurs GRATUITS lancés EN MÊME TEMPS, on garde le premier
+   qui rend une image. Plus rapide qu'en file d'attente, et si l'un tombe (quota,
+   panne) l'autre a déjà pris le relais — sans attendre son échec. */
+async function firstOf(tasks) {
   const errs = [];
+  return await new Promise((resolve, reject) => {
+    let left = tasks.length, done = false;
+    if (!left) return reject(new Error('no_provider'));
+    tasks.forEach((t) => {
+      Promise.resolve().then(t).then((v) => { if (!done) { done = true; resolve(v); } },
+        (e) => { errs.push(String((e && e.message) || e)); if (--left === 0 && !done) reject(new Error(errs.join(' | '))); });
+    });
+  });
+}
+async function textToImageChain(env, prompt, ratio, h) {
+  const full = prompt + '. High quality, detailed, no text, no watermark.';
+  const errs = [];
+  /* 1) Les deux moteurs gratuits COURENT ENSEMBLE (le plus rapide gagne). */
   try {
-    const g = await geminiImage(env, prompt + '. High quality, detailed, no text, no watermark.', null);
-    return imgResponse(g.mime, g.b64, Object.assign({ 'x-crea-provider': g.provider }, h));
+    const r = await firstOf([
+      () => geminiImage(env, full, null),
+      () => cfImage(env, full)
+    ]);
+    return imgResponse(r.mime, r.b64, Object.assign({ 'x-crea-provider': r.provider }, h));
   } catch (e) { errs.push(String((e && e.message) || e)); }
+  /* 2) 3e gratuit */
   try {
     const t = await togetherImage(env, prompt, ratio);
     return imgResponse(t.mime, t.b64, Object.assign({ 'x-crea-provider': t.provider }, h));
   } catch (e) { errs.push(String((e && e.message) || e)); }
+  /* 3) payant en tout dernier */
   const token = env.REPLICATE_API_TOKEN;
   if (token) {
     try { return await runImageModel(BG, BG.input(prompt, ratio), token, Object.assign({ 'x-crea-provider': 'replicate' }, h)); }
@@ -374,10 +428,17 @@ export default {
       const prompt = MAGIC[preset] || (custom ? ('Edit this photo: ' + custom + '.' + KEEP_FACE) : '');
       if (!prompt) return json({ error: 'unknown_preset' }, h, 400);
       const errs = [];
+      /* Gemini sait ÉDITER la photo (garde le visage) → toujours en premier. */
       try {
         const g = await geminiImage(env, prompt, image);
         return imgResponse(g.mime, g.b64, Object.assign({ 'x-crea-provider': g.provider }, h));
       } catch (e) { errs.push(String((e && e.message) || e)); }
+      /* Secours GRATUIT réel (Workers AI) : il ne peut pas repartir de la photo,
+         il recrée la scène décrite — moins fidèle, mais mieux que « rien ». */
+      try {
+        const c = await cfImage(env, prompt.replace(/Keep the SAME person[^.]*\./g, '') + ' Portrait, cinematic, detailed.');
+        return imgResponse(c.mime, c.b64, Object.assign({ 'x-crea-provider': c.provider, 'x-crea-fallback': 'recreated' }, h));
+      } catch (e2) { errs.push(String((e2 && e2.message) || e2)); }
       return json({ error: errs.join(' | ') }, h, 502);
     }
 
@@ -412,6 +473,51 @@ export default {
       });
       if (frames.length < 2) return json({ error: (errs[0] || 'pose_failed'), got: frames.length }, h, 502);
       return json({ frames, provider: 'gemini', asked: refs.length, got: frames.length, errors: errs.slice(0, 2) }, h);
+    }
+
+    // --- 🎙 VOIX CHANTÉE (Studio) : le texte est dit par une vraie voix de
+    //     synthèse (Cloudflare Workers AI, gratuit). L'app la met en musique :
+    //     calage sur le tempo + correction de hauteur sur la mélodie. ---
+    if (url.pathname === '/voice') {
+      const text = (body && typeof body.text === 'string') ? body.text.slice(0, 1500) : '';
+      if (!text) return json({ error: 'no_text' }, h, 400);
+      try {
+        const v = await cfSpeech(env, text, (body && body.lang) || 'fr');
+        return new Response(b64ToBytes(v.b64), {
+          status: 200,
+          headers: Object.assign({ 'content-type': v.mime, 'cache-control': 'no-store', 'x-crea-provider': 'cloudflare:melotts' }, h)
+        });
+      } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
+    }
+
+    // --- 🎼 PARTITION : l'IA compose la structure (accords, mélodie, tempo) que
+    //     le téléphone joue en multi-pistes → « studio » complet et gratuit. ---
+    if (url.pathname === '/compose') {
+      if (!freeAI) return json({ error: 'gemini_no_key' }, h, 503);
+      const style = (body && typeof body.style === 'string') ? body.style.slice(0, 40) : 'pop';
+      const mood = (body && typeof body.mood === 'string') ? body.mood.slice(0, 80) : '';
+      const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
+      const ask = 'Tu es compositeur. Donne UNIQUEMENT un JSON valide (aucun texte autour) pour un morceau '
+        + style + (mood ? ' , ambiance ' + mood : '') + ' :\n'
+        + '{"bpm":<60-160>,"key":<0-11 (0=Do)>,"scale":"major"|"minor",'
+        + '"progression":[<4 à 8 degrés entre 0 et 6>],'
+        + '"melody":[<16 à 32 entiers, degrés -7..14, -99 = silence>],'
+        + '"drums":{"kick":[<16 0/1>],"snare":[<16 0/1>],"hat":[<16 0/1>]},'
+        + '"bassPattern":[<8 à 16 entiers 0..7>]}\n'
+        + 'Cohérent musicalement, refrain accrocheur, rien d\'autre que le JSON.';
+      try {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
+          { method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }], generationConfig: { responseMimeType: 'application/json' } }) });
+        const j = await r.json();
+        if (!r.ok) return json({ error: 'gemini_' + r.status }, h, 502);
+        const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+        const txt = parts.map((p) => p.text || '').join('').trim();
+        let score = null;
+        try { score = JSON.parse(txt.replace(/^```json\s*|```$/g, '')); } catch (_) { }
+        if (!score || !Array.isArray(score.melody)) return json({ error: 'bad_score' }, h, 502);
+        return json({ score, style }, h);
+      } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
     }
 
     // --- 🎵 PAROLES DE CHANSON (texte IA gratuit) ---

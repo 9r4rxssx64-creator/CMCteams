@@ -519,6 +519,12 @@
           <button class="bigbtn ghost hidden" id="magicRecBtn" onclick="Magic.record()">🎙 Enregistrer ma voix (30 s)</button>
         </div>
         <pre class="lyrics hidden" id="magicLyrics"></pre>
+        <div class="hint" style="margin-top:6px">🎹 <b>Studio</b> — l'IA compose la musique <b>et</b> chante ta chanson (gratuit) :</div>
+        <div style="padding:2px 14px">
+          <button class="bigbtn" id="magicStudioBtn" onclick="Magic.studio()">🎹 Produire le morceau complet</button>
+          <button class="bigbtn ghost hidden" id="magicSaveSong" onclick="Magic.saveSong()">📤 Enregistrer le morceau</button>
+        </div>
+        <div class="hint" id="magicStudioHint"></div>
       </div>
 
       <div class="hint" id="magicHint"></div>
@@ -576,7 +582,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v8.3.0';
+var APP_VER='v8.4.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -2323,6 +2329,164 @@ var Magic=(function(){
   }
   function stopInstru(){playing=false;$('magicPlayBtn').textContent='▶️ Jouer l\'instru';
     try{if(ac){ac.close();ac=null;}}catch(e){}}
+
+  /* ============ 🎹 STUDIO (l'équivalent gratuit d'un Suno) ============
+     1) l'IA écrit les paroles       (Gemini)
+     2) l'IA compose la partition    (accords + mélodie + batterie)
+     3) une vraie voix chante        (Workers AI, calée sur la mélodie)
+     4) le téléphone joue et mixe    (multi-pistes, rendu hors-ligne)
+     → un fichier audio complet, sans crédit. */
+  var songBlob=null;
+  function studio(){
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    var theme=$('magicTheme').value.trim();
+    if(!lastLyrics&&!theme){toast('Écris le sujet, ou « Écrire ma chanson » d\'abord');return;}
+    busy=true;$('magicStudioBtn').disabled=true;songBlob=null;$('magicSaveSong').classList.add('hidden');
+    aiShow('🎼 L\'IA compose ta musique…');studioHint('L\'IA écrit la partition…');
+    var lyr=lastLyrics;
+    var step0=lyr?Promise.resolve(lyr):fetch(AI_URL+'/lyrics',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({theme:theme,style:songStyle,mode:songMode})}).then(function(r){return r.json();});
+    step0.then(function(L){
+      if(!L||!L.lyrics)throw new Error((L&&L.error)||'no_lyrics');
+      lastLyrics=L;var el=$('magicLyrics');el.textContent=L.lyrics;el.classList.remove('hidden');
+      return fetch(AI_URL+'/compose',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({style:songStyle,mood:theme})}).then(function(r){return r.json();})
+        .then(function(C){return {L:L,score:(C&&C.score)||null};});
+    }).then(function(o){
+      aiShow('🎙 L\'IA chante ta chanson…');studioHint('Voix en cours…');
+      var sung=singableText(o.L.lyrics);
+      return fetch(AI_URL+'/voice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:sung,lang:'fr'})})
+        .then(function(r){ if(!r.ok)return r.json().then(function(j){throw new Error(j&&j.error||'voice_http');});
+          return r.arrayBuffer(); })
+        .then(function(buf){return {L:o.L,score:o.score,voice:buf};})
+        .catch(function(e){ studioHint('🎵 Voix indisponible ('+String(e.message||e).slice(0,40)+') — morceau instrumental.');
+          return {L:o.L,score:o.score,voice:null};});
+    }).then(function(o){
+      aiShow('🎚 Mixage du morceau…');studioHint('Mixage…');
+      return renderSong(o.score,o.voice);
+    }).then(function(blob){
+      busy=false;$('magicStudioBtn').disabled=false;aiHide();
+      songBlob=blob;$('magicSaveSong').classList.remove('hidden');
+      var url=URL.createObjectURL(blob);var a=new Audio(url);a.play().catch(function(){});
+      studioHint('✅ Morceau prêt ('+Math.round(blob.size/1024)+' Ko) — il joue, et tu peux l\'enregistrer.');
+      toast('Morceau produit 🎹',2400);
+    }).catch(function(e){busy=false;$('magicStudioBtn').disabled=false;aiHide();
+      var m=aiErrMsg(e);studioHint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  function studioHint(t){var e=$('magicStudioHint');if(e)e.textContent=t||'';}
+  /* Garde ce qui se chante (retire TITRE:, COUPLET:, etc.) */
+  function singableText(lyrics){
+    return String(lyrics||'').split('\n')
+      .filter(function(l){return l.trim()&&!/^(TITRE|COUPLET|REFRAIN|PONT|TEXTE)\s*\d*\s*:/i.test(l.trim());})
+      .join('. ').slice(0,900);
+  }
+  /* Décode la voix d'abord : le morceau doit durer AU MOINS aussi longtemps
+     qu'elle, sinon le chant se retrouve coupé au milieu. */
+  function renderSong(score,voiceBuf){
+    if(!voiceBuf)return renderSongWith(score,null,0);
+    var OCd=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+    if(!OCd)return renderSongWith(score,null,0);
+    var tmp=new OCd(1,1,44100);
+    return tmp.decodeAudioData(voiceBuf.slice(0))
+      .then(function(vb){return renderSongWith(score,vb,vb.duration);})
+      .catch(function(){return renderSongWith(score,null,0);});
+  }
+  /* Rendu HORS-LIGNE : instru multi-pistes + voix, mixés en un seul fichier. */
+  function renderSongWith(score,voiceBufDecoded,voiceDur){
+    var S=score||{};
+    var bpm=Math.max(60,Math.min(160,S.bpm||110));
+    var scaleMin=(S.scale==='minor');
+    var root=48+((S.key|0)%12);
+    var prog=(Array.isArray(S.progression)&&S.progression.length?S.progression:[0,5,3,4]).slice(0,8);
+    var mel=(Array.isArray(S.melody)&&S.melody.length?S.melody:[0,2,4,2,0,-3,0,4]).slice(0,32);
+    var dr=S.drums||{};
+    var kick=dr.kick||[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0];
+    var snare=dr.snare||[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0];
+    var hat=dr.hat||[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0];
+    var beat=60/bpm;
+    /* le nombre de mesures suit la voix (mini 8, maxi 64 ≈ 2 min 20) */
+    var need=(voiceDur||0)+1.2, bars=Math.max(8,Math.min(64,Math.ceil(need/(4*beat))));
+    var dur=bars*4*beat+1.5;
+    var SR=44100;
+    var OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+    if(!OC)return Promise.reject(new Error('audio_indisponible'));
+    var oc=new OC(2,Math.ceil(dur*SR),SR);
+    var MAJ=[0,2,4,5,7,9,11],MIN=[0,2,3,5,7,8,10];
+    function deg2midi(d,base){var sc=scaleMin?MIN:MAJ;var o=Math.floor(d/7),i=((d%7)+7)%7;return (base||root)+o*12+sc[i];}
+    function f(m){return 440*Math.pow(2,(m-69)/12);}
+    function tone(midi,at,len,gain,type,detune){
+      var o=oc.createOscillator(),g=oc.createGain();o.type=type||'triangle';o.frequency.value=f(midi);
+      if(detune)o.detune.value=detune;
+      g.gain.setValueAtTime(0.0001,at);g.gain.exponentialRampToValueAtTime(Math.max(0.0002,gain),at+0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001,at+len);
+      o.connect(g);g.connect(oc.destination);o.start(at);o.stop(at+len+0.05);
+    }
+    function boom(at){var o=oc.createOscillator(),g=oc.createGain();o.type='sine';
+      o.frequency.setValueAtTime(150,at);o.frequency.exponentialRampToValueAtTime(45,at+0.12);
+      g.gain.setValueAtTime(0.75,at);g.gain.exponentialRampToValueAtTime(0.0001,at+0.18);
+      o.connect(g);g.connect(oc.destination);o.start(at);o.stop(at+0.25);}
+    function noise(at,len,gain,hp){
+      var n=Math.max(64,Math.floor(len*SR)),b=oc.createBuffer(1,n,SR),d=b.getChannelData(0);
+      for(var i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
+      var s=oc.createBufferSource();s.buffer=b;var g=oc.createGain();g.gain.value=gain;
+      var flt=oc.createBiquadFilter();flt.type='highpass';flt.frequency.value=hp||2000;
+      s.connect(flt);flt.connect(g);g.connect(oc.destination);s.start(at);}
+    for(var bar=0;bar<bars;bar++){
+      var chordDeg=prog[bar%prog.length]|0;
+      for(var st=0;st<16;st++){
+        var at=(bar*4+st/4)*beat;
+        if(kick[st%16])boom(at);
+        if(snare[st%16])noise(at,0.16,0.28,1500);
+        if(hat[st%16])noise(at,0.045,0.10,6000);
+        if(st%4===0){                                   /* accord (3 notes) */
+          [0,2,4].forEach(function(iv){tone(deg2midi(chordDeg+iv,root),at,beat*0.95,0.055,'sawtooth',iv?4:0);});
+          tone(deg2midi(chordDeg,root-24),at,beat*0.9,0.30,'sine');   /* basse */
+        }
+        if(st%2===0){                                   /* mélodie */
+          var m=mel[(bar*8+st/2)%mel.length];
+          if(m>-50)tone(deg2midi(m+chordDeg,root+12),at,beat*0.42,0.12,'square');
+        }
+      }
+    }
+    if(voiceBufDecoded){
+      try{
+        var s=oc.createBufferSource();s.buffer=voiceBufDecoded;
+        var g=oc.createGain();g.gain.value=1.35;            /* la voix passe devant */
+        var comp=oc.createDynamicsCompressor();
+        s.connect(comp);comp.connect(g);g.connect(oc.destination);
+        s.start(0.35);                                     /* petite intro avant le chant */
+      }catch(e){}
+    }
+    return oc.startRendering().then(function(rendered){
+      fadeOut(rendered,1.2);                                /* fin en douceur, pas de coupure sèche */
+      return new Blob([wavFromBuffer(rendered)],{type:'audio/wav'});
+    });
+  }
+  /* Fondu de fin (secondes) — évite que le morceau s'arrête net */
+  function fadeOut(buf,sec){
+    var n=Math.min(buf.length,Math.floor((sec||1)*buf.sampleRate));
+    for(var c=0;c<buf.numberOfChannels;c++){
+      var d=buf.getChannelData(c),s=buf.length-n;
+      for(var i=0;i<n;i++)d[s+i]*=1-i/n;
+    }
+  }
+  /* AudioBuffer → fichier WAV (lisible et partageable partout, iPhone inclus) */
+  function wavFromBuffer(buf){
+    var ch=buf.numberOfChannels,len=buf.length,sr=buf.sampleRate;
+    var data=new DataView(new ArrayBuffer(44+len*ch*2));
+    function str(o,s){for(var i=0;i<s.length;i++)data.setUint8(o+i,s.charCodeAt(i));}
+    str(0,'RIFF');data.setUint32(4,36+len*ch*2,true);str(8,'WAVE');str(12,'fmt ');
+    data.setUint32(16,16,true);data.setUint16(20,1,true);data.setUint16(22,ch,true);
+    data.setUint32(24,sr,true);data.setUint32(28,sr*ch*2,true);data.setUint16(32,ch*2,true);
+    data.setUint16(34,16,true);str(36,'data');data.setUint32(40,len*ch*2,true);
+    var off=44,chans=[],c,i;
+    for(c=0;c<ch;c++)chans.push(buf.getChannelData(c));
+    for(i=0;i<len;i++)for(c=0;c<ch;c++){
+      var v=Math.max(-1,Math.min(1,chans[c][i]));
+      data.setInt16(off,v<0?v*0x8000:v*0x7fff,true);off+=2;
+    }
+    return data.buffer;
+  }
   return {
     init:build,
     pick:function(){$('fileMagicPhoto').click();},
@@ -2340,7 +2504,10 @@ var Magic=(function(){
       im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);},
     _song:function(f){songFile=f;$('magicSingHint').textContent='🎵 Son choisi : '+(f.name||'audio').slice(0,40)+' — touche « Faire chanter ma photo ».';toast('Musique prête 🎵',1400);},
     custom:function(){var v=$('magicCustom').value.trim();if(!v){toast('Décris ce que tu veux');return;}apply(null,v,v);},
-    sing:sing,song:song,playInstru:playInstru,duo:duo,record:record,
+    sing:sing,song:song,playInstru:playInstru,duo:duo,record:record,studio:studio,
+    _songBlob:function(){return songBlob;},   /* lecture seule — sert aux tests automatiques */
+    saveSong:function(){if(!songBlob){toast('Produis d\'abord le morceau');return;}
+      shareOrSave(songBlob,((lastLyrics&&lastLyrics.title)||'ma-chanson').replace(/[^\w -]/g,'').slice(0,40)+'.wav','Mon morceau');},
     export:function(){if(!outUrl){toast('Crée d\'abord une image ou une vidéo');return;}
       fetch(outUrl).then(function(r){return r.blob();}).then(function(b){
         var isV=(b.type||'').indexOf('video')>=0;var ext=isV?((b.type.indexOf('webm')>=0)?'webm':'mp4'):'png';
