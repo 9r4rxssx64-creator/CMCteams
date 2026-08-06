@@ -1,11 +1,12 @@
 # 📜 Récupération AUTO des actes — registres numérisés officiels
 
-_Généré le 2026-08-04 00:58 UTC par `tools/arbre/research-registres.mjs` (CI, réseau ouvert). Brut complet dans `registresraw/` pour itération._
+_Généré le 2026-08-05 07:37 UTC par `tools/arbre/research-registres.mjs` (CI, réseau ouvert). Brut complet dans `registresraw/` pour itération._
 
 ## Cibles (actes assez anciens pour être consultables en ligne)
 
 | Personne | Acte | Lieu | Année | Base |
 |---|---|---|---|---|
+| Philippe Laurent Jérôme MAIFFRET | naissance | Nice | 1850 | AD06 |
 | Léonie Rosa Désirée MAIFFRET | naissance | Beaulieu-sur-Mer | 1895 | AD06 |
 | Alexandre MAIFFRET | naissance | Beaulieu-sur-Mer | 1906 | AD06 |
 | Marguerite-Rose MAIFFRET | naissance | Nice | 1907 | AD06 |
@@ -18,7 +19,15 @@ _Généré le 2026-08-04 00:58 UTC par `tools/arbre/research-registres.mjs` (CI,
 | Josette MAIFFRET | naissance | Beaulieu-sur-Mer | 1922 | AD06 |
 | Jean Antoine Pierre MAIFFRET | naissance | Beaulieu-sur-Mer | 1925 | AD06 |
 | Jacqueline MAIFFRET | naissance | Beaulieu-sur-Mer | 1926 | AD06 |
+| Julie Joséphine Marie MAIFFRET | naissance | Monaco | 1880 | Monaco |
+| Emmanuel François MAIFFRET | naissance | Monaco | 1884 | Monaco |
+| François Louis MAIFFRET | naissance | Monaco | 1887 | Monaco |
+| Philippe Laurent Jérôme MAIFFRET | décès | Monaco (bd des Moulins n°18) | 1905 | Monaco |
+| Pauline Élisabeth MAIFFRET | naissance | Monaco (Villa Beausoleil, bd de France) | 1905 | Monaco |
+| Pauline Élisabeth MAIFFRET | décès | Monaco | 1907 | Monaco |
+| Paula Françoise MAIFFRET | naissance | Monaco (Villa Nathalie, chemin des Œillets) | 1910 | Monaco |
 | François Joseph Philippe MAIFFRET | naissance | Monaco | 1912 | Monaco |
+| François Louis MAIFFRET | décès | Monaco | 1912 | Monaco |
 
 ## Monaco — résultats API (base registres ≥1900)
 

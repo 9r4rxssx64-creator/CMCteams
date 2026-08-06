@@ -125,6 +125,48 @@ jobs:
             echo "::warning::RAILWAY_TOKEN absent → tableau de bord bot en railway_token_absent (fail-open)."
           fi
 
+      - name: OpenAI — clé pour la voix naturelle KDMC Lingua (/__lingua/tts, fail-open si absente)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OPENAI_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+        run: |
+          if [ -n "${OPENAI_KEY:-}" ]; then
+            printf '%s' "$OPENAI_KEY" | wrangler secret put OPEN_AI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::OPEN_AI_API_KEY non posée (voix Lingua en repli navigateur)"
+          else
+            echo "::warning::OPEN_AI_API_KEY absente → voix Lingua en repli navigateur (Web Speech)."
+          fi
+
+      - name: Groq + Mistral + Gemini — clés pour le Coach IA KDMC Lingua (/__lingua/ai, fail-open si absentes)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GROQ_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -n "${GROQ_KEY:-}" ]; then
+            printf '%s' "$GROQ_KEY" | wrangler secret put GROQ_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GROQ_API_KEY non posée (Coach IA en repli Mistral/Gemini/hors-ligne)"
+          else
+            echo "::warning::GROQ_API_KEY absente → Coach IA tentera Mistral puis Gemini."
+          fi
+          if [ -n "${MISTRAL_KEY:-}" ]; then
+            printf '%s' "$MISTRAL_KEY" | wrangler secret put MISTRAL_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::MISTRAL_API_KEY non posée (repli Mistral indisponible)"
+          else
+            echo "::warning::MISTRAL_API_KEY absente → pas de repli Mistral pour le Coach IA."
+          fi
+          if [ -n "${GEMINI_KEY:-}" ]; then
+            printf '%s' "$GEMINI_KEY" | wrangler secret put GEMINI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GEMINI_API_KEY non posée (dernier repli Coach IA indisponible)"
+          else
+            echo "::warning::GEMINI_API_KEY absente → pas de dernier repli Gemini pour le Coach IA."
+          fi
+
       - name: Health check des belles adresses
         run: |
           for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \
@@ -141,6 +183,13 @@ jobs:
           curl -fsS -m 20 -L "https://studio.kd-mc.com/" 2>/dev/null | grep -o "Créa Studio" | head -1 \
             && echo "  ✅ l'app Créa Studio est bien servie sur le domaine" \
             || echo "  ::warning:: studio.kd-mc.com ne renvoie pas encore l'app (cert/DNS en cours, ou routage à vérifier)"
+          echo "== VOIX KDMC Lingua (/__lingua/tts) — vraie voix naturelle OU repli navigateur ? =="
+          CT=$(curl -fsS -m 25 -o /dev/null -w "%{content_type}" "https://lingua.kd-mc.com/__lingua/tts?v=nova&t=bonjour" 2>/dev/null || echo "erreur")
+          echo "  content-type=$CT"
+          case "$CT" in
+            audio/*) echo "  ✅ VOIX NATURELLE OpenAI ACTIVE côté serveur (un vrai audio est servi)";;
+            *) echo "  ::warning:: /__lingua/tts NE renvoie PAS d'audio (=$CT) → l'app retombe sur la voix du navigateur (robotique). Cause probable : OPEN_AI_API_KEY absente/invalide/quota. Vérifier le secret GitHub OPEN_AI_API_KEY.";;
+          esac
 
       - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
         # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,

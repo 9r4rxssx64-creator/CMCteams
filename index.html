@@ -71,7 +71,7 @@
 <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1668 2388'%3E%3Crect width='1668' height='2388' fill='%230a1408'/%3E%3Ctext x='834' y='1100' text-anchor='middle' font-size='280' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='834' y='1300' text-anchor='middle' font-size='170' font-weight='800' fill='%23c9a227' letter-spacing='18' font-family='system-ui'%3ECMC%3C/text%3E%3Ctext x='834' y='1420' text-anchor='middle' font-size='86' fill='%237aaa80' letter-spacing='14' font-family='system-ui'%3ETEAMS%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 2732'%3E%3Crect width='2048' height='2732' fill='%230a1408'/%3E%3Ctext x='1024' y='1280' text-anchor='middle' font-size='320' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='1024' y='1500' text-anchor='middle' font-size='190' font-weight='800' fill='%23c9a227' letter-spacing='20' font-family='system-ui'%3ECMC%3C/text%3E%3Ctext x='1024' y='1620' text-anchor='middle' font-size='96' fill='%237aaa80' letter-spacing='16' font-family='system-ui'%3ETEAMS%3C/text%3E%3C/svg%3E">
 <!-- CSP v9.396 \u2014 restrictive mais compatible Firebase/PDF.js/Anthropic/Sentry -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://apis.kd-mc.com https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apex-auth-worker.9r4rxssx64.workers.dev https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://apis.kd-mc.com https://admin.kd-mc.com https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apex-auth-worker.9r4rxssx64.workers.dev https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -5775,7 +5775,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.873";
+var APP_VER="v9.875";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9476,13 +9476,14 @@ try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontal
   if(uid){
     var lastAct=parseInt(localStorage.getItem("cmc_lastact")||"0");
     var expired=lastAct>0&&(Date.now()-lastAct)>SESSION_TTL;
-    if(expired){
-      localStorage.removeItem("cmc_uid");
-      localStorage.removeItem("cmc_lastact");
-      console.info("Session expirée après inactivité.");
-    } else {
+    /* v9.874 — RECONNAISSANCE AUTO après 1ʳᵉ connexion (Kevin 2026-08-04 « pour toutes
+       les apps toujours ») : l'appareil est reconnu dès le 1er login réussi → la session
+       est restaurée MÊME après 8h d'inactivité. Le TTL ne délogue plus personne ; seule
+       la déconnexion explicite (bouton ✕) redemande les identifiants. */
+    {
       var e=A.employees.find(function(x){return x.id===uid;});
       if(e){A.user=e;localStorage.setItem("cmc_lastact",String(Date.now()));startPresenceHeartbeat();
+        if(expired){try{if(typeof _audit==="function")_audit("session_auto_renewed",e.id,e.name,"","reconnu auto après "+Math.round((Date.now()-lastAct)/3600000)+"h d'inactivité");}catch(_){}}
         // Restaurer les préférences de l'employé depuis A.reg
         var _pr=A.reg[e.id]||{};
         if(_pr.prefLang&&_pr.prefLang!==_lang){_lang=_pr.prefLang;localStorage.setItem("cmc_lang",_lang);_ttsLang=_lang==="it"?"it-IT":_lang==="en"?"en-US":"fr-FR";}
@@ -9536,7 +9537,9 @@ function touchSession(){if(A.user)localStorage.setItem("cmc_lastact",String(Date
 // Sans ca, la session expire malgre l'app ouverte. Sentinelle TTL 5 min ci-dessous.
 (function(){try{var _evts=["click","keydown","touchstart","scroll"];var _lastTouch=0;function _onAct(){var n=Date.now();if(n-_lastTouch>30000){_lastTouch=n;touchSession();}}_evts.forEach(function(ev){try{document.addEventListener(ev,_onAct,{passive:true,capture:true});}catch(_){document.addEventListener(ev,_onAct,true);}});}catch(_){}
 // v9.545 — Sentinelle TTL 8h enforce : check toutes 5 min, doLogout si expire
-try{setInterval(function(){try{if(!A.user)return;var lastAct=parseInt(localStorage.getItem("cmc_lastact")||"0",10);if(lastAct>0&&Date.now()-lastAct>SESSION_TTL){console.info("[TTL] session 8h expiree -> logout auto");try{if(typeof toast==="function")toast("Session expiree apres 8h d'inactivite","warn");}catch(_){}doLogout();}}catch(_){}},5*60*1000);}catch(_){}
+/* v9.874 — le logout auto TTL 8h est RETIRÉ (règle « reconnaissance auto après 1ère
+   connexion, toutes les apps toujours ») : un appareil connu reste connecté ; seule la
+   déconnexion explicite (✕) revoque. Le TTL ne sert plus qu'à l'audit (session_auto_renewed). */
 })();
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);_rebuildIndexes();}
 // v9.67 — Firebase et sync queue différés APRÈS premier render (perf: first paint rapide)
@@ -13206,7 +13209,7 @@ window._tool_check_ram=function(){try{if(performance&&performance.memory){var mb
 window._tool_check_storage_size=function(){try{var t=0;for(var k in localStorage){if(localStorage.hasOwnProperty(k))t+=(localStorage[k]||"").length;}var pct=Math.round(t/(5*1048576)*100);return pct>80?{finding:"localStorage "+pct+"%"}:null;}catch(_){}return null;};
 window._tool_count_dom_nodes=function(){try{var n=document.getElementsByTagName("*").length;return n>10000?{finding:"DOM "+n+" noeuds"}:null;}catch(_){}return null;};
 window._tool_scan_doublons=function(){try{var seen={},dup=0;(A.employees||[]).forEach(function(e){if(seen[e.id])dup++;seen[e.id]=1;});return dup>0?{finding:dup+" IDs dupliques"}:null;}catch(_){}return null;};
-window._tool_check_session_health=function(){try{var last=+lg("cmc_lastact",0);if(A.user&&last&&Date.now()-last>8*3600000)return {finding:"Session expiree"};}catch(_){}return null;};
+window._tool_check_session_health=function(){/* v9.874 : la session n'expire plus (reconnaissance auto, toutes apps) — plus de finding TTL */return null;};
 // ═══════════════════════════════════════════════════════════════════════
 // SENTINELLES EXPERT (v9.438, 2026-04-20) — voir SENTINELS.md
 // 7 sentinelles universelles à dupliquer dans tous projets Kevin.
@@ -17100,8 +17103,45 @@ function _renderTutoStep(){
     +'</div></div>';
 }
 /** Log user login in cmc_userlog (max 500). @param {Object} emp Employee object. @returns {void} */
+/* v9.874 — Journal unifié domaine « qui se connecte » (worker kdmc-access).
+   Fail-open, throttlé : n'affecte JAMAIS le fonctionnement de l'app. Envoie des
+   MÉTADONNÉES d'action (jamais de contenu privé) au worker central. */
+var _kdmcAccessSeen={};
+function kdmcAccessDevice(){var u=navigator.userAgent||"";if(/iPhone/.test(u))return"iPhone";if(/iPad/.test(u))return"iPad";if(/Android/.test(u))return"Android";if(/Macintosh|Mac OS X/.test(u))return"Mac";if(/Windows/.test(u))return"PC Windows";if(/Linux/.test(u))return"Linux";return"Autre";}
+/* Ce que SEULE l'app peut voir (le serveur n'y a pas accès) : taille d'écran (→ modèle
+   d'iPhone), app installée sur l'écran d'accueil ou simple navigateur, cœurs, thème,
+   langue et fuseau RÉELS du téléphone. Envoyé une fois à la connexion. Tolérant :
+   chaque champ absent est simplement omis, jamais d'erreur. */
+function kdmcAccessUA(){
+  try{
+    var s=window.screen||{},d={};
+    if(s.width&&s.height)d.ecran=Math.round(s.width)+"x"+Math.round(s.height);
+    if(window.devicePixelRatio)d.dpr=Math.round(window.devicePixelRatio*100)/100;
+    try{d.pwa=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}catch(_){}
+    if(navigator.hardwareConcurrency)d.coeurs=navigator.hardwareConcurrency;
+    if(navigator.language)d.langue=navigator.language;
+    try{d.fuseau=Intl.DateTimeFormat().resolvedOptions().timeZone||"";}catch(_){}
+    try{d.sombre=!!(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);}catch(_){}
+    try{var c=navigator.connection;if(c&&c.effectiveType)d.reseau=c.effectiveType;}catch(_){}
+    try{if(navigator.maxTouchPoints)d.tactile=navigator.maxTouchPoints;}catch(_){}
+    return d;
+  }catch(_){return null;}
+}
+function kdmcAccessLog(event,meta,who){
+  try{
+    var u=who||(typeof A!=="undefined"&&A.user);if(!u||!u.id)return;
+    var k=String(event||"");var t=Date.now();
+    if(_kdmcAccessSeen[k]&&t-_kdmcAccessSeen[k]<5000)return; // anti-spam : 5s entre évènements identiques
+    _kdmcAccessSeen[k]=t;
+    var tier=(u.id===AID)?"admin":"employe";
+    var _m=meta;if(k==="connexion"){var _ua=kdmcAccessUA();if(_ua)_m=Object.assign({},meta||{},{appareil:_ua});}
+    var body=JSON.stringify({app:"cmcteams",uid:u.id,name:u.name||"",event:k,device:kdmcAccessDevice(),tier:tier,meta:_m||undefined});
+    fetch("https://admin.kd-mc.com/log",{method:"POST",headers:{"Content-Type":"application/json"},body:body,keepalive:true,mode:"cors"}).catch(function(){});
+  }catch(_){}
+}
 function logUserLogin(emp){
   var reg=A.reg&&A.reg[emp.id]||{};
+  try{kdmcAccessLog("connexion",undefined,emp);}catch(_){}
   // v9.60 — D\u00e9tection navigateur + OS depuis UA pour un affichage plus lisible
   var _ua=(navigator.userAgent||"");
   var _browser="";
@@ -17688,6 +17728,7 @@ function sv(v){
   A.view=v;
   touchSession();
   if(A.user)_trackView(A.user.id,v);
+  if(A.user)kdmcAccessLog("vue:"+v);
   render();
   // Scroll en haut après le layout — requestAnimationFrame garantit que le DOM est peint
   requestAnimationFrame(function(){window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});

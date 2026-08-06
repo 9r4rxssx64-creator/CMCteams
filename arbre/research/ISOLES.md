@@ -1,4 +1,4 @@
-# 🔗 Sonde « membres isolés » — 2026-08-04
+# 🔗 Sonde « membres isolés » — 2026-08-05
 
 ## 🇨🇭 Claude Alain DE SARZENS († 10.05.2022, Suisse)
 - **hommages-sarzens** : HTTP ok, 7 Ko — rien pour « /SARZENS|Sarzens/ » ([txt](isolesraw/hommages-sarzens.txt) · [capture](isolesraw/hommages-sarzens.png))
@@ -17,7 +17,7 @@ Call log:
 
 ## 📰 Journal de Monaco — mars 1935 (naissance Myriam 5.03.1935 + état civil MAIFFRET)
 - **jdm-recherche-maiffret** : HTTP ok, 101 Ko — rien pour « /MAIFFRET/ » ([txt](isolesraw/jdm-recherche-maiffret.txt) · [capture](isolesraw/jdm-recherche-maiffret.png))
-- **jdm-archives-1935** : HTTP ok, 172 Ko — 🎯 TROUVÉ « 1935 » ([txt](isolesraw/jdm-archives-1935.txt) · [capture](isolesraw/jdm-archives-1935.png))
+- **jdm-archives-1935** : HTTP ok, 171 Ko — 🎯 TROUVÉ « 1935 » ([txt](isolesraw/jdm-archives-1935.txt) · [capture](isolesraw/jdm-archives-1935.png))
 
 ## 🌐 Jean Marius Victor SAUVAIGO (n. 12.07.1912 Nice) — pistes publiques
 - **geneanet-sauvaigo-nice** : HTTP ok, 27 Ko — rien pour « /SAUVAIGO/ » ([txt](isolesraw/geneanet-sauvaigo-nice.txt) · [capture](isolesraw/geneanet-sauvaigo-nice.png))

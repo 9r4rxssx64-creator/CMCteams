@@ -26,7 +26,7 @@ function log(s) { console.log(s); L.push(s); }
 
 /* Cibles : (base, nom recherché, filtre de ligne → dossier de sortie)
    On capture TOUTES les lignes de chaque nom — chaque acte peut prouver un lien. */
-const NOMS = ['MAIFFRET', 'SAUVAIGO', 'MOLINARIO', 'PACHIAUDI', 'BRUNO', 'VIRGILI', 'DENTAU', 'VAN DEN BOSCH', 'DESARZENS', 'DE SARZENS'];
+const NOMS = ['MAIFFRET', 'SAUVAIGO', 'MOLINARIO', 'PACHIAUDI', 'BRUNO', 'VIRGILI', 'DENTAU', 'VAN DEN BOSCH', 'DESARZENS', 'DE SARZENS', 'CRESTO', 'VERVLOET', 'PIZZIO'];
 const MAXROWS = 12; /* plafond par nom (BRUNO est très courant à Monaco) */
 const TARGETS = [
   { tag: 'mc1900', base: 'https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/', noms: NOMS },

@@ -1,6 +1,6 @@
 # 🔎 Recherche généalogique automatique — fichier des décès INSEE (matchID)
 
-Générée le 2026-08-03 par la CI (réseau ouvert). Chaque ligne = un ACTE DE DÉCÈS officiel : il confirme la date+lieu de NAISSANCE (utile pour les ascendants). Le fichier couvre les décès en France depuis 1970 — les personnes décédées avant 1970, à Monaco ou à l'étranger n'y figurent pas, et les VIVANTS n'y figurent jamais.
+Générée le 2026-08-05 par la CI (réseau ouvert). Chaque ligne = un ACTE DE DÉCÈS officiel : il confirme la date+lieu de NAISSANCE (utile pour les ascendants). Le fichier couvre les décès en France depuis 1970 — les personnes décédées avant 1970, à Monaco ou à l'étranger n'y figurent pas, et les VIVANTS n'y figurent jamais.
 
 ## desarzens_tous — DESARZENS — nom rare (vaudois) : TOUS les décès en France
 **42 résultat(s)**

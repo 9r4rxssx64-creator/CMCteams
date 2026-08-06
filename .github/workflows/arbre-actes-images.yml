@@ -27,8 +27,17 @@ jobs:
         run: node tools/arbre/probe-isoles.mjs || echo "sonde isolés partielle"
       - name: Toutes villes & pays — nouvelles pistes (INSEE, presse CH, Gallica, JdM, Vaud, AD13)
         run: node tools/arbre/research-nouvelles-pistes.mjs || echo "nouvelles pistes partielles"
+      - name: Vague 5 — L'Écho de Beausoleil (Gallica) + cimetières Monaco + JdM formulaire
+        run: node tools/arbre/research-echo-cimetieres.mjs || echo "vague 5 partielle"
       - name: Nettoyage node_modules (pas de commit)
-        run: rm -rf node_modules package.json package-lock.json
+        # npm install modifie le package.json RACINE du repo → restaurer les
+        # fichiers suivis, sinon le rebase de secours échoue (« unstaged changes »)
+        run: |
+          rm -rf node_modules
+          # séparément : un pathspec absent fait échouer TOUT le checkout groupé
+          git checkout -- package.json 2>/dev/null || true
+          git checkout -- package-lock.json 2>/dev/null || true
+          git status --short | head
       - name: Commit images + rapport
         run: |
           git config user.name "arbre-bot"
@@ -36,8 +45,11 @@ jobs:
           git add arbre/research
           git commit -m "Arbre: images des actes Monaco (preuves filiation) [skip ci]" || { echo "aucun changement"; exit 0; }
           # main peut avoir bougé pendant les ~30 min de scraping → rebase avant push (3 essais)
-          for i in 1 2 3; do
+          for i in 1 2 3 4; do
             git push && break
-            git fetch origin "${GITHUB_REF_NAME}" && git rebase "origin/${GITHUB_REF_NAME}" && continue
+            git fetch origin "${GITHUB_REF_NAME}"
+            git checkout -- . 2>/dev/null || true   # purge tout residu non indexe avant rebase
+            git rebase "origin/${GITHUB_REF_NAME}" || { git rebase --abort 2>/dev/null; git pull --rebase -X ours origin "${GITHUB_REF_NAME}" || true; }
             sleep 5
           done
+          git push || { echo "::error::push definitif impossible — resultats dans le log ci-dessous"; git log --oneline -3; git status --short | head; exit 1; }

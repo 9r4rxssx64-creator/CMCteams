@@ -1,4 +1,4 @@
-# 🌍 Recherche toutes villes & pays — nouvelles découvertes (2026-08-04)
+# 🌍 Recherche toutes villes & pays — nouvelles découvertes (2026-08-05)
 
 ## 📜 INSEE (fichier des décès France ≥1970) — nouvelles personnes des actes
 - **Emmanuel MAIFFRET** (peintre, né ~1884 Monaco — mort après 1970 en France ?) → 8 résultat(s) :

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v1.0.27 -->
+<!-- v1.0.29 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
@@ -145,6 +145,12 @@
         <a class="card soon" aria-disabled="true" tabindex="-1" href="https://9r4rxssx64-creator.github.io/CMCteams/shops/pawsome/"><span class="ic">🐾</span><span class="ct"><span class="nm">Pawsome <span class="badge soon">🚧 En construction</span></span><span class="ds">Tout pour les animaux</span><span class="url">kd-mc.com → pawsome</span></span><span class="arr">›</span></a>
       </nav>
 
+      <h2 class="cat">👨‍👩‍👧 Famille</h2>
+      <nav class="grid" aria-label="Famille">
+        <a class="card" href="https://arbre.kd-mc.com/"><span class="ic">🌳</span><span class="ct"><span class="nm">Arbre généalogique</span><span class="ds">L’arbre de la famille — photos, actes officiels scannés, 7 générations. Protégé par le code famille</span><span class="url">arbre.kd-mc.com</span></span><span class="arr">›</span></a>
+        <a class="card" href="https://lingua.kd-mc.com/"><span class="ic">🐝</span><span class="ct"><span class="nm">KDMC Lingua</span><span class="ds">Apprendre les langues avec Bee — leçons, examens, prof IA, mode discussion</span><span class="url">lingua.kd-mc.com</span></span><span class="arr">›</span></a>
+      </nav>
+
       <!-- TOUT l'espace réservé Kevin + Lolo regroupé ici : révélé par kdmc-portal.js (admin OU Kevin/Laurence).
            Les autres clients ne le voient jamais. /admin/ reste protégé par le code admin (Lolo voit la tuile mais n'entre pas sans le code). -->
       <div id="priv-zone" hidden>
@@ -159,6 +165,19 @@
           <a class="card adm" href="https://autorisations.kd-mc.com/"><span class="ic">🆔</span><span class="ct"><span class="nm">Autorisations <span class="badge">Privé</span></span><span class="ds">Apex fait tout à ta place — tu valides d'un Face ID (connexion, paiement, signature, KYC)</span><span class="url">autorisations.kd-mc.com</span></span><span class="arr">›</span></a>
           <a class="card adm" href="https://dashboard.kd-mc.com/"><span class="ic">📊</span><span class="ct"><span class="nm">Dashboard boutiques <span class="badge">Privé</span></span><span class="ds">Commandes, produits, stats, finances</span><span class="url">dashboard.kd-mc.com</span></span><span class="arr">›</span></a>
           <a class="card adm" href="/admin/"><span class="ic">👥</span><span class="ct"><span class="nm">Admin domaine <span class="badge">Admin</span></span><span class="ds">Fiches clients &amp; fonctions communes (code admin requis)</span><span class="url">kd-mc.com → admin</span></span><span class="arr">›</span></a>
+        </nav>
+      </div>
+
+      <!-- « Qui se connecte » : MÊME logique que le bot crypto — révélé dès que la session porte
+           ton nom (Kevin/Laurence), SANS exiger le Face ID. La page admin.kd-mc.com est verrouillée
+           par son PROPRE code (200807, vérifié serveur en temps constant) → afficher le raccourci
+           ne donne AUCUN accès (leçon #99 vise l'ACCÈS, pas l'affichage d'un lien vers une page
+           déjà verrouillée). Vécu 2026-08-05 : dans #priv-zone (Face ID obligatoire), Kevin ne
+           voyait RIEN sur son iPhone → une tuile invisible = une fonction qui n'existe pas. -->
+      <div id="access-zone" hidden>
+        <h2 class="cat">🗂️ Qui se connecte</h2>
+        <nav class="grid" aria-label="Journal des connexions du domaine">
+          <a class="card adm" href="https://admin.kd-mc.com/"><span class="ic">🗂️</span><span class="ct"><span class="nm">Qui se connecte <span class="badge">Admin</span></span><span class="ds">Historique de chaque personne qui se connecte à ton domaine — apps, appareils, en ligne, actions. Code 200807</span><span class="url">admin.kd-mc.com</span></span><span class="arr">›</span></a>
         </nav>
       </div>
 
@@ -184,8 +203,8 @@
   <!-- ?v= numéroté : force le rafraîchissement du JS à chaque version (sinon le cache
        HTTP/SW sert l'ancien fichier — la tuile bot n'apparaissait pas, leçon #39/#82). -->
   <script src="kdmc-sso.js?v=1.0.26"></script>
-  <script src="kdmc-portal.js?v=1.0.26"></script>
+  <script src="kdmc-portal.js?v=1.0.29"></script>
   <!-- MAJ auto forcée + badge version (helper partagé) -->
-  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-home" data-version="v1.0.27" data-color="#c9a227" defer></script>
+  <script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="kdmc-home" data-version="v1.0.29" data-color="#c9a227" defer></script>
 </body>
 </html>

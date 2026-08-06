@@ -1,0 +1,25 @@
+name: Décès — vérif CORS API matchID (in-arbre)
+# Kevin « ne fonctionne pas » : prouver que l'API INSEE (matchID) autorise l'appel
+# depuis le navigateur (CORS) → sinon la recherche in-arbre échoue silencieusement.
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  cors:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Requête avec Origin arbre.kd-mc.com
+        run: |
+          echo "== En-têtes (Origin: https://arbre.kd-mc.com) =="
+          curl -sS -D - -o /tmp/body.json \
+            -H "Origin: https://arbre.kd-mc.com" \
+            "https://deces.matchid.io/deces/api/v1/search?q=MAIFFRET&size=3" | grep -iE "HTTP/|access-control-allow-origin|content-type" || true
+          echo "== Échantillon résultat =="
+          head -c 400 /tmp/body.json; echo
+          echo "== Verdict =="
+          if grep -qi "access-control-allow-origin" <(curl -sS -D - -o /dev/null -H "Origin: https://arbre.kd-mc.com" "https://deces.matchid.io/deces/api/v1/search?q=MAIFFRET&size=1"); then
+            echo "✅ CORS OK → la recherche in-arbre marche depuis le navigateur (iPhone inclus)."
+          else
+            echo "⚠️ PAS d'en-tête CORS → il faudra passer par un proxy same-origin (kdmc-router). À corriger."
+          fi

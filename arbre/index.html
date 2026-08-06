@@ -54,6 +54,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--gold)}
 .sec{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);padding:15px;margin:11px 0;backdrop-filter:blur(12px);box-shadow:var(--sh)}
 .sec h3{margin:0 0 11px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--gold)}
 .grid{display:grid;gap:10px}.chips{display:flex;flex-wrap:wrap;gap:8px}
+.blgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:4px}
+.blcard{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:10px 8px 12px;text-align:center;box-shadow:var(--sh);transition:transform .12s,border-color .2s}
+.blcard:active{transform:translateY(1px) scale(.99)}
+.blsvg svg,.blbig svg{width:100%;height:auto;display:block}
+.blnm{font-weight:700;margin-top:7px;font-size:14px;letter-spacing:.3px}
+.bln{color:var(--mut);font-size:12px}
+.blbig{display:flex;justify-content:center;align-items:center;padding:4px 0;min-height:60px}
+.blbig svg{width:62%;max-width:230px}
+.blemb{width:44px;flex:none;align-self:center}
+.blemb svg{width:44px;height:auto;display:block;filter:drop-shadow(0 2px 4px rgba(92,70,28,.3))}
 .row2{display:flex;gap:9px}.row2>*{flex:1}
 label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .empty{text-align:center;color:var(--mut);padding:44px 12px}
@@ -94,7 +104,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .tnode .tn{font-weight:700;font-size:14px;line-height:1.16;overflow:hidden;text-overflow:ellipsis;color:#2c2010;font-family:Georgia,"Times New Roman",serif}
 .tnode .ty{font-size:11.5px;color:#856a3a;margin-top:1px}
 .av.M,.av.F{background:radial-gradient(circle at 36% 30%,#fffbef,#e7d4a6)}
-.bandlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#f3e6c2;background:rgba(74,54,26,.9);padding:5px 14px;border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.bandlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#f3e6c2;background:rgba(74,54,26,.9);padding:5px 14px;border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:4;pointer-events:none}
 .couplebadge{position:absolute;transform:translate(-50%,-50%);font-size:15px;background:rgba(255,248,230,.96);border:1px solid var(--gold);border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(240,200,116,.35)}
 .treemode{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:4px;background:rgba(74,54,26,.9);border:1px solid var(--gold);border-radius:999px;padding:3px;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .treemode button{font-size:12px;font-weight:700;color:#f3e6c2;padding:7px 12px;border-radius:999px;white-space:nowrap}
@@ -134,7 +144,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .tnode .rt{position:absolute;top:-8px;left:9px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#04222a;background:var(--cyan);padding:1px 6px;border-radius:999px}
 .zoomBtns{position:absolute;right:12px;bottom:12px;z-index:5;display:flex;flex-direction:column;gap:8px}
 .zoomBtns button{width:44px;height:44px;border-radius:13px;background:var(--glass2);border:1px solid var(--line);font-size:20px;font-weight:800;backdrop-filter:blur(10px);box-shadow:var(--sh)}
-.hintpan{position:absolute;left:12px;bottom:12px;right:74px;z-index:4;pointer-events:none;font-size:11px;color:var(--mut);background:rgba(255,250,238,.8);border:1px solid var(--line);padding:5px 9px;border-radius:10px}
+.hintpan{position:absolute;left:112px;bottom:12px;right:74px;z-index:4;pointer-events:none;font-size:11px;color:var(--mut);background:rgba(255,250,238,.8);border:1px solid var(--line);padding:5px 9px;border-radius:10px}
 /* modal */
 .ov{position:fixed;inset:0;z-index:60;background:rgba(4,7,12,.72);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -148,6 +158,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .caro .dots{position:absolute;left:0;right:0;bottom:9px;display:flex;gap:6px;justify-content:center;z-index:2}
 .caro .dots i{width:7px;height:7px;border-radius:50%;background:#ffffff66}.caro .dots i.on{background:#fff;width:18px;border-radius:4px}
 .caro .nav{position:absolute;top:0;bottom:0;width:38%;z-index:2}.caro .nav.l{left:0}.caro .nav.r{right:0}
+.caro .carocnt{position:absolute;right:10px;bottom:9px;z-index:2;background:rgba(20,14,6,.55);color:#fff;font-size:11.5px;padding:3px 9px;border-radius:10px;letter-spacing:.4px}
 .caro .ph-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mut);font-size:13px;padding:20px}
 .thumbs{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
 .thumbs .t{width:50px;height:50px;border-radius:11px;overflow:hidden;border:1px solid var(--line);position:relative}
@@ -159,6 +170,22 @@ a{color:var(--cyan);text-decoration:none}
 .acterow{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch}
 .actecard{flex:0 0 auto;width:120px;cursor:pointer;text-align:center}
 .actecard img{width:120px;height:150px;object-fit:cover;object-position:top;border:2px solid var(--gold);border-radius:10px;background:#fffef8;box-shadow:0 3px 10px rgba(60,40,10,.25)}
+.docrow{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch}
+.doccard{flex:0 0 auto;width:120px;position:relative;cursor:pointer;text-align:center}
+.doccard .dprev{width:120px;height:150px;border:2px solid var(--line);border-radius:10px;background:#fffef8;object-fit:cover;object-position:top;box-shadow:0 3px 10px rgba(60,40,10,.2)}
+.doccard .dcover{width:120px;height:150px;border:2px solid var(--line);border-radius:10px;background:linear-gradient(160deg,#fffef8,#efe4c8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(60,40,10,.2)}
+.doccard .dcover .big{font-size:42px}
+.doccard .dcover .ext{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gold);text-transform:uppercase}
+.doccard .alab{font-size:10.5px;line-height:1.25;color:var(--ink);opacity:.85;margin-top:4px;word-break:break-word;max-height:2.6em;overflow:hidden}
+.doccard .dsz2{font-size:10px;color:var(--mut)}
+.doclegacy{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
+.docitem{display:flex;align-items:center;gap:10px;background:#fffef8;border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;min-height:44px;cursor:pointer}
+.docitem .dic{font-size:22px}
+.docitem .dnm{flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.docitem .dsz{font-size:11px;color:var(--mut);white-space:nowrap}
+.docitem .ddel{width:30px;height:30px;line-height:28px;text-align:center;border-radius:50%;background:#a3403a;color:#fff;font-size:15px;flex:0 0 auto}
+.actecard{position:relative}
+.actedel{position:absolute;top:-6px;right:-6px;z-index:2;width:26px;height:26px;line-height:24px;text-align:center;border-radius:50%;background:#a3403a;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .actecard .alab{font-size:10.5px;line-height:1.25;color:var(--ink);opacity:.85;margin-top:4px;word-break:break-word}
 .acteov{position:fixed;inset:0;z-index:9999;background:rgba(20,14,6,.96);display:flex;flex-direction:column}
 .acteov .bar{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));color:#f3e2b6;font-size:14px}
@@ -217,6 +244,7 @@ a{color:var(--cyan);text-decoration:none}
     <button class="tab act" data-view="tree">🌳 Arbre</button>
     <button class="tab" data-view="list">👥 Personnes</button>
     <button class="tab" data-view="search">🔎 Actes</button>
+    <button class="tab" data-view="blasons">🛡 Blasons</button>
     <button class="tab" data-view="tools">⚙️ Réglages</button>
   </div>
   <div id="wrap"></div>
@@ -227,7 +255,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.46";
+var APP_VER="v2.82";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -249,7 +277,7 @@ var CODEHASH="",VIEW="tree",ROOT=null,TREEMODE="asc",EXP={},ME="";
 var VIEWER="";try{var _vw=localStorage.getItem("arbre_viewer");if(_vw)VIEWER=_vw;}catch(e){}
 function viewerId(){return (VIEWER&&P(VIEWER))?VIEWER:null;}
 function setViewer(id){VIEWER=id;try{localStorage.setItem("arbre_viewer",id);}catch(e){}}
-function textOnly(db){var c={persons:{},meta:db.meta};for(var id in db.persons){var p=db.persons[id],q={};for(var k in p)if(k!=="photos")q[k]=p[k];q.photoCount=(p.photos||[]).length;c.persons[id]=q;}return c;}
+function textOnly(db){var c={persons:{},meta:db.meta};for(var id in db.persons){var p=db.persons[id],q={};for(var k in p)if(k!=="photos"&&k!=="docs")q[k]=p[k];q.photoCount=(p.photos||[]).length;q.docCount=(p.docs||[]).length;if(p.actes)q.actes=p.actes.map(function(a){return {label:a.label,by:a.by,ts:a.ts,img:(a.img&&a.img.length<200000)?a.img:undefined};});c.persons[id]=q;}return c;}
 async function saveLocal(){DB.meta.updatedAt=now();await idbSet("tree",DB);try{localStorage.setItem("arbre_v2_text",JSON.stringify(textOnly(DB)));}catch(e){}}
 async function loadLocal(){var d=await idbGet("tree");if(d&&d.persons){DB=d;return true;}try{var t=JSON.parse(localStorage.getItem("arbre_v2_text")||"null");if(t&&t.persons){DB=t;return true;}}catch(e){}return false;}
 
@@ -276,8 +304,10 @@ function full(p){if(!p)return "?";return ((p.prenom||"")+" "+(p.nom||"")).trim()
 function yr(d){if(!d)return "";var m=String(d).match(/\d{4}/);return m?m[0]:"";}
 function lifespan(p){var a=yr(p.naissance&&p.naissance.date),b=yr(p.deces&&p.deces.date);if(p.vivant)return a?a+" · vivant":"vivant";if(!a&&!b)return "";return (a||"?")+(b?"–"+b:"");}
 function childrenOf(id){var r=[];for(var k in DB.persons){var p=DB.persons[k];if(p.pere===id||p.mere===id)r.push(k);}return r;}
-var DIVORCED=[["seed_stephan_bruno","seed_sabrina"]];
+var DIVORCED=[["seed_stephan_bruno","seed_sabrina"],["seed_emile","seed_mariefrance"],["seed_gerard","seed_marienoel"]];
 function isDivorced(a,b){return DIVORCED.some(function(d){return (d[0]===a&&d[1]===b)||(d[0]===b&&d[1]===a);});}
+var SEPARATED=[["seed_kevin","seed_pascale_vervloet"]];
+function isSeparated(a,b){return SEPARATED.some(function(d){return (d[0]===a&&d[1]===b)||(d[0]===b&&d[1]===a);});}
 function spouseNames(p){return (p.conjoints||[]).map(function(id){return full(P(id));}).filter(Boolean);}
 function initials(p){return ((p.prenom||"?")[0]||"?").toUpperCase();}
 function avatarHTML(p,sz){var cls=p.sexe==="F"?"F":p.sexe==="M"?"M":"";var ph=(p.photos&&p.photos[0]);var st=sz?'style="width:'+sz+'px;height:'+sz+'px;font-size:'+(sz*0.42|0)+'px"':"";return '<div class="av '+cls+'" '+st+'>'+(ph?'<img src="'+ph+'" alt="">':esc(initials(p)))+'</div>';}
@@ -293,7 +323,7 @@ var TREE={ROWH:158,BOXW:198,COUPLEGAP:24,UNITGAP:64,PAD:34,COMPGAP:64,CARD:184};
    🫒 "o" = famille SAUVAIGO · MAIFFRET (côté maman — olivier, Nice/Monaco)
    🌳 "c" = famille DESARZENS (côté papa — chêne, racines suisses/Vaud)
    "oc" = dans les DEUX arbres (Gérard, Kevin, Sabrina, Ronan, Théo = sang des deux). */
-var FAM_OVERRIDE={seed_gerard:"oc",seed_kevin:"oc",seed_sabrina:"oc",seed_ronan:"oc",seed_theo:"oc",
+var FAM_OVERRIDE={seed_gerard:"oc",seed_kevin:"oc",seed_laurence:"oc",seed_sabrina:"oc",seed_ronan:"oc",seed_theo:"oc",
   seed_christian:"o",seed_cecile:"o",seed_marienoel:"o",seed_christine_vdb:"o",seed_philippe_vdb:"o",seed_laura_vdb:"o",
   seed_guy:"c",seed_emile:"c",seed_loic:"c",seed_yann:"c",seed_claude_desarzens:"c"};
 function famOf(p){if(!p)return "oc";var ov=FAM_OVERRIDE[p.id];if(ov)return ov;var n=(p.nom||"").toUpperCase();
@@ -311,25 +341,47 @@ function tidyTree(ids){
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP;
   var set={};ids.forEach(function(x){set[x]=1;});
   var placed={},nodes=[],links=[],rowCur={},depthMax=0;
+  /* ── GÉNÉRATION GLOBALE par propagation de contraintes (union-find pondéré) ──
+     Deux époux = MÊME étage ; un enfant = étage parent+1. Corrige le défaut vu par
+     Kevin : un conjoint « marié dans la famille » (Victor, Gérard, Pascale…) ne
+     flotte plus au mauvais niveau — il partage la rangée de son époux/épouse. */
+  var uf={},pot={};
+  function ufFind(x){if(uf[x]===undefined){uf[x]=x;pot[x]=0;return x;}if(uf[x]===x)return x;var r=ufFind(uf[x]);pot[x]+=pot[uf[x]];uf[x]=r;return r;}
+  function ufUnion(a,b,diff){/* impose niveau[b]-niveau[a]=diff */var ra=ufFind(a),rb=ufFind(b);if(ra===rb)return (pot[b]-pot[a])===diff;uf[rb]=ra;pot[rb]=diff+pot[a]-pot[b];return true;}
+  ids.forEach(function(x){var pp=P(x);[pp.pere,pp.mere].forEach(function(par){if(par&&set[par])ufUnion(par,x,1);});(pp.conjoints||[]).forEach(function(c){if(set[c])ufUnion(x,c,0);});});
+  var glevel={},gmin=1e9;ids.forEach(function(x){ufFind(x);if(pot[x]<gmin)gmin=pot[x];});
+  ids.forEach(function(x){glevel[x]=pot[x]-gmin;});
   function members(x){var pp=P(x);var m=[x];(pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&m.indexOf(c)<0)m.push(c);});return m;}
   function unit(x,depth){
     if(placed[x])return null;
-    var mem=members(x);mem.forEach(function(z){placed[z]=1;});if(depth>depthMax)depthMax=depth;
+    var mem=members(x);mem.forEach(function(z){placed[z]=1;});var d=glevel[x]||0;if(d>depthMax)depthMax=d;
     var kidset={};mem.forEach(function(z){childrenOf(z).forEach(function(k){if(set[k]&&!placed[k])kidset[k]=1;});});
     var kids=Object.keys(kidset).sort(function(a,b){return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
+    var nStart=nodes.length,lStart=links.length;   /* pour décaler le sous-arbre enfants EN BLOC si besoin */
     var cc=[];kids.forEach(function(k){var c=unit(k,depth+1);if(c!=null)cc.push({x:c,id:k});});
     var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP;
-    /* curseur PAR RANGÉE : deux unités d'une même ligne ne peuvent JAMAIS se
-       chevaucher (bug vu par Kevin : couples Gérard/Marie-Brigitte superposés),
-       tout en gardant chaque couple centré au-dessus de ses enfants quand possible. */
-    var minC=(rowCur[depth]!==undefined?rowCur[depth]:0)+uW/2,center;
-    if(cc.length){var xs=cc.map(function(o){return o.x;});center=(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2;if(center<minC)center=minC;}
-    else center=minC;
-    rowCur[depth]=center+uW/2+UNITGAP;
-    var sx=center-uW/2+BOXW/2,y=depth*ROWH;
+    /* curseur PAR RANGÉE : deux unités d'une même ligne ne se chevauchent JAMAIS,
+       ET chaque couple reste centré PILE au-dessus de ses enfants. */
+    var minC=(rowCur[d]!==undefined?rowCur[d]:0)+uW/2,center;
+    if(cc.length){
+      var xs=cc.map(function(o){return o.x;});center=(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2;
+      if(center<minC){
+        /* Manque de place à gauche : au lieu de décaler le parent tout seul (enfants
+           « de travers » — défaut vu par Kevin 2026-08-04), on POUSSE tout le bloc
+           enfants vers la droite → le couple reste exactement au-dessus d'eux. */
+        var delta=minC-center;
+        for(var ni=nStart;ni<nodes.length;ni++)nodes[ni].x+=delta;
+        for(var li=lStart;li<links.length;li++){links[li].x1+=delta;links[li].x2+=delta;}
+        cc.forEach(function(o){o.x+=delta;});
+        for(var dk in rowCur){if(+dk>d)rowCur[dk]+=delta;}
+        center=minC;
+      }
+    } else center=minC;
+    rowCur[d]=center+uW/2+UNITGAP;
+    var sx=center-uW/2+BOXW/2,y=d*ROWH;
     mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z===viewerId()});});
     for(var i=0;i<mem.length-1;i++)links.push({couple:1,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});
-    cc.forEach(function(o){links.push({x1:center,y1:y+36,x2:o.x,y2:(depth+1)*ROWH-36,child:o.id});});
+    cc.forEach(function(o){links.push({x1:center,y1:y+36,x2:o.x,y2:(glevel[o.id]||d+1)*ROWH-36,child:o.id});});
     return center;
   }
   var roots=ids.filter(function(x){var pp=P(x);return !(pp.pere&&set[pp.pere])&&!(pp.mere&&set[pp.mere]);});
@@ -376,16 +428,20 @@ function layoutForest(filter,anchors){
   singleIds.sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
   if(singleIds.length)maxW=Math.max(maxW,BOXW*Math.min(4,singleIds.length));
   var totalW=Math.max(maxW,BOXW*2)+PAD*2;
-  var nodes=[],links=[],bands=[],y=PAD;
+  /* BANDH (v2.69, Kevin « on voit pas les titres ») : chaque bandeau de section a
+     désormais SA PROPRE hauteur réservée — plus jamais recouvert par une carte. */
+  var BANDH=76,nodes=[],links=[],bands=[],y=PAD;
   laid.forEach(function(t,i){
     var offx=(totalW-t.w)/2 - t.minx + BOXW/2;
+    bands.push({y:y,label:compLabel(trees[i])});
+    y+=BANDH;
     t.nodes.forEach(function(n){nodes.push({id:n.id,x:n.x+offx,y:n.y+y,root:n.root});});
     t.links.forEach(function(l){links.push(l.couple?{couple:1,x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y}:{x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y,child:l.child});});
-    bands.push({y:y-(i===0?18:COMPGAP/2),label:compLabel(trees[i])});
     y+=t.h+COMPGAP;
   });
   if(singleIds.length){
-    bands.push({y:y-(nodes.length?COMPGAP/2:18),label:nodes.length?"Autres membres · à relier":"Membres de la famille"});
+    bands.push({y:y,label:nodes.length?"Autres membres · à relier":"Membres de la famille"});
+    y+=BANDH;
     var cols=Math.max(1,Math.min(singleIds.length,Math.floor((totalW-PAD*2)/BOXW)));
     var gx0=(totalW-cols*BOXW)/2 + BOXW/2;
     singleIds.forEach(function(x,idx){var r=Math.floor(idx/cols),c=idx%cols;nodes.push({id:x,x:gx0+c*BOXW,y:y+r*ROWH,root:x===viewerId()});});
@@ -402,10 +458,175 @@ var BRANCHES=[
   {re:/DENTAU/i,c:"#a04f6b",lab:"Dentau"},
   {re:/VIRGILI/i,c:"#3c6ca8",lab:"Virgili"},
   {re:/PACHIAUDI/i,c:"#8a7a55",lab:"Pachiaudi"},
-  {re:/BRUNO/i,c:"#a3403a",lab:"Bruno"}
+  {re:/BRUNO/i,c:"#a3403a",lab:"Bruno"},
+  {re:/VERVLOET/i,c:"#1f7a8c",lab:"Vervloet"},
+  {re:/CRESTO/i,c:"#8e3b8e",lab:"Cresto"},
+  {re:/PIZZIO/i,c:"#c27b2c",lab:"Pizzio"}
 ];
 function hexA(h,a){var r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return "rgba("+r+","+g+","+b+","+a+")";}
 function branchOf(p){var n=(p&&p.nom)||"";for(var i=0;i<BRANCHES.length;i++)if(BRANCHES[i].re.test(n))return BRANCHES[i];return {c:"#9a8c66",lab:"Autre"};}
+/* ===== ARMOIRIES — vrais blasons attestés (dessin fidèle) + style monégasque pour le reste + initiales des membres (Kevin 2026-08-06) ===== */
+var MC={red:"#C8102E",redL:"#E23B52",redD:"#9B1B30",arg:"#F4F1EA",argD:"#DBDEE3",gold:"#C9A227",azur:"#1F4E8C",sable:"#2b2320",seal:"#8f1420"};
+function _hhash(s){s=(s||"").toUpperCase();var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*16777619)>>>0;}return h>>>0;}
+function _star(cx,cy,r,f,pts){pts=pts||5;var p=[];for(var i=0;i<pts*2;i++){var a=-Math.PI/2+i*Math.PI/pts,rr=i%2?r*0.4:r;p.push((cx+Math.cos(a)*rr).toFixed(1)+","+(cy+Math.sin(a)*rr).toFixed(1));}return '<polygon points="'+p.join(" ")+'" fill="'+f+'"/>';}
+function _besant(cx,cy,r,f){return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+f+'"/>';}
+function _crescent(cx,cy,r,f){return '<path d="M '+(cx-r*0.15)+' '+(cy-r)+' A '+r+' '+r+' 0 1 0 '+(cx-r*0.15)+' '+(cy+r)+' A '+(r*0.78)+' '+(r*0.78)+' 0 1 1 '+(cx-r*0.15)+' '+(cy-r)+' Z" fill="'+f+'"/>';}
+function _heart(cx,cy,r,f){var d="M "+cx+" "+(cy+r*0.92)+" C "+(cx-r*1.5)+" "+(cy-r*0.15)+" "+(cx-r*0.72)+" "+(cy-r*1.15)+" "+cx+" "+(cy-r*0.32)+" C "+(cx+r*0.72)+" "+(cy-r*1.15)+" "+(cx+r*1.5)+" "+(cy-r*0.15)+" "+cx+" "+(cy+r*0.92)+" Z";return '<path d="'+d+'" fill="'+f+'"/>';}
+function _lotus(cx,cy,r,f){function pet(dx,h){return '<path d="M '+cx+' '+(cy+r*0.5)+' Q '+(cx+dx-r*0.5)+' '+(cy-h*0.3)+' '+(cx+dx)+' '+(cy-h)+' Q '+(cx+dx+r*0.5)+' '+(cy-h*0.3)+' '+cx+' '+(cy+r*0.5)+' Z" fill="'+f+'"/>';}return '<g>'+pet(-r*1.15,r*0.9)+pet(r*1.15,r*0.9)+pet(0,r*1.35)+'</g>';}
+function _crown(cx,y,w,gid){var hh=w*0.52,pts="M "+(cx-w/2)+" "+(y+hh*0.5)+" L "+(cx-w/2)+" "+y+" L "+(cx-w*0.22)+" "+(y+hh*0.5)+" L "+(cx-w*0.11)+" "+(y-hh*0.05)+" L "+cx+" "+(y+hh*0.5)+" L "+(cx+w*0.11)+" "+(y-hh*0.05)+" L "+(cx+w*0.22)+" "+(y+hh*0.5)+" L "+(cx+w/2)+" "+y+" L "+(cx+w/2)+" "+(y+hh*0.5)+" Z";
+  var band='<rect x="'+(cx-w/2)+'" y="'+(y+hh*0.5)+'" width="'+w+'" height="'+(hh*0.42)+'" rx="3" fill="url(#'+gid+')" stroke="#7c5e1c" stroke-width="1"/>';
+  var pearls=_besant(cx-w/2,y,3.4,"url(#"+gid+")")+_besant(cx-w*0.11,y-hh*0.05,3.4,"url(#"+gid+")")+_besant(cx+w*0.11,y-hh*0.05,3.4,"url(#"+gid+")")+_besant(cx+w/2,y,3.4,"url(#"+gid+")");
+  var jew='<circle cx="'+(cx-w*0.24)+'" cy="'+(y+hh*0.71)+'" r="3.2" fill="'+MC.red+'"/><circle cx="'+cx+'" cy="'+(y+hh*0.71)+'" r="3.6" fill="'+MC.red+'"/><circle cx="'+(cx+w*0.24)+'" cy="'+(y+hh*0.71)+'" r="3.2" fill="'+MC.red+'"/>';
+  return '<path d="'+pts+'" fill="url(#'+gid+')" stroke="#7c5e1c" stroke-width="1"/>'+band+jew+pearls;}
+function _medallion(cx,cy,r,txt,gid){return '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r+'" fill="'+MC.seal+'"/>'
+  +'<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r+'" fill="none" stroke="url(#'+gid+')" stroke-width="'+(r*0.17).toFixed(1)+'"/>'
+  +'<text x="'+cx.toFixed(1)+'" y="'+(cy+r*0.34).toFixed(1)+'" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="'+(r*0.92).toFixed(1)+'" fill="'+MC.arg+'">'+esc(txt)+'</text>';}
+function _famName(nom){nom=(nom||"").toUpperCase().trim();return /SARZ/.test(nom)?"DESARZENS":nom;}
+function _isFamilyNom(nom){return !!(nom&&nom.length>=2&&nom===nom.toUpperCase()&&/[A-ZÀ-Ý]/.test(nom));}
+function _memIni(p){return (((p&&p.prenom)||"").trim().charAt(0)+(((p&&p.nom)||"").trim().charAt(0))).toUpperCase()||"?";}
+function _famMembers(nom){nom=_famName(nom);var arr=[];for(var id in DB.persons){var p=DB.persons[id];if(!p||!_isFamilyNom(p.nom)||_famName(p.nom)!==nom)continue;arr.push({ini:_memIni(p),name:full(p),y:(yr(p.naissance&&p.naissance.date)||9999)});}arr.sort(function(a,b){return (a.y-b.y)||a.name.localeCompare(b.name);});return arr;}
+/* Vrais blasons attestés : champ (émail) + meubles fidèles au blasonnement. GOLD = url() du dégradé or de l'écu. */
+var REAL_ARMS={
+  "CIAIS":{field:MC.azur,label:"Caïs de Pierlas (Nice) — d'azur à une étoile d'or, un cœur de gueules et un croissant d'argent, rangés en pal",source:"fr.wikipedia.org/wiki/Famille_Caïs",
+    charges:function(CX,GOLD){return _star(CX,208,23,GOLD)+_heart(CX,270,22,MC.red)+'<circle cx="'+CX+'" cy="334" r="24" fill="'+MC.arg+'"/><circle cx="'+(CX+11)+'" cy="328" r="21" fill="'+MC.azur+'"/>';}},
+  "PIZZIO":{field:MC.azur,label:"Pizzi (Parme) — d'azur, à la fasce d'argent chargée de trois étoiles d'or",source:"heraldrysinstitute.com — Pizzi",
+    charges:function(CX,GOLD){return '<rect x="0" y="256" width="420" height="46" fill="'+MC.arg+'"/>'+_star(CX-52,279,13,GOLD)+_star(CX,279,13,GOLD)+_star(CX+52,279,13,GOLD);}},
+  "BRUNO":{field:MC.azur,label:"Bruno (Piémont, Turin-Mondovì) — d'azur, à la bande d'or · nom très répandu : plusieurs blasons Bruno existent",source:"heraldrysinstitute.com / Rietstap",
+    charges:function(CX,GOLD){return '<line x1="120" y1="180" x2="300" y2="410" stroke="'+MC.gold+'" stroke-width="46"/><line x1="120" y1="180" x2="300" y2="410" stroke="'+GOLD+'" stroke-width="42"/>';}},
+  "VAN DEN BOSCH":{field:MC.arg,label:"Van den Bosch (noblesse belge) — d'argent au chevron d'azur chargé de 3 étoiles d'or, accompagné de 3 lotus d'azur",source:"nl.wikipedia.org — Van den Bosch (Belgisch adelsgeslacht)",
+    charges:function(CX,GOLD){var ch='<path d="M120,336 L'+CX+',242 L300,336 L300,364 L'+CX+',270 L120,364 Z" fill="'+MC.azur+'"/>';
+      var stars=_star(CX,262,11,GOLD,6)+_star(CX-58,312,11,GOLD,6)+_star(CX+58,312,11,GOLD,6);
+      var lot=_lotus(CX-64,214,15,MC.azur)+_lotus(CX+64,214,15,MC.azur)+_lotus(CX,388,15,MC.azur);
+      return ch+stars+lot;}},
+  "VIRGILI":{field:MC.red,label:"Virgili (Italie) — de gueules à cinq carreaux d'or, chacun traversé d'un dard de sable",source:"heraldrysinstitute.com — Virgili",
+    charges:function(CX,GOLD){function car(x,y){return '<rect x="'+(x-13)+'" y="'+(y-13)+'" width="26" height="26" rx="2" fill="'+GOLD+'"/><rect x="'+(x-2.5)+'" y="'+(y-16)+'" width="5" height="32" fill="'+MC.sable+'"/><polygon points="'+x+','+(y-20)+' '+(x-5)+','+(y-13)+' '+(x+5)+','+(y-13)+'" fill="'+MC.sable+'"/>';}return car(CX,272)+car(CX-48,226)+car(CX+48,226)+car(CX-48,318)+car(CX+48,318);}}
+};
+function blasonSVG(nom,members){nom=_famName(nom)||"?";members=members||[];var N=members.length;
+  var h=_hhash(nom),real=REAL_ARMS[nom];
+  var mode=(h>>>8)%4,charge=(h>>>13)%5,flank=((h>>>16)&1)===1,crownOn=((h>>>18)%5)!==0;
+  var id="b"+h.toString(36);
+  var CX=210,SHTOP=150,SHW=184,L=CX-SHW/2,R=CX+SHW/2,SHBOT=430,MID=296;
+  var shield="M"+L+","+SHTOP+" H"+R+" V"+MID+" C"+R+","+(MID+58)+" "+(CX+52)+","+(SHBOT-32)+" "+CX+","+SHBOT+" C"+(CX-52)+","+(SHBOT-32)+" "+L+","+(MID+58)+" "+L+","+MID+" Z";
+  var inL=L+12,inR=R-12,inTop=SHTOP+12,inMid=MID-6,inBot=SHBOT-16;
+  var inner="M"+inL+","+inTop+" H"+inR+" V"+inMid+" C"+inR+","+(inMid+48)+" "+(CX+44)+","+(inBot-26)+" "+CX+","+inBot+" C"+(CX-44)+","+(inBot-26)+" "+inL+","+(inMid+48)+" "+inL+","+inMid+" Z";
+  var gGold=id+"go",gRed=id+"re",gArg=id+"ar",gGloss=id+"gl",clip=id+"cl",fuse=id+"fu",GOLD="url(#"+gGold+")";
+  var defs='<defs>'
+    +'<linearGradient id="'+gGold+'" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fbeaa0"/><stop offset=".45" stop-color="#e3c152"/><stop offset=".75" stop-color="#c39a32"/><stop offset="1" stop-color="#8f6d20"/></linearGradient>'
+    +'<linearGradient id="'+gRed+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+MC.redL+'"/><stop offset=".5" stop-color="'+MC.red+'"/><stop offset="1" stop-color="'+MC.redD+'"/></linearGradient>'
+    +'<linearGradient id="'+gArg+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="'+MC.arg+'"/><stop offset="1" stop-color="'+MC.argD+'"/></linearGradient>'
+    +'<radialGradient id="'+gGloss+'" cx="0.5" cy="0.28" r="0.75"><stop offset="0" stop-color="#ffffff" stop-opacity=".38"/><stop offset=".55" stop-color="#ffffff" stop-opacity=".06"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>'
+    +'<pattern id="'+fuse+'" width="38" height="50" patternUnits="userSpaceOnUse"><rect width="38" height="50" fill="'+MC.arg+'"/><polygon points="19,0 38,25 19,50 0,25" fill="'+MC.red+'"/></pattern>'
+    +'<clipPath id="'+clip+'"><path d="'+shield+'"/></clipPath></defs>';
+  var s='<svg viewBox="0 0 420 566" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Armoiries '+esc(nom)+'">'+defs;
+  s+='<circle cx="'+CX+'" cy="262" r="176" fill="url(#'+gGloss+')" opacity=".5"/>';
+  var rc=CX,ryc=266,ringR=190,D2R=Math.PI/180;
+  function seal(ang,r,txt){var mx=rc+Math.cos(ang)*ringR,my=ryc+Math.sin(ang)*ringR;return _medallion(mx,my,r,txt,gGold);}
+  function arc(a1,a2,rr){var p1x=(rc+Math.cos(a1)*rr).toFixed(1),p1y=(ryc+Math.sin(a1)*rr).toFixed(1),p2x=(rc+Math.cos(a2)*rr).toFixed(1),p2y=(ryc+Math.sin(a2)*rr).toFixed(1),sweep=a2>a1?1:0,big=Math.abs(a2-a1)>Math.PI?1:0;return '<path d="M'+p1x+','+p1y+' A'+rr+','+rr+' 0 '+big+' '+sweep+' '+p2x+','+p2y+'" fill="none" stroke="url(#'+gGold+')" stroke-width="2.2" opacity=".8"/>';}
+  if(N>0&&N<=4){var mr=16,gap=42,x0=CX-(N-1)*gap/2,py=SHBOT+30;s+='<line x1="'+CX+'" y1="'+(SHBOT-4)+'" x2="'+CX+'" y2="'+(py-12)+'" stroke="url(#'+gGold+')" stroke-width="2" opacity=".7"/>';for(var i=0;i<N;i++){s+=_medallion(x0+i*gap,py,mr,members[i].ini,gGold);}}
+  else if(N>4){var nR=Math.ceil(N/2),nL=N-nR,mrW=Math.max(8,Math.min(18,Math.round((ringR*128*D2R)/Math.max(nR,1)/2.4))),rT=-60*D2R,rB=68*D2R,lT=240*D2R,lB=112*D2R;s+=arc(rT,rB,ringR)+arc(lT,lB,ringR);for(var a=0;a<nR;a++){var t=(a+0.5)/nR;s+=seal(rT+(rB-rT)*t,mrW,members[a].ini);}for(var c=0;c<nL;c++){var t2=(c+0.5)/nL;s+=seal(lT+(lB-lT)*t2,mrW,members[nR+c].ini);}}
+  s+='<path d="'+shield+'" transform="translate(0,6)" fill="#000000" opacity=".18"/>';
+  s+='<g clip-path="url(#'+clip+')">';
+  if(real){ s+='<rect width="420" height="566" fill="'+real.field+'"/>'+real.charges(CX,GOLD); }
+  else if(mode===1){ s+='<rect width="420" height="566" fill="url(#'+fuse+')"/>'; }
+  else if(mode===2){ s+='<rect width="210" height="566" fill="url(#'+gArg+')"/><rect x="210" width="210" height="566" fill="url(#'+gRed+')"/>'; }
+  else { s+='<rect width="420" height="566" fill="url(#'+gRed+')"/>'; if(mode===3)s+='<rect y="'+SHTOP+'" width="420" height="44" fill="url(#'+fuse+')"/>'; }
+  s+='<path d="'+shield+'" fill="url(#'+gGloss+')"/></g>';
+  if(!real){var cy0=286;if(flank&&mode!==1)s+=_star(CX-58,cy0-20,11,GOLD)+_star(CX+58,cy0-20,11,GOLD);
+    var monoFill,monoStroke;if(mode===1){var ly=cy0-4;s+='<polygon points="'+CX+','+(ly-64)+' '+(CX+50)+','+ly+' '+CX+','+(ly+64)+' '+(CX-50)+','+ly+'" fill="url(#'+gRed+')" stroke="url(#'+gGold+')" stroke-width="4"/>';monoFill="url(#"+gArg+")";monoStroke="#5b1018";}else if(mode===2){monoFill="url(#"+gGold+")";monoStroke=MC.sable;}else{monoFill="url(#"+gArg+")";monoStroke="#5b1018";}
+    s+='<text x="'+CX+'" y="'+(cy0+18)+'" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="90" fill="'+monoFill+'" stroke="'+monoStroke+'" stroke-width="1.4">'+esc(nom.charAt(0))+'</text>';}
+  s+='<path d="'+shield+'" fill="none" stroke="url(#'+gGold+')" stroke-width="6"/>';
+  s+='<path d="'+shield+'" fill="none" stroke="#6b4f1e" stroke-width="1.2" opacity=".5"/>';
+  s+='<path d="'+inner+'" fill="none" stroke="url(#'+gGold+')" stroke-width="2" opacity=".7"/>';
+  if(crownOn)s+=_crown(CX,116,74,gGold);
+  var fs=nom.length>12?15:nom.length>9?18:22, ry=492;
+  s+='<path d="M60,'+(ry+22)+' L44,'+(ry+2)+' L70,'+(ry+8)+' Z" fill="#7c5e1c"/><path d="M'+(420-60)+','+(ry+22)+' L'+(420-44)+','+(ry+2)+' L'+(420-70)+','+(ry+8)+' Z" fill="#7c5e1c"/><path d="M62,'+(ry+8)+' Q210,'+(ry-16)+' 358,'+(ry+8)+' L350,'+(ry+38)+' Q210,'+(ry+16)+' 70,'+(ry+38)+' Z" fill="url(#'+gGold+')" stroke="#7c5e1c" stroke-width="1"/><text x="210" y="'+(ry+30)+'" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="'+fs+'" letter-spacing="1" fill="#3a2c16">'+esc(nom)+'</text>';
+  return s+'</svg>';
+}
+/* Blasons CRÉÉS (armorial de famille, style monégasque) — d'après le modèle dessiné par Kevin :
+   bordure fuselée de gueules/argent, fusée d'or chargée de l'initiale, olivier, étoile en chef,
+   couronne d'initiales des membres, banderole. IDs uniques par famille (anti-collision <defs>). */
+var _DFIELDS=[
+  ["#1b3f74","#12305c","#0a1c3a"], /*azur*/
+  ["#2f7d4f","#1b5e3a","#0e3a22"], /*sinople*/
+  ["#7a3d6e","#5a2a52","#371830"], /*pourpre*/
+  ["#4a4038","#2b2320","#171210"], /*sable*/
+  ["#c0433f","#8d1a1f","#5c0f12"]  /*gueules*/
+];
+var _DFIELD_FIXED={"DESARZENS":0}; /* DESARZENS = azur (design original Kevin) */
+function _dfield(nom,h){var i=_DFIELD_FIXED[nom];if(i==null)i=(h>>>7)%_DFIELDS.length;return _DFIELDS[i];}
+function designedBlason(nom,members){nom=_famName(nom)||"?";members=members||[];
+  var h=_hhash(nom),p="d"+h.toString(36),F=_dfield(nom,h);
+  var az=p+"az",or=p+"or",oc=p+"oc",pa=p+"pa",lu=p+"lu",fo=p+"fo",om=p+"om",ec=p+"ec",ce=p+"ce",br=p+"br",fu=p+"fu";
+  var initial=(nom.charAt(0)||"?");
+  var slots=[[240,235],[460,235],[222,400],[478,400],[258,560],[442,560]],seals="";
+  for(var i=0;i<slots.length&&i<members.length;i++){var ini=(members[i].ini||"?"),sx=slots[i][0],sy=slots[i][1],fs=ini.length>=2?32:44,dy=ini.length>=2?11:16;
+    seals+='<g><circle cx="'+sx+'" cy="'+sy+'" r="40" fill="url(#'+oc+')" stroke="#0a1c3a" stroke-width="2.5"/><circle cx="'+sx+'" cy="'+sy+'" r="33" fill="none" stroke="#0a1c3a" stroke-width="1" opacity="0.5"/><text x="'+sx+'" y="'+(sy+dy)+'" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="'+fs+'" fill="#0a1c3a">'+esc(ini)+'</text></g>';}
+  var bfs=nom.length>12?24:nom.length>9?30:34, bls=nom.length>12?3:6;
+  var defs='<defs>'
+   +'<pattern id="'+fu+'" patternUnits="userSpaceOnUse" width="36" height="50" patternTransform="translate(0,4)"><rect width="36" height="50" fill="#f7f3e8"/><polygon points="18,0 36,25 18,50 0,25" fill="#b3232a"/><polygon points="18,0 36,25 18,50 0,25" fill="none" stroke="#8d1a1f" stroke-width="0.8"/></pattern>'
+   +'<linearGradient id="'+az+'" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0%" stop-color="'+F[0]+'"/><stop offset="55%" stop-color="'+F[1]+'"/><stop offset="100%" stop-color="'+F[2]+'"/></linearGradient>'
+   +'<linearGradient id="'+or+'" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0%" stop-color="#f4e2a4"/><stop offset="45%" stop-color="#d9b45c"/><stop offset="100%" stop-color="#b48b32"/></linearGradient>'
+   +'<linearGradient id="'+oc+'" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0%" stop-color="#fbf0c8"/><stop offset="50%" stop-color="#e2c274"/><stop offset="100%" stop-color="#b8912f"/></linearGradient>'
+   +'<linearGradient id="'+pa+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fdfaf1"/><stop offset="100%" stop-color="#e8e0cb"/></linearGradient>'
+   +'<radialGradient id="'+lu+'" cx="0.35" cy="0.22" r="0.75"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></radialGradient>'
+   +'<radialGradient id="'+fo+'" cx="0.5" cy="0.42" r="0.75"><stop offset="0%" stop-color="#fdfaf2"/><stop offset="100%" stop-color="#f2ead7"/></radialGradient>'
+   +'<filter id="'+om+'" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#4a3c1e" flood-opacity="0.28"/></filter>'
+   +'<path id="'+ec+'" d="M140,110 H560 V470 C560,600 478,702 350,780 C222,702 140,600 140,470 Z"/>'
+   +'<clipPath id="'+ce+'"><use href="#'+ec+'"/></clipPath>'
+   +'<g id="'+br+'"><path d="M137,742 C88,655 64,500 96,318" fill="none" stroke="#5f7038" stroke-width="6" stroke-linecap="round"/>'
+     +'<g fill="#7d8f4e" stroke="#4f6030" stroke-width="1.2">'
+     +'<ellipse cx="101" cy="684" rx="26" ry="8.5" transform="rotate(-140 101 684)"/><ellipse cx="135" cy="684" rx="26" ry="8.5" transform="rotate(-40 135 684)"/>'
+     +'<ellipse cx="84" cy="633" rx="25" ry="8.5" transform="rotate(-140 84 633)"/><ellipse cx="118" cy="633" rx="25" ry="8.5" transform="rotate(-40 118 633)"/>'
+     +'<ellipse cx="72" cy="572" rx="26" ry="8.5" transform="rotate(-140 72 572)"/><ellipse cx="106" cy="572" rx="26" ry="8.5" transform="rotate(-40 106 572)"/>'
+     +'<ellipse cx="66" cy="507" rx="25" ry="8" transform="rotate(-140 66 507)"/><ellipse cx="100" cy="507" rx="25" ry="8" transform="rotate(-40 100 507)"/>'
+     +'<ellipse cx="65" cy="450" rx="24" ry="8" transform="rotate(-140 65 450)"/><ellipse cx="99" cy="450" rx="24" ry="8" transform="rotate(-40 99 450)"/>'
+     +'<ellipse cx="68" cy="384" rx="23" ry="7.5" transform="rotate(-140 68 384)"/><ellipse cx="102" cy="384" rx="23" ry="7.5" transform="rotate(-40 102 384)"/>'
+     +'<ellipse cx="75" cy="331" rx="21" ry="7" transform="rotate(-140 75 331)"/><ellipse cx="109" cy="331" rx="21" ry="7" transform="rotate(-40 109 331)"/></g>'
+     +'<g fill="url(#'+or+')" stroke="#9a7726" stroke-width="1"><circle cx="110" cy="660" r="5.5"/><circle cx="93" cy="545" r="5"/><circle cx="88" cy="418" r="4.5"/></g></g>'
+   +'</defs>';
+  var s='<svg viewBox="0 0 700 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Blason familial '+esc(nom)+'">'+defs;
+  s+='<rect width="700" height="900" fill="url(#'+fo+')"/>';
+  s+='<rect x="12" y="12" width="676" height="876" fill="none" stroke="url(#'+or+')" stroke-width="3"/>';
+  s+='<rect x="22" y="22" width="656" height="856" fill="none" stroke="#b48b32" stroke-width="1" opacity="0.55"/>';
+  s+='<g fill="url(#'+or+')" stroke="#9a7726" stroke-width="0.8"><polygon points="34,26 41,36 34,46 27,36"/><polygon points="666,26 673,36 666,46 659,36"/><polygon points="34,854 41,864 34,874 27,864"/><polygon points="666,854 673,864 666,874 659,864"/></g>';
+  s+='<polygon points="350,42 354.7,55.5 369,55.8 357.6,64.5 361.8,78.2 350,70 338.2,78.2 342.4,64.5 331,55.8 345.3,55.5" fill="url(#'+oc+')" stroke="#9a7726" stroke-width="1.2"/>';
+  s+='<use href="#'+br+'"/><use href="#'+br+'" transform="translate(700,0) scale(-1,1)"/>';
+  s+='<g filter="url(#'+om+')"><use href="#'+ec+'" fill="url(#'+az+')"/></g>';
+  s+='<g clip-path="url(#'+ce+')"><use href="#'+ec+'" fill="url(#'+az+')"/><use href="#'+ec+'" fill="url(#'+lu+')"/><use href="#'+ec+'" fill="none" stroke="url(#'+or+')" stroke-width="42"/><use href="#'+ec+'" fill="none" stroke="url(#'+fu+')" stroke-width="36"/></g>';
+  s+='<polygon points="350,283 416,400 350,517 284,400" fill="url(#'+or+')" stroke="#0a1c3a" stroke-width="3"/>';
+  s+='<polygon points="350,300 404,400 350,500 296,400" fill="none" stroke="#0a1c3a" stroke-width="1" opacity="0.45"/>';
+  s+='<text x="350" y="437" text-anchor="middle" font-family="Georgia,serif" font-size="104" font-weight="bold" fill="#0a1c3a">'+esc(initial)+'</text>';
+  s+='<g>'+seals+'</g>';
+  s+='<use href="#'+ec+'" fill="none" stroke="url(#'+or+')" stroke-width="4"/><use href="#'+ec+'" fill="none" stroke="#8a6a20" stroke-width="1" opacity="0.6"/>';
+  s+='<g filter="url(#'+om+')"><path d="M150,795 C270,775 430,775 550,795 L550,842 C430,822 270,822 150,842 Z" fill="url(#'+pa+')" stroke="#b48b32" stroke-width="2"/><path d="M150,795 L108,780 L124,812 L108,850 L150,842 Z" fill="#ded4ba" stroke="#b48b32" stroke-width="2"/><path d="M550,795 L592,780 L576,812 L592,850 L550,842 Z" fill="#ded4ba" stroke="#b48b32" stroke-width="2"/></g>';
+  s+='<text x="350" y="817" text-anchor="middle" font-family="Georgia,serif" font-size="'+bfs+'" font-weight="bold" letter-spacing="'+bls+'" fill="'+F[2]+'">'+esc(nom)+'</text>';
+  return s+'</svg>';
+}
+function anyBlasonSVG(nom,members){return REAL_ARMS[_famName(nom)]?blasonSVG(nom,members):designedBlason(nom,members);}
+function _blasonReal(nom){return !!REAL_ARMS[_famName(nom)];}
+function _blasonFamilies(){var m={};for(var id in DB.persons){var p=DB.persons[id];if(!p||!_isFamilyNom(p.nom))continue;var k=_famName(p.nom);m[k]=(m[k]||0)+1;}return Object.keys(m).map(function(k){return {nom:k,n:m[k],members:_famMembers(k),real:!!REAL_ARMS[k]};}).sort(function(a,b){return (b.real?1:0)-(a.real?1:0)||b.n-a.n||a.nom.localeCompare(b.nom);});}
+function _blasonPNG(nom,members,scale,cb){var real=_blasonReal(nom),BW=real?420:700,BH=real?566:900,svg=anyBlasonSVG(nom,members),img=new Image();img.onload=function(){var w=Math.round(BW*scale),hh=Math.round(BH*scale),c=document.createElement("canvas");c.width=w;c.height=hh;var x=c.getContext("2d");x.drawImage(img,0,0,w,hh);try{cb(c.toDataURL("image/png"));}catch(e){cb(null);}};img.onerror=function(){cb(null);};try{img.src="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));}catch(e){cb(null);}}
+function openBlason(nom){nom=_famName(nom);var mem=_famMembers(nom),cnt=mem.length,real=REAL_ARMS[nom];
+  var html='<div class="sheet blsheet"><button class="bkbtn" data-close>✕</button><div class="grab"></div>'
+   +'<h2 style="text-align:center;margin:6px 0 2px">Armoiries '+esc(nom)+'</h2>'
+   +'<div class="mut" style="text-align:center;font-size:13px;margin-bottom:8px">'+cnt+' membre'+(cnt>1?"s":"")+' · '+(real?"Blason officiel — reproduit à l\'identique":"Blason créé — armorial de famille")+'</div>'
+   +'<div class="blbig">'+anyBlasonSVG(nom,mem)+'</div>'
+   +(real?'<div class="sec" style="font-size:12.5px"><b>Blason officiel :</b> '+esc(real.label)+'.<br><span class="mut">Source : '+esc(real.source)+'. ⚠ Armoiries liées au NOM (même patronyme) — le lien avec cette lignée précise reste à prouver généalogiquement.</span></div>':'<div class="sec" style="font-size:12.5px"><b>Blason créé</b> — armorial de famille au <b>style monégasque</b> (bordure fuselée de gueules et d\'argent, fusée d\'or à l\'initiale, étoile en chef, rameaux d\'olivier). Autour de l\'écu, <b>les initiales de chaque membre</b>.<br><span class="mut">Ce n\'est pas un blason historique attesté : aucun blason officiel connu pour ce nom à ce jour.</span></div>')
+   +'<div class="mut" style="text-align:center;font-size:12.5px;margin:10px 6px 4px">📲 Sur iPhone : appuie longuement sur l\'image ci-dessous → « Enregistrer dans Photos ».</div>'
+   +'<div class="blbig" id="blPng"><div class="mut" style="font-size:13px">Préparation de l\'image…</div></div>'
+   +'<a class="btn gold" id="blDl" style="width:100%;margin-top:8px" download="Blason-'+esc(nom.replace(/[^A-Z]/g,""))+'.png">⤓ Enregistrer le blason</a>'
+   +'<button class="btn ghost" data-close style="width:100%;margin-top:8px">Fermer</button></div>';
+  showOverlay(html);
+  _blasonPNG(nom,mem,2.6,function(url){var box=document.getElementById("blPng"),a=document.getElementById("blDl");if(!box)return;if(url){box.innerHTML='<img src="'+url+'" alt="Armoiries '+esc(nom)+'" style="width:74%;max-width:270px;border-radius:12px">';if(a)a.href=url;}else{box.innerHTML='<div class="mut" style="font-size:13px">Image indisponible — le blason ci-dessus reste net à l\'écran.</div>';if(a)a.style.display="none";}});
+}
+function renderBlasons(){var w=$("#wrap");var fams=_blasonFamilies(),reals=fams.filter(function(f){return f.real;}),others=fams.filter(function(f){return !f.real;});
+  var head='<div class="sec"><h3>🛡 Album des blasons de familles</h3><p class="mut" style="font-size:13px;margin:0">Trié en deux : les <b>vrais blasons officiels</b> (attestés, reproduits à l\'identique) et les <b>blasons créés</b> (armorial de famille au style monégasque). Autour de chaque écu, <b>les initiales de chaque membre</b>. Touche un blason pour le détail et l\'enregistrer.</p></div>';
+  function card(f){return '<button class="blcard" data-bl="'+esc(f.nom)+'"><div class="blsvg">'+anyBlasonSVG(f.nom,f.members)+'</div><div class="blnm">'+esc(f.nom)+'</div><div class="bln">'+(f.real?"Blason officiel":"Blason créé")+' · '+f.n+' membre'+(f.n>1?"s":"")+'</div></button>';}
+  var secReal=reals.length?'<div class="sec" style="padding-bottom:4px"><h3 style="margin:2px 0">✅ Vrais blasons officiels</h3><p class="mut" style="font-size:12.5px;margin:0">Attestés historiquement, source à l\'appui.</p></div><div class="blgrid">'+reals.map(card).join("")+'</div>':'';
+  var secDes=others.length?'<div class="sec" style="padding-bottom:4px;margin-top:6px"><h3 style="margin:2px 0">🎨 Blasons créés</h3><p class="mut" style="font-size:12.5px;margin:0">Armorial de famille (style monégasque) — pas un blason historique attesté. Remplacé dès qu\'un vrai blason est trouvé.</p></div><div class="blgrid">'+others.map(card).join("")+'</div>':'';
+  w.innerHTML=head+secReal+secDes;
+  w.querySelectorAll("[data-bl]").forEach(function(b){b.onclick=function(){openBlason(b.dataset.bl);};});
+}
 var _RENDERSTYLE="card";
 function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||(p.vivant?"vivant":"");
   var blood=(window._LSET&&_LSET[n.id]&&!n.root);var bc=branchOf(p).c;
@@ -538,10 +759,11 @@ function drawStage(fit){
     return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="'+st2+'" stroke-width="'+sw2+'" stroke-linecap="round" opacity=".95"/>';}).join("");
   var defs='<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b0842c"/><stop offset="1" stop-color="#8a6420"/></linearGradient><linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5427"/><stop offset="1" stop-color="#5a3d18"/></linearGradient></defs>';
   var svg='<svg width="'+W+'" height="'+_lay.h+'">'+defs+zebra+rules+paths+'</svg>';
-  var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+(b.y-(plan?0:30))+'px">'+esc(b.label)+'</div>';}).join("");
+  var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+b.y+'px">'+esc(b.label)+'</div>';}).join("");
   var rings=couples.map(function(c){return '<div class="couplebadge" style="left:'+c.x+'px;top:'+c.y+'px">💍</div>';}).join("");
   stage.style.width=W+"px";stage.style.height=_lay.h+"px";
-  stage.innerHTML=svg+genLabels+labels+rings+_lay.nodes.map(tnodeHTML).join("");
+  /* v2.69 : bandeaux APRÈS les cartes dans le DOM → toujours lisibles (jamais recouverts) */
+  stage.innerHTML=svg+genLabels+rings+_lay.nodes.map(tnodeHTML).join("")+labels;
   if(fit)fitStage();
 }
 function applyST(){var s=$("#stage");if(s)s.style.transform="translate("+VIEWST.tx+"px,"+VIEWST.ty+"px) scale("+VIEWST.sc+")";}
@@ -581,11 +803,58 @@ function inListFam(p){return LISTFAM==="tous"||famOf(p).indexOf(LISTFAM)>=0;}
 function renderList(){var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});var w=$("#wrap");if(!ids.length){w.innerHTML='<div class="empty">Aucune personne.</div>';return;}var q=(renderList._q||"").toLowerCase();var html=famChipsHTML(LISTFAM)+'<div style="margin:6px 0 10px"><input id="qbox" placeholder="🔎 Filtrer..." value="'+esc(renderList._q||"")+'"></div><div class="grid">';var n=0;ids.forEach(function(id){var p=P(id);if(!inListFam(p))return;if(q&&full(p).toLowerCase().indexOf(q)<0&&String(p.notes||"").toLowerCase().indexOf(q)<0)return;html+=personCardHTML(id);n++;});html+='</div>';if(!n)html+='<div class="empty">Aucun résultat.</div>';w.innerHTML=html;bindFamChips();var qb=$("#qbox");if(qb)qb.oninput=function(){renderList._q=qb.value;var s=qb.selectionStart;renderList();var nn=$("#qbox");if(nn){nn.focus();try{nn.setSelectionRange(s,s);}catch(e){}}};}
 function searchLinks(p){var nom=encodeURIComponent(p.nom||""),pre=encodeURIComponent(p.prenom||""),lieu=encodeURIComponent((p.naissance&&p.naissance.lieu)||(p.deces&&p.deces.lieu)||"");var g=full(p);return [{t:"🏛️ Archives Monaco",u:"https://archives.mairie.mc/"},{t:"🌿 Archives 06 (Beaulieu/Nice)",u:"https://archives06.fr/"},{t:"☀️ Archives 13 (Salon-de-Provence)",u:"https://www.archives13.fr/"},{t:"🌳 Geneanet",u:"https://www.geneanet.org/fonds/individus/?go=1&nom="+nom+"&prenom="+pre+(lieu?"&place__0__="+lieu:"")},{t:"📇 Filae",u:"https://www.filae.com/search/results/?lastname="+nom+"&firstname="+pre},{t:"🔵 FamilySearch",u:"https://www.familysearch.org/search/record/results?q.surname="+nom+"&q.givenName="+pre},{t:"⚰️ Fichier décès INSEE (1970→auj.)",u:"https://deces.matchid.io/search?q="+pre+"+"+nom},{t:"🪦 Décès par famille (acte-deces.fr)",u:"https://www.acte-deces.fr/recherche-deces-famille-"+encodeURIComponent(String(p.nom||"").toLowerCase().replace(/\s+/g,"-"))},{t:"🔎 Google",u:"https://www.google.com/search?q="+encodeURIComponent('"'+g+'" généalogie '+((p.naissance&&p.naissance.lieu)||""))}];}
 function acteCount(p){return (p.sources||[]).filter(function(x){return /matchid\.io\/id\/|n°\d+\/\d{4}|Acte de/i.test((x.url||"")+(x.label||""));}).length;}
+// ---- Recherche décès INSEE intégrée à l'arbre (API matchID — marche sur iPhone, sans moteur lourd)
+function _decesFmtDate(s){s=String(s||"").replace(/[^0-9-]/g,"");var m=s.match(/^(\d{4})-?(\d{2})-?(\d{2})$/);if(m)return (m[3]==="00"?"":m[3]+".")+(m[2]==="00"?"":m[2]+".")+m[1];var y=s.match(/^(\d{4})/);return y?y[1]:(s||"?");}
+function _decesArchive(place){var p=(place||"").toUpperCase();
+  if(/MONACO|MONTE.?CARLO/.test(p))return{n:"État-civil de Monaco",u:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"};
+  if(/NICE|BEAULIEU|VILLEFRANCHE|ANTIBES|CANNES|CAGNES|MENTON|GRASSE/.test(p))return{n:"Archives 06 (à ouvrir sur ton tél.)",u:"https://archives06.fr/"};
+  if(/MARSEILLE|SALON|AIX|ARLES|AUBAGNE/.test(p))return{n:"Archives 13",u:"https://www.archives13.fr/archive/recherche/etatcivil/n:88"};
+  if(/RAMATUELLE|TOULON|HYERES|DRAGUIGNAN/.test(p))return{n:"Archives 83 (Var)",u:"https://archives.var.fr/"};
+  return{n:"Service-public / mairie",u:"https://www.service-public.fr/particuliers/vosdroits/N359"};}
+function _decesDemande(kind,nom,pre,extra){var subj=encodeURIComponent("Demande d'acte de "+kind+" — "+pre+" "+nom);
+  var body=encodeURIComponent("Bonjour,\n\nJe sollicite une copie de l'acte de "+kind+" de :\nNom : "+nom+"\nPrénom(s) : "+pre+"\n"+(extra||"")+"\nJe vous remercie.\nCordialement.");
+  return "mailto:?subject="+subj+"&body="+body;}
+function decesSearch(){
+  var nomEl=$("#decesNom"),preEl=$("#decesPre"),box=$("#decesRes");if(!box)return;
+  var nom=(nomEl&&nomEl.value||"").trim(),pre=(preEl&&preEl.value||"").trim();
+  if(nom.length<2){box.innerHTML='<p class="mut">Écris au moins 2 lettres de nom.</p>';return;}
+  box.innerHTML='<p class="mut">Recherche en cours…</p>';
+  var q=encodeURIComponent((pre+" "+nom).trim());
+  // proxy MÊME ORIGINE (arbre.kd-mc.com/__deces) → l'API INSEE n'a pas de CORS
+  fetch("/__deces?q="+q+"&size=25").then(function(r){return r.json();}).then(function(j){
+    var hits=((j||{}).response||{}).persons||[];
+    if(!hits.length){box.innerHTML='<p class="mut">Aucun résultat. Essaie sans le prénom, ou vérifie l\'orthographe.</p>';return;}
+    box.innerHTML='<p class="mut" style="margin:0 0 8px">'+hits.length+' résultat'+(hits.length>1?"s":"")+' :</p>'+hits.map(function(h){
+      var nm=(h.name&&h.name.last)||"",pr=((h.name&&h.name.first)||[]).join(" ");
+      var b=h.birth||{},d=h.death||{},nn=_decesFmtDate(b.date),dd=_decesFmtDate(d.date);
+      var bl=(b.location&&b.location.city)||"",dl=(d.location&&d.location.city)||"";var a=_decesArchive(bl||dl);
+      var mD=_decesDemande("décès",nm,pr,"Décès : "+dd+(dl?(" à "+dl):"")+"\nNaissance : "+nn+(bl?(" à "+bl):"")+"\n");
+      var mN=_decesDemande("naissance",nm,pr,"Naissance : "+nn+(bl?(" à "+bl):"")+"\n");
+      var mM=_decesDemande("mariage",nm,pr,"Né(e) : "+nn+"\nLieu du mariage : à confirmer\n");
+      return '<div class="pc" style="display:block;border-left:6px solid #c9a24a">'
+        +'<div class="nm">'+esc(nm)+' <span style="color:#c9a24a">'+esc(pr)+'</span></div>'
+        +'<div class="sub">🎂 '+esc(nn)+(bl?' à '+esc(bl):'')+'  ·  🕯️ '+esc(dd)+(dl?' à '+esc(dl):'')+'</div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'
+        +'<a class="btn sm" href="'+mD+'">🕯️ Acte décès</a>'
+        +'<a class="btn sm" href="'+mN+'">🍼 Acte naissance</a>'
+        +'<a class="btn sm" href="'+mM+'">💍 Acte mariage</a>'
+        +'<a class="btn sm ghost" target="_blank" rel="noopener" href="https://deces.matchid.io/id/'+esc(h.id||"")+'">📜 Fiche</a>'
+        +'<a class="btn sm ghost" target="_blank" rel="noopener" href="'+esc(a.u)+'">🏛️ '+esc(a.n)+'</a>'
+        +'</div></div>';}).join("");
+  }).catch(function(){box.innerHTML='<p class="mut">Pas de réponse là. <a target="_blank" rel="noopener" href="https://deces.matchid.io/search?q='+q+'">Ouvrir la recherche ↗</a></p>';});
+}
 function renderSearch(){var w=$("#wrap");var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});var withA=0,tot=0;
   var body=ids.map(function(id){var p=P(id);if(!inListFam(p))return "";tot++;var n=acteCount(p);if(n)withA++;
     var st=n?'<span class="okb">📜 '+n+' acte'+(n>1?"s":"")+' officiel'+(n>1?"s":"")+' ✓</span>':'<span class="mut">à rechercher</span>';
     return '<div class="pc" data-search="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+'</div><div class="sub">'+esc(lifespan(p)||(p.vivant?"vivant":""))+' · '+st+'</div></div><span>🔎</span></div>';}).join("");
-  w.innerHTML=famChipsHTML(LISTFAM)+'<div class="sec"><h3>Actes — '+withA+' personne'+(withA>1?"s":"")+' sur '+tot+' avec acte officiel ✓</h3><p class="mut" style="font-size:13px;margin:0 0 10px">Le robot cherche tout seul chaque mois (INSEE, Monaco, presse ancienne). Touche une personne → recherches pré-remplies + demande d\'acte à copier.</p><div class="grid">'+(body||'<div class="empty">Ajoute des personnes.</div>')+'</div></div>';bindFamChips();}
+  var searchUI='<div class="sec"><h3>🔎 Rechercher un décès (fichier INSEE, 1970 → aujourd\'hui)</h3>'
+    +'<p class="mut" style="font-size:13px;margin:0 0 8px">Tape un nom, vois le décès officiel, et demande l\'acte (naissance / mariage / décès) en 1 clic.</p>'
+    +'<div class="row2"><input id="decesNom" placeholder="Nom (ex : MAIFFRET)" autocomplete="off" autocapitalize="characters"><input id="decesPre" placeholder="Prénom (optionnel)" autocomplete="off"></div>'
+    +'<button class="btn gold" id="decesGo" style="width:100%;margin-top:8px">🔎 Rechercher</button>'
+    +'<div id="decesRes" style="margin-top:10px"></div></div>';
+  w.innerHTML=famChipsHTML(LISTFAM)+searchUI+'<div class="sec"><h3>Actes de la famille — '+withA+' personne'+(withA>1?"s":"")+' sur '+tot+' avec acte officiel ✓</h3><p class="mut" style="font-size:13px;margin:0 0 10px">Le robot cherche tout seul chaque mois (INSEE, Monaco, presse ancienne). Touche une personne → recherches pré-remplies + demande d\'acte à copier.</p><div class="grid">'+(body||'<div class="empty">Ajoute des personnes.</div>')+'</div></div>';bindFamChips();
+  var g=$("#decesGo");if(g)g.onclick=decesSearch;
+  ["#decesNom","#decesPre"].forEach(function(sel){var e=$(sel);if(e)e.addEventListener("keydown",function(ev){if(ev.key==="Enter")decesSearch();});});}
 function openSearch(id){var p=P(id);var h='<div class="sheet"><button class="bkbtn" data-close aria-label="Fermer">✕</button><div class="grab"></div><h2 style="padding-left:48px">🔎 '+esc(full(p))+'</h2><p class="mut" style="margin:2px 0 12px;font-size:13px">Ouvre chaque source, confirme la date, puis reviens la saisir sur la fiche.</p>'+searchLinks(p).map(function(l){return '<a class="btn" style="width:100%;margin:6px 0;justify-content:space-between" target="_blank" rel="noopener" href="'+esc(l.u)+'">'+esc(l.t)+' <span class="mut">↗</span></a>';}).join("")+'<button class="btn ghost" data-close style="width:100%;margin-top:10px">Fermer</button></div>';showOverlay(h);}
 
 /* ---------- tools ---------- */
@@ -619,7 +888,10 @@ function exportPrint(){
 }
 function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.innerHTML=
   '<div class="sec"><h3>Temps réel</h3><div class="kv"><span class="k">Synchro famille</span><span>'+(_cloudOK?'🟢 Active':'🟠 Local (hors-ligne)')+'</span></div><div class="kv"><span class="k">Ton nom (auteur des ajouts)</span><span>'+esc(ME||"—")+'</span></div><div class="kv"><span class="k">🙋 « Moi » dans l\'arbre</span><span>'+(viewerId()?esc(full(P(viewerId()))):"vue neutre")+'</span></div>'+(viewerId()?'<button class="btn ghost sm" id="btnNeutre" style="width:100%;margin-top:8px">↺ Revenir à la vue neutre (aucun « moi »)</button>':'<p class="mut" style="font-size:12.5px;margin:6px 0 0">Ouvre TA fiche → « 🙋 C\'est moi » pour voir l\'arbre de ton point de vue.</p>')+'<div class="kv"><span class="k">Personnes</span><span>'+n+'</span></div><div class="row2" style="margin-top:11px"><button class="btn" id="btnSync">🔄 Synchroniser</button><button class="btn" id="btnName">✏️ Mon nom</button></div></div>'+
-  '<div class="sec"><h3>Sauvegarde</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Auto-sauvegardé en continu. Tu peux aussi exporter/importer un fichier.</p><div class="row2"><button class="btn" id="btnExport">⬇️ Exporter</button><button class="btn" id="btnImport">⬆️ Importer</button></div><button class="btn gold" id="btnPrint" style="width:100%;margin-top:8px">🖨 Imprimer / PDF de l\'arbre ('+famLabel(FAMKEY)+')</button><input type="file" id="fileImport" accept="application/json" class="hidden"></div>'+
+  '<div class="sec"><h3>Sauvegarde & Import</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Auto-sauvegardé en continu. Tu peux aussi exporter/importer un fichier.</p><div class="row2"><button class="btn" id="btnExport">⬇️ Exporter</button><button class="btn" id="btnImport">⬆️ Importer</button></div>'+
+  '<button class="btn gold" id="btnGedcom" style="width:100%;margin-top:8px">🌳 Importer un GEDCOM (Geneanet, FamilySearch…)</button>'+
+  '<p class="mut" style="font-size:12.5px;margin:6px 0 0">💡 Sur Geneanet/FamilySearch : « Exporter » → fichier GEDCOM → ouvre-le ici. Je fusionne tout (nouvelles personnes ajoutées, fiches connues complétées, <b>jamais écrasées</b>).</p>'+
+  '<button class="btn" id="btnPrint" style="width:100%;margin-top:8px">🖨 Imprimer / PDF de l\'arbre ('+famLabel(FAMKEY)+')</button><input type="file" id="fileImport" accept=".json,.ged,.gedcom,application/json" class="hidden"></div>'+
   '<div class="sec"><h3>Sécurité</h3><button class="btn" id="btnCode" style="width:100%">🔑 Changer le code famille</button><button class="btn ghost" id="btnLock" style="width:100%;margin-top:8px">🔒 Verrouiller</button></div>'+
   '<div class="sec"><h3>🤖 Recherches automatiques</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Le robot cherche chaque mois : actes INSEE, registres de Monaco, presse ancienne, et vérifie le nuage familial.</p><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/REGISTRES.md">📜 Actes &amp; registres trouvés <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md">📚 Infos presse &amp; sources <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/CLOUD.md">☁️ Vérification du nuage familial <span class="mut">↗</span></a></div>'+
   '<div class="sec"><h3>À propos</h3><p class="mut" style="font-size:13px;margin:0">Arbre familial '+APP_VER+'. Auto-save + synchro temps réel (code famille). Photos tous formats converties automatiquement. Ajoute/corrige/commente librement.</p></div>';
@@ -627,10 +899,10 @@ function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.i
   $("#btnName").onclick=setMe;
   var bn=$("#btnNeutre");if(bn)bn.onclick=function(){setViewer("");toast("↺ Vue neutre — personne n'est « moi »");render();};
   var bp=$("#btnPrint");if(bp)bp.onclick=exportPrint;
-  $("#btnExport").onclick=doExport;$("#btnImport").onclick=function(){$("#fileImport").click();};$("#fileImport").onchange=doImport;
+  $("#btnExport").onclick=doExport;$("#btnImport").onclick=function(){$("#fileImport").click();};var bg=$("#btnGedcom");if(bg)bg.onclick=function(){$("#fileImport").click();};$("#fileImport").onchange=doImport;
   $("#btnCode").onclick=changeCode;$("#btnLock").onclick=function(){sessionStorage.removeItem("arbre_unlocked");localStorage.removeItem("arbre_trust");location.reload();};
 }
-function render(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.classList.toggle("act",t.dataset.view===VIEW);});if(VIEW==="tree")renderTree();else if(VIEW==="list")renderList();else if(VIEW==="search")renderSearch();else renderTools();$("#ver").textContent=APP_VER+" · "+Object.keys(DB.persons).length+" pers.";}
+function render(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.classList.toggle("act",t.dataset.view===VIEW);});if(VIEW==="tree")renderTree();else if(VIEW==="list")renderList();else if(VIEW==="search")renderSearch();else if(VIEW==="blasons")renderBlasons();else renderTools();$("#ver").textContent=APP_VER+" · "+Object.keys(DB.persons).length+" pers.";}
 
 /* Accès aux ACTES officiels, calculé pour CHAQUE personne selon son cas :
    - état civil français : images librement consultables au-delà de 100 ans
@@ -693,7 +965,7 @@ function _lineageSet(){var K=viewerId();var set={};if(!K)return set;set[K]=1;var
 function relationToKevin(id,noAlliance){
   var K=viewerId();if(!K||!P(id))return "";if(id===K)return "⭐ toi";
   var g=P(id).sexe==="F";
-  if(((P(id).conjoints)||[]).indexOf(K)>=0){if(isDivorced(id,K))return g?"ton ex-femme":"ton ex-mari";return g?"ta femme":"ton mari";}
+  if(((P(id).conjoints)||[]).indexOf(K)>=0){if(isDivorced(id,K))return g?"ton ex-femme":"ton ex-mari";if(isSeparated(id,K))return g?"ton ex-compagne (séparés)":"ton ex-compagnon (séparés)";return g?"ta femme":"ton mari";}
   var ak=_upMap(K);ak[K]=0;var ap=_upMap(id);ap[id]=0;
   var best=null;
   for(var a in ak){if(ap[a]!==undefined){var m=ak[a],n=ap[a];if(!best||m+n<best[0]+best[1]||(m+n===best[0]+best[1]&&Math.min(m,n)<Math.min(best[0],best[1])))best=[m,n];}}
@@ -723,20 +995,24 @@ function openActe(a){var d=document.createElement("div");d.className="acteov";
 function openPerson(id,isBack){var p=P(id);if(!p)return;
   if(!isBack){if(_curPerson&&_curPerson!==id)_pStack.push(_curPerson);}_curPerson=id;
   clearInterval(_caro.timer);_caro.i=0;var photos=p.photos||[];
-  var caro='<div class="caro" id="caroBox">'+(photos.length?photos.map(function(src,i){return '<div class="slide'+(i===0?" on":"")+'"><img src="'+src+'" alt=""></div>';}).join("")+'<button class="nav l" data-caro="-1"></button><button class="nav r" data-caro="1"></button><div class="dots">'+photos.map(function(_,i){return '<i class="'+(i===0?"on":"")+'"></i>';}).join("")+'</div>':'<div class="ph-empty">Aucune photo — touche ✏️ Modifier pour en ajouter (tous formats).</div>')+'</div>';
+  var caro='<div class="caro" id="caroBox">'+(photos.length?photos.map(function(src,i){return '<div class="slide'+(i===0?" on":"")+'"><img src="'+src+'" alt=""></div>';}).join("")+'<button class="nav l" data-caro="-1"></button><button class="nav r" data-caro="1"></button>'+(photos.length>8?'<div class="carocnt" id="caroCnt">1 / '+photos.length+'</div>':'<div class="dots">'+photos.map(function(_,i){return '<i class="'+(i===0?"on":"")+'"></i>';}).join("")+'</div>'):'<div class="ph-empty">Aucune photo — touche ✏️ Modifier pour en ajouter (tous formats, sans limite).</div>')+'</div>';
   function irow(ic,lab,val){return val?'<div class="irow"><span class="ic">'+ic+'</span><div style="min-width:0"><div class="lab">'+lab+'</div><div class="val">'+esc(val)+'</div></div></div>':"";}
   var nb=(p.naissance&&p.naissance.date)||"",nl=(p.naissance&&p.naissance.lieu)||"",db=(p.deces&&p.deces.date)||"",dl=(p.deces&&p.deces.lieu)||"";
   var info=irow("🎂","Naissance",[nb,nl?"à "+nl:""].filter(Boolean).join(" "))+(p.vivant?'<div class="irow"><span class="ic">🟢</span><div><div class="lab">Statut</div><div class="val gold">Vivant</div></div></div>':irow("🕊️","Décès",[db,dl?"à "+dl:""].filter(Boolean).join(" ")));
-  var relItems=[];if(p.pere&&P(p.pere))relItems.push([p.pere,"père"]);if(p.mere&&P(p.mere))relItems.push([p.mere,"mère"]);(p.conjoints||[]).forEach(function(c){if(P(c))relItems.push([c,isDivorced(id,c)?"ex-conjoint (divorcés)":"conjoint"]);});childrenOf(id).forEach(function(c){relItems.push([c,"enfant"]);});
+  var relItems=[];if(p.pere&&P(p.pere))relItems.push([p.pere,"père"]);if(p.mere&&P(p.mere))relItems.push([p.mere,"mère"]);(p.conjoints||[]).forEach(function(c){if(P(c))relItems.push([c,isDivorced(id,c)?"ex-conjoint (divorcés)":isSeparated(id,c)?"ex-conjoint (séparés)":"conjoint"]);});childrenOf(id).forEach(function(c){relItems.push([c,"enfant"]);});
   var relHtml=relItems.map(function(it){var q=P(it[0]);return '<button class="relchip" data-open="'+it[0]+'">'+avatarHTML(q)+'<span>'+esc(full(q))+' <small>'+it[1]+'</small></span></button>';}).join("");
   var sources=(p.sources||[]).map(function(s){return '<a class="srcbtn" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label||"acte")+' ↗</a>';}).join(" ")
     +actLinks(p).map(function(s){if(s.copy)return '<button class="srcbtn" data-copyreq="'+s.copy+'">'+esc(s.label)+'</button>';return '<a class="srcbtn" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label)+' ↗</a>';}).join(" ");
   var comments=(p.comments||[]).slice().sort(function(a,b){return a.ts-b.ts;}).map(function(c){return '<div class="cmt"><div class="h"><span>'+esc(c.by||"famille")+' · '+relTime(c.ts)+'</span><button class="x" data-delc="'+c.id+'">✕</button></div><div style="white-space:pre-wrap">'+esc(c.text)+'</div></div>';}).join("");
   var canBack=_pStack.length>0;
   var back='<button class="bkbtn" id="pBack" aria-label="'+(canBack?"Retour":"Fermer")+'">'+(canBack?"‹":"✕")+'</button>';
-  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div></div>'+caro+
+  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div>'+(_isFamilyNom(p.nom)?'<button class="blemb" data-bl="'+esc(_famName(p.nom))+'" title="'+(_blasonReal(p.nom)?"Blason officiel ":"Blason créé ")+esc(_famName(p.nom))+'">'+anyBlasonSVG(p.nom,_famMembers(p.nom))+'</button>':'')+'</div>'+caro+
     '<div class="sec">'+info+(relHtml?'<div style="padding-top:12px"><div style="color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Famille</div><div class="chips">'+relHtml+'</div></div>':"")+(p.notes?'<div style="padding:12px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+'</div>'+
-    (function(){var acts=(p.actes||[]);if(!acts.length)return "";return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3><div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'"><img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div></div>';})()+
+    (function(){var acts=(p.actes||[]);return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3>'+(acts.length?'<div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'">'+(a.by?'<b class="actedel" data-rmacte="'+i+'" title="Supprimer">×</b>':'')+'<img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun acte pour l\'instant.</p>')+'<button class="btn sm" id="addActe">➕ Ajouter un acte (photo / scan)</button><input type="file" id="acteIn" accept="image/*" hidden></div>';})()+
+    (function(){var docs=(p.docs||[]);function ico(ty,nm){nm=(nm||"").toLowerCase();if(/pdf/.test(ty)||/\.pdf$/.test(nm))return "📕";if(/image/.test(ty))return "🖼";if(/\.(doc|docx|odt|rtf)$/.test(nm))return "📘";if(/\.(xls|xlsx|csv|numbers)$/.test(nm))return "📗";if(/\.(zip|rar|7z)$/.test(nm))return "🗂";if(/audio|\.(mp3|m4a|wav)$/.test(ty+nm))return "🎙";if(/video|\.(mp4|mov)$/.test(ty+nm))return "🎞";return "📄";}
+    function ksz(n){return n>1048576?(n/1048576).toFixed(1)+" Mo":Math.max(1,Math.round(n/1024))+" Ko";}
+    function ext(nm){var m=String(nm||"").match(/\.([a-z0-9]{2,5})$/i);return m?m[1]:"";}
+    return '<div class="sec"><h3>📎 Documents & dossiers — tous formats</h3>'+(docs.length?'<div class="docrow">'+docs.map(function(d,i){var vis=d.preview||(/^image\//.test(d.type||"")?d.data:null);return '<div class="doccard" data-doc="'+i+'">'+(d.by?'<b class="actedel" data-rmdoc="'+i+'">×</b>':'')+(vis?'<img class="dprev" loading="lazy" src="'+esc(vis)+'" alt="">':'<div class="dcover"><span class="big">'+ico(d.type,d.name)+'</span><span class="ext">'+esc(ext(d.name)||"doc")+'</span></div>')+'<div class="alab">'+esc(d.label||d.name||"document")+'</div><div class="dsz2">'+ksz(d.size||0)+'</div></div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun document. PDF, Word, tableur, zip, audio… tout passe.</p>')+'<button class="btn sm" id="addDoc">➕ Ajouter des documents (multi-sélection)</button><input type="file" id="docIn" multiple hidden></div>';})()+
     (sources?'<div class="sec"><h3>Actes / sources</h3><div class="chips">'+sources+'</div></div>':"")+
     '<div class="sec"><h3>💬 Commentaires & infos</h3><div id="cmtList">'+(comments||'<p class="mut" style="font-size:13px;margin:0">Aucun commentaire. Ajoute une info, une anecdote, une question…</p>')+'</div><div style="display:flex;gap:8px;margin-top:10px"><input id="cmtIn" placeholder="Écris un commentaire…"><button class="btn gold sm" id="cmtAdd">Envoyer</button></div></div>'+
     '<div class="sec"><h3>➕ Ajouter un proche</h3><div class="addrel"><button class="btn sm" data-add="pere:'+id+'">👴 Père</button><button class="btn sm" data-add="mere:'+id+'">👵 Mère</button><button class="btn sm" data-add="conj:'+id+'">💍 Conjoint(e)</button><button class="btn sm" data-add="child:'+id+'">👶 Enfant</button></div></div>'+
@@ -744,7 +1020,31 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
     (id!==viewerId()?'<button class="btn ghost" id="btnMoi" style="width:100%;margin-top:8px">🙋 C\'est moi — voir l\'arbre de mon point de vue</button>':'<p class="mut" style="text-align:center;font-size:13px;margin:8px 0 0">⭐ L\'arbre est vu de TON point de vue sur cet appareil.</p>')+
     '<button class="btn ghost" data-close style="width:100%;margin-top:8px">Fermer</button></div>';
   showOverlay(h);
-  ov0=$(".ov");if(ov0)ov0.querySelectorAll("[data-acte]").forEach(function(c){c.onclick=function(){var a=(P(id).actes||[])[+c.dataset.acte];if(a)openActe(a);};});
+  ov0=$(".ov");if(ov0){ov0.querySelectorAll("[data-acte]").forEach(function(c){c.onclick=function(e){if(e.target.closest("[data-rmacte]"))return;var a=(P(id).actes||[])[+c.dataset.acte];if(a)openActe(a);};});
+  ov0.querySelectorAll("[data-rmacte]").forEach(function(b){b.onclick=async function(){if(!confirm("Supprimer cet acte ajouté par la famille ?"))return;var pp=P(id);pp.actes=(pp.actes||[]).filter(function(_,i){return i!==+b.dataset.rmacte;});pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("🗑 Acte retiré");};});
+  ov0.querySelectorAll("[data-doc]").forEach(function(c){c.onclick=function(e){if(e.target.closest("[data-rmdoc]"))return;var d=(P(id).docs||[])[+c.dataset.doc];if(!d)return;
+    if(/^image\//.test(d.type||"")){openActe({label:d.label||d.name,img:d.data});return;}
+    if(d.preview){openActe({label:(d.label||d.name||"document")+" — page 1",img:d.preview});return;}
+    try{var bin=atob((d.data.split(",")[1]||""));var arr=new Uint8Array(bin.length);for(var k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);var bl=new Blob([arr],{type:d.type||"application/octet-stream"});var u=URL.createObjectURL(bl);var a=document.createElement("a");a.href=u;if(/pdf/.test(d.type||"")){a.target="_blank";}else{a.download=d.name||"document";}document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},30000);}catch(err){toast("Ouverture impossible sur cet appareil");}};});
+  ov0.querySelectorAll("[data-rmdoc]").forEach(function(b){b.onclick=async function(){if(!confirm("Supprimer ce document ?"))return;var pp=P(id);pp.docs=(pp.docs||[]).filter(function(_,i){return i!==+b.dataset.rmdoc;});pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("🗑 Document retiré");};});
+  var db2=$("#addDoc");if(db2)db2.onclick=function(){$("#docIn").click();};
+  var di2=$("#docIn");if(di2)di2.onchange=async function(e){var files=Array.prototype.slice.call(e.target.files||[]);e.target.value="";if(!files.length)return;
+    var pp=P(id);pp.docs=pp.docs||[];var ok=0,skip=0;
+    for(var i2=0;i2<files.length;i2++){var f=files[i2];
+      try{
+        if(/^image\//.test(f.type)){var img=await importActe(f);pp.docs.push({label:f.name,name:f.name,type:f.type,size:Math.round(img.length*0.75),data:img,by:ME||"famille",ts:now()});ok++;}
+        else if(f.size<=6291456){var data=await new Promise(function(rs,rj){var r=new FileReader();r.onload=function(){rs(r.result);};r.onerror=rj;r.readAsDataURL(f);});var prev=null;if(/pdf/i.test(f.type)||/\.pdf$/i.test(f.name||"")){toast("Aperçu du PDF…");prev=await pdfPreview(data);}pp.docs.push({label:f.name,name:f.name,type:f.type||"",size:f.size,data:data,preview:prev||undefined,by:ME||"famille",ts:now()});ok++;}
+        else{skip++;toast("⚠️ "+(f.name||"fichier")+" dépasse 6 Mo — photographie les pages ou compresse-le");}
+      }catch(err){skip++;}
+    }
+    if(ok){pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("📎 "+ok+" document(s) ajouté(s)"+(skip?" · "+skip+" ignoré(s)":""));}
+    else if(!skip)toast("Aucun fichier lisible");};
+  var ab=$("#addActe");if(ab)ab.onclick=function(){$("#acteIn").click();};
+  var ai=$("#acteIn");if(ai)ai.onchange=async function(e){var f=(e.target.files||[])[0];e.target.value="";if(!f)return;
+    var lab=window.prompt("Titre de l'acte (ex : 🍼 Acte de naissance 1952, mairie de Nice)","📜 Acte — "+full(P(id)));if(lab===null)return;
+    toast("Conversion de l'acte…");
+    try{var img=await importActe(f);var pp=P(id);pp.actes=pp.actes||[];pp.actes.push({label:(lab||"📜 Acte").slice(0,140),img:img,by:ME||"famille",ts:now()});pp.updatedAt=now();await persist(id);cloudPush(id);openPerson(id,true);toast("📜 Acte ajouté à la fiche");}
+    catch(err){toast("Fichier illisible — prends une photo nette de l'acte");}};}
   var bm=$("#btnMoi");if(bm)bm.onclick=function(){setViewer(id);toast("⭐ L'arbre est maintenant vu de TON point de vue ("+full(P(id))+")");closeOverlay();render();};
   var bb=$("#pBack");if(bb)bb.onclick=function(){if(_pStack.length){var prev=_pStack.pop();if(prev){openPerson(prev,true);return;}}closeOverlay();};
   if(photos.length>1){var box=$("#caroBox");_caro.timer=setInterval(function(){caroGo(1);},3200);box.querySelectorAll("[data-caro]").forEach(function(b){b.onclick=function(){caroGo(+b.dataset.caro);};});}
@@ -755,7 +1055,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   ov.querySelectorAll("[data-copyreq]").forEach(function(b){b.onclick=function(){var pp=P(id);var t=b.dataset.copyreq;var txt=buildActRequest(pp,t);var lieu=(t==="naissance"?(pp.naissance&&pp.naissance.lieu):(pp.deces&&pp.deces.lieu))||"";var ok=function(){toast("📋 Demande copiée — colle-la dans un email à la mairie"+(lieu?" de "+lieu:""));};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,function(){window.prompt("Copie ce texte :",txt);});else window.prompt("Copie ce texte :",txt);};});
 }
-function caroGo(d){var box=$("#caroBox");if(!box)return;var sl=box.querySelectorAll(".slide");if(sl.length<2)return;var dots=box.querySelectorAll(".dots i");sl[_caro.i].classList.remove("on");if(dots[_caro.i])dots[_caro.i].classList.remove("on");_caro.i=(_caro.i+d+sl.length)%sl.length;sl[_caro.i].classList.add("on");if(dots[_caro.i])dots[_caro.i].classList.add("on");}
+function caroGo(d){var box=$("#caroBox");if(!box)return;var sl=box.querySelectorAll(".slide");if(sl.length<2)return;var dots=box.querySelectorAll(".dots i");sl[_caro.i].classList.remove("on");if(dots[_caro.i])dots[_caro.i].classList.remove("on");_caro.i=(_caro.i+d+sl.length)%sl.length;sl[_caro.i].classList.add("on");if(dots[_caro.i])dots[_caro.i].classList.add("on");var cc=box.querySelector("#caroCnt");if(cc){var v=(_caro.i+1)+" / "+sl.length;if(cc.textContent!==v)cc.textContent=v;}}
 
 /* ---------- add / edit + photo import (any format) ---------- */
 var _draftPhotos=[];
@@ -786,26 +1086,130 @@ function openEdit(id,link){_editLink=null;var p;
   function rt(){var t=$("#thumbs");t.innerHTML=_draftPhotos.map(function(src,i){return '<div class="t" data-rmph="'+i+'"><img src="'+src+'"><b>×</b></div>';}).join("")||'<span class="mut" style="font-size:12px">Aucune photo</span>';}rt();
   sheet.addEventListener("click",function(e){var n=e.target.closest("[data-rmph]");if(n){_draftPhotos.splice(+n.dataset.rmph,1);rt();}});
   $("#addPhoto").onclick=function(){$("#photoIn").click();};
-  $("#photoIn").onchange=async function(e){var files=Array.prototype.slice.call(e.target.files||[]);toast("Conversion des photos…");for(var i=0;i<files.length;i++){if(_draftPhotos.length>=10){toast("Maximum 10 photos");break;}try{var d=await importPhoto(files[i]);_draftPhotos.push(d);rt();}catch(err){toast("Photo ignorée ("+(files[i].name||"?")+")");}}e.target.value="";};
+  $("#photoIn").onchange=async function(e){var files=Array.prototype.slice.call(e.target.files||[]);toast("Conversion des photos…");for(var i=0;i<files.length;i++){try{var d=await importPhoto(files[i]);_draftPhotos.push(d);rt();}catch(err){toast("Photo ignorée ("+(files[i].name||"?")+")");}}e.target.value="";};
   $("#saveP").onclick=async function(){var g=function(f){var n=sheet.querySelector('[data-f="'+f+'"]');return n?(n.type==="checkbox"?n.checked:n.value.trim()):"";};var np=id?P(id):{id:uid(),comments:[]};np.prenom=g("prenom");np.nom=g("nom");np.sexe=g("sexe");np.vivant=g("vivant");np.naissance={date:g("ndate"),lieu:g("nlieu")};np.deces={date:g("ddate"),lieu:g("dlieu")};np.pere=g("pere")||null;np.mere=g("mere")||null;var conj=g("conj");var conjNew=g("conjNew");np.conjoints=conj?[conj]:[];np.notes=g("notes");np.photos=_draftPhotos.slice();np.sources=np.sources||[];np.comments=np.comments||[];np.updatedAt=now();np.updatedBy=ME||"famille";if(!np.prenom&&!np.nom){toast("Mets au moins un prénom ou un nom");return;}DB.persons[np.id]=np;if(conj&&P(conj)){var c=P(conj);c.conjoints=c.conjoints||[];if(c.conjoints.indexOf(np.id)<0){c.conjoints.push(np.id);c.updatedAt=now();cloudPush(conj);}}else if(!conj&&conjNew){var toks=conjNew.split(/\s+/);var sp={id:uid(),prenom:toks[0]||conjNew,nom:toks.slice(1).join(" "),sexe:np.sexe==="M"?"F":(np.sexe==="F"?"M":""),conjoints:[np.id],photos:[],sources:[],comments:[],notes:"Conjoint(e) de "+full(np)+" (ajouté(e) à la main).",updatedAt:now(),updatedBy:ME||"famille"};DB.persons[sp.id]=sp;np.conjoints=[sp.id];cloudPush(sp.id);}if(_editLink&&_editLink.childId&&P(_editLink.childId)){var ch2=P(_editLink.childId);ch2[_editLink.parentType]=np.id;ch2.updatedAt=now();cloudPush(_editLink.childId);}await persist(np.id);ROOT=ROOT||np.id;closeOverlay();render();toast("💾 Enregistré");};
   var del=$("#delP");if(del)del.onclick=async function(){if(!confirm("Supprimer "+full(P(id))+" ?"))return;for(var k in DB.persons){var c=DB.persons[k],ch=false;if(c.pere===id){c.pere=null;ch=true;}if(c.mere===id){c.mere=null;ch=true;}var ci=(c.conjoints||[]).indexOf(id);if(ci>=0){c.conjoints.splice(ci,1);ch=true;}if(ch){c.updatedAt=now();cloudPush(k);}}delete DB.persons[id];await saveLocal();var t=await anonAuth();if(t){try{fetch(cloudBase()+"/persons/"+id+".json?auth="+t,{method:"DELETE"});}catch(e){}}closeOverlay();render();toast("Supprimé");};
 }
+var _pdfjs=null;
+async function pdfPreview(dataUrl){
+  try{
+    if(!_pdfjs){_pdfjs=await import("./vendor/pdf.min.mjs");_pdfjs.GlobalWorkerOptions.workerSrc="./vendor/pdf.worker.min.mjs";}
+    var bin=atob(dataUrl.split(",")[1]||"");var arr=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    var doc=await _pdfjs.getDocument({data:arr,isEvalSupported:false}).promise;
+    var pg=await doc.getPage(1);var vp=pg.getViewport({scale:1});var s=1600/Math.max(vp.width,vp.height);vp=pg.getViewport({scale:s});
+    var cv=document.createElement("canvas");cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);
+    await pg.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+    var out=cv.toDataURL("image/jpeg",0.88);try{doc.destroy();}catch(e){}
+    return out;
+  }catch(e){return null;}
+}
+function importActe(file){return new Promise(function(res,rej){
+  function fromImg(){return new Promise(function(rs,rj){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){rs(im);};im.onerror=rj;im.src=r.result;};r.onerror=rj;r.readAsDataURL(file);});}
+  var get=("createImageBitmap"in window)?createImageBitmap(file,{imageOrientation:"from-image"}).catch(fromImg):fromImg();
+  get.then(function(src){var w=src.width||src.naturalWidth,h=src.height||src.naturalHeight;var MAX=2600;var s=Math.min(1,MAX/Math.max(w,h));var cv=document.createElement("canvas");cv.width=Math.round(w*s);cv.height=Math.round(h*s);cv.getContext("2d").drawImage(src,0,0,cv.width,cv.height);res(cv.toDataURL("image/jpeg",0.9));}).catch(rej);
+});}
 function importPhoto(file){return new Promise(function(res,rej){
-  var MAX=1400;
+  var MAX=2200;
   function fromBitmap(){return createImageBitmap(file,{imageOrientation:"from-image"}).then(function(bm){return draw(bm,bm.width,bm.height);});}
   function fromImg(){return new Promise(function(rs,rj){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){rs(draw(im,im.naturalWidth,im.naturalHeight));};im.onerror=rj;im.src=r.result;};r.onerror=rj;r.readAsDataURL(file);});}
-  function draw(src,w,h){var s=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*s),chh=Math.round(h*s);var cv=document.createElement("canvas");cv.width=cw;cv.height=chh;var ctx=cv.getContext("2d");ctx.fillStyle="#0c1220";ctx.fillRect(0,0,cw,chh);ctx.drawImage(src,0,0,cw,chh);return cv.toDataURL("image/jpeg",0.82);}
+  function draw(src,w,h){var s=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*s),chh=Math.round(h*s);var cv=document.createElement("canvas");cv.width=cw;cv.height=chh;var ctx=cv.getContext("2d");ctx.fillStyle="#0c1220";ctx.fillRect(0,0,cw,chh);ctx.drawImage(src,0,0,cw,chh);return cv.toDataURL("image/jpeg",0.9);}
   (("createImageBitmap"in window)?fromBitmap().catch(fromImg):fromImg()).then(res).catch(function(){fromImg().then(res).catch(rej);});
 });}
 
 /* ---------- overlay ---------- */
 function _removeOv(){clearInterval(_caro.timer);var ov=$(".ov");if(ov)ov.remove();}
-function showOverlay(html){_removeOv();var ov=el('<div class="ov">'+html+'</div>');document.body.appendChild(ov);ov.addEventListener("click",function(e){if(e.target===ov)closeOverlay();});ov.querySelectorAll("[data-close]").forEach(function(b){b.onclick=closeOverlay;});ov.addEventListener("click",function(e){var a=e.target.closest("[data-add]");if(a){var pr=a.dataset.add.split(":"),rel=pr[0],pid=pr[1];if(rel==="conj")openEdit(null,{conj:pid});else if(rel==="child")openEdit(null,{childOf:pid});else openEdit(null,{parentType:rel,childId:pid});return;}var o=e.target.closest("[data-open]");if(o){openPerson(o.dataset.open);return;}var ed=e.target.closest("[data-edit]");if(ed){openEdit(ed.dataset.edit);return;}var s=e.target.closest("[data-searchp]");if(s){openSearch(s.dataset.searchp);}});}
+function showOverlay(html){_removeOv();var ov=el('<div class="ov">'+html+'</div>');document.body.appendChild(ov);ov.addEventListener("click",function(e){if(e.target===ov)closeOverlay();});ov.querySelectorAll("[data-close]").forEach(function(b){b.onclick=closeOverlay;});ov.addEventListener("click",function(e){var a=e.target.closest("[data-add]");if(a){var pr=a.dataset.add.split(":"),rel=pr[0],pid=pr[1];if(rel==="conj")openEdit(null,{conj:pid});else if(rel==="child")openEdit(null,{childOf:pid});else openEdit(null,{parentType:rel,childId:pid});return;}var o=e.target.closest("[data-open]");if(o){openPerson(o.dataset.open);return;}var ed=e.target.closest("[data-edit]");if(ed){openEdit(ed.dataset.edit);return;}var bl=e.target.closest("[data-bl]");if(bl){openBlason(bl.dataset.bl);return;}var s=e.target.closest("[data-searchp]");if(s){openSearch(s.dataset.searchp);}});}
 function closeOverlay(){_removeOv();_pStack=[];_curPerson=null;}
 
 /* ---------- export/import + name + code ---------- */
 function doExport(){var blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="arbre-familial-"+new Date().toISOString().slice(0,10)+".json";a.click();toast("⬇️ Exporté");}
-function doImport(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=async function(){try{var d=JSON.parse(r.result);if(!d.persons)throw 0;var add=0;for(var id in d.persons){var rp=d.persons[id],lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;add++;}}await persist();render();toast("⬆️ Importé ("+add+" fiches)");}catch(err){toast("Fichier invalide");}};r.readAsText(f);e.target.value="";}
+/* ---- Import GEDCOM (Kevin « Go » 2026-08-06) : Geneanet / FamilySearch / Filae →
+   « Exporter GEDCOM » → on fusionne ici. Règle : JAMAIS écraser une donnée existante,
+   on COMPLÈTE les fiches connues (match nom + prénom + année ±1) et on CRÉE les autres. */
+var _GED_MONTHS={JAN:"01",FEB:"02",MAR:"03",APR:"04",MAY:"05",JUN:"06",JUL:"07",AUG:"08",SEP:"09",OCT:"10",NOV:"11",DEC:"12"};
+function _gedDate(s){s=String(s||"").replace(/^(ABT|EST|CAL|BEF|AFT|FROM|TO)\.?\s+/i,"").trim();
+  var m=s.match(/^(\d{1,2})\s+([A-Z]{3})\s+(\d{3,4})$/i);if(m&&_GED_MONTHS[m[2].toUpperCase()])return ("0"+m[1]).slice(-2)+"."+_GED_MONTHS[m[2].toUpperCase()]+"."+m[3];
+  m=s.match(/^([A-Z]{3})\s+(\d{3,4})$/i);if(m&&_GED_MONTHS[m[1].toUpperCase()])return _GED_MONTHS[m[1].toUpperCase()]+"."+m[2];
+  m=s.match(/(\d{3,4})/);return m?m[1]:"";}
+function _gedNorm(s){return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Z ]/g," ").replace(/\s+/g," ").trim();}
+function _gedYr(s){var m=String(s||"").match(/(1[5-9]\d\d|20\d\d)/);return m?+m[1]:0;}
+function parseGedcom(text){
+  var lines=String(text).replace(/^﻿/,"").split(/\r?\n/),people={},fams={},cur=null,curType="",ctx=[];
+  for(var i=0;i<lines.length;i++){var ln=lines[i];if(!ln.trim())continue;
+    var m=ln.match(/^\s*(\d+)\s+(@[^@]+@\s+)?(\S+)(?:\s+(.*))?$/);if(!m)continue;
+    var lvl=+m[1],xref=(m[2]||"").trim(),tag=m[3].toUpperCase(),val=(m[4]||"").trim();
+    if(lvl===0){cur=null;curType="";ctx=[];
+      if(xref&&tag==="INDI"){cur=people[xref]={prenom:"",nom:"",sexe:"",nd:"",nl:"",dd:"",dl:"",famc:"",fams:[]};curType="I";}
+      else if(xref&&tag==="FAM"){cur=fams[xref]={husb:"",wife:"",chil:[],mdate:"",mlieu:""};curType="F";}
+      continue;}
+    if(!cur)continue;ctx[lvl]=tag;ctx.length=lvl+1;
+    if(curType==="I"){
+      if(lvl===1&&tag==="NAME"&&!cur.prenom&&!cur.nom){var nm=val.match(/^([^/]*)\/([^/]*)\/?/);if(nm){cur.prenom=nm[1].trim();cur.nom=nm[2].trim();}else cur.prenom=val;}
+      else if(lvl===2&&tag==="GIVN"&&ctx[1]==="NAME")cur.prenom=val||cur.prenom;
+      else if(lvl===2&&tag==="SURN"&&ctx[1]==="NAME")cur.nom=val||cur.nom;
+      else if(lvl===1&&tag==="SEX")cur.sexe=(val==="M"||val==="F")?val:"";
+      else if(lvl===2&&tag==="DATE"&&ctx[1]==="BIRT")cur.nd=_gedDate(val);
+      else if(lvl===2&&tag==="PLAC"&&ctx[1]==="BIRT")cur.nl=val.split(",")[0].trim();
+      else if(lvl===2&&tag==="DATE"&&ctx[1]==="DEAT")cur.dd=_gedDate(val);
+      else if(lvl===2&&tag==="PLAC"&&ctx[1]==="DEAT")cur.dl=val.split(",")[0].trim();
+      else if(lvl===1&&tag==="FAMC")cur.famc=val;
+      else if(lvl===1&&tag==="FAMS")cur.fams.push(val);
+    }else{
+      if(lvl===1&&tag==="HUSB")cur.husb=val;
+      else if(lvl===1&&tag==="WIFE")cur.wife=val;
+      else if(lvl===1&&tag==="CHIL")cur.chil.push(val);
+      else if(lvl===2&&tag==="DATE"&&ctx[1]==="MARR")cur.mdate=_gedDate(val);
+      else if(lvl===2&&tag==="PLAC"&&ctx[1]==="MARR")cur.mlieu=val.split(",")[0].trim();
+    }}
+  return {people:people,fams:fams};
+}
+async function gedImport(text){
+  var g=parseGedcom(text),refs=Object.keys(g.people);
+  if(!refs.length){toast("GEDCOM vide ou illisible");return;}
+  /* index des fiches existantes par nom normalisé */
+  var byNom={};Object.keys(DB.persons).forEach(function(id){var p=P(id);if(!p||!p.nom)return;var k=_gedNorm(p.nom);(byNom[k]=byNom[k]||[]).push(id);});
+  function matchExisting(gp){var cand=byNom[_gedNorm(gp.nom)]||[];var gf=_gedNorm(gp.prenom).split(" ")[0];var gy=_gedYr(gp.nd);
+    for(var i=0;i<cand.length;i++){var p=P(cand[i]);var pf=_gedNorm(p.prenom).split(" ")[0];if(!gf||!pf||gf!==pf)continue;
+      var py=_gedYr(p.naissance&&p.naissance.date);
+      if(gy&&py){if(Math.abs(gy-py)<=1)return cand[i];}
+      else return cand[i];/* même nom + même 1er prénom, pas d'année pour trancher */}
+    return null;}
+  var map={},nNew=0,nEnr=0,today=new Date().toLocaleDateString("fr-FR");
+  refs.forEach(function(ref){var gp=g.people[ref];if(!gp.nom&&!gp.prenom)return;var ex=matchExisting(gp);
+    if(ex)map[ref]=ex;else map[ref]="__NEW__";});
+  var newCount=refs.filter(function(r){return map[r]==="__NEW__";}).length;
+  var enrCount=refs.filter(function(r){return map[r]&&map[r]!=="__NEW__";}).length;
+  if(!confirm("📥 GEDCOM lu : "+refs.length+" personne(s), "+Object.keys(g.fams).length+" famille(s).\n\n→ "+newCount+" NOUVELLE(S) fiche(s)\n→ "+enrCount+" fiche(s) existante(s) à compléter (jamais écrasées)\n\nImporter ?"))return;
+  /* création des nouvelles fiches */
+  refs.forEach(function(ref){var gp=g.people[ref];if(map[ref]!=="__NEW__")return;
+    var id="ged_"+uid();map[ref]=id;nNew++;
+    DB.persons[id]={id:id,prenom:gp.prenom,nom:gp.nom,sexe:gp.sexe,vivant:!gp.dd&&_gedYr(gp.nd)>1926,
+      naissance:{date:gp.nd,lieu:gp.nl},deces:{date:gp.dd,lieu:gp.dl},conjoints:[],photos:[],sources:[],comments:[],
+      notes:"⬆️ Importé du GEDCOM le "+today+".",updatedAt:now(),updatedBy:ME||"gedcom"};});
+  /* enrichissement des fiches existantes (compléter, jamais écraser) */
+  refs.forEach(function(ref){var gp=g.people[ref],id=map[ref];if(!id||id==="__NEW__")return;var p=P(id);if(!p)return;var chg=false;
+    p.naissance=p.naissance||{};p.deces=p.deces||{};
+    if(gp.nd&&!p.naissance.date){p.naissance.date=gp.nd;chg=true;}
+    if(gp.nl&&!p.naissance.lieu){p.naissance.lieu=gp.nl;chg=true;}
+    if(gp.dd&&!p.deces.date){p.deces.date=gp.dd;chg=true;}
+    if(gp.dl&&!p.deces.lieu){p.deces.lieu=gp.dl;chg=true;}
+    if(gp.sexe&&!p.sexe){p.sexe=gp.sexe;chg=true;}
+    if(chg){p.notes=(p.notes?p.notes+" ":"")+"⬆️ Complété par GEDCOM ("+today+").";p.updatedAt=now();nEnr++;}});
+  /* liens familiaux : parents + conjoints (seulement si absents) */
+  Object.keys(g.fams).forEach(function(fr){var f=g.fams[fr];var h=f.husb&&map[f.husb],w=f.wife&&map[f.wife];
+    if(h&&w&&P(h)&&P(w)){var ph=P(h),pw=P(w);ph.conjoints=ph.conjoints||[];pw.conjoints=pw.conjoints||[];
+      if(ph.conjoints.indexOf(w)<0){ph.conjoints.push(w);ph.updatedAt=now();}
+      if(pw.conjoints.indexOf(h)<0){pw.conjoints.push(h);pw.updatedAt=now();}
+      if(f.mdate&&String(ph.notes||"").indexOf("💍")<0){ph.notes=(ph.notes?ph.notes+" ":"")+"💍 Mariage (GEDCOM) : "+f.mdate+(f.mlieu?" à "+f.mlieu:"")+".";}}
+    f.chil.forEach(function(cr){var c=cr&&map[cr];if(!c||!P(c))return;var pc=P(c);
+      if(h&&P(h)&&!pc.pere){pc.pere=h;pc.updatedAt=now();}
+      if(w&&P(w)&&!pc.mere){pc.mere=w;pc.updatedAt=now();}});});
+  await persist();ROOT=ROOT||Object.keys(DB.persons)[0];render();
+  toast("✅ GEDCOM importé : "+nNew+" nouvelle(s), "+nEnr+" complétée(s)");
+}
+function doImport(e){var f=e.target.files[0];if(!f)return;var isGed=/\.(ged|gedcom)$/i.test(f.name||"");var r=new FileReader();r.onload=async function(){var txt=r.result;
+  if(isGed||/^\s*0\s+HEAD/m.test(String(txt).slice(0,200))){try{await gedImport(txt);}catch(err){toast("GEDCOM illisible : "+String(err&&err.message||err).slice(0,60));}return;}
+  try{var d=JSON.parse(txt);if(!d.persons)throw 0;var add=0;for(var id in d.persons){var rp=d.persons[id],lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;add++;}}await persist();render();toast("⬆️ Importé ("+add+" fiches)");}catch(err){toast("Fichier invalide (JSON ou GEDCOM attendu)");}};r.readAsText(f);e.target.value="";}
 function setMe(){var n=prompt("Ton prénom (apparaîtra sur tes ajouts/commentaires) :",ME||"");if(n!=null){ME=n.trim();localStorage.setItem("arbre_me",ME);if(VIEW==="tools")render();}}
 async function changeCode(){var c=prompt("Nouveau code famille :");if(!c)return;var c2=prompt("Confirme :");if(c!==c2){toast("Codes différents");return;}CODEHASH=await sha256("arbre::"+c.trim());localStorage.setItem("arbre_codehash",CODEHASH);await cloudPushAll();toast("🔑 Code changé — repartage-le");}
 
@@ -828,29 +1232,43 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=25;
+var SEED_VERSION=43;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
-  add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{lieu:""},deces:{},conjoints:["seed_mt_maiffret"],notes:"Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
+  add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{date:"1914"},deces:{},conjoints:["seed_mt_maiffret"],notes:"🛣 Monaco honore le nom : une ALLÉE LAZARE SAUVAIGO existe en Principauté, et une Fondation « Christiane et Lazare Sauvaigo » a été autorisée par Ordonnance Souveraine (Journal de Monaco n°6864, 14.04.1989) — lien éventuel avec la famille à explorer. Grand-père maternel de Kevin, né en 1914 (année donnée par Kevin, 2026-08-04). ⚠️ Le SAUVAIGO INSEE « Jean-Marius-Victor » né en 1912 n'est donc PAS lui — piste écartée. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité). 🔎 PISTE (recherche 6.08.2026, à PROUVER) : parents candidats de Victor = Joseph Louis Honoré SAUVAIGO (1889-1965) × Joséphine Jeanne Hortense BORRIAZZI (1890-1986), mariés le 10.08.1911 à Nice — dates cohérentes, non prouvé. L'acte de mariage Victor × Marie-Thérèse (3.05.1939) ou l'acte de naissance de Victor (1914, Nice AD06 ou Monaco archives.mairie.mc) nommeront ses parents. Lignée niçoise ancienne repérée (arbre Geneanet marieclaire1) : Honoré SAUVAIGO (1787-1872, Nice) → Joseph (1804-1870) → … Argument fort : DEUX alliances Sauvaigo×Maiffret (Jules×Victorine 1883, Victor×Marie-Thérèse 1939) = même lignée probable.",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
   add({id:"seed_mt_maiffret",prenom:"Marie-Thérèse",nom:"MAIFFRET",sexe:"F",pere:"seed_marius1890",naissance:{date:"23.10.1914",lieu:"Nice"},deces:{date:"19.02.2000",lieu:"Monaco"},conjoints:["seed_victor_sauvaigo"],notes:"✅ CONFIRMÉE au fichier INSEE (recherche auto 2026-08-03) : née le 23.10.1914 à NICE, décédée le 19.02.2000 à MONACO (85 ans). ⚠️ Le document familial disait 23.10.1911 — même jour et mois, l'acte officiel dit 1914. Épouse de Victor Sauvaigo. MAIFFRET = nom provençal d'origine germanique (Mathfrid : force + paix), rameau Meiffren/Meiffret. 📜 DOCUMENT FAMILIAL : fille de Marius MAIFFRET (1890–1968), mariée le 3.05.1939 à Victor SAUVAIGO ; enfants : Marie-Jo (1943), Patrick (1945, décédé bébé), Marie-Noël (1950), Marie-Brigitte (1954) — le manuscrit note aussi des grossesses perdues et une « Hélène 20/01/49 » incertaine. Notable niçois du nom, contemporain de la famille : Charles MAIFFRET (1877–1958), industriel confiseur, conseiller du canton de Nice-4 (1919–1922) — lien à explorer.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/50UZUgMMtNwH"},SRC.matchid,SRC.gMaiffret,SRC.beaulieu1]});
-  add({id:"seed_marienoel",prenom:"Marie-Noël",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{date:"25.09.1950",lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",conjoints:["seed_gerard"],notes:"Mère de Kevin, née à Monaco. Épouse de Gérard DESARZENS."});
-  add({id:"seed_sabrina",conjoints:["seed_stephan_bruno"],prenom:"Sabrina",nom:"DESARZENS",sexe:"F",vivant:true,naissance:{date:"22.03.1971",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Sœur de Kevin. Née le 22 mars 1971 à Monaco."});
-  add({id:"seed_ronan",prenom:"Ronan",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_kevin",notes:"Fils de Kevin. Date/lieu à compléter."});
+  add({id:"seed_marienoel",prenom:"Marie-Noëlle",nom:"SAUVAIGO",sexe:"F",vivant:true,naissance:{date:"25.09.1950",lieu:"Monaco"},pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",conjoints:["seed_gerard"],notes:"Marie-Noëlle Monique Renée SAUVAIGO (nom complet — acte notarié de Monaco, 2025). Mère de Kevin et de Sabrina. Ex-épouse de Gérard DESARZENS (divorcés le 28 novembre 1996, Tribunal de Première Instance de Monaco). Née à Monaco."});
+  add({id:"seed_sabrina",conjoints:["seed_stephan_bruno"],prenom:"Sabrina",nom:"DESARZENS",sexe:"F",vivant:true,naissance:{date:"22.03.1971",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Sabrina Donata Jacqueline DESARZENS (nom complet — acte notarié de Monaco, 2025). Sœur aînée de Kevin. Née le 22 mars 1971 à Monaco, de nationalité monégasque. Chef de division chargé des relations et de la qualité de vie. Domiciliée 20 Quai Jean-Charles Rey « Le Magellan », Monaco. Divorcée (non remariée) de Stéphan Jean-Pierre Lilian BRUNO ; mère de Théo."});
+  add({id:"seed_ronan",prenom:"Ronan",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_kevin",mere:"seed_pascale_vervloet",notes:"Fils de Kevin et de Pascale VERVLOET (précisé par Kevin le 4.08.2026). Date/lieu à compléter."});
+  add({id:"seed_pascale_vervloet",prenom:"Pascale",nom:"VERVLOET",sexe:"F",vivant:true,conjoints:["seed_kevin"],notes:"Pascale VERVLOET — maman de Ronan, séparée de Kevin (précisé par Kevin le 4.08.2026). VERVLOET = nom flamand (Belgique) — piste d\'origine à explorer. Dates à compléter."});
+  add({id:"seed_laurence",prenom:"Laurence",nom:"SAINT-POLIT",sexe:"F",vivant:true,conjoints:["seed_kevin"],notes:"Compagne actuelle de Kevin (en couple, précisé par Kevin le 5.08.2026). Dates et famille à compléter."});
   add({id:"seed_theo",prenom:"Théo",nom:"BRUNO",sexe:"M",vivant:true,pere:"seed_stephan_bruno",mere:"seed_sabrina",notes:"Théo BRUNO — fils de Stephan BRUNO et de Sabrina DESARZENS, neveu de Kevin (confirmé par Kevin le 4.08.2026). Date de naissance à compléter."});
-  add({id:"seed_stephan_bruno",prenom:"Stephan",nom:"BRUNO",sexe:"M",vivant:true,conjoints:["seed_sabrina"],notes:"Stephan BRUNO — père de Théo. DIVORCÉ de Sabrina DESARZENS (précisé par Kevin le 4.08.2026). Dates et lieu de naissance à compléter. 🎯 ROBOT : 24 actes BRUNO à Monaco (1901-1912) sauvegardés en images (familles BRUNO monégasques anciennes) — ascendance de Stephan à explorer quand ses dates seront connues."});
+  add({id:"seed_stephan_bruno",prenom:"Stéphan",nom:"BRUNO",sexe:"M",vivant:true,conjoints:["seed_sabrina"],notes:"Stéphan Jean-Pierre Lilian BRUNO (nom complet — acte notarié de Monaco, 2025) — père de Théo. DIVORCÉ de Sabrina DESARZENS. Dates et lieu de naissance à compléter. 🎯 ROBOT : 24 actes BRUNO à Monaco (1901-1912) sauvegardés en images (familles BRUNO monégasques anciennes) — ascendance de Stephan à explorer quand ses dates seront connues."});
   add({id:"seed_marie_brigitte",prenom:"Marie-Brigitte",nom:"SAUVAIGO",sexe:"F",vivant:true,conjoints:["seed_christian"],pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"31.12.1954"},notes:"Sœur de Marie-Noël (tante maternelle de Kevin). Épouse de Christian. 📜 DOCUMENT (stylo) : née le 31.12.1954 (« Brigou »)."});
-  add({id:"seed_christian",prenom:"Christian",nom:"",sexe:"M",conjoints:["seed_marie_brigitte"],notes:"Mari de Marie-Brigitte. Nom/date à compléter."});
-  add({id:"seed_cecile",prenom:"Cécile",nom:"",sexe:"F",vivant:true,pere:"seed_christian",mere:"seed_marie_brigitte",notes:"Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter."});
+  add({id:"seed_christian",prenom:"Christian",nom:"CRESTO",sexe:"M",conjoints:["seed_marie_brigitte"],notes:"Christian CRESTO — mari de Marie-Brigitte (nom précisé par Kevin le 4.08.2026). CRESTO = nom bien implanté dans les Alpes-Maritimes. Date à compléter."});
+  add({id:"seed_cecile",prenom:"Cécile",nom:"CRESTO",sexe:"F",vivant:true,conjoints:["seed_henry_pizzio"],pere:"seed_christian",mere:"seed_marie_brigitte",notes:"Nom CRESTO = celui de son père Christian. Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter."});
+  add({id:"seed_henry_pizzio",prenom:"Henry",nom:"PIZZIO",sexe:"M",vivant:true,conjoints:["seed_cecile"],notes:"Henry PIZZIO — mari de Cécile, papa de Paloma (précisé par Kevin le 4.08.2026). PIZZIO = nom du pays niçois. Dates à compléter."});
+  add({id:"seed_paloma_pizzio",prenom:"Paloma",nom:"PIZZIO",sexe:"F",vivant:true,pere:"seed_henry_pizzio",mere:"seed_cecile",notes:"Paloma PIZZIO — fille d'Henry et de Cécile (précisé par Kevin le 4.08.2026). Date à compléter."});
   add({id:"seed_marie_joe",prenom:"Marie-Joe",nom:"SAUVAIGO",sexe:"F",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"11.11.1943",lieu:"Monaco"},deces:{date:"26.11.2021",lieu:"République tchèque"},notes:"✅ TRÈS PROBABLE (fichier INSEE) : « Marie José SAUVAIGO », née le 11.11.1943 à MONACO — la SEULE Sauvaigo née à Monaco de tout le fichier des décès — † 26.11.2021 en République tchèque (78 ans). Sœur de Marie-Noël (tante maternelle de Kevin). À confirmer par la famille.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/-Gi6moX8QES8"},SRC.matchid,SRC.gSauvaigo,SRC.monacoTree]});
-  add({id:"seed_kevin",prenom:"Kevin",nom:"DESARZENS",sexe:"M",vivant:true,naissance:{date:"5.02.1979",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",notes:"Né à Monaco. « de Sarzance » est la forme phonétique du nom officiel DESARZENS."});
+  add({id:"seed_kevin",prenom:"Kevin",nom:"DESARZENS",sexe:"M",vivant:true,naissance:{date:"5.02.1979",lieu:"Monaco"},pere:"seed_gerard",mere:"seed_marienoel",conjoints:["seed_pascale_vervloet","seed_laurence"],notes:"Kevin Yannick Patrik DESARZENS (nom complet — acte notarié de Monaco, 2025). Né le 5 février 1979 à Monaco, de nationalité monégasque, employé de la Société des Bains de Mer (SBM). Domicilié 1 promenade Honoré II « Jardins d'Apolline », Monaco. Fils de Gérard DESARZENS et de Marie-Noëlle SAUVAIGO. Père de Ronan (avec Pascale VERVLOET, dont il est séparé). En couple avec Laurence SAINT-POLIT (2026). « de Sarzance » est la forme phonétique du nom officiel DESARZENS."});
   /* — Branche PATERNELLE (DESARZENS — origine suisse/Vaud) — */
-  add({id:"seed_guy",prenom:"Guy",nom:"DESARZENS",sexe:"M",deces:{},notes:"Grand-père paternel de Kevin (père de Gérard et d'Émile) — prénom donné par Kevin (2026-08-03), « il me semble » : à confirmer sur l'acte de naissance de Gérard (1944, Salon-de-Provence, Archives 13). 🔎 Recherche INSEE auto 2026-08-03 : AUCUN Guy DESARZENS du Sud dans le fichier des décès (1970→auj.) → Guy est probablement décédé AVANT 1970, ou à Monaco/à l'étranger. Piste suisse : SARZENS = hameau de la commune de Lucens (Vaud, district Broye-Vully), cité dès l'an 996, ~82 habitants — berceau du nom. Porteurs vaudois célèbres : Victor Desarzens (1908–1986, chef d'orchestre né à Château-d'Œx), Corinne et Fanny Desarzens (écrivaines). Voir aussi Claude Alain DE SARZENS (1941 Marseille, †2022 Suisse) — parent possible.",sources:[SRC.ad13,SRC.gDesarzens,SRC.davel,SRC.sarzens]});
-  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",pere:"seed_guy",conjoints:["seed_marienoel"],naissance:{date:"avril 1944",lieu:"Salon-de-Provence"},deces:{},notes:"Père de Kevin, époux de Marie-Noël SAUVAIGO. Né en avril 1944 à Salon-de-Provence (Bouches-du-Rhône). Fils de Guy DESARZENS (à confirmer). Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). L'acte de naissance 1944 à Salon (Archives 13) confirmera le prénom de Guy + donnera la grand-mère paternelle.",sources:[SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
-  add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",pere:"seed_guy",notes:"Frère de Gérard (oncle paternel de Kevin). Fils de Guy DESARZENS (à confirmer).",sources:[SRC.gDesarzens]});
-  add({id:"seed_loic",prenom:"Loïc",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",notes:"Fils d'Émile (cousin de Kevin). Date à compléter."});
-  add({id:"seed_yann",prenom:"Yann",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",notes:"Fils d'Émile (cousin de Kevin). Date à compléter."});
+  add({id:"seed_guy",prenom:"Guy Édouard",nom:"DESARZENS",sexe:"M",conjoints:["seed_renee_dejean","seed_yvette_epouse"],naissance:{date:"7.03.1918",lieu:"Poissy"},deces:{date:"14.11.2005",lieu:"Nemours"},notes:"Grand-père paternel de Kevin (père de Gérard et d'Émile avec sa 1ʳᵉ épouse ; + de Patrice, Hervé et Sylvie avec sa 2ᵉ épouse Yvette). 👵 1ʳᵉ ÉPOUSE = Renée Gilberte DEJEAN (mère de Gérard et d'Émile), NOMMÉE sur l'acte de décès de Gérard (Monaco, copie intégrale N°125/2025, 6.08.2026). ✅ LIEU DU DÉCÈS CONFIRMÉ par Kevin (2026-08-06) : NEMOURS (Seine-et-Marne) — en accord avec le fichier INSEE (commune 77333, acte n°256/2005). Cette double concordance (fichier + mémoire familiale) renforce fortement l'identification de ce Guy Édouard. 🇨🇭 NAISSANCE à vérifier aussi : l'INSEE dit Poissy 7.03.1918, mais Kevin (2026-08-06) : « Guy peut-être né en Suisse, à voir ». 🔎 PISTE ABLIS (2026-08-06) : Kevin a ouvert aux Archives des Yvelines le registre « 4E 5614 — ABLIS, Naissances/Mariages/Décès 1915-1926 » (couvre 1918) → Guy est peut-être né à ABLIS et non à Poissy (à confirmer sur l'acte du 7 mars 1918). Le robot atteint la fiche du registre mais PAS la visionneuse (image bloquée aux serveurs) → Kevin feuillette sur son iPhone jusqu'au 7.03.1918 et envoie la capture. arks fournis : 1ec57a22… et 1ed6ca67… (moteur arko AD78). 🟡 INTÉGRÉ à la demande de Kevin (2026-08-06, « l'acte de décès a l'air bon, je confirmerai ») : fichier INSEE = « GUY ÉDOUARD DESARZENS », né le 7.03.1918 à POISSY (Yvelines), † 14.11.2005 à NEMOURS (Seine-et-Marne) — ACTE DE DÉCÈS n°256/2005, commune INSEE 77333 (Nemours). Vérifié aussi dans le fichier complet : c'est le SEUL Guy DESARZENS plausible (l'autre, « Guy Henri » né 1931 † 1997 à l'étranger, est écarté). 🎯 PISTE FAMILLE : « Christiane Angèle DESARZENS », née 19.07.1937, † 15.09.2006, commune 77118 (Seine-et-Marne, tout près de Nemours — acte n°56) : possible parente de Guy (épouse ? sœur ?) — à creuser. 📜 PROCHAINES PREUVES : (1) acte de NAISSANCE n° à trouver, Poissy 1918 (>100 ans = librement consultable, Archives des Yvelines AD78) → nommera SES PARENTS + la mention en marge donnera son MARIAGE (date + lieu) ; (2) copie intégrale de l'acte de décès n°256/2005 (mairie de Nemours — Kevin, petit-fils, y a droit) → conjoint + parents. ⚠️ Réserve honnête maintenue : Poissy/Nemours = région parisienne, à concilier avec Gérard né 1944 à Salon-de-Provence et l'origine suisse. Piste suisse : SARZENS = hameau de la commune de Lucens (Vaud, district Broye-Vully), cité dès l'an 996, ~82 habitants — berceau du nom. Porteurs vaudois célèbres : Victor Desarzens (1908–1986, chef d'orchestre né à Château-d'Œx), Corinne et Fanny Desarzens (écrivaines). Voir aussi Claude Alain DE SARZENS (1941 Marseille, †2022 Suisse) — parent possible.",sources:[{label:"🎯 PISTE décès INSEE — Guy Édouard Desarzens (1918 Poissy → 2005 Nemours)",url:"https://deces.matchid.io/id/osfHYMnAF3_Y"},{label:"🍼 Registres AD78 — chercher Poissy · naissances · 1918 (acte du 7 mars, ouvrir depuis le téléphone : robot bloqué au 2ᵉ passage)",url:"https://archives.yvelines.fr/rechercher/archives-en-ligne/registres-paroissiaux-et-detat-civil"},SRC.ad13,SRC.gDesarzens,SRC.davel,SRC.sarzens]});
+  add({id:"seed_yvette_epouse",prenom:"Yvette",nom:"",sexe:"F",conjoints:["seed_guy"],notes:"2ᵉ épouse de Guy Édouard DESARZENS (info Kevin, 2026-08-06). Mère de Patrice, Hervé et Sylvie. Nom de jeune fille à retrouver (l'acte de mariage avec Guy le donnera — mention en marge de l'acte de naissance de Guy). ⚠️ Coïncidence relevée au fichier INSEE : une « Yvette Victoire DESARZENS », née 18.03.1927 à La Roche-Vineuse (71), † 10.04.2026 (commune 71137, acte n°36) — MAIS le fichier INSEE enregistre le nom de NAISSANCE : cette Yvette-là est née Desarzens (parente de Guy ? sœur ?). Homonymie troublante, à vérifier — PAS de lien posé sans preuve.",sources:[SRC.matchid]});
+  add({id:"seed_patrice_dsz",prenom:"Patrice",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_guy",mere:"seed_yvette_epouse",notes:"Fils de Guy et d'Yvette (2ᵉ épouse) — demi-frère de Gérard et Émile (info Kevin, 2026-08-06). A une fille : Amélie (précisé par Kevin le 6.08.2026)."});
+  add({id:"seed_herve_dsz",prenom:"Hervé",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_guy",mere:"seed_yvette_epouse",notes:"Fils de Guy et d'Yvette (2ᵉ épouse) — demi-frère de Gérard et Émile (info Kevin, 2026-08-06)."});
+  add({id:"seed_sylvie_dsz",prenom:"Sylvie",nom:"DESARZENS",sexe:"F",vivant:true,pere:"seed_guy",mere:"seed_yvette_epouse",notes:"Fille de Guy et d'Yvette (2ᵉ épouse) — demi-sœur de Gérard et Émile (info Kevin, 2026-08-06). A deux fils : Christopher et Alban (précisé par Kevin le 6.08.2026)."});
+  add({id:"seed_amelie_dsz",prenom:"Amélie",nom:"DESARZENS",sexe:"F",vivant:true,pere:"seed_patrice_dsz",notes:"Fille de Patrice DESARZENS (petite-fille de Guy et d'Yvette). Précisé par Kevin le 6.08.2026. Date de naissance à compléter."});
+  add({id:"seed_christopher",prenom:"Christopher",nom:"",sexe:"M",vivant:true,mere:"seed_sylvie_dsz",notes:"Fils de Sylvie DESARZENS (petit-fils de Guy et d'Yvette). Frère d'Alban. Précisé par Kevin le 6.08.2026. Nom de famille (père) et date à compléter."});
+  add({id:"seed_alban",prenom:"Alban",nom:"",sexe:"M",vivant:true,mere:"seed_sylvie_dsz",notes:"Fils de Sylvie DESARZENS (petit-fils de Guy et d'Yvette). Frère de Christopher. Précisé par Kevin le 6.08.2026. Nom de famille (père) et date à compléter."});
+  add({id:"seed_renee_dejean",prenom:"Renée Gilberte",nom:"DEJEAN",sexe:"F",conjoints:["seed_guy"],deces:{date:""},notes:"👵 GRAND-MÈRE PATERNELLE de Kevin — NOMMÉE sur l'acte de décès de Gérard (Monaco, copie intégrale N°125/2025) : « fils de Guy Édouard DESARZENS et de Renée Gilberte DEJEAN, décédés ». 1ʳᵉ épouse de Guy Édouard DESARZENS, mère de Gérard (1944) et d'Émile. Décédée (date et lieu à retrouver). DEJEAN = patronyme français répandu (Sud-Ouest / Provence). Son mariage avec Guy (~1940-1944, probablement à Salon-de-Provence) et son acte de naissance donneront ses dates et ses propres parents.",sources:[{label:"📜 Acte de décès de Gérard — Mairie de Monaco, copie intégrale N°125/2025",url:"https://mairie.mc/"}]});
+  add({id:"seed_gerard",prenom:"Gérard",nom:"DESARZENS",sexe:"M",pere:"seed_guy",mere:"seed_renee_dejean",conjoints:["seed_marienoel"],naissance:{date:"19.04.1944",lieu:"Salon-de-Provence"},deces:{date:"25.03.2025",lieu:"Monaco"},notes:"Gérard Ange Émile DESARZENS — père de Kevin et de Sabrina, ex-époux de Marie-Noëlle SAUVAIGO (divorcés le 28 novembre 1996, Tribunal de Première Instance de Monaco). Retraité, de nationalité monégasque, domicilié 4 Avenue Hector Otto « Le Garden House », Monaco. 🕯 DÉCÉDÉ le 25 MARS 2025 à MONACO. 📜 ACTE REÇU (Kevin, 6.08.2026) — acte de notoriété après décès dressé par Me Charles-Henri REY, notaire à Monaco, enregistré à Monaco le 12 mai 2025 : il CONFIRME décès 25.03.2025 Monaco · naissance 19 avril 1944 à Salon-de-Provence (Bouches-du-Rhône) · nationalité monégasque · 2 enfants seuls héritiers (Sabrina, née 22.03.1971, et Kevin, né 5.02.1979) issus de son union avec Marie-Noëlle SAUVAIGO. ✅ PARENTS CONFIRMÉS par l'ACTE DE DÉCÈS intégral de Monaco (N°125/2025, fourni par Kevin le 6.08.2026) : « fils de Guy Édouard DESARZENS et de Renée Gilberte DEJEAN, décédés » → PÈRE = Guy Édouard DESARZENS (filiation CONFIRMÉE, fini le « à confirmer »), MÈRE = Renée Gilberte DEJEAN (grand-mère paternelle, désormais dans l'arbre). Décédé à 12h02 au Centre Hospitalier (Princesse Grace) ; acte dressé le 26.03.2025 par S. Robini, off. état civil, sur déclaration de Pascal Blanc. 🇲🇨 Décès à Monaco = enregistré à l'État Civil de Monaco (absent du fichier INSEE français, c'est normal — vérifié le 6.08.2026 sur les 46 décès DESARZENS). Fils de Guy Édouard DESARZENS (CONFIRMÉ) et de Renée Gilberte DEJEAN. Nom DESARZENS = « de Sarzens » : originaire de SARZENS, canton de Vaud (Suisse) — patronyme suisse romand (la particule « de » est toponymique, non noble). L'acte de naissance 1944 à Salon (Archives 13) confirmera le prénom de Guy + donnera la grand-mère paternelle.",sources:[{label:"🇲🇨 État Civil — Mairie de Monaco (demande d'acte de décès)",url:"https://mairie.mc/"},{label:"🇫🇷 Acte transcrit côté France — service-public (état civil de l'étranger)",url:"https://www.service-public.fr/particuliers/vosdroits/F1444"},SRC.ad13,SRC.gDesarzens,SRC.sarzens,SRC.davel]});
+  add({id:"seed_emile",prenom:"Émile",nom:"DESARZENS",sexe:"M",pere:"seed_guy",mere:"seed_renee_dejean",conjoints:["seed_charlotte","seed_mariefrance"],notes:"Frère de Gérard (oncle paternel de Kevin). Fils de Guy Édouard DESARZENS et de Renée Gilberte DEJEAN (mêmes parents que Gérard — confirmé via l'acte de décès de Gérard, Monaco N°125/2025). Deux unions : Charlotte (mère de Loïc) et Marie-France (mère de Yann) — lien réciproque rétabli 2026-08-04.",sources:[SRC.gDesarzens]});
+  add({id:"seed_charlotte",prenom:"Charlotte",nom:"",sexe:"F",vivant:true,conjoints:["seed_emile"],notes:"Charlotte — maman de Loïc, avec Émile (précisé par Kevin le 4.08.2026). Nom de famille à compléter."});
+  add({id:"seed_mariefrance",prenom:"Marie-France",nom:"",sexe:"F",vivant:true,conjoints:["seed_emile"],notes:"Marie-France — maman de Yann, avec Émile (précisé par Kevin le 4.08.2026). Nom de famille à compléter."});
+  add({id:"seed_loic",prenom:"Loïc",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",mere:"seed_charlotte",notes:"Fils d'Émile DESARZENS et de Charlotte (cousin de Kevin — mamans différentes pour Loïc et Yann). MARIÉ (précisé par Kevin le 6.08.2026). Nom de l'épouse et date à compléter."});
+  add({id:"seed_yann",prenom:"Yann",nom:"DESARZENS",sexe:"M",vivant:true,pere:"seed_emile",mere:"seed_mariefrance",notes:"Fils d'Émile DESARZENS et de Marie-France (cousin de Kevin — mamans différentes pour Loïc et Yann). Émile et Marie-France sont DIVORCÉS (précisé par Kevin le 6.08.2026). Date à compléter."});
   /* — Jonction Sauvaigo ⇄ Maiffret (confirmée, index Geneanet) — */
-  add({id:"seed_jules_sauvaigo",prenom:"Jules",nom:"SAUVAIGO",sexe:"M",naissance:{date:"1858 ?"},conjoints:["seed_victoire"],notes:"📜 DOCUMENT FAMILIAL + index Geneanet : marié en 1883 à Victoire MAIFFRET (fille de Jean-Baptiste). Leurs filles : Julie (1893–1912) et Micheline (1892–1907). 1ʳᵉ alliance Sauvaigo ⇄ Maiffret — la 2ᵉ sera Victor × Marie-Thérèse en 1939. Lien exact avec Victor Sauvaigo à établir.",sources:[SRC.gSauvaigo,SRC.monacoTree]});
+  add({id:"seed_jules_sauvaigo",prenom:"Jules",nom:"SAUVAIGO",sexe:"M",naissance:{date:"1858 ?"},conjoints:["seed_victoire"],notes:"🎯 REGISTRES MONACO LUS (2026-08-04) : il n'est PAS né à Monaco (registres 1852-1866 : seuls François-Arnulphe 1857 et Barthélemi 1860, fils de Joseph SAUVAIGO × BOUFFA, et Jacques-Adolphe 1860, fils de Louis-Étienne — TOUS « natifs de Nice ») → Jules (n. 1858) est très probablement né à NICE comme eux ; registres AD06 Nice 1858 à consulter (téléphone). 📜 DOCUMENT FAMILIAL + index Geneanet : marié en 1883 à Victoire MAIFFRET (fille de Jean-Baptiste). Leurs filles : Julie (1893–1912) et Micheline (1892–1907). 1ʳᵉ alliance Sauvaigo ⇄ Maiffret — la 2ᵉ sera Victor × Marie-Thérèse en 1939. Lien exact avec Victor Sauvaigo à établir.",sources:[SRC.gSauvaigo,SRC.monacoTree]});
   add({id:"seed_victoire",prenom:"Victoire",nom:"MAIFFRET",sexe:"F",pere:"seed_jb_maiffret",conjoints:["seed_jules_sauvaigo"],naissance:{date:"10.12.1860"},deces:{date:"2.07.1943"},notes:"📜 DOCUMENT FAMILIAL : fille de Jean-Baptiste MAIFFRET. Née le 10.12.1860, † 2.07.1943. Épouse de Jules SAUVAIGO (mariage 1883 — l'index Geneanet l'appelle « Victorine »). Mère de Julie et Micheline SAUVAIGO.",sources:[SRC.gMaiffret,SRC.marieclaire,SRC.monacoTree]});
   add({id:"seed_julie_sauvaigo",prenom:"Julie",nom:"SAUVAIGO",sexe:"F",pere:"seed_jules_sauvaigo",mere:"seed_victoire",naissance:{date:"13.03.1893"},deces:{date:"15.06.1912"},notes:"📜 DOCUMENT FAMILIAL : née le 13.03.1893, † 15.06.1912 (19 ans), sans postérité. Fille de Jules Sauvaigo et Victoire Maiffret.",sources:[SRC.monacoTree]});
   add({id:"seed_micheline_sauvaigo",prenom:"Micheline",nom:"SAUVAIGO",sexe:"F",pere:"seed_jules_sauvaigo",mere:"seed_victoire",naissance:{date:"1892"},deces:{date:"2.02.1907"},notes:"📜 DOCUMENT FAMILIAL : née en 1892, † 2.02.1907 à l'âge de 14 ans. Fille de Jules Sauvaigo et Victoire Maiffret.",sources:[SRC.monacoTree]});
@@ -861,7 +1279,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_andre_maiffret",prenom:"André",nom:"MAIFFRET",sexe:"M",pere:"seed_jean1852",conjoints:["seed_elisabeth_molinario"],naissance:{date:"19.10.1879 ?"},deces:{date:"18.10.1961"},notes:"📜 DOCUMENT FAMILIAL : fils de Jean (1852). † 18.10.1961. Marié le 17.12.1934 à Élisabeth MOLINARIO. Père de Marguerite-Rose. ⚠️ Année de naissance difficile à lire sur le manuscrit (1879 probable — 1819 impossible, son père étant né en 1852).",sources:[SRC.ad06]});
   add({id:"seed_elisabeth_molinario",prenom:"Élisabeth",nom:"MOLINARIO",sexe:"F",pere:"seed_molinario_marius",mere:"seed_dentau_mm",conjoints:["seed_andre_maiffret"],notes:"🎯 PISTES ROBOT (bases Monaco) : MOLINARIO nombreux à Monaco 1880-1917 (Christine 1883, Pierre-Antoine 1891, Marie-Jeanne 1894, mariages 1904/1907/1917) — parenté possible avec la branche niçoise, à explorer. 📜 DOCUMENT FAMILIAL : fille de Marius-Antoine Molinario et Marie-Marguerite Dentau. Mariée le 17.12.1934 à André MAIFFRET.",sources:[SRC.ad06]});
   add({id:"seed_marguerite_molinario",prenom:"Marguerite",nom:"MOLINARIO",sexe:"F",pere:"seed_molinario_marius",mere:"seed_dentau_mm",naissance:{date:"13.03.1868"},deces:{date:"21.10.1951"},notes:"📜 DOCUMENT FAMILIAL : née le 13.03.1868, † 21.10.1951. Sans postérité. Sœur d'Élisabeth.",sources:[SRC.ad06]});
-  add({id:"seed_alexandre_1856",prenom:"Alexandre",nom:"MAIFFRET",sexe:"M",pere:"seed_jb_maiffret",naissance:{date:"14.10.1856"},deces:{date:"3.05.1926"},notes:"📜 DOCUMENT FAMILIAL : fils de Jean-Baptiste. Né le 14.10.1856, † 3.05.1926. Père de 7 enfants : Louis, Joseph-Alexandre, Jean, Marius, Léonie, Pierre et Charles. C'est l'AÏEUL direct de Kevin (arrière-arrière-grand-père). Actes avant ~1891 à chercher à VILLEFRANCHE-sur-Mer.",sources:[SRC.ad06,SRC.beaulieu1]});
+  add({id:"seed_alexandre_1856",prenom:"Alexandre",nom:"MAIFFRET",sexe:"M",pere:"seed_jb_maiffret",naissance:{date:"14.10.1856"},deces:{date:"3.05.1926"},notes:"🗞 JOURNAL DE MONACO n°1937 (3.09.1895) : « Les horticulteurs MM. MAIFFRET Alexandre, propriétaire, et Keller, fournissent à titre gracieux… » — très probablement LUI (la famille était dans l'horticulture sur la Riviera : Marius figure aussi dans les bulletins de la Société d'horticulture de Nice). 🛣 Une RUE MAIFFRET existe à Beaulieu-sur-Mer, la ville de la famille. 📜 DOCUMENT FAMILIAL : fils de Jean-Baptiste. Né le 14.10.1856, † 3.05.1926. Père de 7 enfants : Louis, Joseph-Alexandre, Jean, Marius, Léonie, Pierre et Charles. C'est l'AÏEUL direct de Kevin (arrière-arrière-grand-père). Actes avant ~1891 à chercher à VILLEFRANCHE-sur-Mer.",sources:[SRC.ad06,SRC.beaulieu1]});
   add({id:"seed_louis_maiffret",prenom:"Louis",nom:"MAIFFRET",sexe:"M",pere:"seed_alexandre_1856",naissance:{date:"16.06.1880"},deces:{date:"14.05.1932"},notes:"📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 16.06.1880, † 14.05.1932. Sans postérité.",sources:[SRC.beaulieu1]});
   add({id:"seed_josephalex",prenom:"Joseph-Alexandre",nom:"MAIFFRET",sexe:"M",pere:"seed_alexandre_1856",naissance:{date:"22.08.1886"},deces:{date:"24.07.1931"},notes:"📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 22.08.1886 (une copie antérieure disait 1836 — impossible, corrigé), † 24.07.1931. Sans postérité.",sources:[SRC.ad06]});
   add({id:"seed_jean1888",prenom:"Jean",nom:"MAIFFRET",sexe:"M",pere:"seed_alexandre_1856",naissance:{date:"12.12.1888"},deces:{date:"16.01.1954"},notes:"📜 DOCUMENT FAMILIAL : fils d'Alexandre (1856). Né le 12.12.1888, † 16.01.1954. Père d'Alexandre (1906), Léon (1910) et Victor (1914).",sources:[SRC.beaulieu1]});
@@ -893,19 +1311,19 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_lucette_vdb",prenom:"Lucette Thérèse",nom:"VAN DEN BOSCH",sexe:"F",mere:"seed_leonie",naissance:{date:"12.02.1920",lieu:"Beaulieu-sur-Mer"},deces:{date:"16.12.2010",lieu:"Ramatuelle"},notes:"✅ CONFIRMÉE au fichier INSEE : née le 12.02.1920 à Beaulieu-sur-Mer, † 16.12.2010 à Ramatuelle (90 ans) — l'écart 1920/1926 du document est TRANCHÉ par l'acte : 1920. Fille probable de Léonie MAIFFRET (chaînon Maiffret ⇄ Van den Bosch). Frère probable : Alexandre (1921–2022, † à 101 ans à Beaulieu).",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/rO5QX3w6sFnW"},SRC.matchid,SRC.acteVdb]});
   add({id:"seed_alex_vdb",prenom:"Alexandre Robert Victor",nom:"VAN DEN BOSCH",sexe:"M",mere:"seed_leonie",naissance:{date:"25.07.1921",lieu:"Beaulieu-sur-Mer"},deces:{date:"13.10.2022",lieu:"Beaulieu-sur-Mer"},notes:"✅ DÉCOUVERT au fichier INSEE (recherche auto 2026-08-03) : né le 25.07.1921 à Beaulieu-sur-Mer, † 13.10.2022 à Beaulieu-sur-Mer — à 101 ANS. Frère probable de Lucette Thérèse (autre enfant probable de Léonie MAIFFRET). Toute sa vie à Beaulieu. À rattacher.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/1X2L5T-fjruX"},SRC.matchid,SRC.acteVdb]});
   add({id:"seed_francois_mc",actes:[{label:"🍼 Naissance n°71/1912 — Monte-Carlo (parents nommés)",img:"research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg"}],prenom:"François Joseph Philippe",nom:"MAIFFRET",sexe:"M",pere:"seed_emmanuel_mc",mere:"seed_josephine_ciais",conjoints:["seed_madeleine_mathieu"],naissance:{date:"9.12.1912",lieu:"Monaco"},deces:{date:"6.11.2004",lieu:"Nice"},notes:"✅ ACTE DE NAISSANCE LU (n°71/1912, Mairie de Monte-Carlo — image dans le dépôt) : né le 9.12.1912 à 16h30, Maison Verani, rue des Orchidées, Monte-Carlo. Père : Emmanuel MAIFFRET, peintre, 27 ans, natif de Monaco. Mère : Joséphine Angèle CIAIS, couturière, 26 ans, son épouse. Témoin : un employé du Casino. Mentions marginales : marié à Monaco le 25.04.1957 avec Madeleine Marie Clémence MATHIEU ; décédé à Nice le 6.11.2004 (= INSEE ✓). Prénommé François (comme son oncle François-Louis, † 6 semaines avant sa naissance) et Philippe (comme son grand-père, † 1905). ⚠️ Sa branche (grand-père Philippe, arrière-grand-père Jérôme, familles de Nice/Monaco) est DISTINCTE de la lignée de Marie-Thérèse (Jean-Baptiste 1815, Beaulieu) — un lien plus ancien entre les deux familles MAIFFRET de Nice reste possible mais non prouvé.",sources:[{label:"🍼 Acte de naissance n°71/1912 — base Monaco (image scannée)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"},{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/lmAX_0gFBqZe"},SRC.matchid,SRC.monaco1900]});
-  add({id:"seed_myriam_mc",actes:[{label:"🍼 PISTE : naissance de François (n°71/1912) — famille MAIFFRET de Monaco",img:"research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg"}],prenom:"Myriam Augusta Olga",nom:"MAIFFRET",sexe:"F",naissance:{date:"5.03.1935",lieu:"Monaco"},deces:{date:"6.10.2024",lieu:"Nice"},notes:"✅ INSEE : née à MONACO le 5.03.1935, † 6.10.2024 à Nice (89 ans). La SEULE famille MAIFFRET de Monaco à cette époque est celle d'Emmanuel × Joséphine CIAIS (actes lus) → Myriam est très probablement la fille de Paula Françoise (n. 1910, célibataire en 1935 — l'enfant garde alors le nom MAIFFRET) OU de François (n. 1912, marié seulement en 1957). L'acte de 1935 est verrouillé par la loi des 100 ans : une demande officielle à l'état civil de Monaco (bouton 📋 de cette fiche) tranchera. PAS de lien posé sans preuve. 🎯 PISTE INSEE : « Henry Emmanuel MAIFFRET, né le 22.09.1936 à NICE, † 18.04.2022 à Tourrettes-sur-Loup » — même génération qu'elle (frère ? cousin ?), prénom « Emmanuel » = prénom du grand-père : famille de Monaco très probable.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/x4kL8TBj4RML"},SRC.matchid,SRC.monaco1900]});
-  add({id:"seed_claude_desarzens",prenom:"Claude Alain",nom:"DE SARZENS",sexe:"M",naissance:{date:"19.03.1941",lieu:"Marseille"},deces:{date:"10.05.2022",lieu:"Suisse"},notes:"✅ DÉCOUVERT au fichier INSEE : « DE SARZENS Claude Alain », né le 19.03.1941 à MARSEILLE, † 10.05.2022 en SUISSE (81 ans). Piste FORTE branche paternelle : né dans les Bouches-du-Rhône (comme Gérard, 1944 à Salon) et décédé en Suisse (berceau du nom). Frère ou cousin de Gérard ? À vérifier avec la famille.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/NFlPwJbkB0SI"},SRC.matchid,SRC.gDesarzens,SRC.sarzens]});
-  add({id:"seed_jmv_sauvaigo",actes:[{label:"🕯 PISTE : décès Barthélemy SAUVAIGO n°245/1902 (fils de Joseph × BOUFFA)",img:"research/actesimg/mc1900-SAUVAIGO/01-Deces_1902_245_SAUVAIGO_Barthelemy_Dominique_01_12_1902_02_12_1902_1_image-net1.jpg"},{label:"💍 PISTE : mariage Réparate SAUVAIGO n°23/1918 (fille de J-B × RAVELLO)",img:"research/actesimg/mc1900-SAUVAIGO/02-Mariage_1918_23_Epoux_GINET_Francois_Joseph_Eugene_Epouse_SAUVAIGO_Reparate_Josephine_Hele-net1.jpg"}],prenom:"Jean Marius Victor",nom:"SAUVAIGO",sexe:"M",naissance:{date:"12.07.1912",lieu:"Nice"},deces:{date:"9.09.1999",lieu:"Nice"},notes:"✅ INSEE : né le 12.07.1912 à Nice, † 9.09.1999 à Nice (87 ans) — porte « Victor » en 3ᵉ prénom, même génération que le grand-père Victor. ACTES MONACO LUS (images dans le dépôt) : deux familles SAUVAIGO monégasques identifiées — (1) Joseph SAUVAIGO × Marie Jeanne Josèphe BOUFFA (fils Barthélemy Dominique, serrurier, 1860–1902, célibataire ; déclarant François SAUVAIGO, menuisier, ~1867, frère probable) ; (2) Jean-Baptiste SAUVAIGO, receveur des postes et télégraphes, × Césarine RAVELLO (fille Réparate, née Nice 8.08.1896, mariée GINET 1918). Son acte de naissance (Nice 1912) est aux AD06 — mur anti-robot : à consulter depuis le téléphone de Kevin (lien dans la fiche). PAS de lien posé sans preuve.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/TRUO05b-SzgQ"},SRC.matchid,SRC.gSauvaigo,SRC.monacoTree]});
+  add({id:"seed_myriam_mc",actes:[{label:"🍼 PISTE : naissance de François (n°71/1912) — famille MAIFFRET de Monaco",img:"research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg"}],prenom:"Myriam Augusta Olga",nom:"MAIFFRET",sexe:"F",naissance:{date:"5.03.1935",lieu:"Monaco"},deces:{date:"6.10.2024",lieu:"Nice"},notes:"⚠️ INCONNUE de Kevin (il dit ne pas la connaître, 2026-08-04) — statut incertain, à rattacher ou à retirer selon vérification familiale. ✅ INSEE : née à MONACO le 5.03.1935, † 6.10.2024 à Nice (89 ans). La SEULE famille MAIFFRET de Monaco à cette époque est celle d'Emmanuel × Joséphine CIAIS (actes lus) → Myriam est très probablement la fille de Paula Françoise (n. 1910, célibataire en 1935 — l'enfant garde alors le nom MAIFFRET) OU de François (n. 1912, marié seulement en 1957). L'acte de 1935 est verrouillé par la loi des 100 ans : une demande officielle à l'état civil de Monaco (bouton 📋 de cette fiche) tranchera. PAS de lien posé sans preuve. 🎯 PISTE INSEE : « Henry Emmanuel MAIFFRET, né le 22.09.1936 à NICE, † 18.04.2022 à Tourrettes-sur-Loup » — même génération qu'elle (frère ? cousin ?), prénom « Emmanuel » = prénom du grand-père : famille de Monaco très probable.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/x4kL8TBj4RML"},SRC.matchid,SRC.monaco1900]});
+  add({id:"seed_claude_desarzens",prenom:"Claude Alain",nom:"DE SARZENS",sexe:"M",naissance:{date:"19.03.1941",lieu:"Marseille"},deces:{date:"10.05.2022",lieu:"Suisse"},notes:"✅ DÉCOUVERT au fichier INSEE : « DE SARZENS Claude Alain », né le 19.03.1941 à MARSEILLE, † 10.05.2022 en SUISSE (81 ans). Piste FORTE branche paternelle : né dans les Bouches-du-Rhône (comme Gérard, 1944 à Salon) et décédé en Suisse (berceau du nom). 🇨🇭 RENFORCÉ 2026-08-04 : Kevin dit que son grand-père paternel (Guy) était « apparemment suisse » → Claude Alain appartient très probablement à cette même lignée paternelle suisse DE SARZENS. Frère de Guy, ou frère/cousin de Gérard ? À vérifier avec la famille.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/NFlPwJbkB0SI"},SRC.matchid,SRC.gDesarzens,SRC.sarzens]});
+  add({id:"seed_jmv_sauvaigo",actes:[{label:"📖 REGISTRE 1857 : naissance François-Arnulphe, fils de Joseph SAUVAIGO (natif de Nice) × Marie-Jeanne-Josèphe BOUFFA",img:"research/actesimg/mcav1900-SAUVAIGO/03-Registre_N_1852_1857_SAUVAIGO_Francois_Arnulphe_12_1857_image_12_sur_15-net1.jpg"},{label:"📖 REGISTRE 1860 : naissance Barthélemi-Dominique, même famille Joseph × BOUFFA (signé Sovaigo Giuseppe)",img:"research/actesimg/mcav1900-SAUVAIGO/04-Registre_N_1858_1866_SAUVAIGO_Barthelemi_Dominique_7_1860_image_7_sur_14-net1.jpg"},{label:"📖 REGISTRE 1860 : naissance Jacques-Adolphe, fils de Louis-Étienne SAUVAIGO (fils de Dominique, natif de Nice) × Louise-Jeanne-Marie THIBAUD",img:"research/actesimg/mcav1900-SAUVAIGO/05-Registre_N_1858_1866_SAUVAIGO_Jacques_Adolphe_8_1860_image_8_sur_14-net1.jpg"},{label:"🕯 PISTE : décès Barthélemy SAUVAIGO n°245/1902 (fils de Joseph × BOUFFA)",img:"research/actesimg/mc1900-SAUVAIGO/01-Deces_1902_245_SAUVAIGO_Barthelemy_Dominique_01_12_1902_02_12_1902_1_image-net1.jpg"},{label:"💍 PISTE : mariage Réparate SAUVAIGO n°23/1918 (fille de J-B × RAVELLO)",img:"research/actesimg/mc1900-SAUVAIGO/02-Mariage_1918_23_Epoux_GINET_Francois_Joseph_Eugene_Epouse_SAUVAIGO_Reparate_Josephine_Hele-net1.jpg"}],prenom:"Jean Marius Victor",nom:"SAUVAIGO",sexe:"M",naissance:{date:"12.07.1912",lieu:"Nice"},deces:{date:"9.09.1999",lieu:"Nice"},notes:"⚠️ NON RATTACHÉ — ce n'est PAS le grand-père de Kevin : Victor SAUVAIGO était né en 1914 (confirmé par Kevin, 2026-08-04), celui-ci est né en 1912. Homonyme niçois, lien de parenté non établi (à retirer s'il n'y en a aucun). ✅ INSEE : né le 12.07.1912 à Nice, † 9.09.1999 à Nice (87 ans). ACTES MONACO LUS (images dans le dépôt) : deux familles SAUVAIGO monégasques identifiées — (1) Joseph SAUVAIGO × Marie Jeanne Josèphe BOUFFA (fils Barthélemy Dominique, serrurier, 1860–1902, célibataire ; déclarant François SAUVAIGO, menuisier, ~1867, frère probable) ; (2) Jean-Baptiste SAUVAIGO, receveur des postes et télégraphes, × Césarine RAVELLO (fille Réparate, née Nice 8.08.1896, mariée GINET 1918). Son acte de naissance (Nice 1912) est aux AD06 — mur anti-robot : à consulter depuis le téléphone de Kevin (lien dans la fiche). PAS de lien posé sans preuve.",sources:[{label:"📜 Acte de décès officiel (INSEE)",url:"https://deces.matchid.io/id/TRUO05b-SzgQ"},SRC.matchid,SRC.gSauvaigo,SRC.monacoTree]});
   /* — BRANCHE MAIFFRET DE MONACO — reconstituée par LECTURE DES ACTES scannés (2026-08-04, images dans arbre/research/actesimg/) — */
   add({id:"seed_jerome_mc",actes:[{label:"🕯 Décès de son fils Philippe (n°306/1905) — il y est nommé",img:"research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg"}],prenom:"Jérôme",nom:"MAIFFRET",sexe:"M",naissance:{lieu:"Nice (probable)"},deces:{},conjoints:["seed_therese_orselli"],notes:"📜 Cité dans l’acte de décès n°306/1905 de son fils Philippe : « fils de Jérôme et de Thérèse Orselli ». Souche niçoise de la branche MAIFFRET de Monaco — distincte (à ce stade) de la lignée Jean-Baptiste 1815 (Beaulieu).",sources:[{label:"📜 Acte de décès de Philippe n°306/1905 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_therese_orselli",actes:[{label:"🕯 Décès de son fils Philippe (n°306/1905) — elle y est nommée",img:"research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg"}],prenom:"Thérèse",nom:"ORSELLI",sexe:"F",naissance:{},deces:{},conjoints:["seed_jerome_mc"],notes:"📜 Citée dans l’acte de décès n°306/1905 de son fils Philippe MAIFFRET.",sources:[{label:"📜 Acte n°306/1905 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_philippe_mc",actes:[{label:"🕯 Décès n°306/1905 — Monaco (parents + épouse nommés)",img:"research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg"}],prenom:"Philippe Laurent Jérôme",nom:"MAIFFRET",sexe:"M",pere:"seed_jerome_mc",mere:"seed_therese_orselli",conjoints:["seed_caroline_carlin"],naissance:{date:"~1850",lieu:"Nice"},deces:{date:"20.11.1905",lieu:"Monaco (bd des Moulins n°18)"},notes:"✅ ACTE DE DÉCÈS LU (n°306 du 20.11.1905, Monaco) : concierge, 55 ans, natif de Nice, époux de Caroline CARLIN, fils de Jérôme et de Thérèse Orselli. Décès déclaré par Emmanuel MAIFFRET, peintre, 21 ans (son fils très probable). Nom complet « Philippe Laurent Jérôme » confirmé par l’acte de mariage de sa fille Julie (n°39/1906).",sources:[{label:"📜 Acte de décès n°306/1905 (image dans le dépôt)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_caroline_carlin",actes:[{label:"🕯 Décès de son mari Philippe (n°306/1905)",img:"research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg"},{label:"💍 Mariage de sa fille Julie (n°39/1906) — elle y consent",img:"research/actesimg/mc1900-MAIFFRET/05-Mariage_1906_39_Epoux_DANIEL_Pierre_Epouse_MAIFFRET_Julie_Josephine_Marie_16_06_1906_4_ima-net1.jpg"}],prenom:"Pauline Caroline",nom:"CARLIN",sexe:"F",conjoints:["seed_philippe_mc"],naissance:{},deces:{},notes:"📜 Épouse de Philippe MAIFFRET (acte n°306/1905). Concierge, présente et consentante au mariage de sa fille Julie en 1906 (acte n°39/1906).",sources:[{label:"📜 Acte de mariage n°39/1906 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
-  add({id:"seed_emmanuel_mc",actes:[{label:"🍼 Naissance de son fils François (n°71/1912) — il y est nommé",img:"research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg"},{label:"🕯 Décès de Philippe (n°306/1905) — il est le déclarant",img:"research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg"}],prenom:"Emmanuel François",nom:"MAIFFRET",sexe:"M",pere:"seed_philippe_mc",mere:"seed_caroline_carlin",conjoints:["seed_josephine_ciais"],naissance:{date:"~1884",lieu:"Monaco"},deces:{},notes:"✅ PROUVÉ père de Pauline (1905), Paula (1910) et François (1912) — les 3 actes de naissance lus le nomment : peintre, natif de Monaco (20 ans en 1905, 25 en 1910, 27 en 1912). ⚠️ Sa propre filiation (fils de Philippe × Caroline CARLIN) est TRÈS PROBABLE mais pas encore prouvée par un acte : 3 indices — (1) il déclare le décès de Philippe en 1905, rôle familial ; (2) François-Louis († 1912), fils PROUVÉ de Philippe, est de la même génération et du même quartier ; (3) il prénomme son fils « Philippe » en 3ᵉ prénom. Son acte de naissance (~1884, registres Monaco <1900 non indexés en ligne) le confirmera. 🎯 PISTE INSEE (2026-08-04) : « Emmanuel Joseph MAIFFRET, né le 6.01.1909 à BEAUSOLEIL, † 26.02.1994 à Villefranche-sur-Mer » — né entre Pauline (1905) et Paula (1910), à côté de Monte-Carlo, prénommé Emmanuel comme lui : 4ᵉ enfant TRÈS possible (acte de naissance Beausoleil 1909 = AD06, à vérifier).",sources:[{label:"🍼 Actes de naissance de ses 3 enfants (images dans le dépôt)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
-  add({id:"seed_josephine_ciais",actes:[{label:"🍼 Naissance de Pauline (n°313/1905)",img:"research/actesimg/mc1900-MAIFFRET/06-Naissance_1905_313_MAIFFRET_Pauline_Elisabeth_26_10_1905_29_10_1905_1_image-net1.jpg"},{label:"🍼 Naissance de Paula (n°254/1910)",img:"research/actesimg/mc1900-MAIFFRET/07-Naissance_1910_254_MAIFFRET_Paula_Francoise_14_09_1910_14_09_1910_1_image-net1.jpg"},{label:"🍼 Naissance de François (n°71/1912)",img:"research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg"}],prenom:"Joséphine Angèle",nom:"CIAIS",sexe:"F",conjoints:["seed_emmanuel_mc"],naissance:{date:"~1886",lieu:"La Turbie (Alpes-Maritimes)"},deces:{},notes:"✅ Mère de Pauline (1905, déclarée « demoiselle » — mariage avec Emmanuel postérieur), Paula (1910) et François (1912). Couturière, native de La Turbie (l’acte de 1912 écrit « Nice » — les officiers variaient).",sources:[{label:"🍼 Actes de naissance de ses 3 enfants (images)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
+  add({id:"seed_emmanuel_mc",actes:[{label:"🍼 Naissance de son fils François (n°71/1912) — il y est nommé",img:"research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg"},{label:"🕯 Décès de Philippe (n°306/1905) — il est le déclarant",img:"research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg"}],prenom:"Emmanuel François",nom:"MAIFFRET",sexe:"M",pere:"seed_philippe_mc",mere:"seed_caroline_carlin",conjoints:["seed_josephine_ciais"],naissance:{date:"~1884",lieu:"Monaco"},deces:{},notes:"✅ PROUVÉ père de Pauline (1905), Paula (1910) et François (1912) — les 3 actes de naissance lus le nomment : peintre, natif de Monaco (20 ans en 1905, 25 en 1910, 27 en 1912). ⚠️ Sa propre filiation (fils de Philippe × Caroline CARLIN) est TRÈS PROBABLE mais pas encore prouvée par un acte : 3 indices — (1) il déclare le décès de Philippe en 1905, rôle familial ; (2) François-Louis († 1912), fils PROUVÉ de Philippe, est de la même génération et du même quartier ; (3) il prénomme son fils « Philippe » en 3ᵉ prénom. Son acte de naissance (~1884, registres Monaco <1900 non indexés en ligne) le confirmera. 🎯 PISTE INSEE (2026-08-04) : « Emmanuel Joseph MAIFFRET, né le 6.01.1909 à BEAUSOLEIL, † 26.02.1994 à Villefranche-sur-Mer » — né entre Pauline (1905) et Paula (1910), à côté de Monte-Carlo, prénommé Emmanuel comme lui : 4ᵉ enfant TRÈS possible (acte de naissance Beausoleil 1909 = AD06, à vérifier). 🗞 JOURNAL DE MONACO n°2503 (26.06.1906), rubrique Accidents : « M. Emmanuel Maiffret, âgé de 21 ans… » — âge cohérent avec sa naissance ~1885 (2ᵉ confirmation indépendante).",sources:[{label:"🍼 Actes de naissance de ses 3 enfants (images dans le dépôt)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
+  add({id:"seed_josephine_ciais",actes:[{label:"🍼 Naissance de Pauline (n°313/1905)",img:"research/actesimg/mc1900-MAIFFRET/06-Naissance_1905_313_MAIFFRET_Pauline_Elisabeth_26_10_1905_29_10_1905_1_image-net1.jpg"},{label:"🍼 Naissance de Paula (n°254/1910)",img:"research/actesimg/mc1900-MAIFFRET/07-Naissance_1910_254_MAIFFRET_Paula_Francoise_14_09_1910_14_09_1910_1_image-net1.jpg"},{label:"🍼 Naissance de François (n°71/1912)",img:"research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg"}],prenom:"Joséphine Angèle",nom:"CIAIS",sexe:"F",conjoints:["seed_emmanuel_mc"],naissance:{date:"~1886",lieu:"La Turbie (Alpes-Maritimes)"},deces:{},notes:"✅ Mère de Pauline (1905, déclarée « demoiselle » — mariage avec Emmanuel postérieur), Paula (1910) et François (1912). Couturière, native de La Turbie (l’acte de 1912 écrit « Nice » — les officiers variaient). 🗞 JOURNAL DE MONACO : dès 1873, des CIAIS capitaines de barques (« Résurrection », Golfe Juan, chargement de sable) dans les mouvements du port — vieille famille de la côte. Clin d'œil : aujourd'hui une Aurélie CIAIS est chef de service adjoint à l'État Civil de Monaco (JdM 18.07.2025) — la demande d'acte de la famille passera par elle !",sources:[{label:"🍼 Actes de naissance de ses 3 enfants (images)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_pauline_mc",actes:[{label:"🍼 Naissance n°313/1905 — Monaco",img:"research/actesimg/mc1900-MAIFFRET/06-Naissance_1905_313_MAIFFRET_Pauline_Elisabeth_26_10_1905_29_10_1905_1_image-net1.jpg"},{label:"🕯 Décès n°56/1907 — Monaco (15 mois)",img:"research/actesimg/mc1900-MAIFFRET/02-Deces_1907_56_MAIFFRET_Pauline_Elisabeth_01_02_1907_02_02_1907_1_image-net1.jpg"}],prenom:"Pauline Élisabeth",nom:"MAIFFRET",sexe:"F",pere:"seed_emmanuel_mc",mere:"seed_josephine_ciais",naissance:{date:"26.10.1905",lieu:"Monaco (Villa Beausoleil, bd de France)"},deces:{date:"1.02.1907",lieu:"Monaco"},notes:"✅ ACTE DE NAISSANCE LU (n°313/1905) : née le 26.10.1905 à 3h du matin ; père Emmanuel François MAIFFRET, peintre, 20 ans, « se reconnaissant être le père » ; mère demoiselle Joséphine CIAIS, couturière, 19 ans. Morte à 15 mois (acte de décès n°56/1907, image dans le dépôt).",sources:[{label:"🍼 Acte de naissance n°313/1905 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_paula_mc",actes:[{label:"🍼 Naissance n°254/1910 — Monaco",img:"research/actesimg/mc1900-MAIFFRET/07-Naissance_1910_254_MAIFFRET_Paula_Francoise_14_09_1910_14_09_1910_1_image-net1.jpg"}],prenom:"Paula Françoise",nom:"MAIFFRET",sexe:"F",pere:"seed_emmanuel_mc",mere:"seed_josephine_ciais",naissance:{date:"14.09.1910",lieu:"Monaco (Villa Nathalie, chemin des Œillets)"},deces:{date:"19.08.1994",lieu:"Monaco"},notes:"✅ ACTE DE NAISSANCE LU (n°254/1910) : née le 14.09.1910 à 7h du matin ; père Emmanuel MAIFFRET, peintre, 25 ans ; mère Joséphine Angèle CIAIS, couturière, 24 ans, son épouse. Témoin : Pierre DANIEL, maçon (son oncle par alliance — mari de Julie). Mention marginale : décédée à Monaco le 19.08.1994. Piste : mère possible de Myriam (n. 1935 — acte verrouillé).",sources:[{label:"🍼 Acte de naissance n°254/1910 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
-  add({id:"seed_francoislouis_mc",actes:[{label:"🕯 Décès n°58/1912 — Monte-Carlo (fils de Philippe × Caroline CARLIN)",img:"research/actesimg/mc1900-MAIFFRET/01-Deces_1912_58_MAIFFRET_Francois_Louis_23_10_1912_23_10_1912_1_image-net1.jpg"}],prenom:"François Louis",nom:"MAIFFRET",sexe:"M",pere:"seed_philippe_mc",mere:"seed_caroline_carlin",conjoints:["seed_rose_fracchia"],naissance:{date:"~1887",lieu:"Monaco"},deces:{date:"23.10.1912",lieu:"Monaco"},notes:"✅ ACTE DE DÉCÈS LU (n°58 du 23.10.1912, Monte-Carlo) : ouvrier fontiste, 25 ans, natif de Monaco, époux de Rose Angeline FRACCHIA, « fils de feu MAIFFRET Philippe et de CARLIN Pauline Caroline ». Mort 6 semaines avant la naissance de son neveu François, qui a reçu son prénom.",sources:[{label:"📜 Acte de décès n°58/1912 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
+  add({id:"seed_francoislouis_mc",actes:[{label:"🕯 Décès n°58/1912 — Monte-Carlo (fils de Philippe × Caroline CARLIN)",img:"research/actesimg/mc1900-MAIFFRET/01-Deces_1912_58_MAIFFRET_Francois_Louis_23_10_1912_23_10_1912_1_image-net1.jpg"}],prenom:"François Louis",nom:"MAIFFRET",sexe:"M",pere:"seed_philippe_mc",mere:"seed_caroline_carlin",conjoints:["seed_rose_fracchia"],naissance:{date:"~1887",lieu:"Monaco"},deces:{date:"23.10.1912",lieu:"Monaco"},notes:"✅ ACTE DE DÉCÈS LU (n°58 du 23.10.1912, Monte-Carlo) : ouvrier fontiste, 25 ans, natif de Monaco, époux de Rose Angeline FRACCHIA, « fils de feu MAIFFRET Philippe et de CARLIN Pauline Caroline ». Mort 6 semaines avant la naissance de son neveu François, qui a reçu son prénom. 🗞 JOURNAL DE MONACO : n°1879 (7.08.1894) palmarès scolaire « François Maiffret » (~7 ans ✓) et n°1986 (4.08.1896) prix d'école « F. Maiffret » — son enfance à Monaco dans le journal.",sources:[{label:"📜 Acte de décès n°58/1912 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_rose_fracchia",actes:[{label:"🕯 Décès de son mari François-Louis (n°58/1912)",img:"research/actesimg/mc1900-MAIFFRET/01-Deces_1912_58_MAIFFRET_Francois_Louis_23_10_1912_23_10_1912_1_image-net1.jpg"}],prenom:"Rose Angeline",nom:"FRACCHIA",sexe:"F",conjoints:["seed_francoislouis_mc"],naissance:{},deces:{},notes:"📜 Épouse de François Louis MAIFFRET (acte de décès n°58/1912).",sources:[{label:"📜 Acte n°58/1912 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_julie_mc",actes:[{label:"💍 Mariage n°39/1906 avec Pierre DANIEL (parents nommés)",img:"research/actesimg/mc1900-MAIFFRET/05-Mariage_1906_39_Epoux_DANIEL_Pierre_Epouse_MAIFFRET_Julie_Josephine_Marie_16_06_1906_4_ima-net1.jpg"}],prenom:"Julie Joséphine Marie",nom:"MAIFFRET",sexe:"F",pere:"seed_philippe_mc",mere:"seed_caroline_carlin",conjoints:["seed_pierre_daniel"],naissance:{date:"16.06.1880",lieu:"Monaco"},deces:{},notes:"✅ ACTE DE MARIAGE LU (n°39 du 16.06.1906, Monaco) : « fille majeure de feu Philippe Laurent Jérôme MAIFFRET et de Pauline Caroline CARLIN, concierge, ici présente et consentante ». Née à Monaco le 16.06.1880. Mariée le jour de ses 26 ans.",sources:[{label:"💍 Acte de mariage n°39/1906 (4 images dans le dépôt)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
   add({id:"seed_pierre_daniel",actes:[{label:"💍 Mariage n°39/1906 avec Julie MAIFFRET",img:"research/actesimg/mc1900-MAIFFRET/05-Mariage_1906_39_Epoux_DANIEL_Pierre_Epouse_MAIFFRET_Julie_Josephine_Marie_16_06_1906_4_ima-net1.jpg"}],prenom:"Pierre",nom:"DANIEL",sexe:"M",conjoints:["seed_julie_mc"],naissance:{date:"12.05.1881",lieu:"Sospel (Alpes-Maritimes)"},deces:{},notes:"💍 Époux de Julie MAIFFRET (acte n°39/1906) : sapeur-pompier, fils de Joseph DANIEL, maçon, et d’Ursule TOESCA, blanchisseuse. Témoin de la naissance de Paula en 1910 (beau-frère d’Emmanuel).",sources:[{label:"💍 Acte de mariage n°39/1906 (image)",url:"https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"}]});
@@ -916,7 +1334,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   return s;}
 function seed(){DB.persons=buildSeed();DB.meta={updatedAt:now(),seedVersion:SEED_VERSION};}
 /* Fusion des personnes « officielles » sans écraser les ajouts/édits perso (photos/commentaires conservés). Tourne 1× par version. */
-function mergeSeed(){var s=buildSeed();for(var id in s){var loc=DB.persons[id];if(!loc){DB.persons[id]=s[id];}else if(id.indexOf("seed_")===0){var ph=(loc.photos&&loc.photos.length)?loc.photos:s[id].photos;var cm=(loc.comments&&loc.comments.length)?loc.comments:s[id].comments;DB.persons[id]=Object.assign({},s[id],{photos:ph,comments:cm});}}DB.meta=DB.meta||{};DB.meta.seedVersion=SEED_VERSION;}
+function mergeSeed(){var s=buildSeed();for(var id in s){var loc=DB.persons[id];if(!loc){DB.persons[id]=s[id];}else if(id.indexOf("seed_")===0){var ph=(loc.photos&&loc.photos.length)?loc.photos:s[id].photos;var cm=(loc.comments&&loc.comments.length)?loc.comments:s[id].comments;var ua=(loc.actes||[]).filter(function(a){return a&&a.by;});var ac=(s[id].actes||[]).concat(ua);var dc2=(loc.docs||[]).filter(function(d){return d&&d.by;});DB.persons[id]=Object.assign({},s[id],{photos:ph,comments:cm},ac.length?{actes:ac}:{},dc2.length?{docs:dc2}:{});}}DB.meta=DB.meta||{};DB.meta.seedVersion=SEED_VERSION;}
 
 /* ---------- boot ---------- */
 function bindApp(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.onclick=function(){VIEW=t.dataset.view;render();};});$("#fab").onclick=function(){openEdit(null);};document.body.addEventListener("click",function(e){if(e.target.closest(".ov"))return;var n=e.target.closest("#wrap [data-open]");if(n){openPerson(n.dataset.open);return;}var s=e.target.closest("#wrap [data-search]");if(s)openSearch(s.dataset.search);});document.addEventListener("visibilitychange",function(){if(!document.hidden&&sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});window.addEventListener("focus",function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);});setInterval(function(){if(sessionStorage.getItem("arbre_unlocked"))cloudPull(true);},8000);}
@@ -985,7 +1403,9 @@ async function startApp(){$("#gate").classList.add("hidden");$("#app").classList
   if(seedChanged||dups.length){saveLocal();cloudPushAll().catch(function(){});if(dups.length)toast("🧹 "+dups.length+" doublon(s) nettoyé(s)");}
   cloudPull(false);}
 async function boot(){await idbOpen();if(!localStorage.getItem("arbre_codehash"))localStorage.setItem("arbre_codehash",DEFAULT_CODEHASH);var stored=localStorage.getItem("arbre_codehash");$("#gateHint").textContent="Astuce : le code de ta famille a été défini. Reconnu automatiquement ensuite.";bindApp();
-  if(sessionStorage.getItem("arbre_unlocked")&&localStorage.getItem("arbre_trust")==="1"){CODEHASH=stored;return startApp();}
+  /* Reconnaissance auto après 1ʳᵉ connexion (règle Kevin) : le trust persistant suffit —
+     l'app rouvre directement, le code n'est redemandé qu'après déconnexion explicite (🔒) */
+  if(localStorage.getItem("arbre_trust")==="1"){CODEHASH=stored;sessionStorage.setItem("arbre_unlocked","1");return startApp();}
   async function tryGate(){var c=$("#gateCode").value;if(!c){toast("Entre le code");return;}var h=await sha256("arbre::"+c.trim());if(h===stored){CODEHASH=h;sessionStorage.setItem("arbre_unlocked","1");localStorage.setItem("arbre_trust","1");startApp();}else{toast("Code incorrect");$("#gateCode").value="";}}
   $("#gateBtn").onclick=tryGate;$("#gateCode").addEventListener("keydown",function(e){if(e.key==="Enter")tryGate();});$("#gateCode").focus();}
 /* ---------- MAJ auto FORCÉE : toujours la dernière version, sans rien faire ---------- */
