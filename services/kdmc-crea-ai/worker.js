@@ -83,7 +83,30 @@ const MAGIC = {
   cosplay: 'Restyle this person as an epic superhero: detailed original costume with cape and armour details, dramatic rim lighting, city rooftop at dusk, heroic pose, cinematic and photorealistic.' + KEEP_FACE,
   vintage: 'Restyle this person as a 1970s film photograph: period clothing and hairstyle, warm faded film colours, grain, soft vignette, authentic vintage look.' + KEEP_FACE,
   bebe: 'Show this person as an adorable small child version of themselves (about 5 years old), same recognizable facial features, cheerful, natural soft lighting, photorealistic.' + KEEP_FACE,
-  vieux: 'Show this person realistically aged to about 80 years old: natural wrinkles, grey hair, same recognizable features, warm natural lighting, photorealistic.' + KEEP_FACE
+  vieux: 'Show this person realistically aged to about 80 years old: natural wrinkles, grey hair, same recognizable features, warm natural lighting, photorealistic.' + KEEP_FACE,
+  /* Gio — photo pro / CV / shooting */
+  cv: 'Turn this into a professional corporate headshot: the person wears an elegant dark business suit, neutral studio background, soft flattering key light, sharp focus on the eyes, confident friendly expression, LinkedIn/CV quality.' + KEEP_FACE,
+  nb: 'Turn this into a high-end black and white studio portrait: dramatic side lighting, deep blacks and clean whites, fine grain, editorial fashion look, sharp eyes.' + KEEP_FACE,
+  shooting: 'Turn this into a magazine fashion shooting photo: stylish outfit, professional studio lighting with coloured gels, confident pose, editorial composition, ultra sharp, high-end retouching.' + KEEP_FACE,
+  passeport: 'Turn this into a compliant ID/passport photo: plain light grey background, even frontal lighting, neutral expression, face centred and fully visible, shoulders straight, no shadow.' + KEEP_FACE,
+  /* Face Maker — coiffures IA */
+  coif_court: 'Change ONLY the hairstyle: give this person a modern short haircut, clean fade on the sides, neatly styled on top. Keep the exact same face, expression, clothes and background.' + KEEP_FACE,
+  coif_long: 'Change ONLY the hairstyle: give this person long flowing hair, healthy and well styled. Keep the exact same face, expression, clothes and background.' + KEEP_FACE,
+  coif_boucle: 'Change ONLY the hairstyle: give this person natural voluminous curly hair. Keep the exact same face, expression, clothes and background.' + KEEP_FACE,
+  coif_blond: 'Change ONLY the hair colour to a natural blond, keeping the same haircut. Keep the exact same face, expression, clothes and background.' + KEEP_FACE,
+  coif_barbe: 'Change ONLY the facial hair: give this person a well-groomed full beard that suits their face. Keep the exact same face, eyes, expression, clothes and background.' + KEEP_FACE,
+  coif_rase: 'Change ONLY the hair: give this person a clean shaved head (and no beard), realistic scalp. Keep the exact same face, expression, clothes and background.' + KEEP_FACE,
+  /* Trends virales */
+  muscle: 'Show this person with an impressively athletic muscular body at the gym, same head and face, realistic sportswear, gym lighting, photorealistic and flattering.' + KEEP_FACE,
+  bebedanse: 'Turn this person into an adorable chubby baby version dancing in the street wearing sunglasses, a gold chain and floral shorts, warm golden-hour light, funny and cute, photorealistic 3D render.' + KEEP_FACE,
+  drole: 'Make a funny cartoon caricature of this person: exaggerated proportions (big head, small body), goofy joyful expression, comic style, funny but friendly, colourful background.' + KEEP_FACE
+};
+/* Scènes à DEUX photos (Hype AI : réunir deux personnes). */
+const DUO = {
+  souvenir: 'Create one single warm photo where the person from the FIRST image and the person from the SECOND image are together side by side, standing close and smiling, soft golden light, peaceful beautiful garden background. Keep BOTH faces clearly recognizable and unchanged. Natural, respectful and photorealistic. No text, no watermark.',
+  famille: 'Create one single natural family photo where the person from the FIRST image and the person from the SECOND image pose together, warm indoor light, both smiling at the camera. Keep BOTH faces clearly recognizable and unchanged. Photorealistic. No text.',
+  couple: 'Create one single romantic photo where the person from the FIRST image and the person from the SECOND image are together at sunset by the sea, happy and relaxed. Keep BOTH faces clearly recognizable and unchanged. Photorealistic. No text.',
+  fete: 'Create one single festive photo where the person from the FIRST image and the person from the SECOND image celebrate together with balloons and a cake, joyful party lighting. Keep BOTH faces clearly recognizable and unchanged. Photorealistic. No text.'
 };
 /* Poses de bouche pour le LIP-SYNC (« je chante ») — l'app choisit selon le volume. */
 const SING_POSES = [
@@ -123,7 +146,7 @@ function parseDataUrl(u) {
   return { mime: m[1], b64: m[2] };
 }
 
-async function geminiImage(env, prompt, imgDataUrl) {
+async function geminiImage(env, prompt, imgDataUrl, extraImg) {
   const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
   if (!key) throw new Error('gemini_no_key');
   const parts = [{ text: prompt }];
@@ -131,6 +154,11 @@ async function geminiImage(env, prompt, imgDataUrl) {
     const p = parseDataUrl(imgDataUrl);
     if (!p) throw new Error('bad_image_data');
     parts.push({ inline_data: { mime_type: p.mime, data: p.b64 } });
+  }
+  if (extraImg) {                       /* 2e image : duo, ou pose de référence */
+    const p2 = parseDataUrl(extraImg);
+    if (!p2) throw new Error('bad_image_data2');
+    parts.push({ inline_data: { mime_type: p2.mime, data: p2.b64 } });
   }
   const body = JSON.stringify({
     contents: [{ parts }],
@@ -353,6 +381,39 @@ export default {
       return json({ error: errs.join(' | ') }, h, 502);
     }
 
+    // --- 👥 DUO : réunir DEUX photos dans une même scène (Hype AI) ---
+    if (url.pathname === '/duo') {
+      if (badImage(image)) return json({ error: 'bad_image' }, h, 400);
+      const img2 = body && body.image2;
+      if (badImage(img2)) return json({ error: 'bad_image2' }, h, 400);
+      const p = DUO[(body && body.preset)] || DUO.souvenir;
+      try {
+        const g = await geminiImage(env, p, image, img2);
+        return imgResponse(g.mime, g.b64, Object.assign({ 'x-crea-provider': g.provider }, h));
+      } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
+    }
+
+    // --- 🕺 REJOUER UNE VRAIE VIDÉO : chaque pose de référence est refaite
+    //     avec la personne de la photo (Pose / Dance AI / CapCut templates) ---
+    if (url.pathname === '/pose') {
+      if (badImage(image)) return json({ error: 'bad_image' }, h, 400);
+      if (!freeAI) return json({ error: 'gemini_no_key' }, h, 503);
+      const refs = (body && Array.isArray(body.poses)) ? body.poses.slice(0, 6) : [];
+      if (refs.length < 2) return json({ error: 'need_poses' }, h, 400);
+      const ask = 'You are given TWO images. The FIRST is a person. The SECOND shows a reference body pose. '
+        + 'Redraw the person from the FIRST image adopting EXACTLY the same body pose, arm and leg positions as in the SECOND image. '
+        + 'Keep the person\'s own face, hair, clothes and background from the FIRST image — copy ONLY the pose. '
+        + 'Full body if possible, natural anatomy, photorealistic. No text, no watermark, no border.';
+      const res = await Promise.allSettled(refs.map((r) => geminiImage(env, ask, image, r)));
+      const frames = [], errs = [];
+      res.forEach((r) => {
+        if (r.status === 'fulfilled') frames.push('data:' + r.value.mime + ';base64,' + r.value.b64);
+        else errs.push(String((r.reason && r.reason.message) || r.reason));
+      });
+      if (frames.length < 2) return json({ error: (errs[0] || 'pose_failed'), got: frames.length }, h, 502);
+      return json({ frames, provider: 'gemini', asked: refs.length, got: frames.length, errors: errs.slice(0, 2) }, h);
+    }
+
     // --- 🎵 PAROLES DE CHANSON (texte IA gratuit) ---
     if (url.pathname === '/lyrics') {
       if (!freeAI) return json({ error: 'gemini_no_key' }, h, 503);
@@ -360,8 +421,17 @@ export default {
       const style = (body && typeof body.style === 'string') ? body.style.slice(0, 60) : 'pop';
       if (!theme) return json({ error: 'no_theme' }, h, 400);
       const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
-      const ask = 'Écris une chanson originale en FRANÇAIS, style ' + style + ', sur : ' + theme
-        + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes accrocheuses et répétables>\nCOUPLET 2:\n<4 lignes>\nRefrain court, rimes simples, facile à chanter. Pas d\'explications.';
+      const mode = (body && body.mode) === 'voix' ? 'voix' : ((body && body.mode) === 'perso' ? 'perso' : 'simple');
+      const ask = mode === 'voix'
+        /* Shoom « Voix » : un texte calibré à lire au micro (~30 s) */
+        ? ('Écris un TEXTE À LIRE À VOIX HAUTE en FRANÇAIS, à enregistrer en 30 secondes environ (75 à 90 mots), '
+           + 'sur : ' + theme + '. Ton : ' + style + '. Phrases courtes, rythmées, faciles à dire, avec un refrain répété 2 fois.\n'
+           + 'Format EXACT, rien d\'autre :\nTITRE: <titre court>\nTEXTE:\n<le texte à lire>')
+        : (mode === 'perso'
+          ? ('Écris une chanson originale en FRANÇAIS, style ' + style + ', sur : ' + theme
+             + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes>\nCOUPLET 2:\n<4 lignes>\nPONT:\n<2 lignes>\nREFRAIN FINAL:\n<4 lignes>\nRimes riches, images fortes, vocabulaire varié. Pas d\'explications.')
+          : ('Écris une chanson originale en FRANÇAIS, style ' + style + ', sur : ' + theme
+             + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes accrocheuses et répétables>\nCOUPLET 2:\n<4 lignes>\nRefrain court, rimes simples, facile à chanter. Pas d\'explications.'));
       try {
         const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
           { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }] }) });
@@ -371,7 +441,7 @@ export default {
         const text = parts.map((p) => p.text || '').join('').trim();
         if (!text) return json({ error: 'no_lyrics' }, h, 502);
         const t = /TITRE\s*:\s*(.+)/i.exec(text);
-        return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: text, style }, h);
+        return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: text, style, mode }, h);
       } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
     }
 
