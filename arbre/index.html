@@ -255,7 +255,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.82";
+var APP_VER="v2.83";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -473,6 +473,37 @@ function _besant(cx,cy,r,f){return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fi
 function _crescent(cx,cy,r,f){return '<path d="M '+(cx-r*0.15)+' '+(cy-r)+' A '+r+' '+r+' 0 1 0 '+(cx-r*0.15)+' '+(cy+r)+' A '+(r*0.78)+' '+(r*0.78)+' 0 1 1 '+(cx-r*0.15)+' '+(cy-r)+' Z" fill="'+f+'"/>';}
 function _heart(cx,cy,r,f){var d="M "+cx+" "+(cy+r*0.92)+" C "+(cx-r*1.5)+" "+(cy-r*0.15)+" "+(cx-r*0.72)+" "+(cy-r*1.15)+" "+cx+" "+(cy-r*0.32)+" C "+(cx+r*0.72)+" "+(cy-r*1.15)+" "+(cx+r*1.5)+" "+(cy-r*0.15)+" "+cx+" "+(cy+r*0.92)+" Z";return '<path d="'+d+'" fill="'+f+'"/>';}
 function _lotus(cx,cy,r,f){function pet(dx,h){return '<path d="M '+cx+' '+(cy+r*0.5)+' Q '+(cx+dx-r*0.5)+' '+(cy-h*0.3)+' '+(cx+dx)+' '+(cy-h)+' Q '+(cx+dx+r*0.5)+' '+(cy-h*0.3)+' '+cx+' '+(cy+r*0.5)+' Z" fill="'+f+'"/>';}return '<g>'+pet(-r*1.15,r*0.9)+pet(r*1.15,r*0.9)+pet(0,r*1.35)+'</g>';}
+/* Lion rampant héraldique (face à dextre) — boîte locale 100×134.
+   Corps + queue séparés (même fill), gueule ouverte, crinière à pointes, 3 griffes par patte, touffe de queue. */
+var _LION_BODY="M46,2C40,1 36,3 35,7L31,4C28,3 26,6 28,9C30,10 31,11 31,12C27,13 24,14 21,15C16,15 12,16 11,19C10,21 12,23 15,23L21,23C19,25 19,26 21,27L16,30C12,31 12,35 17,35C21,35 25,34 28,36C27,40 28,44 31,47C29,48 27,49 25,50C20,46 14,41 9,37C5,34 2,37 5,40C3,41 2,44 5,45C3,47 3,50 7,50C12,51 18,52 23,55C18,56 12,58 7,60C3,61 2,64 5,66C3,68 4,71 8,71C6,74 8,77 12,76C17,74 22,72 26,72C27,78 28,84 28,90C24,96 19,103 14,109C10,113 6,113 4,117C1,119 2,123 6,123C4,126 6,129 10,128C14,127 18,124 21,120C26,114 30,108 34,103C34,110 33,119 31,127C27,128 24,131 26,134L40,134C43,131 43,124 43,116C44,110 45,106 47,102C52,97 57,92 60,87C60,72 57,56 53,44C51,38 49,33 45,30L51,28L46,24L52,18L46,15L50,9L45,7C45,4 46,3 46,2Z";
+var _LION_TAIL="M57,88C68,82 74,70 74,56C74,44 69,36 63,31C59,27 60,22 65,20C61,13 64,6 71,4C71,9 74,12 78,12C77,17 80,21 84,20C83,26 86,31 89,31C86,36 85,41 81,43C85,53 84,65 79,74C74,84 67,90 60,94Z";
+function _lionInner(f,tongue,eyeFill){
+  return '<path d="'+_LION_TAIL+'" fill="'+f+'" stroke="#3a2a10" stroke-width="1.8" stroke-linejoin="round"/>'
+   +'<path d="'+_LION_BODY+'" fill="'+f+'" stroke="#3a2a10" stroke-width="1.8" stroke-linejoin="round"/>'
+   +(tongue?'<path d="M20,24 C16,24 13,26 12,28 C14,29 18,29 20,27Z" fill="'+tongue+'"/>':'')
+   +'<path d="M38,12 C43,16 45,22 44,28 M33,18 C38,22 40,27 39,32" fill="none" stroke="#3a2a10" stroke-width="1.4" opacity=".45"/>'
+   +'<circle cx="28" cy="11" r="1.7" fill="'+(eyeFill||"#2b1c08")+'"/>';}
+function _lionR(cx,ytop,h,f,tongue){var s=(h/134).toFixed(4),x0=(cx-46*h/134).toFixed(1);
+  return '<g transform="translate('+x0+','+ytop+') scale('+s+')">'+_lionInner(f,tongue)+'</g>';}
+function _lionParti(cx,ytop,h,f1,f2,uid,tongue){var s=(h/134).toFixed(4),x0=(cx-46*h/134).toFixed(1);
+  return '<g transform="translate('+x0+','+ytop+') scale('+s+')">'
+   +'<clipPath id="'+uid+'pa"><rect x="-14" y="-14" width="59" height="164"/></clipPath>'
+   +'<clipPath id="'+uid+'pb"><rect x="45" y="-14" width="64" height="164"/></clipPath>'
+   +'<g clip-path="url(#'+uid+'pa)"><path d="'+_LION_TAIL+'" fill="'+f1+'"/><path d="'+_LION_BODY+'" fill="'+f1+'"/></g>'
+   +'<g clip-path="url(#'+uid+'pb)"><path d="'+_LION_TAIL+'" fill="'+f2+'"/><path d="'+_LION_BODY+'" fill="'+f2+'"/></g>'
+   +'<path d="'+_LION_TAIL+'" fill="none" stroke="#3a2a10" stroke-width="1.8" stroke-linejoin="round"/>'
+   +'<path d="'+_LION_BODY+'" fill="none" stroke="#3a2a10" stroke-width="1.8" stroke-linejoin="round"/>'
+   +(tongue?'<path d="M20,24 C16,24 13,26 12,28 C14,29 18,29 20,27Z" fill="'+tongue+'"/>':'')
+   +'<circle cx="28" cy="11" r="1.7" fill="#fdfaf1"/></g>';}
+function _lys(cx,cy,h,f){var s=(h/32).toFixed(3);
+  return '<g transform="translate('+cx+','+cy+') scale('+s+')" fill="'+f+'">'
+   +'<path d="M0,-16 C3.2,-10 3.2,-6 0,-1.5 C-3.2,-6 -3.2,-10 0,-16Z"/>'
+   +'<path d="M-2,-3 C-6,-9 -12,-9 -13,-4 C-13.8,0.5 -8,2.5 -2.5,0.5Z"/>'
+   +'<path d="M2,-3 C6,-9 12,-9 13,-4 C13.8,0.5 8,2.5 2.5,0.5Z"/>'
+   +'<rect x="-7" y="1.5" width="14" height="3" rx="1"/>'
+   +'<path d="M0,5 C2.6,8 2.6,12.5 0,16 C-2.6,12.5 -2.6,8 0,5Z"/>'
+   +'<path d="M-2.2,5 C-5.5,8 -6.5,12 -4.5,14 C-2.5,12.5 -1.6,9 -1.8,5.5Z"/>'
+   +'<path d="M2.2,5 C5.5,8 6.5,12 4.5,14 C2.5,12.5 1.6,9 1.8,5.5Z"/></g>';}
 function _crown(cx,y,w,gid){var hh=w*0.52,pts="M "+(cx-w/2)+" "+(y+hh*0.5)+" L "+(cx-w/2)+" "+y+" L "+(cx-w*0.22)+" "+(y+hh*0.5)+" L "+(cx-w*0.11)+" "+(y-hh*0.05)+" L "+cx+" "+(y+hh*0.5)+" L "+(cx+w*0.11)+" "+(y-hh*0.05)+" L "+(cx+w*0.22)+" "+(y+hh*0.5)+" L "+(cx+w/2)+" "+y+" L "+(cx+w/2)+" "+(y+hh*0.5)+" Z";
   var band='<rect x="'+(cx-w/2)+'" y="'+(y+hh*0.5)+'" width="'+w+'" height="'+(hh*0.42)+'" rx="3" fill="url(#'+gid+')" stroke="#7c5e1c" stroke-width="1"/>';
   var pearls=_besant(cx-w/2,y,3.4,"url(#"+gid+")")+_besant(cx-w*0.11,y-hh*0.05,3.4,"url(#"+gid+")")+_besant(cx+w*0.11,y-hh*0.05,3.4,"url(#"+gid+")")+_besant(cx+w/2,y,3.4,"url(#"+gid+")");
@@ -499,7 +530,31 @@ var REAL_ARMS={
       var lot=_lotus(CX-64,214,15,MC.azur)+_lotus(CX+64,214,15,MC.azur)+_lotus(CX,388,15,MC.azur);
       return ch+stars+lot;}},
   "VIRGILI":{field:MC.red,label:"Virgili (Italie) — de gueules à cinq carreaux d'or, chacun traversé d'un dard de sable",source:"heraldrysinstitute.com — Virgili",
-    charges:function(CX,GOLD){function car(x,y){return '<rect x="'+(x-13)+'" y="'+(y-13)+'" width="26" height="26" rx="2" fill="'+GOLD+'"/><rect x="'+(x-2.5)+'" y="'+(y-16)+'" width="5" height="32" fill="'+MC.sable+'"/><polygon points="'+x+','+(y-20)+' '+(x-5)+','+(y-13)+' '+(x+5)+','+(y-13)+'" fill="'+MC.sable+'"/>';}return car(CX,272)+car(CX-48,226)+car(CX+48,226)+car(CX-48,318)+car(CX+48,318);}}
+    charges:function(CX,GOLD){function car(x,y){return '<rect x="'+(x-13)+'" y="'+(y-13)+'" width="26" height="26" rx="2" fill="'+GOLD+'"/><rect x="'+(x-2.5)+'" y="'+(y-16)+'" width="5" height="32" fill="'+MC.sable+'"/><polygon points="'+x+','+(y-20)+' '+(x-5)+','+(y-13)+' '+(x+5)+','+(y-13)+'" fill="'+MC.sable+'"/>';}return car(CX,272)+car(CX-48,226)+car(CX+48,226)+car(CX-48,318)+car(CX+48,318);}},
+  "MOLINARIO":{field:MC.arg,label:"Molinari (Milan, Castano Primo — arme parlante, variante Molinario) — d'argent à la roue de moulin d'or sur une terrasse de sinople, surmontée d'un arbre du même ; au chef d'Anjou (d'azur aux fleurs de lys d'or, au lambel de gueules)",source:"heraldrysinstitute.com — Molinari",
+    charges:function(CX,GOLD){var sin="#2f7d4f",sinD="#1b5e3a",s="";
+      /* terrasse */ s+='<path d="M96,380 Q'+CX+',352 324,380 L324,470 L96,470 Z" fill="'+sin+'"/><path d="M96,380 Q'+CX+',352 324,380" fill="none" stroke="'+sinD+'" stroke-width="3"/>';
+      /* roue de moulin */ var wy=312,wr=44;
+      for(var a=0;a<8;a++){var an=a*Math.PI/4+Math.PI/8,c=Math.cos(an),si=Math.sin(an);
+        s+='<line x1="'+(CX+c*wr).toFixed(1)+'" y1="'+(wy+si*wr).toFixed(1)+'" x2="'+(CX+c*(wr+13)).toFixed(1)+'" y2="'+(wy+si*(wr+13)).toFixed(1)+'" stroke="'+GOLD+'" stroke-width="9"/>';
+        s+='<line x1="'+CX+'" y1="'+wy+'" x2="'+(CX+c*wr).toFixed(1)+'" y2="'+(wy+si*wr).toFixed(1)+'" stroke="'+GOLD+'" stroke-width="5"/>';}
+      s+='<circle cx="'+CX+'" cy="'+wy+'" r="'+wr+'" fill="none" stroke="'+GOLD+'" stroke-width="9"/><circle cx="'+CX+'" cy="'+wy+'" r="9" fill="'+GOLD+'"/>';
+      /* arbre */ s+='<rect x="'+(CX-4)+'" y="240" width="8" height="26" fill="'+sinD+'"/><circle cx="'+CX+'" cy="226" r="16" fill="'+sin+'"/><circle cx="'+(CX-14)+'" cy="234" r="11" fill="'+sin+'"/><circle cx="'+(CX+14)+'" cy="234" r="11" fill="'+sin+'"/>';
+      /* chef d'Anjou */ s+='<rect x="0" y="150" width="420" height="60" fill="'+MC.azur+'"/>'+_lys(CX-56,190,24,GOLD)+_lys(CX,192,24,GOLD)+_lys(CX+56,190,24,GOLD);
+      s+='<rect x="146" y="155" width="128" height="6" fill="'+MC.red+'"/><polygon points="152,161 166,161 163,178 155,178" fill="'+MC.red+'"/><polygon points="203,161 217,161 214,178 206,178" fill="'+MC.red+'"/><polygon points="254,161 268,161 265,178 257,178" fill="'+MC.red+'"/>';
+      return s;}},
+  "CRESTO":{field:MC.arg,label:"Cresta (Turin — même racine, variante Cresto) — d'argent au lion parti d'azur et de gueules, lampassé de gueules et armé d'azur",source:"heraldrysinstitute.com — Cresta",
+    charges:function(CX,GOLD){var uid=GOLD.replace(/[^a-z0-9]/gi,"");
+      return _lionParti(CX,168,238,MC.azur,MC.red,uid,MC.red);}},
+  "DANIEL":{field:MC.red,label:"Daniel (Normandie, anoblie 1574 — nom porté par plusieurs familles) — de gueules au lion d'or tenant de sa patte senestre une épée d'argent, au chef d'azur chargé de trois étoiles d'or",source:"armorial.org — Rietstap 13165",
+    charges:function(CX,GOLD){var s="";
+      /* épée d'argent, bien dégagée à senestre de la patte levée */
+      s+='<polygon points="150.2,301.5 136,219.8 133,212 132.6,220.9 143.8,302.5" fill="'+MC.arg+'" stroke="#6a6f78" stroke-width="1.5"/>';
+      s+='<line x1="138.1" y1="303.4" x2="155.9" y2="300.6" stroke="'+GOLD+'" stroke-width="6" stroke-linecap="round"/>';
+      s+='<line x1="147" y1="302" x2="148.9" y2="313.9" stroke="'+GOLD+'" stroke-width="4.5"/><circle cx="149.5" cy="317.5" r="4" fill="'+GOLD+'"/>';
+      /* lion d'or */ s+=_lionR(CX+4,222,196,GOLD,null);
+      /* chef d'azur + 3 étoiles */ s+='<rect x="0" y="150" width="420" height="60" fill="'+MC.azur+'"/>'+_star(CX-56,180,14,GOLD)+_star(CX,180,14,GOLD)+_star(CX+56,180,14,GOLD);
+      return s;}}
 };
 function blasonSVG(nom,members){nom=_famName(nom)||"?";members=members||[];var N=members.length;
   var h=_hhash(nom),real=REAL_ARMS[nom];
