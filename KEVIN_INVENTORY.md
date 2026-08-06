@@ -1742,3 +1742,4 @@ Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Dé
 |---|---|---|
 | `tests/verify-crea-cartoon.mjs` | Preuve : le cartoon garde la couleur de peau, aplatit vraiment, et trace un VRAI trait qui grossit avec l'image | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
 | `tests/verify-crea-selection.mjs` | Preuve : toucher un visage le sélectionne, flouter/cartooniser n'agit QUE là, et « Retirer » / « Enregistrer » marchent | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-selection.mjs) |
+| `tests/verify-crea-plein-ecran.mjs` | Preuve : le plein écran couvre tout l'écran, zoom au doigt, « Remplir », et « Enregistrer » sous la main | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-plein-ecran.mjs) |

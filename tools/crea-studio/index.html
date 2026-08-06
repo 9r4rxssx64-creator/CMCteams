@@ -201,6 +201,22 @@
     padding:3px 8px;border-radius:20px;background:rgba(0,0,0,.55);border:1px solid var(--line);
     color:var(--gold2);opacity:.8;font-weight:700;pointer-events:none}
 
+  /* ---------- PLEIN ÉCRAN ---------- */
+  #plein{position:fixed;inset:0;z-index:200;background:#000;display:none;
+    align-items:center;justify-content:center;overflow:hidden;touch-action:none;overscroll-behavior:none}
+  #plein.on{display:flex}
+  #plein .media{max-width:100%;max-height:100%;display:block;transform-origin:0 0;
+    will-change:transform;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  #pleinBar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;justify-content:center;
+    padding:10px 12px calc(10px + var(--safeb));background:linear-gradient(transparent,rgba(0,0,0,.75) 55%)}
+  #pleinBar button{min-width:52px;min-height:46px;padding:0 14px;border-radius:14px;font-size:14px;
+    font-weight:700;background:rgba(30,30,38,.9);border:1px solid var(--line);color:var(--txt)}
+  #pleinBar button.gold{background:var(--grad);color:#1a1200;border-color:transparent}
+  #pleinBar button:active{transform:scale(.95)}
+  #pleinTop{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;
+    padding:calc(8px + var(--safet)) 14px 10px;background:linear-gradient(rgba(0,0,0,.75),transparent);
+    font-size:13px;font-weight:700;color:var(--gold2);pointer-events:none}
+
   /* ---------- TOAST ---------- */
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + var(--safeb));
     background:rgba(20,20,28,.96);border:1px solid var(--line);padding:11px 16px;border-radius:14px;
@@ -297,6 +313,7 @@
         <button class="chip" data-tab="cartoon"><span class="ic">🖍️</span>Cartoon</button>
         <button class="chip" data-tab="text"><span class="ic">🅣</span>Texte</button>
         <button class="chip" data-tab="reset"><span class="ic">↺</span>Reset</button>
+        <button class="chip" id="photoFull" onclick="Photo.plein()"><span class="ic">⛶</span>Plein écran</button>
         <button class="chip" id="photoSave" onclick="Photo.export()"><span class="ic">💾</span>Enregistrer</button>
         <button class="chip" id="photoRemove" onclick="Photo.clear()"><span class="ic">🗑️</span>Retirer</button>
       </div>
@@ -439,6 +456,7 @@
         <button class="chip" data-tab="vtext"><span class="ic">💬</span>Sous-titre</button>
         <button class="chip" data-tab="viral"><span class="ic">🔥</span>Viral</button>
         <button class="chip" data-tab="music"><span class="ic">🎵</span>Musique</button>
+        <button class="chip" id="videoFull" onclick="Vid.plein()"><span class="ic">⛶</span>Plein écran</button>
         <button class="chip" id="videoSave" onclick="Vid.export()"><span class="ic">💾</span>Enregistrer</button>
         <button class="chip" id="videoRemove" onclick="Vid.clear()"><span class="ic">🗑️</span>Retirer</button>
       </div>
@@ -517,6 +535,7 @@
         <button class="chip" data-tab="fill"><span class="ic">🪣</span>Remplir</button>
         <button class="chip" onclick="Anim.undo()"><span class="ic">↶</span>Annuler</button>
         <button class="chip" onclick="Anim.play()"><span class="ic" id="animPlayIc">▶</span>Lire</button>
+        <button class="chip" id="animFull" onclick="Anim.plein()"><span class="ic">⛶</span>Plein écran</button>
         <button class="chip" id="animSave" onclick="Anim.save()"><span class="ic">💾</span>Enregistrer</button>
         <button class="chip" id="animRemove" onclick="Anim.clear()"><span class="ic">🗑️</span>Retirer</button>
       </div>
@@ -547,6 +566,7 @@
       <div class="toolrow" id="aiModels" style="justify-content:center">
         <button class="chip on" data-model="standard"><span class="ic">⚡</span>Standard</button>
         <button class="chip" data-model="quality"><span class="ic">💎</span>Qualité max</button>
+        <button class="chip" onclick="pleinResultat('aividPhoto','aividVideo','Ma vidéo Danse IA',function(){AiVid.export();})"><span class="ic">⛶</span>Plein écran</button>
       </div>
       <div class="textedit"><input id="aiPrompt" placeholder="Optionnel : précise (ex: danse hip-hop…)" maxlength="120"></div>
       <div style="padding:2px 14px">
@@ -677,6 +697,7 @@
         <button class="chip" data-tab="duo"><span class="ic">👥</span>À deux</button>
         <button class="chip" data-tab="sing"><span class="ic">🎤</span>Je chante</button>
         <button class="chip" data-tab="song"><span class="ic">🎵</span>Chanson IA</button>
+        <button class="chip" onclick="pleinResultat('magicPhoto','magicVideo','Ma création IA',function(){Magic.export();})"><span class="ic">⛶</span>Plein écran</button>
       </div>
 
       <div id="magicLook">
@@ -807,7 +828,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.5.0';
+var APP_VER='v9.6.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -843,6 +864,186 @@ async function shareOrSave(blob,name,title){
   }
   download(blob,name); return false;
 }
+
+/* ============ ⛶ PLEIN ÉCRAN — VOIR LE RÉSULTAT EN GRAND ============
+   Kevin : « Pouvoir voir en plein écran les résultats etc ».
+   Sur iPhone, l'API plein écran du navigateur ne marche PAS sur autre chose
+   qu'une vidéo : on fabrique donc notre propre plein écran (un calque qui
+   couvre tout l'écran). Il marche partout, hors ligne, et on y ajoute ce que
+   le navigateur ne donne pas : zoom à deux doigts, double-tap, déplacement au
+   doigt, et le bouton « Enregistrer » sous la main. */
+var Plein=(function(){
+  var box=null,media=null,bar=null,titre=null,onSave=null,cleanup=null,legende='';
+  var sc=1,tx=0,ty=0,base={w:0,h:0},ptrs={},pinch=null,dragging=null,lastTap=0;
+  var nat={w:0,h:0},fit=1,rot=0,remplir=false;   /* taille d'origine, échelle, rotation, mode « remplir » */
+
+  function build(){
+    if(box)return;
+    box=document.createElement('div');box.id='plein';
+    box.innerHTML='<div id="pleinTop"></div><div id="pleinBar"></div>';
+    document.body.appendChild(box);
+    bar=box.querySelector('#pleinBar');titre=box.querySelector('#pleinTop');
+    box.addEventListener('pointerdown',down);
+    box.addEventListener('pointermove',move);
+    box.addEventListener('pointerup',up);
+    box.addEventListener('pointercancel',up);
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&box.classList.contains('on'))fermer();});
+    /* si Kevin tourne son téléphone, on recalcule : une photo paysage remplit
+       alors vraiment l'écran, sans avoir rien à faire */
+    var re=function(){if(box.classList.contains('on')&&media){sc=1;tx=0;ty=0;mesure();}};
+    window.addEventListener('resize',re);
+    window.addEventListener('orientationchange',function(){setTimeout(re,250);});
+  }
+  function applique(){
+    if(!media)return;
+    media.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+(fit*sc)+')';
+    base.w=(rot?nat.h:nat.w)*fit*sc;
+    base.h=(rot?nat.w:nat.h)*fit*sc;
+  }
+  /* on garde toujours un bout de l'image à l'écran (sinon on la « perd ») */
+  function borne(){
+    if(!media)return;
+    var W=box.clientWidth,H=box.clientHeight;
+    var maxX=Math.max(0,(base.w-W)/2),maxY=Math.max(0,(base.h-H)/2);
+    tx=Math.max(-maxX,Math.min(maxX,tx));
+    ty=Math.max(-maxY,Math.min(maxY,ty));
+  }
+  /* Calcule l'échelle d'affichage.
+     PIÈGE MESURÉ : une photo PAYSAGE sur un téléphone PORTRAIT ne remplit que
+     293 px de haut sur 844 — « plein écran » techniquement, minuscule en vrai.
+     J'ai d'abord tourné l'image automatiquement : elle devenait bien plus
+     grande… mais le VISAGE se retrouvait couché sur le côté. Plus grand ≠ mieux.
+     Solution : on affiche droit (tout est visible), et deux échappatoires
+     évidentes — « ⤢ Remplir » (l'image occupe TOUT l'écran, les bords sont
+     rognés, comme une vidéo) et « ⟳ » si Kevin VEUT tourner. Et si le téléphone
+     est tourné, on recalcule tout seul : là, une photo paysage remplit
+     naturellement l'écran. */
+  function mesure(){
+    if(!media)return;
+    var nw=media.naturalWidth||media.videoWidth||media.clientWidth||1;
+    var nh=media.naturalHeight||media.videoHeight||media.clientHeight||1;
+    nat={w:nw,h:nh};
+    var W=box.clientWidth,H=box.clientHeight;
+    var aw=rot?nh:nw, ah=rot?nw:nh;
+    fit=remplir?Math.max(W/aw,H/ah):Math.min(W/aw,H/ah);
+    media.style.position='absolute';media.style.left='50%';media.style.top='50%';
+    media.style.width=nw+'px';media.style.height=nh+'px';
+    media.style.marginLeft=(-nw/2)+'px';media.style.marginTop=(-nh/2)+'px';
+    media.style.maxWidth='none';media.style.maxHeight='none';
+    media.style.transformOrigin='50% 50%';
+    applique();borne();applique();
+    titre.textContent=legende+(remplir?'  ·  rempli (les bords sont coupés)':'');
+    var bt=$('pleinFill');if(bt)bt.textContent=remplir?'⤡':'⤢';
+  }
+  function zoomVers(f,cx,cy){
+    var old=sc;sc=Math.max(1,Math.min(6,f));
+    if(sc===1){tx=0;ty=0;}
+    else{
+      var W=box.clientWidth/2,H=box.clientHeight/2;
+      var k=sc/old;
+      tx=(tx-(cx-W))*k+(cx-W);ty=(ty-(cy-H))*k+(cy-H);
+    }
+    borne();applique();
+  }
+  function down(e){
+    if(e.target.closest&&e.target.closest('#pleinBar'))return;
+    ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=Object.keys(ptrs);
+    if(ids.length===2){
+      var a=ptrs[ids[0]],b=ptrs[ids[1]];
+      pinch={d:Math.hypot(a.x-b.x,a.y-b.y),sc:sc,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2};
+      dragging=null;return;
+    }
+    dragging={x:e.clientX,y:e.clientY,tx:tx,ty:ty,bouge:false};
+    try{box.setPointerCapture(e.pointerId);}catch(_){}
+  }
+  function move(e){
+    if(!ptrs[e.pointerId])return;
+    ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=Object.keys(ptrs);
+    if(pinch&&ids.length>=2){
+      var a=ptrs[ids[0]],b=ptrs[ids[1]];
+      var d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(pinch.d>0)zoomVers(pinch.sc*(d/pinch.d),pinch.cx,pinch.cy);
+      return;
+    }
+    if(dragging&&sc>1){
+      tx=dragging.tx+(e.clientX-dragging.x);ty=dragging.ty+(e.clientY-dragging.y);
+      if(Math.abs(e.clientX-dragging.x)+Math.abs(e.clientY-dragging.y)>6)dragging.bouge=true;
+      borne();applique();
+    }else if(dragging&&Math.abs(e.clientX-dragging.x)+Math.abs(e.clientY-dragging.y)>6){dragging.bouge=true;}
+  }
+  function up(e){
+    var etait=dragging;delete ptrs[e.pointerId];
+    if(Object.keys(ptrs).length<2)pinch=null;
+    dragging=null;
+    if(etait&&!etait.bouge){
+      var t=Date.now();
+      if(t-lastTap<300){zoomVers(sc>1.2?1:2.6,e.clientX,e.clientY);lastTap=0;return;}
+      lastTap=t;
+      /* un simple tap sur le fond ferme (seulement si on n'est pas zoomé) */
+      if(sc<=1.02&&e.target===box)setTimeout(function(){if(Date.now()-lastTap>=290)fermer();},300);
+    }
+  }
+  function poser(el,t,save,libere){
+    build();
+    if(media&&media.parentNode)media.remove();
+    media=el;media.className='media';
+    box.insertBefore(media,titre.nextSibling);
+    onSave=save||null;cleanup=libere||null;legende=t||'';titre.textContent=legende;
+    sc=1;tx=0;ty=0;ptrs={};pinch=null;rot=0;fit=1;remplir=false;
+    bar.innerHTML='';
+    if(onSave){
+      var s=document.createElement('button');s.className='gold';s.id='pleinSave';s.textContent='💾 Enregistrer';
+      s.onclick=function(){onSave();};bar.appendChild(s);
+    }
+    var f=document.createElement('button');f.id='pleinFill';f.textContent='⤢';
+    f.title='Remplir tout l\'écran';
+    f.onclick=function(){remplir=!remplir;sc=1;tx=0;ty=0;mesure();};bar.appendChild(f);
+    var r90=document.createElement('button');r90.id='pleinRot';r90.textContent='⟳';
+    r90.title='Tourner';
+    r90.onclick=function(){rot=rot?0:90;sc=1;tx=0;ty=0;mesure();};bar.appendChild(r90);
+    var z=document.createElement('button');z.id='pleinZoom';z.textContent='🔍';
+    z.onclick=function(){zoomVers(sc>1.2?1:2.6,box.clientWidth/2,box.clientHeight/2);};bar.appendChild(z);
+    var c=document.createElement('button');c.id='pleinClose';c.textContent='✕';
+    c.title='Fermer';c.onclick=fermer;bar.appendChild(c);
+    box.classList.add('on');
+    /* on mesure dès que la taille d'origine est connue (image chargée / vidéo prête) */
+    var go=function(){mesure();};
+    if(media.tagName==='IMG'){ if(media.complete&&media.naturalWidth)go(); else media.onload=go; }
+    else { if(media.videoWidth)go(); else media.onloadedmetadata=go; }
+    setTimeout(go,120);
+    try{if(box.requestFullscreen)box.requestFullscreen().catch(function(){});}catch(_){}
+    return true;
+  }
+  function fermer(){
+    if(!box)return;
+    box.classList.remove('on');
+    try{if(document.fullscreenElement)document.exitFullscreen().catch(function(){});}catch(_){}
+    if(media){try{if(media.pause)media.pause();}catch(_){}}
+    if(cleanup){try{cleanup();}catch(_){}cleanup=null;}
+    if(media&&media.parentNode)media.remove();
+    media=null;onSave=null;sc=1;tx=0;ty=0;ptrs={};pinch=null;
+  }
+  return {
+    /* une image (canvas ou URL) en grand */
+    image:function(src,t,save,libere){
+      var el;
+      if(src&&src.tagName==='CANVAS'){el=new Image();el.src=src.toDataURL('image/png');}
+      else{el=new Image();el.src=src;}
+      el.alt='';return poser(el,t,save,libere);
+    },
+    /* une vidéo en grand — sur iPhone on préfère le vrai lecteur système */
+    video:function(src,t,save,libere){
+      var v=document.createElement('video');
+      v.src=src;v.controls=true;v.playsInline=true;v.setAttribute('playsinline','');
+      v.setAttribute('webkit-playsinline','');v.autoplay=true;
+      return poser(v,t,save,libere);
+    },
+    ouvert:function(){return !!(box&&box.classList.contains('on'));},
+    fermer:fermer
+  };
+})();
 
 /* ============ 🌐 LE DOMAINE TE RECONNAÎT DÉJÀ ============
    kd-mc.com sait qui tu es (une seule connexion pour toutes tes apps). Au lieu
@@ -1140,12 +1341,26 @@ var Mine=(function(){
     var w=document.createElement('div');
     w.style.cssText='position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.92);display:flex;'+
       'flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px';
-    w.innerHTML='<div style="max-width:100%;max-height:64vh;overflow:auto">'+html+'</div>'+
+    w.innerHTML='<div style="max-width:100%;max-height:60vh;overflow:auto">'+html+'</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">'+
-      '<button class="bigbtn" id="mineShare">📤 Enregistrer / Partager</button>'+
+      (it.kind==='audio'?'':'<button class="bigbtn" id="mineFull">⛶ Voir en plein écran</button>')+
+      '<button class="bigbtn'+(it.kind==='audio'?'':' ghost')+'" id="mineShare">📤 Enregistrer / Partager</button>'+
       '<button class="bigbtn ghost" id="mineDel">🗑 Effacer</button>'+
       '<button class="bigbtn ghost" id="mineClose">Fermer</button></div>';
     document.body.appendChild(w);
+    /* ⛶ plein écran : l'aperçu de la galerie était plafonné à 60 % de l'écran,
+       donc on ne VOYAIT jamais vraiment le résultat. Là c'est tout l'écran,
+       avec zoom au doigt, et « Enregistrer » reste sous la main. */
+    var full=w.querySelector('#mineFull');
+    if(full)full.onclick=function(){
+      var u=URL.createObjectURL(it.blob),lib=function(){try{URL.revokeObjectURL(u);}catch(e){}};
+      var t=(it.label||'Ma création');
+      if(it.kind==='video')Plein.video(u,t,function(){shareOrSave(it.blob,name,t);},lib);
+      else Plein.image(u,t,function(){shareOrSave(it.blob,name,t);},lib);
+    };
+    /* toucher l'aperçu = plein écran direct (geste naturel) */
+    var apercu=w.querySelector('img');
+    if(apercu&&full){apercu.style.cursor='zoom-in';apercu.onclick=function(){full.click();};}
     function close(){try{URL.revokeObjectURL(url);}catch(e){}w.remove();}
     w.querySelector('#mineClose').onclick=close;
     w.querySelector('#mineShare').onclick=function(){shareOrSave(it.blob,name,it.label||'Ma création');};
@@ -1616,7 +1831,12 @@ var Cam=(function(){
     },'image/jpeg',0.92);
   }
   function startVideo(){
-    if(!stream||rec)return;
+    if(rec)return;
+    /* Avant, on sortait EN SILENCE si la caméra n'était pas allumée : Kevin
+       appuyait, rien ne se passait, aucun message. (Règle « toujours détailler
+       l'erreur ».) */
+    if(!stream)return hint('⚠️ La caméra n\'est pas allumée — touche « Démarrer ».');
+    if(!v()||!v().videoWidth)return hint('⏳ La caméra se prépare — réessaie dans 1 seconde.');
     var mime=['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm']
       .filter(function(m){try{return MediaRecorder.isTypeSupported(m);}catch(e){return false;}})[0]||'';
     /* On filme le rendu FILTRÉ : sinon le filtre choisi disparaîtrait de la vidéo. */
@@ -1987,6 +2207,33 @@ $('btnExport').onclick=function(){
   else if(CUR==='aivid')AiVid.export();
   else if(CUR==='magic')Magic.export();
 };
+
+/* ⛶ Voir en grand le résultat d'un écran qui affiche soit une image, soit une
+   vidéo (Magie IA, Danse IA). On prend celui des deux qui est visible.
+   Pour une vidéo sur iPhone, le VRAI lecteur système est le meilleur plein
+   écran possible — on l'utilise quand il existe. */
+function pleinResultat(imgId,vidId,titre,save){
+  var im=$(imgId),vd=$(vidId);
+  var vidOk=vd&&!vd.classList.contains('hidden')&&vd.src;
+  var imgOk=im&&!im.classList.contains('hidden')&&im.src;
+  if(vidOk){
+    try{
+      if(vd.webkitEnterFullscreen){vd.webkitEnterFullscreen();vd.play().catch(function(){});return;}
+      if(vd.requestFullscreen){vd.requestFullscreen();vd.play().catch(function(){});return;}
+    }catch(e){}
+    Plein.video(vd.src,titre,save);return;
+  }
+  if(imgOk){Plein.image(im.src,titre+' — pince pour zoomer',save);return;}
+  toast('Crée d\'abord quelque chose à regarder',1600);
+}
+/* toucher directement le résultat = plein écran (geste naturel) */
+['magicPhoto','aividPhoto'].forEach(function(id){
+  var el=$(id);if(!el)return;
+  el.style.cursor='zoom-in';
+  el.addEventListener('click',function(){
+    if(el.src&&!el.classList.contains('hidden'))Plein.image(el.src,'Ton résultat — pince pour zoomer');
+  });
+});
 
 /* generic tab switching within a studio panel */
 function wireTabs(rowId,map){
@@ -2654,6 +2901,17 @@ var Photo=(function(){
       sctx.save();sctx.globalCompositeOperation='destination-out';sctx.drawImage(selMasque(false),0,0);sctx.restore();
       snapshotOriginal();buildFilters();render();toast('Sélection effacée de la photo 🗑️',1600);
     },
+    /* ⛶ Voir le résultat en GRAND (avec zoom au doigt). On rend la photo en
+       PLEINE résolution — pas l'aperçu réduit — donc on voit les vrais détails. */
+    plein:function(){
+      if(!loaded){toast('Ouvre une photo d\'abord');return;}
+      var out=document.createElement('canvas');out.width=srcCanvas.width;out.height=srcCanvas.height;
+      var octx=out.getContext('2d',{willReadFrequently:true});
+      peindreBase(octx,out.width,out.height);
+      drawOverlays(octx,out.width,out.height);
+      drawTexts(octx,out.width,out.height,1);
+      Plein.image(out,out.width+'×'+out.height+' px — pince pour zoomer',function(){Photo.export();});
+    },
     /* --- retirer la photo (Kevin : « comme l'enlever ») --- */
     clear:function(){
       if(!loaded){toast('Aucune photo ouverte');return;}
@@ -3196,6 +3454,17 @@ var Vid=(function(){
     _loadMusic:function(file){music={file:file,url:URL.createObjectURL(file)};$('musicName').textContent='🎵 '+file.name;toast('Musique ajoutée',1200);},
     _refs:function(){return {vel:vel,get start(){return start},get end(){return end},get filterStr(){return filterStr},get speed(){return speed},get sub(){return sub},get music(){return music},get musicVol(){return musicVol},get vratio(){return vratio},get vbg(){return vbg},get amb(){return amb},get fade(){return fade},get capStyle(){return capStyle},get beatZoom(){return beatZoom}};},
     export:function(){ VidExport.run(); },
+    /* ⛶ Voir la vidéo en GRAND. Sur iPhone on ouvre le VRAI lecteur système
+       (le seul vrai plein écran autorisé pour une vidéo) ; ailleurs, notre
+       calque plein écran avec les commandes. */
+    plein:function(){
+      if(!loaded||!vel.src){toast('Ouvre une vidéo d\'abord');return;}
+      try{
+        if(vel.webkitEnterFullscreen){vel.muted=false;vel.webkitEnterFullscreen();vel.play().catch(function(){});return;}
+        if(vel.requestFullscreen){vel.requestFullscreen();vel.play().catch(function(){});return;}
+      }catch(e){}
+      Plein.video(vel.src,'Ta vidéo',function(){Vid.export();});
+    },
     /* Retirer la vidéo de l'écran (Kevin : « comme l'enlever ») — on libère
        aussi la mémoire du téléphone (URL de la vidéo et de la musique). */
     clear:function(){
@@ -3493,6 +3762,11 @@ var Anim=(function(){
     save:function(){
       if(!frames.length){toast('Dessine d\'abord');return;}
       frames[cur].toBlob(function(b){shareOrSave(b,'crea-dessin.png','Mon dessin');toast('Enregistré dans « Mes créas » 💾',1800);},'image/png');
+    },
+    /* ⛶ Voir le dessin en GRAND (l'image du moment, pleine résolution) */
+    plein:function(){
+      if(!frames.length){toast('Dessine d\'abord');return;}
+      Plein.image(frames[cur],'Image '+(cur+1)+'/'+frames.length+' — pince pour zoomer',function(){Anim.save();});
     },
     /* Retirer le dessin / l'image importée (Kevin : « comme l'enlever ») */
     clear:function(){
