@@ -1713,3 +1713,15 @@ Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · 
 | `tests/verify-crea-gallery.mjs` | Preuve : « Mes créas » garde tout, même après rechargement | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-gallery.mjs) |
 | `tests/verify-crea-ai-fallback.mjs` | Preuve : l'app marche même si l'IA principale tombe | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-ai-fallback.mjs) |
 | `tests/no-conflict-markers.test.mjs` | Garde : aucun conflit de fusion ne peut plus entrer dans le dépôt | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-conflict-markers.test.mjs) |
+## 🗂️ « Qui se connecte » + comptes uniques (session 2026-08-06)
+
+| Fichier | Description | Liens |
+|---|---|---|
+| .claude/skills/domain-journal/SKILL.md | Mon mode d'emploi du journal du domaine (source unique, un compte par personne, pièges, vie privée) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/domain-journal/SKILL.md) |
+| services/kdmc-router/worker.js | Le routeur du domaine : enregistre chaque visite, range chaque personne dans UN dossier | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) |
+| services/kdmc-router/compte-unique.test.mjs | 10 tests : un seul dossier par personne, doublon tardif absorbé, Ronan intact | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/compte-unique.test.mjs) |
+| services/kdmc-router/domain-log.test.mjs | 7 tests : lecture protégée par ton code, aucune donnée privée exposée | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/domain-log.test.mjs) |
+| services/kdmc-access/page.js | La page « Qui se connecte » (admin.kd-mc.com) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page.js) |
+| services/kdmc-access/page-logic.test.mjs | 4 tests : robots exclus, deux comptes du même nom additionnés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page-logic.test.mjs) |
+
+Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Déploiements : [routeur](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) · [page admin](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-access.yml)

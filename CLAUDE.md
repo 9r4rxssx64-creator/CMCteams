@@ -9633,3 +9633,7 @@ S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses to
 - Mode d'emploi détaillé : `.claude/skills/agent-toolkit/SKILL.md`. Côté Apex : catalogue plugins, tag `agent-toolkit`.
 - **Interdits** : vendoriser un binaire ou un script exécutable tiers ; installer un hook tiers qui réécrit **toutes** mes commandes (PROTECTION ≠ STABILITÉ).
 - **Ajouter une source** = l'ajouter dans `tools/agent-toolkit/sources.json` **ET** dans le catalogue Apex, dans le même commit (le test de parité vérifie que les URLs correspondent).
+
+### Skills « domaine » à ouvrir par réflexe
+- **`.claude/skills/domain-journal/`** — « Qui se connecte » (admin.kd-mc.com) : source unique des connexions = le routeur (KV `ACCOUNTS`), règle **un compte par personne** (fusion datée, identité stricte prénom+nom), robots exclus, vie privée (métadonnées seulement). À lire AVANT de toucher aux comptes, fiches, connexions ou à `kdmc-router` (leçons #164 et #166).
+- **Décès = dans l'arbre** (`arbre.kd-mc.com/__deces`), jamais un sous-domaine : `deces.kd-mc.com` a été retiré le 2026-08-06, ne pas le recréer (cf. NOTES_USER.md).

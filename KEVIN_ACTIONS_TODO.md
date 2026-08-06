@@ -1,3 +1,21 @@
+
+## 🗺️ SESSION 2026-08-06 — Feuille de route (ce qui reste, dans l'ordre)
+
+**Rien ne t'attend côté action** — sauf une décision (point 4). Le reste, je le finis moi.
+
+| # | Ce qui reste | Qui | État |
+|---|---|---|---|
+| 1 | **Déployer le routeur** (retrait `deces.kd-mc.com` + fusion « un compte par personne » + « Ronan Desarzens » ≠ Kevin) | moi | ⏳ en file — **GitHub était en panne partielle** (`Service Unavailable` au step « Set up job »). À relancer si besoin. |
+| 2 | **Vérifier que ton doublon a fusionné** (une seule ligne « kevin Desarzens » au lieu de 196 + 116) | moi | ⏳ après le point 1 + une de tes connexions |
+| 3 | **Apex v13 : refaire le bundle** pour que sa CSP autorise `admin.kd-mc.com` — sinon ce que tu fais dans Apex n'apparaît pas dans « Qui se connecte » | moi | ⏳ mesuré `envoi:ABSENT / CSP:ABSENT` |
+| 4 | **Ta décision** : je supprime aussi l'outil `tools/deces-insee/` et ses 6 automatisations (elles dorment : lancement manuel seulement, 0 mail, 0 coût) ? | **toi** | ❓ un mot suffit |
+| 5 | Récupérer le 6ᵉ dépôt de la boîte à outils (miroir corrigé) | moi | ⏳ relancé |
+
+### Déjà fait cette session (rien à faire)
+- 🧰 **Boîte à outils agents** : les 6 dépôts de ton tableau installés pour moi **et** pour Apex, contenu récupéré, mis à jour tout seul le 1ᵉʳ de chaque mois.
+- 🔐 **Un compte par personne** réparé (deux défauts réels trouvés en lisant le journal live).
+- 🧹 `deces.kd-mc.com` retiré → suite de tests du domaine **34/34** (le dernier rouge est parti).
+
 <!-- Backlog Claude Code (audit Apex 2026-07-05, aucune action Kevin requise) :
 
 ## 🤖 SESSION 2026-07-08 — AGENTS DE CODE INDÉPENDANTS qui CODENT (Kevin « tous »)
