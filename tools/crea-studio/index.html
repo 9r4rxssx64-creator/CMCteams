@@ -448,7 +448,10 @@
         <button class="chip" data-model="quality"><span class="ic">💎</span>Qualité max</button>
       </div>
       <div class="textedit"><input id="aiPrompt" placeholder="Optionnel : précise (ex: danse hip-hop…)" maxlength="120"></div>
-      <div style="padding:2px 14px"><button class="bigbtn" id="aiGenBtn" onclick="AiVid.generate()">🪄 Générer la vidéo</button></div>
+      <div style="padding:2px 14px">
+        <button class="bigbtn" id="aiGenBtn" onclick="AiVid.generate()">🪄 Générer la vidéo</button>
+        <button class="bigbtn ghost" id="aiPoseBtn" onclick="AiVid.pickRef()">🎥 Rejouer une vraie vidéo (danse de référence)</button>
+      </div>
       <div class="hint" id="aiVidHint">⏱️ La génération prend ~1 à 3 minutes. Tu peux attendre sur cet écran.</div>
     </div>
   </section>
@@ -469,15 +472,27 @@
     <div class="panel hidden" id="magicPanel">
       <div class="toolrow" id="magicTabs">
         <button class="chip on" data-tab="look"><span class="ic">🪄</span>Transformer</button>
+        <button class="chip" data-tab="duo"><span class="ic">👥</span>À deux</button>
         <button class="chip" data-tab="sing"><span class="ic">🎤</span>Je chante</button>
         <button class="chip" data-tab="song"><span class="ic">🎵</span>Chanson IA</button>
       </div>
 
       <div id="magicLook">
-        <div class="hint">Touche un style — l'IA transforme ta photo (gratuit) :</div>
+        <div class="hint">Choisis une famille, puis un style — l'IA transforme ta photo (gratuit) :</div>
+        <div class="toolrow" id="magicFams"></div>
         <div class="toolrow" id="magicStyles"></div>
         <div class="textedit"><input id="magicCustom" placeholder="Ou décris ce que tu veux (ex: en pilote de F1…)" maxlength="140"></div>
         <div style="padding:2px 14px"><button class="bigbtn ghost" onclick="Magic.custom()">🪄 Créer ma transformation</button></div>
+      </div>
+
+      <div id="magicDuo" class="hidden">
+        <div class="hint">Réunis <b>deux photos</b> dans une même scène (une personne + une autre) :</div>
+        <div class="toolrow" id="magicDuoStyles"></div>
+        <div style="padding:2px 14px">
+          <button class="bigbtn" onclick="Magic.pick2()">📂 Choisir la 2ᵉ photo</button>
+          <button class="bigbtn ghost" id="magicDuoBtn" onclick="Magic.duo()">👥 Créer la photo à deux</button>
+        </div>
+        <div class="hint" id="magicDuoHint">La 1ʳᵉ photo est celle déjà chargée en haut.</div>
       </div>
 
       <div id="magicSing" class="hidden">
@@ -491,11 +506,17 @@
 
       <div id="magicSong" class="hidden">
         <div class="hint">L'IA écrit ta chanson (paroles + instru jouée par le téléphone) :</div>
+        <div class="toolrow" id="magicSongModes" style="justify-content:center">
+          <button class="chip on" data-mode="simple"><span class="ic">⚡</span>Simple</button>
+          <button class="chip" data-mode="perso"><span class="ic">🎨</span>Personnalisé</button>
+          <button class="chip" data-mode="voix"><span class="ic">🎙</span>Ma voix</button>
+        </div>
         <div class="toolrow" id="magicSongStyles"></div>
         <div class="textedit"><input id="magicTheme" placeholder="Sujet de la chanson (ex: mes potes du casino)" maxlength="140"></div>
         <div style="padding:2px 14px">
           <button class="bigbtn" id="magicSongBtn" onclick="Magic.song()">🎼 Écrire ma chanson</button>
           <button class="bigbtn ghost hidden" id="magicPlayBtn" onclick="Magic.playInstru()">▶️ Jouer l'instru</button>
+          <button class="bigbtn ghost hidden" id="magicRecBtn" onclick="Magic.record()">🎙 Enregistrer ma voix (30 s)</button>
         </div>
         <pre class="lyrics hidden" id="magicLyrics"></pre>
       </div>
@@ -546,6 +567,8 @@
 <input type="file" id="fileMagicPhoto" accept="image/*" class="hidden">
 <input type="file" id="fileMagicCam" accept="image/*" capture="user" class="hidden">
 <input type="file" id="fileMagicSong" accept="audio/*" class="hidden">
+<input type="file" id="fileMagicPhoto2" accept="image/*" class="hidden">
+<input type="file" id="fileDanceRef" accept="video/*" class="hidden">
 
 <script>
 /* ============================================================
@@ -553,7 +576,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v8.2.0';
+var APP_VER='v8.3.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -1891,7 +1914,67 @@ var AiVid=(function(){
     else if(/SAFETY|blocked|no_image/i.test(msg)){hint('⚠️ L\'IA a refusé cette photo (règles de sécurité). Essaie une autre photo, de préférence une personne entière bien visible.');toast('Photo refusée par l\'IA — essaie-en une autre',3200);}
     else{hint('❌ Génération impossible pour l\'instant — réessaie.');toast('Génération impossible, réessaie',2600);}
   }
+  /* 🎥 REJOUER UNE VRAIE VIDÉO (Pose / Dance AI / modèles CapCut) :
+     on extrait des poses clés de la vidéo de référence, l'IA les refait avec
+     la personne de la photo, puis on monte la vidéo dans le téléphone. */
+  function refVideo(file){
+    if(!photoData){toast('Charge d\'abord ta photo');return;}
+    if(busy){toast('Génération déjà en cours…');return;}
+    busy=true;out=null;$('aiGenBtn').disabled=true;startTs=Date.now();
+    hint('🎥 Lecture de la vidéo de référence…');
+    extractPoses(file,5).then(function(poses){
+      hint('🕺 L\'IA te met dans ces '+poses.length+' poses… (gratuit, ~40-60 s)');
+      return fetch(AI_URL+'/pose',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({image:photoData,poses:poses})}).then(function(r){return r.json();});
+    }).then(function(j){
+      if(!j||!j.frames||j.frames.length<2)throw new Error((j&&j.error)||'pose_failed');
+      hint('🎬 Montage de ta vidéo… ('+j.frames.length+' poses)');
+      return buildDanceVideo(j.frames);
+    }).then(function(blob){
+      if(freeBlobUrl)URL.revokeObjectURL(freeBlobUrl);
+      freeBlobUrl=URL.createObjectURL(blob);done(freeBlobUrl);
+    }).catch(fail);
+  }
+  /* Extrait n images réparties dans la vidéo (les « poses » à copier). */
+  function extractPoses(file,n){
+    return new Promise(function(resolve,reject){
+      var v=document.createElement('video');v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');
+      v.preload='metadata';v.src=URL.createObjectURL(file);
+      v.onerror=function(){reject(new Error('video_illisible'));};
+      /* Beaucoup de vidéos ENREGISTRÉES (WebM/MediaRecorder, certaines apps) annoncent
+         duration = Infinity : il faut forcer un seek très loin pour obtenir la vraie
+         durée, sinon l'extraction échoue (mesuré en test). */
+      function realDuration(cb){
+        var d=v.duration;
+        if(isFinite(d)&&d>0){cb(d);return;}
+        var onSeek=function(){
+          v.removeEventListener('seeked',onSeek);
+          var d2=v.duration;
+          if(!isFinite(d2)||d2<=0){try{d2=(v.seekable&&v.seekable.length)?v.seekable.end(0):0;}catch(e){d2=0;}}
+          cb(d2);
+        };
+        v.addEventListener('seeked',onSeek);
+        try{v.currentTime=1e6;}catch(e){cb(0);}
+      }
+      v.onloadedmetadata=function(){ realDuration(function(dur){
+        if(!isFinite(dur)||dur<=0){reject(new Error('video_vide'));return;}
+        var W=Math.min(512,v.videoWidth||512),H=Math.round((v.videoHeight||512)*W/(v.videoWidth||512));
+        var c=document.createElement('canvas');c.width=W;c.height=H;var cx=c.getContext('2d');
+        var times=[],i;for(i=0;i<n;i++)times.push(Math.min(dur-0.05,dur*(i+0.5)/n));
+        var outp=[],idx=0;
+        v.onseeked=function(){
+          try{cx.drawImage(v,0,0,W,H);outp.push(c.toDataURL('image/jpeg',0.85));}catch(e){}
+          idx++;if(idx>=times.length){URL.revokeObjectURL(v.src);
+            outp.length>=2?resolve(outp):reject(new Error('poses_insuffisantes'));return;}
+          v.currentTime=times[idx];
+        };
+        v.currentTime=times[0];
+        setTimeout(function(){if(outp.length>=2&&idx<times.length){idx=times.length;resolve(outp);}},20000);
+      }); };
+    });
+  }
   return {init:buildVibes,pick:function(){$('fileAiPhoto').click();},camera:function(){$('fileAiPhotoCam').click();},_load:loadPhoto,generate:generate,_mux:muxMusic,
+    pickRef:function(){if(!photoData){toast('Charge d\'abord ta photo');return;}$('fileDanceRef').click();},_ref:refVideo,
     export:function(){if(out)save(out);else toast('Génère d\'abord une vidéo');}};
 })();
 function pickVideoMime(){var l=['video/mp4;codecs=h264','video/mp4','video/webm;codecs=vp9','video/webm'];for(var i=0;i<l.length;i++){if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(l[i]))return l[i];}return '';}
@@ -1959,20 +2042,32 @@ $('fileAiMusic').onchange=function(e){if(e.target.files[0])AiVid._mux(e.target.f
    montage vidéo + instru = fait DANS le téléphone (aucun crédit). */
 var Magic=(function(){
   var img=$('magicPhoto'),vid=$('magicVideo');
-  var photoData=null,songFile=null,busy=false,outUrl=null,lastLyrics=null,songStyle='pop',ac=null;
-  var STYLES=[
-    {id:'figurine',emoji:'🧸',label:'Figurine'},
-    {id:'boite',emoji:'📦',label:'En boîte'},
-    {id:'anime',emoji:'🌸',label:'Anime'},
-    {id:'toon3d',emoji:'🎬',label:'Toon 3D'},
-    {id:'glowup',emoji:'✨',label:'Clip néon'},
-    {id:'lion',emoji:'🦁',label:'Anniv. lion'},
-    {id:'espace',emoji:'🚀',label:'Espace'},
-    {id:'redcarpet',emoji:'🌟',label:'Tapis rouge'},
-    {id:'cosplay',emoji:'🦸',label:'Super-héros'},
-    {id:'vintage',emoji:'📼',label:'Vintage 70s'},
-    {id:'bebe',emoji:'👶',label:'En enfant'},
-    {id:'vieux',emoji:'👴',label:'Dans 50 ans'}
+  var photoData=null,photo2=null,songFile=null,busy=false,outUrl=null,lastLyrics=null,songStyle='pop',songMode='simple',duoStyle='souvenir',ac=null;
+  /* 25 styles rangés par famille (max ~6 par groupe = lisible sur iPhone). */
+  var FAMS=[
+    {id:'perso',emoji:'🎭',label:'Personnages',items:[
+      {id:'figurine',emoji:'🧸',label:'Figurine'},{id:'boite',emoji:'📦',label:'En boîte'},
+      {id:'anime',emoji:'🌸',label:'Anime'},{id:'toon3d',emoji:'🎬',label:'Toon 3D'},
+      {id:'cosplay',emoji:'🦸',label:'Super-héros'},{id:'drole',emoji:'😂',label:'Caricature'}]},
+    {id:'pro',emoji:'💼',label:'Photo pro',items:[
+      {id:'cv',emoji:'👔',label:'Photo CV'},{id:'nb',emoji:'⚫',label:'Noir & blanc'},
+      {id:'shooting',emoji:'📸',label:'Shooting'},{id:'passeport',emoji:'🪪',label:'Identité'}]},
+    {id:'coif',emoji:'💇',label:'Coiffure',items:[
+      {id:'coif_court',emoji:'✂️',label:'Cheveux courts'},{id:'coif_long',emoji:'💁',label:'Cheveux longs'},
+      {id:'coif_boucle',emoji:'🌀',label:'Bouclés'},{id:'coif_blond',emoji:'👱',label:'Blond'},
+      {id:'coif_barbe',emoji:'🧔',label:'Barbe'},{id:'coif_rase',emoji:'🥚',label:'Rasé'}]},
+    {id:'scene',emoji:'🌍',label:'Scènes',items:[
+      {id:'lion',emoji:'🦁',label:'Anniv. lion'},{id:'espace',emoji:'🚀',label:'Espace'},
+      {id:'redcarpet',emoji:'🌟',label:'Tapis rouge'},{id:'glowup',emoji:'✨',label:'Clip néon'},
+      {id:'vintage',emoji:'📼',label:'Vintage 70s'}]},
+    {id:'fun',emoji:'🤪',label:'Fun',items:[
+      {id:'bebe',emoji:'👶',label:'En enfant'},{id:'vieux',emoji:'👴',label:'Dans 50 ans'},
+      {id:'muscle',emoji:'💪',label:'Musclé'},{id:'bebedanse',emoji:'🕺',label:'Bébé danseur'}]}
+  ];
+  var curFam='perso';
+  var DUO_STYLES=[
+    {id:'souvenir',emoji:'🤍',label:'Souvenir'},{id:'famille',emoji:'👨‍👩‍👧',label:'Famille'},
+    {id:'couple',emoji:'❤️',label:'Couple'},{id:'fete',emoji:'🎉',label:'Fête'}
   ];
   var SONG_STYLES=[
     {id:'rap',emoji:'🎤',label:'Rap'},{id:'pop',emoji:'🎶',label:'Pop'},
@@ -1980,17 +2075,37 @@ var Magic=(function(){
     {id:'lofi',emoji:'🌙',label:'Chill'},{id:'disco',emoji:'🪩',label:'Disco'}
   ];
   function hint(t){var e=$('magicHint');if(e)e.textContent=t||'';}
-  function build(){
+  function buildStyles(){
     var c=$('magicStyles');c.innerHTML='';
-    STYLES.forEach(function(s){var b=document.createElement('button');b.className='chip';
+    var fam=FAMS.filter(function(f){return f.id===curFam;})[0]||FAMS[0];
+    fam.items.forEach(function(s){var b=document.createElement('button');b.className='chip';
       b.innerHTML='<span class="ic">'+s.emoji+'</span>'+s.label;
       b.onclick=function(){apply(s.id,s.label);};c.appendChild(b);});
+  }
+  function build(){
+    var f=$('magicFams');f.innerHTML='';
+    FAMS.forEach(function(fa){var b=document.createElement('button');b.className='chip'+(fa.id===curFam?' on':'');
+      b.innerHTML='<span class="ic">'+fa.emoji+'</span>'+fa.label;
+      b.onclick=function(){curFam=fa.id;f.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');buildStyles();};
+      f.appendChild(b);});
+    buildStyles();
+    var d=$('magicDuoStyles');d.innerHTML='';
+    DUO_STYLES.forEach(function(s){var b=document.createElement('button');b.className='chip'+(s.id===duoStyle?' on':'');
+      b.innerHTML='<span class="ic">'+s.emoji+'</span>'+s.label;
+      b.onclick=function(){duoStyle=s.id;d.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};
+      d.appendChild(b);});
     var g=$('magicSongStyles');g.innerHTML='';
     SONG_STYLES.forEach(function(s){var b=document.createElement('button');b.className='chip'+(s.id===songStyle?' on':'');
       b.innerHTML='<span class="ic">'+s.emoji+'</span>'+s.label;
       b.onclick=function(){songStyle=s.id;g.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};
       g.appendChild(b);});
-    wireTabs('magicTabs',{look:'magicLook',sing:'magicSing',song:'magicSong'});
+    var m=$('magicSongModes');
+    m.querySelectorAll('[data-mode]').forEach(function(b){b.onclick=function(){
+      songMode=b.dataset.mode;m.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');
+      $('magicSongBtn').textContent=(songMode==='voix')?'🎙 Écrire mon texte à lire':'🎼 Écrire ma chanson';
+      hint(songMode==='voix'?'Mode « Ma voix » : l\'IA écrit un texte calibré pour 30 s, tu l\'enregistres, et tu chantes dessus.':'');
+    };});
+    wireTabs('magicTabs',{look:'magicLook',duo:'magicDuo',sing:'magicSing',song:'magicSong'});
   }
   function loadPhoto(file){var im=new Image();im.onload=function(){
       var MAX=1024,sc=Math.min(MAX/im.width,MAX/im.height,1);var c=document.createElement('canvas');
@@ -2026,6 +2141,52 @@ var Magic=(function(){
       })
       .catch(function(e){clearTimeout(to);busy=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
+  /* --- 1bis) 👥 À DEUX : réunir deux photos dans une même scène (Hype AI) --- */
+  function duo(){
+    if(!photoData){toast('Charge d\'abord la 1ʳᵉ photo');return;}
+    if(!photo2){toast('Choisis la 2ᵉ photo 📂');return;}
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    busy=true;$('magicDuoBtn').disabled=true;aiShow('L\'IA réunit les deux photos… 👥');
+    fetch(AI_URL+'/duo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,image2:photo2,preset:duoStyle})})
+      .then(function(r){var ct=r.headers.get('content-type')||'';
+        if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||('http_'+r.status));},function(){throw new Error('http_'+r.status);});
+        return r.blob();})
+      .then(function(b){busy=false;$('magicDuoBtn').disabled=false;aiHide();
+        if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
+        img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
+        hint('✅ Photo à deux prête.');
+        openExport('Vous êtes réunis 👥','La photo est prête — tu peux l\'enregistrer.',[
+          {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'a-deux.png','Notre photo');closeSheet();}}
+        ]);})
+      .catch(function(e){busy=false;$('magicDuoBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* --- 1ter) 🎙 Enregistrer sa voix DANS l'app (Shoom, mode « Ma voix ») --- */
+  var recorder=null,recTimer=null;
+  function record(){
+    if(recorder){stopRec();return;}
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Micro indisponible sur cet appareil');return;}
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      var mime='';['audio/mp4','audio/webm;codecs=opus','audio/webm'].forEach(function(t){
+        if(!mime&&window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))mime=t;});
+      try{recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);}
+      catch(e){toast('Enregistrement indisponible');return;}
+      var chunks=[];recorder.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
+      recorder.onstop=function(){
+        try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+        clearTimeout(recTimer);recorder=null;$('magicRecBtn').textContent='🎙 Enregistrer ma voix (30 s)';
+        var b=new Blob(chunks,{type:mime||'audio/webm'});
+        if(!b.size){toast('Rien n\'a été enregistré');return;}
+        songFile=new File([b],'ma-voix.'+((mime.indexOf('mp4')>=0)?'m4a':'webm'),{type:b.type});
+        $('magicSingHint').textContent='🎤 Ta voix est prête — va sur « Je chante » pour animer ta photo.';
+        hint('✅ Voix enregistrée ('+Math.round(b.size/1024)+' Ko). Onglet « Je chante » pour la mettre sur ta photo.');
+        toast('Voix enregistrée 🎙',2200);
+      };
+      recorder.start();$('magicRecBtn').textContent='⏹ Arrêter l\'enregistrement';
+      toast('Ça enregistre — lis ton texte 🎙',2000);
+      recTimer=setTimeout(stopRec,30000);           /* 30 s comme Shoom */
+    }).catch(function(){toast('Micro refusé — autorise le micro dans Réglages');});
+  }
+  function stopRec(){try{if(recorder&&recorder.state!=='inactive')recorder.stop();}catch(e){}}
   /* --- 2) « Je chante » : lip-sync RÉEL (bouche selon le volume du son) --- */
   function sing(){
     if(!photoData){toast('Choisis une photo d\'abord');return;}
@@ -2108,14 +2269,17 @@ var Magic=(function(){
     if(!theme){toast('Écris le sujet de ta chanson');return;}
     if(busy){toast('Un traitement est déjà en cours…');return;}
     busy=true;$('magicSongBtn').disabled=true;aiShow('L\'IA écrit ta chanson… 🎼');
-    fetch(AI_URL+'/lyrics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:theme,style:songStyle})})
+    fetch(AI_URL+'/lyrics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:theme,style:songStyle,mode:songMode})})
       .then(function(r){return r.json();})
       .then(function(j){busy=false;$('magicSongBtn').disabled=false;aiHide();
         if(!j||!j.lyrics)throw new Error((j&&j.error)||'no_lyrics');
         lastLyrics=j;var el=$('magicLyrics');el.textContent=j.lyrics;el.classList.remove('hidden');
         $('magicPlayBtn').classList.remove('hidden');
-        hint('✅ « '+j.title+' » — touche ▶️ pour l\'instru, chante par-dessus, puis enregistre ta voix et fais chanter ta photo 🎤');
-        toast('Chanson écrite 🎼',1800);})
+        $('magicRecBtn').classList.toggle('hidden',songMode!=='voix');
+        hint(songMode==='voix'
+          ? '✅ « '+j.title+' » — lis ce texte à voix haute en touchant 🎙 (30 s), puis « Je chante » anime ta photo.'
+          : '✅ « '+j.title+' » — touche ▶️ pour l\'instru, chante par-dessus, puis enregistre ta voix et fais chanter ta photo 🎤');
+        toast(songMode==='voix'?'Texte prêt à lire 🎙':'Chanson écrite 🎼',1800);})
       .catch(function(e){busy=false;$('magicSongBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* Instru générée dans le téléphone (WebAudio) — tempo/gamme selon le style. */
@@ -2164,10 +2328,19 @@ var Magic=(function(){
     pick:function(){$('fileMagicPhoto').click();},
     camera:function(){$('fileMagicCam').click();},
     pickSong:function(){$('fileMagicSong').click();},
+    pick2:function(){$('fileMagicPhoto2').click();},
     _load:loadPhoto,
+    _load2:function(file){var im=new Image();im.onload=function(){
+        var MAX=1024,sc=Math.min(MAX/im.width,MAX/im.height,1);var c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));
+        c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+        photo2=c.toDataURL('image/jpeg',0.9);
+        $('magicDuoHint').textContent='✅ 2ᵉ photo prête — touche « Créer la photo à deux ».';
+        toast('2ᵉ photo prête 👥',1400);URL.revokeObjectURL(im.src);};
+      im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);},
     _song:function(f){songFile=f;$('magicSingHint').textContent='🎵 Son choisi : '+(f.name||'audio').slice(0,40)+' — touche « Faire chanter ma photo ».';toast('Musique prête 🎵',1400);},
     custom:function(){var v=$('magicCustom').value.trim();if(!v){toast('Décris ce que tu veux');return;}apply(null,v,v);},
-    sing:sing,song:song,playInstru:playInstru,
+    sing:sing,song:song,playInstru:playInstru,duo:duo,record:record,
     export:function(){if(!outUrl){toast('Crée d\'abord une image ou une vidéo');return;}
       fetch(outUrl).then(function(r){return r.blob();}).then(function(b){
         var isV=(b.type||'').indexOf('video')>=0;var ext=isV?((b.type.indexOf('webm')>=0)?'webm':'mp4'):'png';
@@ -2177,6 +2350,8 @@ var Magic=(function(){
 $('fileMagicPhoto').onchange=function(e){if(e.target.files[0]){go('magic');Magic._load(e.target.files[0]);}e.target.value='';};
 $('fileMagicCam').onchange=function(e){if(e.target.files[0]){go('magic');Magic._load(e.target.files[0]);}e.target.value='';};
 $('fileMagicSong').onchange=function(e){if(e.target.files[0])Magic._song(e.target.files[0]);e.target.value='';};
+$('fileMagicPhoto2').onchange=function(e){if(e.target.files[0])Magic._load2(e.target.files[0]);e.target.value='';};
+$('fileDanceRef').onchange=function(e){if(e.target.files[0])AiVid._ref(e.target.files[0]);e.target.value='';};
 $('fileBg').onchange=function(e){if(e.target.files[0])Photo._loadBg(e.target.files[0]);e.target.value='';};
 
 /* init all */
