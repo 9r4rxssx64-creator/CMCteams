@@ -1,0 +1,41 @@
+name: Arbre — AD78 visionneuse directe (ark de Kevin)
+# Kevin fournit l'ark depuis son iPhone → le robot ouvre la visionneuse en direct
+# (contourne le moteur de recherche qui bloque) et aspire les pages du registre.
+on:
+  workflow_dispatch:
+    inputs:
+      arks:
+        description: "URL(s) ark AD78 (séparées par des espaces)"
+        required: false
+        default: "https://archives.yvelines.fr/ark:36937/1ec57a223d4b6e488f720050568b5512.moteur=arko_default_618914e3ee7e4"
+      pages:
+        description: "Nombre de vues à feuilleter"
+        required: false
+        default: "40"
+permissions:
+  contents: write
+jobs:
+  ark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i -D playwright@1.48.0 && npx playwright install --with-deps chromium
+      - name: Robot visionneuse
+        env:
+          ARKS: ${{ inputs.arks }}
+          PAGES: ${{ inputs.pages }}
+        run: node tools/arbre/fetch-ad78-ark.mjs
+      - name: Commit résultats
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research/AD78-ARK.md arbre/research/ad78raw/ark || true
+          git commit -m "Arbre: AD78 visionneuse directe (ark Kevin) [skip ci]" || { echo "aucun changement"; exit 0; }
+          for i in 1 2 3 4; do git push && break; git fetch origin "${GITHUB_REF_NAME}"; git rebase "origin/${GITHUB_REF_NAME}" || git rebase --abort || true; sleep 5; done
+          git push || echo "::warning::push impossible (résultats dans le log)"
