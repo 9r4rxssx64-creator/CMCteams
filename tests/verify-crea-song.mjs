@@ -35,10 +35,10 @@ async function run(withVoice,voiceSec){
   page.on('pageerror',e=>errs.push('PAGEERROR: '+e.message));
   page.on('console',m=>{if(m.type()==='error')errs.push('CONSOLE: '+m.text());});
   await page.route('**/lyrics',r=>r.fulfill({status:200,contentType:'application/json',
-    body:JSON.stringify({title:'Mon test',lyrics:'TITRE: Mon test\nCOUPLET 1:\nune ligne qui se chante\nREFRAIN:\nle refrain qui reste'})}));
-  await page.route('**/compose',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({score:SCORE,style:'pop'})}));
+    body:JSON.stringify({title:'Mon test',provider:'cloudflare',lyrics:'TITRE: Mon test\nCOUPLET 1:\nune ligne qui se chante\nREFRAIN:\nle refrain qui reste'})}));
+  await page.route('**/compose',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({score:SCORE,style:'pop',provider:'cloudflare'})}));
   await page.route('**/voice',r=> withVoice
-    ? r.fulfill({status:200,contentType:'audio/wav',body:wav(voiceSec||2,22050,180)})
+    ? r.fulfill({status:200,contentType:'audio/wav',headers:{'x-crea-provider':'cloudflare:melotts'},body:wav(voiceSec||2,22050,180)})
     : r.fulfill({status:502,contentType:'application/json',body:'{"error":"cf_no_binding"}'}));
   await page.addInitScript(()=>{window.CREA_AI_URL='http://127.0.0.1:8244/ai';});
   await page.goto(`http://127.0.0.1:${PORT}/index.html`,{waitUntil:'load'});
@@ -88,6 +88,8 @@ let r1=await run(true);
 chk(r1.ok && r1.info.visible, `morceau produit AVEC voix — ${r1.hint.slice(0,70)}`);
 chk(r1.info.wav && r1.info.size>200000, `vrai fichier WAV (${Math.round(r1.info.size/1024)} Ko, entête RIFF/WAVE)`);
 chk(r1.info.rms>300, `le morceau contient du son (énergie ${r1.info.rms})`);
+chk(/IA de secours utilisée pour/.test(r1.hint) && /paroles/.test(r1.hint) && /musique/.test(r1.hint) && /voix/.test(r1.hint),
+  `Kevin VOIT que c'est l'IA de secours qui a travaillé — ${r1.hint.slice(-62)}`);
 chk(jsErr(r1.errs).length===0, `0 erreur JS (avec voix)${jsErr(r1.errs).length?': '+jsErr(r1.errs)[0]:''}`);
 // 2) voix en panne → doit quand même produire l'instrumental
 let r2=await run(false);
