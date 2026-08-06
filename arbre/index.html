@@ -244,7 +244,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.67";
+var APP_VER="v2.68";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -710,7 +710,10 @@ function exportPrint(){
 }
 function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.innerHTML=
   '<div class="sec"><h3>Temps réel</h3><div class="kv"><span class="k">Synchro famille</span><span>'+(_cloudOK?'🟢 Active':'🟠 Local (hors-ligne)')+'</span></div><div class="kv"><span class="k">Ton nom (auteur des ajouts)</span><span>'+esc(ME||"—")+'</span></div><div class="kv"><span class="k">🙋 « Moi » dans l\'arbre</span><span>'+(viewerId()?esc(full(P(viewerId()))):"vue neutre")+'</span></div>'+(viewerId()?'<button class="btn ghost sm" id="btnNeutre" style="width:100%;margin-top:8px">↺ Revenir à la vue neutre (aucun « moi »)</button>':'<p class="mut" style="font-size:12.5px;margin:6px 0 0">Ouvre TA fiche → « 🙋 C\'est moi » pour voir l\'arbre de ton point de vue.</p>')+'<div class="kv"><span class="k">Personnes</span><span>'+n+'</span></div><div class="row2" style="margin-top:11px"><button class="btn" id="btnSync">🔄 Synchroniser</button><button class="btn" id="btnName">✏️ Mon nom</button></div></div>'+
-  '<div class="sec"><h3>Sauvegarde</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Auto-sauvegardé en continu. Tu peux aussi exporter/importer un fichier.</p><div class="row2"><button class="btn" id="btnExport">⬇️ Exporter</button><button class="btn" id="btnImport">⬆️ Importer</button></div><button class="btn gold" id="btnPrint" style="width:100%;margin-top:8px">🖨 Imprimer / PDF de l\'arbre ('+famLabel(FAMKEY)+')</button><input type="file" id="fileImport" accept="application/json" class="hidden"></div>'+
+  '<div class="sec"><h3>Sauvegarde & Import</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Auto-sauvegardé en continu. Tu peux aussi exporter/importer un fichier.</p><div class="row2"><button class="btn" id="btnExport">⬇️ Exporter</button><button class="btn" id="btnImport">⬆️ Importer</button></div>'+
+  '<button class="btn gold" id="btnGedcom" style="width:100%;margin-top:8px">🌳 Importer un GEDCOM (Geneanet, FamilySearch…)</button>'+
+  '<p class="mut" style="font-size:12.5px;margin:6px 0 0">💡 Sur Geneanet/FamilySearch : « Exporter » → fichier GEDCOM → ouvre-le ici. Je fusionne tout (nouvelles personnes ajoutées, fiches connues complétées, <b>jamais écrasées</b>).</p>'+
+  '<button class="btn" id="btnPrint" style="width:100%;margin-top:8px">🖨 Imprimer / PDF de l\'arbre ('+famLabel(FAMKEY)+')</button><input type="file" id="fileImport" accept=".json,.ged,.gedcom,application/json" class="hidden"></div>'+
   '<div class="sec"><h3>Sécurité</h3><button class="btn" id="btnCode" style="width:100%">🔑 Changer le code famille</button><button class="btn ghost" id="btnLock" style="width:100%;margin-top:8px">🔒 Verrouiller</button></div>'+
   '<div class="sec"><h3>🤖 Recherches automatiques</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Le robot cherche chaque mois : actes INSEE, registres de Monaco, presse ancienne, et vérifie le nuage familial.</p><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/REGISTRES.md">📜 Actes &amp; registres trouvés <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md">📚 Infos presse &amp; sources <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/CLOUD.md">☁️ Vérification du nuage familial <span class="mut">↗</span></a></div>'+
   '<div class="sec"><h3>À propos</h3><p class="mut" style="font-size:13px;margin:0">Arbre familial '+APP_VER+'. Auto-save + synchro temps réel (code famille). Photos tous formats converties automatiquement. Ajoute/corrige/commente librement.</p></div>';
@@ -718,7 +721,7 @@ function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.i
   $("#btnName").onclick=setMe;
   var bn=$("#btnNeutre");if(bn)bn.onclick=function(){setViewer("");toast("↺ Vue neutre — personne n'est « moi »");render();};
   var bp=$("#btnPrint");if(bp)bp.onclick=exportPrint;
-  $("#btnExport").onclick=doExport;$("#btnImport").onclick=function(){$("#fileImport").click();};$("#fileImport").onchange=doImport;
+  $("#btnExport").onclick=doExport;$("#btnImport").onclick=function(){$("#fileImport").click();};var bg=$("#btnGedcom");if(bg)bg.onclick=function(){$("#fileImport").click();};$("#fileImport").onchange=doImport;
   $("#btnCode").onclick=changeCode;$("#btnLock").onclick=function(){sessionStorage.removeItem("arbre_unlocked");localStorage.removeItem("arbre_trust");location.reload();};
 }
 function render(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.classList.toggle("act",t.dataset.view===VIEW);});if(VIEW==="tree")renderTree();else if(VIEW==="list")renderList();else if(VIEW==="search")renderSearch();else renderTools();$("#ver").textContent=APP_VER+" · "+Object.keys(DB.persons).length+" pers.";}
@@ -942,7 +945,93 @@ function closeOverlay(){_removeOv();_pStack=[];_curPerson=null;}
 
 /* ---------- export/import + name + code ---------- */
 function doExport(){var blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="arbre-familial-"+new Date().toISOString().slice(0,10)+".json";a.click();toast("⬇️ Exporté");}
-function doImport(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=async function(){try{var d=JSON.parse(r.result);if(!d.persons)throw 0;var add=0;for(var id in d.persons){var rp=d.persons[id],lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;add++;}}await persist();render();toast("⬆️ Importé ("+add+" fiches)");}catch(err){toast("Fichier invalide");}};r.readAsText(f);e.target.value="";}
+/* ---- Import GEDCOM (Kevin « Go » 2026-08-06) : Geneanet / FamilySearch / Filae →
+   « Exporter GEDCOM » → on fusionne ici. Règle : JAMAIS écraser une donnée existante,
+   on COMPLÈTE les fiches connues (match nom + prénom + année ±1) et on CRÉE les autres. */
+var _GED_MONTHS={JAN:"01",FEB:"02",MAR:"03",APR:"04",MAY:"05",JUN:"06",JUL:"07",AUG:"08",SEP:"09",OCT:"10",NOV:"11",DEC:"12"};
+function _gedDate(s){s=String(s||"").replace(/^(ABT|EST|CAL|BEF|AFT|FROM|TO)\.?\s+/i,"").trim();
+  var m=s.match(/^(\d{1,2})\s+([A-Z]{3})\s+(\d{3,4})$/i);if(m&&_GED_MONTHS[m[2].toUpperCase()])return ("0"+m[1]).slice(-2)+"."+_GED_MONTHS[m[2].toUpperCase()]+"."+m[3];
+  m=s.match(/^([A-Z]{3})\s+(\d{3,4})$/i);if(m&&_GED_MONTHS[m[1].toUpperCase()])return _GED_MONTHS[m[1].toUpperCase()]+"."+m[2];
+  m=s.match(/(\d{3,4})/);return m?m[1]:"";}
+function _gedNorm(s){return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Z ]/g," ").replace(/\s+/g," ").trim();}
+function _gedYr(s){var m=String(s||"").match(/(1[5-9]\d\d|20\d\d)/);return m?+m[1]:0;}
+function parseGedcom(text){
+  var lines=String(text).replace(/^﻿/,"").split(/\r?\n/),people={},fams={},cur=null,curType="",ctx=[];
+  for(var i=0;i<lines.length;i++){var ln=lines[i];if(!ln.trim())continue;
+    var m=ln.match(/^\s*(\d+)\s+(@[^@]+@\s+)?(\S+)(?:\s+(.*))?$/);if(!m)continue;
+    var lvl=+m[1],xref=(m[2]||"").trim(),tag=m[3].toUpperCase(),val=(m[4]||"").trim();
+    if(lvl===0){cur=null;curType="";ctx=[];
+      if(xref&&tag==="INDI"){cur=people[xref]={prenom:"",nom:"",sexe:"",nd:"",nl:"",dd:"",dl:"",famc:"",fams:[]};curType="I";}
+      else if(xref&&tag==="FAM"){cur=fams[xref]={husb:"",wife:"",chil:[],mdate:"",mlieu:""};curType="F";}
+      continue;}
+    if(!cur)continue;ctx[lvl]=tag;ctx.length=lvl+1;
+    if(curType==="I"){
+      if(lvl===1&&tag==="NAME"&&!cur.prenom&&!cur.nom){var nm=val.match(/^([^/]*)\/([^/]*)\/?/);if(nm){cur.prenom=nm[1].trim();cur.nom=nm[2].trim();}else cur.prenom=val;}
+      else if(lvl===2&&tag==="GIVN"&&ctx[1]==="NAME")cur.prenom=val||cur.prenom;
+      else if(lvl===2&&tag==="SURN"&&ctx[1]==="NAME")cur.nom=val||cur.nom;
+      else if(lvl===1&&tag==="SEX")cur.sexe=(val==="M"||val==="F")?val:"";
+      else if(lvl===2&&tag==="DATE"&&ctx[1]==="BIRT")cur.nd=_gedDate(val);
+      else if(lvl===2&&tag==="PLAC"&&ctx[1]==="BIRT")cur.nl=val.split(",")[0].trim();
+      else if(lvl===2&&tag==="DATE"&&ctx[1]==="DEAT")cur.dd=_gedDate(val);
+      else if(lvl===2&&tag==="PLAC"&&ctx[1]==="DEAT")cur.dl=val.split(",")[0].trim();
+      else if(lvl===1&&tag==="FAMC")cur.famc=val;
+      else if(lvl===1&&tag==="FAMS")cur.fams.push(val);
+    }else{
+      if(lvl===1&&tag==="HUSB")cur.husb=val;
+      else if(lvl===1&&tag==="WIFE")cur.wife=val;
+      else if(lvl===1&&tag==="CHIL")cur.chil.push(val);
+      else if(lvl===2&&tag==="DATE"&&ctx[1]==="MARR")cur.mdate=_gedDate(val);
+      else if(lvl===2&&tag==="PLAC"&&ctx[1]==="MARR")cur.mlieu=val.split(",")[0].trim();
+    }}
+  return {people:people,fams:fams};
+}
+async function gedImport(text){
+  var g=parseGedcom(text),refs=Object.keys(g.people);
+  if(!refs.length){toast("GEDCOM vide ou illisible");return;}
+  /* index des fiches existantes par nom normalisé */
+  var byNom={};Object.keys(DB.persons).forEach(function(id){var p=P(id);if(!p||!p.nom)return;var k=_gedNorm(p.nom);(byNom[k]=byNom[k]||[]).push(id);});
+  function matchExisting(gp){var cand=byNom[_gedNorm(gp.nom)]||[];var gf=_gedNorm(gp.prenom).split(" ")[0];var gy=_gedYr(gp.nd);
+    for(var i=0;i<cand.length;i++){var p=P(cand[i]);var pf=_gedNorm(p.prenom).split(" ")[0];if(!gf||!pf||gf!==pf)continue;
+      var py=_gedYr(p.naissance&&p.naissance.date);
+      if(gy&&py){if(Math.abs(gy-py)<=1)return cand[i];}
+      else return cand[i];/* même nom + même 1er prénom, pas d'année pour trancher */}
+    return null;}
+  var map={},nNew=0,nEnr=0,today=new Date().toLocaleDateString("fr-FR");
+  refs.forEach(function(ref){var gp=g.people[ref];if(!gp.nom&&!gp.prenom)return;var ex=matchExisting(gp);
+    if(ex)map[ref]=ex;else map[ref]="__NEW__";});
+  var newCount=refs.filter(function(r){return map[r]==="__NEW__";}).length;
+  var enrCount=refs.filter(function(r){return map[r]&&map[r]!=="__NEW__";}).length;
+  if(!confirm("📥 GEDCOM lu : "+refs.length+" personne(s), "+Object.keys(g.fams).length+" famille(s).\n\n→ "+newCount+" NOUVELLE(S) fiche(s)\n→ "+enrCount+" fiche(s) existante(s) à compléter (jamais écrasées)\n\nImporter ?"))return;
+  /* création des nouvelles fiches */
+  refs.forEach(function(ref){var gp=g.people[ref];if(map[ref]!=="__NEW__")return;
+    var id="ged_"+uid();map[ref]=id;nNew++;
+    DB.persons[id]={id:id,prenom:gp.prenom,nom:gp.nom,sexe:gp.sexe,vivant:!gp.dd&&_gedYr(gp.nd)>1926,
+      naissance:{date:gp.nd,lieu:gp.nl},deces:{date:gp.dd,lieu:gp.dl},conjoints:[],photos:[],sources:[],comments:[],
+      notes:"⬆️ Importé du GEDCOM le "+today+".",updatedAt:now(),updatedBy:ME||"gedcom"};});
+  /* enrichissement des fiches existantes (compléter, jamais écraser) */
+  refs.forEach(function(ref){var gp=g.people[ref],id=map[ref];if(!id||id==="__NEW__")return;var p=P(id);if(!p)return;var chg=false;
+    p.naissance=p.naissance||{};p.deces=p.deces||{};
+    if(gp.nd&&!p.naissance.date){p.naissance.date=gp.nd;chg=true;}
+    if(gp.nl&&!p.naissance.lieu){p.naissance.lieu=gp.nl;chg=true;}
+    if(gp.dd&&!p.deces.date){p.deces.date=gp.dd;chg=true;}
+    if(gp.dl&&!p.deces.lieu){p.deces.lieu=gp.dl;chg=true;}
+    if(gp.sexe&&!p.sexe){p.sexe=gp.sexe;chg=true;}
+    if(chg){p.notes=(p.notes?p.notes+" ":"")+"⬆️ Complété par GEDCOM ("+today+").";p.updatedAt=now();nEnr++;}});
+  /* liens familiaux : parents + conjoints (seulement si absents) */
+  Object.keys(g.fams).forEach(function(fr){var f=g.fams[fr];var h=f.husb&&map[f.husb],w=f.wife&&map[f.wife];
+    if(h&&w&&P(h)&&P(w)){var ph=P(h),pw=P(w);ph.conjoints=ph.conjoints||[];pw.conjoints=pw.conjoints||[];
+      if(ph.conjoints.indexOf(w)<0){ph.conjoints.push(w);ph.updatedAt=now();}
+      if(pw.conjoints.indexOf(h)<0){pw.conjoints.push(h);pw.updatedAt=now();}
+      if(f.mdate&&String(ph.notes||"").indexOf("💍")<0){ph.notes=(ph.notes?ph.notes+" ":"")+"💍 Mariage (GEDCOM) : "+f.mdate+(f.mlieu?" à "+f.mlieu:"")+".";}}
+    f.chil.forEach(function(cr){var c=cr&&map[cr];if(!c||!P(c))return;var pc=P(c);
+      if(h&&P(h)&&!pc.pere){pc.pere=h;pc.updatedAt=now();}
+      if(w&&P(w)&&!pc.mere){pc.mere=w;pc.updatedAt=now();}});});
+  await persist();ROOT=ROOT||Object.keys(DB.persons)[0];render();
+  toast("✅ GEDCOM importé : "+nNew+" nouvelle(s), "+nEnr+" complétée(s)");
+}
+function doImport(e){var f=e.target.files[0];if(!f)return;var isGed=/\.(ged|gedcom)$/i.test(f.name||"");var r=new FileReader();r.onload=async function(){var txt=r.result;
+  if(isGed||/^\s*0\s+HEAD/m.test(String(txt).slice(0,200))){try{await gedImport(txt);}catch(err){toast("GEDCOM illisible : "+String(err&&err.message||err).slice(0,60));}return;}
+  try{var d=JSON.parse(txt);if(!d.persons)throw 0;var add=0;for(var id in d.persons){var rp=d.persons[id],lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;add++;}}await persist();render();toast("⬆️ Importé ("+add+" fiches)");}catch(err){toast("Fichier invalide (JSON ou GEDCOM attendu)");}};r.readAsText(f);e.target.value="";}
 function setMe(){var n=prompt("Ton prénom (apparaîtra sur tes ajouts/commentaires) :",ME||"");if(n!=null){ME=n.trim();localStorage.setItem("arbre_me",ME);if(VIEW==="tools")render();}}
 async function changeCode(){var c=prompt("Nouveau code famille :");if(!c)return;var c2=prompt("Confirme :");if(c!==c2){toast("Codes différents");return;}CODEHASH=await sha256("arbre::"+c.trim());localStorage.setItem("arbre_codehash",CODEHASH);await cloudPushAll();toast("🔑 Code changé — repartage-le");}
 
