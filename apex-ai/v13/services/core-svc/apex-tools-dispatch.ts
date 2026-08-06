@@ -801,6 +801,39 @@ class ApexToolsDispatcher {
           return { ok: false, error: err instanceof Error ? err.message : String(err) };
         }
       }
+      case 'llm_council': {
+        /* v13.4.364 (Kevin « Utilise toutes les ia dispo. Orchestre d'ia ») :
+         * tool déclaré depuis longtemps mais JAMAIS dispatché (mort, erreur #28).
+         * Câblé sur le crew RÉEL : brainstorm parallèle (chaque expert appelle SON
+         * provider via streamSingle) + synthèse juge par Anthropic (conductor). */
+        const { crewExperts } = await import('../ai/crew-experts.js');
+        const task = String(params['task'] ?? '');
+        if (!task) return { ok: false, error: 'task requis' };
+        const maxRounds = Number(params['max_rounds'] ?? 3);
+        const mode = maxRounds >= 2 ? 'debate' : 'consensus';
+        const result = await crewExperts.run({
+          task,
+          systemPrompt: 'Tu es un expert du conseil multi-IA d\'APEX. Réponds précis, en français.',
+          members: crewExperts.defaultMembers('specialized'),
+          mode,
+        });
+        const synthesis = maxRounds >= 3
+          ? await crewExperts.conductorSynthesis(result, task)
+          : result.synthesis;
+        return {
+          synthesis,
+          experts: result.responses.map((r) => ({
+            ia: crewExperts.providerName(r.provider),
+            expertise: r.expertise,
+            ok: r.ok,
+            extrait: r.text.slice(0, 300),
+          })),
+          conflicts: result.conflicts,
+          consensus: result.consensus,
+          latency_ms: result.totalLatencyMs,
+          rounds_executed: maxRounds >= 3 ? ['brainstorm', 'debate', 'synthese_juge'] : maxRounds >= 2 ? ['brainstorm', 'debate'] : ['brainstorm'],
+        };
+      }
       case 'multi_branch_status': {
         const { apexMultiBranchCoordinator } = await import('../admin/apex-multi-branch-coordinator.js');
         const refresh = params['refresh'] === true;

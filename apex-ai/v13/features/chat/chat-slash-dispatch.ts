@@ -161,6 +161,38 @@ export function handleSlashCommand(rootEl: HTMLElement, text: string): boolean {
       }
       return true;
     }
+    case 'orchestre': {
+      /* v13.4.364 (Kevin « Utilise toutes les ia dispo. Orchestre d'ia ») :
+       * on/off = auto-orchestration sur gros travail ; avec une question =
+       * force l'orchestre (toutes les IA en parallèle + synthèse Claude). */
+      const a = args.trim();
+      const low = a.toLowerCase();
+      void (async () => {
+        const { aiOrchestrator } = await import('../../services/ai/ai-orchestrator.js');
+        const { crewExperts } = await import('../../services/ai/crew-experts.js');
+        if (low === 'on' || low === 'off') {
+          aiOrchestrator.setEnabled(low === 'on');
+          toast.success(`🎼 Orchestre d'IA auto : ${low === 'on' ? 'ACTIVÉ' : 'désactivé'}`);
+          return;
+        }
+        if (!a) {
+          const provs = crewExperts.availableProviders().map((p) => crewExperts.providerName(p)).join(', ');
+          const st = aiOrchestrator.isEnabled() ? 'ACTIVÉ (auto sur gros travail)' : 'désactivé';
+          pushAssistantMessage(
+            rootEl,
+            `🎼 **Orchestre d'IA** : ${st}.\n\nIA disponibles : ${provs}.\n\n` +
+              'Usage : `/orchestre <ta question>` pour consulter TOUTES les IA en parallèle ' +
+              '(synthèse par Claude, divergences citées), ou `/orchestre on|off` pour l\'auto-détection ' +
+              '(mots-clés : audit, expert, complet, exhaustif…).',
+          );
+          return;
+        }
+        aiOrchestrator.forceNext();
+        const { enqueueText } = await import('./chat-engine.js');
+        enqueueText(rootEl, a);
+      })();
+      return true;
+    }
     case 'approbations': {
       /* v13.4.357 — Coffre d'autorisations : ouvre la PWA où Kevin valide d'un Face ID.
        * Apex y dépose ses demandes (approval-broker) avant tout acte sensible. */
