@@ -9635,5 +9635,6 @@ S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses to
 - **Ajouter une source** = l'ajouter dans `tools/agent-toolkit/sources.json` **ET** dans le catalogue Apex, dans le même commit (le test de parité vérifie que les URLs correspondent).
 
 ### Skills « domaine » à ouvrir par réflexe
+- **`.claude/skills/verif-reelle/`** — **vérifier POUR DE VRAI** (vraies pages kd-mc.com, vrai navigateur, **connecté en tant que Kevin**, captures d'écran) via le workflow `verif-reelle.yml`. **Interdit d'affirmer qu'une page/donnée marche sans l'avoir vue** (leçons #131/#135). Périmètre kd-mc.com uniquement, code admin par secret CI jamais journalisé, lecture seule, session **nommée** (pas « admin prouvé » Face ID) — le dire.
 - **`.claude/skills/domain-journal/`** — « Qui se connecte » (admin.kd-mc.com) : source unique des connexions = le routeur (KV `ACCOUNTS`), règle **un compte par personne** (fusion datée, identité stricte prénom+nom), robots exclus, vie privée (métadonnées seulement). À lire AVANT de toucher aux comptes, fiches, connexions ou à `kdmc-router` (leçons #164 et #166).
 - **Décès = dans l'arbre** (`arbre.kd-mc.com/__deces`), jamais un sous-domaine : `deces.kd-mc.com` a été retiré le 2026-08-06, ne pas le recréer (cf. NOTES_USER.md).

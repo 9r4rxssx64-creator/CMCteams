@@ -67,6 +67,7 @@ Ces documents sont **lus automatiquement** à chaque session. Ils sont la **mém
 | [KDMC_ADRESSES.md](KDMC_ADRESSES.md) | Adresses / coordonnées |
 | [.claude/skills/agent-toolkit/](.claude/skills/agent-toolkit/SKILL.md) | 🧰 Boîte à outils agents : les 6 dépôts de ton tableau (skills, mémoire, design, jetons, entreprise, LLM gratuit) |
 | [.claude/skills/domain-journal/](.claude/skills/domain-journal/SKILL.md) | 🗂️ « Qui se connecte » : le journal du domaine, un compte par personne, vie privée |
+| [.claude/skills/verif-reelle/](.claude/skills/verif-reelle/SKILL.md) | 🔎 Vérifier POUR DE VRAI le domaine, connecté en tant que toi (captures d'écran) |
 | [vendor/agent-toolkit/](vendor/agent-toolkit/README.md) | Le contenu récupéré des 6 dépôts (+ MANIFEST : version exacte, licence) |
 
 ---

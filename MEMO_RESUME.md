@@ -1,4 +1,27 @@
 
+### 🔎 « Simuler ma connexion pour vérifier en réel » (2026-08-06, Kevin)
+
+Le blocage récurrent (leçons #131/#135) : l'agent n'atteint pas kd-mc.com, et la CI ne voyait que
+les écrans de login → je déduisais au lieu de constater. **Résolu.**
+
+- **Réutilisé, pas dupliqué** (leçon #164) : `tools/smoke/audit-live.mjs` existait déjà (13 surfaces,
+  captures, erreurs JS, requêtes bloquées). Ce qui manquait = **être connecté**.
+- **Nouveau `tools/smoke/session-kevin.mjs`** : repose la marque de session que **l'app écrit
+  elle-même**, relue dans son code — CMCteams `cmc_uid`+`cmc_lastact` · Apex `apex_v13_user`+
+  `apex_v13_last_known_uid` · admin `kdmc_access_pinhash` · Arbre `arbre_trust` · portail = vrai
+  pass `POST /__sso/issue`. Appliqué **avant** le chargement (`addInitScript`).
+- **Opt-in** `KDMC_AS_KEVIN=1` → sans le drapeau l'audit reste **anonyme** (zéro régression).
+- **Workflow `verif-reelle.yml`** (dispatch) : je le déclenche, il rend **une capture par page**.
+- **Sécurité** : périmètre kd-mc.com **refusé ailleurs** (throw) · code admin par **secret CI**
+  (`APEX_ADMIN_PIN_SHA256`), jamais dans le dépôt, **jamais journalisé** · lecture seule · sans code
+  fourni on ne fabrique rien.
+- **Honnêteté** : session **nommée**, pas « admin prouvé » (Face ID) → zones réservées masquées.
+- **Garde-fou** `tests/session-kevin.test.mjs` (21 vérifs, câblé `test:ci`) : si une app change sa
+  clé de session, on le sait **là**, au lieu de croire qu'on est connecté devant un écran de login.
+  Prouvé qu'il rougit (marque faussée → code retour 1).
+- **Parité Apex** : `apex-verif-reelle.md` + le test de parité étendu (9/9).
+
+
 ### ⛔ Blocage EXTERNE mesuré (2026-08-06, ~15:22 UTC → en cours) — panne mondiale GitHub Actions
 
 **Mesuré** : `in_progress` = **0** · `queued` = **391** (le plus ancien à 15:49, `updated_at == created_at`).
