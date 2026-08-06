@@ -195,30 +195,53 @@ async function geminiImage(env, prompt, imgDataUrl, extraImg) {
 /* ---------------- Fournisseur 1bis : Cloudflare Workers AI (GRATUIT, même compte) -------
    Free tier quotidien, binding direct (aucune clé). Sert de vrai secours ET de
    renfort parallèle. FLUX pour l'image, MeloTTS pour la voix chantée du Studio. */
-const CF_IMG = '@cf/black-forest-labs/flux-1-schnell';
-const CF_TTS = '@cf/myshell-ai/melotts';
 async function cfImage(env, prompt) {
   if (!env.AI) throw new Error('cf_no_binding');
-  let r;
-  try { r = await env.AI.run(CF_IMG, { prompt: String(prompt).slice(0, 1800), steps: 4 }); }
-  catch (e) { throw new Error('cf_' + String((e && e.message) || e).slice(0, 120)); }
-  /* flux-1-schnell renvoie { image: "<base64 jpeg>" } ; certains modèles renvoient un flux */
-  if (r && typeof r.image === 'string') return { mime: 'image/jpeg', b64: r.image, provider: 'cloudflare:flux' };
-  if (r instanceof ReadableStream) {
-    const buf = await new Response(r).arrayBuffer();
-    const u = new Uint8Array(buf); let s = '';
-    for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
-    return { mime: 'image/png', b64: btoa(s), provider: 'cloudflare:flux' };
+  const p = String(prompt).slice(0, 1800);
+  const errs = [];
+  for (const model of CF_IMG_MODELS) {
+    try {
+      const r = await env.AI.run(model, /flux/.test(model) ? { prompt: p, steps: 4 } : { prompt: p });
+      /* flux renvoie { image: "<base64>" } ; d'autres renvoient un flux binaire */
+      if (r && typeof r.image === 'string' && r.image.length > 100) return { mime: 'image/jpeg', b64: r.image, provider: 'cloudflare:' + model.split('/').pop() };
+      if (r instanceof ReadableStream) {
+        const u = new Uint8Array(await new Response(r).arrayBuffer());
+        if (u.length > 100) { let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+          return { mime: 'image/png', b64: btoa(s), provider: 'cloudflare:' + model.split('/').pop() }; }
+      }
+      errs.push(model.split('/').pop() + ':vide');
+    } catch (e) { errs.push(model.split('/').pop() + ':' + String((e && e.message) || e).slice(0, 60)); }
   }
-  throw new Error('cf_no_image');
+  throw new Error('cf_' + errs.join(' ; ').slice(0, 240));
 }
-const CF_TXT = '@cf/meta/llama-3.1-8b-instruct';
+/* Plusieurs modèles candidats, essayés dans l'ordre. Un seul modèle figé =
+   une dépréciation (vécu : llama-3.1-8b retiré le 2026-05-30) casse la feature
+   du jour au lendemain, en silence. */
+const CF_TXT_MODELS = [
+  '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+  '@cf/meta/llama-4-scout-17b-16e-instruct',
+  '@cf/mistralai/mistral-small-3.1-24b-instruct',
+  '@cf/google/gemma-3-12b-it',
+  '@cf/meta/llama-3.1-8b-instruct-fast',
+];
+const CF_TTS_TRIES = [
+  { model: '@cf/myshell-ai/melotts', input: (t, l) => ({ prompt: t, lang: l || 'fr' }) },
+  { model: '@cf/myshell-ai/melotts', input: (t) => ({ prompt: t }) },
+  { model: '@cf/myshell-ai/melotts', input: (t) => ({ prompt: t, lang: 'en' }) },
+  { model: '@cf/deepgram/aura-1', input: (t) => ({ text: t, speaker: 'angus' }) },
+  { model: '@cf/deepgram/aura-1', input: (t) => ({ text: t }) },
+];
+const CF_IMG_MODELS = [
+  '@cf/black-forest-labs/flux-1-schnell',
+  '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+  '@cf/bytedance/stable-diffusion-xl-lightning',
+];
 /* Écriture de texte par Cloudflare Workers AI — GRATUIT, aucune clé.
    Sert de secours quand Gemini tombe : sans ça, une panne Gemini = plus de
    paroles NI de partition, donc plus de morceau du tout. */
 async function cfText(env, prompt, wantJson) {
   if (!env.AI) throw new Error('cf_no_binding');
-  const r = await env.AI.run(CF_TXT, {
+  const input = {
     messages: [
       { role: 'system', content: wantJson
           ? 'Tu reponds UNIQUEMENT par un JSON valide, sans texte autour, sans balises markdown.'
@@ -226,23 +249,38 @@ async function cfText(env, prompt, wantJson) {
       { role: 'user', content: String(prompt).slice(0, 4000) },
     ],
     max_tokens: wantJson ? 900 : 700,
-  });
-  const t = String((r && (r.response || r.result || r.text)) || '').trim();
-  if (!t) throw new Error('cf_no_text');
-  return t;
+  };
+  const errs = [];
+  for (const model of CF_TXT_MODELS) {
+    try {
+      const r = await env.AI.run(model, input);
+      const t = String((r && (r.response || (r.result && r.result.response) || r.text)) || '').trim();
+      if (t) return t;
+      errs.push(model.split('/').pop() + ':vide');
+    } catch (e) { errs.push(model.split('/').pop() + ':' + String((e && e.message) || e).slice(0, 60)); }
+  }
+  throw new Error('cf_' + errs.join(' ; ').slice(0, 240));
 }
 
 async function cfSpeech(env, text, lang) {
   if (!env.AI) throw new Error('cf_no_binding');
-  const r = await env.AI.run(CF_TTS, { prompt: String(text).slice(0, 1800), lang: lang || 'fr' });
-  if (r && typeof r.audio === 'string') return { mime: 'audio/mpeg', b64: r.audio };
-  if (r instanceof ReadableStream) {
-    const buf = await new Response(r).arrayBuffer();
-    const u = new Uint8Array(buf); let s = '';
-    for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
-    return { mime: 'audio/mpeg', b64: btoa(s) };
+  const t = String(text || '').slice(0, 1800);
+  const errs = [];
+  for (const cand of CF_TTS_TRIES) {
+    try {
+      const r = await env.AI.run(cand.model, cand.input(t, lang));
+      if (r && typeof r.audio === 'string' && r.audio.length > 100) return { mime: 'audio/mpeg', b64: r.audio, model: cand.model };
+      if (r instanceof ReadableStream) {
+        const buf = new Uint8Array(await new Response(r).arrayBuffer());
+        if (buf.length > 100) {
+          let bin = ''; for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+          return { mime: 'audio/mpeg', b64: btoa(bin), model: cand.model };
+        }
+      }
+      errs.push(cand.model.split('/').pop() + ':vide');
+    } catch (e) { errs.push(cand.model.split('/').pop() + ':' + String((e && e.message) || e).slice(0, 60)); }
   }
-  throw new Error('cf_no_audio');
+  throw new Error('cf_' + errs.join(' ; ').slice(0, 240));
 }
 
 /* ---------------- Fournisseur 2 : Together FLUX.1-schnell-Free (GRATUIT, texte→image) ---- */
@@ -400,6 +438,43 @@ export default {
     const freeAI = !!(env.GEMINI_API_KEY || env.GOOGLE_API_KEY);
 
     if (req.method === 'OPTIONS') return new Response(null, { headers: h });
+    /* --- 🔎 SONDE MODÈLES (diagnostic) ---
+       Je n'ai pas accès à Cloudflare depuis l'agent : cette sonde, lancée par la
+       CI, dit QUELS modèles répondent vraiment aujourd'hui. Sans elle, un modèle
+       déprécié (vécu : llama-3.1-8b retiré le 2026-05-30) se découvre en
+       devinant, un déploiement à la fois. Lecture seule, aucune donnée écrite. */
+    if (url.pathname === '/aidiag') {
+      if (!env.AI) return json({ error: 'cf_no_binding' }, h, 503);
+      const out = { text: [], tts: [], img: [] };
+      for (const m of CF_TXT_MODELS) {
+        try {
+          const r = await env.AI.run(m, { messages: [{ role: 'user', content: 'Dis bonjour en 3 mots.' }], max_tokens: 24 });
+          const t = String((r && (r.response || (r.result && r.result.response))) || '').trim();
+          out.text.push({ m, ok: !!t, sample: t.slice(0, 40) });
+        } catch (e) { out.text.push({ m, ok: false, err: String((e && e.message) || e).slice(0, 110) }); }
+      }
+      for (const c of CF_TTS_TRIES) {
+        const shape = Object.keys(c.input('x', 'fr')).join('+');
+        try {
+          const r = await env.AI.run(c.model, c.input('bonjour tout le monde', 'fr'));
+          let n = 0;
+          if (r && typeof r.audio === 'string') n = r.audio.length;
+          else if (r instanceof ReadableStream) n = (await new Response(r).arrayBuffer()).byteLength;
+          out.tts.push({ m: c.model, shape, ok: n > 100, size: n });
+        } catch (e) { out.tts.push({ m: c.model, shape, ok: false, err: String((e && e.message) || e).slice(0, 110) }); }
+      }
+      for (const m of CF_IMG_MODELS) {
+        try {
+          const r = await env.AI.run(m, /flux/.test(m) ? { prompt: 'a red apple', steps: 4 } : { prompt: 'a red apple' });
+          let n = 0;
+          if (r && typeof r.image === 'string') n = r.image.length;
+          else if (r instanceof ReadableStream) n = (await new Response(r).arrayBuffer()).byteLength;
+          out.img.push({ m, ok: n > 100, size: n });
+        } catch (e) { out.img.push({ m, ok: false, err: String((e && e.message) || e).slice(0, 110) }); }
+      }
+      return json(out, h);
+    }
+
     if (url.pathname === '/health') {
       return json({
         ok: true,
@@ -554,7 +629,7 @@ export default {
         const score = parseScore(await cfText(env, ask, true));
         if (score) return json({ score, style, provider: 'cloudflare', fallback: errs[0] || '' }, h);
         errs.push('cf_bad_score');
-      } catch (e) { errs.push('cf_' + String((e && e.message) || e).slice(0, 80)); }
+      } catch (e) { const m = String((e && e.message) || e); errs.push((/^cf_/.test(m) ? m : 'cf_' + m).slice(0, 160)); }
       return json({ error: errs.join(' | ') }, h, 502);
     }
 
@@ -599,7 +674,7 @@ export default {
         const text = await cfText(env, ask, false);
         if (text) return outLyrics(text, 'cloudflare', errs[0] || '');
         errs.push('cf_no_lyrics');
-      } catch (e) { errs.push('cf_' + String((e && e.message) || e).slice(0, 80)); }
+      } catch (e) { const m = String((e && e.message) || e); errs.push((/^cf_/.test(m) ? m : 'cf_' + m).slice(0, 160)); }
       return json({ error: errs.join(' | ') }, h, 502);
     }
 

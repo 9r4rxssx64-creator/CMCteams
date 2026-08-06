@@ -169,6 +169,30 @@ jobs:
           PY
           echo "== Fin auto-test =="
 
+      - name: Sonde modèles Workers AI (quels modèles répondent VRAIMENT aujourd'hui)
+        if: ${{ inputs.selftest == true }}
+        run: |
+          set +e
+          BASE="${HEALTH_BASE:-https://crea-ai.kd-mc.com}"
+          echo "== SONDE : je n'atteins pas Cloudflare depuis l'agent, la CI teste pour moi =="
+          curl -sS -m 220 -X POST "$BASE/aidiag" -H 'content-type: application/json' -d '{}' -o /tmp/diag.json \
+            -w "HTTP %{http_code} | size=%{size_download}\n"
+          python3 - <<'PY'
+          import json
+          try: d=json.load(open('/tmp/diag.json'))
+          except Exception as e: print('  ❌ sonde illisible:',e); raise SystemExit
+          if d.get('error'): print('  ❌',d['error']); raise SystemExit
+          for cat,label in (('text','TEXTE (paroles + partition)'),('tts','VOIX'),('img','IMAGE')):
+              print('  --',label)
+              for r in d.get(cat,[]):
+                  mark='✅' if r.get('ok') else '❌'
+                  extra=r.get('sample') or ('%s octets'%r.get('size') if r.get('size') else '') or r.get('err','')
+                  shape=(' ['+r['shape']+']') if r.get('shape') else ''
+                  print('     %s %s%s  %s'%(mark,r.get('m'),shape,str(extra)[:100]))
+              ok=[r for r in d.get(cat,[]) if r.get('ok')]
+              print('     → %d/%d modèle(s) utilisable(s)'%(len(ok),len(d.get(cat,[]))))
+          PY
+
       - name: Auto-test STUDIO (partition + voix chantée, Workers AI gratuit)
         if: ${{ inputs.selftest == true }}
         run: |
