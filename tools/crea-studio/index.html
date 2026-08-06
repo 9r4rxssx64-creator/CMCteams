@@ -608,7 +608,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v8.5.1';
+var APP_VER='v8.5.2';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -787,6 +787,16 @@ var AI_URL=(window.CREA_AI_URL||localStorage.getItem('crea_ai_url')||'https://kd
 function aiShow(msg){$('aiMsg').textContent=msg||'IA en cours…';$('aiLoad').classList.remove('hidden');}
 function aiHide(){$('aiLoad').classList.add('hidden');}
 /* Traduit la vraie cause d'échec IA en message clair et actionnable (règle : jamais d'erreur générique). */
+/* Dit clairement QUELLE IA a fait le travail. Kevin doit pouvoir verifier que
+   le secours a pris le relais — sinon « ça marche » cache une panne. */
+function aiWho(provider){
+  var p=String(provider||'');
+  if(/gemini/i.test(p))return 'IA principale';
+  if(/cloudflare|cf|flux|melotts/i.test(p))return 'IA de secours (gratuite)';
+  if(/together/i.test(p))return 'IA de renfort';
+  if(/replicate/i.test(p))return 'IA payante';
+  return '';
+}
 function aiErrMsg(e){var m=String((e&&e.message)||e||'');
   if(/402/.test(m))   return {t:'Crédit IA épuisé — recharge le compte Replicate (quelques €) pour réactiver l\'IA. En attendant : version rapide appliquée.',ms:5200};
   if(/429/.test(m))   return {t:'IA très demandée à l\'instant — réessaie dans 1 min. Version rapide appliquée.',ms:3600};
@@ -2301,6 +2311,7 @@ var Magic=(function(){
       toast('Photo prête — choisis un style ✨',1500);
     };im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);}
   /* --- 1) Transformations 1-clic (Gemini image, gratuit) --- */
+  var _lastWho='',_lastRecreated=false;
   function apply(preset,label,custom){
     if(!photoData){toast('Choisis une photo d\'abord');return;}
     if(busy){toast('Un traitement est déjà en cours…');return;}
@@ -2310,11 +2321,16 @@ var Magic=(function(){
     fetch(AI_URL+'/magic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       .then(function(r){var ct=r.headers.get('content-type')||'';
         if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||('http_'+r.status));},function(){throw new Error('http_'+r.status);});
+        _lastWho=aiWho(r.headers.get('x-crea-provider'));
+        _lastRecreated=(r.headers.get('x-crea-fallback')==='recreated');
         return r.blob();})
       .then(function(b){clearTimeout(to);busy=false;aiHide();
         if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
         img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
-        hint('✅ '+(label||'Transformation')+' — tu peux enregistrer ou essayer un autre style.');
+        hint('✅ '+(label||'Transformation')
+          +(_lastRecreated?' — attention : ta photo n\'a pas pu être retouchée, l\'IA de secours a recréé une image à partir de zéro.'
+                          :(_lastWho?' ('+_lastWho+')':''))
+          +' Tu peux enregistrer ou essayer un autre style.');
         openExport((label||'Transformation')+' prête ✨','Enregistre, repars de ce résultat, ou essaie un autre style.',[
           {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'magie-ia.png','Ma création IA');closeSheet();}},
           {label:'♻️ Continuer depuis ce résultat',ghost:true,fn:function(){photoData=null;var i2=new Image();i2.onload=function(){
@@ -2513,8 +2529,9 @@ var Magic=(function(){
      3) une vraie voix chante        (Workers AI, calée sur la mélodie)
      4) le téléphone joue et mixe    (multi-pistes, rendu hors-ligne)
      → un fichier audio complet, sans crédit. */
-  var songBlob=null;
+  var songBlob=null,_who={};
   function studio(){
+    _who={};
     if(busy){toast('Un traitement est déjà en cours…');return;}
     var theme=$('magicTheme').value.trim();
     if(!lastLyrics&&!theme){toast('Écris le sujet, ou « Écrire ma chanson » d\'abord');return;}
@@ -2525,15 +2542,18 @@ var Magic=(function(){
         body:JSON.stringify({theme:theme,style:songStyle,mode:songMode})}).then(function(r){return r.json();});
     step0.then(function(L){
       if(!L||!L.lyrics)throw new Error((L&&L.error)||'no_lyrics');
+      if(L.provider)_who.lyrics=aiWho(L.provider);
       lastLyrics=L;var el=$('magicLyrics');el.textContent=L.lyrics;el.classList.remove('hidden');
       return fetch(AI_URL+'/compose',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({style:songStyle,mood:theme})}).then(function(r){return r.json();})
-        .then(function(C){return {L:L,score:(C&&C.score)||null};});
+        .then(function(C){ if(C&&C.provider)_who.score=aiWho(C.provider);
+          return {L:L,score:(C&&C.score)||null};});
     }).then(function(o){
       aiShow('🎙 L\'IA chante ta chanson…');studioHint('Voix en cours…');
       var sung=singableText(o.L.lyrics);
       return fetch(AI_URL+'/voice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:sung,lang:'fr'})})
         .then(function(r){ if(!r.ok)return r.json().then(function(j){throw new Error(j&&j.error||'voice_http');});
+          _who.voice=aiWho(r.headers.get('x-crea-provider'));
           return r.arrayBuffer(); })
         .then(function(buf){return {L:o.L,score:o.score,voice:buf};})
         .catch(function(e){ studioHint('🎵 Voix indisponible ('+String(e.message||e).slice(0,40)+') — morceau instrumental.');
@@ -2546,7 +2566,12 @@ var Magic=(function(){
       songBlob=blob;$('magicSaveSong').classList.remove('hidden');
       archive(blob,((lastLyrics&&lastLyrics.title)||'Mon morceau'));
       var url=URL.createObjectURL(blob);var a=new Audio(url);a.play().catch(function(){});
-      studioHint('✅ Morceau prêt ('+Math.round(blob.size/1024)+' Ko) — il joue, et tu peux l\'enregistrer.');
+      var secours=[];
+      if(/secours/.test(_who.lyrics||''))secours.push('paroles');
+      if(/secours/.test(_who.score||''))secours.push('musique');
+      if(/secours/.test(_who.voice||''))secours.push('voix');
+      studioHint('✅ Morceau prêt ('+Math.round(blob.size/1024)+' Ko) — il joue, et tu peux l\'enregistrer.'
+        +(secours.length?' (IA de secours utilisée pour : '+secours.join(', ')+')':''));
       toast('Morceau produit 🎹',2400);
     }).catch(function(e){busy=false;$('magicStudioBtn').disabled=false;aiHide();
       var m=aiErrMsg(e);studioHint('⚠️ '+m.t);toast(m.t,m.ms);});
