@@ -85,8 +85,30 @@ chk(j.ok === true && j.configured === true && j.cloudflare === true, 'l\'état d
 env = { GEMINI_API_KEY: 'fake', AI: fakeAI({ textDown: true }) };
 r = await post('/compose', { style: 'pop' }, env);
 j = await r.json();
-chk(r.status === 502 && /gemini_429/.test(j.error || '') && /cf_/.test(j.error || ''),
-  `si les 2 IA tombent, l'erreur donne la cause exacte des DEUX (${String(j.error).slice(0, 60)})`);
+chk(r.status === 502 && /gemini_429/.test(j.error || '') && /cloudflare_/.test(j.error || ''),
+  `si toutes les IA tombent, l'erreur nomme CHACUNE avec sa cause (${String(j.error).slice(0, 70)})`);
+
+// ── 6) TOUTES les IA gratuites : la 1re en panne, une AUTRE prend le relais ───
+globalThis.fetch = async (u, o) => {
+  const url = String(u);
+  if (url.includes('groq.com')) return new Response('{"error":"rate limit"}', { status: 429 });
+  if (url.includes('generativelanguage')) return new Response('{"error":{"message":"quota"}}', { status: 429 });
+  if (url.includes('mistral.ai')) return new Response(JSON.stringify({ choices: [{ message: { content: 'TITRE: Par Mistral\nCOUPLET 1:\nune ligne' } }] }), { status: 200, headers: { 'content-type': 'application/json' } });
+  return new Response('{}', { status: 500 });
+};
+env = { GROQ_API_KEY: 'k', GEMINI_API_KEY: 'k', MISTRAL_API_KEY: 'k', COHERE_API_KEY: 'k' };
+r = await post('/lyrics', { theme: 'test', style: 'pop' }, env);
+j = await r.json();
+chk(r.status === 200 && j.provider === 'mistral' && /Par Mistral/.test(j.lyrics || ''),
+  `2 IA en panne → une 3e prend le relais toute seule (provider=${j.provider})`);
+chk(/groq_429/.test(j.fallback || ''), `et Kevin voit POURQUOI ça a basculé (${String(j.fallback).slice(0, 34)})`);
+
+// une IA sans clé n'est jamais appelée (pas d'appel inutile ni d'erreur trompeuse)
+env = { MISTRAL_API_KEY: 'k' };
+r = await post('/lyrics', { theme: 'test' }, env);
+j = await r.json();
+chk(r.status === 200 && j.provider === 'mistral' && !j.fallback,
+  'une IA sans clé est ignorée proprement (aucune erreur inventée)');
 
 globalThis.fetch = realFetch;
 console.log('=== CRÉA IA — SECOURS GRATUIT ===');

@@ -262,6 +262,97 @@ async function cfText(env, prompt, wantJson) {
   throw new Error('cf_' + errs.join(' ; ').slice(0, 240));
 }
 
+/* ---------------- 🆓 TOUTES LES IA GRATUITES DE KEVIN (texte) ----------------
+   Chaîne complète, essayée dans l'ordre. Toutes ces clés existent déjà dans ses
+   secrets GitHub — aucune carte, aucun nouveau compte. Si l'une est en panne ou
+   à quota, la suivante prend le relais SANS que l'app s'arrête.
+   Les noms de secrets sont ceux EXACTS de Kevin (dont la typo PERPLEXITI). */
+const TEXT_PROVIDERS = [
+  { id: 'groq',       key: 'GROQ_API_KEY',       url: 'https://api.groq.com/openai/v1/chat/completions',        model: 'llama-3.3-70b-versatile',        free: true },
+  { id: 'gemini',     key: 'GEMINI_API_KEY',     url: '',                                                      model: 'gemini-2.5-flash',               free: true },
+  { id: 'mistral',    key: 'MISTRAL_API_KEY',    url: 'https://api.mistral.ai/v1/chat/completions',            model: 'mistral-small-latest',           free: true },
+  { id: 'cohere',     key: 'COHERE_API_KEY',     url: 'https://api.cohere.ai/compatibility/v1/chat/completions', model: 'command-r-08-2024',            free: true },
+  { id: 'together',   key: 'TOGETHER_API_KEY',   url: 'https://api.together.xyz/v1/chat/completions',          model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free', free: true },
+  { id: 'deepseek',   key: 'DEEPSEEK_API_KEY',   url: 'https://api.deepseek.com/chat/completions',             model: 'deepseek-chat',                  free: false },
+  { id: 'openrouter', key: 'OPENROUTER_API_KEY', url: 'https://openrouter.ai/api/v1/chat/completions',         model: 'meta-llama/llama-3.3-70b-instruct:free', free: true },
+];
+/* Appel « compatible OpenAI » : la même forme marche pour Groq, Mistral, Cohere,
+   Together, DeepSeek et OpenRouter → un seul code au lieu de six. */
+async function openaiLikeText(url, key, model, prompt, wantJson) {
+  const body = {
+    model,
+    messages: [
+      { role: 'system', content: wantJson
+          ? 'Tu reponds UNIQUEMENT par un JSON valide, sans texte autour, sans balises markdown.'
+          : 'Tu ecris en francais, en respectant EXACTEMENT le format demande, sans explications.' },
+      { role: 'user', content: String(prompt).slice(0, 4000) },
+    ],
+    max_tokens: wantJson ? 900 : 800,
+    temperature: 0.8,
+  };
+  if (wantJson) body.response_format = { type: 'json_object' };
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+    body: JSON.stringify(body),
+  });
+  const txt = await r.text();
+  if (!r.ok) throw new Error(r.status + '_' + txt.slice(0, 90));
+  let j; try { j = JSON.parse(txt); } catch (_) { throw new Error('reponse_illisible'); }
+  const out = String((((j.choices || [])[0] || {}).message || {}).content || '').trim();
+  if (!out) throw new Error('vide');
+  return out;
+}
+async function geminiText(key, model, prompt, wantJson) {
+  const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key), {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(Object.assign(
+      { contents: [{ parts: [{ text: String(prompt).slice(0, 4000) }] }] },
+      wantJson ? { generationConfig: { responseMimeType: 'application/json' } } : {})),
+  });
+  const txt = await r.text();
+  if (!r.ok) throw new Error(r.status + '_' + txt.slice(0, 90));
+  let j; try { j = JSON.parse(txt); } catch (_) { throw new Error('reponse_illisible'); }
+  const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+  const out = parts.map((x) => x.text || '').join('').trim();
+  if (!out) throw new Error('vide');
+  return out;
+}
+/* Écrit un texte en essayant TOUTES les IA gratuites, puis Cloudflare.
+   Retourne { text, provider } — on sait toujours QUI a répondu. */
+/* Y a-t-il AU MOINS un moteur IA utilisable ? (une seule clé suffit) */
+function anyEngine(env) {
+  if (env.AI) return true;
+  if (env.REPLICATE_API_TOKEN) return true;
+  if (env.GOOGLE_API_KEY) return true;
+  return TEXT_PROVIDERS.some((p) => !!env[p.key]);
+}
+/* Liste des IA réellement disponibles, pour /health (honnêteté : Kevin voit
+   exactement ce qui est branché, pas une promesse). */
+function enginesAvailable(env) {
+  const out = TEXT_PROVIDERS.filter((p) => !!env[p.key]).map((p) => p.id);
+  if (env.GOOGLE_API_KEY && out.indexOf('gemini') < 0) out.push('gemini');
+  if (env.AI) out.push('cloudflare');
+  if (env.REPLICATE_API_TOKEN) out.push('replicate(payant)');
+  return out;
+}
+async function anyText(env, prompt, wantJson) {
+  const errs = [];
+  for (const p of TEXT_PROVIDERS) {
+    const key = env[p.key] || (p.id === 'gemini' ? env.GOOGLE_API_KEY : null);
+    if (!key) continue;
+    try {
+      const t = p.id === 'gemini'
+        ? await geminiText(key, p.model, prompt, wantJson)
+        : await openaiLikeText(p.url, key, p.model, prompt, wantJson);
+      if (t) return { text: t, provider: p.id, tried: errs };
+    } catch (e) { errs.push(p.id + '_' + String((e && e.message) || e).slice(0, 70)); }
+  }
+  try { return { text: await cfText(env, prompt, wantJson), provider: 'cloudflare', tried: errs }; }
+  catch (e) { errs.push('cloudflare_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
+  throw new Error(errs.length ? errs.join(' | ') : 'aucune_ia_configuree');
+}
+
 async function cfSpeech(env, text, lang) {
   if (!env.AI) throw new Error('cf_no_binding');
   const t = String(text || '').slice(0, 1800);
@@ -478,10 +569,12 @@ export default {
     if (url.pathname === '/health') {
       return json({
         ok: true,
-        configured: !!(freeAI || token || env.AI),
+        configured: anyEngine(env),
         free: freeAI,                    // IA gratuite (Gemini) disponible
         together: !!env.TOGETHER_API_KEY, // repli gratuit texte→image
         cloudflare: !!env.AI,            // 2e IA gratuite (image + voix + texte)
+        engines: enginesAvailable(env),  // TOUTES les IA branchées, nommées
+        engines_count: enginesAvailable(env).length,
         paid: !!token                    // Replicate (secours payant)
       }, h);
     }
@@ -509,9 +602,10 @@ export default {
     }
 
     if (req.method !== 'POST') return json({ error: 'post_only' }, h, 405);
-    /* Workers AI compte comme moteur : sans ce test, une clé Gemini absente
-       fermait TOUTE l'app alors que la 2e IA gratuite est disponible. */
-    if (!freeAI && !token && !env.AI) return json({ error: 'not_configured' }, h, 503);
+    /* N'IMPORTE QUELLE IA configurée suffit à ouvrir l'app. Sans ce compte
+       complet, une seule clé (ex : Mistral seul) donnait « pas configuré »
+       alors qu'un moteur parfaitement valide était disponible. */
+    if (!anyEngine(env)) return json({ error: 'not_configured' }, h, 503);
 
     let body = null;
     try { body = await req.json(); } catch (_) { return json({ error: 'bad_json' }, h, 400); }
@@ -608,29 +702,13 @@ export default {
         try { sc = JSON.parse((m ? m[0] : String(txt)).replace(/^```json\s*|```$/g, '')); } catch (_) { }
         return (sc && Array.isArray(sc.melody)) ? sc : null;
       };
-      const errs = [];
-      if (key) {
-        try {
-          const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
-            { method: 'POST', headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }], generationConfig: { responseMimeType: 'application/json' } }) });
-          const j = await r.json();
-          if (!r.ok) errs.push('gemini_' + r.status);
-          else {
-            const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
-            const score = parseScore(parts.map((p) => p.text || '').join('').trim());
-            if (score) return json({ score, style, provider: 'gemini' }, h);
-            errs.push('gemini_bad_score');
-          }
-        } catch (e) { errs.push('gemini_' + String((e && e.message) || e).slice(0, 80)); }
-      } else errs.push('gemini_no_key');
-      /* SECOURS GRATUIT : Workers AI écrit la partition à la place */
+      /* TOUTES les IA gratuites sont essayées : une panne ou un quota ne coupe plus la musique. */
       try {
-        const score = parseScore(await cfText(env, ask, true));
-        if (score) return json({ score, style, provider: 'cloudflare', fallback: errs[0] || '' }, h);
-        errs.push('cf_bad_score');
-      } catch (e) { const m = String((e && e.message) || e); errs.push((/^cf_/.test(m) ? m : 'cf_' + m).slice(0, 160)); }
-      return json({ error: errs.join(' | ') }, h, 502);
+        const r = await anyText(env, ask, true);
+        const score = parseScore(r.text);
+        if (score) return json({ score, style, provider: r.provider, fallback: (r.tried || [])[0] || '' }, h);
+        return json({ error: 'bad_score_' + r.provider + '_' + String(r.text).slice(0, 90) }, h, 502);
+      } catch (e) { return json({ error: String((e && e.message) || e).slice(0, 400) }, h, 502); }
     }
 
     // --- 🎵 PAROLES DE CHANSON (texte IA gratuit) ---
@@ -650,32 +728,12 @@ export default {
              + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes>\nCOUPLET 2:\n<4 lignes>\nPONT:\n<2 lignes>\nREFRAIN FINAL:\n<4 lignes>\nRimes riches, images fortes, vocabulaire varié. Pas d\'explications.')
           : ('Écris une chanson originale en FRANÇAIS, style ' + style + ', sur : ' + theme
              + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes accrocheuses et répétables>\nCOUPLET 2:\n<4 lignes>\nRefrain court, rimes simples, facile à chanter. Pas d\'explications.'));
-      const outLyrics = (text, provider, why) => {
-        const t = /TITRE\s*:\s*(.+)/i.exec(text);
-        return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: text, style, mode, provider, fallback: why || '' }, h);
-      };
-      const errs = [];
-      if (key) {
-        try {
-          const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
-            { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }] }) });
-          const j = await r.json();
-          if (!r.ok) errs.push('gemini_' + r.status + '_' + (((j && j.error && j.error.message) || '')).slice(0, 120));
-          else {
-            const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
-            const text = parts.map((p) => p.text || '').join('').trim();
-            if (text) return outLyrics(text, 'gemini');
-            errs.push('gemini_no_lyrics');
-          }
-        } catch (e) { errs.push('gemini_' + String((e && e.message) || e).slice(0, 80)); }
-      } else errs.push('gemini_no_key');
-      /* SECOURS GRATUIT : Workers AI écrit les paroles à la place */
       try {
-        const text = await cfText(env, ask, false);
-        if (text) return outLyrics(text, 'cloudflare', errs[0] || '');
-        errs.push('cf_no_lyrics');
-      } catch (e) { const m = String((e && e.message) || e); errs.push((/^cf_/.test(m) ? m : 'cf_' + m).slice(0, 160)); }
-      return json({ error: errs.join(' | ') }, h, 502);
+        const r = await anyText(env, ask, false);
+        const t = /TITRE\s*:\s*(.+)/i.exec(r.text);
+        return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: r.text, style, mode,
+          provider: r.provider, fallback: (r.tried || [])[0] || '' }, h);
+      } catch (e) { return json({ error: String((e && e.message) || e).slice(0, 400) }, h, 502); }
     }
 
     // --- POSES (danse OU chant) : photo → vidéo, GRATUIT via Gemini ---
