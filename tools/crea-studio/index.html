@@ -175,6 +175,9 @@
     display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted)}
 
   .hint{font-size:11.5px;color:var(--muted);text-align:center;padding:2px 14px 6px}
+  .lyrics{margin:6px 14px 10px;padding:12px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+    border-radius:14px;font-size:13.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--txt);
+    max-height:38vh;overflow:auto;-webkit-overflow-scrolling:touch;font-family:inherit}
   .hint b{color:var(--gold2)}
   #aiLoad{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
   .ai-card{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:24px 28px;text-align:center;max-width:82vw;box-shadow:0 20px 60px rgba(0,0,0,.6)}
@@ -450,6 +453,57 @@
     </div>
   </section>
 
+  <!-- ============ ✨ MAGIE IA (transformations 1-clic + chant + chanson) ============ -->
+  <section class="studio" id="s-magic">
+    <div class="canvas-wrap" id="magicWrap">
+      <div class="empty" id="magicEmpty">
+        <div class="big">✨</div>
+        <h2>Magie IA</h2>
+        <p>Mets une photo → deviens une figurine, un personnage anime, un super-héros, fête ton anniversaire avec un lion… ou chante ta propre chanson. Comme les apps virales, en un clic.</p>
+        <button class="bigbtn" onclick="Magic.pick()">📂 Choisir une photo</button>
+        <button class="bigbtn ghost" onclick="Magic.camera()">📷 Prendre une photo</button>
+      </div>
+      <img class="viewer hidden" id="magicPhoto" alt="">
+      <video class="viewer hidden" id="magicVideo" playsinline webkit-playsinline controls loop></video>
+    </div>
+    <div class="panel hidden" id="magicPanel">
+      <div class="toolrow" id="magicTabs">
+        <button class="chip on" data-tab="look"><span class="ic">🪄</span>Transformer</button>
+        <button class="chip" data-tab="sing"><span class="ic">🎤</span>Je chante</button>
+        <button class="chip" data-tab="song"><span class="ic">🎵</span>Chanson IA</button>
+      </div>
+
+      <div id="magicLook">
+        <div class="hint">Touche un style — l'IA transforme ta photo (gratuit) :</div>
+        <div class="toolrow" id="magicStyles"></div>
+        <div class="textedit"><input id="magicCustom" placeholder="Ou décris ce que tu veux (ex: en pilote de F1…)" maxlength="140"></div>
+        <div style="padding:2px 14px"><button class="bigbtn ghost" onclick="Magic.custom()">🪄 Créer ma transformation</button></div>
+      </div>
+
+      <div id="magicSing" class="hidden">
+        <div class="hint">Ta photo <b>chante</b> ta musique : sa bouche bouge en rythme sur le son. 🎤</div>
+        <div style="padding:2px 14px">
+          <button class="bigbtn" onclick="Magic.pickSong()">🎵 Choisir la musique / ma voix</button>
+          <button class="bigbtn ghost" id="magicSingBtn" onclick="Magic.sing()">🎬 Faire chanter ma photo</button>
+        </div>
+        <div class="hint" id="magicSingHint">Astuce : enregistre ta voix avec l'app Dictaphone, puis choisis le fichier ici.</div>
+      </div>
+
+      <div id="magicSong" class="hidden">
+        <div class="hint">L'IA écrit ta chanson (paroles + instru jouée par le téléphone) :</div>
+        <div class="toolrow" id="magicSongStyles"></div>
+        <div class="textedit"><input id="magicTheme" placeholder="Sujet de la chanson (ex: mes potes du casino)" maxlength="140"></div>
+        <div style="padding:2px 14px">
+          <button class="bigbtn" id="magicSongBtn" onclick="Magic.song()">🎼 Écrire ma chanson</button>
+          <button class="bigbtn ghost hidden" id="magicPlayBtn" onclick="Magic.playInstru()">▶️ Jouer l'instru</button>
+        </div>
+        <pre class="lyrics hidden" id="magicLyrics"></pre>
+      </div>
+
+      <div class="hint" id="magicHint"></div>
+    </div>
+  </section>
+
 </div>
 
 <!-- BOTTOM NAV -->
@@ -458,6 +512,7 @@
   <button data-go="video"><span class="ic">🎬</span>Vidéo</button>
   <button data-go="anim"><span class="ic">✏️</span>Cartoon</button>
   <button data-go="aivid"><span class="ic">🕺</span>Danse IA</button>
+  <button data-go="magic"><span class="ic">✨</span>Magie</button>
 </div>
 
 <div id="vbadge">v1.0.0</div>
@@ -488,6 +543,9 @@
 <input type="file" id="fileAiPhotoCam" accept="image/*" capture="user" class="hidden">
 <input type="file" id="fileAiMusic" accept="audio/*" class="hidden">
 <input type="file" id="fileBg" accept="image/*" class="hidden">
+<input type="file" id="fileMagicPhoto" accept="image/*" class="hidden">
+<input type="file" id="fileMagicCam" accept="image/*" capture="user" class="hidden">
+<input type="file" id="fileMagicSong" accept="audio/*" class="hidden">
 
 <script>
 /* ============================================================
@@ -495,7 +553,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v8.1.0';
+var APP_VER='v8.2.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -548,12 +606,14 @@ $('btnNew').onclick=function(){
   else if(CUR==='video')Vid.pick();
   else if(CUR==='anim')Anim.start();
   else if(CUR==='aivid')AiVid.pick();
+  else if(CUR==='magic')Magic.pick();
 };
 $('btnExport').onclick=function(){
   if(CUR==='photo')Photo.export();
   else if(CUR==='video')Vid.export();
   else if(CUR==='anim')Anim.export();
   else if(CUR==='aivid')AiVid.export();
+  else if(CUR==='magic')Magic.export();
 };
 
 /* generic tab switching within a studio panel */
@@ -1893,10 +1953,234 @@ $('fileOverlay').onchange=function(e){if(e.target.files[0])Photo._addOverlayImag
 $('fileAiPhoto').onchange=function(e){if(e.target.files[0]){go('aivid');AiVid._load(e.target.files[0]);}e.target.value='';};
 $('fileAiPhotoCam').onchange=function(e){if(e.target.files[0]){go('aivid');AiVid._load(e.target.files[0]);}e.target.value='';};
 $('fileAiMusic').onchange=function(e){if(e.target.files[0])AiVid._mux(e.target.files[0]);e.target.value='';};
+/* ============ ✨ MAGIE IA — reverse-engineering des apps virales ============
+   AI Mirror (figurine/anime) · ToonApp (danse) · AI Catch (scènes) ·
+   Donna & AI Music (photo qui chante + chanson). Images = Gemini (gratuit),
+   montage vidéo + instru = fait DANS le téléphone (aucun crédit). */
+var Magic=(function(){
+  var img=$('magicPhoto'),vid=$('magicVideo');
+  var photoData=null,songFile=null,busy=false,outUrl=null,lastLyrics=null,songStyle='pop',ac=null;
+  var STYLES=[
+    {id:'figurine',emoji:'🧸',label:'Figurine'},
+    {id:'boite',emoji:'📦',label:'En boîte'},
+    {id:'anime',emoji:'🌸',label:'Anime'},
+    {id:'toon3d',emoji:'🎬',label:'Toon 3D'},
+    {id:'glowup',emoji:'✨',label:'Clip néon'},
+    {id:'lion',emoji:'🦁',label:'Anniv. lion'},
+    {id:'espace',emoji:'🚀',label:'Espace'},
+    {id:'redcarpet',emoji:'🌟',label:'Tapis rouge'},
+    {id:'cosplay',emoji:'🦸',label:'Super-héros'},
+    {id:'vintage',emoji:'📼',label:'Vintage 70s'},
+    {id:'bebe',emoji:'👶',label:'En enfant'},
+    {id:'vieux',emoji:'👴',label:'Dans 50 ans'}
+  ];
+  var SONG_STYLES=[
+    {id:'rap',emoji:'🎤',label:'Rap'},{id:'pop',emoji:'🎶',label:'Pop'},
+    {id:'rock',emoji:'🎸',label:'Rock'},{id:'reggae',emoji:'🌴',label:'Reggae'},
+    {id:'lofi',emoji:'🌙',label:'Chill'},{id:'disco',emoji:'🪩',label:'Disco'}
+  ];
+  function hint(t){var e=$('magicHint');if(e)e.textContent=t||'';}
+  function build(){
+    var c=$('magicStyles');c.innerHTML='';
+    STYLES.forEach(function(s){var b=document.createElement('button');b.className='chip';
+      b.innerHTML='<span class="ic">'+s.emoji+'</span>'+s.label;
+      b.onclick=function(){apply(s.id,s.label);};c.appendChild(b);});
+    var g=$('magicSongStyles');g.innerHTML='';
+    SONG_STYLES.forEach(function(s){var b=document.createElement('button');b.className='chip'+(s.id===songStyle?' on':'');
+      b.innerHTML='<span class="ic">'+s.emoji+'</span>'+s.label;
+      b.onclick=function(){songStyle=s.id;g.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};
+      g.appendChild(b);});
+    wireTabs('magicTabs',{look:'magicLook',sing:'magicSing',song:'magicSong'});
+  }
+  function loadPhoto(file){var im=new Image();im.onload=function(){
+      var MAX=1024,sc=Math.min(MAX/im.width,MAX/im.height,1);var c=document.createElement('canvas');
+      c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      photoData=c.toDataURL('image/jpeg',0.9);outUrl=null;
+      img.src=photoData;img.classList.remove('hidden');vid.classList.add('hidden');vid.removeAttribute('src');
+      $('magicEmpty').classList.add('hidden');$('magicPanel').classList.remove('hidden');
+      hint('Touche un style pour transformer ta photo.');URL.revokeObjectURL(im.src);
+      toast('Photo prête — choisis un style ✨',1500);
+    };im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);}
+  /* --- 1) Transformations 1-clic (Gemini image, gratuit) --- */
+  function apply(preset,label,custom){
+    if(!photoData){toast('Choisis une photo d\'abord');return;}
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    busy=true;aiShow('L\'IA transforme ta photo… ✨');hint('');
+    var body=custom?{image:photoData,custom:custom}:{image:photoData,preset:preset};
+    var to=setTimeout(function(){},1);
+    fetch(AI_URL+'/magic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){var ct=r.headers.get('content-type')||'';
+        if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||('http_'+r.status));},function(){throw new Error('http_'+r.status);});
+        return r.blob();})
+      .then(function(b){clearTimeout(to);busy=false;aiHide();
+        if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
+        img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
+        hint('✅ '+(label||'Transformation')+' — tu peux enregistrer ou essayer un autre style.');
+        openExport((label||'Transformation')+' prête ✨','Enregistre, repars de ce résultat, ou essaie un autre style.',[
+          {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'magie-ia.png','Ma création IA');closeSheet();}},
+          {label:'♻️ Continuer depuis ce résultat',ghost:true,fn:function(){photoData=null;var i2=new Image();i2.onload=function(){
+              var c=document.createElement('canvas');c.width=i2.naturalWidth;c.height=i2.naturalHeight;c.getContext('2d').drawImage(i2,0,0);
+              photoData=c.toDataURL('image/jpeg',0.9);toast('On repart de cette image ✨',1400);};i2.src=outUrl;closeSheet();}}
+        ]);
+      })
+      .catch(function(e){clearTimeout(to);busy=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* --- 2) « Je chante » : lip-sync RÉEL (bouche selon le volume du son) --- */
+  function sing(){
+    if(!photoData){toast('Choisis une photo d\'abord');return;}
+    if(!songFile){toast('Choisis d\'abord la musique ou ta voix 🎵');return;}
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    busy=true;$('magicSingBtn').disabled=true;aiShow('L\'IA prépare ta bouche qui chante… 🎤');
+    fetch(AI_URL+'/frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,mode:'sing',n:3})})
+      .then(function(r){return r.json();})
+      .then(function(j){if(!j||!j.frames||j.frames.length<2)throw new Error((j&&j.error)||'frames_failed');
+        aiShow('Montage de la vidéo… 🎬');
+        return buildSingVideo(j.frames,songFile);})
+      .then(function(blob){busy=false;$('magicSingBtn').disabled=false;aiHide();
+        if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(blob);
+        img.classList.add('hidden');vid.src=outUrl;vid.classList.remove('hidden');vid.play().catch(function(){});
+        hint('✅ Ta photo chante ! Enregistre-la.');
+        openExport('Tu chantes 🎤','Ta photo chante en rythme sur le son choisi.',[
+          {label:'📤 Enregistrer / Partager',fn:function(){var ext=(blob.type.indexOf('webm')>=0)?'webm':'mp4';shareOrSave(blob,'je-chante.'+ext,'Je chante !');closeSheet();}},
+          {label:'🔁 Refaire',ghost:true,fn:function(){closeSheet();sing();}}
+        ]);})
+      .catch(function(e){busy=false;$('magicSingBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* Monte la vidéo chantée : la bouche suit le VOLUME réel de l'audio. */
+  function buildSingVideo(urls,audioFile){
+    return new Promise(function(resolve,reject){
+      var imgs=[],done=0;
+      urls.forEach(function(u,i){var im=new Image();im.onload=function(){imgs[i]=im;if(++done===urls.length)go2();};
+        im.onerror=function(){if(++done===urls.length)go2();};im.src=u;});
+      function go2(){
+        imgs=imgs.filter(Boolean);
+        if(imgs.length<2){reject(new Error('frames_unreadable'));return;}
+        var MAXW=720,w=imgs[0].naturalWidth||720,hh=imgs[0].naturalHeight||1280;
+        if(w>MAXW){hh=Math.round(hh*MAXW/w);w=MAXW;}
+        var cv=document.createElement('canvas');cv.width=w;cv.height=hh;var cx=cv.getContext('2d');
+        var actx;try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){reject(new Error('audio_unavailable'));return;}
+        var aud=new Audio(URL.createObjectURL(audioFile));aud.crossOrigin='anonymous';
+        aud.onerror=function(){reject(new Error('audio_illisible'));};
+        aud.onloadedmetadata=function(){
+          var DUR=Math.min(aud.duration||10,20);   /* 20 s max (partage facile) */
+          var src,an,dest;
+          try{ src=actx.createMediaElementSource(aud); an=actx.createAnalyser(); an.fftSize=512;
+               dest=actx.createMediaStreamDestination(); src.connect(an); an.connect(dest); an.connect(actx.destination);
+          }catch(e){reject(new Error('audio_route'));return;}
+          var data=new Uint8Array(an.frequencyBinCount);
+          var stream=cv.captureStream(30);
+          try{dest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});}catch(e){}
+          var mime=pickVideoMime(),rec;
+          try{rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:6000000}:undefined);}
+          catch(e){reject(new Error('recorder_unavailable'));return;}
+          var chunks=[];rec.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
+          rec.onstop=function(){try{actx.close();}catch(e){}try{aud.pause();}catch(e){}
+            var b=new Blob(chunks,{type:mime||'video/webm'});b.size?resolve(b):reject(new Error('empty_video'));};
+          var t0=performance.now(),ended=false;
+          function finish(){if(ended)return;ended=true;try{rec.stop();}catch(e){}}
+          function draw(){
+            if(ended)return;
+            var el=performance.now()-t0;
+            if(el>=DUR*1000||aud.ended){finish();return;}
+            an.getByteTimeDomainData(data);
+            var sum=0;for(var i=0;i<data.length;i++){var v=(data[i]-128)/128;sum+=v*v;}
+            var rms=Math.sqrt(sum/data.length);                 /* volume instantané */
+            var lvl=Math.min(imgs.length-1,Math.floor(rms*imgs.length*4.2));  /* → bouche */
+            var im=imgs[lvl]||imgs[0];
+            var s=1.015+rms*0.05,tilt=Math.sin(el/420)*0.01;    /* la tête bouge un peu */
+            cx.fillStyle='#000';cx.fillRect(0,0,w,hh);
+            cx.save();cx.translate(w/2,hh/2);cx.rotate(tilt);cx.scale(s,s);
+            cx.drawImage(im,-w/2,-hh/2,w,hh);cx.restore();
+            requestAnimationFrame(draw);
+          }
+          if(actx.state==='suspended')actx.resume();
+          rec.start(200);aud.currentTime=0;aud.play().then(function(){requestAnimationFrame(draw);})
+            .catch(function(){reject(new Error('audio_play'));});
+          setTimeout(finish,DUR*1000+2500);
+        };
+      }
+    });
+  }
+  /* --- 3) Chanson IA : paroles (Gemini) + instru jouée par le téléphone --- */
+  function song(){
+    var theme=$('magicTheme').value.trim();
+    if(!theme){toast('Écris le sujet de ta chanson');return;}
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    busy=true;$('magicSongBtn').disabled=true;aiShow('L\'IA écrit ta chanson… 🎼');
+    fetch(AI_URL+'/lyrics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:theme,style:songStyle})})
+      .then(function(r){return r.json();})
+      .then(function(j){busy=false;$('magicSongBtn').disabled=false;aiHide();
+        if(!j||!j.lyrics)throw new Error((j&&j.error)||'no_lyrics');
+        lastLyrics=j;var el=$('magicLyrics');el.textContent=j.lyrics;el.classList.remove('hidden');
+        $('magicPlayBtn').classList.remove('hidden');
+        hint('✅ « '+j.title+' » — touche ▶️ pour l\'instru, chante par-dessus, puis enregistre ta voix et fais chanter ta photo 🎤');
+        toast('Chanson écrite 🎼',1800);})
+      .catch(function(e){busy=false;$('magicSongBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* Instru générée dans le téléphone (WebAudio) — tempo/gamme selon le style. */
+  var playing=false;
+  function playInstru(){
+    if(playing){stopInstru();return;}
+    var CFG={rap:{bpm:88,root:49,wave:'square'},pop:{bpm:112,root:57,wave:'triangle'},
+             rock:{bpm:128,root:52,wave:'sawtooth'},reggae:{bpm:76,root:54,wave:'triangle'},
+             lofi:{bpm:72,root:50,wave:'sine'},disco:{bpm:120,root:55,wave:'sawtooth'}}[songStyle]||{bpm:110,root:57,wave:'triangle'};
+    try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();}catch(e){toast('Son indisponible');return;}
+    if(ac.state==='suspended')ac.resume();
+    playing=true;$('magicPlayBtn').textContent='⏹ Arrêter l\'instru';
+    var beat=60/CFG.bpm,t=ac.currentTime+0.1,BARS=8;
+    var deg=[0,3,5,7,10,12];                       /* pentatonique = toujours juste */
+    function note(midi,at,dur,gain,wave){
+      var o=ac.createOscillator(),g=ac.createGain();o.type=wave||CFG.wave;
+      o.frequency.value=440*Math.pow(2,(midi-69)/12);
+      g.gain.setValueAtTime(0.0001,at);g.gain.exponentialRampToValueAtTime(gain,at+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,at+dur);
+      o.connect(g);g.connect(ac.destination);o.start(at);o.stop(at+dur+0.05);
+    }
+    function kick(at){var o=ac.createOscillator(),g=ac.createGain();o.type='sine';
+      o.frequency.setValueAtTime(140,at);o.frequency.exponentialRampToValueAtTime(45,at+0.13);
+      g.gain.setValueAtTime(0.6,at);g.gain.exponentialRampToValueAtTime(0.0001,at+0.16);
+      o.connect(g);g.connect(ac.destination);o.start(at);o.stop(at+0.2);}
+    function hat(at){var b=ac.createBuffer(1,1024,ac.sampleRate),d=b.getChannelData(0);
+      for(var i=0;i<1024;i++)d[i]=(Math.random()*2-1)*0.35;
+      var s=ac.createBufferSource();s.buffer=b;var g=ac.createGain();
+      g.gain.setValueAtTime(0.12,at);g.gain.exponentialRampToValueAtTime(0.0001,at+0.05);
+      s.connect(g);g.connect(ac.destination);s.start(at);}
+    for(var bar=0;bar<BARS;bar++){
+      for(var b2=0;b2<4;b2++){
+        var at=t+(bar*4+b2)*beat;
+        if(b2%2===0)kick(at);
+        hat(at+beat/2);
+        note(CFG.root-12+deg[(bar+b2)%deg.length],at,beat*0.9,0.18);          /* basse */
+        if(b2%2===1)note(CFG.root+12+deg[(bar*2+b2)%deg.length],at,beat*0.45,0.09); /* mélodie */
+      }
+    }
+    setTimeout(stopInstru,BARS*4*beat*1000+400);
+  }
+  function stopInstru(){playing=false;$('magicPlayBtn').textContent='▶️ Jouer l\'instru';
+    try{if(ac){ac.close();ac=null;}}catch(e){}}
+  return {
+    init:build,
+    pick:function(){$('fileMagicPhoto').click();},
+    camera:function(){$('fileMagicCam').click();},
+    pickSong:function(){$('fileMagicSong').click();},
+    _load:loadPhoto,
+    _song:function(f){songFile=f;$('magicSingHint').textContent='🎵 Son choisi : '+(f.name||'audio').slice(0,40)+' — touche « Faire chanter ma photo ».';toast('Musique prête 🎵',1400);},
+    custom:function(){var v=$('magicCustom').value.trim();if(!v){toast('Décris ce que tu veux');return;}apply(null,v,v);},
+    sing:sing,song:song,playInstru:playInstru,
+    export:function(){if(!outUrl){toast('Crée d\'abord une image ou une vidéo');return;}
+      fetch(outUrl).then(function(r){return r.blob();}).then(function(b){
+        var isV=(b.type||'').indexOf('video')>=0;var ext=isV?((b.type.indexOf('webm')>=0)?'webm':'mp4'):'png';
+        shareOrSave(b,'magie-ia.'+ext,'Ma création IA');});}
+  };
+})();
+$('fileMagicPhoto').onchange=function(e){if(e.target.files[0]){go('magic');Magic._load(e.target.files[0]);}e.target.value='';};
+$('fileMagicCam').onchange=function(e){if(e.target.files[0]){go('magic');Magic._load(e.target.files[0]);}e.target.value='';};
+$('fileMagicSong').onchange=function(e){if(e.target.files[0])Magic._song(e.target.files[0]);e.target.value='';};
 $('fileBg').onchange=function(e){if(e.target.files[0])Photo._loadBg(e.target.files[0]);e.target.value='';};
 
 /* init all */
-Photo.init();Vid.init();Anim.init();AiVid.init();
+Photo.init();Vid.init();Anim.init();AiVid.init();Magic.init();
 
 /* handle resize */
 window.addEventListener('resize',function(){
