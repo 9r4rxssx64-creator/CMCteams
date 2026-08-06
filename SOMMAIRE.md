@@ -64,6 +64,9 @@ Ces documents sont **lus automatiquement** à chaque session. Ils sont la **mém
 | [NETWORK_CONNECTIVITY.md](NETWORK_CONNECTIVITY.md) | Réseau / connexions |
 | [AUDIT_TEMPLATE_PRO.md](AUDIT_TEMPLATE_PRO.md) | Modèle d'audit complet |
 | [KDMC_ADRESSES.md](KDMC_ADRESSES.md) | Adresses / coordonnées |
+| [.claude/skills/agent-toolkit/](.claude/skills/agent-toolkit/SKILL.md) | 🧰 Boîte à outils agents : les 6 dépôts de ton tableau (skills, mémoire, design, jetons, entreprise, LLM gratuit) |
+| [.claude/skills/domain-journal/](.claude/skills/domain-journal/SKILL.md) | 🗂️ « Qui se connecte » : le journal du domaine, un compte par personne, vie privée |
+| [vendor/agent-toolkit/](vendor/agent-toolkit/README.md) | Le contenu récupéré des 6 dépôts (+ MANIFEST : version exacte, licence) |
 
 ---
 

@@ -1,4 +1,26 @@
 
+## 🧰 Boîte à outils agents + « Qui se connecte » durci (2026-08-06)
+
+**Kevin (tableau filmé « Une Notion = Un Projet ») : « Récupère et installe tout ça pour toi et Apex et utilise. Note tout. »**
+- 6 dépôts **identifiés** (noms tronqués à l'écran → vérifiés un par un) : Ingénieur=`anthropics/skills` · Mémoire=`garrytan/gbrain` · Design=`bergside/awesome-design-skills` · Jetons=`rtk-ai/rtk` · Entreprise=`codejunkie99/meridian-company-os` · LLM gratuit=`jeis4wpi/free-llm-api-resources` (l'original `cheahjs` renvoie 404 → miroir vivant).
+- **Récupération par la CI** (l'agent n'atteint pas github.com) : `tools/agent-toolkit/{sources.json,sync.mjs}` + workflow `agent-toolkit-sync.yml` (bouton + cron **mensuel**). Ne copie que du **texte**, plafonds par fichier/dépôt, purge avant copie, `MANIFEST.json` (SHA + licence), fail-open + `::warning::` par source en échec. Ouvre une PR (jamais de push main).
+- **Réellement vendorisé** : skills 32 fichiers · gbrain 133 · awesome-design-skills 136 · rtk 33 · meridian 6.
+- **Usage** : skill `.claude/skills/agent-toolkit/`. **Parité Apex** : 6 entrées taguées `agent-toolkit` dans `apex-plugins-catalog.ts` + test qui vérifie que l'URL Apex == l'URL vendorisée.
+- **Honnêteté** : `rtk` = binaire desktop dont l'install pose un hook qui réécrit TOUTES mes commandes → **non installé** (PROTECTION ≠ STABILITÉ) ; gain réel publié ~3,7 %, pas 60-90 %.
+- Mesuré : sync 6/6 · parité Apex 6/6 · marketplace 61/61 · tsc 0.
+
+**Deux vrais défauts trouvés en lisant le journal LIVE (8 personnes / 538 connexions, Kevin à 196) :**
+- **Fusion « une seule fois » → datée et répétée** : `merged_v1` était un drapeau permanent, un doublon né après n'était plus jamais absorbé (deux fiches « kevin Desarzens », 196 + 116). Remplacé par `merged_at` + re-passage ≤1×/semaine, scan borné aux 300 derniers uid.
+- **« Ronan Desarzens » était pris pour l'admin** : `isAdminName` acceptait (nom de famille + 2 mots) → sa fiche aurait été fondue dans celle de Kevin. Corrigé : nom de famille **ET** prénom/initiale. ⚠️ Irréversible pour ce qui aurait déjà été fusionné.
+- 3 tests de non-régression (10/10 sur `compte-unique`). Piège consigné : vieillir aussi `last_seen` (anti-réécriture 120 s).
+
+**`deces.kd-mc.com` retiré (Kevin « Retire dece »)** : route déclarée dans le worker mais **jamais joignable** (absente d'`apps.json` ET de `wrangler.toml`) — c'était le seul test rouge (`apps-consistency`), rouge avant mes changements. Suite kdmc-router **34/34**. La recherche de décès **reste dans l'arbre** (`arbre.kd-mc.com`, bouton + relais même-origine `/__deces`) — c'est sa place, vérifié dans le code et vert au dernier contrôle live.
+
+**Nouveau skill** `.claude/skills/domain-journal/` : tout ce qu'il faut savoir sur « Qui se connecte » (source unique, un compte par personne, pièges, vie privée).
+
+**⏳ En attente au moment d'écrire** : le déploiement du routeur (retrait deces + fusion des comptes) est en file — **GitHub était en panne partielle** (`Failed to resolve action download info: Service Unavailable`, échec au step « Set up job », rien à voir avec le code). Apex v13 n'alimente toujours pas le journal (CSP du bundle déployé sans `admin.kd-mc.com`).
+
+
 ## 🧠 Mémoire RAG Apex (TOP 8 #7) — v13.4.346 (2026-07-07, Kevin « fais la mémoire Apex »)
 - Worker `services/kdmc-rag/` (worker.js + wrangler.toml, SANS DO — leçons #132/#133) : embeddings Workers AI `@cf/baai/bge-m3` (multilingue FR, 1024 dims, AUCUNE clé externe) + Vectorize `apex-memory`. Endpoints /health /upsert /query /forget, auth x-apex-pin (double-hash toléré #95), CORS whitelist, fail-open JSON (#133). `deploy-kdmc-rag.yml` dispatch-only (crée index idempotent + secret PIN + deploy + smoke /health hasVec:true, #95).
 - Client `services/ai/apex-memory-rag.ts` : remember/recall/recallBlock, **FLAG `apex_v13_rag_enabled` défaut OFF** (no-op → 0 impact), FAIL-OPEN total, timeout court (≤2.5 s) dans le prompt, auth PIN (jamais exposée), URL sous-domaine COMPTE (#85). Wiré chat-engine : auto-remember (autoExtractAndLearn) + auto-recall injecté dans le prompt (recallBlock, score≥0.6). tsc 0, eslint 0, RAG 6/6, chat send-path 51/51 (flag off → inchangé). Skill `.claude/skills/apex-memory-rag/`. Bump v13.4.346.
