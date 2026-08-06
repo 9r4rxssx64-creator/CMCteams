@@ -1735,3 +1735,10 @@ Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Dé
 | `tests/verify-crea-masques.mjs` | Preuve : le visage est trouvé, les 15 masques sont différents et cuits dans la photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-masques.mjs) |
 | `tests/verify-crea-famille.mjs` | Preuve : isolation entre familles, jetons signés, expiration | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille.mjs) |
 | `tests/verify-crea-famille-app.mjs` | Preuve : **deux téléphones** qui se parlent pour de vrai | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille-app.mjs) |
+
+### Créa Studio v9.5.0 — sélection + cartoon refait (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tests/verify-crea-cartoon.mjs` | Preuve : le cartoon garde la couleur de peau, aplatit vraiment, et trace un VRAI trait qui grossit avec l'image | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
+| `tests/verify-crea-selection.mjs` | Preuve : toucher un visage le sélectionne, flouter/cartooniser n'agit QUE là, et « Retirer » / « Enregistrer » marchent | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-selection.mjs) |

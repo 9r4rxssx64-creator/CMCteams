@@ -193,9 +193,13 @@
   #bnav button.on .ic{filter:drop-shadow(0 0 10px rgba(232,184,75,.55))}
 
   /* ---------- VERSION BADGE ---------- */
+  /* Le badge ne doit JAMAIS voler un appui destiné à un réglage : le panneau
+     défile, donc n'importe quel bouton peut passer sous lui. Il laisse donc
+     traverser les appuis (pointer-events:none) — mesuré : sinon la case
+     « réglages seulement ici » devenait intouchable au bas du panneau. */
   #vbadge{position:fixed;left:8px;bottom:calc(64px + var(--safeb));z-index:40;font-size:10px;
     padding:3px 8px;border-radius:20px;background:rgba(0,0,0,.55);border:1px solid var(--line);
-    color:var(--gold2);opacity:.8;font-weight:700}
+    color:var(--gold2);opacity:.8;font-weight:700;pointer-events:none}
 
   /* ---------- TOAST ---------- */
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + var(--safeb));
@@ -286,12 +290,15 @@
         <button class="chip" data-tab="filters"><span class="ic">✨</span>Filtres</button>
         <button class="chip" data-tab="trend"><span class="ic">🔥</span>Tendance</button>
         <button class="chip" data-tab="crop"><span class="ic">✂️</span>Cadrer</button>
+        <button class="chip" data-tab="select"><span class="ic">🎯</span>Sélection</button>
         <button class="chip" data-tab="cutout"><span class="ic">🪄</span>Détourer</button>
         <button class="chip" data-tab="paint"><span class="ic">🖌️</span>Dessin</button>
         <button class="chip" data-tab="sticker"><span class="ic">😀</span>Stickers</button>
         <button class="chip" data-tab="cartoon"><span class="ic">🖍️</span>Cartoon</button>
         <button class="chip" data-tab="text"><span class="ic">🅣</span>Texte</button>
         <button class="chip" data-tab="reset"><span class="ic">↺</span>Reset</button>
+        <button class="chip" id="photoSave" onclick="Photo.export()"><span class="ic">💾</span>Enregistrer</button>
+        <button class="chip" id="photoRemove" onclick="Photo.clear()"><span class="ic">🗑️</span>Retirer</button>
       </div>
       <div id="photoAdjust" class="sliders"></div>
       <div id="photoFilters" class="presets hidden"></div>
@@ -328,6 +335,31 @@
           <button class="chip" data-bg="black"><span class="ic">⬛</span>Noir</button>
           <button class="chip" data-bg="white"><span class="ic">⬜</span>Blanc</button>
         </div>
+      </div>
+      <div id="photoSelect" class="hidden">
+        <div class="hint">Choisis <b>QUI</b> ou <b>QUOI</b> tu veux modifier. Le reste de la photo ne bouge pas.<br>Touche le visage (ou la personne) directement sur l'image.</div>
+        <div class="toolrow" id="selTools" style="justify-content:center">
+          <button class="chip on" data-sel="face"><span class="ic">😀</span>Un visage</button>
+          <button class="chip" data-sel="person"><span class="ic">🧍</span>Une personne</button>
+          <button class="chip" data-sel="brush"><span class="ic">🖌️</span>Au doigt</button>
+          <button class="chip" data-sel="unbrush"><span class="ic">🩹</span>Enlever</button>
+        </div>
+        <div class="toolrow" style="justify-content:center">
+          <button class="chip" onclick="Photo.selInvert()"><span class="ic">🔄</span>Inverser</button>
+          <button class="chip" onclick="Photo.selAll()"><span class="ic">⬜</span>Toute la photo</button>
+          <button class="chip" onclick="Photo.selNone()"><span class="ic">✖️</span>Tout enlever</button>
+        </div>
+        <div class="sliders" id="selSliders"></div>
+        <div class="hint" id="selInfo">Rien de sélectionné pour l'instant.</div>
+        <div style="padding:2px 14px"><button class="bigbtn" onclick="Photo.selBlur()">🌫️ Flouter la sélection (masquer un visage)</button></div>
+        <div style="padding:4px 14px 0"><button class="bigbtn ghost" onclick="Photo.selCartoon()">🖍️ Cartooniser SEULEMENT la sélection</button></div>
+        <div style="padding:4px 14px 0"><button class="bigbtn ghost" onclick="Photo.selKeep()">✂️ Garder seulement la sélection (fond transparent)</button></div>
+        <div style="padding:4px 14px 0"><button class="bigbtn ghost" onclick="Photo.selErase()">🗑️ Effacer la sélection</button></div>
+        <div style="padding:4px 14px 0"><button class="bigbtn ghost" onclick="Photo.selOutBlur()">🔦 Mettre en avant (flouter tout le reste)</button></div>
+        <label class="hint" style="display:flex;align-items:center;gap:8px;padding:8px 14px 0">
+          <input type="checkbox" id="selOnly" style="width:20px;height:20px">
+          Appliquer les <b>réglages et filtres</b> uniquement dans la sélection
+        </label>
       </div>
       <div id="photoCutout" class="hidden">
         <div class="hint">Rends le fond transparent — comme Photoshop/GIMP. Choisis un outil puis touche l'image.</div>
@@ -407,6 +439,8 @@
         <button class="chip" data-tab="vtext"><span class="ic">💬</span>Sous-titre</button>
         <button class="chip" data-tab="viral"><span class="ic">🔥</span>Viral</button>
         <button class="chip" data-tab="music"><span class="ic">🎵</span>Musique</button>
+        <button class="chip" id="videoSave" onclick="Vid.export()"><span class="ic">💾</span>Enregistrer</button>
+        <button class="chip" id="videoRemove" onclick="Vid.clear()"><span class="ic">🗑️</span>Retirer</button>
       </div>
       <div id="videoTrim">
         <div class="hint" id="trimInfo">Chargement…</div>
@@ -483,6 +517,8 @@
         <button class="chip" data-tab="fill"><span class="ic">🪣</span>Remplir</button>
         <button class="chip" onclick="Anim.undo()"><span class="ic">↶</span>Annuler</button>
         <button class="chip" onclick="Anim.play()"><span class="ic" id="animPlayIc">▶</span>Lire</button>
+        <button class="chip" id="animSave" onclick="Anim.save()"><span class="ic">💾</span>Enregistrer</button>
+        <button class="chip" id="animRemove" onclick="Anim.clear()"><span class="ic">🗑️</span>Retirer</button>
       </div>
       <div class="palette" id="animColors"></div>
       <div class="sliders" id="animSliders"></div>
@@ -771,7 +807,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.4.0';
+var APP_VER='v9.5.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -2219,12 +2255,36 @@ var Photo=(function(){
     view.height=Math.max(1,Math.round(ih*pscale));
     view.style.width=dispW+'px';view.style.height=dispH+'px';
   }
+  /* Peint l'image réglée. Si « seulement dans la sélection » est coché, les
+     réglages/filtres sont posés à travers le calque de sélection : le reste de
+     la photo reste EXACTEMENT comme avant (c'est tout l'intérêt). */
+  function peindreBase(ctx,W,H){
+    if(!(selOnly&&selHas())){
+      applyAdjust(srcCanvas,ctx,adj,W,H);
+      applyTrendEffect(ctx,W,H,fx,fxAmt);
+      return;
+    }
+    var t=document.createElement('canvas');t.width=W;t.height=H;
+    var tx=t.getContext('2d',{willReadFrequently:true});
+    applyAdjust(srcCanvas,tx,adj,W,H);
+    applyTrendEffect(tx,W,H,fx,fxAmt);
+    tx.globalCompositeOperation='destination-in';tx.drawImage(selMasque(false),0,0,W,H);
+    ctx.clearRect(0,0,W,H);ctx.drawImage(srcCanvas,0,0,W,H);ctx.drawImage(t,0,0);
+  }
+  /* voile doré = Kevin VOIT ce qui est sélectionné (seulement dans l'onglet) */
+  function voileSelection(ctx,W,H){
+    if(!selShow||!selHas())return;
+    var t=document.createElement('canvas');t.width=W;t.height=H;var tx=t.getContext('2d');
+    tx.fillStyle='rgba(232,184,75,0.38)';tx.fillRect(0,0,W,H);
+    tx.globalCompositeOperation='destination-in';tx.drawImage(selMasque(false),0,0,W,H);
+    ctx.drawImage(t,0,0);
+  }
   function render(){
     if(!loaded)return;
-    applyAdjust(srcCanvas,vctx,adj,view.width,view.height);
-    applyTrendEffect(vctx,view.width,view.height,fx,fxAmt);
+    peindreBase(vctx,view.width,view.height);
     drawOverlays(vctx,view.width,view.height);
     drawTexts(vctx,view.width,view.height,1);
+    voileSelection(vctx,view.width,view.height);
   }
   function snapshotOriginal(){originalCanvas.width=srcCanvas.width;originalCanvas.height=srcCanvas.height;originalCanvas.getContext('2d').drawImage(srcCanvas,0,0);}
   function drawOverlays(ctx,w,h){
@@ -2255,8 +2315,11 @@ var Photo=(function(){
     sctx.drawImage(img,0,0,srcCanvas.width,srcCanvas.height);
     snapshotOriginal();
     loaded=true;adj=defaultAdjust();curPreset='orig';texts=[];overlays=[];brushTool=null;
+    /* nouvelle photo = nouvelle sélection (sinon on hériterait de celle d'avant) */
+    selReady();selCv.getContext('2d').clearRect(0,0,selCv.width,selCv.height);selDirty=true;selNb=0;
+    selOnly=false;var ck=$('selOnly');if(ck)ck.checked=false;
     $('photoEmpty').classList.add('hidden');view.classList.remove('hidden');$('photoPanel').classList.remove('hidden');
-    fitView();buildSliders();buildFilters();render();
+    fitView();buildSliders();buildFilters();selInfo();render();
     toast('Photo chargée ✨',1200);
   }
 
@@ -2343,6 +2406,181 @@ var Photo=(function(){
   function setBgGradient(){compositeBg(function(tx,w,h){var g=tx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#5b9dff');g.addColorStop(.5,'#a06bff');g.addColorStop(1,'#ff6ea9');tx.fillStyle=g;tx.fillRect(0,0,w,h);});toast('Fond dégradé',1000);}
   function setBgBlur(){compositeBg(function(tx,w,h){var cs=Math.max(w/originalCanvas.width,h/originalCanvas.height);tx.filter='blur('+Math.round(Math.max(w,h)*0.04)+'px)';tx.drawImage(originalCanvas,(w-originalCanvas.width*cs)/2,(h-originalCanvas.height*cs)/2,originalCanvas.width*cs,originalCanvas.height*cs);tx.filter='none';});toast('Fond flou',1000);}
   function setBgImage(imgEl){compositeBg(function(tx,w,h){var cs=Math.max(w/imgEl.width,h/imgEl.height);tx.drawImage(imgEl,(w-imgEl.width*cs)/2,(h-imgEl.height*cs)/2,imgEl.width*cs,imgEl.height*cs);});toast('Fond remplacé',1200);}
+  /* ============ 🎯 SÉLECTION — ne modifier QU'UNE personne, QU'UN visage ============
+     Kevin : « Pouvoir sélectionner seulement le visage, une personne, etc. »
+     La sélection est un CALQUE de transparence de la même taille que la photo :
+     opaque = « je travaille ici », vide = « on n'y touche pas ». C'est ce que
+     font les vrais logiciels, et ça permet de tout faire avec le canvas
+     (flouter un visage, cartooniser une seule personne, détourer, etc.). */
+  var selCv=null,selDirty=true,selNb=0,selShow=false,selOnly=false,selDoux=18;
+  function selReady(){
+    if(!selCv){selCv=document.createElement('canvas');}
+    if(selCv.width!==srcCanvas.width||selCv.height!==srcCanvas.height){
+      selCv.width=srcCanvas.width;selCv.height=srcCanvas.height;selDirty=true;
+    }
+    return selCv.getContext('2d',{willReadFrequently:true});
+  }
+  function selTouche(){selDirty=true;selInfo();render();}
+  function selCombien(){
+    if(!selDirty)return selNb;
+    var x=selReady(),w=selCv.width,h=selCv.height;
+    if(!w||!h){selNb=0;selDirty=false;return 0;}
+    var d=x.getImageData(0,0,w,h).data,n=0;
+    for(var i=3;i<d.length;i+=4*7)if(d[i]>24)n++;      /* échantillon : assez pour savoir */
+    selNb=n*7;selDirty=false;return selNb;
+  }
+  function selHas(){return loaded&&selCombien()>0;}
+  function selInfo(){
+    var el=$('selInfo');if(!el)return;
+    var n=selCombien(),tot=Math.max(1,srcCanvas.width*srcCanvas.height);
+    el.innerHTML=n?('✅ Sélection active : <b>'+Math.round(n/tot*100)+' %</b> de la photo. Les boutons ci-dessous n\'agissent que là.')
+                  :'Rien de sélectionné pour l\'instant.';
+  }
+  /* peau : test YCbCr — marche sur toutes les carnations (même base que les masques) */
+  function estPeau(r,g,b){
+    var cb=128-0.168736*r-0.331264*g+0.5*b, cr=128+0.5*r-0.418688*g-0.081312*b;
+    return cb>76&&cb<128&&cr>132&&cr<176&&r>50&&g>28&&b>18&&r>b-24;
+  }
+  /* tache de peau connectée au point touché → boîte du visage */
+  function boiteVisage(px,py){
+    var w=srcCanvas.width,h=srcCanvas.height;
+    var pas=Math.max(1,Math.round(Math.max(w,h)/420));         /* on travaille réduit = rapide */
+    var sw=Math.floor(w/pas),sh=Math.floor(h/pas);
+    var d=sctx.getImageData(0,0,w,h).data;
+    function idx(x,y){return ((y*pas)*w+(x*pas))*4;}
+    var sx=Math.min(sw-1,Math.max(0,Math.round(px/pas))),sy=Math.min(sh-1,Math.max(0,Math.round(py/pas)));
+    var o=idx(sx,sy);
+    var tr=d[o],tg=d[o+1],tb=d[o+2];
+    if(!estPeau(tr,tg,tb))return null;
+    var vu=new Uint8Array(sw*sh),pile=[sx,sy],n=0,x0=sx,x1=sx,y0=sy,y1=sy;
+    var maxi=sw*sh*0.45;
+    while(pile.length){
+      var y=pile.pop(),x=pile.pop();
+      if(x<0||y<0||x>=sw||y>=sh)continue;
+      var k=y*sw+x;if(vu[k])continue;vu[k]=1;
+      var i=idx(x,y),r=d[i],g=d[i+1],b=d[i+2];
+      if(!estPeau(r,g,b))continue;
+      if(Math.abs(r-tr)+Math.abs(g-tg)+Math.abs(b-tb)>190)continue;   /* pas de fuite vers un autre visage */
+      n++;if(n>maxi)break;
+      if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+      pile.push(x+1,y,x-1,y,x,y+1,x,y-1);
+    }
+    if(n<12)return null;
+    return {x:x0*pas,y:y0*pas,w:Math.max(1,(x1-x0))*pas,h:Math.max(1,(y1-y0))*pas,n:n*pas*pas};
+  }
+  function selEllipse(cx,cy,rx,ry,mode){
+    var x=selReady();
+    x.save();
+    x.globalCompositeOperation=(mode==='del')?'destination-out':'source-over';
+    var g=x.createRadialGradient(cx,cy,0,cx,cy,1);           /* dégradé unitaire + transformation */
+    g.addColorStop(0,'rgba(255,255,255,1)');
+    g.addColorStop(Math.max(0.05,1-selDoux/100),'rgba(255,255,255,1)');
+    g.addColorStop(1,'rgba(255,255,255,0)');
+    x.translate(cx,cy);x.scale(rx,ry);x.translate(-cx,-cy);
+    x.fillStyle=g;x.beginPath();x.arc(cx,cy,1,0,7);x.fill();
+    x.restore();
+  }
+  function selVisageAu(px,py,avecCorps){
+    var b=boiteVisage(px,py);
+    if(!b){toast('Touche bien le visage (la peau) — ou sélectionne au doigt',2600);return false;}
+    var cx=b.x+b.w/2, cy=b.y+b.h/2 - b.h*0.08;               /* on remonte : le front/les cheveux */
+    var rx=b.w*0.78, ry=b.h*0.86;
+    selEllipse(cx,cy,rx,ry);
+    if(avecCorps){
+      /* le corps sous le visage : épaules ≈ 3 têtes de large, jusqu'en bas.
+         On retire ensuite ce qui ressemble au FOND (couleur des 4 coins). */
+      var x=selReady(),H=srcCanvas.height;
+      var cou=b.y+b.h*0.95, ep=Math.min(H,cou+b.h*0.55);
+      x.save();x.fillStyle='#fff';x.beginPath();
+      x.moveTo(cx-b.w*0.42,cou);x.lineTo(cx+b.w*0.42,cou);
+      x.lineTo(cx+b.w*1.45,ep);x.lineTo(cx+b.w*1.55,H);
+      x.lineTo(cx-b.w*1.55,H);x.lineTo(cx-b.w*1.45,ep);
+      x.closePath();x.fill();x.restore();
+      enleverFond();
+    }
+    selTouche();
+    toast(avecCorps?'Personne sélectionnée 🧍 (affine au doigt)':'Visage sélectionné 😀',2200);
+    return true;
+  }
+  /* dans la sélection, on retire les pixels qui ressemblent au fond (coins) */
+  function enleverFond(){
+    var w=srcCanvas.width,h=srcCanvas.height,x=selReady();
+    var d=sctx.getImageData(0,0,w,h).data;
+    function px(a,b2){var i=((b2*w)+a)*4;return [d[i],d[i+1],d[i+2]];}
+    var c=[px(0,0),px(w-1,0),px(0,h-1),px(w-1,h-1)];
+    var rr=(c[0][0]+c[1][0]+c[2][0]+c[3][0])/4,gg=(c[0][1]+c[1][1]+c[2][1]+c[3][1])/4,bb=(c[0][2]+c[1][2]+c[2][2]+c[3][2])/4;
+    var im=x.getImageData(0,0,w,h),m=im.data;
+    for(var i=0,p=0;i<m.length;i+=4,p++){
+      if(!m[i+3])continue;
+      var j=p*4;
+      if(Math.abs(d[j]-rr)+Math.abs(d[j+1]-gg)+Math.abs(d[j+2]-bb)<72)m[i+3]=0;
+    }
+    x.putImageData(im,0,0);
+  }
+  function selPinceau(a,b,mode){
+    var x=selReady(),rad=srcRadius();
+    x.save();x.lineJoin=x.lineCap='round';x.lineWidth=rad*2;
+    x.globalCompositeOperation=(mode==='del')?'destination-out':'source-over';
+    x.strokeStyle='#fff';
+    x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();x.restore();
+    selTouche();
+  }
+  /* calque prêt à composer : blanc, transparence = la sélection (ou son inverse) */
+  function selMasque(inverse){
+    var w=srcCanvas.width,h=srcCanvas.height;
+    var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');
+    if(inverse){x.fillStyle='#fff';x.fillRect(0,0,w,h);x.globalCompositeOperation='destination-out';}
+    if(selCv)x.drawImage(selCv,0,0);
+    return c;
+  }
+  /* pose un calque d'effet UNIQUEMENT dans la sélection */
+  function selPoser(effetCv,inverse){
+    var w=srcCanvas.width,h=srcCanvas.height;
+    var t=document.createElement('canvas');t.width=w;t.height=h;var tx=t.getContext('2d');
+    tx.drawImage(effetCv,0,0);
+    tx.globalCompositeOperation='destination-in';tx.drawImage(selMasque(inverse),0,0);
+    sctx.drawImage(t,0,0);
+    snapshotOriginal();buildFilters();render();
+  }
+  function copieFloue(){
+    var w=srcCanvas.width,h=srcCanvas.height;
+    var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');
+    x.filter='blur('+Math.max(6,Math.round(Math.min(w,h)/38))+'px)';
+    x.drawImage(srcCanvas,0,0);x.filter='none';return c;
+  }
+  function copieCartoon(){
+    var w=srcCanvas.width,h=srcCanvas.height;
+    var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d',{willReadFrequently:true});
+    x.drawImage(srcCanvas,0,0);cartoonize(c,x,cartoonP);return c;
+  }
+  function selGarde(){ /* vrai si une action de sélection est possible */
+    if(!loaded){toast('Ouvre une photo d\'abord');return false;}
+    if(!selHas()){toast('Sélectionne d\'abord un visage, une personne, ou au doigt',2600);return false;}
+    return true;
+  }
+  function buildSelect(){
+    $('selTools').querySelectorAll('[data-sel]').forEach(function(b){
+      b.onclick=function(){
+        b.parentNode.querySelectorAll('[data-sel]').forEach(function(x){x.classList.remove('on')});
+        b.classList.add('on');setBrush('sel'+b.dataset.sel);
+        toast(b.dataset.sel==='face'?'Touche le visage sur la photo'
+             :b.dataset.sel==='person'?'Touche le visage de la personne'
+             :b.dataset.sel==='brush'?'Passe le doigt sur ce que tu veux garder'
+             :'Passe le doigt sur ce que tu veux retirer de la sélection',2400);
+      };
+    });
+    var c=$('selSliders');c.innerHTML='';
+    [['Taille du doigt',10,120,brushSize,function(v){brushSize=v;}],
+     ['Bord adouci (%)',0,60,selDoux,function(v){selDoux=v;}]].forEach(function(a,k){
+      var w=document.createElement('div');w.className='sld';
+      w.innerHTML='<label>'+a[0]+' <b id="selv'+k+'">'+a[3]+'</b></label>';
+      var r=document.createElement('input');r.type='range';r.min=a[1];r.max=a[2];r.value=a[3];
+      r.oninput=function(){a[4](+r.value);$('selv'+k).textContent=r.value;};
+      w.appendChild(r);c.appendChild(w);
+    });
+    var ck=$('selOnly');if(ck)ck.onchange=function(){selOnly=ck.checked;render();};
+  }
+
   function aiRun(kind,okMsg,fallback){
     if(!loaded){toast('Ouvre une photo d\'abord');return;}
     var lng=Math.max(srcCanvas.width,srcCanvas.height),ds=Math.min(1024/lng,1);
@@ -2366,8 +2604,8 @@ var Photo=(function(){
 
   return {
     init:function(){
-      wireTabs('photoTools',{adjust:'photoAdjust',filters:'photoFilters',trend:'photoTrend',crop:'photoCrop',cutout:'photoCutout',paint:'photoPaint',sticker:'photoSticker',cartoon:'photoCartoon',text:'photoText'});
-      buildSliders();buildCartoonSliders();buildTextTools();buildCutout();buildPaint();buildStickers();buildTrend();buildFormat();
+      wireTabs('photoTools',{adjust:'photoAdjust',filters:'photoFilters',trend:'photoTrend',crop:'photoCrop',select:'photoSelect',cutout:'photoCutout',paint:'photoPaint',sticker:'photoSticker',cartoon:'photoCartoon',text:'photoText'});
+      buildSliders();buildCartoonSliders();buildTextTools();buildSelect();buildCutout();buildPaint();buildStickers();buildTrend();buildFormat();
       // crop AR buttons
       $('photoCrop').querySelectorAll('[data-ar]').forEach(function(b){b.onclick=function(){Crop.setAR(+b.dataset.ar);b.parentNode.querySelectorAll('[data-ar]').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};});
     },
@@ -2385,7 +2623,52 @@ var Photo=(function(){
       $('photoAdjust').classList.remove('hidden');['photoFilters','photoTrend','photoCrop','photoCutout','photoPaint','photoSticker','photoCartoon','photoText'].forEach(function(x){$(x).classList.add('hidden')});
     },
     _onTab:function(tab){ if(tab==='crop')Crop.enter();else Crop.exit();
-      if(tab==='cutout')setBrush(curCut);else if(tab==='paint')setBrush(curPaint);else setBrush(null); },
+      selShow=(tab==='select');
+      if(tab==='select'){var b=$('selTools').querySelector('[data-sel].on');setBrush('sel'+((b&&b.dataset.sel)||'face'));selInfo();}
+      else if(tab==='cutout')setBrush(curCut);
+      else if(tab==='paint')setBrush(curPaint);
+      else setBrush(null);
+      render(); },
+    /* --- actions de sélection (visibles dans l'onglet 🎯 Sélection) --- */
+    selNone:function(){if(!loaded)return;var x=selReady();x.clearRect(0,0,selCv.width,selCv.height);selTouche();toast('Sélection effacée',1100);},
+    selAll:function(){if(!loaded)return;var x=selReady();x.fillStyle='#fff';x.fillRect(0,0,selCv.width,selCv.height);selTouche();toast('Toute la photo sélectionnée',1200);},
+    selInvert:function(){
+      if(!loaded)return;var x=selReady(),w=selCv.width,h=selCv.height;
+      var im=x.getImageData(0,0,w,h),d=im.data;
+      for(var i=3;i<d.length;i+=4)d[i]=255-d[i];
+      x.putImageData(im,0,0);selTouche();toast('Sélection inversée 🔄',1200);
+    },
+    selBlur:function(){if(!selGarde())return;toast('Floutage…',700);setTimeout(function(){selPoser(copieFloue(),false);toast('Zone floutée 🌫️',1500);},30);},
+    selCartoon:function(){if(!selGarde())return;toast('Cartoon sur la sélection…',900);setTimeout(function(){selPoser(copieCartoon(),false);toast('Cartoon appliqué ici seulement 🖍️',1600);},30);},
+    selOutBlur:function(){if(!selGarde())return;toast('Mise en avant…',700);setTimeout(function(){selPoser(copieFloue(),true);toast('Le reste est flouté 🔦',1500);},30);},
+    selKeep:function(){
+      if(!selGarde())return;
+      var w=srcCanvas.width,h=srcCanvas.height;
+      var t=document.createElement('canvas');t.width=w;t.height=h;var tx=t.getContext('2d');
+      tx.drawImage(srcCanvas,0,0);tx.globalCompositeOperation='destination-in';tx.drawImage(selMasque(false),0,0);
+      sctx.clearRect(0,0,w,h);sctx.drawImage(t,0,0);
+      snapshotOriginal();buildFilters();render();toast('Gardé : le fond est transparent ✂️',1800);
+    },
+    selErase:function(){
+      if(!selGarde())return;
+      sctx.save();sctx.globalCompositeOperation='destination-out';sctx.drawImage(selMasque(false),0,0);sctx.restore();
+      snapshotOriginal();buildFilters();render();toast('Sélection effacée de la photo 🗑️',1600);
+    },
+    /* --- retirer la photo (Kevin : « comme l'enlever ») --- */
+    clear:function(){
+      if(!loaded){toast('Aucune photo ouverte');return;}
+      if(!confirm('Retirer cette photo de l\'écran ?\n\nCe qui a déjà été enregistré dans « Mes créas » n\'est pas touché.'))return;
+      loaded=false;texts=[];overlays=[];selOverlay=-1;setBrush(null);
+      adj=defaultAdjust();curPreset='orig';fx='none';fxAmt=65;exportRatio=0;
+      if(selCv){selReady().clearRect(0,0,selCv.width,selCv.height);selDirty=true;selNb=0;}
+      selOnly=false;var ck=$('selOnly');if(ck)ck.checked=false;
+      try{Crop.exit();}catch(e){}
+      srcCanvas.width=1;srcCanvas.height=1;
+      vctx.clearRect(0,0,view.width,view.height);
+      view.classList.add('hidden');$('photoPanel').classList.add('hidden');$('photoEmpty').classList.remove('hidden');
+      var fi=$('fileImg');if(fi)fi.value='';var fc=$('fileImgCam');if(fc)fc.value='';
+      toast('Photo retirée 🗑️',1300);
+    },
     resize:function(targetW){ if(!loaded)return;var ratio=srcCanvas.height/srcCanvas.width,nw=Math.min(Math.max(64,targetW|0),4000),nh=Math.round(nw*ratio);
       var tmp=document.createElement('canvas');tmp.width=nw;tmp.height=nh;tmp.getContext('2d').drawImage(srcCanvas,0,0,nw,nh);
       srcCanvas.width=nw;srcCanvas.height=nh;sctx.clearRect(0,0,nw,nh);sctx.drawImage(tmp,0,0);snapshotOriginal();fitView();buildFilters();render();toast('Taille : '+nw+'×'+nh+' px',1200); },
@@ -2394,10 +2677,14 @@ var Photo=(function(){
     _brushActive:function(){return !!brushTool&&brushTool!=='cutMagic'?true:brushTool==='cutMagic';},
     _isMagic:function(){return brushTool==='cutMagic';},
     _brushDown:function(e){var p=srcXY(e);
+      if(brushTool==='selface'){selVisageAu(p.x,p.y,false);brushLast=null;return;}
+      if(brushTool==='selperson'){selVisageAu(p.x,p.y,true);brushLast=null;return;}
+      if(brushTool==='selbrush'||brushTool==='selunbrush'){brushLast=p;selPinceau(p,p,brushTool==='selunbrush'?'del':'add');return;}
       if(brushTool==='cutMagic'){magicErase(p.x,p.y);brushLast=null;return;}
       if(brushTool==='clone'){if(!cloneSrc){cloneSrc=p;brushLast=null;toast('Source définie — dessine sur le défaut',1500);return;}cloneOff={dx:p.x-cloneSrc.x,dy:p.y-cloneSrc.y};brushLast=p;stampClone(p,p);return;}
       brushLast=p;applyBrush(p,p);},
-    _brushMove:function(e){if(brushTool==='cutMagic'||!brushLast)return;var p=srcXY(e);
+    _brushMove:function(e){if(brushTool==='cutMagic'||brushTool==='selface'||brushTool==='selperson'||!brushLast)return;var p=srcXY(e);
+      if(brushTool==='selbrush'||brushTool==='selunbrush'){selPinceau(brushLast,p,brushTool==='selunbrush'?'del':'add');brushLast=p;return;}
       if(brushTool==='clone'){stampClone(brushLast,p);brushLast=p;return;}
       applyBrush(brushLast,p);brushLast=p;},
     _brushUp:function(){brushLast=null;},
@@ -2461,8 +2748,7 @@ var Photo=(function(){
       if(!loaded){toast('Ouvre une photo d\'abord');return;}
       var out=document.createElement('canvas');out.width=srcCanvas.width;out.height=srcCanvas.height;
       var octx=out.getContext('2d',{willReadFrequently:true});
-      applyAdjust(srcCanvas,octx,adj,out.width,out.height);
-      applyTrendEffect(octx,out.width,out.height,fx,fxAmt);
+      peindreBase(octx,out.width,out.height);      /* même rendu que l'aperçu, pleine résolution */
       drawOverlays(octx,out.width,out.height);
       drawTexts(octx,out.width,out.height,1);
       if(exportRatio){out=frameToRatio(out,exportRatio,exportBg);octx=out.getContext('2d');}
@@ -2479,35 +2765,166 @@ var Photo=(function(){
     },
     // exposed refs for Crop module
     _srcCanvas:function(){return srcCanvas;},_sctx:function(){return sctx;},_view:function(){return view;},
+    /* lecture seule du calque de sélection (sert aux vérifications) */
+    _selStats:function(){
+      if(!loaded||!selCv||!selCv.width)return null;
+      var x=selCv.getContext('2d',{willReadFrequently:true});
+      return {w:selCv.width,h:selCv.height,data:x.getImageData(0,0,selCv.width,selCv.height).data};
+    },
     _fit:fitView,_render:render,_loaded:function(){return loaded;}
   };
 })();
 
-/* ---- cartoonize algorithm (posterize + Sobel edges + smoothing) ---- */
+/* ============ 🖍️ CARTOON — nouvelle recette (v9.5.0) ============
+   Kevin : « Cartoon ne fonctionne pas bien du tout. Pas beau. » Il avait raison,
+   et voici POURQUOI l'ancienne version faisait des taches vertes/orange sur la
+   peau, avec les 3 causes corrigées :
+
+   1) On arrondissait le ROUGE, le VERT et le BLEU chacun de son côté. Deux
+      couleurs voisines de peau tombaient donc sur des marches différentes →
+      la teinte partait en vrille (taches). MAINTENANT : on n'arrondit que la
+      LUMIÈRE et on garde la teinte d'origine (on multiplie R, V, B par le même
+      facteur). La peau reste de la peau, en plus lisse.
+   2) Le flou moyennait AUSSI les contours → visage en bouillie. MAINTENANT :
+      un lissage qui RESPECTE les contours (on garde le détail là où ça change
+      vite, on aplatit là où c'est uni) — c'est ce qui donne l'aplat propre.
+   3) Le trait était 1 pixel noir dur, invisible sur une grande photo et plein
+      de bruit sur les textures. MAINTENANT : trait à l'encre style manga
+      (différence de deux flous), ÉPAISSEUR PROPORTIONNELLE à la taille de
+      l'image, bords adoucis, et il ne s'accroche qu'aux vraies formes.
+
+   Tout est en flou « séparable » (2 passages avec une somme glissante) : le
+   temps de calcul ne dépend PAS du rayon → ça reste rapide sur iPhone. */
+function _sepBlurF(src,w,h,r){          /* flou boîte séparable sur un plan (Float32) */
+  if(r<1)return src;
+  var tmp=new Float32Array(w*h),out=new Float32Array(w*h),x,y,i,sum,n=r*2+1;
+  for(y=0;y<h;y++){                      /* horizontal */
+    var row=y*w;sum=0;
+    for(i=-r;i<=r;i++)sum+=src[row+Math.min(w-1,Math.max(0,i))];
+    for(x=0;x<w;x++){
+      tmp[row+x]=sum/n;
+      sum-=src[row+Math.min(w-1,Math.max(0,x-r))];
+      sum+=src[row+Math.min(w-1,Math.max(0,x+r+1))];
+    }
+  }
+  for(x=0;x<w;x++){                      /* vertical */
+    sum=0;
+    for(i=-r;i<=r;i++)sum+=tmp[Math.min(h-1,Math.max(0,i))*w+x];
+    for(y=0;y<h;y++){
+      out[y*w+x]=sum/n;
+      sum-=tmp[Math.min(h-1,Math.max(0,y-r))*w+x];
+      sum+=tmp[Math.min(h-1,Math.max(0,y+r+1))*w+x];
+    }
+  }
+  return out;
+}
+function _sepMaxF(src,w,h,r){           /* épaissit un trait SANS l'affaiblir (max séparable) */
+  if(r<1)return src;
+  var tmp=new Float32Array(w*h),out=new Float32Array(w*h),x,y,i,m;
+  for(y=0;y<h;y++){var row=y*w;
+    for(x=0;x<w;x++){m=0;for(i=x-r;i<=x+r;i++){var xi=i<0?0:(i>=w?w-1:i);if(src[row+xi]>m)m=src[row+xi];}tmp[row+x]=m;}}
+  for(x=0;x<w;x++){
+    for(y=0;y<h;y++){m=0;for(i=y-r;i<=y+r;i++){var yi=i<0?0:(i>=h?h-1:i);var v=tmp[yi*w+x];if(v>m)m=v;}out[y*w+x]=m;}}
+  return out;
+}
+function _smoothstep(a,b,v){ if(b===a)return v>=b?1:0; var t=(v-a)/(b-a); t=t<0?0:(t>1?1:t); return t*t*(3-2*t); }
+
 function cartoonize(canvas,ctx,p){
   var w=canvas.width,h=canvas.height;
-  var img=ctx.getImageData(0,0,w,h),d=img.data;
-  // 1. smoothing (box blur passes)
-  for(var s=0;s<p.smooth;s++)img=boxBlur(img,w,h,1);
-  d=img.data;
-  // 2. posterize (quantize)
-  var levels=p.colors,step=255/(levels-1);
-  var edgeSrc=new Uint8ClampedArray(d); // keep smoothed for edge calc (grayscale)
-  for(var i=0;i<d.length;i+=4){
-    d[i]=Math.round(Math.round(d[i]/step)*step);
-    d[i+1]=Math.round(Math.round(d[i+1]/step)*step);
-    d[i+2]=Math.round(Math.round(d[i+2]/step)*step);
+  if(!w||!h)return;
+  var img=ctx.getImageData(0,0,w,h),d=img.data,N=w*h,i,j;
+  var levels=Math.max(2,Math.min(24,p.colors|0||8));
+  var force=Math.max(0,Math.min(100,p.edge==null?60:p.edge));
+  var doux=Math.max(0,Math.min(5,p.smooth==null?2:p.smooth));
+
+  /* plans séparés (Float32 = pas d'arrondi à chaque étape) */
+  var R=new Float32Array(N),G=new Float32Array(N),B=new Float32Array(N),A=new Uint8ClampedArray(N);
+  for(i=0,j=0;i<N;i++,j+=4){R[i]=d[j];G[i]=d[j+1];B[i]=d[j+2];A[i]=d[j+3];}
+
+  /* rayons proportionnels à la taille : même rendu sur une petite et une grande photo */
+  var base=Math.max(1,Math.round(Math.min(w,h)/260));
+  var rFlat=Math.max(1,base*(1+doux));
+
+  /* 1) lissage qui RESPECTE les contours (2 passes) */
+  var k,bR,bG,bB,gray=new Float32Array(N);
+  for(k=0;k<2;k++){
+    for(i=0;i<N;i++)gray[i]=R[i]*0.299+G[i]*0.587+B[i]*0.114;
+    var gb=_sepBlurF(gray,w,h,Math.max(1,base));
+    bR=_sepBlurF(R,w,h,rFlat);bG=_sepBlurF(G,w,h,rFlat);bB=_sepBlurF(B,w,h,rFlat);
+    for(i=0;i<N;i++){
+      var det=Math.abs(gray[i]-gb[i]);            /* fort = on est sur un contour */
+      /* 10 et pas 4 : le GRAIN d'une photo (±7) doit être aplati, sinon il
+         survit et l'aplat de couleur n'arrive jamais (mesuré : 93→113 nuances). */
+      var keep=_smoothstep(10,30,det);            /* 1 = garder le détail */
+      R[i]=bR[i]+(R[i]-bR[i])*keep;
+      G[i]=bG[i]+(G[i]-bG[i])*keep;
+      B[i]=bB[i]+(B[i]-bB[i])*keep;
+    }
   }
-  // 3. Sobel edges on grayscale
-  var gray=new Float32Array(w*h);
-  for(var q=0,j=0;q<edgeSrc.length;q+=4,j++)gray[j]=edgeSrc[q]*0.299+edgeSrc[q+1]*0.587+edgeSrc[q+2]*0.114;
-  var thr=(100-p.edge)*2.2+30;
-  for(var y=1;y<h-1;y++)for(var x=1;x<w-1;x++){
-    var o=y*w+x;
-    var gx=-gray[o-w-1]-2*gray[o-1]-gray[o+w-1]+gray[o-w+1]+2*gray[o+1]+gray[o+w+1];
-    var gy=-gray[o-w-1]-2*gray[o-w]-gray[o-w+1]+gray[o+w-1]+2*gray[o+w]+gray[o+w+1];
-    var mag=Math.sqrt(gx*gx+gy*gy);
-    if(mag>thr){var pi=o*4;d[pi]=d[pi+1]=d[pi+2]=15;}
+
+  /* On GARDE la lumière lissée AVANT les aplats : c'est elle qui servira à
+     tracer le trait. Tracer sur l'image déjà mise en bandes fabriquait de faux
+     contours au bord de chaque bande → trait en POINTILLÉS et mouchetures dans
+     les cheveux (vu à l'image). Couleurs et trait viennent donc de deux étapes
+     différentes, comme dans un vrai dessin : on peint, puis on encre. */
+  var grayPlat=new Float32Array(N);
+  for(i=0;i<N;i++)grayPlat[i]=R[i]*0.299+G[i]*0.587+B[i]*0.114;
+
+  /* 2) aplats : on n'arrondit que la LUMIÈRE, la teinte est conservée */
+  var span=levels-1,sat=1.12;
+  for(i=0;i<N;i++){
+    var Y=R[i]*0.299+G[i]*0.587+B[i]*0.114;
+    var t=Y/255*span,band=Math.floor(t),f=t-band;
+    var q=(band+_smoothstep(0.44,0.56,f))/span*255;   /* marche adoucie = pas d'escalier */
+    var ratio=(q+3)/(Y+3);
+    var r2=R[i]*ratio,g2=G[i]*ratio,b2=B[i]*ratio;
+    var m=(r2+g2+b2)/3;                                /* petit coup de peps */
+    R[i]=m+(r2-m)*sat;G[i]=m+(g2-m)*sat;B[i]=m+(b2-m)*sat;
+  }
+
+  /* 3) trait d'encre — POSÉ SUR le contour, pas à côté */
+  var line=null;
+  if(force>0){
+    /* Le trait est calculé sur la lumière LISSÉE (donc sans grain) et il est
+       CENTRÉ sur le contour. Avant, il ne noircissait que le côté déjà sombre
+       d'un bord (le côté cheveux d'un bord cheveux/peau) : noircir du noir ne
+       se voit pas → on avait l'impression qu'il n'y avait pas de trait. */
+    var gs=_sepBlurF(grayPlat,w,h,Math.max(1,Math.round(base*0.7)));
+    /* Seuil calibré SUR L'IMAGE LISSÉE : un contour net devient une pente de
+       3-4 px après lissage, donc sa pente par pixel est bien plus faible qu'on
+       ne le croit. Un seuil calculé sur l'image brute laissait le trait à ~5 %
+       d'opacité → « trait en pointillés à peine visible ». */
+    /* On regarde le contraste À LA BONNE DISTANCE : sur une grande photo, un
+       contour s'étale sur plusieurs pixels, donc regarder le pixel d'à côté
+       donne une pente ridicule et le trait disparaît. On écarte donc les points
+       de mesure comme l'image grandit → même rendu en petit et en grand. */
+    var s=Math.max(1,Math.round(base*0.9));
+    var seuil=(100-force)*0.30+3;            /* force 100 → beaucoup de traits */
+    line=new Float32Array(N);
+    for(var yy=0;yy<h;yy++){
+      var y0=Math.max(0,yy-s)*w,y1=Math.min(h-1,yy+s)*w,yc=yy*w;
+      for(var xx=0;xx<w;xx++){
+        var x0=Math.max(0,xx-s),x1=Math.min(w-1,xx+s);
+        var gx=-gs[y0+x0]-2*gs[yc+x0]-gs[y1+x0]+gs[y0+x1]+2*gs[yc+x1]+gs[y1+x1];
+        var gy2=-gs[y0+x0]-2*gs[y0+xx]-gs[y0+x1]+gs[y1+x0]+2*gs[y1+xx]+gs[y1+x1];
+        line[yc+xx]=_smoothstep(seuil,seuil+10,Math.sqrt(gx*gx+gy2*gy2)/4);
+      }
+    }
+    /* ÉPAISSIR : sans ça le trait fait 1 px et devient invisible sur une grande
+       photo (c'est ce que Kevin voyait). On DILATE (maximum du voisinage) : le
+       trait s'élargit SANS pâlir — un simple flou, lui, l'étale et l'affaiblit.
+       Puis 1 px de flou pour adoucir la bordure (pas de marches d'escalier). */
+    line=_sepMaxF(line,w,h,Math.max(1,Math.round(base*0.9)));
+    line=_sepBlurF(line,w,h,Math.max(1,Math.round(base*0.6)));
+  }
+
+  /* On pose une VRAIE encre foncée par-dessus (mélange vers le noir) au lieu de
+     multiplier la couleur : en multipliant, le trait devenait gris clair sur une
+     zone claire et invisible sur une zone déjà sombre. */
+  var enc=Math.min(0.96,0.45+force/100*0.51),ink=16;
+  for(i=0,j=0;i<N;i++,j+=4){
+    var a2=line?line[i]*enc:0;
+    d[j]=R[i]+(ink-R[i])*a2;d[j+1]=G[i]+(ink-G[i])*a2;d[j+2]=B[i]+(ink-B[i])*a2;d[j+3]=A[i];
   }
   ctx.putImageData(img,0,0);
 }
@@ -2778,7 +3195,24 @@ var Vid=(function(){
     pickMusic:function(){$('fileAudio').click();},
     _loadMusic:function(file){music={file:file,url:URL.createObjectURL(file)};$('musicName').textContent='🎵 '+file.name;toast('Musique ajoutée',1200);},
     _refs:function(){return {vel:vel,get start(){return start},get end(){return end},get filterStr(){return filterStr},get speed(){return speed},get sub(){return sub},get music(){return music},get musicVol(){return musicVol},get vratio(){return vratio},get vbg(){return vbg},get amb(){return amb},get fade(){return fade},get capStyle(){return capStyle},get beatZoom(){return beatZoom}};},
-    export:function(){ VidExport.run(); }
+    export:function(){ VidExport.run(); },
+    /* Retirer la vidéo de l'écran (Kevin : « comme l'enlever ») — on libère
+       aussi la mémoire du téléphone (URL de la vidéo et de la musique). */
+    clear:function(){
+      if(!loaded){toast('Aucune vidéo ouverte');return;}
+      if(!confirm('Retirer cette vidéo de l\'écran ?\n\nCe qui a déjà été enregistré dans « Mes créas » n\'est pas touché.'))return;
+      try{vel.pause();}catch(e){}
+      playing=false;loaded=false;
+      if(vel.src){try{URL.revokeObjectURL(vel.src);}catch(e){}vel.removeAttribute('src');vel.load();}
+      if(music&&music.url){try{URL.revokeObjectURL(music.url);}catch(e){}}
+      music=null;$('musicName').textContent='';
+      start=0;end=0;dur=0;speed=1;filterStr='none';curFilter='orig';sub={txt:'',color:'#ffffff'};sub0=false;
+      vratio=0;vbg='blur';amb='none';fade=1;capStyle='simple';beatZoom=0;
+      vel.classList.add('hidden');$('videoPanel').classList.add('hidden');$('videoEmpty').classList.remove('hidden');
+      var f1=$('fileVid');if(f1)f1.value='';var f2=$('fileVidCam');if(f2)f2.value='';
+      var f3=$('fileAudio');if(f3)f3.value='';
+      toast('Vidéo retirée 🗑️',1300);
+    }
   };
 })();
 
@@ -3052,6 +3486,25 @@ var Anim=(function(){
       btns.push({label:'🖼️ Image actuelle (PNG)',fn:function(){frames[cur].toBlob(function(b){shareOrSave(b,'crea-dessin.png','Mon dessin');closeSheet();},'image/png');}});
       if(canWebm)btns.push({label:'🎞️ Animation (vidéo)',ghost:true,fn:function(){closeSheet();exportVideo();}});
       openExport('Exporter le cartoon',frames.length>1?'Ton animation compte '+frames.length+' images à '+fps+' img/s.':'Enregistre ton dessin.',btns);
+    },
+    /* 💾 Enregistrer en UN tap : l'image part dans « Mes créas » ET dans le
+       partage iPhone. Avant, il fallait passer par un menu — Kevin ne savait
+       pas où enregistrer son dessin. */
+    save:function(){
+      if(!frames.length){toast('Dessine d\'abord');return;}
+      frames[cur].toBlob(function(b){shareOrSave(b,'crea-dessin.png','Mon dessin');toast('Enregistré dans « Mes créas » 💾',1800);},'image/png');
+    },
+    /* Retirer le dessin / l'image importée (Kevin : « comme l'enlever ») */
+    clear:function(){
+      if(!frames.length){toast('Rien à retirer');return;}
+      if(!confirm('Tout retirer et repartir à zéro ?\n\nCe qui a déjà été enregistré dans « Mes créas » n\'est pas touché.'))return;
+      if(playing){clearInterval(playT);playing=false;$('animPlayIc').textContent='▶';}
+      frames=[];cur=0;undoStack=[];
+      cx.clearRect(0,0,W,H);
+      cv.classList.add('hidden');$('animPanel').classList.add('hidden');$('animEmpty').classList.remove('hidden');
+      $('framesStrip').innerHTML='';
+      var f=$('fileImgAnim');if(f)f.value='';
+      toast('Retiré 🗑️',1300);
     },
     _refs:function(){return {frames:frames,W:W,H:H,fps:fps};}
   };
