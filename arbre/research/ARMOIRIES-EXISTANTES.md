@@ -2,12 +2,12 @@
 
 Recherche parallèle (5 axes) des **blasons réels déjà attestés** pour chaque patronyme de l'arbre, + guide de style **monégasque**.
 
-> ## ✅ STATUT D'INTÉGRATION (arbre v2.82, 2026-08-06)
+> ## ✅ STATUT D'INTÉGRATION (arbre v2.83, 2026-08-06)
 > **Album en 2 sections** (Kevin : « Fais moi un album de blason par famille, trie par vrai et crée »). Kevin a fourni un **blason DESARZENS dessiné** (azur, fusée d'or au D, bordure fuselée de gueules/argent, olivier, étoile, banderole) → devenu le **modèle des « blasons créés »**.
-> - **🛡 Vrais blasons officiels** (attestés, `blasonSVG`) : CIAIS, PIZZIO, BRUNO, VAN DEN BOSCH, VIRGILI.
-> - **🎨 Blasons créés** (`designedBlason`, style monégasque, IDs uniques par famille anti-collision) : toutes les autres familles (MAIFFRET, DESARZENS, SAUVAIGO, MOLINARIO, CRESTO, CARLIN, DANIEL, DEJEAN, DENTAU, FRACCHIA, MATHIEU, ORSELLI, SAINT-POLIT, VERVLOET). Champ coloré par famille, 6 initiales de membres max (les + anciens), fusée d'or à l'initiale du nom. **Clairement libellé « Blason créé — pas un blason historique attesté ».**
-> - Un blason créé est **remplacé automatiquement** dès qu'un vrai blason est ajouté à `REAL_ARMS` (MOLINARIO→Molinari, CRESTO→Cresta, DANIEL à intégrer ensuite).
-> _Historique v2.81 : galerie limitée aux vrais (« Trop faux cela ») — désormais les créés reviennent mais dans une section séparée + design de qualité fourni par Kevin._
+> - **🛡 Vrais blasons officiels** (attestés, `blasonSVG` + `REAL_ARMS`) — **8** : CIAIS, PIZZIO, BRUNO, VAN DEN BOSCH, VIRGILI + **MOLINARIO** (Molinari : roue de moulin d'or, terrasse+arbre de sinople, chef d'Anjou lys+lambel), **CRESTO** (Cresta : lion rampant parti d'azur et de gueules sur argent), **DANIEL** (lion d'or à l'épée d'argent, chef d'azur aux 3 étoiles d'or) — intégrés v2.83 (« Intègre les vrais »). Lion rampant héraldique dessiné en SVG (`_LION_BODY`/`_LION_TAIL`, crinière à pointes, griffes, touffe) + `_lys` fleur de lys.
+> - **🎨 Blasons créés** (`designedBlason`, style monégasque, IDs uniques par famille anti-collision) — **11** : MAIFFRET, DESARZENS, SAUVAIGO, CARLIN, DEJEAN, DENTAU, FRACCHIA, MATHIEU, ORSELLI, SAINT-POLIT, VERVLOET. **Clairement libellé « Blason créé — pas un blason historique attesté ».**
+> - Un blason créé est **remplacé automatiquement** dès qu'un vrai blason entre dans `REAL_ARMS`. Prochaines pistes réelles : ORSELLI (blason non lu, page à ouvrir), CARLIN (préciser la branche), MATHIEU (préciser la lignée), DESARZENS (requête Archives cantonales vaudoises).
+> _Historique v2.81 : galerie limitée aux vrais (« Trop faux cela ») → v2.82 : album 2 sections avec le design Kevin → v2.83 : +3 vrais (Molinari/Cresta/Daniel)._
 > - **Intégrés dans `REAL_ARMS`** (5) : **CIAIS** (azur, étoile+cœur+croissant en pal), **PIZZIO** (azur, fasce d'argent + 3 étoiles d'or), **BRUNO** (azur, bande d'or), **VAN DEN BOSCH** (argent, chevron d'azur + 3 étoiles 6 rais + 3 lotus d'azur), **VIRGILI** (gueules, 5 carreaux d'or percés d'un dard).
 > - **Listées « sans blason officiel connu »** dans l'app (aucun blason inventé) : MAIFFRET, DESARZENS, SAUVAIGO, MOLINARIO, CRESTO, CARLIN, DANIEL, DEJEAN, DENTAU, FRACCHIA, MATHIEU, ORSELLI, SAINT-POLIT, VERVLOET.
 > - **À intégrer ensuite (blasons réels documentés, « plusieurs si existe »)** : MOLINARIO→Molinari (roue de moulin + chef d'Anjou), CRESTO→Cresta (lion parti azur/gueules), DANIEL (lion + chef 3 étoiles). À dessiner à l'identique quand validés.
