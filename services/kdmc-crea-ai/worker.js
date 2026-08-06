@@ -64,6 +64,33 @@ const PROMPTS = {
   cartoon: 'Redraw this photo in a vivid cartoon / animated-movie style. Keep the SAME subject, same pose, same composition and same framing. Bold clean outlines, flat vibrant colors, cel shading, expressive but faithful. No text, no watermark, no border.',
   enhance: 'Enhance this photo: sharper details, cleaner lighting, better contrast and natural colors, reduce noise and blur. Keep the subject, pose, framing and composition EXACTLY the same. Photorealistic result. No text, no watermark.'
 };
+/* ---------------- ✨ MAGIE IA : transformations 1-clic (reverse-engineering des
+   apps virales : AI Mirror, ToonApp, AI Catch, Donna IA Musique, AI Music) ------- */
+const KEEP_FACE = ' Keep the SAME person and a clearly recognizable face (same features, same hair colour). Photorealistic quality where relevant. No text, no watermark, no border.';
+const MAGIC = {
+  /* AI Mirror — figurine / action figure / anime / 3D toon */
+  figurine: 'Turn this person into a collectible action figure: a small, glossy, highly detailed toy figurine of them, standing on a real desk in soft daylight, shallow depth of field, realistic plastic material with visible seams and paint finish, miniature scale next to everyday objects.' + KEEP_FACE,
+  boite: 'Turn this person into a boxed collectible action figure still sealed in its blister pack: transparent plastic bubble on a printed cardboard backing, small accessories beside the figure, product photo on a clean background, realistic packaging.' + KEEP_FACE,
+  anime: 'Redraw this person in modern Japanese anime style: clean line art, expressive large eyes, soft cel shading, vibrant colours, detailed hair strands, anime background with light bokeh.' + KEEP_FACE,
+  toon3d: 'Redraw this person as a charming 3D animated-movie character (Pixar/Disney style): big expressive eyes, soft rounded features, subsurface-scattering skin, cinematic soft lighting, rendered in 3D.' + KEEP_FACE,
+  /* Donna — glow-up / clip look */
+  glowup: 'Restyle this person as a stylish music-video shot: they stand in a neon-lit city street at night, wet reflective ground, cinematic colour grading, fashionable modern outfit, confident pose, shallow depth of field, film look.' + KEEP_FACE,
+  /* AI Catch — scènes impossibles / fun */
+  lion: 'Place this person at a luxurious birthday party seated next to a real majestic lion wearing a party hat: birthday cake with lit candles, balloons, elegant table, warm party lighting, both looking at the camera, photorealistic and funny.' + KEEP_FACE,
+  espace: 'Place this person as an astronaut floating inside a space station with Earth visible through the window, realistic spacesuit (helmet open so the face is visible), cinematic lighting, photorealistic.' + KEEP_FACE,
+  redcarpet: 'Place this person on a red carpet premiere: paparazzi flashes, elegant outfit, crowd and banners blurred in the background, glamorous cinematic lighting, photorealistic.' + KEEP_FACE,
+  /* Cosplay / époques */
+  cosplay: 'Restyle this person as an epic superhero: detailed original costume with cape and armour details, dramatic rim lighting, city rooftop at dusk, heroic pose, cinematic and photorealistic.' + KEEP_FACE,
+  vintage: 'Restyle this person as a 1970s film photograph: period clothing and hairstyle, warm faded film colours, grain, soft vignette, authentic vintage look.' + KEEP_FACE,
+  bebe: 'Show this person as an adorable small child version of themselves (about 5 years old), same recognizable facial features, cheerful, natural soft lighting, photorealistic.' + KEEP_FACE,
+  vieux: 'Show this person realistically aged to about 80 years old: natural wrinkles, grey hair, same recognizable features, warm natural lighting, photorealistic.' + KEEP_FACE
+};
+/* Poses de bouche pour le LIP-SYNC (« je chante ») — l'app choisit selon le volume. */
+const SING_POSES = [
+  'mouth closed, calm confident expression, holding a microphone near the face, stage lighting',
+  'mouth slightly open as if singing a soft note, eyes engaged, holding a microphone, stage lighting',
+  'mouth wide open singing loudly and passionately, expressive eyebrows, holding a microphone, stage lighting'
+];
 /* Poses successives pour la vidéo « qui danse » (une image IA par pose). */
 const DANCE_POSES = [
   'both arms raised up high, big joyful smile, leaning slightly to the left, dancing',
@@ -75,6 +102,11 @@ const DANCE_POSES = [
   'hands clapping in front of the chest, bouncing, cheerful',
   'one leg lifted, arms swinging to the opposite side, lively dance step'
 ];
+function singPrompt(pose) {
+  return 'Edit this photo so the SAME person is singing on stage: ' + pose + '. '
+    + 'Keep the exact same person, same face, same hair, same clothes and the same camera framing — only the mouth and expression change. '
+    + 'Photorealistic. No text, no watermark, no border.';
+}
 function dancePrompt(pose, extra) {
   return 'Edit this photo so the SAME person is dancing: ' + pose + '. '
     + (extra ? 'Style/mood: ' + extra + '. ' : '')
@@ -306,14 +338,52 @@ export default {
     const image = body && body.image;
     const badImage = (v) => (!v || typeof v !== 'string' || v.length > 12 * 1024 * 1024);
 
-    // --- POSES DE DANSE (photo → vidéo, GRATUIT via Gemini) ---
+    // --- ✨ MAGIE : transformation 1-clic de la photo (figurine, anime, scène…) ---
+    if (url.pathname === '/magic') {
+      if (badImage(image)) return json({ error: 'bad_image' }, h, 400);
+      const preset = (body && typeof body.preset === 'string') ? body.preset : '';
+      const custom = (body && typeof body.custom === 'string') ? body.custom.slice(0, 300) : '';
+      const prompt = MAGIC[preset] || (custom ? ('Edit this photo: ' + custom + '.' + KEEP_FACE) : '');
+      if (!prompt) return json({ error: 'unknown_preset' }, h, 400);
+      const errs = [];
+      try {
+        const g = await geminiImage(env, prompt, image);
+        return imgResponse(g.mime, g.b64, Object.assign({ 'x-crea-provider': g.provider }, h));
+      } catch (e) { errs.push(String((e && e.message) || e)); }
+      return json({ error: errs.join(' | ') }, h, 502);
+    }
+
+    // --- 🎵 PAROLES DE CHANSON (texte IA gratuit) ---
+    if (url.pathname === '/lyrics') {
+      if (!freeAI) return json({ error: 'gemini_no_key' }, h, 503);
+      const theme = (body && typeof body.theme === 'string') ? body.theme.slice(0, 300) : '';
+      const style = (body && typeof body.style === 'string') ? body.style.slice(0, 60) : 'pop';
+      if (!theme) return json({ error: 'no_theme' }, h, 400);
+      const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
+      const ask = 'Écris une chanson originale en FRANÇAIS, style ' + style + ', sur : ' + theme
+        + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes accrocheuses et répétables>\nCOUPLET 2:\n<4 lignes>\nRefrain court, rimes simples, facile à chanter. Pas d\'explications.';
+      try {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
+          { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }] }) });
+        const j = await r.json();
+        if (!r.ok) return json({ error: 'gemini_' + r.status + '_' + (((j && j.error && j.error.message) || '')).slice(0, 140) }, h, 502);
+        const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+        const text = parts.map((p) => p.text || '').join('').trim();
+        if (!text) return json({ error: 'no_lyrics' }, h, 502);
+        const t = /TITRE\s*:\s*(.+)/i.exec(text);
+        return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: text, style }, h);
+      } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
+    }
+
+    // --- POSES (danse OU chant) : photo → vidéo, GRATUIT via Gemini ---
     if (url.pathname === '/frames') {
       if (badImage(image)) return json({ error: 'bad_image' }, h, 400);
       if (!freeAI) return json({ error: 'gemini_no_key' }, h, 503);
       const extra = (body && typeof body.prompt === 'string') ? body.prompt.slice(0, 200) : '';
-      const n = Math.max(2, Math.min(8, parseInt((body && body.n), 10) || 5));
-      const poses = DANCE_POSES.slice(0, n);
-      const res = await Promise.allSettled(poses.map((p) => geminiImage(env, dancePrompt(p, extra), image)));
+      const mode = (body && body.mode) === 'sing' ? 'sing' : 'dance';
+      const n = Math.max(2, Math.min(8, parseInt((body && body.n), 10) || (mode === 'sing' ? 3 : 5)));
+      const poses = mode === 'sing' ? SING_POSES.slice(0, n) : DANCE_POSES.slice(0, n);
+      const res = await Promise.allSettled(poses.map((p) => geminiImage(env, mode === 'sing' ? singPrompt(p) : dancePrompt(p, extra), image)));
       const frames = [];
       const errs = [];
       res.forEach((r) => {
