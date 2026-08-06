@@ -1,4 +1,10 @@
 name: Apex v13 deploy drift watch (anti-récidive Erreur #54)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # un deploiement ne doit jamais etre coupe en plein vol
+
 
 # v13.4.168 (Kevin 2026-05-15) : sentinelle drift watch.
 #

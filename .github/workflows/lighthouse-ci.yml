@@ -1,4 +1,10 @@
 name: Lighthouse CI Mobile (Apex v13)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Audit Kevin v13.1.0 production-grade : Lighthouse mobile sur chaque push/PR
 # Budgets cibles : Performance ≥ 90, A11y ≥ 95, BP ≥ 95, SEO ≥ 90, PWA ≥ 90

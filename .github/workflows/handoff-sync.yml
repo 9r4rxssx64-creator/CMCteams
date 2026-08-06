@@ -1,4 +1,10 @@
 name: Handoff Claude Code <-> Apex AI Sync
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Synchronise le fichier CLAUDE_HANDOFF.json avec Firebase ax_claude_code_handoff
 # Comme ca Apex AI ecrit dans Firebase (auto), et le fichier GitHub est a jour pour
