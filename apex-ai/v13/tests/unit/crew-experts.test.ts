@@ -217,21 +217,26 @@ describe('crew-experts (v13.4.142 coverage)', () => {
     });
   });
 
-  describe('defaultMembers', () => {
-    it('mode specialized retourne 4 experts', () => {
+  describe('defaultMembers (v13.4.364 : TOUTES les IA dispo, Kevin « Utilise toutes les ia dispo »)', () => {
+    it('mode specialized = tous les providers dispo, anthropic en tête, rôles assignés', () => {
       const m: CrewMember[] = crewExperts.defaultMembers('specialized');
-      expect(m.length).toBe(4);
+      expect(m.length).toBeGreaterThanOrEqual(2);
+      expect(m[0]?.provider).toBe('anthropic');
       expect(m[0]?.expertise).toBe('security');
+      /* providers tous DISTINCTS (le crew n'appelle jamais 2× la même IA) */
+      expect(new Set(m.map((x) => x.provider)).size).toBe(m.length);
     });
 
-    it('mode consensus retourne 3 providers', () => {
+    it('mode consensus = tous les providers dispo (sans rôle)', () => {
       const m = crewExperts.defaultMembers('consensus');
-      expect(m.length).toBe(3);
+      expect(m.length).toBeGreaterThanOrEqual(2);
+      expect(m.every((x) => x.expertise === undefined)).toBe(true);
     });
 
-    it('mode par défaut = specialized', () => {
+    it('mode par défaut = specialized (rôles présents)', () => {
       const m = crewExperts.defaultMembers();
-      expect(m.length).toBe(4);
+      expect(m.length).toBeGreaterThanOrEqual(2);
+      expect(m.every((x) => typeof x.expertise === 'string')).toBe(true);
     });
   });
 });

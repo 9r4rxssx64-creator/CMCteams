@@ -24,7 +24,9 @@ import { auditLog } from '../observability/audit-log.js';
 import { aiRouter } from './ai-router.js';
 
 export type CrewMode = 'consensus' | 'debate' | 'specialized';
-export type CrewProvider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral';
+/* v13.4.364 (Kevin « Utilise toutes les IA dispo ») : élargi à TOUS les providers
+ * réellement appelables par le router (openclaw exclu = placeholder sans clé). */
+export type CrewProvider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral' | 'cerebras';
 
 export interface CrewMember {
   provider: CrewProvider;
@@ -73,7 +75,13 @@ const EXPERTISE_MAP: Record<CrewProvider, string> = {
   groq: 'speed',
   openrouter: 'general',
   mistral: 'multilingual',
+  cerebras: 'speed-alt',
 };
+
+/* v13.4.364 — Providers servis par le proxy Cloudflare (clé côté serveur, flag
+ * apex_v13_use_secrets_proxy défaut ON) parmi ceux que le router sait appeler.
+ * openrouter n'est PAS proxié → dispo seulement avec clé locale. */
+const PROXIED_CREW: readonly CrewProvider[] = ['anthropic', 'openai', 'groq', 'gemini', 'mistral', 'cerebras'];
 
 class CrewExpertsService {
   /**
@@ -170,24 +178,26 @@ class CrewExpertsService {
     const enrichedPrompt = this.buildMemberPrompt(systemPrompt, expertise, mode, member.systemPromptOverride);
 
     let collectedText = '';
-    let lastError: Error | undefined;
     try {
-      /* aiRouter.stream signature : (messages, system, onChunk, onError?)
-       * On capture text via onChunk + erreur via onError pour cohérence multi-provider. */
-      await aiRouter.stream(
+      /* v13.4.364 FIX ORCHESTRATION (Kevin « Utilise toutes les IA dispo ») :
+       * avant, on passait par aiRouter.stream() = chaîne de failover → member.provider
+       * était IGNORÉ et tous les « experts » tapaient la MÊME IA. streamSingle appelle
+       * VRAIMENT le provider du membre (clés proxy/vault incluses, 0 failover croisé). */
+      const result = await aiRouter.streamSingle(
+        member.provider,
         [{ role: 'user', content: task }],
         enrichedPrompt,
         (chunk: { text?: string; done?: boolean }) => {
           if (chunk.text) collectedText += chunk.text;
         },
-        (err: Error) => { lastError = err; },
+        ctrl.signal,
       );
       clearTimeout(timeout);
-      if (lastError) throw lastError;
+      if (!result.ok) throw new Error(result.error);
       return {
         provider: member.provider,
         expertise,
-        text: collectedText,
+        text: result.text || collectedText,
         latencyMs: Date.now() - tStart,
         ok: true,
       };
@@ -299,7 +309,7 @@ class CrewExpertsService {
     return conflicts;
   }
 
-  private providerName(provider: CrewProvider): string {
+  providerName(provider: CrewProvider): string {
     const names: Record<CrewProvider, string> = {
       anthropic: 'Claude',
       openai: 'GPT',
@@ -307,8 +317,74 @@ class CrewExpertsService {
       groq: 'Groq',
       openrouter: 'OpenRouter',
       mistral: 'Mistral',
+      cerebras: 'Cerebras',
     };
     return names[provider];
+  }
+
+  /**
+   * v13.4.364 — TOUS les providers réellement disponibles maintenant :
+   * proxy actif (défaut) → les 6 proxiés ; + tout provider avec clé locale
+   * (openrouter). Anthropic toujours en tête (IA principale, leçon #124).
+   */
+  availableProviders(): CrewProvider[] {
+    const out = new Set<CrewProvider>();
+    let proxyOn = true;
+    try {
+      const f = localStorage.getItem('apex_v13_use_secrets_proxy');
+      proxyOn = f !== 'false' && f !== '0';
+    } catch { /* défaut ON */ }
+    if (proxyOn) for (const p of PROXIED_CREW) out.add(p);
+    const all: CrewProvider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'mistral', 'cerebras'];
+    for (const p of all) {
+      try {
+        const raw = localStorage.getItem(`ax_${p}_key`);
+        if (raw && raw.length > 0) out.add(p);
+      } catch { /* ignore */ }
+    }
+    out.add('anthropic'); /* toujours joignable (proxy) — jamais un crew vide */
+    /* Anthropic d'abord, puis gratuits (groq/gemini/cerebras/openrouter), puis payants */
+    const order: CrewProvider[] = ['anthropic', 'groq', 'gemini', 'cerebras', 'openrouter', 'openai', 'mistral'];
+    return order.filter((p) => out.has(p));
+  }
+
+  /**
+   * v13.4.364 — Synthèse ORCHESTRÉE (« va plus loin ») : Anthropic relit toutes
+   * les réponses des experts et produit la réponse finale fusionnée, en citant
+   * les apports/divergences de chaque IA. Fallback : synthèse naïve si l'appel
+   * chef d'orchestre échoue (jamais de réponse vide).
+   */
+  async conductorSynthesis(
+    result: CrewResult,
+    task: string,
+    onChunk?: (chunk: { text?: string; done?: boolean }) => void,
+    signal?: AbortSignal,
+  ): Promise<string> {
+    const successful = result.responses.filter((r) => r.ok && r.text);
+    if (successful.length === 0) return result.synthesis;
+    if (successful.length === 1) return result.synthesis;
+    const expertBlock = successful
+      .map((r) => `### ${this.providerName(r.provider)} (${r.expertise})\n${r.text.slice(0, 4000)}`)
+      .join('\n\n');
+    const conductorPrompt =
+      'Tu es APEX, chef d\'orchestre d\'un panel multi-IA. Plusieurs IA expertes ont répondu ' +
+      'indépendamment à la même question. Fusionne leurs réponses en UNE réponse finale : ' +
+      'garde le meilleur de chacune, signale les divergences importantes (« Gemini dit X, GPT dit Y »), ' +
+      'et termine par la recommandation la plus fiable. Réponds en français, direct, sans préambule.';
+    let collected = '';
+    const call = await aiRouter.streamSingle(
+      'anthropic',
+      [{ role: 'user', content: `Question d'origine :\n${task}\n\nRéponses des experts :\n\n${expertBlock}` }],
+      conductorPrompt,
+      (chunk) => {
+        if (chunk.text) collected += chunk.text;
+        onChunk?.(chunk);
+      },
+      signal,
+    );
+    if (call.ok && (call.text || collected)) return call.text || collected;
+    logger.warn('crew-experts', 'conductor synthesis failed → fallback naïf', { err: call.ok ? '' : call.error });
+    return result.synthesis;
   }
 
   private persistHistory(result: CrewResult): void {
@@ -356,22 +432,17 @@ class CrewExpertsService {
   }
 
   /**
-   * Crew par défaut (utilisé par tool IA `crew_experts`).
+   * Crew par défaut (utilisé par tool IA `crew_experts` + orchestre d'IA).
+   * v13.4.364 (Kevin « Utilise toutes les IA dispo ») : construit depuis TOUS
+   * les providers réellement disponibles, plus une liste figée de 3-4.
    */
   defaultMembers(mode: CrewMode = 'specialized'): CrewMember[] {
+    const avail = this.availableProviders();
     if (mode === 'specialized') {
-      return [
-        { provider: 'anthropic', expertise: 'security' },
-        { provider: 'openai', expertise: 'code-quality' },
-        { provider: 'gemini', expertise: 'perf' },
-        { provider: 'groq', expertise: 'ux' },
-      ];
+      const roles = ['security', 'code-quality', 'perf', 'ux', 'reasoning', 'creativity', 'edge-cases'];
+      return avail.map((provider, i) => ({ provider, expertise: roles[i % roles.length]! }));
     }
-    return [
-      { provider: 'anthropic' },
-      { provider: 'openai' },
-      { provider: 'gemini' },
-    ];
+    return avail.map((provider) => ({ provider }));
   }
 }
 
