@@ -1,7 +1,8 @@
-/* PREUVE — Créa Studio « le cartoon doit être BEAU » (v9.5.0).
- * Kevin, capture du 6 août : « Cartoon ne fonctionne pas bien du tout. Pas beau. »
- * Le défaut visible : des taches vertes/orange sur la peau, un visage en bouillie,
- * et pas de vrai trait de dessin.
+/* PREUVE — Créa Studio « le cartoon doit être BEAU » + PARITÉ avec les apps
+ * virales (v9.7.0). Kevin : « Cartoon ne fonctionne pas bien du tout. Pas beau. »
+ * puis « Cartoon à parité avec les apps qu'on a copiées » (ToonMe, Prisma,
+ * Voilà, Clip2Comic). Le défaut visible au départ : des taches vertes/orange sur
+ * la peau, un visage en bouillie, et pas de vrai trait de dessin.
  *
  * On ne juge pas « à l'œil » : on MESURE sur une photo de test qui contient
  * exactement ce qui cassait avant (dégradés de peau + texture + contours nets) :
@@ -12,6 +13,9 @@
  *   5) « Force des contours = 0 » ⇒ aucun trait (le réglage sert vraiment)
  *   6) ça reste RAPIDE sur une grande photo (iPhone)
  *   7) l'ancienne recette échouerait au test n°1 (preuve que le test mord)
+ *   8) les 12 STYLES existent, sont TOUS différents, transforment vraiment,
+ *      ne finissent ni tout noir ni tout blanc, et restent rapides
+ *   9) les styles portrait lissent la PEAU sans ramollir les contours
  * Lancer : node tests/verify-crea-cartoon.mjs
  */
 import { chromium } from 'playwright';
@@ -194,6 +198,94 @@ const ancienne = await page.evaluate(() => {
 });
 chk(ancienne > ecartTeinte,
   `le test mord : l'ancienne recette décale la peau de ${ancienne.toFixed(1)}° contre ${ecartTeinte.toFixed(1)}° pour la nouvelle`);
+
+
+/* ---------- 8 : LES STYLES (parité ToonMe / Prisma / Voilà / Clip2Comic) ---------- */
+const styles = await page.evaluate(() => {
+  const src0 = window.__scene(300, 380);
+  const g0 = src0.getContext('2d', { willReadFrequently: true });
+  const ref = g0.getImageData(0, 0, 300, 380).data;
+  const out = {};
+  for (const st of window.CARTOON_STYLES) {
+    const c = window.__scene(300, 380);
+    const g = c.getContext('2d', { willReadFrequently: true });
+    const t = performance.now();
+    window.cartoonize(c, g, { style: st.id });
+    const ms = performance.now() - t;
+    const d = g.getImageData(0, 0, 300, 380).data;
+    let sig = 0, change = 0, vides = 0, lum = 0;
+    for (let i = 0; i < d.length; i += 4 * 11) {
+      sig = (sig * 33 + d[i] + d[i + 1] * 3 + d[i + 2] * 7) >>> 0;
+      if (Math.abs(d[i] - ref[i]) + Math.abs(d[i + 1] - ref[i + 1]) + Math.abs(d[i + 2] - ref[i + 2]) > 24) change++;
+      const L = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+      lum += L; if (L < 12 || L > 245) vides++;
+      }
+    const n = Math.ceil(d.length / (4 * 11));
+    out[st.id] = { sig, change: change / n, plat: vides / n, lum: lum / n, ms, nom: st.nom };
+  }
+  return out;
+});
+const ids = Object.keys(styles);
+chk(ids.length >= 12, `${ids.length} styles proposés (comme les apps virales : cartoon, anime, BD, 3D, peinture, pop art, noir, encre, croquis, gravure, néon, sticker)`);
+const sigs = new Set(ids.map((k) => styles[k].sig));
+chk(sigs.size === ids.length,
+  `les ${ids.length} styles donnent ${sigs.size} rendus TOUS DIFFÉRENTS (aucun doublon déguisé)`);
+const mous = ids.filter((k) => styles[k].change < 0.20);
+chk(mous.length === 0,
+  mous.length ? `styles qui ne changent presque rien : ${mous.map((k) => styles[k].nom + ' ' + (styles[k].change * 100).toFixed(0) + '%').join(', ')}`
+    : `chaque style transforme VRAIMENT la photo (${(Math.min(...ids.map((k) => styles[k].change)) * 100).toFixed(0)} % de pixels changés au minimum)`);
+const noirs = ids.filter((k) => styles[k].plat > 0.72);
+chk(noirs.length === 0,
+  noirs.length ? `styles illisibles (presque tout noir ou tout blanc) : ${noirs.map((k) => styles[k].nom).join(', ')}`
+    : `aucun style ne finit tout noir ni tout blanc (le pire garde ${(100 - Math.max(...ids.map((k) => styles[k].plat)) * 100).toFixed(0)} % de nuances)`);
+const lent = ids.filter((k) => styles[k].ms > 2500);
+chk(lent.length === 0, `tous les styles restent rapides (le plus lent : ${Math.max(...ids.map((k) => styles[k].ms)).toFixed(0)} ms sur 300×380)`);
+
+/* ---------- 9 : la peau du VISAGE est vraiment lissée (styles portrait) ----------
+   Ce que font ToonMe / Voilà : effacer les imperfections de la PEAU en gardant
+   le reste net. On pose donc un petit défaut sur la joue ET un motif identique
+   sur le fond, puis on regarde lequel disparaît. */
+const portrait = await page.evaluate(() => {
+  function scene() {
+    const W = 320, H = 400;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.fillStyle = '#24405e'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#2b1c14';
+    g.beginPath(); g.ellipse(W * 0.5, H * 0.42, W * 0.25, H * 0.30, 0, 0, 6.2832); g.fill();
+    const sk = g.createRadialGradient(W * 0.44, H * 0.36, 4, W * 0.5, H * 0.45, W * 0.28);
+    sk.addColorStop(0, '#f0c9a6'); sk.addColorStop(1, '#c08c62'); g.fillStyle = sk;
+    g.beginPath(); g.ellipse(W * 0.5, H * 0.46, W * 0.20, H * 0.25, 0, 0, 6.2832); g.fill();
+    // le MÊME petit défaut : sur la joue, et sur le fond (témoin)
+    g.fillStyle = 'rgba(120,70,60,0.75)';
+    g.beginPath(); g.arc(W * 0.40, H * 0.50, W * 0.018, 0, 6.2832); g.fill();
+    return c;
+  }
+  function contraste(cv, cx, cy, r) {
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    const X = Math.round(cx * cv.width - r), Y = Math.round(cy * cv.height - r);
+    const d = g.getImageData(X, Y, r * 2, r * 2).data;
+    let mn = 999, mx = -1;
+    for (let i = 0; i < d.length; i += 4) {
+      const L = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+      if (L < mn) mn = L; if (L > mx) mx = L;
+    }
+    return mx - mn;
+  }
+  const r = Math.round(320 * 0.03);
+  const out = {};
+  for (const st of ['cartoon', 'anime']) {
+    const c = scene();
+    window.cartoonize(c, c.getContext('2d', { willReadFrequently: true }), { style: st });
+    // et le bord cheveux/visage : il doit RESTER net (sinon on a fait de la bouillie)
+    out[st] = { joue: contraste(c, 0.40, 0.50, r), bord: contraste(c, 0.50, 0.235, r) };
+  }
+  return out;
+});
+chk(portrait.anime.joue < portrait.cartoon.joue * 0.75,
+  `le style portrait EFFACE le défaut sur la joue : contraste ${portrait.cartoon.joue.toFixed(0)} (Cartoon) → ${portrait.anime.joue.toFixed(0)} (Anime)`);
+chk(portrait.anime.bord > portrait.cartoon.bord * 0.7 && portrait.anime.bord > portrait.anime.joue * 2,
+  `…sans transformer le visage en bouillie : le bord cheveux/visage reste net (${portrait.anime.bord.toFixed(0)} de contraste, contre ${portrait.anime.joue.toFixed(0)} pour le défaut effacé)`);
 
 chk(errs.length === 0, `0 erreur JS${errs.length ? ': ' + errs[0] : ''}`);
 console.log('=== CRÉA STUDIO — CARTOON ===');

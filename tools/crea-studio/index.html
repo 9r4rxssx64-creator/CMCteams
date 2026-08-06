@@ -417,10 +417,14 @@
         <div class="sliders" id="stickerSliders"></div>
       </div>
       <div id="photoCartoon" class="hidden">
-        <div class="hint">Transforme ta photo en dessin animé (contours + aplats de couleur).</div>
-        <div class="sliders" id="cartoonSliders"></div>
-        <div style="padding:0 14px"><button class="bigbtn" onclick="Photo.aiCartoon()">🤖 Cartoon IA — qualité max</button></div>
-        <div style="padding:6px 14px 0"><button class="bigbtn ghost" onclick="Photo.cartoonize()">🖍️ Cartooniser (rapide, hors-ligne)</button></div>
+        <div class="hint">Choisis un <b>style</b> — chaque vignette montre <b>ta</b> photo. Un tap et c'est appliqué.</div>
+        <div class="presets" id="cartoonStyles"></div>
+        <details style="padding:2px 14px 0">
+          <summary class="hint" style="cursor:pointer">🎚️ Réglages fins (facultatif)</summary>
+          <div class="sliders" id="cartoonSliders"></div>
+          <button class="chip" onclick="Photo.cartoonAuto()" style="margin:4px 0 8px"><span class="ic">✨</span>Revenir au réglage automatique</button>
+        </details>
+        <div style="padding:0 14px"><button class="bigbtn ghost" onclick="Photo.aiCartoon()">🤖 Cartoon IA — qualité max (en ligne)</button></div>
       </div>
       <div id="photoText" class="hidden">
         <div class="textedit"><input id="photoTextInput" placeholder="Ton texte…" maxlength="60"></div>
@@ -828,7 +832,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.6.0';
+var APP_VER='v9.7.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -2416,7 +2420,7 @@ var Photo=(function(){
   var loaded=false;
   var texts=[]; // {txt,color,size,x,y}
   var overlays=[]; // {canvas,x,y,scale} stickers/images (calques-lite)
-  var cartoonP={edge:60,colors:8,smooth:2};
+  var cartoonP={style:'cartoon'};   /* edge/colors/smooth n'existent QUE si Kevin bouge un curseur */
   var fx='none', fxAmt=65;              // effet tendance + intensité
   var exportRatio=0, exportBg='blur';   // format réseaux à l'export
   var originalCanvas=document.createElement('canvas'); // copie pour « Restaurer »
@@ -2448,13 +2452,54 @@ var Photo=(function(){
   }
   function buildCartoonSliders(){
     var c=$('cartoonSliders');c.innerHTML='';
+    var st=styleCartoon(cartoonP.style).d;
+    var auto={edge:st.trait==null?60:st.trait,colors:st.lv||8,smooth:st.doux==null?2:st.doux};
     [['edge','Force des contours',0,100],['colors','Nb couleurs',3,16],['smooth','Lissage',0,5]].forEach(function(a){
-      var key=a[0];var wrap=document.createElement('div');wrap.className='sld';
-      wrap.innerHTML='<label>'+a[1]+' <b id="cv_'+key+'">'+cartoonP[key]+'</b></label>';
-      var r=document.createElement('input');r.type='range';r.min=a[2];r.max=a[3];r.value=cartoonP[key];
+      var key=a[0],val=(cartoonP[key]!=null?cartoonP[key]:auto[key]);
+      var wrap=document.createElement('div');wrap.className='sld';
+      wrap.innerHTML='<label>'+a[1]+' <b id="cv_'+key+'">'+val+'</b></label>';
+      var r=document.createElement('input');r.type='range';r.min=a[2];r.max=a[3];r.value=val;
+      /* dès que Kevin touche un curseur, SA valeur prime sur celle du style */
       r.oninput=function(){cartoonP[key]=+r.value;$('cv_'+key).textContent=r.value;};
       wrap.appendChild(r);c.appendChild(wrap);
     });
+  }
+  /* Galerie de styles — chaque vignette est fabriquée AVEC LA PHOTO DE KEVIN,
+     comme ToonMe / Prisma : on voit le résultat avant de choisir. Les vignettes
+     sont calculées sur une mini-copie (128 px), donc c'est instantané. */
+  function buildCartoonStyles(){
+    var c=$('cartoonStyles');if(!c)return;c.innerHTML='';
+    CARTOON_STYLES.forEach(function(st){
+      var d=document.createElement('div');d.className='preset'+(st.id===cartoonP.style?' on':'');
+      d.dataset.style=st.id;
+      var th=document.createElement('div');th.className='thumb';
+      var tc=document.createElement('canvas');tc.width=72;tc.height=72;
+      th.appendChild(tc);d.appendChild(th);
+      var sp=document.createElement('span');sp.textContent=st.emoji+' '+st.nom;d.appendChild(sp);
+      d.onclick=function(){appliqueStyle(st.id);};
+      c.appendChild(d);
+      if(loaded){
+        var g=tc.getContext('2d',{willReadFrequently:true});
+        var s2=Math.max(srcCanvas.width,srcCanvas.height);
+        var sw=srcCanvas.width/s2*72,sh=srcCanvas.height/s2*72;
+        g.drawImage(srcCanvas,(72-sw)/2,(72-sh)/2,sw,sh);
+        try{cartoonize(tc,g,{style:st.id});}catch(e){}
+      }
+    });
+  }
+  function appliqueStyle(id){
+    if(!loaded){toast('Ouvre une photo d\'abord');return;}
+    cartoonP.style=id;
+    var st=styleCartoon(id);
+    toast('Style ' + st.nom + '…',700);
+    setTimeout(function(){
+      sctx.drawImage(originalCanvas,0,0);            /* on repart TOUJOURS de la photo d'origine :
+                                                       sinon essayer 3 styles empilait 3 traitements */
+      cartoonize(srcCanvas,sctx,cartoonP);
+      adj=defaultAdjust();curPreset='';fx='none';
+      buildSliders();buildFilters();buildCartoonStyles();render();
+      toast(st.emoji+' '+st.nom+' appliqué',1500);
+    },20);
   }
   function buildFilters(){
     var c=$('photoFilters');c.innerHTML='';
@@ -2566,7 +2611,7 @@ var Photo=(function(){
     selReady();selCv.getContext('2d').clearRect(0,0,selCv.width,selCv.height);selDirty=true;selNb=0;
     selOnly=false;var ck=$('selOnly');if(ck)ck.checked=false;
     $('photoEmpty').classList.add('hidden');view.classList.remove('hidden');$('photoPanel').classList.remove('hidden');
-    fitView();buildSliders();buildFilters();selInfo();render();
+    fitView();buildSliders();buildFilters();buildCartoonStyles();selInfo();render();
     toast('Photo chargée ✨',1200);
   }
 
@@ -2852,7 +2897,7 @@ var Photo=(function(){
   return {
     init:function(){
       wireTabs('photoTools',{adjust:'photoAdjust',filters:'photoFilters',trend:'photoTrend',crop:'photoCrop',select:'photoSelect',cutout:'photoCutout',paint:'photoPaint',sticker:'photoSticker',cartoon:'photoCartoon',text:'photoText'});
-      buildSliders();buildCartoonSliders();buildTextTools();buildSelect();buildCutout();buildPaint();buildStickers();buildTrend();buildFormat();
+      buildSliders();buildCartoonSliders();buildCartoonStyles();buildTextTools();buildSelect();buildCutout();buildPaint();buildStickers();buildTrend();buildFormat();
       // crop AR buttons
       $('photoCrop').querySelectorAll('[data-ar]').forEach(function(b){b.onclick=function(){Crop.setAR(+b.dataset.ar);b.parentNode.querySelectorAll('[data-ar]').forEach(function(x){x.classList.remove('on')});b.classList.add('on');};});
     },
@@ -2871,6 +2916,7 @@ var Photo=(function(){
     },
     _onTab:function(tab){ if(tab==='crop')Crop.enter();else Crop.exit();
       selShow=(tab==='select');
+      if(tab==='cartoon')buildCartoonStyles();
       if(tab==='select'){var b=$('selTools').querySelector('[data-sel].on');setBrush('sel'+((b&&b.dataset.sel)||'face'));selInfo();}
       else if(tab==='cutout')setBrush(curCut);
       else if(tab==='paint')setBrush(curPaint);
@@ -2971,6 +3017,15 @@ var Photo=(function(){
     enterCrop:function(){if(loaded)Crop.enter();},
     exitCrop:function(){Crop.exit();},
     applyCrop:function(){Crop.apply();buildFilters();},
+    /* revenir au réglage automatique du style (les curseurs redeviennent muets) */
+    cartoonAuto:function(){
+      delete cartoonP.edge;delete cartoonP.colors;delete cartoonP.smooth;
+      buildCartoonSliders();
+      if(loaded)appliqueStyle(cartoonP.style);else toast('Réglages remis en automatique',1300);
+    },
+    _styles:function(){return CARTOON_STYLES.map(function(x){return x.id;});},
+    _styleCourant:function(){return cartoonP.style;},
+    style:function(id){appliqueStyle(id);},
     cartoonize:function(){
       if(!loaded)return;toast('Cartoonisation…',800);
       setTimeout(function(){
@@ -3087,13 +3142,69 @@ function _sepMaxF(src,w,h,r){           /* épaissit un trait SANS l'affaiblir (
 }
 function _smoothstep(a,b,v){ if(b===a)return v>=b?1:0; var t=(v-a)/(b-a); t=t<0?0:(t>1?1:t); return t*t*(3-2*t); }
 
+/* ============ 🎨 LES STYLES (parité avec ToonMe / Prisma / Voilà / Clip2Comic) ============
+   Kevin : « Cartoon à parité avec les apps qu'on a copiées ». Ces apps ne
+   proposent pas UN cartoon : elles proposent une GALERIE de styles. Chacun ici
+   est une vraie recette différente (pas juste un nom sur le même rendu — même
+   règle que les 16 filtres et les 15 masques) :
+     lv       = nombre d'aplats de lumière            trait  = force du trait
+     doux     = lissage                                sat    = peps des couleurs
+     encre    = couleur du trait                       chaud  = réchauffe la peau
+     peau     = lisse davantage le VISAGE (comme les apps de portrait)
+     trame    = points d'imprimerie (BD)               hachure= hachures (gravure)
+     palette  = remplace les couleurs (pop art)        rim    = liseré de lumière (3D)
+     neon/croquis/toile/contour = recettes complètes dédiées */
+var CARTOON_STYLES=[
+  {id:'cartoon', emoji:'🖍️',nom:'Cartoon',  d:{lv:8, doux:2,trait:65,sat:1.12,encre:[16,16,18]}},
+  {id:'anime',   emoji:'🌸',nom:'Anime',    d:{lv:7, doux:2,trait:46,sat:1.26,encre:[58,32,46],chaud:6,peau:1,bloom:0.15}},
+  {id:'bd',      emoji:'💥',nom:'BD',       d:{lv:4, doux:2,trait:88,sat:1.55,encre:[0,0,0],trame:1}},
+  {id:'toon3d',  emoji:'🧊',nom:'Toon 3D',  d:{lv:5, doux:2,trait:38,sat:1.42,encre:[24,20,34],peau:1,rim:1.6,niveaux:1}},
+  {id:'peinture',emoji:'🎨',nom:'Peinture', d:{lv:8, doux:5,trait:0, sat:1.38,toile:1,iter:4,relief:2.2}},
+  {id:'popart',  emoji:'🟡',nom:'Pop Art',  d:{lv:4, doux:2,trait:82,sat:1,encre:[0,0,0],niveaux:1,
+      palette:[[26,20,60],[214,38,110],[247,181,32],[250,240,214]]}},
+  {id:'noir',    emoji:'🖤',nom:'Noir',     d:{lv:5, doux:2,trait:80,sat:0,encre:[0,0,0],gris:1,contraste:1.35,niveaux:1}},
+  {id:'encre',   emoji:'🖊️',nom:'Encre',    d:{lv:4, doux:2,trait:92,sat:0,encre:[0,0,0],gris:1,hachure:1,niveaux:1}},
+  {id:'croquis', emoji:'✏️',nom:'Croquis',  d:{croquis:1,doux:1}},
+  {id:'gravure', emoji:'✒️',nom:'Gravure',  d:{gravure:1,doux:2,niveaux:1}},
+  {id:'neon',    emoji:'🌈',nom:'Néon',     d:{neon:1,doux:2}},
+  {id:'sticker', emoji:'🧸',nom:'Sticker',  d:{lv:6, doux:3,trait:72,sat:1.35,encre:[10,10,12],contour:1}}
+];
+function styleCartoon(id){
+  for(var i=0;i<CARTOON_STYLES.length;i++)if(CARTOON_STYLES[i].id===id)return CARTOON_STYLES[i];
+  return CARTOON_STYLES[0];
+}
+/* masque doux du visage (0..1) — sert à lisser la peau comme les apps portrait */
+function _masqueVisage(canvas,w,h){
+  var b=null;
+  try{ if(window.Face&&Face.reset){Face.reset();for(var t=0;t<4;t++)b=Face.detect(canvas,w,h);} }catch(e){b=null;}
+  if(!b)return null;
+  var m=new Float32Array(w*h);
+  /* On reste À L'INTÉRIEUR du visage. Un masque trop large mordait sur le bord
+     cheveux/visage et le RAMOLLISSAIT (mesuré : contraste du bord 162 → 94,
+     soit exactement la « bouillie » qu'on veut éviter). */
+  var cx=b.x+b.w/2, cy=b.y+b.h/2, rx=b.w*0.60, ry=b.h*0.70;
+  for(var y=0;y<h;y++)for(var x=0;x<w;x++){
+    var dx=(x-cx)/rx, dy=(y-cy)/ry, r=Math.sqrt(dx*dx+dy*dy);
+    m[y*w+x]=1-_smoothstep(0.70,1.05,r);
+  }
+  return m;
+}
+
 function cartoonize(canvas,ctx,p){
   var w=canvas.width,h=canvas.height;
   if(!w||!h)return;
+  p=p||{};
+  var S=styleCartoon(p.style||'cartoon').d;
   var img=ctx.getImageData(0,0,w,h),d=img.data,N=w*h,i,j;
-  var levels=Math.max(2,Math.min(24,p.colors|0||8));
-  var force=Math.max(0,Math.min(100,p.edge==null?60:p.edge));
-  var doux=Math.max(0,Math.min(5,p.smooth==null?2:p.smooth));
+  /* Les curseurs de Kevin passent AVANT le style quand il y touche ; sinon le
+     style décide (c'est ça, « tout auto » : un tap suffit). */
+  /* Une valeur DONNÉE par l'appelant prime toujours ; sinon c'est le style qui
+     décide (« tout auto » : un tap suffit). Piège évité : ignorer en silence un
+     réglage explicite casserait tous les anciens appels — mesuré, le test
+     « force des contours = 0 » est tombé d'un coup. */
+  var levels=Math.max(2,Math.min(24,(p.colors!=null?p.colors:S.lv)|0||8));
+  var force=Math.max(0,Math.min(100,p.edge!=null?p.edge:(S.trait==null?60:S.trait)));
+  var doux=Math.max(0,Math.min(5,p.smooth!=null?p.smooth:(S.doux==null?2:S.doux)));
 
   /* plans séparés (Float32 = pas d'arrondi à chaque étape) */
   var R=new Float32Array(N),G=new Float32Array(N),B=new Float32Array(N),A=new Uint8ClampedArray(N);
@@ -3105,18 +3216,31 @@ function cartoonize(canvas,ctx,p){
 
   /* 1) lissage qui RESPECTE les contours (2 passes) */
   var k,bR,bG,bB,gray=new Float32Array(N);
-  for(k=0;k<2;k++){
+  /* PEAU : sur les styles portrait (Anime, Toon 3D), on lisse DAVANTAGE le
+     visage — c'est exactement ce que font ToonMe / Voilà. Le reste de l'image
+     garde son détail (sinon tout devient de la bouillie). */
+  var mVis=S.peau?_masqueVisage(canvas,w,h):null;
+  var nIter=S.iter||2;                 /* Peinture : plus de passes = vrais aplats de matière */
+  for(k=0;k<nIter;k++){
     for(i=0;i<N;i++)gray[i]=R[i]*0.299+G[i]*0.587+B[i]*0.114;
     var gb=_sepBlurF(gray,w,h,Math.max(1,base));
     bR=_sepBlurF(R,w,h,rFlat);bG=_sepBlurF(G,w,h,rFlat);bB=_sepBlurF(B,w,h,rFlat);
+    var pR=null,pG=null,pB=null;
+    if(mVis){var rp=Math.max(2,Math.round(rFlat*2.1));
+      pR=_sepBlurF(R,w,h,rp);pG=_sepBlurF(G,w,h,rp);pB=_sepBlurF(B,w,h,rp);}
     for(i=0;i<N;i++){
       var det=Math.abs(gray[i]-gb[i]);            /* fort = on est sur un contour */
       /* 10 et pas 4 : le GRAIN d'une photo (±7) doit être aplati, sinon il
          survit et l'aplat de couleur n'arrive jamais (mesuré : 93→113 nuances). */
       var keep=_smoothstep(10,30,det);            /* 1 = garder le détail */
-      R[i]=bR[i]+(R[i]-bR[i])*keep;
-      G[i]=bG[i]+(G[i]-bG[i])*keep;
-      B[i]=bB[i]+(B[i]-bB[i])*keep;
+      var lr=bR[i],lg=bG[i],lb=bB[i];
+      if(mVis&&mVis[i]>0.02){var f2=mVis[i]*0.85;
+        lr=lr+(pR[i]-lr)*f2;lg=lg+(pG[i]-lg)*f2;lb=lb+(pB[i]-lb)*f2;
+        keep*= (1-mVis[i]*0.22);                  /* peau plus lisse, mais contours gardés */
+      }
+      R[i]=lr+(R[i]-lr)*keep;
+      G[i]=lg+(G[i]-lg)*keep;
+      B[i]=lb+(B[i]-lb)*keep;
     }
   }
 
@@ -3128,16 +3252,106 @@ function cartoonize(canvas,ctx,p){
   var grayPlat=new Float32Array(N);
   for(i=0;i<N;i++)grayPlat[i]=R[i]*0.299+G[i]*0.587+B[i]*0.114;
 
+  /* AUTO-NIVEAUX : on étire la lumière sur toute la plage AVANT de faire les
+     aplats. Sans ça, une photo un peu sombre donnait un « Encre » et un « Noir »
+     ENTIÈREMENT noirs (vu à l'image) : les 4 niveaux tombaient tous dans les
+     ombres. On coupe 2 % en haut et en bas pour ignorer les extrêmes. */
+  var lo=0,hi=255;
+  if(S.niveaux){
+    var hist=new Uint32Array(256);
+    for(i=0;i<N;i++)hist[Math.max(0,Math.min(255,(R[i]*0.299+G[i]*0.587+B[i]*0.114)|0))]++;
+    var cut=N*0.02,acc=0;
+    for(i=0;i<256;i++){acc+=hist[i];if(acc>cut){lo=i;break;}}
+    acc=0;for(i=255;i>=0;i--){acc+=hist[i];if(acc>cut){hi=i;break;}}
+    if(hi-lo<24){lo=0;hi=255;}
+  }
+  var etire=255/Math.max(1,hi-lo);
+
   /* 2) aplats : on n'arrondit que la LUMIÈRE, la teinte est conservée */
-  var span=levels-1,sat=1.12;
+  var span=levels-1,sat=(S.sat==null?1.12:S.sat);
+  var pal=S.palette||null, ctr=S.contraste||1;
   for(i=0;i<N;i++){
     var Y=R[i]*0.299+G[i]*0.587+B[i]*0.114;
+    if(S.niveaux)Y=Math.max(0,Math.min(255,(Y-lo)*etire));
+    if(ctr!==1){Y=Math.max(0,Math.min(255,(Y-128)*ctr+128));}
     var t=Y/255*span,band=Math.floor(t),f=t-band;
+    if(band>span)band=span;
     var q=(band+_smoothstep(0.44,0.56,f))/span*255;   /* marche adoucie = pas d'escalier */
+    if(pal){
+      /* POP ART : chaque niveau de lumière devient une couleur franche imposée
+         (comme les sérigraphies de Warhol) — la teinte d'origine disparaît. */
+      var c=pal[Math.max(0,Math.min(pal.length-1,Math.round(Y/255*(pal.length-1))))];
+      R[i]=c[0];G[i]=c[1];B[i]=c[2];continue;
+    }
     var ratio=(q+3)/(Y+3);
     var r2=R[i]*ratio,g2=G[i]*ratio,b2=B[i]*ratio;
-    var m=(r2+g2+b2)/3;                                /* petit coup de peps */
+    if(S.gris){var qq=18+q*(242-18)/255;r2=g2=b2=qq;}  /* noir & blanc franc, sans boucher les noirs */
+    if(S.chaud){r2+=S.chaud;b2-=S.chaud*0.6;}          /* peau réchauffée (anime) */
+    var m=(r2+g2+b2)/3;                                /* peps des couleurs */
     R[i]=m+(r2-m)*sat;G[i]=m+(g2-m)*sat;B[i]=m+(b2-m)*sat;
+  }
+  /* TRAME d'imprimerie (BD) : de vrais points, plus gros là où c'est sombre.
+     C'est LA signature visuelle des comics — sans ça, « BD » n'est qu'un cartoon
+     très saturé. Le pas des points suit la taille de l'image. */
+  if(S.trame){
+    var pas=Math.max(3,Math.round(Math.min(w,h)/110));
+    for(var ty=0;ty<h;ty++)for(var tx2=0;tx2<w;tx2++){
+      var o2=ty*w+tx2;
+      var Yt=(R[o2]*0.299+G[o2]*0.587+B[o2]*0.114)/255;
+      if(Yt>0.86)continue;                              /* les blancs restent blancs */
+      var ox=(tx2%pas)-pas/2, oy=(ty%pas)-pas/2;
+      var dist=Math.sqrt(ox*ox+oy*oy);
+      var rayon=(1-Yt)*pas*0.52;
+      var pt=1-_smoothstep(rayon-0.9,rayon+0.9,dist);   /* 1 = dans le point */
+      if(pt>0){var a3=pt*0.55;R[o2]*= (1-a3);G[o2]*=(1-a3);B[o2]*=(1-a3);}
+    }
+  }
+  /* HACHURES (Encre) et GRAVURE : des traits parallèles dont la densité suit
+     l'ombre — la technique du dessin à la plume. */
+  if(S.hachure||S.gravure){
+    /* Écart des traits : trop serré, les hachures se touchent et donnent un
+       aplat gris (vu à l'image : la Gravure n'était qu'un pâté). On les espace
+       proportionnellement à l'image et on ne hachure QUE les ombres. */
+    var ec=Math.max(4,Math.round(Math.min(w,h)/70));
+    var croise=!!S.gravure;
+    var lum=new Float32Array(N);
+    for(i=0;i<N;i++)lum[i]=(R[i]*0.299+G[i]*0.587+B[i]*0.114)/255;
+    for(var hy=0;hy<h;hy++)for(var hx=0;hx<w;hx++){
+      var o3=hy*w+hx, om=1-lum[o3];
+      if(S.gravure){R[o3]=G[o3]=B[o3]=248;}             /* papier clair */
+      var enc2=0;
+      if(((hx+hy)%ec)===0&&om>0.16)enc2=Math.min(1,(om-0.16)*2.0);
+      if(croise&&((hx-hy+w*ec*2)%ec)===0&&om>0.46)enc2=Math.max(enc2,Math.min(1,(om-0.46)*2.6));
+      if(!croise&&((hx-hy+w*ec*2)%ec)===0&&om>0.70)enc2=Math.max(enc2,Math.min(1,(om-0.70)*3.4));
+      if(om>0.90)enc2=1;                                 /* les vrais noirs restent pleins */
+      if(enc2>0){var ii=S.gravure?38:0;
+        R[o3]=R[o3]+(ii-R[o3])*enc2;G[o3]=G[o3]+(ii-G[o3])*enc2;B[o3]=B[o3]+(ii-B[o3])*enc2;}
+    }
+  }
+  /* PEINTURE : relief de matière. On éclaire/assombrit selon la pente de la
+     lumière — l'œil y lit des coups de pinceau en épaisseur (impasto).
+     Sans ça, « Peinture » ressemblait juste à la photo d'origine. */
+  if(S.relief){
+    var lg2=new Float32Array(N);
+    for(i=0;i<N;i++)lg2[i]=R[i]*0.299+G[i]*0.587+B[i]*0.114;
+    var pas2=Math.max(1,Math.round(base*0.8));
+    for(var ry=0;ry<h;ry++)for(var rx=0;rx<w;rx++){
+      var o5=ry*w+rx;
+      var xa=Math.max(0,rx-pas2), xb=Math.min(w-1,rx+pas2);
+      var ya=Math.max(0,ry-pas2)*w, yb=Math.min(h-1,ry+pas2)*w;
+      var rel=((lg2[ry*w+xa]-lg2[ry*w+xb])+(lg2[ya+rx]-lg2[yb+rx]))*0.28*(S.relief||1);
+      R[o5]=Math.max(0,Math.min(255,R[o5]+rel));
+      G[o5]=Math.max(0,Math.min(255,G[o5]+rel));
+      B[o5]=Math.max(0,Math.min(255,B[o5]+rel));
+    }
+  }
+  /* TOILE (Peinture) : la trame du tissu, visible mais discrète */
+  if(S.toile){
+    var pt2=Math.max(2,Math.round(base*1.2));
+    for(var vy=0;vy<h;vy++)for(var vx=0;vx<w;vx++){
+      var o4=vy*w+vx, tt=((vx%pt2===0)?9:0)+((vy%pt2===0)?9:0)-9;
+      R[o4]+=tt;G[o4]+=tt;B[o4]+=tt;
+    }
   }
 
   /* 3) trait d'encre — POSÉ SUR le contour, pas à côté */
@@ -3176,13 +3390,71 @@ function cartoonize(canvas,ctx,p){
     line=_sepBlurF(line,w,h,Math.max(1,Math.round(base*0.6)));
   }
 
+  /* --- recettes qui REMPLACENT l'image (croquis / néon) --- */
+  if(S.croquis||S.neon){
+    /* On repart de la lumière lissée et de la force des contours : un croquis,
+       c'est du papier + du graphite sur les contours ; un néon, c'est du noir +
+       des contours qui brillent. */
+    var gsk=_sepBlurF(grayPlat,w,h,Math.max(1,Math.round(base*0.7)));
+    var sK=Math.max(1,Math.round(base*0.9));
+    var bord=new Float32Array(N);
+    for(var qy=0;qy<h;qy++){
+      var qy0=Math.max(0,qy-sK)*w,qy1=Math.min(h-1,qy+sK)*w,qyc=qy*w;
+      for(var qx=0;qx<w;qx++){
+        var qx0=Math.max(0,qx-sK),qx1=Math.min(w-1,qx+sK);
+        var ggx=-gsk[qy0+qx0]-2*gsk[qyc+qx0]-gsk[qy1+qx0]+gsk[qy0+qx1]+2*gsk[qyc+qx1]+gsk[qy1+qx1];
+        var ggy=-gsk[qy0+qx0]-2*gsk[qy0+qx]-gsk[qy0+qx1]+gsk[qy1+qx0]+2*gsk[qy1+qx]+gsk[qy1+qx1];
+        bord[qyc+qx]=Math.min(1,Math.sqrt(ggx*ggx+ggy*ggy)/4/26);
+      }
+    }
+    if(S.croquis){
+      var flou=_sepBlurF(bord,w,h,1);
+      for(i=0,j=0;i<N;i++,j+=4){
+        var t2=Math.min(1,bord[i]*1.25+flou[i]*0.55);
+        var ombre=Math.max(0,(1-grayPlat[i]/255)-0.55)*0.55;   /* léger ombrage crayon */
+        var v2=255-(t2*205+ombre*150);
+        var pap=((i%7===0)?4:0);                                 /* grain de papier */
+        d[j]=d[j+1]=d[j+2]=Math.max(0,Math.min(255,v2+pap));d[j+3]=A[i];
+      }
+      ctx.putImageData(img,0,0);return;
+    }
+    var halo=_sepBlurF(bord,w,h,Math.max(2,base*3));
+    for(i=0,j=0;i<N;i++,j+=4){
+      var e2=Math.min(1,bord[i]*1.35), gl=Math.min(1,halo[i]*2.2);
+      var teinte=(i%w)/w;                                        /* dégradé cyan → magenta */
+      var nr=90+165*teinte, ng=210-120*teinte, nb=255-40*teinte;
+      d[j]  =Math.min(255, 8+nr*e2+nr*gl*0.42);
+      d[j+1]=Math.min(255,10+ng*e2+ng*gl*0.42);
+      d[j+2]=Math.min(255,22+nb*e2+nb*gl*0.42);
+      d[j+3]=A[i];
+    }
+    ctx.putImageData(img,0,0);return;
+  }
+
   /* On pose une VRAIE encre foncée par-dessus (mélange vers le noir) au lieu de
      multiplier la couleur : en multipliant, le trait devenait gris clair sur une
      zone claire et invisible sur une zone déjà sombre. */
-  var enc=Math.min(0.96,0.45+force/100*0.51),ink=16;
+  var enc=Math.min(0.96,0.45+force/100*0.51);
+  var IK=S.encre||[16,16,18];
+  /* LISERÉ de lumière (Toon 3D) : un fin bord clair sur les contours = l'effet
+     « relief » des rendus 3D façon Pixar. */
+  var rim=null;
+  if(S.rim&&line){rim=_sepBlurF(line,w,h,Math.max(1,base));}
+  /* CONTOUR blanc épais (Sticker) : la silhouette entourée de blanc, comme un
+     autocollant découpé. */
+  var halo2=null;
+  if(S.contour&&line){halo2=_sepMaxF(line,w,h,Math.max(2,Math.round(base*2.6)));}
   for(i=0,j=0;i<N;i++,j+=4){
+    var r3=R[i],g3=G[i],b3=B[i];
+    if(halo2){var hb=Math.max(0,halo2[i]-(line?line[i]:0))*0.75;
+      r3=r3+(252-r3)*hb;g3=g3+(252-g3)*hb;b3=b3+(252-b3)*hb;}
+    if(rim){var rl=Math.max(0,rim[i]-line[i])*0.55*(S.rim||1);
+      r3=Math.min(255,r3+rl*90);g3=Math.min(255,g3+rl*95);b3=Math.min(255,b3+rl*110);}
+    if(S.bloom){var Yb=(r3*0.299+g3*0.587+b3*0.114)/255;
+      if(Yb>0.75){var bl=(Yb-0.75)*4*S.bloom;
+        r3=Math.min(255,r3+bl*45);g3=Math.min(255,g3+bl*40);b3=Math.min(255,b3+bl*35);}}
     var a2=line?line[i]*enc:0;
-    d[j]=R[i]+(ink-R[i])*a2;d[j+1]=G[i]+(ink-G[i])*a2;d[j+2]=B[i]+(ink-B[i])*a2;d[j+3]=A[i];
+    d[j]=r3+(IK[0]-r3)*a2;d[j+1]=g3+(IK[1]-g3)*a2;d[j+2]=b3+(IK[2]-b3)*a2;d[j+3]=A[i];
   }
   ctx.putImageData(img,0,0);
 }
@@ -3732,7 +4004,8 @@ var Anim=(function(){
       var img=new Image();img.onload=function(){
         var c=document.createElement('canvas');c.width=img.width;c.height=img.height;c.getContext('2d').drawImage(img,0,0);
         // cartoonize the base to trace over
-        cartoonize(c,c.getContext('2d'),{edge:70,colors:6,smooth:2});
+        /* on utilise le style choisi dans le Studio Photo (par défaut « Cartoon ») */
+        cartoonize(c,c.getContext('2d',{willReadFrequently:true}),{style:(window.Photo&&Photo._styleCourant&&Photo._styleCourant())||'cartoon'});
         startApp(c);toast('Image importée (trace par-dessus)',1600);URL.revokeObjectURL(img.src);
       };img.src=URL.createObjectURL(file);
     },
