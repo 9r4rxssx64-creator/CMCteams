@@ -130,16 +130,20 @@ for (const w of [320, 375, 390, 430]) {
   await p2.goto(URL_APP, { waitUntil: 'load' }); await p2.waitForTimeout(250);
   await seConnecter(p2, 'Test Galerie', '1234');
   const m = await p2.evaluate(() => {
-    const bs = [...document.querySelectorAll('#bnav button')].map((b) => b.getBoundingClientRect());
+    const nav = document.getElementById('bnav');
+    const bs = [...nav.querySelectorAll('button')].map((b) => b.getBoundingClientRect());
     return {
       n: bs.length,
       minW: Math.round(Math.min(...bs.map((r) => r.width))),
       minH: Math.round(Math.min(...bs.map((r) => r.height))),
-      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      // la PAGE ne doit jamais déborder ; la barre, elle, a le droit de se faire glisser
+      pageDeborde: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+      barreGlisse: nav.scrollWidth > nav.clientWidth + 1,
     };
   });
-  chk(m.minW >= 44 && m.minH >= 44 && !m.overflow,
-    `barre du bas OK à ${w}px : ${m.n} boutons de ${m.minW}×${m.minH}px, 0 débordement`);
+  chk(m.minW >= 44 && m.minH >= 44 && !m.pageDeborde,
+    `barre du bas OK à ${w}px : ${m.n} boutons de ${m.minW}×${m.minH}px`
+    + (m.barreGlisse ? ' (elle se fait glisser du doigt)' : '') + ', page sans débordement');
   await c2.close();
 }
 

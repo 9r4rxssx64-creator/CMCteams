@@ -116,15 +116,21 @@
   .sw.on{border-color:#fff;transform:scale(1.12)}
 
   /* ---------- BOTTOM NAV ---------- */
+  /* La barre du bas se fait glisser du doigt quand il y a plus d'écrans que de
+     place : chaque bouton garde sa taille (norme Apple 44px), au lieu de
+     rétrécir jusqu'à devenir intouchable sur un petit iPhone. */
   #bnav{
     flex:0 0 auto;display:flex;background:rgba(11,11,15,.9);backdrop-filter:blur(20px);
     -webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);
-    padding-bottom:var(--safeb);z-index:30
+    padding-bottom:var(--safeb);z-index:30;
+    overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none
   }
-  #bnav button{flex:1;padding:9px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;
-    color:var(--muted);font-size:11px;font-weight:600}
+  #bnav::-webkit-scrollbar{display:none}
+  #bnav button{flex:1 0 auto;min-width:56px;padding:9px 4px;display:flex;flex-direction:column;
+    align-items:center;gap:3px;color:var(--muted);font-size:11px;font-weight:600}
   #bnav button .ic{font-size:22px;line-height:1}
   #bnav button{font-size:10px}
+  #bnav button .ic{font-size:21px}
   .mine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin-top:10px}
   .mine-it{position:relative;border-radius:12px;overflow:hidden;background:#141414;
     border:1px solid rgba(232,184,75,.28);aspect-ratio:1;display:flex;align-items:center;
@@ -137,6 +143,7 @@
   #camWrap{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:14px;
     overflow:hidden;margin-top:10px}
   #camView,#camShot{width:100%;height:100%;object-fit:cover;display:block}
+  #camOverlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   #camView.mir{transform:scaleX(-1)}
   #camTop{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px}
   .camIco{width:46px;height:46px;border-radius:50%;border:0;font-size:20px;
@@ -168,6 +175,19 @@
   .u-row b{font-size:13px}
   .u-row .u-meta{font-size:11px;opacity:.72}
   .u-row button{margin-left:auto;min-height:44px;min-width:44px}
+  #s-fam input[type=text],#s-fam input[type=password]{width:100%;box-sizing:border-box;margin:6px 0;
+    padding:13px 12px;font-size:16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);
+    background:#0e0e10;color:#f2f2f2;min-height:48px}
+  .fam-msgs{max-height:230px;overflow:auto;margin-top:8px}
+  .fam-m{background:#141416;border:1px solid rgba(255,255,255,.08);border-radius:12px;
+    padding:8px 10px;margin-top:6px;font-size:13px}
+  .fam-m b{color:var(--gold2);font-size:12px}
+  .fam-m .t{opacity:.55;font-size:10px;float:right}
+  .fam-it .who{position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.6);color:#f0e0b8;
+    font-size:10px;padding:3px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fam-re{position:absolute;bottom:18px;left:0;right:0;display:flex;justify-content:center;gap:4px}
+  .fam-re button{background:rgba(0,0,0,.55);border:0;color:#fff;border-radius:12px;
+    font-size:12px;padding:3px 7px;min-height:26px}
   .mine-empty{opacity:.75;font-size:13px;padding:18px 4px;text-align:center}
   #bnav button.on{color:var(--gold2)}
   #bnav button.on .ic{filter:drop-shadow(0 0 10px rgba(232,184,75,.55))}
@@ -519,8 +539,12 @@
           <button class="camIco" id="camGridBtn" title="Grille">#️⃣</button>
           <button class="camIco" id="camMirror" title="Effet miroir">🪞</button>
         </div>
+        <canvas id="camOverlay"></canvas>
         <div id="camRecDot" class="hidden">● REC <span id="camRecT">0:00</span></div>
       </div>
+      <div class="hint" style="margin-top:8px">🎭 Masques</div>
+      <div class="chips" id="camMasks"></div>
+      <div class="hint" style="margin-top:8px">🎨 Filtres</div>
       <div class="chips" id="camFilters"></div>
       <div class="row" style="margin-top:10px;align-items:center;justify-content:center;gap:14px">
         <button class="bigbtn ghost" id="camImport">📂 Importer</button>
@@ -530,6 +554,37 @@
       <div class="hint" id="camHint">Touche « Démarrer » pour allumer la caméra.</div>
       <div class="row" style="margin-top:8px">
         <button class="bigbtn" id="camStart">▶️ Démarrer la caméra</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="studio" id="s-fam">
+    <div class="card" id="famJoinCard">
+      <h2>👨‍👩‍👧 Famille</h2>
+      <p class="hint">Un espace privé rien que pour vous. Ce que tu partages ici,
+        seule ta famille le voit — il faut le code pour entrer.</p>
+      <input id="famNom" type="text" placeholder="Nom de la famille (ex : Desarzens)" autocapitalize="words">
+      <input id="famCode" type="password" placeholder="Le code de la famille (4 caractères minimum)" autocomplete="off">
+      <button class="bigbtn" id="famJoin">Rejoindre ma famille</button>
+      <div class="hint" id="famHint"></div>
+    </div>
+    <div class="card hidden" id="famCard">
+      <h2>👨‍👩‍👧 <span id="famTitre">Famille</span></h2>
+      <div class="hint" id="famQui"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="bigbtn" id="famShare">📤 Partager ma dernière création</button>
+        <button class="bigbtn ghost" id="famRefresh">🔄 Actualiser</button>
+        <button class="bigbtn ghost" id="famLeave">🚪 Quitter</button>
+      </div>
+      <label class="row hidden" id="famAdminRow" style="gap:8px;align-items:center;margin:8px 0">
+        <input type="checkbox" id="famAll"><span>👑 Voir <b>toutes</b> les familles</span>
+      </label>
+      <div id="famFeed" class="mine-grid"></div>
+      <h2 style="margin-top:16px">💬 Messages</h2>
+      <div id="famMsgs" class="fam-msgs"></div>
+      <div class="row" style="margin-top:8px">
+        <input id="famTexte" type="text" placeholder="Écris à ta famille…" style="flex:1">
+        <button class="bigbtn" id="famSend">Envoyer</button>
       </div>
     </div>
   </section>
@@ -649,6 +704,7 @@
   <button data-go="anim"><span class="ic">✏️</span>Cartoon</button>
   <button data-go="aivid"><span class="ic">🕺</span>Danse IA</button>
   <button data-go="magic"><span class="ic">✨</span>Magie</button>
+  <button data-go="fam"><span class="ic">👨‍👩‍👧</span>Famille</button>
   <button data-go="mine"><span class="ic">🗂</span>Mes créas</button>
 </div>
 
@@ -712,7 +768,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.1.0';
+var APP_VER='v9.3.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -1083,6 +1139,170 @@ var Import=(function(){
   return {any:any,kind:kind,reduire:reduire,tropGros:tropGros};
 })();
 
+/* ================= 🎭 MASQUES QUI SUIVENT LE VISAGE =================
+   Deux façons de trouver le visage, dans cet ordre :
+     1) le détecteur du téléphone (FaceDetector) quand il existe → précis ;
+     2) sinon, notre propre repérage par couleur de peau → approximatif mais
+        gratuit, hors ligne, et suffisant pour poser des oreilles ou un chapeau.
+   Aucune bibliothèque téléchargée : tout est dessiné au trait, donc ça marche
+   même sans réseau et ça ne pèse rien. */
+var Face=(function(){
+  var natif=null,dispo=(typeof FaceDetector!=='undefined');
+  if(dispo){try{natif=new FaceDetector({fastMode:true,maxDetectedFaces:1});}catch(e){natif=null;dispo=false;}}
+  var lisse=null;                                   /* boîte lissée (évite que le masque tremble) */
+  var buf=document.createElement('canvas'),bctx=buf.getContext('2d',{willReadFrequently:true});
+  /* Repérage par couleur de peau (YCbCr) — robuste sur toutes les carnations */
+  function parCouleur(src,W,H){
+    var w=96,h=Math.max(1,Math.round(w*H/W));
+    buf.width=w;buf.height=h;
+    try{bctx.drawImage(src,0,0,w,h);}catch(e){return null;}
+    var d;try{d=bctx.getImageData(0,0,w,h).data;}catch(e){return null;}
+    var xs=[],ys=[],n=0;
+    for(var y=0;y<h;y++)for(var x=0;x<w;x++){
+      var i=(y*w+x)*4,r=d[i],g=d[i+1],b=d[i+2];
+      var cb=128-0.168736*r-0.331264*g+0.5*b, cr=128+0.5*r-0.418688*g-0.081312*b;
+      var yy=0.299*r+0.587*g+0.114*b;
+      if(yy>45&&cb>77&&cb<130&&cr>133&&cr<180){xs.push(x);ys.push(y);n++;}
+    }
+    if(n<40)return null;                              /* pas assez de peau = pas de visage */
+    xs.sort(function(a,b){return a-b;});ys.sort(function(a,b){return a-b;});
+    /* on coupe 12% de chaque côté : mains, cou et bruit ne tirent plus la boîte */
+    var q=function(a,p){return a[Math.min(a.length-1,Math.max(0,Math.floor(a.length*p)))];};
+    var x0=q(xs,0.12),x1=q(xs,0.88),y0=q(ys,0.08),y1=q(ys,0.86);
+    var bw=(x1-x0)/w, bh=(y1-y0)/h;
+    if(bw<0.05||bh<0.05)return null;
+    return {x:x0/w*W, y:y0/h*H, w:bw*W, h:bh*H, how:'couleur'};
+  }
+  function fusion(a,b,k){return a==null?b:(a*(1-k)+b*k);}
+  /* Trouve le visage. Renvoie null si on n'en voit pas (on le DIT à l'écran). */
+  function detect(src,W,H){
+    var box=parCouleur(src,W,H);
+    if(!box)return null;
+    if(!lisse)lisse={x:box.x,y:box.y,w:box.w,h:box.h};
+    else{var k=0.35;
+      lisse.x=fusion(lisse.x,box.x,k);lisse.y=fusion(lisse.y,box.y,k);
+      lisse.w=fusion(lisse.w,box.w,k);lisse.h=fusion(lisse.h,box.h,k);}
+    return {x:lisse.x,y:lisse.y,w:lisse.w,h:lisse.h,how:box.how};
+  }
+  function detectNatif(src){
+    if(!natif)return Promise.resolve(null);
+    return natif.detect(src).then(function(f){
+      if(!f||!f.length)return null;
+      var b=f[0].boundingBox;
+      return {x:b.x,y:b.y,w:b.width,h:b.height,how:'natif'};
+    }).catch(function(){return null;});
+  }
+  function reset(){lisse=null;}
+  return {detect:detect,detectNatif:detectNatif,reset:reset,natifDispo:function(){return !!natif;}};
+})();
+
+/* Les masques, dessinés au trait sur la boîte du visage (x,y,w,h) */
+var Masks=(function(){
+  function ell(g,x,y,rx,ry,c){g.beginPath();g.ellipse(x,y,rx,ry,0,0,6.2832);g.fillStyle=c;g.fill();}
+  function ring(g,x,y,rx,ry,c,e){g.beginPath();g.ellipse(x,y,rx,ry,0,0,6.2832);g.strokeStyle=c;g.lineWidth=e;g.stroke();}
+  var L=[
+   {id:'chien',n:'🐶 Chien',d:function(g,x,y,w,h){
+      ell(g,x+w*0.14,y-h*0.06,w*0.20,h*0.26,'#6b4326');ell(g,x+w*0.86,y-h*0.06,w*0.20,h*0.26,'#6b4326');
+      ell(g,x+w*0.14,y-h*0.04,w*0.11,h*0.16,'#a9743f');ell(g,x+w*0.86,y-h*0.04,w*0.11,h*0.16,'#a9743f');
+      ell(g,x+w*0.5,y+h*0.72,w*0.12,h*0.09,'#2b2b2b');
+      ell(g,x+w*0.5,y+h*0.92,w*0.09,h*0.13,'#ef6b8a');}},
+   {id:'chat',n:'🐱 Chat',d:function(g,x,y,w,h){
+      [0.18,0.82].forEach(function(p){
+        g.beginPath();g.moveTo(x+w*p-w*0.16,y+h*0.08);g.lineTo(x+w*p,y-h*0.28);g.lineTo(x+w*p+w*0.16,y+h*0.08);
+        g.closePath();g.fillStyle='#d9a441';g.fill();});
+      ell(g,x+w*0.5,y+h*0.72,w*0.08,h*0.06,'#ef6b8a');
+      g.strokeStyle='#fff';g.lineWidth=Math.max(2,w*0.012);
+      [[-1,0.62],[-1,0.72],[-1,0.82],[1,0.62],[1,0.72],[1,0.82]].forEach(function(m){
+        g.beginPath();g.moveTo(x+w*0.5+m[0]*w*0.1,y+h*m[1]);
+        g.lineTo(x+w*0.5+m[0]*w*0.45,y+h*(m[1]-0.05));g.stroke();});}},
+   {id:'lapin',n:'🐰 Lapin',d:function(g,x,y,w,h){
+      [0.3,0.7].forEach(function(p){
+        ell(g,x+w*p,y-h*0.3,w*0.10,h*0.34,'#fff');ell(g,x+w*p,y-h*0.29,w*0.05,h*0.26,'#ffb6c8');});
+      ell(g,x+w*0.5,y+h*0.72,w*0.07,h*0.05,'#ff9ab0');}},
+   {id:'couronne',n:'👑 Couronne',d:function(g,x,y,w,h){
+      g.beginPath();g.moveTo(x+w*0.1,y+h*0.02);g.lineTo(x+w*0.22,y-h*0.28);g.lineTo(x+w*0.35,y-h*0.05);
+      g.lineTo(x+w*0.5,y-h*0.34);g.lineTo(x+w*0.65,y-h*0.05);g.lineTo(x+w*0.78,y-h*0.28);
+      g.lineTo(x+w*0.9,y+h*0.02);g.closePath();
+      var gr=g.createLinearGradient(x,y-h*0.3,x+w,y);gr.addColorStop(0,'#f7d774');gr.addColorStop(1,'#c99b2e');
+      g.fillStyle=gr;g.fill();
+      ell(g,x+w*0.5,y-h*0.12,w*0.045,h*0.045,'#e0455a');}},
+   {id:'lunettes',n:'🕶 Lunettes',d:function(g,x,y,w,h){
+      var yy=y+h*0.4,r=w*0.19;
+      ell(g,x+w*0.3,yy,r,r*0.72,'rgba(15,15,20,.86)');ell(g,x+w*0.7,yy,r,r*0.72,'rgba(15,15,20,.86)');
+      g.strokeStyle='#111';g.lineWidth=Math.max(3,w*0.03);
+      g.beginPath();g.moveTo(x+w*0.49,yy);g.lineTo(x+w*0.51,yy);g.stroke();
+      g.beginPath();g.moveTo(x+w*0.11,yy);g.lineTo(x-w*0.02,yy-h*0.05);g.stroke();
+      g.beginPath();g.moveTo(x+w*0.89,yy);g.lineTo(x+w*1.02,yy-h*0.05);g.stroke();}},
+   {id:'nerd',n:'🤓 Nerd',d:function(g,x,y,w,h){
+      var yy=y+h*0.4,r=w*0.2;
+      ring(g,x+w*0.3,yy,r,r*0.8,'#1b1b1b',Math.max(3,w*0.035));
+      ring(g,x+w*0.7,yy,r,r*0.8,'#1b1b1b',Math.max(3,w*0.035));
+      ell(g,x+w*0.3,yy,r,r*0.8,'rgba(180,220,255,.22)');ell(g,x+w*0.7,yy,r,r*0.8,'rgba(180,220,255,.22)');
+      g.strokeStyle='#1b1b1b';g.lineWidth=Math.max(3,w*0.03);
+      g.beginPath();g.moveTo(x+w*0.5,yy);g.lineTo(x+w*0.5,yy);g.stroke();}},
+   {id:'moustache',n:'🥸 Moustache',d:function(g,x,y,w,h){
+      g.fillStyle='#3a2a1c';
+      g.beginPath();g.moveTo(x+w*0.5,y+h*0.8);
+      g.bezierCurveTo(x+w*0.2,y+h*0.62,x+w*0.05,y+h*0.9,x+w*0.32,y+h*0.9);
+      g.bezierCurveTo(x+w*0.42,y+h*0.9,x+w*0.46,y+h*0.84,x+w*0.5,y+h*0.84);
+      g.bezierCurveTo(x+w*0.54,y+h*0.84,x+w*0.58,y+h*0.9,x+w*0.68,y+h*0.9);
+      g.bezierCurveTo(x+w*0.95,y+h*0.9,x+w*0.8,y+h*0.62,x+w*0.5,y+h*0.8);
+      g.fill();}},
+   {id:'pirate',n:'🏴‍☠️ Pirate',d:function(g,x,y,w,h){
+      g.fillStyle='#151515';
+      g.beginPath();g.moveTo(x-w*0.05,y+h*0.14);g.lineTo(x+w*1.05,y+h*0.14);
+      g.lineTo(x+w*0.95,y-h*0.04);g.lineTo(x+w*0.05,y-h*0.04);g.closePath();g.fill();
+      ell(g,x+w*0.5,y-h*0.02,w*0.42,h*0.16,'#151515');
+      ell(g,x+w*0.3,y+h*0.4,w*0.16,h*0.13,'#0d0d0d');
+      g.strokeStyle='#0d0d0d';g.lineWidth=Math.max(3,w*0.025);
+      g.beginPath();g.moveTo(x+w*0.14,y+h*0.33);g.lineTo(x+w*0.9,y+h*0.28);g.stroke();}},
+   {id:'fete',n:'🎉 Chapeau fête',d:function(g,x,y,w,h){
+      g.beginPath();g.moveTo(x+w*0.5,y-h*0.42);g.lineTo(x+w*0.2,y+h*0.06);g.lineTo(x+w*0.8,y+h*0.06);
+      g.closePath();var gr=g.createLinearGradient(x+w*0.2,y,x+w*0.8,y);
+      gr.addColorStop(0,'#ff5d8f');gr.addColorStop(0.5,'#ffd166');gr.addColorStop(1,'#4cc9f0');
+      g.fillStyle=gr;g.fill();
+      ell(g,x+w*0.5,y-h*0.44,w*0.07,h*0.07,'#fff');}},
+   {id:'fleurs',n:'🌸 Fleurs',d:function(g,x,y,w,h){
+      for(var i=0;i<7;i++){var t=i/6,px=x+w*(0.08+t*0.84),py=y+h*(0.02-Math.sin(t*3.14)*0.16);
+        var c=['#ff8fab','#ffd6e0','#c1a3ff','#ffe08a','#a0e7a0','#ff8fab','#ffd6e0'][i];
+        for(var k=0;k<5;k++){var a=k/5*6.2832;
+          ell(g,px+Math.cos(a)*w*0.035,py+Math.sin(a)*w*0.035,w*0.028,w*0.028,c);}
+        ell(g,px,py,w*0.018,w*0.018,'#fff2a8');}}},
+   {id:'diable',n:'😈 Diable',d:function(g,x,y,w,h){
+      [[0.24,-1],[0.76,1]].forEach(function(m){
+        g.beginPath();g.moveTo(x+w*m[0],y+h*0.04);
+        g.quadraticCurveTo(x+w*(m[0]+m[1]*0.08),y-h*0.3,x+w*(m[0]-m[1]*0.02),y-h*0.34);
+        g.quadraticCurveTo(x+w*(m[0]+m[1]*0.12),y-h*0.22,x+w*(m[0]+m[1]*0.1),y+h*0.05);
+        g.closePath();g.fillStyle='#d62828';g.fill();});}},
+   {id:'ange',n:'😇 Auréole',d:function(g,x,y,w,h){
+      ring(g,x+w*0.5,y-h*0.26,w*0.3,h*0.09,'#ffe066',Math.max(4,w*0.035));
+      g.globalAlpha=0.45;ring(g,x+w*0.5,y-h*0.26,w*0.34,h*0.12,'#fff3b0',Math.max(3,w*0.02));g.globalAlpha=1;}},
+   {id:'cowboy',n:'🤠 Cowboy',d:function(g,x,y,w,h){
+      ell(g,x+w*0.5,y+h*0.06,w*0.62,h*0.11,'#8b5e34');
+      g.beginPath();g.moveTo(x+w*0.24,y+h*0.06);g.quadraticCurveTo(x+w*0.5,y-h*0.4,x+w*0.76,y+h*0.06);
+      g.closePath();g.fillStyle='#a06c3f';g.fill();
+      g.fillStyle='#3d2b1f';g.fillRect(x+w*0.24,y-h*0.02,w*0.52,h*0.06);}},
+   {id:'coeurs',n:'😍 Cœurs',d:function(g,x,y,w,h){
+      function coeur(cx,cy,t){g.beginPath();g.moveTo(cx,cy+t*0.3);
+        g.bezierCurveTo(cx+t,cy-t*0.6,cx+t*0.4,cy-t*1.1,cx,cy-t*0.45);
+        g.bezierCurveTo(cx-t*0.4,cy-t*1.1,cx-t,cy-t*0.6,cx,cy+t*0.3);
+        g.fillStyle='#ff2d55';g.fill();}
+      coeur(x+w*0.3,y+h*0.42,w*0.14);coeur(x+w*0.7,y+h*0.42,w*0.14);}},
+   {id:'plongee',n:'🤿 Plongée',d:function(g,x,y,w,h){
+      ell(g,x+w*0.5,y+h*0.4,w*0.42,h*0.24,'rgba(140,210,255,.35)');
+      ring(g,x+w*0.5,y+h*0.4,w*0.42,h*0.24,'#0f6ea8',Math.max(4,w*0.035));
+      g.fillStyle='#0f6ea8';g.fillRect(x+w*0.44,y+h*0.62,w*0.12,h*0.34);}}
+  ];
+  /* Dessine le masque choisi sur un contexte, pour la boîte du visage donnée */
+  function draw(g,id,box){
+    var m=L.filter(function(x){return x.id===id;})[0];
+    if(!m||!box)return false;
+    g.save();try{m.d(g,box.x,box.y,box.w,box.h);}catch(e){}g.restore();
+    return true;
+  }
+  return {list:L,draw:draw,ids:function(){return L.map(function(m){return m.id;});}};
+})();
+
 /* ================= 📷 CAMÉRA (façon Snapchat) =================
    Filtres en direct, avant/arrière, minuteur, lampe, grille, effet miroir,
    photo au clic / vidéo en gardant le doigt appuyé. Ce qui est pris part
@@ -1109,11 +1329,40 @@ var Cam=(function(){
     {id:'metal',   n:'Métal',      css:'grayscale(.7) contrast(1.5) brightness(1.1)'}
   ];
   var stream=null,fx='aucun',facing='user',mirror=true,grid=false,timer=0,torch=false;
+  var mask='aucun',faceBox=null,trackRaf=null,lastDetect=0;
   var rec=null,chunks=[],recT=null,recStart=0,holding=false,holdTimer=null;
   function v(){return $('camView');}
   function hint(t){var e=$('camHint');if(e)e.textContent=t||'';}
   function css(){var f=FX.filter(function(x){return x.id===fx;})[0];return (f&&f.css)||'none';}
   function applyFx(){var el=v();if(el)el.style.filter=css();}
+  function maskChips(){
+    var box=$('camMasks');if(!box)return;
+    var items=[{id:'aucun',n:'Aucun masque'}].concat(Masks.list.map(function(m){return {id:m.id,n:m.n};}));
+    box.innerHTML=items.map(function(m){
+      return '<button class="chip'+(m.id===mask?' on':'')+'" data-mask="'+m.id+'">'+esc(m.n)+'</button>';}).join('');
+    box.querySelectorAll('[data-mask]').forEach(function(b){
+      b.onclick=function(){mask=b.dataset.mask;Face.reset();maskChips();
+        hint(mask==='aucun'?'Masque enlevé.':'Masque « '+b.textContent+' » — place ton visage dans l\'image.');};});
+  }
+  /* Suivi du visage : on cherche 8×/s (assez fluide, léger pour la batterie) */
+  function track(){
+    var el=v(),ov=$('camOverlay');
+    if(!el||!ov)return;
+    if(ov.width!==el.clientWidth||ov.height!==el.clientHeight){
+      ov.width=el.clientWidth||360;ov.height=el.clientHeight||480;}
+    var g=ov.getContext('2d');
+    g.clearRect(0,0,ov.width,ov.height);
+    if(stream&&mask!=='aucun'&&el.videoWidth){
+      var now=Date.now();
+      if(now-lastDetect>125){lastDetect=now;faceBox=Face.detect(el,ov.width,ov.height);}
+      if(faceBox){
+        var b=faceBox;
+        if(mirror&&facing==='user')b={x:ov.width-b.x-b.w,y:b.y,w:b.w,h:b.h};
+        Masks.draw(g,mask,b);
+      }
+    }
+    trackRaf=requestAnimationFrame(track);
+  }
   function chips(){
     var box=$('camFilters');if(!box)return;
     box.innerHTML=FX.map(function(f){
@@ -1145,6 +1394,8 @@ var Cam=(function(){
     try{if(rec&&rec.state!=='inactive')rec.stop();}catch(e){}
     try{if(stream)stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
     stream=null;var el=v();if(el)el.srcObject=null;
+    faceBox=null;Face.reset();
+    var ov=$('camOverlay');if(ov){var g=ov.getContext('2d');g.clearRect(0,0,ov.width,ov.height);}
     if(!silencieux)hint('Caméra éteinte.');
   }
   function swap(){facing=(facing==='user')?'environment':'user';if(stream)start();}
@@ -1171,9 +1422,17 @@ var Cam=(function(){
     var el=v();if(!el||!el.videoWidth)return null;
     var c=$('camShot');c.width=el.videoWidth;c.height=el.videoHeight;
     var g=c.getContext('2d');
+    g.save();
     g.filter=css();
     if(mirror&&facing==='user'){g.translate(c.width,0);g.scale(-1,1);}
     g.drawImage(el,0,0,c.width,c.height);
+    g.restore();
+    /* le masque est CUIT dans la photo, aux vraies dimensions de l'image */
+    if(mask!=='aucun'){
+      var b=Face.detect(el,c.width,c.height);
+      if(b){ if(mirror&&facing==='user')b={x:c.width-b.x-b.w,y:b.y,w:b.w,h:b.h};
+        Masks.draw(g,mask,b); }
+    }
     return c;
   }
   function shoot(){
@@ -1208,9 +1467,19 @@ var Cam=(function(){
     var el=v(),c=document.createElement('canvas');
     c.width=el.videoWidth||720;c.height=el.videoHeight||960;
     var g=c.getContext('2d'),raf=null;
-    (function draw(){g.filter=css();
-      if(mirror&&facing==='user'){g.save();g.translate(c.width,0);g.scale(-1,1);g.drawImage(el,0,0,c.width,c.height);g.restore();}
+    var lastF=0,bx=null;
+    (function draw(){
+      g.save();g.filter=css();
+      if(mirror&&facing==='user'){g.translate(c.width,0);g.scale(-1,1);g.drawImage(el,0,0,c.width,c.height);}
       else g.drawImage(el,0,0,c.width,c.height);
+      g.restore();
+      if(mask!=='aucun'){
+        var now=Date.now();
+        if(now-lastF>125){lastF=now;bx=Face.detect(el,c.width,c.height);}
+        if(bx){var b=bx;
+          if(mirror&&facing==='user')b={x:c.width-b.x-b.w,y:b.y,w:b.w,h:b.h};
+          Masks.draw(g,mask,b);}
+      }
       raf=requestAnimationFrame(draw);})();
     var out=c.captureStream(30);
     try{stream.getAudioTracks().forEach(function(t){out.addTrack(t);});}catch(e){}
@@ -1244,7 +1513,8 @@ var Cam=(function(){
   }
   function stopVideo(){try{if(rec&&rec.state!=='inactive')rec.stop();}catch(e){}}
   function init(){
-    chips();
+    chips();maskChips();
+    if(!trackRaf)track();
     $('camStart').onclick=start;
     $('camStop').onclick=function(){if(rec)stopVideo();else stop();};
     $('camSwap').onclick=swap;
@@ -1268,7 +1538,9 @@ var Cam=(function(){
     sh.addEventListener('mouseleave',function(){if(holding&&!rec){clearTimeout(holdTimer);holding=false;}});
   }
   return {init:init,start:start,stop:stop,shoot:shoot,startVideo:startVideo,stopVideo:stopVideo,
-          filters:FX,setFx:function(id){fx=id;chips();applyFx();},current:function(){return fx;}};
+          filters:FX,setFx:function(id){fx=id;chips();applyFx();},current:function(){return fx;},
+          setMask:function(id){mask=id;Face.reset();maskChips();},mask:function(){return mask;},
+          grab:grab};
 })();
 
 /* ---------- 👤 Écran de connexion + espace admin ---------- */
@@ -1341,6 +1613,135 @@ var Account=(function(){
           restore:restore,paint:paint};
 })();
 
+/* ================= 👨‍👩‍👧 FAMILLE — le lien entre nos téléphones =================
+   Espace PRIVÉ : il faut le nom de la famille ET son code. Le jeton reçu du
+   service est gardé dans le téléphone, jamais le code lui-même. */
+var Fam=(function(){
+  var URL_FAM=(window.CREA_FAM_URL||localStorage.getItem('crea_fam_url')
+    ||'https://kdmc-crea-famille.9r4rxssx64.workers.dev').replace(/\/$/,'');
+  function cle(){var c=(window.Users&&Users.current&&Users.current());return 'crea_fam_'+(c?c.uid:'invite');}
+  function etat(){try{return JSON.parse(localStorage.getItem(cle())||'null');}catch(e){return null;}}
+  function poser(v){try{v?localStorage.setItem(cle(),JSON.stringify(v)):localStorage.removeItem(cle());}catch(e){}}
+  function hint(t){var e=$('famHint');if(e)e.textContent=t||'';}
+  function api(chemin,corps){
+    var o=corps?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corps)}:{};
+    return fetch(URL_FAM+chemin,o).then(function(r){
+      return r.json().then(function(j){ if(!r.ok)throw new Error(j&&(j.detail||j.error)||('http_'+r.status)); return j; },
+        function(){ throw new Error('reponse_illisible_http_'+r.status); });
+    });
+  }
+  function rejoindre(){
+    var c=(window.Users&&Users.current&&Users.current());
+    if(!c)return hint('⚠️ Connecte-toi d\'abord (ton prénom et ton nom).');
+    var f=$('famNom').value.trim(), code=$('famCode').value.trim();
+    if(!f)return hint('⚠️ Donne le nom de la famille.');
+    if(code.length<4)return hint('⚠️ Le code famille fait 4 caractères minimum.');
+    hint('Connexion à la famille…');
+    api('/rejoindre',{famille:f,nom:c.name,code:code}).then(function(j){
+      poser({jeton:j.jeton,famille:j.famille,admin:!!j.admin,nom:j.nom});
+      $('famCode').value='';
+      hint(''); montrer(); charger();
+      toast('👨‍👩‍👧 Bienvenue dans la famille '+j.famille,2400);
+      if(window.Users&&Users.remember)Users.remember('Fait partie de la famille « '+j.famille+' »','famille');
+    }).catch(function(e){hint('⚠️ '+String(e.message||e).slice(0,110));});
+  }
+  function quitter(){poser(null);montrer();toast('Tu as quitté l\'espace famille',1800);}
+  function montrer(){
+    var e=etat();
+    $('famJoinCard').classList.toggle('hidden',!!e);
+    $('famCard').classList.toggle('hidden',!e);
+    if(e){
+      $('famTitre').textContent='Famille '+e.famille;
+      $('famQui').textContent='Tu es '+e.nom+(e.admin?' 👑 (administrateur)':'')+
+        ' — tout s\'efface tout seul au bout de 14 jours.';
+      $('famAdminRow').classList.toggle('hidden',!e.admin);
+    }
+  }
+  /* Envoie la dernière création faite dans l'app (photo, vidéo, morceau) */
+  function partager(){
+    var e=etat();if(!e)return;
+    if(!window.Mine)return toast('Rien à partager pour l\'instant');
+    Mine.list().then(function(l){
+      if(!l.length)return toast('Fabrique d\'abord quelque chose 🙂',2600);
+      var it=l[0];
+      if(it.blob.size>6*1024*1024)
+        return toast('Cette création fait '+(it.blob.size/1048576).toFixed(1)+
+          ' Mo : trop lourd pour le partage famille (max 6 Mo).',5000);
+      aiShow('Envoi à la famille…');
+      var fr=new FileReader();
+      fr.onload=function(){
+        api('/partager',{jeton:e.jeton,kind:it.kind,label:it.label,mime:it.type,data:fr.result})
+          .then(function(){aiHide();toast('Partagé avec la famille 🎉',2200);charger();})
+          .catch(function(er){aiHide();toast('Envoi impossible : '+String(er.message||er).slice(0,80),4600);});
+      };
+      fr.onerror=function(){aiHide();toast('Fichier illisible');};
+      fr.readAsDataURL(it.blob);
+    });
+  }
+  function quand(ts){
+    var d=new Date(ts),n=new Date();
+    var hm=('0'+d.getHours()).slice(-2)+'h'+('0'+d.getMinutes()).slice(-2);
+    return d.toDateString()===n.toDateString()?hm:(d.getDate()+'/'+(d.getMonth()+1)+' '+hm);
+  }
+  function ico(k){return k==='video'?'🎬':k==='audio'?'🎵':'🖼';}
+  function charger(){
+    var e=etat();if(!e)return;
+    var tout=($('famAll')&&$('famAll').checked&&e.admin)?'&tout=1':'';
+    var grille=$('famFeed');
+    api('/fil?jeton='+encodeURIComponent(e.jeton)+tout).then(function(j){
+      var items=j.items||[];
+      if(!items.length){grille.innerHTML='<div class="mine-empty">Rien de partagé pour l\'instant.<br>'+
+        'Touche « Partager ma dernière création ».</div>';return;}
+      grille.innerHTML=items.map(function(it){
+        var src=URL_FAM+'/voir?jeton='+encodeURIComponent(e.jeton)+'&id='+encodeURIComponent(it.id)+
+          (it.fid?'&famille='+encodeURIComponent(it.fid):'');
+        var vue=(it.kind==='image')?'<img src="'+esc(src)+'" alt="" loading="lazy">'
+                                   :'<div class="emo">'+ico(it.kind)+'</div>';
+        var re=['❤️','👍','😂'].map(function(em){
+          var n=((it.reactions||{})[em]||[]).length;
+          return '<button data-re="'+esc(it.id)+'" data-em="'+em+'">'+em+(n?' '+n:'')+'</button>';}).join('');
+        return '<div class="mine-it fam-it">'+vue+
+          '<div class="who">'+esc(it.par)+(it.famille?' · '+esc(it.famille):'')+'</div>'+
+          '<div class="fam-re">'+re+'</div>'+
+          '<div class="tag">'+esc(quand(it.ts))+' · '+esc(it.label)+'</div></div>';
+      }).join('');
+      grille.querySelectorAll('[data-re]').forEach(function(b){
+        b.onclick=function(ev){ev.stopPropagation();
+          api('/reaction',{jeton:e.jeton,id:b.dataset.re,emo:b.dataset.em})
+            .then(charger).catch(function(er){toast(String(er.message||er).slice(0,70));});};
+      });
+    }).catch(function(er){
+      grille.innerHTML='<div class="mine-empty">⚠️ '+esc(String(er.message||er).slice(0,110))+'</div>';});
+    api('/messages?jeton='+encodeURIComponent(e.jeton)).then(function(j){
+      var box=$('famMsgs'),ms=j.messages||[];
+      box.innerHTML=ms.length?ms.slice(-40).map(function(m){
+        return '<div class="fam-m"><span class="t">'+esc(quand(m.ts))+'</span><b>'+esc(m.par)+'</b><br>'+
+          esc(m.texte)+'</div>';}).join(''):'<div class="hint">Aucun message. Dis bonjour 👋</div>';
+      box.scrollTop=box.scrollHeight;
+    }).catch(function(){});
+  }
+  function envoyer(){
+    var e=etat();if(!e)return;
+    var t=$('famTexte').value.trim();if(!t)return;
+    $('famTexte').value='';
+    api('/message',{jeton:e.jeton,texte:t}).then(charger)
+      .catch(function(er){toast('Message non envoyé : '+String(er.message||er).slice(0,70),4200);});
+  }
+  function init(){
+    var b;
+    if(b=$('famJoin'))b.onclick=rejoindre;
+    if(b=$('famShare'))b.onclick=partager;
+    if(b=$('famRefresh'))b.onclick=charger;
+    if(b=$('famLeave'))b.onclick=quitter;
+    if(b=$('famSend'))b.onclick=envoyer;
+    if(b=$('famAll'))b.onchange=charger;
+    if(b=$('famTexte'))b.addEventListener('keydown',function(ev){if(ev.key==='Enter')envoyer();});
+    if(b=$('famCode'))b.addEventListener('keydown',function(ev){if(ev.key==='Enter')rejoindre();});
+    montrer();
+  }
+  return {init:init,montrer:montrer,charger:charger,etat:etat,quitter:quitter,url:URL_FAM};
+})();
+
 /* ---------- navigation studios ---------- */
 var CUR='photo';
 document.querySelectorAll('#bnav button').forEach(function(b){
@@ -1349,6 +1750,7 @@ document.querySelectorAll('#bnav button').forEach(function(b){
 function go(name){
   CUR=name;
   if(name==='mine'&&window.Mine){Mine.refresh();if(window.Account)Account.paint();}
+  if(name==='fam'&&window.Fam){Fam.montrer();if(Fam.etat())Fam.charger();}
   if(name!=='cam'&&window.Cam)Cam.stop(true);   /* la caméra ne reste JAMAIS allumée en fond */
   document.querySelectorAll('.studio').forEach(function(s){s.classList.remove('active')});
   $('s-'+name).classList.add('active');
@@ -3296,6 +3698,7 @@ toast('Bienvenue dans Créa Studio 🎨',2200);
 /* Écran de connexion : APRÈS que tous les modules existent (sinon Account n'est
    pas encore défini et l'app démarre sans demander qui l'utilise — erreur #28). */
 try{ Cam.init(); }catch(e){}
+try{ Fam.init(); }catch(e){}
 try{ Account.init(); }
 catch(e){ try{ toast('Comptes indisponibles : '+String(e.message||e).slice(0,60)); }catch(_){} }
 </script>
