@@ -105,6 +105,26 @@ const pwned = await page.evaluate(() => !!window.__pwn);
 const injected = await page.locator('#mineGrid .tag img').count();
 chk(!pwned && injected === 0, 'un titre piégé venant de l\'IA est neutralisé (pas de code injecté)');
 
+// 7) la barre du bas reste utilisable sur TOUS les iPhone (norme Apple : 44 px)
+//    — garde anti-régression : ajouter un bouton de plus ne doit pas la casser.
+for (const w of [320, 375, 390, 430]) {
+  const c2 = await browser.newContext({ viewport: { width: w, height: 844 }, isMobile: true, hasTouch: true });
+  const p2 = await c2.newPage();
+  await p2.goto(URL_APP, { waitUntil: 'load' }); await p2.waitForTimeout(250);
+  const m = await p2.evaluate(() => {
+    const bs = [...document.querySelectorAll('#bnav button')].map((b) => b.getBoundingClientRect());
+    return {
+      n: bs.length,
+      minW: Math.round(Math.min(...bs.map((r) => r.width))),
+      minH: Math.round(Math.min(...bs.map((r) => r.height))),
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    };
+  });
+  chk(m.minW >= 44 && m.minH >= 44 && !m.overflow,
+    `barre du bas OK à ${w}px : ${m.n} boutons de ${m.minW}×${m.minH}px, 0 débordement`);
+  await c2.close();
+}
+
 chk(errs.length === 0, `0 erreur JS${errs.length ? ': ' + errs[0] : ''}`);
 
 console.log('=== CRÉA STUDIO — MES CRÉATIONS ===');
