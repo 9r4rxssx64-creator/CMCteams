@@ -94,7 +94,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .tnode .tn{font-weight:700;font-size:14px;line-height:1.16;overflow:hidden;text-overflow:ellipsis;color:#2c2010;font-family:Georgia,"Times New Roman",serif}
 .tnode .ty{font-size:11.5px;color:#856a3a;margin-top:1px}
 .av.M,.av.F{background:radial-gradient(circle at 36% 30%,#fffbef,#e7d4a6)}
-.bandlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#f3e6c2;background:rgba(74,54,26,.9);padding:5px 14px;border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.bandlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#f3e6c2;background:rgba(74,54,26,.9);padding:5px 14px;border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:4;pointer-events:none}
 .couplebadge{position:absolute;transform:translate(-50%,-50%);font-size:15px;background:rgba(255,248,230,.96);border:1px solid var(--gold);border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(240,200,116,.35)}
 .treemode{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:4px;background:rgba(74,54,26,.9);border:1px solid var(--gold);border-radius:999px;padding:3px;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .treemode button{font-size:12px;font-weight:700;color:#f3e6c2;padding:7px 12px;border-radius:999px;white-space:nowrap}
@@ -134,7 +134,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .tnode .rt{position:absolute;top:-8px;left:9px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#04222a;background:var(--cyan);padding:1px 6px;border-radius:999px}
 .zoomBtns{position:absolute;right:12px;bottom:12px;z-index:5;display:flex;flex-direction:column;gap:8px}
 .zoomBtns button{width:44px;height:44px;border-radius:13px;background:var(--glass2);border:1px solid var(--line);font-size:20px;font-weight:800;backdrop-filter:blur(10px);box-shadow:var(--sh)}
-.hintpan{position:absolute;left:12px;bottom:12px;right:74px;z-index:4;pointer-events:none;font-size:11px;color:var(--mut);background:rgba(255,250,238,.8);border:1px solid var(--line);padding:5px 9px;border-radius:10px}
+.hintpan{position:absolute;left:112px;bottom:12px;right:74px;z-index:4;pointer-events:none;font-size:11px;color:var(--mut);background:rgba(255,250,238,.8);border:1px solid var(--line);padding:5px 9px;border-radius:10px}
 /* modal */
 .ov{position:fixed;inset:0;z-index:60;background:rgba(4,7,12,.72);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -244,7 +244,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.68";
+var APP_VER="v2.69";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -417,16 +417,20 @@ function layoutForest(filter,anchors){
   singleIds.sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
   if(singleIds.length)maxW=Math.max(maxW,BOXW*Math.min(4,singleIds.length));
   var totalW=Math.max(maxW,BOXW*2)+PAD*2;
-  var nodes=[],links=[],bands=[],y=PAD;
+  /* BANDH (v2.69, Kevin « on voit pas les titres ») : chaque bandeau de section a
+     désormais SA PROPRE hauteur réservée — plus jamais recouvert par une carte. */
+  var BANDH=76,nodes=[],links=[],bands=[],y=PAD;
   laid.forEach(function(t,i){
     var offx=(totalW-t.w)/2 - t.minx + BOXW/2;
+    bands.push({y:y,label:compLabel(trees[i])});
+    y+=BANDH;
     t.nodes.forEach(function(n){nodes.push({id:n.id,x:n.x+offx,y:n.y+y,root:n.root});});
     t.links.forEach(function(l){links.push(l.couple?{couple:1,x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y}:{x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y,child:l.child});});
-    bands.push({y:y-(i===0?18:COMPGAP/2),label:compLabel(trees[i])});
     y+=t.h+COMPGAP;
   });
   if(singleIds.length){
-    bands.push({y:y-(nodes.length?COMPGAP/2:18),label:nodes.length?"Autres membres · à relier":"Membres de la famille"});
+    bands.push({y:y,label:nodes.length?"Autres membres · à relier":"Membres de la famille"});
+    y+=BANDH;
     var cols=Math.max(1,Math.min(singleIds.length,Math.floor((totalW-PAD*2)/BOXW)));
     var gx0=(totalW-cols*BOXW)/2 + BOXW/2;
     singleIds.forEach(function(x,idx){var r=Math.floor(idx/cols),c=idx%cols;nodes.push({id:x,x:gx0+c*BOXW,y:y+r*ROWH,root:x===viewerId()});});
@@ -582,10 +586,11 @@ function drawStage(fit){
     return '<path d="M'+l.x1+' '+l.y1+' C '+l.x1+' '+my+' '+l.x2+' '+my+' '+l.x2+' '+l.y2+'" fill="none" stroke="'+st2+'" stroke-width="'+sw2+'" stroke-linecap="round" opacity=".95"/>';}).join("");
   var defs='<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b0842c"/><stop offset="1" stop-color="#8a6420"/></linearGradient><linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5427"/><stop offset="1" stop-color="#5a3d18"/></linearGradient></defs>';
   var svg='<svg width="'+W+'" height="'+_lay.h+'">'+defs+zebra+rules+paths+'</svg>';
-  var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+(b.y-(plan?0:30))+'px">'+esc(b.label)+'</div>';}).join("");
+  var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+b.y+'px">'+esc(b.label)+'</div>';}).join("");
   var rings=couples.map(function(c){return '<div class="couplebadge" style="left:'+c.x+'px;top:'+c.y+'px">💍</div>';}).join("");
   stage.style.width=W+"px";stage.style.height=_lay.h+"px";
-  stage.innerHTML=svg+genLabels+labels+rings+_lay.nodes.map(tnodeHTML).join("");
+  /* v2.69 : bandeaux APRÈS les cartes dans le DOM → toujours lisibles (jamais recouverts) */
+  stage.innerHTML=svg+genLabels+rings+_lay.nodes.map(tnodeHTML).join("")+labels;
   if(fit)fitStage();
 }
 function applyST(){var s=$("#stage");if(s)s.style.transform="translate("+VIEWST.tx+"px,"+VIEWST.ty+"px) scale("+VIEWST.sc+")";}
