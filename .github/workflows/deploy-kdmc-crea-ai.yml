@@ -168,3 +168,42 @@ jobs:
               print('  ❌ pas de poses — cause exacte:',str(d)[:400])
           PY
           echo "== Fin auto-test =="
+
+      - name: Auto-test STUDIO (partition + voix chantée, Workers AI gratuit)
+        if: ${{ inputs.selftest == true }}
+        run: |
+          set +e
+          BASE="${HEALTH_BASE:-https://crea-ai.kd-mc.com}"
+          echo "== STUDIO — les 2 briques du morceau =="
+
+          echo "----- /compose (l'IA écrit la partition) -----"
+          curl -sS -m 90 -X POST "$BASE/compose" -H 'content-type: application/json' \
+            -d '{"style":"pop","mood":"une soiree entre amis"}' -o /tmp/sc.json \
+            -w "HTTP %{http_code} | size=%{size_download}\n"
+          python3 - <<'PY'
+          import json
+          try: d=json.load(open('/tmp/sc.json'))
+          except Exception as e: print('  ❌ réponse illisible:',e); raise SystemExit
+          s=d.get('score') or {}
+          need=['bpm','progression','melody','drums']
+          missing=[k for k in need if not s.get(k)]
+          if s and not missing:
+              print('  ✅ partition OK — %s bpm, %d accords, %d notes de mélodie (source: %s)'
+                    %(s.get('bpm'),len(s.get('progression') or []),len(s.get('melody') or []),d.get('provider','?')))
+          else:
+              print('  ❌ partition incomplète, manque %s — brut: %s'%(missing,str(d)[:300]))
+          PY
+
+          echo "----- /voice (Workers AI chante — LE SECOURS GRATUIT) -----"
+          curl -sS -m 120 -X POST "$BASE/voice" -H 'content-type: application/json' \
+            -d '{"text":"une soiree entre amis, on chante tous ensemble","lang":"fr"}' \
+            -o /tmp/v.bin -D /tmp/v.hdr \
+            -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
+          case "$(file -b --mime-type /tmp/v.bin 2>/dev/null)" in
+            audio/*|application/octet-stream)
+              SZ=$(stat -c%s /tmp/v.bin)
+              if [ "$SZ" -gt 2000 ]; then echo "  ✅ AUDIO reçu ($SZ octets) → Workers AI répond, la voix marche";
+              else echo "  ❌ audio trop petit ($SZ octets)"; head -c 300 /tmp/v.bin; echo; fi;;
+            *) echo "  ❌ pas de l'audio — cause exacte :"; head -c 400 /tmp/v.bin | tr -d '\0'; echo;;
+          esac
+          echo "== Fin auto-test STUDIO =="
