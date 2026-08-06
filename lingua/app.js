@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.27.3";
+var APP_VER="v2.28.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -672,7 +672,7 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à m
   var words=String(text||"").split(/\s+/).filter(Boolean);
   /* La durée estimée suit la VITESSE de la voix choisie (fillette ×1.24 = parle plus vite)
      → bouche + sous-titres + minuterie restent SYNCHRONISÉS avec la voix, plus de décalage */
-  var _r=(beeVoiceCfg().rate||1);
+  var _c=beeVoiceCfg(), _r=(_c.rate||1)*(_c.gen||1);
   var dur=Math.min(12000, Math.round((900+text.length*68)/_r));
   DISC.talking=true; if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
   /* Chorégraphie auto : compliment → elle danse ou saute de joie ; sinon en mode vidéo elle salue en parlant */
@@ -688,7 +688,7 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à m
   var vcfg=beeVoiceCfg(), vid=vcfg.tts; /* Bee : la voix CHOISIE par l'utilisateur (fillette par défaut) */
   var myReq=++_ttsReq; /* anti-décalage : un ancien son ne peut plus partir en retard */
   if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
-    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
     if(vcfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vcfg.rate; }catch(_){} }
     a.onended=function(){ if(DISC.timer)clearTimeout(DISC.timer); stop(); };
     a.onerror=function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,true,vcfg); };
@@ -803,8 +803,8 @@ var BEE_VOICE="bee"; /* marqueur : la voix de Bee est CHOISIE par l'utilisateur 
    différentes ») : base cloud + vitesse de lecture SANS préservation du pitch → plus rapide
    = plus aigu = voix de petite fille. rate=vitesse audio cloud ; wsPitch/wsRate = repli local. */
 var BEE_VOICES=[
-  {id:"fillette",  nom:"🎀 Petite Bee",        desc:"la petite abeille au miel — voix de fillette aiguë et adorable", phrase:"Bzzz ! Moi c'est Bee, ta petite abeille au miel !",          tts:"nova",    rate:1.24, wsPitch:1.7, wsRate:1.05},
-  {id:"minibee",   nom:"🐝 Bee rigolote",      desc:"l'abeille espiègle de la ruche, encore plus aiguë",              phrase:"Bzzz bzzz ! On fait la course jusqu'à la ruche ?",           tts:"nova",    rate:1.45, wsPitch:2,   wsRate:1.15},
+  {id:"fillette",  nom:"🎀 Petite Bee",        desc:"la petite abeille au miel — voix de fillette aiguë et adorable", phrase:"Bzzz ! Moi c'est Bee, ta petite abeille au miel !",          tts:"nova",    rate:1.24, gen:0.81, wsPitch:1.7, wsRate:0.95},
+  {id:"minibee",   nom:"🐝 Bee rigolote",      desc:"l'abeille espiègle de la ruche, encore plus aiguë",              phrase:"Bzzz bzzz ! On fait la course jusqu'à la ruche ?",           tts:"nova",    rate:1.45, gen:0.68, wsPitch:2,   wsRate:0.95},
   {id:"douce",     nom:"🌸 Bee des fleurs",    desc:"douce et tendre comme un champ de fleurs",                       phrase:"Bonjour… viens, on va butiner de nouveaux mots ensemble.",   tts:"shimmer", rate:1,    wsPitch:1.15,wsRate:.95},
   {id:"petillante",nom:"☀️ Bee du soleil",     desc:"pétillante comme un matin d'été au rucher",                      phrase:"Bzzz ! Quelle belle journée pour apprendre, on y va ?",      tts:"nova",    rate:1,    wsPitch:1.2, wsRate:1},
   {id:"conteuse",  nom:"🍯 Mamie Bee",         desc:"la conteuse de la ruche, comme une histoire au coin du miel",    phrase:"Approche… je vais te raconter les secrets de la ruche.",     tts:"fable",   rate:.96,  wsPitch:1.1, wsRate:.9}
@@ -818,7 +818,7 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){}
   if(_isCloudVoice(vid)){ try{
     if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
-    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
     if(cfg&&cfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=cfg.rate; }catch(_){} }
     a.onerror=function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); };
     var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); }); return; }catch(e){} }
