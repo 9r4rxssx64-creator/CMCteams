@@ -1,5 +1,21 @@
 # 🛟 Secours de déploiement — si GitHub retombe en panne
 
+> ## ✅ BRANCHÉ le 7 août 2026 à 01:11 — `kdmc-router`
+>
+> Kevin a connecté Cloudflare Workers Builds. Vérifié sur sa capture d'écran :
+> dépôt `9r4rxssx64-creator/CMCteams` · Root directory `/services/kdmc-router` ·
+> Deploy command `npx wrangler deploy` · Build command *None* · Production branch `main`.
+>
+> **Reste à faire (sans urgence)** : passer **« Builds for non-production branches »** sur
+> **Disabled**. Sinon chaque branche `claude/*` poussée déclenche une construction →
+> consomme le quota gratuit (le parachute serait mort le jour où il sert) et peut envoyer
+> des e-mails d'échec (règle anti-spam Kevin).
+>
+> **Ne pas toucher aux « Build watch paths »** (laisser `*`) tant qu'on n'a pas confirmé si
+> le chemin se compte depuis la racine du dépôt ou depuis le Root directory : la doc
+> Cloudflare renvoie **403** à l'agent (mesuré 2026-08-07). Une mauvaise valeur ne rougit
+> pas — elle désactive le parachute **en silence**. Vérifier avant de proposer une valeur.
+
 > **Pourquoi** : le 6 août 2026, GitHub Actions est tombé **6 heures** (0 travail en cours,
 > 390 en attente). Résultat : plus aucun déploiement ne partait. Tes sites tournaient
 > toujours, mais on ne pouvait **rien mettre à jour**.
@@ -30,6 +46,14 @@ Puis, sur cette page :
 5. **Save**.
 
 C'est tout. Aucune clé à saisir : les secrets déjà posés sur le Worker restent en place.
+
+**Pourquoi les clés ne risquent rien (vérifié, pas supposé)** : le déploiement GitHub fait deux
+choses — publier le code, **et** reposer 10 secrets sur le routeur (`KDMC_ADMIN_PIN_SHA256`,
+`KDMC_SSO_SECRET`, Firebase ×3, `KDMC_PUSH_TOKEN`, `RAILWAY_TOKEN`, OpenAI, Groq, Mistral,
+Gemini — voir `.github/workflows/deploy-kdmc-router.yml`). Cloudflare, lui, publie **seulement
+le code**. Ce n'est pas un problème : sur un Worker, les secrets **survivent aux publications**,
+`wrangler deploy` ne les efface pas. Le parachute publie donc un routeur complet et fonctionnel.
+**Limite honnête** : si un secret venait à manquer, seul GitHub sait le reposer.
 
 ---
 
