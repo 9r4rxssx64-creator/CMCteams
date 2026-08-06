@@ -1,0 +1,83 @@
+/**
+ * Boîte à outils agents — les 6 dépôts du tableau « Une Notion = Un Projet » (Kevin 2026-08-06).
+ *
+ * Ce qu'on verrouille ici (parité Apex ↔ Claude Code) :
+ *  - les 6 sont bien dans le catalogue Apex (sinon Apex ne les « connaît » pas) ;
+ *  - la source déclarée dans Apex est la MÊME URL que celle vendorisée côté Claude Code
+ *    (tools/agent-toolkit/sources.json) → impossible de faire diverger les deux installs ;
+ *  - honnêteté PWA : rtk est un binaire desktop, il ne doit jamais être annoncé « compatible
+ *    navigateur » (règle : ne pas survendre) ;
+ *  - aucun doublon d'identifiant introduit dans le catalogue.
+ */
+import { describe, it, expect } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import { APEX_PLUGINS_CATALOG } from '../../data/apex-plugins-catalog.js';
+
+/* Le fichier vit à la racine du dépôt ; vitest tourne depuis apex-ai/v13 (mais pas toujours
+   selon d'où on lance) → on remonte jusqu'à le trouver, sans supposer le cwd. */
+function findSources(): string {
+  let dir = process.cwd();
+  for (let i = 0; i < 6; i++) {
+    const p = resolve(dir, 'tools/agent-toolkit/sources.json');
+    if (existsSync(p)) return p;
+    dir = resolve(dir, '..');
+  }
+  throw new Error('tools/agent-toolkit/sources.json introuvable depuis ' + process.cwd());
+}
+
+const SOURCES = JSON.parse(readFileSync(findSources(), 'utf8')) as {
+  sources: Array<{ id: string; repo: string; notion: string }>;
+};
+
+/* id du catalogue Apex ↔ id de la vendorisation Claude Code */
+const PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ['anthropic-skills', 'skills'],
+  ['gbrain', 'gbrain'],
+  ['awesome-design-skills', 'awesome-design-skills'],
+  ['rtk-token-saver', 'rtk'],
+  ['meridian-company-os', 'meridian-company-os'],
+  ['free-llm-api-resources', 'free-llm-api-resources'],
+];
+
+describe('Boîte à outils agents — parité Apex / Claude Code', () => {
+  it('les 6 dépôts du tableau sont dans le catalogue Apex', () => {
+    const ids = APEX_PLUGINS_CATALOG.map((p) => p.id);
+    for (const [apexId] of PAIRS) expect(ids, 'manque ' + apexId).toContain(apexId);
+  });
+
+  it('chaque entrée Apex pointe la MÊME URL que la source vendorisée', () => {
+    for (const [apexId, srcId] of PAIRS) {
+      const plugin = APEX_PLUGINS_CATALOG.find((p) => p.id === apexId)!;
+      const src = SOURCES.sources.find((s) => s.id === srcId)!;
+      expect(src, 'source ' + srcId + ' absente de sources.json').toBeTruthy();
+      expect(plugin.url).toBe(src.repo);
+    }
+  });
+
+  it('toutes portent le tag agent-toolkit (filtrable dans la vue Plugins)', () => {
+    for (const [apexId] of PAIRS) {
+      const plugin = APEX_PLUGINS_CATALOG.find((p) => p.id === apexId)!;
+      expect(plugin.tags ?? [], apexId).toContain('agent-toolkit');
+    }
+  });
+
+  it('honnêteté : rtk (binaire desktop) n\'est PAS annoncé compatible navigateur', () => {
+    const rtk = APEX_PLUGINS_CATALOG.find((p) => p.id === 'rtk-token-saver')!;
+    expect(rtk.pwa_compatible).toBe(false);
+    expect(rtk.status).toBe('unsupported-pwa');
+  });
+
+  it('aucun identifiant en double dans le catalogue', () => {
+    const ids = APEX_PLUGINS_CATALOG.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('chaque entrée a une description utile (pas un titre recopié)', () => {
+    for (const [apexId] of PAIRS) {
+      const plugin = APEX_PLUGINS_CATALOG.find((p) => p.id === apexId)!;
+      expect(plugin.description.length, apexId).toBeGreaterThan(60);
+    }
+  });
+});
