@@ -237,8 +237,13 @@ async function handleLingua(request, url, env) {
       const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
       let voice = (url.searchParams.get('v') || 'nova').toLowerCase();
       if (VOICES.indexOf(voice) < 0) voice = 'nova';
+      // Vitesse de GÉNÉRATION (0.25–2) : permet la voix « fillette » — générée lente puis
+      // accélérée côté client (pitch monte, tempo net redevient normal). Clampée + cachée à part.
+      let speed = parseFloat(url.searchParams.get('s') || '1');
+      if (!(speed >= 0.25 && speed <= 2)) speed = 1;
+      speed = Math.round(speed * 100) / 100;
       if (!text.trim()) return JL({ ok: false, reason: 'no_text' }, 400);
-      const hbuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(voice + ':' + text));
+      const hbuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(voice + ':' + speed + ':' + text));
       const hash = Array.prototype.map.call(new Uint8Array(hbuf), (b) => ('0' + b.toString(16)).slice(-2)).join('');
       const ckey = 'ltts:' + hash;
       const audioHdr = Object.assign({ 'content-type': 'audio/mpeg', 'cache-control': 'public, max-age=31536000' }, cors);
@@ -248,7 +253,7 @@ async function handleLingua(request, url, env) {
       const rr = await fetch('https://api.openai.com/v1/audio/speech', {
         method: 'POST',
         headers: { 'authorization': 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
-        body: JSON.stringify({ model: 'tts-1', voice: voice, input: text, response_format: 'mp3' }),
+        body: JSON.stringify({ model: 'tts-1', voice: voice, input: text, response_format: 'mp3', speed: speed }),
       });
       if (!rr.ok) return JL({ ok: false, reason: 'tts_err', status: rr.status }); // fail-open (200)
       const buf = await rr.arrayBuffer();
