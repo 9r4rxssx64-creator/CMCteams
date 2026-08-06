@@ -1,0 +1,41 @@
+name: Arbre — retrouver un décès précis (INSEE + fichier complet)
+# Kevin 2026-08-06 : retrouver l'acte de décès d'une personne précise (ex: Gérard).
+# Résultats affichés dans le log du job (aucun commit). Outil réutilisable.
+on:
+  workflow_dispatch:
+    inputs:
+      nom:
+        description: "Nom de famille"
+        required: true
+        default: "DESARZENS"
+      prenom:
+        description: "Prénom"
+        required: true
+        default: "Gérard"
+      ymin:
+        description: "Décès à partir de l'année"
+        required: false
+        default: "2024"
+      ymax:
+        description: "Décès jusqu'à l'année"
+        required: false
+        default: "2026"
+permissions:
+  contents: read
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python3 -m pip install --quiet duckdb
+      - name: Recherche
+        env:
+          NOM: ${{ inputs.nom }}
+          PRENOM: ${{ inputs.prenom }}
+          YMIN: ${{ inputs.ymin }}
+          YMAX: ${{ inputs.ymax }}
+        run: python3 tools/arbre/find-deces.py
