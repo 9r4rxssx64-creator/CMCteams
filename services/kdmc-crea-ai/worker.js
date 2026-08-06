@@ -212,6 +212,26 @@ async function cfImage(env, prompt) {
   }
   throw new Error('cf_no_image');
 }
+const CF_TXT = '@cf/meta/llama-3.1-8b-instruct';
+/* Écriture de texte par Cloudflare Workers AI — GRATUIT, aucune clé.
+   Sert de secours quand Gemini tombe : sans ça, une panne Gemini = plus de
+   paroles NI de partition, donc plus de morceau du tout. */
+async function cfText(env, prompt, wantJson) {
+  if (!env.AI) throw new Error('cf_no_binding');
+  const r = await env.AI.run(CF_TXT, {
+    messages: [
+      { role: 'system', content: wantJson
+          ? 'Tu reponds UNIQUEMENT par un JSON valide, sans texte autour, sans balises markdown.'
+          : 'Tu ecris en francais, en respectant EXACTEMENT le format demande, sans explications.' },
+      { role: 'user', content: String(prompt).slice(0, 4000) },
+    ],
+    max_tokens: wantJson ? 900 : 700,
+  });
+  const t = String((r && (r.response || r.result || r.text)) || '').trim();
+  if (!t) throw new Error('cf_no_text');
+  return t;
+}
+
 async function cfSpeech(env, text, lang) {
   if (!env.AI) throw new Error('cf_no_binding');
   const r = await env.AI.run(CF_TTS, { prompt: String(text).slice(0, 1800), lang: lang || 'fr' });
@@ -383,9 +403,10 @@ export default {
     if (url.pathname === '/health') {
       return json({
         ok: true,
-        configured: !!(freeAI || token),
+        configured: !!(freeAI || token || env.AI),
         free: freeAI,                    // IA gratuite (Gemini) disponible
         together: !!env.TOGETHER_API_KEY, // repli gratuit texte→image
+        cloudflare: !!env.AI,            // 2e IA gratuite (image + voix + texte)
         paid: !!token                    // Replicate (secours payant)
       }, h);
     }
@@ -413,7 +434,9 @@ export default {
     }
 
     if (req.method !== 'POST') return json({ error: 'post_only' }, h, 405);
-    if (!freeAI && !token) return json({ error: 'not_configured' }, h, 503);
+    /* Workers AI compte comme moteur : sans ce test, une clé Gemini absente
+       fermait TOUTE l'app alors que la 2e IA gratuite est disponible. */
+    if (!freeAI && !token && !env.AI) return json({ error: 'not_configured' }, h, 503);
 
     let body = null;
     try { body = await req.json(); } catch (_) { return json({ error: 'bad_json' }, h, 400); }
@@ -493,7 +516,6 @@ export default {
     // --- 🎼 PARTITION : l'IA compose la structure (accords, mélodie, tempo) que
     //     le téléphone joue en multi-pistes → « studio » complet et gratuit. ---
     if (url.pathname === '/compose') {
-      if (!freeAI) return json({ error: 'gemini_no_key' }, h, 503);
       const style = (body && typeof body.style === 'string') ? body.style.slice(0, 40) : 'pop';
       const mood = (body && typeof body.mood === 'string') ? body.mood.slice(0, 80) : '';
       const key = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
@@ -505,24 +527,39 @@ export default {
         + '"drums":{"kick":[<16 0/1>],"snare":[<16 0/1>],"hat":[<16 0/1>]},'
         + '"bassPattern":[<8 à 16 entiers 0..7>]}\n'
         + 'Cohérent musicalement, refrain accrocheur, rien d\'autre que le JSON.';
+      const parseScore = (txt) => {
+        let sc = null;
+        const m = /\{[\s\S]*\}/.exec(String(txt || ''));   /* tolère du bavardage autour */
+        try { sc = JSON.parse((m ? m[0] : String(txt)).replace(/^```json\s*|```$/g, '')); } catch (_) { }
+        return (sc && Array.isArray(sc.melody)) ? sc : null;
+      };
+      const errs = [];
+      if (key) {
+        try {
+          const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
+            { method: 'POST', headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }], generationConfig: { responseMimeType: 'application/json' } }) });
+          const j = await r.json();
+          if (!r.ok) errs.push('gemini_' + r.status);
+          else {
+            const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+            const score = parseScore(parts.map((p) => p.text || '').join('').trim());
+            if (score) return json({ score, style, provider: 'gemini' }, h);
+            errs.push('gemini_bad_score');
+          }
+        } catch (e) { errs.push('gemini_' + String((e && e.message) || e).slice(0, 80)); }
+      } else errs.push('gemini_no_key');
+      /* SECOURS GRATUIT : Workers AI écrit la partition à la place */
       try {
-        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
-          { method: 'POST', headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }], generationConfig: { responseMimeType: 'application/json' } }) });
-        const j = await r.json();
-        if (!r.ok) return json({ error: 'gemini_' + r.status }, h, 502);
-        const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
-        const txt = parts.map((p) => p.text || '').join('').trim();
-        let score = null;
-        try { score = JSON.parse(txt.replace(/^```json\s*|```$/g, '')); } catch (_) { }
-        if (!score || !Array.isArray(score.melody)) return json({ error: 'bad_score' }, h, 502);
-        return json({ score, style }, h);
-      } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
+        const score = parseScore(await cfText(env, ask, true));
+        if (score) return json({ score, style, provider: 'cloudflare', fallback: errs[0] || '' }, h);
+        errs.push('cf_bad_score');
+      } catch (e) { errs.push('cf_' + String((e && e.message) || e).slice(0, 80)); }
+      return json({ error: errs.join(' | ') }, h, 502);
     }
 
     // --- 🎵 PAROLES DE CHANSON (texte IA gratuit) ---
     if (url.pathname === '/lyrics') {
-      if (!freeAI) return json({ error: 'gemini_no_key' }, h, 503);
       const theme = (body && typeof body.theme === 'string') ? body.theme.slice(0, 300) : '';
       const style = (body && typeof body.style === 'string') ? body.style.slice(0, 60) : 'pop';
       if (!theme) return json({ error: 'no_theme' }, h, 400);
@@ -538,17 +575,32 @@ export default {
              + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes>\nCOUPLET 2:\n<4 lignes>\nPONT:\n<2 lignes>\nREFRAIN FINAL:\n<4 lignes>\nRimes riches, images fortes, vocabulaire varié. Pas d\'explications.')
           : ('Écris une chanson originale en FRANÇAIS, style ' + style + ', sur : ' + theme
              + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes accrocheuses et répétables>\nCOUPLET 2:\n<4 lignes>\nRefrain court, rimes simples, facile à chanter. Pas d\'explications.'));
-      try {
-        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
-          { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }] }) });
-        const j = await r.json();
-        if (!r.ok) return json({ error: 'gemini_' + r.status + '_' + (((j && j.error && j.error.message) || '')).slice(0, 140) }, h, 502);
-        const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
-        const text = parts.map((p) => p.text || '').join('').trim();
-        if (!text) return json({ error: 'no_lyrics' }, h, 502);
+      const outLyrics = (text, provider, why) => {
         const t = /TITRE\s*:\s*(.+)/i.exec(text);
-        return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: text, style, mode }, h);
-      } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
+        return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: text, style, mode, provider, fallback: why || '' }, h);
+      };
+      const errs = [];
+      if (key) {
+        try {
+          const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(key),
+            { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: ask }] }] }) });
+          const j = await r.json();
+          if (!r.ok) errs.push('gemini_' + r.status + '_' + (((j && j.error && j.error.message) || '')).slice(0, 120));
+          else {
+            const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+            const text = parts.map((p) => p.text || '').join('').trim();
+            if (text) return outLyrics(text, 'gemini');
+            errs.push('gemini_no_lyrics');
+          }
+        } catch (e) { errs.push('gemini_' + String((e && e.message) || e).slice(0, 80)); }
+      } else errs.push('gemini_no_key');
+      /* SECOURS GRATUIT : Workers AI écrit les paroles à la place */
+      try {
+        const text = await cfText(env, ask, false);
+        if (text) return outLyrics(text, 'cloudflare', errs[0] || '');
+        errs.push('cf_no_lyrics');
+      } catch (e) { errs.push('cf_' + String((e && e.message) || e).slice(0, 80)); }
+      return json({ error: errs.join(' | ') }, h, 502);
     }
 
     // --- POSES (danse OU chant) : photo → vidéo, GRATUIT via Gemini ---
