@@ -45,6 +45,16 @@ jobs:
           if [ -n "${{ github.event.inputs.only }}" ]; then ARGS="--only ${{ github.event.inputs.only }}"; fi
           node tools/agent-toolkit/sync.mjs $ARGS | tee /tmp/atk.log
 
+      - name: Prévenir FORT si une source n'a pas pu être récupérée
+        run: |
+          node -e "
+            const m = require('./vendor/agent-toolkit/MANIFEST.json');
+            const ko = m.sources.filter(s => !s.ok);
+            ko.forEach(s => console.log('::warning title=Source non récupérée::' + s.id + ' (' + s.repo + ') — ' + s.error));
+            console.log(ko.length ? ko.length + ' source(s) en échec — dépôt renommé/supprimé ? à vérifier'
+                                  : 'Les ' + m.sources.length + ' sources ont été récupérées.');
+          "
+
       - name: Refuser tout binaire qui se serait glissé dedans
         run: |
           set -e

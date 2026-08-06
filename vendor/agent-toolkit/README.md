@@ -20,7 +20,7 @@ au prochain passage.
 | `awesome-design-skills/` | Design | https://github.com/bergside/awesome-design-skills |
 | `rtk/` | Économie de jetons | https://github.com/rtk-ai/rtk |
 | `meridian-company-os/` | Entreprise | https://github.com/codejunkie99/meridian-company-os |
-| `free-llm-api-resources/` | LLM gratuit | https://github.com/cheahjs/free-llm-api-resources |
+| `free-llm-api-resources/` | LLM gratuit | https://github.com/jeis4wpi/free-llm-api-resources |
 
 Mode d'emploi côté agent : [`.claude/skills/agent-toolkit/SKILL.md`](../../.claude/skills/agent-toolkit/SKILL.md).
 Côté Apex : catalogue `apex-ai/v13/data/apex-plugins-catalog.ts` (tag `agent-toolkit`).

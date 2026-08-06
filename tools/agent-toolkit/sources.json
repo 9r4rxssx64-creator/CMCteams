@@ -51,8 +51,9 @@
     {
       "id": "free-llm-api-resources",
       "notion": "LLM gratuit",
-      "repo": "https://github.com/cheahjs/free-llm-api-resources",
-      "licence": "voir LICENSE vendorisée",
+      "repo": "https://github.com/jeis4wpi/free-llm-api-resources",
+      "_note_url": "L'original cheahjs/free-llm-api-resources renvoie 404 depuis le 2026-08-06 (dépôt supprimé/renommé) — vérifié. On pointe le miroir vivant, même nom, même contenu.",
+      "licence": "voir le dépôt (pas de LICENSE à la racine)",
       "usage": "Liste tenue à jour des IA utilisables gratuitement par API (quotas, modèles, limites). Sert de filet de secours quand un forfait est épuisé.",
       "include": ["README.md", "LICENSE*", "*.md"],
       "exclude": ["node_modules/**", "src/**", ".github/**"]

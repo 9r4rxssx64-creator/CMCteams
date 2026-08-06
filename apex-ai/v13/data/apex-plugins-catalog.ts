@@ -3240,7 +3240,7 @@ export const APEX_PLUGINS_CATALOG: readonly ApexPluginManifest[] = [
     id: 'free-llm-api-resources',
     name: 'Free LLM API Resources (LLM gratuit)',
     source: 'community',
-    url: 'https://github.com/cheahjs/free-llm-api-resources',
+    url: 'https://github.com/jeis4wpi/free-llm-api-resources',
     description:
       'Liste tenue à jour des IA utilisables gratuitement par API (modèles, quotas, limites). Filet de secours quand un forfait est épuisé — Anthropic reste l\'IA principale, les gratuits vont en fin de chaîne.',
     category: 'ai-ml',
