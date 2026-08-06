@@ -12,6 +12,7 @@
 | 5 | Récupérer le 6ᵉ dépôt de la boîte à outils (miroir corrigé) | moi | ⏳ relancé |
 
 ### Déjà fait cette session (rien à faire)
+- 🤖 **Pareil pour Apex** (v13.4.362) : il connaît les 6 dépôts, il a ses 2 fiches à lui, et un test empêche qu'on lui oublie quelque chose à l'avenir. **Défaut réel trouvé au passage** : Apex ne lisait QUE mes fiches « à plat » — tous mes dossiers de compétences lui étaient invisibles. C'est écrit, testé, et le plafond corrigé (il perdait 2 compétences à chaque ajout).
 - 🧰 **Boîte à outils agents** : les 6 dépôts de ton tableau installés pour moi **et** pour Apex, contenu récupéré, mis à jour tout seul le 1ᵉʳ de chaque mois.
 - 🔐 **Un compte par personne** réparé (deux défauts réels trouvés en lisant le journal live).
 - 🧹 `deces.kd-mc.com` retiré → suite de tests du domaine **34/34** (le dernier rouge est parti).
