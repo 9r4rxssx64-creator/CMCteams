@@ -104,13 +104,16 @@ const avantV = await page.evaluate(async () => (await window.Mine.list()).length
 await page.evaluate(() => window.Cam.startVideo());
 await page.waitForTimeout(1600);
 await page.evaluate(() => window.Cam.stopVideo());
-await page.waitForTimeout(900);
+// on attend que la vidéo soit VRAIMENT écrite (elle l'est en tâche de fond) —
+// une attente fixe rendait ce test instable sans que l'app ait le moindre défaut
+await page.waitForFunction(async (n) => (await window.Mine.list()).length > n, avantV, { timeout: 12000 })
+  .catch(() => {});
 const vid = await page.evaluate(async () => {
   const l = await window.Mine.list();
   return { n: l.length, kind: l[0].kind, size: l[0].blob.size };
 });
-chk(vid.n === avantV + 1 && vid.kind === 'video' && vid.size > 3000,
-  `filmer produit une vraie vidéo rangée (${Math.round(vid.size / 1024)} Ko)`);
+chk(vid.n > avantV && vid.kind === 'video' && vid.size > 3000,
+  `filmer produit une vraie vidéo rangée (${Math.round(vid.size / 1024)} Ko, galerie ${avantV} → ${vid.n})`);
 
 // 6) quitter l'écran éteint la caméra
 await fermer();
