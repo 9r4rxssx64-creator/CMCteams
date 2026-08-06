@@ -922,7 +922,12 @@ class Memory {
     for (const folder of FOLDERS) {
       const entries = await listFolder(folder);
       const allowedExt = folder === 'hooks' ? /\.(?:sh|ts|js)$/i : /\.md$/i;
-      const filtered = entries.filter((e) => allowedExt.test(e.name)).slice(0, 30); /* cap 30 par folder */
+      /* Cap par dossier. `skills` monte à 45 : le tri est ALPHABÉTIQUE, donc chaque nouveau
+       * `apex-*.md` ajouté en tête pousse silencieusement un skill hors du cache (mesuré en
+       * ajoutant apex-agent-toolkit + apex-domain-journal → 2 skills perdus). Coût réel
+       * négligeable (markdown de quelques Ko), et l'injection reste bornée côté prompt. */
+      const cap = folder === 'skills' ? 45 : 30;
+      const filtered = entries.filter((e) => allowedExt.test(e.name)).slice(0, cap);
       for (const ent of filtered) {
         if (!ent.name || ent.name.startsWith('_')) continue; /* skip _template */
         const content = await fetchRaw(`${folder}/${ent.name}`);

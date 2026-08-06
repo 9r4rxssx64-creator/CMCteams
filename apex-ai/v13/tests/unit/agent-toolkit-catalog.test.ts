@@ -17,15 +17,15 @@ import { APEX_PLUGINS_CATALOG } from '../../data/apex-plugins-catalog.js';
 
 /* Le fichier vit à la racine du dépôt ; vitest tourne depuis apex-ai/v13 (mais pas toujours
    selon d'où on lance) → on remonte jusqu'à le trouver, sans supposer le cwd. */
-function findSources(): string {
+function findRepoRoot(): string {
   let dir = process.cwd();
   for (let i = 0; i < 6; i++) {
-    const p = resolve(dir, 'tools/agent-toolkit/sources.json');
-    if (existsSync(p)) return p;
+    if (existsSync(resolve(dir, 'tools/agent-toolkit/sources.json'))) return dir;
     dir = resolve(dir, '..');
   }
-  throw new Error('tools/agent-toolkit/sources.json introuvable depuis ' + process.cwd());
+  throw new Error('racine du dépôt introuvable depuis ' + process.cwd());
 }
+const findSources = (): string => resolve(findRepoRoot(), 'tools/agent-toolkit/sources.json');
 
 const SOURCES = JSON.parse(readFileSync(findSources(), 'utf8')) as {
   sources: Array<{ id: string; repo: string; notion: string }>;
@@ -72,6 +72,35 @@ describe('Boîte à outils agents — parité Apex / Claude Code', () => {
   it('aucun identifiant en double dans le catalogue', () => {
     const ids = APEX_PLUGINS_CATALOG.map((p) => p.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  /* Apex ne lit QUE les fichiers .md à plat de .claude/skills/ (syncMeta filtre type==='file').
+     Mes skills à moi sont des DOSSIERS → invisibles pour lui. D'où la convention du dépôt :
+     un skill dossier pour Claude Code + un apex-*.md concis pour Apex. Ce test empêche qu'on
+     ajoute un skill pour moi en oubliant Apex (règle PARITÉ APEX). */
+  it('parité skills : chaque skill dossier de cette session a son pendant apex-*.md', () => {
+    const root = findRepoRoot();
+    for (const [dir, flat] of [
+      ['agent-toolkit', 'apex-agent-toolkit.md'],
+      ['domain-journal', 'apex-domain-journal.md'],
+    ] as const) {
+      expect(existsSync(resolve(root, '.claude/skills', dir, 'SKILL.md')), dir).toBe(true);
+      expect(existsSync(resolve(root, '.claude/skills', flat)), flat).toBe(true);
+    }
+  });
+
+  it('le skill Apex cite les MÊMES 6 dépôts que la vendorisation', () => {
+    const txt = readFileSync(resolve(findRepoRoot(), '.claude/skills/apex-agent-toolkit.md'), 'utf8');
+    for (const s of SOURCES.sources) {
+      const nom = s.repo.replace('https://github.com/', '');
+      expect(txt, 'apex-agent-toolkit.md ne cite pas ' + nom).toContain(nom);
+    }
+  });
+
+  it('le skill Apex rappelle qu\'Anthropic reste l\'IA principale (leçons #124/#129)', () => {
+    const txt = readFileSync(resolve(findRepoRoot(), '.claude/skills/apex-agent-toolkit.md'), 'utf8');
+    expect(txt).toMatch(/Anthropic reste l'IA principale/i);
+    expect(txt).toMatch(/fin\*{0,2} de `DEFAULT_CHAIN`|en \*\*fin\*\* de/i);
   });
 
   it('chaque entrée a une description utile (pas un titre recopié)', () => {

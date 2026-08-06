@@ -4,6 +4,18 @@
 > Source de vérité unique pour tous les projets gérés par Apex AI.
 > Apex IA peut consulter ce fichier en autonomie via `cmcRead("APEX_PROJECTS.md")`.
 
+## 🎯 STATUS MAJ 2026-08-06 — Apex v13.4.362 (boîte à outils agents + journal du domaine)
+
+- **Catalogue plugins enrichi** : 6 entrées taguées `agent-toolkit` (skills Anthropic, gbrain,
+  awesome-design-skills, rtk, meridian-company-os, free-llm-api-resources). Contenu texte
+  vendorisé dans `vendor/agent-toolkit/` (SHA + licence dans `MANIFEST.json`), rafraîchi tout seul
+  le 1er de chaque mois par `agent-toolkit-sync.yml`.
+- **2 skills Apex** : `apex-agent-toolkit.md`, `apex-domain-journal.md` (les skills en DOSSIER sont
+  invisibles pour Apex — cf. APEX_HANDOFF.md).
+- **Cap skills du meta-cache 30 → 45** (sinon chaque nouveau `apex-*.md` en éjectait 2, mesuré).
+- **Tests** : `agent-toolkit-catalog.test.ts` 9/9 (dont parité skills + « Anthropic reste principale »),
+  marketplace 61/61, rules-injection 22/22, tsc 0.
+
 ## 🎯 STATUS MAJ 2026-05-14 — Apex v13.4.42 (Skills 2026 + Runtime Tester + Admin integration + System prompt enrichi)
 
 **Déployé sur main** via auto-merge bot. URL prod : `https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/`
