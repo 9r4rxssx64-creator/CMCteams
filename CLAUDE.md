@@ -9627,7 +9627,7 @@ S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses to
 | Design | `bergside/awesome-design-skills` | avant toute maquette → choisir une direction **nommée** (anti-design-d'IA-générique) |
 | Économie de jetons | `rtk-ai/rtk` | commande bavarde. Gain réel mesuré ~3,7 %, pas 60-90 % → ne pas survendre |
 | Entreprise | `codejunkie99/meridian-company-os` | piloter humains + agents dans une console (inspiration admin kd-mc.com) |
-| LLM gratuit | `cheahjs/free-llm-api-resources` | forfait épuisé → repli **en fin** de chaîne (Anthropic reste l'IA principale) |
+| LLM gratuit | `free-llm-api-resources` | forfait épuisé → repli **en fin** de chaîne (Anthropic reste l'IA principale) |
 
 - Contenu vendorisé : `vendor/agent-toolkit/<id>/` + `MANIFEST.json` (SHA + licence). Mise à jour : workflow `agent-toolkit-sync.yml` (bouton + cron mensuel).
 - Mode d'emploi détaillé : `.claude/skills/agent-toolkit/SKILL.md`. Côté Apex : catalogue plugins, tag `agent-toolkit`.

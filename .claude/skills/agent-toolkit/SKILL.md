@@ -27,7 +27,7 @@ la licence et la date. Mise à jour : workflow **`agent-toolkit-sync.yml`** (bou
 | 🎨 Design | [bergside/awesome-design-skills](https://github.com/bergside/awesome-design-skills) | Kevin demande une direction visuelle. 67 systèmes prêts (`SKILL.md` pour moi + `DESIGN.md` pour l'humain) + `index.json`. **Anti-« design d'IA générique »** : je pioche une direction précise au lieu du crème/serif/terracotta par défaut. |
 | 💰 Économie de jetons | [rtk-ai/rtk](https://github.com/rtk-ai/rtk) | une commande crache 500 lignes inutiles dans mon contexte. `rtk <cmd>` compresse la sortie. Voir « honnêteté » plus bas. |
 | 🏢 Entreprise | [codejunkie99/meridian-company-os](https://github.com/codejunkie99/meridian-company-os) | on parle de piloter **humains + agents** dans une même console (cockpit, kanban, objectifs, gouvernance, audit). Inspiration directe pour l'admin de kd-mc.com. |
-| 🆓 LLM gratuit | [cheahjs/free-llm-api-resources](https://github.com/cheahjs/free-llm-api-resources) | un forfait IA est épuisé, ou je cherche un repli gratuit. Liste tenue à jour : modèles, quotas, limites. |
+| 🆓 LLM gratuit | [free-llm-api-resources](https://github.com/jeis4wpi/free-llm-api-resources) | un forfait IA est épuisé, ou je cherche un repli gratuit. Liste tenue à jour : modèles, quotas, limites. |
 
 ## Réflexes concrets
 
