@@ -29,7 +29,8 @@ const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 const page = await ctx.newPage(); const errs = [];
 page.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
-page.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE: ' + m.text()); });
+// le bac à sable ne peut pas joindre kd-mc.com : un échec réseau n'est pas un bug de l'app
+page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR_TUNNEL|ERR_NAME|ERR_CONNECTION/.test(m.text())) errs.push('CONSOLE: ' + m.text()); });
 const URL_APP = `http://127.0.0.1:${PORT}/index.html`;
 await page.goto(URL_APP, { waitUntil: 'load' });
 await page.waitForTimeout(400);
@@ -127,6 +128,46 @@ const round = await page.evaluate(async () => {
 });
 chk(round.lost === 0 && round.after === round.before,
   `sauvegarde → restauration : ${round.before} comptes perdus puis retrouvés (${round.after})`);
+
+// 12) RECONNU AUTO : si le domaine sait qui tu es, plus besoin de code
+const auto = await (async () => {
+  const c2 = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const p2 = await c2.newPage();
+  // on simule la réponse du domaine (kd-mc.com/__sso/whoami)
+  // l'app appelle « /__sso/whoami » en MÊME ORIGINE (le routeur sert aussi studio.kd-mc.com)
+  await p2.route(/__sso\/whoami/, (rt) => rt.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify({ ok: true, uid: 'kdmc_kevin', name: 'Kevin Desarzens', verified: true, admin: true }) }));
+  await p2.route(/__sso\/issue/, (rt) => rt.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }));
+  await p2.route(/\/log$/, (rt) => rt.fulfill({ status: 204, body: '' }));
+  await p2.goto(URL_APP, { waitUntil: 'load' });
+  await p2.waitForTimeout(1200);
+  const dedans = await p2.evaluate(() => document.getElementById('gate').classList.contains('hidden'));
+  const admin = await p2.evaluate(() => window.Users.isAdmin());
+  const qui = await p2.evaluate(() => (window.Users.current() || {}).name || '');
+  await c2.close();
+  return { dedans, admin, qui };
+})();
+chk(auto.dedans && auto.qui === 'Kevin Desarzens',
+  `RECONNU AUTO : le domaine dit qui tu es ⇒ aucun code à taper (« ${auto.qui} »)`);
+chk(auto.admin, 'et Kevin est directement administrateur (identité vérifiée par le domaine)');
+
+// 13) domaine injoignable : l'app demande normalement, elle ne se bloque pas
+const horsLigne = await (async () => {
+  const c3 = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const p3 = await c3.newPage();
+  await p3.route(/__sso/, (rt) => rt.abort());       // domaine coupé
+  await p3.route(/\/log$/, (rt) => rt.abort());
+  await p3.goto(URL_APP, { waitUntil: 'load' });
+  await p3.waitForTimeout(1000);
+  const gateVisible = await p3.evaluate(() => !document.getElementById('gate').classList.contains('hidden'));
+  await p3.fill('#gateName', 'Sophie Bernard'); await p3.fill('#gateCode', '4242');
+  await p3.click('#gateGo'); await p3.waitForTimeout(500);
+  const entre = await p3.evaluate(() => document.getElementById('gate').classList.contains('hidden'));
+  await c3.close();
+  return { gateVisible, entre };
+})();
+chk(horsLigne.gateVisible && horsLigne.entre,
+  'domaine injoignable ⇒ l\'app demande le code normalement et laisse entrer (jamais bloquée)');
 
 chk(errs.length === 0, `0 erreur JS${errs.length ? ': ' + errs[0] : ''}`);
 console.log('=== CRÉA STUDIO — COMPTES ===');

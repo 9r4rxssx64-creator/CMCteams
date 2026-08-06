@@ -561,20 +561,23 @@
   <section class="studio" id="s-fam">
     <div class="card" id="famJoinCard">
       <h2>👨‍👩‍👧 Famille</h2>
-      <p class="hint">Un espace privé rien que pour vous. Ce que tu partages ici,
-        seule ta famille le voit — il faut le code pour entrer.</p>
-      <input id="famNom" type="text" placeholder="Nom de la famille (ex : Desarzens)" autocapitalize="words">
-      <input id="famCode" type="password" placeholder="Le code de la famille (4 caractères minimum)" autocomplete="off">
-      <button class="bigbtn" id="famJoin">Rejoindre ma famille</button>
+      <p class="hint">Un espace privé rien que pour vous : ta <b>famille</b>, tes <b>amis</b>,
+        tes cousins… Autant de cercles que tu veux, chacun avec son code.
+        Ce que tu partages dans un cercle, seul ce cercle le voit.</p>
+      <input id="famNom" type="text" placeholder="Nom du cercle (ex : Desarzens, Les copains…)" autocapitalize="words">
+      <input id="famCode" type="password" placeholder="Le code du cercle (4 caractères minimum)" autocomplete="off">
+      <button class="bigbtn" id="famJoin">Rejoindre ce cercle</button>
       <div class="hint" id="famHint"></div>
     </div>
     <div class="card hidden" id="famCard">
       <h2>👨‍👩‍👧 <span id="famTitre">Famille</span></h2>
       <div class="hint" id="famQui"></div>
+      <div class="chips" id="famCercles"></div>
       <div class="row" style="margin-top:8px">
         <button class="bigbtn" id="famShare">📤 Partager ma dernière création</button>
         <button class="bigbtn ghost" id="famRefresh">🔄 Actualiser</button>
-        <button class="bigbtn ghost" id="famLeave">🚪 Quitter</button>
+        <button class="bigbtn ghost" id="famPlus">➕ Autre cercle</button>
+      <button class="bigbtn ghost" id="famLeave">🚪 Quitter</button>
       </div>
       <label class="row hidden" id="famAdminRow" style="gap:8px;align-items:center;margin:8px 0">
         <input type="checkbox" id="famAll"><span>👑 Voir <b>toutes</b> les familles</span>
@@ -768,7 +771,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.3.0';
+var APP_VER='v9.4.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -804,6 +807,73 @@ async function shareOrSave(blob,name,title){
   }
   download(blob,name); return false;
 }
+
+/* ============ 🌐 LE DOMAINE TE RECONNAÎT DÉJÀ ============
+   kd-mc.com sait qui tu es (une seule connexion pour toutes tes apps). Au lieu
+   de te redemander qui tu es, Créa Studio le LUI DEMANDE. Tu n'as donc rien à
+   retaper : tu es reconnu tout seul, comme partout ailleurs sur ton domaine.
+   Si le domaine ne répond pas (hors ligne, app installée), on garde la
+   connexion locale — l'app ne se bloque jamais pour ça. */
+var Domaine=(function(){
+  /* MÊME ORIGINE : studio.kd-mc.com est servi par le MÊME routeur que kd-mc.com,
+     donc on appelle « /__sso/… » sans nom de domaine. C'est important : le
+     domaine ne renvoie pas d'en-tête CORS, donc un appel vers « https://kd-mc.com »
+     depuis studio.kd-mc.com serait BLOQUÉ par le navigateur, en silence.
+     (En local/hors domaine, window.KDMC_BASE permet de pointer ailleurs.) */
+  var BASE=(window.KDMC_BASE!==undefined?window.KDMC_BASE:'').replace(/\/$/,'');
+  var LOG=(window.KDMC_LOG||'https://admin.kd-mc.com').replace(/\/$/,'');   /* celui-ci autorise le CORS */
+  var CLE='crea_sso_token', dernier=null;
+  /* L'app installée ne reçoit pas le cookie du domaine : le portail lui passe
+     le jeton dans le lien de retour (#kdmc_sso=…). On le récupère UNE fois. */
+  function capterJeton(){
+    try{
+      var m=/[#&]kdmc_sso=([^&]+)/.exec(location.hash||'');
+      if(m&&m[1]){localStorage.setItem(CLE,decodeURIComponent(m[1]));
+        history.replaceState(null,'',location.pathname+location.search);}
+    }catch(e){}
+    try{return localStorage.getItem(CLE)||'';}catch(e){return '';}
+  }
+  /* Qui es-tu ? Renvoie null si le domaine ne sait pas (ou ne répond pas). */
+  function quiSuisJe(){
+    var jeton=capterJeton();
+    var url=BASE+'/__sso/whoami'+(jeton?('?t='+encodeURIComponent(jeton)):'');
+    var o={credentials:'include'};
+    if(jeton)o.headers={'x-kdmc-sso':jeton};
+    return fetch(url,o).then(function(r){return r.json();}).then(function(j){
+      if(!j||!j.ok)return null;
+      dernier={uid:j.uid,name:j.name,admin:!!j.admin,verified:!!j.verified};
+      return dernier;
+    }).catch(function(){return null;});
+  }
+  /* On dit au domaine qui vient d'entrer : la personne est alors reconnue dans
+     TOUTES les apps, et sa visite apparaît dans « Qui se connecte ». */
+  function annoncer(nom,uid){
+    var toks=String(nom||'').trim().split(/\s+/).filter(Boolean);
+    if(toks.length<2)return Promise.resolve(null);      /* jamais un prénom seul */
+    return fetch(BASE+'/__sso/issue',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({uid:uid||('crea_'+toks.join('-').toLowerCase()),name:nom,cgu:true})})
+      .then(function(r){return r.json();}).then(function(j){
+        if(j&&j.ok&&j.token){try{localStorage.setItem(CLE,j.token);}catch(e){}}
+        return j;
+      }).catch(function(){return null;});
+  }
+  /* Trace d'usage : MÉTADONNÉES seulement (qui, quand, quelle action).
+     Jamais une photo, jamais un message — le contenu reste dans le téléphone. */
+  function trace(event,meta){
+    try{
+      var c=(window.Users&&Users.current&&Users.current());
+      if(!c)return;
+      fetch(LOG+'/log',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({app:'crea-studio',uid:c.uid,name:c.name,
+          event:String(event||'').slice(0,40),
+          device:(navigator.userAgent||'').slice(0,90),
+          meta:meta||{}})}).catch(function(){});
+    }catch(e){}
+  }
+  return {quiSuisJe:quiSuisJe,annoncer:annoncer,trace:trace,
+          dernier:function(){return dernier;},base:BASE};
+})();
 
 /* ================= 👤 COMPTES — un par personne, avec mémoire =================
    Chaque personne a son espace : ses créations, ses réglages, ses souvenirs.
@@ -887,7 +957,21 @@ var Users=(function(){
       saveAll(m); return n;
     });
   }
-  return {login:login,logout:logout,current:current,isAdmin:isAdmin,list:list,
+  /* Entrée SANS code : réservée au cas où c'est le DOMAINE qui garantit
+     l'identité (il l'a déjà vérifiée, parfois avec Face ID). On ne contourne
+     donc aucune sécurité : on ne redemande simplement pas deux fois. */
+  function loginDomaine(nom,admin){
+    var toks=norm(nom).split(' ').filter(function(t){return t.length>=2;});
+    if(toks.length<2)return {ok:false,why:'Le domaine n\'a pas donné un prénom ET un nom.'};
+    var uid=uidOf(nom),m=all(),u=m[uid];
+    if(!u)u={uid:uid,name:String(nom).trim().slice(0,60),pin:'',created:Date.now(),
+             memory:[],prefs:{},count:0};
+    u.admin=!!admin||isAdminName(nom); u.seen=Date.now(); u.parDomaine=true;
+    u.name=String(nom).trim().slice(0,60);
+    m[uid]=u; saveAll(m); localStorage.setItem(CUR,uid);
+    return {ok:true,user:u};
+  }
+  return {login:login,loginDomaine:loginDomaine,logout:logout,current:current,isAdmin:isAdmin,list:list,
           remember:remember,memory:memory,backup:backup,restore:restore,
           update:update,uidOf:uidOf,isAdminName:isAdminName};
 })();
@@ -1150,6 +1234,7 @@ var Face=(function(){
   var natif=null,dispo=(typeof FaceDetector!=='undefined');
   if(dispo){try{natif=new FaceDetector({fastMode:true,maxDetectedFaces:1});}catch(e){natif=null;dispo=false;}}
   var lisse=null;                                   /* boîte lissée (évite que le masque tremble) */
+  var perdu=0, TOLERANCE=6;                         /* on garde la dernière position un instant */
   var buf=document.createElement('canvas'),bctx=buf.getContext('2d',{willReadFrequently:true});
   /* Repérage par couleur de peau (YCbCr) — robuste sur toutes les carnations */
   function parCouleur(src,W,H){
@@ -1165,23 +1250,58 @@ var Face=(function(){
       if(yy>45&&cb>77&&cb<130&&cr>133&&cr<180){xs.push(x);ys.push(y);n++;}
     }
     if(n<40)return null;                              /* pas assez de peau = pas de visage */
-    xs.sort(function(a,b){return a-b;});ys.sort(function(a,b){return a-b;});
-    /* on coupe 12% de chaque côté : mains, cou et bruit ne tirent plus la boîte */
-    var q=function(a,p){return a[Math.min(a.length-1,Math.max(0,Math.floor(a.length*p)))];};
-    var x0=q(xs,0.12),x1=q(xs,0.88),y0=q(ys,0.08),y1=q(ys,0.86);
-    var bw=(x1-x0)/w, bh=(y1-y0)/h;
+    /* On ne garde que la PLUS GROSSE tache de peau : une main qui passe ou un
+       bras nu ne tire plus la boîte vers lui (avant, elle s'étirait dessus). */
+    var vus=new Uint8Array(w*h), grille=new Uint8Array(w*h);
+    for(var k=0;k<xs.length;k++)grille[ys[k]*w+xs[k]]=1;
+    var meilleure=null,pile=new Int32Array(w*h);
+    for(var p0=0;p0<w*h;p0++){
+      if(!grille[p0]||vus[p0])continue;
+      var haut=0;pile[haut++]=p0;vus[p0]=1;
+      var mnx=w,mxx=0,mny=h,mxy=0,taille=0;
+      while(haut){
+        var q0=pile[--haut],qx=q0%w,qy=(q0-qx)/w;taille++;
+        if(qx<mnx)mnx=qx; if(qx>mxx)mxx=qx; if(qy<mny)mny=qy; if(qy>mxy)mxy=qy;
+        for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){
+          var nx=qx+dx,ny=qy+dy;
+          if(nx<0||ny<0||nx>=w||ny>=h)continue;
+          var ni=ny*w+nx;
+          if(grille[ni]&&!vus[ni]){vus[ni]=1;pile[haut++]=ni;}
+        }
+      }
+      if(!meilleure||taille>meilleure.taille)
+        meilleure={taille:taille,x0:mnx,x1:mxx,y0:mny,y1:mxy};
+    }
+    if(!meilleure||meilleure.taille<30)return null;
+    /* Un visage est plus haut que large : on redresse une tache trop étalée
+       (épaules, décolleté) pour que le chapeau ne parte pas sur le côté. */
+    var bw=(meilleure.x1-meilleure.x0+1)/w, bh=(meilleure.y1-meilleure.y0+1)/h;
+    var cx=(meilleure.x0+meilleure.x1+1)/2/w, cy=(meilleure.y0+meilleure.y1+1)/2/h;
+    var ratio=(bw*W)/Math.max(1,bh*H);
+    if(ratio>1.15){var vise=bh*H*1.0/W;cx=cx;bw=Math.max(vise,bw*0.72);}
     if(bw<0.05||bh<0.05)return null;
-    return {x:x0/w*W, y:y0/h*H, w:bw*W, h:bh*H, how:'couleur'};
+    return {x:(cx-bw/2)*W, y:(cy-bh/2)*H, w:bw*W, h:bh*H, how:'couleur', taille:meilleure.taille};
   }
   function fusion(a,b,k){return a==null?b:(a*(1-k)+b*k);}
   /* Trouve le visage. Renvoie null si on n'en voit pas (on le DIT à l'écran). */
   function detect(src,W,H){
     var box=parCouleur(src,W,H);
-    if(!box)return null;
+    if(!box){
+      /* Visage perdu une fraction de seconde (clignement, flou de mouvement) :
+         on garde la dernière position au lieu de faire disparaître le masque. */
+      if(lisse&&perdu<TOLERANCE){perdu++;return {x:lisse.x,y:lisse.y,w:lisse.w,h:lisse.h,how:'garde'};}
+      lisse=null;perdu=0;return null;
+    }
     if(!lisse)lisse={x:box.x,y:box.y,w:box.w,h:box.h};
-    else{var k=0.35;
+    else{
+      /* Lissage ADAPTATIF : un petit mouvement est amorti (pas de tremblement),
+         un grand mouvement est suivi vite (le masque ne reste pas en arrière). */
+      var d=Math.abs(box.x-lisse.x)+Math.abs(box.y-lisse.y);
+      var ref=Math.max(1,lisse.w);
+      var k=d>ref*0.6?0.75:(d>ref*0.25?0.5:0.3);
       lisse.x=fusion(lisse.x,box.x,k);lisse.y=fusion(lisse.y,box.y,k);
-      lisse.w=fusion(lisse.w,box.w,k);lisse.h=fusion(lisse.h,box.h,k);}
+      lisse.w=fusion(lisse.w,box.w,k*0.8);lisse.h=fusion(lisse.h,box.h,k*0.8);}
+    perdu=0;
     return {x:lisse.x,y:lisse.y,w:lisse.w,h:lisse.h,how:box.how};
   }
   function detectNatif(src){
@@ -1192,7 +1312,7 @@ var Face=(function(){
       return {x:b.x,y:b.y,w:b.width,h:b.height,how:'natif'};
     }).catch(function(){return null;});
   }
-  function reset(){lisse=null;}
+  function reset(){lisse=null;perdu=0;}
   return {detect:detect,detectNatif:detectNatif,reset:reset,natifDispo:function(){return !!natif;}};
 })();
 
@@ -1555,7 +1675,9 @@ var Account=(function(){
     var r=Users.login(n,c);
     if(!r.ok){hint('⚠️ '+r.why);return;}
     hint('');$('gateCode').value='';
-    hide(); paint();
+    hide(); paint(); ouvert();
+    /* on prévient le domaine : la personne sera reconnue dans TOUTES ses apps */
+    try{Domaine.annoncer(r.user.name,r.user.uid);}catch(e){}
     toast((r.user.admin?'👑 ':'👋 ')+'Bonjour '+r.user.name.split(' ')[0]+' !',2000);
     if(window.Mine)Mine.refresh();
   }
@@ -1607,8 +1729,22 @@ var Account=(function(){
     var g=$('gateGo');if(g)g.onclick=go;
     ['gateName','gateCode'].forEach(function(id){var e=$(id);if(e)e.addEventListener('keydown',
       function(ev){if(ev.key==='Enter')go();});});
-    if(Users.current()){hide();paint();}else{show();}
+    /* 1) déjà connu sur CE téléphone → on entre direct, on ne redemande rien */
+    if(Users.current()){hide();paint();ouvert();return;}
+    /* 2) sinon on demande au domaine : il te reconnaît peut-être déjà */
+    show(); hint('On regarde si le domaine te reconnaît…');
+    Domaine.quiSuisJe().then(function(moi){
+      if(!moi||!moi.name){hint('');return;}          /* il ne sait pas → on demande */
+      var r=Users.loginDomaine(moi.name,moi.admin);
+      if(!r.ok){hint('');return;}
+      hint(''); hide(); paint(); ouvert();
+      toast((r.user.admin?'👑 ':'👋 ')+'Reconnu : '+r.user.name.split(' ')[0]
+        +' — pas besoin de code, le domaine te connaît.',3200);
+      if(window.Mine)Mine.refresh();
+    }).catch(function(){hint('');});
   }
+  /* Trace d'ouverture : elle apparaît dans « Qui se connecte » du domaine */
+  function ouvert(){ try{Domaine.trace('ouverture',{v:APP_VER});}catch(e){} }
   return {init:init,go:go,logout:logout,backup:backup,pickRestore:pickRestore,
           restore:restore,paint:paint};
 })();
@@ -1620,8 +1756,32 @@ var Fam=(function(){
   var URL_FAM=(window.CREA_FAM_URL||localStorage.getItem('crea_fam_url')
     ||'https://kdmc-crea-famille.9r4rxssx64.workers.dev').replace(/\/$/,'');
   function cle(){var c=(window.Users&&Users.current&&Users.current());return 'crea_fam_'+(c?c.uid:'invite');}
+  /* Plusieurs cercles : famille, amis, cousins… On garde TOUS ceux qu'on a
+     rejoints, et on bascule de l'un à l'autre en un tap. */
+  function tous(){try{return JSON.parse(localStorage.getItem(cle()+'_tous')||'[]')||[];}catch(e){return [];}}
+  function poserTous(l){try{localStorage.setItem(cle()+'_tous',JSON.stringify(l.slice(0,12)));}catch(e){}}
   function etat(){try{return JSON.parse(localStorage.getItem(cle())||'null');}catch(e){return null;}}
-  function poser(v){try{v?localStorage.setItem(cle(),JSON.stringify(v)):localStorage.removeItem(cle());}catch(e){}}
+  function poser(v){
+    try{
+      if(v){
+        localStorage.setItem(cle(),JSON.stringify(v));
+        var l=tous().filter(function(x){return x.famille!==v.famille;});
+        l.unshift(v); poserTous(l);
+      }else localStorage.removeItem(cle());
+    }catch(e){}
+  }
+  /* Quitter UN cercle ne doit pas faire oublier les autres */
+  function basculer(nom){
+    var c=tous().filter(function(x){return x.famille===nom;})[0];
+    if(!c)return;
+    try{localStorage.setItem(cle(),JSON.stringify(c));}catch(e){}
+    montrer();charger();toast('Cercle : '+nom,1600);
+  }
+  function oublier(nom){
+    poserTous(tous().filter(function(x){return x.famille!==nom;}));
+    var e=etat(); if(e&&e.famille===nom)try{localStorage.removeItem(cle());}catch(_){}
+    montrer();
+  }
   function hint(t){var e=$('famHint');if(e)e.textContent=t||'';}
   function api(chemin,corps){
     var o=corps?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corps)}:{};
@@ -1645,16 +1805,33 @@ var Fam=(function(){
       if(window.Users&&Users.remember)Users.remember('Fait partie de la famille « '+j.famille+' »','famille');
     }).catch(function(e){hint('⚠️ '+String(e.message||e).slice(0,110));});
   }
-  function quitter(){poser(null);montrer();toast('Tu as quitté l\'espace famille',1800);}
+  function quitter(){
+    try{localStorage.removeItem(cle());}catch(e){}
+    var l=tous();
+    if(l.length){                       /* il reste d'autres cercles : on y bascule */
+      try{localStorage.setItem(cle(),JSON.stringify(l[0]));}catch(e){}
+      montrer();charger();toast('Cercle : '+l[0].famille,1600);
+    }else{montrer();toast('Tu es sorti de tes cercles',1800);}
+  }
   function montrer(){
     var e=etat();
     $('famJoinCard').classList.toggle('hidden',!!e);
     $('famCard').classList.toggle('hidden',!e);
     if(e){
-      $('famTitre').textContent='Famille '+e.famille;
+      $('famTitre').textContent=e.famille;
       $('famQui').textContent='Tu es '+e.nom+(e.admin?' 👑 (administrateur)':'')+
         ' — tout s\'efface tout seul au bout de 14 jours.';
       $('famAdminRow').classList.toggle('hidden',!e.admin);
+      var box=$('famCercles'),l=tous();
+      box.innerHTML=l.map(function(c){
+        return '<button class="chip'+(c.famille===e.famille?' on':'')+'" data-cer="'+esc(c.famille)+'">'+
+          esc(c.famille)+'</button>';}).join('')+
+        (l.length>1?'<button class="chip" data-oub="'+esc(e.famille)+'">🗑 oublier ce cercle</button>':'');
+      box.querySelectorAll('[data-cer]').forEach(function(b){
+        b.onclick=function(){if(b.dataset.cer!==e.famille)basculer(b.dataset.cer);};});
+      box.querySelectorAll('[data-oub]').forEach(function(b){
+        b.onclick=function(){if(confirm('Oublier le cercle « '+b.dataset.oub+' » sur ce téléphone ?'))
+          oublier(b.dataset.oub);};});
     }
   }
   /* Envoie la dernière création faite dans l'app (photo, vidéo, morceau) */
@@ -1733,13 +1910,17 @@ var Fam=(function(){
     if(b=$('famShare'))b.onclick=partager;
     if(b=$('famRefresh'))b.onclick=charger;
     if(b=$('famLeave'))b.onclick=quitter;
+    if(b=$('famPlus'))b.onclick=function(){
+      $('famJoinCard').classList.remove('hidden');$('famCard').classList.add('hidden');
+      $('famNom').value='';$('famCode').value='';hint('Donne le nom et le code de l\'autre cercle.');};
     if(b=$('famSend'))b.onclick=envoyer;
     if(b=$('famAll'))b.onchange=charger;
     if(b=$('famTexte'))b.addEventListener('keydown',function(ev){if(ev.key==='Enter')envoyer();});
     if(b=$('famCode'))b.addEventListener('keydown',function(ev){if(ev.key==='Enter')rejoindre();});
     montrer();
   }
-  return {init:init,montrer:montrer,charger:charger,etat:etat,quitter:quitter,url:URL_FAM};
+  return {init:init,montrer:montrer,charger:charger,etat:etat,quitter:quitter,url:URL_FAM,
+          tous:tous,basculer:basculer,oublier:oublier};
 })();
 
 /* ---------- navigation studios ---------- */

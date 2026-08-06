@@ -74,9 +74,9 @@ async function telephone(nom, code) {                 // un téléphone = un nav
   return { ctx, page };
 }
 const rejoindre = async (page, famille, code) => {
-  // si on est déjà dans une famille, on en sort d'abord (le formulaire est caché)
+  // déjà dans un cercle ? on ouvre le formulaire « autre cercle » (sans perdre l'actuel)
   const dedans = await page.evaluate(() => !document.getElementById('famCard').classList.contains('hidden'));
-  if (dedans) { await page.click('#famLeave'); await page.waitForTimeout(250); }
+  if (dedans) { await page.click('#famPlus'); await page.waitForTimeout(250); }
   await page.fill('#famNom', famille); await page.fill('#famCode', code);
   await page.click('#famJoin'); await page.waitForTimeout(600);
 };
@@ -163,6 +163,28 @@ await M.page.click('#famRefresh'); await M.page.waitForTimeout(900);
 const txt = await M.page.textContent('#famFeed');
 chk(/⚠️/.test(txt || '') && (txt || '').length > 10, `service coupé ⇒ message clair à l'écran — « ${(txt || '').trim().slice(0, 58)} »`);
 coupe = false;
+
+// ── 9) PLUSIEURS CERCLES : famille ET amis sur le même téléphone ────────────
+await rejoindre(M.page, 'Les copains', 'apero2026');       // Marie rejoint un 2e cercle
+await M.page.waitForTimeout(700);
+let cercles = await M.page.locator('#famCercles .chip[data-cer]').count();
+chk(cercles === 2, `Marie a 2 cercles sur son téléphone : famille ET amis (${cercles})`);
+// ce qu'elle partage chez les copains ne doit PAS apparaître dans la famille
+await creer(M.page, 'Photo entre copains');
+await M.page.click('#famShare'); await M.page.waitForTimeout(900);
+let nCopains = await M.page.locator('#famFeed .fam-it').count();
+await M.page.click('#famCercles .chip[data-cer="Desarzens"]'); await M.page.waitForTimeout(900);
+let nFamille = await M.page.locator('#famFeed .fam-it').count();
+chk(nCopains === 1 && nFamille === 1,
+  `chaque cercle garde ses affaires : ${nCopains} chez les copains, ${nFamille} en famille`);
+// et Paul (famille seulement) ne voit RIEN des copains
+await P.page.click('#famRefresh'); await P.page.waitForTimeout(800);
+const txtP = await P.page.textContent('#famFeed');
+chk(!/copains/i.test(txtP || ''), 'Paul, qui n\'est pas chez les copains, n\'en voit rien');
+// quitter un cercle ne fait pas perdre l'autre
+await M.page.click('#famLeave'); await M.page.waitForTimeout(700);
+const resteDedans = await M.page.evaluate(() => !document.getElementById('famCard').classList.contains('hidden'));
+chk(resteDedans, 'quitter un cercle bascule sur l\'autre au lieu de tout perdre');
 
 chk(errs.length === 0, `0 erreur JS${errs.length ? ': ' + errs[0] : ''}`);
 console.log('=== CRÉA STUDIO — ÉCRAN FAMILLE ===');

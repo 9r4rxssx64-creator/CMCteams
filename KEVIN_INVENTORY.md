@@ -1725,3 +1725,13 @@ Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · 
 | services/kdmc-access/page-logic.test.mjs | 4 tests : robots exclus, deux comptes du même nom additionnés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page-logic.test.mjs) |
 
 Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Déploiements : [routeur](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) · [page admin](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-access.yml)
+
+### Créa Studio v9.3.0 — masques + famille (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `services/kdmc-crea-famille/worker.js` | Le lien **privé** entre les téléphones de la famille | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-famille/worker.js) |
+| `.github/workflows/deploy-kdmc-crea-famille.yml` | Déploie le lien famille (crée son stockage tout seul, 0 clic) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/deploy-kdmc-crea-famille.yml) |
+| `tests/verify-crea-masques.mjs` | Preuve : le visage est trouvé, les 15 masques sont différents et cuits dans la photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-masques.mjs) |
+| `tests/verify-crea-famille.mjs` | Preuve : isolation entre familles, jetons signés, expiration | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille.mjs) |
+| `tests/verify-crea-famille-app.mjs` | Preuve : **deux téléphones** qui se parlent pour de vrai | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille-app.mjs) |
