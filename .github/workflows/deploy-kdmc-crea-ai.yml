@@ -70,6 +70,31 @@ jobs:
               || echo "::warning::TOGETHER_API_KEY non posée (repli gratuit texte→image absent)"
           fi
 
+      # TOUTES les IA GRATUITES de Kevin. Les noms de secrets sont EXACTS
+      # (règle « noms secrets GitHub doivent matcher », dont la typo PERPLEXITI).
+      # Une clé absente n'est pas une erreur : la chaîne saute simplement ce moteur.
+      - name: Injecte TOUTES les autres IA gratuites (Groq, Mistral, Cohere, DeepSeek, OpenRouter)
+        working-directory: services/kdmc-crea-ai
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          set +e
+          for N in GROQ_API_KEY MISTRAL_API_KEY COHERE_API_KEY DEEPSEEK_API_KEY OPENROUTER_API_KEY; do
+            V="${!N}"
+            if [ -n "$V" ]; then
+              printf '%s' "$V" | wrangler secret put "$N" 2>&1 | tail -1 \
+                && echo "  ✅ $N posée" || echo "::warning::$N non posée"
+            else
+              echo "  ⚪ $N absente des secrets → ce moteur sera simplement ignoré"
+            fi
+          done
+
       - name: Injecte la clé Replicate (SECOURS payant, depuis AX_REPLICATE_KEY)
         working-directory: services/kdmc-crea-ai
         env:
@@ -107,7 +132,14 @@ jobs:
           BASE="${HEALTH_BASE:-https://crea-ai.kd-mc.com}"
           echo "== Base testée : $BASE =="
           echo "----- /health (quelles IA sont dispo) -----"
-          curl -sS -m 20 "$BASE/health"; echo
+          curl -sS -m 20 "$BASE/health" -o /tmp/h.json; cat /tmp/h.json; echo
+          python3 - <<'PY'
+          import json
+          try: d=json.load(open('/tmp/h.json'))
+          except Exception: raise SystemExit
+          e=d.get('engines') or []
+          print('  → %d IA branchée(s) : %s'%(len(e), ', '.join(e) or 'AUCUNE'))
+          PY
           # Vraie image de test 96x96 (sujet clair sur fond uni) — un pixel 1x1 ne prouve rien.
           python3 - <<'PY' > /tmp/img.txt
           import zlib, struct, base64
