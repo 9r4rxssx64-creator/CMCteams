@@ -393,6 +393,9 @@ async function rlReset(env, ipHash) {
    RÈGLE ABSOLUE déjà écrite dans CLAUDE.md (« COMPTE ADMIN UNIQUE KEVIN ») : tous les
    alias de Kevin désignent UN SEUL compte. On applique la même idée à la fiche. */
 const CANON_UID = 'kdmc_admin';
+/* Intervalle de re-passage de la fusion « un compte par personne ». Une fusion
+   DÉFINITIVE laisse passer les doublons créés ensuite (constaté en vrai) → on repasse. */
+const MERGE_RESCAN_MS = 7 * 24 * 60 * 60 * 1000;
 function normName(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, ' ').trim();
@@ -406,8 +409,9 @@ function isAdminName(name) {
   if (!n) return false;
   if (n === 'kdmc' || n === 'kdmc admin') return true;
   const t = n.split(' ').filter(Boolean);
-  const hasK = t.indexOf('kevin') >= 0, hasD = t.indexOf('desarzens') >= 0;
-  return (hasK && hasD) || (hasD && t.length >= 2);
+  /* Le NOM DE FAMILLE seul ne suffit PAS : « Ronan Desarzens » est quelqu'un d'autre.
+     Il faut le nom de famille ET le prénom (ou son initiale) — « Desarzens K » compte. */
+  return t.indexOf('desarzens') >= 0 && t.some((x) => x === 'kevin' || x === 'k');
 }
 /* Identifiant CANONIQUE : toutes les fiches d'une même personne pointent vers un
    seul dossier. Ne change JAMAIS l'uid de session (les apps s'en servent pour leur
@@ -664,21 +668,28 @@ async function enrich(env, request, uid, name, cgu, pre) {
       (acc.name || uid) + ' : ' + prevCountry + ' → ' + curCountry + ' en ' + acc.anomaly.mins + ' min (déplacement impossible).');
   }
   await accPut(env, acc, !isNew);
-  /* Fusion AUTOMATIQUE des anciennes fiches éparpillées, UNE SEULE FOIS (drapeau
-     `merged_v1`), sans aucune action de Kevin. Rien n'est perdu : les connexions
-     s'additionnent, les historiques se concatènent, appareils/lieux/apps s'unissent.
-     L'ancienne fiche n'est pas effacée : elle devient un renvoi (`merged_into`). */
-  if (!acc.merged_v1) { try { await mergeIntoCanon(env, acc); } catch { /* fail-open */ } }
+  /* Fusion AUTOMATIQUE des fiches éparpillées, sans aucune action de Kevin. Rien n'est
+     perdu : les connexions s'additionnent, les historiques se concatènent, appareils/
+     lieux/apps s'unissent. L'ancienne fiche n'est pas effacée : elle devient un renvoi.
+     MESURÉ le 2026-08-06 : deux fiches « kevin Desarzens » (196 + 116 connexions)
+     coexistaient encore — parce que le drapeau `merged_v1` était DÉFINITIF : une fiche
+     en double apparue APRÈS la première fusion n'était plus jamais absorbée. On repasse
+     donc régulièrement (au plus 1×/semaine par dossier, coût négligeable) au lieu d'une
+     seule fois. Les dossiers déjà fusionnés (merged_v1 sans date) repassent une fois. */
+  const lastMerge = acc.merged_at || 0;
+  if (now - lastMerge > MERGE_RESCAN_MS) { try { await mergeIntoCanon(env, acc); } catch { /* fail-open */ } }
 }
 
 /* Absorbe dans la fiche canonique toutes les fiches de la MÊME personne (autres uid).
    « Même personne » = même nom complet normalisé (accents/casse/tirets ignorés), ou
    tout alias de l'admin. Jamais sur un prénom seul → deux « Marie » restent distinctes. */
 async function mergeIntoCanon(env, acc) {
-  const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
+  /* Borné : on ne relit jamais plus de 300 dossiers dans une même requête. */
+  const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]').slice(-300);
   const me = normName(acc.name);
   const admin = acc.uid === CANON_UID;
-  if (!admin && me.split(' ').filter(Boolean).length < 2) { acc.merged_v1 = 1; await accPut(env, acc, true); return; }
+  const stamp = async () => { acc.merged_v1 = 1; acc.merged_at = Date.now(); await accPut(env, acc, true); };
+  if (!admin && me.split(' ').filter(Boolean).length < 2) { await stamp(); return; }
   const others = [];
   for (const u of idx) {
     if (u === acc.uid) continue;
@@ -687,7 +698,7 @@ async function mergeIntoCanon(env, acc) {
     const same = admin ? isAdminName(o.name) : (normName(o.name) === me && !isAdminName(o.name));
     if (same) others.push(o);
   }
-  if (!others.length) { acc.merged_v1 = 1; await accPut(env, acc, true); return; }
+  if (!others.length) { await stamp(); return; }
   for (const o of others) {
     acc.hits = (acc.hits || 0) + (o.hits || 0);
     acc.history = (acc.history || []).concat(o.history || [])
@@ -710,9 +721,8 @@ async function mergeIntoCanon(env, acc) {
     /* L'ancienne fiche devient un RENVOI (jamais supprimée : traçabilité + réversible). */
     await env.ACCOUNTS.put('acc:' + o.uid, JSON.stringify({ uid: o.uid, name: o.name, merged_into: acc.uid, merged_at: Date.now() }));
   }
-  acc.merged_v1 = 1;
-  await accPut(env, acc, true);
-  await audLog(env, { ev: 'accounts_merged', uid: CANON_UID, detail: others.map((o) => o.uid).join(', ') + ' → ' + CANON_UID });
+  await stamp();
+  await audLog(env, { ev: 'accounts_merged', uid: acc.uid, detail: others.map((o) => o.uid).join(', ') + ' → ' + acc.uid });
 }
 
 async function handleSso(request, url, env) {
