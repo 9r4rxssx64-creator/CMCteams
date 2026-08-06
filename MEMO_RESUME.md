@@ -1,4 +1,23 @@
 
+### ⛔ Blocage EXTERNE mesuré (2026-08-06, ~15:22 UTC → en cours) — panne mondiale GitHub Actions
+
+**Mesuré** : `in_progress` = **0** · `queued` = **391** (le plus ancien à 15:49, `updated_at == created_at`).
+Zéro job en cours + des centaines en file = **rien ne tourne**. Confirmé par GitHub (« workflow runs
+failing to start », incident ouvert 15:22 UTC) et par une source indépendante. Ce n'est ni notre code,
+ni un quota, ni notre cadrage de workflows (cf. #163 : famine = runs `cancelled` sans job ; ici ils
+restent `queued`).
+
+**Rien n'est perdu** : tout est mergé sur `main` (vérifié fichier par fichier), l'arbre de travail est
+propre, et un run en file ne produit rien. Seul effet : les déploiements n'ont pas eu lieu → la prod
+tourne encore sur sa version précédente (les sites ne sont pas cassés, juste pas à jour).
+
+**En attente de la reprise** (rappel automatique programmé, Kevin n'a rien à faire) : déployer le
+routeur (retrait `deces.kd-mc.com` + fusion des comptes), relancer `deploy-kdmc-access` pour vérifier
+qu'il ne reste qu'UNE fiche « kevin Desarzens », finir la 6ᵉ source de la boîte à outils.
+⚠️ GitHub prévient que des jobs en file **peuvent expirer** → un run en attente n'est pas une garantie,
+on re-déclenche à la reprise.
+
+
 ## 🧰 Boîte à outils agents + « Qui se connecte » durci (2026-08-06)
 
 **Kevin (tableau filmé « Une Notion = Un Projet ») : « Récupère et installe tout ça pour toi et Apex et utilise. Note tout. »**
