@@ -48,6 +48,19 @@ les outils de ce type ont économisé **~3,7 %** — pas les 60-90 % annoncés. 
 et **aucun hook automatique n'a été installé** (un wrapper qui réécrit toutes mes commandes serait
 exactement le genre de « protection » qui casse plus qu'elle ne protège — cf. règle PROTECTION ≠ STABILITÉ).
 
+## Ajouter / changer une source
+
+1. `tools/agent-toolkit/sources.json` — id, notion, `repo`, `usage`, motifs `include`/`exclude`.
+2. **Le même dépôt** dans `apex-ai/v13/data/apex-plugins-catalog.ts` (tag `agent-toolkit`), dans le
+   MÊME commit — le test de parité échoue si les deux URL divergent.
+3. `node --test tools/agent-toolkit/` puis lancer le workflow (bouton) et **lire le MANIFEST**.
+
+**Vécu le 2026-08-06** : la 1re récupération a donné **5/6** — `cheahjs/free-llm-api-resources`
+renvoie 404 (dépôt supprimé/renommé) → on pointe un miroir vivant. L'échec est volontairement
+*fail-open* (une source qui bouge ne casse pas le job) mais il est désormais **annoncé fort**
+(`::warning::` par source + bilan). Donc : après chaque passage, **lire `MANIFEST.json`** — un
+`ok:false` s'y voit, pas dans la conclusion du run.
+
 ## Côté Apex
 
 Les 6 sont enregistrés dans le catalogue Apex (`apex-ai/v13/data/apex-plugins-catalog.ts`,
