@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.27.2";
+var APP_VER="v2.27.3";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -670,7 +670,10 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à m
   var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
   var mouth=overlay.querySelector(".disc-mouth"), sub=overlay.querySelector(".disc-sub"), img=overlay.querySelector(".disc-bee");
   var words=String(text||"").split(/\s+/).filter(Boolean);
-  var dur=Math.min(12000, 900+text.length*68);
+  /* La durée estimée suit la VITESSE de la voix choisie (fillette ×1.24 = parle plus vite)
+     → bouche + sous-titres + minuterie restent SYNCHRONISÉS avec la voix, plus de décalage */
+  var _r=(beeVoiceCfg().rate||1);
+  var dur=Math.min(12000, Math.round((900+text.length*68)/_r));
   DISC.talking=true; if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
   /* Chorégraphie auto : compliment → elle danse ou saute de joie ; sinon en mode vidéo elle salue en parlant */
   var praise=/(bravo|super|parfait|génial|excellent|top|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(text);
@@ -830,9 +833,11 @@ function dictate(cb,lang){ try{ var SR=window.SpeechRecognition||window.webkitSp
 /* ============ LEÇON ============ */
 function startLesson(ui,li,rev){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   LESSON={ui:ui,li:li,review:!!rev,ex:buildLesson(ui,li,rev),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render();
-  /* Bee annonce la leçon à voix haute (court, pour ne pas gêner le 1er exercice) */
-  try{ var intro=rev?"C'est parti pour la révision !":"C'est parti ! Écoute bien.";
-    setTimeout(function(){ speakLang(intro,"fr-FR",BEE_VOICE,true); },250); }catch(_){} }
+  /* Bee annonce la leçon à voix haute — SAUF si le 1er exercice joue déjà son mot
+     automatiquement (les deux partaient au même instant et se coupaient l'un l'autre) */
+  try{ var first=LESSON.ex&&LESSON.ex[0];
+    if(!(first&&first.audio)){ var intro=rev?"C'est parti pour la révision !":"C'est parti ! Écoute bien.";
+      setTimeout(function(){ speakLang(intro,"fr-FR",BEE_VOICE,true); },250); } }catch(_){} }
 function unitAllWords(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.forEach(function(l){ o=o.concat(l.words); }); return o; }
 function unitAllPhrases(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.forEach(function(l){ o=o.concat(l.phrases||[]); }); return o; }
 function buildExam(ui){ var pool=allWords(S.course),tier=Math.min(4,diffTier()+1),ws=shuffle(unitAllWords(ui)),ex=[];
@@ -986,10 +991,11 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
   var b=el("button","btn-main"); b.textContent="Continuer"; b.onclick=function(){ m.close(); render(); }; m.body.appendChild(b);
   setTimeout(function(){ var mi=m.body.querySelector(".bee-img"); if(mi){ beeAnimate(mi,"hop"); if(L.wrong===0)beeSparkles(mi,10); }
     /* Fin de leçon : le compagnon fait la fête aussi ET Bee annonce le résultat à voix haute */
-    var cr=document.querySelector(".bee-companion .bee-rig"); if(cr)beeMove(cr, L.wrong===0?"dance":"jump", 3200);
-    var me=accMeta(ACC)||{};
+    var cr=document.querySelector(".bee-companion .bee-rig"); if(cr)beeMove(cr, L.wrong===0?"dance":"jump", 3200); },200);
+  /* L'annonce PARLÉE attend 1,2 s : elle ne coupe plus l'audio du dernier mot appris */
+  setTimeout(function(){ var me=accMeta(ACC)||{};
     speakLang(L.wrong===0?("Sans faute "+(me.name||"")+" ! Je suis trop fière de toi ! Plus "+xp+" points !")
-      :("Leçon terminée ! Plus "+xp+" points. On continue ?"),"fr-FR",BEE_VOICE,true); },200);
+      :("Leçon terminée ! Plus "+xp+" points. On continue ?"),"fr-FR",BEE_VOICE,true); },1200);
 }
 
 /* ---------- Toast / modal ---------- */
