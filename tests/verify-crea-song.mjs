@@ -31,6 +31,21 @@ const PNGBUF=(()=>{const w=8,h=8,rows=[];for(let y=0;y<h;y++)rows.push(Buffer.al
   const ch=(t,d)=>{const l=Buffer.alloc(4);l.writeUInt32BE(d.length);const td=Buffer.concat([Buffer.from(t),d]);const c=Buffer.alloc(4);c.writeUInt32BE(crc(td));return Buffer.concat([l,td,c]);};
   const ih=Buffer.alloc(13);ih.writeUInt32BE(w,0);ih.writeUInt32BE(h,4);ih[8]=8;ih[9]=2;
   return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),ch('IHDR',ih),ch('IDAT',zlib.deflateSync(Buffer.concat(rows),{level:9})),ch('IEND',Buffer.alloc(0))]);})();
+
+/* L'app demande maintenant qui l'utilise : on se connecte comme une vraie personne. */
+async function seConnecter(page, nom, code) {
+  await page.waitForSelector('#gate:not(.hidden)', { timeout: 8000 }).catch(() => {});
+  const besoin = await page.evaluate(() => {
+    const g = document.getElementById('gate');
+    return !!g && !g.classList.contains('hidden');
+  });
+  if (!besoin) return;
+  await page.fill('#gateName', nom || 'Test Utilisateur');
+  await page.fill('#gateCode', code || '1234');
+  await page.click('#gateGo');
+  await page.waitForTimeout(300);
+}
+
 const R={ok:[],ko:[]}; const chk=(c,m)=>(c?R.ok:R.ko).push(m);
 const browser=await chromium.launch({args:['--autoplay-policy=no-user-gesture-required']});
 
@@ -48,6 +63,7 @@ async function run(withVoice,voiceSec){
   await page.addInitScript(()=>{window.CREA_AI_URL='http://127.0.0.1:8244/ai';});
   await page.goto(`http://127.0.0.1:${PORT}/index.html`,{waitUntil:'load'});
   await page.waitForTimeout(500);
+  await seConnecter(page,'Test Chanson','1234');
   await page.click('#bnav button[data-go="magic"]');
   await page.setInputFiles('#fileMagicPhoto',{name:'a.png',mimeType:'image/png',buffer:PNGBUF});
   await page.waitForTimeout(500);
@@ -109,6 +125,7 @@ chk(jsErr(r2.errs).length===0, `0 erreur JS (repli)${jsErr(r2.errs).length?': '+
   await pg.addInitScript(()=>{window.CREA_AI_URL='http://127.0.0.1:8244/ai';});
   await pg.goto(`http://127.0.0.1:${PORT}/index.html`,{waitUntil:'load'});
   await pg.waitForTimeout(400);
+  await seConnecter(pg,'Test Chanson','1234');
   await pg.click('#bnav button[data-go="magic"]');
   await pg.setInputFiles('#fileMagicPhoto',{name:'a.png',mimeType:'image/png',buffer:PNGBUF});
   await pg.waitForTimeout(400);

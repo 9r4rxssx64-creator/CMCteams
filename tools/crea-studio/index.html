@@ -134,6 +134,21 @@
   .mine-it .tag{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.66);
     color:#f0e0b8;font-size:10px;padding:3px 5px;text-align:center;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #gate{position:fixed;inset:0;z-index:120;background:linear-gradient(160deg,#0b0b0d,#141018);
+    display:flex;align-items:center;justify-content:center;padding:18px}
+  .gate-card{width:100%;max-width:360px;background:#151517;border:1px solid rgba(232,184,75,.3);
+    border-radius:18px;padding:22px 18px calc(18px + var(--safeb));text-align:center}
+  .gate-logo{font-size:44px;line-height:1}
+  .gate-card h2{margin:6px 0 4px}
+  .gate-card input{width:100%;box-sizing:border-box;margin:8px 0;padding:14px 12px;font-size:16px;
+    border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#0e0e10;color:#f2f2f2;
+    min-height:48px}
+  .gate-card .bigbtn{width:100%;margin-top:6px}
+  .u-row{display:flex;align-items:center;gap:8px;padding:9px 10px;margin-top:6px;border-radius:12px;
+    background:#141416;border:1px solid rgba(255,255,255,.09);min-height:48px}
+  .u-row b{font-size:13px}
+  .u-row .u-meta{font-size:11px;opacity:.72}
+  .u-row button{margin-left:auto;min-height:44px;min-width:44px}
   .mine-empty{opacity:.75;font-size:13px;padding:18px 4px;text-align:center}
   #bnav button.on{color:var(--gold2)}
   #bnav button.on .ic{filter:drop-shadow(0 0 10px rgba(232,184,75,.55))}
@@ -477,6 +492,23 @@
         <button class="bigbtn ghost" onclick="Mine.refresh()">🔄 Rafraîchir</button>
         <button class="bigbtn ghost" onclick="Mine.clearAll()">🗑 Tout effacer</button>
       </div>
+      <div id="mineWho" class="hint"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="bigbtn ghost" onclick="Account.backup()">💾 Sauvegarder mes comptes</button>
+        <button class="bigbtn ghost" onclick="Account.pickRestore()">📂 Restaurer</button>
+        <button class="bigbtn ghost" onclick="Account.logout()">🔒 Changer de personne</button>
+      </div>
+      <input type="file" id="fileRestore" accept="application/json,.json" class="hidden"
+        onchange="if(this.files[0])Account.restore(this.files[0]);this.value='';">
+      <div id="adminBox" class="hidden">
+        <h2 style="margin-top:14px">👑 Espace administrateur</h2>
+        <p class="hint">Tu vois tout : chaque personne, ses créations, ce que l'app retient d'elle.</p>
+        <label class="row" style="gap:8px;align-items:center;margin:8px 0">
+          <input type="checkbox" id="adminSeeAll" onchange="Mine.setSeeAll(this.checked)">
+          <span>Voir les créations de <b>tout le monde</b></span>
+        </label>
+        <div id="adminUsers"></div>
+      </div>
       <div id="mineGrid" class="mine-grid"></div>
       <div class="hint" id="mineHint"></div>
     </div>
@@ -568,6 +600,23 @@
   <button data-go="mine"><span class="ic">🗂</span>Mes créas</button>
 </div>
 
+<div id="gate" class="hidden">
+  <div class="gate-card">
+    <div class="gate-logo">🎨</div>
+    <h2>Créa Studio</h2>
+    <p class="hint">Chacun son espace : tes créations et tes réglages restent à toi,
+      dans ton téléphone.</p>
+    <input id="gateName" type="text" placeholder="Ton prénom et ton nom" autocomplete="name"
+      autocapitalize="words" enterkeyhint="next">
+    <input id="gateCode" type="password" placeholder="Ton code (4 chiffres minimum)"
+      inputmode="numeric" autocomplete="current-password" enterkeyhint="go">
+    <button class="bigbtn" id="gateGo">Entrer</button>
+    <div class="hint" id="gateHint"></div>
+    <div class="hint" style="opacity:.6;margin-top:10px">
+      Premier passage ? Choisis simplement ton code, ton espace se crée tout seul.</div>
+  </div>
+</div>
+
 <div id="vbadge">v1.0.0</div>
 <div id="toast"></div>
 <div id="aiLoad" class="hidden"><div class="ai-card"><div class="spin"></div><div id="aiMsg">IA en cours…</div><div class="sub">Traitement sur serveur sécurisé — quelques secondes</div></div></div>
@@ -608,7 +657,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v8.6.0';
+var APP_VER='v9.0.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -645,6 +694,93 @@ async function shareOrSave(blob,name,title){
   download(blob,name); return false;
 }
 
+/* ================= 👤 COMPTES — un par personne, avec mémoire =================
+   Chaque personne a son espace : ses créations, ses réglages, ses souvenirs.
+   Tout reste DANS le téléphone (rien n'est envoyé sur internet).
+   Connexion = PRÉNOM + NOM (2 mots minimum, jamais un seul) + code, comme dans
+   toutes les apps de Kevin. Kevin Desarzens + 200807 = admin : il voit tout. */
+var Users=(function(){
+  var LS='crea_users', CUR='crea_current_uid', ADMIN_PIN='200807';
+  function norm(v){return String(v||'').toLowerCase().normalize('NFD')
+    .replace(/[̀-ͯ]/g,'').replace(/[\s\-_.]+/g,' ').trim();}
+  function uidOf(name){var n=norm(name).split(' ').filter(Boolean).sort().join('-');
+    return 'u_'+n.replace(/[^a-z0-9-]/g,'');}
+  function all(){try{return JSON.parse(localStorage.getItem(LS)||'{}')||{};}catch(e){return {};}}
+  function saveAll(m){try{localStorage.setItem(LS,JSON.stringify(m));}catch(e){}}
+  /* Kevin admin : nom + prénom (ou initiale) — un nom de famille seul ne suffit
+     PAS (sinon un homonyme deviendrait admin, cf. leçon #166). */
+  function isAdminName(name){
+    var t=norm(name).split(' ').filter(Boolean);
+    if(t.length<2)return false;
+    var fam=t.indexOf('desarzens')>=0;
+    var pre=t.indexOf('kevin')>=0||t.indexOf('k')>=0;
+    return fam&&pre;
+  }
+  function hash(v){ /* empreinte simple du code — le code lui-même n'est jamais stocké */
+    var h=5381,x=String(v||'');
+    for(var i=0;i<x.length;i++)h=((h*33)^x.charCodeAt(i))>>>0;
+    return 'h'+h.toString(36);
+  }
+  function current(){var u=localStorage.getItem(CUR)||'';var m=all();return (u&&m[u])?m[u]:null;}
+  function isAdmin(){var c=current();return !!(c&&c.admin);}
+  /* Connexion / création de compte. Retourne {ok} ou {ok:false, why} */
+  function login(name,code){
+    var toks=norm(name).split(' ').filter(function(t){return t.length>=2;});
+    if(toks.length<2)return {ok:false,why:'Tape ton PRÉNOM et ton NOM (les deux).'};
+    var admin=isAdminName(name), uid=uidOf(name), m=all(), u=m[uid];
+    if(admin&&String(code||'')!==ADMIN_PIN)return {ok:false,why:'Code administrateur incorrect.'};
+    if(!admin){
+      if(!code||String(code).length<4)return {ok:false,why:'Choisis un code d\'au moins 4 chiffres.'};
+      if(u&&u.pin&&u.pin!==hash(code))return {ok:false,why:'Code incorrect pour ce compte.'};
+    }
+    if(!u){
+      u={uid:uid,name:String(name).trim().slice(0,60),admin:admin,pin:admin?'':hash(code),
+         created:Date.now(),seen:Date.now(),memory:[],prefs:{},count:0};
+    }
+    u.seen=Date.now(); u.admin=admin; u.name=String(name).trim().slice(0,60);
+    m[uid]=u; saveAll(m); localStorage.setItem(CUR,uid);
+    return {ok:true,user:u,nouveau:!u.count};
+  }
+  function logout(){localStorage.removeItem(CUR);}
+  function list(){var m=all();return Object.keys(m).map(function(k){return m[k];})
+    .sort(function(a,b){return (b.seen||0)-(a.seen||0);});}
+  function update(fn){var c=current();if(!c)return;var m=all();fn(m[c.uid]);saveAll(m);}
+  /* Mémoire : ce que l'app retient de la personne (ses goûts, ses thèmes…) */
+  function remember(txt,tag){
+    if(!txt)return;
+    update(function(u){
+      u.memory=u.memory||[];
+      var t=String(txt).slice(0,160);
+      u.memory=u.memory.filter(function(x){return x.t!==t;});
+      u.memory.push({t:t,tag:tag||'',ts:Date.now()});
+      if(u.memory.length>60)u.memory=u.memory.slice(-60);
+    });
+  }
+  function memory(uid){var m=all();var u=uid?m[uid]:current();return (u&&u.memory)||[];}
+  /* Sauvegarde : un fichier que Kevin garde où il veut (rien sur internet) */
+  function backup(){
+    var data={v:1,ts:Date.now(),users:all()};
+    return new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
+  }
+  function restore(file){
+    return file.text().then(function(txt){
+      var d=JSON.parse(txt);
+      if(!d||!d.users)throw new Error('fichier_invalide');
+      var m=all(),n=0;
+      Object.keys(d.users).forEach(function(k){
+        var incoming=d.users[k],existing=m[k];
+        /* on ne perd JAMAIS : on garde la fiche la plus riche */
+        if(!existing||((incoming.memory||[]).length>=(existing.memory||[]).length
+            &&(incoming.seen||0)>=(existing.seen||0))){m[k]=incoming;n++;}
+      });
+      saveAll(m); return n;
+    });
+  }
+  return {login:login,logout:logout,current:current,isAdmin:isAdmin,list:list,
+          remember:remember,memory:memory,backup:backup,restore:restore,
+          update:update,uidOf:uidOf,isAdminName:isAdminName};
+})();
+
 /* Échappe tout texte avant de l'injecter dans la page (règle sécurité : jamais
    de donnée non filtrée dans innerHTML — un titre vient de l'IA ou de Kevin). */
 function esc(v){return String(v==null?'':v)
@@ -656,6 +792,10 @@ function esc(v){return String(v==null?'':v)
    localStorage. Rien ne part sur internet, tout reste sur l'appareil de Kevin. */
 var Mine=(function(){
   var DB='crea-studio',STORE='creations',MAX=120,dbp=null;
+  /* À qui appartient une création : chacun ne voit QUE les siennes.
+     L'admin, lui, peut tout voir (il coche « voir tout le monde »). */
+  function me(){var c=(window.Users&&Users.current&&Users.current());return c?c.uid:'u_invite';}
+  var seeAll=false;
   function open(){
     if(dbp)return dbp;
     dbp=new Promise(function(res,rej){
@@ -693,9 +833,12 @@ var Mine=(function(){
   /* Enregistre une création. Ne bloque JAMAIS l'app : si ça rate, on continue. */
   function save(blob,label,kind){
     if(!blob||!blob.size)return Promise.resolve(false);
+    /* La memoire se remplit ICI : toute creation passe par save(), donc aucun
+       chemin de l'app ne peut « oublier » de retenir ce que la personne fait. */
+    try{ if(window.Users&&Users.remember)Users.remember('A créé : '+(label||'une création'),'creation'); }catch(e){}
     return thumb(blob).then(function(th){
       return tx('readwrite').then(function(st){
-        st.add({ts:Date.now(),label:String(label||'Création').slice(0,60),
+        st.add({ts:Date.now(),uid:me(),label:String(label||'Création').slice(0,60),
                 kind:kind||(/(^video)/.test(blob.type)?'video':/(^audio)/.test(blob.type)?'audio':'image'),
                 type:blob.type||'application/octet-stream',blob:blob,thumb:th});
         return true;
@@ -705,6 +848,8 @@ var Mine=(function(){
   /* Garde les MAX plus récentes (le téléphone ne se remplit jamais tout seul) */
   function trim(){
     return list().then(function(all){
+      var mine=me();
+      all=all.filter(function(o){return !o.uid||o.uid===mine;});
       if(all.length<=MAX)return;
       var old=all.slice(MAX);
       return tx('readwrite').then(function(st){old.forEach(function(o){st.delete(o.id);});});
@@ -714,7 +859,12 @@ var Mine=(function(){
     return tx('readonly').then(function(st){
       return new Promise(function(res){
         var out=[],r=st.openCursor();
-        r.onsuccess=function(){var c=r.result;if(c){out.push(c.value);c.continue();}
+        var mine=me(),admin=!!(window.Users&&Users.isAdmin&&Users.isAdmin());
+        r.onsuccess=function(){var c=r.result;
+          if(c){ var v=c.value;
+            /* les anciennes créations (sans propriétaire) restent visibles par tous */
+            if(!v.uid||v.uid===mine||(admin&&seeAll))out.push(v);
+            c.continue(); }
           else res(out.sort(function(a,b){return b.ts-a.ts;}));};
         r.onerror=function(){res([]);};
       });
@@ -779,7 +929,9 @@ var Mine=(function(){
     tx('readwrite').then(function(st){st.clear();}).then(function(){refresh();toast('Galerie vidée',1600);})
       .catch(function(){toast('Impossible d\'effacer');});
   }
-  return {save:save,refresh:refresh,clearAll:clearAll,list:list};
+  function setSeeAll(v){seeAll=!!v;refresh();}
+  return {save:save,refresh:refresh,clearAll:clearAll,list:list,setSeeAll:setSeeAll,
+          seeAll:function(){return seeAll;}};
 })();
 
 /* ---------- IA (worker Cloudflare → Replicate) ---------- */
@@ -805,6 +957,76 @@ function aiErrMsg(e){var m=String((e&&e.message)||e||'');
   return {t:'IA indisponible — version rapide appliquée.',ms:2400};
 }
 
+/* ---------- 👤 Écran de connexion + espace admin ---------- */
+var Account=(function(){
+  function gate(){return $('gate');}
+  function show(){var g=gate();if(g){g.classList.remove('hidden');
+    setTimeout(function(){try{$('gateName').focus();}catch(e){}},60);}}
+  function hide(){var g=gate();if(g)g.classList.add('hidden');}
+  function hint(t){var e=$('gateHint');if(e)e.textContent=t||'';}
+  function go(){
+    var n=$('gateName').value.trim(), c=$('gateCode').value.trim();
+    var r=Users.login(n,c);
+    if(!r.ok){hint('⚠️ '+r.why);return;}
+    hint('');$('gateCode').value='';
+    hide(); paint();
+    toast((r.user.admin?'👑 ':'👋 ')+'Bonjour '+r.user.name.split(' ')[0]+' !',2000);
+    if(window.Mine)Mine.refresh();
+  }
+  function logout(){Users.logout();if(window.Mine)Mine.setSeeAll(false);
+    var b=$('adminSeeAll');if(b)b.checked=false;show();}
+  function backup(){
+    var b=Users.backup();
+    var d=new Date(),nom='crea-comptes-'+d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)+'.json';
+    shareOrSave(b,nom,'Sauvegarde de mes comptes');
+    toast('Sauvegarde prête 💾',2200);
+  }
+  function pickRestore(){$('fileRestore').click();}
+  function restore(f){
+    Users.restore(f).then(function(n){toast('✅ '+n+' compte(s) restauré(s)',2400);paint();
+      if(window.Mine)Mine.refresh();})
+      .catch(function(e){toast('Fichier illisible ('+String(e.message||e).slice(0,40)+')',3000);});
+  }
+  /* Ce que l'app retient d'une personne, en clair */
+  function memLines(uid){
+    var m=Users.memory(uid)||[];
+    if(!m.length)return '<div class="hint">Rien de retenu pour l\'instant.</div>';
+    return '<div class="hint">'+m.slice(-8).reverse().map(function(x){
+      return '• '+esc(x.t);}).join('<br>')+'</div>';
+  }
+  function paint(){
+    var c=Users.current();
+    var who=$('mineWho');
+    if(who)who.innerHTML=c
+      ? 'Connecté : <b>'+esc(c.name)+'</b>'+(c.admin?' 👑 (administrateur)':'')
+      : 'Personne de connecté.';
+    var box=$('adminBox');
+    if(!box)return;
+    if(!c||!c.admin){box.classList.add('hidden');return;}
+    box.classList.remove('hidden');
+    var us=Users.list();
+    $('adminUsers').innerHTML=us.map(function(u){
+      var when=new Date(u.seen||u.created||Date.now());
+      return '<div class="u-row"><div><b>'+esc(u.name)+'</b>'+(u.admin?' 👑':'')+
+        '<div class="u-meta">vu le '+when.getDate()+'/'+(when.getMonth()+1)+' · '+
+        ((u.memory||[]).length)+' souvenir(s)</div></div>'+
+        '<button class="bigbtn ghost" data-mem="'+esc(u.uid)+'">🧠 Voir</button></div>'+
+        '<div class="hidden" id="mem-'+esc(u.uid)+'">'+memLines(u.uid)+'</div>';
+    }).join('')||'<div class="hint">Aucun autre compte pour l\'instant.</div>';
+    $('adminUsers').querySelectorAll('[data-mem]').forEach(function(b){
+      b.onclick=function(){var d=$('mem-'+b.dataset.mem);if(d)d.classList.toggle('hidden');};
+    });
+  }
+  function init(){
+    var g=$('gateGo');if(g)g.onclick=go;
+    ['gateName','gateCode'].forEach(function(id){var e=$(id);if(e)e.addEventListener('keydown',
+      function(ev){if(ev.key==='Enter')go();});});
+    if(Users.current()){hide();paint();}else{show();}
+  }
+  return {init:init,go:go,logout:logout,backup:backup,pickRestore:pickRestore,
+          restore:restore,paint:paint};
+})();
+
 /* ---------- navigation studios ---------- */
 var CUR='photo';
 document.querySelectorAll('#bnav button').forEach(function(b){
@@ -812,7 +1034,7 @@ document.querySelectorAll('#bnav button').forEach(function(b){
 });
 function go(name){
   CUR=name;
-  if(name==='mine'&&window.Mine)Mine.refresh();
+  if(name==='mine'&&window.Mine){Mine.refresh();if(window.Account)Account.paint();}
   document.querySelectorAll('.studio').forEach(function(s){s.classList.remove('active')});
   $('s-'+name).classList.add('active');
   document.querySelectorAll('#bnav button').forEach(function(b){b.classList.toggle('on',b.dataset.go===name)});
@@ -2543,7 +2765,10 @@ var Magic=(function(){
     step0.then(function(L){
       if(!L||!L.lyrics)throw new Error((L&&L.error)||'no_lyrics');
       if(L.provider)_who.lyrics=aiWho(L.provider);
-      lastLyrics=L;var el=$('magicLyrics');el.textContent=L.lyrics;el.classList.remove('hidden');
+      lastLyrics=L;
+      if(window.Users&&Users.remember){Users.remember('Chanson : '+(L.title||'sans titre')+
+        (theme?' — sujet : '+theme:''),'chanson');}
+      var el=$('magicLyrics');el.textContent=L.lyrics;el.classList.remove('hidden');
       return fetch(AI_URL+'/compose',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({style:songStyle,mood:theme})}).then(function(r){return r.json();})
         .then(function(C){ if(C&&C.provider)_who.score=aiWho(C.provider);
@@ -2752,6 +2977,11 @@ if('serviceWorker' in navigator){
 document.addEventListener('gesturestart',function(e){e.preventDefault();});
 
 toast('Bienvenue dans Créa Studio 🎨',2200);
+
+/* Écran de connexion : APRÈS que tous les modules existent (sinon Account n'est
+   pas encore défini et l'app démarre sans demander qui l'utilise — erreur #28). */
+try{ Account.init(); }
+catch(e){ try{ toast('Comptes indisponibles : '+String(e.message||e).slice(0,60)); }catch(_){} }
 </script>
 </body>
 </html>
