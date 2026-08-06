@@ -1702,3 +1702,14 @@ Tableau « Une Notion = Un Projet » (ta vidéo IMG_3293). Installé pour Claude
 | apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts | 6 tests de parité Apex ↔ Claude Code | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts) |
 
 Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · [gbrain](https://github.com/garrytan/gbrain) (Mémoire) · [awesome-design-skills](https://github.com/bergside/awesome-design-skills) (Design) · [rtk](https://github.com/rtk-ai/rtk) (Économie de jetons) · [meridian-company-os](https://github.com/codejunkie99/meridian-company-os) (Entreprise) · [free-llm-api-resources](https://github.com/jeis4wpi/free-llm-api-resources) (LLM gratuit)
+
+## 🎨 Créa Studio — v8.5.2 (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | L'app (Photo, Vidéo, Cartoon, Danse IA, Magie, **Mes créas**, **Studio musique**) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `services/kdmc-crea-ai/worker.js` | Le moteur IA (images, voix, paroles, partition) + **2ᵉ IA gratuite en secours** | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tests/verify-crea-song.mjs` | Preuve : le morceau est un vrai fichier audio, la voix est bien mixée | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-song.mjs) |
+| `tests/verify-crea-gallery.mjs` | Preuve : « Mes créas » garde tout, même après rechargement | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-gallery.mjs) |
+| `tests/verify-crea-ai-fallback.mjs` | Preuve : l'app marche même si l'IA principale tombe | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-ai-fallback.mjs) |
+| `tests/no-conflict-markers.test.mjs` | Garde : aucun conflit de fusion ne peut plus entrer dans le dépôt | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-conflict-markers.test.mjs) |
