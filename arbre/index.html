@@ -106,6 +106,8 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .av.M,.av.F{background:radial-gradient(circle at 36% 30%,#fffbef,#e7d4a6)}
 .bandlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#f3e6c2;background:rgba(74,54,26,.9);padding:5px 14px;border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(8px);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:4;pointer-events:none}
 .couplebadge{position:absolute;transform:translate(-50%,-50%);font-size:15px;background:rgba(255,248,230,.96);border:1px solid var(--gold);border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(240,200,116,.35)}
+.couplebadge.exb{width:auto;height:auto;padding:3px 9px;gap:4px;font-size:13px;border-color:#c46a6a;background:rgba(255,241,238,.97);box-shadow:0 3px 10px rgba(196,106,106,.3)}
+.couplebadge.exb small{font-size:10px;font-weight:700;letter-spacing:.3px;color:#a03d3d;text-transform:uppercase}
 .treemode{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:4px;background:rgba(74,54,26,.9);border:1px solid var(--gold);border-radius:999px;padding:3px;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .treemode button{font-size:12px;font-weight:700;color:#f3e6c2;padding:7px 12px;border-radius:999px;white-space:nowrap}
 .treemode button.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#3a2708}
@@ -255,7 +257,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.84";
+var APP_VER="v2.85";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -351,7 +353,11 @@ function tidyTree(ids){
   ids.forEach(function(x){var pp=P(x);[pp.pere,pp.mere].forEach(function(par){if(par&&set[par])ufUnion(par,x,1);});(pp.conjoints||[]).forEach(function(c){if(set[c])ufUnion(x,c,0);});});
   var glevel={},gmin=1e9;ids.forEach(function(x){ufFind(x);if(pot[x]<gmin)gmin=pot[x];});
   ids.forEach(function(x){glevel[x]=pot[x]-gmin;});
-  function members(x){var pp=P(x);var m=[x];(pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&m.indexOf(c)<0)m.push(c);});return m;}
+  function members(x){/* Kevin 2026-08-06 : les EX (divorcés/séparés) et anciennes unions À GAUCHE, l'union ACTUELLE À DROITE. */
+    var pp=P(x),ex=[],rest=[];
+    (pp.conjoints||[]).forEach(function(c){if(set[c]&&!placed[c]&&c!==x&&ex.indexOf(c)<0&&rest.indexOf(c)<0){if(isDivorced(x,c)||isSeparated(x,c))ex.push(c);else rest.push(c);}});
+    var cur=rest.length?[rest.pop()]:[];
+    return ex.concat(rest,[x],cur);}
   function unit(x,depth){
     if(placed[x])return null;
     var mem=members(x);mem.forEach(function(z){placed[z]=1;});var d=glevel[x]||0;if(d>depthMax)depthMax=d;
@@ -380,7 +386,10 @@ function tidyTree(ids){
     rowCur[d]=center+uW/2+UNITGAP;
     var sx=center-uW/2+BOXW/2,y=d*ROWH;
     mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z===viewerId()});});
-    for(var i=0;i<mem.length-1;i++)links.push({couple:1,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});
+    for(var i=0;i<mem.length-1;i++){var A=mem[i],B=mem[i+1];
+      var isC=((P(A).conjoints||[]).indexOf(B)>=0)||((P(B).conjoints||[]).indexOf(A)>=0);
+      var st=!isC?"x":(isDivorced(A,B)?"d":(isSeparated(A,B)?"s":"m"));
+      links.push({couple:1,st:st,x1:sx+i*(BOXW+COUPLEGAP),y1:y,x2:sx+(i+1)*(BOXW+COUPLEGAP),y2:y});}
     cc.forEach(function(o){links.push({x1:center,y1:y+36,x2:o.x,y2:(glevel[o.id]||d+1)*ROWH-36,child:o.id});});
     return center;
   }
@@ -436,7 +445,7 @@ function layoutForest(filter,anchors){
     bands.push({y:y,label:compLabel(trees[i])});
     y+=BANDH;
     t.nodes.forEach(function(n){nodes.push({id:n.id,x:n.x+offx,y:n.y+y,root:n.root});});
-    t.links.forEach(function(l){links.push(l.couple?{couple:1,x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y}:{x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y,child:l.child});});
+    t.links.forEach(function(l){links.push(l.couple?{couple:1,st:l.st,x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y}:{x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y,child:l.child});});
     y+=t.h+COMPGAP;
   });
   if(singleIds.length){
@@ -793,8 +802,9 @@ function drawStage(fit){
   function elbow(l){var r=12,my=(l.y1+l.y2)/2;if(Math.abs(l.x2-l.x1)<3)return 'M'+l.x1+' '+l.y1+' L '+l.x2+' '+l.y2;var sg=l.x2>l.x1?1:-1;
     return 'M'+l.x1+' '+l.y1+' L '+l.x1+' '+(my-r)+' Q '+l.x1+' '+my+' '+(l.x1+sg*r)+' '+my+' L '+(l.x2-sg*r)+' '+my+' Q '+l.x2+' '+my+' '+l.x2+' '+(my+r)+' L '+l.x2+' '+l.y2;}
   var paths=_lay.links.map(function(l){
-    if(l.couple){var midx=(l.x1+l.x2)/2;couples.push({x:midx,y:l.y1});
-      return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="'+(plan?'#b0842c':'#ffd977')+'" stroke-width="'+(plan?2.4:3)+'" stroke-linecap="round" opacity=".95"/>';}
+    if(l.couple){var midx=(l.x1+l.x2)/2,cst=l.st||"m";if(cst!=="x")couples.push({x:midx,y:l.y1,st:cst});
+      var dash=cst==="x"?' stroke-dasharray="2 8" opacity=".35"':(cst==="d"||cst==="s")?' stroke-dasharray="8 6" opacity=".8"':' opacity=".95"';
+      return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="'+(plan?'#b0842c':'#ffd977')+'" stroke-width="'+(plan?2.4:3)+'" stroke-linecap="round"'+dash+'/>';}
     var my=(l.y1+l.y2)/2;var gold=goldLink(l);
     if(plan){var st=gold?'#c9992f':'#8a6134';var sw=gold?3.8:2.6;
       return '<path d="'+elbow(l)+'" fill="none" stroke="'+st+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>';}
@@ -803,7 +813,10 @@ function drawStage(fit){
   var defs='<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b0842c"/><stop offset="1" stop-color="#8a6420"/></linearGradient><linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5427"/><stop offset="1" stop-color="#5a3d18"/></linearGradient></defs>';
   var svg='<svg width="'+W+'" height="'+_lay.h+'">'+defs+zebra+rules+paths+'</svg>';
   var labels=(_lay.bands||[]).map(function(b){return '<div class="bandlab" style="left:'+(W/2)+'px;top:'+b.y+'px">'+esc(b.label)+'</div>';}).join("");
-  var rings=couples.map(function(c){return '<div class="couplebadge" style="left:'+c.x+'px;top:'+c.y+'px">💍</div>';}).join("");
+  var rings=couples.map(function(c){
+    if(c.st==="d")return '<div class="couplebadge exb" style="left:'+c.x+'px;top:'+c.y+'px">💔<small>divorcés</small></div>';
+    if(c.st==="s")return '<div class="couplebadge exb" style="left:'+c.x+'px;top:'+c.y+'px">💔<small>séparés</small></div>';
+    return '<div class="couplebadge" style="left:'+c.x+'px;top:'+c.y+'px">💍</div>';}).join("");
   stage.style.width=W+"px";stage.style.height=_lay.h+"px";
   /* v2.69 : bandeaux APRÈS les cartes dans le DOM → toujours lisibles (jamais recouverts) */
   stage.innerHTML=svg+genLabels+rings+_lay.nodes.map(tnodeHTML).join("")+labels;
@@ -996,6 +1009,7 @@ function showLegend(){showOverlay('<div class="sheet"><button class="bkbtn" data
  +'<div class="legrow"><span class="legico">⬆️</span><div><b>Gén. 1</b> en haut = l\'ancêtre le plus ancien. Chaque rangée = une génération.</div></div>'
  +'<div class="legrow"><span class="legico">🎨</span><div><b>Le liseré de couleur à gauche de chaque carte = sa famille de naissance :</b><div class="brchips">'+BRANCHES.slice(0,7).map(function(b){return '<span class="brchip"><i style="background:'+b.c+'"></i>'+b.lab+'</span>';}).join("")+'</div></div></div>'
  +'<div class="legrow"><span class="legico">💍</span><div><b>Deux cartes côte à côte avec 💍</b> = un couple. Le trait qui descend = leurs enfants.</div></div>'
+ +'<div class="legrow"><span class="legico">💔</span><div><b>💔 divorcés / séparés</b> = ancienne union (trait pointillé). Les ex sont placés à <b>gauche</b> de la personne, l\'union actuelle à <b>droite</b>.</div></div>'
  +'<div class="legrow"><span class="legico">🫒</span><div><b>Boutons du haut</b> = changer de famille (Sauvaigo·Maiffret 🫒 / Desarzens 🌳).</div></div>'
  +'<div class="legrow"><span class="legico">🔗</span><div><b>Section « à relier »</b> en bas = membres de la famille pas encore rattachés à l\'arbre.</div></div>'
  +'<div class="legrow"><span class="legico">👆</span><div><b>Touche une carte</b> = fiche complète : lien de parenté avec toi, dates, actes, photos, commentaires.</div></div></div>'
