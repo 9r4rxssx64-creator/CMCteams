@@ -37,7 +37,8 @@ const ctx = await browser.newContext({
 });
 const page = await ctx.newPage(); const errs = [];
 page.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
-page.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE: ' + m.text()); });
+// le bac à sable ne peut pas joindre kd-mc.com : un échec réseau n'est pas un bug de l'app
+page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR_TUNNEL|ERR_NAME|ERR_CONNECTION/.test(m.text())) errs.push('CONSOLE: ' + m.text()); });
 await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'load' });
 await page.waitForTimeout(400);
 // on se connecte comme une vraie personne
