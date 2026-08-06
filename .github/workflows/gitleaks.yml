@@ -1,4 +1,10 @@
 name: Gitleaks (secrets en clair dans commits)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Demande Kevin 2026-05-15 "qualité pro sans gros coûts" :
 # Gitleaks détecte tokens API/secrets en clair pushés par accident.

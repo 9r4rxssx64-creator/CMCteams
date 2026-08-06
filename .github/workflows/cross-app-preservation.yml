@@ -1,4 +1,10 @@
 name: Cross-app preservation gate
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # CRITIQUE — Kevin demande explicitement : "tous mes autres projets doivent rester
 # intacts pendant rebuild Apex". Ce workflow hash les fichiers protégés et fail si

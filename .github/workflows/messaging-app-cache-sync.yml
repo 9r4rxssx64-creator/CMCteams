@@ -1,4 +1,10 @@
 name: Apex Chat — Version + CACHE_VERSION Sync
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Auto-fix CACHE_VERSION + badge data-version pour messaging-app (Apex Chat).
 # Empêche Kevin "Maj force auto oublie pas même PWA iOS" (règle absolue CLAUDE.md).

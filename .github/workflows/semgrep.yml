@@ -1,4 +1,10 @@
 name: Semgrep SAST (sécurité statique gratuit)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Demande Kevin 2026-05-15 "qualité pro sans gros coûts" :
 # Semgrep cloud free remplace audit Cure53 (10-20 k€) pour la détection

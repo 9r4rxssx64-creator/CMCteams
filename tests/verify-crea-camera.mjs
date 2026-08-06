@@ -102,6 +102,12 @@ chk(couleur.ecartMoyen >= 0 && couleur.ecartMoyen < 12,
 await fermer();
 // 5) filmer produit une vraie vidéo
 const avantV = await page.evaluate(async () => (await window.Mine.list()).length);
+// la caméra doit VRAIMENT donner des images avant de filmer, sinon on
+// enregistre du vide (c'est ce qui rendait ce test capricieux, pas l'app)
+await page.waitForFunction(() => {
+  const el = document.getElementById('camView');
+  return el && el.srcObject && el.videoWidth > 0 && el.readyState >= 2;
+}, null, { timeout: 15000 });
 await page.evaluate(() => window.Cam.startVideo());
 await page.waitForTimeout(1600);
 await page.evaluate(() => window.Cam.stopVideo());

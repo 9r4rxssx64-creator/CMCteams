@@ -1,4 +1,10 @@
 name: Auto-rollback if tests fail post-merge
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # P1 audit autonomie 2026-05-07 (Kevin "auto-rollback prouvé")
 #

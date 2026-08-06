@@ -1,4 +1,10 @@
 name: CMC SW Cache Version Sync
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Auto-fix sw.js CACHE pour qu'il match toujours APP_VER de index.html
 # Empeche Kevin de devoir force-refresh : si APP_VER bumpe sans que sw.js suive,
