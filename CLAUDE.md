@@ -9611,3 +9611,25 @@ Si deux solutions atteignent le même résultat, choisir celle qui coûte le moi
 > *« Combien de clics je fais faire à Kevin dans cette réponse ? Chacun est-il VRAIMENT impossible à automatiser/contourner de mon côté (login tiers/KYC/CB/signature) ? Si un seul pouvait être évité par un de mes outils ou un outil à créer → je le fais AVANT d'envoyer. »*
 
 S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses tools), CMCteams, tous projets présents et futurs.
+
+---
+
+## 🧰 RÈGLE — BOÎTE À OUTILS AGENTS : 6 DÉPÔTS DE RÉFÉRENCE (Kevin 2026-08-06)
+
+> **« Récupère et installe tout ça pour toi et Apex et utilise. Note tout. »** — Kevin 2026-08-06 (tableau « Une Notion = Un Projet »)
+
+6 dépôts installés **des deux côtés** (Claude Code + Apex), à utiliser par réflexe :
+
+| Notion | Dépôt | Réflexe |
+|---|---|---|
+| Ingénieur | `anthropics/skills` | avant d'écrire un `SKILL.md` |
+| Mémoire | `garrytan/gbrain` | avant de toucher à la mémoire d'agent (comparer à `tools/memory`) |
+| Design | `bergside/awesome-design-skills` | avant toute maquette → choisir une direction **nommée** (anti-design-d'IA-générique) |
+| Économie de jetons | `rtk-ai/rtk` | commande bavarde. Gain réel mesuré ~3,7 %, pas 60-90 % → ne pas survendre |
+| Entreprise | `codejunkie99/meridian-company-os` | piloter humains + agents dans une console (inspiration admin kd-mc.com) |
+| LLM gratuit | `free-llm-api-resources` | forfait épuisé → repli **en fin** de chaîne (Anthropic reste l'IA principale) |
+
+- Contenu vendorisé : `vendor/agent-toolkit/<id>/` + `MANIFEST.json` (SHA + licence). Mise à jour : workflow `agent-toolkit-sync.yml` (bouton + cron mensuel).
+- Mode d'emploi détaillé : `.claude/skills/agent-toolkit/SKILL.md`. Côté Apex : catalogue plugins, tag `agent-toolkit`.
+- **Interdits** : vendoriser un binaire ou un script exécutable tiers ; installer un hook tiers qui réécrit **toutes** mes commandes (PROTECTION ≠ STABILITÉ).
+- **Ajouter une source** = l'ajouter dans `tools/agent-toolkit/sources.json` **ET** dans le catalogue Apex, dans le même commit (le test de parité vérifie que les URLs correspondent).

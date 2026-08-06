@@ -1685,3 +1685,20 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 | arbre/research/INFOS.md | Infos presse ancienne & sources ouvertes | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md) |
 | arbre/research/RAPPORT.md | Recherche INSEE (~800 actes balayés) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/RAPPORT.md) |
 | Workflows | arbre-cloud-audit.yml (cron 5/mois 04:00) · arbre-recherche.yml (03:00) · arbre-actes-registres.yml (05:00) · arbre-recherche-web.yml | [Actions](https://github.com/9r4rxssx64-creator/cmcteams/actions) |
+
+## 🧰 Boîte à outils agents — 6 dépôts du tableau (session 2026-08-06)
+
+Tableau « Une Notion = Un Projet » (ta vidéo IMG_3293). Installé pour Claude Code **et** Apex.
+
+| Fichier | Description | Liens |
+|---|---|---|
+| tools/agent-toolkit/sources.json | Les 6 dépôts + ce qu'on copie de chacun (texte seulement) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sources.json) |
+| tools/agent-toolkit/sync.mjs | Va chercher les dépôts, ne garde que le texte, épingle le SHA | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sync.mjs) |
+| tools/agent-toolkit/sync.test.mjs | 6 tests : aucun binaire, aucun node_modules, plafonds respectés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sync.test.mjs) |
+| .github/workflows/agent-toolkit-sync.yml | Récupère + ouvre la PR (bouton + 1er de chaque mois) | [Lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/agent-toolkit-sync.yml) |
+| .claude/skills/agent-toolkit/SKILL.md | Mon mode d'emploi : quel dépôt j'ouvre et quand | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/agent-toolkit/SKILL.md) |
+| vendor/agent-toolkit/ | Le contenu récupéré (+ MANIFEST.json : SHA, licence, date) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/vendor/agent-toolkit) |
+| apex-ai/v13/data/apex-plugins-catalog.ts | Les 6 côté Apex (tag `agent-toolkit`) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/data/apex-plugins-catalog.ts) |
+| apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts | 6 tests de parité Apex ↔ Claude Code | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts) |
+
+Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · [gbrain](https://github.com/garrytan/gbrain) (Mémoire) · [awesome-design-skills](https://github.com/bergside/awesome-design-skills) (Design) · [rtk](https://github.com/rtk-ai/rtk) (Économie de jetons) · [meridian-company-os](https://github.com/codejunkie99/meridian-company-os) (Entreprise) · [free-llm-api-resources](https://github.com/jeis4wpi/free-llm-api-resources) (LLM gratuit)

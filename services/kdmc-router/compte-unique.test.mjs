@@ -147,3 +147,53 @@ test('un prénom seul auto-déclaré ne se range PAS dans le dossier admin', asy
   assert.ok(acc(store, 'inconnu_1'), 'la fiche reste séparée');
   assert.ok(acc(store, 'inconnu_2'), 'un homonyme garde sa propre fiche');
 });
+
+/* ── Deux défauts CONSTATÉS EN VRAI le 2026-08-06 sur le journal live ────────────
+   (1) « Connexions RÉELLES → 8 personnes » listait DEUX « kevin Desarzens »
+       (196 et 116 connexions) : la fusion portait un drapeau DÉFINITIF, donc une
+       fiche en double apparue APRÈS le premier passage n'était plus jamais absorbée.
+   (2) « Ronan Desarzens » (nom de famille identique, prénom différent) était
+       reconnu comme l'admin → sa fiche AURAIT ÉTÉ absorbée dans celle de Kevin. */
+
+test('une fiche en double apparue APRÈS la 1re fusion est bien absorbée ensuite', async () => {
+  const { store, env } = mkEnv();
+  await issue(env, 'kdmc_admin', 'Kevin Desarzens');           /* 1re fusion : rien à absorber */
+  const k1 = acc(store, 'kdmc_admin');
+  assert.ok(k1.merged_at, 'la date de dernière fusion est enregistrée');
+
+  /* Une vieille fiche du même Kevin refait surface (import, autre app, migration…). */
+  store.set('idx:uids', JSON.stringify(['kdmc_admin', 'kevin_ancien']));
+  store.set('acc:kevin_ancien', JSON.stringify({
+    uid: 'kevin_ancien', name: 'Kevin DESARZENS', hits: 116, apps: {}, history: [],
+  }));
+  /* On simule le temps qui passe (le re-passage est au plus 1×/semaine). */
+  const k = acc(store, 'kdmc_admin');
+  k.merged_at = Date.now() - 8 * 24 * 3600e3;
+  k.last_seen = Date.now() - 8 * 24 * 3600e3; /* sinon la visite est « trop rapprochée » et rien n'est réécrit */
+  store.set('acc:kdmc_admin', JSON.stringify(k));
+
+  await issue(env, 'kdmc_admin', 'Kevin Desarzens');           /* visite suivante */
+
+  const k2 = acc(store, 'kdmc_admin');
+  assert.ok(k2.hits >= 116, 'les 116 connexions du doublon sont récupérées, got ' + k2.hits);
+  assert.equal(acc(store, 'kevin_ancien').merged_into, 'kdmc_admin', 'le doublon devient un renvoi');
+});
+
+test('Ronan Desarzens garde SON compte (même nom de famille ≠ même personne)', async () => {
+  const { store, env } = mkEnv();
+  await issue(env, 'kdmc_admin', 'Kevin Desarzens');
+  await issue(env, 'ronan_1', 'Ronan Desarzens');
+  const r = acc(store, 'ronan_1');
+  assert.ok(r, 'Ronan a bien sa propre fiche');
+  assert.ok(!r.merged_into, 'Ronan n\'est JAMAIS absorbé dans le compte admin');
+  assert.notEqual(r.name, undefined);
+  /* et l'inverse : Kevin ne récupère pas les connexions de Ronan */
+  const k = acc(store, 'kdmc_admin');
+  assert.ok(!(k.aliases || []).includes('ronan_1'), 'aucun rattachement de Ronan à Kevin');
+});
+
+test('« Desarzens K » (nom + initiale) reste bien reconnu comme l\'admin', async () => {
+  const { store, env } = mkEnv();
+  await issue(env, 'u1', 'DESARZENS K');
+  assert.ok(acc(store, 'kdmc_admin'), 'rangé dans le dossier admin');
+});
