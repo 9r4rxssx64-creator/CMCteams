@@ -134,6 +134,25 @@
   .mine-it .tag{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.66);
     color:#f0e0b8;font-size:10px;padding:3px 5px;text-align:center;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #camWrap{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:14px;
+    overflow:hidden;margin-top:10px}
+  #camView,#camShot{width:100%;height:100%;object-fit:cover;display:block}
+  #camView.mir{transform:scaleX(-1)}
+  #camTop{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px}
+  .camIco{width:46px;height:46px;border-radius:50%;border:0;font-size:20px;
+    background:rgba(0,0,0,.5);color:#fff;backdrop-filter:blur(6px)}
+  .camIco.on{background:rgba(232,184,75,.85);color:#111}
+  #camGrid{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(to right,transparent 33.3%,rgba(255,255,255,.28) 33.3%,rgba(255,255,255,.28) 33.5%,transparent 33.5%,transparent 66.6%,rgba(255,255,255,.28) 66.6%,rgba(255,255,255,.28) 66.8%,transparent 66.8%),
+      linear-gradient(to bottom,transparent 33.3%,rgba(255,255,255,.28) 33.3%,rgba(255,255,255,.28) 33.5%,transparent 33.5%,transparent 66.6%,rgba(255,255,255,.28) 66.6%,rgba(255,255,255,.28) 66.8%,transparent 66.8%)}
+  #camTimerNum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:96px;font-weight:800;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.7)}
+  #camRecDot{position:absolute;top:10px;left:10px;background:rgba(220,38,38,.92);color:#fff;
+    font-size:12px;padding:5px 10px;border-radius:20px;font-weight:700}
+  .shutter{width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgba(232,184,75,.9);
+    box-shadow:0 0 0 3px rgba(0,0,0,.35);flex:0 0 auto}
+  .shutter:active{transform:scale(.93)}
+  .shutter.rec{background:#dc2626;border-color:#fff}
   #gate{position:fixed;inset:0;z-index:120;background:linear-gradient(160deg,#0b0b0d,#141018);
     display:flex;align-items:center;justify-content:center;padding:18px}
   .gate-card{width:100%;max-width:360px;background:#151517;border:1px solid rgba(232,184,75,.3);
@@ -483,6 +502,38 @@
   </section>
 
   <!-- ============ ✨ MAGIE IA (transformations 1-clic + chant + chanson) ============ -->
+  <section class="studio" id="s-cam">
+    <div class="card">
+      <h2>📷 Caméra</h2>
+      <p class="hint">Filtres en direct, avant/arrière, minuteur. Appuie pour une photo,
+        garde le doigt appuyé pour une vidéo.</p>
+      <div id="camWrap">
+        <video id="camView" playsinline muted autoplay></video>
+        <canvas id="camShot" class="hidden"></canvas>
+        <div id="camGrid" class="hidden"></div>
+        <div id="camTimerNum" class="hidden"></div>
+        <div id="camTop">
+          <button class="camIco" id="camSwap" title="Changer de caméra">🔄</button>
+          <button class="camIco" id="camTorch" title="Lampe">🔦</button>
+          <button class="camIco" id="camTimer" title="Minuteur">⏱</button>
+          <button class="camIco" id="camGridBtn" title="Grille">#️⃣</button>
+          <button class="camIco" id="camMirror" title="Effet miroir">🪞</button>
+        </div>
+        <div id="camRecDot" class="hidden">● REC <span id="camRecT">0:00</span></div>
+      </div>
+      <div class="chips" id="camFilters"></div>
+      <div class="row" style="margin-top:10px;align-items:center;justify-content:center;gap:14px">
+        <button class="bigbtn ghost" id="camImport">📂 Importer</button>
+        <button id="camShoot" class="shutter" aria-label="Prendre la photo"></button>
+        <button class="bigbtn ghost" id="camStop">⏹ Stop</button>
+      </div>
+      <div class="hint" id="camHint">Touche « Démarrer » pour allumer la caméra.</div>
+      <div class="row" style="margin-top:8px">
+        <button class="bigbtn" id="camStart">▶️ Démarrer la caméra</button>
+      </div>
+    </div>
+  </section>
+
   <section class="studio" id="s-mine">
     <div class="card">
       <h2>🗂 Mes créations</h2>
@@ -592,7 +643,8 @@
 
 <!-- BOTTOM NAV -->
 <div id="bnav">
-  <button class="on" data-go="photo"><span class="ic">📸</span>Photo</button>
+  <button class="on" data-go="cam"><span class="ic">📷</span>Caméra</button>
+  <button data-go="photo"><span class="ic">🖼</span>Photo</button>
   <button data-go="video"><span class="ic">🎬</span>Vidéo</button>
   <button data-go="anim"><span class="ic">✏️</span>Cartoon</button>
   <button data-go="aivid"><span class="ic">🕺</span>Danse IA</button>
@@ -634,21 +686,24 @@
 </div>
 
 <!-- hidden inputs -->
-<input type="file" id="fileImg" accept="image/*" class="hidden">
-<input type="file" id="fileImgCam" accept="image/*" capture="environment" class="hidden">
-<input type="file" id="fileVid" accept="video/*" class="hidden">
+<input type="file" id="fileCamAny" class="hidden"
+  accept="image/*,image/heic,image/heif,.heic,.heif,video/*,.mov,.mp4,.m4v,.webm,audio/*,.m4a,.aac,.mp3,.wav,.ogg,.caf"
+  onchange="if(this.files[0])Import.any(this.files[0]);this.value='';">
+<input type="file" id="fileImg" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
+<input type="file" id="fileImgCam" accept="image/*,image/heic,image/heif" capture="environment" class="hidden">
+<input type="file" id="fileVid" accept="video/*,.mov,.m4v" class="hidden">
 <input type="file" id="fileVidCam" accept="video/*" capture="environment" class="hidden">
-<input type="file" id="fileAudio" accept="audio/*" class="hidden">
-<input type="file" id="fileImgAnim" accept="image/*" class="hidden">
-<input type="file" id="fileOverlay" accept="image/*" class="hidden">
-<input type="file" id="fileAiPhoto" accept="image/*" class="hidden">
+<input type="file" id="fileAudio" accept="audio/*,.m4a,.caf,.aac" class="hidden">
+<input type="file" id="fileImgAnim" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
+<input type="file" id="fileOverlay" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
+<input type="file" id="fileAiPhoto" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
 <input type="file" id="fileAiPhotoCam" accept="image/*" capture="user" class="hidden">
-<input type="file" id="fileAiMusic" accept="audio/*" class="hidden">
-<input type="file" id="fileBg" accept="image/*" class="hidden">
-<input type="file" id="fileMagicPhoto" accept="image/*" class="hidden">
-<input type="file" id="fileMagicCam" accept="image/*" capture="user" class="hidden">
-<input type="file" id="fileMagicSong" accept="audio/*" class="hidden">
-<input type="file" id="fileMagicPhoto2" accept="image/*" class="hidden">
+<input type="file" id="fileAiMusic" accept="audio/*,.m4a,.caf,.aac" class="hidden">
+<input type="file" id="fileBg" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
+<input type="file" id="fileMagicPhoto" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
+<input type="file" id="fileMagicCam" accept="image/*,image/heic,image/heif" capture="user" class="hidden">
+<input type="file" id="fileMagicSong" accept="audio/*,.m4a,.caf,.aac" class="hidden">
+<input type="file" id="fileMagicPhoto2" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
 <input type="file" id="fileDanceRef" accept="video/*" class="hidden">
 
 <script>
@@ -657,7 +712,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.0.0';
+var APP_VER='v9.1.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -957,6 +1012,265 @@ function aiErrMsg(e){var m=String((e&&e.message)||e||'');
   return {t:'IA indisponible — version rapide appliquée.',ms:2400};
 }
 
+/* ============ 📂 IMPORT MULTIFORMAT + TAILLE ============
+   Kevin importe ce qu'il a sous la main : photo iPhone (HEIC), capture d'écran,
+   vidéo filmée (.mov), note vocale (.m4a), fichier lourd… Il faut que ça marche,
+   ou qu'on dise EXACTEMENT pourquoi ça ne marche pas — jamais un échec muet. */
+var Import=(function(){
+  var MAX_IMG=24*1024*1024, MAX_VID=220*1024*1024, MAX_AUD=60*1024*1024;
+  function ko(n){return Math.round(n/1024);}
+  function mo(n){return (n/1048576).toFixed(1);}
+  function kind(f){
+    var t=(f.type||'').toLowerCase(), n=(f.name||'').toLowerCase();
+    if(t.indexOf('image')===0||/\.(jpe?g|png|gif|webp|bmp|heic|heif|avif|tiff?)$/.test(n))return 'image';
+    if(t.indexOf('video')===0||/\.(mp4|mov|m4v|webm|avi|mkv|3gp)$/.test(n))return 'video';
+    if(t.indexOf('audio')===0||/\.(mp3|wav|m4a|aac|ogg|flac|caf|opus)$/.test(n))return 'audio';
+    return 'inconnu';
+  }
+  /* Vérifie la taille AVANT de charger : un fichier trop gros fige le téléphone
+     en silence, ce qui ressemble à un bug alors que c'est juste trop lourd. */
+  function tropGros(f,k){
+    var max=k==='video'?MAX_VID:(k==='audio'?MAX_AUD:MAX_IMG);
+    if(f.size<=max)return null;
+    return 'Ce fichier fait '+mo(f.size)+' Mo, c\'est trop lourd pour le téléphone (max '
+      +mo(max)+' Mo). Prends une version plus petite, ou coupe la vidéo avant.';
+  }
+  /* Réduit une image trop grande : le téléphone garde de la mémoire et l'IA
+     travaille plus vite. Retourne un File prêt à l'emploi. */
+  function reduire(file,maxCote){
+    maxCote=maxCote||2400;
+    return new Promise(function(res){
+      var im=new Image(),u=URL.createObjectURL(file);
+      im.onload=function(){
+        var k=Math.min(maxCote/im.naturalWidth,maxCote/im.naturalHeight,1);
+        if(k>=1){URL.revokeObjectURL(u);return res({file:file,reduit:false,w:im.naturalWidth,h:im.naturalHeight});}
+        var c=document.createElement('canvas');
+        c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);
+        c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+        c.toBlob(function(b){
+          URL.revokeObjectURL(u);
+          res(b?{file:new File([b],(file.name||'photo').replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'}),
+                 reduit:true,w:c.width,h:c.height}
+               :{file:file,reduit:false});
+        },'image/jpeg',0.9);
+      };
+      im.onerror=function(){URL.revokeObjectURL(u);res(null);};   /* format illisible ici */
+      im.src=u;
+    });
+  }
+  /* Point d'entrée unique : on regarde ce que c'est, on l'envoie au bon studio. */
+  function any(file){
+    if(!file)return;
+    var k=kind(file), gros=tropGros(file,k);
+    if(gros){toast(gros,5200);return;}
+    if(k==='image'){
+      reduire(file).then(function(r){
+        if(!r){toast('Ce format d\'image ne s\'ouvre pas ici ('+(file.name||'').split('.').pop()
+          +'). Sur iPhone, passe par Photos plutôt que Fichiers.',5200);return;}
+        toast(r.reduit?('Photo importée et allégée ('+r.w+'×'+r.h+', '+ko(r.file.size)+' Ko) 🖼')
+                      :('Photo importée ('+r.w+'×'+r.h+') 🖼'),2200);
+        go('photo'); if(window.Photo&&Photo._load)Photo._load(r.file);
+      });
+      return;
+    }
+    if(k==='video'){toast('Vidéo importée ('+mo(file.size)+' Mo) 🎬',2000);
+      go('video'); if(window.Vid&&Vid._load)Vid._load(file); return;}
+    if(k==='audio'){toast('Son importé ('+ko(file.size)+' Ko) 🎵',2000);
+      go('magic'); if(window.Magic&&Magic._song)Magic._song(file); return;}
+    toast('Format non reconnu : '+((file.name||'').split('.').pop()||file.type||'?')
+      +'. Photos, vidéos et sons fonctionnent.',4800);
+  }
+  return {any:any,kind:kind,reduire:reduire,tropGros:tropGros};
+})();
+
+/* ================= 📷 CAMÉRA (façon Snapchat) =================
+   Filtres en direct, avant/arrière, minuteur, lampe, grille, effet miroir,
+   photo au clic / vidéo en gardant le doigt appuyé. Ce qui est pris part
+   directement dans « Mes créas » et peut être retouché dans le studio Photo.
+   Tout se passe dans le téléphone : aucune image n'est envoyée quelque part. */
+var Cam=(function(){
+  /* Des filtres qui rendent VRAIMENT différent (pas 15 noms pour la même image) */
+  var FX=[
+    {id:'aucun',   n:'Aucun',      css:''},
+    {id:'beaute',  n:'Beauté',     css:'saturate(1.12) brightness(1.08) contrast(.96) blur(.4px)'},
+    {id:'eclat',   n:'Éclat',      css:'brightness(1.18) saturate(1.25) contrast(1.05)'},
+    {id:'nb',      n:'Noir & blanc',css:'grayscale(1) contrast(1.18)'},
+    {id:'sepia',   n:'Sépia',      css:'sepia(.8) contrast(1.05) brightness(1.04)'},
+    {id:'vintage', n:'Vintage',    css:'sepia(.35) saturate(1.5) contrast(.9) brightness(1.06)'},
+    {id:'froid',   n:'Froid',      css:'hue-rotate(180deg) saturate(1.15) brightness(1.02)'},
+    {id:'chaud',   n:'Chaud',      css:'sepia(.22) saturate(1.5) hue-rotate(-12deg) brightness(1.05)'},
+    {id:'neon',    n:'Néon',       css:'saturate(2.4) contrast(1.35) hue-rotate(-25deg)'},
+    {id:'vhs',     n:'VHS',        css:'saturate(1.4) contrast(1.25) hue-rotate(8deg) blur(.6px)'},
+    {id:'nuit',    n:'Nuit',       css:'brightness(1.5) contrast(.88) saturate(.8)'},
+    {id:'cinema',  n:'Cinéma',     css:'contrast(1.28) saturate(.85) brightness(.96)'},
+    {id:'negatif', n:'Négatif',    css:'invert(1) hue-rotate(180deg)'},
+    {id:'pop',     n:'Pop art',    css:'saturate(3) contrast(1.6) brightness(1.05)'},
+    {id:'reve',    n:'Rêve',       css:'blur(1.2px) brightness(1.16) saturate(1.3)'},
+    {id:'metal',   n:'Métal',      css:'grayscale(.7) contrast(1.5) brightness(1.1)'}
+  ];
+  var stream=null,fx='aucun',facing='user',mirror=true,grid=false,timer=0,torch=false;
+  var rec=null,chunks=[],recT=null,recStart=0,holding=false,holdTimer=null;
+  function v(){return $('camView');}
+  function hint(t){var e=$('camHint');if(e)e.textContent=t||'';}
+  function css(){var f=FX.filter(function(x){return x.id===fx;})[0];return (f&&f.css)||'none';}
+  function applyFx(){var el=v();if(el)el.style.filter=css();}
+  function chips(){
+    var box=$('camFilters');if(!box)return;
+    box.innerHTML=FX.map(function(f){
+      return '<button class="chip'+(f.id===fx?' on':'')+'" data-fx="'+f.id+'">'+esc(f.n)+'</button>';}).join('');
+    box.querySelectorAll('[data-fx]').forEach(function(b){
+      b.onclick=function(){fx=b.dataset.fx;chips();applyFx();};});
+  }
+  function start(){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+      hint('⚠️ Cet appareil ne permet pas la caméra dans le navigateur. Utilise « 📂 Importer ».');return;}
+    stop(true);
+    hint('Ouverture de la caméra…');
+    navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1080}},audio:true})
+      .then(function(st){
+        stream=st;var el=v();el.srcObject=st;el.play().catch(function(){});
+        el.classList.toggle('mir',mirror&&facing==='user');
+        applyFx();
+        hint('Prêt ✅ Appuie pour une photo, garde appuyé pour filmer.');
+      })
+      .catch(function(e){
+        var m=String(e&&e.name||e);
+        hint(m==='NotAllowedError'
+          ? '⚠️ Tu as refusé la caméra. Autorise-la dans les réglages du téléphone, ou utilise « 📂 Importer ».'
+          : (m==='NotFoundError'?'⚠️ Aucune caméra trouvée sur cet appareil.'
+            :'⚠️ Caméra indisponible ('+m.slice(0,40)+'). Tu peux importer une photo.'));
+      });
+  }
+  function stop(silencieux){
+    try{if(rec&&rec.state!=='inactive')rec.stop();}catch(e){}
+    try{if(stream)stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+    stream=null;var el=v();if(el)el.srcObject=null;
+    if(!silencieux)hint('Caméra éteinte.');
+  }
+  function swap(){facing=(facing==='user')?'environment':'user';if(stream)start();}
+  function toggleTorch(){
+    if(!stream)return hint('Allume d\'abord la caméra.');
+    var tr=stream.getVideoTracks()[0];
+    var caps=(tr&&tr.getCapabilities&&tr.getCapabilities())||{};
+    if(!caps.torch)return hint('⚠️ Cet appareil ne permet pas d\'allumer la lampe pendant la vidéo.');
+    torch=!torch;
+    tr.applyConstraints({advanced:[{torch:torch}]}).then(function(){
+      $('camTorch').classList.toggle('on',torch);}).catch(function(){hint('⚠️ Lampe refusée par l\'appareil.');});
+  }
+  function cycleTimer(){
+    timer=timer===0?3:(timer===3?10:0);
+    var b=$('camTimer');b.textContent=timer?('⏱'+timer):'⏱';b.classList.toggle('on',!!timer);
+    hint(timer?('Minuteur : '+timer+' secondes.'):'Minuteur éteint.');
+  }
+  function toggleGrid(){grid=!grid;$('camGrid').classList.toggle('hidden',!grid);
+    $('camGridBtn').classList.toggle('on',grid);}
+  function toggleMirror(){mirror=!mirror;v().classList.toggle('mir',mirror&&facing==='user');
+    $('camMirror').classList.toggle('on',mirror);hint(mirror?'Effet miroir activé.':'Effet miroir désactivé.');}
+  /* Le filtre est CUIT dans l'image : ce que Kevin voit est ce qu'il obtient. */
+  function grab(){
+    var el=v();if(!el||!el.videoWidth)return null;
+    var c=$('camShot');c.width=el.videoWidth;c.height=el.videoHeight;
+    var g=c.getContext('2d');
+    g.filter=css();
+    if(mirror&&facing==='user'){g.translate(c.width,0);g.scale(-1,1);}
+    g.drawImage(el,0,0,c.width,c.height);
+    return c;
+  }
+  function shoot(){
+    if(!stream)return hint('Allume d\'abord la caméra (▶️ Démarrer).');
+    if(!timer)return snap();
+    var n=timer,box=$('camTimerNum');box.classList.remove('hidden');box.textContent=n;
+    var iv=setInterval(function(){
+      n--;if(n<=0){clearInterval(iv);box.classList.add('hidden');snap();}else box.textContent=n;
+    },1000);
+  }
+  function snap(){
+    var c=grab();if(!c)return hint('⚠️ Image pas encore prête, réessaie dans une seconde.');
+    c.toBlob(function(b){
+      if(!b)return hint('⚠️ Photo vide, réessaie.');
+      archive(b,'Photo caméra');
+      hint('📸 Photo prise et rangée dans « Mes créas » ('+Math.round(b.size/1024)+' Ko).');
+      toast('Photo prise 📸',1600);
+      openExport('Photo prise 📸','Tu peux la garder, la retoucher, ou en reprendre une.',[
+        {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'photo-camera.jpg','Ma photo');closeSheet();}},
+        {label:'🖼 La retoucher dans Photo',ghost:true,fn:function(){
+          closeSheet();go('photo');if(window.Photo&&Photo._load)Photo._load(new File([b],'photo.jpg',{type:'image/jpeg'}));}},
+        {label:'✨ L\'envoyer à la Magie IA',ghost:true,fn:function(){
+          closeSheet();go('magic');if(window.Magic&&Magic._load)Magic._load(new File([b],'photo.jpg',{type:'image/jpeg'}));}}
+      ]);
+    },'image/jpeg',0.92);
+  }
+  function startVideo(){
+    if(!stream||rec)return;
+    var mime=['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm']
+      .filter(function(m){try{return MediaRecorder.isTypeSupported(m);}catch(e){return false;}})[0]||'';
+    /* On filme le rendu FILTRÉ : sinon le filtre choisi disparaîtrait de la vidéo. */
+    var el=v(),c=document.createElement('canvas');
+    c.width=el.videoWidth||720;c.height=el.videoHeight||960;
+    var g=c.getContext('2d'),raf=null;
+    (function draw(){g.filter=css();
+      if(mirror&&facing==='user'){g.save();g.translate(c.width,0);g.scale(-1,1);g.drawImage(el,0,0,c.width,c.height);g.restore();}
+      else g.drawImage(el,0,0,c.width,c.height);
+      raf=requestAnimationFrame(draw);})();
+    var out=c.captureStream(30);
+    try{stream.getAudioTracks().forEach(function(t){out.addTrack(t);});}catch(e){}
+    chunks=[];
+    try{rec=new MediaRecorder(out,mime?{mimeType:mime}:undefined);}catch(e){
+      cancelAnimationFrame(raf);rec=null;return hint('⚠️ Vidéo impossible ici ('+String(e.message||e).slice(0,40)+').');}
+    rec.ondataavailable=function(ev){if(ev.data&&ev.data.size)chunks.push(ev.data);};
+    rec.onstop=function(){
+      cancelAnimationFrame(raf);
+      try{out.getTracks().forEach(function(t){if(t.kind==='video')t.stop();});}catch(e){}
+      var b=new Blob(chunks,{type:mime||'video/webm'});rec=null;
+      $('camShoot').classList.remove('rec');$('camRecDot').classList.add('hidden');
+      if(recT){clearInterval(recT);recT=null;}
+      if(!b.size)return hint('⚠️ Vidéo vide, réessaie.');
+      archive(b,'Vidéo caméra');
+      hint('🎬 Vidéo enregistrée dans « Mes créas » ('+Math.round(b.size/1024)+' Ko).');
+      var ext=(mime.indexOf('mp4')>=0)?'mp4':'webm';
+      openExport('Vidéo prête 🎬','Elle est déjà rangée dans « Mes créas ».',[
+        {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'video-camera.'+ext,'Ma vidéo');closeSheet();}},
+        {label:'🎬 La monter dans Vidéo',ghost:true,fn:function(){
+          closeSheet();go('video');if(window.Vid&&Vid._load)Vid._load(new File([b],'v.'+ext,{type:b.type}));}}
+      ]);
+    };
+    rec.start(200);recStart=Date.now();
+    $('camShoot').classList.add('rec');$('camRecDot').classList.remove('hidden');
+    recT=setInterval(function(){
+      var sec=Math.floor((Date.now()-recStart)/1000);
+      $('camRecT').textContent=Math.floor(sec/60)+':'+('0'+(sec%60)).slice(-2);
+      if(sec>=60)stopVideo();                    /* 1 min max : évite de saturer le téléphone */
+    },500);
+  }
+  function stopVideo(){try{if(rec&&rec.state!=='inactive')rec.stop();}catch(e){}}
+  function init(){
+    chips();
+    $('camStart').onclick=start;
+    $('camStop').onclick=function(){if(rec)stopVideo();else stop();};
+    $('camSwap').onclick=swap;
+    $('camTorch').onclick=toggleTorch;
+    $('camTimer').onclick=cycleTimer;
+    $('camGridBtn').onclick=toggleGrid;
+    $('camMirror').onclick=toggleMirror;
+    $('camMirror').classList.add('on');
+    $('camImport').onclick=function(){$('fileCamAny').click();};
+    var sh=$('camShoot');
+    /* Appui court = photo ; appui long = vidéo (comme Snapchat) */
+    function down(e){e.preventDefault();holding=true;
+      holdTimer=setTimeout(function(){if(holding)startVideo();},420);}
+    function up(){clearTimeout(holdTimer);
+      if(rec){stopVideo();}else if(holding){shoot();}
+      holding=false;}
+    sh.addEventListener('touchstart',down,{passive:false});
+    sh.addEventListener('touchend',up);
+    sh.addEventListener('mousedown',down);
+    sh.addEventListener('mouseup',up);
+    sh.addEventListener('mouseleave',function(){if(holding&&!rec){clearTimeout(holdTimer);holding=false;}});
+  }
+  return {init:init,start:start,stop:stop,shoot:shoot,startVideo:startVideo,stopVideo:stopVideo,
+          filters:FX,setFx:function(id){fx=id;chips();applyFx();},current:function(){return fx;}};
+})();
+
 /* ---------- 👤 Écran de connexion + espace admin ---------- */
 var Account=(function(){
   function gate(){return $('gate');}
@@ -1035,6 +1349,7 @@ document.querySelectorAll('#bnav button').forEach(function(b){
 function go(name){
   CUR=name;
   if(name==='mine'&&window.Mine){Mine.refresh();if(window.Account)Account.paint();}
+  if(name!=='cam'&&window.Cam)Cam.stop(true);   /* la caméra ne reste JAMAIS allumée en fond */
   document.querySelectorAll('.studio').forEach(function(s){s.classList.remove('active')});
   $('s-'+name).classList.add('active');
   document.querySelectorAll('#bnav button').forEach(function(b){b.classList.toggle('on',b.dataset.go===name)});
@@ -2980,6 +3295,7 @@ toast('Bienvenue dans Créa Studio 🎨',2200);
 
 /* Écran de connexion : APRÈS que tous les modules existent (sinon Account n'est
    pas encore défini et l'app démarre sans demander qui l'utilise — erreur #28). */
+try{ Cam.init(); }catch(e){}
 try{ Account.init(); }
 catch(e){ try{ toast('Comptes indisponibles : '+String(e.message||e).slice(0,60)); }catch(_){} }
 </script>
