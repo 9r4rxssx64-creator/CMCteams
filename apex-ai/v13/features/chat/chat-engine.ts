@@ -58,6 +58,14 @@ export function setEngineState(
 
 const MAX_CONTEXT_MESSAGES = 30;
 
+/** v13.4.364 — Pousse un texte dans la file du moteur et lance le traitement.
+ * Utilisé par /orchestre <question> (le dispatch n'a pas la réf queue). */
+export function enqueueText(rootEl: HTMLElement, text: string): void {
+  if (!text.trim()) return;
+  queue.push(text.trim());
+  void processQueue(rootEl);
+}
+
 /* Pièces jointes en attente — réfs STABLES fournies par setEngineState (mutées in-place). */
 let pendingAttachments: Array<{ mime: string; base64: string; name: string }> = [];
 let pendingAttachmentPromises: Array<Promise<void>> = [];
@@ -378,7 +386,18 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
   /* v13.4.273 (Kevin "tout soit bien en place avec eco token") :
    * mesure latence client-side du premier au dernier chunk pour badge UI. */
   const streamT0 = Date.now();
-  await aiRouter.stream(
+  /* v13.4.364 (Kevin « Utilise toutes les ia dispo. Orchestre d'ia ») :
+   * gros travail détecté (audit/expert/complet…) → fan-out multi-IA parallèle +
+   * synthèse Anthropic chef d'orchestre. MÊME contrat de callbacks que
+   * aiRouter.stream ; fail-open → route normale si l'orchestre est indispo. */
+  let streamFn: typeof aiRouter.stream = aiRouter.stream.bind(aiRouter);
+  try {
+    const { aiOrchestrator } = await import('../../services/ai/ai-orchestrator.js');
+    if (aiOrchestrator.shouldOrchestrate(text)) {
+      streamFn = aiOrchestrator.stream.bind(aiOrchestrator);
+    }
+  } catch { /* fail-open : routeur normal */ }
+  await streamFn(
     messages,
     sysPrompt,
     (chunk) => {
