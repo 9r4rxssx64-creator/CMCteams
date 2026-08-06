@@ -8,7 +8,7 @@
 | 1 | **Déployer le routeur** (retrait `deces.kd-mc.com` + fusion « un compte par personne » + « Ronan Desarzens » ≠ Kevin) | moi | ⏳ en file — **GitHub était en panne partielle** (`Service Unavailable` au step « Set up job »). À relancer si besoin. |
 | 2 | **Vérifier que ton doublon a fusionné** (une seule ligne « kevin Desarzens » au lieu de 196 + 116) | moi | ⏳ après le point 1 + une de tes connexions |
 | 3 | **Apex v13 : refaire le bundle** pour que sa CSP autorise `admin.kd-mc.com` — sinon ce que tu fais dans Apex n'apparaît pas dans « Qui se connecte » | moi | ⏳ mesuré `envoi:ABSENT / CSP:ABSENT` |
-| 4 | **Ta décision** : je supprime aussi l'outil `tools/deces-insee/` et ses 6 automatisations (elles dorment : lancement manuel seulement, 0 mail, 0 coût) ? | **toi** | ❓ un mot suffit |
+| 4 | ~~Supprimer l'outil `deces-insee`~~ → **fait** (« Oui supprime ») : page + 4 automatisations supprimées, les 3 qui servent l'arbre gardées. Reste éventuellement à vider le stockage R2 `kdmc-deces-insee` (données publiques INSEE, re-téléchargeables) | moi | ✅ / ❓ un mot pour le stockage |
 | 5 | Récupérer le 6ᵉ dépôt de la boîte à outils (miroir corrigé) | moi | ⏳ relancé |
 
 ### Déjà fait cette session (rien à faire)
