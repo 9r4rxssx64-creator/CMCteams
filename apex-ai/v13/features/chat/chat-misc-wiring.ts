@@ -58,12 +58,14 @@ export function wireLogoAndModeToggle(rootEl: HTMLElement): void {
    * header chat. Cycle auto → economy → premium → auto. Toast indique le
    * nouveau mode + icône bouton change pour refléter l'état courant. */
   const modeToggleBtn = rootEl.querySelector<HTMLButtonElement>('#ax-chat-mode-toggle');
-  const MODE_ICONS: Record<string, string> = { auto: '⚡', economy: '💚', premium: '👑', forced: '🎯' };
+  const MODE_ICONS: Record<string, string> = { auto: '⚡', economy: '💚', premium: '👑', forced: '🎯', 'free-smart': '🆓' };
   const MODE_LABELS: Record<string, string> = {
     auto: 'Auto (intelligent, free fallback si budget)',
     economy: 'Économie (gratuit d\'abord — haiku, max_tokens /2)',
     premium: 'Premium (Anthropic Opus toujours)',
     forced: 'Forced (provider admin override)',
+    /* v13.4.362 (Kevin « privilégie les IA gratuites suivant les questions ») */
+    'free-smart': 'Gratuit malin (IA gratuite pour les questions simples, Anthropic pour les complexes)',
   };
   /* Set icon initial selon mode persisté */
   void (async () => {
@@ -82,9 +84,13 @@ export function wireLogoAndModeToggle(rootEl: HTMLElement): void {
       try {
         const { aiRoutingPolicy } = await import('../../services/ai/ai-routing-policy.js');
         const current = aiRoutingPolicy.getMode();
-        /* Cycle : auto → economy → premium → auto (skip forced, admin-only) */
-        const next: 'auto' | 'economy' | 'premium' =
-          current === 'auto' ? 'economy' : current === 'economy' ? 'premium' : 'auto';
+        /* v13.4.362 — Cycle : free-smart → premium → economy → auto → free-smart
+         * (skip forced, admin-only). free-smart = défaut Kevin (gratuit selon la question). */
+        const next: 'auto' | 'economy' | 'premium' | 'free-smart' =
+          current === 'free-smart' ? 'premium'
+            : current === 'premium' ? 'economy'
+              : current === 'economy' ? 'auto'
+                : 'free-smart';
         aiRoutingPolicy.setMode(next, true); /* choix EXPLICITE user (⚡) */
         if (modeToggleBtn) {
           modeToggleBtn.textContent = MODE_ICONS[next] ?? '⚡';
