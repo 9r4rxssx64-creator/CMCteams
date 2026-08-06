@@ -48,10 +48,15 @@ describe('v13.4.337 — premium/forced ignore le prefix smart-router', () => {
     expect(chain[0]).toBe('anthropic');
   });
 
-  it('admin kdmc_admin par défaut (sans mode stocké) = premium → Anthropic en tête', async () => {
+  it('admin kdmc_admin par défaut = free-smart : question simple → IA gratuite, JAMAIS le drift openai (v13.4.362)', async () => {
     localStorage.setItem('apex_v13_uid', 'kdmc_admin');
     const chain = await buildChain(MESSAGES);
-    expect(chain[0]).toBe('anthropic');
+    /* v13.4.362 : défaut admin = free-smart. « Bonjour » = domaine general (simple)
+     * → provider gratuit en tête. Le smart-router (pro-openai) reste SKIP → 0 drift. */
+    expect(chain[0]).not.toBe('openai');
+    expect(['gemini', 'groq', 'openrouter']).toContain(chain[0]);
+    /* Anthropic toujours joignable en secours */
+    expect(chain).toContain('anthropic');
   });
 
   it('mode forced openai : openai en tête (choix admin explicite respecté)', async () => {
@@ -65,11 +70,15 @@ describe('v13.4.337 — premium/forced ignore le prefix smart-router', () => {
    * un mode 'economy' posé AUTOMATIQUEMENT (apex-self-audit, sans flag explicite)
    * était honoré AVANT le défaut premium → l'admin n'était pas en premium → drift.
    * Le fix : pour l'admin, un mode stocké NON explicite est ignoré → premium. */
-  it('admin + economy AUTO (sans flag explicite) → IGNORÉ → premium → Anthropic', async () => {
+  it('admin + economy AUTO (sans flag explicite) → IGNORÉ → défaut free-smart (pas de drift openai)', async () => {
     localStorage.setItem('apex_v13_uid', 'kdmc_admin');
     localStorage.setItem('apex_v13_routing_mode', 'economy'); /* posé par auto-fix, pas de flag */
     const chain = await buildChain(MESSAGES);
-    expect(chain[0]).toBe('anthropic');
+    /* Le mode auto-fix non-explicite est ignoré → défaut admin free-smart. Question
+     * simple → gratuit en tête, openai jamais préfixé (le drift que v337/362 corrigent). */
+    expect(chain[0]).not.toBe('openai');
+    expect(['gemini', 'groq', 'openrouter']).toContain(chain[0]);
+    expect(chain).toContain('anthropic');
   });
 
   it('admin + economy EXPLICITE (flag) → honoré (choix user respecté, leçon #124)', async () => {

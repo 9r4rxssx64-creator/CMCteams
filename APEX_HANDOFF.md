@@ -7,6 +7,43 @@
 
 ---
 
+## 🆕 v13.4.362 (2026-08-06) — Apex reçoit la boîte à outils + le journal du domaine
+
+Kevin : *« Récupère et installe tout ça pour toi et Apex »* puis *« Pareil apex »*.
+
+### Ce qu'Apex gagne
+1. **Boîte à outils agents** — les 6 dépôts du tableau « Une Notion = Un Projet » sont dans le
+   **catalogue plugins** (`apex-ai/v13/data/apex-plugins-catalog.ts`, tag `agent-toolkit`) :
+   `anthropics/skills` (Ingénieur) · `garrytan/gbrain` (Mémoire) · `bergside/awesome-design-skills`
+   (Design) · `rtk-ai/rtk` (Jetons) · `codejunkie99/meridian-company-os` (Entreprise) ·
+   `jeis4wpi/free-llm-api-resources` (LLM gratuit). Leur **texte** est vendorisé dans
+   `vendor/agent-toolkit/<id>/` (épinglé au SHA, `MANIFEST.json`) → Apex peut le lire via
+   `read_repo_file` / `search_repo_code`, sans dépendre du réseau de l'appareil.
+2. **2 skills Apex** : `.claude/skills/apex-agent-toolkit.md` et `.claude/skills/apex-domain-journal.md`.
+
+### ⚠️ Contrainte découverte (à retenir pour toute future parité)
+`memory.syncMetaFilesAtBoot()` liste `.claude/skills/` via l'API GitHub et ne garde que les
+entrées **`type === 'file'`** en `.md`. **Les skills en DOSSIER (`agent-toolkit/SKILL.md`,
+`domain-journal/SKILL.md`, `security-suite/`, `seo-*/`, …) sont donc INVISIBLES pour Apex.**
+D'où la convention du dépôt, désormais explicite : **un skill dossier pour Claude Code + un
+`apex-*.md` concis pour Apex**. Un test le verrouille
+(`tests/unit/agent-toolkit-catalog.test.ts` : le pendant `apex-*.md` doit exister, citer les
+mêmes 6 dépôts, et rappeler qu'Anthropic reste l'IA principale).
+
+Le cap par dossier passe de 30 à **45 pour `skills`** : le tri est alphabétique, chaque nouveau
+`apex-*.md` poussait silencieusement 2 skills hors du cache (mesuré).
+
+### Rappels métier ajoutés côté Apex
+- **Un compte par personne** (fusion **datée**, identité stricte prénom+nom) et **vie privée**
+  (métadonnées seulement) → `apex-domain-journal.md`.
+- **La recherche de décès vit DANS l'arbre** (`arbre.kd-mc.com/__deces`), le sous-domaine
+  `deces.kd-mc.com` a été retiré le 2026-08-06 — ne pas le recréer.
+- **Anthropic reste l'IA principale** : tout provider gratuit s'ajoute en FIN de `DEFAULT_CHAIN`.
+
+Mémoire compacte partagée : 107 souvenirs exportés (`tools/memory/apex-memory.json`).
+
+---
+
 ## 🆕 v9.653 — Cross-app Vision API : Apex doit lire le visuel CMCteams
 
 Kevin (2026-05-16) : Apex doit lire l'image PDF planning SBM via Claude Vision API et cross-valider le parsing texte.

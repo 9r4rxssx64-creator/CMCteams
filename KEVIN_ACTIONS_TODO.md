@@ -8,10 +8,11 @@
 | 1 | **Déployer le routeur** (retrait `deces.kd-mc.com` + fusion « un compte par personne » + « Ronan Desarzens » ≠ Kevin) | moi | ⏳ en file — **GitHub était en panne partielle** (`Service Unavailable` au step « Set up job »). À relancer si besoin. |
 | 2 | **Vérifier que ton doublon a fusionné** (une seule ligne « kevin Desarzens » au lieu de 196 + 116) | moi | ⏳ après le point 1 + une de tes connexions |
 | 3 | **Apex v13 : refaire le bundle** pour que sa CSP autorise `admin.kd-mc.com` — sinon ce que tu fais dans Apex n'apparaît pas dans « Qui se connecte » | moi | ⏳ mesuré `envoi:ABSENT / CSP:ABSENT` |
-| 4 | **Ta décision** : je supprime aussi l'outil `tools/deces-insee/` et ses 6 automatisations (elles dorment : lancement manuel seulement, 0 mail, 0 coût) ? | **toi** | ❓ un mot suffit |
+| 4 | ~~Supprimer l'outil `deces-insee`~~ → **fait** (« Oui supprime ») : page + 4 automatisations supprimées, les 3 qui servent l'arbre gardées. Reste éventuellement à vider le stockage R2 `kdmc-deces-insee` (données publiques INSEE, re-téléchargeables) | moi | ✅ / ❓ un mot pour le stockage |
 | 5 | Récupérer le 6ᵉ dépôt de la boîte à outils (miroir corrigé) | moi | ⏳ relancé |
 
 ### Déjà fait cette session (rien à faire)
+- 🤖 **Pareil pour Apex** (v13.4.362) : il connaît les 6 dépôts, il a ses 2 fiches à lui, et un test empêche qu'on lui oublie quelque chose à l'avenir. **Défaut réel trouvé au passage** : Apex ne lisait QUE mes fiches « à plat » — tous mes dossiers de compétences lui étaient invisibles. C'est écrit, testé, et le plafond corrigé (il perdait 2 compétences à chaque ajout).
 - 🧰 **Boîte à outils agents** : les 6 dépôts de ton tableau installés pour moi **et** pour Apex, contenu récupéré, mis à jour tout seul le 1ᵉʳ de chaque mois.
 - 🔐 **Un compte par personne** réparé (deux défauts réels trouvés en lisant le journal live).
 - 🧹 `deces.kd-mc.com` retiré → suite de tests du domaine **34/34** (le dernier rouge est parti).

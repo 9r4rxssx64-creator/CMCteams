@@ -1700,7 +1700,9 @@ class AIRouter {
        * en tête après quelques succès openai, exactement le drift que premium corrige.
        * Le smart-router reste actif en 'auto'/'economy' (optimisation clients). */
       const policyMode = aiRoutingPolicy.getMode();
-      const skipSmartPrefix = policyMode === 'premium' || policyMode === 'forced';
+      /* v13.4.362 : 'free-smart' respecte aussi la décision policy (gratuit/Anthropic
+       * selon la question) → le smart-router ne doit pas la ré-ordonner vers openai. */
+      const skipSmartPrefix = policyMode === 'premium' || policyMode === 'forced' || policyMode === 'free-smart';
       try {
         if (skipSmartPrefix) throw new Error('skip:explicit-mode');
         const { smartRouter } = await import('./smart-router.js');

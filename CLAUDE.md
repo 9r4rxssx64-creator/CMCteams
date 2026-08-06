@@ -9573,7 +9573,7 @@ CMCteams, tous workflows GitHub Actions, tous projets futurs.
 
 ---
 
-> 📖 Leçons #90-167 : voir **[LESSONS.md](LESSONS.md)** (archivées pour alléger le contexte, règle conso Kevin 2026-07).
+> 📖 Leçons #90-171 : voir **[LESSONS.md](LESSONS.md)** (archivées pour alléger le contexte, règle conso Kevin 2026-07).
 
 
 ---
