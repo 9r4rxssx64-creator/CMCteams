@@ -11,6 +11,19 @@
 | 4 | ~~Supprimer l'outil `deces-insee`~~ → **fait** (« Oui supprime ») : page + 4 automatisations supprimées, les 3 qui servent l'arbre gardées. Reste éventuellement à vider le stockage R2 `kdmc-deces-insee` (données publiques INSEE, re-téléchargeables) | moi | ✅ / ❓ un mot pour le stockage |
 | 5 | Récupérer le 6ᵉ dépôt de la boîte à outils (miroir corrigé) | moi | ⏳ relancé |
 
+### 🔎 « Vérifie en vrai » — c'est maintenant possible (2026-08-06, rien à faire pour toi)
+
+Avant : je ne pouvais **pas** atteindre kd-mc.com, et même en CI je tombais sur les écrans de
+connexion → je « déduisais » au lieu de constater. Maintenant je peux ouvrir **tes vraies pages,
+déjà connecté en tant que toi**, et te ramener **une capture d'écran par page**.
+
+Tu dis simplement **« vérifie »** et je lance. Aucune manip de ta part, aucun code à me donner.
+
+*Sous le capot : je repose la marque de connexion que chaque app écrit elle-même (relue dans son
+code), et pour l'admin j'utilise ton code déjà stocké en secret — jamais écrit dans le projet,
+jamais affiché. Périmètre verrouillé sur kd-mc.com, lecture seule. Honnêteté : c'est une session
+« à ton nom », pas « admin prouvé par Face ID » → les zones qui exigent Face ID restent masquées.*
+
 ### 🛟 SECOURS DE DÉPLOIEMENT — ton unique clic (préparé le 2026-08-06)
 
 GitHub Actions est tombé 6 h aujourd'hui → plus aucun déploiement ne partait. Pour que ça
