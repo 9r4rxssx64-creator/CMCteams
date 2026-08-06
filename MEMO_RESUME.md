@@ -1,4 +1,46 @@
 
+### 🔎 « Simuler ma connexion pour vérifier en réel » (2026-08-06, Kevin)
+
+Le blocage récurrent (leçons #131/#135) : l'agent n'atteint pas kd-mc.com, et la CI ne voyait que
+les écrans de login → je déduisais au lieu de constater. **Résolu.**
+
+- **Réutilisé, pas dupliqué** (leçon #164) : `tools/smoke/audit-live.mjs` existait déjà (13 surfaces,
+  captures, erreurs JS, requêtes bloquées). Ce qui manquait = **être connecté**.
+- **Nouveau `tools/smoke/session-kevin.mjs`** : repose la marque de session que **l'app écrit
+  elle-même**, relue dans son code — CMCteams `cmc_uid`+`cmc_lastact` · Apex `apex_v13_user`+
+  `apex_v13_last_known_uid` · admin `kdmc_access_pinhash` · Arbre `arbre_trust` · portail = vrai
+  pass `POST /__sso/issue`. Appliqué **avant** le chargement (`addInitScript`).
+- **Opt-in** `KDMC_AS_KEVIN=1` → sans le drapeau l'audit reste **anonyme** (zéro régression).
+- **Workflow `verif-reelle.yml`** (dispatch) : je le déclenche, il rend **une capture par page**.
+- **Sécurité** : périmètre kd-mc.com **refusé ailleurs** (throw) · code admin par **secret CI**
+  (`APEX_ADMIN_PIN_SHA256`), jamais dans le dépôt, **jamais journalisé** · lecture seule · sans code
+  fourni on ne fabrique rien.
+- **Honnêteté** : session **nommée**, pas « admin prouvé » (Face ID) → zones réservées masquées.
+- **Garde-fou** `tests/session-kevin.test.mjs` (21 vérifs, câblé `test:ci`) : si une app change sa
+  clé de session, on le sait **là**, au lieu de croire qu'on est connecté devant un écran de login.
+  Prouvé qu'il rougit (marque faussée → code retour 1).
+- **Parité Apex** : `apex-verif-reelle.md` + le test de parité étendu (9/9).
+
+
+### ⛔ Blocage EXTERNE mesuré (2026-08-06, ~15:22 UTC → en cours) — panne mondiale GitHub Actions
+
+**Mesuré** : `in_progress` = **0** · `queued` = **391** (le plus ancien à 15:49, `updated_at == created_at`).
+Zéro job en cours + des centaines en file = **rien ne tourne**. Confirmé par GitHub (« workflow runs
+failing to start », incident ouvert 15:22 UTC) et par une source indépendante. Ce n'est ni notre code,
+ni un quota, ni notre cadrage de workflows (cf. #163 : famine = runs `cancelled` sans job ; ici ils
+restent `queued`).
+
+**Rien n'est perdu** : tout est mergé sur `main` (vérifié fichier par fichier), l'arbre de travail est
+propre, et un run en file ne produit rien. Seul effet : les déploiements n'ont pas eu lieu → la prod
+tourne encore sur sa version précédente (les sites ne sont pas cassés, juste pas à jour).
+
+**En attente de la reprise** (rappel automatique programmé, Kevin n'a rien à faire) : déployer le
+routeur (retrait `deces.kd-mc.com` + fusion des comptes), relancer `deploy-kdmc-access` pour vérifier
+qu'il ne reste qu'UNE fiche « kevin Desarzens », finir la 6ᵉ source de la boîte à outils.
+⚠️ GitHub prévient que des jobs en file **peuvent expirer** → un run en attente n'est pas une garantie,
+on re-déclenche à la reprise.
+
+
 ## 🧰 Boîte à outils agents + « Qui se connecte » durci (2026-08-06)
 
 **Kevin (tableau filmé « Une Notion = Un Projet ») : « Récupère et installe tout ça pour toi et Apex et utilise. Note tout. »**

@@ -10,6 +10,7 @@
 | Tu veux… | Document |
 |---|---|
 | Voir **ce qu'il me reste à faire / ce que TU dois faire** | [KEVIN_ACTIONS_TODO.md](KEVIN_ACTIONS_TODO.md) |
+| **Si GitHub retombe en panne** (secours de déploiement, 1 clic) | [KEVIN_SECOURS_DEPLOIEMENT.md](KEVIN_SECOURS_DEPLOIEMENT.md) |
 | Savoir **où on en est** (état du moment) | [MEMO_RESUME.md](MEMO_RESUME.md) |
 | Les **règles** que je suis toujours | [CLAUDE.md](CLAUDE.md) |
 | Les **infos métier** (employés, codes, casino…) | [NOTES_USER.md](NOTES_USER.md) |
@@ -66,6 +67,7 @@ Ces documents sont **lus automatiquement** à chaque session. Ils sont la **mém
 | [KDMC_ADRESSES.md](KDMC_ADRESSES.md) | Adresses / coordonnées |
 | [.claude/skills/agent-toolkit/](.claude/skills/agent-toolkit/SKILL.md) | 🧰 Boîte à outils agents : les 6 dépôts de ton tableau (skills, mémoire, design, jetons, entreprise, LLM gratuit) |
 | [.claude/skills/domain-journal/](.claude/skills/domain-journal/SKILL.md) | 🗂️ « Qui se connecte » : le journal du domaine, un compte par personne, vie privée |
+| [.claude/skills/verif-reelle/](.claude/skills/verif-reelle/SKILL.md) | 🔎 Vérifier POUR DE VRAI le domaine, connecté en tant que toi (captures d'écran) |
 | [vendor/agent-toolkit/](vendor/agent-toolkit/README.md) | Le contenu récupéré des 6 dépôts (+ MANIFEST : version exacte, licence) |
 
 ---

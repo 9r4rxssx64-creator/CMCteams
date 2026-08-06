@@ -83,6 +83,7 @@ describe('Boîte à outils agents — parité Apex / Claude Code', () => {
     for (const [dir, flat] of [
       ['agent-toolkit', 'apex-agent-toolkit.md'],
       ['domain-journal', 'apex-domain-journal.md'],
+      ['verif-reelle', 'apex-verif-reelle.md'],
     ] as const) {
       expect(existsSync(resolve(root, '.claude/skills', dir, 'SKILL.md')), dir).toBe(true);
       expect(existsSync(resolve(root, '.claude/skills', flat)), flat).toBe(true);

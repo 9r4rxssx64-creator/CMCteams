@@ -11,6 +11,34 @@
 | 4 | ~~Supprimer l'outil `deces-insee`~~ → **fait** (« Oui supprime ») : page + 4 automatisations supprimées, les 3 qui servent l'arbre gardées. Reste éventuellement à vider le stockage R2 `kdmc-deces-insee` (données publiques INSEE, re-téléchargeables) | moi | ✅ / ❓ un mot pour le stockage |
 | 5 | Récupérer le 6ᵉ dépôt de la boîte à outils (miroir corrigé) | moi | ⏳ relancé |
 
+### 🔎 « Vérifie en vrai » — c'est maintenant possible (2026-08-06, rien à faire pour toi)
+
+Avant : je ne pouvais **pas** atteindre kd-mc.com, et même en CI je tombais sur les écrans de
+connexion → je « déduisais » au lieu de constater. Maintenant je peux ouvrir **tes vraies pages,
+déjà connecté en tant que toi**, et te ramener **une capture d'écran par page**.
+
+Tu dis simplement **« vérifie »** et je lance. Aucune manip de ta part, aucun code à me donner.
+
+*Sous le capot : je repose la marque de connexion que chaque app écrit elle-même (relue dans son
+code), et pour l'admin j'utilise ton code déjà stocké en secret — jamais écrit dans le projet,
+jamais affiché. Périmètre verrouillé sur kd-mc.com, lecture seule. Honnêteté : c'est une session
+« à ton nom », pas « admin prouvé par Face ID » → les zones qui exigent Face ID restent masquées.*
+
+### 🛟 SECOURS DE DÉPLOIEMENT — ton unique clic (préparé le 2026-08-06)
+
+GitHub Actions est tombé 6 h aujourd'hui → plus aucun déploiement ne partait. Pour que ça
+ne se reproduise plus : **Cloudflare publie lui-même**, sans passer par GitHub.
+
+**[👉 Ouvrir les réglages du routeur sur Cloudflare](https://dash.cloudflare.com/?to=/:account/workers/services/view/kdmc-router/production/settings)**
+→ section **Build** → **Connect** → dépôt `CMCteams` → 3 champs :
+`Root directory` = `services/kdmc-router` · `Deploy command` = `npx wrangler deploy` · `Build command` = vide.
+(Détail complet + les autres workers : **[KEVIN_SECOURS_DEPLOIEMENT.md](KEVIN_SECOURS_DEPLOIEMENT.md)**)
+
+Aucune clé à saisir. Je ne peux pas le faire à ta place : Cloudflare n'autorise ce branchement
+que depuis son tableau de bord, avec ta session (aucune API — vérifié). Tout le reste est prêt,
+et un test automatique (83 vérifications, câblé au contrôle `test:ci`) garantit que chaque worker
+reste publiable tel quel par Cloudflare.
+
 ### Déjà fait cette session (rien à faire)
 - 🤖 **Pareil pour Apex** (v13.4.362) : il connaît les 6 dépôts, il a ses 2 fiches à lui, et un test empêche qu'on lui oublie quelque chose à l'avenir. **Défaut réel trouvé au passage** : Apex ne lisait QUE mes fiches « à plat » — tous mes dossiers de compétences lui étaient invisibles. C'est écrit, testé, et le plafond corrigé (il perdait 2 compétences à chaque ajout).
 - 🧰 **Boîte à outils agents** : les 6 dépôts de ton tableau installés pour moi **et** pour Apex, contenu récupéré, mis à jour tout seul le 1ᵉʳ de chaque mois.

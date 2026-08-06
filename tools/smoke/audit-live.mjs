@@ -19,6 +19,7 @@
  */
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync } from 'fs';
+import { connecte, masque } from './session-kevin.mjs';
 
 const BASE = (process.argv[2] || 'https://kd-mc.com').replace(/\/$/, '');
 const ROOT = BASE.replace(/^https?:\/\//, '').replace(/^www\./, ''); // ex: kd-mc.com
@@ -79,6 +80,13 @@ const SURFACES = [
   { url: BASE + '/osint/', name: 'OSINT', selKey: '.leaflet-container' },
 ];
 
+/* « Vérifier en réel EN TANT QUE Kevin » (Kevin 2026-08-06). OPT-IN : sans KDMC_AS_KEVIN=1
+   l'audit reste strictement ANONYME — comportement historique inchangé. Le code admin ne
+   vient QUE d'un secret CI et n'est jamais journalisé (masque()). */
+const AS_KEVIN = process.env.KDMC_AS_KEVIN === '1';
+const PIN_HASH = (process.env.KDMC_ADMIN_PIN_SHA256 || '').trim();
+if (AS_KEVIN) console.log('Mode CONNECTÉ (Kevin) — code admin : ' + masque(PIN_HASH));
+
 const SHOT_DIR = 'audit-live-shots';
 mkdirSync(SHOT_DIR, { recursive: true });
 
@@ -118,6 +126,10 @@ for (const s of SURFACES) {
   const url = s.url;
   const res = { url, name: s.name, ok: true, notes: [] };
   try {
+    if (AS_KEVIN) {
+      const m = await connecte(page, url, { pinHash: PIN_HASH });
+      if (m && m.note) res.notes.push('connexion : ' + m.note);
+    }
     const resp = await page.goto(url, { waitUntil: 'load', timeout: 45000 });
     const status = resp ? resp.status() : 0;
     if (!resp || status >= 400) { res.ok = false; res.notes.push('page HTTP ' + status); }
