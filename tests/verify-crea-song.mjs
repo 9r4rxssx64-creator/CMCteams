@@ -26,6 +26,11 @@ const SCORE={bpm:100,key:0,scale:'minor',progression:[0,5,3,4],
   melody:[0,2,4,2,0,-3,0,4,5,4,2,0,-99,2,4,7],
   drums:{kick:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],snare:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],hat:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0]},
   bassPattern:[0,0,5,5,3,3,4,4]};
+const PNGBUF=(()=>{const w=8,h=8,rows=[];for(let y=0;y<h;y++)rows.push(Buffer.alloc(1+w*3));
+  const crc=(b)=>{let c,x=0xffffffff;for(let n=0;n<b.length;n++){c=(x^b[n])&0xff;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;x=c^(x>>>8);}return(x^0xffffffff)>>>0;};
+  const ch=(t,d)=>{const l=Buffer.alloc(4);l.writeUInt32BE(d.length);const td=Buffer.concat([Buffer.from(t),d]);const c=Buffer.alloc(4);c.writeUInt32BE(crc(td));return Buffer.concat([l,td,c]);};
+  const ih=Buffer.alloc(13);ih.writeUInt32BE(w,0);ih.writeUInt32BE(h,4);ih[8]=8;ih[9]=2;
+  return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),ch('IHDR',ih),ch('IDAT',zlib.deflateSync(Buffer.concat(rows),{level:9})),ch('IEND',Buffer.alloc(0))]);})();
 const R={ok:[],ko:[]}; const chk=(c,m)=>(c?R.ok:R.ko).push(m);
 const browser=await chromium.launch({args:['--autoplay-policy=no-user-gesture-required']});
 
@@ -44,12 +49,7 @@ async function run(withVoice,voiceSec){
   await page.goto(`http://127.0.0.1:${PORT}/index.html`,{waitUntil:'load'});
   await page.waitForTimeout(500);
   await page.click('#bnav button[data-go="magic"]');
-  await page.setInputFiles('#fileMagicPhoto',{name:'a.png',mimeType:'image/png',
-    buffer:(()=>{const w=8,h=8,rows=[];for(let y=0;y<h;y++){const r2=Buffer.alloc(1+w*3);rows.push(r2);}
-      const crc=(b)=>{let c,x=0xffffffff;for(let n=0;n<b.length;n++){c=(x^b[n])&0xff;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;x=c^(x>>>8);}return(x^0xffffffff)>>>0;};
-      const ch=(t,d)=>{const l=Buffer.alloc(4);l.writeUInt32BE(d.length);const td=Buffer.concat([Buffer.from(t),d]);const c=Buffer.alloc(4);c.writeUInt32BE(crc(td));return Buffer.concat([l,td,c]);};
-      const ih=Buffer.alloc(13);ih.writeUInt32BE(w,0);ih.writeUInt32BE(h,4);ih[8]=8;ih[9]=2;
-      return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),ch('IHDR',ih),ch('IDAT',zlib.deflateSync(Buffer.concat(rows),{level:9})),ch('IEND',Buffer.alloc(0))]);})()});
+  await page.setInputFiles('#fileMagicPhoto',{name:'a.png',mimeType:'image/png',buffer:PNGBUF});
   await page.waitForTimeout(500);
   await page.click('#magicTabs .chip[data-tab="song"]'); await page.waitForTimeout(200);
   await page.fill('#magicTheme','mes potes du casino');
@@ -96,6 +96,40 @@ let r2=await run(false);
 chk(r2.ok && r2.info.visible, `morceau produit SANS voix (repli) — ${r2.hint.slice(0,70)}`);
 chk(r2.info.wav && r2.info.rms>300, `repli instrumental jouable (énergie ${r2.info.rms})`);
 chk(jsErr(r2.errs).length===0, `0 erreur JS (repli)${jsErr(r2.errs).length?': '+jsErr(r2.errs)[0]:''}`);
+// 3ter) SA voix : si Kevin enregistre/choisit un son, c'est ELLE qu'on mixe,
+//       et ça doit marcher même avec /voice totalement en panne (aucune IA voix).
+{
+  const ctx2=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  const pg=await ctx2.newPage(); const e2=[];
+  pg.on('pageerror',e=>e2.push('PAGEERROR: '+e.message));
+  await pg.route('**/lyrics',r=>r.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({title:'Mon test',lyrics:'TITRE: Mon test\nCOUPLET 1:\nune ligne'})}));
+  await pg.route('**/compose',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({score:SCORE})}));
+  await pg.route('**/voice',r=>r.fulfill({status:502,contentType:'application/json',body:'{"error":"cf_all_down"}'}));
+  await pg.addInitScript(()=>{window.CREA_AI_URL='http://127.0.0.1:8244/ai';});
+  await pg.goto(`http://127.0.0.1:${PORT}/index.html`,{waitUntil:'load'});
+  await pg.waitForTimeout(400);
+  await pg.click('#bnav button[data-go="magic"]');
+  await pg.setInputFiles('#fileMagicPhoto',{name:'a.png',mimeType:'image/png',buffer:PNGBUF});
+  await pg.waitForTimeout(400);
+  // Kevin choisit SON son (equivalent de « j'enregistre ma voix »)
+  await pg.setInputFiles('#fileMagicSong',{name:'ma-voix.wav',mimeType:'audio/wav',buffer:wav(3,22050,140)});
+  await pg.waitForTimeout(300);
+  await pg.click('#magicTabs .chip[data-tab="song"]'); await pg.waitForTimeout(200);
+  await pg.fill('#magicTheme','ma chanson a moi');
+  await pg.click('#magicStudioBtn');
+  let hint3='',ok3=false;
+  for(let i=0;i<90;i++){ hint3=await pg.textContent('#magicStudioHint').catch(()=>'')||'';
+    if(/✅/.test(hint3)){ok3=true;break;} if(/⚠️/.test(hint3))break; await pg.waitForTimeout(500); }
+  const info3=await pg.evaluate(async()=>{const b=window.Magic._songBlob();if(!b)return{};
+    const ab=await b.arrayBuffer(),dv=new DataView(ab);
+    let s=0,n=0;for(let o=44+Math.floor(0.4*44100)*4;o<Math.min(ab.byteLength-2,44+44100*4*2);o+=2){const v=dv.getInt16(o,true);s+=v*v;n++;}
+    return {rms:n?Math.round(Math.sqrt(s/n)):0};});
+  chk(ok3 && /TA voix/.test(hint3), `SA voix est utilisee meme avec l'IA voix totalement en panne — ${hint3.slice(-46)}`);
+  chk((info3.rms||0)>3500, `sa voix est bien mixee dans le morceau (energie ${info3.rms})`);
+  chk(e2.length===0, `0 erreur JS (ta voix)${e2.length?': '+e2[0]:''}`);
+  await ctx2.close();
+}
 // 3bis) voix LONGUE (45 s) → le morceau doit s'allonger, pas couper le chant
 let r3=await run(true,45);
 chk(r3.info.sec>=46, `morceau adapté à une voix longue (${r3.info.sec}s pour 45s de chant)`);

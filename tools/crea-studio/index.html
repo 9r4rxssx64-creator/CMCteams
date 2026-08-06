@@ -608,7 +608,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v8.5.2';
+var APP_VER='v8.6.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -2549,6 +2549,14 @@ var Magic=(function(){
         .then(function(C){ if(C&&C.provider)_who.score=aiWho(C.provider);
           return {L:L,score:(C&&C.score)||null};});
     }).then(function(o){
+      /* Si Kevin a enregistre SA voix (ou choisi un son), c'est la sienne qui
+         chante — c'est son choix, et ca marche meme si toutes les IA sont KO. */
+      if(songFile){
+        aiShow('🎚 On met TA voix sur la musique…');studioHint('Ta voix…');
+        _who.voice='ta voix';
+        return songFile.arrayBuffer().then(function(buf){return {L:o.L,score:o.score,voice:buf};})
+          .catch(function(){return {L:o.L,score:o.score,voice:null};});
+      }
       aiShow('🎙 L\'IA chante ta chanson…');studioHint('Voix en cours…');
       var sung=singableText(o.L.lyrics);
       return fetch(AI_URL+'/voice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:sung,lang:'fr'})})
@@ -2556,7 +2564,8 @@ var Magic=(function(){
           _who.voice=aiWho(r.headers.get('x-crea-provider'));
           return r.arrayBuffer(); })
         .then(function(buf){return {L:o.L,score:o.score,voice:buf};})
-        .catch(function(e){ studioHint('🎵 Voix indisponible ('+String(e.message||e).slice(0,40)+') — morceau instrumental.');
+        .catch(function(e){ studioHint('🎵 Voix IA indisponible ('+String(e.message||e).slice(0,40)
+            +') — morceau instrumental. Astuce : enregistre TA voix (onglet « Chanter ») puis relance, elle sera mixée dessus.');
           return {L:o.L,score:o.score,voice:null};});
     }).then(function(o){
       aiShow('🎚 Mixage du morceau…');studioHint('Mixage…');
@@ -2570,7 +2579,9 @@ var Magic=(function(){
       if(/secours/.test(_who.lyrics||''))secours.push('paroles');
       if(/secours/.test(_who.score||''))secours.push('musique');
       if(/secours/.test(_who.voice||''))secours.push('voix');
+      var taVoix=(_who.voice==='ta voix');
       studioHint('✅ Morceau prêt ('+Math.round(blob.size/1024)+' Ko) — il joue, et tu peux l\'enregistrer.'
+        +(taVoix?' C\'est TA voix qui chante.':'')
         +(secours.length?' (IA de secours utilisée pour : '+secours.join(', ')+')':''));
       toast('Morceau produit 🎹',2400);
     }).catch(function(e){busy=false;$('magicStudioBtn').disabled=false;aiHide();
