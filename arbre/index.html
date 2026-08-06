@@ -255,7 +255,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.81";
+var APP_VER="v2.82";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -542,14 +542,76 @@ function blasonSVG(nom,members){nom=_famName(nom)||"?";members=members||[];var N
   s+='<path d="M60,'+(ry+22)+' L44,'+(ry+2)+' L70,'+(ry+8)+' Z" fill="#7c5e1c"/><path d="M'+(420-60)+','+(ry+22)+' L'+(420-44)+','+(ry+2)+' L'+(420-70)+','+(ry+8)+' Z" fill="#7c5e1c"/><path d="M62,'+(ry+8)+' Q210,'+(ry-16)+' 358,'+(ry+8)+' L350,'+(ry+38)+' Q210,'+(ry+16)+' 70,'+(ry+38)+' Z" fill="url(#'+gGold+')" stroke="#7c5e1c" stroke-width="1"/><text x="210" y="'+(ry+30)+'" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="'+fs+'" letter-spacing="1" fill="#3a2c16">'+esc(nom)+'</text>';
   return s+'</svg>';
 }
+/* Blasons CRÉÉS (armorial de famille, style monégasque) — d'après le modèle dessiné par Kevin :
+   bordure fuselée de gueules/argent, fusée d'or chargée de l'initiale, olivier, étoile en chef,
+   couronne d'initiales des membres, banderole. IDs uniques par famille (anti-collision <defs>). */
+var _DFIELDS=[
+  ["#1b3f74","#12305c","#0a1c3a"], /*azur*/
+  ["#2f7d4f","#1b5e3a","#0e3a22"], /*sinople*/
+  ["#7a3d6e","#5a2a52","#371830"], /*pourpre*/
+  ["#4a4038","#2b2320","#171210"], /*sable*/
+  ["#c0433f","#8d1a1f","#5c0f12"]  /*gueules*/
+];
+var _DFIELD_FIXED={"DESARZENS":0}; /* DESARZENS = azur (design original Kevin) */
+function _dfield(nom,h){var i=_DFIELD_FIXED[nom];if(i==null)i=(h>>>7)%_DFIELDS.length;return _DFIELDS[i];}
+function designedBlason(nom,members){nom=_famName(nom)||"?";members=members||[];
+  var h=_hhash(nom),p="d"+h.toString(36),F=_dfield(nom,h);
+  var az=p+"az",or=p+"or",oc=p+"oc",pa=p+"pa",lu=p+"lu",fo=p+"fo",om=p+"om",ec=p+"ec",ce=p+"ce",br=p+"br",fu=p+"fu";
+  var initial=(nom.charAt(0)||"?");
+  var slots=[[240,235],[460,235],[222,400],[478,400],[258,560],[442,560]],seals="";
+  for(var i=0;i<slots.length&&i<members.length;i++){var ini=(members[i].ini||"?"),sx=slots[i][0],sy=slots[i][1],fs=ini.length>=2?32:44,dy=ini.length>=2?11:16;
+    seals+='<g><circle cx="'+sx+'" cy="'+sy+'" r="40" fill="url(#'+oc+')" stroke="#0a1c3a" stroke-width="2.5"/><circle cx="'+sx+'" cy="'+sy+'" r="33" fill="none" stroke="#0a1c3a" stroke-width="1" opacity="0.5"/><text x="'+sx+'" y="'+(sy+dy)+'" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="'+fs+'" fill="#0a1c3a">'+esc(ini)+'</text></g>';}
+  var bfs=nom.length>12?24:nom.length>9?30:34, bls=nom.length>12?3:6;
+  var defs='<defs>'
+   +'<pattern id="'+fu+'" patternUnits="userSpaceOnUse" width="36" height="50" patternTransform="translate(0,4)"><rect width="36" height="50" fill="#f7f3e8"/><polygon points="18,0 36,25 18,50 0,25" fill="#b3232a"/><polygon points="18,0 36,25 18,50 0,25" fill="none" stroke="#8d1a1f" stroke-width="0.8"/></pattern>'
+   +'<linearGradient id="'+az+'" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0%" stop-color="'+F[0]+'"/><stop offset="55%" stop-color="'+F[1]+'"/><stop offset="100%" stop-color="'+F[2]+'"/></linearGradient>'
+   +'<linearGradient id="'+or+'" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0%" stop-color="#f4e2a4"/><stop offset="45%" stop-color="#d9b45c"/><stop offset="100%" stop-color="#b48b32"/></linearGradient>'
+   +'<linearGradient id="'+oc+'" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0%" stop-color="#fbf0c8"/><stop offset="50%" stop-color="#e2c274"/><stop offset="100%" stop-color="#b8912f"/></linearGradient>'
+   +'<linearGradient id="'+pa+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fdfaf1"/><stop offset="100%" stop-color="#e8e0cb"/></linearGradient>'
+   +'<radialGradient id="'+lu+'" cx="0.35" cy="0.22" r="0.75"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></radialGradient>'
+   +'<radialGradient id="'+fo+'" cx="0.5" cy="0.42" r="0.75"><stop offset="0%" stop-color="#fdfaf2"/><stop offset="100%" stop-color="#f2ead7"/></radialGradient>'
+   +'<filter id="'+om+'" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#4a3c1e" flood-opacity="0.28"/></filter>'
+   +'<path id="'+ec+'" d="M140,110 H560 V470 C560,600 478,702 350,780 C222,702 140,600 140,470 Z"/>'
+   +'<clipPath id="'+ce+'"><use href="#'+ec+'"/></clipPath>'
+   +'<g id="'+br+'"><path d="M137,742 C88,655 64,500 96,318" fill="none" stroke="#5f7038" stroke-width="6" stroke-linecap="round"/>'
+     +'<g fill="#7d8f4e" stroke="#4f6030" stroke-width="1.2">'
+     +'<ellipse cx="101" cy="684" rx="26" ry="8.5" transform="rotate(-140 101 684)"/><ellipse cx="135" cy="684" rx="26" ry="8.5" transform="rotate(-40 135 684)"/>'
+     +'<ellipse cx="84" cy="633" rx="25" ry="8.5" transform="rotate(-140 84 633)"/><ellipse cx="118" cy="633" rx="25" ry="8.5" transform="rotate(-40 118 633)"/>'
+     +'<ellipse cx="72" cy="572" rx="26" ry="8.5" transform="rotate(-140 72 572)"/><ellipse cx="106" cy="572" rx="26" ry="8.5" transform="rotate(-40 106 572)"/>'
+     +'<ellipse cx="66" cy="507" rx="25" ry="8" transform="rotate(-140 66 507)"/><ellipse cx="100" cy="507" rx="25" ry="8" transform="rotate(-40 100 507)"/>'
+     +'<ellipse cx="65" cy="450" rx="24" ry="8" transform="rotate(-140 65 450)"/><ellipse cx="99" cy="450" rx="24" ry="8" transform="rotate(-40 99 450)"/>'
+     +'<ellipse cx="68" cy="384" rx="23" ry="7.5" transform="rotate(-140 68 384)"/><ellipse cx="102" cy="384" rx="23" ry="7.5" transform="rotate(-40 102 384)"/>'
+     +'<ellipse cx="75" cy="331" rx="21" ry="7" transform="rotate(-140 75 331)"/><ellipse cx="109" cy="331" rx="21" ry="7" transform="rotate(-40 109 331)"/></g>'
+     +'<g fill="url(#'+or+')" stroke="#9a7726" stroke-width="1"><circle cx="110" cy="660" r="5.5"/><circle cx="93" cy="545" r="5"/><circle cx="88" cy="418" r="4.5"/></g></g>'
+   +'</defs>';
+  var s='<svg viewBox="0 0 700 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Blason familial '+esc(nom)+'">'+defs;
+  s+='<rect width="700" height="900" fill="url(#'+fo+')"/>';
+  s+='<rect x="12" y="12" width="676" height="876" fill="none" stroke="url(#'+or+')" stroke-width="3"/>';
+  s+='<rect x="22" y="22" width="656" height="856" fill="none" stroke="#b48b32" stroke-width="1" opacity="0.55"/>';
+  s+='<g fill="url(#'+or+')" stroke="#9a7726" stroke-width="0.8"><polygon points="34,26 41,36 34,46 27,36"/><polygon points="666,26 673,36 666,46 659,36"/><polygon points="34,854 41,864 34,874 27,864"/><polygon points="666,854 673,864 666,874 659,864"/></g>';
+  s+='<polygon points="350,42 354.7,55.5 369,55.8 357.6,64.5 361.8,78.2 350,70 338.2,78.2 342.4,64.5 331,55.8 345.3,55.5" fill="url(#'+oc+')" stroke="#9a7726" stroke-width="1.2"/>';
+  s+='<use href="#'+br+'"/><use href="#'+br+'" transform="translate(700,0) scale(-1,1)"/>';
+  s+='<g filter="url(#'+om+')"><use href="#'+ec+'" fill="url(#'+az+')"/></g>';
+  s+='<g clip-path="url(#'+ce+')"><use href="#'+ec+'" fill="url(#'+az+')"/><use href="#'+ec+'" fill="url(#'+lu+')"/><use href="#'+ec+'" fill="none" stroke="url(#'+or+')" stroke-width="42"/><use href="#'+ec+'" fill="none" stroke="url(#'+fu+')" stroke-width="36"/></g>';
+  s+='<polygon points="350,283 416,400 350,517 284,400" fill="url(#'+or+')" stroke="#0a1c3a" stroke-width="3"/>';
+  s+='<polygon points="350,300 404,400 350,500 296,400" fill="none" stroke="#0a1c3a" stroke-width="1" opacity="0.45"/>';
+  s+='<text x="350" y="437" text-anchor="middle" font-family="Georgia,serif" font-size="104" font-weight="bold" fill="#0a1c3a">'+esc(initial)+'</text>';
+  s+='<g>'+seals+'</g>';
+  s+='<use href="#'+ec+'" fill="none" stroke="url(#'+or+')" stroke-width="4"/><use href="#'+ec+'" fill="none" stroke="#8a6a20" stroke-width="1" opacity="0.6"/>';
+  s+='<g filter="url(#'+om+')"><path d="M150,795 C270,775 430,775 550,795 L550,842 C430,822 270,822 150,842 Z" fill="url(#'+pa+')" stroke="#b48b32" stroke-width="2"/><path d="M150,795 L108,780 L124,812 L108,850 L150,842 Z" fill="#ded4ba" stroke="#b48b32" stroke-width="2"/><path d="M550,795 L592,780 L576,812 L592,850 L550,842 Z" fill="#ded4ba" stroke="#b48b32" stroke-width="2"/></g>';
+  s+='<text x="350" y="817" text-anchor="middle" font-family="Georgia,serif" font-size="'+bfs+'" font-weight="bold" letter-spacing="'+bls+'" fill="'+F[2]+'">'+esc(nom)+'</text>';
+  return s+'</svg>';
+}
+function anyBlasonSVG(nom,members){return REAL_ARMS[_famName(nom)]?blasonSVG(nom,members):designedBlason(nom,members);}
+function _blasonReal(nom){return !!REAL_ARMS[_famName(nom)];}
 function _blasonFamilies(){var m={};for(var id in DB.persons){var p=DB.persons[id];if(!p||!_isFamilyNom(p.nom))continue;var k=_famName(p.nom);m[k]=(m[k]||0)+1;}return Object.keys(m).map(function(k){return {nom:k,n:m[k],members:_famMembers(k),real:!!REAL_ARMS[k]};}).sort(function(a,b){return (b.real?1:0)-(a.real?1:0)||b.n-a.n||a.nom.localeCompare(b.nom);});}
-function _blasonPNG(nom,members,scale,cb){var svg=blasonSVG(nom,members),img=new Image();img.onload=function(){var w=Math.round(420*scale),hh=Math.round(566*scale),c=document.createElement("canvas");c.width=w;c.height=hh;var x=c.getContext("2d");x.drawImage(img,0,0,w,hh);try{cb(c.toDataURL("image/png"));}catch(e){cb(null);}};img.onerror=function(){cb(null);};try{img.src="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));}catch(e){cb(null);}}
+function _blasonPNG(nom,members,scale,cb){var real=_blasonReal(nom),BW=real?420:700,BH=real?566:900,svg=anyBlasonSVG(nom,members),img=new Image();img.onload=function(){var w=Math.round(BW*scale),hh=Math.round(BH*scale),c=document.createElement("canvas");c.width=w;c.height=hh;var x=c.getContext("2d");x.drawImage(img,0,0,w,hh);try{cb(c.toDataURL("image/png"));}catch(e){cb(null);}};img.onerror=function(){cb(null);};try{img.src="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));}catch(e){cb(null);}}
 function openBlason(nom){nom=_famName(nom);var mem=_famMembers(nom),cnt=mem.length,real=REAL_ARMS[nom];
   var html='<div class="sheet blsheet"><button class="bkbtn" data-close>✕</button><div class="grab"></div>'
    +'<h2 style="text-align:center;margin:6px 0 2px">Armoiries '+esc(nom)+'</h2>'
-   +'<div class="mut" style="text-align:center;font-size:13px;margin-bottom:8px">'+cnt+' membre'+(cnt>1?"s":"")+' · '+(real?"Blason officiel — reproduit à l\'identique":"—")+'</div>'
-   +'<div class="blbig">'+blasonSVG(nom,mem)+'</div>'
-   +(real?'<div class="sec" style="font-size:12.5px"><b>Blason officiel :</b> '+esc(real.label)+'.<br><span class="mut">Source : '+esc(real.source)+'. ⚠ Armoiries liées au NOM (même patronyme) — le lien avec cette lignée précise reste à prouver généalogiquement.</span></div>':'')
+   +'<div class="mut" style="text-align:center;font-size:13px;margin-bottom:8px">'+cnt+' membre'+(cnt>1?"s":"")+' · '+(real?"Blason officiel — reproduit à l\'identique":"Blason créé — armorial de famille")+'</div>'
+   +'<div class="blbig">'+anyBlasonSVG(nom,mem)+'</div>'
+   +(real?'<div class="sec" style="font-size:12.5px"><b>Blason officiel :</b> '+esc(real.label)+'.<br><span class="mut">Source : '+esc(real.source)+'. ⚠ Armoiries liées au NOM (même patronyme) — le lien avec cette lignée précise reste à prouver généalogiquement.</span></div>':'<div class="sec" style="font-size:12.5px"><b>Blason créé</b> — armorial de famille au <b>style monégasque</b> (bordure fuselée de gueules et d\'argent, fusée d\'or à l\'initiale, étoile en chef, rameaux d\'olivier). Autour de l\'écu, <b>les initiales de chaque membre</b>.<br><span class="mut">Ce n\'est pas un blason historique attesté : aucun blason officiel connu pour ce nom à ce jour.</span></div>')
    +'<div class="mut" style="text-align:center;font-size:12.5px;margin:10px 6px 4px">📲 Sur iPhone : appuie longuement sur l\'image ci-dessous → « Enregistrer dans Photos ».</div>'
    +'<div class="blbig" id="blPng"><div class="mut" style="font-size:13px">Préparation de l\'image…</div></div>'
    +'<a class="btn gold" id="blDl" style="width:100%;margin-top:8px" download="Blason-'+esc(nom.replace(/[^A-Z]/g,""))+'.png">⤓ Enregistrer le blason</a>'
@@ -558,11 +620,11 @@ function openBlason(nom){nom=_famName(nom);var mem=_famMembers(nom),cnt=mem.leng
   _blasonPNG(nom,mem,2.6,function(url){var box=document.getElementById("blPng"),a=document.getElementById("blDl");if(!box)return;if(url){box.innerHTML='<img src="'+url+'" alt="Armoiries '+esc(nom)+'" style="width:74%;max-width:270px;border-radius:12px">';if(a)a.href=url;}else{box.innerHTML='<div class="mut" style="font-size:13px">Image indisponible — le blason ci-dessus reste net à l\'écran.</div>';if(a)a.style.display="none";}});
 }
 function renderBlasons(){var w=$("#wrap");var fams=_blasonFamilies(),reals=fams.filter(function(f){return f.real;}),others=fams.filter(function(f){return !f.real;});
-  var head='<div class="sec"><h3>🛡 Blasons officiels des familles</h3><p class="mut" style="font-size:13px;margin:0">Seuls les <b>vrais blasons historiques attestés</b> sont affichés — <b>reproduits à l\'identique</b>, source à l\'appui. Autour de chaque écu, <b>les initiales de chaque membre</b> de la famille. Touche un blason pour le détail et l\'enregistrer.</p></div>';
-  if(!reals.length){w.innerHTML=head+'<div class="empty">Aucun blason officiel attesté pour l\'instant.</div>';return;}
-  var cards=reals.map(function(f){return '<button class="blcard" data-bl="'+esc(f.nom)+'"><div class="blsvg">'+blasonSVG(f.nom,f.members)+'</div><div class="blnm">'+esc(f.nom)+'</div><div class="bln">Blason officiel · '+f.n+' membre'+(f.n>1?"s":"")+'</div></button>';}).join("");
-  var otherList=others.length?'<div class="sec"><div class="mut" style="font-size:12.5px"><b>Familles sans blason officiel connu à ce jour :</b><br>'+others.map(function(f){return esc(f.nom);}).join(" · ")+'.<br>Dès qu\'un blason authentique est trouvé, il est ajouté ici (reproduit à l\'identique) — pas de blason inventé.</div></div>':'';
-  w.innerHTML=head+'<div class="blgrid">'+cards+'</div>'+otherList;
+  var head='<div class="sec"><h3>🛡 Album des blasons de familles</h3><p class="mut" style="font-size:13px;margin:0">Trié en deux : les <b>vrais blasons officiels</b> (attestés, reproduits à l\'identique) et les <b>blasons créés</b> (armorial de famille au style monégasque). Autour de chaque écu, <b>les initiales de chaque membre</b>. Touche un blason pour le détail et l\'enregistrer.</p></div>';
+  function card(f){return '<button class="blcard" data-bl="'+esc(f.nom)+'"><div class="blsvg">'+anyBlasonSVG(f.nom,f.members)+'</div><div class="blnm">'+esc(f.nom)+'</div><div class="bln">'+(f.real?"Blason officiel":"Blason créé")+' · '+f.n+' membre'+(f.n>1?"s":"")+'</div></button>';}
+  var secReal=reals.length?'<div class="sec" style="padding-bottom:4px"><h3 style="margin:2px 0">✅ Vrais blasons officiels</h3><p class="mut" style="font-size:12.5px;margin:0">Attestés historiquement, source à l\'appui.</p></div><div class="blgrid">'+reals.map(card).join("")+'</div>':'';
+  var secDes=others.length?'<div class="sec" style="padding-bottom:4px;margin-top:6px"><h3 style="margin:2px 0">🎨 Blasons créés</h3><p class="mut" style="font-size:12.5px;margin:0">Armorial de famille (style monégasque) — pas un blason historique attesté. Remplacé dès qu\'un vrai blason est trouvé.</p></div><div class="blgrid">'+others.map(card).join("")+'</div>':'';
+  w.innerHTML=head+secReal+secDes;
   w.querySelectorAll("[data-bl]").forEach(function(b){b.onclick=function(){openBlason(b.dataset.bl);};});
 }
 var _RENDERSTYLE="card";
@@ -944,7 +1006,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var comments=(p.comments||[]).slice().sort(function(a,b){return a.ts-b.ts;}).map(function(c){return '<div class="cmt"><div class="h"><span>'+esc(c.by||"famille")+' · '+relTime(c.ts)+'</span><button class="x" data-delc="'+c.id+'">✕</button></div><div style="white-space:pre-wrap">'+esc(c.text)+'</div></div>';}).join("");
   var canBack=_pStack.length>0;
   var back='<button class="bkbtn" id="pBack" aria-label="'+(canBack?"Retour":"Fermer")+'">'+(canBack?"‹":"✕")+'</button>';
-  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div>'+((_isFamilyNom(p.nom)&&REAL_ARMS[_famName(p.nom)])?'<button class="blemb" data-bl="'+esc(_famName(p.nom))+'" title="Blason officiel '+esc(_famName(p.nom))+'">'+blasonSVG(p.nom,_famMembers(p.nom))+'</button>':'')+'</div>'+caro+
+  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div>'+(_isFamilyNom(p.nom)?'<button class="blemb" data-bl="'+esc(_famName(p.nom))+'" title="'+(_blasonReal(p.nom)?"Blason officiel ":"Blason créé ")+esc(_famName(p.nom))+'">'+anyBlasonSVG(p.nom,_famMembers(p.nom))+'</button>':'')+'</div>'+caro+
     '<div class="sec">'+info+(relHtml?'<div style="padding-top:12px"><div style="color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Famille</div><div class="chips">'+relHtml+'</div></div>':"")+(p.notes?'<div style="padding:12px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+'</div>'+
     (function(){var acts=(p.actes||[]);return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3>'+(acts.length?'<div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'">'+(a.by?'<b class="actedel" data-rmacte="'+i+'" title="Supprimer">×</b>':'')+'<img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun acte pour l\'instant.</p>')+'<button class="btn sm" id="addActe">➕ Ajouter un acte (photo / scan)</button><input type="file" id="acteIn" accept="image/*" hidden></div>';})()+
     (function(){var docs=(p.docs||[]);function ico(ty,nm){nm=(nm||"").toLowerCase();if(/pdf/.test(ty)||/\.pdf$/.test(nm))return "📕";if(/image/.test(ty))return "🖼";if(/\.(doc|docx|odt|rtf)$/.test(nm))return "📘";if(/\.(xls|xlsx|csv|numbers)$/.test(nm))return "📗";if(/\.(zip|rar|7z)$/.test(nm))return "🗂";if(/audio|\.(mp3|m4a|wav)$/.test(ty+nm))return "🎙";if(/video|\.(mp4|mov)$/.test(ty+nm))return "🎞";return "📄";}
