@@ -257,7 +257,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.89";
+var APP_VER="v2.90";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -931,7 +931,7 @@ function renderSearch(){var w=$("#wrap");var ids=Object.keys(DB.persons).sort(fu
   w.innerHTML=famChipsHTML(LISTFAM)+searchUI+'<div class="sec"><h3>Actes de la famille — '+withA+' personne'+(withA>1?"s":"")+' sur '+tot+' avec acte officiel ✓</h3><p class="mut" style="font-size:13px;margin:0 0 10px">Le robot cherche tout seul chaque mois (INSEE, Monaco, presse ancienne). Touche une personne → recherches pré-remplies + demande d\'acte à copier.</p><div class="grid">'+(body||'<div class="empty">Ajoute des personnes.</div>')+'</div></div>';bindFamChips();
   var g=$("#decesGo");if(g)g.onclick=decesSearch;
   ["#decesNom","#decesPre"].forEach(function(sel){var e=$(sel);if(e)e.addEventListener("keydown",function(ev){if(ev.key==="Enter")decesSearch();});});}
-function openSearch(id){var p=P(id);var h='<div class="sheet"><button class="bkbtn" data-close aria-label="Fermer">✕</button><div class="grab"></div><h2 style="padding-left:48px">🔎 '+esc(full(p))+'</h2><p class="mut" style="margin:2px 0 12px;font-size:13px">Ouvre chaque source, confirme la date, puis reviens la saisir sur la fiche.</p>'+searchLinks(p).map(function(l){return '<a class="btn" style="width:100%;margin:6px 0;justify-content:space-between" target="_blank" rel="noopener" href="'+esc(l.u)+'">'+esc(l.t)+' <span class="mut">↗</span></a>';}).join("")+'<button class="btn ghost" data-close style="width:100%;margin-top:10px">Fermer</button></div>';showOverlay(h);}
+function openSearch(id){var p=P(id);if(!p)return;var h='<div class="sheet"><button class="bkbtn" data-close aria-label="Fermer">✕</button><div class="grab"></div><h2 style="padding-left:48px">🔎 '+esc(full(p))+'</h2><p class="mut" style="margin:2px 0 12px;font-size:13px">Ouvre chaque source, confirme la date, puis reviens la saisir sur la fiche.</p>'+searchLinks(p).map(function(l){return '<a class="btn" style="width:100%;margin:6px 0;justify-content:space-between" target="_blank" rel="noopener" href="'+esc(l.u)+'">'+esc(l.t)+' <span class="mut">↗</span></a>';}).join("")+'<button class="btn ghost" data-close style="width:100%;margin-top:10px">Fermer</button></div>';showOverlay(h);}
 
 /* ---------- tools ---------- */
 /* Impression / PDF : rend la famille affichée en A4 paysage (échelle auto),
