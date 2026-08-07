@@ -1,7 +1,23 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-07-04** (World Monitor v2.11 + OSINT v2.1 live + Cloneur + fix sandbox)
+> Dernière mise à jour : **2026-08-07** (Lingua v2.31.0 jeux de rôle 🎭 + Créa Studio v9.9.0 Bee vivante 🐝)
+
+## 🐝 KDMC Lingua v2.31.0 + Créa Studio v9.9.0 — session 2026-08-07 (mergé sur main)
+
+**🧪 Tester maintenant :**
+- 🎭 [KDMC Lingua — jeux de rôle](https://lingua.kd-mc.com/) — onglet 💬 Coach → carrousel de 9 scènes (café, entretien d'embauche, musique, restaurant, marché, aéroport, hôtel, médecin, lire-et-raconter). Bee JOUE le personnage dans la langue cible. Aussi dans la Discussion 🎬 (chips 🎭).
+- 🐝 [Créa Studio — Bee vivante](https://studio.kd-mc.com/) — Bee (marionnette animée + voix fillette) vit sur tous les écrans : elle guide chaque studio, propose l'action en 1 tap, fête tes créations. 🔕 couper sa voix · 🙈 la cacher.
+
+**🔧 Code modifié :**
+- [lingua/app.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/app.js) — SCENES (9 scènes originales), sceneStart/sceneStop, filtrage du fil en scène, chips Discussion.
+- [services/kdmc-router/worker.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) — `/__lingua/ai` : champ `scenario` injecté dans le prompt du prof (fail-open).
+- [tools/crea-studio/index.html](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) — module 🐝 Bee vivante (fin de page, autonome, fail-open) + CSS marionnette.
+- [tools/crea-studio/bee/rig/](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/tools/crea-studio/bee/rig) — couches de SON image (base, ailes, bras) pour l'offline.
+
+**📜 Historique :** PR [#3169](https://github.com/9r4rxssx64-creator/CMCteams/pull/3169) (Lingua) · PR [#3170](https://github.com/9r4rxssx64-creator/CMCteams/pull/3170) (Créa Studio). Vérifié en vrai : worker déployé ✅, Lingua live ✅ (6 langues · 25 unités), tests navigateur 11/11 + 9/9 ✅.
+
+---
 
 ## 🌍 World Monitor v2.12 + 🔎 OSINT v2.1 live — session 2026-07-04 (mergé sur main)
 
