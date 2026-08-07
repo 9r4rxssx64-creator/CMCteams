@@ -80,6 +80,9 @@
     border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:8px 10px;font-size:13px}
   .autorow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .autorow .d{margin-left:auto;opacity:.72;font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .autoscene{width:100%;margin:4px 0 10px;border-radius:16px;overflow:hidden;background:#000;
+    box-shadow:0 10px 34px rgba(0,0,0,.5)}
+  .autoscene canvas{display:block;width:100%;height:auto}
   .autobar{height:10px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;margin:10px 0 6px}
   .autobar i{display:block;height:100%;width:0;border-radius:99px;
     background:linear-gradient(90deg,#e8b84b,#4dd88f);transition:width .25s ease}
@@ -467,6 +470,9 @@
         <div class="big">🎬</div>
         <h2>Montage auto</h2>
         <p id="autoSummary">Tes vidéos brutes.</p>
+        <!-- pendant le rendu on MONTRE la vidéo en train de se faire :
+             on regarde au lieu d'attendre devant un pourcentage -->
+        <div class="autoscene hidden" id="autoScene"></div>
         <div class="autolist" id="autoList"></div>
         <div class="autobar hidden" id="autoProg"><i id="autoBar"></i></div>
         <div class="hint" id="autoStep"></div>
@@ -547,10 +553,10 @@
         <button class="chip" onclick="Auto.pickMusic()"><span class="ic">🎵</span>Musique</button>
         <button class="chip" onclick="Auto.clear()"><span class="ic">🗑️</span>Tout retirer</button>
       </div>
-      <div class="hint">⏱️ Durée visée (l'app garde les meilleurs moments) :</div>
+      <div class="hint">⏱️ Durée visée (l'app garde les meilleurs moments). ⚠️ La fabrication dure à peu près la longueur de la vidéo finale — 15 s de vidéo = ~15 s d'attente, comme sur tous les logiciels de montage :</div>
       <div class="toolrow" id="autoDur" style="justify-content:center">
-        <button class="chip" data-dur="15"><span class="ic">⚡</span>15 s</button>
-        <button class="chip on" data-dur="30"><span class="ic">📱</span>30 s</button>
+        <button class="chip on" data-dur="15"><span class="ic">⚡</span>15 s</button>
+        <button class="chip" data-dur="30"><span class="ic">📱</span>30 s</button>
         <button class="chip" data-dur="60"><span class="ic">🎞️</span>1 min</button>
         <button class="chip" data-dur="0"><span class="ic">♾️</span>Tout garder</button>
       </div>
@@ -891,7 +897,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.8.0';
+var APP_VER='v9.8.1';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -4011,7 +4017,7 @@ var VidExport=(function(){
 var Auto=(function(){
   var clips=[];             // {file,url,nom,dur,w,h,son}
   var musique=null;         // {file,url,nom}
-  var cible=30,style='dyn',ratio=0.5625,sousTitres=true,mix='voix';
+  var cible=15,style='dyn',ratio=0.5625,sousTitres=true,mix='voix';  /* 15 s par défaut : le rendu dure la longueur de la vidéo */
   var occupe=false;
   /* Rythme du montage : longueur max d'un plan, force du zoom, durée du fondu,
      tolérance aux petits silences, durée mini d'un moment gardé. */
@@ -4335,6 +4341,11 @@ var Auto=(function(){
       var w=plan.w,h=plan.h,S=STYLES[style];
       var cv=document.createElement('canvas');cv.width=w;cv.height=h;var cx=cv.getContext('2d');
       var gel=document.createElement('canvas');gel.width=w;gel.height=h;var gx=gel.getContext('2d');
+      /* On MONTRE la vidéo en train de se fabriquer. Un rendu vidéo dure
+         forcément le temps de la vidéo (c'est pareil sur tous les logiciels
+         de montage) : autant le regarder au lieu de fixer un pourcentage. */
+      var scene=$('autoScene');
+      if(scene){scene.innerHTML='';scene.appendChild(cv);scene.classList.remove('hidden');}
       var vel=$('autoVid');
       vel.muted=!!(musique&&mix==='musique');   // muet SEULEMENT si la musique remplace la voix
       var mime=VidExport.pickMime();
@@ -4361,6 +4372,7 @@ var Auto=(function(){
         branches.forEach(function(n){try{n.disconnect();}catch(e){}});
         if(au){try{au.pause();}catch(e){}}
         try{vel.pause();}catch(e){}
+        if(scene){scene.classList.add('hidden');scene.innerHTML='';}
         var b=new Blob(bouts,{type:mime||'video/webm'});
         if(b.size)res(b);else rej(new Error('rendu vide (0 octet)'));
       };
@@ -4410,7 +4422,7 @@ var Auto=(function(){
             if(tm<0.4)f=1-tm/0.4; else if(reste<0.5)f=1-reste/0.5;
             if(f>0){cx.save();cx.globalAlpha=clamp(f,0,1);cx.fillStyle='#000';cx.fillRect(0,0,w,h);cx.restore();}
             sousTitre(tm);
-            if(prog)prog(clamp(tm/Math.max(0.001,plan.total),0,1));
+            if(prog)prog(clamp(tm/Math.max(0.001,plan.total),0,1),Math.max(0,plan.total-tm));
           }
         }
         requestAnimationFrame(boucle);
@@ -4587,9 +4599,12 @@ var Auto=(function(){
         }
         if(!segs.length)throw new Error('plus rien à garder après le nettoyage');
         var dim=sortie();
-        etape('🎬 Je monte et j\'enregistre… reste sur l\'écran',(clips.length+1)/etapes);
-        var blob=await rendre({segs:segs,total:total,w:dim.w,h:dim.h,mots:mots},function(p){
-          etape('🎬 Rendu… '+Math.round(p*100)+' %',(clips.length+1+p)/etapes);
+        /* On annonce le temps AVANT : un rendu vidéo dure la longueur de la
+           vidéo, comme sur n'importe quel logiciel de montage. Mieux vaut le
+           dire que laisser Kevin se demander si c'est planté. */
+        etape('🎬 Je monte… '+mmss(total)+' à fabriquer, regarde ça se faire 👇',(clips.length+1)/etapes);
+        var blob=await rendre({segs:segs,total:total,w:dim.w,h:dim.h,mots:mots},function(p,reste){
+          etape('🎬 Ta vidéo se fabrique… encore '+Math.ceil(reste)+' s',(clips.length+1+p)/etapes);
         });
         var ext=/mp4/.test(VidExport.pickMime()||'')?'mp4':'webm';
         await Mine.save(blob,'Montage auto',

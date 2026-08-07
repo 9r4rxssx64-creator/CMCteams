@@ -285,6 +285,21 @@ await page.evaluate(() => {
 });
 const avant = await page.evaluate(async () => (await window.Mine.list()).length);
 await page.click('#autoGo');
+// pendant la fabrication, on doit VOIR la vidéo se faire (et le temps restant),
+// pas fixer un pourcentage : un rendu dure forcément la longueur de la vidéo
+await page.waitForFunction(() => {
+  const s = document.getElementById('autoScene');
+  return s && !s.classList.contains('hidden') && s.querySelector('canvas');
+}, null, { timeout: 60000 }).catch(() => {});
+const apercu = {
+  visible: await page.locator('#autoScene canvas').isVisible().catch(() => false),
+  boite: await page.locator('#autoScene canvas').boundingBox().catch(() => null),
+  texte: await page.locator('#autoStep').textContent().catch(() => '')
+};
+chk(apercu.visible && apercu.boite && apercu.boite.width > 200 && apercu.boite.height > 200,
+  `on VOIT la vidéo se fabriquer en direct (aperçu ${apercu.boite ? Math.round(apercu.boite.width) + '×' + Math.round(apercu.boite.height) : 'absent'} px) au lieu d'attendre devant un pourcentage`);
+chk(/encore \d+ s|se fabrique|à fabriquer/.test(apercu.texte || ''),
+  `le temps restant est annoncé en clair (« ${(apercu.texte || '').slice(0, 46)} »)`);
 await page.waitForFunction(() => window.Auto._dernier || /n'a pas abouti/.test((document.getElementById('expTitle') || {}).textContent || ''),
   null, { timeout: 120000 }).catch(() => {});
 const bilan = await page.evaluate(async () => ({
