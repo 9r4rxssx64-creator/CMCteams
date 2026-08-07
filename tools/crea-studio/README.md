@@ -167,3 +167,15 @@ Aucune de ces fonctions ne consomme de crédit payant.
 **Preuves mesurées** (navigateur réel, iPhone 390 px) : 12/12 vérifications vertes, 0 erreur JS —
 les 12 styles envoient le bon preset, la vidéo chantée dure exactement la longueur du son (2,996 s
 pour un fichier de 3 s), paroles + instru OK, aucun débordement horizontal.
+
+---
+
+## 🐝 Bee vivante (v9.9.0)
+
+La mascotte du domaine **Bee** (création originale KDMC, reprise de KDMC Lingua) vit maintenant dans le studio — à la place d'une présentatrice :
+- **Marionnette animée** découpée de SON image (ailes qui battent, bras, clignement des yeux), elle vole/danse/marche toute seule.
+- **Elle parle** (voix fillette « Petite Bee », même voix que dans Lingua — clé serveur, jamais côté client ; repli voix du navigateur si hors-ligne).
+- **Elle guide** : à chaque écran (Photo, Vidéo, Cartoon, Danse IA, Magie…), elle explique et **propose l'action en 1 tap**.
+- **Elle fête tes créations** : export ou vidéo IA prête → danse + étincelles + elle te le dit.
+- **Boutons ON/OFF** : 🔕 couper sa voix · 🙈 la cacher (un petit 🐝 la réveille).
+- 100 % fail-open : sans réseau ou sans image, l'app marche exactement comme avant.
