@@ -108,6 +108,18 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cm-say{background:transparent;border:0;font-size:17px;cursor:pointer;min-width:34px;min-height:34px;align-self:center}
 .coach-chips{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 4px;-webkit-overflow-scrolling:touch}
 .coach-chip{flex:0 0 auto;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:9px 14px;color:#dfe8ef;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:40px}
+.coach-chip.scene-on{background:#3b2f10;border-color:#ffd75e;color:#ffe9a8;font-weight:800}
+/* 🎭 Jeux de rôle : carrousel de scènes + bandeau de scène active + messages système */
+.scene-row{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 4px;-webkit-overflow-scrolling:touch}
+.scene-card{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:9px 12px;min-width:104px;min-height:64px;cursor:pointer;color:#dfe8ef}
+.scene-card .sic{font-size:22px;line-height:1.1}
+.scene-card b{font-size:12px;font-weight:800;white-space:nowrap}
+.scene-card i{font-size:10px;font-style:normal;color:#9fb2c2;white-space:nowrap}
+.scene-banner{display:flex;align-items:center;gap:9px;margin-top:10px;background:#2c230c;border:1px solid #ffd75e;border-radius:14px;padding:10px 12px;font-size:13px;color:#ffe9a8}
+.scene-banner .sic{font-size:20px}
+.scene-banner b{font-weight:800}
+.scene-quit{margin-left:auto;flex:0 0 auto;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:8px 13px;color:#dfe8ef;font-size:12px;font-weight:700;cursor:pointer;min-height:40px}
+.coach-sys{text-align:center;font-size:12px;font-weight:700;color:#c9b26a;padding:2px 0}
 .coach-inbar{display:flex;gap:8px;margin-top:8px;align-items:center}
 .coach-input{flex:1;padding:13px 15px;font-size:16px;border-radius:14px;border:2px solid var(--line);background:var(--card2);color:#fff;outline:none}
 .coach-input:focus{border-color:var(--green)}
