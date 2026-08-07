@@ -1,7 +1,7 @@
 {
  "meta": {
-  "seedVersion": 17,
-  "updatedAt": 1785801675258
+  "seedVersion": 31,
+  "updatedAt": 1785879053219
  },
  "persons": {
   "seed_alex1906_maiffret": {
@@ -29,7 +29,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_alex_vdb": {
    "deces": {
@@ -60,7 +60,7 @@
      "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_alexandre_1856": {
    "deces": {
@@ -71,7 +71,7 @@
     "date": "14.10.1856"
    },
    "nom": "MAIFFRET",
-   "notes": "📜 DOCUMENT FAMILIAL : fils de Jean-Baptiste. Né le 14.10.1856, † 3.05.1926. Père de 7 enfants : Louis, Joseph-Alexandre, Jean, Marius, Léonie, Pierre et Charles. C'est l'AÏEUL direct de Kevin (arrière-arrière-grand-père). Actes avant ~1891 à chercher à VILLEFRANCHE-sur-Mer.",
+   "notes": "🗞 JOURNAL DE MONACO n°1937 (3.09.1895) : « Les horticulteurs MM. MAIFFRET Alexandre, propriétaire, et Keller, fournissent à titre gracieux… » — très probablement LUI (la famille était dans l'horticulture sur la Riviera : Marius figure aussi dans les bulletins de la Société d'horticulture de Nice). 🛣 Une RUE MAIFFRET existe à Beaulieu-sur-Mer, la ville de la famille. 📜 DOCUMENT FAMILIAL : fils de Jean-Baptiste. Né le 14.10.1856, † 3.05.1926. Père de 7 enfants : Louis, Joseph-Alexandre, Jean, Marius, Léonie, Pierre et Charles. C'est l'AÏEUL direct de Kevin (arrière-arrière-grand-père). Actes avant ~1891 à chercher à VILLEFRANCHE-sur-Mer.",
    "pere": "seed_jb_maiffret",
    "prenom": "Alexandre",
    "sexe": "M",
@@ -85,7 +85,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_alexandre_bebe": {
    "deces": {
@@ -106,7 +106,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_andre_maiffret": {
    "conjoints": [
@@ -130,7 +130,7 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_brigitte_m": {
    "id": "seed_brigitte_m",
@@ -145,18 +145,48 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669341,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
+  "seed_caroline_carlin": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg",
+     "label": "🕯 Décès de son mari Philippe (n°306/1905)"
+    },
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/05-Mariage_1906_39_Epoux_DANIEL_Pierre_Epouse_MAIFFRET_Julie_Josephine_Marie_16_06_1906_4_ima-net1.jpg",
+     "label": "💍 Mariage de sa fille Julie (n°39/1906) — elle y consent"
+    }
+   ],
+   "conjoints": [
+    "seed_philippe_mc"
+   ],
+   "id": "seed_caroline_carlin",
+   "nom": "CARLIN",
+   "notes": "📜 Épouse de Philippe MAIFFRET (acte n°306/1905). Concierge, présente et consentante au mariage de sa fille Julie en 1906 (acte n°39/1906).",
+   "prenom": "Pauline Caroline",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte de mariage n°39/1906 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
+  },
   "seed_cecile": {
+   "conjoints": [
+    "seed_henry_pizzio"
+   ],
    "id": "seed_cecile",
    "mere": "seed_marie_brigitte",
-   "nom": "",
-   "notes": "Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter.",
+   "nom": "CRESTO",
+   "notes": "Nom CRESTO = celui de son père Christian. Fille de Marie-Brigitte et Christian (cousine de Kevin). Date à compléter.",
    "pere": "seed_christian",
    "prenom": "Cécile",
    "sexe": "F",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_charles1904": {
@@ -178,18 +208,30 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
+  },
+  "seed_charlotte": {
+   "conjoints": [
+    "seed_emile"
+   ],
+   "id": "seed_charlotte",
+   "nom": "",
+   "notes": "Charlotte — maman de Loïc, avec Émile (précisé par Kevin le 4.08.2026). Nom de famille à compléter.",
+   "prenom": "Charlotte",
+   "sexe": "F",
+   "updatedAt": 1785879053167,
+   "vivant": true
   },
   "seed_christian": {
    "conjoints": [
     "seed_marie_brigitte"
    ],
    "id": "seed_christian",
-   "nom": "",
-   "notes": "Mari de Marie-Brigitte. Nom/date à compléter.",
+   "nom": "CRESTO",
+   "notes": "Christian CRESTO — mari de Marie-Brigitte (nom précisé par Kevin le 4.08.2026). CRESTO = nom bien implanté dans les Alpes-Maritimes. Date à compléter.",
    "prenom": "Christian",
    "sexe": "M",
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_christine_vdb": {
    "id": "seed_christine_vdb",
@@ -204,7 +246,7 @@
      "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
     }
    ],
-   "updatedAt": 1785801669341,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_christophe_m": {
@@ -220,7 +262,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669341,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_claude_desarzens": {
@@ -255,15 +297,21 @@
      "url": "https://fr.wikipedia.org/wiki/Sarzens"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_dentau_mm": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-DENTAU/01-Deces_1911_31_DENTAU_Marie_Anne_05_12_1911_06_12_1911_1_image-net1.jpg",
+     "label": "🕯 PISTE : décès Marie Anne DENTAU n°31/1911 (fille de Jules × Claire RAINAUT)"
+    }
+   ],
    "conjoints": [
     "seed_molinario_marius"
    ],
    "id": "seed_dentau_mm",
    "nom": "DENTAU",
-   "notes": "📜 DOCUMENT FAMILIAL : mariage 22.06.1865 avec Marius-Antoine Molinario. Mère d'Élisabeth et Marguerite. ✅ La famille DENTAU est bien réelle et niçoise (INSEE XXᵉ s. : Nice, Saint-Laurent-du-Var, Villefranche). Variantes : Dentaud, Dentu.",
+   "notes": "🎯 ACTE MONACO LU (décès n°31 du 6.12.1911, Monte-Carlo) : une Marie Anne DENTAU, 65 ans, NATIVE DE NICE, veuve de Jean MARINELLI, FILLE DES DÉFUNTS JULES DENTAU ET CLAIRE RAINAUT, † rue des Oliviers n°10 (déclarée par ses fils Sébastien et Raoul MARINELLI). DENTAU est un nom rare : la famille niçoise Jules DENTAU × Claire RAINAUT est très probablement la sienne (sœur ? cousine ? fille de Jules ?) — registres Nice 1840-1850 (AD06) à consulter pour trancher. 📜 DOCUMENT FAMILIAL : mariage 22.06.1865 avec Marius-Antoine Molinario. Mère d'Élisabeth et Marguerite. ✅ La famille DENTAU est bien réelle et niçoise (INSEE XXᵉ s. : Nice, Saint-Laurent-du-Var, Villefranche). Variantes : Dentaud, Dentu.",
    "prenom": "Marie-Marguerite",
    "sexe": "F",
    "sources": [
@@ -276,7 +324,7 @@
      "url": "https://deces.matchid.io"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_elisabeth_molinario": {
    "conjoints": [
@@ -285,7 +333,7 @@
    "id": "seed_elisabeth_molinario",
    "mere": "seed_dentau_mm",
    "nom": "MOLINARIO",
-   "notes": "📜 DOCUMENT FAMILIAL : fille de Marius-Antoine Molinario et Marie-Marguerite Dentau. Mariée le 17.12.1934 à André MAIFFRET.",
+   "notes": "🎯 PISTES ROBOT (bases Monaco) : MOLINARIO nombreux à Monaco 1880-1917 (Christine 1883, Pierre-Antoine 1891, Marie-Jeanne 1894, mariages 1904/1907/1917) — parenté possible avec la branche niçoise, à explorer. 📜 DOCUMENT FAMILIAL : fille de Marius-Antoine Molinario et Marie-Marguerite Dentau. Mariée le 17.12.1934 à André MAIFFRET.",
    "pere": "seed_molinario_marius",
    "prenom": "Élisabeth",
    "sexe": "F",
@@ -295,12 +343,16 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_emile": {
+   "conjoints": [
+    "seed_charlotte",
+    "seed_mariefrance"
+   ],
    "id": "seed_emile",
    "nom": "DESARZENS",
-   "notes": "Frère de Gérard (oncle paternel de Kevin). Fils de Guy DESARZENS (à confirmer).",
+   "notes": "Frère de Gérard (oncle paternel de Kevin). Fils de Guy DESARZENS (à confirmer). Deux unions : Charlotte (mère de Loïc) et Marie-France (mère de Yann) — lien réciproque rétabli 2026-08-04.",
    "pere": "seed_guy",
    "prenom": "Émile",
    "sexe": "M",
@@ -310,23 +362,71 @@
      "url": "https://www.geneanet.org/nom-de-famille/DESARZENS"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
+  },
+  "seed_emmanuel_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg",
+     "label": "🍼 Naissance de son fils François (n°71/1912) — il y est nommé"
+    },
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg",
+     "label": "🕯 Décès de Philippe (n°306/1905) — il est le déclarant"
+    }
+   ],
+   "conjoints": [
+    "seed_josephine_ciais"
+   ],
+   "id": "seed_emmanuel_mc",
+   "mere": "seed_caroline_carlin",
+   "naissance": {
+    "date": "~1884",
+    "lieu": "Monaco"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ PROUVÉ père de Pauline (1905), Paula (1910) et François (1912) — les 3 actes de naissance lus le nomment : peintre, natif de Monaco (20 ans en 1905, 25 en 1910, 27 en 1912). ⚠️ Sa propre filiation (fils de Philippe × Caroline CARLIN) est TRÈS PROBABLE mais pas encore prouvée par un acte : 3 indices — (1) il déclare le décès de Philippe en 1905, rôle familial ; (2) François-Louis († 1912), fils PROUVÉ de Philippe, est de la même génération et du même quartier ; (3) il prénomme son fils « Philippe » en 3ᵉ prénom. Son acte de naissance (~1884, registres Monaco <1900 non indexés en ligne) le confirmera. 🎯 PISTE INSEE (2026-08-04) : « Emmanuel Joseph MAIFFRET, né le 6.01.1909 à BEAUSOLEIL, † 26.02.1994 à Villefranche-sur-Mer » — né entre Pauline (1905) et Paula (1910), à côté de Monte-Carlo, prénommé Emmanuel comme lui : 4ᵉ enfant TRÈS possible (acte de naissance Beausoleil 1909 = AD06, à vérifier). 🗞 JOURNAL DE MONACO n°2503 (26.06.1906), rubrique Accidents : « M. Emmanuel Maiffret, âgé de 21 ans… » — âge cohérent avec sa naissance ~1885 (2ᵉ confirmation indépendante).",
+   "pere": "seed_philippe_mc",
+   "prenom": "Emmanuel François",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "🍼 Actes de naissance de ses 3 enfants (images dans le dépôt)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_francois_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg",
+     "label": "🍼 Naissance n°71/1912 — Monte-Carlo (parents nommés)"
+    }
+   ],
+   "conjoints": [
+    "seed_madeleine_mathieu"
+   ],
    "deces": {
     "date": "6.11.2004",
     "lieu": "Nice"
    },
    "id": "seed_francois_mc",
+   "mere": "seed_josephine_ciais",
    "naissance": {
     "date": "9.12.1912",
     "lieu": "Monaco"
    },
    "nom": "MAIFFRET",
-   "notes": "✅ DÉCOUVERT au fichier INSEE : MAIFFRET né à MONACO le 9.12.1912, † 6.11.2004 à Nice (91 ans). Né à Monaco comme la famille de Marie-Thérèse → parent proche probable (frère ? cousin ?). À rattacher.",
+   "notes": "✅ ACTE DE NAISSANCE LU (n°71/1912, Mairie de Monte-Carlo — image dans le dépôt) : né le 9.12.1912 à 16h30, Maison Verani, rue des Orchidées, Monte-Carlo. Père : Emmanuel MAIFFRET, peintre, 27 ans, natif de Monaco. Mère : Joséphine Angèle CIAIS, couturière, 26 ans, son épouse. Témoin : un employé du Casino. Mentions marginales : marié à Monaco le 25.04.1957 avec Madeleine Marie Clémence MATHIEU ; décédé à Nice le 6.11.2004 (= INSEE ✓). Prénommé François (comme son oncle François-Louis, † 6 semaines avant sa naissance) et Philippe (comme son grand-père, † 1905). ⚠️ Sa branche (grand-père Philippe, arrière-grand-père Jérôme, familles de Nice/Monaco) est DISTINCTE de la lignée de Marie-Thérèse (Jean-Baptiste 1815, Beaulieu) — un lien plus ancien entre les deux familles MAIFFRET de Nice reste possible mais non prouvé.",
+   "pere": "seed_emmanuel_mc",
    "prenom": "François Joseph Philippe",
    "sexe": "M",
    "sources": [
+    {
+     "label": "🍼 Acte de naissance n°71/1912 — base Monaco (image scannée)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    },
     {
      "label": "📜 Acte de décès officiel (INSEE)",
      "url": "https://deces.matchid.io/id/lmAX_0gFBqZe"
@@ -340,7 +440,40 @@
      "url": "https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
+  },
+  "seed_francoislouis_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/01-Deces_1912_58_MAIFFRET_Francois_Louis_23_10_1912_23_10_1912_1_image-net1.jpg",
+     "label": "🕯 Décès n°58/1912 — Monte-Carlo (fils de Philippe × Caroline CARLIN)"
+    }
+   ],
+   "conjoints": [
+    "seed_rose_fracchia"
+   ],
+   "deces": {
+    "date": "23.10.1912",
+    "lieu": "Monaco"
+   },
+   "id": "seed_francoislouis_mc",
+   "mere": "seed_caroline_carlin",
+   "naissance": {
+    "date": "~1887",
+    "lieu": "Monaco"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ ACTE DE DÉCÈS LU (n°58 du 23.10.1912, Monte-Carlo) : ouvrier fontiste, 25 ans, natif de Monaco, époux de Rose Angeline FRACCHIA, « fils de feu MAIFFRET Philippe et de CARLIN Pauline Caroline ». Mort 6 semaines avant la naissance de son neveu François, qui a reçu son prénom. 🗞 JOURNAL DE MONACO : n°1879 (7.08.1894) palmarès scolaire « François Maiffret » (~7 ans ✓) et n°1986 (4.08.1896) prix d'école « F. Maiffret » — son enfance à Monaco dans le journal.",
+   "pere": "seed_philippe_mc",
+   "prenom": "François Louis",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès n°58/1912 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_gerard": {
    "conjoints": [
@@ -374,7 +507,7 @@
      "url": "https://davel-vd.ch/eb"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_germaine": {
    "deces": {
@@ -395,7 +528,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_guy": {
    "id": "seed_guy",
@@ -421,7 +554,19 @@
      "url": "https://fr.wikipedia.org/wiki/Sarzens"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
+  },
+  "seed_henry_pizzio": {
+   "conjoints": [
+    "seed_cecile"
+   ],
+   "id": "seed_henry_pizzio",
+   "nom": "PIZZIO",
+   "notes": "Henry PIZZIO — mari de Cécile, papa de Paloma (précisé par Kevin le 4.08.2026). PIZZIO = nom du pays niçois. Dates à compléter.",
+   "prenom": "Henry",
+   "sexe": "M",
+   "updatedAt": 1785879053167,
+   "vivant": true
   },
   "seed_jacqueline": {
    "deces": {
@@ -448,7 +593,7 @@
      "url": "https://deces.matchid.io"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_jap_maiffret": {
    "deces": {
@@ -483,7 +628,7 @@
      "url": "https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_jb_maiffret": {
    "deces": {
@@ -507,7 +652,7 @@
      "url": "https://www.geneanet.org/nom-de-famille/MAIFFRET"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_jean1852": {
    "deces": {
@@ -528,7 +673,7 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_jean1888": {
    "deces": {
@@ -549,9 +694,57 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
+  },
+  "seed_jerome_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg",
+     "label": "🕯 Décès de son fils Philippe (n°306/1905) — il y est nommé"
+    }
+   ],
+   "conjoints": [
+    "seed_therese_orselli"
+   ],
+   "id": "seed_jerome_mc",
+   "naissance": {
+    "lieu": "Nice (probable)"
+   },
+   "nom": "MAIFFRET",
+   "notes": "📜 Cité dans l’acte de décès n°306/1905 de son fils Philippe : « fils de Jérôme et de Thérèse Orselli ». Souche niçoise de la branche MAIFFRET de Monaco — distincte (à ce stade) de la lignée Jean-Baptiste 1815 (Beaulieu).",
+   "prenom": "Jérôme",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès de Philippe n°306/1905 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_jmv_sauvaigo": {
+   "actes": [
+    {
+     "img": "research/actesimg/mcav1900-SAUVAIGO/03-Registre_N_1852_1857_SAUVAIGO_Francois_Arnulphe_12_1857_image_12_sur_15-net1.jpg",
+     "label": "📖 REGISTRE 1857 : naissance François-Arnulphe, fils de Joseph SAUVAIGO (natif de Nice) × Marie-Jeanne-Josèphe BOUFFA"
+    },
+    {
+     "img": "research/actesimg/mcav1900-SAUVAIGO/04-Registre_N_1858_1866_SAUVAIGO_Barthelemi_Dominique_7_1860_image_7_sur_14-net1.jpg",
+     "label": "📖 REGISTRE 1860 : naissance Barthélemi-Dominique, même famille Joseph × BOUFFA (signé Sovaigo Giuseppe)"
+    },
+    {
+     "img": "research/actesimg/mcav1900-SAUVAIGO/05-Registre_N_1858_1866_SAUVAIGO_Jacques_Adolphe_8_1860_image_8_sur_14-net1.jpg",
+     "label": "📖 REGISTRE 1860 : naissance Jacques-Adolphe, fils de Louis-Étienne SAUVAIGO (fils de Dominique, natif de Nice) × Louise-Jeanne-Marie THIBAUD"
+    },
+    {
+     "img": "research/actesimg/mc1900-SAUVAIGO/01-Deces_1902_245_SAUVAIGO_Barthelemy_Dominique_01_12_1902_02_12_1902_1_image-net1.jpg",
+     "label": "🕯 PISTE : décès Barthélemy SAUVAIGO n°245/1902 (fils de Joseph × BOUFFA)"
+    },
+    {
+     "img": "research/actesimg/mc1900-SAUVAIGO/02-Mariage_1918_23_Epoux_GINET_Francois_Joseph_Eugene_Epouse_SAUVAIGO_Reparate_Josephine_Hele-net1.jpg",
+     "label": "💍 PISTE : mariage Réparate SAUVAIGO n°23/1918 (fille de J-B × RAVELLO)"
+    }
+   ],
    "deces": {
     "date": "9.09.1999",
     "lieu": "Nice"
@@ -562,7 +755,7 @@
     "lieu": "Nice"
    },
    "nom": "SAUVAIGO",
-   "notes": "✅ DÉCOUVERT au fichier INSEE : SAUVAIGO né le 12.07.1912 à Nice, † 9.09.1999 à Nice (87 ans) — porte « Victor » en 3ᵉ prénom, même génération que le grand-père Victor. Parent probable (frère ? cousin ?) de la branche niçoise. À vérifier avec la famille.",
+   "notes": "✅ INSEE : né le 12.07.1912 à Nice, † 9.09.1999 à Nice (87 ans) — porte « Victor » en 3ᵉ prénom, même génération que le grand-père Victor. ACTES MONACO LUS (images dans le dépôt) : deux familles SAUVAIGO monégasques identifiées — (1) Joseph SAUVAIGO × Marie Jeanne Josèphe BOUFFA (fils Barthélemy Dominique, serrurier, 1860–1902, célibataire ; déclarant François SAUVAIGO, menuisier, ~1867, frère probable) ; (2) Jean-Baptiste SAUVAIGO, receveur des postes et télégraphes, × Césarine RAVELLO (fille Réparate, née Nice 8.08.1896, mariée GINET 1918). Son acte de naissance (Nice 1912) est aux AD06 — mur anti-robot : à consulter depuis le téléphone de Kevin (lien dans la fiche). PAS de lien posé sans preuve.",
    "prenom": "Jean Marius Victor",
    "sexe": "M",
    "sources": [
@@ -583,7 +776,7 @@
      "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_josephalex": {
    "deces": {
@@ -604,7 +797,42 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
+  },
+  "seed_josephine_ciais": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/06-Naissance_1905_313_MAIFFRET_Pauline_Elisabeth_26_10_1905_29_10_1905_1_image-net1.jpg",
+     "label": "🍼 Naissance de Pauline (n°313/1905)"
+    },
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/07-Naissance_1910_254_MAIFFRET_Paula_Francoise_14_09_1910_14_09_1910_1_image-net1.jpg",
+     "label": "🍼 Naissance de Paula (n°254/1910)"
+    },
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg",
+     "label": "🍼 Naissance de François (n°71/1912)"
+    }
+   ],
+   "conjoints": [
+    "seed_emmanuel_mc"
+   ],
+   "id": "seed_josephine_ciais",
+   "naissance": {
+    "date": "~1886",
+    "lieu": "La Turbie (Alpes-Maritimes)"
+   },
+   "nom": "CIAIS",
+   "notes": "✅ Mère de Pauline (1905, déclarée « demoiselle » — mariage avec Emmanuel postérieur), Paula (1910) et François (1912). Couturière, native de La Turbie (l’acte de 1912 écrit « Nice » — les officiers variaient). 🗞 JOURNAL DE MONACO : dès 1873, des CIAIS capitaines de barques (« Résurrection », Golfe Juan, chargement de sable) dans les mouvements du port — vieille famille de la côte. Clin d'œil : aujourd'hui une Aurélie CIAIS est chef de service adjoint à l'État Civil de Monaco (JdM 18.07.2025) — la demande d'acte de la famille passera par elle !",
+   "prenom": "Joséphine Angèle",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "🍼 Actes de naissance de ses 3 enfants (images)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_josette_maiffret": {
    "deces": {
@@ -635,7 +863,7 @@
      "url": "https://deces.matchid.io"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_jules_sauvaigo": {
    "conjoints": [
@@ -646,7 +874,7 @@
     "date": "1858 ?"
    },
    "nom": "SAUVAIGO",
-   "notes": "📜 DOCUMENT FAMILIAL + index Geneanet : marié en 1883 à Victoire MAIFFRET (fille de Jean-Baptiste). Leurs filles : Julie (1893–1912) et Micheline (1892–1907). 1ʳᵉ alliance Sauvaigo ⇄ Maiffret — la 2ᵉ sera Victor × Marie-Thérèse en 1939. Lien exact avec Victor Sauvaigo à établir.",
+   "notes": "🎯 REGISTRES MONACO LUS (2026-08-04) : il n'est PAS né à Monaco (registres 1852-1866 : seuls François-Arnulphe 1857 et Barthélemi 1860, fils de Joseph SAUVAIGO × BOUFFA, et Jacques-Adolphe 1860, fils de Louis-Étienne — TOUS « natifs de Nice ») → Jules (n. 1858) est très probablement né à NICE comme eux ; registres AD06 Nice 1858 à consulter (téléphone). 📜 DOCUMENT FAMILIAL + index Geneanet : marié en 1883 à Victoire MAIFFRET (fille de Jean-Baptiste). Leurs filles : Julie (1893–1912) et Micheline (1892–1907). 1ʳᵉ alliance Sauvaigo ⇄ Maiffret — la 2ᵉ sera Victor × Marie-Thérèse en 1939. Lien exact avec Victor Sauvaigo à établir.",
    "prenom": "Jules",
    "sexe": "M",
    "sources": [
@@ -659,7 +887,36 @@
      "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
+  },
+  "seed_julie_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/05-Mariage_1906_39_Epoux_DANIEL_Pierre_Epouse_MAIFFRET_Julie_Josephine_Marie_16_06_1906_4_ima-net1.jpg",
+     "label": "💍 Mariage n°39/1906 avec Pierre DANIEL (parents nommés)"
+    }
+   ],
+   "conjoints": [
+    "seed_pierre_daniel"
+   ],
+   "id": "seed_julie_mc",
+   "mere": "seed_caroline_carlin",
+   "naissance": {
+    "date": "16.06.1880",
+    "lieu": "Monaco"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ ACTE DE MARIAGE LU (n°39 du 16.06.1906, Monaco) : « fille majeure de feu Philippe Laurent Jérôme MAIFFRET et de Pauline Caroline CARLIN, concierge, ici présente et consentante ». Née à Monaco le 16.06.1880. Mariée le jour de ses 26 ans.",
+   "pere": "seed_philippe_mc",
+   "prenom": "Julie Joséphine Marie",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "💍 Acte de mariage n°39/1906 (4 images dans le dépôt)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_julie_sauvaigo": {
    "deces": {
@@ -681,7 +938,7 @@
      "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_jyf_maiffret": {
    "id": "seed_jyf_maiffret",
@@ -700,22 +957,25 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669341,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_kevin": {
+   "conjoints": [
+    "seed_pascale_vervloet"
+   ],
    "id": "seed_kevin",
    "mere": "seed_marienoel",
    "naissance": {
     "date": "5.02.1979",
     "lieu": "Monaco"
    },
-   "nom": "de Sarzance",
-   "notes": "Né à Monaco. Nom paternel officiel = DESARZENS (« de Sarzance » en est la forme phonétique).",
+   "nom": "DESARZENS",
+   "notes": "Né à Monaco. Père de Ronan (avec Pascale VERVLOET, dont il est séparé).« de Sarzance » est la forme phonétique du nom officiel DESARZENS.",
    "pere": "seed_gerard",
    "prenom": "Kevin",
    "sexe": "M",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_laura_vdb": {
@@ -731,7 +991,7 @@
      "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
     }
    ],
-   "updatedAt": 1785801669341,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_leon_maiffret": {
@@ -763,7 +1023,7 @@
      "url": "https://deces.matchid.io"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_leonie": {
    "deces": {
@@ -798,16 +1058,17 @@
      "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_loic": {
    "id": "seed_loic",
+   "mere": "seed_charlotte",
    "nom": "DESARZENS",
-   "notes": "Fils d'Émile (cousin de Kevin). Date à compléter.",
+   "notes": "Fils d'Émile et de Charlotte (cousin de Kevin — mamans différentes pour Loïc et Yann, précisé par Kevin). Date à compléter.",
    "pere": "seed_emile",
    "prenom": "Loïc",
    "sexe": "M",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_louis_maiffret": {
@@ -829,7 +1090,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_lucette_vdb": {
    "deces": {
@@ -860,7 +1121,30 @@
      "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
+  },
+  "seed_madeleine_mathieu": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg",
+     "label": "🍼 Acte n°71/1912 de François — mention marginale du mariage 1957"
+    }
+   ],
+   "conjoints": [
+    "seed_francois_mc"
+   ],
+   "id": "seed_madeleine_mathieu",
+   "nom": "MATHIEU",
+   "notes": "💍 Épouse de François MAIFFRET — mariage à Monaco le 25.04.1957 (mention marginale de l’acte de naissance n°71/1912 de François).",
+   "prenom": "Madeleine Marie Clémence",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "🍼 Mention marginale de l’acte n°71/1912 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_marg_rose": {
    "deces": {
@@ -887,7 +1171,7 @@
      "url": "https://www.acte-deces.fr/recherche-deces-famille-maiffret"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_marguerite_molinario": {
    "deces": {
@@ -909,7 +1193,7 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_marie_brigitte": {
    "conjoints": [
@@ -925,7 +1209,7 @@
    "pere": "seed_victor_sauvaigo",
    "prenom": "Marie-Brigitte",
    "sexe": "F",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_marie_joe": {
@@ -942,7 +1226,7 @@
    "nom": "SAUVAIGO",
    "notes": "✅ TRÈS PROBABLE (fichier INSEE) : « Marie José SAUVAIGO », née le 11.11.1943 à MONACO — la SEULE Sauvaigo née à Monaco de tout le fichier des décès — † 26.11.2021 en République tchèque (78 ans). Sœur de Marie-Noël (tante maternelle de Kevin). À confirmer par la famille.",
    "pere": "seed_victor_sauvaigo",
-   "prenom": "Marie-Joe",
+   "prenom": "Marie-Josée",
    "sexe": "F",
    "sources": [
     {
@@ -962,12 +1246,30 @@
      "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785880943409,
+   "updatedBy": "famille",
+   "vivant": false
+  },
+  "seed_mariefrance": {
+   "conjoints": [
+    "seed_emile"
+   ],
+   "id": "seed_mariefrance",
+   "nom": "",
+   "notes": "Marie-France — maman de Yann, avec Émile (précisé par Kevin le 4.08.2026). Nom de famille à compléter.",
+   "prenom": "Marie-France",
+   "sexe": "F",
+   "updatedAt": 1785879053167,
+   "vivant": true
   },
   "seed_marienoel": {
    "conjoints": [
     "seed_gerard"
    ],
+   "deces": {
+    "date": "",
+    "lieu": ""
+   },
    "id": "seed_marienoel",
    "mere": "seed_mt_maiffret",
    "naissance": {
@@ -977,9 +1279,10 @@
    "nom": "SAUVAIGO",
    "notes": "Mère de Kevin, née à Monaco. Épouse de Gérard DESARZENS.",
    "pere": "seed_victor_sauvaigo",
-   "prenom": "Marie-Noël",
+   "prenom": "Marie-Noëlle",
    "sexe": "F",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785880597628,
+   "updatedBy": "famille",
    "vivant": true
   },
   "seed_marius1890": {
@@ -1001,7 +1304,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_michel1857": {
    "deces": {
@@ -1022,7 +1325,7 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_michel_maiffret": {
    "deces": {
@@ -1053,7 +1356,7 @@
      "url": "https://deces.matchid.io"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_micheline_sauvaigo": {
    "deces": {
@@ -1075,15 +1378,21 @@
      "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_molinario_marius": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MOLINARIO/01-Mariage_1904_11_Epoux_MOLINARIO_Henri_Francois_Pierre_Epouse_BELTRAME_Marie_06_02_1904_4_i-net1.jpg",
+     "label": "💍 PISTE : mariage Henri MOLINARIO × BELTRAME n°11/1904 (Monaco)"
+    }
+   ],
    "conjoints": [
     "seed_dentau_mm"
    ],
    "id": "seed_molinario_marius",
    "nom": "MOLINARIO",
-   "notes": "📜 DOCUMENT FAMILIAL : marié le 22.06.1865 à Marie-Marguerite DENTAU (région niçoise). Père d'Élisabeth (épouse d'André Maiffret) et de Marguerite (1868–1951). Registre AD06 (Nice) année 1865 à consulter.",
+   "notes": "📜 DOCUMENT FAMILIAL : marié le 22.06.1865 à Marie-Marguerite DENTAU (région niçoise). Père d'Élisabeth (épouse d'André Maiffret) et de Marguerite (1868–1951). Registre AD06 (Nice) année 1865 à consulter. 🎯 ACTES MONACO LUS (2026-08-04) : MOLINARIO de Monaco = famille de Jacques MOLINARIO × Catherine BERTHOLDO (fils Henri, ferblantier, né Monaco 19.05.1881, marié 1904 à Marie BELTRAME — fille de Jacques BELTRAME, EMPLOYÉ AU CASINO, × Marie CORNAGLIA) ; registres <1900 : Christine (n. 1883), Pierre-Antoine (n. 1891), Marie-Jeanne (m. 1894). Parenté avec Marius-Antoine possible mais non prouvée.",
    "prenom": "Marius-Antoine",
    "sexe": "M",
    "sources": [
@@ -1092,7 +1401,7 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_monique_maiffret": {
    "id": "seed_monique_maiffret",
@@ -1110,7 +1419,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669341,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_mt_maiffret": {
@@ -1149,9 +1458,15 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_myriam_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/08-Naissance_1912_71_MAIFFRET_Francois_Joseph_Philippe_09_12_1912_10_12_1912_1_image-net1.jpg",
+     "label": "🍼 PISTE : naissance de François (n°71/1912) — famille MAIFFRET de Monaco"
+    }
+   ],
    "deces": {
     "date": "6.10.2024",
     "lieu": "Nice"
@@ -1162,7 +1477,7 @@
     "lieu": "Monaco"
    },
    "nom": "MAIFFRET",
-   "notes": "✅ DÉCOUVERTE au fichier INSEE : MAIFFRET née à MONACO le 5.03.1935, † 6.10.2024 à Nice (89 ans). Génération suivante de la branche monégasque — à rattacher (fille de François ?).",
+   "notes": "✅ INSEE : née à MONACO le 5.03.1935, † 6.10.2024 à Nice (89 ans). La SEULE famille MAIFFRET de Monaco à cette époque est celle d'Emmanuel × Joséphine CIAIS (actes lus) → Myriam est très probablement la fille de Paula Françoise (n. 1910, célibataire en 1935 — l'enfant garde alors le nom MAIFFRET) OU de François (n. 1912, marié seulement en 1957). L'acte de 1935 est verrouillé par la loi des 100 ans : une demande officielle à l'état civil de Monaco (bouton 📋 de cette fiche) tranchera. PAS de lien posé sans preuve. 🎯 PISTE INSEE : « Henry Emmanuel MAIFFRET, né le 22.09.1936 à NICE, † 18.04.2022 à Tourrettes-sur-Loup » — même génération qu'elle (frère ? cousin ?), prénom « Emmanuel » = prénom du grand-père : famille de Monaco très probable.",
    "prenom": "Myriam Augusta Olga",
    "sexe": "F",
    "sources": [
@@ -1179,7 +1494,7 @@
      "url": "https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_olivier_m": {
    "id": "seed_olivier_m",
@@ -1194,20 +1509,45 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669341,
+   "updatedAt": 1785879053167,
+   "vivant": true
+  },
+  "seed_paloma_pizzio": {
+   "id": "seed_paloma_pizzio",
+   "mere": "seed_cecile",
+   "nom": "PIZZIO",
+   "notes": "Paloma PIZZIO — fille d'Henry et de Cécile (précisé par Kevin le 4.08.2026). Date à compléter.",
+   "pere": "seed_henry_pizzio",
+   "prenom": "Paloma",
+   "sexe": "F",
+   "updatedAt": 1785879053167,
+   "vivant": true
+  },
+  "seed_pascale_vervloet": {
+   "conjoints": [
+    "seed_kevin"
+   ],
+   "id": "seed_pascale_vervloet",
+   "nom": "VERVLOET",
+   "notes": "Pascale VERVLOET — maman de Ronan, avec Kevin (précisé par Kevin le 4.08.2026). VERVLOET = nom flamand (Belgique) — piste d'origine à explorer. Dates à compléter.",
+   "prenom": "Pascale",
+   "sexe": "F",
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_patrick_sauvaigo": {
    "deces": {
-    "date": "29.08.1945"
+    "date": "29.08.1945",
+    "lieu": ""
    },
    "id": "seed_patrick_sauvaigo",
    "mere": "seed_mt_maiffret",
    "naissance": {
-    "date": "12.01.1945"
+    "date": "12.01.1945",
+    "lieu": ""
    },
    "nom": "SAUVAIGO",
-   "notes": "📜 DOCUMENT FAMILIAL (annotation au stylo) : fils de Victor Sauvaigo et Marie-Thérèse Maiffret, né le 12.01.1945, décédé bébé le 29.08.1945. Frère de Marie-Jo, Marie-Noël et Marie-Brigitte.",
+   "notes": "📜 DOCUMENT FAMILIAL (annotation au stylo) : fils de Victor Sauvaigo et Marie-Thérèse Maiffret, né le 12.01.1945, décédé bébé le 29.08.1945. Frère de Marie-Josée, Marie-Noëlle et Marie-Brigitte.",
    "pere": "seed_victor_sauvaigo",
    "prenom": "Patrick",
    "sexe": "M",
@@ -1217,7 +1557,106 @@
      "url": "https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785880911316,
+   "updatedBy": "famille",
+   "vivant": false
+  },
+  "seed_paula_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/07-Naissance_1910_254_MAIFFRET_Paula_Francoise_14_09_1910_14_09_1910_1_image-net1.jpg",
+     "label": "🍼 Naissance n°254/1910 — Monaco"
+    }
+   ],
+   "deces": {
+    "date": "19.08.1994",
+    "lieu": "Monaco"
+   },
+   "id": "seed_paula_mc",
+   "mere": "seed_josephine_ciais",
+   "naissance": {
+    "date": "14.09.1910",
+    "lieu": "Monaco (Villa Nathalie, chemin des Œillets)"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ ACTE DE NAISSANCE LU (n°254/1910) : née le 14.09.1910 à 7h du matin ; père Emmanuel MAIFFRET, peintre, 25 ans ; mère Joséphine Angèle CIAIS, couturière, 24 ans, son épouse. Témoin : Pierre DANIEL, maçon (son oncle par alliance — mari de Julie). Mention marginale : décédée à Monaco le 19.08.1994. Piste : mère possible de Myriam (n. 1935 — acte verrouillé).",
+   "pere": "seed_emmanuel_mc",
+   "prenom": "Paula Françoise",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "🍼 Acte de naissance n°254/1910 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
+  },
+  "seed_pauline_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/06-Naissance_1905_313_MAIFFRET_Pauline_Elisabeth_26_10_1905_29_10_1905_1_image-net1.jpg",
+     "label": "🍼 Naissance n°313/1905 — Monaco"
+    },
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/02-Deces_1907_56_MAIFFRET_Pauline_Elisabeth_01_02_1907_02_02_1907_1_image-net1.jpg",
+     "label": "🕯 Décès n°56/1907 — Monaco (15 mois)"
+    }
+   ],
+   "deces": {
+    "date": "1.02.1907",
+    "lieu": "Monaco"
+   },
+   "id": "seed_pauline_mc",
+   "mere": "seed_josephine_ciais",
+   "naissance": {
+    "date": "26.10.1905",
+    "lieu": "Monaco (Villa Beausoleil, bd de France)"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ ACTE DE NAISSANCE LU (n°313/1905) : née le 26.10.1905 à 3h du matin ; père Emmanuel François MAIFFRET, peintre, 20 ans, « se reconnaissant être le père » ; mère demoiselle Joséphine CIAIS, couturière, 19 ans. Morte à 15 mois (acte de décès n°56/1907, image dans le dépôt).",
+   "pere": "seed_emmanuel_mc",
+   "prenom": "Pauline Élisabeth",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "🍼 Acte de naissance n°313/1905 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
+  },
+  "seed_philippe_mc": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg",
+     "label": "🕯 Décès n°306/1905 — Monaco (parents + épouse nommés)"
+    }
+   ],
+   "conjoints": [
+    "seed_caroline_carlin"
+   ],
+   "deces": {
+    "date": "20.11.1905",
+    "lieu": "Monaco (bd des Moulins n°18)"
+   },
+   "id": "seed_philippe_mc",
+   "mere": "seed_therese_orselli",
+   "naissance": {
+    "date": "~1850",
+    "lieu": "Nice"
+   },
+   "nom": "MAIFFRET",
+   "notes": "✅ ACTE DE DÉCÈS LU (n°306 du 20.11.1905, Monaco) : concierge, 55 ans, natif de Nice, époux de Caroline CARLIN, fils de Jérôme et de Thérèse Orselli. Décès déclaré par Emmanuel MAIFFRET, peintre, 21 ans (son fils très probable). Nom complet « Philippe Laurent Jérôme » confirmé par l’acte de mariage de sa fille Julie (n°39/1906).",
+   "pere": "seed_jerome_mc",
+   "prenom": "Philippe Laurent Jérôme",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "📜 Acte de décès n°306/1905 (image dans le dépôt)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_philippe_vdb": {
    "id": "seed_philippe_vdb",
@@ -1232,7 +1671,7 @@
      "url": "https://www.acte-deces.fr/recherche-deces-famille-van-den-bosch"
     }
    ],
-   "updatedAt": 1785801669341,
+   "updatedAt": 1785879053167,
    "vivant": true
   },
   "seed_pierre1900": {
@@ -1254,19 +1693,82 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
+  },
+  "seed_pierre_daniel": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/05-Mariage_1906_39_Epoux_DANIEL_Pierre_Epouse_MAIFFRET_Julie_Josephine_Marie_16_06_1906_4_ima-net1.jpg",
+     "label": "💍 Mariage n°39/1906 avec Julie MAIFFRET"
+    }
+   ],
+   "conjoints": [
+    "seed_julie_mc"
+   ],
+   "id": "seed_pierre_daniel",
+   "naissance": {
+    "date": "12.05.1881",
+    "lieu": "Sospel (Alpes-Maritimes)"
+   },
+   "nom": "DANIEL",
+   "notes": "💍 Époux de Julie MAIFFRET (acte n°39/1906) : sapeur-pompier, fils de Joseph DANIEL, maçon, et d’Ursule TOESCA, blanchisseuse. Témoin de la naissance de Paula en 1910 (beau-frère d’Emmanuel).",
+   "prenom": "Pierre",
+   "sexe": "M",
+   "sources": [
+    {
+     "label": "💍 Acte de mariage n°39/1906 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_ronan": {
+   "deces": {
+    "date": "",
+    "lieu": ""
+   },
    "id": "seed_ronan",
+   "mere": "seed_pascale_vervloet",
+   "naissance": {
+    "date": "20.08.2007",
+    "lieu": ""
+   },
    "nom": "DESARZENS",
-   "notes": "Fils de Kevin. Date/lieu à compléter.",
+   "notes": "Fils de Kevin et de Pascale VERVLOET (précisé par Kevin le 4.08.2026). Date/lieu à compléter.",
    "pere": "seed_kevin",
    "prenom": "Ronan",
    "sexe": "M",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785880835848,
+   "updatedBy": "famille",
    "vivant": true
   },
+  "seed_rose_fracchia": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/01-Deces_1912_58_MAIFFRET_Francois_Louis_23_10_1912_23_10_1912_1_image-net1.jpg",
+     "label": "🕯 Décès de son mari François-Louis (n°58/1912)"
+    }
+   ],
+   "conjoints": [
+    "seed_francoislouis_mc"
+   ],
+   "id": "seed_rose_fracchia",
+   "nom": "FRACCHIA",
+   "notes": "📜 Épouse de François Louis MAIFFRET (acte de décès n°58/1912).",
+   "prenom": "Rose Angeline",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte n°58/1912 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
+  },
   "seed_sabrina": {
+   "conjoints": [
+    "seed_stephan_bruno"
+   ],
    "id": "seed_sabrina",
    "mere": "seed_marienoel",
    "naissance": {
@@ -1278,18 +1780,72 @@
    "pere": "seed_gerard",
    "prenom": "Sabrina",
    "sexe": "F",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785879053167,
+   "vivant": true
+  },
+  "seed_stephan_bruno": {
+   "conjoints": [
+    "seed_sabrina"
+   ],
+   "deces": {
+    "date": "",
+    "lieu": ""
+   },
+   "id": "seed_stephan_bruno",
+   "naissance": {
+    "date": "06.03.1969",
+    "lieu": ""
+   },
+   "nom": "BRUNO",
+   "notes": "Stephan BRUNO — père de Théo. DIVORCÉ de Sabrina DESARZENS (précisé par Kevin le 4.08.2026). Dates et lieu de naissance à compléter. 🎯 ROBOT : 24 actes BRUNO à Monaco (1901-1912) sauvegardés en images (familles BRUNO monégasques anciennes) — ascendance de Stephan à explorer quand ses dates seront connues.",
+   "prenom": "Stephan",
+   "sexe": "M",
+   "updatedAt": 1785880726023,
+   "updatedBy": "famille",
    "vivant": true
   },
   "seed_theo": {
+   "deces": {
+    "date": "",
+    "lieu": ""
+   },
    "id": "seed_theo",
    "mere": "seed_sabrina",
-   "nom": "",
-   "notes": "Fils de Sabrina (neveu de Kevin). Nom/date à compléter.",
+   "naissance": {
+    "date": "01.11.2001",
+    "lieu": ""
+   },
+   "nom": "BRUNO",
+   "notes": "Théo BRUNO — fils de Stephan BRUNO et de Sabrina DESARZENS, neveu de Kevin (confirmé par Kevin le 4.08.2026). Date de naissance à compléter.",
+   "pere": "seed_stephan_bruno",
    "prenom": "Théo",
    "sexe": "M",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785880762303,
+   "updatedBy": "famille",
    "vivant": true
+  },
+  "seed_therese_orselli": {
+   "actes": [
+    {
+     "img": "research/actesimg/mc1900-MAIFFRET/03-Deces_1905_306_MAIFFRET_Philippe_20_11_1905_20_11_1905_1_image-net1.jpg",
+     "label": "🕯 Décès de son fils Philippe (n°306/1905) — elle y est nommée"
+    }
+   ],
+   "conjoints": [
+    "seed_jerome_mc"
+   ],
+   "id": "seed_therese_orselli",
+   "nom": "ORSELLI",
+   "notes": "📜 Citée dans l’acte de décès n°306/1905 de son fils Philippe MAIFFRET.",
+   "prenom": "Thérèse",
+   "sexe": "F",
+   "sources": [
+    {
+     "label": "📜 Acte n°306/1905 (image)",
+     "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+    }
+   ],
+   "updatedAt": 1785879053167
   },
   "seed_victoire": {
    "conjoints": [
@@ -1321,7 +1877,7 @@
      "url": "https://gw.geneanet.org/abel88?lang=fr&m=N&v=SAUVAIGO"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_victor_sauvaigo": {
    "conjoints": [
@@ -1332,7 +1888,7 @@
     "lieu": ""
    },
    "nom": "SAUVAIGO",
-   "notes": "Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",
+   "notes": "🛣 Monaco honore le nom : une ALLÉE LAZARE SAUVAIGO existe en Principauté, et une Fondation « Christiane et Lazare Sauvaigo » a été autorisée par Ordonnance Souveraine (Journal de Monaco n°6864, 14.04.1989) — lien éventuel avec la famille à explorer. Grand-père maternel de Kevin. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité).",
    "prenom": "Victor",
    "sexe": "M",
    "sources": [
@@ -1349,7 +1905,7 @@
      "url": "https://deces.matchid.io"
     }
    ],
-   "updatedAt": 1785801669340
+   "updatedAt": 1785879053167
   },
   "seed_victorj_maiffret": {
    "conjoints": [
@@ -1383,7 +1939,7 @@
      "url": "https://www.geneanet.org/releves-collaboratifs/view/46334"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_virgili": {
    "conjoints": [
@@ -1400,16 +1956,17 @@
      "url": "https://archives06.fr"
     }
    ],
-   "updatedAt": 1785801669341
+   "updatedAt": 1785879053167
   },
   "seed_yann": {
    "id": "seed_yann",
+   "mere": "seed_mariefrance",
    "nom": "DESARZENS",
-   "notes": "Fils d'Émile (cousin de Kevin). Date à compléter.",
+   "notes": "Fils d'Émile et de Marie-France (cousin de Kevin — mamans différentes pour Loïc et Yann, précisé par Kevin). Date à compléter.",
    "pere": "seed_emile",
    "prenom": "Yann",
    "sexe": "M",
-   "updatedAt": 1785801669340,
+   "updatedAt": 1785879053167,
    "vivant": true
   }
  }

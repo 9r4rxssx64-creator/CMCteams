@@ -57,6 +57,9 @@ jobs:
         run: printf '%s' "$PINSHA" | wrangler secret put APEX_ADMIN_PIN_SHA256
 
       - name: Déployer le worker
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
         run: |
           set -e
           wrangler deploy 2>&1 | tee /tmp/deploy.log

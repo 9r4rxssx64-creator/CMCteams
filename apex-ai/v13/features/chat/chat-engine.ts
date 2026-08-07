@@ -32,6 +32,17 @@ let conversation: DisplayMessage[] = [];
 let queue: string[] = [];
 let isProcessing = false;
 
+/* v13.4.361 (Kevin screenshot "IA bloquée sur Retry auto dans 3s", 3 bulles "test" empilées) :
+ * Le retry auto (erreur récupérable + réponse vide) re-queue le message SANS cap et
+ * pushe une NOUVELLE bulle user à chaque tour → boucle infinie visible + empilement.
+ * FIX : cap strict + retry qui NE duplique PAS la bulle user + message final clair.
+ * - autoRetries : compteur pour l'attempt courant (reset au 1er envoi frais).
+ * - pendingRetry : marque que le prochain processQueue() est un retry (n'incrémente pas le
+ *   compteur, ne compte pas comme un nouvel envoi). */
+const MAX_AUTO_RETRIES = 1;
+let autoRetries = 0;
+let pendingRetry = false;
+
 /** Lie le moteur à l'état du module chat (conversation + queue, réfs stables). */
 export function setEngineState(
   conv: DisplayMessage[],
@@ -46,6 +57,14 @@ export function setEngineState(
 }
 
 const MAX_CONTEXT_MESSAGES = 30;
+
+/** v13.4.364 — Pousse un texte dans la file du moteur et lance le traitement.
+ * Utilisé par /orchestre <question> (le dispatch n'a pas la réf queue). */
+export function enqueueText(rootEl: HTMLElement, text: string): void {
+  if (!text.trim()) return;
+  queue.push(text.trim());
+  void processQueue(rootEl);
+}
 
 /* Pièces jointes en attente — réfs STABLES fournies par setEngineState (mutées in-place). */
 let pendingAttachments: Array<{ mime: string; base64: string; name: string }> = [];
@@ -247,6 +266,10 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
     isProcessing = false;
     return;
   }
+  /* v13.4.361 : distingue un envoi FRAIS (reset le compteur de retry) d'un retry auto. */
+  const isRetryAttempt = pendingRetry;
+  pendingRetry = false;
+  if (!isRetryAttempt) autoRetries = 0;
 
   const user = store.get('user');
   /* v13.4.131 (Kevin "Apex IA chat réservée admin") :
@@ -320,6 +343,9 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
   };
   conversation.push(userMsg);
   persistConversation(conversation);
+  /* v13.4.361 : réf STABLE de la bulle user — `userMsg` est shadowé dans onError
+   * (const userMsg = errors.toUserMessage(err)), donc le retry doit splicer via ceci. */
+  const userBubble = userMsg;
 
   const assistantMsg: DisplayMessage = {
     id: `a_${Date.now()}`,
@@ -360,7 +386,18 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
   /* v13.4.273 (Kevin "tout soit bien en place avec eco token") :
    * mesure latence client-side du premier au dernier chunk pour badge UI. */
   const streamT0 = Date.now();
-  await aiRouter.stream(
+  /* v13.4.364 (Kevin « Utilise toutes les ia dispo. Orchestre d'ia ») :
+   * gros travail détecté (audit/expert/complet…) → fan-out multi-IA parallèle +
+   * synthèse Anthropic chef d'orchestre. MÊME contrat de callbacks que
+   * aiRouter.stream ; fail-open → route normale si l'orchestre est indispo. */
+  let streamFn: typeof aiRouter.stream = aiRouter.stream.bind(aiRouter);
+  try {
+    const { aiOrchestrator } = await import('../../services/ai/ai-orchestrator.js');
+    if (aiOrchestrator.shouldOrchestrate(text)) {
+      streamFn = aiOrchestrator.stream.bind(aiOrchestrator);
+    }
+  } catch { /* fail-open : routeur normal */ }
+  await streamFn(
     messages,
     sysPrompt,
     (chunk) => {
@@ -396,6 +433,8 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
       }
       if (chunk.done) {
         delete assistantMsg.streaming;
+        /* v13.4.361 : réponse aboutie → reset le compteur de retry auto. */
+        if (assistantMsg.text.trim().length > 0) autoRetries = 0;
         /* v13.4.273 : capture provider + latence pour badge sous la réponse */
         if (chunk.provider) assistantMsg.provider = chunk.provider;
         assistantMsg.latencyMs = Date.now() - streamT0;
@@ -423,16 +462,23 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
       const errMsg = err instanceof Error ? err.message : String(err);
       const recoverable = /timeout|abort|fetch failed|network|5\d{2}|rate.?limit|429/i.test(errMsg);
       logger.warn('chat', 'AI stream error', { errMsg, recoverable, userText: text.slice(0, 80) });
-      /* Auto-retry 1× après 3s si erreur récupérable ET pas de texte déjà streamé (Kevin règle "ZÉRO blocage user") */
-      if (recoverable && !assistantMsg.text) {
-        assistantMsg.text = `${userMsg} ⏳ Retry auto dans 3s…`;
+      /* Auto-retry CAPÉ après 3s si erreur récupérable ET pas de texte déjà streamé
+       * (Kevin règle "ZÉRO blocage user" — mais v13.4.361 : jamais en boucle, jamais
+       * d'empilement de bulles user). Au-delà du cap → message final clair actionnable. */
+      if (recoverable && !assistantMsg.text && autoRetries < MAX_AUTO_RETRIES) {
+        autoRetries += 1;
+        assistantMsg.text = `${userMsg} ⏳ Nouvelle tentative auto (${autoRetries}/${MAX_AUTO_RETRIES}) dans 3s…`;
         renderMessages(rootEl);
         setTimeout(() => {
-          /* Cleanup placeholder + re-queue user message */
-          const idx = conversation.indexOf(assistantMsg);
-          if (idx >= 0) conversation.splice(idx, 1);
+          /* Retire la bulle assistant ET la bulle user de CETTE tentative → le re-envoi
+           * en recrée exactement une de chaque (pas d'empilement). */
+          const ai = conversation.indexOf(assistantMsg);
+          if (ai >= 0) conversation.splice(ai, 1);
+          const ui = conversation.indexOf(userBubble);
+          if (ui >= 0) conversation.splice(ui, 1);
           delete assistantMsg.streaming;
           store.set('isStreaming', false);
+          pendingRetry = true; /* prochain processQueue = retry, garde le compteur */
           queue.unshift(text);
           isProcessing = false;
           void processQueue(rootEl);
@@ -451,6 +497,10 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
         finalMsg = `🛠 ${assistantMsg.toolBatchCount} outil(s) exécuté(s) ✅ mais la réponse texte n'a pas terminé. Tape "continue" ou relance ta question pour la suite.`;
       } else if (hasText) {
         finalMsg = `${assistantMsg.text}\n\n---\n⚠ ${userMsg} (réponse partielle préservée)`;
+      } else if (recoverable) {
+        /* v13.4.361 : retry auto épuisé sur erreur récupérable → message CLAIR + actions
+         * (jamais un cul-de-sac « Serveur en panne » figé). */
+        finalMsg = `${userMsg}\n\nLa nouvelle tentative auto n'a rien donné pour l'instant.\n• **Renvoie** ta question (je repars sur un provider sain)\n• Vérifie tes clés IA dans le **Coffre 🔐**\n• Tape **SOS** si ça persiste`;
       } else {
         finalMsg = userMsg;
       }

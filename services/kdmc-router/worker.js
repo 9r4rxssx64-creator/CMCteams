@@ -35,10 +35,33 @@ const ROUTES = {
   'studio.kd-mc.com': '/CMCteams/tools/crea-studio', // Créa Studio — montage vidéo + retouche photo (niveau Photoshop/GIMP) + dessin animé, 100% client-side (Kevin 2026-08-04)
 };
 
+// Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,
+// lecture seule. L'API matchID ne renvoie PAS d'en-tête CORS → un appel direct
+// depuis arbre.kd-mc.com est bloqué par le navigateur (Kevin « je ne vois rien »).
+// Ici arbre.kd-mc.com/__deces?q=… reste same-origin → 0 CORS, marche sur iPhone.
+async function handleDeces(request, url) {
+  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,OPTIONS', 'Access-Control-Allow-Headers': '*' };
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  const q = (url.searchParams.get('q') || '').trim();
+  let size = parseInt(url.searchParams.get('size') || '25', 10); if (!(size > 0)) size = 25; if (size > 50) size = 50;
+  if (q.length < 2) return new Response(JSON.stringify({ response: { persons: [] } }), { headers: { 'content-type': 'application/json', ...cors } });
+  const api = 'https://deces.matchid.io/deces/api/v1/search?q=' + encodeURIComponent(q) + '&size=' + size;
+  try {
+    const r = await fetch(api, { headers: { accept: 'application/json' } });
+    const body = await r.text();
+    return new Response(body, { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300', ...cors } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'proxy', message: String((e && e.message) || e) }), { status: 502, headers: { 'content-type': 'application/json', ...cors } });
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
+
+    // Recherche décès INSEE (proxy same-origin, public read-only) — pour l'arbre.
+    if (url.pathname === '/__deces') return handleDeces(request, url);
 
     // SSO transverse (session unique + CGU). Même origine par sous-domaine.
     if (url.pathname.startsWith('/__sso/')) return handleSso(request, url, env);
@@ -368,6 +391,56 @@ async function rlReset(env, ipHash) {
   try { await env.ACCOUNTS.delete('al:' + ipHash); } catch { /* fail-open */ }
 }
 
+/* ===== COMPTE UNIQUE PAR PERSONNE (Kevin 2026-08-05 : « Je ne veux pas plusieurs
+   comptes, qu'ils soient tous reliés à mon compte admin ») =====
+   CAUSE RACINE : /__sso/issue accepte l'uid envoyé par CHAQUE app (CMCteams → U11804,
+   Apex → kdmc_admin, Lingua → lingua_xxx…) → une fiche par app pour la MÊME personne,
+   donc des connexions éparpillées (« 2 » affichées au lieu de ~191).
+   RÈGLE ABSOLUE déjà écrite dans CLAUDE.md (« COMPTE ADMIN UNIQUE KEVIN ») : tous les
+   alias de Kevin désignent UN SEUL compte. On applique la même idée à la fiche. */
+const CANON_UID = 'kdmc_admin';
+/* Intervalle de re-passage de la fusion « un compte par personne ». Une fusion
+   DÉFINITIVE laisse passer les doublons créés ensuite (constaté en vrai) → on repasse. */
+const MERGE_RESCAN_MS = 7 * 24 * 60 * 60 * 1000;
+function normName(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+/* Le nom est-il celui de l'admin ? Exige 2 tokens OU un alias explicite — jamais un
+   prénom seul auto-déclaré (règle « login = prénom + nom », leçon #99 : un nom
+   auto-déclaré n'accorde AUCUN droit ; ici il ne fait que RANGER la fiche au bon
+   endroit, il ne donne aucun privilège). */
+function isAdminName(name) {
+  const n = normName(name);
+  if (!n) return false;
+  if (n === 'kdmc' || n === 'kdmc admin') return true;
+  const t = n.split(' ').filter(Boolean);
+  /* Le NOM DE FAMILLE seul ne suffit PAS : « Ronan Desarzens » est quelqu'un d'autre.
+     Il faut le nom de famille ET le prénom (ou son initiale) — « Desarzens K » compte. */
+  return t.indexOf('desarzens') >= 0 && t.some((x) => x === 'kevin' || x === 'k');
+}
+/* Identifiant CANONIQUE : toutes les fiches d'une même personne pointent vers un
+   seul dossier. Ne change JAMAIS l'uid de session (les apps s'en servent pour leur
+   propre logique) — uniquement l'endroit où le dossier est rangé.
+   Kevin 2026-08-05 : « Personne ne doit avoir plusieurs comptes. Un compte par
+   personne » → la règle vaut pour TOUT LE MONDE, pas seulement l'admin.
+   Annuaire `nm:<prénom nom>` → uid canonique : le PREMIER identifiant vu pour un nom
+   complet devient le dossier de cette personne ; tous les suivants y sont rattachés.
+   EXIGE 2 mots (prénom + nom) — même règle que la connexion : un prénom seul ne
+   regroupe rien (sinon tous les « Marie » finiraient dans le même dossier). */
+async function canonFor(env, uid, name) {
+  if (uid === CANON_UID) return uid;
+  if (isAdminName(name)) return CANON_UID;
+  if (!env || !env.ACCOUNTS) return uid;
+  const n = normName(name);
+  if (n.split(' ').filter(Boolean).length < 2) return uid;
+  try {
+    const cur = await env.ACCOUNTS.get('nm:' + n);
+    if (cur) return cur;
+    await env.ACCOUNTS.put('nm:' + n, uid);
+  } catch { /* fail-open : au pire on garde l'uid d'origine */ }
+  return uid;
+}
 /* Registre des fiches clients (Cloudflare KV ACCOUNTS). Fail-open si absent. */
 async function accGet(env, uid) {
   if (!env || !env.ACCOUNTS) return null;
@@ -436,14 +509,57 @@ async function audLog(env, entry) {
     await env.ACCOUNTS.put('aud:log', JSON.stringify(log.slice(0, 200)));
   } catch { /* fail-open */ }
 }
+/* Lecture FINE de l'appareil depuis l'User-Agent : modèle, OS + version, navigateur
+   + version. Côté SERVEUR → ni CSP ni bloqueur ne peut l'empêcher, et ça marche même
+   si l'app ne coopère pas. Tolérant : tout champ inconnu reste vide (jamais d'erreur). */
+function uaParse(ua) {
+  const s = String(ua || '');
+  let model = 'Autre';
+  if (/iPhone/i.test(s)) model = 'iPhone';
+  else if (/iPad/i.test(s)) model = 'iPad';
+  else if (/Android/i.test(s)) { const m = s.match(/;\s*([^;()]+?)\s*(?:Build\/|\))/); model = (m && m[1] && m[1].trim()) || 'Android'; }
+  else if (/Macintosh|Mac OS X/i.test(s)) model = 'Mac';
+  else if (/Windows/i.test(s)) model = 'PC Windows';
+  else if (/Linux/i.test(s)) model = 'Linux';
+  let os = '', osv = '', m;
+  if ((m = s.match(/(?:iPhone |CPU )?OS (\d+[._]\d+)/))) { os = 'iOS'; osv = m[1].replace(/_/g, '.'); }
+  else if ((m = s.match(/Android (\d+(?:\.\d+)?)/))) { os = 'Android'; osv = m[1]; }
+  else if ((m = s.match(/Mac OS X (\d+[._]\d+)/))) { os = 'macOS'; osv = m[1].replace(/_/g, '.'); }
+  else if (/Windows NT 10/.test(s)) { os = 'Windows'; osv = '10/11'; }
+  else if (/Windows/i.test(s)) { os = 'Windows'; }
+  else if (/Linux/i.test(s)) { os = 'Linux'; }
+  let br = '', brv = '';
+  if ((m = s.match(/Edg\/(\d+)/))) { br = 'Edge'; brv = m[1]; }
+  else if ((m = s.match(/OPR\/(\d+)/))) { br = 'Opera'; brv = m[1]; }
+  else if (/Chrome\//.test(s) && !/Edg\//.test(s)) { m = s.match(/Chrome\/(\d+)/); br = 'Chrome'; brv = m ? m[1] : ''; }
+  else if ((m = s.match(/Firefox\/(\d+)/))) { br = 'Firefox'; brv = m[1]; }
+  else if ((m = s.match(/Version\/(\d+)[^)]*Safari/))) { br = 'Safari'; brv = m[1]; }
+  else if (/Safari/i.test(s)) { br = 'Safari'; }
+  return { model, os, osv, br, brv };
+}
+/* Opérateur/hébergeur → distingue 4G, box maison, WiFi public… et signale un
+   VPN/serveur (quelqu'un qui masque sa provenance). Signal de sécurité utile. */
+function ispInfo(cf) {
+  const isp = String((cf && cf.asOrganization) || '');
+  const vpn = /vpn|proxy|host|server|cloud|data ?cent|ovh|hetzner|digitalocean|linode|vultr|amazon|aws|google|azure|m247|nordvpn|surfshark|expressvpn|mullvad|cloudflare warp/i.test(isp);
+  return { isp, vpn };
+}
 /* Enrichit (ou crée) la fiche à chaque connexion : MAX de renseignements. */
 async function enrich(env, request, uid, name, cgu, pre) {
   if (!env || !env.ACCOUNTS) return;
+  /* Toutes les apps de la même personne alimentent UN SEUL dossier. */
+  const inUid = uid;
+  uid = await canonFor(env, uid, name);
+  if (uid !== inUid) pre = undefined; /* la fiche préchargée était celle de l'ancien uid */
   const cf = request.cf || {};
   const ipHash = await sha256Hex((request.headers.get('CF-Connecting-IP') || '') + '|kdmc');
   const ua = request.headers.get('user-agent') || '';
   const device = /mobile|iphone|android/i.test(ua) ? 'mobile' : 'desktop';
   const os = /iphone|ipad|ios/i.test(ua) ? 'iOS' : /android/i.test(ua) ? 'Android' : /mac/i.test(ua) ? 'macOS' : /windows/i.test(ua) ? 'Windows' : /linux/i.test(ua) ? 'Linux' : '';
+  /* Détail « espion » : modèle + versions + opérateur + géo fine + fuseau. */
+  const D = uaParse(ua);
+  const NET = ispInfo(cf);
+  const devFull = [D.model, D.os + (D.osv ? ' ' + D.osv : ''), D.br + (D.brv ? ' ' + D.brv : '')].filter(function (x) { return x && x.trim(); }).join(' · ');
   const place = [cf.city, cf.region, cf.country].filter(Boolean).join(', ');
   const now = Date.now();
   const rawHost = (request.headers.get('host') || '').toLowerCase().replace(/:.*$/, '');
@@ -465,8 +581,31 @@ async function enrich(env, request, uid, name, cgu, pre) {
   acc.last_seen = now;
   acc.last_ip_hash = ipHash;
   acc.last_place = place;
-  acc.last_device = device + (os ? ' · ' + os : '');
+  acc.last_device = devFull || (device + (os ? ' · ' + os : ''));
   acc.last_app = host || acc.last_app || '';
+  /* Renseignements fins conservés sur la fiche (dernier état connu). */
+  acc.last_isp = NET.isp; acc.last_vpn = !!NET.vpn;
+  acc.last_tz = cf.timezone || acc.last_tz || '';
+  acc.last_geo = { city: cf.city || '', postal: cf.postalCode || '', lat: cf.latitude || '', lon: cf.longitude || '' };
+  /* MAX DE RENSEIGNEMENTS — tout ce que le réseau nous donne déjà, gratuitement,
+     côté serveur (impossible à bloquer par le navigateur ou un bloqueur de pub). */
+  acc.last_lang = (request.headers.get('accept-language') || '').split(',')[0].trim().slice(0, 12) || acc.last_lang || '';
+  acc.last_net = {
+    asn: cf.asn || '', colo: cf.colo || '', continent: cf.continent || '',
+    region: cf.regionCode || '', http: cf.httpProtocol || '', tls: cf.tlsVersion || '',
+  };
+  /* Par où il est entré (app d'origine) et sur quelle page il est tombé. */
+  try {
+    const ref = request.headers.get('referer') || '';
+    acc.last_from = ref ? new URL(ref).hostname : acc.last_from || '';
+  } catch { /* referer illisible */ }
+  try { acc.last_path = new URL(request.url).pathname.slice(0, 80) || acc.last_path || ''; } catch { /* url illisible */ }
+  /* RYTHME : à quelles heures cette personne se connecte (histogramme 24 h, cumulatif). */
+  acc.hours = acc.hours || {};
+  const hh = String(new Date(now).getUTCHours());
+  acc.hours[hh] = (acc.hours[hh] || 0) + 1;
+  /* devKey VOLONTAIREMENT sans version : sinon chaque mise à jour d'iOS/navigateur
+     compterait comme un « nouvel appareil » → alerte push à chaque update (spam). */
   const devKey = device + (os ? '·' + os : '');
   const newDevice = (acc.devices || []).indexOf(devKey) < 0;
   if (newDevice) structural = true;
@@ -491,16 +630,25 @@ async function enrich(env, request, uid, name, cgu, pre) {
   acc.history = acc.history || [];
   if (host) {
     const a = acc.apps[host] || { first: now, last: 0, sessions: 0 };
-    const cont = a.sessions > 0 && (now - (a.last || 0)) <= SESSION_GAP; /* session encore en cours ? */
+    const prevLast = a.last || 0;
+    const cont = a.sessions > 0 && (now - prevLast) <= SESSION_GAP; /* session encore en cours ? */
     a.last = now;
     let cur = null; /* la session la plus récente pour CE site */
     for (let i = 0; i < acc.history.length; i++) { if (acc.history[i].app === host) { cur = acc.history[i]; break; } }
     if (cont && cur) {
       cur.end = now; /* prolonge la session ouverte → la durée grandit */
+      /* TEMPS CUMULÉ réellement passé sur cette app (somme des prolongations). */
+      a.ms = (a.ms || 0) + Math.max(0, now - prevLast);
     } else {
       a.sessions = (a.sessions || 0) + 1;
       acc.hits = (acc.hits || 0) + 1;
-      acc.history.unshift({ ts: now, end: now, app: host, device: devKey, place: place });
+      /* Chaque session garde SON contexte (appareil détaillé, opérateur, VPN, coords)
+         → on voit l'évolution dans le temps, pas seulement le dernier état. */
+      acc.history.unshift({
+        ts: now, end: now, app: host, device: devKey, place: place,
+        dev: devFull, isp: NET.isp, vpn: NET.vpn ? 1 : 0,
+        lat: cf.latitude || '', lon: cf.longitude || '', tz: cf.timezone || '',
+      });
       if (acc.history.length > 80) acc.history = acc.history.slice(0, 80);
       structural = true;
     }
@@ -526,6 +674,61 @@ async function enrich(env, request, uid, name, cgu, pre) {
       (acc.name || uid) + ' : ' + prevCountry + ' → ' + curCountry + ' en ' + acc.anomaly.mins + ' min (déplacement impossible).');
   }
   await accPut(env, acc, !isNew);
+  /* Fusion AUTOMATIQUE des fiches éparpillées, sans aucune action de Kevin. Rien n'est
+     perdu : les connexions s'additionnent, les historiques se concatènent, appareils/
+     lieux/apps s'unissent. L'ancienne fiche n'est pas effacée : elle devient un renvoi.
+     MESURÉ le 2026-08-06 : deux fiches « kevin Desarzens » (196 + 116 connexions)
+     coexistaient encore — parce que le drapeau `merged_v1` était DÉFINITIF : une fiche
+     en double apparue APRÈS la première fusion n'était plus jamais absorbée. On repasse
+     donc régulièrement (au plus 1×/semaine par dossier, coût négligeable) au lieu d'une
+     seule fois. Les dossiers déjà fusionnés (merged_v1 sans date) repassent une fois. */
+  const lastMerge = acc.merged_at || 0;
+  if (now - lastMerge > MERGE_RESCAN_MS) { try { await mergeIntoCanon(env, acc); } catch { /* fail-open */ } }
+}
+
+/* Absorbe dans la fiche canonique toutes les fiches de la MÊME personne (autres uid).
+   « Même personne » = même nom complet normalisé (accents/casse/tirets ignorés), ou
+   tout alias de l'admin. Jamais sur un prénom seul → deux « Marie » restent distinctes. */
+async function mergeIntoCanon(env, acc) {
+  /* Borné : on ne relit jamais plus de 300 dossiers dans une même requête. */
+  const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]').slice(-300);
+  const me = normName(acc.name);
+  const admin = acc.uid === CANON_UID;
+  const stamp = async () => { acc.merged_v1 = 1; acc.merged_at = Date.now(); await accPut(env, acc, true); };
+  if (!admin && me.split(' ').filter(Boolean).length < 2) { await stamp(); return; }
+  const others = [];
+  for (const u of idx) {
+    if (u === acc.uid) continue;
+    const o = await accGet(env, u);
+    if (!o || o.merged_into) continue;
+    const same = admin ? isAdminName(o.name) : (normName(o.name) === me && !isAdminName(o.name));
+    if (same) others.push(o);
+  }
+  if (!others.length) { await stamp(); return; }
+  for (const o of others) {
+    acc.hits = (acc.hits || 0) + (o.hits || 0);
+    acc.history = (acc.history || []).concat(o.history || [])
+      .sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 80);
+    acc.devices = Array.from(new Set([...(acc.devices || []), ...(o.devices || [])])).slice(-10);
+    acc.places = Array.from(new Set([...(acc.places || []), ...(o.places || [])])).slice(-20);
+    acc.apps = acc.apps || {};
+    for (const [h, s] of Object.entries(o.apps || {})) {
+      const t = acc.apps[h] || { first: s.first || 0, last: 0, sessions: 0, ms: 0 };
+      t.sessions = (t.sessions || 0) + (s.sessions || 0);
+      t.ms = (t.ms || 0) + (s.ms || 0);
+      t.last = Math.max(t.last || 0, s.last || 0);
+      t.first = Math.min(t.first || s.first || 0, s.first || t.first || 0) || t.first;
+      acc.apps[h] = t;
+    }
+    if (o.created && (!acc.created || o.created < acc.created)) acc.created = o.created;
+    if (o.cgu_at && !acc.cgu_at) acc.cgu_at = o.cgu_at;
+    if ((o.last_seen || 0) > (acc.last_seen || 0)) acc.last_seen = o.last_seen;
+    acc.aliases = Array.from(new Set([...(acc.aliases || []), o.uid])).slice(-20);
+    /* L'ancienne fiche devient un RENVOI (jamais supprimée : traçabilité + réversible). */
+    await env.ACCOUNTS.put('acc:' + o.uid, JSON.stringify({ uid: o.uid, name: o.name, merged_into: acc.uid, merged_at: Date.now() }));
+  }
+  await stamp();
+  await audLog(env, { ev: 'accounts_merged', uid: acc.uid, detail: others.map((o) => o.uid).join(', ') + ' → ' + acc.uid });
 }
 
 async function handleSso(request, url, env) {
@@ -687,7 +890,9 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/history' && request.method === 'GET') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
-    const acc = await accGet(env, s.uid);
+    /* Lire le dossier CANONIQUE (sinon on afficherait la fiche partielle de l'app
+       d'où vient la session, au lieu de l'historique complet de la personne). */
+    const acc = await accGet(env, await canonFor(env, s.uid, s.name));
     if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
     return J({
       ok: true, uid: s.uid, name: s.name,
@@ -756,7 +961,12 @@ async function adminSession(request, env) {
   return null;
 }
 async function handleAdmin(request, url, env) {
-  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  /* `domain-log` est le SEUL endpoint admin lu depuis un autre sous-domaine
+     (admin.kd-mc.com) : son préflight a besoin des en-têtes CORS, donc il ne doit
+     PAS être avalé par ce 204 générique — sinon le navigateur bloque la lecture et
+     la page « Qui se connecte » reste vide sans le moindre message (bug attrapé par
+     domain-log.test.mjs avant la mise en ligne). */
+  if (request.method === 'OPTIONS' && url.pathname !== '/__admin/domain-log') return new Response(null, { status: 204 });
   const secret = env && env.KDMC_SSO_SECRET;
   const path = url.pathname;
   /* Login admin (preuve du code) — AVANT le gate, sinon poule-œuf. */
@@ -788,6 +998,58 @@ async function handleAdmin(request, url, env) {
   if (path === '/__admin/logout' && request.method === 'POST') {
     return J({ ok: true }, 'kdmc_admin=; Domain=.kd-mc.com; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax');
   }
+
+  /* « Qui se connecte » (admin.kd-mc.com) — SOURCE UNIQUE des connexions du domaine.
+     Le journal des connexions existe DÉJÀ ici (KV ACCOUNTS : hits, history[], devices,
+     places, apps). Kevin 2026-08-05 : « enlève ça et intègre le dedans » → plutôt qu'un
+     2e journal en parallèle (doublon interdit par « zéro doublon, source unique »), la
+     page admin lit CETTE donnée — la vraie, déjà peuplée (191 connexions).
+     AUTH PAR EN-TÊTE, pas par cookie : `x-apex-pin` = sha256(code admin), déjà équivalent
+     -porteur ailleurs (leçon #95 ; /__admin/login l'accepte tel quel). Sans cookie → aucune
+     autorité ambiante → AUCUNE surface CSRF ajoutée (en-tête personnalisé = préflight
+     obligatoire, non forgeable par un site tiers). CORS limité à admin.kd-mc.com. Lecture seule. */
+  if (path === '/__admin/domain-log' && (request.method === 'GET' || request.method === 'OPTIONS')) {
+    const origin = request.headers.get('origin') || '';
+    const cors = {
+      'Access-Control-Allow-Origin': origin === 'https://admin.kd-mc.com' ? origin : 'https://admin.kd-mc.com',
+      'Access-Control-Allow-Methods': 'GET,OPTIONS',
+      'Access-Control-Allow-Headers': 'x-apex-pin',
+      'Access-Control-Max-Age': '86400',
+      Vary: 'Origin',
+    };
+    const jc = (o, st) => new Response(JSON.stringify(o), { status: st || 200, headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store' }, cors) });
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+    const expected = env && env.KDMC_ADMIN_PIN_SHA256;
+    const given = request.headers.get('x-apex-pin') || '';
+    /* Comparaison en temps constant + fail-closed si le code n'est pas configuré. */
+    let same = !!expected && given.length === expected.length;
+    if (same) { let d = 0; for (let i = 0; i < expected.length; i++) d |= expected.charCodeAt(i) ^ given.charCodeAt(i); same = d === 0; }
+    if (!same) return jc({ ok: false, reason: 'unauthorized' }, 401);
+    if (!env.ACCOUNTS) return jc({ ok: true, people: [], kv: false });
+    const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
+    /* Les fiches FUSIONNÉES ne sont que des renvois → jamais listées comme personnes
+       (sinon les doublons que Kevin veut supprimer réapparaîtraient dans la page). */
+    const accs = (await Promise.all(idx.slice(-500).map((uid) => accGet(env, uid))))
+      .filter(Boolean).filter((a) => !a.merged_into);
+    /* Projection MINIMALE (RGPD : le nécessaire — ni e-mail, ni jeton, ni contenu privé). */
+    const people = accs.map((a) => ({
+      uid: a.uid, name: a.name || '', hits: a.hits || 0, lastSeen: a.last_seen || 0,
+      devices: (a.devices || []).slice(0, 8), places: (a.places || []).slice(0, 8),
+      apps: a.apps || {}, history: (a.history || []).slice(0, 80),
+      /* Renseignements fins (dernier état) : appareil complet, opérateur, VPN,
+         fuseau, géo approximative, 1re fois, anomalie de déplacement détectée. */
+      device: a.last_device || '', isp: a.last_isp || '', vpn: !!a.last_vpn,
+      tz: a.last_tz || '', geo: a.last_geo || null, place: a.last_place || '',
+      lastApp: a.last_app || '', created: a.created || 0, cguAt: a.cgu_at || 0,
+      anomaly: a.anomaly || null,
+      /* Renseignements réseau/entrée + rythme + appareil déclaré par l'app. */
+      lang: a.last_lang || '', net: a.last_net || null, from: a.last_from || '',
+      path: a.last_path || '', hours: a.hours || null, ua: a.last_ua || null,
+      aliases: a.aliases || [], passkey: !!a.passkey,
+    })).sort((x, y) => (y.lastSeen || 0) - (x.lastSeen || 0));
+    return jc({ ok: true, people, count: people.length, ts: Date.now() });
+  }
+
   const me = await adminSession(request, env);
   if (!me) {
     const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);

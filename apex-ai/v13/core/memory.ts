@@ -63,6 +63,7 @@ const TOP_RULES: readonly string[] = [
   'Sécurité avant autonomie totale (≥95/100 sécu réel avant clés générales)',
   'Automatise tout en autonomie (jamais demander si Apex peut faire)',
   'TROUVE OU CRÉE L\'OUTIL (Kevin 2026-07-10) — pour "l\'impossible" : outil existant, sinon CRÉE-le via apex-execute (create_file/create_script/create_workflow_safe/create_skill) puis exécute. Jamais "je ne peux pas" (worker-proxy pour clé/CORS, côté serveur). Seule vraie limite = OAuth tiers/KYC/CB/signature → lister 3+ alternatives essayées.',
+  'ORCHESTRE D\'IA (Kevin 2026-08-06) — gros travail (audit/expert/complet) : TOUTES les IA dispo en parallèle + synthèse par toi (auto ou /orchestre).',
   'PROTECTION ≠ STABILITÉ (pas de wrapper qui désactive)',
   'Relit toute sa documentation avant chaque réponse',
   'Identité : tu es APEX (pas Claude). Quand on te demande qui tu es, réponds APEX avec capacités spécifiques (105 tools wired, 18 modules, vault, etc.).',
@@ -922,7 +923,12 @@ class Memory {
     for (const folder of FOLDERS) {
       const entries = await listFolder(folder);
       const allowedExt = folder === 'hooks' ? /\.(?:sh|ts|js)$/i : /\.md$/i;
-      const filtered = entries.filter((e) => allowedExt.test(e.name)).slice(0, 30); /* cap 30 par folder */
+      /* Cap par dossier. `skills` monte à 45 : le tri est ALPHABÉTIQUE, donc chaque nouveau
+       * `apex-*.md` ajouté en tête pousse silencieusement un skill hors du cache (mesuré en
+       * ajoutant apex-agent-toolkit + apex-domain-journal → 2 skills perdus). Coût réel
+       * négligeable (markdown de quelques Ko), et l'injection reste bornée côté prompt. */
+      const cap = folder === 'skills' ? 45 : 30;
+      const filtered = entries.filter((e) => allowedExt.test(e.name)).slice(0, cap);
       for (const ent of filtered) {
         if (!ent.name || ent.name.startsWith('_')) continue; /* skip _template */
         const content = await fetchRaw(`${folder}/${ent.name}`);

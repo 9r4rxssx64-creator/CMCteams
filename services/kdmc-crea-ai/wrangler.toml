@@ -11,3 +11,10 @@ routes = [
   { pattern = "crea-ai.kd-mc.com", custom_domain = true }
 ]
 workers_dev = true
+
+# Cloudflare Workers AI — 2e moteur GRATUIT (free tier quotidien du compte, déjà
+# actif pour kdmc-rag/kdmc-apis). Aucune clé à gérer : binding direct.
+# Sert de SECOURS RÉEL (le secours Replicate était mort : crédit épuisé = 402)
+# et de renfort en PARALLÈLE quand deux moteurs valent mieux qu'un.
+[ai]
+binding = "AI"

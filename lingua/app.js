@@ -47,7 +47,32 @@ function loadS(){
   S.beeVoice=lg("beeVoice","fillette"); // voix de Bee choisie (catalogue BEE_VOICES) — fillette mignonne par défaut
   S.coachScene=lg("coachScene",null); // 🎭 jeu de rôle en cours (id de SCENES) — null = conversation libre
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
+
+/* PROGRESSION → « Qui se connecte » (kd-mc.com). Kevin veut suivre l'avancée de
+   chacun (XP, série, mots appris, leçons du jour) au même endroit que les connexions.
+   Métadonnées de progression UNIQUEMENT (aucun contenu de leçon, aucune réponse).
+   PROD-ONLY (*.kd-mc.com) → inerte en local/test. Throttlé 5 min. Fail-open total :
+   si ça échoue, l'app continue exactement pareil (jamais bloquer l'apprentissage). */
+var _progT=0;
+function reportProgress(){
+  try{
+    if(typeof location==="undefined"||!/\.kd-mc\.com$/.test(location.hostname||""))return;
+    var now=Date.now(); if(now-_progT<300000)return; _progT=now;
+    var m=(typeof accMeta==="function"&&ACC)?accMeta(ACC):null; if(!m||!m.name)return;
+    var t=S.today||{};
+    var meta={
+      xp:S.xp|0, serie:S.streak|0, gemmes:S.gems|0,
+      mots:(typeof wordCount==="function"?wordCount():0)|0,
+      cours:S.course||"", niveau:(S.prog&&S.course&&S.prog[S.course])?S.prog[S.course]:0,
+      aujourdhui:{xp:t.xp|0, lecons:t.lessons|0, parfaits:t.perfect|0}
+    };
+    var ua=navigator.userAgent||"";
+    var dev=/iPhone/.test(ua)?"iPhone":/iPad/.test(ua)?"iPad":/Android/.test(ua)?"Android":/Macintosh/.test(ua)?"Mac":/Windows/.test(ua)?"PC Windows":"Autre";
+    fetch("https://admin.kd-mc.com/log",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,mode:"cors",
+      body:JSON.stringify({app:"lingua",uid:"lingua_"+ACC,name:m.name,event:"progression",device:dev,tier:"lingua",meta:meta})}).catch(function(){});
+  }catch(e){}
+}
 
 /* ============ Comptes (CRUD) ============ */
 var AVATARS=["🦊","🐼","🐨","🦁","🐵","🐸","🦄","🐙","🐯","🐧","🐷","🐰","🐻","🐮","🐲","🦖"];

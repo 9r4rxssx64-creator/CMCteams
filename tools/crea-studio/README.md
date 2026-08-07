@@ -139,3 +139,31 @@ Captures d'écran de preuve générées à chaque test.
 Déjà livré : IA (détourage/cartoon/upscale), karaoké, zoom-beat, tampon correcteur, meme, effets tendance, formats réseaux. À venir si tu veux : **remplacement de fond IA** (mettre un décor), **speed-ramp**, **export GIF**, **calques complets multi-photos**, **cartoon IA sur vidéo**.
 
 *Version 6.0.0 — Studio créatif tout-en-un + pack viral + créateur pro + IA serveur + Danse IA (photo→vidéo), pour kd-mc.com (studio.kd-mc.com).*
+
+## ✨ Magie IA (v8.2.0) — reverse-engineering des apps virales
+
+Sources étudiées (captures Kevin 2026-08-04) : **AI Mirror** (figurine/anime/action figure),
+**ToonApp** (photo → danse TikTok), **AI Catch** (scènes impossibles : anniversaire avec un lion),
+**Donna IA Musique** (photo + voix → clip musical, chanson rap/pop), **AI Music** (te voir chanter un titre).
+
+**Ce qui a été reproduit — et comment (100 % gratuit)**
+
+| Fonction | Équivalent app | Chez nous |
+|---|---|---|
+| 🧸 Figurine / 📦 en boîte | AI Mirror | Gemini 2.5 Flash Image (édition d'image, free tier) |
+| 🌸 Anime · 🎬 Toon 3D | AI Mirror / ToonApp | idem |
+| ✨ Clip néon (glow-up) | Donna | idem |
+| 🦁 Anniv. lion · 🚀 Espace · 🌟 Tapis rouge | AI Catch | idem |
+| 🦸 Super-héros · 📼 Vintage · 👶 enfant · 👴 +50 ans | AI Mirror | idem |
+| 🪄 Transformation libre | toutes | prompt utilisateur + garde « garder le même visage » |
+| 🎤 Je chante (lip-sync) | AI Music | 3 poses de bouche générées par l'IA + **synchro sur le volume réel du son** (Web Audio RMS), montage dans le téléphone |
+| 🎵 Chanson IA | Donna | paroles écrites par Gemini (6 styles) + **instru jouée par le téléphone** (WebAudio, gamme pentatonique = toujours juste) |
+| 💃 Danse | ToonApp | poses de danse IA + montage aller-retour rythmé (onglet Danse IA) |
+
+**Honnêteté** : la musique n'est pas un modèle type Suno (payant) — l'instru est synthétisée
+localement et les paroles viennent de l'IA ; on chante par-dessus, puis « Je chante » anime la photo.
+Aucune de ces fonctions ne consomme de crédit payant.
+
+**Preuves mesurées** (navigateur réel, iPhone 390 px) : 12/12 vérifications vertes, 0 erreur JS —
+les 12 styles envoient le bon preset, la vidéo chantée dure exactement la longueur du son (2,996 s
+pour un fichier de 3 s), paroles + instru OK, aucun débordement horizontal.

@@ -1685,3 +1685,78 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 | arbre/research/INFOS.md | Infos presse ancienne & sources ouvertes | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md) |
 | arbre/research/RAPPORT.md | Recherche INSEE (~800 actes balayés) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/RAPPORT.md) |
 | Workflows | arbre-cloud-audit.yml (cron 5/mois 04:00) · arbre-recherche.yml (03:00) · arbre-actes-registres.yml (05:00) · arbre-recherche-web.yml | [Actions](https://github.com/9r4rxssx64-creator/cmcteams/actions) |
+
+## 🧰 Boîte à outils agents — 6 dépôts du tableau (session 2026-08-06)
+
+Tableau « Une Notion = Un Projet » (ta vidéo IMG_3293). Installé pour Claude Code **et** Apex.
+
+| Fichier | Description | Liens |
+|---|---|---|
+| tools/agent-toolkit/sources.json | Les 6 dépôts + ce qu'on copie de chacun (texte seulement) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sources.json) |
+| tools/agent-toolkit/sync.mjs | Va chercher les dépôts, ne garde que le texte, épingle le SHA | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sync.mjs) |
+| tools/agent-toolkit/sync.test.mjs | 6 tests : aucun binaire, aucun node_modules, plafonds respectés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sync.test.mjs) |
+| .github/workflows/agent-toolkit-sync.yml | Récupère + ouvre la PR (bouton + 1er de chaque mois) | [Lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/agent-toolkit-sync.yml) |
+| .claude/skills/agent-toolkit/SKILL.md | Mon mode d'emploi : quel dépôt j'ouvre et quand | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/agent-toolkit/SKILL.md) |
+| vendor/agent-toolkit/ | Le contenu récupéré (+ MANIFEST.json : SHA, licence, date) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/vendor/agent-toolkit) |
+| apex-ai/v13/data/apex-plugins-catalog.ts | Les 6 côté Apex (tag `agent-toolkit`) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/data/apex-plugins-catalog.ts) |
+| apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts | 6 tests de parité Apex ↔ Claude Code | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts) |
+
+Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · [gbrain](https://github.com/garrytan/gbrain) (Mémoire) · [awesome-design-skills](https://github.com/bergside/awesome-design-skills) (Design) · [rtk](https://github.com/rtk-ai/rtk) (Économie de jetons) · [meridian-company-os](https://github.com/codejunkie99/meridian-company-os) (Entreprise) · [free-llm-api-resources](https://github.com/jeis4wpi/free-llm-api-resources) (LLM gratuit)
+
+## 🎨 Créa Studio — v8.5.2 (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | L'app (Photo, Vidéo, Cartoon, Danse IA, Magie, **Mes créas**, **Studio musique**) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `services/kdmc-crea-ai/worker.js` | Le moteur IA (images, voix, paroles, partition) + **2ᵉ IA gratuite en secours** | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tests/verify-crea-song.mjs` | Preuve : le morceau est un vrai fichier audio, la voix est bien mixée | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-song.mjs) |
+| `tests/verify-crea-gallery.mjs` | Preuve : « Mes créas » garde tout, même après rechargement | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-gallery.mjs) |
+| `tests/verify-crea-ai-fallback.mjs` | Preuve : l'app marche même si l'IA principale tombe | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-ai-fallback.mjs) |
+| `tests/no-conflict-markers.test.mjs` | Garde : aucun conflit de fusion ne peut plus entrer dans le dépôt | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-conflict-markers.test.mjs) |
+## 🗂️ « Qui se connecte » + comptes uniques (session 2026-08-06)
+
+| Fichier | Description | Liens |
+|---|---|---|
+| .claude/skills/domain-journal/SKILL.md | Mon mode d'emploi du journal du domaine (source unique, un compte par personne, pièges, vie privée) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/domain-journal/SKILL.md) |
+| services/kdmc-router/worker.js | Le routeur du domaine : enregistre chaque visite, range chaque personne dans UN dossier | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) |
+| services/kdmc-router/compte-unique.test.mjs | 10 tests : un seul dossier par personne, doublon tardif absorbé, Ronan intact | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/compte-unique.test.mjs) |
+| services/kdmc-router/domain-log.test.mjs | 7 tests : lecture protégée par ton code, aucune donnée privée exposée | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/domain-log.test.mjs) |
+| services/kdmc-access/page.js | La page « Qui se connecte » (admin.kd-mc.com) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page.js) |
+| services/kdmc-access/page-logic.test.mjs | 4 tests : robots exclus, deux comptes du même nom additionnés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page-logic.test.mjs) |
+
+Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Déploiements : [routeur](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) · [page admin](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-access.yml)
+
+### Créa Studio v9.3.0 — masques + famille (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `services/kdmc-crea-famille/worker.js` | Le lien **privé** entre les téléphones de la famille | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-famille/worker.js) |
+| `.github/workflows/deploy-kdmc-crea-famille.yml` | Déploie le lien famille (crée son stockage tout seul, 0 clic) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/deploy-kdmc-crea-famille.yml) |
+| `tests/verify-crea-masques.mjs` | Preuve : le visage est trouvé, les 15 masques sont différents et cuits dans la photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-masques.mjs) |
+| `tests/verify-crea-famille.mjs` | Preuve : isolation entre familles, jetons signés, expiration | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille.mjs) |
+| `tests/verify-crea-famille-app.mjs` | Preuve : **deux téléphones** qui se parlent pour de vrai | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille-app.mjs) |
+
+### Créa Studio v9.5.0 — sélection + cartoon refait (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tests/verify-crea-cartoon.mjs` | Preuve : le cartoon garde la couleur de peau, aplatit vraiment, et trace un VRAI trait qui grossit avec l'image | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
+| `tests/verify-crea-selection.mjs` | Preuve : toucher un visage le sélectionne, flouter/cartooniser n'agit QUE là, et « Retirer » / « Enregistrer » marchent | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-selection.mjs) |
+| `tests/verify-crea-plein-ecran.mjs` | Preuve : le plein écran couvre tout l'écran, zoom au doigt, « Remplir », et « Enregistrer » sous la main | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-plein-ecran.mjs) |
+
+### Créa Studio v9.7.0 — 12 styles cartoon (parité apps virales) (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | `CARTOON_STYLES` : les 12 recettes + galerie de vignettes calculées sur TA photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `tests/verify-crea-cartoon.mjs` | Preuve : 12 styles tous différents, tous lisibles, tous rapides, peau lissée sans bouillie | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
+
+### Créa Studio v9.8.0 — 🎬 Montage auto (2026-08-07)
+
+Tu donnes tes vidéos brutes, l'app te rend la vidéo montée. Un seul bouton.
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | Module `Auto` : écoute le son pour enlever les blancs, regarde l'image pour jeter le noir/flou, corrige les couleurs, zoom lent + fondus, sous-titres, musique, compte rendu chiffré | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `services/kdmc-crea-ai/worker.js` | Nouvelle porte `/transcribe` : la parole devient du texte (IA gratuite Cloudflare). Seul un petit extrait sonore part, jamais la vidéo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tests/verify-crea-montage-auto.mjs` | Preuve (29 vérifs) : 2 vraies vidéos fabriquées puis montées, blancs coupés mesurés, seuil qui s'adapte au volume, hésitations retirées, couleurs corrigées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-montage-auto.mjs) |

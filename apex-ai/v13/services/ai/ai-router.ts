@@ -1293,6 +1293,37 @@ class AIRouter {
   }
 
   /**
+   * v13.4.364 (Kevin « Utilise toutes les IA dispo. Orchestre d'IA ») —
+   * Stream depuis UN provider PRÉCIS, sans failover cross-provider.
+   * La primitive manquante pour l'orchestration multi-IA : avant, crew-experts
+   * passait par stream() (chaîne de failover) → tous les « experts » tapaient
+   * en réalité la MÊME IA. Ici : rotation de clés + route proxy incluses
+   * (streamWithKeyFailover), mais on reste sur le provider demandé.
+   */
+  async streamSingle(
+    provider: Provider,
+    messages: ChatMessage[],
+    system: string,
+    onChunk: (chunk: StreamChunk) => void,
+    signal?: AbortSignal,
+  ): Promise<{ ok: true; text: string; provider: Provider } | { ok: false; error: string; provider: Provider }> {
+    const ctrl = new AbortController();
+    if (signal) {
+      if (signal.aborted) ctrl.abort();
+      else signal.addEventListener('abort', () => ctrl.abort(), { once: true });
+    }
+    try {
+      const result = await this.streamWithKeyFailover(provider, messages, system, onChunk, ctrl.signal);
+      if (result.status === 'aborted') return { ok: false, error: 'aborted', provider };
+      if (result.status === 'error') return { ok: false, error: result.error.message.slice(0, 300), provider };
+      return { ok: true, text: result.streamResult.assistantText, provider };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, error: msg.slice(0, 300), provider };
+    }
+  }
+
+  /**
    * Exécute UNE itération du failover : essaie chaque provider de la chain
    * jusqu'à un succès. Retourne le résultat structuré (texte + tools).
    * - aborted=true si AbortError reçu
@@ -1700,7 +1731,9 @@ class AIRouter {
        * en tête après quelques succès openai, exactement le drift que premium corrige.
        * Le smart-router reste actif en 'auto'/'economy' (optimisation clients). */
       const policyMode = aiRoutingPolicy.getMode();
-      const skipSmartPrefix = policyMode === 'premium' || policyMode === 'forced';
+      /* v13.4.362 : 'free-smart' respecte aussi la décision policy (gratuit/Anthropic
+       * selon la question) → le smart-router ne doit pas la ré-ordonner vers openai. */
+      const skipSmartPrefix = policyMode === 'premium' || policyMode === 'forced' || policyMode === 'free-smart';
       try {
         if (skipSmartPrefix) throw new Error('skip:explicit-mode');
         const { smartRouter } = await import('./smart-router.js');

@@ -1,3 +1,135 @@
+# MEMO_RESUME — état de session
+
+## Nuit du 6 au 7 août 2026 — « vérifier en réel » livré, et ce qu'il a trouvé
+
+**Contexte** : GitHub Actions est tombé 6 h (0 job en cours / 393 en file). Rien n'a été
+perdu ; tout est reparti seul au redémarrage.
+
+### Livré et sur `main`
+1. **Boîte à outils agents** — les 6 dépôts du tableau, côté Claude Code (vendorisés,
+   épinglés au SHA) ET côté Apex (catalogue, tag `agent-toolkit`) + tests de parité.
+2. **Secours de déploiement Cloudflare Workers Builds** — BRANCHÉ par Kevin le 07/08 à
+   01:11 sur `kdmc-router`. Reste à passer « Builds for non-production branches » sur
+   Disabled. NE PAS toucher aux Build watch paths (doc Cloudflare en 403 → non confirmé).
+3. **Vérif RÉELLE connectée** (`verif-reelle.yml` + `tools/smoke/session-kevin.mjs`) —
+   1er run : 16 pages ouvertes en vrai, connecté (CMCteams admin U11804, Apex admin,
+   arbre déverrouillé), captures d'écran par page.
+
+### Ce que le 1er run a trouvé
+- **Faux positif (le mien)** : « arbre vide » — le contrôle comptait `.tnode` alors que
+  l'app rend le style parchemin (`.tmed`). Reproduit en local : **81 cartes affichées**,
+  0 erreur JS. Contrôle corrigé (`#stage [data-open]`, indépendant du style).
+- **Vrai bug** : CMCteams demandait `/%22/%22` → 404. Un fond invalide produisait
+  `url(""/"")`. Corrigé par `_bgUrlOk()` (v9.876) + `tests/bg-url-guard.test.mjs`.
+- **Vrai bug, plus grave** : `| tee` sans `pipefail` → un ÉCHEC ressortait VERT.
+  48 étapes concernées, dont **15 déploiements** (dont le routeur kd-mc.com).
+  Corrigé + `tests/workflows-pipefail.test.mjs` (règle dure + cliquet 35).
+- **Synchro boîte à outils** : échec à l'ENVOI (`stale info`), pas à la récupération.
+  Corrigé (`git fetch` avant `checkout -B`, le lease reste actif).
+
+### Reste à faire
+- Relancer `agent-toolkit-sync.yml` (only=free-llm-api-resources) → doit passer 6/6.
+- Lire `deploy-kdmc-access.yml` : il ne doit rester qu'UNE fiche « kevin Desarzens »
+  (la fusion se déclenche à la prochaine visite de Kevin sur kd-mc.com).
+- Apex v13 : reconstruire le paquet pour que sa CSP autorise `admin.kd-mc.com`.
+
+Leçons écrites : **#176** (pipefail) et **#177** (contrôle accroché à une classe cosmétique
+= fausse alerte ; reproduire AVANT d'alerter).
+
+---
+
+
+### 🎬 Créa Studio v9.8.0 — « Montage auto » (2026-08-07, Kevin : « fais pareil enrichi »)
+
+Kevin a envoyé une capture de **video-use** (« éditeur vidéo IA gratuit ») : là-bas il faut un
+ordinateur, un dossier, une ligne de commande et une clé d'API. Ici : **le téléphone et un bouton**.
+
+- **Écran Vidéo → « ✨ Montage auto (plusieurs vidéos) »** : tu donnes tes rushes, l'app rend la
+  vidéo montée et la range dans « Mes créas ».
+- **Ce qu'elle fait toute seule** : écoute le son de chaque rush (seuil **adapté à chaque vidéo**)
+  pour enlever les blancs · regarde l'image pour jeter les passages **noirs ou flous** · garde les
+  meilleurs moments **dans l'ordre**, sans jamais vider une des vidéos · corrige lumière, contraste,
+  couleurs et **balance des blancs** d'après la vraie image · **zoom lent** alterné + **fondus** ·
+  **sous-titres** écrits depuis la parole (IA gratuite Cloudflare, nouvelle porte `/transcribe`) ·
+  retire les **hésitations** (« euh », « voilà ») et **recale** le reste · musique mixée sous la voix ·
+  une vidéo horizontale n'est **pas charcutée** en format téléphone (image entière sur fond flou).
+- **Compte rendu honnête** à la fin : combien gardé, combien coupé, et si les sous-titres n'ont pas
+  pu être faits, **la raison exacte** (jamais « ça a marché » sans chiffres).
+- **Preuve** : `tests/verify-crea-montage-auto.mjs` — 2 vraies vidéos fabriquées dans le navigateur
+  puis montées pour de bon (mesuré : 12,0 s de brut → **8,5 s**, **3,4 s de blancs coupés**, MP4 1 Mo).
+  Câblé dans `test:ci`.
+- **3 bugs anciens corrigés au passage** (ils touchaient l'export vidéo déjà livré) : le son original
+  sortait **muet** ; le **2ᵉ** export d'affilée sortait muet aussi ; une vidéo à durée inconnue était
+  vue comme vide. Voir leçon **#182**.
+
+
+### 🔎 « Simuler ma connexion pour vérifier en réel » (2026-08-06, Kevin)
+
+Le blocage récurrent (leçons #131/#135) : l'agent n'atteint pas kd-mc.com, et la CI ne voyait que
+les écrans de login → je déduisais au lieu de constater. **Résolu.**
+
+- **Réutilisé, pas dupliqué** (leçon #164) : `tools/smoke/audit-live.mjs` existait déjà (13 surfaces,
+  captures, erreurs JS, requêtes bloquées). Ce qui manquait = **être connecté**.
+- **Nouveau `tools/smoke/session-kevin.mjs`** : repose la marque de session que **l'app écrit
+  elle-même**, relue dans son code — CMCteams `cmc_uid`+`cmc_lastact` · Apex `apex_v13_user`+
+  `apex_v13_last_known_uid` · admin `kdmc_access_pinhash` · Arbre `arbre_trust` · portail = vrai
+  pass `POST /__sso/issue`. Appliqué **avant** le chargement (`addInitScript`).
+- **Opt-in** `KDMC_AS_KEVIN=1` → sans le drapeau l'audit reste **anonyme** (zéro régression).
+- **Workflow `verif-reelle.yml`** (dispatch) : je le déclenche, il rend **une capture par page**.
+- **Sécurité** : périmètre kd-mc.com **refusé ailleurs** (throw) · code admin par **secret CI**
+  (`APEX_ADMIN_PIN_SHA256`), jamais dans le dépôt, **jamais journalisé** · lecture seule · sans code
+  fourni on ne fabrique rien.
+- **Honnêteté** : session **nommée**, pas « admin prouvé » (Face ID) → zones réservées masquées.
+- **Garde-fou** `tests/session-kevin.test.mjs` (21 vérifs, câblé `test:ci`) : si une app change sa
+  clé de session, on le sait **là**, au lieu de croire qu'on est connecté devant un écran de login.
+  Prouvé qu'il rougit (marque faussée → code retour 1).
+- **Parité Apex** : `apex-verif-reelle.md` + le test de parité étendu (9/9).
+
+
+### ⛔ Blocage EXTERNE mesuré (2026-08-06, ~15:22 UTC → en cours) — panne mondiale GitHub Actions
+
+**Mesuré** : `in_progress` = **0** · `queued` = **391** (le plus ancien à 15:49, `updated_at == created_at`).
+Zéro job en cours + des centaines en file = **rien ne tourne**. Confirmé par GitHub (« workflow runs
+failing to start », incident ouvert 15:22 UTC) et par une source indépendante. Ce n'est ni notre code,
+ni un quota, ni notre cadrage de workflows (cf. #163 : famine = runs `cancelled` sans job ; ici ils
+restent `queued`).
+
+**Rien n'est perdu** : tout est mergé sur `main` (vérifié fichier par fichier), l'arbre de travail est
+propre, et un run en file ne produit rien. Seul effet : les déploiements n'ont pas eu lieu → la prod
+tourne encore sur sa version précédente (les sites ne sont pas cassés, juste pas à jour).
+
+**En attente de la reprise** (rappel automatique programmé, Kevin n'a rien à faire) : déployer le
+routeur (retrait `deces.kd-mc.com` + fusion des comptes), relancer `deploy-kdmc-access` pour vérifier
+qu'il ne reste qu'UNE fiche « kevin Desarzens », finir la 6ᵉ source de la boîte à outils.
+⚠️ GitHub prévient que des jobs en file **peuvent expirer** → un run en attente n'est pas une garantie,
+on re-déclenche à la reprise.
+
+
+## 🧰 Boîte à outils agents + « Qui se connecte » durci (2026-08-06)
+
+**Kevin (tableau filmé « Une Notion = Un Projet ») : « Récupère et installe tout ça pour toi et Apex et utilise. Note tout. »**
+- 6 dépôts **identifiés** (noms tronqués à l'écran → vérifiés un par un) : Ingénieur=`anthropics/skills` · Mémoire=`garrytan/gbrain` · Design=`bergside/awesome-design-skills` · Jetons=`rtk-ai/rtk` · Entreprise=`codejunkie99/meridian-company-os` · LLM gratuit=`jeis4wpi/free-llm-api-resources` (l'original `cheahjs` renvoie 404 → miroir vivant).
+- **Récupération par la CI** (l'agent n'atteint pas github.com) : `tools/agent-toolkit/{sources.json,sync.mjs}` + workflow `agent-toolkit-sync.yml` (bouton + cron **mensuel**). Ne copie que du **texte**, plafonds par fichier/dépôt, purge avant copie, `MANIFEST.json` (SHA + licence), fail-open + `::warning::` par source en échec. Ouvre une PR (jamais de push main).
+- **Réellement vendorisé** : skills 32 fichiers · gbrain 133 · awesome-design-skills 136 · rtk 33 · meridian 6.
+- **Usage** : skill `.claude/skills/agent-toolkit/`. **Parité Apex** : 6 entrées taguées `agent-toolkit` dans `apex-plugins-catalog.ts` + test qui vérifie que l'URL Apex == l'URL vendorisée.
+- **Honnêteté** : `rtk` = binaire desktop dont l'install pose un hook qui réécrit TOUTES mes commandes → **non installé** (PROTECTION ≠ STABILITÉ) ; gain réel publié ~3,7 %, pas 60-90 %.
+- Mesuré : sync 6/6 · parité Apex 6/6 · marketplace 61/61 · tsc 0.
+
+**Deux vrais défauts trouvés en lisant le journal LIVE (8 personnes / 538 connexions, Kevin à 196) :**
+- **Fusion « une seule fois » → datée et répétée** : `merged_v1` était un drapeau permanent, un doublon né après n'était plus jamais absorbé (deux fiches « kevin Desarzens », 196 + 116). Remplacé par `merged_at` + re-passage ≤1×/semaine, scan borné aux 300 derniers uid.
+- **« Ronan Desarzens » était pris pour l'admin** : `isAdminName` acceptait (nom de famille + 2 mots) → sa fiche aurait été fondue dans celle de Kevin. Corrigé : nom de famille **ET** prénom/initiale. ⚠️ Irréversible pour ce qui aurait déjà été fusionné.
+- 3 tests de non-régression (10/10 sur `compte-unique`). Piège consigné : vieillir aussi `last_seen` (anti-réécriture 120 s).
+
+**`deces.kd-mc.com` retiré (Kevin « Retire dece »)** : route déclarée dans le worker mais **jamais joignable** (absente d'`apps.json` ET de `wrangler.toml`) — c'était le seul test rouge (`apps-consistency`), rouge avant mes changements. Suite kdmc-router **34/34**. La recherche de décès **reste dans l'arbre** (`arbre.kd-mc.com`, bouton + relais même-origine `/__deces`) — c'est sa place, vérifié dans le code et vert au dernier contrôle live.
+
+**Parité Apex (Kevin « Pareil apex ») — Apex v13.4.362** : 2 skills Apex (`apex-agent-toolkit.md`, `apex-domain-journal.md`) + APEX_HANDOFF/APEX_PROJECTS à jour. **Contrainte découverte en lisant le code (pas supposée)** : `syncMetaFilesAtBoot` ne garde que les entrées `type==='file'` en `.md` → **tous mes skills en DOSSIER sont invisibles pour Apex** ; d'où la convention désormais testée « skill dossier pour moi + `apex-*.md` pour Apex ». Cap `skills` du meta-cache 30 → 45 (chaque nouveau `apex-*.md` éjectait 2 skills, mesuré). Tests parité 9/9, marketplace 61/61, rules-injection 22/22, tsc 0.
+
+**Outil `deces-insee` supprimé** (Kevin « Oui supprime ») : page + 4 automatisations (build Parquet→R2, moteur DuckDB→R2, préflight R2, smoke). **Gardées** : `arbre-find-deces`, `deces-cors-check`, `deces-live-check` — elles servent la recherche DANS l'arbre. Vérifié AVANT de supprimer : `arbre/index.html` n'utilise ni R2 ni DuckDB ni parquet (0 occurrence) → aucune dépendance ; 0 référence orpheline après coup. Reste en Cloudflare le bucket R2 `kdmc-deces-insee` (données publiques, re-téléchargeables) — à vider sur un mot. ⚠️ Ce lot avait été fait une 1re fois puis **perdu par un redémarrage du conteneur** (travail non committé) → refait ; leçon : committer chaque lot destructif tout de suite.
+
+**Nouveau skill** `.claude/skills/domain-journal/` : tout ce qu'il faut savoir sur « Qui se connecte » (source unique, un compte par personne, pièges, vie privée).
+
+**⏳ En attente au moment d'écrire** : le déploiement du routeur (retrait deces + fusion des comptes) est en file — **GitHub était en panne partielle** (`Failed to resolve action download info: Service Unavailable`, échec au step « Set up job », rien à voir avec le code). Apex v13 n'alimente toujours pas le journal (CSP du bundle déployé sans `admin.kd-mc.com`).
+
 
 ## 🧠 Mémoire RAG Apex (TOP 8 #7) — v13.4.346 (2026-07-07, Kevin « fais la mémoire Apex »)
 - Worker `services/kdmc-rag/` (worker.js + wrangler.toml, SANS DO — leçons #132/#133) : embeddings Workers AI `@cf/baai/bge-m3` (multilingue FR, 1024 dims, AUCUNE clé externe) + Vectorize `apex-memory`. Endpoints /health /upsert /query /forget, auth x-apex-pin (double-hash toléré #95), CORS whitelist, fail-open JSON (#133). `deploy-kdmc-rag.yml` dispatch-only (crée index idempotent + secret PIN + deploy + smoke /health hasVec:true, #95).

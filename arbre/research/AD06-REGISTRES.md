@@ -1,4 +1,4 @@
-# 🏛 AD06 — accès direct aux registres (sans le moteur de recherche) — 2026-08-04
+# 🏛 AD06 — accès direct aux registres (sans le moteur de recherche) — 2026-08-05
 
 Les URLs ark viennent des pages sauvegardées par Kevin depuis son iPhone (le mur anti-robot ne s'applique qu'au moteur de recherche — on teste ici l'accès DIRECT à la visionneuse).
 Total fichiers : **6** (dans `arbre/research/ad06raw/`)

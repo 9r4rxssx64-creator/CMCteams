@@ -1,145 +1,960 @@
 {
+ "seed_victor_sauvaigo": {
+  "id": "seed_victor_sauvaigo",
+  "nom": "SAUVAIGO",
+  "prenom": "Victor",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
  "seed_mt_maiffret": {
-  "acteUrl": "https://deces.matchid.io/id/50UZUgMMtNwH",
-  "nom": "Maiffret",
-  "prenoms": "Marie Therese",
-  "naissance": "19141023",
-  "lieuNaissance": "Nice",
-  "deces": "20000219",
-  "lieuDeces": "",
-  "certificateId": "0"
+  "id": "seed_mt_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Marie-Thérèse",
+  "deces": null,
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Nice"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
  },
- "seed_leonie": {
-  "acteUrl": "https://deces.matchid.io/id/_Wu2WjLd77ex",
-  "nom": "Maiffret",
-  "prenoms": "Leonie Rosa Desiree",
-  "naissance": "18950919",
-  "lieuNaissance": "Beaulieu-sur-Mer",
-  "deces": "19720130",
-  "lieuDeces": [
-   "Villefranche",
-   "Villefranche-sur-Mer"
-  ],
-  "certificateId": "9"
- },
- "seed_lucette_vdb": {
-  "acteUrl": "https://deces.matchid.io/id/rO5QX3w6sFnW",
-  "nom": "Van Den Bosch",
-  "prenoms": "Lucette Therese",
-  "naissance": "19200212",
-  "lieuNaissance": "Beaulieu-sur-Mer",
-  "deces": "20101216",
-  "lieuDeces": "Ramatuelle",
-  "certificateId": "18"
- },
- "seed_alex_vdb": {
-  "acteUrl": "https://deces.matchid.io/id/1X2L5T-fjruX",
-  "nom": "Van Den Bosch",
-  "prenoms": "Alexandre Robert Victor",
-  "naissance": "19210725",
-  "lieuNaissance": "Beaulieu-sur-Mer",
-  "deces": "20221013",
-  "lieuDeces": "Beaulieu-sur-Mer",
-  "certificateId": "36"
- },
- "seed_francois_mc": {
-  "acteUrl": "https://deces.matchid.io/id/lmAX_0gFBqZe",
-  "nom": "Maiffret",
-  "prenoms": "Francois Joseph Philippe",
-  "naissance": "19121209",
-  "lieuNaissance": "Monaco",
-  "deces": "20041106",
-  "lieuDeces": "Nice",
-  "certificateId": "4541"
- },
- "seed_myriam_mc": {
-  "acteUrl": "https://deces.matchid.io/id/x4kL8TBj4RML",
-  "nom": "Maiffret",
-  "prenoms": "Myriam Augusta Olga",
-  "naissance": "19350305",
-  "lieuNaissance": "Monaco",
-  "deces": "20241006",
-  "lieuDeces": "Nice",
-  "certificateId": "3870"
- },
- "seed_jap_maiffret": {
-  "acteUrl": "https://deces.matchid.io/id/BPQPjNWdUD-q",
-  "nom": "Maiffret",
-  "prenoms": "Jean Antoine Pierre",
-  "naissance": "19250518",
-  "lieuNaissance": "Beaulieu-sur-Mer",
-  "deces": "20100122",
-  "lieuDeces": "",
-  "certificateId": "00224"
- },
- "seed_victorj_maiffret": {
-  "acteUrl": "https://deces.matchid.io/id/3CQSYx2qCq7V",
-  "nom": "Maiffret",
-  "prenoms": "Victor Jules",
-  "naissance": "19140302",
-  "lieuNaissance": "Beaulieu-sur-Mer",
-  "deces": "19820821",
-  "lieuDeces": "Nice",
-  "certificateId": "3784"
- },
- "seed_claude_desarzens": {
-  "acteUrl": "https://deces.matchid.io/id/NFlPwJbkB0SI",
-  "nom": "De Sarzens",
-  "prenoms": "Claude Alain",
-  "naissance": "19410319",
-  "lieuNaissance": "Marseille",
-  "deces": "20220510",
-  "lieuDeces": "",
-  "certificateId": "2701"
- },
- "seed_jmv_sauvaigo": {
-  "acteUrl": "https://deces.matchid.io/id/TRUO05b-SzgQ",
-  "nom": "Sauvaigo",
-  "prenoms": "Jean Marius Victor",
-  "naissance": "19120712",
-  "lieuNaissance": "Nice",
-  "deces": "19990909",
-  "lieuDeces": "Nice",
-  "certificateId": "000004103"
+ "seed_christian": {
+  "id": "seed_christian",
+  "nom": "CRESTO",
+  "prenom": "Christian",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
  },
  "seed_marie_joe": {
-  "acteUrl": "https://deces.matchid.io/id/-Gi6moX8QES8",
-  "nom": "Sauvaigo",
-  "prenoms": "Marie Jose",
-  "naissance": "19431111",
-  "lieuNaissance": "Monaco",
-  "deces": "20211126",
-  "lieuDeces": "",
-  "certificateId": "52"
+  "id": "seed_marie_joe",
+  "nom": "SAUVAIGO",
+  "prenom": "Marie-Joe",
+  "deces": null,
+  "naissance": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/",
+   "lieu": "Monaco"
+  },
+  "mariage": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+  }
+ },
+ "seed_guy": {
+  "id": "seed_guy",
+  "nom": "DESARZENS",
+  "prenom": "Guy",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_gerard": {
+  "id": "seed_gerard",
+  "nom": "DESARZENS",
+  "prenom": "Gérard",
+  "deces": null,
+  "naissance": {
+   "archive": "Archives dép. Bouches-du-Rhône (AD13)",
+   "url": "https://www.archives13.fr/archive/recherche/etatcivil/n:88",
+   "lieu": "Salon-de-Provence"
+  },
+  "mariage": {
+   "archive": "Archives dép. Bouches-du-Rhône (AD13)",
+   "url": "https://www.archives13.fr/archive/recherche/etatcivil/n:88"
+  }
+ },
+ "seed_emile": {
+  "id": "seed_emile",
+  "nom": "DESARZENS",
+  "prenom": "Émile",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_jules_sauvaigo": {
+  "id": "seed_jules_sauvaigo",
+  "nom": "SAUVAIGO",
+  "prenom": "Jules",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_victoire": {
+  "id": "seed_victoire",
+  "nom": "MAIFFRET",
+  "prenom": "Victoire",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_julie_sauvaigo": {
+  "id": "seed_julie_sauvaigo",
+  "nom": "SAUVAIGO",
+  "prenom": "Julie",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_micheline_sauvaigo": {
+  "id": "seed_micheline_sauvaigo",
+  "nom": "SAUVAIGO",
+  "prenom": "Micheline",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_jb_maiffret": {
+  "id": "seed_jb_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Jean-Baptiste",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_jean1852": {
+  "id": "seed_jean1852",
+  "nom": "MAIFFRET",
+  "prenom": "Jean",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_michel1857": {
+  "id": "seed_michel1857",
+  "nom": "MAIFFRET",
+  "prenom": "Michel",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_andre_maiffret": {
+  "id": "seed_andre_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "André",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_elisabeth_molinario": {
+  "id": "seed_elisabeth_molinario",
+  "nom": "MOLINARIO",
+  "prenom": "Élisabeth",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_marguerite_molinario": {
+  "id": "seed_marguerite_molinario",
+  "nom": "MOLINARIO",
+  "prenom": "Marguerite",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_alexandre_1856": {
+  "id": "seed_alexandre_1856",
+  "nom": "MAIFFRET",
+  "prenom": "Alexandre",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_louis_maiffret": {
+  "id": "seed_louis_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Louis",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_josephalex": {
+  "id": "seed_josephalex",
+  "nom": "MAIFFRET",
+  "prenom": "Joseph-Alexandre",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_jean1888": {
+  "id": "seed_jean1888",
+  "nom": "MAIFFRET",
+  "prenom": "Jean",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_marius1890": {
+  "id": "seed_marius1890",
+  "nom": "MAIFFRET",
+  "prenom": "Marius",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_pierre1900": {
+  "id": "seed_pierre1900",
+  "nom": "MAIFFRET",
+  "prenom": "Pierre",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_charles1904": {
+  "id": "seed_charles1904",
+  "nom": "MAIFFRET",
+  "prenom": "Charles",
+  "deces": {
+   "date": "01.07.1988",
+   "commune": "étranger",
+   "code": "99142",
+   "acte": "381",
+   "naissance_date": "28.01.1905",
+   "naissance_lieu": "AIGUINES",
+   "score": 6
+  },
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_alexandre_bebe": {
+  "id": "seed_alexandre_bebe",
+  "nom": "MAIFFRET",
+  "prenom": "Alexandre",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_germaine": {
+  "id": "seed_germaine",
+  "nom": "MAIFFRET",
+  "prenom": "Germaine",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_jacqueline": {
+  "id": "seed_jacqueline",
+  "nom": "MAIFFRET",
+  "prenom": "Jacqueline",
+  "deces": {
+   "date": "21.11.1988",
+   "commune": "Nice",
+   "code": "06088",
+   "acte": "5401",
+   "naissance_date": "22.12.1926",
+   "naissance_lieu": "BEAULIEU-SUR-MER",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_virgili": {
+  "id": "seed_virgili",
+  "nom": "VIRGILI",
+  "prenom": "Madeleine-Caroline",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_patrick_sauvaigo": {
+  "id": "seed_patrick_sauvaigo",
+  "nom": "SAUVAIGO",
+  "prenom": "Patrick",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_leonie": {
+  "id": "seed_leonie",
+  "nom": "MAIFFRET",
+  "prenom": "Léonie Rosa Désirée",
+  "deces": null,
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_jap_maiffret": {
+  "id": "seed_jap_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Jean Antoine Pierre",
+  "deces": {
+   "date": "22.01.2010",
+   "commune": "MONACO (étranger)",
+   "code": "99138",
+   "acte": "00224",
+   "naissance_date": "18.05.1925",
+   "naissance_lieu": "BEAULIEU-SUR-MER",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_victorj_maiffret": {
+  "id": "seed_victorj_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Victor Jules",
+  "deces": null,
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_alex1906_maiffret": {
+  "id": "seed_alex1906_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Alexandre",
+  "deces": {
+   "date": "25.02.1993",
+   "commune": "Villefranche-sur-Mer",
+   "code": "06159",
+   "acte": "19",
+   "naissance_date": "10.07.1906",
+   "naissance_lieu": "BEAULIEU-SUR-MER",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_marg_rose": {
+  "id": "seed_marg_rose",
+  "nom": "MAIFFRET",
+  "prenom": "Marguerite-Rose",
+  "deces": null,
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Nice"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
  },
  "seed_michel_maiffret": {
-  "acteUrl": "https://deces.matchid.io/id/8K3SODdfjBZm",
-  "nom": "Maiffret",
-  "prenoms": "Michel Jean-Marie",
-  "naissance": "19370819",
-  "lieuNaissance": "Nice",
-  "deces": "20050318",
-  "lieuDeces": "Beaulieu-sur-Mer",
-  "certificateId": "06"
+  "id": "seed_michel_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Michel",
+  "deces": null,
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Nice"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
  },
  "seed_leon_maiffret": {
-  "acteUrl": "https://deces.matchid.io/id/2ts_aJpuJzWm",
-  "nom": "Maiffret",
-  "prenoms": "Leon Blaise Theresius",
-  "naissance": "19100425",
-  "lieuNaissance": "Beaulieu-sur-Mer",
-  "deces": "19940313",
-  "lieuDeces": "Nice",
-  "certificateId": "1367    N"
+  "id": "seed_leon_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Léon",
+  "deces": {
+   "date": "13.03.1994",
+   "commune": "Nice",
+   "code": "06088",
+   "acte": "1367",
+   "naissance_date": "25.04.1910",
+   "naissance_lieu": "BEAULIEU-SUR-MER",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
  },
  "seed_josette_maiffret": {
-  "acteUrl": "https://deces.matchid.io/id/e6vSw47xZ_FH",
-  "nom": "Maiffret",
-  "prenoms": "Josette Cesarine Henriette",
-  "naissance": "19220131",
-  "lieuNaissance": "Beaulieu-sur-Mer",
-  "deces": "19940511",
-  "lieuDeces": "Nice",
-  "certificateId": "2261    N"
+  "id": "seed_josette_maiffret",
+  "nom": "MAIFFRET",
+  "prenom": "Josette",
+  "deces": {
+   "date": "11.05.1994",
+   "commune": "Nice",
+   "code": "06088",
+   "acte": "2261",
+   "naissance_date": "31.01.1922",
+   "naissance_lieu": "BEAULIEU-SUR-MER",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_lucette_vdb": {
+  "id": "seed_lucette_vdb",
+  "nom": "VAN DEN BOSCH",
+  "prenom": "Lucette Thérèse",
+  "deces": {
+   "date": "16.12.2010",
+   "commune": "Ramatuelle",
+   "code": "83101",
+   "acte": "18",
+   "naissance_date": "12.02.1920",
+   "naissance_lieu": "BEAULIEU-SUR-MER",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_alex_vdb": {
+  "id": "seed_alex_vdb",
+  "nom": "VAN DEN BOSCH",
+  "prenom": "Alexandre Robert Victor",
+  "deces": {
+   "date": "13.10.2022",
+   "commune": "Beaulieu-sur-Mer",
+   "code": "06011",
+   "acte": "36",
+   "naissance_date": "25.07.1921",
+   "naissance_lieu": "BEAULIEU-SUR-MER",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Beaulieu-sur-Mer"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_francois_mc": {
+  "id": "seed_francois_mc",
+  "nom": "MAIFFRET",
+  "prenom": "François Joseph Philippe",
+  "deces": {
+   "date": "06.11.2004",
+   "commune": "Nice",
+   "code": "06088",
+   "acte": "4541",
+   "naissance_date": "09.12.1912",
+   "naissance_lieu": "MONACO",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/",
+   "lieu": "Monaco"
+  },
+  "mariage": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+  }
+ },
+ "seed_myriam_mc": {
+  "id": "seed_myriam_mc",
+  "nom": "MAIFFRET",
+  "prenom": "Myriam Augusta Olga",
+  "deces": null,
+  "naissance": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/",
+   "lieu": "Monaco"
+  },
+  "mariage": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+  }
+ },
+ "seed_claude_desarzens": {
+  "id": "seed_claude_desarzens",
+  "nom": "DE SARZENS",
+  "prenom": "Claude Alain",
+  "deces": {
+   "date": "10.05.2022",
+   "commune": "SUISSE (étranger)",
+   "code": "99140",
+   "acte": "2701",
+   "naissance_date": "19.03.1941",
+   "naissance_lieu": "MARSEILLE",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Bouches-du-Rhône (AD13)",
+   "url": "https://www.archives13.fr/archive/recherche/etatcivil/n:88",
+   "lieu": "Marseille"
+  },
+  "mariage": {
+   "archive": "Archives dép. Bouches-du-Rhône (AD13)",
+   "url": "https://www.archives13.fr/archive/recherche/etatcivil/n:88"
+  }
+ },
+ "seed_jmv_sauvaigo": {
+  "id": "seed_jmv_sauvaigo",
+  "nom": "SAUVAIGO",
+  "prenom": "Jean Marius Victor",
+  "deces": {
+   "date": "09.09.1999",
+   "commune": "Nice",
+   "code": "06088",
+   "acte": "000004103",
+   "naissance_date": "12.07.1912",
+   "naissance_lieu": "NICE",
+   "score": 11
+  },
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Nice"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_jerome_mc": {
+  "id": "seed_jerome_mc",
+  "nom": "MAIFFRET",
+  "prenom": "Jérôme",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_therese_orselli": {
+  "id": "seed_therese_orselli",
+  "nom": "ORSELLI",
+  "prenom": "Thérèse",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_philippe_mc": {
+  "id": "seed_philippe_mc",
+  "nom": "MAIFFRET",
+  "prenom": "Philippe Laurent Jérôme",
+  "deces": null,
+  "naissance": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/",
+   "lieu": "Nice"
+  },
+  "mariage": {
+   "archive": "Archives dép. Alpes-Maritimes (AD06)",
+   "url": "https://archives06.fr/"
+  }
+ },
+ "seed_caroline_carlin": {
+  "id": "seed_caroline_carlin",
+  "nom": "CARLIN",
+  "prenom": "Pauline Caroline",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_emmanuel_mc": {
+  "id": "seed_emmanuel_mc",
+  "nom": "MAIFFRET",
+  "prenom": "Emmanuel François",
+  "deces": null,
+  "naissance": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/",
+   "lieu": "Monaco"
+  },
+  "mariage": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+  }
+ },
+ "seed_josephine_ciais": {
+  "id": "seed_josephine_ciais",
+  "nom": "CIAIS",
+  "prenom": "Joséphine Angèle",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": "La Turbie (Alpes-Maritimes)"
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_pauline_mc": {
+  "id": "seed_pauline_mc",
+  "nom": "MAIFFRET",
+  "prenom": "Pauline Élisabeth",
+  "deces": null,
+  "naissance": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/",
+   "lieu": "Monaco (Villa Beausoleil, bd de France)"
+  },
+  "mariage": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+  }
+ },
+ "seed_paula_mc": {
+  "id": "seed_paula_mc",
+  "nom": "MAIFFRET",
+  "prenom": "Paula Françoise",
+  "deces": null,
+  "naissance": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/",
+   "lieu": "Monaco (Villa Nathalie, chemin des Œillets)"
+  },
+  "mariage": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+  }
+ },
+ "seed_francoislouis_mc": {
+  "id": "seed_francoislouis_mc",
+  "nom": "MAIFFRET",
+  "prenom": "François Louis",
+  "deces": null,
+  "naissance": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/",
+   "lieu": "Monaco"
+  },
+  "mariage": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+  }
+ },
+ "seed_rose_fracchia": {
+  "id": "seed_rose_fracchia",
+  "nom": "FRACCHIA",
+  "prenom": "Rose Angeline",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_julie_mc": {
+  "id": "seed_julie_mc",
+  "nom": "MAIFFRET",
+  "prenom": "Julie Joséphine Marie",
+  "deces": null,
+  "naissance": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/",
+   "lieu": "Monaco"
+  },
+  "mariage": {
+   "archive": "État-civil de Monaco (base ≥1900)",
+   "url": "https://archives.mairie.mc/r/5/base-de-registres-a-partir-de-1900/"
+  }
+ },
+ "seed_pierre_daniel": {
+  "id": "seed_pierre_daniel",
+  "nom": "DANIEL",
+  "prenom": "Pierre",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": "Sospel (Alpes-Maritimes)"
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_madeleine_mathieu": {
+  "id": "seed_madeleine_mathieu",
+  "nom": "MATHIEU",
+  "prenom": "Madeleine Marie Clémence",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_molinario_marius": {
+  "id": "seed_molinario_marius",
+  "nom": "MOLINARIO",
+  "prenom": "Marius-Antoine",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
+ },
+ "seed_dentau_mm": {
+  "id": "seed_dentau_mm",
+  "nom": "DENTAU",
+  "prenom": "Marie-Marguerite",
+  "deces": null,
+  "naissance": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359",
+   "lieu": ""
+  },
+  "mariage": {
+   "archive": "Service-public / mairie du lieu",
+   "url": "https://www.service-public.fr/particuliers/vosdroits/N359"
+  }
  }
 }

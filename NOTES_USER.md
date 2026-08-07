@@ -1,3 +1,22 @@
+
+## 🕯️ Recherche de décès : elle vit DANS l'arbre (2026-08-06)
+
+La recherche de décès (fichier INSEE, 1970 → aujourd'hui) est une **fonction de l'app arbre
+généalogique** ([arbre.kd-mc.com](https://arbre.kd-mc.com)) : bouton « 🔎 Rechercher un décès »
+(Nom + Prénom, la touche Entrée lance la recherche) + lien « 🕯️ Acte décès » sur les personnes.
+Techniquement elle passe par le domaine lui-même (`arbre.kd-mc.com/__deces`) → aucun blocage,
+**ça marche sur iPhone**.
+
+Un outil séparé (`tools/deces-insee`, moteur DuckDB sur stockage R2) avait aussi été tenté : il a
+été **entièrement supprimé le 2026-08-06** à ta demande (« Oui supprime ») — page + 4 automatisations.
+Les 3 automatisations qui servent l'arbre sont **gardées** : retrouver un acte précis
+(`arbre-find-deces`), vérifier que l'API INSEE répond depuis un navigateur (`deces-cors-check`),
+vérifier le relais en direct (`deces-live-check`).
+
+Il avait existé un sous-domaine séparé `deces.kd-mc.com` : il n'a **jamais été joignable** et a été
+**retiré le 2026-08-06** à ta demande (« Retire dece »). **Ne pas le recréer** — le décès est dans
+l'arbre, c'est sa place.
+
 # NOTES_USER — Informations métier données par l'admin
 
 > **Lecture obligatoire à chaque session.**

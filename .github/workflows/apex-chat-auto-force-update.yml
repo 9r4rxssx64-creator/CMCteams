@@ -1,4 +1,10 @@
 name: Apex Chat — Auto-trigger MAJ chez tous les users
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # v1.1.163 — Kevin "Elle a la version 61 et moi 62".
 # Après chaque push sur main qui touche messaging-app/ (frontend, sw, worker),

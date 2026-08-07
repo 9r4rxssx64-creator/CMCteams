@@ -41,6 +41,9 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
         run: |
           set -e
           wrangler deploy 2>&1 | tee deploy.log
@@ -69,6 +72,31 @@ jobs:
             printf '%s' "$TOGETHER_KEY" | wrangler secret put TOGETHER_API_KEY 2>&1 | tail -2 \
               || echo "::warning::TOGETHER_API_KEY non posée (repli gratuit texte→image absent)"
           fi
+
+      # TOUTES les IA GRATUITES de Kevin. Les noms de secrets sont EXACTS
+      # (règle « noms secrets GitHub doivent matcher », dont la typo PERPLEXITI).
+      # Une clé absente n'est pas une erreur : la chaîne saute simplement ce moteur.
+      - name: Injecte TOUTES les autres IA gratuites (Groq, Mistral, Cohere, DeepSeek, OpenRouter)
+        working-directory: services/kdmc-crea-ai
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          set +e
+          for N in GROQ_API_KEY MISTRAL_API_KEY COHERE_API_KEY DEEPSEEK_API_KEY OPENROUTER_API_KEY; do
+            V="${!N}"
+            if [ -n "$V" ]; then
+              printf '%s' "$V" | wrangler secret put "$N" 2>&1 | tail -1 \
+                && echo "  ✅ $N posée" || echo "::warning::$N non posée"
+            else
+              echo "  ⚪ $N absente des secrets → ce moteur sera simplement ignoré"
+            fi
+          done
 
       - name: Injecte la clé Replicate (SECOURS payant, depuis AX_REPLICATE_KEY)
         working-directory: services/kdmc-crea-ai
@@ -107,7 +135,14 @@ jobs:
           BASE="${HEALTH_BASE:-https://crea-ai.kd-mc.com}"
           echo "== Base testée : $BASE =="
           echo "----- /health (quelles IA sont dispo) -----"
-          curl -sS -m 20 "$BASE/health"; echo
+          curl -sS -m 20 "$BASE/health" -o /tmp/h.json; cat /tmp/h.json; echo
+          python3 - <<'PY'
+          import json
+          try: d=json.load(open('/tmp/h.json'))
+          except Exception: raise SystemExit
+          e=d.get('engines') or []
+          print('  → %d IA branchée(s) : %s'%(len(e), ', '.join(e) or 'AUCUNE'))
+          PY
           # Vraie image de test 96x96 (sujet clair sur fond uni) — un pixel 1x1 ne prouve rien.
           python3 - <<'PY' > /tmp/img.txt
           import zlib, struct, base64
@@ -168,3 +203,66 @@ jobs:
               print('  ❌ pas de poses — cause exacte:',str(d)[:400])
           PY
           echo "== Fin auto-test =="
+
+      - name: Sonde modèles Workers AI (quels modèles répondent VRAIMENT aujourd'hui)
+        if: ${{ inputs.selftest == true }}
+        run: |
+          set +e
+          BASE="${HEALTH_BASE:-https://crea-ai.kd-mc.com}"
+          echo "== SONDE : je n'atteins pas Cloudflare depuis l'agent, la CI teste pour moi =="
+          curl -sS -m 220 -X POST "$BASE/aidiag" -H 'content-type: application/json' -d '{}' -o /tmp/diag.json \
+            -w "HTTP %{http_code} | size=%{size_download}\n"
+          python3 - <<'PY'
+          import json
+          try: d=json.load(open('/tmp/diag.json'))
+          except Exception as e: print('  ❌ sonde illisible:',e); raise SystemExit
+          if d.get('error'): print('  ❌',d['error']); raise SystemExit
+          for cat,label in (('text','TEXTE (paroles + partition)'),('tts','VOIX'),('img','IMAGE')):
+              print('  --',label)
+              for r in d.get(cat,[]):
+                  mark='✅' if r.get('ok') else '❌'
+                  extra=r.get('sample') or ('%s octets'%r.get('size') if r.get('size') else '') or r.get('err','')
+                  shape=(' ['+r['shape']+']') if r.get('shape') else ''
+                  print('     %s %s%s  %s'%(mark,r.get('m'),shape,str(extra)[:100]))
+              ok=[r for r in d.get(cat,[]) if r.get('ok')]
+              print('     → %d/%d modèle(s) utilisable(s)'%(len(ok),len(d.get(cat,[]))))
+          PY
+
+      - name: Auto-test STUDIO (partition + voix chantée, Workers AI gratuit)
+        if: ${{ inputs.selftest == true }}
+        run: |
+          set +e
+          BASE="${HEALTH_BASE:-https://crea-ai.kd-mc.com}"
+          echo "== STUDIO — les 2 briques du morceau =="
+
+          echo "----- /compose (l'IA écrit la partition) -----"
+          curl -sS -m 90 -X POST "$BASE/compose" -H 'content-type: application/json' \
+            -d '{"style":"pop","mood":"une soiree entre amis"}' -o /tmp/sc.json \
+            -w "HTTP %{http_code} | size=%{size_download}\n"
+          python3 - <<'PY'
+          import json
+          try: d=json.load(open('/tmp/sc.json'))
+          except Exception as e: print('  ❌ réponse illisible:',e); raise SystemExit
+          s=d.get('score') or {}
+          need=['bpm','progression','melody','drums']
+          missing=[k for k in need if not s.get(k)]
+          if s and not missing:
+              print('  ✅ partition OK — %s bpm, %d accords, %d notes de mélodie (source: %s)'
+                    %(s.get('bpm'),len(s.get('progression') or []),len(s.get('melody') or []),d.get('provider','?')))
+          else:
+              print('  ❌ partition incomplète, manque %s — brut: %s'%(missing,str(d)[:300]))
+          PY
+
+          echo "----- /voice (Workers AI chante — LE SECOURS GRATUIT) -----"
+          curl -sS -m 120 -X POST "$BASE/voice" -H 'content-type: application/json' \
+            -d '{"text":"une soiree entre amis, on chante tous ensemble","lang":"fr"}' \
+            -o /tmp/v.bin -D /tmp/v.hdr \
+            -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
+          case "$(file -b --mime-type /tmp/v.bin 2>/dev/null)" in
+            audio/*|application/octet-stream)
+              SZ=$(stat -c%s /tmp/v.bin)
+              if [ "$SZ" -gt 2000 ]; then echo "  ✅ AUDIO reçu ($SZ octets) → Workers AI répond, la voix marche";
+              else echo "  ❌ audio trop petit ($SZ octets)"; head -c 300 /tmp/v.bin; echo; fi;;
+            *) echo "  ❌ pas de l'audio — cause exacte :"; head -c 400 /tmp/v.bin | tr -d '\0'; echo;;
+          esac
+          echo "== Fin auto-test STUDIO =="

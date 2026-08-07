@@ -46,6 +46,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'voice', emoji: '🔊', description: 'Active/désactive lecture vocale auto', argsHint: '' },
   { name: 'effort', emoji: '🧠', description: 'Effort de raisonnement (auto/direct/moyen/élevé) — élevé montre la réflexion', argsHint: '<auto|direct|moyen|élevé>' },
   { name: 'thinking', emoji: '🧠', description: 'Raisonnement NATIF Anthropic (on/off) — extended thinking réel, avec effort « élevé »', argsHint: '<on|off>' },
+  { name: 'orchestre', emoji: '🎼', description: 'Orchestre d\'IA — consulte TOUTES les IA dispo en parallèle + synthèse Claude (auto sur gros travail ; on/off ; ou pose ta question)', argsHint: '<question|on|off>' },
   { name: 'approbations', emoji: '🔐', description: 'Coffre d\'autorisations — je fais tout, tu valides d\'un Face ID (connexion, paiement, signature, KYC)', argsHint: '' },
   { name: 'export', emoji: '📄', description: 'Exporte la conversation en Markdown', argsHint: '' },
   { name: 'partager', emoji: '📤', description: 'Partage la conversation (fichier HTML autonome)', argsHint: '' },

@@ -1,4 +1,10 @@
 name: Apex Chat E2E — tests Playwright sur prod live
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Lance Playwright Chromium + WebKit iPhone sur la prod après chaque déploiement
 # messaging-app/ (cf règle CLAUDE.md "TOUJOURS TESTER END-TO-END").

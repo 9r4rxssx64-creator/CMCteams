@@ -3152,4 +3152,103 @@ export const APEX_PLUGINS_CATALOG: readonly ApexPluginManifest[] = [
     estimated_value: 'low',
     tags: ['cli'],
   },
+
+  /* ====== BOÎTE À OUTILS AGENTS — tableau « Une Notion = Un Projet » (Kevin 2026-08-06) ======
+   * Les 6 dépôts filmés par Kevin. Leur TEXTE est vendorisé dans vendor/agent-toolkit/<id>/
+   * (workflow agent-toolkit-sync.yml, cron mensuel) → Apex y a accès en lecture via GitHub
+   * (read_repo_file / search_repo_code) sans dépendre du réseau de chaque appareil.
+   * Parité Claude Code : skill `.claude/skills/agent-toolkit/SKILL.md`.
+   */
+  {
+    id: 'anthropic-skills',
+    name: 'Anthropic Skills (Ingénieur)',
+    source: 'anthropic-official',
+    url: 'https://github.com/anthropics/skills',
+    description:
+      'Skills officiels Anthropic (docx/pdf/pptx/xlsx, mcp-builder, artifacts). Référence du format SKILL.md quand Apex crée un skill via skill_factory.',
+    category: 'dev-tools',
+    pwa_compatible: true,
+    oauth_required: false,
+    status: 'installed',
+    apex_tools: ['skill_factory_create', 'read_repo_file'],
+    install_method: 'native-fetch',
+    estimated_value: 'critical',
+    tags: ['agent-toolkit', 'skills', 'ingenieur'],
+  },
+  {
+    id: 'gbrain',
+    name: 'gbrain (Mémoire d\'agent)',
+    source: 'community',
+    url: 'https://github.com/garrytan/gbrain',
+    description:
+      'Cerveau/mémoire d\'agent exposé en MCP (stdio pour Claude Code, HTTP OAuth 2.1). À comparer à la mémoire compacte maison avant d\'inventer autre chose.',
+    category: 'memory',
+    pwa_compatible: false,
+    oauth_required: true,
+    status: 'available',
+    install_method: 'cloudflare-worker',
+    estimated_value: 'high',
+    tags: ['agent-toolkit', 'memoire'],
+  },
+  {
+    id: 'awesome-design-skills',
+    name: 'Awesome Design Skills (Design)',
+    source: 'community',
+    url: 'https://github.com/bergside/awesome-design-skills',
+    description:
+      '67 systèmes de design prêts à l\'emploi (SKILL.md agent + DESIGN.md humain + index.json). Anti-« design d\'IA générique » : on choisit une direction nommée.',
+    category: 'design',
+    pwa_compatible: true,
+    oauth_required: false,
+    status: 'installed',
+    apex_tools: ['generate_design_system'],
+    install_method: 'native-fetch',
+    estimated_value: 'high',
+    tags: ['agent-toolkit', 'design', 'ui'],
+  },
+  {
+    id: 'rtk-token-saver',
+    name: 'rtk (Économie de jetons)',
+    source: 'community',
+    url: 'https://github.com/rtk-ai/rtk',
+    description:
+      'Proxy CLI (binaire Rust) qui compresse la sortie des commandes dev avant qu\'elle n\'entre dans le contexte. Honnêteté : gain réel mesuré ~3,7 % sur corpus, pas 60-90 %. Hors navigateur → doc seulement côté Apex.',
+    category: 'dev-tools',
+    pwa_compatible: false,
+    oauth_required: false,
+    status: 'unsupported-pwa',
+    install_method: 'app-native',
+    estimated_value: 'medium',
+    tags: ['agent-toolkit', 'jetons', 'cout'],
+  },
+  {
+    id: 'meridian-company-os',
+    name: 'Meridian Company OS (Entreprise)',
+    source: 'community',
+    url: 'https://github.com/codejunkie99/meridian-company-os',
+    description:
+      'OS d\'entreprise open-source : piloter humains + agents dans une console unique (cockpit, kanban, objectifs, gouvernance, audit, finances). Inspiration pour l\'admin kd-mc.com.',
+    category: 'workflow',
+    pwa_compatible: true,
+    oauth_required: false,
+    status: 'available',
+    install_method: 'web-link',
+    estimated_value: 'medium',
+    tags: ['agent-toolkit', 'entreprise', 'pilotage'],
+  },
+  {
+    id: 'free-llm-api-resources',
+    name: 'Free LLM API Resources (LLM gratuit)',
+    source: 'community',
+    url: 'https://github.com/jeis4wpi/free-llm-api-resources',
+    description:
+      'Liste tenue à jour des IA utilisables gratuitement par API (modèles, quotas, limites). Filet de secours quand un forfait est épuisé — Anthropic reste l\'IA principale, les gratuits vont en fin de chaîne.',
+    category: 'ai-ml',
+    pwa_compatible: true,
+    oauth_required: false,
+    status: 'installed',
+    install_method: 'native-fetch',
+    estimated_value: 'high',
+    tags: ['agent-toolkit', 'llm', 'gratuit', 'failover'],
+  },
 ] as const;

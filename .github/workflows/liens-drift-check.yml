@@ -21,7 +21,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: liens-drift
+  group: liens-drift-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

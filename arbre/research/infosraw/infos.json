@@ -1495,24 +1495,39 @@
    "total": 37,
    "recs": [
     {
-     "titre": "Rimsky-Korsakoff • Capriccio espagnol ~ ~ Moussorgsky • Khovantchina (Victor Desarzens)",
-     "year": "",
-     "url": "https://archive.org/details/mms-57-rimsky-korsakoff-o-capriccio-espagnol-moussorgsky-o-khovantchina-victor-desarzens"
-    },
-    {
-     "titre": "Schubert - Hupperts, Pelleg, Dahinden (MMS-63)",
-     "year": "",
-     "url": "https://archive.org/details/05-schubert-adagio-rondo-concertante"
-    },
-    {
      "titre": "USB cover for Legrand Mosaic bloc (4742433)",
      "year": 2021,
      "url": "https://archive.org/details/thingiverse-4742433"
     },
     {
-     "titre": "Visage, soins aux plantes",
-     "year": 2010,
-     "url": "https://archive.org/details/visagesoinsauxpl0000desa"
+     "titre": "Metamorphosen / Le Bourgeois Gentilhomme",
+     "year": 1964,
+     "url": "https://archive.org/details/lp_metamorphosen-le-bourgeois-gentilhomme_richard-strauss-orchestre-de-chambre-de-la"
+    },
+    {
+     "titre": "Beethoven: Klavierkonzert Nr. 4 B-Dur op. 58",
+     "year": "",
+     "url": "https://archive.org/details/mms-2192-lily-kraus"
+    },
+    {
+     "titre": "Variations On A Theme By Frank Bridge, Op. 10 / Concerto Accademico",
+     "year": 1952,
+     "url": "https://archive.org/details/lp_variations-on-a-theme-by-frank-bridge-op-1_benjamin-britten-ralph-vaughan-williams-or"
+    },
+    {
+     "titre": "Tasso (Symphonic Poem) / Symphony For Small Wind Orchestra",
+     "year": 1952,
+     "url": "https://archive.org/details/lp_tasso-symphonic-poem-symphony-for-smal_franz-liszt-charles-gounod-winterthur-s"
+    },
+    {
+     "titre": "Rameau - Desarzens Victor, Sack Theodor (MMS-86)",
+     "year": "",
+     "url": "https://archive.org/details/01-rameau-platee-ballet-suite-1"
+    },
+    {
+     "titre": "Resfest Swissmix / Interview with Monica Pozzi",
+     "year": "",
+     "url": "https://archive.org/details/Resfest_Swissmix__Interview_with_Monica_Pozzi"
     },
     {
      "titre": "Ces femmes musulmanes qui pourfendent lʹislam politique",
@@ -1520,29 +1535,14 @@
      "url": "https://archive.org/details/hautes-frequences_20190414_standard_ces-femmes-musulmanes-qui-pourfendent-l_b613"
     },
     {
-     "titre": "Bach - Concerts BWV 1060r, 1061 (MMS-77)",
-     "year": "",
-     "url": "https://archive.org/details/04-bach-conc-2-harpsichords-bwv-1061-mov-1_202103"
+     "titre": "Musikkollegium Winterthur | 15. Hausabend",
+     "year": 1953,
+     "url": "https://archive.org/details/19530429-ktp-ab-mkw-15-hausabend"
     },
     {
-     "titre": "Les Genies Du Classique - Volume II No.16 - Schumann",
-     "year": "",
-     "url": "https://archive.org/details/les-genies-du-classique-volume-ii-no.16-schumann"
-    },
-    {
-     "titre": "Verklärte Nacht, Op.4 / Introduction and Allegro, Op.47 / Prelude and Fugue, Op.29",
-     "year": 1962,
-     "url": "https://archive.org/details/lp_verklrte-nacht-op4-introduction-and-alleg_arnold-schoenberg-sir-edward-elgar-benjami"
-    },
-    {
-     "titre": "Les génies du classique, volume II no 16: Schumann",
+     "titre": "Il faut se méfier des paysages : roman",
      "year": 1989,
-     "url": "https://archive.org/details/geniesduclassique_vol2no16"
-    },
-    {
-     "titre": "The musician and the man: Portrait of Victor Desarzens, 1908-1986",
-     "year": 1986,
-     "url": "https://archive.org/details/musicianmanportr0000unse"
+     "url": "https://archive.org/details/ilfautsemefierde0000desa"
     }
    ]
   },
@@ -1568,17 +1568,17 @@
   }
  },
  "jdm": [
-  "jdm-home : HTTP 200 (951398 o)",
+  "jdm-home : HTTP 200 (953334 o)",
   "jdm-search-maiffret : HTTP 404 (103320 o)",
   "jdm-search-sauvaigo : HTTP 404 (103320 o)",
-  "jdm-jina-maiffret : HTTP 403 (5912 o)"
+  "jdm-jina-maiffret : HTTP 403 (5891 o)"
  ],
  "mil": [
   "gm-home : HTTP 500 (0 o)",
   "gm-maiffret : HTTP 200 (526 o)",
   "mdh-maiffret : ❌ fetch failed",
   "mdh-sauvaigo : ❌ fetch failed",
-  "jina-gm-maiffret : HTTP 403 (6147 o)"
+  "jina-gm-maiffret : HTTP 403 (6126 o)"
  ],
  "graves": [],
  "avis": [],

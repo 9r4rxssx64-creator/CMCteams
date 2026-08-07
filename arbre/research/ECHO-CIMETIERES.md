@@ -1,4 +1,4 @@
-# 📰 Vague 5 — L'Écho de Beausoleil + cimetières Monaco (2026-08-04)
+# 📰 Vague 5 — L'Écho de Beausoleil + cimetières Monaco (2026-08-05)
 
 ## 📰 L'Écho de Beausoleil et de Monte-Carlo (Gallica) — recherche DANS le journal
 - ark introuvable dans la réponse SRU (voir gallica-ark-lookup.xml)

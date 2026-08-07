@@ -32,6 +32,12 @@ export const PAGE_HTML = `<!doctype html>
   .chip.app{color:#dfe9d6;border-color:#2a3d29}
   .chip.g{color:var(--gold);border-color:#3a3216}
   .tier{font-size:10.5px;padding:2px 7px;border-radius:6px;background:#1a2416;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px}
+  .fold{margin-top:6px;border-top:1px solid rgba(255,255,255,.05)}
+  .fold>summary{cursor:pointer;list-style:none;padding:7px 0;font-size:13px;color:var(--txt);min-height:34px;display:flex;align-items:center}
+  .fold>summary::-webkit-details-marker{display:none}
+  .fold>summary::before{content:'▸';margin-right:7px;color:var(--txt2)}
+  .fold[open]>summary::before{content:'▾'}
+  .sect{margin-top:10px;font-size:12px;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em}
   .tl{margin-top:11px;border-top:1px solid var(--bd);padding-top:9px;display:none}
   .tl.open{display:block}
   .ev{display:flex;gap:9px;font-size:12.5px;padding:5px 0;color:var(--txt2);border-bottom:1px solid rgba(255,255,255,.03)}
@@ -43,6 +49,8 @@ export const PAGE_HTML = `<!doctype html>
   .pin{width:100%;margin-top:18px;padding:14px;border-radius:12px;border:1px solid var(--bd);background:var(--bg2);color:var(--txt);font-size:22px;text-align:center;letter-spacing:10px}
   .err{color:#e8736b;font-size:13px;margin-top:10px;min-height:18px}
   .badge{position:fixed;left:calc(env(safe-area-inset-left) + 8px);bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:10px;color:var(--txt3);background:rgba(0,0,0,.5);padding:3px 7px;border-radius:6px;border:1px solid var(--bd);z-index:9}
+  .ss-bots{margin-top:8px}
+  .ss-bots .btn{width:100%;font-size:13px;color:var(--txt2)}
   .kpi{display:flex;gap:14px;margin-top:8px}
   .kpi b{color:var(--gold)}
 </style></head>
@@ -52,7 +60,84 @@ export const PAGE_HTML = `<!doctype html>
 <script>
 (function(){
   var $=function(s,r){return (r||document).querySelector(s)};
-  var app=$('#app');var KEY='kdmc_access_pinhash';var DATA=null;var TIMER=null;
+  var app=$('#app');var KEY='kdmc_access_pinhash';var DATA=null;var CONN=null;var TIMER=null;
+  /* CONN = les VRAIES connexions du domaine (source unique : KV du routeur, déjà peuplée).
+     DATA = le détail des actions dans les apps. Les deux sont fusionnés par personne :
+     une seule page, plus de doublon avec « Mes connexions » du portail (Kevin 2026-08-05). */
+  var DOMAIN_LOG='https://kd-mc.com/__admin/domain-log';
+  function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+  function hm(ts){var d=new Date(ts);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+  function dayKey(ts){var d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+  function dayLabel(ts){var k=dayKey(ts);if(k===dayKey(Date.now()))return "Aujourd'hui";if(k===dayKey(Date.now()-86400000))return 'Hier';return new Date(ts).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}
+  function dur(ms){if(!ms||ms<60000)return '< 1 min';var m=Math.round(ms/60000);if(m<60)return m+' min';var h=Math.floor(m/60);return h+' h'+(m%60?' '+(m%60)+' min':'')}
+  var APPNM={'kd-mc.com':'🏠 Portail','www.kd-mc.com':'🏠 Portail','cmcteams.kd-mc.com':'📅 CMCteams','apex-ai.kd-mc.com':'🤖 Apex','apex-chat.kd-mc.com':'💬 Apex Chat','coffre.kd-mc.com':'🔐 Coffre','dashboard.kd-mc.com':'📊 Dashboard','sourcing.kd-mc.com':'📦 Sourcing','beatbot.kd-mc.com':'🌊 PoolPilot','arbre.kd-mc.com':'🌳 Arbre','lingua.kd-mc.com':'🐝 Lingua','studio.kd-mc.com':'🎬 Studio','bot.kd-mc.com':'🤖 Bot','la-detente.kd-mc.com':'🛍 La Détente','chez-lolo.kd-mc.com':'🛍 Chez Lolo','departs.kd-mc.com':'🚪 Départs','autorisations.kd-mc.com':'🆔 Autorisations'};
+  function appNm(h){return APPNM[h]||String(h||'')}
+  /* Fusionne connexions (CONN) + actions (DATA) en UNE liste de personnes. */
+  function people(){
+    var map={};
+    function slot(k,nm){if(!map[k])map[k]={key:k,name:nm||'',actions:0,recent:[],apps:{},devices:{},places:[],conns:0,hist:[],lastSeen:0,firstSeen:0,tiers:{}};if(!map[k].name&&nm)map[k].name=nm;return map[k]}
+    ((CONN&&CONN.people)||[]).forEach(function(p){
+      var m=slot(norm(p.name)||p.uid,p.name);
+      /* ADDITIONNER, jamais écraser : une même personne peut avoir PLUSIEURS comptes
+         (uid différents pour le même nom). Vécu 2026-08-05 : Kevin affichait « 2
+         connexions » au lieu de ~191 — le 2e compte écrasait le 1er (affectation simple au lieu d'un cumul).
+         Idem pour l'historique (concaténé puis retrié) et le temps par app (cumulé). */
+      m.conns=(m.conns||0)+(p.hits||0);
+      m.hist=(m.hist||[]).concat(p.history||[]).sort(function(a,b){return (b.ts||0)-(a.ts||0)}).slice(0,120);
+      (p.places||[]).forEach(function(pl){if(m.places.indexOf(pl)<0)m.places.push(pl)});
+      m.lastSeen=Math.max(m.lastSeen,p.lastSeen||0);
+      m.uids=(m.uids||[]).concat([p.uid]);
+      /* Renseignements fins : on garde ceux du compte vu le PLUS RÉCEMMENT. */
+      if((p.lastSeen||0)>=(m._detTs||0)){
+        m._detTs=p.lastSeen||0;
+        m.dev=p.device||m.dev||'';m.isp=p.isp||m.isp||'';m.vpn=!!p.vpn;m.tz=p.tz||m.tz||'';
+        m.geo=p.geo||m.geo||null;m.place=p.place||m.place||'';m.lastApp=p.lastApp||m.lastApp||'';
+      }
+      /* Renseignements réseau / entrée / rythme. */
+      m.lang=p.lang||m.lang||'';m.net=p.net||m.net||null;m.from=p.from||m.from||'';
+      m.path=p.path||m.path||'';m.passkey=m.passkey||!!p.passkey;
+      m.aliases=(m.aliases||[]).concat(p.aliases||[]);
+      m.hours=m.hours||{};Object.keys(p.hours||{}).forEach(function(h){m.hours[h]=(m.hours[h]||0)+(p.hours[h]||0)});
+      if(p.created&&(!m.created||p.created<m.created))m.created=p.created; /* la 1re fois = la PLUS ANCIENNE */
+      if(p.anomaly)m.anomaly=p.anomaly;
+      /* Temps réellement passé, cumulé par app sur TOUS les comptes de la personne. */
+      m.appStats=m.appStats||{};m.totalMs=m.totalMs||0;
+      Object.keys(p.apps||{}).forEach(function(a){
+        var s=p.apps[a]||{},t=m.appStats[a]||{sessions:0,ms:0,last:0};
+        t.sessions=(t.sessions||0)+(s.sessions||0);t.ms=(t.ms||0)+(s.ms||0);t.last=Math.max(t.last||0,s.last||0);
+        m.appStats[a]=t;m.apps[a]=1;m.totalMs+=(s.ms||0);
+      });
+      (p.devices||[]).forEach(function(d){m.devices[d]=1});
+    });
+    ((DATA&&DATA.people)||[]).forEach(function(p){
+      var m=slot(norm(p.name)||p.key,p.name);
+      m.actions=p.count||0;m.recent=p.recent||[];m.tiers=p.tiers||m.tiers;
+      /* PROGRESSION : dernier état envoyé par chaque app (Lingua : XP/série/mots…).
+         Générique — toute app qui envoie event:"progression" + meta apparaît ici,
+         sans rien changer à cette page. */
+      (p.recent||[]).forEach(function(e){
+        if(e.meta&&e.meta.appareil&&(!m._uaTs||e.ts>m._uaTs)){m._uaTs=e.ts;m.ua=e.meta.appareil}
+        if(e.event!=='progression'||!e.meta)return;
+        m.prog=m.prog||{};
+        if(!m.prog[e.app]||m.prog[e.app].ts<e.ts)m.prog[e.app]={ts:e.ts,meta:e.meta};
+      });
+      m.lastSeen=Math.max(m.lastSeen,p.lastSeen||0);
+      m.firstSeen=m.firstSeen?Math.min(m.firstSeen,p.firstSeen||0):(p.firstSeen||0);
+      (p.appsList||[]).forEach(function(a){m.apps[a]=1});(p.devicesList||[]).forEach(function(d){m.devices[d]=1});
+    });
+    return Object.keys(map).map(function(k){return map[k]}).sort(function(a,b){return (b.lastSeen||0)-(a.lastSeen||0)});
+  }
+  /* ROBOTS & TESTS ≠ PERSONNES. Les smoke-tests CI (runners GitHub, souvent aux USA)
+     et mes évènements de vérification créent de vraies fiches : sans les séparer, ils
+     ÉCRASENT la lecture (vécu : « 187 connexions » dont 167 d'un robot, et les vraies
+     personnes noyées). On les masque par défaut, sans les supprimer — un clic les montre. */
+  function isBot(p){
+    var n=norm(p.name||''), u=(p.uids||[]).join(' ')+' '+(p.key||'');
+    return !!(/^(ci |ci$|smoke|test|bot|verification|verif|monitor|uptime|healthcheck|playwright|headless)/.test(n)
+      || /\b(smoke|healthcheck|uptime)\b/.test(n)
+      || /__verif__|^ci_|_ci$|\bci\b/.test(u)
+      || (p.tiers&&p.tiers.test));
+  }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   async function sha(t){var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')}
   function ago(ts){if(!ts)return '';var s=Math.floor((Date.now()-ts)/1000);if(s<60)return 'à l\\'instant';var m=Math.floor(s/60);if(m<60)return 'il y a '+m+' min';var h=Math.floor(m/60);if(h<24)return 'il y a '+h+' h';var d=Math.floor(h/24);return 'il y a '+d+' j'}
@@ -82,42 +167,140 @@ export const PAGE_HTML = `<!doctype html>
       var r=await fetch('/history',{headers:{'x-apex-pin':hash}});
       if(r.status===401){renderLock('Code incorrect.');return false}
       if(!r.ok){renderLock('Souci serveur ('+r.status+'), réessaie.');return false}
-      DATA=await r.json();window._pinhash=hash;renderMain();startAuto();return true;
+      DATA=await r.json();window._pinhash=hash;await loadConn(hash);renderMain();startAuto();return true;
     }catch(e){renderLock('Réseau indisponible, réessaie.');return false}
   }
+  /* Vraies connexions du domaine — fail-open : si indisponible, on affiche quand même
+     les actions (ne JAMAIS montrer une page vide à cause d'une source secondaire). */
+  async function loadConn(hash){
+    try{var r=await fetch(DOMAIN_LOG,{headers:{'x-apex-pin':hash}});if(r.ok)CONN=await r.json()}catch(e){}
+  }
   function startAuto(){if(TIMER)clearInterval(TIMER);TIMER=setInterval(function(){if(window._pinhash&&document.visibilityState==='visible')refresh()},30000)}
-  async function refresh(){try{var r=await fetch('/history',{headers:{'x-apex-pin':window._pinhash}});if(r.ok){DATA=await r.json();renderMain(true)}}catch(e){}}
+  async function refresh(){try{var r=await fetch('/history',{headers:{'x-apex-pin':window._pinhash}});if(r.ok)DATA=await r.json();await loadConn(window._pinhash);renderMain(true)}catch(e){}}
 
   var Q='';var OPEN={};
+  /* Robots masqués par défaut (choix mémorisé sur l'appareil). */
+  var SHOWBOTS=false;try{SHOWBOTS=localStorage.getItem('kdmc_access_bots')==='1'}catch(e){}
   function renderMain(keepScroll){
     var y=keepScroll?window.scrollY:0;
-    var people=(DATA&&DATA.people)||[];
-    var online=people.filter(function(p){return p.online}).length;
+    var all=people();
+    /* Vraies personnes d'un côté, robots/tests de l'autre — les compteurs ne
+       comptent QUE les personnes (sinon un robot à 167 connexions fausse tout). */
+    var bots=all.filter(isBot), list=SHOWBOTS?all:all.filter(function(p){return !isBot(p)});
+    var humans=all.filter(function(p){return !isBot(p)});
+    var ONLINE_MS=5*60*1000;
+    var online=humans.filter(function(p){return Date.now()-(p.lastSeen||0)<ONLINE_MS}).length;
+    var totalConns=humans.reduce(function(a,p){return a+(p.conns||0)},0);
+    var totalActs=humans.reduce(function(a,p){return a+(p.actions||0)},0);
     var q=Q.toLowerCase();
-    var shown=q?people.filter(function(p){return (p.name||'').toLowerCase().indexOf(q)>=0||(p.appsList||[]).join(' ').toLowerCase().indexOf(q)>=0}):people;
+    var shown=q?list.filter(function(p){return (p.name||'').toLowerCase().indexOf(q)>=0||Object.keys(p.apps||{}).join(' ').toLowerCase().indexOf(q)>=0}):list;
     var h='<header><div class="wrap"><div class="row"><div style="flex:1"><h1>Qui se connecte <span class="g">·</span> mon domaine</h1>'
-      +'<div class="kpi"><span><b>'+people.length+'</b> personnes</span><span><b>'+online+'</b> en ligne</span><span><b>'+((DATA&&DATA.totalEvents)||0)+'</b> évènements</span></div></div>'
+      +'<div class="kpi"><span><b>'+humans.length+'</b> personnes</span><span><b>'+online+'</b> en ligne</span><span><b>'+totalConns+'</b> connexions</span><span><b>'+totalActs+'</b> actions</span></div></div>'
       +'<button class="btn" id="rf">↻</button></div>'
-      +'<input class="search" id="q" placeholder="🔎 Rechercher une personne, une app…" value="'+esc(Q)+'"></div></header><div class="wrap" id="list">';
-    if(!shown.length){h+='<div class="empty">📭 '+(q?'Aucun résultat.':'Aucune connexion enregistrée pour le moment.<br>Les apps commenceront à alimenter ce journal.')+'</div>'}
+      +'<input class="search" id="q" placeholder="🔎 Rechercher une personne, une app…" value="'+esc(Q)+'">'
+      +(bots.length?'<div class="ss-bots"><button class="btn" id="tb" type="button">'+(SHOWBOTS?'🙈 Masquer':'🤖 Voir')+' les robots &amp; tests ('+bots.length+')</button></div>':'')
+      +'</div></header><div class="wrap" id="list">';
+    if(!shown.length){h+='<div class="empty">📭 '+(q?'Aucun résultat.':'Aucune connexion enregistrée pour le moment.')+'</div>'}
     shown.forEach(function(p){
-      var dev=(p.devicesList||[]).map(function(d){return '<span class="chip">'+esc(d)+'</span>'}).join('');
-      var apps=(p.appsList||[]).map(function(a){return '<span class="chip app">'+esc(a)+'</span>'}).join('');
+      var isOn=Date.now()-(p.lastSeen||0)<ONLINE_MS;
+      var dev=Object.keys(p.devices||{}).map(function(d){return '<span class="chip">'+esc(d)+'</span>'}).join('');
+      var apps=Object.keys(p.apps||{}).map(function(a){return '<span class="chip app">'+esc(appNm(a))+'</span>'}).join('');
       var tiers=Object.keys(p.tiers||{}).map(function(t){return '<span class="tier">'+esc(t)+'</span>'}).join(' ');
       var opened=OPEN[p.key];
-      var tl=(p.recent||[]).map(function(e){return '<div class="ev"><span class="t">'+dt(e.ts)+'</span><span class="e">'+esc(e.event||'')+(e.app?' · '+esc(e.app):'')+(e.device?' · '+esc(e.device):'')+(e.country?' · '+esc(e.country):'')+'</span></div>'}).join('');
+      /* Connexions groupées PAR JOUR (comme « Mes connexions » du portail, désormais ici). */
+      var byDay={},order=[];
+      (p.hist||[]).forEach(function(e){var k=dayKey(e.ts);if(!byDay[k]){byDay[k]={ts:e.ts,items:[]};order.push(byDay[k])}byDay[k].items.push(e)});
+      var folders=order.map(function(g,i){
+        var rows=g.items.map(function(e){
+        /* Chaque connexion porte SON contexte : appareil exact, opérateur, VPN, lieu. */
+        var det=[appNm(e.app),'⏱ '+dur((e.end||e.ts)-e.ts)];
+        if(e.dev)det.push(e.dev);
+        if(e.place)det.push('📍 '+e.place);
+        if(e.isp)det.push((e.vpn?'🕵️ ':'📶 ')+e.isp);
+        var map=(e.lat&&e.lon)?' <a href="https://www.openstreetmap.org/?mlat='+encodeURIComponent(e.lat)+'&mlon='+encodeURIComponent(e.lon)+'#map=12/'+encodeURIComponent(e.lat)+'/'+encodeURIComponent(e.lon)+'" target="_blank" rel="noopener">🗺</a>':'';
+        return '<div class="ev"><span class="t">'+esc(hm(e.ts))+'</span><span class="e">'+esc(det.join(' · '))+map+'</span></div>';
+      }).join('');
+        return '<details class="fold"'+(i===0?' open':'')+'><summary>📅 '+esc(dayLabel(g.ts))+' · '+g.items.length+' connexion'+(g.items.length>1?'s':'')+'</summary>'+rows+'</details>';
+      }).join('');
+      /* Détail « travail » : par app, nb de sessions + temps passé + dernière fois. */
+      var appsDetail=Object.keys(p.appStats||{}).sort(function(a,b){return ((p.appStats[b]&&p.appStats[b].ms)||0)-((p.appStats[a]&&p.appStats[a].ms)||0)}).map(function(a){
+        var s=p.appStats[a]||{};
+        return '<div class="ev"><span class="t">'+esc(appNm(a))+'</span><span class="e">'+(s.sessions||0)+' session'+((s.sessions||0)>1?'s':'')+(s.ms?' · ⏱ '+esc(dur(s.ms)):'')+(s.last?' · dernière '+ago(s.last):'')+'</span></div>';
+      }).join('');
+      /* ANALYSES CALCULÉES (aucune donnée supplémentaire à collecter — tout se déduit
+         de l'historique déjà là) : durée moyenne, app préférée, assiduité, heure de
+         prédilection. C'est ce qui transforme une liste en renseignement. */
+      var infos=[];
+      var nS=0,sumS=0;(p.hist||[]).forEach(function(e){var d=(e.end||e.ts)-e.ts;if(d>0){nS++;sumS+=d}});
+      if(nS)infos.push('⏱ Session moyenne ' + dur(Math.round(sumS/nS)));
+      var best='',bestMs=0;Object.keys(p.appStats||{}).forEach(function(a){var ms=(p.appStats[a]||{}).ms||0;if(ms>bestMs){bestMs=ms;best=a}});
+      if(best)infos.push('❤️ App préférée ' + appNm(best));
+      var jours={};(p.hist||[]).forEach(function(e){jours[dayKey(e.ts)]=1});
+      var nj=Object.keys(jours).length;if(nj)infos.push('📆 ' + nj + ' jour' + (nj>1?'s':'') + ' actif' + (nj>1?'s':''));
+      var hs=p.hours||{},hb='',hbn=0;Object.keys(hs).forEach(function(h){if(hs[h]>hbn){hbn=hs[h];hb=h}});
+      if(hb!=='')infos.push('🕓 Surtout vers ' + hb + 'h');
+      if(p.lang)infos.push('🗣 ' + p.lang);
+      if(p.from)infos.push('↩️ Arrivé depuis ' + appNm(p.from));
+      if(p.passkey)infos.push('🔐 Face ID activé');
+      if(p.aliases&&p.aliases.length)infos.push('🔗 ' + p.aliases.length + ' ancien' + (p.aliases.length>1?'s':'') + ' identifiant' + (p.aliases.length>1?'s':'') + ' rattaché' + (p.aliases.length>1?'s':''));
+      var ua=p.ua||null;
+      if(ua){
+        if(ua.ecran)infos.push('🖥 Écran ' + ua.ecran + (ua.dpr?' @'+ua.dpr+'x':''));
+        if(ua.pwa!==undefined)infos.push(ua.pwa?'📲 App installée':'🌐 Dans le navigateur');
+        if(ua.coeurs)infos.push('⚙️ ' + ua.coeurs + ' cœurs');
+        if(ua.fuseau)infos.push('🕓 ' + ua.fuseau);
+        if(ua.reseau)infos.push('📶 ' + ua.reseau);
+        if(ua.sombre!==undefined)infos.push(ua.sombre?'🌙 Thème sombre':'☀️ Thème clair');
+      }
+      var n2=p.net||null;
+      if(n2){
+        if(n2.colo)infos.push('🌍 Via ' + n2.colo + (n2.continent?' ('+n2.continent+')':''));
+        if(n2.asn)infos.push('🛰 Réseau AS' + n2.asn);
+        if(n2.http||n2.tls)infos.push('🔒 ' + [n2.http,n2.tls].filter(Boolean).join(' · '));
+      }
+      var infoDetail=infos.length?'<div class="ev"><span class="e">'+infos.map(esc).join(' · ')+'</span></div>':'';
+      /* Progression, lisible : « XP 1240 · série 12 j · mots 340 · aujourd'hui 3 leçons ».
+         Rendu générique (parcourt le meta) → marche pour Lingua et toute app future. */
+      var LBL={xp:'⭐ XP',serie:'🔥 Série',gemmes:'💎 Gemmes',mots:'📚 Mots',cours:'🎓 Cours',niveau:'📈 Niveau',lecons:'Leçons',parfaits:'Parfaits',aujourdhui:"Aujourd'hui"};
+      function flat(o,pre){var out=[];Object.keys(o||{}).forEach(function(k){var v=o[k];
+        if(v&&typeof v==='object'){out=out.concat(flat(v,(LBL[k]||k)+' '))}
+        else if(v!==''&&v!==null&&v!==undefined){out.push((pre||'')+(LBL[k]||k)+' '+v)}});return out}
+      var progDetail=Object.keys(p.prog||{}).map(function(a){
+        var pr=p.prog[a];
+        return '<div class="ev"><span class="t">'+esc(appNm(a))+'</span><span class="e">'+esc(flat(pr.meta).join(' · '))+' <span class="g">· '+ago(pr.ts)+'</span></span></div>';
+      }).join('');
+      var acts=(p.recent||[]).map(function(e){return '<div class="ev"><span class="t">'+dt(e.ts)+'</span><span class="e">'+esc(e.event||'')+(e.app?' · '+esc(appNm(e.app)):'')+(e.device?' · '+esc(e.device):'')+'</span></div>'}).join('');
       h+='<div class="card"><div class="pers" data-k="'+esc(p.key)+'">'
-        +'<span class="dot" style="background:'+(p.online?'var(--on)':'var(--off)')+'"></span>'
-        +'<span class="nm">'+esc(p.name)+' '+tiers+'</span>'
+        +'<span class="dot" style="background:'+(isOn?'var(--on)':'var(--off)')+'"></span>'
+        +'<span class="nm">'+esc(p.name||'—')+' '+tiers+'</span>'
         +'<span class="when">'+ago(p.lastSeen)+'</span></div>'
-        +'<div class="chips">'+apps+dev+'<span class="chip g">'+p.count+' actions</span><span class="chip">1re fois '+dt(p.firstSeen)+'</span></div>'
-        +'<div class="tl'+(opened?' open':'')+'" data-tl="'+esc(p.key)+'">'+(tl||'<div class="ev">—</div>')+'</div></div>';
+        +'<div class="chips">'
+        +(p.dev?'<span class="chip">📱 '+esc(p.dev)+'</span>':dev)
+        +(p.place?'<span class="chip">📍 '+esc(p.place)+'</span>':((p.places&&p.places.length)?'<span class="chip">📍 '+esc(p.places[0])+'</span>':''))
+        +(p.isp?'<span class="chip">'+(p.vpn?'🕵️ ':'📶 ')+esc(p.isp)+'</span>':'')
+        +(p.vpn?'<span class="chip" style="border-color:var(--off)">VPN / serveur</span>':'')
+        +(p.tz?'<span class="chip">🕓 '+esc(p.tz)+'</span>':'')
+        +(p.conns?'<span class="chip g">'+p.conns+' connexions</span>':'')
+        +(p.totalMs?'<span class="chip g">⏱ '+esc(dur(p.totalMs))+' au total</span>':'')
+        +(p.actions?'<span class="chip g">'+p.actions+' actions</span>':'')
+        +(p.created?'<span class="chip">1re fois '+dt(p.created)+'</span>':'')
+        +'</div>'
+        +(p.anomaly?'<div class="ev" style="color:var(--off)">⚠️ Déplacement impossible : '+esc(p.anomaly.from)+' → '+esc(p.anomaly.to)+' en '+esc(String(p.anomaly.mins))+' min (compte partagé ou VPN ?)</div>':'')
+        +'<div class="tl'+(opened?' open':'')+'" data-tl="'+esc(p.key)+'">'
+        +(infoDetail?'<div class="sect">Renseignements</div>'+infoDetail:'')
+        +(progDetail?'<div class="sect">Progression</div>'+progDetail:'')
+        +(appsDetail?'<div class="sect">Temps par app</div>'+appsDetail:'')
+        +(folders?'<div class="sect">Connexions</div>'+folders:'')
+        +(acts?'<div class="sect">Actions dans les apps</div>'+acts:'')
+        +((!folders&&!acts)?'<div class="ev">—</div>':'')
+        +'</div></div>';
     });
     h+='</div>';
     app.innerHTML=h;
     if(keepScroll)window.scrollTo(0,y);
     var qi=$('#q');qi.oninput=function(){Q=qi.value;var pos=qi.selectionStart;renderMain(true);var n=$('#q');n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}};
     $('#rf').onclick=refresh;
+    var tb=$('#tb');if(tb)tb.onclick=function(){SHOWBOTS=!SHOWBOTS;try{localStorage.setItem('kdmc_access_bots',SHOWBOTS?'1':'0')}catch(e){}renderMain(true)};
     Array.prototype.forEach.call(document.querySelectorAll('.pers'),function(el){el.onclick=function(){var k=el.getAttribute('data-k');OPEN[k]=!OPEN[k];var t=document.querySelector('[data-tl="'+CSS.escape(k)+'"]');if(t)t.classList.toggle('open',OPEN[k])}});
   }
 

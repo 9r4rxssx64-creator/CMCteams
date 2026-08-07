@@ -93,6 +93,11 @@
          qui vise l'ACCÈS, pas l'affichage d'un raccourci vers une page déjà verrouillée). */
       var botZone = document.getElementById('bot-zone');
       if (botZone) botZone.hidden = !(isPriv || named);
+      /* « Qui se connecte » : même règle que le bot — la page admin.kd-mc.com a son PROPRE
+         code (200807) donc afficher le raccourci n'accorde aucun accès. Sans ça, la tuile
+         restait invisible sur l'iPhone de Kevin (Face ID non prouvé) = fonction inexistante. */
+      var accessZone = document.getElementById('access-zone');
+      if (accessZone) accessZone.hidden = !(isPriv || named);
       renderSelfService(s); /* « Mes appareils / connexions » — pour TOUT connecté */
     };
     if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }
@@ -138,11 +143,25 @@
     _ssUid = s.uid;
     _ssVerified = !!(s && s.verified);
     box.hidden = false;
-    box.innerHTML = '<h2 class="cat">🔐 Mes appareils &amp; connexions</h2>'
+    /* ADMIN : plus de « Mes connexions » ICI — c'était un DOUBLON de la page
+       « Qui se connecte » (qui montre tout le monde, lui compris, à partir de la
+       MÊME donnée). Règle « zéro doublon, source unique » (Kevin 2026-08-05 :
+       « enlève ça et intègre le dedans. Je suis admin. »).
+       Les NON-admins gardent leur historique perso ici : c'est leur seul accès
+       (ils n'entrent pas dans la page admin) → retirer pour tous serait une régression. */
+    /* MÊME RÈGLE QUE LA TUILE « Qui se connecte » (admin OU nom reconnu).
+       Vécu 2026-08-05 : tester `s.admin` SEUL ne suffisait pas — la session de Kevin
+       le reconnaît par son NOM sans être « admin prouvé » (Face ID), donc il voyait la
+       tuile MAIS gardait l'historique en double en bas du portail. Les deux gates
+       doivent être IDENTIQUES, sinon le doublon revient pour celui qui voit la tuile. */
+    var hasUnified = !!(s && s.admin) || /kevin|desarzens|laurence|lolo|saint.?polit/.test(norm(s && s.name || ''));
+    box.innerHTML = '<h2 class="cat">🔐 Mes appareils' + (hasUnified ? '' : ' &amp; connexions') + '</h2>'
       + '<div id="ss-pk" class="ss-card">Chargement…</div>'
-      + '<div id="ss-hist" class="ss-card"></div>';
+      + (hasUnified
+        ? '<div class="ss-card ss-mut">🕘 Ton historique complet est dans <a href="https://admin.kd-mc.com/">Qui se connecte</a> — avec celui de tout le monde.</div>'
+        : '<div id="ss-hist" class="ss-card"></div>');
     loadMyPasskeys();
-    loadMyHistory();
+    if (!hasUnified) loadMyHistory();
   }
   function loadMyPasskeys() {
     var el = document.getElementById('ss-pk');

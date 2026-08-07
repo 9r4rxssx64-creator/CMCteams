@@ -1,6 +1,6 @@
 # 📚 INFOS MAX — presse ancienne & sources ouvertes (toutes les familles)
 
-_Généré le 2026-08-04 01:00 UTC par `tools/arbre/research-infos.mjs` (CI). Brut : `infosraw/`._
+_Généré le 2026-08-05 07:39 UTC par `tools/arbre/research-infos.mjs` (CI). Brut : `infosraw/`._
 
 ## 🗞 Gallica (BnF) — presse & documents numérisés
 
@@ -277,14 +277,14 @@ _Généré le 2026-08-04 01:00 UTC par `tools/arbre/research-infos.mjs` (CI). Br
 ### "DESARZENS" "Monaco" — 0 résultat(s)
 
 ### "DESARZENS" — 37 résultat(s)
-- [Rimsky-Korsakoff • Capriccio espagnol ~ ~ Moussorgsky • Khovantchina (Victor Desarzens)](https://archive.org/details/mms-57-rimsky-korsakoff-o-capriccio-espagnol-moussorgsky-o-khovantchina-victor-desarzens)
-- [Schubert - Hupperts, Pelleg, Dahinden (MMS-63)](https://archive.org/details/05-schubert-adagio-rondo-concertante)
 - [USB cover for Legrand Mosaic bloc (4742433) (2021)](https://archive.org/details/thingiverse-4742433)
-- [Visage, soins aux plantes (2010)](https://archive.org/details/visagesoinsauxpl0000desa)
+- [Metamorphosen / Le Bourgeois Gentilhomme (1964)](https://archive.org/details/lp_metamorphosen-le-bourgeois-gentilhomme_richard-strauss-orchestre-de-chambre-de-la)
+- [Beethoven: Klavierkonzert Nr. 4 B-Dur op. 58](https://archive.org/details/mms-2192-lily-kraus)
+- [Variations On A Theme By Frank Bridge, Op. 10 / Concerto Accademico (1952)](https://archive.org/details/lp_variations-on-a-theme-by-frank-bridge-op-1_benjamin-britten-ralph-vaughan-williams-or)
+- [Tasso (Symphonic Poem) / Symphony For Small Wind Orchestra (1952)](https://archive.org/details/lp_tasso-symphonic-poem-symphony-for-smal_franz-liszt-charles-gounod-winterthur-s)
+- [Rameau - Desarzens Victor, Sack Theodor (MMS-86)](https://archive.org/details/01-rameau-platee-ballet-suite-1)
+- [Resfest Swissmix / Interview with Monica Pozzi](https://archive.org/details/Resfest_Swissmix__Interview_with_Monica_Pozzi)
 - [Ces femmes musulmanes qui pourfendent lʹislam politique (2019)](https://archive.org/details/hautes-frequences_20190414_standard_ces-femmes-musulmanes-qui-pourfendent-l_b613)
-- [Bach - Concerts BWV 1060r, 1061 (MMS-77)](https://archive.org/details/04-bach-conc-2-harpsichords-bwv-1061-mov-1_202103)
-- [Les Genies Du Classique - Volume II No.16 - Schumann](https://archive.org/details/les-genies-du-classique-volume-ii-no.16-schumann)
-- [Verklärte Nacht, Op.4 / Introduction and Allegro, Op.47 / Prelude and Fugue, Op.29 (1962)](https://archive.org/details/lp_verklrte-nacht-op4-introduction-and-alleg_arnold-schoenberg-sir-edward-elgar-benjami)
 
 ### "VAN DEN BOSCH" "Beaulieu" — 0 résultat(s)
 
@@ -296,10 +296,10 @@ _Généré le 2026-08-04 01:00 UTC par `tools/arbre/research-infos.mjs` (CI). Br
 
 ## 🏛 Journal de Monaco (gazette officielle) — état des probes
 
-- jdm-home : HTTP 200 (951398 o)
+- jdm-home : HTTP 200 (953334 o)
 - jdm-search-maiffret : HTTP 404 (103320 o)
 - jdm-search-sauvaigo : HTTP 404 (103320 o)
-- jdm-jina-maiffret : HTTP 403 (5912 o)
+- jdm-jina-maiffret : HTTP 403 (5891 o)
 
 ## 🎖 Registres militaires (matricules / morts pour la France)
 
@@ -307,7 +307,7 @@ _Généré le 2026-08-04 01:00 UTC par `tools/arbre/research-infos.mjs` (CI). Br
 - gm-maiffret : HTTP 200 (526 o)
 - mdh-maiffret : ❌ fetch failed
 - mdh-sauvaigo : ❌ fetch failed
-- jina-gm-maiffret : HTTP 403 (6147 o)
+- jina-gm-maiffret : HTTP 403 (6126 o)
 
 ## 🪦 Tombes & photos (Findagrave)
 

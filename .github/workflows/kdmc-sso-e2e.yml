@@ -1,4 +1,10 @@
 name: KDMC SSO — test navigateur réel (Chromium)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Pilote un vrai Chromium (Playwright) contre le VRAI worker kdmc-router + le
 # VRAI portail, pour prouver le parcours "compte unique" / "pass signé" :

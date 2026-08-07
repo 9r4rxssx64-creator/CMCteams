@@ -1,0 +1,85 @@
+name: Vérif RÉELLE (connecté en tant que Kevin)
+
+# Kevin 2026-08-06 : « Trouve un moyen de simuler ma connexion pour accéder à mon domaine
+# et vérifier réel quand demandé. »
+#
+# Pourquoi : depuis l'agent, kd-mc.com est injoignable (egress bloqué) ; et même depuis la CI,
+# les pages utiles sont derrière une connexion → on ne voyait que les écrans de login.
+# Ici : vrai Chromium, vraies pages, DÉJÀ CONNECTÉ en tant que Kevin, sur le vrai domaine.
+#
+# Sécurité : périmètre verrouillé sur kd-mc.com (le module refuse tout autre domaine),
+# le code admin vient d'un SECRET (jamais du dépôt, jamais journalisé), lecture seule.
+# Honnêteté : la session est NOMMÉE, pas « admin prouvé » (Face ID) → certaines zones
+# réservées restent masquées, et le rapport le dit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      connecte:
+        description: "Connecté en tant que Kevin ? (non = audit anonyme classique)"
+        type: boolean
+        default: true
+      base:
+        description: "Domaine à vérifier"
+        default: "https://kd-mc.com"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verif-reelle
+  cancel-in-progress: false
+
+jobs:
+  verif:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Vérifier la couche « session » AVANT d'ouvrir quoi que ce soit
+        run: node tests/session-kevin.test.mjs
+
+      - name: Installer Chromium
+        run: |
+          npm i -D playwright@1.49.1 --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Ouvrir les vraies pages (connecté)
+        env:
+          KDMC_AS_KEVIN: ${{ inputs.connecte && '1' || '0' }}
+          KDMC_ADMIN_PIN_SHA256: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
+        # `pipefail` OBLIGATOIRE : sans lui, le code de sortie est celui de `tee` (toujours 0)
+        # et un audit qui dit « ÉCHEC (2 surfaces) » ressort VERT. Constaté au 1er run réel
+        # (run 31129784556 : 2 surfaces en échec, job vert). Un contrôle qui ment est pire
+        # que pas de contrôle — cf. règle PREUVE > DÉCLARATION.
+        shell: bash -euo pipefail {0}
+        run: node tools/smoke/audit-live.mjs "${{ inputs.base }}" 2>&1 | tee /tmp/verif.log
+
+      - name: Captures d'écran + rapport (même en cas d'échec)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verif-reelle-${{ github.run_id }}
+          path: |
+            audit-live-shots/
+            audit-live-report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Résumé lisible
+        if: always()
+        run: |
+          {
+            echo "## Vérif RÉELLE — ${{ inputs.base }}"
+            echo "Connecté en tant que Kevin : **${{ inputs.connecte }}**"
+            echo ""
+            echo '```'
+            tail -60 /tmp/verif.log 2>/dev/null || echo "(pas de log)"
+            echo '```'
+            echo ""
+            echo "Les captures d'écran de chaque page sont dans l'artifact ci-dessus."
+          } >> "$GITHUB_STEP_SUMMARY"
