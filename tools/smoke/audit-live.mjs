@@ -90,16 +90,13 @@ const SURFACES = [
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
-      // Studio créa : l'app rend sa nav + la mascotte Bee VIVANTE (marionnette 4 couches).
-      // Bee se construit dès le chargement (avant même l'écran d'entrée) — fail-open :
-      // si son image manquait, le compagnon s'enlève seul → ce contrôle le verrait.
+      // Studio créa : l'app rend sa nav complète (Bee est la mascotte de LINGUA, pas du studio —
+      // Kevin 2026-08-07 ; aucune mascotte attendue ici).
       try {
         await page.waitForTimeout(1500);
         const nav = await page.$$eval('#bnav button', els => els.length).catch(() => 0);
         if (nav < 6) return { ok:false, note:'nav attendue ≥6 boutons, vus ' + nav };
-        const bee = await page.$$eval('.bee-companion .bee-rig img', els => els.length).catch(() => 0);
-        if (bee < 1) return { ok:false, note:'mascotte Bee absente (attendu ≥1 couche, vues ' + bee + ')' };
-        return { ok:true, note: nav + ' studios · Bee vivante ' + bee + ' couches 🐝' };
+        return { ok:true, note: nav + ' studios rendus' };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: BASE + '/worldmonitor/', name: 'World Monitor', selKey: '.leaflet-container' },

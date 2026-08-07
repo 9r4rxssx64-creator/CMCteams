@@ -12,12 +12,11 @@
    Testé navigateur réel 11/11 ✅. Worker déployé ✅ (run 31222451220 success).
    **Vérifié EN VRAI** (verif-reelle 31222551767) : Lingua live OK — 6 langues,
    25 unités, 6 onglets.
-2. **Créa Studio v9.9.0 — Bee vivante** (PR #3170, « Bée à la place de la femme ») :
-   portage du système Bee de Lingua dans studio.kd-mc.com. Marionnette animée (couches
-   de SON image, copiées dans `tools/crea-studio/bee/rig/`), voix fillette « Petite
-   Bee » via le serveur Lingua (clé serveur), bulles + bouton d'action 1-tap par écran,
-   célébrations (export / vidéo IA prête), ON/OFF (🔕 voix, 🙈 cacher). Module autonome
-   fail-open en fin de page, SW v9.9.0. Testé navigateur réel 9/9 ✅.
+2. **Créa Studio v9.9.1 — SANS Bee** (correction Kevin « Bee est pour Lingua, pas
+   pour le studio ») : le portage Bee v9.9.0 (PR #3170) a été RETIRÉ (revert propre,
+   version avancée v9.9.1 pour forcer la mise à jour des téléphones). Bee reste la
+   mascotte de LINGUA uniquement. La surface Créa Studio reste surveillée par la
+   vérif réelle (nav ≥6 studios), sans exigence de mascotte.
 
 ### Note sur le 404 /%22/%22 (surface CMCteams, run verif-reelle de 22:05 UTC)
 Le run a encore vu `https://cmcteams.kd-mc.com/%22/%22` → 404, ALORS QUE les gardes

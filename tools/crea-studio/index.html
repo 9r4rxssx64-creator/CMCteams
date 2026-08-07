@@ -286,51 +286,6 @@
   .stickergrid{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;max-height:120px;overflow-y:auto;justify-content:center}
   .stickergrid button{width:44px;height:44px;border-radius:11px;background:var(--card);border:1px solid var(--line);font-size:24px;display:flex;align-items:center;justify-content:center}
   .stickergrid button:active{transform:scale(.9);background:var(--card2)}
-  /* ============ 🐝 BEE VIVANTE — marionnette animée (reprise de KDMC Lingua, mêmes couches
-     découpées de SON image : ailes + bras + paupières) : elle vit, guide et parle dans le studio */
-  .bee-companion{position:fixed;right:10px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:70;cursor:pointer;animation:beeFloat 3.4s ease-in-out infinite}
-  @keyframes beeFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
-  .bee-rig{position:relative;width:62px;height:62px;border-radius:50%;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.35);background:#fdf6e3}
-  .rig-base,.rig-piece{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
-  .rig-wl{transform-origin:34% 46%;animation:wingFlapL 1.15s ease-in-out infinite}
-  .rig-wr{transform-origin:66% 44%;animation:wingFlapR 1.15s ease-in-out infinite}
-  @keyframes wingFlapL{0%,100%{transform:rotate(0)}50%{transform:rotate(-6deg)}}
-  @keyframes wingFlapR{0%,100%{transform:rotate(0)}50%{transform:rotate(6deg)}}
-  .bee-rig.talk .rig-wl{animation:wingFlapL .32s ease-in-out infinite}
-  .bee-rig.talk .rig-wr{animation:wingFlapR .32s ease-in-out infinite}
-  .rig-arm{transform-origin:72% 53%}
-  .bee-rig.talk .rig-arm{animation:armWave .55s ease-in-out infinite}
-  @keyframes armWave{0%,100%{transform:rotate(0)}40%{transform:rotate(-13deg)}70%{transform:rotate(5deg)}}
-  .rig-lid{position:absolute;background:rgb(253,225,87);border:0;border-radius:46%;opacity:0;pointer-events:none;transition:opacity .05s}
-  .rig-lid.ll{left:32.2%;top:27.4%;width:18.2%;height:15%}
-  .rig-lid.lr{left:51.3%;top:27.2%;width:17.4%;height:15.2%}
-  .bee-rig.blink .rig-lid{opacity:1}
-  .bee-rig.mv-dance{animation:rigDance 1.05s ease-in-out infinite}
-  .bee-rig.mv-jump{animation:rigJump .85s cubic-bezier(.36,.07,.19,.97) infinite}
-  .bee-rig.mv-fly{animation:rigFly 3.6s ease-in-out infinite}
-  .bee-rig.mv-walk{animation:rigWalk .8s ease-in-out infinite}
-  .bee-rig.mv-dance .rig-wl,.bee-rig.mv-fly .rig-wl{animation:wingFlapL .3s ease-in-out infinite}
-  .bee-rig.mv-dance .rig-wr,.bee-rig.mv-fly .rig-wr{animation:wingFlapR .3s ease-in-out infinite}
-  .bee-rig.mv-dance .rig-arm{animation:armWave .5s ease-in-out infinite}
-  @keyframes rigDance{0%,100%{transform:rotate(0) translate(0,0)}20%{transform:rotate(-7deg) translate(-4%,-3%)}40%{transform:rotate(6deg) translate(4%,0)}60%{transform:rotate(-6deg) translate(-3%,-4%)}80%{transform:rotate(7deg) translate(3%,0)}}
-  @keyframes rigJump{0%,100%{transform:translateY(0) scale(1,1)}18%{transform:translateY(2%) scale(1.05,.9)}45%{transform:translateY(-16%) scale(.97,1.06)}70%{transform:translateY(0) scale(1.04,.94)}85%{transform:translateY(-1%) scale(1,1)}}
-  @keyframes rigFly{0%,100%{transform:translate(0,0) rotate(0)}12%{transform:translate(7%,-9%) rotate(5deg)}30%{transform:translate(13%,2%) rotate(-3deg)}50%{transform:translate(0,6%) rotate(0)}70%{transform:translate(-13%,-4%) rotate(4deg)}88%{transform:translate(-6%,-10%) rotate(-4deg)}}
-  @keyframes rigWalk{0%,100%{transform:translateY(0) rotate(-2.5deg)}25%{transform:translateY(-3%) rotate(0)}50%{transform:translateY(0) rotate(2.5deg)}75%{transform:translateY(-3%) rotate(0)}}
-  .bee-bubble{position:fixed;right:12px;bottom:calc(148px + env(safe-area-inset-bottom));z-index:71;max-width:250px;
-    background:var(--card,#182430);border:1px solid var(--line,#2a3a49);border-radius:16px;border-bottom-right-radius:5px;
-    padding:11px 13px;font-size:13.5px;font-weight:600;color:#fff;box-shadow:0 8px 22px rgba(0,0,0,.4);animation:bubblePop .28s ease-out;cursor:pointer}
-  @keyframes bubblePop{0%{transform:scale(.5) translateY(10px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}
-  .bee-bubble.bye{opacity:0;transform:translateY(8px);transition:all .4s}
-  .bb-act{margin-top:8px}
-  .bb-yes{width:100%;padding:10px 12px;border:0;border-radius:11px;background:linear-gradient(90deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:14px;cursor:pointer;min-height:44px}
-  .bb-yes:active{transform:scale(.97)}
-  .bb-tools{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
-  .bb-tools button{background:none;border:0;font-size:15px;opacity:.65;cursor:pointer;padding:4px 6px;min-height:28px}
-  .bee-spark{position:fixed;z-index:9999;pointer-events:none;font-size:16px;animation:sparkFly .9s ease-out forwards}
-  @keyframes sparkFly{0%{transform:translate(0,0) scale(.6);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.25);opacity:0}}
-  .bee-back{position:fixed;right:10px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:70;width:40px;height:40px;border-radius:50%;
-    background:var(--card,#182430);border:1px solid var(--line,#2a3a49);font-size:19px;opacity:.7;cursor:pointer}
-  @media (prefers-reduced-motion:reduce){.bee-companion,.rig-wl,.rig-wr,.bee-rig.talk .rig-arm,.bee-rig.mv-dance,.bee-rig.mv-jump,.bee-rig.mv-fly,.bee-rig.mv-walk{animation:none}.bee-spark{display:none}}
 </style>
 </head>
 <body>
@@ -942,7 +897,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.9.0';
+var APP_VER='v9.9.1';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -5702,150 +5657,6 @@ try{ Cam.init(); }catch(e){}
 try{ Fam.init(); }catch(e){}
 try{ Account.init(); }
 catch(e){ try{ toast('Comptes indisponibles : '+String(e.message||e).slice(0,60)); }catch(_){} }
-</script>
-<script>
-/* ============ 🐝 BEE VIVANTE dans le Créa Studio (Kevin 2026-08-07) ============
-   Reprise à l'identique du système « Bee vivante » de KDMC Lingua (marionnette animée
-   découpée de SON image, voix fillette, bulles, actions) — Bee est LA mascotte du
-   domaine, à la place d'une présentatrice : elle vit sur chaque écran, guide, parle,
-   propose des actions et fête tes créations. 100 % fail-open : si un morceau manque
-   (voix en ligne, image), l'app marche exactement comme avant. */
-(function(){
-"use strict";
-var OFF_KEY='crea_bee_off', MUTE_KEY='crea_bee_mute';
-var TTS_BASE='https://lingua.kd-mc.com/__lingua/tts'; /* même voix que dans Lingua (clé serveur, jamais côté client) */
-var VOICE={tts:'nova',rate:1.24,gen:0.81,wsPitch:1.7,wsRate:0.95}; /* 🎀 Petite Bee (fillette) */
-var rig=null,comp=null,_ttsAudio=null,_ttsReq=0,_said={},_hello=false;
-
-/* --- Voix : cloud (nova aiguë) → repli voix navigateur fillette → silence (jamais bloquer) --- */
-function muted(){ try{ return localStorage.getItem(MUTE_KEY)==='1'; }catch(e){ return false; } }
-function speak(text){ if(muted()||!text)return; text=String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}·]/gu,' ');
-  var my=++_ttsReq;
-  try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(e){}
-  try{
-    if(_ttsAudio){ try{_ttsAudio.pause();}catch(e){} _ttsAudio=null; }
-    var a=new Audio(TTS_BASE+'?v='+VOICE.tts+'&s='+VOICE.gen+'&t='+encodeURIComponent(text)); _ttsAudio=a;
-    try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=VOICE.rate; }catch(e){}
-    a.onerror=function(){ if(my===_ttsReq)webSpeak(text); };
-    a.onplaying=function(){ if(rig&&my===_ttsReq){ rig.classList.add('talk'); } };
-    a.onended=function(){ if(rig)rig.classList.remove('talk'); };
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(my===_ttsReq)webSpeak(text); });
-  }catch(e){ webSpeak(text); } }
-function webSpeak(text){ try{ var u=new SpeechSynthesisUtterance(text); u.lang='fr-FR'; u.pitch=VOICE.wsPitch; u.rate=VOICE.wsRate;
-  var vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf('fr')===0;});
-  if(vs[0])u.voice=vs[0];
-  u.onstart=function(){ if(rig)rig.classList.add('talk'); }; u.onend=function(){ if(rig)rig.classList.remove('talk'); };
-  speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
-
-/* --- Étincelles + mouvements (mêmes gestes que dans Lingua) --- */
-function sparkles(el,n){ try{ var r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,em=['✨','⭐','💛','🐝','🎨','🌟'];
-  for(var i=0;i<(n||8);i++){ var s=document.createElement('span'); s.className='bee-spark'; s.textContent=em[Math.floor(Math.random()*em.length)];
-    var a=Math.random()*Math.PI*2,d=40+Math.random()*55;
-    s.style.left=cx+'px'; s.style.top=cy+'px'; s.style.setProperty('--dx',(Math.cos(a)*d)+'px'); s.style.setProperty('--dy',(Math.sin(a)*d-24)+'px');
-    document.body.appendChild(s); (function(sp){ setTimeout(function(){ sp.remove(); },950); })(s); } }catch(e){} }
-function move(kind,dur){ if(!rig)return; ['mv-dance','mv-jump','mv-fly','mv-walk'].forEach(function(c){rig.classList.remove(c);});
-  if(!kind)return; rig.classList.add('mv-'+kind);
-  setTimeout(function(){ try{rig.classList.remove('mv-'+kind);}catch(e){} },dur||2400); }
-
-/* --- Bulles : parole simple + proposition avec bouton d'action (elle AGIT vraiment) --- */
-function bubbleTools(b){ var t=document.createElement('div'); t.className='bb-tools';
-  var m=document.createElement('button'); m.textContent=muted()?'🔊':'🔕'; m.title='Voix de Bee';
-  m.onclick=function(ev){ ev.stopPropagation(); try{ localStorage.setItem(MUTE_KEY,muted()?'0':'1'); }catch(e){} m.textContent=muted()?'🔊':'🔕';
-    if(!muted())speak('Me revoilà !'); else { try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(e){} } };
-  var h=document.createElement('button'); h.textContent='🙈'; h.title='Cacher Bee';
-  h.onclick=function(ev){ ev.stopPropagation(); b.remove(); hide(); };
-  t.appendChild(m); t.appendChild(h); b.appendChild(t); }
-function say(text,ms){ try{ var old=document.querySelector('.bee-bubble'); if(old)old.remove();
-  var b=document.createElement('div'); b.className='bee-bubble';
-  var tx=document.createElement('div'); tx.textContent=text; b.appendChild(tx);
-  bubbleTools(b); b.onclick=function(){ b.remove(); };
-  document.body.appendChild(b); speak(text);
-  setTimeout(function(){ try{ b.classList.add('bye'); setTimeout(function(){b.remove();},400); }catch(e){} },ms||8000); }catch(e){} }
-function ask(text,yes,fn,ms){ try{ var old=document.querySelector('.bee-bubble'); if(old)old.remove();
-  var b=document.createElement('div'); b.className='bee-bubble';
-  var tx=document.createElement('div'); tx.textContent=text; b.appendChild(tx);
-  var act=document.createElement('div'); act.className='bb-act';
-  var y=document.createElement('button'); y.className='bb-yes'; y.textContent=yes;
-  y.onclick=function(ev){ ev.stopPropagation(); b.remove(); try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){} fn(); };
-  act.appendChild(y); b.appendChild(act); bubbleTools(b);
-  b.onclick=function(){ b.remove(); };
-  document.body.appendChild(b); speak(text);
-  setTimeout(function(){ try{ b.classList.add('bye'); setTimeout(function(){b.remove();},400); }catch(e){} },ms||14000); }catch(e){} }
-
-/* --- Ce que Bee raconte selon l'écran (elle CONNAÎT le studio et guide) --- */
-var LINES={
-  cam:  {t:'Bzzz ! Prends une photo, et on la transforme ensemble 📷',a:null},
-  photo:{t:'Montre-moi une photo, on la rend magnifique !',a:['🖼 Choisir une photo',function(){ if(window.Photo)Photo.pick(); }]},
-  video:{t:'On monte une vidéo ? Coupe, filtres, sous-titres… je gère tout avec toi 🎬',a:['🎬 Choisir une vidéo',function(){ if(window.Vid)Vid.pick(); }]},
-  anim: {t:'Ici on fait des dessins animés ! Dessine, et je fais bouger tout ça ✏️',a:['✏️ Nouveau dessin',function(){ if(window.Anim)Anim.start(); }]},
-  aivid:{t:'Mets une photo et je la fais DANSER, comme les vidéos du moment 🕺',a:['🕺 Choisir une photo',function(){ if(window.AiVid)AiVid.pick(); }]},
-  magic:{t:'La Magie IA : une photo, un tap, et pouf — figurine, dessin animé, chanson ✨',a:['✨ C\'est parti',function(){ if(window.Magic)Magic.pick(); }]},
-  fam:  {t:'L\'espace Famille : partage tes créations avec ceux que tu aimes 💛',a:null},
-  mine: {t:'Tes créations sont là, bien au chaud dans la ruche 🍯',a:null}
-};
-function lineFor(n){ return LINES[n]||{t:'Bzzz ! On crée quelque chose ?',a:null}; }
-function onScreen(n){ if(!comp||!document.body.contains(comp))return;
-  if(_said[n])return; _said[n]=true;
-  var L=lineFor(n); setTimeout(function(){ if(L.a)ask(L.t,L.a[0],L.a[1]); else say(L.t); },500); }
-
-/* --- Elle VIT : clignements + petits mouvements tout seuls --- */
-function life(){ (function blink(){ if(!rig||!document.body.contains(rig))return;
-    rig.classList.add('blink'); setTimeout(function(){ try{rig.classList.remove('blink');}catch(e){} },150);
-    setTimeout(blink,2400+Math.random()*3400); })();
-  (function idle(){ if(!rig||!document.body.contains(rig))return;
-    var ks=['fly','walk','dance']; move(ks[Math.floor(Math.random()*ks.length)],2200+Math.random()*1400);
-    setTimeout(idle,12000+Math.random()*9000); })(); }
-
-/* --- Cacher / réafficher (bouton ON/OFF, règle Kevin) --- */
-function hide(){ try{ localStorage.setItem(OFF_KEY,'1'); }catch(e){}
-  if(comp){ comp.remove(); comp=null; rig=null; }
-  try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(e){}
-  var back=document.createElement('button'); back.className='bee-back'; back.textContent='🐝'; back.title='Réveiller Bee';
-  back.onclick=function(){ back.remove(); try{ localStorage.setItem(OFF_KEY,'0'); }catch(e){} build(); say('Bzzz ! Je suis là !'); };
-  document.body.appendChild(back); }
-function build(){ comp=document.createElement('div'); comp.className='bee-companion';
-  rig=document.createElement('div'); rig.className='bee-rig';
-  rig.innerHTML='<img class="rig-base" src="bee/rig/base.webp" alt="Bee">'+
-    '<img class="rig-piece rig-wl" src="bee/rig/wing-l.webp" alt="" onerror="this.remove()">'+
-    '<img class="rig-piece rig-wr" src="bee/rig/wing-r.webp" alt="" onerror="this.remove()">'+
-    '<img class="rig-piece rig-arm" src="bee/rig/arm.webp" alt="" onerror="this.remove()">'+
-    '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>';
-  comp.appendChild(rig);
-  /* si son image de base ne charge pas → pas de Bee cassée à l'écran (fail-open) */
-  var base=rig.querySelector('.rig-base'); base.onerror=function(){ try{comp.remove();}catch(e){} comp=null; rig=null; };
-  comp.onclick=function(){ move(['dance','jump','fly','walk'][Math.floor(Math.random()*4)],2600); sparkles(rig,7);
-    try{if(navigator.vibrate)navigator.vibrate(10);}catch(e){}
-    var L=lineFor(window.CUR||'photo'); if(L.a)ask(L.t,L.a[0],L.a[1]); else say(L.t); };
-  document.body.appendChild(comp);
-  setTimeout(life,900+Math.random()*600); }
-
-/* --- Elle fête tes créations : export = bravo + étincelles ; vidéo IA prête = elle le dit --- */
-function celebrate(){ if(!rig)return; move('dance',3000); sparkles(rig,10); }
-function watchResult(id,msg){ var el=document.getElementById(id); if(!el||!window.MutationObserver)return;
-  var was=el.classList.contains('hidden');
-  new MutationObserver(function(){ var now=el.classList.contains('hidden');
-    if(was&&!now){ celebrate(); say(msg,7000); } was=now; }).observe(el,{attributes:true,attributeFilter:['class']}); }
-
-function start(){
-  try{ if(localStorage.getItem(OFF_KEY)==='1'){ hide(); return; } }catch(e){}
-  build();
-  /* le bouton Exporter → petite fête (sans gêner l'action) */
-  var ex=document.getElementById('btnExport');
-  if(ex){ var orig=ex.onclick; ex.onclick=function(evt){ if(orig)orig.call(this,evt); setTimeout(celebrate,400); }; }
-  /* l'écran change → Bee commente (1 fois par écran et par session) */
-  if(typeof window.go==='function'){ var g=window.go; window.go=function(n){ g(n); try{onScreen(n);}catch(e){} }; }
-  /* les résultats IA apparaissent → elle prévient à voix haute */
-  watchResult('aividVideo','Ta vidéo est prête… regarde-toi danser ! 🕺');
-  watchResult('magicVideo','Et voilà, ta magie est prête ! ✨');
-  /* accueil : elle attend que l'écran d'entrée (prénom) soit passé, puis se présente */
-  (function helloWhenReady(n){ if(_hello)return;
-    var gate=document.getElementById('gate');
-    if(gate&&!gate.classList.contains('hidden')){ if(n<120)setTimeout(function(){helloWhenReady(n+1);},1000); return; }
-    _hello=true; setTimeout(function(){ var L=lineFor(window.CUR||'photo');
-      if(L.a)ask('Bonjour ! Moi c\'est Bee 🐝 '+L.t,L.a[0],L.a[1]); else say('Bonjour ! Moi c\'est Bee 🐝 '+L.t); },1200); })(0);
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start); else start();
-})();
 </script>
 </body>
 </html>
