@@ -52,6 +52,11 @@ jobs:
         env:
           KDMC_AS_KEVIN: ${{ inputs.connecte && '1' || '0' }}
           KDMC_ADMIN_PIN_SHA256: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
+        # `pipefail` OBLIGATOIRE : sans lui, le code de sortie est celui de `tee` (toujours 0)
+        # et un audit qui dit « ÉCHEC (2 surfaces) » ressort VERT. Constaté au 1er run réel
+        # (run 31129784556 : 2 surfaces en échec, job vert). Un contrôle qui ment est pire
+        # que pas de contrôle — cf. règle PREUVE > DÉCLARATION.
+        shell: bash -euo pipefail {0}
         run: node tools/smoke/audit-live.mjs "${{ inputs.base }}" 2>&1 | tee /tmp/verif.log
 
       - name: Captures d'écran + rapport (même en cas d'échec)
