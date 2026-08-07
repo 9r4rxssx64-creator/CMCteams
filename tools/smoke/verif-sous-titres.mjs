@@ -59,8 +59,15 @@ async function main() {
       return;
     }
     audio = Buffer.from(await r.arrayBuffer());
-    dire('/voice → ' + audio.length + ' octets de ' + type);
+    /* Durée approximative (MP3 ~16 ko/s). On la DIT, parce qu'une voix de test
+       qui se met à bégayer fabrique un son 15× trop long — et c'est alors la
+       VOIX qui est fautive, pas la transcription. Sans ça, on accuserait le
+       mauvais coupable et on comparerait deux essais non comparables. */
+    const secondes = audio.length / 16000;
+    dire('/voice → ' + audio.length + ' octets de ' + type + '  (~' + secondes.toFixed(1) + ' s)');
     if (audio.length < 2000) ko.push('le son produit est trop court (' + audio.length + ' octets) pour être une vraie phrase');
+    if (secondes > 8) dire('⚠️ La voix de test s\'est répétée (' + secondes.toFixed(1) + ' s pour une phrase de ~3 s) :' +
+      ' le texte retrouvé contiendra des répétitions qui NE viennent PAS de la transcription.');
   } catch (e) { ko.push('/voice injoignable : ' + (e && e.message || e)); return; }
 
   /* --- 2) le faire ÉCRIRE --- */
