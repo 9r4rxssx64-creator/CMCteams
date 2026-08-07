@@ -1,0 +1,28 @@
+name: Arbre — chercher un avis de décès publié (pompes funèbres / journaux)
+# Kevin 2026-08-07 : « Monique Maiffret est morte va chercher son avis de décès ».
+# L'agent ne peut pas atteindre ces sites (403 anti-robot + egress fermé) → la CI le fait.
+# Résultats dans le log du job (aucun commit). Outil réutilisable pour tout nom.
+on:
+  workflow_dispatch:
+    inputs:
+      nom:
+        description: "Nom de famille"
+        required: true
+        default: "MAIFFRET"
+      prenom:
+        description: "Prénom (filtre d'affichage, vide = tous)"
+        required: false
+        default: "Monique"
+permissions:
+  contents: read
+jobs:
+  chercher:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recherche multi-sites
+        env:
+          NOM: ${{ inputs.nom }}
+          PRENOM: ${{ inputs.prenom }}
+        run: python3 tools/arbre/find-avis-deces.py
