@@ -158,6 +158,24 @@ for (const s of SURFACES) {
   const url = s.url;
   const res = { url, name: s.name, ok: true, notes: [] };
   try {
+    /* mouchard pollution (CMCteams) : enregistre CHAQUE élément dont le src/style contient
+       la valeur polluée AU MOMENT où il est posé — même s'il disparaît ensuite (diaporama) */
+    if (s.name === 'CMCteams') {
+      await page.addInitScript(() => {
+        window.__pollu = [];
+        const chk = (el) => { try {
+          if (!el.getAttribute) return;
+          const src = el.getAttribute('src') || '';
+          const st = el.getAttribute('style') || '';
+          if (src.includes('"') || src.includes('%22')) window.__pollu.push('SRC <' + el.tagName + '> ' + src.slice(0, 50) + ' · parent=' + (el.parentElement ? (el.parentElement.className || el.parentElement.id || el.parentElement.tagName) : '?'));
+          if (st.includes('"/"') || st.includes('%22') || st.includes('&quot;')) window.__pollu.push('STYLE <' + el.tagName + ' class=' + (el.className || '') + '> ' + st.slice(0, 90));
+        } catch (e) { /* mouchard best-effort */ } };
+        new MutationObserver((ms) => { ms.forEach((m) => {
+          if (m.type === 'attributes') chk(m.target);
+          if (m.addedNodes) m.addedNodes.forEach((n) => { if (n.nodeType === 1) { chk(n); if (n.querySelectorAll) n.querySelectorAll('[src],[style]').forEach(chk); } });
+        }); }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'style'] });
+      });
+    }
     if (AS_KEVIN) {
       const m = await connecte(page, url, { pinHash: PIN_HASH });
       if (m && m.note) res.notes.push('connexion : ' + m.note);
@@ -170,6 +188,34 @@ for (const s of SURFACES) {
     if (!(await page.$(s.selKey))) { res.ok = false; res.notes.push('élément clé absent: ' + s.selKey); }
 
     if (s.deep) { try { const d = await s.deep(page); res.notes.push('deep: ' + d.note); if (!d.ok) res.ok = false; } catch (e) { res.ok = false; res.notes.push('deep KO: ' + (e && e.message ? e.message : e)); } }
+
+    /* ENQUÊTE 404 /%22/%22 (intermittent malgré les gardes v9.876-880) : quand la requête
+       polluée est vue, on DÉSIGNE le consommateur exact dans le DOM — élément, attribut,
+       et extrait — pour enfin trouver la clé de données source au lieu de deviner. */
+    if (badStatus.some((b) => b.includes('%22'))) {
+      try {
+        const who = await page.evaluate(() => {
+          const out = [];
+          document.querySelectorAll('img,video,source,link[rel*="icon"]').forEach((el) => {
+            const src = el.getAttribute('src') || el.getAttribute('href') || '';
+            if (src.includes('"') || src.includes('%22')) out.push('<' + el.tagName.toLowerCase() + ' src=' + JSON.stringify(src).slice(0, 60) + '> parent=' + (el.parentElement ? el.parentElement.className || el.parentElement.id || el.parentElement.tagName : '?'));
+          });
+          document.querySelectorAll('[style*="%22"],[style*="url"]').forEach((el) => {
+            const st = el.getAttribute('style') || '';
+            if (st.includes('%22') || st.includes('\\"')) out.push('style=' + JSON.stringify(st).slice(0, 90) + ' sur .' + (el.className || el.id || el.tagName));
+          });
+          for (const sh of document.styleSheets) { try { for (const r of sh.cssRules || []) { const t = r.cssText || ''; if (t.includes('%22')) out.push('CSS: ' + t.slice(0, 110)); } } catch (e) { /* cross-origin */ } }
+          const vars = [];
+          const cs = getComputedStyle(document.body);
+          ['--cmc-login-bg', '--cmc-accueil-bg', '--cmc-planning-bg'].forEach((v) => { const val = cs.getPropertyValue(v); if (val && (val.includes('%22') || val.includes('"/"'))) vars.push(v + '=' + val.slice(0, 60)); });
+          if (vars.length) out.push('vars: ' + vars.join(' · '));
+          return out.slice(0, 5);
+        });
+        const mouchard = await page.evaluate(() => (window.__pollu || []).slice(0, 5)).catch(() => []);
+        if (mouchard.length) who.push('MOUCHARD: ' + mouchard.join(' | '));
+        res.notes.push(who.length ? ('COUPABLE %22 → ' + who.join(' | ')) : 'COUPABLE %22 → introuvable dans le DOM au moment du scan (élément déjà retiré ?)');
+      } catch (e) { /* enquête best-effort */ }
+    }
 
     await page.screenshot({ path: SHOT_DIR + '/' + s.name.replace(/[^\w]+/g, '_') + '.png' }).catch(() => {});
 
