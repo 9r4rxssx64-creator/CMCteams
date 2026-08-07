@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.28.1";
+var APP_VER="v2.28.2";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -885,7 +885,11 @@ function outOfHearts(){ VIEW="home"; render(); var m=modal();
   var b2=el("button","btn-ghost"); b2.textContent="Réviser gratuitement (regagne des cœurs)"; b2.onclick=function(){ m.close(); var rw=shuffle(allWords(S.course)).slice(0,8); LESSON={ui:null,li:null,review:true,heal:true,ex:buildLesson(null,null,rw),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; render(); };
   m.body.appendChild(b1); m.body.appendChild(b2);
 }
+function ttsPrefetch(text){ /* fabrique le son EN AVANCE (mise en réserve) — il partira instantanément à la validation */
+  if(!S.sound||!text)return; var vid=S.voice||"nova"; if(!_isCloudVoice(vid))return;
+  try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); a.preload="auto"; }catch(_){} }
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
+  if(ex&&ex.w&&ex.w.t&&!L.answered) ttsPrefetch(ex.w.t); /* la réponse sera dite SANS attente à la validation */
   var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
   top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ?")){ VIEW="home"; render(); } }; d.appendChild(top);
   var body=el("div","lesson-body");
@@ -977,6 +981,8 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
     else if(!ok && Math.random()<0.5){ speakLang(["Pas grave, on retient !","Presque ! On continue.","Courage, tu y es presque !"][L.wrong%3],"fr-FR",BEE_VOICE,true); } },40);
 }
 function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol="";
+  /* un son de la question PRÉCÉDENTE encore en fabrication/lecture ne doit JAMAIS sortir pendant la suivante */
+  ++_ttsReq; try{ if(_ttsAudio){_ttsAudio.pause(); _ttsAudio=null;} if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
   if(L.i>=L.ex.length){ finishLesson(); return; } if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; } render();
 }
