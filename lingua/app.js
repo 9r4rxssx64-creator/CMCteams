@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.28.0";
+var APP_VER="v2.28.1";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -666,34 +666,60 @@ function discMove(kind,dur){ /* Bee bouge de tout son corps. VRAIE VIDÉO si dis
   if(DISC.moveEnd)clearTimeout(DISC.moveEnd);
   DISC.moveEnd=setTimeout(function(){ try{rig.classList.remove("mv-"+kind);}catch(_){} }, dur||2800);
 }
-function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres mot à mot, robuste même sans événements audio */
+function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRONISÉS SUR LE SON RÉEL.
+  AVANT : bouche/sous-titres partaient dès la demande, mais la fabrication en ligne d'une phrase
+  neuve prend 1-3 s → tout défilait AVANT la voix (le « décalage » persistant de Kevin).
+  MAINTENANT : rien ne bouge tant que le son n'a pas réellement démarré (événement playing),
+  les sous-titres suivent la POSITION RÉELLE de lecture, et tout s'arrête sur la fin réelle. */
   var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
   var mouth=overlay.querySelector(".disc-mouth"), sub=overlay.querySelector(".disc-sub"), img=overlay.querySelector(".disc-bee");
   var words=String(text||"").split(/\s+/).filter(Boolean);
-  /* La durée estimée suit la VITESSE de la voix choisie (fillette ×1.24 = parle plus vite)
-     → bouche + sous-titres + minuterie restent SYNCHRONISÉS avec la voix, plus de décalage */
-  var _c=beeVoiceCfg(), _r=(_c.rate||1)*(_c.gen||1);
-  var dur=Math.min(12000, Math.round((900+text.length*68)/_r));
-  DISC.talking=true; if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
-  /* Chorégraphie auto : compliment → elle danse ou saute de joie ; sinon en mode vidéo elle salue en parlant */
-  var praise=/(bravo|super|parfait|génial|excellent|top|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(text);
-  if(praise) discMove(Math.random()<.5?"dance":"jump", Math.min(dur,4200));
-  else if(DISC.vid&&DISC.clip) DISC.clip("hello", Math.min(dur/1000,6));
-  if(sub){ sub.textContent=""; var wi=0; var step=Math.max(120, Math.min(300, dur/Math.max(1,words.length)));
-    var si=setInterval(function(){ if(wi>=words.length||!DISC.open){ clearInterval(si); return; } sub.textContent+=(wi?" ":"")+words[wi++]; sub.scrollTop=sub.scrollHeight; }, step); }
-  function stop(){ DISC.talking=false; try{ if(mouth)mouth.classList.remove("talking"); if(img)img.classList.remove("talk"); }catch(_){}
+  var vcfg=beeVoiceCfg(), vid=vcfg.tts;
+  var netR=(vcfg.rate||1)*(vcfg.gen||1);
+  var estDur=Math.min(12000, Math.round((900+text.length*68)/netR));
+  var myReq=++_ttsReq; /* un ancien son/repli en retard est ignoré */
+  DISC.talking=true; /* bloque un double-envoi pendant le chargement */
+  if(sub)sub.textContent="…"; /* signe de vie pendant la fabrication de la voix */
+  if(DISC.subIv){ clearInterval(DISC.subIv); DISC.subIv=null; }
+  function stop(){ DISC.talking=false; if(DISC.subIv){clearInterval(DISC.subIv);DISC.subIv=null;}
+    try{ if(mouth)mouth.classList.remove("talking"); if(img)img.classList.remove("talk"); }catch(_){}
+    if(sub&&words.length)sub.textContent=words.join(" "); /* texte complet lisible à la fin */
     if(DISC.handsFree&&DISC.open){ setTimeout(function(){ discListen(); },500); } }
-  if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop,dur);
+  function startVisuals(dur,audio){ if(!DISC.open||myReq!==_ttsReq)return;
+    if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
+    /* chorégraphie au moment où la voix DÉMARRE (plus en avance) */
+    var praise=/(bravo|super|parfait|génial|excellent|top|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(text);
+    if(praise) discMove(Math.random()<.5?"dance":"jump", Math.min(dur,4200));
+    else if(DISC.vid&&DISC.clip) DISC.clip("hello", Math.min(dur/1000,6));
+    if(sub){ sub.textContent="";
+      if(audio){ /* sous-titres calés sur la POSITION RÉELLE du son */
+        var shown=0;
+        DISC.subIv=setInterval(function(){ if(!DISC.open||myReq!==_ttsReq){clearInterval(DISC.subIv);DISC.subIv=null;return;}
+          var d=audio.duration; if(!(d>0))return;
+          var n=Math.max(shown, Math.min(words.length, Math.round((audio.currentTime/d)*words.length)));
+          while(shown<n){ sub.textContent+=(shown?" ":"")+words[shown++]; }
+          sub.scrollTop=sub.scrollHeight;
+          if(audio.ended||shown>=words.length){ clearInterval(DISC.subIv); DISC.subIv=null; } },120);
+      } else { var wi=0, step=Math.max(120, Math.min(300, dur/Math.max(1,words.length)));
+        DISC.subIv=setInterval(function(){ if(wi>=words.length||!DISC.open||myReq!==_ttsReq){ clearInterval(DISC.subIv); DISC.subIv=null; return; }
+          sub.textContent+=(wi?" ":"")+words[wi++]; sub.scrollTop=sub.scrollHeight; }, step); } }
+    if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop, dur+400); }
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
-  var vcfg=beeVoiceCfg(), vid=vcfg.tts; /* Bee : la voix CHOISIE par l'utilisateur (fillette par défaut) */
-  var myReq=++_ttsReq; /* anti-décalage : un ancien son ne peut plus partir en retard */
   if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
     var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
     if(vcfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vcfg.rate; }catch(_){} }
-    a.onended=function(){ if(DISC.timer)clearTimeout(DISC.timer); stop(); };
-    a.onerror=function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,true,vcfg); };
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,true,vcfg); });
-  }catch(e){ _webSpeakLang(text,lang,true,vcfg); } } else if(S.sound){ _webSpeakLang(text,lang,true,vcfg); }
+    var started=false, fell=false;
+    var fallback=function(){ if(fell||started||myReq!==_ttsReq)return; fell=true;
+      _webSpeakLang(text,lang,true,vcfg); startVisuals(estDur,null); };
+    a.addEventListener("playing",function(){ if(started||fell)return; started=true;
+      var real=(a.duration>0)?Math.round(a.duration/(vcfg.rate||1)*1000):estDur;
+      startVisuals(real,a); });
+    a.onended=function(){ if(DISC.timer)clearTimeout(DISC.timer); if(myReq===_ttsReq)stop(); };
+    a.onerror=fallback;
+    var p=a.play(); if(p&&p.catch)p.catch(fallback);
+  }catch(e){ _webSpeakLang(text,lang,true,vcfg); startVisuals(estDur,null); } }
+  else if(S.sound){ _webSpeakLang(text,lang,true,vcfg); startVisuals(estDur,null); }
+  else { startVisuals(estDur,null); } /* son coupé : on montre quand même le texte */
 }
 function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
   var mic=overlay.querySelector(".disc-mic"); if(mic)mic.classList.add("rec");
@@ -748,7 +774,7 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
     DISC.moveT=setTimeout(moveLoop, 9000+Math.random()*7000); }
   DISC.moveT=setTimeout(moveLoop,6000);
   ov.querySelectorAll(".disc-moves button").forEach(function(b){ b.onclick=function(){ var bee=ov.querySelector(".disc-bee"); if(bee)beeSparkles(bee,6); discMove(b.getAttribute("data-mv"), 3400); }; });
-  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; DISC.vid=false; DISC.clip=null; if(DISC.blinkT)clearTimeout(DISC.blinkT); if(DISC.moveT)clearTimeout(DISC.moveT); if(DISC.moveEnd)clearTimeout(DISC.moveEnd); if(DISC.clipT)clearTimeout(DISC.clipT); try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
+  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; DISC.vid=false; DISC.clip=null; if(DISC.blinkT)clearTimeout(DISC.blinkT); if(DISC.moveT)clearTimeout(DISC.moveT); if(DISC.moveEnd)clearTimeout(DISC.moveEnd); if(DISC.clipT)clearTimeout(DISC.clipT); if(DISC.subIv){clearInterval(DISC.subIv);DISC.subIv=null;} try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
   ov.querySelector(".disc-send").onclick=discSend;
   ov.querySelector(".disc-input").onkeydown=function(e){ if(e.key==="Enter")discSend(); };
   ov.querySelector(".disc-mic").onclick=discListen;
