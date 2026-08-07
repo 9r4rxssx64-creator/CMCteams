@@ -257,7 +257,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.86";
+var APP_VER="v2.89";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -325,7 +325,7 @@ var TREE={ROWH:158,BOXW:198,COUPLEGAP:24,UNITGAP:64,PAD:34,COMPGAP:64,CARD:184};
    🫒 "o" = famille SAUVAIGO · MAIFFRET (côté maman — olivier, Nice/Monaco)
    🌳 "c" = famille DESARZENS (côté papa — chêne, racines suisses/Vaud)
    "oc" = dans les DEUX arbres (Gérard, Kevin, Sabrina, Ronan, Théo = sang des deux). */
-var FAM_OVERRIDE={seed_gerard:"oc",seed_kevin:"oc",seed_laurence:"oc",seed_sabrina:"oc",seed_ronan:"oc",seed_theo:"oc",
+var FAM_OVERRIDE={seed_gerard:"oc",seed_kevin:"oc",seed_laurence:"oc",seed_sabrina:"oc",seed_ronan:"oc",seed_theo:"oc",seed_marielle:"o",
   seed_christian:"o",seed_cecile:"o",seed_marienoel:"o",seed_christine_vdb:"o",seed_philippe_vdb:"o",seed_laura_vdb:"o",
   seed_guy:"c",seed_emile:"c",seed_loic:"c",seed_yann:"c",seed_claude_desarzens:"c"};
 function famOf(p){if(!p)return "oc";var ov=FAM_OVERRIDE[p.id];if(ov)return ov;var n=(p.nom||"").toUpperCase();
@@ -342,7 +342,7 @@ function compLabel(ids){var cnt={};ids.forEach(function(x){var nm=(P(x).nom||"")
 function tidyTree(ids){
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP;
   var set={};ids.forEach(function(x){set[x]=1;});
-  var placed={},nodes=[],links=[],rowCur={},depthMax=0;
+  var placed={},nodes=[],links=[],rowCur={},depthMax=0,bx={};/* bx = carte (objet nœud) par personne — suit les décalages en bloc */
   /* ── GÉNÉRATION GLOBALE par propagation de contraintes (union-find pondéré) ──
      Deux époux = MÊME étage ; un enfant = étage parent+1. Corrige le défaut vu par
      Kevin : un conjoint « marié dans la famille » (Victor, Gérard, Pascale…) ne
@@ -362,7 +362,13 @@ function tidyTree(ids){
     if(placed[x])return null;
     var mem=members(x);mem.forEach(function(z){placed[z]=1;});var d=glevel[x]||0;if(d>depthMax)depthMax=d;
     var kidset={};mem.forEach(function(z){childrenOf(z).forEach(function(k){if(set[k]&&!placed[k])kidset[k]=1;});});
-    var kids=Object.keys(kidset).sort(function(a,b){return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
+    /* Position (relative au centre de l'unité) du MILIEU DU COUPLE des parents d'un
+       enfant k — sert à trier les fratries par couple (moins de croisements) ET à
+       placer le parent pile au-dessus de ses enfants (médiane, Kevin 2026-08-07). */
+    var STEP=BOXW+COUPLEGAP,half=(mem.length-1)/2;
+    function relMid(pid){var i=mem.indexOf(pid);return i<0?null:(i-half)*STEP;}
+    function coupleRel(k){var ck=P(k)||{},a=relMid(ck.pere),b=relMid(ck.mere);if(a!=null&&b!=null)return (a+b)/2;if(a!=null)return a;if(b!=null)return b;return 0;}
+    var kids=Object.keys(kidset).sort(function(a,b){var ra=coupleRel(a),rb=coupleRel(b);if(ra!==rb)return ra-rb;return ((yr(P(a).naissance&&P(a).naissance.date))||9999)-((yr(P(b).naissance&&P(b).naissance.date))||9999);});
     var nStart=nodes.length,lStart=links.length;   /* pour décaler le sous-arbre enfants EN BLOC si besoin */
     var cc=[];kids.forEach(function(k){var c=unit(k,depth+1);if(c!=null)cc.push({x:c,id:k});});
     var uW=mem.length*BOXW+(mem.length-1)*COUPLEGAP;
@@ -370,7 +376,13 @@ function tidyTree(ids){
        ET chaque couple reste centré PILE au-dessus de ses enfants. */
     var minC=(rowCur[d]!==undefined?rowCur[d]:0)+uW/2,center;
     if(cc.length){
-      var xs=cc.map(function(o){return o.x;});center=(Math.min.apply(null,xs)+Math.max.apply(null,xs))/2;
+      /* Kevin 2026-08-07 « chaque enfant bien en dessous de ses parents » : on place
+         le parent à la MÉDIANE des positions idéales — pour chaque enfant, l'idéal
+         est que le MILIEU DE SON COUPLE parental (pas le centre du bloc) tombe pile
+         au-dessus de SA carte. Un enfant unique atterrit exactement sous ses parents,
+         même quand le couple est décalé dans l'unité (ex à gauche, actuelle à droite). */
+      var wants=cc.map(function(o){return (bx[o.id]?bx[o.id].x:o.x)-coupleRel(o.id);}).sort(function(u,v){return u-v;});
+      center=wants.length%2?wants[(wants.length-1)/2]:(wants[wants.length/2-1]+wants[wants.length/2])/2;
       if(center<minC){
         /* Manque de place à gauche : au lieu de décaler le parent tout seul (enfants
            « de travers » — défaut vu par Kevin 2026-08-04), on POUSSE tout le bloc
@@ -385,7 +397,7 @@ function tidyTree(ids){
     } else center=minC;
     rowCur[d]=center+uW/2+UNITGAP;
     var sx=center-uW/2+BOXW/2,y=d*ROWH;
-    mem.forEach(function(z,i){nodes.push({id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z===viewerId()});});
+    mem.forEach(function(z,i){var nd={id:z,x:sx+i*(BOXW+COUPLEGAP),y:y,root:z===viewerId()};nodes.push(nd);bx[z]=nd;});
     for(var i=0;i<mem.length-1;i++){var A=mem[i],B=mem[i+1];
       var isC=((P(A).conjoints||[]).indexOf(B)>=0)||((P(B).conjoints||[]).indexOf(A)>=0);
       var st=!isC?"x":(isDivorced(A,B)?"d":(isSeparated(A,B)?"s":"m"));
@@ -396,7 +408,9 @@ function tidyTree(ids){
     var mx={};mem.forEach(function(z,i){mx[z]=sx+i*(BOXW+COUPLEGAP);});
     cc.forEach(function(o){var ck=P(o.id)||{},fx=mx[ck.pere],mmx=mx[ck.mere],ox;
       if(fx!=null&&mmx!=null)ox=(fx+mmx)/2;else if(fx!=null)ox=fx;else if(mmx!=null)ox=mmx;else ox=center;
-      links.push({x1:ox,y1:y+36,x2:o.x,y2:(glevel[o.id]||d+1)*ROWH-36,child:o.id});});
+      /* le trait ATTERRIT SUR la carte de l'enfant (pas entre lui et son conjoint) */
+      var tx=bx[o.id]?bx[o.id].x:o.x;
+      links.push({x1:ox,y1:y+36,x2:tx,y2:(glevel[o.id]||d+1)*ROWH-36,child:o.id});});
     return center;
   }
   var roots=ids.filter(function(x){var pp=P(x);return !(pp.pere&&set[pp.pere])&&!(pp.mere&&set[pp.mere]);});
@@ -1295,7 +1309,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=43;
+var SEED_VERSION=45;
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
   add({id:"seed_victor_sauvaigo",prenom:"Victor",nom:"SAUVAIGO",sexe:"M",naissance:{date:"1914"},deces:{},conjoints:["seed_mt_maiffret"],notes:"🛣 Monaco honore le nom : une ALLÉE LAZARE SAUVAIGO existe en Principauté, et une Fondation « Christiane et Lazare Sauvaigo » a été autorisée par Ordonnance Souveraine (Journal de Monaco n°6864, 14.04.1989) — lien éventuel avec la famille à explorer. Grand-père maternel de Kevin, né en 1914 (année donnée par Kevin, 2026-08-04). ⚠️ Le SAUVAIGO INSEE « Jean-Marius-Victor » né en 1912 n'est donc PAS lui — piste écartée. SAUVAIGO = nom niçois attesté à Nice dès le XVIᵉ s. Famille notable à Nice : Émile Sauvaigo (1856–1927, médecin-botaniste), Pierre Sauvaigo (député des Alpes-Maritimes, †1983), Charles Martin-Sauvaigo (peintre, 1881–1970), Jean-Luc Sauvaigo (poète niçois, né 1950) — liens éventuels à explorer. Dates à compléter (probablement encore sous délai de communicabilité). 🔎 PISTE (recherche 6.08.2026, à PROUVER) : parents candidats de Victor = Joseph Louis Honoré SAUVAIGO (1889-1965) × Joséphine Jeanne Hortense BORRIAZZI (1890-1986), mariés le 10.08.1911 à Nice — dates cohérentes, non prouvé. L'acte de mariage Victor × Marie-Thérèse (3.05.1939) ou l'acte de naissance de Victor (1914, Nice AD06 ou Monaco archives.mairie.mc) nommeront ses parents. Lignée niçoise ancienne repérée (arbre Geneanet marieclaire1) : Honoré SAUVAIGO (1787-1872, Nice) → Joseph (1804-1870) → … Argument fort : DEUX alliances Sauvaigo×Maiffret (Jules×Victorine 1883, Victor×Marie-Thérèse 1939) = même lignée probable.",sources:[SRC.monacoTree,SRC.monaco1900,SRC.matchid]});
@@ -1354,7 +1368,8 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_jacqueline",prenom:"Jacqueline",nom:"MAIFFRET",sexe:"F",pere:"seed_pierre1900",naissance:{date:"22.12.1926",lieu:"Beaulieu-sur-Mer"},deces:{date:"21.11.1988",lieu:"Nice"},notes:"📜 DOCUMENT FAMILIAL + INSEE : fille de Pierre (1900). Née le 22.12.1926 à Beaulieu-sur-Mer, † 21.11.1988 à Nice.",sources:[SRC.beaulieu1,SRC.matchid]});
   add({id:"seed_virgili",prenom:"Madeleine-Caroline",nom:"VIRGILI",sexe:"F",conjoints:["seed_victorj_maiffret"],notes:"📜 DOCUMENT FAMILIAL : épouse de Victor MAIFFRET (1914–1982). Mère de Jean-Yves-François.",sources:[SRC.ad06]});
   add({id:"seed_jyf_maiffret",prenom:"Jean-Yves-François",nom:"MAIFFRET",sexe:"M",pere:"seed_victorj_maiffret",mere:"seed_virgili",vivant:true,naissance:{date:"1.12.1943"},notes:"📜 DOCUMENT FAMILIAL : fils de Victor MAIFFRET et Madeleine-Caroline VIRGILI. Né le 1.12.1943 (jour à confirmer sur le manuscrit).",sources:[SRC.ad06]});
-  add({id:"seed_monique_maiffret",prenom:"Monique",nom:"MAIFFRET",sexe:"F",mere:"seed_josette_maiffret",vivant:true,naissance:{date:"16.08.1955"},notes:"📜 DOCUMENT FAMILIAL : fille de Josette (1922). Née le 16.08.1955. Annotation voisine « Murielle 27/3/63 » — possible sœur, à confirmer.",sources:[SRC.beaulieu1]});
+  add({id:"seed_monique_maiffret",prenom:"Monique",nom:"MAIFFRET",sexe:"F",mere:"seed_josette_maiffret",vivant:false,naissance:{date:"16.08.1955"},deces:{},notes:"📜 DOCUMENT FAMILIAL : fille de Josette (1922). Née le 16.08.1955. Annotation voisine « Murielle 27/3/63 » — possible sœur, à confirmer. ✝️ DÉCÉDÉE (annoncé par Kevin, 7.08.2026) — date et lieu à compléter. 🔎 Recherches 7.08.2026 : AUCUN acte « Monique MAIFFRET » au fichier INSEE des décès (2023→2026, ni même depuis 1970 — décès trop récent, le fichier a 1-2 mois de délai) ; aucun avis publié trouvé à ce jour (dansnoscoeurs, libramemoria, avis-de-deces.net, pfg…). ⚠️ L'avis « Monique MAIFFRET, 86 ans, Nice, †12.11.2017 » (Libramemoria/Nice-Matin) est une HOMONYME née ~1931 — ce n'est PAS elle. Piste : si mariée, l'avis peut être publié sous son nom d'épouse (« née Maiffret »). 👧 Une fille : Marielle (annoncé par Kevin, 7.08.2026).",sources:[SRC.beaulieu1]});
+  add({id:"seed_marielle",prenom:"Marielle",nom:"",sexe:"F",mere:"seed_monique_maiffret",vivant:true,notes:"👧 Fille de Monique MAIFFRET (annoncé par Kevin, 7.08.2026). Nom de famille, date de naissance et père à compléter — la maman de Kevin doit préciser. ⚠️ À ne PAS confondre avec l'annotation « Murielle 27/3/63 » du document familial : née en 1963, cette Murielle ne peut pas être la fille de Monique (née 1955) — c'est plutôt une possible SŒUR de Monique.",sources:[SRC.beaulieu1]});
   add({id:"seed_patrick_sauvaigo",prenom:"Patrick",nom:"SAUVAIGO",sexe:"M",pere:"seed_victor_sauvaigo",mere:"seed_mt_maiffret",naissance:{date:"12.01.1945"},deces:{date:"29.08.1945"},notes:"📜 DOCUMENT FAMILIAL (annotation au stylo) : fils de Victor Sauvaigo et Marie-Thérèse Maiffret, né le 12.01.1945, décédé bébé le 29.08.1945. Frère de Marie-Jo, Marie-Noël et Marie-Brigitte.",sources:[SRC.monaco1900]});
   add({id:"seed_christine_vdb",prenom:"Christine",nom:"",sexe:"F",vivant:true,mere:"seed_lucette_vdb",notes:"📜 DOCUMENT (stylo) : enfant de Lucette Van den Bosch. Nom de famille à compléter.",sources:[SRC.acteVdb]});
   add({id:"seed_philippe_vdb",prenom:"Philippe",nom:"",sexe:"M",vivant:true,mere:"seed_lucette_vdb",notes:"📜 DOCUMENT (stylo) : enfant de Lucette Van den Bosch. Nom à compléter.",sources:[SRC.acteVdb]});
