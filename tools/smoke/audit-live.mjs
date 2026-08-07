@@ -180,7 +180,7 @@ for (const s of SURFACES) {
         window.__pollu = [];
         const chk = (el) => { try {
           if (!el.getAttribute) return;
-          const src = el.getAttribute('src') || '';
+          const src = el.getAttribute('src') || el.getAttribute('href') || el.getAttribute('poster') || '';
           const st = el.getAttribute('style') || '';
           if (src.includes('"') || src.includes('%22')) window.__pollu.push('SRC <' + el.tagName + '> ' + src.slice(0, 50) + ' · parent=' + (el.parentElement ? (el.parentElement.className || el.parentElement.id || el.parentElement.tagName) : '?'));
           if (st.includes('"/"') || st.includes('%22') || st.includes('&quot;')) window.__pollu.push('STYLE <' + el.tagName + ' class=' + (el.className || '') + '> ' + st.slice(0, 90));
@@ -188,7 +188,7 @@ for (const s of SURFACES) {
         new MutationObserver((ms) => { ms.forEach((m) => {
           if (m.type === 'attributes') chk(m.target);
           if (m.addedNodes) m.addedNodes.forEach((n) => { if (n.nodeType === 1) { chk(n); if (n.querySelectorAll) n.querySelectorAll('[src],[style]').forEach(chk); } });
-        }); }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'style'] });
+        }); }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'style', 'href', 'poster'] });
       });
     }
     if (AS_KEVIN) {
