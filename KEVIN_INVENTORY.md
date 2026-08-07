@@ -1,11 +1,12 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-08-07** (Lingua v2.31.0 jeux de rôle 🎭 · Bee reste la mascotte de Lingua uniquement)
+> Dernière mise à jour : **2026-08-07** (Lingua v2.32.0 : jeux de rôle 🎭 + Histoires de la ruche 📖 · Bee = mascotte de Lingua uniquement)
 
 ## 🐝 KDMC Lingua v2.31.0 — session 2026-08-07 (mergé sur main)
 
 **🧪 Tester maintenant :**
+- 📖 [KDMC Lingua — Histoires de la ruche](https://lingua.kd-mc.com/) — accueil → carte « Histoires de la ruche » : Bee raconte 6 histoires originales dans la langue apprise (quiz + récompenses, déblocage progressif).
 - 🎭 [KDMC Lingua — jeux de rôle](https://lingua.kd-mc.com/) — onglet 💬 Coach → carrousel de 9 scènes (café, entretien d'embauche, musique, restaurant, marché, aéroport, hôtel, médecin, lire-et-raconter). Bee JOUE le personnage dans la langue cible. Aussi dans la Discussion 🎬 (chips 🎭).
 
 **🔧 Code modifié :**

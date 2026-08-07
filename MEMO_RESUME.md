@@ -18,6 +18,13 @@
    mascotte de LINGUA uniquement. La surface Créa Studio reste surveillée par la
    vérif réelle (nav ≥6 studios), sans exigence de mascotte.
 
+3. **KDMC Lingua v2.32.0 — 📖 Histoires de la ruche** (« Va plus loin, enrichis
+   Lingua ») : 6 mini-histoires 100 % originales écrites dans les 6 langues (vocab A1
+   du programme), racontées ligne par ligne (voix de Bee sur ses répliques, français
+   dessous), quiz de compréhension, progression à déblocage (1 finie → suivante),
+   +20 XP +5 💎 à la 1re lecture, quête « Lis 1 histoire », carte accueil x/6.
+   Testé navigateur réel : 9/9 ✅.
+
 ### Note sur le 404 /%22/%22 (surface CMCteams, run verif-reelle de 22:05 UTC)
 Le run a encore vu `https://cmcteams.kd-mc.com/%22/%22` → 404, ALORS QUE les gardes
 v9.876-878 (autre session, PRs #3154/#3155, mergées 17:32) sont sur main. Repro locale
