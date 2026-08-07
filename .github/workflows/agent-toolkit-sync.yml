@@ -72,6 +72,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BR="claude/agent-toolkit-sync"
+          # La branche de synchro survit d'un run à l'autre. Sans récupérer son état distant,
+          # `--force-with-lease` échoue en « stale info » (il refuse d'écraser ce qu'il ne
+          # connaît pas) — c'est ce qui a fait échouer le run 31129787712 alors que la
+          # récupération des 6 dépôts, elle, avait réussi. On récupère donc la référence
+          # d'abord ; le garde-fou du lease reste actif, on ne le désactive pas.
+          git fetch origin "$BR" 2>/dev/null || echo "(branche de synchro pas encore distante — 1er run)"
           git checkout -B "$BR"
           git add -A vendor/agent-toolkit
           if git diff --cached --quiet; then
