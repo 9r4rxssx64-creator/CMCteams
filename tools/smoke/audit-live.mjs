@@ -74,22 +74,25 @@ const SURFACES = [
   { url: 'https://lingua.' + ROOT + '/', name: 'KDMC Lingua', selKey: '.brand', deep: async (page) => {
       // App d'apprentissage : écran comptes (anonyme) → créer un compte → vérifier
       // 6 langues + arbre de leçons rendus + onglets. Un écran vide ou <6 langues échoue.
+      // ⚠️ clics DOM (el.click() via evaluate) et JAMAIS page.click : la mascotte Bee
+      // (compagnon + bulle) recouvre les éléments → l'« actionnabilité » Playwright
+      // attend 30 s et échoue alors que l'app marche (vécu run 31225690078).
+      const tap = (sel) => page.$eval(sel, (el) => el.click()).then(() => true).catch(() => false);
       try {
         await page.waitForTimeout(1200);
         if (!(await page.$('.acc-card.add'))) return { ok:false, note:'écran comptes absent' };
-        await page.click('.acc-card.add'); await page.waitForTimeout(600);
-        await page.fill('#acName', 'Audit'); await page.click('.modal .btn-main'); await page.waitForTimeout(700);
+        await tap('.acc-card.add'); await page.waitForTimeout(600);
+        await page.fill('#acName', 'Audit'); await tap('.modal .btn-main'); await page.waitForTimeout(700);
         const langs = await page.$$eval('.course-card', els => els.length).catch(() => 0);
         if (langs < 6) return { ok:false, note:'langues attendues ≥6, vues ' + langs };
-        await page.click('.course-card'); await page.waitForTimeout(700);
+        await tap('.course-card'); await page.waitForTimeout(700);
         const units = await page.$$eval('.unit', els => els.length).catch(() => 0);
         const tabs = await page.$$eval('.tab', els => els.length).catch(() => 0);
         const hearts = (await page.textContent('.tb-stat.hearts').catch(() => '')).replace(/\s/g, '');
         if (units < 1) return { ok:false, note:'aucune unité rendue' };
         // 📖 Histoires de la ruche (v2.32.0) : carte accueil présente + liste des 6 histoires
-        const stCard = await page.$('.stories-card');
         let stories = 0;
-        if (stCard) { await stCard.click(); await page.waitForTimeout(600);
+        if (await tap('.stories-card')) { await page.waitForTimeout(600);
           stories = await page.$$eval('.story-item', els => els.length).catch(() => 0); }
         if (stories < 6) return { ok:false, note:'histoires attendues 6, vues ' + stories };
         return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · vies ' + hearts };
