@@ -10,7 +10,7 @@
  * Session Kevin appliquée si KDMC_AS_KEVIN=1 (mêmes règles que audit-live).
  */
 import { chromium } from 'playwright';
-import { marquesPour } from './session-kevin.mjs';
+import { connecte } from './session-kevin.mjs';
 
 const url = process.argv[2] || 'https://cmcteams.kd-mc.com/';
 const motif = process.argv[3] || '%22';
@@ -20,12 +20,6 @@ if (!/(^|\.)kd-mc\.com$/.test(host)) { console.error('périmètre refusé :', ho
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const page = await ctx.newPage();
-
-if (process.env.KDMC_AS_KEVIN === '1') {
-  const marques = marquesPour(host, { pinHash: process.env.KDMC_ADMIN_PIN_SHA256 || '' });
-  if (marques && marques.init) await page.addInitScript(marques.init);
-  console.log('session appliquée :', (marques && marques.label) || '(aucune)');
-}
 
 const cdp = await ctx.newCDPSession(page);
 await cdp.send('Network.enable');
@@ -44,8 +38,25 @@ cdp.on('Network.requestWillBeSent', (e) => {
   });
 });
 
-await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+if (process.env.KDMC_AS_KEVIN === '1') {
+  await connecte(page, url, { pinHash: process.env.KDMC_ADMIN_PIN_SHA256 || '' });
+} else {
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+}
 await page.waitForTimeout(15000); // laisser Firebase SSE charger les données puis re-render
+
+/* Version réellement SERVIE + éléments fautifs dans le DOM (source exacte) */
+try {
+  const etat = await page.evaluate(() => {
+    const bad = [];
+    document.querySelectorAll('img').forEach(i => { const sr = i.getAttribute('src') || ''; if (sr.includes('\"') || sr.includes('%22')) bad.push('IMG ' + i.outerHTML.slice(0, 260)); });
+    document.querySelectorAll('[style*="url"]').forEach(el => { const st = el.getAttribute('style') || ''; if (/%22/.test(st)) bad.push(el.tagName + ' style=' + st.slice(0, 200)); });
+    return { version: (typeof APP_VER !== 'undefined' ? APP_VER : '(inconnue)'), fautifs: bad };
+  });
+  console.log('VERSION SERVIE :', etat.version);
+  etat.fautifs.forEach(f => console.log('ÉLÉMENT FAUTIF :', f));
+  if (!etat.fautifs.length) console.log('(aucun élément fautif encore présent dans le DOM)');
+} catch (e) { console.log('inspection DOM impossible :', e.message); }
 
 console.log(`\n=== requêtes contenant « ${motif} » sur ${url} : ${trouvailles.length} ===`);
 for (const t of trouvailles) {
