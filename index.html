@@ -5785,7 +5785,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.876";
+var APP_VER="v9.877";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11194,12 +11194,16 @@ function _collectBgPhotos(){
   // v9.59 — Fix cas par cas : si l'employ\u00e9 a un fond perso, il voit UNIQUEMENT ce fond
   // (pas de diaporama avec les fonds globaux). Sinon \u2192 diaporama global admin.
   var _empBg=A.user?getEmpBg(A.user.id):null;
-  if(_empBg){photos.push(_empBg);return photos;}
+  if(_empBg&&_bgUrlOk(_empBg)){photos.push(_empBg);return photos;}
   // Photos globales admin (fallback si pas de fond perso)
   ["accueilBg","planningBg","chatBg","chatBg2","chatBg3","loginBg"].forEach(function(k){
-    if(ph[k]&&photos.indexOf(ph[k])<0) photos.push(ph[k]);
+    if(ph[k]&&_bgUrlOk(ph[k])&&photos.indexOf(ph[k])<0) photos.push(ph[k]);
   });
   return photos;
+  /* v9.877 — le diaporama etait le 4e point d'injection de fond rate par le fix
+     v9.876 : une valeur polluee (ex `"/"`) passait par _safeUrl -> requete /%22/%22
+     -> 404 vu en verif reelle connectee (run 31191430852). Filtre A LA SOURCE :
+     seule une vraie image (data:/blob:/https:/chemin absolu) entre dans le pool. */
 }
 function _startBgSlideshow(){
   // v9.67 : cache — ne re-init que si les photos ont changé
