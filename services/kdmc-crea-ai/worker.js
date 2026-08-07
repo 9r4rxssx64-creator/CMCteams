@@ -637,7 +637,14 @@ export default {
       if (!b64a) return json({ error: 'no_audio' }, h, 400);
       if (b64a.length > 24 * 1024 * 1024) return json({ error: 'audio_too_big', detail: 'extrait sonore > 24 Mo' }, h, 413);
       const lang = /^[a-z]{2}$/.test(String((tb && tb.lang) || '')) ? tb.lang : 'fr';
+      /* Un indice de contexte + la détection de parole (vad_filter) réduisent
+         nettement les mots inventés dans les silences. Si le modèle refuse ces
+         réglages, on retombe sur l'appel simple : jamais de perte de service. */
+      const amorce = lang === 'fr'
+        ? 'Transcription en français d\'une vidéo personnelle. Ponctuation normale.'
+        : 'Transcription of a personal video.';
       const tries = [
+        { model: '@cf/openai/whisper-large-v3-turbo', input: () => ({ audio: b64a, task: 'transcribe', language: lang, vad_filter: true, initial_prompt: amorce }) },
         { model: '@cf/openai/whisper-large-v3-turbo', input: () => ({ audio: b64a, task: 'transcribe', language: lang }) },
         { model: '@cf/openai/whisper', input: () => ({ audio: Array.from(b64ToBytes(b64a)) }) }
       ];

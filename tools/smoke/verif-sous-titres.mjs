@@ -13,6 +13,12 @@
  *
  * Sortie : chaque étape est affichée avec sa vraie réponse. Échec = code 1 et
  * la RAISON EXACTE (règle « toujours détailler les erreurs »).
+ *
+ * LIMITE À DIRE HONNÊTEMENT : la voix de test est fabriquée par une machine,
+ * c'est le cas le PLUS DIFFICILE à transcrire — une vraie voix humaine donne
+ * mieux. Et ce contrôle n'exerce QUE le service : le nettoyage du son fait
+ * dans le téléphone (graves coupés, niveau remonté) est vérifié séparément
+ * par tests/verify-crea-montage-auto.mjs.
  */
 const BASE = (process.env.CREA_AI_URL || 'https://kdmc-crea-ai.9r4rxssx64.workers.dev').replace(/\/$/, '');
 const PHRASE = 'bonjour tout le monde, ceci est un essai de sous-titres';
@@ -75,6 +81,14 @@ async function main() {
   /* --- 3) est-ce bien CE qui a été dit ? --- */
   const n = norm(texte || mots.map((m) => m.m).join(' '));
   const trouves = CLES.filter((k) => n.includes(k));
+  /* Mesure chiffrée, pour COMPARER d'une version à l'autre (le 07/08/2026, le
+     premier passage donnait 4 mots sur 11, soit 36 %). Le contrôle ne juge pas
+     la beauté du texte : il dit si la chaîne marche et à quel point elle colle. */
+  const attendus = norm(PHRASE).split(' ');
+  const dits = new Set(n.split(' '));
+  const colle = attendus.filter((m) => dits.has(m));
+  dire('fidélité : ' + colle.length + ' mot(s) sur ' + attendus.length +
+    ' retrouvé(s) — ' + Math.round(colle.length / attendus.length * 100) + ' %  (référence du 07/08/2026 : 4/11, 36 %)');
   dire('mots-clés retrouvés : ' + (trouves.join(', ') || '(aucun)') + '  sur ' + CLES.join(', '));
   if (trouves.length < 2) {
     ko.push('le texte retrouvé ne ressemble pas à ce qui a été dit (' + trouves.length + ' mot-clé sur ' + CLES.length +

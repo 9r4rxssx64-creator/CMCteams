@@ -205,6 +205,40 @@ const wav = await page.evaluate(() => {
 chk(wav.entete === 'RIFFWAVE' && wav.octets === 44 + 32000 && wav.taux === 16000 && wav.canaux === 1 && wav.bits === 16,
   `l'extrait envoyé pour les sous-titres est un vrai WAV 16 kHz mono (${wav.octets} octets)`);
 
+/* ---------- 7 bis) le son est nettoyé AVANT d'être envoyé ---------- */
+const son = await page.evaluate(() => {
+  const A = window.Auto._algo, sr = 16000, n = sr;
+  const pic = (d) => { let p = 0; for (const v of d) p = Math.max(p, Math.abs(v)); return p; };
+  /* Estime la part de GRAVE : une moyenne glissante de 10 ms efface une voix
+     à 300 Hz (3 périodes) mais laisse passer un grondement à 20 Hz. */
+  const grave = (d) => {
+    const W = 160; let s = 0, p = 0;
+    for (let i = 0; i < d.length; i++) { s += d[i]; if (i >= W) { s -= d[i - W]; const m = Math.abs(s / W); if (m > p) p = m; } }
+    return p;
+  };
+  const melange = (voixAmp, graveAmp) => {
+    const d = new Float32Array(n);
+    for (let i = 0; i < n; i++) d[i] = Math.sin(2 * Math.PI * 300 * i / sr) * voixAmp + Math.sin(2 * Math.PI * 20 * i / sr) * graveAmp;
+    return d;
+  };
+  // 1) voix très faible seule → doit être nettement remontée
+  const faible = melange(0.05, 0); const faibleAvant = pic(faible);
+  A.nettoyerSon(faible, sr);
+  // 2) voix + grondement → la part de grave doit chuter PAR RAPPORT à la voix
+  const sale = melange(0.2, 0.6);
+  const graveAvant = grave(sale) / pic(sale);
+  A.nettoyerSon(sale, sr);
+  const graveApres = grave(sale) / pic(sale);
+  // 3) son déjà fort → pas de saturation
+  const fort = melange(0.95, 0); A.nettoyerSon(fort, sr);
+  return { faibleAvant, faibleApres: pic(faible), graveAvant, graveApres, fort: pic(fort) };
+});
+chk(son.faibleApres > son.faibleAvant * 5 && son.faibleApres <= 0.9,
+  `une voix trop faible est remontée avant d'être envoyée (pic ${son.faibleAvant.toFixed(2)} → ${son.faibleApres.toFixed(2)}, sans jamais saturer)`);
+chk(son.graveApres < son.graveAvant * 0.25,
+  `le grondement des graves (vent, main sur le téléphone) est écrasé : il pesait ${Math.round(son.graveAvant * 100)} % du son, il n'en pèse plus que ${Math.round(son.graveApres * 100)} %`);
+chk(son.fort <= 1.0 && son.fort > 0.8, `un son déjà fort n'est pas saturé (pic ${son.fort.toFixed(2)})`);
+
 /* ---------- 8 & 9) BOUT EN BOUT : 2 vraies vidéos → 1 montage ---------- */
 // On fabrique de vraies vidéos dans le navigateur : image animée + son
 // (bruit fort = « on parle », silence = blanc à couper), plus un passage noir.
