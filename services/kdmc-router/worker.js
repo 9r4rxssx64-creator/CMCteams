@@ -267,6 +267,7 @@ async function handleLingua(request, url, env) {
       const level = String((b && b.level) || 'Débutant').slice(0, 30);
       const lvi = Math.max(0, Math.min(4, parseInt((b && b.levelIndex), 10) || 0));
       const weak = Array.isArray(b && b.weak) ? b.weak.slice(0, 15).map((x) => String(x).slice(0, 60)) : [];
+      const scenario = String((b && b.scenario) || '').slice(0, 120); // jeu de rôle (scène originale choisie côté app)
       const msgs = Array.isArray(b && b.messages) ? b.messages.slice(-12) : [];
       const share = ['surtout en français, avec seulement quelques mots simples de ' + langName,
                      'moitié français, moitié ' + langName + ' (phrases très simples)',
@@ -281,6 +282,7 @@ async function handleLingua(request, url, env) {
         + "Enseigne la langue VIVANTE : au bon moment, glisse une expression idiomatique, une tournure familière ou un mot de jargon courant, en précisant le registre (familier / courant / soutenu) et quand l'employer. "
         + "Progression : introduis peu à peu du vocabulaire et des structures un cran au-dessus de son niveau pour le tirer vers le haut, sans le noyer. Objectif : l'amener au BILINGUE, pas à pas. "
         + (weak.length ? ('Points à retravailler en priorité avec lui : ' + weak.join(', ') + '. ') : '')
+        + (scenario ? ("JEU DE RÔLE : joue la scène suivante avec l'apprenant et RESTE DANS TON PERSONNAGE du début à la fin : " + scenario + ". C'est TOI qui joues l'autre rôle de la scène (pas le professeur), en " + langName + " selon le dosage indiqué. Ouvre la scène toi-même par une première réplique courte et naturelle. Les corrections restent douces et en une phrase, glissées sans casser la scène. ") : '')
         + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
       const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
       if (!chat.some((m) => m.role === 'user')) chat.push({ role: 'user', content: 'Bonjour !' });
