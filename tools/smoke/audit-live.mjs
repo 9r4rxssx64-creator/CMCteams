@@ -159,8 +159,23 @@ for (const s of SURFACES) {
   const res = { url, name: s.name, ok: true, notes: [] };
   try {
     /* mouchard pollution (CMCteams) : enregistre CHAQUE élément dont le src/style contient
-       la valeur polluée AU MOMENT où il est posé — même s'il disparaît ensuite (diaporama) */
+       la valeur polluée AU MOMENT où il est posé — même s'il disparaît ensuite (diaporama).
+       + CDP : la PILE D'APPEL exacte de la requête %22 (fonction + ligne) — le mouchard DOM
+       n'a rien vu (run 31227106483) → la requête part de JS pur (fetch / new Image / beacon). */
+    const cdpStacks = [];
     if (s.name === 'CMCteams') {
+      try {
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send('Network.enable');
+        cdp.on('Network.requestWillBeSent', (ev) => {
+          if (ev.request && ev.request.url && ev.request.url.includes('%22')) {
+            const ini = ev.initiator || {};
+            const frames = (ini.stack && ini.stack.callFrames || []).slice(0, 6)
+              .map((f) => (f.functionName || '?') + '@' + (f.url || '').split('/').pop() + ':' + f.lineNumber);
+            cdpStacks.push('type=' + ini.type + (frames.length ? (' pile: ' + frames.join(' ← ')) : '') + (ini.url ? (' url=' + ini.url.split('/').pop() + ':' + (ini.lineNumber || '?')) : ''));
+          }
+        });
+      } catch (e) { /* CDP best-effort */ }
       await page.addInitScript(() => {
         window.__pollu = [];
         const chk = (el) => { try {
@@ -213,6 +228,7 @@ for (const s of SURFACES) {
         });
         const mouchard = await page.evaluate(() => (window.__pollu || []).slice(0, 5)).catch(() => []);
         if (mouchard.length) who.push('MOUCHARD: ' + mouchard.join(' | '));
+        if (cdpStacks.length) who.push('PILE RÉSEAU: ' + cdpStacks.slice(0, 2).join(' || '));
         res.notes.push(who.length ? ('COUPABLE %22 → ' + who.join(' | ')) : 'COUPABLE %22 → introuvable dans le DOM au moment du scan (élément déjà retiré ?)');
       } catch (e) { /* enquête best-effort */ }
     }
