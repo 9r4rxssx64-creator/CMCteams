@@ -1735,3 +1735,28 @@ Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Dé
 | `tests/verify-crea-masques.mjs` | Preuve : le visage est trouvé, les 15 masques sont différents et cuits dans la photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-masques.mjs) |
 | `tests/verify-crea-famille.mjs` | Preuve : isolation entre familles, jetons signés, expiration | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille.mjs) |
 | `tests/verify-crea-famille-app.mjs` | Preuve : **deux téléphones** qui se parlent pour de vrai | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille-app.mjs) |
+
+### Créa Studio v9.5.0 — sélection + cartoon refait (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tests/verify-crea-cartoon.mjs` | Preuve : le cartoon garde la couleur de peau, aplatit vraiment, et trace un VRAI trait qui grossit avec l'image | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
+| `tests/verify-crea-selection.mjs` | Preuve : toucher un visage le sélectionne, flouter/cartooniser n'agit QUE là, et « Retirer » / « Enregistrer » marchent | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-selection.mjs) |
+| `tests/verify-crea-plein-ecran.mjs` | Preuve : le plein écran couvre tout l'écran, zoom au doigt, « Remplir », et « Enregistrer » sous la main | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-plein-ecran.mjs) |
+
+### Créa Studio v9.7.0 — 12 styles cartoon (parité apps virales) (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | `CARTOON_STYLES` : les 12 recettes + galerie de vignettes calculées sur TA photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `tests/verify-crea-cartoon.mjs` | Preuve : 12 styles tous différents, tous lisibles, tous rapides, peau lissée sans bouillie | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
+
+### Créa Studio v9.8.0 — 🎬 Montage auto (2026-08-07)
+
+Tu donnes tes vidéos brutes, l'app te rend la vidéo montée. Un seul bouton.
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | Module `Auto` : écoute le son pour enlever les blancs, regarde l'image pour jeter le noir/flou, corrige les couleurs, zoom lent + fondus, sous-titres, musique, compte rendu chiffré | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `services/kdmc-crea-ai/worker.js` | Nouvelle porte `/transcribe` : la parole devient du texte (IA gratuite Cloudflare). Seul un petit extrait sonore part, jamais la vidéo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tests/verify-crea-montage-auto.mjs` | Preuve (29 vérifs) : 2 vraies vidéos fabriquées puis montées, blancs coupés mesurés, seuil qui s'adapte au volume, hésitations retirées, couleurs corrigées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-montage-auto.mjs) |

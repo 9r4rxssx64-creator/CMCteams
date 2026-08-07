@@ -1,4 +1,10 @@
 name: CMCteams Runtime Audit
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # v9.628+ (Kevin 2026-05-16 "Intègre playwright") :
 # Lance tests/runtime-audit.mjs + tests/runtime-audit-encadres.mjs

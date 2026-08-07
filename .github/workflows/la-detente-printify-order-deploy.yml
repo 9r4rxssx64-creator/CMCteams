@@ -1,4 +1,10 @@
 name: La Détente — Déploie le Worker de commande Printify
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # un deploiement ne doit jamais etre coupe en plein vol
+
 
 # Déploie ld-printify-order sur Cloudflare, injecte PRINTIFY_API_KEY en secret,
 # capture l'URL réelle et la commit dans printify-order-config.json. 100% auto.

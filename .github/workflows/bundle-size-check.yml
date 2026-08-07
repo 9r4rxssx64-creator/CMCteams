@@ -28,7 +28,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: bundle-size-check
+  group: bundle-size-check-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
