@@ -55,9 +55,15 @@ if URLS:
             except Exception as e2:
                 print(f"    ❌ jina KO aussi — {type(e2).__name__}: {e2}")
         if body:
-            txt = clean(body)
-            print("    ---- CONTENU (4000 premiers caractères) ----")
-            print("    " + txt[:4000])
+            nojs = re.sub(r"<script[^>]*>.*?</script>|<style[^>]*>.*?</style>", " ", body, flags=re.DOTALL|re.IGNORECASE)
+            txt = clean(nojs)
+            print("    ---- CONTENU (sans scripts, 5000 premiers caractères) ----")
+            print("    " + txt[:5000])
+            segs = extraits(nojs, NOM, rayon=450, maxn=10)
+            if segs:
+                print(f"    ---- {len(segs)} EXTRAIT(S) autour de « {NOM} » ----")
+                for sg in segs:
+                    print("    • " + sg[:900])
     sys.exit(0)
 
 q = urllib.parse.quote(NOM)
