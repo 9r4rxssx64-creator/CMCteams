@@ -51,6 +51,9 @@ jobs:
         run: npm i -g wrangler && wrangler --version
 
       - name: Déployer le worker
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
         run: |
           set -e
           wrangler deploy 2>&1 | tee /tmp/deploy.log

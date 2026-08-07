@@ -57,6 +57,9 @@ jobs:
           VAPID_GENERATED: ${{ steps.vapid.outputs.generated }}
           VAPID_PUBLIC_KEY: ${{ steps.vapid.outputs.vapid_public }}
           VAPID_PRIVATE_KEY: ${{ steps.vapid.outputs.vapid_private }}
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
         run: |
           set -e
           wrangler deploy 2>&1 | tee deploy.log

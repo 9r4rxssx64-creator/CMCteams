@@ -90,6 +90,10 @@ jobs:
         working-directory: services/kdmc-apis
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        # `pipefail` OBLIGATOIRE : sans lui le code de sortie est celui de `tee` (toujours 0)
+        # → un déploiement ÉCHOUÉ ressortait VERT. Même piège que verif-reelle.yml, attrapé
+        # par le garde-fou tests/workflows-pipefail.test.mjs.
+        shell: bash -euo pipefail {0}
         run: wrangler deploy 2>&1 | tee /tmp/deploy.log
 
       - name: Smoke test /health (vraie URL)

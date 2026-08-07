@@ -6,10 +6,10 @@
 > dépôt `9r4rxssx64-creator/CMCteams` · Root directory `/services/kdmc-router` ·
 > Deploy command `npx wrangler deploy` · Build command *None* · Production branch `main`.
 >
-> **Reste à faire (sans urgence)** : passer **« Builds for non-production branches »** sur
-> **Disabled**. Sinon chaque branche `claude/*` poussée déclenche une construction →
-> consomme le quota gratuit (le parachute serait mort le jour où il sert) et peut envoyer
-> des e-mails d'échec (règle anti-spam Kevin).
+> **✅ RÉGLÉ le 7 août 2026 (Kevin : « Fait »)** : « Builds for non-production branches »
+> passé sur **Disabled**. Seuls les envois sur `main` déclenchent désormais une
+> construction → le quota gratuit reste disponible le jour où le parachute sert, et plus
+> d'e-mails d'échec sur les branches de travail (règle anti-spam).
 >
 > **Ne pas toucher aux « Build watch paths »** (laisser `*`) tant qu'on n'a pas confirmé si
 > le chemin se compte depuis la racine du dépôt ou depuis le Root directory : la doc
