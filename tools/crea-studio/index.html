@@ -897,7 +897,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.8.1';
+var APP_VER='v9.8.2';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -4191,6 +4191,31 @@ var Auto=(function(){
     return new Uint8Array(buf);
   }
   function b64(u8){var s='',C=0x8000;for(var i=0;i<u8.length;i+=C)s+=String.fromCharCode.apply(null,u8.subarray(i,i+C));return btoa(s);}
+  /* Un son propre se comprend BEAUCOUP mieux. Avant d'envoyer l'extrait pour
+     les sous-titres, on enlève le grondement des graves (vent, main sur le
+     téléphone, table) et on remonte le niveau : une IA se trompe surtout sur
+     un son faible ou plein de rumble. Modifie la copie envoyée, jamais ta vidéo. */
+  function nettoyerSon(x,sr){
+    sr=sr||16000;
+    if(!x||!x.length)return x;
+    /* Passe-haut ~85 Hz en DEUX étages : un seul étage ne descend pas assez
+       vite (mesuré : le grondement ne perdait que la moitié de son poids).
+       Deux étages l'écrasent vraiment, et la voix (≥ 200 Hz) passe presque
+       intacte. */
+    var rc=1/(2*Math.PI*85),dt=1/sr,a=rc/(rc+dt);
+    for(var etage=0;etage<2;etage++){
+      var yP=0,xP=0;
+      for(var i=0;i<x.length;i++){var v=x[i];var y=a*(yP+v-xP);xP=v;yP=y;x[i]=y;}
+    }
+    /* normalisation douce : on vise un pic à 0,89 (jamais plus de ×8) */
+    var pic=0;
+    for(var j=0;j<x.length;j++){var av=x[j]<0?-x[j]:x[j];if(av>pic)pic=av;}
+    if(pic>0.0001){
+      var g=Math.min(8,0.89/pic);
+      if(g!==1)for(var k=0;k<x.length;k++)x[k]=clamp(x[k]*g,-1,1);
+    }
+    return x;
+  }
   function ouvrir(vel,url){
     return new Promise(function(res){
       var fait=false;
@@ -4319,6 +4344,7 @@ var Auto=(function(){
       if(!vrai)return {mots:[],raison:'aucun son lisible'};
       var all=new Float32Array(n),o=0;
       parts.forEach(function(p){all.set(p,o);o+=p.length;});
+      nettoyerSon(all,sr);          // son propre = beaucoup moins d'erreurs de texte
       var r=await fetch(AI_URL+'/transcribe',{method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({audio:b64(wav16(all,sr)),lang:'fr'})});
       var j=await r.json().catch(function(){return {};});
@@ -4642,7 +4668,7 @@ var Auto=(function(){
     /* exposé pour les tests : ce sont ces calculs qui font la qualité du montage */
     _algo:{enveloppe:enveloppe,moments:moments,seuilParole:seuilParole,choisir:choisir,
            correction:correction,noteImage:noteImage,statsCouleur:statsCouleur,garderImage:garderImage,cadrage:cadrage,
-           estRemplissage:estRemplissage,nettoyer:nettoyer,wav16:wav16,mono16:mono16},
+           estRemplissage:estRemplissage,nettoyer:nettoyer,wav16:wav16,mono16:mono16,nettoyerSon:nettoyerSon},
     _etat:function(){return {clips:clips.length,cible:cible,style:style,ratio:ratio,sousTitres:sousTitres,mix:mix,musique:!!musique,occupe:occupe};},
     _dernier:null
   };
