@@ -37,6 +37,29 @@ def extraits(texte, nom, rayon=260, maxn=8):
             break
     return out
 
+URLS = [u for u in re.split(r"[\s,]+", os.environ.get("URLS", "").strip()) if u]
+
+if URLS:
+    print(f"🔎 Lecture d'avis PRECIS — {len(URLS)} URL(s)\n" + "=" * 70)
+    for u in URLS:
+        print(f"\n### {u}")
+        body = None
+        try:
+            body, status = fetch(u)
+            print(f"    ✅ direct HTTP {status}")
+        except Exception as e:
+            print(f"    ⚠ direct KO ({type(e).__name__}: {e}) → essai via lecteur r.jina.ai")
+            try:
+                body, status = fetch("https://r.jina.ai/" + u, timeout=40)
+                print(f"    ✅ via r.jina.ai HTTP {status}")
+            except Exception as e2:
+                print(f"    ❌ jina KO aussi — {type(e2).__name__}: {e2}")
+        if body:
+            txt = clean(body)
+            print("    ---- CONTENU (4000 premiers caractères) ----")
+            print("    " + txt[:4000])
+    sys.exit(0)
+
 q = urllib.parse.quote(NOM)
 qlow = urllib.parse.quote(NOM.lower())
 SITES = [

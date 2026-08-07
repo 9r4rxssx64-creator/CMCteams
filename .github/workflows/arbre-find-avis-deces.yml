@@ -13,6 +13,10 @@ on:
         description: "Prénom (filtre d'affichage, vide = tous)"
         required: false
         default: "Monique"
+      urls:
+        description: "URLs directes d'avis à lire (séparées par des espaces) — mode lecture précise"
+        required: false
+        default: ""
 permissions:
   contents: read
 jobs:
@@ -25,4 +29,5 @@ jobs:
         env:
           NOM: ${{ inputs.nom }}
           PRENOM: ${{ inputs.prenom }}
+          URLS: ${{ inputs.urls }}
         run: python3 tools/arbre/find-avis-deces.py
