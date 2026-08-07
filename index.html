@@ -5804,7 +5804,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.880";
+var APP_VER="v9.881";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -13534,7 +13534,11 @@ function vMapEditor(){
   h+='<div style="position:relative;width:100%;background:radial-gradient(ellipse at center,#0a0a0a 0%,#000 100%);border-radius:12px;overflow:hidden;border:1px solid '+casinoColor+';box-shadow:inset 0 0 60px rgba(201,162,39,.08)">';
   h+='<div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,.6);padding:6px 12px;border-radius:20px;display:flex;align-items:center;gap:6px;font-size:11px;z-index:6"><span style=\"width:8px;height:8px;border-radius:50%;background:#4cd080;animation:cmcLivePulse 1.5s ease-in-out infinite\"></span><strong style=\"color:#a0cca0\">LIVE</strong> &middot; <span id=\"cmcLiveCount\">0</span> employes</div><style>@keyframes cmcLivePulse{0%,100%{opacity:1}50%{opacity:.4}}</style>';
   h+='<svg id="cmc-map-svg" viewBox="0 0 '+VB_W+' '+VB_H+'" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;background:#050505;touch-action:none" role="img" aria-label="Plan '+esc(casinoName)+'" ontouchstart="_cmcMapTouchStart(event)" ontouchmove="_cmcMapTouchMove(event)" ontouchend="_cmcMapTouchEnd(event)" ontouchcancel="_cmcMapTouchEnd(event)">';
-  if(layout.bgImage){
+  /* v9.881 — LE consommateur du 404 /%22/%22 enfin identifié (pile réseau CDP, run
+     31228011564, initiator "parser") : un bgImage pollué (ex `"/"`) passait par esc()
+     → &quot;/&quot; → le navigateur décode l'attribut → requête GET /%22/%22. Le SVG
+     <image href> n'accepte QUE ce qui ressemble à une vraie image. */
+  if(layout.bgImage&&_bgUrlOk(layout.bgImage)){
     h+='<image href="'+esc(layout.bgImage)+'" x="0" y="0" width="'+VB_W+'" height="'+VB_H+'" preserveAspectRatio="xMidYMid slice" opacity="0.55"/>';
   }else{
     h+='<rect x="0" y="0" width="'+VB_W+'" height="'+VB_H+'" fill="rgba(20,20,20,.6)"/>';
@@ -48246,6 +48250,13 @@ var _cmcMapRefreshInt=null;
 // v9.518 (audit) : fusion duplicates ligne 9671 — fallback default + render après save
 function cmcGetCasinoLayout(casinoId){
   var all=lg("cmc_casino_layouts",{})||{};
+  /* v9.881 — assainit la SOURCE : un bgImage qui ne ressemble pas à une image (ex la
+     chaîne `"/"`, cause du 404 /%22/%22 intermittent) est vidé et re-persisté propre —
+     la pollution ne peut plus revenir par la synchro ni resservir ailleurs. */
+  if(all[casinoId]&&typeof all[casinoId].bgImage==="string"&&all[casinoId].bgImage&&!_bgUrlOk(all[casinoId].bgImage)){
+    all[casinoId].bgImage="";
+    try{ls("cmc_casino_layouts",all);console.warn("[v9.881] layout "+casinoId+" : bgImage invalide retiré");}catch(_e){}
+  }
   if(all[casinoId])return all[casinoId];
   if(typeof cmcMapDefaultLayout==="function"){
     all[casinoId]=cmcMapDefaultLayout(casinoId);
