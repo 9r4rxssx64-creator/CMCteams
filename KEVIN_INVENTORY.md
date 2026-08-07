@@ -1750,3 +1750,13 @@ Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Dé
 |---|---|---|
 | `tools/crea-studio/index.html` | `CARTOON_STYLES` : les 12 recettes + galerie de vignettes calculées sur TA photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
 | `tests/verify-crea-cartoon.mjs` | Preuve : 12 styles tous différents, tous lisibles, tous rapides, peau lissée sans bouillie | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
+
+### Créa Studio v9.8.0 — 🎬 Montage auto (2026-08-07)
+
+Tu donnes tes vidéos brutes, l'app te rend la vidéo montée. Un seul bouton.
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | Module `Auto` : écoute le son pour enlever les blancs, regarde l'image pour jeter le noir/flou, corrige les couleurs, zoom lent + fondus, sous-titres, musique, compte rendu chiffré | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `services/kdmc-crea-ai/worker.js` | Nouvelle porte `/transcribe` : la parole devient du texte (IA gratuite Cloudflare). Seul un petit extrait sonore part, jamais la vidéo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tests/verify-crea-montage-auto.mjs` | Preuve (29 vérifs) : 2 vraies vidéos fabriquées puis montées, blancs coupés mesurés, seuil qui s'adapte au volume, hésitations retirées, couleurs corrigées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-montage-auto.mjs) |

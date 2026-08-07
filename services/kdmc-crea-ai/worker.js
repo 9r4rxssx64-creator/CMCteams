@@ -51,6 +51,29 @@ function b64ToBytes(b64) {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
+/* Les modèles de transcription ne répondent pas tous pareil (mots datés,
+   segments, ou juste du texte). On ramène TOUT à la même forme :
+   { text, words:[{ m: mot, a: début(s), b: fin(s) }] }. Sans mots datés, on
+   répartit les mots du segment sur sa durée — un sous-titre légèrement réparti
+   vaut mieux qu'aucun sous-titre. */
+function normalizeWords(r) {
+  const text = String((r && (r.text || r.transcription)) || '').trim();
+  let words = [];
+  const push = (w) => {
+    const m = String((w && (w.word || w.text)) || '').trim();
+    if (m) words.push({ m, a: +w.start || 0, b: +w.end || +w.start || 0 });
+  };
+  if (r && Array.isArray(r.words)) r.words.forEach(push);
+  if (!words.length && r && Array.isArray(r.segments)) {
+    for (const s of r.segments) {
+      if (Array.isArray(s.words) && s.words.length) { s.words.forEach(push); continue; }
+      const parts = String(s.text || '').trim().split(/\s+/).filter(Boolean);
+      const a = +s.start || 0, b = +s.end || a, step = parts.length ? (b - a) / parts.length : 0;
+      parts.forEach((p, i) => words.push({ m: p, a: a + i * step, b: a + (i + 1) * step }));
+    }
+  }
+  return { text, words };
+}
 function imgResponse(mime, b64, h) {
   return new Response(b64ToBytes(b64), {
     status: 200,
@@ -599,6 +622,35 @@ export default {
         if (!rr.ok) return json({ error: 'fetch_' + rr.status }, h, 502);
         return new Response(rr.body, { status: 200, headers: Object.assign({ 'content-type': rr.headers.get('content-type') || 'video/mp4', 'cache-control': 'no-store' }, h) });
       } catch (e) { return json({ error: String((e && e.message) || e) }, h, 502); }
+    }
+
+    /* --- 🗣️ SOUS-TITRES : la parole devient du texte (Workers AI, GRATUIT) ---
+       Sert au « Montage auto » de Créa Studio : le téléphone envoie UNIQUEMENT
+       un petit extrait sonore (16 kHz mono, déjà découpé), jamais la vidéo.
+       Rien n'est conservé ici. Si les deux modèles échouent, on renvoie la
+       raison EXACTE (règle « toujours détailler les erreurs »). */
+    if (url.pathname === '/transcribe' && req.method === 'POST') {
+      if (!env.AI) return json({ error: 'cf_no_binding', detail: 'Workers AI non branché sur ce worker' }, h, 503);
+      let tb = null;
+      try { tb = await req.json(); } catch (_) { return json({ error: 'bad_json' }, h, 400); }
+      const b64a = String((tb && tb.audio) || '').replace(/^data:[^,]*,/, '');
+      if (!b64a) return json({ error: 'no_audio' }, h, 400);
+      if (b64a.length > 24 * 1024 * 1024) return json({ error: 'audio_too_big', detail: 'extrait sonore > 24 Mo' }, h, 413);
+      const lang = /^[a-z]{2}$/.test(String((tb && tb.lang) || '')) ? tb.lang : 'fr';
+      const tries = [
+        { model: '@cf/openai/whisper-large-v3-turbo', input: () => ({ audio: b64a, task: 'transcribe', language: lang }) },
+        { model: '@cf/openai/whisper', input: () => ({ audio: Array.from(b64ToBytes(b64a)) }) }
+      ];
+      const errs = [];
+      for (const c of tries) {
+        try {
+          const r = await env.AI.run(c.model, c.input());
+          const out = normalizeWords(r);
+          if (out.text || out.words.length) return json({ ok: true, model: c.model, text: out.text, words: out.words }, h);
+          errs.push(c.model + ' : réponse vide');
+        } catch (e) { errs.push(c.model + ' : ' + String((e && e.message) || e).slice(0, 140)); }
+      }
+      return json({ error: 'transcribe_failed', detail: errs.join(' | ') }, h, 502);
     }
 
     if (req.method !== 'POST') return json({ error: 'post_only' }, h, 405);

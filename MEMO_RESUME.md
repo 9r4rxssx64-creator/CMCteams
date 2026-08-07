@@ -1,4 +1,28 @@
 
+### 🎬 Créa Studio v9.8.0 — « Montage auto » (2026-08-07, Kevin : « fais pareil enrichi »)
+
+Kevin a envoyé une capture de **video-use** (« éditeur vidéo IA gratuit ») : là-bas il faut un
+ordinateur, un dossier, une ligne de commande et une clé d'API. Ici : **le téléphone et un bouton**.
+
+- **Écran Vidéo → « ✨ Montage auto (plusieurs vidéos) »** : tu donnes tes rushes, l'app rend la
+  vidéo montée et la range dans « Mes créas ».
+- **Ce qu'elle fait toute seule** : écoute le son de chaque rush (seuil **adapté à chaque vidéo**)
+  pour enlever les blancs · regarde l'image pour jeter les passages **noirs ou flous** · garde les
+  meilleurs moments **dans l'ordre**, sans jamais vider une des vidéos · corrige lumière, contraste,
+  couleurs et **balance des blancs** d'après la vraie image · **zoom lent** alterné + **fondus** ·
+  **sous-titres** écrits depuis la parole (IA gratuite Cloudflare, nouvelle porte `/transcribe`) ·
+  retire les **hésitations** (« euh », « voilà ») et **recale** le reste · musique mixée sous la voix ·
+  une vidéo horizontale n'est **pas charcutée** en format téléphone (image entière sur fond flou).
+- **Compte rendu honnête** à la fin : combien gardé, combien coupé, et si les sous-titres n'ont pas
+  pu être faits, **la raison exacte** (jamais « ça a marché » sans chiffres).
+- **Preuve** : `tests/verify-crea-montage-auto.mjs` — 2 vraies vidéos fabriquées dans le navigateur
+  puis montées pour de bon (mesuré : 12,0 s de brut → **8,5 s**, **3,4 s de blancs coupés**, MP4 1 Mo).
+  Câblé dans `test:ci`.
+- **3 bugs anciens corrigés au passage** (ils touchaient l'export vidéo déjà livré) : le son original
+  sortait **muet** ; le **2ᵉ** export d'affilée sortait muet aussi ; une vidéo à durée inconnue était
+  vue comme vide. Voir leçon **#182**.
+
+
 ### 🔎 « Simuler ma connexion pour vérifier en réel » (2026-08-06, Kevin)
 
 Le blocage récurrent (leçons #131/#135) : l'agent n'atteint pas kd-mc.com, et la CI ne voyait que
