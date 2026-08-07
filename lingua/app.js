@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.28.2";
+var APP_VER="v2.29.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -888,6 +888,28 @@ function outOfHearts(){ VIEW="home"; render(); var m=modal();
 function ttsPrefetch(text){ /* fabrique le son EN AVANCE (mise en réserve) — il partira instantanément à la validation */
   if(!S.sound||!text)return; var vid=S.voice||"nova"; if(!_isCloudVoice(vid))return;
   try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); a.preload="auto"; }catch(_){} }
+function beeExplain(ex,L){ /* Explication d'erreur : le sens, ce que voulait dire TA réponse, un exemple d'usage */
+  try{ if(!ex||!ex.w)return null;
+    var t=ex.w.t, fr=ex.w.fr, out={html:"",say:""};
+    out.html='📖 « <b>'+esc(t)+'</b> » = « <b>'+esc(fr)+'</b> »';
+    out.say='« '+t+' », c\'est « '+fr+' ».';
+    var pick=(ex.kind==="mc")?L._pick:(ex.kind==="type"?L._typeVal:null);
+    if(pick&&norm(pick)!==norm(ex.answer||"")){
+      var other=null; try{ allWords(S.course).forEach(function(w2){ if(other)return; if(norm(w2.t)===norm(pick)||norm(w2.fr)===norm(pick)) other=w2; }); }catch(_){}
+      if(other&&norm(other.fr)!==norm(fr)){ var om=(norm(other.t)===norm(pick))?other.fr:other.t;
+        out.html+='<br>🤔 Ta réponse « '+esc(pick)+' » veut dire « <b>'+esc(om)+'</b> »';
+        out.say+=' Ta réponse, « '+pick+' », voulait dire « '+om+' ».'; }
+      else if(ex.kind==="type"){ out.html+='<br>✏️ Tu as écrit « '+esc(pick)+' » — regarde bien l\'orthographe'; } }
+    try{ if(fr.length>=4){ var ks=Object.keys(PHRASEBOOK); for(var i=0;i<ks.length;i++){ if(ks[i].indexOf(fr)>=0){
+      var pt=PHRASEBOOK[ks[i]]&&PHRASEBOOK[ks[i]][COURSES[S.course].id];
+      if(pt){ out.html+='<br>🗣 Exemple : « '+esc(pt)+' » — '+esc(ks[i]); } break; } } } }catch(_){}
+    return out; }catch(_){ return null; } }
+function beeExplainMore(ex){ /* Un tap → le prof IA explique en profondeur (mémoire du Coach) */
+  try{ var c=coachLangMeta(); if(!c||!ex||!ex.w){ toast("Choisis d'abord une langue 🌍"); return; }
+    var q="Explique-moi simplement pourquoi « "+ex.w.fr+" » se dit « "+ex.w.t+" » en "+c.nom.toLowerCase()+", et donne-moi une astuce pour m'en souvenir.";
+    S.coachMsgs.push({role:"user",text:q}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
+    go("coach");
+    coachAsk().then(function(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save(); render(); coachSpeak(reply); }); }catch(_){} }
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
   if(ex&&ex.w&&ex.w.t&&!L.answered) ttsPrefetch(ex.w.t); /* la réponse sera dite SANS attente à la validation */
   var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
@@ -900,6 +922,11 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
     var PRAISE=["✅ Super !","✅ Bien joué !","✅ Bzzz… parfait ! 🐝","✅ Exact !","✅ Bee est fière de toi !","✅ Impeccable !"];
     var CONSOLE_=["❌ Presque ! La bonne réponse :","❌ Pas grave, on retient :","❌ Bee te souffle la réponse :"];
     fb.innerHTML=L.ok?('<b>'+PRAISE[(L.i+L.correct)%PRAISE.length]+'</b>'+(L.combo>=3?' <span class="cb">🔥 combo x'+L.combo+' (+1 XP)</span>':'')):('<b>'+CONSOLE_[L.i%CONSOLE_.length]+'</b> '+esc(L._sol||""));
+    if(!L.ok){ /* EXPLICATION quand on se trompe : le sens, ce que voulait dire TA réponse, un exemple */
+      var expl=beeExplain(ex,L);
+      if(expl&&expl.html){ var ed=el("div","fb-expl"); ed.innerHTML=expl.html; fb.appendChild(ed); }
+      if(ex&&ex.w){ var mb=el("button","fb-more"); mb.textContent="🧠 En savoir plus";
+        mb.onclick=function(ev){ ev.stopPropagation(); beeExplainMore(ex); }; fb.appendChild(mb); } }
     foot.appendChild(fb); }
   var main=el("button","btn-main check"); main.id="mainBtn"; main.textContent=L.answered?"Continuer":"Vérifier"; main.disabled=!L.answered&&!L._can; main.onclick=function(){ L.answered?nextEx():checkEx(ex); }; foot.appendChild(main);
   d.appendChild(foot); return d;
@@ -978,7 +1005,9 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
     /* Bee PARLE : encouragement à voix haute quand il n'y a pas déjà le mot à écouter (priorité au contenu) */
     var wordWillPlay = ok && ex.w && ex.kind!=="match";
     if(ok && !wordWillPlay && L.combo>=2){ speakLang(["Bravo !","Super !","Parfait !","Bien joué !"][L.combo%4],"fr-FR",BEE_VOICE,true); }
-    else if(!ok && Math.random()<0.5){ speakLang(["Pas grave, on retient !","Presque ! On continue.","Courage, tu y es presque !"][L.wrong%3],"fr-FR",BEE_VOICE,true); } },40);
+    else if(!ok){ /* erreur → Bee EXPLIQUE à voix haute (le sens + ce que voulait dire ta réponse) */
+      var _ex=beeExplain(ex,L);
+      setTimeout(function(){ if(LESSON&&LESSON.answered&&LESSON.ok===false&&_ex&&_ex.say) speakLang(_ex.say,"fr-FR",BEE_VOICE,true); },450); } },40);
 }
 function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol="";
   /* un son de la question PRÉCÉDENTE encore en fabrication/lecture ne doit JAMAIS sortir pendant la suivante */
