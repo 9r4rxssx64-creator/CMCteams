@@ -1,15 +1,11 @@
 /* Créa Studio — Service Worker (offline-first) */
-var CACHE_VERSION = 'crea-studio-v9.9.0';
+var CACHE_VERSION = 'crea-studio-v9.9.1';
 var ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon-192.png',
-  './icon-512.png',
-  './bee/rig/base.webp',
-  './bee/rig/wing-l.webp',
-  './bee/rig/wing-r.webp',
-  './bee/rig/arm.webp'
+  './icon-512.png'
 ];
 
 self.addEventListener('install', function (e) {
