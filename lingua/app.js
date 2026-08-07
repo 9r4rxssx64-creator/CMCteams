@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.31.0";
+var APP_VER="v2.32.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -46,8 +46,9 @@ function loadS(){
   S.coachProfile=lg("coachProfile",{objectif:"bilingue",weak:[],notes:""}); // profil d'apprentissage suivi par le Coach
   S.beeVoice=lg("beeVoice","fillette"); // voix de Bee choisie (catalogue BEE_VOICES) — fillette mignonne par défaut
   S.coachScene=lg("coachScene",null); // 🎭 jeu de rôle en cours (id de SCENES) — null = conversation libre
+  S.storiesDone=lg("storiesDone",{}); // 📖 histoires terminées : {courseId:{storyId:ts}}
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
 
 /* PROGRESSION → « Qui se connecte » (kd-mc.com). Kevin veut suivre l'avancée de
    chacun (XP, série, mots appris, leçons du jour) au même endroit que les connexions.
@@ -98,7 +99,7 @@ function findLocalAccount(name,code){ var n=norm(name); var accs=accounts(); for
    appareil : nom+code → tout revient. FAIL-OPEN : si le cloud est indispo, la
    mémoire locale continue (rien perdu localement). */
 var SYNC_BASE="https://lingua.kd-mc.com/__lingua";
-var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene"];
+var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
 function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
@@ -196,7 +197,8 @@ var QUESTS=[
   {id:"les3",t:"Termine 3 leçons",g:3,m:"lessons",r:30},
   {id:"rev1",t:"Fais 1 révision",g:1,m:"reviews",r:15},
   {id:"perf1",t:"1 leçon sans faute",g:1,m:"perfect",r:20},
-  {id:"combo4",t:"Un combo x4",g:4,m:"combo",r:15}
+  {id:"combo4",t:"Un combo x4",g:4,m:"combo",r:15},
+  {id:"sto1",t:"Lis 1 histoire 📖",g:1,m:"stories",r:20}
 ];
 function todaysQuests(){ var h=dayHash(today()),used={},out=[],i=0;
   while(out.length<3 && i<40){ var q=QUESTS[(h+i*3+1)%QUESTS.length]; if(!used[q.id]){used[q.id]=1;out.push(q);} i++; } return out; }
@@ -293,6 +295,8 @@ function render(){
   else if(VIEW==="dict") app.appendChild(vDict());
   else if(VIEW==="translate") app.appendChild(vTranslate());
   else if(VIEW==="league") app.appendChild(vLeague());
+  else if(VIEW==="stories") app.appendChild(vStories());
+  else if(VIEW==="story") app.appendChild(vStoryPlay());
   else if(VIEW==="coach") app.appendChild(vCoach());
   else if(VIEW==="profile") app.appendChild(vProfile());
   app.appendChild(vTabbar());
@@ -422,6 +426,11 @@ function vHome(){ var w=el("div","screen tree");
   var goal=el("div","goal-card");
   goal.innerHTML='<div class="goal-top"><b>🎯 Objectif du jour</b><span>'+S.dailyXP+' / '+S.goal+' XP</span></div><div class="bar"><div class="bar-fill" style="width:'+gp+'%"></div></div>'+(gp>=100?'<div class="goal-done">✅ Objectif atteint !</div>':'');
   w.appendChild(goal);
+  // 📖 Histoires de la ruche — Bee raconte, tu comprends, tu gagnes
+  if(typeof STORIES!=="undefined"&&STORIES.length){ var sd=storiesDoneCount();
+    var stc=el("button","stories-card");
+    stc.innerHTML='<span class="st-ic">📖</span><span class="st-tx"><b>Histoires de la ruche</b><i>Bee te raconte une histoire en '+esc(COURSES[S.course].nom.toLowerCase())+'</i></span><span class="st-badge">'+sd+'/'+STORIES.length+'</span>';
+    stc.onclick=function(){ go("stories"); }; w.appendChild(stc); }
   // quêtes
   var q=el("div","quest-card"); q.innerHTML='<div class="qc-h">📋 Quêtes du jour</div>';
   todaysQuests().forEach(function(qq){ var v=Math.min(qq.g,questVal(qq.m)),done=S.qClaim[qq.id]; var row=el("div","q-row"+(done?" done":""));
@@ -553,6 +562,7 @@ function beeLine(){ try{
     if(due>0)s+=" Et "+due+" mot"+(due>1?"s":"")+" à réviser 🧠"; if(S.streak>0)s+=" · série 🔥"+S.streak; return s; }
   if(VIEW==="review"){ var d2=dueWords().length; return d2>0?("J'ai "+d2+" mot"+(d2>1?"s":"")+" à te faire réviser — on s'y met ?"):"Rien d'urgent ! Une révision libre pour le plaisir ?"; }
   if(VIEW==="dict") return "Cherche un mot, je te dis tout ce que je sais !";
+  if(VIEW==="stories"){ var sdn=storiesDoneCount(); return sdn>=STORIES.length?"Tu as lu TOUTES mes histoires ! Réécoute ta préférée 🍯":"Viens, je te raconte une histoire de la ruche 📖"; }
   if(VIEW==="translate") return "Dis-moi un mot ou une phrase, je te la traduis dans mes 6 langues !";
   if(VIEW==="league"){ var rows=leagueRows(),p=0; for(var i=0;i<rows.length;i++){ if(rows[i].you){p=i+1;break;} }
     return p===1?"Tu es PREMIER ! 🏆 On garde la couronne ?":("Tu es "+p+"ᵉ ! Quelques leçons et on double tout le monde 😼"); }
@@ -844,6 +854,89 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
   discChips(ov);
   var last=null; for(var i=S.coachMsgs.length-1;i>=0;i--){ if(S.coachMsgs[i].role==="bot"){ last=S.coachMsgs[i].text; break; } }
   setTimeout(function(){ discSpeak(last||coachGreeting(c), c.ttsLang); },450);
+}
+/* ============ 📖 HISTOIRES DE LA RUCHE — Bee raconte, tu comprends, tu gagnes ============
+   Histoires 100% originales (data.js STORIES) : chaque ligne est DITE dans la langue
+   cible (voix de Bee pour ses répliques) avec le français en dessous, puis un petit
+   quiz de compréhension. 1re lecture : +20 XP +5 💎 · relecture : +5 XP. */
+var ST=null; /* {sid, i:ligne courante, phase:"lines"|"quiz"|"done", qi, good, replay} */
+function storiesDone(){ return (S.storiesDone&&S.storiesDone[S.course])||{}; }
+function storiesDoneCount(){ return Object.keys(storiesDone()).length; }
+function storyUnlocked(idx){ if(idx===0)return true; return !!storiesDone()[STORIES[idx-1].id]; }
+function storyLineSay(l){ var c=COURSES[S.course]; if(!c||!l)return;
+  speakLang(l.t[S.course]||l.fr, c.ttsLang, l.qui==="🐝"?BEE_VOICE:null, true); }
+function storyStart(idx){ var st=STORIES[idx]; if(!st||!storyUnlocked(idx))return;
+  ST={sid:st.id, idx:idx, i:0, phase:"lines", qi:0, good:0, replay:!!storiesDone()[st.id]};
+  VIEW="story"; window.scrollTo(0,0); render();
+  setTimeout(function(){ storyLineSay(st.lignes[0]); },400); }
+function storyNext(){ if(!ST)return; var st=STORIES[ST.idx];
+  if(ST.phase==="lines"){
+    if(ST.i<st.lignes.length-1){ ST.i++; render(); setTimeout(function(){ storyLineSay(st.lignes[ST.i]); },250); }
+    else { ST.phase="quiz"; ST.qi=0; render();
+      setTimeout(function(){ speakLang("Alors, tu as bien écouté ?","fr-FR",BEE_VOICE,true); },300); } }
+}
+function storyAnswer(oi){ if(!ST||ST.phase!=="quiz")return; var st=STORIES[ST.idx],q=st.quiz[ST.qi];
+  var ok=oi===q.ok; if(ok){ ST.good++; tone([880,1180],.25); }else{ tone([320,240],.3); } vibrate(ok?12:30);
+  ST.lastOk=ok; ST.lastPick=oi; render();
+  setTimeout(function(){ ST.lastOk=null; ST.lastPick=null;
+    if(ST.qi<st.quiz.length-1){ ST.qi++; render(); }
+    else { ST.phase="done";
+      var first=!ST.replay, xp=first?20:5;
+      S.xp+=xp; S.dailyXP+=xp; if(first){ S.gems+=5; }
+      if(!S.storiesDone[S.course])S.storiesDone[S.course]={};
+      S.storiesDone[S.course][st.id]=Date.now();
+      S.today.stories=(S.today.stories||0)+1;
+      save(); checkQuests(); checkAchv(); render();
+      setTimeout(function(){ speakLang(ST.good>=st.quiz.length?"Bravo, tout juste ! Tu es formidable !":"Bravo, l'histoire est finie !","fr-FR",BEE_VOICE,true); },350); }
+  }, 900); }
+function storyQuit(){ ST=null; try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} go("stories"); }
+function vStories(){ var d=el("div","screen"); var c=COURSES[S.course];
+  if(!c){ d.innerHTML='<h2 class="ttl">📖 Histoires</h2><p class="sub2">Choisis d\'abord une langue 🌍.</p>'; return d; }
+  d.innerHTML='<h2 class="ttl">📖 Histoires de la ruche</h2><p class="sub2">Bee te raconte une histoire en '+esc(c.nom.toLowerCase())+' — écoute, lis, réponds. Chaque histoire ouvre la suivante.</p>';
+  STORIES.forEach(function(st,idx){ var done=!!storiesDone()[st.id], open=storyUnlocked(idx);
+    var b=el("button","story-item"+(done?" done":"")+(open?"":" locked"));
+    b.innerHTML='<span class="si-ic">'+(open?st.ic:"🔒")+'</span><span class="si-tx"><b>'+esc(st.titre)+'</b><i>'+st.lignes.length+' répliques · '+st.quiz.length+' questions</i></span><span class="si-st">'+(done?"✅":(open?"▶️":""))+'</span>';
+    if(open)b.onclick=function(){ storyStart(idx); };
+    else b.onclick=function(){ toast("Termine d'abord « "+STORIES[idx-1].titre+" » 🔒"); };
+    d.appendChild(b); });
+  var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
+  return d;
+}
+function vStoryPlay(){ var d=el("div","screen story"); if(!ST){ go("stories"); return d; }
+  var st=STORIES[ST.idx], c=COURSES[S.course];
+  var head=el("div","story-head"); head.innerHTML='<span class="sh-ic">'+st.ic+'</span><b>'+esc(st.titre)+'</b>';
+  var q=el("button","story-quit"); q.textContent="✕"; q.setAttribute("aria-label","Quitter"); q.onclick=storyQuit; head.appendChild(q);
+  d.appendChild(head);
+  var prog=el("div","story-prog"); var total=st.lignes.length+st.quiz.length;
+  var done=ST.phase==="lines"?ST.i:(ST.phase==="quiz"?st.lignes.length+ST.qi:total);
+  prog.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+Math.round(done/total*100)+'%"></div></div>'; d.appendChild(prog);
+  if(ST.phase==="lines"||ST.phase==="quiz"){
+    var box=el("div","story-box");
+    st.lignes.slice(0,ST.phase==="lines"?ST.i+1:st.lignes.length).forEach(function(l,li){
+      var row=el("div","story-line"+(l.qui==="🐝"?" bee":"")+(ST.phase==="lines"&&li===ST.i?" now":""));
+      row.innerHTML='<span class="sl-who">'+l.qui+'</span><span class="sl-tx"><b>'+esc(l.t[S.course]||l.fr)+'</b><i>'+esc(l.fr)+'</i></span>';
+      var sp=el("button","sl-say"); sp.textContent="🔊"; sp.setAttribute("aria-label","Écouter");
+      sp.onclick=function(ev){ ev.stopPropagation(); storyLineSay(l); }; row.appendChild(sp);
+      box.appendChild(row); });
+    d.appendChild(box);
+    if(ST.phase==="lines"){ var nb=el("button","btn-main story-next");
+      nb.textContent=ST.i<st.lignes.length-1?"▶ Suite":"✅ J'ai compris — aux questions !";
+      nb.onclick=storyNext; d.appendChild(nb); }
+    else { var qq=st.quiz[ST.qi]; var qc=el("div","story-quiz");
+      qc.innerHTML='<div class="sq-q">❓ '+esc(qq.q)+'</div>';
+      qq.opts.forEach(function(o,oi){ var ob=el("button","sq-opt"+(ST.lastPick===oi?(ST.lastOk?" good":" bad"):""));
+        ob.textContent=o; ob.onclick=function(){ if(ST.lastPick==null)storyAnswer(oi); }; qc.appendChild(ob); });
+      d.appendChild(qc); } }
+  else { var fin=el("div","story-fin"); var perfect=ST.good>=st.quiz.length;
+    fin.innerHTML='<div class="sf-ic">'+(perfect?"🏆":"🎉")+'</div><h2>'+(perfect?"Parfait !":"Bravo !")+'</h2>'
+      +'<p>'+ST.good+'/'+st.quiz.length+' bonnes réponses · '+(ST.replay?"+5 XP":"+20 XP · +5 💎")+'</p>';
+    var again=el("button","btn-ghost"); again.textContent="🔁 Réécouter l'histoire"; again.onclick=function(){ storyStart(ST.idx); }; fin.appendChild(again);
+    var nxt=ST.idx<STORIES.length-1?el("button","btn-main"):null;
+    if(nxt){ nxt.textContent="📖 Histoire suivante"; nxt.onclick=function(){ storyStart(ST.idx+1); }; fin.appendChild(nxt); }
+    var out=el("button","btn-ghost"); out.textContent="← Toutes les histoires"; out.onclick=storyQuit; fin.appendChild(out);
+    d.appendChild(fin); }
+  setTimeout(function(){ var b=d.querySelector(".story-box"); if(b)b.scrollTop=b.scrollHeight; },40);
+  return d;
 }
 function vTabbar(){ var t=el("div","tabbar"); [["home","🏠","Accueil"],["review","🧠","Réviser"],["coach","💬","Coach"],["translate","🌐","Traduire"],["league","🏆","Ligue"],["profile","🙂","Profil"]].forEach(function(x){ var b=el("button","tab"+(VIEW===x[0]||(x[0]==="review"&&VIEW==="dict")?" active":"")); b.innerHTML='<span>'+x[1]+'</span><i>'+x[2]+'</i>'; b.onclick=function(){go(x[0]);}; t.appendChild(b); }); return t; }
 
