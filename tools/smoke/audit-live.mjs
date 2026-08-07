@@ -86,7 +86,13 @@ const SURFACES = [
         const tabs = await page.$$eval('.tab', els => els.length).catch(() => 0);
         const hearts = (await page.textContent('.tb-stat.hearts').catch(() => '')).replace(/\s/g, '');
         if (units < 1) return { ok:false, note:'aucune unité rendue' };
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · vies ' + hearts };
+        // 📖 Histoires de la ruche (v2.32.0) : carte accueil présente + liste des 6 histoires
+        const stCard = await page.$('.stories-card');
+        let stories = 0;
+        if (stCard) { await stCard.click(); await page.waitForTimeout(600);
+          stories = await page.$$eval('.story-item', els => els.length).catch(() => 0); }
+        if (stories < 6) return { ok:false, note:'histoires attendues 6, vues ' + stories };
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · vies ' + hearts };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
