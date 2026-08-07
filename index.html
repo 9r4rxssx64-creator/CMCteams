@@ -4313,6 +4313,9 @@ function fbApplyData(k,v){
   if(k==="cmc_motd"&&v!==null&&(typeof v!=="object"||Array.isArray(v)))return;
   // Cloner profondément pour éviter les références partagées avec l'objet Firebase SSE
   var vc;try{vc=JSON.parse(JSON.stringify(v));}catch(e){console.warn("fbApplyData: JSON invalide pour",k);return;}
+  /* v9.880 — la synchro peut ramener une valeur de fond polluée (404 /%22/%22 intermittent) :
+     on assainit AVANT d'écrire, la donnée invalide ne touche jamais le stockage local */
+  if(k==="cmc_photos"){ try{_photosSanitize(vc);}catch(e){} }
   try{localStorage.setItem(k,JSON.stringify(vc));}catch(e){}
   // v9.853 — nouveau message employé (page CMCteams light) → notif Kevin (admin)
   if(k==="cmc_kevin_inbox"){ try{ _checkKevinInbox(vc); }catch(_){} }
@@ -5074,6 +5077,16 @@ function _bgUrlOk(u){var s=String(u==null?"":u).trim();
   if(s.length<4)return false;
   if(/["'()\\]/.test(s))return false;              /* une vraie URL de fond n'en contient pas */
   return /^(data:image\/|blob:|https?:\/\/)/i.test(s)||/^\/[^/]/.test(s);}
+/* v9.880 — assainit l'objet cmc_photos LUI-MÊME : toute valeur texte qui ne ressemble
+   pas à une image (ex la chaîne `"/"`) est RETIRÉE. Les gardes _bgUrlOk aux points de
+   rendu restent, mais ceci coupe le mal à la racine : une valeur polluée qui arrive
+   (boot OU synchro) ne peut plus jamais atteindre un consommateur, connu ou futur.
+   Sans risque : ces valeurs étaient de toute façon refusées au rendu. Retourne le nb retiré. */
+function _photosSanitize(ph){ var n=0; if(!ph||typeof ph!=="object")return 0;
+  Object.keys(ph).forEach(function(k){ var v=ph[k];
+    if(typeof v==="string" && v!=="" && !_bgUrlOk(v)){ delete ph[k]; n++; } });
+  if(n){ try{console.warn("[v9.880] cmc_photos assaini : "+n+" valeur(s) invalide(s) retirée(s)");}catch(e){} }
+  return n; }
 function hexA(h,a){return "rgba("+parseInt(h.slice(1,3),16)+","+parseInt(h.slice(3,5),16)+","+parseInt(h.slice(5,7),16)+","+a+")";}
 function now(){return Date.now();}
 // v9.66 perf : memoize fmtTs (appelé N fois/render chat, résultat stable sur 60s)
@@ -5640,6 +5653,12 @@ var A={
   cagnottes:lg("cmc_cagnottes",{}),
   importSuggestions:{newEmps:[],possibleRetired:[]}
 };
+/* v9.880 — fonds/photos pollués : assainissement À LA SOURCE au boot. Le 404 /%22/%22
+   était INTERMITTENT (vu en vrai runs 31222551767 vert / 31225003946 rouge) : les gardes
+   v9.876-878 couvrent les consommateurs connus, mais la valeur invalide restait dans
+   les données synchronisées et re-sortait par un chemin selon le moment. Ici on retire
+   la donnée elle-même → plus AUCUN consommateur (connu ou futur) ne peut la voir. */
+try{ if(_photosSanitize(A.photos)) localStorage.setItem("cmc_photos",JSON.stringify(A.photos)); }catch(_){}
 // v9.191 — Construit les index O(1) au boot (remplace 208 .find() couteux)
 try{_rebuildIndexes();}catch(_){}
 // Dédupliquer A.employees au démarrage — par id ET par nom
@@ -5785,7 +5804,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.879";
+var APP_VER="v9.880";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
