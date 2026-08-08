@@ -1,0 +1,34 @@
+name: Arbre — lire des pages généalogiques (vrai navigateur)
+
+# Kevin 2026-08-08 : « Essaie de remonter avant Jean-Baptiste Maiffret 1815 ».
+# Geneanet & co renvoient 403 aux fetchers simples → un vrai Chromium passe souvent.
+# Lecture seule, pages publiques. Résultats dans le log du job (aucun commit).
+
+on:
+  workflow_dispatch:
+    inputs:
+      motcle:
+        description: "Mot-clé à chercher dans les pages"
+        default: "MAIFFRET"
+      urls:
+        description: "URLs à lire (séparées par des espaces)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  lire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Installer Chromium
+        run: |
+          npm i -D playwright@1.49.1 --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Lire
+        run: node tools/arbre/lire-web.mjs "${{ inputs.motcle }}" ${{ inputs.urls }}
