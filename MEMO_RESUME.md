@@ -31,6 +31,20 @@
    phrase de 10 s, nettoyé à la fin. Non-régression : synchro voix PASS, retour
    arrière 10/10, jeux/stats 21/21. sw.js lingua-v2.35.0.
 
+3quinquies. **KDMC Lingua v2.36.0 — 🎤 Atelier prononciation** (Kevin : « Travailler
+   la prononciation, élocution, etc avec corrections explications etc »). Vue dédiée
+   accessible depuis l'accueil : pour chaque mot appris → modèle audio **normal +
+   🐢 lent** (cloud `&s=0.6`), découpage en **syllabes** (mot·à·mot), **astuces
+   d'élocution** propres à chaque langue (en/it/es/de/pt/nl : th, r roulé, ü, gn,
+   jota, nasales…). Reconnaissance vocale → **score %** + **correction** (« on a
+   entendu … ») + **explication** (dis plus lentement, syllabe par syllabe). Repli
+   **sans micro** (iPhone Safari) : auto-évaluation 3 boutons. XP + quête « Prononce
+   3 mots 🎤 » + succès « Belle diction » (20 mots ≥80 %), compteur « Mots bien dits »
+   dans 📊 Stats, retour arrière protégé. Prouvé en navigateur réel (Playwright) :
+   micro exact→score haut+✅, faux→correction+explication, 🐢 demande bien `&s=0.6`,
+   sans micro→auto-éval avance+XP, pronGoodTotal persisté. Worker déjà au cap 1000
+   (aucun changement). sw.js lingua-v2.36.0. Mergé PR #3233.
+
 3ter. **KDMC Lingua v2.34.0 — synchro voix vérifiée + garde retour-arrière** (Kevin :
    « Vérifie la synchro de la voix avec les questions… Pas de retour arrière possible
    pendant une leçon ») : synchro voix PROUVÉE en navigateur réel (exercices « écoute »
