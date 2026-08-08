@@ -18,6 +18,17 @@
    mascotte de LINGUA uniquement. La surface Créa Studio reste surveillée par la
    vérif réelle (nav ≥6 studios), sans exigence de mascotte.
 
+3ter. **KDMC Lingua v2.34.0 — synchro voix vérifiée + garde retour-arrière** (Kevin :
+   « Vérifie la synchro de la voix avec les questions… Pas de retour arrière possible
+   pendant une leçon ») : synchro voix PROUVÉE en navigateur réel (exercices « écoute »
+   répondus AVEC le mot capturé au moment où il se dit → tous ✅ ; mot redit à la
+   validation = mot de la question ; 🔊 exact ; paires prononcées justes ; 0 son en
+   retard — les jetons anti-décalage `_ttsReq` font le travail). NOUVEAU v2.34.0 :
+   le geste retour iPhone pendant une leçon/défi/paires/histoire n'ÉJECTE plus de
+   l'app (jalon d'historique + même confirmation que ✕, défi éclair terminé
+   proprement avec score compté, retour hors activité = accueil). Testé réel :
+   garde 10/10 PASS + non-régression voix PASS + jeux/stats 21/21 PASS.
+
 3bis. **KDMC Lingua v2.33.0 — Salle de jeux + Statistiques** (« Enrichie encore au
    max tout ») : ⚡ **Défi éclair** (60 s chrono, QCM rapides dans les 2 sens, pénalité
    -3 s par erreur, XP = bonnes réponses, record sauvegardé, succès 🚀 à 15) ·

@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.33.0";
+var APP_VER="v2.34.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -322,6 +322,25 @@ function render(){
   if(VIEW!=="coach"&&S.course) app.appendChild(beeCompanion());  // Bee gère tout : présente sur chaque écran (le Coach l'a déjà en grand)
 }
 function go(v){ if(v!=="blitz")blitzAbort(); if(v!=="pairs")pairsAbort(); VIEW=v; window.scrollTo(0,0); render(); }
+/* ============ Garde retour-arrière (Kevin 2026-08-08 : « pas de retour arrière possible
+   pendant une leçon ») ============
+   Avant : sur iPhone, le geste retour quittait l'app EN PLEINE leçon/défi/histoire —
+   progression de la leçon perdue, sans prévenir. On pose un jalon d'historique à l'entrée
+   de chaque activité ; le geste retour retombe dessus : on RESTE dans l'app et on passe
+   par la même confirmation que le bouton ✕ (le défi éclair, lui, se termine proprement :
+   le score est compté). Hors activité : retour = accueil, jamais une éjection surprise. */
+function _armHistoryGuard(){ try{ history.pushState({lingua:1},""); }catch(_){} }
+window.addEventListener("popstate",function(){
+  try{
+    if(VIEW==="lesson"&&LESSON){ _armHistoryGuard();
+      if(confirm("Quitter la leçon ? La progression de CETTE leçon sera perdue.")){ LESSON=null; VIEW="home"; render(); }
+      return; }
+    if(VIEW==="blitz"&&BZ&&!BZ.over){ _armHistoryGuard(); blitzEnd(); return; }
+    if(VIEW==="pairs"&&PR&&!PR.over){ _armHistoryGuard(); go("home"); return; }
+    if(VIEW==="story"&&ST){ _armHistoryGuard(); storyQuit(); return; }
+    if(ACC&&VIEW!=="home"){ VIEW="home"; render(); }
+  }catch(_){}
+});
 function el(t,c){ var e=document.createElement(t); if(c)e.className=c; return e; }
 
 /* ---------- Comptes ---------- */
@@ -522,7 +541,7 @@ function blitzNextQ(){ var pool=blitzPool(); var w=pool[Math.floor(Math.random()
   BZ.n=(BZ.n||0)+1; BZ.cur=makeMC(w, allWords(S.course), BZ.n%2? "mc_t":"mc_fr"); }
 function blitzStart(){ if(!S.course)return; blitzAbort(); pairsAbort();
   BZ={left:60,good:0,total:0,over:false,lock:false,n:0}; blitzNextQ();
-  VIEW="blitz"; window.scrollTo(0,0); render();
+  VIEW="blitz"; _armHistoryGuard(); window.scrollTo(0,0); render();
   BZT=setInterval(function(){ if(!BZ||BZ.over){ if(BZT){clearInterval(BZT);BZT=null;} return; }
     BZ.left--; if(BZ.left<=0){ blitzEnd(); return; }
     var e=document.querySelector(".bz-time b"); if(e)e.textContent=BZ.left;
@@ -574,7 +593,7 @@ function pairsStart(){ if(!S.course)return; blitzAbort(); pairsAbort();
   if(ws.length<3){ toast("Pas assez de mots — fais d'abord une leçon 🐝"); return; }
   var tiles=[]; ws.forEach(function(w,k){ tiles.push({k:k,side:"fr",txt:w.fr}); tiles.push({k:k,side:"t",txt:w.t}); });
   PR={tiles:shuffle(tiles),need:ws.length,found:0,t0:Date.now(),sel:-1,lock:false,over:false,badA:null,badB:null};
-  VIEW="pairs"; window.scrollTo(0,0); render();
+  VIEW="pairs"; _armHistoryGuard(); window.scrollTo(0,0); render();
   PRT=setInterval(function(){ if(!PR||PR.over){ if(PRT){clearInterval(PRT);PRT=null;} return; }
     var e=document.querySelector(".pr-time b"); if(e)e.textContent=Math.round((Date.now()-PR.t0)/1000); },500); }
 function pairsTap(i){ if(!PR||PR.over||PR.lock)return; var t=PR.tiles[i]; if(t.done||i===PR.sel)return;
@@ -1043,7 +1062,7 @@ function storyLineSay(l){ var c=COURSES[S.course]; if(!c||!l)return;
   speakLang(l.t[S.course]||l.fr, c.ttsLang, l.qui==="🐝"?BEE_VOICE:null, true); }
 function storyStart(idx){ var st=STORIES[idx]; if(!st||!storyUnlocked(idx))return;
   ST={sid:st.id, idx:idx, i:0, phase:"lines", qi:0, good:0, replay:!!storiesDone()[st.id]};
-  VIEW="story"; window.scrollTo(0,0); render();
+  VIEW="story"; _armHistoryGuard(); window.scrollTo(0,0); render();
   setTimeout(function(){ storyLineSay(st.lignes[0]); },400); }
 function storyNext(){ if(!ST)return; var st=STORIES[ST.idx];
   if(ST.phase==="lines"){
@@ -1189,7 +1208,7 @@ function dictate(cb,lang){ try{ var SR=window.SpeechRecognition||window.webkitSp
 
 /* ============ LEÇON ============ */
 function startLesson(ui,li,rev){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
-  LESSON={ui:ui,li:li,review:!!rev,ex:buildLesson(ui,li,rev),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render();
+  LESSON={ui:ui,li:li,review:!!rev,ex:buildLesson(ui,li,rev),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; _armHistoryGuard(); window.scrollTo(0,0); render();
   /* Bee annonce la leçon à voix haute — SAUF si le 1er exercice joue déjà son mot
      automatiquement (les deux partaient au même instant et se coupaient l'un l'autre) */
   try{ var first=LESSON.ex&&LESSON.ex[0];
@@ -1279,7 +1298,7 @@ function beeExplainMore(ex){ /* Un tap → le prof IA explique en profondeur (m�
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
   if(ex&&ex.w&&ex.w.t&&!L.answered) ttsPrefetch(ex.w.t); /* la réponse sera dite SANS attente à la validation */
   var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
-  top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ?")){ VIEW="home"; render(); } }; d.appendChild(top);
+  top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ? La progression de CETTE leçon sera perdue.")){ LESSON=null; VIEW="home"; render(); } }; d.appendChild(top);
   var body=el("div","lesson-body");
   if(ex.kind==="mc")body.appendChild(exMC(ex)); else if(ex.kind==="match")body.appendChild(exMatch(ex)); else if(ex.kind==="bank")body.appendChild(exBank(ex)); else if(ex.kind==="type")body.appendChild(exType(ex)); else if(ex.kind==="speak")body.appendChild(exSpeak(ex));
   d.appendChild(body);
