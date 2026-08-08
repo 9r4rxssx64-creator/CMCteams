@@ -209,6 +209,10 @@ for (const s of SURFACES) {
        et extrait — pour enfin trouver la clé de données source au lieu de deviner. */
     if (badStatus.some((b) => b.includes('%22'))) {
       try {
+        /* quelle VERSION de page a réellement servi ce run ? (tranche « fix pas encore
+           déployé/CDN » vs « fix insuffisant » — on relançait à l'aveugle sans ça) */
+        const ver = await page.evaluate(() => (typeof APP_VER !== 'undefined' ? APP_VER : '?')).catch(() => '?');
+        res.notes.push('version page servie : ' + ver);
         const who = await page.evaluate(() => {
           const out = [];
           document.querySelectorAll('img,video,source,link[rel*="icon"]').forEach((el) => {
