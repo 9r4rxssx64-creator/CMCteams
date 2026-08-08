@@ -209,6 +209,20 @@ for (const s of SURFACES) {
        et extrait — pour enfin trouver la clé de données source au lieu de deviner. */
     if (badStatus.some((b) => b.includes('%22'))) {
       try {
+        /* quelle VERSION de page a réellement servi ce run ? (tranche « fix pas encore
+           déployé/CDN » vs « fix insuffisant » — on relançait à l'aveugle sans ça) */
+        const ver = await page.evaluate(() => (typeof APP_VER !== 'undefined' ? APP_VER : '?')).catch(() => '?');
+        res.notes.push('version page servie : ' + ver);
+        /* énumère les CLÉS de données réellement polluées (valeur contenant `"/"`) —
+           fini de deviner la source une clé à la fois */
+        const polluted = await page.evaluate(() => {
+          const out = [];
+          for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); const v = localStorage.getItem(k) || '';
+            let idx = v.indexOf('\\"/\\"'); if (idx < 0) idx = v.indexOf('"\\/"');
+            if (idx >= 0) out.push(k + ' → …' + v.slice(Math.max(0, idx - 40), idx + 12).replace(/\s+/g, ' ') + '…'); }
+          return out.slice(0, 6);
+        }).catch(() => []);
+        if (polluted.length) res.notes.push('CLÉS POLLUÉES: ' + polluted.join(' | '));
         const who = await page.evaluate(() => {
           const out = [];
           document.querySelectorAll('img,video,source,link[rel*="icon"]').forEach((el) => {
