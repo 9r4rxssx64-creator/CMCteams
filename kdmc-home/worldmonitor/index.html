@@ -369,13 +369,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.37</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.38</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.37";
+var VER="v2.38";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -647,15 +647,10 @@ async function loadEonet(){try{
   setHTML(box,rows.slice(0,25).map(function(r){return '<div class="row"><div class="badge" style="background:#ff8a3d1a;border:1px solid #ff8a3d44;font-size:16px">'+r.icon+'</div><div class="main"><div class="t1">'+esc(r.title)+'</div><div class="t2">'+r.tcat+'</div></div><div class="when">'+(r.when?ago(r.when):"")+'</div></div>';}).join(""));
 }catch(e){setText($("eonetState"),"indispo");if($("sEvents").textContent==="—")setHTML($("eonet"),'<div class="empty">Événements indisponibles — reprise auto.</div>');}}
 
-/* ============ VOLS EUROPE (OpenSky) ============ */
+/* ============ VOLS EUROPE (adsb.lol / airplanes.live — gratuit, CORS OK, sans clé) ============ */
 async function loadFlights(){
-  /* OpenSky a fermé l'accès anonyme (2025) → chaîne de repli gratuite sans clé */
-  try{
-    var d=await getJSON("https://opensky-network.org/api/states/all?lamin=41&lomin=-6&lamax=52&lomax=12",9000);
-    var st=(d&&d.states)||[];
-    if(st.length){DL.flights=st.filter(function(a){return a[5]!=null&&a[6]!=null&&!a[8];}).slice(0,600).map(function(a){return {lat:a[6],lon:a[5]};});
-      setText($("sFlights"),String(st.length));return;}
-  }catch(e){}
+  /* OpenSky a fermé l'accès anonyme (2025) ET bloque le CORS navigateur → on l'a retiré
+     (il ne produisait que du bruit console). adsb.lol + airplanes.live suffisent, CORS OK. */
   try{
     var d2=await getJSON("https://api.adsb.lol/v2/point/46/7/250",10000);
     var ac=(d2&&d2.ac)||[];
@@ -1629,8 +1624,8 @@ document.addEventListener("fullscreenchange",function(){if(MAP)setTimeout(functi
 var FEED={news:[],hn:[],cve:[]};
 function _cveNorm(x){var id=x.cve_id||x.id||"CVE";var sc=(x.cvss_v3!=null?x.cvss_v3:(x.cvss!=null?x.cvss:(x.cvss_v2!=null?x.cvss_v2:null)));return {id:id,sum:x.summary||"",cvss:(sc!=null?+sc:null)};}
 async function loadCve(){
-  /* Source 1 : CIRCL (cve.circl.lu, CORS OK). Repli : Shodan CVEDB. Les 2 sans clé.
-     CIRCL en 1er car Shodan CVEDB bloque le CORS navigateur (bruit console). */
+  /* Source 1 : CIRCL (cve.circl.lu, CORS OK). Repli : Shodan CVEDB via le relais serveur
+     kdmc-live /cve (Shodan bloque le CORS navigateur → passe par le worker, EPSS-ranked). */
   var items=null,src="";
   try{
     var c=await getJSON("https://cve.circl.lu/api/last",11000);
@@ -1638,7 +1633,7 @@ async function loadCve(){
     if(arr.length){items=arr.slice(0,8).map(_cveNorm);src="CIRCL";}
   }catch(e){}
   if(!items){try{
-    var d=await getJSON("https://cvedb.shodan.io/cves?limit=8&sort_by_epss=true",11000);
+    var d=await getJSON(LIVE_URL+"/cve?limit=8",11000);
     var a=(d&&(d.cves||d.data))||(Array.isArray(d)?d:[]);
     if(a.length){items=a.slice(0,8).map(_cveNorm);src="Shodan";}
   }catch(e2){}}
@@ -1819,6 +1814,6 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)fast
   })();
 })();
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.37" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.38" data-color="#c9a227" defer></script>
 </body>
 </html>
