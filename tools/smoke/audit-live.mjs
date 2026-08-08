@@ -172,7 +172,9 @@ for (const s of SURFACES) {
        n'a rien vu (run 31227106483) → la requête part de JS pur (fetch / new Image / beacon). */
     const cdpStacks = [];
     const culpritSnaps = []; /* photos du DOM prises À L'INSTANT de la requête %22 (l'élément peut être éphémère) */
-    if (s.name === 'CMCteams') {
+    /* Départs/light ajoutés (run 31235630065) : GET /%22+m.img+%22 = le SOURCE JS parsé comme
+       HTML (flux servi corrompu) — le piège doit couvrir ces surfaces aussi. */
+    if (s.name === 'CMCteams' || s.name === 'Départs' || s.name === 'CMCteams light') {
       try {
         const cdp = await page.context().newCDPSession(page);
         await cdp.send('Network.enable');
