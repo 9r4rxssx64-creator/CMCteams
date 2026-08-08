@@ -313,9 +313,18 @@ for (const s of SURFACES) {
              other = <image> SVG, fetch/xhr = JS) — discriminant même si l'élément a disparu */
           performance.getEntriesByType('resource').filter((r) => r.name.includes('%22'))
             .forEach((r) => out.push('perf:' + r.initiatorType + ' →' + r.name.slice(-34)));
-          /* corruption de flux ? (cf. Départs v1.32) : source JS qui fuit en texte + compte <script> */
-          const fuite = ((document.body && document.body.textContent || '').match(/function\s+\w+\(|innerHTML|_cmcSafeCatch|\.forEach\(function/g) || []).length;
-          out.push('scripts=' + document.scripts.length + ' fuiteJS=' + fuite);
+          /* corruption de flux ? (cf. Départs v1.32) : source JS qui fuit en texte + compte <script>.
+             PROUVÉ run 31238385202 : scripts=10 fuiteJS=3001 (T0 sain) = document livré
+             DUPLIQUÉ/déchiré en route. On mesure maintenant la taille reçue (Navigation
+             Timing) : decodedBodySize ≈ 2× la taille du fichier = duplication confirmée,
+             et la position de la 1re fuite dit OÙ le flux casse. */
+          const bodyTxt = (document.body && document.body.textContent) || '';
+          const fuite = (bodyTxt.match(/function\s+\w+\(|innerHTML|_cmcSafeCatch|\.forEach\(function/g) || []).length;
+          let taille = '';
+          try { const nav = performance.getEntriesByType('navigation')[0];
+            if (nav) taille = ' reçu=' + nav.decodedBodySize + 'o transfert=' + nav.transferSize + 'o';
+          } catch (e) { /* Navigation Timing best-effort */ }
+          out.push('scripts=' + document.scripts.length + ' fuiteJS=' + fuite + taille);
           return out.slice(0, 8);
         });
         const mouchard = await page.evaluate(() => (window.__pollu || []).slice(0, 5)).catch(() => []);

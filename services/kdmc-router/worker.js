@@ -256,7 +256,11 @@ async function handleLingua(request, url, env) {
     // Voix naturelle : synthèse OpenAI TTS, mise en CACHE KV (1 mot = 1 synthèse à vie).
     // FAIL-OPEN : si clé absente ou erreur → le client repasse en voix navigateur.
     if (url.pathname === '/__lingua/tts' && request.method === 'GET') {
-      const text = (url.searchParams.get('t') || '').slice(0, 200);
+      /* Kevin 2026-08-08 « elle ne lit pas toute la phrase, s'arrête avant la fin » :
+         la limite 200 coupait les textes longs (réponse du Coach, explications) au milieu.
+         1000 couvre tout le contenu de l'app ; tts-1 accepte jusqu'à 4096, et l'URL GET
+         reste largement sous les limites Workers/CDN. */
+      const text = (url.searchParams.get('t') || '').slice(0, 1000);
       const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
       let voice = (url.searchParams.get('v') || 'nova').toLowerCase();
       if (VOICES.indexOf(voice) < 0) voice = 'nova';

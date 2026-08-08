@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.34.0";
+var APP_VER="v2.35.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -274,8 +274,21 @@ var VOICES=[
 ];
 function _isCloudVoice(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===id) return VOICES[i].cloud; } return false; }
 var _ttsAudio=null,_ttsReq=0;
+/* Kevin 2026-08-08 « elle s'arrête avant la fin » — repli voix du téléphone :
+   Chrome/Android et Safari iOS coupent silencieusement toute phrase parlée après ~15 s.
+   Correctif documenté : pendant qu'on parle, un pause()+resume() régulier relance le
+   moteur sans coupure audible. On l'arrête à la fin (onend/onerror) ou dès qu'on ne
+   parle plus. Toutes les lectures locales passent par _wsSpeak → jamais tronquées. */
+var _wsKA=null;
+function _wsStopKA(){ if(_wsKA){ try{ clearInterval(_wsKA); }catch(_){} _wsKA=null; } }
+function _wsSpeak(u){ if(!u)return; try{ speechSynthesis.cancel(); }catch(_){}  _wsStopKA();
+  var done=function(){ _wsStopKA(); };
+  u.onend=done; u.onerror=done;
+  try{ speechSynthesis.speak(u);
+    _wsKA=setInterval(function(){ try{ if(speechSynthesis.speaking){ speechSynthesis.pause(); speechSynthesis.resume(); } else done(); }catch(_){ done(); } },9000);
+  }catch(e){ done(); } }
 function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var myReq=++_ttsReq;
-  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){}   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
   if(_isCloudVoice(vid)){
     try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
       var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
@@ -289,7 +302,7 @@ function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var my
 function _webSpeak(text){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=COURSES[S.course]?COURSES[S.course].ttsLang:"fr-FR"; u.rate=.92;
   var base=(u.lang).split("-")[0], vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var best=vs.filter(function(v){return /premium|enhanced|siri|natural/i.test(v.name);})[0] || vs.filter(function(v){return v.localService;})[0] || vs[0];
-  if(best)u.voice=best; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+  if(best)u.voice=best; _wsSpeak(u);}catch(e){} }
 var AC=null;
 function tone(freqs,dur){ if(!S.sound)return; try{ AC=AC||new(window.AudioContext||window.webkitAudioContext)(); var o=AC.createOscillator(),g=AC.createGain(); o.connect(g);g.connect(AC.destination);o.type="sine";
   freqs.forEach(function(f,i){ o.frequency.setValueAtTime(f,AC.currentTime+i*0.08); });
@@ -1191,7 +1204,7 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
   /* ANTI-DÉCALAGE (même protection que speak()) : coupe tout son en cours + jeton de requête
      → jamais deux voix qui se chevauchent, jamais un ancien son qui part en retard */
   var myReq=++_ttsReq;
-  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){}
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();
   if(_isCloudVoice(vid)){ try{
     if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
     var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
@@ -1202,7 +1215,7 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
 function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=cfg?cfg.wsRate:(fem?.95:.9); u.pitch=cfg?cfg.wsPitch:(fem?1.15:1);
   var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var femV=fem?vs.filter(function(v){return /am[eé]lie|audrey|aur[eé]lie|c[eé]line|chantal|julie|marie|virginie|alice|elsa|paulina|monica|petra|anna|female|femme|woman/i.test(v.name);})[0]:null;
-  var best=femV||vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+  var best=femV||vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; _wsSpeak(u);}catch(e){} }
 function _srOk(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
 function dictate(cb,lang){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Micro non dispo sur ce navigateur"); cb&&cb(""); return; } var r=new SR(); r.lang=lang||"fr-FR"; r.interimResults=false; r.maxAlternatives=3; r.onresult=function(e){ var best=""; try{ best=e.results[0][0].transcript; }catch(_){} cb&&cb(best); }; r.onerror=function(){ cb&&cb(""); }; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Micro indisponible"); cb&&cb(""); } }
 
