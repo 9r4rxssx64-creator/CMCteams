@@ -201,6 +201,38 @@ for (const s of SURFACES) {
       } catch (e) { /* CDP best-effort */ }
       await page.addInitScript(() => {
         window.__pollu = [];
+        /* le tampon Resource Timing par défaut (250) déborde sur CMCteams (500+ requêtes)
+           → l'entrée %22 était évincée, on croyait « pas dans la frame principale » */
+        try { performance.setResourceTimingBufferSize(8000); } catch (e) { /* best-effort */ }
+        /* PIÈGE AUX SOURCES : on intercepte les PUITS d'écriture DOM eux-mêmes — le code
+           de l'app n'est pas minifié, donc la pile d'appel donne la fonction + ligne
+           EXACTES de index.html qui fabriquent le HTML pollué (mouchard DOM aveugle
+           sur les runs 31227106483/31231175160). */
+        const marque = (tag, texte, idx) => { try {
+          const pile = (new Error().stack || '').split('\n').slice(2, 6)
+            .map((l) => l.replace(/\s*at\s*/, '').replace(/https?:\/\/[^:)\s]+/g, '§')).join(' ← ');
+          window.__pollu.push(tag + ' ctx=…' + String(texte).slice(Math.max(0, idx - 130), idx + 40).replace(/\s+/g, ' ') + '… pile: ' + pile);
+        } catch (e) { /* best-effort */ } };
+        const cherche = (s) => {
+          let i = s.indexOf('%22/'); if (i < 0) i = s.indexOf('&quot;/&quot;');
+          if (i < 0) { const m = s.match(/(?:src|href|poster|data|background)="&quot;/); if (m) i = m.index; }
+          if (i < 0) { const m = s.match(/url\((?:&quot;|%22)\/(?:&quot;|%22)\)/); if (m) i = m.index; }
+          return i;
+        };
+        try {
+          const d = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+          Object.defineProperty(Element.prototype, 'innerHTML', {
+            configurable: true,
+            get() { return d.get.call(this); },
+            set(v) { try { const s = String(v); const i = cherche(s); if (i >= 0) marque('PUITS innerHTML<' + this.tagName + '#' + (this.id || '') + '>', s, i); } catch (e) { /* */ } return d.set.call(this, v); }
+          });
+          const ia = Element.prototype.insertAdjacentHTML;
+          Element.prototype.insertAdjacentHTML = function (pos, v) { try { const s = String(v); const i = cherche(s); if (i >= 0) marque('PUITS insertAdjacentHTML', s, i); } catch (e) { /* */ } return ia.call(this, pos, v); };
+          const sa = Element.prototype.setAttribute;
+          Element.prototype.setAttribute = function (n, v) { try { const s = String(v); if (/^(src|href|poster|style|data|xlink:href|srcset|background)$/.test(n) && (s.includes('"') || s.includes('%22/'))) marque('PUITS setAttribute ' + n + '<' + this.tagName + '>', s, Math.max(0, s.indexOf('"'))); } catch (e) { /* */ } return sa.call(this, n, v); };
+          const sp = CSSStyleDeclaration.prototype.setProperty;
+          CSSStyleDeclaration.prototype.setProperty = function (n, v, p) { try { const s = String(v); if (s.includes('%22/') || s.includes('"/"')) marque('PUITS setProperty ' + n, s, Math.max(0, s.indexOf('/'))); } catch (e) { /* */ } return sp.call(this, n, v, p); };
+        } catch (e) { /* piège best-effort */ }
         const chk = (el) => { try {
           if (!el.getAttribute) return;
           const src = el.getAttribute('src') || el.getAttribute('href') || el.getAttribute('poster') || '';
