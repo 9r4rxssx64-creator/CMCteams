@@ -87,6 +87,23 @@ flux corrompu » — le piège a maintenant un détecteur de corruption (fuite d
 source JS en texte visible + compte de `<script>`) qui tranchera au prochain
 run rouge. Patrouille cron 6 h active.
 
+**VERDICT (08/08 ~04h, run 31238385202) — CORRUPTION PROUVÉE par un chiffre** :
+note CMCteams = `COUPABLE %22 → scripts=10 fuiteJS=3001`. `fuiteJS=3001` = 3001
+fragments de code JS (`function …(`, `innerHTML`, `_cmcSafeCatch`…) dans le TEXTE
+VISIBLE de la page (page saine ≈ 0). Donc le parseur HTML casse et **le propre
+source JS de la page se rend comme du texte** → les milliers de `src="…"` /
+`<image href="…">` du source deviennent de vrais tags → `/%22/%22`. Exactement le
+mécanisme corrigé sur Départs. Différence CMCteams : **aucun `</script>` littéral
+statique dans index.html** (les 8 occurrences sont des balises légitimes) → la
+cassure est **pilotée par la DONNÉE** (une valeur stockée chargée via la session
+admin Firebase — d'où l'intermittence + le fait que ça n'arrive qu'en admin). La
+correction n'est donc PAS un patch de source ligne-à-ligne (fichier 1,8 Mo,
+milliers de `src="`), mais **échapper/assainir la valeur qui contient un fragment
+HTML fermant** (probable `</script>` ou `"/"` dans un contenu injecté). Piste
+concrète : trouver la valeur Firebase (chat / planning / photo / nom) contenant
+`</script>` ou `"/"` et l'échapper au point d'injection. Fil long (task #5,
+partiellement porté par une autre session) — patrouille 6 h laissée active.
+
 ## Nuit du 6 au 7 août 2026 — « vérifier en réel » livré, et ce qu'il a trouvé
 
 **Contexte** : GitHub Actions est tombé 6 h (0 job en cours / 393 en file). Rien n'a été
