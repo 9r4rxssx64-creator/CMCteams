@@ -204,7 +204,13 @@ for (const s of SURFACES) {
               const perf = performance.getEntriesByType('resource')
                 .filter((r) => r.name.includes('%22'))
                 .map((r) => 'perf:' + r.initiatorType + ' →' + r.name.slice(-34));
-              return out.slice(0, 4).concat(perf.slice(0, 3));
+              /* DÉTECTEUR DE CORRUPTION DE FLUX (théorie prouvée sur Départs v1.32,
+                 run 31235630065) : si le HTML servi arrive corrompu, le parseur fait
+                 déborder du SOURCE JS en texte visible et le compte de <script> change.
+                 Une page saine : fuiteJS≈0. */
+              const fuite = ((document.body && document.body.textContent || '').match(/function\s+\w+\(|innerHTML|_cmcSafeCatch|\.forEach\(function/g) || []).length;
+              out.push('scripts=' + document.scripts.length + ' fuiteJS=' + fuite);
+              return out.slice(0, 5).concat(perf.slice(0, 3));
             }).catch(() => []));
           }
         });
@@ -307,7 +313,10 @@ for (const s of SURFACES) {
              other = <image> SVG, fetch/xhr = JS) — discriminant même si l'élément a disparu */
           performance.getEntriesByType('resource').filter((r) => r.name.includes('%22'))
             .forEach((r) => out.push('perf:' + r.initiatorType + ' →' + r.name.slice(-34)));
-          return out.slice(0, 7);
+          /* corruption de flux ? (cf. Départs v1.32) : source JS qui fuit en texte + compte <script> */
+          const fuite = ((document.body && document.body.textContent || '').match(/function\s+\w+\(|innerHTML|_cmcSafeCatch|\.forEach\(function/g) || []).length;
+          out.push('scripts=' + document.scripts.length + ' fuiteJS=' + fuite);
+          return out.slice(0, 8);
         });
         const mouchard = await page.evaluate(() => (window.__pollu || []).slice(0, 5)).catch(() => []);
         if (mouchard.length) who.push('MOUCHARD: ' + mouchard.join(' | '));

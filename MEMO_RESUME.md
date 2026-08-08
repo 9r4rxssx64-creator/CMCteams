@@ -61,6 +61,21 @@ Chronologie des faits PROUVÉS (runs verif-reelle) :
 Relancer `verif-reelle.yml` périodiquement jusqu'à capture, puis corriger la vraie
 source et exiger 2 verts consécutifs.
 
+**PERCÉE (08/08 ~03h) — la MÊME FAMILLE attrapée et corrigée sur Départs** :
+run 31235630065 : `GET /%22+m.img+%22` + `/%22+window._depPendingImg+%22` sur
+departs.kd-mc.com ET cmcteams-light.kd-mc.com = EXACTEMENT les 2 seules balises
+image écrites en clair dans le source JS de tools/departs/index.html (code du
+repo CORRECT, repro locale = 0 requête) → preuve que le FLUX HTML SERVI arrive
+parfois corrompu (CDN/réseau) et que le navigateur re-parse le source JS comme
+du HTML (fetch des src littéraux). **Fix Départs v1.32 livré + vérifié en vrai**
+(run 31236712602 : Départs ✅ light ✅) : plus aucune balise image lisible dans
+le source (tag scindé) + URL validée (`window._okImgUrl`). Le `/%22/%22` du
+CMCteams principal (toujours rouge, `type=parser`, AUCUN puits JS traversé,
+AUCUNE entrée resource-timing) colle à la même théorie « parseur principal sur
+flux corrompu » — le piège a maintenant un détecteur de corruption (fuite de
+source JS en texte visible + compte de `<script>`) qui tranchera au prochain
+run rouge. Patrouille cron 6 h active.
+
 ## Nuit du 6 au 7 août 2026 — « vérifier en réel » livré, et ce qu'il a trouvé
 
 **Contexte** : GitHub Actions est tombé 6 h (0 job en cours / 393 en file). Rien n'a été
