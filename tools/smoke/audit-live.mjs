@@ -163,6 +163,7 @@ for (const s of SURFACES) {
        + CDP : la PILE D'APPEL exacte de la requête %22 (fonction + ligne) — le mouchard DOM
        n'a rien vu (run 31227106483) → la requête part de JS pur (fetch / new Image / beacon). */
     const cdpStacks = [];
+    const culpritSnaps = []; /* photos du DOM prises À L'INSTANT de la requête %22 (l'élément peut être éphémère) */
     if (s.name === 'CMCteams') {
       try {
         const cdp = await page.context().newCDPSession(page);
@@ -173,6 +174,28 @@ for (const s of SURFACES) {
             const frames = (ini.stack && ini.stack.callFrames || []).slice(0, 6)
               .map((f) => (f.functionName || '?') + '@' + (f.url || '').split('/').pop() + ':' + f.lineNumber);
             cdpStacks.push('type=' + ini.type + (frames.length ? (' pile: ' + frames.join(' ← ')) : '') + (ini.url ? (' url=' + ini.url.split('/').pop() + ':' + (ini.lineNumber || '?')) : ''));
+            /* balayage INSTANTANÉ de tout le DOM : quel élément porte l'attribut cassé ?
+               (run 31230312178 : v9.882 servie, localStorage propre, scan différé aveugle
+               → il faut photographier au moment T + lire performance.initiatorType qui
+               distingue fond CSS / <img> / <image> SVG / fetch) */
+            culpritSnaps.push(page.evaluate(() => {
+              const out = [];
+              document.querySelectorAll('*').forEach((el) => {
+                for (const a of (el.attributes || [])) {
+                  const v = a.value || '';
+                  const broken = (a.name === 'style')
+                    ? (v.includes('%22/') || v.includes('"/"'))
+                    : (v.includes('"') || v.includes('%22/'));
+                  if (broken && /^(src|href|poster|data|style|xlink:href)$/.test(a.name)) {
+                    out.push('<' + el.tagName.toLowerCase() + ' ' + a.name + '=' + JSON.stringify(v).slice(0, 60) + '> html=' + (el.outerHTML || '').replace(/\s+/g, ' ').slice(0, 160));
+                  }
+                }
+              });
+              const perf = performance.getEntriesByType('resource')
+                .filter((r) => r.name.includes('%22'))
+                .map((r) => 'perf:' + r.initiatorType + ' →' + r.name.slice(-34));
+              return out.slice(0, 4).concat(perf.slice(0, 3));
+            }).catch(() => []));
           }
         });
       } catch (e) { /* CDP best-effort */ }
@@ -187,7 +210,7 @@ for (const s of SURFACES) {
         } catch (e) { /* mouchard best-effort */ } };
         new MutationObserver((ms) => { ms.forEach((m) => {
           if (m.type === 'attributes') chk(m.target);
-          if (m.addedNodes) m.addedNodes.forEach((n) => { if (n.nodeType === 1) { chk(n); if (n.querySelectorAll) n.querySelectorAll('[src],[style]').forEach(chk); } });
+          if (m.addedNodes) m.addedNodes.forEach((n) => { if (n.nodeType === 1) { chk(n); if (n.querySelectorAll) n.querySelectorAll('[src],[style],[href],[poster]').forEach(chk); } });
         }); }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'style', 'href', 'poster'] });
       });
     }
@@ -218,15 +241,15 @@ for (const s of SURFACES) {
         const polluted = await page.evaluate(() => {
           const out = [];
           for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); const v = localStorage.getItem(k) || '';
-            let idx = v.indexOf('\\"/\\"'); if (idx < 0) idx = v.indexOf('"\\/"');
+            let idx = v.indexOf('\\"/\\"'); if (idx < 0) idx = v.indexOf('"\\/"'); if (idx < 0) idx = v.indexOf('%22/%22');
             if (idx >= 0) out.push(k + ' → …' + v.slice(Math.max(0, idx - 40), idx + 12).replace(/\s+/g, ' ') + '…'); }
           return out.slice(0, 6);
         }).catch(() => []);
         if (polluted.length) res.notes.push('CLÉS POLLUÉES: ' + polluted.join(' | '));
         const who = await page.evaluate(() => {
           const out = [];
-          document.querySelectorAll('img,video,source,link[rel*="icon"]').forEach((el) => {
-            const src = el.getAttribute('src') || el.getAttribute('href') || '';
+          document.querySelectorAll('img,video,source,image,link[rel*="icon"]').forEach((el) => {
+            const src = el.getAttribute('src') || el.getAttribute('href') || el.getAttribute('xlink:href') || '';
             if (src.includes('"') || src.includes('%22')) out.push('<' + el.tagName.toLowerCase() + ' src=' + JSON.stringify(src).slice(0, 60) + '> parent=' + (el.parentElement ? el.parentElement.className || el.parentElement.id || el.parentElement.tagName : '?'));
           });
           document.querySelectorAll('[style*="%22"],[style*="url"]').forEach((el) => {
@@ -238,11 +261,21 @@ for (const s of SURFACES) {
           const cs = getComputedStyle(document.body);
           ['--cmc-login-bg', '--cmc-accueil-bg', '--cmc-planning-bg'].forEach((v) => { const val = cs.getPropertyValue(v); if (val && (val.includes('%22') || val.includes('"/"'))) vars.push(v + '=' + val.slice(0, 60)); });
           if (vars.length) out.push('vars: ' + vars.join(' · '));
-          return out.slice(0, 5);
+          /* Resource Timing : le CANAL de chargement (css = fond CSS, img = <img>,
+             other = <image> SVG, fetch/xhr = JS) — discriminant même si l'élément a disparu */
+          performance.getEntriesByType('resource').filter((r) => r.name.includes('%22'))
+            .forEach((r) => out.push('perf:' + r.initiatorType + ' →' + r.name.slice(-34)));
+          return out.slice(0, 7);
         });
         const mouchard = await page.evaluate(() => (window.__pollu || []).slice(0, 5)).catch(() => []);
         if (mouchard.length) who.push('MOUCHARD: ' + mouchard.join(' | '));
         if (cdpStacks.length) who.push('PILE RÉSEAU: ' + cdpStacks.slice(0, 2).join(' || '));
+        /* photos DOM prises à l'instant T de la requête %22 (élément éphémère ⇒ seul ce
+           cliché le voit) + initiatorType (css/img/other) qui dit PAR QUEL CANAL il charge */
+        try {
+          const snaps = (await Promise.all(culpritSnaps)).flat().filter(Boolean);
+          if (snaps.length) who.push('CLICHÉ T0: ' + [...new Set(snaps)].slice(0, 5).join(' | '));
+        } catch (e) { /* best-effort */ }
         res.notes.push(who.length ? ('COUPABLE %22 → ' + who.join(' | ')) : 'COUPABLE %22 → introuvable dans le DOM au moment du scan (élément déjà retiré ?)');
       } catch (e) { /* enquête best-effort */ }
     }
