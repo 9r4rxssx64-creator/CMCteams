@@ -18,6 +18,19 @@
    mascotte de LINGUA uniquement. La surface Créa Studio reste surveillée par la
    vérif réelle (nav ≥6 studios), sans exigence de mascotte.
 
+3quater. **KDMC Lingua v2.35.0 — la voix ne coupe plus avant la fin** (Kevin :
+   « Elle ne lit pas toujours toute la phrase écrite, s'arrête avant la fin »).
+   Deux causes trouvées et corrigées : (1) le worker `/tts` **coupait le texte à
+   200 caractères** → les longues lectures (réponse du Coach, explications) étaient
+   tronquées au milieu (les mots/histoires ≤35 car. passaient — d'où « pas
+   toujours ») → cap porté à **1000** (tts-1 accepte 4096, URL sûre) ; (2) la voix
+   du téléphone (repli hors-ligne) est coupée par Chrome/Safari après ~15 s →
+   **keepalive `resume()`** ajouté (helper `_wsSpeak`, arrêté proprement à la fin).
+   Prouvé en navigateur réel via le vrai Coach : le worker reçoit les 338 car.
+   entiers ; la voix locale parle le texte complet, keepalive déclenché sur une
+   phrase de 10 s, nettoyé à la fin. Non-régression : synchro voix PASS, retour
+   arrière 10/10, jeux/stats 21/21. sw.js lingua-v2.35.0.
+
 3ter. **KDMC Lingua v2.34.0 — synchro voix vérifiée + garde retour-arrière** (Kevin :
    « Vérifie la synchro de la voix avec les questions… Pas de retour arrière possible
    pendant une leçon ») : synchro voix PROUVÉE en navigateur réel (exercices « écoute »
