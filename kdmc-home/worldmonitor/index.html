@@ -369,13 +369,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.39</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.40</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.39";
+var VER="v2.40";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -1055,9 +1055,9 @@ async function loadPlanes(){
   var lat=Math.round(c.lat*1000)/1000,lon=Math.round(c.lng*1000)/1000;
   var b=MAP.getBounds(),km=b.getNorthEast().distanceTo(b.getSouthWest())/1000;
   var nm=Math.min(250,Math.max(50,Math.round(km/2/1.852)));
+  /* avions via le relais serveur /planes (adsb.lol/airplanes.live bloquent le CORS navigateur) */
   var ac=null;
-  try{var d=await getJSON("https://api.adsb.lol/v2/point/"+lat+"/"+lon+"/"+nm,10000);ac=(d&&d.ac)||null;}catch(e){}
-  if(!ac||!ac.length){try{var d2=await getJSON("https://api.airplanes.live/v2/point/"+lat+"/"+lon+"/"+nm,10000);ac=(d2&&d2.ac)||null;}catch(e){}}
+  try{var d=await getJSON(LIVE_URL+"/planes?lat="+lat+"&lon="+lon+"&radius="+nm,10000);ac=(d&&d.ac)||null;}catch(e){}
   if(!ac){setText($("mapHint"),"✈️ trafic aérien momentanément indispo · 🔴 séismes");return;}
   _planeLayer.clearLayers();
   var n=0;
@@ -1808,6 +1808,6 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)fast
   })();
 })();
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.39" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.40" data-color="#c9a227" defer></script>
 </body>
 </html>
