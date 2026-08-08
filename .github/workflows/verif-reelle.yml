@@ -22,6 +22,13 @@ on:
       base:
         description: "Domaine à vérifier"
         default: "https://kd-mc.com"
+  # TEMPORAIRE (enquête 404 /%22/%22, 2026-08-08) : le piège aux puits d'écriture DOM
+  # est armé dans audit-live.mjs — chaque run rouge NOMME la fonction+ligne fautive.
+  # Le bug est intermittent (source externe épisodique), donc on patrouille toutes les
+  # 6 h (cap anti-spam Kevin : 4 runs/jour max). À RETIRER une fois la source corrigée
+  # + 2 verts consécutifs.
+  schedule:
+    - cron: '15 */6 * * *'
 
 permissions:
   contents: read
@@ -50,14 +57,14 @@ jobs:
 
       - name: Ouvrir les vraies pages (connecté)
         env:
-          KDMC_AS_KEVIN: ${{ inputs.connecte && '1' || '0' }}
+          KDMC_AS_KEVIN: ${{ (github.event_name == 'schedule' || inputs.connecte) && '1' || '0' }}
           KDMC_ADMIN_PIN_SHA256: ${{ secrets.APEX_ADMIN_PIN_SHA256 }}
         # `pipefail` OBLIGATOIRE : sans lui, le code de sortie est celui de `tee` (toujours 0)
         # et un audit qui dit « ÉCHEC (2 surfaces) » ressort VERT. Constaté au 1er run réel
         # (run 31129784556 : 2 surfaces en échec, job vert). Un contrôle qui ment est pire
         # que pas de contrôle — cf. règle PREUVE > DÉCLARATION.
         shell: bash -euo pipefail {0}
-        run: node tools/smoke/audit-live.mjs "${{ inputs.base }}" 2>&1 | tee /tmp/verif.log
+        run: node tools/smoke/audit-live.mjs "${{ inputs.base || 'https://kd-mc.com' }}" 2>&1 | tee /tmp/verif.log
 
       - name: Captures d'écran + rapport (même en cas d'échec)
         if: always()
