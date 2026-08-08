@@ -5066,7 +5066,15 @@ function safeUrl(u){
 }
 /* Encode un data URL (ou toute URL) pour insertion s\u00fbre dans CSS url("...") ou attribut src="..."
    Encode les caract\u00e8res pouvant casser l'attribut / la fonction CSS : " \ ( ) */
-function _safeUrl(u){return String(u||"").replace(/\\/g,"%5C").replace(/"/g,"%22").replace(/'/g,"%27").replace(/\(/g,"%28").replace(/\)/g,"%29");}
+function _safeUrl(u){var s=String(u==null?"":u).trim();
+  /* v9.883 — FIX DÉFINITIF du 404 /%22/%22 : une valeur polluée (ex la chaîne `"/"`) était
+     ENCODÉE en %22/%22 par les replace ci-dessous — ce qui EST justement la requête fautive
+     (src="%22/%22" / url("%22/%22") → GET /%22/%22 → 404). On n'émet donc QUE des URLs
+     plausibles (data:/blob:/http(s):/chemin absolu du site) ; tout le reste → "" (aucune
+     requête, aucun 404, dégradation propre). Les valeurs légitimes passent inchangées, avec
+     l'échappement des caractères qui casseraient l'attribut / la fonction CSS url(). */
+  if(!/^(data:|blob:|https?:\/\/|\/[^/])/i.test(s))return "";
+  return s.replace(/\\/g,"%5C").replace(/"/g,"%22").replace(/'/g,"%27").replace(/\(/g,"%28").replace(/\)/g,"%29");}
 /* v9.876 — une valeur de fond invalide (ex : la chaine `"/"`) donnait `url(""/"")`, du CSS
    malformé que le navigateur relit comme une adresse : requête vers /%22/%22 → 404 sur le
    domaine. Vu en vrai le 2026-08-07 (vérif réelle, run 31129784556, surface CMCteams).
@@ -5804,7 +5812,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.882";
+var APP_VER="v9.883";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -7352,6 +7360,15 @@ function runTests(){
   _test("_safeUrl encode guillemets",function(){
     var u=_safeUrl('data:image/png;a"b');
     _assert(u.indexOf('"')<0,"guillemet echappé");
+  });
+  _test("_safeUrl rejette non-URL (anti 404 /%22/%22, v9.883)",function(){
+    _assertEq(_safeUrl('"/"'),"");        /* la valeur polluée historique → jamais %22/%22 */
+    _assertEq(_safeUrl('/'),"");
+    _assertEq(_safeUrl('"'),"");
+    _assertEq(_safeUrl(''),"");
+    _assert(_safeUrl('data:image/png;base64,AAAA').indexOf('data:')===0,"data URL conservée");
+    _assert(_safeUrl('https://x/y.png').indexOf('https://')===0,"http conservée");
+    _assert(_safeUrl('/plan/x.png').indexOf('/plan/')===0,"chemin absolu conservé");
   });
   _test("isDocShared false par défaut",function(){
     _assertEq(isDocShared(null),false);
