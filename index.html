@@ -5804,7 +5804,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.881";
+var APP_VER="v9.882";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -34752,9 +34752,21 @@ var ETABS_PLAN=[
 // v9.277 — Icônes créatives par jeu (SVG paths pour rendre table visible)
 var JEU_ICON_CHAR={bj:"\u2660",roul_ang:"\u25cf",roul_eur:"\u25cb",punto:"\u2663",punto_hr:"\u2666",craps:"\ud83c\udfb2",holdem:"\u2665",poker_cash:"\u2666"};
 // v9.277 — URL image de fond par établissement (admin peut coller une image plan)
-function getPlanBgImages(){return lg("cmc_plan_bg_images",{});}
+/* v9.881 — LA VRAIE SOURCE du 404 /%22/%22 : cmc_plan_bg_images, rempli par un prompt()
+   d'URL LIBRE (jamais validée). Une saisie invalide (ex `"/"`) partait dans les
+   <image href> des cartes (mini-carte accueil L21666, carte tables L19594, impression
+   L35289) → &quot;/&quot; décodé → GET /%22/%22, intermittent selon que la carte rend.
+   Assaini au point de passage UNIQUE : toute valeur non-image est retirée et la
+   version propre re-persiste (la synchro redistribue aux autres appareils). */
+function getPlanBgImages(){var s=lg("cmc_plan_bg_images",{})||{};var n=0;
+  Object.keys(s).forEach(function(k){var v=s[k];
+    if(typeof v!=="string"||!v||!_bgUrlOk(v)){delete s[k];n++;}});
+  if(n){try{ls("cmc_plan_bg_images",s);console.warn("[v9.881] cmc_plan_bg_images assaini : "+n+" valeur(s) retirée(s)");}catch(_e){}}
+  return s;}
 function setPlanBgImage(etabId,url){
   if(!A.user||A.user.id!==AID)return;
+  /* v9.881 — refuser À LA SAISIE ce qui n'est pas une image (cause racine du 404) */
+  if(url&&!_bgUrlOk(url)){toast("⚠ Ce n'est pas une adresse d'image valide (il faut un lien https:// ou une image importée)","err",4000);return;}
   var s=getPlanBgImages();
   if(url)s[etabId]=url;else delete s[etabId];
   ls("cmc_plan_bg_images",s);
