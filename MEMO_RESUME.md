@@ -45,6 +45,23 @@
    sans micro→auto-éval avance+XP, pronGoodTotal persisté. Worker déjà au cap 1000
    (aucun changement). sw.js lingua-v2.36.0. Mergé PR #3233.
 
+3sexies. **KDMC Lingua v2.37.0 — Bee gros plan qui parle VRAIMENT (lip-sync) + corrections
+   très poussées** (Kevin : « Avoir en gros plan Bee et qu'elle parle réellement de la bouche
+   etc vrai interaction comme l'app Speak. Explications, corrections très poussées partout
+   toujours »). 👄 **Lip-sync réel** : la bouche s'ouvre sur l'**amplitude du vrai son** (Web
+   Audio analyser ; le worker `/tts` renvoie déjà `ACAO:*` → analyse cross-origin avec
+   `crossOrigin="anonymous"`). La source est branchée à la sortie AVANT l'analyse → le son passe
+   toujours ; repli flap CSS si l'amplitude reste plate. Helper `beeLipSync()`. 🐝 **Atelier
+   prononciation** : Bee en **gros plan** qui **dit le mot**, bouche animée → « regarde et
+   imite ». 🎬 **Discussion** : pendant qu'elle parle → marionnette + bouche qui articule sur
+   le son (la vidéo générique ne synchronise pas les lèvres) ; la belle vidéo revient entre deux
+   répliques. 🔎 **Corrections très détaillées** : score + **syllabe fautive repérée** (« le
+   décalage commence vers … ») + marche à suivre 1/2/3 + astuces son (placement bouche) +
+   « entendu » échappé (anti-XSS). Prouvé en navigateur réel (Playwright, vrai WAV à amplitude
+   variable servi en CORS) : bouche qui s'anime réellement (atelier + Discussion), correction
+   profonde, exact→85 %+. Non-régression : v2.36 pron PASS, retour arrière 10/10. Garde CI
+   (`audit-live`) : Bee + bouche exigées. sw.js lingua-v2.37.0. Mergé PR #3238.
+
 3ter. **KDMC Lingua v2.34.0 — synchro voix vérifiée + garde retour-arrière** (Kevin :
    « Vérifie la synchro de la voix avec les questions… Pas de retour arrière possible
    pendant une leçon ») : synchro voix PROUVÉE en navigateur réel (exercices « écoute »
