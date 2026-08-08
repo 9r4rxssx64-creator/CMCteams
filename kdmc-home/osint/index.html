@@ -103,7 +103,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
     <div class="empty" id="empty" style="display:none">Aucun outil ne correspond.</div>
   </section>
 </div>
-<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.2</span>
+<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.3</span>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -121,6 +121,7 @@ async function getJSON(url,ms){
 
 /* ============ EN DIRECT (APIs publiques gratuites, sans clé — mêmes sources que World Monitor) ============ */
 var EU_LAT=46,EU_LON=7,EU_NM=250;
+var LIVE_URL="https://kdmc-live.9r4rxssx64.workers.dev"; /* relais serveur : /cve (Shodan CVEDB, CORS OK via worker) */
 var EONET="https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=40&category=";
 /* Détroits stratégiques + zones de tension (statique, indicatif — cf. World Monitor) */
 var CHOKE=[
@@ -153,7 +154,8 @@ async function loadStorms(){
   try{var d=await getJSON(EONET+"severeStorms",14000);drawPts(_stormLayer,eonetPts(d&&d.events),"#b992ff",7,"🌀 Tempête");}catch(e){}
 }
 async function loadCve(){
-  try{var d=await getJSON("https://cvedb.shodan.io/cves?limit=25",9000);var arr=(d&&d.cves)||null;if(arr){setText($("kCve"),String(arr.length));return;}}catch(e){}
+  /* Shodan CVEDB via le relais serveur kdmc-live (Shodan bloque le CORS navigateur). Repli : CIRCL. */
+  try{var d=await getJSON(LIVE_URL+"/cve?limit=25",9000);var arr=(d&&d.cves)||null;if(arr){setText($("kCve"),String(arr.length));return;}}catch(e){}
   try{var c=await getJSON("https://cve.circl.lu/api/last",11000);if(Array.isArray(c)){setText($("kCve"),String(Math.min(c.length,50)));return;}}catch(e2){}
 }
 async function refreshLive(){
@@ -316,6 +318,6 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 /* MAJ auto force (leçon #102) : badge cliquable = échappatoire garantie */
 $("ver").onclick=function(){if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});if(window.caches&&caches.keys)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n);});});location.replace(location.pathname+"?_force_upd_"+Date.now());};
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.2" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.3" data-color="#c9a227" defer></script>
 </body>
 </html>

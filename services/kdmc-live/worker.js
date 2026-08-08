@@ -11,6 +11,7 @@
  *   GET /lightning  → foudre temps réel Blitzortung (WS courte ~5 s) → {strikes:[{lat,lon,time}], debug}
  *   GET /cyclones   → relais CORS de https://www.nhc.noaa.gov/CurrentStorms.json (cache ~10 min)
  *   GET /fires?bbox=w,s,e,n → NASA FIRMS VIIRS_SNPP_NRT (24 h) → FeatureCollection GeoJSON
+ *   GET /cve?limit=N → relais CORS de https://cvedb.shodan.io/cves (classé EPSS, sans clé) → {cves:[…]}
  *   OPTIONS         → préflight CORS
  *
  * SÉCURITÉ (règles CLAUDE.md, leçon #130) :
@@ -216,6 +217,37 @@ async function handleCyclones(request, origin) {
   }
 }
 
+/* ============================== /cve (Shodan CVEDB) ============================== */
+
+// Relais CORS de cvedb.shodan.io — la meilleure source de vulnérabilités publiques SANS clé,
+// classée par risque EPSS, mais qui BLOQUE le CORS navigateur (bruit console côté World Monitor
+// + OSINT). Ici, fetch serveur simple → réponse renvoyée telle quelle au client. Cache court.
+// FAIL-OPEN : toute erreur/amont non-200 → {cves:[]} 200 + debug (cause exacte), jamais un 5xx.
+const CVE_TTL = 600; // 10 min
+async function handleCve(url, origin) {
+  const limit = Math.max(1, Math.min(50, parseInt(url.searchParams.get("limit") || "25", 10) || 25));
+  const upstream = "https://cvedb.shodan.io/cves?limit=" + limit + "&sort_by_epss=true";
+  try {
+    const r = await fetch(upstream, { headers: { "accept": "application/json", "user-agent": "kdmc-live-worker (kd-mc.com World Monitor)" } });
+    const txt = await r.text();
+    if (!r.ok) return json({ cves: [], debug: { upstreamStatus: r.status, body: txt.slice(0, 300) } }, origin);
+    let parsed;
+    try { parsed = JSON.parse(txt); } catch (e) {
+      return json({ cves: [], debug: { note: "CVEDB a renvoyé du non-JSON", firstRaw: txt.slice(0, 300) } }, origin);
+    }
+    // Passthrough {cves:[…]} avec cache navigateur court.
+    return new Response(JSON.stringify(parsed), {
+      status: 200,
+      headers: Object.assign(
+        { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=" + CVE_TTL },
+        cors(origin)
+      ),
+    });
+  } catch (e) {
+    return json({ cves: [], debug: { error: String((e && e.message) || e) } }, origin);
+  }
+}
+
 /* ============================== /fires (NASA FIRMS) ============================== */
 
 // Parse CSV FIRMS (header en 1re ligne) → tableau d'objets. Les champs FIRMS ne contiennent
@@ -283,7 +315,7 @@ async function handleFires(url, origin, env) {
 
 /* ============================== router ============================== */
 
-const ENDPOINTS = ["/health", "/lightning", "/cyclones", "/fires?bbox=w,s,e,n"];
+const ENDPOINTS = ["/health", "/lightning", "/cyclones", "/fires?bbox=w,s,e,n", "/cve?limit=25"];
 
 export default {
   async fetch(request, env) {
@@ -302,6 +334,7 @@ export default {
       if (url.pathname === "/lightning") return await handleLightning(url, origin);
       if (url.pathname === "/cyclones") return await handleCyclones(request, origin);
       if (url.pathname === "/fires") return await handleFires(url, origin, env);
+      if (url.pathname === "/cve") return await handleCve(url, origin);
     } catch (e) {
       return json({ ok: false, error: "handler_threw", detail: String((e && e.message) || e), path: url.pathname }, origin);
     }
