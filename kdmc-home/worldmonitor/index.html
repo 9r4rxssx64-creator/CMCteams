@@ -52,7 +52,9 @@
   .card h2 .k{margin-left:auto; font-size:11px; color:var(--gold); letter-spacing:.06em}
   .globe-card{position:relative; min-height:360px}
   #map{width:100%; height:430px; background:#0a1020}
-  #map.hidden,#globe.hidden{display:none}
+  #map.hidden,#globe.hidden,#g3d.hidden{display:none}
+  #g3d{width:100%;height:520px;border-radius:12px;overflow:hidden;background:#0a0f1e}
+  #g3d .maplibregl-ctrl-attrib{font-size:10px}
   .leaflet-container{background:#0a1020!important; font-family:inherit}
   .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0e1424; color:var(--txt); border:1px solid var(--line)}
   .leaflet-popup-content{margin:9px 12px; font-size:12px; line-height:1.5}
@@ -180,9 +182,10 @@
     <div class="col">
       <section class="card globe-card">
         <h2>🛰️ Vue Terre <span class="k" id="globeState">chargement…</span>
-          <span class="vswitch"><button id="vMap" aria-pressed="true">🗺️ Carte</button><button id="vGlobe" aria-pressed="false">🌍 Globe</button><button id="vFull" title="Plein écran" aria-pressed="false">⛶</button></span>
+          <span class="vswitch"><button id="vMap" aria-pressed="true">🗺️ Carte</button><button id="vGlobe" aria-pressed="false">🌍 Globe</button><button id="vG3D" aria-pressed="false" title="Globe 3D navigable (relief + satellite) — comme Google Earth : glisse pour tourner, 2 doigts pour incliner">🏔️ 3D</button><button id="vFull" title="Plein écran" aria-pressed="false">⛶</button></span>
         </h2>
         <div style="position:relative"><div id="map"></div><div id="mapLive" style="position:absolute;top:8px;right:8px;z-index:800;background:rgba(8,12,24,.78);border:1px solid rgba(120,150,210,.25);border-radius:8px;padding:4px 9px;font-size:11px;letter-spacing:.4px;display:flex;align-items:center;gap:6px;pointer-events:none"><span style="width:7px;height:7px;border-radius:50%;background:#ff3b30;animation:pulseDot 1.6s ease-in-out infinite"></span><b>LIVE</b><span id="mapClock" style="font-variant-numeric:tabular-nums;opacity:.85">—</span></div><div class="maphint" id="mapHint">✈️ avions en direct · 🔴 séismes · pince pour zoomer</div></div>
+        <div id="g3d" class="hidden" aria-label="Globe 3D navigable : relief et satellite, comme Google Earth"></div>
         <div id="wmSearch" style="display:flex;gap:6px;margin:8px 0 2px">
           <input id="wmQ" type="search" placeholder="🔍 Aller à… (ville, pays, lieu)" autocomplete="off" style="flex:1;min-width:0;background:rgba(10,16,30,.7);border:1px solid var(--line);border-radius:9px;color:var(--fg);padding:9px 12px;font:inherit;font-size:14px">
           <button id="wmGo" class="tg" style="min-height:40px" title="Voler vers ce lieu">➜</button>
@@ -366,13 +369,13 @@
 </div>
 
 <footer>
-  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.36</span>
+  <span class="ver" id="ver" title="Forcer la mise à jour">World Monitor v2.37</span>
   <span class="src">Sources publiques gratuites, aucune clé exposée : USGS · NASA EONET · Open-Meteo · wheretheiss.at · OpenSky · NOAA SWPC · The Space Devs · GDELT (actus géolocalisées live + images d'articles) · CoinGecko · TfL JamCams (Londres) · lives YouTube · Wikimedia · Hacker News · alternative.me · Finnhub (clé protégée par worker Cloudflare) · adsb.lol/airplanes.live (avions) · Digitraffic (navires AIS Baltique) · Esri World Imagery (satellite HD) · NASA GIBS/EOSDIS VIIRS (vues satellite LIVE jour/nuit + feux thermiques) · GOES-East/West + Himawari GeoColor (géostationnaire quasi temps réel) · Celestrak + satellite.js SGP4 (positions satellites en direct) · RainViewer (radar pluie mondial live) · GDACS/ONU (alertes catastrophes mondiales live) · NOAA OVATION (aurores live) · Open-Meteo Air Quality (qualité de l'air live) · Open-Meteo Marine (vagues/houle live) · NASA OMPS Aerosol Index (fumées/poussières satellites) · Waze livemap (trafic) · Natural Earth (continents) · Leaflet + CARTO/OpenStreetMap (vraie carte live, ombre jour/nuit solaire calculée en direct, ISS + orbite temps réel). Boîte à outils OSINT (64 outils, 10 catégories, recherche) intégrée. Inspiré d'Osiris / WorldMonitor.</span>
 </footer>
 
 <script>
 "use strict";
-var VER="v2.36";
+var VER="v2.37";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -1560,6 +1563,8 @@ function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_q
 function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(k==="cadastre"||k==="plu"){if(v&&MAP&&MAP.getZoom()<10)setText($("mapHint"),"🇫🇷 Cadastre : zoome sur la France, puis tape une parcelle");if(!v&&!ON.cadastre&&!ON.plu&&_parcelleHL)_parcelleHL.clearLayers();}if(v){if(k==="lightning")loadLightning();else if(k==="cyclones")loadCyclones();else if(k==="firms")loadFirms();else if(k==="crues")loadFloods();}if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
+  document.getElementById("g3d").classList.add("hidden");
+  var b3=$("vG3D");if(b3)b3.setAttribute("aria-pressed","false");
   document.getElementById("map").classList.toggle("hidden",!on);
   document.getElementById("globe").classList.toggle("hidden",on);
   document.getElementById("mapHint").style.display=on?"":"none";
@@ -1570,6 +1575,46 @@ function showMap(on){
 }
 $("vMap").addEventListener("click",function(){showMap(true);});
 $("vGlobe").addEventListener("click",function(){showMap(false);});
+/* 🏔️ GLOBE 3D navigable (type Google Earth) — MapLibre GL, gratuit sans clé :
+   satellite Esri + relief 3D (terrain AWS terrarium) + projection globe + survol tactile.
+   Chargé À LA DEMANDE (perf). Fail-open : si le réseau/CDN échoue → message, l'app reste OK. */
+var _ml=null,_mlLoading=false;
+function _loadMapLibre(cb){
+  if(window.maplibregl)return cb();
+  if(_mlLoading)return;_mlLoading=true;
+  var css=document.createElement("link");css.rel="stylesheet";css.href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";document.head.appendChild(css);
+  var s=document.createElement("script");s.src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
+  s.onload=function(){_mlLoading=false;cb();};
+  s.onerror=function(){_mlLoading=false;setText($("globeState"),"3D indisponible (réseau)");};
+  document.head.appendChild(s);
+}
+function _init3D(){
+  if(_ml||!window.maplibregl)return;
+  _ml=new maplibregl.Map({container:"g3d",attributionControl:true,center:[7.42,43.74],zoom:3.2,pitch:0,bearing:0,maxPitch:85,
+    style:{version:8,sources:{
+      sat:{type:"raster",tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],tileSize:256,maxzoom:19,attribution:"&copy; Esri World Imagery"},
+      dem:{type:"raster-dem",tiles:["https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png"],tileSize:256,encoding:"terrarium",maxzoom:14,attribution:"&copy; Terrain AWS/Mapzen"}
+    },layers:[{id:"bg",type:"background",paint:{"background-color":"#0a0f1e"}},{id:"sat",type:"raster",source:"sat"}]}});
+  try{_ml.addControl(new maplibregl.NavigationControl({visualizePitch:true}),"top-right");}catch(_e){}
+  try{if(maplibregl.GlobeControl)_ml.addControl(new maplibregl.GlobeControl(),"top-right");}catch(_e){}
+  try{_ml.addControl(new maplibregl.ScaleControl({unit:"metric"}),"bottom-left");}catch(_e){}
+  _ml.on("style.load",function(){
+    try{_ml.setProjection({type:"globe"});}catch(_e){}
+    try{_ml.setTerrain({source:"dem",exaggeration:1.4});}catch(_e){}
+    try{_ml.setSky({"sky-color":"#0a1428","sky-horizon-blend":.5,"horizon-color":"#5a7bb5","horizon-fog-blend":.6,"fog-color":"#8fb0e0","fog-ground-blend":.4,"atmosphere-blend":.85});}catch(_e){}
+  });
+}
+function show3D(){
+  document.getElementById("map").classList.add("hidden");
+  document.getElementById("globe").classList.add("hidden");
+  document.getElementById("mapHint").style.display="none";
+  document.getElementById("g3d").classList.remove("hidden");
+  $("vMap").setAttribute("aria-pressed","false");$("vGlobe").setAttribute("aria-pressed","false");
+  var b3=$("vG3D");if(b3)b3.setAttribute("aria-pressed","true");
+  setText($("globeState"),"3D — glisse pour tourner · 2 doigts pour incliner · pince pour zoomer");
+  _loadMapLibre(function(){_init3D();setTimeout(function(){if(_ml)_ml.resize();},90);});
+}
+(function(){var b=$("vG3D");if(b)b.addEventListener("click",show3D);})();
 /* Plein écran carte (bascule auto sur la carte si on est en globe) */
 $("vFull").addEventListener("click",function(){
   var el=document.getElementById("map");
@@ -1774,6 +1819,6 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)fast
   })();
 })();
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.36" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="worldmonitor" data-version="v2.37" data-color="#c9a227" defer></script>
 </body>
 </html>
