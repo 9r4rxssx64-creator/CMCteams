@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.36.0";
+var APP_VER="v2.37.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -762,18 +762,65 @@ function _lev(a,b){ a=a||"";b=b||""; var m=a.length,n=b.length; if(!m)return n; 
   return d[m][n]; }
 function pronScore(target,heard){ var a=norm(target),b=norm(heard); if(!b)return 0;
   var mx=Math.max(a.length,b.length)||1; return Math.max(0,Math.round(100*(1-_lev(a,b)/mx))); }
-/* joue le modèle : normal, ou 🐢 lent (cloud &s=0.6 sans changer la voix ; repli local rate bas) */
+/* Diagnostic fin : trouve la 1re syllabe où « entendu » diverge de la cible → correction ciblée. */
+function pronDiffSyl(target,heard){ var sy=pronSyllables(target).split("·").filter(Boolean);
+  var a=norm(target),b=norm(heard||""); var i=0; while(i<a.length&&i<b.length&&a[i]===b[i])i++;
+  var acc=0; for(var k=0;k<sy.length;k++){ acc+=norm(sy[k]).length; if(i<acc)return {idx:k,syl:sy[k],sylls:sy}; }
+  return {idx:Math.max(0,sy.length-1),syl:sy[sy.length-1]||target,sylls:sy}; }
+/* ============ 👄 LIP-SYNC RÉEL — la bouche de Bee s'ouvre sur l'amplitude du VRAI son (comme Speak) ============
+   Web Audio analyse le son réel du modèle (le worker /tts renvoie ACAO:* → analyse cross-origin OK avec
+   crossOrigin="anonymous"). La source est TOUJOURS branchée à la sortie AVANT l'analyse → le son passe même
+   si l'analyse échoue. Repli automatique : si l'amplitude reste plate ~500 ms (codec/navigateur limité),
+   on remet le flap CSS .talking pour que la bouche bouge quand même. Retourne une fonction stop(). */
+function beeLipSync(audioEl,mouthEl){ if(!audioEl||!mouthEl)return null;
+  try{
+    AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended"){ try{ AC.resume(); }catch(_){} }
+    if(!audioEl._srcNode){ audioEl._srcNode=AC.createMediaElementSource(audioEl); }
+    audioEl._srcNode.connect(AC.destination);               /* le SON d'abord — jamais coupé */
+    var an=AC.createAnalyser(); an.fftSize=256; an.smoothingTimeConstant=0.55;
+    audioEl._srcNode.connect(an);                            /* prise d'analyse (non rebranchée → passif) */
+    var buf=new Uint8Array(an.fftSize), raf=0, maxR=0, flapped=false;
+    var t0=(window.performance&&performance.now)?performance.now():Date.now();
+    mouthEl.classList.remove("talking"); mouthEl.style.opacity="1";
+    function frame(){
+      an.getByteTimeDomainData(buf);
+      var s=0,i; for(i=0;i<buf.length;i++){ var v=(buf[i]-128)/128; s+=v*v; }
+      var rms=Math.sqrt(s/buf.length); if(rms>maxR)maxR=rms;
+      var open=Math.max(0,Math.min(1,(rms-0.01)*7));
+      mouthEl.style.transform="translate(-50%,-50%) scaleY("+(0.3+open*1.6).toFixed(2)+") scaleX("+(1+open*0.4).toFixed(2)+")";
+      var now=(window.performance&&performance.now)?performance.now():Date.now();
+      if(!flapped && now-t0>500 && maxR<0.012){ flapped=true; mouthEl.style.transform=""; mouthEl.classList.add("talking"); }
+      raf=requestAnimationFrame(frame);
+    }
+    raf=requestAnimationFrame(frame);
+    return function(){ try{ cancelAnimationFrame(raf); }catch(_){} try{ an.disconnect(); }catch(_){}
+      try{ mouthEl.classList.remove("talking"); mouthEl.style.transform=""; mouthEl.style.opacity=""; }catch(_){} };
+  }catch(e){ return null; }
+}
+/* joue le modèle : normal, ou 🐢 lent (cloud &s=0.6 sans changer la voix ; repli local rate bas).
+   Si une Bee gros plan est à l'écran (.pron-bee), sa bouche s'anime sur le son réel. */
+var _pronLip=null;
+function _pronLipStop(){ if(_pronLip){ try{ _pronLip(); }catch(_){} _pronLip=null; } }
 function pronSay(text,slow){ if(!S.sound||!text)return; var lang=COURSES[S.course].ttsLang,v=S.voice||"nova"; var myReq=++_ttsReq;
-  try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} _wsStopKA();
+  try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} _wsStopKA(); _pronLipStop();
+  var bee=document.querySelector(".pron-bee"), mouth=bee&&bee.querySelector(".disc-mouth");
   if(_isCloudVoice(v)){ try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
-    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(v)+(slow?"&s=0.6":"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
-    a.onerror=function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow); };
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow); }); return;
+    var a=new Audio(); a.crossOrigin="anonymous"; a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(v)+(slow?"&s=0.6":"")+"&t="+encodeURIComponent(text); _ttsAudio=a;
+    a.addEventListener("playing",function(){ if(myReq!==_ttsReq)return; if(bee)bee.classList.add("talk");
+      if(mouth){ _pronLip=beeLipSync(a,mouth); if(!_pronLip)mouth.classList.add("talking"); } },{once:true});
+    a.onended=function(){ if(bee)bee.classList.remove("talk"); if(mouth)mouth.classList.remove("talking"); _pronLipStop(); };
+    a.onerror=function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow,mouth,bee); };
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow,mouth,bee); }); return;
   }catch(e){} }
-  _pronWeb(text,lang,slow); }
-function _pronWeb(text,lang,slow){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=slow?0.55:0.9;
+  _pronWeb(text,lang,slow,mouth,bee); }
+function _pronWeb(text,lang,slow,mouth,bee){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=slow?0.55:0.9;
   var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
-  var best=vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; _wsSpeak(u); }catch(e){} }
+  var best=vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best;
+  /* pas de flux audio à analyser en local → flap CSS de la bouche entre le début et la fin réels */
+  u.onstart=function(){ if(bee)bee.classList.add("talk"); if(mouth)mouth.classList.add("talking"); };
+  u.onend=function(){ if(bee)bee.classList.remove("talk"); if(mouth)mouth.classList.remove("talking"); };
+  _wsSpeak(u); }catch(e){} }
 var PRON=null;
 function pronPool(){ var all=allWords(S.course),seen=S.words[S.course]||{};
   var learned=all.filter(function(w){ return seen[srsKey(w)]; });
@@ -822,6 +869,10 @@ function vPron(){ var d=el("div","screen pron"); if(!PRON){ VIEW="home"; return 
   head.innerHTML='<button class="bz-quit" aria-label="Quitter">✕</button><span class="pr-time">🎤 <b>'+(PRON.i+1)+'</b>/'+PRON.list.length+'</span><span class="bz-score">'+c.drapeau+'</span>';
   head.querySelector(".bz-quit").onclick=function(){ go("home"); }; d.appendChild(head);
   var bar=el("div","bz-bar"); bar.innerHTML='<div class="bz-bar-fill" style="width:'+Math.round(PRON.i/PRON.list.length*100)+'%"></div>'; d.appendChild(bar);
+  // 🐝 Bee en GROS PLAN : elle DIT le mot, sa bouche s'anime sur le son réel → regarde et imite
+  var stage=el("div","pron-stage");
+  stage.innerHTML='<div class="pron-bee bee-rig">'+beeRigHTML()+'<div class="disc-mouth"></div></div><div class="pron-watch">👀 Regarde sa bouche, puis imite</div>';
+  d.appendChild(stage);
   // mot + syllabes + audio
   var card=el("div","pron-card");
   card.innerHTML='<div class="pron-fr">'+esc(w.fr)+'</div>'
@@ -837,12 +888,26 @@ function vPron(){ var d=el("div","screen pron"); if(!PRON){ VIEW="home"; return 
   var zone=el("div","pron-zone");
   if(PRON.res){
     var sc=PRON.res.score, lvl=sc>=85?"good":(sc>=60?"mid":"bad");
+    // Correction TRÈS détaillée : syllabe fautive repérée + astuces son (👄 placement) + marche à suivre
+    var syl=esc(pronSyllables(w.t));
+    var tipHtml=tips.slice(0,2).map(function(t){ return '<div class="pr-tip">👄 <b>'+esc(t.son)+'</b> — '+esc(t.tip)+'</div>'; }).join("");
     var msg;
-    if(PRON.res.self){ msg="Auto-évaluation enregistrée. Réécoute (🐢) et retente quand tu veux."; }
-    else if(!PRON.res.heard){ msg="Je n'ai pas bien entendu. Rapproche le micro, réécoute (🐢 lent) et répète."; }
-    else if(sc>=85){ msg="Excellent ! On t'a parfaitement compris."; }
-    else if(sc>=60){ msg="Presque ! On a entendu « "+PRON.res.heard+" ». Insiste sur "+tips[0].son+" : "+tips[0].tip; }
-    else { msg="On a entendu « "+PRON.res.heard+" », assez loin du modèle. Réécoute en 🐢 lent, répète syllabe par syllabe : "+esc(pronSyllables(w.t)); }
+    if(PRON.res.self){
+      msg='<b>Auto-évaluation enregistrée 👍</b><br>Réécoute en <b>🐢 lent</b>, <b>regarde la bouche de Bee</b> et imite-la, syllabe par syllabe : <b>'+syl+'</b>.'+tipHtml;
+    } else if(!PRON.res.heard){
+      msg='<b>Je n\'ai pas bien entendu.</b><br>Rapproche le micro et parle plus fort. Réécoute (<b>🐢</b>), regarde la bouche de Bee, puis répète : <b>'+syl+'</b>.';
+    } else if(sc>=85){
+      msg='<b>Excellent, on t\'a parfaitement compris ! 🌟</b><br>Repère utile pour garder le rythme : <b>'+syl+'</b>.'+(tipHtml?'<br><span class="pr-note">Pour aller plus loin :</span>'+tipHtml:'');
+    } else {
+      var df=pronDiffSyl(w.t,PRON.res.heard);
+      var pinpoint=(df&&df.syl)?('Le décalage commence vers la syllabe <b>« '+esc(df.syl)+' »</b>. ') : '';
+      if(sc>=60){
+        msg='<b>Presque ! 🙂</b> On a entendu « <i>'+esc(PRON.res.heard)+'</i> » au lieu de « <b>'+esc(w.t)+'</b> ».<br>'+pinpoint+'Redis-le lentement, syllabe par syllabe : <b>'+syl+'</b>.'+tipHtml;
+      } else {
+        msg='<b>On a entendu « <i>'+esc(PRON.res.heard)+'</i> »</b>, encore loin de « <b>'+esc(w.t)+'</b> ».<br>'+pinpoint
+          +'<div class="pr-steps"><b>Comment corriger :</b><br>1️⃣ Appuie sur <b>🐢 Lent</b> et écoute bien.<br>2️⃣ <b>Regarde la bouche de Bee</b> et copie sa forme.<br>3️⃣ Dis chaque syllabe séparément — <b>'+syl+'</b> — puis enchaîne.</div>'+tipHtml;
+      }
+    }
     var rb=el("div","pron-result "+lvl);
     rb.innerHTML='<div class="pr-score"><b>'+sc+'%</b><span>'+(sc>=85?"🌟 nickel":sc>=60?"🙂 presque":"💪 on retravaille")+'</span></div><div class="pr-msg">'+msg+'</div>';
     zone.appendChild(rb);
@@ -1119,11 +1184,20 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
   if(sub)sub.textContent="…"; /* signe de vie pendant la fabrication de la voix */
   if(DISC.subIv){ clearInterval(DISC.subIv); DISC.subIv=null; }
   function stop(){ DISC.talking=false; if(DISC.subIv){clearInterval(DISC.subIv);DISC.subIv=null;}
+    if(DISC.lip){ try{ DISC.lip(); }catch(_){} DISC.lip=null; }
     try{ if(mouth)mouth.classList.remove("talking"); if(img)img.classList.remove("talk"); }catch(_){}
+    /* fin de phrase : on revient à la belle vidéo de Bee entre deux répliques */
+    if(DISC.wasVid&&img){ try{ img.classList.add("vid"); if(DISC.clip)DISC.clip("idle",0); }catch(_){} DISC.wasVid=false; }
     if(sub&&words.length)sub.textContent=words.join(" "); /* texte complet lisible à la fin */
     if(DISC.handsFree&&DISC.open){ setTimeout(function(){ discListen(); },500); } }
   function startVisuals(dur,audio){ if(!DISC.open||myReq!==_ttsReq)return;
-    if(mouth)mouth.classList.add("talking"); if(img)img.classList.add("talk");
+    /* PENDANT qu'elle parle : marionnette + bouche qui articule sur le SON RÉEL (comme Speak).
+       La vidéo générique ne synchronise pas les lèvres → on la met de côté le temps de la réplique,
+       et on la restaure entre deux phrases (stop()). */
+    if(DISC.lip){ try{ DISC.lip(); }catch(_){} DISC.lip=null; }
+    if(DISC.vid&&img&&img.classList.contains("vid")){ DISC.wasVid=true; img.classList.remove("vid"); }
+    if(mouth){ if(audio){ DISC.lip=beeLipSync(audio,mouth); if(!DISC.lip)mouth.classList.add("talking"); } else mouth.classList.add("talking"); }
+    if(img)img.classList.add("talk");
     /* chorégraphie au moment où la voix DÉMARRE (plus en avance) */
     var praise=/(bravo|super|parfait|génial|excellent|top|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(text);
     if(praise) discMove(Math.random()<.5?"dance":"jump", Math.min(dur,4200));
@@ -1143,7 +1217,7 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
     if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop, dur+400); }
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
   if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
-    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+    var a=new Audio(); a.crossOrigin="anonymous"; a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text); _ttsAudio=a;
     if(vcfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vcfg.rate; }catch(_){} }
     var started=false, fell=false;
     var fallback=function(){ if(fell||started||myReq!==_ttsReq)return; fell=true;

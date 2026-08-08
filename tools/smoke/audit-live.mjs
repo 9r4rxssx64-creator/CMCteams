@@ -109,8 +109,10 @@ const SURFACES = [
         if (await tap('.pron-link')) { await page.waitForTimeout(600);
           const w = await page.$('.pron-word');
           const au = await page.$$eval('.pron-play', els => els.length).catch(() => 0);
-          pron = !!w && au >= 2; }
-        if (!pron) return { ok:false, note:'atelier prononciation 🎤 absent (mot/audio)' };
+          const bee = await page.$('.pron-bee .rig-base');   // 🐝 v2.37 : Bee gros plan qui parle
+          const mth = await page.$('.pron-bee .disc-mouth');  // bouche animée (lip-sync)
+          pron = !!w && au >= 2 && !!bee && !!mth; }
+        if (!pron) return { ok:false, note:'atelier prononciation 🎤 absent (mot/audio/Bee/bouche)' };
         return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · vies ' + hearts };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
