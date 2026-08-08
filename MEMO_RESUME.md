@@ -18,6 +18,20 @@
    mascotte de LINGUA uniquement. La surface Créa Studio reste surveillée par la
    vérif réelle (nav ≥6 studios), sans exigence de mascotte.
 
+3bis. **KDMC Lingua v2.33.0 — Salle de jeux + Statistiques** (« Enrichie encore au
+   max tout ») : ⚡ **Défi éclair** (60 s chrono, QCM rapides dans les 2 sens, pénalité
+   -3 s par erreur, XP = bonnes réponses, record sauvegardé, succès 🚀 à 15) ·
+   🃏 **Paires chrono** (6 paires mot↔traduction, chrono, record temps, succès 🃏
+   sous 45 s, la bonne prononciation est dite à chaque paire) · 📊 **Mes statistiques**
+   (calendrier d'activité 12 semaines nourri par le nouvel historique journalier
+   `hist`, records, langues, leçons finies) · **+6 succès** (mois de feu, légende,
+   grand lecteur, conteur de la ruche, éclair, mémoire d'abeille) · **+2 quêtes**
+   (défi éclair, paires) · cartes accueil dédiées. Chronos coupés proprement à la
+   navigation. Historique branché sur leçons + histoires + jeux, synchronisé cloud.
+   Testé navigateur réel : **21/21 PASS** (défi joué avec vraies bonnes réponses,
+   paires entièrement résolues, 84 cases de calendrier, records persistés, 0 erreur).
+   Vérif réelle enrichie (2 cartes jeux + 84 cases exigées en live).
+
 3. **KDMC Lingua v2.32.0 — 📖 Histoires de la ruche** (« Va plus loin, enrichis
    Lingua ») : 6 mini-histoires 100 % originales écrites dans les 6 langues (vocab A1
    du programme), racontées ligne par ligne (voix de Bee sur ses répliques, français

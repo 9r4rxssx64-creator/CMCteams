@@ -95,7 +95,15 @@ const SURFACES = [
         if (await tap('.stories-card')) { await page.waitForTimeout(600);
           stories = await page.$$eval('.story-item', els => els.length).catch(() => 0); }
         if (stories < 6) return { ok:false, note:'histoires attendues 6, vues ' + stories };
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · vies ' + hearts };
+        // ⚡🃏📊 v2.33.0 : salle de jeux (2 cartes) + page stats (calendrier 84 cases)
+        await tap('.btn-ghost'); await page.waitForTimeout(500); // retour accueil
+        const games = await page.$$eval('.game-card', els => els.length).catch(() => 0);
+        if (games < 2) return { ok:false, note:'cartes jeux attendues 2, vues ' + games };
+        let heat = 0;
+        if (await tap('.stories-card.stats-link')) { await page.waitForTimeout(500);
+          heat = await page.$$eval('.heat-grid .heat', els => els.length).catch(() => 0); }
+        if (heat !== 84) return { ok:false, note:'calendrier stats attendu 84 cases, vu ' + heat };
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · vies ' + hearts };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
