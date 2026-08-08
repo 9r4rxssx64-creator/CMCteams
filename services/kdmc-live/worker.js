@@ -12,6 +12,7 @@
  *   GET /cyclones   → relais CORS de https://www.nhc.noaa.gov/CurrentStorms.json (cache ~10 min)
  *   GET /fires?bbox=w,s,e,n → NASA FIRMS VIIRS_SNPP_NRT (24 h) → FeatureCollection GeoJSON
  *   GET /cve?limit=N → relais CORS de https://cvedb.shodan.io/cves (classé EPSS, sans clé) → {cves:[…]}
+ *   GET /planes?lat=&lon=&radius= → relais CORS avions adsb.lol→airplanes.live → {ac:[…]}
  *   OPTIONS         → préflight CORS
  *
  * SÉCURITÉ (règles CLAUDE.md, leçon #130) :
@@ -248,6 +249,45 @@ async function handleCve(url, origin) {
   }
 }
 
+/* ============================== /planes (adsb.lol / airplanes.live) ============================== */
+
+// Relais CORS des avions temps réel. adsb.lol ET airplanes.live BLOQUENT le CORS navigateur
+// (vérifié par la vérif live — l'hypothèse « adsb.lol CORS-OK » était fausse). Ici, fetch
+// serveur simple → {ac:[…]} renvoyé au client. Repli adsb.lol → airplanes.live. FAIL-OPEN.
+const PLANES_TTL = 20; // 20 s (avions = 15-20 s de fraîcheur)
+async function handlePlanes(url, origin) {
+  const lat = parseFloat(url.searchParams.get("lat"));
+  const lon = parseFloat(url.searchParams.get("lon"));
+  const radius = Math.max(1, Math.min(250, parseInt(url.searchParams.get("radius") || "250", 10) || 250));
+  const la = Number.isFinite(lat) ? lat : 46, lo = Number.isFinite(lon) ? lon : 7;
+  const sources = [
+    "https://api.adsb.lol/v2/point/" + la + "/" + lo + "/" + radius,
+    "https://api.airplanes.live/v2/point/" + la + "/" + lo + "/" + radius,
+  ];
+  const attempts = [];
+  for (const src of sources) {
+    try {
+      const r = await fetch(src, { headers: { "accept": "application/json", "user-agent": "kdmc-live-worker (kd-mc.com World Monitor)" } });
+      const txt = await r.text();
+      if (!r.ok) { attempts.push({ src, status: r.status }); continue; }
+      let parsed;
+      try { parsed = JSON.parse(txt); } catch (e) { attempts.push({ src, note: "non-JSON", firstRaw: txt.slice(0, 120) }); continue; }
+      const ac = (parsed && Array.isArray(parsed.ac)) ? parsed.ac : [];
+      return new Response(JSON.stringify({ ac, count: ac.length, src, debug: { attempts } }), {
+        status: 200,
+        headers: Object.assign(
+          { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=" + PLANES_TTL },
+          cors(origin)
+        ),
+      });
+    } catch (e) {
+      attempts.push({ src, error: String((e && e.message) || e) });
+    }
+  }
+  // FAIL-OPEN : aucune source → {ac:[]} 200 + diagnostic.
+  return json({ ac: [], count: 0, debug: { attempts, note: "adsb.lol + airplanes.live indisponibles" } }, origin);
+}
+
 /* ============================== /fires (NASA FIRMS) ============================== */
 
 // Parse CSV FIRMS (header en 1re ligne) → tableau d'objets. Les champs FIRMS ne contiennent
@@ -315,7 +355,7 @@ async function handleFires(url, origin, env) {
 
 /* ============================== router ============================== */
 
-const ENDPOINTS = ["/health", "/lightning", "/cyclones", "/fires?bbox=w,s,e,n", "/cve?limit=25"];
+const ENDPOINTS = ["/health", "/lightning", "/cyclones", "/fires?bbox=w,s,e,n", "/cve?limit=25", "/planes?lat=46&lon=7&radius=250"];
 
 export default {
   async fetch(request, env) {
@@ -335,6 +375,7 @@ export default {
       if (url.pathname === "/cyclones") return await handleCyclones(request, origin);
       if (url.pathname === "/fires") return await handleFires(url, origin, env);
       if (url.pathname === "/cve") return await handleCve(url, origin);
+      if (url.pathname === "/planes") return await handlePlanes(url, origin);
     } catch (e) {
       return json({ ok: false, error: "handler_threw", detail: String((e && e.message) || e), path: url.pathname }, origin);
     }

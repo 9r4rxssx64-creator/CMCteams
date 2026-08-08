@@ -103,7 +103,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
     <div class="empty" id="empty" style="display:none">Aucun outil ne correspond.</div>
   </section>
 </div>
-<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.3</span>
+<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.4</span>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -135,9 +135,9 @@ var TENSION=[{n:"Ukraine",lat:49,lon:32},{n:"Proche-Orient",lat:31.4,lon:34.4},
 function eonetPts(ev){var p=[];(ev||[]).forEach(function(e){var g=e.geometry&&e.geometry[e.geometry.length-1];if(!g||!g.coordinates)return;var lo=g.coordinates[0],la=g.coordinates[1];if(la==null||lo==null)return;p.push({lat:la,lon:lo,title:e.title||""});});return p;}
 
 async function loadFlights(){
+  /* Avions via le relais serveur kdmc-live /planes (adsb.lol/airplanes.live bloquent le CORS navigateur). */
   var ac=null;
-  try{var d=await getJSON("https://api.adsb.lol/v2/point/"+EU_LAT+"/"+EU_LON+"/"+EU_NM,10000);ac=(d&&d.ac)||null;}catch(e){}
-  if(!ac){try{var d2=await getJSON("https://api.airplanes.live/v2/point/"+EU_LAT+"/"+EU_LON+"/"+EU_NM,10000);ac=(d2&&d2.ac)||null;}catch(e2){}}
+  try{var d=await getJSON(LIVE_URL+"/planes?lat="+EU_LAT+"&lon="+EU_LON+"&radius="+EU_NM,10000);ac=(d&&d.ac)||null;}catch(e){}
   if(ac){setText($("kFlights"),String(ac.length));drawFlights(ac);}
 }
 async function loadQuakes(){
@@ -318,6 +318,6 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 /* MAJ auto force (leçon #102) : badge cliquable = échappatoire garantie */
 $("ver").onclick=function(){if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});if(window.caches&&caches.keys)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n);});});location.replace(location.pathname+"?_force_upd_"+Date.now());};
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.3" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.4" data-color="#c9a227" defer></script>
 </body>
 </html>
