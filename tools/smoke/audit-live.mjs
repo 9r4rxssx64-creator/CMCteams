@@ -103,7 +103,15 @@ const SURFACES = [
         if (await tap('.stories-card.stats-link')) { await page.waitForTimeout(500);
           heat = await page.$$eval('.heat-grid .heat', els => els.length).catch(() => 0); }
         if (heat !== 84) return { ok:false, note:'calendrier stats attendu 84 cases, vu ' + heat };
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · vies ' + hearts };
+        // 🎤 v2.36.0 : atelier prononciation (carte accueil → mot + 2 boutons audio 🔊/🐢)
+        await tap('.btn-ghost'); await page.waitForTimeout(400); // retour accueil
+        let pron = false;
+        if (await tap('.pron-link')) { await page.waitForTimeout(600);
+          const w = await page.$('.pron-word');
+          const au = await page.$$eval('.pron-play', els => els.length).catch(() => 0);
+          pron = !!w && au >= 2; }
+        if (!pron) return { ok:false, note:'atelier prononciation 🎤 absent (mot/audio)' };
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · vies ' + hearts };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
