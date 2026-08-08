@@ -1,7 +1,7 @@
 name: WorldMonitor cadastre smoke (IGN réel)
 
-# Vérifie que les sources IGN câblées dans World Monitor répondent RÉELLEMENT
-# (leçon #134 : prouver les couches/endpoints, jamais supposer). Réseau ouvert (runner).
+# Vérifie que les sources IGN/DVF/Géorisques/BAN câblées dans World Monitor répondent
+# RÉELLEMENT (leçon #134 : prouver les couches/endpoints, jamais supposer). Réseau ouvert.
 on:
   workflow_dispatch:
 
@@ -9,56 +9,60 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - name: Sonder les endpoints IGN
+      - name: Sonder les endpoints IGN / DVF / Géorisques / BAN
         run: |
           set +e
           FAIL=0
-          # Point de test : Paris (cadastre + PLU numérisés)
           LON=2.3488; LAT=48.8534; Z=16
-          read TX TY <<<"$(python3 - <<PY
-import math
-lon,lat,z=$LON,$LAT,$Z
-n=2**z
-x=int((lon+180)/360*n)
-y=int((1-math.log(math.tan(math.radians(lat))+1/math.cos(math.radians(lat)))/math.pi)/2*n)
-print(x,y)
-PY
-)"
+          TX=$(python3 -c "import math;n=2**$Z;print(int(($LON+180)/360*n))")
+          TY=$(python3 -c "import math;lat=math.radians($LAT);n=2**$Z;print(int((1-math.log(math.tan(lat)+1/math.cos(lat))/math.pi)/2*n))")
+          GEOM=$(python3 -c "import urllib.parse,json;print(urllib.parse.quote(json.dumps({'type':'Point','coordinates':[$LON,$LAT]})))")
           echo "Tuile z=$Z col=$TX row=$TY"
 
-          check_img() { # $1=nom $2=url
+          check_img() {
             CT=$(curl -sS -m 25 -o /tmp/t.bin -w '%{content_type}|%{http_code}' "$2")
             SZ=$(wc -c </tmp/t.bin)
             echo ">>> $1 : $CT · ${SZ} octets"
-            case "$CT" in image/*) echo "   ✅ image OK";; *) echo "   ❌ PAS une image (corps: $(head -c 180 /tmp/t.bin))"; FAIL=1;; esac
+            case "$CT" in image/*) echo "   OK image";; *) echo "   KO (corps: $(head -c 180 /tmp/t.bin))"; FAIL=1;; esac
           }
-          check_json() { # $1=nom $2=url $3=motif attendu (optionnel)
+          check_json() {
             OUT=$(curl -sS -m 30 -w '\n__HTTP:%{http_code}__' "$2")
             CODE=$(printf '%s' "$OUT" | grep -o '__HTTP:[0-9]*__' | tr -dc 0-9)
             BODY=$(printf '%s' "$OUT" | sed 's/__HTTP:[0-9]*__//')
             echo ">>> $1 : HTTP $CODE"
-            echo "$BODY" | head -c 500; echo
-            if [ "$CODE" != "200" ]; then echo "   ❌ HTTP≠200"; FAIL=1; return; fi
-            if [ -n "$3" ] && ! echo "$BODY" | grep -q "$3"; then echo "   ⚠️ motif '$3' absent"; fi
-            echo "   ✅ répond"
+            echo "$BODY" | head -c 600; echo
+            if [ "$CODE" != "200" ]; then echo "   KO HTTP != 200"; FAIL=1; return; fi
+            if [ -n "$3" ] && ! echo "$BODY" | grep -q "$3"; then echo "   (motif '$3' absent)"; fi
+            echo "   OK repond"
           }
 
           echo "== 1) Cadastre WMTS (PARCELLAIRE_EXPRESS) =="
-          check_img "cadastre-tuile" "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=CADASTRALPARCELS.PARCELLAIRE_EXPRESS&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX=$Z&TILEROW=$TY&TILECOL=$TX"
+          check_img "cadastre" "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=CADASTRALPARCELS.PARCELLAIRE_EXPRESS&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX=$Z&TILEROW=$TY&TILECOL=$TX"
 
           echo "== 2) Plan IGN WMTS (PLANIGNV2) =="
-          check_img "planign-tuile" "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX=$Z&TILEROW=$TY&TILECOL=$TX"
+          check_img "planign" "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX=$Z&TILEROW=$TY&TILECOL=$TX"
 
-          echo "== 3) API Carto parcelle (tap) =="
-          GEOM=$(python3 -c "import urllib.parse,json;print(urllib.parse.quote(json.dumps({'type':'Point','coordinates':[$LON,$LAT]})))")
+          echo "== 3) Photo aerienne IGN (ORTHOPHOTOS jpeg) =="
+          check_img "ortho" "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX=$Z&TILEROW=$TY&TILECOL=$TX"
+
+          echo "== 4) API Carto parcelle (tap) =="
           check_json "parcelle" "https://apicarto.ign.fr/api/cadastre/parcelle?geom=$GEOM" '"numero"'
 
-          echo "== 4) API Carto zonage PLU (GPU) =="
+          echo "== 5) API Carto zonage PLU (GPU) =="
           check_json "zone-urba" "https://apicarto.ign.fr/api/gpu/zone-urba?geom=$GEOM" '"libelle"'
 
-          echo "== 5) PLU WMS GetMap (GPU.ZONE_URBA) =="
+          echo "== 6) PLU WMS GetMap (GPU.ZONE_URBA) =="
           check_img "plu-wms" "https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=GPU.ZONE_URBA&STYLES=&CRS=EPSG:3857&BBOX=261000,6248000,263000,6250000&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true"
 
+          echo "== 7) Adresse BAN (reverse) =="
+          check_json "ban" "https://api-adresse.data.gouv.fr/reverse/?lon=$LON&lat=$LAT" '"label"'
+
+          echo "== 8) Georisques (risques par point) — dump forme =="
+          check_json "georisques" "https://georisques.gouv.fr/api/v1/gaspar/risques?latlon=$LON%2C$LAT&rayon=1000" "risque"
+
+          echo "== 9) DVF prix immobiliers (cquest) — dump forme/liveness =="
+          check_json "dvf" "https://api.cquest.org/dvf?lat=$LAT&lon=$LON&dist=60" "valeur_fonciere"
+
           echo "======================================"
-          [ "$FAIL" = "0" ] && echo "✅ SMOKE OK — sources IGN vérifiées" || echo "❌ au moins une source KO — voir ci-dessus"
+          if [ "$FAIL" = "0" ]; then echo "SMOKE OK — images verifiees ; JSON dumps ci-dessus = forme reelle"; else echo "au moins une IMAGE KO — voir ci-dessus"; fi
           exit $FAIL
