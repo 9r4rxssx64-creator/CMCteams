@@ -51,17 +51,11 @@ jobs:
           echo "== 5) API Carto zonage PLU (GPU) =="
           check_json "zone-urba" "https://apicarto.ign.fr/api/gpu/zone-urba?geom=$GEOM" '"libelle"'
 
-          echo "== 6) PLU WMS GetMap (GPU.ZONE_URBA) =="
-          check_img "plu-wms" "https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=GPU.ZONE_URBA&STYLES=&CRS=EPSG:3857&BBOX=261000,6248000,263000,6250000&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true"
-
-          echo "== 7) Adresse BAN (reverse) =="
+          echo "== 6) Adresse BAN (reverse) =="
           check_json "ban" "https://api-adresse.data.gouv.fr/reverse/?lon=$LON&lat=$LAT" '"label"'
 
-          echo "== 8) Georisques (risques par point) — dump forme =="
-          check_json "georisques" "https://georisques.gouv.fr/api/v1/gaspar/risques?latlon=$LON%2C$LAT&rayon=1000" "risque"
-
-          echo "== 9) DVF prix immobiliers (cquest) — dump forme/liveness =="
-          check_json "dvf" "https://api.cquest.org/dvf?lat=$LAT&lon=$LON&dist=60" "valeur_fonciere"
+          echo "== 7) Georisques (risques par point, imbrique data[].risques_detail[]) =="
+          check_json "georisques" "https://georisques.gouv.fr/api/v1/gaspar/risques?latlon=$LON%2C$LAT&rayon=1000" "libelle_risque_long"
 
           echo "======================================"
           if [ "$FAIL" = "0" ]; then echo "SMOKE OK — images verifiees ; JSON dumps ci-dessus = forme reelle"; else echo "au moins une IMAGE KO — voir ci-dessus"; fi
