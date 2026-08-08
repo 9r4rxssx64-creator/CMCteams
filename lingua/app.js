@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.35.0";
+var APP_VER="v2.36.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -50,8 +50,9 @@ function loadS(){
   S.hist=lg("hist",{});               // 📊 historique d'activité : {jour: XP gagné ce jour-là}
   S.blitzBest=lg("blitzBest",0);      // ⚡ record du défi éclair (bonnes réponses en 60 s)
   S.pairsBest=lg("pairsBest",0);      // 🃏 record des paires (meilleur temps en secondes)
+  S.pronGoodTotal=lg("pronGoodTotal",0); // 🎤 total de mots bien prononcés (≥80%) — pour le succès
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
 /* 📊 chaque XP gagné est daté — nourrit le calendrier d'activité (page Stats) */
 function _dayTs(k){ var p=String(k).split("-"); return new Date(+p[0],(+p[1]||1)-1,+p[2]||1).getTime(); }
 function histAdd(xp){ if(!xp)return; if(!S.hist)S.hist={}; var t=today(); S.hist[t]=(S.hist[t]||0)+xp;
@@ -107,7 +108,7 @@ function findLocalAccount(name,code){ var n=norm(name); var accs=accounts(); for
    appareil : nom+code → tout revient. FAIL-OPEN : si le cloud est indispo, la
    mémoire locale continue (rien perdu localement). */
 var SYNC_BASE="https://lingua.kd-mc.com/__lingua";
-var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest"];
+var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
 function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
@@ -197,7 +198,8 @@ var ACHV=[
   {id:"words100",i:"📕",t:"Grand lecteur",d:"Apprends 100 mots",f:function(){return wordCount()>=100;}},
   {id:"stories6",i:"🐝",t:"Conteur de la ruche",d:"Termine toutes les histoires",f:function(){return typeof STORIES!=="undefined"&&STORIES.length>0&&typeof storiesDoneCount==="function"&&storiesDoneCount()>=STORIES.length;}},
   {id:"blitz15",i:"🚀",t:"Éclair",d:"15 bonnes réponses en un défi éclair",f:function(){return (S.blitzBest||0)>=15;}},
-  {id:"pairs45",i:"🃏",t:"Mémoire d'abeille",d:"Gagne les paires en moins de 45 s",f:function(){return (S.pairsBest||0)>0&&S.pairsBest<=45;}}
+  {id:"pairs45",i:"🃏",t:"Mémoire d'abeille",d:"Gagne les paires en moins de 45 s",f:function(){return (S.pairsBest||0)>0&&S.pairsBest<=45;}},
+  {id:"pron20",i:"🎤",t:"Belle diction",d:"Bien prononce 20 mots à l'atelier",f:function(){return (S.pronGoodTotal||0)>=20;}}
 ];
 function anyLessonDone(){ var n=0; Object.keys(S.prog).forEach(function(c){ n+=Object.keys(S.prog[c]||{}).length; }); return n>0; }
 function unitFullyDone(){ var done=false; Object.keys(S.prog).forEach(function(c){ if(!COURSES[c])return; COURSES[c].units.forEach(function(u,ui){ var all=true; u.lessons.forEach(function(_,li){ if(!(S.prog[c]["u"+ui+"-"+li]>0))all=false; }); if(all)done=true; }); }); return done; }
@@ -214,7 +216,8 @@ var QUESTS=[
   {id:"combo4",t:"Un combo x4",g:4,m:"combo",r:15},
   {id:"sto1",t:"Lis 1 histoire 📖",g:1,m:"stories",r:20},
   {id:"blitz1",t:"Fais un défi éclair ⚡",g:1,m:"blitz",r:15},
-  {id:"pairs1",t:"Gagne une partie de paires 🃏",g:1,m:"pairs",r:15}
+  {id:"pairs1",t:"Gagne une partie de paires 🃏",g:1,m:"pairs",r:15},
+  {id:"pron3",t:"Prononce 3 mots 🎤",g:3,m:"pron",r:15}
 ];
 function todaysQuests(){ var h=dayHash(today()),used={},out=[],i=0;
   while(out.length<3 && i<40){ var q=QUESTS[(h+i*3+1)%QUESTS.length]; if(!used[q.id]){used[q.id]=1;out.push(q);} i++; } return out; }
@@ -319,6 +322,7 @@ function render(){
   if(VIEW==="lesson"){ app.appendChild(vLesson()); return; }
   if(VIEW==="blitz"){ app.appendChild(vBlitz()); return; }   // ⚡ plein écran (concentration)
   if(VIEW==="pairs"){ app.appendChild(vPairs()); return; }   // 🃏 plein écran
+  if(VIEW==="pron"){ app.appendChild(vPron()); return; }     // 🎤 atelier prononciation plein écran
   if(!S.course){ app.appendChild(vTopbar()); app.appendChild(vCoursePick()); app.appendChild(vTabbar()); return; }
   app.appendChild(vTopbar());
   if(VIEW==="home"){ app.appendChild(vHome()); maybeOfferPlacement(); }
@@ -334,7 +338,7 @@ function render(){
   app.appendChild(vTabbar());
   if(VIEW!=="coach"&&S.course) app.appendChild(beeCompanion());  // Bee gère tout : présente sur chaque écran (le Coach l'a déjà en grand)
 }
-function go(v){ if(v!=="blitz")blitzAbort(); if(v!=="pairs")pairsAbort(); VIEW=v; window.scrollTo(0,0); render(); }
+function go(v){ if(v!=="blitz")blitzAbort(); if(v!=="pairs")pairsAbort(); if(v!=="pron")pronAbort(); VIEW=v; window.scrollTo(0,0); render(); }
 /* ============ Garde retour-arrière (Kevin 2026-08-08 : « pas de retour arrière possible
    pendant une leçon ») ============
    Avant : sur iPhone, le geste retour quittait l'app EN PLEINE leçon/défi/histoire —
@@ -350,6 +354,7 @@ window.addEventListener("popstate",function(){
       return; }
     if(VIEW==="blitz"&&BZ&&!BZ.over){ _armHistoryGuard(); blitzEnd(); return; }
     if(VIEW==="pairs"&&PR&&!PR.over){ _armHistoryGuard(); go("home"); return; }
+    if(VIEW==="pron"&&PRON&&!PRON.over){ _armHistoryGuard(); go("home"); return; }
     if(VIEW==="story"&&ST){ _armHistoryGuard(); storyQuit(); return; }
     if(ACC&&VIEW!=="home"){ VIEW="home"; render(); }
   }catch(_){}
@@ -491,6 +496,10 @@ function vHome(){ var w=el("div","screen tree");
   g2.innerHTML='<span class="gc-ic">🃏</span><b>Paires</b><i>'+(S.pairsBest?('Record : '+S.pairsBest+' s'):'Retrouve les paires')+'</i>';
   g2.onclick=function(){ pairsStart(); };
   gr.appendChild(g1); gr.appendChild(g2); w.appendChild(gr);
+  // 🎤 Atelier prononciation — écoute, répète, corrige ta diction
+  var prc=el("button","stories-card pron-link");
+  prc.innerHTML='<span class="st-ic">🎤</span><span class="st-tx"><b>Atelier prononciation</b><i>écoute, répète, corrige ton élocution '+(_srOk()?'(micro)':'(écoute & répète)')+'</i></span><span class="st-badge">🗣️</span>';
+  prc.onclick=function(){ pronStart(); }; w.appendChild(prc);
   // 📊 Statistiques — activité, records, calendrier
   var stq=el("button","stories-card stats-link");
   stq.innerHTML='<span class="st-ic">📊</span><span class="st-tx"><b>Mes statistiques</b><i>calendrier d\'activité, records, langues</i></span><span class="st-badge">🔥 '+S.streak+'</span>';
@@ -672,6 +681,7 @@ function vStats(){ var d=el("div","screen");
   rg.innerHTML='<div class="rec"><span>⚡</span><b>'+(S.blitzBest||"—")+'</b><i>Défi éclair</i></div>'
     +'<div class="rec"><span>🃏</span><b>'+(S.pairsBest?S.pairsBest+" s":"—")+'</b><i>Paires</i></div>'
     +'<div class="rec"><span>📖</span><b>'+(typeof storiesDoneCount==="function"?storiesDoneCount():0)+'/'+(typeof STORIES!=="undefined"?STORIES.length:0)+'</b><i>Histoires</i></div>'
+    +'<div class="rec"><span>🎤</span><b>'+(S.pronGoodTotal||0)+'</b><i>Mots bien dits</i></div>'
     +'<div class="rec"><span>🏅</span><b>'+Object.keys(S.achv).length+'/'+ACHV.length+'</b><i>Succès</i></div>';
   rc.appendChild(rg); d.appendChild(rc);
   // par langue
@@ -686,6 +696,173 @@ function vStats(){ var d=el("div","screen");
     lw.appendChild(row); });
   if(any)d.appendChild(lw);
   var back=el("button","btn-ghost"); back.textContent="← Accueil"; back.onclick=function(){ go("home"); }; d.appendChild(back);
+  return d;
+}
+
+/* ============ 🎤 Atelier prononciation (Kevin 2026-08-08 : « travailler la
+   prononciation, élocution, avec corrections + explications ») ============
+   Pour CHAQUE mot : modèle audio (normal + 🐢 lent), découpage en syllabes,
+   ASTUCE d'élocution ciblée sur les sons difficiles pour un francophone (règles
+   originales par langue), puis reconnaissance vocale → SCORE %, CORRECTION précise
+   (ce qu'on a entendu vs attendu) et EXPLICATION. Sans micro (iPhone Safari) :
+   repli « écoute → répète → je m'auto-évalue », mêmes astuces + audio lent. */
+var PRON_RULES={
+ en:[{re:/th/i,son:"« th »",tip:"Bout de la langue entre les dents, souffle légèrement — ni « z » ni « s »."},
+     {re:/(^|\s)h\w/i,son:"« h » aspiré",tip:"Souffle vraiment le « h » (petit coup d'air) : il n'est pas muet comme en français."},
+     {re:/r/i,son:"« r »",tip:"« r » doux : la langue recule sans toucher le palais — surtout ne le roule pas."},
+     {re:/oo|ee|ea/i,son:"voyelle longue",tip:"Tiens la voyelle plus longtemps : sheep = « chiiip », pas « chip »."},
+     {re:/w/i,son:"« w »",tip:"Arrondis les lèvres comme pour « ou » puis enchaîne (water = « ouoter »)."},
+     {re:/ed$/i,son:"« -ed » final",tip:"Souvent un simple « t » ou « d » discret, pas « eude »."}],
+ it:[{re:/(.)\1/i,son:"consonne double",tip:"Appuie/allonge la consonne double : pizza = « pit-tsa ». Essentiel en italien."},
+     {re:/gli/i,son:"« gli »",tip:"« l » mouillé : langue au palais, comme « lli » de « million »."},
+     {re:/gn/i,son:"« gn »",tip:"Comme le « gn » de « montagne »."},
+     {re:/ch/i,son:"« ch »",tip:"Se dit « k » : chi = « ki »."},
+     {re:/ci|ce/i,son:"« c » doux",tip:"« ci/ce » se disent « tchi/tché »."},
+     {re:/r/i,son:"« r » roulé",tip:"Roule légèrement le « r » avec le bout de la langue."}],
+ es:[{re:/rr|^r/i,son:"« r » roulé",tip:"Fais vibrer la langue plusieurs fois : perro. Un vrai roulement."},
+     {re:/j|ge|gi/i,son:"« jota »",tip:"Son raclé au fond de la gorge, pas un « j » français (jamón)."},
+     {re:/ll/i,son:"« ll »",tip:"Se dit « y » : calle = « caye »."},
+     {re:/ñ/i,son:"« ñ »",tip:"« gn » de « montagne » : niño."},
+     {re:/h/i,son:"« h » muet",tip:"Le « h » est totalement muet : hola = « ola »."},
+     {re:/v/i,son:"« v »",tip:"Se prononce presque comme un « b » doux."}],
+ de:[{re:/ü/i,son:"« ü »",tip:"Dis « i » mais lèvres arrondies comme pour « ou »."},
+     {re:/ö/i,son:"« ö »",tip:"Dis « é » avec les lèvres arrondies."},
+     {re:/ä/i,son:"« ä »",tip:"Comme un « è » ouvert."},
+     {re:/sch/i,son:"« sch »",tip:"Comme « ch » de « chat »."},
+     {re:/ch/i,son:"« ch »",tip:"Souffle doux au palais (ich) ou raclé en gorge (Bach) selon la voyelle avant."},
+     {re:/z/i,son:"« z »",tip:"Se dit « ts » : zehn = « tsén »."},
+     {re:/w/i,son:"« w »",tip:"Se dit « v »."},
+     {re:/ei/i,son:"« ei »",tip:"Se dit « aï »."}],
+ pt:[{re:/ão|ãe|õe|ã|õ/i,son:"voyelle nasale",tip:"Fais résonner dans le nez : ão ≈ « aon » nasal, sans détacher le « o »."},
+     {re:/nh/i,son:"« nh »",tip:"Comme « gn » de « montagne »."},
+     {re:/lh/i,son:"« lh »",tip:"« l » mouillé, comme « lli » de « million »."},
+     {re:/ç|ce|ci/i,son:"« ç »",tip:"Se dit « s »."},
+     {re:/^r|rr/i,son:"« r » fort",tip:"« r » raclé en gorge en début de mot (au Portugal)."},
+     {re:/s$/i,son:"« s » final",tip:"En fin de mot, le « s » se dit souvent « ch »."}],
+ nl:[{re:/g|ch/i,son:"« g/ch »",tip:"Son raclé au fond de la gorge : le fameux « g » néerlandais."},
+     {re:/ui/i,son:"« ui »",tip:"Diphtongue délicate, entre « eu » et « ei » : arrondis puis relâche."},
+     {re:/ij|ei/i,son:"« ij/ei »",tip:"Se dit « aï »."},
+     {re:/oe/i,son:"« oe »",tip:"Se dit « ou »."},
+     {re:/w/i,son:"« w »",tip:"« v » doux (avec les lèvres, pas les dents)."}]
+};
+function pronTips(word,cid){ var rules=PRON_RULES[cid]||[],seen={},out=[];
+  rules.forEach(function(r){ if(out.length>=3)return; if(r.re.test(word)&&!seen[r.son]){ seen[r.son]=1; out.push(r); } });
+  if(!out.length) out.push({son:"rythme",tip:"Écoute (🐢 lent), répète syllabe par syllabe, puis en entier — sans forcer."});
+  return out; }
+/* découpage syllabique heuristique (visuel) : coupe avant une consonne suivie d'une voyelle */
+function pronSyllables(word){ var V="aáàâäeéèêëiíìîïoóòôöuúùûüyœæ"; var s=String(word||"");
+  var out="",prevV=false;
+  for(var i=0;i<s.length;i++){ var c=s[i],lc=c.toLowerCase(),isV=V.indexOf(lc)>=0;
+    if(!isV && prevV && i<s.length-1){ var nx=s[i+1]?s[i+1].toLowerCase():""; if(V.indexOf(nx)>=0){ out+="·"; } }
+    out+=c; prevV=isV; }
+  return out; }
+function _lev(a,b){ a=a||"";b=b||""; var m=a.length,n=b.length; if(!m)return n; if(!n)return m;
+  var d=[]; for(var i=0;i<=m;i++)d[i]=[i]; for(var j=0;j<=n;j++)d[0][j]=j;
+  for(i=1;i<=m;i++)for(j=1;j<=n;j++){ var c=a[i-1]===b[j-1]?0:1; d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+c); }
+  return d[m][n]; }
+function pronScore(target,heard){ var a=norm(target),b=norm(heard); if(!b)return 0;
+  var mx=Math.max(a.length,b.length)||1; return Math.max(0,Math.round(100*(1-_lev(a,b)/mx))); }
+/* joue le modèle : normal, ou 🐢 lent (cloud &s=0.6 sans changer la voix ; repli local rate bas) */
+function pronSay(text,slow){ if(!S.sound||!text)return; var lang=COURSES[S.course].ttsLang,v=S.voice||"nova"; var myReq=++_ttsReq;
+  try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} _wsStopKA();
+  if(_isCloudVoice(v)){ try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
+    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(v)+(slow?"&s=0.6":"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+    a.onerror=function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow); };
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow); }); return;
+  }catch(e){} }
+  _pronWeb(text,lang,slow); }
+function _pronWeb(text,lang,slow){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=slow?0.55:0.9;
+  var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
+  var best=vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; _wsSpeak(u); }catch(e){} }
+var PRON=null;
+function pronPool(){ var all=allWords(S.course),seen=S.words[S.course]||{};
+  var learned=all.filter(function(w){ return seen[srsKey(w)]; });
+  var base=learned.length>=8?learned:all;
+  /* évite les doublons de forme cible + garde des mots « prononçables » (2+ lettres) */
+  var uniq=[],mk={}; shuffle(base).forEach(function(w){ var k=norm(w.t); if(w.t&&w.t.length>=2&&!mk[k]){ mk[k]=1; uniq.push(w); } });
+  return uniq.slice(0,8); }
+function pronStart(){ if(!S.course)return; blitzAbort(); pairsAbort();
+  var list=pronPool(); if(!list.length){ toast("Fais d'abord une leçon 🐝"); return; }
+  PRON={list:list,i:0,done:0,scoreSum:0,micTried:false,over:false,res:null,listening:false};
+  VIEW="pron"; _armHistoryGuard(); window.scrollTo(0,0); render();
+  setTimeout(function(){ pronSay(list[0].t,false); },350); }
+function pronMic(){ if(!PRON||PRON.listening)return; var w=PRON.list[PRON.i]; if(!w)return;
+  if(!_srOk()){ toast("Micro non dispo ici — écoute et répète, puis auto-évalue 🙂"); return; }
+  PRON.listening=true; PRON.micTried=true; render();
+  dictate(function(txt){ PRON.listening=false;
+    var sc=pronScore(w.t,txt); PRON.res={heard:txt||"",score:sc,self:false};
+    if(sc>=80){ tone([880,1180],.25); vibrate(12); } else { tone([420,320],.28); vibrate(24); }
+    render();
+  }, COURSES[S.course].ttsLang); }
+function pronSelf(v){ if(!PRON)return; var map={ko:45,mid:72,ok:92}; PRON.res={heard:null,score:map[v]||70,self:true}; render(); }
+function pronNext(){ if(!PRON)return; var r=PRON.res||{score:0,self:true};
+  PRON.scoreSum+=r.score; PRON.done++;
+  S.today.pron=(S.today.pron||0)+1; if(r.score>=80){ S.today.pronGood=(S.today.pronGood||0)+1; S.pronGoodTotal=(S.pronGoodTotal||0)+1; }
+  PRON.res=null; PRON.micTried=false;
+  if(PRON.i<PRON.list.length-1){ PRON.i++; render(); setTimeout(function(){ pronSay(PRON.list[PRON.i].t,false); },300); }
+  else pronEnd(); }
+function pronEnd(){ if(!PRON||PRON.over)return; PRON.over=true;
+  var avg=PRON.done?Math.round(PRON.scoreSum/PRON.done):0; PRON.avg=avg;
+  var xp=Math.max(4,Math.min(28,Math.round(avg/4)+PRON.done)); PRON.xp=xp;
+  S.xp+=xp; S.dailyXP+=xp; S.today.xp=(S.today.xp||0)+xp; histAdd(xp);
+  bumpStreak(); leagueAdd(xp); save(); checkAchv(); checkQuests(); render();
+  setTimeout(function(){ speakLang(avg>=80?("Superbe prononciation ! Moyenne "+avg+" pour cent !"):("Bel entraînement ! On progresse, moyenne "+avg+" pour cent."),"fr-FR",BEE_VOICE,true); },350); }
+function pronAbort(){ PRON=null; }
+function vPron(){ var d=el("div","screen pron"); if(!PRON){ VIEW="home"; return vHome(); }
+  var c=COURSES[S.course];
+  if(PRON.over){
+    d.innerHTML='<div class="bz-done"><div class="mascot-mini big">'+MASCOT(PRON.avg>=80?"party":"wave",110)+'</div>'
+      +'<h2>🎤 Atelier terminé !</h2>'
+      +'<div class="reward-grid"><div class="rw"><span>🎯</span><b>'+PRON.avg+'%</b><i>moyenne</i></div><div class="rw"><span>🗣️</span><b>'+PRON.done+'</b><i>mots</i></div><div class="rw"><span>⭐</span><b>+'+PRON.xp+'</b><i>XP</i></div></div></div>';
+    var again=el("button","btn-main"); again.textContent="🎤 Recommencer"; again.onclick=function(){ pronStart(); }; d.appendChild(again);
+    var back=el("button","btn-ghost"); back.textContent="← Accueil"; back.onclick=function(){ go("home"); }; d.appendChild(back);
+    return d; }
+  var w=PRON.list[PRON.i];
+  var head=el("div","bz-head");
+  head.innerHTML='<button class="bz-quit" aria-label="Quitter">✕</button><span class="pr-time">🎤 <b>'+(PRON.i+1)+'</b>/'+PRON.list.length+'</span><span class="bz-score">'+c.drapeau+'</span>';
+  head.querySelector(".bz-quit").onclick=function(){ go("home"); }; d.appendChild(head);
+  var bar=el("div","bz-bar"); bar.innerHTML='<div class="bz-bar-fill" style="width:'+Math.round(PRON.i/PRON.list.length*100)+'%"></div>'; d.appendChild(bar);
+  // mot + syllabes + audio
+  var card=el("div","pron-card");
+  card.innerHTML='<div class="pron-fr">'+esc(w.fr)+'</div>'
+    +'<div class="pron-word">'+esc(w.t)+'</div>'
+    +'<div class="pron-syl">'+esc(pronSyllables(w.t))+'</div>'
+    +'<div class="pron-audio"><button class="pron-play" id="pnNorm">🔊 Écouter</button><button class="pron-play slow" id="pnSlow">🐢 Lent</button></div>';
+  d.appendChild(card);
+  // astuces d'élocution
+  var tips=pronTips(w.t,c.id); var tw=el("div","pron-tips"); tw.innerHTML='<div class="pt-h">💡 Astuce d\'élocution</div>';
+  tips.forEach(function(t){ var r=el("div","pt-row"); r.innerHTML='<b>'+esc(t.son)+'</b> — '+esc(t.tip); tw.appendChild(r); });
+  d.appendChild(tw);
+  // zone micro / résultat
+  var zone=el("div","pron-zone");
+  if(PRON.res){
+    var sc=PRON.res.score, lvl=sc>=85?"good":(sc>=60?"mid":"bad");
+    var msg;
+    if(PRON.res.self){ msg="Auto-évaluation enregistrée. Réécoute (🐢) et retente quand tu veux."; }
+    else if(!PRON.res.heard){ msg="Je n'ai pas bien entendu. Rapproche le micro, réécoute (🐢 lent) et répète."; }
+    else if(sc>=85){ msg="Excellent ! On t'a parfaitement compris."; }
+    else if(sc>=60){ msg="Presque ! On a entendu « "+PRON.res.heard+" ». Insiste sur "+tips[0].son+" : "+tips[0].tip; }
+    else { msg="On a entendu « "+PRON.res.heard+" », assez loin du modèle. Réécoute en 🐢 lent, répète syllabe par syllabe : "+esc(pronSyllables(w.t)); }
+    var rb=el("div","pron-result "+lvl);
+    rb.innerHTML='<div class="pr-score"><b>'+sc+'%</b><span>'+(sc>=85?"🌟 nickel":sc>=60?"🙂 presque":"💪 on retravaille")+'</span></div><div class="pr-msg">'+msg+'</div>';
+    zone.appendChild(rb);
+    var nx=el("button","btn-main"); nx.textContent=(PRON.i<PRON.list.length-1?"Mot suivant →":"Terminer 🎉"); nx.onclick=pronNext; zone.appendChild(nx);
+    var retry=el("button","btn-ghost"); retry.textContent="🔁 Réessayer ce mot"; retry.onclick=function(){ PRON.res=null; render(); }; zone.appendChild(retry);
+  } else if(PRON.listening){
+    zone.innerHTML='<div class="pron-listen">🎙️ …je t\'écoute, répète le mot</div>';
+  } else {
+    if(_srOk()){ var mic=el("button","mic-btn big"); mic.innerHTML="🎤 Répète le mot"; mic.onclick=pronMic; zone.appendChild(mic); }
+    else {
+      var hint=el("div","pron-nomic"); hint.innerHTML='🎤 Le micro n\'est pas disponible ici. Écoute (🔊 / 🐢), répète à voix haute, puis dis comment c\'était :'; zone.appendChild(hint);
+      var sr=el("div","pron-self");
+      [["ko","😕 à retravailler"],["mid","🙂 ça allait"],["ok","😄 nickel"]].forEach(function(p){ var b=el("button","self-btn "+p[0]); b.textContent=p[1]; b.onclick=function(){ pronSelf(p[0]); }; sr.appendChild(b); });
+      zone.appendChild(sr);
+    }
+    var skip=el("button","btn-ghost skip"); skip.textContent="Passer ce mot"; skip.onclick=function(){ PRON.res={heard:null,score:0,self:true,skipped:true}; pronNext(); }; zone.appendChild(skip);
+  }
+  d.appendChild(zone);
+  setTimeout(function(){ var n=document.getElementById("pnNorm"),s=document.getElementById("pnSlow");
+    if(n)n.onclick=function(){ pronSay(w.t,false); }; if(s)s.onclick=function(){ pronSay(w.t,true); }; },0);
   return d;
 }
 
