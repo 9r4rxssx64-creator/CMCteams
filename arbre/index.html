@@ -257,7 +257,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v2.95";
+var APP_VER="v2.96";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; // MAIFFRET
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -326,7 +326,7 @@ var TREE={ROWH:158,BOXW:198,COUPLEGAP:24,UNITGAP:64,PAD:34,COMPGAP:64,CARD:184};
    🌳 "c" = famille DESARZENS (côté papa — chêne, racines suisses/Vaud)
    "oc" = dans les DEUX arbres (Gérard, Kevin, Sabrina, Ronan, Théo = sang des deux). */
 var FAM_OVERRIDE={seed_gerard:"oc",seed_kevin:"oc",seed_laurence:"oc",seed_sabrina:"oc",seed_ronan:"oc",seed_theo:"oc",seed_marielle:"o",seed_yvonne_ch:"o",seed_monique_jaillet:"o",seed_jean_besqueut:"o",seed_brigitte_besqueut:"o",seed_olivier_besqueut:"o",seed_christophe_besqueut:"o",seed_michele_patrice:"c",seed_herve_ep_sylvie:"c",seed_virgile_dsz:"c",
-  seed_christian:"o",seed_cecile:"o",seed_marienoel:"o",seed_christine_vdb:"o",seed_philippe_vdb:"o",seed_laura_vdb:"o",
+  seed_christian:"o",seed_cecile:"o",seed_marienoel:"oc",seed_christine_vdb:"o",seed_philippe_vdb:"o",seed_laura_vdb:"o",
   seed_guy:"c",seed_emile:"c",seed_loic:"c",seed_yann:"c",seed_claude_desarzens:"c"};
 function famOf(p){if(!p)return "oc";var ov=FAM_OVERRIDE[p.id];if(ov)return ov;var n=(p.nom||"").toUpperCase();
   if(/SARZENS|SARZANCE/.test(n))return "c";
@@ -335,7 +335,12 @@ function famOf(p){if(!p)return "oc";var ov=FAM_OVERRIDE[p.id];if(ov)return ov;va
 var FAMKEY="o";try{var _fk=localStorage.getItem("arbre_fam");if(_fk==="o"||_fk==="c")FAMKEY=_fk;}catch(e){}
 function famLabel(k){return k==="c"?"🌳 Desarzens":"🫒 Sauvaigo · Maiffret";}
 function famPhoto(k){return k==="c"?"tree-oak.jpg":"tree.jpg";}
-function compLabel(ids){var cnt={};ids.forEach(function(x){var nm=(P(x).nom||"").trim().toUpperCase();if(nm)cnt[nm]=(cnt[nm]||0)+1;});var top=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];}).slice(0,2);return top.length?("Famille "+top.join(" · ")):"Famille";}
+function compLabel(ids){/* Kevin 8.08.2026 « ce n'est pas la famille Bruno » : le bandeau ne porte QUE les noms de la lignée de la famille affichée (Desarzens côté chêne ; Sauvaigo/Maiffret… côté olivier) — jamais un nom entré par mariage (Bruno, Vervloet…). */
+  var re=FAMKEY==="c"?/SARZENS|SARZANCE/:/SAUVAIGO|MAIFFRET|BOSCH|MOLINARIO|DENTAU|VIRGILI|CRESTO/;
+  var cnt={},cntAll={};ids.forEach(function(x){var nm=(P(x).nom||"").trim().toUpperCase();if(!nm)return;cntAll[nm]=(cntAll[nm]||0)+1;if(re.test(nm))cnt[nm]=(cnt[nm]||0)+1;});
+  var src=Object.keys(cnt).length?cnt:cntAll;
+  var top=Object.keys(src).sort(function(a,b){return src[b]-src[a];}).slice(0,2);
+  return top.length?("Famille "+top.join(" · ")):"Famille";}
 /* Agencement « propre » d'une famille : les PARENTS en haut, chaque enfant
    DIRECTEMENT EN DESSOUS de ses parents (couple centré au-dessus de ses enfants).
    Les plus jeunes descendent tout en bas (ex : Ronan au pied du tronc). */
