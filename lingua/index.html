@@ -495,6 +495,62 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 @keyframes blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.12)}}
 @keyframes pbounce{from{transform:translateY(0)}to{transform:translateY(-7px)}}
 @media (prefers-reduced-motion:reduce){.mascot *,.mascot{animation:none!important}}
+
+/* ===== ⚡🃏 Salle de jeux (v2.33) ===== */
+.games-row{display:flex;gap:10px;margin-bottom:18px}
+.game-card{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:3px;border-radius:16px;padding:13px 14px;cursor:pointer;color:#fff;text-align:left;min-height:78px;border:1px solid var(--line);background:var(--card)}
+.game-card.blitz{background:linear-gradient(135deg,#2b1a10,#1d2733);border-color:#ff9f43}
+.game-card.pairs{background:linear-gradient(135deg,#101f2b,#231d33);border-color:#7c3aed}
+.game-card .gc-ic{font-size:26px}
+.game-card b{font-size:15px}
+.game-card i{font-size:11px;font-style:normal;color:#9fb2c2}
+.stories-card.stats-link{background:linear-gradient(135deg,#10222b,#1d2733);border-color:#38bdf8}
+.stories-card.stats-link .st-badge{background:#38bdf8;color:#082032}
+/* écran défi éclair + paires */
+.screen.blitz,.screen.pairs{padding-top:14px}
+.bz-head{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.bz-quit{background:var(--card);border:1px solid var(--line);color:#9fb2c2;border-radius:12px;min-width:44px;min-height:44px;font-size:18px;cursor:pointer}
+.bz-time,.pr-time{font-weight:900;font-size:17px}
+.bz-time b,.pr-time b{color:var(--gold);font-size:20px}
+.bz-score{margin-left:auto;font-weight:900;font-size:17px}
+.bz-score b{color:#22c55e;font-size:20px}
+.bz-bar{height:10px;background:var(--card);border-radius:99px;overflow:hidden;margin-bottom:16px}
+.bz-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),#ffd067);border-radius:99px;transition:width 1s linear}
+.bz-bar-fill.hot{background:linear-gradient(90deg,#ef4444,#f97316)}
+.bz-q{text-align:center;margin:14px 0 18px}
+.bz-dir{font-size:12.5px;color:#9fb2c2;margin-bottom:8px}
+.bz-word{font-size:30px;font-weight:900}
+.bz-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bz-opt{background:var(--card);border:2px solid var(--line);border-radius:14px;color:#fff;font-size:16px;font-weight:800;padding:16px 10px;min-height:60px;cursor:pointer}
+.bz-opt.good{border-color:#22c55e;background:#12321f}
+.bz-opt.bad{border-color:#ef4444;background:#341418}
+.bz-done{text-align:center;margin:26px 0 18px}
+.bz-done h2{margin:10px 0 8px}
+.bz-rec{display:inline-block;background:linear-gradient(90deg,var(--gold),#ffd067);color:#3b2f10;font-weight:900;border-radius:99px;padding:6px 16px;margin-bottom:10px;animation:pbounce .5s ease infinite alternate}
+/* paires */
+.pr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.pr-tile{background:var(--card);border:2px solid var(--line);border-radius:13px;color:#fff;font-size:14.5px;font-weight:800;padding:12px 6px;min-height:58px;cursor:pointer;word-break:break-word}
+.pr-tile.lang{border-style:dashed}
+.pr-tile.sel{border-color:var(--gold);background:#2b2410}
+.pr-tile.bad{border-color:#ef4444;background:#341418;animation:prshake .3s ease}
+.pr-tile.done{opacity:.28;border-color:#22c55e;pointer-events:none}
+@keyframes prshake{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}60%{transform:translateX(5px)}}
+/* ===== 📊 Stats (v2.33) ===== */
+.heat-wrap,.rec-wrap,.langs-wrap{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:16px}
+.heat-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);gap:3px;justify-content:start;margin:10px 0 8px}
+.heat{width:13px;height:13px;border-radius:3px;background:#22303d}
+.heat.h1{background:#14532d}.heat.h2{background:#15803d}.heat.h3{background:#22c55e}.heat.h4{background:#86efac}
+.heat-legend{display:flex;align-items:center;gap:4px;font-size:11px;color:#9fb2c2}
+.heat-legend .heat{display:inline-block}
+.rec-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.rec{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--card2);border-radius:12px;padding:10px 4px}
+.rec span{font-size:20px}.rec b{font-size:16px}.rec i{font-size:10.5px;font-style:normal;color:#9fb2c2}
+.lang-row{display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:14px}
+.lang-row:last-child{border-bottom:none}
+.lang-row.cur{background:rgba(246,183,60,.07);border-radius:10px}
+.lang-row .lr-fl{font-size:20px}
+.lang-row .lr-n i{font-style:normal;font-size:11px;color:var(--gold)}
+.lang-row .lr-s{margin-left:auto;font-size:12.5px;color:#9fb2c2;font-weight:800}
 </style>
 </head>
 <body>
