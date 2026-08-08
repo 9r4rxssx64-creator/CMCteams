@@ -31,4 +31,7 @@ jobs:
           npm i -D playwright@1.49.1 --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Lire
-        run: node tools/arbre/lire-web.mjs "${{ inputs.motcle }}" ${{ inputs.urls }}
+        env:
+          MOTCLE: ${{ inputs.motcle }}
+          URLS: ${{ inputs.urls }}
+        run: node tools/arbre/lire-web.mjs

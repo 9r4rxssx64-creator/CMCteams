@@ -9,8 +9,9 @@
  */
 import { chromium } from 'playwright';
 
-const motcle = (process.argv[2] || 'MAIFFRET').toLowerCase();
-const urls = process.argv.slice(3);
+const motcle = (process.argv[2] || process.env.MOTCLE || 'MAIFFRET').toLowerCase();
+/* URLs par variable d'environnement (les & et ; des URLs cassent l'interpolation shell) */
+const urls = (process.env.URLS || process.argv.slice(3).join(' ')).split(/\s+/).filter(Boolean);
 if (!urls.length) { console.error('aucune URL'); process.exit(2); }
 
 const browser = await chromium.launch({ args: ['--disable-blink-features=AutomationControlled'] });
