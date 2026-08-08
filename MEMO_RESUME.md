@@ -25,13 +25,27 @@
    +20 XP +5 💎 à la 1re lecture, quête « Lis 1 histoire », carte accueil x/6.
    Testé navigateur réel : 9/9 ✅.
 
-### Note sur le 404 /%22/%22 (surface CMCteams, run verif-reelle de 22:05 UTC)
-Le run a encore vu `https://cmcteams.kd-mc.com/%22/%22` → 404, ALORS QUE les gardes
-v9.876-878 (autre session, PRs #3154/#3155, mergées 17:32) sont sur main. Repro locale
-sur le code v9.879 avec `cmc_photos` entièrement pollué (`"/"` partout) : **0 requête
-%22, gardes OK**. Hypothèse : build Pages/CDN antérieur au fix au moment du run, OU
-pollution dans une autre clé que cmc_photos. Re-run verif-reelle lancé pour trancher —
-ce fil appartient à l'autre session (ne pas doubler le travail).
+### Enquête 404 /%22/%22 (surface CMCteams) — état au 8 août 01:15 UTC
+Chronologie des faits PROUVÉS (runs verif-reelle) :
+- v9.876-880 (fonds CSS, cmc_photos, getEmpPhoto/getEmpBg) puis **v9.881-882**
+  (`cmc_plan_bg_images` assaini au getter + refus à la saisie `_promptPlanBg`) sont
+  sur main et SERVIS (« version page servie : v9.882 » dans la note du run rouge).
+- MALGRÉ ça, runs 31230312178 et 31231175160 encore rouges : `GET /%22/%22`,
+  initiateur `type=parser` (HTML inséré par innerHTML), **localStorage PROPRE**
+  (aucune valeur `\"/\"` ni `%22/%22`), cliché DOM au moment T : rien, mouchard
+  MutationObserver (src/style/href/poster) : rien.
+- Le navigateur CI part de zéro → la valeur polluée arrive par FIREBASE pendant le
+  run. L'intermittence (rouge 00:30/00:50, vert 00:45/00:59/01:03/01:07) suggère
+  une source EXTERNE épisodique (un appareil de Kevin en vieille version qui
+  re-pousse une valeur sale via la synchro ?).
+- **Piège armé dans la vérif réelle** (mergé, commit c7389c8) : les puits d'écriture
+  DOM eux-mêmes (setter `innerHTML`, `insertAdjacentHTML`, `setAttribute`,
+  `setProperty`) capturent la PILE D'APPEL (fonction + ligne d'index.html) dès
+  qu'un HTML contenant `%22/` ou `&quot;/&quot;` passe + Resource Timing porté à
+  8000 entrées (le tampon 250 débordait, d'où le canal invisible).
+**Prochain run ROUGE = le fabricant du HTML cassé sera nommé dans la note.**
+Relancer `verif-reelle.yml` périodiquement jusqu'à capture, puis corriger la vraie
+source et exiger 2 verts consécutifs.
 
 ## Nuit du 6 au 7 août 2026 — « vérifier en réel » livré, et ce qu'il a trouvé
 
