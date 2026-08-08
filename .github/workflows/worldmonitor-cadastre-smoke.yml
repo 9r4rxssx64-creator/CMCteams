@@ -59,6 +59,18 @@ PY
           echo "== 5) PLU WMS GetMap (GPU.ZONE_URBA) =="
           check_img "plu-wms" "https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=GPU.ZONE_URBA&STYLES=&CRS=EPSG:3857&BBOX=261000,6248000,263000,6250000&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true"
 
+          echo "== 6) Photo aérienne IGN (ORTHOPHOTOS jpeg) =="
+          check_img "ortho-tuile" "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX=$Z&TILEROW=$TY&TILECOL=$TX"
+
+          echo "== 7) Adresse BAN (reverse) =="
+          check_json "ban-reverse" "https://api-adresse.data.gouv.fr/reverse/?lon=$LON&lat=$LAT" '"label"'
+
+          echo "== 8) Géorisques (risques par point) — dump forme =="
+          check_json "georisques" "https://georisques.gouv.fr/api/v1/gaspar/risques?latlon=$LON%2C$LAT&rayon=1000" 'risque'
+
+          echo "== 9) DVF prix immobiliers (cquest) — dump forme/liveness =="
+          check_json "dvf" "https://api.cquest.org/dvf?lat=$LAT&lon=$LON&dist=60" 'valeur_fonciere'
+
           echo "======================================"
-          [ "$FAIL" = "0" ] && echo "✅ SMOKE OK — sources IGN vérifiées" || echo "❌ au moins une source KO — voir ci-dessus"
+          [ "$FAIL" = "0" ] && echo "✅ SMOKE OK — sources vérifiées (les JSON dump ci-dessus confirment la forme)" || echo "❌ au moins une source image KO — voir ci-dessus"
           exit $FAIL
