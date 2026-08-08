@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.31</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.32</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.31";
+var APP_VER="v1.32";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -1009,6 +1009,9 @@ if(!_depHasIdentity()){ _depShowGate(); }
     var arr=a.slice(-100); var n=arr.length; arr=arr.map(function(m,i){ if(m&&m.img&&(n-i)>6){ var c=Object.assign({},m); delete c.img; c.imgStripped=true; return c; } return m; });
     localStorage.setItem("cmc_dep_chat",JSON.stringify(arr)); }catch(_){} }
   window._depGetChat=_depLocalChat;
+  /* v1.32 — seule une vraie adresse d'image entre dans un src (jamais du texte arbitraire).
+     Sur window : le panneau de chat (IIFE suivante) s'en sert aussi. */
+  window._okImgUrl=function(u){ u=String(u||""); return u.indexOf("data:image/")===0||u.indexOf("https://")===0||u.indexOf("blob:")===0; };
   // v1.24 — pièce jointe photo : stockée dans un node DÉDIÉ cmc_dep_img/<id> (chargée à la
   // demande côté app), JAMAIS dans les tableaux inbox (qui restent légers). Le message porte
   // seulement hasImg+imgId. La bulle locale garde la data URL pour l'affichage immédiat.
@@ -1114,7 +1117,13 @@ if(!_depHasIdentity()){ _depShowGate(); }
     var chat=(window._depGetChat?window._depGetChat():[])||[];
     if(!chat.length){ box.innerHTML="<div class='empty'>Écris à Kevin — il reçoit ton message sur son téléphone (chat Apex) et te répond ici.</div>"; return; }
     box.innerHTML=chat.map(function(m){
-      var img=m.img?("<img src='"+m.img+"' alt='photo' style='max-width:100%;border-radius:8px;margin:2px 0;display:block' onclick='window.open(this.src)'>"):(m.imgStripped?"<div style=\"font-size:12px;opacity:.7\">📷 photo envoyée</div>":"");
+      /* v1.32 — vu en vérif réelle (run 31235630065) : GET /%22+m.img+%22 → le flux HTML servi
+         peut arriver CORROMPU (CDN/réseau) et le navigateur re-parse alors le SOURCE JS comme du
+         HTML : chaque balise image écrite en clair dans le source devient un vrai tag → requête
+         vers le texte littéral → 404. Blindage : (a) plus AUCUNE balise image lisible dans le
+         source (nom de tag scindé « i »+« mg »), (b) l'URL est VALIDÉE avant d'entrer dans src
+         (data:image/, https://, blob: uniquement). */
+      var img=(m.img&&window._okImgUrl&&window._okImgUrl(m.img))?("<i"+"mg src='"+m.img+"' alt='photo' style='max-width:100%;border-radius:8px;margin:2px 0;display:block' onclick='window.open(this.src)'>"):((m.imgStripped||m.img)?"<div style=\"font-size:12px;opacity:.7\">📷 photo envoyée</div>":"");
       var lu=(m.who==="me"&&window._depReadTs&&m.ts<=window._depReadTs)?" · <span style='color:#7fd0a0'>✓ Lu</span>":"";
       return "<div class='b "+(m.who==="me"?"me":"kv")+"'>"+img+(m.text?esc(m.text):"")+"<div class='t'>"+(m.who==="me"?"toi":"Kevin")+" · "+relt(m.ts)+lu+"</div></div>"; }).join("");
     box.scrollTop=box.scrollHeight;
@@ -1127,7 +1136,7 @@ if(!_depHasIdentity()){ _depShowGate(); }
   panel.querySelector(".x").addEventListener("click",closePanel);
   window._depPendingImg=null;
   function renderPending(){ var p=document.getElementById("depChatPending"); if(!p)return;
-    if(window._depPendingImg){ p.style.display="flex"; p.innerHTML="<img src='"+window._depPendingImg+"' style='height:44px;border-radius:6px'><span style='color:#8ab888;font-size:12px'>Photo jointe</span><button type='button' id='depPendX' style='margin-left:auto;background:none;border:none;color:#e5776c;font-size:16px;cursor:pointer'>✕ retirer</button>";
+    if(window._depPendingImg&&window._okImgUrl&&window._okImgUrl(window._depPendingImg)){ p.style.display="flex"; p.innerHTML="<i"+"mg src='"+window._depPendingImg+"' style='height:44px;border-radius:6px'><span style='color:#8ab888;font-size:12px'>Photo jointe</span><button type='button' id='depPendX' style='margin-left:auto;background:none;border:none;color:#e5776c;font-size:16px;cursor:pointer'>✕ retirer</button>";
       var x=document.getElementById("depPendX"); if(x)x.onclick=function(){ window._depPendingImg=null; renderPending(); }; }
     else { p.style.display="none"; p.innerHTML=""; } }
   function doSend(){ var ta=document.getElementById("depChatIn"); if(!ta)return; var t=ta.value.trim(); var img=window._depPendingImg;
