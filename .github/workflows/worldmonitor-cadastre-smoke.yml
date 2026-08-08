@@ -57,6 +57,15 @@ jobs:
           echo "== 7) Georisques (risques par point, imbrique data[].risques_detail[]) =="
           check_json "georisques" "https://georisques.gouv.fr/api/v1/gaspar/risques?latlon=$LON%2C$LAT&rayon=1000" "libelle_risque_long"
 
+          echo "== 8) Relief 3D — tuile terrain AWS terrarium (globe 3D) =="
+          check_img "terrain-3d" "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/2/2/1.png"
+
+          echo "== 9) CDN MapLibre GL (moteur globe 3D) =="
+          MLCT=$(curl -sS -m 20 -o /tmp/ml.js -w '%{http_code}' "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js")
+          MLSZ=$(wc -c </tmp/ml.js)
+          echo ">>> maplibre-cdn : HTTP $MLCT · ${MLSZ} octets"
+          if [ "$MLCT" != "200" ] || [ "$MLSZ" -lt 100000 ]; then echo "   KO"; FAIL=1; else echo "   OK"; fi
+
           echo "======================================"
           if [ "$FAIL" = "0" ]; then echo "SMOKE OK — images verifiees ; JSON dumps ci-dessus = forme reelle"; else echo "au moins une IMAGE KO — voir ci-dessus"; fi
           exit $FAIL
