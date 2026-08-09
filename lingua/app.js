@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.38.0";
+var APP_VER="v2.39.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -306,6 +306,9 @@ function _webSpeak(text){ if(!S.sound||!text)return; try{ var u=new SpeechSynthe
   var base=(u.lang).split("-")[0], vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var best=vs.filter(function(v){return /premium|enhanced|siri|natural/i.test(v.name);})[0] || vs.filter(function(v){return v.localService;})[0] || vs[0];
   if(best)u.voice=best; _wsSpeak(u);}catch(e){} }
+/* Parle le mot de l'exercice COURANT uniquement (anti-décalage : si on a déjà avancé,
+   un son différé de la question précédente NE sort PAS sur la nouvelle question). */
+function _lsSpeak(text,qi,delay){ setTimeout(function(){ if(LESSON&&LESSON.i===qi&&S.sound)speak(text); }, delay||0); }
 var AC=null;
 function tone(freqs,dur){ if(!S.sound)return; try{ AC=AC||new(window.AudioContext||window.webkitAudioContext)(); var o=AC.createOscillator(),g=AC.createGain(); o.connect(g);g.connect(AC.destination);o.type="sine";
   freqs.forEach(function(f,i){ o.frequency.setValueAtTime(f,AC.currentTime+i*0.08); });
@@ -622,7 +625,7 @@ function pairsTap(i){ if(!PR||PR.over||PR.lock)return; var t=PR.tiles[i]; if(t.d
   if(PR.sel<0){ PR.sel=i; render(); return; }
   var a=PR.tiles[PR.sel];
   if(a.k===t.k && a.side!==t.side){ a.done=t.done=true; PR.found++; PR.sel=-1; beep(true); vibrate(12);
-    speak(a.side==="t"?a.txt:t.txt);
+    /* Kevin : « ne dis pas tous les mots sur les paires » → on garde le son de réussite (beep), pas la voix */
     if(PR.found>=PR.need){ pairsEnd(); } else render(); }
   else { PR.lock=true; PR.badA=PR.sel; PR.badB=i; beep(false); vibrate(28); render();
     setTimeout(function(){ if(!PR)return; PR.lock=false; PR.badA=PR.badB=null; PR.sel=-1; render(); },420); } }
@@ -1584,7 +1587,7 @@ function exMC(ex){ var w=el("div","ex");
   var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour écouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
   var titre=ex.audio?"Que dis-je ?":(ex.mode==="mc_fr"?"Traduis en français":"Traduis ce mot");
   w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">'+titre+'</div></div>'+q;
-  if(ex.audio) setTimeout(function(){speak(ex.w.t);},250);
+  if(ex.audio&&!LESSON.answered) _lsSpeak(ex.w.t,LESSON.i,250);
   var opts=el("div","opts"); ex.opts.forEach(function(o){ var b=el("button","opt"); b.textContent=o; b.onclick=function(){ if(LESSON.answered)return; opts.querySelectorAll(".opt").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); LESSON._pick=o; LESSON._can=true; syncMain(); }; opts.appendChild(b); }); w.appendChild(opts);
   setTimeout(function(){ var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },0);
   return w;
@@ -1596,7 +1599,7 @@ function exMatch(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MAS
   function clearSel(){ if(LESSON._match.sel){LESSON._match.sel.classList.remove("msel");LESSON._match.sel=null;} }
   function mk(it){ var b=el("button","mtile"); b.textContent=it.txt; b.dataset.key=it.key; b.dataset.side=it.side; b.onclick=function(){ if(b.classList.contains("matched"))return; var s=LESSON._match.sel;
     if(!s){clearSel();b.classList.add("msel");LESSON._match.sel=b;return;} if(s===b){b.classList.remove("msel");LESSON._match.sel=null;return;} if(s.dataset.side===b.dataset.side){clearSel();b.classList.add("msel");LESSON._match.sel=b;return;}
-    if(s.dataset.key===b.dataset.key){ s.classList.add("matched");b.classList.add("matched");s.classList.remove("msel");LESSON._match.sel=null;LESSON._match.done++; if(it.w)speak(it.w.t); beep(true);
+    if(s.dataset.key===b.dataset.key){ s.classList.add("matched");b.classList.add("matched");s.classList.remove("msel");LESSON._match.sel=null;LESSON._match.done++; beep(true); /* pas de voix sur chaque paire (Kevin) */
       if(LESSON._match.done>=LESSON._match.need){LESSON._can=true;LESSON._matchOk=true;syncMain();} }
     else{ b.classList.add("mbad");s.classList.add("mbad");var ss=s; setTimeout(function(){b.classList.remove("mbad","msel");ss.classList.remove("mbad","msel");},450); LESSON._match.sel=null; beep(false); } }; return b; }
   left.forEach(function(it){cL.appendChild(mk(it));}); right.forEach(function(it){cR.appendChild(mk(it));}); grid.appendChild(cL);grid.appendChild(cR);w.appendChild(grid); return w;
@@ -1613,12 +1616,16 @@ function exType(ex){ var w=el("div","ex");
   var titre=ex.audio?"Écoute et écris ce que tu entends":(ex.dir==="toFr"?"Écris en français":"Écris la traduction");
   var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour réécouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
   w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">'+titre+'</div></div>'+q;
-  if(ex.audio) setTimeout(function(){speak(ex.w.t);},250);
+  if(ex.audio&&!LESSON.answered) _lsSpeak(ex.w.t,LESSON.i,250);
   var inp=el("input","type-input"); inp.type="text"; inp.setAttribute("autocapitalize","none"); inp.setAttribute("autocomplete","off"); inp.setAttribute("autocorrect","off"); inp.spellcheck=false; inp.placeholder="Écris ta réponse…";
-  inp.oninput=function(){ LESSON._typeVal=inp.value; LESSON._can=inp.value.trim().length>0; syncMain(); };
-  inp.onkeydown=function(e){ if(e.key==="Enter"&&LESSON._can&&!LESSON.answered){ checkEx(ex); } };
+  if(LESSON.answered){ /* après validation : on GARDE ce que tu as écrit à l'écran (coloré) + le clavier ne repop pas → la correction reste visible */
+    inp.value=LESSON._typeVal||""; inp.readOnly=true; inp.classList.add(LESSON.ok?"tgood":"tbad"); }
+  else {
+    inp.oninput=function(){ LESSON._typeVal=inp.value; LESSON._can=inp.value.trim().length>0; syncMain(); };
+    inp.onkeydown=function(e){ if(e.key==="Enter"&&LESSON._can&&!LESSON.answered){ checkEx(ex); } };
+  }
   w.appendChild(inp);
-  setTimeout(function(){ try{inp.focus();}catch(_){} var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },30);
+  setTimeout(function(){ if(!LESSON.answered){ try{inp.focus();}catch(_){} } var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },30);
   return w;
 }
 function exSpeak(ex){ var w=el("div","ex");
@@ -1631,7 +1638,8 @@ function exSpeak(ex){ var w=el("div","ex");
   }, COURSES[S.course].ttsLang); };
   w.appendChild(mic);
   var pass=el("button","btn-ghost skip"); pass.textContent="Passer (sans micro)"; pass.onclick=function(){ LESSON._speakOk=true; LESSON._can=true; syncMain(); }; w.appendChild(pass);
-  setTimeout(function(){ var sb=document.getElementById("spSay"); if(sb)sb.onclick=function(){speak(ex.answer);}; speak(ex.answer); },200);
+  var qiSp=LESSON.i;
+  setTimeout(function(){ var sb=document.getElementById("spSay"); if(sb)sb.onclick=function(){speak(ex.answer);}; if(LESSON&&LESSON.i===qiSp&&!LESSON.answered)speak(ex.answer); },200);
   return w;
 }
 function syncMain(){ var m=document.getElementById("mainBtn"); if(m)m.disabled=!(LESSON.answered||LESSON._can); }
@@ -1643,7 +1651,7 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
   else if(ex.kind==="speak"){ ok=!!L._speakOk; sol=ex.answer; }   // prononciation : indulgent (bien prononcé OU passé)
   L.answered=true; L.ok=ok; L._sol=sol;
   if(ok){ L.correct++; L.combo++; L.comboMax=Math.max(L.comboMax,L.combo); S.today.combo=Math.max(S.today.combo,L.combo);
-    if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")setTimeout(function(){speak(ex.w.t);},140); }
+    if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")_lsSpeak(ex.w.t,L.i,140); }
   else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]); }
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
   setTimeout(function(){ var m=document.querySelector(".lesson .bee-img");
