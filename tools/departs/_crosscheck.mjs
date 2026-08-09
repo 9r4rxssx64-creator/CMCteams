@@ -16,7 +16,7 @@ import { importMonth } from './_gen-boards.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const TARGETS = [
-  { pdf: 'tests/fixtures/aout-2026-v1.pdf', year: 2026, monthIdx: 7 },
+  { pdf: 'tests/fixtures/aout-2026-v2.pdf', year: 2026, monthIdx: 7 },
   { pdf: 'tests/fixtures/juillet-2026-v2.pdf', year: 2026, monthIdx: 6 },
 ];
 function loadCommitted() {
