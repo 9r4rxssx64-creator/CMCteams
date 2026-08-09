@@ -75,6 +75,19 @@
    n'apparaît PLUS. Non-régression : lip-sync v2.37 + prononciation v2.36 + retour arrière 10/10.
    sw.js lingua-v2.38.0. Mergé PR #3248.
 
+3octies. **KDMC Lingua v2.39.0 — voix + exercices au point** (Kevin : « s'arrête avant la fin » ·
+   « écris le mot → rien ne s'affiche ni ce qu'on a écrit ni la bonne réponse » · « décalage » ·
+   « ne dis pas tous les mots sur les paires/quiz » · « voix pas au point »). Corrigé : (1) **« écris
+   le mot »** — après validation le texte écrit RESTE (vert/rouge, verrouillé) + réponse + explication
+   affichées ; le clavier ne repop plus (il cachait la correction et vidait le champ) ; (2) **paires +
+   association** — plus de lecture de CHAQUE mot (on garde le beep de réussite) ; (3) **anti-décalage** —
+   tout son différé attaché à l'exercice COURANT (`_lsSpeak(mot,i)`) : un son de la question précédente
+   ne sort jamais sur la suivante (mc-audio, écris-le, prononce, mot dit après bonne réponse) → moins de
+   chevauchements = moins de coupures. Prouvé en navigateur réel : « écris le mot » faux → texte conservé
+   (rouge, verrouillé) + réponse affichée ; paires résolues avec 1 seule lecture (message de fin), plus
+   1-par-paire. Non-régression : v2.38 + v2.37 + v2.36 + retour arrière 10/10 tous PASS.
+   sw.js lingua-v2.39.0. Mergé PR #3251.
+
 3ter. **KDMC Lingua v2.34.0 — synchro voix vérifiée + garde retour-arrière** (Kevin :
    « Vérifie la synchro de la voix avec les questions… Pas de retour arrière possible
    pendant une leçon ») : synchro voix PROUVÉE en navigateur réel (exercices « écoute »
