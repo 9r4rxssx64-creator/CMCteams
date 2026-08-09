@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.56.0";
+var APP_VER="v2.57.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1040,7 +1040,7 @@ function cefrModal(){ var m=modal(); var lv=currentLevel();
   m.body.innerHTML='<h3>🎓 Ton vrai niveau</h3>'+
     '<p class="mini">Tu es <b>'+esc(lv.cur.code)+'</b> avec <b>'+lv.words+' mots</b> maîtrisés.'+(lv.next?(' Encore <b>'+lv.remain+' mots</b> pour <b>'+esc(lv.next.code)+'</b>.'):' Bravo, tu as tout parcouru ! 🎉')+'</p>'+
     '<div style="margin:10px 0">'+ladder+'</div>'+
-    '<p class="mini">Être vraiment <b>bilingue</b> (C1-C2), c\'est <b>plusieurs milliers de mots</b> et de la pratique sur des <b>années</b> — un marathon, pas un sprint. Lingua te bâtit des <b>bases solides</b> : le programme actuel ('+total+' mots) t\'emmène vers <b>~A2</b>, et il s\'enrichit régulièrement. Chaque mot compte, continue ! 🐝</p>'+
+    '<p class="mini">Être vraiment <b>bilingue</b> (C1-C2), c\'est <b>plusieurs milliers de mots</b> et de la pratique sur des <b>années</b> — un marathon, pas un sprint. Lingua te bâtit des <b>bases solides</b> : le programme actuel ('+total+' mots) t\'emmène vers <b>~'+esc((function(){ var r=LEVELS[0]; LEVELS.forEach(function(s){ if(total>=s.min) r=s; }); return r.code; })())+'</b>, et il s\'enrichit régulièrement. Chaque mot compte, continue ! 🐝</p>'+
     '<button class="btn-main" style="margin-top:8px" onclick="this.closest(\'.overlay\').classList.remove(\'show\');var o=this.closest(\'.overlay\');setTimeout(function(){o.remove();},250);">OK 👍</button>';
 }
 /* Bee réagit selon ce qu'il dit : félicite → fête, question → curieux, salut → coucou. */
