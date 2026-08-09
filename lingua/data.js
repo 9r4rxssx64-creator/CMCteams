@@ -345,6 +345,133 @@ var TEACHER_TIPS = [
   "Passe l'examen de l'unité : ce qui résiste, c'est exactement ce qu'il faut revoir. 🏆"
 ];
 
+/* --- v2.44 : programme intermédiaire (A2 → B1) — parité garantie sur les 6 langues.
+   Un seul dictionnaire source NEWV (fr → {en,it,es,de,pt,nl}) alimente le lexique de
+   TOUTES les langues d'un coup : impossible qu'une langue ait moins que les autres. --- */
+var CURRICULUM_Y = [
+  { t:"Les émotions 😊", c:"#f59e0b", L:[
+    { t:"Se sentir", w:["fatigué","fâché","inquiet","surpris","fier","calme"], p:["je suis fatigué"] },
+    { t:"Le cœur", w:["seul","amoureux","peur","rire","pleurer"], p:["elle a peur"] }
+  ]},
+  { t:"Le temps qui passe ⏳", c:"#8b5cf6", L:[
+    { t:"Quand ?", w:["maintenant","bientôt","tard","tôt","longtemps"], p:["je mange maintenant"] },
+    { t:"À quelle fréquence", w:["toujours","jamais","souvent","parfois","avant","après"], p:["je bois souvent du thé"] }
+  ]},
+  { t:"Au travail 💼", c:"#0ea5e9", L:[
+    { t:"Le bureau", w:["travail","bureau","réunion","patron","collègue","ordinateur"], p:["je travaille au bureau"] },
+    { t:"L'entreprise", w:["projet","salaire","entreprise","réussir","travailler"], p:["j'aime mon travail"] }
+  ]},
+  { t:"La santé 🩺", c:"#ef4444", L:[
+    { t:"Être malade", w:["malade","douleur","médicament","fièvre"], p:["je suis malade"] },
+    { t:"Aller mieux", w:["se reposer","guérir","santé","fort","faible","respirer"], p:["je vais mieux"] }
+  ]},
+  { t:"Les loisirs 🎭", c:"#ec4899", L:[
+    { t:"Bouger", w:["jouer","nager","courir","danser","voyager","sport"], p:["j'aime le sport"] },
+    { t:"Arts et loisirs", w:["lire","écrire","chanter","musique","film","jeu"], p:["j'aime lire"] }
+  ]},
+  { t:"La technologie 📱", c:"#14b8a6", L:[
+    { t:"Mon téléphone", w:["écran","message","photo","application","batterie"], p:["je regarde une photo"] },
+    { t:"En ligne", w:["internet","mot de passe","en ligne","clavier","ordinateur portable"], p:["je suis en ligne"] }
+  ]},
+  { t:"Opinions et idées 💡", c:"#a855f7", L:[
+    { t:"Réfléchir", w:["penser","croire","comprendre","expliquer"], p:["je pense que oui"] },
+    { t:"Discuter", w:["raison","vérité","problème","solution","idée","important"], p:["c'est une bonne idée"] }
+  ]}
+];
+var NEWV = {
+  "fatigué":{en:"tired",it:"stanco",es:"cansado",de:"müde",pt:"cansado",nl:"moe"},
+  "fâché":{en:"angry",it:"arrabbiato",es:"enfadado",de:"wütend",pt:"zangado",nl:"boos"},
+  "inquiet":{en:"worried",it:"preoccupato",es:"preocupado",de:"besorgt",pt:"preocupado",nl:"bezorgd"},
+  "surpris":{en:"surprised",it:"sorpreso",es:"sorprendido",de:"überrascht",pt:"surpreso",nl:"verrast"},
+  "fier":{en:"proud",it:"fiero",es:"orgulloso",de:"stolz",pt:"orgulhoso",nl:"trots"},
+  "calme":{en:"calm",it:"calmo",es:"tranquilo",de:"ruhig",pt:"calmo",nl:"kalm"},
+  "seul":{en:"alone",it:"solo",es:"solo",de:"allein",pt:"sozinho",nl:"alleen"},
+  "amoureux":{en:"in love",it:"innamorato",es:"enamorado",de:"verliebt",pt:"apaixonado",nl:"verliefd"},
+  "peur":{en:"fear",it:"paura",es:"miedo",de:"Angst",pt:"medo",nl:"angst"},
+  "rire":{en:"to laugh",it:"ridere",es:"reír",de:"lachen",pt:"rir",nl:"lachen"},
+  "pleurer":{en:"to cry",it:"piangere",es:"llorar",de:"weinen",pt:"chorar",nl:"huilen"},
+  "maintenant":{en:"now",it:"adesso",es:"ahora",de:"jetzt",pt:"agora",nl:"nu"},
+  "bientôt":{en:"soon",it:"presto",es:"pronto",de:"bald",pt:"em breve",nl:"binnenkort"},
+  "tard":{en:"late",it:"tardi",es:"tarde",de:"spät",pt:"tarde",nl:"laat"},
+  "tôt":{en:"early",it:"presto",es:"temprano",de:"früh",pt:"cedo",nl:"vroeg"},
+  "longtemps":{en:"a long time",it:"a lungo",es:"mucho tiempo",de:"lange",pt:"muito tempo",nl:"lang"},
+  "toujours":{en:"always",it:"sempre",es:"siempre",de:"immer",pt:"sempre",nl:"altijd"},
+  "jamais":{en:"never",it:"mai",es:"nunca",de:"nie",pt:"nunca",nl:"nooit"},
+  "souvent":{en:"often",it:"spesso",es:"a menudo",de:"oft",pt:"frequentemente",nl:"vaak"},
+  "parfois":{en:"sometimes",it:"a volte",es:"a veces",de:"manchmal",pt:"às vezes",nl:"soms"},
+  "avant":{en:"before",it:"prima",es:"antes",de:"vor",pt:"antes",nl:"voor"},
+  "après":{en:"after",it:"dopo",es:"después",de:"nach",pt:"depois",nl:"na"},
+  "travail":{en:"work",it:"lavoro",es:"trabajo",de:"Arbeit",pt:"trabalho",nl:"werk"},
+  "bureau":{en:"office",it:"ufficio",es:"oficina",de:"Büro",pt:"escritório",nl:"kantoor"},
+  "réunion":{en:"meeting",it:"riunione",es:"reunión",de:"Besprechung",pt:"reunião",nl:"vergadering"},
+  "patron":{en:"boss",it:"capo",es:"jefe",de:"Chef",pt:"chefe",nl:"baas"},
+  "collègue":{en:"colleague",it:"collega",es:"colega",de:"Kollege",pt:"colega",nl:"collega"},
+  "ordinateur":{en:"computer",it:"computer",es:"ordenador",de:"Computer",pt:"computador",nl:"computer"},
+  "projet":{en:"project",it:"progetto",es:"proyecto",de:"Projekt",pt:"projeto",nl:"project"},
+  "salaire":{en:"salary",it:"stipendio",es:"salario",de:"Gehalt",pt:"salário",nl:"salaris"},
+  "entreprise":{en:"company",it:"azienda",es:"empresa",de:"Firma",pt:"empresa",nl:"bedrijf"},
+  "réussir":{en:"to succeed",it:"riuscire",es:"lograr",de:"gelingen",pt:"conseguir",nl:"slagen"},
+  "travailler":{en:"to work",it:"lavorare",es:"trabajar",de:"arbeiten",pt:"trabalhar",nl:"werken"},
+  "malade":{en:"sick",it:"malato",es:"enfermo",de:"krank",pt:"doente",nl:"ziek"},
+  "douleur":{en:"pain",it:"dolore",es:"dolor",de:"Schmerz",pt:"dor",nl:"pijn"},
+  "médicament":{en:"medicine",it:"medicina",es:"medicina",de:"Medikament",pt:"remédio",nl:"medicijn"},
+  "fièvre":{en:"fever",it:"febbre",es:"fiebre",de:"Fieber",pt:"febre",nl:"koorts"},
+  "se reposer":{en:"to rest",it:"riposare",es:"descansar",de:"sich ausruhen",pt:"descansar",nl:"rusten"},
+  "guérir":{en:"to heal",it:"guarire",es:"curar",de:"heilen",pt:"curar",nl:"genezen"},
+  "santé":{en:"health",it:"salute",es:"salud",de:"Gesundheit",pt:"saúde",nl:"gezondheid"},
+  "fort":{en:"strong",it:"forte",es:"fuerte",de:"stark",pt:"forte",nl:"sterk"},
+  "faible":{en:"weak",it:"debole",es:"débil",de:"schwach",pt:"fraco",nl:"zwak"},
+  "respirer":{en:"to breathe",it:"respirare",es:"respirar",de:"atmen",pt:"respirar",nl:"ademen"},
+  "jouer":{en:"to play",it:"giocare",es:"jugar",de:"spielen",pt:"jogar",nl:"spelen"},
+  "nager":{en:"to swim",it:"nuotare",es:"nadar",de:"schwimmen",pt:"nadar",nl:"zwemmen"},
+  "courir":{en:"to run",it:"correre",es:"correr",de:"laufen",pt:"correr",nl:"rennen"},
+  "danser":{en:"to dance",it:"ballare",es:"bailar",de:"tanzen",pt:"dançar",nl:"dansen"},
+  "voyager":{en:"to travel",it:"viaggiare",es:"viajar",de:"reisen",pt:"viajar",nl:"reizen"},
+  "sport":{en:"sport",it:"sport",es:"deporte",de:"Sport",pt:"esporte",nl:"sport"},
+  "lire":{en:"to read",it:"leggere",es:"leer",de:"lesen",pt:"ler",nl:"lezen"},
+  "écrire":{en:"to write",it:"scrivere",es:"escribir",de:"schreiben",pt:"escrever",nl:"schrijven"},
+  "chanter":{en:"to sing",it:"cantare",es:"cantar",de:"singen",pt:"cantar",nl:"zingen"},
+  "musique":{en:"music",it:"musica",es:"música",de:"Musik",pt:"música",nl:"muziek"},
+  "film":{en:"movie",it:"film",es:"película",de:"Film",pt:"filme",nl:"film"},
+  "jeu":{en:"game",it:"gioco",es:"juego",de:"Spiel",pt:"jogo",nl:"spel"},
+  "écran":{en:"screen",it:"schermo",es:"pantalla",de:"Bildschirm",pt:"tela",nl:"scherm"},
+  "message":{en:"message",it:"messaggio",es:"mensaje",de:"Nachricht",pt:"mensagem",nl:"bericht"},
+  "photo":{en:"photo",it:"foto",es:"foto",de:"Foto",pt:"foto",nl:"foto"},
+  "application":{en:"app",it:"app",es:"aplicación",de:"App",pt:"aplicativo",nl:"app"},
+  "batterie":{en:"battery",it:"batteria",es:"batería",de:"Batterie",pt:"bateria",nl:"batterij"},
+  "internet":{en:"internet",it:"internet",es:"internet",de:"Internet",pt:"internet",nl:"internet"},
+  "mot de passe":{en:"password",it:"password",es:"contraseña",de:"Passwort",pt:"senha",nl:"wachtwoord"},
+  "en ligne":{en:"online",it:"online",es:"en línea",de:"online",pt:"online",nl:"online"},
+  "clavier":{en:"keyboard",it:"tastiera",es:"teclado",de:"Tastatur",pt:"teclado",nl:"toetsenbord"},
+  "ordinateur portable":{en:"laptop",it:"portatile",es:"portátil",de:"Laptop",pt:"notebook",nl:"laptop"},
+  "penser":{en:"to think",it:"pensare",es:"pensar",de:"denken",pt:"pensar",nl:"denken"},
+  "croire":{en:"to believe",it:"credere",es:"creer",de:"glauben",pt:"acreditar",nl:"geloven"},
+  "comprendre":{en:"to understand",it:"capire",es:"entender",de:"verstehen",pt:"entender",nl:"begrijpen"},
+  "expliquer":{en:"to explain",it:"spiegare",es:"explicar",de:"erklären",pt:"explicar",nl:"uitleggen"},
+  "raison":{en:"reason",it:"ragione",es:"razón",de:"Grund",pt:"razão",nl:"reden"},
+  "vérité":{en:"truth",it:"verità",es:"verdad",de:"Wahrheit",pt:"verdade",nl:"waarheid"},
+  "problème":{en:"problem",it:"problema",es:"problema",de:"Problem",pt:"problema",nl:"probleem"},
+  "solution":{en:"solution",it:"soluzione",es:"solución",de:"Lösung",pt:"solução",nl:"oplossing"},
+  "idée":{en:"idea",it:"idea",es:"idea",de:"Idee",pt:"ideia",nl:"idee"},
+  "important":{en:"important",it:"importante",es:"importante",de:"wichtig",pt:"importante",nl:"belangrijk"},
+  "je suis fatigué":{en:"I am tired",it:"sono stanco",es:"estoy cansado",de:"ich bin müde",pt:"estou cansado",nl:"ik ben moe"},
+  "elle a peur":{en:"she is afraid",it:"ha paura",es:"tiene miedo",de:"sie hat Angst",pt:"ela tem medo",nl:"zij is bang"},
+  "je mange maintenant":{en:"I eat now",it:"mangio adesso",es:"como ahora",de:"ich esse jetzt",pt:"como agora",nl:"ik eet nu"},
+  "je bois souvent du thé":{en:"I often drink tea",it:"bevo spesso il tè",es:"bebo té a menudo",de:"ich trinke oft Tee",pt:"bebo chá com frequência",nl:"ik drink vaak thee"},
+  "je travaille au bureau":{en:"I work at the office",it:"lavoro in ufficio",es:"trabajo en la oficina",de:"ich arbeite im Büro",pt:"trabalho no escritório",nl:"ik werk op kantoor"},
+  "j'aime mon travail":{en:"I like my work",it:"amo il mio lavoro",es:"me gusta mi trabajo",de:"ich mag meine Arbeit",pt:"gosto do meu trabalho",nl:"ik hou van mijn werk"},
+  "je suis malade":{en:"I am sick",it:"sono malato",es:"estoy enfermo",de:"ich bin krank",pt:"estou doente",nl:"ik ben ziek"},
+  "je vais mieux":{en:"I feel better",it:"sto meglio",es:"estoy mejor",de:"es geht mir besser",pt:"estou melhor",nl:"het gaat beter"},
+  "j'aime le sport":{en:"I like sport",it:"mi piace lo sport",es:"me gusta el deporte",de:"ich mag Sport",pt:"gosto de esporte",nl:"ik hou van sport"},
+  "j'aime lire":{en:"I like to read",it:"mi piace leggere",es:"me gusta leer",de:"ich lese gern",pt:"gosto de ler",nl:"ik lees graag"},
+  "je regarde une photo":{en:"I look at a photo",it:"guardo una foto",es:"miro una foto",de:"ich schaue ein Foto an",pt:"olho uma foto",nl:"ik kijk naar een foto"},
+  "je suis en ligne":{en:"I am online",it:"sono online",es:"estoy en línea",de:"ich bin online",pt:"estou online",nl:"ik ben online"},
+  "je pense que oui":{en:"I think so",it:"penso di sì",es:"creo que sí",de:"ich glaube schon",pt:"acho que sim",nl:"ik denk het wel"},
+  "c'est une bonne idée":{en:"it's a good idea",it:"è una buona idea",es:"es una buena idea",de:"das ist eine gute Idee",pt:"é uma boa ideia",nl:"het is een goed idee"}
+};
+CURRICULUM_Y.forEach(function(u){ CURRICULUM.push(u); });
+LANGS.forEach(function(l){ Object.keys(NEWV).forEach(function(k){ if(NEWV[k][l]) LEX[l][k]=NEWV[k][l]; }); });
+
 /* --- Génération des cours + dictionnaire de traduction --- */
 var COURSES = {};
 LANGS.forEach(function(l){
