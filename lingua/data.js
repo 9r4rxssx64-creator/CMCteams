@@ -1614,7 +1614,7 @@ var NEWV7 = {
   "vigne":{en:"vine",it:"vigna",es:"viña",de:"Rebe",pt:"videira",nl:"wijnstok"},
   "maïs":{en:"corn",it:"mais",es:"maíz",de:"Mais",pt:"milho",nl:"maïs"},
   "équipe":{en:"team",it:"squadra",es:"equipo",de:"Mannschaft",pt:"equipa",nl:"ploeg"},
-  "match":{en:"match",it:"partita",es:"partido",de:"Match",pt:"jogo de futebol",nl:"wedstrijd"},
+  "match":{en:"match",it:"partita",es:"partido",de:"Match",pt:"partida",nl:"wedstrijd"},
   "but":{en:"goal",it:"gol",es:"gol",de:"Tor",pt:"golo",nl:"doelpunt"},
   "arbitre":{en:"referee",it:"arbitro",es:"árbitro",de:"Schiedsrichter",pt:"árbitro",nl:"scheidsrechter"},
   "terrain":{en:"pitch",it:"campo da gioco",es:"terreno de juego",de:"Spielfeld",pt:"campo de jogos",nl:"speelveld"},
