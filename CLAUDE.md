@@ -9638,3 +9638,34 @@ S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses to
 - **`.claude/skills/verif-reelle/`** — **vérifier POUR DE VRAI** (vraies pages kd-mc.com, vrai navigateur, **connecté en tant que Kevin**, captures d'écran) via le workflow `verif-reelle.yml`. **Interdit d'affirmer qu'une page/donnée marche sans l'avoir vue** (leçons #131/#135). Périmètre kd-mc.com uniquement, code admin par secret CI jamais journalisé, lecture seule, session **nommée** (pas « admin prouvé » Face ID) — le dire.
 - **`.claude/skills/domain-journal/`** — « Qui se connecte » (admin.kd-mc.com) : source unique des connexions = le routeur (KV `ACCOUNTS`), règle **un compte par personne** (fusion datée, identité stricte prénom+nom), robots exclus, vie privée (métadonnées seulement). À lire AVANT de toucher aux comptes, fiches, connexions ou à `kdmc-router` (leçons #164 et #166).
 - **Décès = dans l'arbre** (`arbre.kd-mc.com/__deces`), jamais un sous-domaine : `deces.kd-mc.com` a été retiré le 2026-08-06, ne pas le recréer (cf. NOTES_USER.md).
+
+---
+
+## 🕵️ RÈGLE ABSOLUE — VÉRITÉ, RIEN DE FAUX, PARTOUT TOUJOURS (Kevin 2026-08-09, MAÎTRESSE)
+
+> **« Étend vérité, rien de faux, partout toujours »** — Kevin 2026-08-09.
+
+**Règle absolue, NON-NÉGOCIABLE, chapeaute « JAMAIS HALLUCINER / reproduction identique » et « second avis indépendant »** — Lingua (référence), Apex, CMCteams, tous projets présents et futurs qui produisent du CONTENU (traductions, explications, corrections, réponses de quiz, faits, données affichées).
+
+### 1. Aucun contenu FAUX ne doit jamais être publié — nulle part, jamais
+
+Tout contenu généré (par une IA, un parser, un import, un humain) qui peut être VRAI ou FAUX doit passer une **porte de vérité** avant d'être publié : traduction correcte, réponse de quiz réellement juste, explication non hallucinée, donnée fidèle à la source. Mieux vaut ne rien publier que publier un faux (cf. bug « hen→poule », « Presque ! » sur une réponse fausse).
+
+### 2. Deux niveaux obligatoires, l'un déterministe, l'autre indépendant
+
+- **STRUCTURE (déterministe, 0 clé, tourne À CHAQUE changement)** : parité (toutes les langues/champs présents et non vides), bornes (index de bonne réponse valide), 0 doublon, 0 repli silencieux. **Le build ÉCHOUE** si un faux structurel apparaît. Réf Lingua : `tools/lingua/verify-truth.mjs --struct` câblé dans `.github/workflows/lingua-truth.yml`.
+- **SENS (second modèle INDÉPENDANT, ≠ celui qui a produit)** : juge les traductions / réponses / faits. **Bloque** le NOUVEAU contenu douteux (ex : moteur d'histoires Lingua `grow-content.mjs` → rejet silencieux si le juge trouve une erreur dure). Pour le contenu DÉJÀ en place → audit consultatif périodique (`--semantic`, rapport `audit/*-verite.md`) : **on signale, on ne supprime pas à l'aveugle** (un juge IA peut se tromper → vérifier avant d'agir, règle #59/#83).
+
+### 3. « Partout toujours »
+
+Chaque feature qui produit du contenu doit livrer sa porte de vérité DANS le même commit (jamais « on vérifiera après »), et la faire tourner **en continu** (garde CI à chaque changement + audit périodique). S'applique aussi aux explications/corrections de l'IA (Apex, coach Lingua) : un system prompt qui produit des faits doit interdire l'invention et, quand c'est vérifiable, être audité.
+
+### 4. Distinguer FAUX (à bloquer) de STYLE (toléré)
+
+La porte bloque les vraies erreurs (sens, genre, accord, orthographe, réponse fausse, fait inventé) et **tolère** les simples préférences de style (« moins naturel »). Ne jamais bloquer/éditer du contenu CORRECT sous prétexte de style.
+
+### 5. Test mental obligatoire avant chaque livraison de contenu
+
+> *« Ce contenu peut-il être FAUX ? Si oui, ai-je une porte de vérité (structure déterministe + second avis indépendant) qui l'empêche de partir, et qui tourne en permanence ? Si non → l'ajouter AVANT de publier. »*
+
+S'applique : Lingua (référence livrée), Apex, CMCteams, tous projets présents et futurs.
