@@ -700,6 +700,258 @@ var NEWV2 = {
 CURRICULUM_Z.forEach(function(u){ CURRICULUM.push(u); });
 LANGS.forEach(function(l){ Object.keys(NEWV2).forEach(function(k){ if(NEWV2[k][l]) LEX[l][k]=NEWV2[k][l]; }); });
 
+/* --- v2.57 « Enrichi +++ » : 2e grande vague (A2 solide → cap A2+/B1) — 16 unités, ~187 entrées.
+   Toujours le même mécanisme à parité garantie. Portugais EUROPÉEN assumé partout
+   (constipação, auscultadores, videojogo, ficheiro, descarregar, conduzir, turma…). --- */
+var CURRICULUM_W = [
+  { t:"La maison en détail 🛋", c:"#0ea5e9", L:[
+    { t:"Les pièces", w:["salon","chambre","jardin","garage","étage","escalier"] },
+    { t:"La structure", w:["toit","mur","sol","plafond","ascenseur","voisin"] }
+  ]},
+  { t:"Les objets du quotidien 🔑", c:"#f59e0b", L:[
+    { t:"Sur moi", w:["montre","lunettes","parapluie","portefeuille","stylo","crayon"] },
+    { t:"À la maison", w:["ciseaux","papier","journal","boîte","bougie"] }
+  ]},
+  { t:"Le caractère 💭", c:"#8b5cf6", L:[
+    { t:"Les qualités", w:["intelligent","poli","courageux","honnête","patient","sympathique"] },
+    { t:"Les traits", w:["timide","sérieux","paresseux","curieux","méchant","sévère"] }
+  ]},
+  { t:"Apprendre 🎓", c:"#10b981", L:[
+    { t:"En classe", w:["élève","classe","leçon","examen","note","erreur","cahier"] },
+    { t:"Les mots", w:["mot","phrase","langue","dictionnaire","page","sac à dos"] }
+  ]},
+  { t:"Le temps libre 🎨", c:"#ec4899", L:[
+    { t:"Créer", w:["dessiner","peindre","chanson","guitare","piano"] },
+    { t:"Sortir", w:["marcher","promenade","pêcher","fête","invité"] }
+  ]},
+  { t:"Les sens 👂", c:"#3b82f6", L:[
+    { t:"Percevoir", w:["regarder","écouter","entendre","toucher","goûter"] },
+    { t:"Le corps encore", w:["voix","peau","épaule","genou","cou","sourire"] }
+  ]},
+  { t:"La grande famille 👥", c:"#e11d48", L:[
+    { t:"Les proches encore", w:["oncle","tante","cousin","neveu","nièce"] },
+    { t:"Les gens", w:["mari","couple","adulte","personne"] }
+  ]},
+  { t:"Les mesures 📏", c:"#7c3aed", L:[
+    { t:"Compter", w:["mètre","kilomètre","kilo","litre"] },
+    { t:"Les parts", w:["moitié","quart","double","premier","dernier","prochain"] }
+  ]},
+  { t:"À table encore 🍲", c:"#f97316", L:[
+    { t:"Les goûts", w:["goût","délicieux","sucré","salé","amer","épicé"], p:["c'est délicieux"] },
+    { t:"La faim", w:["faim","soif","boisson","morceau","tranche"], p:["j'ai faim","j'ai soif"] }
+  ]},
+  { t:"Les métiers encore 💼", c:"#14b8a6", L:[
+    { t:"Qui fait quoi", w:["métier","usine","vendeur","infirmier","pompier"] },
+    { t:"En ville", w:["facteur","coiffeur","dentiste","gagner","perdre"] }
+  ]},
+  { t:"Le cœur encore 💗", c:"#a855f7", L:[
+    { t:"Les élans", w:["espoir","joie","chance","rêve","espérer"], p:["je rêve de voyager"] },
+    { t:"Les ombres", w:["colère","honte","souci","embrasser"] }
+  ]},
+  { t:"Chez le médecin 🏥", c:"#ef4444", L:[
+    { t:"Les soucis", w:["rendez-vous","blessure","sang","tousser"] },
+    { t:"Se soigner", w:["rhume","grippe","urgence","sain"] }
+  ]},
+  { t:"Le numérique 🖥", c:"#22c55e", L:[
+    { t:"Les appareils", w:["imprimante","écouteurs","appareil photo","allumer","éteindre"] },
+    { t:"En ligne encore", w:["fichier","site","réseau","jeu vidéo","télécharger"] }
+  ]},
+  { t:"Le monde 🌐", c:"#0ea5e9", L:[
+    { t:"La carte", w:["pays","monde","capitale","drapeau"], p:["mon pays est beau"] },
+    { t:"Les directions", w:["nord","sud","est","ouest"] },
+    { t:"L'histoire", w:["roi","reine","guerre","paix"] }
+  ]},
+  { t:"Parler couramment 🗣", c:"#f6b73c", L:[
+    { t:"Survivre", w:["je ne comprends pas","pouvez-vous répéter","je suis d'accord","ça ne fait rien","bien sûr"] },
+    { t:"Être poli", w:["à bientôt","bon appétit","félicitations","bienvenue","attention"] }
+  ]},
+  { t:"Bouger partout 🏃", c:"#12b981", L:[
+    { t:"Aller et venir", w:["entrer","sortir","monter","descendre","rester","partir"], p:["je reste à la maison","le train part à huit heures"] },
+    { t:"En mouvement", w:["tomber","sauter","voler","conduire","arrêter","revenir"] }
+  ]}
+];
+var NEWV3 = {
+  "salon":{en:"living room",it:"soggiorno",es:"salón",de:"Wohnzimmer",pt:"sala de estar",nl:"woonkamer"},
+  "chambre":{en:"bedroom",it:"camera",es:"habitación",de:"Schlafzimmer",pt:"quarto",nl:"slaapkamer"},
+  "jardin":{en:"garden",it:"giardino",es:"jardín",de:"Garten",pt:"jardim",nl:"tuin"},
+  "garage":{en:"garage",it:"garage",es:"garaje",de:"Garage",pt:"garagem",nl:"garage"},
+  "étage":{en:"floor",it:"piano",es:"piso",de:"Etage",pt:"andar",nl:"verdieping"},
+  "escalier":{en:"stairs",it:"scale",es:"escalera",de:"Treppe",pt:"escada",nl:"trap"},
+  "toit":{en:"roof",it:"tetto",es:"tejado",de:"Dach",pt:"telhado",nl:"dak"},
+  "mur":{en:"wall",it:"muro",es:"pared",de:"Wand",pt:"parede",nl:"muur"},
+  "sol":{en:"floor",it:"pavimento",es:"suelo",de:"Boden",pt:"chão",nl:"vloer"},
+  "plafond":{en:"ceiling",it:"soffitto",es:"techo",de:"Decke",pt:"teto",nl:"plafond"},
+  "ascenseur":{en:"lift",it:"ascensore",es:"ascensor",de:"Aufzug",pt:"elevador",nl:"lift"},
+  "voisin":{en:"neighbour",it:"vicino",es:"vecino",de:"Nachbar",pt:"vizinho",nl:"buurman"},
+  "montre":{en:"watch",it:"orologio",es:"reloj",de:"Uhr",pt:"relógio",nl:"horloge"},
+  "lunettes":{en:"glasses",it:"occhiali",es:"gafas",de:"Brille",pt:"óculos",nl:"bril"},
+  "parapluie":{en:"umbrella",it:"ombrello",es:"paraguas",de:"Regenschirm",pt:"guarda-chuva",nl:"paraplu"},
+  "portefeuille":{en:"wallet",it:"portafoglio",es:"cartera",de:"Brieftasche",pt:"carteira",nl:"portemonnee"},
+  "stylo":{en:"pen",it:"penna",es:"bolígrafo",de:"Kugelschreiber",pt:"caneta",nl:"pen"},
+  "crayon":{en:"pencil",it:"matita",es:"lápiz",de:"Bleistift",pt:"lápis",nl:"potlood"},
+  "ciseaux":{en:"scissors",it:"forbici",es:"tijeras",de:"Schere",pt:"tesoura",nl:"schaar"},
+  "papier":{en:"paper",it:"carta",es:"papel",de:"Papier",pt:"papel",nl:"papier"},
+  "journal":{en:"newspaper",it:"giornale",es:"periódico",de:"Zeitung",pt:"jornal",nl:"krant"},
+  "boîte":{en:"box",it:"scatola",es:"caja",de:"Schachtel",pt:"caixa",nl:"doos"},
+  "bougie":{en:"candle",it:"candela",es:"vela",de:"Kerze",pt:"vela",nl:"kaars"},
+  "intelligent":{en:"intelligent",it:"intelligente",es:"inteligente",de:"intelligent",pt:"inteligente",nl:"slim"},
+  "poli":{en:"polite",it:"educato",es:"educado",de:"höflich",pt:"educado",nl:"beleefd"},
+  "courageux":{en:"brave",it:"coraggioso",es:"valiente",de:"mutig",pt:"corajoso",nl:"moedig"},
+  "honnête":{en:"honest",it:"onesto",es:"honesto",de:"ehrlich",pt:"honesto",nl:"eerlijk"},
+  "patient":{en:"patient",it:"paziente",es:"paciente",de:"geduldig",pt:"paciente",nl:"geduldig"},
+  "sympathique":{en:"nice",it:"simpatico",es:"simpático",de:"sympathisch",pt:"simpático",nl:"sympathiek"},
+  "timide":{en:"shy",it:"timido",es:"tímido",de:"schüchtern",pt:"tímido",nl:"verlegen"},
+  "sérieux":{en:"serious",it:"serio",es:"serio",de:"ernst",pt:"sério",nl:"serieus"},
+  "paresseux":{en:"lazy",it:"pigro",es:"perezoso",de:"faul",pt:"preguiçoso",nl:"lui"},
+  "curieux":{en:"curious",it:"curioso",es:"curioso",de:"neugierig",pt:"curioso",nl:"nieuwsgierig"},
+  "méchant":{en:"mean",it:"cattivo",es:"malo",de:"böse",pt:"mau",nl:"gemeen"},
+  "sévère":{en:"strict",it:"severo",es:"estricto",de:"streng",pt:"severo",nl:"streng"},
+  "élève":{en:"pupil",it:"alunno",es:"alumno",de:"Schüler",pt:"aluno",nl:"leerling"},
+  "classe":{en:"class",it:"classe",es:"clase",de:"Klasse",pt:"turma",nl:"klas"},
+  "leçon":{en:"lesson",it:"lezione",es:"lección",de:"Lektion",pt:"lição",nl:"les"},
+  "examen":{en:"exam",it:"esame",es:"examen",de:"Prüfung",pt:"exame",nl:"examen"},
+  "note":{en:"grade",it:"voto",es:"nota",de:"Note",pt:"nota",nl:"cijfer"},
+  "erreur":{en:"mistake",it:"errore",es:"error",de:"Fehler",pt:"erro",nl:"fout"},
+  "cahier":{en:"notebook",it:"quaderno",es:"cuaderno",de:"Heft",pt:"caderno",nl:"schrift"},
+  "mot":{en:"word",it:"parola",es:"palabra",de:"Wort",pt:"palavra",nl:"woord"},
+  "phrase":{en:"sentence",it:"frase",es:"frase",de:"Satz",pt:"frase",nl:"zin"},
+  "langue":{en:"language",it:"lingua",es:"idioma",de:"Sprache",pt:"língua",nl:"taal"},
+  "dictionnaire":{en:"dictionary",it:"dizionario",es:"diccionario",de:"Wörterbuch",pt:"dicionário",nl:"woordenboek"},
+  "page":{en:"page",it:"pagina",es:"página",de:"Seite",pt:"página",nl:"pagina"},
+  "sac à dos":{en:"backpack",it:"zaino",es:"mochila",de:"Rucksack",pt:"mochila",nl:"rugzak"},
+  "dessiner":{en:"to draw",it:"disegnare",es:"dibujar",de:"zeichnen",pt:"desenhar",nl:"tekenen"},
+  "peindre":{en:"to paint",it:"dipingere",es:"pintar",de:"malen",pt:"pintar",nl:"schilderen"},
+  "chanson":{en:"song",it:"canzone",es:"canción",de:"Lied",pt:"canção",nl:"lied"},
+  "guitare":{en:"guitar",it:"chitarra",es:"guitarra",de:"Gitarre",pt:"guitarra",nl:"gitaar"},
+  "piano":{en:"piano",it:"pianoforte",es:"piano",de:"Klavier",pt:"piano",nl:"piano"},
+  "marcher":{en:"to walk",it:"camminare",es:"caminar",de:"zu Fuß gehen",pt:"caminhar",nl:"wandelen"},
+  "promenade":{en:"walk",it:"passeggiata",es:"paseo",de:"Spaziergang",pt:"passeio",nl:"wandeling"},
+  "pêcher":{en:"to fish",it:"pescare",es:"pescar",de:"angeln",pt:"pescar",nl:"vissen"},
+  "fête":{en:"party",it:"festa",es:"fiesta",de:"Party",pt:"festa",nl:"feest"},
+  "invité":{en:"guest",it:"ospite",es:"invitado",de:"Gast",pt:"convidado",nl:"gast"},
+  "regarder":{en:"to watch",it:"guardare",es:"mirar",de:"schauen",pt:"olhar",nl:"kijken"},
+  "écouter":{en:"to listen",it:"ascoltare",es:"escuchar",de:"zuhören",pt:"escutar",nl:"luisteren"},
+  "entendre":{en:"to hear",it:"sentire",es:"oír",de:"hören",pt:"ouvir",nl:"horen"},
+  "toucher":{en:"to touch",it:"toccare",es:"tocar",de:"berühren",pt:"tocar",nl:"aanraken"},
+  "goûter":{en:"to taste",it:"assaggiare",es:"probar",de:"probieren",pt:"provar",nl:"proeven"},
+  "voix":{en:"voice",it:"voce",es:"voz",de:"Stimme",pt:"voz",nl:"stem"},
+  "peau":{en:"skin",it:"pelle",es:"piel",de:"Haut",pt:"pele",nl:"huid"},
+  "épaule":{en:"shoulder",it:"spalla",es:"hombro",de:"Schulter",pt:"ombro",nl:"schouder"},
+  "genou":{en:"knee",it:"ginocchio",es:"rodilla",de:"Knie",pt:"joelho",nl:"knie"},
+  "cou":{en:"neck",it:"collo",es:"cuello",de:"Hals",pt:"pescoço",nl:"nek"},
+  "sourire":{en:"smile",it:"sorriso",es:"sonrisa",de:"Lächeln",pt:"sorriso",nl:"glimlach"},
+  "oncle":{en:"uncle",it:"zio",es:"tío",de:"Onkel",pt:"tio",nl:"oom"},
+  "tante":{en:"aunt",it:"zia",es:"tía",de:"Tante",pt:"tia",nl:"tante"},
+  "cousin":{en:"cousin",it:"cugino",es:"primo",de:"Cousin",pt:"primo",nl:"neef"},
+  "neveu":{en:"nephew",it:"nipote",es:"sobrino",de:"Neffe",pt:"sobrinho",nl:"neefje"},
+  "nièce":{en:"niece",it:"nipote",es:"sobrina",de:"Nichte",pt:"sobrinha",nl:"nichtje"},
+  "mari":{en:"husband",it:"marito",es:"marido",de:"Ehemann",pt:"marido",nl:"echtgenoot"},
+  "couple":{en:"couple",it:"coppia",es:"pareja",de:"Paar",pt:"casal",nl:"stel"},
+  "adulte":{en:"adult",it:"adulto",es:"adulto",de:"Erwachsener",pt:"adulto",nl:"volwassene"},
+  "personne":{en:"person",it:"persona",es:"persona",de:"Person",pt:"pessoa",nl:"persoon"},
+  "mètre":{en:"metre",it:"metro",es:"metro",de:"Meter",pt:"metro",nl:"meter"},
+  "kilomètre":{en:"kilometre",it:"chilometro",es:"kilómetro",de:"Kilometer",pt:"quilómetro",nl:"kilometer"},
+  "kilo":{en:"kilo",it:"chilo",es:"kilo",de:"Kilo",pt:"quilo",nl:"kilo"},
+  "litre":{en:"litre",it:"litro",es:"litro",de:"Liter",pt:"litro",nl:"liter"},
+  "moitié":{en:"half",it:"metà",es:"mitad",de:"Hälfte",pt:"metade",nl:"helft"},
+  "quart":{en:"quarter",it:"quarto",es:"cuarto",de:"Viertel",pt:"quarto",nl:"kwart"},
+  "double":{en:"double",it:"doppio",es:"doble",de:"doppelt",pt:"dobro",nl:"dubbel"},
+  "premier":{en:"first",it:"primo",es:"primero",de:"erste",pt:"primeiro",nl:"eerste"},
+  "dernier":{en:"last",it:"ultimo",es:"último",de:"letzte",pt:"último",nl:"laatste"},
+  "prochain":{en:"next",it:"prossimo",es:"próximo",de:"nächste",pt:"próximo",nl:"volgende"},
+  "goût":{en:"taste",it:"gusto",es:"sabor",de:"Geschmack",pt:"sabor",nl:"smaak"},
+  "délicieux":{en:"delicious",it:"delizioso",es:"delicioso",de:"lecker",pt:"delicioso",nl:"heerlijk"},
+  "sucré":{en:"sweet",it:"dolce",es:"dulce",de:"süß",pt:"doce",nl:"zoet"},
+  "salé":{en:"salty",it:"salato",es:"salado",de:"salzig",pt:"salgado",nl:"zout"},
+  "amer":{en:"bitter",it:"amaro",es:"amargo",de:"bitter",pt:"amargo",nl:"bitter"},
+  "épicé":{en:"spicy",it:"piccante",es:"picante",de:"scharf",pt:"picante",nl:"pittig"},
+  "faim":{en:"hunger",it:"fame",es:"hambre",de:"Hunger",pt:"fome",nl:"honger"},
+  "soif":{en:"thirst",it:"sete",es:"sed",de:"Durst",pt:"sede",nl:"dorst"},
+  "boisson":{en:"drink",it:"bevanda",es:"bebida",de:"Getränk",pt:"bebida",nl:"drankje"},
+  "morceau":{en:"piece",it:"pezzo",es:"trozo",de:"Stück",pt:"pedaço",nl:"stuk"},
+  "tranche":{en:"slice",it:"fetta",es:"rebanada",de:"Scheibe",pt:"fatia",nl:"plak"},
+  "métier":{en:"profession",it:"mestiere",es:"oficio",de:"Beruf",pt:"profissão",nl:"beroep"},
+  "usine":{en:"factory",it:"fabbrica",es:"fábrica",de:"Fabrik",pt:"fábrica",nl:"fabriek"},
+  "vendeur":{en:"salesman",it:"venditore",es:"vendedor",de:"Verkäufer",pt:"vendedor",nl:"verkoper"},
+  "infirmier":{en:"nurse",it:"infermiere",es:"enfermero",de:"Krankenpfleger",pt:"enfermeiro",nl:"verpleger"},
+  "pompier":{en:"firefighter",it:"pompiere",es:"bombero",de:"Feuerwehrmann",pt:"bombeiro",nl:"brandweerman"},
+  "facteur":{en:"postman",it:"postino",es:"cartero",de:"Briefträger",pt:"carteiro",nl:"postbode"},
+  "coiffeur":{en:"hairdresser",it:"parrucchiere",es:"peluquero",de:"Friseur",pt:"cabeleireiro",nl:"kapper"},
+  "dentiste":{en:"dentist",it:"dentista",es:"dentista",de:"Zahnarzt",pt:"dentista",nl:"tandarts"},
+  "gagner":{en:"to win",it:"vincere",es:"ganar",de:"gewinnen",pt:"ganhar",nl:"winnen"},
+  "perdre":{en:"to lose",it:"perdere",es:"perder",de:"verlieren",pt:"perder",nl:"verliezen"},
+  "espoir":{en:"hope",it:"speranza",es:"esperanza",de:"Hoffnung",pt:"esperança",nl:"hoop"},
+  "joie":{en:"joy",it:"gioia",es:"alegría",de:"Freude",pt:"alegria",nl:"vreugde"},
+  "chance":{en:"luck",it:"fortuna",es:"suerte",de:"Glück",pt:"sorte",nl:"geluk"},
+  "rêve":{en:"dream",it:"sogno",es:"sueño",de:"Traum",pt:"sonho",nl:"droom"},
+  "espérer":{en:"to hope",it:"sperare",es:"esperar",de:"hoffen",pt:"esperar",nl:"hopen"},
+  "colère":{en:"anger",it:"rabbia",es:"enfado",de:"Wut",pt:"raiva",nl:"woede"},
+  "honte":{en:"shame",it:"vergogna",es:"vergüenza",de:"Scham",pt:"vergonha",nl:"schaamte"},
+  "souci":{en:"worry",it:"preoccupazione",es:"preocupación",de:"Sorge",pt:"preocupação",nl:"zorg"},
+  "embrasser":{en:"to kiss",it:"baciare",es:"besar",de:"küssen",pt:"beijar",nl:"kussen"},
+  "rendez-vous":{en:"appointment",it:"appuntamento",es:"cita",de:"Termin",pt:"consulta",nl:"afspraak"},
+  "blessure":{en:"injury",it:"ferita",es:"herida",de:"Verletzung",pt:"ferida",nl:"wond"},
+  "sang":{en:"blood",it:"sangue",es:"sangre",de:"Blut",pt:"sangue",nl:"bloed"},
+  "tousser":{en:"to cough",it:"tossire",es:"toser",de:"husten",pt:"tossir",nl:"hoesten"},
+  "rhume":{en:"cold",it:"raffreddore",es:"resfriado",de:"Erkältung",pt:"constipação",nl:"verkoudheid"},
+  "grippe":{en:"flu",it:"influenza",es:"gripe",de:"Grippe",pt:"gripe",nl:"griep"},
+  "urgence":{en:"emergency",it:"emergenza",es:"emergencia",de:"Notfall",pt:"emergência",nl:"noodgeval"},
+  "sain":{en:"healthy",it:"sano",es:"sano",de:"gesund",pt:"saudável",nl:"gezond"},
+  "imprimante":{en:"printer",it:"stampante",es:"impresora",de:"Drucker",pt:"impressora",nl:"printer"},
+  "écouteurs":{en:"headphones",it:"cuffie",es:"auriculares",de:"Kopfhörer",pt:"auscultadores",nl:"koptelefoon"},
+  "appareil photo":{en:"camera",it:"macchina fotografica",es:"cámara",de:"Kamera",pt:"máquina fotográfica",nl:"camera"},
+  "allumer":{en:"to switch on",it:"accendere",es:"encender",de:"einschalten",pt:"ligar",nl:"aanzetten"},
+  "éteindre":{en:"to switch off",it:"spegnere",es:"apagar",de:"ausschalten",pt:"desligar",nl:"uitzetten"},
+  "fichier":{en:"file",it:"file",es:"archivo",de:"Datei",pt:"ficheiro",nl:"bestand"},
+  "site":{en:"website",it:"sito",es:"sitio web",de:"Webseite",pt:"site",nl:"website"},
+  "réseau":{en:"network",it:"rete",es:"red",de:"Netzwerk",pt:"rede",nl:"netwerk"},
+  "jeu vidéo":{en:"video game",it:"videogioco",es:"videojuego",de:"Videospiel",pt:"videojogo",nl:"computerspel"},
+  "télécharger":{en:"to download",it:"scaricare",es:"descargar",de:"herunterladen",pt:"descarregar",nl:"downloaden"},
+  "pays":{en:"country",it:"paese",es:"país",de:"Land",pt:"país",nl:"land"},
+  "monde":{en:"world",it:"mondo",es:"mundo",de:"Welt",pt:"mundo",nl:"wereld"},
+  "capitale":{en:"capital",it:"capitale",es:"capital",de:"Hauptstadt",pt:"capital",nl:"hoofdstad"},
+  "drapeau":{en:"flag",it:"bandiera",es:"bandera",de:"Flagge",pt:"bandeira",nl:"vlag"},
+  "nord":{en:"north",it:"nord",es:"norte",de:"Norden",pt:"norte",nl:"noorden"},
+  "sud":{en:"south",it:"sud",es:"sur",de:"Süden",pt:"sul",nl:"zuiden"},
+  "est":{en:"east",it:"est",es:"este",de:"Osten",pt:"leste",nl:"oosten"},
+  "ouest":{en:"west",it:"ovest",es:"oeste",de:"Westen",pt:"oeste",nl:"westen"},
+  "roi":{en:"king",it:"re",es:"rey",de:"König",pt:"rei",nl:"koning"},
+  "reine":{en:"queen",it:"regina",es:"reina",de:"Königin",pt:"rainha",nl:"koningin"},
+  "guerre":{en:"war",it:"guerra",es:"guerra",de:"Krieg",pt:"guerra",nl:"oorlog"},
+  "paix":{en:"peace",it:"pace",es:"paz",de:"Frieden",pt:"paz",nl:"vrede"},
+  "je ne comprends pas":{en:"I don't understand",it:"non capisco",es:"no entiendo",de:"ich verstehe nicht",pt:"não percebo",nl:"ik begrijp het niet"},
+  "pouvez-vous répéter":{en:"can you repeat",it:"può ripetere",es:"¿puede repetir?",de:"können Sie das wiederholen",pt:"pode repetir",nl:"kunt u dat herhalen"},
+  "je suis d'accord":{en:"I agree",it:"sono d'accordo",es:"estoy de acuerdo",de:"ich stimme zu",pt:"concordo",nl:"ik ben het eens"},
+  "ça ne fait rien":{en:"it doesn't matter",it:"non fa niente",es:"no importa",de:"das macht nichts",pt:"não faz mal",nl:"het geeft niet"},
+  "bien sûr":{en:"of course",it:"certo",es:"por supuesto",de:"natürlich",pt:"claro",nl:"natuurlijk"},
+  "à bientôt":{en:"see you soon",it:"a presto",es:"hasta pronto",de:"bis bald",pt:"até breve",nl:"tot snel"},
+  "bon appétit":{en:"enjoy your meal",it:"buon appetito",es:"buen provecho",de:"guten Appetit",pt:"bom apetite",nl:"eet smakelijk"},
+  "félicitations":{en:"congratulations",it:"congratulazioni",es:"enhorabuena",de:"herzlichen Glückwunsch",pt:"parabéns",nl:"gefeliciteerd"},
+  "bienvenue":{en:"welcome",it:"benvenuto",es:"bienvenido",de:"willkommen",pt:"bem-vindo",nl:"welkom"},
+  "attention":{en:"watch out",it:"attenzione",es:"cuidado",de:"Achtung",pt:"cuidado",nl:"pas op"},
+  "entrer":{en:"to enter",it:"entrare",es:"entrar",de:"eintreten",pt:"entrar",nl:"binnenkomen"},
+  "sortir":{en:"to go out",it:"uscire",es:"salir",de:"ausgehen",pt:"sair",nl:"uitgaan"},
+  "monter":{en:"to go up",it:"salire",es:"subir",de:"hinaufgehen",pt:"subir",nl:"omhooggaan"},
+  "descendre":{en:"to go down",it:"scendere",es:"bajar",de:"hinuntergehen",pt:"descer",nl:"naar beneden gaan"},
+  "rester":{en:"to stay",it:"restare",es:"quedarse",de:"bleiben",pt:"ficar",nl:"blijven"},
+  "partir":{en:"to leave",it:"partire",es:"irse",de:"weggehen",pt:"partir",nl:"vertrekken"},
+  "tomber":{en:"to fall",it:"cadere",es:"caer",de:"fallen",pt:"cair",nl:"vallen"},
+  "sauter":{en:"to jump",it:"saltare",es:"saltar",de:"springen",pt:"saltar",nl:"springen"},
+  "voler":{en:"to fly",it:"volare",es:"volar",de:"fliegen",pt:"voar",nl:"vliegen"},
+  "conduire":{en:"to drive",it:"guidare",es:"conducir",de:"fahren",pt:"conduzir",nl:"rijden"},
+  "arrêter":{en:"to stop",it:"fermare",es:"parar",de:"anhalten",pt:"parar",nl:"stoppen"},
+  "revenir":{en:"to come back",it:"tornare",es:"volver",de:"zurückkommen",pt:"voltar",nl:"terugkomen"},
+  "c'est délicieux":{en:"it is delicious",it:"è delizioso",es:"está delicioso",de:"das ist lecker",pt:"está delicioso",nl:"het is heerlijk"},
+  "j'ai faim":{en:"I am hungry",it:"ho fame",es:"tengo hambre",de:"ich habe Hunger",pt:"tenho fome",nl:"ik heb honger"},
+  "j'ai soif":{en:"I am thirsty",it:"ho sete",es:"tengo sed",de:"ich habe Durst",pt:"tenho sede",nl:"ik heb dorst"},
+  "je rêve de voyager":{en:"I dream of travelling",it:"sogno di viaggiare",es:"sueño con viajar",de:"ich träume vom Reisen",pt:"sonho em viajar",nl:"ik droom van reizen"},
+  "mon pays est beau":{en:"my country is beautiful",it:"il mio paese è bello",es:"mi país es bonito",de:"mein Land ist schön",pt:"o meu país é bonito",nl:"mijn land is mooi"},
+  "je reste à la maison":{en:"I stay at home",it:"resto a casa",es:"me quedo en casa",de:"ich bleibe zu Hause",pt:"fico em casa",nl:"ik blijf thuis"},
+  "le train part à huit heures":{en:"the train leaves at eight",it:"il treno parte alle otto",es:"el tren sale a las ocho",de:"der Zug fährt um acht ab",pt:"o comboio parte às oito",nl:"de trein vertrekt om acht uur"}
+};
+CURRICULUM_W.forEach(function(u){ CURRICULUM.push(u); });
+LANGS.forEach(function(l){ Object.keys(NEWV3).forEach(function(k){ if(NEWV3[k][l]) LEX[l][k]=NEWV3[k][l]; }); });
+
 /* --- Génération des cours + dictionnaire de traduction --- */
 var COURSES = {};
 LANGS.forEach(function(l){
