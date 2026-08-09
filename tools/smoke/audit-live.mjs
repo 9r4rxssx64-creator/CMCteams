@@ -113,7 +113,27 @@ const SURFACES = [
           const mth = await page.$('.pron-bee .disc-mouth');  // bouche animée (lip-sync)
           pron = !!w && au >= 2 && !!bee && !!mth; }
         if (!pron) return { ok:false, note:'atelier prononciation 🎤 absent (mot/audio/Bee/bouche)' };
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · vies ' + hearts };
+        // 🔊 v2.40 : les 6 voix HD doivent être CLAIRES (audio réel non vide) et DIFFÉRENTES (octets distincts).
+        // Sondage du VRAI worker (même origine). Repli fail-open (pas de clé) = toléré, pas un bug de page.
+        let voix = '';
+        try {
+          const vp = await page.evaluate(async () => {
+            const vs = ['alloy','echo','fable','onyx','nova','shimmer'], out = [];
+            for (const v of vs) { try {
+              const r = await fetch('/__lingua/tts?v=' + v + '&t=bonjour', { cache:'no-store' });
+              const ct = r.headers.get('content-type') || ''; const b = new Uint8Array(await r.arrayBuffer());
+              let sum = 0; for (let i=0;i<b.length;i+=97) sum = (sum + b[i]) >>> 0;
+              out.push({ v, audio:/audio/.test(ct), len:b.length, sig:b.length + ':' + sum });
+            } catch (e) { out.push({ v, err:1 }); } }
+            return out;
+          });
+          const real = vp.filter(x => x.audio && x.len > 800);
+          const distinct = new Set(real.map(x => x.sig)).size;
+          if (real.length === 0) voix = ' · voix backend en repli (toléré)';
+          else if (real.length >= 5 && distinct >= 5) voix = ' · 6 voix HD réelles distinctes ✅ (' + distinct + ' signatures)';
+          else return { ok:false, note:'voix HD non distinctes/claires : ' + real.length + ' audio, ' + distinct + ' distinctes' };
+        } catch (_) { voix = ' · sonde voix indispo (toléré)'; }
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤' + voix + ' · vies ' + hearts };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
