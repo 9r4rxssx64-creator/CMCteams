@@ -16,22 +16,22 @@
       "name": "Départs CMC", "appId": "com.kdmc.departs",
       "mode": "server", "url": "https://departs.kd-mc.com",
       "icon": "",
-      "actif": false, "verifie": false,
-      "note": "Prêt à dry-run (URL live confirmée via routeur)."
+      "actif": true, "verifie": true,
+      "note": "Dry-run prouvé (ARCHIVE SUCCEEDED, run 31319626650)."
     },
     "cmcteams": {
       "name": "CMCteams", "appId": "com.kdmc.cmcteams",
       "mode": "server", "url": "https://cmcteams.kd-mc.com",
       "icon": "",
-      "actif": false, "verifie": false,
-      "note": "Interne casino → distribution PRIVÉE (TestFlight/Business Manager), pas Store public."
+      "actif": true, "verifie": true,
+      "note": "Dry-run prouvé (run 31319630665). Interne casino → distribution PRIVÉE (TestFlight), pas Store public."
     },
     "lingua": {
       "name": "KDMC Lingua", "appId": "com.kdmc.lingua",
       "mode": "server", "url": "https://lingua.kd-mc.com",
       "icon": "",
-      "actif": false, "verifie": false,
-      "note": "App d'apprentissage de langues (famille)."
+      "actif": true, "verifie": true,
+      "note": "App d'apprentissage de langues (famille). Dry-run prouvé (run 31319634613)."
     }
   }
 }
