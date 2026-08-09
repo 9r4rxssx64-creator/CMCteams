@@ -88,7 +88,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .mic-btn:active{transform:translateY(1px)}
 .btn-ghost.skip{width:100%;margin-top:10px;background:transparent;border:1px solid var(--line);color:#9fb2c2;border-radius:12px;padding:11px;font-size:14px;cursor:pointer;min-height:44px}
 /* Coach IA */
-.screen.coach{display:flex;flex-direction:column;padding-bottom:8px}
+.screen.coach{display:flex;flex-direction:column;padding-bottom:calc(150px + env(safe-area-inset-bottom))}
 .coach-head{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
 .coach-flag{font-size:30px}
 .coach-hd{display:flex;flex-direction:column}
@@ -161,7 +161,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .story-fin h2{margin:8px 0 4px}
 .story-fin p{color:#c9b26a;font-weight:700;margin-bottom:16px}
 .story-fin .btn-main,.story-fin .btn-ghost{width:100%;margin-top:8px}
-.coach-inbar{display:flex;gap:8px;margin-top:8px;align-items:center}
+.coach-inbar{display:flex;gap:8px;margin-top:8px;align-items:center;position:sticky;bottom:calc(64px + env(safe-area-inset-bottom));background:var(--bg);padding:8px 0 6px;z-index:20}
 .coach-input{flex:1;padding:13px 15px;font-size:16px;border-radius:14px;border:2px solid var(--line);background:var(--card2);color:#fff;outline:none}
 .coach-input:focus{border-color:var(--green)}
 .coach-send{flex:0 0 auto;width:50px;height:50px;border:0;border-radius:14px;background:linear-gradient(90deg,var(--green),var(--green-d));color:#fff;font-size:20px;cursor:pointer}
