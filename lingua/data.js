@@ -320,12 +320,20 @@ var PHRASEBOOK_X2 = {
 Object.keys(PHRASEBOOK_X2).forEach(function(k){ PHRASEBOOK[k]=PHRASEBOOK_X2[k]; });
 
 /* --- Parcours : jalons de niveau (par nombre de mots maîtrisés) + conseils du prof (100% original) --- */
+/* Paliers CECRL RÉALISTES (repères honnêtes du vocabulaire actif). AVANT : ça s'arrêtait à
+   « A2+ » à 240 mots et la barre Coach appelait ça « 100% bilingue » — FAUX. Être bilingue
+   (C1-C2) demande plusieurs MILLIERS de mots et des années. On garde des paliers rapprochés au
+   début (là où on progresse vite) puis l'échelle réelle jusqu'au bilingue. */
 var LEVELS = [
-  {code:"Débutant", min:0},
-  {code:"A1",  min:40},
-  {code:"A1+", min:90},
-  {code:"A2",  min:160},
-  {code:"A2+", min:240}
+  {code:"Débutant", cefr:"—",  min:0},
+  {code:"A1",  cefr:"A1", min:80},
+  {code:"A1+", cefr:"A1", min:200},
+  {code:"A2",  cefr:"A2", min:450},
+  {code:"A2+", cefr:"A2", min:800},
+  {code:"B1",  cefr:"B1", min:1400},
+  {code:"B2",  cefr:"B2", min:2800},
+  {code:"C1",  cefr:"C1", min:5000},
+  {code:"Bilingue", cefr:"C2", min:9000}
 ];
 var TEACHER_TIPS = [
   "Révise 5 minutes juste avant de dormir : ton cerveau fixe les mots pendant la nuit. 🌙",
