@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.50.0";
+var APP_VER="v2.51.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -782,15 +782,34 @@ function pronDiffSyl(target,heard){ var sy=pronSyllables(target).split("·").fil
   var a=norm(target),b=norm(heard||""); var i=0; while(i<a.length&&i<b.length&&a[i]===b[i])i++;
   var acc=0; for(var k=0;k<sy.length;k++){ acc+=norm(sy[k]).length; if(i<acc)return {idx:k,syl:sy[k],sylls:sy}; }
   return {idx:Math.max(0,sy.length-1),syl:sy[sy.length-1]||target,sylls:sy}; }
+/* Déblocage audio iOS : au 1er vrai geste (toucher/clic), on « réveille » le moteur audio du navigateur
+   (AudioContext) + on joue un buffer silencieux — obligatoire sur iPhone pour que le moteur passe en
+   "running". Une fois débloqué, la bouche de Bee peut s'animer sur le VRAI son sans jamais couper le son. */
+function _audioUnlock(){
+  try{
+    AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    if(AC.state!=="running"&&AC.resume){ AC.resume(); }
+    var b=AC.createBuffer(1,1,22050), s=AC.createBufferSource(); s.buffer=b; s.connect(AC.destination);
+    (s.start||s.noteOn).call(s,0);
+  }catch(_){}
+}
+try{
+  ["touchend","click","pointerdown","keydown"].forEach(function(ev){
+    document.addEventListener(ev,_audioUnlock,{passive:true});
+  });
+}catch(_){}
 /* ============ 👄 LIP-SYNC RÉEL — la bouche de Bee s'ouvre sur l'amplitude du VRAI son (comme Speak) ============
    Web Audio analyse le son réel du modèle (le worker /tts renvoie ACAO:* → analyse cross-origin OK avec
    crossOrigin="anonymous"). La source est TOUJOURS branchée à la sortie AVANT l'analyse → le son passe même
    si l'analyse échoue. Repli automatique : si l'amplitude reste plate ~500 ms (codec/navigateur limité),
    on remet le flap CSS .talking pour que la bouche bouge quand même. Retourne une fonction stop(). */
 function beeLipSync(audioEl,mouthEl){ if(!audioEl||!mouthEl)return null;
+  /* iOS CRITIQUE : brancher un <audio> dans le moteur audio (createMediaElementSource) DÉTOURNE le son
+     par ce moteur — et sur iPhone, si le moteur n'est pas "running" (débloqué par un vrai geste), le son
+     est COUPÉ. Donc si le moteur n'est pas prêt, on NE touche PAS au son : on retourne null → l'appelant
+     remet le flap CSS .talking (la bouche bouge quand même) et le son sort normalement par l'<audio>. */
+  try{ if(!AC || AC.state!=="running") return null; }catch(_){ return null; }
   try{
-    AC=AC||new(window.AudioContext||window.webkitAudioContext)();
-    if(AC.state==="suspended"){ try{ AC.resume(); }catch(_){} }
     if(!audioEl._srcNode){ audioEl._srcNode=AC.createMediaElementSource(audioEl); }
     audioEl._srcNode.connect(AC.destination);               /* le SON d'abord — jamais coupé */
     var an=AC.createAnalyser(); an.fftSize=256; an.smoothingTimeConstant=0.55;
@@ -1309,6 +1328,7 @@ function discLiveStart(){ if(DISC.live||DISC.liveConnecting)return; var c=coachL
        var pc=new RTCPeerConnection(); DISC.livePc=pc;
        au=document.createElement("audio"); au.autoplay=true; au.style.display="none"; document.body.appendChild(au); DISC.liveAudio=au;
        pc.ontrack=function(e){ try{ au.srcObject=e.streams[0]; }catch(_){}
+         try{ var pp=au.play(); if(pp&&pp.catch)pp.catch(function(){}); }catch(_){}   /* iOS : force la lecture du flux distant */
          var ov=document.querySelector(".disc-overlay"), mouth=ov&&ov.querySelector(".disc-mouth"), bee=ov&&ov.querySelector(".disc-bee");
          if(bee)bee.classList.add("talk");
          if(mouth){ if(DISC.liveLip){try{DISC.liveLip();}catch(_){}} DISC.liveLip=beeLipSyncStream(e.streams[0],mouth); } };
@@ -1324,7 +1344,8 @@ function discLiveStart(){ if(DISC.live||DISC.liveConnecting)return; var c=coachL
    })
    .then(function(){ DISC.liveConnecting=false; DISC.live=true; _discLiveUI(true); toast("🔴 En direct — parle, Bee te répond"); })
    .catch(function(e){ DISC.liveConnecting=false; discLiveStop();
-     toast("Appel en direct indisponible — je reste en conversation normale"); });
+     var why=(e&&e.name==="NotAllowedError")?"micro refusé" : (e&&e.message)?String(e.message).slice(0,60) : "erreur réseau";
+     toast("Appel en direct indisponible ("+why+") — je reste en conversation normale"); });
 }
 function discLiveStop(){ DISC.live=false; DISC.liveConnecting=false;
   try{ if(DISC.liveLip){DISC.liveLip();DISC.liveLip=null;} }catch(_){}
