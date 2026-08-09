@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.55.0";
+var APP_VER="v2.56.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1032,7 +1032,9 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
 var _coachThinking=false,_coachPose="wave";
 function coachLangMeta(){ return S.course?COURSES[S.course]:null; }
 /* Modale honnête : l'échelle CECRL réelle + où se situe VRAIMENT « bilingue ». */
-function cefrModal(){ var m=modal(); var lv=currentLevel(); var total=(S.course&&COURSES[S.course])?allWords(S.course).length:0;
+function cefrModal(){ var m=modal(); var lv=currentLevel();
+  var uniq={}; if(S.course&&COURSES[S.course]) allWords(S.course).forEach(function(w){ uniq[w.fr]=1; });
+  var total=Object.keys(uniq).length; /* mots UNIQUES du programme (honnête, sans doublons entre unités) */
   var ladder=LEVELS.map(function(s){ var on=s.code===lv.cur.code;
     return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 11px;border-radius:10px;margin:3px 0;'+(on?'background:#2c230c;border:1px solid #ffd75e;color:#ffe9a8;font-weight:800':'background:var(--card2);color:#cfe0ee')+'"><b>'+esc(s.code)+'</b><span style="opacity:.85">'+(s.min===0?'départ':'~'+s.min+' mots')+'</span></div>'; }).join('');
   m.body.innerHTML='<h3>🎓 Ton vrai niveau</h3>'+
