@@ -370,7 +370,7 @@ Dès que Kevin dit « fais l'audit », « audit », « audite X », « fais ton 
 — quel que soit le projet — déclencher l'audit le PLUS COMPLET, jamais une
 version partielle ou rapide.
 
-### Les 10 axes obligatoires d'un audit complet (aucun ne doit manquer)
+### Les 11 axes obligatoires d'un audit complet (aucun ne doit manquer)
 
 0. **LIVE RÉEL** (axe n°1, exécuté sur le vrai domaine — cf. « PASSE LIVE RÉELLE »
    ci-dessous) : chaque surface kd-mc.com chargée dans un vrai navigateur (via CI,
@@ -395,6 +395,11 @@ version partielle ou rapide.
 6. **Sécurité** — XSS, secrets exposés, CSP, guards admin, auth. **→ exécuter la PASSE SÉCU scan-and-fix (arsenal + passe vérifiée) ET appliquer les correctifs sûrs** (cf. section dédiée ci-dessous — lire le code ne suffit pas).
 7. **Performance** — bundle, LCP/INP/CLS, intervals zombies, memory leaks.
 8. **UX / accessibilité** — touch targets ≥44px, contraste, aria, mobile 375px.
+9. **AMÉLIORATIONS (full)** — pas ce qui est cassé : ce qui MARCHE mais peut être
+   MEILLEUR. Code mort/non-câblé, doublons, dette chiffrée, fuites, couverture,
+   dépendances en retard, features à pousser plus loin. **→ exécuter la PASSE
+   AMÉLIORATIONS TOTALES** (`npm run audit:improvements`, cf. section dédiée) —
+   un audit qui ne sort que des bugs laisse l'app stagner.
 
 ### 🔬 PASSE DE STABILITÉ MESURÉE — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-06-08, ABSOLUE)
 
@@ -536,6 +541,55 @@ L'axe Sécurité ne se contente PLUS de « lire le code » : à CHAQUE « fais l
 4. **Rejouable + Apex** : `/scan-and-fix` (Claude Code) et `/scanfix` (Apex, dispatch `security-suite`). Apex SCANNE (`/audit` → `ax_security_last`) ; les CORRECTIONS vérifiées sont appliquées par Claude Code — JAMAIS de patch aveugle depuis un bot CI (règle never-break).
 5. **Règle de complétude** : tant que le scan (CI + passe vérifiée) n'a pas tourné ET que les correctifs sûrs ne sont pas appliqués + prouvés + mergés (propagation vérifiée sur `main`), l'axe Sécurité reste « lecture seule » = incomplet.
 
+### 🚀 PASSE AMÉLIORATIONS TOTALES (« full améliorations ») — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-08-09, ABSOLUE)
+
+> **« Intègre dans "fais ton audit" une audit de full améliorations. »** — Kevin 2026-08-09
+
+Les 8 premiers axes cherchent ce qui est **CASSÉ**. Celui-ci cherche ce qui **MARCHE mais peut
+être MEILLEUR**, et le **CHIFFRE**. Sans lui, l'audit est un contrôle qualité : l'app ne régresse
+pas, mais elle **stagne** — ce qui contredit « TOUT AU MAX » et « va plus loin sans qu'on te le
+demande ». Un audit sans passe améliorations est **incomplet**.
+
+1. **OUTIL CÂBLÉ — à lancer à CHAQUE audit** (jamais « à l'œil ») :
+   ```bash
+   npm run audit:improvements     # mesure + backlog classé (offline)
+   npm run audit:improvements -- --deps   # + paquets en retard / vulnérabilités (CI, réseau)
+   npm run audit:all              # stabilité + améliorations d'un coup
+   ```
+   Mesure réellement : **code déclaré jamais appelé** (erreur #28 Declaration ≠ Deployment, vues
+   inatteignables incluses) · **fonctions définies 2×** (la 2ᵉ écrase la 1ʳᵉ en silence) · **dette
+   chiffrée** (poids fichier, `style=` en dur, `innerHTML` sans `esc()`, TODO, `console.log`) ·
+   **fuites** (`setInterval` sans `clearInterval`, écouteurs jamais retirés) · **couverture des
+   vues** par les tests · **dépendances**.
+
+2. **RATCHET, jamais de faux rouge** : la dette existante est figée dans
+   `tools/audit/improvements-baseline.json`. L'outil échoue **UNIQUEMENT si un compteur AUGMENTE**
+   → le NOUVEAU code est bloqué sans allumer un rouge permanent sur l'ancien. Re-figer
+   volontairement : `--update-baseline` (et dire pourquoi dans le commit).
+
+3. **TRIAGE OBLIGATOIRE avant d'agir** (règle #83/#131) : un compteur n'est pas un bug. Vérifier
+   chaque ligne du backlog avant de toucher au code. *Vécu le 2026-08-09* : le compteur « vues non
+   testées » annonçait **85/102** — faux : le smoke `render-views` liste les routes en minuscules
+   (`'accueil'`), pas les noms de fonctions (`vAccueil`). Après correction : **41**. Une mesure
+   fausse est pire que pas de mesure.
+
+4. **Le backlog est CLASSÉ et CHIFFRÉ** : chaque entrée = `[P0-P3] titre · mesure réelle · action`.
+   Jamais « il faudrait améliorer X » sans le nombre. Les P0/P1 se corrigent dans la foulée de
+   l'audit, les P2/P3 sont consignés (`audit/03-FINDINGS.md`).
+
+5. **Veille / aller plus loin** (complète la règle « TOUT AU MAX ») : la passe inclut la question
+   *« existe-t-il aujourd'hui mieux que ce qu'on utilise ? »* — modèles IA, libs, API Web. Toute
+   piste doit être **mesurée ou marquée 🔴 non mesuré**, jamais supposée.
+
+6. **Garde CI** : `npm run test:improvements-guard` (câblé dans `test:ci`) vérifie que l'outil
+   existe, tourne, que le ratchet tient, que la règle est déclarée ici, et que **Apex a la même
+   passe** (parité). *Raison d'être : une règle qui ne vit que dans les dossiers finit par être
+   sautée — c'est exactement comme ça que la parité Apex a été manquée le 2026-08-09.*
+
+7. **Test mental** : *« Est-ce que je sors de cet audit avec une liste CHIFFRÉE de ce qui peut
+   devenir meilleur, ou seulement avec des bugs corrigés ? Si l'app ne progresse pas après mon
+   audit, je n'ai fait qu'un contrôle technique. »*
+
 ### Autonome + mesuré
 
 - Audit lancé en autonomie totale, multi-subagents en parallèle si besoin.
@@ -545,6 +599,7 @@ L'axe Sécurité ne se contente PLUS de « lire le code » : à CHAQUE « fais l
 - **Passe LIVE réelle exécutée (audit-live.yml + e2e dédiés)** — sinon audit incomplet.
 - **Second avis INDÉPENDANT (non-Claude) obtenu + trié** (Qodo PR-Agent / CodeRabbit / SonarCloud) — sinon audit biaisé/incomplet.
 - **Passe SÉCU scan-and-fix exécutée (security-suite + strix + passe VÉRIFIÉE) ET correctifs sûrs appliqués + prouvés + mergés** — sinon axe sécurité incomplet.
+- **Passe AMÉLIORATIONS TOTALES exécutée (`npm run audit:improvements`) + backlog chiffré et trié** — sinon l'audit constate mais ne fait pas progresser = incomplet.
 
 ### Intégration Apex
 
@@ -555,7 +610,9 @@ en continu avec les autres axes.
 
 ### Test mental obligatoire
 
-> *"Mon audit couvre-t-il les 10 axes ? **Ai-je CHARGÉ les vraies pages dans un
+> *"Mon audit couvre-t-il les 11 axes ? **Ai-je lancé la PASSE AMÉLIORATIONS TOTALES
+> (`npm run audit:improvements`) et est-ce que je sors avec un backlog CHIFFRÉ de ce qui
+> peut devenir meilleur — ou seulement avec des bugs corrigés ? Ai-je CHARGÉ les vraies pages dans un
 > navigateur (passe LIVE via CI) et complété un achat/message de test sur le vrai
 > domaine, ou seulement LU le code ? Ai-je un SECOND AVIS INDÉPENDANT (non-Claude —
 > Qodo/CodeRabbit/Sonar) sur les mêmes changements, ou est-ce moi qui relis mon

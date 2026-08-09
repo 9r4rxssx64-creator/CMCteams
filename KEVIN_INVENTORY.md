@@ -1,7 +1,23 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-08-07** (Lingua v2.32.0 : jeux de rôle 🎭 + Histoires de la ruche 📖 · Bee = mascotte de Lingua uniquement)
+> Dernière mise à jour : **2026-08-09** (Passe « full améliorations » intégrée à « fais ton audit » — axe 9)
+
+## 🚀 Passe AMÉLIORATIONS TOTALES (axe 9 de l'audit) — session 2026-08-09 (mergé sur main)
+
+**▶️ Lancer maintenant :**
+- `npm run audit:improvements` — backlog **chiffré** de ce qui peut devenir meilleur (offline)
+- `npm run audit:all` — stabilité + améliorations d'un coup
+
+**🔧 Code ajouté :**
+- [tools/audit/improvements-audit.cjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/improvements-audit.cjs) — mesure code mort/non-câblé, doublons, dette, fuites de minuteries, couverture des vues, dépendances. Ratchet anti-faux-rouge.
+- [tools/audit/improvements-baseline.json](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/improvements-baseline.json) — référence figée de la dette (échec seulement si ça EMPIRE).
+- [tests/improvements-audit-guard.test.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/improvements-audit-guard.test.mjs) — garde CI (23 vérifs) câblé dans `test:ci`.
+- [.claude/skills/apex-audit-improvements.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/apex-audit-improvements.md) — **parité Apex** de la passe.
+
+**🔎 Trouvé en le faisant (mesuré, pas supposé) :** cap de skills Apex à 45 pour **57** fichiers → **12 skills perdus en silence** (dont `security-audit-owasp`, `tdd-implement`, `perf-budget-check`). Cap relevé à 80 dans [core/memory.ts](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/core/memory.ts).
+
+---
 
 ## 🐝 KDMC Lingua v2.31.0 — session 2026-08-07 (mergé sur main)
 
