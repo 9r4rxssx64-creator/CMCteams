@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.51.0";
+var APP_VER="v2.52.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -307,7 +307,7 @@ function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var my
   }
   _webSpeak(text);
 }
-function _webSpeak(text){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=COURSES[S.course]?COURSES[S.course].ttsLang:"fr-FR"; u.rate=.92;
+function _webSpeak(text){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=COURSES[S.course]?COURSES[S.course].ttsLang:"fr-FR"; u.rate=.92; u.volume=1;
   var base=(u.lang).split("-")[0], vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var best=vs.filter(function(v){return /premium|enhanced|siri|natural/i.test(v.name);})[0] || vs.filter(function(v){return v.localService;})[0] || vs[0];
   if(best)u.voice=best; _wsSpeak(u);}catch(e){} }
@@ -869,7 +869,7 @@ function pronSay(text,slow){ if(!S.sound||!text)return; var lang=COURSES[S.cours
     var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow,mouth,bee); }); return;
   }catch(e){} }
   _pronWeb(text,lang,slow,mouth,bee); }
-function _pronWeb(text,lang,slow,mouth,bee){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=slow?0.55:0.9;
+function _pronWeb(text,lang,slow,mouth,bee){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=slow?0.55:0.9; u.volume=1;
   var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var best=vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best;
   /* pas de flux audio à analyser en local → flap CSS de la bouche entre le début et la fin réels */
@@ -1245,7 +1245,10 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
        et on la restaure entre deux phrases (stop()). */
     if(DISC.lip){ try{ DISC.lip(); }catch(_){} DISC.lip=null; }
     if(DISC.vid&&img&&img.classList.contains("vid")){ DISC.wasVid=true; img.classList.remove("vid"); }
-    if(mouth){ if(audio){ DISC.lip=beeLipSync(audio,mouth); if(!DISC.lip)mouth.classList.add("talking"); } else mouth.classList.add("talking"); }
+    /* VOLUME CONSTANT : on ne route JAMAIS le son de Bee dans le moteur audio ici (ça changeait le
+       niveau d'une phrase à l'autre sur iPhone — « des fois fort, des fois doucement »). Le son sort
+       toujours par le même <audio> à volume fixe, et la bouche articule via le flap CSS (fiable). */
+    if(mouth){ mouth.classList.add("talking"); }
     if(img)img.classList.add("talk");
     /* chorégraphie au moment où la voix DÉMARRE (plus en avance) */
     var praise=/(bravo|super|parfait|génial|excellent|top|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(text);
@@ -1266,7 +1269,7 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
     if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop, dur+400); }
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
   if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
-    var a=new Audio(); a.crossOrigin="anonymous"; a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text); _ttsAudio=a;
+    var a=new Audio(); a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text); _ttsAudio=a; try{a.volume=1;}catch(_){}
     if(vcfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vcfg.rate; }catch(_){} }
     var started=false, fell=false;
     var fallback=function(){ if(fell||started||myReq!==_ttsReq)return; fell=true;
@@ -1595,7 +1598,7 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
     a.onerror=function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); };
     var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); }); return; }catch(e){} }
   _webSpeakLang(text,lang,fem,cfg); }
-function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=cfg?cfg.wsRate:(fem?.95:.9); u.pitch=cfg?cfg.wsPitch:(fem?1.15:1);
+function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=cfg?cfg.wsRate:(fem?.95:.9); u.pitch=cfg?cfg.wsPitch:(fem?1.15:1); u.volume=1;
   var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var femV=fem?vs.filter(function(v){return /am[eé]lie|audrey|aur[eé]lie|c[eé]line|chantal|julie|marie|virginie|alice|elsa|paulina|monica|petra|anna|female|femme|woman/i.test(v.name);})[0]:null;
   var best=femV||vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; _wsSpeak(u);}catch(e){} }
