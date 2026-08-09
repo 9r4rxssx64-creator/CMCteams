@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.41.0";
+var APP_VER="v2.42.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1320,13 +1320,15 @@ function storyLineSay(l){ var c=COURSES[S.course]; if(!c||!l)return;
   speakLang(l.t[S.course]||l.fr, c.ttsLang, l.qui==="🐝"?BEE_VOICE:null, true); }
 function storyStart(idx){ var st=STORIES[idx]; if(!st||!storyUnlocked(idx))return;
   ST={sid:st.id, idx:idx, i:0, phase:"lines", qi:0, good:0, replay:!!storiesDone()[st.id], showFr:false};
+  /* réchauffe TOUTES les répliques d'avance → la voix suit le texte sans décalage */
+  ttsPrefetchMany(st.lignes.map(function(l){ return l.t[S.course]||l.fr; }));
   VIEW="story"; _armHistoryGuard(); window.scrollTo(0,0); render();
-  setTimeout(function(){ storyLineSay(st.lignes[0]); },400); }
+  setTimeout(function(){ storyLineSay(st.lignes[0]); },150); }
 function storyNext(){ if(!ST)return; var st=STORIES[ST.idx];
   if(ST.phase==="lines"){
-    if(ST.i<st.lignes.length-1){ ST.i++; render(); setTimeout(function(){ storyLineSay(st.lignes[ST.i]); },250); }
+    if(ST.i<st.lignes.length-1){ ST.i++; render(); setTimeout(function(){ storyLineSay(st.lignes[ST.i]); },90); }
     else { ST.phase="quiz"; ST.qi=0; render();
-      setTimeout(function(){ speakLang("Alors, tu as bien écouté ?","fr-FR",BEE_VOICE,true); },300); } }
+      setTimeout(function(){ speakLang("Alors, tu as bien écouté ?","fr-FR",BEE_VOICE,true); },120); } }
 }
 function storyAnswer(oi){ if(!ST||ST.phase!=="quiz")return; var st=STORIES[ST.idx],q=st.quiz[ST.qi];
   var ok=oi===q.ok; if(ok){ ST.good++; tone([880,1180],.25); }else{ tone([320,240],.3); } vibrate(ok?12:30);
@@ -1526,9 +1528,15 @@ function outOfHearts(){ VIEW="home"; render(); var m=modal();
   var b2=el("button","btn-ghost"); b2.textContent="Réviser gratuitement (regagne des cœurs)"; b2.onclick=function(){ m.close(); var rw=shuffle(allWords(S.course)).slice(0,8); LESSON={ui:null,li:null,review:true,heal:true,ex:buildLesson(null,null,rw),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; render(); };
   m.body.appendChild(b1); m.body.appendChild(b2);
 }
-function ttsPrefetch(text){ /* fabrique le son EN AVANCE (mise en réserve) — il partira instantanément à la validation */
+var _ttsWarm={};
+function ttsPrefetch(text){ /* fabrique le son EN AVANCE : un vrai fetch() réchauffe le cache du worker
+   ET le cache navigateur → à la lecture, la voix part INSTANTANÉMENT (fini « la voix arrive trop
+   tard après le texte »). Anti-doublon via _ttsWarm. */
   if(!S.sound||!text)return; var vid=S.voice||"nova"; if(!_isCloudVoice(vid))return;
-  try{ var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); a.preload="auto"; }catch(_){} }
+  var url=SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text);
+  if(_ttsWarm[url])return; if(Object.keys(_ttsWarm).length>400)_ttsWarm={}; _ttsWarm[url]=1;
+  try{ fetch(url).catch(function(){}); }catch(_){} }
+function ttsPrefetchMany(list){ if(!list)return; try{ list.forEach(function(t){ if(t)ttsPrefetch(t); }); }catch(_){} }
 function beeExplain(ex,L){ /* Explication d'erreur : le sens, ce que voulait dire TA réponse, un exemple d'usage */
   try{ if(!ex||!ex.w)return null;
     var t=ex.w.t, fr=ex.w.fr, out={html:"",say:""};
@@ -1562,7 +1570,8 @@ function beeExplainMore(ex){ /* Un tap → le prof IA explique en profondeur (m�
     go("coach");
     coachAsk().then(function(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save(); render(); coachSpeak(reply); }); }catch(_){} }
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
-  if(ex&&ex.w&&ex.w.t&&!L.answered) ttsPrefetch(ex.w.t); /* la réponse sera dite SANS attente à la validation */
+  if(ex&&ex.w&&ex.w.t) ttsPrefetch(ex.w.t); /* mot courant réchauffé → lecture instantanée */
+  if(L.ex[L.i+1]&&L.ex[L.i+1].w&&L.ex[L.i+1].w.t) ttsPrefetch(L.ex[L.i+1].w.t); /* et le suivant → 0 décalage à l'enchaînement */
   var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
   top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ? La progression de CETTE leçon sera perdue.")){ LESSON=null; VIEW="home"; render(); } }; d.appendChild(top);
   var body=el("div","lesson-body");
