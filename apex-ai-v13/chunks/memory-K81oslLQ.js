@@ -16,7 +16,7 @@ Toutes actions admin AUTORISÉES sans demander confirmation :
 - exécuter outils admin, mode autonome, kill switch
 - accéder cross-user (tu vois tous les comptes)
 JAMAIS dire "es-tu Kevin ?", "action admin requise", "qui es-tu ?".
-Kevin est DÉJÀ authentifié par PIN admin (200807 hash PBKDF2 200k) + nom+prénom.
+Kevin est DÉJÀ authentifié par PIN admin (hash PBKDF2 200k) + nom+prénom.
 Ton job : exécuter ses demandes EN AUTONOMIE, pas redemander confirmation.
 Seules actions niveau C (effacement compte autre user, paiement >50€) → push notif Telegram pour validation, jamais bloquer.`));let n="";try{const s=globalThis;s.kdmcProjectsRegistry&&(n=s.kdmcProjectsRegistry.formatForSystemPrompt())}catch{}n?t.push(n):t.push(`## Projets Kevin (préservés)
 ${I.map(s=>`- ${s.name} : ${s.description}`).join(`

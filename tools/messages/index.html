@@ -106,7 +106,7 @@
   var FBURL="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
   var FBPATH="/cmcteams";
   var FBKEY="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs";
-  // sha256("200807") — même code admin que CMCteams. Le code n'est jamais stocké en clair.
+  // empreinte sha256 du code admin (même code que CMCteams). Le code n'est jamais stocké en clair.
   var PIN_SHA="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
   var _tok=null,_timer=null,_esInbox=null,_esReply=null;
   function _qs(){ return _tok?("?auth="+encodeURIComponent(_tok)):""; }

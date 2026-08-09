@@ -1207,9 +1207,17 @@ var Domaine=(function(){
    Chaque personne a son espace : ses créations, ses réglages, ses souvenirs.
    Tout reste DANS le téléphone (rien n'est envoyé sur internet).
    Connexion = PRÉNOM + NOM (2 mots minimum, jamais un seul) + code, comme dans
-   toutes les apps de Kevin. Kevin Desarzens + 200807 = admin : il voit tout. */
+   toutes les apps de Kevin. Kevin Desarzens + son code admin = admin : il voit tout. */
 var Users=(function(){
-  var LS='crea_users', CUR='crea_current_uid', ADMIN_PIN='200807';
+  var LS='crea_users', CUR='crea_current_uid';
+  /* v9.885 CORRECTIF SÉCU (audit 2026-08-09) — le PIN admin de Kevin était écrit EN CLAIR ici
+     (constante `ADMIN_PIN`), sur une page publique : un simple « voir la source » de
+     studio.kd-mc.com le donnait, or ce même PIN sert dans ses AUTRES apps → portée bien plus
+     large que ce studio. On ne garde que son empreinte (même fonction `hash` que les comptes).
+     HONNÊTE : cette porte reste CÔTÉ CLIENT et l'empreinte est faible (djb2 32 bits) — elle
+     empêche la lecture directe, pas un calcul déterminé. La vraie porte doit être le SSO
+     serveur déjà présent (`/__sso/whoami`, l.~1166) : à basculer (P1 du rapport d'audit). */
+  var ADMIN_PIN_H='h1r79tmw';
   function norm(v){return String(v||'').toLowerCase().normalize('NFD')
     .replace(/[̀-ͯ]/g,'').replace(/[\s\-_.]+/g,' ').trim();}
   function uidOf(name){var n=norm(name).split(' ').filter(Boolean).sort().join('-');
@@ -1237,7 +1245,7 @@ var Users=(function(){
     var toks=norm(name).split(' ').filter(function(t){return t.length>=2;});
     if(toks.length<2)return {ok:false,why:'Tape ton PRÉNOM et ton NOM (les deux).'};
     var admin=isAdminName(name), uid=uidOf(name), m=all(), u=m[uid];
-    if(admin&&String(code||'')!==ADMIN_PIN)return {ok:false,why:'Code administrateur incorrect.'};
+    if(admin&&hash(String(code||''))!==ADMIN_PIN_H)return {ok:false,why:'Code administrateur incorrect.'};
     if(!admin){
       if(!code||String(code).length<4)return {ok:false,why:'Choisis un code d\'au moins 4 chiffres.'};
       if(u&&u.pin&&u.pin!==hash(code))return {ok:false,why:'Code incorrect pour ce compte.'};
