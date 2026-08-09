@@ -5812,7 +5812,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.886";
+var APP_VER="v9.887";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17881,15 +17881,14 @@ function calcDepPos(empName,tid,day){
     for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWork((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
   }
   var wi=workDays.indexOf(day); if(wi<0) return null;
-  // v9.865 (Kevin 2026-07-09 « corrige dans light les départs correctement » — la fenêtre
-  // GLISSE de +1 à chaque CYCLE de repos : ta ligne 6-4-2-3 → 4-2-3-5 → 2-3-5-1). rot NE
-  // continue PAS en continu : rot = index_de_cycle + position_dans_le_cycle. Un trou dans
-  // workDays (repos d'équipe) = nouveau cycle. Le jour 1 reste 1-6-4-2-3-5. Identique à compute().
-  var _rotByDay={}, _cyc=0, _kd=0, _prevWD=null;
-  for(var _iw=0;_iw<workDays.length;_iw++){ var _wd2=workDays[_iw];
-    if(_prevWD!==null){ if(_wd2-_prevWD>1){ _cyc++; _kd=0; } else { _kd++; } }
-    _rotByDay[_wd2]=_cyc+_kd; _prevWD=_wd2;
-  }
+  // v9.868 (Kevin 2026-07-10 « certaines personnes ont le même départ plusieurs fois dans le mois,
+  // la suite n'est pas respectée ») — RETOUR à la rotation CONTINUE rot=wi (+1 par jour travaillé
+  // de l'équipe, SANS remise à zéro au repos). Chaque chef parcourt la suite DANS L'ORDRE
+  // (1-4-2-3-5 puis 1-4-2-3-5…) → jamais 2× le même numéro avant d'avoir fini la suite.
+  // Le v9.865 remettait rot à zéro à chaque cycle de repos → comme les cycles sont plus courts
+  // que la taille d'équipe, un même numéro revenait au bout de 1-2 jours (4-2 puis 4-2).
+  // Mauvaise interprétation de « ma ligne glisse » : la fenêtre glisse de +1 PAR JOUR (continu),
+  // pas par cycle. Identique à compute() (page light).
   // v9.857 (Kevin 2026-07-04 « quand une personne manque 1,2,3 jours ne pas revoir l'algo,
   // laisser le numéro mort ; revoir seulement quand départ en vacances/congé »).
   // ROSTER STABLE : la rotation se calcule sur le ROSTER (chefs actifs MOINS ceux en congé
@@ -17910,7 +17909,7 @@ function calcDepPos(empName,tid,day){
   if(!meEmp) return null;                                 // en congé long OU hors équipe
   if(!isWork((pl[meEmp.id]||{})[day]||'')) return null;   // absence courte → numéro MORT (rien affiché)
   var j=effRoster.indexOf(meEmp);
-  var SEQd=getSeqForSize(N), rot=_rotByDay[day];
+  var SEQd=getSeqForSize(N), rot=wi;
   return SEQd[(((rot+j)%N)+N)%N];
 }
 

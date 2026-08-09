@@ -19,6 +19,12 @@ on:
 permissions:
   contents: read
 
+# Garde anti-empilement (test:ci-no-stampede) : une seule exécution par workflow+réf,
+# les runs obsolètes de la même réf sont annulés (pas un déploiement → cancel OK).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   structure:
     runs-on: ubuntu-latest
