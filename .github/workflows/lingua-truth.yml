@@ -1,0 +1,53 @@
+name: Lingua — Vérité (rien de faux, partout toujours)
+
+# « Étend vérité, rien de faux, partout toujours » (Kevin 2026-08-09).
+# 1) STRUCTURE (déterministe, 0 clé) : à CHAQUE changement de lingua/**, on vérifie que TOUT le
+#    contenu a ses 6 langues, des quiz dans les bornes, 0 doublon → le build ÉCHOUE si un faux
+#    structurel apparaît (impossible de publier une langue manquante ou une mauvaise réponse hors bornes).
+# 2) SENS (second modèle indépendant) : 1×/semaine + à la demande, un audit sémantique signale les
+#    traductions/réponses DOUTEUSES dans un rapport (audit/lingua-verite.md). Consultatif : n'édite rien
+#    (un juge IA peut se tromper — on vérifie avant de corriger). Uploadé en artifact + affiché dans le log.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: [ 'lingua/**', 'tools/lingua/verify-truth.mjs', '.github/workflows/lingua-truth.yml' ]
+  schedule:
+    - cron: '0 5 * * 1'   # lundi 05:00 UTC (1×/semaine)
+
+permissions:
+  contents: read
+
+jobs:
+  structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: "Vérité structurelle (6 langues partout, quiz dans les bornes, 0 doublon)"
+        run: node tools/lingua/verify-truth.mjs lingua --struct
+
+  semantique:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: "Second avis indépendant sur les traductions + quiz (audit, n'édite rien)"
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          node tools/lingua/verify-truth.mjs lingua --semantic | tee /tmp/verite.log
+          echo "----- RAPPORT -----"
+          cat audit/lingua-verite.md || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lingua-verite
+          path: audit/lingua-verite.md
+          if-no-files-found: ignore
