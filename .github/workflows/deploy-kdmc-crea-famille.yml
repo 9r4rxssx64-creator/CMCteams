@@ -99,6 +99,25 @@ jobs:
               && echo "  ✅ secret posé" || echo "::warning::secret non posé — le service restera en attente"
           fi
 
+      - name: Code admin (v9 SÉCU — admin par SECRET, plus jamais par le nom)
+        working-directory: services/kdmc-crea-famille
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADMIN_CODE: ${{ secrets.CREA_FAMILLE_ADMIN_CODE }}
+        run: |
+          set +e
+          # Audit 2026-08-09 : avant, taper « Kevin Desarzens » suffisait à lire TOUTES les familles.
+          # Désormais l'admin doit fournir ce code secret. Sans le secret GitHub → fail-closed
+          # (personne n'est admin) : la faille est fermée quoi qu'il arrive.
+          if [ -n "${ADMIN_CODE:-}" ]; then
+            printf '%s' "$ADMIN_CODE" | wrangler secret put ADMIN_CODE 2>&1 | tail -2 \
+              && echo "  ✅ code admin posé (Kevin redevient admin en le saisissant)" \
+              || echo "::warning::code admin non posé"
+          else
+            echo "::warning::secret GitHub CREA_FAMILLE_ADMIN_CODE absent → fail-closed (personne admin). Kevin : crée ce secret pour redevenir admin."
+          fi
+
       - name: Vérification (le service répond-il ?)
         run: |
           set +e
