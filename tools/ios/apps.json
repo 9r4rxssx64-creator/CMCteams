@@ -1,39 +1,37 @@
 {
-  "_doc": "Registre des apps du domaine kd-mc.com à publier en vraie appli iPhone (TestFlight/privé). Le workflow ios-apps-testflight.yml lit ce fichier. Ajouter une app = ajouter une entrée ici (aucun secret nouveau). Sécurité : les identifiants (appId) sont enregistrés AUTOMATIQUEMENT par la signature ASC API key — rien à faire côté Apple.",
-  "_secrets_requis": [
-    "APPLE_TEAM_ID",
-    "APPSTORE_API_KEY_ID",
-    "APPSTORE_API_ISSUER_ID",
-    "APPSTORE_API_KEY_BASE64"
-  ],
-  "_mode": "Par défaut 'server' : l'appli charge le vrai site https (même origine → le SSO du domaine continue de marcher). 'bundle' (plus tard) embarque les fichiers pour l'offline + push, mais demande d'ouvrir le CORS du routeur pour /__sso — étape d'après.",
+  "_doc": "Registre des apps du domaine kd-mc.com à publier en vraie appli iPhone (TestFlight/privé). Le workflow ios-apps-testflight.yml lit ce fichier. Ajouter une app = ajouter une entrée ici (aucun secret nouveau). Les identifiants (appId) sont enregistrés AUTOMATIQUEMENT par la signature ASC API key.",
+  "_secrets_requis": ["APPLE_TEAM_ID", "APPSTORE_API_KEY_ID", "APPSTORE_API_ISSUER_ID", "APPSTORE_API_KEY_BASE64"],
+  "_mode": "'server' : l'appli charge le vrai site https (même origine → le SSO du domaine marche). 'bundle' (plus tard) = offline + push, demande d'ouvrir le CORS /__sso.",
+  "_icon": "chemin d'une image carrée du dépôt (idéalement ≥512px). Vide → icône par défaut tools/ios/default-icon-1024.png. L'alpha est aplati automatiquement.",
+  "_verifie": "true quand un dry-run a prouvé ARCHIVE SUCCEEDED sur Mac cloud (sans secret). 'actif' true = autorisé à partir en TestFlight.",
   "apps": {
     "crea-studio": {
-      "name": "Créa Studio",
-      "appId": "com.kdmc.creastudio",
-      "mode": "server",
-      "url": "https://studio.kd-mc.com",
-      "web": "tools/crea-studio",
-      "actif": true,
-      "note": "PILOTE — self-contained, légitime, SSO déjà branché. Sert à prouver le pipeline de bout en bout."
+      "name": "Créa Studio", "appId": "com.kdmc.creastudio",
+      "mode": "server", "url": "https://studio.kd-mc.com",
+      "icon": "tools/crea-studio/icon-512.png",
+      "actif": true, "verifie": true,
+      "note": "PILOTE — dry-run prouvé (ARCHIVE SUCCEEDED, run 31312234369)."
     },
     "departs": {
-      "name": "Départs CMC",
-      "appId": "com.kdmc.departs",
-      "mode": "server",
-      "url": "https://kd-mc.com/tools/departs/",
-      "web": "tools/departs",
-      "actif": false,
-      "note": "À activer après le pilote (vérifier l'URL live exacte)."
+      "name": "Départs CMC", "appId": "com.kdmc.departs",
+      "mode": "server", "url": "https://departs.kd-mc.com",
+      "icon": "",
+      "actif": false, "verifie": false,
+      "note": "Prêt à dry-run (URL live confirmée via routeur)."
     },
     "cmcteams": {
-      "name": "CMCteams",
-      "appId": "com.kdmc.cmcteams",
-      "mode": "server",
-      "url": "https://kd-mc.com/",
-      "web": ".",
-      "actif": false,
-      "note": "Interne casino → distribution PRIVÉE (TestFlight/Business Manager), pas Store public. Vérifier l'URL live avant activation."
+      "name": "CMCteams", "appId": "com.kdmc.cmcteams",
+      "mode": "server", "url": "https://cmcteams.kd-mc.com",
+      "icon": "",
+      "actif": false, "verifie": false,
+      "note": "Interne casino → distribution PRIVÉE (TestFlight/Business Manager), pas Store public."
+    },
+    "lingua": {
+      "name": "KDMC Lingua", "appId": "com.kdmc.lingua",
+      "mode": "server", "url": "https://lingua.kd-mc.com",
+      "icon": "",
+      "actif": false, "verifie": false,
+      "note": "App d'apprentissage de langues (famille)."
     }
   }
 }
