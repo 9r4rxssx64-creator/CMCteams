@@ -89,6 +89,25 @@ if (capM) {
     + (flat - cap) + ' skill(s) perdu(s) en silence');
 }
 
+/* 7. CONFORMITÉ DES RÈGLES — « vérifie que toutes tes règles soient respectées automatiquement »
+      (Kevin 2026-08-09). L'outil doit exister, tourner, et son ratchet doit tenir : si une NOUVELLE
+      règle est ajoutée à CLAUDE.md sans garde-fou, ce test vire au rouge. C'est le correctif de
+      cause racine : une règle ne peut plus vivre uniquement dans un document. */
+const RULES_TOOL = 'tools/audit/rules-compliance.cjs';
+ok(existsSync(join(ROOT, RULES_TOOL)), RULES_TOOL + ' existe');
+ok(!!pkg.scripts['audit:rules'], 'script npm audit:rules câblé');
+let rout = '';
+try {
+  rout = execFileSync(process.execPath, [RULES_TOOL], { cwd: ROOT, timeout: 60_000 }).toString();
+} catch (e) {
+  rout = (e && e.stdout && e.stdout.toString()) || '';
+  fails.push('conformité des règles en échec : une règle a été ajoutée SANS garde-fou automatique. '
+    + (rout.split('\n').filter((l) => l.includes('❌')).join(' | ') || '(sortie vide)'));
+}
+ok(/CONFORMITÉ DES RÈGLES/.test(rout), 'l\'outil de conformité produit son tableau');
+ok(/COMPORTEMENTAL/.test(rout), 'il distingue les règles non mécanisables (honnêteté)');
+ok(existsSync(join(ROOT, 'tools/audit/rules-compliance-baseline.json')), 'la référence du ratchet règles existe');
+
 console.log('\n' + (fails.length ? '❌' : '✅') + ' garde « passe améliorations » : ' + pass + ' vérif OK, '
   + fails.length + ' échec(s)');
 for (const f of fails) console.log('   ❌ ' + f);

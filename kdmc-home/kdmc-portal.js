@@ -94,7 +94,7 @@
       var botZone = document.getElementById('bot-zone');
       if (botZone) botZone.hidden = !(isPriv || named);
       /* « Qui se connecte » : même règle que le bot — la page admin.kd-mc.com a son PROPRE
-         code (200807) donc afficher le raccourci n'accorde aucun accès. Sans ça, la tuile
+         code admin (vérifié serveur) donc afficher le raccourci n'accorde aucun accès. Sans ça, la tuile
          restait invisible sur l'iPhone de Kevin (Face ID non prouvé) = fonction inexistante. */
       var accessZone = document.getElementById('access-zone');
       if (accessZone) accessZone.hidden = !(isPriv || named);
