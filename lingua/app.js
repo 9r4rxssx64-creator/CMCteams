@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.40.0";
+var APP_VER="v2.41.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1319,7 +1319,7 @@ function storyUnlocked(idx){ if(idx===0)return true; return !!storiesDone()[STOR
 function storyLineSay(l){ var c=COURSES[S.course]; if(!c||!l)return;
   speakLang(l.t[S.course]||l.fr, c.ttsLang, l.qui==="🐝"?BEE_VOICE:null, true); }
 function storyStart(idx){ var st=STORIES[idx]; if(!st||!storyUnlocked(idx))return;
-  ST={sid:st.id, idx:idx, i:0, phase:"lines", qi:0, good:0, replay:!!storiesDone()[st.id]};
+  ST={sid:st.id, idx:idx, i:0, phase:"lines", qi:0, good:0, replay:!!storiesDone()[st.id], showFr:false};
   VIEW="story"; _armHistoryGuard(); window.scrollTo(0,0); render();
   setTimeout(function(){ storyLineSay(st.lignes[0]); },400); }
 function storyNext(){ if(!ST)return; var st=STORIES[ST.idx];
@@ -1365,13 +1365,19 @@ function vStoryPlay(){ var d=el("div","screen story"); if(!ST){ go("stories"); r
   prog.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+Math.round(done/total*100)+'%"></div></div>'; d.appendChild(prog);
   if(ST.phase==="lines"||ST.phase==="quiz"){
     var box=el("div","story-box");
+    /* Pendant les QUESTIONS : on MASQUE la traduction française (sinon la réponse est donnée).
+       Kevin : « masquer les réponses… les afficher ensuite pour explication si besoin, pas pendant. » */
+    var showFr = ST.phase==="lines" || ST.showFr;
     st.lignes.slice(0,ST.phase==="lines"?ST.i+1:st.lignes.length).forEach(function(l,li){
       var row=el("div","story-line"+(l.qui==="🐝"?" bee":"")+(ST.phase==="lines"&&li===ST.i?" now":""));
-      row.innerHTML='<span class="sl-who">'+l.qui+'</span><span class="sl-tx"><b>'+esc(l.t[S.course]||l.fr)+'</b><i>'+esc(l.fr)+'</i></span>';
+      row.innerHTML='<span class="sl-who">'+l.qui+'</span><span class="sl-tx"><b>'+esc(l.t[S.course]||l.fr)+'</b>'+(showFr?'<i>'+esc(l.fr)+'</i>':'')+'</span>';
       var sp=el("button","sl-say"); sp.textContent="🔊"; sp.setAttribute("aria-label","Écouter");
       sp.onclick=function(ev){ ev.stopPropagation(); storyLineSay(l); }; row.appendChild(sp);
       box.appendChild(row); });
     d.appendChild(box);
+    if(ST.phase==="quiz"){ var frt=el("button","btn-ghost story-fr-toggle");
+      frt.textContent=ST.showFr?"🙈 Masquer les traductions":"👁 Voir les traductions (aide)";
+      frt.onclick=function(){ ST.showFr=!ST.showFr; render(); }; d.appendChild(frt); }
     if(ST.phase==="lines"){ var nb=el("button","btn-main story-next");
       nb.textContent=ST.i<st.lignes.length-1?"▶ Suite":"✅ J'ai compris — aux questions !";
       nb.onclick=storyNext; d.appendChild(nb); }
