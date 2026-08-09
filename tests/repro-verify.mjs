@@ -61,7 +61,7 @@ async function runOne(browser, pdfRel, year, monthIdx, label) {
 
 async function main() {
   const browser = await chromium.launch({ headless: true });
-  const r1 = await runOne(browser, 'tests/fixtures/aout-2026-v1.pdf', 2026, 7, 'Août V1');
+  const r1 = await runOne(browser, 'tests/fixtures/aout-2026-v2.pdf', 2026, 7, 'Août V2');
   const r2 = await runOne(browser, 'tests/fixtures/juillet-2026-v2.pdf', 2026, 6, 'Juillet V2');
   await browser.close();
   let pass = 0, fail = 0;

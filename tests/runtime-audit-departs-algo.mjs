@@ -26,7 +26,7 @@ try {
   await page.goto('file://' + resolve(root, 'index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => typeof window.handleFileImport === 'function' && window.A && Array.isArray(A.employees), { timeout: 20000 });
   await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); A.year = 2026; A.month = 7; A.overrides = A.overrides || {}; delete A.overrides['2026-7']; sv('import'); });
-  const b64 = readFileSync(resolve(root, 'tests/fixtures/aout-2026-v1.pdf')).toString('base64');
+  const b64 = readFileSync(resolve(root, 'tests/fixtures/aout-2026-v2.pdf')).toString('base64');
   await page.evaluate(async ({ b64 }) => {
     const bin = atob(b64); const arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     const file = new File([arr], 'aout.pdf', { type: 'application/pdf' });
