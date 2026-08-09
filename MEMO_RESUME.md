@@ -62,6 +62,19 @@
    profonde, exact→85 %+. Non-régression : v2.36 pron PASS, retour arrière 10/10. Garde CI
    (`audit-live`) : Bee + bouche exigées. sw.js lingua-v2.37.0. Mergé PR #3238.
 
+3septies. **KDMC Lingua v2.38.0 — corrections de leçon FIABLES** (Kevin a montré une leçon
+   « hen → poule » avec une explication FAUSSE et inventée — « la femelle de la poule »,
+   « pensez à hennie » — et un « Presque ! » alors que sa réponse « raisin »=grape n'était pas
+   proche). Cause : `aiQuickExplain` appelait l'IA gratuite (petits modèles) à CHAQUE erreur et
+   affichait + LISAIT sa réponse hallucinée. Corrigé : (1) **auto-IA hallucinée supprimée** →
+   l'explication auto est 100 % fiable, issue des données de l'app (sens + ce que voulait dire ta
+   réponse + ⚠️ faux-ami quand les mots se ressemblent + 💡 cognat « presque comme en français » +
+   exemple) ; (2) **« Presque ! » retiré** → « Pas tout à fait. » ; (3) **« Demander au prof »**
+   conservé à la demande avec garde ANTI-INVENTION. Prouvé en navigateur réel : QCM faux →
+   « Pas grave, on retient : » (0 « Presque »), explication fiable, et /ai forcé à halluciner
+   n'apparaît PLUS. Non-régression : lip-sync v2.37 + prononciation v2.36 + retour arrière 10/10.
+   sw.js lingua-v2.38.0. Mergé PR #3248.
+
 3ter. **KDMC Lingua v2.34.0 — synchro voix vérifiée + garde retour-arrière** (Kevin :
    « Vérifie la synchro de la voix avec les questions… Pas de retour arrière possible
    pendant une leçon ») : synchro voix PROUVÉE en navigateur réel (exercices « écoute »
