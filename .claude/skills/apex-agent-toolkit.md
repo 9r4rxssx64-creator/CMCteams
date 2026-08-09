@@ -51,8 +51,12 @@ déléguer** une sous-tâche au bon spécialiste — comme Claude Code (règle P
 
 ## Règles
 
-- ⚠️ **Anthropic reste l'IA principale.** Un provider gratuit s'ajoute en **fin** de `DEFAULT_CHAIN`,
-  jamais en tête (leçons #124/#129).
+- ⚠️ **Anthropic reste l'IA principale** pour les questions complexes ET le filet de secours (0 blocage).
+  **Décision Kevin 2026-08-09 : « garde Gemini, IA suivant le niveau de la question »** → mode
+  `free-smart` : question SIMPLE → IA gratuite (Gemini) d'abord ; question COMPLEXE → Anthropic.
+  Kevin force `premium` (Anthropic toujours) via ⚡ à tout moment. Sur le **failover**, un provider
+  gratuit reste en **fin** de `DEFAULT_CHAIN` (jamais devant Anthropic sur une question complexe) —
+  ce N'EST PLUS « Anthropic par défaut sur TOUT » (l'ancienne lecture stricte des leçons #124/#129).
 - **Ne jamais installer** un binaire tiers ni un hook qui s'interpose sur toutes les commandes
   (PROTECTION ≠ STABILITÉ). On vendorise la **doc**, pas l'exécutable.
 - **Ajouter une source** = `tools/agent-toolkit/sources.json` **ET** le catalogue plugins dans le
