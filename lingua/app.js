@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.46.0";
+var APP_VER="v2.47.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1183,6 +1183,9 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
     /* fin de phrase : on revient à la belle vidéo de Bee entre deux répliques */
     if(DISC.wasVid&&img){ try{ img.classList.add("vid"); if(DISC.clip)DISC.clip("idle",0); }catch(_){} DISC.wasVid=false; }
     if(sub&&words.length)sub.textContent=words.join(" "); /* texte complet lisible à la fin */
+    /* TEMPS RÉEL : s'il reste des phrases de la réponse, on enchaîne TOUT DE SUITE la suivante
+       (Bee a déjà commencé à parler/mimer sur la 1re phrase → plus d'attente de toute la tirade). */
+    if(DISC._q&&DISC._q.length&&DISC.open&&myReq===_ttsReq){ var _nx=DISC._q.shift(); setTimeout(function(){ if(DISC.open)discSpeak(_nx,lang); },70); return; }
     if(DISC.handsFree&&DISC.open){ setTimeout(function(){ discListen(); },500); } }
   function startVisuals(dur,audio){ if(!DISC.open||myReq!==_ttsReq)return;
     /* PENDANT qu'elle parle : marionnette + bouche qui articule sur le SON RÉEL (comme Speak).
@@ -1226,7 +1229,26 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
   else if(S.sound){ _webSpeakLang(text,lang,true,vcfg); startVisuals(estDur,null); }
   else { startVisuals(estDur,null); } /* son coupé : on montre quand même le texte */
 }
+/* Découpe une réponse en phrases courtes pour un rendu « live » : Bee dit la 1re tout de suite. */
+function _discSentences(text){ var t=String(text||"").trim(); if(!t)return [];
+  var parts=t.split(/(?<=[.!?…])\s+/).map(function(s){return s.trim();}).filter(Boolean);
+  var out=[]; parts.forEach(function(s){ if(out.length && (s.length<14 || out[out.length-1].length<14)) out[out.length-1]+=" "+s; else out.push(s); });
+  return out.length?out:[t]; }
+/* Dit une réponse phrase par phrase : la 1re part immédiatement, les suivantes sont réchauffées
+   d'avance (voix prête) → Bee mime dès la 1re phrase au lieu d'attendre toute la tirade. */
+function discSay(text,lang){ var seq=_discSentences(text); DISC._q=seq.slice(1);
+  try{ ttsPrefetchMany(seq.slice(1)); }catch(_){}   /* réchauffe la suite pendant qu'elle parle */
+  discSpeak(seq[0],lang); }
+/* Barge-in : couper Bee net (l'utilisateur reprend la parole quand il veut). */
+function discStopSpeaking(){ DISC._q=[]; DISC.talking=false; _ttsReq++;   /* invalide le son/►en cours */
+  try{ if(_ttsAudio){_ttsAudio.pause();} }catch(_){}
+  try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
+  if(DISC.subIv){ try{clearInterval(DISC.subIv);}catch(_){} DISC.subIv=null; }
+  if(DISC.timer){ try{clearTimeout(DISC.timer);}catch(_){} DISC.timer=null; }
+  var ov=document.querySelector(".disc-overlay"); if(ov){ var m=ov.querySelector(".disc-mouth"),b=ov.querySelector(".disc-bee");
+    try{ if(m)m.classList.remove("talking"); if(b)b.classList.remove("talk"); }catch(_){} } }
 function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
+  discStopSpeaking();  /* si Bee parle, on la coupe et on écoute (vraie conversation) */
   var mic=overlay.querySelector(".disc-mic"); if(mic)mic.classList.add("rec");
   dictate(function(txt){ if(mic)mic.classList.remove("rec"); if(txt){ var inp=overlay.querySelector(".disc-input"); if(inp)inp.value=txt; discSend(); } },"fr-FR"); }
 /* 🎭 Scènes jouables aussi en mode Discussion plein écran (Bee ouvre la scène à voix haute) */
@@ -1238,7 +1260,7 @@ function discSceneStart(id){ var ov=document.querySelector(".disc-overlay"); var
   discChips(ov);
   coachAsk().then(function(reply){ if(!DISC.open)return; if(img)img.classList.remove("think");
     S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
-    discSpeak(reply, c.ttsLang); }); }
+    discSay(reply, c.ttsLang); }); }
 function discChips(ov){ var chips=ov.querySelector(".disc-chips"); if(!chips)return; chips.innerHTML="";
   var c=coachLangMeta(); if(!c)return;
   var snA=coachSceneMeta();
@@ -1249,7 +1271,7 @@ function discChips(ov){ var chips=ov.querySelector(".disc-chips"); if(!chips)ret
     b.onclick=function(){ discSceneStart(sn.id); }; chips.appendChild(b); });
   coachSuggestions(c).slice(0,snA?4:2).forEach(function(s){ var b=el("button","coach-chip"); b.textContent=s;
     b.onclick=function(){ var inp=ov.querySelector(".disc-input"); if(inp)inp.value=s; discSend(); }; chips.appendChild(b); }); }
-function discSend(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay||DISC.talking)return;
+function discSend(){ var overlay=document.querySelector(".disc-overlay"); if(!overlay)return; if(DISC.talking)discStopSpeaking(); /* envoyer coupe Bee (vraie conversation) */
   var inp=overlay.querySelector(".disc-input"); var text=(inp&&inp.value||"").trim(); if(!text)return; inp.value="";
   var c=coachLangMeta(); if(!c)return;
   S.coachMsgs.push({role:"user",text:text}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
@@ -1258,7 +1280,7 @@ function discSend(){ var overlay=document.querySelector(".disc-overlay"); if(!ov
   coachAsk().then(function(reply){ if(!DISC.open)return; if(img)img.classList.remove("think");
     S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
     if(/(bravo|super|parfait|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(reply)){ var bi=overlay.querySelector(".disc-bee"); if(bi){ beeSparkles(bi,10); } }
-    discSpeak(reply, c.ttsLang); }); }
+    discSay(reply, c.ttsLang); }); }
 function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ toast("Choisis d'abord une langue 🌍"); return; }
   DISC.open=true; var ov=el("div","disc-overlay");
   ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
@@ -1306,7 +1328,7 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
   var hf=ov.querySelector(".disc-hf"); hf.onclick=function(){ DISC.handsFree=!DISC.handsFree; hf.classList.toggle("on",DISC.handsFree); toast(DISC.handsFree?"🙌 Mains libres : je t'écoute après chaque réponse":"Mains libres coupé"); };
   discChips(ov);
   var last=null; for(var i=S.coachMsgs.length-1;i>=0;i--){ if(S.coachMsgs[i].role==="bot"){ last=S.coachMsgs[i].text; break; } }
-  setTimeout(function(){ discSpeak(last||coachGreeting(c), c.ttsLang); },450);
+  setTimeout(function(){ discSay(last||coachGreeting(c), c.ttsLang); },450);
 }
 /* ============ 📖 HISTOIRES DE LA RUCHE — Bee raconte, tu comprends, tu gagnes ============
    Histoires 100% originales (data.js STORIES) : chaque ligne est DITE dans la langue
