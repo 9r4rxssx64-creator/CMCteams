@@ -923,11 +923,14 @@ class Memory {
     for (const folder of FOLDERS) {
       const entries = await listFolder(folder);
       const allowedExt = folder === 'hooks' ? /\.(?:sh|ts|js)$/i : /\.md$/i;
-      /* Cap par dossier. `skills` monte à 45 : le tri est ALPHABÉTIQUE, donc chaque nouveau
-       * `apex-*.md` ajouté en tête pousse silencieusement un skill hors du cache (mesuré en
-       * ajoutant apex-agent-toolkit + apex-domain-journal → 2 skills perdus). Coût réel
-       * négligeable (markdown de quelques Ko), et l'injection reste bornée côté prompt. */
-      const cap = folder === 'skills' ? 45 : 30;
+      /* Cap par dossier. Le tri est ALPHABÉTIQUE, donc tout skill au-delà du cap est perdu
+       * SILENCIEUSEMENT (aucune erreur, Apex ignore juste qu'il existe).
+       * 2026-08-09 — MESURÉ pendant la passe améliorations : 57 fichiers `.md` à plat pour un
+       * cap de 45 → 12 skills réellement perdus, dont security-audit-owasp, tdd-implement,
+       * perf-budget-check, ux-accessibility-audit. Poids total des 57 = 270 Ko (moyenne 4,7 Ko)
+       * → le cap ne protégeait rien de réel, il amputait Apex. Relevé à 80 (marge ~23 fichiers),
+       * le cap individuel de 200 Ko/fichier reste la vraie protection anti-quota. */
+      const cap = folder === 'skills' ? 80 : 30;
       const filtered = entries.filter((e) => allowedExt.test(e.name)).slice(0, cap);
       for (const ent of filtered) {
         if (!ent.name || ent.name.startsWith('_')) continue; /* skip _template */
