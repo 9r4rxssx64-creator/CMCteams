@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.48.0";
+var APP_VER="v2.49.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1304,7 +1304,7 @@ function discLiveStart(){ if(DISC.live||DISC.liveConnecting)return; var c=coachL
        var dc=pc.createDataChannel("oai-events"); DISC.liveDc=dc;
        dc.onopen=function(){ try{ dc.send(JSON.stringify({type:"session.update",session:{turn_detection:{type:"server_vad"}}})); }catch(_){} };
        return pc.createOffer().then(function(offer){ return pc.setLocalDescription(offer).then(function(){
-         return fetch("https://api.openai.com/v1/realtime?model="+encodeURIComponent(model),
+         return fetch("https://api.openai.com/v1/realtime/calls?model="+encodeURIComponent(model),
            {method:"POST", body:offer.sdp, headers:{ "Authorization":"Bearer "+tok, "Content-Type":"application/sdp" }});
        }); }).then(function(sdpRes){ if(!sdpRes.ok) throw new Error("sdp "+sdpRes.status);
          return sdpRes.text(); }).then(function(answer){ return pc.setRemoteDescription({type:"answer",sdp:answer}); });

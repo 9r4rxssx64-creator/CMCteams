@@ -295,21 +295,22 @@ async function handleLingua(request, url, env) {
       let b = {}; try { b = await request.json(); } catch (_) { /* corps optionnel */ }
       const langName = String((b && b.langName) || 'la langue cible').slice(0, 40);
       const level = String((b && b.level) || 'Débutant').slice(0, 30);
-      const model = env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview';
+      const model = env.OPENAI_REALTIME_MODEL || 'gpt-realtime';
       const voice = env.OPENAI_REALTIME_VOICE || 'coral';
       const instructions = 'Tu es Bee, une abeille tutrice de ' + langName + ' chaleureuse et vivante, pour un francophone (niveau ' + level + '). '
         + 'Conversation ORALE naturelle, phrases COURTES. Parle surtout en ' + langName + ' ; reviens au français seulement si l\'apprenant bloque. '
         + 'Suis le sujet qu\'il lance (tout thème), réagis comme une vraie amie, puis relance par une petite question. '
         + 'Corrige ses fautes EN DOUCEUR : reformule correctement puis explique en une phrase simple en français. Reste encourageante.';
       try {
-        const rr = await fetch('https://api.openai.com/v1/realtime/sessions', {
+        // API Realtime GA : jeton éphémère via /v1/realtime/client_secrets (l'ancien /sessions a disparu).
+        const rr = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
           method: 'POST', headers: { authorization: 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
-          body: JSON.stringify({ model, voice, instructions, modalities: ['audio', 'text'], input_audio_transcription: { model: 'whisper-1' } }),
+          body: JSON.stringify({ session: { type: 'realtime', model, instructions, audio: { output: { voice } } } }),
         });
         const j = await rr.json().catch(() => null);
-        const secret = j && j.client_secret && j.client_secret.value;
+        const secret = j && (j.value || (j.client_secret && j.client_secret.value)); // GA: {value}; compat ancien {client_secret:{value}}
         if (!rr.ok || !secret) return JL({ ok: false, reason: 'openai_error', detail: (j && j.error && j.error.message) || ('http ' + rr.status) });
-        return JL({ ok: true, client_secret: secret, expires_at: (j.client_secret && j.client_secret.expires_at) || 0, model });
+        return JL({ ok: true, client_secret: secret, expires_at: (j.expires_at) || (j.client_secret && j.client_secret.expires_at) || 0, model });
       } catch (e) { return JL({ ok: false, reason: 'error', detail: String((e && e.message) || e).slice(0, 120) }); }
     }
     // Coach IA (conversation) : IA gratuite via clé serveur (jamais exposée). FAIL-OPEN.
