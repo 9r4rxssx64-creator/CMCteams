@@ -42,6 +42,19 @@ const dep = read('.github/workflows/deploy-kdmc-crea-famille.yml');
 ok(/CREA_FAMILLE_ADMIN_CODE/.test(dep) && /wrangler secret put ADMIN_CODE/.test(dep),
   '② le déploiement pose ADMIN_CODE depuis un secret GitHub (fail-closed si absent)');
 
+/* ③ ADMIN UNIVERSEL DU DOMAINE — Kevin est admin famille via le SSO central
+ *   (kd-mc.com/__sso/whoami : admin = uid connu ET verified/Face ID), SANS code par app.
+ *   Le CODE local reste un repli. Ce chemin ne doit jamais régresser. */
+ok(/async function estAdminSSO\(request\)/.test(worker), '③ le worker a estAdminSSO (admin via SSO central)');
+ok(/kd-mc\.com\/__sso\/whoami/.test(worker), '③ estAdminSSO interroge le SSO central kd-mc.com/__sso/whoami');
+ok(/j\.admin\s*&&\s*j\.verified/.test(worker), '③ admin EXIGE verified (Face ID), jamais le nom seul');
+ok(/const admin = \(await estAdminSSO\(request\)\)\s*\|\|\s*estAdmin\(env,\s*body\.code_admin\)/.test(worker),
+  '③ /rejoindre = admin par SSO central OU code local (repli)');
+/* le CLIENT transmet le pass du domaine au worker (sinon le SSO ne sert à rien) */
+const client = read('tools/crea-studio/index.html');
+ok(/crea_sso_token/.test(client) && /o\.headers\.Authorization\s*=\s*'Bearer '/.test(client),
+  '③ le client crea-studio transmet le pass SSO (Authorization: Bearer) au service famille');
+
 console.log('\n' + (fails.length ? '❌' : '✅') + ' garde P0 (proxy + crea-famille) : '
   + pass + ' vérif OK, ' + fails.length + ' échec(s)');
 for (const f of fails) console.log('   ❌ ' + f);

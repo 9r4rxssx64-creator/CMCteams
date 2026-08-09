@@ -194,11 +194,33 @@
     } catch (_) { T('Info stockage indisponible'); }
   }
 
+  /* ── Admin UNIVERSEL du domaine (Kevin reconnu partout, sans code par boutique) ──
+     On demande à kd-mc.com « qui es-tu ? » : si c'est Kevin (ou Laurence) reconnu
+     par le domaine avec Face ID (verified), on ouvre l'admin tout seul — comme le
+     tableau de bord des boutiques. Le code PIN local reste un SECOURS si le domaine
+     est injoignable. Sécurité : admin EXIGE verified (Face ID), jamais le nom seul.
+     Si le SSO ne répond pas (autre origine, hors ligne) → on ne casse rien (PIN). */
+  async function ssoAutoAdmin() {
+    if (isAdmin()) return true;
+    try {
+      var hsh = location.hash || ''; var mm = hsh.match(/[#&]kdmc_sso=([^&]+)/);
+      if (mm) { try { localStorage.setItem('kdmc_sso_token', decodeURIComponent(mm[1])); } catch (_) {}
+                try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {} }
+      var tok = ''; try { tok = localStorage.getItem('kdmc_sso_token') || ''; } catch (_) {}
+      var hdr = {}; if (tok) hdr.Authorization = 'Bearer ' + tok;
+      var rs = await fetch('/__sso/whoami', { credentials: 'include', cache: 'no-store', headers: hdr });
+      var j = rs && rs.ok ? await rs.json() : null;
+      var ok = j && j.ok && j.verified === true &&
+        (j.admin === true || /laurence|lolo|saint.?polit|kevin|desarzens/i.test(j.name || ''));
+      if (ok) { localStorage.setItem(TRUST, '1'); localStorage.removeItem(LOCK); installBar(); rerender(); return true; }
+    } catch (_) { /* SSO injoignable → on retombe sur le PIN, rien de cassé */ }
+    return false;
+  }
   /* ── Boot ──────────────────────────────────────────────────────────────── */
   window.kdmcAdminOpen = openUnlock;
   function boot() {
     mergeIntoCatalog(); if (loadProds().length) rerender();
-    if (isAdmin()) installBar();
+    if (isAdmin()) installBar(); else ssoAutoAdmin();
     try {
       var q = location.search || '', h = location.hash || '';
       if (/[?&]admin=1\b/.test(q) || h === '#admin') openUnlock();

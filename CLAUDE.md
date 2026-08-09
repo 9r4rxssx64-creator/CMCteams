@@ -9510,6 +9510,48 @@ A verifier a chaque audit (axRunAudit, subagent audit).
 
 ---
 
+## 🌐 RÈGLE ABSOLUE — ADMIN UNIVERSEL DU DOMAINE VIA SSO CENTRAL + RECONNU AUTO POUR TOUS (Kevin 2026-08-09, ABSOLUE)
+
+> **« Intègre mon compte admin d'office. Connexion domaine identique et universelle pour moi. Admin partout auto reconnu. Auto reconnu pour tous. »** — Kevin 2026-08-09
+
+**Règle absolue, NON-NÉGOCIABLE, chapeaute « RECONNAISSANCE AUTO APRÈS 1ʳᵉ CONNEXION » + « FACEID » + « JAMAIS DEMANDER UN CLIC »** — toutes les surfaces du domaine kd-mc.com (boutiques, outils, Créa Studio/Famille, Départs, CMCteams, Apex, futures apps).
+
+### 1. UNE seule autorité admin pour TOUT le domaine : le SSO central
+
+L'admin d'une app se décide **UNIQUEMENT** en demandant au domaine, jamais avec un code/PIN propre à l'app :
+```
+GET https://kd-mc.com/__sso/whoami   (même origine → chemin relatif "/__sso/whoami" ; sinon header Authorization: Bearer <pass>)
+→ { ok, uid, name, verified, admin }
+admin = ( uid ∈ ADMIN_UIDS ['kdmc_admin','kevin-desarzens'] ) ET verified===true
+```
+- **Sécurité NON-NÉGOCIABLE** : admin EXIGE `verified===true` (Face ID / passkey prouvé). **JAMAIS** le nom seul (un homonyme « Desarzens » ne devient pas admin — leçon #99/#166). Pattern de référence : `services/kdmc-balances/src/index.js` (fetch whoami + exige `j.admin && j.verified`) ; routeur `services/kdmc-router/worker.js:779`.
+- **INTERDIT** : créer un nouveau secret/PIN admin **par app** (ex : le `CREA_FAMILLE_ADMIN_CODE` demandé à tort le 2026-08-09 → rendu inutile par le SSO). Un code/PIN local ne reste **QUE** comme repli anti-lock-out (SSO injoignable), jamais comme porte principale.
+
+### 2. Le CLIENT transmet le pass, sinon le SSO ne sert à rien
+
+Toute page qui appelle un **worker d'une autre origine** (workers.dev) DOIT transmettre le pass du domaine : `headers.Authorization = 'Bearer ' + localStorage['kdmc_sso_token']` (jeton capté depuis `#kdmc_sso=` au retour du portail, ou cookie `.kd-mc.com` en même-origine). Le worker le reforwarde à `/__sso/whoami`. Sans ça, le chemin admin du worker est du **code mort** (cas Créa Famille worker↔client, corrigé 2026-08-09).
+
+### 3. Reconnu AUTO pour TOUS (pas que l'admin)
+
+Au boot, chaque app lit `/__sso/whoami` : si le domaine renvoie un `name` (2 tokens), on **entre sans redemander** (prénom+nom déjà prouvés ailleurs) — `loginDomaine(name, admin)` (réf `tools/crea-studio/index.html`). L'admin (Kevin) passe admin d'office ; un membre normal entre en lecture/usage normal. **Fail-open** : SSO muet → on garde la connexion locale (jamais de blocage).
+
+### 4. Fail-open obligatoire (jamais de régression)
+
+L'appel `/__sso/whoami` est TOUJOURS en `try/catch` : autre origine, hors-ligne, 404 → on retombe silencieusement sur le PIN/mot de passe local existant. Ajouter le SSO ne doit JAMAIS pouvoir casser une app (règle « JAMAIS RÉGRESSER »).
+
+### 5. État (audit 2026-08-09) — branché / à brancher
+
+- 🟢 **Déjà universel** : `shops/dashboard`, `shops/chez-lolo`, `shops/sourcing`, `kdmc-balances`, routeur, CMCteams (`index.html` pont auto-login admin SSO), **+ (2026-08-09)** Créa Famille (worker `estAdminSSO` + client `Fam.api` Bearer), **4 boutiques partagées** (`shops/_shared/kdmc-shop-admin.js` → `ssoAutoAdmin`), **Départs** (`tools/departs/index.html` → `_depSsoAutoAdmin`), crea-studio (admin auto via `loginDomaine`).
+- 🔴 **Reste à brancher** (suivi) : `tools/approvals` (passkey WebAuthn local propre → fédérer), `apex-ai-v13` (admin `id==='kdmc_admin'` local, whoami réduit au heartbeat → décider sur `j.admin&&j.verified`), `crypto-bot-dashboard` (retirer le `/__admin/login` local, garder SSO). Retrait des PIN de secours = durcissement optionnel (ne pas casser l'anti-lock-out).
+
+### 6. Test mental obligatoire avant chaque app avec notion d'admin
+
+> *« L'admin de cette app se décide-t-il via `/__sso/whoami` (verified+uid connu), OU via un secret/PIN propre à l'app ? Si secret propre → le remplacer par le SSO central (PIN en repli seulement). Le client transmet-il bien le pass au worker ? L'appel est-il en try/catch (fail-open) ? Kevin, reconnu par son domaine, est-il admin ICI sans rien retaper ? »*
+
+S'applique : tout le domaine kd-mc.com (priorité absolue), tous projets futurs.
+
+---
+
 ## 🆔 RÈGLE ABSOLUE — FACEID/TOUCHID DANS TOUS LES PROJETS (Kevin 2026-05-22, ABSOLUE)
 
 > **"FaceID dans tous les projets note le et fais le un après l'autre."** — Kevin 2026-05-22
