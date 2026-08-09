@@ -58,9 +58,9 @@ jobs:
             const k=process.env.KEY, a=(r.apps||{})[k];
             const isTF=process.env.RT==="testflight";
             if(!a){console.error("::error::app inconnue: "+k+" (voir tools/ios/apps.json)");process.exit(1);}
-            // En dry-run on autorise une app pas encore active (pour la PROUVER avant de l'activer).
-            // Seul l'envoi TestFlight exige actif:true.
-            if(isTF && a.actif!==true){console.error("::error::app \""+k+"\" pas encore activée (actif:false) — dry-run d'abord");process.exit(1);}
+            // En dry-run on autorise une app pas encore active (pour la PROUVER avant activation).
+            // Seul TestFlight exige actif:true.
+            if(isTF && a.actif!==true){console.error("::error::app \""+k+"\" pas encore activee (actif:false) — fais un dry-run avant");process.exit(1);}
             if(!a.url){console.error("::error::url manquante pour "+k);process.exit(1);}
             const out=process.env.GITHUB_OUTPUT;
             fs.appendFileSync(out,"name="+a.name+"\n");
