@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.39.0";
+var APP_VER="v2.40.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -943,16 +943,7 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   var ac=el("div","achv-wrap"); ac.innerHTML='<div class="sec-h">🏅 Succès ('+Object.keys(S.achv).length+'/'+ACHV.length+')</div>'; var ag=el("div","achv-grid");
   ACHV.forEach(function(a){ var got=S.achv[a.id]; var b=el("div","achv"+(got?" got":"")); b.innerHTML='<span class="ai">'+a.i+'</span><span class="at">'+a.t+'</span>'; b.title=a.d; ag.appendChild(b); });
   ac.appendChild(ag); d.appendChild(ac);
-  // 🔊 Voix de Bee — choix par compte, aperçu parlé à chaque tap
-  var vw=el("div","voice-wrap"); vw.innerHTML='<div class="sec-h">🔊 Voix de Bee</div>';
-  BEE_VOICES.forEach(function(v){
-    var b=el("button","voice-opt"+((S.beeVoice||"fillette")===v.id?" sel":""));
-    b.innerHTML='<b>'+v.nom+'</b><span>'+v.desc+'</span>';
-    b.onclick=function(){ S.beeVoice=v.id; save(); vibrate(10);
-      speakLang(v.phrase||"Bzzz ! Moi c'est Bee !","fr-FR","bee",true);
-      render(); toast("Voix de Bee : "+v.nom); };
-    vw.appendChild(b); });
-  d.appendChild(vw);
+  // (Une seule voix pour tout — voir la section « 🔊 Voix » plus bas. Fini les 2 réglages qui se contredisaient.)
   // mémoire en ligne
   var cloud=el("div","freeze-card");
   if(me.code){ cloud.innerHTML='<div><b>☁️ Mémoire en ligne active</b><span> — ta progression est sauvegardée. Retrouve-la partout avec ton prénom + ton code.</span></div><div class="fx">'+(_cloudState==="off"?"⚠️":"✓")+'</div>'; }
@@ -1179,7 +1170,7 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
   var overlay=document.querySelector(".disc-overlay"); if(!overlay)return;
   var mouth=overlay.querySelector(".disc-mouth"), sub=overlay.querySelector(".disc-sub"), img=overlay.querySelector(".disc-bee");
   var words=String(text||"").split(/\s+/).filter(Boolean);
-  var vcfg=beeVoiceCfg(), vid=vcfg.tts;
+  var vcfg={rate:1,gen:1,wsRate:.95,wsPitch:1}, vid=S.voice||"nova";  /* voix choisie, claire, sans déformation (lip-sync ok) */
   var netR=(vcfg.rate||1)*(vcfg.gen||1);
   var estDur=Math.min(12000, Math.round((900+text.length*68)/netR));
   var myReq=++_ttsReq; /* un ancien son/repli en retard est ignoré */
@@ -1454,14 +1445,16 @@ var BEE_VOICES=[
 ];
 function beeVoiceCfg(){ var id=S.beeVoice||"fillette"; for(var i=0;i<BEE_VOICES.length;i++){ if(BEE_VOICES[i].id===id)return BEE_VOICES[i]; } return BEE_VOICES[0]; }
 function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voice||"nova";
-  var cfg=null; if(vid==="bee"){ cfg=beeVoiceCfg(); vid=cfg.tts; }
+  /* UNE SEULE voix partout = celle que tu as choisie (S.voice), CLAIRE et à vitesse normale.
+     Fini « la voix change selon la catégorie » et l'effet fillette aigu/étouffé (Kevin). */
+  var cfg=null; if(vid==="bee"){ vid=S.voice||"nova"; }
   /* ANTI-DÉCALAGE (même protection que speak()) : coupe tout son en cours + jeton de requête
      → jamais deux voix qui se chevauchent, jamais un ancien son qui part en retard */
   var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();
   if(_isCloudVoice(vid)){ try{
     if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
-    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a; try{a.volume=1;}catch(_){}
     if(cfg&&cfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=cfg.rate; }catch(_){} }
     a.onerror=function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); };
     var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); }); return; }catch(e){} }
@@ -1587,7 +1580,9 @@ function exMC(ex){ var w=el("div","ex");
   var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour écouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
   var titre=ex.audio?"Que dis-je ?":(ex.mode==="mc_fr"?"Traduis en français":"Traduis ce mot");
   w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">'+titre+'</div></div>'+q;
-  if(ex.audio&&!LESSON.answered) _lsSpeak(ex.w.t,LESSON.i,250);
+  /* entraîne l'oreille : on LIT le mot cible affiché (mode audio, ou « traduis en français » où
+     le mot dans la langue est montré). On ne lit pas la réponse cachée (ça la donnerait). */
+  if(!LESSON.answered && (ex.audio || ex.mode==="mc_fr")) _lsSpeak(ex.w.t,LESSON.i,260);
   var opts=el("div","opts"); ex.opts.forEach(function(o){ var b=el("button","opt"); b.textContent=o; b.onclick=function(){ if(LESSON.answered)return; opts.querySelectorAll(".opt").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); LESSON._pick=o; LESSON._can=true; syncMain(); }; opts.appendChild(b); }); w.appendChild(opts);
   setTimeout(function(){ var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },0);
   return w;
@@ -1616,7 +1611,8 @@ function exType(ex){ var w=el("div","ex");
   var titre=ex.audio?"Écoute et écris ce que tu entends":(ex.dir==="toFr"?"Écris en français":"Écris la traduction");
   var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour réécouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
   w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">'+titre+'</div></div>'+q;
-  if(ex.audio&&!LESSON.answered) _lsSpeak(ex.w.t,LESSON.i,250);
+  /* on lit le mot cible montré (écoute, ou « écris en français » où le mot dans la langue est affiché) */
+  if(!LESSON.answered && (ex.audio || ex.dir==="toFr")) _lsSpeak(ex.w.t,LESSON.i,260);
   var inp=el("input","type-input"); inp.type="text"; inp.setAttribute("autocapitalize","none"); inp.setAttribute("autocomplete","off"); inp.setAttribute("autocorrect","off"); inp.spellcheck=false; inp.placeholder="Écris ta réponse…";
   if(LESSON.answered){ /* après validation : on GARDE ce que tu as écrit à l'écran (coloré) + le clavier ne repop pas → la correction reste visible */
     inp.value=LESSON._typeVal||""; inp.readOnly=true; inp.classList.add(LESSON.ok?"tgood":"tbad"); }
