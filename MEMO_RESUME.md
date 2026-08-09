@@ -88,6 +88,20 @@
    1-par-paire. Non-régression : v2.38 + v2.37 + v2.36 + retour arrière 10/10 tous PASS.
    sw.js lingua-v2.39.0. Mergé PR #3251.
 
+3nonies. **KDMC Lingua v2.40.0 — UNE voix claire partout + lecture du mot (oreille)** (Kevin :
+   « élocution pas claire » · « on choisit une voix mais selon la catégorie elle change seule » ·
+   « on comprend rien, on entend rien volume à fond » · « lis la question aussi pour entraîner
+   l'oreille »). Cause : 2 réglages séparés — S.voice (mots) et S.beeVoice (coach/jeux/atelier,
+   défaut « fillette » = nova générée lente puis accélérée SANS garder le pitch → aiguë/étouffée).
+   Corrigé : (1) **une seule voix = celle choisie** (S.voice), claire, vitesse normale, partout
+   (speakLang « bee » → S.voice sans déformation ; discSpeak idem, lip-sync gardé ; volume=1) ;
+   (2) **2ᵉ section « Voix de Bee » supprimée** → un seul choix « 🔊 Voix » ; (3) **oreille** :
+   « Traduis/Écris en français » lisent le mot cible affiché (jamais la réponse cachée). Prouvé en
+   navigateur réel : voix Shimmer → 37/37 lectures en Shimmer (0 autre), 0 déformation, section
+   Bee absente, mot lu. Non-régression v2.39→v2.36 + retour arrière 10/10 PASS. sw.js
+   lingua-v2.40.0. Mergé PR #3253. **RESTE** : « niveau pas adapté » (attendre le retour de Kevin
+   sur ce qui est trop dur — phrases ? vocabulaire ?).
+
 3ter. **KDMC Lingua v2.34.0 — synchro voix vérifiée + garde retour-arrière** (Kevin :
    « Vérifie la synchro de la voix avec les questions… Pas de retour arrière possible
    pendant une leçon ») : synchro voix PROUVÉE en navigateur réel (exercices « écoute »
