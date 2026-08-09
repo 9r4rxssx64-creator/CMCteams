@@ -22,7 +22,7 @@ en **vraies applis iPhone**, signées et envoyées sur **TestFlight**, **sans Ma
    | `APPLE_TEAM_ID` | ton Team ID (en haut à droite d'App Store Connect / page Membership) |
    | `APPSTORE_API_KEY_ID` | le **Key ID** de l'étape 2 |
    | `APPSTORE_API_ISSUER_ID` | l'**Issuer ID** de l'étape 2 |
-   | `APPSTORE_API_KEY_BASE64` | le fichier `.p8` encodé en base64 (sur iPhone : je te donnerai un mini-outil 1-clic, ou colle-le tel quel et je le convertis) |
+   | `APPSTORE_API_KEY_BASE64` | **le contenu du fichier `.p8` collé TEL QUEL** (le pipeline l'accepte directement — pas de conversion). Le base64 marche aussi (compat Apex). |
 
 C'est **tout**. Aucun Mac, aucun certificat, aucune ligne de code.
 
