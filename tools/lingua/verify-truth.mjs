@@ -84,6 +84,8 @@ async function semanticAudit(ctx) {
       + '\n- si ta « correction » est IDENTIQUE à la traduction donnée, ce n\'est PAS une erreur → ne la signale pas ;'
       + '\n- un mot français neutre (collègue, photo, ami) peut légitimement prendre le masculin par défaut dans la langue cible → NE signale pas ;'
       + '\n- Bee est FÉMININE : les accords féminins la concernant sont corrects ;'
+      + '\n- le pt est du portugais EUROPÉEN (Portugal) : « desporto », « depressa », « pequeno-almoço », « autocarro » sont CORRECTS — ne propose JAMAIS la variante brésilienne ;'
+      + '\n- une contraction anglaise (it\'s vs it is), un synonyme valable ou un temps verbal équivalent ne sont PAS des erreurs ;'
       + '\n- ignore le style et la simple « préférence » ; en cas de doute, NE signale PAS.'
       + '\nRéponds UNIQUEMENT en JSON : {"faux": [{"langue":"la langue","fr":"la phrase française","traduction":"la traduction fautive","correction":"la bonne traduction (DIFFÉRENTE de la fautive)","raison":"en 6 mots max"}]}. Liste VIDE si tout est correct.';
     const raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }]));
