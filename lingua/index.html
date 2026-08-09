@@ -266,6 +266,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 @keyframes micPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12);box-shadow:0 0 0 8px rgba(244,63,94,.25)}}
 .disc-hf{flex:0 0 auto;width:48px;height:48px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:#9fb2c2;font-size:19px;cursor:pointer}
 .disc-hf.on{background:linear-gradient(90deg,var(--green),var(--green-d));color:#fff;border-color:transparent}
+.disc-live{flex:0 0 auto;width:48px;height:48px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:#9fb2c2;font-size:19px;cursor:pointer}
+.disc-live.on{background:linear-gradient(90deg,#e11d48,#f43f5e);color:#fff;border-color:transparent;animation:micPulse .9s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.disc-bee,.disc-bee.talk,.disc-mouth.talking,.disc-mic.rec{animation:none}}
 .bee-spark{position:fixed;z-index:9999;pointer-events:none;font-size:16px;animation:sparkFly .9s ease-out forwards}
 @keyframes sparkFly{0%{transform:translate(0,0) scale(.6);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.25);opacity:0}}
