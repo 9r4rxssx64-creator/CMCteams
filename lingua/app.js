@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.49.0";
+var APP_VER="v2.50.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -173,13 +173,18 @@ function dueWords(){ var c=COURSES[S.course]; if(!c)return []; var db=srsGet(S.c
 function wordCount(){ var t=0; Object.keys(S.words).forEach(function(c){ t+=Object.keys(S.words[c]).length; }); return t; }
 
 /* ============ Ligue (simulation locale) ============ */
-var BOTS=["Léa","Marco","Sofia","Yanis","Nora","Diego","Emma","Luca","Zoé","Tom","Inès","Théo","Mia","Ravi","Ana","Nils","Ela","Bruno"];
+/* CLASSEMENT 100% RÉEL (Kevin : « dans Lingua, vrai info seulement »).
+   Fini les faux adversaires inventés : le classement de la semaine n'affiche QUE des personnes
+   RÉELLES (les comptes de cet appareil) avec leur XP RÉELLE des 7 derniers jours (calculée depuis
+   leur historique). Aucun joueur ni score fabriqué. */
 function weekId(){ var d=new Date(),o=new Date(d.getFullYear(),0,1),w=Math.ceil((((d-o)/864e5)+o.getDay()+1)/7); return d.getFullYear()+"-W"+w; }
-function ensureLeague(){ var wk=weekId(); if(S.leagueWeek!==wk||!S.league){ S.leagueWeek=wk;
-  S.league={you:0,bots:shuffle(BOTS).slice(0,9).map(function(n){return {name:n,xp:Math.floor(Math.random()*200)};})}; save(); } }
-function leagueAdd(x){ ensureLeague(); S.league.you+=x; S.league.bots.forEach(function(b){ if(Math.random()<0.6)b.xp+=Math.floor(Math.random()*x); }); save(); }
-function leagueRows(){ ensureLeague(); var r=S.league.bots.map(function(b){return{name:b.name,xp:b.xp,you:false};});
-  r.push({name:(accMeta(ACC)||{}).name||"Toi",xp:S.league.you,you:true}); r.sort(function(a,b){return b.xp-a.xp;}); return r; }
+function ensureLeague(){ /* plus rien à générer : le classement est calculé en temps réel depuis l'historique */ }
+function leagueAdd(x){ /* no-op : l'XP réelle est déjà comptée (S.xp + historique S.hist) */ }
+function _weekCutoff(){ var d=new Date(); d.setHours(0,0,0,0); return d.getTime()-6*864e5; } /* début du jour il y a 6 j → 7 derniers jours */
+function _acctWeekXp(id){ var h; if(id===ACC){ h=S.hist||{}; } else { try{ h=JSON.parse(_rawGet(id,"hist")||"{}"); }catch(_){ h={}; } }
+  var cut=_weekCutoff(),sum=0; for(var k in h){ if(Object.prototype.hasOwnProperty.call(h,k) && _dayTs(k)>=cut){ sum+=(+h[k]||0); } } return sum; }
+function leagueRows(){ return accounts().map(function(a){ return {name:a.name||"Joueur",avatar:a.avatar||"🦊",xp:_acctWeekXp(a.id),you:a.id===ACC}; })
+  .sort(function(a,b){ return b.xp-a.xp; }); }
 
 /* ============ Succès ============ */
 var ACHV=[
@@ -552,9 +557,16 @@ function vDict(){ var d=el("div","screen"); var c=COURSES[S.course]; var seen=S.
 }
 
 /* ---------- Ligue ---------- */
-function vLeague(){ var d=el("div","screen"); ensureLeague(); d.innerHTML='<h2 class="ttl">🏆 Ligue Bronze</h2><p class="sub2">Classement de la semaine — gagne de l\'XP pour monter.</p>';
-  var list=el("div","lb"); leagueRows().forEach(function(r,i){ var row=el("div","lb-row"+(r.you?" me":"")+(i<3?" top":"")); row.innerHTML='<span class="rk">'+(i+1)+'</span><span class="rn">'+(i===0?"🥇 ":i===1?"🥈 ":i===2?"🥉 ":"")+esc(r.name)+(r.you?" (toi)":"")+'</span><span class="rx">'+r.xp+' XP</span>'; list.appendChild(row); });
-  d.appendChild(list); return d;
+function vLeague(){ var d=el("div","screen"); var rows=leagueRows(); var multi=rows.length>1;
+  d.innerHTML='<h2 class="ttl">🏆 Ta semaine</h2><p class="sub2">XP RÉELLE des 7 derniers jours'+(multi?' — toi et les comptes de cet appareil':'')+'. Que du vrai, aucun joueur inventé.</p>';
+  var list=el("div","lb"); rows.forEach(function(r,i){ var row=el("div","lb-row"+(r.you?" me":"")+(multi&&i<3?" top":""));
+    var medal=(multi&&i===0)?"🥇 ":(multi&&i===1)?"🥈 ":(multi&&i===2)?"🥉 ":"";
+    row.innerHTML='<span class="rk">'+(i+1)+'</span><span class="rn">'+medal+esc(r.avatar||"")+" "+esc(r.name)+(r.you?" (toi)":"")+'</span><span class="rx">'+r.xp+' XP</span>'; list.appendChild(row); });
+  d.appendChild(list);
+  if(!multi){ var note=el("p","sub2"); note.style.marginTop="12px";
+    note.textContent="Tu es seul sur cet appareil : ajoute un compte (ex. Laurence) pour un vrai classement à plusieurs — ici, aucun adversaire inventé, uniquement des personnes réelles."; d.appendChild(note); }
+  var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
+  return d;
 }
 
 /* ============ ⚡ Défi éclair — 60 s, un max de bonnes réponses ============ */
