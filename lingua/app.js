@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.59.0";
+var APP_VER="v2.60.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -158,6 +158,9 @@ function bumpStreak(){
   else if(S.lastDay===y2 && S.freeze>0){ S.freeze-=1; S.streak+=1; toast("🧊 Gel utilisé — série sauvée !"); }
   else S.streak=1;
   S.lastDay=t; save();
+  /* Jalons de série RÉELS (le garde S.lastDay===t empêche tout doublon le même jour) */
+  var MS=[3,7,14,30,50,100,200,365];
+  if(MS.indexOf(S.streak)>=0){ var n=S.streak; setTimeout(function(){ toast("🔥 "+n+" jours de série — bravo !"); },700); }
 }
 
 /* ============ Révision espacée (SM-2 allégé) ============ */
@@ -1808,6 +1811,8 @@ function exSpeak(ex){ var w=el("div","ex");
 }
 function syncMain(){ var m=document.getElementById("mainBtn"); if(m)m.disabled=!(LESSON.answered||LESSON._can); }
 function checkEx(ex){ var L=LESSON,ok=false,sol="";
+  /* palier AVANT la 1re réponse de la leçon (pour fêter un vrai passage de palier à la fin) */
+  if(L._lvl0==null){ try{ L._lvl0=currentLevel().cur.code; }catch(_){ L._lvl0=""; } }
   if(ex.kind==="mc"){ ok=L._pick===ex.answer; sol=ex.answer; }
   else if(ex.kind==="match"){ ok=!!L._matchOk; }
   else if(ex.kind==="bank"){ ok=norm(L._bankVal)===norm(ex.answer); sol=ex.answer; }
@@ -1839,22 +1844,30 @@ function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._b
   if(L.i>=L.ex.length){ finishLesson(); return; } if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; } render();
 }
 function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); return; } var base=L.exam?25:(L.review?10:15),bonus=L.wrong===0?5:0,combo=Math.max(0,L.comboMax-2); var xp=base+bonus+combo;
-  S.xp+=xp; S.dailyXP+=xp; histAdd(xp); S.gems+=(L.exam?(L.wrong===0?8:5):(L.wrong===0?3:1));
+  /* VÉRITÉ : les gemmes AFFICHÉES = les gemmes réellement créditées (examen = 8/5, leçon = 3/1) */
+  var gems=(L.exam?(L.wrong===0?8:5):(L.wrong===0?3:1));
+  S.xp+=xp; S.dailyXP+=xp; histAdd(xp); S.gems+=gems;
   S.today.xp+=xp; if(L.review)S.today.reviews++; else S.today.lessons++; if(L.wrong===0){S.today.perfect++; ls("hadPerfect",true);}
   if(L.heal){ S.hearts=Math.min(HEART_MAX,S.hearts+1); if(S.hearts>=HEART_MAX)S.heartTs=Date.now(); }
   if(L.exam){ var ek="ex"+L.ui; var wasNew=!(S.prog[S.course][ek]>0); S.prog[S.course][ek]=Math.min(5,(S.prog[S.course][ek]||0)+1); if(wasNew)setTimeout(function(){toast("🏆 Examen de l'unité réussi !");},400); }
   else if(L.ui!=null&&L.li!=null&&!L.review){ var k="u"+L.ui+"-"+L.li; S.prog[S.course][k]=Math.min(5,(S.prog[S.course][k]||0)+1); }
   bumpStreak(); leagueAdd(xp); save(); checkAchv(); checkQuests();
   VIEW="home"; render();
-  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",120)+'</div><h3>'+(L.wrong===0?"Sans faute ! 🎉":"Leçon terminée ✅")+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+(L.wrong===0?3:1)+'</b><i>Gemmes</i></div></div>';
+  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",120)+'</div><h3>'+(L.wrong===0?(L.exam?"Examen sans faute ! 🏆":"Sans faute ! 🎉"):(L.exam?"Examen réussi ✅":"Leçon terminée ✅"))+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+gems+'</b><i>Gemmes</i></div></div>';
+  /* Précision RÉELLE : bonnes réponses et erreurs (les erreurs sont reposées jusqu'à réussite) */
+  var acc=el("p","mini fin-acc"); acc.innerHTML='✅ '+L.correct+' bonnes réponses'+(L.wrong>0?' · ❌ '+L.wrong+' erreur'+(L.wrong>1?'s':'')+' corrigée'+(L.wrong>1?'s':''):' — 100 %'); m.body.appendChild(acc);
+  /* Passage de palier RÉEL (mots maîtrisés, même source que la barre Coach) — fêté seulement s'il a eu lieu */
+  var lvUp=null; try{ if(L._lvl0){ var lvN=currentLevel(),i0=-1,i1=-1; LEVELS.forEach(function(s,i){ if(s.code===L._lvl0)i0=i; if(s.code===lvN.cur.code)i1=i; }); if(i0>=0&&i1>i0) lvUp=lvN.cur; } }catch(_){}
+  if(lvUp){ var lu=el("div","lvl-up"); lu.innerHTML='🎓 Nouveau palier : <b>'+esc(lvUp.code)+'</b> !'; m.body.appendChild(lu); }
   var b=el("button","btn-main"); b.textContent="Continuer"; b.onclick=function(){ m.close(); render(); }; m.body.appendChild(b);
   setTimeout(function(){ var mi=m.body.querySelector(".bee-img"); if(mi){ beeAnimate(mi,"hop"); if(L.wrong===0)beeSparkles(mi,10); }
     /* Fin de leçon : le compagnon fait la fête aussi ET Bee annonce le résultat à voix haute */
     var cr=document.querySelector(".bee-companion .bee-rig"); if(cr)beeMove(cr, L.wrong===0?"dance":"jump", 3200); },200);
   /* L'annonce PARLÉE attend 1,2 s : elle ne coupe plus l'audio du dernier mot appris */
   setTimeout(function(){ var me=accMeta(ACC)||{};
-    speakLang(L.wrong===0?("Sans faute "+(me.name||"")+" ! Je suis trop fière de toi ! Plus "+xp+" points !")
-      :("Leçon terminée ! Plus "+xp+" points. On continue ?"),"fr-FR",BEE_VOICE,true); },1200);
+    speakLang((L.wrong===0?("Sans faute "+(me.name||"")+" ! Je suis trop fière de toi ! Plus "+xp+" points !")
+      :("Leçon terminée ! Plus "+xp+" points. On continue ?"))
+      +(lvUp?(" Et tu passes au palier "+lvUp.code+", félicitations !"):""),"fr-FR",BEE_VOICE,true); },1200);
 }
 
 /* ---------- Toast / modal ---------- */
