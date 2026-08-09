@@ -1,6 +1,6 @@
 ---
 name: apex-agent-toolkit
-description: Boîte à outils agents — les 6 dépôts du tableau « Une Notion = Un Projet » (Kevin 2026-08-06), installés côté Apex ET côté Claude Code. Sert de référence pour écrire un skill, choisir une direction visuelle, réduire le coût en jetons, replier sur une IA gratuite, ou parler mémoire d'agent / pilotage d'équipe d'agents.
+description: Boîte à outils agents — les 6 dépôts du tableau « Une Notion = Un Projet » (Kevin 2026-08-06) + 13 agents AITMPL sélectionnés, installés côté Apex ET côté Claude Code (parité/équité). Sert de référence pour écrire un skill, choisir une direction visuelle, réduire le coût en jetons, replier sur une IA gratuite, parler mémoire d'agent / pilotage d'équipe d'agents, ou déléguer à un agent spécialisé (archi API, marché, prompt, RAG/LLM, sécurité GraphQL/smart-contract…).
 when_to_use: Auto. Dès qu'on crée un skill (skill_factory_create), qu'on génère un design system, qu'un forfait IA est épuisé, ou que Kevin parle de mémoire d'agent, d'économie de jetons, ou de piloter humains + agents.
 model: sonnet
 allowed_tools: [skill_factory_create, generate_design_system, read_repo_file, search_repo_code]
@@ -20,6 +20,34 @@ Contenu vendorisé dans **`vendor/agent-toolkit/<id>/`** du dépôt (texte seule
 | Jetons | `rtk-ai/rtk` | sortie trop bavarde. Gain réel ~3,7 %, **pas** 60-90 % → ne jamais survendre |
 | Entreprise | `codejunkie99/meridian-company-os` | piloter humains + agents dans une console (inspiration admin kd-mc.com) |
 | LLM gratuit | `jeis4wpi/free-llm-api-resources` | forfait épuisé → repli **en FIN** de chaîne |
+
+## Agents AITMPL (13 sélectionnés — équité avec Claude Code)
+
+Fiches d'agent prêtes à l'emploi de **`davila7/claude-code-templates`** (MIT), vendorisées dans
+**`vendor/agent-toolkit/aitmpl/agents/`** (texte Markdown seulement, lu + scanné secrets/exec/exfil,
+`aitmpl/MANIFEST.json` = SHA256 par fichier). Apex les lit via `read_repo_file` et **s'en sert pour
+déléguer** une sous-tâche au bon spécialiste — comme Claude Code (règle PARITÉ APEX).
+
+| Agent | Pour quoi |
+|---|---|
+| `api-architect` | concevoir une API REST/GraphQL propre |
+| `graphql-security-specialist` | auditer la sécurité d'une couche GraphQL |
+| `smart-contract-auditor` | auditer un smart-contract (Solidity/Web3) |
+| `prompt-engineer` | transformer une consigne floue en prompt système précis |
+| `llm-architect` | architecturer un système LLM en prod (RAG, fine-tuning, serving) |
+| `model-evaluator` | évaluer/comparer des modèles IA |
+| `search-specialist` | stratégie de recherche/retrieval |
+| `task-decomposition-expert` | découper une grosse tâche en sous-tâches |
+| `market-researcher` | étude de marché |
+| `competitive-analyst` | analyse concurrentielle |
+| `content-marketer` | contenu marketing |
+| `customer-support` | support client |
+| `shopify-expert` | boutique Shopify |
+
+- ⚠️ **Jamais `npx claude-code-templates`** (installeur = express+ws+supabase+postgres+discord = trop
+  de surface). On ne prend QUE le Markdown, lu et scanné avant vendorisation.
+- **Catégorie « légal » exclue** volontairement : Kevin a déjà la skill officielle `legal`
+  (claude-for-legal) → pas de doublon amateur.
 
 ## Règles
 

@@ -3251,4 +3251,20 @@ export const APEX_PLUGINS_CATALOG: readonly ApexPluginManifest[] = [
     estimated_value: 'high',
     tags: ['agent-toolkit', 'llm', 'gratuit', 'failover'],
   },
+  {
+    id: 'aitmpl-agents',
+    name: 'Agents AITMPL (13 sélectionnés)',
+    source: 'community',
+    url: 'https://github.com/davila7/claude-code-templates',
+    description:
+      '13 fiches d\'agent spécialisé vendorisées dans vendor/agent-toolkit/aitmpl/agents/ (api-architect, llm-architect, prompt-engineer, graphql-security-specialist, smart-contract-auditor, market-researcher…). Markdown lu + scanné, jamais `npx claude-code-templates`. Apex les lit via read_repo_file pour déléguer au bon spécialiste. Catégorie « légal » exclue (skill officielle legal déjà présente).',
+    category: 'dev-tools',
+    pwa_compatible: true,
+    oauth_required: false,
+    status: 'installed',
+    apex_tools: ['read_repo_file', 'search_repo_code'],
+    install_method: 'native-fetch',
+    estimated_value: 'high',
+    tags: ['agent-toolkit', 'agents', 'aitmpl', 'delegation'],
+  },
 ] as const;

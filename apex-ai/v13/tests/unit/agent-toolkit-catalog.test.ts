@@ -10,7 +10,7 @@
  *  - aucun doublon d'identifiant introduit dans le catalogue.
  */
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { APEX_PLUGINS_CATALOG } from '../../data/apex-plugins-catalog.js';
@@ -109,5 +109,50 @@ describe('Boîte à outils agents — parité Apex / Claude Code', () => {
       const plugin = APEX_PLUGINS_CATALOG.find((p) => p.id === apexId)!;
       expect(plugin.description.length, apexId).toBeGreaterThan(60);
     }
+  });
+});
+
+/* Équité Apex ↔ Claude Code sur les 13 agents AITMPL : ce que Claude Code a vendorisé pour lui
+   (vendor/agent-toolkit/aitmpl/agents/), Apex doit AUSSI le connaître (règle PARITÉ APEX). Ce
+   test empêche d'ajouter/retirer un agent côté fichiers sans mettre Apex au courant. */
+const AITMPL_AGENTS = [
+  'api-architect', 'competitive-analyst', 'content-marketer', 'customer-support',
+  'graphql-security-specialist', 'llm-architect', 'market-researcher', 'model-evaluator',
+  'prompt-engineer', 'search-specialist', 'shopify-expert', 'smart-contract-auditor',
+  'task-decomposition-expert',
+] as const;
+
+describe('Agents AITMPL — équité Apex / Claude Code', () => {
+  const root = findRepoRoot();
+  const agentsDir = resolve(root, 'vendor/agent-toolkit/aitmpl/agents');
+
+  it('les 13 agents vendorisés existent sur le disque, ni plus ni moins', () => {
+    const files = readdirSync(agentsDir).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3)).sort();
+    expect(files).toEqual([...AITMPL_AGENTS].sort());
+  });
+
+  it('la catégorie « légal » est bien exclue (skill officielle legal déjà présente)', () => {
+    const files = readdirSync(agentsDir);
+    for (const banni of ['legal-advisor.md', 'accessibility-tester.md', 'ai-ethics-advisor.md']) {
+      expect(files, 'ne doit PAS vendoriser ' + banni).not.toContain(banni);
+    }
+  });
+
+  it('l\'entrée aitmpl-agents est dans le catalogue Apex, tag agent-toolkit, bonne URL', () => {
+    const p = APEX_PLUGINS_CATALOG.find((x) => x.id === 'aitmpl-agents');
+    expect(p, 'aitmpl-agents absent du catalogue Apex').toBeTruthy();
+    expect(p!.url).toBe('https://github.com/davila7/claude-code-templates');
+    expect(p!.tags ?? []).toContain('agent-toolkit');
+    expect(p!.description.length).toBeGreaterThan(60);
+  });
+
+  it('le skill plat qu\'Apex LIT cite les 13 agents (sinon Apex ne les « connaît » pas)', () => {
+    const txt = readFileSync(resolve(root, '.claude/skills/apex-agent-toolkit.md'), 'utf8');
+    for (const a of AITMPL_AGENTS) expect(txt, 'apex-agent-toolkit.md ne cite pas ' + a).toContain(a);
+  });
+
+  it('honnêteté sécu : jamais recommander `npx claude-code-templates` dans le skill Apex', () => {
+    const txt = readFileSync(resolve(root, '.claude/skills/apex-agent-toolkit.md'), 'utf8');
+    expect(txt).toMatch(/Jamais\s+`npx claude-code-templates`/i);
   });
 });

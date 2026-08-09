@@ -61,11 +61,25 @@ renvoie 404 (dépôt supprimé/renommé) → on pointe un miroir vivant. L'éche
 (`::warning::` par source + bilan). Donc : après chaque passage, **lire `MANIFEST.json`** — un
 `ok:false` s'y voit, pas dans la conclusion du run.
 
+## Agents AITMPL (13 sélectionnés — hors des 6 « notions »)
+
+En plus des 6 dépôts du tableau, on a vendorisé **13 fiches d'agent** de
+`davila7/claude-code-templates` (AITMPL, MIT) dans **`vendor/agent-toolkit/aitmpl/agents/`** :
+api-architect, competitive-analyst, content-marketer, customer-support, graphql-security-specialist,
+llm-architect, market-researcher, model-evaluator, prompt-engineer, search-specialist, shopify-expert,
+smart-contract-auditor, task-decomposition-expert. **Tout sauf la catégorie « légal »** (Kevin a déjà
+la skill officielle `legal`). Récupérées via CI **lecture seule** (`aitmpl-fetch-picks.yml` +
+`aitmpl-harvest.yml`), **jamais `npx claude-code-templates`** (installeur = express+ws+supabase+
+postgres+discord). Chaque `.md` lu + scanné (secrets/exec/exfil/injection) ; `aitmpl/MANIFEST.json`
+= SHA256 par fichier. Ce sont des définitions d'agent à ouvrir avant de déléguer une sous-tâche.
+
 ## Côté Apex
 
-Les 6 sont enregistrés dans le catalogue Apex (`apex-ai/v13/data/apex-plugins-catalog.ts`,
-catégorie/tag `agent-toolkit`) → Apex les connaît, les liste dans sa vue Plugins, et sait à quoi
-chacun sert. Test de non-régression : `apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts`.
+Les 6 dépôts **et** la sélection AITMPL sont enregistrés dans le catalogue Apex
+(`apex-ai/v13/data/apex-plugins-catalog.ts`, catégorie/tag `agent-toolkit`, entrée `aitmpl-agents`)
+→ Apex les connaît, les liste dans sa vue Plugins, et sait à quoi chacun sert. Le skill plat
+`apex-agent-toolkit.md` (que Apex lit vraiment) détaille les 13 agents. Test de non-régression
+(équité Apex ↔ Claude Code) : `apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts`.
 
 ## Licences
 
