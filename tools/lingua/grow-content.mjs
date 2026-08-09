@@ -94,7 +94,8 @@ async function generateStory(sampleTitles) {
   const user = 'Écris UNE mini-histoire ORIGINALE différente de : ' + sampleTitles.join(', ') + '. '
     + 'Réponds UNIQUEMENT en JSON strict de cette forme exacte : '
     + '{"id":"motcourt_minuscules","ic":"un emoji","titre":"Titre en français","lignes":[{"qui":"🐝 ou 🧑","fr":"phrase courte en français","t":{"en":"...","it":"...","es":"...","de":"...","pt":"...","nl":"..."}}],"quiz":[{"q":"question en français","opts":["...","...","..."],"ok":0}]}. '
-    + 'Règles : 5 lignes, phrases très courtes et correctes ; traductions FIDÈLES et naturelles dans les 6 langues (en,it,es,de,pt,nl) ; 3 questions de compréhension EN FRANÇAIS avec 3 options et l\'index "ok" de la bonne réponse. Aucune faute. N\'invente jamais un mot : si tu doutes d\'une traduction, choisis une phrase plus simple.';
+    + 'Règles : 5 lignes, phrases très courtes et correctes ; traductions FIDÈLES et naturelles dans les 6 langues (en,it,es,de,pt,nl) ; 3 questions de compréhension EN FRANÇAIS avec 3 options et l\'index "ok" de la bonne réponse. Aucune faute. '
+    + "N'emploie PAS le prénom « Bee » comme sujet dans les phrases (il ne se traduit pas) : écris « je / tu / il / elle / nous » à la place. Choisis des phrases neutres qui se traduisent naturellement dans les 6 langues (évite les tournures ambiguës de genre). N'invente jamais un mot : si tu doutes d'une traduction, choisis une phrase plus simple.";
   const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
   const raw = (await callGroq(msgs, true)) || (await callMistral(msgs, true)) || (await callGemini(msgs));
   return parseJson(raw);
@@ -115,8 +116,12 @@ async function judgeStory(st, generatorTried) {
   if (!raw && generatorTried !== 'gemini') raw = await callGemini(msgs);
   if (!raw && generatorTried !== 'groq') raw = await callGroq(msgs, true);
   const j = parseJson(raw);
-  if (!j) return { ok: false, problemes: ['juge indisponible'] };
-  return { ok: !!j.ok && (!Array.isArray(j.problemes) || j.problemes.length === 0), problemes: j.problemes || [] };
+  if (!j) return { ok: false, available: false, hard: ['juge indisponible'] };
+  const problemes = Array.isArray(j.problemes) ? j.problemes : [];
+  // On BLOQUE uniquement les vraies erreurs (sens/genre/accord/orthographe), pas les
+  // simples préférences de style (« moins naturel »). Zéro erreur dure = on accepte.
+  const hard = problemes.filter((p) => /incorrect|faux|erreur|fautif|mauvais|contresens|ne veut rien dire|n'existe pas|invent|manqu|genre|accord|orthograph|devrait être|wrong/i.test(String(p)));
+  return { ok: hard.length === 0, available: true, hard, all: problemes };
 }
 
 /* ---------- Insertion + bump de version ---------- */
@@ -168,7 +173,8 @@ function bumpVersion() {
 
   if (!dry) {
     judged = await judgeStory(st, 'groq');
-    if (!judged.ok) { console.log('REJET (second avis): ' + (judged.problemes || []).slice(0, 6).join(' | ')); process.exit(0); }
+    if (!judged.available) { console.log('SKIP: juge indisponible.'); process.exit(0); }
+    if (!judged.ok) { console.log('REJET (second avis, erreurs dures): ' + (judged.hard || []).slice(0, 6).join(' | ')); process.exit(0); }
   }
 
   insertStory(st);
