@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.47.0";
+var APP_VER="v2.48.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -801,6 +801,27 @@ function beeLipSync(audioEl,mouthEl){ if(!audioEl||!mouthEl)return null;
       try{ mouthEl.classList.remove("talking"); mouthEl.style.transform=""; mouthEl.style.opacity=""; }catch(_){} };
   }catch(e){ return null; }
 }
+/* Variante « flux direct » : la bouche de Bee mime sur un MediaStream (voix live de l'appel). */
+function beeLipSyncStream(stream,mouthEl){ if(!stream||!mouthEl)return null;
+  try{
+    AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended"){ try{ AC.resume(); }catch(_){} }
+    var src=AC.createMediaStreamSource(stream);
+    var an=AC.createAnalyser(); an.fftSize=256; an.smoothingTimeConstant=0.55; src.connect(an); /* analyse seule (pas vers destination : le son sort par l'<audio>) */
+    var buf=new Uint8Array(an.fftSize), raf=0;
+    mouthEl.classList.remove("talking"); mouthEl.style.opacity="1";
+    function frame(){
+      an.getByteTimeDomainData(buf);
+      var s=0,i; for(i=0;i<buf.length;i++){ var v=(buf[i]-128)/128; s+=v*v; }
+      var rms=Math.sqrt(s/buf.length), open=Math.max(0,Math.min(1,(rms-0.01)*7));
+      mouthEl.style.transform="translate(-50%,-50%) scaleY("+(0.3+open*1.6).toFixed(2)+") scaleX("+(1+open*0.4).toFixed(2)+")";
+      raf=requestAnimationFrame(frame);
+    }
+    raf=requestAnimationFrame(frame);
+    return function(){ try{ cancelAnimationFrame(raf); }catch(_){} try{ an.disconnect(); }catch(_){} try{ src.disconnect(); }catch(_){}
+      try{ mouthEl.classList.remove("talking"); mouthEl.style.transform=""; mouthEl.style.opacity=""; }catch(_){} };
+  }catch(e){ return null; }
+}
 /* joue le modèle : normal, ou 🐢 lent (cloud &s=0.6 sans changer la voix ; repli local rate bas).
    Si une Bee gros plan est à l'écran (.pron-bee), sa bouche s'anime sur le son réel. */
 var _pronLip=null;
@@ -1251,6 +1272,57 @@ function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!
   discStopSpeaking();  /* si Bee parle, on la coupe et on écoute (vraie conversation) */
   var mic=overlay.querySelector(".disc-mic"); if(mic)mic.classList.add("rec");
   dictate(function(txt){ if(mic)mic.classList.remove("rec"); if(txt){ var inp=overlay.querySelector(".disc-input"); if(inp)inp.value=txt; discSend(); } },"fr-FR"); }
+/* ===== 📞 APPEL EN DIRECT (voix-à-voix temps réel, OpenAI Realtime via WebRTC) =====
+   Bee t'écoute EN CONTINU et te répond en parlant pendant qu'elle « réfléchit » ; tu peux la couper
+   juste en parlant (détection de tour côté serveur). Sa bouche mime sur la voix live.
+   FAIL-SAFE : la moindre panne (pas de jeton, micro refusé, WebRTC KO) → on raccroche proprement
+   et la Discussion normale (tours de parole) reste 100% utilisable. */
+function _discLiveBtn(){ var ov=document.querySelector(".disc-overlay"); return ov&&ov.querySelector(".disc-live"); }
+function _discLiveUI(on){ var b=_discLiveBtn(); if(b){ b.classList.toggle("on",!!on); b.textContent=on?"⏹":"📞"; b.title=on?"Raccrocher":"Appel en direct"; }
+  var ov=document.querySelector(".disc-overlay"); var sub=ov&&ov.querySelector(".disc-sub");
+  if(on&&sub)sub.textContent="🔴 En direct — parle, Bee t'écoute…"; }
+function discLiveToggle(){ if(DISC.live){ discLiveStop(); toast("Appel terminé"); } else { discLiveStart(); } }
+function discLiveStart(){ if(DISC.live||DISC.liveConnecting)return; var c=coachLangMeta(); if(!c)return;
+  if(!(navigator.mediaDevices&&window.RTCPeerConnection)){ toast("Ton navigateur ne gère pas l'appel en direct — conversation normale gardée"); return; }
+  DISC.liveConnecting=true; discStopSpeaking(); toast("📞 Connexion en direct…");
+  var au;
+  fetch(SYNC_BASE+"/rt-session",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({lang:c.id,langName:c.nom,level:diffLabel()})})
+   .then(function(r){ return r.json(); })
+   .then(function(j){
+     if(!j||!j.ok||!j.client_secret){ throw new Error("token"); }
+     var tok=j.client_secret, model=j.model||"gpt-4o-realtime-preview";
+     return navigator.mediaDevices.getUserMedia({audio:true}).then(function(mic){
+       DISC.liveMic=mic;
+       var pc=new RTCPeerConnection(); DISC.livePc=pc;
+       au=document.createElement("audio"); au.autoplay=true; au.style.display="none"; document.body.appendChild(au); DISC.liveAudio=au;
+       pc.ontrack=function(e){ try{ au.srcObject=e.streams[0]; }catch(_){}
+         var ov=document.querySelector(".disc-overlay"), mouth=ov&&ov.querySelector(".disc-mouth"), bee=ov&&ov.querySelector(".disc-bee");
+         if(bee)bee.classList.add("talk");
+         if(mouth){ if(DISC.liveLip){try{DISC.liveLip();}catch(_){}} DISC.liveLip=beeLipSyncStream(e.streams[0],mouth); } };
+       try{ pc.addTrack(mic.getAudioTracks()[0], mic); }catch(_){}
+       var dc=pc.createDataChannel("oai-events"); DISC.liveDc=dc;
+       dc.onopen=function(){ try{ dc.send(JSON.stringify({type:"session.update",session:{turn_detection:{type:"server_vad"}}})); }catch(_){} };
+       return pc.createOffer().then(function(offer){ return pc.setLocalDescription(offer).then(function(){
+         return fetch("https://api.openai.com/v1/realtime?model="+encodeURIComponent(model),
+           {method:"POST", body:offer.sdp, headers:{ "Authorization":"Bearer "+tok, "Content-Type":"application/sdp" }});
+       }); }).then(function(sdpRes){ if(!sdpRes.ok) throw new Error("sdp "+sdpRes.status);
+         return sdpRes.text(); }).then(function(answer){ return pc.setRemoteDescription({type:"answer",sdp:answer}); });
+     });
+   })
+   .then(function(){ DISC.liveConnecting=false; DISC.live=true; _discLiveUI(true); toast("🔴 En direct — parle, Bee te répond"); })
+   .catch(function(e){ DISC.liveConnecting=false; discLiveStop();
+     toast("Appel en direct indisponible — je reste en conversation normale"); });
+}
+function discLiveStop(){ DISC.live=false; DISC.liveConnecting=false;
+  try{ if(DISC.liveLip){DISC.liveLip();DISC.liveLip=null;} }catch(_){}
+  try{ if(DISC.liveDc){DISC.liveDc.close();} }catch(_){}
+  try{ if(DISC.livePc){DISC.livePc.close();} }catch(_){}
+  try{ if(DISC.liveMic){DISC.liveMic.getTracks().forEach(function(t){t.stop();});} }catch(_){}
+  try{ if(DISC.liveAudio){DISC.liveAudio.srcObject=null; DISC.liveAudio.remove();} }catch(_){}
+  DISC.livePc=DISC.liveMic=DISC.liveAudio=DISC.liveDc=null;
+  var ov=document.querySelector(".disc-overlay"), bee=ov&&ov.querySelector(".disc-bee"); if(bee)bee.classList.remove("talk");
+  _discLiveUI(false); }
 /* 🎭 Scènes jouables aussi en mode Discussion plein écran (Bee ouvre la scène à voix haute) */
 function discSceneStart(id){ var ov=document.querySelector(".disc-overlay"); var sn=sceneById(id); if(!ov||!sn||DISC.talking)return;
   var c=coachLangMeta(); if(!c)return;
@@ -1296,7 +1368,7 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
     '<div class="disc-sub"></div>'+
     '<div class="disc-moves"><button data-mv="dance" title="Danse">💃</button><button data-mv="jump" title="Saute">🦘</button><button data-mv="fly" title="Vole">🕊️</button><button data-mv="walk" title="Marche">🚶</button></div>'+
     '<div class="disc-chips"></div>'+
-    '<div class="disc-inbar"><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle-moi de tout… (voyage, ciné, ta journée)" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
+    '<div class="disc-inbar"><button class="disc-live" title="Appel en direct">📞</button><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle-moi de tout… (voyage, ciné, ta journée)" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
   document.body.appendChild(ov);
   /* Elle VIT : clignement des yeux à intervalles naturels (aléatoires) */
   function blinkLoop(){ if(!DISC.open)return; var rig=ov.querySelector(".bee-rig");
@@ -1321,7 +1393,8 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
     DISC.moveT=setTimeout(moveLoop, 9000+Math.random()*7000); }
   DISC.moveT=setTimeout(moveLoop,6000);
   ov.querySelectorAll(".disc-moves button").forEach(function(b){ b.onclick=function(){ var bee=ov.querySelector(".disc-bee"); if(bee)beeSparkles(bee,6); discMove(b.getAttribute("data-mv"), 3400); }; });
-  ov.querySelector(".disc-close").onclick=function(){ DISC.open=false; DISC.talking=false; DISC.vid=false; DISC.clip=null; if(DISC.blinkT)clearTimeout(DISC.blinkT); if(DISC.moveT)clearTimeout(DISC.moveT); if(DISC.moveEnd)clearTimeout(DISC.moveEnd); if(DISC.clipT)clearTimeout(DISC.clipT); if(DISC.subIv){clearInterval(DISC.subIv);DISC.subIv=null;} try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
+  ov.querySelector(".disc-live").onclick=discLiveToggle;
+  ov.querySelector(".disc-close").onclick=function(){ try{ discLiveStop(); }catch(_){} DISC.open=false; DISC.talking=false; DISC.vid=false; DISC.clip=null; if(DISC.blinkT)clearTimeout(DISC.blinkT); if(DISC.moveT)clearTimeout(DISC.moveT); if(DISC.moveEnd)clearTimeout(DISC.moveEnd); if(DISC.clipT)clearTimeout(DISC.clipT); if(DISC.subIv){clearInterval(DISC.subIv);DISC.subIv=null;} try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} ov.remove(); render(); };
   ov.querySelector(".disc-send").onclick=discSend;
   ov.querySelector(".disc-input").onkeydown=function(e){ if(e.key==="Enter")discSend(); };
   ov.querySelector(".disc-mic").onclick=discListen;

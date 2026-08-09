@@ -287,6 +287,31 @@ async function handleLingua(request, url, env) {
       try { await env.ACCOUNTS.put(ckey, buf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* cache best-effort */ }
       return new Response(buf, { status: 200, headers: audioHdr });
     }
+    // Mode « APPEL EN DIRECT » (voix-à-voix temps réel) : on frappe un JETON ÉPHÉMÈRE OpenAI Realtime
+    // côté serveur (la vraie clé ne quitte jamais le worker) ; le navigateur ouvre ensuite la WebRTC
+    // avec ce jeton court. FAIL-OPEN : si pas de clé / erreur, on renvoie ok:false → repli conversation normale.
+    if (url.pathname === '/__lingua/rt-session' && request.method === 'POST') {
+      if (!env.OPEN_AI_API_KEY) return JL({ ok: false, reason: 'no_key' });
+      let b = {}; try { b = await request.json(); } catch (_) { /* corps optionnel */ }
+      const langName = String((b && b.langName) || 'la langue cible').slice(0, 40);
+      const level = String((b && b.level) || 'Débutant').slice(0, 30);
+      const model = env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview';
+      const voice = env.OPENAI_REALTIME_VOICE || 'coral';
+      const instructions = 'Tu es Bee, une abeille tutrice de ' + langName + ' chaleureuse et vivante, pour un francophone (niveau ' + level + '). '
+        + 'Conversation ORALE naturelle, phrases COURTES. Parle surtout en ' + langName + ' ; reviens au français seulement si l\'apprenant bloque. '
+        + 'Suis le sujet qu\'il lance (tout thème), réagis comme une vraie amie, puis relance par une petite question. '
+        + 'Corrige ses fautes EN DOUCEUR : reformule correctement puis explique en une phrase simple en français. Reste encourageante.';
+      try {
+        const rr = await fetch('https://api.openai.com/v1/realtime/sessions', {
+          method: 'POST', headers: { authorization: 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
+          body: JSON.stringify({ model, voice, instructions, modalities: ['audio', 'text'], input_audio_transcription: { model: 'whisper-1' } }),
+        });
+        const j = await rr.json().catch(() => null);
+        const secret = j && j.client_secret && j.client_secret.value;
+        if (!rr.ok || !secret) return JL({ ok: false, reason: 'openai_error', detail: (j && j.error && j.error.message) || ('http ' + rr.status) });
+        return JL({ ok: true, client_secret: secret, expires_at: (j.client_secret && j.client_secret.expires_at) || 0, model });
+      } catch (e) { return JL({ ok: false, reason: 'error', detail: String((e && e.message) || e).slice(0, 120) }); }
+    }
     // Coach IA (conversation) : IA gratuite via clé serveur (jamais exposée). FAIL-OPEN.
     if (url.pathname === '/__lingua/ai' && request.method === 'POST') {
       let b; try { b = await request.json(); } catch { return JL({ ok: false, reason: 'bad_json' }, 400); }
