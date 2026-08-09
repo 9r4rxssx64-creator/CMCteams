@@ -734,5 +734,16 @@ var STORIES=[
   {q:"Bee a un petit…", opts:["Problème","Gâteau","Chien"], ok:0},
   {q:"La fleur a…", opts:["Faim","Soif","Peur"], ok:1},
   {q:"L'ami trouve une bonne…", opts:["Idée","Erreur","Chanson"], ok:0}]}
+ ,
+ {id:"le_parc", ic:"🏞️", titre:"Une visite au parc", lignes:[
+  {qui:"🐝", fr:"Je vais au parc.", t:{en:"I'm going to the park.", it:"Vado al parco.", es:"Voy al parque.", de:"Ich gehe in den Park.", pt:"Vou ao parque.", nl:"Ik ga naar het park."}},
+  {qui:"🧑", fr:"Je t'attends à l'entrée.", t:{en:"I'll wait for you at the entrance.", it:"Ti aspetto all'ingresso.", es:"Te espero en la entrada.", de:"Ich warte auf dich am Eingang.", pt:"Espero por você na entrada.", nl:"Ik wacht op je bij de ingang."}},
+  {qui:"🐝", fr:"Il fait soleil.", t:{en:"It's sunny.", it:"Fa sole.", es:"Hace sol.", de:"Die Sonne scheint.", pt:"Está sol.", nl:"Het is zonnig."}},
+  {qui:"🧑", fr:"Je suis heureux.", t:{en:"I'm happy.", it:"Sono felice.", es:"Estoy contento.", de:"Ich bin glücklich.", pt:"Estou feliz.", nl:"Ik ben gelukkig."}},
+  {qui:"🐝", fr:"Je suis fatigué.", t:{en:"I'm tired.", it:"Sono stanco.", es:"Estoy cansado.", de:"Ich bin müde.", pt:"Estou cansado.", nl:"Ik ben moe."}}],
+  quiz:[
+  {q:"Qui va au parc ?", opts:["Toi","Moi","Lui"], ok:1},
+  {q:"Quel temps fait-il ?", opts:["Il pleut","Il fait soleil","Il neige"], ok:1},
+  {q:"Qui est fatigué ?", opts:["Toi","Moi","Lui"], ok:2}]}
  /*__STORIES_AUTO__ : les nouvelles histoires générées automatiquement s'insèrent ICI (ne pas retirer ce repère) */
 ];
