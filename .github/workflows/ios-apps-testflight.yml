@@ -68,8 +68,10 @@ jobs:
             fs.appendFileSync(out,"url="+a.url+"\n");
             fs.appendFileSync(out,"mode="+(a.mode||"server")+"\n");
             fs.appendFileSync(out,"icon="+(a.icon||"")+"\n");
+            fs.appendFileSync(out,"iconColor="+(a.iconColor||"#0b1020")+"\n");
+            fs.appendFileSync(out,"appBound="+(a.appBound===false?"false":"true")+"\n");
             try{ fs.appendFileSync(out,"host="+new URL(a.url).host+"\n"); }catch(e){ fs.appendFileSync(out,"host=kd-mc.com\n"); }
-            console.log("→ "+a.name+" ("+a.appId+") mode="+(a.mode||"server")+" url="+a.url+" icon="+(a.icon||"(défaut)"));
+            console.log("→ "+a.name+" ("+a.appId+") appBound="+(a.appBound===false?"false":"true")+" url="+a.url);
           '
         env:
           KEY: ${{ github.event.inputs.app }}
@@ -102,6 +104,8 @@ jobs:
           APP_URL: ${{ steps.app.outputs.url }}
           APP_HOST: ${{ steps.app.outputs.host }}
           APP_ICON: ${{ steps.app.outputs.icon }}
+          ICON_COLOR: ${{ steps.app.outputs.iconColor }}
+          APP_BOUND: ${{ steps.app.outputs.appBound }}
           BUILD_NUM: ${{ github.run_number }}
         run: |
           set -e
@@ -119,7 +123,7 @@ jobs:
             "appName": "${APP_NAME}",
             "webDir": "www",
             "server": { "url": "${APP_URL}", "cleartext": false },
-            "ios": { "contentInset": "always", "limitsNavigationsToAppBoundDomains": true }
+            "ios": { "contentInset": "always", "limitsNavigationsToAppBoundDomains": ${APP_BOUND} }
           }
           JSON
           npx cap add ios
@@ -130,8 +134,12 @@ jobs:
           # puis @capacitor/assets aplati l'alpha (interdit par l'App Store) + génère
           # toutes les tailles dans le catalogue d'assets iOS.
           SRC="$GITHUB_WORKSPACE/${APP_ICON:-}"
-          if [ -z "${APP_ICON:-}" ] || [ ! -f "$SRC" ]; then SRC="$GITHUB_WORKSPACE/tools/ios/default-icon-1024.png"; fi
-          echo "Icône source : $SRC"
+          if [ -z "${APP_ICON:-}" ] || [ ! -f "$SRC" ]; then
+            # pas d'icône fournie → on en génère une, couleur propre à l'app
+            python3 "$GITHUB_WORKSPACE/tools/ios/make-icon.py" "$RUNNER_TEMP/deficon.png" "${ICON_COLOR:-#0b1020}"
+            SRC="$RUNNER_TEMP/deficon.png"
+          fi
+          echo "Icône source : $SRC (couleur ${ICON_COLOR})"
           mkdir -p assets
           sips -s format png -z 1024 1024 "$SRC" --out assets/icon.png
           npm i -D @capacitor/assets@3 >/dev/null 2>&1
@@ -150,12 +158,19 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$PLIST" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool false" "$PLIST" 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Set :NSAppTransportSecurity:NSAllowsArbitraryLoads false" "$PLIST"
-          # App-Bound Domains = kd-mc.com + l'hôte de cette app (limite ce que la WebView peut charger)
+          # App-Bound Domains = verrou de navigation au domaine (sécu max). Seulement
+          # pour les apps autonomes (appBound:true). Les boutiques (appBound:false) doivent
+          # pouvoir aller vers un paiement externe → on ne verrouille pas (ATS HTTPS reste actif).
           /usr/libexec/PlistBuddy -c "Delete :WKAppBoundDomains" "$PLIST" 2>/dev/null || true
-          /usr/libexec/PlistBuddy -c "Add :WKAppBoundDomains array" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :WKAppBoundDomains:0 string kd-mc.com" "$PLIST"
-          if [ -n "${APP_HOST:-}" ] && [ "${APP_HOST}" != "kd-mc.com" ]; then
-            /usr/libexec/PlistBuddy -c "Add :WKAppBoundDomains:1 string ${APP_HOST}" "$PLIST"
+          if [ "${APP_BOUND}" = "true" ]; then
+            /usr/libexec/PlistBuddy -c "Add :WKAppBoundDomains array" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :WKAppBoundDomains:0 string kd-mc.com" "$PLIST"
+            if [ -n "${APP_HOST:-}" ] && [ "${APP_HOST}" != "kd-mc.com" ]; then
+              /usr/libexec/PlistBuddy -c "Add :WKAppBoundDomains:1 string ${APP_HOST}" "$PLIST"
+            fi
+            echo "🔒 Navigation verrouillée au domaine (App-Bound)."
+          else
+            echo "🌐 Navigation externe autorisée (boutique) — ATS HTTPS strict maintenu."
           fi
           echo "work=$WORK" >> "$GITHUB_OUTPUT"
 
