@@ -105,10 +105,15 @@ async function generateStory(sampleTitles) {
 async function judgeStory(st, generatorTried) {
   const pairs = [];
   st.lignes.forEach((l) => LANGS.forEach((lg) => pairs.push('[' + LNAMES[lg] + '] "' + l.fr + '" => "' + l.t[lg] + '"')));
-  const sys = "Tu es un correcteur professionnel plurilingue rigoureux. Tu vérifies des traductions du français vers 6 langues.";
-  const user = 'Voici des couples français => traduction. Dis si CHAQUE traduction est correcte et naturelle.\n'
+  const histoireFr = st.lignes.map((l) => l.qui + ' ' + l.fr).join('\n');
+  const quizTxt = st.quiz.map((q, i) => 'Q' + (i + 1) + ' : ' + q.q + ' | options: [' + q.opts.join(' , ') + '] | bonne réponse annoncée: "' + q.opts[q.ok] + '"').join('\n');
+  const sys = "Tu es un correcteur professionnel plurilingue rigoureux. Tu vérifies (1) des traductions du français vers 6 langues, ET (2) qu'un petit quiz de compréhension est cohérent avec l'histoire française.";
+  const user = 'PARTIE 1 — Traductions. Dis si CHAQUE traduction est correcte et naturelle.\n'
     + pairs.join('\n')
-    + '\nRéponds UNIQUEMENT en JSON : {"ok": true/false, "problemes": ["décris chaque traduction fausse ou maladroite, sinon liste vide"]}. Sois strict : la moindre erreur de sens, de genre, d\'accord ou d\'orthographe compte comme un problème.';
+    + "\n\nPARTIE 2 — Quiz. Voici l'histoire en français (🐝 = l'abeille Bee, considérée à la 3e personne « elle/lui » ; 🧑 = l'ami, « moi/toi ») :\n"
+    + histoireFr + '\n' + quizTxt + '\n'
+    + 'Pour CHAQUE question, dis si la « bonne réponse annoncée » est RÉELLEMENT correcte d\'après l\'histoire, et si le mapping des pronoms est COHÉRENT entre les questions.\n'
+    + '\nRéponds UNIQUEMENT en JSON : {"ok": true/false, "problemes": ["décris chaque traduction fausse/maladroite ET chaque réponse de quiz incorrecte ou incohérente ; sinon liste vide"]}. Sois strict : la moindre erreur de sens, genre, accord, orthographe, OU une bonne réponse de quiz fausse/incohérente compte comme un problème.';
   const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
   // fournisseur DIFFÉRENT de celui qui a généré (indépendance)
   let raw = null;
@@ -120,7 +125,7 @@ async function judgeStory(st, generatorTried) {
   const problemes = Array.isArray(j.problemes) ? j.problemes : [];
   // On BLOQUE uniquement les vraies erreurs (sens/genre/accord/orthographe), pas les
   // simples préférences de style (« moins naturel »). Zéro erreur dure = on accepte.
-  const hard = problemes.filter((p) => /incorrect|faux|erreur|fautif|mauvais|contresens|ne veut rien dire|n'existe pas|invent|manqu|genre|accord|orthograph|devrait être|wrong/i.test(String(p)));
+  const hard = problemes.filter((p) => /incorrect|faux|erreur|fautif|mauvais|contresens|ne veut rien dire|n'existe pas|invent|manqu|genre|accord|orthograph|devrait être|wrong|incohéren|quiz|réponse|question/i.test(String(p)));
   return { ok: hard.length === 0, available: true, hard, all: problemes };
 }
 
