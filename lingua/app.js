@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.53.0";
+var APP_VER="v2.54.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1698,8 +1698,13 @@ function beeExplainMore(ex){ /* Un tap → le prof IA explique en profondeur (m�
   try{ var c=coachLangMeta(); if(!c||!ex||!ex.w){ toast("Choisis d'abord une langue 🌍"); return; }
     var q="Explique-moi simplement, en 2 phrases maximum, pourquoi « "+ex.w.fr+" » se dit « "+ex.w.t+" » en "+c.nom.toLowerCase()+". IMPORTANT : n'invente JAMAIS de mot, d'étymologie ni d'astuce fausse ; base-toi uniquement sur des faits sûrs ; si tu n'as pas d'astuce mémoire fiable, n'en donne pas. Réponds en français simple.";
     S.coachMsgs.push({role:"user",text:q}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
-    go("coach");
-    coachAsk().then(function(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save(); render(); coachSpeak(reply); }); }catch(_){} }
+    /* On RESTE dans la leçon (Kevin ne perd plus sa série de questions) : l'explication du prof
+       s'affiche EN LIGNE sous le feedback, et le bouton « Continuer » reste là pour enchaîner. */
+    if(LESSON){ LESSON._profLoading=true; LESSON._profReply=null; if(VIEW==="lesson")render(); }
+    coachAsk().then(function(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
+      if(LESSON){ LESSON._profLoading=false; LESSON._profReply=reply; if(VIEW==="lesson")render(); else { go("coach"); render(); } }
+      try{ coachSpeak(reply); }catch(_){} })
+     .catch(function(){ if(LESSON){ LESSON._profLoading=false; LESSON._profReply="Bee n'a pas pu expliquer là, réessaie."; if(VIEW==="lesson")render(); } }); }catch(_){} }
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
   if(ex&&ex.w&&ex.w.t) ttsPrefetch(ex.w.t); /* mot courant réchauffé → lecture instantanée */
   if(L.ex[L.i+1]&&L.ex[L.i+1].w&&L.ex[L.i+1].w.t) ttsPrefetch(L.ex[L.i+1].w.t); /* et le suivant → 0 décalage à l'enchaînement */
@@ -1716,8 +1721,11 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
     if(!L.ok){ /* EXPLICATION quand on se trompe : le sens, ce que voulait dire TA réponse, un exemple */
       var expl=beeExplain(ex,L);
       if(expl&&expl.html){ var ed=el("div","fb-expl"); ed.innerHTML=expl.html; fb.appendChild(ed); }
-      if(ex&&ex.w){ var mb=el("button","fb-more"); mb.textContent="💬 Demander au prof";
-        mb.onclick=function(ev){ ev.stopPropagation(); beeExplainMore(ex); }; fb.appendChild(mb); } }
+      if(ex&&ex.w){ var mb=el("button","fb-more"); mb.textContent=L._profReply?"💬 Redemander au prof":"💬 Demander au prof";
+        mb.disabled=!!L._profLoading;
+        mb.onclick=function(ev){ ev.stopPropagation(); beeExplainMore(ex); }; fb.appendChild(mb); }
+      if(L._profLoading){ var pl=el("div","fb-expl prof"); pl.textContent="🐝 Bee réfléchit…"; fb.appendChild(pl); }
+      else if(L._profReply){ var pr=el("div","fb-expl prof"); pr.innerHTML='<b>🐝 Prof :</b> '+esc(L._profReply); fb.appendChild(pr); } }
     foot.appendChild(fb); }
   var main=el("button","btn-main check"); main.id="mainBtn"; main.textContent=L.answered?"Continuer":"Vérifier"; main.disabled=!L.answered&&!L._can; main.onclick=function(){ L.answered?nextEx():checkEx(ex); }; foot.appendChild(main);
   d.appendChild(foot); return d;
@@ -1810,7 +1818,7 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
       var _ex=beeExplain(ex,L);
       setTimeout(function(){ if(LESSON&&LESSON.answered&&LESSON.ok===false&&_ex&&_ex.say) speakLang(_ex.say,"fr-FR",BEE_VOICE,true); },450); } },40);
 }
-function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol=""; L._aiExpl=null;
+function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol=""; L._aiExpl=null; L._profReply=null; L._profLoading=false;
   /* un son de la question PRÉCÉDENTE encore en fabrication/lecture ne doit JAMAIS sortir pendant la suivante */
   ++_ttsReq; try{ if(_ttsAudio){_ttsAudio.pause(); _ttsAudio=null;} if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
