@@ -129,9 +129,11 @@ async function wordsAudit(ctx) {
       + '\n- en cas de doute, NE signale PAS.'
       + '\nSignale UNIQUEMENT une traduction VRAIMENT fausse (le mot ne veut pas dire ça).'
       + '\nRéponds UNIQUEMENT en JSON : {"faux":[{"langue":"...","fr":"le mot français","traduction":"la traduction fautive","correction":"la bonne (DIFFÉRENTE)","raison":"6 mots max"}]}. Liste VIDE si tout est correct.';
-    const raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }]));
+    let raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }]));
+    if (!raw) { await new Promise((r) => setTimeout(r, 4000)); raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }])); }
     const j = parse(raw);
-    if (!j) { suspects.push({ story: 'mots — lot ' + (b + 1), notes: ['juge indisponible (ni Gemini ni Mistral)'] }); break; }
+    /* rate-limit sur UN lot → on le note et on CONTINUE (avant : break = les lots suivants jamais audités) */
+    if (!j) { suspects.push({ story: 'mots — lot ' + (b + 1), notes: ['juge indisponible sur ce lot (quota) — à réauditer'] }); await new Promise((r) => setTimeout(r, 2000)); continue; }
     const arr = Array.isArray(j.faux) ? j.faux : [];
     const notes = arr.map((f) => {
       if (!f || typeof f !== 'object') return null;
@@ -141,6 +143,7 @@ async function wordsAudit(ctx) {
       return '[' + lg + '] « ' + fr + ' » => "' + tr + '"  (proposé: "' + co + '" · ' + ra + ')';
     }).filter(Boolean);
     if (notes.length) suspects.push({ story: 'mots — lot ' + (b + 1), notes });
+    await new Promise((r) => setTimeout(r, 800)); /* espace les appels → moins de rate-limit */
   }
   return suspects;
 }
