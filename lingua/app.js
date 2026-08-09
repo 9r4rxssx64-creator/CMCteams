@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.37.0";
+var APP_VER="v2.38.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1537,25 +1537,25 @@ function beeExplain(ex,L){ /* Explication d'erreur : le sens, ce que voulait dir
       var other=null; try{ allWords(S.course).forEach(function(w2){ if(other)return; if(norm(w2.t)===norm(pick)||norm(w2.fr)===norm(pick)) other=w2; }); }catch(_){}
       if(other&&norm(other.fr)!==norm(fr)){ var om=(norm(other.t)===norm(pick))?other.fr:other.t;
         out.html+='<br>🤔 Ta réponse « '+esc(pick)+' » veut dire « <b>'+esc(om)+'</b> »';
-        out.say+=' Ta réponse, « '+pick+' », voulait dire « '+om+' ».'; }
+        out.say+=' Ta réponse, « '+pick+' », voulait dire « '+om+' ».';
+        /* ⚠️ faux-ami / confusion : si ta réponse RESSEMBLE au mot cible, préviens explicitement */
+        var pk=norm(pick),ntt=norm(t);
+        if(pk&&ntt&&pk!==ntt&&(pk.slice(0,3)===ntt.slice(0,3)||_lev(pk,ntt)<=2)){
+          out.html+='<br>⚠️ « <b>'+esc(t)+'</b> » (='+esc(fr)+') et « '+esc(pick)+' » (='+esc(om)+') se ressemblent — ne les confonds pas.'; } }
       else if(ex.kind==="type"){ out.html+='<br>✏️ Tu as écrit « '+esc(pick)+' » — regarde bien l\'orthographe'; } }
+    /* 💡 indice FIABLE (jamais inventé) : le mot est proche du français → on le signale */
+    var nt=norm(t),nf=norm(fr);
+    if(nt&&nf&&nt!==nf&&(nt.slice(0,4)===nf.slice(0,4)||_lev(nt,nf)<=2)){
+      out.html+='<br>💡 Presque comme en français : « '+esc(fr)+' » → « <b>'+esc(t)+'</b> ».'; out.say+=' C\'est presque comme en français.'; }
     try{ if(fr.length>=4){ var ks=Object.keys(PHRASEBOOK); for(var i=0;i<ks.length;i++){ if(ks[i].indexOf(fr)>=0){
       var pt=PHRASEBOOK[ks[i]]&&PHRASEBOOK[ks[i]][COURSES[S.course].id];
       if(pt){ out.html+='<br>🗣 Exemple : « '+esc(pt)+' » — '+esc(ks[i]); } break; } } } }catch(_){}
     return out; }catch(_){ return null; } }
-function aiQuickExplain(ex,cb){ /* Prof IA AUTOMATIQUE à chaque erreur : explication courte + astuce mémoire.
-   Appel léger et isolé (ne pollue pas la mémoire du Coach). FAIL-OPEN : silencieux si indispo. */
-  try{ var c=coachLangMeta(); if(!c||!ex||!ex.w){ cb(null); return; }
-    var q="Explique en 2 phrases maximum pourquoi « "+ex.w.fr+" » se dit « "+ex.w.t+" » en "+c.nom.toLowerCase()+", puis donne UNE astuce mémoire très courte. Réponds en français, très court.";
-    var payload={ lang:c.id, langName:c.nom, level:diffLabel(), levelIndex:diffTier(), words:masteredCount(), weak:[],
-      messages:[{role:"user",text:q}] };
-    fetch(SYNC_BASE+"/ai",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)})
-      .then(function(r){ return r.json(); })
-      .then(function(j){ cb((j&&j.ok&&j.reply)?String(j.reply).slice(0,420):null); })
-      .catch(function(){ cb(null); }); }catch(_){ cb(null); } }
-function beeExplainMore(ex){ /* Un tap → le prof IA explique en profondeur (mémoire du Coach) */
+function beeExplainMore(ex){ /* Un tap → le prof IA explique en profondeur (mémoire du Coach).
+   Garde ANTI-INVENTION : on interdit d'inventer mots/étymologies/astuces douteuses (bug vécu :
+   « pensez à hennie », « la femelle de la poule »). Faits sûrs uniquement, sinon pas d'astuce. */
   try{ var c=coachLangMeta(); if(!c||!ex||!ex.w){ toast("Choisis d'abord une langue 🌍"); return; }
-    var q="Explique-moi simplement pourquoi « "+ex.w.fr+" » se dit « "+ex.w.t+" » en "+c.nom.toLowerCase()+", et donne-moi une astuce pour m'en souvenir.";
+    var q="Explique-moi simplement, en 2 phrases maximum, pourquoi « "+ex.w.fr+" » se dit « "+ex.w.t+" » en "+c.nom.toLowerCase()+". IMPORTANT : n'invente JAMAIS de mot, d'étymologie ni d'astuce fausse ; base-toi uniquement sur des faits sûrs ; si tu n'as pas d'astuce mémoire fiable, n'en donne pas. Réponds en français simple.";
     S.coachMsgs.push({role:"user",text:q}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
     go("coach");
     coachAsk().then(function(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save(); render(); coachSpeak(reply); }); }catch(_){} }
@@ -1569,12 +1569,11 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
   var foot=el("div","lesson-foot"+(L.answered?(L.ok?" ok":" ko"):""));
   if(L.answered){ var fb=el("div","feedback");
     var PRAISE=["✅ Super !","✅ Bien joué !","✅ Bzzz… parfait ! 🐝","✅ Exact !","✅ Bee est fière de toi !","✅ Impeccable !"];
-    var CONSOLE_=["❌ Presque ! La bonne réponse :","❌ Pas grave, on retient :","❌ Bee te souffle la réponse :"];
+    var CONSOLE_=["❌ Pas tout à fait. La bonne réponse :","❌ Pas grave, on retient :","❌ Bee te souffle la réponse :"];
     fb.innerHTML=L.ok?('<b>'+PRAISE[(L.i+L.correct)%PRAISE.length]+'</b>'+(L.combo>=3?' <span class="cb">🔥 combo x'+L.combo+' (+1 XP)</span>':'')):('<b>'+CONSOLE_[L.i%CONSOLE_.length]+'</b> '+esc(L._sol||""));
     if(!L.ok){ /* EXPLICATION quand on se trompe : le sens, ce que voulait dire TA réponse, un exemple */
       var expl=beeExplain(ex,L);
       if(expl&&expl.html){ var ed=el("div","fb-expl"); ed.innerHTML=expl.html; fb.appendChild(ed); }
-      if(L._aiExpl){ var ai=el("div","fb-ai"); ai.textContent="🧠 "+L._aiExpl; fb.appendChild(ai); }
       if(ex&&ex.w){ var mb=el("button","fb-more"); mb.textContent="💬 Demander au prof";
         mb.onclick=function(ev){ ev.stopPropagation(); beeExplainMore(ex); }; fb.appendChild(mb); } }
     foot.appendChild(fb); }
@@ -1655,19 +1654,11 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
     /* Bee PARLE : encouragement à voix haute quand il n'y a pas déjà le mot à écouter (priorité au contenu) */
     var wordWillPlay = ok && ex.w && ex.kind!=="match";
     if(ok && !wordWillPlay && L.combo>=2){ speakLang(["Bravo !","Super !","Parfait !","Bien joué !"][L.combo%4],"fr-FR",BEE_VOICE,true); }
-    else if(!ok){ /* erreur → Bee EXPLIQUE à voix haute (le sens + ce que voulait dire ta réponse) */
+    else if(!ok){ /* erreur → Bee EXPLIQUE à voix haute (le sens + ce que voulait dire ta réponse).
+      Explication 100% FIABLE issue des données de l'app (jamais inventée). L'IA du prof reste
+      disponible À LA DEMANDE (bouton « Demander au prof »), avec un garde anti-invention. */
       var _ex=beeExplain(ex,L);
-      setTimeout(function(){ if(LESSON&&LESSON.answered&&LESSON.ok===false&&_ex&&_ex.say) speakLang(_ex.say,"fr-FR",BEE_VOICE,true); },450);
-      /* … et le prof IA complète TOUT SEUL (grammaire + astuce mémoire) — « tout auto toujours » */
-      var qi=L.i, t0=Date.now();
-      aiQuickExplain(ex,function(reply){ if(!reply)return;
-        if(!(LESSON&&LESSON.answered&&LESSON.ok===false&&LESSON.i===qi))return; /* déjà passé à la suite → on jette */
-        LESSON._aiExpl=reply;
-        var fb=document.querySelector(".lesson .feedback");
-        if(fb&&!fb.querySelector(".fb-ai")){ var ai=el("div","fb-ai"); ai.textContent="🧠 "+reply; var mr=fb.querySelector(".fb-more"); fb.insertBefore(ai, mr||null); }
-        /* Bee la dit après la 1re explication (pas de coupure) ; re-garde au moment de parler */
-        var wait=Math.max(0, 5200-(Date.now()-t0));
-        setTimeout(function(){ if(LESSON&&LESSON.answered&&LESSON.ok===false&&LESSON.i===qi) speakLang(reply,"fr-FR",BEE_VOICE,true); },wait); }); } },40);
+      setTimeout(function(){ if(LESSON&&LESSON.answered&&LESSON.ok===false&&_ex&&_ex.say) speakLang(_ex.say,"fr-FR",BEE_VOICE,true); },450); } },40);
 }
 function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._bankVal=null;L._chosen=null;L._typeVal=null;L._speakOk=false;L._sol=""; L._aiExpl=null;
   /* un son de la question PRÉCÉDENTE encore en fabrication/lecture ne doit JAMAIS sortir pendant la suivante */
