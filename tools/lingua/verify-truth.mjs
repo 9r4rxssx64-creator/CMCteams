@@ -79,9 +79,13 @@ async function semanticAudit(ctx) {
     const quizTxt = st.quiz.map((q, i) => 'Q' + (i + 1) + ' : ' + q.q + ' | options: [' + q.opts.join(' , ') + '] | réponse annoncée: "' + q.opts[q.ok] + '"').join('\n');
     const sys = "Tu es correcteur plurilingue rigoureux et PRUDENT. Tu ne signales QUE les erreurs CERTAINES et flagrantes, jamais le style ni un doute.";
     const user = 'Traductions FR→langue :\n' + pairs.join('\n')
-      + "\n\nHistoire (🐝=Bee, 3e personne elle/lui ; 🧑=l'ami, moi/toi) :\n" + histoireFr + '\n' + quizTxt
-      + '\nSignale UNIQUEMENT les traductions VRAIMENT fausses (contresens, mauvais mot, faute de genre/accord/orthographe) ou une réponse de quiz réellement incorrecte. Ignore le style. En cas de doute, NE signale PAS.'
-      + '\nRéponds UNIQUEMENT en JSON : {"faux": [{"langue":"la langue","fr":"la phrase française","traduction":"la traduction fautive","correction":"la bonne traduction","raison":"en 6 mots max"}]}. Liste VIDE si tout est correct.';
+      + "\n\nHistoire (🐝=Bee, une abeille de genre FÉMININ → « obrigada », « contente », « prête », « stanca » sont CORRECTS pour elle ; 🧑=l'ami) :\n" + histoireFr + '\n' + quizTxt
+      + '\nSignale UNIQUEMENT les traductions VRAIMENT fausses (contresens, mauvais mot, faute d\'orthographe évidente) ou une réponse de quiz réellement incorrecte. RÈGLES ANTI-FAUX-ALERTE, à respecter absolument :'
+      + '\n- si ta « correction » est IDENTIQUE à la traduction donnée, ce n\'est PAS une erreur → ne la signale pas ;'
+      + '\n- un mot français neutre (collègue, photo, ami) peut légitimement prendre le masculin par défaut dans la langue cible → NE signale pas ;'
+      + '\n- Bee est FÉMININE : les accords féminins la concernant sont corrects ;'
+      + '\n- ignore le style et la simple « préférence » ; en cas de doute, NE signale PAS.'
+      + '\nRéponds UNIQUEMENT en JSON : {"faux": [{"langue":"la langue","fr":"la phrase française","traduction":"la traduction fautive","correction":"la bonne traduction (DIFFÉRENTE de la fautive)","raison":"en 6 mots max"}]}. Liste VIDE si tout est correct.';
     const raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }]));
     const j = parse(raw);
     if (!j) { suspects.push({ story: st.id, notes: ['juge indisponible (ni Gemini ni Mistral)'] }); break; }
@@ -92,6 +96,7 @@ async function semanticAudit(ctx) {
       if (f && typeof f === 'object') {
         const fr = String(f.fr || '').slice(0, 80), tr = String(f.traduction || '').slice(0, 80), co = String(f.correction || '').slice(0, 80), lg = String(f.langue || '').slice(0, 20), ra = String(f.raison || '').slice(0, 60);
         if (!fr || !tr) return null; // sans paire concrète = bruit → ignoré
+        if (co && co.trim().toLowerCase() === tr.trim().toLowerCase()) return null; // « correction » identique = faux positif
         return '[' + lg + '] "' + fr + '" => "' + tr + '"  (proposé: "' + co + '" · ' + ra + ')';
       }
       return null;
