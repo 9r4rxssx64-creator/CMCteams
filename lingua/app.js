@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.44.0";
+var APP_VER="v2.45.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1067,9 +1067,9 @@ function beeCompanion(){ var w=el("div","bee-companion");
 function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang,BEE_VOICE,true);
   var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
 function coachGreeting(c){ var me=accMeta(ACC)||{}; var n=me.name||"toi"; var hi=(DICT["salut"]&&DICT["salut"][c.id])||"Salut";
-  return hi+" "+n+" ! 🐝 Moi c'est Bee, ton abeille coach de "+c.nom.toLowerCase()+" ! On butine quelques mots ensemble vers le bilingue ? Écris-moi, ou touche une suggestion ci-dessous."; }
+  return hi+" "+n+" ! 🐝 Moi c'est Bee, ton amie coach de "+c.nom.toLowerCase()+". On peut discuter de TOUT ce que tu veux — ton week-end, un film, ton travail, un voyage, une idée… Je te suis, je te réponds pour de vrai et je te corrige en douceur. De quoi as-tu envie de parler ?"; }
 function coachSuggestions(c){ var hello=(DICT["comment ça va"]&&DICT["comment ça va"][c.id])||"Bonjour";
-  return [hello, "Apprends-moi 3 mots utiles", "Corrige ma phrase (j'écris ensuite)", "Donne-moi un mini-défi 🎯"]; }
+  return ["Parle-moi de ta journée 🌤️", "J'ai vu un film hier 🎬", "Raconte-moi une blague 😄", hello, "Apprends-moi 3 mots utiles", "Corrige ma phrase (j'écris ensuite)"]; }
 function coachOffline(){ return "Je ne peux pas discuter à l'instant (coach momentanément indisponible). En attendant, fais une leçon 🧠 — je garde en mémoire où tu en es et on reprend juste après !"; }
 /* ============ 🎭 JEUX DE RÔLE (scènes 100% originales, thème ruche) ============
    Comme un vrai cours de conversation : Bee JOUE un personnage (serveur, recruteur, ami…)
@@ -1145,7 +1145,7 @@ function vCoach(){ var d=el("div","screen coach");
   if(_coachThinking){ var tp=el("div","coach-msg bot"); tp.innerHTML='<div class="cm-av">'+MASCOT("read",38)+'</div><div class="cm-txt typing">•  •  •</div>'; box.appendChild(tp); }
   d.appendChild(box);
   var chips=el("div","coach-chips"); coachSuggestions(c).forEach(function(s){ var b=el("button","coach-chip"); b.textContent=s; b.onclick=function(){ coachSend(s); }; chips.appendChild(b); }); d.appendChild(chips);
-  var bar=el("div","coach-inbar"); var inp=el("input","coach-input"); inp.type="text"; inp.placeholder="Écris au coach…"; inp.setAttribute("autocomplete","off"); inp.setAttribute("autocapitalize","sentences");
+  var bar=el("div","coach-inbar"); var inp=el("input","coach-input"); inp.type="text"; inp.placeholder="Parle-moi de ce que tu veux…"; inp.setAttribute("autocomplete","off"); inp.setAttribute("autocapitalize","sentences");
   inp.onkeydown=function(e){ if(e.key==="Enter"&&inp.value.trim()){ coachSend(inp.value.trim()); } };
   var snd=el("button","coach-send"); snd.textContent="➤"; snd.title="Envoyer"; snd.onclick=function(){ if(inp.value.trim()) coachSend(inp.value.trim()); };
   bar.appendChild(inp); bar.appendChild(snd); d.appendChild(bar);
@@ -1274,7 +1274,7 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
     '<div class="disc-sub"></div>'+
     '<div class="disc-moves"><button data-mv="dance" title="Danse">💃</button><button data-mv="jump" title="Saute">🦘</button><button data-mv="fly" title="Vole">🕊️</button><button data-mv="walk" title="Marche">🚶</button></div>'+
     '<div class="disc-chips"></div>'+
-    '<div class="disc-inbar"><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle ou écris à Bee…" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
+    '<div class="disc-inbar"><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle-moi de tout… (voyage, ciné, ta journée)" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
   document.body.appendChild(ov);
   /* Elle VIT : clignement des yeux à intervalles naturels (aléatoires) */
   function blinkLoop(){ if(!DISC.open)return; var rig=ov.querySelector(".bee-rig");

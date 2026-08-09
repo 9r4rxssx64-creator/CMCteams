@@ -303,8 +303,9 @@ async function handleLingua(request, url, env) {
                      'entièrement en ' + langName][lvi];
       const sys = 'Tu es un professeur de ' + langName + ' expert et bienveillant, spécialisé dans l\'enseignement aux francophones, 20 ans d\'expérience. '
         + "Niveau actuel de l'apprenant : " + level + '. Parle ' + share + '. '
-        + 'Style : conversation orale NATURELLE, réponses COURTES (1 à 3 phrases), chaleureuses, jamais scolaires ni robotiques. '
+        + 'Style : conversation orale NATURELLE, réponses COURTES (1 à 4 phrases), chaleureuses, jamais scolaires ni robotiques. '
         + "Fais parler l'apprenant : termine presque toujours par une petite question adaptée à son niveau. "
+        + (!scenario ? ("CONVERSATION LIBRE IMPROVISÉE : c'est l'apprenant qui mène. Suis le SUJET QU'IL LANCE, quel qu'il soit (son week-end, un film, le travail, l'actualité, un souvenir, un rêve, une opinion, la cuisine, le sport, ses projets, la philosophie… absolument tout) et RESTE dessus tant qu'il l'anime — ne le ramène JAMAIS de force à une leçon. Réagis d'abord comme un vrai ami natif : intérêt sincère, une petite réaction ou un avis personnel court, rebondis sur un détail précis qu'il vient de dire, puis relance par une question qui APPROFONDIT (va plus loin : le pourquoi, un exemple, un ressenti, une suite). S'il change de thème, enchaîne naturellement sans résister. Objectif : un vrai échange vivant et spontané, pas un questionnaire ni une interrogation scolaire. ") : '')
         + "CORRECTION EXPERTE ET DOUCE : si l'apprenant fait une faute (grammaire, orthographe, conjugaison, syntaxe, accord, genre, préposition, temps), reformule d'abord correctement de façon naturelle, puis explique l'erreur en UNE phrase simple en français, sans le décourager ; valorise ce qui est juste. "
         + "Enseigne la langue VIVANTE : au bon moment, glisse une expression idiomatique, une tournure familière ou un mot de jargon courant, en précisant le registre (familier / courant / soutenu) et quand l'employer. "
         + "Progression : introduis peu à peu du vocabulaire et des structures un cran au-dessus de son niveau pour le tirer vers le haut, sans le noyer. Objectif : l'amener au BILINGUE, pas à pas. "
@@ -317,7 +318,7 @@ async function handleLingua(request, url, env) {
         try {
           const rr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST', headers: { 'authorization': 'Bearer ' + env.GROQ_API_KEY, 'content-type': 'application/json' },
-            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: chat, max_tokens: 220, temperature: 0.7 }),
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: chat, max_tokens: 300, temperature: 0.75 }),
           });
           if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'groq' }); }
         } catch (_) { /* repli */ }
@@ -326,7 +327,7 @@ async function handleLingua(request, url, env) {
         try {
           const rr = await fetch('https://api.mistral.ai/v1/chat/completions', {
             method: 'POST', headers: { 'authorization': 'Bearer ' + env.MISTRAL_API_KEY, 'content-type': 'application/json' },
-            body: JSON.stringify({ model: 'mistral-small-latest', messages: chat, max_tokens: 220, temperature: 0.7 }),
+            body: JSON.stringify({ model: 'mistral-small-latest', messages: chat, max_tokens: 300, temperature: 0.75 }),
           });
           if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'mistral' }); }
         } catch (_) { /* repli */ }
@@ -336,7 +337,7 @@ async function handleLingua(request, url, env) {
           const contents = chat.filter((m) => m.role !== 'system').map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }));
           const rr = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + env.GEMINI_API_KEY, {
             method: 'POST', headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: contents, generationConfig: { maxOutputTokens: 220, temperature: 0.7 } }),
+            body: JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: contents, generationConfig: { maxOutputTokens: 300, temperature: 0.75 } }),
           });
           if (rr.ok) { const j = await rr.json(); const reply = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'gemini' }); }
         } catch (_) { /* repli */ }
