@@ -673,5 +673,66 @@ var STORIES=[
   quiz:[
   {q:"Il fait…", opts:["Chaud","Froid","Beau"], ok:1},
   {q:"Bee met un…", opts:["Manteau","Maillot","Pyjama"], ok:0},
-  {q:"Le chapeau est…", opts:["Bleu","Rouge","Vert"], ok:1}]}
+  {q:"Le chapeau est…", opts:["Bleu","Rouge","Vert"], ok:1}]},
+ {id:"travail", ic:"💼", titre:"Le premier jour de travail", lignes:[
+  {qui:"🐝", fr:"Aujourd'hui, je commence un nouveau travail.", t:{en:"Today I start a new job.", it:"Oggi comincio un nuovo lavoro.", es:"Hoy empiezo un trabajo nuevo.", de:"Heute fange ich einen neuen Job an.", pt:"Hoje começo um novo trabalho.", nl:"Vandaag begin ik een nieuwe baan."}},
+  {qui:"🐝", fr:"Je suis un peu inquiète.", t:{en:"I am a little worried.", it:"Sono un po' preoccupata.", es:"Estoy un poco preocupada.", de:"Ich bin ein bisschen besorgt.", pt:"Estou um pouco preocupada.", nl:"Ik ben een beetje bezorgd."}},
+  {qui:"🧑", fr:"Bonjour ! Bienvenue au bureau.", t:{en:"Hello! Welcome to the office.", it:"Buongiorno! Benvenuta in ufficio.", es:"¡Hola! Bienvenida a la oficina.", de:"Hallo! Willkommen im Büro.", pt:"Olá! Bem-vinda ao escritório.", nl:"Hallo! Welkom op kantoor."}},
+  {qui:"🧑", fr:"Voici ton ordinateur et ton collègue.", t:{en:"Here is your computer and your colleague.", it:"Ecco il tuo computer e il tuo collega.", es:"Aquí está tu ordenador y tu colega.", de:"Hier ist dein Computer und dein Kollege.", pt:"Aqui está o teu computador e o teu colega.", nl:"Hier is je computer en je collega."}},
+  {qui:"🐝", fr:"Merci ! Je suis contente d'être ici.", t:{en:"Thank you! I am happy to be here.", it:"Grazie! Sono contenta di essere qui.", es:"¡Gracias! Estoy contenta de estar aquí.", de:"Danke! Ich bin froh, hier zu sein.", pt:"Obrigada! Estou contente por estar aqui.", nl:"Dank je! Ik ben blij hier te zijn."}}],
+  quiz:[
+  {q:"Bee commence un nouveau…", opts:["Voyage","Travail","Repas"], ok:1},
+  {q:"Au début, Bee est…", opts:["Inquiète","Fâchée","Fatiguée"], ok:0},
+  {q:"On lui montre son…", opts:["Vélo","Ordinateur","Chapeau"], ok:1}]},
+ {id:"musique", ic:"🎵", titre:"Bee chante", lignes:[
+  {qui:"🐝", fr:"J'aime la musique.", t:{en:"I like music.", it:"Mi piace la musica.", es:"Me gusta la música.", de:"Ich mag Musik.", pt:"Gosto de música.", nl:"Ik hou van muziek."}},
+  {qui:"🐝", fr:"Le soir, je chante et je danse.", t:{en:"In the evening, I sing and I dance.", it:"La sera canto e ballo.", es:"Por la noche canto y bailo.", de:"Am Abend singe ich und tanze.", pt:"À noite canto e danço.", nl:"'s Avonds zing en dans ik."}},
+  {qui:"🧑", fr:"Tu chantes très bien !", t:{en:"You sing very well!", it:"Canti molto bene!", es:"¡Cantas muy bien!", de:"Du singst sehr gut!", pt:"Cantas muito bem!", nl:"Je zingt heel goed!"}},
+  {qui:"🐝", fr:"Merci ! On danse ensemble ?", t:{en:"Thank you! Shall we dance together?", it:"Grazie! Balliamo insieme?", es:"¡Gracias! ¿Bailamos juntos?", de:"Danke! Tanzen wir zusammen?", pt:"Obrigada! Dançamos juntos?", nl:"Dank je! Zullen we samen dansen?"}},
+  {qui:"🧑", fr:"Oui, j'adore danser !", t:{en:"Yes, I love to dance!", it:"Sì, adoro ballare!", es:"¡Sí, me encanta bailar!", de:"Ja, ich tanze sehr gern!", pt:"Sim, adoro dançar!", nl:"Ja, ik dans dolgraag!"}}],
+  quiz:[
+  {q:"Bee aime la…", opts:["Musique","Soupe","Pluie"], ok:0},
+  {q:"Le soir, Bee chante et…", opts:["Dort","Danse","Mange"], ok:1},
+  {q:"L'ami veut…", opts:["Danser","Partir","Lire"], ok:0}]},
+ {id:"telephone", ic:"📱", titre:"Le téléphone", lignes:[
+  {qui:"🐝", fr:"Où est mon téléphone ?", t:{en:"Where is my phone?", it:"Dov'è il mio telefono?", es:"¿Dónde está mi teléfono?", de:"Wo ist mein Telefon?", pt:"Onde está o meu telefone?", nl:"Waar is mijn telefoon?"}},
+  {qui:"🧑", fr:"Il est sur la table, près de l'ordinateur.", t:{en:"It is on the table, near the computer.", it:"È sul tavolo, vicino al computer.", es:"Está en la mesa, cerca del ordenador.", de:"Es liegt auf dem Tisch, neben dem Computer.", pt:"Está na mesa, perto do computador.", nl:"Het ligt op de tafel, bij de computer."}},
+  {qui:"🐝", fr:"Merci ! J'ai un message.", t:{en:"Thank you! I have a message.", it:"Grazie! Ho un messaggio.", es:"¡Gracias! Tengo un mensaje.", de:"Danke! Ich habe eine Nachricht.", pt:"Obrigada! Tenho uma mensagem.", nl:"Dank je! Ik heb een bericht."}},
+  {qui:"🐝", fr:"C'est une photo de la plage !", t:{en:"It is a photo of the beach!", it:"È una foto della spiaggia!", es:"¡Es una foto de la playa!", de:"Es ist ein Foto vom Strand!", pt:"É uma foto da praia!", nl:"Het is een foto van het strand!"}},
+  {qui:"🧑", fr:"Elle est magnifique !", t:{en:"It is beautiful!", it:"È bellissima!", es:"¡Es preciosa!", de:"Es ist wunderschön!", pt:"É linda!", nl:"Hij is prachtig!"}}],
+  quiz:[
+  {q:"Bee cherche son…", opts:["Livre","Téléphone","Chapeau"], ok:1},
+  {q:"Le téléphone est près de l'…", opts:["Ordinateur","Arbre","Assiette"], ok:0},
+  {q:"La photo montre la…", opts:["Montagne","Plage","Ville"], ok:1}]},
+ {id:"surprise", ic:"😊", titre:"Une belle surprise", lignes:[
+  {qui:"🧑", fr:"Bee, ferme les yeux !", t:{en:"Bee, close your eyes!", it:"Bee, chiudi gli occhi!", es:"¡Bee, cierra los ojos!", de:"Bee, mach die Augen zu!", pt:"Bee, fecha os olhos!", nl:"Bee, doe je ogen dicht!"}},
+  {qui:"🐝", fr:"D'accord. Qu'est-ce que c'est ?", t:{en:"Okay. What is it?", it:"Va bene. Cos'è?", es:"Vale. ¿Qué es?", de:"Okay. Was ist das?", pt:"Está bem. O que é?", nl:"Oké. Wat is het?"}},
+  {qui:"🧑", fr:"Ouvre les yeux : c'est un gâteau !", t:{en:"Open your eyes: it is a cake!", it:"Apri gli occhi: è una torta!", es:"Abre los ojos: ¡es un pastel!", de:"Mach die Augen auf: es ist ein Kuchen!", pt:"Abre os olhos: é um bolo!", nl:"Doe je ogen open: het is een taart!"}},
+  {qui:"🐝", fr:"Oh ! Je suis surprise et très contente !", t:{en:"Oh! I am surprised and very happy!", it:"Oh! Sono sorpresa e molto contenta!", es:"¡Oh! ¡Estoy sorprendida y muy contenta!", de:"Oh! Ich bin überrascht und sehr glücklich!", pt:"Oh! Estou surpresa e muito contente!", nl:"Oh! Ik ben verrast en heel blij!"}},
+  {qui:"🐝", fr:"Merci, tu es un vrai ami !", t:{en:"Thank you, you are a true friend!", it:"Grazie, sei un vero amico!", es:"¡Gracias, eres un amigo de verdad!", de:"Danke, du bist ein echter Freund!", pt:"Obrigada, és um verdadeiro amigo!", nl:"Dank je, je bent een echte vriend!"}}],
+  quiz:[
+  {q:"L'ami demande de fermer les…", opts:["Yeux","Mains","Portes"], ok:0},
+  {q:"La surprise est un…", opts:["Livre","Gâteau","Chien"], ok:1},
+  {q:"Bee est surprise et…", opts:["Fâchée","Contente","Fatiguée"], ok:1}]},
+ {id:"weekend", ic:"🌤️", titre:"Le week-end de Bee", lignes:[
+  {qui:"🧑", fr:"Qu'est-ce que tu fais ce week-end ?", t:{en:"What are you doing this weekend?", it:"Cosa fai questo fine settimana?", es:"¿Qué haces este fin de semana?", de:"Was machst du dieses Wochenende?", pt:"O que fazes este fim de semana?", nl:"Wat doe je dit weekend?"}},
+  {qui:"🐝", fr:"Samedi, je vais nager à la mer.", t:{en:"On Saturday, I go swimming at the sea.", it:"Sabato vado a nuotare al mare.", es:"El sábado voy a nadar al mar.", de:"Am Samstag gehe ich im Meer schwimmen.", pt:"No sábado vou nadar ao mar.", nl:"Zaterdag ga ik zwemmen in de zee."}},
+  {qui:"🐝", fr:"Dimanche, je lis un livre au parc.", t:{en:"On Sunday, I read a book in the park.", it:"Domenica leggo un libro al parco.", es:"El domingo leo un libro en el parque.", de:"Am Sonntag lese ich ein Buch im Park.", pt:"No domingo leio um livro no parque.", nl:"Zondag lees ik een boek in het park."}},
+  {qui:"🧑", fr:"Ça a l'air génial !", t:{en:"That sounds great!", it:"Sembra fantastico!", es:"¡Suena genial!", de:"Das klingt toll!", pt:"Parece ótimo!", nl:"Dat klinkt geweldig!"}},
+  {qui:"🐝", fr:"Oui ! J'aime beaucoup le week-end.", t:{en:"Yes! I really like the weekend.", it:"Sì! Mi piace molto il fine settimana.", es:"¡Sí! Me gusta mucho el fin de semana.", de:"Ja! Ich mag das Wochenende sehr.", pt:"Sim! Gosto muito do fim de semana.", nl:"Ja! Ik hou erg van het weekend."}}],
+  quiz:[
+  {q:"Samedi, Bee va…", opts:["Nager","Dormir","Travailler"], ok:0},
+  {q:"Dimanche, elle lit au…", opts:["Café","Parc","Marché"], ok:1},
+  {q:"Bee aime le…", opts:["Lundi","Week-end","Matin"], ok:1}]},
+ {id:"idee", ic:"💡", titre:"Une bonne idée", lignes:[
+  {qui:"🐝", fr:"J'ai un petit problème.", t:{en:"I have a small problem.", it:"Ho un piccolo problema.", es:"Tengo un pequeño problema.", de:"Ich habe ein kleines Problem.", pt:"Tenho um pequeno problema.", nl:"Ik heb een klein probleem."}},
+  {qui:"🧑", fr:"Explique-moi, je vais t'aider.", t:{en:"Explain to me, I will help you.", it:"Spiegami, ti aiuto.", es:"Explícame, te ayudo.", de:"Erklär mir, ich helfe dir.", pt:"Explica-me, vou ajudar-te.", nl:"Leg het me uit, ik help je."}},
+  {qui:"🐝", fr:"Ma fleur a soif et je n'ai pas d'eau.", t:{en:"My flower is thirsty and I have no water.", it:"Il mio fiore ha sete e non ho acqua.", es:"Mi flor tiene sed y no tengo agua.", de:"Meine Blume hat Durst und ich habe kein Wasser.", pt:"A minha flor tem sede e não tenho água.", nl:"Mijn bloem heeft dorst en ik heb geen water."}},
+  {qui:"🧑", fr:"J'ai une idée : va à la rivière !", t:{en:"I have an idea: go to the river!", it:"Ho un'idea: vai al fiume!", es:"Tengo una idea: ¡ve al río!", de:"Ich habe eine Idee: geh zum Fluss!", pt:"Tenho uma ideia: vai ao rio!", nl:"Ik heb een idee: ga naar de rivier!"}},
+  {qui:"🐝", fr:"C'est une très bonne idée. Merci !", t:{en:"That is a very good idea. Thank you!", it:"È un'ottima idea. Grazie!", es:"Es una muy buena idea. ¡Gracias!", de:"Das ist eine sehr gute Idee. Danke!", pt:"É uma ótima ideia. Obrigada!", nl:"Dat is een heel goed idee. Dank je!"}}],
+  quiz:[
+  {q:"Bee a un petit…", opts:["Problème","Gâteau","Chien"], ok:0},
+  {q:"La fleur a…", opts:["Faim","Soif","Peur"], ok:1},
+  {q:"L'ami trouve une bonne…", opts:["Idée","Erreur","Chanson"], ok:0}]}
+ /*__STORIES_AUTO__ : les nouvelles histoires générées automatiquement s'insèrent ICI (ne pas retirer ce repère) */
 ];
