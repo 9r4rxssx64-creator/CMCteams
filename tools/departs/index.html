@@ -766,6 +766,25 @@ async function checkPin(){ var h=await sha256((document.getElementById("pinIn").
   if(h===PIN_SHA256){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); paintAppDiag(); toast("Mode admin activé"); }
   else toast("Code incorrect"); }
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&document.getElementById("pinModal").classList.contains("on"))checkPin(); });
+// ADMIN UNIVERSEL DU DOMAINE — Kevin reconnu partout sans code. On demande à
+// kd-mc.com « qui es-tu ? » : si c'est Kevin, prouvé par Face ID (verified), on
+// passe en admin tout seul. Le code PIN reste un SECOURS si le domaine ne répond
+// pas (hors ligne, autre origine) → aucune régression : on ne casse rien.
+async function _depSsoAutoAdmin(){ try{
+  if(isAdmin())return;
+  var m=(location.hash||"").match(/[#&]kdmc_sso=([^&]+)/);
+  if(m){ try{localStorage.setItem("kdmc_sso_token",decodeURIComponent(m[1]));}catch(_){}
+         try{history.replaceState(null,"",location.pathname+location.search);}catch(_){} }
+  var tok=""; try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
+  var hdr={}; if(tok)hdr.Authorization="Bearer "+tok;
+  var r=await fetch("/__sso/whoami",{credentials:"include",cache:"no-store",headers:hdr});
+  var j=r&&r.ok?await r.json():null;
+  if(j&&j.ok&&j.verified===true&&j.admin===true){
+    document.body.classList.add("admin");
+    var b=document.getElementById("lockBtn"); if(b)b.textContent="🔓 Quitter admin";
+    try{render();paintAppDiag();}catch(_){}
+  }
+}catch(_){/* SSO injoignable → PIN, rien de cassé */} }
 function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(window._tt); window._tt=setTimeout(function(){t.classList.remove("on");},2200); }
 function _appDiagText(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
   if(window.DEPARTS_GEN&&window.DEPARTS_GEN.months&&window.DEPARTS_GEN.months.length){
@@ -833,6 +852,7 @@ BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
 CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
 _depWireDelegation();
 fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
+_depSsoAutoAdmin();
 if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
 // v1.20 — GATE 1ère connexion : si pas d'identité stockée sur cet appareil, on demande
 // nom + prénom (règle LOGIN TOUJOURS PRÉNOM + NOM) + CGU AVANT de laisser voir les départs.

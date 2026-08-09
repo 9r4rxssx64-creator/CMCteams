@@ -2139,7 +2139,14 @@ var Fam=(function(){
   }
   function hint(t){var e=$('famHint');if(e)e.textContent=t||'';}
   function api(chemin,corps){
-    var o=corps?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corps)}:{};
+    var o=corps?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corps)}:{headers:{}};
+    o.headers=o.headers||{};
+    /* On transmet le PASS du domaine (le même que « qui suis-je »). Le service
+       famille demande alors à kd-mc.com qui c'est : Kevin, reconnu par son
+       domaine (Face ID), est admin famille SANS aucun code à part — pareil que
+       partout ailleurs. Sans pass, on reste un membre normal (0 blocage). */
+    try{var _t=localStorage.getItem('crea_sso_token')||'';
+      if(_t)o.headers.Authorization='Bearer '+_t;}catch(e){}
     return fetch(URL_FAM+chemin,o).then(function(r){
       return r.json().then(function(j){ if(!r.ok)throw new Error(j&&(j.detail||j.error)||('http_'+r.status)); return j; },
         function(){ throw new Error('reponse_illisible_http_'+r.status); });
