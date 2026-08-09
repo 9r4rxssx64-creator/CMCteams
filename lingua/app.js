@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.54.0";
+var APP_VER="v2.55.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1031,6 +1031,16 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
 /* ============ Coach IA (conversation interactive, mémoire PAR COMPTE) ============ */
 var _coachThinking=false,_coachPose="wave";
 function coachLangMeta(){ return S.course?COURSES[S.course]:null; }
+/* Modale honnête : l'échelle CECRL réelle + où se situe VRAIMENT « bilingue ». */
+function cefrModal(){ var m=modal(); var lv=currentLevel(); var total=(S.course&&COURSES[S.course])?allWords(S.course).length:0;
+  var ladder=LEVELS.map(function(s){ var on=s.code===lv.cur.code;
+    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 11px;border-radius:10px;margin:3px 0;'+(on?'background:#2c230c;border:1px solid #ffd75e;color:#ffe9a8;font-weight:800':'background:var(--card2);color:#cfe0ee')+'"><b>'+esc(s.code)+'</b><span style="opacity:.85">'+(s.min===0?'départ':'~'+s.min+' mots')+'</span></div>'; }).join('');
+  m.body.innerHTML='<h3>🎓 Ton vrai niveau</h3>'+
+    '<p class="mini">Tu es <b>'+esc(lv.cur.code)+'</b> avec <b>'+lv.words+' mots</b> maîtrisés.'+(lv.next?(' Encore <b>'+lv.remain+' mots</b> pour <b>'+esc(lv.next.code)+'</b>.'):' Bravo, tu as tout parcouru ! 🎉')+'</p>'+
+    '<div style="margin:10px 0">'+ladder+'</div>'+
+    '<p class="mini">Être vraiment <b>bilingue</b> (C1-C2), c\'est <b>plusieurs milliers de mots</b> et de la pratique sur des <b>années</b> — un marathon, pas un sprint. Lingua te bâtit des <b>bases solides</b> : le programme actuel ('+total+' mots) t\'emmène vers <b>~A2</b>, et il s\'enrichit régulièrement. Chaque mot compte, continue ! 🐝</p>'+
+    '<button class="btn-main" style="margin-top:8px" onclick="this.closest(\'.overlay\').classList.remove(\'show\');var o=this.closest(\'.overlay\');setTimeout(function(){o.remove();},250);">OK 👍</button>';
+}
 /* Bee réagit selon ce qu'il dit : félicite → fête, question → curieux, salut → coucou. */
 function coachPoseFor(t){ t=(" "+String(t||"")+" ").toLowerCase();
   if(/(bravo|super|parfait|excellent|g[eé]nial|tr[eè]s bien|bien jou|f[eé]licit|complimenti|bravissim|muy bien|perfecto|sehr gut|toll|[oó]timo|muito bem|goed zo|knap)/.test(t)) return "party";
@@ -1172,8 +1182,10 @@ function vCoach(){ var d=el("div","screen coach");
   var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>';
   var cine=el("button","coach-cine"); cine.innerHTML="🎬<span>Discussion</span>"; cine.title="Mode discussion plein écran"; cine.onclick=openDiscussion; head.appendChild(cine);
   d.appendChild(head);
-  var pct=Math.min(100,Math.round(masteredCount()/240*100));
-  var pb=el("div","coach-prog"); pb.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+pct+'%"></div></div><span>'+pct+'% vers le bilingue</span>'; d.appendChild(pb);
+  /* Progression HONNÊTE (CECRL réel), plus de faux « % vers le bilingue » à 240 mots. */
+  var lv=currentLevel(); var pb=el("div","coach-prog"); pb.style.cursor="pointer"; pb.title="Voir le vrai chemin vers le bilingue";
+  pb.innerHTML='<div class="bar"><div class="bar-fill" style="width:'+lv.pct+'%"></div></div><span>Niveau <b>'+esc(lv.cur.code)+'</b>'+(lv.next?(' · '+lv.pct+'% vers '+esc(lv.next.code)):' 🎉')+' · '+lv.words+' mots</span>';
+  pb.onclick=cefrModal; d.appendChild(pb);
   /* 🎭 Jeux de rôle : scène active → bandeau + quitter ; sinon → carrousel de scènes à jouer */
   var snA=coachSceneMeta();
   if(snA){ var bn=el("div","scene-banner"); bn.innerHTML='<span class="sic">'+snA.ic+'</span><span>Scène : <b>'+esc(snA.nom)+'</b></span>';
@@ -1645,7 +1657,7 @@ function openDiff(){ var m=modal();
 function maybeOfferPlacement(){
   if(!S.course || S.diff!=null || masteredCount()>0 || lg("placeAsked",false)) return;
   ls("placeAsked",true);
-  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT("point",110)+'</div><h3>📊 Évaluons ton niveau</h3><p class="mini">Un mini-test d\'une minute pour <b>adapter les leçons à ton niveau</b> et t\'emmener vers le <b>bilingue</b> au plus vite. (Tu pourras le refaire quand tu veux.)</p>';
+  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT("point",110)+'</div><h3>📊 Évaluons ton niveau</h3><p class="mini">Un mini-test d\'une minute pour <b>adapter les leçons à ton niveau</b> et progresser pas à pas. (Tu pourras le refaire quand tu veux.)</p>';
   var b1=el("button","btn-main"); b1.textContent="🚀 Faire le test (1 min)"; b1.onclick=function(){ m.close(); startPlacement(); }; m.body.appendChild(b1);
   var b2=el("button","btn-ghost"); b2.textContent="Je débute — commencer simple"; b2.onclick=function(){ S.diff=0; save(); m.close(); render(); }; m.body.appendChild(b2);
 }
