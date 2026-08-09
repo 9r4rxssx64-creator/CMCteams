@@ -77,14 +77,26 @@ async function semanticAudit(ctx) {
     st.lignes.forEach((l) => LANGS.forEach((lg) => pairs.push('[' + LNAMES[lg] + '] "' + l.fr + '" => "' + l.t[lg] + '"')));
     const histoireFr = st.lignes.map((l) => l.qui + ' ' + l.fr).join('\n');
     const quizTxt = st.quiz.map((q, i) => 'Q' + (i + 1) + ' : ' + q.q + ' | options: [' + q.opts.join(' , ') + '] | réponse annoncée: "' + q.opts[q.ok] + '"').join('\n');
-    const sys = "Tu es correcteur plurilingue rigoureux. Tu vérifies des traductions FR→6 langues ET la cohérence d'un quiz FR avec son histoire.";
-    const user = 'Traductions :\n' + pairs.join('\n')
+    const sys = "Tu es correcteur plurilingue rigoureux et PRUDENT. Tu ne signales QUE les erreurs CERTAINES et flagrantes, jamais le style ni un doute.";
+    const user = 'Traductions FR→langue :\n' + pairs.join('\n')
       + "\n\nHistoire (🐝=Bee, 3e personne elle/lui ; 🧑=l'ami, moi/toi) :\n" + histoireFr + '\n' + quizTxt
-      + '\nRéponds UNIQUEMENT en JSON {"faux": ["décris chaque traduction VRAIMENT fausse (sens/genre/accord/orthographe) ou réponse de quiz incorrecte ; ignore les simples préférences de style ; liste vide si tout est correct"]}';
-    const raw = (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }]));
+      + '\nSignale UNIQUEMENT les traductions VRAIMENT fausses (contresens, mauvais mot, faute de genre/accord/orthographe) ou une réponse de quiz réellement incorrecte. Ignore le style. En cas de doute, NE signale PAS.'
+      + '\nRéponds UNIQUEMENT en JSON : {"faux": [{"langue":"la langue","fr":"la phrase française","traduction":"la traduction fautive","correction":"la bonne traduction","raison":"en 6 mots max"}]}. Liste VIDE si tout est correct.';
+    const raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }]));
     const j = parse(raw);
-    if (!j) { suspects.push({ story: st.id, note: 'juge indisponible (ni Mistral ni Gemini)' }); break; }
-    if (Array.isArray(j.faux) && j.faux.length) suspects.push({ story: st.id, faux: j.faux });
+    if (!j) { suspects.push({ story: st.id, notes: ['juge indisponible (ni Gemini ni Mistral)'] }); break; }
+    const arr = Array.isArray(j.faux) ? j.faux : [];
+    // Normalise en chaînes lisibles + jette le bruit (items sans paire fr/traduction, ou run-on absurde)
+    const notes = arr.map((f) => {
+      if (typeof f === 'string') return f.length <= 200 ? f : null;
+      if (f && typeof f === 'object') {
+        const fr = String(f.fr || '').slice(0, 80), tr = String(f.traduction || '').slice(0, 80), co = String(f.correction || '').slice(0, 80), lg = String(f.langue || '').slice(0, 20), ra = String(f.raison || '').slice(0, 60);
+        if (!fr || !tr) return null; // sans paire concrète = bruit → ignoré
+        return '[' + lg + '] "' + fr + '" => "' + tr + '"  (proposé: "' + co + '" · ' + ra + ')';
+      }
+      return null;
+    }).filter(Boolean);
+    if (notes.length) suspects.push({ story: st.id, notes });
   }
   return suspects;
 }
@@ -104,7 +116,7 @@ async function semanticAudit(ctx) {
   const outDir = path.resolve('audit'); try { fs.mkdirSync(outDir, { recursive: true }); } catch (_) {}
   const lines = ['# Lingua — audit VÉRITÉ (second avis indépendant)', '', 'Points DOUTEUX à revoir (l\'IA peut se tromper : vérifier avant de corriger).', ''];
   if (!suspects.length) lines.push('✅ Aucun point douteux signalé par le second modèle sur les histoires.');
-  else suspects.forEach((s) => { lines.push('## ' + s.story); (s.faux || [s.note]).forEach((f) => lines.push('- ' + f)); lines.push(''); });
+  else suspects.forEach((s) => { lines.push('## ' + s.story); (s.notes || []).forEach((f) => lines.push('- ' + String(f))); lines.push(''); });
   fs.writeFileSync(path.join(outDir, 'lingua-verite.md'), lines.join('\n'));
   console.log((suspects.length ? ('SUSPECTS: ' + suspects.length + ' histoire(s) → audit/lingua-verite.md') : 'OK sémantique : rien de douteux signalé.'));
   process.exit(0);
