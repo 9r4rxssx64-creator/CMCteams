@@ -451,7 +451,7 @@ var NEWV = {
   "mot de passe":{en:"password",it:"password",es:"contraseña",de:"Passwort",pt:"senha",nl:"wachtwoord"},
   "en ligne":{en:"online",it:"online",es:"en línea",de:"online",pt:"online",nl:"online"},
   "clavier":{en:"keyboard",it:"tastiera",es:"teclado",de:"Tastatur",pt:"teclado",nl:"toetsenbord"},
-  "ordinateur portable":{en:"laptop",it:"portatile",es:"portátil",de:"Laptop",pt:"notebook",nl:"laptop"},
+  "ordinateur portable":{en:"laptop",it:"portatile",es:"portátil",de:"Laptop",pt:"portátil",nl:"laptop"},
   "penser":{en:"to think",it:"pensare",es:"pensar",de:"denken",pt:"pensar",nl:"denken"},
   "croire":{en:"to believe",it:"credere",es:"creer",de:"glauben",pt:"acreditar",nl:"geloven"},
   "comprendre":{en:"to understand",it:"capire",es:"entender",de:"verstehen",pt:"entender",nl:"begrijpen"},
