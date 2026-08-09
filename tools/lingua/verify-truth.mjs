@@ -106,6 +106,43 @@ async function semanticAudit(ctx) {
   return suspects;
 }
 
+/* Audit des MOTS du lexique (extension v2.56 : le juge couvre AUSSI le vocabulaire, pas que les
+   histoires). Lots de 30 mots × 6 langues. GARDE ANTI-BIAIS : le pt est du portugais EUROPÉEN
+   (pt-PT) — « desporto », « pequeno-almoço », « autocarro », « talho » sont CORRECTS ; ne jamais
+   « corriger » vers le brésilien. Erreurs DURES uniquement (contresens / mauvais mot). */
+async function wordsAudit(ctx) {
+  const { LEX = {} } = ctx;
+  const keys = Object.keys(LEX.en || {});
+  const suspects = [];
+  const BATCH = 30;
+  for (let b = 0; b * BATCH < keys.length; b++) {
+    const slice = keys.slice(b * BATCH, (b + 1) * BATCH);
+    const pairs = slice.map((fr) => '« ' + fr + ' » → en:"' + LEX.en[fr] + '" · it:"' + LEX.it[fr] + '" · es:"' + LEX.es[fr] + '" · de:"' + LEX.de[fr] + '" · pt:"' + LEX.pt[fr] + '" · nl:"' + LEX.nl[fr] + '"');
+    const sys = 'Tu es correcteur plurilingue rigoureux et PRUDENT. Tu ne signales QUE les erreurs CERTAINES (contresens, mot faux), jamais le style, jamais un synonyme valable.';
+    const user = 'Lexique français → 6 langues :\n' + pairs.join('\n')
+      + '\n\nRÈGLES ABSOLUES :'
+      + '\n- pt = portugais EUROPÉEN (Portugal) : « desporto », « pequeno-almoço », « talho », « morada », « champô », « autocarro », « telefonar » sont CORRECTS — ne propose JAMAIS la variante brésilienne ;'
+      + '\n- un synonyme correct (bonita/hermosa, taart/taartje) n\'est PAS une erreur ;'
+      + '\n- les noms allemands prennent une majuscule (correct) ; les verbes donnés à l\'infinitif sont corrects ;'
+      + '\n- en cas de doute, NE signale PAS.'
+      + '\nSignale UNIQUEMENT une traduction VRAIMENT fausse (le mot ne veut pas dire ça).'
+      + '\nRéponds UNIQUEMENT en JSON : {"faux":[{"langue":"...","fr":"le mot français","traduction":"la traduction fautive","correction":"la bonne (DIFFÉRENTE)","raison":"6 mots max"}]}. Liste VIDE si tout est correct.';
+    const raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }]));
+    const j = parse(raw);
+    if (!j) { suspects.push({ story: 'mots — lot ' + (b + 1), notes: ['juge indisponible (ni Gemini ni Mistral)'] }); break; }
+    const arr = Array.isArray(j.faux) ? j.faux : [];
+    const notes = arr.map((f) => {
+      if (!f || typeof f !== 'object') return null;
+      const fr = String(f.fr || '').slice(0, 60), tr = String(f.traduction || '').slice(0, 60), co = String(f.correction || '').slice(0, 60), lg = String(f.langue || '').slice(0, 20), ra = String(f.raison || '').slice(0, 60);
+      if (!fr || !tr) return null;
+      if (co && co.trim().toLowerCase() === tr.trim().toLowerCase()) return null;
+      return '[' + lg + '] « ' + fr + ' » => "' + tr + '"  (proposé: "' + co + '" · ' + ra + ')';
+    }).filter(Boolean);
+    if (notes.length) suspects.push({ story: 'mots — lot ' + (b + 1), notes });
+  }
+  return suspects;
+}
+
 /* ---------------- Orchestration ---------------- */
 (async () => {
   const ctx = load();
@@ -116,13 +153,13 @@ async function semanticAudit(ctx) {
     console.log('OK : aucun faux structurel — 6 langues partout, quiz dans les bornes, 0 doublon.');
     process.exit(0);
   }
-  // semantic
-  const suspects = await semanticAudit(ctx);
+  // semantic : histoires + MOTS du lexique (v2.56 — le juge couvre tout le contenu)
+  const suspects = (await semanticAudit(ctx)).concat(await wordsAudit(ctx));
   const outDir = path.resolve('audit'); try { fs.mkdirSync(outDir, { recursive: true }); } catch (_) {}
   const lines = ['# Lingua — audit VÉRITÉ (second avis indépendant)', '', 'Points DOUTEUX à revoir (l\'IA peut se tromper : vérifier avant de corriger).', ''];
-  if (!suspects.length) lines.push('✅ Aucun point douteux signalé par le second modèle sur les histoires.');
+  if (!suspects.length) lines.push('✅ Aucun point douteux signalé par le second modèle (histoires + lexique complet).');
   else suspects.forEach((s) => { lines.push('## ' + s.story); (s.notes || []).forEach((f) => lines.push('- ' + String(f))); lines.push(''); });
   fs.writeFileSync(path.join(outDir, 'lingua-verite.md'), lines.join('\n'));
-  console.log((suspects.length ? ('SUSPECTS: ' + suspects.length + ' histoire(s) → audit/lingua-verite.md') : 'OK sémantique : rien de douteux signalé.'));
+  console.log((suspects.length ? ('SUSPECTS: ' + suspects.length + ' section(s) → audit/lingua-verite.md') : 'OK sémantique : rien de douteux signalé (histoires + lexique).'));
   process.exit(0);
 })().catch((e) => { console.log('ERREUR: ' + (e && e.message || e)); process.exit(2); });
