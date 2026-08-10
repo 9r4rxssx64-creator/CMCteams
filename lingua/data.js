@@ -4087,6 +4087,98 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var o2=LEX2O[l]||{}; Object.keys(o2).forEach(function(k){ LEX2[l][k]=o2[k]; }); });
+/* ── Vague 16 nouvelles langues (v2.85) : unités 121-128 — le plein air, ustensiles
+   malins, les métiers, en musique, la Terre en colère, adjectifs qui brillent, verbes
+   d'action, les mots du temps. Anti-collisions vérifiées : bouchon=korek do butelki /
+   пробка от бутылки (korek/пробка=embouteillage) ; jumelles zh=双筒望远镜 (望远镜=
+   télescope), cs=dalekohled (teleskop=télescope) ; uk trompette=сурма (труба=tuyau),
+   cs=trumpeta (trubka=tuyau), ar=بوق موسيقي (بوق=klaxon) ; aussitôt distinct de tout
+   de suite partout (pl od razu, ru сразу, cs okamžitě, zh 立刻, ja ただちに, ko 즉시,
+   ar حالاً) ; ja appuyer=押さえます (押します=pousser).
+   Homographe réel assumé : ru труба = tuyau ET trompette (même mot). */
+var LEX2P = {
+pl:{
+"camping":"kemping","tente":"namiot","sac de couchage":"śpiwór","lampe de poche":"latarka","hamac":"hamak","randonnée":"wędrówka","chasse":"polowanie","boussole":"kompas","jumelles":"lornetka","feu de camp":"ognisko",
+"fouet":"trzepaczka","louche":"chochla","passoire":"durszlak","râpe":"tarka","entonnoir":"lejek","couvercle":"pokrywka","bouchon":"korek do butelki","tire-bouchon":"korkociąg","glaçon":"kostka lodu","paille":"słomka",
+"plombier":"hydraulik","électricien":"elektryk","menuisier":"stolarz","bijoutier":"jubiler","vétérinaire":"weterynarz","pêcheur":"rybak","chauffeur":"kierowca","fleuriste":"kwiaciarz",
+"orchestre":"orkiestra","violon":"skrzypce","flûte":"flet","trompette":"trąbka","mélodie":"melodia","rythme":"rytm","chorale":"chór","tambour":"bęben",
+"volcan":"wulkan","inondation":"powódź","tremblement de terre":"trzęsienie ziemi","avalanche":"lawina","canicule":"upał","continent":"kontynent",
+"étonnant":"zdumiewający","effrayant":"przerażający","passionnant":"pasjonujący","émouvant":"wzruszający","précieux":"cenny","semblable":"podobny","épuisant":"wyczerpujący","décevant":"rozczarowujący","indispensable":"niezbędny","disponible":"dostępny","provisoire":"tymczasowy",
+"détruire":"niszczyć","creuser":"kopać","vider":"opróżniać","verrouiller":"zamykać na klucz","brancher":"podłączać","débrancher":"odłączać","appuyer":"naciskać","secouer":"potrząsać","frotter":"pocierać","essuyer":"wycierać","plonger":"nurkować","ramer":"wiosłować",
+"autrefois":"dawniej","récemment":"niedawno","désormais":"odtąd","auparavant":"przedtem","à l'avenir":"w przyszłości","aussitôt":"od razu","tout à coup":"nagle","dès que":"jak tylko"
+},
+ru:{
+"camping":"кемпинг","tente":"палатка","sac de couchage":"спальный мешок","lampe de poche":"фонарик","hamac":"гамак","randonnée":"поход","chasse":"охота","boussole":"компас","jumelles":"бинокль","feu de camp":"костёр",
+"fouet":"венчик","louche":"половник","passoire":"дуршлаг","râpe":"тёрка","entonnoir":"воронка","couvercle":"крышка","bouchon":"пробка от бутылки","tire-bouchon":"штопор","glaçon":"кубик льда","paille":"соломинка",
+"plombier":"сантехник","électricien":"электрик","menuisier":"столяр","bijoutier":"ювелир","vétérinaire":"ветеринар","pêcheur":"рыбак","chauffeur":"водитель","fleuriste":"флорист",
+"orchestre":"оркестр","violon":"скрипка","flûte":"флейта","trompette":"труба","mélodie":"мелодия","rythme":"ритм","chorale":"хор","tambour":"барабан",
+"volcan":"вулкан","inondation":"наводнение","tremblement de terre":"землетрясение","avalanche":"лавина","canicule":"жара","continent":"континент",
+"étonnant":"удивительный","effrayant":"пугающий","passionnant":"увлекательный","émouvant":"трогательный","précieux":"драгоценный","semblable":"похожий","épuisant":"изнурительный","décevant":"разочаровывающий","indispensable":"необходимый","disponible":"доступный","provisoire":"временный",
+"détruire":"разрушать","creuser":"копать","vider":"опустошать","verrouiller":"запирать","brancher":"подключать","débrancher":"отключать","appuyer":"нажимать","secouer":"трясти","frotter":"тереть","essuyer":"вытирать","plonger":"нырять","ramer":"грести",
+"autrefois":"раньше","récemment":"недавно","désormais":"отныне","auparavant":"прежде","à l'avenir":"в будущем","aussitôt":"сразу","tout à coup":"вдруг","dès que":"как только"
+},
+uk:{
+"camping":"кемпінг","tente":"намет","sac de couchage":"спальник","lampe de poche":"ліхтарик","hamac":"гамак","randonnée":"похід","chasse":"полювання","boussole":"компас","jumelles":"бінокль","feu de camp":"багаття",
+"fouet":"віночок","louche":"ополоник","passoire":"друшляк","râpe":"тертка","entonnoir":"лійка","couvercle":"кришка","bouchon":"корок","tire-bouchon":"штопор","glaçon":"кубик льоду","paille":"соломинка",
+"plombier":"сантехнік","électricien":"електрик","menuisier":"столяр","bijoutier":"ювелір","vétérinaire":"ветеринар","pêcheur":"рибалка","chauffeur":"водій","fleuriste":"флорист",
+"orchestre":"оркестр","violon":"скрипка","flûte":"флейта","trompette":"сурма","mélodie":"мелодія","rythme":"ритм","chorale":"хор","tambour":"барабан",
+"volcan":"вулкан","inondation":"повінь","tremblement de terre":"землетрус","avalanche":"лавина","canicule":"спека","continent":"континент",
+"étonnant":"дивовижний","effrayant":"моторошний","passionnant":"захопливий","émouvant":"зворушливий","précieux":"коштовний","semblable":"схожий","épuisant":"виснажливий","décevant":"невтішний","indispensable":"необхідний","disponible":"доступний","provisoire":"тимчасовий",
+"détruire":"руйнувати","creuser":"копати","vider":"спорожняти","verrouiller":"замикати","brancher":"підключати","débrancher":"відключати","appuyer":"натискати","secouer":"трясти","frotter":"терти","essuyer":"витирати","plonger":"пірнати","ramer":"веслувати",
+"autrefois":"колись","récemment":"нещодавно","désormais":"відтепер","auparavant":"раніше","à l'avenir":"у майбутньому","aussitôt":"одразу","tout à coup":"раптом","dès que":"як тільки"
+},
+cs:{
+"camping":"kemp","tente":"stan","sac de couchage":"spacák","lampe de poche":"baterka","hamac":"houpací síť","randonnée":"túra","chasse":"lov","boussole":"kompas","jumelles":"dalekohled","feu de camp":"táborák",
+"fouet":"metlička","louche":"naběračka","passoire":"cedník","râpe":"struhadlo","entonnoir":"trychtýř","couvercle":"poklička","bouchon":"zátka","tire-bouchon":"vývrtka","glaçon":"kostka ledu","paille":"brčko",
+"plombier":"instalatér","électricien":"elektrikář","menuisier":"truhlář","bijoutier":"klenotník","vétérinaire":"veterinář","pêcheur":"rybář","chauffeur":"řidič","fleuriste":"květinář",
+"orchestre":"orchestr","violon":"housle","flûte":"flétna","trompette":"trumpeta","mélodie":"melodie","rythme":"rytmus","chorale":"sbor","tambour":"buben",
+"volcan":"sopka","inondation":"povodeň","tremblement de terre":"zemětřesení","avalanche":"lavina","canicule":"vedro","continent":"kontinent",
+"étonnant":"překvapivý","effrayant":"děsivý","passionnant":"fascinující","émouvant":"dojemný","précieux":"cenný","semblable":"podobný","épuisant":"vyčerpávající","décevant":"neuspokojivý","indispensable":"nezbytný","disponible":"dostupný","provisoire":"dočasný",
+"détruire":"ničit","creuser":"kopat","vider":"vyprazdňovat","verrouiller":"zamykat","brancher":"zapojovat","débrancher":"odpojovat","appuyer":"mačkat","secouer":"třást","frotter":"třít","essuyer":"utírat","plonger":"potápět se","ramer":"veslovat",
+"autrefois":"dříve","récemment":"nedávno","désormais":"od nynějška","auparavant":"předtím","à l'avenir":"v budoucnu","aussitôt":"okamžitě","tout à coup":"najednou","dès que":"jakmile"
+},
+zh:{
+"camping":"露营","tente":"帐篷","sac de couchage":"睡袋","lampe de poche":"手电筒","hamac":"吊床","randonnée":"徒步旅行","chasse":"打猎","boussole":"指南针","jumelles":"双筒望远镜","feu de camp":"篝火",
+"fouet":"打蛋器","louche":"汤勺","passoire":"滤网","râpe":"擦丝器","entonnoir":"漏斗","couvercle":"盖子","bouchon":"瓶塞","tire-bouchon":"开瓶器","glaçon":"冰块","paille":"吸管",
+"plombier":"水管工","électricien":"电工","menuisier":"木匠","bijoutier":"珠宝商","vétérinaire":"兽医","pêcheur":"渔夫","chauffeur":"司机","fleuriste":"花店老板",
+"orchestre":"管弦乐队","violon":"小提琴","flûte":"长笛","trompette":"小号","mélodie":"旋律","rythme":"节奏","chorale":"合唱团","tambour":"鼓",
+"volcan":"火山","inondation":"洪水","tremblement de terre":"地震","avalanche":"雪崩","canicule":"热浪","continent":"大陆",
+"étonnant":"令人惊讶的","effrayant":"吓人的","passionnant":"引人入胜的","émouvant":"感人的","précieux":"珍贵的","semblable":"相似的","épuisant":"累人的","décevant":"令人失望的","indispensable":"必不可少的","disponible":"可用的","provisoire":"临时的",
+"détruire":"摧毁","creuser":"挖","vider":"倒空","verrouiller":"锁上","brancher":"插上","débrancher":"拔掉","appuyer":"按","secouer":"摇晃","frotter":"搓","essuyer":"擦","plonger":"潜水","ramer":"划船",
+"autrefois":"从前","récemment":"最近","désormais":"从今以后","auparavant":"之前","à l'avenir":"将来","aussitôt":"立刻","tout à coup":"突然","dès que":"一到就"
+},
+ja:{
+"camping":"キャンプ","tente":"テント","sac de couchage":"寝袋","lampe de poche":"懐中電灯","hamac":"ハンモック","randonnée":"ハイキング","chasse":"狩り","boussole":"コンパス","jumelles":"双眼鏡","feu de camp":"たき火",
+"fouet":"泡立て器","louche":"おたま","passoire":"ざる","râpe":"おろし金","entonnoir":"じょうご","couvercle":"ふた","bouchon":"栓","tire-bouchon":"コルク抜き","glaçon":"氷","paille":"ストロー",
+"plombier":"配管工","électricien":"電気技師","menuisier":"大工","bijoutier":"宝石商","vétérinaire":"獣医","pêcheur":"漁師","chauffeur":"運転手","fleuriste":"花屋",
+"orchestre":"オーケストラ","violon":"バイオリン","flûte":"フルート","trompette":"トランペット","mélodie":"メロディー","rythme":"リズム","chorale":"合唱団","tambour":"太鼓",
+"volcan":"火山","inondation":"洪水","tremblement de terre":"地震","avalanche":"雪崩","canicule":"猛暑","continent":"大陸",
+"étonnant":"驚くべき","effrayant":"恐ろしい","passionnant":"わくわくする","émouvant":"感動的な","précieux":"貴重な","semblable":"似ている","épuisant":"疲れる","décevant":"がっかりする","indispensable":"不可欠な","disponible":"利用できる","provisoire":"一時的な",
+"détruire":"破壊します","creuser":"掘ります","vider":"空にします","verrouiller":"鍵をかけます","brancher":"つなぎます","débrancher":"抜きます","appuyer":"押さえます","secouer":"振ります","frotter":"こすります","essuyer":"拭きます","plonger":"潜ります","ramer":"漕ぎます",
+"autrefois":"昔","récemment":"最近","désormais":"これから","auparavant":"以前に","à l'avenir":"将来は","aussitôt":"ただちに","tout à coup":"突然","dès que":"〜するとすぐに"
+},
+ko:{
+"camping":"캠핑","tente":"텐트","sac de couchage":"침낭","lampe de poche":"손전등","hamac":"해먹","randonnée":"하이킹","chasse":"사냥","boussole":"나침반","jumelles":"쌍안경","feu de camp":"모닥불",
+"fouet":"거품기","louche":"국자","passoire":"체","râpe":"강판","entonnoir":"깔때기","couvercle":"뚜껑","bouchon":"병마개","tire-bouchon":"코르크 따개","glaçon":"얼음","paille":"빨대",
+"plombier":"배관공","électricien":"전기공","menuisier":"목수","bijoutier":"보석상","vétérinaire":"수의사","pêcheur":"어부","chauffeur":"운전사","fleuriste":"플로리스트",
+"orchestre":"오케스트라","violon":"바이올린","flûte":"플루트","trompette":"트럼펫","mélodie":"멜로디","rythme":"리듬","chorale":"합창단","tambour":"북",
+"volcan":"화산","inondation":"홍수","tremblement de terre":"지진","avalanche":"눈사태","canicule":"폭염","continent":"대륙",
+"étonnant":"놀라운","effrayant":"소름 끼치는","passionnant":"흥미진진한","émouvant":"감동적인","précieux":"귀중한","semblable":"비슷한","épuisant":"지치게 하는","décevant":"실망스러운","indispensable":"필수적인","disponible":"이용 가능한","provisoire":"임시의",
+"détruire":"파괴하다","creuser":"파다","vider":"비우다","verrouiller":"잠그다","brancher":"꽂다","débrancher":"뽑다","appuyer":"누르다","secouer":"흔들다","frotter":"문지르다","essuyer":"닦다","plonger":"잠수하다","ramer":"노를 젓다",
+"autrefois":"옛날에","récemment":"최근에","désormais":"이제부터","auparavant":"이전에","à l'avenir":"앞으로","aussitôt":"즉시","tout à coup":"갑자기","dès que":"하자마자"
+},
+ar:{
+"camping":"تخييم","tente":"خيمة","sac de couchage":"كيس نوم","lampe de poche":"مصباح يدوي","hamac":"أرجوحة شبكية","randonnée":"رحلة مشي","chasse":"صيد","boussole":"بوصلة","jumelles":"منظار","feu de camp":"نار المخيم",
+"fouet":"مضرب بيض","louche":"مغرفة","passoire":"مصفاة","râpe":"مبشرة","entonnoir":"قمع","couvercle":"غطاء","bouchon":"سدادة","tire-bouchon":"بريمة","glaçon":"مكعب ثلج","paille":"شفاطة",
+"plombier":"سباك","électricien":"كهربائي","menuisier":"نجار","bijoutier":"صائغ","vétérinaire":"طبيب بيطري","pêcheur":"صياد سمك","chauffeur":"سائق","fleuriste":"بائع زهور",
+"orchestre":"أوركسترا","violon":"كمان","flûte":"فلوت","trompette":"بوق موسيقي","mélodie":"لحن","rythme":"إيقاع","chorale":"جوقة","tambour":"طبل",
+"volcan":"بركان","inondation":"فيضان","tremblement de terre":"زلزال","avalanche":"انهيار ثلجي","canicule":"موجة حر","continent":"قارة",
+"étonnant":"مدهش","effrayant":"مخيف","passionnant":"شيق","émouvant":"مؤثر","précieux":"ثمين","semblable":"مشابه","épuisant":"مرهق","décevant":"مخيب للآمال","indispensable":"لا غنى عنه","disponible":"متاح","provisoire":"مؤقت",
+"détruire":"يدمر","creuser":"يحفر","vider":"يفرغ","verrouiller":"يقفل","brancher":"يوصل","débrancher":"ينزع القابس","appuyer":"يضغط","secouer":"يهز","frotter":"يفرك","essuyer":"يمسح","plonger":"يغوص","ramer":"يجدف",
+"autrefois":"قديمًا","récemment":"مؤخرًا","désormais":"من الآن فصاعدًا","auparavant":"سابقًا","à l'avenir":"في المستقبل","aussitôt":"حالاً","tout à coup":"فجأة","dès que":"بمجرد أن"
+}
+};
+LANGS2.forEach(function(l){ var p2=LEX2P[l]||{}; Object.keys(p2).forEach(function(k){ LEX2[l][k]=p2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
