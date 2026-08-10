@@ -4888,6 +4888,66 @@ var LEX2VIV = {
 };
 LANGS2.forEach(function(l){ var w2=LEX2VIV[l]||{}; Object.keys(w2).forEach(function(k){ LEX2[l][k]=w2[k]; }); });
 
+/* ===== Vague « COMME UN NATIF » : expressions du quotidien, style & apparence, la forêt ===== */
+var CURRICULUM_E = [
+  {t:"Parler comme un natif 💬", c:"#22d3ee", L:[
+    {t:"Au quotidien", w:["ça marche","c'est parti","au fait","quand même","coûter cher"]},
+    {t:"Ça me gave !", w:["avoir la flemme","en avoir marre","avoir hâte","faire exprès","n'importe quoi"]} ]},
+  {t:"Le style 💇", c:"#e879f9", L:[
+    {t:"Chez le coiffeur", w:["coiffure","barbe","moustache","frange","se raser"]},
+    {t:"Bijoux & look", w:["maquillage","boucle d'oreille","collier","bracelet","tatouage"]} ]},
+  {t:"La forêt 🦊", c:"#65a30d", L:[
+    {t:"Les animaux des bois", w:["sanglier","cerf","hibou","écureuil","hérisson"]},
+    {t:"Traces & détails", w:["aigle","fourmi","ruche","plume","griffe"]} ]}
+];
+CURRICULUM_E.forEach(function(u){ CURRICULUM.push(u); });
+
+var NEWV20 = {
+  "ça marche":{"en":"sounds good","it":"ci sto","es":"¡hecho!","de":"geht klar","pt":"combinado","nl":"prima"},
+  "c'est parti":{"en":"here we go","it":"si parte","es":"¡allá vamos!","de":"los geht's","pt":"vamos lá","nl":"daar gaan we"},
+  "au fait":{"en":"by the way","it":"a proposito","es":"a propósito","de":"apropos","pt":"já agora","nl":"tussen haakjes"},
+  "quand même":{"en":"even so","it":"lo stesso","es":"de todos modos","de":"trotzdem","pt":"mesmo assim","nl":"evengoed"},
+  "coûter cher":{"en":"to cost a lot","it":"costare caro","es":"costar caro","de":"viel kosten","pt":"custar caro","nl":"veel kosten"},
+  "avoir la flemme":{"en":"to feel lazy","it":"non avere voglia","es":"dar pereza","de":"keine Lust haben","pt":"estar com preguiça","nl":"geen zin hebben"},
+  "en avoir marre":{"en":"to be fed up","it":"averne abbastanza","es":"estar harto","de":"die Nase voll haben","pt":"estar farto","nl":"er genoeg van hebben"},
+  "avoir hâte":{"en":"to look forward to","it":"non vedere l'ora","es":"estar deseando","de":"es kaum erwarten","pt":"mal poder esperar","nl":"niet kunnen wachten"},
+  "faire exprès":{"en":"to do it on purpose","it":"farlo apposta","es":"hacerlo a propósito","de":"es absichtlich tun","pt":"fazer de propósito","nl":"expres doen"},
+  "n'importe quoi":{"en":"nonsense","it":"sciocchezze","es":"tonterías","de":"Quatsch","pt":"disparate","nl":"onzin"},
+  "coiffure":{"en":"hairstyle","it":"pettinatura","es":"peinado","de":"Frisur","pt":"penteado","nl":"kapsel"},
+  "barbe":{"en":"beard","it":"barba","es":"barba","de":"Bart","pt":"barba","nl":"baard"},
+  "moustache":{"en":"moustache","it":"baffi","es":"bigote","de":"Schnurrbart","pt":"bigode","nl":"snor"},
+  "frange":{"en":"fringe","it":"frangia","es":"flequillo","de":"Pony","pt":"franja","nl":"pony"},
+  "se raser":{"en":"to shave","it":"radersi","es":"afeitarse","de":"sich rasieren","pt":"barbear-se","nl":"zich scheren"},
+  "maquillage":{"en":"make-up","it":"trucco","es":"maquillaje","de":"Schminke","pt":"maquilhagem","nl":"make-up"},
+  "boucle d'oreille":{"en":"earring","it":"orecchino","es":"pendiente","de":"Ohrring","pt":"brinco","nl":"oorbel"},
+  "collier":{"en":"necklace","it":"collana","es":"collar","de":"Halskette","pt":"colar","nl":"ketting"},
+  "bracelet":{"en":"bracelet","it":"braccialetto","es":"pulsera","de":"Armband","pt":"pulseira","nl":"armband"},
+  "tatouage":{"en":"tattoo","it":"tatuaggio","es":"tatuaje","de":"Tätowierung","pt":"tatuagem","nl":"tatoeage"},
+  "sanglier":{"en":"wild boar","it":"cinghiale","es":"jabalí","de":"Wildschwein","pt":"javali","nl":"wild zwijn"},
+  "cerf":{"en":"deer","it":"cervo","es":"ciervo","de":"Hirsch","pt":"veado","nl":"hert"},
+  "hibou":{"en":"owl","it":"gufo","es":"búho","de":"Eule","pt":"mocho","nl":"uil"},
+  "écureuil":{"en":"squirrel","it":"scoiattolo","es":"ardilla","de":"Eichhörnchen","pt":"esquilo","nl":"eekhoorn"},
+  "hérisson":{"en":"hedgehog","it":"riccio","es":"erizo","de":"Igel","pt":"ouriço","nl":"egel"},
+  "aigle":{"en":"eagle","it":"aquila","es":"águila","de":"Adler","pt":"águia","nl":"adelaar"},
+  "fourmi":{"en":"ant","it":"formica","es":"hormiga","de":"Ameise","pt":"formiga","nl":"mier"},
+  "ruche":{"en":"beehive","it":"alveare","es":"colmena","de":"Bienenstock","pt":"colmeia","nl":"bijenkorf"},
+  "plume":{"en":"feather","it":"piuma","es":"pluma","de":"Feder","pt":"pena","nl":"veer"},
+  "griffe":{"en":"claw","it":"artiglio","es":"garra","de":"Kralle","pt":"garra","nl":"klauw"}
+};
+LANGS.forEach(function(l){ Object.keys(NEWV20).forEach(function(k){ if(NEWV20[k][l]) LEX[l][k]=NEWV20[k][l]; }); });
+
+var LEX2NAT = {
+  pl:{"ça marche":"dobra","c'est parti":"zaczynamy","au fait":"swoją drogą","quand même":"a jednak","coûter cher":"dużo kosztować","avoir la flemme":"nie chce mi się","en avoir marre":"mieć dość","avoir hâte":"nie móc się doczekać","faire exprès":"robić celowo","n'importe quoi":"bzdury","coiffure":"fryzura","barbe":"broda","moustache":"wąsy","frange":"grzywka","se raser":"golić się","maquillage":"makijaż","boucle d'oreille":"kolczyk","collier":"naszyjnik","bracelet":"bransoletka","tatouage":"tatuaż","sanglier":"dzik","cerf":"jeleń","hibou":"sowa","écureuil":"wiewiórka","hérisson":"jeż","aigle":"orzeł","fourmi":"mrówka","ruche":"ul","plume":"pióro","griffe":"pazur"},
+  ru:{"ça marche":"договорились","c'est parti":"поехали","au fait":"к слову","quand même":"всё равно","coûter cher":"дорого стоить","avoir la flemme":"мне лень","en avoir marre":"надоело","avoir hâte":"не терпится","faire exprès":"делать нарочно","n'importe quoi":"ерунда","coiffure":"причёска","barbe":"борода","moustache":"усы","frange":"чёлка","se raser":"бриться","maquillage":"макияж","boucle d'oreille":"серьга","collier":"ожерелье","bracelet":"браслет","tatouage":"татуировка","sanglier":"кабан","cerf":"олень","hibou":"филин","écureuil":"белка","hérisson":"ёж","aigle":"орёл","fourmi":"муравей","ruche":"улей","plume":"перо","griffe":"коготь"},
+  uk:{"ça marche":"домовились","c'est parti":"поїхали","au fait":"між іншим","quand même":"все-таки","coûter cher":"дорого коштувати","avoir la flemme":"мені ліньки","en avoir marre":"набридло","avoir hâte":"не терпиться","faire exprès":"робити навмисно","n'importe quoi":"дурниці","coiffure":"зачіска","barbe":"борода","moustache":"вуса","frange":"гривка","se raser":"голитися","maquillage":"макіяж","boucle d'oreille":"сережка","collier":"намисто","bracelet":"браслет","tatouage":"татуювання","sanglier":"кабан","cerf":"олень","hibou":"пугач","écureuil":"білка","hérisson":"їжак","aigle":"орел","fourmi":"мураха","ruche":"вулик","plume":"перо","griffe":"кіготь"},
+  cs:{"ça marche":"platí","c'est parti":"jdeme na to","au fait":"mimochodem","quand même":"stejně","coûter cher":"hodně stát","avoir la flemme":"nechce se mi","en avoir marre":"mít toho dost","avoir hâte":"nemoct se dočkat","faire exprès":"dělat naschvál","n'importe quoi":"nesmysl","coiffure":"účes","barbe":"vousy","moustache":"knír","frange":"ofina","se raser":"holit se","maquillage":"líčení","boucle d'oreille":"náušnice","collier":"náhrdelník","bracelet":"náramek","tatouage":"tetování","sanglier":"divoké prase","cerf":"jelen","hibou":"výr","écureuil":"veverka","hérisson":"ježek","aigle":"orel","fourmi":"mravenec","ruche":"úl","plume":"pírko","griffe":"dráp"},
+  zh:{"ça marche":"行","c'est parti":"开始吧","au fait":"对了","quand même":"还是","coûter cher":"很花钱","avoir la flemme":"懒得做","en avoir marre":"受够了","avoir hâte":"迫不及待","faire exprès":"故意做","n'importe quoi":"胡说","coiffure":"发型","barbe":"胡子","moustache":"小胡子","frange":"刘海","se raser":"刮胡子","maquillage":"化妆","boucle d'oreille":"耳环","collier":"项链","bracelet":"手链","tatouage":"纹身","sanglier":"野猪","cerf":"鹿","hibou":"猫头鹰","écureuil":"松鼠","hérisson":"刺猬","aigle":"老鹰","fourmi":"蚂蚁","ruche":"蜂巢","plume":"羽毛","griffe":"爪子"},
+  ja:{"ça marche":"了解","c'est parti":"始めよう","au fait":"ところで","quand même":"やっぱり","coûter cher":"高くつく","avoir la flemme":"やる気が出ない","en avoir marre":"うんざりする","avoir hâte":"待ちきれない","faire exprès":"わざとやる","n'importe quoi":"でたらめ","coiffure":"髪型","barbe":"ひげ","moustache":"口ひげ","frange":"前髪","se raser":"ひげを剃る","maquillage":"化粧","boucle d'oreille":"イヤリング","collier":"ネックレス","bracelet":"ブレスレット","tatouage":"タトゥー","sanglier":"イノシシ","cerf":"鹿","hibou":"フクロウ","écureuil":"リス","hérisson":"ハリネズミ","aigle":"ワシ","fourmi":"アリ","ruche":"ハチの巣","plume":"羽","griffe":"鉤爪"},
+  ko:{"ça marche":"알겠어","c'est parti":"시작하자","au fait":"그나저나","quand même":"그럼에도","coûter cher":"돈이 많이 들다","avoir la flemme":"귀찮다","en avoir marre":"지겹다","avoir hâte":"기대되다","faire exprès":"일부러 하다","n'importe quoi":"말도 안 돼","coiffure":"머리 모양","barbe":"수염","moustache":"콧수염","frange":"앞머리","se raser":"면도하다","maquillage":"화장","boucle d'oreille":"귀걸이","collier":"목걸이","bracelet":"팔찌","tatouage":"문신","sanglier":"멧돼지","cerf":"사슴","hibou":"부엉이","écureuil":"다람쥐","hérisson":"고슴도치","aigle":"독수리","fourmi":"개미","ruche":"벌집","plume":"깃털","griffe":"발톱"},
+  ar:{"ça marche":"اتفقنا","c'est parti":"لننطلق","au fait":"على فكرة","quand même":"مع ذلك","coûter cher":"يكلف كثيراً","avoir la flemme":"أشعر بالكسل","en avoir marre":"سئم","avoir hâte":"لا أطيق الانتظار","faire exprès":"يفعلها عمداً","n'importe quoi":"كلام فارغ","coiffure":"تسريحة","barbe":"لحية","moustache":"شارب","frange":"غرة","se raser":"يحلق ذقنه","maquillage":"مكياج","boucle d'oreille":"قرط","collier":"قلادة","bracelet":"سوار","tatouage":"وشم","sanglier":"خنزير بري","cerf":"أيل","hibou":"بومة","écureuil":"سنجاب","hérisson":"قنفذ","aigle":"نسر","fourmi":"نملة","ruche":"خلية نحل","plume":"ريشة","griffe":"مخلب"}
+};
+LANGS2.forEach(function(l){ var w2=LEX2NAT[l]||{}; Object.keys(w2).forEach(function(k){ LEX2[l][k]=w2[k]; }); });
+
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
