@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.97.0";
+var APP_VER="v2.98.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1880,15 +1880,16 @@ function exType(ex){ var w=el("div","ex");
   return w;
 }
 function exSpeak(ex){ var w=el("div","ex");
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div><div class="q-word">'+esc(ex.prompt)+' <button class="say" id="spSay">🔊</button></div><div class="speak-mean">👉 sens : <b>'+esc(ex.w&&ex.w.fr||"")+'</b></div><div class="speak-hint" id="spHint">Écoute (🔊), comprends le sens, puis touche le micro et répète.</div>';
+  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div><div class="q-word">'+esc(ex.prompt)+' <button class="say" id="spSay">🔊</button></div><div class="speak-hint" id="spHint">Écoute (🔊) puis touche le micro et répète.</div>';
+  var _mean=' <b>👉 « '+esc(ex.answer)+' » = « '+esc(ex.w&&ex.w.fr||"")+' »</b>'; /* le SENS ne se révèle qu\'APRÈS avoir parlé (Kevin : « seulement en réponse, après ») */
   var mic=el("button","mic-btn"); mic.innerHTML="🎤 Parler";
   mic.onclick=function(){ mic.innerHTML="🎤 …j'écoute"; dictate(function(txt,alts){
     var m=bestPronMatch(ex.answer,txt,alts); var ok=m.score>=60; /* indulgent : phonétiquement proche suffit */
-    var h=document.getElementById("spHint"); if(h) h.textContent=(m.heard?('Entendu : « '+esc(m.heard)+' » ('+m.score+'%)'):"Je n'ai pas bien entendu")+(ok?' ✅ bravo !':' — réessaie, ou passe.');
+    var h=document.getElementById("spHint"); if(h) h.innerHTML=(m.heard?('Entendu : « '+esc(m.heard)+' » ('+m.score+'%)'):"Je n'ai pas bien entendu")+(ok?' ✅ bravo !':' — réessaie, ou passe.')+'<br>'+_mean;
     LESSON._speakOk=ok; LESSON._can=true; mic.innerHTML=ok?"✅ Bien prononcé":"🎤 Réessayer"; syncMain();
   }, COURSES[S.course].ttsLang); };
   w.appendChild(mic);
-  var pass=el("button","btn-ghost skip"); pass.textContent="Passer (sans micro)"; pass.onclick=function(){ LESSON._speakOk=true; LESSON._can=true; syncMain(); }; w.appendChild(pass);
+  var pass=el("button","btn-ghost skip"); pass.textContent="Passer (sans micro)"; pass.onclick=function(){ var h=document.getElementById("spHint"); if(h)h.innerHTML="Tu as passé.<br>"+_mean; LESSON._speakOk=true; LESSON._can=true; syncMain(); }; w.appendChild(pass);
   var qiSp=LESSON.i;
   setTimeout(function(){ var sb=document.getElementById("spSay"); if(sb)sb.onclick=function(){speak(ex.answer);}; if(LESSON&&LESSON.i===qiSp&&!LESSON.answered)speak(ex.answer); },200);
   return w;
