@@ -3901,6 +3901,99 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var m2=LEX2M[l]||{}; Object.keys(m2).forEach(function(k){ LEX2[l][k]=m2[k]; }); });
+/* ── Vague 14 nouvelles langues (v2.83) : unités 105-112 — la grande famille, les grands
+   jours, communiquer, verbes précieux, se repérer, les fruits du verger, à l'hôtel, en mer.
+   Anti-collisions vérifiées : époux ≠ mari partout (ru супруг/муж, cs choť/manžel,
+   zh 配偶/丈夫, ja 配偶者, ko 배우자, ar قرين/زوج, uk муж bookish/чоловік) ;
+   au-dessus/au-dessous ≠ sur/sous (pl powyżej/poniżej, ru выше/ниже, uk вище/нижче,
+   cs výše/níže, ar أعلى/أسفل car فوق=sur تحت=sous) ; filet=sieć rybacka/рыболовная
+   сеть/rybářská síť (sieć/сеть/síť=réseau) ; ru prévenir=извещать (предупреждать=avertir) ;
+   ar à l'extérieur=خارجًا (في الخارج=à l'étranger), cérémonie=مراسم (حفلة=fête).
+   Homographes réels assumés : ko 밤 = nuit ET châtaigne (le classique coréen) ;
+   cs mezi = entre ET parmi (même mot, pas d'alternative). */
+var LEX2N = {
+pl:{
+"beau-père":"teść","belle-mère":"teściowa","gendre":"zięć","belle-sœur":"szwagierka","beau-frère":"szwagier","époux":"małżonek","jumeaux":"bliźniaki","aîné":"najstarszy","cadet":"najmłodszy","petit-fils":"wnuk","petite-fille":"wnuczka","veuf":"wdowiec",
+"cérémonie":"ceremonia","bouquet":"bukiet","alliance":"obrączka","discours":"przemówienie","félicitations pour ton mariage":"gratulacje z okazji ślubu","baptême":"chrzest","enterrement":"pogrzeb",
+"annoncer":"ogłaszać","prévenir":"uprzedzać","saluer":"pozdrawiać","interrompre":"przerywać","prononcer":"wymawiać","puis-je vous aider":"czy mogę pomóc","bavarder":"gadać","chuchoter":"szeptać","se plaindre":"narzekać","avouer":"przyznawać się","exagérer":"przesadzać",
+"éviter":"unikać","oser":"odważać się","mériter":"zasługiwać","atteindre":"osiągać","appartenir":"należeć","dépendre":"zależeć","à qui appartient ce sac":"do kogo należy ta torba","sembler":"wydawać się","paraître":"zdawać się","exister":"istnieć","suffire":"wystarczać","diminuer":"zmniejszać","augmenter":"zwiększać","réclamer":"domagać się","emballer":"pakować","serrer":"ściskać","lâcher":"puszczać",
+"au-dessus":"powyżej","au-dessous":"poniżej","à travers":"przez","le long de":"wzdłuż","parmi":"wśród","contre":"przeciwko","au fond de":"na dnie","autour":"wokół","vers":"w stronę","en face":"naprzeciwko","à l'intérieur":"wewnątrz","à l'extérieur":"na zewnątrz","au milieu":"pośrodku",
+"framboise":"malina","cerise":"wiśnia","prune":"śliwka","myrtille":"borówka","pêche":"brzoskwinia","abricot":"morela","melon":"melon","pastèque":"arbuz","ananas":"ananas","concombre":"ogórek","poireau":"por","chou":"kapusta","noix":"orzech","noisette":"orzech laskowy","châtaigne":"kasztan",
+"réception":"recepcja","réceptionniste":"recepcjonista","chambre double":"pokój dwuosobowy","chambre simple":"pokój jednoosobowy","auberge":"gospoda","climatisation":"klimatyzacja","chauffage":"ogrzewanie","oreiller":"poduszka","couverture":"koc","drap":"prześcieradło",
+"voile":"żagiel","ancre":"kotwica","équipage":"załoga","capitaine":"kapitan","croisière":"rejs","port":"port","phare":"latarnia morska","marée":"przypływ","mouette":"mewa","filet":"sieć rybacka","naufrage":"rozbicie statku","bouée":"boja"
+},
+ru:{
+"beau-père":"тесть","belle-mère":"тёща","gendre":"зять","belle-sœur":"невестка","beau-frère":"шурин","époux":"супруг","jumeaux":"близнецы","aîné":"старший","cadet":"младший","petit-fils":"внук","petite-fille":"внучка","veuf":"вдовец",
+"cérémonie":"церемония","bouquet":"букет","alliance":"обручальное кольцо","discours":"речь","félicitations pour ton mariage":"поздравляю со свадьбой","baptême":"крещение","enterrement":"похороны",
+"annoncer":"объявлять","prévenir":"извещать","saluer":"здороваться","interrompre":"перебивать","prononcer":"произносить","puis-je vous aider":"чем я могу помочь","bavarder":"болтать","chuchoter":"шептать","se plaindre":"жаловаться","avouer":"признаваться","exagérer":"преувеличивать",
+"éviter":"избегать","oser":"осмеливаться","mériter":"заслуживать","atteindre":"достигать","appartenir":"принадлежать","dépendre":"зависеть","à qui appartient ce sac":"чья это сумка","sembler":"казаться","paraître":"выглядеть","exister":"существовать","suffire":"хватать","diminuer":"уменьшать","augmenter":"увеличивать","réclamer":"требовать","emballer":"упаковывать","serrer":"сжимать","lâcher":"отпускать",
+"au-dessus":"выше","au-dessous":"ниже","à travers":"сквозь","le long de":"вдоль","parmi":"среди","contre":"против","au fond de":"на дне","autour":"вокруг","vers":"в сторону","en face":"напротив","à l'intérieur":"внутри","à l'extérieur":"снаружи","au milieu":"посередине",
+"framboise":"малина","cerise":"вишня","prune":"слива","myrtille":"черника","pêche":"персик","abricot":"абрикос","melon":"дыня","pastèque":"арбуз","ananas":"ананас","concombre":"огурец","poireau":"лук-порей","chou":"капуста","noix":"орех","noisette":"фундук","châtaigne":"каштан",
+"réception":"стойка регистрации","réceptionniste":"администратор","chambre double":"двухместный номер","chambre simple":"одноместный номер","auberge":"постоялый двор","climatisation":"кондиционер","chauffage":"отопление","oreiller":"подушка","couverture":"одеяло","drap":"простыня",
+"voile":"парус","ancre":"якорь","équipage":"экипаж","capitaine":"капитан","croisière":"круиз","port":"порт","phare":"маяк","marée":"прилив","mouette":"чайка","filet":"рыболовная сеть","naufrage":"кораблекрушение","bouée":"буй"
+},
+uk:{
+"beau-père":"тесть","belle-mère":"теща","gendre":"зять","belle-sœur":"невістка","beau-frère":"шурин","époux":"муж","jumeaux":"близнюки","aîné":"старший","cadet":"молодший","petit-fils":"онук","petite-fille":"онука","veuf":"вдівець",
+"cérémonie":"церемонія","bouquet":"букет","alliance":"обручка","discours":"промова","félicitations pour ton mariage":"вітаю з весіллям","baptême":"хрещення","enterrement":"похорон",
+"annoncer":"оголошувати","prévenir":"сповіщати","saluer":"вітатися","interrompre":"перебивати","prononcer":"вимовляти","puis-je vous aider":"чим я можу допомогти","bavarder":"балакати","chuchoter":"шепотіти","se plaindre":"скаржитися","avouer":"зізнаватися","exagérer":"перебільшувати",
+"éviter":"уникати","oser":"наважуватися","mériter":"заслуговувати","atteindre":"досягати","appartenir":"належати","dépendre":"залежати","à qui appartient ce sac":"чия це сумка","sembler":"здаватися","paraître":"видаватися","exister":"існувати","suffire":"вистачати","diminuer":"зменшувати","augmenter":"збільшувати","réclamer":"вимагати","emballer":"пакувати","serrer":"стискати","lâcher":"відпускати",
+"au-dessus":"вище","au-dessous":"нижче","à travers":"крізь","le long de":"вздовж","parmi":"серед","contre":"проти","au fond de":"на дні","autour":"навколо","vers":"у бік","en face":"навпроти","à l'intérieur":"всередині","à l'extérieur":"зовні","au milieu":"посередині",
+"framboise":"малина","cerise":"вишня","prune":"слива","myrtille":"чорниця","pêche":"персик","abricot":"абрикос","melon":"диня","pastèque":"кавун","ananas":"ананас","concombre":"огірок","poireau":"цибуля-порей","chou":"капуста","noix":"горіх","noisette":"фундук","châtaigne":"каштан",
+"réception":"рецепція","réceptionniste":"адміністратор","chambre double":"двомісний номер","chambre simple":"одномісний номер","auberge":"корчма","climatisation":"кондиціонер","chauffage":"опалення","oreiller":"подушка","couverture":"ковдра","drap":"простирадло",
+"voile":"вітрило","ancre":"якір","équipage":"екіпаж","capitaine":"капітан","croisière":"круїз","port":"порт","phare":"маяк","marée":"приплив","mouette":"чайка","filet":"рибальська сітка","naufrage":"корабельна аварія","bouée":"буй"
+},
+cs:{
+"beau-père":"tchán","belle-mère":"tchyně","gendre":"zeť","belle-sœur":"švagrová","beau-frère":"švagr","époux":"choť","jumeaux":"dvojčata","aîné":"nejstarší","cadet":"nejmladší","petit-fils":"vnuk","petite-fille":"vnučka","veuf":"vdovec",
+"cérémonie":"obřad","bouquet":"kytice","alliance":"snubní prsten","discours":"projev","félicitations pour ton mariage":"gratuluji ke svatbě","baptême":"křest","enterrement":"pohřeb",
+"annoncer":"oznamovat","prévenir":"upozorňovat","saluer":"zdravit","interrompre":"přerušovat","prononcer":"vyslovovat","puis-je vous aider":"mohu vám pomoci","bavarder":"povídat si","chuchoter":"šeptat","se plaindre":"stěžovat si","avouer":"přiznávat se","exagérer":"přehánět",
+"éviter":"vyhýbat se","oser":"odvažovat se","mériter":"zasloužit si","atteindre":"dosahovat","appartenir":"patřit","dépendre":"záviset","à qui appartient ce sac":"komu patří ta taška","sembler":"zdát se","paraître":"jevit se","exister":"existovat","suffire":"stačit","diminuer":"zmenšovat","augmenter":"zvětšovat","réclamer":"domáhat se","emballer":"balit","serrer":"svírat","lâcher":"pouštět",
+"au-dessus":"výše","au-dessous":"níže","à travers":"skrz","le long de":"podél","parmi":"mezi","contre":"proti","au fond de":"na dně","autour":"kolem","vers":"směrem k","en face":"naproti","à l'intérieur":"uvnitř","à l'extérieur":"venku","au milieu":"uprostřed",
+"framboise":"malina","cerise":"třešeň","prune":"švestka","myrtille":"borůvka","pêche":"broskev","abricot":"meruňka","melon":"meloun","pastèque":"vodní meloun","ananas":"ananas","concombre":"okurka","poireau":"pórek","chou":"zelí","noix":"ořech","noisette":"lískový ořech","châtaigne":"kaštan",
+"réception":"recepce","réceptionniste":"recepční","chambre double":"dvoulůžkový pokoj","chambre simple":"jednolůžkový pokoj","auberge":"hostinec","climatisation":"klimatizace","chauffage":"topení","oreiller":"polštář","couverture":"deka","drap":"prostěradlo",
+"voile":"plachta","ancre":"kotva","équipage":"posádka","capitaine":"kapitán","croisière":"plavba","port":"přístav","phare":"maják","marée":"příliv","mouette":"racek","filet":"rybářská síť","naufrage":"ztroskotání","bouée":"bóje"
+},
+zh:{
+"beau-père":"岳父","belle-mère":"岳母","gendre":"女婿","belle-sœur":"嫂子","beau-frère":"姐夫","époux":"配偶","jumeaux":"双胞胎","aîné":"长子","cadet":"幼子","petit-fils":"孙子","petite-fille":"孙女","veuf":"鳏夫",
+"cérémonie":"仪式","bouquet":"花束","alliance":"婚戒","discours":"演讲","félicitations pour ton mariage":"恭喜 你 结婚","baptême":"洗礼","enterrement":"葬礼",
+"annoncer":"宣布","prévenir":"通知","saluer":"打招呼","interrompre":"打断","prononcer":"发音","puis-je vous aider":"我 能 帮 你 吗","bavarder":"聊天","chuchoter":"小声说","se plaindre":"抱怨","avouer":"承认","exagérer":"夸张",
+"éviter":"避免","oser":"敢","mériter":"值得","atteindre":"达到","appartenir":"属于","dépendre":"取决于","à qui appartient ce sac":"这个 包 是 谁 的","sembler":"好像","paraître":"显得","exister":"存在","suffire":"足够","diminuer":"减少","augmenter":"增加","réclamer":"要求","emballer":"包装","serrer":"握紧","lâcher":"放开",
+"au-dessus":"上方","au-dessous":"下方","à travers":"穿过","le long de":"沿着","parmi":"之中","contre":"靠着","au fond de":"在深处","autour":"周围","vers":"朝","en face":"对面","à l'intérieur":"在里面","à l'extérieur":"在外面","au milieu":"在中间",
+"framboise":"覆盆子","cerise":"樱桃","prune":"李子","myrtille":"蓝莓","pêche":"桃子","abricot":"杏","melon":"甜瓜","pastèque":"西瓜","ananas":"菠萝","concombre":"黄瓜","poireau":"韭葱","chou":"卷心菜","noix":"核桃","noisette":"榛子","châtaigne":"栗子",
+"réception":"前台","réceptionniste":"前台接待员","chambre double":"双人房","chambre simple":"单人房","auberge":"客栈","climatisation":"空调","chauffage":"暖气","oreiller":"枕头","couverture":"毯子","drap":"床单",
+"voile":"帆","ancre":"锚","équipage":"船员","capitaine":"船长","croisière":"邮轮旅行","port":"港口","phare":"灯塔","marée":"潮汐","mouette":"海鸥","filet":"渔网","naufrage":"海难","bouée":"救生圈"
+},
+ja:{
+"beau-père":"義理の父","belle-mère":"義理の母","gendre":"婿","belle-sœur":"義理の姉","beau-frère":"義理の兄","époux":"配偶者","jumeaux":"双子","aîné":"長男","cadet":"末っ子","petit-fils":"孫息子","petite-fille":"孫娘","veuf":"男やもめ",
+"cérémonie":"式典","bouquet":"花束","alliance":"結婚指輪","discours":"スピーチ","félicitations pour ton mariage":"ご結婚 おめでとう ございます","baptême":"洗礼式","enterrement":"葬式",
+"annoncer":"発表します","prévenir":"知らせます","saluer":"挨拶します","interrompre":"さえぎります","prononcer":"発音します","puis-je vous aider":"お手伝い しましょう か","bavarder":"おしゃべりします","chuchoter":"ささやきます","se plaindre":"文句を言います","avouer":"白状します","exagérer":"大げさに言います",
+"éviter":"避けます","oser":"思い切ってします","mériter":"〜に値します","atteindre":"達します","appartenir":"属します","dépendre":"〜によります","à qui appartient ce sac":"この かばん は 誰 の です か","sembler":"〜のようです","paraître":"見えます","exister":"存在します","suffire":"足ります","diminuer":"減らします","augmenter":"増やします","réclamer":"要求します","emballer":"包みます","serrer":"握ります","lâcher":"放します",
+"au-dessus":"真上","au-dessous":"真下","à travers":"〜を通って","le long de":"〜に沿って","parmi":"〜の中で","contre":"〜に対して","au fond de":"〜の奥に","autour":"〜の周りに","vers":"〜へ向かって","en face":"向かい","à l'intérieur":"内側に","à l'extérieur":"外側に","au milieu":"真ん中に",
+"framboise":"ラズベリー","cerise":"さくらんぼ","prune":"プラム","myrtille":"ブルーベリー","pêche":"桃","abricot":"あんず","melon":"メロン","pastèque":"スイカ","ananas":"パイナップル","concombre":"きゅうり","poireau":"リーキ","chou":"キャベツ","noix":"クルミ","noisette":"ヘーゼルナッツ","châtaigne":"栗",
+"réception":"フロント","réceptionniste":"フロント係","chambre double":"ダブルルーム","chambre simple":"シングルルーム","auberge":"宿屋","climatisation":"エアコン","chauffage":"暖房","oreiller":"枕","couverture":"毛布","drap":"シーツ",
+"voile":"帆","ancre":"錨","équipage":"乗組員","capitaine":"船長","croisière":"クルーズ","port":"港","phare":"灯台","marée":"潮","mouette":"カモメ","filet":"網","naufrage":"難破","bouée":"浮き輪"
+},
+ko:{
+"beau-père":"시아버지","belle-mère":"시어머니","gendre":"사위","belle-sœur":"형수","beau-frère":"매형","époux":"배우자","jumeaux":"쌍둥이","aîné":"맏이","cadet":"막내","petit-fils":"손자","petite-fille":"손녀","veuf":"홀아비",
+"cérémonie":"예식","bouquet":"꽃다발","alliance":"결혼반지","discours":"연설","félicitations pour ton mariage":"결혼 축하해요","baptême":"세례","enterrement":"장례식",
+"annoncer":"발표하다","prévenir":"알리다","saluer":"인사하다","interrompre":"끼어들다","prononcer":"발음하다","puis-je vous aider":"도와드릴까요","bavarder":"수다를 떨다","chuchoter":"속삭이다","se plaindre":"불평하다","avouer":"인정하다","exagérer":"과장하다",
+"éviter":"피하다","oser":"감히 하다","mériter":"자격이 있다","atteindre":"도달하다","appartenir":"속하다","dépendre":"달려 있다","à qui appartient ce sac":"이 가방은 누구 거예요","sembler":"것 같다","paraître":"보이다","exister":"존재하다","suffire":"충분하다","diminuer":"줄이다","augmenter":"늘리다","réclamer":"요구하다","emballer":"포장하다","serrer":"꽉 쥐다","lâcher":"놓다",
+"au-dessus":"위쪽에","au-dessous":"아래쪽에","à travers":"통해서","le long de":"따라서","parmi":"가운데","contre":"에 기대어","au fond de":"깊숙한 곳에","autour":"주위에","vers":"쪽으로","en face":"맞은편에","à l'intérieur":"안쪽에","à l'extérieur":"바깥쪽에","au milieu":"한가운데에",
+"framboise":"라즈베리","cerise":"체리","prune":"자두","myrtille":"블루베리","pêche":"복숭아","abricot":"살구","melon":"멜론","pastèque":"수박","ananas":"파인애플","concombre":"오이","poireau":"리크","chou":"양배추","noix":"호두","noisette":"헤이즐넛","châtaigne":"밤",
+"réception":"프런트","réceptionniste":"프런트 직원","chambre double":"더블룸","chambre simple":"싱글룸","auberge":"여관","climatisation":"에어컨","chauffage":"난방","oreiller":"베개","couverture":"담요","drap":"침대 시트",
+"voile":"돛","ancre":"닻","équipage":"승무원","capitaine":"선장","croisière":"크루즈","port":"항구","phare":"등대","marée":"조수","mouette":"갈매기","filet":"그물","naufrage":"난파","bouée":"부표"
+},
+ar:{
+"beau-père":"حمو","belle-mère":"حماة","gendre":"صهر","belle-sœur":"أخت الزوج","beau-frère":"أخو الزوج","époux":"قرين","jumeaux":"توأم","aîné":"البكر","cadet":"الأصغر","petit-fils":"حفيد","petite-fille":"حفيدة","veuf":"أرمل",
+"cérémonie":"مراسم","bouquet":"باقة زهور","alliance":"خاتم الزواج","discours":"خطبة","félicitations pour ton mariage":"مبروك الزواج","baptême":"معمودية","enterrement":"جنازة",
+"annoncer":"يعلن","prévenir":"يبلغ","saluer":"يسلم على","interrompre":"يقاطع","prononcer":"ينطق","puis-je vous aider":"هل يمكنني مساعدتك","bavarder":"يدردش","chuchoter":"يهمس","se plaindre":"يشتكي","avouer":"يعترف","exagérer":"يبالغ",
+"éviter":"يتجنب","oser":"يجرؤ","mériter":"يستحق","atteindre":"يصل إلى","appartenir":"ينتمي إلى","dépendre":"يعتمد على","à qui appartient ce sac":"لمن هذه الحقيبة","sembler":"يبدو","paraître":"يظهر","exister":"يوجد","suffire":"يكفي","diminuer":"يقلل","augmenter":"يزيد","réclamer":"يطالب","emballer":"يغلف","serrer":"يشد","lâcher":"يفلت",
+"au-dessus":"أعلى","au-dessous":"أسفل","à travers":"عبر","le long de":"على طول","parmi":"من بين","contre":"ضد","au fond de":"في قاع","autour":"حول","vers":"نحو","en face":"مقابل","à l'intérieur":"في الداخل","à l'extérieur":"خارجًا","au milieu":"في المنتصف",
+"framboise":"توت العليق","cerise":"كرز","prune":"برقوق","myrtille":"توت أزرق","pêche":"خوخ","abricot":"مشمش","melon":"شمام","pastèque":"بطيخ","ananas":"أناناس","concombre":"خيار","poireau":"كراث","chou":"ملفوف","noix":"جوز","noisette":"بندق","châtaigne":"كستناء",
+"réception":"استقبال","réceptionniste":"موظف استقبال","chambre double":"غرفة مزدوجة","chambre simple":"غرفة مفردة","auberge":"نزل","climatisation":"مكيف","chauffage":"تدفئة","oreiller":"وسادة","couverture":"بطانية","drap":"ملاءة",
+"voile":"شراع","ancre":"مرساة","équipage":"طاقم","capitaine":"قبطان","croisière":"رحلة بحرية","port":"ميناء","phare":"منارة","marée":"مد وجزر","mouette":"نورس","filet":"شبكة صيد","naufrage":"غرق السفينة","bouée":"عوامة"
+}
+};
+LANGS2.forEach(function(l){ var n2=LEX2N[l]||{}; Object.keys(n2).forEach(function(k){ LEX2[l][k]=n2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
