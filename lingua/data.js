@@ -3712,6 +3712,102 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var k2=LEX2K[l]||{}; Object.keys(k2).forEach(function(k){ LEX2[l][k]=k2[k]; }); });
+/* ── Vague 12 nouvelles langues (v2.81) : unités 89-96 — le bricolage, les urgences,
+   bien manger dehors, sortir le soir, mots de liaison, la pensée, question d'argent,
+   les matières. Anti-collisions vérifiées : ru échelle=стремянка (лестница=escalier),
+   bois=древесина (дерево=arbre), se souvenir=вспоминать ; zh réservation=订位
+   (预订=réserver), plutôt=宁愿 (比较=comparer) ; ja réservation=席の予約
+   (予約=rendez-vous), entracte=休憩 ; ko environ=대략 (약=médicament), bois=목재
+   (나무=arbre) ; ar cependant=ومع ذلك (لكن=mais), scène=خشبة المسرح (مسرح=théâtre),
+   réfléchir=يتأمل (يفكر=penser), dette=ديون (دين=religion), spectacle=عرض مسرحي
+   (عرض=promotion). Emprunter/prêter distingués partout (ja 借ります/貸します,
+   ko 빌리다/빌려주다, zh 借/借给, ar يقترض/يقرض, cs půjčovat si/půjčovat,
+   pl pożyczać/pożyczać komuś, uk позичати/давати в борг, ru брать в долг/одалживать).
+   Homographes réels assumés : zh 危险 (dangereux ET danger, même mot) ; peau ET cuir (polysémie classique sans autre mot) :
+   pl skóra, ru кожа, uk шкіра, cs kůže, ar جلد. */
+var LEX2L = {
+pl:{
+"marteau":"młotek","clou":"gwóźdź","vis":"śruba","tournevis":"śrubokręt","outil":"narzędzie","pelle":"łopata","réparer":"naprawiać","percer":"wiercić","coller":"kleić","mesurer":"mierzyć","échelle":"drabina","pinceau":"pędzel","scie":"piła","tuyau":"rura","corde":"lina","fil":"drut",
+"incendie":"pożar","ambulance":"karetka","secours":"ratunek","danger":"niebezpieczeństwo","alarme":"alarm","il y a le feu":"pali się","voleur":"złodziej","témoin":"świadek","prudent":"ostrożny","avertir":"ostrzegać","fuite":"wyciek",
+"réservation":"rezerwacja","pourboire":"napiwek","commander":"zamawiać","végétarien":"wegetarianin","saignant":"krwisty","bien cuit":"dobrze wysmażony","l'addition, s'il vous plaît":"rachunek proszę",
+"concert":"koncert","spectacle":"przedstawienie","chanteur":"piosenkarz","acteur":"aktor","scène":"scena","applaudir":"klaskać","le spectacle commence à huit heures":"przedstawienie zaczyna się o ósmej","exposition":"wystawa","ambiance":"atmosfera","cirque":"cyrk","affiche":"plakat","entracte":"antrakt",
+"cependant":"jednak","pourtant":"mimo to","malgré":"mimo","sauf":"oprócz","environ":"około","plutôt":"raczej","sans doute":"zapewne","d'ailleurs":"zresztą","en fait":"właściwie","au lieu de":"zamiast","grâce à":"dzięki","à cause de":"z powodu",
+"se souvenir":"pamiętać","mémoire":"pamięć","reconnaître":"rozpoznawać","regretter":"żałować","deviner":"zgadywać","je me souviens de toi":"pamiętam cię","imaginer":"wyobrażać sobie","réfléchir":"zastanawiać się","supposer":"przypuszczać","hésiter":"wahać się","prévoir":"przewidywać",
+"emprunter":"pożyczać","prêter":"pożyczać komuś","dette":"dług","récompense":"nagroda","ça vaut la peine":"warto",
+"métal":"metal","plastique":"plastik","bois":"drewno","or":"złoto","carton":"karton","coton":"bawełna","laine":"wełna","cuir":"skóra","soie":"jedwab","tissu":"tkanina"
+},
+ru:{
+"marteau":"молоток","clou":"гвоздь","vis":"винт","tournevis":"отвёртка","outil":"инструмент","pelle":"лопата","réparer":"чинить","percer":"сверлить","coller":"клеить","mesurer":"измерять","échelle":"стремянка","pinceau":"кисть","scie":"пила","tuyau":"труба","corde":"верёвка","fil":"провод",
+"incendie":"пожар","ambulance":"скорая помощь","secours":"спасение","danger":"опасность","alarme":"сигнализация","il y a le feu":"тут пожар","voleur":"вор","témoin":"свидетель","prudent":"осторожный","avertir":"предупреждать","fuite":"утечка",
+"réservation":"бронирование","pourboire":"чаевые","commander":"заказывать","végétarien":"вегетарианец","saignant":"с кровью","bien cuit":"хорошо прожаренный","l'addition, s'il vous plaît":"счёт, пожалуйста",
+"concert":"концерт","spectacle":"спектакль","chanteur":"певец","acteur":"актёр","scène":"сцена","applaudir":"аплодировать","le spectacle commence à huit heures":"спектакль начинается в восемь","exposition":"выставка","ambiance":"атмосфера","cirque":"цирк","affiche":"афиша","entracte":"антракт",
+"cependant":"однако","pourtant":"всё-таки","malgré":"несмотря на","sauf":"кроме","environ":"примерно","plutôt":"скорее","sans doute":"наверное","d'ailleurs":"кстати","en fait":"на самом деле","au lieu de":"вместо","grâce à":"благодаря","à cause de":"из-за",
+"se souvenir":"вспоминать","mémoire":"память","reconnaître":"узнавать","regretter":"жалеть","deviner":"угадывать","je me souviens de toi":"я помню тебя","imaginer":"представлять","réfléchir":"размышлять","supposer":"предполагать","hésiter":"колебаться","prévoir":"предвидеть",
+"emprunter":"брать в долг","prêter":"одалживать","dette":"долг","récompense":"награда","ça vaut la peine":"это того стоит",
+"métal":"металл","plastique":"пластик","bois":"древесина","or":"золото","carton":"картон","coton":"хлопок","laine":"шерсть","cuir":"кожа","soie":"шёлк","tissu":"ткань"
+},
+uk:{
+"marteau":"молоток","clou":"цвях","vis":"гвинт","tournevis":"викрутка","outil":"інструмент","pelle":"лопата","réparer":"ремонтувати","percer":"свердлити","coller":"клеїти","mesurer":"вимірювати","échelle":"драбина","pinceau":"пензель","scie":"пилка","tuyau":"труба","corde":"мотузка","fil":"дріт",
+"incendie":"пожежа","ambulance":"швидка допомога","secours":"порятунок","danger":"небезпека","alarme":"сигналізація","il y a le feu":"тут пожежа","voleur":"злодій","témoin":"свідок","prudent":"обережний","avertir":"попереджати","fuite":"витік",
+"réservation":"бронювання","pourboire":"чайові","commander":"замовляти","végétarien":"вегетаріанець","saignant":"з кров'ю","bien cuit":"добре просмажений","l'addition, s'il vous plaît":"рахунок, будь ласка",
+"concert":"концерт","spectacle":"вистава","chanteur":"співак","acteur":"актор","scène":"сцена","applaudir":"аплодувати","le spectacle commence à huit heures":"вистава починається о восьмій","exposition":"виставка","ambiance":"атмосфера","cirque":"цирк","affiche":"афіша","entracte":"антракт",
+"cependant":"однак","pourtant":"все ж таки","malgré":"попри","sauf":"крім","environ":"приблизно","plutôt":"радше","sans doute":"мабуть","d'ailleurs":"до речі","en fait":"насправді","au lieu de":"замість","grâce à":"завдяки","à cause de":"через",
+"se souvenir":"згадувати","mémoire":"пам'ять","reconnaître":"впізнавати","regretter":"шкодувати","deviner":"вгадувати","je me souviens de toi":"я пам'ятаю тебе","imaginer":"уявляти","réfléchir":"розмірковувати","supposer":"припускати","hésiter":"вагатися","prévoir":"передбачати",
+"emprunter":"позичати","prêter":"давати в борг","dette":"борг","récompense":"нагорода","ça vaut la peine":"це того варте",
+"métal":"метал","plastique":"пластик","bois":"деревина","or":"золото","carton":"картон","coton":"бавовна","laine":"вовна","cuir":"шкіра","soie":"шовк","tissu":"тканина"
+},
+cs:{
+"marteau":"kladivo","clou":"hřebík","vis":"šroub","tournevis":"šroubovák","outil":"nástroj","pelle":"lopata","réparer":"opravovat","percer":"vrtat","coller":"lepit","mesurer":"měřit","échelle":"žebřík","pinceau":"štětec","scie":"pila","tuyau":"trubka","corde":"lano","fil":"drát",
+"incendie":"požár","ambulance":"sanitka","secours":"záchrana","danger":"nebezpečí","alarme":"alarm","il y a le feu":"hoří","voleur":"zloděj","témoin":"svědek","prudent":"opatrný","avertir":"varovat","fuite":"únik",
+"réservation":"rezervace","pourboire":"spropitné","commander":"objednávat","végétarien":"vegetarián","saignant":"krvavý","bien cuit":"dobře propečený","l'addition, s'il vous plaît":"účet prosím",
+"concert":"koncert","spectacle":"představení","chanteur":"zpěvák","acteur":"herec","scène":"scéna","applaudir":"tleskat","le spectacle commence à huit heures":"představení začíná v osm","exposition":"výstava","ambiance":"atmosféra","cirque":"cirkus","affiche":"plakát","entracte":"přestávka",
+"cependant":"však","pourtant":"přesto","malgré":"navzdory","sauf":"kromě","environ":"přibližně","plutôt":"spíše","sans doute":"nejspíš","d'ailleurs":"ostatně","en fait":"vlastně","au lieu de":"namísto","grâce à":"díky","à cause de":"kvůli",
+"se souvenir":"pamatovat si","mémoire":"paměť","reconnaître":"rozpoznávat","regretter":"litovat","deviner":"hádat","je me souviens de toi":"pamatuji si tě","imaginer":"představovat si","réfléchir":"přemýšlet","supposer":"předpokládat","hésiter":"váhat","prévoir":"předvídat",
+"emprunter":"půjčovat si","prêter":"půjčovat","dette":"dluh","récompense":"odměna","ça vaut la peine":"stojí to za to",
+"métal":"kov","plastique":"plast","bois":"dřevo","or":"zlato","carton":"karton","coton":"bavlna","laine":"vlna","cuir":"kůže","soie":"hedvábí","tissu":"látka"
+},
+zh:{
+"marteau":"锤子","clou":"钉子","vis":"螺丝","tournevis":"螺丝刀","outil":"工具","pelle":"铲子","réparer":"修理","percer":"钻孔","coller":"粘","mesurer":"测量","échelle":"梯子","pinceau":"刷子","scie":"锯子","tuyau":"管子","corde":"绳子","fil":"电线",
+"incendie":"火灾","ambulance":"救护车","secours":"救援","danger":"危险","alarme":"警报","il y a le feu":"着火 了","voleur":"小偷","témoin":"目击者","prudent":"小心的","avertir":"警告","fuite":"泄漏",
+"réservation":"订位","pourboire":"小费","commander":"点菜","végétarien":"素食者","saignant":"三分熟","bien cuit":"全熟","l'addition, s'il vous plaît":"请 结账",
+"concert":"音乐会","spectacle":"演出","chanteur":"歌手","acteur":"演员","scène":"舞台","applaudir":"鼓掌","le spectacle commence à huit heures":"演出 八点 开始","exposition":"展览","ambiance":"气氛","cirque":"马戏团","affiche":"海报","entracte":"中场休息",
+"cependant":"然而","pourtant":"不过","malgré":"尽管","sauf":"除了","environ":"大约","plutôt":"宁愿","sans doute":"大概","d'ailleurs":"况且","en fait":"其实","au lieu de":"而不是","grâce à":"多亏了","à cause de":"由于",
+"se souvenir":"记得","mémoire":"记忆","reconnaître":"认出","regretter":"后悔","deviner":"猜","je me souviens de toi":"我 记得 你","imaginer":"想象","réfléchir":"思考","supposer":"假设","hésiter":"犹豫","prévoir":"预测",
+"emprunter":"借","prêter":"借给","dette":"债务","récompense":"奖励","ça vaut la peine":"这 值得",
+"métal":"金属","plastique":"塑料","bois":"木头","or":"黄金","carton":"纸板","coton":"棉花","laine":"羊毛","cuir":"皮革","soie":"丝绸","tissu":"布料"
+},
+ja:{
+"marteau":"ハンマー","clou":"釘","vis":"ネジ","tournevis":"ドライバー","outil":"道具","pelle":"シャベル","réparer":"修理します","percer":"穴を開けます","coller":"貼ります","mesurer":"測ります","échelle":"はしご","pinceau":"刷毛","scie":"のこぎり","tuyau":"パイプ","corde":"ロープ","fil":"針金",
+"incendie":"火事","ambulance":"救急車","secours":"救助","danger":"危険","alarme":"警報","il y a le feu":"火事 です","voleur":"泥棒","témoin":"目撃者","prudent":"慎重な","avertir":"警告します","fuite":"漏れ",
+"réservation":"席の予約","pourboire":"チップ","commander":"注文します","végétarien":"ベジタリアン","saignant":"レア","bien cuit":"ウェルダン","l'addition, s'il vous plaît":"お会計 お願いします",
+"concert":"コンサート","spectacle":"ショー","chanteur":"歌手","acteur":"俳優","scène":"舞台","applaudir":"拍手します","le spectacle commence à huit heures":"ショー は 八時 に 始まります","exposition":"展覧会","ambiance":"雰囲気","cirque":"サーカス","affiche":"ポスター","entracte":"休憩",
+"cependant":"しかし","pourtant":"それでも","malgré":"〜にもかかわらず","sauf":"〜以外","environ":"約","plutôt":"むしろ","sans doute":"おそらく","d'ailleurs":"ちなみに","en fait":"実は","au lieu de":"〜の代わりに","grâce à":"〜のおかげで","à cause de":"〜のせいで",
+"se souvenir":"覚えています","mémoire":"記憶","reconnaître":"見分けます","regretter":"後悔します","deviner":"当てます","je me souviens de toi":"あなた を 覚えています","imaginer":"想像します","réfléchir":"考えます","supposer":"推測します","hésiter":"ためらいます","prévoir":"予測します",
+"emprunter":"借ります","prêter":"貸します","dette":"借金","récompense":"ご褒美","ça vaut la peine":"その 価値 が あります",
+"métal":"金属","plastique":"プラスチック","bois":"木材","or":"金","carton":"段ボール","coton":"綿","laine":"ウール","cuir":"革","soie":"絹","tissu":"布"
+},
+ko:{
+"marteau":"망치","clou":"못","vis":"나사","tournevis":"드라이버","outil":"도구","pelle":"삽","réparer":"수리하다","percer":"뚫다","coller":"붙이다","mesurer":"재다","échelle":"사다리","pinceau":"붓","scie":"톱","tuyau":"파이프","corde":"밧줄","fil":"철사",
+"incendie":"화재","ambulance":"구급차","secours":"구조","danger":"위험","alarme":"경보","il y a le feu":"불이 났어요","voleur":"도둑","témoin":"목격자","prudent":"신중한","avertir":"경고하다","fuite":"누수",
+"réservation":"자리 예약","pourboire":"팁","commander":"주문하다","végétarien":"채식주의자","saignant":"레어","bien cuit":"웰던","l'addition, s'il vous plaît":"계산서 주세요",
+"concert":"콘서트","spectacle":"공연","chanteur":"가수","acteur":"배우","scène":"무대","applaudir":"박수를 치다","le spectacle commence à huit heures":"공연은 여덟 시에 시작해요","exposition":"전시회","ambiance":"분위기","cirque":"서커스","affiche":"포스터","entracte":"인터미션",
+"cependant":"그러나","pourtant":"그래도","malgré":"에도 불구하고","sauf":"제외하고","environ":"대략","plutôt":"오히려","sans doute":"아마도","d'ailleurs":"게다가","en fait":"사실은","au lieu de":"대신에","grâce à":"덕분에","à cause de":"때문에",
+"se souvenir":"기억하다","mémoire":"기억","reconnaître":"알아보다","regretter":"후회하다","deviner":"맞히다","je me souviens de toi":"너를 기억해요","imaginer":"상상하다","réfléchir":"곰곰이 생각하다","supposer":"추측하다","hésiter":"망설이다","prévoir":"예측하다",
+"emprunter":"빌리다","prêter":"빌려주다","dette":"빚","récompense":"보상","ça vaut la peine":"그럴 가치가 있어요",
+"métal":"금속","plastique":"플라스틱","bois":"목재","or":"금","carton":"판지","coton":"면","laine":"양모","cuir":"가죽","soie":"실크","tissu":"옷감"
+},
+ar:{
+"marteau":"مطرقة","clou":"مسمار","vis":"برغي","tournevis":"مفك","outil":"أداة","pelle":"مجرفة","réparer":"يصلح","percer":"يثقب","coller":"يلصق","mesurer":"يقيس","échelle":"سلم","pinceau":"فرشاة طلاء","scie":"منشار","tuyau":"أنبوب","corde":"حبل","fil":"سلك",
+"incendie":"حريق","ambulance":"سيارة إسعاف","secours":"إنقاذ","danger":"خطر","alarme":"إنذار","il y a le feu":"هناك حريق","voleur":"لص","témoin":"شاهد","prudent":"حذر","avertir":"يحذر","fuite":"تسرب",
+"réservation":"حجز","pourboire":"بقشيش","commander":"يطلب","végétarien":"نباتي","saignant":"قليل الاستواء","bien cuit":"مطهو جيدًا","l'addition, s'il vous plaît":"الحساب من فضلك",
+"concert":"حفلة موسيقية","spectacle":"عرض مسرحي","chanteur":"مغني","acteur":"ممثل","scène":"خشبة المسرح","applaudir":"يصفق","le spectacle commence à huit heures":"يبدأ العرض في الساعة الثامنة","exposition":"معرض","ambiance":"أجواء","cirque":"سيرك","affiche":"ملصق","entracte":"استراحة",
+"cependant":"ومع ذلك","pourtant":"رغم ذلك","malgré":"رغم","sauf":"ما عدا","environ":"حوالي","plutôt":"بالأحرى","sans doute":"على الأرجح","d'ailleurs":"بالمناسبة","en fait":"في الواقع","au lieu de":"بدلاً من","grâce à":"بفضل","à cause de":"بسبب",
+"se souvenir":"يتذكر","mémoire":"ذاكرة","reconnaître":"يتعرف على","regretter":"يندم","deviner":"يخمن","je me souviens de toi":"أتذكرك","imaginer":"يتخيل","réfléchir":"يتأمل","supposer":"يفترض","hésiter":"يتردد","prévoir":"يتوقع",
+"emprunter":"يقترض","prêter":"يقرض","dette":"ديون","récompense":"مكافأة","ça vaut la peine":"يستحق العناء",
+"métal":"معدن","plastique":"بلاستيك","bois":"خشب","or":"ذهب","carton":"كرتون","coton":"قطن","laine":"صوف","cuir":"جلد","soie":"حرير","tissu":"قماش"
+}
+};
+LANGS2.forEach(function(l){ var l2=LEX2L[l]||{}; Object.keys(l2).forEach(function(k){ LEX2[l][k]=l2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
