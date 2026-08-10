@@ -375,7 +375,7 @@
 
 <script>
 "use strict";
-var VER="v2.41";
+var VER="v2.42";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -1560,7 +1560,20 @@ function _setHistDate(iso){
    au 1er fix SEULEMENT (on ne vole pas la carte ensuite). Updater IDEMPOTENT
    (règle stabilité : ne mute que si la valeur change). Permission refusée →
    message clair + puce désactivée (pas de re-demande en boucle). */
-var _posWatch=null,_posLayer=null,_posMarker=null,_posCircle=null,_posFix=null,_posCentered=false;
+var _posWatch=null,_posLayer=null,_posMarker=null,_posCircle=null,_posFix=null,_posCentered=false,_pos3dMarker=null;
+/* v2.42 — « carte, map, globe etc » (Kevin) : la position se dessine PARTOUT.
+   Ici : synchro du marqueur sur le globe 3D (MapLibre) — idempotent, fail-open. */
+function _pos3dSync(){
+  try{
+    var ml=(typeof _ml!=="undefined")?_ml:null;
+    if(!ml||!window.maplibregl){return;}
+    if(ON.pos&&_posFix){
+      if(!_pos3dMarker){_pos3dMarker=new maplibregl.Marker({color:"#2f7fff"}).setLngLat([_posFix.lon,_posFix.lat]).addTo(ml);}
+      else{var c=_pos3dMarker.getLngLat();
+        if(Math.abs(c.lat-_posFix.lat)>1e-6||Math.abs(c.lng-_posFix.lon)>1e-6)_pos3dMarker.setLngLat([_posFix.lon,_posFix.lat]);}
+    }else if(_pos3dMarker){_pos3dMarker.remove();_pos3dMarker=null;}
+  }catch(_e){}
+}
 function _posChipSync(){var b=document.querySelector('[data-layer="pos"]');if(b){var w=String(!!ON.pos);if(b.getAttribute("aria-pressed")!==w)b.setAttribute("aria-pressed",w);}}
 function _posDraw(lat,lon,acc){
   if(!MAP||!LEAF)return;
@@ -1579,6 +1592,7 @@ function _posDraw(lat,lon,acc){
   if(Math.abs((_posCircle.getRadius()||0)-wantR)>1)_posCircle.setRadius(wantR);
   _posMarker.setPopupContent('<div style="font-size:12px">📍 <b>Ma position</b><br>'+lat.toFixed(5)+", "+lon.toFixed(5)+(acc?('<br>précision ±'+Math.round(acc)+' m'):'')+'<br><span style="opacity:.7">🔒 ta position GPS reste sur l&#39;appareil (les couches live chargent la zone affichée, comme quand tu déplaces la carte)</span></div>');
   if(!_posCentered){_posCentered=true;try{MAP.setView([lat,lon],Math.max(MAP.getZoom()||0,13));}catch(_e){}}
+  _pos3dSync();
 }
 function posStart(){
   if(!("geolocation" in navigator)){setText($("mapHint"),"📍 Localisation indisponible sur cet appareil");ON.pos=0;_savePrefs();_posChipSync();return;}
@@ -1604,6 +1618,7 @@ function posStop(){
   _posFix=null;_posCentered=false;
   if(MAP&&_posLayer&&MAP.hasLayer(_posLayer)){try{MAP.removeLayer(_posLayer);}catch(_e){}}
   _posMarker=null;_posCircle=null;_posLayer=null;
+  _pos3dSync(); /* retire aussi le marqueur du globe 3D */
   var el=$("mapHint");if(el&&el.textContent&&el.textContent.indexOf("📍")===0)setText(el,"");
 }
 function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer,lightning:_lightningLayer,cyclones:_cyclonesLayer,firms:_firmsLayer,crues:_floodLayer,cadastre:_cadastreLayer,plu:_pluLayer}[k]||null;}
@@ -1659,7 +1674,9 @@ function show3D(){
   $("vMap").setAttribute("aria-pressed","false");$("vGlobe").setAttribute("aria-pressed","false");
   var b3=$("vG3D");if(b3)b3.setAttribute("aria-pressed","true");
   setText($("globeState"),"3D — glisse pour tourner · 2 doigts pour incliner · pince pour zoomer");
-  _loadMapLibre(function(){_init3D();setTimeout(function(){if(_ml)_ml.resize();},90);});
+  _loadMapLibre(function(){_init3D();setTimeout(function(){if(_ml)_ml.resize();
+    try{if(typeof _pos3dSync==="function")_pos3dSync();}catch(_e){} /* 📍 position sur le 3D dès l'ouverture */
+  },90);});
 }
 (function(){var b=$("vG3D");if(b)b.addEventListener("click",show3D);})();
 /* Plein écran carte (bascule auto sur la carte si on est en globe) */
