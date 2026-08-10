@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.67.0";
+var APP_VER="v2.68.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -19,7 +19,7 @@ function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,
 function today(){ var d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
 function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function sample(arr,n,ex){ return shuffle(arr.filter(function(x){return x!==ex;})).slice(0,n); }
-function norm(s){ return String(s||"").toLowerCase().trim().replace(/[.,!?¿¡'’]/g,"").replace(/\s+/g," ").replace(/[àâä]/g,"a").replace(/[éèêë]/g,"e").replace(/[îï]/g,"i").replace(/[ôö]/g,"o").replace(/[ûü]/g,"u").replace(/ç/g,"c").replace(/ß/g,"ss"); }
+function norm(s){ return String(s||"").toLowerCase().trim().replace(/[.,!?¿¡'’]/g,"").replace(/\s+/g," ").replace(/[àâä]/g,"a").replace(/[éèêë]/g,"e").replace(/[îï]/g,"i").replace(/[ôö]/g,"o").replace(/[ûü]/g,"u").replace(/ç/g,"c").replace(/ß/g,"ss").replace(/ł/g,"l").normalize("NFD").replace(/[̀-ͯ]/g,""); } /* NFD : tolère TOUS les accents latins (polonais ż/ą, tchèque č/ř…) au clavier français */
 function vibrate(m){ try{ if(navigator.vibrate) navigator.vibrate(m);}catch(e){} }
 function dayHash(s){ var h=7; for(var i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))%100000; return h; }
 
@@ -266,10 +266,14 @@ function allWords(c){ var o=[]; COURSES[c].units.forEach(function(u){u.lessons.f
 function diffTier(){ if(S.diff!=null) return S.diff; var m=masteredCount(); return m>=240?4:m>=160?3:m>=90?2:m>=40?1:0; }
 function exForWord(w,pool,tier,i){
   var r=(i*7+tier*3)%10;
+  /* Langues à alphabet non latin (russe, chinois, japonais…) : on n'exige JAMAIS d'écrire la
+     langue cible au clavier — écrire vers la cible/dictée → choix multiples ; écrire le
+     FRANÇAIS (toFr) reste possible partout. */
+  var NT=COURSES[S.course]&&COURSES[S.course].noType;
   if(tier<=0){ var m=i%3===0?"mc_t":(i%3===1?"mc_fr":"listen"); if(m==="listen"&&!S.sound)m="mc_t"; return makeMC(w,pool,m); }
-  if(tier===1){ if(r<3) return makeType(w,"toT"); return makeMC(w,pool,i%2?"mc_fr":"mc_t"); }
-  if(tier===2){ if(r<5) return makeType(w, r%2?"toT":"toFr"); if(r<7&&S.sound) return makeType(w,"listen"); return makeMC(w,pool,r%2?"mc_fr":"mc_t"); }
-  if(r<6) return makeType(w, r%2?"toT":"toFr"); if(r<8&&S.sound) return makeType(w,"listen"); return makeMC(w,pool,"mc_fr");
+  if(tier===1){ if(r<3) return NT?makeMC(w,pool,"mc_t"):makeType(w,"toT"); return makeMC(w,pool,i%2?"mc_fr":"mc_t"); }
+  if(tier===2){ if(r<5) return (r%2&&!NT)?makeType(w,"toT"):makeType(w,"toFr"); if(r<7&&S.sound) return NT?makeMC(w,pool,"listen"):makeType(w,"listen"); return makeMC(w,pool,r%2?"mc_fr":"mc_t"); }
+  if(r<6) return (r%2&&!NT)?makeType(w,"toT"):makeType(w,"toFr"); if(r<8&&S.sound) return NT?makeMC(w,pool,"listen"):makeType(w,"listen"); return makeMC(w,pool,"mc_fr");
 }
 function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course),tier=diffTier();
   var words=rev||c.units[ui].lessons[li].words.slice();
@@ -277,7 +281,7 @@ function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course)
   var ex=[];
   shuffle(words).forEach(function(w,i){ ex.push(exForWord(w,pool,tier,i)); });
   if(words.length>=4 && tier<=2) ex.splice(1,0,makeMatch(shuffle(words).slice(0,Math.min(5,words.length))));
-  phr.forEach(function(p){ ex.push(makeBank(p,pool)); if(tier>=3) ex.push(makeType({fr:p.fr,t:p.t},"toT")); });
+  phr.forEach(function(p){ ex.push(makeBank(p,pool)); if(tier>=3&&!(c&&c.noType)) ex.push(makeType({fr:p.fr,t:p.t},"toT")); });
   if(tier>=2 && _srOk() && words.length){ shuffle(words).slice(0,Math.min(2,words.length)).forEach(function(w){ ex.push(makeSpeak(w)); }); } // prononciation à partir du niveau « assez difficile »
   return shuffle(ex).slice(0,Math.min(ex.length, 12+tier*2)); // 12 → 20 selon le niveau
 }
@@ -476,7 +480,7 @@ function vTopbar(){ var t=el("div","topbar"); var c=S.course?COURSES[S.course]:n
 
 /* ---------- Choix de langue (course pick) ---------- */
 function coursePct(id){ if(!COURSES[id])return 0; var tot=0,done=0; COURSES[id].units.forEach(function(u,ui){ u.lessons.forEach(function(_,li){ tot++; if((S.prog[id]||{})["u"+ui+"-"+li]>0)done++; }); }); return Math.round(done/tot*100); }
-function vCoursePick(){ var d=el("div","screen"); d.innerHTML='<h2 class="ttl">🌍 Choisis une langue</h2><p class="sub2">6 langues — commence, ou continue là où tu en es.</p>';
+function vCoursePick(){ var d=el("div","screen"); d.innerHTML='<h2 class="ttl">🌍 Choisis une langue</h2><p class="sub2">'+Object.keys(COURSES).length+' langues — commence, ou continue là où tu en es.</p>';
   var list=el("div","course-pick");
   Object.keys(COURSES).forEach(function(id){ var c=COURSES[id],p=coursePct(id),b=el("button","course-card");
     b.innerHTML='<span class="flag">'+c.drapeau+'</span><span class="cnom">'+c.nom+(p>0?' <i class="cpct">'+p+'%</i>':'')+'<span class="cbar"><span style="width:'+p+'%"></span></span></span><span class="arrow">'+(p>0?'▶':'›')+'</span>';
@@ -524,7 +528,7 @@ function vHome(){ var w=el("div","screen tree");
   goal.innerHTML='<div class="goal-top"><b>🎯 Objectif du jour</b><span>'+S.dailyXP+' / '+S.goal+' XP</span></div><div class="bar"><div class="bar-fill" style="width:'+gp+'%"></div></div>'+(gp>=100?'<div class="goal-done">✅ Objectif atteint !</div>':'');
   w.appendChild(goal);
   // 📖 Histoires de la ruche — Bee raconte, tu comprends, tu gagnes
-  if(typeof STORIES!=="undefined"&&STORIES.length){ var sd=storiesDoneCount();
+  if(typeof STORIES!=="undefined"&&STORIES.length&&STORIES[0].lignes[0].t[S.course]){ var sd=storiesDoneCount(); /* histoires cachées si pas encore traduites dans cette langue */
     var stc=el("button","stories-card");
     stc.innerHTML='<span class="st-ic">📖</span><span class="st-tx"><b>Histoires de la ruche</b><i>Bee te raconte une histoire en '+esc(COURSES[S.course].nom.toLowerCase())+'</i></span><span class="st-badge">'+sd+'/'+STORIES.length+'</span>';
     stc.onclick=function(){ go("stories"); }; w.appendChild(stc); }
@@ -1497,6 +1501,7 @@ function storyUnlocked(idx){ if(idx===0)return true; return !!storiesDone()[STOR
 function storyLineSay(l){ var c=COURSES[S.course]; if(!c||!l)return;
   speakLang(l.t[S.course]||l.fr, c.ttsLang, l.qui==="🐝"?BEE_VOICE:null, true); }
 function storyStart(idx){ var st=STORIES[idx]; if(!st||!storyUnlocked(idx))return;
+  if(!(st.lignes[0]&&st.lignes[0].t[S.course])){ toast("📖 Histoires bientôt disponibles dans cette langue"); return; } /* VÉRITÉ : jamais lire du français à la place de la langue cible */
   ST={sid:st.id, idx:idx, i:0, phase:"lines", qi:0, good:0, replay:!!storiesDone()[st.id], showFr:false};
   /* réchauffe TOUTES les répliques d'avance → la voix suit le texte sans décalage */
   ttsPrefetchMany(st.lignes.map(function(l){ return l.t[S.course]||l.fr; }));
@@ -1581,21 +1586,21 @@ function vTabbar(){ var t=el("div","tabbar"); [["home","🏠","Accueil"],["revie
 
 /* ============ Traducteur multilingue (hors-ligne, basé sur le dictionnaire) ============ */
 var REV=null;
-function buildRev(){ REV={fr:{}}; LANGS.forEach(function(l){REV[l]={};});
-  Object.keys(DICT).forEach(function(fr){ REV.fr[norm(fr)]=fr; LANGS.forEach(function(l){ var v=DICT[fr][l]; if(v)REV[l][norm(v)]=fr; }); }); }
-function translateQ(q,src){ if(!REV)buildRev(); var nq=norm(q); if(!nq)return null; var order=src==="auto"?["fr"].concat(LANGS):[src];
+function buildRev(){ REV={fr:{}}; TLANGS.forEach(function(l){REV[l]={};});
+  Object.keys(DICT).forEach(function(fr){ REV.fr[norm(fr)]=fr; TLANGS.forEach(function(l){ var v=DICT[fr][l]; if(v)REV[l][norm(v)]=fr; }); }); }
+function translateQ(q,src){ if(!REV)buildRev(); var nq=norm(q); if(!nq)return null; var order=src==="auto"?["fr"].concat(TLANGS):[src];
   var fr=null;
   for(var i=0;i<order.length&&!fr;i++){ var m=REV[order[i]]; if(m&&m[nq])fr=m[nq]; }
   if(!fr){ // approché : commence par / contient
     for(var j=0;j<order.length&&!fr;j++){ var mm=REV[order[j]]; if(!mm)continue; var keys=Object.keys(mm);
       for(var k=0;k<keys.length;k++){ if(keys[k].indexOf(nq)===0||nq.indexOf(keys[k])===0){ fr=mm[keys[k]]; break; } } } }
-  if(!fr)return null; var out={fr:fr}; LANGS.forEach(function(l){ out[l]=DICT[fr][l]||"—"; }); return out;
+  if(!fr)return null; var out={fr:fr}; TLANGS.forEach(function(l){ out[l]=DICT[fr][l]||"—"; }); return out;
 }
 var TR={src:"auto", q:"", res:null};
 function vTranslate(){ var d=el("div","screen");
-  d.innerHTML='<h2 class="ttl">🌐 Traducteur</h2><p class="sub2">7 langues, hors-ligne. Tape un mot ou une phrase.</p>';
+  d.innerHTML='<h2 class="ttl">🌐 Traducteur</h2><p class="sub2">'+(TLANGS.length+1)+' langues, hors-ligne. Tape un mot ou une phrase.</p>';
   var bar=el("div","tr-bar");
-  var langsOpt=[["auto","🔎 Auto"],["fr","🇫🇷 Français"]].concat(LANGS.map(function(l){return [l,LMETA[l].drapeau+" "+LMETA[l].nom];}));
+  var langsOpt=[["auto","🔎 Auto"],["fr","🇫🇷 Français"]].concat(TLANGS.map(function(l){return [l,LMETA[l].drapeau+" "+LMETA[l].nom];}));
   bar.innerHTML='<select id="trSrc">'+langsOpt.map(function(o){return '<option value="'+o[0]+'"'+(TR.src===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("")+'</select>';
   var input=el("div","tr-in");
   input.innerHTML='<input id="trQ" class="txt" placeholder="ex : bonjour, chat, je t\'aime…" value="'+esc(TR.q)+'" autocomplete="off">'+
@@ -1606,7 +1611,7 @@ function vTranslate(){ var d=el("div","screen");
   function paint(){ var o=d.querySelector("#trOut"); o.innerHTML="";
     if(!TR.q.trim()){ o.innerHTML='<div class="tr-hint">💡 Essaie « bonjour », « chat », « où sont les toilettes »…</div>'; return; }
     if(!TR.res){ o.innerHTML='<div class="tr-hint">🤔 Mot introuvable dans le dictionnaire ('+Object.keys(DICT).length+' entrées). Essaie un autre mot.</div>'; return; }
-    var langsAll=[["fr","🇫🇷","Français"]].concat(LANGS.map(function(l){return [l,LMETA[l].drapeau,LMETA[l].nom];}));
+    var langsAll=[["fr","🇫🇷","Français"]].concat(TLANGS.map(function(l){return [l,LMETA[l].drapeau,LMETA[l].nom];}));
     langsAll.forEach(function(l){ var val=TR.res[l[0]]; if(!val||val==="—")return; var card=el("div","tr-card");
       card.innerHTML='<span class="trflag">'+l[1]+'</span><span class="trtxt"><b>'+esc(val)+'</b><i>'+l[2]+'</i></span>'+(l[0]!=="fr"?'<button class="trspk" data-l="'+l[0]+'" data-t="'+esc(val)+'">🔊</button>':'');
       o.appendChild(card); });
@@ -1665,7 +1670,7 @@ function unitAllPhrases(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.f
 function buildExam(ui){ var pool=allWords(S.course),tier=Math.min(4,diffTier()+1),ws=shuffle(unitAllWords(ui)),ex=[];
   ws.forEach(function(w,i){ ex.push(exForWord(w,pool,tier,i)); }); // examen = un cran plus dur que les leçons
   if(ws.length>=4 && tier<=2) ex.splice(2,0,makeMatch(shuffle(ws).slice(0,Math.min(5,ws.length))));
-  unitAllPhrases(ui).forEach(function(p){ ex.push(makeBank(p,pool)); if(tier>=2) ex.push(makeType({fr:p.fr,t:p.t},"toT")); });
+  unitAllPhrases(ui).forEach(function(p){ ex.push(makeBank(p,pool)); if(tier>=2&&!(COURSES[S.course]&&COURSES[S.course].noType)) ex.push(makeType({fr:p.fr,t:p.t},"toT")); });
   return shuffle(ex).slice(0,Math.min(ex.length, 15+tier)); }
 /* ---------- Test de niveau (placement) : estime le niveau puis adapte tout ---------- */
 function buildPlacement(){ var c=COURSES[S.course],pool=allWords(S.course),qs=[];

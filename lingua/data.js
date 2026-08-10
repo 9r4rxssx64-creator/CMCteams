@@ -2501,6 +2501,172 @@ var NEWV11 = {
 CURRICULUM_O.forEach(function(u){ CURRICULUM.push(u); });
 LANGS.forEach(function(l){ Object.keys(NEWV11).forEach(function(k){ if(NEWV11[k][l]) LEX[l][k]=NEWV11[k][l]; }); });
 
+/* ============ 🌏 NOUVELLES LANGUES — Europe de l'Est + Asie (cours DÉMARRAGE) ============
+   Kevin 2026-08-10 : « ajoute langues pays de l'est, asiatique, etc ». Chaque nouvelle langue
+   couvre ENTIÈREMENT les 8 premières unités (A1 démarrage) et grandit vague par vague comme
+   les 6 langues d'origine. VÉRITÉ : seules les unités 100 % traduites entrent dans le cours —
+   aucun repli français silencieux. noType = écriture au clavier remplacée par des choix
+   (alphabets non latins) ; les phrases zh/ja sont segmentées par espaces (blocs de mots). */
+var LANGS2 = ["pl","ru","uk","cs","zh","ja","ko","ar"];
+var LMETA2 = {
+  pl:{nom:"Polonais",  drapeau:"🇵🇱", tts:"pl-PL"},
+  ru:{nom:"Russe",     drapeau:"🇷🇺", tts:"ru-RU", noType:true},
+  uk:{nom:"Ukrainien", drapeau:"🇺🇦", tts:"uk-UA", noType:true},
+  cs:{nom:"Tchèque",   drapeau:"🇨🇿", tts:"cs-CZ"},
+  zh:{nom:"Chinois (mandarin)", drapeau:"🇨🇳", tts:"zh-CN", noType:true},
+  ja:{nom:"Japonais",  drapeau:"🇯🇵", tts:"ja-JP", noType:true},
+  ko:{nom:"Coréen",    drapeau:"🇰🇷", tts:"ko-KR", noType:true},
+  ar:{nom:"Arabe",     drapeau:"🇸🇦", tts:"ar-SA", noType:true, rtl:true}
+};
+Object.keys(LMETA2).forEach(function(k){ LMETA[k]=LMETA2[k]; });
+var LEX2 = {
+pl:{
+"bonjour":"dzień dobry","salut":"cześć","au revoir":"do widzenia","merci":"dziękuję","oui":"tak","non":"nie","s'il te plaît":"proszę","pardon":"przepraszam",
+"homme":"mężczyzna","femme":"kobieta","garçon":"chłopiec","fille":"dziewczyna","ami":"przyjaciel","enfant":"dziecko","nom":"imię","moi":"ja",
+"eau":"woda","pain":"chleb","maison":"dom","livre":"książka","chien":"pies","chat":"kot",
+"je suis un homme":"jestem mężczyzną","elle est une femme":"ona jest kobietą","le chat boit de l'eau":"kot pije wodę",
+"café":"kawa","lait":"mleko","vin":"wino","thé":"herbata","jus":"sok","bière":"piwo",
+"pomme":"jabłko","fromage":"ser","poisson":"ryba","viande":"mięso","riz":"ryż","œuf":"jajko","gâteau":"ciasto","soupe":"zupa",
+"je bois du café":"piję kawę","je mange une pomme":"jem jabłko","nous mangeons du riz":"jemy ryż",
+"zéro":"zero","un":"jeden","deux":"dwa","trois":"trzy","quatre":"cztery","cinq":"pięć","six":"sześć","sept":"siedem","huit":"osiem","neuf":"dziewięć","dix":"dziesięć","cent":"sto",
+"j'ai deux chats":"mam dwa koty","trois pommes":"trzy jabłka",
+"mère":"matka","père":"ojciec","frère":"brat","sœur":"siostra","grand-mère":"babcia","grand-père":"dziadek","bébé":"niemowlę","famille":"rodzina",
+"rouge":"czerwony","bleu":"niebieski","vert":"zielony","jaune":"żółty","noir":"czarny","blanc":"biały","orange":"pomarańczowy","rose":"różowy",
+"une fleur rouge":"czerwony kwiat","le chat est noir":"kot jest czarny",
+"cheval":"koń","oiseau":"ptak","vache":"krowa","poule":"kura","cochon":"świnia","lapin":"królik","mouton":"owca","souris":"mysz",
+"jour":"dzień","nuit":"noc","matin":"rano","soir":"wieczór","semaine":"tydzień","mois":"miesiąc","année":"rok","heure":"godzina","minute":"minuta","aujourd'hui":"dzisiaj","demain":"jutro","hier":"wczoraj",
+"gare":"dworzec","hôtel":"hotel","rue":"ulica","gauche":"lewo","droite":"prawo","ici":"tutaj","grand":"duży","petit":"mały","nouveau":"nowy","beau":"piękny","bon":"dobry","vite":"szybko",
+"où est la gare":"gdzie jest dworzec","la maison est grande":"dom jest duży","c'est un bon café":"to jest dobra kawa"
+},
+ru:{
+"bonjour":"здравствуйте","salut":"привет","au revoir":"до свидания","merci":"спасибо","oui":"да","non":"нет","s'il te plaît":"пожалуйста","pardon":"извините",
+"homme":"мужчина","femme":"женщина","garçon":"мальчик","fille":"девочка","ami":"друг","enfant":"ребёнок","nom":"имя","moi":"я",
+"eau":"вода","pain":"хлеб","maison":"дом","livre":"книга","chien":"собака","chat":"кот",
+"je suis un homme":"я мужчина","elle est une femme":"она женщина","le chat boit de l'eau":"кот пьёт воду",
+"café":"кофе","lait":"молоко","vin":"вино","thé":"чай","jus":"сок","bière":"пиво",
+"pomme":"яблоко","fromage":"сыр","poisson":"рыба","viande":"мясо","riz":"рис","œuf":"яйцо","gâteau":"торт","soupe":"суп",
+"je bois du café":"я пью кофе","je mange une pomme":"я ем яблоко","nous mangeons du riz":"мы едим рис",
+"zéro":"ноль","un":"один","deux":"два","trois":"три","quatre":"четыре","cinq":"пять","six":"шесть","sept":"семь","huit":"восемь","neuf":"девять","dix":"десять","cent":"сто",
+"j'ai deux chats":"у меня два кота","trois pommes":"три яблока",
+"mère":"мама","père":"папа","frère":"брат","sœur":"сестра","grand-mère":"бабушка","grand-père":"дедушка","bébé":"малыш","famille":"семья",
+"rouge":"красный","bleu":"синий","vert":"зелёный","jaune":"жёлтый","noir":"чёрный","blanc":"белый","orange":"оранжевый","rose":"розовый",
+"une fleur rouge":"красный цветок","le chat est noir":"кот чёрный",
+"cheval":"лошадь","oiseau":"птица","vache":"корова","poule":"курица","cochon":"свинья","lapin":"кролик","mouton":"овца","souris":"мышь",
+"jour":"день","nuit":"ночь","matin":"утро","soir":"вечер","semaine":"неделя","mois":"месяц","année":"год","heure":"час","minute":"минута","aujourd'hui":"сегодня","demain":"завтра","hier":"вчера",
+"gare":"вокзал","hôtel":"отель","rue":"улица","gauche":"налево","droite":"направо","ici":"здесь","grand":"большой","petit":"маленький","nouveau":"новый","beau":"красивый","bon":"хороший","vite":"быстро",
+"où est la gare":"где вокзал","la maison est grande":"дом большой","c'est un bon café":"это хороший кофе"
+},
+uk:{
+"bonjour":"добрий день","salut":"привіт","au revoir":"до побачення","merci":"дякую","oui":"так","non":"ні","s'il te plaît":"будь ласка","pardon":"вибачте",
+"homme":"чоловік","femme":"жінка","garçon":"хлопчик","fille":"дівчинка","ami":"друг","enfant":"дитина","nom":"ім'я","moi":"я",
+"eau":"вода","pain":"хліб","maison":"дім","livre":"книга","chien":"собака","chat":"кіт",
+"je suis un homme":"я чоловік","elle est une femme":"вона жінка","le chat boit de l'eau":"кіт п'є воду",
+"café":"кава","lait":"молоко","vin":"вино","thé":"чай","jus":"сік","bière":"пиво",
+"pomme":"яблуко","fromage":"сир","poisson":"риба","viande":"м'ясо","riz":"рис","œuf":"яйце","gâteau":"торт","soupe":"суп",
+"je bois du café":"я п'ю каву","je mange une pomme":"я їм яблуко","nous mangeons du riz":"ми їмо рис",
+"zéro":"нуль","un":"один","deux":"два","trois":"три","quatre":"чотири","cinq":"п'ять","six":"шість","sept":"сім","huit":"вісім","neuf":"дев'ять","dix":"десять","cent":"сто",
+"j'ai deux chats":"у мене два коти","trois pommes":"три яблука",
+"mère":"мама","père":"тато","frère":"брат","sœur":"сестра","grand-mère":"бабуся","grand-père":"дідусь","bébé":"малюк","famille":"сім'я",
+"rouge":"червоний","bleu":"синій","vert":"зелений","jaune":"жовтий","noir":"чорний","blanc":"білий","orange":"помаранчевий","rose":"рожевий",
+"une fleur rouge":"червона квітка","le chat est noir":"кіт чорний",
+"cheval":"кінь","oiseau":"птах","vache":"корова","poule":"курка","cochon":"свиня","lapin":"кролик","mouton":"вівця","souris":"миша",
+"jour":"день","nuit":"ніч","matin":"ранок","soir":"вечір","semaine":"тиждень","mois":"місяць","année":"рік","heure":"година","minute":"хвилина","aujourd'hui":"сьогодні","demain":"завтра","hier":"вчора",
+"gare":"вокзал","hôtel":"готель","rue":"вулиця","gauche":"ліворуч","droite":"праворуч","ici":"тут","grand":"великий","petit":"маленький","nouveau":"новий","beau":"гарний","bon":"добрий","vite":"швидко",
+"où est la gare":"де вокзал","la maison est grande":"дім великий","c'est un bon café":"це добра кава"
+},
+cs:{
+"bonjour":"dobrý den","salut":"ahoj","au revoir":"na shledanou","merci":"děkuji","oui":"ano","non":"ne","s'il te plaît":"prosím","pardon":"promiňte",
+"homme":"muž","femme":"žena","garçon":"chlapec","fille":"dívka","ami":"přítel","enfant":"dítě","nom":"jméno","moi":"já",
+"eau":"voda","pain":"chléb","maison":"dům","livre":"kniha","chien":"pes","chat":"kočka",
+"je suis un homme":"jsem muž","elle est une femme":"ona je žena","le chat boit de l'eau":"kočka pije vodu",
+"café":"káva","lait":"mléko","vin":"víno","thé":"čaj","jus":"džus","bière":"pivo",
+"pomme":"jablko","fromage":"sýr","poisson":"ryba","viande":"maso","riz":"rýže","œuf":"vejce","gâteau":"dort","soupe":"polévka",
+"je bois du café":"piju kávu","je mange une pomme":"jím jablko","nous mangeons du riz":"jíme rýži",
+"zéro":"nula","un":"jeden","deux":"dva","trois":"tři","quatre":"čtyři","cinq":"pět","six":"šest","sept":"sedm","huit":"osm","neuf":"devět","dix":"deset","cent":"sto",
+"j'ai deux chats":"mám dvě kočky","trois pommes":"tři jablka",
+"mère":"matka","père":"otec","frère":"bratr","sœur":"sestra","grand-mère":"babička","grand-père":"dědeček","bébé":"miminko","famille":"rodina",
+"rouge":"červený","bleu":"modrý","vert":"zelený","jaune":"žlutý","noir":"černý","blanc":"bílý","orange":"oranžový","rose":"růžový",
+"une fleur rouge":"červená květina","le chat est noir":"kočka je černá",
+"cheval":"kůň","oiseau":"pták","vache":"kráva","poule":"slepice","cochon":"prase","lapin":"králík","mouton":"ovce","souris":"myš",
+"jour":"den","nuit":"noc","matin":"ráno","soir":"večer","semaine":"týden","mois":"měsíc","année":"rok","heure":"hodina","minute":"minuta","aujourd'hui":"dnes","demain":"zítra","hier":"včera",
+"gare":"nádraží","hôtel":"hotel","rue":"ulice","gauche":"vlevo","droite":"vpravo","ici":"tady","grand":"velký","petit":"malý","nouveau":"nový","beau":"krásný","bon":"dobrý","vite":"rychle",
+"où est la gare":"kde je nádraží","la maison est grande":"dům je velký","c'est un bon café":"to je dobrá káva"
+},
+zh:{
+"bonjour":"你好","salut":"嗨","au revoir":"再见","merci":"谢谢","oui":"是","non":"不","s'il te plaît":"请","pardon":"对不起",
+"homme":"男人","femme":"女人","garçon":"男孩","fille":"女孩","ami":"朋友","enfant":"孩子","nom":"名字","moi":"我",
+"eau":"水","pain":"面包","maison":"房子","livre":"书","chien":"狗","chat":"猫",
+"je suis un homme":"我 是 男人","elle est une femme":"她 是 女人","le chat boit de l'eau":"猫 喝 水",
+"café":"咖啡","lait":"牛奶","vin":"葡萄酒","thé":"茶","jus":"果汁","bière":"啤酒",
+"pomme":"苹果","fromage":"奶酪","poisson":"鱼","viande":"肉","riz":"米饭","œuf":"鸡蛋","gâteau":"蛋糕","soupe":"汤",
+"je bois du café":"我 喝 咖啡","je mange une pomme":"我 吃 苹果","nous mangeons du riz":"我们 吃 米饭",
+"zéro":"零","un":"一","deux":"二","trois":"三","quatre":"四","cinq":"五","six":"六","sept":"七","huit":"八","neuf":"九","dix":"十","cent":"百",
+"j'ai deux chats":"我 有 两 只 猫","trois pommes":"三 个 苹果",
+"mère":"妈妈","père":"爸爸","frère":"哥哥","sœur":"姐姐","grand-mère":"奶奶","grand-père":"爷爷","bébé":"宝宝","famille":"家庭",
+"rouge":"红色","bleu":"蓝色","vert":"绿色","jaune":"黄色","noir":"黑色","blanc":"白色","orange":"橙色","rose":"粉色",
+"une fleur rouge":"红色 的 花","le chat est noir":"猫 是 黑色 的",
+"cheval":"马","oiseau":"鸟","vache":"奶牛","poule":"母鸡","cochon":"猪","lapin":"兔子","mouton":"绵羊","souris":"老鼠",
+"jour":"白天","nuit":"夜晚","matin":"早上","soir":"晚上","semaine":"星期","mois":"月","année":"年","heure":"小时","minute":"分钟","aujourd'hui":"今天","demain":"明天","hier":"昨天",
+"gare":"火车站","hôtel":"酒店","rue":"街道","gauche":"左边","droite":"右边","ici":"这里","grand":"大","petit":"小","nouveau":"新","beau":"漂亮","bon":"好","vite":"快",
+"où est la gare":"火车站 在 哪里","la maison est grande":"房子 很 大","c'est un bon café":"这 是 很 好 的 咖啡"
+},
+ja:{
+"bonjour":"こんにちは","salut":"やあ","au revoir":"さようなら","merci":"ありがとう","oui":"はい","non":"いいえ","s'il te plaît":"おねがいします","pardon":"すみません",
+"homme":"男の人","femme":"女の人","garçon":"男の子","fille":"女の子","ami":"友だち","enfant":"子ども","nom":"名前","moi":"私",
+"eau":"水","pain":"パン","maison":"家","livre":"本","chien":"犬","chat":"猫",
+"je suis un homme":"私 は 男の人 です","elle est une femme":"彼女 は 女の人 です","le chat boit de l'eau":"猫 は 水 を 飲みます",
+"café":"コーヒー","lait":"牛乳","vin":"ワイン","thé":"お茶","jus":"ジュース","bière":"ビール",
+"pomme":"りんご","fromage":"チーズ","poisson":"魚","viande":"肉","riz":"ご飯","œuf":"卵","gâteau":"ケーキ","soupe":"スープ",
+"je bois du café":"私 は コーヒー を 飲みます","je mange une pomme":"私 は りんご を 食べます","nous mangeons du riz":"私たち は ご飯 を 食べます",
+"zéro":"ゼロ","un":"一","deux":"二","trois":"三","quatre":"四","cinq":"五","six":"六","sept":"七","huit":"八","neuf":"九","dix":"十","cent":"百",
+"j'ai deux chats":"猫 が 二匹 います","trois pommes":"りんご 三個",
+"mère":"お母さん","père":"お父さん","frère":"兄","sœur":"姉","grand-mère":"おばあさん","grand-père":"おじいさん","bébé":"赤ちゃん","famille":"家族",
+"rouge":"赤","bleu":"青","vert":"緑","jaune":"黄色","noir":"黒","blanc":"白","orange":"オレンジ色","rose":"ピンク",
+"une fleur rouge":"赤い 花","le chat est noir":"猫 は 黒い です",
+"cheval":"馬","oiseau":"鳥","vache":"牛","poule":"にわとり","cochon":"豚","lapin":"うさぎ","mouton":"羊","souris":"ねずみ",
+"jour":"昼","nuit":"夜","matin":"朝","soir":"晩","semaine":"週","mois":"月","année":"年","heure":"時間","minute":"分","aujourd'hui":"今日","demain":"明日","hier":"昨日",
+"gare":"駅","hôtel":"ホテル","rue":"道","gauche":"左","droite":"右","ici":"ここ","grand":"大きい","petit":"小さい","nouveau":"新しい","beau":"きれい","bon":"いい","vite":"速く",
+"où est la gare":"駅 は どこ です か","la maison est grande":"家 は 大きい です","c'est un bon café":"これ は いい コーヒー です"
+},
+ko:{
+"bonjour":"안녕하세요","salut":"안녕","au revoir":"안녕히 가세요","merci":"감사합니다","oui":"네","non":"아니요","s'il te plaît":"주세요","pardon":"미안해요",
+"homme":"남자","femme":"여자","garçon":"남자아이","fille":"여자아이","ami":"친구","enfant":"아이","nom":"이름","moi":"나",
+"eau":"물","pain":"빵","maison":"집","livre":"책","chien":"개","chat":"고양이",
+"je suis un homme":"저는 남자입니다","elle est une femme":"그녀는 여자입니다","le chat boit de l'eau":"고양이가 물을 마셔요",
+"café":"커피","lait":"우유","vin":"와인","thé":"차","jus":"주스","bière":"맥주",
+"pomme":"사과","fromage":"치즈","poisson":"생선","viande":"고기","riz":"밥","œuf":"계란","gâteau":"케이크","soupe":"수프",
+"je bois du café":"저는 커피를 마셔요","je mange une pomme":"저는 사과를 먹어요","nous mangeons du riz":"우리는 밥을 먹어요",
+"zéro":"영","un":"하나","deux":"둘","trois":"셋","quatre":"넷","cinq":"다섯","six":"여섯","sept":"일곱","huit":"여덟","neuf":"아홉","dix":"열","cent":"백",
+"j'ai deux chats":"고양이가 두 마리 있어요","trois pommes":"사과 세 개",
+"mère":"엄마","père":"아빠","frère":"오빠","sœur":"언니","grand-mère":"할머니","grand-père":"할아버지","bébé":"아기","famille":"가족",
+"rouge":"빨간색","bleu":"파란색","vert":"초록색","jaune":"노란색","noir":"검은색","blanc":"흰색","orange":"주황색","rose":"분홍색",
+"une fleur rouge":"빨간 꽃","le chat est noir":"고양이는 검은색이에요",
+"cheval":"말","oiseau":"새","vache":"소","poule":"닭","cochon":"돼지","lapin":"토끼","mouton":"양","souris":"쥐",
+"jour":"낮","nuit":"밤","matin":"아침","soir":"저녁","semaine":"주","mois":"달","année":"년","heure":"시간","minute":"분","aujourd'hui":"오늘","demain":"내일","hier":"어제",
+"gare":"기차역","hôtel":"호텔","rue":"길","gauche":"왼쪽","droite":"오른쪽","ici":"여기","grand":"크다","petit":"작다","nouveau":"새롭다","beau":"아름답다","bon":"좋다","vite":"빨리",
+"où est la gare":"기차역이 어디예요","la maison est grande":"집이 커요","c'est un bon café":"이것은 좋은 커피예요"
+},
+ar:{
+"bonjour":"مرحبا","salut":"أهلا","au revoir":"مع السلامة","merci":"شكرا","oui":"نعم","non":"لا","s'il te plaît":"من فضلك","pardon":"عفوا",
+"homme":"رجل","femme":"امرأة","garçon":"ولد","fille":"بنت","ami":"صديق","enfant":"طفل","nom":"اسم","moi":"أنا",
+"eau":"ماء","pain":"خبز","maison":"بيت","livre":"كتاب","chien":"كلب","chat":"قط",
+"je suis un homme":"أنا رجل","elle est une femme":"هي امرأة","le chat boit de l'eau":"القط يشرب الماء",
+"café":"قهوة","lait":"حليب","vin":"نبيذ","thé":"شاي","jus":"عصير","bière":"بيرة",
+"pomme":"تفاحة","fromage":"جبن","poisson":"سمك","viande":"لحم","riz":"أرز","œuf":"بيضة","gâteau":"كعكة","soupe":"حساء",
+"je bois du café":"أنا أشرب القهوة","je mange une pomme":"أنا آكل تفاحة","nous mangeons du riz":"نحن نأكل الأرز",
+"zéro":"صفر","un":"واحد","deux":"اثنان","trois":"ثلاثة","quatre":"أربعة","cinq":"خمسة","six":"ستة","sept":"سبعة","huit":"ثمانية","neuf":"تسعة","dix":"عشرة","cent":"مئة",
+"j'ai deux chats":"عندي قطان","trois pommes":"ثلاث تفاحات",
+"mère":"أم","père":"أب","frère":"أخ","sœur":"أخت","grand-mère":"جدة","grand-père":"جد","bébé":"رضيع","famille":"عائلة",
+"rouge":"أحمر","bleu":"أزرق","vert":"أخضر","jaune":"أصفر","noir":"أسود","blanc":"أبيض","orange":"برتقالي","rose":"وردي",
+"une fleur rouge":"زهرة حمراء","le chat est noir":"القط أسود",
+"cheval":"حصان","oiseau":"طائر","vache":"بقرة","poule":"دجاجة","cochon":"خنزير","lapin":"أرنب","mouton":"خروف","souris":"فأر",
+"jour":"نهار","nuit":"ليل","matin":"صباح","soir":"مساء","semaine":"أسبوع","mois":"شهر","année":"سنة","heure":"ساعة","minute":"دقيقة","aujourd'hui":"اليوم","demain":"غدا","hier":"أمس",
+"gare":"محطة القطار","hôtel":"فندق","rue":"شارع","gauche":"يسار","droite":"يمين","ici":"هنا","grand":"كبير","petit":"صغير","nouveau":"جديد","beau":"جميل","bon":"جيد","vite":"بسرعة",
+"où est la gare":"أين محطة القطار","la maison est grande":"البيت كبير","c'est un bon café":"هذه قهوة جيدة"
+}
+};
+var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
+
 /* --- Génération des cours + dictionnaire de traduction --- */
 var COURSES = {};
 LANGS.forEach(function(l){
@@ -2510,10 +2676,27 @@ LANGS.forEach(function(l){
                phrases:(le.p||[]).map(function(fr){ return {fr:fr,t:LEX[l][fr]||fr}; }) };
     }) }; }) };
 });
-/* DICT[fr] = {en,it,es,de,pt,nl} — union du lexique des cours + phrasier */
+/* Nouvelles langues : VÉRITÉ — seules les unités ENTIÈREMENT traduites entrent au cours
+   (aucun mot affiché en français à la place de la langue cible). */
+LANGS2.forEach(function(l){
+  var lex=LEX2[l]||{}, units=[];
+  CURRICULUM.forEach(function(u){
+    var full=u.L.every(function(le){
+      return (le.w||[]).every(function(fr){ return !!lex[fr]; }) && (le.p||[]).every(function(fr){ return !!lex[fr]; });
+    });
+    if(full) units.push({ titre:u.t, couleur:u.c, lessons:u.L.map(function(le){
+      return { titre:le.t, words:(le.w||[]).map(function(fr){ return {fr:fr,t:lex[fr]}; }),
+               phrases:(le.p||[]).map(function(fr){ return {fr:fr,t:lex[fr]}; }) };
+    }) });
+  });
+  if(units.length) COURSES[l]={ id:l, nom:LMETA2[l].nom, drapeau:LMETA2[l].drapeau, ttsLang:LMETA2[l].tts,
+    noType:!!LMETA2[l].noType, rtl:!!LMETA2[l].rtl, units:units };
+});
+/* DICT[fr] = {en,…,nl + nouvelles langues quand traduites} — union du lexique + phrasier */
 var DICT = {};
 Object.keys(LEX.en).forEach(function(fr){ DICT[fr]={}; LANGS.forEach(function(l){ DICT[fr][l]=LEX[l][fr]; }); });
 Object.keys(PHRASEBOOK).forEach(function(fr){ DICT[fr]=PHRASEBOOK[fr]; });
+LANGS2.forEach(function(l){ Object.keys(LEX2[l]).forEach(function(fr){ if(DICT[fr]) DICT[fr][l]=LEX2[l][fr]; }); });
 
 /* ============ 📖 HISTOIRES DE LA RUCHE — mini-histoires 100% originales ============
    Chaque histoire : lignes (qui parle · texte fr · texte par langue) + quiz de
