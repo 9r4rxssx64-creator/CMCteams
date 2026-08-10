@@ -263,17 +263,48 @@ async function handleLingua(request, url, env) {
       const text = (url.searchParams.get('t') || '').slice(0, 1000);
       const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
       let voice = (url.searchParams.get('v') || 'nova').toLowerCase();
-      if (VOICES.indexOf(voice) < 0) voice = 'nova';
+      const isAntonin = voice === 'antonin'; // 🎙️ vraie voix CLONÉE d'Antonin (Kevin a validé à l'oreille)
+      if (!isAntonin && VOICES.indexOf(voice) < 0) voice = 'nova';
       // Vitesse de GÉNÉRATION (0.25–2) : permet la voix « fillette » — générée lente puis
       // accélérée côté client (pitch monte, tempo net redevient normal). Clampée + cachée à part.
       let speed = parseFloat(url.searchParams.get('s') || '1');
       if (!(speed >= 0.25 && speed <= 2)) speed = 1;
       speed = Math.round(speed * 100) / 100;
       if (!text.trim()) return JL({ ok: false, reason: 'no_text' }, 400);
-      const hbuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(voice + ':' + speed + ':' + text));
-      const hash = Array.prototype.map.call(new Uint8Array(hbuf), (b) => ('0' + b.toString(16)).slice(-2)).join('');
-      const ckey = 'ltts:' + hash;
       const audioHdr = Object.assign({ 'content-type': 'audio/mpeg', 'cache-control': 'public, max-age=31536000' }, cors);
+      const hashOf = async (s) => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+        return Array.prototype.map.call(new Uint8Array(b), (x) => ('0' + x.toString(16)).slice(-2)).join(''); };
+      /* 🎙️ ANTONIN — voix clonée via Replicate (minimax/speech-02-hd, voice_id du clone).
+         Cache KV : 1 phrase = 1 génération à vie. FAIL-OPEN : si clé absente / Replicate KO,
+         on retombe sur onyx (voix d'homme proche) SANS jamais cacher le repli sous la clé
+         Antonin (sinon une panne passagère collerait la mauvaise voix pour toujours). */
+      if (isAntonin) {
+        const aSpeed = Math.max(0.5, speed); // MiniMax accepte 0.5–2 (OpenAI descend à 0.25)
+        const akey = 'ltts:' + (await hashOf('antonin:' + aSpeed + ':' + text));
+        const acached = await env.ACCOUNTS.get(akey, 'arrayBuffer');
+        if (acached) return new Response(acached, { status: 200, headers: audioHdr });
+        if (env.AX_REPLICATE_KEY) {
+          try {
+            const rp = await fetch('https://api.replicate.com/v1/models/minimax/speech-02-hd/predictions', {
+              method: 'POST',
+              headers: { 'authorization': 'Bearer ' + env.AX_REPLICATE_KEY, 'content-type': 'application/json', 'prefer': 'wait' },
+              body: JSON.stringify({ input: { text: text, voice_id: env.ANTONIN_VOICE_ID || 'R8_QFPX9IXV', speed: aSpeed } }),
+            });
+            const j = await rp.json().catch(() => null);
+            const out = j && (typeof j.output === 'string' ? j.output : (Array.isArray(j.output) ? j.output[0] : null));
+            if (rp.ok && j && j.status === 'succeeded' && out) {
+              const af = await fetch(out);
+              if (af.ok) {
+                const abuf = await af.arrayBuffer();
+                try { await env.ACCOUNTS.put(akey, abuf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* best-effort */ }
+                return new Response(abuf, { status: 200, headers: audioHdr });
+              }
+            }
+          } catch (_) { /* fail-open → onyx ci-dessous */ }
+        }
+        voice = 'onyx'; // repli honnête : voix d'homme OpenAI, cachée sous SA clé onyx (jamais sous Antonin)
+      }
+      const ckey = 'ltts:' + (await hashOf(voice + ':' + speed + ':' + text));
       const cached = await env.ACCOUNTS.get(ckey, 'arrayBuffer');
       if (cached) return new Response(cached, { status: 200, headers: audioHdr });
       if (!env.OPEN_AI_API_KEY) return JL({ ok: false, reason: 'tts_absent' }); // fail-open (200) → repli navigateur
