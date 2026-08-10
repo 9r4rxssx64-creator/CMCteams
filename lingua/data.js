@@ -2601,6 +2601,42 @@ var NEWV13 = {
 CURRICULUM_L2.forEach(function(u){ CURRICULUM.push(u); });
 LANGS.forEach(function(l){ Object.keys(NEWV13).forEach(function(k){ if(NEWV13[k][l]) LEX[l][k]=NEWV13[k][l]; }); });
 
+/* --- Vague 13 (v2.73, cap B2) : bricolage (matériaux, gestes) + cuisine & quantités --- */
+var CURRICULUM_K = [
+  {t:"Bricolage 🔨", c:"#b45309", L:[
+    {t:"Matériaux", w:["fer","acier","sable","colle","peinture","aiguille"]},
+    {t:"À l'œuvre", w:["construire","casser","visser"]} ]},
+  {t:"Cuisine et quantités 🍳", c:"#65a30d", L:[
+    {t:"En cuisine", w:["vinaigre","moutarde","sauce","ingrédient","congélateur","mixeur"]},
+    {t:"Les quantités", w:["tiers","plusieurs","quelques","aucun","chaque","au moins","au maximum"]} ]}
+];
+var NEWV14 = {
+"fer":{en:"iron",it:"ferro",es:"hierro",de:"Eisen",pt:"ferro",nl:"ijzer"},
+"acier":{en:"steel",it:"acciaio",es:"acero",de:"Stahl",pt:"aço",nl:"staal"},
+"sable":{en:"sand",it:"sabbia",es:"arena",de:"Sand",pt:"areia",nl:"zand"},
+"colle":{en:"glue",it:"colla",es:"pegamento",de:"Kleber",pt:"cola",nl:"lijm"},
+"peinture":{en:"paint",it:"vernice",es:"pintura",de:"Farbe",pt:"tinta",nl:"verf"},
+"aiguille":{en:"needle",it:"ago",es:"aguja",de:"Nadel",pt:"agulha",nl:"naald"},
+"construire":{en:"build",it:"costruire",es:"construir",de:"bauen",pt:"construir",nl:"bouwen"},
+"casser":{en:"break",it:"rompere",es:"romper",de:"zerbrechen",pt:"partir",nl:"breken"},
+"visser":{en:"screw",it:"avvitare",es:"atornillar",de:"schrauben",pt:"aparafusar",nl:"schroeven"},
+"vinaigre":{en:"vinegar",it:"aceto",es:"vinagre",de:"Essig",pt:"vinagre",nl:"azijn"},
+"moutarde":{en:"mustard",it:"senape",es:"mostaza",de:"Senf",pt:"mostarda",nl:"mosterd"},
+"sauce":{en:"sauce",it:"salsa",es:"salsa",de:"Soße",pt:"molho",nl:"saus"},
+"ingrédient":{en:"ingredient",it:"ingrediente",es:"ingrediente",de:"Zutat",pt:"ingrediente",nl:"ingrediënt"},
+"congélateur":{en:"freezer",it:"congelatore",es:"congelador",de:"Gefrierschrank",pt:"congelador",nl:"vriezer"},
+"mixeur":{en:"blender",it:"frullatore",es:"batidora",de:"Mixer",pt:"liquidificadora",nl:"blender"},
+"tiers":{en:"third",it:"terzo",es:"tercio",de:"Drittel",pt:"terço",nl:"een derde"},
+"plusieurs":{en:"several",it:"parecchi",es:"varios",de:"mehrere",pt:"vários",nl:"verschillende"},
+"quelques":{en:"a few",it:"alcuni",es:"algunos",de:"einige",pt:"alguns",nl:"enkele"},
+"aucun":{en:"none",it:"nessuno",es:"ninguno",de:"keiner",pt:"nenhum",nl:"geen"},
+"chaque":{en:"each",it:"ogni",es:"cada",de:"jeder",pt:"cada",nl:"elk"},
+"au moins":{en:"at least",it:"almeno",es:"al menos",de:"mindestens",pt:"pelo menos",nl:"minstens"},
+"au maximum":{en:"at most",it:"al massimo",es:"como máximo",de:"höchstens",pt:"no máximo",nl:"hoogstens"}
+};
+CURRICULUM_K.forEach(function(u){ CURRICULUM.push(u); });
+LANGS.forEach(function(l){ Object.keys(NEWV14).forEach(function(k){ if(NEWV14[k][l]) LEX[l][k]=NEWV14[k][l]; }); });
+
 /* ============ 🌏 NOUVELLES LANGUES — Europe de l'Est + Asie (cours DÉMARRAGE) ============
    Kevin 2026-08-10 : « ajoute langues pays de l'est, asiatique, etc ». Chaque nouvelle langue
    couvre ENTIÈREMENT les 8 premières unités (A1 démarrage) et grandit vague par vague comme
@@ -2941,6 +2977,94 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var c2=LEX2C[l]||{}; Object.keys(c2).forEach(function(k){ LEX2[l][k]=c2[k]; }); });
+/* Vague 4 des nouvelles langues (v2.73) : unités 25-32 — nombres 11-1000, émotions, le temps qui
+   passe, au travail, la santé, les loisirs, la technologie, opinions & idées. 24 → 32 unités.
+   Homographes réels assumés : zh 工作 = travail/travailler ; ko 일 = travail (aussi jour/un),
+   쓰다 = écrire (aussi porter/utiliser). Genre : cs à la voix de Bee (féminin) ; pl/ru colle au
+   masculin du français affiché. Coréen : nombres natifs jusqu'à 50, sino-coréen 천 (1000). */
+var LEX2D = {
+pl:{
+"onze":"jedenaście","douze":"dwanaście","treize":"trzynaście","quatorze":"czternaście","quinze":"piętnaście","seize":"szesnaście","dix-sept":"siedemnaście","dix-huit":"osiemnaście","dix-neuf":"dziewiętnaście","vingt":"dwadzieścia","trente":"trzydzieści","quarante":"czterdzieści","cinquante":"pięćdziesiąt","mille":"tysiąc",
+"fatigué":"zmęczony","fâché":"zły","inquiet":"zmartwiony","surpris":"zaskoczony","fier":"dumny","calme":"spokojny","seul":"samotny","amoureux":"zakochany","peur":"strach","rire":"śmiać się","pleurer":"płakać","je suis fatigué":"jestem zmęczony","elle a peur":"ona się boi",
+"maintenant":"teraz","bientôt":"wkrótce","tard":"późno","tôt":"wcześnie","longtemps":"długo","toujours":"zawsze","jamais":"nigdy","souvent":"często","parfois":"czasami","avant":"przed","après":"po","je mange maintenant":"jem teraz","je bois souvent du thé":"często piję herbatę",
+"travail":"praca","bureau":"biuro","réunion":"spotkanie","patron":"szef","collègue":"kolega","ordinateur":"komputer","projet":"projekt","salaire":"pensja","entreprise":"firma","réussir":"odnieść sukces","travailler":"pracować","je travaille au bureau":"pracuję w biurze","j'aime mon travail":"lubię moją pracę",
+"malade":"chory","douleur":"ból","médicament":"lekarstwo","fièvre":"gorączka","se reposer":"odpoczywać","guérir":"wyzdrowieć","santé":"zdrowie","fort":"silny","faible":"słaby","respirer":"oddychać","je suis malade":"jestem chory","je vais mieux":"czuję się lepiej",
+"jouer":"grać","nager":"pływać","courir":"biegać","danser":"tańczyć","voyager":"podróżować","sport":"sport","lire":"czytać","écrire":"pisać","chanter":"śpiewać","musique":"muzyka","film":"film","jeu":"gra","j'aime le sport":"lubię sport","j'aime lire":"lubię czytać",
+"écran":"ekran","message":"wiadomość","photo":"zdjęcie","application":"aplikacja","batterie":"bateria","internet":"internet","mot de passe":"hasło","en ligne":"online","clavier":"klawiatura","ordinateur portable":"laptop","je regarde une photo":"oglądam zdjęcie","je suis en ligne":"jestem online",
+"penser":"myśleć","croire":"wierzyć","comprendre":"rozumieć","expliquer":"wyjaśniać","raison":"powód","vérité":"prawda","problème":"problem","solution":"rozwiązanie","idée":"pomysł","important":"ważny","je pense que oui":"myślę że tak","c'est une bonne idée":"to dobry pomysł"
+},
+ru:{
+"onze":"одиннадцать","douze":"двенадцать","treize":"тринадцать","quatorze":"четырнадцать","quinze":"пятнадцать","seize":"шестнадцать","dix-sept":"семнадцать","dix-huit":"восемнадцать","dix-neuf":"девятнадцать","vingt":"двадцать","trente":"тридцать","quarante":"сорок","cinquante":"пятьдесят","mille":"тысяча",
+"fatigué":"усталый","fâché":"сердитый","inquiet":"обеспокоенный","surpris":"удивлённый","fier":"гордый","calme":"спокойный","seul":"одинокий","amoureux":"влюблённый","peur":"страх","rire":"смеяться","pleurer":"плакать","je suis fatigué":"я устал","elle a peur":"она боится",
+"maintenant":"сейчас","bientôt":"скоро","tard":"поздно","tôt":"рано","longtemps":"долго","toujours":"всегда","jamais":"никогда","souvent":"часто","parfois":"иногда","avant":"до","après":"после","je mange maintenant":"я ем сейчас","je bois souvent du thé":"я часто пью чай",
+"travail":"работа","bureau":"офис","réunion":"совещание","patron":"начальник","collègue":"коллега","ordinateur":"компьютер","projet":"проект","salaire":"зарплата","entreprise":"компания","réussir":"преуспеть","travailler":"работать","je travaille au bureau":"я работаю в офисе","j'aime mon travail":"я люблю свою работу",
+"malade":"больной","douleur":"боль","médicament":"лекарство","fièvre":"жар","se reposer":"отдыхать","guérir":"выздороветь","santé":"здоровье","fort":"сильный","faible":"слабый","respirer":"дышать","je suis malade":"я болею","je vais mieux":"мне лучше",
+"jouer":"играть","nager":"плавать","courir":"бегать","danser":"танцевать","voyager":"путешествовать","sport":"спорт","lire":"читать","écrire":"писать","chanter":"петь","musique":"музыка","film":"фильм","jeu":"игра","j'aime le sport":"я люблю спорт","j'aime lire":"я люблю читать",
+"écran":"экран","message":"сообщение","photo":"фотография","application":"приложение","batterie":"батарея","internet":"интернет","mot de passe":"пароль","en ligne":"онлайн","clavier":"клавиатура","ordinateur portable":"ноутбук","je regarde une photo":"я смотрю фотографию","je suis en ligne":"я онлайн",
+"penser":"думать","croire":"верить","comprendre":"понимать","expliquer":"объяснять","raison":"причина","vérité":"правда","problème":"проблема","solution":"решение","idée":"идея","important":"важный","je pense que oui":"я думаю что да","c'est une bonne idée":"это хорошая идея"
+},
+uk:{
+"onze":"одинадцять","douze":"дванадцять","treize":"тринадцять","quatorze":"чотирнадцять","quinze":"п'ятнадцять","seize":"шістнадцять","dix-sept":"сімнадцять","dix-huit":"вісімнадцять","dix-neuf":"дев'ятнадцять","vingt":"двадцять","trente":"тридцять","quarante":"сорок","cinquante":"п'ятдесят","mille":"тисяча",
+"fatigué":"втомлений","fâché":"сердитий","inquiet":"стурбований","surpris":"здивований","fier":"гордий","calme":"спокійний","seul":"самотній","amoureux":"закоханий","peur":"страх","rire":"сміятися","pleurer":"плакати","je suis fatigué":"я втомлений","elle a peur":"вона боїться",
+"maintenant":"зараз","bientôt":"скоро","tard":"пізно","tôt":"рано","longtemps":"довго","toujours":"завжди","jamais":"ніколи","souvent":"часто","parfois":"іноді","avant":"до","après":"після","je mange maintenant":"я їм зараз","je bois souvent du thé":"я часто п'ю чай",
+"travail":"робота","bureau":"офіс","réunion":"нарада","patron":"начальник","collègue":"колега","ordinateur":"комп'ютер","projet":"проєкт","salaire":"зарплата","entreprise":"компанія","réussir":"досягти успіху","travailler":"працювати","je travaille au bureau":"я працюю в офісі","j'aime mon travail":"я люблю свою роботу",
+"malade":"хворий","douleur":"біль","médicament":"ліки","fièvre":"гарячка","se reposer":"відпочивати","guérir":"одужати","santé":"здоров'я","fort":"сильний","faible":"слабкий","respirer":"дихати","je suis malade":"я хворію","je vais mieux":"мені краще",
+"jouer":"грати","nager":"плавати","courir":"бігати","danser":"танцювати","voyager":"подорожувати","sport":"спорт","lire":"читати","écrire":"писати","chanter":"співати","musique":"музика","film":"фільм","jeu":"гра","j'aime le sport":"я люблю спорт","j'aime lire":"я люблю читати",
+"écran":"екран","message":"повідомлення","photo":"фотографія","application":"застосунок","batterie":"батарея","internet":"інтернет","mot de passe":"пароль","en ligne":"онлайн","clavier":"клавіатура","ordinateur portable":"ноутбук","je regarde une photo":"я дивлюся фотографію","je suis en ligne":"я онлайн",
+"penser":"думати","croire":"вірити","comprendre":"розуміти","expliquer":"пояснювати","raison":"причина","vérité":"правда","problème":"проблема","solution":"рішення","idée":"ідея","important":"важливий","je pense que oui":"я думаю що так","c'est une bonne idée":"це хороша ідея"
+},
+cs:{
+"onze":"jedenáct","douze":"dvanáct","treize":"třináct","quatorze":"čtrnáct","quinze":"patnáct","seize":"šestnáct","dix-sept":"sedmnáct","dix-huit":"osmnáct","dix-neuf":"devatenáct","vingt":"dvacet","trente":"třicet","quarante":"čtyřicet","cinquante":"padesát","mille":"tisíc",
+"fatigué":"unavený","fâché":"naštvaný","inquiet":"ustaraný","surpris":"překvapený","fier":"hrdý","calme":"klidný","seul":"osamělý","amoureux":"zamilovaný","peur":"strach","rire":"smát se","pleurer":"plakat","je suis fatigué":"jsem unavená","elle a peur":"ona se bojí",
+"maintenant":"teď","bientôt":"brzy","tard":"pozdě","tôt":"časně","longtemps":"dlouho","toujours":"vždy","jamais":"nikdy","souvent":"často","parfois":"někdy","avant":"před","après":"po","je mange maintenant":"jím teď","je bois souvent du thé":"často piju čaj",
+"travail":"práce","bureau":"kancelář","réunion":"schůzka","patron":"šéf","collègue":"kolega","ordinateur":"počítač","projet":"projekt","salaire":"plat","entreprise":"firma","réussir":"uspět","travailler":"pracovat","je travaille au bureau":"pracuji v kanceláři","j'aime mon travail":"mám ráda svou práci",
+"malade":"nemocný","douleur":"bolest","médicament":"lék","fièvre":"horečka","se reposer":"odpočívat","guérir":"uzdravit se","santé":"zdraví","fort":"silný","faible":"slabý","respirer":"dýchat","je suis malade":"jsem nemocná","je vais mieux":"je mi lépe",
+"jouer":"hrát","nager":"plavat","courir":"běhat","danser":"tancovat","voyager":"cestovat","sport":"sport","lire":"číst","écrire":"psát","chanter":"zpívat","musique":"hudba","film":"film","jeu":"hra","j'aime le sport":"mám ráda sport","j'aime lire":"ráda čtu",
+"écran":"obrazovka","message":"zpráva","photo":"fotka","application":"aplikace","batterie":"baterie","internet":"internet","mot de passe":"heslo","en ligne":"online","clavier":"klávesnice","ordinateur portable":"notebook","je regarde une photo":"dívám se na fotku","je suis en ligne":"jsem online",
+"penser":"myslet","croire":"věřit","comprendre":"rozumět","expliquer":"vysvětlit","raison":"důvod","vérité":"pravda","problème":"problém","solution":"řešení","idée":"nápad","important":"důležitý","je pense que oui":"myslím že ano","c'est une bonne idée":"to je dobrý nápad"
+},
+zh:{
+"onze":"十一","douze":"十二","treize":"十三","quatorze":"十四","quinze":"十五","seize":"十六","dix-sept":"十七","dix-huit":"十八","dix-neuf":"十九","vingt":"二十","trente":"三十","quarante":"四十","cinquante":"五十","mille":"千",
+"fatigué":"累","fâché":"生气","inquiet":"担心","surpris":"惊讶","fier":"骄傲","calme":"平静","seul":"孤单","amoureux":"恋爱中","peur":"害怕","rire":"笑","pleurer":"哭","je suis fatigué":"我 很 累","elle a peur":"她 害怕",
+"maintenant":"现在","bientôt":"很快","tard":"晚","tôt":"早","longtemps":"很久","toujours":"总是","jamais":"从不","souvent":"经常","parfois":"有时","avant":"以前","après":"以后","je mange maintenant":"我 现在 吃饭","je bois souvent du thé":"我 经常 喝 茶",
+"travail":"工作","bureau":"办公室","réunion":"会议","patron":"老板","collègue":"同事","ordinateur":"电脑","projet":"项目","salaire":"工资","entreprise":"公司","réussir":"成功","travailler":"工作","je travaille au bureau":"我 在 办公室 工作","j'aime mon travail":"我 喜欢 我 的 工作",
+"malade":"生病","douleur":"疼痛","médicament":"药","fièvre":"发烧","se reposer":"休息","guérir":"康复","santé":"健康","fort":"强壮","faible":"虚弱","respirer":"呼吸","je suis malade":"我 生病 了","je vais mieux":"我 好多 了",
+"jouer":"玩","nager":"游泳","courir":"跑步","danser":"跳舞","voyager":"旅行","sport":"运动","lire":"读书","écrire":"写","chanter":"唱歌","musique":"音乐","film":"电影","jeu":"游戏","j'aime le sport":"我 喜欢 运动","j'aime lire":"我 喜欢 读书",
+"écran":"屏幕","message":"消息","photo":"照片","application":"应用","batterie":"电池","internet":"互联网","mot de passe":"密码","en ligne":"在线","clavier":"键盘","ordinateur portable":"笔记本电脑","je regarde une photo":"我 看 照片","je suis en ligne":"我 在线",
+"penser":"想","croire":"相信","comprendre":"明白","expliquer":"解释","raison":"原因","vérité":"真相","problème":"问题","solution":"解决办法","idée":"主意","important":"重要","je pense que oui":"我 想 是 的","c'est une bonne idée":"这 是 个 好 主意"
+},
+ja:{
+"onze":"十一","douze":"十二","treize":"十三","quatorze":"十四","quinze":"十五","seize":"十六","dix-sept":"十七","dix-huit":"十八","dix-neuf":"十九","vingt":"二十","trente":"三十","quarante":"四十","cinquante":"五十","mille":"千",
+"fatigué":"疲れた","fâché":"怒っている","inquiet":"心配","surpris":"驚いた","fier":"誇らしい","calme":"穏やか","seul":"一人ぼっち","amoureux":"恋している","peur":"恐れ","rire":"笑います","pleurer":"泣きます","je suis fatigué":"私 は 疲れました","elle a peur":"彼女 は 怖がっています",
+"maintenant":"今","bientôt":"もうすぐ","tard":"遅く","tôt":"早く","longtemps":"長い間","toujours":"いつも","jamais":"決して","souvent":"よく","parfois":"時々","avant":"前","après":"後","je mange maintenant":"私 は 今 食べます","je bois souvent du thé":"私 は よく お茶 を 飲みます",
+"travail":"仕事","bureau":"オフィス","réunion":"会議","patron":"上司","collègue":"同僚","ordinateur":"パソコン","projet":"プロジェクト","salaire":"給料","entreprise":"会社","réussir":"成功します","travailler":"働きます","je travaille au bureau":"私 は オフィス で 働きます","j'aime mon travail":"私 は 仕事 が 好き です",
+"malade":"病気","douleur":"痛み","médicament":"薬","fièvre":"熱","se reposer":"休みます","guérir":"治ります","santé":"健康","fort":"強い","faible":"弱い","respirer":"呼吸します","je suis malade":"私 は 病気 です","je vais mieux":"私 は よくなりました",
+"jouer":"遊びます","nager":"泳ぎます","courir":"走ります","danser":"踊ります","voyager":"旅行します","sport":"スポーツ","lire":"読みます","écrire":"書きます","chanter":"歌います","musique":"音楽","film":"映画","jeu":"ゲーム","j'aime le sport":"私 は スポーツ が 好き です","j'aime lire":"私 は 読書 が 好き です",
+"écran":"画面","message":"メッセージ","photo":"写真","application":"アプリ","batterie":"バッテリー","internet":"インターネット","mot de passe":"パスワード","en ligne":"オンライン","clavier":"キーボード","ordinateur portable":"ノートパソコン","je regarde une photo":"私 は 写真 を 見ます","je suis en ligne":"私 は オンライン です",
+"penser":"思います","croire":"信じます","comprendre":"わかります","expliquer":"説明します","raison":"理由","vérité":"真実","problème":"問題","solution":"解決策","idée":"アイデア","important":"大切","je pense que oui":"私 は そう 思います","c'est une bonne idée":"それ は いい アイデア です"
+},
+ko:{
+"onze":"열하나","douze":"열둘","treize":"열셋","quatorze":"열넷","quinze":"열다섯","seize":"열여섯","dix-sept":"열일곱","dix-huit":"열여덟","dix-neuf":"열아홉","vingt":"스물","trente":"서른","quarante":"마흔","cinquante":"쉰","mille":"천",
+"fatigué":"피곤하다","fâché":"화나다","inquiet":"걱정하다","surpris":"놀라다","fier":"자랑스럽다","calme":"차분하다","seul":"외롭다","amoureux":"사랑에 빠지다","peur":"두려움","rire":"웃다","pleurer":"울다","je suis fatigué":"저는 피곤해요","elle a peur":"그녀는 무서워해요",
+"maintenant":"지금","bientôt":"곧","tard":"늦게","tôt":"일찍","longtemps":"오랫동안","toujours":"항상","jamais":"절대","souvent":"자주","parfois":"가끔","avant":"전에","après":"후에","je mange maintenant":"저는 지금 먹어요","je bois souvent du thé":"저는 자주 차를 마셔요",
+"travail":"일","bureau":"사무실","réunion":"회의","patron":"상사","collègue":"동료","ordinateur":"컴퓨터","projet":"프로젝트","salaire":"월급","entreprise":"회사","réussir":"성공하다","travailler":"일하다","je travaille au bureau":"저는 사무실에서 일해요","j'aime mon travail":"저는 제 일을 좋아해요",
+"malade":"아프다","douleur":"통증","médicament":"약","fièvre":"열","se reposer":"쉬다","guérir":"낫다","santé":"건강","fort":"강하다","faible":"약하다","respirer":"숨쉬다","je suis malade":"저는 아파요","je vais mieux":"저는 나아지고 있어요",
+"jouer":"놀다","nager":"수영하다","courir":"달리다","danser":"춤추다","voyager":"여행하다","sport":"운동","lire":"읽다","écrire":"쓰다","chanter":"노래하다","musique":"음악","film":"영화","jeu":"게임","j'aime le sport":"저는 운동을 좋아해요","j'aime lire":"저는 읽는 것을 좋아해요",
+"écran":"화면","message":"메시지","photo":"사진","application":"앱","batterie":"배터리","internet":"인터넷","mot de passe":"비밀번호","en ligne":"온라인","clavier":"키보드","ordinateur portable":"노트북","je regarde une photo":"저는 사진을 봐요","je suis en ligne":"저는 온라인이에요",
+"penser":"생각하다","croire":"믿다","comprendre":"이해하다","expliquer":"설명하다","raison":"이유","vérité":"진실","problème":"문제","solution":"해결책","idée":"아이디어","important":"중요하다","je pense que oui":"저는 그렇다고 생각해요","c'est une bonne idée":"좋은 생각이에요"
+},
+ar:{
+"onze":"أحد عشر","douze":"اثنا عشر","treize":"ثلاثة عشر","quatorze":"أربعة عشر","quinze":"خمسة عشر","seize":"ستة عشر","dix-sept":"سبعة عشر","dix-huit":"ثمانية عشر","dix-neuf":"تسعة عشر","vingt":"عشرون","trente":"ثلاثون","quarante":"أربعون","cinquante":"خمسون","mille":"ألف",
+"fatigué":"متعب","fâché":"غاضب","inquiet":"قلق","surpris":"متفاجئ","fier":"فخور","calme":"هادئ","seul":"وحيد","amoureux":"واقع في الحب","peur":"خوف","rire":"يضحك","pleurer":"يبكي","je suis fatigué":"أنا متعب","elle a peur":"هي خائفة",
+"maintenant":"الآن","bientôt":"قريبا","tard":"متأخرا","tôt":"مبكرا","longtemps":"طويلا","toujours":"دائما","jamais":"أبدا","souvent":"غالبا","parfois":"أحيانا","avant":"قبل","après":"بعد","je mange maintenant":"أنا آكل الآن","je bois souvent du thé":"أشرب الشاي غالبا",
+"travail":"عمل","bureau":"مكتب","réunion":"اجتماع","patron":"مدير","collègue":"زميل","ordinateur":"حاسوب","projet":"مشروع","salaire":"راتب","entreprise":"شركة","réussir":"ينجح","travailler":"يعمل","je travaille au bureau":"أعمل في المكتب","j'aime mon travail":"أحب عملي",
+"malade":"مريض","douleur":"ألم","médicament":"دواء","fièvre":"حمى","se reposer":"يستريح","guérir":"يشفى","santé":"صحة","fort":"قوي","faible":"ضعيف","respirer":"يتنفس","je suis malade":"أنا مريض","je vais mieux":"أنا أتحسن",
+"jouer":"يلعب","nager":"يسبح","courir":"يجري","danser":"يرقص","voyager":"يسافر","sport":"رياضة","lire":"يقرأ","écrire":"يكتب","chanter":"يغني","musique":"موسيقى","film":"فيلم","jeu":"لعبة","j'aime le sport":"أحب الرياضة","j'aime lire":"أحب القراءة",
+"écran":"شاشة","message":"رسالة","photo":"صورة","application":"تطبيق","batterie":"بطارية","internet":"إنترنت","mot de passe":"كلمة السر","en ligne":"متصل","clavier":"لوحة المفاتيح","ordinateur portable":"حاسوب محمول","je regarde une photo":"أنظر إلى صورة","je suis en ligne":"أنا متصل",
+"penser":"يفكر","croire":"يعتقد","comprendre":"يفهم","expliquer":"يشرح","raison":"سبب","vérité":"حقيقة","problème":"مشكلة","solution":"حل","idée":"فكرة","important":"مهم","je pense que oui":"أعتقد ذلك","c'est une bonne idée":"هذه فكرة جيدة"
+}
+};
+LANGS2.forEach(function(l){ var d2=LEX2D[l]||{}; Object.keys(d2).forEach(function(k){ LEX2[l][k]=d2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
