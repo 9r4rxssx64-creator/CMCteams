@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.99.0";
+var APP_VER="v2.100.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -45,6 +45,7 @@ function loadS(){
   S.coachMsgs=lg("coachMsgs",[]);                                   // mémoire du Coach IA — PAR COMPTE (historique de conversation)
   S.coachProfile=lg("coachProfile",{objectif:"bilingue",weak:[],notes:""}); // profil d'apprentissage suivi par le Coach
   S.beeVoice=lg("beeVoice","fillette"); // voix de Bee choisie (catalogue BEE_VOICES) — fillette mignonne par défaut
+  S.turtle=lg("turtle",false); // 🐢 mode tortue : les modèles de prononciation se jouent au ralenti partout
   S.coachScene=lg("coachScene",null); // 🎭 jeu de rôle en cours (id de SCENES) — null = conversation libre
   S.storiesDone=lg("storiesDone",{}); // 📖 histoires terminées : {courseId:{storyId:ts}}
   S.hist=lg("hist",{});               // 📊 historique d'activité : {jour: XP gagné ce jour-là}
@@ -78,7 +79,7 @@ function fixPlacementProg(){
     if(changed){ S.diff=null; /* le niveau estimé par ce test n'était pas fiable → retour en Auto (doux, selon les mots appris) */ save(); }
   }catch(e){}
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
 /* 📊 chaque XP gagné est daté — nourrit le calendrier d'activité (page Stats) */
 function _dayTs(k){ var p=String(k).split("-"); return new Date(+p[0],(+p[1]||1)-1,+p[2]||1).getTime(); }
 function histAdd(xp){ if(!xp)return; if(!S.hist)S.hist={}; var t=today(); S.hist[t]=(S.hist[t]||0)+xp;
@@ -134,7 +135,7 @@ function findLocalAccount(name,code){ var n=norm(name); var accs=accounts(); for
    appareil : nom+code → tout revient. FAIL-OPEN : si le cloud est indispo, la
    mémoire locale continue (rien perdu localement). */
 var SYNC_BASE="https://lingua.kd-mc.com/__lingua";
-var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal"];
+var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
 function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
@@ -958,6 +959,27 @@ function _pronWeb(text,lang,slow,mouth,bee){ if(!S.sound||!text)return; try{ var
   u.onstart=function(){ if(bee)bee.classList.add("talk"); if(mouth)mouth.classList.add("talking"); };
   u.onend=function(){ if(bee)bee.classList.remove("talk"); if(mouth)mouth.classList.remove("talking"); };
   _wsSpeak(u); }catch(e){} }
+/* 🐢 MODE TORTUE — syllabe par syllabe : découpe le mot, joue CHAQUE syllabe au ralenti (cloud
+   &s=0.55, repli voix locale), avec une petite pause entre, puis redit le mot entier lentement.
+   Anti-chevauchement via le jeton _ttsReq (comme speak()/pronSay). 1 syllabe → simple ralenti. */
+function speakSyllables(text){ if(!S.sound||!text)return;
+  var lang=COURSES[S.course]?COURSES[S.course].ttsLang:"fr-FR", v=S.voice||"nova", vr=voiceReal(v)||{};
+  var parts=pronSyllables(text).split("·").map(function(s){return s.trim();}).filter(Boolean);
+  if(parts.length<2){ pronSay(text,true); return; }
+  var my=++_ttsReq, i=0;
+  function playOne(seg,done){
+    try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){ } }
+      var a=new Audio(); a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+"&s=0.55&t="+encodeURIComponent(seg); _ttsAudio=a; try{a.volume=1;}catch(_){ }
+      var fell=false, fb=function(){ if(fell)return; fell=true; try{ var u=new SpeechSynthesisUtterance(seg); u.lang=lang; u.rate=0.5; u.onend=done; u.onerror=done; speechSynthesis.speak(u); }catch(_){ done(); } };
+      a.onended=done; a.onerror=fb; var p=a.play(); if(p&&p.catch)p.catch(fb);
+    }catch(e){ done(); } }
+  function next(){ if(my!==_ttsReq)return;
+    if(i>=parts.length){ setTimeout(function(){ if(my===_ttsReq)pronSay(text,true); },260); return; } // conclut par le mot entier, lent
+    playOne(parts[i++], function(){ if(my===_ttsReq) setTimeout(next,230); }); }
+  next(); }
+/* Joue le modèle en respectant le mode tortue : 🐢 ON → lent, sinon normal. */
+function modelSpeak(text){ if(!text)return; if(S.turtle) pronSay(text,true); else speak(text); }
+function toggleTurtle(){ S.turtle=!S.turtle; save(); vibrate(10); toast(S.turtle?"🐢 Mode tortue activé — les modèles se disent au ralenti":"🐢 Mode tortue désactivé"); render(); }
 var PRON=null;
 function pronPool(){ var all=allWords(S.course),seen=S.words[S.course]||{};
   var learned=all.filter(function(w){ return seen[srsKey(w)]; });
@@ -969,7 +991,7 @@ function pronStart(){ if(!S.course)return; blitzAbort(); pairsAbort();
   var list=pronPool(); if(!list.length){ toast("Fais d'abord une leçon 🐝"); return; }
   PRON={list:list,i:0,done:0,scoreSum:0,micTried:false,over:false,res:null,listening:false};
   VIEW="pron"; _armHistoryGuard(); window.scrollTo(0,0); render();
-  setTimeout(function(){ pronSay(list[0].t,false); },350); }
+  setTimeout(function(){ pronSay(list[0].t,!!S.turtle); },350); }
 function pronMic(){ if(!PRON||PRON.listening)return; var w=PRON.list[PRON.i]; if(!w)return;
   if(!_srOk()){ toast("Micro non dispo ici — écoute et répète, puis auto-évalue 🙂"); return; }
   PRON.listening=true; PRON.micTried=true; render();
@@ -983,7 +1005,7 @@ function pronNext(){ if(!PRON)return; var r=PRON.res||{score:0,self:true};
   PRON.scoreSum+=r.score; PRON.done++;
   S.today.pron=(S.today.pron||0)+1; if(r.score>=80){ S.today.pronGood=(S.today.pronGood||0)+1; S.pronGoodTotal=(S.pronGoodTotal||0)+1; }
   PRON.res=null; PRON.micTried=false;
-  if(PRON.i<PRON.list.length-1){ PRON.i++; render(); setTimeout(function(){ pronSay(PRON.list[PRON.i].t,false); },300); }
+  if(PRON.i<PRON.list.length-1){ PRON.i++; render(); setTimeout(function(){ pronSay(PRON.list[PRON.i].t,!!S.turtle); },300); }
   else pronEnd(); }
 function pronEnd(){ if(!PRON||PRON.over)return; PRON.over=true;
   var avg=PRON.done?Math.round(PRON.scoreSum/PRON.done):0; PRON.avg=avg;
@@ -1015,7 +1037,9 @@ function vPron(){ var d=el("div","screen pron"); if(!PRON){ VIEW="home"; return 
   card.innerHTML='<div class="pron-fr">'+esc(w.fr)+'</div>'
     +'<div class="pron-word">'+esc(w.t)+'</div>'
     +'<div class="pron-syl">'+esc(pronSyllables(w.t))+'</div>'
-    +'<div class="pron-audio"><button class="pron-play" id="pnNorm">🔊 Écouter</button><button class="pron-play slow" id="pnSlow">🐢 Lent</button></div>';
+    +'<div class="pron-audio"><button class="pron-play" id="pnNorm">🔊 Écouter</button><button class="pron-play slow" id="pnSlow">🐢 Lent</button>'
+    +(pronSyllables(w.t).indexOf("·")>=0?'<button class="pron-play slow" id="pnSyl">🐢 Syllabes</button>':'')+'</div>'
+    +'<button class="turtle-toggle'+(S.turtle?' on':'')+'" id="pnTurtle">🐢 Mode tortue : '+(S.turtle?'ON':'OFF')+'</button>';
   d.appendChild(card);
   // astuces d'élocution
   var tips=pronTips(w.t,c.id); var tw=el("div","pron-tips"); tw.innerHTML='<div class="pt-h">💡 Astuce d\'élocution</div>';
@@ -1063,8 +1087,9 @@ function vPron(){ var d=el("div","screen pron"); if(!PRON){ VIEW="home"; return 
     var skip=el("button","btn-ghost skip"); skip.textContent="Passer ce mot"; skip.onclick=function(){ PRON.res={heard:null,score:0,self:true,skipped:true}; pronNext(); }; zone.appendChild(skip);
   }
   d.appendChild(zone);
-  setTimeout(function(){ var n=document.getElementById("pnNorm"),s=document.getElementById("pnSlow");
-    if(n)n.onclick=function(){ pronSay(w.t,false); }; if(s)s.onclick=function(){ pronSay(w.t,true); }; },0);
+  setTimeout(function(){ var n=document.getElementById("pnNorm"),s=document.getElementById("pnSlow"),sy=document.getElementById("pnSyl"),tt=document.getElementById("pnTurtle");
+    if(n)n.onclick=function(){ pronSay(w.t,false); }; if(s)s.onclick=function(){ pronSay(w.t,true); };
+    if(sy)sy.onclick=function(){ speakSyllables(w.t); }; if(tt)tt.onclick=toggleTurtle; },0);
   return d;
 }
 
@@ -1886,7 +1911,17 @@ function exType(ex){ var w=el("div","ex");
   return w;
 }
 function exSpeak(ex){ var w=el("div","ex");
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div><div class="q-word">'+esc(ex.prompt)+' <button class="say" id="spSay">🔊</button></div><div class="speak-hint" id="spHint">Écoute (🔊) puis touche le micro et répète.</div>';
+  var syl=pronSyllables(ex.answer); var hasSyl=syl.indexOf("·")>=0;
+  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div>'
+    +'<div class="q-word">'+esc(ex.prompt)+'</div>'
+    +(hasSyl?'<div class="pron-syl" title="Découpage en syllabes">'+esc(syl)+'</div>':'')
+    +'<div class="pron-audio">'
+      +'<button class="pron-play" id="spSay">🔊 Écouter</button>'
+      +'<button class="pron-play slow" id="spSlow">🐢 Lent</button>'
+      +(hasSyl?'<button class="pron-play slow" id="spSyl">🐢 Syllabes</button>':'')
+    +'</div>'
+    +'<button class="turtle-toggle'+(S.turtle?' on':'')+'" id="spTurtle">🐢 Mode tortue : '+(S.turtle?'ON':'OFF')+'</button>'
+    +'<div class="speak-hint" id="spHint">Écoute (🔊 / 🐢) puis touche le micro et répète.</div>';
   var _mean=' <b>👉 « '+esc(ex.answer)+' » = « '+esc(ex.w&&ex.w.fr||"")+' »</b>'; /* le SENS ne se révèle qu\'APRÈS avoir parlé (Kevin : « seulement en réponse, après ») */
   var mic=el("button","mic-btn"); mic.innerHTML="🎤 Parler";
   mic.onclick=function(){ mic.innerHTML="🎤 …j'écoute"; dictate(function(txt,alts){
@@ -1897,7 +1932,13 @@ function exSpeak(ex){ var w=el("div","ex");
   w.appendChild(mic);
   var pass=el("button","btn-ghost skip"); pass.textContent="Passer (sans micro)"; pass.onclick=function(){ var h=document.getElementById("spHint"); if(h)h.innerHTML="Tu as passé.<br>"+_mean; LESSON._speakOk=true; LESSON._can=true; syncMain(); }; w.appendChild(pass);
   var qiSp=LESSON.i;
-  setTimeout(function(){ var sb=document.getElementById("spSay"); if(sb)sb.onclick=function(){speak(ex.answer);}; if(LESSON&&LESSON.i===qiSp&&!LESSON.answered)speak(ex.answer); },200);
+  setTimeout(function(){
+    var sb=document.getElementById("spSay"); if(sb)sb.onclick=function(){ speak(ex.answer); };
+    var sl=document.getElementById("spSlow"); if(sl)sl.onclick=function(){ pronSay(ex.answer,true); };
+    var sy=document.getElementById("spSyl"); if(sy)sy.onclick=function(){ speakSyllables(ex.answer); };
+    var tt=document.getElementById("spTurtle"); if(tt)tt.onclick=toggleTurtle;
+    if(LESSON&&LESSON.i===qiSp&&!LESSON.answered) modelSpeak(ex.answer); /* auto : lent si 🐢 ON */
+  },200);
   return w;
 }
 function syncMain(){ var m=document.getElementById("mainBtn"); if(m)m.disabled=!(LESSON.answered||LESSON._can); }
