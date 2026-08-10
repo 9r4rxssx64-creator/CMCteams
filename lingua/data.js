@@ -3243,6 +3243,96 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var f2=LEX2F[l]||{}; Object.keys(f2).forEach(function(k){ LEX2[l][k]=f2[k]; }); });
+/* Vague 7 des nouvelles langues (v2.76) : unités 49-56 — le temps libre, les sens, la grande
+   famille, les mesures, à table encore, les métiers encore, le cœur encore, chez le médecin.
+   48 → 56 unités. Anti-doublons : pl épaule=bark (bras=ramię), ru goûter=пробовать на вкус
+   (essayer=пробовать), zh regarder=观看 (voir=看), espérer=盼望 (espoir=希望), sain=健康的 ;
+   ja regarder=見つめます, sain=健康的 ; ko regarder=바라보다, invité=초대 손님 (client=손님).
+   Homographes RÉELS assumés : uk чоловік = homme ET mari ; ko 쓰다 (+ amer) ; ar حار = chaud
+   ET épicé ; ja 心配 = inquiet ET souci. */
+var LEX2G = {
+pl:{
+"dessiner":"rysować","peindre":"malować","chanson":"piosenka","guitare":"gitara","piano":"pianino","marcher":"chodzić","promenade":"spacer","pêcher":"łowić ryby","fête":"impreza","invité":"gość",
+"regarder":"patrzeć","écouter":"słuchać","entendre":"słyszeć","toucher":"dotykać","goûter":"smakować","voix":"głos","peau":"skóra","épaule":"bark","genou":"kolano","cou":"szyja","sourire":"uśmiech",
+"oncle":"wujek","tante":"ciocia","cousin":"kuzyn","neveu":"bratanek","nièce":"bratanica","mari":"mąż","couple":"para","adulte":"dorosły","personne":"osoba",
+"mètre":"metr","kilomètre":"kilometr","kilo":"kilogram","litre":"litr","moitié":"połowa","quart":"ćwierć","double":"podwójny","premier":"pierwszy","dernier":"ostatni","prochain":"następny",
+"goût":"smak","délicieux":"pyszny","sucré":"słodki","salé":"słony","amer":"gorzki","épicé":"ostry","faim":"głód","soif":"pragnienie","boisson":"napój","morceau":"kawałek","tranche":"plasterek","c'est délicieux":"to jest pyszne","j'ai faim":"jestem głodny","j'ai soif":"chce mi się pić",
+"métier":"zawód","usine":"fabryka","vendeur":"sprzedawca","infirmier":"pielęgniarz","pompier":"strażak","facteur":"listonosz","coiffeur":"fryzjer","dentiste":"dentysta","gagner":"wygrywać","perdre":"przegrywać",
+"espoir":"nadzieja","joie":"radość","chance":"szczęście","rêve":"marzenie","espérer":"mieć nadzieję","colère":"gniew","honte":"wstyd","souci":"zmartwienie","embrasser":"całować","je rêve de voyager":"marzę o podróżach",
+"rendez-vous":"wizyta","blessure":"rana","sang":"krew","tousser":"kaszleć","rhume":"przeziębienie","grippe":"grypa","urgence":"nagły wypadek","sain":"zdrowy"
+},
+ru:{
+"dessiner":"рисовать","peindre":"рисовать красками","chanson":"песня","guitare":"гитара","piano":"пианино","marcher":"ходить","promenade":"прогулка","pêcher":"ловить рыбу","fête":"праздник","invité":"гость",
+"regarder":"смотреть","écouter":"слушать","entendre":"слышать","toucher":"трогать","goûter":"пробовать на вкус","voix":"голос","peau":"кожа","épaule":"плечо","genou":"колено","cou":"шея","sourire":"улыбка",
+"oncle":"дядя","tante":"тётя","cousin":"кузен","neveu":"племянник","nièce":"племянница","mari":"муж","couple":"пара","adulte":"взрослый","personne":"человек",
+"mètre":"метр","kilomètre":"километр","kilo":"килограмм","litre":"литр","moitié":"половина","quart":"четверть","double":"двойной","premier":"первый","dernier":"последний","prochain":"следующий",
+"goût":"вкус","délicieux":"вкусный","sucré":"сладкий","salé":"солёный","amer":"горький","épicé":"острый","faim":"голод","soif":"жажда","boisson":"напиток","morceau":"кусок","tranche":"ломтик","c'est délicieux":"это вкусно","j'ai faim":"я голоден","j'ai soif":"я хочу пить",
+"métier":"профессия","usine":"завод","vendeur":"продавец","infirmier":"медбрат","pompier":"пожарный","facteur":"почтальон","coiffeur":"парикмахер","dentiste":"стоматолог","gagner":"выигрывать","perdre":"проигрывать",
+"espoir":"надежда","joie":"радость","chance":"удача","rêve":"мечта","espérer":"надеяться","colère":"гнев","honte":"стыд","souci":"беспокойство","embrasser":"целовать","je rêve de voyager":"я мечтаю путешествовать",
+"rendez-vous":"приём","blessure":"рана","sang":"кровь","tousser":"кашлять","rhume":"простуда","grippe":"грипп","urgence":"экстренный случай","sain":"здоровый"
+},
+uk:{
+"dessiner":"малювати","peindre":"малювати фарбами","chanson":"пісня","guitare":"гітара","piano":"піаніно","marcher":"ходити","promenade":"прогулянка","pêcher":"ловити рибу","fête":"свято","invité":"гість",
+"regarder":"дивитися","écouter":"слухати","entendre":"чути","toucher":"торкатися","goûter":"куштувати","voix":"голос","peau":"шкіра","épaule":"плече","genou":"коліно","cou":"шия","sourire":"усмішка",
+"oncle":"дядько","tante":"тітка","cousin":"кузен","neveu":"племінник","nièce":"племінниця","mari":"чоловік","couple":"пара","adulte":"дорослий","personne":"людина",
+"mètre":"метр","kilomètre":"кілометр","kilo":"кілограм","litre":"літр","moitié":"половина","quart":"чверть","double":"подвійний","premier":"перший","dernier":"останній","prochain":"наступний",
+"goût":"смак","délicieux":"смачний","sucré":"солодкий","salé":"солоний","amer":"гіркий","épicé":"гострий","faim":"голод","soif":"спрага","boisson":"напій","morceau":"шматок","tranche":"скибка","c'est délicieux":"це смачно","j'ai faim":"я голодний","j'ai soif":"я хочу пити",
+"métier":"професія","usine":"завод","vendeur":"продавець","infirmier":"медбрат","pompier":"пожежник","facteur":"листоноша","coiffeur":"перукар","dentiste":"стоматолог","gagner":"вигравати","perdre":"програвати",
+"espoir":"надія","joie":"радість","chance":"удача","rêve":"мрія","espérer":"сподіватися","colère":"гнів","honte":"сором","souci":"турбота","embrasser":"цілувати","je rêve de voyager":"я мрію подорожувати",
+"rendez-vous":"прийом","blessure":"рана","sang":"кров","tousser":"кашляти","rhume":"застуда","grippe":"грип","urgence":"невідкладний випадок","sain":"здоровий"
+},
+cs:{
+"dessiner":"kreslit","peindre":"malovat","chanson":"píseň","guitare":"kytara","piano":"klavír","marcher":"chodit","promenade":"procházka","pêcher":"rybařit","fête":"oslava","invité":"host",
+"regarder":"dívat se","écouter":"poslouchat","entendre":"slyšet","toucher":"dotýkat se","goûter":"ochutnávat","voix":"hlas","peau":"kůže","épaule":"rameno","genou":"koleno","cou":"krk","sourire":"úsměv",
+"oncle":"strýc","tante":"teta","cousin":"bratranec","neveu":"synovec","nièce":"neteř","mari":"manžel","couple":"pár","adulte":"dospělý","personne":"osoba",
+"mètre":"metr","kilomètre":"kilometr","kilo":"kilogram","litre":"litr","moitié":"polovina","quart":"čtvrtina","double":"dvojitý","premier":"první","dernier":"poslední","prochain":"příští",
+"goût":"chuť","délicieux":"výborný","sucré":"sladký","salé":"slaný","amer":"hořký","épicé":"pálivý","faim":"hlad","soif":"žízeň","boisson":"nápoj","morceau":"kousek","tranche":"plátek","c'est délicieux":"to je výborné","j'ai faim":"mám hlad","j'ai soif":"mám žízeň",
+"métier":"povolání","usine":"továrna","vendeur":"prodavač","infirmier":"zdravotník","pompier":"hasič","facteur":"pošťák","coiffeur":"kadeřník","dentiste":"zubař","gagner":"vyhrávat","perdre":"prohrávat",
+"espoir":"naděje","joie":"radost","chance":"štěstí","rêve":"sen","espérer":"doufat","colère":"hněv","honte":"stud","souci":"starost","embrasser":"líbat","je rêve de voyager":"sním o cestování",
+"rendez-vous":"termín","blessure":"rána","sang":"krev","tousser":"kašlat","rhume":"nachlazení","grippe":"chřipka","urgence":"pohotovost","sain":"zdravý"
+},
+zh:{
+"dessiner":"画画","peindre":"绘画","chanson":"歌曲","guitare":"吉他","piano":"钢琴","marcher":"走路","promenade":"散步","pêcher":"钓鱼","fête":"聚会","invité":"客人",
+"regarder":"观看","écouter":"听","entendre":"听见","toucher":"摸","goûter":"尝","voix":"声音","peau":"皮肤","épaule":"肩膀","genou":"膝盖","cou":"脖子","sourire":"微笑",
+"oncle":"叔叔","tante":"阿姨","cousin":"表哥","neveu":"侄子","nièce":"侄女","mari":"丈夫","couple":"夫妻","adulte":"成年人","personne":"人",
+"mètre":"米","kilomètre":"公里","kilo":"公斤","litre":"升","moitié":"一半","quart":"四分之一","double":"双倍","premier":"第一","dernier":"最后","prochain":"下一个",
+"goût":"味道","délicieux":"好吃","sucré":"甜","salé":"咸","amer":"苦","épicé":"辣","faim":"饿","soif":"渴","boisson":"饮料","morceau":"块","tranche":"片","c'est délicieux":"很 好吃","j'ai faim":"我 饿 了","j'ai soif":"我 渴 了",
+"métier":"职业","usine":"工厂","vendeur":"售货员","infirmier":"护士","pompier":"消防员","facteur":"邮递员","coiffeur":"理发师","dentiste":"牙医","gagner":"赢","perdre":"输",
+"espoir":"希望","joie":"快乐","chance":"运气","rêve":"梦想","espérer":"盼望","colère":"愤怒","honte":"羞耻","souci":"烦恼","embrasser":"亲吻","je rêve de voyager":"我 梦想 去 旅行",
+"rendez-vous":"预约","blessure":"伤口","sang":"血","tousser":"咳嗽","rhume":"感冒","grippe":"流感","urgence":"急诊","sain":"健康的"
+},
+ja:{
+"dessiner":"絵を描きます","peindre":"塗ります","chanson":"歌","guitare":"ギター","piano":"ピアノ","marcher":"歩きます","promenade":"散歩","pêcher":"釣りをします","fête":"パーティー","invité":"ゲスト",
+"regarder":"見つめます","écouter":"聞きます","entendre":"聞こえます","toucher":"触ります","goûter":"味わいます","voix":"声","peau":"肌","épaule":"肩","genou":"ひざ","cou":"首","sourire":"笑顔",
+"oncle":"おじさん","tante":"おばさん","cousin":"いとこ","neveu":"おい","nièce":"めい","mari":"夫","couple":"カップル","adulte":"大人","personne":"人",
+"mètre":"メートル","kilomètre":"キロメートル","kilo":"キロ","litre":"リットル","moitié":"半分","quart":"四分の一","double":"二倍","premier":"最初","dernier":"最後","prochain":"次",
+"goût":"味","délicieux":"おいしい","sucré":"甘い","salé":"しょっぱい","amer":"苦い","épicé":"辛い","faim":"空腹","soif":"のどの渇き","boisson":"飲み物","morceau":"かけら","tranche":"一切れ","c'est délicieux":"おいしい です","j'ai faim":"おなか が すきました","j'ai soif":"のど が かわきました",
+"métier":"職業","usine":"工場","vendeur":"店員","infirmier":"看護師","pompier":"消防士","facteur":"郵便配達員","coiffeur":"美容師","dentiste":"歯医者","gagner":"勝ちます","perdre":"負けます",
+"espoir":"希望","joie":"喜び","chance":"運","rêve":"夢","espérer":"望みます","colère":"怒り","honte":"恥","souci":"心配","embrasser":"キスします","je rêve de voyager":"私 は 旅行 を 夢見ています",
+"rendez-vous":"予約","blessure":"けが","sang":"血","tousser":"せきをします","rhume":"風邪","grippe":"インフルエンザ","urgence":"救急","sain":"健康的"
+},
+ko:{
+"dessiner":"그리다","peindre":"칠하다","chanson":"노래","guitare":"기타","piano":"피아노","marcher":"걷다","promenade":"산책","pêcher":"낚시하다","fête":"파티","invité":"초대 손님",
+"regarder":"바라보다","écouter":"듣다","entendre":"들리다","toucher":"만지다","goûter":"맛보다","voix":"목소리","peau":"피부","épaule":"어깨","genou":"무릎","cou":"목","sourire":"미소",
+"oncle":"삼촌","tante":"이모","cousin":"사촌","neveu":"조카","nièce":"조카딸","mari":"남편","couple":"커플","adulte":"어른","personne":"사람",
+"mètre":"미터","kilomètre":"킬로미터","kilo":"킬로그램","litre":"리터","moitié":"절반","quart":"사분의 일","double":"두 배","premier":"첫 번째","dernier":"마지막","prochain":"다음",
+"goût":"맛","délicieux":"맛있다","sucré":"달다","salé":"짜다","amer":"쓰다","épicé":"맵다","faim":"배고픔","soif":"갈증","boisson":"음료","morceau":"조각","tranche":"얇은 조각","c'est délicieux":"맛있어요","j'ai faim":"배고파요","j'ai soif":"목말라요",
+"métier":"직업","usine":"공장","vendeur":"판매원","infirmier":"간호사","pompier":"소방관","facteur":"우편집배원","coiffeur":"미용사","dentiste":"치과 의사","gagner":"이기다","perdre":"지다",
+"espoir":"희망","joie":"기쁨","chance":"운","rêve":"꿈","espérer":"바라다","colère":"분노","honte":"부끄러움","souci":"걱정","embrasser":"키스하다","je rêve de voyager":"저는 여행하는 꿈을 꿔요",
+"rendez-vous":"예약","blessure":"상처","sang":"피","tousser":"기침하다","rhume":"감기","grippe":"독감","urgence":"응급","sain":"건강하다"
+},
+ar:{
+"dessiner":"يرسم","peindre":"يلون","chanson":"أغنية","guitare":"غيتار","piano":"بيانو","marcher":"يمشي","promenade":"نزهة","pêcher":"يصطاد","fête":"حفلة","invité":"ضيف",
+"regarder":"ينظر","écouter":"يستمع","entendre":"يسمع","toucher":"يلمس","goûter":"يتذوق","voix":"صوت","peau":"جلد","épaule":"كتف","genou":"ركبة","cou":"رقبة","sourire":"ابتسامة",
+"oncle":"عم","tante":"عمة","cousin":"ابن عم","neveu":"ابن أخ","nièce":"ابنة أخ","mari":"زوج","couple":"زوجان","adulte":"بالغ","personne":"شخص",
+"mètre":"متر","kilomètre":"كيلومتر","kilo":"كيلوغرام","litre":"لتر","moitié":"نصف","quart":"ربع","double":"ضعف","premier":"أول","dernier":"أخير","prochain":"التالي",
+"goût":"طعم","délicieux":"لذيذ","sucré":"حلو","salé":"مالح","amer":"مر","épicé":"حار","faim":"جوع","soif":"عطش","boisson":"مشروب","morceau":"قطعة","tranche":"شريحة","c'est délicieux":"هذا لذيذ","j'ai faim":"أنا جائع","j'ai soif":"أنا عطشان",
+"métier":"مهنة","usine":"مصنع","vendeur":"بائع","infirmier":"ممرض","pompier":"رجل إطفاء","facteur":"ساعي البريد","coiffeur":"حلاق","dentiste":"طبيب أسنان","gagner":"يربح","perdre":"يخسر",
+"espoir":"أمل","joie":"فرح","chance":"حظ","rêve":"حلم","espérer":"يأمل","colère":"غضب","honte":"خجل","souci":"هم","embrasser":"يقبّل","je rêve de voyager":"أحلم بالسفر",
+"rendez-vous":"موعد","blessure":"جرح","sang":"دم","tousser":"يسعل","rhume":"زكام","grippe":"إنفلونزا","urgence":"طوارئ","sain":"معافى"
+}
+};
+LANGS2.forEach(function(l){ var g2=LEX2G[l]||{}; Object.keys(g2).forEach(function(k){ LEX2[l][k]=g2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
