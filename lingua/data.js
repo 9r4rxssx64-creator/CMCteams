@@ -4778,6 +4778,61 @@ var LEX2MED = {
 };
 LANGS2.forEach(function(l){ var m2=LEX2MED[l]||{}; Object.keys(m2).forEach(function(k){ LEX2[l][k]=m2[k]; }); });
 
+
+/* ===== VAGUE TRAVAIL / CARACTÈRE / ÉMOTIONS (v2.96.0) — 24 mots ×14 langues, 3 unités ===== */
+var CURRICULUM_G = [
+  {t:"Au travail 💼", c:"#0ea5e9", L:[
+    {t:"Les gens", w:["employé","ouvrier","chantier"]},
+    {t:"Le chantier", w:["devis","prime","pause"]} ]},
+  {t:"Le caractère 🧠", c:"#a855f7", L:[
+    {t:"Qualités & défauts", w:["travailleur","menteur","discret","ambitieux"]},
+    {t:"L'esprit", w:["malin","bête","confiant","méfiant","distrait","modeste"]} ]},
+  {t:"Les émotions 😊", c:"#f43f5e", L:[
+    {t:"Ressentis", w:["gêné","soulagé","enthousiaste","épuisé"]},
+    {t:"L'humeur", w:["impatient","de bonne humeur","de mauvaise humeur","avoir honte"]} ]}
+];
+CURRICULUM_G.forEach(function(u){ CURRICULUM.push(u); });
+
+var NEWV18 = {
+  "employé":{"en":"employee","it":"dipendente","es":"empleado","de":"Angestellter","pt":"empregado","nl":"werknemer"},
+  "ouvrier":{"en":"worker","it":"operaio","es":"obrero","de":"Arbeiter","pt":"operário","nl":"arbeider"},
+  "chantier":{"en":"construction site","it":"cantiere","es":"obra","de":"Baustelle","pt":"estaleiro","nl":"bouwplaats"},
+  "devis":{"en":"quote","it":"preventivo","es":"presupuesto","de":"Kostenvoranschlag","pt":"orçamento","nl":"offerte"},
+  "prime":{"en":"bonus","it":"premio","es":"prima","de":"Bonus","pt":"prémio","nl":"bonus"},
+  "pause":{"en":"break","it":"pausa","es":"pausa","de":"Pause","pt":"pausa","nl":"pauze"},
+  "travailleur":{"en":"hard-working","it":"lavoratore","es":"trabajador","de":"fleißig","pt":"trabalhador","nl":"hardwerkend"},
+  "menteur":{"en":"liar","it":"bugiardo","es":"mentiroso","de":"Lügner","pt":"mentiroso","nl":"leugenaar"},
+  "discret":{"en":"discreet","it":"discreto","es":"discreto","de":"diskret","pt":"discreto","nl":"discreet"},
+  "ambitieux":{"en":"ambitious","it":"ambizioso","es":"ambicioso","de":"ehrgeizig","pt":"ambicioso","nl":"ambitieus"},
+  "malin":{"en":"cunning","it":"furbo","es":"astuto","de":"schlau","pt":"esperto","nl":"sluw"},
+  "bête":{"en":"silly","it":"stupido","es":"tonto","de":"dumm","pt":"tolo","nl":"dom"},
+  "confiant":{"en":"confident","it":"fiducioso","es":"confiado","de":"zuversichtlich","pt":"confiante","nl":"zelfverzekerd"},
+  "méfiant":{"en":"wary","it":"diffidente","es":"desconfiado","de":"misstrauisch","pt":"desconfiado","nl":"wantrouwig"},
+  "distrait":{"en":"absent-minded","it":"distratto","es":"distraído","de":"zerstreut","pt":"distraído","nl":"verstrooid"},
+  "modeste":{"en":"modest","it":"modesto","es":"modesto","de":"bescheiden","pt":"modesto","nl":"bescheiden"},
+  "gêné":{"en":"embarrassed","it":"imbarazzato","es":"avergonzado","de":"verlegen","pt":"envergonhado","nl":"beschaamd"},
+  "soulagé":{"en":"relieved","it":"sollevato","es":"aliviado","de":"erleichtert","pt":"aliviado","nl":"opgelucht"},
+  "enthousiaste":{"en":"enthusiastic","it":"entusiasta","es":"entusiasta","de":"begeistert","pt":"entusiasmado","nl":"enthousiast"},
+  "épuisé":{"en":"exhausted","it":"esausto","es":"agotado","de":"erschöpft","pt":"exausto","nl":"uitgeput"},
+  "impatient":{"en":"impatient","it":"impaziente","es":"impaciente","de":"ungeduldig","pt":"impaciente","nl":"ongeduldig"},
+  "de bonne humeur":{"en":"in a good mood","it":"di buon umore","es":"de buen humor","de":"gut gelaunt","pt":"de bom humor","nl":"goedgehumeurd"},
+  "de mauvaise humeur":{"en":"in a bad mood","it":"di cattivo umore","es":"de mal humor","de":"schlecht gelaunt","pt":"de mau humor","nl":"slechtgehumeurd"},
+  "avoir honte":{"en":"to be ashamed","it":"vergognarsi","es":"avergonzarse","de":"sich schämen","pt":"ter vergonha","nl":"zich schamen"}
+};
+LANGS.forEach(function(l){ Object.keys(NEWV18).forEach(function(k){ if(NEWV18[k][l]) LEX[l][k]=NEWV18[k][l]; }); });
+
+var LEX2WRK = {
+  pl:{"employé":"pracownik","ouvrier":"robotnik","chantier":"budowa","devis":"wycena","prime":"premia","pause":"przerwa","travailleur":"pracowity","menteur":"kłamca","discret":"dyskretny","ambitieux":"ambitny","malin":"sprytny","bête":"głupi","confiant":"pewny siebie","méfiant":"nieufny","distrait":"roztargniony","modeste":"skromny","gêné":"zażenowany","soulagé":"ulżony","enthousiaste":"entuzjastyczny","épuisé":"wyczerpany","impatient":"niecierpliwy","de bonne humeur":"w dobrym humorze","de mauvaise humeur":"w złym humorze","avoir honte":"wstydzić się"},
+  ru:{"employé":"сотрудник","ouvrier":"рабочий","chantier":"стройка","devis":"смета","prime":"премия","pause":"перерыв","travailleur":"трудолюбивый","menteur":"лжец","discret":"сдержанный","ambitieux":"амбициозный","malin":"хитрый","bête":"глупый","confiant":"уверенный","méfiant":"недоверчивый","distrait":"рассеянный","modeste":"скромный","gêné":"смущённый","soulagé":"облегчённый","enthousiaste":"восторженный","épuisé":"измотанный","impatient":"нетерпеливый","de bonne humeur":"в хорошем настроении","de mauvaise humeur":"в плохом настроении","avoir honte":"стыдиться"},
+  uk:{"employé":"співробітник","ouvrier":"робітник","chantier":"будівництво","devis":"кошторис","prime":"премія","pause":"перерва","travailleur":"працьовитий","menteur":"брехун","discret":"стриманий","ambitieux":"амбітний","malin":"хитрий","bête":"дурний","confiant":"впевнений","méfiant":"недовірливий","distrait":"неуважний","modeste":"скромний","gêné":"збентежений","soulagé":"полегшений","enthousiaste":"захоплений","épuisé":"виснажений","impatient":"нетерплячий","de bonne humeur":"у гарному настрої","de mauvaise humeur":"у поганому настрої","avoir honte":"соромитися"},
+  cs:{"employé":"zaměstnanec","ouvrier":"dělník","chantier":"staveniště","devis":"cenová nabídka","prime":"prémie","pause":"přestávka","travailleur":"pracovitý","menteur":"lhář","discret":"diskrétní","ambitieux":"ctižádostivý","malin":"mazaný","bête":"hloupý","confiant":"sebejistý","méfiant":"nedůvěřivý","distrait":"roztržitý","modeste":"skromný","gêné":"rozpačitý","soulagé":"ulevený","enthousiaste":"nadšený","épuisé":"vyčerpaný","impatient":"netrpělivý","de bonne humeur":"v dobré náladě","de mauvaise humeur":"ve špatné náladě","avoir honte":"stydět se"},
+  zh:{"employé":"员工","ouvrier":"工人","chantier":"工地","devis":"报价","prime":"奖金","pause":"休息","travailleur":"勤奋","menteur":"骗子","discret":"谨慎","ambitieux":"有野心","malin":"机灵","bête":"愚蠢","confiant":"自信","méfiant":"多疑","distrait":"心不在焉","modeste":"谦虚","gêné":"尴尬","soulagé":"松了一口气","enthousiaste":"热情","épuisé":"精疲力尽","impatient":"不耐烦","de bonne humeur":"心情好","de mauvaise humeur":"心情不好","avoir honte":"羞愧"},
+  ja:{"employé":"従業員","ouvrier":"労働者","chantier":"工事現場","devis":"見積もり","prime":"ボーナス","pause":"休憩","travailleur":"勤勉","menteur":"嘘つき","discret":"控えめ","ambitieux":"野心的","malin":"ずる賢い","bête":"愚か","confiant":"自信がある","méfiant":"疑い深い","distrait":"上の空","modeste":"謙虚","gêné":"恥ずかしい","soulagé":"ほっとした","enthousiaste":"熱心","épuisé":"疲れ果てた","impatient":"せっかち","de bonne humeur":"機嫌がいい","de mauvaise humeur":"機嫌が悪い","avoir honte":"恥じる"},
+  ko:{"employé":"직원","ouvrier":"노동자","chantier":"공사장","devis":"견적","prime":"보너스","pause":"휴식","travailleur":"근면한","menteur":"거짓말쟁이","discret":"과묵한","ambitieux":"야심 찬","malin":"약삭빠른","bête":"어리석은","confiant":"자신 있는","méfiant":"의심 많은","distrait":"산만한","modeste":"겸손한","gêné":"당황한","soulagé":"안도한","enthousiaste":"열정적인","épuisé":"기진맥진한","impatient":"성급한","de bonne humeur":"기분이 좋은","de mauvaise humeur":"기분이 나쁜","avoir honte":"부끄러워하다"},
+  ar:{"employé":"موظف","ouvrier":"عامل","chantier":"ورشة بناء","devis":"عرض أسعار","prime":"حافز","pause":"استراحة","travailleur":"مجتهد","menteur":"كاذب","discret":"متحفظ","ambitieux":"طموح","malin":"داهية","bête":"غبي","confiant":"واثق","méfiant":"مرتاب","distrait":"شارد الذهن","modeste":"متواضع","gêné":"محرج","soulagé":"مرتاح البال","enthousiaste":"متحمس","épuisé":"منهك","impatient":"نافد الصبر","de bonne humeur":"في مزاج جيد","de mauvaise humeur":"في مزاج سيئ","avoir honte":"يخجل"}
+};
+LANGS2.forEach(function(l){ var w2=LEX2WRK[l]||{}; Object.keys(w2).forEach(function(k){ LEX2[l][k]=w2[k]; }); });
+
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
