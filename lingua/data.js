@@ -5039,23 +5039,23 @@ LANGS2.forEach(function(l){ Object.keys(LEX2[l]).forEach(function(fr){ if(DICT[f
    Débloquage : la 1re est ouverte, chaque histoire ouvre la suivante. */
 var STORIES=[
  {id:"cafe", ic:"☕", titre:"Au café", lignes:[
-  {qui:"🐝", fr:"Bonjour !", t:{en:"Hello!", it:"Buongiorno!", es:"¡Buenos días!", de:"Guten Tag!", pt:"Bom dia!", nl:"Goedendag!"}},
-  {qui:"🧑‍🍳", fr:"Bonjour ! Café ou thé ?", t:{en:"Hello! Coffee or tea?", it:"Buongiorno! Caffè o tè?", es:"¡Buenos días! ¿Café o té?", de:"Guten Tag! Kaffee oder Tee?", pt:"Bom dia! Café ou chá?", nl:"Goedendag! Koffie of thee?"}},
-  {qui:"🐝", fr:"Un café, s'il te plaît.", t:{en:"A coffee, please.", it:"Un caffè, per favore.", es:"Un café, por favor.", de:"Einen Kaffee, bitte.", pt:"Um café, por favor.", nl:"Een koffie, alstublieft."}},
-  {qui:"🧑‍🍳", fr:"Et un gâteau ?", t:{en:"And a cake?", it:"E una torta?", es:"¿Y un pastel?", de:"Und einen Kuchen?", pt:"E um bolo?", nl:"En een taart?"}},
-  {qui:"🐝", fr:"Oui ! Merci !", t:{en:"Yes! Thank you!", it:"Sì! Grazie!", es:"¡Sí! ¡Gracias!", de:"Ja! Danke!", pt:"Sim! Obrigada!", nl:"Ja! Dank je!"}},
-  {qui:"🐝", fr:"Le café est bon.", t:{en:"The coffee is good.", it:"Il caffè è buono.", es:"El café es bueno.", de:"Der Kaffee ist gut.", pt:"O café é bom.", nl:"De koffie is goed."}}],
+  {qui:"🐝", fr:"Bonjour !", t:{en:"Hello!", it:"Buongiorno!", es:"¡Buenos días!", de:"Guten Tag!", pt:"Bom dia!", nl:"Goedendag!", pl:"Cześć!", ru:"Привет!", uk:"Привіт!", cs:"Ahoj!", zh:"你好！", ja:"こんにちは！", ko:"안녕하세요!", ar:"مرحباً!"}},
+  {qui:"🧑‍🍳", fr:"Bonjour ! Café ou thé ?", t:{en:"Hello! Coffee or tea?", it:"Buongiorno! Caffè o tè?", es:"¡Buenos días! ¿Café o té?", de:"Guten Tag! Kaffee oder Tee?", pt:"Bom dia! Café ou chá?", nl:"Goedendag! Koffie of thee?", pl:"Cześć! Kawa czy herbata?", ru:"Привет! Кофе или чай?", uk:"Привіт! Кава чи чай?", cs:"Ahoj! Káva nebo čaj?", zh:"你好！喝咖啡还是茶？", ja:"こんにちは！コーヒーか紅茶ですか？", ko:"안녕하세요! 커피나 차를 드릴까요?", ar:"مرحباً! قهوة أو شاي؟"}},
+  {qui:"🐝", fr:"Un café, s'il te plaît.", t:{en:"A coffee, please.", it:"Un caffè, per favore.", es:"Un café, por favor.", de:"Einen Kaffee, bitte.", pt:"Um café, por favor.", nl:"Een koffie, alstublieft.", pl:"Kawę, proszę.", ru:"Кофе, пожалуйста.", uk:"Каву, будь ласка.", cs:"Kávu, prosím.", zh:"请给我一杯咖啡。", ja:"コーヒーをください。", ko:"커피를 주세요.", ar:"قهوة، من فضلك؟"}},
+  {qui:"🧑‍🍳", fr:"Et un gâteau ?", t:{en:"And a cake?", it:"E una torta?", es:"¿Y un pastel?", de:"Und einen Kuchen?", pt:"E um bolo?", nl:"En een taart?", pl:"A ciasto?", ru:"И торт?", uk:"І торт?", cs:"A dort?", zh:"还有蛋糕吗？", ja:"ケーキもありますか？", ko:"케이크도 있나요?", ar:"والكعك؟"}},
+  {qui:"🐝", fr:"Oui ! Merci !", t:{en:"Yes! Thank you!", it:"Sì! Grazie!", es:"¡Sí! ¡Gracias!", de:"Ja! Danke!", pt:"Sim! Obrigada!", nl:"Ja! Dank je!", pl:"Tak! Dziękuję!", ru:"Да! Спасибо!", uk:"Так! Дякую!", cs:"Ano! Děkuji!", zh:"是的！谢谢！", ja:"はい！ありがとう！", ko:"네! 감사합니다!", ar:"نعم! شكراً!"}},
+  {qui:"🐝", fr:"Le café est bon.", t:{en:"The coffee is good.", it:"Il caffè è buono.", es:"El café es bueno.", de:"Der Kaffee ist gut.", pt:"O café é bom.", nl:"De koffie is goed.", pl:"Kawa jest dobra.", ru:"Кофе хорош.", uk:"Кава добра.", cs:"Káva je dobrá.", zh:"咖啡很好。", ja:"コーヒーが美味しいです。", ko:"커피가 좋습니다.", ar:"القهوة جيدة؟"}}],
   quiz:[
   {q:"Que commande Bee ?", opts:["Un café","Un thé","Un jus"], ok:0},
   {q:"Avec quoi ?", opts:["Du pain","Un gâteau","Une soupe"], ok:1},
   {q:"Le café est…", opts:["Petit","Noir","Bon"], ok:2}]},
  {id:"chat", ic:"🐱", titre:"Le chat noir", lignes:[
-  {qui:"🐝", fr:"Voici la maison.", t:{en:"Here is the house.", it:"Ecco la casa.", es:"Aquí está la casa.", de:"Hier ist das Haus.", pt:"Aqui está a casa.", nl:"Hier is het huis."}},
-  {qui:"🐝", fr:"Un chat est dans la maison.", t:{en:"A cat is in the house.", it:"Un gatto è nella casa.", es:"Un gato está en la casa.", de:"Eine Katze ist im Haus.", pt:"Um gato está na casa.", nl:"Een kat is in het huis."}},
-  {qui:"🐝", fr:"Le chat est noir.", t:{en:"The cat is black.", it:"Il gatto è nero.", es:"El gato es negro.", de:"Die Katze ist schwarz.", pt:"O gato é preto.", nl:"De kat is zwart."}},
-  {qui:"🐱", fr:"Le chat boit du lait.", t:{en:"The cat drinks milk.", it:"Il gatto beve il latte.", es:"El gato bebe leche.", de:"Die Katze trinkt Milch.", pt:"O gato bebe leite.", nl:"De kat drinkt melk."}},
-  {qui:"🐕", fr:"Le chien est petit.", t:{en:"The dog is small.", it:"Il cane è piccolo.", es:"El perro es pequeño.", de:"Der Hund ist klein.", pt:"O cão é pequeno.", nl:"De hond is klein."}},
-  {qui:"🐝", fr:"Bonne nuit, le chat !", t:{en:"Good night, cat!", it:"Buonanotte, gatto!", es:"¡Buenas noches, gato!", de:"Gute Nacht, Katze!", pt:"Boa noite, gato!", nl:"Goedenacht, kat!"}}],
+  {qui:"🐝", fr:"Voici la maison.", t:{en:"Here is the house.", it:"Ecco la casa.", es:"Aquí está la casa.", de:"Hier ist das Haus.", pt:"Aqui está a casa.", nl:"Hier is het huis.", pl:"Oto dom.", ru:"Вот дом.", uk:"Ось будинок.", cs:"Tady je dům.", zh:"这是房子。", ja:"ここに家があります。", ko:"이것이 집입니다.", ar:"هنا البيت."}},
+  {qui:"🐝", fr:"Un chat est dans la maison.", t:{en:"A cat is in the house.", it:"Un gatto è nella casa.", es:"Un gato está en la casa.", de:"Eine Katze ist im Haus.", pt:"Um gato está na casa.", nl:"Een kat is in het huis.", pl:"Kot jest w domu.", ru:"Кошка находится в доме.", uk:"Кіт у будинку.", cs:"Kočka je v domě.", zh:"猫在房子里。", ja:"猫が家の中にいます。", ko:"고양이가 집 안에 있습니다.", ar:"القطة في البيت."}},
+  {qui:"🐝", fr:"Le chat est noir.", t:{en:"The cat is black.", it:"Il gatto è nero.", es:"El gato es negro.", de:"Die Katze ist schwarz.", pt:"O gato é preto.", nl:"De kat is zwart.", pl:"Kot jest czarny.", ru:"Кошка чёрная.", uk:"Кіт чорний.", cs:"Kočka je černá.", zh:"猫是黑色的。", ja:"猫は黒です。", ko:"고양이는 검은색입니다.", ar:"القطة سوداء."}},
+  {qui:"🐱", fr:"Le chat boit du lait.", t:{en:"The cat drinks milk.", it:"Il gatto beve il latte.", es:"El gato bebe leche.", de:"Die Katze trinkt Milch.", pt:"O gato bebe leite.", nl:"De kat drinkt melk.", pl:"Kot pije mleko.", ru:"Кошка пьёт молоко.", uk:"Кіт п'є молоко.", cs:"Kočka pije mléko.", zh:"猫在喝牛奶。", ja:"猫は牛乳を飲んでいます。", ko:"고양이가 우유를 마십니다.", ar:"القطة تشرب الحليب."}},
+  {qui:"🐕", fr:"Le chien est petit.", t:{en:"The dog is small.", it:"Il cane è piccolo.", es:"El perro es pequeño.", de:"Der Hund ist klein.", pt:"O cão é pequeno.", nl:"De hond is klein.", pl:"Piesek jest mały.", ru:"Собака маленькая.", uk:"Песик маленький.", cs:"Pes je malý.", zh:"小狗很小。", ja:"犬は小さいです。", ko:"개의 크기는 작습니다.", ar:"الكلب صغير."}},
+  {qui:"🐝", fr:"Bonne nuit, le chat !", t:{en:"Good night, cat!", it:"Buonanotte, gatto!", es:"¡Buenas noches, gato!", de:"Gute Nacht, Katze!", pt:"Boa noite, gato!", nl:"Goedenacht, kat!", pl:"Dobranoc, kocię!", ru:"Спокойной ночи, кот!", uk:"На добраніч, кіт!", cs:"Dobrou noc, kotě!", zh:"晚安，猫。", ja:"おやすみ、猫さん。", ko:"안녕히 주무세요, 고양이.", ar:"تصبح على خير، قط."}}],
   quiz:[
   {q:"De quelle couleur est le chat ?", opts:["Blanc","Noir","Rouge"], ok:1},
   {q:"Que boit le chat ?", opts:["Du lait","De l'eau","Du café"], ok:0},
