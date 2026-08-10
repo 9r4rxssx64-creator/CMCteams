@@ -3808,6 +3808,99 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var l2=LEX2L[l]||{}; Object.keys(l2).forEach(function(k){ LEX2[l][k]=l2[k]; }); });
+/* ── Vague 13 nouvelles langues (v2.82) : unités 97-104 — à l'aéroport, à la gare,
+   la ville en détail, à la ferme, le sport en grand, l'atelier d'artiste, à la poste,
+   le grand ménage. Anti-collisions vérifiées : pl guichet=okienko (kasa=caisse) ;
+   ru terrain=площадка (поле=champ), peintre=живописец (художник=artiste),
+   guichet=окошко (касса=caisse), atterrissage=приземление (посадка=embarquement) ;
+   uk guichet=віконце, peintre=живописець ; cs éponge=houbička (houba=champignon),
+   panneau=dopravní značka (značka=marque), lampadaire=pouliční lampa (lampa=lampe),
+   sculpture=plastika (socha=statue) ; zh tableau=画作 (画画=dessiner) ;
+   ko terrain=운동장 (경기장=stade), tableau=회화 ; ar terrain=أرض الملعب (ملعب=stade),
+   entraînement=تمرين (تدريب=formation), galerie=صالة عرض (معرض=exposition). */
+var LEX2M = {
+pl:{
+"embarquement":"wejście na pokład","décollage":"start","atterrissage":"lądowanie","bagage à main":"bagaż podręczny","hublot":"iluminator","piste":"pas startowy",
+"quai":"peron","guichet":"okienko","aller simple":"bilet w jedną stronę","aller-retour":"bilet w obie strony","correspondance":"przesiadka","le train est en retard":"pociąg jest opóźniony","où est le quai":"gdzie jest peron",
+"trottoir":"chodnik","passage piéton":"przejście dla pieszych","panneau":"znak","lampadaire":"latarnia","boîte aux lettres":"skrzynka pocztowa","rond-point":"rondo","fontaine":"fontanna","statue":"posąg","banlieue":"przedmieścia","centre-ville":"centrum miasta","tunnel":"tunel",
+"ferme":"gospodarstwo","récolte":"zbiory","semer":"siać","tracteur":"traktor","blé":"pszenica","grange":"stodoła","étable":"obora","poulailler":"kurnik","puits":"studnia","épouvantail":"strach na wróble","troupeau":"stado","berger":"pasterz","foin":"siano","vigne":"winnica","maïs":"kukurydza",
+"équipe":"drużyna","match":"mecz","but":"gol","arbitre":"sędzia","terrain":"boisko","tournoi":"turniej","victoire":"zwycięstwo","défaite":"porażka","entraînement":"trening","adversaire":"przeciwnik","champion":"mistrz","médaille":"medal",
+"peintre":"malarz","tableau":"obraz","sculpture":"rzeźba","sculpteur":"rzeźbiarz","atelier":"pracownia","dessin":"rysunek","œuvre":"dzieło","portrait":"portret","chef-d'œuvre":"arcydzieło","galerie":"galeria","exposer":"wystawiać",
+"colis":"paczka","timbre":"znaczek","enveloppe":"koperta","livraison":"dostawa","expéditeur":"nadawca","destinataire":"odbiorca","formulaire":"formularz","signature":"podpis","tampon":"pieczątka",
+"balayer":"zamiatać","aspirateur":"odkurzacz","lessive":"pranie","vaisselle":"naczynia","poussière":"kurz","balai":"miotła","seau":"wiadro","éponge":"gąbka","serpillière":"mop"
+},
+ru:{
+"embarquement":"посадка","décollage":"взлёт","atterrissage":"приземление","bagage à main":"ручная кладь","hublot":"иллюминатор","piste":"взлётная полоса",
+"quai":"платформа","guichet":"окошко","aller simple":"билет в одну сторону","aller-retour":"билет туда и обратно","correspondance":"пересадка","le train est en retard":"поезд опаздывает","où est le quai":"где платформа",
+"trottoir":"тротуар","passage piéton":"пешеходный переход","panneau":"знак","lampadaire":"фонарь","boîte aux lettres":"почтовый ящик","rond-point":"круговое движение","fontaine":"фонтан","statue":"статуя","banlieue":"пригород","centre-ville":"центр города","tunnel":"тоннель",
+"ferme":"ферма","récolte":"урожай","semer":"сеять","tracteur":"трактор","blé":"пшеница","grange":"амбар","étable":"коровник","poulailler":"курятник","puits":"колодец","épouvantail":"пугало","troupeau":"стадо","berger":"пастух","foin":"сено","vigne":"виноградник","maïs":"кукуруза",
+"équipe":"команда","match":"матч","but":"гол","arbitre":"судья","terrain":"площадка","tournoi":"турнир","victoire":"победа","défaite":"поражение","entraînement":"тренировка","adversaire":"соперник","champion":"чемпион","médaille":"медаль",
+"peintre":"живописец","tableau":"картина","sculpture":"скульптура","sculpteur":"скульптор","atelier":"мастерская","dessin":"рисунок","œuvre":"произведение","portrait":"портрет","chef-d'œuvre":"шедевр","galerie":"галерея","exposer":"выставлять",
+"colis":"посылка","timbre":"марка","enveloppe":"конверт","livraison":"доставка","expéditeur":"отправитель","destinataire":"получатель","formulaire":"бланк","signature":"подпись","tampon":"печать",
+"balayer":"подметать","aspirateur":"пылесос","lessive":"стирка","vaisselle":"посуда","poussière":"пыль","balai":"метла","seau":"ведро","éponge":"губка","serpillière":"швабра"
+},
+uk:{
+"embarquement":"посадка","décollage":"зліт","atterrissage":"приземлення","bagage à main":"ручна поклажа","hublot":"ілюмінатор","piste":"злітна смуга",
+"quai":"платформа","guichet":"віконце","aller simple":"квиток в один бік","aller-retour":"квиток туди й назад","correspondance":"пересадка","le train est en retard":"потяг запізнюється","où est le quai":"де платформа",
+"trottoir":"тротуар","passage piéton":"пішохідний перехід","panneau":"знак","lampadaire":"ліхтар","boîte aux lettres":"поштова скринька","rond-point":"кільце","fontaine":"фонтан","statue":"статуя","banlieue":"передмістя","centre-ville":"центр міста","tunnel":"тунель",
+"ferme":"ферма","récolte":"врожай","semer":"сіяти","tracteur":"трактор","blé":"пшениця","grange":"стодола","étable":"корівник","poulailler":"курник","puits":"колодязь","épouvantail":"опудало","troupeau":"стадо","berger":"пастух","foin":"сіно","vigne":"виноградник","maïs":"кукурудза",
+"équipe":"команда","match":"матч","but":"гол","arbitre":"суддя","terrain":"майданчик","tournoi":"турнір","victoire":"перемога","défaite":"поразка","entraînement":"тренування","adversaire":"суперник","champion":"чемпіон","médaille":"медаль",
+"peintre":"живописець","tableau":"картина","sculpture":"скульптура","sculpteur":"скульптор","atelier":"майстерня","dessin":"малюнок","œuvre":"твір","portrait":"портрет","chef-d'œuvre":"шедевр","galerie":"галерея","exposer":"виставляти",
+"colis":"посилка","timbre":"марка","enveloppe":"конверт","livraison":"доставка","expéditeur":"відправник","destinataire":"одержувач","formulaire":"бланк","signature":"підпис","tampon":"печатка",
+"balayer":"підмітати","aspirateur":"пилосос","lessive":"прання","vaisselle":"посуд","poussière":"пил","balai":"мітла","seau":"відро","éponge":"губка","serpillière":"швабра"
+},
+cs:{
+"embarquement":"nástup","décollage":"vzlet","atterrissage":"přistání","bagage à main":"příruční zavazadlo","hublot":"okénko","piste":"ranvej",
+"quai":"nástupiště","guichet":"přepážka","aller simple":"jednosměrná jízdenka","aller-retour":"zpáteční jízdenka","correspondance":"přestup","le train est en retard":"vlak má zpoždění","où est le quai":"kde je nástupiště",
+"trottoir":"chodník","passage piéton":"přechod pro chodce","panneau":"dopravní značka","lampadaire":"pouliční lampa","boîte aux lettres":"poštovní schránka","rond-point":"kruhový objezd","fontaine":"fontána","statue":"socha","banlieue":"předměstí","centre-ville":"centrum města","tunnel":"tunel",
+"ferme":"farma","récolte":"sklizeň","semer":"sít","tracteur":"traktor","blé":"pšenice","grange":"stodola","étable":"chlév","poulailler":"kurník","puits":"studna","épouvantail":"strašák","troupeau":"stádo","berger":"pastýř","foin":"seno","vigne":"vinice","maïs":"kukuřice",
+"équipe":"tým","match":"zápas","but":"gól","arbitre":"rozhodčí","terrain":"hřiště","tournoi":"turnaj","victoire":"vítězství","défaite":"porážka","entraînement":"trénink","adversaire":"soupeř","champion":"šampion","médaille":"medaile",
+"peintre":"malíř","tableau":"obraz","sculpture":"plastika","sculpteur":"sochař","atelier":"ateliér","dessin":"kresba","œuvre":"dílo","portrait":"portrét","chef-d'œuvre":"mistrovské dílo","galerie":"galerie","exposer":"vystavovat",
+"colis":"balík","timbre":"poštovní známka","enveloppe":"obálka","livraison":"doručení","expéditeur":"odesílatel","destinataire":"příjemce","formulaire":"formulář","signature":"podpis","tampon":"razítko",
+"balayer":"zametat","aspirateur":"vysavač","lessive":"praní","vaisselle":"nádobí","poussière":"prach","balai":"koště","seau":"kbelík","éponge":"houbička","serpillière":"mop"
+},
+zh:{
+"embarquement":"登机","décollage":"起飞","atterrissage":"降落","bagage à main":"手提行李","hublot":"舷窗","piste":"跑道",
+"quai":"站台","guichet":"售票处","aller simple":"单程票","aller-retour":"往返票","correspondance":"换乘","le train est en retard":"火车 晚点 了","où est le quai":"站台 在 哪里",
+"trottoir":"人行道","passage piéton":"人行横道","panneau":"路牌","lampadaire":"路灯","boîte aux lettres":"邮箱","rond-point":"环岛","fontaine":"喷泉","statue":"雕像","banlieue":"郊区","centre-ville":"市中心","tunnel":"隧道",
+"ferme":"农场","récolte":"收成","semer":"播种","tracteur":"拖拉机","blé":"小麦","grange":"谷仓","étable":"牛棚","poulailler":"鸡舍","puits":"水井","épouvantail":"稻草人","troupeau":"畜群","berger":"牧羊人","foin":"干草","vigne":"葡萄园","maïs":"玉米",
+"équipe":"队","match":"比赛","but":"进球","arbitre":"裁判","terrain":"球场","tournoi":"锦标赛","victoire":"胜利","défaite":"失败","entraînement":"训练","adversaire":"对手","champion":"冠军","médaille":"奖牌",
+"peintre":"画家","tableau":"画作","sculpture":"雕塑","sculpteur":"雕塑家","atelier":"工作室","dessin":"图画","œuvre":"作品","portrait":"肖像","chef-d'œuvre":"杰作","galerie":"画廊","exposer":"展出",
+"colis":"包裹","timbre":"邮票","enveloppe":"信封","livraison":"送货","expéditeur":"寄件人","destinataire":"收件人","formulaire":"表格","signature":"签名","tampon":"印章",
+"balayer":"扫地","aspirateur":"吸尘器","lessive":"洗衣服","vaisselle":"餐具","poussière":"灰尘","balai":"扫帚","seau":"水桶","éponge":"海绵","serpillière":"拖把"
+},
+ja:{
+"embarquement":"搭乗","décollage":"離陸","atterrissage":"着陸","bagage à main":"手荷物","hublot":"舷窓","piste":"滑走路",
+"quai":"ホーム","guichet":"窓口","aller simple":"片道切符","aller-retour":"往復切符","correspondance":"乗り換え","le train est en retard":"電車 は 遅れています","où est le quai":"ホーム は どこ です か",
+"trottoir":"歩道","passage piéton":"横断歩道","panneau":"標識","lampadaire":"街灯","boîte aux lettres":"ポスト","rond-point":"ロータリー","fontaine":"噴水","statue":"彫像","banlieue":"郊外","centre-ville":"中心街","tunnel":"トンネル",
+"ferme":"農場","récolte":"収穫","semer":"種をまきます","tracteur":"トラクター","blé":"小麦","grange":"納屋","étable":"牛小屋","poulailler":"鶏小屋","puits":"井戸","épouvantail":"かかし","troupeau":"群れ","berger":"羊飼い","foin":"干し草","vigne":"ぶどう畑","maïs":"トウモロコシ",
+"équipe":"チーム","match":"試合","but":"ゴール","arbitre":"審判","terrain":"グラウンド","tournoi":"トーナメント","victoire":"勝利","défaite":"敗北","entraînement":"トレーニング","adversaire":"相手","champion":"チャンピオン","médaille":"メダル",
+"peintre":"画家","tableau":"絵画","sculpture":"彫刻","sculpteur":"彫刻家","atelier":"アトリエ","dessin":"絵","œuvre":"作品","portrait":"肖像画","chef-d'œuvre":"傑作","galerie":"ギャラリー","exposer":"展示します",
+"colis":"小包","timbre":"切手","enveloppe":"封筒","livraison":"配達","expéditeur":"差出人","destinataire":"宛先","formulaire":"用紙","signature":"署名","tampon":"はんこ",
+"balayer":"掃きます","aspirateur":"掃除機","lessive":"洗濯","vaisselle":"食器","poussière":"ほこり","balai":"ほうき","seau":"バケツ","éponge":"スポンジ","serpillière":"モップ"
+},
+ko:{
+"embarquement":"탑승","décollage":"이륙","atterrissage":"착륙","bagage à main":"기내 수하물","hublot":"비행기 창문","piste":"활주로",
+"quai":"승강장","guichet":"매표소","aller simple":"편도표","aller-retour":"왕복표","correspondance":"환승","le train est en retard":"기차가 연착됐어요","où est le quai":"승강장이 어디예요",
+"trottoir":"인도","passage piéton":"횡단보도","panneau":"표지판","lampadaire":"가로등","boîte aux lettres":"우체통","rond-point":"로터리","fontaine":"분수","statue":"동상","banlieue":"교외","centre-ville":"시내","tunnel":"터널",
+"ferme":"농장","récolte":"수확","semer":"씨를 뿌리다","tracteur":"트랙터","blé":"밀","grange":"헛간","étable":"외양간","poulailler":"닭장","puits":"우물","épouvantail":"허수아비","troupeau":"가축 떼","berger":"양치기","foin":"건초","vigne":"포도밭","maïs":"옥수수",
+"équipe":"팀","match":"경기","but":"골","arbitre":"심판","terrain":"운동장","tournoi":"토너먼트","victoire":"승리","défaite":"패배","entraînement":"훈련","adversaire":"상대","champion":"챔피언","médaille":"메달",
+"peintre":"화가","tableau":"회화","sculpture":"조각품","sculpteur":"조각가","atelier":"작업실","dessin":"그림","œuvre":"작품","portrait":"초상화","chef-d'œuvre":"걸작","galerie":"갤러리","exposer":"전시하다",
+"colis":"소포","timbre":"우표","enveloppe":"봉투","livraison":"배달","expéditeur":"보내는 사람","destinataire":"받는 사람","formulaire":"양식","signature":"서명","tampon":"도장",
+"balayer":"쓸다","aspirateur":"청소기","lessive":"빨래","vaisselle":"설거지","poussière":"먼지","balai":"빗자루","seau":"양동이","éponge":"스펀지","serpillière":"대걸레"
+},
+ar:{
+"embarquement":"صعود الطائرة","décollage":"إقلاع","atterrissage":"هبوط","bagage à main":"حقيبة يد","hublot":"نافذة الطائرة","piste":"مدرج",
+"quai":"رصيف","guichet":"شباك التذاكر","aller simple":"تذكرة ذهاب","aller-retour":"تذكرة ذهاب وعودة","correspondance":"تبديل","le train est en retard":"القطار متأخر","où est le quai":"أين الرصيف",
+"trottoir":"رصيف المشاة","passage piéton":"ممر مشاة","panneau":"لافتة","lampadaire":"عمود إنارة","boîte aux lettres":"صندوق بريد","rond-point":"دوار","fontaine":"نافورة","statue":"تمثال","banlieue":"ضواحي","centre-ville":"وسط المدينة","tunnel":"نفق",
+"ferme":"مزرعة","récolte":"حصاد","semer":"يزرع","tracteur":"جرار","blé":"قمح","grange":"مخزن الحبوب","étable":"حظيرة","poulailler":"قن الدجاج","puits":"بئر","épouvantail":"فزاعة","troupeau":"قطيع","berger":"راعٍ","foin":"قش","vigne":"كرم العنب","maïs":"ذرة",
+"équipe":"فريق","match":"مباراة","but":"هدف","arbitre":"حكم","terrain":"أرض الملعب","tournoi":"بطولة","victoire":"انتصار","défaite":"هزيمة","entraînement":"تمرين","adversaire":"خصم","champion":"بطل","médaille":"ميدالية",
+"peintre":"رسام","tableau":"لوحة","sculpture":"منحوتة","sculpteur":"نحات","atelier":"ورشة","dessin":"رسم","œuvre":"عمل فني","portrait":"بورتريه","chef-d'œuvre":"تحفة","galerie":"صالة عرض","exposer":"يقيم معرضًا",
+"colis":"طرد","timbre":"طابع بريدي","enveloppe":"ظرف","livraison":"توصيل","expéditeur":"مرسل","destinataire":"مستلم","formulaire":"استمارة","signature":"توقيع","tampon":"ختم",
+"balayer":"يكنس","aspirateur":"مكنسة كهربائية","lessive":"غسيل الملابس","vaisselle":"غسيل الأطباق","poussière":"غبار","balai":"مكنسة","seau":"دلو","éponge":"إسفنجة","serpillière":"ممسحة"
+}
+};
+LANGS2.forEach(function(l){ var m2=LEX2M[l]||{}; Object.keys(m2).forEach(function(k){ LEX2[l][k]=m2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
