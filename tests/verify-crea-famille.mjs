@@ -30,8 +30,8 @@ function fauxKV() {
   };
 }
 const ENV = () => ({ FAMILLE: fauxKV(), FAMILLE_SECRET: 'secret-de-test-tres-long-123456' });
-const post = (env, path, body) => worker.fetch(new Request('https://x' + path, {
-  method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://kd-mc.com' },
+const post = (env, path, body, headers) => worker.fetch(new Request('https://x' + path, {
+  method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://kd-mc.com', ...(headers || {}) },
   body: JSON.stringify(body),
 }), env);
 const get = (env, path) => worker.fetch(new Request('https://x' + path, { headers: { origin: 'https://kd-mc.com' } }), env);
@@ -103,15 +103,30 @@ j = await r.json();
 chk(r.status === 413 && /Mo/.test(j.detail || ''), `un fichier trop lourd est refusé avec sa taille — « ${String(j.detail).slice(0, 60)} »`);
 
 // ── 7) Kevin voit toutes les familles, pas les autres ────────────────────────
+// v9 SSO (règle « ADMIN UNIVERSEL DU DOMAINE », leçons #99/#166) : l'admin vient du
+// SSO central (whoami admin+verified), JAMAIS du nom. On simule le SSO du domaine :
+// seul le porteur du jeton SSO de Kevin est admin — un nom tapé ne donne rien.
 r = await post(env, '/rejoindre', { famille: 'Cousins', nom: 'Luc Martin', code: 'autre-code' });
 const luc = (await r.json()).jeton;
 await post(env, '/partager', { jeton: luc, kind: 'image', label: 'Chez les cousins', mime: 'image/png', data: PNG });
-r = await post(env, '/rejoindre', { famille: 'Desarzens', nom: 'Kevin Desarzens', code: 'noel2026' });
+const vraiFetch = globalThis.fetch;
+globalThis.fetch = async (url, opt) => {
+  if (String(url).includes('/__sso/whoami')) {
+    const hh = (opt && opt.headers) || {};
+    const auth = hh.Authorization || hh.authorization || '';
+    if (auth === 'Bearer jeton-sso-kevin-test')
+      return new Response(JSON.stringify({ ok: true, uid: 'kdmc_admin', name: 'Kevin Desarzens', verified: true, admin: true }), { status: 200, headers: { 'content-type': 'application/json' } });
+    return new Response(JSON.stringify({ ok: false }), { status: 401 });
+  }
+  return vraiFetch(url, opt);
+};
+r = await post(env, '/rejoindre', { famille: 'Desarzens', nom: 'Kevin Desarzens', code: 'noel2026' }, { Authorization: 'Bearer jeton-sso-kevin-test' });
 j = await r.json();
 const kevin = j.jeton;
-chk(j.admin === true, 'Kevin Desarzens est reconnu administrateur');
+chk(j.admin === true, 'Kevin Desarzens est reconnu administrateur (via SSO du domaine, session vérifiée)');
 r = await post(env, '/rejoindre', { famille: 'Desarzens', nom: 'Ronan Desarzens', code: 'noel2026' });
-chk((await r.json()).admin === false, 'un homonyme (Ronan Desarzens) N\'EST PAS administrateur');
+chk((await r.json()).admin === false, 'un homonyme (Ronan Desarzens) N\'EST PAS administrateur (nom seul = rien)');
+globalThis.fetch = vraiFetch;
 r = await get(env, '/fil?jeton=' + encodeURIComponent(kevin) + '&tout=1');
 j = await r.json();
 const familles = new Set((j.items || []).map((x) => x.famille));
