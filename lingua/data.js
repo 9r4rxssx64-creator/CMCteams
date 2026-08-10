@@ -4613,6 +4613,61 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var t2=LEX2T[l]||{}; Object.keys(t2).forEach(function(k){ LEX2[l][k]=t2[k]; }); });
+
+/* ===== VAGUE ENVIRONNEMENT / CLIMAT (v2.92.0) — 24 mots ×14 langues, 3 unités ===== */
+var CURRICULUM_J = [
+  {t:"Le climat 🌡️", c:"#22c55e", L:[
+    {t:"Se réchauffer", w:["réchauffer","refroidir","gaz","carbone"]},
+    {t:"La fonte", w:["fonte","glacier","banquise","catastrophe"]} ]},
+  {t:"Protéger la planète ♻️", c:"#14b8a6", L:[
+    {t:"Les déchets", w:["polluer","déchet","poubelle","jeter"]},
+    {t:"Réduire", w:["ramasser","tri sélectif","compost","gaspillage"]} ]},
+  {t:"Les gestes verts 🌱", c:"#12b981", L:[
+    {t:"Jardiner", w:["planter","arroser","cultiver","graine"]},
+    {t:"À la maison", w:["racine","robinet","ampoule","renouvelable"]} ]}
+];
+CURRICULUM_J.forEach(function(u){ CURRICULUM.push(u); });
+
+var NEWV15 = {
+  "réchauffer":{"en":"to warm up","it":"riscaldare","es":"calentar","de":"erwärmen","pt":"aquecer","nl":"opwarmen"},
+  "refroidir":{"en":"to cool down","it":"raffreddare","es":"enfriar","de":"abkühlen","pt":"arrefecer","nl":"afkoelen"},
+  "gaz":{"en":"gas","it":"gas","es":"gas","de":"Gas","pt":"gás","nl":"gas"},
+  "carbone":{"en":"carbon","it":"carbonio","es":"carbono","de":"Kohlenstoff","pt":"carbono","nl":"koolstof"},
+  "fonte":{"en":"melting","it":"fusione","es":"deshielo","de":"Schmelze","pt":"degelo","nl":"dooi"},
+  "glacier":{"en":"glacier","it":"ghiacciaio","es":"glaciar","de":"Gletscher","pt":"glaciar","nl":"gletsjer"},
+  "banquise":{"en":"sea ice","it":"banchisa","es":"banquisa","de":"Packeis","pt":"banco de gelo","nl":"pakijs"},
+  "catastrophe":{"en":"disaster","it":"catastrofe","es":"catástrofe","de":"Katastrophe","pt":"catástrofe","nl":"ramp"},
+  "polluer":{"en":"to pollute","it":"inquinare","es":"contaminar","de":"verschmutzen","pt":"poluir","nl":"vervuilen"},
+  "déchet":{"en":"trash","it":"rifiuto","es":"residuo","de":"Abfall","pt":"resíduo","nl":"afval"},
+  "poubelle":{"en":"trash can","it":"pattumiera","es":"cubo de basura","de":"Mülleimer","pt":"caixote do lixo","nl":"prullenbak"},
+  "jeter":{"en":"to throw away","it":"buttare","es":"desechar","de":"wegwerfen","pt":"deitar fora","nl":"weggooien"},
+  "ramasser":{"en":"to pick up","it":"raccogliere","es":"recoger","de":"aufheben","pt":"recolher","nl":"oprapen"},
+  "tri sélectif":{"en":"waste sorting","it":"raccolta differenziata","es":"recogida selectiva","de":"Mülltrennung","pt":"recolha seletiva","nl":"afvalscheiding"},
+  "compost":{"en":"compost","it":"compost","es":"compost","de":"Kompost","pt":"composto","nl":"compost"},
+  "gaspillage":{"en":"wastefulness","it":"spreco","es":"desperdicio","de":"Verschwendung","pt":"desperdício","nl":"verspilling"},
+  "planter":{"en":"to plant","it":"piantare","es":"plantar","de":"pflanzen","pt":"plantar","nl":"planten"},
+  "arroser":{"en":"to water","it":"annaffiare","es":"regar","de":"bewässern","pt":"regar","nl":"begieten"},
+  "cultiver":{"en":"to cultivate","it":"coltivare","es":"cultivar","de":"anbauen","pt":"cultivar","nl":"verbouwen"},
+  "graine":{"en":"seed","it":"seme","es":"semilla","de":"Samen","pt":"semente","nl":"zaad"},
+  "racine":{"en":"root","it":"radice","es":"raíz","de":"Wurzel","pt":"raiz","nl":"wortel"},
+  "robinet":{"en":"tap","it":"rubinetto","es":"grifo","de":"Wasserhahn","pt":"torneira","nl":"kraan"},
+  "ampoule":{"en":"light bulb","it":"lampadina","es":"bombilla","de":"Glühbirne","pt":"lâmpada elétrica","nl":"gloeilamp"},
+  "renouvelable":{"en":"renewable","it":"rinnovabile","es":"renovable","de":"erneuerbar","pt":"renovável","nl":"hernieuwbaar"}
+};
+LANGS.forEach(function(l){ Object.keys(NEWV15).forEach(function(k){ if(NEWV15[k][l]) LEX[l][k]=NEWV15[k][l]; }); });
+
+var LEX2ENV = {
+  pl:{"réchauffer":"ogrzewać","refroidir":"chłodzić","gaz":"gaz","carbone":"węgiel","fonte":"topnienie","glacier":"lodowiec","banquise":"kra lodowa","catastrophe":"katastrofa","polluer":"zanieczyszczać","déchet":"odpad","poubelle":"kosz na śmieci","jeter":"wyrzucać","ramasser":"zbierać","tri sélectif":"segregacja odpadów","compost":"kompost","gaspillage":"marnotrawstwo","planter":"sadzić","arroser":"podlewać","cultiver":"uprawiać","graine":"nasiono","racine":"korzeń","robinet":"kran","ampoule":"żarówka","renouvelable":"odnawialny"},
+  ru:{"réchauffer":"нагревать","refroidir":"охлаждать","gaz":"газ","carbone":"углерод","fonte":"таяние","glacier":"ледник","banquise":"паковый лёд","catastrophe":"катастрофа","polluer":"загрязнять","déchet":"отход","poubelle":"мусорное ведро","jeter":"выбрасывать","ramasser":"собирать","tri sélectif":"сортировка мусора","compost":"компост","gaspillage":"расточительство","planter":"сажать","arroser":"поливать","cultiver":"выращивать","graine":"семя","racine":"корень","robinet":"кран","ampoule":"лампочка","renouvelable":"возобновляемый"},
+  uk:{"réchauffer":"нагрівати","refroidir":"охолоджувати","gaz":"газ","carbone":"вуглець","fonte":"танення","glacier":"льодовик","banquise":"паковий лід","catastrophe":"катастрофа","polluer":"забруднювати","déchet":"відхід","poubelle":"смітник","jeter":"викидати","ramasser":"збирати","tri sélectif":"сортування сміття","compost":"компост","gaspillage":"марнотратство","planter":"садити","arroser":"поливати","cultiver":"вирощувати","graine":"насіння","racine":"корінь","robinet":"кран","ampoule":"лампочка","renouvelable":"відновлюваний"},
+  cs:{"réchauffer":"ohřívat","refroidir":"chladit","gaz":"plyn","carbone":"uhlík","fonte":"tání","glacier":"ledovec","banquise":"mořský led","catastrophe":"katastrofa","polluer":"znečišťovat","déchet":"odpadek","poubelle":"koš na odpadky","jeter":"vyhazovat","ramasser":"sbírat","tri sélectif":"třídění odpadu","compost":"kompost","gaspillage":"plýtvání","planter":"sázet","arroser":"zalévat","cultiver":"pěstovat","graine":"semeno","racine":"kořen","robinet":"kohoutek","ampoule":"žárovka","renouvelable":"obnovitelný"},
+  zh:{"réchauffer":"加热","refroidir":"冷却","gaz":"气体","carbone":"碳","fonte":"消融","glacier":"冰川","banquise":"浮冰","catastrophe":"灾难","polluer":"污染","déchet":"垃圾","poubelle":"垃圾桶","jeter":"扔掉","ramasser":"捡","tri sélectif":"垃圾分类","compost":"堆肥","gaspillage":"浪费","planter":"种植","arroser":"浇水","cultiver":"栽培","graine":"种子","racine":"根","robinet":"水龙头","ampoule":"灯泡","renouvelable":"可再生"},
+  ja:{"réchauffer":"温めます","refroidir":"冷やします","gaz":"ガス","carbone":"炭素","fonte":"融解","glacier":"氷河","banquise":"流氷","catastrophe":"災害","polluer":"汚染します","déchet":"ごみ","poubelle":"ごみ箱","jeter":"捨てます","ramasser":"拾います","tri sélectif":"ごみの分別","compost":"堆肥","gaspillage":"無駄","planter":"植えます","arroser":"水をやります","cultiver":"栽培します","graine":"種子","racine":"根","robinet":"蛇口","ampoule":"電球","renouvelable":"再生可能"},
+  ko:{"réchauffer":"데우다","refroidir":"식히다","gaz":"가스","carbone":"탄소","fonte":"해빙","glacier":"빙하","banquise":"유빙","catastrophe":"재난","polluer":"오염시키다","déchet":"쓰레기","poubelle":"쓰레기통","jeter":"버리다","ramasser":"줍다","tri sélectif":"분리수거","compost":"퇴비","gaspillage":"낭비","planter":"심다","arroser":"물을 주다","cultiver":"재배하다","graine":"씨앗","racine":"뿌리","robinet":"수도꼭지","ampoule":"전구","renouvelable":"재생 가능한"},
+  ar:{"réchauffer":"يُدفئ","refroidir":"يُبرِّد","gaz":"غاز","carbone":"كربون","fonte":"ذوبان","glacier":"نهر جليدي","banquise":"جليد بحري","catastrophe":"كارثة","polluer":"يلوث","déchet":"نفاية","poubelle":"سلة المهملات","jeter":"يتخلّص من","ramasser":"يجمع","tri sélectif":"فرز النفايات","compost":"سماد","gaspillage":"تبذير","planter":"يغرس","arroser":"يسقي","cultiver":"يستزرع","graine":"بذرة","racine":"جذر","robinet":"صنبور","ampoule":"مصباح كهربائي","renouvelable":"متجدد"}
+};
+LANGS2.forEach(function(l){ var e2=LEX2ENV[l]||{}; Object.keys(e2).forEach(function(k){ LEX2[l][k]=e2[k]; }); });
+
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
