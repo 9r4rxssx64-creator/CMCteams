@@ -3333,6 +3333,97 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var g2=LEX2G[l]||{}; Object.keys(g2).forEach(function(k){ LEX2[l][k]=g2[k]; }); });
+/* Vague 8 des nouvelles langues (v2.77) : unités 57-64 — le numérique, le monde, parler
+   couramment, bouger partout, bon appétit encore, l'argent malin, s'habiller encore, la routine
+   du matin. 56 → 64 unités. Anti-doublons : zh allumer/éteindre=开机/关机, se coucher=上床睡觉,
+   ranger=收拾 ; ru préparer=подготавливать (cuisiner=готовить), nettoyer=чистить (ranger=убирать) ;
+   pl facture=faktura (addition=rachunek) ; ja se réveiller=目が覚めます (se lever=起きます) ;
+   ko se coucher=잠자리에 들다 ; ar se coucher=يذهب للنوم, bonbon=سكاكر (dessert=حلوى).
+   Homographes RÉELS assumés : ru мир = monde ET paix, курица = poule/poulet, счёт = compte/addition ;
+   cs země = terre/pays, účet = compte/addition ; ja 寝ます = dormir/se coucher ; ko 쓰다 (+ dépenser). */
+var LEX2H = {
+pl:{
+"imprimante":"drukarka","écouteurs":"słuchawki","appareil photo":"aparat fotograficzny","allumer":"włączać","éteindre":"wyłączać","fichier":"plik","site":"strona internetowa","réseau":"sieć","jeu vidéo":"gra wideo","télécharger":"pobierać",
+"pays":"kraj","monde":"świat","capitale":"stolica","drapeau":"flaga","nord":"północ","sud":"południe","est":"wschód","ouest":"zachód","roi":"król","reine":"królowa","guerre":"wojna","paix":"pokój","mon pays est beau":"mój kraj jest piękny",
+"je ne comprends pas":"nie rozumiem","pouvez-vous répéter":"czy może pan powtórzyć","je suis d'accord":"zgadzam się","ça ne fait rien":"nic nie szkodzi","bien sûr":"oczywiście","à bientôt":"do zobaczenia","bon appétit":"smacznego","félicitations":"gratulacje","bienvenue":"witamy","attention":"uwaga",
+"entrer":"wchodzić","sortir":"wychodzić","monter":"iść w górę","descendre":"schodzić","rester":"zostawać","partir":"wyjeżdżać","tomber":"spadać","sauter":"skakać","voler":"latać","conduire":"prowadzić","arrêter":"zatrzymywać","revenir":"wracać","je reste à la maison":"zostaję w domu","le train part à huit heures":"pociąg odjeżdża o ósmej",
+"poulet":"kurczak","jambon":"szynka","saucisse":"kiełbasa","pâtes":"makaron","frites":"frytki","champignon":"grzyb","miel":"miód","confiture":"dżem","yaourt":"jogurt","glace":"lody","chocolat":"czekolada","bonbon":"cukierek","biscuit":"herbatnik",
+"compte":"konto","facture":"faktura","impôt":"podatek","loyer":"czynsz","pièce":"moneta","distributeur":"bankomat","économiser":"oszczędzać","dépenser":"wydawać","économies":"oszczędności","reçu":"paragon",
+"jupe":"spódnica","pull":"sweter","veste":"kurtka","chaussettes":"skarpetki","gants":"rękawiczki","écharpe":"szalik","ceinture":"pasek","poche":"kieszeń","bouton":"guzik","taille":"rozmiar","mode":"moda",
+"se réveiller":"budzić się","se lever":"wstawać","s'habiller":"ubierać się","réveil":"budzik","se dépêcher":"spieszyć się","se coucher":"kłaść się spać","préparer":"przygotowywać","nettoyer":"sprzątać","ranger":"porządkować","repasser":"prasować","je me lève à sept heures":"wstaję o siódmej"
+},
+ru:{
+"imprimante":"принтер","écouteurs":"наушники","appareil photo":"фотоаппарат","allumer":"включать","éteindre":"выключать","fichier":"файл","site":"сайт","réseau":"сеть","jeu vidéo":"видеоигра","télécharger":"скачивать",
+"pays":"страна","monde":"мир","capitale":"столица","drapeau":"флаг","nord":"север","sud":"юг","est":"восток","ouest":"запад","roi":"король","reine":"королева","guerre":"война","paix":"мир","mon pays est beau":"моя страна красивая",
+"je ne comprends pas":"я не понимаю","pouvez-vous répéter":"повторите пожалуйста","je suis d'accord":"я согласен","ça ne fait rien":"ничего страшного","bien sûr":"конечно","à bientôt":"до скорого","bon appétit":"приятного аппетита","félicitations":"поздравляю","bienvenue":"добро пожаловать","attention":"осторожно",
+"entrer":"входить","sortir":"выходить","monter":"подниматься","descendre":"спускаться","rester":"оставаться","partir":"уезжать","tomber":"падать","sauter":"прыгать","voler":"летать","conduire":"водить","arrêter":"останавливать","revenir":"возвращаться","je reste à la maison":"я остаюсь дома","le train part à huit heures":"поезд отправляется в восемь часов",
+"poulet":"курица","jambon":"ветчина","saucisse":"колбаса","pâtes":"макароны","frites":"картофель фри","champignon":"гриб","miel":"мёд","confiture":"варенье","yaourt":"йогурт","glace":"мороженое","chocolat":"шоколад","bonbon":"конфета","biscuit":"печенье",
+"compte":"счёт","facture":"квитанция","impôt":"налог","loyer":"арендная плата","pièce":"монета","distributeur":"банкомат","économiser":"экономить","dépenser":"тратить","économies":"сбережения","reçu":"чек",
+"jupe":"юбка","pull":"свитер","veste":"куртка","chaussettes":"носки","gants":"перчатки","écharpe":"шарф","ceinture":"ремень","poche":"карман","bouton":"пуговица","taille":"размер","mode":"мода",
+"se réveiller":"просыпаться","se lever":"вставать","s'habiller":"одеваться","réveil":"будильник","se dépêcher":"торопиться","se coucher":"ложиться спать","préparer":"подготавливать","nettoyer":"чистить","ranger":"убирать","repasser":"гладить","je me lève à sept heures":"я встаю в семь часов"
+},
+uk:{
+"imprimante":"принтер","écouteurs":"навушники","appareil photo":"фотоапарат","allumer":"вмикати","éteindre":"вимикати","fichier":"файл","site":"сайт","réseau":"мережа","jeu vidéo":"відеогра","télécharger":"завантажувати",
+"pays":"країна","monde":"світ","capitale":"столиця","drapeau":"прапор","nord":"північ","sud":"південь","est":"схід","ouest":"захід","roi":"король","reine":"королева","guerre":"війна","paix":"мир","mon pays est beau":"моя країна гарна",
+"je ne comprends pas":"я не розумію","pouvez-vous répéter":"повторіть будь ласка","je suis d'accord":"я згоден","ça ne fait rien":"нічого страшного","bien sûr":"звичайно","à bientôt":"до зустрічі","bon appétit":"смачного","félicitations":"вітаю","bienvenue":"ласкаво просимо","attention":"обережно",
+"entrer":"заходити","sortir":"виходити","monter":"підніматися","descendre":"спускатися","rester":"залишатися","partir":"від'їжджати","tomber":"падати","sauter":"стрибати","voler":"літати","conduire":"водити","arrêter":"зупиняти","revenir":"повертатися","je reste à la maison":"я залишаюся вдома","le train part à huit heures":"потяг відправляється о восьмій",
+"poulet":"курка","jambon":"шинка","saucisse":"ковбаса","pâtes":"макарони","frites":"картопля фрі","champignon":"гриб","miel":"мед","confiture":"варення","yaourt":"йогурт","glace":"морозиво","chocolat":"шоколад","bonbon":"цукерка","biscuit":"печиво",
+"compte":"рахунок","facture":"квитанція","impôt":"податок","loyer":"орендна плата","pièce":"монета","distributeur":"банкомат","économiser":"заощаджувати","dépenser":"витрачати","économies":"заощадження","reçu":"чек",
+"jupe":"спідниця","pull":"светр","veste":"куртка","chaussettes":"шкарпетки","gants":"рукавички","écharpe":"шарф","ceinture":"ремінь","poche":"кишеня","bouton":"ґудзик","taille":"розмір","mode":"мода",
+"se réveiller":"прокидатися","se lever":"вставати","s'habiller":"одягатися","réveil":"будильник","se dépêcher":"поспішати","se coucher":"лягати спати","préparer":"підготовувати","nettoyer":"чистити","ranger":"прибирати","repasser":"прасувати","je me lève à sept heures":"я встаю о сьомій"
+},
+cs:{
+"imprimante":"tiskárna","écouteurs":"sluchátka","appareil photo":"fotoaparát","allumer":"zapnout","éteindre":"vypnout","fichier":"soubor","site":"webová stránka","réseau":"síť","jeu vidéo":"videohra","télécharger":"stáhnout",
+"pays":"země","monde":"svět","capitale":"hlavní město","drapeau":"vlajka","nord":"sever","sud":"jih","est":"východ","ouest":"západ","roi":"král","reine":"královna","guerre":"válka","paix":"mír","mon pays est beau":"moje země je krásná",
+"je ne comprends pas":"nerozumím","pouvez-vous répéter":"můžete to zopakovat","je suis d'accord":"souhlasím","ça ne fait rien":"to nevadí","bien sûr":"samozřejmě","à bientôt":"brzy na viděnou","bon appétit":"dobrou chuť","félicitations":"gratuluji","bienvenue":"vítejte","attention":"pozor",
+"entrer":"vcházet","sortir":"vycházet","monter":"stoupat","descendre":"scházet","rester":"zůstávat","partir":"odjíždět","tomber":"padat","sauter":"skákat","voler":"létat","conduire":"řídit","arrêter":"zastavovat","revenir":"vracet se","je reste à la maison":"zůstávám doma","le train part à huit heures":"vlak odjíždí v osm hodin",
+"poulet":"kuře","jambon":"šunka","saucisse":"klobása","pâtes":"těstoviny","frites":"hranolky","champignon":"houba","miel":"med","confiture":"džem","yaourt":"jogurt","glace":"zmrzlina","chocolat":"čokoláda","bonbon":"bonbón","biscuit":"sušenka",
+"compte":"účet","facture":"faktura","impôt":"daň","loyer":"nájem","pièce":"mince","distributeur":"bankomat","économiser":"šetřit","dépenser":"utrácet","économies":"úspory","reçu":"účtenka",
+"jupe":"sukně","pull":"svetr","veste":"bunda","chaussettes":"ponožky","gants":"rukavice","écharpe":"šála","ceinture":"pásek","poche":"kapsa","bouton":"knoflík","taille":"velikost","mode":"móda",
+"se réveiller":"probouzet se","se lever":"vstávat","s'habiller":"oblékat se","réveil":"budík","se dépêcher":"spěchat","se coucher":"jít spát","préparer":"připravovat","nettoyer":"čistit","ranger":"uklízet","repasser":"žehlit","je me lève à sept heures":"vstávám v sedm hodin"
+},
+zh:{
+"imprimante":"打印机","écouteurs":"耳机","appareil photo":"相机","allumer":"开机","éteindre":"关机","fichier":"文件","site":"网站","réseau":"网络","jeu vidéo":"电子游戏","télécharger":"下载",
+"pays":"国家","monde":"世界","capitale":"首都","drapeau":"国旗","nord":"北","sud":"南","est":"东","ouest":"西","roi":"国王","reine":"王后","guerre":"战争","paix":"和平","mon pays est beau":"我 的 国家 很 美",
+"je ne comprends pas":"我 不 明白","pouvez-vous répéter":"请 再 说 一遍","je suis d'accord":"我 同意","ça ne fait rien":"没关系","bien sûr":"当然","à bientôt":"回头见","bon appétit":"慢慢吃","félicitations":"恭喜","bienvenue":"欢迎","attention":"小心",
+"entrer":"进","sortir":"出去","monter":"上去","descendre":"下去","rester":"留下","partir":"离开","tomber":"摔倒","sauter":"跳","voler":"飞","conduire":"开车","arrêter":"停","revenir":"回来","je reste à la maison":"我 留 在 家里","le train part à huit heures":"火车 八点 出发",
+"poulet":"鸡肉","jambon":"火腿","saucisse":"香肠","pâtes":"意大利面","frites":"薯条","champignon":"蘑菇","miel":"蜂蜜","confiture":"果酱","yaourt":"酸奶","glace":"冰淇淋","chocolat":"巧克力","bonbon":"糖果","biscuit":"饼干",
+"compte":"账户","facture":"发票","impôt":"税","loyer":"房租","pièce":"硬币","distributeur":"取款机","économiser":"存钱","dépenser":"花钱","économies":"积蓄","reçu":"收据",
+"jupe":"裙子","pull":"毛衣","veste":"夹克","chaussettes":"袜子","gants":"手套","écharpe":"围巾","ceinture":"腰带","poche":"口袋","bouton":"扣子","taille":"尺寸","mode":"时尚",
+"se réveiller":"醒来","se lever":"起床","s'habiller":"穿衣服","réveil":"闹钟","se dépêcher":"赶时间","se coucher":"上床睡觉","préparer":"准备","nettoyer":"打扫","ranger":"收拾","repasser":"熨衣服","je me lève à sept heures":"我 七点 起床"
+},
+ja:{
+"imprimante":"プリンター","écouteurs":"イヤホン","appareil photo":"カメラ","allumer":"つけます","éteindre":"消します","fichier":"ファイル","site":"ウェブサイト","réseau":"ネットワーク","jeu vidéo":"テレビゲーム","télécharger":"ダウンロードします",
+"pays":"国","monde":"世界","capitale":"首都","drapeau":"国旗","nord":"北","sud":"南","est":"東","ouest":"西","roi":"王様","reine":"女王","guerre":"戦争","paix":"平和","mon pays est beau":"私 の 国 は 美しい です",
+"je ne comprends pas":"わかりません","pouvez-vous répéter":"もう一度 言ってください","je suis d'accord":"賛成 です","ça ne fait rien":"大丈夫 です","bien sûr":"もちろん","à bientôt":"また ね","bon appétit":"いただきます","félicitations":"おめでとう","bienvenue":"ようこそ","attention":"気をつけて",
+"entrer":"入ります","sortir":"出ます","monter":"上がります","descendre":"下ります","rester":"残ります","partir":"出発します","tomber":"転びます","sauter":"跳びます","voler":"飛びます","conduire":"運転します","arrêter":"止めます","revenir":"戻ります","je reste à la maison":"私 は 家 に います","le train part à huit heures":"電車 は 八時 に 出発します",
+"poulet":"鶏肉","jambon":"ハム","saucisse":"ソーセージ","pâtes":"パスタ","frites":"フライドポテト","champignon":"きのこ","miel":"はちみつ","confiture":"ジャム","yaourt":"ヨーグルト","glace":"アイスクリーム","chocolat":"チョコレート","bonbon":"あめ","biscuit":"クッキー",
+"compte":"口座","facture":"請求書","impôt":"税金","loyer":"家賃","pièce":"硬貨","distributeur":"ATM","économiser":"貯金します","dépenser":"使います","économies":"貯金","reçu":"レシート",
+"jupe":"スカート","pull":"セーター","veste":"ジャケット","chaussettes":"靴下","gants":"手袋","écharpe":"マフラー","ceinture":"ベルト","poche":"ポケット","bouton":"ボタン","taille":"サイズ","mode":"ファッション",
+"se réveiller":"目が覚めます","se lever":"起きます","s'habiller":"着替えます","réveil":"目覚まし時計","se dépêcher":"急ぎます","se coucher":"寝ます","préparer":"準備します","nettoyer":"掃除します","ranger":"片付けます","repasser":"アイロンをかけます","je me lève à sept heures":"私 は 七時 に 起きます"
+},
+ko:{
+"imprimante":"프린터","écouteurs":"이어폰","appareil photo":"카메라","allumer":"켜다","éteindre":"끄다","fichier":"파일","site":"웹사이트","réseau":"네트워크","jeu vidéo":"비디오 게임","télécharger":"다운로드하다",
+"pays":"나라","monde":"세계","capitale":"수도","drapeau":"국기","nord":"북쪽","sud":"남쪽","est":"동쪽","ouest":"서쪽","roi":"왕","reine":"여왕","guerre":"전쟁","paix":"평화","mon pays est beau":"우리 나라는 아름다워요",
+"je ne comprends pas":"이해가 안 돼요","pouvez-vous répéter":"다시 말해 주세요","je suis d'accord":"동의해요","ça ne fait rien":"괜찮아요","bien sûr":"물론이죠","à bientôt":"또 봐요","bon appétit":"맛있게 드세요","félicitations":"축하해요","bienvenue":"환영해요","attention":"조심하세요",
+"entrer":"들어가다","sortir":"나가다","monter":"올라가다","descendre":"내려가다","rester":"머무르다","partir":"떠나다","tomber":"넘어지다","sauter":"뛰다","voler":"날다","conduire":"운전하다","arrêter":"멈추다","revenir":"돌아오다","je reste à la maison":"저는 집에 있어요","le train part à huit heures":"기차는 여덟 시에 출발해요",
+"poulet":"닭고기","jambon":"햄","saucisse":"소시지","pâtes":"파스타","frites":"감자튀김","champignon":"버섯","miel":"꿀","confiture":"잼","yaourt":"요구르트","glace":"아이스크림","chocolat":"초콜릿","bonbon":"사탕","biscuit":"쿠키",
+"compte":"계좌","facture":"청구서","impôt":"세금","loyer":"집세","pièce":"동전","distributeur":"현금 인출기","économiser":"저축하다","dépenser":"쓰다","économies":"저축","reçu":"영수증",
+"jupe":"치마","pull":"스웨터","veste":"재킷","chaussettes":"양말","gants":"장갑","écharpe":"목도리","ceinture":"벨트","poche":"주머니","bouton":"단추","taille":"사이즈","mode":"패션",
+"se réveiller":"깨다","se lever":"일어나다","s'habiller":"옷을 입다","réveil":"알람 시계","se dépêcher":"서두르다","se coucher":"잠자리에 들다","préparer":"준비하다","nettoyer":"청소하다","ranger":"정리하다","repasser":"다림질하다","je me lève à sept heures":"저는 일곱 시에 일어나요"
+},
+ar:{
+"imprimante":"طابعة","écouteurs":"سماعات","appareil photo":"كاميرا","allumer":"يشغل","éteindre":"يطفئ","fichier":"ملف","site":"موقع إلكتروني","réseau":"شبكة","jeu vidéo":"لعبة فيديو","télécharger":"يحمل",
+"pays":"بلد","monde":"عالم","capitale":"عاصمة","drapeau":"علم","nord":"شمال","sud":"جنوب","est":"شرق","ouest":"غرب","roi":"ملك","reine":"ملكة","guerre":"حرب","paix":"سلام","mon pays est beau":"بلدي جميل",
+"je ne comprends pas":"لا أفهم","pouvez-vous répéter":"هل يمكنك أن تكرر","je suis d'accord":"أنا موافق","ça ne fait rien":"لا بأس","bien sûr":"بالطبع","à bientôt":"إلى اللقاء","bon appétit":"بالهناء والشفاء","félicitations":"مبروك","bienvenue":"أهلا وسهلا","attention":"انتبه",
+"entrer":"يدخل","sortir":"يخرج","monter":"يصعد","descendre":"ينزل","rester":"يبقى","partir":"يغادر","tomber":"يسقط","sauter":"يقفز","voler":"يطير","conduire":"يقود","arrêter":"يوقف","revenir":"يعود","je reste à la maison":"أبقى في البيت","le train part à huit heures":"يغادر القطار في الساعة الثامنة",
+"poulet":"دجاج","jambon":"جامبون","saucisse":"نقانق","pâtes":"معكرونة","frites":"بطاطس مقلية","champignon":"فطر","miel":"عسل","confiture":"مربى","yaourt":"زبادي","glace":"آيس كريم","chocolat":"شوكولاتة","bonbon":"سكاكر","biscuit":"بسكويت",
+"compte":"حساب","facture":"فاتورة","impôt":"ضريبة","loyer":"إيجار","pièce":"عملة معدنية","distributeur":"صراف آلي","économiser":"يوفر","dépenser":"ينفق","économies":"مدخرات","reçu":"إيصال",
+"jupe":"تنورة","pull":"كنزة","veste":"سترة","chaussettes":"جوارب","gants":"قفازات","écharpe":"وشاح","ceinture":"حزام","poche":"جيب","bouton":"زر","taille":"مقاس","mode":"موضة",
+"se réveiller":"يستيقظ","se lever":"ينهض","s'habiller":"يلبس","réveil":"منبه","se dépêcher":"يستعجل","se coucher":"يذهب للنوم","préparer":"يحضر","nettoyer":"ينظف","ranger":"يرتب","repasser":"يكوي","je me lève à sept heures":"أنهض في الساعة السابعة"
+}
+};
+LANGS2.forEach(function(l){ var h2=LEX2H[l]||{}; Object.keys(h2).forEach(function(k){ LEX2[l][k]=h2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
