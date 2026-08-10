@@ -2946,5 +2946,16 @@ var STORIES=[
   {q:"Bee a un petit…", opts:["Problème","Gâteau","Chien"], ok:0},
   {q:"La fleur a…", opts:["Faim","Soif","Peur"], ok:1},
   {q:"L'ami trouve une bonne…", opts:["Idée","Erreur","Chanson"], ok:0}]}
+ ,
+ {id:"le_parc", ic:"🏞️", titre:"Le parc", lignes:[
+  {qui:"🐝", fr:"Je vais au parc.", t:{en:"I'm going to the park.", it:"Vado al parco.", es:"Voy al parque.", de:"Ich gehe in den Park.", pt:"Vou ao parque.", nl:"Ik ga naar het park."}},
+  {qui:"🧑", fr:"Il fait soleil.", t:{en:"It's sunny.", it:"Fa sole.", es:"Hace sol.", de:"Die Sonne scheint.", pt:"Está sol.", nl:"Het is zonnig."}},
+  {qui:"🐝", fr:"Je vois des oiseaux.", t:{en:"I see birds.", it:"Vedo degli uccelli.", es:"Veo pájaros.", de:"Ich sehe Vögel.", pt:"Vejo pássaros.", nl:"Ik zie vogels."}},
+  {qui:"🧑", fr:"Nous allons nous asseoir.", t:{en:"We're going to sit down.", it:"Andiamo a sederci.", es:"Vamos a sentarnos.", de:"Wir setzen uns hin.", pt:"Vamos nos sentar.", nl:"We gaan zitten."}},
+  {qui:"🐝", fr:"C'est amusant.", t:{en:"It's fun.", it:"È divertente.", es:"Es divertido.", de:"Es macht Spaß.", pt:"É divertido.", nl:"Het is leuk."}}],
+  quiz:[
+  {q:"Qui va au parc ?", opts:["L'ami","L'abeille","Les oiseaux"], ok:1},
+  {q:"Quel temps fait-il ?", opts:["Il pleut","Il fait soleil","Il neige"], ok:1},
+  {q:"Que font l'abeille et l'ami ?", opts:["Ils dansent","Ils vont se promener","Ils s'assoient"], ok:2}]}
  /*__STORIES_AUTO__ : les nouvelles histoires générées automatiquement s'insèrent ICI (ne pas retirer ce repère) */
 ];
