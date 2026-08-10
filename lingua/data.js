@@ -3065,6 +3065,94 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var d2=LEX2D[l]||{}; Object.keys(d2).forEach(function(k){ LEX2[l][k]=d2[k]; }); });
+/* Vague 5 des nouvelles langues (v2.74) : unités 33-40 — verbes du quotidien, la cuisine, la salle
+   de bain, lieux de la ville, la position, faire les courses, voyager loin, décrire encore.
+   32 → 40 unités. Homographes réels supplémentaires assumés : ru/uk лёгкий/легкий = facile ET
+   léger ; cs těžký = difficile ET lourd ; zh 快 = vite/rapide ; ja すぎる (trop) = suffixe enseigné
+   tel quel ; ru huile = растительное масло pour distinguer du beurre (масло). */
+var LEX2E = {
+pl:{
+"prendre":"brać","trouver":"znajdować","chercher":"szukać","attendre":"czekać","ouvrir":"otwierać","fermer":"zamykać","commencer":"zaczynać","finir":"kończyć","aider":"pomagać","habiter":"mieszkać","porter":"nosić","essayer":"próbować","apprendre":"uczyć się","oublier":"zapominać","montrer":"pokazywać","je cherche la gare":"szukam dworca",
+"cuisine":"kuchnia","four":"piekarnik","frigo":"lodówka","bouteille":"butelka","recette":"przepis","cuisiner":"gotować","sel":"sól","poivre":"pieprz","sucre":"cukier","huile":"olej","beurre":"masło","farine":"mąka","petit-déjeuner":"śniadanie","déjeuner":"obiad","dîner":"kolacja",
+"savon":"mydło","douche":"prysznic","bain":"kąpiel","serviette":"ręcznik","se laver":"myć się","brosse à dents":"szczoteczka do zębów","dentifrice":"pasta do zębów","miroir":"lustro","peigne":"grzebień","shampoing":"szampon","je me lave les mains":"myję ręce",
+"bibliothèque":"biblioteka","piscine":"basen","cinéma":"kino","théâtre":"teatr","stade":"stadion","place":"plac","poste":"poczta","mairie":"ratusz","boulangerie":"piekarnia","boucherie":"sklep mięsny","quartier":"dzielnica","coin":"róg",
+"sous":"pod","sur":"na","devant":"przed","derrière":"za","entre":"między","à côté":"obok","en haut":"na górze","en bas":"na dole","tout droit":"prosto","près":"blisko","loin":"daleko",
+"gratuit":"darmowy","soldes":"wyprzedaż","liste":"lista","sac":"torba","panier":"koszyk","cadeau":"prezent","client":"klient","caisse":"kasa","ouvert":"otwarty","fermé":"zamknięty","trop":"za bardzo","c'est trop cher":"to jest za drogie","le magasin est ouvert":"sklep jest otwarty",
+"valise":"walizka","passeport":"paszport","billet":"bilet","bagage":"bagaż","frontière":"granica","douane":"urząd celny","départ":"odjazd","arrivée":"przyjazd","retard":"opóźnienie","réserver":"rezerwować","annuler":"anulować","vacances":"wakacje","je réserve un hôtel":"rezerwuję hotel",
+"lourd":"ciężki","léger":"lekki","long":"długi","court":"krótki","large":"szeroki","étroit":"wąski","rapide":"szybki","lent":"wolny","dangereux":"niebezpieczny","sûr":"bezpieczny","riche":"bogaty","pauvre":"biedny","drôle":"zabawny","gentil":"miły"
+},
+ru:{
+"prendre":"брать","trouver":"находить","chercher":"искать","attendre":"ждать","ouvrir":"открывать","fermer":"закрывать","commencer":"начинать","finir":"заканчивать","aider":"помогать","habiter":"жить","porter":"носить","essayer":"пробовать","apprendre":"учиться","oublier":"забывать","montrer":"показывать","je cherche la gare":"я ищу вокзал",
+"cuisine":"кухня","four":"духовка","frigo":"холодильник","bouteille":"бутылка","recette":"рецепт","cuisiner":"готовить","sel":"соль","poivre":"перец","sucre":"сахар","huile":"растительное масло","beurre":"масло","farine":"мука","petit-déjeuner":"завтрак","déjeuner":"обед","dîner":"ужин",
+"savon":"мыло","douche":"душ","bain":"ванна","serviette":"полотенце","se laver":"мыться","brosse à dents":"зубная щётка","dentifrice":"зубная паста","miroir":"зеркало","peigne":"расчёска","shampoing":"шампунь","je me lave les mains":"я мою руки",
+"bibliothèque":"библиотека","piscine":"бассейн","cinéma":"кинотеатр","théâtre":"театр","stade":"стадион","place":"площадь","poste":"почта","mairie":"мэрия","boulangerie":"булочная","boucherie":"мясной магазин","quartier":"район","coin":"угол",
+"sous":"под","sur":"на","devant":"перед","derrière":"за","entre":"между","à côté":"рядом","en haut":"наверху","en bas":"внизу","tout droit":"прямо","près":"близко","loin":"далеко",
+"gratuit":"бесплатный","soldes":"распродажа","liste":"список","sac":"сумка","panier":"корзина","cadeau":"подарок","client":"клиент","caisse":"касса","ouvert":"открытый","fermé":"закрытый","trop":"слишком","c'est trop cher":"это слишком дорого","le magasin est ouvert":"магазин открыт",
+"valise":"чемодан","passeport":"паспорт","billet":"билет","bagage":"багаж","frontière":"граница","douane":"таможня","départ":"отъезд","arrivée":"прибытие","retard":"задержка","réserver":"бронировать","annuler":"отменять","vacances":"отпуск","je réserve un hôtel":"я бронирую отель",
+"lourd":"тяжёлый","léger":"лёгкий","long":"длинный","court":"короткий","large":"широкий","étroit":"узкий","rapide":"быстрый","lent":"медленный","dangereux":"опасный","sûr":"безопасный","riche":"богатый","pauvre":"бедный","drôle":"смешной","gentil":"добрый"
+},
+uk:{
+"prendre":"брати","trouver":"знаходити","chercher":"шукати","attendre":"чекати","ouvrir":"відкривати","fermer":"закривати","commencer":"починати","finir":"закінчувати","aider":"допомагати","habiter":"жити","porter":"носити","essayer":"пробувати","apprendre":"вчитися","oublier":"забувати","montrer":"показувати","je cherche la gare":"я шукаю вокзал",
+"cuisine":"кухня","four":"духовка","frigo":"холодильник","bouteille":"пляшка","recette":"рецепт","cuisiner":"готувати","sel":"сіль","poivre":"перець","sucre":"цукор","huile":"олія","beurre":"масло","farine":"борошно","petit-déjeuner":"сніданок","déjeuner":"обід","dîner":"вечеря",
+"savon":"мило","douche":"душ","bain":"ванна","serviette":"рушник","se laver":"митися","brosse à dents":"зубна щітка","dentifrice":"зубна паста","miroir":"дзеркало","peigne":"гребінець","shampoing":"шампунь","je me lave les mains":"я мию руки",
+"bibliothèque":"бібліотека","piscine":"басейн","cinéma":"кінотеатр","théâtre":"театр","stade":"стадіон","place":"площа","poste":"пошта","mairie":"мерія","boulangerie":"пекарня","boucherie":"м'ясна крамниця","quartier":"район","coin":"ріг",
+"sous":"під","sur":"на","devant":"перед","derrière":"за","entre":"між","à côté":"поруч","en haut":"нагорі","en bas":"внизу","tout droit":"прямо","près":"близько","loin":"далеко",
+"gratuit":"безкоштовний","soldes":"розпродаж","liste":"список","sac":"сумка","panier":"кошик","cadeau":"подарунок","client":"клієнт","caisse":"каса","ouvert":"відкритий","fermé":"закритий","trop":"занадто","c'est trop cher":"це занадто дорого","le magasin est ouvert":"магазин відкритий",
+"valise":"валіза","passeport":"паспорт","billet":"квиток","bagage":"багаж","frontière":"кордон","douane":"митниця","départ":"від'їзд","arrivée":"прибуття","retard":"затримка","réserver":"бронювати","annuler":"скасовувати","vacances":"відпустка","je réserve un hôtel":"я бронюю готель",
+"lourd":"важкий","léger":"легкий","long":"довгий","court":"короткий","large":"широкий","étroit":"вузький","rapide":"швидкий","lent":"повільний","dangereux":"небезпечний","sûr":"безпечний","riche":"багатий","pauvre":"бідний","drôle":"смішний","gentil":"добрий"
+},
+cs:{
+"prendre":"brát","trouver":"najít","chercher":"hledat","attendre":"čekat","ouvrir":"otevřít","fermer":"zavřít","commencer":"začít","finir":"skončit","aider":"pomáhat","habiter":"bydlet","porter":"nosit","essayer":"zkoušet","apprendre":"učit se","oublier":"zapomínat","montrer":"ukázat","je cherche la gare":"hledám nádraží",
+"cuisine":"kuchyně","four":"trouba","frigo":"lednička","bouteille":"láhev","recette":"recept","cuisiner":"vařit","sel":"sůl","poivre":"pepř","sucre":"cukr","huile":"olej","beurre":"máslo","farine":"mouka","petit-déjeuner":"snídaně","déjeuner":"oběd","dîner":"večeře",
+"savon":"mýdlo","douche":"sprcha","bain":"koupel","serviette":"ručník","se laver":"mýt se","brosse à dents":"zubní kartáček","dentifrice":"zubní pasta","miroir":"zrcadlo","peigne":"hřeben","shampoing":"šampon","je me lave les mains":"myji si ruce",
+"bibliothèque":"knihovna","piscine":"bazén","cinéma":"kino","théâtre":"divadlo","stade":"stadion","place":"náměstí","poste":"pošta","mairie":"radnice","boulangerie":"pekárna","boucherie":"řeznictví","quartier":"čtvrť","coin":"roh",
+"sous":"pod","sur":"na","devant":"před","derrière":"za","entre":"mezi","à côté":"vedle","en haut":"nahoře","en bas":"dole","tout droit":"rovně","près":"blízko","loin":"daleko",
+"gratuit":"zdarma","soldes":"výprodej","liste":"seznam","sac":"taška","panier":"košík","cadeau":"dárek","client":"zákazník","caisse":"pokladna","ouvert":"otevřený","fermé":"zavřený","trop":"příliš","c'est trop cher":"to je příliš drahé","le magasin est ouvert":"obchod je otevřený",
+"valise":"kufr","passeport":"pas","billet":"lístek","bagage":"zavazadlo","frontière":"hranice","douane":"celnice","départ":"odjezd","arrivée":"příjezd","retard":"zpoždění","réserver":"rezervovat","annuler":"zrušit","vacances":"dovolená","je réserve un hôtel":"rezervuji hotel",
+"lourd":"těžký","léger":"lehký","long":"dlouhý","court":"krátký","large":"široký","étroit":"úzký","rapide":"rychlý","lent":"pomalý","dangereux":"nebezpečný","sûr":"bezpečný","riche":"bohatý","pauvre":"chudý","drôle":"vtipný","gentil":"milý"
+},
+zh:{
+"prendre":"拿","trouver":"找到","chercher":"找","attendre":"等","ouvrir":"打开","fermer":"关","commencer":"开始","finir":"结束","aider":"帮助","habiter":"住","porter":"穿","essayer":"试","apprendre":"学习","oublier":"忘记","montrer":"展示","je cherche la gare":"我 找 火车站",
+"cuisine":"厨房","four":"烤箱","frigo":"冰箱","bouteille":"瓶子","recette":"食谱","cuisiner":"做饭","sel":"盐","poivre":"胡椒","sucre":"糖","huile":"油","beurre":"黄油","farine":"面粉","petit-déjeuner":"早饭","déjeuner":"午饭","dîner":"晚饭",
+"savon":"肥皂","douche":"淋浴","bain":"泡澡","serviette":"毛巾","se laver":"洗澡","brosse à dents":"牙刷","dentifrice":"牙膏","miroir":"镜子","peigne":"梳子","shampoing":"洗发水","je me lave les mains":"我 洗 手",
+"bibliothèque":"图书馆","piscine":"游泳池","cinéma":"电影院","théâtre":"剧院","stade":"体育场","place":"广场","poste":"邮局","mairie":"市政厅","boulangerie":"面包店","boucherie":"肉店","quartier":"街区","coin":"角落",
+"sous":"下面","sur":"上面","devant":"前面","derrière":"后面","entre":"中间","à côté":"旁边","en haut":"顶部","en bas":"底部","tout droit":"一直走","près":"近","loin":"远",
+"gratuit":"免费","soldes":"打折","liste":"清单","sac":"袋子","panier":"购物篮","cadeau":"礼物","client":"顾客","caisse":"收银台","ouvert":"开门","fermé":"关门","trop":"太","c'est trop cher":"这 太 贵 了","le magasin est ouvert":"商店 开门 了",
+"valise":"行李箱","passeport":"护照","billet":"票","bagage":"行李","frontière":"边境","douane":"海关","départ":"出发","arrivée":"到达","retard":"延误","réserver":"预订","annuler":"取消","vacances":"假期","je réserve un hôtel":"我 预订 酒店",
+"lourd":"重","léger":"轻","long":"长","court":"短","large":"宽","étroit":"窄","rapide":"快","lent":"慢","dangereux":"危险","sûr":"安全","riche":"富有","pauvre":"贫穷","drôle":"有趣","gentil":"善良"
+},
+ja:{
+"prendre":"取ります","trouver":"見つけます","chercher":"探します","attendre":"待ちます","ouvrir":"開けます","fermer":"閉めます","commencer":"始めます","finir":"終わります","aider":"手伝います","habiter":"住みます","porter":"着ます","essayer":"試します","apprendre":"学びます","oublier":"忘れます","montrer":"見せます","je cherche la gare":"私 は 駅 を 探します",
+"cuisine":"台所","four":"オーブン","frigo":"冷蔵庫","bouteille":"ボトル","recette":"レシピ","cuisiner":"料理します","sel":"塩","poivre":"こしょう","sucre":"砂糖","huile":"油","beurre":"バター","farine":"小麦粉","petit-déjeuner":"朝ごはん","déjeuner":"昼ごはん","dîner":"晩ごはん",
+"savon":"せっけん","douche":"シャワー","bain":"お風呂","serviette":"タオル","se laver":"洗います","brosse à dents":"歯ブラシ","dentifrice":"歯磨き粉","miroir":"鏡","peigne":"くし","shampoing":"シャンプー","je me lave les mains":"私 は 手 を 洗います",
+"bibliothèque":"図書館","piscine":"プール","cinéma":"映画館","théâtre":"劇場","stade":"スタジアム","place":"広場","poste":"郵便局","mairie":"市役所","boulangerie":"パン屋","boucherie":"肉屋","quartier":"地区","coin":"角",
+"sous":"下","sur":"上","devant":"前","derrière":"後ろ","entre":"間","à côté":"となり","en haut":"上の方","en bas":"下の方","tout droit":"まっすぐ","près":"近く","loin":"遠く",
+"gratuit":"無料","soldes":"セール","liste":"リスト","sac":"袋","panier":"買い物かご","cadeau":"プレゼント","client":"お客さん","caisse":"レジ","ouvert":"開いている","fermé":"閉まっている","trop":"すぎる","c'est trop cher":"これ は 高すぎます","le magasin est ouvert":"店 は 開いています",
+"valise":"スーツケース","passeport":"パスポート","billet":"チケット","bagage":"荷物","frontière":"国境","douane":"税関","départ":"出発","arrivée":"到着","retard":"遅れ","réserver":"予約します","annuler":"キャンセルします","vacances":"休暇","je réserve un hôtel":"私 は ホテル を 予約します",
+"lourd":"重い","léger":"軽い","long":"長い","court":"短い","large":"広い","étroit":"狭い","rapide":"速い","lent":"遅い","dangereux":"危ない","sûr":"安全","riche":"金持ち","pauvre":"貧しい","drôle":"面白い","gentil":"優しい"
+},
+ko:{
+"prendre":"가져가다","trouver":"발견하다","chercher":"찾다","attendre":"기다리다","ouvrir":"열다","fermer":"닫다","commencer":"시작하다","finir":"끝내다","aider":"돕다","habiter":"살다","porter":"입다","essayer":"시도하다","apprendre":"배우다","oublier":"잊다","montrer":"보여주다","je cherche la gare":"저는 기차역을 찾아요",
+"cuisine":"부엌","four":"오븐","frigo":"냉장고","bouteille":"병","recette":"요리법","cuisiner":"요리하다","sel":"소금","poivre":"후추","sucre":"설탕","huile":"기름","beurre":"버터","farine":"밀가루","petit-déjeuner":"아침 식사","déjeuner":"점심 식사","dîner":"저녁 식사",
+"savon":"비누","douche":"샤워","bain":"목욕","serviette":"수건","se laver":"씻다","brosse à dents":"칫솔","dentifrice":"치약","miroir":"거울","peigne":"빗","shampoing":"샴푸","je me lave les mains":"저는 손을 씻어요",
+"bibliothèque":"도서관","piscine":"수영장","cinéma":"영화관","théâtre":"극장","stade":"경기장","place":"광장","poste":"우체국","mairie":"시청","boulangerie":"빵집","boucherie":"정육점","quartier":"동네","coin":"모퉁이",
+"sous":"아래","sur":"위","devant":"앞","derrière":"뒤","entre":"사이","à côté":"옆","en haut":"위쪽","en bas":"아래쪽","tout droit":"직진","près":"가까이","loin":"멀리",
+"gratuit":"무료","soldes":"세일","liste":"목록","sac":"가방","panier":"장바구니","cadeau":"선물","client":"손님","caisse":"계산대","ouvert":"열려 있다","fermé":"닫혀 있다","trop":"너무","c'est trop cher":"이것은 너무 비싸요","le magasin est ouvert":"가게가 열려 있어요",
+"valise":"여행 가방","passeport":"여권","billet":"표","bagage":"짐","frontière":"국경","douane":"세관","départ":"출발","arrivée":"도착","retard":"지연","réserver":"예약하다","annuler":"취소하다","vacances":"휴가","je réserve un hôtel":"저는 호텔을 예약해요",
+"lourd":"무겁다","léger":"가볍다","long":"길다","court":"짧다","large":"넓다","étroit":"좁다","rapide":"빠르다","lent":"느리다","dangereux":"위험하다","sûr":"안전하다","riche":"부유하다","pauvre":"가난하다","drôle":"웃기다","gentil":"친절하다"
+},
+ar:{
+"prendre":"يأخذ","trouver":"يجد","chercher":"يبحث","attendre":"ينتظر","ouvrir":"يفتح","fermer":"يغلق","commencer":"يبدأ","finir":"ينهي","aider":"يساعد","habiter":"يسكن","porter":"يرتدي","essayer":"يحاول","apprendre":"يتعلم","oublier":"ينسى","montrer":"يعرض","je cherche la gare":"أبحث عن محطة القطار",
+"cuisine":"مطبخ","four":"فرن","frigo":"ثلاجة","bouteille":"زجاجة","recette":"وصفة","cuisiner":"يطبخ","sel":"ملح","poivre":"فلفل","sucre":"سكر","huile":"زيت","beurre":"زبدة","farine":"طحين","petit-déjeuner":"فطور","déjeuner":"غداء","dîner":"عشاء",
+"savon":"صابون","douche":"دش","bain":"حمام","serviette":"منشفة","se laver":"يغتسل","brosse à dents":"فرشاة أسنان","dentifrice":"معجون أسنان","miroir":"مرآة","peigne":"مشط","shampoing":"شامبو","je me lave les mains":"أغسل يدي",
+"bibliothèque":"مكتبة","piscine":"مسبح","cinéma":"سينما","théâtre":"مسرح","stade":"ملعب","place":"ساحة","poste":"مكتب البريد","mairie":"البلدية","boulangerie":"مخبز","boucherie":"ملحمة","quartier":"حي","coin":"زاوية",
+"sous":"تحت","sur":"فوق","devant":"أمام","derrière":"خلف","entre":"بين","à côté":"بجانب","en haut":"في الأعلى","en bas":"في الأسفل","tout droit":"إلى الأمام","près":"قريب","loin":"بعيد",
+"gratuit":"مجاني","soldes":"تخفيضات","liste":"قائمة","sac":"حقيبة","panier":"سلة","cadeau":"هدية","client":"زبون","caisse":"صندوق الدفع","ouvert":"مفتوح","fermé":"مغلق","trop":"أكثر من اللازم","c'est trop cher":"هذا غال جدا","le magasin est ouvert":"المتجر مفتوح",
+"valise":"حقيبة سفر","passeport":"جواز سفر","billet":"تذكرة","bagage":"أمتعة","frontière":"حدود","douane":"جمارك","départ":"مغادرة","arrivée":"وصول","retard":"تأخير","réserver":"يحجز","annuler":"يلغي","vacances":"عطلة","je réserve un hôtel":"أحجز فندقا",
+"lourd":"ثقيل","léger":"خفيف","long":"طويل","court":"قصير","large":"عريض","étroit":"ضيق","rapide":"سريع","lent":"بطيء","dangereux":"خطير","sûr":"آمن","riche":"غني","pauvre":"فقير","drôle":"مضحك","gentil":"لطيف"
+}
+};
+LANGS2.forEach(function(l){ var e2=LEX2E[l]||{}; Object.keys(e2).forEach(function(k){ LEX2[l][k]=e2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
