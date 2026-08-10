@@ -3994,6 +3994,99 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var n2=LEX2N[l]||{}; Object.keys(n2).forEach(function(k){ LEX2[l][k]=n2[k]; }); });
+/* ── Vague 15 nouvelles langues (v2.84) : unités 113-120 — la vie marine, l'espace,
+   les sciences, la justice, il était une fois, sous le capot, le corps au-dedans,
+   l'élégance. Anti-collisions vérifiées : cs coffre=kufr auta (kufr=valise),
+   algue=mořská řasa / cil=řasa distingués ; ko estomac=위장 (위=sur) ;
+   ru nœud papillon=галстук-бабочка (бабочка=papillon), fermeture éclair=
+   застёжка-молния (молния=éclair) ; uk краватка-метелик, застібка-блискавка ;
+   ar coupable=مدان (مذنب=comète), algue=أعشاب بحرية (طحلب=mousse).
+   Homographes réels assumés (même mot dans la langue, pas d'alternative) :
+   pl sędzia, ru судья, uk суддя = arbitre ET juge ; ko 기사 = article ET chevalier ;
+   ar بطل = champion ET héros. */
+var LEX2O = {
+pl:{
+"algue":"wodorost","coquillage":"muszla","crabe":"krab","méduse":"meduza","pieuvre":"ośmiornica",
+"fusée":"rakieta","navette":"prom kosmiczny","satellite":"satelita","astronaute":"astronauta","télescope":"teleskop","gravité":"grawitacja","comète":"kometa","galaxie":"galaktyka","univers":"wszechświat","étoile filante":"spadająca gwiazda","ovni":"UFO","extraterrestre":"kosmita",
+"chimie":"chemia","physique":"fizyka","biologie":"biologia","laboratoire":"laboratorium","microscope":"mikroskop","invention":"wynalazek","découverte":"odkrycie","chercheur":"badacz","théorie":"teoria","cerveau":"mózg",
+"tribunal":"sąd","juge":"sędzia","procès":"proces","preuve":"dowód","plainte":"skarga","coupable":"winny","innocent":"niewinny","prison":"więzienie","amende":"grzywna","interdit":"zakazany",
+"couronne":"korona","trône":"tron","chevalier":"rycerz","héros":"bohater","empire":"imperium","il était une fois":"dawno, dawno temu","bataille":"bitwa","armée":"wojsko","soldat":"żołnierz","révolution":"rewolucja","épée":"miecz","bouclier":"tarcza","flèche":"strzała","canon":"armata",
+"moteur":"silnik","frein":"hamulec","pneu":"opona","volant":"kierownica","coffre":"bagażnik","capot":"maska silnika","klaxon":"klakson","rétroviseur":"lusterko wsteczne","pare-brise":"przednia szyba","essuie-glace":"wycieraczka","embouteillage":"korek","panne":"awaria",
+"poumon":"płuco","estomac":"żołądek","foie":"wątroba","muscle":"mięsień","squelette":"szkielet","veine":"żyła","côte":"żebro","cheville":"kostka","poignet":"nadgarstek","menton":"podbródek","hanche":"biodro","mollet":"łydka","sourcil":"brew","cil":"rzęsa","paupière":"powieka","nuque":"kark","paume":"dłoń",
+"costume":"garnitur","cravate":"krawat","nœud papillon":"muszka","gilet":"kamizelka","imperméable":"płaszcz przeciwdeszczowy","bretelles":"szelki","fermeture éclair":"zamek błyskawiczny","talon":"obcas","semelle":"podeszwa","lacet":"sznurówka","col":"kołnierz","manche":"rękaw"
+},
+ru:{
+"algue":"водоросль","coquillage":"ракушка","crabe":"краб","méduse":"медуза","pieuvre":"осьминог",
+"fusée":"ракета","navette":"шаттл","satellite":"спутник","astronaute":"космонавт","télescope":"телескоп","gravité":"гравитация","comète":"комета","galaxie":"галактика","univers":"вселенная","étoile filante":"падающая звезда","ovni":"НЛО","extraterrestre":"инопланетянин",
+"chimie":"химия","physique":"физика","biologie":"биология","laboratoire":"лаборатория","microscope":"микроскоп","invention":"изобретение","découverte":"открытие","chercheur":"исследователь","théorie":"теория","cerveau":"мозг",
+"tribunal":"суд","juge":"судья","procès":"судебный процесс","preuve":"доказательство","plainte":"жалоба","coupable":"виновный","innocent":"невиновный","prison":"тюрьма","amende":"штраф","interdit":"запрещённый",
+"couronne":"корона","trône":"трон","chevalier":"рыцарь","héros":"герой","empire":"империя","il était une fois":"жили-были","bataille":"битва","armée":"армия","soldat":"солдат","révolution":"революция","épée":"меч","bouclier":"щит","flèche":"стрела","canon":"пушка",
+"moteur":"двигатель","frein":"тормоз","pneu":"шина","volant":"руль","coffre":"багажник","capot":"капот","klaxon":"клаксон","rétroviseur":"зеркало заднего вида","pare-brise":"лобовое стекло","essuie-glace":"дворники","embouteillage":"пробка","panne":"поломка",
+"poumon":"лёгкое","estomac":"желудок","foie":"печень","muscle":"мышца","squelette":"скелет","veine":"вена","côte":"ребро","cheville":"лодыжка","poignet":"запястье","menton":"подбородок","hanche":"бедро","mollet":"икра","sourcil":"бровь","cil":"ресница","paupière":"веко","nuque":"затылок","paume":"ладонь",
+"costume":"костюм","cravate":"галстук","nœud papillon":"галстук-бабочка","gilet":"жилет","imperméable":"дождевик","bretelles":"подтяжки","fermeture éclair":"застёжка-молния","talon":"каблук","semelle":"подошва","lacet":"шнурок","col":"воротник","manche":"рукав"
+},
+uk:{
+"algue":"водорість","coquillage":"мушля","crabe":"краб","méduse":"медуза","pieuvre":"восьминіг",
+"fusée":"ракета","navette":"шатл","satellite":"супутник","astronaute":"космонавт","télescope":"телескоп","gravité":"гравітація","comète":"комета","galaxie":"галактика","univers":"всесвіт","étoile filante":"падаюча зірка","ovni":"НЛО","extraterrestre":"інопланетянин",
+"chimie":"хімія","physique":"фізика","biologie":"біологія","laboratoire":"лабораторія","microscope":"мікроскоп","invention":"винахід","découverte":"відкриття","chercheur":"дослідник","théorie":"теорія","cerveau":"мозок",
+"tribunal":"суд","juge":"суддя","procès":"судовий процес","preuve":"доказ","plainte":"скарга","coupable":"винний","innocent":"невинний","prison":"в'язниця","amende":"штраф","interdit":"заборонений",
+"couronne":"корона","trône":"трон","chevalier":"лицар","héros":"герой","empire":"імперія","il était une fois":"давним-давно","bataille":"битва","armée":"армія","soldat":"солдат","révolution":"революція","épée":"меч","bouclier":"щит","flèche":"стріла","canon":"гармата",
+"moteur":"двигун","frein":"гальмо","pneu":"шина","volant":"кермо","coffre":"багажник","capot":"капот","klaxon":"клаксон","rétroviseur":"дзеркало заднього виду","pare-brise":"лобове скло","essuie-glace":"двірники","embouteillage":"затор","panne":"поломка",
+"poumon":"легеня","estomac":"шлунок","foie":"печінка","muscle":"м'яз","squelette":"скелет","veine":"вена","côte":"ребро","cheville":"щиколотка","poignet":"зап'ясток","menton":"підборіддя","hanche":"стегно","mollet":"литка","sourcil":"брова","cil":"вія","paupière":"повіка","nuque":"потилиця","paume":"долоня",
+"costume":"костюм","cravate":"краватка","nœud papillon":"краватка-метелик","gilet":"жилет","imperméable":"дощовик","bretelles":"підтяжки","fermeture éclair":"застібка-блискавка","talon":"підбор","semelle":"підошва","lacet":"шнурок","col":"комір","manche":"рукав"
+},
+cs:{
+"algue":"mořská řasa","coquillage":"mušle","crabe":"krab","méduse":"medúza","pieuvre":"chobotnice",
+"fusée":"raketa","navette":"raketoplán","satellite":"družice","astronaute":"astronaut","télescope":"teleskop","gravité":"gravitace","comète":"kometa","galaxie":"galaxie","univers":"vesmír","étoile filante":"padající hvězda","ovni":"UFO","extraterrestre":"mimozemšťan",
+"chimie":"chemie","physique":"fyzika","biologie":"biologie","laboratoire":"laboratoř","microscope":"mikroskop","invention":"vynález","découverte":"objev","chercheur":"výzkumník","théorie":"teorie","cerveau":"mozek",
+"tribunal":"soud","juge":"soudce","procès":"soudní proces","preuve":"důkaz","plainte":"stížnost","coupable":"vinný","innocent":"nevinný","prison":"vězení","amende":"pokuta","interdit":"zakázaný",
+"couronne":"koruna","trône":"trůn","chevalier":"rytíř","héros":"hrdina","empire":"říše","il était une fois":"bylo nebylo","bataille":"bitva","armée":"armáda","soldat":"voják","révolution":"revoluce","épée":"meč","bouclier":"štít","flèche":"šíp","canon":"dělo",
+"moteur":"motor","frein":"brzda","pneu":"pneumatika","volant":"volant","coffre":"kufr auta","capot":"kapota","klaxon":"klakson","rétroviseur":"zpětné zrcátko","pare-brise":"čelní sklo","essuie-glace":"stěrač","embouteillage":"zácpa","panne":"porucha",
+"poumon":"plíce","estomac":"žaludek","foie":"játra","muscle":"sval","squelette":"kostra","veine":"žíla","côte":"žebro","cheville":"kotník","poignet":"zápěstí","menton":"brada","hanche":"kyčel","mollet":"lýtko","sourcil":"obočí","cil":"řasa","paupière":"víčko","nuque":"zátylek","paume":"dlaň",
+"costume":"oblek","cravate":"kravata","nœud papillon":"motýlek","gilet":"vesta","imperméable":"pláštěnka","bretelles":"kšandy","fermeture éclair":"zip","talon":"podpatek","semelle":"podrážka","lacet":"tkanička","col":"límec","manche":"rukáv"
+},
+zh:{
+"algue":"海藻","coquillage":"贝壳","crabe":"螃蟹","méduse":"水母","pieuvre":"章鱼",
+"fusée":"火箭","navette":"航天飞机","satellite":"卫星","astronaute":"宇航员","télescope":"望远镜","gravité":"重力","comète":"彗星","galaxie":"星系","univers":"宇宙","étoile filante":"流星","ovni":"不明飞行物","extraterrestre":"外星人",
+"chimie":"化学","physique":"物理","biologie":"生物学","laboratoire":"实验室","microscope":"显微镜","invention":"发明","découverte":"发现","chercheur":"研究员","théorie":"理论","cerveau":"大脑",
+"tribunal":"法院","juge":"法官","procès":"诉讼","preuve":"证据","plainte":"投诉","coupable":"有罪的","innocent":"无罪的","prison":"监狱","amende":"罚款","interdit":"禁止的",
+"couronne":"王冠","trône":"王座","chevalier":"骑士","héros":"英雄","empire":"帝国","il était une fois":"很久 很久 以前","bataille":"战役","armée":"军队","soldat":"士兵","révolution":"革命","épée":"剑","bouclier":"盾","flèche":"箭","canon":"大炮",
+"moteur":"发动机","frein":"刹车","pneu":"轮胎","volant":"方向盘","coffre":"后备箱","capot":"引擎盖","klaxon":"喇叭","rétroviseur":"后视镜","pare-brise":"挡风玻璃","essuie-glace":"雨刷","embouteillage":"堵车","panne":"故障",
+"poumon":"肺","estomac":"胃","foie":"肝脏","muscle":"肌肉","squelette":"骨骼","veine":"静脉","côte":"肋骨","cheville":"脚踝","poignet":"手腕","menton":"下巴","hanche":"髋部","mollet":"小腿","sourcil":"眉毛","cil":"睫毛","paupière":"眼皮","nuque":"后颈","paume":"手掌",
+"costume":"西装","cravate":"领带","nœud papillon":"领结","gilet":"马甲","imperméable":"雨衣","bretelles":"背带","fermeture éclair":"拉链","talon":"鞋跟","semelle":"鞋底","lacet":"鞋带","col":"衣领","manche":"袖子"
+},
+ja:{
+"algue":"海藻","coquillage":"貝殻","crabe":"カニ","méduse":"クラゲ","pieuvre":"タコ",
+"fusée":"ロケット","navette":"スペースシャトル","satellite":"衛星","astronaute":"宇宙飛行士","télescope":"望遠鏡","gravité":"重力","comète":"彗星","galaxie":"銀河","univers":"宇宙","étoile filante":"流れ星","ovni":"ユーフォー","extraterrestre":"宇宙人",
+"chimie":"化学","physique":"物理","biologie":"生物学","laboratoire":"実験室","microscope":"顕微鏡","invention":"発明","découverte":"発見","chercheur":"研究者","théorie":"理論","cerveau":"脳",
+"tribunal":"裁判所","juge":"裁判官","procès":"裁判","preuve":"証拠","plainte":"苦情","coupable":"有罪の","innocent":"無罪の","prison":"刑務所","amende":"罰金","interdit":"禁止された",
+"couronne":"王冠","trône":"王座","chevalier":"騎士","héros":"英雄","empire":"帝国","il était une fois":"昔々","bataille":"戦い","armée":"軍隊","soldat":"兵士","révolution":"革命","épée":"剣","bouclier":"盾","flèche":"矢","canon":"大砲",
+"moteur":"エンジン","frein":"ブレーキ","pneu":"タイヤ","volant":"ハンドル","coffre":"トランク","capot":"ボンネット","klaxon":"クラクション","rétroviseur":"バックミラー","pare-brise":"フロントガラス","essuie-glace":"ワイパー","embouteillage":"渋滞","panne":"故障",
+"poumon":"肺","estomac":"胃","foie":"肝臓","muscle":"筋肉","squelette":"骨格","veine":"静脈","côte":"肋骨","cheville":"足首","poignet":"手首","menton":"あご","hanche":"腰","mollet":"ふくらはぎ","sourcil":"眉毛","cil":"まつげ","paupière":"まぶた","nuque":"うなじ","paume":"手のひら",
+"costume":"スーツ","cravate":"ネクタイ","nœud papillon":"蝶ネクタイ","gilet":"ベスト","imperméable":"レインコート","bretelles":"サスペンダー","fermeture éclair":"ファスナー","talon":"ヒール","semelle":"靴底","lacet":"靴ひも","col":"襟","manche":"袖"
+},
+ko:{
+"algue":"해초","coquillage":"조개껍데기","crabe":"게","méduse":"해파리","pieuvre":"문어",
+"fusée":"로켓","navette":"우주왕복선","satellite":"위성","astronaute":"우주비행사","télescope":"망원경","gravité":"중력","comète":"혜성","galaxie":"은하","univers":"우주","étoile filante":"별똥별","ovni":"유에프오","extraterrestre":"외계인",
+"chimie":"화학","physique":"물리학","biologie":"생물학","laboratoire":"실험실","microscope":"현미경","invention":"발명","découverte":"발견","chercheur":"연구원","théorie":"이론","cerveau":"뇌",
+"tribunal":"법원","juge":"판사","procès":"재판","preuve":"증거","plainte":"고소","coupable":"유죄의","innocent":"무죄의","prison":"감옥","amende":"벌금","interdit":"금지된",
+"couronne":"왕관","trône":"왕좌","chevalier":"기사","héros":"영웅","empire":"제국","il était une fois":"옛날 옛적에","bataille":"전투","armée":"군대","soldat":"군인","révolution":"혁명","épée":"검","bouclier":"방패","flèche":"화살","canon":"대포",
+"moteur":"엔진","frein":"브레이크","pneu":"타이어","volant":"핸들","coffre":"트렁크","capot":"보닛","klaxon":"경적","rétroviseur":"백미러","pare-brise":"앞유리","essuie-glace":"와이퍼","embouteillage":"교통 체증","panne":"고장",
+"poumon":"폐","estomac":"위장","foie":"간","muscle":"근육","squelette":"골격","veine":"정맥","côte":"갈비뼈","cheville":"발목","poignet":"손목","menton":"턱","hanche":"골반","mollet":"종아리","sourcil":"눈썹","cil":"속눈썹","paupière":"눈꺼풀","nuque":"목덜미","paume":"손바닥",
+"costume":"정장","cravate":"넥타이","nœud papillon":"나비넥타이","gilet":"조끼","imperméable":"우비","bretelles":"멜빵","fermeture éclair":"지퍼","talon":"굽","semelle":"밑창","lacet":"신발 끈","col":"옷깃","manche":"소매"
+},
+ar:{
+"algue":"أعشاب بحرية","coquillage":"صدفة","crabe":"سلطعون","méduse":"قنديل البحر","pieuvre":"أخطبوط",
+"fusée":"صاروخ","navette":"مكوك فضائي","satellite":"قمر صناعي","astronaute":"رائد فضاء","télescope":"تلسكوب","gravité":"جاذبية","comète":"مذنب","galaxie":"مجرة","univers":"كون","étoile filante":"شهاب","ovni":"جسم طائر مجهول","extraterrestre":"كائن فضائي",
+"chimie":"كيمياء","physique":"فيزياء","biologie":"أحياء","laboratoire":"مختبر","microscope":"مجهر","invention":"اختراع","découverte":"اكتشاف","chercheur":"باحث","théorie":"نظرية","cerveau":"دماغ",
+"tribunal":"محكمة","juge":"قاضٍ","procès":"محاكمة","preuve":"دليل","plainte":"شكوى","coupable":"مدان","innocent":"بريء","prison":"سجن","amende":"غرامة","interdit":"ممنوع",
+"couronne":"تاج","trône":"عرش","chevalier":"فارس","héros":"بطل","empire":"إمبراطورية","il était une fois":"كان يا ما كان","bataille":"معركة","armée":"جيش","soldat":"جندي","révolution":"ثورة","épée":"سيف","bouclier":"درع","flèche":"سهم","canon":"مدفع",
+"moteur":"محرك","frein":"فرامل","pneu":"إطار","volant":"مقود","coffre":"صندوق السيارة","capot":"غطاء المحرك","klaxon":"بوق","rétroviseur":"مرآة جانبية","pare-brise":"زجاج أمامي","essuie-glace":"مساحة الزجاج","embouteillage":"ازدحام مروري","panne":"عطل",
+"poumon":"رئة","estomac":"معدة","foie":"كبد","muscle":"عضلة","squelette":"هيكل عظمي","veine":"وريد","côte":"ضلع","cheville":"كاحل","poignet":"معصم","menton":"ذقن","hanche":"ورك","mollet":"ربلة الساق","sourcil":"حاجب","cil":"رمش","paupière":"جفن","nuque":"قفا","paume":"راحة اليد",
+"costume":"بدلة","cravate":"ربطة عنق","nœud papillon":"ربطة فراشة","gilet":"صدرية","imperméable":"معطف مطر","bretelles":"حمالات","fermeture éclair":"سحاب","talon":"كعب","semelle":"نعل","lacet":"رباط الحذاء","col":"ياقة","manche":"كم القميص"
+}
+};
+LANGS2.forEach(function(l){ var o2=LEX2O[l]||{}; Object.keys(o2).forEach(function(k){ LEX2[l][k]=o2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
