@@ -2809,6 +2809,94 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var b=LEX2B[l]||{}; Object.keys(b).forEach(function(k){ LEX2[l][k]=b[k]; }); });
+/* Vague 3 des nouvelles langues (v2.71) : unités 17-24 — transports, métiers, jours & saisons,
+   météo, adjectifs utiles, restaurant, achats, questions. Les 8 cours passent de 16 à 24 unités.
+   Homographes RÉELS assumés (c'est la langue, pas une erreur) : ko 배 = bateau (déjà ventre/poire),
+   ko 눈 = neige (déjà œil) ; cs stát = coûter (aussi « être debout »). Adjectifs ko en forme du
+   dictionnaire (-다), verbes ja en forme polie ます. */
+var LEX2C = {
+pl:{
+"voiture":"samochód","bus":"autobus","vélo":"rower","moto":"motocykl","taxi":"taksówka","camion":"ciężarówka","train":"pociąg","avion":"samolot","bateau":"statek","métro":"metro",
+"médecin":"lekarz","professeur":"nauczyciel","cuisinier":"kucharz","policier":"policjant","serveur":"kelner","avocat":"prawnik","ingénieur":"inżynier","artiste":"artysta","boulanger":"piekarz","agriculteur":"rolnik",
+"lundi":"poniedziałek","mardi":"wtorek","mercredi":"środa","jeudi":"czwartek","vendredi":"piątek","samedi":"sobota","dimanche":"niedziela","printemps":"wiosna","été":"lato","automne":"jesień","hiver":"zima",
+"pluie":"deszcz","neige":"śnieg","vent":"wiatr","nuage":"chmura","orage":"burza","chaud":"gorący","froid":"zimny","il pleut":"pada deszcz","il fait chaud":"jest gorąco",
+"heureux":"szczęśliwy","triste":"smutny","facile":"łatwy","difficile":"trudny","jeune":"młody","vieux":"stary","propre":"czysty","sale":"brudny","plein":"pełny","vide":"pusty","cher":"drogi","content":"zadowolony",
+"menu":"menu","plat":"danie","entrée":"przystawka","dessert":"deser","addition":"rachunek","fourchette":"widelec","couteau":"nóż","cuillère":"łyżka","assiette":"talerz","verre":"szklanka","tasse":"filiżanka",
+"argent":"pieniądze","prix":"cena","euro":"euro","carte":"karta","monnaie":"reszta","acheter":"kupować","vendre":"sprzedawać","payer":"płacić","coûter":"kosztować",
+"qui":"kto","quoi":"co","où":"gdzie","quand":"kiedy","comment":"jak","pourquoi":"dlaczego","combien":"ile"
+},
+ru:{
+"voiture":"машина","bus":"автобус","vélo":"велосипед","moto":"мотоцикл","taxi":"такси","camion":"грузовик","train":"поезд","avion":"самолёт","bateau":"корабль","métro":"метро",
+"médecin":"врач","professeur":"учитель","cuisinier":"повар","policier":"полицейский","serveur":"официант","avocat":"адвокат","ingénieur":"инженер","artiste":"художник","boulanger":"пекарь","agriculteur":"фермер",
+"lundi":"понедельник","mardi":"вторник","mercredi":"среда","jeudi":"четверг","vendredi":"пятница","samedi":"суббота","dimanche":"воскресенье","printemps":"весна","été":"лето","automne":"осень","hiver":"зима",
+"pluie":"дождь","neige":"снег","vent":"ветер","nuage":"облако","orage":"гроза","chaud":"горячий","froid":"холодный","il pleut":"идёт дождь","il fait chaud":"жарко",
+"heureux":"счастливый","triste":"грустный","facile":"лёгкий","difficile":"трудный","jeune":"молодой","vieux":"старый","propre":"чистый","sale":"грязный","plein":"полный","vide":"пустой","cher":"дорогой","content":"довольный",
+"menu":"меню","plat":"блюдо","entrée":"закуска","dessert":"десерт","addition":"счёт","fourchette":"вилка","couteau":"нож","cuillère":"ложка","assiette":"тарелка","verre":"стакан","tasse":"чашка",
+"argent":"деньги","prix":"цена","euro":"евро","carte":"карта","monnaie":"сдача","acheter":"покупать","vendre":"продавать","payer":"платить","coûter":"стоить",
+"qui":"кто","quoi":"что","où":"где","quand":"когда","comment":"как","pourquoi":"почему","combien":"сколько"
+},
+uk:{
+"voiture":"машина","bus":"автобус","vélo":"велосипед","moto":"мотоцикл","taxi":"таксі","camion":"вантажівка","train":"потяг","avion":"літак","bateau":"корабель","métro":"метро",
+"médecin":"лікар","professeur":"вчитель","cuisinier":"кухар","policier":"поліцейський","serveur":"офіціант","avocat":"адвокат","ingénieur":"інженер","artiste":"художник","boulanger":"пекар","agriculteur":"фермер",
+"lundi":"понеділок","mardi":"вівторок","mercredi":"середа","jeudi":"четвер","vendredi":"п'ятниця","samedi":"субота","dimanche":"неділя","printemps":"весна","été":"літо","automne":"осінь","hiver":"зима",
+"pluie":"дощ","neige":"сніг","vent":"вітер","nuage":"хмара","orage":"гроза","chaud":"гарячий","froid":"холодний","il pleut":"іде дощ","il fait chaud":"спекотно",
+"heureux":"щасливий","triste":"сумний","facile":"легкий","difficile":"складний","jeune":"молодий","vieux":"старий","propre":"чистий","sale":"брудний","plein":"повний","vide":"порожній","cher":"дорогий","content":"задоволений",
+"menu":"меню","plat":"страва","entrée":"закуска","dessert":"десерт","addition":"рахунок","fourchette":"виделка","couteau":"ніж","cuillère":"ложка","assiette":"тарілка","verre":"склянка","tasse":"чашка",
+"argent":"гроші","prix":"ціна","euro":"євро","carte":"картка","monnaie":"решта","acheter":"купувати","vendre":"продавати","payer":"платити","coûter":"коштувати",
+"qui":"хто","quoi":"що","où":"де","quand":"коли","comment":"як","pourquoi":"чому","combien":"скільки"
+},
+cs:{
+"voiture":"auto","bus":"autobus","vélo":"kolo","moto":"motorka","taxi":"taxi","camion":"kamion","train":"vlak","avion":"letadlo","bateau":"loď","métro":"metro",
+"médecin":"lékař","professeur":"učitel","cuisinier":"kuchař","policier":"policista","serveur":"číšník","avocat":"právník","ingénieur":"inženýr","artiste":"umělec","boulanger":"pekař","agriculteur":"zemědělec",
+"lundi":"pondělí","mardi":"úterý","mercredi":"středa","jeudi":"čtvrtek","vendredi":"pátek","samedi":"sobota","dimanche":"neděle","printemps":"jaro","été":"léto","automne":"podzim","hiver":"zima",
+"pluie":"déšť","neige":"sníh","vent":"vítr","nuage":"mrak","orage":"bouřka","chaud":"horký","froid":"studený","il pleut":"prší","il fait chaud":"je horko",
+"heureux":"šťastný","triste":"smutný","facile":"snadný","difficile":"těžký","jeune":"mladý","vieux":"starý","propre":"čistý","sale":"špinavý","plein":"plný","vide":"prázdný","cher":"drahý","content":"spokojený",
+"menu":"jídelní lístek","plat":"jídlo","entrée":"předkrm","dessert":"dezert","addition":"účet","fourchette":"vidlička","couteau":"nůž","cuillère":"lžíce","assiette":"talíř","verre":"sklenice","tasse":"šálek",
+"argent":"peníze","prix":"cena","euro":"euro","carte":"karta","monnaie":"drobné","acheter":"kupovat","vendre":"prodávat","payer":"platit","coûter":"stát",
+"qui":"kdo","quoi":"co","où":"kde","quand":"kdy","comment":"jak","pourquoi":"proč","combien":"kolik"
+},
+zh:{
+"voiture":"汽车","bus":"公共汽车","vélo":"自行车","moto":"摩托车","taxi":"出租车","camion":"卡车","train":"火车","avion":"飞机","bateau":"船","métro":"地铁",
+"médecin":"医生","professeur":"老师","cuisinier":"厨师","policier":"警察","serveur":"服务员","avocat":"律师","ingénieur":"工程师","artiste":"艺术家","boulanger":"面包师","agriculteur":"农民",
+"lundi":"星期一","mardi":"星期二","mercredi":"星期三","jeudi":"星期四","vendredi":"星期五","samedi":"星期六","dimanche":"星期日","printemps":"春天","été":"夏天","automne":"秋天","hiver":"冬天",
+"pluie":"雨","neige":"雪","vent":"风","nuage":"云","orage":"雷雨","chaud":"热","froid":"冷","il pleut":"下雨 了","il fait chaud":"天气 很 热",
+"heureux":"幸福","triste":"难过","facile":"容易","difficile":"难","jeune":"年轻","vieux":"老","propre":"干净","sale":"脏","plein":"满","vide":"空","cher":"贵","content":"高兴",
+"menu":"菜单","plat":"菜","entrée":"开胃菜","dessert":"甜点","addition":"账单","fourchette":"叉子","couteau":"刀","cuillère":"勺子","assiette":"盘子","verre":"玻璃杯","tasse":"杯子",
+"argent":"钱","prix":"价格","euro":"欧元","carte":"银行卡","monnaie":"零钱","acheter":"买","vendre":"卖","payer":"付钱","coûter":"花费",
+"qui":"谁","quoi":"什么","où":"哪里","quand":"什么时候","comment":"怎么","pourquoi":"为什么","combien":"多少"
+},
+ja:{
+"voiture":"車","bus":"バス","vélo":"自転車","moto":"バイク","taxi":"タクシー","camion":"トラック","train":"電車","avion":"飛行機","bateau":"船","métro":"地下鉄",
+"médecin":"医者","professeur":"先生","cuisinier":"料理人","policier":"警察官","serveur":"ウェイター","avocat":"弁護士","ingénieur":"エンジニア","artiste":"芸術家","boulanger":"パン職人","agriculteur":"農家",
+"lundi":"月曜日","mardi":"火曜日","mercredi":"水曜日","jeudi":"木曜日","vendredi":"金曜日","samedi":"土曜日","dimanche":"日曜日","printemps":"春","été":"夏","automne":"秋","hiver":"冬",
+"pluie":"雨","neige":"雪","vent":"風","nuage":"雲","orage":"雷雨","chaud":"暑い","froid":"寒い","il pleut":"雨 が 降っています","il fait chaud":"暑い です",
+"heureux":"幸せ","triste":"悲しい","facile":"簡単","difficile":"難しい","jeune":"若い","vieux":"古い","propre":"清潔","sale":"汚い","plein":"いっぱい","vide":"空っぽ","cher":"高い","content":"うれしい",
+"menu":"メニュー","plat":"料理","entrée":"前菜","dessert":"デザート","addition":"お会計","fourchette":"フォーク","couteau":"ナイフ","cuillère":"スプーン","assiette":"皿","verre":"グラス","tasse":"カップ",
+"argent":"お金","prix":"値段","euro":"ユーロ","carte":"カード","monnaie":"おつり","acheter":"買います","vendre":"売ります","payer":"払います","coûter":"かかります",
+"qui":"誰","quoi":"何","où":"どこ","quand":"いつ","comment":"どうやって","pourquoi":"なぜ","combien":"いくら"
+},
+ko:{
+"voiture":"자동차","bus":"버스","vélo":"자전거","moto":"오토바이","taxi":"택시","camion":"트럭","train":"기차","avion":"비행기","bateau":"배","métro":"지하철",
+"médecin":"의사","professeur":"선생님","cuisinier":"요리사","policier":"경찰관","serveur":"웨이터","avocat":"변호사","ingénieur":"엔지니어","artiste":"예술가","boulanger":"제빵사","agriculteur":"농부",
+"lundi":"월요일","mardi":"화요일","mercredi":"수요일","jeudi":"목요일","vendredi":"금요일","samedi":"토요일","dimanche":"일요일","printemps":"봄","été":"여름","automne":"가을","hiver":"겨울",
+"pluie":"비","neige":"눈","vent":"바람","nuage":"구름","orage":"뇌우","chaud":"덥다","froid":"춥다","il pleut":"비가 와요","il fait chaud":"날씨가 더워요",
+"heureux":"행복하다","triste":"슬프다","facile":"쉽다","difficile":"어렵다","jeune":"젊다","vieux":"늙다","propre":"깨끗하다","sale":"더럽다","plein":"가득하다","vide":"비다","cher":"비싸다","content":"기쁘다",
+"menu":"메뉴","plat":"요리","entrée":"애피타이저","dessert":"디저트","addition":"계산서","fourchette":"포크","couteau":"칼","cuillère":"숟가락","assiette":"접시","verre":"유리잔","tasse":"컵",
+"argent":"돈","prix":"가격","euro":"유로","carte":"카드","monnaie":"거스름돈","acheter":"사다","vendre":"팔다","payer":"지불하다","coûter":"돈이 들다",
+"qui":"누구","quoi":"무엇","où":"어디","quand":"언제","comment":"어떻게","pourquoi":"왜","combien":"얼마"
+},
+ar:{
+"voiture":"سيارة","bus":"حافلة","vélo":"دراجة","moto":"دراجة نارية","taxi":"سيارة أجرة","camion":"شاحنة","train":"قطار","avion":"طائرة","bateau":"سفينة","métro":"مترو",
+"médecin":"طبيب","professeur":"معلم","cuisinier":"طباخ","policier":"شرطي","serveur":"نادل","avocat":"محام","ingénieur":"مهندس","artiste":"فنان","boulanger":"خباز","agriculteur":"مزارع",
+"lundi":"الاثنين","mardi":"الثلاثاء","mercredi":"الأربعاء","jeudi":"الخميس","vendredi":"الجمعة","samedi":"السبت","dimanche":"الأحد","printemps":"الربيع","été":"الصيف","automne":"الخريف","hiver":"الشتاء",
+"pluie":"مطر","neige":"ثلج","vent":"ريح","nuage":"سحابة","orage":"عاصفة","chaud":"حار","froid":"بارد","il pleut":"إنها تمطر","il fait chaud":"الجو حار",
+"heureux":"سعيد","triste":"حزين","facile":"سهل","difficile":"صعب","jeune":"شاب","vieux":"عجوز","propre":"نظيف","sale":"متسخ","plein":"ممتلئ","vide":"فارغ","cher":"غالي","content":"مسرور",
+"menu":"قائمة الطعام","plat":"طبق","entrée":"مقبلات","dessert":"حلوى","addition":"الحساب","fourchette":"شوكة","couteau":"سكين","cuillère":"ملعقة","assiette":"صحن","verre":"كوب","tasse":"فنجان",
+"argent":"مال","prix":"سعر","euro":"يورو","carte":"بطاقة","monnaie":"فكة","acheter":"يشتري","vendre":"يبيع","payer":"يدفع","coûter":"يكلف",
+"qui":"من","quoi":"ماذا","où":"أين","quand":"متى","comment":"كيف","pourquoi":"لماذا","combien":"كم"
+}
+};
+LANGS2.forEach(function(l){ var c2=LEX2C[l]||{}; Object.keys(c2).forEach(function(k){ LEX2[l][k]=c2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
