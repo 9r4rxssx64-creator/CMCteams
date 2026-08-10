@@ -3516,6 +3516,106 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var i2=LEX2I[l]||{}; Object.keys(i2).forEach(function(k){ LEX2[l][k]=i2[k]; }); });
+/* ── Vague 10 nouvelles langues (v2.79) : unités 73-80 — émotions fines, météo fine,
+   cuisine du chef, le logement, le corps en action, au magasin, les études, le temps précis.
+   Anti-collisions vérifiées : pl bouillir=wrzeć (gotować=cuisiner), tempête=sztorm
+   (burza=orage), satisfait=usatysfakcjonowany (zadowolony=content), cours=zajęcia
+   (lekcja=leçon), échouer=oblać (przegrywać=perdre), siècle=stulecie (wiek=âge) ;
+   ru depuis=с тех пор (с=avec), satisfait=удовлетворённый (довольный=content),
+   étudier=изучать (учиться=apprendre), cours=занятие (урок=leçon), tempête=буря
+   (гроза=orage) ; uk grimper=лізти (підніматися=monter), depuis=відтоді (з=avec),
+   satisfait=вдоволений (задоволений=content), cours=заняття (урок=leçon) ;
+   cs bouillir=vřít (vařit=cuisiner), cours=přednáška (hodina=heure), satisfait=uspokojený
+   (spokojený=content), tempête=bouře (bouřka=orage) ; zh étudier=读书 (学习=apprendre),
+   tenir=握住 (拿=prendre), cours=课程 (课=leçon), grimper=爬 (上去=monter) ;
+   ja promotion=特売 (セール=soldes), grimper=登ります (上がります=monter), pendant=〜の間
+   (間=entre) ; ko grimper=오르다 (올라가다=monter), détendu=느긋한 ; ar tempête=عاصفة شديدة
+   (عاصفة=orage), tiroir=دُرج (درج=escalier), attraper=يمسك / tenir=يحمل.
+   Homographes réels assumés : pl południe=sud+midi, północ=nord+minuit, uk північ=nord+minuit (mots slaves
+   uniques, pas d'alternative) ; ar يدفع=payer ET pousser (dafaʿa, seul verbe naturel). */
+var LEX2J = {
+pl:{
+"nerveux":"zdenerwowany","déçu":"rozczarowany","jaloux":"zazdrosny","stressé":"zestresowany","détendu":"zrelaksowany","ému":"wzruszony","satisfait":"usatysfakcjonowany","reconnaissant":"wdzięczny",
+"brouillard":"mgła","éclair":"błyskawica","tonnerre":"grzmot","arc-en-ciel":"tęcza","tempête":"sztorm","quel temps fait-il":"jaka jest pogoda","gel":"mróz","degré":"stopień","prévisions":"prognoza","humide":"wilgotny","sécheresse":"susza",
+"bouillir":"wrzeć","frire":"smażyć","griller":"grillować","mélanger":"mieszać","couper":"kroić","verser":"nalewać","casserole":"garnek","poêle":"patelnia","plateau":"taca","nappe":"obrus","micro-ondes":"mikrofalówka",
+"appartement":"mieszkanie","immeuble":"blok","rez-de-chaussée":"parter","balcon":"balkon","terrasse":"taras","cheminée":"kominek","meuble":"mebel","canapé":"sofa","armoire":"szafa","tiroir":"szuflada","rideau":"zasłona","tapis":"dywan","déménager":"przeprowadzać się","nous déménageons demain":"jutro się przeprowadzamy",
+"pousser":"pchać","tirer":"ciągnąć","lancer":"rzucać","attraper":"łapać","tenir":"trzymać","soulever":"podnosić","plier":"zginać","frapper":"uderzać","glisser":"ślizgać się","grimper":"wspinać się",
+"rayon":"dział","vitrine":"witryna","marque":"marka","qualité":"jakość","choix":"wybór","rembourser":"zwracać pieniądze","échanger":"wymieniać","promotion":"promocja","comparer":"porównywać","choisir":"wybierać",
+"université":"uniwersytet","étudiant":"student","cours":"zajęcia","diplôme":"dyplom","échouer":"oblać","étudier":"studiować","j'étudie à l'université":"studiuję na uniwersytecie","matière":"przedmiot","mathématiques":"matematyka","sciences":"nauka","géographie":"geografia","connaissance":"wiedza",
+"seconde":"sekunda","instant":"chwila","siècle":"stulecie","époque":"epoka","midi":"południe","minuit":"północ","date":"data","calendrier":"kalendarz","horaire":"harmonogram","durée":"czas trwania","pendant":"podczas","depuis":"od"
+},
+ru:{
+"nerveux":"нервный","déçu":"разочарованный","jaloux":"ревнивый","stressé":"напряжённый","détendu":"расслабленный","ému":"растроганный","satisfait":"удовлетворённый","reconnaissant":"благодарный",
+"brouillard":"туман","éclair":"молния","tonnerre":"гром","arc-en-ciel":"радуга","tempête":"буря","quel temps fait-il":"какая погода","gel":"мороз","degré":"градус","prévisions":"прогноз","humide":"влажный","sécheresse":"засуха",
+"bouillir":"кипятить","frire":"жарить","griller":"жарить на гриле","mélanger":"смешивать","couper":"резать","verser":"наливать","casserole":"кастрюля","poêle":"сковорода","plateau":"поднос","nappe":"скатерть","micro-ondes":"микроволновка",
+"appartement":"квартира","immeuble":"здание","rez-de-chaussée":"первый этаж","balcon":"балкон","terrasse":"терраса","cheminée":"камин","meuble":"мебель","canapé":"диван","armoire":"шкаф","tiroir":"ящик","rideau":"штора","tapis":"ковёр","déménager":"переезжать","nous déménageons demain":"мы переезжаем завтра",
+"pousser":"толкать","tirer":"тянуть","lancer":"бросать","attraper":"ловить","tenir":"держать","soulever":"поднимать","plier":"сгибать","frapper":"ударять","glisser":"скользить","grimper":"взбираться",
+"rayon":"отдел","vitrine":"витрина","marque":"бренд","qualité":"качество","choix":"выбор","rembourser":"возвращать деньги","échanger":"обменивать","promotion":"акция","comparer":"сравнивать","choisir":"выбирать",
+"université":"университет","étudiant":"студент","cours":"занятие","diplôme":"диплом","échouer":"провалиться","étudier":"изучать","j'étudie à l'université":"я учусь в университете","matière":"предмет","mathématiques":"математика","sciences":"наука","géographie":"география","connaissance":"знание",
+"seconde":"секунда","instant":"момент","siècle":"век","époque":"эпоха","midi":"полдень","minuit":"полночь","date":"дата","calendrier":"календарь","horaire":"расписание","durée":"продолжительность","pendant":"во время","depuis":"с тех пор"
+},
+uk:{
+"nerveux":"знервований","déçu":"розчарований","jaloux":"ревнивий","stressé":"напружений","détendu":"розслаблений","ému":"зворушений","satisfait":"вдоволений","reconnaissant":"вдячний",
+"brouillard":"туман","éclair":"блискавка","tonnerre":"грім","arc-en-ciel":"веселка","tempête":"буря","quel temps fait-il":"яка погода","gel":"мороз","degré":"градус","prévisions":"прогноз","humide":"вологий","sécheresse":"посуха",
+"bouillir":"кип'ятити","frire":"смажити","griller":"смажити на грилі","mélanger":"змішувати","couper":"різати","verser":"наливати","casserole":"каструля","poêle":"сковорідка","plateau":"таця","nappe":"скатертина","micro-ondes":"мікрохвильовка",
+"appartement":"квартира","immeuble":"багатоповерхівка","rez-de-chaussée":"перший поверх","balcon":"балкон","terrasse":"тераса","cheminée":"камін","meuble":"меблі","canapé":"диван","armoire":"шафа","tiroir":"шухляда","rideau":"фіранка","tapis":"килим","déménager":"переїжджати","nous déménageons demain":"ми переїжджаємо завтра",
+"pousser":"штовхати","tirer":"тягнути","lancer":"кидати","attraper":"ловити","tenir":"тримати","soulever":"піднімати","plier":"згинати","frapper":"вдаряти","glisser":"ковзати","grimper":"лізти",
+"rayon":"відділ","vitrine":"вітрина","marque":"бренд","qualité":"якість","choix":"вибір","rembourser":"повертати гроші","échanger":"обмінювати","promotion":"акція","comparer":"порівнювати","choisir":"вибирати",
+"université":"університет","étudiant":"студент","cours":"заняття","diplôme":"диплом","échouer":"провалитися","étudier":"навчатися","j'étudie à l'université":"я навчаюся в університеті","matière":"предмет","mathématiques":"математика","sciences":"наука","géographie":"географія","connaissance":"знання",
+"seconde":"секунда","instant":"мить","siècle":"століття","époque":"епоха","midi":"полудень","minuit":"північ","date":"дата","calendrier":"календар","horaire":"розклад","durée":"тривалість","pendant":"під час","depuis":"відтоді"
+},
+cs:{
+"nerveux":"nervózní","déçu":"zklamaný","jaloux":"žárlivý","stressé":"vystresovaný","détendu":"uvolněný","ému":"dojatý","satisfait":"uspokojený","reconnaissant":"vděčný",
+"brouillard":"mlha","éclair":"blesk","tonnerre":"hrom","arc-en-ciel":"duha","tempête":"bouře","quel temps fait-il":"jaké je počasí","gel":"mráz","degré":"stupeň","prévisions":"předpověď","humide":"vlhký","sécheresse":"sucho",
+"bouillir":"vřít","frire":"smažit","griller":"grilovat","mélanger":"míchat","couper":"krájet","verser":"nalévat","casserole":"hrnec","poêle":"pánev","plateau":"podnos","nappe":"ubrus","micro-ondes":"mikrovlnka",
+"appartement":"byt","immeuble":"bytový dům","rez-de-chaussée":"přízemí","balcon":"balkón","terrasse":"terasa","cheminée":"krb","meuble":"nábytek","canapé":"pohovka","armoire":"skříň","tiroir":"šuplík","rideau":"závěs","tapis":"koberec","déménager":"stěhovat se","nous déménageons demain":"zítra se stěhujeme",
+"pousser":"tlačit","tirer":"táhnout","lancer":"házet","attraper":"chytat","tenir":"držet","soulever":"zvedat","plier":"ohýbat","frapper":"udeřit","glisser":"klouzat","grimper":"šplhat",
+"rayon":"oddělení","vitrine":"výloha","marque":"značka","qualité":"kvalita","choix":"výběr","rembourser":"vracet peníze","échanger":"vyměňovat","promotion":"akce","comparer":"srovnávat","choisir":"vybírat",
+"université":"univerzita","étudiant":"student","cours":"přednáška","diplôme":"diplom","échouer":"neuspět","étudier":"studovat","j'étudie à l'université":"studuji na univerzitě","matière":"předmět","mathématiques":"matematika","sciences":"věda","géographie":"zeměpis","connaissance":"znalost",
+"seconde":"sekunda","instant":"okamžik","siècle":"století","époque":"epocha","midi":"poledne","minuit":"půlnoc","date":"datum","calendrier":"kalendář","horaire":"rozvrh","durée":"trvání","pendant":"během","depuis":"od té doby"
+},
+zh:{
+"nerveux":"紧张的","déçu":"失望的","jaloux":"嫉妒的","stressé":"压力大的","détendu":"放松的","ému":"感动的","satisfait":"满意的","reconnaissant":"感激的",
+"brouillard":"雾","éclair":"闪电","tonnerre":"雷","arc-en-ciel":"彩虹","tempête":"暴风雨","quel temps fait-il":"天气 怎么样","gel":"霜冻","degré":"度","prévisions":"天气预报","humide":"潮湿的","sécheresse":"干旱",
+"bouillir":"煮","frire":"炸","griller":"烤","mélanger":"搅拌","couper":"切","verser":"倒","casserole":"锅","poêle":"平底锅","plateau":"托盘","nappe":"桌布","micro-ondes":"微波炉",
+"appartement":"公寓","immeuble":"大楼","rez-de-chaussée":"一楼","balcon":"阳台","terrasse":"露台","cheminée":"壁炉","meuble":"家具","canapé":"沙发","armoire":"衣柜","tiroir":"抽屉","rideau":"窗帘","tapis":"地毯","déménager":"搬家","nous déménageons demain":"我们 明天 搬家",
+"pousser":"推","tirer":"拉","lancer":"扔","attraper":"抓住","tenir":"握住","soulever":"举起","plier":"弯曲","frapper":"打","glisser":"滑","grimper":"爬",
+"rayon":"货架","vitrine":"橱窗","marque":"品牌","qualité":"质量","choix":"选择","rembourser":"退款","échanger":"交换","promotion":"促销","comparer":"比较","choisir":"选",
+"université":"大学","étudiant":"大学生","cours":"课程","diplôme":"文凭","échouer":"不及格","étudier":"念书","j'étudie à l'université":"我 在 大学 念书","matière":"科目","mathématiques":"数学","sciences":"科学","géographie":"地理","connaissance":"知识",
+"seconde":"秒","instant":"瞬间","siècle":"世纪","époque":"时代","midi":"中午","minuit":"午夜","date":"日期","calendrier":"日历","horaire":"时刻表","durée":"时长","pendant":"期间","depuis":"自从"
+},
+ja:{
+"nerveux":"緊張した","déçu":"がっかりした","jaloux":"嫉妬深い","stressé":"ストレスを感じた","détendu":"リラックスした","ému":"感動した","satisfait":"満足した","reconnaissant":"感謝している",
+"brouillard":"霧","éclair":"稲妻","tonnerre":"雷","arc-en-ciel":"虹","tempête":"嵐","quel temps fait-il":"天気 は どう です か","gel":"霜","degré":"度","prévisions":"天気予報","humide":"湿った","sécheresse":"干ばつ",
+"bouillir":"茹でます","frire":"揚げます","griller":"焼きます","mélanger":"混ぜます","couper":"切ります","verser":"注ぎます","casserole":"鍋","poêle":"フライパン","plateau":"トレイ","nappe":"テーブルクロス","micro-ondes":"電子レンジ",
+"appartement":"アパート","immeuble":"ビル","rez-de-chaussée":"一階","balcon":"バルコニー","terrasse":"テラス","cheminée":"暖炉","meuble":"家具","canapé":"ソファ","armoire":"タンス","tiroir":"引き出し","rideau":"カーテン","tapis":"カーペット","déménager":"引っ越します","nous déménageons demain":"私たち は 明日 引っ越します",
+"pousser":"押します","tirer":"引きます","lancer":"投げます","attraper":"捕まえます","tenir":"持ちます","soulever":"持ち上げます","plier":"曲げます","frapper":"叩きます","glisser":"滑ります","grimper":"登ります",
+"rayon":"売り場","vitrine":"ショーウィンドウ","marque":"ブランド","qualité":"品質","choix":"選択","rembourser":"返金します","échanger":"交換します","promotion":"特売","comparer":"比べます","choisir":"選びます",
+"université":"大学","étudiant":"学生","cours":"講義","diplôme":"卒業証書","échouer":"失敗します","étudier":"勉強します","j'étudie à l'université":"私 は 大学 で 勉強します","matière":"科目","mathématiques":"数学","sciences":"科学","géographie":"地理","connaissance":"知識",
+"seconde":"秒","instant":"瞬間","siècle":"世紀","époque":"時代","midi":"正午","minuit":"真夜中","date":"日付","calendrier":"カレンダー","horaire":"時刻表","durée":"期間","pendant":"〜の間","depuis":"から"
+},
+ko:{
+"nerveux":"긴장한","déçu":"실망한","jaloux":"질투하는","stressé":"스트레스받은","détendu":"느긋한","ému":"감동한","satisfait":"만족한","reconnaissant":"고마워하는",
+"brouillard":"안개","éclair":"번개","tonnerre":"천둥","arc-en-ciel":"무지개","tempête":"폭풍","quel temps fait-il":"날씨가 어때요","gel":"서리","degré":"도","prévisions":"일기예보","humide":"습한","sécheresse":"가뭄",
+"bouillir":"끓이다","frire":"튀기다","griller":"굽다","mélanger":"섞다","couper":"자르다","verser":"붓다","casserole":"냄비","poêle":"프라이팬","plateau":"쟁반","nappe":"식탁보","micro-ondes":"전자레인지",
+"appartement":"아파트","immeuble":"건물","rez-de-chaussée":"1층","balcon":"발코니","terrasse":"테라스","cheminée":"벽난로","meuble":"가구","canapé":"소파","armoire":"옷장","tiroir":"서랍","rideau":"커튼","tapis":"카펫","déménager":"이사하다","nous déménageons demain":"우리는 내일 이사해요",
+"pousser":"밀다","tirer":"당기다","lancer":"던지다","attraper":"잡다","tenir":"쥐다","soulever":"들어 올리다","plier":"구부리다","frapper":"치다","glisser":"미끄러지다","grimper":"오르다",
+"rayon":"코너","vitrine":"쇼윈도","marque":"브랜드","qualité":"품질","choix":"선택","rembourser":"환불하다","échanger":"교환하다","promotion":"프로모션","comparer":"비교하다","choisir":"고르다",
+"université":"대학교","étudiant":"대학생","cours":"강의","diplôme":"졸업장","échouer":"실패하다","étudier":"공부하다","j'étudie à l'université":"저는 대학교에서 공부해요","matière":"과목","mathématiques":"수학","sciences":"과학","géographie":"지리","connaissance":"지식",
+"seconde":"초","instant":"순간","siècle":"세기","époque":"시대","midi":"정오","minuit":"자정","date":"날짜","calendrier":"달력","horaire":"시간표","durée":"기간","pendant":"동안","depuis":"부터"
+},
+ar:{
+"nerveux":"متوتر","déçu":"خائب الأمل","jaloux":"غيور","stressé":"مضغوط","détendu":"مسترخٍ","ému":"متأثر","satisfait":"راضٍ","reconnaissant":"ممتن",
+"brouillard":"ضباب","éclair":"برق","tonnerre":"رعد","arc-en-ciel":"قوس قزح","tempête":"عاصفة شديدة","quel temps fait-il":"كيف الطقس","gel":"صقيع","degré":"درجة","prévisions":"توقعات الطقس","humide":"رطب","sécheresse":"جفاف",
+"bouillir":"يغلي","frire":"يقلي","griller":"يشوي","mélanger":"يخلط","couper":"يقطع","verser":"يسكب","casserole":"قدر","poêle":"مقلاة","plateau":"صينية","nappe":"مفرش طاولة","micro-ondes":"ميكروويف",
+"appartement":"شقة","immeuble":"مبنى سكني","rez-de-chaussée":"الطابق الأرضي","balcon":"شرفة","terrasse":"تراس","cheminée":"مدفأة","meuble":"أثاث","canapé":"أريكة","armoire":"خزانة","tiroir":"دُرج","rideau":"ستارة","tapis":"سجادة","déménager":"ينتقل","nous déménageons demain":"سننتقل غدًا",
+"pousser":"يدفع","tirer":"يسحب","lancer":"يرمي","attraper":"يلتقط","tenir":"يمسك","soulever":"يرفع","plier":"يثني","frapper":"يضرب","glisser":"ينزلق","grimper":"يتسلق",
+"rayon":"قسم","vitrine":"واجهة المتجر","marque":"علامة تجارية","qualité":"جودة","choix":"اختيار","rembourser":"يرد المال","échanger":"يستبدل","promotion":"عرض","comparer":"يقارن","choisir":"يختار",
+"université":"جامعة","étudiant":"طالب","cours":"محاضرة","diplôme":"شهادة","échouer":"يفشل","étudier":"يدرس","j'étudie à l'université":"أدرس في الجامعة","matière":"مادة","mathématiques":"رياضيات","sciences":"علوم","géographie":"جغرافيا","connaissance":"معرفة",
+"seconde":"ثانية","instant":"لحظة","siècle":"قرن","époque":"عصر","midi":"الظهيرة","minuit":"منتصف الليل","date":"تاريخ","calendrier":"تقويم","horaire":"جدول","durée":"مدة","pendant":"خلال","depuis":"منذ"
+}
+};
+LANGS2.forEach(function(l){ var j2=LEX2J[l]||{}; Object.keys(j2).forEach(function(k){ LEX2[l][k]=j2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
