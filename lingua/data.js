@@ -4833,6 +4833,61 @@ var LEX2WRK = {
 };
 LANGS2.forEach(function(l){ var w2=LEX2WRK[l]||{}; Object.keys(w2).forEach(function(k){ LEX2[l][k]=w2[k]; }); });
 
+/* ===== Vague « VIVRE ENSEMBLE » : amitié & liens, vie de quartier, débat & ressentis ===== */
+var CURRICULUM_F = [
+  {t:"Amitié & liens 🤝", c:"#f59e0b", L:[
+    {t:"Les liens", w:["complicité","politesse","hospitalité","tendresse"]},
+    {t:"Les brouilles", w:["se disputer","se réconcilier","malentendu","rancune","trahison"]} ]},
+  {t:"Vivre ensemble 🏘️", c:"#10b981", L:[
+    {t:"Le quartier", w:["voisinage","emménager","corvée","désordre"]},
+    {t:"Les valeurs", w:["solidarité","générosité","égoïsme","réconciliation"]} ]},
+  {t:"Discuter & convaincre 🗣️", c:"#6366f1", L:[
+    {t:"Le débat", w:["point de vue","désaccord","contredire","démontrer"]},
+    {t:"Ressentis profonds", w:["déception","regret","ennui","bouleversé"]} ]}
+];
+CURRICULUM_F.forEach(function(u){ CURRICULUM.push(u); });
+
+var NEWV19 = {
+  "complicité":{"en":"closeness","it":"complicità","es":"complicidad","de":"Verbundenheit","pt":"cumplicidade","nl":"verbondenheid"},
+  "politesse":{"en":"politeness","it":"cortesia","es":"cortesía","de":"Höflichkeit","pt":"cortesia","nl":"beleefdheid"},
+  "hospitalité":{"en":"hospitality","it":"ospitalità","es":"hospitalidad","de":"Gastfreundschaft","pt":"hospitalidade","nl":"gastvrijheid"},
+  "tendresse":{"en":"tenderness","it":"tenerezza","es":"ternura","de":"Zärtlichkeit","pt":"ternura","nl":"tederheid"},
+  "se disputer":{"en":"to argue","it":"litigare","es":"discutir","de":"sich streiten","pt":"discutir","nl":"ruzie maken"},
+  "se réconcilier":{"en":"to make up","it":"fare pace","es":"reconciliarse","de":"sich versöhnen","pt":"reconciliar-se","nl":"zich verzoenen"},
+  "malentendu":{"en":"misunderstanding","it":"malinteso","es":"malentendido","de":"Missverständnis","pt":"mal-entendido","nl":"misverstand"},
+  "rancune":{"en":"grudge","it":"rancore","es":"rencor","de":"Groll","pt":"rancor","nl":"wrok"},
+  "trahison":{"en":"betrayal","it":"tradimento","es":"traición","de":"Verrat","pt":"traição","nl":"verraad"},
+  "voisinage":{"en":"neighbours","it":"vicinato","es":"vecindario","de":"Nachbarschaft","pt":"vizinhança","nl":"buurt"},
+  "emménager":{"en":"to move in","it":"trasferirsi","es":"instalarse","de":"einziehen","pt":"instalar-se","nl":"intrekken"},
+  "corvée":{"en":"chore","it":"faccenda","es":"tarea pesada","de":"lästige Pflicht","pt":"tarefa chata","nl":"karwei"},
+  "désordre":{"en":"mess","it":"disordine","es":"desorden","de":"Unordnung","pt":"desordem","nl":"rommel"},
+  "solidarité":{"en":"solidarity","it":"solidarietà","es":"solidaridad","de":"Solidarität","pt":"solidariedade","nl":"solidariteit"},
+  "générosité":{"en":"generosity","it":"generosità","es":"generosidad","de":"Großzügigkeit","pt":"generosidade","nl":"vrijgevigheid"},
+  "égoïsme":{"en":"selfishness","it":"egoismo","es":"egoísmo","de":"Egoismus","pt":"egoísmo","nl":"egoïsme"},
+  "réconciliation":{"en":"reconciliation","it":"riconciliazione","es":"reconciliación","de":"Versöhnung","pt":"reconciliação","nl":"verzoening"},
+  "point de vue":{"en":"point of view","it":"punto di vista","es":"punto de vista","de":"Standpunkt","pt":"ponto de vista","nl":"standpunt"},
+  "désaccord":{"en":"disagreement","it":"disaccordo","es":"desacuerdo","de":"Meinungsverschiedenheit","pt":"desacordo","nl":"onenigheid"},
+  "contredire":{"en":"to contradict","it":"contraddire","es":"contradecir","de":"widersprechen","pt":"contradizer","nl":"tegenspreken"},
+  "démontrer":{"en":"to demonstrate","it":"dimostrare","es":"demostrar","de":"nachweisen","pt":"demonstrar","nl":"aantonen"},
+  "déception":{"en":"disappointment","it":"delusione","es":"decepción","de":"Enttäuschung","pt":"deceção","nl":"teleurstelling"},
+  "regret":{"en":"regret","it":"rimpianto","es":"arrepentimiento","de":"Bedauern","pt":"arrependimento","nl":"spijt"},
+  "ennui":{"en":"boredom","it":"noia","es":"aburrimiento","de":"Langeweile","pt":"tédio","nl":"verveling"},
+  "bouleversé":{"en":"shaken","it":"sconvolto","es":"conmocionado","de":"erschüttert","pt":"abalado","nl":"aangeslagen"}
+};
+LANGS.forEach(function(l){ Object.keys(NEWV19).forEach(function(k){ if(NEWV19[k][l]) LEX[l][k]=NEWV19[k][l]; }); });
+
+var LEX2VIV = {
+  pl:{"complicité":"zażyłość","politesse":"uprzejmość","hospitalité":"gościnność","tendresse":"czułość","se disputer":"kłócić się","se réconcilier":"pogodzić się","malentendu":"nieporozumienie","rancune":"uraza","trahison":"zdrada","voisinage":"sąsiedztwo","emménager":"wprowadzić się","corvée":"przykry obowiązek","désordre":"bałagan","solidarité":"solidarność","générosité":"hojność","égoïsme":"egoizm","réconciliation":"pojednanie","point de vue":"punkt widzenia","désaccord":"niezgoda","contredire":"zaprzeczać","démontrer":"wykazać","déception":"rozczarowanie","regret":"żal","ennui":"nuda","bouleversé":"wstrząśnięty"},
+  ru:{"complicité":"близость","politesse":"вежливость","hospitalité":"гостеприимство","tendresse":"нежность","se disputer":"ссориться","se réconcilier":"мириться","malentendu":"недоразумение","rancune":"обида","trahison":"предательство","voisinage":"соседство","emménager":"въехать","corvée":"нудная работа","désordre":"беспорядок","solidarité":"солидарность","générosité":"щедрость","égoïsme":"эгоизм","réconciliation":"примирение","point de vue":"точка зрения","désaccord":"разногласие","contredire":"противоречить","démontrer":"обосновывать","déception":"разочарование","regret":"сожаление","ennui":"скука","bouleversé":"потрясённый"},
+  uk:{"complicité":"близькість","politesse":"ввічливість","hospitalité":"гостинність","tendresse":"ніжність","se disputer":"сваритися","se réconcilier":"миритися","malentendu":"непорозуміння","rancune":"образа","trahison":"зрада","voisinage":"сусідство","emménager":"в'їхати","corvée":"нудна робота","désordre":"безлад","solidarité":"солідарність","générosité":"щедрість","égoïsme":"егоїзм","réconciliation":"примирення","point de vue":"точка зору","désaccord":"незгода","contredire":"суперечити","démontrer":"обґрунтовувати","déception":"розчарування","regret":"жаль","ennui":"нудьга","bouleversé":"приголомшений"},
+  cs:{"complicité":"blízkost","politesse":"zdvořilost","hospitalité":"pohostinnost","tendresse":"něha","se disputer":"hádat se","se réconcilier":"usmířit se","malentendu":"nedorozumění","rancune":"zášť","trahison":"zrada","voisinage":"sousedství","emménager":"nastěhovat se","corvée":"otravná povinnost","désordre":"nepořádek","solidarité":"solidarita","générosité":"štědrost","égoïsme":"sobectví","réconciliation":"usmíření","point de vue":"úhel pohledu","désaccord":"neshoda","contredire":"odporovat","démontrer":"prokázat","déception":"zklamání","regret":"lítost","ennui":"nuda","bouleversé":"otřesený"},
+  zh:{"complicité":"默契","politesse":"礼貌","hospitalité":"好客","tendresse":"温柔","se disputer":"吵架","se réconcilier":"和好","malentendu":"误会","rancune":"怨恨","trahison":"背叛","voisinage":"邻里","emménager":"搬进","corvée":"苦差事","désordre":"杂乱","solidarité":"团结","générosité":"慷慨","égoïsme":"自私","réconciliation":"和解","point de vue":"观点","désaccord":"分歧","contredire":"反驳","démontrer":"论证","déception":"失望","regret":"遗憾","ennui":"无聊","bouleversé":"震撼"},
+  ja:{"complicité":"絆","politesse":"礼儀","hospitalité":"おもてなし","tendresse":"優しさ","se disputer":"けんかする","se réconcilier":"仲直りする","malentendu":"誤解","rancune":"恨み","trahison":"裏切り","voisinage":"近所","emménager":"入居する","corvée":"雑用","désordre":"散らかり","solidarité":"連帯","générosité":"寛大さ","égoïsme":"利己主義","réconciliation":"仲直り","point de vue":"視点","désaccord":"不一致","contredire":"反論する","démontrer":"論証する","déception":"失望","regret":"後悔","ennui":"退屈","bouleversé":"動揺した"},
+  ko:{"complicité":"유대감","politesse":"예의","hospitalité":"환대","tendresse":"다정함","se disputer":"다투다","se réconcilier":"화해하다","malentendu":"오해","rancune":"원한","trahison":"배신","voisinage":"이웃들","emménager":"입주하다","corvée":"허드렛일","désordre":"엉망","solidarité":"연대","générosité":"관대함","égoïsme":"이기심","réconciliation":"화해","point de vue":"관점","désaccord":"의견 차이","contredire":"반박하다","démontrer":"논증하다","déception":"실망감","regret":"후회","ennui":"지루함","bouleversé":"동요한"},
+  ar:{"complicité":"انسجام","politesse":"تهذيب","hospitalité":"كرم الضيافة","tendresse":"حنان","se disputer":"يتشاجر","se réconcilier":"يتصالح","malentendu":"سوء فهم","rancune":"ضغينة","trahison":"خيانة","voisinage":"الجوار","emménager":"ينتقل للسكن","corvée":"مهمة مملة","désordre":"فوضى","solidarité":"تضامن","générosité":"كرم","égoïsme":"أنانية","réconciliation":"مصالحة","point de vue":"وجهة نظر","désaccord":"عدم اتفاق","contredire":"يناقض","démontrer":"يبرهن","déception":"خيبة أمل","regret":"أسف","ennui":"ملل","bouleversé":"متأثر بشدة"}
+};
+LANGS2.forEach(function(l){ var w2=LEX2VIV[l]||{}; Object.keys(w2).forEach(function(k){ LEX2[l][k]=w2[k]; }); });
+
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
