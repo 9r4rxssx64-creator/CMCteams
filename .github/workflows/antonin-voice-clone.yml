@@ -1,0 +1,86 @@
+name: Antonin — clonage de voix (Replicate)
+
+# Prouve que la voix d'Antonin peut être clonée : convertit son enregistrement,
+# l'envoie à Replicate (XTTS-v2, zéro-shot cross-lingue) et génère une phrase test.
+# Le fichier audio produit est déposé en artifact pour écoute + vérification.
+# Clé : AX_REPLICATE_KEY (secret déjà présent, utilisé par d'autres workers).
+
+on:
+  workflow_dispatch:
+    inputs:
+      texte:
+        description: "Phrase à faire dire à Antonin"
+        default: "Adiou, c'est Antonin ! Boudu, quelle belle journée pour apprendre les langues, con."
+        required: false
+      langue:
+        description: "Langue (fr, en, es, it, pl, ...)"
+        default: "fr"
+        required: false
+
+jobs:
+  clone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Convertir l'enregistrement d'Antonin (m4a → wav 24k mono)
+        run: |
+          set -e
+          ffmpeg -y -i lingua/voices/antonin.m4a -ar 24000 -ac 1 antonin.wav
+          ls -la antonin.wav
+
+      - name: Cloner la voix + générer la phrase test
+        env:
+          REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
+          TEXTE: ${{ github.event.inputs.texte }}
+          LANGUE: ${{ github.event.inputs.langue }}
+        run: |
+          set -e
+          if [ -z "${REPLICATE_KEY:-}" ]; then echo "::error::AX_REPLICATE_KEY absente"; exit 1; fi
+
+          echo "== 1) Upload de la voix de référence vers Replicate =="
+          UP=$(curl -sS -X POST https://api.replicate.com/v1/files \
+                 -H "Authorization: Bearer $REPLICATE_KEY" \
+                 -F "content=@antonin.wav;type=audio/wav")
+          REF=$(echo "$UP" | jq -r '.urls.get // empty')
+          if [ -z "$REF" ]; then
+            echo "::error::Upload échoué. Réponse brute :"; echo "$UP"; exit 1
+          fi
+          echo "Référence: $REF"
+
+          echo "== 2) Clonage XTTS-v2 (zéro-shot) — Prefer: wait =="
+          BODY=$(jq -n --arg t "$TEXTE" --arg s "$REF" --arg l "$LANGUE" \
+                  '{input:{text:$t, speaker:$s, language:$l, cleanup_voice:false}}')
+          RES=$(curl -sS -X POST https://api.replicate.com/v1/models/lucataco/xtts-v2/predictions \
+                  -H "Authorization: Bearer $REPLICATE_KEY" \
+                  -H "Content-Type: application/json" \
+                  -H "Prefer: wait" \
+                  -d "$BODY")
+          echo "$RES" > result.json
+          STATUS=$(echo "$RES" | jq -r '.status // empty')
+          OUT=$(echo "$RES" | jq -r 'if (.output|type)=="string" then .output elif (.output|type)=="array" then .output[0] else empty end')
+          echo "Statut: $STATUS"
+          if [ "$STATUS" != "succeeded" ] || [ -z "$OUT" ]; then
+            echo "::error::Clonage NON abouti (statut=$STATUS). Détail (cause exacte) :"
+            echo "$RES" | jq -r '.error // .detail // "voir result.json"'
+            echo "----- réponse brute -----"; echo "$RES"
+            exit 1
+          fi
+
+          echo "== 3) Récupération de l'audio d'Antonin =="
+          curl -sS -L "$OUT" -o antonin-test.wav
+          ls -la antonin-test.wav
+          echo "✅ VOIX D'ANTONIN CLONÉE — phrase générée : « $TEXTE »"
+
+      - name: Déposer l'audio d'Antonin (artifact à écouter)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: antonin-voix-test
+          path: |
+            antonin-test.wav
+            result.json
+          if-no-files-found: warn
