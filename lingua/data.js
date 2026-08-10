@@ -2501,6 +2501,62 @@ var NEWV11 = {
 CURRICULUM_O.forEach(function(u){ CURRICULUM.push(u); });
 LANGS.forEach(function(l){ Object.keys(NEWV11).forEach(function(k){ if(NEWV11[k][l]) LEX[l][k]=NEWV11[k][l]; }); });
 
+/* --- Vague 11 (v2.69, cap B2) : citoyenneté & travail + nuances (fréquence, rythme, caractère, connecteurs) --- */
+var CURRICULUM_M = [
+  {t:"Citoyens 🏛️", c:"#0ea5e9", L:[
+    {t:"La nation", w:["nation","peuple","société","droit","devoir","voter"]},
+    {t:"La justice", w:["justice","contrat","signer","remboursement"]},
+    {t:"Au travail", w:["entretien","délai","effort","progrès","résultat"]} ]},
+  {t:"Nuances 🎚️", c:"#a855f7", L:[
+    {t:"La fréquence", w:["quotidien","hebdomadaire","mensuel","annuel"]},
+    {t:"Le rythme", w:["immédiat","soudain","progressif","définitif"]},
+    {t:"Qualités", w:["efficace","inutile","évident","compliqué","précis","vague"]},
+    {t:"Caractères", w:["sincère","avare","impoli","imprudent","lâche","fou"]},
+    {t:"Pour argumenter", w:["en effet","autrement dit","dorénavant"]} ]}
+];
+var NEWV12 = {
+"nation":{en:"nation",it:"nazione",es:"nación",de:"Nation",pt:"nação",nl:"natie"},
+"peuple":{en:"people",it:"popolo",es:"pueblo",de:"Volk",pt:"povo",nl:"volk"},
+"société":{en:"society",it:"società",es:"sociedad",de:"Gesellschaft",pt:"sociedade",nl:"samenleving"},
+"droit":{en:"right",it:"diritto",es:"derecho",de:"Recht",pt:"direito",nl:"recht"},
+"devoir":{en:"duty",it:"dovere",es:"deber",de:"Pflicht",pt:"dever",nl:"plicht"},
+"voter":{en:"vote",it:"votare",es:"votar",de:"wählen",pt:"votar",nl:"stemmen"},
+"justice":{en:"justice",it:"giustizia",es:"justicia",de:"Gerechtigkeit",pt:"justiça",nl:"rechtvaardigheid"},
+"contrat":{en:"contract",it:"contratto",es:"contrato",de:"Vertrag",pt:"contrato",nl:"contract"},
+"signer":{en:"sign",it:"firmare",es:"firmar",de:"unterschreiben",pt:"assinar",nl:"ondertekenen"},
+"remboursement":{en:"refund",it:"rimborso",es:"reembolso",de:"Rückerstattung",pt:"reembolso",nl:"terugbetaling"},
+"entretien":{en:"interview",it:"colloquio",es:"entrevista",de:"Vorstellungsgespräch",pt:"entrevista",nl:"sollicitatiegesprek"},
+"délai":{en:"deadline",it:"scadenza",es:"plazo",de:"Frist",pt:"prazo",nl:"termijn"},
+"effort":{en:"effort",it:"sforzo",es:"esfuerzo",de:"Anstrengung",pt:"esforço",nl:"inspanning"},
+"progrès":{en:"progress",it:"progresso",es:"progreso",de:"Fortschritt",pt:"progresso",nl:"vooruitgang"},
+"résultat":{en:"result",it:"risultato",es:"resultado",de:"Ergebnis",pt:"resultado",nl:"resultaat"},
+"quotidien":{en:"daily",it:"quotidiano",es:"diario",de:"täglich",pt:"diário",nl:"dagelijks"},
+"hebdomadaire":{en:"weekly",it:"settimanale",es:"semanal",de:"wöchentlich",pt:"semanal",nl:"wekelijks"},
+"mensuel":{en:"monthly",it:"mensile",es:"mensual",de:"monatlich",pt:"mensal",nl:"maandelijks"},
+"annuel":{en:"yearly",it:"annuale",es:"anual",de:"jährlich",pt:"anual",nl:"jaarlijks"},
+"immédiat":{en:"immediate",it:"immediato",es:"inmediato",de:"sofortig",pt:"imediato",nl:"onmiddellijk"},
+"soudain":{en:"sudden",it:"improvviso",es:"repentino",de:"plötzlich",pt:"repentino",nl:"plotseling"},
+"progressif":{en:"gradual",it:"graduale",es:"gradual",de:"allmählich",pt:"gradual",nl:"geleidelijk"},
+"définitif":{en:"final",it:"definitivo",es:"definitivo",de:"endgültig",pt:"definitivo",nl:"definitief"},
+"efficace":{en:"effective",it:"efficace",es:"eficaz",de:"wirksam",pt:"eficaz",nl:"doeltreffend"},
+"inutile":{en:"useless",it:"inutile",es:"inútil",de:"nutzlos",pt:"inútil",nl:"nutteloos"},
+"évident":{en:"obvious",it:"ovvio",es:"evidente",de:"offensichtlich",pt:"óbvio",nl:"duidelijk"},
+"compliqué":{en:"complicated",it:"complicato",es:"complicado",de:"kompliziert",pt:"complicado",nl:"ingewikkeld"},
+"précis":{en:"precise",it:"preciso",es:"preciso",de:"genau",pt:"preciso",nl:"nauwkeurig"},
+"vague":{en:"vague",it:"vago",es:"vago",de:"vage",pt:"vago",nl:"vaag"},
+"sincère":{en:"sincere",it:"sincero",es:"sincero",de:"aufrichtig",pt:"sincero",nl:"oprecht"},
+"avare":{en:"stingy",it:"avaro",es:"tacaño",de:"geizig",pt:"avarento",nl:"gierig"},
+"impoli":{en:"rude",it:"maleducato",es:"maleducado",de:"unhöflich",pt:"mal-educado",nl:"onbeleefd"},
+"imprudent":{en:"careless",it:"imprudente",es:"imprudente",de:"unvorsichtig",pt:"imprudente",nl:"onvoorzichtig"},
+"lâche":{en:"cowardly",it:"codardo",es:"cobarde",de:"feige",pt:"cobarde",nl:"laf"},
+"fou":{en:"crazy",it:"pazzo",es:"loco",de:"verrückt",pt:"louco",nl:"gek"},
+"en effet":{en:"indeed",it:"infatti",es:"en efecto",de:"in der Tat",pt:"de facto",nl:"inderdaad"},
+"autrement dit":{en:"in other words",it:"in altre parole",es:"en otras palabras",de:"mit anderen Worten",pt:"por outras palavras",nl:"met andere woorden"},
+"dorénavant":{en:"from now on",it:"d'ora in poi",es:"de ahora en adelante",de:"von nun an",pt:"doravante",nl:"voortaan"}
+};
+CURRICULUM_M.forEach(function(u){ CURRICULUM.push(u); });
+LANGS.forEach(function(l){ Object.keys(NEWV12).forEach(function(k){ if(NEWV12[k][l]) LEX[l][k]=NEWV12[k][l]; }); });
+
 /* ============ 🌏 NOUVELLES LANGUES — Europe de l'Est + Asie (cours DÉMARRAGE) ============
    Kevin 2026-08-10 : « ajoute langues pays de l'est, asiatique, etc ». Chaque nouvelle langue
    couvre ENTIÈREMENT les 8 premières unités (A1 démarrage) et grandit vague par vague comme
