@@ -3424,6 +3424,98 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var h2=LEX2H[l]||{}; Object.keys(h2).forEach(function(k){ LEX2[l][k]=h2[k]; }); });
+/* ── Vague 9 nouvelles langues (v2.78) : unités 65-72 — la vie qui passe, décrire le
+   monde, petits mots 2, raconter, la planète, les fêtes, vrai ou faux, sur la route.
+   Anti-collisions vérifiées : pl ancien=dawny (stary=vieux) ; ru ancien=старинный
+   (старый=vieux), tout de suite=немедленно (сейчас=maintenant), d'accord=ладно ;
+   uk jour férié=святковий день (свято=fête) ; cs ancien=starobylý (starý=vieux),
+   feu rouge=červená (fém., ≠ červený=rouge) ; ja ancien=昔の (古い=vieux),
+   intéressant=興味深い (面白い=drôle), raconter=語ります (話します=parler) ;
+   ar silencieux=صامت (هادئ=calme), Noël=عيد الميلاد المجيد (≠ عيد ميلاد=anniversaire).
+   Homographe réel assumé : ja 高い = cher ET haut (takai, seul mot naturel). */
+var LEX2I = {
+pl:{
+"naître":"rodzić się","grandir":"dorastać","mourir":"umierać","vie":"życie","mort":"śmierć","âge":"wiek","anniversaire":"urodziny","mariage":"ślub","naissance":"narodziny","enfance":"dzieciństwo","joyeux anniversaire":"wszystkiego najlepszego","la vie est belle":"życie jest piękne","avenir":"przyszłość","passé":"przeszłość","souvenir":"wspomnienie",
+"clair":"jasny","foncé":"ciemny","mouillé":"mokry","sec":"suchy","doux":"miękki","dur":"twardy","profond":"głęboki","haut":"wysoki","bas":"niski","moderne":"nowoczesny","ancien":"dawny","bruyant":"hałaśliwy","silencieux":"cichy","bruit":"hałas","ennuyeux":"nudny","intéressant":"ciekawy","célèbre":"sławny",
+"lequel":"który","quelque part":"gdzieś","nulle part":"nigdzie","ensemble":"razem","seulement":"tylko","d'accord":"zgoda","vraiment":"naprawdę","déjà":"już","presque":"prawie","ensuite":"następnie","enfin":"nareszcie","tout de suite":"natychmiast",
+"raconter":"opowiadać","décrire":"opisywać","répéter":"powtarzać","traduire":"tłumaczyć","signifier":"znaczyć","histoire":"historia","promettre":"obiecywać","mentir":"kłamać","crier":"krzyczeć","remercier":"dziękować","inviter":"zapraszać","souhaiter":"życzyć",
+"environnement":"środowisko","pollution":"zanieczyszczenie","déchets":"śmieci","recycler":"poddawać recyklingowi","protéger":"chronić","énergie":"energia","planète":"planeta","climat":"klimat","nature":"przyroda","air":"powietrze","sauvage":"dziki","animal":"zwierzę","paysage":"krajobraz","lumière":"światło",
+"Noël":"Boże Narodzenie","Pâques":"Wielkanoc","nouvel an":"Nowy Rok","week-end":"weekend","jour férié":"święto","surprise":"niespodzianka","ballon":"balon","feu d'artifice":"fajerwerki","invitation":"zaproszenie","carnaval":"karnawał",
+"vrai":"prawdziwy","faux":"fałszywy","possible":"możliwy","impossible":"niemożliwy","je suis prêt":"jestem gotowy","utile":"przydatny","prêt":"gotowy","occupé":"zajęty","libre":"wolny",
+"permis":"prawo jazdy","essence":"benzyna","station-service":"stacja benzynowa","se garer":"parkować","vitesse":"prędkość","il y a trop de circulation":"jest za duży ruch","feu rouge":"czerwone światło","carrefour":"skrzyżowanie","autoroute":"autostrada","circulation":"ruch uliczny","accident":"wypadek"
+},
+ru:{
+"naître":"рождаться","grandir":"расти","mourir":"умирать","vie":"жизнь","mort":"смерть","âge":"возраст","anniversaire":"день рождения","mariage":"свадьба","naissance":"рождение","enfance":"детство","joyeux anniversaire":"с днём рождения","la vie est belle":"жизнь прекрасна","avenir":"будущее","passé":"прошлое","souvenir":"воспоминание",
+"clair":"светлый","foncé":"тёмный","mouillé":"мокрый","sec":"сухой","doux":"мягкий","dur":"твёрдый","profond":"глубокий","haut":"высокий","bas":"низкий","moderne":"современный","ancien":"старинный","bruyant":"шумный","silencieux":"тихий","bruit":"шум","ennuyeux":"скучный","intéressant":"интересный","célèbre":"известный",
+"lequel":"который","quelque part":"где-то","nulle part":"нигде","ensemble":"вместе","seulement":"только","d'accord":"ладно","vraiment":"действительно","déjà":"уже","presque":"почти","ensuite":"затем","enfin":"наконец","tout de suite":"немедленно",
+"raconter":"рассказывать","décrire":"описывать","répéter":"повторять","traduire":"переводить","signifier":"означать","histoire":"история","promettre":"обещать","mentir":"врать","crier":"кричать","remercier":"благодарить","inviter":"приглашать","souhaiter":"желать",
+"environnement":"окружающая среда","pollution":"загрязнение","déchets":"мусор","recycler":"перерабатывать","protéger":"защищать","énergie":"энергия","planète":"планета","climat":"климат","nature":"природа","air":"воздух","sauvage":"дикий","animal":"животное","paysage":"пейзаж","lumière":"свет",
+"Noël":"Рождество","Pâques":"Пасха","nouvel an":"Новый год","week-end":"выходные","jour férié":"праздничный день","surprise":"сюрприз","ballon":"воздушный шар","feu d'artifice":"фейерверк","invitation":"приглашение","carnaval":"карнавал",
+"vrai":"настоящий","faux":"ложный","possible":"возможный","impossible":"невозможный","je suis prêt":"я готов","utile":"полезный","prêt":"готовый","occupé":"занятый","libre":"свободный",
+"permis":"водительские права","essence":"бензин","station-service":"заправка","se garer":"парковаться","vitesse":"скорость","il y a trop de circulation":"слишком много машин","feu rouge":"красный свет","carrefour":"перекрёсток","autoroute":"шоссе","circulation":"движение","accident":"авария"
+},
+uk:{
+"naître":"народжуватися","grandir":"рости","mourir":"помирати","vie":"життя","mort":"смерть","âge":"вік","anniversaire":"день народження","mariage":"весілля","naissance":"народження","enfance":"дитинство","joyeux anniversaire":"з днем народження","la vie est belle":"життя прекрасне","avenir":"майбутнє","passé":"минуле","souvenir":"спогад",
+"clair":"світлий","foncé":"темний","mouillé":"мокрий","sec":"сухий","doux":"м'який","dur":"твердий","profond":"глибокий","haut":"високий","bas":"низький","moderne":"сучасний","ancien":"давній","bruyant":"гучний","silencieux":"тихий","bruit":"шум","ennuyeux":"нудний","intéressant":"цікавий","célèbre":"відомий",
+"lequel":"котрий","quelque part":"десь","nulle part":"ніде","ensemble":"разом","seulement":"тільки","d'accord":"гаразд","vraiment":"справді","déjà":"вже","presque":"майже","ensuite":"потім","enfin":"нарешті","tout de suite":"негайно",
+"raconter":"розповідати","décrire":"описувати","répéter":"повторювати","traduire":"перекладати","signifier":"означати","histoire":"історія","promettre":"обіцяти","mentir":"брехати","crier":"кричати","remercier":"дякувати","inviter":"запрошувати","souhaiter":"бажати",
+"environnement":"довкілля","pollution":"забруднення","déchets":"сміття","recycler":"переробляти","protéger":"захищати","énergie":"енергія","planète":"планета","climat":"клімат","nature":"природа","air":"повітря","sauvage":"дикий","animal":"тварина","paysage":"краєвид","lumière":"світло",
+"Noël":"Різдво","Pâques":"Великдень","nouvel an":"Новий рік","week-end":"вихідні","jour férié":"святковий день","surprise":"сюрприз","ballon":"повітряна кулька","feu d'artifice":"феєрверк","invitation":"запрошення","carnaval":"карнавал",
+"vrai":"правдивий","faux":"хибний","possible":"можливий","impossible":"неможливий","je suis prêt":"я готовий","utile":"корисний","prêt":"готовий","occupé":"зайнятий","libre":"вільний",
+"permis":"водійські права","essence":"бензин","station-service":"заправка","se garer":"паркуватися","vitesse":"швидкість","il y a trop de circulation":"забагато машин","feu rouge":"червоне світло","carrefour":"перехрестя","autoroute":"автомагістраль","circulation":"дорожній рух","accident":"аварія"
+},
+cs:{
+"naître":"narodit se","grandir":"vyrůstat","mourir":"umírat","vie":"život","mort":"smrt","âge":"věk","anniversaire":"narozeniny","mariage":"svatba","naissance":"narození","enfance":"dětství","joyeux anniversaire":"všechno nejlepší","la vie est belle":"život je krásný","avenir":"budoucnost","passé":"minulost","souvenir":"vzpomínka",
+"clair":"světlý","foncé":"tmavý","mouillé":"mokrý","sec":"suchý","doux":"měkký","dur":"tvrdý","profond":"hluboký","haut":"vysoký","bas":"nízký","moderne":"moderní","ancien":"starobylý","bruyant":"hlučný","silencieux":"tichý","bruit":"hluk","ennuyeux":"nudný","intéressant":"zajímavý","célèbre":"slavný",
+"lequel":"který","quelque part":"někde","nulle part":"nikde","ensemble":"spolu","seulement":"jenom","d'accord":"dobře","vraiment":"opravdu","déjà":"už","presque":"skoro","ensuite":"potom","enfin":"konečně","tout de suite":"hned",
+"raconter":"vyprávět","décrire":"popisovat","répéter":"opakovat","traduire":"překládat","signifier":"znamenat","histoire":"příběh","promettre":"slibovat","mentir":"lhát","crier":"křičet","remercier":"děkovat","inviter":"zvát","souhaiter":"přát",
+"environnement":"životní prostředí","pollution":"znečištění","déchets":"odpadky","recycler":"recyklovat","protéger":"chránit","énergie":"energie","planète":"planeta","climat":"podnebí","nature":"příroda","air":"vzduch","sauvage":"divoký","animal":"zvíře","paysage":"krajina","lumière":"světlo",
+"Noël":"Vánoce","Pâques":"Velikonoce","nouvel an":"Nový rok","week-end":"víkend","jour férié":"svátek","surprise":"překvapení","ballon":"balónek","feu d'artifice":"ohňostroj","invitation":"pozvánka","carnaval":"karneval",
+"vrai":"pravdivý","faux":"falešný","possible":"možný","impossible":"nemožný","je suis prêt":"jsem připraven","utile":"užitečný","prêt":"připravený","occupé":"zaneprázdněný","libre":"volný",
+"permis":"řidičský průkaz","essence":"benzín","station-service":"čerpací stanice","se garer":"parkovat","vitesse":"rychlost","il y a trop de circulation":"je moc velký provoz","feu rouge":"červená","carrefour":"křižovatka","autoroute":"dálnice","circulation":"provoz","accident":"nehoda"
+},
+zh:{
+"naître":"出生","grandir":"长大","mourir":"死","vie":"生活","mort":"死亡","âge":"年龄","anniversaire":"生日","mariage":"婚礼","naissance":"诞生","enfance":"童年","joyeux anniversaire":"生日 快乐","la vie est belle":"生活 真 美好","avenir":"未来","passé":"过去","souvenir":"回忆",
+"clair":"明亮的","foncé":"深色的","mouillé":"湿的","sec":"干的","doux":"柔软的","dur":"硬的","profond":"深的","haut":"高的","bas":"低的","moderne":"现代的","ancien":"古老的","bruyant":"吵闹的","silencieux":"安静的","bruit":"噪音","ennuyeux":"无聊的","intéressant":"有趣的","célèbre":"有名的",
+"lequel":"哪一个","quelque part":"某个地方","nulle part":"哪里都不","ensemble":"一起","seulement":"只","d'accord":"好的","vraiment":"确实","déjà":"已经","presque":"几乎","ensuite":"然后","enfin":"终于","tout de suite":"马上",
+"raconter":"讲述","décrire":"描述","répéter":"重复","traduire":"翻译","signifier":"意思是","histoire":"故事","promettre":"承诺","mentir":"说谎","crier":"喊叫","remercier":"感谢","inviter":"邀请","souhaiter":"祝愿",
+"environnement":"环境","pollution":"污染","déchets":"垃圾","recycler":"回收","protéger":"保护","énergie":"能源","planète":"行星","climat":"气候","nature":"大自然","air":"空气","sauvage":"野生的","animal":"动物","paysage":"风景","lumière":"光",
+"Noël":"圣诞节","Pâques":"复活节","nouvel an":"新年","week-end":"周末","jour férié":"法定假日","surprise":"惊喜","ballon":"气球","feu d'artifice":"烟花","invitation":"邀请函","carnaval":"狂欢节",
+"vrai":"真的","faux":"假的","possible":"可能的","impossible":"不可能的","je suis prêt":"我 准备好了","utile":"有用的","prêt":"准备好的","occupé":"忙碌的","libre":"有空的",
+"permis":"驾照","essence":"汽油","station-service":"加油站","se garer":"停车","vitesse":"速度","il y a trop de circulation":"路上 车 太多了","feu rouge":"红灯","carrefour":"十字路口","autoroute":"高速公路","circulation":"交通","accident":"事故"
+},
+ja:{
+"naître":"生まれます","grandir":"育ちます","mourir":"死にます","vie":"人生","mort":"死","âge":"年齢","anniversaire":"誕生日","mariage":"結婚式","naissance":"誕生","enfance":"子供時代","joyeux anniversaire":"お誕生日 おめでとう","la vie est belle":"人生 は 美しい です","avenir":"未来","passé":"過去","souvenir":"思い出",
+"clair":"明るい","foncé":"暗い","mouillé":"濡れた","sec":"乾いた","doux":"柔らかい","dur":"硬い","profond":"深い","haut":"高い","bas":"低い","moderne":"現代的な","ancien":"昔の","bruyant":"うるさい","silencieux":"静かな","bruit":"騒音","ennuyeux":"退屈な","intéressant":"興味深い","célèbre":"有名な",
+"lequel":"どれ","quelque part":"どこかに","nulle part":"どこにも","ensemble":"一緒に","seulement":"だけ","d'accord":"分かりました","vraiment":"本当に","déjà":"もう","presque":"ほとんど","ensuite":"それから","enfin":"やっと","tout de suite":"すぐに",
+"raconter":"語ります","décrire":"描写します","répéter":"繰り返します","traduire":"翻訳します","signifier":"意味します","histoire":"物語","promettre":"約束します","mentir":"嘘をつきます","crier":"叫びます","remercier":"感謝します","inviter":"招待します","souhaiter":"願います",
+"environnement":"環境","pollution":"汚染","déchets":"ゴミ","recycler":"リサイクルします","protéger":"守ります","énergie":"エネルギー","planète":"惑星","climat":"気候","nature":"自然","air":"空気","sauvage":"野生の","animal":"動物","paysage":"景色","lumière":"光",
+"Noël":"クリスマス","Pâques":"イースター","nouvel an":"お正月","week-end":"週末","jour férié":"祝日","surprise":"サプライズ","ballon":"風船","feu d'artifice":"花火","invitation":"招待状","carnaval":"カーニバル",
+"vrai":"本当の","faux":"偽の","possible":"可能な","impossible":"不可能な","je suis prêt":"準備 が できました","utile":"役に立つ","prêt":"準備ができた","occupé":"忙しい","libre":"暇な",
+"permis":"運転免許","essence":"ガソリン","station-service":"ガソリンスタンド","se garer":"駐車します","vitesse":"スピード","il y a trop de circulation":"交通量 が 多い です","feu rouge":"赤信号","carrefour":"交差点","autoroute":"高速道路","circulation":"交通量","accident":"事故"
+},
+ko:{
+"naître":"태어나다","grandir":"자라다","mourir":"죽다","vie":"인생","mort":"죽음","âge":"나이","anniversaire":"생일","mariage":"결혼식","naissance":"탄생","enfance":"어린 시절","joyeux anniversaire":"생일 축하해요","la vie est belle":"인생은 아름다워요","avenir":"미래","passé":"과거","souvenir":"추억",
+"clair":"밝은","foncé":"어두운","mouillé":"젖은","sec":"마른","doux":"부드러운","dur":"딱딱한","profond":"깊은","haut":"높은","bas":"낮은","moderne":"현대적인","ancien":"오래된","bruyant":"시끄러운","silencieux":"조용한","bruit":"소음","ennuyeux":"지루한","intéressant":"흥미로운","célèbre":"유명한",
+"lequel":"어느 것","quelque part":"어딘가에","nulle part":"아무 데도","ensemble":"함께","seulement":"오직","d'accord":"알겠어요","vraiment":"정말","déjà":"이미","presque":"거의","ensuite":"그다음에","enfin":"마침내","tout de suite":"바로",
+"raconter":"들려주다","décrire":"묘사하다","répéter":"반복하다","traduire":"번역하다","signifier":"의미하다","histoire":"이야기","promettre":"약속하다","mentir":"거짓말하다","crier":"소리치다","remercier":"감사하다","inviter":"초대하다","souhaiter":"빌다",
+"environnement":"환경","pollution":"오염","déchets":"쓰레기","recycler":"재활용하다","protéger":"보호하다","énergie":"에너지","planète":"행성","climat":"기후","nature":"자연","air":"공기","sauvage":"야생의","animal":"동물","paysage":"경치","lumière":"빛",
+"Noël":"크리스마스","Pâques":"부활절","nouvel an":"새해","week-end":"주말","jour férié":"공휴일","surprise":"서프라이즈","ballon":"풍선","feu d'artifice":"불꽃놀이","invitation":"초대장","carnaval":"카니발",
+"vrai":"진짜","faux":"가짜","possible":"가능한","impossible":"불가능한","je suis prêt":"준비됐어요","utile":"유용한","prêt":"준비된","occupé":"바쁜","libre":"한가한",
+"permis":"운전면허","essence":"휘발유","station-service":"주유소","se garer":"주차하다","vitesse":"속도","il y a trop de circulation":"차가 너무 많아요","feu rouge":"빨간불","carrefour":"교차로","autoroute":"고속도로","circulation":"교통","accident":"사고"
+},
+ar:{
+"naître":"يولد","grandir":"يكبر","mourir":"يموت","vie":"حياة","mort":"موت","âge":"عمر","anniversaire":"عيد ميلاد","mariage":"زفاف","naissance":"ولادة","enfance":"طفولة","joyeux anniversaire":"عيد ميلاد سعيد","la vie est belle":"الحياة جميلة","avenir":"مستقبل","passé":"ماضٍ","souvenir":"ذكرى",
+"clair":"فاتح","foncé":"داكن","mouillé":"مبلل","sec":"جاف","doux":"ناعم","dur":"صلب","profond":"عميق","haut":"عالٍ","bas":"منخفض","moderne":"حديث","ancien":"قديم","bruyant":"صاخب","silencieux":"صامت","bruit":"ضجيج","ennuyeux":"ممل","intéressant":"مثير للاهتمام","célèbre":"مشهور",
+"lequel":"أيهما","quelque part":"في مكان ما","nulle part":"لا مكان","ensemble":"معًا","seulement":"فقط","d'accord":"حسنًا","vraiment":"حقًا","déjà":"بالفعل","presque":"تقريبًا","ensuite":"بعد ذلك","enfin":"أخيرًا","tout de suite":"فورًا",
+"raconter":"يروي","décrire":"يصف","répéter":"يكرر","traduire":"يترجم","signifier":"يعني","histoire":"قصة","promettre":"يعد","mentir":"يكذب","crier":"يصرخ","remercier":"يشكر","inviter":"يدعو","souhaiter":"يتمنى",
+"environnement":"بيئة","pollution":"تلوث","déchets":"نفايات","recycler":"يعيد التدوير","protéger":"يحمي","énergie":"طاقة","planète":"كوكب","climat":"مناخ","nature":"طبيعة","air":"هواء","sauvage":"بري","animal":"حيوان","paysage":"منظر طبيعي","lumière":"ضوء",
+"Noël":"عيد الميلاد المجيد","Pâques":"عيد الفصح","nouvel an":"رأس السنة","week-end":"عطلة نهاية الأسبوع","jour férié":"عطلة رسمية","surprise":"مفاجأة","ballon":"بالون","feu d'artifice":"ألعاب نارية","invitation":"دعوة","carnaval":"كرنفال",
+"vrai":"صحيح","faux":"خاطئ","possible":"ممكن","impossible":"مستحيل","je suis prêt":"أنا جاهز","utile":"مفيد","prêt":"جاهز","occupé":"مشغول","libre":"متفرغ",
+"permis":"رخصة قيادة","essence":"بنزين","station-service":"محطة وقود","se garer":"يركن السيارة","vitesse":"سرعة","il y a trop de circulation":"هناك ازدحام شديد","feu rouge":"إشارة حمراء","carrefour":"تقاطع","autoroute":"طريق سريع","circulation":"حركة المرور","accident":"حادث"
+}
+};
+LANGS2.forEach(function(l){ var i2=LEX2I[l]||{}; Object.keys(i2).forEach(function(k){ LEX2[l][k]=i2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
