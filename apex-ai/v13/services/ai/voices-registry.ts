@@ -370,6 +370,20 @@ const VOICES: readonly Voice[] = [
 
   /* === 18 VOIX THÉMATIQUES === */
   {
+    /* Profil « Antonin » (Kevin 2026-08-10) — voix de garçon APPROCHANTE fabriquée
+       par effets Web Audio (comme Bébé, en plus doux) ; la vraie voix d'Antonin
+       demandera un enregistrement audio (clonage). Déjà en choix dans Lingua v2.86. */
+    id: 'theme_antonin',
+    name: 'Antonin 🧒',
+    category: 'thematic',
+    provider: 'web_audio_filter',
+    description: 'Voix de garçon — le profil d’Antonin',
+    emoji: '🧒',
+    language: 'fr-FR',
+    gender: 'male',
+    effects: { pitch: 5, rate: 1.02 },
+  },
+  {
     id: 'theme_yoda',
     name: 'Yoda',
     category: 'thematic',
