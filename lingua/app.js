@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.96.0";
+var APP_VER="v2.97.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -200,6 +200,14 @@ function srsUpdate(w,ok){ var db=srsGet(S.course),k=srsKey(w),it=db[k]||{ease:2.
 function dueWords(){ var c=COURSES[S.course]; if(!c)return []; var db=srsGet(S.course),out=[],n=Date.now();
   c.units.forEach(function(u){u.lessons.forEach(function(l){l.words.forEach(function(w){ var it=db[srsKey(w)]; if(it&&it.reps>0&&it.due<=n)out.push(w); });});}); return out; }
 function wordCount(){ var t=0; Object.keys(S.words).forEach(function(c){ t+=Object.keys(S.words[c]).length; }); return t; }
+/* Mots FAIBLES : déjà vus mais ratés (reps remis à 0) ou fragiles (ease basse) → à revoir en priorité (points faibles / erreurs). */
+function weakWords(){ var c=COURSES[S.course]; if(!c)return []; var db=srsGet(S.course),seen=S.words[S.course]||{},out=[];
+  c.units.forEach(function(u){u.lessons.forEach(function(l){l.words.forEach(function(w){ var k=srsKey(w),it=db[k]; if(seen[k]&&it&&(it.reps===0||it.ease<2.3)) out.push(w); });});}); return out; }
+/* Mots APPRIS dans l'ordre du programme (chronologique, depuis le début) — pour « revoir depuis le début ». */
+function learnedWords(){ var c=COURSES[S.course]; if(!c)return []; var seen=S.words[S.course]||{},out=[];
+  c.units.forEach(function(u){u.lessons.forEach(function(l){l.words.forEach(function(w){ if(seen[srsKey(w)]) out.push(w); });});}); return out; }
+/* Pool de révision = points faibles d'abord, puis mots dus (mémoire espacée), sans doublon. */
+function reviewPool(){ var out=[],s={}; weakWords().concat(dueWords()).forEach(function(w){ var k=srsKey(w); if(!s[k]){ s[k]=1; out.push(w); } }); return out; }
 
 /* ============ Ligue (simulation locale) ============ */
 /* CLASSEMENT 100% RÉEL (Kevin : « dans Lingua, vrai info seulement »).
@@ -283,6 +291,11 @@ function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course)
   if(words.length>=4 && tier<=2) ex.splice(1,0,makeMatch(shuffle(words).slice(0,Math.min(5,words.length))));
   phr.forEach(function(p){ ex.push(makeBank(p,pool)); if(tier>=3&&!(c&&c.noType)) ex.push(makeType({fr:p.fr,t:p.t},"toT")); });
   if(tier>=2 && _srOk() && words.length){ shuffle(words).slice(0,Math.min(2,words.length)).forEach(function(w){ ex.push(makeSpeak(w)); }); } // prononciation à partir du niveau « assez difficile »
+  /* Mémoire espacée : dans une leçon normale, on GLISSE quelques mots DÉJÀ vus (points faibles d'abord)
+     pour réviser au fur et à mesure et ne rien oublier (Kevin : « faire réviser tout ce qui a déjà été vu »). */
+  if(!rev && ui!=null && li!=null){ var cur={}; words.forEach(function(w){ cur[srsKey(w)]=1; });
+    var rp=reviewPool().filter(function(w){ return !cur[srsKey(w)]; });
+    shuffle(rp).slice(0,3).forEach(function(w){ ex.push(exForWord(w,pool,tier,ex.length)); }); }
   return shuffle(ex).slice(0,Math.min(ex.length, 12+tier*2)); // 12 → 20 selon le niveau
 }
 function makeMC(w,pool,mode){ var asT=mode!=="mc_fr",correct=asT?w.t:w.fr;
@@ -585,11 +598,20 @@ function vHome(){ var w=el("div","screen tree");
 }
 
 /* ---------- Révision + dico ---------- */
-function vReview(){ var d=el("div","screen"); var due=dueWords();
-  d.innerHTML='<h2 class="ttl">🧠 Révision</h2>';
-  var card=el("div","review-card"); card.innerHTML='<div class="mascot-mini">'+MASCOT("read",90)+'</div><p>'+(due.length?'<b>'+due.length+'</b> mot(s) à réviser aujourd\'hui.':'Rien d\'urgent — fais une révision libre !')+'</p>';
-  var b=el("button","btn-main"); b.textContent=due.length?"Réviser maintenant":"Révision libre";
-  b.onclick=function(){ var rw=due.length?due.slice(0,10):shuffle(allWords(S.course)).slice(0,10); startLesson(null,null,rw); }; card.appendChild(b);
+function vReview(){ var d=el("div","screen"); var due=dueWords(), weak=weakWords(), learned=learnedWords(), all=allWords(S.course);
+  d.innerHTML='<h2 class="ttl">🧠 Réviser</h2><p class="sub2">Retravaille et teste tout ce que tu as appris depuis le début — pour ne rien oublier.</p>';
+  var box="display:flex;gap:8px;margin:4px 0 14px", cell="flex:1;text-align:center;background:rgba(127,127,127,.12);border-radius:14px;padding:12px 6px";
+  var stat=el("div"); stat.setAttribute("style",box);
+  stat.innerHTML='<div style="'+cell+'"><b style="font-size:1.5rem">'+learned.length+'</b><br><i style="opacity:.7;font-size:.8rem">appris</i></div>'
+    +'<div style="'+cell+'"><b style="font-size:1.5rem">'+due.length+'</b><br><i style="opacity:.7;font-size:.8rem">à revoir</i></div>'
+    +'<div style="'+cell+'"><b style="font-size:1.5rem;color:'+(weak.length?'#f43f5e':'inherit')+'">'+weak.length+'</b><br><i style="opacity:.7;font-size:.8rem">points faibles</i></div>';
+  d.appendChild(stat);
+  var card=el("div","review-card");
+  function rev(pool,cut){ var p=(pool&&pool.length)?pool:(learned.length?learned:all); startLesson(null,null,(cut?p.slice(0,12):shuffle(p.slice()).slice(0,12))); }
+  if(weak.length){ var bw=el("button","btn-main"); bw.innerHTML='🔴 Réviser mes points faibles ('+weak.length+')'; bw.onclick=function(){ rev(weak); }; card.appendChild(bw); }
+  var bd=el("button",weak.length?"btn-ghost":"btn-main"); bd.innerHTML=due.length?('🧠 Réviser maintenant ('+due.length+')'):'🧠 Révision du jour'; bd.onclick=function(){ rev(due.length?due:reviewPool()); }; card.appendChild(bd);
+  var bc=el("button","btn-ghost"); bc.textContent="🕑 Revoir depuis le début"; bc.onclick=function(){ rev(learned,true); }; card.appendChild(bc);
+  var bf=el("button","btn-ghost"); bf.textContent="🎲 Révision libre (surprise)"; bf.onclick=function(){ rev(learned); }; card.appendChild(bf);
   var b2=el("button","btn-ghost"); b2.textContent="📖 Voir le dictionnaire"; b2.onclick=function(){ go("dict"); }; card.appendChild(b2);
   d.appendChild(card); return d;
 }
@@ -1858,7 +1880,7 @@ function exType(ex){ var w=el("div","ex");
   return w;
 }
 function exSpeak(ex){ var w=el("div","ex");
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div><div class="q-word">'+esc(ex.prompt)+' <button class="say" id="spSay">🔊</button></div><div class="speak-hint" id="spHint">Écoute (🔊) puis touche le micro et répète.</div>';
+  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div><div class="q-word">'+esc(ex.prompt)+' <button class="say" id="spSay">🔊</button></div><div class="speak-mean">👉 sens : <b>'+esc(ex.w&&ex.w.fr||"")+'</b></div><div class="speak-hint" id="spHint">Écoute (🔊), comprends le sens, puis touche le micro et répète.</div>';
   var mic=el("button","mic-btn"); mic.innerHTML="🎤 Parler";
   mic.onclick=function(){ mic.innerHTML="🎤 …j'écoute"; dictate(function(txt,alts){
     var m=bestPronMatch(ex.answer,txt,alts); var ok=m.score>=60; /* indulgent : phonétiquement proche suffit */
