@@ -4723,6 +4723,61 @@ var LEX2DIG = {
 };
 LANGS2.forEach(function(l){ var d3=LEX2DIG[l]||{}; Object.keys(d3).forEach(function(k){ LEX2[l][k]=d3[k]; }); });
 
+
+/* ===== VAGUE SANTÉ / CORPS (v2.94.0) — 24 mots ×14 langues, 3 unités ===== */
+var CURRICULUM_H = [
+  {t:"Tomber malade 🤒", c:"#ef4444", L:[
+    {t:"Les maux", w:["toux","mal de tête","mal de ventre","angine"]},
+    {t:"Bobos", w:["nausée","se blesser","se brûler","brûlure"]} ]},
+  {t:"Se soigner 💊", c:"#10b981", L:[
+    {t:"Les remèdes", w:["comprimé","pilule","sirop","avaler"]},
+    {t:"Chez le médecin", w:["soigner","urgences","tension","carie"]} ]},
+  {t:"Forme & corps 🏃", c:"#f59e0b", L:[
+    {t:"En forme", w:["fatigue","insomnie","vitamine","peser"]},
+    {t:"Le corps", w:["maigrir","grossir","os","articulation"]} ]}
+];
+CURRICULUM_H.forEach(function(u){ CURRICULUM.push(u); });
+
+var NEWV17 = {
+  "toux":{"en":"cough","it":"tosse","es":"tos","de":"Husten","pt":"tosse","nl":"hoest"},
+  "mal de tête":{"en":"headache","it":"mal di testa","es":"dolor de cabeza","de":"Kopfschmerzen","pt":"dor de cabeça","nl":"hoofdpijn"},
+  "mal de ventre":{"en":"stomachache","it":"mal di pancia","es":"dolor de barriga","de":"Bauchschmerzen","pt":"dor de barriga","nl":"buikpijn"},
+  "angine":{"en":"sore throat","it":"mal di gola","es":"dolor de garganta","de":"Halsschmerzen","pt":"dor de garganta","nl":"keelpijn"},
+  "nausée":{"en":"nausea","it":"nausea","es":"náusea","de":"Übelkeit","pt":"náusea","nl":"misselijkheid"},
+  "se blesser":{"en":"to get hurt","it":"farsi male","es":"lastimarse","de":"sich verletzen","pt":"magoar-se","nl":"zich bezeren"},
+  "se brûler":{"en":"to get burned","it":"scottarsi","es":"quemarse","de":"sich verbrennen","pt":"queimar-se","nl":"zich branden"},
+  "brûlure":{"en":"burn","it":"ustione","es":"quemadura","de":"Verbrennung","pt":"queimadura","nl":"brandwond"},
+  "comprimé":{"en":"tablet","it":"compressa","es":"comprimido","de":"Tablette","pt":"comprimido","nl":"tablet"},
+  "pilule":{"en":"pill","it":"pillola","es":"píldora","de":"Pille","pt":"pílula","nl":"pil"},
+  "sirop":{"en":"syrup","it":"sciroppo","es":"jarabe","de":"Sirup","pt":"xarope","nl":"siroop"},
+  "avaler":{"en":"to swallow","it":"deglutire","es":"tragar","de":"schlucken","pt":"engolir","nl":"slikken"},
+  "soigner":{"en":"to treat","it":"curare","es":"tratar","de":"behandeln","pt":"tratar","nl":"behandelen"},
+  "urgences":{"en":"emergency room","it":"pronto soccorso","es":"urgencias","de":"Notaufnahme","pt":"urgências","nl":"spoedeisende hulp"},
+  "tension":{"en":"blood pressure","it":"pressione","es":"tensión","de":"Blutdruck","pt":"tensão arterial","nl":"bloeddruk"},
+  "carie":{"en":"cavity","it":"carie","es":"caries","de":"Karies","pt":"cárie","nl":"gaatje"},
+  "fatigue":{"en":"tiredness","it":"stanchezza","es":"cansancio","de":"Müdigkeit","pt":"cansaço","nl":"vermoeidheid"},
+  "insomnie":{"en":"insomnia","it":"insonnia","es":"insomnio","de":"Schlaflosigkeit","pt":"insónia","nl":"slapeloosheid"},
+  "vitamine":{"en":"vitamin","it":"vitamina","es":"vitamina","de":"Vitamin","pt":"vitamina","nl":"vitamine"},
+  "peser":{"en":"to weigh","it":"pesare","es":"pesar","de":"wiegen","pt":"pesar","nl":"wegen"},
+  "maigrir":{"en":"to lose weight","it":"dimagrire","es":"adelgazar","de":"abnehmen","pt":"emagrecer","nl":"afvallen"},
+  "grossir":{"en":"to gain weight","it":"ingrassare","es":"engordar","de":"zunehmen","pt":"engordar","nl":"aankomen"},
+  "os":{"en":"bone","it":"osso","es":"hueso","de":"Knochen","pt":"osso","nl":"bot"},
+  "articulation":{"en":"joint","it":"articolazione","es":"articulación","de":"Gelenk","pt":"articulação","nl":"gewricht"}
+};
+LANGS.forEach(function(l){ Object.keys(NEWV17).forEach(function(k){ if(NEWV17[k][l]) LEX[l][k]=NEWV17[k][l]; }); });
+
+var LEX2MED = {
+  pl:{"toux":"kaszel","mal de tête":"ból głowy","mal de ventre":"ból brzucha","angine":"ból gardła","nausée":"mdłości","se blesser":"zranić się","se brûler":"poparzyć się","brûlure":"oparzenie","comprimé":"tabletka","pilule":"pigułka","sirop":"syrop","avaler":"połykać","soigner":"leczyć","urgences":"izba przyjęć","tension":"ciśnienie","carie":"próchnica","fatigue":"zmęczenie","insomnie":"bezsenność","vitamine":"witamina","peser":"ważyć","maigrir":"chudnąć","grossir":"tyć","os":"kość","articulation":"staw"},
+  ru:{"toux":"кашель","mal de tête":"головная боль","mal de ventre":"боль в животе","angine":"боль в горле","nausée":"тошнота","se blesser":"пораниться","se brûler":"обжечься","brûlure":"ожог","comprimé":"таблетка","pilule":"пилюля","sirop":"сироп","avaler":"глотать","soigner":"лечить","urgences":"неотложка","tension":"давление","carie":"кариес","fatigue":"усталость","insomnie":"бессонница","vitamine":"витамин","peser":"взвешивать","maigrir":"худеть","grossir":"толстеть","os":"кость","articulation":"сустав"},
+  uk:{"toux":"кашель","mal de tête":"головний біль","mal de ventre":"біль у животі","angine":"біль у горлі","nausée":"нудота","se blesser":"поранитися","se brûler":"обпектися","brûlure":"опік","comprimé":"таблетка","pilule":"пігулка","sirop":"сироп","avaler":"ковтати","soigner":"лікувати","urgences":"невідкладна допомога","tension":"тиск","carie":"карієс","fatigue":"втома","insomnie":"безсоння","vitamine":"вітамін","peser":"зважувати","maigrir":"худнути","grossir":"товстіти","os":"кістка","articulation":"суглоб"},
+  cs:{"toux":"kašel","mal de tête":"bolest hlavy","mal de ventre":"bolest břicha","angine":"bolest v krku","nausée":"nevolnost","se blesser":"zranit se","se brûler":"spálit se","brûlure":"popálenina","comprimé":"tableta","pilule":"pilulka","sirop":"sirup","avaler":"polykat","soigner":"léčit","urgences":"urgentní příjem","tension":"tlak","carie":"zubní kaz","fatigue":"únava","insomnie":"nespavost","vitamine":"vitamín","peser":"vážit","maigrir":"hubnout","grossir":"tloustnout","os":"kost","articulation":"kloub"},
+  zh:{"toux":"咳嗽","mal de tête":"头痛","mal de ventre":"肚子痛","angine":"咽喉痛","nausée":"恶心","se blesser":"受伤","se brûler":"烫伤","brûlure":"烧伤","comprimé":"药片","pilule":"药丸","sirop":"糖浆","avaler":"吞","soigner":"治疗","urgences":"急诊科","tension":"血压","carie":"蛀牙","fatigue":"疲劳","insomnie":"失眠","vitamine":"维生素","peser":"称重","maigrir":"减肥","grossir":"增肥","os":"骨头","articulation":"关节"},
+  ja:{"toux":"咳","mal de tête":"頭痛","mal de ventre":"腹痛","angine":"のどの痛み","nausée":"吐き気","se blesser":"けがをします","se brûler":"やけどします","brûlure":"やけど","comprimé":"錠剤","pilule":"丸薬","sirop":"シロップ","avaler":"飲み込みます","soigner":"治療します","urgences":"救急外来","tension":"血圧","carie":"虫歯","fatigue":"疲れ","insomnie":"不眠","vitamine":"ビタミン","peser":"量ります","maigrir":"痩せます","grossir":"太ります","os":"骨","articulation":"関節"},
+  ko:{"toux":"기침","mal de tête":"두통","mal de ventre":"복통","angine":"인후염","nausée":"메스꺼움","se blesser":"다치다","se brûler":"데다","brûlure":"화상","comprimé":"정제","pilule":"알약","sirop":"시럽","avaler":"삼키다","soigner":"치료하다","urgences":"응급실","tension":"혈압","carie":"충치","fatigue":"피로","insomnie":"불면증","vitamine":"비타민","peser":"무게를 재다","maigrir":"살을 빼다","grossir":"살이 찌다","os":"뼈","articulation":"관절"},
+  ar:{"toux":"سعال","mal de tête":"صداع","mal de ventre":"ألم في المعدة","angine":"التهاب الحلق","nausée":"غثيان","se blesser":"يُصاب","se brûler":"يحترق","brûlure":"حرق","comprimé":"قرص","pilule":"حبة دواء","sirop":"شراب","avaler":"يبتلع","soigner":"يعالج","urgences":"الطوارئ","tension":"ضغط الدم","carie":"تسوس","fatigue":"تعب","insomnie":"أرق","vitamine":"فيتامين","peser":"يزن","maigrir":"ينحف","grossir":"يسمن","os":"عظم","articulation":"مفصل"}
+};
+LANGS2.forEach(function(l){ var m2=LEX2MED[l]||{}; Object.keys(m2).forEach(function(k){ LEX2[l][k]=m2[k]; }); });
+
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
