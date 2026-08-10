@@ -4274,6 +4274,98 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var q2=LEX2Q[l]||{}; Object.keys(q2).forEach(function(k){ LEX2[l][k]=q2[k]; }); });
+/* ── Vague 18 nouvelles langues (v2.88) : unités 137-144 — sentiments fins, caractères
+   trempés, au bureau, les médias, à la banque, le numérique avancé, le grand chantier,
+   enquête policière. Anti-collisions vérifiées : congé ≠ vacances (ru отгул, cs volno,
+   ko 연차, ar إجازة) ; toiture ≠ toit (pl pokrycie dachu, ru кровля, cs střešní krytina,
+   zh 屋面, ja 屋根材, ko 지붕재, ar تسقيف) ; taux pl=stopa procentowa (stopa=pied) ;
+   échéance cs=lhůta (termín=rendez-vous) ; humble ≠ modeste (pl pokorny, ja 謙遜な,
+   ko 겸허한, ar وديع) ; inquiétude ≠ inquiet/souci (zh 担忧, ja 懸念, ko 근심) ;
+   objectif ar=غاية (هدف=but), témoignage ar=إفادة (شهادة=diplôme), indice ar=قرينة
+   (دليل=preuve), virement ru=денежный перевод (перевод=traduction). */
+var LEX2R = {
+pl:{
+"soulagement":"ulga","admiration":"podziw","enthousiasme":"entuzjazm","compassion":"współczucie","nostalgie":"nostalgia","inquiétude":"niepokój","angoisse":"trwoga","méfiance":"nieufność","frustration":"frustracja","j'en ai marre":"mam dość","mépris":"pogarda","gêne":"skrępowanie","indifférence":"obojętność",
+"ambitieux":"ambitny","audacieux":"śmiały","loyal":"lojalny","perfectionniste":"perfekcjonista","insouciant":"beztroski","arrogant":"arogancki","humble":"pokorny","hypocrite":"hipokryta","rancunier":"pamiętliwy","indulgent":"pobłażliwy",
+"ordre du jour":"porządek obrad","échéance":"termin","objectif":"cel","tâche":"zadanie","responsabilité":"odpowiedzialność","procès-verbal":"protokół","congé":"urlop","télétravail":"praca zdalna","démission":"dymisja","recrutement":"rekrutacja","entretien d'embauche":"rozmowa kwalifikacyjna","ce n'est pas la peine":"nie ma potrzeby",
+"reportage":"reportaż","interview":"wywiad","gros titre":"nagłówek","rédaction":"redakcja","rumeur":"plotka","scandale":"skandal","censure":"cenzura","sondage":"sondaż",
+"virement":"przelew","prélèvement":"polecenie zapłaty","intérêts":"odsetki","taux":"stopa procentowa","devise":"waluta","hypothèque":"hipoteka","livret d'épargne":"książeczka oszczędnościowa","chéquier":"książeczka czekowa","espèces":"gotówka","facture d'électricité":"rachunek za prąd",
+"intelligence artificielle":"sztuczna inteligencja","données":"dane","logiciel":"oprogramowanie","matériel":"sprzęt","sauvegarde":"kopia zapasowa","mise à jour":"aktualizacja","piratage":"atak hakerski","virus informatique":"wirus komputerowy","écran tactile":"ekran dotykowy","objet connecté":"inteligentne urządzenie","réseau social":"media społecznościowe",
+"gratte-ciel":"wieżowiec","béton":"beton","brique":"cegła","grue":"dźwig","échafaudage":"rusztowanie","fondations":"fundamenty","charpente":"więźba dachowa","façade":"fasada","toiture":"pokrycie dachu","permis de construire":"pozwolenie na budowę",
+"enquête":"śledztwo","indice":"poszlaka","suspect":"podejrzany","témoignage":"zeznanie","empreintes digitales":"odciski palców","alibi":"alibi","cambriolage":"włamanie","agression":"napaść","escroquerie":"oszustwo","interrogatoire":"przesłuchanie","menottes":"kajdanki","rançon":"okup"
+},
+ru:{
+"soulagement":"облегчение","admiration":"восхищение","enthousiasme":"энтузиазм","compassion":"сострадание","nostalgie":"ностальгия","inquiétude":"обеспокоенность","angoisse":"тревога","méfiance":"недоверие","frustration":"фрустрация","j'en ai marre":"мне надоело","mépris":"презрение","gêne":"смущение","indifférence":"безразличие",
+"ambitieux":"амбициозный","audacieux":"дерзкий","loyal":"преданный","perfectionniste":"перфекционист","insouciant":"беззаботный","arrogant":"высокомерный","humble":"смиренный","hypocrite":"лицемер","rancunier":"злопамятный","indulgent":"снисходительный",
+"ordre du jour":"повестка дня","échéance":"срок","objectif":"цель","tâche":"задача","responsabilité":"ответственность","procès-verbal":"протокол","congé":"отгул","télétravail":"удалённая работа","démission":"отставка","recrutement":"набор персонала","entretien d'embauche":"собеседование","ce n'est pas la peine":"не стоит",
+"reportage":"репортаж","interview":"интервью","gros titre":"заголовок","rédaction":"редакция","rumeur":"слухи","scandale":"скандал","censure":"цензура","sondage":"опрос",
+"virement":"денежный перевод","prélèvement":"автоплатёж","intérêts":"проценты","taux":"ставка","devise":"валюта","hypothèque":"ипотека","livret d'épargne":"сберегательный счёт","chéquier":"чековая книжка","espèces":"наличные","facture d'électricité":"счёт за электричество",
+"intelligence artificielle":"искусственный интеллект","données":"данные","logiciel":"программное обеспечение","matériel":"оборудование","sauvegarde":"резервная копия","mise à jour":"обновление","piratage":"взлом","virus informatique":"компьютерный вирус","écran tactile":"сенсорный экран","objet connecté":"умное устройство","réseau social":"социальная сеть",
+"gratte-ciel":"небоскрёб","béton":"бетон","brique":"кирпич","grue":"подъёмный кран","échafaudage":"строительные леса","fondations":"фундамент","charpente":"стропила","façade":"фасад","toiture":"кровля","permis de construire":"разрешение на строительство",
+"enquête":"расследование","indice":"улика","suspect":"подозреваемый","témoignage":"показания","empreintes digitales":"отпечатки пальцев","alibi":"алиби","cambriolage":"кража со взломом","agression":"нападение","escroquerie":"мошенничество","interrogatoire":"допрос","menottes":"наручники","rançon":"выкуп"
+},
+uk:{
+"soulagement":"полегшення","admiration":"захоплення","enthousiasme":"ентузіазм","compassion":"співчуття","nostalgie":"ностальгія","inquiétude":"занепокоєння","angoisse":"тривога","méfiance":"недовіра","frustration":"фрустрація","j'en ai marre":"мені набридло","mépris":"зневага","gêne":"збентеження","indifférence":"байдужість",
+"ambitieux":"амбітний","audacieux":"зухвалий","loyal":"відданий","perfectionniste":"перфекціоніст","insouciant":"безтурботний","arrogant":"зарозумілий","humble":"смиренний","hypocrite":"лицемір","rancunier":"злопам'ятний","indulgent":"поблажливий",
+"ordre du jour":"порядок денний","échéance":"термін","objectif":"мета","tâche":"завдання","responsabilité":"відповідальність","procès-verbal":"протокол","congé":"відгул","télétravail":"віддалена робота","démission":"відставка","recrutement":"набір персоналу","entretien d'embauche":"співбесіда","ce n'est pas la peine":"не варто",
+"reportage":"репортаж","interview":"інтерв'ю","gros titre":"заголовок","rédaction":"редакція","rumeur":"чутки","scandale":"скандал","censure":"цензура","sondage":"опитування",
+"virement":"переказ","prélèvement":"автоплатіж","intérêts":"відсотки","taux":"ставка","devise":"валюта","hypothèque":"іпотека","livret d'épargne":"ощадний рахунок","chéquier":"чекова книжка","espèces":"готівка","facture d'électricité":"рахунок за електрику",
+"intelligence artificielle":"штучний інтелект","données":"дані","logiciel":"програмне забезпечення","matériel":"обладнання","sauvegarde":"резервна копія","mise à jour":"оновлення","piratage":"злам","virus informatique":"комп'ютерний вірус","écran tactile":"сенсорний екран","objet connecté":"розумний пристрій","réseau social":"соціальна мережа",
+"gratte-ciel":"хмарочос","béton":"бетон","brique":"цегла","grue":"підйомний кран","échafaudage":"риштування","fondations":"фундамент","charpente":"крокви","façade":"фасад","toiture":"покрівля","permis de construire":"дозвіл на будівництво",
+"enquête":"розслідування","indice":"зачіпка","suspect":"підозрюваний","témoignage":"свідчення","empreintes digitales":"відбитки пальців","alibi":"алібі","cambriolage":"крадіжка зі зламом","agression":"напад","escroquerie":"шахрайство","interrogatoire":"допит","menottes":"наручники","rançon":"викуп"
+},
+cs:{
+"soulagement":"úleva","admiration":"obdiv","enthousiasme":"nadšení","compassion":"soucit","nostalgie":"nostalgie","inquiétude":"znepokojení","angoisse":"úzkost","méfiance":"nedůvěra","frustration":"frustrace","j'en ai marre":"mám toho dost","mépris":"pohrdání","gêne":"rozpaky","indifférence":"lhostejnost",
+"ambitieux":"ambiciózní","audacieux":"smělý","loyal":"loajální","perfectionniste":"perfekcionista","insouciant":"bezstarostný","arrogant":"arogantní","humble":"pokorný","hypocrite":"pokrytec","rancunier":"mstivý","indulgent":"shovívavý",
+"ordre du jour":"program jednání","échéance":"lhůta","objectif":"cíl","tâche":"úkol","responsabilité":"odpovědnost","procès-verbal":"zápis","congé":"volno","télétravail":"práce na dálku","démission":"rezignace","recrutement":"nábor","entretien d'embauche":"pracovní pohovor","ce n'est pas la peine":"není třeba",
+"reportage":"reportáž","interview":"rozhovor","gros titre":"titulek","rédaction":"redakce","rumeur":"fáma","scandale":"skandál","censure":"cenzura","sondage":"průzkum",
+"virement":"převod","prélèvement":"inkaso","intérêts":"úroky","taux":"sazba","devise":"měna","hypothèque":"hypotéka","livret d'épargne":"spořicí účet","chéquier":"šeková knížka","espèces":"hotovost","facture d'électricité":"účet za elektřinu",
+"intelligence artificielle":"umělá inteligence","données":"data","logiciel":"software","matériel":"hardware","sauvegarde":"záloha","mise à jour":"aktualizace","piratage":"hackerský útok","virus informatique":"počítačový virus","écran tactile":"dotyková obrazovka","objet connecté":"chytré zařízení","réseau social":"sociální síť",
+"gratte-ciel":"mrakodrap","béton":"beton","brique":"cihla","grue":"jeřáb","échafaudage":"lešení","fondations":"základy","charpente":"krov","façade":"fasáda","toiture":"střešní krytina","permis de construire":"stavební povolení",
+"enquête":"vyšetřování","indice":"stopa","suspect":"podezřelý","témoignage":"svědectví","empreintes digitales":"otisky prstů","alibi":"alibi","cambriolage":"vloupání","agression":"napadení","escroquerie":"podvod","interrogatoire":"výslech","menottes":"pouta","rançon":"výkupné"
+},
+zh:{
+"soulagement":"宽慰","admiration":"钦佩","enthousiasme":"热情","compassion":"同情","nostalgie":"怀旧","inquiétude":"担忧","angoisse":"焦虑","méfiance":"不信任","frustration":"挫败感","j'en ai marre":"我 受够了","mépris":"蔑视","gêne":"尴尬","indifférence":"冷漠",
+"ambitieux":"有野心的","audacieux":"大胆的","loyal":"忠诚的","perfectionniste":"完美主义者","insouciant":"无忧无虑的","arrogant":"傲慢的","humble":"谦逊的","hypocrite":"伪君子","rancunier":"记仇的","indulgent":"宽容的",
+"ordre du jour":"议程","échéance":"期限","objectif":"目标","tâche":"任务","responsabilité":"责任","procès-verbal":"会议记录","congé":"休假","télétravail":"远程办公","démission":"辞呈","recrutement":"招聘","entretien d'embauche":"面试","ce n'est pas la peine":"不必了",
+"reportage":"专题报道","interview":"采访","gros titre":"头条","rédaction":"编辑部","rumeur":"谣言","scandale":"丑闻","censure":"审查","sondage":"民意调查",
+"virement":"转账","prélèvement":"自动扣款","intérêts":"利息","taux":"利率","devise":"货币","hypothèque":"抵押贷款","livret d'épargne":"储蓄账户","chéquier":"支票簿","espèces":"现金","facture d'électricité":"电费单",
+"intelligence artificielle":"人工智能","données":"数据","logiciel":"软件","matériel":"硬件","sauvegarde":"备份","mise à jour":"更新","piratage":"黑客攻击","virus informatique":"电脑病毒","écran tactile":"触摸屏","objet connecté":"智能设备","réseau social":"社交网络",
+"gratte-ciel":"摩天大楼","béton":"混凝土","brique":"砖","grue":"起重机","échafaudage":"脚手架","fondations":"地基","charpente":"屋架","façade":"外墙","toiture":"屋面","permis de construire":"建筑许可证",
+"enquête":"调查","indice":"线索","suspect":"嫌疑人","témoignage":"证词","empreintes digitales":"指纹","alibi":"不在场证明","cambriolage":"入室盗窃","agression":"袭击","escroquerie":"诈骗","interrogatoire":"审讯","menottes":"手铐","rançon":"赎金"
+},
+ja:{
+"soulagement":"安堵","admiration":"賞賛","enthousiasme":"熱意","compassion":"同情","nostalgie":"郷愁","inquiétude":"懸念","angoisse":"不安","méfiance":"不信感","frustration":"フラストレーション","j'en ai marre":"もう うんざり です","mépris":"軽蔑","gêne":"気まずさ","indifférence":"無関心",
+"ambitieux":"野心的な","audacieux":"大胆な","loyal":"忠実な","perfectionniste":"完璧主義者","insouciant":"のんきな","arrogant":"横柄な","humble":"謙遜な","hypocrite":"偽善者","rancunier":"執念深い","indulgent":"寛大な",
+"ordre du jour":"議題","échéance":"締め切り","objectif":"目標","tâche":"タスク","responsabilité":"責任","procès-verbal":"議事録","congé":"有給休暇","télétravail":"テレワーク","démission":"辞職","recrutement":"採用","entretien d'embauche":"面接","ce n'est pas la peine":"その 必要 は ありません",
+"reportage":"ルポ","interview":"インタビュー","gros titre":"見出し","rédaction":"編集部","rumeur":"噂","scandale":"スキャンダル","censure":"検閲","sondage":"世論調査",
+"virement":"振り込み","prélèvement":"自動引き落とし","intérêts":"利子","taux":"金利","devise":"通貨","hypothèque":"住宅ローン","livret d'épargne":"貯金通帳","chéquier":"小切手帳","espèces":"現金","facture d'électricité":"電気代の請求書",
+"intelligence artificielle":"人工知能","données":"データ","logiciel":"ソフトウェア","matériel":"ハードウェア","sauvegarde":"バックアップ","mise à jour":"アップデート","piratage":"ハッキング","virus informatique":"コンピューターウイルス","écran tactile":"タッチスクリーン","objet connecté":"スマート機器","réseau social":"SNS",
+"gratte-ciel":"超高層ビル","béton":"コンクリート","brique":"レンガ","grue":"クレーン","échafaudage":"足場","fondations":"基礎","charpente":"骨組み","façade":"外壁","toiture":"屋根材","permis de construire":"建築許可",
+"enquête":"捜査","indice":"手がかり","suspect":"容疑者","témoignage":"証言","empreintes digitales":"指紋","alibi":"アリバイ","cambriolage":"空き巣","agression":"暴行","escroquerie":"詐欺","interrogatoire":"尋問","menottes":"手錠","rançon":"身代金"
+},
+ko:{
+"soulagement":"안도","admiration":"감탄","enthousiasme":"열정","compassion":"연민","nostalgie":"향수","inquiétude":"근심","angoisse":"불안","méfiance":"불신","frustration":"좌절감","j'en ai marre":"지긋지긋해요","mépris":"경멸","gêne":"어색함","indifférence":"무관심",
+"ambitieux":"야심 찬","audacieux":"대담한","loyal":"충성스러운","perfectionniste":"완벽주의자","insouciant":"태평한","arrogant":"거만한","humble":"겸허한","hypocrite":"위선자","rancunier":"뒤끝 있는","indulgent":"관대한",
+"ordre du jour":"안건","échéance":"마감","objectif":"목표","tâche":"업무","responsabilité":"책임","procès-verbal":"회의록","congé":"연차","télétravail":"재택근무","démission":"사직","recrutement":"채용","entretien d'embauche":"면접","ce n'est pas la peine":"그럴 필요 없어요",
+"reportage":"르포","interview":"인터뷰","gros titre":"헤드라인","rédaction":"편집부","rumeur":"소문","scandale":"스캔들","censure":"검열","sondage":"여론 조사",
+"virement":"계좌 이체","prélèvement":"자동 이체","intérêts":"이자","taux":"금리","devise":"화폐","hypothèque":"주택 담보 대출","livret d'épargne":"예금 통장","chéquier":"수표책","espèces":"현금","facture d'électricité":"전기 요금 고지서",
+"intelligence artificielle":"인공지능","données":"데이터","logiciel":"소프트웨어","matériel":"하드웨어","sauvegarde":"백업","mise à jour":"업데이트","piratage":"해킹","virus informatique":"컴퓨터 바이러스","écran tactile":"터치스크린","objet connecté":"스마트 기기","réseau social":"소셜 미디어",
+"gratte-ciel":"마천루","béton":"콘크리트","brique":"벽돌","grue":"크레인","échafaudage":"비계","fondations":"기초","charpente":"골조","façade":"파사드","toiture":"지붕재","permis de construire":"건축 허가",
+"enquête":"수사","indice":"단서","suspect":"용의자","témoignage":"증언","empreintes digitales":"지문","alibi":"알리바이","cambriolage":"빈집털이","agression":"폭행","escroquerie":"사기","interrogatoire":"심문","menottes":"수갑","rançon":"몸값"
+},
+ar:{
+"soulagement":"ارتياح","admiration":"إعجاب","enthousiasme":"حماس","compassion":"تعاطف","nostalgie":"حنين","inquiétude":"انشغال البال","angoisse":"كرب","méfiance":"ريبة","frustration":"إحباط","j'en ai marre":"طفح الكيل","mépris":"ازدراء","gêne":"إحراج","indifférence":"لامبالاة",
+"ambitieux":"طموح","audacieux":"جريء","loyal":"وفي","perfectionniste":"ساعٍ للكمال","insouciant":"خالي البال","arrogant":"متعجرف","humble":"وديع","hypocrite":"منافق","rancunier":"حقود","indulgent":"متسامح",
+"ordre du jour":"جدول الأعمال","échéance":"موعد نهائي","objectif":"غاية","tâche":"مهمة","responsabilité":"مسؤولية","procès-verbal":"محضر الاجتماع","congé":"إجازة","télétravail":"عمل عن بعد","démission":"استقالة","recrutement":"توظيف","entretien d'embauche":"مقابلة عمل","ce n'est pas la peine":"لا داعي لذلك",
+"reportage":"تقرير صحفي","interview":"مقابلة","gros titre":"عنوان رئيسي","rédaction":"هيئة التحرير","rumeur":"إشاعة","scandale":"فضيحة","censure":"رقابة","sondage":"استطلاع رأي",
+"virement":"تحويل مصرفي","prélèvement":"خصم تلقائي","intérêts":"فوائد","taux":"معدل","devise":"عملة","hypothèque":"رهن عقاري","livret d'épargne":"دفتر توفير","chéquier":"دفتر شيكات","espèces":"نقدًا","facture d'électricité":"فاتورة الكهرباء",
+"intelligence artificielle":"ذكاء اصطناعي","données":"بيانات","logiciel":"برمجيات","matériel":"أجهزة","sauvegarde":"نسخة احتياطية","mise à jour":"تحديث","piratage":"قرصنة","virus informatique":"فيروس حاسوب","écran tactile":"شاشة لمس","objet connecté":"جهاز ذكي","réseau social":"وسائل التواصل",
+"gratte-ciel":"ناطحة سحاب","béton":"خرسانة","brique":"طوب","grue":"رافعة","échafaudage":"سقالة","fondations":"أساسات","charpente":"هيكل خشبي","façade":"واجهة","toiture":"تسقيف","permis de construire":"رخصة بناء",
+"enquête":"تحقيق","indice":"قرينة","suspect":"مشتبه به","témoignage":"إفادة","empreintes digitales":"بصمات الأصابع","alibi":"حجة غياب","cambriolage":"سطو","agression":"اعتداء","escroquerie":"احتيال","interrogatoire":"استجواب","menottes":"أصفاد","rançon":"فدية"
+}
+};
+LANGS2.forEach(function(l){ var r2=LEX2R[l]||{}; Object.keys(r2).forEach(function(k){ LEX2[l][k]=r2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
