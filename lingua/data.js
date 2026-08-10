@@ -4460,6 +4460,159 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var s2=LEX2S[l]||{}; Object.keys(s2).forEach(function(k){ LEX2[l][k]=s2[k]; }); });
+/* ── Vague 20 FINALE nouvelles langues (v2.90) : unités 153-167 — étapes de la vie,
+   art de débattre, croyances, université, voyager malin, sport intensif, cours d'eau,
+   verbes vifs, loisirs créatifs, citoyens, nuances, dire et faire, sciences, bricolage,
+   cuisine et quantités. LE PROGRAMME COMPLET (167/167) EST COUVERT DANS LES 8 LANGUES.
+   Anti-collisions clés : droit pl=uprawnienie (prawo=droite), délai ≠ échéance partout
+   (uk строк, zh 时限, ja 期限, ko 기한, ar مهلة) ; escale ≠ correspondance (pl
+   międzylądowanie, ru стыковка, cs mezipřistání, zh 中转, ja 経由, ko 경유) ; crue ≠
+   inondation (pl wezbranie, ru паводок, zh 涨水, ja 増水) ; plusieurs ≠ quelques dans
+   les 8 (pl kilka/parę, ru несколько/пара, uk декілька/кілька, cs několik/pár,
+   zh 好几个/几个, ja いくつもの/いくつかの, ko 여러/몇몇, ar عدة/بضعة) ; dorénavant ≠
+   désormais partout ; rite ar=شعيرة (طقس=météo), en effet ar=فعلاً (بالفعل=déjà) ;
+   soupçonner ≠ douter (zh 猜疑, ja 怪しみます, ko 수상히 여기다) ; insister ru=упорствовать
+   (настаивать=exiger) ; récompenser zh=奖赏 (奖励=récompense) ; échecs zh=国际象棋
+   (象棋=jeu chinois différent — vérité). */
+var LEX2T = {
+pl:{
+"nourrisson":"niemowlak","adolescence":"okres dojrzewania","jeunesse":"młodość","majorité":"pełnoletność","vieillesse":"starość","décès":"zgon","état civil":"stan cywilny","espérance de vie":"średnia długość życia",
+"argument":"argument","réfuter":"obalać","nuancer":"niuansować","objection":"sprzeciw","porte-parole":"rzecznik","compromis":"kompromis","consensus":"konsensus","polémique":"polemika","controverse":"kontrowersja","mauvaise foi":"zła wola",
+"mosquée":"meczet","synagogue":"synagoga","temple":"świątynia","prière":"modlitwa","pèlerinage":"pielgrzymka","croyance":"wierzenie","foi":"wiara","athée":"ateista","rite":"obrzęd","laïcité":"świeckość",
+"licence":"licencjat","master":"magister","doctorat":"doktorat","thèse":"rozprawa doktorska","soutenance":"obrona pracy","amphithéâtre":"aula","bourse":"stypendium","inscription":"zapisy","recherche scientifique":"badania naukowe","stage de fin d'études":"staż dyplomowy",
+"hébergement":"zakwaterowanie","itinéraire":"trasa","formalités":"formalności","visa":"wiza","assurance voyage":"ubezpieczenie podróżne","escale":"międzylądowanie","hors saison":"poza sezonem","haute saison":"szczyt sezonu","dépaysement":"zmiana otoczenia","office de tourisme":"informacja turystyczna",
+"échauffement":"rozgrzewka","étirement":"rozciąganie","endurance":"wytrzymałość","souffle":"oddech","transpiration":"pocenie się","courbature":"zakwasy","récupération":"regeneracja","dopage":"doping","performance":"wynik sportowy","esprit d'équipe":"duch zespołu",
+"barrage":"tama","écluse":"śluza","affluent":"dopływ","delta":"delta","estuaire":"ujście rzeki","berge":"brzeg rzeki","noyade":"utonięcie","crue":"wezbranie","nappe phréatique":"wody gruntowe",
+"jaillir":"tryskać","s'effondrer":"zawalić się","surgir":"wyłaniać się","se répandre":"rozprzestrzeniać się","déborder":"przelewać się","engloutir":"pochłaniać","dissoudre":"rozpuszczać","s'évaporer":"parować","congeler":"zamrażać","fondre":"topić się",
+"tricot":"robienie na drutach","couture":"szycie","broderie":"haft","poterie":"garncarstwo","aquarelle":"akwarela","calligraphie":"kaligrafia","origami":"origami","maquette":"makieta","échecs":"szachy","jeu de dames":"warcaby",
+"nation":"naród","peuple":"lud","société":"społeczeństwo","droit":"uprawnienie","devoir":"obowiązek","voter":"głosować","justice":"sprawiedliwość","contrat":"umowa","signer":"podpisywać","remboursement":"zwrot pieniędzy","entretien":"konserwacja","délai":"czas realizacji","effort":"wysiłek","progrès":"postęp","résultat":"wynik",
+"quotidien":"codzienny","hebdomadaire":"cotygodniowy","mensuel":"comiesięczny","annuel":"coroczny","immédiat":"natychmiastowy","soudain":"nagły","progressif":"stopniowy","définitif":"ostateczny","efficace":"skuteczny","inutile":"bezużyteczny","évident":"oczywisty","compliqué":"skomplikowany","précis":"dokładny","vague":"niejasny","sincère":"autentyczny","avare":"skąpy","impoli":"niegrzeczny","imprudent":"nieostrożny","lâche":"tchórzliwy","fou":"szalony","en effet":"rzeczywiście","autrement dit":"innymi słowy","dorénavant":"od tej pory",
+"jurer":"przysięgać","pardonner":"wybaczać","trahir":"zdradzać","se venger":"mścić się","prouver":"udowadniać","féliciter":"gratulować","encourager":"zachęcać","consoler":"pocieszać","rassurer":"uspokajać","interdire":"zakazywać","autoriser":"zezwalać","obéir":"słuchać się","désobéir":"nie słuchać się","punir":"karać","récompenser":"nagradzać","menacer":"grozić","supplier":"błagać","soupçonner":"podejrzewać","insister":"nalegać","céder":"ustępować","parier":"zakładać się",
+"océan":"ocean","atmosphère":"atmosfera ziemska","oxygène":"tlen","espèce":"gatunek","électricité":"elektryczność","robot":"robot","éclipse":"zaćmienie",
+"fer":"żelazo","acier":"stal","sable":"piasek","colle":"klej","peinture":"farba","aiguille":"igła","construire":"budować","casser":"łamać","visser":"przykręcać",
+"vinaigre":"ocet","moutarde":"musztarda","sauce":"sos","ingrédient":"składnik","congélateur":"zamrażarka","mixeur":"blender","tiers":"jedna trzecia","plusieurs":"kilka","quelques":"parę","aucun":"żaden","chaque":"każdy","au moins":"przynajmniej","au maximum":"maksymalnie"
+},
+ru:{
+"nourrisson":"младенец","adolescence":"подростковый возраст","jeunesse":"молодость","majorité":"совершеннолетие","vieillesse":"старость","décès":"кончина","état civil":"гражданское состояние","espérance de vie":"продолжительность жизни",
+"argument":"аргумент","réfuter":"опровергать","nuancer":"уточнять","objection":"возражение","porte-parole":"пресс-секретарь","compromis":"компромисс","consensus":"консенсус","polémique":"полемика","controverse":"спор","mauvaise foi":"недобросовестность",
+"mosquée":"мечеть","synagogue":"синагога","temple":"храм","prière":"молитва","pèlerinage":"паломничество","croyance":"верование","foi":"вера","athée":"атеист","rite":"обряд","laïcité":"светскость",
+"licence":"бакалавриат","master":"магистратура","doctorat":"докторантура","thèse":"диссертация","soutenance":"защита диссертации","amphithéâtre":"аудитория","bourse":"стипендия","inscription":"зачисление","recherche scientifique":"научные исследования","stage de fin d'études":"преддипломная практика",
+"hébergement":"проживание","itinéraire":"маршрут","formalités":"формальности","visa":"виза","assurance voyage":"туристическая страховка","escale":"стыковка","hors saison":"не в сезон","haute saison":"высокий сезон","dépaysement":"смена обстановки","office de tourisme":"туристическое бюро",
+"échauffement":"разминка","étirement":"растяжка","endurance":"выносливость","souffle":"дыхание","transpiration":"пот","courbature":"крепатура","récupération":"восстановление","dopage":"допинг","performance":"спортивный результат","esprit d'équipe":"командный дух",
+"barrage":"плотина","écluse":"шлюз","affluent":"приток","delta":"дельта","estuaire":"устье","berge":"берег","noyade":"утопление","crue":"паводок","nappe phréatique":"грунтовые воды",
+"jaillir":"бить ключом","s'effondrer":"рухнуть","surgir":"возникать","se répandre":"распространяться","déborder":"переливаться","engloutir":"поглощать","dissoudre":"растворять","s'évaporer":"испаряться","congeler":"замораживать","fondre":"таять",
+"tricot":"вязание","couture":"шитьё","broderie":"вышивка","poterie":"гончарное дело","aquarelle":"акварель","calligraphie":"каллиграфия","origami":"оригами","maquette":"макет","échecs":"шахматы","jeu de dames":"шашки",
+"nation":"нация","peuple":"народ","société":"общество","droit":"право","devoir":"обязанность","voter":"голосовать","justice":"справедливость","contrat":"контракт","signer":"подписывать","remboursement":"возврат денег","entretien":"техобслуживание","délai":"срок исполнения","effort":"усилие","progrès":"прогресс","résultat":"результат",
+"quotidien":"ежедневный","hebdomadaire":"еженедельный","mensuel":"ежемесячный","annuel":"ежегодный","immédiat":"немедленный","soudain":"внезапный","progressif":"постепенный","définitif":"окончательный","efficace":"эффективный","inutile":"бесполезный","évident":"очевидный","compliqué":"сложный","précis":"точный","vague":"расплывчатый","sincère":"искренний","avare":"жадный","impoli":"невежливый","imprudent":"неосторожный","lâche":"трусливый","fou":"сумасшедший","en effet":"в самом деле","autrement dit":"иными словами","dorénavant":"впредь",
+"jurer":"клясться","pardonner":"прощать","trahir":"предавать","se venger":"мстить","prouver":"доказывать","féliciter":"поздравлять","encourager":"подбадривать","consoler":"утешать","rassurer":"успокаивать","interdire":"запрещать","autoriser":"разрешать","obéir":"подчиняться","désobéir":"не слушаться","punir":"наказывать","récompenser":"награждать","menacer":"угрожать","supplier":"умолять","soupçonner":"подозревать","insister":"упорствовать","céder":"уступать","parier":"держать пари",
+"océan":"океан","atmosphère":"атмосфера Земли","oxygène":"кислород","espèce":"вид","électricité":"электричество","robot":"робот","éclipse":"затмение",
+"fer":"железо","acier":"сталь","sable":"песок","colle":"клей","peinture":"краска","aiguille":"игла","construire":"строить","casser":"ломать","visser":"закручивать",
+"vinaigre":"уксус","moutarde":"горчица","sauce":"соус","ingrédient":"ингредиент","congélateur":"морозилка","mixeur":"блендер","tiers":"треть","plusieurs":"несколько","quelques":"пара-тройка","aucun":"никакой","chaque":"каждый","au moins":"по крайней мере","au maximum":"максимум"
+},
+uk:{
+"nourrisson":"немовля","adolescence":"підлітковий вік","jeunesse":"молодість","majorité":"повноліття","vieillesse":"старість","décès":"кончина","état civil":"цивільний стан","espérance de vie":"тривалість життя",
+"argument":"аргумент","réfuter":"спростовувати","nuancer":"уточнювати","objection":"заперечення","porte-parole":"речник","compromis":"компроміс","consensus":"консенсус","polémique":"полеміка","controverse":"суперечка","mauvaise foi":"недобросовісність",
+"mosquée":"мечеть","synagogue":"синагога","temple":"храм","prière":"молитва","pèlerinage":"паломництво","croyance":"вірування","foi":"віра","athée":"атеїст","rite":"обряд","laïcité":"світськість",
+"licence":"бакалаврат","master":"магістратура","doctorat":"докторантура","thèse":"дисертація","soutenance":"захист дисертації","amphithéâtre":"аудиторія","bourse":"стипендія","inscription":"зарахування","recherche scientifique":"наукові дослідження","stage de fin d'études":"переддипломна практика",
+"hébergement":"проживання","itinéraire":"маршрут","formalités":"формальності","visa":"віза","assurance voyage":"туристичне страхування","escale":"проміжна зупинка","hors saison":"поза сезоном","haute saison":"високий сезон","dépaysement":"зміна оточення","office de tourisme":"туристичне бюро",
+"échauffement":"розминка","étirement":"розтяжка","endurance":"витривалість","souffle":"дихання","transpiration":"піт","courbature":"крепатура","récupération":"відновлення","dopage":"допінг","performance":"спортивний результат","esprit d'équipe":"командний дух",
+"barrage":"гребля","écluse":"шлюз","affluent":"притока","delta":"дельта","estuaire":"гирло","berge":"берег","noyade":"утоплення","crue":"паводок","nappe phréatique":"ґрунтові води",
+"jaillir":"бити фонтаном","s'effondrer":"обвалюватися","surgir":"виникати","se répandre":"поширюватися","déborder":"переливатися","engloutir":"поглинати","dissoudre":"розчиняти","s'évaporer":"випаровуватися","congeler":"заморожувати","fondre":"танути",
+"tricot":"в'язання","couture":"шиття","broderie":"вишивка","poterie":"гончарство","aquarelle":"акварель","calligraphie":"каліграфія","origami":"орігамі","maquette":"макет","échecs":"шахи","jeu de dames":"шашки",
+"nation":"нація","peuple":"народ","société":"суспільство","droit":"право","devoir":"обов'язок","voter":"голосувати","justice":"справедливість","contrat":"контракт","signer":"підписувати","remboursement":"повернення грошей","entretien":"техобслуговування","délai":"строк","effort":"зусилля","progrès":"прогрес","résultat":"результат",
+"quotidien":"щоденний","hebdomadaire":"щотижневий","mensuel":"щомісячний","annuel":"щорічний","immédiat":"негайний","soudain":"раптовий","progressif":"поступовий","définitif":"остаточний","efficace":"ефективний","inutile":"марний","évident":"очевидний","compliqué":"заплутаний","précis":"точний","vague":"розмитий","sincère":"щирий","avare":"скупий","impoli":"неввічливий","imprudent":"необережний","lâche":"боягузливий","fou":"божевільний","en effet":"дійсно","autrement dit":"іншими словами","dorénavant":"віднині",
+"jurer":"присягатися","pardonner":"прощати","trahir":"зраджувати","se venger":"мститися","prouver":"доводити","féliciter":"вітати","encourager":"заохочувати","consoler":"втішати","rassurer":"заспокоювати","interdire":"забороняти","autoriser":"дозволяти","obéir":"слухатися","désobéir":"не слухатися","punir":"карати","récompenser":"нагороджувати","menacer":"погрожувати","supplier":"благати","soupçonner":"підозрювати","insister":"стояти на своєму","céder":"поступатися","parier":"битися об заклад",
+"océan":"океан","atmosphère":"атмосфера Землі","oxygène":"кисень","espèce":"вид","électricité":"електрика","robot":"робот","éclipse":"затемнення",
+"fer":"залізо","acier":"сталь","sable":"пісок","colle":"клей","peinture":"фарба","aiguille":"голка","construire":"будувати","casser":"ламати","visser":"закручувати",
+"vinaigre":"оцет","moutarde":"гірчиця","sauce":"соус","ingrédient":"інгредієнт","congélateur":"морозилка","mixeur":"блендер","tiers":"третина","plusieurs":"декілька","quelques":"кілька","aucun":"жоден","chaque":"кожен","au moins":"принаймні","au maximum":"щонайбільше"
+},
+cs:{
+"nourrisson":"kojenec","adolescence":"dospívání","jeunesse":"mládí","majorité":"plnoletost","vieillesse":"stáří","décès":"úmrtí","état civil":"osobní stav","espérance de vie":"průměrná délka života",
+"argument":"argument","réfuter":"vyvracet","nuancer":"upřesňovat","objection":"námitka","porte-parole":"mluvčí","compromis":"kompromis","consensus":"konsenzus","polémique":"polemika","controverse":"kontroverze","mauvaise foi":"zlá vůle",
+"mosquée":"mešita","synagogue":"synagoga","temple":"chrám","prière":"modlitba","pèlerinage":"pouť","croyance":"přesvědčení","foi":"víra","athée":"ateista","rite":"rituál","laïcité":"sekularismus",
+"licence":"bakalářský titul","master":"magisterský titul","doctorat":"doktorát","thèse":"disertace","soutenance":"obhajoba","amphithéâtre":"posluchárna","bourse":"stipendium","inscription":"zápis ke studiu","recherche scientifique":"vědecký výzkum","stage de fin d'études":"absolventská stáž",
+"hébergement":"ubytování","itinéraire":"itinerář","formalités":"formality","visa":"vízum","assurance voyage":"cestovní pojištění","escale":"mezipřistání","hors saison":"mimo sezónu","haute saison":"hlavní sezóna","dépaysement":"změna prostředí","office de tourisme":"turistické informační centrum",
+"échauffement":"rozcvička","étirement":"protahování","endurance":"vytrvalost","souffle":"dech","transpiration":"pocení","courbature":"bolest svalů","récupération":"regenerace","dopage":"doping","performance":"výkon","esprit d'équipe":"týmový duch",
+"barrage":"přehrada","écluse":"zdymadlo","affluent":"přítok","delta":"delta","estuaire":"ústí řeky","berge":"břeh","noyade":"utonutí","crue":"velká voda","nappe phréatique":"podzemní voda",
+"jaillir":"tryskat","s'effondrer":"zhroutit se","surgir":"vynořovat se","se répandre":"šířit se","déborder":"přetékat","engloutir":"pohlcovat","dissoudre":"rozpouštět","s'évaporer":"vypařovat se","congeler":"zmrazovat","fondre":"tát",
+"tricot":"pletení","couture":"šití","broderie":"vyšívání","poterie":"keramika","aquarelle":"akvarel","calligraphie":"kaligrafie","origami":"origami","maquette":"maketa","échecs":"šachy","jeu de dames":"dáma",
+"nation":"národ","peuple":"lid","société":"společnost","droit":"právo","devoir":"povinnost","voter":"hlasovat","justice":"spravedlnost","contrat":"kontrakt","signer":"podepisovat","remboursement":"vrácení peněz","entretien":"údržba","délai":"stanovená lhůta","effort":"úsilí","progrès":"pokrok","résultat":"výsledek",
+"quotidien":"každodenní","hebdomadaire":"týdenní","mensuel":"měsíční","annuel":"roční","immédiat":"okamžitý","soudain":"náhlý","progressif":"postupný","définitif":"konečný","efficace":"účinný","inutile":"zbytečný","évident":"zřejmý","compliqué":"složitý","précis":"přesný","vague":"vágní","sincère":"opravdový","avare":"lakomý","impoli":"nezdvořilý","imprudent":"neopatrný","lâche":"zbabělý","fou":"bláznivý","en effet":"skutečně","autrement dit":"jinými slovy","dorénavant":"napříště",
+"jurer":"přísahat","pardonner":"odpouštět","trahir":"zrazovat","se venger":"mstít se","prouver":"dokazovat","féliciter":"gratulovat","encourager":"povzbuzovat","consoler":"utěšovat","rassurer":"uklidňovat","interdire":"zakazovat","autoriser":"povolovat","obéir":"uposlechnout","désobéir":"neuposlechnout","punir":"trestat","récompenser":"odměňovat","menacer":"vyhrožovat","supplier":"úpěnlivě prosit","soupçonner":"podezírat","insister":"trvat na svém","céder":"ustupovat","parier":"sázet se",
+"océan":"oceán","atmosphère":"zemská atmosféra","oxygène":"kyslík","espèce":"druh","électricité":"elektřina","robot":"robot","éclipse":"zatmění",
+"fer":"železo","acier":"ocel","sable":"písek","colle":"lepidlo","peinture":"malířská barva","aiguille":"jehla","construire":"stavět","casser":"rozbíjet","visser":"šroubovat",
+"vinaigre":"ocet","moutarde":"hořčice","sauce":"omáčka","ingrédient":"ingredience","congélateur":"mrazák","mixeur":"mixér","tiers":"třetina","plusieurs":"několik","quelques":"hrstka","aucun":"žádný","chaque":"každý","au moins":"alespoň","au maximum":"maximálně"
+},
+zh:{
+"nourrisson":"婴儿","adolescence":"青春期","jeunesse":"青春","majorité":"成年","vieillesse":"晚年","décès":"去世","état civil":"户籍","espérance de vie":"预期寿命",
+"argument":"论点","réfuter":"反驳","nuancer":"细化","objection":"异议","porte-parole":"发言人","compromis":"妥协","consensus":"共识","polémique":"论战","controverse":"争议","mauvaise foi":"恶意",
+"mosquée":"清真寺","synagogue":"犹太教堂","temple":"寺庙","prière":"祈祷","pèlerinage":"朝圣","croyance":"信念","foi":"信仰","athée":"无神论者","rite":"宗教仪式","laïcité":"政教分离",
+"licence":"学士学位","master":"硕士学位","doctorat":"博士学位","thèse":"博士论文","soutenance":"论文答辩","amphithéâtre":"阶梯教室","bourse":"奖学金","inscription":"注册","recherche scientifique":"科学研究","stage de fin d'études":"毕业实习",
+"hébergement":"住宿","itinéraire":"路线","formalités":"手续","visa":"签证","assurance voyage":"旅游保险","escale":"中转","hors saison":"淡季","haute saison":"旺季","dépaysement":"异国情调","office de tourisme":"旅游咨询处",
+"échauffement":"热身","étirement":"拉伸","endurance":"耐力","souffle":"气息","transpiration":"出汗","courbature":"肌肉酸痛","récupération":"恢复","dopage":"兴奋剂","performance":"表现","esprit d'équipe":"团队精神",
+"barrage":"水坝","écluse":"船闸","affluent":"支流","delta":"三角洲","estuaire":"河口","berge":"河岸","noyade":"溺水","crue":"涨水","nappe phréatique":"地下水",
+"jaillir":"喷出","s'effondrer":"倒塌","surgir":"突然出现","se répandre":"蔓延","déborder":"溢出","engloutir":"吞没","dissoudre":"溶解","s'évaporer":"蒸发","congeler":"冷冻","fondre":"融化",
+"tricot":"编织","couture":"缝纫","broderie":"刺绣","poterie":"陶艺","aquarelle":"水彩画","calligraphie":"书法","origami":"折纸","maquette":"模型","échecs":"国际象棋","jeu de dames":"西洋跳棋",
+"nation":"民族","peuple":"人民","société":"社会","droit":"权利","devoir":"义务","voter":"去投票","justice":"正义","contrat":"合同","signer":"签字","remboursement":"还款","entretien":"保养","délai":"时限","effort":"努力","progrès":"进步","résultat":"结果",
+"quotidien":"日常的","hebdomadaire":"每周的","mensuel":"每月的","annuel":"每年的","immédiat":"立即的","soudain":"突然的","progressif":"渐进的","définitif":"最终的","efficace":"有效的","inutile":"无用的","évident":"明显的","compliqué":"复杂的","précis":"精确的","vague":"模糊的","sincère":"真诚的","avare":"吝啬的","impoli":"不礼貌的","imprudent":"不小心的","lâche":"懦弱的","fou":"疯狂的","en effet":"的确","autrement dit":"换句话说","dorénavant":"今后",
+"jurer":"发誓","pardonner":"原谅","trahir":"背叛","se venger":"报仇","prouver":"证明","féliciter":"祝贺","encourager":"鼓励","consoler":"安慰","rassurer":"使安心","interdire":"禁止","autoriser":"允许","obéir":"服从","désobéir":"不服从","punir":"惩罚","récompenser":"奖赏","menacer":"威胁","supplier":"恳求","soupçonner":"猜疑","insister":"坚持","céder":"让步","parier":"打赌",
+"océan":"海洋","atmosphère":"大气层","oxygène":"氧气","espèce":"物种","électricité":"电","robot":"机器人","éclipse":"日食",
+"fer":"铁","acier":"钢","sable":"沙子","colle":"胶水","peinture":"油漆","aiguille":"针","construire":"建造","casser":"打破","visser":"拧螺丝",
+"vinaigre":"醋","moutarde":"芥末","sauce":"酱汁","ingrédient":"食材","congélateur":"冷冻柜","mixeur":"搅拌机","tiers":"三分之一","plusieurs":"好几个","quelques":"几个","aucun":"没有任何","chaque":"每个","au moins":"至少","au maximum":"最多"
+},
+ja:{
+"nourrisson":"乳児","adolescence":"思春期","jeunesse":"青春","majorité":"成年","vieillesse":"老年","décès":"死亡","état civil":"戸籍","espérance de vie":"平均寿命",
+"argument":"論拠","réfuter":"反論します","nuancer":"ニュアンスをつけます","objection":"異議","porte-parole":"スポークスマン","compromis":"妥協","consensus":"コンセンサス","polémique":"論争","controverse":"賛否両論","mauvaise foi":"不誠実",
+"mosquée":"モスク","synagogue":"シナゴーグ","temple":"寺","prière":"祈り","pèlerinage":"巡礼","croyance":"信念","foi":"信仰","athée":"無神論者","rite":"儀式","laïcité":"政教分離",
+"licence":"学士号","master":"修士号","doctorat":"博士号","thèse":"博士論文","soutenance":"論文審査","amphithéâtre":"講堂","bourse":"奨学金","inscription":"入学手続き","recherche scientifique":"科学研究","stage de fin d'études":"卒業インターン",
+"hébergement":"宿泊","itinéraire":"旅程","formalités":"手続き","visa":"ビザ","assurance voyage":"旅行保険","escale":"経由","hors saison":"オフシーズン","haute saison":"ハイシーズン","dépaysement":"非日常感","office de tourisme":"観光案内所",
+"échauffement":"ウォーミングアップ","étirement":"ストレッチ","endurance":"持久力","souffle":"息","transpiration":"汗","courbature":"筋肉痛","récupération":"疲労回復","dopage":"ドーピング","performance":"パフォーマンス","esprit d'équipe":"チームワーク",
+"barrage":"ダム","écluse":"水門","affluent":"支流","delta":"三角州","estuaire":"河口","berge":"川岸","noyade":"溺死","crue":"増水","nappe phréatique":"地下水",
+"jaillir":"噴き出します","s'effondrer":"崩れます","surgir":"現れます","se répandre":"広がります","déborder":"あふれます","engloutir":"飲み込みます","dissoudre":"溶かします","s'évaporer":"蒸発します","congeler":"冷凍します","fondre":"溶けます",
+"tricot":"編み物","couture":"裁縫","broderie":"刺繍","poterie":"陶芸","aquarelle":"水彩画","calligraphie":"書道","origami":"折り紙","maquette":"模型","échecs":"チェス","jeu de dames":"チェッカー",
+"nation":"国家","peuple":"国民","société":"社会","droit":"権利","devoir":"義務","voter":"投票します","justice":"正義","contrat":"契約","signer":"署名します","remboursement":"返金","entretien":"メンテナンス","délai":"期限","effort":"努力","progrès":"進歩","résultat":"結果",
+"quotidien":"日常の","hebdomadaire":"毎週の","mensuel":"毎月の","annuel":"年間の","immédiat":"即時の","soudain":"突然の","progressif":"段階的な","définitif":"最終的な","efficace":"効果的な","inutile":"無駄な","évident":"明らかな","compliqué":"複雑な","précis":"正確な","vague":"曖昧な","sincère":"誠実な","avare":"けちな","impoli":"失礼な","imprudent":"不注意な","lâche":"臆病な","fou":"狂った","en effet":"確かに","autrement dit":"言い換えれば","dorénavant":"今後",
+"jurer":"誓います","pardonner":"許します","trahir":"裏切ります","se venger":"復讐します","prouver":"証明します","féliciter":"祝います","encourager":"励まします","consoler":"慰めます","rassurer":"安心させます","interdire":"禁止します","autoriser":"許可します","obéir":"従います","désobéir":"逆らいます","punir":"罰します","récompenser":"褒美を与えます","menacer":"脅します","supplier":"懇願します","soupçonner":"怪しみます","insister":"言い張ります","céder":"譲ります","parier":"賭けます",
+"océan":"大洋","atmosphère":"大気","oxygène":"酸素","espèce":"種","électricité":"電気","robot":"ロボット","éclipse":"日食",
+"fer":"鉄","acier":"鋼","sable":"砂","colle":"接着剤","peinture":"ペンキ","aiguille":"針","construire":"建てます","casser":"壊します","visser":"ネジを締めます",
+"vinaigre":"酢","moutarde":"マスタード","sauce":"ソース","ingrédient":"材料","congélateur":"冷凍庫","mixeur":"ミキサー","tiers":"三分の一","plusieurs":"いくつもの","quelques":"いくつかの","aucun":"一つもない","chaque":"それぞれの","au moins":"少なくとも","au maximum":"最大で"
+},
+ko:{
+"nourrisson":"영아","adolescence":"사춘기","jeunesse":"청춘","majorité":"성년","vieillesse":"노년","décès":"사망","état civil":"호적","espérance de vie":"기대 수명",
+"argument":"논거","réfuter":"반박하다","nuancer":"뉘앙스를 더하다","objection":"이의","porte-parole":"대변인","compromis":"타협","consensus":"합의","polémique":"설전","controverse":"논란","mauvaise foi":"억지",
+"mosquée":"모스크","synagogue":"유대교 회당","temple":"사원","prière":"기도","pèlerinage":"성지 순례","croyance":"믿음","foi":"신앙","athée":"무신론자","rite":"의례","laïcité":"정교분리",
+"licence":"학사 학위","master":"석사 학위","doctorat":"박사 학위","thèse":"박사 논문","soutenance":"논문 심사","amphithéâtre":"강당","bourse":"장학금","inscription":"등록","recherche scientifique":"과학 연구","stage de fin d'études":"졸업 인턴십",
+"hébergement":"숙박","itinéraire":"여정","formalités":"수속","visa":"비자","assurance voyage":"여행자 보험","escale":"경유","hors saison":"비수기","haute saison":"성수기","dépaysement":"색다른 기분","office de tourisme":"관광 안내소",
+"échauffement":"준비 운동","étirement":"스트레칭","endurance":"지구력","souffle":"숨","transpiration":"땀","courbature":"근육통","récupération":"피로 회복","dopage":"도핑","performance":"기량","esprit d'équipe":"팀워크",
+"barrage":"댐","écluse":"갑문","affluent":"지류","delta":"삼각주","estuaire":"하구","berge":"강둑","noyade":"익사","crue":"증수","nappe phréatique":"지하수",
+"jaillir":"솟구치다","s'effondrer":"무너지다","surgir":"불쑥 나타나다","se répandre":"퍼지다","déborder":"넘치다","engloutir":"삼키다","dissoudre":"녹이다","s'évaporer":"증발하다","congeler":"얼리다","fondre":"녹다",
+"tricot":"뜨개질","couture":"바느질","broderie":"자수","poterie":"도예","aquarelle":"수채화","calligraphie":"서예","origami":"종이접기","maquette":"모형","échecs":"체스","jeu de dames":"체커",
+"nation":"국가","peuple":"국민","société":"사회","droit":"권리","devoir":"의무","voter":"투표하다","justice":"정의","contrat":"계약","signer":"서명하다","remboursement":"환불","entretien":"유지 보수","délai":"기한","effort":"노력","progrès":"진보","résultat":"결과",
+"quotidien":"일상적인","hebdomadaire":"주간의","mensuel":"월간의","annuel":"연간의","immédiat":"즉각적인","soudain":"갑작스러운","progressif":"점진적인","définitif":"최종적인","efficace":"효과적인","inutile":"쓸모없는","évident":"명백한","compliqué":"복잡한","précis":"정확한","vague":"모호한","sincère":"진실한","avare":"인색한","impoli":"무례한","imprudent":"경솔한","lâche":"비겁한","fou":"미친","en effet":"과연","autrement dit":"다시 말해서","dorénavant":"앞으로는",
+"jurer":"맹세하다","pardonner":"용서하다","trahir":"배신하다","se venger":"복수하다","prouver":"증명하다","féliciter":"축하하다","encourager":"격려하다","consoler":"위로하다","rassurer":"안심시키다","interdire":"금지하다","autoriser":"허가하다","obéir":"복종하다","désobéir":"거역하다","punir":"벌하다","récompenser":"보상하다","menacer":"위협하다","supplier":"애원하다","soupçonner":"수상히 여기다","insister":"고집하다","céder":"양보하다","parier":"내기하다",
+"océan":"대양","atmosphère":"대기","oxygène":"산소","espèce":"종","électricité":"전기","robot":"로봇","éclipse":"일식",
+"fer":"철","acier":"강철","sable":"모래","colle":"접착제","peinture":"페인트","aiguille":"바늘","construire":"짓다","casser":"부수다","visser":"나사를 조이다",
+"vinaigre":"식초","moutarde":"겨자","sauce":"소스","ingrédient":"재료","congélateur":"냉동고","mixeur":"믹서","tiers":"3분의 1","plusieurs":"여러","quelques":"몇몇","aucun":"하나도 없는","chaque":"각각의","au moins":"적어도","au maximum":"최대한"
+},
+ar:{
+"nourrisson":"طفل رضيع","adolescence":"مراهقة","jeunesse":"شباب","majorité":"سن الرشد","vieillesse":"شيخوخة","décès":"وفاة","état civil":"الحالة المدنية","espérance de vie":"متوسط العمر",
+"argument":"حجة","réfuter":"يدحض","nuancer":"يدقق","objection":"اعتراض","porte-parole":"متحدث رسمي","compromis":"حل وسط","consensus":"إجماع","polémique":"جدل","controverse":"خلاف","mauvaise foi":"سوء نية",
+"mosquée":"مسجد","synagogue":"كنيس","temple":"معبد","prière":"صلاة","pèlerinage":"حج","croyance":"معتقد","foi":"إيمان","athée":"ملحد","rite":"شعيرة","laïcité":"علمانية",
+"licence":"بكالوريوس","master":"ماجستير","doctorat":"دكتوراه","thèse":"أطروحة","soutenance":"مناقشة الأطروحة","amphithéâtre":"مدرج جامعي","bourse":"منحة دراسية","inscription":"تسجيل","recherche scientifique":"بحث علمي","stage de fin d'études":"تدريب التخرج",
+"hébergement":"إقامة","itinéraire":"مسار","formalités":"إجراءات","visa":"تأشيرة","assurance voyage":"تأمين سفر","escale":"توقف مؤقت","hors saison":"خارج الموسم","haute saison":"ذروة الموسم","dépaysement":"تغيير الأجواء","office de tourisme":"مكتب سياحة",
+"échauffement":"إحماء","étirement":"تمدد","endurance":"قدرة على التحمل","souffle":"نفس","transpiration":"تعرق","courbature":"ألم عضلي","récupération":"استشفاء","dopage":"منشطات","performance":"أداء","esprit d'équipe":"روح الفريق",
+"barrage":"سد","écluse":"هويس","affluent":"رافد","delta":"دلتا","estuaire":"مصب","berge":"ضفة","noyade":"غرق","crue":"فيضان النهر","nappe phréatique":"مياه جوفية",
+"jaillir":"يتدفق","s'effondrer":"ينهار","surgir":"يظهر فجأة","se répandre":"ينتشر","déborder":"يفيض","engloutir":"يبتلع","dissoudre":"يذيب","s'évaporer":"يتبخر","congeler":"يجمد","fondre":"يذوب",
+"tricot":"حياكة","couture":"خياطة","broderie":"تطريز","poterie":"فخار","aquarelle":"ألوان مائية","calligraphie":"فن الخط","origami":"أوريغامي","maquette":"مجسم","échecs":"شطرنج","jeu de dames":"لعبة الداما",
+"nation":"أمة","peuple":"شعب","société":"مجتمع","droit":"حق","devoir":"واجب","voter":"يصوت","justice":"عدالة","contrat":"عقد","signer":"يوقع","remboursement":"استرداد المال","entretien":"صيانة","délai":"مهلة","effort":"جهد","progrès":"تقدم","résultat":"نتيجة",
+"quotidien":"يومي","hebdomadaire":"أسبوعي","mensuel":"شهري","annuel":"سنوي","immédiat":"فوري","soudain":"مفاجئ","progressif":"تدريجي","définitif":"نهائي","efficace":"فعال","inutile":"عديم الفائدة","évident":"بديهي","compliqué":"معقد","précis":"مضبوط","vague":"غامض","sincère":"مخلص","avare":"بخيل","impoli":"وقح","imprudent":"متهور","lâche":"جبان","fou":"مجنون","en effet":"فعلاً","autrement dit":"بعبارة أخرى","dorénavant":"منذ الآن",
+"jurer":"يقسم","pardonner":"يسامح","trahir":"يخون","se venger":"ينتقم","prouver":"يثبت","féliciter":"يهنئ","encourager":"يشجع","consoler":"يواسي","rassurer":"يطمئن","interdire":"يمنع","autoriser":"يسمح","obéir":"يطيع","désobéir":"يعصي","punir":"يعاقب","récompenser":"يكافئ","menacer":"يهدد","supplier":"يتوسل","soupçonner":"يشتبه","insister":"يصر","céder":"يتنازل","parier":"يراهن",
+"océan":"محيط","atmosphère":"غلاف جوي","oxygène":"أكسجين","espèce":"نوع","électricité":"كهرباء","robot":"روبوت","éclipse":"كسوف",
+"fer":"حديد","acier":"فولاذ","sable":"رمل","colle":"غراء","peinture":"طلاء","aiguille":"إبرة","construire":"يبني","casser":"يكسر","visser":"يشد البرغي",
+"vinaigre":"خل","moutarde":"خردل","sauce":"صلصة","ingrédient":"مكونات","congélateur":"فريزر","mixeur":"خلاط","tiers":"ثلث","plusieurs":"عدة","quelques":"بضعة","aucun":"ولا واحد","chaque":"كل واحد","au moins":"على الأقل","au maximum":"على الأكثر"
+}
+};
+LANGS2.forEach(function(l){ var t2=LEX2T[l]||{}; Object.keys(t2).forEach(function(k){ LEX2[l][k]=t2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
