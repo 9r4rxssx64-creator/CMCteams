@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.85.0";
+var APP_VER="v2.86.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -311,9 +311,16 @@ var VOICES=[
   {id:"alloy",  name:"Alloy — neutre",     cloud:true},
   {id:"echo",   name:"Echo — posée",       cloud:true},
   {id:"onyx",   name:"Onyx — grave",       cloud:true},
+  /* 🧒 Profil « Antonin » (Kevin 2026-08-10) : voix de garçon fabriquée avec la même
+     technique éprouvée que la voix fillette de Bee — générée lentement (s=0.85) puis
+     accélérée (×1.18 : le timbre monte, le tempo redevient normal). Honnête : voix de
+     garçon APPROCHANTE ; la VRAIE voix d'Antonin demandera un enregistrement audio. */
+  {id:"antonin",name:"🧒 Antonin — garçon", cloud:true, tts:"alloy", gen:0.85, rate:1.18, wsPitch:1.25},
   {id:"device", name:"Voix du téléphone (hors-ligne)", cloud:false}
 ];
 function _isCloudVoice(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===id) return VOICES[i].cloud; } return false; }
+/* Résout un id de voix vers sa vraie voix cloud + réglages (profils comme « antonin »). */
+function voiceReal(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===id) return VOICES[i]; } return null; }
 var _ttsAudio=null,_ttsReq=0;
 /* Kevin 2026-08-08 « elle s'arrête avant la fin » — repli voix du téléphone :
    Chrome/Android et Safari iOS coupent silencieusement toute phrase parlée après ~15 s.
@@ -332,7 +339,9 @@ function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var my
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
   if(_isCloudVoice(vid)){
     try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
-      var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+      var vr=voiceReal(vid)||{};
+      var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+(vr.gen?"&s="+vr.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+      if(vr.rate){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vr.rate; }catch(_){} }
       a.onerror=function(){ if(myReq===_ttsReq) _webSpeak(text); };   // ne parle que si c'est TOUJOURS la dernière demande
       var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq) _webSpeak(text); });
       return;
@@ -898,7 +907,9 @@ function pronSay(text,slow){ if(!S.sound||!text)return; var lang=COURSES[S.cours
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} _wsStopKA(); _pronLipStop();
   var bee=document.querySelector(".pron-bee"), mouth=bee&&bee.querySelector(".disc-mouth");
   if(_isCloudVoice(v)){ try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
-    var a=new Audio(); a.crossOrigin="anonymous"; a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(v)+(slow?"&s=0.6":"")+"&t="+encodeURIComponent(text); _ttsAudio=a;
+    var vr=voiceReal(v)||{};
+    var a=new Audio(); a.crossOrigin="anonymous"; a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+(slow?"&s=0.6":(vr.gen?"&s="+vr.gen:""))+"&t="+encodeURIComponent(text); _ttsAudio=a;
+    if(vr.rate&&!slow){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vr.rate; }catch(_){} }
     a.addEventListener("playing",function(){ if(myReq!==_ttsReq)return; if(bee)bee.classList.add("talk");
       if(mouth){ _pronLip=beeLipSync(a,mouth); if(!_pronLip)mouth.classList.add("talking"); } },{once:true});
     a.onended=function(){ if(bee)bee.classList.remove("talk"); if(mouth)mouth.classList.remove("talking"); _pronLipStop(); };
@@ -1639,6 +1650,8 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
   /* UNE SEULE voix partout = celle que tu as choisie (S.voice), CLAIRE et à vitesse normale.
      Fini « la voix change selon la catégorie » et l'effet fillette aigu/étouffé (Kevin). */
   var cfg=null; if(vid==="bee"){ vid=S.voice||"nova"; }
+  /* Profils de voix (ex : « antonin ») : on résout vers la vraie voix cloud + réglages. */
+  var _vr=voiceReal(vid); if(_vr&&_vr.tts){ cfg={rate:_vr.rate||1, gen:_vr.gen, wsPitch:_vr.wsPitch||1.1, wsRate:1}; vid=_vr.tts; }
   /* ANTI-DÉCALAGE (même protection que speak()) : coupe tout son en cours + jeton de requête
      → jamais deux voix qui se chevauchent, jamais un ancien son qui part en retard */
   var myReq=++_ttsReq;
