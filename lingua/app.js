@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.98.0";
+var APP_VER="v2.99.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1113,6 +1113,12 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
 /* ============ Coach IA (conversation interactive, mémoire PAR COMPTE) ============ */
 var _coachThinking=false,_coachPose="wave";
 function coachLangMeta(){ return S.course?COURSES[S.course]:null; }
+/* VOIX du prof selon le NIVEAU (miroir exact du dosage du worker /ai, share[levelIndex]) :
+   débutant (tier 0-1) → la réponse de Bee est SURTOUT en français → on la lit avec la voix
+   FRANÇAISE (sinon une voix anglaise massacre le français = « ça monte et descend » + « mauvais
+   anglais »). Niveau plus avancé (tier ≥2 « surtout en langue cible ») → voix de la langue cible.
+   Un mot isolé de l'autre langue passe très bien dans la voix dominante. */
+function coachTtsLang(){ var c=coachLangMeta(); if(!c) return "fr-FR"; return diffTier()<=1 ? "fr-FR" : c.ttsLang; }
 /* Modale honnête : l'échelle CECRL réelle + où se situe VRAIMENT « bilingue ». */
 function cefrModal(){ var m=modal(); var lv=currentLevel();
   var uniq={}; if(S.course&&COURSES[S.course]) allWords(S.course).forEach(function(w){ uniq[w.fr]=1; });
@@ -1210,7 +1216,7 @@ function beeCompanion(){ var w=el("div","bee-companion");
   },600); }
   return w; }
 /* Bee PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
-function coachSpeak(text){ var c=coachLangMeta(); if(!c||!text) return; speakLang(text,c.ttsLang,BEE_VOICE,true);
+function coachSpeak(text){ if(!text) return; speakLang(text,coachTtsLang(),BEE_VOICE,true); /* voix selon le niveau : débutant = français (la réponse est surtout en français), avancé = langue cible */
   var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
 function coachGreeting(c){ var me=accMeta(ACC)||{}; var n=me.name||"toi"; var hi=(DICT["salut"]&&DICT["salut"][c.id])||"Salut";
   return hi+" "+n+" ! 🐝 Moi c'est Bee, ton amie coach de "+c.nom.toLowerCase()+". On peut discuter de TOUT ce que tu veux — ton week-end, un film, ton travail, un voyage, une idée… Je te suis, je te réponds pour de vrai et je te corrige en douceur. De quoi as-tu envie de parler ?"; }
@@ -1464,7 +1470,7 @@ function discSceneStart(id){ var ov=document.querySelector(".disc-overlay"); var
   discChips(ov);
   coachAsk().then(function(reply){ if(!DISC.open)return; if(img)img.classList.remove("think");
     S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
-    discSay(reply, c.ttsLang); }); }
+    discSay(reply, coachTtsLang()); }); }
 function discChips(ov){ var chips=ov.querySelector(".disc-chips"); if(!chips)return; chips.innerHTML="";
   var c=coachLangMeta(); if(!c)return;
   var snA=coachSceneMeta();
@@ -1484,7 +1490,7 @@ function discSend(){ var overlay=document.querySelector(".disc-overlay"); if(!ov
   coachAsk().then(function(reply){ if(!DISC.open)return; if(img)img.classList.remove("think");
     S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
     if(/(bravo|super|parfait|complimenti|bravissim|muy bien|perfecto|sehr gut|[oó]timo|goed)/i.test(reply)){ var bi=overlay.querySelector(".disc-bee"); if(bi){ beeSparkles(bi,10); } }
-    discSay(reply, c.ttsLang); }); }
+    discSay(reply, coachTtsLang()); }); }
 function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ toast("Choisis d'abord une langue 🌍"); return; }
   DISC.open=true; var ov=el("div","disc-overlay");
   ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
@@ -1533,7 +1539,7 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
   var hf=ov.querySelector(".disc-hf"); hf.onclick=function(){ DISC.handsFree=!DISC.handsFree; hf.classList.toggle("on",DISC.handsFree); toast(DISC.handsFree?"🙌 Mains libres : je t'écoute après chaque réponse":"Mains libres coupé"); };
   discChips(ov);
   var last=null; for(var i=S.coachMsgs.length-1;i>=0;i--){ if(S.coachMsgs[i].role==="bot"){ last=S.coachMsgs[i].text; break; } }
-  setTimeout(function(){ discSay(last||coachGreeting(c), c.ttsLang); },450);
+  setTimeout(function(){ discSay(last||coachGreeting(c), coachTtsLang()); },450);
 }
 /* ============ 📖 HISTOIRES DE LA RUCHE — Bee raconte, tu comprends, tu gagnes ============
    Histoires 100% originales (data.js STORIES) : chaque ligne est DITE dans la langue
