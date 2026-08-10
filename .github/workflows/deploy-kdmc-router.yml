@@ -148,6 +148,20 @@ jobs:
             echo "::warning::OPEN_AI_API_KEY absente → voix Lingua en repli navigateur (Web Speech)."
           fi
 
+      - name: Replicate — clé pour la voix clonée d'Antonin (/__lingua/tts?v=antonin, fail-open si absente)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
+        run: |
+          if [ -n "${REPLICATE_KEY:-}" ]; then
+            printf '%s' "$REPLICATE_KEY" | wrangler secret put AX_REPLICATE_KEY 2>&1 | tail -2 \
+              || echo "::warning::AX_REPLICATE_KEY non posée (voix Antonin en repli onyx)"
+          else
+            echo "::warning::AX_REPLICATE_KEY absente → voix Antonin en repli onyx (fail-open)."
+          fi
+
       - name: Groq + Mistral + Gemini — clés pour le Coach IA KDMC Lingua (/__lingua/ai, fail-open si absentes)
         working-directory: services/kdmc-router
         env:
@@ -198,6 +212,13 @@ jobs:
           case "$CT" in
             audio/*) echo "  ✅ VOIX NATURELLE OpenAI ACTIVE côté serveur (un vrai audio est servi)";;
             *) echo "  ::warning:: /__lingua/tts NE renvoie PAS d'audio (=$CT) → l'app retombe sur la voix du navigateur (robotique). Cause probable : OPEN_AI_API_KEY absente/invalide/quota. Vérifier le secret GitHub OPEN_AI_API_KEY.";;
+          esac
+          echo "== VOIX D'ANTONIN (/__lingua/tts?v=antonin) — clone Replicate OU repli onyx ? =="
+          CTA=$(curl -fsS -m 60 -o /dev/null -w "%{content_type}" "https://lingua.kd-mc.com/__lingua/tts?v=antonin&t=Adiou%20c%27est%20Antonin" 2>/dev/null || echo "erreur")
+          echo "  content-type=$CTA"
+          case "$CTA" in
+            audio/*) echo "  ✅ la voix d'Antonin répond en audio (clone Replicate ou repli onyx — les deux servent un mp3)";;
+            *) echo "  ::warning:: v=antonin ne renvoie pas d'audio (=$CTA) — vérifier AX_REPLICATE_KEY et OPEN_AI_API_KEY.";;
           esac
 
       - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)

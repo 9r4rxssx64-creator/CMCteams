@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.101.0";
+var APP_VER="v2.102.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -325,12 +325,11 @@ var VOICES=[
   {id:"alloy",  name:"Alloy — neutre",     cloud:true},
   {id:"echo",   name:"Echo — posée",       cloud:true},
   {id:"onyx",   name:"Onyx — grave",       cloud:true},
-  /* 🎙️ Profil « Antonin — accent du Sud » (Kevin 2026-08-10) : Antonin est un adulte du
-     Sud (Provence/Marseille). Placeholder = voix d'homme chaude et grave (onyx), timbre
-     posé. Honnête : les voix cloud parlent un français NEUTRE — elles ne font pas
-     l'accent du Sud. La VRAIE voix d'Antonin (timbre + accent) demandera un
-     enregistrement audio de lui (1-2 min) → clone vocal. */
-  {id:"antonin",name:"🎙️ Antonin — accent du Sud", cloud:true, tts:"onyx", wsPitch:0.95},
+  /* 🎙️ Antonin — VRAIE voix clonée (Kevin a validé à l'oreille le 2026-08-10).
+     Le worker /__lingua/tts?v=antonin appelle le clone (Replicate minimax/speech-02-hd,
+     voice_id du clone) avec cache — et retombe tout seul sur onyx si le clone est
+     indisponible (fail-open, jamais de silence). */
+  {id:"antonin",name:"🎙️ Antonin (vraie voix)", cloud:true, wsPitch:0.95},
   {id:"device", name:"Voix du téléphone (hors-ligne)", cloud:false}
 ];
 function _isCloudVoice(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===id) return VOICES[i].cloud; } return false; }
