@@ -2665,6 +2665,94 @@ ar:{
 "où est la gare":"أين محطة القطار","la maison est grande":"البيت كبير","c'est un bon café":"هذه قهوة جيدة"
 }
 };
+/* Vague 2 des nouvelles langues (v2.69) : unités 9-16 — maison, vêtements, nature, phrases,
+   verbes essentiels, corps, fruits & légumes, en ville. Les 8 cours passent de 8 à 16 unités.
+   Notes vérité (homographes RÉELS assumés, pas des erreurs) : ja 月 = lune ET mois ;
+   ko 달 = lune/mois, 배 = ventre/poire, 다리 = jambe/pont — c'est la langue. Verbes ar donnés
+   à la 3ᵉ pers. du présent (convention des dictionnaires arabes) ; ja en forme polie ます. */
+var LEX2B = {
+pl:{
+"table":"stół","chaise":"krzesło","lit":"łóżko","porte":"drzwi","fenêtre":"okno","clé":"klucz","téléphone":"telefon","lampe":"lampa","nous avons une maison":"mamy dom",
+"chemise":"koszula","pantalon":"spodnie","chaussures":"buty","robe":"sukienka","chapeau":"kapelusz","manteau":"płaszcz",
+"soleil":"słońce","lune":"księżyc","mer":"morze","montagne":"góra","arbre":"drzewo","fleur":"kwiat","ciel":"niebo","plage":"plaża","le soleil est grand":"słońce jest duże",
+"je parle":"mówię","tu vas":"idziesz","il a un chien":"on ma psa","j'aime le café":"lubię kawę",
+"être":"być","avoir":"mieć","aller":"iść","faire":"robić","venir":"przychodzić","voir":"widzieć","vouloir":"chcieć","pouvoir":"móc","manger":"jeść","boire":"pić","parler":"mówić","aimer":"kochać","savoir":"wiedzieć","dire":"powiedzieć","donner":"dawać","dormir":"spać",
+"tête":"głowa","cheveux":"włosy","œil":"oko","nez":"nos","bouche":"usta","oreille":"ucho","dent":"ząb","main":"ręka","bras":"ramię","jambe":"noga","pied":"stopa","doigt":"palec","cœur":"serce","dos":"plecy","ventre":"brzuch",
+"fruit":"owoc","banane":"banan","fraise":"truskawka","citron":"cytryna","raisin":"winogrona","poire":"gruszka","légume":"warzywo","tomate":"pomidor","carotte":"marchewka","oignon":"cebula","salade":"sałata","pomme de terre":"ziemniak",
+"ville":"miasto","magasin":"sklep","marché":"targ","banque":"bank","école":"szkoła","hôpital":"szpital","pharmacie":"apteka","restaurant":"restauracja","église":"kościół","parc":"park","pont":"most","aéroport":"lotnisko","musée":"muzeum"
+},
+ru:{
+"table":"стол","chaise":"стул","lit":"кровать","porte":"дверь","fenêtre":"окно","clé":"ключ","téléphone":"телефон","lampe":"лампа","nous avons une maison":"у нас есть дом",
+"chemise":"рубашка","pantalon":"брюки","chaussures":"обувь","robe":"платье","chapeau":"шляпа","manteau":"пальто",
+"soleil":"солнце","lune":"луна","mer":"море","montagne":"гора","arbre":"дерево","fleur":"цветок","ciel":"небо","plage":"пляж","le soleil est grand":"солнце большое",
+"je parle":"я говорю","tu vas":"ты идёшь","il a un chien":"у него есть собака","j'aime le café":"я люблю кофе",
+"être":"быть","avoir":"иметь","aller":"идти","faire":"делать","venir":"приходить","voir":"видеть","vouloir":"хотеть","pouvoir":"мочь","manger":"есть","boire":"пить","parler":"говорить","aimer":"любить","savoir":"знать","dire":"сказать","donner":"давать","dormir":"спать",
+"tête":"голова","cheveux":"волосы","œil":"глаз","nez":"нос","bouche":"рот","oreille":"ухо","dent":"зуб","main":"кисть руки","bras":"рука","jambe":"нога","pied":"ступня","doigt":"палец","cœur":"сердце","dos":"спина","ventre":"живот",
+"fruit":"фрукт","banane":"банан","fraise":"клубника","citron":"лимон","raisin":"виноград","poire":"груша","légume":"овощ","tomate":"помидор","carotte":"морковь","oignon":"лук","salade":"салат","pomme de terre":"картофель",
+"ville":"город","magasin":"магазин","marché":"рынок","banque":"банк","école":"школа","hôpital":"больница","pharmacie":"аптека","restaurant":"ресторан","église":"церковь","parc":"парк","pont":"мост","aéroport":"аэропорт","musée":"музей"
+},
+uk:{
+"table":"стіл","chaise":"стілець","lit":"ліжко","porte":"двері","fenêtre":"вікно","clé":"ключ","téléphone":"телефон","lampe":"лампа","nous avons une maison":"у нас є дім",
+"chemise":"сорочка","pantalon":"штани","chaussures":"взуття","robe":"сукня","chapeau":"капелюх","manteau":"пальто",
+"soleil":"сонце","lune":"місяць","mer":"море","montagne":"гора","arbre":"дерево","fleur":"квітка","ciel":"небо","plage":"пляж","le soleil est grand":"сонце велике",
+"je parle":"я говорю","tu vas":"ти йдеш","il a un chien":"у нього є собака","j'aime le café":"я люблю каву",
+"être":"бути","avoir":"мати","aller":"йти","faire":"робити","venir":"приходити","voir":"бачити","vouloir":"хотіти","pouvoir":"могти","manger":"їсти","boire":"пити","parler":"говорити","aimer":"любити","savoir":"знати","dire":"сказати","donner":"давати","dormir":"спати",
+"tête":"голова","cheveux":"волосся","œil":"око","nez":"ніс","bouche":"рот","oreille":"вухо","dent":"зуб","main":"кисть руки","bras":"рука","jambe":"нога","pied":"ступня","doigt":"палець","cœur":"серце","dos":"спина","ventre":"живіт",
+"fruit":"фрукт","banane":"банан","fraise":"полуниця","citron":"лимон","raisin":"виноград","poire":"груша","légume":"овоч","tomate":"помідор","carotte":"морква","oignon":"цибуля","salade":"салат","pomme de terre":"картопля",
+"ville":"місто","magasin":"магазин","marché":"ринок","banque":"банк","école":"школа","hôpital":"лікарня","pharmacie":"аптека","restaurant":"ресторан","église":"церква","parc":"парк","pont":"міст","aéroport":"аеропорт","musée":"музей"
+},
+cs:{
+"table":"stůl","chaise":"židle","lit":"postel","porte":"dveře","fenêtre":"okno","clé":"klíč","téléphone":"telefon","lampe":"lampa","nous avons une maison":"máme dům",
+"chemise":"košile","pantalon":"kalhoty","chaussures":"boty","robe":"šaty","chapeau":"klobouk","manteau":"kabát",
+"soleil":"slunce","lune":"měsíc","mer":"moře","montagne":"hora","arbre":"strom","fleur":"květina","ciel":"nebe","plage":"pláž","le soleil est grand":"slunce je velké",
+"je parle":"mluvím","tu vas":"jdeš","il a un chien":"on má psa","j'aime le café":"mám ráda kávu",
+"être":"být","avoir":"mít","aller":"jít","faire":"dělat","venir":"přijít","voir":"vidět","vouloir":"chtít","pouvoir":"moct","manger":"jíst","boire":"pít","parler":"mluvit","aimer":"milovat","savoir":"vědět","dire":"říct","donner":"dát","dormir":"spát",
+"tête":"hlava","cheveux":"vlasy","œil":"oko","nez":"nos","bouche":"ústa","oreille":"ucho","dent":"zub","main":"ruka","bras":"paže","jambe":"noha","pied":"chodidlo","doigt":"prst","cœur":"srdce","dos":"záda","ventre":"břicho",
+"fruit":"ovoce","banane":"banán","fraise":"jahoda","citron":"citron","raisin":"hrozny","poire":"hruška","légume":"zelenina","tomate":"rajče","carotte":"mrkev","oignon":"cibule","salade":"salát","pomme de terre":"brambora",
+"ville":"město","magasin":"obchod","marché":"trh","banque":"banka","école":"škola","hôpital":"nemocnice","pharmacie":"lékárna","restaurant":"restaurace","église":"kostel","parc":"park","pont":"most","aéroport":"letiště","musée":"muzeum"
+},
+zh:{
+"table":"桌子","chaise":"椅子","lit":"床","porte":"门","fenêtre":"窗户","clé":"钥匙","téléphone":"电话","lampe":"灯","nous avons une maison":"我们 有 房子",
+"chemise":"衬衫","pantalon":"裤子","chaussures":"鞋子","robe":"连衣裙","chapeau":"帽子","manteau":"大衣",
+"soleil":"太阳","lune":"月亮","mer":"大海","montagne":"山","arbre":"树","fleur":"花","ciel":"天空","plage":"海滩","le soleil est grand":"太阳 很 大",
+"je parle":"我 说话","tu vas":"你 去","il a un chien":"他 有 一 只 狗","j'aime le café":"我 喜欢 咖啡",
+"être":"是","avoir":"有","aller":"去","faire":"做","venir":"来","voir":"看","vouloir":"想要","pouvoir":"能","manger":"吃","boire":"喝","parler":"说话","aimer":"爱","savoir":"知道","dire":"说","donner":"给","dormir":"睡觉",
+"tête":"头","cheveux":"头发","œil":"眼睛","nez":"鼻子","bouche":"嘴巴","oreille":"耳朵","dent":"牙齿","main":"手","bras":"手臂","jambe":"腿","pied":"脚","doigt":"手指","cœur":"心脏","dos":"背","ventre":"肚子",
+"fruit":"水果","banane":"香蕉","fraise":"草莓","citron":"柠檬","raisin":"葡萄","poire":"梨","légume":"蔬菜","tomate":"西红柿","carotte":"胡萝卜","oignon":"洋葱","salade":"生菜","pomme de terre":"土豆",
+"ville":"城市","magasin":"商店","marché":"市场","banque":"银行","école":"学校","hôpital":"医院","pharmacie":"药店","restaurant":"餐厅","église":"教堂","parc":"公园","pont":"桥","aéroport":"机场","musée":"博物馆"
+},
+ja:{
+"table":"テーブル","chaise":"いす","lit":"ベッド","porte":"ドア","fenêtre":"窓","clé":"鍵","téléphone":"電話","lampe":"ランプ","nous avons une maison":"私たち は 家 が あります",
+"chemise":"シャツ","pantalon":"ズボン","chaussures":"靴","robe":"ワンピース","chapeau":"帽子","manteau":"コート",
+"soleil":"太陽","lune":"月","mer":"海","montagne":"山","arbre":"木","fleur":"花","ciel":"空","plage":"ビーチ","le soleil est grand":"太陽 は 大きい です",
+"je parle":"私 は 話します","tu vas":"あなた は 行きます","il a un chien":"彼 は 犬 が います","j'aime le café":"私 は コーヒー が 好き です",
+"être":"です","avoir":"あります","aller":"行きます","faire":"します","venir":"来ます","voir":"見ます","vouloir":"ほしい","pouvoir":"できます","manger":"食べます","boire":"飲みます","parler":"話します","aimer":"愛する","savoir":"知っています","dire":"言います","donner":"あげます","dormir":"寝ます",
+"tête":"頭","cheveux":"髪","œil":"目","nez":"鼻","bouche":"口","oreille":"耳","dent":"歯","main":"手","bras":"腕","jambe":"脚","pied":"足","doigt":"指","cœur":"心臓","dos":"背中","ventre":"おなか",
+"fruit":"果物","banane":"バナナ","fraise":"いちご","citron":"レモン","raisin":"ぶどう","poire":"なし","légume":"野菜","tomate":"トマト","carotte":"にんじん","oignon":"たまねぎ","salade":"レタス","pomme de terre":"じゃがいも",
+"ville":"町","magasin":"店","marché":"市場","banque":"銀行","école":"学校","hôpital":"病院","pharmacie":"薬局","restaurant":"レストラン","église":"教会","parc":"公園","pont":"橋","aéroport":"空港","musée":"博物館"
+},
+ko:{
+"table":"테이블","chaise":"의자","lit":"침대","porte":"문","fenêtre":"창문","clé":"열쇠","téléphone":"전화","lampe":"램프","nous avons une maison":"우리는 집이 있어요",
+"chemise":"셔츠","pantalon":"바지","chaussures":"신발","robe":"원피스","chapeau":"모자","manteau":"코트",
+"soleil":"해","lune":"달","mer":"바다","montagne":"산","arbre":"나무","fleur":"꽃","ciel":"하늘","plage":"해변","le soleil est grand":"해가 커요",
+"je parle":"저는 말해요","tu vas":"당신은 가요","il a un chien":"그는 개가 있어요","j'aime le café":"저는 커피를 좋아해요",
+"être":"이다","avoir":"있다","aller":"가다","faire":"하다","venir":"오다","voir":"보다","vouloir":"원하다","pouvoir":"할 수 있다","manger":"먹다","boire":"마시다","parler":"이야기하다","aimer":"사랑하다","savoir":"알다","dire":"말하다","donner":"주다","dormir":"자다",
+"tête":"머리","cheveux":"머리카락","œil":"눈","nez":"코","bouche":"입","oreille":"귀","dent":"치아","main":"손","bras":"팔","jambe":"다리","pied":"발","doigt":"손가락","cœur":"심장","dos":"등","ventre":"배",
+"fruit":"과일","banane":"바나나","fraise":"딸기","citron":"레몬","raisin":"포도","poire":"배","légume":"채소","tomate":"토마토","carotte":"당근","oignon":"양파","salade":"상추","pomme de terre":"감자",
+"ville":"도시","magasin":"가게","marché":"시장","banque":"은행","école":"학교","hôpital":"병원","pharmacie":"약국","restaurant":"식당","église":"교회","parc":"공원","pont":"다리","aéroport":"공항","musée":"박물관"
+},
+ar:{
+"table":"طاولة","chaise":"كرسي","lit":"سرير","porte":"باب","fenêtre":"نافذة","clé":"مفتاح","téléphone":"هاتف","lampe":"مصباح","nous avons une maison":"عندنا بيت",
+"chemise":"قميص","pantalon":"بنطال","chaussures":"حذاء","robe":"فستان","chapeau":"قبعة","manteau":"معطف",
+"soleil":"شمس","lune":"قمر","mer":"بحر","montagne":"جبل","arbre":"شجرة","fleur":"زهرة","ciel":"سماء","plage":"شاطئ","le soleil est grand":"الشمس كبيرة",
+"je parle":"أنا أتكلم","tu vas":"أنت تذهب","il a un chien":"عنده كلب","j'aime le café":"أحب القهوة",
+"être":"يكون","avoir":"يملك","aller":"يذهب","faire":"يفعل","venir":"يأتي","voir":"يرى","vouloir":"يريد","pouvoir":"يستطيع","manger":"يأكل","boire":"يشرب","parler":"يتكلم","aimer":"يحب","savoir":"يعرف","dire":"يقول","donner":"يعطي","dormir":"ينام",
+"tête":"رأس","cheveux":"شعر","œil":"عين","nez":"أنف","bouche":"فم","oreille":"أذن","dent":"سن","main":"يد","bras":"ذراع","jambe":"ساق","pied":"قدم","doigt":"إصبع","cœur":"قلب","dos":"ظهر","ventre":"بطن",
+"fruit":"فاكهة","banane":"موز","fraise":"فراولة","citron":"ليمون","raisin":"عنب","poire":"كمثرى","légume":"خضار","tomate":"طماطم","carotte":"جزر","oignon":"بصل","salade":"خس","pomme de terre":"بطاطا",
+"ville":"مدينة","magasin":"متجر","marché":"سوق","banque":"بنك","école":"مدرسة","hôpital":"مستشفى","pharmacie":"صيدلية","restaurant":"مطعم","église":"كنيسة","parc":"حديقة","pont":"جسر","aéroport":"مطار","musée":"متحف"
+}
+};
+LANGS2.forEach(function(l){ var b=LEX2B[l]||{}; Object.keys(b).forEach(function(k){ LEX2[l][k]=b[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
