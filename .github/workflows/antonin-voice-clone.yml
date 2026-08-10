@@ -18,6 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Installer ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - name: Convertir en mp3 (MiniMax refuse l'extension .m4a — « invalid file ext »)
+        run: |
+          set -e
+          ffmpeg -y -i lingua/voices/antonin.m4a -ar 32000 -b:a 128k antonin.mp3
+          ls -la antonin.mp3
+
       - name: Cloner la voix d'Antonin + générer la phrase test
         env:
           REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
@@ -38,8 +47,8 @@ jobs:
             echo "$r"
           }
 
-          echo "== 1) Upload de la voix de référence (m4a) =="
-          UP=$(curl -sS -X POST https://api.replicate.com/v1/files -H "$AUTH" -F "content=@lingua/voices/antonin.m4a;type=audio/mp4")
+          echo "== 1) Upload de la voix de référence (mp3) =="
+          UP=$(curl -sS -X POST https://api.replicate.com/v1/files -H "$AUTH" -F "content=@antonin.mp3;type=audio/mpeg")
           REF=$(echo "$UP" | jq -r '.urls.get // empty')
           if [ -z "$REF" ]; then echo "::error::Upload échoué :"; echo "$UP"; exit 1; fi
           echo "Référence: $REF"
