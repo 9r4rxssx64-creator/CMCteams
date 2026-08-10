@@ -4948,6 +4948,58 @@ var LEX2NAT = {
 };
 LANGS2.forEach(function(l){ var w2=LEX2NAT[l]||{}; Object.keys(w2).forEach(function(k){ LEX2[l][k]=w2[k]; }); });
 
+/* ===== Vague « SUR LA ROUTE & L'ARGENT » : conduite, budget, nuances utiles ===== */
+var CURRICULUM_D = [
+  {t:"Au volant 🚗", c:"#f97316", L:[
+    {t:"Conduire", w:["faire le plein","accélérer","ralentir","doubler"]},
+    {t:"Sur la route", w:["ceinture de sécurité","piéton","clignotant","klaxonner","crevaison"]} ]},
+  {t:"L'argent au quotidien 💰", c:"#84cc16", L:[
+    {t:"À la banque", w:["compte bancaire","retirer de l'argent","faire des économies"]},
+    {t:"Bien gérer", w:["dépenser trop","être à découvert","charges"]} ]},
+  {t:"Nuances & petits mots 🎁", c:"#8b5cf6", L:[
+    {t:"Expressions utiles", w:["malgré tout","dès que possible","faute de mieux","pot de départ"]},
+    {t:"Compléments", w:["électroménager","artisan","jalousie"]} ]}
+];
+CURRICULUM_D.forEach(function(u){ CURRICULUM.push(u); });
+
+var NEWV21 = {
+  "faire le plein":{"en":"to fill up","it":"fare il pieno","es":"repostar","de":"volltanken","pt":"atestar o depósito","nl":"voltanken"},
+  "accélérer":{"en":"to speed up","it":"accelerare","es":"acelerar","de":"beschleunigen","pt":"acelerar","nl":"versnellen"},
+  "ralentir":{"en":"to slow down","it":"rallentare","es":"reducir la velocidad","de":"langsamer fahren","pt":"abrandar","nl":"langzamer rijden"},
+  "doubler":{"en":"to overtake","it":"sorpassare","es":"adelantar","de":"überholen","pt":"ultrapassar","nl":"inhalen"},
+  "ceinture de sécurité":{"en":"seatbelt","it":"cintura di sicurezza","es":"cinturón de seguridad","de":"Sicherheitsgurt","pt":"cinto de segurança","nl":"veiligheidsgordel"},
+  "piéton":{"en":"pedestrian","it":"pedone","es":"peatón","de":"Fußgänger","pt":"peão","nl":"voetganger"},
+  "clignotant":{"en":"indicator","it":"lampeggiatore","es":"intermitente","de":"Blinker","pt":"pisca-pisca","nl":"richtingaanwijzer"},
+  "klaxonner":{"en":"to honk","it":"suonare il clacson","es":"tocar el claxon","de":"hupen","pt":"buzinar","nl":"toeteren"},
+  "crevaison":{"en":"flat tyre","it":"foratura","es":"pinchazo","de":"Reifenpanne","pt":"furo no pneu","nl":"lekke band"},
+  "compte bancaire":{"en":"bank account","it":"conto bancario","es":"cuenta bancaria","de":"Bankkonto","pt":"conta bancária","nl":"bankrekening"},
+  "retirer de l'argent":{"en":"to withdraw money","it":"prelevare","es":"sacar dinero","de":"Geld abheben","pt":"levantar dinheiro","nl":"geld opnemen"},
+  "faire des économies":{"en":"to save up","it":"mettere da parte","es":"ahorrar dinero","de":"Geld zurücklegen","pt":"juntar dinheiro","nl":"geld opzijzetten"},
+  "dépenser trop":{"en":"to overspend","it":"spendere troppo","es":"gastar demasiado","de":"zu viel ausgeben","pt":"gastar demais","nl":"te veel uitgeven"},
+  "être à découvert":{"en":"to be overdrawn","it":"essere in rosso","es":"estar en números rojos","de":"im Minus sein","pt":"estar a descoberto","nl":"rood staan"},
+  "charges":{"en":"service charges","it":"spese condominiali","es":"gastos de comunidad","de":"Nebenkosten","pt":"despesas de condomínio","nl":"servicekosten"},
+  "malgré tout":{"en":"despite everything","it":"nonostante tutto","es":"a pesar de todo","de":"trotz allem","pt":"apesar de tudo","nl":"ondanks alles"},
+  "dès que possible":{"en":"as soon as possible","it":"appena possibile","es":"cuanto antes","de":"so bald wie möglich","pt":"logo que possível","nl":"zo snel mogelijk"},
+  "faute de mieux":{"en":"for lack of anything better","it":"in mancanza di meglio","es":"a falta de algo mejor","de":"mangels Besserem","pt":"à falta de melhor","nl":"bij gebrek aan beter"},
+  "pot de départ":{"en":"farewell party","it":"festa d'addio","es":"fiesta de despedida","de":"Abschiedsfeier","pt":"festa de despedida","nl":"afscheidsborrel"},
+  "électroménager":{"en":"household appliances","it":"elettrodomestici","es":"electrodomésticos","de":"Haushaltsgeräte","pt":"eletrodomésticos","nl":"huishoudelijke apparaten"},
+  "artisan":{"en":"craftsman","it":"artigiano","es":"artesano","de":"Handwerker","pt":"artesão","nl":"vakman"},
+  "jalousie":{"en":"jealousy","it":"gelosia","es":"celos","de":"Eifersucht","pt":"ciúme","nl":"jaloezie"}
+};
+LANGS.forEach(function(l){ Object.keys(NEWV21).forEach(function(k){ if(NEWV21[k][l]) LEX[l][k]=NEWV21[k][l]; }); });
+
+var LEX2ROU = {
+  pl:{"faire le plein":"zatankować","accélérer":"przyspieszać","ralentir":"jechać wolniej","doubler":"wyprzedzać","ceinture de sécurité":"pas bezpieczeństwa","piéton":"pieszy","clignotant":"kierunkowskaz","klaxonner":"trąbić","crevaison":"przebita opona","compte bancaire":"konto bankowe","retirer de l'argent":"wypłacić pieniądze","faire des économies":"odkładać pieniądze","dépenser trop":"wydawać za dużo","être à découvert":"mieć debet","charges":"opłaty","malgré tout":"mimo wszystko","dès que possible":"jak najszybciej","faute de mieux":"z braku lepszego","pot de départ":"impreza pożegnalna","électroménager":"sprzęt AGD","artisan":"rzemieślnik","jalousie":"zazdrość"},
+  ru:{"faire le plein":"заправиться","accélérer":"ускоряться","ralentir":"замедляться","doubler":"обгонять","ceinture de sécurité":"ремень безопасности","piéton":"пешеход","clignotant":"поворотник","klaxonner":"сигналить","crevaison":"прокол колеса","compte bancaire":"банковский счёт","retirer de l'argent":"снять деньги","faire des économies":"откладывать деньги","dépenser trop":"тратить слишком много","être à découvert":"быть в минусе","charges":"коммунальные платежи","malgré tout":"несмотря ни на что","dès que possible":"как можно скорее","faute de mieux":"за неимением лучшего","pot de départ":"проводы","électroménager":"бытовая техника","artisan":"мастер","jalousie":"ревность"},
+  uk:{"faire le plein":"заправитися","accélérer":"прискорюватися","ralentir":"сповільнюватися","doubler":"обганяти","ceinture de sécurité":"ремінь безпеки","piéton":"пішохід","clignotant":"поворотник","klaxonner":"сигналити","crevaison":"прокол колеса","compte bancaire":"банківський рахунок","retirer de l'argent":"зняти гроші","faire des économies":"відкладати гроші","dépenser trop":"витрачати забагато","être à découvert":"бути в мінусі","charges":"комунальні платежі","malgré tout":"попри все","dès que possible":"якнайшвидше","faute de mieux":"за браком кращого","pot de départ":"проводи","électroménager":"побутова техніка","artisan":"майстер","jalousie":"ревнощі"},
+  cs:{"faire le plein":"natankovat","accélérer":"zrychlovat","ralentir":"zpomalovat","doubler":"předjíždět","ceinture de sécurité":"bezpečnostní pás","piéton":"chodec","clignotant":"blinkr","klaxonner":"troubit","crevaison":"píchlá pneumatika","compte bancaire":"bankovní účet","retirer de l'argent":"vybrat peníze","faire des économies":"odkládat si peníze","dépenser trop":"utrácet příliš","être à découvert":"být v mínusu","charges":"poplatky za služby","malgré tout":"navzdory všemu","dès que possible":"co nejdříve","faute de mieux":"z nedostatku lepšího","pot de départ":"rozlučka","électroménager":"domácí spotřebiče","artisan":"řemeslník","jalousie":"žárlivost"},
+  zh:{"faire le plein":"加满油","accélérer":"加速","ralentir":"减速","doubler":"超车","ceinture de sécurité":"安全带","piéton":"行人","clignotant":"转向灯","klaxonner":"按喇叭","crevaison":"爆胎","compte bancaire":"银行账户","retirer de l'argent":"取钱","faire des économies":"攒钱","dépenser trop":"超支","être à découvert":"透支","charges":"物业费","malgré tout":"不管怎样","dès que possible":"尽快","faute de mieux":"退而求其次","pot de départ":"欢送会","électroménager":"家电","artisan":"工匠","jalousie":"嫉妒"},
+  ja:{"faire le plein":"給油する","accélérer":"加速する","ralentir":"減速する","doubler":"追い越す","ceinture de sécurité":"シートベルト","piéton":"歩行者","clignotant":"ウインカー","klaxonner":"クラクションを鳴らす","crevaison":"パンク","compte bancaire":"銀行口座","retirer de l'argent":"お金を下ろす","faire des économies":"お金を貯める","dépenser trop":"使いすぎる","être à découvert":"赤字になる","charges":"管理費","malgré tout":"何があっても","dès que possible":"できるだけ早く","faute de mieux":"仕方なく","pot de départ":"送別会","électroménager":"家電","artisan":"職人","jalousie":"嫉妬"},
+  ko:{"faire le plein":"주유하다","accélérer":"가속하다","ralentir":"속도를 줄이다","doubler":"추월하다","ceinture de sécurité":"안전벨트","piéton":"보행자","clignotant":"깜빡이","klaxonner":"경적을 울리다","crevaison":"펑크","compte bancaire":"은행 계좌","retirer de l'argent":"돈을 찾다","faire des économies":"돈을 모으다","dépenser trop":"과소비하다","être à découvert":"마이너스가 되다","charges":"관리비","malgré tout":"그렇더라도","dès que possible":"최대한 빨리","faute de mieux":"아쉬운 대로","pot de départ":"송별회","électroménager":"가전제품","artisan":"장인","jalousie":"질투"},
+  ar:{"faire le plein":"يملأ الخزان","accélérer":"يسرع","ralentir":"يبطئ","doubler":"يتجاوز","ceinture de sécurité":"حزام الأمان","piéton":"مشاة","clignotant":"غماز","klaxonner":"يزمر","crevaison":"ثقب الإطار","compte bancaire":"حساب مصرفي","retirer de l'argent":"يسحب نقوداً","faire des économies":"يدخر المال","dépenser trop":"يفرط في الإنفاق","être à découvert":"يتجاوز رصيده","charges":"رسوم الخدمات","malgré tout":"رغم كل شيء","dès que possible":"في أقرب وقت","faute de mieux":"لعدم وجود أفضل","pot de départ":"حفل وداع","électroménager":"أجهزة منزلية","artisan":"حرفي","jalousie":"غيرة"}
+};
+LANGS2.forEach(function(l){ var w2=LEX2ROU[l]||{}; Object.keys(w2).forEach(function(k){ LEX2[l][k]=w2[k]; }); });
+
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
