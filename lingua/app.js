@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.94.0";
+var APP_VER="v2.95.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -824,6 +824,17 @@ function _lev(a,b){ a=a||"";b=b||""; var m=a.length,n=b.length; if(!m)return n; 
   return d[m][n]; }
 function pronScore(target,heard){ var a=norm(target),b=norm(heard); if(!b)return 0;
   var mx=Math.max(a.length,b.length)||1; return Math.max(0,Math.round(100*(1-_lev(a,b)/mx))); }
+/* Reconnaissance plus juste : le micro renvoie plusieurs hypothèses (alternatives) ; on garde
+   CELLE qui colle le mieux à la cible. Inclusion exacte = quasi-parfait (le mot est bien dedans,
+   même noyé dans une phrase). Retourne {heard, score} sur la meilleure hypothèse. */
+function bestPronMatch(target, best, alts){
+  var cands=(alts&&alts.length?alts.slice():[]); if(best&&cands.indexOf(best)<0)cands.unshift(best);
+  cands=cands.filter(Boolean); if(!cands.length)return {heard:"",score:0};
+  var a=norm(target), out={heard:cands[0],score:0};
+  cands.forEach(function(h){ var b=norm(h); var sc=pronScore(target,h);
+    if(b&&a&&(b===a||b.indexOf(a)>=0||a.indexOf(b)>=0)) sc=Math.max(sc,92); // le mot cible est présent
+    if(sc>out.score){ out.score=sc; out.heard=h; } });
+  return out; }
 /* Diagnostic fin : trouve la 1re syllabe où « entendu » diverge de la cible → correction ciblée. */
 function pronDiffSyl(target,heard){ var sy=pronSyllables(target).split("·").filter(Boolean);
   var a=norm(target),b=norm(heard||""); var i=0; while(i<a.length&&i<b.length&&a[i]===b[i])i++;
@@ -940,8 +951,8 @@ function pronStart(){ if(!S.course)return; blitzAbort(); pairsAbort();
 function pronMic(){ if(!PRON||PRON.listening)return; var w=PRON.list[PRON.i]; if(!w)return;
   if(!_srOk()){ toast("Micro non dispo ici — écoute et répète, puis auto-évalue 🙂"); return; }
   PRON.listening=true; PRON.micTried=true; render();
-  dictate(function(txt){ PRON.listening=false;
-    var sc=pronScore(w.t,txt); PRON.res={heard:txt||"",score:sc,self:false};
+  dictate(function(txt,alts){ PRON.listening=false;
+    var m=bestPronMatch(w.t,txt,alts); var sc=m.score; PRON.res={heard:m.heard||"",score:sc,self:false};
     if(sc>=80){ tone([880,1180],.25); vibrate(12); } else { tone([420,320],.28); vibrate(24); }
     render();
   }, COURSES[S.course].ttsLang); }
@@ -1669,7 +1680,7 @@ function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u
   var femV=fem?vs.filter(function(v){return /am[eé]lie|audrey|aur[eé]lie|c[eé]line|chantal|julie|marie|virginie|alice|elsa|paulina|monica|petra|anna|female|femme|woman/i.test(v.name);})[0]:null;
   var best=femV||vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; _wsSpeak(u);}catch(e){} }
 function _srOk(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
-function dictate(cb,lang){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Micro non dispo sur ce navigateur"); cb&&cb(""); return; } var r=new SR(); r.lang=lang||"fr-FR"; r.interimResults=false; r.maxAlternatives=3; r.onresult=function(e){ var best=""; try{ best=e.results[0][0].transcript; }catch(_){} cb&&cb(best); }; r.onerror=function(){ cb&&cb(""); }; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Micro indisponible"); cb&&cb(""); } }
+function dictate(cb,lang){ try{ var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR){ toast("Micro non dispo sur ce navigateur"); cb&&cb("",[]); return; } var r=new SR(); r.lang=lang||"fr-FR"; r.interimResults=false; r.maxAlternatives=6; /* 6 hypothèses : le bon mot est souvent dans la 2e/3e */ r.onresult=function(e){ var alts=[]; try{ var res=e.results[0]; for(var i=0;i<res.length;i++){ if(res[i]&&res[i].transcript) alts.push(res[i].transcript); } }catch(_){} cb&&cb(alts[0]||"", alts); }; r.onerror=function(){ cb&&cb("",[]); }; r.start(); toast("🎤 Parle…"); }catch(e){ toast("Micro indisponible"); cb&&cb("",[]); } }
 
 /* ============ LEÇON ============ */
 function startLesson(ui,li,rev){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
@@ -1849,9 +1860,9 @@ function exType(ex){ var w=el("div","ex");
 function exSpeak(ex){ var w=el("div","ex");
   w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div><div class="q-word">'+esc(ex.prompt)+' <button class="say" id="spSay">🔊</button></div><div class="speak-hint" id="spHint">Écoute (🔊) puis touche le micro et répète.</div>';
   var mic=el("button","mic-btn"); mic.innerHTML="🎤 Parler";
-  mic.onclick=function(){ mic.innerHTML="🎤 …j'écoute"; dictate(function(txt){
-    var a=norm(ex.answer),t=norm(txt); var ok=!!t&&(t===a||t.indexOf(a)>=0||a.indexOf(t)>=0);
-    var h=document.getElementById("spHint"); if(h) h.textContent=(txt?('Entendu : « '+txt+' »'):"Je n'ai pas bien entendu")+(ok?' ✅ bravo !':' — réessaie, ou passe.');
+  mic.onclick=function(){ mic.innerHTML="🎤 …j'écoute"; dictate(function(txt,alts){
+    var m=bestPronMatch(ex.answer,txt,alts); var ok=m.score>=60; /* indulgent : phonétiquement proche suffit */
+    var h=document.getElementById("spHint"); if(h) h.textContent=(m.heard?('Entendu : « '+esc(m.heard)+' » ('+m.score+'%)'):"Je n'ai pas bien entendu")+(ok?' ✅ bravo !':' — réessaie, ou passe.');
     LESSON._speakOk=ok; LESSON._can=true; mic.innerHTML=ok?"✅ Bien prononcé":"🎤 Réessayer"; syncMain();
   }, COURSES[S.course].ttsLang); };
   w.appendChild(mic);
