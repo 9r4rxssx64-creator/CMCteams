@@ -3616,6 +3616,102 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var j2=LEX2J[l]||{}; Object.keys(j2).forEach(function(k){ LEX2[l][k]=j2[k]; }); });
+/* ── Vague 11 nouvelles langues (v2.80) : unités 81-88 — s'entraider, l'actualité,
+   exprimer son avis, autour du monde, chez le docteur, la carrière, pleine nature,
+   les caractères. Anti-collisions vérifiées : pl aimable=uprzejmy (miły=gentil),
+   avis=opinia (zdanie=phrase) ; ru ordonnance=рецепт врача (рецепт=recette),
+   défendre=заступаться (защищать=protéger) ; uk ordonnance=рецепт лікаря,
+   rocher=скеля (камінь=pierre), défendre=боронити (захищати=protéger) ;
+   cs ordonnance=lékařský předpis (recept=recette), aimable=laskavý (milý=gentil) ;
+   zh aide=帮忙 (帮助=aider), accueillir=迎接 (欢迎=bienvenue), réussite=成就
+   (成功=réussir), défendre=保卫 (保护=protéger) ; ja sage=賢明な (賢い=intelligent),
+   aimable=愛想がいい (優しい=gentil), défendre=かばいます (守ります=protéger) ;
+   ko exemple=예시, ruisseau=개울, défendre=지키다 (보호하다=protéger) ;
+   ar ordonnance=وصفة طبية (وصفة=recette), aimable=ودود (لطيف=gentil),
+   ruisseau=غدير (جدول=horaire), défendre=يدافع عن (يحمي=protéger). */
+var LEX2K = {
+pl:{
+"conseil":"rada","aide":"pomoc","service":"przysługa","soutien":"wsparcie","confiance":"zaufanie","respect":"szacunek","je te fais confiance":"ufam ci","amitié":"przyjaźń","partager":"dzielić się","offrir":"podarować","accueillir":"witać","défendre":"bronić","visiter":"odwiedzać",
+"journaliste":"dziennikarz","article":"artykuł","radio":"radio","télévision":"telewizja","chaîne":"kanał","publicité":"reklama","gouvernement":"rząd","loi":"ustawa","élection":"wybory","président":"prezydent","police":"policja","sécurité":"bezpieczeństwo","liberté":"wolność",
+"avis":"opinia","préférer":"woleć","décider":"decydować","changer":"zmieniać","douter":"wątpić","se tromper":"mylić się","à mon avis, c'est vrai":"moim zdaniem to prawda","convaincre":"przekonywać","exemple":"przykład","discussion":"dyskusja","promesse":"obietnica","mensonge":"kłamstwo","secret":"tajemnica",
+"à l'étranger":"za granicą","culture":"kultura","tradition":"tradycja","religion":"religia","touriste":"turysta","guide":"przewodnik","monument":"zabytek","château":"zamek","tour":"wieża","désert":"pustynia","aventure":"przygoda","carte postale":"pocztówka",
+"ordonnance":"recepta","vaccin":"szczepionka","pansement":"plaster","opération":"operacja","piqûre":"zastrzyk","salle d'attente":"poczekalnia","j'ai besoin d'un médecin":"potrzebuję lekarza","éternuer":"kichać","saigner":"krwawić","vertige":"zawroty głowy","cicatrice":"blizna","plâtre":"gips","béquilles":"kule",
+"embaucher":"zatrudniać","candidature":"kandydatura","expérience":"doświadczenie","compétence":"umiejętność","formation":"szkolenie","stage":"staż","je cherche du travail":"szukam pracy","démissionner":"rezygnować","licencier":"zwalniać","retraite":"emerytura","chômage":"bezrobocie","augmentation":"podwyżka","réussite":"sukces",
+"vallée":"dolina","falaise":"klif","cascade":"wodospad","rocher":"skała","sommet":"szczyt","ruisseau":"strumień","grotte":"jaskinia","boue":"błoto","sentier":"ścieżka","insecte":"owad","grenouille":"żaba","branche":"gałąź","écorce":"kora","mousse":"mech",
+"généreux":"hojny","sage":"mądry","modeste":"skromny","sensible":"wrażliwy","aimable":"życzliwy","égoïste":"samolubny","têtu":"uparty","bavard":"gadatliwy","maladroit":"niezdarny","franc":"szczery"
+},
+ru:{
+"conseil":"совет","aide":"помощь","service":"услуга","soutien":"поддержка","confiance":"доверие","respect":"уважение","je te fais confiance":"я тебе доверяю","amitié":"дружба","partager":"делиться","offrir":"дарить","accueillir":"встречать","défendre":"заступаться","visiter":"навещать",
+"journaliste":"журналист","article":"статья","radio":"радио","télévision":"телевидение","chaîne":"канал","publicité":"реклама","gouvernement":"правительство","loi":"закон","élection":"выборы","président":"президент","police":"полиция","sécurité":"безопасность","liberté":"свобода",
+"avis":"мнение","préférer":"предпочитать","décider":"решать","changer":"менять","douter":"сомневаться","se tromper":"ошибаться","à mon avis, c'est vrai":"по-моему, это правда","convaincre":"убеждать","exemple":"пример","discussion":"обсуждение","promesse":"обещание","mensonge":"ложь","secret":"секрет",
+"à l'étranger":"за границей","culture":"культура","tradition":"традиция","religion":"религия","touriste":"турист","guide":"гид","monument":"памятник","château":"замок","tour":"башня","désert":"пустыня","aventure":"приключение","carte postale":"открытка",
+"ordonnance":"рецепт врача","vaccin":"вакцина","pansement":"пластырь","opération":"операция","piqûre":"укол","salle d'attente":"зал ожидания","j'ai besoin d'un médecin":"мне нужен врач","éternuer":"чихать","saigner":"кровоточить","vertige":"головокружение","cicatrice":"шрам","plâtre":"гипс","béquilles":"костыли",
+"embaucher":"нанимать","candidature":"кандидатура","expérience":"опыт","compétence":"навык","formation":"обучение","stage":"стажировка","je cherche du travail":"я ищу работу","démissionner":"увольняться","licencier":"увольнять","retraite":"пенсия","chômage":"безработица","augmentation":"прибавка","réussite":"успех",
+"vallée":"долина","falaise":"утёс","cascade":"водопад","rocher":"скала","sommet":"вершина","ruisseau":"ручей","grotte":"пещера","boue":"грязь","sentier":"тропа","insecte":"насекомое","grenouille":"лягушка","branche":"ветка","écorce":"кора","mousse":"мох",
+"généreux":"щедрый","sage":"мудрый","modeste":"скромный","sensible":"чувствительный","aimable":"любезный","égoïste":"эгоистичный","têtu":"упрямый","bavard":"болтливый","maladroit":"неуклюжий","franc":"откровенный"
+},
+uk:{
+"conseil":"порада","aide":"допомога","service":"послуга","soutien":"підтримка","confiance":"довіра","respect":"повага","je te fais confiance":"я тобі довіряю","amitié":"дружба","partager":"ділитися","offrir":"дарувати","accueillir":"зустрічати","défendre":"боронити","visiter":"відвідувати",
+"journaliste":"журналіст","article":"стаття","radio":"радіо","télévision":"телебачення","chaîne":"канал","publicité":"реклама","gouvernement":"уряд","loi":"закон","élection":"вибори","président":"президент","police":"поліція","sécurité":"безпека","liberté":"свобода",
+"avis":"думка","préférer":"віддавати перевагу","décider":"вирішувати","changer":"змінювати","douter":"сумніватися","se tromper":"помилятися","à mon avis, c'est vrai":"на мою думку, це правда","convaincre":"переконувати","exemple":"приклад","discussion":"обговорення","promesse":"обіцянка","mensonge":"брехня","secret":"секрет",
+"à l'étranger":"за кордоном","culture":"культура","tradition":"традиція","religion":"релігія","touriste":"турист","guide":"гід","monument":"пам'ятка","château":"замок","tour":"вежа","désert":"пустеля","aventure":"пригода","carte postale":"листівка",
+"ordonnance":"рецепт лікаря","vaccin":"вакцина","pansement":"пластир","opération":"операція","piqûre":"укол","salle d'attente":"зала очікування","j'ai besoin d'un médecin":"мені потрібен лікар","éternuer":"чхати","saigner":"кровоточити","vertige":"запаморочення","cicatrice":"шрам","plâtre":"гіпс","béquilles":"милиці",
+"embaucher":"наймати","candidature":"кандидатура","expérience":"досвід","compétence":"навичка","formation":"навчання","stage":"стажування","je cherche du travail":"я шукаю роботу","démissionner":"звільнятися","licencier":"звільняти","retraite":"пенсія","chômage":"безробіття","augmentation":"надбавка","réussite":"успіх",
+"vallée":"долина","falaise":"урвище","cascade":"водоспад","rocher":"скеля","sommet":"вершина","ruisseau":"струмок","grotte":"печера","boue":"багнюка","sentier":"стежка","insecte":"комаха","grenouille":"жаба","branche":"гілка","écorce":"кора","mousse":"мох",
+"généreux":"щедрий","sage":"мудрий","modeste":"скромний","sensible":"чутливий","aimable":"люб'язний","égoïste":"егоїстичний","têtu":"впертий","bavard":"балакучий","maladroit":"незграбний","franc":"відвертий"
+},
+cs:{
+"conseil":"rada","aide":"pomoc","service":"služba","soutien":"podpora","confiance":"důvěra","respect":"respekt","je te fais confiance":"věřím ti","amitié":"přátelství","partager":"sdílet","offrir":"darovat","accueillir":"vítat","défendre":"bránit","visiter":"navštěvovat",
+"journaliste":"novinář","article":"článek","radio":"rádio","télévision":"televize","chaîne":"kanál","publicité":"reklama","gouvernement":"vláda","loi":"zákon","élection":"volby","président":"prezident","police":"policie","sécurité":"bezpečnost","liberté":"svoboda",
+"avis":"názor","préférer":"preferovat","décider":"rozhodovat","changer":"měnit","douter":"pochybovat","se tromper":"mýlit se","à mon avis, c'est vrai":"podle mě je to pravda","convaincre":"přesvědčovat","exemple":"příklad","discussion":"diskuse","promesse":"slib","mensonge":"lež","secret":"tajemství",
+"à l'étranger":"v zahraničí","culture":"kultura","tradition":"tradice","religion":"náboženství","touriste":"turista","guide":"průvodce","monument":"památka","château":"hrad","tour":"věž","désert":"poušť","aventure":"dobrodružství","carte postale":"pohlednice",
+"ordonnance":"lékařský předpis","vaccin":"vakcína","pansement":"náplast","opération":"operace","piqûre":"injekce","salle d'attente":"čekárna","j'ai besoin d'un médecin":"potřebuji lékaře","éternuer":"kýchat","saigner":"krvácet","vertige":"závrať","cicatrice":"jizva","plâtre":"sádra","béquilles":"berle",
+"embaucher":"zaměstnávat","candidature":"kandidatura","expérience":"zkušenost","compétence":"dovednost","formation":"školení","stage":"stáž","je cherche du travail":"hledám práci","démissionner":"rezignovat","licencier":"propouštět","retraite":"důchod","chômage":"nezaměstnanost","augmentation":"zvýšení platu","réussite":"úspěch",
+"vallée":"údolí","falaise":"útes","cascade":"vodopád","rocher":"skála","sommet":"vrchol","ruisseau":"potok","grotte":"jeskyně","boue":"bláto","sentier":"stezka","insecte":"hmyz","grenouille":"žába","branche":"větev","écorce":"kůra","mousse":"mech",
+"généreux":"štědrý","sage":"moudrý","modeste":"skromný","sensible":"citlivý","aimable":"laskavý","égoïste":"sobecký","têtu":"tvrdohlavý","bavard":"upovídaný","maladroit":"nešikovný","franc":"upřímný"
+},
+zh:{
+"conseil":"建议","aide":"帮忙","service":"服务","soutien":"支持","confiance":"信任","respect":"尊重","je te fais confiance":"我 相信 你","amitié":"友谊","partager":"分享","offrir":"赠送","accueillir":"迎接","défendre":"保卫","visiter":"拜访",
+"journaliste":"记者","article":"文章","radio":"收音机","télévision":"电视机","chaîne":"频道","publicité":"广告","gouvernement":"政府","loi":"法律","élection":"选举","président":"总统","police":"警方","sécurité":"治安","liberté":"自由",
+"avis":"意见","préférer":"更喜欢","décider":"决定","changer":"改变","douter":"怀疑","se tromper":"弄错","à mon avis, c'est vrai":"在 我 看来 这 是 真的","convaincre":"说服","exemple":"例子","discussion":"讨论","promesse":"诺言","mensonge":"谎言","secret":"秘密",
+"à l'étranger":"在国外","culture":"文化","tradition":"传统","religion":"宗教","touriste":"游客","guide":"导游","monument":"纪念碑","château":"城堡","tour":"塔","désert":"沙漠","aventure":"冒险","carte postale":"明信片",
+"ordonnance":"处方","vaccin":"疫苗","pansement":"创可贴","opération":"手术","piqûre":"打针","salle d'attente":"候诊室","j'ai besoin d'un médecin":"我 需要 医生","éternuer":"打喷嚏","saigner":"流血","vertige":"头晕","cicatrice":"疤痕","plâtre":"石膏","béquilles":"拐杖",
+"embaucher":"雇用","candidature":"求职申请","expérience":"经验","compétence":"技能","formation":"培训","stage":"实习","je cherche du travail":"我 在 找 工作","démissionner":"辞职","licencier":"解雇","retraite":"退休","chômage":"失业","augmentation":"加薪","réussite":"成就",
+"vallée":"山谷","falaise":"悬崖","cascade":"瀑布","rocher":"岩石","sommet":"山顶","ruisseau":"小溪","grotte":"洞穴","boue":"泥","sentier":"小路","insecte":"昆虫","grenouille":"青蛙","branche":"树枝","écorce":"树皮","mousse":"苔藓",
+"généreux":"慷慨的","sage":"明智的","modeste":"谦虚的","sensible":"敏感的","aimable":"和蔼的","égoïste":"自私的","têtu":"固执的","bavard":"话多的","maladroit":"笨拙的","franc":"坦率的"
+},
+ja:{
+"conseil":"アドバイス","aide":"助け","service":"サービス","soutien":"支え","confiance":"信頼","respect":"尊敬","je te fais confiance":"あなた を 信じます","amitié":"友情","partager":"分けます","offrir":"贈ります","accueillir":"迎えます","défendre":"かばいます","visiter":"訪ねます",
+"journaliste":"記者","article":"記事","radio":"ラジオ","télévision":"テレビ","chaîne":"チャンネル","publicité":"広告","gouvernement":"政府","loi":"法律","élection":"選挙","président":"大統領","police":"警方","sécurité":"治安","liberté":"自由",
+"avis":"意見","préférer":"好みます","décider":"決めます","changer":"変えます","douter":"疑います","se tromper":"間違えます","à mon avis, c'est vrai":"私 の 意見 では それ は 本当 です","convaincre":"説得します","exemple":"例","discussion":"議論","promesse":"約束","mensonge":"嘘","secret":"秘密",
+"à l'étranger":"海外で","culture":"文化","tradition":"伝統","religion":"宗教","touriste":"観光客","guide":"ガイド","monument":"記念碑","château":"城","tour":"塔","désert":"砂漠","aventure":"冒険","carte postale":"はがき",
+"ordonnance":"処方箋","vaccin":"ワクチン","pansement":"絆創膏","opération":"手術","piqûre":"注射","salle d'attente":"待合室","j'ai besoin d'un médecin":"医者 が 必要 です","éternuer":"くしゃみをします","saigner":"血が出ます","vertige":"めまい","cicatrice":"傷跡","plâtre":"ギプス","béquilles":"松葉杖",
+"embaucher":"雇います","candidature":"応募","expérience":"経験","compétence":"スキル","formation":"研修","stage":"インターンシップ","je cherche du travail":"仕事 を 探しています","démissionner":"辞めます","licencier":"解雇します","retraite":"退職","chômage":"失業","augmentation":"昇給","réussite":"成功",
+"vallée":"谷","falaise":"崖","cascade":"滝","rocher":"岩","sommet":"頂上","ruisseau":"小川","grotte":"洞窟","boue":"泥","sentier":"小道","insecte":"昆虫","grenouille":"カエル","branche":"枝","écorce":"樹皮","mousse":"苔",
+"généreux":"気前がいい","sage":"賢明な","modeste":"謙虚な","sensible":"敏感な","aimable":"愛想がいい","égoïste":"わがままな","têtu":"頑固な","bavard":"おしゃべりな","maladroit":"不器用な","franc":"率直な"
+},
+ko:{
+"conseil":"조언","aide":"도움","service":"서비스","soutien":"지원","confiance":"신뢰","respect":"존중","je te fais confiance":"너를 믿어요","amitié":"우정","partager":"나누다","offrir":"선물하다","accueillir":"맞이하다","défendre":"지키다","visiter":"방문하다",
+"journaliste":"기자","article":"기사","radio":"라디오","télévision":"텔레비전","chaîne":"채널","publicité":"광고","gouvernement":"정부","loi":"법","élection":"선거","président":"대통령","police":"경찰","sécurité":"안전","liberté":"자유",
+"avis":"의견","préférer":"선호하다","décider":"결정하다","changer":"바꾸다","douter":"의심하다","se tromper":"실수하다","à mon avis, c'est vrai":"제 생각에는 그게 사실이에요","convaincre":"설득하다","exemple":"예시","discussion":"토론","promesse":"약속","mensonge":"거짓말","secret":"비밀",
+"à l'étranger":"해외에서","culture":"문화","tradition":"전통","religion":"종교","touriste":"관광객","guide":"가이드","monument":"기념물","château":"성","tour":"탑","désert":"사막","aventure":"모험","carte postale":"엽서",
+"ordonnance":"처방전","vaccin":"백신","pansement":"반창고","opération":"수술","piqûre":"주사","salle d'attente":"대기실","j'ai besoin d'un médecin":"의사가 필요해요","éternuer":"재채기하다","saigner":"피가 나다","vertige":"어지러움","cicatrice":"흉터","plâtre":"깁스","béquilles":"목발",
+"embaucher":"고용하다","candidature":"지원서","expérience":"경험","compétence":"기술","formation":"연수","stage":"인턴십","je cherche du travail":"일자리를 찾고 있어요","démissionner":"사직하다","licencier":"해고하다","retraite":"은퇴","chômage":"실업","augmentation":"임금 인상","réussite":"성공",
+"vallée":"계곡","falaise":"절벽","cascade":"폭포","rocher":"바위","sommet":"정상","ruisseau":"개울","grotte":"동굴","boue":"진흙","sentier":"오솔길","insecte":"곤충","grenouille":"개구리","branche":"나뭇가지","écorce":"나무껍질","mousse":"이끼",
+"généreux":"너그러운","sage":"현명한","modeste":"겸손한","sensible":"섬세한","aimable":"상냥한","égoïste":"이기적인","têtu":"고집이 센","bavard":"수다스러운","maladroit":"서투른","franc":"솔직한"
+},
+ar:{
+"conseil":"نصيحة","aide":"مساعدة","service":"خدمة","soutien":"دعم","confiance":"ثقة","respect":"احترام","je te fais confiance":"أثق بك","amitié":"صداقة","partager":"يشارك","offrir":"يهدي","accueillir":"يرحب بـ","défendre":"يدافع عن","visiter":"يزور",
+"journaliste":"صحفي","article":"مقال","radio":"راديو","télévision":"تلفزيون","chaîne":"قناة","publicité":"إعلان","gouvernement":"حكومة","loi":"قانون","élection":"انتخابات","président":"رئيس","police":"شرطة","sécurité":"أمان","liberté":"حرية",
+"avis":"رأي","préférer":"يفضل","décider":"يقرر","changer":"يغير","douter":"يشك","se tromper":"يخطئ","à mon avis, c'est vrai":"في رأيي هذا صحيح","convaincre":"يقنع","exemple":"مثال","discussion":"نقاش","promesse":"وعد","mensonge":"كذبة","secret":"سر",
+"à l'étranger":"في الخارج","culture":"ثقافة","tradition":"تقليد","religion":"دين","touriste":"سائح","guide":"مرشد","monument":"نصب تذكاري","château":"قلعة","tour":"برج","désert":"صحراء","aventure":"مغامرة","carte postale":"بطاقة بريدية",
+"ordonnance":"وصفة طبية","vaccin":"لقاح","pansement":"ضمادة","opération":"عملية جراحية","piqûre":"حقنة","salle d'attente":"غرفة الانتظار","j'ai besoin d'un médecin":"أحتاج إلى طبيب","éternuer":"يعطس","saigner":"ينزف","vertige":"دوخة","cicatrice":"ندبة","plâtre":"جبيرة","béquilles":"عكازات",
+"embaucher":"يوظف","candidature":"طلب توظيف","expérience":"خبرة","compétence":"مهارة","formation":"تدريب","stage":"تدريب عملي","je cherche du travail":"أبحث عن عمل","démissionner":"يستقيل","licencier":"يفصل","retraite":"تقاعد","chômage":"بطالة","augmentation":"علاوة","réussite":"نجاح",
+"vallée":"وادٍ","falaise":"جرف","cascade":"شلال","rocher":"صخرة","sommet":"قمة","ruisseau":"غدير","grotte":"كهف","boue":"طين","sentier":"درب","insecte":"حشرة","grenouille":"ضفدع","branche":"غصن","écorce":"لحاء","mousse":"طحلب",
+"généreux":"كريم","sage":"حكيم","modeste":"متواضع","sensible":"حساس","aimable":"دمث","égoïste":"أناني","têtu":"عنيد","bavard":"ثرثار","maladroit":"أخرق","franc":"صريح"
+}
+};
+LANGS2.forEach(function(l){ var k2=LEX2K[l]||{}; Object.keys(k2).forEach(function(k){ LEX2[l][k]=k2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
