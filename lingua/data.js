@@ -4366,6 +4366,100 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var r2=LEX2R[l]||{}; Object.keys(r2).forEach(function(k){ LEX2[l][k]=r2[k]; }); });
+/* ── Vague 19 nouvelles langues (v2.89) : unités 145-152 — scène internationale, secrets
+   du chef, adjectifs de précision, connecteurs soutenus, au microscope, logement et droit,
+   expressions imagées, le cinéma. Anti-collisions vérifiées : connecteurs soutenus tous
+   distincts de cependant/pourtant/mais déjà en place (zh toutefois=可是 car 但是=mais,
+   ko toutefois=다만 car 하지만=mais, par conséquent=그러므로 car 따라서=le long de,
+   en outre=또한 car 게다가=d'ailleurs, bien que=지만 car 에도 불구하고=malgré) ;
+   pl vedette=gwiazda filmowa (gwiazda=étoile), ru éplucher=чистить овощи (чистить=
+   nettoyer), rigoureux=скрупулёзный (строгий=sévère), contravention=штрафной талон
+   (штраф=amende) ; cs générique=závěrečné titulky (titulky=sous-titres) ;
+   zh stationnement=泊车 (停车=se garer). Homographe réel assumé : ar ذرة = maïs ET
+   atome (dhurra/dharra, même graphie sans voyelles). */
+var LEX2S = {
+pl:{
+"ambassade":"ambasada","consulat":"konsulat","traité":"traktat","diplomatie":"dyplomacja","cessez-le-feu":"zawieszenie broni","réfugié":"uchodźca","immigration":"imigracja","émigration":"emigracja","mondialisation":"globalizacja","aide humanitaire":"pomoc humanitarna",
+"assaisonner":"przyprawiać","éplucher":"obierać","mariner":"marynować","pétrir":"ugniatać","levure":"drożdże","mijoter":"dusić","cuisson":"gotowanie","garniture":"dodatki","épices":"przyprawy","herbes aromatiques":"zioła",
+"rentable":"opłacalny","fiable":"niezawodny","exigeant":"wymagający","soigneux":"staranny","rigoureux":"rygorystyczny","approfondi":"dogłębny","négligent":"niedbały","souple":"elastyczny","rigide":"sztywny","robuste":"wytrzymały","durable":"trwały","superficiel":"powierzchowny",
+"néanmoins":"niemniej jednak","toutefois":"jednakże","en revanche":"za to","par conséquent":"w konsekwencji","d'autant plus":"tym bardziej","en outre":"ponadto","quant à":"co do","faute de":"z braku","à condition que":"pod warunkiem że","bien que":"chociaż","afin de":"w celu","tandis que":"podczas gdy",
+"cellule":"komórka","gène":"gen","ADN":"DNA","molécule":"cząsteczka","atome":"atom","évolution":"ewolucja","échantillon":"próbka","hypothèse":"hipoteza","démonstration":"pokaz","éprouvette":"probówka",
+"locataire":"lokator","propriétaire":"właściciel","bail":"umowa najmu","caution":"kaucja","assurance":"ubezpieczenie","héritage":"spadek","testament":"testament","notaire":"notariusz","péage":"opłata drogowa","covoiturage":"wspólne przejazdy","contravention":"mandat","stationnement":"parkowanie",
+"ça saute aux yeux":"to rzuca się w oczy","il n'y a pas de quoi":"nie ma za co","à vrai dire":"prawdę mówiąc","en fin de compte":"koniec końców","quoi qu'il en soit":"tak czy inaczej",
+"réalisateur":"reżyser","tournage":"kręcenie filmu","scénario":"scenariusz","figurant":"statysta","vedette":"gwiazda filmowa","plateau de tournage":"plan filmowy","doublage":"dubbing","bande-annonce":"zwiastun","générique":"napisy końcowe","effets spéciaux":"efekty specjalne","court-métrage":"film krótkometrażowy","sous-titrage":"napisy do filmu"
+},
+ru:{
+"ambassade":"посольство","consulat":"консульство","traité":"договор","diplomatie":"дипломатия","cessez-le-feu":"прекращение огня","réfugié":"беженец","immigration":"иммиграция","émigration":"эмиграция","mondialisation":"глобализация","aide humanitaire":"гуманитарная помощь",
+"assaisonner":"приправлять","éplucher":"чистить овощи","mariner":"мариновать","pétrir":"месить","levure":"дрожжи","mijoter":"тушить","cuisson":"приготовление","garniture":"гарнир","épices":"специи","herbes aromatiques":"пряные травы",
+"rentable":"прибыльный","fiable":"надёжный","exigeant":"требовательный","soigneux":"аккуратный","rigoureux":"скрупулёзный","approfondi":"углублённый","négligent":"небрежный","souple":"гибкий","rigide":"жёсткий","robuste":"прочный","durable":"долговечный","superficiel":"поверхностный",
+"néanmoins":"тем не менее","toutefois":"впрочем","en revanche":"зато","par conséquent":"следовательно","d'autant plus":"тем более","en outre":"кроме того","quant à":"что касается","faute de":"за неимением","à condition que":"при условии что","bien que":"хотя","afin de":"для того чтобы","tandis que":"в то время как",
+"cellule":"клетка","gène":"ген","ADN":"ДНК","molécule":"молекула","atome":"атом","évolution":"эволюция","échantillon":"образец","hypothèse":"гипотеза","démonstration":"показ","éprouvette":"пробирка",
+"locataire":"арендатор","propriétaire":"владелец","bail":"договор аренды","caution":"залог","assurance":"страховка","héritage":"наследство","testament":"завещание","notaire":"нотариус","péage":"дорожный сбор","covoiturage":"совместные поездки","contravention":"штрафной талон","stationnement":"парковка",
+"ça saute aux yeux":"это бросается в глаза","il n'y a pas de quoi":"не за что","à vrai dire":"по правде говоря","en fin de compte":"в конечном счёте","quoi qu'il en soit":"как бы то ни было",
+"réalisateur":"режиссёр","tournage":"съёмки","scénario":"сценарий","figurant":"статист","vedette":"кинозвезда","plateau de tournage":"съёмочная площадка","doublage":"дубляж","bande-annonce":"трейлер","générique":"титры","effets spéciaux":"спецэффекты","court-métrage":"короткометражка","sous-titrage":"субтитрование"
+},
+uk:{
+"ambassade":"посольство","consulat":"консульство","traité":"міжнародний договір","diplomatie":"дипломатія","cessez-le-feu":"припинення вогню","réfugié":"біженець","immigration":"імміграція","émigration":"еміграція","mondialisation":"глобалізація","aide humanitaire":"гуманітарна допомога",
+"assaisonner":"приправляти","éplucher":"обчищати","mariner":"маринувати","pétrir":"місити","levure":"дріжджі","mijoter":"тушкувати","cuisson":"приготування","garniture":"гарнір","épices":"спеції","herbes aromatiques":"пряні трави",
+"rentable":"прибутковий","fiable":"надійний","exigeant":"вимогливий","soigneux":"охайний","rigoureux":"ретельний","approfondi":"поглиблений","négligent":"недбалий","souple":"гнучкий","rigide":"жорсткий","robuste":"міцний","durable":"довговічний","superficiel":"поверхневий",
+"néanmoins":"проте","toutefois":"втім","en revanche":"натомість","par conséquent":"отже","d'autant plus":"тим більше","en outre":"крім того","quant à":"щодо","faute de":"через брак","à condition que":"за умови що","bien que":"хоча","afin de":"задля","tandis que":"тоді як",
+"cellule":"клітина","gène":"ген","ADN":"ДНК","molécule":"молекула","atome":"атом","évolution":"еволюція","échantillon":"зразок","hypothèse":"гіпотеза","démonstration":"наочний показ","éprouvette":"пробірка",
+"locataire":"орендар","propriétaire":"власник","bail":"договір оренди","caution":"застава","assurance":"страхування","héritage":"спадщина","testament":"заповіт","notaire":"нотаріус","péage":"дорожній збір","covoiturage":"спільні поїздки","contravention":"штрафний талон","stationnement":"паркування",
+"ça saute aux yeux":"це впадає в око","il n'y a pas de quoi":"нема за що","à vrai dire":"правду кажучи","en fin de compte":"зрештою","quoi qu'il en soit":"як би там не було",
+"réalisateur":"режисер","tournage":"зйомки","scénario":"сценарій","figurant":"статист","vedette":"кінозірка","plateau de tournage":"знімальний майданчик","doublage":"дубляж","bande-annonce":"трейлер","générique":"титри","effets spéciaux":"спецефекти","court-métrage":"короткометражка","sous-titrage":"субтитрування"
+},
+cs:{
+"ambassade":"velvyslanectví","consulat":"konzulát","traité":"smlouva","diplomatie":"diplomacie","cessez-le-feu":"příměří","réfugié":"uprchlík","immigration":"imigrace","émigration":"emigrace","mondialisation":"globalizace","aide humanitaire":"humanitární pomoc",
+"assaisonner":"kořenit","éplucher":"loupat","mariner":"marinovat","pétrir":"hníst","levure":"droždí","mijoter":"dusit","cuisson":"vaření","garniture":"příloha","épices":"koření","herbes aromatiques":"bylinky",
+"rentable":"výnosný","fiable":"spolehlivý","exigeant":"náročný","soigneux":"pečlivý","rigoureux":"důsledný","approfondi":"důkladný","négligent":"nedbalý","souple":"pružný","rigide":"tuhý","robuste":"odolný","durable":"trvanlivý","superficiel":"povrchní",
+"néanmoins":"nicméně","toutefois":"avšak","en revanche":"naopak","par conséquent":"tudíž","d'autant plus":"tím spíše","en outre":"kromě toho","quant à":"pokud jde o","faute de":"pro nedostatek","à condition que":"pod podmínkou že","bien que":"ačkoli","afin de":"za účelem","tandis que":"zatímco",
+"cellule":"buňka","gène":"gen","ADN":"DNA","molécule":"molekula","atome":"atom","évolution":"evoluce","échantillon":"vzorek","hypothèse":"hypotéza","démonstration":"předvedení","éprouvette":"zkumavka",
+"locataire":"nájemník","propriétaire":"majitel","bail":"nájemní smlouva","caution":"kauce","assurance":"pojištění","héritage":"dědictví","testament":"závěť","notaire":"notář","péage":"mýtné","covoiturage":"spolujízda","contravention":"pokutový blok","stationnement":"parkování",
+"ça saute aux yeux":"to bije do očí","il n'y a pas de quoi":"není zač","à vrai dire":"po pravdě řečeno","en fin de compte":"koneckonců","quoi qu'il en soit":"ať je to jakkoli",
+"réalisateur":"režisér","tournage":"natáčení","scénario":"scénář","figurant":"komparzista","vedette":"filmová hvězda","plateau de tournage":"filmový plac","doublage":"dabing","bande-annonce":"upoutávka","générique":"závěrečné titulky","effets spéciaux":"speciální efekty","court-métrage":"krátký film","sous-titrage":"titulkování"
+},
+zh:{
+"ambassade":"大使馆","consulat":"领事馆","traité":"条约","diplomatie":"外交","cessez-le-feu":"停火","réfugié":"难民","immigration":"移民","émigration":"移居国外","mondialisation":"全球化","aide humanitaire":"人道主义援助",
+"assaisonner":"调味","éplucher":"削皮","mariner":"腌制","pétrir":"揉面","levure":"酵母","mijoter":"炖","cuisson":"烹饪","garniture":"配菜","épices":"香料","herbes aromatiques":"香草",
+"rentable":"有利可图的","fiable":"可靠的","exigeant":"要求高的","soigneux":"细心的","rigoureux":"严谨的","approfondi":"深入的","négligent":"粗心的","souple":"灵活的","rigide":"僵硬的","robuste":"结实的","durable":"耐用的","superficiel":"肤浅的",
+"néanmoins":"尽管如此","toutefois":"可是","en revanche":"相反","par conséquent":"因此","d'autant plus":"更何况","en outre":"此外","quant à":"至于","faute de":"由于缺乏","à condition que":"只要","bien que":"虽然","afin de":"为了","tandis que":"而",
+"cellule":"细胞","gène":"基因","ADN":"DNA","molécule":"分子","atome":"原子","évolution":"进化","échantillon":"样本","hypothèse":"假说","démonstration":"演示","éprouvette":"试管",
+"locataire":"房客","propriétaire":"房东","bail":"租约","caution":"押金","assurance":"保险","héritage":"遗产","testament":"遗嘱","notaire":"公证人","péage":"过路费","covoiturage":"拼车","contravention":"罚单","stationnement":"泊车",
+"ça saute aux yeux":"一目了然","il n'y a pas de quoi":"不客气","à vrai dire":"说实话","en fin de compte":"归根结底","quoi qu'il en soit":"无论如何",
+"réalisateur":"导演","tournage":"拍摄","scénario":"剧本","figurant":"群众演员","vedette":"明星","plateau de tournage":"片场","doublage":"配音","bande-annonce":"预告片","générique":"片尾字幕","effets spéciaux":"特效","court-métrage":"短片","sous-titrage":"字幕制作"
+},
+ja:{
+"ambassade":"大使館","consulat":"領事館","traité":"条約","diplomatie":"外交","cessez-le-feu":"停戦","réfugié":"難民","immigration":"移民","émigration":"国外移住","mondialisation":"グローバル化","aide humanitaire":"人道支援",
+"assaisonner":"味付けします","éplucher":"皮をむきます","mariner":"マリネします","pétrir":"こねます","levure":"イースト","mijoter":"煮込みます","cuisson":"調理","garniture":"付け合わせ","épices":"スパイス","herbes aromatiques":"ハーブ",
+"rentable":"採算が取れる","fiable":"信頼できる","exigeant":"要求が厳しい","soigneux":"丁寧な","rigoureux":"厳密な","approfondi":"徹底した","négligent":"ずさんな","souple":"柔軟な","rigide":"硬直した","robuste":"頑丈な","durable":"長持ちする","superficiel":"表面的な",
+"néanmoins":"それにもかかわらず","toutefois":"ただし","en revanche":"一方で","par conséquent":"したがって","d'autant plus":"なおさら","en outre":"さらに","quant à":"〜については","faute de":"〜がないため","à condition que":"〜という条件で","bien que":"〜だけれども","afin de":"〜を目的として","tandis que":"〜である一方",
+"cellule":"細胞","gène":"遺伝子","ADN":"DNA","molécule":"分子","atome":"原子","évolution":"進化","échantillon":"サンプル","hypothèse":"仮説","démonstration":"実証","éprouvette":"試験管",
+"locataire":"借家人","propriétaire":"大家","bail":"賃貸契約","caution":"敷金","assurance":"保険","héritage":"遺産","testament":"遺言","notaire":"公証人","péage":"通行料","covoiturage":"相乗り","contravention":"違反切符","stationnement":"駐車",
+"ça saute aux yeux":"一目瞭然 です","il n'y a pas de quoi":"どういたしまして","à vrai dire":"実を言うと","en fin de compte":"結局のところ","quoi qu'il en soit":"いずれにせよ",
+"réalisateur":"映画監督","tournage":"撮影","scénario":"脚本","figurant":"エキストラ","vedette":"スター","plateau de tournage":"撮影セット","doublage":"吹き替え","bande-annonce":"予告編","générique":"エンドロール","effets spéciaux":"特殊効果","court-métrage":"短編映画","sous-titrage":"字幕付け"
+},
+ko:{
+"ambassade":"대사관","consulat":"영사관","traité":"조약","diplomatie":"외교","cessez-le-feu":"휴전","réfugié":"난민","immigration":"이민","émigration":"해외 이주","mondialisation":"세계화","aide humanitaire":"인도적 지원",
+"assaisonner":"간을 하다","éplucher":"껍질을 벗기다","mariner":"재우다","pétrir":"반죽하다","levure":"효모","mijoter":"뭉근히 끓이다","cuisson":"조리","garniture":"곁들임","épices":"향신료","herbes aromatiques":"허브",
+"rentable":"수익성 있는","fiable":"신뢰할 수 있는","exigeant":"까다로운","soigneux":"꼼꼼한","rigoureux":"엄밀한","approfondi":"심층적인","négligent":"부주의한","souple":"유연한","rigide":"경직된","robuste":"튼튼한","durable":"오래가는","superficiel":"피상적인",
+"néanmoins":"그럼에도 불구하고","toutefois":"다만","en revanche":"반면에","par conséquent":"그러므로","d'autant plus":"더욱이","en outre":"그 밖에도","quant à":"에 관해서는","faute de":"이 없어서","à condition que":"하는 조건으로","bien que":"지만","afin de":"하고자","tandis que":"인 데 비해",
+"cellule":"세포","gène":"유전자","ADN":"DNA","molécule":"분자","atome":"원자","évolution":"진화","échantillon":"표본","hypothèse":"가설","démonstration":"증명","éprouvette":"시험관",
+"locataire":"세입자","propriétaire":"집주인","bail":"임대 계약","caution":"보증금","assurance":"보험","héritage":"유산","testament":"유언장","notaire":"공증인","péage":"통행료","covoiturage":"카풀","contravention":"딱지","stationnement":"주차",
+"ça saute aux yeux":"한눈에 봐도 알아요","il n'y a pas de quoi":"천만에요","à vrai dire":"사실대로 말하면","en fin de compte":"결국에는","quoi qu'il en soit":"어쨌든",
+"réalisateur":"영화감독","tournage":"촬영","scénario":"시나리오","figurant":"엑스트라","vedette":"스타","plateau de tournage":"촬영장","doublage":"더빙","bande-annonce":"예고편","générique":"엔딩 크레딧","effets spéciaux":"특수 효과","court-métrage":"단편 영화","sous-titrage":"자막 제작"
+},
+ar:{
+"ambassade":"سفارة","consulat":"قنصلية","traité":"معاهدة","diplomatie":"دبلوماسية","cessez-le-feu":"وقف إطلاق النار","réfugié":"لاجئ","immigration":"هجرة","émigration":"هجرة إلى الخارج","mondialisation":"عولمة","aide humanitaire":"مساعدات إنسانية",
+"assaisonner":"يتبل","éplucher":"يقشر","mariner":"ينقع","pétrir":"يعجن","levure":"خميرة","mijoter":"يطهو على نار هادئة","cuisson":"طهي","garniture":"طبق جانبي","épices":"بهارات","herbes aromatiques":"أعشاب عطرية",
+"rentable":"مربح","fiable":"موثوق","exigeant":"متطلب","soigneux":"دقيق","rigoureux":"منهجي","approfondi":"معمق","négligent":"مهمل","souple":"مرن","rigide":"متصلب","robuste":"متين","durable":"مستدام","superficiel":"سطحي",
+"néanmoins":"برغم ذلك","toutefois":"بيد أن","en revanche":"في المقابل","par conséquent":"بالتالي","d'autant plus":"لا سيما","en outre":"علاوة على ذلك","quant à":"أما بالنسبة لـ","faute de":"لعدم وجود","à condition que":"بشرط أن","bien que":"مع أن","afin de":"من أجل","tandis que":"بينما",
+"cellule":"خلية","gène":"جين","ADN":"الحمض النووي","molécule":"جزيء","atome":"ذرة","évolution":"تطور","échantillon":"عينة","hypothèse":"فرضية","démonstration":"برهان","éprouvette":"أنبوب اختبار",
+"locataire":"مستأجر","propriétaire":"مالك","bail":"عقد إيجار","caution":"وديعة","assurance":"تأمين","héritage":"ميراث","testament":"وصية","notaire":"كاتب عدل","péage":"رسوم الطريق","covoiturage":"مشاركة السيارة","contravention":"مخالفة","stationnement":"وقوف السيارات",
+"ça saute aux yeux":"واضح وضوح الشمس","il n'y a pas de quoi":"لا شكر على واجب","à vrai dire":"في الحقيقة","en fin de compte":"في نهاية المطاف","quoi qu'il en soit":"على أي حال",
+"réalisateur":"مخرج","tournage":"تصوير الفيلم","scénario":"سيناريو","figurant":"كومبارس","vedette":"نجم سينمائي","plateau de tournage":"موقع التصوير","doublage":"دبلجة","bande-annonce":"إعلان تشويقي","générique":"شارة النهاية","effets spéciaux":"مؤثرات خاصة","court-métrage":"فيلم قصير","sous-titrage":"سترجة"
+}
+};
+LANGS2.forEach(function(l){ var s2=LEX2S[l]||{}; Object.keys(s2).forEach(function(k){ LEX2[l][k]=s2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
