@@ -4668,6 +4668,61 @@ var LEX2ENV = {
 };
 LANGS2.forEach(function(l){ var e2=LEX2ENV[l]||{}; Object.keys(e2).forEach(function(k){ LEX2[l][k]=e2[k]; }); });
 
+
+/* ===== VAGUE NUMÉRIQUE / TECHNO (v2.93.0) — 24 mots ×14 langues, 3 unités ===== */
+var CURRICULUM_I = [
+  {t:"L'ordinateur 💻", c:"#3b82f6", L:[
+    {t:"Les fichiers", w:["dossier","enregistrer","supprimer","copier"]},
+    {t:"Sur le web", w:["navigateur","moteur de recherche","lien","imprimer"]} ]},
+  {t:"Se connecter 🌐", c:"#8b5cf6", L:[
+    {t:"Les messages", w:["messagerie","boîte mail","pièce jointe","abonnement"]},
+    {t:"Sécurité", w:["code","pirate","virus","wifi"]} ]},
+  {t:"Le matériel 🔌", c:"#f97316", L:[
+    {t:"Les appareils", w:["smartphone","clé USB","chargeur","câble"]},
+    {t:"Son & image", w:["cliquer","haut-parleur","micro","webcam"]} ]}
+];
+CURRICULUM_I.forEach(function(u){ CURRICULUM.push(u); });
+
+var NEWV16 = {
+  "dossier":{"en":"folder","it":"cartella","es":"carpeta","de":"Ordner","pt":"pasta","nl":"map"},
+  "navigateur":{"en":"browser","it":"browser","es":"navegador","de":"Browser","pt":"navegador","nl":"browser"},
+  "moteur de recherche":{"en":"search engine","it":"motore di ricerca","es":"motor de búsqueda","de":"Suchmaschine","pt":"motor de busca","nl":"zoekmachine"},
+  "enregistrer":{"en":"to save","it":"salvare","es":"guardar","de":"speichern","pt":"guardar","nl":"opslaan"},
+  "supprimer":{"en":"to delete","it":"eliminare","es":"eliminar","de":"löschen","pt":"eliminar","nl":"verwijderen"},
+  "copier":{"en":"to copy","it":"copiare","es":"copiar","de":"kopieren","pt":"copiar","nl":"kopiëren"},
+  "imprimer":{"en":"to print","it":"stampare","es":"imprimir","de":"drucken","pt":"imprimir","nl":"afdrukken"},
+  "lien":{"en":"link","it":"collegamento","es":"enlace","de":"Link","pt":"hiperligação","nl":"link"},
+  "messagerie":{"en":"messaging","it":"messaggistica","es":"mensajería","de":"Nachrichtendienst","pt":"mensagens","nl":"berichten"},
+  "boîte mail":{"en":"inbox","it":"posta in arrivo","es":"bandeja de entrada","de":"Posteingang","pt":"caixa de entrada","nl":"postvak IN"},
+  "pièce jointe":{"en":"attachment","it":"allegato","es":"adjunto","de":"Anhang","pt":"anexo","nl":"bijlage"},
+  "abonnement":{"en":"subscription","it":"abbonamento","es":"suscripción","de":"Abonnement","pt":"subscrição","nl":"abonnement"},
+  "code":{"en":"code","it":"codice","es":"código","de":"Code","pt":"código","nl":"code"},
+  "pirate":{"en":"hacker","it":"hacker","es":"hacker","de":"Hacker","pt":"hacker","nl":"hacker"},
+  "virus":{"en":"virus","it":"virus","es":"virus","de":"Virus","pt":"vírus","nl":"virus"},
+  "wifi":{"en":"Wi-Fi","it":"wifi","es":"wifi","de":"WLAN","pt":"wifi","nl":"wifi"},
+  "smartphone":{"en":"smartphone","it":"smartphone","es":"teléfono inteligente","de":"Smartphone","pt":"smartphone","nl":"smartphone"},
+  "clé USB":{"en":"USB stick","it":"chiavetta USB","es":"memoria USB","de":"USB-Stick","pt":"pen drive","nl":"USB-stick"},
+  "chargeur":{"en":"charger","it":"caricabatterie","es":"cargador","de":"Ladegerät","pt":"carregador","nl":"oplader"},
+  "câble":{"en":"cable","it":"cavo","es":"cable","de":"Kabel","pt":"cabo","nl":"kabel"},
+  "cliquer":{"en":"to click","it":"cliccare","es":"hacer clic","de":"klicken","pt":"clicar","nl":"klikken"},
+  "haut-parleur":{"en":"speaker","it":"altoparlante","es":"altavoz","de":"Lautsprecher","pt":"altifalante","nl":"luidspreker"},
+  "micro":{"en":"microphone","it":"microfono","es":"micrófono","de":"Mikrofon","pt":"microfone","nl":"microfoon"},
+  "webcam":{"en":"webcam","it":"webcam","es":"cámara web","de":"Webcam","pt":"webcam","nl":"webcam"}
+};
+LANGS.forEach(function(l){ Object.keys(NEWV16).forEach(function(k){ if(NEWV16[k][l]) LEX[l][k]=NEWV16[k][l]; }); });
+
+var LEX2DIG = {
+  pl:{"dossier":"folder","navigateur":"przeglądarka","moteur de recherche":"wyszukiwarka","enregistrer":"zapisywać","supprimer":"usuwać","copier":"kopiować","imprimer":"drukować","lien":"link","messagerie":"komunikator","boîte mail":"skrzynka odbiorcza","pièce jointe":"załącznik","abonnement":"subskrypcja","code":"kod","pirate":"haker","virus":"wirus","wifi":"wifi","smartphone":"smartfon","clé USB":"pendrive","chargeur":"ładowarka","câble":"kabel","cliquer":"klikać","haut-parleur":"głośnik","micro":"mikrofon","webcam":"kamera internetowa"},
+  ru:{"dossier":"папка","navigateur":"браузер","moteur de recherche":"поисковик","enregistrer":"сохранять","supprimer":"удалять","copier":"копировать","imprimer":"печатать","lien":"ссылка","messagerie":"мессенджер","boîte mail":"входящие","pièce jointe":"вложение","abonnement":"подписка","code":"код","pirate":"хакер","virus":"вирус","wifi":"вайфай","smartphone":"смартфон","clé USB":"флешка","chargeur":"зарядка","câble":"кабель","cliquer":"кликать","haut-parleur":"динамик","micro":"микрофон","webcam":"веб-камера"},
+  uk:{"dossier":"папка","navigateur":"браузер","moteur de recherche":"пошуковик","enregistrer":"зберігати","supprimer":"видаляти","copier":"копіювати","imprimer":"друкувати","lien":"посилання","messagerie":"месенджер","boîte mail":"вхідні","pièce jointe":"вкладення","abonnement":"підписка","code":"код","pirate":"хакер","virus":"вірус","wifi":"вайфай","smartphone":"смартфон","clé USB":"флешка","chargeur":"зарядний пристрій","câble":"кабель","cliquer":"клікати","haut-parleur":"динамік","micro":"мікрофон","webcam":"вебкамера"},
+  cs:{"dossier":"složka","navigateur":"prohlížeč","moteur de recherche":"vyhledávač","enregistrer":"ukládat","supprimer":"mazat","copier":"kopírovat","imprimer":"tisknout","lien":"odkaz","messagerie":"messenger","boîte mail":"doručená pošta","pièce jointe":"příloha","abonnement":"předplatné","code":"kód","pirate":"hacker","virus":"virus","wifi":"wifi","smartphone":"chytrý telefon","clé USB":"flash disk","chargeur":"nabíječka","câble":"kabel","cliquer":"klikat","haut-parleur":"reproduktor","micro":"mikrofon","webcam":"webkamera"},
+  zh:{"dossier":"文件夹","navigateur":"浏览器","moteur de recherche":"搜索引擎","enregistrer":"保存","supprimer":"删除","copier":"复制","imprimer":"打印","lien":"链接","messagerie":"即时通讯","boîte mail":"收件箱","pièce jointe":"附件","abonnement":"订阅","code":"代码","pirate":"黑客","virus":"病毒","wifi":"无线网络","smartphone":"智能手机","clé USB":"U盘","chargeur":"充电器","câble":"电缆","cliquer":"点击","haut-parleur":"扬声器","micro":"麦克风","webcam":"网络摄像头"},
+  ja:{"dossier":"フォルダ","navigateur":"ブラウザ","moteur de recherche":"検索エンジン","enregistrer":"保存します","supprimer":"削除します","copier":"コピーします","imprimer":"印刷します","lien":"リンク","messagerie":"メッセージアプリ","boîte mail":"受信箱","pièce jointe":"添付ファイル","abonnement":"定期購読","code":"コード","pirate":"ハッカー","virus":"ウイルス","wifi":"Wi-Fi","smartphone":"スマートフォン","clé USB":"USBメモリ","chargeur":"充電器","câble":"ケーブル","cliquer":"クリックします","haut-parleur":"スピーカー","micro":"マイク","webcam":"ウェブカメラ"},
+  ko:{"dossier":"폴더","navigateur":"브라우저","moteur de recherche":"검색 엔진","enregistrer":"저장하다","supprimer":"삭제하다","copier":"복사하다","imprimer":"인쇄하다","lien":"링크","messagerie":"메신저","boîte mail":"받은편지함","pièce jointe":"첨부파일","abonnement":"구독","code":"코드","pirate":"해커","virus":"바이러스","wifi":"와이파이","smartphone":"스마트폰","clé USB":"USB 메모리","chargeur":"충전기","câble":"케이블","cliquer":"클릭하다","haut-parleur":"스피커","micro":"마이크","webcam":"웹캠"},
+  ar:{"dossier":"مجلد","navigateur":"متصفح","moteur de recherche":"محرك بحث","enregistrer":"يحفظ","supprimer":"يحذف","copier":"ينسخ","imprimer":"يطبع","lien":"رابط","messagerie":"مراسلة","boîte mail":"صندوق الوارد","pièce jointe":"مرفق","abonnement":"اشتراك","code":"رمز","pirate":"قرصان","virus":"فيروس","wifi":"واي فاي","smartphone":"هاتف ذكي","clé USB":"فلاش USB","chargeur":"شاحن","câble":"كابل","cliquer":"ينقر","haut-parleur":"مكبر الصوت","micro":"ميكروفون","webcam":"كاميرا ويب"}
+};
+LANGS2.forEach(function(l){ var d3=LEX2DIG[l]||{}; Object.keys(d3).forEach(function(k){ LEX2[l][k]=d3[k]; }); });
+
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
