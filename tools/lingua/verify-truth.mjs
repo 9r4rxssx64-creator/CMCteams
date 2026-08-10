@@ -52,7 +52,28 @@ function structCheck(ctx) {
   });
   // 4) PHRASEBOOK : 6 langues non vides
   Object.keys(PHRASEBOOK).forEach((fr) => LANGS.forEach((lg) => { const v = PHRASEBOOK[fr] && PHRASEBOOK[fr][lg]; if (typeof v !== 'string' || !v.trim()) errs.push('PHRASEBOOK « ' + fr + ' » : ' + lg + ' manquant/vide'); }));
-  return { errs, counts: { terms: terms.size, lex: base.length, stories: STORIES.length, phrases: Object.keys(PHRASEBOOK).length } };
+  // 5) NOUVELLES LANGUES (Est/Asie, cours démarrage) : aucun repli français, parité entre elles
+  const { LANGS2 = [], LEX2 = {}, COURSES = {} } = ctx;
+  let l2units = 0;
+  if (LANGS2.length) {
+    const baseKeys = Object.keys(LEX2[LANGS2[0]] || {});
+    LANGS2.forEach((lg) => {
+      const lex = LEX2[lg] || {};
+      Object.keys(lex).forEach((k) => { if (typeof lex[k] !== 'string' || !lex[k].trim()) errs.push('LEX2 « ' + k + ' » : ' + lg + ' vide'); });
+      // parité du démarrage : mêmes clés dans toutes les nouvelles langues
+      const ks = new Set(Object.keys(lex));
+      baseKeys.forEach((k) => { if (!ks.has(k)) errs.push('LEX2 « ' + k + ' » absent en ' + lg); });
+      Object.keys(lex).forEach((k) => { if (!baseKeys.includes(k)) errs.push('LEX2 « ' + k + ' » présent en ' + lg + ' mais pas dans ' + LANGS2[0]); });
+      // le cours généré ne doit contenir AUCUN repli français (mot affiché = traduction du lexique)
+      const c = COURSES[lg];
+      if (!c || !c.units || !c.units.length) { errs.push('COURSES.' + lg + ' : aucune unité générée'); return; }
+      l2units += c.units.length;
+      c.units.forEach((u) => u.lessons.forEach((le) => {
+        le.words.concat(le.phrases || []).forEach((w) => { if (!lex[w.fr] || lex[w.fr] !== w.t) errs.push('COURSES.' + lg + ' « ' + w.fr + ' » : repli français ou incohérence'); });
+      }));
+    });
+  }
+  return { errs, counts: { terms: terms.size, lex: base.length, stories: STORIES.length, phrases: Object.keys(PHRASEBOOK).length, langs2: LANGS2.length, l2units } };
 }
 
 /* ---------------- SECOND AVIS INDÉPENDANT (IA) — audit, n'édite pas ---------------- */
@@ -148,18 +169,60 @@ async function wordsAudit(ctx) {
   return suspects;
 }
 
+/* Audit des NOUVELLES LANGUES (v2.68 : pl/ru/uk/cs/zh/ja/ko/ar — cours démarrage).
+   Mêmes gardes anti-faux-alerte. Choix assumés (à NE PAS « corriger ») : zh/ja « frère/sœur » =
+   aîné(e) (哥哥/姐姐, 兄/姉) ; ko = formes dites par une locutrice (오빠/언니, Bee est féminine) ;
+   phrases zh/ja segmentées par ESPACES (blocs de mots pour l'appli) = voulu. */
+async function words2Audit(ctx) {
+  const { LANGS2 = [], LEX2 = {} } = ctx;
+  if (!LANGS2.length) return [];
+  const NAMES2 = { pl: 'polonais', ru: 'russe', uk: 'ukrainien', cs: 'tchèque', zh: 'chinois (mandarin simplifié)', ja: 'japonais', ko: 'coréen', ar: 'arabe (standard moderne)' };
+  const keys = Object.keys(LEX2[LANGS2[0]] || {});
+  const suspects = [];
+  const BATCH = 25;
+  for (let b = 0; b * BATCH < keys.length; b++) {
+    const slice = keys.slice(b * BATCH, (b + 1) * BATCH);
+    const pairs = slice.map((fr) => '« ' + fr + ' » → ' + LANGS2.map((l) => l + ':"' + LEX2[l][fr] + '"').join(' · '));
+    const sys = 'Tu es correcteur plurilingue rigoureux et PRUDENT. Tu ne signales QUE les erreurs CERTAINES (contresens, mot faux), jamais le style, jamais un synonyme valable.';
+    const user = 'Lexique français → 8 langues (pl=polonais, ru=russe, uk=ukrainien, cs=tchèque, zh=chinois simplifié, ja=japonais, ko=coréen, ar=arabe standard) :\n' + pairs.join('\n')
+      + '\n\nRÈGLES ABSOLUES :'
+      + '\n- zh/ja : « frère »=哥哥/兄 et « sœur »=姐姐/姉 (aîné·e) sont des choix pédagogiques CORRECTS ;'
+      + '\n- ko : 오빠/언니 (dits par une locutrice) sont CORRECTS — l\'app parle par la voix de Bee, féminine ;'
+      + '\n- les phrases zh/ja sont volontairement SEGMENTÉES par espaces (blocs de mots) : ce n\'est PAS une erreur ;'
+      + '\n- ar : l\'arabe standard sans voyelles courtes est CORRECT ; le duel (قطان) est CORRECT pour « deux » ;'
+      + '\n- un synonyme correct ou un registre voisin n\'est PAS une erreur ; en cas de doute, NE signale PAS.'
+      + '\nSignale UNIQUEMENT une traduction VRAIMENT fausse (le mot ne veut pas dire ça).'
+      + '\nRéponds UNIQUEMENT en JSON : {"faux":[{"langue":"...","fr":"le mot français","traduction":"la traduction fautive","correction":"la bonne (DIFFÉRENTE)","raison":"6 mots max"}]}. Liste VIDE si tout est correct.';
+    let raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }]));
+    if (!raw) { await new Promise((r) => setTimeout(r, 4000)); raw = (await callGemini([{ role: 'system', content: sys }, { role: 'user', content: user }])) || (await callMistral([{ role: 'system', content: sys }, { role: 'user', content: user }])); }
+    const j = parse(raw);
+    if (!j) { suspects.push({ story: 'nouvelles langues — lot ' + (b + 1), notes: ['juge indisponible sur ce lot (quota) — à réauditer'] }); await new Promise((r) => setTimeout(r, 2000)); continue; }
+    const arr = Array.isArray(j.faux) ? j.faux : [];
+    const notes = arr.map((f) => {
+      if (!f || typeof f !== 'object') return null;
+      const fr = String(f.fr || '').slice(0, 60), tr = String(f.traduction || '').slice(0, 60), co = String(f.correction || '').slice(0, 60), lg = String(f.langue || '').slice(0, 30), ra = String(f.raison || '').slice(0, 60);
+      if (!fr || !tr) return null;
+      if (co && co.trim().toLowerCase() === tr.trim().toLowerCase()) return null;
+      return '[' + lg + '] « ' + fr + ' » => "' + tr + '"  (proposé: "' + co + '" · ' + ra + ')';
+    }).filter(Boolean);
+    if (notes.length) suspects.push({ story: 'nouvelles langues — lot ' + (b + 1), notes });
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  return suspects;
+}
+
 /* ---------------- Orchestration ---------------- */
 (async () => {
   const ctx = load();
   if (mode === 'struct') {
     const { errs, counts } = structCheck(ctx);
-    console.log('VÉRITÉ (structure) — ' + counts.terms + ' mots, ' + counts.lex + ' entrées LEX ×6, ' + counts.stories + ' histoires, ' + counts.phrases + ' phrases.');
+    console.log('VÉRITÉ (structure) — ' + counts.terms + ' mots, ' + counts.lex + ' entrées LEX ×6, ' + counts.stories + ' histoires, ' + counts.phrases + ' phrases' + (counts.langs2 ? ', +' + counts.langs2 + ' nouvelles langues (' + counts.l2units + ' unités démarrage, 0 repli fr)' : '') + '.');
     if (errs.length) { console.log('FAUX STRUCTUREL (' + errs.length + ') :\n - ' + errs.slice(0, 40).join('\n - ')); process.exit(1); }
     console.log('OK : aucun faux structurel — 6 langues partout, quiz dans les bornes, 0 doublon.');
     process.exit(0);
   }
   // semantic : histoires + MOTS du lexique (v2.56 — le juge couvre tout le contenu)
-  const suspects = (await semanticAudit(ctx)).concat(await wordsAudit(ctx));
+  const suspects = (await semanticAudit(ctx)).concat(await wordsAudit(ctx)).concat(await words2Audit(ctx));
   const outDir = path.resolve('audit'); try { fs.mkdirSync(outDir, { recursive: true }); } catch (_) {}
   const lines = ['# Lingua — audit VÉRITÉ (second avis indépendant)', '', 'Points DOUTEUX à revoir (l\'IA peut se tromper : vérifier avant de corriger).', ''];
   if (!suspects.length) lines.push('✅ Aucun point douteux signalé par le second modèle (histoires + lexique complet).');
