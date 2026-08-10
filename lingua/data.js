@@ -3153,6 +3153,96 @@ ar:{
 }
 };
 LANGS2.forEach(function(l){ var e2=LEX2E[l]||{}; Object.keys(e2).forEach(function(k){ LEX2[l][k]=e2[k]; }); });
+/* Vague 6 des nouvelles langues (v2.75) : unités 41-48 — communiquer, la nature sauvage, les
+   animaux sauvages, petits mots essentiels, la maison en détail, objets du quotidien, le
+   caractère, apprendre. 40 → 48 unités. Distinctions faites pour éviter les doublons de valeur :
+   pl nouvelle=nowina (message=wiadomość) ; zh réponse=答案 (répondre=回答), mot=单词 ;
+   ar lettre=خطاب (message=رسالة), feuille=ورقة شجر (papier=ورق), jardin=بستان (parc=حديقة),
+   toit=سطح (plafond=سقف), montre=ساعة يد (heure=ساعة), crayon=قلم رصاص (stylo=قلم).
+   Homographe réel assumé : zh 问题 = question ET problème (c'est la langue). */
+var LEX2F = {
+pl:{
+"appeler":"dzwonić","répondre":"odpowiadać","demander":"pytać","envoyer":"wysyłać","recevoir":"otrzymywać","question":"pytanie","réponse":"odpowiedź","nouvelle":"nowina","lettre":"list","adresse":"adres","e-mail":"e-mail","numéro":"numer","je t'appelle demain":"zadzwonię do ciebie jutro",
+"rivière":"rzeka","lac":"jezioro","forêt":"las","île":"wyspa","colline":"wzgórze","champ":"pole","herbe":"trawa","feuille":"liść","pierre":"kamień","terre":"ziemia","feu":"ogień","étoile":"gwiazda","la rivière est froide":"rzeka jest zimna",
+"lion":"lew","tigre":"tygrys","éléphant":"słoń","singe":"małpa","ours":"niedźwiedź","loup":"wilk","renard":"lis","serpent":"wąż","abeille":"pszczoła","papillon":"motyl","araignée":"pająk","canard":"kaczka","l'abeille aime les fleurs":"pszczoła lubi kwiaty",
+"avec":"z","sans":"bez","aussi":"też","mais":"ale","parce que":"ponieważ","ou":"albo","si":"jeśli","donc":"więc","beaucoup":"dużo","peu":"mało","très":"bardzo","peut-être":"może","quelque chose":"coś","rien":"nic","tout":"wszystko","quelqu'un":"ktoś","je voyage avec ma famille":"podróżuję z rodziną",
+"salon":"salon","chambre":"sypialnia","jardin":"ogród","garage":"garaż","étage":"piętro","escalier":"schody","toit":"dach","mur":"ściana","sol":"podłoga","plafond":"sufit","ascenseur":"winda","voisin":"sąsiad",
+"montre":"zegarek","lunettes":"okulary","parapluie":"parasol","portefeuille":"portfel","stylo":"długopis","crayon":"ołówek","ciseaux":"nożyczki","papier":"papier","journal":"gazeta","boîte":"pudełko","bougie":"świeca",
+"intelligent":"inteligentny","poli":"uprzejmy","courageux":"odważny","honnête":"uczciwy","patient":"cierpliwy","sympathique":"sympatyczny","timide":"nieśmiały","sérieux":"poważny","paresseux":"leniwy","curieux":"ciekawski","méchant":"złośliwy","sévère":"surowy",
+"élève":"uczeń","classe":"klasa","leçon":"lekcja","examen":"egzamin","note":"ocena","erreur":"błąd","cahier":"zeszyt","mot":"słowo","phrase":"zdanie","langue":"język","dictionnaire":"słownik","page":"strona","sac à dos":"plecak"
+},
+ru:{
+"appeler":"звонить","répondre":"отвечать","demander":"спрашивать","envoyer":"отправлять","recevoir":"получать","question":"вопрос","réponse":"ответ","nouvelle":"новость","lettre":"письмо","adresse":"адрес","e-mail":"электронная почта","numéro":"номер","je t'appelle demain":"я позвоню тебе завтра",
+"rivière":"река","lac":"озеро","forêt":"лес","île":"остров","colline":"холм","champ":"поле","herbe":"трава","feuille":"лист","pierre":"камень","terre":"земля","feu":"огонь","étoile":"звезда","la rivière est froide":"река холодная",
+"lion":"лев","tigre":"тигр","éléphant":"слон","singe":"обезьяна","ours":"медведь","loup":"волк","renard":"лиса","serpent":"змея","abeille":"пчела","papillon":"бабочка","araignée":"паук","canard":"утка","l'abeille aime les fleurs":"пчела любит цветы",
+"avec":"с","sans":"без","aussi":"тоже","mais":"но","parce que":"потому что","ou":"или","si":"если","donc":"поэтому","beaucoup":"много","peu":"мало","très":"очень","peut-être":"может быть","quelque chose":"что-то","rien":"ничего","tout":"всё","quelqu'un":"кто-то","je voyage avec ma famille":"я путешествую с семьёй",
+"salon":"гостиная","chambre":"спальня","jardin":"сад","garage":"гараж","étage":"этаж","escalier":"лестница","toit":"крыша","mur":"стена","sol":"пол","plafond":"потолок","ascenseur":"лифт","voisin":"сосед",
+"montre":"часы","lunettes":"очки","parapluie":"зонт","portefeuille":"кошелёк","stylo":"ручка","crayon":"карандаш","ciseaux":"ножницы","papier":"бумага","journal":"газета","boîte":"коробка","bougie":"свеча",
+"intelligent":"умный","poli":"вежливый","courageux":"смелый","honnête":"честный","patient":"терпеливый","sympathique":"приятный","timide":"застенчивый","sérieux":"серьёзный","paresseux":"ленивый","curieux":"любопытный","méchant":"злой","sévère":"строгий",
+"élève":"ученик","classe":"класс","leçon":"урок","examen":"экзамен","note":"оценка","erreur":"ошибка","cahier":"тетрадь","mot":"слово","phrase":"предложение","langue":"язык","dictionnaire":"словарь","page":"страница","sac à dos":"рюкзак"
+},
+uk:{
+"appeler":"дзвонити","répondre":"відповідати","demander":"запитувати","envoyer":"надсилати","recevoir":"отримувати","question":"питання","réponse":"відповідь","nouvelle":"новина","lettre":"лист","adresse":"адреса","e-mail":"електронна пошта","numéro":"номер","je t'appelle demain":"я подзвоню тобі завтра",
+"rivière":"річка","lac":"озеро","forêt":"ліс","île":"острів","colline":"пагорб","champ":"поле","herbe":"трава","feuille":"листок","pierre":"камінь","terre":"земля","feu":"вогонь","étoile":"зірка","la rivière est froide":"річка холодна",
+"lion":"лев","tigre":"тигр","éléphant":"слон","singe":"мавпа","ours":"ведмідь","loup":"вовк","renard":"лисиця","serpent":"змія","abeille":"бджола","papillon":"метелик","araignée":"павук","canard":"качка","l'abeille aime les fleurs":"бджола любить квіти",
+"avec":"з","sans":"без","aussi":"теж","mais":"але","parce que":"тому що","ou":"або","si":"якщо","donc":"тому","beaucoup":"багато","peu":"мало","très":"дуже","peut-être":"можливо","quelque chose":"щось","rien":"нічого","tout":"все","quelqu'un":"хтось","je voyage avec ma famille":"я подорожую з сім'єю",
+"salon":"вітальня","chambre":"спальня","jardin":"сад","garage":"гараж","étage":"поверх","escalier":"сходи","toit":"дах","mur":"стіна","sol":"підлога","plafond":"стеля","ascenseur":"ліфт","voisin":"сусід",
+"montre":"годинник","lunettes":"окуляри","parapluie":"парасолька","portefeuille":"гаманець","stylo":"ручка","crayon":"олівець","ciseaux":"ножиці","papier":"папір","journal":"газета","boîte":"коробка","bougie":"свічка",
+"intelligent":"розумний","poli":"ввічливий","courageux":"сміливий","honnête":"чесний","patient":"терплячий","sympathique":"приємний","timide":"сором'язливий","sérieux":"серйозний","paresseux":"лінивий","curieux":"допитливий","méchant":"злий","sévère":"суворий",
+"élève":"учень","classe":"клас","leçon":"урок","examen":"іспит","note":"оцінка","erreur":"помилка","cahier":"зошит","mot":"слово","phrase":"речення","langue":"мова","dictionnaire":"словник","page":"сторінка","sac à dos":"рюкзак"
+},
+cs:{
+"appeler":"volat","répondre":"odpovídat","demander":"ptát se","envoyer":"posílat","recevoir":"dostávat","question":"otázka","réponse":"odpověď","nouvelle":"novinka","lettre":"dopis","adresse":"adresa","e-mail":"e-mail","numéro":"číslo","je t'appelle demain":"zavolám ti zítra",
+"rivière":"řeka","lac":"jezero","forêt":"les","île":"ostrov","colline":"kopec","champ":"pole","herbe":"tráva","feuille":"list","pierre":"kámen","terre":"země","feu":"oheň","étoile":"hvězda","la rivière est froide":"řeka je studená",
+"lion":"lev","tigre":"tygr","éléphant":"slon","singe":"opice","ours":"medvěd","loup":"vlk","renard":"liška","serpent":"had","abeille":"včela","papillon":"motýl","araignée":"pavouk","canard":"kachna","l'abeille aime les fleurs":"včela miluje květiny",
+"avec":"s","sans":"bez","aussi":"také","mais":"ale","parce que":"protože","ou":"nebo","si":"jestli","donc":"takže","beaucoup":"hodně","peu":"málo","très":"velmi","peut-être":"možná","quelque chose":"něco","rien":"nic","tout":"všechno","quelqu'un":"někdo","je voyage avec ma famille":"cestuji s rodinou",
+"salon":"obývací pokoj","chambre":"ložnice","jardin":"zahrada","garage":"garáž","étage":"patro","escalier":"schody","toit":"střecha","mur":"zeď","sol":"podlaha","plafond":"strop","ascenseur":"výtah","voisin":"soused",
+"montre":"hodinky","lunettes":"brýle","parapluie":"deštník","portefeuille":"peněženka","stylo":"propiska","crayon":"tužka","ciseaux":"nůžky","papier":"papír","journal":"noviny","boîte":"krabice","bougie":"svíčka",
+"intelligent":"chytrý","poli":"zdvořilý","courageux":"odvážný","honnête":"čestný","patient":"trpělivý","sympathique":"sympatický","timide":"stydlivý","sérieux":"vážný","paresseux":"líný","curieux":"zvědavý","méchant":"zlý","sévère":"přísný",
+"élève":"žák","classe":"třída","leçon":"lekce","examen":"zkouška","note":"známka","erreur":"chyba","cahier":"sešit","mot":"slovo","phrase":"věta","langue":"jazyk","dictionnaire":"slovník","page":"stránka","sac à dos":"batoh"
+},
+zh:{
+"appeler":"打电话","répondre":"回答","demander":"问","envoyer":"发送","recevoir":"收到","question":"问题","réponse":"答案","nouvelle":"新闻","lettre":"信","adresse":"地址","e-mail":"电子邮件","numéro":"号码","je t'appelle demain":"我 明天 给 你 打电话",
+"rivière":"河","lac":"湖","forêt":"森林","île":"岛","colline":"山丘","champ":"田野","herbe":"草","feuille":"叶子","pierre":"石头","terre":"土地","feu":"火","étoile":"星星","la rivière est froide":"河水 很 冷",
+"lion":"狮子","tigre":"老虎","éléphant":"大象","singe":"猴子","ours":"熊","loup":"狼","renard":"狐狸","serpent":"蛇","abeille":"蜜蜂","papillon":"蝴蝶","araignée":"蜘蛛","canard":"鸭子","l'abeille aime les fleurs":"蜜蜂 喜欢 花",
+"avec":"和","sans":"没有","aussi":"也","mais":"但是","parce que":"因为","ou":"或者","si":"如果","donc":"所以","beaucoup":"很多","peu":"少","très":"很","peut-être":"也许","quelque chose":"东西","rien":"没什么","tout":"一切","quelqu'un":"有人","je voyage avec ma famille":"我 和 家人 一起 旅行",
+"salon":"客厅","chambre":"卧室","jardin":"花园","garage":"车库","étage":"楼层","escalier":"楼梯","toit":"屋顶","mur":"墙","sol":"地板","plafond":"天花板","ascenseur":"电梯","voisin":"邻居",
+"montre":"手表","lunettes":"眼镜","parapluie":"雨伞","portefeuille":"钱包","stylo":"钢笔","crayon":"铅笔","ciseaux":"剪刀","papier":"纸","journal":"报纸","boîte":"盒子","bougie":"蜡烛",
+"intelligent":"聪明","poli":"有礼貌","courageux":"勇敢","honnête":"诚实","patient":"有耐心","sympathique":"友好","timide":"害羞","sérieux":"认真","paresseux":"懒惰","curieux":"好奇","méchant":"凶","sévère":"严格",
+"élève":"学生","classe":"班级","leçon":"课","examen":"考试","note":"分数","erreur":"错误","cahier":"笔记本","mot":"单词","phrase":"句子","langue":"语言","dictionnaire":"词典","page":"页","sac à dos":"书包"
+},
+ja:{
+"appeler":"電話します","répondre":"答えます","demander":"聞きます","envoyer":"送ります","recevoir":"受け取ります","question":"質問","réponse":"答え","nouvelle":"ニュース","lettre":"手紙","adresse":"住所","e-mail":"メール","numéro":"番号","je t'appelle demain":"明日 電話します",
+"rivière":"川","lac":"湖","forêt":"森","île":"島","colline":"丘","champ":"畑","herbe":"草","feuille":"葉","pierre":"石","terre":"土","feu":"火","étoile":"星","la rivière est froide":"川 は 冷たい です",
+"lion":"ライオン","tigre":"トラ","éléphant":"ゾウ","singe":"サル","ours":"クマ","loup":"オオカミ","renard":"キツネ","serpent":"ヘビ","abeille":"ミツバチ","papillon":"チョウ","araignée":"クモ","canard":"アヒル","l'abeille aime les fleurs":"ミツバチ は 花 が 好き です",
+"avec":"と","sans":"なしで","aussi":"も","mais":"でも","parce que":"なぜなら","ou":"または","si":"もし","donc":"だから","beaucoup":"たくさん","peu":"少し","très":"とても","peut-être":"たぶん","quelque chose":"何か","rien":"何も","tout":"全部","quelqu'un":"誰か","je voyage avec ma famille":"私 は 家族 と 旅行します",
+"salon":"リビング","chambre":"寝室","jardin":"庭","garage":"ガレージ","étage":"階","escalier":"階段","toit":"屋根","mur":"壁","sol":"床","plafond":"天井","ascenseur":"エレベーター","voisin":"隣人",
+"montre":"腕時計","lunettes":"めがね","parapluie":"傘","portefeuille":"財布","stylo":"ペン","crayon":"えんぴつ","ciseaux":"はさみ","papier":"紙","journal":"新聞","boîte":"箱","bougie":"ろうそく",
+"intelligent":"賢い","poli":"礼儀正しい","courageux":"勇敢","honnête":"正直","patient":"我慢強い","sympathique":"感じがいい","timide":"恥ずかしがり屋","sérieux":"まじめ","paresseux":"怠け者","curieux":"好奇心が強い","méchant":"意地悪","sévère":"厳しい",
+"élève":"生徒","classe":"クラス","leçon":"授業","examen":"試験","note":"成績","erreur":"間違い","cahier":"ノート","mot":"単語","phrase":"文","langue":"言語","dictionnaire":"辞書","page":"ページ","sac à dos":"リュックサック"
+},
+ko:{
+"appeler":"전화하다","répondre":"대답하다","demander":"묻다","envoyer":"보내다","recevoir":"받다","question":"질문","réponse":"대답","nouvelle":"소식","lettre":"편지","adresse":"주소","e-mail":"이메일","numéro":"번호","je t'appelle demain":"내일 전화할게요",
+"rivière":"강","lac":"호수","forêt":"숲","île":"섬","colline":"언덕","champ":"밭","herbe":"풀","feuille":"잎","pierre":"돌","terre":"땅","feu":"불","étoile":"별","la rivière est froide":"강이 차가워요",
+"lion":"사자","tigre":"호랑이","éléphant":"코끼리","singe":"원숭이","ours":"곰","loup":"늑대","renard":"여우","serpent":"뱀","abeille":"꿀벌","papillon":"나비","araignée":"거미","canard":"오리","l'abeille aime les fleurs":"꿀벌은 꽃을 좋아해요",
+"avec":"와","sans":"없이","aussi":"또한","mais":"하지만","parce que":"왜냐하면","ou":"또는","si":"만약","donc":"그래서","beaucoup":"많이","peu":"조금","très":"아주","peut-être":"아마","quelque chose":"뭔가","rien":"아무것도","tout":"전부","quelqu'un":"누군가","je voyage avec ma famille":"저는 가족과 여행해요",
+"salon":"거실","chambre":"침실","jardin":"정원","garage":"차고","étage":"층","escalier":"계단","toit":"지붕","mur":"벽","sol":"바닥","plafond":"천장","ascenseur":"엘리베이터","voisin":"이웃",
+"montre":"손목시계","lunettes":"안경","parapluie":"우산","portefeuille":"지갑","stylo":"펜","crayon":"연필","ciseaux":"가위","papier":"종이","journal":"신문","boîte":"상자","bougie":"양초",
+"intelligent":"똑똑하다","poli":"예의 바르다","courageux":"용감하다","honnête":"정직하다","patient":"참을성이 있다","sympathique":"상냥하다","timide":"수줍다","sérieux":"진지하다","paresseux":"게으르다","curieux":"호기심이 많다","méchant":"못되다","sévère":"엄격하다",
+"élève":"학생","classe":"반","leçon":"수업","examen":"시험","note":"성적","erreur":"실수","cahier":"공책","mot":"단어","phrase":"문장","langue":"언어","dictionnaire":"사전","page":"페이지","sac à dos":"배낭"
+},
+ar:{
+"appeler":"يتصل","répondre":"يجيب","demander":"يسأل","envoyer":"يرسل","recevoir":"يستقبل","question":"سؤال","réponse":"جواب","nouvelle":"خبر","lettre":"خطاب","adresse":"عنوان","e-mail":"بريد إلكتروني","numéro":"رقم","je t'appelle demain":"سأتصل بك غدا",
+"rivière":"نهر","lac":"بحيرة","forêt":"غابة","île":"جزيرة","colline":"تلة","champ":"حقل","herbe":"عشب","feuille":"ورقة شجر","pierre":"حجر","terre":"أرض","feu":"نار","étoile":"نجمة","la rivière est froide":"النهر بارد",
+"lion":"أسد","tigre":"نمر","éléphant":"فيل","singe":"قرد","ours":"دب","loup":"ذئب","renard":"ثعلب","serpent":"ثعبان","abeille":"نحلة","papillon":"فراشة","araignée":"عنكبوت","canard":"بطة","l'abeille aime les fleurs":"النحلة تحب الزهور",
+"avec":"مع","sans":"بدون","aussi":"أيضا","mais":"لكن","parce que":"لأن","ou":"أو","si":"إذا","donc":"لذلك","beaucoup":"كثيرا","peu":"قليلا","très":"جدا","peut-être":"ربما","quelque chose":"شيء ما","rien":"لا شيء","tout":"كل شيء","quelqu'un":"شخص ما","je voyage avec ma famille":"أسافر مع عائلتي",
+"salon":"غرفة الجلوس","chambre":"غرفة النوم","jardin":"بستان","garage":"مرآب","étage":"طابق","escalier":"درج","toit":"سطح","mur":"جدار","sol":"أرضية","plafond":"سقف","ascenseur":"مصعد","voisin":"جار",
+"montre":"ساعة يد","lunettes":"نظارة","parapluie":"مظلة","portefeuille":"محفظة","stylo":"قلم","crayon":"قلم رصاص","ciseaux":"مقص","papier":"ورق","journal":"جريدة","boîte":"صندوق","bougie":"شمعة",
+"intelligent":"ذكي","poli":"مهذب","courageux":"شجاع","honnête":"صادق","patient":"صبور","sympathique":"ودود","timide":"خجول","sérieux":"جاد","paresseux":"كسول","curieux":"فضولي","méchant":"شرير","sévère":"صارم",
+"élève":"تلميذ","classe":"صف","leçon":"درس","examen":"امتحان","note":"علامة","erreur":"خطأ","cahier":"دفتر","mot":"كلمة","phrase":"جملة","langue":"لغة","dictionnaire":"قاموس","page":"صفحة","sac à dos":"حقيبة ظهر"
+}
+};
+LANGS2.forEach(function(l){ var f2=LEX2F[l]||{}; Object.keys(f2).forEach(function(k){ LEX2[l][k]=f2[k]; }); });
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
 /* --- Génération des cours + dictionnaire de traduction --- */
