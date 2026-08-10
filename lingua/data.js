@@ -2557,6 +2557,50 @@ var NEWV12 = {
 CURRICULUM_M.forEach(function(u){ CURRICULUM.push(u); });
 LANGS.forEach(function(l){ Object.keys(NEWV12).forEach(function(k){ if(NEWV12[k][l]) LEX[l][k]=NEWV12[k][l]; }); });
 
+/* --- Vague 12 (v2.71, cap B2) : verbes de relation (promesse, soutien, autorité, négociation) + sciences --- */
+var CURRICULUM_L2 = [
+  {t:"Dire et faire 🤝", c:"#f43f5e", L:[
+    {t:"Promettre", w:["jurer","pardonner","trahir","se venger","prouver"]},
+    {t:"Soutenir", w:["féliciter","encourager","consoler","rassurer"]},
+    {t:"Autorité", w:["interdire","autoriser","obéir","désobéir","punir","récompenser"]},
+    {t:"Négocier", w:["menacer","supplier","soupçonner","insister","céder","parier"]} ]},
+  {t:"Sciences 🔭", c:"#06b6d4", L:[
+    {t:"La Terre", w:["océan","atmosphère","oxygène","espèce"]},
+    {t:"Découvertes", w:["électricité","robot","éclipse"]} ]}
+];
+var NEWV13 = {
+"jurer":{en:"swear",it:"giurare",es:"jurar",de:"schwören",pt:"jurar",nl:"zweren"},
+"pardonner":{en:"forgive",it:"perdonare",es:"perdonar",de:"verzeihen",pt:"perdoar",nl:"vergeven"},
+"trahir":{en:"betray",it:"tradire",es:"traicionar",de:"verraten",pt:"trair",nl:"verraden"},
+"se venger":{en:"take revenge",it:"vendicarsi",es:"vengarse",de:"sich rächen",pt:"vingar-se",nl:"wraak nemen"},
+"prouver":{en:"prove",it:"dimostrare",es:"demostrar",de:"beweisen",pt:"provar",nl:"bewijzen"},
+"féliciter":{en:"congratulate",it:"congratularsi",es:"felicitar",de:"gratulieren",pt:"felicitar",nl:"feliciteren"},
+"encourager":{en:"encourage",it:"incoraggiare",es:"animar",de:"ermutigen",pt:"encorajar",nl:"aanmoedigen"},
+"consoler":{en:"comfort",it:"consolare",es:"consolar",de:"trösten",pt:"consolar",nl:"troosten"},
+"rassurer":{en:"reassure",it:"rassicurare",es:"tranquilizar",de:"beruhigen",pt:"tranquilizar",nl:"geruststellen"},
+"interdire":{en:"forbid",it:"vietare",es:"prohibir",de:"verbieten",pt:"proibir",nl:"verbieden"},
+"autoriser":{en:"allow",it:"autorizzare",es:"autorizar",de:"erlauben",pt:"autorizar",nl:"toestaan"},
+"obéir":{en:"obey",it:"obbedire",es:"obedecer",de:"gehorchen",pt:"obedecer",nl:"gehoorzamen"},
+"désobéir":{en:"disobey",it:"disobbedire",es:"desobedecer",de:"nicht gehorchen",pt:"desobedecer",nl:"niet gehoorzamen"},
+"punir":{en:"punish",it:"punire",es:"castigar",de:"bestrafen",pt:"castigar",nl:"straffen"},
+"récompenser":{en:"reward",it:"ricompensare",es:"recompensar",de:"belohnen",pt:"recompensar",nl:"belonen"},
+"menacer":{en:"threaten",it:"minacciare",es:"amenazar",de:"drohen",pt:"ameaçar",nl:"dreigen"},
+"supplier":{en:"beg",it:"supplicare",es:"suplicar",de:"anflehen",pt:"suplicar",nl:"smeken"},
+"soupçonner":{en:"suspect",it:"sospettare",es:"sospechar",de:"verdächtigen",pt:"suspeitar",nl:"verdenken"},
+"insister":{en:"insist",it:"insistere",es:"insistir",de:"beharren",pt:"insistir",nl:"aandringen"},
+"céder":{en:"give in",it:"cedere",es:"ceder",de:"nachgeben",pt:"ceder",nl:"toegeven"},
+"parier":{en:"bet",it:"scommettere",es:"apostar",de:"wetten",pt:"apostar",nl:"wedden"},
+"océan":{en:"ocean",it:"oceano",es:"océano",de:"Ozean",pt:"oceano",nl:"oceaan"},
+"atmosphère":{en:"atmosphere",it:"atmosfera",es:"atmósfera",de:"Atmosphäre",pt:"atmosfera",nl:"atmosfeer"},
+"oxygène":{en:"oxygen",it:"ossigeno",es:"oxígeno",de:"Sauerstoff",pt:"oxigénio",nl:"zuurstof"},
+"espèce":{en:"species",it:"specie",es:"especie",de:"Art",pt:"espécie",nl:"soort"},
+"électricité":{en:"electricity",it:"elettricità",es:"electricidad",de:"Strom",pt:"eletricidade",nl:"elektriciteit"},
+"robot":{en:"robot",it:"robot",es:"robot",de:"Roboter",pt:"robô",nl:"robot"},
+"éclipse":{en:"eclipse",it:"eclissi",es:"eclipse",de:"Finsternis",pt:"eclipse",nl:"verduistering"}
+};
+CURRICULUM_L2.forEach(function(u){ CURRICULUM.push(u); });
+LANGS.forEach(function(l){ Object.keys(NEWV13).forEach(function(k){ if(NEWV13[k][l]) LEX[l][k]=NEWV13[k][l]; }); });
+
 /* ============ 🌏 NOUVELLES LANGUES — Europe de l'Est + Asie (cours DÉMARRAGE) ============
    Kevin 2026-08-10 : « ajoute langues pays de l'est, asiatique, etc ». Chaque nouvelle langue
    couvre ENTIÈREMENT les 8 premières unités (A1 démarrage) et grandit vague par vague comme
