@@ -199,7 +199,7 @@
           <details class="tgroup"><summary class="tgsum">🌦️ Météo & ciel <span class="tgn">5</span></summary><div class="tgwrap"><button class="tg" data-layer="radar" aria-pressed="false" title="Radar de précipitations MONDIAL en direct (RainViewer, maj ~10 min)"><span class="i" style="background:#61c8ff"></span>🌧️ Pluie radar</button><button class="tg" data-layer="aurora" aria-pressed="false" title="Aurores boréales/australes EN DIRECT — prévision NOAA OVATION maj ~5 min (probabilité d'aurore visible)"><span class="i" style="background:#7fffc9"></span>🌌 Aurores</button><button class="tg" data-layer="air" aria-pressed="false" title="Qualité de l'air EN DIRECT dans ~34 grandes villes (Open-Meteo, indice européen) — Monaco inclus"><span class="i" style="background:#a8e05f"></span>🌫️ Air</button><button class="tg" data-layer="waves" aria-pressed="false" title="Vagues & houle EN DIRECT sur ~28 points d'océans et mers (Open-Meteo Marine) — Méditerranée/Monaco inclus"><span class="i" style="background:#4db8ff"></span>🌊 Vagues</button><button class="tg" data-layer="night" aria-pressed="true" title="Ombre jour/nuit RÉELLE — position du soleil calculée en direct (maj 1 min)"><span class="i" style="background:#26304a"></span>🌓 Jour/Nuit</button></div></details>
           <details class="tgroup"><summary class="tgsum">🗺️ Fond de carte <span class="tgn">8</span></summary><div class="tgwrap"><button class="tg" data-base="dark" aria-pressed="true" title="Carte sombre (par défaut)"><span class="i" style="background:#5a6a8a"></span>🌙 Carte</button><button class="tg" data-base="sat" aria-pressed="false" title="Satellite haute résolution (Esri)"><span class="i" style="background:#8fd18f"></span>🛰️ Satellite HD</button><button class="tg" data-base="live" aria-pressed="false" title="Vue satellite LIVE — VIIRS/NASA, image d'hier (nuages, feux, tempêtes vus de l'espace)"><span class="i" style="background:#7fd6ff"></span>🛰️ Live NASA</button><button class="tg" data-base="night" aria-pressed="false" title="Terre de nuit LIVE — VIIRS Day/Night Band (lumières des villes, image d'hier)"><span class="i" style="background:#ffd27f"></span>🌃 Terre nuit</button><button class="tg" data-base="geo" aria-pressed="false" title="Vue géostationnaire quasi TEMPS RÉEL (~10-20 min) — GOES-East/West GeoColor + Himawari IR (NASA GIBS, vérifiés CI) : nuages et tempêtes en continu"><span class="i" style="background:#9be47f"></span>🌎 Géo LIVE</button><button class="tg" data-base="ign" aria-pressed="false" title="Plan IGN officiel (cartes topographiques France, Géoplateforme — sans clé)"><span class="i" style="background:#b7d3a8"></span>🗺️ Plan IGN</button><button class="tg" data-base="relief" aria-pressed="false" title="Relief ombré mondial (hillshade Esri) — montagnes, vallées, comme en 3D"><span class="i" style="background:#c9b79a"></span>🏔️ Relief</button><button class="tg" data-base="ortho" aria-pressed="false" title="Photographies aériennes IGN — vraie vue aérienne haute résolution sur la France (comme Google Earth)"><span class="i" style="background:#9ec4e0"></span>🛰️ Photo France</button></div></details>
           <details class="tgroup"><summary class="tgsum">🇫🇷 Cadastre France <span class="tgn">2</span></summary><div class="tgwrap"><button class="tg" data-layer="cadastre" aria-pressed="false" title="Parcelles cadastrales officielles IGN (Parcellaire Express) — zoome sur la France puis tape une parcelle : n° + surface + commune"><span class="i" style="background:#e8b830"></span>🗺️ Parcelles</button><button class="tg" data-layer="plu" aria-pressed="false" title="Zonage d'urbanisme (PLU) — Géoportail de l'Urbanisme : zones U/AU/A/N (ex. « Campagne »)"><span class="i" style="background:#7fd6a8"></span>🏞️ Zonage PLU</button></div></details>
-          <details class="tgroup"><summary class="tgsum">🎯 Aller à <span class="tgn">2</span></summary><div class="tgwrap"><button class="tg" data-view="world" aria-pressed="false" title="Recentrer sur le monde entier"><span class="i" style="background:#5aa9ff"></span>🌍 Monde</button><button class="tg" data-view="mc" aria-pressed="false" title="Recentrer sur Monaco"><span class="i" style="background:#e8b830"></span>📍 Monaco</button></div></details>
+          <details class="tgroup"><summary class="tgsum">🎯 Aller à <span class="tgn">3</span></summary><div class="tgwrap"><button class="tg" data-view="world" aria-pressed="false" title="Recentrer sur le monde entier"><span class="i" style="background:#5aa9ff"></span>🌍 Monde</button><button class="tg" data-view="mc" aria-pressed="false" title="Recentrer sur Monaco"><span class="i" style="background:#e8b830"></span>📍 Monaco</button><button class="tg" data-layer="pos" aria-pressed="false" title="Ta position EN DIRECT sur la carte (point bleu + cercle de précision, suivi GPS live). VIE PRIVÉE : ta position GPS reste sur CET appareil (la couche ne l&#39;envoie nulle part) ; les couches live (vols…) chargent la zone affichée, comme quand tu déplaces la carte."><span class="i" style="background:#2f7fff"></span>📍 Ma position</button></div></details>
         </div>
         <div id="radarBar" style="display:none;align-items:center;gap:10px;margin:6px 0 2px;font-size:12px;color:var(--dim)">
           <span>⏪ Replay pluie 2h</span>
@@ -375,7 +375,7 @@
 
 <script>
 "use strict";
-var VER="v2.40";
+var VER="v2.41";
 document.getElementById("ver").textContent="World Monitor "+VER;
 document.getElementById("ver").onclick=function(){ try{location.replace(location.pathname+"?_v="+Date.now());}catch(e){location.reload();} };
 
@@ -476,7 +476,7 @@ tickClock();setInterval(tickClock,1000);
 /* ============ GLOBE ============ */
 var cv=$("globe"),ctx=cv.getContext("2d"),rot=0,spin=!reduceMotion();
 var DL={quakes:[],fires:[],volcano:[],storms:[],flights:[],ships:[],sats:[],gdacs:[],aurora:[],air:[],waves:[],crues:[],iss:null};
-var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1,lightning:0,cyclones:0,firms:0,crues:0,cadastre:0,plu:0};
+var ON={quakes:1,fires:1,volcano:1,storms:1,flights:1,ships:1,detroits:1,iss:1,sats:1,radar:0,firesat:0,gdacs:1,aurora:0,air:0,waves:0,smoke:0,night:1,lightning:0,cyclones:0,firms:0,crues:0,cadastre:0,plu:0,pos:0};
 /* 🧠 Mémoire des réglages (Kevin n°13) : couches/fond/vue persistés par appareil */
 var _PREFS_K="wm_prefs_v1",_lastView="",_wantBase="";
 try{var _pf=JSON.parse(localStorage.getItem(_PREFS_K)||"{}");
@@ -599,7 +599,9 @@ function drawGlobe(){var w=cv._w,h=cv._h,cx=w/2,cy=h/2,R=Math.min(w,h)/2-14;ctx.
   if(ON.fires)DL.fires.forEach(function(f){dot(cx,cy,R,f.lat,f.lon,2.4,"#ff8a3d",.8);});
   if(ON.volcano)DL.volcano.forEach(function(f){dot(cx,cy,R,f.lat,f.lon,3,"#ff5a4d",.9);});
   if(ON.storms)DL.storms.forEach(function(f){dot(cx,cy,R,f.lat,f.lon,3.2,"#b992ff",.85);});
-  if(ON.iss&&DL.iss){var d=dot(cx,cy,R,DL.iss.lat,DL.iss.lon,5,"#35d6e6",1);if(d){ctx.beginPath();ctx.arc(d.sx,d.sy,10,0,7);ctx.strokeStyle="#35d6e6";ctx.globalAlpha=.5;ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle="#9fe9f2";ctx.font="10px sans-serif";ctx.fillText("ISS",d.sx+13,d.sy+3);}}}
+  if(ON.iss&&DL.iss){var d=dot(cx,cy,R,DL.iss.lat,DL.iss.lon,5,"#35d6e6",1);if(d){ctx.beginPath();ctx.arc(d.sx,d.sy,10,0,7);ctx.strokeStyle="#35d6e6";ctx.globalAlpha=.5;ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle="#9fe9f2";ctx.font="10px sans-serif";ctx.fillText("ISS",d.sx+13,d.sy+3);}}
+  /* 📍 v2.41 — ma position sur le globe aussi (guard typeof : _posFix est défini plus bas) */
+  if(ON.pos&&typeof _posFix!=="undefined"&&_posFix){var dp=dot(cx,cy,R,_posFix.lat,_posFix.lon,4.5,"#2f7fff",1);if(dp){ctx.beginPath();ctx.arc(dp.sx,dp.sy,9,0,7);ctx.strokeStyle="#2f7fff";ctx.globalAlpha=.5;ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle="#9fc4ff";ctx.font="10px sans-serif";ctx.fillText("MOI",dp.sx+12,dp.sy+3);}}}
 function loop(){if(spin)rot+=0.0021;drawGlobe();requestAnimationFrame(loop);}
 resizeGlobe();requestAnimationFrame(loop);
 
@@ -985,6 +987,9 @@ function initMap(){
     var s=new Date().toISOString().slice(11,19)+" UTC";if(el.textContent!==s)el.textContent=s;},1000);
   /* 🧠 fond + vue mémorisés (fail-open) */
   try{if(_wantBase&&_bases[_wantBase])setBase(_wantBase);if(_lastView)setMapView(_lastView);}catch(_e){}
+  /* 📍 v2.41 — position mémorisée : si Kevin l'avait activée, on la relance
+     (permission déjà accordée → aucun re-prompt ; révoquée → message clair + coupe). */
+  try{if(ON.pos)posStart();}catch(_e){}
   /* 🌦 Météo en tout point (Kevin n°5) : tap sur la carte → météo live + 3 jours (Open-Meteo, gratuit sans clé) */
   MAP.on("click",function(ev){
     try{
@@ -1548,8 +1553,61 @@ function _setHistDate(iso){
 (function(){var hd=$("histDate");if(hd){hd.max=_yISO(1);hd.addEventListener("change",function(){_setHistDate(hd.value);
   if(hd.value&&_wantBase!=="live"&&_wantBase!=="night"&&typeof setBase==="function"){_wantBase="live";_savePrefs();setBase("live");}});}
   var hn=$("histNow");if(hn)hn.addEventListener("click",function(){if(hd)hd.value="";_setHistDate(null);});})();
+/* 📍 v2.41 — MA POSITION (Kevin « intègre la localisation »). VIE PRIVÉE ABSOLUE :
+   la position est lue par le GPS de l'appareil et DESSINÉE localement — elle n'est
+   JAMAIS envoyée sur le réseau (aucun fetch avec les coordonnées). Suivi LIVE
+   (watchPosition, règle temps réel), point bleu + cercle de précision, recentrage
+   au 1er fix SEULEMENT (on ne vole pas la carte ensuite). Updater IDEMPOTENT
+   (règle stabilité : ne mute que si la valeur change). Permission refusée →
+   message clair + puce désactivée (pas de re-demande en boucle). */
+var _posWatch=null,_posLayer=null,_posMarker=null,_posCircle=null,_posFix=null,_posCentered=false;
+function _posChipSync(){var b=document.querySelector('[data-layer="pos"]');if(b){var w=String(!!ON.pos);if(b.getAttribute("aria-pressed")!==w)b.setAttribute("aria-pressed",w);}}
+function _posDraw(lat,lon,acc){
+  if(!MAP||!LEAF)return;
+  if(!_posLayer)_posLayer=LEAF.layerGroup();
+  if(!MAP.hasLayer(_posLayer))_posLayer.addTo(MAP);
+  if(!_posMarker){
+    _posCircle=LEAF.circle([lat,lon],{radius:Math.max(15,acc||30),color:"#2f7fff",weight:1,opacity:.5,fillColor:"#2f7fff",fillOpacity:.12});
+    _posLayer.addLayer(_posCircle);
+    _posMarker=LEAF.circleMarker([lat,lon],{radius:7,color:"#fff",weight:2,fillColor:"#2f7fff",fillOpacity:1});
+    _posMarker.bindPopup("");
+    _posLayer.addLayer(_posMarker);
+  }
+  var cur=_posMarker.getLatLng();
+  if(Math.abs(cur.lat-lat)>1e-6||Math.abs(cur.lng-lon)>1e-6){_posMarker.setLatLng([lat,lon]);_posCircle.setLatLng([lat,lon]);}
+  var wantR=Math.max(15,acc||30);
+  if(Math.abs((_posCircle.getRadius()||0)-wantR)>1)_posCircle.setRadius(wantR);
+  _posMarker.setPopupContent('<div style="font-size:12px">📍 <b>Ma position</b><br>'+lat.toFixed(5)+", "+lon.toFixed(5)+(acc?('<br>précision ±'+Math.round(acc)+' m'):'')+'<br><span style="opacity:.7">🔒 ta position GPS reste sur l&#39;appareil (les couches live chargent la zone affichée, comme quand tu déplaces la carte)</span></div>');
+  if(!_posCentered){_posCentered=true;try{MAP.setView([lat,lon],Math.max(MAP.getZoom()||0,13));}catch(_e){}}
+}
+function posStart(){
+  if(!("geolocation" in navigator)){setText($("mapHint"),"📍 Localisation indisponible sur cet appareil");ON.pos=0;_savePrefs();_posChipSync();return;}
+  if(_posWatch!==null)return;
+  if(typeof initMap==="function")initMap();
+  setText($("mapHint"),"📍 Recherche de ta position… (autorise si demandé)");
+  _posWatch=navigator.geolocation.watchPosition(function(p){
+    _posFix={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy||0};
+    _posDraw(_posFix.lat,_posFix.lon,_posFix.acc);
+    var h="📍 Position en direct (±"+Math.round(_posFix.acc)+" m) — 🔒 GPS jamais transmis";
+    var el=$("mapHint");if(el&&el.textContent!==h)setText(el,h);
+  },function(err){
+    if(err&&err.code===1){ /* refusée : on coupe proprement, pas de harcèlement */
+      setText($("mapHint"),"📍 Position refusée — Réglages > Confidentialité > Localisation > Safari, puis retouche la puce");
+      posStop();ON.pos=0;_savePrefs();_posChipSync();
+    }else{
+      setText($("mapHint"),"📍 Position introuvable pour l'instant (signal GPS faible ?) — je continue d'essayer");
+    }
+  },{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+}
+function posStop(){
+  if(_posWatch!==null){try{navigator.geolocation.clearWatch(_posWatch);}catch(_e){}_posWatch=null;}
+  _posFix=null;_posCentered=false;
+  if(MAP&&_posLayer&&MAP.hasLayer(_posLayer)){try{MAP.removeLayer(_posLayer);}catch(_e){}}
+  _posMarker=null;_posCircle=null;_posLayer=null;
+  var el=$("mapHint");if(el&&el.textContent&&el.textContent.indexOf("📍")===0)setText(el,"");
+}
 function _leafLayerFor(k){return {flights:_planeLayer,ships:_shipLayer,quakes:_quakeLayer,fires:_fireLayer,volcano:_volcanoLayer,storms:_stormLayer,detroits:_chokeLayer,sats:_satsLayer,radar:_radarLayer,firesat:_fireSatLayer,gdacs:_gdacsLayer,aurora:_auroraLayer,air:_airLayer,waves:_wavesLayer,smoke:_smokeLayer,night:_nightLayer,iss:_issLayer,lightning:_lightningLayer,cyclones:_cyclonesLayer,firms:_firmsLayer,crues:_floodLayer,cadastre:_cadastreLayer,plu:_pluLayer}[k]||null;}
-function applyLeafToggle(k,v){var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(k==="cadastre"||k==="plu"){if(v&&MAP&&MAP.getZoom()<10)setText($("mapHint"),"🇫🇷 Cadastre : zoome sur la France, puis tape une parcelle");if(!v&&!ON.cadastre&&!ON.plu&&_parcelleHL)_parcelleHL.clearLayers();}if(v){if(k==="lightning")loadLightning();else if(k==="cyclones")loadCyclones();else if(k==="firms")loadFirms();else if(k==="crues")loadFloods();}if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
+function applyLeafToggle(k,v){if(k==="pos"){if(v)posStart();else posStop();return;}var ly=_leafLayerFor(k);if(k==="radar")setTimeout(_radarBarSync,50);if(k==="cadastre"||k==="plu"){if(v&&MAP&&MAP.getZoom()<10)setText($("mapHint"),"🇫🇷 Cadastre : zoome sur la France, puis tape une parcelle");if(!v&&!ON.cadastre&&!ON.plu&&_parcelleHL)_parcelleHL.clearLayers();}if(v){if(k==="lightning")loadLightning();else if(k==="cyclones")loadCyclones();else if(k==="firms")loadFirms();else if(k==="crues")loadFloods();}if(!MAP||!ly)return;if(v){if(!MAP.hasLayer(ly))ly.addTo(MAP);}else{if(MAP.hasLayer(ly))MAP.removeLayer(ly);}}
 /* bascule Carte / Globe */
 function showMap(on){
   document.getElementById("g3d").classList.add("hidden");
