@@ -52,6 +52,22 @@ class DetectorConfig:
     burst_area_frac: float = 0.0009   # surface totale en zone = rafale (no-bird)
     confirm_frames: int = 2           # trames consécutives pour confirmer
     reset_gap_frames: int = 5         # trames sans cible pour réarmer
+    # OPTIMISATION (mesurée) : la soustraction de fond coûte 73 % du temps
+    # d'analyse et son coût croît avec le nombre de pixels. En 1440x1080, le
+    # pipeline plafonnait à 132 images/s alors que 3 caméras à 65 fps en
+    # exigent 195 : il ne tenait PAS le temps réel.
+    #
+    # On cherche donc les blobs sur une image RÉDUITE (rapide), puis on mesure
+    # la couleur sur l'image PLEINE résolution, là où la précision compte
+    # vraiment (c'est l'orange qui décide du verdict).
+    #
+    # 0 = désactivé (traitement pleine résolution).
+    detect_max_pixels: int = 640 * 480
+    # Chercher les blobs en niveaux de gris serait encore 1,8x plus rapide,
+    # MAIS c'est REFUSÉ par défaut : mesuré, la précision tombe de 27/27 à
+    # 26/27 — un plateau manqué devient « cassé », soit un point attribué à
+    # tort. Un gain de vitesse ne vaut jamais une erreur d'arbitrage.
+    detect_gray: bool = False
 
 
 def _orange_ratio(bgr_roi: np.ndarray) -> float:
@@ -77,20 +93,40 @@ class MotionDetector:
         )
         self._kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         self._n = 0
+        self._scale = 1.0        # facteur de réduction réellement appliqué
 
     @property
     def n_processed(self) -> int:
         return self._n
 
     def process(self, frame: Frame) -> List[Detection]:
-        """Renvoie les détections de cette trame (vide pendant le warmup)."""
+        """Renvoie les détections de cette trame (vide pendant le warmup).
+
+        Les coordonnées renvoyées sont TOUJOURS en pleine résolution, même si
+        la détection a travaillé sur une image réduite : le reste du programme
+        n'a pas à s'en soucier.
+        """
         img = frame.image
         h, w = img.shape[:2]
         area_img = float(w * h)
 
+        # Réduction éventuelle, uniquement pour la recherche de blobs.
+        small = img
+        cap = int(self.cfg.detect_max_pixels or 0)
+        if self.cfg.detect_gray and small.ndim == 3:
+            small = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        if cap > 0 and w * h > cap:
+            self._scale = float(np.sqrt(cap / float(w * h)))
+            small = cv2.resize(small, (max(2, int(w * self._scale)),
+                                       max(2, int(h * self._scale))),
+                               interpolation=cv2.INTER_LINEAR)
+        else:
+            self._scale = 1.0
+        inv = 1.0 / self._scale        # pour revenir en pleine résolution
+
         # Pendant le warmup on apprend vite le fond (learningRate élevé).
         lr = 0.5 if self._n < self.cfg.warmup_frames else -1
-        fg = self._bg.apply(img, learningRate=lr)
+        fg = self._bg.apply(small, learningRate=lr)
         self._n += 1
         if self._n <= self.cfg.warmup_frames:
             return []
@@ -108,12 +144,22 @@ class MotionDetector:
 
         for lbl in range(1, n_labels):
             x, y, bw, bh, area = stats[lbl]
+            # Remise à l'échelle : surfaces en pixels² -> facteur inv².
+            area = float(area) * inv * inv
             if area < noise_min:
                 continue
             cx, cy = centroids[lbl]
+            cx *= inv
+            cy *= inv
+            x = int(x * inv)
+            y = int(y * inv)
+            bw = max(1, int(bw * inv))
+            bh = max(1, int(bh * inv))
             # Rondeur via le contour de la boîte englobante (approx rapide).
             perim = 2.0 * (bw + bh)
             circ = (4.0 * np.pi * area / (perim * perim)) if perim > 0 else 0.0
+            # La couleur est TOUJOURS mesurée en pleine résolution : c'est
+            # l'orange qui décide du verdict, on ne dégrade pas ce signal.
             roi = img[y:y + bh, x:x + bw]
             oratio = _orange_ratio(roi)
             is_clay = (
