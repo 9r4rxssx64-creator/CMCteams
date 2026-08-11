@@ -3,7 +3,7 @@
 **La marche à suivre, dans l'ordre, de « je n'ai rien » à « je fais une
 démonstration à un club ».** À cocher au fur et à mesure.
 
-> Le logiciel est **déjà fait et testé** (289 tests verts). Tout ce qui suit
+> Le logiciel est **déjà fait et testé** (308 tests verts). Tout ce qui suit
 > concerne le **matériel** et la **preuve sur le terrain**.
 
 ---
@@ -80,7 +80,7 @@ l'Europe en dernier (48 h, et on connaît alors les vraies dimensions).
 Rien n'oblige à attendre les bras croisés. Tout est faisable **sans matériel** :
 
 - [ ] Installer le logiciel sur un ordinateur : `./install.sh --dev`
-- [ ] Lancer `pytest` → **289 tests OK**
+- [ ] Lancer `pytest` → **308 tests OK**
 - [ ] Lancer `python -m tools.bench --all` → **100 %** sur les 3 bancs
 - [ ] Faire tourner une **partie complète en simulation** et prendre en main
       l'interface tablette
