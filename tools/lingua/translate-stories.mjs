@@ -152,7 +152,12 @@ function frKind(fr) {
 function fixTerminalPunct(fr, lg, v) {
   const k = frKind(fr);
   let s = String(v).trim();
-  if (lg !== 'zh' && lg !== 'ja') s = s.replace(/！/g, '!').replace(/？/g, '?').replace(/。/g, '.').replace(/，/g, ',');
+  if (lg !== 'zh' && lg !== 'ja') {
+    s = s.replace(/！/g, '!').replace(/？/g, '?').replace(/。/g, '.').replace(/，/g, ',');
+    /* La ponctuation pleine-chasse porte son propre blanc ; en ASCII il faut le rendre,
+       sinon on colle les mots (vécu : « 고마워!나는 » relevé par l'audit sémantique). */
+    s = s.replace(/([!?.,])(?=[^\s!?.,])/g, '$1 ').trim();
+  }
   /* ASYMÉTRIQUE : si le français est une question, on n'impose RIEN (une tournure de
      demande « une table, s'il vous plaît. » est une traduction légitime d'une question).
      Si le français N'EST PAS une question, aucun « ?/？/؟ » final n'est toléré. */
