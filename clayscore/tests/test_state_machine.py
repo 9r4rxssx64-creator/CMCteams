@@ -226,3 +226,55 @@ def test_full_fu_two_shooters_exact_scores():
     assert cards["Kevin"]["casse"] == 25 and cards["Kevin"]["points"] == 25
     assert cards["Kevin"]["nobird"] == 1
     assert cards["Laurence"]["casse"] == 0 and cards["Laurence"]["points"] == 0
+
+
+# --- multi-lanceurs (dossier v4) ---------------------------------------- #
+def test_multi_lanceurs_assignes_automatiquement():
+    p = Partie("fosse_universelle", ["A"], serie=6,
+               machines=["Trap 1", "Trap 2"])
+    assert p.machines == ["Trap 1", "Trap 2"]
+    seen = []
+    for _ in range(6):
+        seen.append(p.current_machine)   # lanceur attribué au poste courant
+        p.submit_verdict("casse")
+    # 2 lanceurs alternés sur les postes 1..5 puis retour au poste 1.
+    assert seen == ["Trap 1", "Trap 2", "Trap 1", "Trap 2", "Trap 1", "Trap 1"]
+    # Les statistiques distinguent bien les deux machines.
+    stats = p.stats_by_machine()
+    assert set(stats) == {"Trap 1", "Trap 2"}
+    assert sum(v["clays"] for v in stats.values()) == 6
+
+
+def test_lanceurs_par_defaut_un_par_poste():
+    p = Partie("fosse_universelle", ["A"], serie=2)   # 5 postes
+    assert len(p.machines) == 5
+    assert p.current_machine == "Lanceur 1"
+
+
+def test_machine_explicite_prioritaire():
+    p = Partie("fosse_universelle", ["A"], serie=2, machines=["Trap 1"])
+    p.submit_verdict("casse", machine="Trap secours")
+    assert p.results[0].machine == "Trap secours"
+
+
+def test_lanceurs_vides_refuses():
+    with pytest.raises(ValueError):
+        Partie("fosse_universelle", ["A"], serie=2, machines=[])
+
+
+# --- mode concours (dossier v4) ----------------------------------------- #
+def test_mode_concours_marque_officiel():
+    p = Partie("fosse_universelle", ["A"], serie=2, mode="concours")
+    st = p.state()
+    assert st["mode"] == "concours" and st["official"] is True
+
+
+def test_mode_entrainement_par_defaut():
+    p = Partie("fosse_universelle", ["A"], serie=2)
+    st = p.state()
+    assert st["mode"] == "entrainement" and st["official"] is False
+
+
+def test_mode_inconnu_refuse():
+    with pytest.raises(ValueError):
+        Partie("fosse_universelle", ["A"], serie=2, mode="apero")

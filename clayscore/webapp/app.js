@@ -61,11 +61,14 @@ $("#start").onclick = async () => {
   if (!shooters.length) return toast("Ajoute au moins un tireur");
   const cart = $("#f-cart").value;
   try {
+    const machines = $("#f-machines").value.split(",").map(s => s.trim()).filter(Boolean);
     await api("/api/game/new", { method: "POST", body: JSON.stringify({
       discipline: $("#f-disc").value, shooters,
       serie: parseInt($("#f-serie").value, 10) || 25,
       cartouches: cart ? parseInt(cart, 10) : null,
       auto_mode: $("#f-auto").checked,
+      machines: machines.length ? machines : null,
+      mode: $("#f-mode").value,
     })});
     show("game");
   } catch (e) { toast(e.message); }
@@ -123,7 +126,8 @@ function renderState(st) {
   LAST_STATE = st;
   if (!st || !st.active) { return; }
   const d = DISC_MAP[st.discipline] || { label: st.discipline, scoring: "standard" };
-  $("#g-disc").textContent = d.label;
+  $("#g-disc").textContent = d.label + (st.official ? " · 🏆 CONCOURS" : "")
+    + (st.current_machine ? " · " + st.current_machine : "");
   const totalClays = st.serie * st.scorecard.length;
   const done = st.scorecard.reduce((a, c) => a + c.clays, 0);
   $("#g-progress").textContent = `${done}/${totalClays} plateaux`;

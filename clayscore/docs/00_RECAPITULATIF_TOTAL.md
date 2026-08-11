@@ -23,7 +23,7 @@ fonctionne sur un réseau local **sans Internet**, piloté depuis une tablette.
 | | État |
 |---|---|
 | **Logiciel** | ✅ **Terminé et testé** — les 8 jalons prévus sont développés et fonctionnent |
-| **Tests automatiques** | ✅ **117 réussis, 1 ignoré** (celui qui exige une carte graphique) |
+| **Tests automatiques** | ✅ **130 réussis, 1 ignoré** (celui qui exige une carte graphique) |
 | **Validation** | ✅ En **simulation** (vidéos générées avec réponse connue d'avance) |
 | **Matériel** | ⏳ **Pas encore acheté** — la liste d'achat est prête (BUDGET_BOM) |
 | **Validation terrain** | ⏳ **Pas encore faite** — nécessite de vraies vidéos de stand |
@@ -42,7 +42,7 @@ n'a pas encore vu le vrai monde.*
 | 1 | **Détection des lancements** | Compte chaque plateau lancé | **100 %** (27/27) |
 | 2 | **Détection des coups de feu** | Repère et horodate chaque tir au son | **100 %**, **0 faux positif** |
 | 3 | **Verdicts** | Cassé / Manqué / No bird, + cas douteux renvoyés à l'humain | **100 %** (225 clips testés) |
-| 4 | **Gestion de partie** | 5 disciplines, rotation, no-bird, doublés, scores | Tests exhaustifs ✅ |
+| 4 | **Gestion de partie** | 5 disciplines, rotation, no-bird, doublés, multi-lanceurs, modes entraînement/concours, scores | Tests exhaustifs ✅ |
 | 5 | **Serveur + appli tablette** | Partie jouable au navigateur, scores en direct, ralentis | Vérifié en conditions réelles ✅ |
 | 6 | **Multi-caméras** | Fusion des 3 vues, position 3D, corridors de vol | Triangulation exacte ✅ |
 | 7 | **Intégration matériel** | Découpe un flux vidéo continu en plateaux ; caméras/micro branchés ; redémarrage auto après panne | 5/5 plateaux découpés ✅ |
@@ -109,9 +109,11 @@ navigateur). Elles fonctionnent hors ligne, sans Internet.
 | Lignes de code (logiciel) | **4 562** |
 | Lignes de tests | **1 387** |
 | Fonctions de test | **114** |
-| Tests réussis | **117** (+1 ignoré : exige un GPU) |
+| Tests réussis | **130** (+1 ignoré : exige un GPU) |
 | Jalons terminés | **8 / 8** |
 | Disciplines gérées | **5** (FU, FO, DTL, parcours, compak) |
+| Lanceurs par partie | **multi-lanceurs** (attribution auto par poste + stats) |
+| Modes de jeu | **entraînement** et **concours** (chaque plateau arbitré) |
 | Coût logiciel (licences) | **0 €** (100 % open source) |
 
 ---

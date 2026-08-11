@@ -96,6 +96,13 @@
           <select id="f-cart"><option value="">Auto</option>
             <option>1</option><option>2</option></select></div>
       </div>
+      <label for="f-machines">Lanceurs actifs (séparés par une virgule)</label>
+      <input id="f-machines" placeholder="Laisser vide = un lanceur par poste">
+      <label for="f-mode">Mode</label>
+      <select id="f-mode">
+        <option value="entrainement">🎯 Entraînement</option>
+        <option value="concours">🏆 Concours (chaque plateau arbitré)</option>
+      </select>
       <label style="display:flex;gap:10px;align-items:center;margin-top:12px">
         <input type="checkbox" id="f-auto" style="width:auto">
         Valider seul les verdicts sûrs (mode auto)</label>

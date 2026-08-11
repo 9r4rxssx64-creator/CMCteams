@@ -17,7 +17,9 @@ t'appuyer, et où sont les zones d'ombre. Aucune bonne nouvelle exagérée ici.
 | Le no-bird gèle bien la rotation | Testé (même tireur, même poste) | `pytest tests/test_state_machine.py` |
 | Rien ne se perd si ça plante | Reprise d'état testée | `pytest tests/test_capture.py` |
 | L'export ralenti habillé fonctionne | Vidéos produites + servies | `pytest tests/test_replay.py` |
-| **Total** | **117 tests réussis** | `pytest` |
+| Multi-lanceurs attribués et suivis | Testé (alternance + stats par machine) | `pytest tests/test_state_machine.py` |
+| Mode concours interdit l'auto-validation | Testé (chaque plateau arbitré) | `pytest tests/test_server.py` |
+| **Total** | **130 tests réussis** | `pytest` |
 
 ---
 
