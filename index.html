@@ -5812,7 +5812,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.889";
+var APP_VER="v9.890";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17830,17 +17830,20 @@ function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.v
 // hors sujet et risqué. Ici on ne change QUE les numéros de départ.
 // MIROIR EXACT de DEP_ABS dans tools/departs/index.html (page light) — la garde
 // test:departs-abs-parity échoue si les deux listes divergent.
-// PRT (« Prêt ») reste du TRAVAIL et garde son numéro (décision Kevin 2026-07-10, leçon #140).
-// v9.889 (ultra-review 2026-08-10) :
-//  · +CLM (arrêt longue maladie) — BUG RÉEL MESURÉ sur août : EL MISSOURI O (BJ Éq.10) était
-//    en CLM les jours 21-24 et recevait quand même les numéros 1,4,2,3 → ses 4 collègues
-//    avaient de FAUX numéros ces 4 jours (20 cellules). CLM est déjà classé absence partout
-//    ailleurs dans l'app (_CMC_ABS_LIEU l.1454, ABS l.24630) ; seule la rotation l'ignorait.
-//    Avec 4 jours consécutifs (≥4), la règle v9.857 le sort du roster → les présents se
-//    recompactent, comme Kevin l'a demandé (« revoir seulement en congé/vacances »).
-//  · +DEPL/DEP/SS — l'app les comptait « travail », la page light « absence » → les numéros
-//    divergeaient dès qu'un chef avait un de ces codes (0 cas en juillet/août : piège latent).
-var DEP_ABS=["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","DEPL","DEP","SS","CLM"];
+// RÈGLE MÉTIER TRANCHÉE PAR KEVIN — « celui qui est RATTACHÉ à l'équipe garde sa place dans la
+// rotation ; seuls les vrais congés/arrêts la libèrent » :
+//  · PRT (« Prêt », mis à disposition d'un autre service) = TRAVAIL, GARDE son numéro
+//    (décision Kevin 2026-07-10, leçon #140).
+//  · DEPL / DEP (déplacement) et SS = TRAVAIL, GARDENT leur numéro — décision Kevin
+//    2026-08-10 (« B »), même logique que PRT. Ils sont donc VOLONTAIREMENT ABSENTS de
+//    cette liste. La page light les comptait en absence → elle a été alignée sur l'app.
+//  · CLM (arrêt longue maladie) = ABSENCE, PAS de numéro — v9.889, BUG RÉEL MESURÉ sur août :
+//    EL MISSOURI O (BJ Éq.10) était en CLM les jours 21-24 et recevait quand même les numéros
+//    1,4,2,3 → ses 4 collègues avaient de FAUX numéros ces 4 jours (20 cellules). CLM est déjà
+//    classé absence partout ailleurs dans l'app (_CMC_ABS_LIEU l.1454, ABS l.24630) ; seule la
+//    rotation l'ignorait. 4 jours consécutifs (≥4) → la règle v9.857 le sort du roster et les
+//    présents se recompactent, comme Kevin l'a demandé (« revoir en congé/vacances »).
+var DEP_ABS=["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","CLM"];
 function isWorkDep(c){return !!c && DEP_ABS.indexOf(c)<0;}
 function calcDepPos(empName,tid,day){
   var CI=gCI(A.year,A.month);
