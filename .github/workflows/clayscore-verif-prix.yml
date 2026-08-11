@@ -12,6 +12,15 @@ name: ClayScore — Vérifier les prix sur les vraies pages
 # aucun mail automatique. Conforme à la règle anti-spam.
 
 on:
+  # Déclencheur PUSH volontairement très étroit : uniquement quand l'outil ou
+  # la table des prix change. C'est ce qui permet de lancer la vérification
+  # depuis une branche, sans attendre que le workflow soit sur `main` (l'API
+  # `workflow_dispatch` ne voit que les workflows de la branche par défaut).
+  push:
+    paths:
+      - "clayscore/tools/verif_prix.py"
+      - "clayscore/clayscore/site.py"
+      - ".github/workflows/clayscore-verif-prix.yml"
   workflow_dispatch:
     inputs:
       tolerance:
@@ -42,7 +51,9 @@ jobs:
         working-directory: clayscore
         run: |
           set -o pipefail
-          ARGS="--tolerance ${{ inputs.tolerance }} --sortie rapport-prix.md"
+          # Sur un push, `inputs` est vide : on retombe sur les valeurs par défaut.
+          TOL="${{ inputs.tolerance }}"; TOL="${TOL:-12}"
+          ARGS="--tolerance $TOL --sortie rapport-prix.md"
           if [ "${{ inputs.strict }}" = "true" ]; then ARGS="$ARGS --strict"; fi
           # On ne masque JAMAIS la sortie : en cas d'échec, le motif exact
           # (HTTP 403, timeout, prix introuvable) doit rester lisible.
