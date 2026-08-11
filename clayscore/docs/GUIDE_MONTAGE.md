@@ -222,7 +222,7 @@ hostapd/dnsmasq (WiFi local) et le service qui redémarre tout seul.
 
 ```bash
 source .venv/bin/activate
-pytest                       # doit afficher 130 tests OK
+pytest                       # doit afficher 159 tests OK
 python -m tools.bench --all  # doit afficher 100 % sur les 3 bancs
 ```
 
@@ -279,9 +279,19 @@ monochrome + IR (c'est exactement à ça que sert le monochrome).
 ### 5. Lancer le WiFi local et le serveur
 
 ```bash
-sudo IFACE=wlan0 ./deploy/setup_hotspot.sh     # crée le réseau du stand
-sudo systemctl start clayscore                 # démarre le hub
+sudo ./deploy/network.sh --mode auto     # réseau : autonome OU branché au club
+sudo systemctl start clayscore           # démarre le hub
 ```
+
+Le mode `auto` **rejoint le réseau du club s'il en existe un**, sinon il crée
+son propre WiFi `ClayScore`. Le hub affiche lui-même l'adresse à taper et ce
+qui cloche. Pour voir ce qui serait fait sans rien modifier :
+`./deploy/network.sh --mode reseau --dry-run`
+
+⚠️ **Les caméras restent sur leur propre réseau** (2ᵉ prise du hub), jamais sur
+celui du club. L'appli le vérifie : onglet **📶 Réseau** → « caméras isolées ✅ ».
+
+Détail complet des modes, du code d'accès et du dépannage : **`GUIDE_RESEAU`**.
 
 Sur la tablette : se connecter au WiFi `ClayScore`, ouvrir
 **`http://<ip-du-hub>:8000`**, puis « Ajouter à l'écran d'accueil » → l'appli
@@ -303,7 +313,7 @@ Ordre logique, du plus simple au plus complet :
 
 | # | Test | Résultat attendu |
 |---|---|---|
-| 1 | `pytest` | 130 tests OK |
+| 1 | `pytest` | 159 tests OK |
 | 2 | `python -m tools.bench --all` | 100 % sur les 3 bancs |
 | 3 | `arv-tool-0.8 --list` | 3 caméras listées |
 | 4 | Ouvrir l'appli sur la tablette | Interface affichée, ✅ connecté |

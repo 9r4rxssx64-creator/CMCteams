@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pytest
 
-from clayscore.sources.audio_file import FileAudioSource, read_wav_mono
+from clayscore.sources.audio_file import read_wav_mono
 from clayscore.sources.video_file import FileVideoSource
 from tools import synth
 

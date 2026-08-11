@@ -55,6 +55,12 @@ ni tireur ni informaticien.
 | **Global shutter** | Capteur qui fige toute l'image d'un coup → indispensable pour un objet rapide |
 | **Infrarouge 850 nm** | Lumière invisible à l'œil, aide à voir par mauvaise lumière |
 | **Fichier de configuration** | Le fichier `config.yaml` : c'est **le seul** à changer pour passer au vrai matériel |
+| **Mode autonome** | Le boîtier crée **son propre WiFi**. Aucune box, aucun Internet |
+| **Mode réseau** | Le boîtier **rejoint le réseau du club**. La tablette ne change pas de WiFi |
+| **PoE** | Un seul câble réseau apporte **l'électricité ET l'image** à une caméra |
+| **mDNS / .local** | Ce qui permet de taper `clayscore.local` au lieu d'une adresse en chiffres |
+| **Code d'accès** | Le code qui protège les scores quand le boîtier est sur un réseau partagé |
+| **XSS** | Faille où un texte saisi (ex. un nom) devient du code qui s'exécute. Corrigée |
 
 ## Le business
 

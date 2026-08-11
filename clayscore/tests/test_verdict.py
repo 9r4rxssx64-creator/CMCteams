@@ -1,7 +1,6 @@
 """Tests du jalon 3 : verdicts cassé/manqué/no-bird + routage des ambigus."""
 from __future__ import annotations
 
-import numpy as np
 
 from clayscore.sources.audio_file import read_wav_mono
 from clayscore.sources.video_file import FileVideoSource

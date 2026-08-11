@@ -178,6 +178,22 @@
       <div id="tv-board"></div>
     </div>
   </section>
+
+  <!-- ============ RÉSEAU ============ -->
+  <section id="view-net" class="hidden">
+    <div class="card">
+      <h2>Réseau du boîtier</h2>
+      <div id="net-mode" class="big"></div>
+      <p id="net-detail" class="muted"></p>
+      <div id="net-urls"></div>
+      <div id="net-checks"></div>
+    </div>
+    <div class="card">
+      <h2>État du système</h2>
+      <div id="net-health" class="muted"></div>
+      <button id="net-refresh" style="margin-top:10px">🔄 Revérifier</button>
+    </div>
+  </section>
 </div>
 
 <nav class="foot">
@@ -185,6 +201,7 @@
   <button data-nav="game">🎯 En cours</button>
   <button data-nav="history">📜 Historique</button>
   <button data-nav="tv">📺 TV</button>
+  <button data-nav="net">📶 Réseau</button>
 </nav>
 <div id="toast"></div>
 

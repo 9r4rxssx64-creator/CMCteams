@@ -1,0 +1,186 @@
+# ClayScore — Audit qualité commerciale
+
+**Objectif : « zéro erreur, qualité commercialisable ». Voici ce qui a été
+cherché, ce qui a été trouvé, ce qui a été corrigé — et ce qui reste vrai.**
+
+Date : 11/08/2026 · Version : 0.8.0
+
+> **Règle appliquée : mesurer, jamais estimer.** Chaque chiffre ci-dessous
+> vient d'une commande exécutée, pas d'une impression.
+
+---
+
+## Résultat en une ligne
+
+**5 défauts réels trouvés, dont 3 qui auraient posé problème en clientèle.
+Tous corrigés, chacun avec un test qui empêche le retour du bug.**
+
+| | Avant | Après |
+|---|---|---|
+| Tests automatiques | 130 | **159** |
+| Alertes de qualité de code | 10 | **0** |
+| Précision (lancements / coups de feu / verdicts) | 27/27 · 27/27 · 27/27 | **inchangée : 100 %** |
+| Recette de bout en bout | — | **18/18 contrôles** |
+
+---
+
+## Les défauts trouvés
+
+### 🔴 1. Le serveur se figeait pendant chaque analyse
+
+**Mesuré** : pendant l'analyse d'un plateau, une **2ᵉ tablette** mettait
+**530 ms** à répondre au lieu de 41 ms — **13× plus lent**. Sur du vrai
+matériel (capture + vidéo), c'est bien pire.
+
+**Ce que ça donnait en vrai** : l'écran TV du club-house se fige à chaque
+plateau, la 2ᵉ tablette ne réagit plus, les scores en direct saccadent.
+Inacceptable pour un produit vendu.
+
+**Cause racine** : le verrou interne était gardé **pendant toute l'analyse**
+(~1 s). Tout le reste attendait derrière.
+
+**Correction** : l'analyse se fait désormais **hors du verrou**, et les
+traitements lourds (analyse, habillage vidéo, écriture en base) tournent dans
+un fil séparé.
+
+**Vérifié après correction** : **530 ms → 2,7 ms**. Le serveur reste réactif.
+
+---
+
+### 🔴 2. Un nom de tireur pouvait exécuter du code (faille XSS)
+
+Les noms saisis étaient insérés **tels quels** dans la page, à 6 endroits
+(tableau des scores, écran TV, historique, fiche finale).
+
+**Ce que ça donnait en vrai** : quelqu'un s'inscrit sous le nom
+`<img src=x onerror=...>` et son code s'exécute **sur toutes les tablettes et
+sur l'écran TV du club-house**. Sur le réseau partagé d'un club, c'est une
+porte ouverte.
+
+**Correction** : échappement systématique de toute donnée saisie.
+**Test** : parcourt le code de l'appli et **échoue** si un nom est inséré sans
+échappement — la faille ne peut plus revenir par inadvertance.
+
+---
+
+### 🔴 3. Aucune protection des scores sur un réseau partagé
+
+Tant que le boîtier créait son propre WiFi, le réseau restait privé. Dès qu'on
+le branche sur le réseau d'un club — ce qui est désormais prévu — **n'importe
+qui sur ce réseau pouvait changer un score** depuis son téléphone.
+
+**Correction** : un **code d'accès** protège toutes les écritures (nouvelle
+partie, lancer, verdict, enregistrement). Les lectures restent libres (écran
+TV, spectateurs, historique).
+
+**Vérifié sur un vrai serveur** : sans code → refusé ; mauvais code → refusé ;
+bon code → accepté ; lecture → toujours libre.
+
+---
+
+### 🟠 4. Le disque se remplissait sans limite
+
+Chaque plateau produit un ralenti. **Rien ne les supprimait jamais.**
+
+**Ce que ça donnait en vrai** : au bout de quelques saisons, le disque est
+plein — et la panne tombe forcément au pire moment : à l'écriture d'un clip,
+en pleine compétition.
+
+**Correction** : entretien automatique après chaque plateau (600 clips /
+5 Go max, les plus anciens partent en premier). **Le clip que l'arbitre est en
+train de regarder n'est jamais supprimé.** Les scores, eux, ne sont jamais
+touchés (ils sont en base, quelques kilo-octets par partie).
+
+---
+
+### 🟠 5. Deux tablettes pouvaient lancer deux plateaux à la fois
+
+Si deux arbitres appuyaient en même temps, **deux plateaux** étaient consommés
+pour un seul lancé réel — donc un plateau fantôme dans la fiche.
+
+**Correction** : un seul plateau analysé à la fois ; le second reçoit un
+message clair. **Test** : 4 appuis simultanés → 1 accepté, 3 refusés.
+
+---
+
+### 🟡 Défauts mineurs corrigés au passage
+
+- Base de données accédée depuis plusieurs fils **sans verrou** → verrou ajouté
+  (indispensable maintenant que les écritures sont déportées).
+- `?limit=1000000000` sur l'historique n'était pas borné → plafonné à 500.
+- 10 alertes de qualité de code (imports et variables inutilisés) → **0**.
+- Le mot de passe WiFi passé au script hotspot était **ignoré** → il est
+  maintenant appliqué, avec refus des mots de passe de moins de 8 caractères.
+
+---
+
+## Ce qui a été vérifié et qui allait déjà bien
+
+| Contrôle | Résultat |
+|---|---|
+| Secrets (clés, mots de passe) dans le code | **aucun** |
+| Traversée de répertoire sur les vidéos (`/clips/../../etc/passwd`) | **bloquée** |
+| Codec des ralentis | **H.264** — lisible iPhone et navigateur |
+| Le service worker ne sert jamais de score périmé | **confirmé** |
+| Reprise après coupure de courant en pleine partie | **la partie repart où elle en était** |
+| `except:` masquant des erreurs | **aucun** |
+| Comptage avec no-bird rejoués | **12 plateaux pour 12, exact** |
+| Mode concours : validation auto | **désactivée d'office** |
+
+---
+
+## Recette complète (exécutée sur un vrai serveur)
+
+Partie de A à Z : 2 tireurs, mode concours, 2 lanceurs, 13 lancers dont
+1 no-bird rejoué, en 8,4 secondes.
+
+```
+== SÉCURITÉ ==            écriture sans code refusée · mauvais code refusé · lecture libre
+== RÉSEAU ==              mode réseau actif · http://clayscore.local:8000 · code exigé
+== PARTIE ==              partie créée · fiche officielle · validation auto coupée
+                          partie terminée · 12 plateaux comptés pour 12
+== SORTIES ==             CSV · enregistrement en base · historique · état système
+== VIDÉOS ==              ralenti servi · codec H.264 · traversée de répertoire bloquée
+
+18/18 contrôles OK
+```
+
+---
+
+## Auto-critique — ce que cet audit ne prouve pas
+
+**Le point le plus faible** : tout reste vérifié **en simulation**. Les vidéos
+sont générées par ordinateur. La précision de 100 % est celle du simulateur,
+**pas celle d'un vrai stand**. Aucune correction de cet audit ne change ça.
+
+**Ce que je n'ai pas pu vérifier :**
+- Le **matériel réel** : caméras GigE, micro, Jetson, carte WiFi en point
+  d'accès, jumbo frames du switch. Rien de tout ça n'existe encore.
+- Le nom `clayscore.local` (mDNS) selon les tablettes — iPad le gère nativement,
+  certains Android non ; l'adresse IP reste toujours affichée en secours.
+- La tenue dans la durée : une journée complète de tir sans redémarrage.
+- Les **pages marchandes** des liens d'achat (accès bloqué depuis
+  l'environnement de développement).
+
+**Ce dont je ne suis pas certain :**
+- Les limites d'entretien (600 clips / 5 Go) sont un choix raisonnable, **pas
+  une mesure** : la taille d'un vrai clip en 1440×1080 reste inconnue tant
+  qu'aucune caméra n'a filmé.
+- Le code d'accès protège d'un curieux sur le réseau du club. Ce **n'est pas**
+  une sécurité de niveau bancaire : quelqu'un de déterminé sur le même réseau
+  pourrait l'intercepter (pas de chiffrement HTTPS en local).
+- « Qualité commercialisable » sur le **logiciel** : oui, à mon meilleur
+  niveau. Sur le **produit complet** : non — il manque encore la preuve
+  terrain, le marquage CE et un vrai boîtier.
+
+---
+
+## Pour rejouer cet audit
+
+```bash
+python3 -m pytest -q                    # 159 tests
+python3 -m tools.bench --all            # précision mesurée
+ruff check clayscore tools tests        # qualité de code
+node --check webapp/app.js              # syntaxe de l'appli tablette
+bash -n deploy/network.sh               # syntaxe des scripts
+```

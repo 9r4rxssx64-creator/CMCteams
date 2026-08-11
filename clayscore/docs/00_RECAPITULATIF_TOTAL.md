@@ -23,7 +23,7 @@ fonctionne sur un réseau local **sans Internet**, piloté depuis une tablette.
 | | État |
 |---|---|
 | **Logiciel** | ✅ **Terminé et testé** — les 8 jalons prévus sont développés et fonctionnent |
-| **Tests automatiques** | ✅ **130 réussis, 1 ignoré** (celui qui exige une carte graphique) |
+| **Tests automatiques** | ✅ **159 réussis, 1 ignoré** (celui qui exige une carte graphique) |
 | **Validation** | ✅ En **simulation** (vidéos générées avec réponse connue d'avance) |
 | **Matériel** | ⏳ **Pas encore acheté** — la liste d'achat est prête (BUDGET_BOM) |
 | **Validation terrain** | ⏳ **Pas encore faite** — nécessite de vraies vidéos de stand |
@@ -85,6 +85,8 @@ ClayScore_Dossier_Complet/
 │   ├── SPEC_TECHNIQUE.md        ← le cahier des charges du logiciel (texte d'origine)
 │   ├── JOURNAL_PROJET.md        ← tout ce qui a été fait, y compris les bugs corrigés
 │   ├── GLOSSAIRE.md             ← tous les mots expliqués (ball-trap, technique, business)
+│   ├── AUDIT_QUALITE.md         ← les défauts trouvés/corrigés, mesures avant-après
+│   ├── GUIDE_RESEAU.md          ← autonome ou branché au club, code d'accès, dépannage
 │   ├── GUIDE_MATERIEL.md        ← CHAQUE pièce : rôle, quoi prendre, liens d'achat, pièges
 │   ├── GUIDE_MONTAGE.md         ← assembler les pods, câbler, placer sur le stand, régler
 │   ├── CHECKLIST_PROTOTYPE.md   ← la marche à suivre pas à pas, de la commande à la démo
@@ -115,14 +117,17 @@ navigateur). Elles fonctionnent hors ligne, sans Internet.
 
 | Indicateur | Valeur |
 |---|---|
-| Lignes de code (logiciel) | **4 562** |
-| Lignes de tests | **1 387** |
-| Fonctions de test | **114** |
-| Tests réussis | **130** (+1 ignoré : exige un GPU) |
+| Lignes de code (logiciel) | **4 108** |
+| Lignes de tests | **1 847** |
+| Fonctions de test | **156** |
+| Tests réussis | **159** (+1 ignoré : exige un GPU) |
 | Jalons terminés | **8 / 8** |
 | Disciplines gérées | **5** (FU, FO, DTL, parcours, compak) |
 | Lanceurs par partie | **multi-lanceurs** (attribution auto par poste + stats) |
 | Modes de jeu | **entraînement** et **concours** (chaque plateau arbitré) |
+| Réseau | **autonome** (WiFi propre) **ou branché** au réseau d'un club, bascule automatique |
+| Sécurité des scores | **code d'accès** sur toute écriture (obligatoire en concours) |
+| Entretien | **automatique** : le disque ne peut plus se remplir |
 | Coût logiciel (licences) | **0 €** (100 % open source) |
 
 ---

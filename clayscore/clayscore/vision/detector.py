@@ -16,7 +16,7 @@ Toutes les tailles sont exprimées en fraction de la surface d'image
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional
 
 import cv2

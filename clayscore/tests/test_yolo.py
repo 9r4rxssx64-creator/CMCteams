@@ -1,6 +1,8 @@
 """Tests du jalon 8 : dataset YOLO, détecteur enfichable, entraînement, labeling."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -98,6 +100,7 @@ def test_labeled_store_add_and_list(tmp_path):
     img = np.zeros((120, 160, 3), dtype=np.uint8)
     path = store.add_sample("casse", image=img, clip_url="/clips/a.mp4",
                             auto_verdict="ambigu", confidence=0.55)
+    assert path and Path(path).exists(), "L'image arbitrée doit être écrite."
     assert (tmp_path / "labeled" / "casse").exists()
     assert store.count("casse") == 1 and store.count() == 1
     samples = store.list_samples()

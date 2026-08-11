@@ -87,7 +87,7 @@ erreur explicite (matériel absent) — c'est attendu et testé.
 - [x] **4. Machine à états de la partie** — 5 disciplines, no-bird, doublés (tests exhaustifs)
 - [x] **5. Serveur FastAPI + PWA** — partie jouable au navigateur, WebSocket temps réel, ralentis (+ export ralenti **habillé** verdict/trajectoire pour la vidéo de démo)
 - [x] **6. Multi-caméras** — fusion stéréo, triangulation 3D grossière, calibration auto des corridors
-- [x] **7. Intégration matériel** — capture pilotée par la source (segmentation live), Aravis/micro branchés, systemd + hotspot WiFi, reprise d'état après crash
+- [x] **7. Intégration matériel** — capture pilotée par la source (segmentation live), Aravis/micro branchés, systemd + réseau **autonome ou branché au club** (`deploy/network.sh`), code d'accès, entretien disque, reprise d'état après crash
 - [x] **8. IA v2** — dataset YOLO auto-annoté, détecteur enfichable (repli classique), pipeline d'entraînement + export TensorRT, boucle data/labeled/
 
 ### IA v2 (jalon 8)

@@ -67,7 +67,7 @@ c'est ce qui a servi à créer les 3 démos.
 
 ```bash
 cd logiciel
-pytest                      # → doit afficher : 117 passed, 1 skipped
+pytest                      # → doit afficher : 159 passed, 1 skipped
 python -m tools.bench --all # → doit afficher : 27/27 = 1.000 (×3)
 ```
 
@@ -106,7 +106,10 @@ source:
 Et sur le boîtier (Jetson) :
 ```bash
 ./install.sh --hardware          # caméras + micro + service qui redémarre tout seul
-sudo IFACE=wlan0 ./deploy/setup_hotspot.sh   # crée le WiFi local "ClayScore"
+sudo ./deploy/network.sh --mode auto         # réseau : autonome OU club, au choix
+# (auto = rejoint le réseau du club s'il existe, sinon crée le WiFi "ClayScore")
+# Essai à blanc, sans rien modifier :
+./deploy/network.sh --mode reseau --dry-run
 ```
 
 Aucune ligne de code à toucher.
@@ -120,6 +123,9 @@ Aucune ligne de code à toucher.
 | `./install.sh` refuse de démarrer | `chmod +x install.sh` puis relance |
 | « python introuvable » | Installer Python 3.10 ou plus récent |
 | La tablette ne voit pas la page | Vérifier que tablette et ordinateur sont sur **le même WiFi** |
+| Quelle adresse taper ? | `http://clayscore.local:8000` — ou l'adresse affichée au démarrage |
+| Un code d'accès est demandé | Normal sur réseau partagé : c'est `network.access_pin` du fichier de config |
+| Savoir si tout est bien branché | Onglet **📶 Réseau** de l'appli : mode, adresse, caméras isolées, place disque |
 | Les vidéos ne s'ouvrent pas | Utiliser VLC (gratuit) — format mp4 standard |
 
 ---
