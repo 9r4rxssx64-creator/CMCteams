@@ -17,7 +17,7 @@ Tous corrigés, chacun avec un test qui empêche le retour du bug.**
 
 | | Avant | Après |
 |---|---|---|
-| Tests automatiques | 130 | **224** |
+| Tests automatiques | 130 | **281** |
 | Alertes de qualité de code | 10 | **0** |
 | Précision (lancements / coups de feu / verdicts) | 27/27 · 27/27 · 27/27 | **inchangée : 100 %** |
 | Recette de bout en bout | — | **18/18 contrôles** |
@@ -343,7 +343,7 @@ sont générées par ordinateur. La précision de 100 % est celle du simulateur,
 ## Pour rejouer cet audit
 
 ```bash
-python3 -m pytest -q                    # 224 tests
+python3 -m pytest -q                    # 281 tests
 python3 -m tools.bench --all            # précision mesurée
 ruff check clayscore tools tests        # qualité de code
 node --check webapp/app.js              # syntaxe de l'appli tablette

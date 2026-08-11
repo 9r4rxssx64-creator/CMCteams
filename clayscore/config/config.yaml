@@ -21,7 +21,8 @@ source:
     # width: 1440
     # height: 1080
     # fps: 50
-    # pixel_format: Mono8
+    # pixel_format: RGB8   # COULEUR OBLIGATOIRE (Mono = 9/27 au lieu de 27/27).
+    #                       Sinon BayerRG8/BG8/GR8/GB8. Un format Mono est refusé.
 
   audio:
     # type: file -> rejoue un .wav (simulation) | type: mic -> micro USB réel

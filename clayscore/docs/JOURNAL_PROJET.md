@@ -21,7 +21,7 @@ comment ils ont été résolus.** Rien n'est masqué : les erreurs figurent auss
 | 11/08/2026 | **Audit qualité commerciale** : 5 défauts réels corrigés | +18 tests |
 | 11/08/2026 | **Réseau autonome OU branché au club** + code d'accès | +11 tests |
 | 11/08/2026 | **Niveau compétition** : preuve, alimentation, sans fil | +51 tests |
-| **Total** | | **224 tests verts** |
+| **Total** | | **281 tests verts** |
 
 ---
 

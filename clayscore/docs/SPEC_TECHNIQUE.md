@@ -4,6 +4,14 @@
 > charges qui a servi à développer le logiciel. Conservé mot pour mot pour
 > référence — les 8 jalons décrits ici ont tous été réalisés (voir
 > `00_RECAPITULATIF_TOTAL`).
+>
+> 🔴 **Une seule ligne de ce cahier des charges s'est révélée fausse à
+> l'usage** — elle est conservée telle quelle ci-dessous, mais ne pas la
+> suivre : *« 3 caméras GigE Vision Hikrobot MV-CS016-10 (2 mono + 1
+> couleur) »*. **Les 3 caméras doivent être en COULEUR.** Le test de l'orange
+> du plateau tourne sur chaque caméra. Mesuré sur le banc des 27 scénarios :
+> couleur **27/27**, monochrome **9/27**, avec des erreurs annoncées comme
+> certaines. Correction et mesures : `MATERIEL_OPTIMAL` § 2.
 
 ---
 
@@ -97,7 +105,7 @@ Une partie de FU à 2 tireurs, 25 plateaux chacun avec doublés et un no-bird in
 | Mode simulation (priorité absolue) | ✅ tout fonctionne sans matériel |
 | Architecture (arborescence ci-dessus) | ✅ respectée |
 | Règles métier (verdict, no-bird, rotation, doublés, audio) | ✅ implémentées et testées |
-| Couverture > 80 % sur `game/` et `verdict` | ✅ 224 tests, dont la totalité des règles de partie |
+| Couverture > 80 % sur `game/` et `verdict` | ✅ 281 tests, dont la totalité des règles de partie |
 | Definition of done globale | ✅ **vérifiée** : partie FU 2 tireurs × 25 plateaux + no-bird jouée via le serveur, scores exacts, ralentis servis |
 | Matériel réel (Jetson, caméras, micro) | ⏳ code écrit et branché, **non testé sur matériel** (non acheté) |
 | Performance 3 flux 1440×1080 ≥ 50 fps | ⏳ **non mesurée** (exige le Jetson) |
