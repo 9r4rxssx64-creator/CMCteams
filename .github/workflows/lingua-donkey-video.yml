@@ -1,0 +1,103 @@
+name: "KDMC Lingua — Anime Bourrico l'âne en VIDÉO (IA image→vidéo, à la demande)"
+
+# Même chaîne que lingua-bee-video.yml : Replicate (AX_REPLICATE_KEY, modèle
+# minimax/video-01-live, spécialisé animation d'illustrations) anime l'image de l'âne.
+# L'image de départ DOIT être publiquement joignable → on part de son fichier sur main.
+#
+# Deux différences avec la version Bee, volontaires :
+#  1. les prompts n'ont pas d'ailes : un âne remue les OREILLES et la queue ;
+#  2. on commit directement dans lingua/donkey/live/ — c'est le chemin que l'app lit
+#     (MASC()+"/live/<nom>.mp4"), donc zéro étape manuelle de recopie ensuite.
+# Manuel uniquement (workflow_dispatch) — zéro cron, zéro mail (règle anti-spam).
+
+on:
+  workflow_dispatch:
+    inputs:
+      clips:
+        description: "Clips à générer (idle hello dance jump fly walk)"
+        default: "idle hello dance jump fly walk"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - name: Génère les boucles vidéo de l'âne
+        env:
+          REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
+        run: |
+          set -e
+          if [ -z "${REPLICATE_KEY:-}" ]; then echo "::error::AX_REPLICATE_KEY absente"; exit 1; fi
+          mkdir -p /tmp/vid
+          IMG_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/lingua/donkey/rig/base.webp"
+          echo "Image de départ : $IMG_URL"
+          # Garde-fou : si l'image n'est pas joignable publiquement, Replicate échouera sur
+          # les 6 clips l'un après l'autre — autant le dire tout de suite.
+          CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$IMG_URL" || echo 000)
+          [ "$CODE" = "200" ] || { echo "::error::image de départ injoignable (http=$CODE) — l'âne doit être sur main"; exit 1; }
+
+          KEEP="Keep the exact same cute cartoon donkey character design, same grey fur, same cream muzzle, same long ears with pink inside, same big eyes, same colors and same plain cream background."
+          gen_vid () {
+            NAME="$1"; PROMPT="$2"
+            echo "== $NAME =="
+            CREATE=$(curl -sS https://api.replicate.com/v1/models/minimax/video-01-live/predictions \
+              -H "Authorization: Bearer $REPLICATE_KEY" -H "Content-Type: application/json" \
+              -d "$(jq -n --arg p "$PROMPT" --arg img "$IMG_URL" '{input:{prompt:$p, first_frame_image:$img, prompt_optimizer:true}}')")
+            ID=$(printf '%s' "$CREATE" | jq -r '.id // empty')
+            if [ -z "$ID" ]; then echo "::warning::$NAME création échouée : $(printf '%s' "$CREATE" | jq -r '.detail // .title // "?"' | head -c 200)"; return 1; fi
+            for i in $(seq 1 60); do
+              sleep 10
+              ST=$(curl -sS -H "Authorization: Bearer $REPLICATE_KEY" "https://api.replicate.com/v1/predictions/$ID")
+              STATUS=$(printf '%s' "$ST" | jq -r '.status')
+              if [ "$STATUS" = "succeeded" ]; then
+                URL=$(printf '%s' "$ST" | jq -r 'if (.output|type)=="array" then .output[0] else .output end')
+                curl -sSL "$URL" -o "/tmp/vid/$NAME.mp4"
+                echo "  OK ($(wc -c < /tmp/vid/$NAME.mp4) octets)"; return 0
+              fi
+              if [ "$STATUS" = "failed" ] || [ "$STATUS" = "canceled" ]; then
+                echo "::warning::$NAME $STATUS : $(printf '%s' "$ST" | jq -r '.error // "?"' | head -c 200)"; return 1
+              fi
+              [ $((i % 6)) -eq 0 ] && echo "  …$STATUS (${i}0s)"
+            done
+            echo "::warning::$NAME timeout (~10 min)"; return 1
+          }
+
+          OK=0
+          for C in ${{ github.event.inputs.clips || 'idle hello dance jump fly walk' }}; do
+            case "$C" in
+              idle)  gen_vid idle  "$KEEP The cute donkey stands calmly in place, breathing softly, blinking naturally, its long ears twitching gently, tiny head tilts, subtle seamless idle loop, nothing else changes" && OK=$((OK+1)) ;;
+              hello) gen_vid hello "$KEEP The cute donkey waves hello warmly with one raised front hoof, ears perking up, blinking, joyful, subtle seamless loop" && OK=$((OK+1)) ;;
+              dance) gen_vid dance "$KEEP The cute donkey dances happily in place, swaying side to side with rhythm, bouncing, long ears flopping to the beat, tail swishing, joyful expression, fun dance loop" && OK=$((OK+1)) ;;
+              jump)  gen_vid jump  "$KEEP The cute donkey jumps up with excitement and lands softly, then jumps again, celebratory hops, ears bouncing, happy, seamless loop" && OK=$((OK+1)) ;;
+              fly)   gen_vid fly   "$KEEP The cute donkey gallops joyfully in a small playful circle, kicking up its hooves, ears flapping, tail swishing, returns to the center facing the viewer, seamless loop" && OK=$((OK+1)) ;;
+              walk)  gen_vid walk  "$KEEP The cute donkey walks cheerfully in place with a bouncy little march, hooves stepping, ears bobbing, adorable strut, seamless loop" && OK=$((OK+1)) ;;
+              *) echo "::warning::clip inconnu : $C" ;;
+            esac
+          done
+          echo "Vidéos générées : $OK"
+          [ "$OK" -ge 1 ] || { echo "::error::aucune vidéo générée"; exit 1; }
+
+      - name: Commit dans le dossier que l'app lit vraiment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BR="claude/lingua-donkey-video-${{ github.run_number }}"
+          git checkout -b "$BR"
+          mkdir -p lingua/donkey/live
+          cp /tmp/vid/*.mp4 lingua/donkey/live/ 2>/dev/null || true
+          ls -la lingua/donkey/live
+          git add lingua/donkey/live
+          git commit -m "Lingua : boucles vidéo de Bourrico l'âne (Replicate) [skip ci]" \
+            -m "Animées depuis son image de base. Déposées directement dans lingua/donkey/live/, le chemin que l'app lit — aucune recopie manuelle ensuite." || { echo "rien à committer"; exit 0; }
+          for i in 1 2 3 4; do git push -u origin "$BR" && break || sleep $((2**i)); done
+
+      - name: Artefact (trace)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: donkey-video, path: /tmp/vid/, retention-days: 30 }
