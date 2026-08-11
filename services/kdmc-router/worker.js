@@ -261,10 +261,14 @@ async function handleLingua(request, url, env) {
          1000 couvre tout le contenu de l'app ; tts-1 accepte jusqu'à 4096, et l'URL GET
          reste largement sous les limites Workers/CDN. */
       const text = (url.searchParams.get('t') || '').slice(0, 1000);
+      /* Kevin 2026-08-11 « la voix est trop robot » : les 6 voix historiques marchent sur les
+         DEUX moteurs ; les 5 voix « HD » (coral, sage, ash, ballad, verse) n'existent QUE sur
+         gpt-4o-mini-tts → REPLI obligatoire vers leur cousine tts-1, sinon OpenAI répond 400. */
       const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+      const VOIX_HD = { coral: 'nova', sage: 'shimmer', ash: 'onyx', ballad: 'fable', verse: 'echo' };
       let voice = (url.searchParams.get('v') || 'nova').toLowerCase();
       const isAntonin = voice === 'antonin'; // 🎙️ vraie voix CLONÉE d'Antonin (Kevin a validé à l'oreille)
-      if (!isAntonin && VOICES.indexOf(voice) < 0) voice = 'nova';
+      if (!isAntonin && VOICES.indexOf(voice) < 0 && !VOIX_HD[voice]) voice = 'nova';
       // Vitesse de GÉNÉRATION (0.25–2) : permet la voix « fillette » — générée lente puis
       // accélérée côté client (pitch monte, tempo net redevient normal). Clampée + cachée à part.
       let speed = parseFloat(url.searchParams.get('s') || '1');
@@ -304,18 +308,40 @@ async function handleLingua(request, url, env) {
         }
         voice = 'onyx'; // repli honnête : voix d'homme OpenAI, cachée sous SA clé onyx (jamais sous Antonin)
       }
-      const ckey = 'ltts:' + (await hashOf(voice + ':' + speed + ':' + text));
+      /* 🗣️ MOTEUR DE VOIX — Kevin 2026-08-11 : « la voix est trop robot, dur de comprendre ».
+         Cause mesurée : on synthétisait avec « tts-1 », le plus ancien moteur OpenAI. On passe
+         à gpt-4o-mini-tts, nettement plus humain, PLUS une consigne de jeu (« instructions »)
+         qui n'existe que sur ce moteur : ton chaleureux de prof, articulation nette.
+         GARDE-FOU : la vitesse (bouton 🐢 Lent, syllabes) n'est fiable que sur tts-1 → dès que
+         la vitesse n'est pas normale, on RESTE sur tts-1. Le 🐢 continue donc de marcher.
+         REPLI : si le nouveau moteur refuse (modèle/voix/quota), on refait avec tts-1 → jamais
+         de silence. La CLÉ DE CACHE contient le moteur : sans ça, tous les mots déjà entendus
+         resteraient servis dans leur ancienne version robotique — Kevin n'entendrait AUCUN
+         changement (c'est le piège classique du cache). */
+      const HD_MODELE = 'gpt-4o-mini-tts';
+      const HD_CONSIGNE = "Voix humaine et chaleureuse de professeur de langue : articulation nette, rythme posé et naturel, ton bienveillant, jamais robotique. Prononce le texte dans sa propre langue, avec l'accent d'un locuteur natif.";
+      const hd = speed === 1;                       // vitesse normale → nouveau moteur
+      const modele = hd ? HD_MODELE : 'tts-1';
+      const voixPour = (m) => (m === 'tts-1' && VOIX_HD[voice]) ? VOIX_HD[voice] : voice;
+      const cle = async (m) => 'ltts:' + (await hashOf(m + ':' + voixPour(m) + ':' + speed + ':' + text));
+      const ckey = await cle(modele);
       const cached = await env.ACCOUNTS.get(ckey, 'arrayBuffer');
       if (cached) return new Response(cached, { status: 200, headers: audioHdr });
       if (!env.OPEN_AI_API_KEY) return JL({ ok: false, reason: 'tts_absent' }); // fail-open (200) → repli navigateur
-      const rr = await fetch('https://api.openai.com/v1/audio/speech', {
-        method: 'POST',
-        headers: { 'authorization': 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
-        body: JSON.stringify({ model: 'tts-1', voice: voice, input: text, response_format: 'mp3', speed: speed }),
-      });
+      const synth = async (m) => {
+        const corps = { model: m, voice: voixPour(m), input: text, response_format: 'mp3' };
+        if (m === HD_MODELE) corps.instructions = HD_CONSIGNE; else corps.speed = speed;
+        return fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST',
+          headers: { 'authorization': 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
+          body: JSON.stringify(corps),
+        });
+      };
+      let mUse = modele, rr = await synth(mUse);
+      if (!rr.ok && mUse === HD_MODELE) { mUse = 'tts-1'; rr = await synth(mUse); } // repli honnête, jamais de silence
       if (!rr.ok) return JL({ ok: false, reason: 'tts_err', status: rr.status }); // fail-open (200)
       const buf = await rr.arrayBuffer();
-      try { await env.ACCOUNTS.put(ckey, buf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* cache best-effort */ }
+      try { await env.ACCOUNTS.put(await cle(mUse), buf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* cache best-effort */ }
       return new Response(buf, { status: 200, headers: audioHdr });
     }
     // Mode « APPEL EN DIRECT » (voix-à-voix temps réel) : on frappe un JETON ÉPHÉMÈRE OpenAI Realtime

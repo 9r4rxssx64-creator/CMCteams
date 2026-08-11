@@ -30,6 +30,15 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
 
+      # Garde BLOQUANTE : on ne déploie pas un routeur dont la voix ou le repli sont cassés.
+      # Ces deux tests tournent hors ligne (fetch simulé) → rapides, sans clé, sans réseau.
+      - name: Tests du worker (voix Lingua + voix clonée d'Antonin)
+        working-directory: services/kdmc-router
+        shell: bash -eo pipefail {0}
+        run: |
+          node voix-tts.test.mjs
+          node antonin-tts.test.mjs
+
       - name: Install wrangler
         run: npm i -g wrangler@3
 
