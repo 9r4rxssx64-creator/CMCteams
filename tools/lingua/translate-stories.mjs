@@ -86,12 +86,44 @@ async function translateStory(st) {
   const user = 'Traduis CHAQUE ligne de cette mini-histoire vers : polonais (pl), russe (ru), ukrainien (uk), tchèque (cs), chinois mandarin simplifié (zh), japonais (ja), coréen (ko), arabe standard moderne (ar).\n'
     + lignes + '\n'
     + 'Réponds UNIQUEMENT en JSON strict : {"lignes":[{"pl":"...","ru":"...","uk":"...","cs":"...","zh":"...","ja":"...","ko":"...","ar":"..."}]} — une entrée PAR ligne, dans le MÊME ordre. '
-    + 'Règles : traductions naturelles pour un débutant, même sens que le français (l\'anglais sert de repère), ponctuation de la langue (。en chinois/japonais, ؟ en arabe), aucun mot français laissé tel quel, aucune romanisation pour zh/ja/ko/ar.';
+    + 'Règles : traductions naturelles pour un débutant, même sens que le français (l\'anglais sert de repère), aucun mot français laissé tel quel, aucune romanisation pour zh/ja/ko/ar. '
+    + 'PONCTUATION FINALE : elle suit le TYPE de la phrase française — une affirmation se termine par . (。en zh/ja), une exclamation par ! (！en zh/ja) ; le point d\'interrogation (؟ en arabe, ？en zh/ja) sert UNIQUEMENT si la phrase française est une question.';
   const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
   let raw = await callGroq(msgs, true); let by = 'groq';
   if (!raw) { raw = await callMistral(msgs, true); by = 'mistral'; }
   if (!raw) { raw = await callGemini(msgs); by = 'gemini'; }
   return { tr: parseJson(raw), by };
+}
+
+/* ---------- Normalisation déterministe de la ponctuation finale ----------
+   Cause racine (passages 5-11) : le modèle A terminait les affirmatives arabes
+   par « ؟ » (induit par une consigne ambiguë). Le TYPE de phrase vient du
+   FRANÇAIS : on reflète mécaniquement sa ponctuation finale — sans toucher au
+   sens — AVANT le juge, qui garde le dernier mot sur tout le reste. */
+const TERM_RE = /[.!?。！？؟…]+\s*$/;
+const PUNCT_BY_LANG = {
+  zh: { q: '？', x: '！', s: '。' },
+  ja: { q: '？', x: '！', s: '。' },
+  ar: { q: '؟', x: '!', s: '.' },
+  default: { q: '?', x: '!', s: '.' },
+};
+function frKind(fr) {
+  const m = String(fr).trim().match(/[.!?…]+$/);
+  const p = m ? m[0] : '.';
+  return p.includes('?') ? 'q' : p.includes('!') ? 'x' : 's';
+}
+function fixTerminalPunct(fr, lg, v) {
+  const p = (PUNCT_BY_LANG[lg] || PUNCT_BY_LANG.default)[frKind(fr)];
+  const s = String(v).trim();
+  return TERM_RE.test(s) ? s.replace(TERM_RE, p) : s + p;
+}
+function normalizePunct(st, tr) {
+  if (!tr || !Array.isArray(tr.lignes)) return tr;
+  tr.lignes.forEach((t, i) => {
+    if (!t || !st.lignes[i]) return;
+    L2.forEach((lg) => { if (typeof t[lg] === 'string' && t[lg].trim()) t[lg] = fixTerminalPunct(st.lignes[i].fr, lg, t[lg]); });
+  });
+  return tr;
 }
 
 /* ---------- Second avis indépendant (modèle B, fournisseur différent) ---------- */
@@ -168,6 +200,7 @@ function bumpVersion() {
       const g = await translateStory(st); tr = g.tr; by = g.by;
       if (!tr) { console.log('SKIP ' + st.id + ' : traduction IA indisponible.'); continue; }
     }
+    normalizePunct(st, tr);
     const errs = validateTranslations(st, tr);
     if (errs.length) { console.log('REJET structurel ' + st.id + ' : ' + errs.slice(0, 5).join(' | ')); continue; }
     if (!dry) {
