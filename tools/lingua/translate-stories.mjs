@@ -201,7 +201,52 @@ async function judgeTranslations(st, tr, generatorTried) {
   if (!j) return { ok: false, available: false, hard: ['juge indisponible'] };
   const problemes = Array.isArray(j.problemes) ? j.problemes : [];
   const hard = problemes.filter((p) => /incorrect|faux|erreur|fautif|mauvais|contresens|ne veut rien dire|n'existe pas|invent|manqu|genre|accord|orthograph|devrait être|wrong|romanis|translitt/i.test(String(p)));
-  return { ok: hard.length === 0, available: true, hard, all: problemes };
+  if (!hard.length) return { ok: true, available: true, hard: [], all: problemes, judgedBy };
+
+  /* CONFIRMATION PAR UN 2e JUGE INDÉPENDANT (leçon vérifiée passage 21) : un juge seul
+     se trompe AUSSI dans l'autre sens. Exemple prouvé dans son propre texte — il a écrit
+     « 'dort' n'existe pas en tchèque ; la traduction correcte est 'Je tam dort.' », en
+     employant le mot qu'il déclare inexistant (dort = gâteau, tchèque courant). Ce faux
+     rejet bloquait l'histoire à CHAQUE passage.
+     On ne relâche donc RIEN : on exige qu'un 2e juge, d'un fournisseur différent du
+     traducteur ET du 1er juge, CONFIRME chaque faute. Une vraie faute est vue par les
+     deux ; une faute hallucinée ne l'est pas. Si aucun 2e juge n'est joignable, on garde
+     le verdict du 1er (on ne publie jamais un doute). */
+  const confirmed = await confirmProblems(hard, [generatorTried, judgedBy]);
+  if (!confirmed.available) return { ok: false, available: true, hard, all: problemes, judgedBy, confirmedBy: null };
+  return { ok: confirmed.kept.length === 0, available: true, hard: confirmed.kept, all: problemes, judgedBy, confirmedBy: confirmed.by, dismissed: confirmed.dismissed };
+}
+
+/* Re-examen ciblé : le 2e juge ne revoit QUE les fautes signalées, et dit pour chacune
+   si elle est réellement fautive. Réponse indexée → pas d'ambiguïté d'appariement. */
+async function confirmProblems(hard, exclude) {
+  const list = hard.map((p, i) => (i + 1) + '. ' + p).join('\n');
+  const sys = 'Tu es un correcteur plurilingue senior. Un premier correcteur a signalé des fautes dans des traductions. Ton rôle est de dire lesquelles sont RÉELLEMENT fautives — les premiers correcteurs se trompent parfois et signalent comme « mot inexistant » un mot parfaitement courant.';
+  const user = 'Pour CHAQUE reproche ci-dessous, dis s\'il est justifié.\n' + list
+    + '\nRéponds UNIQUEMENT en JSON : {"verdicts":[{"n":1,"fautif":true/false,"pourquoi":"court"}]} — une entrée par numéro. '
+    + 'fautif=true seulement si la traduction est VRAIMENT fautive (sens, genre, accord, orthographe, mot réellement inexistant). '
+    + 'fautif=false si le reproche est infondé (le mot existe bien, la forme est correcte, ou ce n\'est qu\'une préférence de style).';
+  const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
+  const chain = ['mistral', 'gemini', 'cohere', 'deepseek', 'together', 'xai', 'groq'].filter((id) => !exclude.includes(id));
+  let raw = null, by = null;
+  for (const id of chain) {
+    if (raw) break;
+    raw = id === 'mistral' ? await callMistral(msgs, true)
+      : id === 'gemini' ? await callGemini(msgs)
+      : id === 'groq' ? await callGroq(msgs, true)
+      : await callCompat(id, msgs, true);
+    if (raw) by = id;
+  }
+  const j = parseJson(raw);
+  if (!j || !Array.isArray(j.verdicts)) return { available: false, kept: hard, dismissed: [], by: null };
+  const kept = [], dismissed = [];
+  hard.forEach((p, i) => {
+    const v = j.verdicts.find((x) => Number(x && x.n) === i + 1);
+    /* Sans verdict explicite « non fautif », on GARDE la faute (prudence). */
+    if (v && v.fautif === false) dismissed.push(p + '  [écarté par ' + by + ' : ' + (v.pourquoi || 'reproche infondé') + ']');
+    else kept.push(p);
+  });
+  return { available: true, kept, dismissed, by };
 }
 
 /* ---------- Patch de data.js (complète t:{…} de chaque ligne) ---------- */
@@ -278,7 +323,8 @@ function bumpVersion() {
     if (!dry) {
       const judged = await judgeTranslations(st, tr, by);
       if (!judged.available) { console.log('SKIP ' + st.id + ' : juge indisponible.'); continue; }
-      if (!judged.ok) { console.log('REJET (second avis) ' + st.id + ' : ' + (judged.hard || []).slice(0, 5).join(' | ')); continue; }
+      (judged.dismissed || []).forEach((d) => console.log('   reproche écarté (2e juge) : ' + d));
+      if (!judged.ok) { console.log('REJET (second avis' + (judged.confirmedBy ? ', confirmé par ' + judged.confirmedBy : '') + ') ' + st.id + ' : ' + (judged.hard || []).slice(0, 5).join(' | ')); continue; }
     }
     patchStory(st, tr);
     /* re-vérifie après patch : les 14 langues présentes sur CHAQUE ligne de cette histoire */
