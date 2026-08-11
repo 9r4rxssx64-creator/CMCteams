@@ -271,6 +271,7 @@ def create_app(clips_dir: Optional[str] = None,
                           batterie=app.state.battery, conso_w=_conso(),
                           duree_epreuve_h=duree_h)
         st = eng.state()
+        _qual = _qualite_derniere_image()
         rapport = officiel.pre_competition_check(
             mode="concours" if st.get("official") else "entrainement",
             pin_actif=net_st.pin_required,
@@ -283,7 +284,10 @@ def create_app(clips_dir: Optional[str] = None,
             journal_ok=app.state.journal.verify()["ok"],
             horloge_synchro=all(p.derive_horloge_ms <= 20
                                 for p in fleet.pods) if fleet.pods else True,
-            duree_epreuve_h=duree_h)
+            duree_epreuve_h=duree_h,
+            # None tant qu'aucune image réelle n'a été analysée : on ne coche
+            # pas un contrôle qu'on n'a pas fait.
+            couleur_ok=(_qual or {}).get("couleur_ok"))
         return {**rapport.to_dict(), "alimentation": pw.to_dict(),
                 "postes": fleet.to_dict()}
 
@@ -312,30 +316,42 @@ def create_app(clips_dir: Optional[str] = None,
     def postes():
         return app.state.fleet.to_dict()
 
-    @app.get("/api/image/qualite")
-    def image_qualite():
-        """L'image des caméras est-elle exploitable ? Sinon, quoi régler ?
+    def _qualite_derniere_image():
+        """Qualité mesurée sur la dernière vraie image, ou None si aucune.
 
-        Mesuré : la précision chute si l'image est trop sombre, trop claire ou
-        trop bruitée — et ces trois défauts se corrigent au réglage de la
-        caméra. Autant les voir AVANT l'épreuve.
+        Partagé par l'écran de réglage ET le GO/NO-GO : le contrôle avant
+        épreuve doit s'appuyer sur une image RÉELLE, pas sur une hypothèse.
         """
         from ..vision.detector import qualite_image
         pend = engine().pending
         if pend is None or not pend.clip_url:
-            return {"ok": None,
-                    "detail": "Lance un plateau : la qualité s'évalue sur une "
-                              "vraie image de la caméra."}
+            return None
         src = clips / Path(pend.clip_url).name
         if not src.exists():
-            raise HTTPException(404, "Clip source introuvable.")
+            return None
         import cv2 as _cv2
         cap = _cv2.VideoCapture(str(src))
         ok, img = cap.read()
         cap.release()
         if not ok:
-            raise HTTPException(500, "Image illisible.")
+            return None
         return qualite_image(img)
+
+    @app.get("/api/image/qualite")
+    def image_qualite():
+        """L'image des caméras est-elle exploitable ? Sinon, quoi régler ?
+
+        Mesuré : la précision chute si l'image est trop sombre, trop claire,
+        trop bruitée — ou SANS COULEUR (27/27 -> 9/27). Ces défauts se
+        corrigent au réglage ou au choix de la caméra. Autant les voir AVANT
+        l'épreuve.
+        """
+        q = _qualite_derniere_image()
+        if q is None:
+            return {"ok": None,
+                    "detail": "Lance un plateau : la qualité s'évalue sur une "
+                              "vraie image de la caméra."}
+        return q
 
     # --- réseau, version, santé ------------------------------------------ #
     @app.get("/api/network")

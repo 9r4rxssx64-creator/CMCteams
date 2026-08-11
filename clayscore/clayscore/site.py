@@ -22,8 +22,9 @@ Le raisonnement, chiffré :
 Ce module refuse une configuration impossible AVANT la commande du matériel,
 et sort le prévisionnel (matériel + coût) du club complet.
 
-⚠️ Les prix sont ceux de `docs/BUDGET_BOM.md` : des **cibles de planification**
-non vérifiées auprès des fournisseurs, pas des devis.
+⚠️ Les prix sont de deux natures, jamais mélangées : **RELEVÉ** (offre publique
+réellement trouvée, avec sa source et sa date) et **cible** (hypothèse de
+planification issue de `docs/BUDGET_BOM.md`, non confirmée). Voir `SOURCE_PRIX`.
 """
 from __future__ import annotations
 
@@ -56,29 +57,75 @@ RETOUR_CAMERA: Dict[str, float] = {
     "hd": 12.0,        # 1080p H.264 : ralenti exploitable à l'écran
 }
 
-# Prix cibles (€), repris de docs/BUDGET_BOM.md.
-# Les postes marqués NOUVEAU n'existaient pas dans le BOM d'un kit unique :
-# ils apparaissent seulement quand on équipe un club entier. Prix à confirmer.
+# Prix (€). Deux natures très différentes, et on ne les confond pas :
+#
+#   RELEVÉ = un prix public réellement trouvé (référence + source + date).
+#   cible  = une hypothèse de planification héritée de docs/BUDGET_BOM.md,
+#            jamais confirmée chez un fournisseur.
+#
+# `SOURCE_PRIX` documente CHAQUE ligne, et un test vérifie qu'aucun prix
+# n'existe sans provenance : c'est ce qui empêche un chiffre inventé de se
+# glisser dans un devis.
+#
+# Conversion utilisée : 1 USD = 0,866 € (1 EUR = 1,1542 USD, 11 août 2026).
+USD_EUR = 0.866
+
 PRIX: Dict[str, float] = {
-    "camera": 180.0,
-    "objectif": 35.0,
-    "filtre": 15.0,
-    "caisson": 15.0,
-    "trepied": 15.0,
-    "calculateur": 280.0,        # Jetson Orin Nano
-    "ssd": 40.0,
-    "switch_poe": 60.0,
-    "micro": 25.0,
-    "batterie_30ah": 130.0,
-    "chargeur": 25.0,
-    "cablage": 50.0,
-    "pont_directionnel": 120.0,  # la PAIRE (une extrémité de chaque côté)
-    "routeur": 40.0,
-    "ecran_club": 250.0,         # NOUVEAU — écran d'affichage du club-house
-    "mini_pc_club": 200.0,       # NOUVEAU — agrège les 3 terrains, pilote l'écran
+    "camera": 168.0,             # RELEVÉ
+    "objectif": 35.0,            # cible
+    "filtre": 15.0,              # cible
+    "caisson": 15.0,             # cible
+    "trepied": 15.0,             # cible
+    "calculateur": 216.0,        # RELEVÉ
+    "ssd": 40.0,                 # cible
+    "switch_poe": 60.0,          # cible
+    "micro": 25.0,               # cible
+    "batterie_30ah": 46.0,       # RELEVÉ
+    "chargeur": 25.0,            # cible
+    "cablage": 50.0,             # cible
+    "pont_directionnel": 85.0,   # RELEVÉ — la PAIRE
+    "routeur": 40.0,             # cible
+    "ecran_club": 250.0,         # cible — NOUVEAU
+    "mini_pc_club": 200.0,       # cible — NOUVEAU
+}
+
+SOURCE_PRIX: Dict[str, str] = {
+    "camera": "RELEVÉ — Hikrobot MV-CS016 (IMX273, 1440x1080, global shutter), "
+              "en version COULEUR (obligatoire, cf. mesure 27/27 vs 9/27) : "
+              "194 USD par 5-19 pièces sur Alibaba, août 2026 -> 168 €. "
+              "Le prix de la variante GigE (10GC) n'a pas été relevé à part.",
+    "objectif": "cible BUDGET_BOM — monture C, 8 mm. Aucun prix public relevé "
+                "pour un 8 mm destiné à un capteur 1/2.9\".",
+    "filtre": "cible BUDGET_BOM — passe-bande 850 nm / polarisant.",
+    "caisson": "cible BUDGET_BOM — boîtier aluminium IP66.",
+    "trepied": "cible BUDGET_BOM — fixation rigide.",
+    "calculateur": "RELEVÉ — NVIDIA Jetson Orin Nano Super Developer Kit, "
+                   "249 USD prix officiel NVIDIA -> 216 €. ⚠️ forte demande : "
+                   "le prix au comptant peut être un multiple de ce tarif.",
+    "ssd": "cible BUDGET_BOM — NVMe 500 Go.",
+    "switch_poe": "cible BUDGET_BOM. Un TP-Link TL-SG1005P (4 ports PoE, 65 W) "
+                  "est listé à 30,83 £ chez un revendeur britannique : la "
+                  "cible de 60 € est donc prudente.",
+    "micro": "cible BUDGET_BOM — micro USB omnidirectionnel.",
+    "batterie_30ah": "RELEVÉ — LiFePO4 12 V 30 Ah avec BMS, à partir de 46 € "
+                     "TTC (eBay Allemagne, juillet 2026). La cible du "
+                     "BUDGET_BOM était de 130 € : nettement surévaluée.",
+    "chargeur": "cible BUDGET_BOM — chargeur LiFePO4 dédié.",
+    "cablage": "cible BUDGET_BOM — Cat6 extérieur, presse-étoupes, fusibles.",
+    "pont_directionnel": "RELEVÉ — Ubiquiti NanoStation 5AC Loco, ~49 USD "
+                         "l'unité, 450+ Mbit/s annoncés, portée >10 km. "
+                         "La PAIRE = ~98 USD -> 85 €.",
+    "routeur": "cible BUDGET_BOM — routeur WiFi local.",
+    "ecran_club": "cible — écran/TV du club-house. NOUVEAU, aucun prix relevé.",
+    "mini_pc_club": "cible — mini-PC du club-house. NOUVEAU, aucun prix relevé.",
 }
 
 POSTES_NOUVEAUX = ("ecran_club", "mini_pc_club")
+
+
+def prix_releve(poste: str) -> bool:
+    """Ce prix vient-il d'une offre réellement trouvée, ou d'une hypothèse ?"""
+    return SOURCE_PRIX[poste].startswith("RELEVÉ")
 
 
 @dataclass
@@ -285,7 +332,14 @@ class Site:
         ajoute("mini_pc_club", 1, "agrège les terrains, pilote l'écran")
         ajoute("ecran_club", 1, "affichage des scores et du retour caméra")
 
+        for ligne in lignes:
+            ligne["prix_releve"] = prix_releve(ligne["poste"])
+            ligne["source_prix"] = SOURCE_PRIX[ligne["poste"]]
+
         total = round(sum(ligne["total"] for ligne in lignes), 2)
+        releves = round(sum(ligne["total"] for ligne in lignes
+                            if ligne["prix_releve"]), 2)
+        cibles = round(total - releves, 2)
         nouveau = round(sum(ligne["total"] for ligne in lignes
                             if ligne["nouveau"]), 2)
         return {
@@ -295,9 +349,13 @@ class Site:
             "n_terrains": n_terrains,
             "n_pods": n_pods,
             "n_lanceurs": self.n_lanceurs,
-            "avertissement": "Prix cibles de docs/BUDGET_BOM.md — hypothèses de "
-                             "planification, pas des devis. Douane et TVA non "
-                             "comprises sur les commandes hors UE.",
+            "releves": releves,
+            "cibles": cibles,
+            "avertissement": "Aucun de ces prix n'est un devis. Les lignes "
+                             "RELEVÉ viennent d'une offre publique datée (voir "
+                             "SOURCE_PRIX), les autres restent des hypothèses "
+                             "de planification. Douane et TVA non comprises "
+                             "sur les commandes hors UE.",
         }
 
     def to_dict(self) -> Dict:

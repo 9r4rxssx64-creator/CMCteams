@@ -92,6 +92,7 @@ ClayScore_Dossier_Complet/
 │   ├── GUIDE_GRANDE_SURFACE.md  ← sans fil, parcours de chasse, plusieurs terrains
 │   ├── GUIDE_ITALIE_FITAV.md    ← mots italiens, FO/FU, et l'installation à Vintimille
 │   ├── PREVISIONNEL_CLUB.md     ← club entier : 3 terrains distants + club-house (chiffré)
+│   ├── MATERIEL_OPTIMAL.md      ← quoi acheter exactement, prix relevés, pièges de commande
 │   ├── GUIDE_MATERIEL.md        ← CHAQUE pièce : rôle, quoi prendre, liens d'achat, pièges
 │   ├── GUIDE_MONTAGE.md         ← assembler les pods, câbler, placer sur le stand, régler
 │   ├── CHECKLIST_PROTOTYPE.md   ← la marche à suivre pas à pas, de la commande à la démo

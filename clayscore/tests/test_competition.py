@@ -413,3 +413,40 @@ def test_api_alimentation_et_postes(tmp_path):
     assert a["conso_w"] > 0 and "mesure" in a
     p = c.get("/api/postes").json()
     assert "pods" in p and "problemes" in p
+
+
+# --- caméra monochrome : le GO/NO-GO doit l'attraper ---------------------- #
+def _go_args(**over):
+    base = dict(mode="concours", pin_actif=True, cameras_isolees=True,
+                pods_ok=3, pods_total=3, alimentation_ok=True, autonomie_h=12.0,
+                disque_libre_mo=50_000, journal_ok=True, horloge_synchro=True)
+    base.update(over)
+    return base
+
+
+def test_camera_monochrome_refuse_le_depart():
+    from clayscore.officiel import pre_competition_check
+    r = pre_competition_check(**_go_args(couleur_ok=False))
+    assert r.go is False
+    item = next(i for i in r.items if i.cle == "couleur")
+    assert item.ok is False and item.bloquant is True
+    assert "COULEUR" in item.solution
+
+
+def test_couleur_verifiee_laisse_partir():
+    from clayscore.officiel import pre_competition_check
+    r = pre_competition_check(**_go_args(couleur_ok=True))
+    assert r.go is True
+    assert next(i for i in r.items if i.cle == "couleur").ok is True
+
+
+def test_couleur_non_encore_mesuree_nest_pas_cochee_mais_ne_bloque_pas():
+    # On ne coche pas un contrôle qu'on n'a pas fait — mais on ne bloque pas
+    # non plus une partie d'entraînement pour ça.
+    from clayscore.officiel import pre_competition_check
+    r = pre_competition_check(**_go_args(couleur_ok=None))
+    item = next(i for i in r.items if i.cle == "couleur")
+    assert item.ok is False
+    assert item.bloquant is False
+    assert "essai" in item.solution
+    assert r.go is True

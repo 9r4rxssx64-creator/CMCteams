@@ -345,7 +345,33 @@ def qualite_image(img: np.ndarray) -> dict:
     nettete = float(cv2.Laplacian(gris, cv2.CV_64F).var())
     satures = float(np.mean(gris >= 250))     # zones cramées
 
+    # Couleur : le verdict repose sur le test « orange » du plateau. Une image
+    # sans couleur (caméra MONOCHROME, ou réglage saturation à zéro) casse ce
+    # test — et le casse SILENCIEUSEMENT, ce qui est le pire cas.
+    #
+    # MESURÉ sur le banc des 27 scénarios :
+    #   couleur     -> 27/27 (100 %)
+    #   monochrome  ->  9/27 (33 %), et chaque « cassé » devient « manqué »
+    #                  avec une confiance de 0,72 : au-dessus du seuil, donc
+    #                  jamais signalé comme ambigu. Faux, et sûr de lui.
+    #
+    # Seuil choisi sur mesure, pas au jugé : saturation moyenne mesurée à
+    # 18,9 dans le pire cas couleur (contre-jour) et exactement 0,0 en
+    # monochrome. Un seuil à 5 est loin des deux — il ne se déclenche que sur
+    # un flux réellement incolore, pas sur une journée grise.
+    saturation = (float(np.mean(cv2.cvtColor(img, cv2.COLOR_BGR2HSV)[:, :, 1]))
+                  if img.ndim == 3 else 0.0)
+
     problemes = []
+    if saturation < 5.0:
+        problemes.append({
+            "niveau": "bloquant",
+            "quoi": f"Image sans couleur (saturation mesurée {saturation:.1f}) — "
+                    "caméra monochrome ou saturation à zéro. Le plateau est "
+                    "reconnu à sa couleur orange : sans elle, mesuré 9/27 au "
+                    "lieu de 27/27, et les erreurs passent pour des certitudes.",
+            "solution": "Utiliser une caméra COULEUR, ou remonter la saturation "
+                        "dans les réglages de la caméra."})
     if lumiere < 45:
         problemes.append({
             "niveau": "important",
@@ -364,6 +390,8 @@ def qualite_image(img: np.ndarray) -> dict:
             "solution": "Baisser le gain/ISO de la caméra et ouvrir le "
                         "diaphragme. Un grain fort dégrade la reconnaissance."})
     return {"ok": not problemes, "luminosite": round(lumiere, 1),
+            "saturation": round(saturation, 1),
+            "couleur_ok": saturation >= 5.0,
             "bruit": round(bruit, 2), "nettete": round(nettete, 1),
             "nettete_info": "indicateur seul : comparer deux réglages du même "
                             "poste, ne juge pas la mise au point à lui seul",

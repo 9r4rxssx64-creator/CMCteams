@@ -4,7 +4,7 @@
 club-house un peu plus loin qui doit voir les scores et les caméras.**
 
 > Tous les chiffres de cette page sont **calculés par le logiciel**
-> (`clayscore/site.py`), pas tapés à la main. 29 tests vérifient ces calculs.
+> (`clayscore/site.py`), pas tapés à la main. 32 tests vérifient ces calculs.
 > Pour les rejouer : voir § 8.
 
 ---
@@ -17,8 +17,8 @@ club-house un peu plus loin qui doit voir les scores et les caméras.**
 | **38 lanceurs** couverts | 15 + 15 (fosses olympiques) + 8 (parcours) |
 | **10 postes de vue** (caméras) | 3 + 3 + 4 |
 | **Ce qui remonte au club-house** | **12,6 Mbit/s** — score **+ retour caméra** |
-| **Coût matériel total** | **≈ 5 280 €** |
-| **Faisable en 3 fois** | 2 000 € → +1 510 € → +1 770 € |
+| **Coût matériel total** | **≈ 4 611 €** (dont 2 721 € à prix relevés) |
+| **Faisable en 3 fois** | 1 781 € → +1 291 € → +1 539 € |
 
 ---
 
@@ -88,7 +88,7 @@ donc très variées : il faut **voir large**.
 
 | Choix | Décision | Pourquoi |
 |---|---|---|
-| Caméras | **3** (2 en paire + 1 latérale) | La paire mesure la distance, la latérale tranche les cas limites |
+| Caméras | **3, toutes en COULEUR** | ⚠️ **mesuré** : en monochrome le banc tombe de 27/27 à 9/27 — le plateau est reconnu à son orange. Voir `MATERIEL_OPTIMAL` § 2 |
 | Objectif | **8 mm** (pas 12 mm) | Sinon un plateau très latéral sort du champ |
 | Liaison des caméras | **câble PoE**, 30 m | Vidéo brute : jamais sans fil |
 | Alimentation | batterie 30 Ah toujours en ligne + secteur | Aucune coupure possible |
@@ -124,7 +124,7 @@ C'est la partie nouvelle : elle n'existait pas dans le kit « une fosse ».
 | **Mini-PC** | Reçoit les 3 terrains, agrège les scores, pilote l'écran | 200 € |
 | **Écran / TV** | Affiche scores en direct + retour caméra | 250 € |
 | **Routeur** | Réseau du club-house | 40 € |
-| **3 ponts directionnels** (paires) | Une liaison dédiée par terrain | 360 € |
+| **3 ponts directionnels** (paires) | Une liaison dédiée par terrain | 255 € |
 
 **Ce que voit le club-house :**
 - les **scores en direct** des 3 terrains, côte à côte ;
@@ -138,33 +138,34 @@ Tu peux couper le retour vidéo terrain par terrain : sans lui, il ne reste que
 
 ## 6. Le prévisionnel matériel complet
 
-Calculé par `Site.bom()`. Prix cibles de `BUDGET_BOM.md`.
+Calculé par `Site.bom()`. Chaque prix porte sa provenance : voir `MATERIEL_OPTIMAL.md` pour la source et la date de chacun.
 
 | Poste | Qté | Prix unit. | Total |
 |---|---:|---:|---:|
-| Caméra industrielle | 10 | 180 € | 1 800 € |
+| Caméra industrielle **COULEUR** | 10 | 168 € | 1 680 € |
 | Objectif 8 mm | 10 | 35 € | 350 € |
 | Filtre optique | 10 | 15 € | 150 € |
 | Caisson étanche IP66 | 10 | 15 € | 150 € |
 | Trépied / fixation | 10 | 15 € | 150 € |
-| Calculateur (Jetson) | 3 | 280 € | 840 € |
+| Calculateur (Jetson Orin Nano Super) | 3 | 216 € | 648 € |
 | SSD NVMe 500 Go | 3 | 40 € | 120 € |
 | Switch PoE | 3 | 60 € | 180 € |
 | Micro (détection du coup de feu) | 3 | 25 € | 75 € |
-| Batterie LiFePO4 30 Ah | 3 | 130 € | 390 € |
+| Batterie LiFePO4 30 Ah | 3 | 46 € | 138 € |
 | Chargeur LiFePO4 | 3 | 25 € | 75 € |
 | Câblage extérieur / connectique | 3 lots | 50 € | 150 € |
-| Pont WiFi directionnel (paire) | 3 | 120 € | 360 € |
+| Pont directionnel NanoStation 5AC Loco (paire) | 3 | 85 € | 255 € |
 | Routeur club-house | 1 | 40 € | 40 € |
 | **Mini-PC club-house** *(nouveau)* | 1 | 200 € | 200 € |
 | **Écran club-house** *(nouveau)* | 1 | 250 € | 250 € |
-| **TOTAL MATÉRIEL** | | | **5 280 €** |
+| **TOTAL MATÉRIEL** | | | **4 611 €** |
 
-> ⚠️ **Ce ne sont pas des devis.** Ce sont les prix cibles de planification du
-> `BUDGET_BOM`, non confirmés auprès des fournisseurs. **TVA et douane non
-> comprises** sur une commande hors UE (compter +20 % + frais de dossier sur
-> la partie chinoise). Les deux postes marqués *(nouveau)* n'existaient pas
-> dans le budget d'un kit simple — ils apparaissent parce qu'on équipe un club.
+> ⚠️ **Ce ne sont pas des devis.** **2 721 €** correspondent à des offres
+> publiques réellement relevées (caméra, calculateur, batterie, pont) ; les
+> **1 890 €** restants sont encore des hypothèses de planification. Le détail
+> ligne par ligne, avec la source et la date de chaque prix relevé, est dans
+> **`MATERIEL_OPTIMAL.md`**. **TVA et douane non comprises** sur une commande
+> hors UE (+20 % + frais de dossier sur la partie chinoise).
 
 ---
 
@@ -175,9 +176,9 @@ avant de câbler le club.
 
 | Étape | Ce qu'on installe | Coût de l'étape | Cumul |
 |---|---|---:|---:|
-| **1** | Fosse 1 seule (+ club-house déjà complet) | **2 000 €** | 2 000 € |
-| **2** | Fosse 2 | **+1 510 €** | 3 510 € |
-| **3** | Parcours de chasse | **+1 770 €** | 5 280 € |
+| **1** | Fosse 1 seule (+ club-house déjà complet) | **1 781 €** | 1 781 € |
+| **2** | Fosse 2 | **+1 291 €** | 3 072 € |
+| **3** | Parcours de chasse | **+1 539 €** | 4 611 € |
 
 L'étape 1 contient déjà l'écran, le mini-PC et le premier pont : dès le premier
 week-end, **le club-house affiche les scores de la fosse 1**. Les étapes 2 et 3
@@ -200,7 +201,7 @@ site.add(Terrain("CHASSE", "parcours", distance_club_m=700, n_lanceurs=8,
                  retour_camera="apercu", pods=[...]))
 
 site.debit_club_mbps()   # -> 12.6
-site.bom()["total"]      # -> 5280.0
+site.bom()["total"]      # -> 4611.0
 site.check()             # -> les problèmes, en français, avec la solution
 ```
 
