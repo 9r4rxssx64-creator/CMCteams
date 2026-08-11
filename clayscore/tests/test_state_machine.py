@@ -278,3 +278,32 @@ def test_mode_entrainement_par_defaut():
 def test_mode_inconnu_refuse():
     with pytest.raises(ValueError):
         Partie("fosse_universelle", ["A"], serie=2, mode="apero")
+
+
+# --- noms italiens (FITAV) : Kevin tire à Vintimille --------------------- #
+@pytest.mark.parametrize("italien,attendu", [
+    ("fossa_universale", "fosse_universelle"),
+    ("fossa_olimpica", "fosse_olympique"),
+    ("trap", "fosse_olympique"),
+    ("percorso_di_caccia", "parcours"),
+    ("percorso_caccia", "parcours"),
+    ("compak_sporting", "compak"),
+])
+def test_nom_italien_donne_la_meme_discipline(italien, attendu):
+    assert get_discipline(italien) is get_discipline(attendu)
+
+
+def test_une_partie_se_joue_avec_le_nom_italien():
+    p = Partie("fossa_olimpica", ["Kevin"], serie=3)
+    assert p.discipline.key == "fosse_olympique"
+    for _ in range(3):
+        p.submit_verdict("casse")
+    assert p.scorecard()[0]["points"] == 3
+    assert p.finished
+
+
+def test_elica_non_implementee_leve_une_erreur():
+    # « Elica » (ZZ) existe en Italie mais n'est PAS implémentée : on refuse
+    # au lieu de scorer avec les règles d'une autre discipline.
+    with pytest.raises(ValueError):
+        get_discipline("elica")
