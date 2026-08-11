@@ -41,12 +41,17 @@ def club_reference() -> Site:
                 for i in range(n)]
 
     s = Site(nom="Club 3 terrains")
+    # 2 caméras de diffusion par terrain : une sur le TIREUR, une sur la
+    # ZONE DE VOL. Elles ne jugent pas — elles alimentent l'écran du bar.
     s.add(Terrain("FOSSE-1", "fosse_olympique", distance_club_m=250,
-                  retour_camera="apercu", pods=pods("F1")))
+                  retour_camera="apercu", cameras_diffusion=2,
+                  pods=pods("F1")))
     s.add(Terrain("FOSSE-2", "fosse_olympique", distance_club_m=280,
-                  retour_camera="apercu", pods=pods("F2")))
+                  retour_camera="apercu", cameras_diffusion=2,
+                  pods=pods("F2")))
     s.add(Terrain("CHASSE", "parcours", distance_club_m=700, n_lanceurs=8,
-                  retour_camera="apercu", pods=pods("CH", 4)))
+                  retour_camera="apercu", cameras_diffusion=2,
+                  pods=pods("CH", 4)))
     return s
 
 

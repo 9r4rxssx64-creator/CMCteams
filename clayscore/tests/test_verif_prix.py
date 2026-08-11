@@ -133,7 +133,9 @@ def test_les_postes_a_prix_releve_sont_tous_surveilles():
     from clayscore.site import PRIX, prix_releve
     surveilles = {o.poste for o in OFFRES}
     releves = {p for p in PRIX if prix_releve(p)}
-    manquants = releves - surveilles - {"objectif"}   # objectif : lot, pas de fiche
+    # « objectif » et « camera_diffusion » se commandent sur une page de
+    # recherche (lot d'optiques, gamme de caméras) : aucune fiche unique.
+    manquants = releves - surveilles - {"objectif", "camera_diffusion"}
     assert not manquants, f"prix relevé sans page de contrôle : {manquants}"
 
 

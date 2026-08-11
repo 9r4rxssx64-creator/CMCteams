@@ -45,6 +45,13 @@ Un lien 🛒 mène à **la fiche du produit** (un clic, panier). Un lien 🔎 m�
 |  | Basler acA1440-73gc (équivalent UE) | UE | 🟢 371.77 € | [🛒 Acheter](https://www.baslerweb.com/en/shop/aca1440-73gc/) | Comparatif : 2,7x le prix du Hikrobot pour +8 img/s dont on n'a pas besoin. Écarté. |
 |  | AliExpress — Hikrobot MV-CS016-10GC | CN | 🟡 — | [🛒 Acheter](https://www.aliexpress.com/item/1005009578278144.html) | Même référence, à l'unité : utile pour commander 1 ou 2 caméras à l'étape 0 sans passer par un minimum de commande. |
 
+### Camera diffusion — 6 à acheter
+
+| | Vendeur | Pays | Prix unitaire | Lien | Remarque |
+|:--:|---|:--:|---:|---|---|
+| **✔** | LDLC — caméra IP PoE Reolink (IP67, RTSP) | FR | 🟢 59.00 € | [🔎 Chercher](https://www.ldlc.com/en/computing/networking/ip-camera/c4305/+fb-C999953630+fc1062-1.html) | À partir de 59 €. Prendre un modèle **PoE** (même câble et même switch que les caméras d'arbitrage) et **RTSP** (c'est ce flux que l'écran du club affiche). |
+|  | Reolink — boutique officielle | UE | 🟡 — | [🔎 Chercher](https://store.reolink.com/poe-ip-cameras/) | Repli : gamme complète, IP67, flux RTSP documenté. |
+
 ### Chargeur — 3 à acheter
 
 | | Vendeur | Pays | Prix unitaire | Lien | Remarque |
@@ -100,7 +107,7 @@ Un lien 🛒 mène à **la fiche du produit** (un clic, panier). Un lien 🔎 m�
 |:--:|---|:--:|---:|---|---|
 | **✔** | LDLC — SSD M.2 NVMe 500 Go | FR | 🟡 40.00 € | [🔎 Chercher](https://www.ldlc.com/recherche/ssd%20m.2%20nvme%20500%20go/) |  |
 
-### Switch poe — 3 à acheter
+### Switch poe — 6 à acheter
 
 | | Vendeur | Pays | Prix unitaire | Lien | Remarque |
 |:--:|---|:--:|---:|---|---|
@@ -203,6 +210,13 @@ C'est ce qu'on exécute. Grouper chez un même vendeur évite de payer plusieurs
 | ssd | 3 | 40.00 € | 120.00 € | [🔎 Chercher](https://www.ldlc.com/recherche/ssd%20m.2%20nvme%20500%20go/) |
 | **Sous-total LDLC — SSD M.2 NVMe 500 Go** | | | **120.00 €** | |
 
+### LDLC — caméra IP PoE Reolink (IP67, RTSP)
+
+| Pièce | Qté | P.U. | Total | Lien |
+|---|---:|---:|---:|---|
+| camera diffusion | 6 | 59.00 € | 354.00 € | [🔎 Chercher](https://www.ldlc.com/en/computing/networking/ip-camera/c4305/+fb-C999953630+fc1062-1.html) |
+| **Sous-total LDLC — caméra IP PoE Reolink (IP67, RTSP)** | | | **354.00 €** | |
+
 ### LDLC — mini-PC Intel N100
 
 | Pièce | Qté | P.U. | Total | Lien |
@@ -221,8 +235,8 @@ C'est ce qu'on exécute. Grouper chez un même vendeur évite de payer plusieurs
 
 | Pièce | Qté | P.U. | Total | Lien |
 |---|---:|---:|---:|---|
-| switch poe | 3 | 60.00 € | 180.00 € | [🛒 Acheter](https://linovision.com/products/5-ports-full-gigabit-poe-switch-with-dc12v-dc24v-dc48v-input) |
-| **Sous-total Linovision — switch PoE 5 ports, entrée DC 12-48 V** | | | **180.00 €** | |
+| switch poe | 6 | 60.00 € | 360.00 € | [🛒 Acheter](https://linovision.com/products/5-ports-full-gigabit-poe-switch-with-dc12v-dc24v-dc48v-input) |
+| **Sous-total Linovision — switch PoE 5 ports, entrée DC 12-48 V** | | | **360.00 €** | |
 
 ### eBay DE — LiFePO4 12 V 30 Ah avec BMS
 
@@ -238,11 +252,11 @@ C'est ce qu'on exécute. Grouper chez un même vendeur évite de payer plusieurs
 | | Montant |
 |---|---:|
 | **Club 3 terrains + club-house — configuration optimal** | |
-| Total HT | **6017.32 €** |
+| Total HT | **6551.32 €** |
 | dont 🇨🇳 Chine | 2933.58 € |
-| dont 🇪🇺 Europe | 3083.74 € |
+| dont 🇪🇺 Europe | 3617.74 € |
 | TVA 20 % sur la part chinoise | +586.72 € |
-| **TOTAL LIVRÉ** | **6604.04 €** |
+| **TOTAL LIVRÉ** | **7138.04 €** |
 
 > ⚠️ **Ce devis n'engage aucun vendeur.** Il est construit à partir de prix publics, dont certains lus sur la fiche (✅) et d'autres vus en recherche (🟢) ou estimés (🟡). Les **frais de port** et les **frais de dossier de douane** (15-30 € par colis) ne sont PAS compris. Sur 13 caméras, demander le palier « 20-99 pièces » au vendeur : c'est 3 € de moins par pièce.
 

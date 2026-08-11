@@ -254,8 +254,8 @@ def test_les_prix_releves_sont_distingues_des_hypotheses():
     from clayscore.site import prix_releve
     releves = {p for p in PRIX if prix_releve(p)}
     # Ceux-là ont une offre publique datée derrière eux.
-    assert releves == {"camera", "objectif", "calculateur", "batterie_30ah",
-                       "pont_directionnel"}
+    assert releves == {"camera", "camera_diffusion", "objectif",
+                       "calculateur", "batterie_30ah", "pont_directionnel"}
     # Les postes inventés pour le club-house n'en font PAS partie.
     assert not any(prix_releve(p) for p in ("ecran_club", "mini_pc_club"))
 
@@ -356,3 +356,77 @@ def test_un_import_coute_la_tva_en_plus():
     # La caméra reste gagnante même importée taxée.
     from clayscore.site import ORIGINE
     assert cout_import(ORIGINE["camera"]["chine"]) < ORIGINE["camera"]["ue"]
+
+
+# --- caméras de DIFFUSION : montrer, pas juger --------------------------- #
+def _terrain_avec_diffusion(n=2):
+    return Terrain("FO", "fosse_olympique", distance_club_m=250,
+                   retour_camera="apercu", cameras_diffusion=n,
+                   pods=_pods("FO"))
+
+
+def test_une_camera_de_diffusion_ajoute_son_direct_au_club():
+    from clayscore.site import DEBIT_DIFFUSION_MBPS
+    sans = Terrain("FO", "fosse_olympique", distance_club_m=250, pods=_pods("A"))
+    avec = _terrain_avec_diffusion(2)
+    assert avec.debit_vers_club_mbps() == pytest.approx(
+        sans.debit_vers_club_mbps() + 2 * DEBIT_DIFFUSION_MBPS)
+
+
+def test_la_diffusion_ne_remplace_pas_l_arbitrage():
+    # Le score et le ralenti continuent de remonter : la diffusion s'AJOUTE.
+    t = _terrain_avec_diffusion(1)
+    assert t.debit_vers_club_mbps() == pytest.approx(0.2 + 4.0 + 4.0)
+
+
+def test_trois_terrains_avec_deux_cameras_de_diffusion_tiennent_encore():
+    s = Site([Terrain(f"T{i}", "fosse_olympique", distance_club_m=250,
+                      cameras_diffusion=2, pods=_pods(f"T{i}"))
+              for i in range(3)])
+    # 3 x (0,2 + 4 + 8) = 36,6 Mbit/s sur des ponts à 100 : ça passe.
+    assert s.debit_club_mbps() == pytest.approx(36.6)
+    assert _bloquants(s.check()) == []
+
+
+def test_un_nombre_negatif_de_cameras_est_refuse():
+    with pytest.raises(ValueError):
+        Terrain("T", "fosse_olympique", distance_club_m=10,
+                cameras_diffusion=-1, pods=_pods("T"))
+
+
+# --- le piège du switch PoE ---------------------------------------------- #
+def test_au_dela_de_quatre_cameras_il_faut_un_deuxieme_switch():
+    from clayscore.site import PORTS_POE_PAR_SWITCH
+    assert PORTS_POE_PAR_SWITCH == 4
+    t = _terrain_avec_diffusion(2)          # 3 pods + 2 diffusion = 5
+    assert t.cameras_totales == 5
+    assert t.switchs_poe() == 2
+    avis = [p for p in t.check() if "ports PoE" in p["quoi"]]
+    assert len(avis) == 1 and avis[0]["niveau"] == "important"
+
+
+def test_quatre_cameras_tiennent_sur_un_seul_switch():
+    t = Terrain("T", "fosse_olympique", distance_club_m=100,
+                cameras_diffusion=1, pods=_pods("T"))
+    assert t.cameras_totales == 4 and t.switchs_poe() == 1
+    assert not [p for p in t.check() if "ports PoE" in p["quoi"]]
+
+
+def test_le_devis_facture_les_switchs_selon_les_cameras_pas_les_terrains():
+    s = Site([_terrain_avec_diffusion(2)])
+    lignes = {ln["poste"]: ln for ln in s.bom("minimum")["lignes"]}
+    assert lignes["camera_diffusion"]["qte"] == 2
+    assert lignes["switch_poe"]["qte"] == 2      # et non 1 par terrain
+    assert "ports alimentés" in lignes["switch_poe"]["note"]
+
+
+def test_la_camera_de_diffusion_coute_bien_moins_cher():
+    # Elle ne juge pas : ni obturateur global ni couleur calibrée exigés.
+    assert PRIX["camera_diffusion"] < PRIX["camera"] / 2
+
+
+def test_sans_diffusion_aucune_ligne_de_diffusion_dans_le_devis():
+    s = Site([_fosse("F1")])
+    postes = {ln["poste"] for ln in s.bom("minimum")["lignes"]}
+    assert "camera_diffusion" not in postes
+    assert s.bom("minimum")["cameras_diffusion"] == 0
