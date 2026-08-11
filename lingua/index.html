@@ -230,7 +230,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .rig-lid.lr{left:var(--lr-l,51.3%);top:var(--lr-t,27.2%);width:var(--lr-w,17.4%);height:var(--lr-h,15.2%)}
 /* Geometrie PAR MASCOTTE : les paupieres et la bouche sont posees en %, donc elles doivent
    suivre le visage. Valeurs par defaut = l'abeille ; l'ane a les siennes (mesurees sur son image). */
-.bee-rig[data-mascot="donkey"]{--lid:#cfc6bd}
+.bee-rig[data-mascot="donkey"]{
+  --lid:#a38470;                 /* pelage MESURÉ autour des yeux : rgb(163,132,112) */
+  --ll-l:32.2%;--ll-t:35.6%;--ll-w:11.2%;--ll-h:13.1%;
+  --lr-l:55.8%;--lr-t:35.6%;--lr-w:11.4%;--lr-h:13.1%;
+  --mo-l:50%;--mo-t:55.7%
+}
 /* Selecteur de mascotte (reglages) — cibles tactiles larges, lisibles sur iPhone */
 .masc-row{display:flex;gap:10px;margin-top:8px}
 .masc-pick{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;min-height:112px;border-radius:14px;border:2px solid transparent;background:var(--card2);color:#cfe0ee;font:inherit;cursor:pointer}
