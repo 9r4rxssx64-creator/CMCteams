@@ -26,7 +26,7 @@ from ..engine import MatchEngine
 from ..game.disciplines import list_disciplines
 from ..storage import Storage
 
-VERSION = "0.9.0"
+VERSION = "0.10.0"
 
 # Chemins projet.
 _PKG_ROOT = Path(__file__).resolve().parent.parent.parent  # clayscore/
@@ -311,6 +311,31 @@ def create_app(clips_dir: Optional[str] = None,
     @app.get("/api/postes")
     def postes():
         return app.state.fleet.to_dict()
+
+    @app.get("/api/image/qualite")
+    def image_qualite():
+        """L'image des caméras est-elle exploitable ? Sinon, quoi régler ?
+
+        Mesuré : la précision chute si l'image est trop sombre, trop claire ou
+        trop bruitée — et ces trois défauts se corrigent au réglage de la
+        caméra. Autant les voir AVANT l'épreuve.
+        """
+        from ..vision.detector import qualite_image
+        pend = engine().pending
+        if pend is None or not pend.clip_url:
+            return {"ok": None,
+                    "detail": "Lance un plateau : la qualité s'évalue sur une "
+                              "vraie image de la caméra."}
+        src = clips / Path(pend.clip_url).name
+        if not src.exists():
+            raise HTTPException(404, "Clip source introuvable.")
+        import cv2 as _cv2
+        cap = _cv2.VideoCapture(str(src))
+        ok, img = cap.read()
+        cap.release()
+        if not ok:
+            raise HTTPException(500, "Image illisible.")
+        return qualite_image(img)
 
     # --- réseau, version, santé ------------------------------------------ #
     @app.get("/api/network")

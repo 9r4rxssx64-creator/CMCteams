@@ -3,7 +3,7 @@
 **Objectif : « zéro erreur, qualité commercialisable ». Voici ce qui a été
 cherché, ce qui a été trouvé, ce qui a été corrigé — et ce qui reste vrai.**
 
-Date : 11/08/2026 · Version : 0.9.0
+Date : 11/08/2026 · Version : 0.10.0
 
 > **Règle appliquée : mesurer, jamais estimer.** Chaque chiffre ci-dessous
 > vient d'une commande exécutée, pas d'une impression.
@@ -17,7 +17,7 @@ Tous corrigés, chacun avec un test qui empêche le retour du bug.**
 
 | | Avant | Après |
 |---|---|---|
-| Tests automatiques | 130 | **210** |
+| Tests automatiques | 130 | **224** |
 | Alertes de qualité de code | 10 | **0** |
 | Précision (lancements / coups de feu / verdicts) | 27/27 · 27/27 · 27/27 | **inchangée : 100 %** |
 | Recette de bout en bout | — | **18/18 contrôles** |
@@ -199,6 +199,97 @@ ligne), et refus motivé des installations sans fil impossibles.
 
 ---
 
+## Passe 3 — optimisation et robustesse (même journée)
+
+Deux défauts **majeurs** trouvés, tous deux invisibles sur le banc de test
+habituel — parce qu'il teste des images propres, en petite résolution.
+
+### 🔴 7. Le système ne tenait PAS le temps réel sur le matériel prévu
+
+Le banc tourne sur des clips 240×180. Les vraies caméras font **1440×1080**,
+soit **27× plus de pixels**. Mesuré à cette résolution :
+
+| | images/s | 3 caméras à 65 fps (195 img/s) |
+|---|---:|---|
+| **Avant** | **89** | ❌ **impossible** |
+| **Après** | **288** | ✅ 48 % de marge |
+
+**Cause** : la soustraction de fond représente **73 %** du temps d'analyse, et
+son coût suit le nombre de pixels.
+
+**Correction** : les blobs sont cherchés sur une image **réduite** (rapide),
+mais la **couleur reste mesurée en pleine résolution** — c'est elle qui décide
+du verdict, on n'accélère que la recherche, jamais la décision.
+
+**Un piège évité** : mesurer la précision sur le banc habituel n'aurait rien
+prouvé — en 240×180, la réduction ne se déclenche jamais. J'ai donc regénéré
+les clips en 1440×1080 pour exercer le vrai chemin : **18/18 avec réduction,
+18/18 sans**. Sans perte, sur le bon chemin de code.
+
+**Une optimisation refusée** : chercher les blobs en niveaux de gris serait
+encore 1,8× plus rapide. Mesuré, la précision tombe de 27/27 à 26/27 — un
+plateau **manqué** devenant « cassé », donc un point attribué à tort. Refusé
+et documenté dans le code : aucun gain de vitesse ne vaut une erreur
+d'arbitrage.
+
+### 🔴 8. Le système devenait aveugle à la tombée du jour
+
+Test de robustesse : on dégrade les images comme le ferait une vraie journée
+(pénombre, grain, surexposition) et on regarde où ça casse.
+
+**Résultat avant correction** : à **−40 % et −60 % de lumière**, la précision
+tombait à **33 %** — c'est-à-dire le hasard. Tous les verdicts devenaient
+MANQUÉ. Et c'est **la fin de journée, quand les clubs tirent le plus.**
+
+**Cause racine** : le test de couleur utilisait des seuils **absolus**
+(« rouge > 140 »). En basse lumière, le rouge passe sous le seuil et le
+plateau cesse d'être « orange » pour le programme.
+
+**Correction** : on ajoute un test fondé sur la **teinte**, qui ne change pas
+quand la lumière baisse — un plateau orange reste orange, simplement plus
+sombre. Bornes **choisies sur mesure**, pas au jugé : distributions relevées
+sur les vrais clips (plateau en teinte 10-19, feuillage de forêt à partir de
+18, ciel vers 100-106). Une borne à 25 attrapait la forêt.
+
+| Condition (27 clips chacune) | Avant | Après |
+|---|---|---|
+| Conditions propres | 27/27 | **27/27** |
+| Sous-exposé −40 % | 9/27 ❌ | **27/27** ✅ |
+| Très sombre −60 % | 9/27 ❌ | **27/27** ✅ |
+| Flou de mise au point | 27/27 | **27/27** |
+| Bruit capteur fort | 27/27 | 23/27 |
+| Surexposé +50 % | 27/27 | 25/27 *(0 point donné à tort)* |
+
+**Le compromis est assumé et mesuré**, pas subi : une image trop claire ou
+trop bruitée **se corrige au réglage de la caméra** (diaphragme, temps de
+pose, gain) ; la tombée du jour, non. Quatre variantes ont été comparées
+chiffres en main avant de retenir celle-ci — c'est la seule qui supprime
+aussi le point attribué à tort.
+
+### 🟠 9. Ces défauts de réglage sont maintenant détectés AVANT l'épreuve
+
+Puisque pénombre, grain et surexposition se corrigent au réglage, le système
+les **mesure et les signale** — avec le geste qui corrige, dans l'onglet
+« Système » de la tablette. Zéro faux avertissement sur les trois fonds.
+
+**Une alarme volontairement retirée** : je voulais aussi détecter une mise au
+point ratée. Mesuré : un **ciel parfaitement net score 3,8** et une **forêt
+franchement floue score 2,0** — les valeurs se chevauchent, parce que ce
+chiffre dépend du contenu de la scène autant que de la netteté. Aucun seuil
+ne peut trancher sur une image isolée. **Plutôt que de livrer un contrôle qui
+crie au loup sur un beau ciel dégagé, la valeur est affichée comme simple
+indicateur** — utile pour comparer deux réglages du même poste, pas pour
+juger seule.
+
+### 🟡 Un test instable corrigé
+
+Le premier test de performance passait seul et échouait en suite complète
+(machine chargée). Un test instable est pire que pas de test : il mesure
+désormais le meilleur de 3 essais, et le garde-fou principal porte sur le
+**rapport** avant/après, qui ne dépend pas de la machine.
+
+---
+
 ## Auto-critique — ce que cet audit ne prouve pas
 
 **Le point le plus faible** : tout reste vérifié **en simulation**. Les vidéos
@@ -234,13 +325,25 @@ sont générées par ordinateur. La précision de 100 % est celle du simulateur,
   et testé en logiciel**, mais le calculateur déporté n'a jamais tourné :
   c'est du matériel non acheté. Les portées sans fil sont des ordres de
   grandeur, pas des mesures.
+- Les **288 images/s** sont mesurées sur cette machine de développement. Un
+  Jetson est plus lent (ARM) : divisé par 3, on retomberait à ~96 img/s, sous
+  le besoin de 195. **À vérifier sur le vrai Jetson** — et si le compte n'y
+  est pas, le levier existe déjà : la carte graphique du Jetson (chemin
+  TensorRT du jalon 8) n'est pas encore utilisée pour la détection.
+- La **robustesse est mesurée sur des dégradations simulées** (assombrissement,
+  bruit gaussien). Une vraie fin de journée apporte aussi des couleurs qui
+  changent, des ombres longues et des contre-jours rasants. Le sens de la
+  correction est certain ; l'ampleur reste à confirmer sur de vraies images.
+- Le **bruit capteur fort reste un point faible** (23/27). Il se corrige en
+  baissant le gain de la caméra — le système le signale — mais je n'ai pas
+  trouvé de correctif logiciel sans coût ailleurs.
 
 ---
 
 ## Pour rejouer cet audit
 
 ```bash
-python3 -m pytest -q                    # 210 tests
+python3 -m pytest -q                    # 224 tests
 python3 -m tools.bench --all            # précision mesurée
 ruff check clayscore tools tests        # qualité de code
 node --check webapp/app.js              # syntaxe de l'appli tablette

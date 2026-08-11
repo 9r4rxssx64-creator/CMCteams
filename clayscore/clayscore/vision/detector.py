@@ -52,17 +52,81 @@ class DetectorConfig:
     burst_area_frac: float = 0.0009   # surface totale en zone = rafale (no-bird)
     confirm_frames: int = 2           # trames consécutives pour confirmer
     reset_gap_frames: int = 5         # trames sans cible pour réarmer
+    # OPTIMISATION (mesurée) : la soustraction de fond coûte 73 % du temps
+    # d'analyse et son coût croît avec le nombre de pixels. En 1440x1080, le
+    # pipeline plafonnait à 132 images/s alors que 3 caméras à 65 fps en
+    # exigent 195 : il ne tenait PAS le temps réel.
+    #
+    # On cherche donc les blobs sur une image RÉDUITE (rapide), puis on mesure
+    # la couleur sur l'image PLEINE résolution, là où la précision compte
+    # vraiment (c'est l'orange qui décide du verdict).
+    #
+    # 0 = désactivé (traitement pleine résolution).
+    detect_max_pixels: int = 640 * 480
+    # Chercher les blobs en niveaux de gris serait encore 1,8x plus rapide,
+    # MAIS c'est REFUSÉ par défaut : mesuré, la précision tombe de 27/27 à
+    # 26/27 — un plateau manqué devient « cassé », soit un point attribué à
+    # tort. Un gain de vitesse ne vaut jamais une erreur d'arbitrage.
+    detect_gray: bool = False
 
 
 def _orange_ratio(bgr_roi: np.ndarray) -> float:
-    """Fraction de pixels orange (plateau) dans une ROI BGR."""
+    """Fraction de pixels orange (plateau) dans une ROI BGR.
+
+    Test fondé sur la TEINTE, pas sur la luminosité.
+
+    L'ancienne version utilisait des seuils absolus (« rouge > 140 »). Mesuré :
+    à −60 % de lumière — c'est-à-dire une fin de journée, quand les clubs
+    tirent le plus — le plateau cessait d'être « orange » pour le programme,
+    et **tous** les verdicts devenaient MANQUÉ (précision effondrée à 33 %).
+
+    La teinte, elle, ne change pas quand la lumière baisse : un plateau orange
+    reste orange, simplement plus sombre. On exige donc une teinte dans la
+    bande orange, une couleur franche (saturation), et juste assez de lumière
+    pour que la mesure ait un sens.
+    """
     if bgr_roi.size == 0:
         return 0.0
+
+    # (1) Test en niveaux BGR — solide en pleine lumière et sur image bruitée,
+    #     mais il lâche quand la lumière baisse (le rouge passe sous le seuil).
     b = bgr_roi[..., 0].astype(np.int32)
     g = bgr_roi[..., 1].astype(np.int32)
     r = bgr_roi[..., 2].astype(np.int32)
-    mask = (r > 140) & (g > 55) & (g < 190) & (b < 130) & (r - b > 50)
-    return float(mask.mean())
+    par_niveaux = (r > 140) & (g > 55) & (g < 190) & (b < 130) & (r - b > 50)
+
+    # (2) Test en TEINTE — insensible à la baisse de lumière (un plateau
+    #     orange reste orange, simplement plus sombre), mais moins fiable
+    #     quand la couleur est délavée (surexposition) ou très bruitée.
+    hsv = cv2.cvtColor(bgr_roi, cv2.COLOR_BGR2HSV)
+    hh = hsv[..., 0].astype(np.int32)     # teinte 0-179 (OpenCV)
+    ss = hsv[..., 1].astype(np.int32)     # saturation 0-255
+    vv = hsv[..., 2].astype(np.int32)     # luminosité 0-255
+    # Bornes CHOISIES SUR MESURE (distributions relevées sur les vrais clips) :
+    # le plateau est en teinte 10-19 sur les trois fonds, le feuillage d'une
+    # forêt commence à 18, le ciel est vers 100-106. Une borne à 25 attrapait
+    # la forêt (précision tombée à 25/27) ; 17 sépare proprement.
+    # L'écart rouge-bleu est exigé AUSSI ici : il survit à la baisse de
+    # lumière (il est proportionnel), mais pas au bruit ni au délavage. C'est
+    # lui qui empêche du bruit d'être pris pour un plateau — mesuré, il fait
+    # passer le bruit fort de 21/27 à 23/27 et supprime le point attribué à
+    # tort en surexposition.
+    par_teinte = ((hh >= 3) & (hh <= 17) & (ss >= 80) & (vv >= 30)
+                  & (r - b > 50))
+
+    # Les deux tests se complètent : chacun couvre l'angle mort de l'autre.
+    # MESURÉ sur 27 clips par condition (voir docs/AUDIT_QUALITE.md) :
+    #                        niveaux seuls   les deux
+    #   conditions propres      27/27          27/27
+    #   sous-exposé -40 %        9/27  <<<     27/27
+    #   très sombre -60 %        9/27  <<<     27/27
+    #   bruit capteur fort      27/27          23/27
+    #   surexposé +50 %         27/27          25/27 (0 point donné à tort)
+    # Le compromis est assumé : une image trop claire ou trop bruitée se
+    # corrige au réglage de la caméra (diaphragme, temps de pose) et le
+    # système le signale AVANT l'épreuve ; la tombée du jour, elle, ne se
+    # corrige pas — et c'est justement quand les clubs tirent.
+    return float((par_niveaux | par_teinte).mean())
 
 
 class MotionDetector:
@@ -77,20 +141,40 @@ class MotionDetector:
         )
         self._kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         self._n = 0
+        self._scale = 1.0        # facteur de réduction réellement appliqué
 
     @property
     def n_processed(self) -> int:
         return self._n
 
     def process(self, frame: Frame) -> List[Detection]:
-        """Renvoie les détections de cette trame (vide pendant le warmup)."""
+        """Renvoie les détections de cette trame (vide pendant le warmup).
+
+        Les coordonnées renvoyées sont TOUJOURS en pleine résolution, même si
+        la détection a travaillé sur une image réduite : le reste du programme
+        n'a pas à s'en soucier.
+        """
         img = frame.image
         h, w = img.shape[:2]
         area_img = float(w * h)
 
+        # Réduction éventuelle, uniquement pour la recherche de blobs.
+        small = img
+        cap = int(self.cfg.detect_max_pixels or 0)
+        if self.cfg.detect_gray and small.ndim == 3:
+            small = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        if cap > 0 and w * h > cap:
+            self._scale = float(np.sqrt(cap / float(w * h)))
+            small = cv2.resize(small, (max(2, int(w * self._scale)),
+                                       max(2, int(h * self._scale))),
+                               interpolation=cv2.INTER_LINEAR)
+        else:
+            self._scale = 1.0
+        inv = 1.0 / self._scale        # pour revenir en pleine résolution
+
         # Pendant le warmup on apprend vite le fond (learningRate élevé).
         lr = 0.5 if self._n < self.cfg.warmup_frames else -1
-        fg = self._bg.apply(img, learningRate=lr)
+        fg = self._bg.apply(small, learningRate=lr)
         self._n += 1
         if self._n <= self.cfg.warmup_frames:
             return []
@@ -108,12 +192,22 @@ class MotionDetector:
 
         for lbl in range(1, n_labels):
             x, y, bw, bh, area = stats[lbl]
+            # Remise à l'échelle : surfaces en pixels² -> facteur inv².
+            area = float(area) * inv * inv
             if area < noise_min:
                 continue
             cx, cy = centroids[lbl]
+            cx *= inv
+            cy *= inv
+            x = int(x * inv)
+            y = int(y * inv)
+            bw = max(1, int(bw * inv))
+            bh = max(1, int(bh * inv))
             # Rondeur via le contour de la boîte englobante (approx rapide).
             perim = 2.0 * (bw + bh)
             circ = (4.0 * np.pi * area / (perim * perim)) if perim > 0 else 0.0
+            # La couleur est TOUJOURS mesurée en pleine résolution : c'est
+            # l'orange qui décide du verdict, on ne dégrade pas ce signal.
             roi = img[y:y + bh, x:x + bw]
             oratio = _orange_ratio(roi)
             is_clay = (
@@ -212,3 +306,65 @@ def count_launches(source: VideoSource,
             dets = detector.process(frame)
             counter.update(frame.index, dets)
     return counter.events if counter else []
+
+
+# --- contrôle de la qualité d'image (réglage caméra) ---------------------- #
+def qualite_image(img: np.ndarray) -> dict:
+    """L'image est-elle exploitable ? Sinon, que faut-il régler ?
+
+    Mesuré : la précision chute quand l'image est trop sombre, trop claire ou
+    trop bruitée. Ces trois défauts se corrigent **au réglage de la caméra**
+    (diaphragme, temps de pose, gain) — encore faut-il les voir. D'où ce
+    contrôle, affiché avant l'épreuve plutôt que découvert au 20ᵉ plateau.
+
+    Retourne des mesures RÉELLES (pas des estimations) et, pour chaque défaut,
+    le geste qui le corrige.
+    """
+    if img is None or img.size == 0:
+        return {"ok": False, "problemes": [{
+            "niveau": "bloquant", "quoi": "Aucune image reçue de la caméra.",
+            "solution": "Vérifier le câble et l'alimentation du poste."}]}
+
+    gris = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+    lumiere = float(np.mean(gris))
+    # Bruit : écart-type de l'image moins sa version lissée (le lissage retire
+    # le signal, il ne reste que le grain).
+    bruit = float(np.std(gris.astype(np.float32)
+                         - cv2.GaussianBlur(gris, (5, 5), 0).astype(np.float32)))
+    # Netteté : mesurée et RAPPORTÉE, mais volontairement SANS alarme.
+    #
+    # Mesuré : un ciel parfaitement net score 3,8 ; une forêt franchement
+    # floue score 2,0. Les valeurs se chevauchent, parce que ce chiffre
+    # dépend du CONTENU de la scène autant que de la mise au point. Aucun
+    # seuil ne peut donc séparer « net » de « flou » sur une image isolée.
+    #
+    # Plutôt qu'un contrôle qui crierait au loup sur un beau ciel dégagé, on
+    # affiche la valeur comme indicateur : la mise au point se règle à l'œil
+    # à l'installation (plateau tenu à 25-30 m — voir GUIDE_MONTAGE), et ce
+    # chiffre sert à COMPARER deux réglages du même poste, pas à juger seul.
+    nettete = float(cv2.Laplacian(gris, cv2.CV_64F).var())
+    satures = float(np.mean(gris >= 250))     # zones cramées
+
+    problemes = []
+    if lumiere < 45:
+        problemes.append({
+            "niveau": "important",
+            "quoi": f"Image très sombre (luminosité moyenne {lumiere:.0f}/255).",
+            "solution": "Ouvrir le diaphragme, ou rallonger un peu le temps de "
+                        "pose (sans dépasser 1/1000 s : le plateau deviendrait flou)."})
+    if satures > 0.08:
+        problemes.append({
+            "niveau": "important",
+            "quoi": f"Image surexposée ({satures*100:.0f} % de zones cramées).",
+            "solution": "Fermer le diaphragme ou raccourcir le temps de pose."})
+    if bruit > 8.0:
+        problemes.append({
+            "niveau": "important",
+            "quoi": f"Image bruitée (grain mesuré {bruit:.1f}).",
+            "solution": "Baisser le gain/ISO de la caméra et ouvrir le "
+                        "diaphragme. Un grain fort dégrade la reconnaissance."})
+    return {"ok": not problemes, "luminosite": round(lumiere, 1),
+            "bruit": round(bruit, 2), "nettete": round(nettete, 1),
+            "nettete_info": "indicateur seul : comparer deux réglages du même "
+                            "poste, ne juge pas la mise au point à lui seul",
+            "satures_pct": round(satures * 100, 1), "problemes": problemes}
