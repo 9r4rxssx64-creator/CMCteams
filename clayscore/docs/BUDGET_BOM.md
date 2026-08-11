@@ -7,22 +7,41 @@
 
 ## A. Nomenclature du prototype (configuration complète v3)
 
-| Poste | Détail | Qté | Prix cible unit. | Total cible | Source |
+| Poste | Détail | Qté | Prix cible unit. | Total cible | Acheter |
 |---|---|---:|---:|---:|---|
-| Caméras industrielles | Hikrobot MV-CS016 (2 mono + 1 couleur, global shutter) | 3 | ~180 € | ~540 € | [Alibaba](https://www.alibaba.com/product-detail/HIKROBOT-MV-CS016-10GC-1-2-1601122368910.html) |
-| Objectifs | montures C, focale adaptée | 3 | ~35 € | ~105 € | même vendeur caméras |
-| Éclairage / filtre IR 850 nm | anti contre-jour, tous temps | 1 lot | ~60 € | ~60 € | [AliExpress](https://fr.aliexpress.com/item/32757408525.html) |
-| Filtres optiques | passe-bande / polarisant | 3 | ~15 € | ~45 € | même vendeur |
-| Caissons IP66 génériques | boîtes alu étanches (pods) | 3 | ~15 € | ~45 € | générique |
-| Hub IA | NVIDIA Jetson Orin Nano (prix officiel) | 1 | ~280 € | ~280 € | [Silicon Highway](https://www.siliconhighwaydirect.com/product-p/945-13766-0005-000.htm) / [Arrow](https://www.arrow.com/en/products/945-13766-0000-000/nvidia.html) |
-| Stockage | SSD NVMe (clips + base) | 1 | ~40 € | ~40 € | Amazon.fr / LDLC |
-| Switch PoE | alim + data caméras GigE | 1 | ~60 € | ~60 € | [LDLC](https://www.ldlc.com/en/product/PB00266981.html) |
-| Routeur WiFi local | réseau autonome sans Internet | 1 | ~40 € | ~40 € | [GL.iNet](https://www.gl-inet.com/en-us/products) |
-| Micro USB | détection coups de feu | 1 | ~25 € | ~25 € | Amazon.fr |
-| Batterie | LiFePO4 12 V 30 Ah (1 journée) | 1 | ~130 € | ~130 € | Amazon.fr |
-| Câblage / connectique | GigE, alim, étanche | 1 lot | ~50 € | ~50 € | générique |
-| Trépieds / piquets pods | fixation terrain | 3 | ~15 € | ~45 € | générique |
+| Caméras industrielles | Hikrobot MV-CS016 (2 mono + 1 couleur, global shutter) | 3 | ~180 € | ~540 € | ▸ [Alibaba (lien direct)](https://www.alibaba.com/product-detail/HIKROBOT-MV-CS016-10GC-1-2-1601122368910.html) |
+| Objectifs | monture C, focale **8 et/ou 12 mm** | 3 | ~35 € | ~105 € | ▸ même vendeur · [recherche AliExpress](https://fr.aliexpress.com/w/wholesale-C-mount-12mm-machine-vision-lens.html) |
+| Éclairage / filtre IR 850 nm | anti contre-jour, tous temps | 1 lot | ~60 € | ~60 € | ▸ [AliExpress (lien direct)](https://fr.aliexpress.com/item/32757408525.html) |
+| Filtres optiques | passe-bande 850 nm / polarisant | 3 | ~15 € | ~45 € | ▸ même vendeur · [recherche AliExpress](https://fr.aliexpress.com/w/wholesale-850nm-bandpass-filter.html) |
+| Caissons IP66 | boîtes alu étanches (pods) | 3 | ~15 € | ~45 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=bo%C3%AEtier+%C3%A9tanche+IP66+aluminium) · [AliExpress](https://fr.aliexpress.com/w/wholesale-IP66-aluminum-enclosure-box.html) |
+| Hub IA | NVIDIA Jetson Orin Nano (**prix officiel**) | 1 | ~280 € | ~280 € | ▸ [Silicon Highway](https://www.siliconhighwaydirect.com/product-p/945-13766-0005-000.htm) · [Arrow](https://www.arrow.com/en/products/945-13766-0000-000/nvidia.html) |
+| Stockage | SSD NVMe 500 Go M.2 (clips + base) | 1 | ~40 € | ~40 € | ▸ [recherche LDLC](https://www.ldlc.com/recherche/ssd%20m.2%20nvme%20500%20go/) · [Amazon](https://www.amazon.fr/s?k=SSD+M.2+NVMe+500+Go) |
+| Switch PoE | alim + data caméras GigE (**entrée DC de préférence**) | 1 | ~60 € | ~60 € | ▸ [LDLC (lien direct)](https://www.ldlc.com/en/product/PB00266981.html) · [recherche](https://www.ldlc.com/recherche/switch%20poe%205%20ports/) |
+| Routeur WiFi local | réseau autonome sans Internet | 1 | ~40 € | ~40 € | ▸ [GL.iNet (lien direct)](https://www.gl-inet.com/en-us/products) · [Amazon](https://www.amazon.fr/s?k=GL.iNet+routeur+voyage) |
+| Micro USB | détection coups de feu, omnidirectionnel | 1 | ~25 € | ~25 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=micro+USB+omnidirectionnel+conf%C3%A9rence) |
+| Batterie | LiFePO4 12 V 30 Ah (**8,1 h mesurés en calcul**) | 1 | ~130 € | ~130 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=batterie+LiFePO4+12V+30Ah) |
+| Câblage / connectique | Cat6 **extérieur**, presse-étoupes, bornier à fusibles | 1 lot | ~50 € | ~50 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=c%C3%A2ble+ethernet+ext%C3%A9rieur+cat6+30m) · [LDLC](https://www.ldlc.com/recherche/cable%20reseau%20exterieur%20cat6/) |
+| Trépieds / piquets pods | fixation terrain **rigide** | 3 | ~15 € | ~45 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=tr%C3%A9pied+photo+lourd) |
 | **Total matériel prototype** | | | | **≈ 1 465 €** | |
+
+**Extras conseillés (petites pièces qu'on découvre toujours au montage) :**
+
+| Poste | Détail | ~Prix | Acheter |
+|---|---|---:|---|
+| 2ᵉ jeu d'objectifs | 8 mm **et** 12 mm pour choisir sur le terrain | +70 € | ▸ même vendeur |
+| Chargeur LiFePO4 | dédié (un chargeur plomb abîme une LiFePO4) | +25 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=chargeur+LiFePO4+12V) |
+| Hublots, presse-étoupes, gel de silice, visserie | étanchéité des pods | +30 € | ▸ [recherche presse-étoupe PG9](https://www.amazon.fr/s?k=presse+%C3%A9toupe+PG9) |
+| Caisse à outils étanche | transport du hub | +25 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=caisse+%C3%A0+outils+%C3%A9tanche) |
+| **Total réaliste avec extras** | | **≈ 1 615 €** | |
+
+> ⚠️ **Sur les liens** : les liens « **lien direct** » sont ceux fournis par
+> Kevin (dossier v4). Les liens « **recherche** » ouvrent une recherche sur le
+> site, **pas une fiche produit précise** — les pages marchandes n'ont pas pu
+> être ouvertes depuis l'environnement de développement, donc aucune référence
+> produit n'a été inventée. Critères de choix détaillés dans **`GUIDE_MATERIEL`**.
+>
+> 💡 **Ne pas oublier la douane** sur le colis chinois : TVA 20 % + frais de
+> dossier, souvent absents des budgets.
 
 *Fourchette annoncée : **1 450 – 1 550 €** config max (prix échantillon négociés,
 commande Chine groupée chez ≤ 2 vendeurs, un seul passage en douane).*
