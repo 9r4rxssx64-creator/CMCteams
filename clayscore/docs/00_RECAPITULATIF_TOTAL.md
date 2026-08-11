@@ -80,11 +80,17 @@ ClayScore_Dossier_Complet/
 ├── 00_RECAPITULATIF_TOTAL.md    ← vous êtes ici
 ├── 01_COMMENT_UTILISER.md       ← mode d'emploi (installer, lancer, tester)
 ├── 02_ETAT_ET_LIMITES.md        ← ce qui est prouvé / ce qui ne l'est pas
+├── index.html                   ← MENU D'ACCUEIL (ouvre-le en premier)
 ├── documents/
+│   ├── SPEC_TECHNIQUE.md        ← le cahier des charges du logiciel (texte d'origine)
+│   ├── JOURNAL_PROJET.md        ← tout ce qui a été fait, y compris les bugs corrigés
+│   ├── GLOSSAIRE.md             ← tous les mots expliqués (ball-trap, technique, business)
 │   ├── DOSSIER_BUSINESS.md      ← stratégie, cadre Monaco, statut
 │   ├── BUDGET_BOM.md            ← liste d'achat détaillée + marges
 │   ├── DOSSIER_VIDEO.md         ← script + storyboard de la vidéo de démo
-│   └── EMAIL_LAPORTE.md         ← emails de contact prêts (FR + EN)
+│   ├── EMAIL_LAPORTE.md         ← emails de contact prêts (FR + EN)
+│   ├── ORIGINAL_DOSSIER_V4.md   ← ton dossier v4, mot pour mot
+│   └── ORIGINAL_PLAN_VIDEO.md   ← ton plan vidéo, mot pour mot
 ├── pages/
 │   ├── landing.html             ← page de présentation (à ouvrir au navigateur)
 │   └── onepager.html            ← dossier partenaire 1 page (imprimable)
