@@ -17,7 +17,7 @@ var CURRICULUM = [
   {t:"Les bases 🌱", c:"#12b981", L:[
     {t:"Salutations", w:["bonjour","salut","au revoir","merci","oui","non","s'il te plaît","pardon"]},
     {t:"Les gens", w:["homme","femme","garçon","fille","ami","enfant","nom","moi"], p:["je suis un homme","elle est une femme"]},
-    {t:"Mots utiles", w:["eau","pain","maison","livre","chien","chat"], p:["le chat boit de l'eau"]} ]},
+    {t:"Objets du quotidien", w:["eau","pain","maison","livre","chien","chat"], p:["le chat boit de l'eau"]} ]},
   {t:"Nourriture 🍎", c:"#f6b73c", L:[
     {t:"À boire", w:["café","lait","vin","thé","jus","bière"], p:["je bois du café"]},
     {t:"À manger", w:["pomme","fromage","poisson","viande","riz","œuf","gâteau","soupe"], p:["je mange une pomme","nous mangeons du riz"]} ]},
@@ -29,10 +29,10 @@ var CURRICULUM = [
     {t:"La famille", w:["grand-mère","grand-père","bébé","famille"]} ]},
   {t:"Les couleurs 🎨", c:"#8b5cf6", L:[
     {t:"Couleurs vives", w:["rouge","bleu","vert","jaune"], p:["une fleur rouge"]},
-    {t:"Autres couleurs", w:["noir","blanc","orange","rose"], p:["le chat est noir"]} ]},
+    {t:"Noir, blanc & pastels", w:["noir","blanc","orange","rose"], p:["le chat est noir"]} ]},
   {t:"Les animaux 🐾", c:"#14b8a6", L:[
     {t:"À la ferme", w:["cheval","oiseau","vache","poule"]},
-    {t:"Autres animaux", w:["cochon","lapin","mouton","souris"]} ]},
+    {t:"Petits animaux", w:["cochon","lapin","mouton","souris"]} ]},
   {t:"Le temps ⏰", c:"#f97316", L:[
     {t:"Les moments", w:["jour","nuit","matin","soir"]},
     {t:"Les durées", w:["semaine","mois","année","heure","minute"]},
@@ -179,7 +179,7 @@ var CURRICULUM_X = [
     {t:"Les légumes", w:["légume","tomate","carotte","oignon","salade","pomme de terre"]} ]},
   {t:"En ville 🏙️", c:"#0d9488", L:[
     {t:"Les lieux", w:["ville","magasin","marché","banque","école","hôpital","pharmacie"]},
-    {t:"Encore des lieux", w:["restaurant","église","parc","pont","aéroport","musée"]} ]},
+    {t:"Lieux à connaître", w:["restaurant","église","parc","pont","aéroport","musée"]} ]},
   {t:"Les transports 🚗", c:"#ea580c", L:[
     {t:"Sur la route", w:["voiture","bus","vélo","moto","taxi","camion"]},
     {t:"Voyager", w:["train","avion","bateau","métro"]} ]},
@@ -4958,7 +4958,7 @@ var CURRICULUM_D = [
     {t:"Bien gérer", w:["dépenser trop","être à découvert","charges"]} ]},
   {t:"Nuances & petits mots 🎁", c:"#8b5cf6", L:[
     {t:"Expressions utiles", w:["malgré tout","dès que possible","faute de mieux","pot de départ"]},
-    {t:"Compléments", w:["électroménager","artisan","jalousie"]} ]}
+    {t:"Maison & sentiments", w:["électroménager","artisan","jalousie"]} ]}
 ];
 CURRICULUM_D.forEach(function(u){ CURRICULUM.push(u); });
 

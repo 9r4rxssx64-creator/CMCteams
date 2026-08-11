@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.112.0";
+var APP_VER="v2.113.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -45,7 +45,10 @@ function loadS(){
   S.coachMsgs=lg("coachMsgs",[]);                                   // mémoire du Coach IA — PAR COMPTE (historique de conversation)
   S.coachProfile=lg("coachProfile",{objectif:"bilingue",weak:[],notes:""}); // profil d'apprentissage suivi par le Coach
   S.mascot=lg("mascot","bee"); // mascotte choisie : "bee" ou "donkey"
-  S.beeArt=lg("beeArt","douce"); // dessin de Bee : "douce" ou "vive" (choix de Kevin dans les reglages)
+  /* Defaut = « vive », le dessin qui etait affiche AVANT la v2.111.0 : Kevin a demande de
+     « remettre comme avant ». S'il prefere l'autre, un seul tap dans les Reglages suffit —
+     c'est justement pour ca que le choix existe (j'ai devine faux deux fois). */
+  S.beeArt=lg("beeArt","vive"); // dessin de Bee : "douce" ou "vive" (choix dans les reglages)
   S.beeVoice=lg("beeVoice","fillette"); // voix de Bee choisie (catalogue BEE_VOICES) — fillette mignonne par défaut
   S.turtle=lg("turtle",false); // 🐢 mode tortue : les modèles de prononciation se jouent au ralenti partout
   S.coachScene=lg("coachScene",null); // 🎭 jeu de rôle en cours (id de SCENES) — null = conversation libre
@@ -149,10 +152,10 @@ function mascotCfg(){ var id=S.mascot||"bee"; for(var i=0;i<MASCOTS.length;i++){
    trouve « doux et mignon » et j'ai devine faux deux fois : le choix est desormais DANS
    l'app (Reglages), il tape et c'est regle — je ne devine plus a sa place. */
 var BEE_ARTS=[
-  {id:"douce", nom:"Douce", desc:"pelage tout doux, couleurs tendres", dir:"bee"},
-  {id:"vive",  nom:"Vive",  desc:"traits nets, jaune eclatant",        dir:"bee/v2"}
+  {id:"vive",  nom:"Vive",  desc:"traits nets, jaune eclatant",        dir:"bee/v2"},
+  {id:"douce", nom:"Douce", desc:"pelage tout doux, couleurs tendres", dir:"bee"}
 ];
-function beeArtCfg(){ var id=S.beeArt||"douce"; for(var i=0;i<BEE_ARTS.length;i++){ if(BEE_ARTS[i].id===id) return BEE_ARTS[i]; } return BEE_ARTS[0]; }
+function beeArtCfg(){ var id=S.beeArt||"vive"; for(var i=0;i<BEE_ARTS.length;i++){ if(BEE_ARTS[i].id===id) return BEE_ARTS[i]; } return BEE_ARTS[0]; }
 function MART(){ return mascotCfg().id==="bee" ? beeArtCfg().id : ""; }  /* variante de dessin active */
 function MASC(){ var c=mascotCfg(); return c.id==="bee" ? beeArtCfg().dir : c.dir; }  /* dossier des images */
 function MEMO(){ return mascotCfg().emoji; }    /* emoji affiche */
@@ -1347,7 +1350,7 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   if((S.mascot||"bee")==="bee"){
     var ah=el("p","mini masc-arth"); ah.textContent="\ud83c\udfa8 Son dessin \u2014 touche celui que tu pr\u00e9f\u00e8res :"; mc.appendChild(ah);
     var arow=el("div","masc-row");
-    BEE_ARTS.forEach(function(a){ var on=(S.beeArt||"douce")===a.id;
+    BEE_ARTS.forEach(function(a){ var on=(S.beeArt||"vive")===a.id;
       var b=el("button","masc-pick art"+(on?" on":""));
       b.innerHTML='<img src="'+a.dir+'/wave.webp" width="64" height="64" alt="" onerror="this.replaceWith(document.createTextNode(\'\ud83d\udc1d\'))"><b>'+esc(a.nom)+'</b><i>'+(on?"\u2713 "+a.desc:a.desc)+'</i>';
       b.onclick=function(){ if(!on) setBeeArt(a.id); };
