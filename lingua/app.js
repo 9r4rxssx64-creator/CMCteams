@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.105.1";
+var APP_VER="v2.105.2";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1356,7 +1356,8 @@ function vCoach(){ var d=el("div","screen coach");
 /* ============ MODE DISCUSSION 🎬 — Bee en gros plan, bouche animée, elle DIT son texte ============ */
 var DISC={open:false,talking:false,handsFree:false,timer:null};
 function discMove(kind,dur){ /* Bee bouge de tout son corps. VRAIE VIDÉO si dispo, sinon marionnette CSS. */
-  if(DISC.vid&&DISC.clip&&kind){ DISC.clip(kind,(dur||2800)/1000); return; }
+  /* DISC.clip renvoie false si ce clip vidéo manque → on enchaîne sur la marionnette CSS. */
+  if(DISC.vid&&DISC.clip&&kind&&DISC.clip(kind,(dur||2800)/1000))return;
   var rig=document.querySelector(".disc-overlay .bee-rig"); if(!rig)return;
   ["mv-dance","mv-jump","mv-fly","mv-walk"].forEach(function(c){rig.classList.remove(c);});
   if(!kind)return; rig.classList.add("mv-"+kind);
@@ -1563,14 +1564,27 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
   /* VRAIE VIDÉO de Bee (Replicate, générée depuis SON image) : activée dès qu'elle se charge.
      Si le navigateur ne la lit pas (erreur/codec) → repli marionnette, sans écran vide. */
   var dv=ov.querySelector(".disc-vid"), db=ov.querySelector(".disc-bee");
-  DISC.vid=false;
+  DISC.vid=false; DISC.noClip=DISC.noClip||{};
   if(dv){
     dv.addEventListener("canplay",function(){ if(!DISC.open)return; DISC.vid=true; db.classList.add("vid"); },{once:true});
-    dv.onerror=function(){ DISC.vid=false; try{db.classList.remove("vid");}catch(_){} try{dv.remove();}catch(_){} };
-    DISC.clip=function(name,secs){ if(!DISC.vid||!dv||!DISC.open)return;
+    /* Un clip d'humeur qui manque (ex. l'âne n'a pas encore "jump") ne doit PAS tuer la vidéo :
+       on le note comme absent, on revient au repos, et ce mouvement-là passe en marionnette CSS.
+       Seul l'échec du clip de repos fait basculer toute la scène en marionnette. */
+    dv.onerror=function(){
+      var cur=String(dv.getAttribute("src")||""), m=cur.match(/\/live\/([a-z]+)\.mp4/);
+      if(DISC.vid&&m&&m[1]!=="idle"){
+        DISC.noClip[MASC()+"/"+m[1]]=1;
+        try{ dv.src=MASC()+"/live/idle.mp4"; var q=dv.play(); if(q&&q.catch)q.catch(function(){}); }catch(_){}
+        try{ discMove(m[1],2800); }catch(_){}
+        return;
+      }
+      DISC.vid=false; try{db.classList.remove("vid");}catch(_){} try{dv.remove();}catch(_){} };
+    DISC.clip=function(name,secs){ if(!DISC.vid||!dv||!DISC.open)return false;
+      if(name&&name!=="idle"&&DISC.noClip[MASC()+"/"+name])return false;
       try{ dv.src=MASC()+"/live/"+name+".mp4"; dv.loop=true; var p=dv.play(); if(p&&p.catch)p.catch(function(){}); }catch(_){}
       if(DISC.clipT)clearTimeout(DISC.clipT);
-      if(name!=="idle"){ DISC.clipT=setTimeout(function(){ if(DISC.open&&DISC.vid&&dv){ try{ dv.src=MASC()+"/live/idle.mp4"; var q=dv.play(); if(q&&q.catch)q.catch(function(){}); }catch(_){} } }, Math.max(2,(secs||4))*1000); } };
+      if(name!=="idle"){ DISC.clipT=setTimeout(function(){ if(DISC.open&&DISC.vid&&dv){ try{ dv.src=MASC()+"/live/idle.mp4"; var q=dv.play(); if(q&&q.catch)q.catch(function(){}); }catch(_){} } }, Math.max(2,(secs||4))*1000); }
+      return true; };
   }
   /* Elle VIT aussi entre deux phrases : de temps en temps elle vole, marche ou danse toute seule */
   function moveLoop(){ if(!DISC.open)return;

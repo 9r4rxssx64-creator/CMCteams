@@ -50,7 +50,13 @@ jobs:
               -H "Authorization: Bearer $REPLICATE_KEY" -H "Content-Type: application/json" \
               -d "$(jq -n --arg p "$PROMPT" --arg img "$IMG_URL" '{input:{prompt:$p, first_frame_image:$img, prompt_optimizer:true}}')")
             ID=$(printf '%s' "$CREATE" | jq -r '.id // empty')
-            if [ -z "$ID" ]; then echo "::warning::$NAME création échouée : $(printf '%s' "$CREATE" | jq -r '.detail // .title // "?"' | head -c 200)"; return 1; fi
+            if [ -z "$ID" ]; then
+              DET=$(printf '%s' "$CREATE" | jq -r '.detail // .title // "?"' | head -c 200)
+              # Crédit épuisé : inutile d'enchaîner les clips suivants, ils échoueront tous
+              # (et le throttle « moins de 5 $ » brouille le message). On le dit une fois, clairement.
+              case "$DET" in *"insufficient credit"*) echo "NOCREDIT" > /tmp/vid/.nocredit ;; esac
+              echo "::warning::$NAME création échouée : $DET"; return 1
+            fi
             for i in $(seq 1 60); do
               sleep 10
               ST=$(curl -sS -H "Authorization: Bearer $REPLICATE_KEY" "https://api.replicate.com/v1/predictions/$ID")
@@ -70,6 +76,7 @@ jobs:
 
           OK=0
           for C in ${{ github.event.inputs.clips || 'idle hello dance jump fly walk' }}; do
+            if [ -f /tmp/vid/.nocredit ]; then echo "::warning::$C sauté — crédit Replicate épuisé"; continue; fi
             case "$C" in
               idle)  gen_vid idle  "$KEEP The cute donkey stands calmly in place, breathing softly, blinking naturally, its long ears twitching gently, tiny head tilts, subtle seamless idle loop, nothing else changes" && OK=$((OK+1)) ;;
               hello) gen_vid hello "$KEEP The cute donkey waves hello warmly with one raised front hoof, ears perking up, blinking, joyful, subtle seamless loop" && OK=$((OK+1)) ;;
@@ -81,6 +88,9 @@ jobs:
             esac
           done
           echo "Vidéos générées : $OK"
+          if [ -f /tmp/vid/.nocredit ]; then
+            echo "::warning::Crédit Replicate épuisé — recharge sur https://replicate.com/account/billing puis relance ce bouton pour les clips manquants."
+          fi
           [ "$OK" -ge 1 ] || { echo "::error::aucune vidéo générée"; exit 1; }
 
       - name: Commit dans le dossier que l'app lit vraiment
