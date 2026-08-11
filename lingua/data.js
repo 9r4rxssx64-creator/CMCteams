@@ -5152,11 +5152,11 @@ var STORIES=[
   {q:"Bee a mal…", opts:["À la tête","Au pied","Au bras"], ok:0},
   {q:"Le docteur dit de boire…", opts:["Du café","De l'eau","Du lait"], ok:1}]},
  {id:"parc", ic:"🌳", titre:"Le parc", lignes:[
-  {qui:"🐝", fr:"Allons au parc !", t:{en:"Let's go to the park!", it:"Andiamo al parco!", es:"¡Vamos al parque!", de:"Gehen wir in den Park!", pt:"Vamos ao parque!", nl:"Laten we naar het park gaan!"}},
-  {qui:"🐝", fr:"Les arbres sont grands.", t:{en:"The trees are big.", it:"Gli alberi sono grandi.", es:"Los árboles son grandes.", de:"Die Bäume sind groß.", pt:"As árvores são grandes.", nl:"De bomen zijn groot."}},
-  {qui:"🐕", fr:"Le chien court.", t:{en:"The dog runs.", it:"Il cane corre.", es:"El perro corre.", de:"Der Hund rennt.", pt:"O cão corre.", nl:"De hond rent."}},
-  {qui:"🐝", fr:"Je joue avec le ballon.", t:{en:"I play with the ball.", it:"Gioco con la palla.", es:"Juego con la pelota.", de:"Ich spiele mit dem Ball.", pt:"Jogo com a bola.", nl:"Ik speel met de bal."}},
-  {qui:"🐝", fr:"Le parc est beau !", t:{en:"The park is beautiful!", it:"Il parco è bello!", es:"¡El parque es bonito!", de:"Der Park ist schön!", pt:"O parque é bonito!", nl:"Het park is mooi!"}}],
+  {qui:"🐝", fr:"Allons au parc !", t:{en:"Let's go to the park!", it:"Andiamo al parco!", es:"¡Vamos al parque!", de:"Gehen wir in den Park!", pt:"Vamos ao parque!", nl:"Laten we naar het park gaan!", pl:"Chodźmy do parku!", ru:"Давайте пойдём в парк!", uk:"Ходімо в парк!", cs:"Pojďme do parku!", zh:"我们去公园吧！", ja:"公園に行こう！", ko:"공원에 가자!", ar:"هيا إلى الحديقة؟"}},
+  {qui:"🐝", fr:"Les arbres sont grands.", t:{en:"The trees are big.", it:"Gli alberi sono grandi.", es:"Los árboles son grandes.", de:"Die Bäume sind groß.", pt:"As árvores são grandes.", nl:"De bomen zijn groot.", pl:"Drzewa są wysokie.", ru:"Деревья большие.", uk:"Дерева великі.", cs:"Stromy jsou vysoké.", zh:"树很高。", ja:"木は高い。", ko:"나무가 크다.", ar:"الأشجار كبيرة؟"}},
+  {qui:"🐕", fr:"Le chien court.", t:{en:"The dog runs.", it:"Il cane corre.", es:"El perro corre.", de:"Der Hund rennt.", pt:"O cão corre.", nl:"De hond rent.", pl:"Pies biegnie.", ru:"Собака бежит.", uk:"Пес біжить.", cs:"Pes běží.", zh:"狗在跑。", ja:"犬が走っている。", ko:"개의 달리고 있다.", ar:"الكلب يركض؟"}},
+  {qui:"🐝", fr:"Je joue avec le ballon.", t:{en:"I play with the ball.", it:"Gioco con la palla.", es:"Juego con la pelota.", de:"Ich spiele mit dem Ball.", pt:"Jogo com a bola.", nl:"Ik speel met de bal.", pl:"Bawię się piłką.", ru:"Я играю с мячом.", uk:"Я граюся з м'ячем.", cs:"Hraji si s míčem.", zh:"我在玩球。", ja:"私はボールで遊んでいる。", ko:"나는 공을 가지고 노는 중이다.", ar:"أنا ألعب الكرة؟"}},
+  {qui:"🐝", fr:"Le parc est beau !", t:{en:"The park is beautiful!", it:"Il parco è bello!", es:"¡El parque es bonito!", de:"Der Park ist schön!", pt:"O parque é bonito!", nl:"Het park is mooi!", pl:"Park jest piękny!", ru:"Парк красив!", uk:"Парк красивий!", cs:"Park je krásný!", zh:"公园真漂亮！", ja:"公園は美しい！", ko:"공원은 아름답다!", ar:"الحديقة جميلة؟"}}],
   quiz:[
   {q:"Où va Bee ?", opts:["Au parc","À la gare","À l'école"], ok:0},
   {q:"Que fait le chien ?", opts:["Il dort","Il court","Il mange"], ok:1},
