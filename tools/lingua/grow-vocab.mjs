@@ -46,34 +46,48 @@ const DRY = has('dry');
 
 function load() { const ctx = {}; vm.createContext(ctx); vm.runInContext(fs.readFileSync(DATA, 'utf8'), ctx); return ctx; }
 
-/* ---------------- Appels IA (fournisseurs indépendants) ---------------- */
+/* ---------------- Appels IA (fournisseurs indépendants) ----------------
+   RETENTATIVE OBLIGATOIRE. Vécu le 2026-08-11 : 8 vagues lancées d'affilée ont épuisé le
+   quota des fournisseurs — 7 vagues sur 8 n'ont RIEN produit, et sur la 8e l'anglais est
+   passé (24/24) mais l'italien et l'espagnol se sont fait jeter. Sans retentative, un simple
+   « trop de requêtes » (429) fait perdre toute une vague de travail. */
+const dors = (ms) => new Promise((r) => setTimeout(r, ms));
+let _stats = { appels: 0, retentes: 0, echecs: 0 };
+async function appelJson(url, opts, extrait) {
+  for (let essai = 0; essai < 4; essai++) {
+    _stats.appels++;
+    const r = await fetch(url, opts).catch(() => null);
+    if (r && r.ok) { const j = await r.json().catch(() => null); const v = j && extrait(j); if (v) return v; }
+    /* 429 = trop de requêtes, 5xx = souci passager → on attend de plus en plus longtemps */
+    const rejouable = !r || r.status === 429 || r.status >= 500;
+    if (!rejouable || essai === 3) break;
+    _stats.retentes++;
+    const attente = (r && parseInt(r.headers.get('retry-after') || '0', 10) * 1000) || (3000 * Math.pow(2, essai));
+    await dors(Math.min(attente, 45000));
+  }
+  _stats.echecs++; return null;
+}
 async function callGroq(messages, json) {
   if (!process.env.GROQ_API_KEY) return null;
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  return appelJson('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST', headers: { authorization: 'Bearer ' + process.env.GROQ_API_KEY, 'content-type': 'application/json' },
     body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 4000, temperature: 0.3, ...(json ? { response_format: { type: 'json_object' } } : {}) }),
-  }).catch(() => null);
-  if (!r || !r.ok) return null; const j = await r.json().catch(() => null);
-  return j?.choices?.[0]?.message?.content || null;
+  }, (j) => j?.choices?.[0]?.message?.content);
 }
 async function callMistral(messages, json) {
   if (!process.env.MISTRAL_API_KEY) return null;
-  const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
+  return appelJson('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST', headers: { authorization: 'Bearer ' + process.env.MISTRAL_API_KEY, 'content-type': 'application/json' },
     body: JSON.stringify({ model: 'mistral-large-latest', messages, max_tokens: 4000, temperature: 0.2, ...(json ? { response_format: { type: 'json_object' } } : {}) }),
-  }).catch(() => null);
-  if (!r || !r.ok) return null; const j = await r.json().catch(() => null);
-  return j?.choices?.[0]?.message?.content || null;
+  }, (j) => j?.choices?.[0]?.message?.content);
 }
 async function callGemini(messages) {
   if (!process.env.GEMINI_API_KEY) return null;
   const sys = messages.find((m) => m.role === 'system'); const rest = messages.filter((m) => m.role !== 'system');
-  const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY, {
+  return appelJson('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY, {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ system_instruction: sys ? { parts: [{ text: sys.content }] } : undefined, contents: rest.map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })), generationConfig: { maxOutputTokens: 4000, temperature: 0.2 } }),
-  }).catch(() => null);
-  if (!r || !r.ok) return null; const j = await r.json().catch(() => null);
-  return j?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+  }, (j) => j?.candidates?.[0]?.content?.parts?.[0]?.text);
 }
 function parseJson(txt) { if (!txt) return null; try { const m = txt.match(/\{[\s\S]*\}/); return JSON.parse(m ? m[0] : txt); } catch { return null; } }
 
@@ -198,19 +212,30 @@ function selftest() {
 
   let termes = (await proposeTermes(deja)).filter((t) => !deja.has(t));
   termes = [...new Set(termes)].slice(0, N);
-  if (termes.length < 4) { console.log('Aucun terme nouveau proposé (IA indisponible ?) — rien à faire.'); process.exit(0); }
+  if (termes.length < 4) {
+    console.log('Aucun terme nouveau proposé — ' + (_stats.echecs ? ('les fournisseurs n\'ont pas répondu (' + _stats.appels + ' appels, ' + _stats.retentes + ' retentatives, ' + _stats.echecs + ' échecs) : c\'est un souci de quota, pas de contenu.') : 'l\'IA n\'a rien proposé de nouveau.'));
+    process.exit(0);
+  }
   console.log('Termes retenus (' + termes.length + ') : ' + termes.join(', '));
 
-  /* traduction + jugement, langue par langue */
+  /* traduction + jugement, langue par langue.
+     DISTINCTION IMPORTANTE (défaut vu le 2026-08-11) : un juge MUET n'est pas un juge qui
+     REFUSE. Avant, une panne du juge comptait « 0/24 validées » — on jetait 24 bonnes
+     traductions en croyant qu'elles étaient fausses, sans le dire. Maintenant, juge injoignable
+     = vague abandonnée avec un message clair (on ne devine pas, on ne jette pas en silence). */
   const trad = {}; const rejets = {};
   for (const lg of TOUTES) {
     const t = await traduire(termes, lg);
-    if (!t) { console.log('  ' + lg + ' : traduction indisponible → vague abandonnée (aucune langue ne doit manquer).'); process.exit(0); }
+    if (!t) { console.log('  ' + lg + ' : traducteur injoignable → vague abandonnée (aucune langue ne doit manquer).'); process.exit(0); }
     const paires = termes.map((fr) => [fr, String(t[fr] || '').trim()]).filter(([, v]) => v);
-    const verdict = await juger(lg, paires) || {};
+    const verdict = await juger(lg, paires);
+    if (!verdict) { console.log('  ' + lg + ' : JUGE injoignable → vague abandonnée. (Sans second avis, on n\'écrit rien : ' + paires.length + ' traductions non vérifiées, donc écartées.)'); process.exit(0); }
+    const repondu = paires.filter(([fr]) => typeof verdict[fr] === 'boolean').length;
+    if (repondu < paires.length / 2) { console.log('  ' + lg + ' : le juge n\'a répondu que sur ' + repondu + '/' + paires.length + ' → vague abandonnée (avis trop partiel pour être fiable).'); process.exit(0); }
     trad[lg] = {};
     paires.forEach(([fr, v]) => { if (verdict[fr] === true) trad[lg][fr] = v; else (rejets[fr] = rejets[fr] || []).push(lg + (verdict[fr] === false ? '' : '?')); });
-    console.log('  ' + lg + ' : ' + Object.keys(trad[lg]).length + '/' + termes.length + ' validées');
+    console.log('  ' + lg + ' : ' + Object.keys(trad[lg]).length + '/' + termes.length + ' validées (juge consulté sur ' + repondu + ')');
+    await dors(1500);   // on respire entre deux langues : c'est le quota qui a tué la 1re tentative
   }
 
   /* un terme n'est gardé que s'il est juste dans LES 14 langues */
@@ -233,4 +258,5 @@ function selftest() {
   execFileSync(process.execPath, [path.join(path.dirname(new URL(import.meta.url).pathname), 'verify-truth.mjs'), ROOT], { stdio: 'inherit' });
   const nv = bumpVersion();
   console.log('\n✅ ' + gardes.length + ' termes ajoutés (' + nouveauxVerbes.length + ' verbes) × 14 langues = ' + (gardes.length * 14) + ' traductions validées. Version ' + nv + '.');
+  console.log('   (appels IA : ' + _stats.appels + ', retentatives : ' + _stats.retentes + ', échecs définitifs : ' + _stats.echecs + ')');
 })();

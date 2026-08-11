@@ -15,8 +15,8 @@ on:
   workflow_dispatch:
     inputs:
       vagues:
-        description: "Nombre de vagues à enchaîner (1 à 8)"
-        default: "3"
+        description: "Nombre de vagues à enchaîner (1 à 8). 2 est le bon rythme : au-delà, le quota des fournisseurs saute."
+        default: "2"
         required: false
       theme:
         description: "Thème imposé (vide = thèmes automatiques, verbes en priorité)"
@@ -53,7 +53,7 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          N="${{ github.event.inputs.vagues || '3' }}"
+          N="${{ github.event.inputs.vagues || '2' }}"
           case "$N" in ''|*[!0-9]*) N=3 ;; esac
           [ "$N" -gt 8 ] && N=8
           IMPOSE="${{ github.event.inputs.theme }}"
@@ -76,7 +76,9 @@ jobs:
             echo "::group::Vague $i — $TH"
             node tools/lingua/grow-vocab.mjs lingua --theme "$TH" $FL --n 24 | tee -a /tmp/vocab.log || true
             echo "::endgroup::"
-            sleep 5
+            # 60 s entre deux vagues : le 1er essai (8 vagues en rafale, 5 s d'écart) a fait
+            # sauter le quota des fournisseurs — 7 vagues sur 8 sont revenues vides.
+            sleep 60
           done
           echo "changed=$(git status --porcelain lingua | grep -c . || true)" >> "$GITHUB_OUTPUT"
 
