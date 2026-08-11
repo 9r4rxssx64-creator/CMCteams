@@ -13,7 +13,7 @@ pour être robuste aux durées/vitesses variables.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
 import numpy as np
 

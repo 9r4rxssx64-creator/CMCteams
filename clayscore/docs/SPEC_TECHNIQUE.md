@@ -97,9 +97,12 @@ Une partie de FU à 2 tireurs, 25 plateaux chacun avec doublés et un no-bird in
 | Mode simulation (priorité absolue) | ✅ tout fonctionne sans matériel |
 | Architecture (arborescence ci-dessus) | ✅ respectée |
 | Règles métier (verdict, no-bird, rotation, doublés, audio) | ✅ implémentées et testées |
-| Couverture > 80 % sur `game/` et `verdict` | ✅ 130 tests, dont la totalité des règles de partie |
+| Couverture > 80 % sur `game/` et `verdict` | ✅ 159 tests, dont la totalité des règles de partie |
 | Definition of done globale | ✅ **vérifiée** : partie FU 2 tireurs × 25 plateaux + no-bird jouée via le serveur, scores exacts, ralentis servis |
 | Matériel réel (Jetson, caméras, micro) | ⏳ code écrit et branché, **non testé sur matériel** (non acheté) |
 | Performance 3 flux 1440×1080 ≥ 50 fps | ⏳ **non mesurée** (exige le Jetson) |
 | Watchdog + reprise d'état | ✅ implémenté (service systemd + rejeu du match) |
 | Licence privée, hors ligne, sans cloud | ✅ respecté (0 télémétrie, 0 licence payante) |
+| Réseau autonome **et** branchable au réseau d'un club | ✅ 3 modes + bascule auto, caméras isolées (`GUIDE_RESEAU`) |
+| Protection des scores sur réseau partagé | ✅ code d'accès sur les écritures, lectures libres |
+| Tenue en clientèle (audit qualité) | ✅ 5 défauts réels corrigés + tests de non-régression (`AUDIT_QUALITE`) |

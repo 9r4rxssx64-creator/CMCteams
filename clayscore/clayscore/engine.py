@@ -111,6 +111,9 @@ class MatchEngine:
         self.partie: Optional[Partie] = None
         self.pending: Optional[Analysis] = None
         self.auto_mode = False   # si True : valide seul les verdicts sûrs
+        # Vrai pendant l'analyse d'un plateau (faite hors verrou) : empêche
+        # deux analyses simultanées si deux tablettes appuient en même temps.
+        self._analysing = False
         # Reprise d'état après crash (watchdog) : on journalise chaque verdict.
         self.state_path = state_path
         self._cfg: Optional[Dict] = None
@@ -145,14 +148,38 @@ class MatchEngine:
         return self.partie
 
     def throw(self) -> Dict:
-        """Analyse le prochain plateau (sans valider si arbitrage requis)."""
+        """Analyse le prochain plateau (sans valider si arbitrage requis).
+
+        L'analyse dure ~1 s (bien plus avec les vraies caméras). Elle est donc
+        faite **hors du verrou** : sinon toute autre tablette, l'écran TV et le
+        rafraîchissement des scores restent figés pendant tout ce temps
+        (mesuré : 13x plus lent avant correction).
+
+        Un seul plateau peut être analysé à la fois : si deux tablettes
+        appuient en même temps, la seconde reçoit une erreur claire plutôt que
+        de lancer une deuxième analyse en parallèle.
+        """
         with self._lock:
             p = self._require()
             if p.finished:
                 raise RuntimeError("La partie est terminée.")
-            analysis = self.sim.next_plateau()
-            if analysis is None:
-                raise RuntimeError("Plus de plateaux disponibles dans le flux.")
+            if self._analysing:
+                raise RuntimeError("Un plateau est déjà en cours d'analyse.")
+            self._analysing = True
+
+        try:
+            analysis = self.sim.next_plateau()      # <- hors verrou (lent)
+        finally:
+            with self._lock:
+                self._analysing = False
+
+        if analysis is None:
+            raise RuntimeError("Plus de plateaux disponibles dans le flux.")
+
+        with self._lock:
+            # La partie a pu se terminer pendant l'analyse (autre tablette).
+            if self.partie is None or self.partie.finished:
+                raise RuntimeError("La partie est terminée.")
             self.pending = analysis
             committed = None
             # Auto-validation seulement si activée ET verdict sûr (non ambigu).
@@ -167,7 +194,7 @@ class MatchEngine:
     def commit(self, verdict: Optional[str] = None, cartridge: int = 1) -> Dict:
         """Valide un verdict (celui de l'humain, ou l'auto si `verdict` None)."""
         with self._lock:
-            p = self._require()
+            self._require()
             if self.pending is None and verdict is None:
                 raise RuntimeError("Aucun plateau à valider.")
             pending = self.pending

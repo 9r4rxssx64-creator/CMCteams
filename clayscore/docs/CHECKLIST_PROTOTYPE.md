@@ -3,7 +3,7 @@
 **La marche à suivre, dans l'ordre, de « je n'ai rien » à « je fais une
 démonstration à un club ».** À cocher au fur et à mesure.
 
-> Le logiciel est **déjà fait et testé** (130 tests verts). Tout ce qui suit
+> Le logiciel est **déjà fait et testé** (159 tests verts). Tout ce qui suit
 > concerne le **matériel** et la **preuve sur le terrain**.
 
 ---
@@ -80,7 +80,7 @@ l'Europe en dernier (48 h, et on connaît alors les vraies dimensions).
 Rien n'oblige à attendre les bras croisés. Tout est faisable **sans matériel** :
 
 - [ ] Installer le logiciel sur un ordinateur : `./install.sh --dev`
-- [ ] Lancer `pytest` → **130 tests OK**
+- [ ] Lancer `pytest` → **159 tests OK**
 - [ ] Lancer `python -m tools.bench --all` → **100 %** sur les 3 bancs
 - [ ] Faire tourner une **partie complète en simulation** et prendre en main
       l'interface tablette
@@ -126,8 +126,12 @@ Rien n'oblige à attendre les bras croisés. Tout est faisable **sans matériel*
 - [ ] `config/config.yaml` → `type: aravis` + `type: mic`
 - [ ] **Image en direct** vue depuis les 3 caméras
 - [ ] Taper dans les mains → **coup de feu détecté**
-- [ ] Hotspot WiFi actif, tablette connectée, **appli installée** sur l'écran
-      d'accueil
+- [ ] Réseau appliqué : `sudo ./deploy/network.sh --mode auto`
+- [ ] Tablette connectée, **appli installée** sur l'écran d'accueil
+- [ ] `http://clayscore.local:8000` répond (sinon utiliser l'adresse affichée)
+- [ ] Onglet **📶 Réseau** : mode correct + « caméras isolées ✅ »
+- [ ] **Code d'accès renseigné** (`network.access_pin`) si le hub est branché
+      sur le réseau d'un club — obligatoire en concours
 - [ ] **Test batterie** : laisser tourner 8 h en intérieur → vérifier
       l'autonomie annoncée
 - [ ] Redémarrage automatique testé : couper le courant en pleine partie →

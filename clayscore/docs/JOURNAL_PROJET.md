@@ -17,7 +17,10 @@ comment ils ont été résolus.** Rien n'est masqué : les erreurs figurent auss
 | 11/08/2026 | Dossier récapitulatif total | — |
 | 11/08/2026 | **Bug corrigé** : vidéos illisibles en navigateur/iPhone | +2 tests |
 | 11/08/2026 | **2 écarts comblés** : multi-lanceurs + mode concours | +11 tests |
-| **Total** | | **130 tests verts** |
+| 11/08/2026 | Guides matériel / montage / prototype + liens d'achat | — |
+| 11/08/2026 | **Audit qualité commerciale** : 5 défauts réels corrigés | +18 tests |
+| 11/08/2026 | **Réseau autonome OU branché au club** + code d'accès | +11 tests |
+| **Total** | | **159 tests verts** |
 
 ---
 
@@ -119,6 +122,38 @@ de session, **corrigé** avec un message qui explique le rattrapage.
 
 ---
 
+### 🐛 Cinq défauts trouvés à l'audit qualité (11/08)
+
+Audit demandé : « zéro erreur, qualité commercialisable ». Cinq défauts réels,
+tous corrigés, chacun avec un test qui empêche le retour du bug.
+
+1. **Le serveur se figeait pendant chaque analyse.** Mesuré : une 2ᵉ tablette
+   attendait **530 ms au lieu de 41 ms** (13× plus lent) — l'écran TV du
+   club-house se serait figé à chaque plateau. Cause : le verrou interne était
+   gardé pendant toute l'analyse. Corrigé → **530 ms → 2,7 ms**.
+2. **Faille XSS** : un tireur nommé `<img onerror=...>` exécutait du code sur
+   toutes les tablettes et l'écran TV. Corrigé (échappement) + test qui relit
+   le code de l'appli et échoue si la faille revient.
+3. **Aucune protection des scores** sur un réseau partagé. Corrigé : code
+   d'accès sur toutes les écritures, lectures libres.
+4. **Le disque se remplissait sans limite** → panne garantie un jour, en pleine
+   compétition. Corrigé : entretien automatique, le clip en cours d'arbitrage
+   étant protégé.
+5. **Deux tablettes pouvaient analyser deux plateaux à la fois** (plateau
+   fantôme dans la fiche). Corrigé : un seul à la fois, message clair au second.
+
+Plus : verrou manquant sur la base, historique non borné, mot de passe WiFi
+ignoré par le script hotspot, et 10 alertes de qualité de code → **0**.
+
+### 🌐 Réseau : autonome ET branchable (11/08)
+
+Le boîtier crée son propre WiFi **ou** rejoint le réseau d'un club, et bascule
+tout seul selon ce qu'il trouve. Les caméras restent **toujours** sur leur
+propre réseau : le club n'est pas inondé par la vidéo, et une panne de sa box
+n'arrête pas l'arbitrage. Détail complet : `GUIDE_RESEAU`.
+
+---
+
 ## 3. Les décisions techniques importantes
 
 | Décision | Pourquoi |
@@ -130,6 +165,9 @@ de session, **corrigé** avec un message qui explique le rattrapage.
 | Générateur de plateaux avec vérité terrain | Permet de **mesurer** la précision au lieu de l'estimer |
 | Zéro dépendance payante | Coût logiciel = 0 € de licence |
 | Repli systématique (IA absente, ffmpeg absent, matériel absent) | **Le système ne tombe jamais en panne** à cause d'un composant manquant |
+| Réseau des caméras **séparé** de celui du club | Le club n'est pas inondé par la vidéo, et sa panne réseau n'arrête pas l'arbitrage |
+| Analyse faite **hors du verrou** | Une tablette qui analyse ne fige plus les autres ni l'écran TV |
+| Lectures libres, **écritures protégées** par code | L'écran TV et les spectateurs voient tout ; seuls les scores sont protégés |
 
 ---
 

@@ -15,7 +15,7 @@ import argparse
 from pathlib import Path
 from typing import List, Optional
 
-from clayscore.replay import render_overlay_clip, render_overlay_from_file
+from clayscore.replay import render_overlay_from_file
 from clayscore.sources.audio_file import read_wav_mono
 from clayscore.sources.video_file import FileVideoSource
 from clayscore.vision.verdict import decide_verdict

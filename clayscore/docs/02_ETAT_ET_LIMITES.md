@@ -19,7 +19,12 @@ t'appuyer, et où sont les zones d'ombre. Aucune bonne nouvelle exagérée ici.
 | L'export ralenti habillé fonctionne | Vidéos produites + servies | `pytest tests/test_replay.py` |
 | Multi-lanceurs attribués et suivis | Testé (alternance + stats par machine) | `pytest tests/test_state_machine.py` |
 | Mode concours interdit l'auto-validation | Testé (chaque plateau arbitré) | `pytest tests/test_server.py` |
-| **Total** | **130 tests réussis** | `pytest` |
+| Les scores sont protégés sur un réseau partagé | Écriture refusée sans code, lecture libre | `pytest tests/test_network.py` |
+| Le boîtier marche autonome **et** branché au club | Bascule automatique testée | `pytest tests/test_network.py` |
+| Le disque ne peut pas se remplir | Purge automatique, clip en cours protégé | `pytest tests/test_maintenance.py` |
+| Deux tablettes ne créent pas de plateau fantôme | 4 appuis simultanés → 1 seul analysé | `pytest tests/test_maintenance.py` |
+| Un nom de tireur ne peut pas exécuter de code | Échappement vérifié dans l'appli | `pytest tests/test_maintenance.py` |
+| **Total** | **159 tests réussis** | `pytest` |
 
 ---
 

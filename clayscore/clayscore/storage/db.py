@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 import time
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -30,35 +31,46 @@ class Storage:
     def __init__(self, path: str | Path = "data/clayscore.db"):
         self.path = str(path)
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
+        # check_same_thread=False : le serveur exécute les écritures dans un
+        # fil séparé pour ne pas bloquer les autres tablettes. Un verrou est
+        # donc OBLIGATOIRE — sans lui, deux requêtes simultanées corrompent la
+        # connexion partagée.
         self._conn = sqlite3.connect(self.path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
-        self._conn.executescript(SCHEMA)
-        self._conn.commit()
+        self._lock = threading.Lock()
+        with self._lock:
+            self._conn.executescript(SCHEMA)
+            self._conn.commit()
 
     def save_partie(self, partie, created_at: Optional[float] = None) -> int:
         ts = time.time() if created_at is None else float(created_at)
-        cur = self._conn.execute(
-            "INSERT INTO parties (created_at, discipline, serie, cartouches, "
-            "shooters, scorecard, stats_post) VALUES (?,?,?,?,?,?,?)",
-            (
-                ts,
-                partie.discipline.key,
-                partie.serie,
-                partie.cartouches,
-                json.dumps(partie.shooters, ensure_ascii=False),
-                json.dumps(partie.scorecard(), ensure_ascii=False),
-                json.dumps(partie.stats_by_post(), ensure_ascii=False),
-            ),
-        )
-        self._conn.commit()
-        return int(cur.lastrowid)
+        with self._lock:
+            cur = self._conn.execute(
+                "INSERT INTO parties (created_at, discipline, serie, cartouches, "
+                "shooters, scorecard, stats_post) VALUES (?,?,?,?,?,?,?)",
+                (
+                    ts,
+                    partie.discipline.key,
+                    partie.serie,
+                    partie.cartouches,
+                    json.dumps(partie.shooters, ensure_ascii=False),
+                    json.dumps(partie.scorecard(), ensure_ascii=False),
+                    json.dumps(partie.stats_by_post(), ensure_ascii=False),
+                ),
+            )
+            self._conn.commit()
+            return int(cur.lastrowid)
 
     def list_parties(self, limit: int = 50) -> List[Dict]:
-        rows = self._conn.execute(
-            "SELECT id, created_at, discipline, serie, cartouches, shooters, "
-            "scorecard FROM parties ORDER BY id DESC LIMIT ?",
-            (int(limit),),
-        ).fetchall()
+        # Borne dure : une requête ?limit=999999999 ne doit pas pouvoir vider
+        # la base en mémoire ni figer le serveur.
+        n = max(1, min(int(limit), 500))
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT id, created_at, discipline, serie, cartouches, shooters, "
+                "scorecard FROM parties ORDER BY id DESC LIMIT ?",
+                (n,),
+            ).fetchall()
         out = []
         for r in rows:
             out.append({
@@ -73,8 +85,9 @@ class Storage:
         return out
 
     def get_partie(self, party_id: int) -> Optional[Dict]:
-        r = self._conn.execute(
-            "SELECT * FROM parties WHERE id=?", (int(party_id),)).fetchone()
+        with self._lock:
+            r = self._conn.execute(
+                "SELECT * FROM parties WHERE id=?", (int(party_id),)).fetchone()
         if r is None:
             return None
         return {
@@ -89,4 +102,5 @@ class Storage:
         }
 
     def close(self) -> None:
-        self._conn.close()
+        with self._lock:
+            self._conn.close()
