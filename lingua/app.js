@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.110.0";
+var APP_VER="v2.111.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -150,7 +150,17 @@ function MNAME(){ return mascotCfg().nom; }     /* prenom affiche */
 /* Accord en genre : Bee est une abeille (feminin), Bourricot un ane (masculin).
    Sans ca on lit \u00ab Bourricot est fiere de toi \u00bb \u2014 faux et moche. */
 function MG(f,m){ return mascotCfg().gen==="m" ? m : f; }
-function setMascot(id){ S.mascot=id; save(); vibrate(10); toast(mascotCfg().emoji+" "+mascotCfg().titre+" est ta mascotte !"); render(); }
+/* Le cri de la mascotte : une abeille ne fait pas le meme bruit qu'un ane.
+   Vu sur capture le 2026-08-11 : Bourricot disait « Bzzz ! » — incoherent. */
+function MCRI(){ return mascotCfg().gen==="m" ? "Hi-han !" : "Bzzz !"; }
+/* Le « chez-soi » de la mascotte : la ruche pour Bee, le pre pour Bourricot. */
+function MLIEU(){ return mascotCfg().gen==="m" ? "du pr\u00e9" : "de la ruche"; }
+function setMascot(id){ S.mascot=id; save(); vibrate(10);
+  /* La bulle affichée appartient à l'ANCIENNE mascotte : on l'efface et on autorise la nouvelle
+     à reparler. Sans ça, Bourricot gardait la phrase de Bee — « je suis fière de toi » au masculin
+     (bug vu sur capture le 2026-08-11 ; MG() était bon, c'est la bulle qui était périmée). */
+  try{ var b=document.querySelector(".bee-bubble"); if(b)b.remove(); _beeSaid={}; }catch(_){}
+  toast(mascotCfg().emoji+" "+mascotCfg().titre+" est ta mascotte !"); render(); }
 var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
@@ -202,8 +212,7 @@ function bumpStreak(){
   else S.streak=1;
   S.lastDay=t; save();
   /* Jalons de série RÉELS (le garde S.lastDay===t empêche tout doublon le même jour) */
-  var MS=[3,7,14,30,50,100,200,365];
-  if(MS.indexOf(S.streak)>=0){ var n=S.streak; setTimeout(function(){ toast("🔥 "+n+" jours de série — bravo !"); },700); }
+  setTimeout(paliersSerie,700);
 }
 
 /* ============ Révision espacée (SM-2 allégé) ============ */
@@ -262,6 +271,73 @@ var ACHV=[
 ];
 function anyLessonDone(){ var n=0; Object.keys(S.prog).forEach(function(c){ var p=S.prog[c]||{}; Object.keys(p).forEach(function(k){ if(p[k]>0)n++; }); }); return n>0; } /* VÉRITÉ : seules les leçons VRAIMENT faites comptent (pas les « ouvertes par le test ») */
 function unitFullyDone(){ var done=false; Object.keys(S.prog).forEach(function(c){ if(!COURSES[c])return; COURSES[c].units.forEach(function(u,ui){ var all=true; u.lessons.forEach(function(_,li){ if(!(S.prog[c]["u"+ui+"-"+li]>0))all=false; }); if(all)done=true; }); }); return done; }
+/* ============ 🎁 RÉCOMPENSES — ludiques, encourageantes, satisfaisantes, PARTOUT
+   (Kevin 2026-08-11 : « ajoute des récompenses… va plus loin +++ »)
+   Un seul point d'entrée, recompense(), pour que TOUT récompense de la même façon :
+   confettis + son + vibration + la mascotte qui fait la fête + le gain écrit en gros.
+   VÉRITÉ : ce qui est annoncé est ce qui est réellement crédité — le popup lit les gains
+   APRÈS les avoir appliqués, jamais des valeurs décoratives. ============ */
+function confettis(n){ try{ var w=el("div","conf-w"); document.body.appendChild(w);
+  var C=["#ffd75e","#12b981","#ff5d6c","#7c8cff","#ff9f43","#4ecdc4"];
+  for(var i=0;i<(n||26);i++){ var p=el("i","conf");
+    p.style.left=(6+Math.random()*88)+"%"; p.style.background=C[i%C.length];
+    p.style.animationDelay=(Math.random()*.35).toFixed(2)+"s";
+    p.style.animationDuration=(1.5+Math.random()*1.1).toFixed(2)+"s";
+    p.style.transform="rotate("+Math.round(Math.random()*360)+"deg)"; w.appendChild(p); }
+  setTimeout(function(){ try{w.remove();}catch(_){} },3200); }catch(_){} }
+function _sonRecompense(gros){ try{ var A=_ac(); if(!A)return; var t=A.currentTime;
+  var notes=gros?[523,659,784,1047]:[659,880];
+  notes.forEach(function(f,i){ var o=A.createOscillator(),g=A.createGain();
+    o.type="triangle"; o.frequency.value=f; o.connect(g); g.connect(A.destination);
+    g.gain.setValueAtTime(0.0001,t+i*0.09); g.gain.exponentialRampToValueAtTime(0.13,t+i*0.09+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.09+0.30);
+    o.start(t+i*0.09); o.stop(t+i*0.09+0.32); }); }catch(_){} }
+/* r = {gems,xp,coeur,gel,titre,sous,emoji,gros} — applique PUIS annonce */
+function recompense(r){ r=r||{}; var gains=[];
+  if(r.gems){ S.gems+=r.gems; gains.push("+"+r.gems+" 💎"); }
+  if(r.xp){ S.xp+=r.xp; S.dailyXP+=r.xp; histAdd(r.xp); gains.push("+"+r.xp+" XP"); }
+  if(r.coeur){ var av=S.hearts; S.hearts=Math.min(HEART_MAX,S.hearts+r.coeur);
+    if(S.hearts>av) gains.push("+"+(S.hearts-av)+" ❤️"); }
+  if(r.gel){ S.freeze+=r.gel; gains.push("+"+r.gel+" 🧊"); }
+  save();
+  vibrate(r.gros?[18,50,18,50,28]:14); _sonRecompense(!!r.gros); confettis(r.gros?46:22);
+  try{ var f=document.querySelector(".ex-face,.coach-face,.bee-rig"); if(f){ mascotReact(f,"joie",1500); beeSparkles(f,r.gros?12:6); } }catch(_){}
+  var pop=el("div","rw-pop"+(r.gros?" gros":""));
+  pop.innerHTML='<span class="rw-ic">'+(r.emoji||"🎁")+'</span>'+
+    '<b>'+esc(r.titre||"Récompense !")+'</b>'+
+    (gains.length?'<span class="rw-gain">'+esc(gains.join("  ·  "))+'</span>':'')+
+    (r.sous?'<i>'+esc(r.sous)+'</i>':'');
+  document.body.appendChild(pop);
+  setTimeout(function(){ try{ pop.classList.add("bye"); setTimeout(function(){pop.remove();},420); }catch(_){} }, r.gros?3000:2100);
+  return gains.join(" · ");
+}
+/* Paliers DANS la leçon : toutes les 5 bonnes réponses, un petit cadeau tout de suite.
+   L'attente jusqu'à la fin de la leçon était le moment le moins encourageant. */
+function paliersLecon(L){ if(!L||L.correct<=0||L.correct%5)return;
+  var n=L.correct/5;
+  recompense({gems:1, xp:2, emoji:["⭐","🔥","💫","🌟"][n%4],
+    titre:L.correct+" bonnes réponses d'affilée !", sous:"Continue comme ça"}); }
+/* Coffre de fin de leçon : 3 niveaux selon TA performance, ouvert d'un geste. */
+function coffreLecon(L,hote){ var parfait=L.wrong===0, presque=L.wrong<=1;
+  var niv = parfait?"or":(presque?"argent":"bois");
+  var lot = parfait?{gems:5,xp:10,gel:(Math.random()<.34?1:0)} : presque?{gems:3,xp:5} : {gems:2,xp:3};
+  var box=el("div","coffre "+niv);
+  box.innerHTML='<div class="cf-lid">'+(parfait?"🏆":(presque?"🎁":"📦"))+'</div>'+
+    '<b>'+(parfait?"Coffre d\'or":(presque?"Coffre d\'argent":"Coffre"))+'</b><i>Touche pour ouvrir</i>';
+  box.onclick=function(){ if(box._ouvert)return; box._ouvert=true; box.classList.add("ouvert");
+    recompense({gems:lot.gems, xp:lot.xp, gel:lot.gel, gros:parfait, emoji:parfait?"🏆":"🎁",
+      titre:parfait?"Coffre d'or ouvert !":"Coffre ouvert !",
+      sous:parfait?"Sans aucune faute — bravo !":"Reviens demain pour un autre"});
+    setTimeout(function(){ try{ box.querySelector("i").textContent="Ouvert ✓"; }catch(_){} },300); };
+  hote.appendChild(box); return box; }
+/* Séries de jours : 3, 7, 14, 30, 100 — fêtées pour de vrai, une seule fois chacune. */
+function paliersSerie(){ var P={3:{g:5,t:"3 jours de suite !"},7:{g:12,t:"Une semaine entière !",gel:1},
+    14:{g:20,t:"Deux semaines !",gel:1},30:{g:40,t:"Un mois complet !",gel:2},
+    50:{g:60,t:"50 jours !"},100:{g:100,t:"100 jours !!",gel:3},
+    200:{g:200,t:"200 jours !!"},365:{g:365,t:"UNE ANNÉE ENTIÈRE !!!",gel:5}};
+  var p=P[S.streak]; if(!p)return; var k="serie"+S.streak; if(S.achv[k])return;
+  S.achv[k]=Date.now(); save();
+  recompense({gems:p.g, gel:p.gel, gros:S.streak>=7, emoji:"🔥", titre:p.t, sous:"Ta série continue"}); }
 function checkAchv(){ ACHV.forEach(function(a){ if(!S.achv[a.id] && a.f()){ S.achv[a.id]=Date.now(); S.gems+=10; save(); toast("🏅 Succès : "+a.t+" (+10 💎)"); } }); }
 
 /* ============ Quêtes quotidiennes ============ */
@@ -332,6 +408,76 @@ function makeType(w,dir){ var toT=dir!=="toFr", answer=toT?w.t:w.fr;
 /* Exercice de PRONONCIATION (parler au micro) — reconnaissance vocale, indulgent. */
 function makeSpeak(w){ return {kind:"speak",w:w,prompt:w.t,answer:w.t}; }
 
+/* ============ 🏃 LES VERBES — entraînement dédié (Kevin 2026-08-11 :
+   « ajoute des exercices sur les verbes, écrit, parlé, etc, va plus loin »)
+   Les verbes sont le squelette d'une langue : les travailler à part fait progresser
+   bien plus vite que de les croiser au hasard du vocabulaire.
+   VÉRITÉ : on n'entraîne QUE des verbes de VERBES_FR — liste explicite, vérifiée présente
+   dans le programme et traduite dans les 14 langues. On ne conjugue RIEN : les formes
+   conjuguées ne sont pas dans les données, les inventer serait enseigner du faux. ============ */
+var VERB_PACKS=[
+  {id:"v1", ic:"🌱", t:"Verbes du quotidien",  s:"les 60 premiers, ceux qu'on dit tous les jours", a:0,   b:60},
+  {id:"v2", ic:"💬", t:"Verbes pour se débrouiller", s:"demander, expliquer, se déplacer",        a:60,  b:140},
+  {id:"v3", ic:"🛠️", t:"Verbes de l'action",    s:"faire, réparer, cuisiner, bricoler",           a:140, b:220},
+  {id:"v4", ic:"🎓", t:"Verbes avancés",        s:"nuancer, convaincre, raconter",                a:220, b:999}
+];
+/* Les verbes RÉELLEMENT disponibles dans la langue en cours (mot + traduction). */
+function verbPool(){ if(typeof VERBES_FR==="undefined")return [];
+  var dico={}; allWords(S.course).forEach(function(w){ if(!dico[w.fr])dico[w.fr]=w; });
+  var o=[]; VERBES_FR.forEach(function(fr){ var w=dico[fr]; if(w&&w.t)o.push(w); }); return o; }
+function verbPackWords(p){ var all=verbPool(); return all.slice(p.a,Math.min(p.b,all.length)); }
+function verbPackDone(id){ return (S.prog[S.course]&&S.prog[S.course]["verb-"+id])||0; }
+/* Une séance de verbes : ÉCRIT + PARLÉ + choix + paires + écoute — dans les DEUX sens.
+   Le dosage suit ton niveau, mais l'écrit et le parlé sont TOUJOURS présents (c'est la demande). */
+function buildVerbLesson(p){ var pool=allWords(S.course),tier=diffTier(),NT=COURSES[S.course]&&COURSES[S.course].noType;
+  var ws=shuffle(verbPackWords(p)); if(!ws.length)return [];
+  var n=Math.min(ws.length,10), pick=ws.slice(0,n), ex=[];
+  pick.forEach(function(w,i){
+    /* 1) reconnaître · 2) ÉCRIRE en français (possible dans TOUTES les langues,
+       même celles à autre alphabet) · 3) écrire dans la langue quand c'est jouable */
+    if(i%3===0) ex.push(makeMC(w,pool,i%2?"mc_fr":"mc_t"));
+    else if(i%3===1) ex.push(makeType(w,"toFr"));
+    else ex.push(NT?makeMC(w,pool,"mc_t"):makeType(w,"toT"));
+  });
+  if(pick.length>=4) ex.splice(1,0,makeMatch(pick.slice(0,Math.min(5,pick.length))));
+  /* ÉCOUTE-et-écris (ou écoute-et-choisis si l'alphabet n'est pas latin) */
+  if(S.sound) shuffle(pick).slice(0,2).forEach(function(w){ ex.push(NT?makeMC(w,pool,"listen"):makeType(w,"listen")); });
+  /* PARLÉ : au moins 2 verbes à prononcer si le micro marche, sinon écoute+choix pour
+     ne JAMAIS livrer une séance sans la partie orale promise. */
+  var oraux=shuffle(pick).slice(0,3);
+  if(_srOk()) oraux.forEach(function(w){ ex.push(makeSpeak(w)); });
+  else if(S.sound) oraux.slice(0,2).forEach(function(w){ ex.push(makeMC(w,pool,"listen")); });
+  return shuffle(ex).slice(0,Math.min(ex.length,14+tier));
+}
+function startVerbs(p){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
+  var ex=buildVerbLesson(p);
+  if(!ex.length){ toast("Ces verbes ne sont pas encore dans cette langue"); return; }
+  LESSON={ui:null,li:null,review:false,verbs:p.id,titre:p.t,ex:ex,i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null};
+  VIEW="lesson"; _armHistoryGuard(); window.scrollTo(0,0); render();
+  try{ var f=LESSON.ex[0]; if(!(f&&f.audio)) setTimeout(function(){ speakLang("Séance verbes ! "+p.t+". On écrit et on parle.","fr-FR",BEE_VOICE,true); },250); }catch(_){}
+}
+/* Écran 🏃 Les verbes : les paquets, ta progression, et combien de verbes tu as vus. */
+function vVerbs(){ var w=el("div","screen verbs-scr"),all=verbPool();
+  var h=el("div","vb-head");
+  h.innerHTML='<div class="mascot-mini">'+MASCOT("point",92)+'</div>'
+    +'<h2>🏃 Les verbes</h2><p class="mini">Le squelette de la langue. Ici on les travaille à part : '
+    +'<b>on écrit</b>, <b>on parle</b>, on écoute et on associe. '+all.length+' verbes en '
+    +esc(COURSES[S.course].nom.toLowerCase())+'.</p>';
+  w.appendChild(h);
+  if(!all.length){ var v=el("p","mini"); v.textContent="Les verbes ne sont pas encore disponibles dans cette langue."; w.appendChild(v); return w; }
+  var vus=0; try{ var db=srsGet(S.course); all.forEach(function(x){ if(db[srsKey(x)])vus++; }); }catch(_){}
+  var bar=el("div","vb-bar"); bar.innerHTML='<div class="vb-fill" style="width:'+Math.round(vus/all.length*100)+'%"></div>';
+  var lab=el("p","mini vb-lab"); lab.innerHTML='📚 <b>'+vus+'</b> verbes déjà travaillés sur '+all.length;
+  w.appendChild(bar); w.appendChild(lab);
+  VERB_PACKS.forEach(function(p){ var nb=verbPackWords(p).length; if(!nb)return;
+    var d=verbPackDone(p.id);
+    var b=el("button","vb-card"+(d>0?" fait":""));
+    b.innerHTML='<span class="vb-ic">'+p.ic+'</span><span class="vb-tx"><b>'+esc(p.t)+'</b><i>'+esc(p.s)+' · '+nb+' verbes</i></span>'
+      +'<span class="vb-badge">'+(d>0?('👑 '+d):'▶')+'</span>';
+    b.onclick=function(){ startVerbs(p); }; w.appendChild(b); });
+  var bk=el("button","btn-ghost"); bk.textContent="← Retour"; bk.onclick=function(){ go("home"); }; w.appendChild(bk);
+  return w; }
+
 /* ============ Voix + sons ============ */
 /* Catalogue de voix : 6 voix naturelles (cloud, HD) + la voix du téléphone (hors-ligne). */
 var VOICES=[
@@ -387,6 +533,11 @@ function _webSpeak(text){ if(!S.sound||!text)return; try{ var u=new SpeechSynthe
    un son différé de la question précédente NE sort PAS sur la nouvelle question). */
 function _lsSpeak(text,qi,delay){ setTimeout(function(){ if(LESSON&&LESSON.i===qi&&S.sound)speak(text); }, delay||0); }
 var AC=null;
+/* Contexte audio partagé (récompenses + sons de leçon). Respecte le réglage « son » :
+   si Kevin coupe le son, AUCUN bruit ne sort, même pour une récompense. */
+function _ac(){ if(!S.sound)return null;
+  try{ AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended"){ try{AC.resume();}catch(_){} } return AC; }catch(_){ return null; } }
 function tone(freqs,dur){ if(!S.sound)return; try{ AC=AC||new(window.AudioContext||window.webkitAudioContext)(); var o=AC.createOscillator(),g=AC.createGain(); o.connect(g);g.connect(AC.destination);o.type="sine";
   freqs.forEach(function(f,i){ o.frequency.setValueAtTime(f,AC.currentTime+i*0.08); });
   g.gain.setValueAtTime(.14,AC.currentTime); g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+dur); o.start(); o.stop(AC.currentTime+dur);}catch(e){} }
@@ -413,6 +564,7 @@ function render(){
   else if(VIEW==="stories") app.appendChild(vStories());
   else if(VIEW==="story") app.appendChild(vStoryPlay());
   else if(VIEW==="stats") app.appendChild(vStats());
+  else if(VIEW==="verbs") app.appendChild(vVerbs());
   else if(VIEW==="coach") app.appendChild(vCoach());
   else if(VIEW==="profile") app.appendChild(vProfile());
   app.appendChild(vTabbar());
@@ -580,6 +732,11 @@ function vHome(){ var w=el("div","screen tree");
   g2.innerHTML='<span class="gc-ic">🃏</span><b>Paires</b><i>'+(S.pairsBest?('Record : '+S.pairsBest+' s'):'Retrouve les paires')+'</i>';
   g2.onclick=function(){ pairsStart(); };
   gr.appendChild(g1); gr.appendChild(g2); w.appendChild(gr);
+  // 🏃 Les verbes — entraînement dédié (écrit + parlé), le squelette de la langue
+  if(typeof VERBES_FR!=="undefined"){ var nv=verbPool().length;
+    if(nv){ var vbc=el("button","stories-card verbs-link");
+      vbc.innerHTML='<span class="st-ic">🏃</span><span class="st-tx"><b>Les verbes</b><i>écrire, parler, écouter — '+nv+' verbes à maîtriser</i></span><span class="st-badge">✍️🗣️</span>';
+      vbc.onclick=function(){ go("verbs"); }; w.appendChild(vbc); } }
   // 🎤 Atelier prononciation — écoute, répète, corrige ta diction
   var prc=el("button","stories-card pron-link");
   prc.innerHTML='<span class="st-ic">🎤</span><span class="st-tx"><b>Atelier prononciation</b><i>écoute, répète, corrige ton élocution '+(_srOk()?'(micro)':'(écoute & répète)')+'</i></span><span class="st-badge">🗣️</span>';
@@ -1204,16 +1361,16 @@ document.addEventListener("click",function(e){ var el=e.target&&e.target.closest
 var _beeSaid={};
 function beeLine(){ try{
   if(VIEW==="home"){ var nx=nextLessonToDo(),due=dueWords().length;
-    var s="Bzzz ! "+(nx?("On fait « "+nx.titre+" » ?"):"Tout est ouvert, champion !");
+    var s=MCRI()+" "+(nx?("On fait « "+nx.titre+" » ?"):"Tout est ouvert, champion !");
     if(due>0)s+=" Et "+due+" mot"+(due>1?"s":"")+" à réviser 🧠"; if(S.streak>0)s+=" · série 🔥"+S.streak; return s; }
   if(VIEW==="review"){ var d2=dueWords().length; return d2>0?("J'ai "+d2+" mot"+(d2>1?"s":"")+" à te faire réviser — on s'y met ?"):"Rien d'urgent ! Une révision libre pour le plaisir ?"; }
   if(VIEW==="dict") return "Cherche un mot, je te dis tout ce que je sais !";
-  if(VIEW==="stories"){ var sdn=storiesDoneCount(); return sdn>=STORIES.length?"Tu as lu TOUTES mes histoires ! Réécoute ta préférée 🍯":"Viens, je te raconte une histoire de la ruche 📖"; }
+  if(VIEW==="stories"){ var sdn=storiesDoneCount(); return sdn>=STORIES.length?"Tu as lu TOUTES mes histoires ! Réécoute ta préférée 🍯":"Viens, je te raconte une histoire "+MLIEU()+" 📖"; }
   if(VIEW==="translate") return "Dis-moi un mot ou une phrase, je te la traduis dans mes 6 langues !";
   if(VIEW==="league"){ var rows=leagueRows(),p=0; for(var i=0;i<rows.length;i++){ if(rows[i].you){p=i+1;break;} }
     return p===1?"Tu es PREMIER ! 🏆 On garde la couronne ?":("Tu es "+p+"ᵉ ! Quelques leçons et on double tout le monde 😼"); }
   if(VIEW==="profile") return "Niveau "+diffLabel()+" · "+masteredCount()+" mots appris. Je suis "+MG("fière","fier")+" de toi !";
-  return "Bzzz ! On apprend quelque chose ?"; }catch(_){ return "Bzzz !"; } }
+  return MCRI()+" On apprend quelque chose ?"; }catch(_){ return MCRI(); } }
 function beeBubble(text,ms){ try{ var old=document.querySelector(".bee-bubble"); if(old)old.remove();
   var b=document.createElement("div"); b.className="bee-bubble"; b.textContent=text;
   b.onclick=function(){ b.remove(); }; document.body.appendChild(b);
@@ -1780,7 +1937,7 @@ function storyAnswer(oi){ if(!ST||ST.phase!=="quiz")return; var st=STORIES[ST.id
 function storyQuit(){ ST=null; try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} go("stories"); }
 function vStories(){ var d=el("div","screen"); var c=COURSES[S.course];
   if(!c){ d.innerHTML='<h2 class="ttl">📖 Histoires</h2><p class="sub2">Choisis d\'abord une langue 🌍.</p>'; return d; }
-  d.innerHTML='<h2 class="ttl">📖 Histoires de la ruche</h2><p class="sub2">Bee te raconte une histoire en '+esc(c.nom.toLowerCase())+' — écoute, lis, réponds. Chaque histoire ouvre la suivante.</p>';
+  d.innerHTML='<h2 class="ttl">📖 Histoires de la ruche</h2><p class="sub2">'+esc(MNAME())+' te raconte une histoire en '+esc(c.nom.toLowerCase())+' — écoute, lis, réponds. Chaque histoire ouvre la suivante.</p>';
   STORIES.forEach(function(st,idx){ var done=!!storiesDone()[st.id], open=storyUnlocked(idx);
     var b=el("button","story-item"+(done?" done":"")+(open?"":" locked"));
     b.innerHTML='<span class="si-ic">'+(open?st.ic:"🔒")+'</span><span class="si-tx"><b>'+esc(st.titre)+'</b><i>'+st.lignes.length+' répliques · '+st.quiz.length+' questions</i></span><span class="si-st">'+(done?"✅":(open?"▶️":""))+'</span>';
@@ -2019,6 +2176,15 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
   var body=el("div","lesson-body");
   setTimeout(function(){ exFaceAlive(d); },60);   /* respire, cligne, te suit du regard, réagit au toucher */
   if(ex.kind==="mc")body.appendChild(exMC(ex)); else if(ex.kind==="match")body.appendChild(exMatch(ex)); else if(ex.kind==="bank")body.appendChild(exBank(ex)); else if(ex.kind==="type")body.appendChild(exType(ex)); else if(ex.kind==="speak")body.appendChild(exSpeak(ex));
+  /* Type d'exercice lisible dans le DOM : sert aux tests automatiques (prouver qu'une séance
+     de verbes contient bien de l'ÉCRIT et du PARLÉ) sans exposer les variables internes. */
+  try{ var _sig=function(x){ return x.kind+(x.dir?":"+x.dir:(x.mode?":"+x.mode:"")); };
+    body.dataset.kind=_sig(ex); body.dataset.mot=(ex.w&&ex.w.fr)||"";
+    /* Programme complet de la séance, lisible dans le DOM : permet de PROUVER (test navigateur)
+       qu'une séance de verbes contient bien de l'écrit ET de l'oral, sans exposer les variables. */
+    d.dataset.plan=L.ex.map(_sig).join(",");
+    d.dataset.mots=L.ex.map(function(x){ return x.kind==="match"?x.pairs.map(function(p){return p.fr;}).join("+"):((x.w&&x.w.fr)||""); }).join(",");
+  }catch(_){}
   d.appendChild(body);
   var foot=el("div","lesson-foot"+(L.answered?(L.ok?" ok":" ko"):""));
   if(L.answered){ var fb=el("div","feedback");
@@ -2127,7 +2293,10 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
   else if(ex.kind==="speak"){ ok=!!L._speakOk; sol=ex.answer; }   // prononciation : indulgent (bien prononcé OU passé)
   L.answered=true; L.ok=ok; L._sol=sol;
   if(ok){ L.correct++; L.combo++; L.comboMax=Math.max(L.comboMax,L.combo); S.today.combo=Math.max(S.today.combo,L.combo);
-    if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")_lsSpeak(ex.w.t,L.i,140); }
+    if(L.combo>=2)comboSound(L.combo); else beep(true); vibrate(15); if(ex.w&&ex.kind!=="match")_lsSpeak(ex.w.t,L.i,140);
+    /* Récompense TOUT DE SUITE toutes les 5 bonnes réponses : attendre la fin de la leçon
+       était le moment le moins encourageant (Kevin : « récompenses partout »). */
+    setTimeout(function(){ paliersLecon(L); },520); }
   else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]); }
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
   setTimeout(function(){ var m=document.querySelector(".lesson .bee-img");
@@ -2159,15 +2328,19 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
   S.today.xp+=xp; if(L.review)S.today.reviews++; else S.today.lessons++; if(L.wrong===0){S.today.perfect++; ls("hadPerfect",true);}
   if(L.heal){ S.hearts=Math.min(HEART_MAX,S.hearts+1); if(S.hearts>=HEART_MAX)S.heartTs=Date.now(); }
   if(L.exam){ var ek="ex"+L.ui; var wasNew=!(S.prog[S.course][ek]>0); S.prog[S.course][ek]=Math.min(5,Math.max(0,S.prog[S.course][ek]||0)+1); if(wasNew)setTimeout(function(){toast("🏆 Examen de l'unité réussi !");},400); }
+  else if(L.verbs){ var vk="verb-"+L.verbs; S.prog[S.course][vk]=Math.min(5,Math.max(0,S.prog[S.course][vk]||0)+1); }
   else if(L.ui!=null&&L.li!=null&&!L.review){ var k="u"+L.ui+"-"+L.li; /* Math.max : une leçon « ouverte par le test » (-1) vraiment faite passe bien à 1 */ S.prog[S.course][k]=Math.min(5,Math.max(0,S.prog[S.course][k]||0)+1); }
   bumpStreak(); leagueAdd(xp); save(); checkAchv(); checkQuests();
-  VIEW="home"; render();
+  VIEW=L.verbs?"verbs":"home"; render();   /* une séance de verbes te ramène aux verbes */
   var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",158)+'</div><h3>'+(L.wrong===0?(L.exam?"Examen sans faute ! 🏆":"Sans faute ! 🎉"):(L.exam?"Examen réussi ✅":"Leçon terminée ✅"))+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+gems+'</b><i>Gemmes</i></div></div>';
   /* Précision RÉELLE : bonnes réponses et erreurs (les erreurs sont reposées jusqu'à réussite) */
   var acc=el("p","mini fin-acc"); acc.innerHTML='✅ '+L.correct+' bonnes réponses'+(L.wrong>0?' · ❌ '+L.wrong+' erreur'+(L.wrong>1?'s':'')+' corrigée'+(L.wrong>1?'s':''):' — 100 %'); m.body.appendChild(acc);
   /* Passage de palier RÉEL (mots maîtrisés, même source que la barre Coach) — fêté seulement s'il a eu lieu */
   var lvUp=null; try{ if(L._lvl0){ var lvN=currentLevel(),i0=-1,i1=-1; LEVELS.forEach(function(s,i){ if(s.code===L._lvl0)i0=i; if(s.code===lvN.cur.code)i1=i; }); if(i0>=0&&i1>i0) lvUp=lvN.cur; } }catch(_){}
   if(lvUp){ var lu=el("div","lvl-up"); lu.innerHTML='🎓 Nouveau palier : <b>'+esc(lvUp.code)+'</b> !'; m.body.appendChild(lu); }
+  /* Coffre BONUS à ouvrir soi-même : le geste rend la récompense satisfaisante, et son
+     contenu dépend VRAIMENT de la performance (or = zéro faute). */
+  coffreLecon(L,m.body);
   var b=el("button","btn-main"); b.textContent="Continuer"; b.onclick=function(){ m.close(); render(); }; m.body.appendChild(b);
   setTimeout(function(){ var mi=m.body.querySelector(".bee-img"); if(mi){ beeAnimate(mi,"hop"); if(L.wrong===0)beeSparkles(mi,10); }
     /* Fin de leçon : le compagnon fait la fête aussi ET Bee annonce le résultat à voix haute */

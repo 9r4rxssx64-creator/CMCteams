@@ -5283,3 +5283,65 @@ var STORIES=[
   {q:"L'ami trouve une bonne…", opts:["Idée","Erreur","Chanson"], ok:0}]}
  /*__STORIES_AUTO__ : les nouvelles histoires générées automatiquement s'insèrent ICI (ne pas retirer ce repère) */
 ];
+
+
+/* ============ 🏃 LES VERBES — liste VÉRIFIÉE (Kevin 2026-08-11 : « exercices sur les verbes »)
+   VÉRITÉ, RIEN DE FAUX : liste EXPLICITE d'infinitifs français, PAS une heuristique. Une règle
+   du type « finit par -er/-ir/-re » attrape « beurre », « lettre », « acier », « anniversaire »…
+   et enseignerait des noms comme des verbes. Chaque entrée ci-dessous est (1) un vrai infinitif,
+   (2) réellement présent dans le programme, (3) traduite dans les 14 langues (vérifié : 312 × 14
+   = 4368 traductions, 0 trou). Le garde CI verifie-verbes.mjs le revérifie à chaque changement. */
+var VERBES_FR = [
+  "aborder","aboutir","accélérer","accomplir","accueillir","acheter",
+  "admettre","aider","aimer","aller","allumer","annoncer",
+  "annuler","appartenir","appeler","applaudir","apprendre","appuyer",
+  "arrêter","arroser","assaisonner","atteindre","attendre","attraper",
+  "augmenter","autoriser","avaler","avertir","avoir","avouer",
+  "balayer","bavarder","boire","bouillir","brancher","casser",
+  "céder","changer","chanter","chercher","choisir","chuchoter",
+  "cliquer","coller","commander","commencer","comparer","comprendre",
+  "conduire","congeler","consoler","constater","construire","contredire",
+  "convaincre","copier","couper","courir","coûter","creuser",
+  "crier","croire","cuisiner","cultiver","danser","déborder",
+  "débrancher","décider","décrire","défendre","déjeuner","demander",
+  "déménager","démissionner","démontrer","dépendre","dépenser","descendre",
+  "désobéir","dessiner","détruire","deviner","devoir","dîner",
+  "dire","dissoudre","donner","dormir","doubler","douter",
+  "échanger","échouer","économiser","écouter","écrire","emballer",
+  "embaucher","embrasser","emménager","emprunter","encourager","engloutir",
+  "enregistrer","entendre","entreprendre","entrer","envisager","envoyer",
+  "éplucher","espérer","essayer","essuyer","éteindre","éternuer",
+  "être","étudier","éviter","exagérer","exiger","exister",
+  "expliquer","exposer","faire","féliciter","fermer","finir",
+  "fondre","frapper","frire","frotter","gagner","gaspiller",
+  "glisser","goûter","grandir","griller","grimper","grossir",
+  "guérir","habiter","hésiter","imaginer","imprimer","insister",
+  "interdire","interrompre","investir","inviter","jaillir","jeter",
+  "jouer","jurer","klaxonner","lâcher","lancer","licencier",
+  "lire","maigrir","manger","marcher","mariner","mélanger",
+  "menacer","mentir","mériter","mesurer","mijoter","monter",
+  "montrer","mourir","nager","naître","négliger","négocier",
+  "nettoyer","nuancer","obéir","offrir","oser","oublier",
+  "ouvrir","pardonner","parier","parler","partager","partir",
+  "payer","pêcher","peindre","penser","percer","perdre",
+  "persuader","peser","pétrir","planter","pleurer","plier",
+  "plonger","polluer","porter","pousser","pouvoir","préférer",
+  "prendre","préparer","prétendre","prêter","prévenir","prévoir",
+  "promettre","prononcer","protéger","prouver","publier","punir",
+  "raconter","ralentir","ramasser","ramer","ranger","rassurer",
+  "recevoir","réchauffer","réclamer","récompenser","reconnaître","recycler",
+  "réfléchir","refroidir","réfuter","regarder","regretter","rembourser",
+  "remercier","renoncer","réparer","repasser","répéter","répondre",
+  "réserver","respirer","rester","réussir","revenir","rire",
+  "s'effondrer","s'évaporer","s'habiller","saigner","saluer","sauter",
+  "savoir","se blesser","se brûler","se coucher","se dépêcher","se disputer",
+  "se garer","se laver","se lever","se plaindre","se raser","se réconcilier",
+  "se répandre","se reposer","se réveiller","se souvenir","se tromper","se venger",
+  "secouer","sembler","semer","serrer","signer","signifier",
+  "soigner","sortir","souhaiter","soulever","souligner","soupçonner",
+  "sourire","suffire","supplier","supposer","supprimer","surgir",
+  "surmonter","télécharger","tenir","tirer","tomber","toucher",
+  "tousser","traduire","trahir","travailler","trier","trouver",
+  "vendre","venir","verrouiller","verser","vider","visiter",
+  "visser","voir","voler","voter","vouloir","voyager"
+];
