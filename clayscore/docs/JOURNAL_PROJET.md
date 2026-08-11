@@ -21,7 +21,7 @@ comment ils ont été résolus.** Rien n'est masqué : les erreurs figurent auss
 | 11/08/2026 | **Audit qualité commerciale** : 5 défauts réels corrigés | +18 tests |
 | 11/08/2026 | **Réseau autonome OU branché au club** + code d'accès | +11 tests |
 | 11/08/2026 | **Niveau compétition** : preuve, alimentation, sans fil | +51 tests |
-| **Total** | | **210 tests verts** |
+| **Total** | | **224 tests verts** |
 
 ---
 
@@ -182,6 +182,28 @@ désormais **déclaré explicitement**, jamais deviné.
 
 ---
 
+### ⚡ Deux défauts majeurs trouvés en optimisant (11/08)
+
+1. **Le système ne tenait pas le temps réel.** Le banc tourne sur des clips
+   240×180 ; les vraies caméras font 1440×1080, soit 27× plus de pixels. À
+   cette résolution : **89 images/s alors qu'il en faut 195** pour 3 caméras.
+   Corrigé (détection sur image réduite, couleur en pleine résolution) :
+   **288 images/s, 48 % de marge.** Validé sans perte en regénérant les clips
+   en 1440×1080 — le banc habituel n'aurait rien prouvé, la réduction ne s'y
+   déclenchant jamais.
+2. **Le système devenait aveugle à la tombée du jour.** À −60 % de lumière,
+   la précision tombait à **33 %** (le hasard) : tous les verdicts devenaient
+   MANQUÉ. Cause : des seuils de couleur **absolus**. Corrigé par un test
+   fondé sur la teinte, dont les bornes ont été relevées sur les vrais clips.
+   **33 % → 100 %.**
+
+Deux optimisations ont été **refusées après mesure** : la détection en
+niveaux de gris (1,8× plus rapide mais un point attribué à tort), et une
+alarme de mise au point (un ciel net score 3,8, une forêt floue 2,0 : les
+valeurs se chevauchent, aucun seuil ne peut trancher).
+
+---
+
 ## 3. Les décisions techniques importantes
 
 | Décision | Pourquoi |
@@ -199,6 +221,9 @@ désormais **déclaré explicitement**, jamais deviné.
 | Journal **chaîné** plutôt que simple fichier de log | Un score modifié après coup devient détectable par un tiers |
 | Batterie **toujours en ligne** (jamais alimenté direct) | Changer ou perdre une source ne provoque aucune coupure |
 | Type de flux **déclaré**, jamais deviné | Une installation sans fil impossible est refusée avant le terrain |
+| Détection sur image **réduite**, couleur en **pleine résolution** | On accélère la recherche, jamais la décision |
+| Couleur jugée sur les **niveaux ET la teinte** | Les deux se complètent : l'un tient en pleine lumière, l'autre à la tombée du jour |
+| Mesurer et afficher plutôt qu'alarmer quand on ne peut pas conclure | Un contrôle qui crie au loup fait perdre plus de temps qu'il n'en fait gagner |
 
 ---
 

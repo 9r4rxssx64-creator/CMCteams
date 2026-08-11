@@ -245,6 +245,18 @@ async function loadCompetition() {
   try { pw = await api("/api/alimentation"); } catch (e) { }
   try { po = await api("/api/postes"); } catch (e) { }
   try { j  = await api("/api/officiel/journal"); } catch (e) { }
+  try {
+    const q = await api("/api/image/qualite");
+    if (q.ok === null) { $("#imgq").textContent = q.detail; }
+    else {
+      $("#imgq").innerHTML =
+        (q.ok ? "✅ Image exploitable<br>" : "⚠️ Réglage caméra à revoir<br>") +
+        `<span class="muted">luminosité ${q.luminosite}/255 · grain ${q.bruit} ·
+         netteté ${q.nettete} (indicateur)</span>` +
+        (q.problemes || []).map((x) => `<div class="chip" style="width:100%;text-align:left">
+          ${esc(x.quoi)}<br><span class="muted">→ ${esc(x.solution)}</span></div>`).join("");
+    }
+  } catch (e) { }
 
   if (g) {
     $("#go-verdict").textContent = g.go ? "✅ PRÊT" : "⛔ PAS PRÊT";
