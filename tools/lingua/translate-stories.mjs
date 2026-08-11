@@ -148,10 +148,15 @@ async function judgeTranslations(st, tr, generatorTried) {
     + '\nRéponds UNIQUEMENT en JSON : {"ok": true/false, "problemes": ["décris chaque traduction FAUSSE (sens, genre, accord, orthographe, mot inventé, romanisation au lieu de l\'écriture native) ; liste vide sinon"]}. '
     + 'Sois strict sur les vraies erreurs, mais NE signale PAS les simples préférences de style.';
   const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
+  /* 2 tentatives sur la chaîne de juges (pause 20 s entre les deux) : un 429
+     passager ne doit pas coûter tout un passage (vécu passages 14-17). */
   let raw = null;
-  if (generatorTried !== 'mistral') raw = await callMistral(msgs, true);
-  if (!raw && generatorTried !== 'gemini') raw = await callGemini(msgs);
-  if (!raw && generatorTried !== 'groq') raw = await callGroq(msgs, true);
+  for (let attempt = 0; attempt < 2 && !raw; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 20000));
+    if (generatorTried !== 'mistral') raw = await callMistral(msgs, true);
+    if (!raw && generatorTried !== 'gemini') raw = await callGemini(msgs);
+    if (!raw && generatorTried !== 'groq') raw = await callGroq(msgs, true);
+  }
   const j = parseJson(raw);
   if (!j) return { ok: false, available: false, hard: ['juge indisponible'] };
   const problemes = Array.isArray(j.problemes) ? j.problemes : [];
