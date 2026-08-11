@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.105.0";
+var APP_VER="v2.105.1";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -442,7 +442,7 @@ function el(t,c){ var e=document.createElement(t); if(c)e.className=c; return e;
 function vAccounts(){
   var d=el("div","screen center accounts");
   var accs=accounts();
-  d.innerHTML='<div class="mascot-wrap">'+MASCOT("wave",120)+'</div><h1 class="brand">KDMC <span>Lingua</span></h1><p class="sub">Qui apprend aujourd\'hui ? 👋</p>';
+  d.innerHTML='<div class="mascot-wrap">'+MASCOT("wave",158)+'</div><h1 class="brand">KDMC <span>Lingua</span></h1><p class="sub">Qui apprend aujourd\'hui ? 👋</p>';
   var grid=el("div","acc-grid");
   accs.forEach(function(a){
     var b=el("button","acc-card");
@@ -683,7 +683,7 @@ function blitzEnd(){ if(!BZ||BZ.over)return; if(BZT){clearInterval(BZT);BZT=null
 function blitzAbort(){ if(BZT){clearInterval(BZT);BZT=null;} BZ=null; }
 function vBlitz(){ var d=el("div","screen blitz"); if(!BZ){ VIEW="home"; return vHome(); }
   if(BZ.over){
-    d.innerHTML='<div class="bz-done"><div class="mascot-mini big">'+MASCOT(BZ.good>=10?"party":"wave",110)+'</div>'
+    d.innerHTML='<div class="bz-done"><div class="mascot-mini big">'+MASCOT(BZ.good>=10?"party":"wave",145)+'</div>'
       +'<h2>⚡ Défi terminé !</h2>'
       +(BZ.rec?'<div class="bz-rec">🚀 NOUVEAU RECORD !</div>':'')
       +'<div class="reward-grid"><div class="rw"><span>✅</span><b>'+BZ.good+'</b><i>bonnes rép.</i></div><div class="rw"><span>⭐</span><b>+'+BZ.xp+'</b><i>XP</i></div><div class="rw"><span>🏅</span><b>'+(S.blitzBest||0)+'</b><i>record</i></div></div></div>';
@@ -733,7 +733,7 @@ function pairsEnd(){ if(!PR||PR.over)return; if(PRT){clearInterval(PRT);PRT=null
 function pairsAbort(){ if(PRT){clearInterval(PRT);PRT=null;} PR=null; }
 function vPairs(){ var d=el("div","screen pairs"); if(!PR){ VIEW="home"; return vHome(); }
   if(PR.over){
-    d.innerHTML='<div class="bz-done"><div class="mascot-mini big">'+MASCOT(PR.secs<=45?"party":"wave",110)+'</div>'
+    d.innerHTML='<div class="bz-done"><div class="mascot-mini big">'+MASCOT(PR.secs<=45?"party":"wave",145)+'</div>'
       +'<h2>🃏 Paires trouvées !</h2>'
       +(PR.rec?'<div class="bz-rec">🏆 NOUVEAU RECORD !</div>':'')
       +'<div class="reward-grid"><div class="rw"><span>⏱</span><b>'+PR.secs+' s</b><i>temps</i></div><div class="rw"><span>⭐</span><b>+'+PR.xp+'</b><i>XP</i></div><div class="rw"><span>🏅</span><b>'+(S.pairsBest||0)+' s</b><i>record</i></div></div></div>';
@@ -1029,7 +1029,7 @@ function pronAbort(){ PRON=null; }
 function vPron(){ var d=el("div","screen pron"); if(!PRON){ VIEW="home"; return vHome(); }
   var c=COURSES[S.course];
   if(PRON.over){
-    d.innerHTML='<div class="bz-done"><div class="mascot-mini big">'+MASCOT(PRON.avg>=80?"party":"wave",110)+'</div>'
+    d.innerHTML='<div class="bz-done"><div class="mascot-mini big">'+MASCOT(PRON.avg>=80?"party":"wave",145)+'</div>'
       +'<h2>🎤 Atelier terminé !</h2>'
       +'<div class="reward-grid"><div class="rw"><span>🎯</span><b>'+PRON.avg+'%</b><i>moyenne</i></div><div class="rw"><span>🗣️</span><b>'+PRON.done+'</b><i>mots</i></div><div class="rw"><span>⭐</span><b>+'+PRON.xp+'</b><i>XP</i></div></div></div>';
     var again=el("button","btn-main"); again.textContent="🎤 Recommencer"; again.onclick=function(){ pronStart(); }; d.appendChild(again);
@@ -1331,19 +1331,19 @@ function vCoach(){ var d=el("div","screen coach");
     SCENES.forEach(function(sn){ var b=el("button","scene-card"); b.innerHTML='<span class="sic">'+sn.ic+'</span><b>'+esc(sn.nom)+'</b><i>'+esc(sn.desc)+'</i>';
       b.onclick=function(){ sceneStart(sn.id); }; sr.appendChild(b); });
     d.appendChild(sr); }
-  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),100);
+  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),132);
   var mimg=mas.querySelector(".bee-img"); if(mimg&&!S.coachMsgs.length)mimg.classList.add("pop");
   d.appendChild(mas);
   var box=el("div","coach-box");
-  if(!S.coachMsgs.length){ var intro=el("div","coach-msg bot"); intro.innerHTML='<div class="cm-av">'+MASCOT("wave",38)+'</div>'; var it=el("div","cm-txt"); it.textContent=coachGreeting(c); intro.appendChild(it); box.appendChild(intro); }
+  if(!S.coachMsgs.length){ var intro=el("div","coach-msg bot"); intro.innerHTML='<div class="cm-av">'+MASCOT("wave",46)+'</div>'; var it=el("div","cm-txt"); it.textContent=coachGreeting(c); intro.appendChild(it); box.appendChild(intro); }
   S.coachMsgs.slice(-40).forEach(function(m){
     if(m.role==="sys"){ var sysd=el("div","coach-sys"); sysd.textContent=m.text; box.appendChild(sysd); return; }
     var row=el("div","coach-msg "+(m.role==="user"?"user":"bot"));
-    if(m.role!=="user") row.innerHTML='<div class="cm-av">'+MASCOT("point",38)+'</div>';
+    if(m.role!=="user") row.innerHTML='<div class="cm-av">'+MASCOT("point",46)+'</div>';
     var t=el("div","cm-txt"); t.textContent=m.text; row.appendChild(t);
     if(m.role!=="user"){ var say=el("button","cm-say"); say.textContent="🔊"; say.title="Écouter"; say.onclick=function(){ coachSpeak(m.text); }; row.appendChild(say); }
     box.appendChild(row); });
-  if(_coachThinking){ var tp=el("div","coach-msg bot"); tp.innerHTML='<div class="cm-av">'+MASCOT("read",38)+'</div><div class="cm-txt typing">•  •  •</div>'; box.appendChild(tp); }
+  if(_coachThinking){ var tp=el("div","coach-msg bot"); tp.innerHTML='<div class="cm-av">'+MASCOT("read",46)+'</div><div class="cm-txt typing">•  •  •</div>'; box.appendChild(tp); }
   d.appendChild(box);
   var chips=el("div","coach-chips"); coachSuggestions(c).forEach(function(s){ var b=el("button","coach-chip"); b.textContent=s; b.onclick=function(){ coachSend(s); }; chips.appendChild(b); }); d.appendChild(chips);
   var bar=el("div","coach-inbar"); var inp=el("input","coach-input"); inp.type="text"; inp.placeholder="Parle-moi de ce que tu veux…"; inp.setAttribute("autocomplete","off"); inp.setAttribute("autocapitalize","sentences");
@@ -1786,7 +1786,7 @@ function finishPlacement(L){ var ratio=L.correct/Math.max(1,L.ex.length);
   for(var ui=0;ui<Math.min(openUpto,c.units.length);ui++){ (function(u){ u.lessons.forEach(function(_,li){ var k="u"+ui+"-"+li; if(!(S.prog[S.course][k]>0)) S.prog[S.course][k]=-1; }); })(c.units[ui]); }
   save(); VIEW="home"; render();
   var names=["Facile (Débutant)","Moyen (A1)","Assez difficile (A1+)","Difficile (A2)","Expert (A2+)"];
-  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT("party",120)+'</div><h3>📊 Niveau estimé : '+names[tier]+'</h3><p class="mini">'+L.correct+'/'+L.ex.length+' bonnes réponses. J\'ai adapté la difficulté des exercices'+(openUpto>0?' et ouvert les '+openUpto+' premières unités pour toi.':'.')+' Tu peux réajuster dans ton profil quand tu veux.</p>';
+  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT("party",158)+'</div><h3>📊 Niveau estimé : '+names[tier]+'</h3><p class="mini">'+L.correct+'/'+L.ex.length+' bonnes réponses. J\'ai adapté la difficulté des exercices'+(openUpto>0?' et ouvert les '+openUpto+' premières unités pour toi.':'.')+' Tu peux réajuster dans ton profil quand tu veux.</p>';
   var b=el("button","btn-main"); b.textContent="C'est parti ! 🚀"; b.onclick=function(){ m.close(); render(); }; m.body.appendChild(b); }
 function diffLabel(){ return S.diff==null?"Auto":["Facile","Moyen","Assez difficile","Difficile","Expert"][S.diff]; }
 function openDiff(){ var m=modal();
@@ -1799,7 +1799,7 @@ function openDiff(){ var m=modal();
 function maybeOfferPlacement(){
   if(!S.course || S.diff!=null || masteredCount()>0 || lg("placeAsked",false)) return;
   ls("placeAsked",true);
-  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT("point",110)+'</div><h3>📊 Évaluons ton niveau</h3><p class="mini">Un mini-test d\'une minute pour <b>adapter les leçons à ton niveau</b> et progresser pas à pas. (Tu pourras le refaire quand tu veux.)</p>';
+  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT("point",145)+'</div><h3>📊 Évaluons ton niveau</h3><p class="mini">Un mini-test d\'une minute pour <b>adapter les leçons à ton niveau</b> et progresser pas à pas. (Tu pourras le refaire quand tu veux.)</p>';
   var b1=el("button","btn-main"); b1.textContent="🚀 Faire le test (1 min)"; b1.onclick=function(){ m.close(); startPlacement(); }; m.body.appendChild(b1);
   var b2=el("button","btn-ghost"); b2.textContent="Je débute — commencer simple"; b2.onclick=function(){ S.diff=0; save(); m.close(); render(); }; m.body.appendChild(b2);
 }
@@ -1808,7 +1808,7 @@ function startExam(ui){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   var msg="C'est "+MNAME()+" qui te fait passer l'examen ! Concentre-toi, je suis avec toi "+MEMO();
   setTimeout(function(){ beeBubble(msg,5000); speakLang(msg,"fr-FR",BEE_VOICE,true); },350); }
 function outOfHearts(){ VIEW="home"; render(); var m=modal();
-  m.body.innerHTML='<div class="mascot-mini">'+MASCOT("sad",90)+'</div><h3>Plus de vies ❤️</h3><p>Tes cœurs reviennent seuls (1 / 30 min).</p>';
+  m.body.innerHTML='<div class="mascot-mini">'+MASCOT("sad",118)+'</div><h3>Plus de vies ❤️</h3><p>Tes cœurs reviennent seuls (1 / 30 min).</p>';
   var b1=el("button","btn-main"); b1.textContent="Recharger (350 💎)"; b1.onclick=function(){ if(S.gems>=350){S.gems-=350;S.hearts=HEART_MAX;S.heartTs=Date.now();save();m.close();render();} else toast("Pas assez de gemmes 💎"); };
   var b2=el("button","btn-ghost"); b2.textContent="Réviser gratuitement (regagne des cœurs)"; b2.onclick=function(){ m.close(); var rw=shuffle(allWords(S.course)).slice(0,8); LESSON={ui:null,li:null,review:true,heal:true,ex:buildLesson(null,null,rw),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; render(); };
   m.body.appendChild(b1); m.body.appendChild(b2);
@@ -1887,7 +1887,7 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
 function exMC(ex){ var w=el("div","ex");
   var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour écouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
   var titre=ex.audio?"Que dis-je ?":(ex.mode==="mc_fr"?"Traduis en français":"Traduis ce mot");
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">'+titre+'</div></div>'+q;
+  w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">'+titre+'</div></div>'+q;
   /* entraîne l'oreille : on LIT le mot cible affiché (mode audio, ou « traduis en français » où
      le mot dans la langue est montré). On ne lit pas la réponse cachée (ça la donnerait). */
   if(!LESSON.answered && (ex.audio || ex.mode==="mc_fr")) _lsSpeak(ex.w.t,LESSON.i,260);
@@ -1895,7 +1895,7 @@ function exMC(ex){ var w=el("div","ex");
   setTimeout(function(){ var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },0);
   return w;
 }
-function exMatch(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Associe les paires</div></div>';
+function exMatch(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">Associe les paires</div></div>';
   var grid=el("div","match-grid"),cL=el("div","mcol"),cR=el("div","mcol");
   var left=shuffle(ex.pairs.map(function(p){return{txt:p.fr,key:p.fr,side:"L"};})),right=shuffle(ex.pairs.map(function(p){return{txt:p.t,key:p.fr,side:"R",w:p.w};}));
   LESSON._match={sel:null,done:0,need:ex.pairs.length};
@@ -1907,7 +1907,7 @@ function exMatch(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MAS
     else{ b.classList.add("mbad");s.classList.add("mbad");var ss=s; setTimeout(function(){b.classList.remove("mbad","msel");ss.classList.remove("mbad","msel");},450); LESSON._match.sel=null; beep(false); } }; return b; }
   left.forEach(function(it){cL.appendChild(mk(it));}); right.forEach(function(it){cR.appendChild(mk(it));}); grid.appendChild(cL);grid.appendChild(cR);w.appendChild(grid); return w;
 }
-function exBank(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Traduis cette phrase</div></div><div class="q-word">'+esc(ex.prompt)+'</div>';
+function exBank(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">Traduis cette phrase</div></div><div class="q-word">'+esc(ex.prompt)+'</div>';
   var ans=el("div","bank-answer"),bank=el("div","bank-src"); LESSON._chosen=[];
   function refresh(){ ans.innerHTML=""; LESSON._chosen.forEach(function(tok,idx){ var t=el("button","tok"); t.textContent=tok; t.onclick=function(){LESSON._chosen.splice(idx,1);refresh();}; ans.appendChild(t); });
     var used={}; LESSON._chosen.forEach(function(t){used[t]=(used[t]||0)+1;}); var seen={}; bank.querySelectorAll(".tok").forEach(function(b){ var t=b.textContent; seen[t]=(seen[t]||0)+1; if(seen[t]<=(used[t]||0))b.classList.add("used"); else b.classList.remove("used"); });
@@ -1918,7 +1918,7 @@ function exBank(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MASC
 function exType(ex){ var w=el("div","ex");
   var titre=ex.audio?"Écoute et écris ce que tu entends":(ex.dir==="toFr"?"Écris en français":"Écris la traduction");
   var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour réécouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">'+titre+'</div></div>'+q;
+  w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">'+titre+'</div></div>'+q;
   /* on lit le mot cible montré (écoute, ou « écris en français » où le mot dans la langue est affiché) */
   if(!LESSON.answered && (ex.audio || ex.dir==="toFr")) _lsSpeak(ex.w.t,LESSON.i,260);
   var inp=el("input","type-input"); inp.type="text"; inp.setAttribute("autocapitalize","none"); inp.setAttribute("autocomplete","off"); inp.setAttribute("autocorrect","off"); inp.spellcheck=false; inp.placeholder="Écris ta réponse…";
@@ -1934,7 +1934,7 @@ function exType(ex){ var w=el("div","ex");
 }
 function exSpeak(ex){ var w=el("div","ex");
   var syl=pronSyllables(ex.answer); var hasSyl=syl.indexOf("·")>=0;
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",64)+'<div class="bubble">Prononce à voix haute 🎤</div></div>'
+  w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">Prononce à voix haute 🎤</div></div>'
     +'<div class="q-word">'+esc(ex.prompt)+'</div>'
     +(hasSyl?'<div class="pron-syl" title="Découpage en syllabes">'+esc(syl)+'</div>':'')
     +'<div class="pron-audio">'
@@ -2007,7 +2007,7 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
   else if(L.ui!=null&&L.li!=null&&!L.review){ var k="u"+L.ui+"-"+L.li; /* Math.max : une leçon « ouverte par le test » (-1) vraiment faite passe bien à 1 */ S.prog[S.course][k]=Math.min(5,Math.max(0,S.prog[S.course][k]||0)+1); }
   bumpStreak(); leagueAdd(xp); save(); checkAchv(); checkQuests();
   VIEW="home"; render();
-  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",120)+'</div><h3>'+(L.wrong===0?(L.exam?"Examen sans faute ! 🏆":"Sans faute ! 🎉"):(L.exam?"Examen réussi ✅":"Leçon terminée ✅"))+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+gems+'</b><i>Gemmes</i></div></div>';
+  var m=modal(); m.body.innerHTML='<div class="mascot-mini big">'+MASCOT(L.wrong===0?"party":"wave",158)+'</div><h3>'+(L.wrong===0?(L.exam?"Examen sans faute ! 🏆":"Sans faute ! 🎉"):(L.exam?"Examen réussi ✅":"Leçon terminée ✅"))+'</h3><div class="reward-grid"><div class="rw"><span>⭐</span><b>+'+xp+'</b><i>XP</i></div><div class="rw"><span>🔥</span><b>'+S.streak+'</b><i>Série</i></div><div class="rw"><span>💎</span><b>+'+gems+'</b><i>Gemmes</i></div></div>';
   /* Précision RÉELLE : bonnes réponses et erreurs (les erreurs sont reposées jusqu'à réussite) */
   var acc=el("p","mini fin-acc"); acc.innerHTML='✅ '+L.correct+' bonnes réponses'+(L.wrong>0?' · ❌ '+L.wrong+' erreur'+(L.wrong>1?'s':'')+' corrigée'+(L.wrong>1?'s':''):' — 100 %'); m.body.appendChild(acc);
   /* Passage de palier RÉEL (mots maîtrisés, même source que la barre Coach) — fêté seulement s'il a eu lieu */
