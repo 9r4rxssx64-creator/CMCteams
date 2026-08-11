@@ -5343,5 +5343,6 @@ var VERBES_FR = [
   "surmonter","télécharger","tenir","tirer","tomber","toucher",
   "tousser","traduire","trahir","travailler","trier","trouver",
   "vendre","venir","verrouiller","verser","vider","visiter",
-  "visser","voir","voler","voter","vouloir","voyager"
+  "visser","voir","voler","voter","vouloir","voyager",
+  "diminuer","paraître"
 ];
