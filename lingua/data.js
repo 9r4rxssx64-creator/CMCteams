@@ -5212,11 +5212,11 @@ var STORIES=[
   {q:"La poule a un…", opts:["Chat","Œuf","Livre"], ok:1},
   {q:"Le cochon est…", opts:["Bleu","Rose","Noir"], ok:1}]},
  {id:"vetements", ic:"🧥", titre:"Les vêtements", lignes:[
-  {qui:"🐝", fr:"Il fait froid.", t:{en:"It is cold.", it:"Fa freddo.", es:"Hace frío.", de:"Es ist kalt.", pt:"Está frio.", nl:"Het is koud."}},
-  {qui:"🐝", fr:"Je mets un manteau.", t:{en:"I put on a coat.", it:"Metto un cappotto.", es:"Me pongo un abrigo.", de:"Ich ziehe einen Mantel an.", pt:"Visto um casaco.", nl:"Ik trek een jas aan."}},
-  {qui:"🐝", fr:"J'ai un chapeau rouge.", t:{en:"I have a red hat.", it:"Ho un cappello rosso.", es:"Tengo un sombrero rojo.", de:"Ich habe einen roten Hut.", pt:"Tenho um chapéu vermelho.", nl:"Ik heb een rode hoed."}},
-  {qui:"🧑", fr:"Tes chaussures sont belles.", t:{en:"Your shoes are nice.", it:"Le tue scarpe sono belle.", es:"Tus zapatos son bonitos.", de:"Deine Schuhe sind schön.", pt:"Os teus sapatos são bonitos.", nl:"Je schoenen zijn mooi."}},
-  {qui:"🐝", fr:"Merci ! Je suis prête !", t:{en:"Thank you! I am ready!", it:"Grazie! Sono pronta!", es:"¡Gracias! ¡Estoy lista!", de:"Danke! Ich bin bereit!", pt:"Obrigada! Estou pronta!", nl:"Dank je! Ik ben klaar!"}}],
+  {qui:"🐝", fr:"Il fait froid.", t:{en:"It is cold.", it:"Fa freddo.", es:"Hace frío.", de:"Es ist kalt.", pt:"Está frio.", nl:"Het is koud.", pl:"Jest zimno.", ru:"Холодно.", uk:"Холодно.", cs:"Je zima.", zh:"很冷。", ja:"寒いです。", ko:"추워.", ar:"بارد."}},
+  {qui:"🐝", fr:"Je mets un manteau.", t:{en:"I put on a coat.", it:"Metto un cappotto.", es:"Me pongo un abrigo.", de:"Ich ziehe einen Mantel an.", pt:"Visto um casaco.", nl:"Ik trek een jas aan.", pl:"Wkładam płaszcz.", ru:"Я надеваю пальто.", uk:"Я надягаю пальто.", cs:"Oblékám si kabát.", zh:"我穿上外套。", ja:"コートを着ます。", ko:"코트를 입습니다.", ar:"ألبس معطفا."}},
+  {qui:"🐝", fr:"J'ai un chapeau rouge.", t:{en:"I have a red hat.", it:"Ho un cappello rosso.", es:"Tengo un sombrero rojo.", de:"Ich habe einen roten Hut.", pt:"Tenho um chapéu vermelho.", nl:"Ik heb een rode hoed.", pl:"Mam czerwoną czapkę.", ru:"У меня есть красная шапка.", uk:"У мене є червона шапка.", cs:"Mám červenou čapku.", zh:"我有一顶红帽子。", ja:"私には赤い帽子があります。", ko:"나는 빨간 모자를 가지고 있습니다.", ar:"عندى قبعة حمراء."}},
+  {qui:"🧑", fr:"Tes chaussures sont belles.", t:{en:"Your shoes are nice.", it:"Le tue scarpe sono belle.", es:"Tus zapatos son bonitos.", de:"Deine Schuhe sind schön.", pt:"Os teus sapatos são bonitos.", nl:"Je schoenen zijn mooi.", pl:"Twoje buty są ładne.", ru:"Твои туфли красивые.", uk:"Твої туфлі гарні.", cs:"Tvoje boty jsou hezké.", zh:"你的鞋子很漂亮。", ja:"あなたの靴はきれいです。", ko:"당신의 신발은 예쁩니다.", ar:"حذاؤك جميل."}},
+  {qui:"🐝", fr:"Merci ! Je suis prête !", t:{en:"Thank you! I am ready!", it:"Grazie! Sono pronta!", es:"¡Gracias! ¡Estoy lista!", de:"Danke! Ich bin bereit!", pt:"Obrigada! Estou pronta!", nl:"Dank je! Ik ben klaar!", pl:"Dziękuję! Jestem gotowa!", ru:"Спасибо! Я готова!", uk:"Дякую! Я готова!", cs:"Děkuji! Jsem připravena!", zh:"谢谢！我准备好了！", ja:"ありがとう！私は準備できました！", ko:"고마워! 나는 준비가 되었어!", ar:"شكرا! أنا مستعدة!"}}],
   quiz:[
   {q:"Il fait…", opts:["Chaud","Froid","Beau"], ok:1},
   {q:"Bee met un…", opts:["Manteau","Maillot","Pyjama"], ok:0},
