@@ -71,37 +71,42 @@ RETOUR_CAMERA: Dict[str, float] = {
 USD_EUR = 0.866
 
 PRIX: Dict[str, float] = {
-    "camera": 168.0,             # RELEVÉ
-    "objectif": 35.0,            # cible
+    "camera": 139.0,             # RELEVÉ
+    "objectif": 36.0,            # RELEVÉ
     "filtre": 15.0,              # cible
     "caisson": 15.0,             # cible
     "trepied": 15.0,             # cible
-    "calculateur": 216.0,        # RELEVÉ
+    "calculateur": 307.0,        # RELEVÉ (prix UE réel, pas le tarif officiel)
     "ssd": 40.0,                 # cible
     "switch_poe": 60.0,          # cible
     "micro": 25.0,               # cible
     "batterie_30ah": 46.0,       # RELEVÉ
     "chargeur": 25.0,            # cible
     "cablage": 50.0,             # cible
-    "pont_directionnel": 85.0,   # RELEVÉ — la PAIRE
+    "pont_directionnel": 98.0,   # RELEVÉ — la PAIRE, achetée en UE
     "routeur": 40.0,             # cible
     "ecran_club": 250.0,         # cible — NOUVEAU
     "mini_pc_club": 200.0,       # cible — NOUVEAU
 }
 
 SOURCE_PRIX: Dict[str, str] = {
-    "camera": "RELEVÉ — Hikrobot MV-CS016 (IMX273, 1440x1080, global shutter), "
-              "en version COULEUR (obligatoire, cf. mesure 27/27 vs 9/27) : "
-              "194 USD par 5-19 pièces sur Alibaba, août 2026 -> 168 €. "
-              "Le prix de la variante GigE (10GC) n'a pas été relevé à part.",
-    "objectif": "cible BUDGET_BOM — monture C, 8 mm. Aucun prix public relevé "
-                "pour un 8 mm destiné à un capteur 1/2.9\".",
+    "camera": "RELEVÉ — Hikrobot MV-CS016-10GC : la référence EXACTE (GigE, "
+              "COULEUR, global shutter, 1440x1080, 65,2 img/s). 160 USD par "
+              "5-19 pièces sur Alibaba, août 2026 -> 139 €. Achat CHINE : "
+              "l'équivalent de marque européenne (Basler acA1440-73gc) est à "
+              "429-493 USD, soit 2,7x plus cher pour +8 img/s.",
+    "objectif": "RELEVÉ — jeu d'objectifs monture C 5 MP (5/8/12/16/25 mm) à "
+                "~41,84 USD pièce sur eBay -> 36 €. Prendre du F1.4 : c'est la "
+                "façon la moins chère d'acheter de la lumière pour les fins de "
+                "journée. Achat CHINE (fabricants AICO / Hangzhou Ai Ke).",
     "filtre": "cible BUDGET_BOM — passe-bande 850 nm / polarisant.",
     "caisson": "cible BUDGET_BOM — boîtier aluminium IP66.",
     "trepied": "cible BUDGET_BOM — fixation rigide.",
-    "calculateur": "RELEVÉ — NVIDIA Jetson Orin Nano Super Developer Kit, "
-                   "249 USD prix officiel NVIDIA -> 216 €. ⚠️ forte demande : "
-                   "le prix au comptant peut être un multiple de ce tarif.",
+    "calculateur": "RELEVÉ — NVIDIA Jetson Orin Nano Super Developer Kit. "
+                   "Tarif officiel 249 USD (216 €) mais prix RÉEL en Europe "
+                   "307,14 € (idealo.fr, revendeurs Kubii/Gotronic/RS). C'est "
+                   "ce prix-là qui est retenu : 216 € + TVA + douane ferait "
+                   "~277 € pour un import, sans garantie ni SAV. Achat UE.",
     "ssd": "cible BUDGET_BOM — NVMe 500 Go.",
     "switch_poe": "cible BUDGET_BOM. Un TP-Link TL-SG1005P (4 ports PoE, 65 W) "
                   "est listé à 30,83 £ chez un revendeur britannique : la "
@@ -112,13 +117,53 @@ SOURCE_PRIX: Dict[str, str] = {
                      "BUDGET_BOM était de 130 € : nettement surévaluée.",
     "chargeur": "cible BUDGET_BOM — chargeur LiFePO4 dédié.",
     "cablage": "cible BUDGET_BOM — Cat6 extérieur, presse-étoupes, fusibles.",
-    "pont_directionnel": "RELEVÉ — Ubiquiti NanoStation 5AC Loco, ~49 USD "
-                         "l'unité, 450+ Mbit/s annoncés, portée >10 km. "
-                         "La PAIRE = ~98 USD -> 85 €.",
+    "pont_directionnel": "RELEVÉ — Ubiquiti NanoStation 5AC Loco, 450+ Mbit/s, "
+                         "portée >10 km. 49 € l'unité en France (idealo, "
+                         "Getic 50,62 €, LDLC 64,95 €) -> la PAIRE 98 €. "
+                         "Achat UE : même prix qu'en import une fois la TVA "
+                         "ajoutée, mais livré tout de suite.",
     "routeur": "cible BUDGET_BOM — routeur WiFi local.",
     "ecran_club": "cible — écran/TV du club-house. NOUVEAU, aucun prix relevé.",
     "mini_pc_club": "cible — mini-PC du club-house. NOUVEAU, aucun prix relevé.",
 }
+
+# D'où vient le meilleur prix, poste par poste. « retenu » n'est PAS toujours
+# le moins cher affiché : pour un import, il faut ajouter TVA (20 %) + frais de
+# douane, et accepter l'absence de garantie locale. Le bon choix est donc
+# MIXTE — et c'est le résultat de la comparaison, pas un a priori.
+TVA = 0.20
+
+ORIGINE: Dict[str, Dict] = {
+    "camera": {"retenu": "chine", "chine": 139.0, "ue": 372.0,
+               "pourquoi": "Hikrobot 139 € contre 372 € pour l'équivalent "
+                           "Basler : 2,7x. Même en ajoutant TVA et douane "
+                           "(~172 €), la Chine reste largement devant."},
+    "objectif": {"retenu": "chine", "chine": 36.0, "ue": None,
+                 "pourquoi": "Aucun prix public UE relevé ; à commander avec "
+                             "les caméras, chez le même vendeur."},
+    "calculateur": {"retenu": "ue", "chine": None, "ue": 307.0,
+                    "pourquoi": "Tarif officiel 216 €, mais 277 € une fois TVA "
+                                "et douane ajoutées — pour 30 € de plus, l'UE "
+                                "apporte garantie, SAV et zéro risque de "
+                                "contrefaçon sur une pièce critique."},
+    "pont_directionnel": {"retenu": "ue", "chine": None, "ue": 98.0,
+                          "pourquoi": "49 € l'unité en France : l'import ne "
+                                      "ferait rien gagner après TVA."},
+    "batterie_30ah": {"retenu": "ue", "chine": None, "ue": 46.0,
+                      "pourquoi": "Lourd : le transport annule l'écart. Et une "
+                                  "batterie lithium en colis express hors UE "
+                                  "pose un problème réglementaire."},
+}
+
+
+def cout_import(prix_chine: float) -> float:
+    """Ce qu'un prix chinois coûte VRAIMENT une fois arrivé : + TVA (20 %).
+
+    Les frais de dossier du transporteur s'ajoutent PAR COLIS, pas par article :
+    ils sont comptés une seule fois, au niveau du devis, pas ici.
+    """
+    return round(prix_chine * (1 + TVA), 2)
+
 
 POSTES_NOUVEAUX = ("ecran_club", "mini_pc_club")
 
@@ -294,8 +339,22 @@ class Site:
         return problemes
 
     # ---------------------------------------------------------------- BOM --
-    def bom(self) -> Dict:
-        """Prévisionnel matériel du club entier : quantités et coût cible."""
+    def bom(self, niveau: str = "optimal") -> Dict:
+        """Prévisionnel matériel du club entier.
+
+        `niveau` :
+          - "minimum" : juste ce qu'il faut pour que ça marche.
+          - "optimal" : ce qu'il faut pour que ça marche DANS TOUS LES CAS —
+            un poste de vue de SECOURS par terrain (le rôle existe déjà dans
+            le logiciel : une caméra qui tombe pendant une épreuve ne l'arrête
+            plus), et DEUX jeux d'objectifs (8 mm pour voir large en fosse
+            olympique et sur parcours, 12 mm pour la précision en fosse
+            universelle) — le choix se fait alors sur le terrain, pas au
+            moment de la commande.
+        """
+        if niveau not in ("minimum", "optimal"):
+            raise ValueError(
+                f"Niveau inconnu : {niveau!r} (attendu : minimum | optimal).")
         lignes: List[Dict] = []
 
         def ajoute(poste: str, qte: int, note: str = "") -> None:
@@ -309,12 +368,21 @@ class Site:
                 "note": note,
             })
 
-        n_pods = sum(len(t.pods) for t in self.terrains)
         n_terrains = len(self.terrains)
+        n_pods = sum(len(t.pods) for t in self.terrains)
+        # En « optimal », un poste de SECOURS par terrain.
+        secours = n_terrains if niveau == "optimal" else 0
+        n_pods_total = n_pods + secours
+        # ... et deux focales par poste (8 mm ET 12 mm) au lieu d'une.
+        objectifs_par_pod = 2 if niveau == "optimal" else 1
 
-        # Par poste de vue.
-        for poste in ("camera", "objectif", "filtre", "caisson", "trepied"):
-            ajoute(poste, n_pods, "1 par poste de vue")
+        for poste in ("camera", "filtre", "caisson", "trepied"):
+            ajoute(poste, n_pods_total,
+                   "1 par poste de vue"
+                   + (f" (dont {secours} de secours)" if secours else ""))
+        ajoute("objectif", n_pods_total * objectifs_par_pod,
+               "8 mm ET 12 mm par poste : le choix se fait sur le terrain"
+               if objectifs_par_pod == 2 else "1 par poste de vue")
 
         # Par terrain : un calculateur qui décide sur place, et son réseau local.
         for poste in ("calculateur", "ssd", "switch_poe", "micro",
@@ -343,11 +411,14 @@ class Site:
         nouveau = round(sum(ligne["total"] for ligne in lignes
                             if ligne["nouveau"]), 2)
         return {
+            "niveau": niveau,
             "lignes": lignes,
             "total": total,
             "total_postes_nouveaux": nouveau,
             "n_terrains": n_terrains,
             "n_pods": n_pods,
+            "n_pods_factures": n_pods_total,
+            "pods_secours": secours,
             "n_lanceurs": self.n_lanceurs,
             "releves": releves,
             "cibles": cibles,
@@ -366,5 +437,6 @@ class Site:
             "n_lanceurs": self.n_lanceurs,
             "debit_club_mbps": round(self.debit_club_mbps(), 2),
             "problemes": self.check(),
-            "bom": self.bom(),
+            "bom": self.bom("optimal"),
+            "bom_minimum": self.bom("minimum"),
         }

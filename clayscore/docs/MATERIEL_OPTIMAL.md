@@ -104,7 +104,7 @@ Deux routes crédibles. J'ai comparé au prix réel du jour, pas au prix d'hier.
 | Obturateur global | ✅ | ✅ |
 | Déclenchement externe (paire synchro) | ✅ | ✅ |
 | Monture objectif | C | C/CS |
-| **Prix caméra** | **168 €** 🟢 | **43 €** 🟢 (50 USD) |
+| **Prix caméra** | **139 €** 🟢 (160 USD, réf. `-10GC`) | **43 €** 🟢 (50 USD) |
 | Longueur de câble | **100 m** (Ethernet) | **~30 cm** (nappe CSI) |
 | Alimentation | **par le câble réseau (PoE)** | séparée, par caméra |
 
@@ -120,7 +120,7 @@ Le calcul devient donc :
 
 | Route | Coût par caméra | Câblage |
 |---|---:|---|
-| Industrielle GigE | **168 €** | 1 câble : données **+** courant, 100 m |
+| Industrielle GigE | **139 €** | 1 câble : données **+** courant, 100 m |
 | Raspberry (1 Pi par caméra) | 43 + 152 = **195 €** | nappe + alim + réseau par caméra |
 
 **La route « pas chère » est devenue la plus chère.** Et elle reste la plus
@@ -137,7 +137,7 @@ ne peut pas mettre deux caméras sur le même Pi).
 
 | Option | Prix | Ce que ça apporte | Risque |
 |---|---:|---|---|
-| **Jetson Orin Nano Super** | **216 €** 🟢 (249 USD) | GPU : indispensable **si** on active le détecteur IA (YOLO) | Forte demande — le prix au comptant peut être un multiple du tarif officiel |
+| **Jetson Orin Nano Super** | **307 €** 🟢 (prix UE réel ; 249 USD au tarif officiel) | GPU : indispensable **si** on active le détecteur IA (YOLO) | Forte demande — le prix au comptant peut être un multiple du tarif officiel |
 | Mini-PC Intel N100 | 🟡 non relevé | x86, ports USB3/Ethernet, souvent moins cher | Pas de GPU → détecteur classique seulement |
 
 **Le détecteur livré aujourd'hui (classique) tourne sur processeur**, pas sur
@@ -149,8 +149,9 @@ GPU. Le Jetson n'est donc nécessaire que pour la variante IA.
 >
 > ✅ **Ce qu'il faut faire, et c'est peu cher** : acheter **UN SEUL**
 > calculateur, lancer `python -m tools.bench --all` dessus, et **ne commander
-> les deux autres qu'après**. 216 € pour supprimer le seul vrai risque
-> technique du projet.
+> les deux autres qu'après**. Avec 2 caméras et 4 objectifs, ça fait **813 €
+> livré** pour supprimer le seul vrai risque technique du projet — détail dans
+> **`COMPARATIF_CHINE_UE.md`** § 5.
 
 ---
 
@@ -158,7 +159,7 @@ GPU. Le Jetson n'est donc nécessaire que pour la variante IA.
 
 | Matériel | Prix | Performance | Besoin réel |
 |---|---:|---|---|
-| **Ubiquiti NanoStation 5AC Loco** (la paire) | **85 €** 🟢 (~98 USD) | 450+ Mbit/s annoncés, portée > 10 km | **4,2 Mbit/s** par terrain |
+| **Ubiquiti NanoStation 5AC Loco** (la paire) | **98 €** 🟢 (49 € l'unité en France) | 450+ Mbit/s annoncés, portée > 10 km | **4,2 Mbit/s** par terrain |
 
 La marge est énorme (×100). C'est voulu : en extérieur, la pluie, les feuilles
 et les autres réseaux 5 GHz mangent du débit. On dimensionne large et on ne
@@ -175,37 +176,38 @@ Ce tableau est **calculé** par `Site.bom()`, pas tapé à la main.
 
 | Poste | Réf. / critère | Qté | Unit. | Total | Prix |
 |---|---|---:|---:|---:|:--:|
-| Caméra industrielle **couleur** | Hikrobot MV-CS016-10GC | 10 | 168 € | 1 680 € | 🟢 |
-| Objectif monture C **8 mm** | voir § 7 | 10 | 35 € | 350 € | 🟡 |
-| Filtre optique | passe-bande 850 nm / polarisant | 10 | 15 € | 150 € | 🟡 |
-| Caisson IP66 | boîtier aluminium | 10 | 15 € | 150 € | 🟡 |
-| Fixation rigide | trépied lourd / piquet | 10 | 15 € | 150 € | 🟡 |
-| Calculateur | Jetson Orin Nano Super | 3 | 216 € | 648 € | 🟢 |
+| Caméra industrielle **couleur** | Hikrobot MV-CS016-10GC | 13 | 139 € | 1 807 € | 🟢 |
+| Objectifs **8 mm ET 12 mm** F1.4 | monture C, 5 MP | 26 | 36 € | 936 € | 🟢 |
+| Filtre optique | passe-bande 850 nm / polarisant | 13 | 15 € | 195 € | 🟡 |
+| Caisson IP66 | boîtier aluminium | 13 | 15 € | 195 € | 🟡 |
+| Fixation rigide | trépied lourd / piquet | 13 | 15 € | 195 € | 🟡 |
+| Calculateur | Jetson Orin Nano Super (UE) | 3 | 307 € | 921 € | 🟢 |
 | SSD NVMe 500 Go | clips + base | 3 | 40 € | 120 € | 🟡 |
 | Switch PoE | TP-Link TL-SG1005P (65 W) | 3 | 60 € | 180 € | 🟡 |
 | Micro USB | omnidirectionnel | 3 | 25 € | 75 € | 🟡 |
 | Batterie LiFePO4 12 V 30 Ah | avec BMS | 3 | 46 € | 138 € | 🟢 |
 | Chargeur LiFePO4 | dédié | 3 | 25 € | 75 € | 🟡 |
 | Câblage extérieur | Cat6 ext., presse-étoupes, fusibles | 3 lots | 50 € | 150 € | 🟡 |
-| Pont directionnel (paire) | NanoStation 5AC Loco | 3 | 85 € | 255 € | 🟢 |
+| Pont directionnel (paire) | NanoStation 5AC Loco (UE) | 3 | 98 € | 294 € | 🟢 |
 | Routeur club-house | WiFi local | 1 | 40 € | 40 € | 🟡 |
 | Mini-PC club-house | agrège + pilote l'écran | 1 | 200 € | 200 € | 🟡 |
 | Écran club-house | TV scores + retour caméra | 1 | 250 € | 250 € | 🟡 |
-| **TOTAL** | | | | **4 611 €** | |
+| **TOTAL (config OPTIMALE)** | | | | **5 771 € HT** | |
 
 **Répartition honnête :**
 
 | | Montant | Part |
 |---|---:|---:|
-| 🟢 Prix **relevés** (offre publique datée) | **2 721 €** | 59 % |
-| 🟡 Prix **à confirmer** (hypothèses) | **1 890 €** | 41 % |
+| 🟢 Prix **relevés** (offre publique datée) | **4 096 €** | 71 % |
+| 🟡 Prix **à confirmer** (hypothèses) | **1 675 €** | 29 % |
 
 > ⚠️ **Aucun de ces chiffres n'est un devis.** Ils ne comprennent ni la **TVA**
 > ni la **douane** sur la partie hors UE (compter **+20 %** + frais de dossier
 > sur la commande chinoise, soit environ **+340 €** sur les 1 680 € de caméras).
 
-**Et si on achetait tout d'un coup :** 4 611 € + ~340 € de TVA/douane
-≈ **4 950 €**. En trois étapes : **1 781 €** → +1 291 € → +1 539 €.
+**Livré, TVA comprise sur la part chinoise : 6 320 €.** En config *minimum*
+(sans secours ni double focale) : 4 993 €. Détail et étapes :
+**`COMPARATIF_CHINE_UE.md`**.
 
 ---
 
@@ -215,10 +217,9 @@ Ce sont les seules inconnues qui pèsent :
 
 | Poste | Montant en jeu | Comment lever le doute |
 |---|---:|---|
-| **Objectifs 8 mm** | 350 € | Les demander **au même vendeur Hikrobot** : ils vendent l'ensemble caméra + objectif, et un lot négocié coûte moins cher que 10 achats séparés |
 | **Écran + mini-PC club-house** | 450 € | Regarder d'abord ce que le club **a déjà** : une TV au bar et un vieux PC suffisent. Ça peut tomber à 0 € |
-| **Switch PoE** | 180 € | Un TL-SG1005P est listé à 30,83 £ : la cible de 60 € est **prudente**, ça devrait baisser |
-| **Petites pièces** (filtres, caissons, fixations, câblage) | 600 € | Un seul lot chez un vendeur : c'est le poste le plus dispersé, donc celui où on perd du temps et des frais de port |
+| **Switch PoE** | 180 € | En prendre un à **entrée continue 12-48 V** (se branche sur la batterie). ⚠️ à 12 V, le budget PoE tombe à ~60 W — assez pour 4 caméras |
+| **Petites pièces** (filtres, caissons, fixations, câblage) | 735 € | Un seul lot chez un vendeur : c'est le poste le plus dispersé, donc celui où on perd du temps et des frais de port |
 
 ---
 
