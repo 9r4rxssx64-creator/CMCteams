@@ -225,9 +225,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .rig-arm{transform-origin:72% 53%}
 .bee-rig.talk .rig-arm{animation:armWave .55s ease-in-out infinite}
 @keyframes armWave{0%,100%{transform:rotate(0)}40%{transform:rotate(-13deg)}70%{transform:rotate(5deg)}}
-.rig-lid{position:absolute;background:rgb(253,225,87);border:0;border-radius:46%;opacity:0;pointer-events:none;transition:opacity .05s}
-.rig-lid.ll{left:32.2%;top:27.4%;width:18.2%;height:15%}
-.rig-lid.lr{left:51.3%;top:27.2%;width:17.4%;height:15.2%}
+.rig-lid{position:absolute;background:var(--lid,rgb(253,225,87));border:0;border-radius:46%;opacity:0;pointer-events:none;transition:opacity .05s}
+.rig-lid.ll{left:var(--ll-l,32.2%);top:var(--ll-t,27.4%);width:var(--ll-w,18.2%);height:var(--ll-h,15%)}
+.rig-lid.lr{left:var(--lr-l,51.3%);top:var(--lr-t,27.2%);width:var(--lr-w,17.4%);height:var(--lr-h,15.2%)}
+/* Geometrie PAR MASCOTTE : les paupieres et la bouche sont posees en %, donc elles doivent
+   suivre le visage. Valeurs par defaut = l'abeille ; l'ane a les siennes (mesurees sur son image). */
+.bee-rig[data-mascot="donkey"]{
+  --lid:#a38470;                 /* pelage MESURÉ autour des yeux : rgb(163,132,112) */
+  --ll-l:32.2%;--ll-t:35.6%;--ll-w:11.2%;--ll-h:13.1%;
+  --lr-l:55.8%;--lr-t:35.6%;--lr-w:11.4%;--lr-h:13.1%;
+  --mo-l:50%;--mo-t:55.7%
+}
+/* Selecteur de mascotte (reglages) — cibles tactiles larges, lisibles sur iPhone */
+.masc-row{display:flex;gap:10px;margin-top:8px}
+.masc-pick{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;min-height:112px;border-radius:14px;border:2px solid transparent;background:var(--card2);color:#cfe0ee;font:inherit;cursor:pointer}
+.masc-pick img{border-radius:50%;background:#fff8ea}
+.masc-pick b{font-size:13px}
+.masc-pick i{font-size:11px;opacity:.75;font-style:normal}
+.masc-pick.on{border-color:#ffd75e;background:#2c230c;color:#ffe9a8}
 .bee-rig.blink .rig-lid{opacity:1}
 /* Mouvements du corps ENTIER — 100% locaux et gratuits (aucune API) : danse, saut, vol, marche.
    Placés APRÈS .disc-bee.talk pour gagner la cascade : pendant un mouvement, le petit bob de
@@ -252,7 +267,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .disc-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
 .disc-bee.vid .disc-vid{display:block}
 .disc-bee.vid .rig-piece,.disc-bee.vid .rig-lid,.disc-bee.vid .disc-mouth{display:none!important}
-.disc-mouth{position:absolute;left:52.4%;top:42.6%;width:6.6%;height:5.2%;transform:translate(-50%,-50%) scale(1);border-radius:42% 42% 50% 50%/36% 36% 64% 64%;background:radial-gradient(60% 55% at 50% 66%,#ff5d6c 0%,#8a3018 60%,#53200f 100%);border:2px solid #3a1c10;opacity:0;pointer-events:none}
+.disc-mouth{position:absolute;left:var(--mo-l,52.4%);top:var(--mo-t,42.6%);width:6.6%;height:5.2%;transform:translate(-50%,-50%) scale(1);border-radius:42% 42% 50% 50%/36% 36% 64% 64%;background:radial-gradient(60% 55% at 50% 66%,#ff5d6c 0%,#8a3018 60%,#53200f 100%);border:2px solid #3a1c10;opacity:0;pointer-events:none}
 .disc-mouth.talking{opacity:1;animation:discMouth .27s ease-in-out infinite alternate}
 @keyframes discMouth{0%{transform:translate(-50%,-50%) scale(1.02,.96)}100%{transform:translate(-50%,-50%) scale(1.38,1.52)}}
 .disc-sub{margin-top:14px;min-height:52px;max-height:96px;overflow-y:auto;max-width:min(86vw,420px);text-align:center;font-size:16.5px;line-height:1.5;color:#eaf2f8;font-weight:600}
