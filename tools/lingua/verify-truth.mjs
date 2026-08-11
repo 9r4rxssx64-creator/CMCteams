@@ -21,6 +21,11 @@ const ROOT = path.resolve(process.argv.find((a, i) => i >= 2 && !a.startsWith('-
 const DATA = path.join(ROOT, 'data.js');
 const LANGS = ['en', 'it', 'es', 'de', 'pt', 'nl'];
 const LNAMES = { en: 'anglais', it: 'italien', es: 'espagnol', de: 'allemand', pt: 'portugais', nl: 'néerlandais' };
+/* Les 8 langues Est+Asie : leurs histoires n'étaient PAS relues sur le sens (angle mort
+   trouvé le 2026-08-11) — c'est précisément là qu'ont dormi 67 fautes réelles avant d'être
+   attrapées à la main. La passe sémantique les couvre désormais aussi. */
+const L2 = ['pl', 'ru', 'uk', 'cs', 'zh', 'ja', 'ko', 'ar'];
+const L2NAMES = { pl: 'polonais', ru: 'russe', uk: 'ukrainien', cs: 'tchèque', zh: 'chinois (mandarin simplifié)', ja: 'japonais', ko: 'coréen', ar: 'arabe (standard moderne)' };
 const mode = process.argv.includes('--semantic') ? 'semantic' : 'struct';
 
 function load() { const ctx = {}; vm.createContext(ctx); vm.runInContext(fs.readFileSync(DATA, 'utf8'), ctx); return ctx; }
@@ -151,8 +156,44 @@ async function semanticAudit(ctx) {
       return null;
     }).filter(Boolean);
     if (notes.length) suspects.push({ story: st.id, notes });
+
+    /* 2e passe : les 8 langues Est+Asie (appel séparé — 14 langues d'un coup noierait le juge). */
+    const notes2 = await auditStoryL2(st);
+    if (notes2.length) suspects.push({ story: st.id + ' (Est+Asie)', notes: notes2 });
   }
   return suspects;
+}
+
+/* Relecture du sens pour pl/ru/uk/cs/zh/ja/ko/ar. Mêmes garde-fous anti-fausse-alerte que
+   la passe 6-langues, PLUS ceux appris à la dure : ne pas déclarer inexistant un mot courant
+   (le juge a rejeté « dort » en tchèque — gâteau — en l'employant dans sa propre correction),
+   et ne pas exiger un « ? » quand le français n'en a pas. */
+async function auditStoryL2(st) {
+  const pairs = [];
+  st.lignes.forEach((l) => L2.forEach((lg) => { const v = l.t && l.t[lg]; if (v) pairs.push('[' + L2NAMES[lg] + '] "' + l.fr + '" => "' + v + '"'); }));
+  if (!pairs.length) return [];
+  const sys = 'Tu es correcteur plurilingue rigoureux et PRUDENT (polonais, russe, ukrainien, tchèque, chinois, japonais, coréen, arabe). Tu ne signales QUE les erreurs CERTAINES et flagrantes, jamais le style ni un doute.';
+  const user = 'Traductions FR→langue (🐝 Bee est une abeille de genre FÉMININ : les accords féminins la concernant sont CORRECTS) :\n' + pairs.join('\n')
+    + '\n\nSignale UNIQUEMENT les traductions VRAIMENT fausses. RÈGLES ANTI-FAUX-ALERTE, à respecter absolument :'
+    + '\n- si ta « correction » est IDENTIQUE à la traduction donnée, ce n\'est PAS une erreur → ne la signale pas ;'
+    + '\n- ne déclare JAMAIS « ce mot n\'existe pas » sans certitude absolue : « dort » (gâteau) est un mot tchèque courant, « tort » un mot polonais courant ;'
+    + '\n- la ponctuation finale suit le FRANÇAIS : une affirmation ne doit PAS finir par « ? » — n\'exige pas un point d\'interrogation absent du français ;'
+    + '\n- une tournure de demande (« une table, s\'il vous plaît ») est une traduction légitime d\'une question française ;'
+    + '\n- un synonyme valable, un temps équivalent ou un registre poli différent ne sont PAS des erreurs ;'
+    + '\n- en cas de doute, NE signale PAS.'
+    + '\nRéponds UNIQUEMENT en JSON : {"faux": [{"langue":"la langue","fr":"la phrase française","traduction":"la traduction fautive","correction":"la bonne traduction (DIFFÉRENTE de la fautive)","raison":"en 8 mots max"}]}. Liste VIDE si tout est correct.';
+  const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
+  const raw = (await callGemini(msgs)) || (await callMistral(msgs));
+  const j = parse(raw);
+  if (!j) return [];
+  const arr = Array.isArray(j.faux) ? j.faux : [];
+  return arr.map((f) => {
+    if (!f || typeof f !== 'object') return null;
+    const fr = String(f.fr || '').slice(0, 80), tr = String(f.traduction || '').slice(0, 80), co = String(f.correction || '').slice(0, 80), lg = String(f.langue || '').slice(0, 24), ra = String(f.raison || '').slice(0, 60);
+    if (!fr || !tr) return null;
+    if (co && co.trim().toLowerCase() === tr.trim().toLowerCase()) return null;  /* correction identique = faux positif */
+    return '[' + lg + '] "' + fr + '" => "' + tr + '"  (proposé: "' + co + '" · ' + ra + ')';
+  }).filter(Boolean);
 }
 
 /* Audit des MOTS du lexique (extension v2.56 : le juge couvre AUSSI le vocabulaire, pas que les
