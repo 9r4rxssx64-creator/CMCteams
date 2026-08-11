@@ -39,6 +39,13 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Juges de secours (indépendants) : si Mistral + Gemini sont en limite de débit
+          # au même moment, le passage était perdu (« juge indisponible »). Mêmes clés que
+          # le reste du dépôt. Aucune n'est Anthropic : l'IA principale n'est pas engagée.
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: |
           node tools/lingua/translate-stories.mjs lingua --limit "${{ github.event.inputs.limit || '3' }}" | tee /tmp/tr.log
           echo "changed=$(git status --porcelain lingua | grep -c . || true)" >> "$GITHUB_OUTPUT"
