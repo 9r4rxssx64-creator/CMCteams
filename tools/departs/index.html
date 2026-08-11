@@ -194,7 +194,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.35";
+var APP_VER="v1.36";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -203,13 +203,18 @@ function seqForSize(n){return SEQS[n]||(function(){var a=[];for(var i=1;i<=n;i++
 // ROTATION DES DÉPARTS — liste des codes qui ne sont PAS « à la table » ce jour-là.
 // MIROIR EXACT de DEP_ABS/isWorkDep dans l'app (index.html) — la garde test:departs-abs-parity
 // échoue si les deux listes divergent (une divergence = numéros différents app vs page).
-// PRT (« Prêt », mis à disposition d'un autre service) reste du TRAVAIL et garde son numéro
-// (décision Kevin 2026-07-10, leçon #140) → volontairement ABSENT de cette liste.
-// v1.35 (ultra-review 2026-08-10) — AJOUT de CLM (arrêt/congé longue maladie). Il manquait :
-// EL MISSOURI O (Août, BJ Éq.10) était en CLM les jours 21-24 et recevait quand même les
-// numéros 1,4,2,3 comme s'il était à la table → ses 4 collègues avaient de FAUX numéros ces
-// 4 jours (20 cellules). CLM est déjà classé absence partout ailleurs dans l'app (_CMC_ABS_LIEU).
-var DEP_ABS=["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","DEPL","DEP","SS","CLM"];
+// RÈGLE MÉTIER TRANCHÉE PAR KEVIN — « celui qui est RATTACHÉ à l'équipe garde sa place dans la
+// rotation ; seuls les vrais congés/arrêts la libèrent » :
+//  · PRT (« Prêt », mis à disposition d'un autre service) = TRAVAIL, GARDE son numéro
+//    (décision Kevin 2026-07-10, leçon #140).
+//  · DEPL / DEP (déplacement) et SS = TRAVAIL, GARDENT leur numéro — décision Kevin
+//    2026-08-10 (« B »), même logique que PRT. Cette page les comptait en ABSENCE alors que
+//    l'app les comptait en TRAVAIL → divergence de numéros ; c'est l'APP qui avait raison,
+//    cette page est alignée dessus (v1.36). Ils sont donc VOLONTAIREMENT ABSENTS d'ici.
+//  · CLM (arrêt longue maladie) = ABSENCE, PAS de numéro (v1.35) — bug réel mesuré sur août :
+//    EL MISSOURI O (BJ Éq.10) en CLM les jours 21-24 recevait quand même les numéros 1,4,2,3
+//    et faussait ceux de ses 4 collègues (20 cellules).
+var DEP_ABS=["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","CLM"];
 function isWork(c){return !!c && DEP_ABS.indexOf(c)<0;}
 function cellClass(c){
   if(!c) return "off";

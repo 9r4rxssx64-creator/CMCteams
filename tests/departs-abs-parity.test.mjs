@@ -46,13 +46,14 @@ if (aApp && aLight) {
     'les 2 listes DEP_ABS sont IDENTIQUES app ⇄ page light'
     + (setA !== setL ? ` — seulement dans l'app : [${seulApp}] · seulement dans la page : [${seulLight}]` : ''));
 
-  /* 2. CONTENU — les cas déjà tranchés ne doivent JAMAIS repartir en arrière. */
+  /* 2. CONTENU — les cas TRANCHÉS PAR KEVIN ne doivent JAMAIS repartir en arrière.
+        Règle : « rattaché à l'équipe → garde sa place ; seuls les vrais congés/arrêts la libèrent ». */
   ok(aApp.includes('CLM'),
     'CLM (arrêt longue maladie) = ABSENCE → pas de numéro de départ (bug réel août, EL MISSOURI O j21-24)');
-  ['DEPL', 'DEP', 'SS'].forEach((c) => ok(aApp.includes(c),
-    `${c} = ABSENCE des deux côtés (l'app le comptait « travail », la page « absence »)`));
   ok(!aApp.includes('PRT'),
-    'PRT (« Prêt ») reste du TRAVAIL et GARDE son numéro — décision Kevin 2026-07-10 (leçon #140)');
+    'PRT (« Prêt ») = TRAVAIL, GARDE son numéro — décision Kevin 2026-07-10 (leçon #140)');
+  ['DEPL', 'DEP', 'SS'].forEach((c) => ok(!aApp.includes(c),
+    `${c} (déplacement) = TRAVAIL, GARDE son numéro — décision Kevin 2026-08-10 (« B »), même logique que PRT`));
   ['RH', 'R', 'CP', 'M', 'AF'].forEach((c) => ok(aApp.includes(c),
     `${c} reste une absence (socle historique, aucune régression)`));
 }
