@@ -135,3 +135,41 @@ def test_les_postes_a_prix_releve_sont_tous_surveilles():
     releves = {p for p in PRIX if prix_releve(p)}
     manquants = releves - surveilles - {"objectif"}   # objectif : lot, pas de fiche
     assert not manquants, f"prix relevé sans page de contrôle : {manquants}"
+
+
+# --- contrôle des liens --------------------------------------------------- #
+def test_les_offres_a_controler_viennent_du_catalogue():
+    from tools.verif_prix import offres_du_catalogue
+    offres = offres_du_catalogue()
+    assert offres, "aucune fiche produit à contrôler"
+    # Uniquement des fiches (une page de recherche n'a pas de prix unique).
+    from clayscore.fournisseurs import CATALOGUE
+    fiches = {f.url for f in CATALOGUE if f.lien == "fiche" and f.prix}
+    assert {o.url for o in offres} == fiches
+
+
+def test_le_facteur_reconstruit_la_paire_depuis_le_prix_unitaire():
+    from tools.verif_prix import offres_du_catalogue
+    pont = next(o for o in offres_du_catalogue()
+                if o.poste == "pont_directionnel" and "Getic" in o.nom)
+    assert pont.facteur == 2.0        # 1 / 0.5 : deux antennes par pont
+
+
+def test_un_lien_mort_est_signale(monkeypatch):
+    from tools.verif_prix import rendre_liens, tester_liens
+    monkeypatch.setattr("tools.verif_prix.telecharger",
+                        lambda url, timeout=20: (None, "HTTP 404"))
+    res = tester_liens([("Vendeur X", "https://exemple.invalid/fiche")])
+    assert res[0]["vivant"] is False
+    md = rendre_liens(res)
+    assert "🔴" in md and "404" in md
+    assert "0/1 liens répondent" in md
+
+
+def test_un_403_est_explique_et_non_pris_pour_un_lien_casse(monkeypatch):
+    from tools.verif_prix import rendre_liens, tester_liens
+    monkeypatch.setattr("tools.verif_prix.telecharger",
+                        lambda url, timeout=20: (None, "HTTP 403"))
+    md = rendre_liens(tester_liens([("eBay", "https://ebay.de/itm/1")]))
+    assert "refuse les robots" in md
+    assert "pas** que le lien est mort" in md

@@ -23,7 +23,7 @@ fonctionne sur un réseau local **sans Internet**, piloté depuis une tablette.
 | | État |
 |---|---|
 | **Logiciel** | ✅ **Terminé et testé** — les 8 jalons prévus sont développés et fonctionnent |
-| **Tests automatiques** | ✅ **308 réussis, 1 ignoré** (celui qui exige une carte graphique) |
+| **Tests automatiques** | ✅ **328 réussis, 1 ignoré** (celui qui exige une carte graphique) |
 | **Validation** | ✅ En **simulation** (vidéos générées avec réponse connue d'avance) |
 | **Matériel** | ⏳ **Pas encore acheté** — la liste d'achat est prête (BUDGET_BOM) |
 | **Validation terrain** | ⏳ **Pas encore faite** — nécessite de vraies vidéos de stand |
@@ -94,6 +94,8 @@ ClayScore_Dossier_Complet/
 │   ├── PREVISIONNEL_CLUB.md     ← club entier : 3 terrains distants + club-house (chiffré)
 │   ├── MATERIEL_OPTIMAL.md      ← quoi acheter exactement, prix relevés, pièges de commande
 │   ├── COMPARATIF_CHINE_UE.md   ← Chine ou Europe ? le comparatif, et la config optimale
+│   ├── DEVIS_COMPARATIF.md      ← DEVIS : qui vend quoi, liens 1 clic, panier par vendeur
+│   ├── DEVIS_ETAPE_0.md         ← le devis du kit à acheter EN PREMIER (899 €)
 │   ├── GUIDE_MATERIEL.md        ← CHAQUE pièce : rôle, quoi prendre, liens d'achat, pièges
 │   ├── GUIDE_MONTAGE.md         ← assembler les pods, câbler, placer sur le stand, régler
 │   ├── CHECKLIST_PROTOTYPE.md   ← la marche à suivre pas à pas, de la commande à la démo
@@ -127,7 +129,7 @@ navigateur). Elles fonctionnent hors ligne, sans Internet.
 | Lignes de code (logiciel) | **5 598** |
 | Lignes de tests | **3 038** |
 | Fonctions de test | **259** |
-| Tests réussis | **308** (+1 ignoré : exige un GPU) |
+| Tests réussis | **328** (+1 ignoré : exige un GPU) |
 | Jalons terminés | **8 / 8** |
 | Disciplines gérées | **5** (FU, FO, DTL, parcours, compak) |
 | Lanceurs par partie | **multi-lanceurs** (attribution auto par poste + stats) |
