@@ -50,6 +50,14 @@ LANCEURS_PAR_DISCIPLINE: Dict[str, Optional[int]] = {
     "parcours": None,       # variable : à déclarer terrain par terrain
 }
 
+# Une caméra de DIFFUSION (montrer le tireur et les plateaux à l'écran du
+# club-house) : caméra IP qui compresse elle-même, 1080p H.264 ~4 Mbit/s.
+DEBIT_DIFFUSION_MBPS = 4.0
+
+# Un switch PoE d'entrée de gamme offre 4 ports alimentés. Au-delà, il en
+# faut un deuxième — l'oubli classique quand on ajoute des caméras.
+PORTS_POE_PAR_SWITCH = 4
+
 # Retour vidéo vers le club-house (par terrain), en Mbit/s.
 RETOUR_CAMERA: Dict[str, float] = {
     "aucun": 0.0,      # seul le score remonte
@@ -79,6 +87,7 @@ USD_EUR = 0.866
 
 PRIX: Dict[str, float] = {
     "camera": 138.66,            # RELEVÉ (160 USD x 0,8666)
+    "camera_diffusion": 59.0,    # RELEVÉ — caméra IP PoE (montrer, pas juger)
     "objectif": 36.0,            # RELEVÉ
     "filtre": 15.0,              # cible
     "caisson": 15.0,             # cible
@@ -102,6 +111,13 @@ SOURCE_PRIX: Dict[str, str] = {
               "5-19 pièces sur Alibaba, août 2026 -> 139 €. Achat CHINE : "
               "l'équivalent de marque européenne (Basler acA1440-73gc) est à "
               "429-493 USD, soit 2,7x plus cher pour +8 img/s.",
+    "camera_diffusion": "RELEVÉ — caméra IP PoE extérieure IP67, flux RTSP "
+                        "H.264/H.265, à partir de 59 € (Reolink chez LDLC, "
+                        "août 2026). Elle ne participe PAS au verdict : elle "
+                        "montre le tireur et la zone de vol sur l'écran du "
+                        "club-house. Donc ni obturateur global ni couleur "
+                        "calibrée nécessaires — d'où 2,4x moins cher qu'une "
+                        "caméra d'arbitrage. Se branche sur le MÊME switch PoE.",
     "objectif": "RELEVÉ — jeu d'objectifs monture C 5 MP (5/8/12/16/25 mm) à "
                 "~41,84 USD pièce sur eBay -> 36 €. Prendre du F1.4 : c'est la "
                 "façon la moins chère d'acheter de la lumière pour les fins de "
@@ -147,6 +163,12 @@ ORIGINE: Dict[str, Dict] = {
                "pourquoi": "Hikrobot 138,66 € contre 371,77 € pour l'équivalent "
                            "Basler : 2,7x. Même en ajoutant TVA et douane "
                            "(~172 €), la Chine reste largement devant."},
+    "camera_diffusion": {"retenu": "ue", "chine": None, "ue": 59.0,
+                         "pourquoi": "59 € en France, livrée et garantie. "
+                                     "L'import ne se justifie pas sur une "
+                                     "pièce à ce prix, et une caméra IP "
+                                     "chinoise sans mise à jour pose un "
+                                     "problème de sécurité réseau."},
     "objectif": {"retenu": "chine", "chine": 36.0, "ue": None,
                  "pourquoi": "Aucun prix public UE relevé ; à commander avec "
                              "les caméras, chez le même vendeur."},
@@ -209,6 +231,9 @@ class Terrain:
     distance_club_m: float
     liaison_club: str = "wifi_directionnel"
     retour_camera: str = "apercu"
+    # Caméras dédiées au SPECTACLE : elles ne jugent rien, elles montrent le
+    # tireur et la zone de vol sur l'écran du club-house.
+    cameras_diffusion: int = 0
     n_lanceurs: Optional[int] = None
     pods: List[Pod] = field(default_factory=list)
 
@@ -225,6 +250,8 @@ class Terrain:
                 f"(attendu : {sorted(RETOUR_CAMERA)}).")
         if self.distance_club_m < 0:
             raise ValueError("Distance négative.")
+        if self.cameras_diffusion < 0:
+            raise ValueError("Nombre de caméras de diffusion négatif.")
         if self.n_lanceurs is None:
             self.n_lanceurs = LANCEURS_PAR_DISCIPLINE[self.discipline]
         if self.n_lanceurs is None:
@@ -239,8 +266,26 @@ class Terrain:
         return PodFleet(list(self.pods))
 
     def debit_vers_club_mbps(self) -> float:
-        """Ce qui remonte au club-house : le score, plus le retour vidéo."""
-        return DEBIT_EDGE_MBPS + RETOUR_CAMERA[self.retour_camera]
+        """Ce qui remonte au club-house : le score, le ralenti, et le direct.
+
+        Trois choses distinctes, additionnées :
+          - le **score** (~0,2 Mbit/s) : toujours là ;
+          - le **retour d'arbitrage** (le ralenti du plateau litigieux) ;
+          - le **direct de diffusion** : une ou plusieurs caméras qui montrent
+            le tireur et la zone de vol, sans participer au verdict.
+        """
+        return (DEBIT_EDGE_MBPS + RETOUR_CAMERA[self.retour_camera]
+                + self.cameras_diffusion * DEBIT_DIFFUSION_MBPS)
+
+    @property
+    def cameras_totales(self) -> int:
+        """Tout ce qui est branché sur le switch PoE du terrain."""
+        return len(self.pods) + self.cameras_diffusion
+
+    def switchs_poe(self) -> int:
+        """Combien de switchs PoE ? Au-delà de 4 caméras, il en faut deux."""
+        n = self.cameras_totales
+        return max(1, -(-n // PORTS_POE_PAR_SWITCH))    # division arrondie au sup.
 
     def check(self) -> List[Dict]:
         """Ce terrain tient-il debout, et sa remontée au club passe-t-elle ?"""
@@ -274,6 +319,17 @@ class Terrain:
                 "quoi": f"{self.id} : aucun poste de vue déclaré.",
                 "solution": "Déclarer au moins une paire appairée sur ce terrain.",
             })
+
+        # L'oubli classique : on ajoute des caméras et le switch n'a plus de
+        # port alimenté. Mieux vaut le savoir avant la commande.
+        if self.cameras_totales > PORTS_POE_PAR_SWITCH:
+            problemes.append({
+                "niveau": "important",
+                "quoi": f"{self.id} : {self.cameras_totales} caméras pour "
+                        f"{PORTS_POE_PAR_SWITCH} ports PoE par switch.",
+                "solution": f"Prévoir {self.switchs_poe()} switchs PoE sur ce "
+                            "terrain (c'est déjà compté dans le devis).",
+            })
         return problemes
 
     def to_dict(self) -> Dict:
@@ -285,6 +341,8 @@ class Terrain:
             "liaison_club": self.liaison_club,
             "liaison_label": LIAISONS[self.liaison_club]["label"],
             "retour_camera": self.retour_camera,
+            "cameras_diffusion": self.cameras_diffusion,
+            "switchs_poe": self.switchs_poe(),
             "debit_vers_club_mbps": round(self.debit_vers_club_mbps(), 2),
             "pods": len(self.pods),
             "problemes": self.check(),
@@ -412,9 +470,18 @@ class Site:
                if objectifs_par_pod == 2 else "1 par poste de vue")
 
         # Par terrain : un calculateur qui décide sur place, et son réseau local.
-        for poste in ("calculateur", "ssd", "switch_poe", "micro",
+        # Caméras de diffusion : elles montrent, elles ne jugent pas.
+        n_diffusion = sum(t.cameras_diffusion for t in self.terrains)
+        ajoute("camera_diffusion", n_diffusion,
+               "caméra IP : le tireur et les plateaux à l'écran du club-house")
+
+        for poste in ("calculateur", "ssd", "micro",
                       "batterie_30ah", "chargeur", "cablage"):
             ajoute(poste, n_terrains, "1 par terrain")
+        # Le switch dépend du NOMBRE de caméras, pas du nombre de terrains.
+        n_switchs = sum(t.switchs_poe() for t in self.terrains)
+        ajoute("switch_poe", n_switchs,
+               f"{PORTS_POE_PAR_SWITCH} ports alimentés par switch")
 
         # Liaisons vers le club-house.
         ajoute("pont_directionnel",
@@ -449,6 +516,7 @@ class Site:
             "n_pods": n_pods,
             "n_pods_factures": n_pods_total,
             "pods_secours": secours,
+            "cameras_diffusion": n_diffusion,
             "n_lanceurs": self.n_lanceurs,
             "releves": releves,
             "verifies": verifies,

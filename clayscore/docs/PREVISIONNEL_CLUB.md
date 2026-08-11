@@ -15,9 +15,10 @@ club-house un peu plus loin qui doit voir les scores et les caméras.**
 |---|---|
 | **3 terrains** équipés + **1 club-house** | ✅ possible |
 | **38 lanceurs** couverts | 15 + 15 (fosses olympiques) + 8 (parcours) |
-| **13 postes de vue** (caméras) | 3 + 3 + 4, **+1 secours par terrain** |
-| **Ce qui remonte au club-house** | **12,6 Mbit/s** — score **+ retour caméra** |
-| **Coût matériel (config OPTIMALE)** | **6 022 € HT** → **6 570 € livré** |
+| **13 caméras d'arbitrage** | 3 + 3 + 4, **+1 secours par terrain** |
+| 🆕 **6 caméras de diffusion** | 2 par terrain : le **tireur** et la **zone de vol** |
+| **Ce qui remonte au club-house** | **36,6 Mbit/s** — score + ralenti **+ direct** |
+| **Coût matériel (config OPTIMALE, diffusion comprise)** | **6 551 € HT** → **7 099 € livré** |
 | **Faisable en 3 fois (livré)** | 2 417 € → +1 928 € → +2 225 € |
 
 ---
@@ -128,8 +129,55 @@ C'est la partie nouvelle : elle n'existait pas dans le kit « une fosse ».
 
 **Ce que voit le club-house :**
 - les **scores en direct** des 3 terrains, côte à côte ;
-- le **retour caméra** de chaque terrain (720p, ou HD si tu veux du ralenti) ;
+- le **retour d'arbitrage** : le ralenti du plateau litigieux ;
+- 🆕 le **DIRECT** : le tireur et la zone de vol, en vrai, sur l'écran du bar ;
 - l'état de chaque terrain : batterie, caméras en ligne, liaison.
+
+### 🆕 Les caméras de DIFFUSION — montrer, pas juger
+
+Les 3 caméras d'un terrain servent à **décider** : obturateur global, couleur
+calibrée, 65 images/s. On ne les détourne pas pour faire du spectacle — leur
+image part au calculateur, pas à l'écran.
+
+Pour **montrer**, on ajoute des caméras dédiées, et elles coûtent bien moins
+cher parce qu'elles n'ont aucune de ces contraintes :
+
+| | Caméra d'**arbitrage** | Caméra de **diffusion** |
+|---|---|---|
+| Rôle | décide cassé / manqué | montre le tireur et les plateaux |
+| Obturateur global | **obligatoire** | inutile |
+| Couleur calibrée | **obligatoire** | inutile |
+| Compression | aucune (809 Mbit/s bruts) | **intégrée** (H.264, ~4 Mbit/s) |
+| **Prix** | **138,66 €** | **59 €** |
+
+**Le cadrage recommandé — 2 caméras par terrain :**
+
+```
+   📷 CAM « TIREUR »                    📷 CAM « ZONE DE VOL »
+   derrière/à côté du poste            grand angle sur la fosse
+   → on voit l'épaulé, le geste        → on voit le plateau partir et casser
+```
+
+**Ce que ça change côté technique :**
+- **+4 Mbit/s par caméra** vers le club-house. Avec 2 caméras sur chacun des
+  3 terrains : **36,6 Mbit/s** au total — le pont en transporte ~100. Ça passe.
+- Elles se branchent sur le **même câble et le même switch PoE** que les
+  caméras d'arbitrage. Rien de nouveau à tirer.
+- ⚠️ **Mais attention au switch** : 3 caméras + 2 de diffusion = **5**, alors
+  qu'un switch d'entrée de gamme n'a que **4 ports alimentés**. Il en faut
+  donc **deux par terrain**. Le logiciel le signale et le devis les compte —
+  c'est l'oubli classique quand on ajoute des caméras.
+- La caméra de **secours**, elle, ne prend pas de port : elle reste au placard
+  et remplace une caméra tombée.
+
+**Coût de l'option, pour les 3 terrains :** 6 caméras (354 €) + 3 switchs
+supplémentaires (180 €) = **+534 € HT**.
+
+> ⚖️ **Un point à ne pas négliger** : diffuser l'image de tireurs sur un écran
+> public, ce n'est pas la même chose que filmer un plateau. Il faut **prévenir
+> les tireurs** (panneau à l'entrée du stand suffit généralement) et pouvoir
+> couper le direct à la demande. L'appli permet d'éteindre la diffusion
+> terrain par terrain — le score, lui, continue de remonter.
 
 Tu peux couper le retour vidéo terrain par terrain : sans lui, il ne reste que
 **0,2 Mbit/s** par terrain — ça passerait même en 4G.
@@ -204,7 +252,7 @@ site.add(Terrain("CHASSE", "parcours", distance_club_m=700, n_lanceurs=8,
                  retour_camera="apercu", pods=[...]))
 
 site.debit_club_mbps()   # -> 12.6
-site.bom()["total"]      # -> 6022.0  (config optimale)
+site.bom()["total"]      # -> 6551.0  (config optimale, diffusion comprise)
 site.check()             # -> les problèmes, en français, avec la solution
 ```
 

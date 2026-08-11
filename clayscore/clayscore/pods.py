@@ -40,7 +40,13 @@ LIAISONS: Dict[str, Dict] = {
             "sans_fil": True},
 }
 
-ROLES = ("stereo_a", "stereo_b", "lateral", "secours")
+# Rôles d'un poste de vue. Les quatre premiers servent à JUGER le plateau ;
+# « diffusion » sert à MONTRER — le tireur, la zone de vol — sur l'écran du
+# club-house. Une caméra de diffusion ne participe jamais au verdict : elle
+# n'a donc pas besoin d'obturateur global ni de couleur calibrée, et elle
+# compresse elle-même (caméra IP). C'est ce qui la rend 2,5x moins chère.
+ROLES = ("stereo_a", "stereo_b", "lateral", "secours", "diffusion")
+ROLES_ARBITRAGE = ("stereo_a", "stereo_b", "lateral", "secours")
 
 # Ce que le pod envoie réellement sur sa liaison. À déclarer explicitement :
 # supposer qu'un pod « compresse forcément parce qu'il est sans fil » est faux
@@ -86,6 +92,11 @@ class Pod:
     @property
     def sans_fil(self) -> bool:
         return bool(LIAISONS[self.liaison]["sans_fil"])
+
+    @property
+    def diffusion(self) -> bool:
+        """Ce poste montre-t-il (écran du club) au lieu de juger ?"""
+        return self.role == "diffusion"
 
     @property
     def edge(self) -> bool:
@@ -142,7 +153,17 @@ def check_link(pod: Pod) -> List[Dict]:
                         "place et n'envoie que le verdict + un court ralenti).",
         })
 
-    if pod.sans_fil and pod.flux == "compresse":
+    if pod.diffusion and pod.flux == "brut":
+        problemes.append({
+            "niveau": "important",
+            "quoi": f"{pod.id} : caméra de diffusion en vidéo BRUTE "
+                    f"({DEBIT_BRUT_MBPS:.0f} Mbit/s) — inutile et ruineux en "
+                    "débit, elle ne sert qu'à l'affichage.",
+            "solution": "Une caméra IP compresse elle-même : déclarer "
+                        "flux « compresse ».",
+        })
+
+    if pod.sans_fil and pod.flux == "compresse" and not pod.diffusion:
         problemes.append({
             "niveau": "important",
             "quoi": f"{pod.id} : vidéo compressée transmise sans fil — "

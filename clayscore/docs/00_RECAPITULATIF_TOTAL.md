@@ -23,7 +23,7 @@ fonctionne sur un réseau local **sans Internet**, piloté depuis une tablette.
 | | État |
 |---|---|
 | **Logiciel** | ✅ **Terminé et testé** — les 8 jalons prévus sont développés et fonctionnent |
-| **Tests automatiques** | ✅ **328 réussis, 1 ignoré** (celui qui exige une carte graphique) |
+| **Tests automatiques** | ✅ **341 réussis, 1 ignoré** (celui qui exige une carte graphique) |
 | **Validation** | ✅ En **simulation** (vidéos générées avec réponse connue d'avance) |
 | **Matériel** | ⏳ **Pas encore acheté** — la liste d'achat est prête (BUDGET_BOM) |
 | **Validation terrain** | ⏳ **Pas encore faite** — nécessite de vraies vidéos de stand |
@@ -129,7 +129,7 @@ navigateur). Elles fonctionnent hors ligne, sans Internet.
 | Lignes de code (logiciel) | **5 598** |
 | Lignes de tests | **3 038** |
 | Fonctions de test | **259** |
-| Tests réussis | **328** (+1 ignoré : exige un GPU) |
+| Tests réussis | **341** (+1 ignoré : exige un GPU) |
 | Jalons terminés | **8 / 8** |
 | Disciplines gérées | **5** (FU, FO, DTL, parcours, compak) |
 | Lanceurs par partie | **multi-lanceurs** (attribution auto par poste + stats) |
@@ -142,7 +142,7 @@ navigateur). Elles fonctionnent hors ligne, sans Internet.
 | Grandes surfaces | postes **sans fil** jusqu'à **> 1 km** (le pod décide sur place) |
 | Temps réel | **288 images/s** mesurées pour 195 requises (3 caméras × 65 fps) |
 | Caméras | **couleur obligatoire** — mesuré : 27/27 en couleur, **9/27 en monochrome** |
-| Club multi-terrains | 3 terrains + club-house, config **optimale** : **6 570 € livré**, 12,6 Mbit/s de remontée |
+| Club multi-terrains | 3 terrains + club-house : **7 099 € livré**, 36,6 Mbit/s (scores + ralenti + direct) |
 | Basse lumière | verdicts justes jusqu'à **−60 % de lumière** (33 % → 100 %) |
 | Réglage caméra | défauts (sombre / cramé / bruité) **détectés et expliqués** |
 | Coût logiciel (licences) | **0 €** (100 % open source) |

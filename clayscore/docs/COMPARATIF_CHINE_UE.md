@@ -21,6 +21,7 @@ prix par prix, pas un a priori.
 | **Calculateur** Jetson Orin Nano Super | 216 € (tarif officiel) | **392,50 €** ✅ | 🇪🇺 | ⚠️ prix **vérifié sur la fiche** : Gotronic 392,50 €, Kubii 465 €. Les « 307 € » d'un comparateur étaient faux. Un import reviendrait à ~277 €, mais sans garantie ni SAV sur la pièce critique |
 | **Pont directionnel** NanoStation 5AC Loco (paire) | — | **96,08 €** ✅ | 🇪🇺 | 48,04 € l'unité chez **Getic** (vérifié). ⚠️ LDLC est à 64,95 € : **+35 %** pour le même produit |
 | **Batterie** LiFePO4 12 V 30 Ah | — | **46 €** 🟢 | 🇪🇺 | Lourde. Et une batterie lithium en colis express hors UE pose un problème réglementaire |
+| 🆕 **Caméra de diffusion** IP PoE | — | **59 €** 🟢 | 🇪🇺 | Elle **montre**, elle ne juge pas → ni obturateur global ni couleur calibrée : **2,4× moins cher**. Une caméra IP sans mises à jour pose un problème de sécurité réseau : on la prend en Europe |
 
 **La règle qui en sort :** *ce qui est léger, cher à la marque et sans SAV
 critique → Chine. Ce qui est lourd, réglementé, ou dont on aura besoin d'un
@@ -62,7 +63,8 @@ et pourquoi chaque ajout est justifié.
 | **+1 caméra de secours par terrain** | +417 € | Une caméra qui tombe **pendant** une épreuve ne l'arrête plus. Le rôle `secours` existe déjà dans le logiciel : il suffit de la basculer |
 | **Double jeu d'objectifs (8 mm ET 12 mm)** | +468 € | Le **8 mm** voit large (fosse olympique, 15 lanceurs, parcours) ; le **12 mm** est plus précis (fosse universelle, 5 lanceurs). Avec les deux, le choix se fait **sur le terrain**, pas au moment de la commande — et une erreur d'appréciation ne coûte plus une nouvelle commande de 3 semaines |
 | **Objectifs en F1.4** | inclus | La façon la moins chère d'acheter de la lumière pour les fins de journée. **C'est la bonne réponse au manque de lumière — pas le monochrome** |
-| **Switch PoE à entrée continue 12-48 V** | inclus | Se branche **directement sur la batterie**, sans onduleur. ⚠️ à 12 V d'entrée, le budget PoE tombe à ~60 W — largement assez pour 3-4 caméras |
+| **Switch PoE à entrée continue 12-48 V** | inclus | Se branche **directement sur la batterie**, sans onduleur. ⚠️ à 12 V d'entrée, le budget PoE tombe à ~60 W |
+| 🆕 **2 caméras de diffusion par terrain** | +534 € | Le **tireur** et la **zone de vol** en direct sur l'écran du bar, en plus des scores. Comprend le **2ᵉ switch PoE** que ces caméras rendent nécessaire (5 caméras > 4 ports) |
 
 **Écart total : +1 128 €, soit +24 %.** C'est une assurance, pas un doublement.
 
@@ -79,10 +81,10 @@ commander chez **un seul** vendeur chinois.
 | **Étape 0** — valider avant tout (1 calculateur + 2 caméras + 4 objectifs) | 814 € | 422 € | 392 € | **899 €** |
 | **Phase 1** — 1 fosse + club-house complet | 2 249 € | 844 € | 1 405 € | **2 417 €** |
 | **Phase 2** — + 2ᵉ fosse | 4 007 € | 1 688 € | 2 319 € | **4 345 €** |
-| **Phase 3** — + parcours de chasse | 6 022 € | 2 743 € | 3 279 € | **6 570 €** |
+| **Phase 3** — + parcours de chasse | 6 551 € | 2 743 € | 3 808 € | **7 099 €** |
 | *(pour comparaison : club complet en config minimum)* | *4 894 €* | *1 750 €* | *3 144 €* | ***5 244 €*** |
 
-**Sur les 6 022 € HT de la config optimale : 1 466 € sont VÉRIFIÉS sur la
+**Sur les 6 551 € HT de la config optimale : 1 466 € sont VÉRIFIÉS sur la
 fiche produit, 4 347 € reposent sur une offre réelle (72 %)**, et 1 675 €
 restent des hypothèses (écran et mini-PC du club-house, petites pièces).
 

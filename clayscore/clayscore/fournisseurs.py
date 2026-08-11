@@ -93,6 +93,20 @@ CATALOGUE: List[Fournisseur] = [
         note="Comparatif : 2,7x le prix du Hikrobot pour +8 img/s dont on n'a "
              "pas besoin. Écarté."),
 
+    # --- caméra de diffusion : montrer, pas juger ------------------------ #
+    Fournisseur(
+        "camera_diffusion", "LDLC — caméra IP PoE Reolink (IP67, RTSP)", "FR",
+        "https://www.ldlc.com/en/computing/networking/ip-camera/c4305/+fb-C999953630+fc1062-1.html",
+        lien="recherche", prix=59.0, confiance=RELEVE,
+        note="À partir de 59 €. Prendre un modèle **PoE** (même câble et même "
+             "switch que les caméras d'arbitrage) et **RTSP** (c'est ce flux "
+             "que l'écran du club affiche)."),
+    Fournisseur(
+        "camera_diffusion", "Reolink — boutique officielle", "UE",
+        "https://store.reolink.com/poe-ip-cameras/",
+        lien="recherche", confiance=CIBLE,
+        note="Repli : gamme complète, IP67, flux RTSP documenté."),
+
     # --- optique --------------------------------------------------------- #
     Fournisseur(
         "objectif", "AliExpress — objectifs monture C 5 MP (8 et 12 mm)", "CN",
