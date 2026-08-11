@@ -6,7 +6,7 @@
  *   · l'app comptait DEPL / DEP / SS comme du TRAVAIL, la page light comme une ABSENCE
  *     → dès qu'un chef portait un de ces codes, TOUTE l'équipe obtenait des numéros
  *       différents entre l'app et la page (0 cas en juillet/août = piège latent, invisible).
- *   · les DEUX oubliaient CLM (arrêt longue maladie) → bug RÉEL mesuré sur août :
+ *   · les DEUX oubliaient CLM (congé mariage — Convention SBM art.18, 4 jours) → bug RÉEL mesuré sur août :
  *     EL MISSOURI O (BJ Éq.10) en CLM les jours 21-24 recevait quand même les numéros
  *     1,4,2,3 et faussait les numéros de ses 4 collègues (20 cellules).
  *     Une comparaison « app == light » ne peut PAS attraper ce cas : les deux se trompaient
@@ -49,7 +49,7 @@ if (aApp && aLight) {
   /* 2. CONTENU — les cas TRANCHÉS PAR KEVIN ne doivent JAMAIS repartir en arrière.
         Règle : « rattaché à l'équipe → garde sa place ; seuls les vrais congés/arrêts la libèrent ». */
   ok(aApp.includes('CLM'),
-    'CLM (arrêt longue maladie) = ABSENCE → pas de numéro de départ (bug réel août, EL MISSOURI O j21-24)');
+    'CLM (congé mariage — Convention SBM art.18, 4 jours) = ABSENCE → pas de numéro de départ (bug réel août, EL MISSOURI O j21-24)');
   ok(!aApp.includes('PRT'),
     'PRT (« Prêt ») = TRAVAIL, GARDE son numéro — décision Kevin 2026-07-10 (leçon #140)');
   ['DEPL', 'DEP', 'SS'].forEach((c) => ok(!aApp.includes(c),

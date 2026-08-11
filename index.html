@@ -1411,6 +1411,15 @@ var CODES={
   "CFL"   :{l:"F\u00eate incluse cong\u00e9", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
   "CRH"   :{l:"RH inclus cong\u00e9", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
   "CDH"   :{l:"RH cong\u00e9 pay\u00e9", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
+  // v9.891 (Kevin 2026-08-11 \u00ab El Missouri est de mariage \u00bb) \u2014 CLM = CONG\u00c9 MARIAGE (Convention
+  // SBM art.18 : 4 jours), PAS un arr\u00eat maladie. Observ\u00e9 dans le PDF d'ao\u00fbt (EL MISSOURI O,
+  // BJ \u00c9q.10, jours 21-24 = exactement les 4 jours de l'article 18).
+  // POURQUOI L'AJOUTER ICI : un code ABSENT de ce dictionnaire est SUPPRIM\u00c9 des plannings au
+  // d\u00e9marrage (nettoyage \u00ab code invalide \u00bb, ~l.9520) \u2014 c'est exactement ce qui avait effac\u00e9
+  // 10 jours de DEPL \u00e0 FOREST M (v9.751). CLM \u00e9tait dans le m\u00eame cas : non reconnu = \u00e0 risque.
+  // Bonus : le code cesse d'\u00eatre opaque, Kevin et l'employ\u00e9 lisent \u00ab Cong\u00e9 mariage \u00bb.
+  // Il reste une ABSENCE pour la rotation des d\u00e9parts (pr\u00e9sent dans DEP_ABS) \u2192 pas de num\u00e9ro.
+  "CLM"   :{l:"Cong\u00e9 mariage", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
   "15/19" :{l:"15h\u201319h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   "14/20" :{l:"14h\u201320h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   // ── PIT BOSS / SUPERVISEUR — codes spécifiques cadres (v9.121) ─────────
@@ -5812,7 +5821,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.890";
+var APP_VER="v9.891";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17837,7 +17846,7 @@ function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.v
 //  · DEPL / DEP (déplacement) et SS = TRAVAIL, GARDENT leur numéro — décision Kevin
 //    2026-08-10 (« B »), même logique que PRT. Ils sont donc VOLONTAIREMENT ABSENTS de
 //    cette liste. La page light les comptait en absence → elle a été alignée sur l'app.
-//  · CLM (arrêt longue maladie) = ABSENCE, PAS de numéro — v9.889, BUG RÉEL MESURÉ sur août :
+//  · CLM (congé mariage — Convention SBM art.18, 4 jours) = ABSENCE, PAS de numéro — v9.889, BUG RÉEL MESURÉ sur août :
 //    EL MISSOURI O (BJ Éq.10) était en CLM les jours 21-24 et recevait quand même les numéros
 //    1,4,2,3 → ses 4 collègues avaient de FAUX numéros ces 4 jours (20 cellules). CLM est déjà
 //    classé absence partout ailleurs dans l'app (_CMC_ABS_LIEU l.1454, ABS l.24630) ; seule la
