@@ -67,6 +67,17 @@ jobs:
           # Consigne « un mot à compléter » → il doit écrire des tirets bas ___ (l'app en fait une case)
           if echo "$REP" | grep -q '__'; then echo "✅ Il utilise bien le format ___ (case à remplir dans l'app)";
           else echo "⚠️ Pas de ___ dans CETTE réponse — l'app affichera du texte simple (pas bloquant : une IA n'obéit pas à 100%)"; fi
+          # La phrase à trou doit être dans la LANGUE APPRISE (vu en vrai : « J'ai ___ mon sac à dos »
+          # proposé à quelqu'un qui apprend l'anglais → n'apprend rien).
+          PHRASE=$(echo "$REP" | grep -o '[^.!?]*__[^.!?]*' | head -1 || true)
+          if [ -n "$PHRASE" ]; then
+            echo "phrase de l'exercice : $PHRASE"
+            if echo "$PHRASE" | grep -qiE "(^| )(j'ai|je |tu |il |elle |nous |vous |mon |ma |mes |le |la |les |une |des |dans |pour |avec )"; then
+              echo "⚠️ Cette phrase a l'air FRANÇAISE — l'exercice doit être dans la langue apprise"
+            else
+              echo "✅ La phrase de l'exercice est bien dans la langue apprise"
+            fi
+          fi
           # Consigne « une seule question à la fois » → pas de liste 1. 2. 3.
           if echo "$REP" | grep -qE '(^|[^0-9])3[.)] '; then echo "⚠️ Il semble poser 3 questions d'un coup (consigne « une seule » non respectée cette fois)";
           else echo "✅ Une seule question à la fois"; fi

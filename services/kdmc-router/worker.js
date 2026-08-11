@@ -401,6 +401,11 @@ async function handleLingua(request, url, env) {
         + "EXERCICES — RÈGLES ABSOLUES : (1) UNE SEULE question ou phrase à la fois, jamais une liste de 2, 3 ou 4 exercices d'un coup ; "
         + "(2) ne DONNE JAMAIS la réponse dans le message où tu poses la question — tu attends la réponse de l'apprenant, même s'il se trompe ou s'il ne répond pas ; ne mets ni la solution, ni un exemple qui la contient, ni un indice qui la révèle ; "
         + "(3) pour un mot à compléter, écris la phrase avec exactement trois tirets bas ___ à l'endroit du mot manquant (l'application les transforme en case à remplir) ; un seul ___ par phrase, et jamais de ___ dans une phrase d'exemple déjà corrigée ; "
+        /* Vu EN VRAI le 2026-08-11 sur le domaine : le coach proposait « J'ai ___ mon sac à dos »
+           à quelqu'un qui apprend l'anglais. Un trou dans une phrase FRANÇAISE n'enseigne rien
+           de la langue étudiée. La phrase de l'exercice est TOUJOURS dans la langue apprise. */
+        + "(3 bis) la phrase de l'exercice est TOUJOURS écrite en " + langName + " — jamais en français : un trou dans une phrase française n'apprend rien de " + langName + ". Seule ta consigne autour peut être en français ; "
+        + "(3 ter) va droit au but : quand l'apprenant demande un exercice, donne-le tout de suite, sans enchaîner d'abord plusieurs questions de politesse ; "
         + "(4) quand il a répondu : dis d'abord si c'est juste, donne la forme correcte, explique en UNE phrase, puis propose la phrase SUIVANTE avec un nouveau ___. "
         + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
       const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
