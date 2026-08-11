@@ -48,6 +48,53 @@ commande Chine groupée chez ≤ 2 vendeurs, un seul passage en douane).*
 **Logiciel : 0 € de licence** (pile open source — le logiciel est déjà développé,
 jalons 0→8, voir `README.md`).
 
+## A-bis. Kit COMPÉTITION / GRANDE SURFACE (options)
+
+Le kit de base (§ A) couvre une fosse câblée. Voici ce qu'il faut **en plus**
+pour viser la compétition officielle et les grandes surfaces.
+
+### Alimentation continue (aucune coupure possible)
+
+| Poste | Détail | ~Prix | Acheter |
+|---|---|---:|---|
+| Chargeur LiFePO4 12 V | recharge sur secteur, batterie toujours en ligne | 25 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=chargeur+LiFePO4+12V) |
+| Convertisseur DC-DC **isolé** | dérivation sur un lanceur, **en sécurité** | 20 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=convertisseur+DC+DC+isol%C3%A9+12V) |
+| Porte-fusibles + fusibles | 1 fusible par départ | 10 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=porte+fusible+12V+auto) |
+| Connecteurs Anderson | débrancher le lanceur en 5 s | 12 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=connecteur+anderson+powerpole) |
+| Capteur INA226 | **mesurer** la conso au lieu de l'estimer | 8 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=INA226+capteur+courant) |
+| **Sous-total alimentation** | | **~75 €** | |
+
+### Poste de vue déporté sans fil (par poste)
+
+| Poste | Détail | ~Prix | Acheter |
+|---|---|---:|---|
+| Calculateur de pod | rend le pod « intelligent » (il décide sur place) | 280 € | ▸ [Silicon Highway](https://www.siliconhighwaydirect.com/product-p/945-13766-0005-000.htm) |
+| Caméra + objectif + caisson | identique au § A | 230 € | ▸ voir § A |
+| Batterie 12 Ah + charge | autonomie ~12 h | 80 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=batterie+LiFePO4+12V+12Ah) |
+| **Sous-total par poste déporté** | | **~590 €** | |
+
+### Liaisons longue distance
+
+| Poste | Portée | ~Prix | Acheter |
+|---|---|---:|---|
+| Pont WiFi directionnel 5 GHz (paire) | **> 1 km** | 120 € | ▸ [recherche LDLC](https://www.ldlc.com/recherche/pont%20wifi%20exterieur/) |
+| Nœud WiFi maillé extérieur | ~150 m | 70 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=point+acc%C3%A8s+wifi+ext%C3%A9rieur+IP66) |
+| Routeur 4G + SIM | illimitée | 30 € + abo | ▸ [recherche Amazon](https://www.amazon.fr/s?k=routeur+4G+ext%C3%A9rieur) |
+
+### Récapitulatif des configurations
+
+| Configuration | Contenu | Total |
+|---|---|---:|
+| **Base — une fosse câblée** | kit § A | **~1 465 €** |
+| **Compétition** | base + alimentation continue + extras | **~1 690 €** |
+| **Compétition + 1 poste déporté** | + pod intelligent + pont directionnel | **~2 400 €** |
+| **Parcours (3 zones déportées)** | + 3 pods intelligents + liaisons | **~3 580 €** |
+
+> ⚠️ La vidéo brute (**809 Mbit/s par caméra**) ne passera **jamais** sans fil.
+> C'est le calculateur au pod qui rend le sans-fil possible, en ne transmettant
+> que le verdict et un court ralenti (**0,2 Mbit/s**). Détail :
+> `GUIDE_GRANDE_SURFACE`.
+
 ## B. Investissement total avant premières ventes (~9 000 €, hypothèse)
 
 | Poste | Estimation |
@@ -75,7 +122,8 @@ jalons 0→8, voir `README.md`).
 
 1. **Devis fournisseurs réels** (Alibaba/AliExpress/LDLC/Arrow) — les prix ci-dessus sont des cibles.
 2. **Coût réel du marquage CE** (peut varier fortement) — poste le plus incertain.
-3. **Fiscalité Monaco** (impôt sur les bénéfices 25 % si > 25 % du CA hors Monaco) — voir `DOSSIER_BUSINESS.md`, à valider Welcome Business Office.
-4. **Volumes** : la marge 35 % suppose des prix d'achat en petite série ; ils baissent à volume.
+3. **Coût de l'agrément fédéral** — la FFBT n'a pas encore été contactée ; les conditions (et le coût) d'un dispositif d'aide à l'arbitrage sont inconnus. Voir `GUIDE_COMPETITION.md`.
+4. **Fiscalité Monaco** (impôt sur les bénéfices 25 % si > 25 % du CA hors Monaco) — voir `DOSSIER_BUSINESS.md`, à valider Welcome Business Office.
+5. **Volumes** : la marge 35 % suppose des prix d'achat en petite série ; ils baissent à volume.
 
 *Ce fichier est un outil de planification, pas un devis engageant.*

@@ -3,7 +3,7 @@
 **Objectif : « zéro erreur, qualité commercialisable ». Voici ce qui a été
 cherché, ce qui a été trouvé, ce qui a été corrigé — et ce qui reste vrai.**
 
-Date : 11/08/2026 · Version : 0.8.0
+Date : 11/08/2026 · Version : 0.9.0
 
 > **Règle appliquée : mesurer, jamais estimer.** Chaque chiffre ci-dessous
 > vient d'une commande exécutée, pas d'une impression.
@@ -17,7 +17,7 @@ Tous corrigés, chacun avec un test qui empêche le retour du bug.**
 
 | | Avant | Après |
 |---|---|---|
-| Tests automatiques | 130 | **159** |
+| Tests automatiques | 130 | **210** |
 | Alertes de qualité de code | 10 | **0** |
 | Précision (lancements / coups de feu / verdicts) | 27/27 · 27/27 · 27/27 | **inchangée : 100 %** |
 | Recette de bout en bout | — | **18/18 contrôles** |
@@ -145,6 +145,58 @@ Partie de A à Z : 2 tireurs, mode concours, 2 lanceurs, 13 lancers dont
 18/18 contrôles OK
 ```
 
+### Recette compétition (passe 2)
+
+Installation réaliste : 2 postes filaires + **1 poste sans fil à 800 m**
+alimenté par dérivation sur un lanceur, épreuve en mode concours.
+
+```
+== INSTALLATION ==        3 postes dont 1 sans fil à 800 m · aucun problème
+                          débit total 1618 Mbit/s (le poste déporté n'envoie que 0,2)
+== ALIMENTATION ==        alimenté par le lanceur, batterie en tampon
+                          autonomie illimitée · rappel du convertisseur isolé
+== CONTRÔLE ==            NO-GO annoncé, point manquant nommé
+                          GO complet une fois les caméras sur leur réseau
+== ÉPREUVE ==             épreuve concours jouée jusqu'au bout
+== PREUVE ==              journal intègre (12 événements) · fiche scellée
+                          fiche retouchée → sceau invalide
+                          ligne supprimée → détectée
+
+16/16 contrôles OK
+```
+
+💡 **Un point mérite d'être noté** : lors du premier passage, le contrôle a
+refusé le GO parce qu'il ne trouvait **pas de réseau caméras** sur la machine
+de développement. Ce n'était pas un bug — le contrôle lit l'état **réel** de
+la machine, et il avait raison de refuser. C'est exactement le comportement
+attendu sur un stand mal câblé.
+
+---
+
+## Passe 2 — niveau compétition (même journée)
+
+Après les 5 défauts ci-dessus, une seconde passe a porté sur les exigences de
+compétition, l'alimentation et les grandes surfaces. **Un défaut de conception
+supplémentaire a été trouvé — dans mon propre modèle.**
+
+### 🟠 6. Une hypothèse fausse laissait passer une installation impossible
+
+Le premier modèle de liaison supposait qu'un poste sans fil **compressait
+forcément** sa vidéo. C'est faux : une caméra industrielle envoie du **brut**
+(809 Mbit/s), sauf matériel d'encodage dédié. Conséquence : le système aurait
+**accepté** une installation WiFi qui ne pouvait pas fonctionner — découverte
+garantie sur le terrain, après achat.
+
+**Détecté par** un test que j'avais écrit pour vérifier le refus… et qui a
+échoué. **Corrigé** : le type de flux (`brut` / `compresse` / `edge`) est
+maintenant **déclaré explicitement**, jamais deviné.
+
+**Ajouté dans cette passe** : journal inaltérable (une ligne modifiée ou
+supprimée est détectée), fiche scellée, contrôle GO/NO-GO avec 8 points
+bloquants testés un par un, alimentation sans coupure (batterie toujours en
+ligne), et refus motivé des installations sans fil impossibles.
+**+51 tests.**
+
 ---
 
 ## Auto-critique — ce que cet audit ne prouve pas
@@ -172,13 +224,23 @@ sont générées par ordinateur. La précision de 100 % est celle du simulateur,
 - « Qualité commercialisable » sur le **logiciel** : oui, à mon meilleur
   niveau. Sur le **produit complet** : non — il manque encore la preuve
   terrain, le marquage CE et un vrai boîtier.
+- **« Compétition officielle » : le mot est piégeux.** Les exigences
+  techniques (preuve, traçabilité, contestation, disponibilité) sont
+  implémentées et testées. Mais **aucun logiciel ne s'homologue lui-même** :
+  c'est une décision de fédération, et la FFBT n'a pas encore été contactée.
+  Je n'ai pas pu lire les règlements (accès web bloqué). Voir
+  `GUIDE_COMPETITION` — le chemin y est décrit sans détour.
+- Le **pod intelligent** (qui rend le sans-fil possible) est **conçu, modélisé
+  et testé en logiciel**, mais le calculateur déporté n'a jamais tourné :
+  c'est du matériel non acheté. Les portées sans fil sont des ordres de
+  grandeur, pas des mesures.
 
 ---
 
 ## Pour rejouer cet audit
 
 ```bash
-python3 -m pytest -q                    # 159 tests
+python3 -m pytest -q                    # 210 tests
 python3 -m tools.bench --all            # précision mesurée
 ruff check clayscore tools tests        # qualité de code
 node --check webapp/app.js              # syntaxe de l'appli tablette

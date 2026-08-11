@@ -60,6 +60,16 @@ DEFAULTS: Dict[str, Any] = {
         "clips_max_files": 600,
         "clips_max_mb": 5000,
     },
+    # Alimentation : la batterie est toujours en ligne, rechargée par la
+    # source disponible -> changer de source ne coupe jamais le système.
+    "alimentation": {
+        "sources": ["secteur"],       # secteur | lanceur
+        "batterie_ah": 30,
+        "batterie_v": 12,
+        "duree_epreuve_h": 8,
+    },
+    # Postes de vue. Vide = simulation (aucun matériel déclaré).
+    "postes": [],
 }
 
 

@@ -47,7 +47,7 @@ function show(view) {
   $$(".foot button").forEach((b) => b.classList.toggle("on", b.dataset.nav === view));
   if (view === "history") loadHistory();
   if (view === "tv") renderTV(LAST_STATE);
-  if (view === "net") loadNetwork();
+  if (view === "net") { loadCompetition(); loadNetwork(); }
 }
 const verdictTag = (v) => `<span class="tag tag-${v}">${(
   { casse: "CASSÉ", manque: "MANQUÉ", nobird: "NO BIRD", ambigu: "À VÉRIFIER" }[v] || v)}</span>`;
@@ -237,6 +237,62 @@ function connectWS() {
 /* Répond à la seule question qui compte sur le terrain :
    "quelle adresse je tape sur la tablette, et est-ce que tout est branché ?" */
 const NIVEAU_ICONE = { bloquant: "🔴", important: "🟠", conseil: "🟡" };
+
+/* Contrôle GO/NO-GO avant une épreuve : un seul point rouge et on ne part pas. */
+async function loadCompetition() {
+  let g = null, pw = null, po = null, j = null;
+  try { g  = await api("/api/officiel/controle"); } catch (e) { }
+  try { pw = await api("/api/alimentation"); } catch (e) { }
+  try { po = await api("/api/postes"); } catch (e) { }
+  try { j  = await api("/api/officiel/journal"); } catch (e) { }
+
+  if (g) {
+    $("#go-verdict").textContent = g.go ? "✅ PRÊT" : "⛔ PAS PRÊT";
+    $("#go-verdict").style.color = g.go ? "var(--casse,#28c281)" : "var(--manque,#ff5a4d)";
+    $("#go-items").innerHTML = (g.items || []).map((i) =>
+      `<div class="chip" style="width:100%;text-align:left">
+        ${i.ok ? "✅" : (i.bloquant ? "⛔" : "🟠")} ${esc(i.quoi)}
+        ${i.ok ? "" : `<br><span class="muted">→ ${esc(i.solution)}</span>`}</div>`).join("");
+  }
+  if (pw) {
+    const auto = pw.autonomie_h === null ? "illimitée (source branchée)"
+                                         : pw.autonomie_h + " h restantes";
+    $("#pwr").innerHTML =
+      `Source : <b>${esc(pw.source)}</b>${pw.sur_batterie ? " (sur batterie)" : ""}<br>` +
+      `Consommation : <b>${pw.conso_w} W</b> · Autonomie : <b>${esc(String(auto))}</b><br>` +
+      `<span class="muted">Valeur ${esc(pw.mesure)}</span>` +
+      (pw.alertes || []).map((a) =>
+        `<div class="chip" style="width:100%;text-align:left">${esc(a.quoi)}<br>
+         <span class="muted">→ ${esc(a.solution)}</span></div>`).join("");
+  }
+  if (po) {
+    $("#pods").innerHTML = po.pods.length
+      ? po.pods.map((p) => `<div class="chip" style="width:100%;text-align:left">
+          ${p.en_ligne ? "🟢" : "🔴"} <b>${esc(p.id)}</b> · ${esc(p.role)} ·
+          ${esc(p.liaison_label)} · ${p.distance_m} m ·
+          ${p.edge ? "intelligent" : esc(p.flux)} (${p.debit_requis_mbps} Mbit/s)</div>`).join("")
+        + (po.problemes || []).map((x) => `<div class="chip" style="width:100%;text-align:left">
+            ⚠️ ${esc(x.quoi)}<br><span class="muted">→ ${esc(x.solution)}</span></div>`).join("")
+      : '<span class="muted">Aucun poste déclaré (mode simulation).</span>';
+  }
+  if (j) {
+    const v = j.verification;
+    $("#journal").innerHTML = v.ok
+      ? `✅ Journal intègre — <b>${j.entrees}</b> événements enregistrés<br>
+         <span class="muted">Sceau : ${esc((v.sceau || "").slice(0, 16))}…</span>`
+      : `⛔ <b>Journal altéré</b> (${esc(v.raison || "")})<br>
+         <span class="muted">Prévenir le jury avant de continuer.</span>`;
+  }
+}
+$("#go-refresh").onclick = () => { loadCompetition(); loadNetwork(); };
+$("#seal-btn").onclick = async () => {
+  try {
+    const f = await api("/api/officiel/fiche");
+    $("#seal-out").innerHTML = `Sceau : <b>${esc(f.sceau_court)}</b><br>
+      <span class="muted">À reporter sur la fiche papier. Toute modification
+      d'un score change ce sceau.</span>`;
+  } catch (e) { toast(e.message); }
+};
 
 async function loadNetwork() {
   let n = null, h = null;

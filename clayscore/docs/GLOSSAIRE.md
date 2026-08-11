@@ -61,6 +61,12 @@ ni tireur ni informaticien.
 | **mDNS / .local** | Ce qui permet de taper `clayscore.local` au lieu d'une adresse en chiffres |
 | **Code d'accès** | Le code qui protège les scores quand le boîtier est sur un réseau partagé |
 | **XSS** | Faille où un texte saisi (ex. un nom) devient du code qui s'exécute. Corrigée |
+| **Journal inaltérable** | Registre où chaque ligne est liée à la précédente : modifier un score se voit |
+| **Sceau** | Code court calculé sur la fiche. Un chiffre changé = un sceau différent |
+| **GO / NO-GO** | Le contrôle avant épreuve : un seul point rouge et on ne démarre pas |
+| **Pod intelligent (edge)** | Un poste qui **décide sur place** au lieu d'envoyer la vidéo. C'est ce qui permet le sans-fil |
+| **Homologation** | La validation par une fédération. Aucun matériel ne peut se l'attribuer lui-même |
+| **Dérivation lanceur** | Prendre le courant sur l'alimentation d'un lanceur, avec convertisseur isolé et fusible |
 
 ## Le business
 
