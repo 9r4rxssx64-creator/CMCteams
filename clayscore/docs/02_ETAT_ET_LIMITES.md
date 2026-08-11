@@ -24,7 +24,12 @@ t'appuyer, et où sont les zones d'ombre. Aucune bonne nouvelle exagérée ici.
 | Le disque ne peut pas se remplir | Purge automatique, clip en cours protégé | `pytest tests/test_maintenance.py` |
 | Deux tablettes ne créent pas de plateau fantôme | 4 appuis simultanés → 1 seul analysé | `pytest tests/test_maintenance.py` |
 | Un nom de tireur ne peut pas exécuter de code | Échappement vérifié dans l'appli | `pytest tests/test_maintenance.py` |
-| **Total** | **159 tests réussis** | `pytest` |
+| Un score modifié après coup est détecté | Journal chaîné : ligne modifiée ou supprimée repérée | `pytest tests/test_competition.py` |
+| La fiche finale est scellée | Le sceau change au moindre chiffre modifié | `pytest tests/test_competition.py` |
+| On ne démarre pas une épreuve mal préparée | GO/NO-GO : 8 points bloquants testés un par un | `pytest tests/test_competition.py` |
+| Changer de source d'alimentation ne coupe rien | Batterie toujours en ligne, autonomie contrôlée | `pytest tests/test_competition.py` |
+| Une installation sans fil impossible est refusée | 809 Mbit/s bruts ne passent pas : refus motivé | `pytest tests/test_competition.py` |
+| **Total** | **210 tests réussis** | `pytest` |
 
 ---
 

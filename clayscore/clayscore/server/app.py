@@ -21,12 +21,12 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .. import maintenance, network
+from .. import maintenance, network, officiel, pods, power
 from ..engine import MatchEngine
 from ..game.disciplines import list_disciplines
 from ..storage import Storage
 
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 
 # Chemins projet.
 _PKG_ROOT = Path(__file__).resolve().parent.parent.parent  # clayscore/
@@ -90,6 +90,14 @@ def create_app(clips_dir: Optional[str] = None,
     statep = state_path or str(_PKG_ROOT / "data" / "match_state.json")
 
     app.state.net = net or network.NetworkConfig()
+    # Traçabilité officielle : journal chaîné, écrit à chaque événement.
+    app.state.journal = officiel.OfficialJournal(
+        Path(statep).parent / "journal_officiel.jsonl")
+    # Postes de vue et alimentation : renseignés par la configuration ou par
+    # les pods eux-mêmes ; l'app en dérive le GO/NO-GO de compétition.
+    app.state.fleet = pods.PodFleet()
+    app.state.battery = power.Battery()
+    app.state.sources = ["secteur"]
     app.state.engine = MatchEngine(clips_dir=str(clips), state_path=statep)
     # Reprise après crash / redémarrage (watchdog systemd) : rejoue le match.
     try:
@@ -101,6 +109,14 @@ def create_app(clips_dir: Optional[str] = None,
 
     def engine() -> MatchEngine:
         return app.state.engine
+
+    def _place_libre_mo() -> float:
+        """Place réellement libre sur le disque (pas une estimation)."""
+        import shutil as _sh
+        try:
+            return _sh.disk_usage(str(clips)).free / (1024 * 1024)
+        except OSError:
+            return 0.0
 
     async def push_state():
         await app.state.ws.broadcast({"type": "state", "state": engine().state()})
@@ -140,6 +156,9 @@ def create_app(clips_dir: Optional[str] = None,
                                machines=req.machines, mode=req.mode)
         except (ValueError, RuntimeError) as e:
             raise HTTPException(400, str(e))
+        app.state.journal.append("partie_ouverte", {
+            "discipline": req.discipline, "tireurs": req.shooters,
+            "serie": req.serie, "mode": req.mode})
         await push_state()
         return st
 
@@ -163,10 +182,19 @@ def create_app(clips_dir: Optional[str] = None,
 
     @app.post("/api/game/verdict", dependencies=[Depends(guard)])
     async def game_verdict(req: Verdict):
+        pend = engine().pending
+        auto = pend.auto_verdict if pend else None
         try:
             res = await offload(engine().commit, req.verdict, req.cartridge)
         except (ValueError, RuntimeError) as e:
             raise HTTPException(400, str(e))
+        # Trace officielle : on distingue un verdict accepté d'une correction
+        # humaine — c'est exactement ce qu'un jury veut pouvoir relire.
+        corrige = req.verdict is not None and req.verdict != auto
+        app.state.journal.append(
+            "verdict_corrige" if corrige else "verdict_valide",
+            {"verdict": req.verdict or auto, "auto": auto,
+             "cartouche": req.cartridge})
         await push_state()
         return res
 
@@ -219,6 +247,70 @@ def create_app(clips_dir: Optional[str] = None,
         except Exception as e:  # noqa: BLE001
             raise HTTPException(500, f"Habillage impossible : {e}")
         return {"clip_url": f"/clips/{out_name}", "verdict": verdict}
+
+    # --- compétition officielle ------------------------------------------ #
+    def _conso() -> float:
+        n_pods = max(1, len(app.state.fleet.pods)) if app.state.fleet.pods else 3
+        return power.consommation({"hub": 1, "camera": n_pods, "switch_poe": 1,
+                                   "routeur": 1, "ssd": 1, "micro": 1})
+
+    @app.get("/api/officiel/journal")
+    def journal_verifie():
+        """Le journal a-t-il été modifié ? Réponse vérifiable par un jury."""
+        j: officiel.OfficialJournal = app.state.journal
+        return {"verification": j.verify(), "entrees": len(j.entries)}
+
+    @app.get("/api/officiel/controle")
+    def controle_avant_epreuve(duree_h: float = 8.0):
+        """GO / NO-GO : un seul point rouge et on ne démarre pas l'épreuve."""
+        cfg: network.NetworkConfig = app.state.net
+        net_st = network.status(cfg)
+        eng = engine()
+        fleet: pods.PodFleet = app.state.fleet
+        pw = power.status(sources_presentes=app.state.sources,
+                          batterie=app.state.battery, conso_w=_conso(),
+                          duree_epreuve_h=duree_h)
+        st = eng.state()
+        rapport = officiel.pre_competition_check(
+            mode="concours" if st.get("official") else "entrainement",
+            pin_actif=net_st.pin_required,
+            cameras_isolees=net_st.cameras_isolated,
+            pods_ok=fleet.en_ligne or 0,
+            pods_total=len(fleet.pods),
+            alimentation_ok=not pw.sur_batterie or pw.charge_pct > 0,
+            autonomie_h=pw.autonomie_h,
+            disque_libre_mo=_place_libre_mo(),
+            journal_ok=app.state.journal.verify()["ok"],
+            horloge_synchro=all(p.derive_horloge_ms <= 20
+                                for p in fleet.pods) if fleet.pods else True,
+            duree_epreuve_h=duree_h)
+        return {**rapport.to_dict(), "alimentation": pw.to_dict(),
+                "postes": fleet.to_dict()}
+
+    @app.get("/api/officiel/fiche")
+    def fiche_scellee():
+        """Fiche finale scellée : le moindre chiffre changé invalide le sceau."""
+        eng = engine()
+        if eng.partie is None:
+            raise HTTPException(400, "Aucune partie en cours.")
+        j: officiel.OfficialJournal = app.state.journal
+        v = j.verify()
+        return officiel.seal_scorecard(
+            eng.partie.scorecard(),
+            {"discipline": eng.partie.discipline.key,
+             "serie": eng.partie.serie, "mode": getattr(eng.partie, "mode", ""),
+             "version": VERSION},
+            v.get("sceau", officiel.GENESIS))
+
+    @app.get("/api/alimentation")
+    def alimentation():
+        pw = power.status(sources_presentes=app.state.sources,
+                          batterie=app.state.battery, conso_w=_conso())
+        return pw.to_dict()
+
+    @app.get("/api/postes")
+    def postes():
+        return app.state.fleet.to_dict()
 
     # --- réseau, version, santé ------------------------------------------ #
     @app.get("/api/network")

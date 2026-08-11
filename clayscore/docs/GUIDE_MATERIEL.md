@@ -425,7 +425,7 @@ Un trépied léger qui vibre au vent peut à lui seul faire chuter la précision
 Cohérent avec la fourchette du dossier v4 (**1 450 – 1 550 €**), les extras
 étant des petites pièces qu'on découvre toujours au montage.
 
-**Logiciel : 0 €** — il est déjà écrit et testé (159 tests verts).
+**Logiciel : 0 €** — il est déjà écrit et testé (210 tests verts).
 
 ---
 

@@ -89,3 +89,45 @@ network:
 maintenance:
   clips_max_files: 600
   clips_max_mb: 5000
+
+# --------------------------------------------------------------------------
+# ALIMENTATION — batterie, secteur, ou dérivation sur un lanceur.
+# La batterie est TOUJOURS en ligne et se recharge depuis la source
+# disponible : changer de source (ou la perdre) ne coupe jamais le système.
+# ⚠️ Dérivation lanceur : convertisseur ISOLÉ + fusible dédié obligatoires.
+# --------------------------------------------------------------------------
+alimentation:
+  sources: [secteur]          # secteur | lanceur  (liste de ce qui est branché)
+  batterie_ah: 30
+  batterie_v: 12
+  duree_epreuve_h: 8          # sert au GO/NO-GO avant une épreuve
+
+# --------------------------------------------------------------------------
+# POSTES DE VUE — filaires, ou sans fil pour couvrir de grandes surfaces.
+#
+# flux : brut      -> caméra nue (809 Mbit/s : CÂBLE OBLIGATOIRE)
+#        compresse -> encodeur H.264 au pod (~12 Mbit/s)
+#        edge      -> le pod DÉCIDE sur place (~0,2 Mbit/s : sans fil, >1 km)
+#
+# Le mode "edge" est ce qui permet parcours de chasse, compak éloigné et
+# plusieurs terrains. Le système REFUSE une configuration impossible.
+# --------------------------------------------------------------------------
+postes:
+  - id: POD-A
+    role: stereo_a           # stereo_a | stereo_b | lateral | secours
+    liaison: ethernet        # ethernet | wifi_local | wifi_maille | wifi_directionnel | lte
+    distance_m: 30
+    flux: brut
+    alimentation: poe
+  - id: POD-B
+    role: stereo_b
+    liaison: ethernet
+    distance_m: 30
+    flux: brut
+    alimentation: poe
+  - id: POD-C
+    role: lateral
+    liaison: ethernet
+    distance_m: 40
+    flux: brut
+    alimentation: poe

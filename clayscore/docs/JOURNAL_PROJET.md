@@ -20,7 +20,8 @@ comment ils ont été résolus.** Rien n'est masqué : les erreurs figurent auss
 | 11/08/2026 | Guides matériel / montage / prototype + liens d'achat | — |
 | 11/08/2026 | **Audit qualité commerciale** : 5 défauts réels corrigés | +18 tests |
 | 11/08/2026 | **Réseau autonome OU branché au club** + code d'accès | +11 tests |
-| **Total** | | **159 tests verts** |
+| 11/08/2026 | **Niveau compétition** : preuve, alimentation, sans fil | +51 tests |
+| **Total** | | **210 tests verts** |
 
 ---
 
@@ -154,6 +155,33 @@ n'arrête pas l'arbitrage. Détail complet : `GUIDE_RESEAU`.
 
 ---
 
+### 🏆 Niveau compétition officielle (11/08)
+
+Trois briques ajoutées, plus une erreur de conception attrapée par un test.
+
+- **Preuve** : journal chaîné (toute modification se voit), fiche scellée,
+  contrôle GO/NO-GO qui refuse de démarrer une épreuve mal préparée, et
+  distinction entre verdict accepté et **correction humaine** — c'est
+  exactement ce qu'un jury relit. Détail : `GUIDE_COMPETITION`.
+- **Alimentation** : batterie **toujours en ligne**, rechargée par le secteur
+  ou par dérivation sur un lanceur → changer de source ne coupe jamais rien.
+  Détail : `GUIDE_ALIMENTATION`.
+- **Grandes surfaces** : une caméra produit **809 Mbit/s** bruts — 2,4 Gbit/s
+  à trois. Aucune liaison sans fil ne transporte ça. D'où le **pod
+  intelligent** qui décide sur place et n'envoie que le verdict + un court
+  ralenti : **0,2 Mbit/s**, donc sans fil jusqu'à plus d'un kilomètre.
+  Détail : `GUIDE_GRANDE_SURFACE`.
+
+### 🐛 Une hypothèse fausse dans mon propre modèle
+
+Le premier modèle supposait qu'un pod sans fil *compressait forcément* sa
+vidéo. C'est faux : une caméra industrielle envoie du brut, sauf matériel
+d'encodage dédié. Le modèle laissait donc passer une installation impossible.
+Le test l'a révélé ; le type de flux (`brut` / `compresse` / `edge`) est
+désormais **déclaré explicitement**, jamais deviné.
+
+---
+
 ## 3. Les décisions techniques importantes
 
 | Décision | Pourquoi |
@@ -168,6 +196,9 @@ n'arrête pas l'arbitrage. Détail complet : `GUIDE_RESEAU`.
 | Réseau des caméras **séparé** de celui du club | Le club n'est pas inondé par la vidéo, et sa panne réseau n'arrête pas l'arbitrage |
 | Analyse faite **hors du verrou** | Une tablette qui analyse ne fige plus les autres ni l'écran TV |
 | Lectures libres, **écritures protégées** par code | L'écran TV et les spectateurs voient tout ; seuls les scores sont protégés |
+| Journal **chaîné** plutôt que simple fichier de log | Un score modifié après coup devient détectable par un tiers |
+| Batterie **toujours en ligne** (jamais alimenté direct) | Changer ou perdre une source ne provoque aucune coupure |
+| Type de flux **déclaré**, jamais deviné | Une installation sans fil impossible est refusée avant le terrain |
 
 ---
 
