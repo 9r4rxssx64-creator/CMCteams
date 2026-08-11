@@ -32,7 +32,7 @@ t'appuyer, et où sont les zones d'ombre. Aucune bonne nouvelle exagérée ici.
 | Le système tient 3 caméras en temps réel | Mesuré 288 img/s pour 195 requis | `pytest tests/test_performance.py` |
 | La pénombre ne rend plus le système aveugle | −60 % de lumière : 33 % → 100 % | `pytest tests/test_performance.py` |
 | Les défauts de réglage caméra sont signalés | Sombre, cramé, bruité détectés, 0 faux positif | `pytest tests/test_performance.py` |
-| **Total** | **289 tests réussis** | `pytest` |
+| **Total** | **308 tests réussis** | `pytest` |
 
 ---
 

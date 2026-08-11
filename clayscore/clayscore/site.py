@@ -57,11 +57,18 @@ RETOUR_CAMERA: Dict[str, float] = {
     "hd": 12.0,        # 1080p H.264 : ralenti exploitable à l'écran
 }
 
-# Prix (€). Deux natures très différentes, et on ne les confond pas :
+# Prix (€). TROIS niveaux de confiance, jamais confondus :
 #
-#   RELEVÉ = un prix public réellement trouvé (référence + source + date).
-#   cible  = une hypothèse de planification héritée de docs/BUDGET_BOM.md,
-#            jamais confirmée chez un fournisseur.
+#   VÉRIFIÉ = la fiche produit a été OUVERTE et le prix lu dessus, par le
+#             workflow `clayscore-verif-prix` qui tourne sur le runner GitHub
+#             (le seul endroit d'où le réseau est ouvert). C'est le seul
+#             niveau qu'on peut opposer à un fournisseur.
+#   RELEVÉ  = un prix vu dans un résultat de recherche daté, sans que la
+#             fiche ait pu être ouverte.
+#   cible   = une hypothèse de planification héritée de docs/BUDGET_BOM.md.
+#
+# Relancer la vérification : pousser une modification de ce fichier, ou
+# lancer le workflow « ClayScore — Vérifier les prix sur les vraies pages ».
 #
 # `SOURCE_PRIX` documente CHAQUE ligne, et un test vérifie qu'aucun prix
 # n'existe sans provenance : c'est ce qui empêche un chiffre inventé de se
@@ -76,14 +83,14 @@ PRIX: Dict[str, float] = {
     "filtre": 15.0,              # cible
     "caisson": 15.0,             # cible
     "trepied": 15.0,             # cible
-    "calculateur": 307.0,        # RELEVÉ (prix UE réel, pas le tarif officiel)
+    "calculateur": 392.5,        # VÉRIFIÉ sur la fiche produit (CI)
     "ssd": 40.0,                 # cible
     "switch_poe": 60.0,          # cible
     "micro": 25.0,               # cible
     "batterie_30ah": 46.0,       # RELEVÉ
     "chargeur": 25.0,            # cible
     "cablage": 50.0,             # cible
-    "pont_directionnel": 98.0,   # RELEVÉ — la PAIRE, achetée en UE
+    "pont_directionnel": 96.08,  # VÉRIFIÉ sur la fiche produit (CI) — la PAIRE
     "routeur": 40.0,             # cible
     "ecran_club": 250.0,         # cible — NOUVEAU
     "mini_pc_club": 200.0,       # cible — NOUVEAU
@@ -102,11 +109,13 @@ SOURCE_PRIX: Dict[str, str] = {
     "filtre": "cible BUDGET_BOM — passe-bande 850 nm / polarisant.",
     "caisson": "cible BUDGET_BOM — boîtier aluminium IP66.",
     "trepied": "cible BUDGET_BOM — fixation rigide.",
-    "calculateur": "RELEVÉ — NVIDIA Jetson Orin Nano Super Developer Kit. "
-                   "Tarif officiel 249 USD (216 €) mais prix RÉEL en Europe "
-                   "307,14 € (idealo.fr, revendeurs Kubii/Gotronic/RS). C'est "
-                   "ce prix-là qui est retenu : 216 € + TVA + douane ferait "
-                   "~277 € pour un import, sans garantie ni SAV. Achat UE.",
+    "calculateur": "VÉRIFIÉ 11/08/2026 sur les fiches produit (workflow "
+                   "clayscore-verif-prix) — NVIDIA Jetson Orin Nano Super : "
+                   "Gotronic 392,50 € et Kubii 465,00 €. On retient le moins "
+                   "cher réellement vérifié : 392,50 €. ⚠️ Les 307 € annoncés "
+                   "par un comparateur étaient FAUX (-22 %) : aucun revendeur "
+                   "ne les pratique. Le tarif officiel NVIDIA de 249 USD "
+                   "n'existe pas au comptant en Europe. Achat UE.",
     "ssd": "cible BUDGET_BOM — NVMe 500 Go.",
     "switch_poe": "cible BUDGET_BOM. Un TP-Link TL-SG1005P (4 ports PoE, 65 W) "
                   "est listé à 30,83 £ chez un revendeur britannique : la "
@@ -117,11 +126,11 @@ SOURCE_PRIX: Dict[str, str] = {
                      "BUDGET_BOM était de 130 € : nettement surévaluée.",
     "chargeur": "cible BUDGET_BOM — chargeur LiFePO4 dédié.",
     "cablage": "cible BUDGET_BOM — Cat6 extérieur, presse-étoupes, fusibles.",
-    "pont_directionnel": "RELEVÉ — Ubiquiti NanoStation 5AC Loco, 450+ Mbit/s, "
-                         "portée >10 km. 49 € l'unité en France (idealo, "
-                         "Getic 50,62 €, LDLC 64,95 €) -> la PAIRE 98 €. "
-                         "Achat UE : même prix qu'en import une fois la TVA "
-                         "ajoutée, mais livré tout de suite.",
+    "pont_directionnel": "VÉRIFIÉ 11/08/2026 sur les fiches produit — Ubiquiti "
+                         "NanoStation 5AC Loco, 450+ Mbit/s, portée >10 km. "
+                         "Getic 48,04 € l'unité -> la PAIRE 96,08 € (retenu). "
+                         "LDLC affiche 64,95 € l'unité, soit 129,90 € la paire "
+                         "(+35 %) : commander chez Getic. Achat UE.",
     "routeur": "cible BUDGET_BOM — routeur WiFi local.",
     "ecran_club": "cible — écran/TV du club-house. NOUVEAU, aucun prix relevé.",
     "mini_pc_club": "cible — mini-PC du club-house. NOUVEAU, aucun prix relevé.",
@@ -141,14 +150,19 @@ ORIGINE: Dict[str, Dict] = {
     "objectif": {"retenu": "chine", "chine": 36.0, "ue": None,
                  "pourquoi": "Aucun prix public UE relevé ; à commander avec "
                              "les caméras, chez le même vendeur."},
-    "calculateur": {"retenu": "ue", "chine": None, "ue": 307.0,
-                    "pourquoi": "Tarif officiel 216 €, mais 277 € une fois TVA "
-                                "et douane ajoutées — pour 30 € de plus, l'UE "
-                                "apporte garantie, SAV et zéro risque de "
-                                "contrefaçon sur une pièce critique."},
-    "pont_directionnel": {"retenu": "ue", "chine": None, "ue": 98.0,
-                          "pourquoi": "49 € l'unité en France : l'import ne "
-                                      "ferait rien gagner après TVA."},
+    "calculateur": {"retenu": "ue", "chine": None, "ue": 392.5,
+                    "pourquoi": "Prix VÉRIFIÉ sur fiche produit (Gotronic "
+                                "392,50 € ; Kubii 465 €). Un import au tarif "
+                                "officiel reviendrait à ~277 € TVA+douane, "
+                                "mais sans garantie ni SAV sur la pièce la "
+                                "plus critique, et le marché parallèle du "
+                                "Jetson est risqué. À rechallenger si l'écart "
+                                "se creuse encore."},
+    "pont_directionnel": {"retenu": "ue", "chine": None, "ue": 96.08,
+                          "pourquoi": "48,04 € l'unité chez Getic (vérifié) : "
+                                      "l'import ne ferait rien gagner après "
+                                      "TVA. Attention, LDLC est 35 % plus "
+                                      "cher sur le même produit."},
     "batterie_30ah": {"retenu": "ue", "chine": None, "ue": 46.0,
                       "pourquoi": "Lourd : le transport annule l'écart. Et une "
                                   "batterie lithium en colis express hors UE "
@@ -168,9 +182,22 @@ def cout_import(prix_chine: float) -> float:
 POSTES_NOUVEAUX = ("ecran_club", "mini_pc_club")
 
 
+def niveau_prix(poste: str) -> str:
+    """« verifie » (fiche ouverte) | « releve » (recherche) | « cible »."""
+    source = SOURCE_PRIX[poste]
+    if source.startswith("VÉRIFIÉ"):
+        return "verifie"
+    if source.startswith("RELEVÉ"):
+        return "releve"
+    return "cible"
+
+
 def prix_releve(poste: str) -> bool:
-    """Ce prix vient-il d'une offre réellement trouvée, ou d'une hypothèse ?"""
-    return SOURCE_PRIX[poste].startswith("RELEVÉ")
+    """Ce prix repose-t-il sur une offre réelle (vérifiée ou relevée) ?
+
+    Par opposition à une hypothèse de planification.
+    """
+    return niveau_prix(poste) in ("verifie", "releve")
 
 
 @dataclass
@@ -402,11 +429,14 @@ class Site:
 
         for ligne in lignes:
             ligne["prix_releve"] = prix_releve(ligne["poste"])
+            ligne["niveau_prix"] = niveau_prix(ligne["poste"])
             ligne["source_prix"] = SOURCE_PRIX[ligne["poste"]]
 
         total = round(sum(ligne["total"] for ligne in lignes), 2)
         releves = round(sum(ligne["total"] for ligne in lignes
                             if ligne["prix_releve"]), 2)
+        verifies = round(sum(ligne["total"] for ligne in lignes
+                             if ligne["niveau_prix"] == "verifie"), 2)
         cibles = round(total - releves, 2)
         nouveau = round(sum(ligne["total"] for ligne in lignes
                             if ligne["nouveau"]), 2)
@@ -421,6 +451,7 @@ class Site:
             "pods_secours": secours,
             "n_lanceurs": self.n_lanceurs,
             "releves": releves,
+            "verifies": verifies,
             "cibles": cibles,
             "avertissement": "Aucun de ces prix n'est un devis. Les lignes "
                              "RELEVÉ viennent d'une offre publique datée (voir "

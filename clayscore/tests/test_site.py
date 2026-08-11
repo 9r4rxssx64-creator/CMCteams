@@ -260,6 +260,22 @@ def test_les_prix_releves_sont_distingues_des_hypotheses():
     assert not any(prix_releve(p) for p in ("ecran_club", "mini_pc_club"))
 
 
+def test_trois_niveaux_de_confiance_sur_les_prix():
+    from clayscore.site import niveau_prix
+    # VÉRIFIÉ = la fiche produit a été ouverte par le workflow de contrôle.
+    assert niveau_prix("calculateur") == "verifie"
+    assert niveau_prix("pont_directionnel") == "verifie"
+    # RELEVÉ = vu dans une recherche, fiche jamais ouverte.
+    assert niveau_prix("camera") == "releve"
+    # cible = hypothèse de planification.
+    assert niveau_prix("ecran_club") == "cible"
+
+
+def test_le_bom_isole_ce_qui_est_reellement_verifie():
+    bom = Site([_fosse("F1"), _fosse("F2")]).bom()
+    assert 0 < bom["verifies"] <= bom["releves"] <= bom["total"]
+
+
 def test_le_bom_dit_quelle_part_du_total_est_reellement_relevee():
     bom = Site([_fosse("F1"), _fosse("F2")]).bom()
     assert bom["releves"] + bom["cibles"] == pytest.approx(bom["total"])

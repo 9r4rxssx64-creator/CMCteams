@@ -4,9 +4,11 @@
 viennent de Chine, tout le reste d'Europe. C'est le résultat d'une comparaison
 prix par prix, pas un a priori.
 
-> Mis à jour le **11/08/2026**. 🟢 = prix public réellement relevé ·
-> 🟡 = hypothèse à confirmer. Conversion **1 USD = 0,866 €**.
-> Les totaux sont **calculés** par `clayscore/site.py` (40 tests).
+> Mis à jour le **11/08/2026**. TROIS niveaux de confiance :
+> **✅ VÉRIFIÉ** = la fiche produit a été **ouverte** et le prix lu dessus ·
+> **🟢 relevé** = vu dans une recherche datée · **🟡 cible** = hypothèse.
+> Conversion **1 USD = 0,8666 €** (taux relevé le jour du contrôle).
+> Les totaux sont **calculés** par `clayscore/site.py` (43 tests).
 
 ---
 
@@ -16,8 +18,8 @@ prix par prix, pas un a priori.
 |---|---:|---:|:--:|---|
 | **Caméra** couleur GigE global shutter | **139 €** 🟢 | 372 € 🟢 | 🇨🇳 | Hikrobot `MV-CS016-10GC` contre Basler `acA1440-73gc` : **2,7×** l'écart pour +8 img/s. Même taxée (167 €), la Chine gagne largement |
 | **Objectifs** monture C 5 MP | **36 €** 🟢 | — | 🇨🇳 | À commander avec les caméras, chez le même vendeur |
-| **Calculateur** Jetson Orin Nano Super | 216 € (tarif officiel) | **307 €** 🟢 | 🇪🇺 | 216 € + TVA + douane = ~277 €. Pour **30 € de plus**, l'Europe donne garantie, SAV, et zéro risque de contrefaçon sur la pièce critique |
-| **Pont directionnel** NanoStation 5AC Loco (paire) | — | **98 €** 🟢 | 🇪🇺 | 49 € l'unité en France : l'import ne ferait rien gagner après TVA |
+| **Calculateur** Jetson Orin Nano Super | 216 € (tarif officiel) | **392,50 €** ✅ | 🇪🇺 | ⚠️ prix **vérifié sur la fiche** : Gotronic 392,50 €, Kubii 465 €. Les « 307 € » d'un comparateur étaient faux. Un import reviendrait à ~277 €, mais sans garantie ni SAV sur la pièce critique |
+| **Pont directionnel** NanoStation 5AC Loco (paire) | — | **96,08 €** ✅ | 🇪🇺 | 48,04 € l'unité chez **Getic** (vérifié). ⚠️ LDLC est à 64,95 € : **+35 %** pour le même produit |
 | **Batterie** LiFePO4 12 V 30 Ah | — | **46 €** 🟢 | 🇪🇺 | Lourde. Et une batterie lithium en colis express hors UE pose un problème réglementaire |
 
 **La règle qui en sort :** *ce qui est léger, cher à la marque et sans SAV
@@ -74,23 +76,23 @@ commander chez **un seul** vendeur chinois.
 
 | Configuration | HT | dont 🇨🇳 | dont 🇪🇺 | **Livré TTC** |
 |---|---:|---:|---:|---:|
-| **Étape 0** — valider avant tout (1 calculateur + 2 caméras + 4 objectifs) | 729 € | 422 € | 307 € | **813 €** |
-| **Phase 1** — 1 fosse + club-house complet | 2 165 € | 844 € | 1 321 € | **2 334 €** |
-| **Phase 2** — + 2ᵉ fosse | 3 840 € | 1 688 € | 2 152 € | **4 178 €** |
-| **Phase 3** — + parcours de chasse | 5 771 € | 2 743 € | 3 028 € | **6 320 €** |
-| *(pour comparaison : club complet en config minimum)* | *4 643 €* | *1 750 €* | *2 893 €* | ***4 993 €*** |
+| **Étape 0** — valider avant tout (1 calculateur + 2 caméras + 4 objectifs) | 814 € | 422 € | 392 € | **899 €** |
+| **Phase 1** — 1 fosse + club-house complet | 2 249 € | 844 € | 1 405 € | **2 417 €** |
+| **Phase 2** — + 2ᵉ fosse | 4 007 € | 1 688 € | 2 319 € | **4 345 €** |
+| **Phase 3** — + parcours de chasse | 6 022 € | 2 743 € | 3 279 € | **6 570 €** |
+| *(pour comparaison : club complet en config minimum)* | *4 894 €* | *1 750 €* | *3 144 €* | ***5 244 €*** |
 
-**Sur les 5 771 € HT de la config optimale : 4 096 € sont à prix relevés
-(71 %)**, 1 675 € restent des hypothèses (écran et mini-PC du club-house,
-petites pièces).
+**Sur les 6 022 € HT de la config optimale : 1 466 € sont VÉRIFIÉS sur la
+fiche produit, 4 347 € reposent sur une offre réelle (72 %)**, et 1 675 €
+restent des hypothèses (écran et mini-PC du club-house, petites pièces).
 
 ---
 
 ## 5. L'ordre d'achat
 
-### Étape 0 — 813 € — **à faire avant tout le reste**
+### Étape 0 — 899 € — **à faire avant tout le reste**
 
-1 Jetson (Europe, livré en 48 h) + 2 caméras + 4 objectifs (Chine).
+1 Jetson (Europe, livré en 48 h) + 2 caméras + 4 objectifs (Chine) = **899 €**.
 
 Ça valide en une fois **les deux seules inconnues techniques du projet** :
 - la **cadence** tient-elle sur le vrai calculateur ? (`python -m tools.bench --all`,
@@ -98,7 +100,7 @@ petites pièces).
   sur Jetson**) ;
 - la **paire stéréo** se synchronise-t-elle par déclenchement externe ?
 
-> **Ne commande pas 13 caméras avant d'avoir fait ça.** 813 € pour supprimer
+> **Ne commande pas 13 caméras avant d'avoir fait ça.** 899 € pour supprimer
 > le seul vrai risque du dossier.
 
 ### Puis, une commande chinoise groupée
@@ -129,11 +131,32 @@ les frais de dossier.
 
 ---
 
-## 7. Ce que je ne peux pas garantir — honnêtement
+## 7. Comment ces prix sont contrôlés — et ce qui reste incertain
 
-- **Le pare-feu de mon environnement bloque les pages marchandes.** Tous les
-  prix 🟢 viennent de **résultats de recherche datés du 11/08/2026**, pas de
-  fiches produit ouvertes. À revérifier au moment de commander.
+**Le contrôle est automatique.** Le pare-feu de mon environnement bloque les
+pages marchandes, mais **le runner GitHub a le réseau ouvert**. Un workflow y
+ouvre les vraies fiches produit, en lit le prix (donnée structurée schema.org)
+et le compare à celui du dossier :
+
+```
+Actions → « ClayScore — Vérifier les prix sur les vraies pages » → Run workflow
+```
+
+**Ce que le premier contrôle a trouvé (11/08/2026) — 4 pages sur 6 lues :**
+
+| Ce que disait le dossier | Ce que dit la vraie fiche | Verdict |
+|---|---|---|
+| Jetson **307 €** (comparateur) | **392,50 €** Gotronic · **465 €** Kubii | 🔴 **faux de −22 %** → corrigé |
+| Pont **98 €** la paire | **96,08 €** chez Getic · 129,90 € chez LDLC | ✅ confirmé, et LDLC écarté |
+| Caméra 139 € (Alibaba) | page lue, **prix masqué** (affiché en JavaScript) | ⏳ reste « relevé » |
+| Batterie 46 € (eBay DE) | **HTTP 403** — eBay refuse les robots | ⏳ reste « relevé » |
+
+C'est exactement à ça que sert l'outil : **il a trouvé une erreur de 85 € par
+calculateur dans mon propre dossier**, soit 256 € sur le club.
+
+- **Une page non lue n'est pas une erreur** : Alibaba affiche ses prix en
+  JavaScript et eBay bloque les robots. Ces deux prix restent au niveau
+  « relevé » et sont à confirmer au moment de commander.
 - **Aucun de ces prix n'est un devis**, et aucune remise n'est négociée. Sur
   13 caméras, le palier « 20-99 pièces » (157 USD) n'est pas atteint, mais un
   vendeur accorde souvent le palier supérieur sur une commande groupée : **à

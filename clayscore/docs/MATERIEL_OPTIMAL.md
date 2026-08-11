@@ -137,7 +137,7 @@ ne peut pas mettre deux caméras sur le même Pi).
 
 | Option | Prix | Ce que ça apporte | Risque |
 |---|---:|---|---|
-| **Jetson Orin Nano Super** | **307 €** 🟢 (prix UE réel ; 249 USD au tarif officiel) | GPU : indispensable **si** on active le détecteur IA (YOLO) | Forte demande — le prix au comptant peut être un multiple du tarif officiel |
+| **Jetson Orin Nano Super** | **392,50 €** ✅ (vérifié Gotronic ; Kubii 465 €) | GPU : indispensable **si** on active le détecteur IA (YOLO) | Forte demande — le prix au comptant peut être un multiple du tarif officiel |
 | Mini-PC Intel N100 | 🟡 non relevé | x86, ports USB3/Ethernet, souvent moins cher | Pas de GPU → détecteur classique seulement |
 
 **Le détecteur livré aujourd'hui (classique) tourne sur processeur**, pas sur
@@ -149,7 +149,7 @@ GPU. Le Jetson n'est donc nécessaire que pour la variante IA.
 >
 > ✅ **Ce qu'il faut faire, et c'est peu cher** : acheter **UN SEUL**
 > calculateur, lancer `python -m tools.bench --all` dessus, et **ne commander
-> les deux autres qu'après**. Avec 2 caméras et 4 objectifs, ça fait **813 €
+> les deux autres qu'après**. Avec 2 caméras et 4 objectifs, ça fait **899 €
 > livré** pour supprimer le seul vrai risque technique du projet — détail dans
 > **`COMPARATIF_CHINE_UE.md`** § 5.
 
@@ -159,7 +159,7 @@ GPU. Le Jetson n'est donc nécessaire que pour la variante IA.
 
 | Matériel | Prix | Performance | Besoin réel |
 |---|---:|---|---|
-| **Ubiquiti NanoStation 5AC Loco** (la paire) | **98 €** 🟢 (49 € l'unité en France) | 450+ Mbit/s annoncés, portée > 10 km | **4,2 Mbit/s** par terrain |
+| **Ubiquiti NanoStation 5AC Loco** (la paire) | **96,08 €** ✅ (48,04 € l'unité chez Getic) | 450+ Mbit/s annoncés, portée > 10 km | **4,2 Mbit/s** par terrain |
 
 La marge est énorme (×100). C'est voulu : en extérieur, la pluie, les feuilles
 et les autres réseaux 5 GHz mangent du débit. On dimensionne large et on ne
@@ -181,32 +181,33 @@ Ce tableau est **calculé** par `Site.bom()`, pas tapé à la main.
 | Filtre optique | passe-bande 850 nm / polarisant | 13 | 15 € | 195 € | 🟡 |
 | Caisson IP66 | boîtier aluminium | 13 | 15 € | 195 € | 🟡 |
 | Fixation rigide | trépied lourd / piquet | 13 | 15 € | 195 € | 🟡 |
-| Calculateur | Jetson Orin Nano Super (UE) | 3 | 307 € | 921 € | 🟢 |
+| Calculateur | Jetson Orin Nano Super (UE) | 3 | 392,50 € | 1 178 € | ✅ |
 | SSD NVMe 500 Go | clips + base | 3 | 40 € | 120 € | 🟡 |
 | Switch PoE | TP-Link TL-SG1005P (65 W) | 3 | 60 € | 180 € | 🟡 |
 | Micro USB | omnidirectionnel | 3 | 25 € | 75 € | 🟡 |
 | Batterie LiFePO4 12 V 30 Ah | avec BMS | 3 | 46 € | 138 € | 🟢 |
 | Chargeur LiFePO4 | dédié | 3 | 25 € | 75 € | 🟡 |
 | Câblage extérieur | Cat6 ext., presse-étoupes, fusibles | 3 lots | 50 € | 150 € | 🟡 |
-| Pont directionnel (paire) | NanoStation 5AC Loco (UE) | 3 | 98 € | 294 € | 🟢 |
+| Pont directionnel (paire) | NanoStation 5AC Loco — Getic (UE) | 3 | 96,08 € | 288 € | ✅ |
 | Routeur club-house | WiFi local | 1 | 40 € | 40 € | 🟡 |
 | Mini-PC club-house | agrège + pilote l'écran | 1 | 200 € | 200 € | 🟡 |
 | Écran club-house | TV scores + retour caméra | 1 | 250 € | 250 € | 🟡 |
-| **TOTAL (config OPTIMALE)** | | | | **5 771 € HT** | |
+| **TOTAL (config OPTIMALE)** | | | | **6 022 € HT** | |
 
 **Répartition honnête :**
 
 | | Montant | Part |
 |---|---:|---:|
-| 🟢 Prix **relevés** (offre publique datée) | **4 096 €** | 71 % |
-| 🟡 Prix **à confirmer** (hypothèses) | **1 675 €** | 29 % |
+| ✅ Prix **vérifiés sur la fiche produit** | **1 466 €** | 24 % |
+| 🟢 Prix **relevés** (recherche datée) | **2 881 €** | 48 % |
+| 🟡 Prix **à confirmer** (hypothèses) | **1 675 €** | 28 % |
 
 > ⚠️ **Aucun de ces chiffres n'est un devis.** Ils ne comprennent ni la **TVA**
 > ni la **douane** sur la partie hors UE (compter **+20 %** + frais de dossier
 > sur la commande chinoise, soit environ **+340 €** sur les 1 680 € de caméras).
 
-**Livré, TVA comprise sur la part chinoise : 6 320 €.** En config *minimum*
-(sans secours ni double focale) : 4 993 €. Détail et étapes :
+**Livré, TVA comprise sur la part chinoise : 6 570 €.** En config *minimum*
+(sans secours ni double focale) : 5 244 €. Détail et étapes :
 **`COMPARATIF_CHINE_UE.md`**.
 
 ---

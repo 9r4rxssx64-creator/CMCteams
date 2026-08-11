@@ -17,8 +17,8 @@ club-house un peu plus loin qui doit voir les scores et les caméras.**
 | **38 lanceurs** couverts | 15 + 15 (fosses olympiques) + 8 (parcours) |
 | **13 postes de vue** (caméras) | 3 + 3 + 4, **+1 secours par terrain** |
 | **Ce qui remonte au club-house** | **12,6 Mbit/s** — score **+ retour caméra** |
-| **Coût matériel (config OPTIMALE)** | **5 771 € HT** → **6 320 € livré** (dont 4 096 € à prix relevés) |
-| **Faisable en 3 fois (livré)** | 2 334 € → +1 844 € → +2 142 € |
+| **Coût matériel (config OPTIMALE)** | **6 022 € HT** → **6 570 € livré** |
+| **Faisable en 3 fois (livré)** | 2 417 € → +1 928 € → +2 225 € |
 
 ---
 
@@ -124,7 +124,7 @@ C'est la partie nouvelle : elle n'existait pas dans le kit « une fosse ».
 | **Mini-PC** | Reçoit les 3 terrains, agrège les scores, pilote l'écran | 200 € |
 | **Écran / TV** | Affiche scores en direct + retour caméra | 250 € |
 | **Routeur** | Réseau du club-house | 40 € |
-| **3 ponts directionnels** (paires) | Une liaison dédiée par terrain | 294 € |
+| **3 ponts directionnels** (paires) | Une liaison dédiée par terrain | 288 € |
 
 **Ce que voit le club-house :**
 - les **scores en direct** des 3 terrains, côte à côte ;
@@ -147,22 +147,22 @@ Calculé par `Site.bom()`. Chaque prix porte sa provenance : voir `MATERIEL_OPTI
 | Filtre optique | 13 | 15 € | 195 € |
 | Caisson étanche IP66 | 13 | 15 € | 195 € |
 | Trépied / fixation | 13 | 15 € | 195 € |
-| Calculateur (Jetson Orin Nano Super, acheté en UE) | 3 | 307 € | 921 € |
+| Calculateur (Jetson Orin Nano Super, acheté en UE) | 3 | 392,50 € | 1 178 € |
 | SSD NVMe 500 Go | 3 | 40 € | 120 € |
 | Switch PoE | 3 | 60 € | 180 € |
 | Micro (détection du coup de feu) | 3 | 25 € | 75 € |
 | Batterie LiFePO4 30 Ah | 3 | 46 € | 138 € |
 | Chargeur LiFePO4 | 3 | 25 € | 75 € |
 | Câblage extérieur / connectique | 3 lots | 50 € | 150 € |
-| Pont directionnel NanoStation 5AC Loco (paire) | 3 | 98 € | 294 € |
+| Pont directionnel NanoStation 5AC Loco (paire, chez Getic) | 3 | 96,08 € | 288 € |
 | Routeur club-house | 1 | 40 € | 40 € |
 | **Mini-PC club-house** *(nouveau)* | 1 | 200 € | 200 € |
 | **Écran club-house** *(nouveau)* | 1 | 250 € | 250 € |
-| **TOTAL MATÉRIEL (optimal)** | | | **5 771 € HT** |
+| **TOTAL MATÉRIEL (optimal)** | | | **6 022 € HT** |
 
 > ⚠️ **Ce ne sont pas des devis.** Le tableau ci-dessus est la configuration
 > **OPTIMALE** (caméra de secours par terrain + double jeu d'objectifs) :
-> **5 771 € HT**, dont **4 096 € à prix relevés (71 %)**. En config
+> **6 022 € HT**, dont **4 096 € à prix relevés (71 %)**. En config
 > **minimum** : 4 643 € HT. Le comparatif Chine/Europe poste par poste et les
 > totaux **livrés TVA comprise** sont dans **`COMPARATIF_CHINE_UE.md`**.
 
@@ -175,10 +175,10 @@ avant de câbler le club.
 
 | Étape | Ce qu'on installe | Coût de l'étape | Cumul |
 |---|---|---:|---:|
-| **0** | 1 calculateur + 2 caméras + 4 objectifs — **valider avant tout** | **813 €** | 813 € |
-| **1** | Fosse 1 + club-house complet | **2 334 €** | 2 334 € |
-| **2** | Fosse 2 | **+1 844 €** | 4 178 € |
-| **3** | Parcours de chasse | **+2 142 €** | 6 320 € |
+| **0** | 1 calculateur + 2 caméras + 4 objectifs — **valider avant tout** | **899 €** | 899 € |
+| **1** | Fosse 1 + club-house complet | **2 417 €** | 2 417 € |
+| **2** | Fosse 2 | **+1 928 €** | 4 345 € |
+| **3** | Parcours de chasse | **+2 225 €** | 6 570 € |
 
 *(Montants **livrés**, TVA comprise sur la part chinoise. L'étape 0 fait partie
 de l'étape 1, elle n'est pas en plus.)*
@@ -204,7 +204,7 @@ site.add(Terrain("CHASSE", "parcours", distance_club_m=700, n_lanceurs=8,
                  retour_camera="apercu", pods=[...]))
 
 site.debit_club_mbps()   # -> 12.6
-site.bom()["total"]      # -> 5771.0  (config optimale)
+site.bom()["total"]      # -> 6022.0  (config optimale)
 site.check()             # -> les problèmes, en français, avec la solution
 ```
 
