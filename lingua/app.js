@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.104.15";
+var APP_VER="v2.105.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -44,6 +44,7 @@ function loadS(){
   S.diff=lg("diff",null);   // difficulté des exercices : null = Auto (dérivée du niveau), 0..4 = fixée (test de niveau / profil)
   S.coachMsgs=lg("coachMsgs",[]);                                   // mémoire du Coach IA — PAR COMPTE (historique de conversation)
   S.coachProfile=lg("coachProfile",{objectif:"bilingue",weak:[],notes:""}); // profil d'apprentissage suivi par le Coach
+  S.mascot=lg("mascot","bee"); // mascotte choisie : "bee" ou "donkey"
   S.beeVoice=lg("beeVoice","fillette"); // voix de Bee choisie (catalogue BEE_VOICES) — fillette mignonne par défaut
   S.turtle=lg("turtle",false); // 🐢 mode tortue : les modèles de prononciation se jouent au ralenti partout
   S.coachScene=lg("coachScene",null); // 🎭 jeu de rôle en cours (id de SCENES) — null = conversation libre
@@ -79,7 +80,7 @@ function fixPlacementProg(){
     if(changed){ S.diff=null; /* le niveau estimé par ce test n'était pas fiable → retour en Auto (doux, selon les mots appris) */ save(); }
   }catch(e){}
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
 /* 📊 chaque XP gagné est daté — nourrit le calendrier d'activité (page Stats) */
 function _dayTs(k){ var p=String(k).split("-"); return new Date(+p[0],(+p[1]||1)-1,+p[2]||1).getTime(); }
 function histAdd(xp){ if(!xp)return; if(!S.hist)S.hist={}; var t=today(); S.hist[t]=(S.hist[t]||0)+xp;
@@ -135,7 +136,19 @@ function findLocalAccount(name,code){ var n=norm(name); var accs=accounts(); for
    appareil : nom+code → tout revient. FAIL-OPEN : si le cloud est indispo, la
    mémoire locale continue (rien perdu localement). */
 var SYNC_BASE="https://lingua.kd-mc.com/__lingua";
-var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle"];
+/* ---------- MASCOTTE : Bee ou l'Ane (Kevin 2026-08-11 : « qu'on ait le choix ») ----------
+   UN SEUL point de verite : dossier d'images, emoji, prenom, couleur de paupiere. Tout le
+   reste de l'app passe par MASC()/MEMO()/MNAME() — plus aucun chemin « bee/ » en dur. */
+var MASCOTS=[
+  {id:"bee",    dir:"bee",    emoji:"\ud83d\udc1d", nom:"Bee",      titre:"Bee l'abeille",  lid:"rgb(253,225,87)"},
+  {id:"donkey", dir:"donkey", emoji:"\ud83e\udecf", nom:"Bourrico", titre:"Bourrico l'\u00e2ne", lid:"#cfc6bd"}
+];
+function mascotCfg(){ var id=S.mascot||"bee"; for(var i=0;i<MASCOTS.length;i++){ if(MASCOTS[i].id===id) return MASCOTS[i]; } return MASCOTS[0]; }
+function MASC(){ return mascotCfg().dir; }      /* dossier des images */
+function MEMO(){ return mascotCfg().emoji; }    /* emoji affiche */
+function MNAME(){ return mascotCfg().nom; }     /* prenom affiche */
+function setMascot(id){ S.mascot=id; save(); vibrate(10); toast(mascotCfg().emoji+" "+mascotCfg().titre+" est ta mascotte !"); render(); }
+var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
 function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
@@ -553,7 +566,7 @@ function vHome(){ var w=el("div","screen tree");
   // 📖 Histoires de la ruche — Bee raconte, tu comprends, tu gagnes
   if(typeof STORIES!=="undefined"&&STORIES.length&&STORIES[0].lignes[0].t[S.course]){ var sd=storiesDoneCount(); /* histoires cachées si pas encore traduites dans cette langue */
     var stc=el("button","stories-card");
-    stc.innerHTML='<span class="st-ic">📖</span><span class="st-tx"><b>Histoires de la ruche</b><i>Bee te raconte une histoire en '+esc(COURSES[S.course].nom.toLowerCase())+'</i></span><span class="st-badge">'+sd+'/'+STORIES.length+'</span>';
+    stc.innerHTML='<span class="st-ic">📖</span><span class="st-tx"><b>Histoires de la ruche</b><i>'+MNAME()+' te raconte une histoire en '+esc(COURSES[S.course].nom.toLowerCase())+'</i></span><span class="st-badge">'+sd+'/'+STORIES.length+'</span>';
     stc.onclick=function(){ go("stories"); }; w.appendChild(stc); }
   // ⚡🃏 Salle de jeux — deux défis chrono pour réviser en s'amusant
   var gr=el("div","games-row");
@@ -1111,6 +1124,16 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   var freeze=el("div","freeze-card"); freeze.innerHTML='<div><b>🧊 Gel de série</b><span> — protège 1 jour manqué</span></div><div class="fx">x'+S.freeze+'</div>';
   var fb=el("button","btn-buy"); fb.textContent="Acheter (200 💎)"; fb.onclick=function(){ if(S.gems>=200){ S.gems-=200; S.freeze++; save(); toast("🧊 Gel ajouté !"); render(); } else toast("Pas assez de gemmes 💎"); };
   freeze.appendChild(fb); d.appendChild(freeze);
+  // MASCOTTE : Bee ou l'Ane (Kevin : « qu'on ait le choix »)
+  var mc=el("div","voice-card");
+  mc.innerHTML='<div class="sec-h">\ud83c\udfad Ta mascotte</div><p class="mini">Qui t\'accompagne dans l\'app ? Le changement est immediat, partout.</p>';
+  var mrow=el("div","masc-row");
+  MASCOTS.forEach(function(m){ var on=(S.mascot||"bee")===m.id;
+    var b=el("button","masc-pick"+(on?" on":""));
+    b.innerHTML='<img src="'+m.dir+'/wave.webp" width="64" height="64" alt="" onerror="this.replaceWith(document.createTextNode(\''+m.emoji+'\'))"><b>'+esc(m.titre)+'</b><i>'+(on?"\u2713 Choisie":"Choisir")+'</i>';
+    b.onclick=function(){ if(!on) setMascot(m.id); };
+    mrow.appendChild(b); });
+  mc.appendChild(mrow); d.appendChild(mc);
   // voix (large choix, testables)
   var vc=el("div","voice-card");
   vc.innerHTML='<div class="sec-h">🔊 Voix</div><p class="mini">Choisis ta voix. Touche ▶ pour l\'écouter. Les voix « HD » sont naturelles (en ligne) ; « téléphone » marche hors-ligne.</p>';
@@ -1152,7 +1175,7 @@ function cefrModal(){ var m=modal(); var lv=currentLevel();
   m.body.innerHTML='<h3>🎓 Ton vrai niveau</h3>'+
     '<p class="mini">Tu es <b>'+esc(lv.cur.code)+'</b> avec <b>'+lv.words+' mots</b> maîtrisés.'+(lv.next?(' Encore <b>'+lv.remain+' mots</b> pour <b>'+esc(lv.next.code)+'</b>.'):' Bravo, tu as tout parcouru ! 🎉')+'</p>'+
     '<div style="margin:10px 0">'+ladder+'</div>'+
-    '<p class="mini">Être vraiment <b>bilingue</b> (C1-C2), c\'est <b>plusieurs milliers de mots</b> et de la pratique sur des <b>années</b> — un marathon, pas un sprint. Lingua te bâtit des <b>bases solides</b> : le programme actuel ('+total+' mots) t\'emmène vers <b>~'+esc((function(){ var r=LEVELS[0]; LEVELS.forEach(function(s){ if(total>=s.min) r=s; }); return r.code; })())+'</b>, et il s\'enrichit régulièrement. Chaque mot compte, continue ! 🐝</p>'+
+    '<p class="mini">Être vraiment <b>bilingue</b> (C1-C2), c\'est <b>plusieurs milliers de mots</b> et de la pratique sur des <b>années</b> — un marathon, pas un sprint. Lingua te bâtit des <b>bases solides</b> : le programme actuel ('+total+' mots) t\'emmène vers <b>~'+esc((function(){ var r=LEVELS[0]; LEVELS.forEach(function(s){ if(total>=s.min) r=s; }); return r.code; })())+'</b>, et il s\'enrichit régulièrement. Chaque mot compte, continue ! '+MEMO()+'</p>'+
     '<button class="btn-main" style="margin-top:8px" onclick="this.closest(\'.overlay\').classList.remove(\'show\');var o=this.closest(\'.overlay\');setTimeout(function(){o.remove();},250);">OK 👍</button>';
 }
 /* Bee réagit selon ce qu'il dit : félicite → fête, question → curieux, salut → coucou. */
@@ -1193,10 +1216,10 @@ function beeBubble(text,ms){ try{ var old=document.querySelector(".bee-bubble");
   b.onclick=function(){ b.remove(); }; document.body.appendChild(b);
   setTimeout(function(){ try{ b.classList.add("bye"); setTimeout(function(){b.remove();},400); }catch(_){} }, ms||6000); }catch(_){} }
 /* Marionnette réutilisable : les couches animées découpées de SON image (ailes+bras+paupières) */
-function beeRigHTML(){ return '<img class="rig-base" src="bee/rig/base.webp" alt="Bee">'+
-  '<img class="rig-piece rig-wl" src="bee/rig/wing-l.webp" alt="" onerror="this.remove()">'+
-  '<img class="rig-piece rig-wr" src="bee/rig/wing-r.webp" alt="" onerror="this.remove()">'+
-  '<img class="rig-piece rig-arm" src="bee/rig/arm.webp" alt="" onerror="this.remove()">'+
+function beeRigHTML(){ var M=MASC(); return '<img class="rig-base" src="'+M+'/rig/base.webp" alt="'+MNAME()+'">'+
+  '<img class="rig-piece rig-wl" src="'+M+'/rig/wing-l.webp" alt="" onerror="this.remove()">'+
+  '<img class="rig-piece rig-wr" src="'+M+'/rig/wing-r.webp" alt="" onerror="this.remove()">'+
+  '<img class="rig-piece rig-arm" src="'+M+'/rig/arm.webp" alt="" onerror="this.remove()">'+
   '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'; }
 function beeMove(rig,kind,dur){ if(!rig)return; ["mv-dance","mv-jump","mv-fly","mv-walk"].forEach(function(c){rig.classList.remove(c);});
   if(!kind)return; rig.classList.add("mv-"+kind);
@@ -1243,7 +1266,7 @@ function beeCompanion(){ var w=el("div","bee-companion");
 function coachSpeak(text){ if(!text) return; speakLang(text,coachTtsLang(),BEE_VOICE,true); /* voix selon le niveau : débutant = français (la réponse est surtout en français), avancé = langue cible */
   var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
 function coachGreeting(c){ var me=accMeta(ACC)||{}; var n=me.name||"toi"; var hi=(DICT["salut"]&&DICT["salut"][c.id])||"Salut";
-  return hi+" "+n+" ! 🐝 Moi c'est Bee, ton amie coach de "+c.nom.toLowerCase()+". On peut discuter de TOUT ce que tu veux — ton week-end, un film, ton travail, un voyage, une idée… Je te suis, je te réponds pour de vrai et je te corrige en douceur. De quoi as-tu envie de parler ?"; }
+  return hi+" "+n+" ! '+MEMO()+' Moi c'est '+MNAME()+', ton amie coach de "+c.nom.toLowerCase()+". On peut discuter de TOUT ce que tu veux — ton week-end, un film, ton travail, un voyage, une idée… Je te suis, je te réponds pour de vrai et je te corrige en douceur. De quoi as-tu envie de parler ?"; }
 function coachSuggestions(c){ var hello=(DICT["comment ça va"]&&DICT["comment ça va"][c.id])||"Bonjour";
   return ["Parle-moi de ta journée 🌤️", "J'ai vu un film hier 🎬", "Raconte-moi une blague 😄", hello, "Apprends-moi 3 mots utiles", "Corrige ma phrase (j'écris ensuite)"]; }
 function coachOffline(){ return "Je ne peux pas discuter à l'instant (coach momentanément indisponible). En attendant, fais une leçon 🧠 — je garde en mémoire où tu en es et on reprend juste après !"; }
@@ -1259,7 +1282,7 @@ var SCENES=[
   {id:"voyage",   ic:"✈️", nom:"À l'aéroport",        desc:"S'enregistrer, se repérer",     sc:"une scène à l'aéroport : tu es l'agent d'accueil, l'apprenant s'enregistre pour son vol, pose ses questions et demande son chemin"},
   {id:"hotel",    ic:"🏨", nom:"À l'hôtel",           desc:"Réserver une chambre",          sc:"une scène à la réception d'un hôtel : tu es le réceptionniste, l'apprenant réserve une chambre, demande les horaires et les services"},
   {id:"medecin",  ic:"🩺", nom:"Chez le médecin",     desc:"Dire ce qui ne va pas",         sc:"une consultation chez le médecin : tu es le médecin rassurant, l'apprenant explique simplement ce qui ne va pas et répond à tes questions"},
-  {id:"lecture",  ic:"📖", nom:"Lire et raconter",    desc:"Bee raconte, tu racontes",      sc:"un jeu de lecture : tu racontes une toute petite histoire originale (3 phrases maximum, adaptée au niveau), puis tu poses des questions simples sur l'histoire et l'apprenant la raconte avec ses mots"}
+  {id:"lecture",  ic:"📖", nom:"Lire et raconter",    desc:MNAME()+" raconte, tu racontes",      sc:"un jeu de lecture : tu racontes une toute petite histoire originale (3 phrases maximum, adaptée au niveau), puis tu poses des questions simples sur l'histoire et l'apprenant la raconte avec ses mots"}
 ];
 function sceneById(id){ for(var i=0;i<SCENES.length;i++){ if(SCENES[i].id===id)return SCENES[i]; } return null; }
 function coachSceneMeta(){ return S.coachScene?sceneById(S.coachScene):null; }
@@ -1440,7 +1463,7 @@ function discListen(){ var overlay=document.querySelector(".disc-overlay"); if(!
 function _discLiveBtn(){ var ov=document.querySelector(".disc-overlay"); return ov&&ov.querySelector(".disc-live"); }
 function _discLiveUI(on){ var b=_discLiveBtn(); if(b){ b.classList.toggle("on",!!on); b.textContent=on?"⏹":"📞"; b.title=on?"Raccrocher":"Appel en direct"; }
   var ov=document.querySelector(".disc-overlay"); var sub=ov&&ov.querySelector(".disc-sub");
-  if(on&&sub)sub.textContent="🔴 En direct — parle, Bee t'écoute…"; }
+  if(on&&sub)sub.textContent="🔴 En direct — parle, "+MNAME()+" t'écoute…"; }
 function discLiveToggle(){ if(DISC.live){ discLiveStop(); toast("Appel terminé"); } else { discLiveStart(); } }
 function discLiveStart(){ if(DISC.live||DISC.liveConnecting)return; var c=coachLangMeta(); if(!c)return;
   if(!(navigator.mediaDevices&&window.RTCPeerConnection)){ toast("Ton navigateur ne gère pas l'appel en direct — conversation normale gardée"); return; }
@@ -1471,7 +1494,7 @@ function discLiveStart(){ if(DISC.live||DISC.liveConnecting)return; var c=coachL
          return sdpRes.text(); }).then(function(answer){ return pc.setRemoteDescription({type:"answer",sdp:answer}); });
      });
    })
-   .then(function(){ DISC.liveConnecting=false; DISC.live=true; _discLiveUI(true); toast("🔴 En direct — parle, Bee te répond"); })
+   .then(function(){ DISC.liveConnecting=false; DISC.live=true; _discLiveUI(true); toast("🔴 En direct — parle, "+MNAME()+" te répond"); })
    .catch(function(e){ DISC.liveConnecting=false; discLiveStop();
      var why=(e&&e.name==="NotAllowedError")?"micro refusé" : (e&&e.message)?String(e.message).slice(0,60) : "erreur réseau";
      toast("Appel en direct indisponible ("+why+") — je reste en conversation normale"); });
@@ -1518,15 +1541,15 @@ function discSend(){ var overlay=document.querySelector(".disc-overlay"); if(!ov
 function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ toast("Choisis d'abord une langue 🌍"); return; }
   DISC.open=true; var ov=el("div","disc-overlay");
   ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
-    '<div class="disc-title">🐝 Bee · '+esc(c.nom)+'</div>'+
-    '<div class="disc-stage"><div class="disc-bee bee-rig">'+
-      '<img class="rig-base" src="bee/rig/base.webp" alt="Bee">'+
-      '<img class="rig-piece rig-wl" src="bee/rig/wing-l.webp" alt="" onerror="this.remove()">'+
-      '<img class="rig-piece rig-wr" src="bee/rig/wing-r.webp" alt="" onerror="this.remove()">'+
-      '<img class="rig-piece rig-arm" src="bee/rig/arm.webp" alt="" onerror="this.remove()">'+
+    '<div class="disc-title">'+MEMO()+' '+MNAME()+' · '+esc(c.nom)+'</div>'+
+    '<div class="disc-stage"><div class="disc-bee bee-rig" data-mascot="'+mascotCfg().id+'">'+
+      '<img class="rig-base" src="'+MASC()+'/rig/base.webp" alt="'+MNAME()+'">'+
+      '<img class="rig-piece rig-wl" src="'+MASC()+'/rig/wing-l.webp" alt="" onerror="this.remove()">'+
+      '<img class="rig-piece rig-wr" src="'+MASC()+'/rig/wing-r.webp" alt="" onerror="this.remove()">'+
+      '<img class="rig-piece rig-arm" src="'+MASC()+'/rig/arm.webp" alt="" onerror="this.remove()">'+
       '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
       '<div class="disc-mouth"></div>'+
-      '<video class="disc-vid" src="bee/live/idle.mp4" autoplay loop muted playsinline></video></div></div>'+
+      '<video class="disc-vid" src="'+MASC()+'/live/idle.mp4" autoplay loop muted playsinline></video></div></div>'+
     '<div class="disc-sub"></div>'+
     '<div class="disc-moves"><button data-mv="dance" title="Danse">💃</button><button data-mv="jump" title="Saute">🦘</button><button data-mv="fly" title="Vole">🕊️</button><button data-mv="walk" title="Marche">🚶</button></div>'+
     '<div class="disc-chips"></div>'+
@@ -1545,9 +1568,9 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
     dv.addEventListener("canplay",function(){ if(!DISC.open)return; DISC.vid=true; db.classList.add("vid"); },{once:true});
     dv.onerror=function(){ DISC.vid=false; try{db.classList.remove("vid");}catch(_){} try{dv.remove();}catch(_){} };
     DISC.clip=function(name,secs){ if(!DISC.vid||!dv||!DISC.open)return;
-      try{ dv.src="bee/live/"+name+".mp4"; dv.loop=true; var p=dv.play(); if(p&&p.catch)p.catch(function(){}); }catch(_){}
+      try{ dv.src=MASC()+"/live/"+name+".mp4"; dv.loop=true; var p=dv.play(); if(p&&p.catch)p.catch(function(){}); }catch(_){}
       if(DISC.clipT)clearTimeout(DISC.clipT);
-      if(name!=="idle"){ DISC.clipT=setTimeout(function(){ if(DISC.open&&DISC.vid&&dv){ try{ dv.src="bee/live/idle.mp4"; var q=dv.play(); if(q&&q.catch)q.catch(function(){}); }catch(_){} } }, Math.max(2,(secs||4))*1000); } };
+      if(name!=="idle"){ DISC.clipT=setTimeout(function(){ if(DISC.open&&DISC.vid&&dv){ try{ dv.src=MASC()+"/live/idle.mp4"; var q=dv.play(); if(q&&q.catch)q.catch(function(){}); }catch(_){} } }, Math.max(2,(secs||4))*1000); } };
   }
   /* Elle VIT aussi entre deux phrases : de temps en temps elle vole, marche ou danse toute seule */
   function moveLoop(){ if(!DISC.open)return;
@@ -1630,7 +1653,7 @@ function vStoryPlay(){ var d=el("div","screen story"); if(!ST){ go("stories"); r
     var showFr = ST.phase==="lines" || ST.showFr;
     st.lignes.slice(0,ST.phase==="lines"?ST.i+1:st.lignes.length).forEach(function(l,li){
       var row=el("div","story-line"+(l.qui==="🐝"?" bee":"")+(ST.phase==="lines"&&li===ST.i?" now":""));
-      row.innerHTML='<span class="sl-who">'+l.qui+'</span><span class="sl-tx"><b>'+esc(l.t[S.course]||l.fr)+'</b>'+(showFr?'<i>'+esc(l.fr)+'</i>':'')+'</span>';
+      row.innerHTML='<span class="sl-who">'+(l.qui==="🐝"?MEMO():l.qui)+'</span><span class="sl-tx"><b>'+esc(l.t[S.course]||l.fr)+'</b>'+(showFr?'<i>'+esc(l.fr)+'</i>':'')+'</span>';
       var sp=el("button","sl-say"); sp.textContent="🔊"; sp.setAttribute("aria-label","Écouter");
       sp.onclick=function(ev){ ev.stopPropagation(); storyLineSay(l); }; row.appendChild(sp);
       box.appendChild(row); });
@@ -1782,7 +1805,7 @@ function maybeOfferPlacement(){
 }
 function startExam(ui){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   LESSON={ui:ui,li:null,exam:true,review:false,ex:buildExam(ui),i:0,wrong:0,correct:0,combo:0,comboMax:0,answered:false,ok:null}; VIEW="lesson"; window.scrollTo(0,0); render();
-  var msg="C'est Bee qui te fait passer l'examen ! Concentre-toi, je suis avec toi 🐝";
+  var msg="C'est "+MNAME()+" qui te fait passer l'examen ! Concentre-toi, je suis avec toi "+MEMO();
   setTimeout(function(){ beeBubble(msg,5000); speakLang(msg,"fr-FR",BEE_VOICE,true); },350); }
 function outOfHearts(){ VIEW="home"; render(); var m=modal();
   m.body.innerHTML='<div class="mascot-mini">'+MASCOT("sad",90)+'</div><h3>Plus de vies ❤️</h3><p>Tes cœurs reviennent seuls (1 / 30 min).</p>';
@@ -1835,7 +1858,7 @@ function beeExplainMore(ex){ /* Un tap → le prof IA explique en profondeur (m�
     coachAsk().then(function(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); save();
       if(LESSON){ LESSON._profLoading=false; LESSON._profReply=reply; if(VIEW==="lesson")render(); else { go("coach"); render(); } }
       try{ coachSpeak(reply); }catch(_){} })
-     .catch(function(){ if(LESSON){ LESSON._profLoading=false; LESSON._profReply="Bee n'a pas pu expliquer là, réessaie."; if(VIEW==="lesson")render(); } }); }catch(_){} }
+     .catch(function(){ if(LESSON){ LESSON._profLoading=false; LESSON._profReply=MNAME()+" n'a pas pu expliquer là, réessaie."; if(VIEW==="lesson")render(); } }); }catch(_){} }
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
   if(ex&&ex.w&&ex.w.t) ttsPrefetch(ex.w.t); /* mot courant réchauffé → lecture instantanée */
   if(L.ex[L.i+1]&&L.ex[L.i+1].w&&L.ex[L.i+1].w.t) ttsPrefetch(L.ex[L.i+1].w.t); /* et le suivant → 0 décalage à l'enchaînement */
@@ -1846,8 +1869,8 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
   d.appendChild(body);
   var foot=el("div","lesson-foot"+(L.answered?(L.ok?" ok":" ko"):""));
   if(L.answered){ var fb=el("div","feedback");
-    var PRAISE=["✅ Super !","✅ Bien joué !","✅ Bzzz… parfait ! 🐝","✅ Exact !","✅ Bee est fière de toi !","✅ Impeccable !"];
-    var CONSOLE_=["❌ Pas tout à fait. La bonne réponse :","❌ Pas grave, on retient :","❌ Bee te souffle la réponse :"];
+    var PRAISE=["✅ Super !","✅ Bien joué !","✅ Bzzz… parfait ! 🐝","✅ Exact !","✅ "+MNAME()+" est fière de toi !","✅ Impeccable !"];
+    var CONSOLE_=["❌ Pas tout à fait. La bonne réponse :","❌ Pas grave, on retient :","❌ "+MNAME()+" te souffle la réponse :"];
     fb.innerHTML=L.ok?('<b>'+PRAISE[(L.i+L.correct)%PRAISE.length]+'</b>'+(L.combo>=3?' <span class="cb">🔥 combo x'+L.combo+' (+1 XP)</span>':'')):('<b>'+CONSOLE_[L.i%CONSOLE_.length]+'</b> '+esc(L._sol||""));
     if(!L.ok){ /* EXPLICATION quand on se trompe : le sens, ce que voulait dire TA réponse, un exemple */
       var expl=beeExplain(ex,L);
@@ -1855,7 +1878,7 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
       if(ex&&ex.w){ var mb=el("button","fb-more"); mb.textContent=L._profReply?"💬 Redemander au prof":"💬 Demander au prof";
         mb.disabled=!!L._profLoading;
         mb.onclick=function(ev){ ev.stopPropagation(); beeExplainMore(ex); }; fb.appendChild(mb); }
-      if(L._profLoading){ var pl=el("div","fb-expl prof"); pl.textContent="🐝 Bee réfléchit…"; fb.appendChild(pl); }
+      if(L._profLoading){ var pl=el("div","fb-expl prof"); pl.textContent=MEMO()+" "+MNAME()+" réfléchit…"; fb.appendChild(pl); }
       else if(L._profReply){ var pr=el("div","fb-expl prof"); pr.innerHTML='<b>🐝 Prof :</b> '+esc(L._profReply); fb.appendChild(pr); } }
     foot.appendChild(fb); }
   var main=el("button","btn-main check"); main.id="mainBtn"; main.textContent=L.answered?"Continuer":"Vérifier"; main.disabled=!L.answered&&!L._can; main.onclick=function(){ L.answered?nextEx():checkEx(ex); }; foot.appendChild(main);
@@ -2009,7 +2032,7 @@ function modal(){ var ov=el("div","overlay"),box=el("div","modal"); ov.appendChi
    Illustrations IA en médaillon rond (bee/*.webp) + repli SVG animé si l'image manque. */
 var BEE_IMG={wave:"wave",point:"point",party:"party",read:"read",sad:"read"};
 function MASCOT(pose,size){ size=size||100; var f=BEE_IMG[pose]||"wave";
-  return '<img class="mascot bee-img pose-'+pose+'" src="bee/'+f+'.webp" width="'+size+'" height="'+size+'" alt="" data-pose="'+pose+'" data-size="'+size+'" onerror="window._beeFallback&&window._beeFallback(this)">';
+  return '<img class="mascot bee-img pose-'+pose+'" src="'+MASC()+'/'+f+'.webp" width="'+size+'" height="'+size+'" alt="" data-pose="'+pose+'" data-size="'+size+'" onerror="window._beeFallback&&window._beeFallback(this)">';
 }
 window._beeFallback=function(el){ try{ var d=document.createElement("span"); d.innerHTML=MASCOT_SVG((el.dataset&&el.dataset.pose)||"wave", parseInt(el.dataset&&el.dataset.size,10)||100); el.replaceWith(d.firstChild); }catch(_){} };
 function MASCOT_SVG(pose,size){ size=size||100;
