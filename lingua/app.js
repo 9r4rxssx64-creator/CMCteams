@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.116.0";
+var APP_VER="v2.117.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1437,7 +1437,13 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   // réglages
   var st=el("div","settings");
   st.innerHTML='<label class="row"><span>🔊 Son & voix</span><input type="checkbox" id="setSound" '+(S.sound?"checked":"")+'></label>'+
-    '<label class="row"><span>🎯 Objectif quotidien</span><select id="setGoal">'+[10,20,30,50].map(function(g){return '<option value="'+g+'"'+(S.goal===g?" selected":"")+'>'+g+' XP</option>';}).join("")+'</select></label>';
+    /* Kevin 2026-08-11 : « objectif max trop bas, Laurence vient de faire 284 sans y passer
+       longtemps ». Le plafond de 50 XP était atteint en une seule séance -> l'objectif ne
+       voulait plus rien dire. On monte jusqu'a 500, et la valeur enregistree reste proposee
+       meme si elle ne fait pas partie de la liste (aucun compte ne perd son reglage). */
+    '<label class="row"><span>🎯 Objectif quotidien</span><select id="setGoal">'+
+      [10,20,30,50,75,100,150,200,300,500].concat(S.goal).filter(function(g,i,a){return a.indexOf(g)===i;}).sort(function(a,b){return a-b;})
+        .map(function(g){return '<option value="'+g+'"'+(S.goal===g?" selected":"")+'>'+g+' XP'+(g>=200?' 🔥':(g>=100?' 💪':''))+'</option>';}).join("")+'</select></label>';
   var sw=el("button","row switch"); sw.innerHTML='<span>👥 Changer de compte</span><span>›</span>'; sw.onclick=function(){ PICK=true; render(); }; st.appendChild(sw);
   var rs=el("button","row danger"); rs.textContent="♻️ Réinitialiser ce compte"; rs.onclick=function(){ if(confirm("Effacer TOUTE la progression de ce compte ?")){ ["hearts","gems","xp","streak","lastDay","freeze","dailyXP","prog","srs","league","achv","words","today","qClaim","course"].forEach(function(k){ localStorage.removeItem(pfx()+k); }); loadS(); VIEW="home"; render(); } }; st.appendChild(rs);
   d.appendChild(st);
@@ -1731,6 +1737,45 @@ function coachSend(text){ if(_coachThinking||!text) return; var c=coachLangMeta(
   _coachThinking=true; render();
   coachAsk().then(function(reply){ _coachThinking=false; if(reply){ S.coachMsgs.push({role:"bot",text:reply}); if(S.coachMsgs.length>60)S.coachMsgs=S.coachMsgs.slice(-60); _coachPose=coachPoseFor(reply); } save(); render();
     setTimeout(function(){ if(reply) coachSpeak(reply); },260); }); }
+/* ===== Exercices À TROUS cliquables dans le chat du Coach =====
+   Kevin 2026-08-11 : « il demande de remplir un mot dans un texte mais on peut pas écrire
+   dessus ». Quand le coach écrit une phrase avec ___ , on remplace chaque ___ par une VRAIE
+   case de saisie, et un bouton « Vérifier » renvoie la phrase complétée au coach.
+   Sécurité : le texte du coach n'est JAMAIS inséré en HTML (textContent uniquement). */
+function coachRendTrous(cible, texte){
+  if(!/_{2,}/.test(String(texte||""))) return null;
+  var champs=[];
+  String(texte).split("\n").forEach(function(li){
+    if(!li.trim()) return;
+    var ld=el("div","cm-line");
+    if(/_{2,}/.test(li)){
+      ld.className="cm-line trou";
+      var bouts=li.split(/_{2,}/), ch=[];
+      bouts.forEach(function(txt,k){
+        if(txt){ var s=el("span"); s.textContent=txt; ld.appendChild(s); }
+        if(k<bouts.length-1){ var inp=el("input","cm-blank"); inp.type="text"; inp.placeholder="?";
+          inp.setAttribute("autocomplete","off"); inp.setAttribute("autocapitalize","none"); inp.setAttribute("spellcheck","false");
+          ld.appendChild(inp); ch.push(inp); }
+      });
+      champs.push({modele:li, inputs:ch});
+    } else ld.textContent=li;
+    cible.appendChild(ld);
+  });
+  return champs.length?champs:null;
+}
+function coachEnvoieTrous(champs){
+  var rempli=champs.some(function(c){ return c.inputs.some(function(i){ return i.value.trim(); }); });
+  if(!rempli){ toast("✍️ Écris ta réponse dans la case, puis touche Vérifier"); return; }
+  var rep=champs.map(function(c){ var k=-1;
+    var ligne=c.modele.replace(/_{2,}/g, function(){ k++; return (c.inputs[k]&&c.inputs[k].value.trim())||"…"; });
+    /* On renvoie LA PHRASE seule, pas l'intro du coach (« Super ! Complète : … ») ni le numéro :
+       sinon le coach relit ses propres mots comme s'ils venaient de l'apprenant. */
+    var t=c.modele.indexOf("_"), p=c.modele.lastIndexOf(":", t);
+    if(p>=0) ligne=ligne.slice(ligne.length-(c.modele.length-p-1)).trim();
+    return ligne.replace(/^\d+[.)]\s*/,"").trim();
+  }).join("\n");
+  coachSend(rep);
+}
 function vCoach(){ var d=el("div","screen coach");
   var c=coachLangMeta(); if(!c){ d.innerHTML='<h2 class="ttl">💬 Coach</h2><p class="sub2">Choisis d\'abord une langue 🌍 dans l\'onglet 🏠.</p>'; return d; }
   var head=el("div","coach-head"); head.innerHTML='<span class="coach-flag">'+c.drapeau+'</span><div class="coach-hd"><b>Coach '+esc(c.nom)+'</b><span>Niveau '+esc(diffLabel())+' · objectif bilingue</span></div>';
@@ -1767,11 +1812,22 @@ function vCoach(){ var d=el("div","screen coach");
     var sb=document.querySelector(".coach-sub"); if(sb)sb.textContent=t; }}); },120);
   var box=el("div","coach-box");
   /* Pas de doublon : le bonjour est DÉJÀ dit en gros sous le visage (.coach-sub). */
-  S.coachMsgs.slice(-40).forEach(function(m){
+  var vus=S.coachMsgs.slice(-40), dernierBot=-1;
+  vus.forEach(function(m,i){ if(m.role==="bot") dernierBot=i; });
+  vus.forEach(function(m,i){
     if(m.role==="sys"){ var sysd=el("div","coach-sys"); sysd.textContent=m.text; box.appendChild(sysd); return; }
     var row=el("div","coach-msg "+(m.role==="user"?"user":"bot"));
     if(m.role!=="user") row.innerHTML='<div class="cm-av">'+MASCOT("point",46)+'</div>';
-    var t=el("div","cm-txt"); t.textContent=m.text; row.appendChild(t);
+    var t=el("div","cm-txt");
+    /* Kevin 2026-08-11 : « il demande de remplir un mot dans un texte mais on peut pas écrire
+       dessus ». Les trous ___ du DERNIER message deviennent de VRAIES cases à remplir. */
+    var champs=(m.role==="bot" && i===dernierBot) ? coachRendTrous(t,m.text) : null;
+    if(!champs) t.textContent=m.text;
+    row.appendChild(t);
+    if(champs){ var vb=el("button","cm-check"); vb.textContent="✅ Vérifier ma réponse";
+      vb.onclick=function(){ coachEnvoieTrous(champs); };
+      champs.forEach(function(c){ c.inputs.forEach(function(inp){ inp.onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); vb.click(); } }; }); });
+      row.appendChild(vb); }
     if(m.role!=="user"){ var say=el("button","cm-say"); say.textContent="🔊"; say.title="Écouter"; say.onclick=function(){ coachSpeak(m.text); }; row.appendChild(say); }
     box.appendChild(row); });
   if(_coachThinking){ var tp=el("div","coach-msg bot"); tp.innerHTML='<div class="cm-av">'+MASCOT("read",46)+'</div><div class="cm-txt typing">•  •  •</div>'; box.appendChild(tp); }
@@ -1779,8 +1835,18 @@ function vCoach(){ var d=el("div","screen coach");
   var chips=el("div","coach-chips"); coachSuggestions(c).forEach(function(s){ var b=el("button","coach-chip"); b.textContent=s; b.onclick=function(){ coachSend(s); }; chips.appendChild(b); }); d.appendChild(chips);
   var bar=el("div","coach-inbar"); var inp=el("input","coach-input"); inp.type="text"; inp.placeholder="Parle-moi de ce que tu veux…"; inp.setAttribute("autocomplete","off"); inp.setAttribute("autocapitalize","sentences");
   inp.onkeydown=function(e){ if(e.key==="Enter"&&inp.value.trim()){ coachSend(inp.value.trim()); } };
+  /* 🎤 Kevin 2026-08-11 : « dans coach il n'y a pas de micro ». Il écoute dans la langue
+     étudiée (c'est l'intérêt : s'entraîner à parler), et le texte arrive dans la case SANS
+     partir tout seul — on peut le corriger ou le compléter avant d'envoyer. */
+  var mic=el("button","coach-mic"); mic.textContent="🎤"; mic.title="Parler en "+c.nom;
+  mic.onclick=function(){ if(mic.classList.contains("on"))return;
+    mic.classList.add("on");
+    dictate(function(txt){ mic.classList.remove("on");
+      if(txt){ inp.value=(inp.value?inp.value+" ":"")+txt; vibrate(10); }
+      try{ inp.focus(); }catch(_){}
+    }, c.ttsLang||"en-US"); };
   var snd=el("button","coach-send"); snd.textContent="➤"; snd.title="Envoyer"; snd.onclick=function(){ if(inp.value.trim()) coachSend(inp.value.trim()); };
-  bar.appendChild(inp); bar.appendChild(snd); d.appendChild(bar);
+  bar.appendChild(inp); bar.appendChild(mic); bar.appendChild(snd); d.appendChild(bar);
   setTimeout(function(){ var b=d.querySelector(".coach-box"); if(b)b.scrollTop=b.scrollHeight; },40);
   return d;
 }

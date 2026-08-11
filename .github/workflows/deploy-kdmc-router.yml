@@ -38,6 +38,7 @@ jobs:
         run: |
           node voix-tts.test.mjs
           node antonin-tts.test.mjs
+          node ../../tools/lingua/verify-coach.mjs
 
       - name: Install wrangler
         run: npm i -g wrangler@3

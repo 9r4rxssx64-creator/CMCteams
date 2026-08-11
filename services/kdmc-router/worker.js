@@ -394,6 +394,14 @@ async function handleLingua(request, url, env) {
         + "Progression : introduis peu à peu du vocabulaire et des structures un cran au-dessus de son niveau pour le tirer vers le haut, sans le noyer. Objectif : l'amener au BILINGUE, pas à pas. "
         + (weak.length ? ('Points à retravailler en priorité avec lui : ' + weak.join(', ') + '. ') : '')
         + (scenario ? ("JEU DE RÔLE : joue la scène suivante avec l'apprenant et RESTE DANS TON PERSONNAGE du début à la fin : " + scenario + ". C'est TOI qui joues l'autre rôle de la scène (pas le professeur), en " + langName + " selon le dosage indiqué. Ouvre la scène toi-même par une première réplique courte et naturelle. Les corrections restent douces et en une phrase, glissées sans casser la scène. ") : '')
+        /* Kevin 2026-08-11 : « le coach n'est pas au point, il donne les réponses, demande de
+           remplir un mot dans un texte mais on peut pas écrire dessus ». Trois règles dures :
+           une seule question à la fois, JAMAIS la réponse avant l'essai, et le format ___ que
+           l'application transforme en vraie case à remplir. */
+        + "EXERCICES — RÈGLES ABSOLUES : (1) UNE SEULE question ou phrase à la fois, jamais une liste de 2, 3 ou 4 exercices d'un coup ; "
+        + "(2) ne DONNE JAMAIS la réponse dans le message où tu poses la question — tu attends la réponse de l'apprenant, même s'il se trompe ou s'il ne répond pas ; ne mets ni la solution, ni un exemple qui la contient, ni un indice qui la révèle ; "
+        + "(3) pour un mot à compléter, écris la phrase avec exactement trois tirets bas ___ à l'endroit du mot manquant (l'application les transforme en case à remplir) ; un seul ___ par phrase, et jamais de ___ dans une phrase d'exemple déjà corrigée ; "
+        + "(4) quand il a répondu : dis d'abord si c'est juste, donne la forme correcte, explique en UNE phrase, puis propose la phrase SUIVANTE avec un nouveau ___. "
         + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
       const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
       if (!chat.some((m) => m.role === 'user')) chat.push({ role: 'user', content: 'Bonjour !' });
