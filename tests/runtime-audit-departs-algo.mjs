@@ -44,12 +44,12 @@ try {
     // Algo PAGE (compute v1.26) — ROSTER STABLE : absence 1-3j = numéro mort (le chef reste
     // dans le roster, N + rangs inchangés → autres inchangés) ; congé ≥4j = retiré → recompacte.
     // Réplique exacte de calcDepPos (app). off=0.
-    function absRun(e,D){ if(isWork((pl[e.id]||{})[D]||''))return 0; let L=1,dd;
-      for(dd=D-1;dd>=1&&!isWork((pl[e.id]||{})[dd]||'');dd--)L++;
-      for(dd=D+1;dd<=days&&!isWork((pl[e.id]||{})[dd]||'');dd++)L++; return L; }
+    function absRun(e,D){ if(isWorkDep((pl[e.id]||{})[D]||''))return 0; let L=1,dd;
+      for(dd=D-1;dd>=1&&!isWorkDep((pl[e.id]||{})[dd]||'');dd--)L++;
+      for(dd=D+1;dd<=days&&!isWorkDep((pl[e.id]||{})[dd]||'');dd++)L++; return L; }
     function pageDeps(chefEmps) {
-      const active = chefEmps.filter(e => { for(let d=1;d<=days;d++) if(isWork((pl[e.id]||{})[d]||'')) return true; return false; });
-      const wd = []; for(let d=1;d<=days;d++){ for(const e of active){ if(isWork((pl[e.id]||{})[d]||'')){ wd.push(d); break; } } }
+      const active = chefEmps.filter(e => { for(let d=1;d<=days;d++) if(isWorkDep((pl[e.id]||{})[d]||'')) return true; return false; });
+      const wd = []; for(let d=1;d<=days;d++){ for(const e of active){ if(isWorkDep((pl[e.id]||{})[d]||'')){ wd.push(d); break; } } }
       const baseOf = {}; active.forEach((e,ai)=>baseOf[e.name]=ai);
       const deps = {}; active.forEach(e=>deps[e.name]={});
       // v9.868 — rotation CONTINUE : rot = index du jour dans les jours de travail d'équipe (wi),
@@ -57,16 +57,16 @@ try {
       for(let d=1;d<=days;d++){ const wi=wd.indexOf(d); if(wi<0) continue;
         const eff = active.filter(e=>{const r=absRun(e,d);return r===0||r<4;}).sort((a,b)=>baseOf[a.name]-baseOf[b.name]);
         const N=eff.length; if(!N) continue; const SEQd=sq(N), rot=wi;
-        eff.forEach((e,j)=>{ if(isWork((pl[e.id]||{})[d]||'')) deps[e.name][d]=SEQd[(((rot+j)%N)+N)%N]; }); }
+        eff.forEach((e,j)=>{ if(isWorkDep((pl[e.id]||{})[d]||'')) deps[e.name][d]=SEQd[(((rot+j)%N)+N)%N]; }); }
       return deps;
     }
     let teamsChecked = 0, nullWorks = 0, phantom = 0, mismatch = 0, totalCells = 0, withNumber = 0;
     Object.keys(CHEFS_T).forEach(tid => {
       const names = CHEFS_T[tid] || []; if (!names.length) return;
-      const chefEmps = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWork((pl[e.id]||{})[i+1]||'')));
+      const chefEmps = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWorkDep((pl[e.id]||{})[i+1]||'')));
       if (chefEmps.length < 2) return; teamsChecked++;
       const pg = pageDeps(chefEmps);
-      chefEmps.forEach(e => { for (let d=1;d<=days;d++){ const c=(pl[e.id]||{})[d]||''; if(!isWork(c)) continue; totalCells++;
+      chefEmps.forEach(e => { for (let d=1;d<=days;d++){ const c=(pl[e.id]||{})[d]||''; if(!isWorkDep(c)) continue; totalCells++;
         A.year=2026; A.month=7; const ap = calcDepPos(e.name, tid, d); const pgv = pg[e.name] && pg[e.name][d];
         // v9.857 : le max valide est la TAILLE DU ROSTER (chefs actifs), pas les présents du jour
         // — un présent peut porter le n° le plus haut avec un « numéro mort » ailleurs (absence courte).
@@ -101,15 +101,15 @@ try {
     let teamsBig = 0, badNear = 0, checked = 0;
     Object.keys(CHEFS_T).forEach(tid => {
       const names = CHEFS_T[tid] || []; if (names.length < 5) return; // équipes ≥5 chefs (là où le bug était visible)
-      const active = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWork((pl[e.id]||{})[i+1]||'')));
+      const active = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWorkDep((pl[e.id]||{})[i+1]||'')));
       if (active.length < 5) return;
       const full = active.length; teamsBig++;
       // jours de travail de l'équipe (union) + rot CONTINU (v9.868) = index du jour (wi)
-      const wd = []; for (let d = 1; d <= days; d++) { if (active.some(e => isWork((pl[e.id]||{})[d]||''))) wd.push(d); }
+      const wd = []; for (let d = 1; d <= days; d++) { if (active.some(e => isWorkDep((pl[e.id]||{})[d]||''))) wd.push(d); }
       // jours à roster complet (tous présents) + leur rot + vecteur de départ (ordre des chefs)
       const stable = [];
       for (let d = 1; d <= days; d++) {
-        if (!active.every(e => isWork((pl[e.id]||{})[d]||''))) continue;
+        if (!active.every(e => isWorkDep((pl[e.id]||{})[d]||''))) continue;
         const vec = active.map(e => { A.year=2026; A.month=7; return calcDepPos(e.name, tid, d); });
         stable.push({ d, rot: wd.indexOf(d), vec: JSON.stringify(vec) });
       }
