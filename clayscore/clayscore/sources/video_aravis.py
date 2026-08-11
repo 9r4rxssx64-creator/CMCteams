@@ -20,6 +20,54 @@ import numpy as np
 
 from .base import Frame, VideoSource
 
+# --------------------------------------------------------------------------
+# Formats de pixels : le point où une installation se sabote en silence.
+#
+# Le verdict repose sur la reconnaissance de l'ORANGE du plateau. MESURÉ sur
+# le banc des 27 scénarios : en couleur 27/27, en monochrome 9/27 — et les
+# erreurs sortent avec une confiance de 0,72, donc sans jamais demander
+# d'arbitrage. D'où deux garde-fous ici :
+#
+#   1. un format MONO est REFUSÉ à la construction (message explicite) ;
+#   2. une mosaïque Bayer est déballée avec la BONNE correspondance OpenCV.
+#
+# ⚠️ Le piège Bayer, MESURÉ et non supposé : le nommage OpenCV est décalé
+# d'un cran par rapport au nommage GenICam. Sur une cible orange
+# BGR (30,120,240), `BayerRG8` déballé avec `COLOR_BayerRG2BGR` ressort en
+# BGR (240,120,30) — teinte 107, du BLEU. Le rouge et le bleu sont échangés,
+# et le test « orange » ne voit plus rien. La correspondance ci-dessous a été
+# vérifiée par mesure sur les quatre motifs, et un test la verrouille.
+BAYER_VERS_OPENCV = {
+    "BayerRG8": "COLOR_BayerBG2BGR",
+    "BayerBG8": "COLOR_BayerRG2BGR",
+    "BayerGR8": "COLOR_BayerGB2BGR",
+    "BayerGB8": "COLOR_BayerGR2BGR",
+}
+
+# Formats sortis directement en 3 canaux par la caméra : aucune ambiguïté
+# possible. C'est le choix RECOMMANDÉ quand le modèle le propose.
+FORMATS_3_CANAUX = ("RGB8", "BGR8", "RGB8Packed", "BGR8Packed")
+
+
+def decode_image(arr, width: int, height: int, pixel_format: str):
+    """Transforme les octets bruts de la caméra en image BGR exploitable.
+
+    Extrait de `read()` exprès : c'est la partie qui peut casser le produit en
+    silence, et elle doit être testable SANS matériel.
+    """
+    import cv2
+
+    fmt = str(pixel_format)
+    if fmt in FORMATS_3_CANAUX or arr.size >= width * height * 3:
+        return arr[: width * height * 3].reshape(height, width, 3)
+
+    plan = arr[: width * height].reshape(height, width)
+    if fmt in BAYER_VERS_OPENCV:
+        return cv2.cvtColor(plan, getattr(cv2, BAYER_VERS_OPENCV[fmt]))
+    # Dernier recours : un plan unique non Bayer = monochrome. On le convertit
+    # pour ne pas planter, mais `qualite_image()` le signalera comme bloquant.
+    return cv2.cvtColor(plan, cv2.COLOR_GRAY2BGR)
+
 
 def _try_import_aravis():
     """Importe Aravis si disponible, sinon renvoie None."""
@@ -41,7 +89,9 @@ class AravisVideoSource(VideoSource):
         camera_id : identifiant Aravis ("Hikrobot-<serial>") ou None (1re caméra)
         width/height : ROI capteur (défaut plein capteur 1440x1080)
         fps : cadence d'acquisition
-        pixel_format : "Mono8", "BayerRG8", "RGB8", ...
+        pixel_format : COULEUR obligatoire — "RGB8"/"BGR8" (recommandé) ou
+            "BayerRG8"/"BayerBG8"/"BayerGR8"/"BayerGB8". Un format Mono est
+            REFUSÉ : le verdict a besoin de l'orange du plateau.
         n_buffers : profondeur du flux (défaut 20)
     """
 
@@ -51,14 +101,23 @@ class AravisVideoSource(VideoSource):
         width: int = 1440,
         height: int = 1080,
         fps: float = 50.0,
-        pixel_format: str = "Mono8",
+        pixel_format: str = "RGB8",
         n_buffers: int = 20,
+        autoriser_mono: bool = False,
     ):
         self.camera_id = camera_id
         self._req_width = int(width)
         self._req_height = int(height)
         self._req_fps = float(fps)
         self.pixel_format = str(pixel_format)
+        if self.pixel_format.lower().startswith("mono") and not autoriser_mono:
+            raise ValueError(
+                f"Format de pixels {self.pixel_format!r} : la caméra sortirait "
+                "du NOIR ET BLANC. Le plateau est reconnu à sa couleur orange "
+                "— mesuré 9/27 au lieu de 27/27, et les erreurs passent pour "
+                "des certitudes.\n"
+                "Utiliser un format couleur : RGB8 (recommandé), ou "
+                f"{', '.join(sorted(BAYER_VERS_OPENCV))}.")
         self.n_buffers = int(n_buffers)
         self._camera = None
         self._stream = None
@@ -115,13 +174,7 @@ class AravisVideoSource(VideoSource):
             h = buf.get_image_height()
             data = buf.get_data()
             arr = np.frombuffer(data, dtype=np.uint8)
-            if arr.size >= w * h * 3:
-                image = arr[: w * h * 3].reshape(h, w, 3)
-            else:
-                mono = arr[: w * h].reshape(h, w)
-                import cv2
-
-                image = cv2.cvtColor(mono, cv2.COLOR_GRAY2BGR)
+            image = decode_image(arr, w, h, self.pixel_format)
             frame = Frame(
                 index=self._index,
                 timestamp=self._index / self._req_fps,

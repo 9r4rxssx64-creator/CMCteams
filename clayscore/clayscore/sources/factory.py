@@ -46,8 +46,11 @@ def build_video_source(cfg: Mapping[str, Any]) -> VideoSource:
             width=int(cfg.get("width", 1440)),
             height=int(cfg.get("height", 1080)),
             fps=float(cfg.get("fps", 50.0)),
-            pixel_format=str(cfg.get("pixel_format", "Mono8")),
+            # COULEUR par défaut : le verdict reconnaît le plateau à son
+            # orange (mesuré 27/27 en couleur, 9/27 en monochrome).
+            pixel_format=str(cfg.get("pixel_format", "RGB8")),
             n_buffers=int(cfg.get("n_buffers", 20)),
+            autoriser_mono=bool(cfg.get("autoriser_mono", False)),
         )
     raise ValueError(
         f"Type de source vidéo inconnu : {kind!r} "

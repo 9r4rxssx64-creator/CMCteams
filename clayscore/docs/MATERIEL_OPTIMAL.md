@@ -56,6 +56,40 @@ avec assurance. Un défaut invisible qui fausse une compétition entière.
 > COULEUR.** Chez Hikrobot, les références se terminent par `C` (couleur) et
 > non `M` (mono) : `MV-CS016-10**GC**`, pas `-10GM`.
 
+### 2-bis. Le piège qui suit : le format de pixels
+
+Acheter une caméra couleur ne suffit pas — **il faut aussi la régler en
+couleur**, et deux réglages faux donnent exactement le même désastre :
+
+| Réglage | Ce qui se passe | Verdict |
+|---|---|---|
+| `pixel_format: Mono8` | La caméra couleur sort du **noir et blanc** | 🔴 9/27 |
+| `pixel_format: BayerRG8` mal déballé | **Rouge et bleu échangés** — l'orange devient **bleu** | 🔴 plus aucun orange |
+| `pixel_format: RGB8` | La caméra fait le travail elle-même | ✅ |
+
+Le second piège n'est pas théorique, il est **mesuré** : le nommage OpenCV est
+décalé d'un cran par rapport au nommage GenICam des capteurs. Sur une cible
+orange BGR (30, 120, 240), `BayerRG8` déballé avec le code « évident »
+`COLOR_BayerRG2BGR` ressort en BGR **(240, 120, 30)** — teinte **107**, du
+bleu franc. La bonne correspondance, vérifiée sur les quatre motifs :
+
+| Capteur (GenICam) | Code OpenCV correct |
+|---|---|
+| `BayerRG8` | `COLOR_BayerBG2BGR` |
+| `BayerBG8` | `COLOR_BayerRG2BGR` |
+| `BayerGR8` | `COLOR_BayerGB2BGR` |
+| `BayerGB8` | `COLOR_BayerGR2BGR` |
+
+**Ce qui a été corrigé dans le logiciel** : le format par défaut était
+`Mono8` (la configuration sortie de la boîte cassait donc le produit) — il est
+désormais **`RGB8`** ; un format `Mono*` est **refusé** avec un message
+explicite ; et le déballage Bayer utilise la table ci-dessus, verrouillée par
+un test qui vérifie qu'une mosaïque orange ressort bien **orange**.
+
+> ✅ **À la commande comme au réglage : demander `RGB8`** (ou `BGR8`) quand le
+> modèle le propose. La caméra démosaïque elle-même, et toute cette classe de
+> pièges disparaît.
+
 ---
 
 ## 3. Le choix de la caméra — et la surprise de 2026

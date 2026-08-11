@@ -25,7 +25,7 @@ où l'acheter en un clic, et les pièges à éviter.**
 
 ```
         POD 1              POD 2              POD 3
-     (mono + IR)        (mono + IR)         (couleur)
+      (couleur)          (couleur)           (couleur)
          │                  │                   │
          └── câble Ethernet ─┴─ câble Ethernet ──┘
                             │
@@ -55,8 +55,8 @@ jusqu'aux caméras.
 | | |
 |---|---|
 | **Rôle** | Voir le plateau en vol et l'instant de la casse |
-| **Quantité** | **3** (2 monochromes + 1 couleur) |
-| **Prix cible** | ~180 € pièce → **~540 €** |
+| **Quantité** | **3, toutes en COULEUR** (réf. finissant par `C`, jamais `M`) |
+| **Prix relevé** | ~168 € pièce → **~504 €** (194 USD par 5-19 pcs, août 2026) |
 | **Achat** | ▸ [lien direct — Alibaba, Hikrobot MV-CS016](https://www.alibaba.com/product-detail/HIKROBOT-MV-CS016-10GC-1-2-1601122368910.html) |
 | **Alternative** | ▸ [recherche Alibaba « GigE global shutter camera »](https://www.alibaba.com/trade/search?SearchText=GigE+global+shutter+industrial+camera) |
 
@@ -69,12 +69,28 @@ jusqu'aux caméras.
 2. **GigE Vision + PoE** — un câble réseau unique = image + alimentation, sur
    **100 m** de distance. Idéal pour des pods dispersés sur un stand.
 3. **65 images/seconde** — assez pour voir la casse, pas seulement l'avant/après.
-4. **2 mono + 1 couleur** : le monochrome est **plus sensible à la lumière**
-   (pas de filtre couleur devant le capteur) → meilleur en fin de journée et
-   en infrarouge. Le couleur sert à reconnaître l'**orange** du plateau, ce
-   qui est le cœur de la logique de verdict du logiciel.
+4. 🔴 **LES 3 EN COULEUR — correction du 11/08/2026.** Ce guide recommandait
+   « 2 mono + 1 couleur », au motif que le monochrome capte mieux la lumière.
+   **C'était une erreur, et elle est mesurée** : le test de l'**orange** du
+   plateau tourne sur **chaque** caméra, pas seulement sur une. Banc des 27
+   scénarios rejoué en désaturé :
+
+   | | Résultat |
+   |---|---|
+   | Couleur | **27/27 = 100 %** |
+   | Monochrome | **9/27 = 33 %** |
+
+   Et le pire : chaque « cassé » devient « manqué » avec une confiance de
+   **0,72**, au-dessus du seuil d'arbitrage — le système se trompe **sans
+   jamais demander de vérification**. Le logiciel refuse désormais de démarrer
+   une épreuve sur un flux sans couleur. Détail : `MATERIEL_OPTIMAL` § 2.
+
+   *Pour la fin de journée*, la vraie réponse n'est pas le monochrome mais un
+   objectif plus ouvert et un gain maîtrisé (voir § objectifs).
 
 ### À vérifier avant de commander
+- [ ] Référence finissant par **`C` = couleur** (jamais `M` = mono) — ⚠️ le
+      point qui casse le produit en silence
 - [ ] Mention explicite **« global shutter »** (pas « rolling »)
 - [ ] Interface **GigE** (Gigabit Ethernet) **avec PoE**, pas USB3
 - [ ] Monture d'objectif **C** ou **CS** (à noter — ça conditionne les objectifs)
@@ -208,7 +224,7 @@ coûte 150 €+ ; un boîtier alu IP66 générique à 15 € offre **la même pr
 |---|---|
 | **Rôle** | Le cerveau : reçoit les 3 flux vidéo, analyse, rend les verdicts |
 | **Quantité** | 1 |
-| **Prix cible** | **~280 €** (249 $ + TVA — **prix officiel uniquement**) |
+| **Prix relevé** | **~216 €** (249 USD prix officiel NVIDIA) — ⚠️ le double sur certaines places de marché |
 | **Achat** | ▸ [lien direct — Silicon Highway](https://www.siliconhighwaydirect.com/product-p/945-13766-0005-000.htm) · ▸ [lien direct — Arrow](https://www.arrow.com/en/products/945-13766-0000-000/nvidia.html) |
 
 Pourquoi un Jetson et pas un PC portable : il consomme **15 W** (contre 60-90 W),
@@ -315,7 +331,7 @@ Testé : **27/27 détections, 0 fausse alerte**.
 |---|---|
 | **Rôle** | Une journée complète d'autonomie sans prise secteur |
 | **Quantité** | 1, **LiFePO4 12 V 30 Ah** |
-| **Prix cible** | **~130 €** |
+| **Prix relevé** | **~46 €** (LiFePO4 12 V 30 Ah avec BMS, juillet 2026) |
 | **Achat** | ▸ [recherche Amazon « batterie LiFePO4 12V 30Ah »](https://www.amazon.fr/s?k=batterie+LiFePO4+12V+30Ah) |
 
 ### Le calcul d'autonomie (fait, pas estimé)
@@ -416,7 +432,7 @@ Un trépied léger qui vibre au vent peut à lui seul faire chuter la précision
 | Batterie | 130 € |
 | Câblage | 50 € |
 | Trépieds (3) | 45 € |
-| **TOTAL** | **≈ 1 465 €** |
+| **TOTAL** | **≈ 1 300 €** (prix révisés 11/08/2026 — voir `MATERIEL_OPTIMAL`) |
 | *+ 2e jeu d'objectifs (recommandé)* | *+ 70 €* |
 | *+ chargeur LiFePO4* | *+ 25 €* |
 | *+ visserie / hublots / gel de silice* | *+ 30 €* |
@@ -425,7 +441,7 @@ Un trépied léger qui vibre au vent peut à lui seul faire chuter la précision
 Cohérent avec la fourchette du dossier v4 (**1 450 – 1 550 €**), les extras
 étant des petites pièces qu'on découvre toujours au montage.
 
-**Logiciel : 0 €** — il est déjà écrit et testé (224 tests verts).
+**Logiciel : 0 €** — il est déjà écrit et testé (281 tests verts).
 
 ---
 

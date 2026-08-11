@@ -21,7 +21,7 @@ premier montage. Le premier prendra une demi-journée. C'est normal.
 
 # PARTIE 1 — Assembler un pod (atelier, à la maison)
 
-À faire **3 fois** (2 pods monochrome + IR, 1 pod couleur).
+À faire **3 fois** — les **3 caméras sont en couleur** (voir `MATERIEL_OPTIMAL` § 2 : en monochrome, 9/27 au lieu de 27/27).
 Temps : ~1 h par pod la première fois.
 
 ### Ce qu'il te faut sous la main
@@ -222,7 +222,7 @@ hostapd/dnsmasq (WiFi local) et le service qui redémarre tout seul.
 
 ```bash
 source .venv/bin/activate
-pytest                       # doit afficher 224 tests OK
+pytest                       # doit afficher 281 tests OK
 python -m tools.bench --all  # doit afficher 100 % sur les 3 bancs
 ```
 
@@ -244,7 +244,7 @@ source:
     width: 1440
     height: 1080
     fps: 50
-    pixel_format: Mono8
+    pixel_format: RGB8      # ⚠️ COULEUR obligatoire — jamais Mono8
   audio:
     type: mic           # ← au lieu de "file"
 ```
@@ -273,8 +273,15 @@ En visant la zone de vol, avec l'image en direct :
 
 → **Viser 1/2000 s.** À 1/500 s, un plateau qui ne fait que ~13 px de large est
 étalé sur 6 px : il devient un trait, et la détection de la casse se dégrade.
-Si 1/2000 s rend l'image trop sombre → ouvrir plus le diaphragme, ou passer en
-monochrome + IR (c'est exactement à ça que sert le monochrome).
+Si 1/2000 s rend l'image trop sombre → **ouvrir plus le diaphragme**, monter
+un objectif plus lumineux, ou accepter 1/1000 s (1,9 px de flou à 8 mm, encore
+correct).
+
+🔴 **Ne PAS passer en monochrome pour gagner de la lumière.** C'était le
+conseil de la version précédente de ce guide, et il est faux : le verdict
+reconnaît le plateau à son **orange**. Mesuré : **27/27 en couleur, 9/27 en
+monochrome**, avec des erreurs sûres d'elles. Le logiciel refuse désormais un
+format `Mono*` et bloque le départ d'épreuve sur un flux incolore.
 
 ### 5. Lancer le WiFi local et le serveur
 
@@ -313,7 +320,7 @@ Ordre logique, du plus simple au plus complet :
 
 | # | Test | Résultat attendu |
 |---|---|---|
-| 1 | `pytest` | 224 tests OK |
+| 1 | `pytest` | 281 tests OK |
 | 2 | `python -m tools.bench --all` | 100 % sur les 3 bancs |
 | 3 | `arv-tool-0.8 --list` | 3 caméras listées |
 | 4 | Ouvrir l'appli sur la tablette | Interface affichée, ✅ connecté |
