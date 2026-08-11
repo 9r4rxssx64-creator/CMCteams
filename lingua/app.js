@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.111.0";
+var APP_VER="v2.112.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -45,6 +45,7 @@ function loadS(){
   S.coachMsgs=lg("coachMsgs",[]);                                   // mémoire du Coach IA — PAR COMPTE (historique de conversation)
   S.coachProfile=lg("coachProfile",{objectif:"bilingue",weak:[],notes:""}); // profil d'apprentissage suivi par le Coach
   S.mascot=lg("mascot","bee"); // mascotte choisie : "bee" ou "donkey"
+  S.beeArt=lg("beeArt","douce"); // dessin de Bee : "douce" ou "vive" (choix de Kevin dans les reglages)
   S.beeVoice=lg("beeVoice","fillette"); // voix de Bee choisie (catalogue BEE_VOICES) — fillette mignonne par défaut
   S.turtle=lg("turtle",false); // 🐢 mode tortue : les modèles de prononciation se jouent au ralenti partout
   S.coachScene=lg("coachScene",null); // 🎭 jeu de rôle en cours (id de SCENES) — null = conversation libre
@@ -80,7 +81,7 @@ function fixPlacementProg(){
     if(changed){ S.diff=null; /* le niveau estimé par ce test n'était pas fiable → retour en Auto (doux, selon les mots appris) */ save(); }
   }catch(e){}
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot","beeArt"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
 /* 📊 chaque XP gagné est daté — nourrit le calendrier d'activité (page Stats) */
 function _dayTs(k){ var p=String(k).split("-"); return new Date(+p[0],(+p[1]||1)-1,+p[2]||1).getTime(); }
 function histAdd(xp){ if(!xp)return; if(!S.hist)S.hist={}; var t=today(); S.hist[t]=(S.hist[t]||0)+xp;
@@ -144,7 +145,16 @@ var MASCOTS=[
   {id:"donkey", dir:"donkey", emoji:"\ud83e\udecf", nom:"Bourricot", titre:"Bourricot l'\u00e2ne", lid:"#cfc6bd",         gen:"m"}
 ];
 function mascotCfg(){ var id=S.mascot||"bee"; for(var i=0;i<MASCOTS.length;i++){ if(MASCOTS[i].id===id) return MASCOTS[i]; } return MASCOTS[0]; }
-function MASC(){ return mascotCfg().dir; }      /* dossier des images */
+/* Dessins disponibles pour Bee. Kevin a change d'avis plusieurs fois sur celui qu'il
+   trouve « doux et mignon » et j'ai devine faux deux fois : le choix est desormais DANS
+   l'app (Reglages), il tape et c'est regle — je ne devine plus a sa place. */
+var BEE_ARTS=[
+  {id:"douce", nom:"Douce", desc:"pelage tout doux, couleurs tendres", dir:"bee"},
+  {id:"vive",  nom:"Vive",  desc:"traits nets, jaune eclatant",        dir:"bee/v2"}
+];
+function beeArtCfg(){ var id=S.beeArt||"douce"; for(var i=0;i<BEE_ARTS.length;i++){ if(BEE_ARTS[i].id===id) return BEE_ARTS[i]; } return BEE_ARTS[0]; }
+function MART(){ return mascotCfg().id==="bee" ? beeArtCfg().id : ""; }  /* variante de dessin active */
+function MASC(){ var c=mascotCfg(); return c.id==="bee" ? beeArtCfg().dir : c.dir; }  /* dossier des images */
 function MEMO(){ return mascotCfg().emoji; }    /* emoji affiche */
 function MNAME(){ return mascotCfg().nom; }     /* prenom affiche */
 /* Accord en genre : Bee est une abeille (feminin), Bourricot un ane (masculin).
@@ -155,13 +165,17 @@ function MG(f,m){ return mascotCfg().gen==="m" ? m : f; }
 function MCRI(){ return mascotCfg().gen==="m" ? "Hi-han !" : "Bzzz !"; }
 /* Le « chez-soi » de la mascotte : la ruche pour Bee, le pre pour Bourricot. */
 function MLIEU(){ return mascotCfg().gen==="m" ? "du pr\u00e9" : "de la ruche"; }
+/* Choix du dessin de Bee : effet immediat, memorise, synchronise entre appareils. */
+function setBeeArt(id){ S.beeArt=id; save(); vibrate(10);
+  try{ var b=document.querySelector(".bee-bubble"); if(b)b.remove(); _beeSaid={}; }catch(_){}
+  toast("\ud83c\udfa8 Dessin « "+beeArtCfg().nom+" » choisi !"); render(); }
 function setMascot(id){ S.mascot=id; save(); vibrate(10);
   /* La bulle affichée appartient à l'ANCIENNE mascotte : on l'efface et on autorise la nouvelle
      à reparler. Sans ça, Bourricot gardait la phrase de Bee — « je suis fière de toi » au masculin
      (bug vu sur capture le 2026-08-11 ; MG() était bon, c'est la bulle qui était périmée). */
   try{ var b=document.querySelector(".bee-bubble"); if(b)b.remove(); _beeSaid={}; }catch(_){}
   toast(mascotCfg().emoji+" "+mascotCfg().titre+" est ta mascotte !"); render(); }
-var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot"];
+var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot","beeArt"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
 function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
@@ -314,6 +328,9 @@ function recompense(r){ r=r||{}; var gains=[];
 /* Paliers DANS la leçon : toutes les 5 bonnes réponses, un petit cadeau tout de suite.
    L'attente jusqu'à la fin de la leçon était le moment le moins encourageant. */
 function paliersLecon(L){ if(!L||L.correct<=0||L.correct%5)return;
+  /* Pas de palier sur la DERNIÈRE question : l'écran de fin et son coffre arrivent dans la
+     foulée, les deux félicitations se chevauchaient (vu au test le 2026-08-11). */
+  if(L.i>=L.ex.length-1)return;
   var n=L.correct/5;
   recompense({gems:1, xp:2, emoji:["⭐","🔥","💫","🌟"][n%4],
     titre:L.correct+" bonnes réponses d'affilée !", sous:"Continue comme ça"}); }
@@ -376,6 +393,34 @@ function exForWord(w,pool,tier,i){
   if(tier===2){ if(r<5) return (r%2&&!NT)?makeType(w,"toT"):makeType(w,"toFr"); if(r<7&&S.sound) return NT?makeMC(w,pool,"listen"):makeType(w,"listen"); return makeMC(w,pool,r%2?"mc_fr":"mc_t"); }
   if(r<6) return (r%2&&!NT)?makeType(w,"toT"):makeType(w,"toFr"); if(r<8&&S.sound) return NT?makeMC(w,pool,"listen"):makeType(w,"listen"); return makeMC(w,pool,"mc_fr");
 }
+/* Longueur d'une leçon (Kevin 2026-08-11 : « il y a trop peu de question par exercice. 20 »).
+   20 questions de base ; jusqu'à 30 si tu te trompes beaucoup, pour REVOIR ce qui coince. */
+var LECON_BASE=20, LECON_MAX=30;
+/* Un mot vu sous UN SEUL angle n'est pas appris. Ce complément donne un 2e angle DIFFÉRENT
+   du premier (tu l'as reconnu → maintenant écris-le ; tu l'as écrit → maintenant écoute-le). */
+function exAutreAngle(w,pool,tier,dejaVu){
+  var NT=COURSES[S.course]&&COURSES[S.course].noType;
+  var k=String(dejaVu||"");
+  if(k.indexOf("mc")===0) return NT?makeMC(w,pool,"mc_fr"):makeType(w,"toFr");
+  if(k.indexOf("type")===0){ if(S.sound) return NT?makeMC(w,pool,"listen"):makeType(w,"listen"); return makeMC(w,pool,"mc_t"); }
+  return makeMC(w,pool,"mc_fr");
+}
+function _sig(x){ return x?(x.kind+(x.dir?":"+x.dir:(x.mode?":"+x.mode:""))):""; }
+/* Complète une liste d'exercices jusqu'à `cible` questions, sans jamais inventer de mot :
+   2e angle sur les mots de la leçon d'abord, puis révisions de mots déjà vus. */
+function complèteJusqua(ex,words,pool,tier,cible){
+  var vu={}; ex.forEach(function(x){ if(x.w&&x.w.fr) vu[x.w.fr]=_sig(x); });
+  shuffle(words.slice()).forEach(function(w){ if(ex.length>=cible)return;
+    ex.push(exAutreAngle(w,pool,tier,vu[w.fr])); });
+  if(ex.length<cible){ var cur={}; words.forEach(function(w){ cur[srsKey(w)]=1; });
+    shuffle(reviewPool().filter(function(w){ return !cur[srsKey(w)]; })).forEach(function(w){
+      if(ex.length>=cible)return; ex.push(exForWord(w,pool,tier,ex.length)); }); }
+  if(ex.length<cible){ /* dernier recours : d'autres mots du cours, jamais de doublon d'exercice */
+    var deja={}; ex.forEach(function(x){ if(x.w&&x.w.fr) deja[x.w.fr+"|"+_sig(x)]=1; });
+    shuffle(pool.slice()).forEach(function(w){ if(ex.length>=cible)return;
+      var e=exForWord(w,pool,tier,ex.length); if(!deja[w.fr+"|"+_sig(e)]){ deja[w.fr+"|"+_sig(e)]=1; ex.push(e); } }); }
+  return ex;
+}
 function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course),tier=diffTier();
   var words=rev||c.units[ui].lessons[li].words.slice();
   var phr=rev?[]:(c.units[ui].lessons[li].phrases||[]);
@@ -389,7 +434,8 @@ function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course)
   if(!rev && ui!=null && li!=null){ var cur={}; words.forEach(function(w){ cur[srsKey(w)]=1; });
     var rp=reviewPool().filter(function(w){ return !cur[srsKey(w)]; });
     shuffle(rp).slice(0,3).forEach(function(w){ ex.push(exForWord(w,pool,tier,ex.length)); }); }
-  return shuffle(ex).slice(0,Math.min(ex.length, 12+tier*2)); // 12 → 20 selon le niveau
+  ex=shuffle(ex);
+  return complèteJusqua(ex,words,pool,tier,LECON_BASE).slice(0,LECON_BASE);
 }
 function makeMC(w,pool,mode){ var asT=mode!=="mc_fr",correct=asT?w.t:w.fr;
   /* distracteurs : chaînes DISTINCTES de la réponse et entre elles (anti-collision de traductions) */
@@ -447,7 +493,8 @@ function buildVerbLesson(p){ var pool=allWords(S.course),tier=diffTier(),NT=COUR
   var oraux=shuffle(pick).slice(0,3);
   if(_srOk()) oraux.forEach(function(w){ ex.push(makeSpeak(w)); });
   else if(S.sound) oraux.slice(0,2).forEach(function(w){ ex.push(makeMC(w,pool,"listen")); });
-  return shuffle(ex).slice(0,Math.min(ex.length,14+tier));
+  ex=shuffle(ex);
+  return complèteJusqua(ex,pick,pool,tier,LECON_BASE).slice(0,LECON_BASE);
 }
 function startVerbs(p){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   var ex=buildVerbLesson(p);
@@ -1289,11 +1336,25 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   mc.innerHTML='<div class="sec-h">\ud83c\udfad Ta mascotte</div><p class="mini">Qui t\'accompagne dans l\'app ? Le changement est immediat, partout.</p>';
   var mrow=el("div","masc-row");
   MASCOTS.forEach(function(m){ var on=(S.mascot||"bee")===m.id;
+    var dir=(m.id==="bee")?beeArtCfg().dir:m.dir;
     var b=el("button","masc-pick"+(on?" on":""));
-    b.innerHTML='<img src="'+m.dir+'/wave.webp" width="64" height="64" alt="" onerror="this.replaceWith(document.createTextNode(\''+m.emoji+'\'))"><b>'+esc(m.titre)+'</b><i>'+(on?"\u2713 Choisie":"Choisir")+'</i>';
+    b.innerHTML='<img src="'+dir+'/wave.webp" width="64" height="64" alt="" onerror="this.replaceWith(document.createTextNode(\''+m.emoji+'\'))"><b>'+esc(m.titre)+'</b><i>'+(on?"\u2713 Choisie":"Choisir")+'</i>';
     b.onclick=function(){ if(!on) setMascot(m.id); };
     mrow.appendChild(b); });
-  mc.appendChild(mrow); d.appendChild(mc);
+  mc.appendChild(mrow);
+  /* Le DESSIN de Bee, au choix. Kevin est le seul juge de ce qui est \u00ab doux et mignon \u00bb :
+     il tape, \u00e7a change tout de suite, c'est m\u00e9moris\u00e9 et suivi sur ses autres appareils. */
+  if((S.mascot||"bee")==="bee"){
+    var ah=el("p","mini masc-arth"); ah.textContent="\ud83c\udfa8 Son dessin \u2014 touche celui que tu pr\u00e9f\u00e8res :"; mc.appendChild(ah);
+    var arow=el("div","masc-row");
+    BEE_ARTS.forEach(function(a){ var on=(S.beeArt||"douce")===a.id;
+      var b=el("button","masc-pick art"+(on?" on":""));
+      b.innerHTML='<img src="'+a.dir+'/wave.webp" width="64" height="64" alt="" onerror="this.replaceWith(document.createTextNode(\'\ud83d\udc1d\'))"><b>'+esc(a.nom)+'</b><i>'+(on?"\u2713 "+a.desc:a.desc)+'</i>';
+      b.onclick=function(){ if(!on) setBeeArt(a.id); };
+      arow.appendChild(b); });
+    mc.appendChild(arow);
+  }
+  d.appendChild(mc);
   // voix (large choix, testables)
   var vc=el("div","voice-card");
   vc.innerHTML='<div class="sec-h">🔊 Voix</div><p class="mini">Choisis ta voix. Touche ▶ pour l\'écouter. Les voix « HD » sont naturelles (en ligne) ; « téléphone » marche hors-ligne.</p>';
@@ -1392,7 +1453,7 @@ function beeRigHTML(withMouth){ var M=MASC();
 /* En LEÇON aussi : la mascotte n'est plus une image figée mais la marionnette vivante,
    en gros plan rond. Elle respire, cligne, te suit du regard, réagit quand tu la touches —
    et surtout elle réagit à TES RÉPONSES (joie / tête basse). */
-function exFaceHTML(){ return '<div class="ex-face bee-rig" data-mascot="'+mascotCfg().id+'">'+
+function exFaceHTML(){ return '<div class="ex-face bee-rig" data-mascot="'+mascotCfg().id+'" data-art="'+MART()+'">'+
   '<div class="rig-zoom">'+beeRigHTML()+'</div></div>'; }
 function exFaceAlive(root){ try{ var f=(root||document).querySelector(".ex-face");
   if(f) mascotAlive(f,{sommeil:150000}); }catch(_){} }
@@ -1489,7 +1550,7 @@ function beeAsk(text,yes,fn,ms){ try{ var old=document.querySelector(".bee-bubbl
   speakLang(String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}·]/gu," "),"fr-FR",BEE_VOICE,true);
   setTimeout(function(){ try{ b.classList.add("bye"); setTimeout(function(){b.remove();},400); }catch(_){} }, ms||14000); }catch(_){} }
 function beeCompanion(){ var w=el("div","bee-companion");
-  var rig=el("div","bee-live bee-rig"); rig.innerHTML=beeRigHTML(); w.appendChild(rig);
+  var rig=el("div","bee-live bee-rig"); rig.setAttribute("data-mascot",mascotCfg().id); rig.setAttribute("data-art",MART()); rig.innerHTML=beeRigHTML(); w.appendChild(rig);
   setTimeout(function(){ beeLifeStart(rig); }, 900+Math.random()*600);
   w.onclick=function(ev){ ev.stopPropagation();
     beeMove(rig, ["dance","jump","fly","walk"][Math.floor(Math.random()*4)], 2600); beeSparkles(rig,7); vibrate(10);
@@ -1622,7 +1683,7 @@ function vCoach(){ var d=el("div","screen coach");
   var mas=el("div","coach-mascot");
   /* .rig-zoom cadre la TÊTE : il zoome l'image ET les paupières/bouche ENSEMBLE, donc les
      repères en % restent alignés (les zoomer séparément les décalerait). */
-  mas.innerHTML='<div class="coach-face bee-rig'+(_coachThinking?" think":"")+'" data-mascot="'+mascotCfg().id+'">'+
+  mas.innerHTML='<div class="coach-face bee-rig'+(_coachThinking?" think":"")+'" data-mascot="'+mascotCfg().id+'" data-art="'+MART()+'">'+
     '<div class="rig-zoom">'+beeRigHTML()+'</div></div>';
   d.appendChild(mas);
   var lastBot=""; for(var _i=S.coachMsgs.length-1;_i>=0;_i--){ if(S.coachMsgs[_i].role==="bot"){ lastBot=S.coachMsgs[_i].text; break; } }
@@ -1844,7 +1905,7 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
   DISC.open=true; var ov=el("div","disc-overlay");
   ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
     '<div class="disc-title">'+MEMO()+' '+MNAME()+' · '+esc(c.nom)+'</div>'+
-    '<div class="disc-stage"><div class="disc-bee bee-rig" data-mascot="'+mascotCfg().id+'">'+
+    '<div class="disc-stage"><div class="disc-bee bee-rig" data-mascot="'+mascotCfg().id+'" data-art="'+MART()+'">'+
       beeRigHTML()+   /* même marionnette que partout ailleurs : elle hérite du regard qui suit et des réactions */
       '<video class="disc-vid" src="'+MASC()+'/live/idle.mp4" autoplay loop muted playsinline></video></div></div>'+
     '<div class="disc-sub"></div>'+
@@ -2080,7 +2141,8 @@ function buildExam(ui){ var pool=allWords(S.course),tier=Math.min(4,diffTier()+1
   ws.forEach(function(w,i){ ex.push(exForWord(w,pool,tier,i)); }); // examen = un cran plus dur que les leçons
   if(ws.length>=4 && tier<=2) ex.splice(2,0,makeMatch(shuffle(ws).slice(0,Math.min(5,ws.length))));
   unitAllPhrases(ui).forEach(function(p){ ex.push(makeBank(p,pool)); if(tier>=2&&!(COURSES[S.course]&&COURSES[S.course].noType)) ex.push(makeType({fr:p.fr,t:p.t},"toT")); });
-  return shuffle(ex).slice(0,Math.min(ex.length, 15+tier)); }
+  ex=shuffle(ex);
+  return complèteJusqua(ex,ws,pool,tier,LECON_BASE).slice(0,LECON_BASE); }
 /* ---------- Test de niveau (placement) : estime le niveau puis adapte tout ---------- */
 function buildPlacement(){ var c=COURSES[S.course],pool=allWords(S.course),qs=[];
   c.units.forEach(function(u,ui){ var w=u.lessons[0]&&u.lessons[0].words[0]; if(w) qs.push({w:w,ui:ui}); }); // 1 mot/unité, du + facile au + dur
@@ -2168,11 +2230,26 @@ function beeExplainMore(ex){ /* Un tap → le prof IA explique en profondeur (m�
       if(LESSON){ LESSON._profLoading=false; LESSON._profReply=reply; if(VIEW==="lesson")render(); else { go("coach"); render(); } }
       try{ coachSpeak(reply); }catch(_){} })
      .catch(function(){ if(LESSON){ LESSON._profLoading=false; LESSON._profReply=MNAME()+" n'a pas pu expliquer là, réessaie."; if(VIEW==="lesson")render(); } }); }catch(_){} }
+/* Le vrai nom de ce qu'on travaille — jamais un titre inventé : il vient du programme lui-même. */
+function lessonTitre(L){ try{
+  if(L.placement) return "📊 Test de niveau";
+  if(L.verbs) return "🏃 "+(L.titre||"Les verbes");
+  var c=COURSES[S.course];
+  if(L.exam && L.ui!=null) return "🏆 Examen · "+c.units[L.ui].titre;
+  if(L.review) return "🧠 Révision";
+  if(L.ui!=null && L.li!=null && c.units[L.ui] && c.units[L.ui].lessons[L.li])
+    return c.units[L.ui].lessons[L.li].titre+" · "+c.units[L.ui].titre;
+  return "Leçon"; }catch(_){ return "Leçon"; } }
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
   if(ex&&ex.w&&ex.w.t) ttsPrefetch(ex.w.t); /* mot courant réchauffé → lecture instantanée */
   if(L.ex[L.i+1]&&L.ex[L.i+1].w&&L.ex[L.i+1].w.t) ttsPrefetch(L.ex[L.i+1].w.t); /* et le suivant → 0 décalage à l'enchaînement */
   var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
   top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ? La progression de CETTE leçon sera perdue.")){ LESSON=null; VIEW="home"; render(); } }; d.appendChild(top);
+  /* Le TITRE de ce que tu es en train de faire + où tu en es. Avant, l'écran de leçon
+     n'affichait AUCUN titre : impossible de savoir quel sujet on travaille (Kevin 2026-08-11). */
+  try{ var tt=lessonTitre(L), ti=el("div","lesson-ttl");
+    ti.innerHTML='<b>'+esc(tt)+'</b><i>question '+(L.i+1)+' sur '+L.ex.length+(L._rattrapages?' · +'+L._rattrapages+' révision'+(L._rattrapages>1?'s':''):'')+'</i>';
+    d.appendChild(ti); }catch(_){}
   var body=el("div","lesson-body");
   setTimeout(function(){ exFaceAlive(d); },60);   /* respire, cligne, te suit du regard, réagit au toucher */
   if(ex.kind==="mc")body.appendChild(exMC(ex)); else if(ex.kind==="match")body.appendChild(exMatch(ex)); else if(ex.kind==="bank")body.appendChild(exBank(ex)); else if(ex.kind==="type")body.appendChild(exType(ex)); else if(ex.kind==="speak")body.appendChild(exSpeak(ex));
@@ -2283,6 +2360,26 @@ function exSpeak(ex){ var w=el("div","ex");
   return w;
 }
 function syncMain(){ var m=document.getElementById("mainBtn"); if(m)m.disabled=!(LESSON.answered||LESSON._can); }
+/* RATTRAPAGE AUTOMATIQUE (Kevin 2026-08-11 : « lorsque on fait bcp d'erreur dans un exercice,
+   ajoute des question pour réviser… l'exercice passe sur 30 questions pour revoir, travailler. Auto »).
+   À partir de 3 erreurs, puis toutes les 2, la leçon s'allonge avec des questions de RÉVISION
+   ciblées sur CE QUI T'A FAIT TOMBER (le mot le plus raté d'abord), sous un angle différent —
+   jamais la même question recopiée. Plafond 30 : on travaille, on ne punit pas.
+   Jamais pendant un examen ni le test de niveau (ce sont des évaluations, pas de l'entraînement). */
+function rattrapage(L){
+  if(!L || L.placement || L.exam) return;
+  if(L.wrong<3 || (L.wrong-3)%2) return;
+  if(L.ex.length>=LECON_MAX) return;
+  var pool=allWords(S.course), tier=diffTier();
+  var dico={}; pool.forEach(function(w){ if(!dico[w.fr])dico[w.fr]=w; });
+  var pires=Object.keys(L._faux||{}).sort(function(a,b){ return L._faux[b]-L._faux[a]; });
+  var vu={}; L.ex.forEach(function(x){ if(x.w&&x.w.fr) vu[x.w.fr]=_sig(x); });
+  var ajout=0, place=Math.min(LECON_MAX-L.ex.length,2);
+  for(var i=0;i<pires.length && ajout<place;i++){ var w=dico[pires[i]]; if(!w)continue;
+    L.ex.push(exAutreAngle(w,pool,tier,vu[w.fr])); ajout++; }
+  if(ajout){ L._rattrapages=(L._rattrapages||0)+ajout;
+    toast("🧠 On révise "+(ajout>1?"ces mots":"ce mot")+" — leçon allongée à "+L.ex.length+" questions"); }
+}
 function checkEx(ex){ var L=LESSON,ok=false,sol="";
   /* palier AVANT la 1re réponse de la leçon (pour fêter un vrai passage de palier à la fin) */
   if(L._lvl0==null){ try{ L._lvl0=currentLevel().cur.code; }catch(_){ L._lvl0=""; } }
@@ -2297,7 +2394,9 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
     /* Récompense TOUT DE SUITE toutes les 5 bonnes réponses : attendre la fin de la leçon
        était le moment le moins encourageant (Kevin : « récompenses partout »). */
     setTimeout(function(){ paliersLecon(L); },520); }
-  else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]); }
+  else{ L.wrong++; L.combo=0; if(!UNLIMITED){ S.hearts=Math.max(0,S.hearts-1); if(S.hearts<HEART_MAX)S.heartTs=Date.now(); } beep(false); vibrate([30,40,30]);
+    if(ex.w&&ex.w.fr){ L._faux=L._faux||{}; L._faux[ex.w.fr]=(L._faux[ex.w.fr]||0)+1; }
+    rattrapage(L); }
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
   setTimeout(function(){ var m=document.querySelector(".lesson .bee-img");
     if(m){ if(ok){ beeAnimate(m,"hop"); if(L.combo>=2)beeSparkles(m,6); } else { beeAnimate(m,"shake"); } }

@@ -143,6 +143,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .stories-card .st-tx b{font-size:15px}
 .stories-card .st-tx i{font-size:11.5px;font-style:normal;color:#c9b26a}
 .stories-card .st-badge{margin-left:auto;background:#ffd75e;color:#3b2f10;font-weight:900;font-size:13px;border-radius:99px;padding:5px 11px}
+/* ---- Dessin « vif » de Bee : ses yeux et sa bouche ne sont pas au même endroit
+       que sur le dessin « doux » — les repères animés suivent le dessin choisi. ---- */
+.bee-rig[data-mascot="bee"][data-art="vive"]{
+  --lid:rgb(253,225,87);
+  --ll-l:32.2%;--ll-t:27.4%;--ll-w:18.2%;--ll-h:15.0%;
+  --lr-l:51.3%;--lr-t:27.2%;--lr-w:17.4%;--lr-h:15.2%;
+  --mo-l:52.4%;--mo-t:42.6%
+}
+.coach-face[data-art="vive"] .rig-zoom{--zo:50% 30%;--zs:1.3}
+.masc-arth{margin:14px 0 2px;opacity:.75}
+.masc-pick.art i{font-size:10.5px;line-height:1.25}
+/* ---- Titre de la leçon en cours (avant : aucun titre affiché) ---- */
+.lesson-ttl{display:flex;flex-direction:column;gap:1px;padding:2px 4px 8px;text-align:center}
+.lesson-ttl b{font-size:14.5px;font-weight:800}
+.lesson-ttl i{font-size:11.5px;font-style:normal;opacity:.6}
 /* ---- 🏃 Les verbes (écrit + parlé) — Kevin 2026-08-11 ---- */
 .stories-card.verbs-link{background:linear-gradient(135deg,#10281f,#1d2733);border-color:#12b981}
 .stories-card.verbs-link .st-tx i{color:#7fd9b6}
