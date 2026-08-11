@@ -105,7 +105,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .coach-face.talk{animation:beeTalk .5s ease-in-out infinite}
 /* Vrai GROS PLAN : on agrandit tout le contenu d'un bloc, centré sur la tête. Valeurs par
    mascotte car la tête n'est pas au même endroit sur les deux dessins. */
-.rig-zoom{position:absolute;inset:0;transform-origin:var(--zo,50% 33%);transform:scale(var(--zs,1.6))}
+.rig-zoom{position:absolute;inset:0;transform-origin:var(--zo,50% 38%);transform:scale(var(--zs,1.25))}
 .coach-face[data-mascot="donkey"] .rig-zoom{--zo:50% 40%;--zs:1.15}  /* ses oreilles sont hautes et larges : au-dela de 1,2 le cadre rond les coupe */
 .coach-face.think{filter:saturate(.75) brightness(.9)}
 .coach-face:active{transform:scale(.97)}
@@ -244,6 +244,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .rig-lid.lr{left:var(--lr-l,51.3%);top:var(--lr-t,27.2%);width:var(--lr-w,17.4%);height:var(--lr-h,15.2%)}
 /* Geometrie PAR MASCOTTE : les paupieres et la bouche sont posees en %, donc elles doivent
    suivre le visage. Valeurs par defaut = l'abeille ; l'ane a les siennes (mesurees sur son image). */
+.bee-rig[data-mascot="bee"]{
+  /* MESURÉ sur son nouveau dessin (2026-08-11) : yeux 35,8/37,1 et 64,0/37,4 ;
+     bouche 51,1/54,9 ; duvet en anneau autour des yeux rgb(252,185,51). */
+  --lid:rgb(252,185,51);
+  --ll-l:28.1%;--ll-t:29.6%;--ll-w:15.5%;--ll-h:15.0%;
+  --lr-l:56.3%;--lr-t:29.7%;--lr-w:15.5%;--lr-h:15.5%;
+  --mo-l:51.1%;--mo-t:54.9%
+}
 .bee-rig[data-mascot="donkey"]{
   /* RE-MESURÉ sur le nouveau dessin (2026-08-11) : yeux 38,0/44,0 et 58,0/43,8 ;
      bouche 51,0/58,9 ; pelage en anneau autour des yeux rgb(231,160,64).
