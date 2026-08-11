@@ -111,8 +111,26 @@ function structCheck(ctx) {
            automatique en -er/-ir/-re, d'où une liste explicite dans data.js) ;
        (b) un verbe absent du programme → l'exercice ne pourrait pas être construit ;
        (c) un verbe non traduit dans une des 14 langues → on enseignerait du vide. */
+  /* 5-bis) DÉCLARÉ ≠ BRANCHÉ (Kevin, règle du projet ; vécu le 2026-08-11).
+     Une vague de vocabulaire écrite APRÈS la génération de COURSES atterrit dans CURRICULUM
+     mais JAMAIS dans les cours : 17 verbes présents dans les données, 0 visible dans l'app,
+     et tous les compteurs disaient « ajoutés ». Ce contrôle compare ce qui est déclaré à ce
+     qui est réellement servi à l'utilisateur, langue par langue. */
+  const declares = new Set(); CURRICULUM.forEach((u) => (u.L || []).forEach((l) => (l.w || []).forEach((w) => declares.add(w))));
+  LANGS.forEach((lg) => {
+    const c = COURSES[lg]; if (!c) { errs.push('COURSES.' + lg + ' : cours absent'); return; }
+    const servis = new Set(); c.units.forEach((u) => u.lessons.forEach((le) => le.words.forEach((w) => servis.add(w.fr))));
+    const perdus = [...declares].filter((t) => !servis.has(t));
+    if (perdus.length) errs.push('DÉCLARÉ MAIS PAS BRANCHÉ — ' + perdus.length + ' terme(s) dans CURRICULUM absent(s) du cours ' + lg
+      + ' (ex : ' + perdus.slice(0, 4).join(', ') + '). Une vague écrite APRÈS la génération de COURSES est invisible dans l\'app.');
+  });
   const { VERBES_FR = [] } = ctx;
   if (VERBES_FR.length) {
+    /* et chaque verbe entraîné doit être réellement servi, sinon la séance ne peut pas le poser */
+    const c0 = COURSES[LANGS[0]];
+    if (c0) { const s0 = new Set(); c0.units.forEach((u) => u.lessons.forEach((le) => le.words.forEach((w) => s0.add(w.fr))));
+      const invisibles = VERBES_FR.filter((v) => !s0.has(v));
+      if (invisibles.length) errs.push('VERBES_FR : ' + invisibles.length + ' verbe(s) jamais servi(s) par le cours (ex : ' + invisibles.slice(0, 4).join(', ') + ')'); }
     const vus = new Set();
     VERBES_FR.forEach((v) => {
       if (vus.has(v)) errs.push('VERBES_FR « ' + v + ' » en double');

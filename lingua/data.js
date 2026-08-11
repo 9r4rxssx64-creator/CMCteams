@@ -5002,6 +5002,21 @@ LANGS2.forEach(function(l){ var w2=LEX2ROU[l]||{}; Object.keys(w2).forEach(funct
 
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
+/*__VOCAB_AUTO__ : les vagues de vocabulaire s'inserent ICI (ne pas retirer ce repere).
+   IMPERATIF : AVANT la generation de COURSES ci-dessous. Une unite poussee APRES est
+   dans CURRICULUM mais ABSENTE des cours -> invisible dans l'app (vu le 2026-08-11 :
+   17 verbes ecrits, 0 visible). Declare n'est pas branche. */
+
+/* Vague de vocabulaire « Verbes de tous les jours 🏃 » — chaque traduction validée par un modèle indépendant. */
+CURRICULUM.push({t:"Verbes de tous les jours 🏃", c:"#12b981", L:[
+  {t:"Partie 1", w:["s'étirer","bâiller","cligner","hoqueter","renifler","transpirer","trébucher"]},
+  {t:"Partie 2", w:["s'accroupir","se pencher","soupirer","murmurer","bredouiller","bégayer","siffloter"]},
+  {t:"Partie 3", w:["fredonner","grignoter","déguster"]}
+]});
+var _VOC = {"s'étirer":{"en":"stretch","it":"stirarsi","es":"estirarse","de":"sich strecken","pt":"esticar","nl":"rekken","pl":"rozciągać się","ru":"растягиваться","uk":"розтягуватися","cs":"protáhnout se","zh":"伸懒腰","ja":"ストレッチする","ko":"신체를 쭉 펴다","ar":"تمطى"},"bâiller":{"en":"yawn","it":"sbadigliare","es":"bostezar","de":"gähnen","pt":"bocejar","nl":"geeuwen","pl":"ziewać","ru":"зевать","uk":"позіхати","cs":"zívat","zh":"打哈欠","ja":"あくびをする","ko":"하품하다","ar":"تثاءب"},"cligner":{"en":"blink","it":"sbattere","es":"parpadear","de":"blinzeln","pt":"piscar","nl":"knipperen","pl":"mrugać","ru":"моргать","uk":"моргати","cs":"mrkat","zh":"眨眼","ja":"まばたきする","ko":"깜빡이다","ar":"غمز"},"hoqueter":{"en":"hiccup","it":"singhiozzare","es":"tener hipo","de":"schluckauf haben","pt":"soluçar","nl":"hikken","pl":"czkać","ru":"икать","uk":"гикати","cs":"škytat","zh":"打嗝","ja":"しゃっくりをする","ko":"기침하다","ar":"فَاقَ"},"renifler":{"en":"sniff","it":"tirare su col naso","es":"resoplar","de":"schniefen","pt":"fungar","nl":"snuiven","pl":"pociągać nosem","ru":"хрюкать","uk":"шморгати","cs":"čichat","zh":"吸鼻子","ja":"鼻をすする","ko":"코를 훌쩍이다","ar":"شمّ"},"transpirer":{"en":"sweat","it":"sudare","es":"transpirar","de":"schwitzen","pt":"transpirar","nl":"zweten","pl":"pocić się","ru":"потеть","uk":"пітніти","cs":"potit se","zh":"出汗","ja":"汗をかく","ko":"汗을 내다","ar":"عرق"},"trébucher":{"en":"stumble","it":"inciampare","es":"tropezar","de":"stolpern","pt":"tropeçar","nl":"struikelen","pl":"potykać się","ru":"спотыкаться","uk":"спотикатися","cs":"klopýtnout","zh":"绊倒","ja":"つまずく","ko":"걸려 넘어지다","ar":"تعثّر"},"s'accroupir":{"en":"crouch","it":"accovacciarsi","es":"agacharse","de":"hocken","pt":"agachar","nl":"hurken","pl":"kucać","ru":"приседать","uk":"присідати","cs":"dřepnout si","zh":"蹲下","ja":"しゃがむ","ko":"무릎을 꿇다","ar":"قرفص"},"se pencher":{"en":"bend","it":"chinarsi","es":"inclinarse","de":"sich beugen","pt":"inclinar","nl":"buigen","pl":"pochylać się","ru":"наклоняться","uk":"нахилятися","cs":"naklonit se","zh":"弯腰","ja":"かがむ","ko":"기울이다","ar":"انحنى"},"soupirer":{"en":"sigh","it":"sospirare","es":"suspirar","de":"seufzen","pt":"suspirar","nl":"zuchten","pl":"wzdychać","ru":"вздыхать","uk":"зітхати","cs":"vzdychat","zh":"叹气","ja":"ため息をつく","ko":"한숨을 쉬다","ar":"تنهّد"},"murmurer":{"en":"whisper","it":"mormorare","es":"murmurar","de":"flüstern","pt":"murmurar","nl":"murmelen","pl":"szeptać","ru":"бормотать","uk":"шепотіти","cs":"šeptat","zh":"低语","ja":"ささやく","ko":"중얼거리다","ar":"همس"},"bredouiller":{"en":"mumble","it":"balbettare","es":"balbucear","de":"nuscheln","pt":"balbuciar","nl":"brabbelen","pl":"bełkotać","ru":"заикаться","uk":"бурмотіти","cs":"breptat","zh":"结巴","ja":"もごもご言う","ko":"말을 더듬다","ar":"تمتم"},"bégayer":{"en":"stutter","it":"balbettare","es":"tartamudear","de":"stottern","pt":"gaguejar","nl":"stotteren","pl":"jąkać się","ru":"заикаться","uk":"заїкатися","cs":"koktat","zh":"口吃","ja":"どもる","ko":"말을 더듬다","ar":"تأتأ"},"siffloter":{"en":"whistle","it":"fischiettare","es":"silbar","de":"pfeifen","pt":"assobiar","nl":"fluiten","pl":"gwizdać","ru":"свистеть","uk":"свистіти","cs":"pískat si","zh":"吹口哨","ja":"口笛を吹く","ko":"휘파람을 불다","ar":"صفّر"},"fredonner":{"en":"hum","it":"canticchiare","es":"tararear","de":"summen","pt":"cantarolar","nl":"neuriën","pl":"nucić","ru":"петь","uk":"наспівувати","cs":"prozpěvovat si","zh":"哼歌","ja":"鼻歌を歌う","ko":"노래를 부르다","ar":"دندن"},"grignoter":{"en":"snack","it":"sgranocchiare","es":"picar","de":"naschen","pt":"petiscar","nl":"knabbelen","pl":"podjadać","ru":"грызть","uk":"перекушувати","cs":"okusovat","zh":"小口吃","ja":"つまむ","ko":"何かを齧다","ar":"تناول خفيفة"},"déguster":{"en":"savor","it":"degustare","es":"degustar","de":"genießen","pt":"degustar","nl":"proeven","pl":"degustować","ru":"пробовать","uk":"смакувати","cs":"ochutnávat","zh":"品尝","ja":"味わう","ko":"맛보다","ar":"تذوّق"}};
+LANGS.forEach(function(l){ Object.keys(_VOC).forEach(function(k){ if(_VOC[k][l]) LEX[l][k]=_VOC[k][l]; }); });
+LANGS2.forEach(function(l){ LEX2[l]=LEX2[l]||{}; Object.keys(_VOC).forEach(function(k){ if(_VOC[k][l]) LEX2[l][k]=_VOC[k][l]; }); });
+
 /* --- Génération des cours + dictionnaire de traduction --- */
 var COURSES = {};
 LANGS.forEach(function(l){
@@ -5344,5 +5359,6 @@ var VERBES_FR = [
   "tousser","traduire","trahir","travailler","trier","trouver",
   "vendre","venir","verrouiller","verser","vider","visiter",
   "visser","voir","voler","voter","vouloir","voyager",
-  "diminuer","paraître"
+  "diminuer","paraître",
+  "s'étirer","bâiller","cligner","hoqueter","renifler","transpirer","trébucher","s'accroupir","se pencher","soupirer","murmurer","bredouiller","bégayer","siffloter","fredonner","grignoter","déguster"
 ];

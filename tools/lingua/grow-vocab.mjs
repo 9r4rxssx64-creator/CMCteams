@@ -142,10 +142,14 @@ async function juger(lg, paires) {
 function esc(s) { return JSON.stringify(String(s)); }
 function ecrire(unite, lexPar, verbes) {
   let src = fs.readFileSync(DATA, 'utf8');
-  /* a) nouvelle unité du programme */
-  const marqueur = '\n/* ============ 🏃 LES VERBES';
+  /* a) nouvelle unité du programme — OBLIGATOIREMENT avant la génération de COURSES.
+     Vécu le 2026-08-11 : le bloc atterrissait APRÈS, donc l'unité entrait dans CURRICULUM
+     mais JAMAIS dans les cours. 17 verbes écrits, 0 visible dans l'app, et tous les compteurs
+     annonçaient « ajoutés ». Déclaré n'est pas branché. Le repère ci-dessous est le seul point
+     d'insertion valable ; la porte de vérité échoue désormais si on écrit ailleurs. */
+  const marqueur = '/*__VOCAB_AUTO__';
   const at = src.indexOf(marqueur);
-  if (at < 0) throw new Error('repère VERBES_FR introuvable dans data.js');
+  if (at < 0) throw new Error('repère __VOCAB_AUTO__ introuvable dans data.js (il doit être AVANT la génération de COURSES)');
   const lecons = unite.L.map((l) => '  {t:' + esc(l.t) + ', w:[' + l.w.map(esc).join(',') + ']}').join(',\n');
   const bloc = '\n/* Vague de vocabulaire « ' + unite.t + ' » — chaque traduction validée par un modèle indépendant. */\n'
     + 'CURRICULUM.push({t:' + esc(unite.t) + ', c:' + esc(unite.c) + ', L:[\n' + lecons + '\n]});\n'
@@ -185,6 +189,12 @@ function selftest() {
     const c2 = load();                                   // data.js doit rester exécutable
     const mots = new Set(); (c2.CURRICULUM || []).forEach((u) => (u.L || []).forEach((l) => (l.w || []).forEach((w) => mots.add(w))));
     gardes.forEach((g) => { if (!mots.has(g)) { ok = false; why = 'terme « ' + g + ' » absent du programme après écriture'; } });
+    /* DÉCLARÉ ≠ BRANCHÉ : le terme doit arriver jusqu'au COURS, pas seulement dans CURRICULUM.
+       C'est CE contrôle qui manquait le 2026-08-11 — 17 verbes écrits, 0 servi à l'utilisateur. */
+    const c0 = c2.COURSES && c2.COURSES[L1[0]];
+    if (!c0) { ok = false; why = 'aucun cours généré après écriture'; }
+    else { const servis = new Set(); c0.units.forEach((u) => u.lessons.forEach((le) => le.words.forEach((w) => servis.add(w.fr))));
+      gardes.forEach((g) => { if (!servis.has(g)) { ok = false; why = 'terme « ' + g + ' » écrit mais JAMAIS SERVI par le cours (bloc inséré après la génération de COURSES ?)'; } }); }
     TOUTES.forEach((lg) => gardes.forEach((g) => {
       const v = (c2.LEX?.[lg]?.[g]) || (c2.LEX2?.[lg]?.[g]);
       if (v !== 'ZZ_' + lg + '_' + g) { ok = false; why = 'traduction ' + lg + ' de « ' + g + ' » non écrite (' + v + ')'; }
