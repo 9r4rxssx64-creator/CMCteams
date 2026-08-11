@@ -75,6 +75,13 @@ class SimulationSource:
             width=320, height=240, duration_s=2.5, seed=self._seed,
         )
         paths = synth.generate(params, str(self.clips_dir / name))
+        # Le ralenti est lu dans un <video> par la tablette : il doit être en
+        # H.264 (OpenCV écrit du FMP4, illisible en navigateur/iOS).
+        try:
+            from .replay import ensure_web_playable
+            ensure_web_playable(paths["video"])
+        except Exception:  # noqa: BLE001 - ne jamais bloquer une partie
+            pass
         data, sr = read_wav_mono(paths["audio"])
         result = decide_verdict(
             FileVideoSource(paths["video"]), data, sr, v_cfg=v_cfg)
