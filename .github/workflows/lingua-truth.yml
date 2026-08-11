@@ -7,6 +7,8 @@ name: Lingua — Vérité (rien de faux, partout toujours)
 # 2) SENS (second modèle indépendant) : 1×/semaine + à la demande, un audit sémantique signale les
 #    traductions/réponses DOUTEUSES dans un rapport (audit/lingua-verite.md). Consultatif : n'édite rien
 #    (un juge IA peut se tromper — on vérifie avant de corriger). Uploadé en artifact + affiché dans le log.
+#    Depuis le 2026-08-11, la passe SENS couvre AUSSI les 8 langues Est+Asie des histoires
+#    (pl/ru/uk/cs/zh/ja/ko/ar) : c'était un angle mort, et c'est là qu'avaient dormi 67 fautes réelles.
 
 on:
   workflow_dispatch: {}
