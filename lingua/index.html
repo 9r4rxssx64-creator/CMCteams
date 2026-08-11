@@ -97,7 +97,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .coach-prog{display:flex;align-items:center;gap:10px;margin:10px 2px 4px}
 .coach-prog .bar{flex:1}
 .coach-prog span{font-size:11px;color:#9fb2c2;white-space:nowrap}
-.coach-mascot{display:flex;justify-content:center;margin:2px 0 -6px}
+.coach-mascot{display:flex;justify-content:center;margin:8px 0 0}
+/* GROS PLAN du coach : même marionnette que le mode discussion (mêmes % pour les paupières et la
+   bouche, donc rien à recalibrer), en rond et un peu plus petit pour laisser voir la conversation. */
+.coach-face{position:relative;width:min(58vw,232px);height:min(58vw,232px);border-radius:50%;overflow:hidden;background:#fdf7e7;cursor:pointer;
+  box-shadow:0 0 0 4px rgba(246,183,60,.5),0 14px 34px rgba(0,0,0,.5);animation:beeFloat 3.4s ease-in-out infinite}
+.coach-face.talk{animation:beeTalk .5s ease-in-out infinite}
+/* Vrai GROS PLAN : on agrandit tout le contenu d'un bloc, centré sur la tête. Valeurs par
+   mascotte car la tête n'est pas au même endroit sur les deux dessins. */
+.rig-zoom{position:absolute;inset:0;transform-origin:var(--zo,50% 33%);transform:scale(var(--zs,1.6))}
+.coach-face[data-mascot="donkey"] .rig-zoom{--zo:50% 46%;--zs:1.5}   /* oreilles hautes : on zoome un peu moins pour ne pas les couper */
+.coach-face.think{filter:saturate(.75) brightness(.9)}
+.coach-face:active{transform:scale(.97)}
+.coach-sub{min-height:2.6em;max-height:7.2em;overflow-y:auto;margin:8px 4px 2px;text-align:center;font-size:15px;font-weight:700;line-height:1.35;color:#ffe9a8}
+@media (prefers-reduced-motion:reduce){.coach-face,.coach-face.talk{animation:none}}
+.coach-box:empty{display:none}
 .coach-box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:8px;max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
 .coach-msg{display:flex;align-items:flex-end;gap:8px;max-width:88%}
 .coach-msg.user{align-self:flex-end;flex-direction:row-reverse}
