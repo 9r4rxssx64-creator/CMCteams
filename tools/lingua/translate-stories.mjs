@@ -109,18 +109,26 @@ async function callGemini(messages) {
 function parseJson(txt) { if (!txt) return null; try { const m = txt.match(/\{[\s\S]*\}/); return JSON.parse(m ? m[0] : txt); } catch { return null; } }
 
 /* ---------- Traduction (modèle A) ---------- */
-async function translateStory(st) {
+async function translateStory(st, skip = []) {
   const sys = 'Tu es un traducteur professionnel plurilingue. Tu traduis des phrases TRÈS simples (niveau A1) du français vers 8 langues, fidèlement et naturellement. Jamais d\'invention.';
   const lignes = st.lignes.map((l, i) => (i + 1) + '. « ' + l.fr + ' » (anglais déjà validé : "' + l.t.en + '")').join('\n');
   const user = 'Traduis CHAQUE ligne de cette mini-histoire vers : polonais (pl), russe (ru), ukrainien (uk), tchèque (cs), chinois mandarin simplifié (zh), japonais (ja), coréen (ko), arabe standard moderne (ar).\n'
     + lignes + '\n'
     + 'Réponds UNIQUEMENT en JSON strict : {"lignes":[{"pl":"...","ru":"...","uk":"...","cs":"...","zh":"...","ja":"...","ko":"...","ar":"..."}]} — une entrée PAR ligne, dans le MÊME ordre. '
     + 'Règles : traductions naturelles pour un débutant, même sens que le français (l\'anglais sert de repère), aucun mot français laissé tel quel, aucune romanisation pour zh/ja/ko/ar. '
+    + 'ÉCRITURE STRICTE — chaque langue UNIQUEMENT dans son propre système : le coréen en hangul SEUL (jamais un kana ni un caractère chinois : « 私の » est INTERDIT en coréen, écris « 제/저의 »), le japonais en kana/kanji, le chinois en caractères chinois, l\'arabe en alphabet arabe, pl/cs en alphabet latin, ru/uk en cyrillique. Mélanger deux écritures dans une même phrase est une FAUTE GRAVE. '
     + 'PONCTUATION FINALE : elle suit le TYPE de la phrase française — une affirmation se termine par . (。en zh/ja), une exclamation par ! (！en zh/ja) ; le point d\'interrogation (؟ en arabe, ？en zh/ja) sert UNIQUEMENT si la phrase française est une question.';
   const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
-  let raw = await callGroq(msgs, true); let by = 'groq';
-  if (!raw) { raw = await callMistral(msgs, true); by = 'mistral'; }
-  if (!raw) { raw = await callGemini(msgs); by = 'gemini'; }
+  /* `skip` = traducteurs déjà essayés et rejetés pour CETTE histoire : on CHANGE de
+     modèle au lieu de re-solliciter celui qui vient d'échouer (une même famille de
+     modèle refait la même faute — vécu : « 私の » réinjecté dans le coréen à chaque
+     tentative sur l'histoire « anniv »). */
+  let raw = null, by = null;
+  for (const id of ['groq', 'mistral', 'gemini']) {
+    if (skip.includes(id)) continue;
+    raw = id === 'groq' ? await callGroq(msgs, true) : id === 'mistral' ? await callMistral(msgs, true) : await callGemini(msgs);
+    if (raw) { by = id; break; }
+  }
   return { tr: parseJson(raw), by };
 }
 
@@ -241,18 +249,32 @@ function bumpVersion() {
 
   let done = 0;
   for (const st of todo) {
-    let tr, by = 'groq';
+    let tr = null, by = 'groq';
     if (dry && argv('--from-file')) {
       const file = JSON.parse(fs.readFileSync(argv('--from-file'), 'utf8'));
       if (file.id !== st.id) { console.log('SKIP ' + st.id + ' : le fichier fourni est pour ' + file.id); continue; }
       tr = file;
+      normalizePunct(st, tr);
+      const e0 = validateTranslations(st, tr);
+      if (e0.length) { console.log('REJET structurel ' + st.id + ' : ' + e0.slice(0, 5).join(' | ')); continue; }
     } else {
-      const g = await translateStory(st); tr = g.tr; by = g.by;
-      if (!tr) { console.log('SKIP ' + st.id + ' : traduction IA indisponible.'); continue; }
+      /* CHANGEMENT DE TRADUCTEUR en cas de rejet structurel : un même modèle refait
+         la même faute (« 私の » réinjecté dans le coréen à chaque essai sur « anniv »).
+         On passe donc au fournisseur suivant plutôt que de re-solliciter le fautif. */
+      const tried = [];
+      for (let k = 0; k < 3 && !tr; k++) {
+        const g = await translateStory(st, tried);
+        if (!g.by) break;                       /* plus aucun traducteur disponible */
+        tried.push(g.by);
+        if (!g.tr) { console.log('   ' + st.id + ' : réponse illisible de ' + g.by + ' → traducteur suivant'); continue; }
+        normalizePunct(st, g.tr);
+        const e = validateTranslations(st, g.tr);
+        if (!e.length) { tr = g.tr; by = g.by; break; }
+        console.log('   ' + st.id + ' : rejet structurel (' + g.by + ') — ' + e.slice(0, 3).join(' | ') + ' → traducteur suivant');
+      }
+      if (!tr) { console.log('REJET structurel ' + st.id + ' : aucun traducteur n\'a produit un texte propre (essayés : ' + (tried.join(', ') || 'aucun') + ').'); continue; }
+      console.log('   traducteur retenu : ' + by);
     }
-    normalizePunct(st, tr);
-    const errs = validateTranslations(st, tr);
-    if (errs.length) { console.log('REJET structurel ' + st.id + ' : ' + errs.slice(0, 5).join(' | ')); continue; }
     if (!dry) {
       const judged = await judgeTranslations(st, tr, by);
       if (!judged.available) { console.log('SKIP ' + st.id + ' : juge indisponible.'); continue; }
