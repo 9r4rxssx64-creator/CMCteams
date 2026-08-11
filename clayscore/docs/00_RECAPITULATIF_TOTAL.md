@@ -1,7 +1,7 @@
 # ClayScore — Récapitulatif TOTAL
 
 **Dossier complet du projet · 11 août 2026**
-Kevin Desarzens · kevin.desarzens@gmail.com · Monaco
+Kevin Desarzens · kevin.desarzens@gmail.com · +33 6 72 28 02 77 · Monaco
 
 > Ce document est le **point d'entrée**. Il résume tout : ce qui existe, ce qui
 > est prouvé, ce qui reste à faire. Chaque chiffre ci-dessous a été **mesuré**,

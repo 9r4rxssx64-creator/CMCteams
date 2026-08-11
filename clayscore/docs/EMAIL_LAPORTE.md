@@ -42,7 +42,7 @@ discipline.
 Bien cordialement,
 Kevin Desarzens
 ClayScore — conçu à Monaco
-kevin.desarzens@gmail.com · [téléphone à compléter] · [lien démo]
+kevin.desarzens@gmail.com · +33 6 72 28 02 77 · [lien démo]
 
 ---
 
@@ -77,4 +77,4 @@ do for the sport.
 Best regards,
 Kevin Desarzens
 ClayScore — designed in Monaco
-kevin.desarzens@gmail.com · [phone] · [demo link]
+kevin.desarzens@gmail.com · +33 6 72 28 02 77 · [demo link]
