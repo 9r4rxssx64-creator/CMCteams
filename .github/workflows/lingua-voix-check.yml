@@ -1,0 +1,47 @@
+name: Lingua — Vérif voix EN VRAI (le serveur renvoie bien du son)
+
+# Kevin 2026-08-11 « la voix est trop robot » → on est passé au moteur naturel
+# (gpt-4o-mini-tts). Ce contrôle frappe le VRAI domaine et vérifie qu'il revient bien
+# du son, pour chaque voix, y compris les 5 nouvelles voix « HD ». Il ne juge PAS la
+# beauté du son (ça, c'est l'oreille de Kevin) — il prouve la partie vérifiable :
+# le serveur répond, avec de l'audio, et le bouton 🐢 Lent marche encore.
+# À la demande uniquement (aucun cron → aucun mail).
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  voix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Chaque voix renvoie-t-elle du vrai son ?"
+        shell: bash -eo pipefail {0}
+        run: |
+          # texte unique à chaque exécution → on force une VRAIE synthèse (pas le cache)
+          MOT="bonjour-$(date +%s)"
+          KO=0
+          for V in coral sage ballad verse ash nova shimmer fable alloy echo onyx antonin; do
+            F=/tmp/$V.mp3
+            CODE=$(curl -sS -o $F -w '%{http_code}' "https://lingua.kd-mc.com/__lingua/tts?v=$V&t=$MOT" || echo 000)
+            TYPE=$(file -b --mime-type $F 2>/dev/null || echo '?')
+            TAILLE=$(wc -c < $F)
+            if [ "$CODE" = "200" ] && [ "$TAILLE" -gt 2000 ] && ! head -c 200 $F | grep -q '"ok":false'; then
+              echo "✅ $V — $TAILLE octets de son ($TYPE)"
+            else
+              echo "❌ $V — HTTP $CODE, $TAILLE octets : $(head -c 200 $F)"
+              KO=$((KO+1))
+            fi
+          done
+          echo "--- bouton 🐢 Lent (vitesse ralentie : doit continuer de marcher) ---"
+          CODE=$(curl -sS -o /tmp/lent.mp3 -w '%{http_code}' "https://lingua.kd-mc.com/__lingua/tts?v=coral&s=0.6&t=$MOT" || echo 000)
+          T=$(wc -c < /tmp/lent.mp3)
+          if [ "$CODE" = "200" ] && [ "$T" -gt 2000 ]; then echo "✅ 🐢 Lent — $T octets"; else echo "❌ 🐢 Lent — HTTP $CODE, $T octets"; KO=$((KO+1)); fi
+          echo
+          if [ "$KO" -gt 0 ]; then
+            echo "$KO voix en échec. Rappel : le serveur est FAIL-OPEN — l'app retombe alors sur la"
+            echo "voix du téléphone et le dit à l'écran (jamais de silence), mais c'est à corriger."
+            exit 1
+          fi
+          echo "Toutes les voix répondent avec du vrai son. Le choix se fait à l'oreille dans Profil → 🔊 Voix."

@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.115.0";
+var APP_VER="v2.116.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -36,7 +36,11 @@ function loadS(){
   S.streak=lg("streak",0); S.lastDay=lg("lastDay",null); S.freeze=lg("freeze",0);
   S.dailyXP=lg("dailyXP",0); S.dailyDay=lg("dailyDay",today()); S.goal=lg("goal",30);
   S.prog=lg("prog",{}); S.srs=lg("srs",{});
-  S.sound=lg("sound",true); S.voice=lg("voice","nova");
+  S.sound=lg("sound",true); S.voice=lg("voice","nova"); S.voixChoisie=lg("voixChoisie",false);
+  /* Kevin 2026-08-11 « change de voix plus humain ». « nova » n'a jamais été un choix :
+     c'était le réglage d'usine. On bascule donc UNE FOIS vers une voix du nouveau moteur.
+     Un compte qui a explicitement choisi sa voix (voixChoisie) n'est JAMAIS touché. */
+  if(!S.voixChoisie && S.voice==="nova"){ S.voice="coral"; }
   S.league=lg("league",null); S.leagueWeek=lg("leagueWeek",null);
   S.achv=lg("achv",{}); S.words=lg("words",{});        // words[course][key]=true (mots vus)
   S.today=lg("today",{day:today(),xp:0,lessons:0,reviews:0,perfect:0,combo:0});
@@ -84,7 +88,7 @@ function fixPlacementProg(){
     if(changed){ S.diff=null; /* le niveau estimé par ce test n'était pas fiable → retour en Auto (doux, selon les mots appris) */ save(); }
   }catch(e){}
 }
-function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot","beeArt"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
+function save(){ ["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","voice","voixChoisie","league","leagueWeek","achv","words","today","qClaim","qDay","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot","beeArt"].forEach(function(k){ ls(k,S[k]); }); try{ scheduleCloudSave(); }catch(e){} try{ reportProgress(); }catch(e){} }
 /* 📊 chaque XP gagné est daté — nourrit le calendrier d'activité (page Stats) */
 function _dayTs(k){ var p=String(k).split("-"); return new Date(+p[0],(+p[1]||1)-1,+p[2]||1).getTime(); }
 function histAdd(xp){ if(!xp)return; if(!S.hist)S.hist={}; var t=today(); S.hist[t]=(S.hist[t]||0)+xp;
@@ -411,18 +415,37 @@ function exAutreAngle(w,pool,tier,dejaVu){
 function _sig(x){ return x?(x.kind+(x.dir?":"+x.dir:(x.mode?":"+x.mode:""))):""; }
 /* Complète une liste d'exercices jusqu'à `cible` questions, sans jamais inventer de mot :
    2e angle sur les mots de la leçon d'abord, puis révisions de mots déjà vus. */
-function complèteJusqua(ex,words,pool,tier,cible){
+/* RESTE DANS LE SUJET (Kevin 2026-08-11 : « dans les exercices il mélange les thèmes, familles »).
+   Une leçon « Salutations » ne doit PAS contenir « clignotant » ni « découvert bancaire ».
+   Ordre de remplissage, du plus proche au plus lointain — et on s'ARRÊTE au thème :
+     1. d'autres angles sur les mots de CETTE leçon (le meilleur remplissage : on approfondit) ;
+     2. les mots des AUTRES leçons de la MÊME unité (même thème, donc cohérent) ;
+     3. seulement en dernier, des mots DÉJÀ VUS à réviser — et jamais plus de 3, pour que la
+        leçon reste reconnaissable.
+   Ce qui a été retiré : la pioche au hasard dans TOUT le cours. C'est elle qui faisait
+   débarquer un mot de l'unité 150 au milieu des couleurs. */
+function motsMemeUnite(ui,li){ try{ var u=COURSES[S.course].units[ui]; if(!u)return [];
+  var o=[]; u.lessons.forEach(function(le,i){ if(i!==li) o=o.concat(le.words); }); return o; }catch(_){ return []; } }
+function complèteJusqua(ex,words,pool,tier,cible,ui,li){
   var vu={}; ex.forEach(function(x){ if(x.w&&x.w.fr) vu[x.w.fr]=_sig(x); });
-  shuffle(words.slice()).forEach(function(w){ if(ex.length>=cible)return;
-    ex.push(exAutreAngle(w,pool,tier,vu[w.fr])); });
-  if(ex.length<cible){ var cur={}; words.forEach(function(w){ cur[srsKey(w)]=1; });
+  var deja={}; ex.forEach(function(x){ if(x.w&&x.w.fr) deja[x.w.fr+"|"+_sig(x)]=1; });
+  function ajoute(e){ if(!e||!e.w||!e.w.fr)return false; var k=e.w.fr+"|"+_sig(e);
+    if(deja[k])return false; deja[k]=1; ex.push(e); return true; }
+  /* 1) deuxième puis troisième angle sur les mots de la leçon */
+  for(var tour=0; tour<2 && ex.length<cible; tour++){
+    shuffle(words.slice()).forEach(function(w){ if(ex.length>=cible)return;
+      if(!ajoute(exAutreAngle(w,pool,tier,vu[w.fr]))) ajoute(exForWord(w,pool,tier,ex.length)); });
+  }
+  /* 2) les voisins de la MÊME unité — même thème */
+  if(ex.length<cible && ui!=null){
+    shuffle(motsMemeUnite(ui,li)).forEach(function(w){ if(ex.length>=cible)return;
+      ajoute(exForWord(w,pool,tier,ex.length)); });
+  }
+  /* 3) au maximum 3 mots de révision (déjà vus), pour ne pas noyer le thème */
+  if(ex.length<cible){ var cur={}; words.forEach(function(w){ cur[srsKey(w)]=1; }); var n=0;
     shuffle(reviewPool().filter(function(w){ return !cur[srsKey(w)]; })).forEach(function(w){
-      if(ex.length>=cible)return; ex.push(exForWord(w,pool,tier,ex.length)); }); }
-  if(ex.length<cible){ /* dernier recours : d'autres mots du cours, jamais de doublon d'exercice */
-    var deja={}; ex.forEach(function(x){ if(x.w&&x.w.fr) deja[x.w.fr+"|"+_sig(x)]=1; });
-    shuffle(pool.slice()).forEach(function(w){ if(ex.length>=cible)return;
-      var e=exForWord(w,pool,tier,ex.length); if(!deja[w.fr+"|"+_sig(e)]){ deja[w.fr+"|"+_sig(e)]=1; ex.push(e); } }); }
-  return ex;
+      if(ex.length>=cible||n>=3)return; if(ajoute(exForWord(w,pool,tier,ex.length))) n++; }); }
+  return ex;   /* si on n'atteint pas 20, tant pis : mieux vaut 16 questions du bon thème */
 }
 function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course),tier=diffTier();
   var words=rev||c.units[ui].lessons[li].words.slice();
@@ -438,7 +461,7 @@ function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course)
     var rp=reviewPool().filter(function(w){ return !cur[srsKey(w)]; });
     shuffle(rp).slice(0,3).forEach(function(w){ ex.push(exForWord(w,pool,tier,ex.length)); }); }
   ex=shuffle(ex);
-  return complèteJusqua(ex,words,pool,tier,LECON_BASE).slice(0,LECON_BASE);
+  return complèteJusqua(ex,words,pool,tier,LECON_BASE,rev?null:ui,rev?null:li).slice(0,LECON_BASE);
 }
 function makeMC(w,pool,mode){ var asT=mode!=="mc_fr",correct=asT?w.t:w.fr;
   /* distracteurs : chaînes DISTINCTES de la réponse et entre elles (anti-collision de traductions) */
@@ -497,7 +520,7 @@ function buildVerbLesson(p){ var pool=allWords(S.course),tier=diffTier(),NT=COUR
   if(_srOk()) oraux.forEach(function(w){ ex.push(makeSpeak(w)); });
   else if(S.sound) oraux.slice(0,2).forEach(function(w){ ex.push(makeMC(w,pool,"listen")); });
   ex=shuffle(ex);
-  return complèteJusqua(ex,pick,pool,tier,LECON_BASE).slice(0,LECON_BASE);
+  return complèteJusqua(ex,pick,pool,tier,LECON_BASE,null,null).slice(0,LECON_BASE);
 }
 function startVerbs(p){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; }
   var ex=buildVerbLesson(p);
@@ -530,7 +553,18 @@ function vVerbs(){ var w=el("div","screen verbs-scr"),all=verbPool();
 
 /* ============ Voix + sons ============ */
 /* Catalogue de voix : 6 voix naturelles (cloud, HD) + la voix du téléphone (hors-ligne). */
+/* Kevin 2026-08-11 « la voix est trop robot, change de voix plus humain » :
+   le serveur synthétise désormais avec un moteur bien plus naturel (gpt-4o-mini-tts)
+   — TOUTES les voix ci-dessous en profitent, même celles déjà choisies. Les 5 voix
+   marquées ✨ n'existent QUE sur ce nouveau moteur : ce sont de vraies voix en plus,
+   à écouter avec ▶ dans Profil → 🔊 Voix. Je ne peux pas juger à l'oreille à la place
+   de Kevin : c'est lui qui garde celle qu'il préfère. */
 var VOICES=[
+  {id:"coral",  name:"✨ Coral — chaleureuse",cloud:true},
+  {id:"sage",   name:"✨ Sage — posée",      cloud:true},
+  {id:"ballad", name:"✨ Ballad — douce",    cloud:true},
+  {id:"verse",  name:"✨ Verse — vivante",   cloud:true},
+  {id:"ash",    name:"✨ Ash — grave",       cloud:true},
   {id:"nova",   name:"Nova — douce",       cloud:true},
   {id:"shimmer",name:"Shimmer — claire",   cloud:true},
   {id:"fable",  name:"Fable — chaleureuse",cloud:true},
@@ -561,24 +595,56 @@ function _wsSpeak(u){ if(!u)return; try{ speechSynthesis.cancel(); }catch(_){}  
   try{ speechSynthesis.speak(u);
     _wsKA=setInterval(function(){ try{ if(speechSynthesis.speaking){ speechSynthesis.pause(); speechSynthesis.resume(); } else done(); }catch(_){ done(); } },9000);
   }catch(e){ done(); } }
+/* La belle voix (en ligne) peut tomber : réseau, worker, quota. Avant, on basculait sur la voix
+   du téléphone EN SILENCE — Kevin entendait un robot sans savoir pourquoi. On le dit maintenant,
+   une seule fois, avec la raison et quoi faire. (Silence = ce que la règle « vérité » interdit.) */
+var _ttsEchecs=0, _ttsPrevenu=false;
+/* CHRONOMÈTRE (mesuré le 2026-08-11) : quand le réseau ne REFUSE pas mais TRAÎNE, la balise
+   audio ne déclenche ni « joue » ni « erreur » — l'app restait donc SILENCIEUSE, sans repli et
+   sans message. Au-delà de 2,5 s sans un seul son, on bascule sur la voix du téléphone. */
+function _ttsChrono(a,req,repli){ var t=setTimeout(function(){
+    if(req!==_ttsReq)return; if(a&&a.currentTime>0&&!a.paused)return;   // ça joue déjà : on ne touche à rien
+    try{ if(a){a.onerror=null;a.pause();} }catch(_){}
+    _voixCloudKO(); repli();
+  },2500);
+  try{ a.addEventListener("playing",function(){ clearTimeout(t); _ttsEchecs=0; }); }catch(_){}
+  return t; }
+function _voixCloudKO(){ _ttsEchecs++;
+  if(_ttsEchecs>=2 && !_ttsPrevenu){ _ttsPrevenu=true;
+    toast("🔈 La voix naturelle ne répond pas — je passe sur la voix du téléphone (moins jolie). Vérifie ta connexion, ou choisis une autre voix dans Profil → Voix."); } }
 function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
   if(_isCloudVoice(vid)){
     try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
       var vr=voiceReal(vid)||{};
-      var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+(vr.gen?"&s="+vr.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a;
-      if(vr.rate){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vr.rate; }catch(_){} }
-      a.onerror=function(){ if(myReq===_ttsReq) _webSpeak(text); };   // ne parle que si c'est TOUJOURS la dernière demande
-      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq) _webSpeak(text); });
+      /* Le MOT À APPRENDRE se dit NET : aucune accélération, aucun trafic de hauteur.
+         Les effets « mignons » (vitesse 1,24 · pitch 1,7) rendaient le modèle robotique et
+         méconnaissable — or c'est LA référence sur laquelle Kevin calque sa prononciation.
+         Les effets restent pour les phrases de Bee, jamais pour le vocabulaire. */
+      var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeak(text); } };   // ne parle que si c'est TOUJOURS la dernière demande
+      _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeak(text); });
+      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeak(text); } });
       return;
     }catch(e){ if(myReq===_ttsReq)_webSpeak(text); return; }
   }
   _webSpeak(text);
 }
+/* Le mot à APPRENDRE doit être dit par une voix DE CETTE LANGUE.
+   Kevin 2026-08-11 : « la voix est trop robot, dur de comprendre avec cet accent ».
+   Cause : si le téléphone n'a AUCUNE voix installée pour la langue étudiée, le navigateur
+   lisait le mot étranger avec la voix FRANÇAISE par défaut — accent faux, mot méconnaissable,
+   et rien ne le disait. On préfère désormais le dire et proposer la solution. */
+var _voixManquante={};
 function _webSpeak(text){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=COURSES[S.course]?COURSES[S.course].ttsLang:"fr-FR"; u.rate=.92; u.volume=1;
   var base=(u.lang).split("-")[0], vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var best=vs.filter(function(v){return /premium|enhanced|siri|natural/i.test(v.name);})[0] || vs.filter(function(v){return v.localService;})[0] || vs[0];
-  if(best)u.voice=best; _wsSpeak(u);}catch(e){} }
+  if(best){ u.voice=best; _wsSpeak(u); return; }
+  /* aucune voix de cette langue sur l'appareil : on ne massacre PAS le mot avec un autre accent */
+  if(!_voixManquante[base]){ _voixManquante[base]=1;
+    var nom=(COURSES[S.course]&&COURSES[S.course].nom)||"cette langue";
+    toast("🔇 Ton téléphone n'a pas de voix « "+nom+" » — le mot serait mal prononcé. Réglages iPhone → Accessibilité → Contenu énoncé → Voix.");
+  } }catch(e){} }
 /* Parle le mot de l'exercice COURANT uniquement (anti-décalage : si on a déjà avancé,
    un son différé de la question précédente NE sort PAS sur la nouvelle question). */
 function _lsSpeak(text,qi,delay){ setTimeout(function(){ if(LESSON&&LESSON.i===qi&&S.sound)speak(text); }, delay||0); }
@@ -1365,7 +1431,7 @@ function vProfile(){ var d=el("div","screen"); var me=accMeta(ACC)||{name:"Toi",
   VOICES.forEach(function(v){ var row=el("div","voice-row"+(S.voice===v.id?" sel":""));
     var lab=el("span","vn"); lab.innerHTML=esc(v.name)+(v.cloud?' <i class="vbadge">HD</i>':''); row.appendChild(lab);
     var test=el("button","vtest"); test.textContent="▶"; test.title="Écouter"; test.onclick=function(ev){ ev.stopPropagation(); var prev=S.voice; S.voice=v.id; speak(sampleWord); S.voice=prev; };
-    var pick=el("button","vpick"+(S.voice===v.id?" on":"")); pick.textContent=S.voice===v.id?"✓ Choisie":"Choisir"; pick.onclick=function(){ S.voice=v.id; save(); toast("Voix : "+v.name); render(); };
+    var pick=el("button","vpick"+(S.voice===v.id?" on":"")); pick.textContent=S.voice===v.id?"✓ Choisie":"Choisir"; pick.onclick=function(){ S.voice=v.id; S.voixChoisie=true; save(); toast("Voix : "+v.name); render(); };
     row.appendChild(test); row.appendChild(pick); vc.appendChild(row); });
   d.appendChild(vc);
   // réglages
@@ -2120,10 +2186,16 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
     if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
     var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a; try{a.volume=1;}catch(_){}
     if(cfg&&cfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=cfg.rate; }catch(_){} }
-    a.onerror=function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); };
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_webSpeakLang(text,lang,fem,cfg); }); return; }catch(e){} }
+    a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeakLang(text,lang,fem,cfg); } };
+    _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeakLang(text,lang,fem,cfg); });
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeakLang(text,lang,fem,cfg); } }); return; }catch(e){} }
   _webSpeakLang(text,lang,fem,cfg); }
-function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=cfg?cfg.wsRate:(fem?.95:.9); u.pitch=cfg?cfg.wsPitch:(fem?1.15:1); u.volume=1;
+function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang;
+  u.rate=cfg?cfg.wsRate:(fem?.95:.9);
+  /* Hauteur BRIDÉE à 1,25 : au-delà, la voix du téléphone devient métallique et difficile à
+     suivre — c'est le « trop robot » signalé par Kevin. Une mascotte mignonne ne vaut pas
+     une voix qu'on ne comprend pas. */
+  u.pitch=Math.min(1.25, cfg?cfg.wsPitch:(fem?1.15:1)); u.volume=1;
   var base=lang.split("-")[0],vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.indexOf(base)===0;});
   var femV=fem?vs.filter(function(v){return /am[eé]lie|audrey|aur[eé]lie|c[eé]line|chantal|julie|marie|virginie|alice|elsa|paulina|monica|petra|anna|female|femme|woman/i.test(v.name);})[0]:null;
   var best=femV||vs.filter(function(v){return v.localService;})[0]||vs[0]; if(best)u.voice=best; _wsSpeak(u);}catch(e){} }
@@ -2145,7 +2217,7 @@ function buildExam(ui){ var pool=allWords(S.course),tier=Math.min(4,diffTier()+1
   if(ws.length>=4 && tier<=2) ex.splice(2,0,makeMatch(shuffle(ws).slice(0,Math.min(5,ws.length))));
   unitAllPhrases(ui).forEach(function(p){ ex.push(makeBank(p,pool)); if(tier>=2&&!(COURSES[S.course]&&COURSES[S.course].noType)) ex.push(makeType({fr:p.fr,t:p.t},"toT")); });
   ex=shuffle(ex);
-  return complèteJusqua(ex,ws,pool,tier,LECON_BASE).slice(0,LECON_BASE); }
+  return complèteJusqua(ex,ws,pool,tier,LECON_BASE,ui,null).slice(0,LECON_BASE); }
 /* ---------- Test de niveau (placement) : estime le niveau puis adapte tout ---------- */
 function buildPlacement(){ var c=COURSES[S.course],pool=allWords(S.course),qs=[];
   c.units.forEach(function(u,ui){ var w=u.lessons[0]&&u.lessons[0].words[0]; if(w) qs.push({w:w,ui:ui}); }); // 1 mot/unité, du + facile au + dur
