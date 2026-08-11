@@ -75,6 +75,13 @@ class SimulationSource:
             width=320, height=240, duration_s=2.5, seed=self._seed,
         )
         paths = synth.generate(params, str(self.clips_dir / name))
+        # Le ralenti est lu dans un <video> par la tablette : il doit être en
+        # H.264 (OpenCV écrit du FMP4, illisible en navigateur/iOS).
+        try:
+            from .replay import ensure_web_playable
+            ensure_web_playable(paths["video"])
+        except Exception:  # noqa: BLE001 - ne jamais bloquer une partie
+            pass
         data, sr = read_wav_mono(paths["audio"])
         result = decide_verdict(
             FileVideoSource(paths["video"]), data, sr, v_cfg=v_cfg)
@@ -114,14 +121,20 @@ class MatchEngine:
     # --- cycle de vie du match --------------------------------------- #
     def new_game(self, discipline: str, shooters: List[str],
                  serie: int = 25, cartouches: Optional[int] = None,
-                 auto_mode: bool = False) -> Dict:
+                 auto_mode: bool = False,
+                 machines: Optional[List[str]] = None,
+                 mode: str = "entrainement") -> Dict:
         with self._lock:
-            self.partie = Partie(discipline, shooters, serie, cartouches)
+            self.partie = Partie(discipline, shooters, serie, cartouches,
+                                 machines=machines, mode=mode)
             self.pending = None
-            self.auto_mode = bool(auto_mode)
+            # MODE CONCOURS : chaque plateau doit être arbitré -> la validation
+            # automatique est désactivée d'office (traçabilité officielle).
+            self.auto_mode = bool(auto_mode) and mode != "concours"
             self._cfg = {"discipline": discipline, "shooters": shooters,
                          "serie": serie, "cartouches": cartouches,
-                         "auto_mode": bool(auto_mode)}
+                         "auto_mode": self.auto_mode,
+                         "machines": machines, "mode": mode}
             self._log = []
             self._persist()
             return self._state_locked()
@@ -216,7 +229,9 @@ class MatchEngine:
             return False
         with self._lock:
             self.partie = Partie(cfg["discipline"], cfg["shooters"],
-                                 cfg["serie"], cfg["cartouches"])
+                                 cfg["serie"], cfg["cartouches"],
+                                 machines=cfg.get("machines"),
+                                 mode=cfg.get("mode", "entrainement"))
             self.auto_mode = bool(cfg.get("auto_mode"))
             self._cfg = cfg
             self._log = []

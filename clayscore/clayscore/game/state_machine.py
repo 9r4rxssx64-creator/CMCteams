@@ -55,6 +55,8 @@ class Partie:
         shooters: List[str],
         serie: int = 25,
         cartouches: Optional[int] = None,
+        machines: Optional[List[str]] = None,
+        mode: str = "entrainement",
     ):
         self.discipline = (
             discipline if isinstance(discipline, Discipline)
@@ -67,6 +69,26 @@ class Partie:
         self.shooters = list(shooters)
         self.serie = int(serie)
         self.cartouches = int(cartouches or self.discipline.cartridges)
+
+        # MULTI-LANCEURS : liste des machines actives (ex. ["Trap 1", "Trap 2"]).
+        # Par défaut, un lanceur par poste. Le lanceur du tour est attribué
+        # automatiquement (tourniquet) et suivi dans les statistiques.
+        if machines is None:
+            # Défaut : un lanceur par poste.
+            self.machines = [f"Lanceur {i + 1}"
+                             for i in range(self.discipline.n_posts)]
+        else:
+            # Liste explicite : elle ne doit pas être vide (erreur de saisie).
+            self.machines = [str(m) for m in machines]
+            if not self.machines:
+                raise ValueError("Il faut au moins un lanceur actif.")
+
+        # MODE CONCOURS : chaque plateau est arbitré (aucune validation
+        # automatique), et la fiche est marquée officielle.
+        if mode not in ("entrainement", "concours"):
+            raise ValueError(
+                f"Mode inconnu : {mode!r} (attendu : entrainement | concours)")
+        self.mode = mode
 
         n = len(self.shooters)
         self.clays_done = [0] * n
@@ -100,6 +122,14 @@ class Partie:
         if i is None:
             return None
         return (self.turn_count[i] % self.discipline.n_posts) + 1
+
+    @property
+    def current_machine(self) -> Optional[str]:
+        """Lanceur qui envoie le plateau du tour courant (attribué au poste)."""
+        post = self.current_post
+        if post is None:
+            return None
+        return self.machines[(post - 1) % len(self.machines)]
 
     def _remaining(self, shooter_idx: int) -> int:
         return self.serie - self.clays_done[shooter_idx]
@@ -166,7 +196,8 @@ class Partie:
         post = self.current_post
         assert s is not None and post is not None
         shooter = self.shooters[s]
-        mach = machine or f"P{post}"
+        # Lanceur : celui explicitement fourni, sinon celui attribué au poste.
+        mach = machine or self.current_machine or f"P{post}"
 
         # --- NO BIRD : gel, on rejoue le tour (même tireur, même poste) ---
         if verdict == "nobird":
@@ -276,6 +307,10 @@ class Partie:
             "finished": self.finished,
             "serie": self.serie,
             "cartouches": self.cartouches,
+            "mode": self.mode,
+            "official": self.mode == "concours",
+            "machines": list(self.machines),
+            "current_machine": self.current_machine,
             "current_shooter": self.current_shooter,
             "current_post": self.current_post,
             "current_turn_size": self.current_turn_size,

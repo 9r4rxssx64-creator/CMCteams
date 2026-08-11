@@ -38,6 +38,8 @@ class NewGame(BaseModel):
     serie: int = 25
     cartouches: Optional[int] = None
     auto_mode: bool = False
+    machines: Optional[List[str]] = None   # multi-lanceurs (ex. ["Trap 1","Trap 2"])
+    mode: str = "entrainement"             # entrainement | concours
 
 
 class Verdict(BaseModel):
@@ -111,7 +113,8 @@ def create_app(clips_dir: Optional[str] = None,
     async def game_new(req: NewGame):
         try:
             st = engine().new_game(req.discipline, req.shooters,
-                                   req.serie, req.cartouches, req.auto_mode)
+                                   req.serie, req.cartouches, req.auto_mode,
+                                   machines=req.machines, mode=req.mode)
         except (ValueError, RuntimeError) as e:
             raise HTTPException(400, str(e))
         await push_state()
