@@ -73,6 +73,13 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Régénérer le devis comparatif avec les prix du jour
+        if: always()
+        working-directory: clayscore
+        run: |
+          python -m tools.devis --sortie docs/DEVIS_COMPARATIF.md || true
+          python -m tools.devis --etape 0 --sortie docs/DEVIS_ETAPE_0.md || true
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -80,6 +87,8 @@ jobs:
           path: |
             clayscore/rapport-prix.md
             clayscore/sortie-brute.txt
+            clayscore/docs/DEVIS_COMPARATIF.md
+            clayscore/docs/DEVIS_ETAPE_0.md
           if-no-files-found: warn
           retention-days: 30
 

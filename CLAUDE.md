@@ -9677,6 +9677,42 @@ CMCteams, tous workflows GitHub Actions, tous projets futurs.
 
 ---
 
+## 🧾 RÈGLE ABSOLUE — DEVIS COMPARATIFS PRÉCIS + LIENS 1 CLIC, TOUJOURS (Kevin 2026-08-11, ABSOLUE)
+
+> **« Je veux des devis comparatifs précis avec liens 1 clic toujours. »** — Kevin 2026-08-11
+
+**Règle absolue, NON-NÉGOCIABLE** — ClayScore, CMCteams, Apex, tous projets présents et futurs. Dès qu'il est question d'ACHETER quelque chose (matériel, licence, service, abonnement) :
+
+### 1. Jamais un prix seul — toujours un COMPARATIF
+Au moins **2 vendeurs** mis côte à côte pour chaque pièce, avec le moins cher **marqué**. C'est ce qui fait apparaître les écarts qu'on ne soupçonne pas (vécu ClayScore : un pont réseau à **+35 %** chez LDLC contre Getic, un calculateur à **+18 %** chez Kubii contre Gotronic).
+
+### 2. Un LIEN 1 CLIC sur CHAQUE ligne, et deux natures jamais confondues
+- **🛒 fiche produit** = un clic → le bon article, prêt au panier. C'est l'objectif partout où c'est possible.
+- **🔎 recherche** = un clic → la bonne recherche, il reste à choisir. **Uniquement** quand aucune fiche n'a pu être identifiée — et c'est écrit.
+- ❌ **INTERDIT** de faire passer une page de recherche pour une fiche produit. Un test le vérifie automatiquement (marqueurs `/s?k=`, `/recherche/`, `/w/wholesale`…).
+
+### 3. Les liens sont TESTÉS, pas seulement collés
+Le pare-feu de l'agent bloque les pages marchandes → **le runner CI a le réseau ouvert**. Un workflow ouvre chaque lien et signale les morts. Un **HTTP 404** est un vrai lien cassé (à corriger) ; un **HTTP 403** signifie « le marchand refuse les robots », pas « lien mort » — la distinction est écrite dans le rapport.
+
+### 4. Trois niveaux de confiance sur chaque prix, affichés
+**✅ VÉRIFIÉ** (fiche ouverte, prix lu dessus — opposable à un vendeur) · **🟢 relevé** (vu en recherche datée) · **🟡 cible** (hypothèse). Ne jamais présenter une hypothèse comme un prix.
+
+### 5. Structure obligatoire du devis
+1. **Comparatif** (vendeurs côte à côte, moins cher marqué) · 2. **Devis par vendeur** (un panier groupé par fournisseur = ce qu'on exécute, évite de payer plusieurs ports/dédouanements) · 3. **Récapitulatif** (HT, part importée, TVA, **TOTAL LIVRÉ**).
+
+### 6. Honnêteté obligatoire en bas de devis
+Écrire noir sur blanc : **« ce devis n'engage aucun vendeur »**, frais de port et de dossier douane **non compris**, remises quantité **non négociées**, taux de change utilisé.
+
+### 7. Source unique
+Le catalogue fournisseurs (vendeur, pays, URL, prix, confiance) est **UNE seule table** qui alimente à la fois le devis, le contrôle CI des prix et les liens des documents. Jamais de liste de liens recopiée à la main dans un document — elle diverge toujours.
+
+### 8. Test mental obligatoire avant d'envoyer un chiffre d'achat
+> *« Kevin peut-il cliquer et commander MAINTENANT ? Y a-t-il au moins un concurrent en face pour prouver que c'est le bon prix ? Chaque lien a-t-il été testé ? Ai-je dit lesquels sont vérifiés et lesquels sont des hypothèses ? »*
+
+Référence d'implémentation : `clayscore/clayscore/fournisseurs.py` (catalogue) + `clayscore/tools/devis.py` (générateur) + `.github/workflows/clayscore-verif-prix.yml` (test des liens et des prix).
+
+---
+
 ## 🖱️ RÈGLE ABSOLUE — LE MOINS DE CLICS POSSIBLE À KEVIN, TOUJOURS (Kevin 2026-07-13, MAÎTRESSE)
 
 > **« Avec tous tes outils, fais-moi faire le moins de clic possible à chacune de mes actions. Seulement quand tu n'as pas d'autres solutions. Rappelle-toi et note-le. »** — Kevin 2026-07-13

@@ -78,7 +78,7 @@ RETOUR_CAMERA: Dict[str, float] = {
 USD_EUR = 0.866
 
 PRIX: Dict[str, float] = {
-    "camera": 139.0,             # RELEVÉ
+    "camera": 138.66,            # RELEVÉ (160 USD x 0,8666)
     "objectif": 36.0,            # RELEVÉ
     "filtre": 15.0,              # cible
     "caisson": 15.0,             # cible
@@ -143,8 +143,8 @@ SOURCE_PRIX: Dict[str, str] = {
 TVA = 0.20
 
 ORIGINE: Dict[str, Dict] = {
-    "camera": {"retenu": "chine", "chine": 139.0, "ue": 372.0,
-               "pourquoi": "Hikrobot 139 € contre 372 € pour l'équivalent "
+    "camera": {"retenu": "chine", "chine": 138.66, "ue": 371.77,
+               "pourquoi": "Hikrobot 138,66 € contre 371,77 € pour l'équivalent "
                            "Basler : 2,7x. Même en ajoutant TVA et douane "
                            "(~172 €), la Chine reste largement devant."},
     "objectif": {"retenu": "chine", "chine": 36.0, "ue": None,

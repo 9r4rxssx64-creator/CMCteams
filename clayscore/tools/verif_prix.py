@@ -64,7 +64,21 @@ class Offre:
     facteur: float = 1.0  # ex. 2 si la page vend l'unité et qu'on compte la paire
 
 
-# Les pages à vérifier. Une seule source de vérité, partagée avec le dossier.
+def offres_du_catalogue() -> List["Offre"]:
+    """Les pages à contrôler viennent du CATALOGUE : une seule source de vérité.
+
+    On ne contrôle que les liens de type « fiche » : une page de recherche n'a
+    pas de prix unique à comparer.
+    """
+    from clayscore.fournisseurs import CATALOGUE
+    return [Offre(f.poste, f"{f.vendeur} ({f.pays})", f.url,
+                  devise=f.devise,
+                  facteur=(1.0 / f.par_unite) if f.par_unite else 1.0)
+            for f in CATALOGUE if f.lien == "fiche" and f.prix is not None]
+
+
+# Anciennes offres codées en dur — conservées comme repli si le catalogue
+# devenait vide, mais le catalogue fait foi.
 OFFRES: List[Offre] = [
     Offre("calculateur", "Jetson Orin Nano Super — Kubii (FR)",
           "https://www.kubii.com/fr/kits-de-developpement/4457-2137-kit-de-developpement-nvidia-jetson-nano-orin-8gb-3272496319639.html"),
@@ -190,6 +204,20 @@ def telecharger(url: str, timeout: int = 25) -> tuple[Optional[str], str]:
         return None, f"{type(e).__name__}: {e}"
 
 
+def tester_liens(urls: List[tuple[str, str]]) -> List[Dict]:
+    """Chaque lien du dossier répond-il ? Un lien mort ne reste pas dans un devis.
+
+    On demande la page entière (pas un HEAD) : beaucoup de marchands
+    répondent 405 à un HEAD alors que la page existe.
+    """
+    resultats: List[Dict] = []
+    for nom, url in urls:
+        html, detail = telecharger(url, timeout=20)
+        resultats.append({"nom": nom, "url": url, "vivant": html is not None,
+                          "detail": detail})
+    return resultats
+
+
 def taux_usd_eur() -> tuple[float, str]:
     """Taux USD->EUR du jour, depuis la Banque centrale européenne (via un
     service public sans clé). En cas d'échec : le taux du dossier, et on le dit.
@@ -259,6 +287,21 @@ def rendre_markdown(lignes: List[Dict], prix_dossier: Dict[str, float],
     return "\n".join(out)
 
 
+def rendre_liens(resultats: List[Dict]) -> str:
+    morts = [r for r in resultats if not r["vivant"]]
+    out = ["", "## Liens du dossier", "",
+           f"**{len(resultats) - len(morts)}/{len(resultats)} liens répondent.**",
+           "", "| État | Lien | Détail |", "|:--:|---|---|"]
+    for r in sorted(resultats, key=lambda x: x["vivant"]):
+        etat = "✅" if r["vivant"] else "🔴"
+        out.append(f"| {etat} | [{r['nom']}]({r['url']}) | {r['detail']} |")
+    out += ["", "> Un « HTTP 403 » signifie que le marchand refuse les robots, "
+            "**pas** que le lien est mort : il s'ouvre normalement dans un "
+            "navigateur. Un « HTTP 404 » est en revanche un vrai lien cassé, "
+            "à corriger.", ""]
+    return "\n".join(out)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--poste", help="ne vérifier qu'un poste")
@@ -271,7 +314,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     from clayscore.site import PRIX
 
-    offres = [o for o in OFFRES if not args.poste or o.poste == args.poste]
+    catalogue = offres_du_catalogue() or OFFRES
+    offres = [o for o in catalogue if not args.poste or o.poste == args.poste]
     if not offres:
         print(f"Aucune offre pour le poste {args.poste!r}.", file=sys.stderr)
         return 2
@@ -279,6 +323,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     taux, source = taux_usd_eur()
     lignes = verifier(offres, PRIX, args.tolerance, taux)
     rapport = rendre_markdown(lignes, PRIX, taux, source, args.tolerance)
+
+    if not args.poste:
+        from clayscore.fournisseurs import liens_a_tester
+        liens = tester_liens([(f"{f.vendeur}", f.url) for f in liens_a_tester()])
+        rapport += rendre_liens(liens)
+        if args.strict and any(
+                r["detail"].startswith("HTTP 404") for r in liens):
+            print(rapport)
+            if args.sortie:
+                with open(args.sortie, "w", encoding="utf-8") as f:
+                    f.write(rapport)
+            return 1
     print(rapport)
     if args.sortie:
         with open(args.sortie, "w", encoding="utf-8") as f:

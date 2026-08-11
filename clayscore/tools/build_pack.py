@@ -149,6 +149,8 @@ def main():
         ("PREVISIONNEL_CLUB", "Prévisionnel d'un club entier"),
         ("MATERIEL_OPTIMAL", "Matériel optimal et tarifs"),
         ("COMPARATIF_CHINE_UE", "Chine ou Europe : le comparatif"),
+        ("DEVIS_COMPARATIF", "Devis comparatif (liens 1 clic)"),
+        ("DEVIS_ETAPE_0", "Devis du kit de validation"),
         ("GUIDE_MATERIEL", "Guide du matériel"),
         ("GUIDE_MONTAGE", "Guide de montage et d'installation"),
         ("CHECKLIST_PROTOTYPE", "Checklist du prototype"),
@@ -310,6 +312,14 @@ MENU = """<!doctype html><html lang="fr"><head><meta charset="utf-8">
         <div class="k">Portée</div><h3>Grandes surfaces</h3>
         <p>Parcours de chasse et postes éloignés : pourquoi le sans-fil
         n'est possible qu'avec un pod qui décide sur place.</p></a>
+      <a class="card" href="documents/DEVIS_COMPARATIF.html">
+        <div class="k">Commander</div><h3>Devis comparatif</h3>
+        <p>Qui vend quoi, à quel prix, avec le lien 1 clic pour chaque pièce.
+        Un panier par vendeur, prêt à exécuter.</p></a>
+      <a class="card" href="documents/DEVIS_ETAPE_0.html">
+        <div class="k">Commander</div><h3>Devis étape 0</h3>
+        <p>Le kit de validation à acheter EN PREMIER : 1 calculateur,
+        2 caméras, 4 objectifs.</p></a>
       <a class="card" href="documents/COMPARATIF_CHINE_UE.html">
         <div class="k">Achat</div><h3>Chine ou Europe ?</h3>
         <p>Le comparatif poste par poste, la config optimale « sûre dans tous

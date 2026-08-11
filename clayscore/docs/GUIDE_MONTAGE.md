@@ -222,7 +222,7 @@ hostapd/dnsmasq (WiFi local) et le service qui redémarre tout seul.
 
 ```bash
 source .venv/bin/activate
-pytest                       # doit afficher 308 tests OK
+pytest                       # doit afficher 328 tests OK
 python -m tools.bench --all  # doit afficher 100 % sur les 3 bancs
 ```
 
@@ -320,7 +320,7 @@ Ordre logique, du plus simple au plus complet :
 
 | # | Test | Résultat attendu |
 |---|---|---|
-| 1 | `pytest` | 308 tests OK |
+| 1 | `pytest` | 328 tests OK |
 | 2 | `python -m tools.bench --all` | 100 % sur les 3 bancs |
 | 3 | `arv-tool-0.8 --list` | 3 caméras listées |
 | 4 | Ouvrir l'appli sur la tablette | Interface affichée, ✅ connecté |
