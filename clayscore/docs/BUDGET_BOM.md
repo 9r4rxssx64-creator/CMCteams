@@ -9,7 +9,7 @@
 
 | Poste | Détail | Qté | Prix cible unit. | Total cible | Acheter |
 |---|---|---:|---:|---:|---|
-| Caméras industrielles | Hikrobot MV-CS016 (**3 × COULEUR**, global shutter) | 3 | ~168 € | ~504 € | ▸ [Alibaba (lien direct)](https://www.alibaba.com/product-detail/HIKROBOT-MV-CS016-10GC-1-2-1601122368910.html) |
+| Caméras industrielles | Hikrobot **MV-CS016-10GC** (**3 × COULEUR**, global shutter, GigE+PoE) | 3 | ~139 € | ~417 € | ▸ [Alibaba (lien direct)](https://www.alibaba.com/product-detail/HIKROBOT-MV-CS016-10GC-1-2-1601122368910.html) |
 | Objectifs | monture C, focale **8 et/ou 12 mm** | 3 | ~35 € | ~105 € | ▸ même vendeur · [recherche AliExpress](https://fr.aliexpress.com/w/wholesale-C-mount-12mm-machine-vision-lens.html) |
 | Éclairage / filtre IR 850 nm | anti contre-jour, tous temps | 1 lot | ~60 € | ~60 € | ▸ [AliExpress (lien direct)](https://fr.aliexpress.com/item/32757408525.html) |
 | Filtres optiques | passe-bande 850 nm / polarisant | 3 | ~15 € | ~45 € | ▸ même vendeur · [recherche AliExpress](https://fr.aliexpress.com/w/wholesale-850nm-bandpass-filter.html) |
@@ -45,9 +45,13 @@
 > « Caméras en couleur »). Détail : `MATERIEL_OPTIMAL.md` § 2.
 >
 > 💶 **Prix révisés 11/08/2026** d'après des offres publiques réellement
-> relevées (voir `MATERIEL_OPTIMAL.md` pour la source et la date de chacune) :
-> caméra 180 → **168 €**, calculateur 280 → **216 €**, batterie 30 Ah
-> 130 → **46 €**, pont directionnel (paire) 120 → **85 €**.
+> relevées, après comparaison **Chine / Europe** poste par poste (voir
+> **`COMPARATIF_CHINE_UE.md`**) : caméra `MV-CS016-10GC` 180 → **139 €** 🇨🇳,
+> objectif 35 → **36 €** 🇨🇳, calculateur 280 → **307 €** 🇪🇺 (le tarif
+> officiel de 249 USD n'existe pas au comptant en Europe), batterie 30 Ah
+> 130 → **46 €** 🇪🇺, pont directionnel (paire) 120 → **98 €** 🇪🇺.
+> **Résultat : achat MIXTE** — optique de Chine, électronique et batteries
+> d'Europe.
 >
 > ⚠️ **Sur les liens** : les liens « **lien direct** » sont ceux fournis par
 > Kevin (dossier v4). Les liens « **recherche** » ouvrent une recherche sur le

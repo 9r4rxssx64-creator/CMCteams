@@ -179,12 +179,13 @@ def test_bom_compte_le_materiel_du_club():
               Terrain("CHASSE", "parcours", distance_club_m=900,
                       n_lanceurs=8, pods=_pods("CH", 4))],
              nom="Club")
-    bom = s.bom()
+    bom = s.bom("minimum")
     lignes = {ligne["poste"]: ligne for ligne in bom["lignes"]}
 
     assert bom["n_terrains"] == 3
     assert bom["n_pods"] == 3 + 3 + 4
     assert lignes["camera"]["qte"] == 10          # 1 par poste de vue
+    assert lignes["objectif"]["qte"] == 10        # 1 focale par poste
     assert lignes["calculateur"]["qte"] == 3      # 1 par terrain
     assert lignes["pont_directionnel"]["qte"] == 3
     assert lignes["ecran_club"]["qte"] == 1
@@ -253,7 +254,7 @@ def test_les_prix_releves_sont_distingues_des_hypotheses():
     from clayscore.site import prix_releve
     releves = {p for p in PRIX if prix_releve(p)}
     # Ceux-là ont une offre publique datée derrière eux.
-    assert releves == {"camera", "calculateur", "batterie_30ah",
+    assert releves == {"camera", "objectif", "calculateur", "batterie_30ah",
                        "pont_directionnel"}
     # Les postes inventés pour le club-house n'en font PAS partie.
     assert not any(prix_releve(p) for p in ("ecran_club", "mini_pc_club"))
@@ -267,3 +268,75 @@ def test_le_bom_dit_quelle_part_du_total_est_reellement_relevee():
     for ligne in bom["lignes"]:
         assert "source_prix" in ligne
         assert isinstance(ligne["prix_releve"], bool)
+
+
+# --- niveau minimum vs optimal ------------------------------------------- #
+def _club():
+    return Site([_fosse("FO-1"), _fosse("FO-2"),
+                 Terrain("CHASSE", "parcours", distance_club_m=700,
+                         n_lanceurs=8, pods=_pods("CH", 4))], nom="Club")
+
+
+def test_le_niveau_optimal_ajoute_un_secours_par_terrain():
+    mini = _club().bom("minimum")
+    opti = _club().bom("optimal")
+    assert mini["pods_secours"] == 0
+    assert opti["pods_secours"] == 3            # 1 par terrain
+    assert opti["n_pods_factures"] == mini["n_pods_factures"] + 3
+    lignes = {ligne["poste"]: ligne for ligne in opti["lignes"]}
+    assert lignes["camera"]["qte"] == 13
+    assert "secours" in lignes["camera"]["note"]
+
+
+def test_le_niveau_optimal_prend_les_deux_focales():
+    opti = _club().bom("optimal")
+    lignes = {ligne["poste"]: ligne for ligne in opti["lignes"]}
+    # 13 postes x 2 focales (8 mm ET 12 mm) : on choisit sur le terrain.
+    assert lignes["objectif"]["qte"] == 26
+    assert "8 mm" in lignes["objectif"]["note"]
+
+
+def test_optimal_coute_plus_cher_que_minimum_et_on_sait_de_combien():
+    mini, opti = _club().bom("minimum"), _club().bom("optimal")
+    assert opti["total"] > mini["total"]
+    # L'écart doit rester raisonnable : c'est une assurance, pas un doublement.
+    assert (opti["total"] - mini["total"]) / mini["total"] < 0.35
+
+
+def test_le_defaut_est_l_optimal():
+    # Kevin a demandé « l'optimal tout de suite » : c'est le défaut.
+    assert _club().bom()["niveau"] == "optimal"
+    d = _club().to_dict()
+    assert d["bom"]["niveau"] == "optimal"
+    assert d["bom_minimum"]["niveau"] == "minimum"
+
+
+def test_niveau_inconnu_refuse():
+    with pytest.raises(ValueError, match="minimum"):
+        _club().bom("luxe")
+
+
+# --- approvisionnement Chine / UE ---------------------------------------- #
+def test_chaque_origine_est_justifiee_et_coherente():
+    from clayscore.site import ORIGINE
+    for poste, o in ORIGINE.items():
+        assert o["retenu"] in ("chine", "ue")
+        assert o[o["retenu"]] is not None, f"{poste} : prix retenu manquant"
+        assert PRIX[poste] == o[o["retenu"]], f"{poste} : PRIX ≠ origine retenue"
+        assert len(o["pourquoi"]) > 40, f"{poste} : justification trop vague"
+
+
+def test_la_camera_vient_de_chine_et_le_calculateur_d_europe():
+    from clayscore.site import ORIGINE
+    # Le résultat n'est pas « tout de Chine » : c'est un choix MIXTE, mesuré.
+    assert ORIGINE["camera"]["retenu"] == "chine"
+    assert ORIGINE["calculateur"]["retenu"] == "ue"
+    assert ORIGINE["pont_directionnel"]["retenu"] == "ue"
+
+
+def test_un_import_coute_la_tva_en_plus():
+    from clayscore.site import cout_import
+    assert cout_import(100.0) == 120.0
+    # La caméra reste gagnante même importée taxée.
+    from clayscore.site import ORIGINE
+    assert cout_import(ORIGINE["camera"]["chine"]) < ORIGINE["camera"]["ue"]

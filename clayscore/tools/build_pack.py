@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 """Assemble le dossier ClayScore : docs en HTML lisibles + menu d'accueil + vidéos."""
-import base64, pathlib, shutil, subprocess, markdown
+import base64
+import pathlib
+import shutil
+import subprocess
+
+import markdown
 
 FONTS = "/mnt/skills/examples/canvas-design/canvas-fonts"
 SRC = pathlib.Path("/home/user/CMCteams/clayscore")
 PACK = pathlib.Path("/tmp/pack/ClayScore_Dossier_Complet")
 DEMOS_H264 = pathlib.Path("/tmp/pack/demos_h264")
 
-b64 = lambda p: base64.b64encode(pathlib.Path(p).read_bytes()).decode()
+def b64(p):
+    """Encode un fichier en base64 (polices embarquées dans le HTML)."""
+    return base64.b64encode(pathlib.Path(p).read_bytes()).decode()
+
+
 DISP = b64(f"{FONTS}/BigShoulders-Bold.ttf")
 MONO = b64(f"{FONTS}/GeistMono-Regular.ttf")
 
@@ -139,6 +148,7 @@ def main():
         ("GUIDE_ITALIE_FITAV", "Tirer en Italie (FITAV)"),
         ("PREVISIONNEL_CLUB", "Prévisionnel d'un club entier"),
         ("MATERIEL_OPTIMAL", "Matériel optimal et tarifs"),
+        ("COMPARATIF_CHINE_UE", "Chine ou Europe : le comparatif"),
         ("GUIDE_MATERIEL", "Guide du matériel"),
         ("GUIDE_MONTAGE", "Guide de montage et d'installation"),
         ("CHECKLIST_PROTOTYPE", "Checklist du prototype"),
@@ -300,6 +310,10 @@ MENU = """<!doctype html><html lang="fr"><head><meta charset="utf-8">
         <div class="k">Portée</div><h3>Grandes surfaces</h3>
         <p>Parcours de chasse et postes éloignés : pourquoi le sans-fil
         n'est possible qu'avec un pod qui décide sur place.</p></a>
+      <a class="card" href="documents/COMPARATIF_CHINE_UE.html">
+        <div class="k">Achat</div><h3>Chine ou Europe ?</h3>
+        <p>Le comparatif poste par poste, la config optimale « sûre dans tous
+        les cas », et ce que ça coûte livré.</p></a>
       <a class="card" href="documents/MATERIEL_OPTIMAL.html">
         <div class="k">Achat</div><h3>Matériel optimal</h3>
         <p>Quoi acheter exactement, à quel prix relevé, dans quel ordre —
