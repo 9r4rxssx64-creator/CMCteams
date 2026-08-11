@@ -5162,11 +5162,11 @@ var STORIES=[
   {q:"Que fait le chien ?", opts:["Il dort","Il court","Il mange"], ok:1},
   {q:"Bee joue avec…", opts:["Un ballon","Un chat","Un livre"], ok:0}]},
  {id:"sport", ic:"⚽", titre:"Le sport", lignes:[
-  {qui:"🐝", fr:"J'aime le sport.", t:{en:"I like sport.", it:"Mi piace lo sport.", es:"Me gusta el deporte.", de:"Ich mag Sport.", pt:"Gosto de desporto.", nl:"Ik hou van sport."}},
-  {qui:"🐝", fr:"Je cours vite.", t:{en:"I run fast.", it:"Corro veloce.", es:"Corro rápido.", de:"Ich laufe schnell.", pt:"Corro depressa.", nl:"Ik ren snel."}},
-  {qui:"🐝", fr:"Je joue au football.", t:{en:"I play football.", it:"Gioco a calcio.", es:"Juego al fútbol.", de:"Ich spiele Fußball.", pt:"Jogo futebol.", nl:"Ik speel voetbal."}},
-  {qui:"🐝", fr:"Le ballon est rond.", t:{en:"The ball is round.", it:"La palla è rotonda.", es:"La pelota es redonda.", de:"Der Ball ist rund.", pt:"A bola é redonda.", nl:"De bal is rond."}},
-  {qui:"🐝", fr:"Le sport, c'est super !", t:{en:"Sport is great!", it:"Lo sport è fantastico!", es:"¡El deporte es genial!", de:"Sport ist toll!", pt:"O desporto é ótimo!", nl:"Sport is geweldig!"}}],
+  {qui:"🐝", fr:"J'aime le sport.", t:{en:"I like sport.", it:"Mi piace lo sport.", es:"Me gusta el deporte.", de:"Ich mag Sport.", pt:"Gosto de desporto.", nl:"Ik hou van sport.", pl:"Lubię sport", ru:"Мне нравится спорт", uk:"Мене подобається спорт", cs:"Mám rád sport", zh:"我喜欢运动", ja:"私はスポーツが好きです", ko:"나는 운동을 좋아합니다", ar:"أنا أحب الرياضة"}},
+  {qui:"🐝", fr:"Je cours vite.", t:{en:"I run fast.", it:"Corro veloce.", es:"Corro rápido.", de:"Ich laufe schnell.", pt:"Corro depressa.", nl:"Ik ren snel.", pl:"Biegnę szybko", ru:"Я бегаю быстро", uk:"Я біжу швидко", cs:"Běžím rychle", zh:"我跑得快", ja:"私は速く走ります", ko:"나는 빠르게 달립니다", ar:"أنا أجرى بسرعة"}},
+  {qui:"🐝", fr:"Je joue au football.", t:{en:"I play football.", it:"Gioco a calcio.", es:"Juego al fútbol.", de:"Ich spiele Fußball.", pt:"Jogo futebol.", nl:"Ik speel voetbal.", pl:"Gram w piłkę nożną", ru:"Я играю в футбол", uk:"Я граю у футбол", cs:"Hraji fotbal", zh:"我踢足球", ja:"私はサッカーをします", ko:"나는 축구를 합니다", ar:"أنا ألعب كرة القدم"}},
+  {qui:"🐝", fr:"Le ballon est rond.", t:{en:"The ball is round.", it:"La palla è rotonda.", es:"La pelota es redonda.", de:"Der Ball ist rund.", pt:"A bola é redonda.", nl:"De bal is rond.", pl:"Piłka jest okrągła", ru:"Мяч круглый", uk:"М'яч круглий", cs:"Míč je kulatý", zh:"球是圆的", ja:"ボールは丸いです", ko:"공은 둥근 모양입니다", ar:"الكرة مستديرة"}},
+  {qui:"🐝", fr:"Le sport, c'est super !", t:{en:"Sport is great!", it:"Lo sport è fantastico!", es:"¡El deporte es genial!", de:"Sport ist toll!", pt:"O desporto é ótimo!", nl:"Sport is geweldig!", pl:"Sport to super!", ru:"Спорт - это здорово!", uk:"Спорт - це супер!", cs:"Sport je super!", zh:"运动真棒！", ja:"スポーツはすごいです！", ko:"운동은 최고입니다！", ar:"الرياضة رائعة！"}}],
   quiz:[
   {q:"Bee court…", opts:["Vite","Lentement","Jamais"], ok:0},
   {q:"Bee joue au…", opts:["Tennis","Football","Basket"], ok:1},
