@@ -16,6 +16,7 @@
 import fs from 'fs';
 import vm from 'vm';
 import path from 'path';
+import crypto from 'crypto';
 
 const ROOT = path.resolve(process.argv.find((a, i) => i >= 2 && !a.startsWith('--')) || 'lingua');
 const DATA = path.join(ROOT, 'data.js');
@@ -104,7 +105,42 @@ function structCheck(ctx) {
       }));
     });
   }
-  return { errs, counts: { terms: terms.size, lex: base.length, stories: STORIES.length, phrases: Object.keys(PHRASEBOOK).length, langs2: LANGS2.length, l2units } };
+  /* 6) VERBES_FR (Kevin 2026-08-11 : « exercices sur les verbes »).
+     Les séances de verbes n'entraînent QUE cette liste. Trois faux possibles, tous bloqués ici :
+       (a) un mot qui n'est PAS un verbe (« beurre », « lettre » — le piège d'une détection
+           automatique en -er/-ir/-re, d'où une liste explicite dans data.js) ;
+       (b) un verbe absent du programme → l'exercice ne pourrait pas être construit ;
+       (c) un verbe non traduit dans une des 14 langues → on enseignerait du vide. */
+  const { VERBES_FR = [] } = ctx;
+  if (VERBES_FR.length) {
+    const vus = new Set();
+    VERBES_FR.forEach((v) => {
+      if (vus.has(v)) errs.push('VERBES_FR « ' + v + ' » en double');
+      vus.add(v);
+      if (!terms.has(v)) errs.push('VERBES_FR « ' + v + ' » : absent du programme (exercice impossible)');
+      LANGS.forEach((lg) => { const t = LEX[lg] && LEX[lg][v]; if (typeof t !== 'string' || !t.trim()) errs.push('VERBES_FR « ' + v + ' » : ' + lg + ' manquant'); });
+      (ctx.LANGS2 || []).forEach((lg) => { const t = (ctx.LEX2 && ctx.LEX2[lg] && ctx.LEX2[lg][v]) || (LEX[lg] && LEX[lg][v]); if (typeof t !== 'string' || !t.trim()) errs.push('VERBES_FR « ' + v + ' » : ' + lg + ' manquant'); });
+    });
+    /* GARDE-BARRIÈRE (cliquet). HONNÊTETÉ : aucun contrôle automatique ne sait dire qu'un mot
+       est un verbe. Une règle « finit par -er/-ir/-re » laisse passer « beurre » et « lettre »
+       (mesuré : sabotage du 2026-08-11, « beurre » ajouté → gate VERT à tort). La vraie
+       protection n'est donc PAS une forme, c'est : la liste est humainement revue, ET toute
+       modification fait ÉCHOUER ce gate tant qu'un humain n'a pas relu et re-figé l'empreinte.
+       Re-figer volontairement : node tools/lingua/verify-truth.mjs lingua --fige-verbes */
+    const empreinte = crypto.createHash('sha256').update(VERBES_FR.slice().sort().join('|')).digest('hex').slice(0, 16);
+    const refPath = path.join(path.dirname(new URL(import.meta.url).pathname), 'verbes-baseline.json');
+    if (process.argv.includes('--fige-verbes')) {
+      fs.writeFileSync(refPath, JSON.stringify({ n: VERBES_FR.length, sha: empreinte }, null, 2) + '\n');
+      console.log('Empreinte des verbes re-figée : ' + VERBES_FR.length + ' verbes, sha ' + empreinte);
+    } else if (fs.existsSync(refPath)) {
+      const ref = JSON.parse(fs.readFileSync(refPath, 'utf8'));
+      if (ref.sha !== empreinte) {
+        errs.push('VERBES_FR a changé (' + ref.n + ' → ' + VERBES_FR.length + ' verbes, sha ' + ref.sha + ' → ' + empreinte + ') : '
+          + 'un humain doit relire les entrées ajoutées (est-ce bien un VERBE ?), puis re-figer avec --fige-verbes');
+      }
+    } else errs.push('verbes-baseline.json manquant : lancer --fige-verbes après relecture de la liste');
+  }
+  return { errs, counts: { terms: terms.size, lex: base.length, stories: STORIES.length, phrases: Object.keys(PHRASEBOOK).length, langs2: LANGS2.length, l2units, verbes: VERBES_FR.length } };
 }
 
 /* ---------------- SECOND AVIS INDÉPENDANT (IA) — audit, n'édite pas ---------------- */
@@ -283,7 +319,7 @@ async function words2Audit(ctx) {
   const ctx = load();
   if (mode === 'struct') {
     const { errs, counts } = structCheck(ctx);
-    console.log('VÉRITÉ (structure) — ' + counts.terms + ' mots, ' + counts.lex + ' entrées LEX ×6, ' + counts.stories + ' histoires, ' + counts.phrases + ' phrases' + (counts.langs2 ? ', +' + counts.langs2 + ' nouvelles langues (' + counts.l2units + ' unités démarrage, 0 repli fr)' : '') + '.');
+    console.log('VÉRITÉ (structure) — ' + counts.terms + ' mots, ' + counts.lex + ' entrées LEX ×6, ' + counts.stories + ' histoires, ' + counts.phrases + ' phrases' + (counts.langs2 ? ', +' + counts.langs2 + ' nouvelles langues (' + counts.l2units + ' unités démarrage, 0 repli fr)' : '') + (counts.verbes ? ', ' + counts.verbes + ' verbes vérifiés ×14 langues' : '') + '.');
     if (errs.length) { console.log('FAUX STRUCTUREL (' + errs.length + ') :\n - ' + errs.slice(0, 40).join('\n - ')); process.exit(1); }
     console.log('OK : aucun faux structurel — 6 langues partout, quiz dans les bornes, 0 doublon.');
     process.exit(0);

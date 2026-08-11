@@ -3,8 +3,8 @@
    en ligne (plus jamais bloqué sur une ancienne page « collée » en mémoire), et on
    garde une copie en cache pour marcher hors-ligne. Aligné sur la règle « MAJ auto
    forcée toujours » : une nouvelle version publiée s'affiche dès la prochaine ouverture. */
-var CACHE = "lingua-v2.110.0";
-var ASSETS = ["./","./index.html","./app.js","./data.js","./manifest.webmanifest","./icon.svg","./bee/wave.webp","./bee/party.webp","./bee/read.webp","./bee/point.webp","./bee/rig/base.webp","./bee/rig/wing-l.webp","./bee/rig/wing-r.webp","./bee/rig/arm.webp","./donkey/wave.webp","./donkey/party.webp","./donkey/read.webp","./donkey/point.webp","./donkey/rig/base.webp"];
+var CACHE = "lingua-v2.111.0";
+var ASSETS = ["./","./index.html","./app.js","./data.js","./manifest.webmanifest","./icon.svg","./bee/wave.webp","./bee/party.webp","./bee/read.webp","./bee/point.webp","./bee/rig/base.webp","./bee/rig/wing-l.webp","./bee/rig/wing-r.webp","./donkey/wave.webp","./donkey/party.webp","./donkey/read.webp","./donkey/point.webp","./donkey/rig/base.webp"];
 
 self.addEventListener("install", function(e){
   self.skipWaiting();
