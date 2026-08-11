@@ -35,8 +35,11 @@ jobs:
           if [ -z "${OPENAI_KEY:-}" ]; then echo "::error::OPEN_AI_API_KEY absente"; exit 1; fi
           mkdir -p /tmp/out
 
-          STYLE="Children's app mascot illustration, thick dark outlines, flat vector cel shading, very large round sparkling eyes with white highlights and long eyelashes, rosy blush cheeks, friendly wide open smile, soft rounded chibi proportions, plain cream-white background, soft shadow ellipse under the feet, square composition, no text, no watermark."
-          WHO="A cute cartoon DONKEY: warm grey fur, light cream muzzle, two long upright ears with soft pink inner ears, a short dark mane tuft on top of the head, small dark hooves."
+          # Le 1er âne était juste : mais PLAT et terne à côté de Bee (Kevin : « c'est pas beau »).
+          # On copie donc le style EXACT de Bee : ombré doux en dégradé, gros yeux brillants avec
+          # plusieurs reflets et longs cils, couleurs chaudes, rond crème en fond, traits fins.
+          STYLE="Adorable children's app mascot illustration in the SAME art style as a friendly cartoon bee mascot: SOFT AIRBRUSHED GRADIENT SHADING (not flat vector), thin warm brown outlines (not thick harsh black), very large glossy sparkling eyes with two or three white highlights and long curved eyelashes, warm rosy blush cheeks, joyful wide open smile showing a small tongue, chibi proportions with a big head, gentle rim light, soft round cream-coloured vignette background circle, soft shadow under the feet, square composition, warm cosy palette, no text, no watermark, no border."
+          WHO="A very cute cartoon BABY DONKEY: soft warm caramel-taupe fur with lighter golden highlights, creamy beige muzzle and belly, two long upright ears with soft pink inner ears, a fluffy chocolate mane tuft on top of the head, a tiny golden honey-drop pendant on a thin collar, small dark hooves, fluffy tail tip."
 
           # 1) SOURCE : l'âne de référence, bras le long du corps (sert aussi de rig/base).
           echo "== source (rig/base) =="
@@ -52,7 +55,7 @@ jobs:
           echo "  source OK ($(wc -c < /tmp/out/donkey-src.png) octets)"
 
           # 2) POSES : dérivées de la source → même personnage exactement.
-          KEEP="Keep the EXACT same character design: same donkey face, same big sparkling eyes, same blush cheeks, same long ears with pink inside, same mane tuft, same grey fur and cream muzzle, same colors, same cartoon style, same plain cream background, same centering and same head position."
+          KEEP="Keep the EXACT same character design: same donkey face, same big glossy sparkling eyes with highlights and eyelashes, same blush cheeks, same long ears with pink inside, same mane tuft, same warm caramel fur and creamy muzzle, same golden pendant, same soft gradient shading, same thin warm outlines, same round cream vignette background, same centering and same head position."
           gen_edit () {
             NAME="$1"; ACTION="$2"
             echo "== $NAME =="

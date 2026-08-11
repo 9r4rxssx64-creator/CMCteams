@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.105.2";
+var APP_VER="v2.106.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -140,13 +140,16 @@ var SYNC_BASE="https://lingua.kd-mc.com/__lingua";
    UN SEUL point de verite : dossier d'images, emoji, prenom, couleur de paupiere. Tout le
    reste de l'app passe par MASC()/MEMO()/MNAME() — plus aucun chemin « bee/ » en dur. */
 var MASCOTS=[
-  {id:"bee",    dir:"bee",    emoji:"\ud83d\udc1d", nom:"Bee",      titre:"Bee l'abeille",  lid:"rgb(253,225,87)"},
-  {id:"donkey", dir:"donkey", emoji:"\ud83e\udecf", nom:"Bourrico", titre:"Bourrico l'\u00e2ne", lid:"#cfc6bd"}
+  {id:"bee",    dir:"bee",    emoji:"\ud83d\udc1d", nom:"Bee",       titre:"Bee l'abeille",       lid:"rgb(253,225,87)", gen:"f"},
+  {id:"donkey", dir:"donkey", emoji:"\ud83e\udecf", nom:"Bourricot", titre:"Bourricot l'\u00e2ne", lid:"#cfc6bd",         gen:"m"}
 ];
 function mascotCfg(){ var id=S.mascot||"bee"; for(var i=0;i<MASCOTS.length;i++){ if(MASCOTS[i].id===id) return MASCOTS[i]; } return MASCOTS[0]; }
 function MASC(){ return mascotCfg().dir; }      /* dossier des images */
 function MEMO(){ return mascotCfg().emoji; }    /* emoji affiche */
 function MNAME(){ return mascotCfg().nom; }     /* prenom affiche */
+/* Accord en genre : Bee est une abeille (feminin), Bourricot un ane (masculin).
+   Sans ca on lit \u00ab Bourricot est fiere de toi \u00bb \u2014 faux et moche. */
+function MG(f,m){ return mascotCfg().gen==="m" ? m : f; }
 function setMascot(id){ S.mascot=id; save(); vibrate(10); toast(mascotCfg().emoji+" "+mascotCfg().titre+" est ta mascotte !"); render(); }
 var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot"];
 var _cloudState="";        // "ok" | "off" | ""
@@ -1209,7 +1212,7 @@ function beeLine(){ try{
   if(VIEW==="translate") return "Dis-moi un mot ou une phrase, je te la traduis dans mes 6 langues !";
   if(VIEW==="league"){ var rows=leagueRows(),p=0; for(var i=0;i<rows.length;i++){ if(rows[i].you){p=i+1;break;} }
     return p===1?"Tu es PREMIER ! 🏆 On garde la couronne ?":("Tu es "+p+"ᵉ ! Quelques leçons et on double tout le monde 😼"); }
-  if(VIEW==="profile") return "Niveau "+diffLabel()+" · "+masteredCount()+" mots appris. Je suis fière de toi !";
+  if(VIEW==="profile") return "Niveau "+diffLabel()+" · "+masteredCount()+" mots appris. Je suis "+MG("fière","fier")+" de toi !";
   return "Bzzz ! On apprend quelque chose ?"; }catch(_){ return "Bzzz !"; } }
 function beeBubble(text,ms){ try{ var old=document.querySelector(".bee-bubble"); if(old)old.remove();
   var b=document.createElement("div"); b.className="bee-bubble"; b.textContent=text;
@@ -1263,10 +1266,54 @@ function beeCompanion(){ var w=el("div","bee-companion");
   },600); }
   return w; }
 /* Bee PARLE vraiment (voix langue cible) + s'anime pendant qu'il parle (mise en scène). */
-function coachSpeak(text){ if(!text) return; speakLang(text,coachTtsLang(),BEE_VOICE,true); /* voix selon le niveau : débutant = français (la réponse est surtout en français), avancé = langue cible */
-  var m=document.querySelector(".coach-mascot"); if(m){ m.classList.add("talking"); var dur=Math.min(6500, 900+String(text).length*65); setTimeout(function(){ try{m.classList.remove("talking");}catch(_){}}, dur); } }
+/* ===== Le coach PARLE en gros plan : bouche animée + texte qui défile sur le SON RÉEL =====
+   Kevin (2026-08-11) : « dans coach je veux avoir bee ou bourricot en gros plan et parle de la
+   bouche, dis le texte ». Même mécanique que le mode discussion, mais directement dans l'onglet. */
+var _coachSubIv=null, _coachTalkT=null;
+/* Le visage VIT même quand il se tait : clignements à intervalles naturels.
+   (Pas de vol/danse ici : le cadre est rond et serré, un grand déplacement sortirait du cadre.) */
+function coachFaceLife(face){ (function blink(){ if(!document.contains(face))return;
+  face.classList.add("blink"); setTimeout(function(){ try{face.classList.remove("blink");}catch(_){} },150);
+  setTimeout(blink, 2400+Math.random()*3400); })(); }
+function coachStopFace(){ if(_coachSubIv){clearInterval(_coachSubIv);_coachSubIv=null;}
+  if(_coachTalkT){clearTimeout(_coachTalkT);_coachTalkT=null;}
+  var f=document.querySelector(".coach-face"); if(f){ f.classList.remove("talk");
+    var mo=f.querySelector(".disc-mouth"); if(mo)mo.classList.remove("talking"); } }
+function coachSpeak(text){ if(!text) return;
+  var prevAudio=_ttsAudio;
+  speakLang(text,coachTtsLang(),BEE_VOICE,true); /* voix selon le niveau : débutant = français (la réponse est surtout en français), avancé = langue cible */
+  var myReq=_ttsReq;
+  var face=document.querySelector(".coach-face"), mouth=face&&face.querySelector(".disc-mouth");
+  var sub=document.querySelector(".coach-sub");
+  var words=String(text).split(/\s+/).filter(Boolean);
+  var est=Math.min(9000, 900+String(text).length*62);
+  coachStopFace();
+  function stop(){ if(myReq!==_ttsReq)return; coachStopFace(); if(sub)sub.textContent=text; }
+  function start(dur,audio){ if(myReq!==_ttsReq)return;
+    if(mouth)mouth.classList.add("talking"); if(face)face.classList.add("talk");
+    if(sub){ sub.textContent=""; var shown=0;
+      _coachSubIv=setInterval(function(){
+        if(myReq!==_ttsReq||!document.contains(sub)){ clearInterval(_coachSubIv); _coachSubIv=null; return; }
+        var n=shown+1;
+        if(audio&&audio.duration>0) n=Math.round((audio.currentTime/audio.duration)*words.length);
+        n=Math.max(shown, Math.min(words.length, n));
+        while(shown<n){ sub.textContent+=(shown?" ":"")+words[shown++]; }
+        if(shown>=words.length||(audio&&audio.ended)){ clearInterval(_coachSubIv); _coachSubIv=null; }
+      }, audio?120:Math.max(110, Math.min(320, est/Math.max(1,words.length)))); }
+    _coachTalkT=setTimeout(stop, dur+400); }
+  /* Son cloud : on cale la bouche et le texte sur la vraie durée. Sinon (voix du téléphone ou
+     son coupé) : estimation — le texte s'affiche quand même, jamais d'écran muet. */
+  var a=(_ttsAudio&&_ttsAudio!==prevAudio)?_ttsAudio:null;
+  if(a&&S.sound){ var started=false;
+    a.addEventListener("playing",function(){ if(started)return; started=true;
+      start((a.duration>0?Math.round(a.duration*1000):est), a); },{once:true});
+    a.addEventListener("ended",function(){ stop(); },{once:true});
+    setTimeout(function(){ if(!started) start(est,null); },1300);
+  } else start(est,null); }
+function _cap(t){ t=String(t||""); return t.charAt(0).toUpperCase()+t.slice(1); }
 function coachGreeting(c){ var me=accMeta(ACC)||{}; var n=me.name||"toi"; var hi=(DICT["salut"]&&DICT["salut"][c.id])||"Salut";
-  return hi+" "+n+" ! '+MEMO()+' Moi c'est '+MNAME()+', ton amie coach de "+c.nom.toLowerCase()+". On peut discuter de TOUT ce que tu veux — ton week-end, un film, ton travail, un voyage, une idée… Je te suis, je te réponds pour de vrai et je te corrige en douceur. De quoi as-tu envie de parler ?"; }
+  var lg=c.nom.toLowerCase(); var de=/^[aeiouyâàéèêîïôûü]/.test(lg)?"d'":"de ";  /* « coach d'anglais », pas « coach de anglais » */
+  return _cap(hi)+" "+n+" ! "+MEMO()+" Moi c'est "+MNAME()+", "+MG("ton amie coach","ton ami coach")+" "+de+lg+". On peut discuter de TOUT ce que tu veux — ton week-end, un film, ton travail, un voyage, une idée… Je te suis, je te réponds pour de vrai et je te corrige en douceur. De quoi as-tu envie de parler ?"; }
 function coachSuggestions(c){ var hello=(DICT["comment ça va"]&&DICT["comment ça va"][c.id])||"Bonjour";
   return ["Parle-moi de ta journée 🌤️", "J'ai vu un film hier 🎬", "Raconte-moi une blague 😄", hello, "Apprends-moi 3 mots utiles", "Corrige ma phrase (j'écris ensuite)"]; }
 function coachOffline(){ return "Je ne peux pas discuter à l'instant (coach momentanément indisponible). En attendant, fais une leçon 🧠 — je garde en mémoire où tu en es et on reprend juste après !"; }
@@ -1331,11 +1378,22 @@ function vCoach(){ var d=el("div","screen coach");
     SCENES.forEach(function(sn){ var b=el("button","scene-card"); b.innerHTML='<span class="sic">'+sn.ic+'</span><b>'+esc(sn.nom)+'</b><i>'+esc(sn.desc)+'</i>';
       b.onclick=function(){ sceneStart(sn.id); }; sr.appendChild(b); });
     d.appendChild(sr); }
-  var mas=el("div","coach-mascot"); mas.innerHTML=MASCOT(_coachThinking?"read":(_coachPose||"wave"),132);
-  var mimg=mas.querySelector(".bee-img"); if(mimg&&!S.coachMsgs.length)mimg.classList.add("pop");
+  /* GROS PLAN qui parle : la vraie tête de la mascotte, yeux qui clignent, bouche qui articule. */
+  var mas=el("div","coach-mascot");
+  /* .rig-zoom cadre la TÊTE : il zoome l'image ET les paupières/bouche ENSEMBLE, donc les
+     repères en % restent alignés (les zoomer séparément les décalerait). */
+  mas.innerHTML='<div class="coach-face bee-rig'+(_coachThinking?" think":"")+'" data-mascot="'+mascotCfg().id+'">'+
+    '<div class="rig-zoom">'+beeRigHTML()+'<div class="disc-mouth"></div></div></div>';
   d.appendChild(mas);
+  var lastBot=""; for(var _i=S.coachMsgs.length-1;_i>=0;_i--){ if(S.coachMsgs[_i].role==="bot"){ lastBot=S.coachMsgs[_i].text; break; } }
+  var sub=el("div","coach-sub"); sub.textContent=_coachThinking?"…":(lastBot||coachGreeting(c));
+  d.appendChild(sub);
+  /* Toucher le visage = réécouter la dernière réplique (cible 44px garantie par le CSS). */
+  var faceEl=mas.querySelector(".coach-face");
+  faceEl.onclick=function(){ var t=lastBot||coachGreeting(c); vibrate(8); coachSpeak(t); };
+  setTimeout(function(){ if(document.contains(faceEl)) coachFaceLife(faceEl); },120);
   var box=el("div","coach-box");
-  if(!S.coachMsgs.length){ var intro=el("div","coach-msg bot"); intro.innerHTML='<div class="cm-av">'+MASCOT("wave",46)+'</div>'; var it=el("div","cm-txt"); it.textContent=coachGreeting(c); intro.appendChild(it); box.appendChild(intro); }
+  /* Pas de doublon : le bonjour est DÉJÀ dit en gros sous le visage (.coach-sub). */
   S.coachMsgs.slice(-40).forEach(function(m){
     if(m.role==="sys"){ var sysd=el("div","coach-sys"); sysd.textContent=m.text; box.appendChild(sysd); return; }
     var row=el("div","coach-msg "+(m.role==="user"?"user":"bot"));
@@ -1883,7 +1941,7 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
   d.appendChild(body);
   var foot=el("div","lesson-foot"+(L.answered?(L.ok?" ok":" ko"):""));
   if(L.answered){ var fb=el("div","feedback");
-    var PRAISE=["✅ Super !","✅ Bien joué !","✅ Bzzz… parfait ! 🐝","✅ Exact !","✅ "+MNAME()+" est fière de toi !","✅ Impeccable !"];
+    var PRAISE=["✅ Super !","✅ Bien joué !","✅ "+MEMO()+" Parfait !","✅ Exact !","✅ "+MNAME()+" est "+MG("fière","fier")+" de toi !","✅ Impeccable !"];
     var CONSOLE_=["❌ Pas tout à fait. La bonne réponse :","❌ Pas grave, on retient :","❌ "+MNAME()+" te souffle la réponse :"];
     fb.innerHTML=L.ok?('<b>'+PRAISE[(L.i+L.correct)%PRAISE.length]+'</b>'+(L.combo>=3?' <span class="cb">🔥 combo x'+L.combo+' (+1 XP)</span>':'')):('<b>'+CONSOLE_[L.i%CONSOLE_.length]+'</b> '+esc(L._sol||""));
     if(!L.ok){ /* EXPLICATION quand on se trompe : le sens, ce que voulait dire TA réponse, un exemple */
@@ -2033,7 +2091,7 @@ function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); retu
     var cr=document.querySelector(".bee-companion .bee-rig"); if(cr)beeMove(cr, L.wrong===0?"dance":"jump", 3200); },200);
   /* L'annonce PARLÉE attend 1,2 s : elle ne coupe plus l'audio du dernier mot appris */
   setTimeout(function(){ var me=accMeta(ACC)||{};
-    speakLang((L.wrong===0?("Sans faute "+(me.name||"")+" ! Je suis trop fière de toi ! Plus "+xp+" points !")
+    speakLang((L.wrong===0?("Sans faute "+(me.name||"")+" ! Je suis trop "+MG("fière","fier")+" de toi ! Plus "+xp+" points !")
       :("Leçon terminée ! Plus "+xp+" points. On continue ?"))
       +(lvUp?(" Et tu passes au palier "+lvUp.code+", félicitations !"):""),"fr-FR",BEE_VOICE,true); },1200);
 }
