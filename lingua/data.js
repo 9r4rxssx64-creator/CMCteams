@@ -5132,11 +5132,11 @@ var STORIES=[
   {q:"Le ciel est…", opts:["Vert","Bleu","Jaune"], ok:1},
   {q:"L'herbe est…", opts:["Rouge","Verte","Noire"], ok:1}]},
  {id:"anniv", ic:"🎂", titre:"L'anniversaire", lignes:[
-  {qui:"🐝", fr:"C'est mon anniversaire !", t:{en:"It is my birthday!", it:"È il mio compleanno!", es:"¡Es mi cumpleaños!", de:"Es ist mein Geburtstag!", pt:"É o meu aniversário!", nl:"Het is mijn verjaardag!"}},
-  {qui:"👪", fr:"Joyeux anniversaire !", t:{en:"Happy birthday!", it:"Buon compleanno!", es:"¡Feliz cumpleaños!", de:"Alles Gute zum Geburtstag!", pt:"Feliz aniversário!", nl:"Fijne verjaardag!"}},
-  {qui:"🐝", fr:"Il y a un gâteau.", t:{en:"There is a cake.", it:"C'è una torta.", es:"Hay un pastel.", de:"Es gibt einen Kuchen.", pt:"Há um bolo.", nl:"Er is een taart."}},
-  {qui:"🐝", fr:"J'ai sept ans.", t:{en:"I am seven years old.", it:"Ho sette anni.", es:"Tengo siete años.", de:"Ich bin sieben Jahre alt.", pt:"Tenho sete anos.", nl:"Ik ben zeven jaar."}},
-  {qui:"🐝", fr:"Merci ! Je suis contente !", t:{en:"Thank you! I am happy!", it:"Grazie! Sono contenta!", es:"¡Gracias! ¡Estoy contenta!", de:"Danke! Ich bin glücklich!", pt:"Obrigada! Estou feliz!", nl:"Dank je! Ik ben blij!"}}],
+  {qui:"🐝", fr:"C'est mon anniversaire !", t:{en:"It is my birthday!", it:"È il mio compleanno!", es:"¡Es mi cumpleaños!", de:"Es ist mein Geburtstag!", pt:"É o meu aniversário!", nl:"Het is mijn verjaardag!", pl:"To są moje urodziny!", ru:"Это мой день рождения!", uk:"Це мій день народження!", cs:"Je to moje narozeniny!", zh:"今天是我的生日！", ja:"今日は私の誕生日です！", ko:"오늘은 제 생일이에요!", ar:"إنه عيد ميلادي!"}},
+  {qui:"👪", fr:"Joyeux anniversaire !", t:{en:"Happy birthday!", it:"Buon compleanno!", es:"¡Feliz cumpleaños!", de:"Alles Gute zum Geburtstag!", pt:"Feliz aniversário!", nl:"Fijne verjaardag!", pl:"Wszystkiego najlepszego z okazji urodzin!", ru:"С днём рождения!", uk:"З днем народження!", cs:"Všechno nejlepší k narozeninám!", zh:"生日快乐！", ja:"お誕生日おめでとう！", ko:"생일 축하해요!", ar:"عيد ميلاد سعيد!"}},
+  {qui:"🐝", fr:"Il y a un gâteau.", t:{en:"There is a cake.", it:"C'è una torta.", es:"Hay un pastel.", de:"Es gibt einen Kuchen.", pt:"Há um bolo.", nl:"Er is een taart.", pl:"Jest tam tort.", ru:"Там есть торт.", uk:"Там є торт.", cs:"Je tam dort.", zh:"那里有一个蛋糕。", ja:"ケーキがあります。", ko:"케이크가 있어요.", ar:"هناك كعكة."}},
+  {qui:"🐝", fr:"J'ai sept ans.", t:{en:"I am seven years old.", it:"Ho sette anni.", es:"Tengo siete años.", de:"Ich bin sieben Jahre alt.", pt:"Tenho sete anos.", nl:"Ik ben zeven jaar.", pl:"Mam siedem lat.", ru:"Мне семь лет.", uk:"Мені сім років.", cs:"Je mi sedm let.", zh:"我七岁了。", ja:"私は七歳です。", ko:"저는 일곱 살이에요.", ar:"أنا في السابعة من عمري."}},
+  {qui:"🐝", fr:"Merci ! Je suis contente !", t:{en:"Thank you! I am happy!", it:"Grazie! Sono contenta!", es:"¡Gracias! ¡Estoy contenta!", de:"Danke! Ich bin glücklich!", pt:"Obrigada! Estou feliz!", nl:"Dank je! Ik ben blij!", pl:"Dziękuję! Jestem szczęśliwa!", ru:"Спасибо! Я счастлива!", uk:"Дякую! Я щаслива!", cs:"Děkuji! Jsem šťastná!", zh:"谢谢！我很开心！", ja:"ありがとう！うれしいです！", ko:"감사합니다! 기뻐요!", ar:"شكراً! أنا سعيدة!"}}],
   quiz:[
   {q:"C'est…", opts:["Le matin","L'anniversaire de Bee","Noël"], ok:1},
   {q:"Il y a un…", opts:["Gâteau","Chat","Livre"], ok:0},
