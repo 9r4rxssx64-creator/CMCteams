@@ -5192,11 +5192,11 @@ var STORIES=[
   {q:"Le sable est…", opts:["Froid","Chaud","Bleu"], ok:1},
   {q:"Bee… dans la mer.", opts:["Dort","Nage","Mange"], ok:1}]},
  {id:"matin", ic:"☀️", titre:"Le matin", lignes:[
-  {qui:"🐝", fr:"C'est le matin.", t:{en:"It is the morning.", it:"È mattina.", es:"Es la mañana.", de:"Es ist Morgen.", pt:"É de manhã.", nl:"Het is ochtend."}},
-  {qui:"🐝", fr:"Je me lève.", t:{en:"I get up.", it:"Mi alzo.", es:"Me levanto.", de:"Ich stehe auf.", pt:"Levanto-me.", nl:"Ik sta op."}},
-  {qui:"🐝", fr:"Je bois du lait.", t:{en:"I drink milk.", it:"Bevo il latte.", es:"Bebo leche.", de:"Ich trinke Milch.", pt:"Bebo leite.", nl:"Ik drink melk."}},
-  {qui:"🐝", fr:"Je mange du pain.", t:{en:"I eat bread.", it:"Mangio il pane.", es:"Como pan.", de:"Ich esse Brot.", pt:"Como pão.", nl:"Ik eet brood."}},
-  {qui:"🐝", fr:"Bonne journée !", t:{en:"Have a good day!", it:"Buona giornata!", es:"¡Buen día!", de:"Einen schönen Tag!", pt:"Bom dia!", nl:"Fijne dag!"}}],
+  {qui:"🐝", fr:"C'est le matin.", t:{en:"It is the morning.", it:"È mattina.", es:"Es la mañana.", de:"Es ist Morgen.", pt:"É de manhã.", nl:"Het is ochtend.", pl:"To jest rano.", ru:"Это утро.", uk:"Це ранок.", cs:"Je ráno.", zh:"这是早晨。", ja:"これは朝です。", ko:"이것은 아침입니다.", ar:"هذا الصباح؟"}},
+  {qui:"🐝", fr:"Je me lève.", t:{en:"I get up.", it:"Mi alzo.", es:"Me levanto.", de:"Ich stehe auf.", pt:"Levanto-me.", nl:"Ik sta op.", pl:"Wstaję.", ru:"Я встаю.", uk:"Я встаю.", cs:"Vstávám.", zh:"我起床了。", ja:"私は起きます。", ko:"나는 일어납니다.", ar:"أنا أقوم؟"}},
+  {qui:"🐝", fr:"Je bois du lait.", t:{en:"I drink milk.", it:"Bevo il latte.", es:"Bebo leche.", de:"Ich trinke Milch.", pt:"Bebo leite.", nl:"Ik drink melk.", pl:"Piję mleko.", ru:"Я пью молоко.", uk:"Я п'ю молоко.", cs:"Piji mléko.", zh:"我喝牛奶。", ja:"私は牛乳を飲みます。", ko:"나는 우유를 마십니다.", ar:"أنا أشرب الحليب؟"}},
+  {qui:"🐝", fr:"Je mange du pain.", t:{en:"I eat bread.", it:"Mangio il pane.", es:"Como pan.", de:"Ich esse Brot.", pt:"Como pão.", nl:"Ik eet brood.", pl:"Jem chleb.", ru:"Я ем хлеб.", uk:"Я їм хліб.", cs:"Jím chleba.", zh:"我吃面包。", ja:"私はパンを食べます。", ko:"나는 빵을 먹습니다.", ar:"أنا آكل الخبز؟"}},
+  {qui:"🐝", fr:"Bonne journée !", t:{en:"Have a good day!", it:"Buona giornata!", es:"¡Buen día!", de:"Einen schönen Tag!", pt:"Bom dia!", nl:"Fijne dag!", pl:"Życzę dobrego dnia!", ru:"Желаю хорошего дня!", uk:"Бажаю добого дня!", cs:"Přeji hezký den!", zh:"祝你有美好的一天！", ja:"良い一日を！", ko:"좋은 하루 보내세요!", ar:"أتمنى لك يوماً جميلاً؟"}}],
   quiz:[
   {q:"C'est le…", opts:["Matin","Soir","Nuit"], ok:0},
   {q:"Bee boit du…", opts:["Café","Lait","Thé"], ok:1},
