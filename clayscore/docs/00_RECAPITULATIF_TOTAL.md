@@ -85,6 +85,9 @@ ClayScore_Dossier_Complet/
 │   ├── SPEC_TECHNIQUE.md        ← le cahier des charges du logiciel (texte d'origine)
 │   ├── JOURNAL_PROJET.md        ← tout ce qui a été fait, y compris les bugs corrigés
 │   ├── GLOSSAIRE.md             ← tous les mots expliqués (ball-trap, technique, business)
+│   ├── GUIDE_MATERIEL.md        ← CHAQUE pièce : rôle, quoi prendre, liens d'achat, pièges
+│   ├── GUIDE_MONTAGE.md         ← assembler les pods, câbler, placer sur le stand, régler
+│   ├── CHECKLIST_PROTOTYPE.md   ← la marche à suivre pas à pas, de la commande à la démo
 │   ├── DOSSIER_BUSINESS.md      ← stratégie, cadre Monaco, statut
 │   ├── BUDGET_BOM.md            ← liste d'achat détaillée + marges
 │   ├── DOSSIER_VIDEO.md         ← script + storyboard de la vidéo de démo
@@ -162,9 +165,10 @@ un professionnel.)*
 |---|---|---|
 | **1** | **Filmer de vraies casses** (même au téléphone) | C'est le **seul** moyen de savoir si la précision tient hors simulation. Ça ne coûte rien. |
 | **2** | Faire valider les **3 points bloquants** ci-dessus | Avant toute dépense |
-| **3** | Commander le matériel (BUDGET_BOM prêt) | Prototype |
-| **4** | Tourner la **vraie vidéo** (script prêt) | C'est elle qui vend |
-| **5** | Contacter Laporte / clubs / MonacoTech (emails prêts) | Avec la vidéo en main |
+| **3** | Commander le matériel — **`CHECKLIST_PROTOTYPE`** donne l'ordre exact, **`GUIDE_MATERIEL`** les liens d'achat | Prototype |
+| **4** | Assembler et installer — **`GUIDE_MONTAGE`** | Premier essai terrain |
+| **5** | Tourner la **vraie vidéo** (script prêt) | C'est elle qui vend |
+| **6** | Contacter Laporte / clubs / MonacoTech (emails prêts) | Avec la vidéo en main |
 
 ---
 
