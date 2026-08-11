@@ -189,7 +189,9 @@ def pre_competition_check(*, mode: str, pin_actif: bool, cameras_isolees: bool,
                           alimentation_ok: bool, autonomie_h: Optional[float],
                           disque_libre_mo: float, journal_ok: bool,
                           horloge_synchro: bool,
-                          duree_epreuve_h: float = 8.0) -> PreCompetitionReport:
+                          duree_epreuve_h: float = 8.0,
+                          couleur_ok: Optional[bool] = None
+                          ) -> PreCompetitionReport:
     """GO / NO-GO avant une épreuve. Un seul rouge = on ne démarre pas.
 
     Volontairement sévère : en compétition, un défaut découvert au 20ᵉ plateau
@@ -218,6 +220,20 @@ def pre_competition_check(*, mode: str, pin_actif: bool, cameras_isolees: bool,
         CheckItem("disque", "Place disque suffisante (≥ 2 Go)",
                   disque_libre_mo >= 2000,
                   solution="Lancer l'entretien, ou libérer de la place."),
+        # Mesuré : un flux sans couleur fait tomber le banc de 27/27 à 9/27,
+        # et il se trompe AVEC CONFIANCE (0,72) — donc sans jamais demander
+        # d'arbitrage. C'est le défaut le plus coûteux : il ne se voit pas.
+        #
+        # `couleur_ok is None` = AUCUNE image n'a encore été analysée. On ne
+        # coche pas un contrôle qu'on n'a pas fait : l'item reste rouge, mais
+        # non bloquant, avec le geste qui le lève (lancer un plateau d'essai).
+        CheckItem("couleur", "Caméras en couleur (le plateau est reconnu à son orange)",
+                  couleur_ok is True,
+                  bloquant=couleur_ok is False,
+                  solution=("Lancer un plateau d'essai : la couleur se vérifie "
+                            "sur une vraie image." if couleur_ok is None else
+                            "Caméra monochrome ou saturation à zéro : mettre une "
+                            "caméra COULEUR, ou remonter la saturation.")),
         CheckItem("journal", "Journal officiel intègre",
                   bool(journal_ok),
                   solution="Journal altéré : ouvrir un nouveau journal et prévenir le jury."),

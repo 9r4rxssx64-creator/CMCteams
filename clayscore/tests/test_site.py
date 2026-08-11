@@ -238,3 +238,32 @@ def test_to_dict_expose_tout_ce_qu_il_faut_a_l_ecran():
 
 def test_le_catalogue_des_retours_reste_ordonne():
     assert RETOUR_CAMERA["aucun"] < RETOUR_CAMERA["apercu"] < RETOUR_CAMERA["hd"]
+
+
+# --- provenance des prix : rien d'inventé sans source --------------------- #
+def test_chaque_prix_a_une_provenance():
+    # Le garde-fou : impossible d'ajouter un prix sans dire d'où il vient.
+    from clayscore.site import SOURCE_PRIX
+    assert set(PRIX) == set(SOURCE_PRIX)
+    for poste, source in SOURCE_PRIX.items():
+        assert len(source) > 30, f"{poste} : provenance trop vague"
+
+
+def test_les_prix_releves_sont_distingues_des_hypotheses():
+    from clayscore.site import prix_releve
+    releves = {p for p in PRIX if prix_releve(p)}
+    # Ceux-là ont une offre publique datée derrière eux.
+    assert releves == {"camera", "calculateur", "batterie_30ah",
+                       "pont_directionnel"}
+    # Les postes inventés pour le club-house n'en font PAS partie.
+    assert not any(prix_releve(p) for p in ("ecran_club", "mini_pc_club"))
+
+
+def test_le_bom_dit_quelle_part_du_total_est_reellement_relevee():
+    bom = Site([_fosse("F1"), _fosse("F2")]).bom()
+    assert bom["releves"] + bom["cibles"] == pytest.approx(bom["total"])
+    assert bom["releves"] > 0 and bom["cibles"] > 0
+    assert "devis" in bom["avertissement"]
+    for ligne in bom["lignes"]:
+        assert "source_prix" in ligne
+        assert isinstance(ligne["prix_releve"], bool)

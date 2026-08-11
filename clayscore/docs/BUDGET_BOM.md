@@ -9,7 +9,7 @@
 
 | Poste | Détail | Qté | Prix cible unit. | Total cible | Acheter |
 |---|---|---:|---:|---:|---|
-| Caméras industrielles | Hikrobot MV-CS016 (2 mono + 1 couleur, global shutter) | 3 | ~180 € | ~540 € | ▸ [Alibaba (lien direct)](https://www.alibaba.com/product-detail/HIKROBOT-MV-CS016-10GC-1-2-1601122368910.html) |
+| Caméras industrielles | Hikrobot MV-CS016 (**3 × COULEUR**, global shutter) | 3 | ~168 € | ~504 € | ▸ [Alibaba (lien direct)](https://www.alibaba.com/product-detail/HIKROBOT-MV-CS016-10GC-1-2-1601122368910.html) |
 | Objectifs | monture C, focale **8 et/ou 12 mm** | 3 | ~35 € | ~105 € | ▸ même vendeur · [recherche AliExpress](https://fr.aliexpress.com/w/wholesale-C-mount-12mm-machine-vision-lens.html) |
 | Éclairage / filtre IR 850 nm | anti contre-jour, tous temps | 1 lot | ~60 € | ~60 € | ▸ [AliExpress (lien direct)](https://fr.aliexpress.com/item/32757408525.html) |
 | Filtres optiques | passe-bande 850 nm / polarisant | 3 | ~15 € | ~45 € | ▸ même vendeur · [recherche AliExpress](https://fr.aliexpress.com/w/wholesale-850nm-bandpass-filter.html) |
@@ -34,6 +34,21 @@
 | Caisse à outils étanche | transport du hub | +25 € | ▸ [recherche Amazon](https://www.amazon.fr/s?k=caisse+%C3%A0+outils+%C3%A9tanche) |
 | **Total réaliste avec extras** | | **≈ 1 615 €** | |
 
+> 🔴 **CORRECTION 11/08/2026 — les 3 caméras doivent être COULEUR.**
+> La version précédente de ce budget prévoyait « 2 mono + 1 couleur ». C'est
+> une **erreur qui aurait cassé le produit** : le verdict repose sur la
+> reconnaissance de l'**orange** du plateau. **Mesuré** sur le banc des 27
+> scénarios : couleur **27/27**, monochrome **9/27** — et chaque « cassé »
+> devient « manqué » avec une confiance de 0,72, donc **sans jamais être
+> signalé comme ambigu**. Faux, et sûr de lui. Le logiciel refuse désormais de
+> démarrer une épreuve sur un flux sans couleur (contrôle GO/NO-GO
+> « Caméras en couleur »). Détail : `MATERIEL_OPTIMAL.md` § 2.
+>
+> 💶 **Prix révisés 11/08/2026** d'après des offres publiques réellement
+> relevées (voir `MATERIEL_OPTIMAL.md` pour la source et la date de chacune) :
+> caméra 180 → **168 €**, calculateur 280 → **216 €**, batterie 30 Ah
+> 130 → **46 €**, pont directionnel (paire) 120 → **85 €**.
+>
 > ⚠️ **Sur les liens** : les liens « **lien direct** » sont ceux fournis par
 > Kevin (dossier v4). Les liens « **recherche** » ouvrent une recherche sur le
 > site, **pas une fiche produit précise** — les pages marchandes n'ont pas pu
