@@ -229,6 +229,33 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .disc-bee.talk{animation:beeTalk .5s ease-in-out infinite}
 .disc-bee.think{filter:saturate(.75) brightness(.9)}
 /* Marionnette : couches animées découpées de SON image */
+/* .rig-look = le niveau qui PORTE l'orientation vers ton doigt. Il est séparé de .bee-rig
+   parce que .bee-rig a déjà ses propres transform (flotter, danser, sauter) et que deux
+   transform sur le même élément s'écrasent. */
+.rig-look{position:absolute;inset:0;transform:translate(var(--lx,0),var(--ly,0)) rotate(var(--lr,0deg));transition:transform .28s cubic-bezier(.22,1,.36,1)}
+/* Respiration : le corps se gonfle et se dégonfle en permanence. Discret exprès (2%) —
+   au-delà, sur un dessin plat, ça fait « image qui pompe » et non « personnage qui respire ». */
+.bee-rig.vivant .rig-base{animation:respire 3.8s ease-in-out infinite;transform-origin:50% 88%}
+@keyframes respire{0%,100%{transform:scale(1,1)}50%{transform:scale(1.018,.986)}}
+/* Réactions : elle répond à ce que tu fais et à ce qui se passe dans le jeu. */
+.bee-rig.rx-poke .rig-look{animation:rxPoke .9s cubic-bezier(.34,1.56,.64,1)}
+@keyframes rxPoke{0%{transform:scale(1,1)}22%{transform:scale(1.1,.88) translateY(3%)}55%{transform:scale(.94,1.09) translateY(-4%)}100%{transform:scale(1,1)}}
+.bee-rig.rx-joie .rig-look{animation:rxJoie 1.5s ease-in-out}
+@keyframes rxJoie{0%,100%{transform:translateY(0) rotate(0)}20%{transform:translateY(-13%) rotate(-8deg)}45%{transform:translateY(0) rotate(6deg)}70%{transform:translateY(-8%) rotate(-4deg)}}
+.bee-rig.rx-triste .rig-look{animation:rxTriste 1.6s ease-in-out}
+@keyframes rxTriste{0%,100%{transform:rotate(0) translateY(0);filter:none}35%,70%{transform:rotate(-7deg) translateY(4%);filter:saturate(.7) brightness(.94)}}
+.bee-rig.rx-reflechit .rig-look{animation:rxPense 2s ease-in-out infinite}
+@keyframes rxPense{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.bee-rig.rx-coucou .rig-look{animation:rxCoucou 1.4s ease-in-out}
+@keyframes rxCoucou{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}50%{transform:rotate(7deg)}75%{transform:rotate(-5deg)}}
+/* Elle s'endort si tu la laisses tranquille : paupières fermées, souffle lent, petit « z ». */
+.bee-rig.dort .rig-lid{opacity:1}
+.bee-rig.dort .rig-base{animation:respire 6.5s ease-in-out infinite}
+.bee-rig.dort .rig-piece{animation:none!important}
+.rig-zzz{position:absolute;left:64%;top:16%;font-size:15%;font-weight:900;color:#cfe0ee;opacity:0;pointer-events:none;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.bee-rig.dort .rig-zzz{animation:zzz 2.6s ease-out infinite}
+@keyframes zzz{0%{opacity:0;transform:translate(0,0) scale(.6)}25%{opacity:.95}100%{opacity:0;transform:translate(38%,-52%) scale(1.5)}}
+@media (prefers-reduced-motion:reduce){.rig-look,.bee-rig.vivant .rig-base,.bee-rig.dort .rig-base,.rig-zzz,.bee-rig.rx-poke .rig-look,.bee-rig.rx-joie .rig-look,.bee-rig.rx-triste .rig-look,.bee-rig.rx-reflechit .rig-look,.bee-rig.rx-coucou .rig-look{animation:none;transition:none}}
 .rig-base,.rig-piece{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 .rig-wl{transform-origin:34% 46%;animation:wingFlapL 1.15s ease-in-out infinite}
 .rig-wr{transform-origin:66% 44%;animation:wingFlapR 1.15s ease-in-out infinite}
@@ -387,6 +414,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .lesson-body{flex:1;padding:14px 16px}
 .ex-h{display:flex;align-items:flex-end;gap:10px;margin-bottom:18px}
 .ex-h .mascot{width:84px;height:84px}
+/* En leçon : la mascotte vivante, en gros plan rond (elle remplace l'image figée). */
+.ex-face{position:relative;width:88px;height:88px;flex:0 0 88px;border-radius:50%;overflow:hidden;background:#fdf7e7;cursor:pointer;
+  box-shadow:0 0 0 3px rgba(246,183,60,.5),0 6px 16px rgba(0,0,0,.45)}
+.ex-face:active{transform:scale(.96)}
 .bubble{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 14px;font-weight:700;position:relative}
 .bubble:before{content:"";position:absolute;left:-8px;bottom:14px;border:7px solid transparent;border-right-color:var(--line)}
 .q-word{font-size:26px;font-weight:800;text-align:center;margin:18px 0 22px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}

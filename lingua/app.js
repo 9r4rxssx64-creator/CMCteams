@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.109.0";
+var APP_VER="v2.110.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1045,7 +1045,7 @@ function vPron(){ var d=el("div","screen pron"); if(!PRON){ VIEW="home"; return 
   var bar=el("div","bz-bar"); bar.innerHTML='<div class="bz-bar-fill" style="width:'+Math.round(PRON.i/PRON.list.length*100)+'%"></div>'; d.appendChild(bar);
   // 🐝 Bee en GROS PLAN : elle DIT le mot, sa bouche s'anime sur le son réel → regarde et imite
   var stage=el("div","pron-stage");
-  stage.innerHTML='<div class="pron-bee bee-rig">'+beeRigHTML()+'<div class="disc-mouth"></div></div><div class="pron-watch">👀 Regarde sa bouche, puis imite</div>';
+  stage.innerHTML='<div class="pron-bee bee-rig">'+beeRigHTML()+'</div><div class="pron-watch">👀 Regarde sa bouche, puis imite</div>';
   d.appendChild(stage);
   // mot + syllabes + audio
   var card=el("div","pron-card");
@@ -1218,15 +1218,98 @@ function beeBubble(text,ms){ try{ var old=document.querySelector(".bee-bubble");
   var b=document.createElement("div"); b.className="bee-bubble"; b.textContent=text;
   b.onclick=function(){ b.remove(); }; document.body.appendChild(b);
   setTimeout(function(){ try{ b.classList.add("bye"); setTimeout(function(){b.remove();},400); }catch(_){} }, ms||6000); }catch(_){} }
-/* Marionnette réutilisable : les couches animées découpées de SON image (ailes+bras+paupières) */
-function beeRigHTML(){ var M=MASC(); return '<img class="rig-base" src="'+M+'/rig/base.webp" alt="'+MNAME()+'">'+
-  '<img class="rig-piece rig-wl" src="'+M+'/rig/wing-l.webp" alt="" onerror="this.remove()">'+
-  '<img class="rig-piece rig-wr" src="'+M+'/rig/wing-r.webp" alt="" onerror="this.remove()">'+
-  '<img class="rig-piece rig-arm" src="'+M+'/rig/arm.webp" alt="" onerror="this.remove()">'+
-  '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'; }
+/* Marionnette réutilisable : les couches animées découpées de SON image (ailes+bras+paupières).
+   Tout est enveloppé dans .rig-look, qui porte l'orientation vers ton doigt : le conteneur
+   .bee-rig garde ses propres animations (flotte, danse, saute) — deux transform sur le même
+   élément s'écrasent l'une l'autre, d'où les deux niveaux. */
+function beeRigHTML(withMouth){ var M=MASC();
+  return '<div class="rig-look">'+
+    '<img class="rig-base" src="'+M+'/rig/base.webp" alt="'+MNAME()+'">'+
+    '<img class="rig-piece rig-wl" src="'+M+'/rig/wing-l.webp" alt="" onerror="this.remove()">'+
+    '<img class="rig-piece rig-wr" src="'+M+'/rig/wing-r.webp" alt="" onerror="this.remove()">'+
+    '<img class="rig-piece rig-arm" src="'+M+'/rig/arm.webp" alt="" onerror="this.remove()">'+
+    '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
+    (withMouth===false?'':'<div class="disc-mouth"></div>')+
+    '<div class="rig-zzz">z</div>'+
+  '</div>'; }
+/* En LEÇON aussi : la mascotte n'est plus une image figée mais la marionnette vivante,
+   en gros plan rond. Elle respire, cligne, te suit du regard, réagit quand tu la touches —
+   et surtout elle réagit à TES RÉPONSES (joie / tête basse). */
+function exFaceHTML(){ return '<div class="ex-face bee-rig" data-mascot="'+mascotCfg().id+'">'+
+  '<div class="rig-zoom">'+beeRigHTML()+'</div></div>'; }
+function exFaceAlive(root){ try{ var f=(root||document).querySelector(".ex-face");
+  if(f) mascotAlive(f,{sommeil:150000}); }catch(_){} }
+function exFaceReact(kind){ try{ var f=document.querySelector(".ex-face"); if(f) mascotReact(f,kind,1600); }catch(_){} }
 function beeMove(rig,kind,dur){ if(!rig)return; ["mv-dance","mv-jump","mv-fly","mv-walk"].forEach(function(c){rig.classList.remove(c);});
   if(!kind)return; rig.classList.add("mv-"+kind);
   setTimeout(function(){ try{rig.classList.remove("mv-"+kind);}catch(_){} }, dur||2400); }
+/* ===== ELLE EST VIVANTE ET ELLE TE RÉPOND (Kevin 2026-08-11 : « animés en entier, en
+   détail, vraie interaction, gros plan — va plus loin »).
+   Un seul point d'entrée, mascotAlive(rig), qui branche d'un coup :
+     · la respiration (le corps se gonfle et se dégonfle, en continu) ;
+     · le regard : elle s'oriente vers ton doigt / ta souris ;
+     · le toucher : tu la touches, elle réagit — et la réaction DÉPEND de l'endroit
+       (la tête = elle est contente, le ventre = elle rit, les ailes = elle s'envole) ;
+     · l'endormissement : si tu ne fais rien, elle baille puis s'endort (zzz), et se
+       réveille quand tu la touches ;
+     · les émotions du jeu : mascotReact("joie"/"triste"/"reflechit"/"coucou").
+   Tout est en CSS + quelques classes : aucun nouveau dessin, aucune image en plus. */
+var _rxLines={
+  tete:["Oh, tu me caresses la tête !","Hihi, ça chatouille !","Merci pour le câlin !"],
+  ventre:["Hé, pas le ventre, ça chatouille !","Hihihi !","Arrête, je vais rire !"],
+  aile:["Attention, je décolle !","Regarde comme je vole bien !","Zzzzip !"],
+  reveil:["Oh ! Tu es revenu !","Je faisais un petit somme…","Coucou, on reprend ?"]
+};
+function _rxSay(zone){ var L=_rxLines[zone]||_rxLines.tete; var t=L[Math.floor(Math.random()*L.length)];
+  try{ speakLang(t,"fr-FR",BEE_VOICE,mascotCfg().gen!=="m"); }catch(_){} return t; }
+function mascotReact(rig,kind,dur){ if(!rig)return;
+  ["rx-joie","rx-triste","rx-reflechit","rx-coucou","rx-poke"].forEach(function(c){rig.classList.remove(c);});
+  if(!kind)return; void rig.offsetWidth;            /* relance l'animation même si c'est la même */
+  rig.classList.add("rx-"+kind);
+  setTimeout(function(){ try{rig.classList.remove("rx-"+kind);}catch(_){} }, dur||1600); }
+function _rigZone(rig,ev){ /* où le doigt a touché, en % du personnage */
+  var r=rig.getBoundingClientRect(); var p=(ev.touches&&ev.touches[0])||ev;
+  var x=(p.clientX-r.left)/r.width*100, y=(p.clientY-r.top)/r.height*100;
+  if(x<28||x>72) return "aile";
+  return y<52 ? "tete" : "ventre"; }
+function mascotAlive(rig,opts){ if(!rig||rig._alive)return; rig._alive=true; opts=opts||{};
+  var look=rig.querySelector(".rig-look")||rig;
+  rig.classList.add("vivant");
+  var lastTouch=Date.now(), dormi=false;
+  /* — respiration + clignement naturel — */
+  (function blink(){ if(!document.contains(rig))return;
+    if(!dormi){ rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150); }
+    setTimeout(blink, dormi?9000:(2400+Math.random()*3400)); })();
+  /* — elle te suit du regard — */
+  function suivre(cx,cy){ if(dormi)return;
+    var r=rig.getBoundingClientRect(); if(!r.width)return;
+    var dx=Math.max(-1,Math.min(1,(cx-(r.left+r.width/2))/(r.width*0.9)));
+    var dy=Math.max(-1,Math.min(1,(cy-(r.top+r.height/2))/(r.height*0.9)));
+    look.style.setProperty("--lx",(dx*3.2).toFixed(2)+"%");
+    look.style.setProperty("--ly",(dy*2.2).toFixed(2)+"%");
+    look.style.setProperty("--lr",(dx*4.5).toFixed(2)+"deg"); }
+  function onMove(e){ var p=(e.touches&&e.touches[0])||e; if(p) suivre(p.clientX,p.clientY); reveille(); }
+  document.addEventListener("pointermove",onMove,{passive:true});
+  document.addEventListener("touchmove",onMove,{passive:true});
+  /* — elle s'endort si tu la laisses tranquille, et se réveille quand tu reviens — */
+  function reveille(){ lastTouch=Date.now();
+    if(dormi){ dormi=false; rig.classList.remove("dort"); mascotReact(rig,"coucou",1500); } }
+  (function veille(){ if(!document.contains(rig)){ document.removeEventListener("pointermove",onMove); document.removeEventListener("touchmove",onMove); return; }
+    if(!dormi && Date.now()-lastTouch > (opts.sommeil||75000)){ dormi=true; rig.classList.add("dort");
+      look.style.removeProperty("--lx"); look.style.removeProperty("--ly"); look.style.removeProperty("--lr"); }
+    setTimeout(veille,4000); })();
+  /* — tu la touches : réaction DIFFÉRENTE selon l'endroit — */
+  rig.style.cursor="pointer";
+  rig.addEventListener("pointerdown",function(ev){
+    var etaitEndormie=dormi; reveille();
+    var zone=_rigZone(rig,ev); vibrate(zone==="ventre"?18:10);
+    if(etaitEndormie){ _rxSay("reveil"); return; }
+    if(zone==="aile"){ beeMove(rig,"fly",2200); }
+    else { mascotReact(rig,"poke",900); beeMove(rig, zone==="ventre"?"dance":"jump", 1600); }
+    try{ beeSparkles(rig, zone==="ventre"?10:6); }catch(_){}
+    var t=_rxSay(zone); if(opts.onPoke) opts.onPoke(t,zone);
+  },{passive:true});
+}
 /* Elle VIT en permanence : clignements + micro-mouvements aléatoires, s'arrête seule si l'élément disparaît */
 function beeLifeStart(rig){
   (function blink(){ if(!document.contains(rig))return;
@@ -1383,15 +1466,18 @@ function vCoach(){ var d=el("div","screen coach");
   /* .rig-zoom cadre la TÊTE : il zoome l'image ET les paupières/bouche ENSEMBLE, donc les
      repères en % restent alignés (les zoomer séparément les décalerait). */
   mas.innerHTML='<div class="coach-face bee-rig'+(_coachThinking?" think":"")+'" data-mascot="'+mascotCfg().id+'">'+
-    '<div class="rig-zoom">'+beeRigHTML()+'<div class="disc-mouth"></div></div></div>';
+    '<div class="rig-zoom">'+beeRigHTML()+'</div></div>';
   d.appendChild(mas);
   var lastBot=""; for(var _i=S.coachMsgs.length-1;_i>=0;_i--){ if(S.coachMsgs[_i].role==="bot"){ lastBot=S.coachMsgs[_i].text; break; } }
   var sub=el("div","coach-sub"); sub.textContent=_coachThinking?"…":(lastBot||coachGreeting(c));
   d.appendChild(sub);
   /* Toucher le visage = réécouter la dernière réplique (cible 44px garantie par le CSS). */
   var faceEl=mas.querySelector(".coach-face");
-  faceEl.onclick=function(){ var t=lastBot||coachGreeting(c); vibrate(8); coachSpeak(t); };
-  setTimeout(function(){ if(document.contains(faceEl)) coachFaceLife(faceEl); },120);
+  /* Touche-la : elle réagit selon l'endroit (tête / ventre / ailes) et te répond. Le texte de
+     sa réaction s'affiche sous elle, comme ses répliques. Réécouter la dernière phrase reste
+     possible via le 🔊 de chaque message — le toucher sert maintenant à jouer avec elle. */
+  setTimeout(function(){ if(document.contains(faceEl)) mascotAlive(faceEl,{onPoke:function(t){
+    var sb=document.querySelector(".coach-sub"); if(sb)sb.textContent=t; }}); },120);
   var box=el("div","coach-box");
   /* Pas de doublon : le bonjour est DÉJÀ dit en gros sous le visage (.coach-sub). */
   S.coachMsgs.slice(-40).forEach(function(m){
@@ -1602,23 +1688,17 @@ function openDiscussion(){ if(DISC.open)return; var c=coachLangMeta(); if(!c){ t
   ov.innerHTML='<button class="disc-close" aria-label="Fermer">✕</button>'+
     '<div class="disc-title">'+MEMO()+' '+MNAME()+' · '+esc(c.nom)+'</div>'+
     '<div class="disc-stage"><div class="disc-bee bee-rig" data-mascot="'+mascotCfg().id+'">'+
-      '<img class="rig-base" src="'+MASC()+'/rig/base.webp" alt="'+MNAME()+'">'+
-      '<img class="rig-piece rig-wl" src="'+MASC()+'/rig/wing-l.webp" alt="" onerror="this.remove()">'+
-      '<img class="rig-piece rig-wr" src="'+MASC()+'/rig/wing-r.webp" alt="" onerror="this.remove()">'+
-      '<img class="rig-piece rig-arm" src="'+MASC()+'/rig/arm.webp" alt="" onerror="this.remove()">'+
-      '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
-      '<div class="disc-mouth"></div>'+
+      beeRigHTML()+   /* même marionnette que partout ailleurs : elle hérite du regard qui suit et des réactions */
       '<video class="disc-vid" src="'+MASC()+'/live/idle.mp4" autoplay loop muted playsinline></video></div></div>'+
     '<div class="disc-sub"></div>'+
     '<div class="disc-moves"><button data-mv="dance" title="Danse">💃</button><button data-mv="jump" title="Saute">🦘</button><button data-mv="fly" title="Vole">🕊️</button><button data-mv="walk" title="Marche">🚶</button></div>'+
     '<div class="disc-chips"></div>'+
     '<div class="disc-inbar"><button class="disc-live" title="Appel en direct">📞</button><button class="disc-mic" title="Parler">🎤</button><input class="disc-input" type="text" placeholder="Parle-moi de tout… (voyage, ciné, ta journée)" autocomplete="off"><button class="disc-send" title="Envoyer">➤</button><button class="disc-hf" title="Mains libres">🙌</button></div>';
   document.body.appendChild(ov);
-  /* Elle VIT : clignement des yeux à intervalles naturels (aléatoires) */
-  function blinkLoop(){ if(!DISC.open)return; var rig=ov.querySelector(".bee-rig");
-    if(rig){ rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150); }
-    DISC.blinkT=setTimeout(blinkLoop, 2200+Math.random()*3200); }
-  DISC.blinkT=setTimeout(blinkLoop,1800);
+  /* Elle VIT et elle te répond : respiration, regard qui te suit, réactions au toucher,
+     endormissement si tu la laisses tranquille. Même moteur que dans l'onglet Coach. */
+  setTimeout(function(){ var rg=ov.querySelector(".bee-rig");
+    if(rg) mascotAlive(rg,{onPoke:function(t){ var sb=ov.querySelector(".disc-sub"); if(sb)sb.textContent=t; }}); },150);
   /* VRAIE VIDÉO de Bee (Replicate, générée depuis SON image) : activée dès qu'elle se charge.
      Si le navigateur ne la lit pas (erreur/codec) → repli marionnette, sans écran vide. */
   var dv=ov.querySelector(".disc-vid"), db=ov.querySelector(".disc-bee");
@@ -1937,6 +2017,7 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
   var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
   top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ? La progression de CETTE leçon sera perdue.")){ LESSON=null; VIEW="home"; render(); } }; d.appendChild(top);
   var body=el("div","lesson-body");
+  setTimeout(function(){ exFaceAlive(d); },60);   /* respire, cligne, te suit du regard, réagit au toucher */
   if(ex.kind==="mc")body.appendChild(exMC(ex)); else if(ex.kind==="match")body.appendChild(exMatch(ex)); else if(ex.kind==="bank")body.appendChild(exBank(ex)); else if(ex.kind==="type")body.appendChild(exType(ex)); else if(ex.kind==="speak")body.appendChild(exSpeak(ex));
   d.appendChild(body);
   var foot=el("div","lesson-foot"+(L.answered?(L.ok?" ok":" ko"):""));
@@ -1959,7 +2040,7 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
 function exMC(ex){ var w=el("div","ex");
   var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour écouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
   var titre=ex.audio?"Que dis-je ?":(ex.mode==="mc_fr"?"Traduis en français":"Traduis ce mot");
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">'+titre+'</div></div>'+q;
+  w.innerHTML='<div class="ex-h">'+exFaceHTML()+'<div class="bubble">'+titre+'</div></div>'+q;
   /* entraîne l'oreille : on LIT le mot cible affiché (mode audio, ou « traduis en français » où
      le mot dans la langue est montré). On ne lit pas la réponse cachée (ça la donnerait). */
   if(!LESSON.answered && (ex.audio || ex.mode==="mc_fr")) _lsSpeak(ex.w.t,LESSON.i,260);
@@ -1967,7 +2048,7 @@ function exMC(ex){ var w=el("div","ex");
   setTimeout(function(){ var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },0);
   return w;
 }
-function exMatch(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">Associe les paires</div></div>';
+function exMatch(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+exFaceHTML()+'<div class="bubble">Associe les paires</div></div>';
   var grid=el("div","match-grid"),cL=el("div","mcol"),cR=el("div","mcol");
   var left=shuffle(ex.pairs.map(function(p){return{txt:p.fr,key:p.fr,side:"L"};})),right=shuffle(ex.pairs.map(function(p){return{txt:p.t,key:p.fr,side:"R",w:p.w};}));
   LESSON._match={sel:null,done:0,need:ex.pairs.length};
@@ -1979,7 +2060,7 @@ function exMatch(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MAS
     else{ b.classList.add("mbad");s.classList.add("mbad");var ss=s; setTimeout(function(){b.classList.remove("mbad","msel");ss.classList.remove("mbad","msel");},450); LESSON._match.sel=null; beep(false); } }; return b; }
   left.forEach(function(it){cL.appendChild(mk(it));}); right.forEach(function(it){cR.appendChild(mk(it));}); grid.appendChild(cL);grid.appendChild(cR);w.appendChild(grid); return w;
 }
-function exBank(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">Traduis cette phrase</div></div><div class="q-word">'+esc(ex.prompt)+'</div>';
+function exBank(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+exFaceHTML()+'<div class="bubble">Traduis cette phrase</div></div><div class="q-word">'+esc(ex.prompt)+'</div>';
   var ans=el("div","bank-answer"),bank=el("div","bank-src"); LESSON._chosen=[];
   function refresh(){ ans.innerHTML=""; LESSON._chosen.forEach(function(tok,idx){ var t=el("button","tok"); t.textContent=tok; t.onclick=function(){LESSON._chosen.splice(idx,1);refresh();}; ans.appendChild(t); });
     var used={}; LESSON._chosen.forEach(function(t){used[t]=(used[t]||0)+1;}); var seen={}; bank.querySelectorAll(".tok").forEach(function(b){ var t=b.textContent; seen[t]=(seen[t]||0)+1; if(seen[t]<=(used[t]||0))b.classList.add("used"); else b.classList.remove("used"); });
@@ -1990,7 +2071,7 @@ function exBank(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+MASC
 function exType(ex){ var w=el("div","ex");
   var titre=ex.audio?"Écoute et écris ce que tu entends":(ex.dir==="toFr"?"Écris en français":"Écris la traduction");
   var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour réécouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">'+titre+'</div></div>'+q;
+  w.innerHTML='<div class="ex-h">'+exFaceHTML()+'<div class="bubble">'+titre+'</div></div>'+q;
   /* on lit le mot cible montré (écoute, ou « écris en français » où le mot dans la langue est affiché) */
   if(!LESSON.answered && (ex.audio || ex.dir==="toFr")) _lsSpeak(ex.w.t,LESSON.i,260);
   var inp=el("input","type-input"); inp.type="text"; inp.setAttribute("autocapitalize","none"); inp.setAttribute("autocomplete","off"); inp.setAttribute("autocorrect","off"); inp.spellcheck=false; inp.placeholder="Écris ta réponse…";
@@ -2006,7 +2087,7 @@ function exType(ex){ var w=el("div","ex");
 }
 function exSpeak(ex){ var w=el("div","ex");
   var syl=pronSyllables(ex.answer); var hasSyl=syl.indexOf("·")>=0;
-  w.innerHTML='<div class="ex-h">'+MASCOT("point",84)+'<div class="bubble">Prononce à voix haute 🎤</div></div>'
+  w.innerHTML='<div class="ex-h">'+exFaceHTML()+'<div class="bubble">Prononce à voix haute 🎤</div></div>'
     +'<div class="q-word">'+esc(ex.prompt)+'</div>'
     +(hasSyl?'<div class="pron-syl" title="Découpage en syllabes">'+esc(syl)+'</div>':'')
     +'<div class="pron-audio">'
@@ -2051,6 +2132,8 @@ function checkEx(ex){ var L=LESSON,ok=false,sol="";
   if(ex.w&&ex.w.fr)srsUpdate(ex.w,ok); save(); render();
   setTimeout(function(){ var m=document.querySelector(".lesson .bee-img");
     if(m){ if(ok){ beeAnimate(m,"hop"); if(L.combo>=2)beeSparkles(m,6); } else { beeAnimate(m,"shake"); } }
+    /* La marionnette de l'en-tête réagit VRAIMENT à ta réponse */
+    exFaceReact(ok?"joie":"triste"); if(ok&&L.combo>=3){ var ff=document.querySelector(".ex-face"); if(ff)beeSparkles(ff,10); }
     /* Le compagnon vivant réagit AUSSI en direct : danse/saute quand c'est bon */
     var cr=document.querySelector(".bee-companion .bee-rig");
     if(cr&&ok){ beeMove(cr, Math.random()<0.5?"dance":"jump", 1900); if(L.combo>=3)beeSparkles(cr,5); }
