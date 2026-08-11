@@ -55,7 +55,29 @@ function validateTranslations(st, tr) {
   return e;
 }
 
-/* ---------- Appels IA (fournisseurs indépendants, mêmes clés que grow-content) ---------- */
+/* ---------- Appels IA (fournisseurs indépendants, mêmes clés que grow-content) ----------
+   JUGES SUPPLÉMENTAIRES (leçon des passages 14-18) : avec seulement Mistral+Gemini comme
+   juges possibles, une limite de débit simultanée = passage perdu. On ajoute 4 fournisseurs
+   « compatibles OpenAI » déjà utilisés ailleurs dans le dépôt (mêmes clés, mêmes URLs que
+   services/kdmc-crea-ai) → 6 juges candidats au lieu de 2. Aucun n'est Anthropic : l'IA
+   principale de Kevin n'est pas engagée ici. */
+const COMPAT = {
+  cohere:   { key: 'COHERE_API_KEY',   url: 'https://api.cohere.ai/compatibility/v1/chat/completions', model: 'command-r-08-2024' },
+  together: { key: 'TOGETHER_API_KEY', url: 'https://api.together.xyz/v1/chat/completions',            model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free' },
+  deepseek: { key: 'DEEPSEEK_API_KEY', url: 'https://api.deepseek.com/chat/completions',               model: 'deepseek-chat' },
+  xai:      { key: 'XAI_API_KEY',      url: 'https://api.x.ai/v1/chat/completions',                    model: 'grok-3-mini' },
+};
+async function callCompat(id, messages, json) {
+  const p = COMPAT[id]; if (!p || !process.env[p.key]) return null;
+  try {
+    const r = await fetch(p.url, {
+      method: 'POST', headers: { authorization: 'Bearer ' + process.env[p.key], 'content-type': 'application/json' },
+      body: JSON.stringify({ model: p.model, messages, max_tokens: 2500, temperature: 0.3, ...(json ? { response_format: { type: 'json_object' } } : {}) }),
+    });
+    if (!r.ok) return null; const j = await r.json();
+    return j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+  } catch { return null; }
+}
 async function callGroq(messages, json) {
   if (!process.env.GROQ_API_KEY) return null;
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -148,15 +170,25 @@ async function judgeTranslations(st, tr, generatorTried) {
     + '\nRéponds UNIQUEMENT en JSON : {"ok": true/false, "problemes": ["décris chaque traduction FAUSSE (sens, genre, accord, orthographe, mot inventé, romanisation au lieu de l\'écriture native) ; liste vide sinon"]}. '
     + 'Sois strict sur les vraies erreurs, mais NE signale PAS les simples préférences de style.';
   const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
-  /* 2 tentatives sur la chaîne de juges (pause 20 s entre les deux) : un 429
-     passager ne doit pas coûter tout un passage (vécu passages 14-17). */
-  let raw = null;
+  /* CHAÎNE DE JUGES ÉLARGIE + 2 tentatives (pause 20 s) : le juge doit TOUJOURS être
+     un fournisseur DIFFÉRENT du traducteur (indépendance = la valeur du second avis),
+     mais il ne doit pas dépendre d'un seul candidat disponible (passages 14-18 perdus
+     sur « juge indisponible » = Mistral+Gemini en limite de débit au même instant). */
+  const chain = ['mistral', 'gemini', 'cohere', 'deepseek', 'together', 'xai', 'groq']
+    .filter((id) => id !== generatorTried);
+  let raw = null, judgedBy = null;
   for (let attempt = 0; attempt < 2 && !raw; attempt++) {
     if (attempt) await new Promise((r) => setTimeout(r, 20000));
-    if (generatorTried !== 'mistral') raw = await callMistral(msgs, true);
-    if (!raw && generatorTried !== 'gemini') raw = await callGemini(msgs);
-    if (!raw && generatorTried !== 'groq') raw = await callGroq(msgs, true);
+    for (const id of chain) {
+      if (raw) break;
+      raw = id === 'mistral' ? await callMistral(msgs, true)
+        : id === 'gemini' ? await callGemini(msgs)
+        : id === 'groq' ? await callGroq(msgs, true)
+        : await callCompat(id, msgs, true);
+      if (raw) judgedBy = id;
+    }
   }
+  if (judgedBy) console.log('   juge : ' + judgedBy + ' (traducteur : ' + generatorTried + ')');
   const j = parseJson(raw);
   if (!j) return { ok: false, available: false, hard: ['juge indisponible'] };
   const problemes = Array.isArray(j.problemes) ? j.problemes : [];
