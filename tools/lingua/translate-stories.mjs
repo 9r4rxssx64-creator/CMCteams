@@ -41,8 +41,15 @@ function validateTranslations(st, tr) {
   tr.lignes.forEach((t, i) => {
     L2.forEach((lg) => {
       const v = t && t[lg];
-      if (typeof v !== 'string' || !v.trim()) e.push('ligne ' + i + ' : ' + lg + ' manquant');
-      else if (v.trim().toLowerCase() === st.lignes[i].fr.trim().toLowerCase()) e.push('ligne ' + i + ' : ' + lg + ' = copie du français (repli interdit)');
+      if (typeof v !== 'string' || !v.trim()) { e.push('ligne ' + i + ' : ' + lg + ' manquant'); return; }
+      if (v.trim().toLowerCase() === st.lignes[i].fr.trim().toLowerCase()) e.push('ligne ' + i + ' : ' + lg + ' = copie du français (repli interdit)');
+      /* PURETÉ D'ÉCRITURE (déterministe, avant le juge) — leçon des passages 1-11 :
+         私の dans du coréen, 头/哪里 dans de l'arabe, затем dans du coréen… publiés. */
+      if (lg !== 'zh' && lg !== 'ja' && /[一-鿿぀-ゟ゠-ヿ]/.test(v)) e.push('ligne ' + i + ' : ' + lg + ' contient du chinois/japonais — ' + v);
+      if (lg !== 'ko' && /[가-힣]/.test(v)) e.push('ligne ' + i + ' : ' + lg + ' contient du hangul — ' + v);
+      if (lg !== 'ru' && lg !== 'uk' && /[Ѐ-ӿ]/.test(v)) e.push('ligne ' + i + ' : ' + lg + ' contient du cyrillique — ' + v);
+      if (lg !== 'ar' && /[؀-ۿ]/.test(v)) e.push('ligne ' + i + ' : ' + lg + ' contient de l\'écriture arabe — ' + v);
+      if (lg === 'zh' && /[぀-ゟ゠-ヿ]/.test(v)) e.push('ligne ' + i + ' : kana japonais en chinois — ' + v);
     });
   });
   return e;
@@ -113,8 +120,14 @@ function frKind(fr) {
   return p.includes('?') ? 'q' : p.includes('!') ? 'x' : 's';
 }
 function fixTerminalPunct(fr, lg, v) {
-  const p = (PUNCT_BY_LANG[lg] || PUNCT_BY_LANG.default)[frKind(fr)];
-  const s = String(v).trim();
+  const k = frKind(fr);
+  let s = String(v).trim();
+  if (lg !== 'zh' && lg !== 'ja') s = s.replace(/！/g, '!').replace(/？/g, '?').replace(/。/g, '.').replace(/，/g, ',');
+  /* ASYMÉTRIQUE : si le français est une question, on n'impose RIEN (une tournure de
+     demande « une table, s'il vous plaît. » est une traduction légitime d'une question).
+     Si le français N'EST PAS une question, aucun « ?/？/؟ » final n'est toléré. */
+  if (k === 'q') return s;
+  const p = (PUNCT_BY_LANG[lg] || PUNCT_BY_LANG.default)[k];
   return TERM_RE.test(s) ? s.replace(TERM_RE, p) : s + p;
 }
 function normalizePunct(st, tr) {
