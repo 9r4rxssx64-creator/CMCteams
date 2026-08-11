@@ -50,6 +50,32 @@ function structCheck(ctx) {
       if (typeof q.ok !== 'number' || q.ok < 0 || q.ok >= (q.opts || []).length) errs.push(st.id + ' q' + i + ' : bonne réponse hors bornes');
     });
   });
+  // 3bis) PURETÉ D'ÉCRITURE + PONCTUATION des histoires (leçon des passages 1-11 :
+  //   japonais dans le coréen, chinois dans l'arabe, « ؟ » sur des affirmatives — publiés
+  //   avant d'être attrapés). Déterministe : bloque toute récidive.
+  //   Règle ASYMÉTRIQUE : un « ? » final sans question française = faux ; l'inverse est
+  //   toléré (une question française peut se traduire par une tournure de demande).
+  const SCRIPT_BANS = {
+    cjk: /[一-鿿぀-ゟ゠-ヿ]/, hangul: /[가-힣]/,
+    cyr: /[Ѐ-ӿ]/, arab: /[؀-ۿ]/, kana: /[぀-ゟ゠-ヿ]/,
+    fw: /[！？。，]/,
+  };
+  const ALL14 = LANGS.concat(ctx.LANGS2 || []);
+  STORIES.forEach((st) => (st.lignes || []).forEach((l, i) => {
+    const frQ = /\?\s*$/.test(String(l.fr || '').trim());
+    ALL14.forEach((lg) => {
+      const v = l.t && typeof l.t[lg] === 'string' ? l.t[lg].trim() : '';
+      if (!v) return;
+      const where = st.id + ' ligne ' + i + ' (' + lg + ')';
+      if (!frQ && /[?？؟]\s*$/.test(v)) errs.push(where + ' : « ? » final sans question française — ' + v);
+      if (lg !== 'zh' && lg !== 'ja' && SCRIPT_BANS.cjk.test(v)) errs.push(where + ' : caractère chinois/japonais égaré — ' + v);
+      if (lg !== 'ko' && SCRIPT_BANS.hangul.test(v)) errs.push(where + ' : hangul égaré — ' + v);
+      if (lg !== 'ru' && lg !== 'uk' && SCRIPT_BANS.cyr.test(v)) errs.push(where + ' : cyrillique égaré — ' + v);
+      if (lg !== 'ar' && SCRIPT_BANS.arab.test(v)) errs.push(where + ' : écriture arabe égarée — ' + v);
+      if (lg === 'zh' && SCRIPT_BANS.kana.test(v)) errs.push(where + ' : kana japonais en chinois — ' + v);
+      if (lg !== 'zh' && lg !== 'ja' && SCRIPT_BANS.fw.test(v)) errs.push(where + ' : ponctuation pleine-chasse hors zh/ja — ' + v);
+    });
+  }));
   // 4) PHRASEBOOK : 6 langues non vides
   Object.keys(PHRASEBOOK).forEach((fr) => LANGS.forEach((lg) => { const v = PHRASEBOOK[fr] && PHRASEBOOK[fr][lg]; if (typeof v !== 'string' || !v.trim()) errs.push('PHRASEBOOK « ' + fr + ' » : ' + lg + ' manquant/vide'); }));
   // 5) NOUVELLES LANGUES (Est/Asie, cours démarrage) : aucun repli français, parité entre elles
