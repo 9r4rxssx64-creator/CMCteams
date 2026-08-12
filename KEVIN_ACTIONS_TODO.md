@@ -52,6 +52,50 @@ fais — c'est le prérequis de la bascule.
 
 ---
 
+## 🔑 2. Jeton GitHub `APEX_GITHUB_PAT` *(ajouté 12/08/2026, à ta demande)*
+
+**Pourquoi** : aujourd'hui, dès qu'une automatisation doit **créer un dépôt**,
+**pousser ailleurs que dans CMCteams** ou **gérer un secret**, elle s'arrête net.
+C'est exactement ce qui vient d'arriver au déplacement de ClayScore : le
+workflow s'est arrêté sur *« Le secret APEX_GITHUB_PAT est absent »*, et il a
+fallu que tu crées le dépôt à la main. Avec ce jeton, ce type de blocage
+disparaît — je fais tout, tu ne cliques plus.
+
+### Étape 1 — créer le jeton (30 secondes)
+**▶️ [Créer le jeton](https://github.com/settings/tokens/new?scopes=repo,workflow&description=APEX_GITHUB_PAT)**
+— le nom et les droits sont **déjà cochés** (`repo` + `workflow`).
+
+Il ne te reste qu'à :
+1. Choisir une **expiration** (⚠️ prends **90 jours**, pas « No expiration » —
+   voir plus bas) ;
+2. **Generate token** ;
+3. **Copier** le jeton (`ghp_…`) — GitHub ne te le remontrera **jamais**.
+
+### Étape 2 — le coller dans les secrets (20 secondes)
+**▶️ [Ajouter le secret](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)**
+
+- **Name** : `APEX_GITHUB_PAT` *(exactement ça — une faute et rien ne marche)*
+- **Secret** : le jeton copié
+- **Add secret**
+
+C'est fini. Je n'ai jamais besoin de le voir : les workflows le lisent tout seuls.
+
+### ⚠️ Ce que je te dois en honnêteté
+Ce jeton est **une clé passe-partout sur tout ton compte GitHub** — il peut
+lire, écrire et créer partout. C'est puissant, et c'est aussi pour ça que je ne
+t'ai **pas** demandé de le faire pour ClayScore : un clic suffisait.
+
+Donc :
+- **mets une expiration à 90 jours** (GitHub te préviendra, tu le referas en
+  30 secondes) ;
+- **ne le colle nulle part ailleurs** que dans la page de secrets ci-dessus ;
+- si tu doutes un jour, **[révoque-le d'un clic](https://github.com/settings/tokens)** —
+  ça ne casse que les automatisations, jamais tes données.
+
+**Ce n'est pas urgent.** Fais-le quand tu veux arrêter de cliquer pour moi.
+
+---
+
 ## 🗺️ SESSION 2026-08-06 — Feuille de route (ce qui reste, dans l'ordre)
 
 **Rien ne t'attend côté action** — sauf une décision (point 4). Le reste, je le finis moi.
