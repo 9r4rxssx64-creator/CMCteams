@@ -119,11 +119,25 @@ jobs:
           MOI: ${{ steps.jeton.outputs.utilisateur }}
         run: |
           set -e
-          # ⚠️ L'identifiant DOIT être le nom de compte, pas « x-access-token ».
-          # Ce dernier est la convention des jetons d'APPLICATION GitHub ; avec un
-          # jeton PERSONNEL, git n'est pas authentifié, retombe en anonyme, et un
-          # dépôt privé répond « Repository not found » — message trompeur qui
-          # laisse croire que le dépôt n'existe pas. (Mesuré : run #2.)
+          # ⚠️⚠️ LA VRAIE CAUSE DES DEUX ÉCHECS PRÉCÉDENTS ⚠️⚠️
+          #
+          # `actions/checkout` installe un en-tête d'autorisation PERMANENT
+          # dans la config git locale :
+          #     http.https://github.com/.extraheader = AUTHORIZATION: basic …
+          # Il porte le jeton DU WORKFLOW, limité à CMCteams — et il s'applique
+          # à TOUTES les requêtes vers github.com, y compris cet envoi. Il
+          # ÉCRASE donc les identifiants écrits dans l'adresse ci-dessous.
+          #
+          # Conséquence : le push partait avec le mauvais jeton, sans accès à
+          # `clayscore`, et GitHub répondait « Repository not found » — parce
+          # qu'il ne dit jamais « accès refusé » sur un dépôt privé, pour ne pas
+          # révéler son existence. Message trompeur, deux fausses pistes.
+          #
+          # PROUVÉ : le workflow de diagnostic, qui ne fait PAS de checkout,
+          # réussit avec les TROIS formes d'identifiant. Le jeton n'a jamais
+          # été en cause.
+          git config --local --unset-all http."https://github.com/".extraheader || true
+
           git remote add prive "https://${MOI}:${PAT}@github.com/${MOI}/${NOM}.git"
           # Pas de --force : si le dépôt contient déjà autre chose, on veut le
           # savoir plutôt que de l'écraser.
