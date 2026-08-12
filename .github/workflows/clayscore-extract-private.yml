@@ -109,6 +109,66 @@ jobs:
           echo "docs=$(git ls-files 'docs/*.md' | wc -l)" >> "$GITHUB_OUTPUT"
           echo "tests=$(git ls-files 'tests/test_*.py' | wc -l)" >> "$GITHUB_OUTPUT"
 
+      - name: Donner au nouveau dépôt sa propre vérification
+        run: |
+          set -e
+          cd source
+          # Pourquoi cette étape : la vérification des prix et les tests
+          # vivaient dans `.github/workflows/` de CMCteams, donc HORS du
+          # dossier clayscore/ — ils n'ont pas suivi le déménagement.
+          # Sans ça, supprimer l'original casserait la vérification des prix
+          # sans que personne ne s'en aperçoive : le dépôt privé n'aurait
+          # AUCUN contrôle. On lui en donne un, adapté à sa nouvelle
+          # disposition (plus de préfixe `clayscore/`).
+          mkdir -p .github/workflows
+          cat > .github/workflows/verification.yml <<'YML'
+          name: Vérification ClayScore
+
+          on:
+            push:
+            pull_request:
+            workflow_dispatch:
+            schedule:
+              - cron: "0 4 * * 1"   # lundi 4 h UTC — les prix bougent
+
+          permissions:
+            contents: read
+
+          jobs:
+            tests:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v6
+                - uses: actions/setup-python@v5
+                  with:
+                    python-version: "3.12"
+                - run: python3 -m pip install --quiet -r requirements.txt
+                - name: Les tests passent-ils ?
+                  run: |
+                    set -o pipefail   # sinon le code de sortie serait celui du tuyau
+                    python3 -m pytest -q 2>&1 | tail -8
+                - name: La porte d'audit tient-elle ?
+                  run: bash tools/audit_externe.sh --gate
+
+            prix:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v6
+                - uses: actions/setup-python@v5
+                  with:
+                    python-version: "3.12"
+                - name: Les liens et les prix du devis sont-ils encore bons ?
+                  run: python3 tools/verif_prix.py --rapport rapport-prix.md || true
+                - uses: actions/upload-artifact@v4
+                  with:
+                    name: rapport-prix
+                    path: rapport-prix.md
+                    if-no-files-found: ignore
+          YML
+          git add .github/workflows/verification.yml
+          git commit -q -m "Sa propre vérification : tests, porte d'audit, contrôle des prix"
+          echo "Vérification ajoutée au dépôt privé."
+
       - name: Créer le dépôt PRIVÉ (s'il n'existe pas déjà)
         if: ${{ !inputs.dry_run }}
         env:
