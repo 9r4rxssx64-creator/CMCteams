@@ -956,6 +956,33 @@ Apex AI doit aussi appliquer cette règle à chaque action significative :
 S'applique : Claude Code (priorité absolue moi-même), Apex IA, CMCteams,
 e-KDMC, Télécommande, CrackPass, Apex Chat, tous projets futurs.
 
+### 7. RENFORCEMENT Kevin 2026-08-12 — « sans que je te le répète » (GARDE MÉCANIQUE)
+
+> **« Mets tous les documents à jour temps réel toujours sans que je te le répète. »** — Kevin 2026-08-12
+
+**Constat honnête** : cette règle existait depuis le 2026-05-16 et Kevin a quand même dû la
+REDEMANDER — `MEMO_RESUME.md` et `KEVIN_INVENTORY.md` avaient une session entière de retard
+(SSO admin universel, 15 apps iOS, localisation World Monitor, OSINT v2.5). **Réécrire la règle
+une 2ᵉ fois n'aurait rien changé** : une règle qui ne vit que dans un document dépend de ma
+mémoire, donc elle finit par être sautée (leçon #142).
+
+**Correctif = un garde, pas de la prose** :
+```bash
+npm run test:docs-frais      # = node tools/audit/docs-fraicheur.cjs (câblé dans test:ci)
+```
+- Si du **CODE** a changé par rapport à `main` sans que **`MEMO_RESUME.md`** bouge → **le gate ÉCHOUE**.
+- Si des fichiers ont été **CRÉÉS** sans que **`KEVIN_INVENTORY.md`** bouge → **échoue** (Kevin doit
+  retrouver ses fichiers avec leur lien cliquable).
+- Compte le committé **et** le travail en cours ; **fail-open** si pas de git/`main`/diff, et
+  ignore les changements purement docs/tests → **aucun faux rouge**.
+- **Prouvé discriminant** (leçon #138) : docs remis en retard → exit 1 ; docs à jour → exit 0.
+
+**Interdit** : retirer ce garde de `test:ci`, ou « documenter plus tard ». Les docs partent dans
+le **MÊME commit** que le code.
+
+**Test mental (mis à jour)** : *« Si Kevin ouvre MEMO_RESUME et KEVIN_INVENTORY maintenant,
+y voit-il ce que je viens de livrer — sans me l'avoir demandé ? »*
+
 ---
 
 ## 🔑 RÈGLE ABSOLUE — NOMS SECRETS GITHUB DOIVENT MATCHER EXACTEMENT (Kevin 2026-05-16)

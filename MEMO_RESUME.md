@@ -1,5 +1,56 @@
 # MEMO_RESUME — état de session
 
+## 9-12 août 2026 — Admin universel du domaine · 15 apps iPhone · localisation · OSINT
+
+### Livré et sur `main`
+1. **ADMIN UNIVERSEL DU DOMAINE (SSO central)** — Kevin est reconnu admin **partout**
+   sans code par app. Le worker `kdmc-crea-famille` demande `kd-mc.com/__sso/whoami`
+   (`estAdminSSO`) et exige `admin && verified` (Face ID prouvé, JAMAIS le nom seul,
+   leçon #99/#166) ; le client `tools/crea-studio` transmet enfin le pass
+   (`Authorization: Bearer kdmc_sso_token`) — sans ça le chemin admin du worker était du
+   **code mort**. Idem `shops/_shared/kdmc-shop-admin.js` (4 boutiques) et `tools/departs`
+   (`_depSsoAutoAdmin`). **Fail-open partout** : SSO muet → PIN local en repli, 0 régression.
+   Règle gravée dans CLAUDE.md. Le secret `CREA_FAMILLE_ADMIN_CODE` devient **facultatif**
+   (repli) → un clic de moins pour Kevin. Garde `test:p0-secu` étendue (17 vérifs).
+2. **PIPELINE iOS — 15 apps du domaine → TestFlight, sans Mac** (`ios-apps-testflight.yml`) :
+   Capacitor emballe chaque app web en vraie appli iPhone sur un **Mac cloud GitHub**,
+   signature **automatique par clé App Store Connect API** (aucun `.p12` à fuiter).
+   Registre `tools/ios/apps.json` (ajouter une app = 1 entrée, 0 secret). Sécurité par app :
+   ATS HTTPS strict partout + `WKAppBoundDomains` (navigation verrouillée au domaine) pour
+   les apps autonomes, relâché pour les boutiques (paiement externe). Icône propre par app
+   (`make-icon.py`, alpha aplati — exigence App Store) + numéro de build unique (sinon
+   TestFlight refuse). **15/15 apps PROUVÉES `ARCHIVE SUCCEEDED`** en dry-run.
+   **Bloqué UNIQUEMENT** par le secret `.p8` : Apple refuse le téléchargement de la clé sur
+   un compte neuf (bug de leur côté, message rouge « réessayer ultérieurement »).
+3. **World Monitor v2.42 — localisation** : puce 📍 Ma position (suivi live `watchPosition`,
+   point + cercle de précision) sur la **carte**, le **globe animé** ET le **globe 3D**.
+   Recentrage au 1er fix seulement, updaters idempotents, permission refusée → message clair
+   + coupe (pas de harcèlement). **Vie privée exacte** : le fix GPS pleine précision ne quitte
+   jamais l'appareil (prouvé 0 fuite réseau) ; dit honnêtement que les couches live chargent
+   la zone AFFICHÉE, comme un déplacement de carte. Test `test:wm-pos` (8/8).
+4. **OSINT v2.5** — catégorie 📺 « Flux TV, radio & fichiers publics » : 9 liens 1-clic avec
+   **leur fonction affichée sous chacun** (nouveau champ `d` + CSS ; avant, seul le nom était
+   visible sur iPhone) et **recherche par fonction**. 129 outils / 19 catégories (compté).
+   **Refusé et écrit dans le code** : vavoo.to, megathread r/Piracy, annuaires de streaming
+   illégal (rediffusion de contenus payants). Test `test:osint-links` (9/9).
+
+### Décisions Kevin de la session
+- **Projet « KDMC Live » (télé/radio) : ANNULÉ** (« Action 2 annule, rien ») — rien codé.
+- **Stockage R2 `kdmc-deces-insee` : « efface » → PAS FAIT**, arrêt volontaire. Vérification
+  avant destruction : 3 scripts le lisent encore (`tools/arbre/find-deces.py`,
+  `actes-register.py`, `enrich-insee-local.py`) = l'automatisation « Arbre — retrouver un
+  décès précis » qu'on avait gardée. Mon info précédente était **incomplète** (j'avais vérifié
+  `arbre/index.html`, pas les scripts). Choix rendu à Kevin : garder, ou supprimer + retirer
+  la « source 2 » des 3 scripts.
+
+### Pièges rencontrés (à ne pas refaire)
+- **Apostrophes dans `node -e '…'`** : même dans un commentaire JS, elles ferment la chaîne
+  bash → « syntax error near unexpected token `)` ». A cassé 4 builds iOS d'un coup.
+- **Icône + numéro de build** : sans eux TestFlight refuse l'envoi — à poser AVANT le 1er essai.
+- **Voyant vert ≠ preuve** : un run « success » de 24 s était en fait un arrêt fail-closed sur
+  secret manquant. Toujours lire le log (`ARCHIVE SUCCEEDED`), pas la pastille.
+
+
 ## Soir du 7 août 2026 — Lingua jeux de rôle 🎭 + Bee vivante dans Créa Studio 🐝
 
 ### Livré et sur `main` (session Lingua/Bee)
