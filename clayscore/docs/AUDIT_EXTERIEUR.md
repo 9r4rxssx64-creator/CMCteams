@@ -112,16 +112,84 @@ elles cachaient les vraies :
 
 ---
 
-## 4. Ce qui reste ouvert (et pourquoi je n'y ai pas touché)
+## 4. La passe d'amélioration — ce que l'audit a permis de réparer
+
+L'audit n'a pas servi qu'à constater. Voici ce qui a été **fait**, mesuré
+avant et après.
+
+### 4.1 Le moteur va plus vite, sans perdre un seul point
+
+Le profilage a montré que **67 % du temps d'analyse** part dans un seul appel :
+la soustraction de fond (MOG2). Deux réglages, tous deux mesurés :
+
+| | Avant | Après |
+|---|---:|---:|
+| Gaussiennes par pixel | 5 (défaut OpenCV) | **3** |
+| Seuillage après MOG2 | à chaque image | **supprimé** (ne changeait aucune valeur) |
+| **Vitesse** (1440×1080, meilleur de 7 essais) | 224 img/s | **231 img/s** |
+| Marge sur les 195 img/s requises | 15 % | **18 %** |
+| **Précision** (les 3 bancs, 27 scénarios) | 27/27 | **27/27** |
+
+**Pourquoi 3 gaussiennes suffisent :** MOG2 en utilise 5 pour décrire un fond
+très remuant — feuillage, foule, écrans. Un stand de ball-trap n'a pas ça :
+caméra fixe, ciel et filets. Descendre à 2 ne gagne plus rien.
+
+**Pourquoi le seuillage était inutile :** sans détection d'ombres, MOG2 ne
+produit **que** 0 et 255 — vérifié en lisant les valeurs réellement sorties.
+Le seuillage ne modifiait donc pas un seul pixel, sur chaque image de chaque
+caméra. Il ne revient que si l'on réactive les ombres, et le code le remet
+alors tout seul.
+
+> Le gain est **modeste et je ne le survends pas** : +3 %. Mais il est gratuit,
+> il est prouvé sans perte de précision, et sur un Jetson — plus lent que la
+> machine de développement — chaque point de marge compte. Les deux réglages
+> sont **verrouillés par des tests** : ils sont invisibles, rien ne planterait
+> si on les perdait, on perdrait seulement la marge, et on ne s'en apercevrait
+> qu'au stand.
+
+### 4.2 Le point d'entrée du serveur : 0 % → 95 % de couverture
+
+42 lignes n'étaient testées par rien. C'est pourtant **le seul chemin par
+lequel le produit démarre**. 7 tests ajoutés, qui vérifient notamment :
+
+- que ce qui est écrit dans `config.yaml` arrive vraiment jusqu'au serveur ;
+- qu'un poste de vue impossible (vidéo brute par WiFi) est **refusé au
+  démarrage**, au garage plutôt qu'au concours ;
+- que l'écran de démarrage affiche bien **l'adresse à ouvrir sur la tablette** —
+  sans elle, l'utilisateur a un serveur qui tourne et aucune idée de quoi en
+  faire ;
+- qu'aucun jargon d'informaticien n'apparaît à l'écran.
+
+### 4.3 Une règle en double, désormais en un seul exemplaire
+
+La traduction « verdict du moteur → fiche de plateau » existait en **deux
+copies identiques** : une pour les plateaux simulés, une pour les plateaux
+réels. Le jour où la fiche change, on en oublie une — et le mode simulation se
+met à ne plus dire la même chose que le mode réel, **sans que rien ne plante**.
+Désormais une seule version (`Analysis.depuis_verdict`).
+
+### 4.4 Le scan de sécurité ne crie plus pour rien
+
+Les 4 signalements de sévérité moyenne sont **intentionnels** — un serveur de
+club doit être joignable depuis les tablettes du stand, ce n'est pas une faille,
+c'est la fonction. Ils sont maintenant documentés un par un dans le code avec
+leur justification. Un scan qui crie tout le temps finit par ne plus être lu.
+
+### 4.5 Arithmétique morte supprimée
+
+`dev.std(axis=0) + dev.mean(axis=0) * 0.0` : un terme multiplié par zéro, donc
+rigoureusement sans effet, qui laissait croire que la moyenne comptait pour
+quelque chose. Elle ne comptait pas.
+
+---
+
+## 4-bis. Ce qui reste ouvert — et pourquoi je n'y touche pas
 
 | Point | Mesure | Décision |
 |---|---|---|
 | `_collect_evidence` (`vision/verdict.py`) en complexité **D** | la plus touffue du projet | **Laissée.** C'est le cœur du verdict, couvert à 97 %. La découper sans besoin réel, c'est risquer la seule fonction qu'on n'a pas le droit de casser |
-| `server/__main__.py` couvert à **0 %** | 42 lignes | Point d'entrée jamais testé — un test de démarrage vaudrait le coup |
-| `video_webcam.py` couvert à **30 %** | 38 lignes | Exige une vraie webcam. Honnête de le dire plutôt que de simuler |
-| `dev.std(axis=0) + dev.mean(axis=0) * 0.0` (`corridor.py`) | arithmétique morte | Ajoute zéro. À supprimer, mais pas dans une passe sécurité |
-| 2 duplications signalées par pylint | `capture`/`engine`, `video_file`/`video_webcam` | Réelles. Factorisables, sans urgence |
-| 4 signalements bandit en sévérité **moyenne** | écoute sur toutes les interfaces, chemins `/tmp` de l'outil de construction | **Intentionnels** : un serveur de club doit être joignable depuis les tablettes du stand. Ce n'est pas une faille, c'est la fonction |
+| `video_webcam.py` couvert à **30 %** | 38 lignes | Exige une vraie webcam. Plus honnête de le dire que de simuler une couverture |
+| 2ᵉ duplication signalée par pylint (`close()` de deux sources vidéo) | 4 lignes | **Laissée.** Factoriser 4 lignes triviales créerait un couplage entre deux sources qui doivent rester indépendantes — leur horodatage diffère réellement (fichier = numéro d'image, webcam = horloge). Obéir au linter aurait été moins bon que le contredire |
 
 ---
 

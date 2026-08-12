@@ -23,7 +23,7 @@ fonctionne sur un réseau local **sans Internet**, piloté depuis une tablette.
 | | État |
 |---|---|
 | **Logiciel** | ✅ **Terminé et testé** — les 8 jalons prévus sont développés et fonctionnent |
-| **Tests automatiques** | ✅ **341 réussis, 1 ignoré** (celui qui exige une carte graphique) |
+| **Tests automatiques** | ✅ **353 réussis, 1 ignoré** (celui qui exige une carte graphique) · couverture **93 %** |
 | **Validation** | ✅ En **simulation** (vidéos générées avec réponse connue d'avance) |
 | **Matériel** | ⏳ **Pas encore acheté** — la liste d'achat est prête (BUDGET_BOM) |
 | **Validation terrain** | ⏳ **Pas encore faite** — nécessite de vraies vidéos de stand |
@@ -129,7 +129,7 @@ navigateur). Elles fonctionnent hors ligne, sans Internet.
 | Lignes de code (logiciel) | **5 598** |
 | Lignes de tests | **3 038** |
 | Fonctions de test | **259** |
-| Tests réussis | **341** (+1 ignoré : exige un GPU) |
+| Tests réussis | **353** (+1 ignoré : exige un GPU) · **93 %** du code couvert |
 | Jalons terminés | **8 / 8** |
 | Disciplines gérées | **5** (FU, FO, DTL, parcours, compak) |
 | Lanceurs par partie | **multi-lanceurs** (attribution auto par poste + stats) |

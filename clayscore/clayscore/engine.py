@@ -41,6 +41,30 @@ class Analysis:
     reasons: List[str] = field(default_factory=list)
     truth: Optional[str] = None   # vérité terrain (simulation only, pour audit)
 
+    @classmethod
+    def depuis_verdict(cls, plateau_id: int, nom_clip: str, result,
+                       truth: Optional[str] = None) -> "Analysis":
+        """Traduit un verdict du moteur de vision en fiche de plateau.
+
+        Cette traduction existait en DEUX exemplaires identiques — un pour les
+        plateaux simulés, un pour les plateaux réels (pylint les avait
+        repérés). Deux copies d'une même règle, c'est une copie qu'on oubliera
+        de mettre à jour le jour où la fiche changera : le mode simulation et
+        le mode réel se mettraient alors à ne plus dire la même chose, sans
+        que rien ne plante. Une seule version, ici.
+        """
+        return cls(
+            plateau_id=plateau_id,
+            clip_url=f"/clips/{nom_clip}.mp4",
+            auto_verdict=result.verdict,
+            best_guess=result.best_guess,
+            confidence=round(result.confidence, 3),
+            ambiguous=(result.verdict == "ambigu"),
+            gunshot=result.evidence.gunshot_frame is not None,
+            reasons=result.reasons,
+            truth=truth,
+        )
+
 
 class SimulationSource:
     """Génère des plateaux synthétiques à la demande (mode simulation)."""
@@ -85,17 +109,9 @@ class SimulationSource:
         data, sr = read_wav_mono(paths["audio"])
         result = decide_verdict(
             FileVideoSource(paths["video"]), data, sr, v_cfg=v_cfg)
-        return Analysis(
-            plateau_id=self._id,
-            clip_url=f"/clips/{name}.mp4",
-            auto_verdict=result.verdict,
-            best_guess=result.best_guess,
-            confidence=round(result.confidence, 3),
-            ambiguous=(result.verdict == "ambigu"),
-            gunshot=result.evidence.gunshot_frame is not None,
-            reasons=result.reasons,
-            truth=synth.VERDICT_BY_SCENARIO[scenario],
-        )
+        return Analysis.depuis_verdict(
+            self._id, name, result,
+            truth=synth.VERDICT_BY_SCENARIO[scenario])
 
 
 class MatchEngine:

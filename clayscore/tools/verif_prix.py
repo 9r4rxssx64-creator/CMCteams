@@ -205,7 +205,9 @@ def telecharger(url: str, timeout: int = 25) -> tuple[Optional[str], str]:
         return None, f"schéma refusé ({schema or 'aucun'}) — http/https seulement"
     req = urllib.request.Request(url, headers=ENTETES)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        # nosec B310 : le schema a ete verifie juste au-dessus (http/https
+        # seulement) et 3 tests prouvent qu'un file:// ne lit rien.
+        with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec B310
             brut = r.read()
         try:
             return brut.decode("utf-8"), "ok"
