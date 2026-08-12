@@ -69,7 +69,10 @@ Reverse-engineering de la fonction **AI Avatar / avatar parlant** de CapCut, ref
 - **😉 Vivant** : cligne des yeux tout seul (~toutes les 4,5 s, en recopiant ta vraie peau du front — jamais une tache peinte), hoche la tête quand tu parles, respire, léger zoom.
 - **👤 Mes mini-moi** : garde ton personnage (photo + bouche repérée + réglages) et rappelle-le en **1 tap** la fois d'après — plus besoin de tout refaire. Jusqu'à 6, ~6 Ko chacun.
 - **🎚️ Ton de la voix** : Grave 🐻 / Normale / Aiguë 🐿️.
-- **🎬 Ambiance** : Aucune / Studio (vignette) / Doux / Ciné (bandes noires + teal-orange), avec fondu d'entrée-sortie. *(C'est un habillage de l'image — ce n'est pas un changement de décor : sans détourage on ne remplace pas le fond, et on ne le prétend pas.)*
+- **🌆 Vrai décor derrière toi** : l'app te **découpe** de ta photo (détourage) et met ce que tu veux derrière — **🫧 Flou portrait** (effet iPhone), **🎬 Studio** (dégradé), **🖼️ ton image**. *Mesuré : l'ancien fond disparaît à 0 %, le nouveau décor occupe 55 % de l'image.* Sans découpe possible (hors-ligne / crédit vide), le bouton **revient tout seul sur « Ma photo »** — on ne laisse jamais croire qu'un décor est actif alors qu'il ne l'est pas.
+- **👁 Aperçu en direct** : la bouche bouge **tout de suite** à l'écran (bouche, clignement, décor, ambiance) — plus besoin d'attendre un rendu complet pour découvrir que c'est à refaire. Touche l'aperçu pour l'arrêter.
+- **⏱️ Durée annoncée pendant que tu écris** : *« ≈ 10 s »*, et un avertissement clair si ton texte dépasse la limite de **60 s**.
+- **🎬 Ambiance** : Aucune / Studio (vignette) / Doux / Ciné (bandes noires + teal-orange), avec fondu d'entrée-sortie. *(L'ambiance habille l'image ; le décor, lui, change ce qu'il y a derrière toi — ce sont deux réglages différents.)*
 - **🎙️ Dicter** au lieu d'écrire (si le navigateur le permet — sinon l'app te renvoie vers le micro du clavier iPhone).
 - **Formats** Story 9:16 / Carré / Paysage · **Sous-titres karaoké** (le mot dit passe en or) · **repérage auto du visage** (touche la bouche pour la replacer).
 - **⚡ Rapide** = 100 % hors-ligne (aucune clé, aucun réseau). **💎 Bouche IA** = poses de bouche plus réalistes via le worker, avec **repli automatique** sur le mode hors-ligne — **l'app marche toujours**.
