@@ -42,6 +42,15 @@ Comme **Viggle / Kling / Hailuo** : tu mets **une photo**, l'app génère une **
 - Génération asynchrone (≈ 1 à 3 min), aperçu auto, **Enregistrer / Partager** / **Regénérer**.
 - 100 % serveur (ta clé Replicate), modèles image→vidéo `minimax/video-01-live` & `video-01`.
 
+### 🎙️ Le micro — tu **vois** ta voix pendant que tu parles
+Un seul micro pour toute l'app (Mini-moi *et* Magie IA « chanter »). Avant, tu appuyais, tu parlais… et tu découvrais **après** que rien n'avait été capté.
+- **Gros bouton rond** (88 px) : touche pour démarrer, touche pour arrêter.
+- **Barre de niveau en direct** : elle bouge = **le micro t'entend vraiment**.
+- **Minuteur** + arrêt automatique (60 s pour ton mini-moi, 45 s pour chanter).
+- **▶️ Réécouter** avant de valider · **🔁 Refaire** · **✅ Utiliser cette voix**.
+- L'app **prévient** quand elle ne t'entend presque pas, au lieu de te laisser fabriquer une vidéo muette.
+- Le micro est **toujours relâché** en sortant — il ne reste jamais allumé en fond.
+
 ### 💳 Recharger l'IA — **n'importe qui peut le faire, en 1 tap**
 Quand la cagnotte IA est vide, l'app ne bloque pas ta famille : **tout le monde peut la recharger**, sans créer de compte.
 - **Bandeau doré permanent** en haut : *« ⏳ IA en pause — 2 créations en attente »* → **1 tap** ouvre l'écran de recharge, depuis n'importe quel écran.
