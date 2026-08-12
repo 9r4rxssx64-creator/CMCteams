@@ -1,4 +1,70 @@
 
+## 🗺️ SESSION 2026-08-09 — Ce qui t'attend (dans l'ordre)
+
+| # | Ce qui reste | Qui | État |
+|---|---|---|---|
+| 1 | **Récupérer la clé Apple `.p8`** (le téléchargement plante côté Apple) | toi | 🔴 **bloque tout le reste iPhone** |
+| 2 | **Décider du projet « KDMC Live »** (télé/radio en direct) — 4 questions plus bas | toi | 🟡 j'attends ton feu vert |
+| 3 | Envoyer tes **15 apps sur TestFlight** | moi | ⏳ dès que le point 1 est fait (5 min) |
+
+---
+
+### 🔴 1. Ta clé Apple `.p8` — la seule chose qui bloque
+
+Tout le reste est **prêt et prouvé** : tes 15 apps se fabriquent en vraies applis iPhone (testé
+sur des Mac dans le cloud), signature, sécurité, icônes. Il ne manque que **ce fichier**.
+
+Le téléchargement échoue chez Apple (« Une erreur s'est produite ») — c'est **leur** bug sur les
+comptes tout neufs, pas toi. À retenter quand tu veux :
+
+1. **[🔑 Ouvrir mes clés App Store Connect](https://appstoreconnect.apple.com/access/integrations/api)**
+   → **+** → nom au choix → accès **Admin** → **Generate** → **Télécharger tout de suite**
+   💡 *Le plus fiable : depuis un **ordinateur** (30 s) plutôt que l'iPhone. Ou essaie **Chrome** sur iPhone, ou en **Wi-Fi** au lieu de la 4G.*
+2. **[📋 Copier le fichier en 1 clic](https://9r4rxssx64-creator.github.io/CMCteams/tools/ios/p8.html)** *(100 % privé — rien n'est envoyé sur internet)*
+3. **[🔐 Coller dans mes secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions)** — **2 secrets** :
+   - `APPSTORE_API_KEY_BASE64` = le contenu du fichier
+   - `APPSTORE_API_KEY_ID` = le **Key ID de la clé que tu viens de télécharger** ⚠️ *(le piège : toujours celui de la dernière)*
+4. Tu me dis **« p8 ok »** → **j'envoie les 15 apps sur ton iPhone.**
+
+> ✅ Déjà en place, rien à refaire : `APPLE_TEAM_ID` (`Y45767LAGC`) et `APPSTORE_API_ISSUER_ID`.
+
+---
+
+### 🟡 2. Projet « KDMC Live » — télé & radio en direct (décision à prendre)
+
+**Ce que je ne fais pas** : le reverse-engineering de **vavoo.to** (rediffusion de chaînes payantes
+sans autorisation) ni les index de fichiers piratés (FilePursuit, r/Piracy). Trop risqué pour ton
+domaine, ta société et ton compte Apple tout neuf — Apple bannit sans discussion.
+
+**Ce que je te propose à la place** (et qui n'existe nulle part bien fait) : `tv.kd-mc.com` —
+~10 000 chaînes **publiques et gratuites** (iptv-org), France TV / Arte / franceinfo / BFM /
+Euronews, **Monaco Info**, Pluto TV & Samsung TV+ (films & séries gratuits), ~50 000 radios,
+archive.org (films libres, téléchargeables), + **yt-dlp** pour **tes** vidéos.
+Lecteur HD adaptatif, **AirPlay vers ta TV**, image-dans-l'image, guide TV, multi-écran,
+favoris via ton SSO, et **une vraie appli iPhone** (elle rentre dans le registre en 1 ligne).
+Coût : **0 €**.
+
+**Limites dites franchement** : Canal+/beIN/Netflix/DAZN = impossible légalement · le sport gratuit
+est rare · certaines chaînes FR peuvent être géo-bloquées depuis Monaco (je mesurerai, je ne devine pas).
+
+**Tes 4 réponses pour que je cadre :**
+1. Usage principal : **infos** · **films/séries gratuits** · **radio/musique** · **TV du salon** ?
+2. **Privé** (toi + Laurence + famille) ou **ouvert** sur le domaine ?
+3. Le **téléchargement**, c'est pour tes propres vidéos, ou autre chose de précis ?
+4. Priorité : **qualité du lecteur** (fluide, AirPlay, zéro coupure) ou **nombre de chaînes** ?
+
+*(Je ne code rien tant que tu n'as pas répondu — c'est toi qui as demandé qu'on cadre d'abord.)*
+
+---
+
+### ✅ Fait pendant ce temps (rien à faire pour toi)
+
+- **Connexion admin universelle** : tu es reconnu admin **partout** sur ton domaine, sans code par app (déployé + vérifié en ligne).
+- **15 apps prêtes pour l'iPhone**, chacune sécurisée (HTTPS strict, navigation verrouillée au domaine, icône propre) — toutes testées sur Mac cloud.
+- **World Monitor v2.42** : ta **localisation** en direct (point bleu + précision) sur la **carte**, le **globe** et le **globe 3D**. Ton GPS ne quitte jamais l'iPhone (prouvé : 0 fuite réseau).
+
+---
+
 ## 🗺️ SESSION 2026-08-06 — Feuille de route (ce qui reste, dans l'ordre)
 
 **Rien ne t'attend côté action** — sauf une décision (point 4). Le reste, je le finis moi.
