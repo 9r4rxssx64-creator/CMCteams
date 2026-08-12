@@ -879,6 +879,19 @@
         <button class="chip" id="miniDictBtn" onclick="Mini.dicter()"><span class="ic">🎙️</span>Dicter</button>
         <button class="chip" onclick="Mini.garder()"><span class="ic">👤</span>Garder ce mini-moi</button>
       </div>
+      <div class="hint">😀 L'expression du visage :</div>
+      <div class="toolrow" id="miniExpr" style="justify-content:center">
+        <button class="chip on" data-expr="neutre"><span class="ic">😐</span>Neutre</button>
+        <button class="chip" data-expr="sourire"><span class="ic">🙂</span>Sourire</button>
+        <button class="chip" data-expr="serieux"><span class="ic">🧐</span>Sérieux</button>
+        <button class="chip" data-expr="surpris"><span class="ic">😮</span>Surpris</button>
+      </div>
+      <div class="hint">💬 Dialogue : une ligne = une réplique, ça alterne tout seul entre les 2.</div>
+      <div class="toolrow" id="miniDlgRow" style="justify-content:center">
+        <button class="chip" id="miniDlgA" onclick="Mini.choisirDlg('A')"><span class="ic">👤</span>Personnage 1</button>
+        <button class="chip" id="miniDlgB" onclick="Mini.choisirDlg('B')"><span class="ic">👥</span>Personnage 2</button>
+        <button class="chip" onclick="Mini.dialogue()"><span class="ic">💬</span>Faire le dialogue</button>
+      </div>
       <div class="hint">🌆 Le décor derrière toi :</div>
       <div class="toolrow" id="miniDecor" style="justify-content:center">
         <button class="chip on" data-dec="none"><span class="ic">🚫</span>Ma photo</button>
@@ -1031,7 +1044,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.14.0';
+var APP_VER='v9.15.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -6031,7 +6044,7 @@ var Mini=(function(){
   var voiceMode='tts', voiceBlob=null, ratio='9:16', subs=true, quality='ai';
   var busy=false, outUrl=null, outBlob=null, mediaRec=null, recChunks=[];
   var visemes=null, clin=true, ambiance='studio', ton='normale';
-  var decor='none', cutoutImg=null, decorImg=null, cutoutEnCours=false;
+  var decor='none', cutoutImg=null, decorImg=null, cutoutEnCours=false, expr='neutre';
   var TONS={grave:0.88,normale:1,aigue:1.13};
   var CLE_PERSOS='crea_mini_persos';
 
@@ -6150,7 +6163,9 @@ var Mini=(function(){
      on le dit au lieu de bricoler un faux fond. Le résultat est redimensionné
      aux dimensions EXACTES de la photo → tous les repères (bouche, yeux,
      cadrage) restent valables, rien à recalculer. ---------------------- */
-  function srcImg(){ return (decor!=='none'&&cutoutImg)?cutoutImg:photoImg; }
+  function srcImg(){
+    if(acteur&&acteur.el)return acteur.el;                 /* dialogue : celui qui parle */
+    return (decor!=='none'&&cutoutImg)?cutoutImg:photoImg; }
   function detourer(){
     if(cutoutImg)return Promise.resolve(cutoutImg);
     if(!photoImg)return Promise.reject(new Error('pas de photo'));
@@ -6262,7 +6277,7 @@ var Mini=(function(){
   }
 
   /* Monte la vidéo : la bouche suit le VOLUME réel de la voix. */
-  function renderTalking(actx,frames,audioBlob){
+  function renderTalking(actx,frames,audioBlob,segs){
     return new Promise(function(resolve,reject){
       if(!actx){reject(new Error('Son indisponible sur ce téléphone'));return;}
       var sz=targetSize(),W=sz.W,H=sz.H;
@@ -6290,7 +6305,10 @@ var Mini=(function(){
         var chunks=[];rec.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
         rec.onstop=function(){try{actx.close();}catch(e){}try{aud.pause();}catch(e){}
           var b=new Blob(chunks,{type:mime||'video/webm'}); b.size?resolve(b):reject(new Error('Vidéo vide'));};
-        var iw=photoImg.naturalWidth,ih=photoImg.naturalHeight, cr=coverRect(iw,ih,W,H);
+        /* en dialogue il n'y a pas forcément de « photo courante » : on part
+           du premier acteur pour ne jamais lire un objet nul. */
+        var base=(segs&&segs.length&&dlgA&&dlgA.el)?dlgA.el:photoImg;
+        var iw=base.naturalWidth,ih=base.naturalHeight, cr=coverRect(iw,ih,W,H);
         var t0=performance.now(),ended=false;
         function finish(){if(ended)return;ended=true;try{rec.stop();}catch(e){}}
         function draw(){
@@ -6311,9 +6329,21 @@ var Mini=(function(){
             var fm=frames[lvl]||frames[0], fr=coverRect(fm.naturalWidth||iw,fm.naturalHeight||ih,W,H);
             cx.drawImage(fm,fr.dx,fr.dy,fr.dw,fr.dh);
           }else{
+            /* dialogue : on montre celui qui parle à cet instant */
+            var sv=null,st0=null,st1=null;
+            if(segs&&segs.length){
+              var s=null;
+              for(var q=0;q<segs.length;q++){ if(el>=segs[q].t0-0.001){s=segs[q];} }
+              s=s||segs[0];
+              acteur=(s.qui==='A')?dlgA:dlgB;
+              sv=s.visemes; st0=s.t0; st1=s.t1;
+              var ai=srcImg();
+              iw=ai.naturalWidth||iw; ih=ai.naturalHeight||ih;
+              cr=coverRect(iw,ih,W,H);
+            }
             dessinerDecor(cx,W,H,cr);                  /* ce qu'il y a derrière toi */
             cx.drawImage(srcImg(),cr.dx,cr.dy,cr.dw,cr.dh);
-            drawFace(cx,cr,iw,ih,rms,el,DUR);
+            drawFace(cx,cr,iw,ih,rms,el,DUR,sv,st0,st1);
           }
           cx.restore();
           drawAmbiance(cx,W,H,el,DUR);
@@ -6362,22 +6392,47 @@ var Mini=(function(){
     }
     return out.length?out:null;
   }
+  /* ---------- 😀 EXPRESSIONS : ce sont les COMMISSURES qui font l'expression.
+     courbe > 0 = coins relevés (sourire), < 0 = coins tombants (sérieux). ---- */
+  var EXPR={
+    neutre: {courbe: 0.00, mw:1.00, open:1.00, yeux:1.00},
+    sourire:{courbe: 0.55, mw:1.12, open:0.92, yeux:0.94},  /* coins hauts, yeux un peu plissés */
+    serieux:{courbe:-0.28, mw:0.94, open:0.80, yeux:1.00},
+    surpris:{courbe: 0.05, mw:0.72, open:1.45, yeux:1.14}   /* bouche ronde, yeux ouverts */
+  };
+  /* Bouche = 2 lèvres (courbes de Bézier). Fermée, elle devient une fine
+     ligne courbée → le sourire se voit même bouche close. */
+  function tracerBouche(cx,mcx,mcy,mw,open,courbe){
+    var hw=Math.max(2,mw/2), lev=courbe*mw*0.17;
+    cx.beginPath();
+    cx.moveTo(mcx-hw, mcy-lev);
+    cx.quadraticCurveTo(mcx, mcy-open*0.95-lev*0.25, mcx+hw, mcy-lev);
+    cx.quadraticCurveTo(mcx, mcy+open*1.00-lev*0.25, mcx-hw, mcy-lev);
+    cx.closePath();
+  }
+
   /* Animation du visage : bouche (visème + volume) + clignement + hochement.
      Tout est local — ça marche sans internet et sans crédit IA. */
-  function drawFace(cx,cr,iw,ih,rms,el,DUR){
-    var fw=(face?face.fw:0.42), fx=(face?face.fx:0.29), fy=(face?face.fy:0.18), fh=(face?face.fh:0.62);
-    var chinFy=(face?(fy+fh):(mouth.y+0.14));
-    var mcx=cr.dx+mouth.x*cr.dw, mcy=cr.dy+mouth.y*cr.dh;
+  function drawFace(cx,cr,iw,ih,rms,el,DUR,segVis,segT0,segT1){
+    /* en dialogue, le visage animé est celui de l'acteur qui parle */
+    var F=acteur?acteur.face:face, M=acteur?acteur.mouth:mouth;
+    var fw=(F?F.fw:0.42), fx=(F?F.fx:0.29), fy=(F?F.fy:0.18), fh=(F?F.fh:0.62);
+    var chinFy=(F?(fy+fh):(M.y+0.14));
+    var mcx=cr.dx+M.x*cr.dw, mcy=cr.dy+M.y*cr.dh;
     var faceWc=fw*cr.dw, baseW=Math.max(10,faceWc*0.50), baseH=Math.max(4,faceWc*0.11);
 
-    /* forme voulue par le texte, amplitude donnée par la voix réelle */
-    var v=VIS.C;
-    if(visemes&&visemes.length){
-      var idx=Math.min(visemes.length-1,Math.floor((el/Math.max(0.05,DUR))*visemes.length));
-      v=VIS[visemes[idx]]||VIS.C;
+    /* forme voulue par le texte, amplitude donnée par la voix réelle.
+       En dialogue on prend les sons de la réplique en cours (segVis) et on
+       les répartit sur SA durée à elle, pas sur toute la vidéo. */
+    var v=VIS.C, liste=segVis||visemes;
+    var t0=(segT0==null?0:segT0), t1=(segT1==null?DUR:segT1);
+    if(liste&&liste.length){
+      var p=(el-t0)/Math.max(0.05,(t1-t0));
+      var idx=Math.min(liste.length-1,Math.max(0,Math.floor(p*liste.length)));
+      v=VIS[liste[idx]]||VIS.C;
     }
     var amp=Math.min(1,rms*3.6);
-    if(!visemes)v={w:0.66+amp*0.10,h:Math.max(0.05,amp)};      /* pas de texte → volume seul */
+    if(!liste)v={w:0.66+amp*0.10,h:Math.max(0.05,amp)};        /* pas de texte → volume seul */
     var mw=baseW*v.w, open=Math.max(0.5,baseH*v.h*(0.35+amp*1.5));
 
     /* mâchoire : on redescend la vraie peau du bas du visage (garde la texture) */
@@ -6387,9 +6442,12 @@ var Mini=(function(){
        découpé — sinon l'ancien fond réapparaîtrait par-dessus le nouveau. */
     if(sh>0&&dsh>0){ try{cx.drawImage(srcImg(),fx*iw,sy,fw*iw,sh,
       cr.dx+fx*cr.dw,dsy+open*0.30, fw*cr.dw,dsh+open*0.62);}catch(e){} }
-    /* bouche : trou sombre + dents quand c'est bien ouvert */
+    /* bouche dessinée avec de VRAIES commissures : c'est leur inclinaison qui
+       fait le sourire ou l'air sérieux, pas un simple ovale plus ou moins gros. */
+    var E=EXPR[expr]||EXPR.neutre;
+    mw*=E.mw; open*=E.open;
     cx.save();
-    cx.beginPath();cx.ellipse(mcx,mcy+open*0.16,mw/2,open*0.9,0,0,Math.PI*2);
+    tracerBouche(cx,mcx,mcy+open*0.14,mw,open,E.courbe);
     cx.fillStyle='rgba(46,14,16,.9)';cx.fill();
     if(open>baseH*0.55){cx.beginPath();cx.ellipse(mcx,mcy-open*0.06,mw*0.40,Math.max(1,open*0.26),0,0,Math.PI*2);
       cx.fillStyle='rgba(240,236,230,.55)';cx.fill();}
@@ -6397,14 +6455,23 @@ var Mini=(function(){
 
     /* clignement : on copie une bande de FRONT et on la descend sur les yeux —
        vraie couleur de peau, aucun risque de tache mal teintée. */
-    if(clin&&face){
-      var cyc=el%4.6;                                   /* un clignement ~toutes les 4,6 s */
-      if(cyc<0.14){
-        var k=1-Math.abs(cyc-0.07)/0.07;                /* 0 → 1 → 0 (ferme puis rouvre) */
-        var eyY=fy+fh*0.34, eyH=fh*0.11;                 /* bande des yeux */
-        var frY=fy+fh*0.16;                              /* bande de front (peau nette) */
-        try{cx.drawImage(srcImg(), fx*iw, frY*ih, fw*iw, eyH*ih,
-          cr.dx+fx*cr.dw, cr.dy+(eyY+eyH*(1-k)*0.9)*cr.dh, fw*cr.dw, eyH*cr.dh*k);}catch(e){}
+    if(face){
+      var eyY=fy+fh*0.34, eyH=fh*0.11;                   /* bande des yeux */
+      var frY=fy+fh*0.16;                                /* bande de front (peau nette) */
+      /* surpris = yeux plus ouverts / sourire = un peu plissés : on remonte ou
+         on descend légèrement la paupière (bande de front recopiée). */
+      if(E.yeux!==1){
+        var dy=(1-E.yeux)*eyH*0.9;                       /* >0 : paupière descend */
+        try{cx.drawImage(srcImg(), fx*iw, frY*ih, fw*iw, eyH*ih*Math.abs(1-E.yeux)*2.2,
+          cr.dx+fx*cr.dw, cr.dy+(eyY+dy)*cr.dh, fw*cr.dw, eyH*cr.dh*Math.abs(1-E.yeux)*2.2);}catch(e){}
+      }
+      if(clin){
+        var cyc=el%4.6;                                  /* un clignement ~toutes les 4,6 s */
+        if(cyc<0.14){
+          var k=1-Math.abs(cyc-0.07)/0.07;               /* 0 → 1 → 0 (ferme puis rouvre) */
+          try{cx.drawImage(srcImg(), fx*iw, frY*ih, fw*iw, eyH*ih,
+            cr.dx+fx*cr.dw, cr.dy+(eyY+eyH*(1-k)*0.9)*cr.dh, fw*cr.dw, eyH*cr.dh*k);}catch(e){}
+        }
       }
     }
   }
@@ -6525,6 +6592,117 @@ var Mini=(function(){
     var cb=$('miniClin');if(cb)cb.querySelectorAll('[data-clin]').forEach(function(b){
       b.classList.toggle('on',(b.dataset.clin==='1')===clin);});
   }
+  /* ============================================================
+     💬 DIALOGUE À DEUX — deux mini-moi qui se répondent.
+     Une LIGNE = une réplique, ça alterne tout seul entre les deux
+     personnages : rien de spécial à taper. Chaque réplique est dite par
+     la voix IA (ton propre à chaque personnage), les voix sont collées
+     bout à bout, et à l'image c'est celui qui parle qu'on voit.
+     ============================================================ */
+  var dlgA=null, dlgB=null, acteur=null;
+  function repliques(txt){
+    var l=String(txt||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+    return l.map(function(t,i){return {texte:t,qui:(i%2)?'B':'A'};});
+  }
+  /* WAV mono 16 bits — format lu partout (iOS compris). */
+  function versWav(f32,sr){
+    var n=f32.length, b=new ArrayBuffer(44+n*2), d=new DataView(b);
+    var w=function(o,s){for(var i=0;i<s.length;i++)d.setUint8(o+i,s.charCodeAt(i));};
+    w(0,'RIFF');d.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');
+    d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);
+    d.setUint32(24,sr,true);d.setUint32(28,sr*2,true);d.setUint16(32,2,true);d.setUint16(34,16,true);
+    w(36,'data');d.setUint32(40,n*2,true);
+    for(var i=0;i<n;i++){var v=Math.max(-1,Math.min(1,f32[i]));d.setInt16(44+i*2,v*32767,true);}
+    return new Blob([b],{type:'audio/wav'});
+  }
+  function voixDe(texte){
+    return fetch(AI_URL+'/voice',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:texte,lang:'fr'})})
+      .then(function(r){ if(!r.ok)return r.json().then(
+        function(j){throw new Error((j&&j.error)||'voice_http');},
+        function(){throw new Error('voice_http_'+r.status);}); return r.arrayBuffer(); });
+  }
+  /* Génère chaque réplique, colle tout, et note QUI parle QUAND. */
+  function fabriquerDialogue(reps,actx){
+    var SR=22050, morceaux=[], segs=[], t=0;
+    var suite=Promise.resolve();
+    reps.forEach(function(r,i){
+      suite=suite.then(function(){
+        aiShow('🗣️ Voix '+(i+1)+'/'+reps.length+'…');
+        return voixDe(r.texte).then(function(ab){return actx.decodeAudioData(ab);})
+          .then(function(buf){
+            /* mono + rééchantillonnage simple vers SR */
+            var src=buf.getChannelData(0), ratio=buf.sampleRate/SR;
+            var n=Math.max(1,Math.floor(src.length/ratio)), out=new Float32Array(n);
+            for(var k=0;k<n;k++)out[k]=src[Math.floor(k*ratio)]||0;
+            /* ton du personnage : plus lent = plus grave, plus vite = plus aigu */
+            var perso=(r.qui==='A')?dlgA:dlgB;
+            var rate=TONS[(perso&&perso.ton)||'normale']||1;
+            var m=Math.max(1,Math.floor(n/rate)), ton=new Float32Array(m);
+            for(var j=0;j<m;j++)ton[j]=out[Math.floor(j*rate)]||0;
+            var dur=m/SR, blanc=new Float32Array(Math.floor(SR*0.22)); /* respiration */
+            morceaux.push(ton,blanc);
+            segs.push({t0:t,t1:t+dur,qui:r.qui,visemes:visemesDuTexte(r.texte),texte:r.texte});
+            t+=dur+blanc.length/SR;
+          });
+      });
+    });
+    return suite.then(function(){
+      var total=morceaux.reduce(function(a,b){return a+b.length;},0);
+      var all=new Float32Array(total),o=0;
+      morceaux.forEach(function(p){all.set(p,o);o+=p.length;});
+      return {blob:versWav(all,SR),segs:segs};
+    });
+  }
+  function lancerDialogue(){
+    if(busy)return;
+    var reps=repliques($('miniScript').value||'');
+    if(reps.length<2){toast('Écris au moins 2 lignes : une par réplique 💬',3600);return;}
+    if(!dlgA||!dlgB){toast('Choisis les 2 personnages du dialogue 👥',3400);return;}
+    apercuStop();
+    busy=true;$('miniGoBtn').disabled=true;
+    var AC=window.AudioContext||window.webkitAudioContext,actx=null;
+    try{actx=new AC();}catch(e){}
+    if(actx&&actx.state==='suspended'){try{actx.resume();}catch(e){}}
+    if(!actx){busy=false;$('miniGoBtn').disabled=false;toast('Son indisponible sur ce téléphone');return;}
+    /* la découpe appartient à la photo courante, pas aux personnages du
+       dialogue → on n'applique aucun décor ici (plutôt que le mauvais). */
+    var decorAvant=decor; decor='none';
+    Promise.all([chargerActeur(dlgA),chargerActeur(dlgB)]).then(function(){
+      return fabriquerDialogue(reps,actx);
+    }).then(function(o){
+      Credit.ok();
+      aiShow('🎬 Montage du dialogue…');
+      var ac2=new AC();
+      return renderTalking(ac2,null,o.blob,o.segs);
+    }).then(function(blob){
+      busy=false;$('miniGoBtn').disabled=false;aiHide();acteur=null;
+      if(outUrl)URL.revokeObjectURL(outUrl); outBlob=blob; outUrl=URL.createObjectURL(blob);
+      img.classList.add('hidden');vid.src=outUrl;vid.classList.remove('hidden');vid.play().catch(function(){});
+      try{Mine.save(blob,'Dialogue mini-moi','video');}catch(e){}
+      hint('✅ Ton dialogue est prêt !');
+      openExport('Votre dialogue 💬','Deux mini-moi qui se répondent.',[
+        {label:'📤 Enregistrer / Partager',fn:function(){var x=((blob.type||'').indexOf('webm')>=0)?'webm':'mp4';
+          shareOrSave(blob,'dialogue.'+x,'Notre dialogue');closeSheet();}},
+        {label:'🔁 Refaire',ghost:true,fn:function(){closeSheet();lancerDialogue();}}
+      ]);
+    }).catch(function(e){
+      busy=false;$('miniGoBtn').disabled=false;aiHide();acteur=null;decor=decorAvant;syncBoutons();
+      if(aiFail(e,{quoi:'les voix du dialogue',hint:hint,relancer:lancerDialogue}))return;
+      var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* Charge l'image d'un personnage une seule fois (elle sert à chaque frame). */
+  function chargerActeur(p){
+    return new Promise(function(res,rej){
+      if(!p){rej(new Error('personnage manquant'));return;}
+      if(p.el){res(p);return;}
+      var im=new Image();
+      im.onload=function(){p.el=im;res(p);};
+      im.onerror=function(){rej(new Error('photo de « '+p.nom+' » illisible'));};
+      im.src=p.img;
+    });
+  }
+
   /* ---------- 👁 APERÇU EN DIRECT : voir tout de suite si la bouche est bien
      placée, si le clignement va, si le décor rend bien — au lieu d'attendre
      un rendu complet pour découvrir que c'est à refaire. Aucun son, aucun
@@ -6604,6 +6782,7 @@ var Mini=(function(){
     $('miniTon').querySelectorAll('[data-ton]').forEach(function(b){b.onclick=function(){ton=b.dataset.ton;setOn(b,'[data-ton]');};});
     $('miniAmb').querySelectorAll('[data-amb]').forEach(function(b){b.onclick=function(){ambiance=b.dataset.amb;setOn(b,'[data-amb]');};});
     $('miniClin').querySelectorAll('[data-clin]').forEach(function(b){b.onclick=function(){clin=(b.dataset.clin==='1');setOn(b,'[data-clin]');};});
+    $('miniExpr').querySelectorAll('[data-expr]').forEach(function(b){b.onclick=function(){expr=b.dataset.expr;setOn(b,'[data-expr]');};});
     $('miniDecor').querySelectorAll('[data-dec]').forEach(function(b){b.onclick=function(){
       setOn(b,'[data-dec]');
       if(b.dataset.dec==='img'&&!decorImg){$('fileMiniDecor').click();return;}
@@ -6625,7 +6804,19 @@ var Mini=(function(){
   }
 
   return {pick:pick,camera:camera,record:record,generate:generate,init:init,_load:_load,
-    garder:garder,dicter:dicter,persos:persos,apercu:apercu,
+    garder:garder,dicter:dicter,persos:persos,apercu:apercu,dialogue:lancerDialogue,
+    /* Choisir qui joue le personnage 1 / 2 du dialogue. */
+    choisirDlg:function(qui){
+      var l=persos();
+      if(!l.length){toast('Garde d\'abord tes mini-moi (bouton « 👤 Garder ce mini-moi ») 👥',4200);return;}
+      var btns=l.map(function(p){return {label:'👤 '+p.nom,fn:function(){
+        var copie={nom:p.nom,img:p.img,mouth:p.mouth,face:p.face,ton:p.ton};
+        if(qui==='A')dlgA=copie; else dlgB=copie;
+        var b=$('miniDlg'+qui); if(b)b.innerHTML='<span class="ic">✅</span>'+esc(p.nom);
+        closeSheet();toast('Personnage '+(qui==='A'?'1':'2')+' : '+p.nom,2000);}};});
+      btns.push({label:'Fermer',ghost:true,fn:closeSheet});
+      openExport('Personnage '+(qui==='A'?'1':'2'),'Qui joue ce rôle dans le dialogue ?',btns);
+    },
     _decorImg:function(file){
       var im=new Image();
       im.onload=function(){decorImg=im;choisirDecor('img');};
