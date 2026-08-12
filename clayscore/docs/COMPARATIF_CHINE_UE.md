@@ -78,23 +78,25 @@ commander chez **un seul** vendeur chinois.
 
 | Configuration | HT | dont 🇨🇳 | dont 🇪🇺 | **Livré TTC** |
 |---|---:|---:|---:|---:|
-| **Étape 0** — valider avant tout (1 calculateur + 2 caméras + 4 objectifs) | 814 € | 422 € | 392 € | **899 €** |
-| **Phase 1** — 1 fosse + club-house complet | 2 249 € | 844 € | 1 405 € | **2 417 €** |
-| **Phase 2** — + 2ᵉ fosse | 4 007 € | 1 688 € | 2 319 € | **4 345 €** |
-| **Phase 3** — + parcours de chasse | 6 551 € | 2 743 € | 3 808 € | **7 099 €** |
-| *(pour comparaison : club complet en config minimum)* | *4 894 €* | *1 750 €* | *3 144 €* | ***5 244 €*** |
+| **Étape 0** — valider avant tout (1 calculateur + 2 caméras + 4 objectifs) | 814 € | 421 € | 393 € | **898 €** |
+| **Phase 1** — 1 fosse + club-house complet (diffusion comprise) | 2 425 € | 903 € | 1 523 € | **2 606 €** |
+| **Phase 2** — + 2ᵉ fosse | 4 360 € | 1 805 € | 2 555 € | **4 722 €** |
+| **Phase 3** — + parcours de chasse | 6 551 € | 2 934 € | 3 618 € | **7 138 €** |
+| *(pour comparaison : club complet en config minimum)* | *5 424 €* | *1 897 €* | *3 528 €* | ***5 804 €*** |
 
 **Sur les 6 551 € HT de la config optimale : 1 466 € sont VÉRIFIÉS sur la
-fiche produit, 4 347 € reposent sur une offre réelle (72 %)**, et 1 675 €
-restent des hypothèses (écran et mini-PC du club-house, petites pièces).
+fiche produit (22 %), 4 696 € reposent sur une offre publique réelle (72 %)**,
+et 1 855 € restent des hypothèses (écran et mini-PC du club-house, petites
+pièces). Le détail vendeur par vendeur, avec un lien 1 clic par ligne, est
+dans **`DEVIS_COMPARATIF.md`**.
 
 ---
 
 ## 5. L'ordre d'achat
 
-### Étape 0 — 899 € — **à faire avant tout le reste**
+### Étape 0 — 898 € — **à faire avant tout le reste**
 
-1 Jetson (Europe, livré en 48 h) + 2 caméras + 4 objectifs (Chine) = **899 €**.
+1 Jetson (Europe, livré en 48 h) + 2 caméras + 4 objectifs (Chine) = **898 €**.
 
 Ça valide en une fois **les deux seules inconnues techniques du projet** :
 - la **cadence** tient-elle sur le vrai calculateur ? (`python -m tools.bench --all`,
@@ -102,7 +104,7 @@ restent des hypothèses (écran et mini-PC du club-house, petites pièces).
   sur Jetson**) ;
 - la **paire stéréo** se synchronise-t-elle par déclenchement externe ?
 
-> **Ne commande pas 13 caméras avant d'avoir fait ça.** 899 € pour supprimer
+> **Ne commande pas 13 caméras avant d'avoir fait ça.** 898 € pour supprimer
 > le seul vrai risque du dossier.
 
 ### Puis, une commande chinoise groupée

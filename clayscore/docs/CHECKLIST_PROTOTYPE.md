@@ -30,7 +30,7 @@ démonstration à un club ».** À cocher au fur et à mesure.
 - **> 85 %** → excellent, commander le matériel en confiance
 - **60-85 %** → normal, il faudra ajuster les seuils (`config.yaml`) avec de
   vraies images : ça se fait, et c'est même prévu pour
-- **< 60 %** → comprendre pourquoi **avant** de dépenser 1 465 €
+- **< 60 %** → comprendre pourquoi **avant** de dépenser ~1 372 €
 
 *(Bénéfice bonus : ces vidéos sont exactement les plans « signature » du plan
 vidéo de démonstration.)*
@@ -39,7 +39,7 @@ vidéo de démonstration.)*
 
 ## Phase 1 — Commander
 
-*Durée : 3 à 5 semaines (délai Chine) · Coût : ~1 465 €*
+*Durée : 3 à 5 semaines (délai Chine) · Coût : ~1 372 € HT (≈ 1 477 € livré)*
 
 **Ordre important** — le Jetson d'abord (délais), la Chine ensuite (long),
 l'Europe en dernier (48 h, et on connaît alors les vraies dimensions).
@@ -186,7 +186,7 @@ Rien n'oblige à attendre les bras croisés. Tout est faisable **sans matériel*
 | # | Piège | Conséquence | Parade |
 |---|---|---|---|
 | 1 | Caméra **rolling shutter** | Plateau déformé → **tout est à refaire** | Exiger « global shutter » **par écrit** |
-| 2 | Sauter la **Phase 0** | 1 465 € dépensés sans savoir si ça marche | Filmer d'abord. C'est gratuit. |
+| 2 | Sauter la **Phase 0** | ~1 372 € dépensés sans savoir si ça marche | Filmer d'abord. C'est gratuit. |
 | 3 | Pods **trop rapprochés** | Distance imprécise, verdicts douteux | 1,5-2,5 m minimum |
 | 4 | Pod qui **bouge** au vent | Détections fantômes partout | Piquet planté > trépied léger |
 | 5 | **Exposition trop longue** | Plateau flou → casse invisible | 1/2000 s |
@@ -201,7 +201,7 @@ Rien n'oblige à attendre les bras croisés. Tout est faisable **sans matériel*
 | Phase | Durée | Coût | Sortie |
 |---|---|---|---|
 | 0 — Filmer | 1-2 week-ends | **0 €** | Précision réelle mesurée |
-| 1 — Commander | 3-5 semaines | ~1 465 € | Matériel livré |
+| 1 — Commander | 3-5 semaines | ~1 477 € livré | Matériel livré |
 | 2 — Préparer | (en parallèle) | 0 € | Logiciel réglé, vidéo concept, RDV pris |
 | 3 — Assembler | 1 week-end | 0 € | 3 pods + hub |
 | 4 — Allumer | ½ journée | 0 € | Système fonctionnel sur table |
@@ -224,4 +224,4 @@ C'est **le cas normal**, pas l'échec. Le logiciel est conçu pour ça :
   absent) : le système ne tombe jamais en panne à cause d'un composant manquant.
 
 **Le vrai risque n'est pas que ça marche à 85 % au lieu de 98 %.
-C'est de dépenser 1 465 € sans avoir fait la Phase 0.**
+C'est de dépenser ~1 372 € sans avoir fait la Phase 0.**

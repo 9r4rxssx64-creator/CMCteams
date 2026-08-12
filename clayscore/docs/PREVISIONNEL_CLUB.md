@@ -18,8 +18,8 @@ club-house un peu plus loin qui doit voir les scores et les caméras.**
 | **13 caméras d'arbitrage** | 3 + 3 + 4, **+1 secours par terrain** |
 | 🆕 **6 caméras de diffusion** | 2 par terrain : le **tireur** et la **zone de vol** |
 | **Ce qui remonte au club-house** | **36,6 Mbit/s** — score + ralenti **+ direct** |
-| **Coût matériel (config OPTIMALE, diffusion comprise)** | **6 551 € HT** → **7 099 € livré** |
-| **Faisable en 3 fois (livré)** | 2 417 € → +1 928 € → +2 225 € |
+| **Coût matériel (config OPTIMALE, diffusion comprise)** | **6 551 € HT** → **7 138 € livré** |
+| **Faisable en 3 fois (livré)** | 2 606 € → +2 116 € → +2 417 € |
 
 ---
 
@@ -35,16 +35,20 @@ Le piège, c'est de vouloir envoyer la vidéo au club-house.
    ✅ CE QU'ON FAIT
    Le calculateur reste SUR le terrain et décide sur place.
    Ce qui part au club-house :
-        score / verdict ............   0,2 Mbit/s
-        retour caméra (720p) .......   4,0 Mbit/s
-        ────────────────────────────────────────
-        par terrain ................   4,2 Mbit/s
-        × 3 terrains ...............  12,6 Mbit/s   ← passe très large
+        score / verdict ..............   0,2 Mbit/s
+        retour caméra d'arbitrage ....   4,0 Mbit/s
+        caméra TIREUR (diffusion) ....   4,0 Mbit/s
+        caméra ZONE DE VOL (diff.) ...   4,0 Mbit/s
+        ──────────────────────────────────────────
+        par terrain ..................  12,2 Mbit/s
+        × 3 terrains .................  36,6 Mbit/s   ← passe encore large
 ```
 
-Un pont WiFi directionnel transporte ~100 Mbit/s. On en utilise **12,6**.
-Il reste donc **8× de marge** : on peut passer les trois terrains en **HD**
-(36,6 Mbit/s) si un jour tu veux du ralenti exploitable sur l'écran du bar.
+Chaque terrain a **son propre pont** — un pont directionnel est
+point-à-point, il ne se partage pas. Chacun transporte ~100 Mbit/s et on en
+utilise **12,2**. Il reste donc **8× de marge par terrain** : de quoi passer
+plus tard en **HD** pour du ralenti exploitable sur l'écran du bar, ou
+d'ajouter une troisième caméra de diffusion, sans rien recâbler.
 
 ---
 
@@ -171,7 +175,8 @@ cher parce qu'elles n'ont aucune de ces contraintes :
   et remplace une caméra tombée.
 
 **Coût de l'option, pour les 3 terrains :** 6 caméras (354 €) + 3 switchs
-supplémentaires (180 €) = **+534 € HT**.
+supplémentaires (180 €) = **+534 € HT** — soit environ **+8 %** sur le
+matériel du club. C'est déjà compris dans le total du § 6.
 
 > ⚖️ **Un point à ne pas négliger** : diffuser l'image de tireurs sur un écran
 > public, ce n'est pas la même chose que filmer un plateau. Il faut **prévenir
@@ -190,29 +195,38 @@ Calculé par `Site.bom()`. Chaque prix porte sa provenance : voir `MATERIEL_OPTI
 
 | Poste | Qté | Prix unit. | Total |
 |---|---:|---:|---:|
-| Caméra industrielle **COULEUR** (dont 3 de secours) | 13 | 139 € | 1 807 € |
+| Caméra industrielle **COULEUR** (dont 3 de secours) | 13 | 138,66 € | 1 803 € |
 | Objectifs **8 mm ET 12 mm** (F1.4) | 26 | 36 € | 936 € |
 | Filtre optique | 13 | 15 € | 195 € |
 | Caisson étanche IP66 | 13 | 15 € | 195 € |
 | Trépied / fixation | 13 | 15 € | 195 € |
+| **Caméra de diffusion** (tireur + zone de vol) | 6 | 59 € | 354 € |
 | Calculateur (Jetson Orin Nano Super, acheté en UE) | 3 | 392,50 € | 1 178 € |
 | SSD NVMe 500 Go | 3 | 40 € | 120 € |
-| Switch PoE | 3 | 60 € | 180 € |
+| Switch PoE (**2 par terrain** — 4 ports alimentés chacun) | 6 | 60 € | 360 € |
 | Micro (détection du coup de feu) | 3 | 25 € | 75 € |
 | Batterie LiFePO4 30 Ah | 3 | 46 € | 138 € |
 | Chargeur LiFePO4 | 3 | 25 € | 75 € |
 | Câblage extérieur / connectique | 3 lots | 50 € | 150 € |
 | Pont directionnel NanoStation 5AC Loco (paire, chez Getic) | 3 | 96,08 € | 288 € |
 | Routeur club-house | 1 | 40 € | 40 € |
-| **Mini-PC club-house** *(nouveau)* | 1 | 200 € | 200 € |
-| **Écran club-house** *(nouveau)* | 1 | 250 € | 250 € |
-| **TOTAL MATÉRIEL (optimal)** | | | **6 022 € HT** |
+| Mini-PC club-house | 1 | 200 € | 200 € |
+| Écran club-house | 1 | 250 € | 250 € |
+| **TOTAL MATÉRIEL (optimal)** | | | **6 551 € HT** |
 
 > ⚠️ **Ce ne sont pas des devis.** Le tableau ci-dessus est la configuration
-> **OPTIMALE** (caméra de secours par terrain + double jeu d'objectifs) :
-> **6 022 € HT**, dont **4 096 € à prix relevés (71 %)**. En config
-> **minimum** : 4 643 € HT. Le comparatif Chine/Europe poste par poste et les
-> totaux **livrés TVA comprise** sont dans **`COMPARATIF_CHINE_UE.md`**.
+> **OPTIMALE** (caméra de secours par terrain + double jeu d'objectifs +
+> diffusion) : **6 551 € HT**, dont **4 696 € à prix relevés (72 %)** et
+> **1 466 € lus directement sur la fiche produit (22 %)**.
+>
+> | Configuration | HT | **Livré** (TVA sur la part 🇨🇳) |
+> |---|---:|---:|
+> | Optimale | 6 551 € | **7 138 €** |
+> | Minimum (sans secours, une focale) | 5 424 € | **5 804 €** |
+>
+> Le devis exécutable **avec un lien 1 clic par ligne** est dans
+> **`DEVIS_COMPARATIF.md`** ; le raisonnement Chine/Europe poste par poste
+> dans **`COMPARATIF_CHINE_UE.md`**.
 
 ---
 
@@ -223,10 +237,10 @@ avant de câbler le club.
 
 | Étape | Ce qu'on installe | Coût de l'étape | Cumul |
 |---|---|---:|---:|
-| **0** | 1 calculateur + 2 caméras + 4 objectifs — **valider avant tout** | **899 €** | 899 € |
-| **1** | Fosse 1 + club-house complet | **2 417 €** | 2 417 € |
-| **2** | Fosse 2 | **+1 928 €** | 4 345 € |
-| **3** | Parcours de chasse | **+2 225 €** | 6 570 € |
+| **0** | 1 calculateur + 2 caméras + 4 objectifs — **valider avant tout** | **898 €** | 898 € |
+| **1** | Fosse 1 + club-house complet (écran, mini-PC, 1ᵉʳ pont, diffusion) | **2 606 €** | 2 606 € |
+| **2** | Fosse 2 | **+2 116 €** | 4 722 € |
+| **3** | Parcours de chasse | **+2 417 €** | **7 138 €** |
 
 *(Montants **livrés**, TVA comprise sur la part chinoise. L'étape 0 fait partie
 de l'étape 1, elle n'est pas en plus.)*

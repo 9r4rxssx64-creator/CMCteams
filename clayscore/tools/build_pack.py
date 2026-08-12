@@ -17,6 +17,30 @@ def b64(p):
     return base64.b64encode(pathlib.Path(p).read_bytes()).decode()
 
 
+def nb_tests() -> str:
+    """Compte les tests RÉELLEMENT collectés — jamais un chiffre écrit à la main.
+
+    Le compteur de la page d'accueil est resté bloqué à « 117 » pendant que la
+    suite passait à 341 : un chiffre en dur périme en silence. On le mesure.
+    """
+    try:
+        r = subprocess.run(
+            ["python3", "-m", "pytest", "--collect-only", "-q", "-p", "no:warnings"],
+            cwd=SRC, capture_output=True, text=True, timeout=300)
+        # `-q` sort une ligne « tests/test_x.py: 21 » par fichier. On les somme.
+        total = 0
+        for ligne in r.stdout.split("\n"):
+            if ligne.startswith("tests/") and ": " in ligne:
+                bout = ligne.rsplit(": ", 1)[1].strip()
+                if bout.isdigit():
+                    total += int(bout)
+        if total:
+            return str(total)
+    except Exception:
+        pass
+    return "?"
+
+
 DISP = b64(f"{FONTS}/BigShoulders-Bold.ttf")
 MONO = b64(f"{FONTS}/GeistMono-Regular.ttf")
 
@@ -273,11 +297,14 @@ MENU = """<!doctype html><html lang="fr"><head><meta charset="utf-8">
     <p class="sub">Mesurés, pas estimés — reproductibles avec <code>pytest</code>.</p>
     <div class="stats">
       <div class="stat"><div class="n">8/8</div><div class="l">jalons terminés</div></div>
-      <div class="stat"><div class="n">117</div><div class="l">tests réussis</div></div>
+      <div class="stat"><div class="n">__NB_TESTS__</div><div class="l">tests automatiques</div></div>
       <div class="stat"><div class="n">100%</div><div class="l">bons verdicts (225 clips)</div></div>
       <div class="stat"><div class="n">0</div><div class="l">faux positif (coups de feu)</div></div>
       <div class="stat"><div class="n">5</div><div class="l">disciplines gérées</div></div>
       <div class="stat"><div class="n">0 €</div><div class="l">de licence logicielle</div></div>
+      <div class="stat"><div class="n">27/27</div><div class="l">en couleur (9/27 en noir et blanc)</div></div>
+      <div class="stat"><div class="n">898 €</div><div class="l">pour valider avant tout achat</div></div>
+      <div class="stat"><div class="n">7 138 €</div><div class="l">club 3 terrains, livré</div></div>
     </div>
     <div class="note"><strong>À savoir :</strong> ces résultats sont obtenus en <em>simulation</em>
     (vidéos générées dont on connaît la réponse). La validation sur de vraies vidéos de stand
@@ -393,7 +420,7 @@ MENU = """<!doctype html><html lang="fr"><head><meta charset="utf-8">
   <a href="mailto:kevin.desarzens@gmail.com">kevin.desarzens@gmail.com</a> ·
   <a href="tel:+33672280277">+33 6 72 28 02 77</a>
 </div>
-</body></html>""".replace("__CSS__", MENU_CSS)
+</body></html>""".replace("__CSS__", MENU_CSS).replace("__NB_TESTS__", nb_tests())
 
 CLAUDE_MD = """# ClayScore — contexte projet (pour Claude Code)
 
