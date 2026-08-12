@@ -238,6 +238,22 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   /* ---------- MODAL / SHEET ---------- */
+  /* ---------- 💳 BANDEAU « IA en pause » + écran de recharge ---------- */
+  /* dans le flux (body = flex column) → aucun chevauchement, aucun calcul */
+  #creditBar{flex:0 0 auto;z-index:31;display:none;gap:8px;align-items:center;
+    padding:9px 12px;font-size:13px;font-weight:700;color:#2a1c00;cursor:pointer;
+    background:linear-gradient(135deg,#f0c14b,#e8a020);box-shadow:0 3px 14px rgba(0,0,0,.35);
+    border:0;width:100%;text-align:left;min-height:44px}
+  #creditBar.on{display:flex;animation:fadeIn .3s ease}
+  #creditBar .cb-txt{flex:1;line-height:1.3}
+  #creditBar .cb-go{background:rgba(0,0,0,.22);color:#fff;border-radius:999px;padding:7px 12px;
+    font-weight:800;font-size:12.5px;white-space:nowrap}
+  .rc-amounts{display:flex;gap:8px;justify-content:center;margin:2px 0 14px;flex-wrap:wrap}
+  .rc-amounts button{flex:1 1 auto;min-width:88px;min-height:52px;border-radius:14px;cursor:pointer;
+    background:var(--bg3,#1b1f26);color:var(--fg,#fff);border:2px solid rgba(255,255,255,.14);
+    font-size:16px;font-weight:800;padding:8px 10px}
+  .rc-amounts button.on{border-color:#e8b84b;background:rgba(232,184,75,.16);color:#f2d68a}
+  .rc-note{color:var(--muted);font-size:12.5px;line-height:1.5;margin:10px 0 0;text-align:center}
   .sheet{position:fixed;inset:0;z-index:90;display:none;align-items:flex-end;justify-content:center}
   .sheet.open{display:flex}
   .sheet .bg{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
@@ -297,6 +313,13 @@
   <button class="tbtn" id="btnNew" title="Nouveau / importer">＋ Ouvrir</button>
   <button class="tbtn gold" id="btnExport" title="Exporter / partager">⤓ Exporter</button>
 </div>
+<!-- 💳 Bandeau permanent quand l'IA est en pause (crédit épuisé) : visible
+     partout, 1 tap → écran de recharge. N'importe qui peut participer. -->
+<button id="creditBar" onclick="Recharge.ouvrir()">
+  <span>⏳</span>
+  <span class="cb-txt" id="creditBarTxt">IA en pause — plus de crédit</span>
+  <span class="cb-go">💳 Recharger</span>
+</button>
 
 <!-- STAGE -->
 <div id="stage">
@@ -913,6 +936,25 @@
   </div>
 </div>
 
+<!-- 💳 ÉCRAN DE RECHARGE — ouvert à tout le monde, pas seulement à l'admin -->
+<div class="sheet" id="rechargeSheet">
+  <div class="bg" onclick="Recharge.fermer()"></div>
+  <div class="body">
+    <div class="grip"></div>
+    <h3>💳 Recharger l'IA</h3>
+    <p id="rcDesc">L'IA coûte quelques centimes à chaque création. Quand la cagnotte est vide,
+      elle se met en pause — <b>n'importe qui peut la recharger</b>, en 30 secondes, sans créer de compte.</p>
+    <div class="rc-amounts" id="rcAmounts">
+      <button data-eur="5" class="on">5 €</button>
+      <button data-eur="10">10 €</button>
+      <button data-eur="20">20 €</button>
+      <button data-eur="50">50 €</button>
+    </div>
+    <div id="rcBtns"></div>
+    <p class="rc-note" id="rcNote"></p>
+  </div>
+</div>
+
 <!-- hidden inputs -->
 <input type="file" id="fileCamAny" class="hidden"
   accept="image/*,image/heic,image/heif,.heic,.heif,video/*,.mov,.mp4,.m4v,.webm,audio/*,.m4a,.aac,.mp3,.wav,.ogg,.caf"
@@ -945,7 +987,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.11.0';
+var APP_VER='v9.12.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -1554,6 +1596,92 @@ function aiErrMsg(e,suite){var m=String((e&&e.message)||e||'');suite=suite||'';
 }
 
 /* ============================================================
+   💳 RECHARGE — n'importe qui peut remettre du crédit (Kevin 2026-08-12)
+   L'IA payante marche avec une cagnotte. Quand elle est vide, TOUT LE MONDE
+   (famille, amis, clients) doit pouvoir la remplir en 1 tap — pas seulement
+   l'admin. Le paiement arrive à Kevin, qui recharge l'IA : c'est écrit noir
+   sur blanc, on ne laisse croire à personne que le paiement recharge tout seul.
+   Revtag @kdmc = valeur réelle du dépôt. PayPal n'a AUCUNE valeur connue :
+   il n'apparaît que si Kevin le renseigne (jamais un lien inventé).
+   ============================================================ */
+var Recharge=(function(){
+  var REVTAG='kdmc';
+  var CLE_PP='crea_paypal_me';
+  var eur=5;
+  function paypalUser(){try{return (localStorage.getItem(CLE_PP)||'').replace(/^@|\/+$/g,'').trim();}catch(e){return '';}}
+  function lienRevolut(m){return 'https://revolut.me/'+REVTAG+(m?('/'+m+'eur'):'');}
+  function lienPaypal(m){var u=paypalUser();return u?('https://paypal.me/'+u+(m?('/'+m+'EUR'):'')):'';}
+  function admin(){try{return !!(window.Users&&Users.isAdmin&&Users.isAdmin());}catch(e){return false;}}
+  function ouvrirUrl(u){ if(!u)return; try{window.open(u,'_blank','noopener');}catch(e){location.href=u;} }
+
+  function btn(label,ghost,fn){var b=document.createElement('button');
+    b.className='bigbtn'+(ghost?' ghost':'');b.textContent=label;b.onclick=fn;return b;}
+
+  function peindre(){
+    var c=$('rcBtns');if(!c)return;c.innerHTML='';
+    /* 1) Payer — le vrai « 1 clic » : montant déjà choisi dans le lien. */
+    c.appendChild(btn('💎 Payer '+eur+' € avec Revolut',false,function(){
+      ouvrirUrl(lienRevolut(eur));apresPaiement();}));
+    var pp=lienPaypal(eur);
+    if(pp)c.appendChild(btn('🅿️ Payer '+eur+' € avec PayPal',true,function(){ouvrirUrl(pp);apresPaiement();}));
+    else if(admin())c.appendChild(btn('➕ Ajouter mon PayPal (une fois)',true,function(){
+      var u=prompt('Ton nom PayPal.me (juste le nom, sans le lien) :','');
+      if(u&&u.trim()){try{localStorage.setItem(CLE_PP,u.trim());}catch(e){}toast('✅ PayPal ajouté',2000);peindre();}}));
+    /* 2) Faire payer quelqu'un d'autre — le lien part par SMS/WhatsApp. */
+    c.appendChild(btn('📤 Demander à quelqu\'un de payer',true,partager));
+    /* 3) Vérifier que c'est reparti. */
+    c.appendChild(btn('🔄 Vérifier si l\'IA est repartie',true,function(){fermer();Credit.verifier();}));
+    /* 4) Admin seulement : mettre l'argent sur le compte de l'IA. */
+    if(admin())c.appendChild(btn('🔧 Recharger le compte IA (admin)',true,function(){
+      ouvrirUrl('https://replicate.com/account/billing');}));
+    c.appendChild(btn('Fermer',true,fermer));
+    var n=$('rcNote');
+    if(n)n.textContent=admin()
+      ? 'Toi (admin) : après le paiement, mets le montant sur le compte de l\'IA avec le bouton 🔧 — c\'est ce qui la redémarre.'
+      : 'Ton paiement arrive à Kevin, qui remet aussitôt le crédit sur l\'IA. Tu n\'as pas de compte à créer.';
+  }
+  function apresPaiement(){
+    /* On ne PRÉTEND pas que c'est payé : on propose de prévenir + de vérifier. */
+    setTimeout(function(){
+      openExport('Merci 🙏','Dès que le crédit est remis, tes créations en attente repartent toutes seules.',[
+        {label:'✅ J\'ai payé — prévenir',fn:function(){closeSheet();prevenir();}},
+        {label:'🔄 Vérifier maintenant',ghost:true,fn:function(){closeSheet();Credit.verifier();}},
+        {label:'Fermer',ghost:true,fn:closeSheet}
+      ]);
+    },900);
+  }
+  function txtPartage(){
+    return 'L\'IA de Créa Studio est en pause (cagnotte vide). Tu peux la recharger en 1 clic ('+eur+' €) : '+lienRevolut(eur);
+  }
+  function partager(){
+    var t=txtPartage();
+    if(navigator.share){navigator.share({title:'Recharger l\'IA',text:t}).catch(function(){});return;}
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){toast('📋 Lien copié — colle-le dans un message',3000);},
+      function(){ouvrirUrl(lienRevolut(eur));});return;}
+    ouvrirUrl(lienRevolut(eur));
+  }
+  function prevenir(){
+    var qui='';try{var c=window.Users&&Users.current&&Users.current();qui=(c&&c.name)?(' ('+c.name+')'):'';}catch(e){}
+    var t='J\'ai payé '+eur+' € pour recharger l\'IA de Créa Studio'+qui+'. Tu peux remettre le crédit 🙏';
+    if(navigator.share){navigator.share({title:'Recharge IA payée',text:t}).catch(function(){});return;}
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){toast('📋 Message copié — envoie-le à Kevin',3200);});return;}
+    toast('Préviens Kevin : '+t,4000);
+  }
+  function ouvrir(){
+    var row=$('rcAmounts');
+    if(row)row.querySelectorAll('[data-eur]').forEach(function(b){
+      b.classList.toggle('on',+b.dataset.eur===eur);
+      b.onclick=function(){eur=+b.dataset.eur;
+        row.querySelectorAll('[data-eur]').forEach(function(x){x.classList.remove('on');});
+        b.classList.add('on');peindre();};});
+    peindre();
+    $('rechargeSheet').classList.add('open');
+  }
+  function fermer(){$('rechargeSheet').classList.remove('open');}
+  return {ouvrir:ouvrir,fermer:fermer,partager:partager,lien:function(){return lienRevolut(eur);}};
+})();
+
+/* ============================================================
    💳 CRÉDIT IA — « plutôt rien qu'un résultat raté »
    Règle Kevin (2026-08-12) : quand l'IA payante n'a plus de crédit et
    que la version sans IA serait MÉDIOCRE (détourage, cartoon, améliorer),
@@ -1563,47 +1691,88 @@ function aiErrMsg(e,suite){var m=String((e&&e.message)||e||'');suite=suite||'';
    ============================================================ */
 var Credit=(function(){
   var CLE='crea_credit_ko';
-  var attente=null;                 /* {quoi, section, relancer} */
+  var file=[];                      /* créations en attente : [{quoi,section,relancer}] */
   var dernier=0;                    /* dernier essai auto (anti-boucle) */
-  var LIEN='https://replicate.com/account/billing';
   /* Vrai « plus de crédit » — à ne pas confondre avec une surcharge (429)
      ou une coupure réseau, qui elles se réessaient toutes seules. */
   function estEpuise(e){var m=String((e&&e.message)||e||'');
     return /\b402\b|insufficient|payment_required|billing|no_credit|out_of_credit|quota_exceeded/i.test(m);}
   function ko(){return !!parseInt(localStorage.getItem(CLE)||'0',10);}
-  function noter(){try{localStorage.setItem(CLE,String(Date.now()));}catch(e){}}
-  function ok(){ if(ko()){ try{localStorage.removeItem(CLE);}catch(e){}
-      attente=null; toast('✅ Le crédit IA est revenu — tout remarche',3000); } }
+  function noter(){try{localStorage.setItem(CLE,String(Date.now()));}catch(e){}bandeau();}
+  function ok(){ if(!ko())return;
+    try{localStorage.removeItem(CLE);}catch(e){}
+    var n=file.length; file=[]; bandeau();
+    toast('✅ Le crédit IA est revenu'+(n?' — relance de '+n+' création'+(n>1?'s':''):'')+' 🎉',3400); }
+
+  /* Bandeau doré permanent : où qu'il soit dans l'app, on sait que l'IA est en
+     pause et on recharge en 1 tap. Idempotent (ne clignote pas). */
+  function bandeau(){
+    var b=$('creditBar'),t=$('creditBarTxt'); if(!b)return;
+    var on=ko(), veut=on?'on':'off';
+    if(b.dataset.etat!==veut){b.classList.toggle('on',on);b.dataset.etat=veut;}
+    if(!on)return;
+    var msg=file.length
+      ? ('IA en pause — '+file.length+' création'+(file.length>1?'s':'')+' en attente')
+      : 'IA en pause — plus de crédit';
+    if(t&&t.textContent!==msg)t.textContent=msg;
+  }
+
   function bloquer(o){
     o=o||{};
-    attente={quoi:o.quoi||'ta création',section:(typeof CUR!=='undefined'?CUR:null),relancer:o.relancer||null};
+    /* file d'attente : plusieurs créations peuvent attendre, sans doublon */
+    if(o.relancer){
+      var q=o.quoi||'ta création';
+      if(!file.some(function(x){return x.quoi===q;}))
+        file.push({quoi:q,section:(typeof CUR!=='undefined'?CUR:null),relancer:o.relancer});
+      if(file.length>5)file.shift();
+    }
+    bandeau();
     var btns=[];
     if(o.relancer)btns.push({label:'🔄 Réessayer maintenant',fn:function(){closeSheet();o.relancer();}});
+    btns.push({label:'💳 Recharger l\'IA (n\'importe qui peut le faire)',fn:function(){closeSheet();Recharge.ouvrir();}});
     if(o.quandMeme)btns.push({label:'⚡ Le faire quand même (moins beau)',ghost:true,fn:function(){
-      closeSheet();attente=null;toast('Version rapide appliquée — qualité réduite',2800);o.quandMeme();}});
-    btns.push({label:'🔗 Recharger le compte IA (quelques €)',ghost:true,fn:function(){try{window.open(LIEN,'_blank');}catch(e){}}});
+      closeSheet();retirer(o.quoi);toast('Version rapide appliquée — qualité réduite',2800);o.quandMeme();}});
+    btns.push({label:'📤 Demander à quelqu\'un de recharger',ghost:true,fn:function(){closeSheet();Recharge.partager();}});
     btns.push({label:'Fermer',ghost:true,fn:function(){closeSheet();}});
     openExport('⏳ Crédit IA épuisé',
-      'Sans l\'IA, '+(o.quoi||'ce résultat')+' serait nettement moins beau. Je préfère attendre que de te rendre quelque chose de raté. Dès que le crédit revient, je le refais tout seul.',
+      'Sans l\'IA, '+(o.quoi||'ce résultat')+' serait nettement moins beau. Je préfère attendre que de te rendre quelque chose de raté. '
+      +'Ta création est gardée en attente et repart toute seule dès que le crédit revient.',
       btns);
+  }
+  function retirer(quoi){file=file.filter(function(x){return x.quoi!==quoi;});bandeau();}
+
+  /* Vérification à la demande (bouton) : la seule façon de savoir si le crédit
+     est revenu est de retenter pour de vrai. S'il n'y a rien en attente, on
+     vérifie au moins que le serveur IA répond — et on le dit honnêtement. */
+  function verifier(){
+    if(file.length){toast('⏳ Je réessaie ta création…',2200);dernier=Date.now();
+      try{file[0].relancer();}catch(e){}return;}
+    toast('⏳ Vérification…',1500);
+    fetch(AI_URL+'/',{method:'GET'}).then(function(r){
+      toast(r.ok?'✅ Le serveur IA répond. Relance ta création pour confirmer le crédit.'
+                :'⚠️ Serveur IA joignable mais en erreur — réessaie dans un moment.',4000);
+    }).catch(function(){toast('⚠️ Serveur IA injoignable — vérifie ta connexion.',3600);});
   }
   /* Reprise automatique : au retour sur l'app (ou toutes les 5 min), on retente
      UNE fois — c'est le seul moyen de savoir si le crédit est revenu. Jamais
      plus d'un essai par 2 min, et jamais si Kevin est parti sur un autre écran
      (sinon un résultat surgirait là où il ne l'attend pas). */
   function reprendre(){
-    if(!attente||!attente.relancer)return;
+    bandeau();
+    if(!file.length)return;
     if(document.visibilityState!=='visible')return;
-    if(typeof CUR!=='undefined'&&attente.section&&CUR!==attente.section)return;
+    var a=file[0];
+    if(typeof CUR!=='undefined'&&a.section&&CUR!==a.section)return;
     if(Date.now()-dernier<120000)return;
     dernier=Date.now();
     toast('⏳ Je regarde si le crédit IA est revenu…',2000);
-    try{attente.relancer();}catch(e){}
+    try{a.relancer();}catch(e){}
   }
   try{document.addEventListener('visibilitychange',reprendre);}catch(e){}
   try{setInterval(reprendre,300000);}catch(e){}
-  return {estEpuise:estEpuise,ko:ko,noter:noter,ok:ok,bloquer:bloquer,
-          enAttente:function(){return !!attente;},annuler:function(){attente=null;}};
+  return {estEpuise:estEpuise,ko:ko,noter:noter,ok:ok,bloquer:bloquer,verifier:verifier,
+          bandeau:bandeau,retirer:retirer,file:function(){return file.length;},
+          enAttente:function(){return !!file.length;},annuler:function(){file=[];bandeau();}};
 })();
 /* Échec IA sans repli acceptable : si c'est le crédit, on attend au lieu de
    rendre n'importe quoi. Renvoie true si le cas a été pris en charge. */
@@ -3280,8 +3449,11 @@ var Photo=(function(){
       aiShow('Création du fond IA… 🌆');
       fetch(AI_URL+'/bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p,ratio:(srcCanvas.width>=srcCanvas.height?'16:9':'9:16')})})
         .then(function(r){var ct=r.headers.get('content-type')||'';if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||'http');});return r.blob();})
-        .then(function(b){var im=new Image();im.onload=function(){aiHide();setBgImage(im);toast('Fond IA appliqué 🌆',1600);URL.revokeObjectURL(im.src);};im.onerror=function(){aiHide();toast('Fond illisible');};im.src=URL.createObjectURL(b);})
-        .catch(function(e){aiHide();var m=aiErrMsg(e);toast(m.t,m.ms);});
+        .then(function(b){var im=new Image();im.onload=function(){aiHide();Credit.ok();setBgImage(im);toast('Fond IA appliqué 🌆',1600);URL.revokeObjectURL(im.src);};im.onerror=function(){aiHide();toast('Fond illisible');};im.src=URL.createObjectURL(b);})
+        /* fond IA : aucune version « sans IA » n'existe → on attend le crédit */
+        .catch(function(e){aiHide();
+          if(aiFail(e,{quoi:'le fond IA',relancer:function(){Photo.aiBg();}}))return;
+          var m=aiErrMsg(e);toast(m.t,m.ms);});
     },
     addText:function(){
       var v=$('photoTextInput').value.trim();if(!v){toast('Écris un texte');return;}
@@ -4497,7 +4669,12 @@ var Auto=(function(){
       var r=await fetch(AI_URL+'/transcribe',{method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({audio:b64(wav16(all,sr)),lang:'fr'})});
       var j=await r.json().catch(function(){return {};});
-      if(!r.ok)return {mots:[],raison:'IA sous-titres : '+(j.detail||j.error||('HTTP '+r.status))};
+      if(!r.ok){
+        /* Repli ACCEPTABLE (le montage reste bon, juste sans sous-titres) : on
+           ne bloque pas le rendu — on allume juste le bandeau de recharge. */
+        var d=j.detail||j.error||('HTTP '+r.status);
+        if(Credit.estEpuise(new Error(String(d)+' '+r.status)))Credit.noter();
+        return {mots:[],raison:'IA sous-titres : '+d};}
       var mots=(j.words||[]).filter(function(w){return w&&w.m;});
       return {mots:mots,raison:mots.length?'':'IA sous-titres : rien compris'};
     }catch(e){return {mots:[],raison:'IA sous-titres injoignable ('+(e&&e.message||e)+')'};}
@@ -5144,7 +5321,12 @@ var AiVid=(function(){
     var msg=String(e&&e.message||e);
     if(/gemini_no_key|not_configured|503/.test(msg)){hint('⚠️ IA vidéo pas encore active (serveur en cours de déploiement). Réessaie dans quelques minutes.');toast('IA vidéo bientôt prête',2600);}
     else if(/quota|RESOURCE_EXHAUSTED|429|rate/i.test(msg)){hint('⚠️ L\'IA gratuite a atteint sa limite du moment — réessaie dans 1 à 2 min (elle se recharge toute seule).');toast('IA occupée, réessaie dans 1 min',3000);}
-    else if(/credit|payment|402|insufficient|billing/i.test(msg)){hint('⚠️ Le moteur avancé (payant) n\'a plus de crédit — mais la version gratuite doit marcher : réessaie.');toast('Réessaie (version gratuite)',3000);}
+    /* Ici les DEUX voies ont échoué (gratuite ET payante) — ne plus prétendre
+       que « la version gratuite doit marcher » : on propose la recharge et on
+       garde la création en attente (elle repart toute seule). */
+    else if(/credit|payment|402|insufficient|billing/i.test(msg)){
+      if(aiFail(new Error('402 '+msg),{quoi:'ta vidéo de danse',hint:hint,relancer:generate}))return;
+      hint('⚠️ Plus de crédit sur le moteur vidéo — recharge pour réactiver.');toast('Crédit IA épuisé',3000);}
     else if(/SAFETY|blocked|no_image/i.test(msg)){hint('⚠️ L\'IA a refusé cette photo (règles de sécurité). Essaie une autre photo, de préférence une personne entière bien visible.');toast('Photo refusée par l\'IA — essaie-en une autre',3200);}
     else{hint('❌ Génération impossible pour l\'instant — réessaie.');toast('Génération impossible, réessaie',2600);}
   }
@@ -5454,7 +5636,9 @@ var Magic=(function(){
           {label:'📤 Enregistrer / Partager',fn:function(){var ext=(blob.type.indexOf('webm')>=0)?'webm':'mp4';shareOrSave(blob,'je-chante.'+ext,'Je chante !');closeSheet();}},
           {label:'🔁 Refaire',ghost:true,fn:function(){closeSheet();sing();}}
         ]);})
-      .catch(function(e){busy=false;$('magicSingBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+      .catch(function(e){busy=false;$('magicSingBtn').disabled=false;aiHide();
+        if(aiFail(e,{quoi:'ta photo qui chante',hint:hint,relancer:sing}))return;
+        var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* Monte la vidéo chantée : la bouche suit le VOLUME réel de l'audio. */
   function buildSingVideo(urls,audioFile){
@@ -5528,7 +5712,9 @@ var Magic=(function(){
           ? '✅ « '+j.title+' » — lis ce texte à voix haute en touchant 🎙 (30 s), puis « Je chante » anime ta photo.'
           : '✅ « '+j.title+' » — touche ▶️ pour l\'instru, chante par-dessus, puis enregistre ta voix et fais chanter ta photo 🎤');
         toast(songMode==='voix'?'Texte prêt à lire 🎙':'Chanson écrite 🎼',1800);})
-      .catch(function(e){busy=false;$('magicSongBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+      .catch(function(e){busy=false;$('magicSongBtn').disabled=false;aiHide();
+        if(aiFail(e,{quoi:'les paroles de ta chanson',hint:hint,relancer:song}))return;
+        var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* Instru générée dans le téléphone (WebAudio) — tempo/gamme selon le style. */
   var playing=false;
@@ -5637,6 +5823,7 @@ var Magic=(function(){
         +(secours.length?' (IA de secours utilisée pour : '+secours.join(', ')+')':''));
       toast('Morceau produit 🎹',2400);
     }).catch(function(e){busy=false;$('magicStudioBtn').disabled=false;aiHide();
+      if(aiFail(e,{quoi:'ton morceau',hint:studioHint,relancer:studio}))return;
       var m=aiErrMsg(e);studioHint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   function studioHint(t){var e=$('magicStudioHint');if(e)e.textContent=t||'';}
@@ -5937,6 +6124,10 @@ var Mini=(function(){
         relancer:generate,quandMeme:function(){quality='fast';
           var b=document.querySelector('#miniQual [data-q="fast"]'); if(b)setOn(b,'[data-q]');
           generate();}}))return;
+      /* Voix IA sans crédit : pas de son = pas de vidéo. On attend le crédit,
+         mais on rappelle qu'enregistrer sa propre voix marche tout de suite. */
+      if(aiFail(e,{quoi:'la voix de ton mini-moi',hint:hint,relancer:generate}))
+        {hint('⏳ Crédit IA épuisé — ou choisis « 🎙️ Ma voix », ça marche sans crédit.');return;}
       var m=aiErrMsg(e); hint('⚠️ '+m.t); toast(m.t,m.ms||3200); });
   }
 
@@ -6057,6 +6248,9 @@ $('fileMiniAudio').onchange=function(e){if(e.target.files[0]){Mini._audio&&Mini.
 
 /* init all */
 Photo.init();Vid.init();Auto.init();Anim.init();AiVid.init();Magic.init();Mini.init();
+/* Au démarrage : si l'IA était en pause, on le montre tout de suite (sinon
+   Kevin relance une création pour rien et attend sans comprendre). */
+try{Credit.bandeau();}catch(e){}
 
 /* handle resize */
 window.addEventListener('resize',function(){
