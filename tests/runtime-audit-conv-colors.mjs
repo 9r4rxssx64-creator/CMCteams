@@ -28,10 +28,10 @@ await page.waitForFunction(() => typeof window.handleFileImport === 'function' &
 
 const Y = 2026, M = 7; // Août
 await page.evaluate(({ y, m }) => { A.user = A.employees.find(e => e.id === 'U11804'); A.year = y; A.month = m; A.overrides = A.overrides || {}; delete A.overrides[y + '-' + m]; if (typeof sv === 'function') sv('import'); }, { y: Y, m: M });
-const b64 = readFileSync(resolve(root, 'tests/fixtures/aout-2026-v1.pdf')).toString('base64');
+const b64 = readFileSync(resolve(root, 'tests/fixtures/aout-2026-v2.pdf')).toString('base64');
 await page.evaluate(async ({ b64, y, m }) => {
   const bin = atob(b64); const arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-  const file = new File([arr], 'aout-2026-v1.pdf', { type: 'application/pdf' });
+  const file = new File([arr], 'aout-2026-v2.pdf', { type: 'application/pdf' });
   const inp = document.getElementById('impFile'); const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files;
   const sy = document.getElementById('impY'); if (sy) sy.value = String(y); const sm = document.getElementById('impM'); if (sm) sm.value = String(m);
   handleFileImport(inp);

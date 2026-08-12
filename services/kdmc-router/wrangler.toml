@@ -26,6 +26,9 @@ routes = [
   { pattern = "bot.kd-mc.com", custom_domain = true },
   { pattern = "beatbot.kd-mc.com", custom_domain = true },
   { pattern = "autorisations.kd-mc.com", custom_domain = true },
+  { pattern = "arbre.kd-mc.com", custom_domain = true },
+  { pattern = "lingua.kd-mc.com", custom_domain = true },
+  { pattern = "studio.kd-mc.com", custom_domain = true },
 ]
 
 # Registre fiches clients — KV à id FIGÉ (provisionné le 2026-06-09) pour un déploiement
@@ -44,9 +47,11 @@ id = "8cfa33a28ac045adb7b7a9556ca8a073"
 [vars]
 KDMC_PUSH_URL = "https://apex-push-worker.9r4rxssx64.workers.dev"
 
-# Sentinelle « robot en surface » (PoolPilot) : le robot piscine n'émet pas sous l'eau,
-# il ne redevient joignable qu'en remontant. Cron 5 min → check Tuya → notif push Kevin
-# à la TRANSITION hors-ligne→en-ligne uniquement (throttle 15 min). No-op tant que les
-# clés Tuya ne sont pas liées (1 lecture KV) — aucun mail, aucune action GitHub.
+# Sentinelle « robot en surface » (PoolPilot) : cron RETIRÉ 2026-08-03.
+# CAUSE : le compte Cloudflare a atteint la limite Free de 5 cron triggers/compte
+# (API /schedules → code 10072). Ce cron faisait ÉCHOUER `wrangler deploy` (masqué par
+# `| tee`) → tout nouveau sous-domaine custom_domain (ex. arbre.kd-mc.com) n'était PLUS
+# provisionné (DNS introuvable). Le handler scheduled() reste dans worker.js ; à ré-armer
+# via un GitHub Actions cron dédié si besoin (ou passage Workers Paid). No-op sans clés Tuya.
 [triggers]
-crons = ["*/5 * * * *"]
+crons = []

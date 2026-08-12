@@ -1,4 +1,10 @@
 name: La Détente — Designs PHOTORÉALISTES armes (Gemini)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Génère de vraies images d'armes (photo studio, registre sport/chasse/ball-trap),
 # fond transparent, via GEMINI_API_KEY, et pousse sur une branche claude/* (auto-merge).

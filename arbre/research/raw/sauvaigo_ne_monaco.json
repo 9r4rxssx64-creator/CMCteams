@@ -1,0 +1,69 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "SAUVAIGO",
+  "birthCountry": "Monaco"
+ },
+ "response": {
+  "total": 1,
+  "maxScoreES": 21.598969,
+  "size": 100,
+  "page": 1,
+  "delay": 1,
+  "persons": [
+   {
+    "score": 0.63,
+    "source": "2023",
+    "sourceLine": 176941,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "country": 1,
+      "score": 1
+     },
+     "score": 0.63,
+     "es": 0.11
+    },
+    "id": "-Gi6moX8QES8",
+    "name": {
+     "first": [
+      "Marie",
+      "Jose"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19431111",
+     "location": {
+      "city": "Monaco",
+      "code": "99138",
+      "codeHistory": "99138",
+      "country": "Monaco",
+      "countryCode": "MCO"
+     }
+    },
+    "death": {
+     "date": "20211126",
+     "certificateId": "52",
+     "age": 78,
+     "location": {
+      "code": "99116",
+      "codeHistory": "99116",
+      "country": "Tcheque (Republique)",
+      "countryCode": "CZE"
+     }
+    }
+   }
+  ]
+ }
+}

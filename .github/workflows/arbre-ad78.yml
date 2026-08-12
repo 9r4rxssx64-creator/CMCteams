@@ -1,0 +1,29 @@
+name: Arbre — AD78 Poissy (naissance Guy 1918 + mention mariage)
+# Kevin 2026-08-06 : acte de naissance de Guy Édouard DESARZENS (7.03.1918, Poissy).
+# >100 ans = librement consultable ; la marge donne le mariage, l'acte les parents.
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  ad78:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i -D playwright@1.48.0 && npx playwright install --with-deps chromium
+      - name: Robot AD78
+        run: node tools/arbre/fetch-ad78-poissy.mjs
+      - name: Commit résultats
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research/AD78-POISSY.md arbre/research/ad78raw || true
+          git commit -m "Arbre: AD78 Poissy — exploration naissance Guy 1918 [skip ci]" || { echo "aucun changement"; exit 0; }
+          for i in 1 2 3 4; do git push && break; git fetch origin "${GITHUB_REF_NAME}"; git rebase "origin/${GITHUB_REF_NAME}" || git rebase --abort || true; sleep 5; done
+          git push || echo "::warning::push impossible (résultats dans le log)"

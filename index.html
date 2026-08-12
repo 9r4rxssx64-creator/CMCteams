@@ -71,7 +71,7 @@
 <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1668 2388'%3E%3Crect width='1668' height='2388' fill='%230a1408'/%3E%3Ctext x='834' y='1100' text-anchor='middle' font-size='280' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='834' y='1300' text-anchor='middle' font-size='170' font-weight='800' fill='%23c9a227' letter-spacing='18' font-family='system-ui'%3ECMC%3C/text%3E%3Ctext x='834' y='1420' text-anchor='middle' font-size='86' fill='%237aaa80' letter-spacing='14' font-family='system-ui'%3ETEAMS%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2048 2732'%3E%3Crect width='2048' height='2732' fill='%230a1408'/%3E%3Ctext x='1024' y='1280' text-anchor='middle' font-size='320' fill='%23c9a227'%3E%E2%99%A6%3C/text%3E%3Ctext x='1024' y='1500' text-anchor='middle' font-size='190' font-weight='800' fill='%23c9a227' letter-spacing='20' font-family='system-ui'%3ECMC%3C/text%3E%3Ctext x='1024' y='1620' text-anchor='middle' font-size='96' fill='%237aaa80' letter-spacing='16' font-family='system-ui'%3ETEAMS%3C/text%3E%3C/svg%3E">
 <!-- CSP v9.396 \u2014 restrictive mais compatible Firebase/PDF.js/Anthropic/Sentry -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://apis.kd-mc.com https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apex-auth-worker.9r4rxssx64.workers.dev https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://asset.montecarlosbm.com https://commons.wikimedia.org https://upload.wikimedia.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://image.pollinations.ai; connect-src 'self' https://apis.kd-mc.com https://admin.kd-mc.com https://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apex-auth-worker.9r4rxssx64.workers.dev https://*.up.railway.app https://api.apex.sbs https://api.anthropic.com https://api.openai.com https://api.emailjs.com https://api.exchangerate-api.com https://api.coingecko.com https://api.qrserver.com https://ipwho.is https://api.ipify.org https://api.open-meteo.com https://9r4rxssx64-creator.github.io https://*.sentry.io https://*.ingest.sentry.io https://*.sentry-cdn.com; frame-src data: https://www.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -1411,6 +1411,15 @@ var CODES={
   "CFL"   :{l:"F\u00eate incluse cong\u00e9", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
   "CRH"   :{l:"RH inclus cong\u00e9", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
   "CDH"   :{l:"RH cong\u00e9 pay\u00e9", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
+  // v9.891 (Kevin 2026-08-11 \u00ab El Missouri est de mariage \u00bb) \u2014 CLM = CONG\u00c9 MARIAGE (Convention
+  // SBM art.18 : 4 jours), PAS un arr\u00eat maladie. Observ\u00e9 dans le PDF d'ao\u00fbt (EL MISSOURI O,
+  // BJ \u00c9q.10, jours 21-24 = exactement les 4 jours de l'article 18).
+  // POURQUOI L'AJOUTER ICI : un code ABSENT de ce dictionnaire est SUPPRIM\u00c9 des plannings au
+  // d\u00e9marrage (nettoyage \u00ab code invalide \u00bb, ~l.9520) \u2014 c'est exactement ce qui avait effac\u00e9
+  // 10 jours de DEPL \u00e0 FOREST M (v9.751). CLM \u00e9tait dans le m\u00eame cas : non reconnu = \u00e0 risque.
+  // Bonus : le code cesse d'\u00eatre opaque, Kevin et l'employ\u00e9 lisent \u00ab Cong\u00e9 mariage \u00bb.
+  // Il reste une ABSENCE pour la rotation des d\u00e9parts (pr\u00e9sent dans DEP_ABS) \u2192 pas de num\u00e9ro.
+  "CLM"   :{l:"Cong\u00e9 mariage", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
   "15/19" :{l:"15h\u201319h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   "14/20" :{l:"14h\u201320h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   // ── PIT BOSS / SUPERVISEUR — codes spécifiques cadres (v9.121) ─────────
@@ -4313,6 +4322,9 @@ function fbApplyData(k,v){
   if(k==="cmc_motd"&&v!==null&&(typeof v!=="object"||Array.isArray(v)))return;
   // Cloner profondément pour éviter les références partagées avec l'objet Firebase SSE
   var vc;try{vc=JSON.parse(JSON.stringify(v));}catch(e){console.warn("fbApplyData: JSON invalide pour",k);return;}
+  /* v9.880 — la synchro peut ramener une valeur de fond polluée (404 /%22/%22 intermittent) :
+     on assainit AVANT d'écrire, la donnée invalide ne touche jamais le stockage local */
+  if(k==="cmc_photos"){ try{_photosSanitize(vc);}catch(e){} }
   try{localStorage.setItem(k,JSON.stringify(vc));}catch(e){}
   // v9.853 — nouveau message employé (page CMCteams light) → notif Kevin (admin)
   if(k==="cmc_kevin_inbox"){ try{ _checkKevinInbox(vc); }catch(_){} }
@@ -5063,7 +5075,35 @@ function safeUrl(u){
 }
 /* Encode un data URL (ou toute URL) pour insertion s\u00fbre dans CSS url("...") ou attribut src="..."
    Encode les caract\u00e8res pouvant casser l'attribut / la fonction CSS : " \ ( ) */
-function _safeUrl(u){return String(u||"").replace(/\\/g,"%5C").replace(/"/g,"%22").replace(/'/g,"%27").replace(/\(/g,"%28").replace(/\)/g,"%29");}
+function _safeUrl(u){var s=String(u==null?"":u).trim();
+  /* v9.883 — FIX DÉFINITIF du 404 /%22/%22 : une valeur polluée (ex la chaîne `"/"`) était
+     ENCODÉE en %22/%22 par les replace ci-dessous — ce qui EST justement la requête fautive
+     (src="%22/%22" / url("%22/%22") → GET /%22/%22 → 404). On n'émet donc QUE des URLs
+     plausibles (data:/blob:/http(s):/chemin absolu du site) ; tout le reste → "" (aucune
+     requête, aucun 404, dégradation propre). Les valeurs légitimes passent inchangées, avec
+     l'échappement des caractères qui casseraient l'attribut / la fonction CSS url(). */
+  if(!/^(data:|blob:|https?:\/\/|\/[^/])/i.test(s))return "";
+  return s.replace(/\\/g,"%5C").replace(/"/g,"%22").replace(/'/g,"%27").replace(/\(/g,"%28").replace(/\)/g,"%29");}
+/* v9.876 — une valeur de fond invalide (ex : la chaine `"/"`) donnait `url(""/"")`, du CSS
+   malformé que le navigateur relit comme une adresse : requête vers /%22/%22 → 404 sur le
+   domaine. Vu en vrai le 2026-08-07 (vérif réelle, run 31129784556, surface CMCteams).
+   On n'accepte donc comme fond QUE ce qui ressemble à une vraie image : data:, blob:,
+   http(s):// ou un chemin absolu du site. Sinon : pas de fond (dégradation propre), jamais
+   de CSS cassé. Volontairement permissif sur la casse et les espaces de bord. */
+function _bgUrlOk(u){var s=String(u==null?"":u).trim();
+  if(s.length<4)return false;
+  if(/["'()\\]/.test(s))return false;              /* une vraie URL de fond n'en contient pas */
+  return /^(data:image\/|blob:|https?:\/\/)/i.test(s)||/^\/[^/]/.test(s);}
+/* v9.880 — assainit l'objet cmc_photos LUI-MÊME : toute valeur texte qui ne ressemble
+   pas à une image (ex la chaîne `"/"`) est RETIRÉE. Les gardes _bgUrlOk aux points de
+   rendu restent, mais ceci coupe le mal à la racine : une valeur polluée qui arrive
+   (boot OU synchro) ne peut plus jamais atteindre un consommateur, connu ou futur.
+   Sans risque : ces valeurs étaient de toute façon refusées au rendu. Retourne le nb retiré. */
+function _photosSanitize(ph){ var n=0; if(!ph||typeof ph!=="object")return 0;
+  Object.keys(ph).forEach(function(k){ var v=ph[k];
+    if(typeof v==="string" && v!=="" && !_bgUrlOk(v)){ delete ph[k]; n++; } });
+  if(n){ try{console.warn("[v9.880] cmc_photos assaini : "+n+" valeur(s) invalide(s) retirée(s)");}catch(e){} }
+  return n; }
 function hexA(h,a){return "rgba("+parseInt(h.slice(1,3),16)+","+parseInt(h.slice(3,5),16)+","+parseInt(h.slice(5,7),16)+","+a+")";}
 function now(){return Date.now();}
 // v9.66 perf : memoize fmtTs (appelé N fois/render chat, résultat stable sur 60s)
@@ -5630,6 +5670,12 @@ var A={
   cagnottes:lg("cmc_cagnottes",{}),
   importSuggestions:{newEmps:[],possibleRetired:[]}
 };
+/* v9.880 — fonds/photos pollués : assainissement À LA SOURCE au boot. Le 404 /%22/%22
+   était INTERMITTENT (vu en vrai runs 31222551767 vert / 31225003946 rouge) : les gardes
+   v9.876-878 couvrent les consommateurs connus, mais la valeur invalide restait dans
+   les données synchronisées et re-sortait par un chemin selon le moment. Ici on retire
+   la donnée elle-même → plus AUCUN consommateur (connu ou futur) ne peut la voir. */
+try{ if(_photosSanitize(A.photos)) localStorage.setItem("cmc_photos",JSON.stringify(A.photos)); }catch(_){}
 // v9.191 — Construit les index O(1) au boot (remplace 208 .find() couteux)
 try{_rebuildIndexes();}catch(_){}
 // Dédupliquer A.employees au démarrage — par id ET par nom
@@ -5775,7 +5821,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.873";
+var APP_VER="v9.891";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -5939,7 +5985,7 @@ function adminRemoveEmpBg(uid){
   toast("Fond personnalis\u00e9 retir\u00e9");dc();
 }
 // Retourne le fond perso d'un employ\u00e9 ou null (fallback vers global)
-function getEmpBg(uid){return A.reg&&A.reg[uid]&&A.reg[uid].customBg?A.reg[uid].customBg:null;}
+function getEmpBg(uid){var v=A.reg&&A.reg[uid]&&A.reg[uid].customBg;return _bgUrlOk(v)?v:null;}/* v9.879 gate a la source */
 
 function uploadAppPhoto(key){
   if(!A.user||A.user.id!==AID)return;
@@ -5999,7 +6045,7 @@ function removeEmpPhoto(uid){
   toast(cmcT("toast.deleted"));dc();
 }
 // Helper : récupère la photo d'un employé ou renvoie null
-function getEmpPhoto(uid){return A.reg&&A.reg[uid]&&A.reg[uid].photo?A.reg[uid].photo:null;}
+function getEmpPhoto(uid){var v=A.reg&&A.reg[uid]&&A.reg[uid].photo;return _bgUrlOk(v)?v:null;}/* v9.879 gate a la source */
 // Helper : rend un avatar HTML (photo si dispo, sinon cercle lettr\u00e9)
 // emp peut \u00eatre {id,name} ou juste {name}. size en px. color = couleur \u00e9quipe ou fallback.
 function empAvatarHtml(emp,size,color){
@@ -7323,6 +7369,15 @@ function runTests(){
   _test("_safeUrl encode guillemets",function(){
     var u=_safeUrl('data:image/png;a"b');
     _assert(u.indexOf('"')<0,"guillemet echappé");
+  });
+  _test("_safeUrl rejette non-URL (anti 404 /%22/%22, v9.883)",function(){
+    _assertEq(_safeUrl('"/"'),"");        /* la valeur polluée historique → jamais %22/%22 */
+    _assertEq(_safeUrl('/'),"");
+    _assertEq(_safeUrl('"'),"");
+    _assertEq(_safeUrl(''),"");
+    _assert(_safeUrl('data:image/png;base64,AAAA').indexOf('data:')===0,"data URL conservée");
+    _assert(_safeUrl('https://x/y.png').indexOf('https://')===0,"http conservée");
+    _assert(_safeUrl('/plan/x.png').indexOf('/plan/')===0,"chemin absolu conservé");
   });
   _test("isDocShared false par défaut",function(){
     _assertEq(isDocShared(null),false);
@@ -9476,13 +9531,14 @@ try{setTimeout(_cmcCheckHorizontalOverflow,8000);setInterval(_cmcCheckHorizontal
   if(uid){
     var lastAct=parseInt(localStorage.getItem("cmc_lastact")||"0");
     var expired=lastAct>0&&(Date.now()-lastAct)>SESSION_TTL;
-    if(expired){
-      localStorage.removeItem("cmc_uid");
-      localStorage.removeItem("cmc_lastact");
-      console.info("Session expirée après inactivité.");
-    } else {
+    /* v9.874 — RECONNAISSANCE AUTO après 1ʳᵉ connexion (Kevin 2026-08-04 « pour toutes
+       les apps toujours ») : l'appareil est reconnu dès le 1er login réussi → la session
+       est restaurée MÊME après 8h d'inactivité. Le TTL ne délogue plus personne ; seule
+       la déconnexion explicite (bouton ✕) redemande les identifiants. */
+    {
       var e=A.employees.find(function(x){return x.id===uid;});
       if(e){A.user=e;localStorage.setItem("cmc_lastact",String(Date.now()));startPresenceHeartbeat();
+        if(expired){try{if(typeof _audit==="function")_audit("session_auto_renewed",e.id,e.name,"","reconnu auto après "+Math.round((Date.now()-lastAct)/3600000)+"h d'inactivité");}catch(_){}}
         // Restaurer les préférences de l'employé depuis A.reg
         var _pr=A.reg[e.id]||{};
         if(_pr.prefLang&&_pr.prefLang!==_lang){_lang=_pr.prefLang;localStorage.setItem("cmc_lang",_lang);_ttsLang=_lang==="it"?"it-IT":_lang==="en"?"en-US":"fr-FR";}
@@ -9536,7 +9592,9 @@ function touchSession(){if(A.user)localStorage.setItem("cmc_lastact",String(Date
 // Sans ca, la session expire malgre l'app ouverte. Sentinelle TTL 5 min ci-dessous.
 (function(){try{var _evts=["click","keydown","touchstart","scroll"];var _lastTouch=0;function _onAct(){var n=Date.now();if(n-_lastTouch>30000){_lastTouch=n;touchSession();}}_evts.forEach(function(ev){try{document.addEventListener(ev,_onAct,{passive:true,capture:true});}catch(_){document.addEventListener(ev,_onAct,true);}});}catch(_){}
 // v9.545 — Sentinelle TTL 8h enforce : check toutes 5 min, doLogout si expire
-try{setInterval(function(){try{if(!A.user)return;var lastAct=parseInt(localStorage.getItem("cmc_lastact")||"0",10);if(lastAct>0&&Date.now()-lastAct>SESSION_TTL){console.info("[TTL] session 8h expiree -> logout auto");try{if(typeof toast==="function")toast("Session expiree apres 8h d'inactivite","warn");}catch(_){}doLogout();}}catch(_){}},5*60*1000);}catch(_){}
+/* v9.874 — le logout auto TTL 8h est RETIRÉ (règle « reconnaissance auto après 1ère
+   connexion, toutes les apps toujours ») : un appareil connu reste connecté ; seule la
+   déconnexion explicite (✕) revoque. Le TTL ne sert plus qu'à l'audit (session_auto_renewed). */
 })();
 function sav(){ls("cmc_e",A.employees);ls("cmc_t",A.teams);ls("cmc_ov",A.overrides);_rebuildIndexes();}
 // v9.67 — Firebase et sync queue différés APRÈS premier render (perf: first paint rapide)
@@ -11181,12 +11239,16 @@ function _collectBgPhotos(){
   // v9.59 — Fix cas par cas : si l'employ\u00e9 a un fond perso, il voit UNIQUEMENT ce fond
   // (pas de diaporama avec les fonds globaux). Sinon \u2192 diaporama global admin.
   var _empBg=A.user?getEmpBg(A.user.id):null;
-  if(_empBg){photos.push(_empBg);return photos;}
+  if(_empBg&&_bgUrlOk(_empBg)){photos.push(_empBg);return photos;}
   // Photos globales admin (fallback si pas de fond perso)
   ["accueilBg","planningBg","chatBg","chatBg2","chatBg3","loginBg"].forEach(function(k){
-    if(ph[k]&&photos.indexOf(ph[k])<0) photos.push(ph[k]);
+    if(ph[k]&&_bgUrlOk(ph[k])&&photos.indexOf(ph[k])<0) photos.push(ph[k]);
   });
   return photos;
+  /* v9.877 — le diaporama etait le 4e point d'injection de fond rate par le fix
+     v9.876 : une valeur polluee (ex `"/"`) passait par _safeUrl -> requete /%22/%22
+     -> 404 vu en verif reelle connectee (run 31191430852). Filtre A LA SOURCE :
+     seule une vraie image (data:/blob:/https:/chemin absolu) entre dans le pool. */
 }
 function _startBgSlideshow(){
   // v9.67 : cache — ne re-init que si les photos ont changé
@@ -11261,12 +11323,12 @@ function render(){
     // Fond perso employ\u00e9 connect\u00e9 : override le fond global
     var _empBg=A.user?getEmpBg(A.user.id):null;
     var _bgUrl=_empBg||ph.accueilBg||null;
-    if(ph.loginBg){b.classList.add("has-login-bg");b.style.setProperty("--cmc-login-bg",'url("'+_safeUrl(ph.loginBg)+'")');}
+    if(_bgUrlOk(ph.loginBg)){b.classList.add("has-login-bg");b.style.setProperty("--cmc-login-bg",'url("'+_safeUrl(ph.loginBg)+'")');}
     else{b.classList.remove("has-login-bg");b.style.removeProperty("--cmc-login-bg");}
-    if(_bgUrl){b.classList.add("has-accueil-bg");b.style.setProperty("--cmc-accueil-bg",'url("'+_safeUrl(_bgUrl)+'")');}
+    if(_bgUrlOk(_bgUrl)){b.classList.add("has-accueil-bg");b.style.setProperty("--cmc-accueil-bg",'url("'+_safeUrl(_bgUrl)+'")');}
     else{b.classList.remove("has-accueil-bg");b.style.removeProperty("--cmc-accueil-bg");}
     var _planBg=ph.planningBg||null;
-    if(_planBg){b.classList.add("has-planning-bg");b.style.setProperty("--cmc-planning-bg",'url("'+_safeUrl(_planBg)+'")');}
+    if(_bgUrlOk(_planBg)){b.classList.add("has-planning-bg");b.style.setProperty("--cmc-planning-bg",'url("'+_safeUrl(_planBg)+'")');}
     else{b.classList.remove("has-planning-bg");b.style.removeProperty("--cmc-planning-bg");}
     // Active le fond planning sp\u00e9cifique uniquement sur les vues planning/departs
     if(_planBg&&(A.view==="planning"||A.view==="departs")) b.classList.add("bg-planning-active");
@@ -13206,7 +13268,7 @@ window._tool_check_ram=function(){try{if(performance&&performance.memory){var mb
 window._tool_check_storage_size=function(){try{var t=0;for(var k in localStorage){if(localStorage.hasOwnProperty(k))t+=(localStorage[k]||"").length;}var pct=Math.round(t/(5*1048576)*100);return pct>80?{finding:"localStorage "+pct+"%"}:null;}catch(_){}return null;};
 window._tool_count_dom_nodes=function(){try{var n=document.getElementsByTagName("*").length;return n>10000?{finding:"DOM "+n+" noeuds"}:null;}catch(_){}return null;};
 window._tool_scan_doublons=function(){try{var seen={},dup=0;(A.employees||[]).forEach(function(e){if(seen[e.id])dup++;seen[e.id]=1;});return dup>0?{finding:dup+" IDs dupliques"}:null;}catch(_){}return null;};
-window._tool_check_session_health=function(){try{var last=+lg("cmc_lastact",0);if(A.user&&last&&Date.now()-last>8*3600000)return {finding:"Session expiree"};}catch(_){}return null;};
+window._tool_check_session_health=function(){/* v9.874 : la session n'expire plus (reconnaissance auto, toutes apps) — plus de finding TTL */return null;};
 // ═══════════════════════════════════════════════════════════════════════
 // SENTINELLES EXPERT (v9.438, 2026-04-20) — voir SENTINELS.md
 // 7 sentinelles universelles à dupliquer dans tous projets Kevin.
@@ -13474,7 +13536,7 @@ function vMapEditor(){
   h+='<div role="tablist" aria-label="Choix du casino" style="display:flex;gap:6px;background:rgba(0,0,0,.4);padding:8px;border-radius:10px;margin-bottom:12px;flex-wrap:wrap;overflow-x:auto">';
   tabsCfg.forEach(function(t){
     var sel=(t.id===curId);
-    h+='<button class="btn" role="tab" aria-selected="'+(sel?"true":"false")+'" onclick="cmcMapSwitchCasino('+JSON.stringify(t.id)+')" style="min-height:48px;padding:10px 14px;flex:1 1 auto;min-width:120px;background:'+(sel?"linear-gradient(135deg,#c9a227,#8a6f15)":"rgba(201,162,39,.08)")+';color:'+(sel?"#000":"#c9a227")+';border:1px solid '+(sel?"#c9a227":"rgba(201,162,39,.3)")+';border-radius:8px;font-weight:'+(sel?"800":"600")+';cursor:pointer;font-size:13px">'+t.icon+' '+esc(t.label)+'</button>';
+    h+='<button class="btn" role="tab" aria-selected="'+(sel?"true":"false")+'" onclick="cmcMapSwitchCasino('+esc(JSON.stringify(t.id))+')" style="min-height:48px;padding:10px 14px;flex:1 1 auto;min-width:120px;background:'+(sel?"linear-gradient(135deg,#c9a227,#8a6f15)":"rgba(201,162,39,.08)")+';color:'+(sel?"#000":"#c9a227")+';border:1px solid '+(sel?"#c9a227":"rgba(201,162,39,.3)")+';border-radius:8px;font-weight:'+(sel?"800":"600")+';cursor:pointer;font-size:13px">'+t.icon+' '+esc(t.label)+'</button>';
   });
   h+='</div>';
   h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
@@ -13498,7 +13560,11 @@ function vMapEditor(){
   h+='<div style="position:relative;width:100%;background:radial-gradient(ellipse at center,#0a0a0a 0%,#000 100%);border-radius:12px;overflow:hidden;border:1px solid '+casinoColor+';box-shadow:inset 0 0 60px rgba(201,162,39,.08)">';
   h+='<div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,.6);padding:6px 12px;border-radius:20px;display:flex;align-items:center;gap:6px;font-size:11px;z-index:6"><span style=\"width:8px;height:8px;border-radius:50%;background:#4cd080;animation:cmcLivePulse 1.5s ease-in-out infinite\"></span><strong style=\"color:#a0cca0\">LIVE</strong> &middot; <span id=\"cmcLiveCount\">0</span> employes</div><style>@keyframes cmcLivePulse{0%,100%{opacity:1}50%{opacity:.4}}</style>';
   h+='<svg id="cmc-map-svg" viewBox="0 0 '+VB_W+' '+VB_H+'" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;background:#050505;touch-action:none" role="img" aria-label="Plan '+esc(casinoName)+'" ontouchstart="_cmcMapTouchStart(event)" ontouchmove="_cmcMapTouchMove(event)" ontouchend="_cmcMapTouchEnd(event)" ontouchcancel="_cmcMapTouchEnd(event)">';
-  if(layout.bgImage){
+  /* v9.881 — LE consommateur du 404 /%22/%22 enfin identifié (pile réseau CDP, run
+     31228011564, initiator "parser") : un bgImage pollué (ex `"/"`) passait par esc()
+     → &quot;/&quot; → le navigateur décode l'attribut → requête GET /%22/%22. Le SVG
+     <image href> n'accepte QUE ce qui ressemble à une vraie image. */
+  if(layout.bgImage&&_bgUrlOk(layout.bgImage)){
     h+='<image href="'+esc(layout.bgImage)+'" x="0" y="0" width="'+VB_W+'" height="'+VB_H+'" preserveAspectRatio="xMidYMid slice" opacity="0.55"/>';
   }else{
     h+='<rect x="0" y="0" width="'+VB_W+'" height="'+VB_H+'" fill="rgba(20,20,20,.6)"/>';
@@ -17100,8 +17166,45 @@ function _renderTutoStep(){
     +'</div></div>';
 }
 /** Log user login in cmc_userlog (max 500). @param {Object} emp Employee object. @returns {void} */
+/* v9.874 — Journal unifié domaine « qui se connecte » (worker kdmc-access).
+   Fail-open, throttlé : n'affecte JAMAIS le fonctionnement de l'app. Envoie des
+   MÉTADONNÉES d'action (jamais de contenu privé) au worker central. */
+var _kdmcAccessSeen={};
+function kdmcAccessDevice(){var u=navigator.userAgent||"";if(/iPhone/.test(u))return"iPhone";if(/iPad/.test(u))return"iPad";if(/Android/.test(u))return"Android";if(/Macintosh|Mac OS X/.test(u))return"Mac";if(/Windows/.test(u))return"PC Windows";if(/Linux/.test(u))return"Linux";return"Autre";}
+/* Ce que SEULE l'app peut voir (le serveur n'y a pas accès) : taille d'écran (→ modèle
+   d'iPhone), app installée sur l'écran d'accueil ou simple navigateur, cœurs, thème,
+   langue et fuseau RÉELS du téléphone. Envoyé une fois à la connexion. Tolérant :
+   chaque champ absent est simplement omis, jamais d'erreur. */
+function kdmcAccessUA(){
+  try{
+    var s=window.screen||{},d={};
+    if(s.width&&s.height)d.ecran=Math.round(s.width)+"x"+Math.round(s.height);
+    if(window.devicePixelRatio)d.dpr=Math.round(window.devicePixelRatio*100)/100;
+    try{d.pwa=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}catch(_){}
+    if(navigator.hardwareConcurrency)d.coeurs=navigator.hardwareConcurrency;
+    if(navigator.language)d.langue=navigator.language;
+    try{d.fuseau=Intl.DateTimeFormat().resolvedOptions().timeZone||"";}catch(_){}
+    try{d.sombre=!!(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);}catch(_){}
+    try{var c=navigator.connection;if(c&&c.effectiveType)d.reseau=c.effectiveType;}catch(_){}
+    try{if(navigator.maxTouchPoints)d.tactile=navigator.maxTouchPoints;}catch(_){}
+    return d;
+  }catch(_){return null;}
+}
+function kdmcAccessLog(event,meta,who){
+  try{
+    var u=who||(typeof A!=="undefined"&&A.user);if(!u||!u.id)return;
+    var k=String(event||"");var t=Date.now();
+    if(_kdmcAccessSeen[k]&&t-_kdmcAccessSeen[k]<5000)return; // anti-spam : 5s entre évènements identiques
+    _kdmcAccessSeen[k]=t;
+    var tier=(u.id===AID)?"admin":"employe";
+    var _m=meta;if(k==="connexion"){var _ua=kdmcAccessUA();if(_ua)_m=Object.assign({},meta||{},{appareil:_ua});}
+    var body=JSON.stringify({app:"cmcteams",uid:u.id,name:u.name||"",event:k,device:kdmcAccessDevice(),tier:tier,meta:_m||undefined});
+    fetch("https://admin.kd-mc.com/log",{method:"POST",headers:{"Content-Type":"application/json"},body:body,keepalive:true,mode:"cors"}).catch(function(){});
+  }catch(_){}
+}
 function logUserLogin(emp){
   var reg=A.reg&&A.reg[emp.id]||{};
+  try{kdmcAccessLog("connexion",undefined,emp);}catch(_){}
   // v9.60 — D\u00e9tection navigateur + OS depuis UA pour un affichage plus lisible
   var _ua=(navigator.userAgent||"");
   var _browser="";
@@ -17688,6 +17791,7 @@ function sv(v){
   A.view=v;
   touchSession();
   if(A.user)_trackView(A.user.id,v);
+  if(A.user)kdmcAccessLog("vue:"+v);
   render();
   // Scroll en haut après le layout — requestAnimationFrame garantit que le DOM est peint
   requestAnimationFrame(function(){window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
@@ -17729,6 +17833,27 @@ function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.v
 })();
 
 // ── Calcul position de départ pour un chef un jour donné ──
+// ROTATION DES DÉPARTS — « cette personne est-elle à la table ce jour-là ? »
+// VOLONTAIREMENT SÉPARÉ du isWork() global (76 usages : heures, couleurs, compteurs, « qui
+// travaille aujourd'hui »). Toucher isWork() global changerait les heures et les couleurs —
+// hors sujet et risqué. Ici on ne change QUE les numéros de départ.
+// MIROIR EXACT de DEP_ABS dans tools/departs/index.html (page light) — la garde
+// test:departs-abs-parity échoue si les deux listes divergent.
+// RÈGLE MÉTIER TRANCHÉE PAR KEVIN — « celui qui est RATTACHÉ à l'équipe garde sa place dans la
+// rotation ; seuls les vrais congés/arrêts la libèrent » :
+//  · PRT (« Prêt », mis à disposition d'un autre service) = TRAVAIL, GARDE son numéro
+//    (décision Kevin 2026-07-10, leçon #140).
+//  · DEPL / DEP (déplacement) et SS = TRAVAIL, GARDENT leur numéro — décision Kevin
+//    2026-08-10 (« B »), même logique que PRT. Ils sont donc VOLONTAIREMENT ABSENTS de
+//    cette liste. La page light les comptait en absence → elle a été alignée sur l'app.
+//  · CLM (congé mariage — Convention SBM art.18, 4 jours) = ABSENCE, PAS de numéro — v9.889, BUG RÉEL MESURÉ sur août :
+//    EL MISSOURI O (BJ Éq.10) était en CLM les jours 21-24 et recevait quand même les numéros
+//    1,4,2,3 → ses 4 collègues avaient de FAUX numéros ces 4 jours (20 cellules). CLM est déjà
+//    classé absence partout ailleurs dans l'app (_CMC_ABS_LIEU l.1454, ABS l.24630) ; seule la
+//    rotation l'ignorait. 4 jours consécutifs (≥4) → la règle v9.857 le sort du roster et les
+//    présents se recompactent, comme Kevin l'a demandé (« revoir en congé/vacances »).
+var DEP_ABS=["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","CLM"];
+function isWorkDep(c){return !!c && DEP_ABS.indexOf(c)<0;}
 function calcDepPos(empName,tid,day){
   var CI=gCI(A.year,A.month);
   var chefNames=CHEFS_T[tid]||[];
@@ -17765,7 +17890,7 @@ function calcDepPos(empName,tid,day){
   // Fix bug : PASSERON en CP plein mois décalait les positions (ordre 1→6→4→2→3→5
   // affichait seulement 2,3,4,5,6 au lieu de 1→5 propre)
   chefEmps=chefEmps.filter(function(e){
-    return da.some(function(d){return isWork((pl[e.id]||{})[d]||'');});
+    return da.some(function(d){return isWorkDep((pl[e.id]||{})[d]||'');});
   });
   if(!chefEmps.length) return null;
   // v9.834 (Kevin 2026-06-29 « vérifie les numéros des départs, l'algorithme ») — PORT
@@ -17783,18 +17908,17 @@ function calcDepPos(empName,tid,day){
   var baseOf={}; chefEmps.forEach(function(e,ai){ baseOf[e.name]=(CI[e.name]!==undefined?CI[e.name]:ai); });
   var workDays=[];
   for(var _wd=1;_wd<=days;_wd++){
-    for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWork((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
+    for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWorkDep((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
   }
   var wi=workDays.indexOf(day); if(wi<0) return null;
-  // v9.865 (Kevin 2026-07-09 « corrige dans light les départs correctement » — la fenêtre
-  // GLISSE de +1 à chaque CYCLE de repos : ta ligne 6-4-2-3 → 4-2-3-5 → 2-3-5-1). rot NE
-  // continue PAS en continu : rot = index_de_cycle + position_dans_le_cycle. Un trou dans
-  // workDays (repos d'équipe) = nouveau cycle. Le jour 1 reste 1-6-4-2-3-5. Identique à compute().
-  var _rotByDay={}, _cyc=0, _kd=0, _prevWD=null;
-  for(var _iw=0;_iw<workDays.length;_iw++){ var _wd2=workDays[_iw];
-    if(_prevWD!==null){ if(_wd2-_prevWD>1){ _cyc++; _kd=0; } else { _kd++; } }
-    _rotByDay[_wd2]=_cyc+_kd; _prevWD=_wd2;
-  }
+  // v9.868 (Kevin 2026-07-10 « certaines personnes ont le même départ plusieurs fois dans le mois,
+  // la suite n'est pas respectée ») — RETOUR à la rotation CONTINUE rot=wi (+1 par jour travaillé
+  // de l'équipe, SANS remise à zéro au repos). Chaque chef parcourt la suite DANS L'ORDRE
+  // (1-4-2-3-5 puis 1-4-2-3-5…) → jamais 2× le même numéro avant d'avoir fini la suite.
+  // Le v9.865 remettait rot à zéro à chaque cycle de repos → comme les cycles sont plus courts
+  // que la taille d'équipe, un même numéro revenait au bout de 1-2 jours (4-2 puis 4-2).
+  // Mauvaise interprétation de « ma ligne glisse » : la fenêtre glisse de +1 PAR JOUR (continu),
+  // pas par cycle. Identique à compute() (page light).
   // v9.857 (Kevin 2026-07-04 « quand une personne manque 1,2,3 jours ne pas revoir l'algo,
   // laisser le numéro mort ; revoir seulement quand départ en vacances/congé »).
   // ROSTER STABLE : la rotation se calcule sur le ROSTER (chefs actifs MOINS ceux en congé
@@ -17805,17 +17929,17 @@ function calcDepPos(empName,tid,day){
   // (= « revoir »). Sur un jour où tout le monde est présent, effRoster == présents → numéros
   // IDENTIQUES à avant (zéro régression sur les jours pleins ; ne touche QUE les jours d'absence
   // courte). Rotation rot=wi (+1 par jour travaillé) conservée. Même logique dans compute (page).
-  function _absRun(id,D){ if(isWork((pl[id]||{})[D]||''))return 0; var L=1,dd;
-    for(dd=D-1;dd>=1&&!isWork((pl[id]||{})[dd]||'');dd--)L++;
-    for(dd=D+1;dd<=days&&!isWork((pl[id]||{})[dd]||'');dd++)L++; return L; }
+  function _absRun(id,D){ if(isWorkDep((pl[id]||{})[D]||''))return 0; var L=1,dd;
+    for(dd=D-1;dd>=1&&!isWorkDep((pl[id]||{})[dd]||'');dd--)L++;
+    for(dd=D+1;dd<=days&&!isWorkDep((pl[id]||{})[dd]||'');dd++)L++; return L; }
   var effRoster=chefEmps.filter(function(e){var r=_absRun(e.id,day);return r===0||r<4;})
                         .sort(function(a,b){return baseOf[a.name]-baseOf[b.name];});
   var N=effRoster.length; if(!N) return null;
   var meEmp=effRoster.filter(function(e){return e.name===empName;})[0];
   if(!meEmp) return null;                                 // en congé long OU hors équipe
-  if(!isWork((pl[meEmp.id]||{})[day]||'')) return null;   // absence courte → numéro MORT (rien affiché)
+  if(!isWorkDep((pl[meEmp.id]||{})[day]||'')) return null;   // absence courte → numéro MORT (rien affiché)
   var j=effRoster.indexOf(meEmp);
-  var SEQd=getSeqForSize(N), rot=_rotByDay[day];
+  var SEQd=getSeqForSize(N), rot=wi;
   return SEQd[(((rot+j)%N)+N)%N];
 }
 
@@ -19593,7 +19717,7 @@ function vPitDashboard(){
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px;margin-bottom:8px">';
   ["auto","full","souple","reserve"].forEach(function(mid){
     var mo=PIT_MODES[mid];var sel=mid===currentModeId;
-    h+='<button onclick="pitSetMode('+JSON.stringify(mid)+')" style="padding:8px 10px;background:'+(sel?mo.col+"28":"rgba(255,255,255,.04)")+';border:1px solid '+(sel?mo.col:"rgba(255,255,255,.1)")+';border-left:3px solid '+mo.col+';border-radius:6px;color:'+mo.col+';cursor:pointer;font-size:12px;font-weight:'+(sel?"900":"700")+';text-align:left">'+esc(mo.label)+'</button>';
+    h+='<button onclick="pitSetMode('+esc(JSON.stringify(mid))+')" style="padding:8px 10px;background:'+(sel?mo.col+"28":"rgba(255,255,255,.04)")+';border:1px solid '+(sel?mo.col:"rgba(255,255,255,.1)")+';border-left:3px solid '+mo.col+';border-radius:6px;color:'+mo.col+';cursor:pointer;font-size:12px;font-weight:'+(sel?"900":"700")+';text-align:left">'+esc(mo.label)+'</button>';
   });
   h+='</div>';
   // Description mode actif
@@ -20074,7 +20198,7 @@ function vPitHistory(){
   h+='<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">';
   types.forEach(function(t){
     var sel=t===typeFilter;
-    h+='<button onclick="A._pitHistFilter='+JSON.stringify(t)+';dc()" style="padding:6px 10px;background:'+(sel?"rgba(192,64,128,.25)":"rgba(192,64,128,.08)")+';border:1px solid '+(sel?"rgba(192,64,128,.6)":"rgba(192,64,128,.25)")+';border-radius:6px;color:#ffb0d0;cursor:pointer;font-size:11px;font-weight:700">'+esc(t)+'</button>';
+    h+='<button onclick="A._pitHistFilter='+esc(JSON.stringify(t))+';dc()" style="padding:6px 10px;background:'+(sel?"rgba(192,64,128,.25)":"rgba(192,64,128,.08)")+';border:1px solid '+(sel?"rgba(192,64,128,.6)":"rgba(192,64,128,.25)")+';border-radius:6px;color:#ffb0d0;cursor:pointer;font-size:11px;font-weight:700">'+esc(t)+'</button>';
   });
   h+='<div style="flex:1"></div>'
     +'<button onclick="sv(\'pit\')" style="padding:6px 10px;background:rgba(90,170,112,.12);border:1px solid rgba(90,170,112,.4);border-radius:6px;color:#7acc90;cursor:pointer;font-size:11px">\u2666 Live</button>'
@@ -20560,11 +20684,13 @@ function simStart(speedX){
   SIM_STATE.log=[];
   // Assure live state
   getLiveState();
+  _simSyncTimer();                      // v9.889 \u2014 d\u00e9marre le tick 1s SEULEMENT ici
   toast("\ud83c\udfae Simulation d\u00e9marr\u00e9e \u00b7 x"+SIM_STATE.speedX);
   dc();
 }
 function simStop(){
   SIM_STATE.active=false;
+  _simSyncTimer();                      // v9.889 \u2014 arr\u00eate le tick 1s (plus de r\u00e9veil batterie)
   toast("\u23f9 Simulation arr\u00eat\u00e9e");
   dc();
 }
@@ -20581,7 +20707,16 @@ function simTick(){
   // Forcément re-render sur la page sim
   if(A.view==="sim")dcDebounced&&dcDebounced();
 }
-setInterval(simTick,1000); // tick 1s réel
+// v9.889 (ultra-review perf 2026-08-10) — AVANT : `setInterval(simTick,1000)` inconditionnel
+// au chargement → le téléphone était réveillé CHAQUE SECONDE, 24h/24, juste pour tester un
+// drapeau `SIM_STATE.active` qui est faux 99,9% du temps (batterie iPhone). Le tick ne sert
+// QUE pendant une simulation → on démarre/arrête la minuterie avec la simulation.
+// SIM_STATE.active démarre à false et n'est jamais restauré au boot → aucune reprise à gérer.
+var _simInt=null;
+function _simSyncTimer(){
+  if(SIM_STATE.active&&!_simInt){ _simInt=setInterval(simTick,1000); }        // tick 1s réel
+  else if(!SIM_STATE.active&&_simInt){ clearInterval(_simInt); _simInt=null; }
+}
 function simGetVirtualDate(){return SIM_STATE.active?new Date(SIM_STATE.virtualNow):new Date();}
 // Pit choisit manuellement un emp du pool → assigne à une table donnée
 function pitManualAssign(uid,tid){
@@ -21570,7 +21705,7 @@ function vLiveRoom(){
   h+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">';
   ETABS_PLAN.forEach(function(e){
     var sel=e.id===etabId;
-    h+='<button onclick="A._liveRoomEtab='+JSON.stringify(e.id)+';dc()" style="padding:6px 10px;background:'+(sel?"rgba(201,162,39,.28)":"rgba(201,162,39,.07)")+';border:1px solid '+(sel?"rgba(201,162,39,.6)":"rgba(201,162,39,.2)")+';border-radius:6px;color:#c9a227;cursor:pointer;font-weight:'+(sel?"800":"600")+';font-size:12px">'+esc(e.name)+'</button>';
+    h+='<button onclick="A._liveRoomEtab='+esc(JSON.stringify(e.id))+';dc()" style="padding:6px 10px;background:'+(sel?"rgba(201,162,39,.28)":"rgba(201,162,39,.07)")+';border:1px solid '+(sel?"rgba(201,162,39,.6)":"rgba(201,162,39,.2)")+';border-radius:6px;color:#c9a227;cursor:pointer;font-weight:'+(sel?"800":"600")+';font-size:12px">'+esc(e.name)+'</button>';
   });
   h+='<div style="flex:1"></div>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
@@ -21723,7 +21858,7 @@ function vLiveRoom(){
     poolLR.slice(0,24).forEach(function(ep){
       var tccP=tc(ep.team);
       var phP=getEmpPhoto(ep.id);
-      h+='<button onclick="(function(){var tids=Object.keys((A.live||{}).tables||{}).filter(function(t){return !A.live.tables[t].closedAt;});if(!tids.length){toast(\'Aucune table ouverte\',\'err\');return;}var choices=tids.map(function(tid,i){var tt=A.live.tables[tid];var ph=tt.physTableId?getTablesCoords()[tt.physTableId]:null;return (i+1)+\'. \'+(ph?ph.name:tid)+\' (\'+tt.jeu+\')\';}).join(\'\\n\');var ans=prompt(\'Assigner \'+'+JSON.stringify(ep.name)+'+\' \u00e0 :\\n\\n\'+choices+\'\\n\\nNum\u00e9ro :\');if(!ans)return;var i=parseInt(ans,10);if(isNaN(i)||i<1||i>tids.length){toast(\'Invalide\',\'err\');return;}pitManualAssign('+JSON.stringify(ep.id)+',tids[i-1]);})()" class="sim-shift-cell" style="display:flex;align-items:center;gap:3px;padding:2px 7px;background:'+tccP+'18;border:1px solid '+tccP+'55;border-radius:12px;color:'+tccP+';font-size:11px;cursor:pointer;font-weight:700">'
+      h+='<button onclick="(function(){var tids=Object.keys((A.live||{}).tables||{}).filter(function(t){return !A.live.tables[t].closedAt;});if(!tids.length){toast(\'Aucune table ouverte\',\'err\');return;}var choices=tids.map(function(tid,i){var tt=A.live.tables[tid];var ph=tt.physTableId?getTablesCoords()[tt.physTableId]:null;return (i+1)+\'. \'+(ph?ph.name:tid)+\' (\'+tt.jeu+\')\';}).join(\'\\n\');var ans=prompt(\'Assigner \'+'+esc(JSON.stringify(ep.name))+'+\' \u00e0 :\\n\\n\'+choices+\'\\n\\nNum\u00e9ro :\');if(!ans)return;var i=parseInt(ans,10);if(isNaN(i)||i<1||i>tids.length){toast(\'Invalide\',\'err\');return;}pitManualAssign('+esc(JSON.stringify(ep.id))+',tids[i-1]);})()" class="sim-shift-cell" style="display:flex;align-items:center;gap:3px;padding:2px 7px;background:'+tccP+'18;border:1px solid '+tccP+'55;border-radius:12px;color:'+tccP+';font-size:11px;cursor:pointer;font-weight:700">'
         +(phP?'<img src="'+esc(phP)+'" alt="" loading="lazy" decoding="async" style="width:14px;height:14px;border-radius:50%;object-fit:cover">':'')
         +esc(ep.name.split(" ")[0])+(ep.chef?' \u265a':'')+'</button>';
     });
@@ -21780,7 +21915,7 @@ function vSimView(){
       +'<div style="display:flex;flex-wrap:wrap;gap:4px">';
     comp.pool.forEach(function(e){
       var tcc=tc(e.team);
-      h+='<button onclick="(function(){var tids='+JSON.stringify(openTids)+';if(!tids.length){toast(\'Pas de table ouverte\',\'err\');return;}var choices=tids.map(function(tid,i){return (i+1)+\'. \'+((getTablesCoords()[live.tables[tid].physTableId]||{}).name||tid)+\' (\'+live.tables[tid].jeu+\')\';}).join(\'\\n\');var ans=prompt(\'Assigner \'+'+JSON.stringify(e.name)+'+\' \u00e0 :\\n\\n\'+choices+\'\\n\\nNum\u00e9ro :\');if(!ans)return;var i=parseInt(ans,10);if(isNaN(i)||i<1||i>tids.length){toast(\'Invalide\',\'err\');return;}pitManualAssign('+JSON.stringify(e.id)+',tids[i-1]);})()" class="sim-shift-cell" style="padding:4px 9px;background:'+tcc+'18;border:1px solid '+tcc+'55;border-radius:12px;color:'+tcc+';font-size:12px;cursor:pointer;font-weight:700">'+esc(e.name.split(" ")[0])+(e.chef?' \ud83d\udc51':'')+'</button>';
+      h+='<button onclick="(function(){var tids='+esc(JSON.stringify(openTids))+';if(!tids.length){toast(\'Pas de table ouverte\',\'err\');return;}var choices=tids.map(function(tid,i){return (i+1)+\'. \'+((getTablesCoords()[live.tables[tid].physTableId]||{}).name||tid)+\' (\'+live.tables[tid].jeu+\')\';}).join(\'\\n\');var ans=prompt(\'Assigner \'+'+esc(JSON.stringify(e.name))+'+\' \u00e0 :\\n\\n\'+choices+\'\\n\\nNum\u00e9ro :\');if(!ans)return;var i=parseInt(ans,10);if(isNaN(i)||i<1||i>tids.length){toast(\'Invalide\',\'err\');return;}pitManualAssign('+esc(JSON.stringify(e.id))+',tids[i-1]);})()" class="sim-shift-cell" style="padding:4px 9px;background:'+tcc+'18;border:1px solid '+tcc+'55;border-radius:12px;color:'+tcc+';font-size:12px;cursor:pointer;font-weight:700">'+esc(e.name.split(" ")[0])+(e.chef?' \ud83d\udc51':'')+'</button>';
     });
     h+='</div></div>';
   }
@@ -24562,7 +24697,16 @@ function vVerify(){
   // règle #1 : noms du texte source PDF sans cellule
   var srcMissing=[];
   try{
-    var src=(window._lastImportText||lg("cmc_import_src_"+key,"")||"").toUpperCase();
+    /* v9.885 CORRECTIF P0 (audit 2026-08-09) — `cmc_import_src_<key>` est stocké en OBJET
+       {txt,ts,year,month} (écrit l.~40194) : l'ancien code faisait `.toUpperCase()` dessus →
+       TypeError avalé par le catch → src="" → la boucle ci-dessous ne tournait JAMAIS et
+       l'écran certifiait « tout le monde a un planning » SANS avoir rien vérifié, dès que la
+       page avait été rechargée (window._lastImportText n'est pas persisté). C'est la règle
+       ABSOLUE n°1 du projet : elle était morte en silence. On lit désormais .txt comme tous
+       les autres lecteurs (l.26725, 27296, 38815). */
+    var _srcEnt=lg("cmc_import_src_"+key,null);
+    var _srcRaw=window._lastImportText||(_srcEnt&&typeof _srcEnt==="object"?(_srcEnt.txt||_srcEnt.text||""):(_srcEnt||""));
+    var src=String(_srcRaw||"").toUpperCase();
     if(src){
       actives.forEach(function(e){
         var has=ov[e.id]&&Object.keys(ov[e.id]).length>0; if(has)return;
@@ -24570,7 +24714,12 @@ function vVerify(){
         if(sn.length>=4&&src.indexOf(sn)>=0)srcMissing.push(e.name);
       });
     }
-  }catch(_){}
+  }catch(_e){
+    /* v9.885 — plus jamais d'échec MUET sur la règle n°1 : c'est le silence de ce catch qui a
+       laissé le bug `.toUpperCase()` sur objet vivre sans être vu (audit 2026-08-09). */
+    try{console.error("[vVerify] contrôle « tout le monde a un planning » en échec :",_e&&_e.message||_e);}catch(_){}
+    srcMissing=["__CONTROLE_IMPOSSIBLE__"];
+  }
   var covState=srcMissing.length?"err":(actNoCell.length>5?"warn":"ok");
   if(covState==="err")problems++;else if(covState==="warn")warns++;
   var covBody=ids.length+' employés avec planning · '+actives.length+' actifs.';
@@ -26194,7 +26343,7 @@ function showSalaryCalculator(empId){
   if(emp&&A.user&&A.user.id===AID){
     var safeNiv=JSON.stringify(niveauSel);
     body+='<div style="padding:10px 20px;border-top:1px solid rgba(201,162,39,.2);background:rgba(0,0,0,.3)">'
-      +'<button onclick="adminSetReg('+JSON.stringify(emp.id)+',\'niveauSBM\',document.getElementById(\'salLevel\').value);toast(\'\ud83d\udcbe Niveau SBM enregistr\u00e9 sur la fiche\')" style="width:100%;padding:10px;background:rgba(201,162,39,.22);border:1px solid rgba(201,162,39,.5);color:#f0d060;border-radius:8px;font-weight:700;cursor:pointer">\ud83d\udcbe Enregistrer ce niveau sur la fiche</button>'
+      +'<button onclick="adminSetReg('+esc(JSON.stringify(emp.id))+',\'niveauSBM\',document.getElementById(\'salLevel\').value);toast(\'\ud83d\udcbe Niveau SBM enregistr\u00e9 sur la fiche\')" style="width:100%;padding:10px;background:rgba(201,162,39,.22);border:1px solid rgba(201,162,39,.5);color:#f0d060;border-radius:8px;font-weight:700;cursor:pointer">\ud83d\udcbe Enregistrer ce niveau sur la fiche</button>'
       +'</div>';
   }
   body+='</div>';
@@ -29473,7 +29622,7 @@ function vGalerie(){
   h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center">'
     +'<span style="font-size:11px;color:#8aa088;letter-spacing:2px;text-transform:uppercase">\u00c9tablissement</span>';
   ["Tous","CMC","CDP"].forEach(function(v){
-    h+=_pill(_galEtab===v,v,"_galEtab=\\'"+v+"\\';_galSalon=\\'Tous\\';dc()");
+    h+=_pill(_galEtab===v,v,"_galEtab='"+v+"';_galSalon='Tous';dc()");
   });
   h+='</div>';
   // Source
@@ -29482,7 +29631,7 @@ function vGalerie(){
   [["Toutes",null],["SBM",_PHOTO_SRC_COL.SBM],["CC",_PHOTO_SRC_COL.CC],["HIST",_PHOTO_SRC_COL.HIST]].forEach(function(x){
     var v=x[0],col=x[1];
     var lbl=v==="Toutes"?"Toutes":(_PHOTO_SRC_LB[v]||v);
-    h+=_pill(_galSrc===v,lbl,"_galSrc=\\'"+v+"\\';dc()",col);
+    h+=_pill(_galSrc===v,lbl,"_galSrc='"+v+"';dc()",col);
   });
   h+='</div>';
   // Salon (dynamique selon étab)
@@ -29490,7 +29639,7 @@ function vGalerie(){
     h+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;align-items:center">'
       +'<span style="font-size:11px;color:#8aa088;letter-spacing:2px;text-transform:uppercase">Salon</span>';
     salons.forEach(function(v){
-      h+=_pill(_galSalon===v,v,"_galSalon=\\'"+v+"\\';dc()");
+      h+=_pill(_galSalon===v,v,"_galSalon='"+v+"';dc()");
     });
     h+='</div>';
   }
@@ -29654,7 +29803,7 @@ function vChat(){
   // Messages — support de 1 \u00e0 3 photos de fond en carousel (chatBg + chatBg2 + chatBg3)
   var _bgImgs=[];
   if(A.photos){
-    ["chatBg","chatBg2","chatBg3"].forEach(function(k){if(A.photos[k])_bgImgs.push(A.photos[k]);});
+    ["chatBg","chatBg2","chatBg3"].forEach(function(k){if(A.photos[k]&&_bgUrlOk(A.photos[k]))_bgImgs.push(A.photos[k]);});
   }
   // Classe "multi" active l'animation carousel uniquement si 2+ images
   var _chatCls="chat-msgs"+(_bgImgs.length>=2?" multi":"");
@@ -30690,7 +30839,26 @@ function chatPickDm(){_chatDmPick=!_chatDmPick;_chatDmQ="";dc();setTimeout(funct
 var _dmSearchTimer;function chatDmSearch(q){var el=document.getElementById("chatDmQIn");var pos=el?el.selectionStart:-1;clearTimeout(_dmSearchTimer);_dmSearchTimer=setTimeout(function(){_chatDmQ=q;dc();requestAnimationFrame(function(){var i2=document.getElementById("chatDmQIn");if(i2){i2.focus();try{i2.setSelectionRange(pos,pos);}catch(e){}}});},150);}
 // Helper universel : met à jour A[key], re-render, replace le focus dans l'input
 /** Update A[key] from input value, then dc() + restore focus on input id. @param {string} key. @param {string} val. @param {string} id Input id. @returns {void} */
-function searchInput(key,val,id){A[key]=val;dc();requestAnimationFrame(function(){var i=document.getElementById(id);if(i){var p=val.length;i.focus();try{i.setSelectionRange(p,p);}catch(e){}}});}
+// v9.889 (ultra-review perf 2026-08-10) — AVANT : `dc()` (reconstruction COMPLÈTE de l'app :
+// barre + contenu + navigation) était relancé à CHAQUE CARACTÈRE tapé, sur ~20 champs de
+// recherche → frappe saccadée sur iPhone. MAINTENANT : temporisation 150 ms (même schéma que
+// chatDmSearch, déjà éprouvé) → 1 seul rendu quand Kevin arrête de taper. A[key] est mis à jour
+// TOUT DE SUITE (aucun retard sur la donnée), et le curseur est replacé à sa position réelle
+// (selectionStart) au lieu d'être forcé en fin de champ.
+var _searchTimers={};
+function searchInput(key,val,id){
+  A[key]=val;                                       // donnée à jour immédiatement
+  var el=document.getElementById(id);
+  var pos=el&&el.selectionStart!=null?el.selectionStart:val.length;
+  clearTimeout(_searchTimers[key]);
+  _searchTimers[key]=setTimeout(function(){
+    dc();
+    requestAnimationFrame(function(){
+      var i=document.getElementById(id);
+      if(i){i.focus();try{i.setSelectionRange(pos,pos);}catch(e){}}
+    });
+  },150);
+}
 function chatSetReply(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m||m.del)return;_chatRep={ts:m.ts,name:m.name,text:m.text||""};
   // DM : activer automatiquement la réponse privée vers l'autre partie
   if(m.to&&A.user){var otherId=m.uid===A.user.id?m.to:m.uid;var otherName=m.uid===A.user.id?(m.toName||m.name):m.name;if(otherId&&otherName&&otherId!==A.user.id)_chatDm={id:otherId,name:otherName};}
@@ -33434,7 +33602,7 @@ function vEmps(){
         </div>
         <!-- v9.50 Fond d'\u00e9cran perso pour cet employ\u00e9 -->
         ${(function(){
-          var _bg=getEmpBg(emp.id);
+          var _bg=getEmpBg(emp.id);if(!_bgUrlOk(_bg))_bg=null;
           return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(201,162,39,.05);border:1px solid rgba(201,162,39,.18);border-radius:8px;margin-bottom:8px">'
             +(_bg
               ?'<div style="width:48px;height:32px;border-radius:6px;background:url(&quot;'+_safeUrl(_bg)+'&quot;) center/cover;border:1px solid rgba(201,162,39,.3);flex-shrink:0"></div>'
@@ -34355,7 +34523,7 @@ function vTablesCoords(){
         +'<div style="font-size:11px;color:#8aa088;font-family:monospace">'+(t.lat||0).toFixed(6)+", "+(t.lng||0).toFixed(6)+'</div>'
         +(date?'<div style="font-size:10px;color:#668066">MAJ : '+date+'</div>':"")
         +'</div>'
-        +'<button onclick="if(confirm(\'Supprimer '+esc(t.name).replace(/'/g,"\\'")+' ?\'))deleteTableCoord('+JSON.stringify(tid)+')" aria-label="Supprimer la table '+esc(t.name)+'" title="Supprimer la table '+esc(t.name)+'" style="padding:6px 10px;background:rgba(224,96,96,.15);border:1px solid rgba(224,96,96,.4);border-radius:6px;color:#e06060;font-size:11px;font-weight:700;cursor:pointer">\ud83d\uddd1</button>'
+        +'<button onclick="if(confirm(\'Supprimer '+esc(t.name).replace(/'/g,"\\'")+' ?\'))deleteTableCoord('+esc(JSON.stringify(tid))+')" aria-label="Supprimer la table '+esc(t.name)+'" title="Supprimer la table '+esc(t.name)+'" style="padding:6px 10px;background:rgba(224,96,96,.15);border:1px solid rgba(224,96,96,.4);border-radius:6px;color:#e06060;font-size:11px;font-weight:700;cursor:pointer">\ud83d\uddd1</button>'
         +'</div>';
     });
     h+='</div>';
@@ -34674,9 +34842,21 @@ var ETABS_PLAN=[
 // v9.277 — Icônes créatives par jeu (SVG paths pour rendre table visible)
 var JEU_ICON_CHAR={bj:"\u2660",roul_ang:"\u25cf",roul_eur:"\u25cb",punto:"\u2663",punto_hr:"\u2666",craps:"\ud83c\udfb2",holdem:"\u2665",poker_cash:"\u2666"};
 // v9.277 — URL image de fond par établissement (admin peut coller une image plan)
-function getPlanBgImages(){return lg("cmc_plan_bg_images",{});}
+/* v9.881 — LA VRAIE SOURCE du 404 /%22/%22 : cmc_plan_bg_images, rempli par un prompt()
+   d'URL LIBRE (jamais validée). Une saisie invalide (ex `"/"`) partait dans les
+   <image href> des cartes (mini-carte accueil L21666, carte tables L19594, impression
+   L35289) → &quot;/&quot; décodé → GET /%22/%22, intermittent selon que la carte rend.
+   Assaini au point de passage UNIQUE : toute valeur non-image est retirée et la
+   version propre re-persiste (la synchro redistribue aux autres appareils). */
+function getPlanBgImages(){var s=lg("cmc_plan_bg_images",{})||{};var n=0;
+  Object.keys(s).forEach(function(k){var v=s[k];
+    if(typeof v!=="string"||!v||!_bgUrlOk(v)){delete s[k];n++;}});
+  if(n){try{ls("cmc_plan_bg_images",s);console.warn("[v9.881] cmc_plan_bg_images assaini : "+n+" valeur(s) retirée(s)");}catch(_e){}}
+  return s;}
 function setPlanBgImage(etabId,url){
   if(!A.user||A.user.id!==AID)return;
+  /* v9.881 — refuser À LA SAISIE ce qui n'est pas une image (cause racine du 404) */
+  if(url&&!_bgUrlOk(url)){toast("⚠ Ce n'est pas une adresse d'image valide (il faut un lien https:// ou une image importée)","err",4000);return;}
   var s=getPlanBgImages();
   if(url)s[etabId]=url;else delete s[etabId];
   ls("cmc_plan_bg_images",s);
@@ -34842,7 +35022,7 @@ function vQRCodesTables(){
     h+='<button onclick="setQrFilterCasino(\'\')" style="padding:6px 12px;min-height:36px;background:'+(_qrFilterCasino?"rgba(255,255,255,.05)":"rgba(201,162,39,.25)")+';border:1px solid '+(_qrFilterCasino?"rgba(255,255,255,.15)":"rgba(201,162,39,.6)")+';border-radius:6px;color:'+(_qrFilterCasino?"#c0c0c0":"#ffdc40")+';cursor:pointer;font-size:12px">Tous</button>';
     casinosList.forEach(function(c){
       var act=_qrFilterCasino===c;
-      h+='<button onclick="setQrFilterCasino('+JSON.stringify(c)+')" style="padding:6px 12px;min-height:36px;background:'+(act?"rgba(201,162,39,.25)":"rgba(255,255,255,.05)")+';border:1px solid '+(act?"rgba(201,162,39,.6)":"rgba(255,255,255,.15)")+';border-radius:6px;color:'+(act?"#ffdc40":"#c0c0c0")+';cursor:pointer;font-size:12px">'+esc(c)+'</button>';
+      h+='<button onclick="setQrFilterCasino('+esc(JSON.stringify(c))+')" style="padding:6px 12px;min-height:36px;background:'+(act?"rgba(201,162,39,.25)":"rgba(255,255,255,.05)")+';border:1px solid '+(act?"rgba(201,162,39,.6)":"rgba(255,255,255,.15)")+';border-radius:6px;color:'+(act?"#ffdc40":"#c0c0c0")+';cursor:pointer;font-size:12px">'+esc(c)+'</button>';
     });
     h+='</div>';
   }
@@ -34861,8 +35041,8 @@ function vQRCodesTables(){
         +'<img src="'+esc(_qrImageUrl(url,240))+'" alt="QR code '+esc(t.name||tid)+'" style="width:100%;max-width:240px;background:#fff;border-radius:8px;padding:4px" loading="lazy"/>'
         +'<div style="font-size:10px;color:#668066;margin-top:8px;word-break:break-all">'+esc(url)+'</div>'
         +'<div style="display:flex;gap:4px;margin-top:6px;justify-content:center">'
-        +'<button onclick="copyToClipboard('+JSON.stringify(url)+',\'URL\')" style="padding:3px 8px;background:rgba(74,160,255,.1);border:1px solid rgba(74,160,255,.3);border-radius:4px;color:#4aa0ff;font-size:10px;cursor:pointer">\ud83d\udccb Copier</button>'
-        +'<button onclick="shareNative({title:\''+esc(t.name||tid)+'\',text:\'Check-in '+esc(t.name||tid)+'\',url:'+JSON.stringify(url)+'})" style="padding:3px 8px;background:rgba(192,64,128,.1);border:1px solid rgba(192,64,128,.3);border-radius:4px;color:#ffb0d0;font-size:10px;cursor:pointer">\ud83d\udce4 Partager</button>'
+        +'<button onclick="copyToClipboard('+esc(JSON.stringify(url))+',\'URL\')" style="padding:3px 8px;background:rgba(74,160,255,.1);border:1px solid rgba(74,160,255,.3);border-radius:4px;color:#4aa0ff;font-size:10px;cursor:pointer">\ud83d\udccb Copier</button>'
+        +'<button onclick="shareNative({title:\''+esc(t.name||tid)+'\',text:\'Check-in '+esc(t.name||tid)+'\',url:'+esc(JSON.stringify(url))+'})" style="padding:3px 8px;background:rgba(192,64,128,.1);border:1px solid rgba(192,64,128,.3);border-radius:4px;color:#ffb0d0;font-size:10px;cursor:pointer">\ud83d\udce4 Partager</button>'
         +'</div>'
         +'</div>';
     });
@@ -35190,17 +35370,17 @@ function vPlanImplantation(){
   h+='<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
   ETABS_PLAN.forEach(function(e){
     var sel=e.id===etabId;
-    h+='<button onclick="A._planEtab='+JSON.stringify(e.id)+';dc()" style="padding:8px 12px;background:'+(sel?"rgba(201,162,39,.3)":"rgba(201,162,39,.08)")+';border:1px solid '+(sel?"rgba(201,162,39,.7)":"rgba(201,162,39,.25)")+';border-radius:6px;color:#c9a227;cursor:pointer;font-weight:'+(sel?"800":"600")+'">'+esc(e.name)+'</button>';
+    h+='<button onclick="A._planEtab='+esc(JSON.stringify(e.id))+';dc()" style="padding:8px 12px;background:'+(sel?"rgba(201,162,39,.3)":"rgba(201,162,39,.08)")+';border:1px solid '+(sel?"rgba(201,162,39,.7)":"rgba(201,162,39,.25)")+';border-radius:6px;color:#c9a227;cursor:pointer;font-weight:'+(sel?"800":"600")+'">'+esc(e.name)+'</button>';
   });
   h+='<div style="flex:1"></div>';
   // Google Maps link
   if(etab.adresse){
     h+='<a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(etab.adresse)+'" target="_blank" rel="noopener" style="padding:8px 12px;background:rgba(74,160,255,.12);border:1px solid rgba(74,160,255,.4);border-radius:6px;color:#4aa0ff;text-decoration:none;font-weight:700;font-size:12px">\ud83d\uddfa\ufe0f Google Maps</a>';
   }
-  h+='<button onclick="_promptPlanBg('+JSON.stringify(etabId)+')" title="D\u00e9finir image de fond (blueprint/capture plan)" style="padding:8px 12px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.4);border-radius:6px;color:#c9a227;cursor:pointer;font-weight:700;font-size:12px">\ud83d\uddbc\ufe0f Image fond</button>';
-  h+='<button onclick="if(confirm(\'Auto-placer toutes les tables GPS sur ce plan ?\'))autoPlacePlanFromGPS('+JSON.stringify(etabId)+')" title="Placer auto via coord GPS" style="padding:8px 12px;background:rgba(74,160,255,.12);border:1px solid rgba(74,160,255,.4);border-radius:6px;color:#4aa0ff;cursor:pointer;font-weight:700;font-size:12px">\ud83d\udef0 GPS auto</button>';
+  h+='<button onclick="_promptPlanBg('+esc(JSON.stringify(etabId))+')" title="D\u00e9finir image de fond (blueprint/capture plan)" style="padding:8px 12px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.4);border-radius:6px;color:#c9a227;cursor:pointer;font-weight:700;font-size:12px">\ud83d\uddbc\ufe0f Image fond</button>';
+  h+='<button onclick="if(confirm(\'Auto-placer toutes les tables GPS sur ce plan ?\'))autoPlacePlanFromGPS('+esc(JSON.stringify(etabId))+')" title="Placer auto via coord GPS" style="padding:8px 12px;background:rgba(74,160,255,.12);border:1px solid rgba(74,160,255,.4);border-radius:6px;color:#4aa0ff;cursor:pointer;font-weight:700;font-size:12px">\ud83d\udef0 GPS auto</button>';
   if(editMode){
-    h+='<button onclick="_promptAddSalon('+JSON.stringify(etabId)+')" title="Ajouter un salon custom" style="padding:8px 12px;background:rgba(192,64,128,.15);border:1px solid rgba(192,64,128,.4);border-radius:6px;color:#ffb0d0;cursor:pointer;font-weight:700;font-size:12px">\u2795 Salon</button>';
+    h+='<button onclick="_promptAddSalon('+esc(JSON.stringify(etabId))+')" title="Ajouter un salon custom" style="padding:8px 12px;background:rgba(192,64,128,.15);border:1px solid rgba(192,64,128,.4);border-radius:6px;color:#ffb0d0;cursor:pointer;font-weight:700;font-size:12px">\u2795 Salon</button>';
   }
   h+='<button onclick="A._planEdit='+(!editMode)+';dc()" style="padding:8px 12px;background:'+(editMode?"rgba(224,96,96,.2)":"rgba(122,204,144,.15)")+';border:1px solid '+(editMode?"rgba(224,96,96,.5)":"rgba(122,204,144,.4)")+';border-radius:6px;color:'+(editMode?"#ff8080":"#7acc90")+';cursor:pointer;font-weight:800">'+(editMode?"\u2713 Terminer":"\u270f\ufe0f \u00c9diter")+'</button>';
   h+='</div>';
@@ -48172,6 +48352,13 @@ var _cmcMapRefreshInt=null;
 // v9.518 (audit) : fusion duplicates ligne 9671 — fallback default + render après save
 function cmcGetCasinoLayout(casinoId){
   var all=lg("cmc_casino_layouts",{})||{};
+  /* v9.881 — assainit la SOURCE : un bgImage qui ne ressemble pas à une image (ex la
+     chaîne `"/"`, cause du 404 /%22/%22 intermittent) est vidé et re-persisté propre —
+     la pollution ne peut plus revenir par la synchro ni resservir ailleurs. */
+  if(all[casinoId]&&typeof all[casinoId].bgImage==="string"&&all[casinoId].bgImage&&!_bgUrlOk(all[casinoId].bgImage)){
+    all[casinoId].bgImage="";
+    try{ls("cmc_casino_layouts",all);console.warn("[v9.881] layout "+casinoId+" : bgImage invalide retiré");}catch(_e){}
+  }
   if(all[casinoId])return all[casinoId];
   if(typeof cmcMapDefaultLayout==="function"){
     all[casinoId]=cmcMapDefaultLayout(casinoId);

@@ -1,0 +1,20 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "firstName": "Victor",
+  "lastName": "SAUVAIGO"
+ },
+ "response": {
+  "total": 0,
+  "maxScoreES": null,
+  "size": 30,
+  "page": 1,
+  "delay": 4,
+  "persons": []
+ }
+}

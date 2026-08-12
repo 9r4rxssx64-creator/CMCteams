@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>OSINT — Centre d'investigation live — KDMC</title>
-<meta name="description" content="Centre OSINT live : carte des vols & séismes en direct, météo/webcams, compteurs temps réel, et boîte à outils d'investigation curée (64 outils).">
+<meta name="description" content="Centre OSINT live : carte des vols & séismes en direct, météo/webcams, compteurs temps réel, et boîte à outils d'investigation curée (120 outils).">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--bg:#070a12;--card:#0e1524;--card2:#0b1220;--line:#1e2a44;--dim:#8aa0c6;--txt:#e7eefc;--gold:#e8b830;--blue:#5aa9ff;--warn:#ff9a5a;--live:#43e08a;--red:#ff5a4d}
@@ -61,7 +61,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
     <a class="back" href="/worldmonitor/">🌍 World Monitor</a>
     <a class="back" href="/">← Accueil</a>
   </div>
-  <p class="sub">Centre d'investigation en sources ouvertes — <b>données live</b> (vols, séismes, cyber, ISS), carte temps réel, météo/webcams, et boîte à outils curée (64 outils).</p>
+  <p class="sub">Centre d'investigation en sources ouvertes — <b>données live</b> (vols, séismes, cyber, ISS), carte temps réel, météo/webcams, et boîte à outils curée (120 outils).</p>
 
   <!-- EN DIRECT -->
   <section class="card">
@@ -95,7 +95,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
 
   <!-- BOITE A OUTILS -->
   <section class="card" style="border:0;background:transparent">
-    <h2 style="border:0;padding:4px 2px 8px">🧰 Boîte à outils — <span style="color:var(--dim);font-weight:400">64 outils curés (OSINT4ALL)</span></h2>
+    <h2 style="border:0;padding:4px 2px 8px">🧰 Boîte à outils — <span style="color:var(--dim);font-weight:400">120 outils · 18 catégories (OSINT4ALL)</span></h2>
     <input class="search" id="q" type="search" inputmode="search" placeholder="🔍 Filtrer un outil ou une catégorie…" autocomplete="off" autocapitalize="off" spellcheck="false">
     <p class="count" id="count"></p>
     <div class="note">⚖️ <b>Usage responsable.</b> Vérification d'information, sécurité, recherche publique. Respecte la vie privée et la loi. Les outils <span style="color:var(--warn)">en orange</span> (faciale, fuites) : cadre légitime et légal uniquement.</div>
@@ -103,7 +103,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
     <div class="empty" id="empty" style="display:none">Aucun outil ne correspond.</div>
   </section>
 </div>
-<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.1</span>
+<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.4</span>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -121,6 +121,7 @@ async function getJSON(url,ms){
 
 /* ============ EN DIRECT (APIs publiques gratuites, sans clé — mêmes sources que World Monitor) ============ */
 var EU_LAT=46,EU_LON=7,EU_NM=250;
+var LIVE_URL="https://kdmc-live.9r4rxssx64.workers.dev"; /* relais serveur : /cve (Shodan CVEDB, CORS OK via worker) */
 var EONET="https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=40&category=";
 /* Détroits stratégiques + zones de tension (statique, indicatif — cf. World Monitor) */
 var CHOKE=[
@@ -134,9 +135,9 @@ var TENSION=[{n:"Ukraine",lat:49,lon:32},{n:"Proche-Orient",lat:31.4,lon:34.4},
 function eonetPts(ev){var p=[];(ev||[]).forEach(function(e){var g=e.geometry&&e.geometry[e.geometry.length-1];if(!g||!g.coordinates)return;var lo=g.coordinates[0],la=g.coordinates[1];if(la==null||lo==null)return;p.push({lat:la,lon:lo,title:e.title||""});});return p;}
 
 async function loadFlights(){
+  /* Avions via le relais serveur kdmc-live /planes (adsb.lol/airplanes.live bloquent le CORS navigateur). */
   var ac=null;
-  try{var d=await getJSON("https://api.adsb.lol/v2/point/"+EU_LAT+"/"+EU_LON+"/"+EU_NM,10000);ac=(d&&d.ac)||null;}catch(e){}
-  if(!ac){try{var d2=await getJSON("https://api.airplanes.live/v2/point/"+EU_LAT+"/"+EU_LON+"/"+EU_NM,10000);ac=(d2&&d2.ac)||null;}catch(e2){}}
+  try{var d=await getJSON(LIVE_URL+"/planes?lat="+EU_LAT+"&lon="+EU_LON+"&radius="+EU_NM,10000);ac=(d&&d.ac)||null;}catch(e){}
   if(ac){setText($("kFlights"),String(ac.length));drawFlights(ac);}
 }
 async function loadQuakes(){
@@ -153,7 +154,8 @@ async function loadStorms(){
   try{var d=await getJSON(EONET+"severeStorms",14000);drawPts(_stormLayer,eonetPts(d&&d.events),"#b992ff",7,"🌀 Tempête");}catch(e){}
 }
 async function loadCve(){
-  try{var d=await getJSON("https://cvedb.shodan.io/cves?limit=25",9000);var arr=(d&&d.cves)||null;if(arr){setText($("kCve"),String(arr.length));return;}}catch(e){}
+  /* Shodan CVEDB via le relais serveur kdmc-live (Shodan bloque le CORS navigateur). Repli : CIRCL. */
+  try{var d=await getJSON(LIVE_URL+"/cve?limit=25",9000);var arr=(d&&d.cves)||null;if(arr){setText($("kCve"),String(arr.length));return;}}catch(e){}
   try{var c=await getJSON("https://cve.circl.lu/api/last",11000);if(Array.isArray(c)){setText($("kCve"),String(Math.min(c.length,50)));return;}}catch(e2){}
 }
 async function refreshLive(){
@@ -250,7 +252,44 @@ var CATS=[
  {i:"📰",n:"Vérification d'actualité",live:1,t:[
    {n:"Wayback Machine",u:"https://web.archive.org/"},{n:"archive.today",u:"https://archive.ph/"},
    {n:"Hoaxy (propagation)",u:"https://hoaxy.osome.iu.edu/"},{n:"Snopes",u:"https://www.snopes.com/"},
-   {n:"Google News",u:"https://news.google.com/"},{n:"GDELT (événements)",u:"https://www.gdeltproject.org/"}]}
+   {n:"Google News",u:"https://news.google.com/"},{n:"GDELT (événements)",u:"https://www.gdeltproject.org/"}]},
+ {i:"🚆",n:"Trains & Rail (live)",live:1,t:[
+   {n:"OpenRailwayMap",u:"https://www.openrailwaymap.org/"},{n:"Raildar (France live)",u:"https://raildar.fr/"},
+   {n:"Realtime Trains (UK)",u:"https://www.realtimetrains.co.uk/"},{n:"Zugverfolgung (DE)",u:"https://zugverfolgung.info/"},
+   {n:"Trainspo",u:"https://trainspo.com/"},{n:"Bahn live map (DE)",u:"https://bahn.expert/map"}]},
+ {i:"🎣",n:"Phishing & E-mail",t:[
+   {n:"Epieos (email→comptes)",u:"https://epieos.com/"},{n:"Holehe (GitHub)",u:"https://github.com/megadose/holehe"},
+   {n:"Hunter.io",u:"https://hunter.io/"},{n:"EmailRep",u:"https://emailrep.io/"},
+   {n:"MXToolbox (en-têtes/DNS)",u:"https://mxtoolbox.com/"},{n:"PhishTank",u:"https://phishtank.org/"},
+   {n:"URLhaus (abuse.ch)",u:"https://urlhaus.abuse.ch/"},{n:"CheckPhish",u:"https://checkphish.ai/"}]},
+ {i:"🦠",n:"Malware & CTI",t:[
+   {n:"VirusTotal",u:"https://www.virustotal.com/"},{n:"MalwareBazaar",u:"https://bazaar.abuse.ch/"},
+   {n:"ThreatFox",u:"https://threatfox.abuse.ch/"},{n:"Hybrid Analysis",u:"https://www.hybrid-analysis.com/"},
+   {n:"ANY.RUN",u:"https://any.run/"},{n:"Triage (tria.ge)",u:"https://tria.ge/"},
+   {n:"MITRE ATT&CK",u:"https://attack.mitre.org/"},{n:"AlienVault OTX",u:"https://otx.alienvault.com/"}]},
+ {i:"🔎",n:"Moteurs de recherche",t:[
+   {n:"Google (dorks)",u:"https://www.google.com/"},{n:"Yandex",u:"https://yandex.com/"},
+   {n:"DuckDuckGo",u:"https://duckduckgo.com/"},{n:"Brave Search",u:"https://search.brave.com/"},
+   {n:"Mojeek",u:"https://www.mojeek.com/"},{n:"Startpage",u:"https://www.startpage.com/"},
+   {n:"SearXNG",u:"https://searx.be/"},{n:"Google Dorking (guide)",u:"https://www.exploit-db.com/google-hacking-database"}]},
+ {i:"📄",n:"Documents & Sociétés",t:[
+   {n:"DocumentCloud",u:"https://www.documentcloud.org/"},{n:"OCCRP Aleph",u:"https://aleph.occrp.org/"},
+   {n:"ICIJ Offshore Leaks",u:"https://offshoreleaks.icij.org/"},{n:"OpenCorporates",u:"https://opencorporates.com/"},
+   {n:"OpenSanctions",u:"https://www.opensanctions.org/"},{n:"Scribd",u:"https://www.scribd.com/"}]},
+ {i:"🗄️",n:"Archives & Cache",live:1,t:[
+   {n:"Wayback Machine",u:"https://web.archive.org/"},{n:"archive.today",u:"https://archive.ph/"},
+   {n:"CachedView",u:"https://cachedview.nl/"},{n:"Memento Time Travel",u:"http://timetravel.mementoweb.org/"},
+   {n:"UK Web Archive",u:"https://www.webarchive.org.uk/"},{n:"Stanford Web Archive",u:"https://swap.stanford.edu/"}]},
+ {i:"📻",n:"Radio & SIGINT",live:1,t:[
+   {n:"WebSDR (récepteurs)",u:"http://www.websdr.org/"},{n:"KiwiSDR map",u:"http://rx.linkfanel.net/"},
+   {n:"Radio Garden",u:"https://radio.garden/"},{n:"Broadcastify",u:"https://www.broadcastify.com/"},
+   {n:"OpenMHz",u:"https://openmhz.com/"},{n:"APRS.fi (radioamateur)",u:"https://aprs.fi/"},
+   {n:"N2YO (satellites)",u:"https://www.n2yo.com/"},{n:"Heavens-Above",u:"https://heavens-above.com/"}]},
+ {i:"🎬",n:"Vidéo OSINT",t:[
+   {n:"InVID / WeVerify",u:"https://www.invid-project.eu/tools-and-services/invid-verification-plugin/"},
+   {n:"YouTube DataViewer (Amnesty)",u:"https://citizenevidence.amnestyusa.org/"},{n:"Watchframe",u:"https://watchframe.com/"},
+   {n:"yt-dlp (GitHub)",u:"https://github.com/yt-dlp/yt-dlp"},{n:"TikTok search",u:"https://www.tiktok.com/search"},
+   {n:"Google Vidéos",u:"https://www.google.com/videohp"}]}
 ];
 function render(f){
   f=norm(f||"");var el=$("cats"),html="",shown=0,total=0;
@@ -279,6 +318,6 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 /* MAJ auto force (leçon #102) : badge cliquable = échappatoire garantie */
 $("ver").onclick=function(){if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});if(window.caches&&caches.keys)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n);});});location.replace(location.pathname+"?_force_upd_"+Date.now());};
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.1" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.4" data-color="#c9a227" defer></script>
 </body>
 </html>

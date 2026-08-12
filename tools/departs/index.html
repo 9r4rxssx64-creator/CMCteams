@@ -188,19 +188,34 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.31</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.32</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.31";
+var APP_VER="v1.36";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
  11:[1,6,4,9,2,11,7,3,8,5,10],12:[1,6,4,9,2,11,7,3,12,8,5,10],13:[1,6,4,9,2,11,7,3,13,8,5,10,12]};
 function seqForSize(n){return SEQS[n]||(function(){var a=[];for(var i=1;i<=n;i++)a.push(i);return a;})();}
-function isWork(c){return !!c && ["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","DEPL","DEP","SS"].indexOf(c)<0;}
+// ROTATION DES DÉPARTS — liste des codes qui ne sont PAS « à la table » ce jour-là.
+// MIROIR EXACT de DEP_ABS/isWorkDep dans l'app (index.html) — la garde test:departs-abs-parity
+// échoue si les deux listes divergent (une divergence = numéros différents app vs page).
+// RÈGLE MÉTIER TRANCHÉE PAR KEVIN — « celui qui est RATTACHÉ à l'équipe garde sa place dans la
+// rotation ; seuls les vrais congés/arrêts la libèrent » :
+//  · PRT (« Prêt », mis à disposition d'un autre service) = TRAVAIL, GARDE son numéro
+//    (décision Kevin 2026-07-10, leçon #140).
+//  · DEPL / DEP (déplacement) et SS = TRAVAIL, GARDENT leur numéro — décision Kevin
+//    2026-08-10 (« B »), même logique que PRT. Cette page les comptait en ABSENCE alors que
+//    l'app les comptait en TRAVAIL → divergence de numéros ; c'est l'APP qui avait raison,
+//    cette page est alignée dessus (v1.36). Ils sont donc VOLONTAIREMENT ABSENTS d'ici.
+//  · CLM (congé mariage — Convention SBM art.18, 4 jours) = ABSENCE, PAS de numéro (v1.35) — bug réel mesuré sur août :
+//    EL MISSOURI O (BJ Éq.10) en CLM les jours 21-24 recevait quand même les numéros 1,4,2,3
+//    et faussait ceux de ses 4 collègues (20 cellules).
+var DEP_ABS=["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","CLM"];
+function isWork(c){return !!c && DEP_ABS.indexOf(c)<0;}
 function cellClass(c){
   if(!c) return "off";
   if(c==="RH") return "rh"; if(c==="R") return "r";
@@ -501,20 +516,20 @@ function compute(){
   function _absRun(nm,D){ if(isWork(ST.codes[nm][D]))return 0; var L=1,dd;
     for(dd=D-1;dd>=1&&!isWork(ST.codes[nm][dd]);dd--)L++;
     for(dd=D+1;dd<=days&&!isWork(ST.codes[nm][dd]);dd++)L++; return L; }
-  // v1.28 (Kevin 2026-07-09 « corrige dans light les départs correctement ») — la fenêtre
-  // GLISSE de +1 à CHAQUE CYCLE de repos (ta ligne 6-4-2-3 → 4-2-3-5 → 2-3-5-1), pas en continu.
-  // rot = index_de_cycle + position_dans_le_cycle. Trou dans workDays = nouveau cycle. Jour 1 = 1-6-4-2-3-5.
-  var rotByDay={}, _cyc=0, _kd=0, _prevWD=null;
-  for(var _iw=0;_iw<workDays.length;_iw++){ var _rwd=workDays[_iw];
-    if(_prevWD!==null){ if(_rwd-_prevWD>1){ _cyc++; _kd=0; } else { _kd++; } }
-    rotByDay[_rwd]=_cyc+_kd; _prevWD=_rwd;
-  }
+  // v1.33 (Kevin 2026-07-10 « certaines personnes ont le même départ plusieurs fois dans le mois,
+  // la suite n'est pas respectée ») — RETOUR à la rotation CONTINUE rot=wi (+1 par jour travaillé
+  // de l'équipe, SANS remise à zéro au repos). Chaque chef parcourt la suite DANS L'ORDRE
+  // (1-4-2-3-5 puis 1-4-2-3-5…) → jamais 2× le même numéro avant d'avoir fini la suite.
+  // Le v1.28 remettait rot à zéro à chaque cycle de repos (rot=index_cycle+position) → comme les
+  // cycles sont plus courts que la taille d'équipe, un même numéro revenait au bout de 1-2 jours
+  // (ex 4-2 puis 4-2). C'était une MAUVAISE interprétation de « ma ligne glisse » : la fenêtre
+  // glisse bien de +1, mais PAR JOUR (continu), pas par cycle. Identique à calcDepPos (app).
   for(var d=1;d<=days;d++){
     var wi=workDays.indexOf(d); if(wi<0) continue;
     var eff=active.filter(function(nm){ var r=_absRun(nm,d); return r===0||r<4; })
                   .sort(function(a,b){ return baseOf[a]-baseOf[b]; });
     var N=eff.length; if(!N) continue;
-    var SEQd=seqForSize(N), rot=rotByDay[d]+off;
+    var SEQd=seqForSize(N), rot=wi+off;
     eff.forEach(function(nm,j){ if(isWork(ST.codes[nm][d])) deps[nm][d]=SEQd[(((rot+j)%N)+N)%N]; });
   }
   return {deps:deps,workDays:workDays,SEQ:SEQ,n:sl,active:active};
@@ -766,6 +781,25 @@ async function checkPin(){ var h=await sha256((document.getElementById("pinIn").
   if(h===PIN_SHA256){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); paintAppDiag(); toast("Mode admin activé"); }
   else toast("Code incorrect"); }
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&document.getElementById("pinModal").classList.contains("on"))checkPin(); });
+// ADMIN UNIVERSEL DU DOMAINE — Kevin reconnu partout sans code. On demande à
+// kd-mc.com « qui es-tu ? » : si c'est Kevin, prouvé par Face ID (verified), on
+// passe en admin tout seul. Le code PIN reste un SECOURS si le domaine ne répond
+// pas (hors ligne, autre origine) → aucune régression : on ne casse rien.
+async function _depSsoAutoAdmin(){ try{
+  if(isAdmin())return;
+  var m=(location.hash||"").match(/[#&]kdmc_sso=([^&]+)/);
+  if(m){ try{localStorage.setItem("kdmc_sso_token",decodeURIComponent(m[1]));}catch(_){}
+         try{history.replaceState(null,"",location.pathname+location.search);}catch(_){} }
+  var tok=""; try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
+  var hdr={}; if(tok)hdr.Authorization="Bearer "+tok;
+  var r=await fetch("/__sso/whoami",{credentials:"include",cache:"no-store",headers:hdr});
+  var j=r&&r.ok?await r.json():null;
+  if(j&&j.ok&&j.verified===true&&j.admin===true){
+    document.body.classList.add("admin");
+    var b=document.getElementById("lockBtn"); if(b)b.textContent="🔓 Quitter admin";
+    try{render();paintAppDiag();}catch(_){}
+  }
+}catch(_){/* SSO injoignable → PIN, rien de cassé */} }
 function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(window._tt); window._tt=setTimeout(function(){t.classList.remove("on");},2200); }
 function _appDiagText(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
   if(window.DEPARTS_GEN&&window.DEPARTS_GEN.months&&window.DEPARTS_GEN.months.length){
@@ -831,8 +865,33 @@ try{ var _mq=new URLSearchParams(location.search).get("me");
 BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
   try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
 CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
-_depWireDelegation();
-fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
+// v1.35 (ultra-review 2026-08-10) — FILET DE SÉCURITÉ. AVANT : si boards-gen.js ne chargeait pas
+// (404, réseau coupé, fichier corrompu), DEPARTS_GEN était absent → applyBoards vidait BOARDS →
+// defaultBoard() renvoyait undefined → load() plantait sur B.people → l'exception remontait ICI,
+// NON attrapée, et TOUT le script s'arrêtait : écran BLANC, même l'écran de connexion et le chat
+// ne s'affichaient plus. MAINTENANT : on attrape, on explique en clair, et on laisse la suite du
+// script vivre (connexion + chat + bouton Rafraîchir restent utilisables).
+try{
+  _depWireDelegation();
+  fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
+}catch(_e){
+  try{
+    var _kb=Object.keys(BOARDS||{}).length;
+    document.body.insertAdjacentHTML("afterbegin",
+      '<div style="margin:12px;padding:14px;border-radius:12px;background:#3a1c1c;'+
+      'border:1px solid #a33;color:#ffd9d9;font-size:14px;line-height:1.5">'+
+      '<b>⚠️ Les plannings n\'ont pas pu être chargés.</b><br>'+
+      'Vérifie ta connexion, puis touche <b>Rafraîchir</b>. '+
+      'Si ça persiste, ferme et rouvre l\'application.<br>'+
+      '<button onclick="try{forceRefresh()}catch(e){location.reload(true)}" '+
+      'style="margin-top:10px;min-height:44px;padding:0 18px;border-radius:10px;border:0;'+
+      'background:#c9a227;color:#191919;font-weight:700;font-size:15px">🔄 Rafraîchir</button>'+
+      '<div style="margin-top:8px;opacity:.65;font-size:12px">détail : '+
+      String((_e&&_e.message)||_e).replace(/</g,"&lt;").slice(0,120)+' · '+_kb+' planning(s) en mémoire</div>'+
+      '</div>');
+  }catch(_){}
+}
+_depSsoAutoAdmin();
 if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
 // v1.20 — GATE 1ère connexion : si pas d'identité stockée sur cet appareil, on demande
 // nom + prénom (règle LOGIN TOUJOURS PRÉNOM + NOM) + CGU AVANT de laisser voir les départs.
@@ -1009,6 +1068,9 @@ if(!_depHasIdentity()){ _depShowGate(); }
     var arr=a.slice(-100); var n=arr.length; arr=arr.map(function(m,i){ if(m&&m.img&&(n-i)>6){ var c=Object.assign({},m); delete c.img; c.imgStripped=true; return c; } return m; });
     localStorage.setItem("cmc_dep_chat",JSON.stringify(arr)); }catch(_){} }
   window._depGetChat=_depLocalChat;
+  /* v1.32 — seule une vraie adresse d'image entre dans un src (jamais du texte arbitraire).
+     Sur window : le panneau de chat (IIFE suivante) s'en sert aussi. */
+  window._okImgUrl=function(u){ u=String(u||""); return u.indexOf("data:image/")===0||u.indexOf("https://")===0||u.indexOf("blob:")===0; };
   // v1.24 — pièce jointe photo : stockée dans un node DÉDIÉ cmc_dep_img/<id> (chargée à la
   // demande côté app), JAMAIS dans les tableaux inbox (qui restent légers). Le message porte
   // seulement hasImg+imgId. La bulle locale garde la data URL pour l'affichage immédiat.
@@ -1114,7 +1176,13 @@ if(!_depHasIdentity()){ _depShowGate(); }
     var chat=(window._depGetChat?window._depGetChat():[])||[];
     if(!chat.length){ box.innerHTML="<div class='empty'>Écris à Kevin — il reçoit ton message sur son téléphone (chat Apex) et te répond ici.</div>"; return; }
     box.innerHTML=chat.map(function(m){
-      var img=m.img?("<img src='"+m.img+"' alt='photo' style='max-width:100%;border-radius:8px;margin:2px 0;display:block' onclick='window.open(this.src)'>"):(m.imgStripped?"<div style=\"font-size:12px;opacity:.7\">📷 photo envoyée</div>":"");
+      /* v1.32 — vu en vérif réelle (run 31235630065) : GET /%22+m.img+%22 → le flux HTML servi
+         peut arriver CORROMPU (CDN/réseau) et le navigateur re-parse alors le SOURCE JS comme du
+         HTML : chaque balise image écrite en clair dans le source devient un vrai tag → requête
+         vers le texte littéral → 404. Blindage : (a) plus AUCUNE balise image lisible dans le
+         source (nom de tag scindé « i »+« mg »), (b) l'URL est VALIDÉE avant d'entrer dans src
+         (data:image/, https://, blob: uniquement). */
+      var img=(m.img&&window._okImgUrl&&window._okImgUrl(m.img))?("<i"+"mg src='"+m.img+"' alt='photo' style='max-width:100%;border-radius:8px;margin:2px 0;display:block' onclick='window.open(this.src)'>"):((m.imgStripped||m.img)?"<div style=\"font-size:12px;opacity:.7\">📷 photo envoyée</div>":"");
       var lu=(m.who==="me"&&window._depReadTs&&m.ts<=window._depReadTs)?" · <span style='color:#7fd0a0'>✓ Lu</span>":"";
       return "<div class='b "+(m.who==="me"?"me":"kv")+"'>"+img+(m.text?esc(m.text):"")+"<div class='t'>"+(m.who==="me"?"toi":"Kevin")+" · "+relt(m.ts)+lu+"</div></div>"; }).join("");
     box.scrollTop=box.scrollHeight;
@@ -1127,7 +1195,7 @@ if(!_depHasIdentity()){ _depShowGate(); }
   panel.querySelector(".x").addEventListener("click",closePanel);
   window._depPendingImg=null;
   function renderPending(){ var p=document.getElementById("depChatPending"); if(!p)return;
-    if(window._depPendingImg){ p.style.display="flex"; p.innerHTML="<img src='"+window._depPendingImg+"' style='height:44px;border-radius:6px'><span style='color:#8ab888;font-size:12px'>Photo jointe</span><button type='button' id='depPendX' style='margin-left:auto;background:none;border:none;color:#e5776c;font-size:16px;cursor:pointer'>✕ retirer</button>";
+    if(window._depPendingImg&&window._okImgUrl&&window._okImgUrl(window._depPendingImg)){ p.style.display="flex"; p.innerHTML="<i"+"mg src='"+window._depPendingImg+"' style='height:44px;border-radius:6px'><span style='color:#8ab888;font-size:12px'>Photo jointe</span><button type='button' id='depPendX' style='margin-left:auto;background:none;border:none;color:#e5776c;font-size:16px;cursor:pointer'>✕ retirer</button>";
       var x=document.getElementById("depPendX"); if(x)x.onclick=function(){ window._depPendingImg=null; renderPending(); }; }
     else { p.style.display="none"; p.innerHTML=""; } }
   function doSend(){ var ta=document.getElementById("depChatIn"); if(!ta)return; var t=ta.value.trim(); var img=window._depPendingImg;

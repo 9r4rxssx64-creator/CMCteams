@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <srw:version>1.2</srw:version>
+    <srw:echoedSearchRetrieveRequest>
+        <srw:query>(gallica all "Victor SAUVAIGO") and (gallica all "Monaco")</srw:query>
+        <srw:version>1.2</srw:version>
+    </srw:echoedSearchRetrieveRequest>
+    <srw:numberOfRecords>677</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;3435&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:records>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Naudin, Charles (1815-1899). Préfacier</dc:contributor>
+                    <dc:creator>Sauvaigo, Émile (Dr). Auteur du texte</dc:creator>
+                    <dc:date>1894</dc:date>
+                    <dc:description>Collection : Bibliothèque des connaissances utiles</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>1 vol. (XXIV-324 p.) : fig. ; in-18</dc:format>
+                    <dc:format>Nombre total de vues : 374</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k3040532c</dc:identifier>
+                    <dc:identifier>NUMM-3040532</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>J.-B. Baillière et fils (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb313044332</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, 8-S-8014</dc:source>
+                    <dc:title>Les cultures sur le littoral de la Méditerranée : Provence, Ligurie, Algérie / Dr Émile Sauvaigo,... ; introduction par Ch. Naudin,...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>0</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k3040532c.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k3040532c</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k3040532c.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k3040532c.medres</medres>
+                <nqamoyen>87.93</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k3040532c.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k3040532c</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Sauvaigo, Émile (Dr). Auteur du texte</dc:creator>
+                    <dc:date>1913</dc:date>
+                    <dc:description>Collection : Bibliothèque des connaissances utiles</dc:description>
+                    <dc:description>INRAE - Licence Ouverte Etalab</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Inr000</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Inr003</dc:description>
+                    <dc:description>Contient une table des matières</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>1 vol. (456 p.) : ill. ; in-16</dc:format>
+                    <dc:format>Nombre total de vues : 468</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k6373190j</dc:identifier>
+                    <dc:identifier>NUMM-6373190</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>J.-B. Baillière et fils (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb31304434d</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>INRAE, 2012-233231</dc:source>
+                    <dc:title>Les cultures sur le littoral de la Méditerranée : Provence, Ligurie, Algérie (2e édition) / Dr Émile Sauvaigo,...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>1</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6373190j.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k6373190j</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6373190j.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6373190j.medres</medres>
+                <nqamoyen>99.96</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6373190j.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k6373190j</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1920-1963</dc:date>
+                    <dc:description>Périodicité : Bimensuel ou mensuel</dc:description>
+                    <dc:description>Etat de collection : 1926-1936</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG98</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328621183/date</dc:identifier>
+                    <dc:identifier>NUMP-20737</dc:identifier>
+                    <dc:identifier>ISSN 10117466</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Monaco-revue (Monaco)</dc:publisher>
+                    <dc:publisher>Monaco-revueMonaco-revue (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328621183</dc:relation>
+                    <dc:relation>A pour reproduction : Rives d'azur (Reproduction numérique) = ISSN 2740-0131 (https://gallica.bnf.fr/ark:/12148/cb328621183/date)</dc:relation>
+                    <dc:relation>A pour reproduction : Rives d'azur (Reproduction numérique) = ISSN 2740-0131 (https://fondsanciens.grasse.fr/ark:/36596/ALTODKL1453) (15 févr. 1928)</dc:relation>
+                    <dc:relation>Première de couverture : 450051</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-61683</dc:source>
+                    <dc:title>Rives d'azur : ["puis" grand magazine illustré]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>2</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8367546w.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb328621183/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8367546w.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8367546w.medres</medres>
+                <nqamoyen>87.35</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8367546w.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k8367546w</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1904</dc:date>
+                    <dc:description>Périodicité : Mensuel</dc:description>
+                    <dc:description>Etat de collection : Mai et oct.-nov. 1916</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : GG14181</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:format>Nombre total de vues : 24</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb43511061d/date</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Rosenstiel (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb43511061d</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, BP-1 (NICE, STE-MADELEINE, A)</dc:source>
+                    <dc:subject>Guerre mondiale (1914-1918) -- Aspect religieux</dc:subject>
+                    <dc:title>Bulletin paroissial (Nice, Paroisse de la Madeleine. 1904?-)</dc:title>
+                    <dc:title>La Madeleine : bulletin paroissial</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>3</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k1154776k.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb43511061d/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k1154776k.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k1154776k.medres</medres>
+                <nqamoyen>86.14</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k1154776k.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k1154776k</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1894-1913</dc:date>
+                    <dc:description>Etat de collection : 1906 (A13,SUPPL). 1907 (A14), 1909 (A16). </dc:description>
+                    <dc:format>Nombre total de vues : 998</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32696458d/date</dc:identifier>
+                    <dc:identifier>NUMP-1778</dc:identifier>
+                    <dc:identifier>ISSN 20158769</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>H. Le Soudier (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32696458d</dc:relation>
+                    <dc:relation>A pour reproduction : Annuaire de la Librairie française (Reproduction numérique) = ISSN 2452-9575 (https://gallica.bnf.fr/ark:/12148/cb32696458d/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 8-Q-3960</dc:source>
+                    <dc:title>Annuaire de la Librairie française</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>4</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k1181830t.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32696458d/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k1181830t.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k1181830t.medres</medres>
+                <nqamoyen>85.09</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k1181830t.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k1181830t</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Amé, Émile (1821-1900). Rédacteur</dc:contributor>
+                    <dc:contributor>France. Ministère de l'instruction publique. Éditeur scientifique</dc:contributor>
+                    <dc:contributor>Comité des travaux historiques et scientifiques (France). Directeur de publication</dc:contributor>
+                    <dc:date>1897</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : Auvergn1</dc:description>
+                    <dc:description>Dictionnaires</dc:description>
+                    <dc:description>Répertoires géographiques</dc:description>
+                    <dc:format>LIV-631 p. ; in-4</dc:format>
+                    <dc:format>Nombre total de vues : 691</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k110093n</dc:identifier>
+                    <dc:identifier>NUMM-110093</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Impr. nationale (Paris)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb37326793g</dc:relation>
+                    <dc:relation>Titre d'ensemble : Dictionnaire topographique de la France</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34105630w</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 4-Lk4-2329</dc:source>
+                    <dc:subject>Noms géographiques</dc:subject>
+                    <dc:subject>Cantal (France)</dc:subject>
+                    <dc:title>Dictionnaire topographique de la France. 7, Dictionnaire topographique du département du Cantal : comprenant les noms de lieu anciens et modernes / réd. par M. Emile Amé,... ; publ. par ordre du ministre de l'Instruction publique ; et sous la dir. du Comité des travaux historiques</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>5</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k110093n.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k110093n</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k110093n.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k110093n.medres</medres>
+                <nqamoyen>97.66</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k110093n.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k110093n</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Société d'horticulture pratique de Nice et des Alpes-Maritimes. Auteur du texte</dc:creator>
+                    <dc:date>1908-192.</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32869587q/date</dc:identifier>
+                    <dc:identifier>NUMP-28117</dc:identifier>
+                    <dc:identifier>ISSN 30390567</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32869587q</dc:relation>
+                    <dc:relation>A pour reproduction : Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes) = ISSN 3039-0559 (https://gallica.bnf.fr/ark:/12148/cb32869587q/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, 8-S-13587</dc:source>
+                    <dc:title>Bulletin trimestriel (Société d'horticulture pratique de Nice et des Alpes-Maritimes)</dc:title>
+                    <dc:title>Bulletin trimestriel / Société d'horticulture pratique de Nice et des Alpes-Maritimes</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>6</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t54305110s.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32869587q/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t54305110s.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t54305110s.medres</medres>
+                <nqamoyen>88.25</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t54305110s.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t54305110s</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1898-1904</dc:date>
+                    <dc:description>Périodicité : Annoncé comme hebdomadaire ; en réalité irrégulier</dc:description>
+                    <dc:description>Etat de collection : n. s., n° 1 (1898, 15 oct.)-27 a., n. s., n° 131 (1903, 30 mai)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32866965s/date</dc:identifier>
+                    <dc:identifier>NUMP-2261</dc:identifier>
+                    <dc:identifier>ISSN 21379610</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32866965s</dc:relation>
+                    <dc:relation>A pour reproduction : La Semaine niçoise (Reproduction numérique) = ISSN 2503-5568 (https://gallica.bnf.fr/ark:/12148/cb32866965s/date)</dc:relation>
+                    <dc:relation>Première de couverture : 212185</dc:relation>
+                    <dc:source>Bibliothèque nationale de France</dc:source>
+                    <dc:title>La Semaine niçoise : ancien "Nice artistique illustré", journal des sociétés locales... ["puis" journal du dimanche des Alpes-Maritimes et de la Principauté de Monaco "puis" revue politique, commerciale et industrielle de la région du Midi "puis" revue hebdomadaire des Alpes-Maritimes"]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>7</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k955741b.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32866965s/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k955741b.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k955741b.medres</medres>
+                <nqamoyen>87.67</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k955741b.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k955741b</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Société centrale d'agriculture, d'horticulture et d'acclimatation de Nice et des Alpes-Maritimes. Éditeur scientifique</dc:contributor>
+                    <dc:date>1898</dc:date>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>In-8°</dc:format>
+                    <dc:format>Nombre total de vues : 84</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k939553f</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>français</dc:language>
+                    <dc:publisher> (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb336050032</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Sciences et techniques, 8-S-9990</dc:source>
+                    <dc:title>Exposition agricole et horticole de Nice, tenue les 31 mars, 1er, 2 et 3 avril 1898 dans les jardins du square Masséna</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>8</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k939553f.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k939553f</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k939553f.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k939553f.medres</medres>
+                <nqamoyen>86.51</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k939553f.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k939553f</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1922-1924</dc:date>
+                    <dc:description>Etat de collection : Jusqu'à : 1924</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MnS000</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32862163x/date</dc:identifier>
+                    <dc:identifier>ISSN 24296554</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32862163x</dc:relation>
+                    <dc:relation>A pour reproduction : La Riviera sportive (Reproduction numérique) = ISSN 2400-8842 (https://gallica.bnf.fr/ark:/12148/cb32862163x/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-35500</dc:source>
+                    <dc:title>La Riviera sportive : organe officiel des Fédérations sportives de la Côte d'Azur / directeur A. Duprez</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>9</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k982325t.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32862163x/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k982325t.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k982325t.medres</medres>
+                <nqamoyen>84.84</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k982325t.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k982325t</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Société des lettres, sciences et arts (Alpes-Maritimes). Éditeur scientifique</dc:contributor>
+                    <dc:date>1916</dc:date>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>In-4°, 223 p., fig., planches et cartes</dc:format>
+                    <dc:format>Nombre total de vues : 245</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k14285108</dc:identifier>
+                    <dc:identifier>NUMM-1428510</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Berger-Levrault (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb336060844</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Littérature et art, 4-Z-2234</dc:source>
+                    <dc:title>Cinquantenaire, 1862-1911. Recueil de mémoires publiés par les membres de la Société. 1er fascicule</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>10</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k14285108.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k14285108</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k14285108.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k14285108.medres</medres>
+                <nqamoyen>88.48</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k14285108.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k14285108</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1891-1895</dc:date>
+                    <dc:description>Périodicité : Hebdomadaire</dc:description>
+                    <dc:description>Etat de collection : 5 avr. 1891-4 août 1895 (7e année), inc.</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32808640v/date</dc:identifier>
+                    <dc:identifier>NUMP-15656</dc:identifier>
+                    <dc:identifier>ISSN 21314950</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Cannes)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32808640v</dc:relation>
+                    <dc:relation>A pour reproduction : Le Littoral illustré (Éd. hebdomadaire. Reproduction numérique) = ISSN 2513-7778 (https://gallica.bnf.fr/ark:/12148/cb32808640v/date)</dc:relation>
+                    <dc:relation>Première de couverture : 205923</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-86487 (BIS)</dc:source>
+                    <dc:title>Le Littoral illustré (Éd. hebdomadaire)</dc:title>
+                    <dc:title>Le Littoral illustré</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>11</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k4517829p.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32808640v/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k4517829p.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k4517829p.medres</medres>
+                <nqamoyen>88.94</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k4517829p.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k4517829p</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1878-1898</dc:date>
+                    <dc:description>Variante(s) de titre : Le sous-titre varie puis disparaît. - De 1897 à 1898 absorbe : "Cannes mondain" ; "Menton mondain. Gazette high life" et "Nice mondain. Gazette high life"</dc:description>
+                    <dc:description>Variante(s) de titre : Nice artistique et industriel</dc:description>
+                    <dc:description>Variante(s) de titre : Nice artistique illustré</dc:description>
+                    <dc:description>Variante(s) de titre : Nice artistique illustré et Nice mondain</dc:description>
+                    <dc:description>Périodicité : Hebdomadaire</dc:description>
+                    <dc:description>Etat de collection : a. 4, n° 3 (1881, 5 nov.)-a. 21, n° 31 (1898, 1er mai)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:format>Nombre total de vues : 4392</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32823624t/date</dc:identifier>
+                    <dc:identifier>NUMP-9125</dc:identifier>
+                    <dc:identifier>ISSN 21327947</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32823624t</dc:relation>
+                    <dc:relation>A pour reproduction : Nice artistique (Reproduction numérique) = ISSN 2419-2252 (https://gallica.bnf.fr/ark:/12148/cb32823624t/date)</dc:relation>
+                    <dc:relation>Première de couverture : 201224</dc:relation>
+                    <dc:source>Bibliothèque nationale de France</dc:source>
+                    <dc:title>Nice artistique : journal littéraire, industriel et financier</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>12</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9549579.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32823624t/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9549579.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9549579.medres</medres>
+                <nqamoyen>85.83</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9549579.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k9549579</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1934-1964</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb327941766/date</dc:identifier>
+                    <dc:identifier>NUMP-22656</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Constantinople)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb327941766</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-10128</dc:source>
+                    <dc:title>Istanboul</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>13</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t5792186.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb327941766/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t5792186.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t5792186.medres</medres>
+                <nqamoyen>85.18</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t5792186.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t5792186</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Société Fragonard. Auteur du texte</dc:creator>
+                    <dc:date>1925-1932</dc:date>
+                    <dc:description>Variante(s) de titre : Bulletin de la Société Fragonard à Grasse</dc:description>
+                    <dc:description>Variante(s) de titre : Bulletins annuels (Société Fragonard)</dc:description>
+                    <dc:description>Etat de collection : |1924/1925-1926/1928</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BibINHA</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : PACA1</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>Nombre total de vues : 315</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32724522x/date</dc:identifier>
+                    <dc:identifier>ISSN 20221495</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>français</dc:language>
+                    <dc:publisher> (Grasse)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32724522x</dc:relation>
+                    <dc:source>Bibliothèque de l'INHA / coll. J. Doucet, 2010-76544</dc:source>
+                    <dc:title>Bulletin annuel (Société Fragonard)</dc:title>
+                    <dc:title>Bulletin annuel / Société Fragonard</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>14</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k61063092.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32724522x/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k61063092.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k61063092.medres</medres>
+                <nqamoyen>95.64</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k61063092.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k61063092</uri>
+            </srw:extraRecordData>
+        </srw:record>
+    </srw:records>
+    <srw:nextRecordPosition>16</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

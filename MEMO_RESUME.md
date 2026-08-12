@@ -1,3 +1,323 @@
+# MEMO_RESUME — état de session
+
+## Soir du 7 août 2026 — Lingua jeux de rôle 🎭 + Bee vivante dans Créa Studio 🐝
+
+### Livré et sur `main` (session Lingua/Bee)
+1. **KDMC Lingua v2.31.0 — jeux de rôle conversationnels** (PR #3169, réponse à la
+   capture Loora « Pareil avec ça ») : 9 scènes 100 % originales (café, entretien
+   d'embauche, musique, restaurant, marché, aéroport, hôtel, médecin, lire-et-raconter).
+   Bee JOUE le personnage dans la langue cible (worker `/ai` : champ `scenario` injecté
+   dans le prompt, fail-open). Coach : carrousel + bandeau + quitter ; Discussion 🎬 :
+   chips de scènes. En scène, seul le fil depuis le début de la scène part à l'IA.
+   Testé navigateur réel 11/11 ✅. Worker déployé ✅ (run 31222451220 success).
+   **Vérifié EN VRAI** (verif-reelle 31222551767) : Lingua live OK — 6 langues,
+   25 unités, 6 onglets.
+2. **Créa Studio v9.9.1 — SANS Bee** (correction Kevin « Bee est pour Lingua, pas
+   pour le studio ») : le portage Bee v9.9.0 (PR #3170) a été RETIRÉ (revert propre,
+   version avancée v9.9.1 pour forcer la mise à jour des téléphones). Bee reste la
+   mascotte de LINGUA uniquement. La surface Créa Studio reste surveillée par la
+   vérif réelle (nav ≥6 studios), sans exigence de mascotte.
+
+3quater. **KDMC Lingua v2.35.0 — la voix ne coupe plus avant la fin** (Kevin :
+   « Elle ne lit pas toujours toute la phrase écrite, s'arrête avant la fin »).
+   Deux causes trouvées et corrigées : (1) le worker `/tts` **coupait le texte à
+   200 caractères** → les longues lectures (réponse du Coach, explications) étaient
+   tronquées au milieu (les mots/histoires ≤35 car. passaient — d'où « pas
+   toujours ») → cap porté à **1000** (tts-1 accepte 4096, URL sûre) ; (2) la voix
+   du téléphone (repli hors-ligne) est coupée par Chrome/Safari après ~15 s →
+   **keepalive `resume()`** ajouté (helper `_wsSpeak`, arrêté proprement à la fin).
+   Prouvé en navigateur réel via le vrai Coach : le worker reçoit les 338 car.
+   entiers ; la voix locale parle le texte complet, keepalive déclenché sur une
+   phrase de 10 s, nettoyé à la fin. Non-régression : synchro voix PASS, retour
+   arrière 10/10, jeux/stats 21/21. sw.js lingua-v2.35.0.
+
+3quinquies. **KDMC Lingua v2.36.0 — 🎤 Atelier prononciation** (Kevin : « Travailler
+   la prononciation, élocution, etc avec corrections explications etc »). Vue dédiée
+   accessible depuis l'accueil : pour chaque mot appris → modèle audio **normal +
+   🐢 lent** (cloud `&s=0.6`), découpage en **syllabes** (mot·à·mot), **astuces
+   d'élocution** propres à chaque langue (en/it/es/de/pt/nl : th, r roulé, ü, gn,
+   jota, nasales…). Reconnaissance vocale → **score %** + **correction** (« on a
+   entendu … ») + **explication** (dis plus lentement, syllabe par syllabe). Repli
+   **sans micro** (iPhone Safari) : auto-évaluation 3 boutons. XP + quête « Prononce
+   3 mots 🎤 » + succès « Belle diction » (20 mots ≥80 %), compteur « Mots bien dits »
+   dans 📊 Stats, retour arrière protégé. Prouvé en navigateur réel (Playwright) :
+   micro exact→score haut+✅, faux→correction+explication, 🐢 demande bien `&s=0.6`,
+   sans micro→auto-éval avance+XP, pronGoodTotal persisté. Worker déjà au cap 1000
+   (aucun changement). sw.js lingua-v2.36.0. Mergé PR #3233.
+
+3sexies. **KDMC Lingua v2.37.0 — Bee gros plan qui parle VRAIMENT (lip-sync) + corrections
+   très poussées** (Kevin : « Avoir en gros plan Bee et qu'elle parle réellement de la bouche
+   etc vrai interaction comme l'app Speak. Explications, corrections très poussées partout
+   toujours »). 👄 **Lip-sync réel** : la bouche s'ouvre sur l'**amplitude du vrai son** (Web
+   Audio analyser ; le worker `/tts` renvoie déjà `ACAO:*` → analyse cross-origin avec
+   `crossOrigin="anonymous"`). La source est branchée à la sortie AVANT l'analyse → le son passe
+   toujours ; repli flap CSS si l'amplitude reste plate. Helper `beeLipSync()`. 🐝 **Atelier
+   prononciation** : Bee en **gros plan** qui **dit le mot**, bouche animée → « regarde et
+   imite ». 🎬 **Discussion** : pendant qu'elle parle → marionnette + bouche qui articule sur
+   le son (la vidéo générique ne synchronise pas les lèvres) ; la belle vidéo revient entre deux
+   répliques. 🔎 **Corrections très détaillées** : score + **syllabe fautive repérée** (« le
+   décalage commence vers … ») + marche à suivre 1/2/3 + astuces son (placement bouche) +
+   « entendu » échappé (anti-XSS). Prouvé en navigateur réel (Playwright, vrai WAV à amplitude
+   variable servi en CORS) : bouche qui s'anime réellement (atelier + Discussion), correction
+   profonde, exact→85 %+. Non-régression : v2.36 pron PASS, retour arrière 10/10. Garde CI
+   (`audit-live`) : Bee + bouche exigées. sw.js lingua-v2.37.0. Mergé PR #3238.
+
+3septies. **KDMC Lingua v2.38.0 — corrections de leçon FIABLES** (Kevin a montré une leçon
+   « hen → poule » avec une explication FAUSSE et inventée — « la femelle de la poule »,
+   « pensez à hennie » — et un « Presque ! » alors que sa réponse « raisin »=grape n'était pas
+   proche). Cause : `aiQuickExplain` appelait l'IA gratuite (petits modèles) à CHAQUE erreur et
+   affichait + LISAIT sa réponse hallucinée. Corrigé : (1) **auto-IA hallucinée supprimée** →
+   l'explication auto est 100 % fiable, issue des données de l'app (sens + ce que voulait dire ta
+   réponse + ⚠️ faux-ami quand les mots se ressemblent + 💡 cognat « presque comme en français » +
+   exemple) ; (2) **« Presque ! » retiré** → « Pas tout à fait. » ; (3) **« Demander au prof »**
+   conservé à la demande avec garde ANTI-INVENTION. Prouvé en navigateur réel : QCM faux →
+   « Pas grave, on retient : » (0 « Presque »), explication fiable, et /ai forcé à halluciner
+   n'apparaît PLUS. Non-régression : lip-sync v2.37 + prononciation v2.36 + retour arrière 10/10.
+   sw.js lingua-v2.38.0. Mergé PR #3248.
+
+3octies. **KDMC Lingua v2.39.0 — voix + exercices au point** (Kevin : « s'arrête avant la fin » ·
+   « écris le mot → rien ne s'affiche ni ce qu'on a écrit ni la bonne réponse » · « décalage » ·
+   « ne dis pas tous les mots sur les paires/quiz » · « voix pas au point »). Corrigé : (1) **« écris
+   le mot »** — après validation le texte écrit RESTE (vert/rouge, verrouillé) + réponse + explication
+   affichées ; le clavier ne repop plus (il cachait la correction et vidait le champ) ; (2) **paires +
+   association** — plus de lecture de CHAQUE mot (on garde le beep de réussite) ; (3) **anti-décalage** —
+   tout son différé attaché à l'exercice COURANT (`_lsSpeak(mot,i)`) : un son de la question précédente
+   ne sort jamais sur la suivante (mc-audio, écris-le, prononce, mot dit après bonne réponse) → moins de
+   chevauchements = moins de coupures. Prouvé en navigateur réel : « écris le mot » faux → texte conservé
+   (rouge, verrouillé) + réponse affichée ; paires résolues avec 1 seule lecture (message de fin), plus
+   1-par-paire. Non-régression : v2.38 + v2.37 + v2.36 + retour arrière 10/10 tous PASS.
+   sw.js lingua-v2.39.0. Mergé PR #3251.
+
+3nonies. **KDMC Lingua v2.40.0 — UNE voix claire partout + lecture du mot (oreille)** (Kevin :
+   « élocution pas claire » · « on choisit une voix mais selon la catégorie elle change seule » ·
+   « on comprend rien, on entend rien volume à fond » · « lis la question aussi pour entraîner
+   l'oreille »). Cause : 2 réglages séparés — S.voice (mots) et S.beeVoice (coach/jeux/atelier,
+   défaut « fillette » = nova générée lente puis accélérée SANS garder le pitch → aiguë/étouffée).
+   Corrigé : (1) **une seule voix = celle choisie** (S.voice), claire, vitesse normale, partout
+   (speakLang « bee » → S.voice sans déformation ; discSpeak idem, lip-sync gardé ; volume=1) ;
+   (2) **2ᵉ section « Voix de Bee » supprimée** → un seul choix « 🔊 Voix » ; (3) **oreille** :
+   « Traduis/Écris en français » lisent le mot cible affiché (jamais la réponse cachée). Prouvé en
+   navigateur réel : voix Shimmer → 37/37 lectures en Shimmer (0 autre), 0 déformation, section
+   Bee absente, mot lu. Non-régression v2.39→v2.36 + retour arrière 10/10 PASS. sw.js
+   lingua-v2.40.0. Mergé PR #3253. **RESTE** : « niveau pas adapté » (attendre le retour de Kevin
+   sur ce qui est trop dur — phrases ? vocabulaire ?).
+
+3ter. **KDMC Lingua v2.34.0 — synchro voix vérifiée + garde retour-arrière** (Kevin :
+   « Vérifie la synchro de la voix avec les questions… Pas de retour arrière possible
+   pendant une leçon ») : synchro voix PROUVÉE en navigateur réel (exercices « écoute »
+   répondus AVEC le mot capturé au moment où il se dit → tous ✅ ; mot redit à la
+   validation = mot de la question ; 🔊 exact ; paires prononcées justes ; 0 son en
+   retard — les jetons anti-décalage `_ttsReq` font le travail). NOUVEAU v2.34.0 :
+   le geste retour iPhone pendant une leçon/défi/paires/histoire n'ÉJECTE plus de
+   l'app (jalon d'historique + même confirmation que ✕, défi éclair terminé
+   proprement avec score compté, retour hors activité = accueil). Testé réel :
+   garde 10/10 PASS + non-régression voix PASS + jeux/stats 21/21 PASS.
+
+3bis. **KDMC Lingua v2.33.0 — Salle de jeux + Statistiques** (« Enrichie encore au
+   max tout ») : ⚡ **Défi éclair** (60 s chrono, QCM rapides dans les 2 sens, pénalité
+   -3 s par erreur, XP = bonnes réponses, record sauvegardé, succès 🚀 à 15) ·
+   🃏 **Paires chrono** (6 paires mot↔traduction, chrono, record temps, succès 🃏
+   sous 45 s, la bonne prononciation est dite à chaque paire) · 📊 **Mes statistiques**
+   (calendrier d'activité 12 semaines nourri par le nouvel historique journalier
+   `hist`, records, langues, leçons finies) · **+6 succès** (mois de feu, légende,
+   grand lecteur, conteur de la ruche, éclair, mémoire d'abeille) · **+2 quêtes**
+   (défi éclair, paires) · cartes accueil dédiées. Chronos coupés proprement à la
+   navigation. Historique branché sur leçons + histoires + jeux, synchronisé cloud.
+   Testé navigateur réel : **21/21 PASS** (défi joué avec vraies bonnes réponses,
+   paires entièrement résolues, 84 cases de calendrier, records persistés, 0 erreur).
+   Vérif réelle enrichie (2 cartes jeux + 84 cases exigées en live).
+
+3. **KDMC Lingua v2.32.0 — 📖 Histoires de la ruche** (« Va plus loin, enrichis
+   Lingua ») : 6 mini-histoires 100 % originales écrites dans les 6 langues (vocab A1
+   du programme), racontées ligne par ligne (voix de Bee sur ses répliques, français
+   dessous), quiz de compréhension, progression à déblocage (1 finie → suivante),
+   +20 XP +5 💎 à la 1re lecture, quête « Lis 1 histoire », carte accueil x/6.
+   Testé navigateur réel : 9/9 ✅.
+
+### Enquête 404 /%22/%22 (surface CMCteams) — état au 8 août 01:15 UTC
+Chronologie des faits PROUVÉS (runs verif-reelle) :
+- v9.876-880 (fonds CSS, cmc_photos, getEmpPhoto/getEmpBg) puis **v9.881-882**
+  (`cmc_plan_bg_images` assaini au getter + refus à la saisie `_promptPlanBg`) sont
+  sur main et SERVIS (« version page servie : v9.882 » dans la note du run rouge).
+- MALGRÉ ça, runs 31230312178 et 31231175160 encore rouges : `GET /%22/%22`,
+  initiateur `type=parser` (HTML inséré par innerHTML), **localStorage PROPRE**
+  (aucune valeur `\"/\"` ni `%22/%22`), cliché DOM au moment T : rien, mouchard
+  MutationObserver (src/style/href/poster) : rien.
+- Le navigateur CI part de zéro → la valeur polluée arrive par FIREBASE pendant le
+  run. L'intermittence (rouge 00:30/00:50, vert 00:45/00:59/01:03/01:07) suggère
+  une source EXTERNE épisodique (un appareil de Kevin en vieille version qui
+  re-pousse une valeur sale via la synchro ?).
+- **Piège armé dans la vérif réelle** (mergé, commit c7389c8) : les puits d'écriture
+  DOM eux-mêmes (setter `innerHTML`, `insertAdjacentHTML`, `setAttribute`,
+  `setProperty`) capturent la PILE D'APPEL (fonction + ligne d'index.html) dès
+  qu'un HTML contenant `%22/` ou `&quot;/&quot;` passe + Resource Timing porté à
+  8000 entrées (le tampon 250 débordait, d'où le canal invisible).
+**Prochain run ROUGE = le fabricant du HTML cassé sera nommé dans la note.**
+Relancer `verif-reelle.yml` périodiquement jusqu'à capture, puis corriger la vraie
+source et exiger 2 verts consécutifs.
+
+**PERCÉE (08/08 ~03h) — la MÊME FAMILLE attrapée et corrigée sur Départs** :
+run 31235630065 : `GET /%22+m.img+%22` + `/%22+window._depPendingImg+%22` sur
+departs.kd-mc.com ET cmcteams-light.kd-mc.com = EXACTEMENT les 2 seules balises
+image écrites en clair dans le source JS de tools/departs/index.html (code du
+repo CORRECT, repro locale = 0 requête) → preuve que le FLUX HTML SERVI arrive
+parfois corrompu (CDN/réseau) et que le navigateur re-parse le source JS comme
+du HTML (fetch des src littéraux). **Fix Départs v1.32 livré + vérifié en vrai**
+(run 31236712602 : Départs ✅ light ✅) : plus aucune balise image lisible dans
+le source (tag scindé) + URL validée (`window._okImgUrl`). Le `/%22/%22` du
+CMCteams principal (toujours rouge, `type=parser`, AUCUN puits JS traversé,
+AUCUNE entrée resource-timing) colle à la même théorie « parseur principal sur
+flux corrompu » — le piège a maintenant un détecteur de corruption (fuite de
+source JS en texte visible + compte de `<script>`) qui tranchera au prochain
+run rouge. Patrouille cron 6 h active.
+
+**VERDICT (08/08 ~04h, run 31238385202) — CORRUPTION PROUVÉE par un chiffre** :
+note CMCteams = `COUPABLE %22 → scripts=10 fuiteJS=3001`. `fuiteJS=3001` = 3001
+fragments de code JS (`function …(`, `innerHTML`, `_cmcSafeCatch`…) dans le TEXTE
+VISIBLE de la page (page saine ≈ 0). Donc le parseur HTML casse et **le propre
+source JS de la page se rend comme du texte** → les milliers de `src="…"` /
+`<image href="…">` du source deviennent de vrais tags → `/%22/%22`. Exactement le
+mécanisme corrigé sur Départs. Différence CMCteams : **aucun `</script>` littéral
+statique dans index.html** (les 8 occurrences sont des balises légitimes) → la
+cassure est **pilotée par la DONNÉE** (une valeur stockée chargée via la session
+admin Firebase — d'où l'intermittence + le fait que ça n'arrive qu'en admin). La
+correction n'est donc PAS un patch de source ligne-à-ligne (fichier 1,8 Mo,
+milliers de `src="`), mais **échapper/assainir la valeur qui contient un fragment
+HTML fermant** (probable `</script>` ou `"/"` dans un contenu injecté). Piste
+concrète : trouver la valeur Firebase (chat / planning / photo / nom) contenant
+`</script>` ou `"/"` et l'échapper au point d'injection. Fil long (task #5,
+partiellement porté par une autre session) — patrouille 6 h laissée active.
+
+## Nuit du 6 au 7 août 2026 — « vérifier en réel » livré, et ce qu'il a trouvé
+
+**Contexte** : GitHub Actions est tombé 6 h (0 job en cours / 393 en file). Rien n'a été
+perdu ; tout est reparti seul au redémarrage.
+
+### Livré et sur `main`
+1. **Boîte à outils agents** — les 6 dépôts du tableau, côté Claude Code (vendorisés,
+   épinglés au SHA) ET côté Apex (catalogue, tag `agent-toolkit`) + tests de parité.
+2. **Secours de déploiement Cloudflare Workers Builds** — BRANCHÉ par Kevin le 07/08 à
+   01:11 sur `kdmc-router`. Reste à passer « Builds for non-production branches » sur
+   Disabled. NE PAS toucher aux Build watch paths (doc Cloudflare en 403 → non confirmé).
+3. **Vérif RÉELLE connectée** (`verif-reelle.yml` + `tools/smoke/session-kevin.mjs`) —
+   1er run : 16 pages ouvertes en vrai, connecté (CMCteams admin U11804, Apex admin,
+   arbre déverrouillé), captures d'écran par page.
+
+### Ce que le 1er run a trouvé
+- **Faux positif (le mien)** : « arbre vide » — le contrôle comptait `.tnode` alors que
+  l'app rend le style parchemin (`.tmed`). Reproduit en local : **81 cartes affichées**,
+  0 erreur JS. Contrôle corrigé (`#stage [data-open]`, indépendant du style).
+- **Vrai bug** : CMCteams demandait `/%22/%22` → 404. Un fond invalide produisait
+  `url(""/"")`. Corrigé par `_bgUrlOk()` (v9.876) + `tests/bg-url-guard.test.mjs`.
+- **Vrai bug, plus grave** : `| tee` sans `pipefail` → un ÉCHEC ressortait VERT.
+  48 étapes concernées, dont **15 déploiements** (dont le routeur kd-mc.com).
+  Corrigé + `tests/workflows-pipefail.test.mjs` (règle dure + cliquet 35).
+- **Synchro boîte à outils** : échec à l'ENVOI (`stale info`), pas à la récupération.
+  Corrigé (`git fetch` avant `checkout -B`, le lease reste actif).
+
+### Reste à faire
+- Relancer `agent-toolkit-sync.yml` (only=free-llm-api-resources) → doit passer 6/6.
+- Lire `deploy-kdmc-access.yml` : il ne doit rester qu'UNE fiche « kevin Desarzens »
+  (la fusion se déclenche à la prochaine visite de Kevin sur kd-mc.com).
+- Apex v13 : reconstruire le paquet pour que sa CSP autorise `admin.kd-mc.com`.
+
+Leçons écrites : **#176** (pipefail) et **#177** (contrôle accroché à une classe cosmétique
+= fausse alerte ; reproduire AVANT d'alerter).
+
+---
+
+
+### 🎬 Créa Studio v9.8.0 — « Montage auto » (2026-08-07, Kevin : « fais pareil enrichi »)
+
+Kevin a envoyé une capture de **video-use** (« éditeur vidéo IA gratuit ») : là-bas il faut un
+ordinateur, un dossier, une ligne de commande et une clé d'API. Ici : **le téléphone et un bouton**.
+
+- **Écran Vidéo → « ✨ Montage auto (plusieurs vidéos) »** : tu donnes tes rushes, l'app rend la
+  vidéo montée et la range dans « Mes créas ».
+- **Ce qu'elle fait toute seule** : écoute le son de chaque rush (seuil **adapté à chaque vidéo**)
+  pour enlever les blancs · regarde l'image pour jeter les passages **noirs ou flous** · garde les
+  meilleurs moments **dans l'ordre**, sans jamais vider une des vidéos · corrige lumière, contraste,
+  couleurs et **balance des blancs** d'après la vraie image · **zoom lent** alterné + **fondus** ·
+  **sous-titres** écrits depuis la parole (IA gratuite Cloudflare, nouvelle porte `/transcribe`) ·
+  retire les **hésitations** (« euh », « voilà ») et **recale** le reste · musique mixée sous la voix ·
+  une vidéo horizontale n'est **pas charcutée** en format téléphone (image entière sur fond flou).
+- **Compte rendu honnête** à la fin : combien gardé, combien coupé, et si les sous-titres n'ont pas
+  pu être faits, **la raison exacte** (jamais « ça a marché » sans chiffres).
+- **Preuve** : `tests/verify-crea-montage-auto.mjs` — 2 vraies vidéos fabriquées dans le navigateur
+  puis montées pour de bon (mesuré : 12,0 s de brut → **8,5 s**, **3,4 s de blancs coupés**, MP4 1 Mo).
+  Câblé dans `test:ci`.
+- **3 bugs anciens corrigés au passage** (ils touchaient l'export vidéo déjà livré) : le son original
+  sortait **muet** ; le **2ᵉ** export d'affilée sortait muet aussi ; une vidéo à durée inconnue était
+  vue comme vide. Voir leçon **#182**.
+
+
+### 🔎 « Simuler ma connexion pour vérifier en réel » (2026-08-06, Kevin)
+
+Le blocage récurrent (leçons #131/#135) : l'agent n'atteint pas kd-mc.com, et la CI ne voyait que
+les écrans de login → je déduisais au lieu de constater. **Résolu.**
+
+- **Réutilisé, pas dupliqué** (leçon #164) : `tools/smoke/audit-live.mjs` existait déjà (13 surfaces,
+  captures, erreurs JS, requêtes bloquées). Ce qui manquait = **être connecté**.
+- **Nouveau `tools/smoke/session-kevin.mjs`** : repose la marque de session que **l'app écrit
+  elle-même**, relue dans son code — CMCteams `cmc_uid`+`cmc_lastact` · Apex `apex_v13_user`+
+  `apex_v13_last_known_uid` · admin `kdmc_access_pinhash` · Arbre `arbre_trust` · portail = vrai
+  pass `POST /__sso/issue`. Appliqué **avant** le chargement (`addInitScript`).
+- **Opt-in** `KDMC_AS_KEVIN=1` → sans le drapeau l'audit reste **anonyme** (zéro régression).
+- **Workflow `verif-reelle.yml`** (dispatch) : je le déclenche, il rend **une capture par page**.
+- **Sécurité** : périmètre kd-mc.com **refusé ailleurs** (throw) · code admin par **secret CI**
+  (`APEX_ADMIN_PIN_SHA256`), jamais dans le dépôt, **jamais journalisé** · lecture seule · sans code
+  fourni on ne fabrique rien.
+- **Honnêteté** : session **nommée**, pas « admin prouvé » (Face ID) → zones réservées masquées.
+- **Garde-fou** `tests/session-kevin.test.mjs` (21 vérifs, câblé `test:ci`) : si une app change sa
+  clé de session, on le sait **là**, au lieu de croire qu'on est connecté devant un écran de login.
+  Prouvé qu'il rougit (marque faussée → code retour 1).
+- **Parité Apex** : `apex-verif-reelle.md` + le test de parité étendu (9/9).
+
+
+### ⛔ Blocage EXTERNE mesuré (2026-08-06, ~15:22 UTC → en cours) — panne mondiale GitHub Actions
+
+**Mesuré** : `in_progress` = **0** · `queued` = **391** (le plus ancien à 15:49, `updated_at == created_at`).
+Zéro job en cours + des centaines en file = **rien ne tourne**. Confirmé par GitHub (« workflow runs
+failing to start », incident ouvert 15:22 UTC) et par une source indépendante. Ce n'est ni notre code,
+ni un quota, ni notre cadrage de workflows (cf. #163 : famine = runs `cancelled` sans job ; ici ils
+restent `queued`).
+
+**Rien n'est perdu** : tout est mergé sur `main` (vérifié fichier par fichier), l'arbre de travail est
+propre, et un run en file ne produit rien. Seul effet : les déploiements n'ont pas eu lieu → la prod
+tourne encore sur sa version précédente (les sites ne sont pas cassés, juste pas à jour).
+
+**En attente de la reprise** (rappel automatique programmé, Kevin n'a rien à faire) : déployer le
+routeur (retrait `deces.kd-mc.com` + fusion des comptes), relancer `deploy-kdmc-access` pour vérifier
+qu'il ne reste qu'UNE fiche « kevin Desarzens », finir la 6ᵉ source de la boîte à outils.
+⚠️ GitHub prévient que des jobs en file **peuvent expirer** → un run en attente n'est pas une garantie,
+on re-déclenche à la reprise.
+
+
+## 🧰 Boîte à outils agents + « Qui se connecte » durci (2026-08-06)
+
+**Kevin (tableau filmé « Une Notion = Un Projet ») : « Récupère et installe tout ça pour toi et Apex et utilise. Note tout. »**
+- 6 dépôts **identifiés** (noms tronqués à l'écran → vérifiés un par un) : Ingénieur=`anthropics/skills` · Mémoire=`garrytan/gbrain` · Design=`bergside/awesome-design-skills` · Jetons=`rtk-ai/rtk` · Entreprise=`codejunkie99/meridian-company-os` · LLM gratuit=`jeis4wpi/free-llm-api-resources` (l'original `cheahjs` renvoie 404 → miroir vivant).
+- **Récupération par la CI** (l'agent n'atteint pas github.com) : `tools/agent-toolkit/{sources.json,sync.mjs}` + workflow `agent-toolkit-sync.yml` (bouton + cron **mensuel**). Ne copie que du **texte**, plafonds par fichier/dépôt, purge avant copie, `MANIFEST.json` (SHA + licence), fail-open + `::warning::` par source en échec. Ouvre une PR (jamais de push main).
+- **Réellement vendorisé** : skills 32 fichiers · gbrain 133 · awesome-design-skills 136 · rtk 33 · meridian 6.
+- **Usage** : skill `.claude/skills/agent-toolkit/`. **Parité Apex** : 6 entrées taguées `agent-toolkit` dans `apex-plugins-catalog.ts` + test qui vérifie que l'URL Apex == l'URL vendorisée.
+- **Honnêteté** : `rtk` = binaire desktop dont l'install pose un hook qui réécrit TOUTES mes commandes → **non installé** (PROTECTION ≠ STABILITÉ) ; gain réel publié ~3,7 %, pas 60-90 %.
+- Mesuré : sync 6/6 · parité Apex 6/6 · marketplace 61/61 · tsc 0.
+
+**Deux vrais défauts trouvés en lisant le journal LIVE (8 personnes / 538 connexions, Kevin à 196) :**
+- **Fusion « une seule fois » → datée et répétée** : `merged_v1` était un drapeau permanent, un doublon né après n'était plus jamais absorbé (deux fiches « kevin Desarzens », 196 + 116). Remplacé par `merged_at` + re-passage ≤1×/semaine, scan borné aux 300 derniers uid.
+- **« Ronan Desarzens » était pris pour l'admin** : `isAdminName` acceptait (nom de famille + 2 mots) → sa fiche aurait été fondue dans celle de Kevin. Corrigé : nom de famille **ET** prénom/initiale. ⚠️ Irréversible pour ce qui aurait déjà été fusionné.
+- 3 tests de non-régression (10/10 sur `compte-unique`). Piège consigné : vieillir aussi `last_seen` (anti-réécriture 120 s).
+
+**`deces.kd-mc.com` retiré (Kevin « Retire dece »)** : route déclarée dans le worker mais **jamais joignable** (absente d'`apps.json` ET de `wrangler.toml`) — c'était le seul test rouge (`apps-consistency`), rouge avant mes changements. Suite kdmc-router **34/34**. La recherche de décès **reste dans l'arbre** (`arbre.kd-mc.com`, bouton + relais même-origine `/__deces`) — c'est sa place, vérifié dans le code et vert au dernier contrôle live.
+
+**Parité Apex (Kevin « Pareil apex ») — Apex v13.4.362** : 2 skills Apex (`apex-agent-toolkit.md`, `apex-domain-journal.md`) + APEX_HANDOFF/APEX_PROJECTS à jour. **Contrainte découverte en lisant le code (pas supposée)** : `syncMetaFilesAtBoot` ne garde que les entrées `type==='file'` en `.md` → **tous mes skills en DOSSIER sont invisibles pour Apex** ; d'où la convention désormais testée « skill dossier pour moi + `apex-*.md` pour Apex ». Cap `skills` du meta-cache 30 → 45 (chaque nouveau `apex-*.md` éjectait 2 skills, mesuré). Tests parité 9/9, marketplace 61/61, rules-injection 22/22, tsc 0.
+
+**Outil `deces-insee` supprimé** (Kevin « Oui supprime ») : page + 4 automatisations (build Parquet→R2, moteur DuckDB→R2, préflight R2, smoke). **Gardées** : `arbre-find-deces`, `deces-cors-check`, `deces-live-check` — elles servent la recherche DANS l'arbre. Vérifié AVANT de supprimer : `arbre/index.html` n'utilise ni R2 ni DuckDB ni parquet (0 occurrence) → aucune dépendance ; 0 référence orpheline après coup. Reste en Cloudflare le bucket R2 `kdmc-deces-insee` (données publiques, re-téléchargeables) — à vider sur un mot. ⚠️ Ce lot avait été fait une 1re fois puis **perdu par un redémarrage du conteneur** (travail non committé) → refait ; leçon : committer chaque lot destructif tout de suite.
+
+**Nouveau skill** `.claude/skills/domain-journal/` : tout ce qu'il faut savoir sur « Qui se connecte » (source unique, un compte par personne, pièges, vie privée).
+
+**⏳ En attente au moment d'écrire** : le déploiement du routeur (retrait deces + fusion des comptes) est en file — **GitHub était en panne partielle** (`Failed to resolve action download info: Service Unavailable`, échec au step « Set up job », rien à voir avec le code). Apex v13 n'alimente toujours pas le journal (CSP du bundle déployé sans `admin.kd-mc.com`).
+
 
 ## 🧠 Mémoire RAG Apex (TOP 8 #7) — v13.4.346 (2026-07-07, Kevin « fais la mémoire Apex »)
 - Worker `services/kdmc-rag/` (worker.js + wrangler.toml, SANS DO — leçons #132/#133) : embeddings Workers AI `@cf/baai/bge-m3` (multilingue FR, 1024 dims, AUCUNE clé externe) + Vectorize `apex-memory`. Endpoints /health /upsert /query /forget, auth x-apex-pin (double-hash toléré #95), CORS whitelist, fail-open JSON (#133). `deploy-kdmc-rag.yml` dispatch-only (crée index idempotent + secret PIN + deploy + smoke /health hasVec:true, #95).
@@ -3602,3 +3922,74 @@ push réparé, quotas KV, system_config NOT NULL, hash OTP, Letters/Time Capsule
 read-receipt, outbox offline+replay, Stripe revocation, dédup DM, fuite localStorage inter-comptes,
 clavier qui se ferme (focus preserve + append incrémental bulles), WCAG/aria-live, couverture honnête.
 **Action Kevin en attente** : flip `ALLOW_TEST_OTP=false` une fois Vonage confirmé (cf. KEVIN_ACTIONS_TODO.md).
+
+## Session 2026-08-04 — Arbre v2.29 : fix lien fantôme Yann/Loïc + audit cloud RÉEL
+
+Kevin signalait « Yann et Loïc n'ont pas de lien avec Christian et Marie-Brigitte » (arbre Desarzens).
+Cause racine : le seed était correct, mais le cloud Firebase partagé (resté à seedVersion 9, 31 pers.)
+contenait 11 fiches-fantômes + 5 copies legacy des anciennes versions, re-fusionnées par les téléphones.
+Livré : `purgeSeedShadows()` dans l'app (boot + chaque cloudPull, fiches enrichies jamais supprimées),
+`tools/arbre/cloud-audit.mjs` + workflow `arbre-cloud-audit.yml` (CI réseau ouvert, auth anonyme identique
+à l'app, vérifie CHAQUE lien contre le seed extrait du vrai index.html, mode FIX avec sauvegardes
+avant/après commitées, cron mensuel le 5 à 04:00 UTC). Run 1 : 11 fantômes purgés + 3 liens ré-alignés.
+Un téléphone famille a auto-updaté v2.29 et poussé la base complète. Run 2 vérifie : **62/62 fiches
+conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CLOUD.md.
+
+### Suite session 2026-08-04 — v2.30/v2.31 : Plan par famille, nom, actes & infos MAX
+
+- **v2.30** (retours captures Kevin) : Plan filtré PAR FAMILLE + barre 🫒/🌳 visible en Plan ;
+  nom corrigé **Kevin DESARZENS** (« de Sarzance » = forme phonétique en note) ; CAUSE RACINE du
+  fouillis = racines triées par nb d'enfants (Victor capturait Marie-Thérèse en Gén.1) → tri par
+  PROFONDEUR de lignée (`subDepth`) : JB Gén.1 → Victor+MT Gén.4 → Kevin Gén.6 → Ronan Gén.7 ;
+  repères « Gén. n » en Plan (limités à la lignée principale). SEED_VERSION 18.
+- **v2.31** : « récupérer tous les actes auto » — pipeline CI `arbre-actes-registres.yml` :
+  `research-registres.mjs` (Monaco Arkothèque : vrai formulaire soumis par nom — ⚠️ champ nom =
+  `form_rech_12` (≥1900) / `r_nom` (<1900), `form_rech_9` = NUMÉRO d'acte ; AD06 = mur TSPD qui
+  rejette même Chromium depuis IP datacenter ; AD13 accessible) + `research-infos.mjs` (Gallica SRU,
+  archive.org, Journal de Monaco, Grand Mémorial/matricules, Mémoire des hommes, Findagrave
+  tombes+photos, avis de décès DuckDuckGo par défunt ≥1990, archives vaudoises Desarzens).
+  In-app : chip « 📋 Copier la demande d'acte » (lettre pré-remplie avec filiation) sur chaque fiche.
+- Rapports : arbre/research/CLOUD.md · REGISTRES.md · INFOS.md (+ brut registresraw/, infosraw/).
+
+### Suite session 2026-08-04 — v2.32→v2.40 : audit complet + visuel familles + « raccorde les isolés »
+
+- **v2.32/v2.33** : audit 10 axes mesuré (audit/arbre-2026-08-04.md) — favicon+icône iPhone, touch
+  targets 44px, badge 📜 acte ✓ par personne + compteur couverture, chips filtre famille dans
+  Personnes/Actes, section « 🤖 Recherches automatiques » dans Réglages. 0 mutation DOM au repos.
+- **v2.34→v2.37** : export PDF A4 paysage (window.print, CSP-safe), étiquettes Gén. vue photo,
+  point de vue PAR MEMBRE (« C'est moi » → lignée or + liens de parenté depuis SOI, `relationToKevin`),
+  vue NEUTRE par défaut si personne n'est choisi, légende ❓.
+- **v2.38→v2.40** (retours captures Kevin « pas beau ni clair ») : photo `object-fit:cover` (pleine),
+  NOM de famille EN COULEUR sur chaque carte/médaillon (8 branches `BRANCHES`, fond teinté, anneau
+  avatar 4px), traits nets arrondis (elbow r=12 ; plan brun 2.6px, photo crème 2.8px, lignée or),
+  pointillés par génération supprimés (zébrure .07 seule). Vérifié Playwright : 57 médaillons photo
+  pleine, 51 noms colorés au plan, 0 erreur JS.
+- **« Recorde les membres qui restent »** : 4 isolés identifiés (François MAIFFRET n.1912 Monaco †2004
+  Nice — acte n°71/1912 trouvé ; Myriam MAIFFRET n.1935 Monaco †2024 Nice ; Claude Alain DE SARZENS
+  n.1941 Marseille †2022 Suisse ; Jean Marius Victor SAUVAIGO n.1912 Nice †1999 Nice). AUCUN lien
+  inventé (leçon lien fantôme). Livré : `tools/arbre/fetch-actes-images.mjs` + workflow
+  `arbre-actes-images.yml` (CI télécharge les IMAGES scannées des actes Monaco — l'acte de naissance
+  porte les noms des parents = preuve) + `tools/arbre/probe-isoles.mjs` (avis de décès hommages.ch /
+  Nice-Matin / Dans Nos Cœurs / Libra Memoria + Journal de Monaco 1935). Viewer Arkothèque =
+  `ArkVisuImage('/arkotheque/arkotheque_visionneuse_archives.php?arko=BASE64')` dans le href.
+
+### Suite 2026-08-04 (soir) — v2.41→v2.47 : actes LUS, branche Monaco raccordée, actes DANS les fiches
+
+- **4 vagues robot CI** (arbre-actes-images.yml) : 100+ images d'actes/registres Monaco téléchargées
+  (pleine résolution img_prot.php). Pièges vaincus : champ nom form_rech_12, href <1900 déjà absolu,
+  MUR DE LICENCE <1900 (« J'accepte » cliqué par le robot), push CI avec rebase-retry.
+- **12 actes lus lettre à lettre** → branche MAIFFRET Monaco PROUVÉE 4 générations (Jérôme×ORSELLI →
+  Philippe×CARLIN → Emmanuel×CIAIS, François-Louis×FRACCHIA, Julie×DANIEL → Pauline/Paula/François
+  ×MATHIEU) ; SAUVAIGO Monaco 2 familles niçoises (Joseph×BOUFFA : François-Arnulphe 1857 +
+  Barthélemi 1860 ; Louis-Étienne fils de Dominique ×THIBAUD : Jacques-Adolphe 1860) ; DENTAU
+  (Jules×Claire RAINAUT) ; MOLINARIO (Jacques×BERTHOLDO).
+- **v2.43 : actes VISIBLES dans les fiches** (champ actes:[{label,img}], vignettes + visionneuse
+  plein écran zoom ＋/－, images servies par le même site depuis arbre/research/) — 18+ fiches équipées.
+- **Théo BRUNO** (fils de Sabrina) + **Stephan BRUNO** père, DIVORCÉ de Sabrina (étiquette
+  ex-conjoint, registre DIVORCED) + couleur famille BRUNO #a3403a.
+- **Pistes INSEE intégrées** : Emmanuel Joseph MAIFFRET (n. Beausoleil 6.01.1909, †1994 —
+  4ᵉ enfant probable), Henry Emmanuel (n. Nice 1936, †2022 — génération Myriam).
+- **actes-verif.mjs** → ACTES-VERIF.md (76 personnes, statut naissance+décès+action).
+- Restent isolés (0 invention) : Myriam (acte 1935 verrouillé), Claude DE SARZENS, Jean-Marius
+  SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
+  DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.

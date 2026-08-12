@@ -3,6 +3,12 @@
 #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, FINNHUB_API_KEY
 # Anti-spam : pas de cron — uniquement dispatch manuel + push sur le dossier du worker.
 name: Deploy WM Quotes Worker
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # un deploiement ne doit jamais etre coupe en plein vol
+
 
 on:
   workflow_dispatch:
@@ -45,6 +51,9 @@ jobs:
         run: npm i -g wrangler && wrangler --version
 
       - name: Déployer le worker
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
         run: |
           set -e
           wrangler deploy 2>&1 | tee /tmp/deploy.log

@@ -30,12 +30,38 @@ const ROUTES = {
   'bot.kd-mc.com': '/CMCteams/tools/crypto-bot-dashboard', // Tableau de bord crypto-bot (Kevin 2026-07-03) — admin-gated via /__bot/*
   'beatbot.kd-mc.com': '/CMCteams/tools/poolrobot', // PoolPilot — app robot piscine Beatbot (Kevin 2026-07-05)
   'autorisations.kd-mc.com': '/CMCteams/tools/approvals', // Coffre d'autorisations — admin only (Kevin 2026-07-10)
+  'arbre.kd-mc.com': '/CMCteams/arbre', // Arbre généalogique familial — protégé par code famille (Kevin 2026-08-03)
+  'lingua.kd-mc.com': '/CMCteams/lingua', // KDMC Lingua — app d'apprentissage de langues (Kevin 2026-08-04)
+  'studio.kd-mc.com': '/CMCteams/tools/crea-studio', // Créa Studio — montage vidéo + retouche photo (niveau Photoshop/GIMP) + dessin animé, 100% client-side (Kevin 2026-08-04)
 };
+
+// Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,
+// lecture seule. L'API matchID ne renvoie PAS d'en-tête CORS → un appel direct
+// depuis arbre.kd-mc.com est bloqué par le navigateur (Kevin « je ne vois rien »).
+// Ici arbre.kd-mc.com/__deces?q=… reste same-origin → 0 CORS, marche sur iPhone.
+async function handleDeces(request, url) {
+  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,OPTIONS', 'Access-Control-Allow-Headers': '*' };
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  const q = (url.searchParams.get('q') || '').trim();
+  let size = parseInt(url.searchParams.get('size') || '25', 10); if (!(size > 0)) size = 25; if (size > 50) size = 50;
+  if (q.length < 2) return new Response(JSON.stringify({ response: { persons: [] } }), { headers: { 'content-type': 'application/json', ...cors } });
+  const api = 'https://deces.matchid.io/deces/api/v1/search?q=' + encodeURIComponent(q) + '&size=' + size;
+  try {
+    const r = await fetch(api, { headers: { accept: 'application/json' } });
+    const body = await r.text();
+    return new Response(body, { status: r.status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300', ...cors } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'proxy', message: String((e && e.message) || e) }), { status: 502, headers: { 'content-type': 'application/json', ...cors } });
+  }
+}
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
+
+    // Recherche décès INSEE (proxy same-origin, public read-only) — pour l'arbre.
+    if (url.pathname === '/__deces') return handleDeces(request, url);
 
     // SSO transverse (session unique + CGU). Même origine par sous-domaine.
     if (url.pathname.startsWith('/__sso/')) return handleSso(request, url, env);
@@ -52,6 +78,10 @@ export default {
     if (url.pathname.startsWith('/__beatbot/')) return handleBeatbot(request, url, env);
     // Push « message CMCteams light » → Kevin même app fermée (token serveur, anti-spam KV).
     if (url.pathname === '/__notify-kevin' && request.method === 'POST') return handleNotifyKevin(request, env);
+    // Mémoire cloud KDMC Lingua : sauvegarde/restauration de la progression par « clé
+    // de compte » (hash nom+code = capacité). Données NON sensibles (XP/série/nom choisi).
+    // ISOLÉ (préfixe KV lingua:), FAIL-OPEN (jamais throw → la mémoire locale reste).
+    if (url.pathname.startsWith('/__lingua/')) return handleLingua(request, url, env);
 
     const base = ROUTES[host];
     if (!base) return Response.redirect('https://kd-mc.com/', 302);
@@ -195,6 +225,227 @@ function J(o, setCookie, status) {
   });
 }
 
+/* ===== Mémoire cloud KDMC Lingua (progression apprenants) =====
+   Stocke/restaure un blob par « clé de compte » = hash(nom+code) fourni par le client
+   (accès par CAPACITÉ : il faut connaître nom+code). Données NON sensibles (XP, série,
+   prénom choisi). Isolé par préfixe KV `lingua:`. FAIL-OPEN : ne jette jamais → si KV
+   absent/erreur, l'app garde sa mémoire locale. Même origine (lingua.kd-mc.com) mais on
+   autorise le CORS en lecture large (endpoints par capacité, non sensibles). */
+async function handleLingua(request, url, env) {
+  const cors = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'access-control-allow-headers': 'content-type' };
+  const JL = (o, s) => new Response(JSON.stringify(o), { status: s || 200, headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }, cors) });
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (!env || !env.ACCOUNTS) return JL({ ok: false, reason: 'kv_absent' }); // fail-open (200)
+  try {
+    const okKey = (k) => /^[a-f0-9]{16,64}$/.test(k);
+    if (url.pathname === '/__lingua/load' && request.method === 'GET') {
+      const k = url.searchParams.get('k') || '';
+      if (!okKey(k)) return JL({ ok: false, reason: 'bad_key' }, 400);
+      const blob = await env.ACCOUNTS.get('lingua:' + k);
+      return JL({ ok: true, data: blob ? JSON.parse(blob) : null });
+    }
+    if (url.pathname === '/__lingua/save' && request.method === 'POST') {
+      let b; try { b = await request.json(); } catch { return JL({ ok: false, reason: 'bad_json' }, 400); }
+      const k = String(b && b.k || '');
+      if (!okKey(k)) return JL({ ok: false, reason: 'bad_key' }, 400);
+      const s = JSON.stringify(b && b.data || {});
+      if (s.length > 200000) return JL({ ok: false, reason: 'too_big' }, 413);
+      await env.ACCOUNTS.put('lingua:' + k, s, { expirationTtl: 60 * 60 * 24 * 400 }); // ~400 j, renouvelé à chaque save
+      return JL({ ok: true });
+    }
+    // Voix naturelle : synthèse OpenAI TTS, mise en CACHE KV (1 mot = 1 synthèse à vie).
+    // FAIL-OPEN : si clé absente ou erreur → le client repasse en voix navigateur.
+    if (url.pathname === '/__lingua/tts' && request.method === 'GET') {
+      /* Kevin 2026-08-08 « elle ne lit pas toute la phrase, s'arrête avant la fin » :
+         la limite 200 coupait les textes longs (réponse du Coach, explications) au milieu.
+         1000 couvre tout le contenu de l'app ; tts-1 accepte jusqu'à 4096, et l'URL GET
+         reste largement sous les limites Workers/CDN. */
+      const text = (url.searchParams.get('t') || '').slice(0, 1000);
+      /* Kevin 2026-08-11 « la voix est trop robot » : les 6 voix historiques marchent sur les
+         DEUX moteurs ; les 5 voix « HD » (coral, sage, ash, ballad, verse) n'existent QUE sur
+         gpt-4o-mini-tts → REPLI obligatoire vers leur cousine tts-1, sinon OpenAI répond 400. */
+      const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+      const VOIX_HD = { coral: 'nova', sage: 'shimmer', ash: 'onyx', ballad: 'fable', verse: 'echo' };
+      let voice = (url.searchParams.get('v') || 'nova').toLowerCase();
+      const isAntonin = voice === 'antonin'; // 🎙️ vraie voix CLONÉE d'Antonin (Kevin a validé à l'oreille)
+      if (!isAntonin && VOICES.indexOf(voice) < 0 && !VOIX_HD[voice]) voice = 'nova';
+      // Vitesse de GÉNÉRATION (0.25–2) : permet la voix « fillette » — générée lente puis
+      // accélérée côté client (pitch monte, tempo net redevient normal). Clampée + cachée à part.
+      let speed = parseFloat(url.searchParams.get('s') || '1');
+      if (!(speed >= 0.25 && speed <= 2)) speed = 1;
+      speed = Math.round(speed * 100) / 100;
+      if (!text.trim()) return JL({ ok: false, reason: 'no_text' }, 400);
+      const audioHdr = Object.assign({ 'content-type': 'audio/mpeg', 'cache-control': 'public, max-age=31536000' }, cors);
+      const hashOf = async (s) => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+        return Array.prototype.map.call(new Uint8Array(b), (x) => ('0' + x.toString(16)).slice(-2)).join(''); };
+      /* 🎙️ ANTONIN — voix clonée via Replicate (minimax/speech-02-hd, voice_id du clone).
+         Cache KV : 1 phrase = 1 génération à vie. FAIL-OPEN : si clé absente / Replicate KO,
+         on retombe sur onyx (voix d'homme proche) SANS jamais cacher le repli sous la clé
+         Antonin (sinon une panne passagère collerait la mauvaise voix pour toujours). */
+      if (isAntonin) {
+        const aSpeed = Math.max(0.5, speed); // MiniMax accepte 0.5–2 (OpenAI descend à 0.25)
+        const akey = 'ltts:' + (await hashOf('antonin:' + aSpeed + ':' + text));
+        const acached = await env.ACCOUNTS.get(akey, 'arrayBuffer');
+        if (acached) return new Response(acached, { status: 200, headers: audioHdr });
+        if (env.AX_REPLICATE_KEY) {
+          try {
+            const rp = await fetch('https://api.replicate.com/v1/models/minimax/speech-02-hd/predictions', {
+              method: 'POST',
+              headers: { 'authorization': 'Bearer ' + env.AX_REPLICATE_KEY, 'content-type': 'application/json', 'prefer': 'wait' },
+              body: JSON.stringify({ input: { text: text, voice_id: env.ANTONIN_VOICE_ID || 'R8_QFPX9IXV', speed: aSpeed } }),
+            });
+            const j = await rp.json().catch(() => null);
+            const out = j && (typeof j.output === 'string' ? j.output : (Array.isArray(j.output) ? j.output[0] : null));
+            if (rp.ok && j && j.status === 'succeeded' && out) {
+              const af = await fetch(out);
+              if (af.ok) {
+                const abuf = await af.arrayBuffer();
+                try { await env.ACCOUNTS.put(akey, abuf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* best-effort */ }
+                return new Response(abuf, { status: 200, headers: audioHdr });
+              }
+            }
+          } catch (_) { /* fail-open → onyx ci-dessous */ }
+        }
+        voice = 'onyx'; // repli honnête : voix d'homme OpenAI, cachée sous SA clé onyx (jamais sous Antonin)
+      }
+      /* 🗣️ MOTEUR DE VOIX — Kevin 2026-08-11 : « la voix est trop robot, dur de comprendre ».
+         Cause mesurée : on synthétisait avec « tts-1 », le plus ancien moteur OpenAI. On passe
+         à gpt-4o-mini-tts, nettement plus humain, PLUS une consigne de jeu (« instructions »)
+         qui n'existe que sur ce moteur : ton chaleureux de prof, articulation nette.
+         GARDE-FOU : la vitesse (bouton 🐢 Lent, syllabes) n'est fiable que sur tts-1 → dès que
+         la vitesse n'est pas normale, on RESTE sur tts-1. Le 🐢 continue donc de marcher.
+         REPLI : si le nouveau moteur refuse (modèle/voix/quota), on refait avec tts-1 → jamais
+         de silence. La CLÉ DE CACHE contient le moteur : sans ça, tous les mots déjà entendus
+         resteraient servis dans leur ancienne version robotique — Kevin n'entendrait AUCUN
+         changement (c'est le piège classique du cache). */
+      const HD_MODELE = 'gpt-4o-mini-tts';
+      const HD_CONSIGNE = "Voix humaine et chaleureuse de professeur de langue : articulation nette, rythme posé et naturel, ton bienveillant, jamais robotique. Prononce le texte dans sa propre langue, avec l'accent d'un locuteur natif.";
+      const hd = speed === 1;                       // vitesse normale → nouveau moteur
+      const modele = hd ? HD_MODELE : 'tts-1';
+      const voixPour = (m) => (m === 'tts-1' && VOIX_HD[voice]) ? VOIX_HD[voice] : voice;
+      const cle = async (m) => 'ltts:' + (await hashOf(m + ':' + voixPour(m) + ':' + speed + ':' + text));
+      const ckey = await cle(modele);
+      const cached = await env.ACCOUNTS.get(ckey, 'arrayBuffer');
+      if (cached) return new Response(cached, { status: 200, headers: audioHdr });
+      if (!env.OPEN_AI_API_KEY) return JL({ ok: false, reason: 'tts_absent' }); // fail-open (200) → repli navigateur
+      const synth = async (m) => {
+        const corps = { model: m, voice: voixPour(m), input: text, response_format: 'mp3' };
+        if (m === HD_MODELE) corps.instructions = HD_CONSIGNE; else corps.speed = speed;
+        return fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST',
+          headers: { 'authorization': 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
+          body: JSON.stringify(corps),
+        });
+      };
+      let mUse = modele, rr = await synth(mUse);
+      if (!rr.ok && mUse === HD_MODELE) { mUse = 'tts-1'; rr = await synth(mUse); } // repli honnête, jamais de silence
+      if (!rr.ok) return JL({ ok: false, reason: 'tts_err', status: rr.status }); // fail-open (200)
+      const buf = await rr.arrayBuffer();
+      try { await env.ACCOUNTS.put(await cle(mUse), buf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* cache best-effort */ }
+      return new Response(buf, { status: 200, headers: audioHdr });
+    }
+    // Mode « APPEL EN DIRECT » (voix-à-voix temps réel) : on frappe un JETON ÉPHÉMÈRE OpenAI Realtime
+    // côté serveur (la vraie clé ne quitte jamais le worker) ; le navigateur ouvre ensuite la WebRTC
+    // avec ce jeton court. FAIL-OPEN : si pas de clé / erreur, on renvoie ok:false → repli conversation normale.
+    if (url.pathname === '/__lingua/rt-session' && request.method === 'POST') {
+      if (!env.OPEN_AI_API_KEY) return JL({ ok: false, reason: 'no_key' });
+      let b = {}; try { b = await request.json(); } catch (_) { /* corps optionnel */ }
+      const langName = String((b && b.langName) || 'la langue cible').slice(0, 40);
+      const level = String((b && b.level) || 'Débutant').slice(0, 30);
+      const model = env.OPENAI_REALTIME_MODEL || 'gpt-realtime';
+      const voice = env.OPENAI_REALTIME_VOICE || 'coral';
+      const instructions = 'Tu es Bee, une abeille tutrice de ' + langName + ' chaleureuse et vivante, pour un francophone (niveau ' + level + '). '
+        + 'Conversation ORALE naturelle, phrases COURTES. Parle surtout en ' + langName + ' ; reviens au français seulement si l\'apprenant bloque. '
+        + 'Suis le sujet qu\'il lance (tout thème), réagis comme une vraie amie, puis relance par une petite question. '
+        + 'Corrige ses fautes EN DOUCEUR : reformule correctement puis explique en une phrase simple en français. Reste encourageante.';
+      try {
+        // API Realtime GA : jeton éphémère via /v1/realtime/client_secrets (l'ancien /sessions a disparu).
+        const rr = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
+          method: 'POST', headers: { authorization: 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
+          body: JSON.stringify({ session: { type: 'realtime', model, instructions, audio: { output: { voice } } } }),
+        });
+        const j = await rr.json().catch(() => null);
+        const secret = j && (j.value || (j.client_secret && j.client_secret.value)); // GA: {value}; compat ancien {client_secret:{value}}
+        if (!rr.ok || !secret) return JL({ ok: false, reason: 'openai_error', detail: (j && j.error && j.error.message) || ('http ' + rr.status) });
+        return JL({ ok: true, client_secret: secret, expires_at: (j.expires_at) || (j.client_secret && j.client_secret.expires_at) || 0, model });
+      } catch (e) { return JL({ ok: false, reason: 'error', detail: String((e && e.message) || e).slice(0, 120) }); }
+    }
+    // Coach IA (conversation) : IA gratuite via clé serveur (jamais exposée). FAIL-OPEN.
+    if (url.pathname === '/__lingua/ai' && request.method === 'POST') {
+      let b; try { b = await request.json(); } catch { return JL({ ok: false, reason: 'bad_json' }, 400); }
+      const langName = String((b && b.langName) || 'la langue cible').slice(0, 40);
+      const level = String((b && b.level) || 'Débutant').slice(0, 30);
+      const lvi = Math.max(0, Math.min(4, parseInt((b && b.levelIndex), 10) || 0));
+      const weak = Array.isArray(b && b.weak) ? b.weak.slice(0, 15).map((x) => String(x).slice(0, 60)) : [];
+      const scenario = String((b && b.scenario) || '').slice(0, 120); // jeu de rôle (scène originale choisie côté app)
+      const msgs = Array.isArray(b && b.messages) ? b.messages.slice(-12) : [];
+      const share = ['surtout en français, avec seulement quelques mots simples de ' + langName,
+                     'moitié français, moitié ' + langName + ' (phrases très simples)',
+                     'surtout en ' + langName + ', et en français uniquement si besoin',
+                     'presque entièrement en ' + langName,
+                     'entièrement en ' + langName][lvi];
+      const sys = 'Tu es un professeur de ' + langName + ' expert et bienveillant, spécialisé dans l\'enseignement aux francophones, 20 ans d\'expérience. '
+        + "Niveau actuel de l'apprenant : " + level + '. Parle ' + share + '. '
+        + 'Style : conversation orale NATURELLE, réponses COURTES (1 à 4 phrases), chaleureuses, jamais scolaires ni robotiques. '
+        + "Fais parler l'apprenant : termine presque toujours par une petite question adaptée à son niveau. "
+        + (!scenario ? ("CONVERSATION LIBRE IMPROVISÉE : c'est l'apprenant qui mène. Suis le SUJET QU'IL LANCE, quel qu'il soit (son week-end, un film, le travail, l'actualité, un souvenir, un rêve, une opinion, la cuisine, le sport, ses projets, la philosophie… absolument tout) et RESTE dessus tant qu'il l'anime — ne le ramène JAMAIS de force à une leçon. Réagis d'abord comme un vrai ami natif : intérêt sincère, une petite réaction ou un avis personnel court, rebondis sur un détail précis qu'il vient de dire, puis relance par une question qui APPROFONDIT (va plus loin : le pourquoi, un exemple, un ressenti, une suite). S'il change de thème, enchaîne naturellement sans résister. Objectif : un vrai échange vivant et spontané, pas un questionnaire ni une interrogation scolaire. ") : '')
+        + "CORRECTION EXPERTE ET DOUCE : si l'apprenant fait une faute (grammaire, orthographe, conjugaison, syntaxe, accord, genre, préposition, temps), reformule d'abord correctement de façon naturelle, puis explique l'erreur en UNE phrase simple en français, sans le décourager ; valorise ce qui est juste. "
+        + "Enseigne la langue VIVANTE : au bon moment, glisse une expression idiomatique, une tournure familière ou un mot de jargon courant, en précisant le registre (familier / courant / soutenu) et quand l'employer. "
+        + "Progression : introduis peu à peu du vocabulaire et des structures un cran au-dessus de son niveau pour le tirer vers le haut, sans le noyer. Objectif : l'amener au BILINGUE, pas à pas. "
+        + (weak.length ? ('Points à retravailler en priorité avec lui : ' + weak.join(', ') + '. ') : '')
+        + (scenario ? ("JEU DE RÔLE : joue la scène suivante avec l'apprenant et RESTE DANS TON PERSONNAGE du début à la fin : " + scenario + ". C'est TOI qui joues l'autre rôle de la scène (pas le professeur), en " + langName + " selon le dosage indiqué. Ouvre la scène toi-même par une première réplique courte et naturelle. Les corrections restent douces et en une phrase, glissées sans casser la scène. ") : '')
+        /* Kevin 2026-08-11 : « le coach n'est pas au point, il donne les réponses, demande de
+           remplir un mot dans un texte mais on peut pas écrire dessus ». Trois règles dures :
+           une seule question à la fois, JAMAIS la réponse avant l'essai, et le format ___ que
+           l'application transforme en vraie case à remplir. */
+        + "EXERCICES — RÈGLES ABSOLUES : (1) UNE SEULE question ou phrase à la fois, jamais une liste de 2, 3 ou 4 exercices d'un coup ; "
+        + "(2) ne DONNE JAMAIS la réponse dans le message où tu poses la question — tu attends la réponse de l'apprenant, même s'il se trompe ou s'il ne répond pas ; ne mets ni la solution, ni un exemple qui la contient, ni un indice qui la révèle ; "
+        + "(3) pour un mot à compléter, écris la phrase avec exactement trois tirets bas ___ à l'endroit du mot manquant (l'application les transforme en case à remplir) ; un seul ___ par phrase, et jamais de ___ dans une phrase d'exemple déjà corrigée ; "
+        /* Vu EN VRAI le 2026-08-11 sur le domaine : le coach proposait « J'ai ___ mon sac à dos »
+           à quelqu'un qui apprend l'anglais. Un trou dans une phrase FRANÇAISE n'enseigne rien
+           de la langue étudiée. La phrase de l'exercice est TOUJOURS dans la langue apprise. */
+        + "(3 bis) la phrase de l'exercice est TOUJOURS écrite en " + langName + " — jamais en français : un trou dans une phrase française n'apprend rien de " + langName + ". Seule ta consigne autour peut être en français ; "
+        + "(3 ter) va droit au but : quand l'apprenant demande un exercice, donne-le tout de suite, sans enchaîner d'abord plusieurs questions de politesse ; "
+        + "(4) quand il a répondu : dis d'abord si c'est juste, donne la forme correcte, explique en UNE phrase, puis propose la phrase SUIVANTE avec un nouveau ___. "
+        + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
+      const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
+      if (!chat.some((m) => m.role === 'user')) chat.push({ role: 'user', content: 'Bonjour !' });
+      if (env.GROQ_API_KEY) {
+        try {
+          const rr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST', headers: { 'authorization': 'Bearer ' + env.GROQ_API_KEY, 'content-type': 'application/json' },
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: chat, max_tokens: 300, temperature: 0.75 }),
+          });
+          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'groq' }); }
+        } catch (_) { /* repli */ }
+      }
+      if (env.MISTRAL_API_KEY) {
+        try {
+          const rr = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST', headers: { 'authorization': 'Bearer ' + env.MISTRAL_API_KEY, 'content-type': 'application/json' },
+            body: JSON.stringify({ model: 'mistral-small-latest', messages: chat, max_tokens: 300, temperature: 0.75 }),
+          });
+          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'mistral' }); }
+        } catch (_) { /* repli */ }
+      }
+      if (env.GEMINI_API_KEY) {
+        try {
+          const contents = chat.filter((m) => m.role !== 'system').map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }));
+          const rr = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + env.GEMINI_API_KEY, {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: contents, generationConfig: { maxOutputTokens: 300, temperature: 0.75 } }),
+          });
+          if (rr.ok) { const j = await rr.json(); const reply = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'gemini' }); }
+        } catch (_) { /* repli */ }
+      }
+      return JL({ ok: false, reason: 'ai_absent' }); // aucune clé/erreur → message hors-ligne côté client (fail-open)
+    }
+    return JL({ ok: false, reason: 'bad_route' }, 404);
+  } catch (e) {
+    return JL({ ok: false, reason: 'error', detail: String((e && e.message) || e).slice(0, 120) }); // fail-open (200)
+  }
+}
+
 /* Garde anti-rejeu WebAuthn : deny-list des challenges DÉJÀ consommés (KV).
    - 1ʳᵉ utilisation d'un challenge → 'fresh' (jamais bloquée : anti-lockout absolu).
    - rejeu du même challenge → 'replay' (refusé).
@@ -241,6 +492,56 @@ async function rlReset(env, ipHash) {
   try { await env.ACCOUNTS.delete('al:' + ipHash); } catch { /* fail-open */ }
 }
 
+/* ===== COMPTE UNIQUE PAR PERSONNE (Kevin 2026-08-05 : « Je ne veux pas plusieurs
+   comptes, qu'ils soient tous reliés à mon compte admin ») =====
+   CAUSE RACINE : /__sso/issue accepte l'uid envoyé par CHAQUE app (CMCteams → U11804,
+   Apex → kdmc_admin, Lingua → lingua_xxx…) → une fiche par app pour la MÊME personne,
+   donc des connexions éparpillées (« 2 » affichées au lieu de ~191).
+   RÈGLE ABSOLUE déjà écrite dans CLAUDE.md (« COMPTE ADMIN UNIQUE KEVIN ») : tous les
+   alias de Kevin désignent UN SEUL compte. On applique la même idée à la fiche. */
+const CANON_UID = 'kdmc_admin';
+/* Intervalle de re-passage de la fusion « un compte par personne ». Une fusion
+   DÉFINITIVE laisse passer les doublons créés ensuite (constaté en vrai) → on repasse. */
+const MERGE_RESCAN_MS = 7 * 24 * 60 * 60 * 1000;
+function normName(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+/* Le nom est-il celui de l'admin ? Exige 2 tokens OU un alias explicite — jamais un
+   prénom seul auto-déclaré (règle « login = prénom + nom », leçon #99 : un nom
+   auto-déclaré n'accorde AUCUN droit ; ici il ne fait que RANGER la fiche au bon
+   endroit, il ne donne aucun privilège). */
+function isAdminName(name) {
+  const n = normName(name);
+  if (!n) return false;
+  if (n === 'kdmc' || n === 'kdmc admin') return true;
+  const t = n.split(' ').filter(Boolean);
+  /* Le NOM DE FAMILLE seul ne suffit PAS : « Ronan Desarzens » est quelqu'un d'autre.
+     Il faut le nom de famille ET le prénom (ou son initiale) — « Desarzens K » compte. */
+  return t.indexOf('desarzens') >= 0 && t.some((x) => x === 'kevin' || x === 'k');
+}
+/* Identifiant CANONIQUE : toutes les fiches d'une même personne pointent vers un
+   seul dossier. Ne change JAMAIS l'uid de session (les apps s'en servent pour leur
+   propre logique) — uniquement l'endroit où le dossier est rangé.
+   Kevin 2026-08-05 : « Personne ne doit avoir plusieurs comptes. Un compte par
+   personne » → la règle vaut pour TOUT LE MONDE, pas seulement l'admin.
+   Annuaire `nm:<prénom nom>` → uid canonique : le PREMIER identifiant vu pour un nom
+   complet devient le dossier de cette personne ; tous les suivants y sont rattachés.
+   EXIGE 2 mots (prénom + nom) — même règle que la connexion : un prénom seul ne
+   regroupe rien (sinon tous les « Marie » finiraient dans le même dossier). */
+async function canonFor(env, uid, name) {
+  if (uid === CANON_UID) return uid;
+  if (isAdminName(name)) return CANON_UID;
+  if (!env || !env.ACCOUNTS) return uid;
+  const n = normName(name);
+  if (n.split(' ').filter(Boolean).length < 2) return uid;
+  try {
+    const cur = await env.ACCOUNTS.get('nm:' + n);
+    if (cur) return cur;
+    await env.ACCOUNTS.put('nm:' + n, uid);
+  } catch { /* fail-open : au pire on garde l'uid d'origine */ }
+  return uid;
+}
 /* Registre des fiches clients (Cloudflare KV ACCOUNTS). Fail-open si absent. */
 async function accGet(env, uid) {
   if (!env || !env.ACCOUNTS) return null;
@@ -309,14 +610,57 @@ async function audLog(env, entry) {
     await env.ACCOUNTS.put('aud:log', JSON.stringify(log.slice(0, 200)));
   } catch { /* fail-open */ }
 }
+/* Lecture FINE de l'appareil depuis l'User-Agent : modèle, OS + version, navigateur
+   + version. Côté SERVEUR → ni CSP ni bloqueur ne peut l'empêcher, et ça marche même
+   si l'app ne coopère pas. Tolérant : tout champ inconnu reste vide (jamais d'erreur). */
+function uaParse(ua) {
+  const s = String(ua || '');
+  let model = 'Autre';
+  if (/iPhone/i.test(s)) model = 'iPhone';
+  else if (/iPad/i.test(s)) model = 'iPad';
+  else if (/Android/i.test(s)) { const m = s.match(/;\s*([^;()]+?)\s*(?:Build\/|\))/); model = (m && m[1] && m[1].trim()) || 'Android'; }
+  else if (/Macintosh|Mac OS X/i.test(s)) model = 'Mac';
+  else if (/Windows/i.test(s)) model = 'PC Windows';
+  else if (/Linux/i.test(s)) model = 'Linux';
+  let os = '', osv = '', m;
+  if ((m = s.match(/(?:iPhone |CPU )?OS (\d+[._]\d+)/))) { os = 'iOS'; osv = m[1].replace(/_/g, '.'); }
+  else if ((m = s.match(/Android (\d+(?:\.\d+)?)/))) { os = 'Android'; osv = m[1]; }
+  else if ((m = s.match(/Mac OS X (\d+[._]\d+)/))) { os = 'macOS'; osv = m[1].replace(/_/g, '.'); }
+  else if (/Windows NT 10/.test(s)) { os = 'Windows'; osv = '10/11'; }
+  else if (/Windows/i.test(s)) { os = 'Windows'; }
+  else if (/Linux/i.test(s)) { os = 'Linux'; }
+  let br = '', brv = '';
+  if ((m = s.match(/Edg\/(\d+)/))) { br = 'Edge'; brv = m[1]; }
+  else if ((m = s.match(/OPR\/(\d+)/))) { br = 'Opera'; brv = m[1]; }
+  else if (/Chrome\//.test(s) && !/Edg\//.test(s)) { m = s.match(/Chrome\/(\d+)/); br = 'Chrome'; brv = m ? m[1] : ''; }
+  else if ((m = s.match(/Firefox\/(\d+)/))) { br = 'Firefox'; brv = m[1]; }
+  else if ((m = s.match(/Version\/(\d+)[^)]*Safari/))) { br = 'Safari'; brv = m[1]; }
+  else if (/Safari/i.test(s)) { br = 'Safari'; }
+  return { model, os, osv, br, brv };
+}
+/* Opérateur/hébergeur → distingue 4G, box maison, WiFi public… et signale un
+   VPN/serveur (quelqu'un qui masque sa provenance). Signal de sécurité utile. */
+function ispInfo(cf) {
+  const isp = String((cf && cf.asOrganization) || '');
+  const vpn = /vpn|proxy|host|server|cloud|data ?cent|ovh|hetzner|digitalocean|linode|vultr|amazon|aws|google|azure|m247|nordvpn|surfshark|expressvpn|mullvad|cloudflare warp/i.test(isp);
+  return { isp, vpn };
+}
 /* Enrichit (ou crée) la fiche à chaque connexion : MAX de renseignements. */
 async function enrich(env, request, uid, name, cgu, pre) {
   if (!env || !env.ACCOUNTS) return;
+  /* Toutes les apps de la même personne alimentent UN SEUL dossier. */
+  const inUid = uid;
+  uid = await canonFor(env, uid, name);
+  if (uid !== inUid) pre = undefined; /* la fiche préchargée était celle de l'ancien uid */
   const cf = request.cf || {};
   const ipHash = await sha256Hex((request.headers.get('CF-Connecting-IP') || '') + '|kdmc');
   const ua = request.headers.get('user-agent') || '';
   const device = /mobile|iphone|android/i.test(ua) ? 'mobile' : 'desktop';
   const os = /iphone|ipad|ios/i.test(ua) ? 'iOS' : /android/i.test(ua) ? 'Android' : /mac/i.test(ua) ? 'macOS' : /windows/i.test(ua) ? 'Windows' : /linux/i.test(ua) ? 'Linux' : '';
+  /* Détail « espion » : modèle + versions + opérateur + géo fine + fuseau. */
+  const D = uaParse(ua);
+  const NET = ispInfo(cf);
+  const devFull = [D.model, D.os + (D.osv ? ' ' + D.osv : ''), D.br + (D.brv ? ' ' + D.brv : '')].filter(function (x) { return x && x.trim(); }).join(' · ');
   const place = [cf.city, cf.region, cf.country].filter(Boolean).join(', ');
   const now = Date.now();
   const rawHost = (request.headers.get('host') || '').toLowerCase().replace(/:.*$/, '');
@@ -338,8 +682,31 @@ async function enrich(env, request, uid, name, cgu, pre) {
   acc.last_seen = now;
   acc.last_ip_hash = ipHash;
   acc.last_place = place;
-  acc.last_device = device + (os ? ' · ' + os : '');
+  acc.last_device = devFull || (device + (os ? ' · ' + os : ''));
   acc.last_app = host || acc.last_app || '';
+  /* Renseignements fins conservés sur la fiche (dernier état connu). */
+  acc.last_isp = NET.isp; acc.last_vpn = !!NET.vpn;
+  acc.last_tz = cf.timezone || acc.last_tz || '';
+  acc.last_geo = { city: cf.city || '', postal: cf.postalCode || '', lat: cf.latitude || '', lon: cf.longitude || '' };
+  /* MAX DE RENSEIGNEMENTS — tout ce que le réseau nous donne déjà, gratuitement,
+     côté serveur (impossible à bloquer par le navigateur ou un bloqueur de pub). */
+  acc.last_lang = (request.headers.get('accept-language') || '').split(',')[0].trim().slice(0, 12) || acc.last_lang || '';
+  acc.last_net = {
+    asn: cf.asn || '', colo: cf.colo || '', continent: cf.continent || '',
+    region: cf.regionCode || '', http: cf.httpProtocol || '', tls: cf.tlsVersion || '',
+  };
+  /* Par où il est entré (app d'origine) et sur quelle page il est tombé. */
+  try {
+    const ref = request.headers.get('referer') || '';
+    acc.last_from = ref ? new URL(ref).hostname : acc.last_from || '';
+  } catch { /* referer illisible */ }
+  try { acc.last_path = new URL(request.url).pathname.slice(0, 80) || acc.last_path || ''; } catch { /* url illisible */ }
+  /* RYTHME : à quelles heures cette personne se connecte (histogramme 24 h, cumulatif). */
+  acc.hours = acc.hours || {};
+  const hh = String(new Date(now).getUTCHours());
+  acc.hours[hh] = (acc.hours[hh] || 0) + 1;
+  /* devKey VOLONTAIREMENT sans version : sinon chaque mise à jour d'iOS/navigateur
+     compterait comme un « nouvel appareil » → alerte push à chaque update (spam). */
   const devKey = device + (os ? '·' + os : '');
   const newDevice = (acc.devices || []).indexOf(devKey) < 0;
   if (newDevice) structural = true;
@@ -364,16 +731,25 @@ async function enrich(env, request, uid, name, cgu, pre) {
   acc.history = acc.history || [];
   if (host) {
     const a = acc.apps[host] || { first: now, last: 0, sessions: 0 };
-    const cont = a.sessions > 0 && (now - (a.last || 0)) <= SESSION_GAP; /* session encore en cours ? */
+    const prevLast = a.last || 0;
+    const cont = a.sessions > 0 && (now - prevLast) <= SESSION_GAP; /* session encore en cours ? */
     a.last = now;
     let cur = null; /* la session la plus récente pour CE site */
     for (let i = 0; i < acc.history.length; i++) { if (acc.history[i].app === host) { cur = acc.history[i]; break; } }
     if (cont && cur) {
       cur.end = now; /* prolonge la session ouverte → la durée grandit */
+      /* TEMPS CUMULÉ réellement passé sur cette app (somme des prolongations). */
+      a.ms = (a.ms || 0) + Math.max(0, now - prevLast);
     } else {
       a.sessions = (a.sessions || 0) + 1;
       acc.hits = (acc.hits || 0) + 1;
-      acc.history.unshift({ ts: now, end: now, app: host, device: devKey, place: place });
+      /* Chaque session garde SON contexte (appareil détaillé, opérateur, VPN, coords)
+         → on voit l'évolution dans le temps, pas seulement le dernier état. */
+      acc.history.unshift({
+        ts: now, end: now, app: host, device: devKey, place: place,
+        dev: devFull, isp: NET.isp, vpn: NET.vpn ? 1 : 0,
+        lat: cf.latitude || '', lon: cf.longitude || '', tz: cf.timezone || '',
+      });
       if (acc.history.length > 80) acc.history = acc.history.slice(0, 80);
       structural = true;
     }
@@ -399,6 +775,61 @@ async function enrich(env, request, uid, name, cgu, pre) {
       (acc.name || uid) + ' : ' + prevCountry + ' → ' + curCountry + ' en ' + acc.anomaly.mins + ' min (déplacement impossible).');
   }
   await accPut(env, acc, !isNew);
+  /* Fusion AUTOMATIQUE des fiches éparpillées, sans aucune action de Kevin. Rien n'est
+     perdu : les connexions s'additionnent, les historiques se concatènent, appareils/
+     lieux/apps s'unissent. L'ancienne fiche n'est pas effacée : elle devient un renvoi.
+     MESURÉ le 2026-08-06 : deux fiches « kevin Desarzens » (196 + 116 connexions)
+     coexistaient encore — parce que le drapeau `merged_v1` était DÉFINITIF : une fiche
+     en double apparue APRÈS la première fusion n'était plus jamais absorbée. On repasse
+     donc régulièrement (au plus 1×/semaine par dossier, coût négligeable) au lieu d'une
+     seule fois. Les dossiers déjà fusionnés (merged_v1 sans date) repassent une fois. */
+  const lastMerge = acc.merged_at || 0;
+  if (now - lastMerge > MERGE_RESCAN_MS) { try { await mergeIntoCanon(env, acc); } catch { /* fail-open */ } }
+}
+
+/* Absorbe dans la fiche canonique toutes les fiches de la MÊME personne (autres uid).
+   « Même personne » = même nom complet normalisé (accents/casse/tirets ignorés), ou
+   tout alias de l'admin. Jamais sur un prénom seul → deux « Marie » restent distinctes. */
+async function mergeIntoCanon(env, acc) {
+  /* Borné : on ne relit jamais plus de 300 dossiers dans une même requête. */
+  const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]').slice(-300);
+  const me = normName(acc.name);
+  const admin = acc.uid === CANON_UID;
+  const stamp = async () => { acc.merged_v1 = 1; acc.merged_at = Date.now(); await accPut(env, acc, true); };
+  if (!admin && me.split(' ').filter(Boolean).length < 2) { await stamp(); return; }
+  const others = [];
+  for (const u of idx) {
+    if (u === acc.uid) continue;
+    const o = await accGet(env, u);
+    if (!o || o.merged_into) continue;
+    const same = admin ? isAdminName(o.name) : (normName(o.name) === me && !isAdminName(o.name));
+    if (same) others.push(o);
+  }
+  if (!others.length) { await stamp(); return; }
+  for (const o of others) {
+    acc.hits = (acc.hits || 0) + (o.hits || 0);
+    acc.history = (acc.history || []).concat(o.history || [])
+      .sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 80);
+    acc.devices = Array.from(new Set([...(acc.devices || []), ...(o.devices || [])])).slice(-10);
+    acc.places = Array.from(new Set([...(acc.places || []), ...(o.places || [])])).slice(-20);
+    acc.apps = acc.apps || {};
+    for (const [h, s] of Object.entries(o.apps || {})) {
+      const t = acc.apps[h] || { first: s.first || 0, last: 0, sessions: 0, ms: 0 };
+      t.sessions = (t.sessions || 0) + (s.sessions || 0);
+      t.ms = (t.ms || 0) + (s.ms || 0);
+      t.last = Math.max(t.last || 0, s.last || 0);
+      t.first = Math.min(t.first || s.first || 0, s.first || t.first || 0) || t.first;
+      acc.apps[h] = t;
+    }
+    if (o.created && (!acc.created || o.created < acc.created)) acc.created = o.created;
+    if (o.cgu_at && !acc.cgu_at) acc.cgu_at = o.cgu_at;
+    if ((o.last_seen || 0) > (acc.last_seen || 0)) acc.last_seen = o.last_seen;
+    acc.aliases = Array.from(new Set([...(acc.aliases || []), o.uid])).slice(-20);
+    /* L'ancienne fiche devient un RENVOI (jamais supprimée : traçabilité + réversible). */
+    await env.ACCOUNTS.put('acc:' + o.uid, JSON.stringify({ uid: o.uid, name: o.name, merged_into: acc.uid, merged_at: Date.now() }));
+  }
+  await stamp();
+  await audLog(env, { ev: 'accounts_merged', uid: acc.uid, detail: others.map((o) => o.uid).join(', ') + ' → ' + acc.uid });
 }
 
 async function handleSso(request, url, env) {
@@ -560,7 +991,9 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/history' && request.method === 'GET') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
-    const acc = await accGet(env, s.uid);
+    /* Lire le dossier CANONIQUE (sinon on afficherait la fiche partielle de l'app
+       d'où vient la session, au lieu de l'historique complet de la personne). */
+    const acc = await accGet(env, await canonFor(env, s.uid, s.name));
     if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
     return J({
       ok: true, uid: s.uid, name: s.name,
@@ -629,7 +1062,12 @@ async function adminSession(request, env) {
   return null;
 }
 async function handleAdmin(request, url, env) {
-  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  /* `domain-log` est le SEUL endpoint admin lu depuis un autre sous-domaine
+     (admin.kd-mc.com) : son préflight a besoin des en-têtes CORS, donc il ne doit
+     PAS être avalé par ce 204 générique — sinon le navigateur bloque la lecture et
+     la page « Qui se connecte » reste vide sans le moindre message (bug attrapé par
+     domain-log.test.mjs avant la mise en ligne). */
+  if (request.method === 'OPTIONS' && url.pathname !== '/__admin/domain-log') return new Response(null, { status: 204 });
   const secret = env && env.KDMC_SSO_SECRET;
   const path = url.pathname;
   /* Login admin (preuve du code) — AVANT le gate, sinon poule-œuf. */
@@ -661,6 +1099,58 @@ async function handleAdmin(request, url, env) {
   if (path === '/__admin/logout' && request.method === 'POST') {
     return J({ ok: true }, 'kdmc_admin=; Domain=.kd-mc.com; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax');
   }
+
+  /* « Qui se connecte » (admin.kd-mc.com) — SOURCE UNIQUE des connexions du domaine.
+     Le journal des connexions existe DÉJÀ ici (KV ACCOUNTS : hits, history[], devices,
+     places, apps). Kevin 2026-08-05 : « enlève ça et intègre le dedans » → plutôt qu'un
+     2e journal en parallèle (doublon interdit par « zéro doublon, source unique »), la
+     page admin lit CETTE donnée — la vraie, déjà peuplée (191 connexions).
+     AUTH PAR EN-TÊTE, pas par cookie : `x-apex-pin` = sha256(code admin), déjà équivalent
+     -porteur ailleurs (leçon #95 ; /__admin/login l'accepte tel quel). Sans cookie → aucune
+     autorité ambiante → AUCUNE surface CSRF ajoutée (en-tête personnalisé = préflight
+     obligatoire, non forgeable par un site tiers). CORS limité à admin.kd-mc.com. Lecture seule. */
+  if (path === '/__admin/domain-log' && (request.method === 'GET' || request.method === 'OPTIONS')) {
+    const origin = request.headers.get('origin') || '';
+    const cors = {
+      'Access-Control-Allow-Origin': origin === 'https://admin.kd-mc.com' ? origin : 'https://admin.kd-mc.com',
+      'Access-Control-Allow-Methods': 'GET,OPTIONS',
+      'Access-Control-Allow-Headers': 'x-apex-pin',
+      'Access-Control-Max-Age': '86400',
+      Vary: 'Origin',
+    };
+    const jc = (o, st) => new Response(JSON.stringify(o), { status: st || 200, headers: Object.assign({ 'content-type': 'application/json', 'cache-control': 'no-store' }, cors) });
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+    const expected = env && env.KDMC_ADMIN_PIN_SHA256;
+    const given = request.headers.get('x-apex-pin') || '';
+    /* Comparaison en temps constant + fail-closed si le code n'est pas configuré. */
+    let same = !!expected && given.length === expected.length;
+    if (same) { let d = 0; for (let i = 0; i < expected.length; i++) d |= expected.charCodeAt(i) ^ given.charCodeAt(i); same = d === 0; }
+    if (!same) return jc({ ok: false, reason: 'unauthorized' }, 401);
+    if (!env.ACCOUNTS) return jc({ ok: true, people: [], kv: false });
+    const idx = JSON.parse((await env.ACCOUNTS.get('idx:uids')) || '[]');
+    /* Les fiches FUSIONNÉES ne sont que des renvois → jamais listées comme personnes
+       (sinon les doublons que Kevin veut supprimer réapparaîtraient dans la page). */
+    const accs = (await Promise.all(idx.slice(-500).map((uid) => accGet(env, uid))))
+      .filter(Boolean).filter((a) => !a.merged_into);
+    /* Projection MINIMALE (RGPD : le nécessaire — ni e-mail, ni jeton, ni contenu privé). */
+    const people = accs.map((a) => ({
+      uid: a.uid, name: a.name || '', hits: a.hits || 0, lastSeen: a.last_seen || 0,
+      devices: (a.devices || []).slice(0, 8), places: (a.places || []).slice(0, 8),
+      apps: a.apps || {}, history: (a.history || []).slice(0, 80),
+      /* Renseignements fins (dernier état) : appareil complet, opérateur, VPN,
+         fuseau, géo approximative, 1re fois, anomalie de déplacement détectée. */
+      device: a.last_device || '', isp: a.last_isp || '', vpn: !!a.last_vpn,
+      tz: a.last_tz || '', geo: a.last_geo || null, place: a.last_place || '',
+      lastApp: a.last_app || '', created: a.created || 0, cguAt: a.cgu_at || 0,
+      anomaly: a.anomaly || null,
+      /* Renseignements réseau/entrée + rythme + appareil déclaré par l'app. */
+      lang: a.last_lang || '', net: a.last_net || null, from: a.last_from || '',
+      path: a.last_path || '', hours: a.hours || null, ua: a.last_ua || null,
+      aliases: a.aliases || [], passkey: !!a.passkey,
+    })).sort((x, y) => (y.lastSeen || 0) - (x.lastSeen || 0));
+    return jc({ ok: true, people, count: people.length, ts: Date.now() });
+  }
+
   const me = await adminSession(request, env);
   if (!me) {
     const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);

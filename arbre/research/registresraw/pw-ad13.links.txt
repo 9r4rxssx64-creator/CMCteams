@@ -1,0 +1,73 @@
+/n/contourner-ad-block/n:276 || Pour en savoir plus et paramétrer les bloqueurs de publicité
+# || OK
+#menu_default || Accès rapide au menu
+#arc_contenu || Accès rapide au contenu
+#recherchez_partout || Accès rapide à la recherche
+/espace-perso || Espacepersonnel
+https://www.departement13.fr/ || 
+/ || Accueil
+/n/rechercher/n:79 || Rechercher
+/n/moteur-de-recherche-des-archives/n:302 || Fonds d'archives
+/n/flora-catalogue-de-la-bibliotheque-des-archives/n:256 || Bibliothèque des archives
+/n/archives-numerisees/n:1 || Archives numérisées
+/archive/catalogue/communes_13/n:500 || Accès par commune
+/n/presentation-des-fonds-d-archives/n:94 || Présentation des fonds d'archives
+/n/aide-a-la-recherche/n:490 || Aide à la recherche
+# || Fermer le menu
+/n/venir/n:494 || Venir
+/n/informations-pratiques/n:502 || Informations pratiques
+/n/venir-en-salle-de-lecture-et-consulter/n:170 || Venir en salle de lecture et consulter
+/n/reproduire-reutiliser-les-archives/n:295 || Reproduire, réutiliser les archives
+/n/communicabilite-des-archives/n:293 || Communicabilité des archives
+/n/a-l-attention-des-genealogistes-professionnels/n:296 || A l'attention des généalogistes professionnels
+# || Fermer le menu
+/n/decouvrir/n:81 || Découvrir
+/n/programmation/n:139 || Programmation
+/n/les-ans-des-abd/n:522 || Les 20 ans des ABD
+/n/publications-des-archives/n:278 || Publications des Archives
+/n/expositions/n:153 || Expositions
+/n/public-scolaire/n:80 || Public scolaire
+/n/public-adulte-et-familial/n:95 || Public adulte et familial
+/n/public-du-champ-social/n:96 || Public du champ social
+/n/jeune-public-hors-temps-scolaire/n:325 || Jeune public hors temps scolaire
+/n/public-en-situation-de-handicap/n:253 || Public en situation de handicap
+/n/connaitre-les-archives-departementales/n:130 || Connaître les Archives départementales
+# || Fermer le menu
+/n/approfondir/n:498 || Approfondir
+/n/dossiers-thematiques/n:385 || Dossiers thématiques
+/n/la-conservation-preventive/n:506 || La conservation préventive
+/document_mois/documents/index/n:269/slug:des-archives || Des archives...
+/n/a-vous-de-jouer/n:238 || A vous de jouer !
+# || Fermer le menu
+/n/archiver/n:82 || Archiver
+/n/officiers-publics-et-ministeriels/n:87 || Officiers publics et ministériels
+/n/archives-des-communes-et-des-intercommunalites/n:89 || Archives des communes et des intercommunalités
+/n/archives-privees/n:90 || Archives privées
+/n/administrations-de-l-etat-et-du-departement/n:91 || Administrations de l'État et du Département
+# || Fermer le menu
+/n/rechercher/n:79 || Rechercher
+/n/archives-numerisees/n:1 || Archives numérisées
+/archive/recherche/etatcivil/n:64 || Registres paroissiaux et état civil
+/archive/recherche/etatcivil/n:64 || Registres paroissiaux et état civil
+/archive/recherche/recensement2/n:45 || Recensement de la population
+/archive/recherche/matricule/n:38 || Recensement militaire
+/archive/recherche/ecrous/n:37 || Établissements pénitentiaires
+/archive/recherche/cadastre/n:36 || Cadastre
+/archive/recherche/hypotheque/n:42 || Hypothèques
+/archive/recherche/enregistrement/n:33 || Enregistrement
+/archive/recherche/notaire/n:47 || Notaires
+/archive/recherche/icono/n:75 || Documents iconographiques
+/archive/recherche/anciennes/n:258 || Archives anciennes
+/cms/thumb/generate/800x600/logo_accueil_marseille.jpg || 
+https://archives.marseille.fr/n/etat-civil/n:161 || Archives municipales
+https://archives.marseille.fr/n/etat-civil/n:161 || site des archives municipales
+https://www.archives13.fr/n/etat-civil/n:109 || voir ici
+tel:++33413318208 || +33 (0)4 13 31 82 08
+mailto:archives13@departement13.fr || Contacter le service
+/n/mentions-legales/n:180 || Mentions légales
+/n/declaration-d-accessibilite/n:468 || Déclaration d'accessibilité
+/n/protection-des-donnees/n:489 || Protection des données
+/plan-du-site/n:172 || Plan du site
+/archive/recherche/contenu/n:189 || Résultats de recherche
+/cms/redirections/url_redirect/n:487?redirection=https%3A%2F%2Fwww.facebook.com%2FArchDep13 || Facebook
+/cms/redirections/url_redirect/n:488?redirection=https%3A%2F%2Fwww.instagram.com%2Farchivesdep13%2F || Instagram

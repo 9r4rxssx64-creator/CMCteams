@@ -64,8 +64,30 @@ class SessionLogger {
       actions: [{ ts: Date.now(), type: 'login' }],
     };
     this.persist();
+    this._pushAccess('connexion');
     logger.info('session-logger', `Session started ${id} (${userName})`);
     return id;
+  }
+
+  /* Journal unifié domaine « qui se connecte » (worker kdmc-access).
+     Fail-open + PROD-ONLY (*.kd-mc.com) → totalement inerte en test/jsdom.
+     Métadonnées seulement, throttlé 5 s/évènement. N'affecte jamais l'app. */
+  private _accessSeen: Record<string, number> = {};
+  private _pushAccess(event: string): void {
+    try {
+      if (typeof location === 'undefined' || !location.hostname || !/\.kd-mc\.com$/.test(location.hostname)) return;
+      const s = this.currentSession;
+      if (!s || !s.uid) return;
+      const t = Date.now();
+      if (this._accessSeen[event] && t - this._accessSeen[event] < 5000) return;
+      this._accessSeen[event] = t;
+      const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+      const dev = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Macintosh|Mac OS X/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'PC Windows' : /Linux/.test(ua) ? 'Linux' : 'Autre';
+      void fetch('https://admin.kd-mc.com/log', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, mode: 'cors',
+        body: JSON.stringify({ app: 'apex', uid: s.uid, name: s.user_name, event, device: dev, tier: s.is_admin ? 'admin' : 'client' }),
+      }).catch(() => { /* fail-open */ });
+    } catch { /* fail-open */ }
   }
 
   /**
@@ -74,6 +96,7 @@ class SessionLogger {
   logAction(type: SessionAction['type'], details?: Record<string, unknown>): void {
     if (!this.currentSession) return;
     this.currentSession.actions.push({ ts: Date.now(), type, ...(details && { details }) });
+    this._pushAccess(type);
     /* Cap actions par session */
     if (this.currentSession.actions.length > MAX_ACTIONS_PER_SESSION) {
       this.currentSession.actions = this.currentSession.actions.slice(-MAX_ACTIONS_PER_SESSION);

@@ -1,7 +1,37 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-07-04** (World Monitor v2.11 + OSINT v2.1 live + Cloneur + fix sandbox)
+> Dernière mise à jour : **2026-08-09** (Passe « full améliorations » intégrée à « fais ton audit » — axe 9)
+
+## 🚀 Passe AMÉLIORATIONS TOTALES (axe 9 de l'audit) — session 2026-08-09 (mergé sur main)
+
+**▶️ Lancer maintenant :**
+- `npm run audit:improvements` — backlog **chiffré** de ce qui peut devenir meilleur (offline)
+- `npm run audit:all` — stabilité + améliorations d'un coup
+
+**🔧 Code ajouté :**
+- [tools/audit/improvements-audit.cjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/improvements-audit.cjs) — mesure code mort/non-câblé, doublons, dette, fuites de minuteries, couverture des vues, dépendances. Ratchet anti-faux-rouge.
+- [tools/audit/improvements-baseline.json](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/improvements-baseline.json) — référence figée de la dette (échec seulement si ça EMPIRE).
+- [tests/improvements-audit-guard.test.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/improvements-audit-guard.test.mjs) — garde CI (23 vérifs) câblé dans `test:ci`.
+- [.claude/skills/apex-audit-improvements.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/apex-audit-improvements.md) — **parité Apex** de la passe.
+
+**🔎 Trouvé en le faisant (mesuré, pas supposé) :** cap de skills Apex à 45 pour **57** fichiers → **12 skills perdus en silence** (dont `security-audit-owasp`, `tdd-implement`, `perf-budget-check`). Cap relevé à 80 dans [core/memory.ts](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/core/memory.ts).
+
+---
+
+## 🐝 KDMC Lingua v2.31.0 — session 2026-08-07 (mergé sur main)
+
+**🧪 Tester maintenant :**
+- 📖 [KDMC Lingua — Histoires de la ruche](https://lingua.kd-mc.com/) — accueil → carte « Histoires de la ruche » : Bee raconte 6 histoires originales dans la langue apprise (quiz + récompenses, déblocage progressif).
+- 🎭 [KDMC Lingua — jeux de rôle](https://lingua.kd-mc.com/) — onglet 💬 Coach → carrousel de 9 scènes (café, entretien d'embauche, musique, restaurant, marché, aéroport, hôtel, médecin, lire-et-raconter). Bee JOUE le personnage dans la langue cible. Aussi dans la Discussion 🎬 (chips 🎭).
+
+**🔧 Code modifié :**
+- [lingua/app.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/app.js) — SCENES (9 scènes originales), sceneStart/sceneStop, filtrage du fil en scène, chips Discussion.
+- [services/kdmc-router/worker.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) — `/__lingua/ai` : champ `scenario` injecté dans le prompt du prof (fail-open).
+
+**📜 Historique :** PR [#3169](https://github.com/9r4rxssx64-creator/CMCteams/pull/3169) (Lingua) · PR #3170 (Bee au studio — RETIRÉE ensuite v9.9.1, Bee = Lingua uniquement). Vérifié en vrai : worker déployé ✅, Lingua live ✅ (6 langues · 25 unités), tests navigateur 11/11 + 9/9 ✅.
+
+---
 
 ## 🌍 World Monitor v2.12 + 🔎 OSINT v2.1 live — session 2026-07-04 (mergé sur main)
 
@@ -1669,3 +1699,94 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 - Générateur PDF : [tools/memo-pdf/generate_pdfs.py](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/memo-pdf/generate_pdfs.py)
 - Worker R2 : [services/coffre-r2/src/index.js](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/coffre-r2/src/index.js) · Workflow : `.github/workflows/deploy-coffre-r2.yml`
 - Test réel : [tests/coffre/e2e.test.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/coffre/e2e.test.mjs) (9/9 ✅)
+
+## 🌳 Arbre généalogique (arbre.kd-mc.com) — session 2026-08-03/04
+
+| Fichier | Description | Liens |
+|---|---|---|
+| arbre/index.html | L'app complète (v2.31 : 2 arbres par famille, Plan par générations, actes, demandes 1 clic) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/index.html) · [Live](https://arbre.kd-mc.com) |
+| tools/arbre/cloud-audit.mjs | Audit + correction du cloud familial (vérifie chaque lien vs le document) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/cloud-audit.mjs) |
+| tools/arbre/research.mjs | Recherche INSEE décès (25 angles) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/research.mjs) |
+| tools/arbre/research-actes.mjs | Liens d'actes INSEE exacts par personne | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/research-actes.mjs) |
+| tools/arbre/research-registres.mjs | Registres scannés : Monaco (formulaire réel), AD06, AD13 | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/research-registres.mjs) |
+| tools/arbre/research-infos.mjs | Infos max : Gallica presse, militaire, tombes/photos, avis de décès, Suisse | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/arbre/research-infos.mjs) |
+| arbre/research/CLOUD.md | Audit réel du cloud (ce que voient les téléphones) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/CLOUD.md) |
+| arbre/research/REGISTRES.md | Actes / registres numérisés trouvés | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/REGISTRES.md) |
+| arbre/research/INFOS.md | Infos presse ancienne & sources ouvertes | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md) |
+| arbre/research/RAPPORT.md | Recherche INSEE (~800 actes balayés) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/RAPPORT.md) |
+| Workflows | arbre-cloud-audit.yml (cron 5/mois 04:00) · arbre-recherche.yml (03:00) · arbre-actes-registres.yml (05:00) · arbre-recherche-web.yml | [Actions](https://github.com/9r4rxssx64-creator/cmcteams/actions) |
+
+## 🧰 Boîte à outils agents — 6 dépôts du tableau (session 2026-08-06)
+
+Tableau « Une Notion = Un Projet » (ta vidéo IMG_3293). Installé pour Claude Code **et** Apex.
+
+| Fichier | Description | Liens |
+|---|---|---|
+| tools/agent-toolkit/sources.json | Les 6 dépôts + ce qu'on copie de chacun (texte seulement) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sources.json) |
+| tools/agent-toolkit/sync.mjs | Va chercher les dépôts, ne garde que le texte, épingle le SHA | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sync.mjs) |
+| tools/agent-toolkit/sync.test.mjs | 6 tests : aucun binaire, aucun node_modules, plafonds respectés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sync.test.mjs) |
+| .github/workflows/agent-toolkit-sync.yml | Récupère + ouvre la PR (bouton + 1er de chaque mois) | [Lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/agent-toolkit-sync.yml) |
+| .claude/skills/agent-toolkit/SKILL.md | Mon mode d'emploi : quel dépôt j'ouvre et quand | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/agent-toolkit/SKILL.md) |
+| vendor/agent-toolkit/ | Le contenu récupéré (+ MANIFEST.json : SHA, licence, date) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/vendor/agent-toolkit) |
+| apex-ai/v13/data/apex-plugins-catalog.ts | Les 6 côté Apex (tag `agent-toolkit`) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/data/apex-plugins-catalog.ts) |
+| apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts | 6 tests de parité Apex ↔ Claude Code | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts) |
+
+Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · [gbrain](https://github.com/garrytan/gbrain) (Mémoire) · [awesome-design-skills](https://github.com/bergside/awesome-design-skills) (Design) · [rtk](https://github.com/rtk-ai/rtk) (Économie de jetons) · [meridian-company-os](https://github.com/codejunkie99/meridian-company-os) (Entreprise) · [free-llm-api-resources](https://github.com/jeis4wpi/free-llm-api-resources) (LLM gratuit)
+
+## 🎨 Créa Studio — v8.5.2 (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | L'app (Photo, Vidéo, Cartoon, Danse IA, Magie, **Mes créas**, **Studio musique**) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `services/kdmc-crea-ai/worker.js` | Le moteur IA (images, voix, paroles, partition) + **2ᵉ IA gratuite en secours** | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tests/verify-crea-song.mjs` | Preuve : le morceau est un vrai fichier audio, la voix est bien mixée | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-song.mjs) |
+| `tests/verify-crea-gallery.mjs` | Preuve : « Mes créas » garde tout, même après rechargement | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-gallery.mjs) |
+| `tests/verify-crea-ai-fallback.mjs` | Preuve : l'app marche même si l'IA principale tombe | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-ai-fallback.mjs) |
+| `tests/no-conflict-markers.test.mjs` | Garde : aucun conflit de fusion ne peut plus entrer dans le dépôt | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-conflict-markers.test.mjs) |
+## 🗂️ « Qui se connecte » + comptes uniques (session 2026-08-06)
+
+| Fichier | Description | Liens |
+|---|---|---|
+| .claude/skills/domain-journal/SKILL.md | Mon mode d'emploi du journal du domaine (source unique, un compte par personne, pièges, vie privée) | [Lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/domain-journal/SKILL.md) |
+| services/kdmc-router/worker.js | Le routeur du domaine : enregistre chaque visite, range chaque personne dans UN dossier | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) |
+| services/kdmc-router/compte-unique.test.mjs | 10 tests : un seul dossier par personne, doublon tardif absorbé, Ronan intact | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/compte-unique.test.mjs) |
+| services/kdmc-router/domain-log.test.mjs | 7 tests : lecture protégée par ton code, aucune donnée privée exposée | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/domain-log.test.mjs) |
+| services/kdmc-access/page.js | La page « Qui se connecte » (admin.kd-mc.com) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page.js) |
+| services/kdmc-access/page-logic.test.mjs | 4 tests : robots exclus, deux comptes du même nom additionnés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page-logic.test.mjs) |
+
+Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Déploiements : [routeur](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) · [page admin](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-access.yml)
+
+### Créa Studio v9.3.0 — masques + famille (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `services/kdmc-crea-famille/worker.js` | Le lien **privé** entre les téléphones de la famille | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-famille/worker.js) |
+| `.github/workflows/deploy-kdmc-crea-famille.yml` | Déploie le lien famille (crée son stockage tout seul, 0 clic) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/deploy-kdmc-crea-famille.yml) |
+| `tests/verify-crea-masques.mjs` | Preuve : le visage est trouvé, les 15 masques sont différents et cuits dans la photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-masques.mjs) |
+| `tests/verify-crea-famille.mjs` | Preuve : isolation entre familles, jetons signés, expiration | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille.mjs) |
+| `tests/verify-crea-famille-app.mjs` | Preuve : **deux téléphones** qui se parlent pour de vrai | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-famille-app.mjs) |
+
+### Créa Studio v9.5.0 — sélection + cartoon refait (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tests/verify-crea-cartoon.mjs` | Preuve : le cartoon garde la couleur de peau, aplatit vraiment, et trace un VRAI trait qui grossit avec l'image | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
+| `tests/verify-crea-selection.mjs` | Preuve : toucher un visage le sélectionne, flouter/cartooniser n'agit QUE là, et « Retirer » / « Enregistrer » marchent | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-selection.mjs) |
+| `tests/verify-crea-plein-ecran.mjs` | Preuve : le plein écran couvre tout l'écran, zoom au doigt, « Remplir », et « Enregistrer » sous la main | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-plein-ecran.mjs) |
+
+### Créa Studio v9.7.0 — 12 styles cartoon (parité apps virales) (2026-08-06)
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | `CARTOON_STYLES` : les 12 recettes + galerie de vignettes calculées sur TA photo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `tests/verify-crea-cartoon.mjs` | Preuve : 12 styles tous différents, tous lisibles, tous rapides, peau lissée sans bouillie | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-cartoon.mjs) |
+
+### Créa Studio v9.8.0 — 🎬 Montage auto (2026-08-07)
+
+Tu donnes tes vidéos brutes, l'app te rend la vidéo montée. Un seul bouton.
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/crea-studio/index.html` | Module `Auto` : écoute le son pour enlever les blancs, regarde l'image pour jeter le noir/flou, corrige les couleurs, zoom lent + fondus, sous-titres, musique, compte rendu chiffré | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
+| `services/kdmc-crea-ai/worker.js` | Nouvelle porte `/transcribe` : la parole devient du texte (IA gratuite Cloudflare). Seul un petit extrait sonore part, jamais la vidéo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tests/verify-crea-montage-auto.mjs` | Preuve (29 vérifs) : 2 vraies vidéos fabriquées puis montées, blancs coupés mesurés, seuil qui s'adapte au volume, hésitations retirées, couleurs corrigées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-montage-auto.mjs) |

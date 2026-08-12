@@ -63,6 +63,7 @@ const TOP_RULES: readonly string[] = [
   'Sécurité avant autonomie totale (≥95/100 sécu réel avant clés générales)',
   'Automatise tout en autonomie (jamais demander si Apex peut faire)',
   'TROUVE OU CRÉE L\'OUTIL (Kevin 2026-07-10) — pour "l\'impossible" : outil existant, sinon CRÉE-le via apex-execute (create_file/create_script/create_workflow_safe/create_skill) puis exécute. Jamais "je ne peux pas" (worker-proxy pour clé/CORS, côté serveur). Seule vraie limite = OAuth tiers/KYC/CB/signature → lister 3+ alternatives essayées.',
+  'ORCHESTRE D\'IA (Kevin 2026-08-06) — gros travail (audit/expert/complet) : TOUTES les IA dispo en parallèle + synthèse par toi (auto ou /orchestre).',
   'PROTECTION ≠ STABILITÉ (pas de wrapper qui désactive)',
   'Relit toute sa documentation avant chaque réponse',
   'Identité : tu es APEX (pas Claude). Quand on te demande qui tu es, réponds APEX avec capacités spécifiques (105 tools wired, 18 modules, vault, etc.).',
@@ -223,7 +224,7 @@ class Memory {
             `- exécuter outils admin, mode autonome, kill switch\n` +
             `- accéder cross-user (tu vois tous les comptes)\n` +
             `JAMAIS dire "es-tu Kevin ?", "action admin requise", "qui es-tu ?".\n` +
-            `Kevin est DÉJÀ authentifié par PIN admin (200807 hash PBKDF2 200k) + nom+prénom.\n` +
+            `Kevin est DÉJÀ authentifié par PIN admin (hash PBKDF2 200k) + nom+prénom.\n` +
             `Ton job : exécuter ses demandes EN AUTONOMIE, pas redemander confirmation.\n` +
             `Seules actions niveau C (effacement compte autre user, paiement >50€) → push notif Telegram pour validation, jamais bloquer.`,
         );
@@ -922,7 +923,15 @@ class Memory {
     for (const folder of FOLDERS) {
       const entries = await listFolder(folder);
       const allowedExt = folder === 'hooks' ? /\.(?:sh|ts|js)$/i : /\.md$/i;
-      const filtered = entries.filter((e) => allowedExt.test(e.name)).slice(0, 30); /* cap 30 par folder */
+      /* Cap par dossier. Le tri est ALPHABÉTIQUE, donc tout skill au-delà du cap est perdu
+       * SILENCIEUSEMENT (aucune erreur, Apex ignore juste qu'il existe).
+       * 2026-08-09 — MESURÉ pendant la passe améliorations : 57 fichiers `.md` à plat pour un
+       * cap de 45 → 12 skills réellement perdus, dont security-audit-owasp, tdd-implement,
+       * perf-budget-check, ux-accessibility-audit. Poids total des 57 = 270 Ko (moyenne 4,7 Ko)
+       * → le cap ne protégeait rien de réel, il amputait Apex. Relevé à 80 (marge ~23 fichiers),
+       * le cap individuel de 200 Ko/fichier reste la vraie protection anti-quota. */
+      const cap = folder === 'skills' ? 80 : 30;
+      const filtered = entries.filter((e) => allowedExt.test(e.name)).slice(0, cap);
       for (const ent of filtered) {
         if (!ent.name || ent.name.startsWith('_')) continue; /* skip _template */
         const content = await fetchRaw(`${folder}/${ent.name}`);

@@ -1,0 +1,652 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <srw:version>1.2</srw:version>
+    <srw:echoedSearchRetrieveRequest>
+        <srw:query>(gallica all "DENTAU")</srw:query>
+        <srw:version>1.2</srw:version>
+    </srw:echoedSearchRetrieveRequest>
+    <srw:numberOfRecords>4338</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;23885&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:records>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>France. Chambre des députés (1876-1942). Auteur du texte</dc:creator>
+                    <dc:date>1876-1942</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : MAEDIGen0</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MAEDI008</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MAEDI012</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MAEDI006</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : MAEDI007</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>Nombre total de vues : 91864</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb435153678/date</dc:identifier>
+                    <dc:identifier>NUMP-11545</dc:identifier>
+                    <dc:identifier>ISSN 25514407</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Impr. de l'Assemblée nationale (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb435153678</dc:relation>
+                    <dc:relation>A pour reproduction : Feuilleton (Chambre des députés. Reproduction numérique) = ISSN 2540-6582 (https://gallica.bnf.fr/ark:/12148/cb435153678/date)</dc:relation>
+                    <dc:source>Bibliothèque et Archives de l'Assemblée nationale, 2013-17796</dc:source>
+                    <dc:title>Feuilleton (Chambre des députés)</dc:title>
+                    <dc:title>Feuilleton / Chambre des députés</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>0</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k6502230v.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb435153678/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6502230v.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k6502230v.medres</medres>
+                <nqamoyen>98.54</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6502230v.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k6502230v</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Henri III (1551-1589 ; roi de France). Auteur du texte</dc:creator>
+                    <dc:creator>France. Auteur du texte</dc:creator>
+                    <dc:date>1582</dc:date>
+                    <dc:description>[Acte royal. 1582-07-10. Fontainebleau]</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>22 p. ; in-8</dc:format>
+                    <dc:format>Nombre total de vues : 26</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k9692356s</dc:identifier>
+                    <dc:identifier>NUMM-9692356</dc:identifier>
+                    <dc:language>frm</dc:language>
+                    <dc:publisher>F. Morel (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb338131549</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, F-46872 (11)</dc:source>
+                    <dc:subject>Clermont-Ferrand -- Grands Jours (Actes royaux)</dc:subject>
+                    <dc:title>Lettres patentes du Roy, pour tenir les Grands Jours en la ville de Clermont en Auvergne, en la présente année 1582, avec l'arrest de la court de parlement de Paris (du 31 juillet 1582), intervenu sur lesdites lettres</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>monographie imprimée</dc:type>
+                    <dc:type>printed monograph</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>1</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k9692356s.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/bpt6k9692356s</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k9692356s.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k9692356s.medres</medres>
+                <nqamoyen>96.79</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k9692356s.thumbnail</thumbnail>
+                <typedoc>monographies</typedoc>
+                <uri>bpt6k9692356s</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1932</dc:date>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32777344f/date</dc:identifier>
+                    <dc:identifier>NUMP-22232</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.?] (Abidjan)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32777344f</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-95616</dc:source>
+                    <dc:title>France-Afrique. Journal quotidien d'information</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>2</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k8671199s.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32777344f/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k8671199s.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k8671199s.medres</medres>
+                <nqamoyen>81.85</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k8671199s.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k8671199s</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1969-1972</dc:date>
+                    <dc:description>Périodicité : Mensuel</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb343492558/date</dc:identifier>
+                    <dc:identifier>NUMP-26242</dc:identifier>
+                    <dc:identifier>ISSN 00368490</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Dunod (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb343492558</dc:relation>
+                    <dc:relation>A pour reproduction : Science progrès découverte (Reproduction numérique) = ISSN 2971-2602 (https://gallica.bnf.fr/ark:/12148/cb343492558/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, 4-R-45</dc:source>
+                    <dc:title>Science progrès découverte : publié avec la participation du Palais de la découverte</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>3</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t51329780p.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb343492558/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t51329780p.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t51329780p.medres</medres>
+                <nqamoyen>89.37</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t51329780p.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t51329780p</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1883-190.</dc:date>
+                    <dc:description>Périodicité : Hebdomadaire</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>Nombre total de vues : 5332</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32875625p/date</dc:identifier>
+                    <dc:identifier>NUMP-6525</dc:identifier>
+                    <dc:identifier>ISSN 29732387</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Tlemcen)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32875625p</dc:relation>
+                    <dc:relation>A pour reproduction : La Tafna (Reproduction numérique) = ISSN 2974-0827 (https://gallica.bnf.fr/ark:/12148/cb32875625p/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-90469</dc:source>
+                    <dc:title>La Tafna : journal de l'arrondissement de Tlemcen, paraissant tous les mercredis</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>4</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k57794743.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32875625p/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k57794743.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k57794743.medres</medres>
+                <nqamoyen>66.33</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k57794743.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k57794743</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1924-1928</dc:date>
+                    <dc:description>Variante(s) de titre : Le Réveil de Beaulieu et du littoral</dc:description>
+                    <dc:description>Périodicité : Hebdomadaire ; irrégulier</dc:description>
+                    <dc:description>Etat de collection : Jusqu'à : 16 juil. 1925 (2e année, n° 71). 10 août 1927-28 avr. 1928 (5e année, n° 77)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG06</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32853923x/date</dc:identifier>
+                    <dc:identifier>NUMP-21277</dc:identifier>
+                    <dc:identifier>ISSN 21367353</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Beaulieu-sur-Mer)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32853923x</dc:relation>
+                    <dc:relation>A pour reproduction : Le Réveil de Beaulieu (Reproduction numérique) = ISSN 2728-266X (https://gallica.bnf.fr/ark:/12148/cb32853923x/date)</dc:relation>
+                    <dc:relation>Première de couverture : 462514</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-20345</dc:source>
+                    <dc:title>Le Réveil de Beaulieu : républicain, politique, littéraire : organe des cantons de Villefranche-sur-Mer et Beausoleil et de la Principauté de Monaco ["puis" économique, politique, mondain]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>5</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k66030062.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32853923x/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k66030062.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k66030062.medres</medres>
+                <nqamoyen>89.18</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k66030062.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k66030062</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Eglise réformée de France Castres. Auteur du texte</dc:creator>
+                    <dc:date>1885-1949</dc:date>
+                    <dc:description>Variante(s) de titre : La Voix du Haut-Languedoc</dc:description>
+                    <dc:description>Périodicité : Bi-mensuel ; mensuel</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG81</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb328909200/date</dc:identifier>
+                    <dc:identifier>NUMP-31627</dc:identifier>
+                    <dc:identifier>ISSN 20187173</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Labuzatié par Viane)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Albi)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Vabre)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Castres)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb328909200</dc:relation>
+                    <dc:source>Archives départementales du Tarn, FOPER 79/1-5</dc:source>
+                    <dc:title>La Voix de la montagne : petite feuille religieuse du Tarn...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>6</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t548284464.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb328909200/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t548284464.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t548284464.medres</medres>
+                <nqamoyen>99.18</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t548284464.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t548284464</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Parti communiste français. Section (Nice). Auteur du texte</dc:creator>
+                    <dc:date>1945-1967</dc:date>
+                    <dc:description>Etat de collection : |12 oct. 1946 [II, n° 766]- n° spéciaux ; 1946-1948, 1951-1953, inc.</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34442303s/date</dc:identifier>
+                    <dc:identifier>NUMP-26518</dc:identifier>
+                    <dc:identifier>ISSN 11537485</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Nice)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34442303s</dc:relation>
+                    <dc:relation>A pour reproduction : Le Patriote de Nice et du Sud-Est (Nice. Reproduction numérique) = ISSN 2999-8050 (https://gallica.bnf.fr/ark:/12148/cb34442303s/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, GR FOL-JO-4299</dc:source>
+                    <dc:title>Le Patriote de Nice et du Sud-Est (Nice)</dc:title>
+                    <dc:title>Le Patriote de Nice et du Sud-Est : grand quotidien d'information de la démocratie</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>7</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t512768288.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34442303s/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t512768288.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t512768288.medres</medres>
+                <nqamoyen>87.44</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t512768288.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t512768288</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1894-1930</dc:date>
+                    <dc:description>Variante(s) de titre : La Vie montpelliéraine et régionale</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG34</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : 3M000</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : 3M019</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32889171n/date</dc:identifier>
+                    <dc:identifier>NUMP-24289</dc:identifier>
+                    <dc:identifier>ISSN 21399700</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Montpellier)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32889171n</dc:relation>
+                    <dc:relation>A pour reproduction : La Vie montpelliéraine (Reproduction numérique) = ISSN 2506-021X (https://ressourcespatrimoines.laregion.fr/ark:/46855/FRB341726101_99005.locale=fr)</dc:relation>
+                    <dc:relation>A pour reproduction : La Vie montpelliéraine (Reproduction numérique) = ISSN 2506-021X (https://memonum-mediatheques.montpellier3m.fr/ark:/12148/cb32889171n/date)</dc:relation>
+                    <dc:relation>A pour reproduction : La Vie montpelliéraine (Reproduction numérique) = ISSN 2506-021X (https://gallica.bnf.fr/ark:/12148/cb32889171n/date)</dc:relation>
+                    <dc:relation>Première de couverture : 228616</dc:relation>
+                    <dc:source>Montpellier Méditerranée Métropole - Médiathèque centrale Emile Zola, 99005</dc:source>
+                    <dc:title>La Vie montpelliéraine : gazette littéraire, théâtrale, humoristique, mondaine</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>8</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k7363300r.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32889171n/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k7363300r.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k7363300r.medres</medres>
+                <nqamoyen>99.09</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k7363300r.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k7363300r</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Consistoire de Saint-Voy (Tence, Haute-Loire). Auteur du texte</dc:creator>
+                    <dc:creator>Fédération protestante du plateau de Haute-Loire et Haute-Ardèche. Auteur du texte</dc:creator>
+                    <dc:date>1909-1948</dc:date>
+                    <dc:description>Variante(s) de titre : L'Écho de la Montagne des églises réformées de la Haute-Loire et Haute-Ardèche</dc:description>
+                    <dc:description>Périodicité : Mensuel</dc:description>
+                    <dc:description>Etat de collection : a. 1, no. 2 (1909, nov.)-a. 26, no. 12 (1934, déc.) ; a.28, no. 3 (1936, mars)-a. 40 (1948) &lt;inc.&gt; + no. spécial</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG43</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG43</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb327605145/date</dc:identifier>
+                    <dc:identifier>NUMP-27763</dc:identifier>
+                    <dc:identifier>ISSN 12501735</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Tence)</dc:publisher>
+                    <dc:publisher>[s.n.][s.n.] (Montbuzat)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb327605145</dc:relation>
+                    <dc:relation>A pour reproduction : L'Écho de la montagne (Tence. 1948. Reproduction numérique) = ISSN 3036-6844 (https://gallica.bnf.fr/ark:/12148/cb327605145/date)</dc:relation>
+                    <dc:relation>Première de couverture : 865174</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-50581</dc:source>
+                    <dc:title>L'Écho de la montagne (Tence. 1909)</dc:title>
+                    <dc:title>L'Écho de la montagne : journal des églises du Consistoire de Saint-Voy</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>9</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k70244529.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb327605145/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k70244529.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k70244529.medres</medres>
+                <nqamoyen>88.12</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k70244529.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k70244529</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1904-1908</dc:date>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG30</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG30</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb410966624/date</dc:identifier>
+                    <dc:identifier>NUMP-28867</dc:identifier>
+                    <dc:identifier>ISSN 20180977</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>oci</dc:language>
+                    <dc:publisher>[s.n.] (Alais)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb410966624</dc:relation>
+                    <dc:relation>A pour reproduction : Le Pays cévenol (Alais. Reproduction numérique) = ISSN 3040-4584 (https://gallica.bnf.fr/ark:/12148/cb410966624/date)</dc:relation>
+                    <dc:relation>Première de couverture : 940020</dc:relation>
+                    <dc:source>CIRDOC - Mediatèca occitana, AB IV</dc:source>
+                    <dc:title>Le Pays cévenol (Alais)</dc:title>
+                    <dc:title>Le Pays cévenol : hebdomadaire littéraire, artistique, félibréen, mutualiste, commercial, industriel et d'annonces</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>10</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t53903542r.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb410966624/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t53903542r.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t53903542r.medres</medres>
+                <nqamoyen>99.64</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t53903542r.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t53903542r</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Renaudin, Émile (1881-1968). Directeur de publication</dc:contributor>
+                    <dc:date>1902-1939</dc:date>
+                    <dc:description>Variante(s) de titre : Le Petit Oranais : quotidien républicain du soir</dc:description>
+                    <dc:description>Périodicité : Paraît 3 fois par semaine ; puis quotidien (1911-)</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32837115n/date</dc:identifier>
+                    <dc:identifier>NUMP-18715</dc:identifier>
+                    <dc:identifier>ISSN 29731429</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Oran)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32837115n</dc:relation>
+                    <dc:relation>A pour reproduction : Le Petit Oranais (Reproduction numérique) = ISSN 2973-9861 (https://gallica.bnf.fr/ark:/12148/cb32837115n/date)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-87832</dc:source>
+                    <dc:title>Le Petit Oranais : petit africain, colon oranais : journal politique, littéraire, mondain, sportif, agricole, commercial et maritime</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>11</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k5011294b.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32837115n/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k5011294b.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k5011294b.medres</medres>
+                <nqamoyen>73.39</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5011294b.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k5011294b</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1882-1918</dc:date>
+                    <dc:description>Variante(s) de titre : Écho de Céret et de l'arrondissement</dc:description>
+                    <dc:description>Variante(s) de titre : L'Écho de Céret</dc:description>
+                    <dc:description>Variante(s) de titre : Écho de Céret &amp; de l'arrondissement : gazette des stations thermales des Pyrénées-Orientales.</dc:description>
+                    <dc:description>Variante(s) de titre : Écho de Céret &amp; de l'arrondissement : journal républicain radical des Pyrénées-Orientales</dc:description>
+                    <dc:description>Périodicité : Hebdomadaire</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG66</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG66</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb327598844/date</dc:identifier>
+                    <dc:identifier>NUMP-27739</dc:identifier>
+                    <dc:identifier>ISSN 2126158X</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Céret)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb327598844</dc:relation>
+                    <dc:relation>A pour reproduction : Écho de Céret &amp; de l'arrondissement (Reproduction numérique) = ISSN 2705-5434 (https://gallica.bnf.fr/ark:/12148/cb327598844/date)</dc:relation>
+                    <dc:relation>Première de couverture : 420292</dc:relation>
+                    <dc:source>Médiathèque de Perpignan, Rpm 329</dc:source>
+                    <dc:title>Écho de Céret &amp; de l'arrondissement : journal républicain hebdomadaire, publiant régulièrement la liste des étrangers d'Amélie-les-Bains &amp; de la Fontaine du Boulou</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>12</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bd6t53726890v.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb327598844/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bd6t53726890v.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bd6t53726890v.medres</medres>
+                <nqamoyen>68.08</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bd6t53726890v.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bd6t53726890v</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1840-1904</dc:date>
+                    <dc:description>Variante(s) de titre : Courrier de Tarn-et-Garonne et Conciliateur</dc:description>
+                    <dc:description>Variante(s) de titre : Le Courrier de Tarn-et-Garonne</dc:description>
+                    <dc:description>Périodicité : Bihebdomadaire ; trihebdomadaire ou quotidien</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG82</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32750811r/date</dc:identifier>
+                    <dc:identifier>NUMP-20378</dc:identifier>
+                    <dc:identifier>ISSN 20168128</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Montauban)</dc:publisher>
+                    <dc:relation>Notice d'ensemble : http://catalogue.bnf.fr/ark:/12148/cb32750811r</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32750811r</dc:relation>
+                    <dc:relation>A pour reproduction : Courrier de Tarn-et-Garonne (Reproduction numérique) = ISSN 2711-631X (https://gallica.bnf.fr/ark:/12148/cb32750811r/date)</dc:relation>
+                    <dc:relation>Première de couverture : 433387</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-951</dc:source>
+                    <dc:title>Courrier de Tarn-et-Garonne : journal politique, littéraire, judiciaire, d'annonces et avis divers ["puis" journal des intérêts conservateurs "puis" journal monarchiste constitutionnel]</dc:title>
+                    <dc:title>Courrier de Tarn-et-Garonne : journal politique, littéraire, judiciaire, d'annonces et avis divers ["puis" journal des intérêts conservateurs "puis" journal monarchiste constitutionnel]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>13</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k60232612.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32750811r/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k60232612.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k60232612.medres</medres>
+                <nqamoyen>85.17</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k60232612.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k60232612</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1876-1922</dc:date>
+                    <dc:description>Périodicité : Hebdomadaire du 1er mai au 31 octobre ; bi-mensuel du 1er novembre au 30 avril</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG31</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG31</dc:description>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32809536k/date</dc:identifier>
+                    <dc:identifier>NUMP-27751</dc:identifier>
+                    <dc:identifier>ISSN 20211058</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Luchon)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32809536k</dc:relation>
+                    <dc:relation>A pour reproduction : Luchon-thermal (Reproduction numérique) = ISSN 3038-4680 (https://gallica.bnf.fr/ark:/12148/cb32809536k/date)</dc:relation>
+                    <dc:relation>Première de couverture : 865191</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Droit, économie, politique, JO-7075</dc:source>
+                    <dc:title>Luchon-thermal : revue hebdomadaire, scientifique et littéraire ["puis" organe de la Reine des Pyrénées ...]</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>14</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k7018245f.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32809536k/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k7018245f.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k7018245f.medres</medres>
+                <nqamoyen>87.56</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k7018245f.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k7018245f</uri>
+            </srw:extraRecordData>
+        </srw:record>
+    </srw:records>
+    <srw:nextRecordPosition>16</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

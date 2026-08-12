@@ -15,6 +15,9 @@
     "chez-lolo.kd-mc.com": { "name": "Chez Lolo", "icon": "🎨" },
     "bot.kd-mc.com": { "name": "Bot Crypto", "icon": "🤖" },
     "beatbot.kd-mc.com": { "name": "PoolPilot", "icon": "🌊" },
-    "autorisations.kd-mc.com": { "name": "Autorisations", "icon": "🆔" }
+    "autorisations.kd-mc.com": { "name": "Autorisations", "icon": "🆔" },
+    "arbre.kd-mc.com": { "name": "Arbre", "icon": "🌳" },
+    "lingua.kd-mc.com": { "name": "Lingua", "icon": "🐝" },
+    "studio.kd-mc.com": { "name": "Créa Studio", "icon": "🎬" }
   }
 }

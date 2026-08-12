@@ -3,6 +3,12 @@
 # Optionnel : CLONE_TOKEN (active l'usage serveur sans navigateur ; sinon browser-only).
 # Anti-spam : pas de cron — dispatch manuel + push sur le dossier du worker.
 name: Deploy KDMC Clone Worker
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # un deploiement ne doit jamais etre coupe en plein vol
+
 
 on:
   workflow_dispatch:
@@ -41,6 +47,9 @@ jobs:
         run: npm i -g wrangler && wrangler --version
 
       - name: Déployer le worker
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
         run: |
           set -e
           wrangler deploy 2>&1 | tee /tmp/deploy.log

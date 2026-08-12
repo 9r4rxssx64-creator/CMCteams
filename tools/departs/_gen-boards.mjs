@@ -99,7 +99,7 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const targets = [
-    { pdf: 'tests/fixtures/aout-2026-v1.pdf', year: 2026, monthIdx: 7 },
+    { pdf: 'tests/fixtures/aout-2026-v2.pdf', year: 2026, monthIdx: 7 },
     { pdf: 'tests/fixtures/juillet-2026-v2.pdf', year: 2026, monthIdx: 6 },
   ];
   const months = [], boards = {}, mirror = {};
@@ -110,6 +110,11 @@ async function main() {
     console.log(r.label + ' : ' + r.teamCount + ' équipes, ' + Object.keys(r.boards).length + ' boards');
   }
   await browser.close();
+  // Filtre anti-dangling : ne garder QUE les miroirs dont les 2 boards existent (une équipe
+  // < 2 personnes n'a pas de board → son entrée miroir pointerait dans le vide → bouton mort).
+  let _dropped = 0;
+  Object.keys(mirror).forEach(k => { if (!boards[k] || !boards[mirror[k]]) { delete mirror[k]; _dropped++; } });
+  if (_dropped) console.log('miroirs dangling retirés: ' + _dropped);
   const payload = { generatedAt: '2026-06-28', months, boards, mirror };
   const js = '/* GÉNÉRÉ par tools/departs/_gen-boards.mjs depuis les vrais PDF (parser géométrique validé). NE PAS éditer à la main. */\n'
     + 'window.DEPARTS_GEN=' + JSON.stringify(payload) + ';\n';

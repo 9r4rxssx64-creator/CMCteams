@@ -1,3 +1,22 @@
+
+## 🕯️ Recherche de décès : elle vit DANS l'arbre (2026-08-06)
+
+La recherche de décès (fichier INSEE, 1970 → aujourd'hui) est une **fonction de l'app arbre
+généalogique** ([arbre.kd-mc.com](https://arbre.kd-mc.com)) : bouton « 🔎 Rechercher un décès »
+(Nom + Prénom, la touche Entrée lance la recherche) + lien « 🕯️ Acte décès » sur les personnes.
+Techniquement elle passe par le domaine lui-même (`arbre.kd-mc.com/__deces`) → aucun blocage,
+**ça marche sur iPhone**.
+
+Un outil séparé (`tools/deces-insee`, moteur DuckDB sur stockage R2) avait aussi été tenté : il a
+été **entièrement supprimé le 2026-08-06** à ta demande (« Oui supprime ») — page + 4 automatisations.
+Les 3 automatisations qui servent l'arbre sont **gardées** : retrouver un acte précis
+(`arbre-find-deces`), vérifier que l'API INSEE répond depuis un navigateur (`deces-cors-check`),
+vérifier le relais en direct (`deces-live-check`).
+
+Il avait existé un sous-domaine séparé `deces.kd-mc.com` : il n'a **jamais été joignable** et a été
+**retiré le 2026-08-06** à ta demande (« Retire dece »). **Ne pas le recréer** — le décès est dans
+l'arbre, c'est sa place.
+
 # NOTES_USER — Informations métier données par l'admin
 
 > **Lecture obligatoire à chaque session.**
@@ -2109,3 +2128,18 @@ déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomencla
   Filtre facture inchangé (PJ + corps). `/health` expose `bf_active/bf_total/bf_remaining`. Prouvé par harness
   (13/13 : lot complet, file pleine, reprise, garde admin, corps capturé). N'écrit jamais tout d'un coup
   (limites CPU Worker) → l'historique se remplit en arrière-plan sur plusieurs lots.
+
+## 🌳 FAMILLE / GÉNÉALOGIE (arbre.kd-mc.com) — vérifié 2026-08-04
+
+- **Nom officiel de Kevin = DESARZENS** ; « de Sarzance » = forme phonétique (à afficher en note, jamais comme nom).
+- **Lignée maternelle (document familial manuscrit = source de vérité)** : Jean-Baptiste MAIFFRET (1815–1903)
+  → Alexandre (1856–1926) → Marius (1890–1968) → Marie-Thérèse MAIFFRET (1914–2000, ×Victor SAUVAIGO 3.05.1939)
+  → Marie-Noël SAUVAIGO (25.09.1950 Monaco) → Kevin (5.02.1979 Monaco) → Ronan. 7 générations, 62 fiches seed.
+- **Côté Desarzens** : Guy → Gérard (1944) + Émile ; Loïc et Yann = fils d'ÉMILE (jamais de Christian) ;
+  Christian = mari de Marie-Brigitte SAUVAIGO, fille unique : Cécile. Origine suisse : village de Sarzens (Vaud).
+- **2 arbres dans l'app** : 🫒 Sauvaigo·Maiffret (fam «o») / 🌳 Desarzens (fam «c») ; «oc» = les deux sangs
+  (Gérard, Kevin, Sabrina, Ronan, Théo). Code famille MAIFFRET.
+- **Bases d'actes** : Monaco archives.mairie.mc (Arkothèque : champ nom = form_rech_12 (≥1900) / r_nom (<1900) ;
+  form_rech_9 = NUMÉRO d'acte, piège) ; AD06 bloqué aux IP datacenter (mur TSPD) — passe depuis l'iPhone de
+  Kevin ; INSEE matchid = 14 actes de décès exacts intégrés aux fiches.
+- Les actes récents sont protégés (loi) : la clé pour remonter côté Desarzens = acte de naissance de Gérard (1944).

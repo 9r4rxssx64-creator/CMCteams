@@ -1,4 +1,4 @@
-const CACHE='cmcteams-v9.873';
+const CACHE='cmcteams-v9.891';
 const ASSETS=['./','/index.html'];
 
 // Install : pré-cache + force activation immédiate
@@ -25,6 +25,19 @@ self.addEventListener('activate',function(e){
 self.addEventListener('fetch',function(e){
   if(e.request.method!=='GET') return;
   var url=e.request.url;
+
+  // v9.884 — NEUTRALISE la requête fantôme /%22.../ (un guillemet parasite `"/"` lu comme URL
+  // par le parseur → GET /%22/%22 → 404 CMCteams, vu par la vérif-reelle). /"/" n'est JAMAIS
+  // une vraie ressource : on répond un GIF transparent 1x1 (200) au lieu de laisser un 404.
+  // Défense en profondeur — les gardes _bgUrlOk/_safeUrl côté app restent la 1re ligne.
+  // Zéro risque : aucune ressource légitime ne contient un guillemet encodé dans son chemin.
+  if(url.indexOf('%22')>=0){
+    e.respondWith(new Response(
+      Uint8Array.from(atob('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='),function(c){return c.charCodeAt(0);}),
+      {status:200,headers:{'content-type':'image/gif','cache-control':'no-store'}}
+    ));
+    return;
+  }
 
   // v9.615 fix Kevin "MAJ auto forcé TOUJOURS tous projets" :
   // Skip SW intercept pour URLs avec ?_v= ou ?_force_upd_ → garantit

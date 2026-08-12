@@ -439,8 +439,8 @@ export async function selfTest(__deps = {}) {
     if (decrypted !== msg) return { ok: false, reason: 'roundtrip-mismatch' };
 
     const exported = await exportPrivateKey(alice.privateKey);
-    const wrapped = await wrapWithPin({ key: exported }, '200807');
-    const unwrapped = await _unwrap(wrapped.ciphertext, wrapped.salt, '200807');
+    const wrapped = await wrapWithPin({ key: exported }, 'autotest-pin-0000');
+    const unwrapped = await _unwrap(wrapped.ciphertext, wrapped.salt, 'autotest-pin-0000');
     if (unwrapped.key !== exported) return { ok: false, reason: 'pin-wrap-mismatch' };
 
     const fp1 = await _fp(alice.publicKey, bob.publicKey);

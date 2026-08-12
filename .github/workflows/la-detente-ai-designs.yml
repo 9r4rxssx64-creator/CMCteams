@@ -1,4 +1,10 @@
 name: La Détente — Designs IA (modèles Kevin → bibliothèque)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 # Génère les designs premium (pistolet+rose, fusils+cœurs, Perazzi+plateaux, crest…)
 # via GEMINI_API_KEY, fond rendu transparent, et pousse sur une branche claude/* (auto-merge).

@@ -1,0 +1,435 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fullText": "Pauline Caroline CARLIN"
+ },
+ "response": {
+  "total": 131481,
+  "maxScoreES": 52.424835,
+  "size": 8,
+  "page": 1,
+  "delay": 139,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1993",
+    "sourceLine": 166666,
+    "scores": {
+     "score": 0,
+     "es": 0.26
+    },
+    "id": "EL2z3dj7lsEK",
+    "name": {
+     "first": [
+      "Caroline",
+      "Louise",
+      "Rose"
+     ],
+     "last": "Carlin"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19031011",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19930313",
+     "certificateId": "01218",
+     "age": 89,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1993",
+    "sourceLine": 166664,
+    "scores": {
+     "score": 0,
+     "es": 0.26
+    },
+    "id": "BPwWbkfJuQaF",
+    "name": {
+     "first": [
+      "Pauline",
+      "Charlotte"
+     ],
+     "last": "Carlin"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19110826",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19930314",
+     "certificateId": "01212",
+     "age": 81,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1995",
+    "sourceLine": 13520,
+    "scores": {
+     "score": 0,
+     "es": 0.24
+    },
+    "id": "JfaZAytJyyQ_",
+    "name": {
+     "first": [
+      "Carolina"
+     ],
+     "last": "Carlin"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19030115",
+     "location": {
+      "city": "Venise",
+      "code": "99127",
+      "codeHistory": "99127",
+      "country": "Italie",
+      "countryCode": "ITA"
+     }
+    },
+    "death": {
+     "date": "19941224",
+     "certificateId": "958",
+     "age": 91,
+     "location": {
+      "city": "Clamart",
+      "code": "92023",
+      "codePostal": [
+       "92140"
+      ],
+      "codeHistory": [
+       "75023",
+       "92023"
+      ],
+      "departmentCode": "92",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 48.7987804,
+      "longitude": 2.2525672
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1980",
+    "sourceLine": 39611,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "zhgm7ua3UaoM",
+    "name": {
+     "first": [
+      "Caroline",
+      "Fortunee"
+     ],
+     "last": "Carvin"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18990907",
+     "location": {
+      "city": "Marseille",
+      "code": "13055",
+      "codeHistory": "13055",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2599669,
+      "longitude": 5.3707409
+     }
+    },
+    "death": {
+     "date": "19800406",
+     "certificateId": "104",
+     "age": 80,
+     "location": {
+      "city": "Bagnols-sur-Cèze",
+      "code": "30028",
+      "codePostal": [
+       "30200"
+      ],
+      "codeHistory": "30028",
+      "departmentCode": "30",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 44.159529,
+      "longitude": 4.6236948
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2002",
+    "sourceLine": 73069,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "L-zKsP9OHNhI",
+    "name": {
+     "first": [
+      "Caroline",
+      "Josephine"
+     ],
+     "last": "Carlini"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19091002",
+     "location": {
+      "city": "Stevi Casana Bnaida",
+      "code": "99127",
+      "codeHistory": "99127",
+      "country": "Italie",
+      "countryCode": "ITA"
+     }
+    },
+    "death": {
+     "date": "20020121",
+     "certificateId": "25",
+     "age": 92,
+     "location": {
+      "city": "Saint-Laurent-du-Var",
+      "code": "06123",
+      "codePostal": [
+       "06700"
+      ],
+      "codeHistory": "06123",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6780224,
+      "longitude": 7.1791754
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1984",
+    "sourceLine": 72178,
+    "scores": {
+     "score": 0,
+     "es": 0.2
+    },
+    "id": "MyWVoj-wrafG",
+    "name": {
+     "first": [
+      "Pauline"
+     ],
+     "last": "Carlini"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "18990327",
+     "location": {
+      "city": "Ersa",
+      "code": "20107",
+      "codePostal": [
+       "20275"
+      ],
+      "codeHistory": [
+       "20107",
+       "2B107"
+      ],
+      "departmentCode": "20",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 42.9931948,
+      "longitude": 9.3823571
+     }
+    },
+    "death": {
+     "date": "19840613",
+     "certificateId": "S4 3/270",
+     "age": 85,
+     "location": {
+      "city": "Marseille",
+      "code": "13055",
+      "codeHistory": "13055",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2599669,
+      "longitude": 5.3707409
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1985",
+    "sourceLine": 357646,
+    "scores": {
+     "score": 0,
+     "es": 0.19
+    },
+    "id": "9SCn9xTNxOyN",
+    "name": {
+     "first": [
+      "Adrienne"
+     ],
+     "last": "Carolin"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19161015",
+     "location": {
+      "city": "Beaufort",
+      "code": "73034",
+      "codePostal": [
+       "73270"
+      ],
+      "codeHistory": "73034",
+      "departmentCode": "73",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.6885055,
+      "longitude": 6.6065751
+     }
+    },
+    "death": {
+     "date": "19850221",
+     "certificateId": "45",
+     "age": 68,
+     "location": {
+      "city": "Albertville",
+      "code": "73011",
+      "codePostal": [
+       "73200"
+      ],
+      "codeHistory": [
+       "73011",
+       "73279"
+      ],
+      "departmentCode": "73",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 45.6729964,
+      "longitude": 6.4024506
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2000",
+    "sourceLine": 447452,
+    "scores": {
+     "score": 0,
+     "es": 0.19
+    },
+    "id": "bf3_d2WL7TIc",
+    "name": {
+     "first": [
+      "Samson"
+     ],
+     "last": "Carolin"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19100728",
+     "location": {
+      "city": "Le Lamentin",
+      "code": "97213",
+      "codePostal": [
+       "97232"
+      ],
+      "codeHistory": "97213",
+      "departmentCode": "972",
+      "country": "France, Martinique",
+      "countryCode": "FRA",
+      "latitude": 14.6210198,
+      "longitude": -61.001754
+     }
+    },
+    "death": {
+     "date": "20000915",
+     "certificateId": "000000282",
+     "age": 90,
+     "location": {
+      "city": "Le Lamentin",
+      "code": "97213",
+      "codePostal": [
+       "97232"
+      ],
+      "codeHistory": "97213",
+      "departmentCode": "972",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 14.6210198,
+      "longitude": -61.001754
+     }
+    }
+   }
+  ]
+ }
+}

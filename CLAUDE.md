@@ -289,7 +289,19 @@ f) **`untrust` explicite au logout** : `localStorage.removeItem('<projet>_device
 - **Apex v13.4.263** : `services/auth/auth.ts` (await trustCurrentDevice +
   loginTrusted) + `features/landing/index.ts` (tryAutoLogin avec auto-recovery
   pour TOUS users)
+- **Arbre v2.56** (2026-08-04) : `arbre/index.html` boot — le trust persistant
+  `localStorage.arbre_trust==="1"` SEUL suffit à auto-entrer (le flag de session
+  est re-semé) ; le code n'est redemandé qu'après déconnexion explicite (🔒).
+  **Anti-pattern corrigé** : conditionner l'auto-login à `sessionStorage` =
+  code redemandé à CHAQUE réouverture d'app (sessionStorage s'efface à la
+  fermeture) — INTERDIT.
 - À auditer / aligner : CMCteams, Apex Chat, e-KDMC, Télécommande, CrackPass.
+
+### 6. RENFORCEMENT Kevin 2026-08-04 — « Pour toutes les app toujours. Note le »
+
+Cette règle s'applique à CHAQUE app existante ET future, sans exception, dès sa
+1ʳᵉ version. Toute nouvelle app avec code/PIN/lockscreen DOIT livrer le trust
+persistant (localStorage) dès le départ — jamais « on l'ajoutera après ».
 
 ---
 
@@ -358,7 +370,7 @@ Dès que Kevin dit « fais l'audit », « audit », « audite X », « fais ton 
 — quel que soit le projet — déclencher l'audit le PLUS COMPLET, jamais une
 version partielle ou rapide.
 
-### Les 10 axes obligatoires d'un audit complet (aucun ne doit manquer)
+### Les 11 axes obligatoires d'un audit complet (aucun ne doit manquer)
 
 0. **LIVE RÉEL** (axe n°1, exécuté sur le vrai domaine — cf. « PASSE LIVE RÉELLE »
    ci-dessous) : chaque surface kd-mc.com chargée dans un vrai navigateur (via CI,
@@ -383,6 +395,11 @@ version partielle ou rapide.
 6. **Sécurité** — XSS, secrets exposés, CSP, guards admin, auth. **→ exécuter la PASSE SÉCU scan-and-fix (arsenal + passe vérifiée) ET appliquer les correctifs sûrs** (cf. section dédiée ci-dessous — lire le code ne suffit pas).
 7. **Performance** — bundle, LCP/INP/CLS, intervals zombies, memory leaks.
 8. **UX / accessibilité** — touch targets ≥44px, contraste, aria, mobile 375px.
+9. **AMÉLIORATIONS (full)** — pas ce qui est cassé : ce qui MARCHE mais peut être
+   MEILLEUR. Code mort/non-câblé, doublons, dette chiffrée, fuites, couverture,
+   dépendances en retard, features à pousser plus loin. **→ exécuter la PASSE
+   AMÉLIORATIONS TOTALES** (`npm run audit:improvements`, cf. section dédiée) —
+   un audit qui ne sort que des bugs laisse l'app stagner.
 
 ### 🔬 PASSE DE STABILITÉ MESURÉE — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-06-08, ABSOLUE)
 
@@ -524,6 +541,55 @@ L'axe Sécurité ne se contente PLUS de « lire le code » : à CHAQUE « fais l
 4. **Rejouable + Apex** : `/scan-and-fix` (Claude Code) et `/scanfix` (Apex, dispatch `security-suite`). Apex SCANNE (`/audit` → `ax_security_last`) ; les CORRECTIONS vérifiées sont appliquées par Claude Code — JAMAIS de patch aveugle depuis un bot CI (règle never-break).
 5. **Règle de complétude** : tant que le scan (CI + passe vérifiée) n'a pas tourné ET que les correctifs sûrs ne sont pas appliqués + prouvés + mergés (propagation vérifiée sur `main`), l'axe Sécurité reste « lecture seule » = incomplet.
 
+### 🚀 PASSE AMÉLIORATIONS TOTALES (« full améliorations ») — OBLIGATOIRE À CHAQUE AUDIT (Kevin 2026-08-09, ABSOLUE)
+
+> **« Intègre dans "fais ton audit" une audit de full améliorations. »** — Kevin 2026-08-09
+
+Les 8 premiers axes cherchent ce qui est **CASSÉ**. Celui-ci cherche ce qui **MARCHE mais peut
+être MEILLEUR**, et le **CHIFFRE**. Sans lui, l'audit est un contrôle qualité : l'app ne régresse
+pas, mais elle **stagne** — ce qui contredit « TOUT AU MAX » et « va plus loin sans qu'on te le
+demande ». Un audit sans passe améliorations est **incomplet**.
+
+1. **OUTIL CÂBLÉ — à lancer à CHAQUE audit** (jamais « à l'œil ») :
+   ```bash
+   npm run audit:improvements     # mesure + backlog classé (offline)
+   npm run audit:improvements -- --deps   # + paquets en retard / vulnérabilités (CI, réseau)
+   npm run audit:all              # stabilité + améliorations d'un coup
+   ```
+   Mesure réellement : **code déclaré jamais appelé** (erreur #28 Declaration ≠ Deployment, vues
+   inatteignables incluses) · **fonctions définies 2×** (la 2ᵉ écrase la 1ʳᵉ en silence) · **dette
+   chiffrée** (poids fichier, `style=` en dur, `innerHTML` sans `esc()`, TODO, `console.log`) ·
+   **fuites** (`setInterval` sans `clearInterval`, écouteurs jamais retirés) · **couverture des
+   vues** par les tests · **dépendances**.
+
+2. **RATCHET, jamais de faux rouge** : la dette existante est figée dans
+   `tools/audit/improvements-baseline.json`. L'outil échoue **UNIQUEMENT si un compteur AUGMENTE**
+   → le NOUVEAU code est bloqué sans allumer un rouge permanent sur l'ancien. Re-figer
+   volontairement : `--update-baseline` (et dire pourquoi dans le commit).
+
+3. **TRIAGE OBLIGATOIRE avant d'agir** (règle #83/#131) : un compteur n'est pas un bug. Vérifier
+   chaque ligne du backlog avant de toucher au code. *Vécu le 2026-08-09* : le compteur « vues non
+   testées » annonçait **85/102** — faux : le smoke `render-views` liste les routes en minuscules
+   (`'accueil'`), pas les noms de fonctions (`vAccueil`). Après correction : **41**. Une mesure
+   fausse est pire que pas de mesure.
+
+4. **Le backlog est CLASSÉ et CHIFFRÉ** : chaque entrée = `[P0-P3] titre · mesure réelle · action`.
+   Jamais « il faudrait améliorer X » sans le nombre. Les P0/P1 se corrigent dans la foulée de
+   l'audit, les P2/P3 sont consignés (`audit/03-FINDINGS.md`).
+
+5. **Veille / aller plus loin** (complète la règle « TOUT AU MAX ») : la passe inclut la question
+   *« existe-t-il aujourd'hui mieux que ce qu'on utilise ? »* — modèles IA, libs, API Web. Toute
+   piste doit être **mesurée ou marquée 🔴 non mesuré**, jamais supposée.
+
+6. **Garde CI** : `npm run test:improvements-guard` (câblé dans `test:ci`) vérifie que l'outil
+   existe, tourne, que le ratchet tient, que la règle est déclarée ici, et que **Apex a la même
+   passe** (parité). *Raison d'être : une règle qui ne vit que dans les dossiers finit par être
+   sautée — c'est exactement comme ça que la parité Apex a été manquée le 2026-08-09.*
+
+7. **Test mental** : *« Est-ce que je sors de cet audit avec une liste CHIFFRÉE de ce qui peut
+   devenir meilleur, ou seulement avec des bugs corrigés ? Si l'app ne progresse pas après mon
+   audit, je n'ai fait qu'un contrôle technique. »*
+
 ### Autonome + mesuré
 
 - Audit lancé en autonomie totale, multi-subagents en parallèle si besoin.
@@ -533,6 +599,7 @@ L'axe Sécurité ne se contente PLUS de « lire le code » : à CHAQUE « fais l
 - **Passe LIVE réelle exécutée (audit-live.yml + e2e dédiés)** — sinon audit incomplet.
 - **Second avis INDÉPENDANT (non-Claude) obtenu + trié** (Qodo PR-Agent / CodeRabbit / SonarCloud) — sinon audit biaisé/incomplet.
 - **Passe SÉCU scan-and-fix exécutée (security-suite + strix + passe VÉRIFIÉE) ET correctifs sûrs appliqués + prouvés + mergés** — sinon axe sécurité incomplet.
+- **Passe AMÉLIORATIONS TOTALES exécutée (`npm run audit:improvements`) + backlog chiffré et trié** — sinon l'audit constate mais ne fait pas progresser = incomplet.
 
 ### Intégration Apex
 
@@ -543,7 +610,9 @@ en continu avec les autres axes.
 
 ### Test mental obligatoire
 
-> *"Mon audit couvre-t-il les 10 axes ? **Ai-je CHARGÉ les vraies pages dans un
+> *"Mon audit couvre-t-il les 11 axes ? **Ai-je lancé la PASSE AMÉLIORATIONS TOTALES
+> (`npm run audit:improvements`) et est-ce que je sors avec un backlog CHIFFRÉ de ce qui
+> peut devenir meilleur — ou seulement avec des bugs corrigés ? Ai-je CHARGÉ les vraies pages dans un
 > navigateur (passe LIVE via CI) et complété un achat/message de test sur le vrai
 > domaine, ou seulement LU le code ? Ai-je un SECOND AVIS INDÉPENDANT (non-Claude —
 > Qodo/CodeRabbit/Sonar) sur les mêmes changements, ou est-ce moi qui relis mon
@@ -9441,6 +9510,48 @@ A verifier a chaque audit (axRunAudit, subagent audit).
 
 ---
 
+## 🌐 RÈGLE ABSOLUE — ADMIN UNIVERSEL DU DOMAINE VIA SSO CENTRAL + RECONNU AUTO POUR TOUS (Kevin 2026-08-09, ABSOLUE)
+
+> **« Intègre mon compte admin d'office. Connexion domaine identique et universelle pour moi. Admin partout auto reconnu. Auto reconnu pour tous. »** — Kevin 2026-08-09
+
+**Règle absolue, NON-NÉGOCIABLE, chapeaute « RECONNAISSANCE AUTO APRÈS 1ʳᵉ CONNEXION » + « FACEID » + « JAMAIS DEMANDER UN CLIC »** — toutes les surfaces du domaine kd-mc.com (boutiques, outils, Créa Studio/Famille, Départs, CMCteams, Apex, futures apps).
+
+### 1. UNE seule autorité admin pour TOUT le domaine : le SSO central
+
+L'admin d'une app se décide **UNIQUEMENT** en demandant au domaine, jamais avec un code/PIN propre à l'app :
+```
+GET https://kd-mc.com/__sso/whoami   (même origine → chemin relatif "/__sso/whoami" ; sinon header Authorization: Bearer <pass>)
+→ { ok, uid, name, verified, admin }
+admin = ( uid ∈ ADMIN_UIDS ['kdmc_admin','kevin-desarzens'] ) ET verified===true
+```
+- **Sécurité NON-NÉGOCIABLE** : admin EXIGE `verified===true` (Face ID / passkey prouvé). **JAMAIS** le nom seul (un homonyme « Desarzens » ne devient pas admin — leçon #99/#166). Pattern de référence : `services/kdmc-balances/src/index.js` (fetch whoami + exige `j.admin && j.verified`) ; routeur `services/kdmc-router/worker.js:779`.
+- **INTERDIT** : créer un nouveau secret/PIN admin **par app** (ex : le `CREA_FAMILLE_ADMIN_CODE` demandé à tort le 2026-08-09 → rendu inutile par le SSO). Un code/PIN local ne reste **QUE** comme repli anti-lock-out (SSO injoignable), jamais comme porte principale.
+
+### 2. Le CLIENT transmet le pass, sinon le SSO ne sert à rien
+
+Toute page qui appelle un **worker d'une autre origine** (workers.dev) DOIT transmettre le pass du domaine : `headers.Authorization = 'Bearer ' + localStorage['kdmc_sso_token']` (jeton capté depuis `#kdmc_sso=` au retour du portail, ou cookie `.kd-mc.com` en même-origine). Le worker le reforwarde à `/__sso/whoami`. Sans ça, le chemin admin du worker est du **code mort** (cas Créa Famille worker↔client, corrigé 2026-08-09).
+
+### 3. Reconnu AUTO pour TOUS (pas que l'admin)
+
+Au boot, chaque app lit `/__sso/whoami` : si le domaine renvoie un `name` (2 tokens), on **entre sans redemander** (prénom+nom déjà prouvés ailleurs) — `loginDomaine(name, admin)` (réf `tools/crea-studio/index.html`). L'admin (Kevin) passe admin d'office ; un membre normal entre en lecture/usage normal. **Fail-open** : SSO muet → on garde la connexion locale (jamais de blocage).
+
+### 4. Fail-open obligatoire (jamais de régression)
+
+L'appel `/__sso/whoami` est TOUJOURS en `try/catch` : autre origine, hors-ligne, 404 → on retombe silencieusement sur le PIN/mot de passe local existant. Ajouter le SSO ne doit JAMAIS pouvoir casser une app (règle « JAMAIS RÉGRESSER »).
+
+### 5. État (audit 2026-08-09) — branché / à brancher
+
+- 🟢 **Déjà universel** : `shops/dashboard`, `shops/chez-lolo`, `shops/sourcing`, `kdmc-balances`, routeur, CMCteams (`index.html` pont auto-login admin SSO), **+ (2026-08-09)** Créa Famille (worker `estAdminSSO` + client `Fam.api` Bearer), **4 boutiques partagées** (`shops/_shared/kdmc-shop-admin.js` → `ssoAutoAdmin`), **Départs** (`tools/departs/index.html` → `_depSsoAutoAdmin`), crea-studio (admin auto via `loginDomaine`).
+- 🔴 **Reste à brancher** (suivi) : `tools/approvals` (passkey WebAuthn local propre → fédérer), `apex-ai-v13` (admin `id==='kdmc_admin'` local, whoami réduit au heartbeat → décider sur `j.admin&&j.verified`), `crypto-bot-dashboard` (retirer le `/__admin/login` local, garder SSO). Retrait des PIN de secours = durcissement optionnel (ne pas casser l'anti-lock-out).
+
+### 6. Test mental obligatoire avant chaque app avec notion d'admin
+
+> *« L'admin de cette app se décide-t-il via `/__sso/whoami` (verified+uid connu), OU via un secret/PIN propre à l'app ? Si secret propre → le remplacer par le SSO central (PIN en repli seulement). Le client transmet-il bien le pass au worker ? L'appel est-il en try/catch (fail-open) ? Kevin, reconnu par son domaine, est-il admin ICI sans rien retaper ? »*
+
+S'applique : tout le domaine kd-mc.com (priorité absolue), tous projets futurs.
+
+---
+
 ## 🆔 RÈGLE ABSOLUE — FACEID/TOUCHID DANS TOUS LES PROJETS (Kevin 2026-05-22, ABSOLUE)
 
 > **"FaceID dans tous les projets note le et fais le un après l'autre."** — Kevin 2026-05-22
@@ -9561,7 +9672,7 @@ CMCteams, tous workflows GitHub Actions, tous projets futurs.
 
 ---
 
-> 📖 Leçons #90-154 : voir **[LESSONS.md](LESSONS.md)** (archivées pour alléger le contexte, règle conso Kevin 2026-07).
+> 📖 Leçons #90-172 : voir **[LESSONS.md](LESSONS.md)** (archivées pour alléger le contexte, règle conso Kevin 2026-07).
 
 
 ---
@@ -9635,3 +9746,69 @@ Si deux solutions atteignent le même résultat, choisir celle qui coûte le moi
 > *« Combien de clics je fais faire à Kevin dans cette réponse ? Chacun est-il VRAIMENT impossible à automatiser/contourner de mon côté (login tiers/KYC/CB/signature) ? Si un seul pouvait être évité par un de mes outils ou un outil à créer → je le fais AVANT d'envoyer. »*
 
 S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses tools), CMCteams, tous projets présents et futurs.
+
+---
+
+## 🧰 RÈGLE — BOÎTE À OUTILS AGENTS : 6 DÉPÔTS DE RÉFÉRENCE (Kevin 2026-08-06)
+
+> **« Récupère et installe tout ça pour toi et Apex et utilise. Note tout. »** — Kevin 2026-08-06 (tableau « Une Notion = Un Projet »)
+
+6 dépôts installés **des deux côtés** (Claude Code + Apex), à utiliser par réflexe :
+
+| Notion | Dépôt | Réflexe |
+|---|---|---|
+| Ingénieur | `anthropics/skills` | avant d'écrire un `SKILL.md` |
+| Mémoire | `garrytan/gbrain` | avant de toucher à la mémoire d'agent (comparer à `tools/memory`) |
+| Design | `bergside/awesome-design-skills` | avant toute maquette → choisir une direction **nommée** (anti-design-d'IA-générique) |
+| Économie de jetons | `rtk-ai/rtk` | commande bavarde. Gain réel mesuré ~3,7 %, pas 60-90 % → ne pas survendre |
+| Entreprise | `codejunkie99/meridian-company-os` | piloter humains + agents dans une console (inspiration admin kd-mc.com) |
+| LLM gratuit | `free-llm-api-resources` | forfait épuisé → repli **en fin** de chaîne (Anthropic reste l'IA principale) |
+
+- Contenu vendorisé : `vendor/agent-toolkit/<id>/` + `MANIFEST.json` (SHA + licence). Mise à jour : workflow `agent-toolkit-sync.yml` (bouton + cron mensuel).
+- Mode d'emploi détaillé : `.claude/skills/agent-toolkit/SKILL.md`. Côté Apex : catalogue plugins, tag `agent-toolkit`.
+- **Interdits** : vendoriser un binaire ou un script exécutable tiers ; installer un hook tiers qui réécrit **toutes** mes commandes (PROTECTION ≠ STABILITÉ).
+- **Ajouter une source** = l'ajouter dans `tools/agent-toolkit/sources.json` **ET** dans le catalogue Apex, dans le même commit (le test de parité vérifie que les URLs correspondent).
+
+### Skills « domaine » à ouvrir par réflexe
+- **`.claude/skills/verif-reelle/`** — **vérifier POUR DE VRAI** (vraies pages kd-mc.com, vrai navigateur, **connecté en tant que Kevin**, captures d'écran) via le workflow `verif-reelle.yml`. **Interdit d'affirmer qu'une page/donnée marche sans l'avoir vue** (leçons #131/#135). Périmètre kd-mc.com uniquement, code admin par secret CI jamais journalisé, lecture seule, session **nommée** (pas « admin prouvé » Face ID) — le dire.
+- **`.claude/skills/domain-journal/`** — « Qui se connecte » (admin.kd-mc.com) : source unique des connexions = le routeur (KV `ACCOUNTS`), règle **un compte par personne** (fusion datée, identité stricte prénom+nom), robots exclus, vie privée (métadonnées seulement). À lire AVANT de toucher aux comptes, fiches, connexions ou à `kdmc-router` (leçons #164 et #166).
+- **Décès = dans l'arbre** (`arbre.kd-mc.com/__deces`), jamais un sous-domaine : `deces.kd-mc.com` a été retiré le 2026-08-06, ne pas le recréer (cf. NOTES_USER.md).
+
+---
+
+## 🕵️ RÈGLE ABSOLUE — VÉRITÉ, RIEN DE FAUX, PARTOUT TOUJOURS (Kevin 2026-08-09, MAÎTRESSE)
+
+> **« Étend vérité, rien de faux, partout toujours »** — Kevin 2026-08-09.
+
+**Règle absolue, NON-NÉGOCIABLE, chapeaute « JAMAIS HALLUCINER / reproduction identique » et « second avis indépendant »** — Lingua (référence), Apex, CMCteams, tous projets présents et futurs qui produisent du CONTENU (traductions, explications, corrections, réponses de quiz, faits, données affichées).
+
+### 1. Aucun contenu FAUX ne doit jamais être publié — nulle part, jamais
+
+Tout contenu généré (par une IA, un parser, un import, un humain) qui peut être VRAI ou FAUX doit passer une **porte de vérité** avant d'être publié : traduction correcte, réponse de quiz réellement juste, explication non hallucinée, donnée fidèle à la source. Mieux vaut ne rien publier que publier un faux (cf. bug « hen→poule », « Presque ! » sur une réponse fausse).
+
+### 2. Deux niveaux obligatoires, l'un déterministe, l'autre indépendant
+
+- **STRUCTURE (déterministe, 0 clé, tourne À CHAQUE changement)** : parité (toutes les langues/champs présents et non vides), bornes (index de bonne réponse valide), 0 doublon, 0 repli silencieux. **Le build ÉCHOUE** si un faux structurel apparaît. Réf Lingua : `tools/lingua/verify-truth.mjs --struct` câblé dans `.github/workflows/lingua-truth.yml`.
+- **SENS (second modèle INDÉPENDANT, ≠ celui qui a produit)** : juge les traductions / réponses / faits. **Bloque** le NOUVEAU contenu douteux (ex : moteur d'histoires Lingua `grow-content.mjs` → rejet silencieux si le juge trouve une erreur dure). Pour le contenu DÉJÀ en place → audit consultatif périodique (`--semantic`, rapport `audit/*-verite.md`) : **on signale, on ne supprime pas à l'aveugle** (un juge IA peut se tromper → vérifier avant d'agir, règle #59/#83).
+
+### 3. « Partout toujours »
+
+Chaque feature qui produit du contenu doit livrer sa porte de vérité DANS le même commit (jamais « on vérifiera après »), et la faire tourner **en continu** (garde CI à chaque changement + audit périodique). S'applique aussi aux explications/corrections de l'IA (Apex, coach Lingua) : un system prompt qui produit des faits doit interdire l'invention et, quand c'est vérifiable, être audité.
+
+### 4. Distinguer FAUX (à bloquer) de STYLE (toléré)
+
+La porte bloque les vraies erreurs (sens, genre, accord, orthographe, réponse fausse, fait inventé) et **tolère** les simples préférences de style (« moins naturel »). Ne jamais bloquer/éditer du contenu CORRECT sous prétexte de style.
+
+### 5. Test mental obligatoire avant chaque livraison de contenu
+
+> *« Ce contenu peut-il être FAUX ? Si oui, ai-je une porte de vérité (structure déterministe + second avis indépendant) qui l'empêche de partir, et qui tourne en permanence ? Si non → l'ajouter AVANT de publier. »*
+
+S'applique : Lingua (référence livrée), Apex, CMCteams, tous projets présents et futurs.
+
+140. **VÉRIF DÉPARTS « pour tout le monde » = la table SEQ des tests doit couvrir TOUTES les tailles réelles (2-13), sinon les grandes équipes sont SILENCIEUSEMENT SAUTÉES ; + PRT « Prêt » GARDE son numéro de départ (CMCteams, Kevin 2026-07-10 « vérifie que l'algo soit bien respecté pour tout le monde, chaque personne de chaque équipe, pareil pour les horaires »)** — Demande de VÉRIFICATION (pas de fix). Résultat mesuré sur la vraie page light (navigateur réel) : (a) le glissement +1 est respecté pour **CHAQUE personne de CHAQUE équipe** ; (b) chaque jour, les numéros sont une **permutation propre** (0 doublon, ∈ SEQ_N) ; (c) un numéro n'apparaît **que sur un jour travaillé** (horaires). **GAP DE COUVERTURE TROUVÉ** : `verify-real-departs-render.mjs` (et mon 1er check) avaient une table `SEQS` s'arrêtant à **7**, alors que l'app en définit jusqu'à **13** (`getSeqForSize`). Conséquence : `seqNof` renvoyait `null` pour les jours à 8-13 présents → ces jours (grandes équipes CMC Éq.9/10/13…) étaient **sautés sans erreur** = fausse impression de « tout vérifié ». Fix : table `SEQS` des tests = **miroir exact** de celle d'`index.html` (2-13) → contrôles de glissement **6683 → 8403** (+1720 réels sur les grandes équipes), toujours 0 anomalie. **HORAIRES / PRT** : mon check a d'abord flaggé 24 « numéro sur jour non travaillé » = tous des jours **PRT** (« Prêt », mis à disposition d'un autre service). Faux positif : la page (`isWork`, tools/departs) traite **PRT comme du travail** (il n'est PAS dans la liste d'exclusion, contrairement à RRT). **Décision métier Kevin (AskUserQuestion, il tranche — zone flip-flop #104-121) : « garde son numéro »** → une personne en Prêt RESTE comptée dans la rotation de son équipe et garde son numéro de départ. Comportement actuel CORRECT, 0 changement de code. **GUARD PERMANENT ajouté** : `tests/verify-departs-integrity.mjs` (câblé `test:departs-integrity` dans `test:ci`) — vraie page, toutes équipes, tous jours : 0 doublon + numéros ∈ SEQ (table 2-13) + numéro uniquement sur jour `isWork` (PRT=travail, miroir exact du `isWork` de la page). Mesuré : 81 équipes, 502 personnes, 1683 jours-équipe, 15562 contrôles horaires, 0 violation. **OBLIGATIONS** : (1) tout test de propriété sur les départs DOIT porter une table SEQ couvrant la taille MAX réelle (13) — une table tronquée SAUTE en silence les grandes équipes (variante #103 « faux vert » : ne rien vérifier ≠ vérifier OK) ; comparer la table du test à `SEQS` d'index.html à chaque évolution ; (2) `isWork` d'un test départs doit être le MIROIR EXACT de celui de la page (PRT compte comme travail, RRT non) — sinon faux positifs/négatifs sur les horaires ; (3) une règle métier ambiguë sur les départs (PRT compté ou non) se tranche avec Kevin, jamais deviné (renforce #112/#138). ✅(vérifié : 8403 glissements + 15562 horaires, 0 anomalie ; PRT confirmé « garde son numéro » par Kevin) ⚠️ SUITE en #141 : ce contrôle « +1 par cycle » PASSAIT pour le glissement de #138 MAIS ne testait PAS qu'une personne ne répète pas un numéro rapproché dans le mois — Kevin l'a signalé juste après (« même départ plusieurs fois, la suite pas respectée ») → voir #141.
+
+141. **DÉPARTS — le « glissement » de #138 remettait la rotation à ZÉRO à chaque repos → même numéro répété à 1-2 jours ; la VRAIE règle = rotation CONTINUE rot=wi (parcourir la suite dans l'ordre) — réconcilie #111+#138+#140 (CMCteams v9.887/light v1.33, Kevin 2026-07-10 « certaines personnes ont le même départ plusieurs fois dans le mois, la suite n'est pas respectée pour tout le monde »)** — Après #140 (« algo respecté » sous le glissement), Kevin signale que des gens répètent un numéro de façon rapprochée. **MESURE (vraie page, avant fix)** : 501/502 personnes (100 %) répètent — donc PAS un bug par-personne, c'est le MODÈLE. DESARZENS K mesuré = `1-4-2-4-2-3-5-1-2-3-5-…` : `4-2` puis `4-2`, le `2` revient au bout de 2 jours. **CAUSE RACINE** : le glissement de #138 (`rot = index_cycle + position_dans_le_cycle`) **remet rot à 0 à chaque cycle de repos** ; comme les cycles de repos sont plus COURTS que la taille d'équipe (5), la suite `1-4-2-3-5` ne se termine jamais dans l'ordre → un numéro revient avant la fin de la suite. **FIX** : retour à la rotation CONTINUE `rot = wi` (index du jour dans les jours de travail d'équipe, +1 par jour SANS reset au repos) — c'est ce que l'app faisait AVANT #138. DESARZENS devient `1-4-2-3-5-1-4-2-3-5-…` : la suite dans l'ordre, jamais 2× le même avant d'avoir fini les 5. **RÉCONCILIATION des 3 demandes (mon #138 était une MAUVAISE interprétation de « ma ligne glisse »)** : rot=wi (a) #111 « chaque chef fait le tour, pas bloqué » ✓ ; (b) #138 « ma ligne glisse 5164→… » ✓ — la fenêtre glisse bien de +1, mais PAR JOUR (continu), pas par cycle ; (c) #140/aujourd'hui « suite respectée, pas de répétition rapprochée » ✓. Le « glissement par cycle » ne satisfaisait que (b) mal compris et cassait (a)+(c). **PREUVE DISCRIMINANTE (obligation #138-2)** : sur le vrai motif de repos de DESARZENS, rot=wi → 0 anomalie « +1 dans la suite », ancien rot=cycle+pos → 5 anomalies (et reproduit EXACTEMENT la ligne cassée mesurée). Tests mis à jour pour encoder la règle CONTINUE (`verify-real-departs-render.mjs` : entre 2 jours de travail d'équipe consécutifs, à effectif présent identique, l'index SEQ avance de +1 pour CHAQUE présent → 8537 contrôles 0 anomalie ; `runtime-audit-departs-algo.mjs` : `rot=wi`, app==page 0 écart, congruence mod N cohérente). app==light vérifié. **OBLIGATIONS** : (1) « la suite respectée » = chaque personne parcourt SEQ_N DANS L'ORDRE (rot continu +1/jour), jamais 2× le même numéro avant d'avoir bouclé la suite — un reset de rotation au repos casse ça dès que le cycle de repos < taille d'équipe ; (2) « ma ligne glisse » de Kevin = fenêtre qui avance de +1 PAR JOUR (continu), PAS un reset par cycle — ne plus confondre (c'était l'erreur #138) ; (3) un test « +1 » sur les départs doit contrôler des jours de travail d'équipe CONSÉCUTIFS (entrées consécutives de workDays, à travers les repos), pas seulement dans un cycle — sinon il rate la répétition rapprochée que Kevin voit ; (4) mesurer « combien de gens répètent » AVANT de conclure : 100 % = modèle, quelques-uns = bug par-personne (ici 100 % → modèle). ✅(DESARZENS 1-4-2-3-5 propre, 8537 contrôles 0 anomalie, discriminant prouvé, app==light)
+
+142. **UN TEST « app == light » NE PEUT PAS ATTRAPER UN BUG OÙ LES DEUX SE TROMPENT PAREIL — auditer le CONTENU de la règle, pas seulement l'égalité des deux surfaces (CMCteams v9.889 / light v1.35, ultra-review Kevin 2026-08-10 « ultra review de fonctionnalité indépendant… d'amélioration et de performance »)** — Contexte : `test:departs-compare` (app ⇄ light, tous les boards) affichait fièrement **0 écart**, et `test:departs-integrity` **15 252 contrôles horaires 0 violation**. Pourtant une revue indépendante a trouvé un **vrai bug sur les données réelles d'août** : la rotation des départs demande « cette personne est-elle à la table ce jour-là ? » via une liste de codes d'absence, et cette liste **oubliait CLM** (congé mariage) **des DEUX côtés**. Mesuré : **EL MISSOURI O** (Août, BJ Éq.10) en CLM les **jours 21-24** recevait quand même les numéros **1, 4, 2, 3** comme s'il était à la table → parce qu'il occupait une place, ses **4 collègues avaient de faux numéros ces 4 jours (20 cellules)**. Le test comparatif était aveugle : les deux surfaces se trompaient **à l'identique**. Le comble : CLM est déjà classé absence PARTOUT ailleurs dans l'app (`_CMC_ABS_LIEU` l.1454, `ABS` l.24630) et un commentaire (l.43031) rappelait même un ancien « décalage par CLM » (v9.770) — seule la rotation l'ignorait. **DEUXIÈME divergence trouvée (latente)** : l'app comptait **DEPL/DEP/SS** comme du TRAVAIL, la page light comme une ABSENCE → dès qu'un chef porterait un de ces codes, TOUTE l'équipe aurait des numéros différents app vs page (0 cas en juillet/août → invisible, piège dormant). **DÉCISION KEVIN 2026-08-10 (« B »)** : DEPL/DEP/SS = **TRAVAIL, ils GARDENT leur numéro**, même logique que PRT — c’est l’APP qui avait raison, la page light a été alignée sur elle (v1.36). Règle métier qui unifie tout : **« rattaché à l’équipe → garde sa place dans la rotation ; seuls les vrais congés/arrêts la libèrent »** (PRT / DEPL / DEP / SS gardent leur numéro · RH / R / CP / M / AF / CLM… la libèrent). **FIX** : un prédicat de rotation dédié `isWorkDep`/`DEP_ABS` (liste = anciennes absences + CLM ; PRT/DEPL/DEP/SS volontairement ABSENTS), miroir exact des deux côtés. **VOLONTAIREMENT SÉPARÉ du `isWork()` global** (76 usages : heures, couleurs, compteurs, « qui travaille aujourd'hui ») — le modifier globalement aurait changé les heures et les couleurs = régression hors sujet ; ici on ne change QUE les numéros de départ. **PREUVE** : impact mesuré AVANT/APRÈS sur les vraies cellules (j21 SIRIO 3→4, MATTONE 5→2, MERLINO 4→3, COURTIN 2→1, EL MISSOURI 1→—), puis vérifié en vrai navigateur que **app == light sur chaque cellule** ; 4671 cellules 0 écart (`departs-algo`), 15 252 contrôles horaires 0 violation, 95/95 vues, 99 boutons, import 280/0. **GARDE PERMANENTE** : `tests/departs-abs-parity.test.mjs` (câblé `test:ci`) — parité stricte des 2 listes + contenu figé (CLM présent ; PRT/DEPL/DEP/SS absents = ils gardent leur numéro) + `calcDepPos` doit utiliser `isWorkDep` et PAS le `isWork` global ; **prouvée discriminante** par sabotage (retirer CLM → 2 échecs ; remettre le `isWork` global → 1 échec ; restauré → 14/0). **OBLIGATIONS** : (0) une divergence entre 2 surfaces sur une RÈGLE MÉTIER se tranche PAR KEVIN, jamais par moi : ici j'avais aligné l'app sur la page (DEPL = absence) alors que Kevin voulait l'inverse (« B » : DEPL garde son numéro) — poser la question en A/B explicite, appliquer sa réponse, et FIGER la décision dans la garde pour qu'elle ne reparte jamais en arrière ; (1) quand deux surfaces implémentent la même règle métier, un test d'ÉGALITÉ ne suffit JAMAIS — il faut aussi une garde sur le CONTENU de la règle (liste figée, cas connus), sinon une erreur commune passe en vert éternellement ; (2) une liste de codes métier dupliquée doit être déclarée en constante nommée des deux côtés + garde de parité dans le MÊME commit, jamais en littéral noyé dans une expression ; (3) avant de « corriger » un prédicat partagé, MESURER son rayon d'impact (`grep -c`) : `isWork` = 76 usages → créer un prédicat dédié plutôt que modifier le global (jamais régresser) ; (4) un test de non-régression qui ré-implémente l'algorithme (`runtime-audit-departs-algo`) doit utiliser le MÊME prédicat que le code de prod, sinon il devient périmé et crie au faux bug (vécu : 11 faux écarts après le fix). ✅(20 cellules d'août corrigées, app==light prouvé cellule par cellule, garde discriminante câblée)
+
+143. **TROIS FUITES DE PERFORMANCE MESURÉES ET CORRIGÉES — horloge 1 s permanente, rendu complet à chaque lettre tapée, écran blanc total si un fichier de données manque (CMCteams v9.889 / light v1.35, ultra-review 2026-08-10)** — Trouvées par revues indépendantes + `audit:improvements` (chiffres réels, jamais estimés). (a) **BATTERIE** : `setInterval(simTick,1000)` posé **inconditionnellement au chargement** → le téléphone était réveillé **chaque seconde, 24h/24**, juste pour tester un drapeau `SIM_STATE.active` faux 99,9 % du temps. Fix : la minuterie démarre/s'arrête AVEC la simulation (`_simSyncTimer` appelé dans `simStart`/`simStop`). **Mesuré en vrai navigateur : 0 minuterie ≤ 1 s au boot (avant : 1), la plus courte passe à 5 s.** (b) **FLUIDITÉ** : `searchInput` appelait `dc()` (reconstruction COMPLÈTE : barre + contenu + navigation) **à chaque caractère**, sur ~20 champs → frappe saccadée sur iPhone. Fix : temporisation 150 ms (schéma déjà éprouvé de `chatDmSearch`), `A[key]` mis à jour immédiatement (0 retard sur la donnée), curseur replacé à sa **position réelle** (`selectionStart`) au lieu d'être forcé en fin de champ. **Mesuré : 8 frappes rapides → 0 rendu pendant la frappe puis 1 seul après (avant : 8).** (c) **FIABILITÉ** : sur la page light, si `boards-gen.js` échouait (404/réseau), `DEPARTS_GEN` absent → `applyBoards` vidait `BOARDS` → `defaultBoard()` undefined → `load()` plantait, **exception NON attrapée au niveau de l'init** → tout le script s'arrêtait : **écran BLANC**, même l'écran de connexion et le chat disparaissaient. Fix : init dans `try/catch` + message clair en français + bouton Rafraîchir 44px. **Mesuré en simulant un vrai 404 : 755 caractères affichés au lieu d'une page vide, message + bouton présents, écran de connexion toujours vivant.** **OBLIGATIONS** : (1) une minuterie qui ne sert que dans un mode précis se démarre/arrête AVEC ce mode — jamais posée « au cas où » au chargement (test mental : « combien de fois par minute je réveille l'iPhone de Kevin pour rien ? ») ; (2) tout `oninput` qui déclenche un rendu global doit être temporisé, et restaurer le curseur à `selectionStart` (pas en fin de champ, sinon on casse l'édition au milieu d'un mot) ; (3) **toute séquence d'initialisation d'une page autonome doit être dans un `try/catch` avec un message visible** : une page qui dépend d'un fichier externe DOIT survivre à son absence (sinon un simple 404 = employé devant un écran blanc, sans même pouvoir se connecter) ; (4) ces 3 bugs étaient invisibles pour les tests fonctionnels (tout passait au vert) — seules la mesure runtime (compteurs de minuteries/rendus) et la simulation de panne les révèlent. ✅(0 minuterie 1 s, 8 frappes → 1 rendu, 404 simulé → message clair ; stabilité 0 FAIL, 95/95 vues, 99 boutons, 0 erreur JS)

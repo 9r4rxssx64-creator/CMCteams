@@ -1,4 +1,10 @@
 name: KDMC — Déploie le routeur de domaine kd-mc.com (autonome)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # un deploiement ne doit jamais etre coupe en plein vol
+
 
 # Déploie le worker "kdmc-router" (reverse-proxy belles adresses + SSO + admin).
 # Provisionne le KV ACCOUNTS (registre fiches clients) et injecte le secret SSO.
@@ -24,6 +30,16 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
 
+      # Garde BLOQUANTE : on ne déploie pas un routeur dont la voix ou le repli sont cassés.
+      # Ces deux tests tournent hors ligne (fetch simulé) → rapides, sans clé, sans réseau.
+      - name: Tests du worker (voix Lingua + voix clonée d'Antonin)
+        working-directory: services/kdmc-router
+        shell: bash -eo pipefail {0}
+        run: |
+          node voix-tts.test.mjs
+          node antonin-tts.test.mjs
+          node ../../tools/lingua/verify-coach.mjs
+
       - name: Install wrangler
         run: npm i -g wrangler@3
 
@@ -37,6 +53,9 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
         run: |
           set -e
           echo "Deploy kdmc-router…"
@@ -125,16 +144,92 @@ jobs:
             echo "::warning::RAILWAY_TOKEN absent → tableau de bord bot en railway_token_absent (fail-open)."
           fi
 
+      - name: OpenAI — clé pour la voix naturelle KDMC Lingua (/__lingua/tts, fail-open si absente)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OPENAI_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+        run: |
+          if [ -n "${OPENAI_KEY:-}" ]; then
+            printf '%s' "$OPENAI_KEY" | wrangler secret put OPEN_AI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::OPEN_AI_API_KEY non posée (voix Lingua en repli navigateur)"
+          else
+            echo "::warning::OPEN_AI_API_KEY absente → voix Lingua en repli navigateur (Web Speech)."
+          fi
+
+      - name: Replicate — clé pour la voix clonée d'Antonin (/__lingua/tts?v=antonin, fail-open si absente)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
+        run: |
+          if [ -n "${REPLICATE_KEY:-}" ]; then
+            printf '%s' "$REPLICATE_KEY" | wrangler secret put AX_REPLICATE_KEY 2>&1 | tail -2 \
+              || echo "::warning::AX_REPLICATE_KEY non posée (voix Antonin en repli onyx)"
+          else
+            echo "::warning::AX_REPLICATE_KEY absente → voix Antonin en repli onyx (fail-open)."
+          fi
+
+      - name: Groq + Mistral + Gemini — clés pour le Coach IA KDMC Lingua (/__lingua/ai, fail-open si absentes)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GROQ_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -n "${GROQ_KEY:-}" ]; then
+            printf '%s' "$GROQ_KEY" | wrangler secret put GROQ_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GROQ_API_KEY non posée (Coach IA en repli Mistral/Gemini/hors-ligne)"
+          else
+            echo "::warning::GROQ_API_KEY absente → Coach IA tentera Mistral puis Gemini."
+          fi
+          if [ -n "${MISTRAL_KEY:-}" ]; then
+            printf '%s' "$MISTRAL_KEY" | wrangler secret put MISTRAL_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::MISTRAL_API_KEY non posée (repli Mistral indisponible)"
+          else
+            echo "::warning::MISTRAL_API_KEY absente → pas de repli Mistral pour le Coach IA."
+          fi
+          if [ -n "${GEMINI_KEY:-}" ]; then
+            printf '%s' "$GEMINI_KEY" | wrangler secret put GEMINI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GEMINI_API_KEY non posée (dernier repli Coach IA indisponible)"
+          else
+            echo "::warning::GEMINI_API_KEY absente → pas de dernier repli Gemini pour le Coach IA."
+          fi
+
       - name: Health check des belles adresses
         run: |
           for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \
                    apex-chat.kd-mc.com la-detente.kd-mc.com chez-lolo.kd-mc.com \
                    dashboard.kd-mc.com sourcing.kd-mc.com coffre.kd-mc.com bot.kd-mc.com \
-                   departs.kd-mc.com cmcteams-light.kd-mc.com; do
+                   departs.kd-mc.com cmcteams-light.kd-mc.com \
+                   autorisations.kd-mc.com arbre.kd-mc.com lingua.kd-mc.com \
+                   studio.kd-mc.com; do
             echo "== https://$H =="
             curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
               || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"
           done
+          echo "== CONTENU studio.kd-mc.com (l'app se charge-t-elle vraiment ?) =="
+          curl -fsS -m 20 -L "https://studio.kd-mc.com/" 2>/dev/null | grep -o "Créa Studio" | head -1 \
+            && echo "  ✅ l'app Créa Studio est bien servie sur le domaine" \
+            || echo "  ::warning:: studio.kd-mc.com ne renvoie pas encore l'app (cert/DNS en cours, ou routage à vérifier)"
+          echo "== VOIX KDMC Lingua (/__lingua/tts) — vraie voix naturelle OU repli navigateur ? =="
+          CT=$(curl -fsS -m 25 -o /dev/null -w "%{content_type}" "https://lingua.kd-mc.com/__lingua/tts?v=nova&t=bonjour" 2>/dev/null || echo "erreur")
+          echo "  content-type=$CT"
+          case "$CT" in
+            audio/*) echo "  ✅ VOIX NATURELLE OpenAI ACTIVE côté serveur (un vrai audio est servi)";;
+            *) echo "  ::warning:: /__lingua/tts NE renvoie PAS d'audio (=$CT) → l'app retombe sur la voix du navigateur (robotique). Cause probable : OPEN_AI_API_KEY absente/invalide/quota. Vérifier le secret GitHub OPEN_AI_API_KEY.";;
+          esac
+          echo "== VOIX D'ANTONIN (/__lingua/tts?v=antonin) — clone Replicate OU repli onyx ? =="
+          CTA=$(curl -fsS -m 60 -o /dev/null -w "%{content_type}" "https://lingua.kd-mc.com/__lingua/tts?v=antonin&t=Adiou%20c%27est%20Antonin" 2>/dev/null || echo "erreur")
+          echo "  content-type=$CTA"
+          case "$CTA" in
+            audio/*) echo "  ✅ la voix d'Antonin répond en audio (clone Replicate ou repli onyx — les deux servent un mp3)";;
+            *) echo "  ::warning:: v=antonin ne renvoie pas d'audio (=$CTA) — vérifier AX_REPLICATE_KEY et OPEN_AI_API_KEY.";;
+          esac
 
       - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
         # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,

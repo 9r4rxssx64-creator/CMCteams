@@ -21,7 +21,9 @@
  */
 
 import { logger } from '../../core/logger.js';
+import { PROXY_PROVIDERS } from '../integrations/apex-secrets-proxy-client.js';
 import { consumptionMonitor } from '../observability/consumption-monitor.js';
+
 
 export type ProviderId = 'anthropic' | 'openai' | 'groq' | 'gemini' | 'openrouter' | 'deepseek' | 'cohere' | 'mistral' | 'perplexity';
 
@@ -38,7 +40,12 @@ export type TaskDomain =
   | 'summary' /* Résumé court */
   | 'creative'; /* Écriture créative */
 
-export type RoutingMode = 'auto' | 'economy' | 'premium' | 'forced';
+/* v13.4.362 (Kevin « Privilégie les IA gratuites suivant les questions ») :
+ * 'free-smart' = par DÉFAUT pour l'admin. Questions SIMPLES (traduction, résumé,
+ * rapidité, chat général, vision) → IA GRATUITE d'abord (Gemini/Groq/OpenRouter).
+ * Questions COMPLEXES (code, raisonnement, admin, créatif, long contexte) → Anthropic.
+ * Anthropic reste en fallback partout → une panne Anthropic ne bloque plus rien. */
+export type RoutingMode = 'auto' | 'economy' | 'premium' | 'forced' | 'free-smart';
 
 export interface RoutingDecision {
   primary: ProviderId;
@@ -75,6 +82,21 @@ const DOMAIN_PREFERENCES: Record<TaskDomain, readonly ProviderId[]> = {
 
 const FREE_PROVIDERS: readonly ProviderId[] = ['groq', 'gemini', 'openrouter'];
 
+/* v13.4.362 — Providers IA servis par le proxy Cloudflare (clé côté serveur).
+ * Quand le proxy est actif (défaut), ces providers sont DISPONIBLES même sans
+ * clé locale `ax_*_key` → indispensable pour que free-smart route vraiment vers
+ * Gemini/Groq. Source unique = PROXY_PROVIDERS du client proxy. */
+const PROXIED_AI: ReadonlySet<ProviderId> = new Set(
+  (PROXY_PROVIDERS as readonly string[]).filter(
+    (p): p is ProviderId => (['anthropic', 'openai', 'groq', 'gemini', 'deepseek', 'cohere', 'mistral', 'perplexity'] as string[]).includes(p),
+  ),
+);
+
+/* v13.4.362 — Domaines "simples" où une IA GRATUITE suffit (mode free-smart).
+ * Les autres (code, reasoning, admin, creative, long_context, search) gardent
+ * Anthropic/spécialisé en primaire pour la qualité. */
+const SIMPLE_FREE_DOMAINS: readonly TaskDomain[] = ['translation', 'summary', 'speed', 'general', 'vision'];
+
 /* Coûts indicatifs €/1M tokens (avg in/out) */
 const COST_PER_M_TOKENS_EUR: Record<ProviderId, number> = {
   anthropic: 8.0,    /* Sonnet 4.6 */
@@ -104,6 +126,29 @@ class AIRoutingPolicy {
     /* Mode premium : Anthropic Opus toujours */
     if (mode === 'premium') {
       return this.buildDecision('anthropic', domain, estimatedTokens, 'Premium mode (Anthropic always)');
+    }
+
+    /* Mode free-smart (Kevin « privilégie les IA gratuites suivant les questions ») :
+     * questions SIMPLES → IA gratuite d'abord ; questions COMPLEXES → Anthropic.
+     * Anthropic (et les payants du domaine) restent en fallback → 0 blocage si panne. */
+    if (mode === 'free-smart') {
+      if (SIMPLE_FREE_DOMAINS.includes(domain)) {
+        /* Prend le 1er provider gratuit du domaine, sinon n'importe quel gratuit dispo. */
+        const prefs = DOMAIN_PREFERENCES[domain];
+        const freeInDomain = prefs.find((p) => FREE_PROVIDERS.includes(p) && this.hasKey(p))
+          ?? FREE_PROVIDERS.find((p) => this.hasKey(p));
+        if (freeInDomain) {
+          return this.buildDecision(freeInDomain, domain, estimatedTokens,
+            `Free-smart : question simple (${domain}) → ${freeInDomain} (gratuit)`);
+        }
+        /* aucun gratuit configuré → domaine normal (Anthropic) */
+      }
+      /* Domaine complexe (code/reasoning/admin/creative/long_context/search) OU
+       * pas de gratuit → primaire du domaine (Anthropic-first), free en fallback. */
+      const prefs = DOMAIN_PREFERENCES[domain];
+      const primary = prefs.find((p) => this.hasKey(p)) ?? 'anthropic';
+      return this.buildDecision(primary, domain, estimatedTokens,
+        `Free-smart : question ${domain} → ${primary} (qualité)`);
     }
 
     /* Mode economy : free first systématique */
@@ -183,7 +228,7 @@ class AIRoutingPolicy {
   getMode(): RoutingMode {
     try {
       const m = localStorage.getItem('apex_v13_routing_mode');
-      const valid = m === 'auto' || m === 'economy' || m === 'premium' || m === 'forced';
+      const valid = m === 'auto' || m === 'economy' || m === 'premium' || m === 'forced' || m === 'free-smart';
       const isAdmin = localStorage.getItem('apex_v13_uid') === 'kdmc_admin';
       /* v13.4.338 (Kevin « toujours openai » MALGRÉ le fix v337) : cause racine =
        * un mode stocké 'economy' posé AUTOMATIQUEMENT par apex-self-audit
@@ -201,9 +246,13 @@ class AIRoutingPolicy {
         if (!isAdmin) return m;
         const explicit = localStorage.getItem('apex_v13_routing_mode_explicit') === '1';
         if (explicit) return m;
-        /* admin + mode stocké NON explicite → ignoré, on tombe sur premium */
+        /* admin + mode stocké NON explicite → ignoré, on tombe sur le défaut admin */
       }
-      if (isAdmin) return 'premium';
+      /* v13.4.362 (Kevin « Privilégie les IA gratuites suivant les questions ») :
+       * défaut admin = 'free-smart' (gratuit pour les questions simples, Anthropic
+       * pour les complexes) au lieu de 'premium' (Anthropic toujours). Kevin peut
+       * toujours forcer 'premium' explicitement via ⚡ (respecté, cf. leçon #124). */
+      if (isAdmin) return 'free-smart';
     } catch {
       /* ignore */
     }
@@ -277,8 +326,12 @@ class AIRoutingPolicy {
     free_providers_available: readonly ProviderId[];
     paid_providers_available: readonly ProviderId[];
   } {
-    const free = FREE_PROVIDERS.filter((p) => this.hasKey(p));
-    const paid = (['anthropic', 'openai', 'deepseek', 'cohere', 'mistral', 'perplexity'] as ProviderId[]).filter((p) => this.hasKey(p));
+    /* v13.4.362 : getStatus reflète les clés LOCALES réellement stockées (comme avant) —
+     * l'apex-self-audit v13.4.340 s'appuie dessus + son PROPRE test proxy. La voie proxy
+     * est gérée à part (routing hasKey proxy-aware). Ne PAS rendre getStatus proxy-aware
+     * (sinon le finding « aucun provider » ne sort jamais → next_steps vides). */
+    const free = FREE_PROVIDERS.filter((p) => this.hasLocalKey(p));
+    const paid = (['anthropic', 'openai', 'deepseek', 'cohere', 'mistral', 'perplexity'] as ProviderId[]).filter((p) => this.hasLocalKey(p));
     const anthropicStatus = consumptionMonitor.getServiceStatus('anthropic');
     return {
       mode: this.getMode(),
@@ -294,28 +347,28 @@ class AIRoutingPolicy {
    */
   recommendActions(): readonly { priority: 'high' | 'medium' | 'low'; action: string; url?: string }[] {
     const recos: Array<{ priority: 'high' | 'medium' | 'low'; action: string; url?: string }> = [];
-    if (!this.hasKey('anthropic')) {
+    if (!this.hasLocalKey('anthropic')) {
       recos.push({
         priority: 'high',
         action: 'Configurer Anthropic (priorité absolue Kevin)',
         url: 'https://console.anthropic.com/settings/keys',
       });
     }
-    if (!this.hasKey('groq')) {
+    if (!this.hasLocalKey('groq')) {
       recos.push({
         priority: 'high',
         action: 'Inscription Groq (gratuit + 500 tok/sec rapide)',
         url: 'https://console.groq.com/keys',
       });
     }
-    if (!this.hasKey('gemini')) {
+    if (!this.hasLocalKey('gemini')) {
       recos.push({
         priority: 'high',
         action: 'Inscription Gemini (gratuit 1M tokens/jour)',
         url: 'https://aistudio.google.com/app/apikey',
       });
     }
-    if (!this.hasKey('openrouter')) {
+    if (!this.hasLocalKey('openrouter')) {
       recos.push({
         priority: 'medium',
         action: 'Inscription OpenRouter (failover universel free Llama/Mixtral)',
@@ -325,7 +378,30 @@ class AIRoutingPolicy {
     return recos;
   }
 
+  /** Proxy Cloudflare actif ? (défaut true — flag `apex_v13_use_secrets_proxy`). */
+  private proxyActive(): boolean {
+    try {
+      const f = localStorage.getItem('apex_v13_use_secrets_proxy');
+      return f !== 'false' && f !== '0';
+    } catch {
+      return true;
+    }
+  }
+
   private hasKey(provider: ProviderId): boolean {
+    try {
+      /* v13.4.362 : proxy actif → provider proxié dispo côté serveur (clé serveur),
+       * même sans clé locale. Sinon on retombe sur la clé locale legacy `ax_*_key`. */
+      if (this.proxyActive() && PROXIED_AI.has(provider)) return true;
+      return this.hasLocalKey(provider);
+    } catch {
+      return false;
+    }
+  }
+
+  /** Clé LOCALE réellement stockée (indépendant du proxy). Sert aux recommandations
+   * de config : proposer d'ajouter une clé locale = backup si le proxy tombe. */
+  private hasLocalKey(provider: ProviderId): boolean {
     try {
       const raw = localStorage.getItem(`ax_${provider}_key`);
       return raw !== null && raw.length > 0;

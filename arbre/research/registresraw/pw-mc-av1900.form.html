@@ -1,0 +1,25 @@
+<form action="/arkotheque/consult_fonds/annotation.php" method="POST" name="form1">
+                        <input type="hidden" name="action" value="">
+                        <input type="hidden" name="todo" value="">
+                        <input type="hidden" name="ref_fonds" value="1">
+                        <input type="hidden" name="autre_champ" value="">
+                                                <div class="champ_formulaire"><label>Nom</label><input type="text" id="r_nom" name="r_nom" value="" class="moyen"></div><div class="champ_formulaire"><label>Prénom</label><input type="text" id="r_prenom" name="r_prenom" value="" class="moyen"></div><div class="champ_formulaire"><label>date</label><span class="texte_intervalle" style="visibility: hidden;">De&nbsp;</span><input class="trescourt" type="text" id="id_r_annot_date_jj_debut" value="" placeholder="jour" name="r_annot_date_jj_debut"><input class="trescourt" type="text" value="" placeholder="mois" name="r_annot_date_mm_debut"><input class="trescourt" type="text" value="" placeholder="année" name="r_annot_date_yyyy_debut"><span class="texte_intervalle" style="visibility: hidden;">à </span><div id="id_r_annot_date" class="intervalle_fin_conteneur" style="display: none;"><input class="trescourt" type="text" value="" placeholder="jour" name="r_annot_date_jj_fin"><input class="trescourt" type="text" value="" placeholder="mois" name="r_annot_date_mm_fin"><input class="trescourt" type="text" value="" placeholder="année" name="r_annot_date_yyyy_fin"></div><a href="Javascript:;" id="date_id_r_annot_date" class="btn_intervalle options_cache"><span>Intervalle</span></a><script type="text/javascript">
+                        $(function(){
+                            $(".texte_intervalle").css("visibility","hidden");
+                            $(".intervalle_fin_conteneur").css("display","inline").hide();
+                            $("#date_id_r_annot_date").on("click",function(){
+                                if($(this).hasClass("options_cache")) {
+                                    $("#id_r_annot_date").fadeIn();
+                                    $(".texte_intervalle",$(this).parents(".champ_formulaire")).css("visibility","visible");
+                                }
+                                else {
+                                    $("#id_r_annot_date").fadeOut();
+                                    $(".texte_intervalle",$(this).parents(".champ_formulaire")).css("visibility","hidden");
+                                }
+                                $(this).toggleClass("options_cache");
+                            });
+                        });
+                        </script></div>
+                        <div class="bouton"><a href="javascript:Valider('rechercher_all','');" class="rechercher" title="Rechercher"><span>Consulter toutes les annotations</span></a>&nbsp;&nbsp;                            <a href="javascript:Valider('rechercher','');" class="rechercher" title="Rechercher"><span>Rechercher</span></a>
+                        </div>
+                    </form>
