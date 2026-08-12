@@ -5002,6 +5002,15 @@ LANGS2.forEach(function(l){ var w2=LEX2ROU[l]||{}; Object.keys(w2).forEach(funct
 
 var TLANGS = LANGS.concat(LANGS2); /* toutes les langues (traducteur / dictionnaire) */
 
+
+/* Vague de vocabulaire « Verbes de tous les jours 🏃 » — chaque traduction validée par un modèle indépendant. */
+CURRICULUM.push({t:"Verbes de tous les jours 🏃", c:"#12b981", L:[
+  {t:"Partie 1", w:["démêler","dégivrer","recoller","enrouler","déplier","décrocher","déverrouiller"]},
+  {t:"Partie 2", w:["déchirer"]}
+]});
+var _VOC = {"démêler":{"en":"untangle","it":"sciogliere","es":"desenredar","de":"entwirren","pt":"desembaraçar","nl":"ontwarren","pl":"rozplątywać","ru":"расчёсывать","uk":"розпутувати","cs":"rozčesat","zh":"梳理","ja":"解く","ko":"빗다","ar":"فك"},"dégivrer":{"en":"defrost","it":"sbrinare","es":"descongelar","de":"enteisen","pt":"desgelar","nl":"ontdooien","pl":"odmrażać","ru":"размораживать","uk":"відлигувати","cs":"odmrazit","zh":"除霜","ja":"霜を取る","ko":"서리를 제거하다","ar":"إزالة الجليد"},"recoller":{"en":"stick back","it":"riattaccare","es":"pegar","de":"zukleben","pt":"colar novamente","nl":"weer vastplakken","pl":"przyklejać","ru":"приклеивать","uk":"переклеювати","cs":"přilepit","zh":"粘回","ja":"貼り直す","ko":"붙이다","ar":"اللصق"},"enrouler":{"en":"roll up","it":"arrotolare","es":"enrollar","de":"aufrollen","pt":"enrolar","nl":"oprollen","pl":"nawijać","ru":"сворачивать","uk":"завивати","cs":"svinout","zh":"卷起","ja":"巻く","ko":"감다","ar":"لف"},"déplier":{"en":"unfold","it":"spiegare","es":"desdoblar","de":"aufklappen","pt":"desdobrar","nl":"openvouwen","pl":"rozkładać","ru":"разворачивать","uk":"розкривати","cs":"rozložit","zh":"展开","ja":"広げる","ko":"펼치다","ar":"توسيع"},"décrocher":{"en":"unhook","it":"staccare","es":"descolgar","de":"abhängen","pt":"desenganchar","nl":"afhalen","pl":"odczepiać","ru":"снимать","uk":"зніматися","cs":"sejmout","zh":"取下","ja":"外す","ko":"내리다","ar":"نزع"},"déverrouiller":{"en":"unlock","it":"sbloccare","es":"desbloquear","de":"entriegeln","pt":"destrancar","nl":"ontgrendelen","pl":"odblokowywać","ru":"отпирать","uk":"відмикати","cs":"odemknout","zh":"解锁","ja":"鍵を開ける","ko":"잠금을 풀다","ar":"فتح القفل"},"déchirer":{"en":"tear","it":"strappare","es":"rasgar","de":"zerreißen","pt":"rasgar","nl":"scheuren","pl":"drzeć","ru":"рвать","uk":"розривати","cs":"roztrhnout","zh":"撕裂","ja":"破る","ko":"찢다","ar":"تمزق"}};
+LANGS.forEach(function(l){ Object.keys(_VOC).forEach(function(k){ if(_VOC[k][l]) LEX[l][k]=_VOC[k][l]; }); });
+LANGS2.forEach(function(l){ LEX2[l]=LEX2[l]||{}; Object.keys(_VOC).forEach(function(k){ if(_VOC[k][l]) LEX2[l][k]=_VOC[k][l]; }); });
 /*__VOCAB_AUTO__ : les vagues de vocabulaire s'inserent ICI (ne pas retirer ce repere).
    IMPERATIF : AVANT la generation de COURSES ci-dessous. Une unite poussee APRES est
    dans CURRICULUM mais ABSENTE des cours -> invisible dans l'app (vu le 2026-08-11 :
@@ -5360,5 +5369,6 @@ var VERBES_FR = [
   "vendre","venir","verrouiller","verser","vider","visiter",
   "visser","voir","voler","voter","vouloir","voyager",
   "diminuer","paraître",
-  "s'étirer","bâiller","cligner","hoqueter","renifler","transpirer","trébucher","s'accroupir","se pencher","soupirer","murmurer","bredouiller","bégayer","siffloter","fredonner","grignoter","déguster"
+  "s'étirer","bâiller","cligner","hoqueter","renifler","transpirer","trébucher","s'accroupir","se pencher","soupirer","murmurer","bredouiller","bégayer","siffloter","fredonner","grignoter","déguster",
+  "démêler","dégivrer","recoller","enrouler","déplier","décrocher","déverrouiller","déchirer"
 ];
