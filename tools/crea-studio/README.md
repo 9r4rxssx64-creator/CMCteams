@@ -42,6 +42,15 @@ Comme **Viggle / Kling / Hailuo** : tu mets **une photo**, l'app génère une **
 - Génération asynchrone (≈ 1 à 3 min), aperçu auto, **Enregistrer / Partager** / **Regénérer**.
 - 100 % serveur (ta clé Replicate), modèles image→vidéo `minimax/video-01-live` & `video-01`.
 
+### 🧑‍🎤 Mini-moi — ta version numérique qui parle *(comme l'AI Avatar de CapCut)*
+Reverse-engineering de la fonction **AI Avatar / avatar parlant** de CapCut, refaite pour tourner **dans ton téléphone** :
+- Tu mets **une photo de ton visage** (ou tu te prends en photo).
+- Tu **écris** ce qu'il doit dire → **Voix IA** le lit, **ou** tu **enregistres ta propre voix**, **ou** tu importes un fichier audio.
+- L'app fabrique une **petite vidéo où toi tu parles** : la **bouche suit le volume réel de la voix**, avec un léger « vivant » (respiration, micro-balancement, zoom lent).
+- **Formats** Story 9:16 / Carré / Paysage · **Sous-titres karaoké** (le mot dit passe en or) · **repérage auto du visage** (touche la bouche pour la replacer).
+- **⚡ Rapide** = 100 % hors-ligne (aucune clé, aucun réseau). **💎 Bouche IA** = poses de bouche plus réalistes via le worker, avec **repli automatique** sur le mode hors-ligne — **l'app marche toujours**.
+- Chaque mini-moi est **enregistré tout seul** dans « Mes créas » + **Enregistrer / Partager**.
+
 ### 🤖 IA (qualité pro) — nouveau
 Branchée sur un **worker serveur sécurisé** (ta clé Replicate reste côté serveur, jamais exposée). Repli automatique sur la version hors-ligne si l'IA n'est pas joignable — **l'app marche toujours**.
 - **🤖 Détourage IA** — isole automatiquement le sujet (personne / objet), fond transparent parfait (bien mieux que la gomme couleur).
