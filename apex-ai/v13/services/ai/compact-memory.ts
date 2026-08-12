@@ -10,8 +10,12 @@
  * FAIL-OPEN total : JSON absent/KO → Apex marche comme avant. Cache localStorage 6 h.
  */
 
-const RAW_URL =
-  'https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/tools/memory/apex-memory.json';
+/* Chemin dans le dépôt — l'adresse réelle est décidée par
+   services/integrations/depot-github (lecture publique aujourd'hui, relais
+   le jour où le dépôt passera en privé). */
+const CHEMIN_MEMOIRE = 'tools/memory/apex-memory.json';
+import { lireFichier as lireFichierDepot } from '../integrations/depot-github.js';
+
 const CACHE_KEY = 'apex_v13_compact_mem_cache';
 const FLAG = 'apex_v13_compact_mem';
 const TTL = 6 * 60 * 60 * 1000;
@@ -81,11 +85,9 @@ async function load(): Promise<MemItem[]> {
     }
   } catch { /* ignore */ }
   try {
-    const r = await fetch(RAW_URL + '?_=' + Math.floor(Date.now() / TTL), {
-      signal: AbortSignal.timeout(4000),
-    });
-    if (!r.ok) return [];
-    const items = (await r.json()) as MemItem[];
+    const brut = await lireFichierDepot(CHEMIN_MEMOIRE, { timeoutMs: 4000 });
+    if (brut === null) return [];
+    const items = JSON.parse(brut) as MemItem[];
     if (!Array.isArray(items)) return [];
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), items })); } catch { /* quota */ }
     return items;

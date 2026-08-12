@@ -2,6 +2,31 @@
 
 ---
 
+## 🟢 Aucune clé à révoquer — vérifié, pas supposé *(12/08/2026)*
+
+Tu m'as dit « protège mon domaine entièrement ». J'ai fait passer un outil qui
+ne signale **que les clés encore vivantes** (il les teste vraiment auprès du
+service, il ne se contente pas de « ça ressemble à une clé »).
+
+**Premier résultat : « 7 clés actives ».** Je ne te l'ai pas annoncé tel quel,
+parce qu'une alerte non vérifiée ne vaut rien. J'ai demandé les repères exacts,
+puis relu les 7 lignes une par une.
+
+**Les 7 « clés » sont mes propres noms de fonctions de test.** Par exemple
+`test_le_gain_ne_depend_pas_de_la_machine` — exactement 40 caractères,
+commençant par `test`. Le service qui les « validait » accepte n'importe quelle
+chaîne commençant par `test_` dans son bac à sable : son « vérifié » ne veut
+rien dire.
+
+➡️ **Rien à révoquer. Tu n'as rien à faire.**
+
+Et pour que ça ne se reproduise pas : l'outil relit désormais la ligne réelle et
+écarte lui-même ce qui est un nom de fonction. Sans ça, un rapport qui crie
+« 7 clés ! » à tort finit par être ignoré — et le jour où il y aura une **vraie**
+clé, elle serait noyée dans le bruit.
+
+---
+
 ## 💳 1. Abonnement GitHub Pro — 4 $/mois *(ajouté 12/08/2026, à ta demande)*
 
 **▶️ [Prendre GitHub Pro](https://github.com/settings/billing/plans)** — puis « Upgrade to Pro ».
@@ -23,26 +48,27 @@ Je te donne cette règle « Pages depuis un dépôt privé » de mémoire, **pas
 page que j'ai pu ouvrir** (mon accès réseau est bloqué). Vérifie-le sur la page
 de tarifs avant de sortir les 4 $. Je ne veux pas que tu payes sur ma parole.
 
-### 🔴 NE BASCULE PAS le dépôt en privé tout de suite — ça casserait Apex
-Apex va chercher ses documents de mémoire sur
-`raw.githubusercontent.com/.../CMCteams/main/...` **sans jeton**. Sur un dépôt
-privé, cette adresse répond **404**. Et le code **encaisse l'erreur sans rien
-dire** : Apex ne planterait pas, il **arrêterait juste de relire tes 8 documents,
-en silence**.
+### ✅ Le verrou qui bloquait la bascule est levé *(12/08/2026)*
+Apex allait chercher ses documents de mémoire sur GitHub **sans jeton**, depuis
+**10 endroits** différents. Sur un dépôt privé, ces adresses répondent **404** —
+et le code **encaisse l'erreur sans rien dire** : Apex n'aurait pas planté, il
+aurait **arrêté de relire tes 8 documents, en silence**. La pire des pannes :
+celle qu'on ne voit pas.
 
-Ce n'est pas à un endroit, mais à **6 au moins** : `memory.syncDocs`,
-`CLAUDE_HANDOFF.json`, `KEVIN_ACTIONS_TODO.md`, la parité Claude Code, la
-sentinelle `reconsult-kevin-watch`, le service sentinelles.
+C'est réglé. Les 10 lectures passent maintenant par **une seule porte**, et un
+test bloque automatiquement quiconque en rouvrirait une autre ailleurs.
 
-**Le correctif est à moi, pas à toi** : router ces 6 appels par ton
-`tools/github-proxy-worker.js`, qui existe déjà. Dis-moi quand tu veux, je le
-fais — c'est le prérequis de la bascule.
+Il reste **une commande à lancer, côté moi** : déployer le petit relais qui
+gardera le jeton côté serveur (`deploy-apex-depot-relais.yml`). Il vérifie tout
+seul qu'il lit bien `CLAUDE.md`, puis **écrit lui-même son adresse dans le
+code** — tu n'as aucun lien à recopier nulle part.
 
 ### L'ordre à suivre
 | | Quoi | Qui | Coût |
 |---|---|---|---|
 | 1 | ClayScore dans son dépôt privé | **moi** (en cours) | 0 € |
-| 2 | Router les 6 appels Apex par le worker | **moi** | 0 € |
+| 2 | Router les lectures Apex par une porte unique | **moi** ✅ fait | 0 € |
+| 2b | Déployer le relais (1 commande, côté moi) | **moi** | 0 € |
 | 3 | Prendre Pro **puis** passer `CMCteams` en privé | **toi** (1 clic) + moi | 4 $/mois |
 
 > 💡 Ce que ni l'abonnement ni le déplacement ne changent : **ce qui est déjà

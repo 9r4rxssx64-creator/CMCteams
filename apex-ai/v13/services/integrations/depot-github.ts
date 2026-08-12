@@ -33,25 +33,45 @@
 
 export const DEPOT = '9r4rxssx64-creator/CMCteams';
 
-/** Clé où l'adresse du relais est rangée (posée par le déploiement du relais). */
+/** Clé où l'adresse du relais peut être rangée à la main (dépannage). */
 export const CLE_RELAIS = 'ax_github_proxy_url';
+
+/**
+ * Adresse du relais écrite ICI, en dur, par le déploiement automatique
+ * (workflow `deploy-apex-depot-relais.yml`).
+ *
+ * POURQUOI EN DUR ET PAS DANS UN FICHIER DE CONFIG : ce serait un
+ * serpent qui se mord la queue. Un fichier de configuration vit DANS le
+ * dépôt ; le jour où le dépôt devient privé, Apex ne peut plus le lire sans
+ * relais… et l'adresse du relais serait justement dedans. L'adresse doit
+ * donc être connue SANS avoir à lire le dépôt.
+ *
+ * Vide = aucun relais = lecture publique, comme aujourd'hui.
+ */
+export const RELAIS_PAR_DEFAUT = '';
+
+function estAdresseValable(v: string): boolean {
+  /* Uniquement https, et rien d'autre : une adresse bancale enverrait les
+     lectures n'importe où. En cas de doute → pas de relais, lecture
+     publique, plutôt qu'une lecture vers un inconnu. */
+  return /^https:\/\/[a-z0-9.-]+(?:\/[^\s]*)?$/i.test(v);
+}
 
 /**
  * L'adresse du relais, ou une chaîne vide s'il n'y en a pas.
  * Isolée dans sa propre fonction pour que les tests puissent la simuler.
  */
 export function adresseRelais(): string {
+  /* Une valeur posée à la main gagne : c'est la porte de secours si le
+     relais déployé tombe et qu'il faut basculer sur un autre en urgence. */
   try {
-    const v = localStorage.getItem(CLE_RELAIS);
-    if (!v) return '';
-    const propre = v.trim().replace(/\/+$/, '');
-    /* On n'accepte qu'une adresse https : une adresse bancale enverrait les
-       lectures n'importe où. En cas de doute → pas de relais, lecture
-       publique (fail-open), plutôt qu'une lecture vers un inconnu. */
-    return /^https:\/\/[^\s]+$/.test(propre) ? propre : '';
+    const v = (localStorage.getItem(CLE_RELAIS) || '').trim().replace(/\/+$/, '');
+    if (v && estAdresseValable(v)) return v;
   } catch {
-    return '';
+    /* localStorage indisponible — on continue avec la valeur par défaut. */
   }
+  const parDefaut = RELAIS_PAR_DEFAUT.trim().replace(/\/+$/, '');
+  return parDefaut && estAdresseValable(parDefaut) ? parDefaut : '';
 }
 
 /**
@@ -89,15 +109,46 @@ export async function lireFichier(
   chemin: string,
   opts?: { branche?: string; timeoutMs?: number },
 ): Promise<string | null> {
+  return (await lireFichierDetaille(chemin, opts)).contenu;
+}
+
+/**
+ * Même lecture, mais qui dit POURQUOI quand ça rate.
+ *
+ * Pourquoi les deux existent : la plupart des appelants se moquent de la
+ * raison (un document manquant est simplement ignoré). Mais ceux qui
+ * remontent une erreur à l'écran doivent garder la cause EXACTE — « HTTP
+ * 404 » et « réseau coupé » n'appellent pas la même réaction. Un message
+ * vague transforme un diagnostic de 10 secondes en enquête d'une heure.
+ */
+export async function lireFichierDetaille(
+  chemin: string,
+  opts?: { branche?: string; timeoutMs?: number },
+): Promise<{ contenu: string | null; statut: number; raison: string }> {
   const url = urlLecture(chemin, opts?.branche ?? 'main');
   const ctrl = new AbortController();
   const minuteur = setTimeout(() => ctrl.abort(), opts?.timeoutMs ?? 12_000);
   try {
     const r = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
-    if (!r.ok) return null;
-    return await r.text();
-  } catch {
-    return null;
+    if (!r.ok) {
+      return {
+        contenu: null,
+        statut: r.status,
+        raison:
+          r.status === 404
+            ? `HTTP 404 — fichier absent, ou dépôt privé sans relais (${chemin})`
+            : `HTTP ${r.status}`,
+      };
+    }
+    return { contenu: await r.text(), statut: r.status, raison: '' };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const coupe = e instanceof Error && e.name === 'AbortError';
+    return {
+      contenu: null,
+      statut: 0,
+      raison: coupe ? `Délai dépassé (${opts?.timeoutMs ?? 12_000} ms)` : `Réseau : ${msg}`,
+    };
   } finally {
     clearTimeout(minuteur);
   }
