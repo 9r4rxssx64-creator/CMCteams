@@ -248,6 +248,22 @@
   #creditBar .cb-txt{flex:1;line-height:1.3}
   #creditBar .cb-go{background:rgba(0,0,0,.22);color:#fff;border-radius:999px;padding:7px 12px;
     font-weight:800;font-size:12.5px;white-space:nowrap}
+  /* 🎙️ Micro : gros bouton + niveau de voix en direct (on voit qu'on est entendu) */
+  .mic-zone{display:flex;flex-direction:column;align-items:center;gap:12px;margin:6px 0 10px}
+  .mic-rec{width:88px;height:88px;border-radius:50%;cursor:pointer;flex:0 0 auto;
+    background:radial-gradient(circle at 50% 38%,#ff6b6b,#c62828);
+    box-shadow:0 6px 22px rgba(198,40,40,.45),inset 0 -3px 10px rgba(0,0,0,.28);
+    border:3px solid rgba(255,255,255,.22);transition:transform .15s ease}
+  .mic-rec:active{transform:scale(.94)}
+  .mic-rec.on{background:radial-gradient(circle at 50% 38%,#ffd166,#e8a020);
+    box-shadow:0 0 0 8px rgba(232,160,32,.18),0 6px 22px rgba(232,160,32,.4);
+    animation:micPulse 1.4s ease-in-out infinite}
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 8px rgba(232,160,32,.18)}50%{box-shadow:0 0 0 15px rgba(232,160,32,.06)}}
+  .mic-niveau{width:100%;max-width:280px;height:12px;border-radius:999px;overflow:hidden;
+    background:rgba(255,255,255,.10)}
+  .mic-niveau i{display:block;height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,#4caf50,#ffd166,#ff6b6b)}
+  .mic-temps{font-variant-numeric:tabular-nums;font-weight:800;font-size:19px;color:var(--txt,#fff)}
   /* 👤 Mes mini-moi : galerie de personnages gardés, 1 tap = rechargé */
   .mini-persos{display:flex;gap:10px;overflow-x:auto;padding:8px 14px 4px;-webkit-overflow-scrolling:touch}
   .mini-persos::-webkit-scrollbar{display:none}
@@ -992,6 +1008,24 @@
   </div>
 </div>
 
+<!-- 🎙️ MICRO — un seul micro pour toute l'app : on VOIT sa voix pendant qu'on
+     parle, on se réécoute, on refait. Fini « j'ai parlé mais ça a capté ? » -->
+<div class="sheet" id="microSheet">
+  <div class="bg" onclick="Micro.fermer()"></div>
+  <div class="body">
+    <div class="grip"></div>
+    <h3 id="micTitre">🎙️ Ta voix</h3>
+    <p id="micDesc">Touche le gros bouton, parle, puis touche-le encore pour arrêter.</p>
+    <div class="mic-zone">
+      <button id="micBtn" class="mic-rec" aria-label="Enregistrer"></button>
+      <div class="mic-niveau"><i id="micBar"></i></div>
+      <div class="mic-temps" id="micTemps">0:00</div>
+    </div>
+    <p class="rc-note" id="micEtat">Prêt.</p>
+    <div id="micBtns"></div>
+  </div>
+</div>
+
 <!-- 💳 ÉCRAN DE RECHARGE — ouvert à tout le monde, pas seulement à l'admin -->
 <div class="sheet" id="rechargeSheet">
   <div class="bg" onclick="Recharge.fermer()"></div>
@@ -1044,7 +1078,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.15.0';
+var APP_VER='v9.16.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -5648,32 +5682,19 @@ var Magic=(function(){
         var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* --- 1ter) 🎙 Enregistrer sa voix DANS l'app (Shoom, mode « Ma voix ») --- */
-  var recorder=null,recTimer=null;
+  /* Même micro que partout ailleurs : niveau en direct, réécoute, refaire. */
   function record(){
-    if(recorder){stopRec();return;}
-    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Micro indisponible sur cet appareil');return;}
-    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-      var mime='';['audio/mp4','audio/webm;codecs=opus','audio/webm'].forEach(function(t){
-        if(!mime&&window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))mime=t;});
-      try{recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);}
-      catch(e){toast('Enregistrement indisponible');return;}
-      var chunks=[];recorder.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
-      recorder.onstop=function(){
-        try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
-        clearTimeout(recTimer);recorder=null;$('magicRecBtn').textContent='🎙 Enregistrer ma voix (30 s)';
-        var b=new Blob(chunks,{type:mime||'audio/webm'});
-        if(!b.size){toast('Rien n\'a été enregistré');return;}
-        songFile=new File([b],'ma-voix.'+((mime.indexOf('mp4')>=0)?'m4a':'webm'),{type:b.type});
-        $('magicSingHint').textContent='🎤 Ta voix est prête — va sur « Je chante » pour animer ta photo.';
-        hint('✅ Voix enregistrée ('+Math.round(b.size/1024)+' Ko). Onglet « Je chante » pour la mettre sur ta photo.');
+    Micro.ouvrir({titre:'🎤 Chante ou lis ton texte',max:45,
+      desc:'Touche le gros bouton et chante (ou lis tes paroles). Tu pourras te réécouter avant de valider.',
+      onOk:function(b){
+        var ext=((b.type||'').indexOf('mp4')>=0)?'m4a':'webm';
+        songFile=new File([b],'ma-voix.'+ext,{type:b.type});
+        var sh=$('magicSingHint');
+        if(sh)sh.textContent='🎤 Ta voix est prête — va sur « Je chante » pour animer ta photo.';
+        hint('✅ Voix prête ('+Math.round(b.size/1024)+' Ko). Onglet « Je chante » pour la mettre sur ta photo.');
         toast('Voix enregistrée 🎙',2200);
-      };
-      recorder.start();$('magicRecBtn').textContent='⏹ Arrêter l\'enregistrement';
-      toast('Ça enregistre — lis ton texte 🎙',2000);
-      recTimer=setTimeout(stopRec,30000);           /* 30 s comme Shoom */
-    }).catch(function(){toast('Micro refusé — autorise le micro dans Réglages');});
+      }});
   }
-  function stopRec(){try{if(recorder&&recorder.state!=='inactive')recorder.stop();}catch(e){}}
   /* --- 2) « Je chante » : lip-sync RÉEL (bouche selon le volume du son) --- */
   function sing(){
     if(!photoData){toast('Choisis une photo d\'abord');return;}
@@ -6038,11 +6059,135 @@ $('fileBg').onchange=function(e){if(e.target.files[0])Photo._loadBg(e.target.fil
    « Bouche IA » ajoute des poses réalistes via le worker, avec
    repli automatique hors-ligne (l'app marche toujours).
    ============================================================ */
+/* ============================================================
+   🎙️ MICRO — un seul micro pour toute l'app.
+   Avant : on appuyait, on parlait, et on découvrait APRÈS coup que le micro
+   n'avait rien capté. Maintenant on VOIT sa voix pendant qu'on parle, on se
+   réécoute, on refait si besoin — et l'app prévient quand elle ne t'entend
+   presque pas. Le micro est TOUJOURS relâché en sortant (jamais allumé en fond).
+   ============================================================ */
+var Micro=(function(){
+  var flux=null, rec=null, chunks=[], actx=null, an=null, raf=0;
+  var t0=0, blob=null, url=null, pic=0, o={}, aud=null, mesures=0;
+
+  function $m(id){return document.getElementById(id);}
+  function etat(t){var e=$m('micEtat'); if(e&&e.textContent!==t)e.textContent=t;}
+  function temps(s){var e=$m('micTemps'),v=Math.floor(s/60)+':'+('0'+Math.floor(s%60)).slice(-2);
+    if(e&&e.textContent!==v)e.textContent=v;}          /* idempotent : pas de clignotement */
+  function barre(p){var b=$m('micBar'); if(b)b.style.width=Math.round(Math.max(0,Math.min(100,p)))+'%';}
+
+  function relacher(){
+    if(raf)cancelAnimationFrame(raf); raf=0;
+    try{if(flux)flux.getTracks().forEach(function(t){t.stop();});}catch(e){}
+    flux=null;
+    try{if(actx)actx.close();}catch(e){}
+    actx=null;an=null;
+  }
+  function peindre(){
+    var c=$m('micBtns'); if(!c)return; c.innerHTML='';
+    function b(l,g,f){var x=document.createElement('button');
+      x.className='bigbtn'+(g?' ghost':'');x.textContent=l;x.onclick=f;c.appendChild(x);}
+    if(blob){
+      b('✅ Utiliser cette voix',false,function(){var v=blob;fermer();if(o.onOk)o.onOk(v);});
+      b(aud&&!aud.paused?'⏸ Pause':'▶️ Réécouter',true,reecouter);
+      b('🔁 Refaire',true,function(){blob=null;pic=0;barre(0);temps(0);etat('Prêt.');peindre();});
+    }
+    b('Fermer',true,fermer);
+  }
+  function reecouter(){
+    if(!blob)return;
+    if(aud&&!aud.paused){aud.pause();peindre();return;}
+    try{if(url)URL.revokeObjectURL(url);}catch(e){}
+    url=URL.createObjectURL(blob);
+    aud=new Audio(url); aud.onended=function(){peindre();};
+    aud.play().catch(function(){toast('Lecture impossible');});
+    peindre();
+  }
+  function demarrer(){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+      etat('Ce téléphone ne donne pas accès au micro.');toast('Micro indisponible',3000);return;}
+    navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}})
+    .then(function(s){
+      flux=s; chunks=[]; pic=0; blob=null;
+      var mime=['audio/mp4','audio/webm;codecs=opus','audio/webm'].filter(function(m){
+        try{return MediaRecorder.isTypeSupported(m);}catch(e){return false;}})[0]||'';
+      try{rec=new MediaRecorder(s,mime?{mimeType:mime}:undefined);}
+      catch(e){relacher();etat('Enregistrement impossible sur ce téléphone.');return;}
+      rec.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
+      rec.onstop=function(){
+        var b=new Blob(chunks,{type:mime||'audio/webm'});
+        relacher(); rec=null;
+        $m('micBtn').classList.remove('on');
+        barre(0);
+        if(!b.size){etat('❌ Rien n\'a été enregistré — réessaie.');peindre();return;}
+        blob=b;
+        var sec=Math.max(0,(Date.now()-t0)/1000);
+        /* On n'accuse le micro QUE si la mesure a vraiment tourné : sinon on
+           dirait « on ne t'entend pas » alors que le son est peut-être bon. */
+        if(mesures>10&&pic<0.02) etat('⚠️ On ne t\'entend presque pas ('+sec.toFixed(1)+' s). Rapproche-toi et refais — ou réécoute pour vérifier.');
+        else etat('✅ Enregistré : '+sec.toFixed(1)+' s — réécoute pour vérifier.');
+        peindre();
+      };
+      /* ⚠️ t0 AVANT la boucle : sinon le minuteur affiche l'heure Unix. */
+      t0=Date.now(); mesures=0;
+      /* niveau en direct : la barre bouge = le micro capte vraiment */
+      try{
+        var AC=window.AudioContext||window.webkitAudioContext;
+        actx=new AC();
+        /* iPhone : le son démarre « en pause » tant qu'on ne le réveille pas —
+           sans ça la barre resterait à 0 et on accuserait le micro à tort. */
+        if(actx.state==='suspended'){try{actx.resume();}catch(e){}}
+        an=actx.createAnalyser(); an.fftSize=512;
+        actx.createMediaStreamSource(s).connect(an);
+        var data=new Uint8Array(an.frequencyBinCount);
+        (function boucle(){
+          if(!an)return;
+          an.getByteTimeDomainData(data);
+          var sum=0;for(var i=0;i<data.length;i++){var v=(data[i]-128)/128;sum+=v*v;}
+          var rms=Math.sqrt(sum/data.length);
+          if(rms>pic)pic=rms;
+          mesures++;
+          barre(rms*260);
+          var s2=(Date.now()-t0)/1000; temps(s2);
+          if(o.max&&s2>=o.max){arreter();return;}
+          raf=requestAnimationFrame(boucle);
+        })();
+      }catch(e){}
+      rec.start();
+      $m('micBtn').classList.add('on');
+      etat('🔴 Ça enregistre — parle ! (touche le bouton pour arrêter)');
+      peindre();
+    }).catch(function(){
+      etat('Micro refusé. Autorise le micro pour cette page, puis réessaie.');
+      toast('Micro refusé — autorise-le dans les réglages',4000);});
+  }
+  function arreter(){ if(rec){try{rec.stop();}catch(e){}} }
+  function ouvrir(opts){
+    o=opts||{}; blob=null; pic=0; aud=null;
+    var t=$m('micTitre'); if(t)t.textContent=o.titre||'🎙️ Ta voix';
+    var d=$m('micDesc'); if(d)d.textContent=o.desc
+      ||('Touche le gros bouton, parle, puis touche-le encore pour arrêter'
+         +(o.max?(' (max '+o.max+' s)'):'')+'.');
+    barre(0); temps(0); etat('Prêt.'); peindre();
+    $m('micBtn').classList.remove('on');
+    $m('micBtn').onclick=function(){ if(rec)arreter(); else demarrer(); };
+    $m('microSheet').classList.add('open');
+  }
+  function fermer(){
+    if(rec){try{rec.stop();}catch(e){}}
+    try{if(aud)aud.pause();}catch(e){}
+    relacher();
+    try{if(url)URL.revokeObjectURL(url);}catch(e){} url=null;
+    $m('microSheet').classList.remove('open');
+  }
+  return {ouvrir:ouvrir,fermer:fermer,arreter:arreter};
+})();
+
 var Mini=(function(){
   var img=$('miniPhoto'),vid=$('miniVideo');
   var photoImg=null, face=null, mouth={x:0.5,y:0.68};
   var voiceMode='tts', voiceBlob=null, ratio='9:16', subs=true, quality='ai';
-  var busy=false, outUrl=null, outBlob=null, mediaRec=null, recChunks=[];
+  var busy=false, outUrl=null, outBlob=null;   /* l'enregistrement vit dans Micro */
   var visemes=null, clin=true, ambiance='studio', ton='normale';
   var decor='none', cutoutImg=null, decorImg=null, cutoutEnCours=false, expr='neutre';
   var TONS={grave:0.88,normale:1,aigue:1.13};
@@ -6110,23 +6255,19 @@ var Mini=(function(){
   }
 
   /* --- voix --- */
+  /* Le micro est le composant commun : niveau en direct + réécoute + refaire. */
   function record(){
-    if(mediaRec){ try{mediaRec.stop();}catch(e){} return; }
-    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Micro indisponible');return;}
-    navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
-      recChunks=[];
-      var mime=['audio/mp4','audio/webm;codecs=opus','audio/webm'].filter(function(m){try{return MediaRecorder.isTypeSupported(m);}catch(e){return false;}})[0]||'';
-      mediaRec=new MediaRecorder(s,mime?{mimeType:mime}:undefined);
-      mediaRec.ondataavailable=function(e){if(e.data.size)recChunks.push(e.data);};
-      mediaRec.onstop=function(){ s.getTracks().forEach(function(t){t.stop();});
-        voiceBlob=new Blob(recChunks,{type:mime||'audio/webm'}); mediaRec=null;
+    Micro.ouvrir({titre:'🎙️ La voix de ton mini-moi',max:60,
+      desc:'Touche le gros bouton et dis ton texte. Tu pourras te réécouter avant de valider.',
+      onOk:function(b){
+        voiceBlob=b; voiceMode='rec';
+        var row=$('miniVoiceRow');
+        if(row)row.querySelectorAll('[data-voice]').forEach(function(x){
+          x.classList.toggle('on',x.dataset.voice==='rec');});
+        $('miniVoiceRec').classList.remove('hidden');
         $('miniRecBtn').textContent='🎙️ Réenregistrer ma voix';
-        hint('✅ Voix enregistrée ('+Math.round(voiceBlob.size/1024)+' Ko). Touche « Fabriquer ».'); };
-      mediaRec.start();
-      $('miniRecBtn').textContent='⏹️ Arrêter';
-      toast('Parle… touche « Arrêter » quand tu as fini',2400);
-      setTimeout(function(){ if(mediaRec){try{mediaRec.stop();}catch(e){}} },30000);
-    }).catch(function(){ toast('Micro refusé ou indisponible'); });
+        hint('✅ Voix prête ('+Math.round(b.size/1024)+' Ko). Touche « Fabriquer ».');
+      }});
   }
   function getAudio(){
     if(voiceMode==='rec'||voiceMode==='file'){
