@@ -199,7 +199,13 @@ jobs:
             "https://${MOI}:${PAT}@github.com/${MOI}/${NOM}.git" essai
           cd essai
           python3 -m pip install --quiet -r requirements.txt
-          python3 -m pytest -q 2>&1 | tail -5
+          # ⚠️ `pytest | tail` renverrait le code de `tail`, pas celui de
+          # pytest : l'étape serait VERTE même avec des tests en échec. C'est
+          # le pire des faux verts — celui qui donne le feu vert pour
+          # supprimer l'original. On garde donc le vrai code de sortie.
+          set -o pipefail
+          python3 -m pytest -q 2>&1 | tail -8
+          echo "Code de sortie de pytest : $? (0 = tous verts)"
 
       - name: Ce qu'il faut retenir
         run: |
