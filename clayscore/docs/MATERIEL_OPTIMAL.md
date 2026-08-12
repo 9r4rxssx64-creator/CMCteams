@@ -176,14 +176,15 @@ Ce tableau est **calculé** par `Site.bom()`, pas tapé à la main.
 
 | Poste | Réf. / critère | Qté | Unit. | Total | Prix |
 |---|---|---:|---:|---:|:--:|
-| Caméra industrielle **couleur** | Hikrobot MV-CS016-10GC | 13 | 139 € | 1 807 € | 🟢 |
+| Caméra industrielle **couleur** | Hikrobot MV-CS016-10GC | 13 | 138,66 € | 1 803 € | 🟢 |
 | Objectifs **8 mm ET 12 mm** F1.4 | monture C, 5 MP | 26 | 36 € | 936 € | 🟢 |
 | Filtre optique | passe-bande 850 nm / polarisant | 13 | 15 € | 195 € | 🟡 |
 | Caisson IP66 | boîtier aluminium | 13 | 15 € | 195 € | 🟡 |
 | Fixation rigide | trépied lourd / piquet | 13 | 15 € | 195 € | 🟡 |
+| **Caméra de diffusion** | IP PoE 1080p — tireur + zone de vol | **6** | 59 € | **354 €** | 🟢 |
 | Calculateur | Jetson Orin Nano Super (UE) | 3 | 392,50 € | 1 178 € | ✅ |
 | SSD NVMe 500 Go | clips + base | 3 | 40 € | 120 € | 🟡 |
-| Switch PoE | TP-Link TL-SG1005P (65 W) | 3 | 60 € | 180 € | 🟡 |
+| Switch PoE | TP-Link TL-SG1005P (65 W) | **6** | 60 € | **360 €** | 🟡 |
 | Micro USB | omnidirectionnel | 3 | 25 € | 75 € | 🟡 |
 | Batterie LiFePO4 12 V 30 Ah | avec BMS | 3 | 46 € | 138 € | 🟢 |
 | Chargeur LiFePO4 | dédié | 3 | 25 € | 75 € | 🟡 |
@@ -192,23 +193,36 @@ Ce tableau est **calculé** par `Site.bom()`, pas tapé à la main.
 | Routeur club-house | WiFi local | 1 | 40 € | 40 € | 🟡 |
 | Mini-PC club-house | agrège + pilote l'écran | 1 | 200 € | 200 € | 🟡 |
 | Écran club-house | TV scores + retour caméra | 1 | 250 € | 250 € | 🟡 |
-| **TOTAL (config OPTIMALE)** | | | | **6 022 € HT** | |
+| **TOTAL (config OPTIMALE)** | | | | **6 551 € HT** | |
+
+> **Deux nouveautés dans ce tableau**, et elles vont ensemble :
+> **6 caméras de diffusion** (deux par terrain : une sur le **tireur**, une sur
+> la **zone de vol**) pour que le club-house voie l'action en direct, pas
+> seulement les chiffres — et **6 switchs PoE au lieu de 3**, parce qu'un
+> switch d'entrée de gamme n'alimente que **4 ports** : avec 5 caméras par
+> terrain (3 d'arbitrage + 2 de diffusion), il en faut **deux par terrain**.
+> C'est typiquement le détail qui bloque un montage un samedi matin.
 
 **Répartition honnête :**
 
 | | Montant | Part |
 |---|---:|---:|
-| ✅ Prix **vérifiés sur la fiche produit** | **1 466 €** | 24 % |
-| 🟢 Prix **relevés** (recherche datée) | **2 881 €** | 48 % |
-| 🟡 Prix **à confirmer** (hypothèses) | **1 675 €** | 28 % |
+| ✅ Prix **lus sur la fiche produit** | **1 466 €** | 22 % |
+| 🟢 Prix **relevés** (recherche datée) | **3 231 €** | 49 % |
+| 🟡 Prix **à confirmer** (hypothèses) | **1 855 €** | 28 % |
 
-> ⚠️ **Aucun de ces chiffres n'est un devis.** Ils ne comprennent ni la **TVA**
-> ni la **douane** sur la partie hors UE (compter **+20 %** + frais de dossier
-> sur la commande chinoise, soit environ **+340 €** sur les 1 680 € de caméras).
+> ⚠️ **Aucun de ces chiffres n'est un devis.** Ils ne comprennent ni les
+> **frais de port** ni les **frais de dossier de douane** (15-30 € par colis).
+> La TVA à l'import est en revanche comptée dans le total livré ci-dessous.
 
-**Livré, TVA comprise sur la part chinoise : 6 570 €.** En config *minimum*
-(sans secours ni double focale) : 5 244 €. Détail et étapes :
-**`COMPARATIF_CHINE_UE.md`**.
+| Configuration | HT | **Livré** (TVA sur la part 🇨🇳) |
+|---|---:|---:|
+| **Optimale** — secours + double focale + diffusion | 6 551 € | **7 138 €** |
+| **Minimum** — sans secours, une focale, diffusion incluse | 5 424 € | **5 804 €** |
+
+Le devis exécutable, **un panier par vendeur avec un lien 1 clic par ligne**,
+est dans **`DEVIS_COMPARATIF.md`**. Le raisonnement Chine/Europe poste par
+poste est dans **`COMPARATIF_CHINE_UE.md`**.
 
 ---
 
@@ -219,7 +233,7 @@ Ce sont les seules inconnues qui pèsent :
 | Poste | Montant en jeu | Comment lever le doute |
 |---|---:|---|
 | **Écran + mini-PC club-house** | 450 € | Regarder d'abord ce que le club **a déjà** : une TV au bar et un vieux PC suffisent. Ça peut tomber à 0 € |
-| **Switch PoE** | 180 € | En prendre un à **entrée continue 12-48 V** (se branche sur la batterie). ⚠️ à 12 V, le budget PoE tombe à ~60 W — assez pour 4 caméras |
+| **Switch PoE** | 360 € | En prendre à **entrée continue 12-48 V** (se branche sur la batterie). ⚠️ à 12 V, le budget PoE tombe à ~60 W — assez pour 4 caméras, d'où **deux switchs par terrain** dès qu'on ajoute la diffusion. Un modèle 8 ports à budget PoE plus large ferait tomber ce poste à ~240 € |
 | **Petites pièces** (filtres, caissons, fixations, câblage) | 735 € | Un seul lot chez un vendeur : c'est le poste le plus dispersé, donc celui où on perd du temps et des frais de port |
 
 ---

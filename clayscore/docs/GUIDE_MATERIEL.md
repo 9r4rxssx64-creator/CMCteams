@@ -56,7 +56,7 @@ jusqu'aux caméras.
 |---|---|
 | **Rôle** | Voir le plateau en vol et l'instant de la casse |
 | **Quantité** | **3, toutes en COULEUR** (réf. finissant par `C`, jamais `M`) |
-| **Prix relevé** | ~168 € pièce → **~504 €** (194 USD par 5-19 pcs, août 2026) |
+| **Prix relevé** | **138,66 €** pièce → **~416 €** les 3 (160 USD par 5-19 pcs, août 2026) · ⚠️ les « 168 € » vus ailleurs correspondent à la version **USB3** (`-10UC`), pas à la GigE `-10GC` qu'il nous faut |
 | **Achat** | ▸ [lien direct — Alibaba, Hikrobot MV-CS016](https://www.alibaba.com/product-detail/HIKROBOT-MV-CS016-10GC-1-2-1601122368910.html) |
 | **Alternative** | ▸ [recherche Alibaba « GigE global shutter camera »](https://www.alibaba.com/trade/search?SearchText=GigE+global+shutter+industrial+camera) |
 

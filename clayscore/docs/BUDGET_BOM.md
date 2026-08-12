@@ -44,14 +44,31 @@
 > démarrer une épreuve sur un flux sans couleur (contrôle GO/NO-GO
 > « Caméras en couleur »). Détail : `MATERIEL_OPTIMAL.md` § 2.
 >
-> 💶 **Prix révisés 11/08/2026** d'après des offres publiques réellement
-> relevées, après comparaison **Chine / Europe** poste par poste (voir
-> **`COMPARATIF_CHINE_UE.md`**) : caméra `MV-CS016-10GC` 180 → **139 €** 🇨🇳,
-> objectif 35 → **36 €** 🇨🇳, calculateur 280 → **307 €** 🇪🇺 (le tarif
-> officiel de 249 USD n'existe pas au comptant en Europe), batterie 30 Ah
-> 130 → **46 €** 🇪🇺, pont directionnel (paire) 120 → **98 €** 🇪🇺.
+> 💶 **Prix révisés 12/08/2026** d'après des offres publiques réellement
+> relevées — et, pour trois d'entre elles, **lues sur la fiche produit
+> elle-même** après ouverture des pages marchandes (voir
+> **`COMPARATIF_CHINE_UE.md`** et **`DEVIS_COMPARATIF.md`**) :
+>
+> | Poste | Cible initiale | Prix retenu | Vendeur | Confiance |
+> |---|---:|---:|---|:--:|
+> | Caméra `MV-CS016-10GC` couleur | 180 € | **138,66 €** 🇨🇳 | Alibaba (160 USD, 5-19 pcs) | 🟢 relevé |
+> | Objectif monture C 8/12 mm | 35 € | **36,00 €** 🇨🇳 | AliExpress | 🟢 relevé |
+> | Calculateur Jetson Orin Nano Super | 280 € | **392,50 €** 🇪🇺 | Gotronic | ✅ **lu sur la fiche** |
+> | Batterie LiFePO4 12 V 30 Ah | 130 € | **46,00 €** 🇪🇺 | Amazon | 🟢 relevé |
+> | Pont directionnel (la **paire**) | 120 € | **96,08 €** 🇪🇺 | Getic | ✅ **lu sur la fiche** |
+>
+> ⚠️ Les « **307 €** » du calculateur, repris d'un comparateur, étaient **faux
+> de −22 %** : la vraie fiche affiche **392,50 €** chez Gotronic (465 € chez
+> Kubii). C'est notre propre contrôle automatique des prix qui l'a trouvé.
 > **Résultat : achat MIXTE** — optique de Chine, électronique et batteries
 > d'Europe.
+>
+> 📉 **Le kit prototype de ce § A revient donc à ≈ 1 372 € HT** (≈ **1 477 €
+> livré**, TVA comprise sur la part chinoise) au lieu des 1 465 € cibles :
+> l'optique chinoise fait gagner plus que le calculateur ne fait perdre.
+> Le **devis exécutable, avec un lien 1 clic par ligne**, est dans
+> **`DEVIS_ETAPE_0.md`** (kit de validation) et **`DEVIS_COMPARATIF.md`**
+> (club complet).
 >
 > ⚠️ **Sur les liens** : les liens « **lien direct** » sont ceux fournis par
 > Kevin (dossier v4). Les liens « **recherche** » ouvrent une recherche sur le
@@ -102,12 +119,20 @@ pour viser la compétition officielle et les grandes surfaces.
 
 ### Récapitulatif des configurations
 
-| Configuration | Contenu | Total |
-|---|---|---:|
-| **Base — une fosse câblée** | kit § A | **~1 465 €** |
-| **Compétition** | base + alimentation continue + extras | **~1 690 €** |
-| **Compétition + 1 poste déporté** | + pod intelligent + pont directionnel | **~2 400 €** |
-| **Parcours (3 zones déportées)** | + 3 pods intelligents + liaisons | **~3 580 €** |
+| Configuration | Contenu | Total cible | Total **révisé** (prix relevés) |
+|---|---|---:|---:|
+| **Base — une fosse câblée** | kit § A | ~1 465 € | **~1 372 € HT** · 1 477 € livré |
+| **Compétition** | base + alimentation continue + extras | ~1 690 € | ~1 600 € HT |
+| **Compétition + 1 poste déporté** | + pod intelligent + pont directionnel | ~2 400 € | ~2 400 € HT |
+| **Parcours (3 zones déportées)** | + 3 pods intelligents + liaisons | ~3 580 € | ~3 580 € HT |
+| **🎯 Club réel — 3 terrains + club-house** | 13 caméras d'arbitrage, 6 caméras de diffusion, 3 calculateurs, 3 ponts | — | **6 551 € HT** · **7 138 € livré** |
+
+> Les deux dernières lignes « cible » n'ont **pas** été recalculées poste par
+> poste : elles restent des ordres de grandeur. La ligne **Club réel** est
+> calculée par le logiciel lui-même (`clayscore.site`), vendeur par vendeur,
+> et détaillée dans **`DEVIS_COMPARATIF.md`** avec un lien 1 clic par ligne.
+> En configuration *minimum* (sans caméra de secours, un seul jeu
+> d'objectifs) : **5 424 € HT · 5 804 € livré**.
 
 > ⚠️ La vidéo brute (**809 Mbit/s par caméra**) ne passera **jamais** sans fil.
 > C'est le calculateur au pod qui rend le sans-fil possible, en ne transmettant

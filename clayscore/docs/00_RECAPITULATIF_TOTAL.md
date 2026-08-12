@@ -95,7 +95,7 @@ ClayScore_Dossier_Complet/
 │   ├── MATERIEL_OPTIMAL.md      ← quoi acheter exactement, prix relevés, pièges de commande
 │   ├── COMPARATIF_CHINE_UE.md   ← Chine ou Europe ? le comparatif, et la config optimale
 │   ├── DEVIS_COMPARATIF.md      ← DEVIS : qui vend quoi, liens 1 clic, panier par vendeur
-│   ├── DEVIS_ETAPE_0.md         ← le devis du kit à acheter EN PREMIER (899 €)
+│   ├── DEVIS_ETAPE_0.md         ← le devis du kit à acheter EN PREMIER (898 €)
 │   ├── GUIDE_MATERIEL.md        ← CHAQUE pièce : rôle, quoi prendre, liens d'achat, pièges
 │   ├── GUIDE_MONTAGE.md         ← assembler les pods, câbler, placer sur le stand, régler
 │   ├── CHECKLIST_PROTOTYPE.md   ← la marche à suivre pas à pas, de la commande à la démo
@@ -142,7 +142,7 @@ navigateur). Elles fonctionnent hors ligne, sans Internet.
 | Grandes surfaces | postes **sans fil** jusqu'à **> 1 km** (le pod décide sur place) |
 | Temps réel | **288 images/s** mesurées pour 195 requises (3 caméras × 65 fps) |
 | Caméras | **couleur obligatoire** — mesuré : 27/27 en couleur, **9/27 en monochrome** |
-| Club multi-terrains | 3 terrains + club-house : **7 099 € livré**, 36,6 Mbit/s (scores + ralenti + direct) |
+| Club multi-terrains | 3 terrains + club-house : **7 138 € livré**, 36,6 Mbit/s (scores + ralenti + direct) |
 | Basse lumière | verdicts justes jusqu'à **−60 % de lumière** (33 % → 100 %) |
 | Réglage caméra | défauts (sombre / cramé / bruité) **détectés et expliqués** |
 | Coût logiciel (licences) | **0 €** (100 % open source) |
@@ -156,7 +156,7 @@ navigateur). Elles fonctionnent hors ligne, sans Internet.
 
 | | Hypothèse |
 |---|---|
-| Prototype complet (config max) | ~1 450 – 1 550 € |
+| Prototype complet (config max) | **~1 372 € HT** · 1 477 € livré (prix relevés) |
 | Investissement avant 1res ventes | ~9 000 € |
 | Prix de vente / kit | ~2 200 € |
 | Marge nette / kit | ~770 € (35 %) |
