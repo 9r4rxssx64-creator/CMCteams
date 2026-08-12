@@ -945,7 +945,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.10.0';
+var APP_VER='v9.11.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -1542,12 +1542,78 @@ function aiWho(provider){
   if(/replicate/i.test(p))return 'IA payante';
   return '';
 }
-function aiErrMsg(e){var m=String((e&&e.message)||e||'');
-  if(/402/.test(m))   return {t:'Crédit IA épuisé — recharge le compte Replicate (quelques €) pour réactiver l\'IA. En attendant : version rapide appliquée.',ms:5200};
-  if(/429/.test(m))   return {t:'IA très demandée à l\'instant — réessaie dans 1 min. Version rapide appliquée.',ms:3600};
-  if(/not_configured|503/.test(m)) return {t:'IA pas encore active (serveur en cours). Version rapide appliquée.',ms:3200};
-  if(/abort|timeout/i.test(m))     return {t:'L\'IA a mis trop de temps — réessaie. Version rapide appliquée.',ms:3200};
-  return {t:'IA indisponible — version rapide appliquée.',ms:2400};
+/* `suite` = ce qui se passe VRAIMENT après l'échec. Vide par défaut : on ne
+   promet plus « version rapide appliquée » quand rien n'est appliqué (mentir
+   sur ce qui a été fait est pire que l'échec lui-même). */
+function aiErrMsg(e,suite){var m=String((e&&e.message)||e||'');suite=suite||'';
+  if(/402/.test(m))   return {t:'Crédit IA épuisé — recharge le compte (quelques €) pour réactiver l\'IA.'+suite,ms:5200};
+  if(/429/.test(m))   return {t:'IA très demandée à l\'instant — réessaie dans 1 min.'+suite,ms:3600};
+  if(/not_configured|503/.test(m)) return {t:'IA pas encore active (serveur en cours).'+suite,ms:3200};
+  if(/abort|timeout/i.test(m))     return {t:'L\'IA a mis trop de temps — réessaie.'+suite,ms:3200};
+  return {t:'IA indisponible.'+suite,ms:2400};
+}
+
+/* ============================================================
+   💳 CRÉDIT IA — « plutôt rien qu'un résultat raté »
+   Règle Kevin (2026-08-12) : quand l'IA payante n'a plus de crédit et
+   que la version sans IA serait MÉDIOCRE (détourage, cartoon, améliorer),
+   on ne rend PAS le résultat moche en douce : on le DIT et on ATTEND.
+   La création est mise en attente et repart TOUTE SEULE dès que le
+   crédit revient — Kevin n'a rien à surveiller.
+   ============================================================ */
+var Credit=(function(){
+  var CLE='crea_credit_ko';
+  var attente=null;                 /* {quoi, section, relancer} */
+  var dernier=0;                    /* dernier essai auto (anti-boucle) */
+  var LIEN='https://replicate.com/account/billing';
+  /* Vrai « plus de crédit » — à ne pas confondre avec une surcharge (429)
+     ou une coupure réseau, qui elles se réessaient toutes seules. */
+  function estEpuise(e){var m=String((e&&e.message)||e||'');
+    return /\b402\b|insufficient|payment_required|billing|no_credit|out_of_credit|quota_exceeded/i.test(m);}
+  function ko(){return !!parseInt(localStorage.getItem(CLE)||'0',10);}
+  function noter(){try{localStorage.setItem(CLE,String(Date.now()));}catch(e){}}
+  function ok(){ if(ko()){ try{localStorage.removeItem(CLE);}catch(e){}
+      attente=null; toast('✅ Le crédit IA est revenu — tout remarche',3000); } }
+  function bloquer(o){
+    o=o||{};
+    attente={quoi:o.quoi||'ta création',section:(typeof CUR!=='undefined'?CUR:null),relancer:o.relancer||null};
+    var btns=[];
+    if(o.relancer)btns.push({label:'🔄 Réessayer maintenant',fn:function(){closeSheet();o.relancer();}});
+    if(o.quandMeme)btns.push({label:'⚡ Le faire quand même (moins beau)',ghost:true,fn:function(){
+      closeSheet();attente=null;toast('Version rapide appliquée — qualité réduite',2800);o.quandMeme();}});
+    btns.push({label:'🔗 Recharger le compte IA (quelques €)',ghost:true,fn:function(){try{window.open(LIEN,'_blank');}catch(e){}}});
+    btns.push({label:'Fermer',ghost:true,fn:function(){closeSheet();}});
+    openExport('⏳ Crédit IA épuisé',
+      'Sans l\'IA, '+(o.quoi||'ce résultat')+' serait nettement moins beau. Je préfère attendre que de te rendre quelque chose de raté. Dès que le crédit revient, je le refais tout seul.',
+      btns);
+  }
+  /* Reprise automatique : au retour sur l'app (ou toutes les 5 min), on retente
+     UNE fois — c'est le seul moyen de savoir si le crédit est revenu. Jamais
+     plus d'un essai par 2 min, et jamais si Kevin est parti sur un autre écran
+     (sinon un résultat surgirait là où il ne l'attend pas). */
+  function reprendre(){
+    if(!attente||!attente.relancer)return;
+    if(document.visibilityState!=='visible')return;
+    if(typeof CUR!=='undefined'&&attente.section&&CUR!==attente.section)return;
+    if(Date.now()-dernier<120000)return;
+    dernier=Date.now();
+    toast('⏳ Je regarde si le crédit IA est revenu…',2000);
+    try{attente.relancer();}catch(e){}
+  }
+  try{document.addEventListener('visibilitychange',reprendre);}catch(e){}
+  try{setInterval(reprendre,300000);}catch(e){}
+  return {estEpuise:estEpuise,ko:ko,noter:noter,ok:ok,bloquer:bloquer,
+          enAttente:function(){return !!attente;},annuler:function(){attente=null;}};
+})();
+/* Échec IA sans repli acceptable : si c'est le crédit, on attend au lieu de
+   rendre n'importe quoi. Renvoie true si le cas a été pris en charge. */
+function aiFail(e,o){
+  o=o||{};
+  if(!Credit.estEpuise(e))return false;
+  Credit.noter();
+  Credit.bloquer({quoi:o.quoi,relancer:o.relancer,quandMeme:o.quandMeme});
+  if(o.hint)try{o.hint('⏳ Crédit IA épuisé — je relance tout seul dès qu\'il revient.');}catch(_){}
+  return true;
 }
 
 /* ============ 📂 IMPORT MULTIFORMAT + TAILLE ============
@@ -3025,14 +3091,28 @@ var Photo=(function(){
     var ck=$('selOnly');if(ck)ck.onchange=function(){selOnly=ck.checked;render();};
   }
 
-  function aiRun(kind,okMsg,fallback){
+  function aiRun(kind,okMsg,fallback,opts){
     if(!loaded){toast('Ouvre une photo d\'abord');return;}
+    opts=opts||{};
+    var relancer=function(){aiRun(kind,okMsg,fallback,opts);};
+    /* Crédit déjà connu épuisé + repli médiocre : on prévient AVANT, sans
+       faire perdre 60 s d'attente pour un résultat qu'on refuserait. */
+    if(opts.mediocre&&Credit.ko()){
+      Credit.bloquer({quoi:opts.quoi||okMsg,relancer:relancer,quandMeme:fallback});return;
+    }
     var lng=Math.max(srcCanvas.width,srcCanvas.height),ds=Math.min(1024/lng,1);
     var tmp=document.createElement('canvas');tmp.width=Math.max(1,Math.round(srcCanvas.width*ds));tmp.height=Math.max(1,Math.round(srcCanvas.height*ds));
     tmp.getContext('2d').drawImage(srcCanvas,0,0,tmp.width,tmp.height);
     var dataUrl=tmp.toDataURL('image/jpeg',0.9);
     aiShow('IA en cours… 🤖');
-    function fb(e){aiHide();var m=aiErrMsg(e);toast(m.t,m.ms);if(fallback)fallback();}
+    function fb(e){
+      aiHide();
+      /* ❌ Jamais de repli MÉDIOCRE en douce quand c'est le crédit : on le dit
+         et la création attend le retour du crédit (elle repart toute seule). */
+      if(opts.mediocre&&aiFail(e,{quoi:opts.quoi||okMsg,relancer:relancer,quandMeme:fallback}))return;
+      var m=aiErrMsg(e,fallback?' Version rapide appliquée.':'');
+      toast(m.t,m.ms);if(fallback)fallback();
+    }
     var ctrl,to=setTimeout(function(){if(ctrl)try{ctrl.abort();}catch(e){}},65000);
     try{ctrl=new AbortController();}catch(e){}
     fetch(AI_URL+'/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl}),signal:ctrl?ctrl.signal:undefined})
@@ -3041,7 +3121,7 @@ var Photo=(function(){
         srcCanvas.width=img.naturalWidth||img.width;srcCanvas.height=img.naturalHeight||img.height;
         sctx.clearRect(0,0,srcCanvas.width,srcCanvas.height);sctx.drawImage(img,0,0);
         snapshotOriginal();adj=defaultAdjust();curPreset='orig';fx='none';fitView();buildSliders();buildFilters();buildTrend();render();
-        aiHide();toast(okMsg+' ✅',1800);URL.revokeObjectURL(img.src);
+        aiHide();Credit.ok();toast(okMsg+' ✅',1800);URL.revokeObjectURL(img.src);
       };img.onerror=function(){clearTimeout(to);fb();};img.src=URL.createObjectURL(blob);})
       .catch(function(e){clearTimeout(to);fb(e);});
   }
@@ -3185,9 +3265,13 @@ var Photo=(function(){
         buildSliders();buildFilters();render();toast('Cartoon appliqué 🖍️',1400);
       },40);
     },
-    aiCutout:function(){aiRun('cutout','Sujet détouré (IA)',function(){autoBg();});},
-    aiCartoon:function(){aiRun('cartoon','Cartoon IA',function(){cartoonize(srcCanvas,sctx,cartoonP);adj=defaultAdjust();buildSliders();buildFilters();render();});},
-    aiEnhance:function(){aiRun('enhance','Image améliorée (IA)',function(){adj.sharpen=Math.max(adj.sharpen||0,45);buildSliders();render();});},
+    /* Ces 3 fonctions ont un repli local NETTEMENT moins bon que l'IA
+       (gomme couleur aux bords sales / posterize / simple netteté) →
+       marquées « mediocre » : en cas de crédit épuisé on attend au lieu
+       de rendre un résultat raté (Kevin 2026-08-12). */
+    aiCutout:function(){aiRun('cutout','Sujet détouré (IA)',function(){autoBg();},{mediocre:true,quoi:'le détourage'});},
+    aiCartoon:function(){aiRun('cartoon','Cartoon IA',function(){cartoonize(srcCanvas,sctx,cartoonP);adj=defaultAdjust();buildSliders();buildFilters();render();},{mediocre:true,quoi:'le cartoon'});},
+    aiEnhance:function(){aiRun('enhance','Image améliorée (IA)',function(){adj.sharpen=Math.max(adj.sharpen||0,45);buildSliders();render();},{mediocre:true,quoi:'l\'amélioration'});},
     bgImage:function(){$('fileBg').click();},
     _loadBg:function(file){var im=new Image();im.onload=function(){setBgImage(im);URL.revokeObjectURL(im.src);};im.src=URL.createObjectURL(file);},
     aiBg:function(){
@@ -5284,7 +5368,7 @@ var Magic=(function(){
         _lastWho=aiWho(r.headers.get('x-crea-provider'));
         _lastRecreated=(r.headers.get('x-crea-fallback')==='recreated');
         return r.blob();})
-      .then(function(b){clearTimeout(to);busy=false;aiHide();
+      .then(function(b){clearTimeout(to);busy=false;aiHide();Credit.ok();
         if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
         img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
         hint('✅ '+(label||'Transformation')
@@ -5298,7 +5382,10 @@ var Magic=(function(){
               photoData=c.toDataURL('image/jpeg',0.9);toast('On repart de cette image ✨',1400);};i2.src=outUrl;closeSheet();}}
         ]);
       })
-      .catch(function(e){clearTimeout(to);busy=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+      .catch(function(e){clearTimeout(to);busy=false;aiHide();
+        /* 100 % IA : sans crédit il n'existe AUCUNE version correcte → on attend. */
+        if(aiFail(e,{quoi:'cette transformation',hint:hint,relancer:function(){apply(preset,label,custom);}}))return;
+        var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* --- 1bis) 👥 À DEUX : réunir deux photos dans une même scène (Hype AI) --- */
   function duo(){
@@ -5317,7 +5404,9 @@ var Magic=(function(){
         openExport('Vous êtes réunis 👥','La photo est prête — tu peux l\'enregistrer.',[
           {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'a-deux.png','Notre photo');closeSheet();}}
         ]);})
-      .catch(function(e){busy=false;$('magicDuoBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+      .catch(function(e){busy=false;$('magicDuoBtn').disabled=false;aiHide();
+        if(aiFail(e,{quoi:'la photo à deux',hint:hint,relancer:duo}))return;
+        var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* --- 1ter) 🎙 Enregistrer sa voix DANS l'app (Shoom, mode « Ma voix ») --- */
   var recorder=null,recTimer=null;
@@ -5801,13 +5890,20 @@ var Mini=(function(){
   }
 
   /* « Bouche IA » : poses de bouche réalistes via le worker (repli = animation locale). */
+  /* Renvoie les poses IA, null = on repliera sur la bouche « rapide », ou
+     rejette avec 'CREDIT' si c'est le crédit (on attend au lieu de dégrader). */
   function maybeFrames(){
     if(quality!=='ai'||!photoImg)return Promise.resolve(null);
     return fetch(AI_URL+'/frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoImg.src,mode:'sing',n:3})})
-      .then(function(r){return r.json();})
-      .then(function(j){ if(!j||!j.frames||j.frames.length<2)return null;
-        return Promise.all(j.frames.map(loadImg)).then(function(a){a=a.filter(Boolean);return a.length>=2?a:null;}); })
-      .catch(function(){return null;});
+      .then(function(r){ if(!r.ok)return r.json().then(function(j){throw new Error((j&&j.error)||('http_'+r.status));},function(){throw new Error('http_'+r.status);}); return r.json(); })
+      .then(function(j){ if(!j||!j.frames||j.frames.length<2)throw new Error('frames_failed');
+        return Promise.all(j.frames.map(loadImg)).then(function(a){a=a.filter(Boolean);
+          if(a.length<2)throw new Error('frames_unreadable'); Credit.ok(); return a;}); })
+      .catch(function(e){
+        if(Credit.estEpuise(e)){var x=new Error('CREDIT');x.cause=e;throw x;}
+        /* panne passagère : la bouche « rapide » reste bonne — mais on le DIT. */
+        hint('ℹ️ Bouche IA indisponible — version rapide utilisée (le résultat reste bon).');
+        return null; });
   }
   function loadImg(u){return new Promise(function(res){var im=new Image();im.crossOrigin='anonymous';im.onload=function(){res(im);};im.onerror=function(){res(null);};im.src=u;});}
 
@@ -5835,6 +5931,12 @@ var Mini=(function(){
         {label:'🔁 Refaire',ghost:true,fn:function(){closeSheet();generate();}}
       ]);
     }).catch(function(e){ busy=false;$('miniGoBtn').disabled=false;aiHide();try{if(actx)actx.close();}catch(_){}
+      /* Kevin a choisi « 💎 Bouche IA » : si c'est le crédit, on ne bascule pas
+         en douce en qualité réduite — on demande, et on relance tout seul après. */
+      if(String(e&&e.message)==='CREDIT'&&aiFail(e.cause||e,{quoi:'la bouche de ton mini-moi',hint:hint,
+        relancer:generate,quandMeme:function(){quality='fast';
+          var b=document.querySelector('#miniQual [data-q="fast"]'); if(b)setOn(b,'[data-q]');
+          generate();}}))return;
       var m=aiErrMsg(e); hint('⚠️ '+m.t); toast(m.t,m.ms||3200); });
   }
 
