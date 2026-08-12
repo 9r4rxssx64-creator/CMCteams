@@ -4,8 +4,9 @@
 | # | Ce qui reste | Qui | État |
 |---|---|---|---|
 | 1 | **Récupérer la clé Apple `.p8`** (le téléchargement plante côté Apple) | toi | 🔴 **bloque tout le reste iPhone** |
-| 2 | **Décider du projet « KDMC Live »** (télé/radio en direct) — 4 questions plus bas | toi | 🟡 j'attends ton feu vert |
+| 2 | ~~Projet « KDMC Live » (télé/radio)~~ | — | ❌ **ANNULÉ** par Kevin (2026-08-09). Rien à faire, rien codé. |
 | 3 | Envoyer tes **15 apps sur TestFlight** | moi | ⏳ dès que le point 1 est fait (5 min) |
+| 4 | **Stockage `kdmc-deces-insee`** : Kevin a dit « efface » — **PAS FAIT**, il est encore utilisé (voir plus bas) | toi | 🟠 un mot : garder ou supprimer quand même |
 
 ---
 
@@ -30,30 +31,33 @@ comptes tout neufs, pas toi. À retenter quand tu veux :
 
 ---
 
-### 🟡 2. Projet « KDMC Live » — télé & radio en direct (décision à prendre)
+### ❌ 2. Projet « KDMC Live » — ANNULÉ
 
-**Ce que je ne fais pas** : le reverse-engineering de **vavoo.to** (rediffusion de chaînes payantes
-sans autorisation) ni les index de fichiers piratés (FilePursuit, r/Piracy). Trop risqué pour ton
-domaine, ta société et ton compte Apple tout neuf — Apple bannit sans discussion.
+Kevin : « **Action 2 annule, rien.** » (2026-08-09) → **abandonné, rien n'a été codé, rien à faire.**
+Aucune trace dans le domaine. Les 9 liens outils (VLC, iptv-org, yt-dlp…) restent simplement
+rangés dans **OSINT** avec leur fonction écrite — c'est tout ce qui a été livré sur ce sujet.
 
-**Ce que je te propose à la place** (et qui n'existe nulle part bien fait) : `tv.kd-mc.com` —
-~10 000 chaînes **publiques et gratuites** (iptv-org), France TV / Arte / franceinfo / BFM /
-Euronews, **Monaco Info**, Pluto TV & Samsung TV+ (films & séries gratuits), ~50 000 radios,
-archive.org (films libres, téléchargeables), + **yt-dlp** pour **tes** vidéos.
-Lecteur HD adaptatif, **AirPlay vers ta TV**, image-dans-l'image, guide TV, multi-écran,
-favoris via ton SSO, et **une vraie appli iPhone** (elle rentre dans le registre en 1 ligne).
-Coût : **0 €**.
+---
 
-**Limites dites franchement** : Canal+/beIN/Netflix/DAZN = impossible légalement · le sport gratuit
-est rare · certaines chaînes FR peuvent être géo-bloquées depuis Monaco (je mesurerai, je ne devine pas).
+### 🟠 4. Stockage `kdmc-deces-insee` — tu as dit « efface », je ne l'ai PAS fait
 
-**Tes 4 réponses pour que je cadre :**
-1. Usage principal : **infos** · **films/séries gratuits** · **radio/musique** · **TV du salon** ?
-2. **Privé** (toi + Laurence + famille) ou **ouvert** sur le domaine ?
-3. Le **téléchargement**, c'est pour tes propres vidéos, ou autre chose de précis ?
-4. Priorité : **qualité du lecteur** (fluide, AirPlay, zéro coupure) ou **nombre de chaînes** ?
+**Pourquoi je me suis arrêté :** en regardant le contenu avant de supprimer, j'ai vu que ce
+stockage **sert encore**. Ce que je t'avais dit (« données publiques, re-téléchargeables »)
+était **incomplet** : j'avais vérifié la page de l'arbre, pas les scripts derrière.
 
-*(Je ne code rien tant que tu n'as pas répondu — c'est toi qui as demandé qu'on cadre d'abord.)*
+**3 scripts lisent ce stockage :** `tools/arbre/find-deces.py`, `actes-register.py`,
+`enrich-insee-local.py` — c'est-à-dire l'automatisation **« Arbre — retrouver un décès précis »**,
+justement celle qu'on avait **gardée**.
+
+**Ce que tu perdrais en supprimant :** le **numéro d'acte de décès** et le **code de la commune**
+(la « source 2 » complète). La recherche par nom/date continuerait de marcher (elle passe par
+matchID, un autre service).
+
+**Ton choix, en un mot :**
+- **« garde »** → je ne touche à rien, la recherche d'actes continue de marcher.
+- **« supprime quand même »** → j'efface le stockage ET je retire proprement la « source 2 »
+  des 3 scripts (sinon ils planteraient). Les données INSEE sont publiques et re-téléchargeables
+  si tu changes d'avis un jour.
 
 ---
 
