@@ -8,14 +8,14 @@ import { orchestrator } from '../core-svc/orchestrator.js';
 import { auditLog } from '../observability/audit-log.js';
 import { firebase } from '../storage/firebase.js';
 
+import { lireFichier as lireFichierDepot } from '../integrations/depot-github.js';
+
 export async function readFile(path: string, branch = 'main'): Promise<{ content: string; size: number }> {
   if (!path || path.includes('..') || path.startsWith('/')) {
     throw new Error('Chemin invalide (relatif obligatoire, pas de ..)');
   }
-  const url = `https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/${branch}/${path}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const content = await res.text();
+  const content = await lireFichierDepot(path, { branche: branch, timeoutMs: 8000 });
+  if (content === null) throw new Error('Lecture impossible (dépôt inaccessible ou fichier absent)');
   return { content, size: content.length };
 }
 export async function resolvePhone(phoneArg?: string, contactName?: string): Promise<string> {
@@ -346,19 +346,17 @@ export async function projectStatus(projectId: string): Promise<unknown> {
 }
 export async function projectContinue(projectId: string): Promise<unknown> {
   /* Lit handoff JSON + KEVIN_ACTIONS_TODO.md + lessons depuis GitHub raw */
-  const handoffUrl = `https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/CLAUDE_HANDOFF.json`;
-  const todoUrl = `https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/KEVIN_ACTIONS_TODO.md`;
   let handoff: unknown = null;
   let todo = '';
   try {
-    const res = await fetch(handoffUrl, { signal: AbortSignal.timeout(5000) });
-    if (res.ok) handoff = await res.json();
+    const brut = await lireFichierDepot('CLAUDE_HANDOFF.json', { timeoutMs: 5000 });
+    if (brut) handoff = JSON.parse(brut);
   } catch {
     /* ignore */
   }
   try {
-    const res = await fetch(todoUrl, { signal: AbortSignal.timeout(5000) });
-    if (res.ok) todo = (await res.text()).slice(0, 5000);
+    const brut = await lireFichierDepot('KEVIN_ACTIONS_TODO.md', { timeoutMs: 5000 });
+    if (brut) todo = brut.slice(0, 5000);
   } catch {
     /* ignore */
   }

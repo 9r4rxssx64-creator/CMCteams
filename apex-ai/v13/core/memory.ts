@@ -16,6 +16,10 @@
 
 import { buildIdentitySection } from './apex-identity.js';
 import { logger } from './logger.js';
+import {
+  lireFichier as lireFichierDepot,
+  listerDossier as listerDossierDepot,
+} from '../services/integrations/depot-github.js';
 
 export interface Fact {
   id: string;
@@ -765,7 +769,11 @@ class Memory {
     failed: number;
     docs: Record<string, { content: string; ts: number; size: number }>;
   }> {
-    const REPO_RAW = 'https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/';
+    /* L'adresse de lecture n'est plus écrite ici : elle vient de
+       services/integrations/depot-github. Raison : le dépôt doit passer en
+       privé, et ces lectures sans jeton répondraient alors 404 — en SILENCE,
+       parce que le code ignore un document manquant. Apex arrêterait de
+       relire ses documents sans que personne ne s'en aperçoive. */
     const DOC_FILES = [
       'CLAUDE.md',
       'NOTES_USER.md',
@@ -800,15 +808,11 @@ class Memory {
         continue;
       }
       try {
-        const res = await fetch(REPO_RAW + doc, {
-          method: 'GET',
-          signal: AbortSignal.timeout(8000),
-        });
-        if (!res.ok) {
+        const content = await lireFichierDepot(doc, { timeoutMs: 8000 });
+        if (content === null) {
           failed++;
           continue;
         }
-        const content = await res.text();
         cache[doc] = { content, ts: now, size: content.length };
         synced++;
       } catch (err: unknown) {
@@ -861,8 +865,9 @@ class Memory {
     rules: Record<string, string>;
     fetchedAt: number;
   }> {
-    const REPO_API = 'https://api.github.com/repos/9r4rxssx64-creator/CMCteams/contents/.claude/';
-    const REPO_RAW_BASE = 'https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/.claude/';
+    /* Adresses centralisées dans services/integrations/depot-github — voir
+       l'explication au-dessus de syncDocsAtBoot. */
+    const BASE_META = '.claude/';
     const FOLDERS = ['skills', 'hooks', 'commands', 'rules'] as const;
     const CACHE_TTL_MS = 6 * 60 * 60 * 1000; /* 6h */
     const cacheKey = 'apex_v13_meta_cache';
@@ -893,14 +898,8 @@ class Memory {
     /* Helper fetch listing folder */
     const listFolder = async (folder: string): Promise<Array<{ name: string; type: string }>> => {
       try {
-        const res = await fetch(REPO_API + folder, {
-          method: 'GET',
-          headers: { Accept: 'application/vnd.github.v3+json' },
-          signal: AbortSignal.timeout(8000),
-        });
-        if (!res.ok) return [];
-        const arr = (await res.json()) as Array<{ name: string; type: string }>;
-        return Array.isArray(arr) ? arr.filter((e) => e && e.type === 'file') : [];
+        const arr = await listerDossierDepot(BASE_META + folder, { timeoutMs: 8000 });
+        return arr.filter((e) => e && e.type === 'file');
       } catch (err: unknown) {
         logger.warn('memory.syncMeta', `list ${folder} failed`, { err });
         return [];
@@ -909,13 +908,7 @@ class Memory {
 
     /* Helper fetch un fichier raw */
     const fetchRaw = async (path: string): Promise<string | null> => {
-      try {
-        const res = await fetch(REPO_RAW_BASE + path, { signal: AbortSignal.timeout(8000) });
-        if (!res.ok) return null;
-        return await res.text();
-      } catch {
-        return null;
-      }
+      return lireFichierDepot(BASE_META + path, { timeoutMs: 8000 });
     };
 
     const fresh: MetaCache = { skills: {}, hooks: {}, commands: {}, rules: {}, fetchedAt: now };
