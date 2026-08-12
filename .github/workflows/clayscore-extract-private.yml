@@ -119,7 +119,12 @@ jobs:
           MOI: ${{ steps.jeton.outputs.utilisateur }}
         run: |
           set -e
-          git remote add prive "https://x-access-token:${PAT}@github.com/${MOI}/${NOM}.git"
+          # ⚠️ L'identifiant DOIT être le nom de compte, pas « x-access-token ».
+          # Ce dernier est la convention des jetons d'APPLICATION GitHub ; avec un
+          # jeton PERSONNEL, git n'est pas authentifié, retombe en anonyme, et un
+          # dépôt privé répond « Repository not found » — message trompeur qui
+          # laisse croire que le dépôt n'existe pas. (Mesuré : run #2.)
+          git remote add prive "https://${MOI}:${PAT}@github.com/${MOI}/${NOM}.git"
           # Pas de --force : si le dépôt contient déjà autre chose, on veut le
           # savoir plutôt que de l'écraser.
           git push prive clayscore-seul:main
@@ -134,7 +139,7 @@ jobs:
         run: |
           set -e
           cd "$(mktemp -d)"
-          git clone --quiet "https://x-access-token:${PAT}@github.com/${MOI}/${NOM}.git" verif
+          git clone --quiet "https://${MOI}:${PAT}@github.com/${MOI}/${NOM}.git" verif
           cd verif
           RECU=$(git ls-files | wc -l)
           echo "Fichiers attendus : $ATTENDU_FICHIERS — reçus : $RECU"
@@ -159,7 +164,7 @@ jobs:
           set -e
           cd "$(mktemp -d)"
           git clone --quiet --depth 1 \
-            "https://x-access-token:${PAT}@github.com/${MOI}/${NOM}.git" essai
+            "https://${MOI}:${PAT}@github.com/${MOI}/${NOM}.git" essai
           cd essai
           python3 -m pip install --quiet -r requirements.txt
           python3 -m pytest -q 2>&1 | tail -5
