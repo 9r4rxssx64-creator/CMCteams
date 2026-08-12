@@ -170,8 +170,9 @@ def simulate(params: SynthParams) -> Scenario:
     launch_frame = int(round(0.30 * fps))
 
     if params.scenario == "casse":
-        gunshot_frame: Optional[int] = launch_frame + int(round(0.40 * fps))
-        break_frame: Optional[int] = gunshot_frame + 1  # balle quasi instantanée
+        tir = launch_frame + int(round(0.40 * fps))
+        gunshot_frame: Optional[int] = tir
+        break_frame: Optional[int] = tir + 1  # balle quasi instantanée
     elif params.scenario == "manque":
         gunshot_frame = launch_frame + int(round(0.40 * fps))
         break_frame = None
@@ -254,8 +255,10 @@ def _make_background(params: SynthParams, rng: np.random.Generator) -> np.ndarra
             ay = int(rng.uniform(H * 0.03, H * 0.08))
             cloud = np.zeros((H, W, 3), dtype=np.float32)
             cv2.ellipse(cloud, (cx, cy), (ax, ay), 0, 0, 360, (250, 250, 250), -1)
-            cloud = cv2.GaussianBlur(cloud, (0, 0), sigmaX=ax * 0.4)
-            img = np.clip(img + cloud * 0.5, 0, 255)
+            cloud[:] = cv2.GaussianBlur(cloud, (0, 0), sigmaX=ax * 0.4)
+            # Ecriture EN PLACE : garde la forme et le float32 de l'image,
+            # et evite de reallouer une image entiere par nuage.
+            np.clip(img + cloud * 0.5, 0, 255, out=img)
 
     elif params.background == "foret":
         # Vert texturé + quelques troncs sombres verticaux.
@@ -427,7 +430,8 @@ def write_video(path: str, images: List[np.ndarray], fps: float) -> None:
     if not images:
         raise ValueError("Aucune image à écrire.")
     h, w = images[0].shape[:2]
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fourcc = cv2.VideoWriter_fourcc(  # type: ignore[attr-defined]  # absent des stubs cv2, présent à l'exécution
+            *"mp4v")
     writer = cv2.VideoWriter(str(path), fourcc, fps, (w, h))
     if not writer.isOpened():
         raise RuntimeError(f"Impossible d'ouvrir le VideoWriter pour {path}")

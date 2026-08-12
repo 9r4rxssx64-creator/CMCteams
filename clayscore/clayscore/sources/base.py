@@ -99,9 +99,9 @@ class VideoSource(ABC):
     def __enter__(self) -> "VideoSource":
         return self.open()
 
-    def __exit__(self, *exc) -> bool:
+    def __exit__(self, *exc) -> None:
+        # None (et pas False) : ce gestionnaire n'avale JAMAIS d'exception.
         self.close()
-        return False
 
 
 class AudioSource(ABC):
@@ -142,6 +142,6 @@ class AudioSource(ABC):
     def __enter__(self) -> "AudioSource":
         return self.open()
 
-    def __exit__(self, *exc) -> bool:
+    def __exit__(self, *exc) -> None:
+        # None (et pas False) : ce gestionnaire n'avale JAMAIS d'exception.
         self.close()
-        return False

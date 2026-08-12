@@ -74,7 +74,7 @@ class CorridorCalibrator:
         envelope = dev.std(axis=0) + dev.mean(axis=0) * 0.0  # base = std inter-essais
         # Plancher d'enveloppe pour éviter des tolérances nulles (bruit).
         scale = np.linalg.norm(reference.max(axis=0) - reference.min(axis=0))
-        floor = max(self.min_envelope_frac * scale, 1e-3)
+        floor = max(float(self.min_envelope_frac * scale), 1e-3)
         envelope = np.maximum(envelope, floor)
         return Corridor(reference=reference, envelope=envelope,
                         n_samples=len(tracks), dims=reference.shape[1])

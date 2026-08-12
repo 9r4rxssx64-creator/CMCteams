@@ -34,7 +34,7 @@ import os
 import socket
 import subprocess
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 MODES = ("auto", "autonome", "reseau")
 
@@ -129,7 +129,7 @@ def _run(cmd: List[str], timeout: float = 3.0) -> str:
         return ""
 
 
-def has_uplink(probe: Optional[callable] = None) -> bool:
+def has_uplink(probe: Optional[Callable[[], bool]] = None) -> bool:
     """Un réseau existant est-il joignable (passerelle par défaut présente) ?
 
     Aucune requête Internet n'est faite : on regarde la table de routage. Un

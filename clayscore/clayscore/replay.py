@@ -200,7 +200,8 @@ def render_overlay_clip(
     reveal = reveal_frame if reveal_frame is not None else int(len(images) * 0.6)
 
     out_fps = max(1.0, fps / max(slowmo, 1e-6))
-    writer = cv2.VideoWriter(str(out_path), cv2.VideoWriter_fourcc(*"mp4v"),
+    writer = cv2.VideoWriter(str(out_path), cv2.VideoWriter_fourcc(  # type: ignore[attr-defined]  # absent des stubs cv2, présent à l'exécution
+            *"mp4v"),
                              out_fps, (W, H))
     if not writer.isOpened():
         raise RuntimeError(f"VideoWriter impossible pour {out_path}")

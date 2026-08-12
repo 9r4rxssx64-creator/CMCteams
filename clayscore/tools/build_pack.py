@@ -175,6 +175,7 @@ def main():
         ("COMPARATIF_CHINE_UE", "Chine ou Europe : le comparatif"),
         ("DEVIS_COMPARATIF", "Devis comparatif (liens 1 clic)"),
         ("DEVIS_ETAPE_0", "Devis du kit de validation"),
+        ("AUDIT_EXTERIEUR", "Ce que des relecteurs extérieurs en pensent"),
         ("GUIDE_MATERIEL", "Guide du matériel"),
         ("GUIDE_MONTAGE", "Guide de montage et d'installation"),
         ("CHECKLIST_PROTOTYPE", "Checklist du prototype"),
@@ -198,13 +199,19 @@ def main():
     for f in sorted(DEMOS_H264.glob("*.mp4")):
         shutil.copy(f, PACK / "demos" / f.name)
 
-    # 5) Logiciel
-    subprocess.run(
-        f"cd {SRC} && tar cf - --exclude='.venv' --exclude='__pycache__' "
-        "--exclude='.pytest_cache' --exclude='*.pyc' --exclude='data/clips' "
-        "--exclude='data/out' --exclude='data/labeled' --exclude='data/yolo' "
-        "--exclude='*.db' --exclude='match_state.json' --exclude='docs' . | "
-        f"(cd {PACK}/logiciel && tar xf -)", shell=True, check=True)
+    # 5) Logiciel — copie SANS passer par un shell.
+    #
+    # L'ancienne version faisait `subprocess.run(f"cd {SRC} && tar ... ",
+    # shell=True)`. bandit la signale en sévérité HAUTE (B602/CWE-78) et il a
+    # raison : tout caractère spécial dans un chemin serait interprété comme
+    # une commande. Ici les chemins sont des constantes, donc rien n'était
+    # exploitable — mais un chemin de travail avec une espace suffisait à
+    # casser la construction du dossier. `shutil.copytree` fait la même chose,
+    # sans shell, et refuse silencieusement moins de choses.
+    IGNORER = shutil.ignore_patterns(
+        ".venv", "__pycache__", ".pytest_cache", "*.pyc", "*.db",
+        "match_state.json", "docs", "clips", "out", "labeled", "yolo")
+    shutil.copytree(SRC, PACK / "logiciel", ignore=IGNORER, dirs_exist_ok=True)
 
     # 6) Menu d'accueil
     (PACK / "index.html").write_text(MENU, encoding="utf-8")
@@ -265,6 +272,10 @@ MENU = """<!doctype html><html lang="fr"><head><meta charset="utf-8">
       <a class="card" href="documents/GLOSSAIRE.html">
         <div class="k">Vocabulaire</div><h3>Glossaire</h3>
         <p>Tous les mots expliqués : ball-trap, produit, informatique, business.</p></a>
+      <a class="card" href="documents/AUDIT_EXTERIEUR.html">
+        <div class="k">Avis extérieur</div><h3>Audit extérieur</h3>
+        <p>Ce que des analyseurs indépendants (non-IA) trouvent : 2 vrais défauts
+        corrigés, et le point le plus grave que <em>aucun</em> outil n'a vu.</p></a>
       <a class="card" href="documents/AUDIT_QUALITE.html">
         <div class="k">Qualité</div><h3>Audit qualité</h3>
         <p>Les défauts trouvés et corrigés, avec les mesures avant/après —

@@ -175,3 +175,48 @@ def test_un_403_est_explique_et_non_pris_pour_un_lien_casse(monkeypatch):
     md = rendre_liens(tester_liens([("eBay", "https://ebay.de/itm/1")]))
     assert "refuse les robots" in md
     assert "pas** que le lien est mort" in md
+
+
+# --------------------------------------------------------- schémas d'URL ----
+# Trouvé par bandit (B310/CWE-22) : `urlopen` sait ouvrir `file://`. Une URL de
+# fournisseur mal saisie lirait alors un fichier de la machine et son contenu
+# remonterait dans le rapport de prix. Ces tests verrouillent le filtre.
+
+def test_une_url_file_est_refusee_sans_lire_le_disque(tmp_path):
+    """`file://` doit être refusé — et surtout, rien ne doit être lu."""
+    from tools.verif_prix import telecharger
+    secret = tmp_path / "secret.txt"
+    secret.write_text("MOT DE PASSE = 200807", encoding="utf-8")
+
+    html, detail = telecharger(f"file://{secret}")
+
+    assert html is None, "un fichier local ne doit JAMAIS être téléchargé"
+    assert "schéma refusé" in detail
+    assert "200807" not in (detail or ""), "le contenu du fichier a fuité"
+
+
+def test_les_autres_schemas_dangereux_sont_refuses():
+    from tools.verif_prix import telecharger
+    for url in ("ftp://exemple.invalid/x", "data:text/html,<b>x</b>",
+                "gopher://exemple.invalid", "exemple.invalid/sans-schema"):
+        html, detail = telecharger(url)
+        assert html is None, f"{url} aurait dû être refusé"
+        assert "schéma refusé" in detail
+
+
+def test_https_reste_accepte(monkeypatch):
+    """Le filtre ne doit pas casser le cas normal."""
+    import tools.verif_prix as vp
+
+    class _Faux:
+        def read(self):
+            return b"<html>ok</html>"
+        def __enter__(self):
+            return self
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(vp.urllib.request, "urlopen",
+                        lambda req, timeout=0: _Faux())
+    html, detail = vp.telecharger("https://exemple.invalid/fiche")
+    assert html == "<html>ok</html>" and detail == "ok"

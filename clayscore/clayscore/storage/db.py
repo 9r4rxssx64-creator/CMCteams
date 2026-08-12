@@ -59,6 +59,8 @@ class Storage:
                 ),
             )
             self._conn.commit()
+            if cur.lastrowid is None:  # jamais vu en pratique apres INSERT
+                raise RuntimeError("la partie n'a pas ete enregistree (aucun identifiant rendu)")
             return int(cur.lastrowid)
 
     def list_parties(self, limit: int = 50) -> List[Dict]:

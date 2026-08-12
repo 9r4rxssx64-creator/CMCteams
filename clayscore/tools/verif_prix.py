@@ -36,6 +36,7 @@ import json
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Dict, List, Optional
@@ -186,8 +187,22 @@ def extraire_prix(html: str) -> tuple[Optional[float], str]:
 
 
 # ------------------------------------------------------------------ réseau --
+SCHEMAS_AUTORISES = ("http", "https")
+
+
 def telecharger(url: str, timeout: int = 25) -> tuple[Optional[str], str]:
-    """Renvoie (html, détail). En cas d'échec, html vaut None et on DIT pourquoi."""
+    """Renvoie (html, détail). En cas d'échec, html vaut None et on DIT pourquoi.
+
+    ⚠️ **Seuls http/https sont acceptés.** `urlopen` sait aussi ouvrir
+    `file://` : une URL de fournisseur mal saisie (ou glissée par un tiers dans
+    le catalogue) ferait alors lire un fichier de la machine et remonterait son
+    contenu dans le rapport de prix. bandit signale ce piège (B310/CWE-22) ;
+    le filtre ci-dessous le ferme. Un schéma refusé n'est pas une panne : il
+    est signalé comme tel dans le rapport, comme un lien mort.
+    """
+    schema = urllib.parse.urlparse(url).scheme.lower()
+    if schema not in SCHEMAS_AUTORISES:
+        return None, f"schéma refusé ({schema or 'aucun'}) — http/https seulement"
     req = urllib.request.Request(url, headers=ENTETES)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
