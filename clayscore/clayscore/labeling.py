@@ -10,14 +10,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import numpy as np
 
+cv2: Any = None  # cv2 est OPTIONNEL : l'écriture JSON n'en a pas besoin.
 try:
-    import cv2
-except Exception:  # noqa: BLE001 - cv2 optionnel pour la simple écriture JSON
-    cv2 = None
+    import cv2  # type: ignore[no-redef]
+except Exception:  # noqa: BLE001
+    pass
 
 VALID = ("casse", "manque", "nobird")
 

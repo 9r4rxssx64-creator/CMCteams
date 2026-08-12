@@ -49,7 +49,7 @@ class MicAudioSource(AudioSource):
         def _callback(indata, frames, time_info, status):  # noqa: ANN001
             self._queue.put(indata[:, 0].copy())
 
-        self._stream = sd.InputStream(
+        flux = sd.InputStream(
             device=self.device,
             channels=1,
             samplerate=self._sr,
@@ -57,7 +57,8 @@ class MicAudioSource(AudioSource):
             dtype="float32",
             callback=_callback,
         )
-        self._stream.start()
+        self._stream = flux
+        flux.start()
         self._index = 0
         self._start_sample = 0
         return self
