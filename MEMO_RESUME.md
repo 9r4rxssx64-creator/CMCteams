@@ -36,12 +36,13 @@
 
 ### Décisions Kevin de la session
 - **Projet « KDMC Live » (télé/radio) : ANNULÉ** (« Action 2 annule, rien ») — rien codé.
-- **Stockage R2 `kdmc-deces-insee` : « efface » → PAS FAIT**, arrêt volontaire. Vérification
-  avant destruction : 3 scripts le lisent encore (`tools/arbre/find-deces.py`,
-  `actes-register.py`, `enrich-insee-local.py`) = l'automatisation « Arbre — retrouver un
-  décès précis » qu'on avait gardée. Mon info précédente était **incomplète** (j'avais vérifié
-  `arbre/index.html`, pas les scripts). Choix rendu à Kevin : garder, ou supprimer + retirer
-  la « source 2 » des 3 scripts.
+- **Stockage R2 `kdmc-deces-insee` : GARDÉ** (Kevin 2026-08-12 « Garde ») — **rien supprimé**.
+  Kevin avait d'abord dit « efface » ; je me suis **arrêté avant de détruire** car 3 scripts le
+  lisent encore (`tools/arbre/find-deces.py`, `actes-register.py`, `enrich-insee-local.py`) =
+  l'automatisation « Arbre — retrouver un décès précis » qu'on avait conservée. Mon info
+  précédente était **incomplète** (j'avais vérifié `arbre/index.html`, pas les scripts) → j'ai
+  corrigé et rendu le choix à Kevin, qui a tranché : on garde. La « source 2 » (numéro d'acte +
+  code commune) continue donc de fonctionner. Leçon #141.
 
 ### Pièges rencontrés (à ne pas refaire)
 - **Apostrophes dans `node -e '…'`** : même dans un commentaire JS, elles ferment la chaîne

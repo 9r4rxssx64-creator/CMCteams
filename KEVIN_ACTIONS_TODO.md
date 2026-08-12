@@ -6,7 +6,7 @@
 | 1 | **Récupérer la clé Apple `.p8`** (le téléchargement plante côté Apple) | toi | 🔴 **bloque tout le reste iPhone** |
 | 2 | ~~Projet « KDMC Live » (télé/radio)~~ | — | ❌ **ANNULÉ** par Kevin (2026-08-09). Rien à faire, rien codé. |
 | 3 | Envoyer tes **15 apps sur TestFlight** | moi | ⏳ dès que le point 1 est fait (5 min) |
-| 4 | **Stockage `kdmc-deces-insee`** : Kevin a dit « efface » — **PAS FAIT**, il est encore utilisé (voir plus bas) | toi | 🟠 un mot : garder ou supprimer quand même |
+| 4 | ~~Stockage `kdmc-deces-insee`~~ | — | ✅ **GARDÉ** (Kevin 2026-08-12 « Garde ») — rien supprimé, la recherche d'actes marche. |
 
 ---
 
@@ -39,25 +39,20 @@ rangés dans **OSINT** avec leur fonction écrite — c'est tout ce qui a été 
 
 ---
 
-### 🟠 4. Stockage `kdmc-deces-insee` — tu as dit « efface », je ne l'ai PAS fait
+### ✅ 4. Stockage `kdmc-deces-insee` — GARDÉ (décision Kevin, 2026-08-12)
 
-**Pourquoi je me suis arrêté :** en regardant le contenu avant de supprimer, j'ai vu que ce
-stockage **sert encore**. Ce que je t'avais dit (« données publiques, re-téléchargeables »)
-était **incomplet** : j'avais vérifié la page de l'arbre, pas les scripts derrière.
+Kevin : « **Garde** » → **rien n'a été supprimé, rien à faire.**
 
-**3 scripts lisent ce stockage :** `tools/arbre/find-deces.py`, `actes-register.py`,
-`enrich-insee-local.py` — c'est-à-dire l'automatisation **« Arbre — retrouver un décès précis »**,
-justement celle qu'on avait **gardée**.
+Bonne décision : ce stockage est **encore lu par 3 scripts** (`tools/arbre/find-deces.py`,
+`actes-register.py`, `enrich-insee-local.py`), c'est-à-dire l'automatisation
+**« Arbre — retrouver un décès précis »**. Elle continue de donner le **numéro d'acte de
+décès** et le **code de la commune** (la « source 2 » complète), en plus de la recherche
+par nom/date.
 
-**Ce que tu perdrais en supprimant :** le **numéro d'acte de décès** et le **code de la commune**
-(la « source 2 » complète). La recherche par nom/date continuerait de marcher (elle passe par
-matchID, un autre service).
-
-**Ton choix, en un mot :**
-- **« garde »** → je ne touche à rien, la recherche d'actes continue de marcher.
-- **« supprime quand même »** → j'efface le stockage ET je retire proprement la « source 2 »
-  des 3 scripts (sinon ils planteraient). Les données INSEE sont publiques et re-téléchargeables
-  si tu changes d'avis un jour.
+*Rappel de ce qui s'est passé : je t'avais annoncé ce stockage comme inutile — c'était une
+info **incomplète** de ma part (j'avais vérifié la page de l'arbre, pas les scripts). Je me
+suis arrêté avant d'effacer et je t'ai rendu le choix. Leçon gravée (#141) : une recherche de
+dépendance couvre page **+ scripts + automatisations**, jamais la page seule.*
 
 ---
 
