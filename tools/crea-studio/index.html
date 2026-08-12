@@ -873,9 +873,18 @@
       <div class="hint" id="miniMouthHint">👄 Touche la bouche sur la photo si elle est mal repérée.</div>
       <div class="mini-persos hidden" id="miniPersos"></div>
       <div class="textedit"><textarea id="miniScript" rows="2" style="width:100%;box-sizing:border-box" placeholder="Ce que ton mini-moi va dire… (ex : Salut, c'est Kevin !)" maxlength="600"></textarea></div>
+      <div class="hint" id="miniDuree"></div>
       <div class="toolrow" style="justify-content:center">
+        <button class="chip" id="miniApBtn" onclick="Mini.apercu()"><span class="ic">👁</span>Aperçu</button>
         <button class="chip" id="miniDictBtn" onclick="Mini.dicter()"><span class="ic">🎙️</span>Dicter</button>
         <button class="chip" onclick="Mini.garder()"><span class="ic">👤</span>Garder ce mini-moi</button>
+      </div>
+      <div class="hint">🌆 Le décor derrière toi :</div>
+      <div class="toolrow" id="miniDecor" style="justify-content:center">
+        <button class="chip on" data-dec="none"><span class="ic">🚫</span>Ma photo</button>
+        <button class="chip" data-dec="blur"><span class="ic">🫧</span>Flou portrait</button>
+        <button class="chip" data-dec="grad"><span class="ic">🎬</span>Studio</button>
+        <button class="chip" data-dec="img"><span class="ic">🖼️</span>Mon image</button>
       </div>
       <div class="hint">🎙️ La voix :</div>
       <div class="toolrow" id="miniVoiceRow" style="justify-content:center">
@@ -1014,6 +1023,7 @@
 <input type="file" id="fileMiniPhoto" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
 <input type="file" id="fileMiniPhotoCam" accept="image/*,image/heic,image/heif" capture="user" class="hidden">
 <input type="file" id="fileMiniAudio" accept="audio/*,.m4a,.caf,.aac,.mp3,.wav,.ogg" class="hidden">
+<input type="file" id="fileMiniDecor" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
 
 <script>
 /* ============================================================
@@ -1021,7 +1031,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.13.0';
+var APP_VER='v9.14.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -6021,6 +6031,7 @@ var Mini=(function(){
   var voiceMode='tts', voiceBlob=null, ratio='9:16', subs=true, quality='ai';
   var busy=false, outUrl=null, outBlob=null, mediaRec=null, recChunks=[];
   var visemes=null, clin=true, ambiance='studio', ton='normale';
+  var decor='none', cutoutImg=null, decorImg=null, cutoutEnCours=false;
   var TONS={grave:0.88,normale:1,aigue:1.13};
   var CLE_PERSOS='crea_mini_persos';
 
@@ -6039,6 +6050,9 @@ var Mini=(function(){
       var out=new Image();
       out.onload=function(){
         photoImg=out; outUrl=null; outBlob=null;
+        /* nouvelle photo = l'ancienne découpe ne vaut plus rien (sinon on
+           collerait le visage de la photo précédente sur le décor) */
+        cutoutImg=null; decor='none'; apercuStop(); syncBoutons();
         img.src=out.src; img.classList.remove('hidden');
         vid.classList.add('hidden'); vid.removeAttribute('src');
         $('miniEmpty').classList.add('hidden'); $('miniPanel').classList.remove('hidden');
@@ -6131,12 +6145,89 @@ var Mini=(function(){
   }
   function loadImg(u){return new Promise(function(res){var im=new Image();im.crossOrigin='anonymous';im.onload=function(){res(im);};im.onerror=function(){res(null);};im.src=u;});}
 
+  /* ---------- 🌆 VRAI DÉCOR : on te découpe de ta photo (détourage) et on met
+     ce que tu veux derrière. Sans découpe, il n'y a PAS de décor possible —
+     on le dit au lieu de bricoler un faux fond. Le résultat est redimensionné
+     aux dimensions EXACTES de la photo → tous les repères (bouche, yeux,
+     cadrage) restent valables, rien à recalculer. ---------------------- */
+  function srcImg(){ return (decor!=='none'&&cutoutImg)?cutoutImg:photoImg; }
+  function detourer(){
+    if(cutoutImg)return Promise.resolve(cutoutImg);
+    if(!photoImg)return Promise.reject(new Error('pas de photo'));
+    if(cutoutEnCours)return Promise.reject(new Error('déjà en cours'));
+    cutoutEnCours=true; aiShow('✂️ Je te découpe de ta photo…');
+    var c=document.createElement('canvas');
+    c.width=photoImg.naturalWidth;c.height=photoImg.naturalHeight;
+    c.getContext('2d').drawImage(photoImg,0,0);
+    return fetch(AI_URL+'/cutout',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:c.toDataURL('image/jpeg',0.9)})})
+      .then(function(r){var ct=r.headers.get('content-type')||'';
+        if(!r.ok||ct.indexOf('image')<0)return r.json().then(
+          function(j){throw new Error((j&&j.error)||('http_'+r.status));},
+          function(){throw new Error('http_'+r.status);});
+        return r.blob();})
+      .then(function(b){return new Promise(function(res,rej){
+        var im=new Image();
+        im.onload=function(){
+          /* remise aux dimensions d'origine : les repères restent bons */
+          var k=document.createElement('canvas');
+          k.width=photoImg.naturalWidth;k.height=photoImg.naturalHeight;
+          k.getContext('2d').drawImage(im,0,0,k.width,k.height);
+          var out=new Image();
+          out.onload=function(){cutoutImg=out;cutoutEnCours=false;aiHide();Credit.ok();res(out);};
+          out.onerror=function(){cutoutEnCours=false;aiHide();rej(new Error('découpe illisible'));};
+          out.src=k.toDataURL('image/png');
+          try{URL.revokeObjectURL(im.src);}catch(e){}
+        };
+        im.onerror=function(){cutoutEnCours=false;aiHide();rej(new Error('découpe illisible'));};
+        im.src=URL.createObjectURL(b);});})
+      .catch(function(e){cutoutEnCours=false;aiHide();throw e;});
+  }
+  function choisirDecor(d){
+    if(d==='none'){decor='none';hint('Décor retiré — ta photo d\'origine.');return;}
+    detourer().then(function(){
+      decor=d;
+      hint(d==='blur'?'✅ Décor flou (effet portrait) — fabrique ta vidéo.'
+          :d==='grad'?'✅ Décor studio — fabrique ta vidéo.'
+          :'✅ Décor : ton image — fabrique ta vidéo.');
+      toast('🌆 Décor prêt',1800);
+    }).catch(function(e){
+      /* pas de découpe = pas de décor. On remet le bouton sur « Aucun » pour
+         ne pas laisser croire qu'un décor est actif. */
+      decor='none'; syncBoutons();
+      if(aiFail(e,{quoi:'le décor derrière toi',hint:hint,relancer:function(){choisirDecor(d);}}))return;
+      var m=aiErrMsg(e);hint('⚠️ Découpe impossible : '+m.t+' — ta photo reste telle quelle.');
+      toast('Décor impossible sans la découpe',3200);
+    });
+  }
+  function dessinerDecor(cx,W,H,cr){
+    if(decor==='none'||!cutoutImg)return;
+    if(decor==='blur'){
+      cx.save();
+      try{cx.filter='blur(22px)';}catch(e){}
+      var m=Math.max(W,H)*0.06;                        /* déborde : pas de bord net */
+      cx.drawImage(photoImg,cr.dx-m,cr.dy-m,cr.dw+m*2,cr.dh+m*2);
+      cx.restore();
+      cx.fillStyle='rgba(0,0,0,.16)';cx.fillRect(0,0,W,H);
+    }else if(decor==='grad'){
+      var g=cx.createLinearGradient(0,0,W,H);
+      g.addColorStop(0,'#1d2a44');g.addColorStop(0.55,'#243a5e');g.addColorStop(1,'#0f1522');
+      cx.fillStyle=g;cx.fillRect(0,0,W,H);
+      var h=cx.createRadialGradient(W/2,H*0.36,10,W/2,H*0.36,Math.max(W,H)*0.55);
+      h.addColorStop(0,'rgba(232,184,75,.22)');h.addColorStop(1,'rgba(232,184,75,0)');
+      cx.fillStyle=h;cx.fillRect(0,0,W,H);
+    }else if(decor==='img'&&decorImg){
+      var dr=coverRect(decorImg.naturalWidth,decorImg.naturalHeight,W,H);
+      cx.drawImage(decorImg,dr.dx,dr.dy,dr.dw,dr.dh);
+    }
+  }
   function targetSize(){ if(ratio==='1:1')return {W:900,H:900}; if(ratio==='16:9')return {W:1280,H:720}; return {W:720,H:1280}; }
   function coverRect(iw,ih,W,H){var s=Math.max(W/iw,H/ih);var dw=iw*s,dh=ih*s;return {dx:(W-dw)/2,dy:(H-dh)/2,dw:dw,dh:dh};}
 
   function generate(){
     if(busy)return;
     if(!photoImg){toast('Choisis une photo d\'abord');return;}
+    apercuStop();                       /* un seul dessin à la fois */
     busy=true; $('miniGoBtn').disabled=true;
     var AC=window.AudioContext||window.webkitAudioContext;
     var actx=null; try{actx=new AC();}catch(e){}
@@ -6185,7 +6276,7 @@ var Mini=(function(){
       try{aud.playbackRate=rate;aud.preservesPitch=false;
         aud.mozPreservesPitch=false;aud.webkitPreservesPitch=false;}catch(e){}
       aud.onloadedmetadata=function(){
-        var DUR=Math.min((aud.duration||6)/rate,30);
+        var DUR=Math.min((aud.duration||6)/rate,60);   /* 60 s max (annoncé sous le texte) */
         var src,an,dest;
         try{ src=actx.createMediaElementSource(aud); an=actx.createAnalyser(); an.fftSize=512;
              dest=actx.createMediaStreamDestination(); src.connect(an); an.connect(dest);
@@ -6220,7 +6311,8 @@ var Mini=(function(){
             var fm=frames[lvl]||frames[0], fr=coverRect(fm.naturalWidth||iw,fm.naturalHeight||ih,W,H);
             cx.drawImage(fm,fr.dx,fr.dy,fr.dw,fr.dh);
           }else{
-            cx.drawImage(photoImg,cr.dx,cr.dy,cr.dw,cr.dh);
+            dessinerDecor(cx,W,H,cr);                  /* ce qu'il y a derrière toi */
+            cx.drawImage(srcImg(),cr.dx,cr.dy,cr.dw,cr.dh);
             drawFace(cx,cr,iw,ih,rms,el,DUR);
           }
           cx.restore();
@@ -6291,7 +6383,9 @@ var Mini=(function(){
     /* mâchoire : on redescend la vraie peau du bas du visage (garde la texture) */
     var sy=mouth.y*ih, sh=Math.max(1,(chinFy-mouth.y)*ih);
     var dsy=mcy, dsh=(cr.dy+chinFy*cr.dh)-mcy;
-    if(sh>0&&dsh>0){ try{cx.drawImage(photoImg,fx*iw,sy,fw*iw,sh,
+    /* srcImg() et pas photoImg : avec un décor, on redécoupe dans le SUJET
+       découpé — sinon l'ancien fond réapparaîtrait par-dessus le nouveau. */
+    if(sh>0&&dsh>0){ try{cx.drawImage(srcImg(),fx*iw,sy,fw*iw,sh,
       cr.dx+fx*cr.dw,dsy+open*0.30, fw*cr.dw,dsh+open*0.62);}catch(e){} }
     /* bouche : trou sombre + dents quand c'est bien ouvert */
     cx.save();
@@ -6309,7 +6403,7 @@ var Mini=(function(){
         var k=1-Math.abs(cyc-0.07)/0.07;                /* 0 → 1 → 0 (ferme puis rouvre) */
         var eyY=fy+fh*0.34, eyH=fh*0.11;                 /* bande des yeux */
         var frY=fy+fh*0.16;                              /* bande de front (peau nette) */
-        try{cx.drawImage(photoImg, fx*iw, frY*ih, fw*iw, eyH*ih,
+        try{cx.drawImage(srcImg(), fx*iw, frY*ih, fw*iw, eyH*ih,
           cr.dx+fx*cr.dw, cr.dy+(eyY+eyH*(1-k)*0.9)*cr.dh, fw*cr.dw, eyH*cr.dh*k);}catch(e){}
       }
     }
@@ -6390,6 +6484,9 @@ var Mini=(function(){
       mouth=p.mouth||{x:.5,y:.66}; face=p.face||null;
       ton=p.ton||'normale'; ambiance=p.ambiance||'studio';
       ratio=p.ratio||'9:16'; clin=(p.clin!==false);
+      /* la découpe n'est pas gardée (trop lourde) → on repart sans décor
+         plutôt que d'afficher un décor actif qui n'existe pas */
+      cutoutImg=null; decor='none'; apercuStop();
       syncBoutons();
       toast('👤 « '+p.nom+' » chargé — écris ton texte',2200);
     };
@@ -6419,7 +6516,8 @@ var Mini=(function(){
   /* Remet les boutons d'accord avec l'état (après chargement d'un perso). */
   function syncBoutons(){
     [['miniRatios','data-ratio',ratio],['miniQual','data-q',quality],
-     ['miniTon','data-ton',ton],['miniAmb','data-amb',ambiance]].forEach(function(a){
+     ['miniTon','data-ton',ton],['miniAmb','data-amb',ambiance],
+     ['miniDecor','data-dec',decor]].forEach(function(a){
       var row=$(a[0]);if(!row)return;
       row.querySelectorAll('['+a[1]+']').forEach(function(b){
         b.classList.toggle('on',b.getAttribute(a[1])===String(a[2]));});
@@ -6427,6 +6525,56 @@ var Mini=(function(){
     var cb=$('miniClin');if(cb)cb.querySelectorAll('[data-clin]').forEach(function(b){
       b.classList.toggle('on',(b.dataset.clin==='1')===clin);});
   }
+  /* ---------- 👁 APERÇU EN DIRECT : voir tout de suite si la bouche est bien
+     placée, si le clignement va, si le décor rend bien — au lieu d'attendre
+     un rendu complet pour découvrir que c'est à refaire. Aucun son, aucun
+     enregistrement : juste l'animation. ---------------------------------- */
+  var apCv=null, apRaf=0, apT0=0;
+  function apercuStop(){
+    if(apRaf)cancelAnimationFrame(apRaf); apRaf=0;
+    if(apCv&&apCv.parentNode)apCv.parentNode.removeChild(apCv); apCv=null;
+    var b=$('miniApBtn'); if(b)b.innerHTML='<span class="ic">👁</span>Aperçu';
+    img.classList.remove('hidden');
+  }
+  function apercu(){
+    if(apRaf){apercuStop();return;}
+    if(!photoImg){toast('Choisis d\'abord une photo');return;}
+    visemes=visemesDuTexte($('miniScript').value||'');
+    apCv=document.createElement('canvas');
+    apCv.className='viewer'; apCv.style.objectFit='contain';
+    var sz=targetSize(); apCv.width=sz.W; apCv.height=sz.H;
+    img.classList.add('hidden');
+    $('miniWrap').appendChild(apCv);
+    var cx=apCv.getContext('2d');
+    var iw=photoImg.naturalWidth, ih=photoImg.naturalHeight;
+    var cr=coverRect(iw,ih,sz.W,sz.H);
+    var DUR=6; apT0=performance.now();
+    var b=$('miniApBtn'); if(b)b.innerHTML='<span class="ic">⏹</span>Stop';
+    function boucle(){
+      var el=(performance.now()-apT0)/1000;
+      if(el>=DUR){apT0=performance.now();el=0;}          /* tourne en boucle */
+      /* volume simulé : une voix qui parle (syllabes + silences) */
+      var rms=Math.max(0,(0.30+0.26*Math.sin(el*11))*(0.55+0.45*Math.sin(el*2.3)));
+      cx.fillStyle='#0a0a0f';cx.fillRect(0,0,sz.W,sz.H);
+      var z=1.0+0.03*(el/DUR), bob=Math.sin(el*2.2)*(sz.H*0.004);
+      var tilt=Math.sin(el*1.15)*0.005, nod=Math.sin(el*5.1)*rms*(sz.H*0.012);
+      cx.save();cx.translate(sz.W/2,sz.H/2);cx.rotate(tilt);cx.scale(z,z);
+      cx.translate(-sz.W/2,-sz.H/2+bob+nod);
+      dessinerDecor(cx,sz.W,sz.H,cr);
+      cx.drawImage(srcImg(),cr.dx,cr.dy,cr.dw,cr.dh);
+      drawFace(cx,cr,iw,ih,rms,el,DUR);
+      cx.restore();
+      drawAmbiance(cx,sz.W,sz.H,el,DUR);
+      apRaf=requestAnimationFrame(boucle);
+    }
+    /* Toucher l'aperçu le stoppe et remontre la photo : c'est là qu'on replace
+       la bouche (sur l'aperçu le zoom bouge, un clic y serait imprécis). */
+    apCv.style.cursor='pointer';
+    apCv.addEventListener('click',function(){apercuStop();toast('Touche la bouche sur la photo 👄',2400);});
+    boucle();
+    toast('👁 Aperçu en direct — touche-le pour l\'arrêter',2600);
+  }
+
   /* 🎙️ Dictée du texte — écrire sur iPhone est long. */
   function dicter(){
     var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -6456,12 +6604,33 @@ var Mini=(function(){
     $('miniTon').querySelectorAll('[data-ton]').forEach(function(b){b.onclick=function(){ton=b.dataset.ton;setOn(b,'[data-ton]');};});
     $('miniAmb').querySelectorAll('[data-amb]').forEach(function(b){b.onclick=function(){ambiance=b.dataset.amb;setOn(b,'[data-amb]');};});
     $('miniClin').querySelectorAll('[data-clin]').forEach(function(b){b.onclick=function(){clin=(b.dataset.clin==='1');setOn(b,'[data-clin]');};});
+    $('miniDecor').querySelectorAll('[data-dec]').forEach(function(b){b.onclick=function(){
+      setOn(b,'[data-dec]');
+      if(b.dataset.dec==='img'&&!decorImg){$('fileMiniDecor').click();return;}
+      choisirDecor(b.dataset.dec);};});
     img.style.cursor='crosshair'; img.addEventListener('click',placeMouth);
-    peindrePersos();
+    /* Estimation de durée en direct : Kevin voit tout de suite si son texte
+       tient dans la vidéo (≈ 13 caractères/seconde en français parlé). */
+    var ta=$('miniScript');
+    if(ta)ta.addEventListener('input',majDuree);
+    peindrePersos();majDuree();
+  }
+  function majDuree(){
+    var el=$('miniDuree');if(!el)return;
+    var n=(($('miniScript')||{}).value||'').trim().length;
+    if(!n){if(el.textContent!=='')el.textContent='';return;}
+    var s=Math.max(1,Math.round(n/13));
+    var t='⏱️ ≈ '+s+' s'+(s>60?' — trop long, la vidéo s\'arrête à 60 s ✂️':'');
+    if(el.textContent!==t)el.textContent=t;      /* idempotent : pas de clignotement */
   }
 
   return {pick:pick,camera:camera,record:record,generate:generate,init:init,_load:_load,
-    garder:garder,dicter:dicter,persos:persos,
+    garder:garder,dicter:dicter,persos:persos,apercu:apercu,
+    _decorImg:function(file){
+      var im=new Image();
+      im.onload=function(){decorImg=im;choisirDecor('img');};
+      im.onerror=function(){toast('Image de décor illisible');decor='none';syncBoutons();};
+      im.src=URL.createObjectURL(file);},
     _audio:function(file){ voiceBlob=file; voiceMode='file';
       var el=$('miniVoiceRow'); if(el){el.querySelectorAll('[data-voice]').forEach(function(x){x.classList.toggle('on',x.dataset.voice==='file');});}
       hint('✅ Fichier audio prêt ('+Math.round((file.size||0)/1024)+' Ko). Touche « Fabriquer ».'); },
@@ -6471,6 +6640,7 @@ var Mini=(function(){
 $('fileMiniPhoto').onchange=function(e){if(e.target.files[0]){go('mini');Mini._load(e.target.files[0]);}e.target.value='';};
 $('fileMiniPhotoCam').onchange=function(e){if(e.target.files[0]){go('mini');Mini._load(e.target.files[0]);}e.target.value='';};
 $('fileMiniAudio').onchange=function(e){if(e.target.files[0]){Mini._audio&&Mini._audio(e.target.files[0]);}e.target.value='';};
+$('fileMiniDecor').onchange=function(e){if(e.target.files[0])Mini._decorImg(e.target.files[0]);e.target.value='';};
 
 /* init all */
 Photo.init();Vid.init();Auto.init();Anim.init();AiVid.init();Magic.init();Mini.init();
