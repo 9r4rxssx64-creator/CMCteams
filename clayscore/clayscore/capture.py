@@ -93,17 +93,10 @@ class LiveMatchSource:
         result = decide_verdict(
             InMemoryVideoSource(images, fps), audio_slice, sr,
             fps_hint=fps, det_cfg=self.det_cfg, v_cfg=v_cfg_or(self.v_cfg))
-        return Analysis(
-            plateau_id=self._id,
-            clip_url=f"/clips/{name}.mp4",
-            auto_verdict=result.verdict,
-            best_guess=result.best_guess,
-            confidence=round(result.confidence, 3),
-            ambiguous=(result.verdict == "ambigu"),
-            gunshot=result.evidence.gunshot_frame is not None,
-            reasons=result.reasons,
-            truth=None,  # inconnu en réel
-        )
+        # En réel, la vérité terrain n'existe pas : personne ne sait à l'avance
+        # ce que le plateau va faire. C'est TOUTE la différence avec la
+        # simulation — et la seule.
+        return Analysis.depuis_verdict(self._id, name, result, truth=None)
 
     def _plateaus(self) -> Iterator[Analysis]:
         detector = MotionDetector(self.det_cfg)

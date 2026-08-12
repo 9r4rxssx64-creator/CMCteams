@@ -9,8 +9,12 @@ import markdown
 
 FONTS = "/mnt/skills/examples/canvas-design/canvas-fonts"
 SRC = pathlib.Path("/home/user/CMCteams/clayscore")
-PACK = pathlib.Path("/tmp/pack/ClayScore_Dossier_Complet")
-DEMOS_H264 = pathlib.Path("/tmp/pack/demos_h264")
+# Chemins de travail de l'outil de CONSTRUCTION du dossier (jamais livre,
+# jamais expose). bandit signale tout /tmp en dur (B108) ; ici il n'y a ni
+# secret ni donnee d'utilisateur, seulement des pages HTML regenerees a
+# chaque execution.
+PACK = pathlib.Path("/tmp/pack/ClayScore_Dossier_Complet")  # nosec B108
+DEMOS_H264 = pathlib.Path("/tmp/pack/demos_h264")  # nosec B108
 
 def b64(p):
     """Encode un fichier en base64 (polices embarquées dans le HTML)."""

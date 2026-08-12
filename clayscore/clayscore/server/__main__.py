@@ -42,7 +42,13 @@ def build_app(config_path: str | None = None):
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Serveur ClayScore.")
-    ap.add_argument("--host", default="0.0.0.0")
+    # 0.0.0.0 = joignable depuis TOUTES les interfaces. bandit le signale
+    # (B104) et c'est normal : ici c'est la fonction meme du produit. Le
+    # hub sert les tablettes du stand par son propre WiFi ou par le reseau
+    # du club ; ecouter seulement en local rendrait le serveur inutile.
+    # Le reseau est isole (pas d'Internet) et toute ecriture de score
+    # exige un code d'acces — voir GUIDE_RESEAU et officiel.py.
+    ap.add_argument("--host", default="0.0.0.0")  # nosec B104
     ap.add_argument("--port", type=int, default=None,
                     help="Par défaut : network.port de la configuration.")
     ap.add_argument("--config", default=None)
