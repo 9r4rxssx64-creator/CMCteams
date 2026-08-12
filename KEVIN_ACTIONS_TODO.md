@@ -1,3 +1,56 @@
+# 🖱️ TES ACTIONS EN ATTENTE — le plus urgent en premier
+
+---
+
+## 💳 1. Abonnement GitHub Pro — 4 $/mois *(ajouté 12/08/2026, à ta demande)*
+
+**▶️ [Prendre GitHub Pro](https://github.com/settings/billing/plans)** — puis « Upgrade to Pro ».
+
+### Pourquoi ça vaut le coup
+Ton dépôt `CMCteams` est **public**. Ce n'est pas ClayScore le plus gênant dedans,
+c'est le reste :
+
+- la structure de planning de **258 employés du casino** ;
+- toute la configuration d'**Apex** ;
+- les **28 documents** du dossier ClayScore (prix, marges, fournisseurs, stratégie).
+
+4 $/mois pour fermer tout ça. Et **kd-mc.com continue de marcher** : avec Pro,
+GitHub Pages publie depuis un dépôt privé, et le **site** reste public — c'est
+seulement le **code source** qui devient privé.
+
+### ⚠️ À vérifier avant de payer
+Je te donne cette règle « Pages depuis un dépôt privé » de mémoire, **pas d'une
+page que j'ai pu ouvrir** (mon accès réseau est bloqué). Vérifie-le sur la page
+de tarifs avant de sortir les 4 $. Je ne veux pas que tu payes sur ma parole.
+
+### 🔴 NE BASCULE PAS le dépôt en privé tout de suite — ça casserait Apex
+Apex va chercher ses documents de mémoire sur
+`raw.githubusercontent.com/.../CMCteams/main/...` **sans jeton**. Sur un dépôt
+privé, cette adresse répond **404**. Et le code **encaisse l'erreur sans rien
+dire** : Apex ne planterait pas, il **arrêterait juste de relire tes 8 documents,
+en silence**.
+
+Ce n'est pas à un endroit, mais à **6 au moins** : `memory.syncDocs`,
+`CLAUDE_HANDOFF.json`, `KEVIN_ACTIONS_TODO.md`, la parité Claude Code, la
+sentinelle `reconsult-kevin-watch`, le service sentinelles.
+
+**Le correctif est à moi, pas à toi** : router ces 6 appels par ton
+`tools/github-proxy-worker.js`, qui existe déjà. Dis-moi quand tu veux, je le
+fais — c'est le prérequis de la bascule.
+
+### L'ordre à suivre
+| | Quoi | Qui | Coût |
+|---|---|---|---|
+| 1 | ClayScore dans son dépôt privé | **moi** (en cours) | 0 € |
+| 2 | Router les 6 appels Apex par le worker | **moi** | 0 € |
+| 3 | Prendre Pro **puis** passer `CMCteams` en privé | **toi** (1 clic) + moi | 4 $/mois |
+
+> 💡 Ce que ni l'abonnement ni le déplacement ne changent : **ce qui est déjà
+> public l'est**. L'historique git le garde, quelqu'un a pu cloner. Réécrire
+> l'historique d'un dépôt à 3 500 pull requests est risqué — je ne le ferai que
+> si tu me le demandes explicitement.
+
+---
 
 ## 🗺️ SESSION 2026-08-06 — Feuille de route (ce qui reste, dans l'ordre)
 
