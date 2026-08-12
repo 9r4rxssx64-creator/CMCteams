@@ -65,6 +65,12 @@ Reverse-engineering de la fonction **AI Avatar / avatar parlant** de CapCut, ref
 - Tu mets **une photo de ton visage** (ou tu te prends en photo).
 - Tu **écris** ce qu'il doit dire → **Voix IA** le lit, **ou** tu **enregistres ta propre voix**, **ou** tu importes un fichier audio.
 - L'app fabrique une **petite vidéo où toi tu parles** : la **bouche suit le volume réel de la voix**, avec un léger « vivant » (respiration, micro-balancement, zoom lent).
+- **👄 La bouche FORME les sons, elle ne fait pas qu'ouvrir/fermer** : à partir de ton texte, l'app déduit les sons (a, é, i, o, ou, m/b/p, f/v…) et donne à la bouche la bonne forme — large et étirée sur un « i », ronde et petite sur un « o », fermée sur un « m ». Le volume réel de la voix règle l'ouverture. *Mesuré : bouche 2,09× plus large sur « iiii » que sur « oooo ».*
+- **😉 Vivant** : cligne des yeux tout seul (~toutes les 4,5 s, en recopiant ta vraie peau du front — jamais une tache peinte), hoche la tête quand tu parles, respire, léger zoom.
+- **👤 Mes mini-moi** : garde ton personnage (photo + bouche repérée + réglages) et rappelle-le en **1 tap** la fois d'après — plus besoin de tout refaire. Jusqu'à 6, ~6 Ko chacun.
+- **🎚️ Ton de la voix** : Grave 🐻 / Normale / Aiguë 🐿️.
+- **🎬 Ambiance** : Aucune / Studio (vignette) / Doux / Ciné (bandes noires + teal-orange), avec fondu d'entrée-sortie. *(C'est un habillage de l'image — ce n'est pas un changement de décor : sans détourage on ne remplace pas le fond, et on ne le prétend pas.)*
+- **🎙️ Dicter** au lieu d'écrire (si le navigateur le permet — sinon l'app te renvoie vers le micro du clavier iPhone).
 - **Formats** Story 9:16 / Carré / Paysage · **Sous-titres karaoké** (le mot dit passe en or) · **repérage auto du visage** (touche la bouche pour la replacer).
 - **⚡ Rapide** = 100 % hors-ligne (aucune clé, aucun réseau). **💎 Bouche IA** = poses de bouche plus réalistes via le worker, avec **repli automatique** sur le mode hors-ligne — **l'app marche toujours**.
 - Chaque mini-moi est **enregistré tout seul** dans « Mes créas » + **Enregistrer / Partager**.
