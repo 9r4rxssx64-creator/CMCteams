@@ -109,15 +109,46 @@ export async function lireFichier(
   chemin: string,
   opts?: { branche?: string; timeoutMs?: number },
 ): Promise<string | null> {
+  return (await lireFichierDetaille(chemin, opts)).contenu;
+}
+
+/**
+ * Même lecture, mais qui dit POURQUOI quand ça rate.
+ *
+ * Pourquoi les deux existent : la plupart des appelants se moquent de la
+ * raison (un document manquant est simplement ignoré). Mais ceux qui
+ * remontent une erreur à l'écran doivent garder la cause EXACTE — « HTTP
+ * 404 » et « réseau coupé » n'appellent pas la même réaction. Un message
+ * vague transforme un diagnostic de 10 secondes en enquête d'une heure.
+ */
+export async function lireFichierDetaille(
+  chemin: string,
+  opts?: { branche?: string; timeoutMs?: number },
+): Promise<{ contenu: string | null; statut: number; raison: string }> {
   const url = urlLecture(chemin, opts?.branche ?? 'main');
   const ctrl = new AbortController();
   const minuteur = setTimeout(() => ctrl.abort(), opts?.timeoutMs ?? 12_000);
   try {
     const r = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
-    if (!r.ok) return null;
-    return await r.text();
-  } catch {
-    return null;
+    if (!r.ok) {
+      return {
+        contenu: null,
+        statut: r.status,
+        raison:
+          r.status === 404
+            ? `HTTP 404 — fichier absent, ou dépôt privé sans relais (${chemin})`
+            : `HTTP ${r.status}`,
+      };
+    }
+    return { contenu: await r.text(), statut: r.status, raison: '' };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const coupe = e instanceof Error && e.name === 'AbortError';
+    return {
+      contenu: null,
+      statut: 0,
+      raison: coupe ? `Délai dépassé (${opts?.timeoutMs ?? 12_000} ms)` : `Réseau : ${msg}`,
+    };
   } finally {
     clearTimeout(minuteur);
   }

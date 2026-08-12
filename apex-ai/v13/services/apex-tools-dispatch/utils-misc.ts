@@ -8,15 +8,17 @@ import { orchestrator } from '../core-svc/orchestrator.js';
 import { auditLog } from '../observability/audit-log.js';
 import { firebase } from '../storage/firebase.js';
 
-import { lireFichier as lireFichierDepot } from '../integrations/depot-github.js';
+import { lireFichier as lireFichierDepot, lireFichierDetaille } from '../integrations/depot-github.js';
 
 export async function readFile(path: string, branch = 'main'): Promise<{ content: string; size: number }> {
   if (!path || path.includes('..') || path.startsWith('/')) {
     throw new Error('Chemin invalide (relatif obligatoire, pas de ..)');
   }
-  const content = await lireFichierDepot(path, { branche: branch, timeoutMs: 8000 });
-  if (content === null) throw new Error('Lecture impossible (dépôt inaccessible ou fichier absent)');
-  return { content, size: content.length };
+  /* Version détaillée : cette erreur remonte à l'écran, elle doit dire la
+     cause EXACTE (« HTTP 404 » ≠ « réseau coupé »). */
+  const res = await lireFichierDetaille(path, { branche: branch, timeoutMs: 8000 });
+  if (res.contenu === null) throw new Error(res.raison);
+  return { content: res.contenu, size: res.contenu.length };
 }
 export async function resolvePhone(phoneArg?: string, contactName?: string): Promise<string> {
   if (phoneArg && phoneArg.trim().length > 0) return phoneArg;
