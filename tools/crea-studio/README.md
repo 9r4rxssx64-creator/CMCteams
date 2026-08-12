@@ -42,6 +42,16 @@ Comme **Viggle / Kling / Hailuo** : tu mets **une photo**, l'app génère une **
 - Génération asynchrone (≈ 1 à 3 min), aperçu auto, **Enregistrer / Partager** / **Regénérer**.
 - 100 % serveur (ta clé Replicate), modèles image→vidéo `minimax/video-01-live` & `video-01`.
 
+### 💳 Recharger l'IA — **n'importe qui peut le faire, en 1 tap**
+Quand la cagnotte IA est vide, l'app ne bloque pas ta famille : **tout le monde peut la recharger**, sans créer de compte.
+- **Bandeau doré permanent** en haut : *« ⏳ IA en pause — 2 créations en attente »* → **1 tap** ouvre l'écran de recharge, depuis n'importe quel écran.
+- **Montant en 1 tap** : 5 € · 10 € · 20 € · 50 € → le bouton **💎 Payer 20 € avec Revolut** ouvre directement le paiement **avec le montant déjà rempli** (`revolut.me/kdmc/20eur`).
+- **📤 Demander à quelqu'un de payer** : envoie le lien par SMS/WhatsApp — la personne paie sans avoir l'app.
+- **✅ J'ai payé — prévenir** : message prêt à envoyer à Kevin.
+- **🔄 Vérifier si l'IA est repartie** : relance ta création en attente pour de vrai.
+- **Honnête** : il est écrit noir sur blanc que *« ton paiement arrive à Kevin, qui remet le crédit »* — on ne laisse croire à personne que le paiement recharge la machine tout seul. L'admin, lui, voit en plus le bouton **🔧 Recharger le compte IA**.
+- **PayPal** n'apparaît **que** si Kevin l'a renseigné (bouton *« Ajouter mon PayPal »*) — aucun lien inventé.
+
 ### 💳 Crédit IA épuisé → on attend, on ne rend jamais un résultat raté
 **Règle (Kevin, 12 août 2026) :** quand l'IA payante n'a plus de crédit et que la version sans IA serait **nettement moins belle**, l'app **ne te rend pas le résultat moche en douce**. Elle te le **dit** et **attend le crédit**.
 - Concerné (repli vraiment médiocre) : **🤖 Détourage IA** (sinon bords sales), **🤖 Cartoon IA** (sinon simple posterisation), **✨ Améliorer** (sinon juste un coup de netteté), **✨ Magie IA / photo à deux** (aucune version sans IA), **💎 Bouche IA** du Mini-moi.
