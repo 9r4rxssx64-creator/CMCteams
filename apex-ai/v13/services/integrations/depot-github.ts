@@ -1,0 +1,152 @@
+/*
+ * depot-github.ts — UNE seule porte pour lire les fichiers du dépôt CMCteams.
+ *
+ * POURQUOI CE FICHIER EXISTE
+ * --------------------------
+ * Apex relit ses documents (CLAUDE.md, NOTES_USER.md, ses skills, sa mémoire
+ * compacte…) directement sur `raw.githubusercontent.com`, SANS jeton. Ça
+ * marche uniquement parce que le dépôt est PUBLIC.
+ *
+ * Or le dépôt contient le dossier commercial ClayScore, la structure de
+ * planning de 258 employés et la configuration d'Apex : il doit passer en
+ * privé. Le jour où il passera en privé, ces lectures répondront 404.
+ *
+ * Le piège : le code est « fail-open » (un document manquant est ignoré en
+ * silence). Apex ne planterait donc PAS — il arrêterait juste de relire ses
+ * documents, sans le dire à personne. C'est exactement le genre de panne
+ * invisible qu'on ne découvre que des semaines plus tard.
+ *
+ * Ce module rassemble les 10 endroits qui lisaient le dépôt chacun de leur
+ * côté. Quand le passage en privé arrivera, il n'y aura qu'UN endroit à
+ * basculer — et un test empêche d'en rouvrir un onzième ailleurs.
+ *
+ * COMMENT ÇA MARCHE
+ * -----------------
+ *   • Si l'adresse du relais est connue (clé `ax_github_proxy_url`) → on passe
+ *     par le relais Cloudflare, qui détient le jeton côté serveur. Le jeton
+ *     n'arrive JAMAIS dans le navigateur.
+ *   • Sinon → lecture publique directe, exactement comme avant.
+ *
+ * Donc : tant que le relais n'est pas configuré, le comportement est
+ * strictement identique à aujourd'hui. Rien ne change, rien ne casse.
+ */
+
+export const DEPOT = '9r4rxssx64-creator/CMCteams';
+
+/** Clé où l'adresse du relais est rangée (posée par le déploiement du relais). */
+export const CLE_RELAIS = 'ax_github_proxy_url';
+
+/**
+ * L'adresse du relais, ou une chaîne vide s'il n'y en a pas.
+ * Isolée dans sa propre fonction pour que les tests puissent la simuler.
+ */
+export function adresseRelais(): string {
+  try {
+    const v = localStorage.getItem(CLE_RELAIS);
+    if (!v) return '';
+    const propre = v.trim().replace(/\/+$/, '');
+    /* On n'accepte qu'une adresse https : une adresse bancale enverrait les
+       lectures n'importe où. En cas de doute → pas de relais, lecture
+       publique (fail-open), plutôt qu'une lecture vers un inconnu. */
+    return /^https:\/\/[^\s]+$/.test(propre) ? propre : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * L'adresse à appeler pour LIRE un fichier du dépôt.
+ * Fonction pure : c'est elle qui porte toute la logique, donc c'est elle
+ * qu'on teste.
+ */
+export function urlLecture(chemin: string, branche = 'main'): string {
+  const propre = String(chemin || '').replace(/^\/+/, '');
+  const relais = adresseRelais();
+  if (relais) {
+    return `${relais}?action=read&path=${encodeURIComponent(propre)}&branch=${encodeURIComponent(branche)}`;
+  }
+  return `https://raw.githubusercontent.com/${DEPOT}/${branche}/${propre}`;
+}
+
+/**
+ * L'adresse à appeler pour LISTER le contenu d'un dossier du dépôt.
+ */
+export function urlListe(chemin: string, branche = 'main'): string {
+  const propre = String(chemin || '').replace(/^\/+/, '').replace(/\/+$/, '');
+  const relais = adresseRelais();
+  if (relais) {
+    return `${relais}?action=list&path=${encodeURIComponent(propre)}&branch=${encodeURIComponent(branche)}`;
+  }
+  return `https://api.github.com/repos/${DEPOT}/contents/${propre}?ref=${branche}`;
+}
+
+/**
+ * Lit un fichier du dépôt. Renvoie son contenu, ou `null` si la lecture
+ * échoue — jamais d'exception : un document manquant ne doit pas empêcher
+ * Apex de démarrer.
+ */
+export async function lireFichier(
+  chemin: string,
+  opts?: { branche?: string; timeoutMs?: number },
+): Promise<string | null> {
+  const url = urlLecture(chemin, opts?.branche ?? 'main');
+  const ctrl = new AbortController();
+  const minuteur = setTimeout(() => ctrl.abort(), opts?.timeoutMs ?? 12_000);
+  try {
+    const r = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+    if (!r.ok) return null;
+    return await r.text();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(minuteur);
+  }
+}
+
+/**
+ * Liste les entrées d'un dossier du dépôt. Renvoie un tableau vide en cas
+ * d'échec — même principe de repli silencieux.
+ */
+export async function listerDossier(
+  chemin: string,
+  opts?: { branche?: string; timeoutMs?: number },
+): Promise<Array<{ name: string; type: string }>> {
+  const url = urlListe(chemin, opts?.branche ?? 'main');
+  const ctrl = new AbortController();
+  const minuteur = setTimeout(() => ctrl.abort(), opts?.timeoutMs ?? 12_000);
+  try {
+    const r = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+    if (!r.ok) return [];
+    const j = (await r.json()) as unknown;
+    return Array.isArray(j) ? (j as Array<{ name: string; type: string }>) : [];
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(minuteur);
+  }
+}
+
+/**
+ * Le dépôt est-il encore lisible ? Sert au diagnostic : si un jour Apex
+ * arrête de relire ses documents, cette réponse dit POURQUOI au lieu de
+ * laisser la panne invisible.
+ */
+export async function diagnostiquerAcces(): Promise<{
+  ok: boolean;
+  via: 'relais' | 'public';
+  detail: string;
+}> {
+  const via = adresseRelais() ? 'relais' : 'public';
+  const contenu = await lireFichier('CLAUDE.md', { timeoutMs: 8000 });
+  if (contenu && contenu.length > 100) {
+    return { ok: true, via, detail: `Lecture OK (${contenu.length} caractères).` };
+  }
+  return {
+    ok: false,
+    via,
+    detail:
+      via === 'public'
+        ? "Lecture publique refusée. Si le dépôt vient de passer en privé, c'est attendu : il faut configurer le relais (clé ax_github_proxy_url)."
+        : 'Le relais ne répond pas ou refuse. Vérifier son adresse et son jeton.',
+  };
+}
