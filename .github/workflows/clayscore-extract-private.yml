@@ -105,11 +105,12 @@ jobs:
           test "$(git ls-files | wc -l)" -gt 50 || {
             echo "::error::Extraction quasi vide — on n'envoie rien."; exit 1; }
           echo "commits=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
-          echo "fichiers=$(git ls-files | wc -l)" >> "$GITHUB_OUTPUT"
+          echo "fichiers_avant_ci=$(git ls-files | wc -l)" >> "$GITHUB_OUTPUT"
           echo "docs=$(git ls-files 'docs/*.md' | wc -l)" >> "$GITHUB_OUTPUT"
           echo "tests=$(git ls-files 'tests/test_*.py' | wc -l)" >> "$GITHUB_OUTPUT"
 
       - name: Donner au nouveau dépôt sa propre vérification
+        id: ci
         run: |
           set -e
           cd source
@@ -168,6 +169,11 @@ jobs:
           git add .github/workflows/verification.yml
           git commit -q -m "Sa propre vérification : tests, porte d'audit, contrôle des prix"
           echo "Vérification ajoutée au dépôt privé."
+          # Le compte définitif se fait ICI, après le dernier ajout. Le compter
+          # plus tôt le rendrait périmé d'un fichier — et la vérification
+          # échouerait en annonçant une perte qui n'existe pas. Une alerte
+          # fausse use la confiance autant qu'une alerte manquée.
+          echo "fichiers=$(git ls-files | wc -l)" >> "$GITHUB_OUTPUT"
 
       - name: Créer le dépôt PRIVÉ (s'il n'existe pas déjà)
         if: ${{ !inputs.dry_run }}
@@ -227,7 +233,7 @@ jobs:
           PAT: ${{ secrets.APEX_GITHUB_PAT }}
           NOM: ${{ inputs.nom_depot }}
           MOI: ${{ steps.jeton.outputs.utilisateur }}
-          ATTENDU_FICHIERS: ${{ steps.extraction.outputs.fichiers }}
+          ATTENDU_FICHIERS: ${{ steps.ci.outputs.fichiers }}
         run: |
           set -e
           cd "$(mktemp -d)"
@@ -276,7 +282,7 @@ jobs:
             echo "|---|---|"
             echo "| Dépôt | \`${{ steps.jeton.outputs.utilisateur }}/${{ inputs.nom_depot }}\` (**privé**) |"
             echo "| Commits repris | ${{ steps.extraction.outputs.commits }} |"
-            echo "| Fichiers | ${{ steps.extraction.outputs.fichiers }} |"
+            echo "| Fichiers | ${{ steps.ci.outputs.fichiers }} |"
             echo "| Documents du dossier | ${{ steps.extraction.outputs.docs }} |"
             echo "| Fichiers de tests | ${{ steps.extraction.outputs.tests }} |"
             echo
