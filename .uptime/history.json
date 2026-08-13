@@ -1,28 +1,5 @@
 [
   {
-    "ts": "2026-05-18T21:39:45Z",
-    "results": [
-      {
-        "url": "https://9r4rxssx64-creator.github.io/CMCteams/",
-        "code": "200",
-        "ms": 299,
-        "status": "ok"
-      },
-      {
-        "url": "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/",
-        "code": "200",
-        "ms": 147,
-        "status": "ok"
-      },
-      {
-        "url": "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/",
-        "code": "200",
-        "ms": 164,
-        "status": "ok"
-      }
-    ]
-  },
-  {
     "ts": "2026-05-18T22:41:23Z",
     "results": [
       {
@@ -24185,6 +24162,119 @@
         "url": "https://9r4rxssx64-creator.github.io/CMCteams/",
         "code": "200",
         "ms": 140,
+        "status": "ok"
+      }
+    ]
+  },
+  {
+    "ts": "2026-08-13T13:06:15Z",
+    "results": [
+      {
+        "url": "https://kd-mc.com/",
+        "code": "200",
+        "ms": 261,
+        "status": "ok"
+      },
+      {
+        "url": "https://cmcteams.kd-mc.com/",
+        "code": "200",
+        "ms": 276,
+        "status": "ok"
+      },
+      {
+        "url": "https://apex-ai.kd-mc.com/",
+        "code": "200",
+        "ms": 176,
+        "status": "ok"
+      },
+      {
+        "url": "https://apex-chat.kd-mc.com/",
+        "code": "200",
+        "ms": 244,
+        "status": "ok"
+      },
+      {
+        "url": "https://la-detente.kd-mc.com/",
+        "code": "200",
+        "ms": 206,
+        "status": "ok"
+      },
+      {
+        "url": "https://chez-lolo.kd-mc.com/",
+        "code": "200",
+        "ms": 193,
+        "status": "ok"
+      },
+      {
+        "url": "https://dashboard.kd-mc.com/",
+        "code": "200",
+        "ms": 206,
+        "status": "ok"
+      },
+      {
+        "url": "https://sourcing.kd-mc.com/",
+        "code": "200",
+        "ms": 177,
+        "status": "ok"
+      },
+      {
+        "url": "https://coffre.kd-mc.com/",
+        "code": "200",
+        "ms": 183,
+        "status": "ok"
+      },
+      {
+        "url": "https://departs.kd-mc.com/",
+        "code": "200",
+        "ms": 182,
+        "status": "ok"
+      },
+      {
+        "url": "https://cmcteams-light.kd-mc.com/",
+        "code": "200",
+        "ms": 61,
+        "status": "ok"
+      },
+      {
+        "url": "https://bot.kd-mc.com/",
+        "code": "200",
+        "ms": 183,
+        "status": "ok"
+      },
+      {
+        "url": "https://beatbot.kd-mc.com/",
+        "code": "200",
+        "ms": 47,
+        "status": "ok"
+      },
+      {
+        "url": "https://apex-secrets-proxy.9r4rxssx64.workers.dev/health",
+        "code": "200",
+        "ms": 77,
+        "status": "ok"
+      },
+      {
+        "url": "https://kdmc-ais.9r4rxssx64.workers.dev/health",
+        "code": "200",
+        "ms": 73,
+        "status": "ok"
+      },
+      {
+        "url": "https://kdmc-live.9r4rxssx64.workers.dev/health",
+        "code": "200",
+        "ms": 59,
+        "status": "ok"
+      },
+      {
+        "url": "https://kdmc-rag.9r4rxssx64.workers.dev/health",
+        "code": "404",
+        "ms": 59,
+        "status": "fail"
+      },
+      {
+        "url": "https://9r4rxssx64-creator.github.io/CMCteams/",
+        "code": "200",
+        "ms": 230,
         "status": "ok"
       }
     ]
