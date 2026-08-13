@@ -1790,3 +1790,17 @@ Tu donnes tes vidéos brutes, l'app te rend la vidéo montée. Un seul bouton.
 | `tools/crea-studio/index.html` | Module `Auto` : écoute le son pour enlever les blancs, regarde l'image pour jeter le noir/flou, corrige les couleurs, zoom lent + fondus, sous-titres, musique, compte rendu chiffré | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
 | `services/kdmc-crea-ai/worker.js` | Nouvelle porte `/transcribe` : la parole devient du texte (IA gratuite Cloudflare). Seul un petit extrait sonore part, jamais la vidéo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
 | `tests/verify-crea-montage-auto.mjs` | Preuve (29 vérifs) : 2 vraies vidéos fabriquées puis montées, blancs coupés mesurés, seuil qui s'adapte au volume, hésitations retirées, couleurs corrigées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-montage-auto.mjs) |
+
+### Lingua v2.121 — le dossier de chaque langue (2026-08-13)
+
+Tu ouvres 📜 sur l'accueil et tu as, pour la langue que tu apprends : son histoire, quatre
+chiffres à retenir, dix anecdotes, et les mots passés entre cette langue et le français.
+Tout est cliquable vers l'endroit où ça se vérifie.
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `lingua/histoires-langues.js` | Le contenu : 15 langues × (histoire + 4 chiffres + 10 anecdotes + 6 mots), chacun avec sa source | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/histoires-langues.js) |
+| `lingua/sources-langues.js` | Les 55 maisons de référence (académies, dictionnaires) — toutes ouvertes en vrai avant d'être affichées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/sources-langues.js) |
+| `tools/lingua/verify-histoires.mjs` | La garde : rien sans source, planchers de contenu, sections vraiment affichées, + `--liens` qui vérifie les 153 sources, + `--semantic` le juge indépendant | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-histoires.mjs) |
+| `tools/lingua/verify-sources.mjs` | Ouvre chaque adresse officielle et écrit son état (répond / refuse les robots / morte) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-sources.mjs) |
+| `.github/workflows/lingua-sources.yml` | L'ouvrage qui teste tout ça pour de vrai (1×/semaine + à la demande) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/lingua-sources.yml) |
