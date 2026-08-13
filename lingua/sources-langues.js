@@ -24,8 +24,8 @@
 
   var LANG_SOURCES = {
     mc: [
-      { nom: 'Comité National des Traditions Monégasques', url: 'https://www.traditions-monaco.com/', quoi: 'la maison qui édite le dictionnaire et enseigne la langue', etat: '?' },
-      { nom: 'Académie des Langues Dialectales', url: 'https://www.ald-monaco.org/', quoi: 'académie officielle des langues de Monaco', etat: '?' },
+      { nom: 'Comité National des Traditions Monégasques', url: 'https://www.traditions-monaco.com/', quoi: 'la maison qui édite le dictionnaire et enseigne la langue', etat: 'ok' },
+      { nom: 'Académie des Langues Dialectales', url: 'https://www.ald-monaco.org/', quoi: 'académie officielle des langues de Monaco', etat: 'ok' },
       { nom: 'Wiktionnaire — monégasque', url: 'https://fr.wiktionary.org/wiki/Cat%C3%A9gorie:mon%C3%A9gasque', quoi: 'les mots libres (CC BY-SA) qui alimentent ce cours', etat: 'ok' },
       { nom: 'munegascu.free.fr', url: 'http://munegascu.free.fr/index_uk.htm', quoi: 'le lexique par thèmes qui alimente ce cours', etat: 'ok' },
       { nom: 'Mairie de Monaco — langue monégasque', url: 'https://www.mairie.mc/', quoi: 'cours de langue monégasque proposés en ville', etat: 'ok' }
