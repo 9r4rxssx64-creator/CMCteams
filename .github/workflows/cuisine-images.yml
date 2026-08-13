@@ -1,0 +1,58 @@
+name: Cuisine — Illustrations IA (Répertoire de la Riviera)
+
+# Génère les illustrations des 113 recettes via GEMINI_API_KEY (secret) et les
+# pousse sur une branche claude/* (auto-merge → Pages). Idempotent : relançable
+# pour reprendre les manquantes. N'invente aucune recette — illustre les plats.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Sous-lot d'IDs (ex: 0,1,2) — vide = toutes les manquantes"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cuisine-images
+  cancel-in-progress: false
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install sharp
+        run: npm i sharp@0.33.5 --no-save
+
+      - name: Génération des illustrations (Gemini / Imagen)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "Clé Gemini présente : $([ -n "$GEMINI_API_KEY" ] && echo oui || echo NON)"
+          node tools/cuisine/gen-images.mjs "${{ github.event.inputs.only }}"
+
+      - name: Commit des images sur une branche claude/*
+        run: |
+          git config user.name "kdmc-bot"
+          git config user.email "bot@kdmc.local"
+          BR="claude/cuisine-images-${{ github.run_id }}"
+          git checkout -b "$BR"
+          git add tools/cuisine/img
+          if git diff --cached --quiet; then
+            echo "Aucune nouvelle image."
+          else
+            git commit -m "Cuisine — illustrations IA générées (Gemini) [skip ci]"
+            git push -u origin "$BR"
+            echo "Poussé sur $BR (auto-merge → Pages)."
+          fi
