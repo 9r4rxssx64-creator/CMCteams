@@ -207,7 +207,7 @@ jobs:
                    dashboard.kd-mc.com sourcing.kd-mc.com coffre.kd-mc.com bot.kd-mc.com \
                    departs.kd-mc.com cmcteams-light.kd-mc.com \
                    autorisations.kd-mc.com arbre.kd-mc.com lingua.kd-mc.com \
-                   studio.kd-mc.com; do
+                   studio.kd-mc.com cuisine.kd-mc.com; do
             echo "== https://$H =="
             curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
               || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"
@@ -216,6 +216,10 @@ jobs:
           curl -fsS -m 20 -L "https://studio.kd-mc.com/" 2>/dev/null | grep -o "Créa Studio" | head -1 \
             && echo "  ✅ l'app Créa Studio est bien servie sur le domaine" \
             || echo "  ::warning:: studio.kd-mc.com ne renvoie pas encore l'app (cert/DNS en cours, ou routage à vérifier)"
+          echo "== CONTENU cuisine.kd-mc.com (le livre se charge-t-il ?) =="
+          curl -fsS -m 20 -L "https://cuisine.kd-mc.com/" 2>/dev/null | grep -o "Répertoire de la Riviera" | head -1 \
+            && echo "  ✅ le livre de cuisine est bien servi sur le domaine" \
+            || echo "  ::warning:: cuisine.kd-mc.com ne renvoie pas encore le livre (cert/DNS en cours, ou Pages tools/cuisine à vérifier)"
           echo "== VOIX KDMC Lingua (/__lingua/tts) — vraie voix naturelle OU repli navigateur ? =="
           CT=$(curl -fsS -m 25 -o /dev/null -w "%{content_type}" "https://lingua.kd-mc.com/__lingua/tts?v=nova&t=bonjour" 2>/dev/null || echo "erreur")
           echo "  content-type=$CT"
