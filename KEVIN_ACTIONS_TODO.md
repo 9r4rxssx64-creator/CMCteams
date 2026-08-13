@@ -15,8 +15,29 @@
 Tout le reste est **prêt et prouvé** : tes 15 apps se fabriquent en vraies applis iPhone (testé
 sur des Mac dans le cloud), signature, sécurité, icônes. Il ne manque que **ce fichier**.
 
-Le téléchargement échoue chez Apple (« Une erreur s'est produite ») — c'est **leur** bug sur les
-comptes tout neufs, pas toi. À retenter quand tu veux :
+Le téléchargement échoue chez Apple (« Une erreur s'est produite ») — ce n'est **pas toi**.
+
+#### 🆘 Avant de re-essayer : 2 choses à vérifier (2 min)
+
+> Le message d'Apple ne dit pas la cause. Voici les 2 pistes **les plus probables** (pas une certitude) :
+
+- **① Un contrat Apple non signé bloque les clés** — c'est le cas le plus fréquent sur un compte
+  tout neuf.
+  👉 **[Ouvrir « Accords, taxes et opérations bancaires »](https://appstoreconnect.apple.com/business)**
+  → si une ligne est **« En attente »** ou **« À accepter »** → **accepte-la**, puis refais la clé.
+- **② Prendre une clé d'ÉQUIPE** (section **Clés d'équipe** / *Team Keys*), pas « individuelle »,
+  avec l'accès **Admin**. ✅ *Oui, c'est bien une clé équipe qu'il faut — tu avais raison de demander.*
+
+Et si ça bloque encore :
+- appui **long** sur *Télécharger* → « **Télécharger le fichier lié** » ;
+- ou **Chrome** sur iPhone ; ou coupe le **Relais privé iCloud** (Réglages → ton nom → iCloud) ;
+- ou **depuis un ordinateur** — le plus fiable, 30 secondes ;
+- ou **attends 24-48 h** : sur une adhésion toute neuve, Apple met parfois ce délai à activer l'API.
+
+💡 Chaque essai raté laisse une clé morte : **supprime-les** (bouton *Révoquer*), sinon on risque de
+coller le mauvais numéro de clé.
+
+#### Puis, quand le fichier est enfin sur ton iPhone :
 
 1. **[🔑 Ouvrir mes clés App Store Connect](https://appstoreconnect.apple.com/access/integrations/api)**
    → **+** → nom au choix → accès **Admin** → **Generate** → **Télécharger tout de suite**
