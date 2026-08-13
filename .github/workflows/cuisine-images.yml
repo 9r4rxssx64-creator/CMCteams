@@ -11,6 +11,10 @@ on:
         description: "Sous-lot d'IDs (ex: 0,1,2) — vide = toutes les manquantes"
         required: false
         type: string
+      force:
+        description: "1 = re-télécharger TOUTES les images (sinon seulement les manquantes)"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -35,6 +39,10 @@ jobs:
 
       - name: Install sharp
         run: npm i sharp@0.33.5 --no-save
+
+      - name: Purge si force
+        if: ${{ github.event.inputs.force == '1' }}
+        run: rm -f tools/cuisine/img/*.jpg && echo "Images purgées (force) — re-téléchargement complet."
 
       - name: Génération des illustrations (photos libres de droits + repli IA)
         env:
