@@ -36,8 +36,9 @@ jobs:
       - name: Install sharp
         run: npm i sharp@0.33.5 --no-save
 
-      - name: Génération des illustrations (multi-fournisseurs)
+      - name: Génération des illustrations (photos libres de droits + repli IA)
         env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           AX_REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
           OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
