@@ -31,6 +31,7 @@ const SCRIPTS = [
   { nom: 'Vérité du contenu (6 langues, quiz, 0 doublon)', cmd: ['tools/lingua/verify-truth.mjs', 'lingua', '--struct'] },
   { nom: 'Le Coach reste utilisable (micro, cases, consignes)', cmd: ['tools/lingua/verify-coach.mjs'] },
   { nom: 'La voix du monégasque dit juste (cas documentés)', cmd: ['tools/lingua/verify-mc-voix.mjs'] },
+  { nom: 'La voix ne se dégrade plus question après question', cmd: ['tools/lingua/verify-voix.mjs', 'lingua'] },
   { nom: 'Histoire & anecdotes : toutes sourcées et bien branchées', cmd: ['tools/lingua/verify-histoires.mjs', 'lingua'] },
   { nom: 'Aucune image demandée dans le vide (0 requête 404)', cmd: ['tools/lingua/verify-assets.mjs', 'lingua'] },
   { nom: 'Sources officielles : bien formées et branchées', cmd: ['tools/lingua/verify-sources.mjs', 'lingua'] },

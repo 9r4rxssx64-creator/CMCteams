@@ -48,6 +48,10 @@ jobs:
       # 🇲🇨 La voix du monégasque : chaque cas vient d'une prononciation DOCUMENTÉE.
       - name: "La voix du monégasque dit juste"
         run: node tools/lingua/verify-mc-voix.mjs
+      # 🔊 La voix ne doit plus « baisser toute seule » après quelques questions : une seule
+      # balise son réutilisée, libérée en fin de leçon, garde-fou borné, raisons expliquées.
+      - name: "La voix ne se dégrade plus question après question"
+        run: node tools/lingua/verify-voix.mjs lingua
       # 📜 Histoire & anecdotes : chaque fait porte sa source, et la rubrique est VRAIMENT
       # branchée dans l'app (une anecdote fausse — ou invisible — ne doit pas passer).
       - name: "Histoire & anecdotes : sourcées et branchées"
