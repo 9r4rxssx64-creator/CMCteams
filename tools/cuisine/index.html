@@ -500,6 +500,7 @@ function renderHome(){
   if(DATA.dialectes&&DATA.dialectes.length){
     h+='<div style="padding:6px 16px"><button class="fam" style="width:100%;flex-direction:row;align-items:center;gap:12px;justify-content:center;border-left:3px solid var(--rouge)" onclick="go(\'lexique\')"><span class="ic">🗣️</span><span class="nm">U parlà d\'ê cœuxe — le parler des plats <span class="n" style="display:block">'+DATA.dialectes.length+' mots en munegascu, niçard &amp; ligure · sourcés</span></span></button></div>';
   }
+  h+='<div style="padding:6px 16px"><a class="fam" href="imprimer.html" style="width:100%;flex-direction:row;align-items:center;gap:12px;justify-content:center;text-decoration:none;border-left:3px solid var(--gold)"><span class="ic">🖨️</span><span class="nm">Livre papier <span class="n" style="display:block">Tout le livre à imprimer ou enregistrer en PDF</span></span></a></div>';
   h+='<div style="text-align:center;padding:4px 24px 30px" class="ui"><button onclick="go(\'sources\')" style="color:var(--gold);font-size:13px;letter-spacing:.05em;text-transform:uppercase">Sources &amp; bibliographie ›</button></div>';
   APP.innerHTML=h;
 }
