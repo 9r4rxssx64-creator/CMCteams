@@ -127,13 +127,18 @@ const SURFACES = [
           await page.waitForTimeout(400); }
           return !!(await page.$('.tabbar')); };
         if (!(await rentrer())) return { ok:false, note:'impossible de revenir à l\'accueil après l\'atelier prononciation' };
-        // 📜 v2.118 : histoire & anecdotes — la rubrique doit s'ouvrir ET chaque fait doit
-        // porter une source cliquable. Un fait sans source = une affirmation invérifiable.
-        let faits = 0, srcs = 0;
+        // 📜 v2.118 puis v2.121 « Enrichit +++ » : le dossier de la langue doit s'ouvrir, et
+        // chaque élément publié (anecdote, chiffre repère, mot voyageur) doit porter une source
+        // cliquable. Un élément sans source = une affirmation invérifiable.
+        let faits = 0, srcs = 0, chiffres = 0, motsV = 0;
         if (await tap('.stories-card.hist-link')) { await page.waitForTimeout(500);
           faits = await page.$$eval('.hist-fait', els => els.length).catch(() => 0);
+          chiffres = await page.$$eval('.hist-chiffres .hc', els => els.filter(a => /^https?:/.test(a.href)).length).catch(() => 0);
+          motsV = await page.$$eval('.hist-mot', els => els.length).catch(() => 0);
           srcs = await page.$$eval('.hf-src', els => els.filter(a => /^https?:/.test(a.href)).length).catch(() => 0); }
-        if (faits < 3 || srcs < faits) return { ok:false, note:'📜 histoire & anecdotes : ' + faits + ' faits, ' + srcs + ' sources cliquables (il en faut une par fait)' };
+        // une source par anecdote ET une par mot (les chiffres sont eux-mêmes des liens)
+        if (faits < 8 || motsV < 4 || chiffres < 3 || srcs < faits + motsV)
+          return { ok:false, note:'📜 dossier de la langue : ' + faits + ' anecdotes, ' + chiffres + ' chiffres, ' + motsV + ' mots, ' + srcs + ' sources cliquables (il en faut une par anecdote et par mot)' };
         await rentrer();
         // 🔊 v2.40 : les 6 voix HD doivent être CLAIRES (audio réel non vide) et DIFFÉRENTES (octets distincts).
         // Sondage du VRAI worker (même origine). Repli fail-open (pas de clé) = toléré, pas un bug de page.
@@ -171,7 +176,7 @@ const SURFACES = [
         } catch (e) { mc = ' · 🇲🇨 sonde monégasque indispo'; }
         // la version RÉELLEMENT servie (preuve que le déploiement est passé, pas le dépôt)
         const ver = await page.evaluate(() => { const b = document.querySelector('.ver, .version, [data-ver]'); return b ? b.textContent.trim() : (window.APP_VER || ''); }).catch(() => '');
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes sourcées 📜' + mc + voix + ' · vies ' + hearts + (ver ? ' · version servie ' + ver : '') };
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes + ' + chiffres + ' chiffres + ' + motsV + ' mots, tous sourcés 📜' + mc + voix + ' · vies ' + hearts + (ver ? ' · version servie ' + ver : '') };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {

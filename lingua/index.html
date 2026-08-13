@@ -741,6 +741,17 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .hist-fait{background:var(--card);border:1px solid var(--line);border-left:3px solid #c9a7ff;border-radius:12px;padding:12px 13px;margin-bottom:10px}
 .hist-fait .hf-t{font-size:14px;line-height:1.5}
 .hist-note{margin-top:14px;font-size:11.5px;line-height:1.5}
+/* Les repères qu'on retient d'un coup d'œil. Deux colonnes à 390px, la pastille entière est
+   cliquable (44px de haut mini, règle iPhone) vers la page où le chiffre se vérifie. */
+.hist-chiffres{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.hist-chiffres .hc{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:64px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;text-decoration:none}
+.hist-chiffres .hc-v{font-size:14px;line-height:1.3;color:var(--gold)}
+.hist-chiffres .hc-k{font-size:11.5px;line-height:1.35;color:#9fb2c2;font-style:normal}
+/* Les mots qui ont voyagé : une carte par mot, le mot en gros, l'histoire dessous. */
+.hist-mots{display:flex;flex-direction:column;gap:10px}
+.hist-mot{background:var(--card);border:1px solid var(--line);border-left:3px solid #7fd1b9;border-radius:12px;padding:12px 13px}
+.hist-mot .hm-m{display:block;font-size:16px;color:#7fd1b9;margin-bottom:4px}
+.hist-mot .hm-d{font-size:13.5px;line-height:1.5;margin-bottom:2px}
 /* 📚 Les maisons de référence de la langue — un lien = une touche confortable (≥44px) */
 .src-lien{display:flex;flex-direction:column;gap:2px;min-height:56px;justify-content:center;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;padding:10px 13px;margin-bottom:9px;text-decoration:none;color:#fff}
 .src-lien b{font-size:14px}

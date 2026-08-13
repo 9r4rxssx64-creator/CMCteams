@@ -35,11 +35,37 @@ const errs = [];
 const ko = (m) => errs.push(m);
 
 /* ---------- 1. Contrôle mécanique du contenu ---------- */
-const MINI_HISTOIRE = 120;   // en dessous, ce n'est pas une histoire, c'est une étiquette
+/* Les planchers montent avec la vague « Enrichit +++ » (Kevin 2026-08-13) : chaque langue a
+   désormais un vrai dossier — une histoire développée, dix anecdotes, des chiffres repères et
+   des mots qui ont voyagé. Un plancher qui NE MONTE PAS avec le contenu ne protège plus rien :
+   il laisserait re-glisser en douce une langue à 4 anecdotes sans que personne le voie. */
+const MINI_HISTOIRE = 400;   // en dessous, ce n'est plus un dossier, c'est une étiquette
 const MINI_FAIT = 25;
-const MINI_FAITS = 3;        // moins de 3 anecdotes = un écran vide, pas une rubrique
+const MINI_FAITS = 8;        // le dossier promet « le sais-tu ? », pas trois lignes
+const MINI_CHIFFRES = 3;     // les repères qu'on retient d'un coup d'œil
+const MINI_MOTS = 4;         // les mots qui ont voyagé entre cette langue et le français
+const MINI_EXPLIC = 20;      // une explication de mot plus courte n'explique rien
 
 COURS.forEach((lg) => { if (!LANG_HISTOIRE[lg]) ko('langue enseignée SANS histoire : ' + lg); });
+
+/* Contrôles communs à tout élément publié : du texte, une source, pas de HTML, pas de doublon. */
+function verifieListe(ou, liste, mini, nomListe, champs) {
+  if (liste.length < mini) ko(ou + ' : ' + liste.length + ' ' + nomListe + ', il en faut au moins ' + mini);
+  const vus = new Set();
+  liste.forEach((x, i) => {
+    const q = ou + ', ' + nomListe.replace(/s$/, '') + ' ' + (i + 1);
+    champs.forEach(([champ, mini2]) => {
+      const v = x[champ];
+      if (typeof v !== 'string' || v.trim().length < mini2) ko(q + ' : « ' + champ + ' » absent ou trop court');
+    });
+    if (!x.src || !String(x.src).trim()) ko(q + ' : SANS SOURCE — rien ne se publie sans source');
+    if (x.url != null && !/^https?:\/\//.test(String(x.url))) ko(q + ' : « url » présente mais ce n\'est pas une adresse http(s)');
+    const cle = String(x[champs[0][0]] || '').trim().toLowerCase();
+    if (vus.has(cle)) ko(q + ' : répété à l\'identique dans la même langue'); vus.add(cle);
+    const tout = champs.map(([c]) => String(x[c] || '')).join('') + String(x.src || '');
+    if (/[<>]/.test(tout)) ko(q + ' : contient du HTML — interdit (le texte est affiché tel quel)');
+  });
+}
 
 Object.keys(LANG_HISTOIRE).forEach((lg) => {
   const h = LANG_HISTOIRE[lg];
@@ -47,17 +73,9 @@ Object.keys(LANG_HISTOIRE).forEach((lg) => {
   if (!h.nom || !String(h.nom).trim()) ko(ou + ' : nom manquant');
   if (!h.src || !String(h.src).trim()) ko(ou + ' : source de l\'histoire manquante');
   if (typeof h.histoire !== 'string' || h.histoire.trim().length < MINI_HISTOIRE) ko(ou + ' : histoire absente ou trop courte (< ' + MINI_HISTOIRE + ' caractères)');
-  const faits = Array.isArray(h.faits) ? h.faits : [];
-  if (faits.length < MINI_FAITS) ko(ou + ' : ' + faits.length + ' anecdote(s), il en faut au moins ' + MINI_FAITS);
-  const vus = new Set();
-  faits.forEach((f, i) => {
-    const q = ou + ', anecdote ' + (i + 1);
-    if (typeof f.t !== 'string' || f.t.trim().length < MINI_FAIT) ko(q + ' : texte absent ou trop court');
-    if (!f.src || !String(f.src).trim()) ko(q + ' : SANS SOURCE — un fait sans source ne se publie pas');
-    const cle = String(f.t || '').trim().toLowerCase();
-    if (vus.has(cle)) ko(q + ' : répétée à l\'identique dans la même langue'); vus.add(cle);
-    if (/[<>]/.test(String(f.t || '') + String(f.src || ''))) ko(q + ' : contient du HTML — interdit (le texte est affiché tel quel)');
-  });
+  verifieListe(ou, Array.isArray(h.faits) ? h.faits : [], MINI_FAITS, 'anecdotes', [['t', MINI_FAIT]]);
+  verifieListe(ou, Array.isArray(h.chiffres) ? h.chiffres : [], MINI_CHIFFRES, 'chiffres', [['k', 3], ['v', 2]]);
+  verifieListe(ou, Array.isArray(h.mots) ? h.mots : [], MINI_MOTS, 'mots', [['m', 2], ['d', MINI_EXPLIC]]);
 });
 
 /* ---------- 2. Le contenu est-il VRAIMENT branché ? (Déclaration ≠ Déploiement) ---------- */
@@ -69,15 +87,23 @@ const brancher = [
   ['la vue est réellement affichée (render)', /VIEW==="histoire"\)\s*app\.appendChild\(vHistoire\(\)\)/.test(app)],
   ['une carte y mène depuis l\'accueil', /go\("histoire"\)/.test(app)],
   ['l\'anecdote du jour tourne (pas toujours la même)', /function anecdoteDuJour\(\)/.test(app) && /anecdoteDuJour\(\)/.test(app.replace(/function anecdoteDuJour\(\)/, ''))],
-  ['chaque source est cliquable vers son article', /function wikiLien\(/.test(app) && /wikiLien\(f\.src\)/.test(app)],
+  ['chaque source est cliquable vers son article', /function wikiLien\(/.test(app) && /lienSrc\(f\)/.test(app)],
   ['le texte est inséré sans HTML (anti-injection)', /tx\.textContent=f\.t/.test(app)],
+  /* « Enrichit +++ » : les trois nouvelles sections doivent être VISIBLES, pas juste écrites
+     dans le fichier de contenu — sinon c'est du contenu mort (Déclaration ≠ Déploiement). */
+  ['les chiffres repères sont affichés', /hist-chiffres/.test(app) && /textContent=x\.v/.test(app)],
+  ['les mots qui ont voyagé sont affichés', /hist-mots/.test(app) && /textContent=w\.d/.test(app)],
+  ['une source hors Wikipédia peut être pointée (champ url)', /function lienSrc\(/.test(app)],
+  ['le style des nouvelles sections existe', /\.hist-chiffres/.test(html) && /\.hist-mot\b/.test(html)],
 ];
 brancher.forEach(([quoi, ok]) => { if (!ok) ko('PAS BRANCHÉ : ' + quoi); });
 
 /* ---------- 3. Verdict structurel ---------- */
 const nb = Object.keys(LANG_HISTOIRE).length;
-const nbFaits = Object.values(LANG_HISTOIRE).reduce((s, h) => s + ((h.faits || []).length), 0);
-console.log('📜 Histoire & anecdotes — ' + nb + ' langue(s), ' + nbFaits + ' anecdote(s), toutes sourcées.');
+const somme = (champ) => Object.values(LANG_HISTOIRE).reduce((s, h) => s + ((h[champ] || []).length), 0);
+const nbFaits = somme('faits');
+console.log('📜 Dossiers des langues — ' + nb + ' langue(s) · ' + nbFaits + ' anecdote(s) · '
+  + somme('chiffres') + ' chiffre(s) repère · ' + somme('mots') + ' mot(s) voyageur(s) — tout sourcé.');
 brancher.forEach(([quoi, ok]) => console.log((ok ? '✅ ' : '❌ ') + quoi));
 if (errs.length) { console.log('\n❌ ' + errs.length + ' problème(s) :'); errs.forEach((e) => console.log('   · ' + e)); }
 else console.log('✅ Contrôle mécanique : rien à signaler.');
@@ -100,8 +126,13 @@ if (SEMANTIC) {
   const douteux = [];
   for (const lg of Object.keys(LANG_HISTOIRE)) {
     const h = LANG_HISTOIRE[lg];
+    /* Le juge relit TOUT ce qui est publié — pas seulement les anecdotes. Un chiffre faux
+       (« 26 lettres ») ou une étymologie inventée se lit comme un fait : même porte. */
     const liste = [{ t: h.histoire, src: h.src, quoi: 'présentation' }]
-      .concat((h.faits || []).map((f, i) => ({ t: f.t, src: f.src, quoi: 'anecdote ' + (i + 1) })));
+      .concat((h.faits || []).map((f, i) => ({ t: f.t, src: f.src, quoi: 'anecdote ' + (i + 1) })))
+      .concat((h.chiffres || []).map((c, i) => ({ t: c.k + ' : ' + c.v, src: c.src, quoi: 'chiffre ' + (i + 1) })))
+      .concat((h.mots || []).map((w, i) => ({ t: '« ' + w.m +
+        ' » — ' + w.d, src: w.src, quoi: 'mot ' + (i + 1) })));
     const sys = "Tu es vérificateur de faits, rigoureux et PRUDENT. Tu ne signales QUE ce qui est FACTUELLEMENT FAUX ou invérifiable, jamais le style, jamais une formulation que tu aurais tournée autrement.";
     const user = 'Voici des affirmations destinées à une application d\'apprentissage des langues, sur le ' + (h.nom || lg) + '.\n'
       + liste.map((x, i) => (i + 1) + '. [' + x.quoi + '] ' + x.t + '   (source annoncée : « ' + x.src + ' »)').join('\n')
@@ -130,6 +161,59 @@ if (SEMANTIC) {
   douteux.forEach((d) => md.push('- **' + d.langue + '** ' + (d.quoi ? '(' + d.quoi + ')' : '') + ' — ' + (d.note || (d.probleme + '\n  - texte : « ' + d.texte + ' »\n  - correction proposée : ' + d.correction + '\n  - source annoncée : ' + d.source))));
   fs.writeFileSync(path.join(ROOT, '..', 'audit', 'lingua-histoires-verite.md'), md.join('\n') + '\n', 'utf8');
   console.log('\nRapport : audit/lingua-histoires-verite.md — ' + douteux.length + ' point(s) à relire (rien n\'a été modifié).');
+}
+
+/* ---------- 5. Mode LIENS : on OUVRE vraiment chaque source (CI, réseau ouvert) ----------
+   Un titre d'article Wikipédia écrit de mémoire peut ne pas exister : le lien tombe alors sur
+   une page « créer cet article », et l'élève se retrouve dans le vide. Déjà vécu avec les
+   adresses des académies (deux inventées, mortes). Donc : la CI clique à ma place. */
+async function ouvre(url) {
+  const essai = async (method) => {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 15000);
+    try {
+      const r = await fetch(url, { method, redirect: 'follow', signal: ctl.signal,
+        headers: { 'user-agent': 'Mozilla/5.0 (compatible; KDMC-Lingua/1.0; +https://lingua.kd-mc.com)' } });
+      return r.status;
+    } catch (_) { return 0; } finally { clearTimeout(t); }
+  };
+  let code = await essai('HEAD');
+  if (code === 0 || code === 405) { const g = await essai('GET'); if (g) code = g; }
+  return code;
+}
+const wikiLien = (titre) => 'https://fr.wikipedia.org/wiki/' + encodeURIComponent(String(titre || '').replace(/ /g, '_'));
+
+if (process.argv.includes('--liens')) {
+  /* On dédoublonne : le même article sert souvent à plusieurs langues. */
+  const cibles = new Map();   // url -> [où on l'utilise]
+  Object.keys(LANG_HISTOIRE).forEach((lg) => {
+    const h = LANG_HISTOIRE[lg];
+    const ajoute = (x, quoi) => {
+      const u = x.url || wikiLien(x.src);
+      if (!cibles.has(u)) cibles.set(u, []);
+      cibles.get(u).push(lg + '/' + quoi);
+    };
+    ajoute({ src: h.src }, 'présentation');
+    (h.faits || []).forEach((f, i) => ajoute(f, 'anecdote ' + (i + 1)));
+    (h.chiffres || []).forEach((c, i) => ajoute(c, 'chiffre ' + (i + 1)));
+    (h.mots || []).forEach((w, i) => ajoute(w, 'mot ' + (i + 1)));
+  });
+  console.log('\n🔗 Ouverture réelle de ' + cibles.size + ' source(s) distincte(s)…\n');
+  const morts = []; let robots = 0;
+  for (const [url, ou] of cibles) {
+    const code = await ouvre(url);
+    /* Même honnêteté que pour les académies : un site qui REFUSE les robots (401/403/429)
+       n'est pas un lien mort — l'adresse est bonne, un humain passe. Seul le 404 condamne,
+       et c'est exactement ce que renvoie Wikipédia pour un article qui n'existe pas. */
+    if (code >= 200 && code < 400) continue;
+    if ([401, 403, 429].includes(code)) { robots++; console.log('🤖 ' + code + '  ' + url + '   (refuse les robots, adresse bonne)'); continue; }
+    morts.push({ url, code, ou }); console.log('❌ ' + (code || 'injoignable') + '  ' + url + '   ← ' + ou.join(', '));
+  }
+  console.log('\n' + (cibles.size - morts.length - robots) + ' source(s) répondent · ' + robots + ' refusent les robots · ' + morts.length + ' introuvable(s).');
+  if (morts.length) {
+    console.log('Une source introuvable envoie l\'élève dans le vide : à corriger AVANT de publier.');
+    errs.push(morts.length + ' source(s) introuvable(s) — voir la liste ci-dessus');
+  }
 }
 
 process.exit(errs.length ? 1 : 0);
