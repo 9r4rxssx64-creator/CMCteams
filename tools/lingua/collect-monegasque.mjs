@@ -63,8 +63,11 @@ const PAGES_WP = ['Monégasque', 'Liste Swadesh du monégasque', 'Ligure (langue
   'Culture monégasque', 'Comité national des traditions monégasques', 'Louis Notari'];
 const PAGES_WK = ['Annexe:Liste Swadesh en monégasque', 'Annexe:Liste Swadesh du monégasque',
   'Wiktionnaire:Liste Swadesh/monégasque', 'Annexe:Liste Swadesh en ligure'];
-const CATS_WK = ['Catégorie:monégasque', 'Catégorie:mots en monégasque', 'Catégorie:ligure',
-  'Catégorie:noms communs en monégasque', 'Catégorie:verbes en monégasque'];
+/* Le monégasque EN PREMIER (c'est lui qu'on enseigne). Le ligure est collecté à part, à titre
+   de comparaison : il ne rentrera JAMAIS dans le cours de monégasque. */
+const CATS_WK = ['Catégorie:monégasque', 'Catégorie:noms communs en monégasque',
+  'Catégorie:verbes en monégasque', 'Catégorie:adjectifs en monégasque',
+  'Catégorie:lexique en monégasque', 'Catégorie:ligure'];
 
 const rapport = { genere_le: null, sources: [], pages_trouvees: [], pages_absentes: [], mots_wiktionnaire: [], note_licence:
   'Wikipédia et le Wiktionnaire sont sous licence CC BY-SA : toute reprise doit citer la source. Aucun lexique édité sous droit d\'auteur n\'est collecté.' };
@@ -98,18 +101,29 @@ for (const cat of CATS_WK) {
   console.log(`✅ Wiktionnaire · ${cat} — ${noms.length} entrée(s)`);
   rapport.sources.push({ categorie: cat, entrees: noms.length });
   for (const nom of noms) {
-    if (motsVus.has(nom) || motsVus.size >= 800) continue;
+    if (motsVus.has(nom) || motsVus.size >= 2000) continue;
     motsVus.add(nom);
     const wt = await wikitexte('fr.wiktionary.org', nom);
     if (!wt) continue;
-    /* on ne garde QUE la section de langue monégasque (== {{langue|xxx}} ==) — pas le reste */
-    const secs = wt.split(/\n==\s*\{\{langue\|/).slice(1);
+    /* On ne garde QUE la section de la langue voulue (== {{langue|xxx}} ==).
+       ⚠️ VÉRITÉ : « lij-mc » = MONÉGASQUE, « lij » = LIGURE (génois). Ce sont deux langues
+       voisines mais DIFFÉRENTES (Fransa en ligure ≠ França en monégasque). On note le code
+       exact de chacun et on ne les mélangera JAMAIS dans le cours. */
+    const secs = wt.split(/\n=+\s*\{\{langue\s*\|/).slice(1);
     for (const s of secs) {
-      const code = (s.match(/^([a-z-]+)\}\}/) || [])[1] || '';
-      if (!/^(mwx|lij|roa)/.test(code) && !/monégasque/i.test(s.slice(0, 400))) continue;
+      const code = (s.match(/^\s*([a-z-]+)\s*\}\}/) || [])[1] || '';
+      if (!/^(lij|mwx)/.test(code)) continue;
       const defs = (s.match(/^#\s*[^#*:\n].*$/gm) || []).slice(0, 3)
-        .map((d) => d.replace(/^#\s*/, '').replace(/\{\{[^}]*\}\}/g, '').replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, '$2').replace(/'{2,}/g, '').trim())
-        .filter(Boolean);
+        .map((d) => d.replace(/^#\s*/, '')
+          /* Les modèles CONTIENNENT souvent le mot français ({{lien|Adèle|fr}}) : les effacer
+             en bloc donnait « Prénom féminin correspondant à . » — une définition vide, donc
+             inutilisable. On garde le contenu utile avant de nettoyer le reste. */
+          .replace(/\{\{(?:lien|l|w|lang|polytonique|zh-lien)\s*\|\s*([^|}]+)[^}]*\}\}/gi, '$1')
+          .replace(/\{\{[^}]*\}\}/g, '')
+          .replace(/<ref[\s\S]*?(?:<\/ref>|\/>)/gi, '').replace(/<[^>]+>/g, '')
+          .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, '$2').replace(/'{2,}/g, '')
+          .replace(/\s{2,}/g, ' ').trim())
+        .filter((d) => d && d !== '.' && /[\p{L}]/u.test(d));
       if (defs.length) { rapport.mots_wiktionnaire.push({ mot: nom, code_langue: code, definitions: defs }); }
     }
     await dodo(150);
@@ -122,7 +136,12 @@ ecrire(`${OUT}/RAPPORT.json`, JSON.stringify(rapport, null, 2));
 console.log('\n===== CE QUI EXISTE VRAIMENT =====');
 console.log('pages récupérées      : ' + rapport.pages_trouvees.length);
 console.log('pages inexistantes    : ' + rapport.pages_absentes.length);
+const parLangue = {};
+rapport.mots_wiktionnaire.forEach((m) => { parLangue[m.code_langue] = (parLangue[m.code_langue] || 0) + 1; });
+rapport.par_langue = parLangue;
 console.log('mots du Wiktionnaire  : ' + rapport.mots_wiktionnaire.length);
+console.log('   dont MONÉGASQUE (lij-mc) : ' + (parLangue['lij-mc'] || 0));
+console.log('   dont ligure (lij, à part): ' + (parLangue['lij'] || 0));
 rapport.mots_wiktionnaire.slice(0, 25).forEach((m) => console.log('   ' + m.mot + ' — ' + m.definitions[0]));
 if (!rapport.pages_trouvees.length && !rapport.mots_wiktionnaire.length) {
   console.log('\n⚠️ AUCUNE source libre trouvée. On ne publiera RIEN plutôt que d\'inventer du monégasque.');
