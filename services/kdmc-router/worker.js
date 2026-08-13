@@ -106,6 +106,33 @@ export default {
     }
 
     let p = url.pathname;
+
+    // Livre de cuisine « A Cüjina de Mùnegu » aussi accessible en CHEMIN du domaine
+    // principal (Kevin 2026-08-13, « je dois pouvoir l'ouvrir même en 4G »). kd-mc.com
+    // est déjà résolu par tous les réseaux/opérateurs → 0 attente de propagation DNS,
+    // contrairement à un sous-domaine tout neuf (cujina/cocina). Chemins : /cujina,
+    // /cuisine, /livre. Redirection vers le / final pour que les images relatives marchent.
+    if ((host === 'kd-mc.com' || host === 'www.kd-mc.com')) {
+      if (/^\/(cujina|cuisine|livre)$/.test(p)) return Response.redirect('https://' + host + p + '/', 301);
+      const cm = p.match(/^\/(cujina|cuisine|livre)(\/.*)?$/);
+      if (cm) {
+        const rest = cm[2] || '/';
+        const upstreamUrl2 = UPSTREAM + '/CMCteams/tools/cuisine' + rest + url.search;
+        const rh2 = new Headers(request.headers); rh2.delete('host');
+        const res2 = await fetch(new Request(upstreamUrl2, {
+          method: request.method, headers: rh2,
+          body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+          redirect: 'manual',
+        }));
+        const oh2 = new Headers(res2.headers);
+        oh2.set('x-kdmc-router', host + ' (cuisine-path)');
+        if (!oh2.has('x-content-type-options')) oh2.set('x-content-type-options', 'nosniff');
+        if (!oh2.has('x-frame-options')) oh2.set('x-frame-options', 'SAMEORIGIN');
+        if (!oh2.has('strict-transport-security')) oh2.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
+        return new Response(res2.body, { status: res2.status, statusText: res2.statusText, headers: oh2 });
+      }
+    }
+
     let upstreamPath;
     if (p === '/' || p === '') upstreamPath = base + '/';
     else if (p.startsWith(PAGES_PREFIX + '/')) upstreamPath = p;
