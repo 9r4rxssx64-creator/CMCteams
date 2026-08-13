@@ -23,8 +23,12 @@ permissions:
 
 # Garde anti-empilement (test:ci-no-stampede) : une seule exécution par workflow+réf,
 # les runs obsolètes de la même réf sont annulés (pas un déploiement → cancel OK).
+# Le groupe inclut l'ÉVÉNEMENT (mesuré le 2026-08-13) : sans lui, un envoi sur main annulait
+# le second avis indépendant lancé à la main, qui n'a donc JAMAIS pu s'exécuter — deux fois de
+# suite. Un audit qu'on croit lancé et qui meurt en silence, c'est un faux vert. Désormais un
+# commit ne remplace qu'un commit, et un lancement manuel qu'un lancement manuel.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
