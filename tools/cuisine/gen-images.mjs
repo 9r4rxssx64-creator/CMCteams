@@ -68,10 +68,12 @@ async function aiTry(r){
     if(fs.existsSync(out)&&fs.statSync(out).size>3000){ skipped++; continue; }
     process.stdout.write(`[${r.id}] ${r.name.slice(0,38)} … `);
     let img=null, via='';
-    // 1) Pexels : requête nettoyée puis repli catégorie
+    // 1) Pexels : requête ciblée (plat dressé) → nettoyée → repli catégorie
     if(PEXELS){
-      const q1=cleanQuery(r.name); const q2=CATQ[r.cat]||'gourmet dish';
-      for(const q of [q1&&(q1+' food'), q1, q2]){ if(!q) continue;
+      const STYLE={'Desserts & Pâtisseries':'dessert plated','Potages & Soupes':'soup bowl','Poissons & Fruits de mer':'seafood dish plated','Viandes, Volailles & Gibiers':'meat dish plated',"Entrées, Œufs & Hors-d'œuvre":'gourmet dish plated','Spécialités du Terroir':'dish plated'};
+      const base=cleanQuery(r.name); const style=STYLE[r.cat]||'gourmet dish';
+      const q2=CATQ[r.cat]||'gourmet dish';
+      for(const q of [base&&(base+' '+style), base&&(base+' food'), q2]){ if(!q) continue;
         for(let a=0;a<3&&!img;a++){ try{ img=await pexels(q); if(img){via='pexels';break;} }catch(e){ if(String(e.message).includes('429')) await sleep(3000); else break; } }
         if(img) break;
       }
