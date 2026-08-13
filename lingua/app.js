@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.119.0";
+var APP_VER="v2.119.1";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1545,12 +1545,19 @@ function beeBubble(text,ms){ try{ var old=document.querySelector(".bee-bubble");
    Tout est enveloppé dans .rig-look, qui porte l'orientation vers ton doigt : le conteneur
    .bee-rig garde ses propres animations (flotte, danse, saute) — deux transform sur le même
    élément s'écrasent l'une l'autre, d'où les deux niveaux. */
-function beeRigHTML(withMouth){ var M=MASC();
+/* Les morceaux animés RÉELLEMENT dessinés, par mascotte.
+   Avant, on demandait les mêmes couches pour tout le monde (ailes + bras) et un `onerror`
+   effaçait celles qui n'existaient pas : rien ne se voyait, mais le téléphone téléchargeait
+   dans le vide. MESURÉ sur lingua.kd-mc.com le 2026-08-13 : 3 requêtes 404
+   `/bee/v2/rig/arm.webp` à chaque affichage (et Bourrico, qui est un âne, réclamait des
+   AILES). On ne demande donc que ce qui existe. Dessiner une nouvelle couche = l'ajouter ici
+   ET poser le fichier ; la garde tools/lingua/verify-assets.mjs vérifie les deux. */
+var RIG_PIECES={ "bee":["wing-l","wing-r"], "bee/v2":["wing-l","wing-r"], "donkey":[] };
+function beeRigHTML(withMouth){ var M=MASC(); var pieces=RIG_PIECES[M]||[];
+  var CLS={ "wing-l":"rig-wl", "wing-r":"rig-wr", "arm":"rig-arm" };
   return '<div class="rig-look">'+
     '<img class="rig-base" src="'+M+'/rig/base.webp" alt="'+MNAME()+'">'+
-    '<img class="rig-piece rig-wl" src="'+M+'/rig/wing-l.webp" alt="" onerror="this.remove()">'+
-    '<img class="rig-piece rig-wr" src="'+M+'/rig/wing-r.webp" alt="" onerror="this.remove()">'+
-    '<img class="rig-piece rig-arm" src="'+M+'/rig/arm.webp" alt="" onerror="this.remove()">'+
+    pieces.map(function(p){ return '<img class="rig-piece '+(CLS[p]||("rig-"+p))+'" src="'+M+'/rig/'+p+'.webp" alt="" onerror="this.remove()">'; }).join('')+
     '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
     (withMouth===false?'':'<div class="disc-mouth"></div>')+
     '<div class="rig-zzz">z</div>'+

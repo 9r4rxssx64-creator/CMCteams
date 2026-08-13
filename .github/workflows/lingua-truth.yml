@@ -48,6 +48,10 @@ jobs:
       # branchée dans l'app (une anecdote fausse — ou invisible — ne doit pas passer).
       - name: "Histoire & anecdotes : sourcées et branchées"
         run: node tools/lingua/verify-histoires.mjs lingua
+      # 🖼️ Aucune image demandée dans le vide : un 404 silencieux coûte du réseau à chaque
+      # affichage et fait passer l'audit live au rouge, ce qui masque les vrais problèmes.
+      - name: "Aucune image demandée dans le vide"
+        run: node tools/lingua/verify-assets.mjs lingua
       # 🇲🇨 Cours de monégasque : chaque mot publié doit RESTER attesté par une source
       # récoltée. Si une source disparaît ou se corrige, le mot ne doit plus être enseigné.
       - name: "Monégasque : chaque mot publié reste attesté"
