@@ -30,6 +30,7 @@ const ko = (gravite, quoi, detail) => { soucis.push({ gravite, quoi, detail }); 
 const SCRIPTS = [
   { nom: 'Vérité du contenu (6 langues, quiz, 0 doublon)', cmd: ['tools/lingua/verify-truth.mjs', 'lingua', '--struct'] },
   { nom: 'Le Coach reste utilisable (micro, cases, consignes)', cmd: ['tools/lingua/verify-coach.mjs'] },
+  { nom: 'La voix du monégasque dit juste (cas documentés)', cmd: ['tools/lingua/verify-mc-voix.mjs'] },
   { nom: 'Moteur de voix du serveur', cmd: ['services/kdmc-router/voix-tts.test.mjs'] },
   { nom: 'Voix clonée d\'Antonin', cmd: ['services/kdmc-router/antonin-tts.test.mjs'] },
 ];

@@ -41,6 +41,9 @@ jobs:
       # consignes « une question à la fois / jamais la réponse » présentes (Kevin 2026-08-11).
       - name: "Le Coach reste utilisable (micro, cases à remplir, consignes)"
         run: node tools/lingua/verify-coach.mjs
+      # 🇲🇨 La voix du monégasque : chaque cas vient d'une prononciation DOCUMENTÉE.
+      - name: "La voix du monégasque dit juste"
+        run: node tools/lingua/verify-mc-voix.mjs
 
   semantique:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
