@@ -1,8 +1,9 @@
 name: Cuisine — Illustrations IA (Répertoire de la Riviera)
 
-# Génère les illustrations des 113 recettes via GEMINI_API_KEY (secret) et les
-# pousse sur une branche claude/* (auto-merge → Pages). Idempotent : relançable
-# pour reprendre les manquantes. N'invente aucune recette — illustre les plats.
+# Génère les illustrations des recettes. Multi-fournisseurs : prend la 1re clé
+# image des secrets qui a du crédit (Together/Replicate/OpenAI/Gemini).
+# Commit des IMAGES SEULES directement sur main (diff = jpg → pas de blocage
+# "workflows permission", et deploy.yml republie Pages). Idempotent + relançable.
 on:
   workflow_dispatch:
     inputs:
@@ -21,7 +22,7 @@ concurrency:
 jobs:
   images:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,24 +36,27 @@ jobs:
       - name: Install sharp
         run: npm i sharp@0.33.5 --no-save
 
-      - name: Génération des illustrations (Gemini / Imagen)
+      - name: Génération des illustrations (multi-fournisseurs)
         env:
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          AX_REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
+          OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "Clé Gemini présente : $([ -n "$GEMINI_API_KEY" ] && echo oui || echo NON)"
-          node tools/cuisine/gen-images.mjs "${{ github.event.inputs.only }}"
+        run: node tools/cuisine/gen-images.mjs "${{ github.event.inputs.only }}"
 
-      - name: Commit des images sur une branche claude/*
+      - name: Commit des images directement sur main
         run: |
           git config user.name "kdmc-bot"
           git config user.email "bot@kdmc.local"
-          BR="claude/cuisine-images-${{ github.run_id }}"
-          git checkout -b "$BR"
           git add tools/cuisine/img
           if git diff --cached --quiet; then
-            echo "Aucune nouvelle image."
-          else
-            git commit -m "Cuisine — illustrations IA générées (Gemini) [skip ci]"
-            git push -u origin "$BR"
-            echo "Poussé sur $BR (auto-merge → Pages)."
+            echo "Aucune nouvelle image à committer."
+            exit 0
           fi
+          git commit -m "Cuisine — illustrations IA générées ($(ls tools/cuisine/img/*.jpg 2>/dev/null | wc -l) images)"
+          for i in 1 2 3 4 5; do
+            git fetch origin main -q
+            git rebase origin/main && git push origin HEAD:main && { echo "Poussé sur main → Pages se redéploie."; exit 0; }
+            echo "retry push $i…"; git rebase --abort 2>/dev/null || true; sleep 5
+          done
+          echo "Échec push après retries"; exit 1
