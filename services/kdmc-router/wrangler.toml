@@ -30,6 +30,7 @@ routes = [
   { pattern = "lingua.kd-mc.com", custom_domain = true },
   { pattern = "studio.kd-mc.com", custom_domain = true },
   { pattern = "cuisine.kd-mc.com", custom_domain = true },
+  { pattern = "cocina.kd-mc.com", custom_domain = true },
 ]
 
 # Registre fiches clients — KV à id FIGÉ (provisionné le 2026-06-09) pour un déploiement
