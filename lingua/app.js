@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.121.0";
+var APP_VER="v2.121.1";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -2193,7 +2193,7 @@ function wikiLien(titre){ return "https://fr.wikipedia.org/wiki/"+encodeURICompo
 function lienSrc(x){ return (x&&x.url)?x.url:wikiLien(x&&x.src); }
 function vHistoire(){ var d=el("div","screen"); var c=COURSES[S.course], h=histLangue(S.course);
   var nom=(c&&c.nom)||(h&&h.nom)||"cette langue";
-  d.innerHTML='<h2 class="ttl">📜 '+esc(nom)+' — histoire &amp; anecdotes</h2>';
+  d.innerHTML='<h2 class="ttl">📜 '+esc(nom)+' — histoire, chiffres &amp; mots</h2>';
   if(!h){ d.innerHTML+='<p class="sub2">L\'histoire de cette langue n\'est pas encore écrite. Elle arrive.</p>';
     var b0=el("button","btn-ghost"); b0.textContent="← Retour"; b0.onclick=function(){ go("home"); }; d.appendChild(b0); return d; }
   var intro=el("div","hist-card");

@@ -360,7 +360,7 @@
       mots: [
         { m: 'アンケート (ankēto)', d: "du français « enquête » : c'est le mot japonais pour un sondage.", src: 'Japonais' },
         { m: 'アトリエ (atorie)', d: "du français « atelier », employé pour l'atelier d'artiste.", src: 'Japonais' },
-        { m: 'ズボン (zubon)', d: "du français « jupon » — devenu le mot courant pour un pantalon.", src: 'Japonais' },
+        { m: 'ズボン (zubon)', d: "viendrait du français « jupon » — c'est le mot courant pour un pantalon.", src: 'Japonais' },
         { m: 'パン (pan)', d: "du portugais pão : le pain est arrivé avec le mot, au XVIe siècle.", src: 'Japonais' },
         { m: 'kimono', d: "dans l'autre sens : le français dit kimono, littéralement « la chose que l'on porte ».", src: 'Kimono' },
         { m: 'tsunami', d: "du japonais 津波, « vague du port » — adopté par le monde entier.", src: 'Tsunami' }
