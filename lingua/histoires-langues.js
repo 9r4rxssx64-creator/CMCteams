@@ -116,7 +116,7 @@
       faits: [
         { t: "L'allemand écrit met une majuscule à TOUS les noms communs, pas seulement aux noms propres.", src: 'Allemand' },
         { t: "On peut fabriquer un mot en collant des mots bout à bout : c'est pourquoi certains mots allemands sont si longs.", src: 'Mot composé' },
-        { t: "Une réforme de l'orthographe en 1996 a fait débat pendant des années dans les pays germanophones.", src: 'Réforme de l’orthographe allemande de 1996' },
+        { t: "Une réforme de l'orthographe en 1996 a fait débat pendant des années dans les pays germanophones.", src: 'Allemand' },
         { t: "C'est la langue maternelle la plus parlée de l'Union européenne.", src: 'Allemand' },
         { t: "Trois genres et quatre cas : chaque nom change selon sa fonction dans la phrase.", src: 'Allemand' },
         { t: "Le verbe part souvent à la fin de la phrase : il faut écouter jusqu'au bout pour comprendre.", src: 'Allemand' },
@@ -139,13 +139,13 @@
       chiffres: [
         { k: 'Pays où il est officiel', v: 'neuf', src: 'Portugais' },
         { k: 'Continents', v: 'quatre', src: 'Portugais' },
-        { k: 'Accord orthographique', v: 'signé en 1990', src: 'Accord orthographique de 1990' },
+        { k: 'Accord orthographique', v: 'signé en 1990', src: 'Portugais' },
         { k: 'Signature sonore', v: 'les voyelles nasales (ã, õ)', src: 'Portugais' }
       ],
       faits: [
         { t: "Le portugais est langue officielle de neuf pays, du Portugal au Brésil, de l'Angola au Timor oriental.", src: 'Portugais' },
         { t: "« Saudade » désigne un mélange de nostalgie et de manque que le portugais nomme d'un seul mot.", src: 'Saudade' },
-        { t: "Un accord orthographique signé en 1990 a rapproché les graphies du Portugal et du Brésil.", src: 'Accord orthographique de 1990' },
+        { t: "Un accord orthographique signé en 1990 a rapproché les graphies du Portugal et du Brésil.", src: 'Portugais' },
         { t: "Le Brésil est le seul pays d'Amérique du Sud dont la langue officielle est le portugais.", src: 'Brésil' },
         { t: "Le portugais et le galicien, parlé en Espagne, descendent d'une même langue médiévale.", src: 'Galaïco-portugais' },
         { t: "Les Lusiades de Camões, publiées en 1572, sont l'épopée nationale portugaise.", src: 'Les Lusiades' },
@@ -195,7 +195,7 @@
     pl: { nom: 'Polonais', src: 'Polonais',
       histoire: "Langue slave occidentale écrite en alphabet latin, le polonais s'est maintenu à travers plus d'un siècle de partages où la Pologne avait disparu des cartes : la langue a tenu lieu de pays. Elle s'est dotée très tôt d'une littérature savante — l'université de Cracovie date de 1364 — et a emprunté au latin, à l'allemand, puis massivement au français aux XVIIIe et XIXe siècles, quand parler français était la marque des salons. Sept cas, trois genres, aucun article : la fin des mots y fait le travail que le français confie aux petits mots devant.",
       chiffres: [
-        { k: 'Alphabet', v: '32 lettres', src: 'Alphabet polonais' },
+        { k: 'Alphabet', v: '32 lettres', src: 'Polonais' },
         { k: 'Cas grammaticaux', v: '7 — la fin du mot dit son rôle', src: 'Polonais' },
         { k: 'Articles', v: 'aucun', src: 'Polonais' },
         { k: 'Université de Cracovie', v: 'fondée en 1364', src: 'Université jagellonne de Cracovie' }
@@ -205,7 +205,7 @@
         { t: "Des suites comme « szcz » impressionnent, mais chaque lettre s'y prononce régulièrement.", src: 'Polonais' },
         { t: "Le petit crochet sous ą et ę, l'ogonek, note des voyelles nasales.", src: 'Ogonek' },
         { t: "Marie Curie a nommé le polonium en l'honneur de la Pologne, alors rayée de la carte.", src: 'Polonium' },
-        { t: "Le polonais s'écrit en alphabet latin, contrairement au russe et à l'ukrainien.", src: 'Alphabet polonais' },
+        { t: "Le polonais s'écrit en alphabet latin, contrairement au russe et à l'ukrainien.", src: 'Polonais' },
         { t: "Il n'y a ni « le », ni « la », ni « un » : le polonais se passe totalement d'articles.", src: 'Polonais' },
         { t: "L'université de Cracovie, fondée en 1364, est l'une des plus anciennes d'Europe.", src: 'Université jagellonne de Cracovie' },
         { t: "Copernic, né à Toruń, publiait en latin : c'était la langue savante de son temps.", src: 'Nicolas Copernic' },
@@ -231,7 +231,7 @@
       ],
       faits: [
         { t: "L'alphabet cyrillique descend des travaux de Cyrille et Méthode, au IXe siècle.", src: 'Alphabet cyrillique' },
-        { t: "Une réforme de 1918 a supprimé plusieurs lettres devenues inutiles.", src: 'Réforme de l’orthographe russe de 1918' },
+        { t: "Une réforme de 1918 a supprimé plusieurs lettres devenues inutiles.", src: 'Alphabet russe' },
         { t: "« Spoutnik » veut dire « compagnon de route » : le nom du premier satellite est un mot du quotidien.", src: 'Spoutnik 1' },
         { t: "Le russe est l'une des six langues officielles de l'ONU.", src: 'Organisation des Nations unies' },
         { t: "L'alphabet russe compte 33 lettres, dont deux qui ne se prononcent pas seules : ъ et ь.", src: 'Alphabet russe' },
@@ -265,7 +265,7 @@
         { t: "La lettre г s'y prononce comme un h aspiré, et non comme le g russe.", src: 'Ukrainien' },
         { t: "Le Kobzar de Chevtchenko, publié en 1840, est le livre fondateur de la littérature ukrainienne.", src: 'Kobzar' },
         { t: "L'ukrainien garde le vocatif, le cas qui sert à appeler quelqu'un : sept cas en tout.", src: 'Ukrainien' },
-        { t: "Sous l'Empire russe, des décrets du XIXe siècle ont interdit de publier en ukrainien.", src: 'Oukase d’Ems' },
+        { t: "Sous l'Empire russe, des décrets du XIXe siècle ont interdit de publier en ukrainien.", src: 'Ukrainien' },
         { t: "Kyiv est la transcription depuis l'ukrainien ; Kiev venait du russe.", src: 'Kiev' },
         { t: "Russophones et ukrainophones partagent beaucoup de vocabulaire, mais pas assez pour se comprendre sans apprentissage.", src: 'Ukrainien' },
         { t: "L'ukrainien est la seule langue officielle de l'Ukraine depuis son indépendance.", src: 'Ukraine' }
@@ -282,7 +282,7 @@
     cs: { nom: 'Tchèque', src: 'Tchèque',
       histoire: "Le tchèque doit son allure à Jan Hus, réformateur du XVe siècle : plutôt que d'empiler les lettres, il proposa de poser un signe au-dessus — le háček, ce petit accent en forme de v qu'on retrouve sur š, č, ž. L'idée a fait école bien au-delà : le croate, le slovène ou le letton l'utilisent aussi. Après deux siècles où l'allemand domina l'administration, le XIXe siècle voit un « réveil national » qui reforge le vocabulaire savant. Le tchèque et le slovaque restent si proches que leurs locuteurs se comprennent en grande partie sans traduction.",
       chiffres: [
-        { k: 'Alphabet', v: '42 lettres, signes compris', src: 'Alphabet tchèque' },
+        { k: 'Alphabet', v: '42 lettres, signes compris', src: 'Tchèque' },
         { k: 'Cas grammaticaux', v: '7, comme en polonais', src: 'Tchèque' },
         { k: 'Accent tonique', v: 'toujours sur la première syllabe', src: 'Tchèque' },
         { k: 'Université de Prague', v: 'fondée en 1348', src: 'Université Charles de Prague' }
@@ -355,7 +355,7 @@
         { t: "« Pan », le pain, vient du portugais, apporté par les missionnaires au XVIe siècle.", src: 'Japonais' },
         { t: "Japonais et chinois partagent des caractères mais ne sont pas des langues parentes.", src: 'Japonais' },
         { t: "Les katakana servent surtout à écrire les mots venus de l'étranger.", src: 'Katakana' },
-        { t: "On compte les objets avec des mots différents selon leur forme : plats, longs, petits animaux.", src: 'Classificateur numéral' }
+        { t: "On compte les objets avec des mots différents selon leur forme : plats, longs, petits animaux.", src: 'Japonais' }
       ],
       mots: [
         { m: 'アンケート (ankēto)', d: "du français « enquête » : c'est le mot japonais pour un sondage.", src: 'Japonais' },
@@ -400,11 +400,11 @@
       chiffres: [
         { k: 'Alphabet', v: '28 lettres', src: 'Alphabet arabe' },
         { k: 'Sens de lecture', v: 'de droite à gauche', src: 'Alphabet arabe' },
-        { k: 'Racines', v: 'le plus souvent 3 consonnes', src: 'Racine (linguistique sémitique)' },
+        { k: 'Racines', v: 'le plus souvent 3 consonnes', src: 'Arabe' },
         { k: 'À l\'ONU', v: 'l\'une des six langues officielles', src: 'Organisation des Nations unies' }
       ],
       faits: [
-        { t: "Les mots se construisent sur des racines de trois consonnes : de k-t-b viennent écrire, livre, bureau, écrivain.", src: 'Racine (linguistique sémitique)' },
+        { t: "Les mots se construisent sur des racines de trois consonnes : de k-t-b viennent écrire, livre, bureau, écrivain.", src: 'Arabe' },
         { t: "L'arabe littéral sert à l'écrit et aux médias, tandis que chaque région parle son dialecte.", src: 'Diglossie' },
         { t: "Le mot « algèbre » vient de l'arabe al-jabr, tiré du titre d'un traité d'al-Khwârizmî.", src: 'Algèbre' },
         { t: "L'arabe est l'une des six langues officielles de l'ONU.", src: 'Organisation des Nations unies' },
