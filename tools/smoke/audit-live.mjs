@@ -85,6 +85,10 @@ const SURFACES = [
         await page.fill('#acName', 'Audit'); await tap('.modal .btn-main'); await page.waitForTimeout(700);
         const langs = await page.$$eval('.course-card', els => els.length).catch(() => 0);
         if (langs < 6) return { ok:false, note:'langues attendues ≥6, vues ' + langs };
+        // 🇲🇨 v2.119 : le monégasque doit être RÉELLEMENT proposé sur le vrai domaine
+        // (pas seulement dans le dépôt) — sinon le déploiement n'est pas passé.
+        const mcDispo = await page.$$eval('.course-card', els => els.some(e => /Monégasque/i.test(e.textContent))).catch(() => false);
+        if (!mcDispo) return { ok:false, note:'🇲🇨 monégasque absent de la liste des langues (déploiement non propagé ?)' };
         await tap('.course-card'); await page.waitForTimeout(700);
         const units = await page.$$eval('.unit', els => els.length).catch(() => 0);
         const tabs = await page.$$eval('.tab', els => els.length).catch(() => 0);
@@ -113,6 +117,15 @@ const SURFACES = [
           const mth = await page.$('.pron-bee .disc-mouth');  // bouche animée (lip-sync)
           pron = !!w && au >= 2 && !!bee && !!mth; }
         if (!pron) return { ok:false, note:'atelier prononciation 🎤 absent (mot/audio/Bee/bouche)' };
+        // 📜 v2.118 : histoire & anecdotes — la rubrique doit s'ouvrir ET chaque fait doit
+        // porter une source cliquable. Un fait sans source = une affirmation invérifiable.
+        await tap('.btn-ghost'); await page.waitForTimeout(400); // retour accueil
+        let faits = 0, srcs = 0;
+        if (await tap('.stories-card.hist-link')) { await page.waitForTimeout(500);
+          faits = await page.$$eval('.hist-fait', els => els.length).catch(() => 0);
+          srcs = await page.$$eval('.hf-src', els => els.filter(a => /^https?:/.test(a.href)).length).catch(() => 0); }
+        if (faits < 3 || srcs < faits) return { ok:false, note:'📜 histoire & anecdotes : ' + faits + ' faits, ' + srcs + ' sources cliquables (il en faut une par fait)' };
+        await tap('.btn-ghost'); await page.waitForTimeout(400);
         // 🔊 v2.40 : les 6 voix HD doivent être CLAIRES (audio réel non vide) et DIFFÉRENTES (octets distincts).
         // Sondage du VRAI worker (même origine). Repli fail-open (pas de clé) = toléré, pas un bug de page.
         let voix = '';
@@ -133,7 +146,23 @@ const SURFACES = [
           else if (real.length >= 5 && distinct >= 5) voix = ' · 6 voix HD réelles distinctes ✅ (' + distinct + ' signatures)';
           else return { ok:false, note:'voix HD non distinctes/claires : ' + real.length + ' audio, ' + distinct + ' distinctes' };
         } catch (_) { voix = ' · sonde voix indispo (toléré)'; }
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤' + voix + ' · vies ' + hearts };
+        // 🇲🇨 v2.119 : entrer VRAIMENT dans le cours de monégasque et vérifier qu'il a des
+        // leçons + l'encadré d'honnêteté (« aucune voix ne parle monégasque »).
+        let mc = '';
+        try {
+          await page.$eval('#tbFlag', (el) => el.click()); await page.waitForTimeout(500);
+          const ok = await page.$$eval('.course-card', (els) => {
+            const c = els.find((e) => /Monégasque/i.test(e.textContent)); if (!c) return false; c.click(); return true; });
+          if (ok) { await page.waitForTimeout(800);
+            const u = await page.$$eval('.unit', els => els.length).catch(() => 0);
+            const note = !!(await page.$('.mc-note'));
+            mc = ' · 🇲🇨 monégasque ' + u + ' unités' + (note ? ' + note honnête' : ' SANS note');
+            if (u < 5 || !note) return { ok:false, note:'🇲🇨 cours monégasque incomplet : ' + u + ' unités, note honnête ' + note };
+          }
+        } catch (e) { mc = ' · 🇲🇨 sonde monégasque indispo'; }
+        // la version RÉELLEMENT servie (preuve que le déploiement est passé, pas le dépôt)
+        const ver = await page.evaluate(() => { const b = document.querySelector('.ver, .version, [data-ver]'); return b ? b.textContent.trim() : (window.APP_VER || ''); }).catch(() => '');
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes sourcées 📜' + mc + voix + ' · vies ' + hearts + (ver ? ' · version servie ' + ver : '') };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
