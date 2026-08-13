@@ -117,15 +117,24 @@ const SURFACES = [
           const mth = await page.$('.pron-bee .disc-mouth');  // bouche animée (lip-sync)
           pron = !!w && au >= 2 && !!bee && !!mth; }
         if (!pron) return { ok:false, note:'atelier prononciation 🎤 absent (mot/audio/Bee/bouche)' };
+        // Revenir À COUP SÛR sur l'accueil. L'atelier prononciation s'affiche en PLEIN ÉCRAN :
+        // il n'a ni « ← Retour » ni barre d'onglets, seulement sa croix ✕ (.bz-quit). En tapant
+        // au hasard sur .btn-ghost, la sonde restait DANS l'atelier et concluait « 0 anecdote »
+        // — un défaut de la sonde présenté comme un défaut de l'app (mesuré le 2026-08-13).
+        const rentrer = async () => { for (let i = 0; i < 4; i++) {
+          if (await page.$('.tabbar')) return true;
+          if (!(await tap('.bz-quit'))) await tap('.btn-ghost');
+          await page.waitForTimeout(400); }
+          return !!(await page.$('.tabbar')); };
+        if (!(await rentrer())) return { ok:false, note:'impossible de revenir à l\'accueil après l\'atelier prononciation' };
         // 📜 v2.118 : histoire & anecdotes — la rubrique doit s'ouvrir ET chaque fait doit
         // porter une source cliquable. Un fait sans source = une affirmation invérifiable.
-        await tap('.btn-ghost'); await page.waitForTimeout(400); // retour accueil
         let faits = 0, srcs = 0;
         if (await tap('.stories-card.hist-link')) { await page.waitForTimeout(500);
           faits = await page.$$eval('.hist-fait', els => els.length).catch(() => 0);
           srcs = await page.$$eval('.hf-src', els => els.filter(a => /^https?:/.test(a.href)).length).catch(() => 0); }
         if (faits < 3 || srcs < faits) return { ok:false, note:'📜 histoire & anecdotes : ' + faits + ' faits, ' + srcs + ' sources cliquables (il en faut une par fait)' };
-        await tap('.btn-ghost'); await page.waitForTimeout(400);
+        await rentrer();
         // 🔊 v2.40 : les 6 voix HD doivent être CLAIRES (audio réel non vide) et DIFFÉRENTES (octets distincts).
         // Sondage du VRAI worker (même origine). Repli fail-open (pas de clé) = toléré, pas un bug de page.
         let voix = '';
