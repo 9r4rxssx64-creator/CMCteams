@@ -52,6 +52,10 @@ jobs:
       # affichage et fait passer l'audit live au rouge, ce qui masque les vrais problèmes.
       - name: "Aucune image demandée dans le vide"
         run: node tools/lingua/verify-assets.mjs lingua
+      # 📚 Sources officielles des langues : bien formées, branchées, et SEULES les adresses
+      # réellement ouvertes (workflow lingua-sources.yml) sont affichées à l'élève.
+      - name: "Sources officielles : bien formées et branchées"
+        run: node tools/lingua/verify-sources.mjs lingua
       # 🇲🇨 Cours de monégasque : chaque mot publié doit RESTER attesté par une source
       # récoltée. Si une source disparaît ou se corrige, le mot ne doit plus être enseigné.
       - name: "Monégasque : chaque mot publié reste attesté"
