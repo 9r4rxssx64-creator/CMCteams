@@ -304,7 +304,7 @@
         { m: 'dollar', d: "du thaler, la monnaie de Jáchymov (Joachimsthal), en Bohême.", src: 'Thaler' },
         { m: 'pistolet', d: "viendrait du tchèque píšťala, l'arme des hussites.", src: 'Pistolet' },
         { m: 'polka', d: "la danse est née en Bohême avant de faire le tour de l'Europe.", src: 'Polka' },
-        { m: 'obusier', d: "du tchèque houfnice, passé par l'allemand.", src: 'Obusier' },
+        { m: 'obusier', d: "du tchèque houfnice, passé en français par l'allemand Haubitze.", src: 'Obusier' },
         { m: 'šofér, bulvár', d: "dans l'autre sens : le tchèque a pris au français « chauffeur » et « boulevard ».", src: 'Tchèque' }
       ] },
 
@@ -369,7 +369,7 @@
     ko: { nom: 'Coréen', src: 'Coréen',
       histoire: "Le coréen s'écrit en hangeul, un alphabet créé au XVe siècle sur ordre du roi Sejong et promulgué en 1446. Fait rare : on connaît sa date, son auteur et son intention — rendre l'écriture accessible au peuple, là où les caractères chinois restaient réservés aux lettrés. La forme des consonnes s'inspire de la position de la bouche et de la langue quand on les prononce, et les lettres se groupent en blocs formant une syllabe. Le coréen place son verbe en fin de phrase et possède plusieurs niveaux de politesse qui changent la terminaison des verbes. Les deux Corées célèbrent leur alphabet, mais pas le même jour.",
       chiffres: [
-        { k: 'Alphabet', v: '24 lettres : 14 consonnes, 10 voyelles', src: 'Hangeul' },
+        { k: 'Alphabet', v: '24 lettres de base (+ des composées)', src: 'Hangeul' },
         { k: 'Promulgué', v: 'en 1446', src: 'Hangeul' },
         { k: 'Écriture', v: 'en blocs d\'une syllabe', src: 'Hangeul' },
         { k: 'Fête de l\'alphabet', v: '9 octobre au Sud, 15 janvier au Nord', src: 'Hangeul' }
@@ -379,15 +379,15 @@
         { t: "La forme des consonnes s'inspire de la position de la bouche et de la langue quand on les prononce.", src: 'Hangeul' },
         { t: "Les lettres se groupent en blocs formant une syllabe, au lieu de s'écrire à la file.", src: 'Hangeul' },
         { t: "La Corée du Sud célèbre son alphabet par un jour férié, le 9 octobre.", src: 'Hangeul' },
-        { t: "Le hangeul compte 24 lettres : 14 consonnes et 10 voyelles.", src: 'Hangeul' },
+        { t: "Le hangeul compte 24 lettres de base — 14 consonnes et 10 voyelles — auxquelles s'ajoutent des lettres composées.", src: 'Hangeul' },
         { t: "Le coréen place le verbe à la fin de la phrase, comme le japonais.", src: 'Coréen' },
         { t: "Plusieurs niveaux de politesse changent la terminaison des verbes selon à qui l'on parle.", src: 'Coréen' },
         { t: "La Corée du Nord fête l'alphabet le 15 janvier, la Corée du Sud le 9 octobre.", src: 'Hangeul' },
-        { t: "Avant le hangeul, le coréen s'écrivait avec des caractères chinois, les hanja.", src: 'Hanja' },
+        { t: "Avant le hangeul, le coréen s'écrivait principalement avec des caractères chinois, les hanja.", src: 'Hanja' },
         { t: "Le hangeul est souvent cité comme l'alphabet le plus vite appris : quelques heures suffisent pour le déchiffrer.", src: 'Hangeul' }
       ],
       mots: [
-        { m: '아르바이트 (areubaiteu)', d: "de l'allemand Arbeit, « travail » : désigne un petit boulot.", src: 'Coréen' },
+        { m: '아르바이트 (areubaiteu)', d: "de l'allemand Arbeit, « travail », arrivé par le japonais : désigne un petit boulot.", src: 'Coréen' },
         { m: '빵 (ppang)', d: "du portugais pão, arrivé par le japonais : c'est le pain.", src: 'Coréen' },
         { m: '바게트 (bageteu)', d: "du français « baguette ».", src: 'Coréen' },
         { m: '카페 (kape)', d: "du français « café », pour l'établissement.", src: 'Coréen' },
@@ -442,15 +442,15 @@
         { t: "Le premier livre écrit en monégasque, A Legenda de Santa Devota, paraît en 1927.", src: 'Louis Notari' },
         { t: "« Munegascu » est le nom que la langue se donne à elle-même, et « Munegu » celui de Monaco.", src: 'Monégasque' },
         { t: "Les Monégasques sont minoritaires dans leur propre pays, ce qui rend la transmission d'autant plus fragile.", src: 'Monaco' },
-        { t: "L'UNESCO le classe parmi les langues menacées.", src: 'Monégasque' }
+        { t: "Les paroles monégasques de l'hymne de Monaco sont de Louis Notari, celui-là même qui a fixé l'écriture de la langue.", src: 'Louis Notari' }
       ],
       mots: [
         { m: 'u portu', d: "le port — le français, l'italien et le monégasque disent presque la même chose.", src: 'Monégasque', url: 'http://munegascu.free.fr/transport.htm' },
-        { m: 'a marina', d: "la mer : on entend le mot « marine » dessous.", src: 'Monégasque', url: 'http://munegascu.free.fr/nature.htm' },
+        { m: 'a marina', d: "la mer — même racine latine que notre « marine ».", src: 'Monégasque', url: 'http://munegascu.free.fr/nature.htm' },
         { m: 'u carrugiu', d: "la rue — le même mot qu'à Gênes, où les carruggi sont les ruelles.", src: 'Monégasque', url: 'http://munegascu.free.fr/ville.htm' },
         { m: 'a piaça', d: "la place, comme la piazza italienne.", src: 'Monégasque', url: 'http://munegascu.free.fr/ville.htm' },
         { m: 'bon giurnu', d: "bonjour, mot à mot « bon jour ».", src: 'Monégasque', url: 'http://munegascu.free.fr/bienvenue.htm' },
-        { m: 'a muntagna', d: "la montagne — celle qui tombe droit dans la mer.", src: 'Monégasque', url: 'http://munegascu.free.fr/nature.htm' }
+        { m: 'a muntagna', d: "la montagne — le même mot qu'en italien, « la montagna ».", src: 'Monégasque', url: 'http://munegascu.free.fr/nature.htm' }
       ] }
   };
 
