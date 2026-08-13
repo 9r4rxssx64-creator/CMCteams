@@ -191,6 +191,8 @@ const SURFACES = [
   { url: 'https://cujina.' + ROOT + '/', name: 'A Cüjina de Mùnegu (cujina)', selKey: '#cover' },
   { url: 'https://cocina.' + ROOT + '/', name: 'A Cüjina de Mùnegu (cocina)', selKey: '#cover' },
   { url: 'https://cuisine.' + ROOT + '/', name: 'A Cüjina de Mùnegu (cuisine)', selKey: '#cover' },
+  // Chemin sur le domaine principal (marche sur tout réseau/4G, 0 DNS nouveau) :
+  { url: BASE + '/cujina/', name: 'A Cüjina de Mùnegu (chemin kd-mc.com/cujina)', selKey: '#cover' },
 ];
 
 /* « Vérifier en réel EN TANT QUE Kevin » (Kevin 2026-08-06). OPT-IN : sans KDMC_AS_KEVIN=1
