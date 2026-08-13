@@ -68,9 +68,13 @@ if (existsSync(R + SRC)) {
   try {
     const src = JSON.parse(lire(SRC));
     const atteste = new Set(Object.keys(src.entrees || {}));
-    const data = lire('lingua/data.js');
-    const bloc = (data.match(/var LEX3\s*=\s*\{[\s\S]*?\n\};/) || [])[0] || '';
-    const publies = [...bloc.matchAll(/"([^"]+)"\s*:\s*"([^"]+)"/g)].map((m) => m[1]);
+    /* Le cours monégasque vit dans son propre fichier ENGENDRÉ (lingua/data-mc.js), pas dans
+       data.js : c'est là qu'il faut regarder. Piège vécu le 2026-08-13 — en cherchant au
+       mauvais endroit, le contrôle annonçait « rien de publié » alors que 650 mots l'étaient :
+       un contrôle qui regarde à côté ment en vert. */
+    const data = existsSync(R + 'lingua/data-mc.js') ? lire('lingua/data-mc.js') : lire('lingua/data.js');
+    const bloc = (data.match(/var LEX3\s*=\s*\{[\s\S]*?\};/) || [])[0] || '';
+    const publies = [...bloc.matchAll(/"([^"]+)"\s*:\s*"([^"]*)"/g)].map((m) => m[1]);
     const orphelins = publies.filter((fr) => !atteste.has(fr));
     if (!publies.length) ok('Monégasque : rien de publié pour l\'instant');
     else if (!orphelins.length) ok('Monégasque : chaque mot publié est attesté', publies.length + ' mot(s)');

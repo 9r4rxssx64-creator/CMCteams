@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.118.0";
+var APP_VER="v2.119.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -612,7 +612,15 @@ function _ttsChrono(a,req,repli){ var t=setTimeout(function(){
 function _voixCloudKO(){ _ttsEchecs++;
   if(_ttsEchecs>=2 && !_ttsPrevenu){ _ttsPrevenu=true;
     toast("🔈 La voix naturelle ne répond pas — je passe sur la voix du téléphone (moins jolie). Vérifie ta connexion, ou choisis une autre voix dans Profil → Voix."); } }
-function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var myReq=++_ttsReq;
+/* 🇲🇨 Le monégasque : AUCUN moteur de synthèse au monde ne le parle. Louis Notari ayant bâti
+   son écriture sur le français, on écrit la prononciation « à la française » (mc-voix.js) et
+   on la fait dire par une voix française — l'élève lit la VRAIE orthographe à l'écran.
+   C'est une approximation, et l'app le dit : jamais faire croire à une voix monégasque. */
+function texteADire(text){
+  try{ if(S.course==="mc" && typeof mcVoix==="function"){ var v=mcVoix(text); if(v) return v; } }catch(_){}
+  return text;
+}
+function speak(text){ if(!S.sound||!text)return; text=texteADire(text); var vid=S.voice||"nova"; var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
   if(_isCloudVoice(vid)){
     try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
@@ -835,6 +843,12 @@ function vHome(){ var w=el("div","screen tree");
   var goal=el("div","goal-card");
   goal.innerHTML='<div class="goal-top"><b>🎯 Objectif du jour</b><span>'+S.dailyXP+' / '+S.goal+' XP</span></div><div class="bar"><div class="bar-fill" style="width:'+gp+'%"></div></div>'+(gp>=100?'<div class="goal-done">✅ Objectif atteint !</div>':'');
   w.appendChild(goal);
+  // 🇲🇨 Monégasque : dire franchement ce que ce cours est, et ce qu'il n'est pas.
+  if(S.course==="mc"){ var mcn=el("div","mc-note");
+    mcn.innerHTML='<b>🇲🇨 Munegascu — la langue du Rocher</b>'
+      +'<span>Chaque mot de ce cours vient d\'une source publique (Wiktionnaire, licence CC BY-SA, et le lexique de munegascu.free.fr) : rien n\'est inventé. Les mots qui manquent, c\'est qu\'aucune source libre ne les donne — on préfère le dire.</span>'
+      +'<span>🔊 <b>Aucune voix de synthèse ne parle monégasque.</b> On écrit la prononciation à la française et une voix française la lit : c\'est proche, mais ce n\'est pas un locuteur du Rocher.</span>';
+    w.appendChild(mcn); }
   // 📖 Histoires de la ruche — Bee raconte, tu comprends, tu gagnes
   if(typeof STORIES!=="undefined"&&STORIES.length&&STORIES[0].lignes[0].t[S.course]){ var sd=storiesDoneCount(); /* histoires cachées si pas encore traduites dans cette langue */
     var stc=el("button","stories-card");
@@ -1140,8 +1154,17 @@ function _lev(a,b){ a=a||"";b=b||""; var m=a.length,n=b.length; if(!m)return n; 
   var d=[]; for(var i=0;i<=m;i++)d[i]=[i]; for(var j=0;j<=n;j++)d[0][j]=j;
   for(i=1;i<=m;i++)for(j=1;j<=n;j++){ var c=a[i-1]===b[j-1]?0:1; d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+c); }
   return d[m][n]; }
-function pronScore(target,heard){ var a=norm(target),b=norm(heard); if(!b)return 0;
-  var mx=Math.max(a.length,b.length)||1; return Math.max(0,Math.round(100*(1-_lev(a,b)/mx))); }
+function pronScore(target,heard){ var b=norm(heard); if(!b)return 0;
+  /* 🇲🇨 En monégasque, le micro du téléphone entend du FRANÇAIS (il n'existe pas de
+     reconnaissance monégasque). Comparer « u gatu » à ce qu'il écrit (« ou gatou ») donnerait
+     0 à un élève qui prononce JUSTE. On compare donc aussi à la transcription à la française :
+     on garde la meilleure des deux — sinon on punirait une bonne prononciation. */
+  var cibles=[String(target)];
+  try{ if(S.course==="mc" && typeof mcVoix==="function"){ var v=mcVoix(target); if(v)cibles.push(v); } }catch(_){}
+  var best=0;
+  cibles.forEach(function(t){ var a=norm(t); var mx=Math.max(a.length,b.length)||1;
+    best=Math.max(best, Math.max(0,Math.round(100*(1-_lev(a,b)/mx)))); });
+  return best; }
 /* Reconnaissance plus juste : le micro renvoie plusieurs hypothèses (alternatives) ; on garde
    CELLE qui colle le mieux à la cible. Inclusion exacte = quasi-parfait (le mot est bien dedans,
    même noyé dans une phrase). Retourne {heard, score} sur la meilleure hypothèse. */

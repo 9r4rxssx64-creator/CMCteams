@@ -32,7 +32,22 @@ const FR = new Set();
 (data.match(/"[^"]{2,40}":"/g) || []).forEach((m) => FR.add(m.slice(1, m.indexOf('":"')).toLowerCase()));
 
 const sansAccent = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
-const estFrancais = (s) => FR.has(String(s).toLowerCase().trim());
+/* Le côté français d'un site de lexique s'écrit rarement « nu » : il porte son article
+   (« la maison »), une variante entre parenthèses (« bienvenu(e) ») ou plusieurs synonymes
+   séparés par une virgule (« madama, scià, signura »).
+   MESURÉ le 2026-08-13 : en comparant les mots BRUTS, 18 pages sur 22 tombaient à 0 reconnu
+   des DEUX côtés → « ambigu », donc ignorées, donc ~700 couples réels jetés. Ce n'était pas
+   le site qui était ambigu : c'était ma comparaison qui était aveugle. On compare donc la
+   forme NETTOYÉE (article et parenthèses retirés, 1er synonyme gardé) — c'est une mesure
+   plus juste, pas une supposition : la règle « majorité nette, sinon on saute » ne bouge pas. */
+function formeNue(s) {
+  return String(s).toLowerCase().normalize('NFC')
+    .replace(/\([^)]*\)/g, ' ')                       // bienvenu(e) → bienvenu
+    .split(/[,;/]/)[0]                                 // madama, scià → madama
+    .replace(/^\s*(le|la|les|l'|un|une|des|du|de la|de l')\s+/, '')   // la maison → maison
+    .replace(/[.!?…]+$/, '').trim();
+}
+const estFrancais = (s) => { const b = String(s).toLowerCase().trim(); return FR.has(b) || FR.has(formeNue(s)); };
 
 /* Une définition de Wiktionnaire → un mot français utilisable, ou null. */
 function motFrancais(def) {
@@ -86,9 +101,13 @@ if (existsSync(R + IN + '/munegascu-couples.json')) {
     if (Math.max(scoreA, scoreB) < 3 || Math.abs(scoreA - scoreB) < 2) { pagesIgnorees++; continue; }
     const frGauche = scoreA > scoreB;
     liste.forEach((x) => {
-      const fr = frGauche ? x.a : x.b, mc = frGauche ? x.b : x.a;
-      if (!/^[\p{L}\p{M}' -]{2,40}$/u.test(fr) || !/^[\p{L}\p{M}'’ -]{2,40}$/u.test(mc)) return;
-      ajoute(fr.toLowerCase(), mc, page, 'munegascu.free.fr'); nSite++;
+      const brutFr = frGauche ? x.a : x.b, brutMc = frGauche ? x.b : x.a;
+      /* on garde le mot français NETTOYÉ (sans article ni variante) pour qu'il colle au
+         vocabulaire de l'app, et la 1re forme monégasque proposée — les autres formes du
+         site restent dans les sources, on n'en invente aucune */
+      const fr = formeNue(brutFr), mc = String(brutMc).split(/[,;/]/)[0].replace(/\([^)]*\)/g, ' ').trim();
+      if (!/^[\p{L}\p{M}' -]{2,40}$/u.test(fr) || !/^[\p{L}\p{M}'’̍ -]{2,40}$/u.test(mc)) return;
+      ajoute(fr, mc, page, 'munegascu.free.fr'); nSite++;
     });
   }
 } else console.log('· pas de munegascu-couples.json (' + IN + ')');
