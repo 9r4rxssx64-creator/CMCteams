@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.120.0";
+var APP_VER="v2.121.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -2188,6 +2188,9 @@ function histLangue(code){ try{ return (typeof LANG_HISTOIRE!=="undefined" && LA
 function anecdoteDuJour(){ var h=histLangue(S.course); if(!h||!h.faits||!h.faits.length)return null;
   return h.faits[dayHash(today()+"anec"+S.course)%h.faits.length]; }
 function wikiLien(titre){ return "https://fr.wikipedia.org/wiki/"+encodeURIComponent(String(titre||"").replace(/ /g,"_")); }
+/* Où se vérifie cet élément : l'adresse exacte quand elle existe (`url`), sinon l'article
+   Wikipédia annoncé. Sert aux mots monégasques, dont la preuve est sur le site du lexique. */
+function lienSrc(x){ return (x&&x.url)?x.url:wikiLien(x&&x.src); }
 function vHistoire(){ var d=el("div","screen"); var c=COURSES[S.course], h=histLangue(S.course);
   var nom=(c&&c.nom)||(h&&h.nom)||"cette langue";
   d.innerHTML='<h2 class="ttl">📜 '+esc(nom)+' — histoire &amp; anecdotes</h2>';
@@ -2201,12 +2204,34 @@ function vHistoire(){ var d=el("div","screen"); var c=COURSES[S.course], h=histL
   var srcA=el("a","hist-src"); srcA.href=wikiLien(h.src||h.nom); srcA.target="_blank"; srcA.rel="noopener noreferrer";
   srcA.textContent="🔎 Source : "+(h.src||h.nom); ligne.appendChild(srcA);
   intro.appendChild(ligne); d.appendChild(intro);
+  /* Les repères qu'on retient d'un coup d'œil (alphabet, cas, tons, pays…). Chaque pastille
+     est cliquable vers la page où le chiffre se vérifie : un chiffre se vérifie comme un fait. */
+  var chs=(h.chiffres||[]);
+  if(chs.length){ var g=el("div","hist-chiffres");
+    chs.forEach(function(x){ var b=el("a","hc"); b.href=lienSrc(x); b.target="_blank"; b.rel="noopener noreferrer";
+      var vv=el("b","hc-v"); vv.textContent=x.v; b.appendChild(vv);
+      var kk=el("i","hc-k"); kk.textContent=x.k; b.appendChild(kk);
+      g.appendChild(b); });
+    d.appendChild(g); }
   var t=el("h3","hist-h3"); t.textContent="Le sais-tu ?"; d.appendChild(t);
   (h.faits||[]).forEach(function(f){ var card=el("div","hist-fait");
     var tx=el("div","hf-t"); tx.textContent=f.t; card.appendChild(tx);
-    var a=el("a","hf-src"); a.href=wikiLien(f.src); a.target="_blank"; a.rel="noopener noreferrer";
+    var a=el("a","hf-src"); a.href=lienSrc(f); a.target="_blank"; a.rel="noopener noreferrer";
     a.textContent="🔎 "+f.src; card.appendChild(a);
     d.appendChild(card); });
+  /* Les mots qui ont voyagé entre cette langue et le français : c'est ce qui rend une langue
+     étrangère soudain familière. Pas de bouton « écouter » ici — le mot est parfois dans la
+     langue étrangère, et le faire lire par une voix française dirait faux. */
+  var mts=(h.mots||[]);
+  if(mts.length){ var t3=el("h3","hist-h3"); t3.textContent="Des mots qui ont voyagé"; d.appendChild(t3);
+    var wrap=el("div","hist-mots");
+    mts.forEach(function(w){ var card=el("div","hist-mot");
+      var mm=el("b","hm-m"); mm.textContent=w.m; card.appendChild(mm);
+      var dd=el("div","hm-d"); dd.textContent=w.d; card.appendChild(dd);
+      var sa=el("a","hf-src"); sa.href=lienSrc(w); sa.target="_blank"; sa.rel="noopener noreferrer";
+      sa.textContent="🔎 "+w.src; card.appendChild(sa);
+      wrap.appendChild(card); });
+    d.appendChild(wrap); }
   var note=el("p","sub2 hist-note");
   note.textContent="Chaque fait renvoie à l'article où il se vérifie (Wikipédia, licence CC BY-SA). Si une source dit autre chose, c'est la source qui a raison : dis-le-moi et je corrige.";
   d.appendChild(note);

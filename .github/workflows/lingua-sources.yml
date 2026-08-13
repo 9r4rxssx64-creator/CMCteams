@@ -46,7 +46,14 @@ jobs:
           git commit -m "Lingua : état réel des sources officielles (chaque adresse ouverte en vrai) [skip ci]"
           git push -u origin "$BR"
           echo "Branche poussée : $BR (le bot fusionne)"
+      # 🔗 Les sources des dossiers de langue (une par anecdote, chiffre et mot) sont des
+      # articles Wikipédia dont j'écris le TITRE : s'il est faux, le lien tombe sur une page
+      # « créer cet article » et l'élève se retrouve dans le vide. La CI les ouvre à ma place.
+      - name: "Ouvrir chaque source des dossiers de langue (anecdotes, chiffres, mots)"
+        shell: bash -eo pipefail {0}
+        run: node tools/lingua/verify-histoires.mjs lingua --liens | tee -a /tmp/sources.log
       - name: "Résumé lisible"
+        if: always()   # le résumé doit s'écrire même si un lien est trouvé mort
         run: |
           {
             echo "## 📚 Sources officielles des langues"
