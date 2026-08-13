@@ -57,12 +57,18 @@ const sansBalises = (s) => s.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '
   .replace(/[ \t ]+/g, ' ').trim();
 const propre = (s) => sansBalises(s).replace(/^[\s.·•\-–—]+|[\s.·•\-–—]+$/g, '').trim();
 
+/* MESURÉ le 2026-08-13 : la page d'accueil ne fait que 652 octets — c'est un vieux site à
+   CADRES (<frameset>). Tout le contenu est derrière des <frame src="…">, pas des <a href>.
+   En ne suivant que les href, on s'arrêtait à 2 pages et 0 mot. On suit donc AUSSI les src
+   des cadres (et les <area> des images cliquables, fréquentes sur ces sites d'époque). */
 function liens(html, base) {
   const out = [];
-  (html.match(/href\s*=\s*["']([^"'#]+)/gi) || []).forEach((h) => {
-    const u = h.replace(/^href\s*=\s*["']/i, '');
+  (html.match(/(?:href|src)\s*=\s*["']([^"'#]+)/gi) || []).forEach((h) => {
+    const u = h.replace(/^(?:href|src)\s*=\s*["']/i, '');
     if (/^(mailto:|javascript:|tel:)/i.test(u)) return;
-    try { const abs = new URL(u, base); if (abs.host === hote && /\.(html?|php)?$/i.test(abs.pathname)) out.push(abs.href.split('#')[0]); } catch (_) {}
+    try { const abs = new URL(u, base); if (abs.host !== hote) return;
+      if (/\.(css|js|jpe?g|png|gif|ico|zip|pdf|mp3|swf)$/i.test(abs.pathname)) return;   // pas des pages
+      out.push(abs.href.split('#')[0]); } catch (_) {}
   });
   return out;
 }
@@ -113,7 +119,9 @@ while (file.length && vues.size < MAX) {
   tous = tous.concat(c);
   pages.push({ url, octets: html.length, couples: c.length });
   console.log((c.length ? '✅' : '· ') + ' ' + url + ' — ' + html.length + ' o, ' + c.length + ' couple(s)');
-  liens(html, url).forEach((l) => { if (!vues.has(l) && file.length + vues.size < MAX * 2) file.push(l); });
+  const trouves = liens(html, url);
+  if (pages.length <= 3) console.log('   liens vus sur cette page : ' + trouves.length);
+  trouves.forEach((l) => { if (!vues.has(l) && file.length + vues.size < MAX * 2) file.push(l); });
 }
 
 /* dédoublonnage : même paire vue sur plusieurs pages = 1 entrée, avec toutes ses sources */
