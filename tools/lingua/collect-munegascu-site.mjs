@@ -48,13 +48,32 @@ async function page(url) {
   return null;
 }
 
-/* --- petites aides HTML (aucune dépendance) --- */
-const sansBalises = (s) => s.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&eacute;/g, 'é').replace(/&egrave;/g, 'è')
-  .replace(/&agrave;/g, 'à').replace(/&ccedil;/g, 'ç').replace(/&ugrave;/g, 'ù').replace(/&ocirc;/g, 'ô')
-  .replace(/&ecirc;/g, 'ê').replace(/&icirc;/g, 'î').replace(/&acirc;/g, 'â').replace(/&uuml;/g, 'ü')
-  .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&[a-z]+;/gi, ' ')
-  .replace(/[ \t ]+/g, ' ').trim();
+/* --- décodage des caractères spéciaux HTML ---
+   BUG TROUVÉ le 2026-08-13 en relisant la moisson : « ncantau » au lieu de « ïncantau »,
+   « baij n » au lieu de « baijûn ». Ma table d'entités ne connaissait qu'une dizaine de
+   lettres, et TOUTE entité inconnue devenait une ESPACE -> l'orthographe monégasque était
+   silencieusement corrompue. Or ici l'orthographe EST la matière enseignée.
+   On décode donc toutes les lettres accentuées par construction (lettre + signe), plus les
+   formes numériques (&#233; / &#xE9;) : plus aucune lettre ne peut disparaître en silence. */
+const SIGNES = { acute: '\u0301', grave: '\u0300', circ: '\u0302', uml: '\u0308', tilde: '\u0303', cedil: '\u0327', ring: '\u030A' };
+const NOMMEES = { nbsp: ' ', amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', laquo: '\u00AB', raquo: '\u00BB',
+  oslash: '\u00F8', szlig: '\u00DF', deg: '\u00B0', rsquo: '\u2019', lsquo: '\u2018',
+  ldquo: '\u201C', rdquo: '\u201D', ndash: '\u2013', mdash: '\u2014', hellip: '\u2026', middot: '\u00B7' };
+function entites(s) {
+  return String(s)
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&([a-zA-Z]+);/g, (tout, nom) => {
+      const bas = nom.toLowerCase();
+      if (NOMMEES[bas] !== undefined) return NOMMEES[bas];
+      const m = bas.match(/^([a-z])(acute|grave|circ|uml|tilde|cedil|ring)$/);
+      if (m) { const lettre = /^[A-Z]/.test(nom) ? m[1].toUpperCase() : m[1];
+        return (lettre + SIGNES[m[2]]).normalize('NFC'); }
+      return tout;   /* inconnue : on la LAISSE VISIBLE plutot que de l'effacer en douce */
+    });
+}
+const sansBalises = (s) => entites(String(s).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ' '))
+  .replace(/[ \t\u00A0]+/g, ' ').trim();
 const propre = (s) => sansBalises(s).replace(/^[\s.·•\-–—]+|[\s.·•\-–—]+$/g, '').trim();
 
 /* MESURÉ le 2026-08-13 : la page d'accueil ne fait que 652 octets — c'est un vieux site à
