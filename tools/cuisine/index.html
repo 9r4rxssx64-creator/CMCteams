@@ -338,10 +338,10 @@ var ILLU_MOTIF={
 };
 var IMG_BASE="img/"; // dossier des illustrations générées (repli SVG si absente)
 function thumbHtml(r){
-  return '<span class="rthumb"><img src="'+IMG_BASE+r.id+'.jpg" alt="" loading="lazy" onerror="this.remove()">'+illu(r.cat)+'</span>';
+  return '<span class="rthumb"><img src="'+IMG_BASE+r.id+'.jpg?v=2" alt="" loading="lazy" onerror="this.remove()">'+illu(r.cat)+'</span>';
 }
 function heroImgHtml(r){
-  return '<div class="rp-photo"><img src="'+IMG_BASE+r.id+'.jpg" alt="Illustration : '+esc(r.name)+'" onerror="this.parentNode.classList.add(\'noimg\');this.remove()"><span class="illu-hero">'+illu(r.cat)+'</span></div>';
+  return '<div class="rp-photo"><img src="'+IMG_BASE+r.id+'.jpg?v=2" alt="Illustration : '+esc(r.name)+'" onerror="this.parentNode.classList.add(\'noimg\');this.remove()"><span class="illu-hero">'+illu(r.cat)+'</span></div>';
 }
 function illu(cat,cls){
   var m=ILLU_MOTIF[cat]||ILLU_MOTIF["Spécialités du Terroir"];
