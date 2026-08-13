@@ -722,6 +722,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .lang-row .lr-fl{font-size:20px}
 .lang-row .lr-n i{font-style:normal;font-size:11px;color:var(--gold)}
 .lang-row .lr-s{margin-left:auto;font-size:12.5px;color:#9fb2c2;font-weight:800}
+/* ===== 📜 Histoire & anecdotes de la langue (v2.118) =====
+   L'anecdote du jour s'affiche en entier sur la carte d'accueil (2 lignes max) : on ne
+   coupe pas une phrase au milieu, sinon elle ne veut plus rien dire. */
+.stories-card.hist-link{background:linear-gradient(135deg,#2a2033,#1d2733);border-color:#c9a7ff;align-items:flex-start}
+.stories-card.hist-link .st-badge{background:#c9a7ff;color:#2a1a3d}
+.stories-card.hist-link .st-tx i{color:#c9b0ea;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hist-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.hist-txt{font-size:14.5px;line-height:1.55;margin:0 0 10px}
+.hist-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hist-say{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-weight:800;font-size:13.5px;cursor:pointer}
+.hist-src,.hf-src{display:inline-flex;align-items:center;min-height:44px;font-size:12px;color:#9fb2c2;text-decoration:none;border-bottom:1px dotted #9fb2c2}
+.hist-h3{font-size:15px;margin:18px 0 8px;color:var(--gold)}
+.hist-fait{background:var(--card);border:1px solid var(--line);border-left:3px solid #c9a7ff;border-radius:12px;padding:12px 13px;margin-bottom:10px}
+.hist-fait .hf-t{font-size:14px;line-height:1.5}
+.hist-note{margin-top:14px;font-size:11.5px;line-height:1.5}
 /* ===== 🎤 Atelier prononciation (v2.36) ===== */
 .stories-card.pron-link{background:linear-gradient(135deg,#2b1020,#1d2733);border-color:#ff7ab8}
 .stories-card.pron-link .st-badge{background:#ff7ab8;color:#3a0f24}
@@ -771,6 +786,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <body>
 <div id="app"></div>
 <script src="data.js"></script>
+<script src="histoires-langues.js"></script>
 <script>
 /* Icône iOS = la mascotte Bee 🐝 (création originale KDMC) */
 (function(){try{
