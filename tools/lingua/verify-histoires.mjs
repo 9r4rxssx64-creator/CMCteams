@@ -198,18 +198,49 @@ if (process.argv.includes('--liens')) {
     (h.chiffres || []).forEach((c, i) => ajoute(c, 'chiffre ' + (i + 1)));
     (h.mots || []).forEach((w, i) => ajoute(w, 'mot ' + (i + 1)));
   });
-  console.log('\n🔗 Ouverture réelle de ' + cibles.size + ' source(s) distincte(s)…\n');
-  const morts = []; let robots = 0;
-  for (const [url, ou] of cibles) {
-    const code = await ouvre(url);
-    /* Même honnêteté que pour les académies : un site qui REFUSE les robots (401/403/429)
-       n'est pas un lien mort — l'adresse est bonne, un humain passe. Seul le 404 condamne,
-       et c'est exactement ce que renvoie Wikipédia pour un article qui n'existe pas. */
-    if (code >= 200 && code < 400) continue;
-    if ([401, 403, 429].includes(code)) { robots++; console.log('🤖 ' + code + '  ' + url + '   (refuse les robots, adresse bonne)'); continue; }
-    morts.push({ url, code, ou }); console.log('❌ ' + (code || 'injoignable') + '  ' + url + '   ← ' + ou.join(', '));
+  console.log('\n🔗 Vérification réelle de ' + cibles.size + ' source(s) distincte(s)…\n');
+  const morts = []; let robots = 0, vus = 0, lotsRates = 0;
+
+  /* Wikipédia : on demande 50 titres d'un coup à son interface de requête. C'est ~40× plus
+     rapide que 161 ouvertures de page, et surtout plus JUSTE : elle répond « missing » pour
+     un article qui n'existe pas, là où une simple ouverture peut être trompée par une
+     redirection. Le reste (sites de lexique) est ouvert normalement. */
+  const wiki = [...cibles.keys()].filter((u) => u.startsWith('https://fr.wikipedia.org/wiki/'));
+  const autres = [...cibles.keys()].filter((u) => !u.startsWith('https://fr.wikipedia.org/wiki/'));
+  const titreDe = (u) => decodeURIComponent(u.slice('https://fr.wikipedia.org/wiki/'.length)).replace(/_/g, ' ');
+  for (let i = 0; i < wiki.length; i += 50) {
+    const lot = wiki.slice(i, i + 50);
+    const api = 'https://fr.wikipedia.org/w/api.php?action=query&format=json&redirects=1&titles='
+      + encodeURIComponent(lot.map(titreDe).join('|'));
+    let j = null;
+    try { const r = await fetch(api, { headers: { 'user-agent': 'KDMC-Lingua/1.0 (https://lingua.kd-mc.com)' } }); if (r.ok) j = await r.json(); } catch (_) {}
+    /* NE RIEN VÉRIFIER ≠ VÉRIFIER OK : si Wikipédia ne répond pas, on le DIT et on échoue,
+       sinon un réseau capricieux ferait passer au vert des titres jamais contrôlés. */
+    if (!j || !j.query) { lotsRates += lot.length; console.log('⚠️  Wikipédia n\'a pas répondu pour un lot de ' + lot.length + ' titres — NON VÉRIFIÉS.'); continue; }
+    /* l'interface normalise et suit les redirections : on refait le lien titre → adresse */
+    const absents = new Set(Object.values(j.query.pages || {}).filter((p) => p.missing !== undefined).map((p) => p.title));
+    const remis = new Map();  // titre demandé -> titre final
+    (j.query.normalized || []).forEach((n) => remis.set(n.from, n.to));
+    (j.query.redirects || []).forEach((n) => remis.set(remis.has(n.from) ? n.from : n.from, n.to));
+    for (const u of lot) {
+      vus++;
+      let t = titreDe(u);
+      let garde = 0; while (remis.has(t) && garde++ < 5) t = remis.get(t);
+      if (absents.has(t) || absents.has(titreDe(u))) { morts.push({ url: u, code: 404, ou: cibles.get(u) }); console.log('❌ article INEXISTANT : « ' + titreDe(u) + ' »   ← ' + cibles.get(u).join(', ')); }
+    }
   }
-  console.log('\n' + (cibles.size - morts.length - robots) + ' source(s) répondent · ' + robots + ' refusent les robots · ' + morts.length + ' introuvable(s).');
+  for (const u of autres) {
+    vus++;
+    const code = await ouvre(u);
+    /* Même honnêteté que pour les académies : un site qui REFUSE les robots (401/403/429)
+       n'est pas un lien mort — l'adresse est bonne, un humain passe. Seul le 404 condamne. */
+    if (code >= 200 && code < 400) continue;
+    if ([401, 403, 429].includes(code)) { robots++; console.log('🤖 ' + code + '  ' + u + '   (refuse les robots, adresse bonne)'); continue; }
+    morts.push({ url: u, code, ou: cibles.get(u) }); console.log('❌ ' + (code || 'injoignable') + '  ' + u + '   ← ' + cibles.get(u).join(', '));
+  }
+  console.log('\n' + (vus - morts.length - robots) + ' source(s) existent · ' + robots + ' refusent les robots · '
+    + morts.length + ' introuvable(s) · ' + lotsRates + ' non vérifiée(s) (sur ' + (vus + lotsRates) + ').');
+  if (lotsRates) errs.push(lotsRates + ' source(s) n\'ont PAS PU être vérifiées (Wikipédia injoignable) — un contrôle qui ne contrôle rien ne doit pas passer au vert');
   if (morts.length) {
     console.log('Une source introuvable envoie l\'élève dans le vide : à corriger AVANT de publier.');
     errs.push(morts.length + ' source(s) introuvable(s) — voir la liste ci-dessus');
