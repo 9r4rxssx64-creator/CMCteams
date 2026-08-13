@@ -1,0 +1,55 @@
+name: Lingua 📚 — Tester les sources officielles des langues
+
+# Kevin 2026-08-13 : « Intègre les sources, les langues ».
+#
+# Pourquoi ce workflow existe : depuis l'agent, internet est fermé — publier une adresse
+# « de mémoire », c'est risquer d'envoyer l'élève dans le vide. Ici (réseau ouvert), CHAQUE
+# adresse est réellement ouverte, et le résultat est écrit dans lingua/sources-langues.js.
+# L'application n'affiche QUE les adresses qui ont répondu.
+#
+# 1×/semaine (un site peut fermer ou déménager) + à la demande. Aucun spam de mails.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 6 * * 2'   # mardi 06:00 UTC
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  tester:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: "Ouvrir pour de vrai chaque adresse officielle"
+        shell: bash -eo pipefail {0}   # sans pipefail, un `node … | tee` échoué ressortirait VERT
+        run: node tools/lingua/verify-sources.mjs --live lingua | tee /tmp/sources.log
+      - name: "Publier le résultat (les liens morts ne seront plus affichés)"
+        run: |
+          if git diff --quiet -- lingua/sources-langues.js; then
+            echo "Aucun changement d'état : rien à publier."; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BR="claude/sources-langues-${{ github.run_id }}"
+          git checkout -b "$BR"
+          git add lingua/sources-langues.js
+          git commit -m "Lingua : état réel des sources officielles (chaque adresse ouverte en vrai) [skip ci]"
+          git push -u origin "$BR"
+          echo "Branche poussée : $BR (le bot fusionne)"
+      - name: "Résumé lisible"
+        run: |
+          {
+            echo "## 📚 Sources officielles des langues"
+            echo ""
+            echo '```'
+            tail -50 /tmp/sources.log || echo "(pas de log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

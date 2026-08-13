@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.119.1";
+var APP_VER="v2.120.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -2210,9 +2210,24 @@ function vHistoire(){ var d=el("div","screen"); var c=COURSES[S.course], h=histL
   var note=el("p","sub2 hist-note");
   note.textContent="Chaque fait renvoie à l'article où il se vérifie (Wikipédia, licence CC BY-SA). Si une source dit autre chose, c'est la source qui a raison : dis-le-moi et je corrige.";
   d.appendChild(note);
+  /* 📚 Les maisons qui font autorité sur cette langue. On n'affiche QUE les adresses
+     réellement ouvertes par la vérification (« ok » ou « le site refuse les robots ») —
+     jamais un lien mort ni un lien jamais testé. */
+  var srcs=srcLangue(S.course);
+  if(srcs.length){
+    var t2=el("h3","hist-h3"); t2.textContent="Pour aller plus loin"; d.appendChild(t2);
+    srcs.forEach(function(s){ var a=el("a","src-lien"); a.href=s.url; a.target="_blank"; a.rel="noopener noreferrer";
+      a.innerHTML='<b>'+esc(s.nom)+'</b><i>'+esc(s.quoi)+'</i>'; d.appendChild(a); });
+    var n2=el("p","sub2 hist-note"); n2.textContent="Ces adresses ont été ouvertes une par une pour vérifier qu'elles répondent. On renvoie vers ces maisons, on ne recopie pas leurs dictionnaires.";
+    d.appendChild(n2);
+  }
   var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
   return d;
 }
+/* Les sources d'une langue, filtrées : « ok » = la page répond, « robot » = le site refuse les
+   visiteurs automatiques mais l'adresse est bonne (un humain passe). Tout le reste est caché. */
+function srcLangue(code){ try{ if(typeof LANG_SOURCES==="undefined")return [];
+    return (LANG_SOURCES[code]||[]).filter(function(s){ return s.etat==="ok"||s.etat==="robot"; }); }catch(_){ return []; } }
 function vStoryPlay(){ var d=el("div","screen story"); if(!ST){ go("stories"); return d; }
   var st=STORIES[ST.idx], c=COURSES[S.course];
   var head=el("div","story-head"); head.innerHTML='<span class="sh-ic">'+st.ic+'</span><b>'+esc(st.titre)+'</b>';

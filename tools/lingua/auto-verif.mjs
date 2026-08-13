@@ -33,6 +33,7 @@ const SCRIPTS = [
   { nom: 'La voix du monégasque dit juste (cas documentés)', cmd: ['tools/lingua/verify-mc-voix.mjs'] },
   { nom: 'Histoire & anecdotes : toutes sourcées et bien branchées', cmd: ['tools/lingua/verify-histoires.mjs', 'lingua'] },
   { nom: 'Aucune image demandée dans le vide (0 requête 404)', cmd: ['tools/lingua/verify-assets.mjs', 'lingua'] },
+  { nom: 'Sources officielles : bien formées et branchées', cmd: ['tools/lingua/verify-sources.mjs', 'lingua'] },
   { nom: 'Moteur de voix du serveur', cmd: ['services/kdmc-router/voix-tts.test.mjs'] },
   { nom: 'Voix clonée d\'Antonin', cmd: ['services/kdmc-router/antonin-tts.test.mjs'] },
 ];
