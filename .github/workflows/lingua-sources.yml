@@ -25,7 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 0 }
+        # profondeur 1 : on n'a pas besoin de l'historique pour pousser un fichier, et un
+        # clone complet de ce dépôt bloque le run plusieurs minutes (mesuré le 2026-08-13).
+        with: { ref: main, fetch-depth: 1 }
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - name: "Ouvrir pour de vrai chaque adresse officielle"
