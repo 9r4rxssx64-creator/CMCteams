@@ -34,7 +34,8 @@ const ROUTES = {
   'lingua.kd-mc.com': '/CMCteams/lingua', // KDMC Lingua — app d'apprentissage de langues (Kevin 2026-08-04)
   'studio.kd-mc.com': '/CMCteams/tools/crea-studio', // Créa Studio — montage vidéo + retouche photo (niveau Photoshop/GIMP) + dessin animé, 100% client-side (Kevin 2026-08-04)
   'cuisine.kd-mc.com': '/CMCteams/tools/cuisine', // Le Grand Répertoire de la Riviera — livre de cuisine numérique (Monaco/Riviera + Ligurie), 113+ recettes illustrées (Kevin 2026-08-13)
-  'cocina.kd-mc.com': '/CMCteams/tools/cuisine',  // « Coçina de Múnegu » — même livre, adresse au nom monégasque (Kevin 2026-08-13)
+  'cocina.kd-mc.com': '/CMCteams/tools/cuisine',  // alias — même livre (Kevin 2026-08-13)
+  'cujina.kd-mc.com': '/CMCteams/tools/cuisine',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
 
 // Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,

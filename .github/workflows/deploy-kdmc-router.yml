@@ -207,7 +207,7 @@ jobs:
                    dashboard.kd-mc.com sourcing.kd-mc.com coffre.kd-mc.com bot.kd-mc.com \
                    departs.kd-mc.com cmcteams-light.kd-mc.com \
                    autorisations.kd-mc.com arbre.kd-mc.com lingua.kd-mc.com \
-                   studio.kd-mc.com cuisine.kd-mc.com cocina.kd-mc.com; do
+                   studio.kd-mc.com cuisine.kd-mc.com cocina.kd-mc.com cujina.kd-mc.com; do
             echo "== https://$H =="
             curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
               || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"
@@ -220,10 +220,13 @@ jobs:
           curl -fsS -m 20 -L "https://cuisine.kd-mc.com/" 2>/dev/null | grep -o "Répertoire de la Riviera" | head -1 \
             && echo "  ✅ le livre de cuisine est bien servi sur le domaine" \
             || echo "  ::warning:: cuisine.kd-mc.com ne renvoie pas encore le livre (cert/DNS en cours, ou Pages tools/cuisine à vérifier)"
-          echo "== CONTENU cocina.kd-mc.com (adresse au nom « Coçina de Múnegu ») =="
-          curl -fsS -m 20 -L "https://cocina.kd-mc.com/" 2>/dev/null | grep -o "Coçina de Múnegu" | head -1 \
-            && echo "  ✅ le livre est bien servi sur cocina.kd-mc.com" \
-            || echo "  ::warning:: cocina.kd-mc.com pas encore servi (cert/DNS custom domain en cours — 1-2 min pour un nouveau sous-domaine)"
+          echo "== CONTENU cujina.kd-mc.com / cocina.kd-mc.com (adresse au nom « A Cüjina de Mùnegu ») =="
+          curl -fsS -m 20 -L "https://cujina.kd-mc.com/" 2>/dev/null | grep -o "Cüjina de Mùnegu" | head -1 \
+            && echo "  ✅ le livre est bien servi sur cujina.kd-mc.com" \
+            || echo "  ::warning:: cujina.kd-mc.com pas encore servi (cert/DNS custom domain en cours — 1-2 min pour un nouveau sous-domaine)"
+          curl -fsS -m 20 -L "https://cocina.kd-mc.com/" 2>/dev/null | grep -o "Cüjina de Mùnegu" | head -1 \
+            && echo "  ✅ alias cocina.kd-mc.com OK" \
+            || echo "  ::warning:: cocina.kd-mc.com pas encore servi (cert/DNS en cours)"
           echo "== VOIX KDMC Lingua (/__lingua/tts) — vraie voix naturelle OU repli navigateur ? =="
           CT=$(curl -fsS -m 25 -o /dev/null -w "%{content_type}" "https://lingua.kd-mc.com/__lingua/tts?v=nova&t=bonjour" 2>/dev/null || echo "erreur")
           echo "  content-type=$CT"
