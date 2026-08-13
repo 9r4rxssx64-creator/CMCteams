@@ -35,7 +35,17 @@ const ROUTES = {
   'studio.kd-mc.com': '/CMCteams/tools/crea-studio', // Créa Studio — montage vidéo + retouche photo (niveau Photoshop/GIMP) + dessin animé, 100% client-side (Kevin 2026-08-04)
   'cuisine.kd-mc.com': '/CMCteams/tools/cuisine', // Le Grand Répertoire de la Riviera — livre de cuisine numérique (Monaco/Riviera + Ligurie), 113+ recettes illustrées (Kevin 2026-08-13)
   'cocina.kd-mc.com': '/CMCteams/tools/cuisine',  // alias — même livre (Kevin 2026-08-13)
-  'cujina.kd-mc.com': '/CMCteams/tools/cuisine',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
+  'cujina.kd-mc.com': '/CMCteams/tools/cuisine',
+  // Belles adresses des apps qui n'en avaient pas — Kevin 2026-08-13 « pourquoi les adresses
+  // ne sont pas pareilles ». Règle KDMC_ADRESSES.md : UNE belle adresse par projet. Les
+  // anciens chemins (kd-mc.com/worldmonitor…) restent valides : rien ne casse, on ajoute.
+  'worldmonitor.kd-mc.com': '/CMCteams/kdmc-home/worldmonitor',
+  'osint.kd-mc.com': '/CMCteams/kdmc-home/osint',
+  'ia.kd-mc.com': '/CMCteams/kdmc-home/ia',
+  'outils.kd-mc.com': '/CMCteams/kdmc-home/outils',
+  // Portail boutiques : vivait SEULEMENT sur github.io (le portail y renvoyait en dur,
+  // hors du domaine, en affichant « kd-mc.com → shops » — une adresse fausse).
+  'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
 
 // Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,
