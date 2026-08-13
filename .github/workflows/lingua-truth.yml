@@ -44,6 +44,10 @@ jobs:
       # 🇲🇨 La voix du monégasque : chaque cas vient d'une prononciation DOCUMENTÉE.
       - name: "La voix du monégasque dit juste"
         run: node tools/lingua/verify-mc-voix.mjs
+      # 📜 Histoire & anecdotes : chaque fait porte sa source, et la rubrique est VRAIMENT
+      # branchée dans l'app (une anecdote fausse — ou invisible — ne doit pas passer).
+      - name: "Histoire & anecdotes : sourcées et branchées"
+        run: node tools/lingua/verify-histoires.mjs lingua
 
   semantique:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
@@ -62,8 +66,21 @@ jobs:
           node tools/lingua/verify-truth.mjs lingua --semantic | tee /tmp/verite.log
           echo "----- RAPPORT -----"
           cat audit/lingua-verite.md || true
+      # 📜 Le même second avis, appliqué à l'histoire et aux anecdotes des langues : un modèle
+      # qui n'a PAS écrit ces textes les relit et signale ce qui serait faux. Consultatif.
+      - name: "Second avis indépendant sur l'histoire & les anecdotes (audit, n'édite rien)"
+        shell: bash -eo pipefail {0}
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          node tools/lingua/verify-histoires.mjs lingua --semantic | tee /tmp/histoires.log
+          echo "----- RAPPORT -----"
+          cat audit/lingua-histoires-verite.md || true
       - uses: actions/upload-artifact@v4
         with:
           name: lingua-verite
-          path: audit/lingua-verite.md
+          path: |
+            audit/lingua-verite.md
+            audit/lingua-histoires-verite.md
           if-no-files-found: ignore

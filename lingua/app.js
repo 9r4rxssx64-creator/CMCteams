@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.117.0";
+var APP_VER="v2.118.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -678,6 +678,7 @@ function render(){
   else if(VIEW==="translate") app.appendChild(vTranslate());
   else if(VIEW==="league") app.appendChild(vLeague());
   else if(VIEW==="stories") app.appendChild(vStories());
+  else if(VIEW==="histoire") app.appendChild(vHistoire());
   else if(VIEW==="story") app.appendChild(vStoryPlay());
   else if(VIEW==="stats") app.appendChild(vStats());
   else if(VIEW==="verbs") app.appendChild(vVerbs());
@@ -857,6 +858,12 @@ function vHome(){ var w=el("div","screen tree");
   var prc=el("button","stories-card pron-link");
   prc.innerHTML='<span class="st-ic">🎤</span><span class="st-tx"><b>Atelier prononciation</b><i>écoute, répète, corrige ton élocution '+(_srOk()?'(micro)':'(écoute & répète)')+'</i></span><span class="st-badge">🗣️</span>';
   prc.onclick=function(){ pronStart(); }; w.appendChild(prc);
+  // 📜 Histoire & anecdotes — d'où vient la langue qu'on apprend (une anecdote change chaque jour)
+  var hL=histLangue(S.course);
+  if(hL){ var anec=anecdoteDuJour();
+    var hc=el("button","stories-card hist-link");
+    hc.innerHTML='<span class="st-ic">📜</span><span class="st-tx"><b>Histoire &amp; anecdotes</b><i>'+esc(anec?anec.t:('d\'où vient '+(COURSES[S.course].nom||'').toLowerCase()))+'</i></span><span class="st-badge">'+((hL.faits||[]).length)+'</span>';
+    hc.onclick=function(){ go("histoire"); }; w.appendChild(hc); }
   // 📊 Statistiques — activité, records, calendrier
   var stq=el("button","stories-card stats-link");
   stq.innerHTML='<span class="st-ic">📊</span><span class="st-tx"><b>Mes statistiques</b><i>calendrier d\'activité, records, langues</i></span><span class="st-badge">🔥 '+S.streak+'</span>';
@@ -2140,6 +2147,39 @@ function vStories(){ var d=el("div","screen"); var c=COURSES[S.course];
     if(open)b.onclick=function(){ storyStart(idx); };
     else b.onclick=function(){ toast("Termine d'abord « "+STORIES[idx-1].titre+" » 🔒"); };
     d.appendChild(b); });
+  var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
+  return d;
+}
+/* ---------- 📜 L'histoire et les anecdotes de la langue (Kevin 2026-08-13) ----------
+   Apprendre une langue, c'est aussi savoir d'où elle vient. Chaque fait affiché ici porte
+   sa SOURCE, cliquable : Kevin (ou n'importe qui) peut vérifier lui-même en un tap. Rien
+   n'est écrit « de mémoire » — un juge indépendant repasse tout (verify-histoires.mjs). */
+function histLangue(code){ try{ return (typeof LANG_HISTOIRE!=="undefined" && LANG_HISTOIRE[code])||null; }catch(_){ return null; } }
+function anecdoteDuJour(){ var h=histLangue(S.course); if(!h||!h.faits||!h.faits.length)return null;
+  return h.faits[dayHash(today()+"anec"+S.course)%h.faits.length]; }
+function wikiLien(titre){ return "https://fr.wikipedia.org/wiki/"+encodeURIComponent(String(titre||"").replace(/ /g,"_")); }
+function vHistoire(){ var d=el("div","screen"); var c=COURSES[S.course], h=histLangue(S.course);
+  var nom=(c&&c.nom)||(h&&h.nom)||"cette langue";
+  d.innerHTML='<h2 class="ttl">📜 '+esc(nom)+' — histoire &amp; anecdotes</h2>';
+  if(!h){ d.innerHTML+='<p class="sub2">L\'histoire de cette langue n\'est pas encore écrite. Elle arrive.</p>';
+    var b0=el("button","btn-ghost"); b0.textContent="← Retour"; b0.onclick=function(){ go("home"); }; d.appendChild(b0); return d; }
+  var intro=el("div","hist-card");
+  var p=el("p","hist-txt"); p.textContent=h.histoire; intro.appendChild(p);
+  var ligne=el("div","hist-tools");
+  var ec=el("button","hist-say"); ec.textContent="🔊 Écouter"; ec.setAttribute("aria-label","Écouter l'histoire de la langue");
+  ec.onclick=function(){ speakLang(h.histoire,"fr-FR"); }; ligne.appendChild(ec);
+  var srcA=el("a","hist-src"); srcA.href=wikiLien(h.src||h.nom); srcA.target="_blank"; srcA.rel="noopener noreferrer";
+  srcA.textContent="🔎 Source : "+(h.src||h.nom); ligne.appendChild(srcA);
+  intro.appendChild(ligne); d.appendChild(intro);
+  var t=el("h3","hist-h3"); t.textContent="Le sais-tu ?"; d.appendChild(t);
+  (h.faits||[]).forEach(function(f){ var card=el("div","hist-fait");
+    var tx=el("div","hf-t"); tx.textContent=f.t; card.appendChild(tx);
+    var a=el("a","hf-src"); a.href=wikiLien(f.src); a.target="_blank"; a.rel="noopener noreferrer";
+    a.textContent="🔎 "+f.src; card.appendChild(a);
+    d.appendChild(card); });
+  var note=el("p","sub2 hist-note");
+  note.textContent="Chaque fait renvoie à l'article où il se vérifie (Wikipédia, licence CC BY-SA). Si une source dit autre chose, c'est la source qui a raison : dis-le-moi et je corrige.";
+  d.appendChild(note);
   var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
   return d;
 }
