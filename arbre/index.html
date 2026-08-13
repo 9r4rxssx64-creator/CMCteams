@@ -64,6 +64,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--gold)}
 .blbig svg{width:62%;max-width:230px}
 .blemb{width:44px;flex:none;align-self:center}
 .blemb svg{width:44px;height:auto;display:block;filter:drop-shadow(0 2px 4px rgba(92,70,28,.3))}
+.blsvg img.blimg{width:100%;height:auto;display:block;border-radius:9px}
+.blbig img.blimg{width:80%;max-width:290px;height:auto;display:block;border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,.28)}
+.blemb img.blimg{width:44px;height:auto;display:block;border-radius:6px}
 .row2{display:flex;gap:9px}.row2>*{flex:1}
 label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .empty{text-align:center;color:var(--mut);padding:44px 12px}
@@ -257,7 +260,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v3.4";
+var APP_VER="v3.5";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; /* empreinte du code famille — v9.885 : le code en clair était écrit ici en commentaire (audit 2026-08-09) */
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -692,21 +695,45 @@ function designedBlason(nom,members){nom=_famName(nom)||"?";members=members||[];
   s+='<text x="350" y="817" text-anchor="middle" font-family="Georgia,serif" font-size="'+bfs+'" font-weight="bold" letter-spacing="'+bls+'" fill="'+F[2]+'">'+esc(nom)+'</text>';
   return s+'</svg>';
 }
-function anyBlasonSVG(nom,members){return REAL_ARMS[_famName(nom)]?blasonSVG(nom,members):designedBlason(nom,members);}
-function _blasonReal(nom){return !!REAL_ARMS[_famName(nom)];}
-function _blasonFamilies(){var m={};for(var id in DB.persons){var p=DB.persons[id];if(!p||!_isFamilyNom(p.nom))continue;var k=_famName(p.nom);m[k]=(m[k]||0)+1;}return Object.keys(m).map(function(k){return {nom:k,n:m[k],members:_famMembers(k),real:!!REAL_ARMS[k]};}).sort(function(a,b){return (b.real?1:0)-(a.real?1:0)||b.n-a.n||a.nom.localeCompare(b.nom);});}
-function _blasonPNG(nom,members,scale,cb){var real=_blasonReal(nom),BW=real?420:700,BH=real?566:900,svg=anyBlasonSVG(nom,members),img=new Image();img.onload=function(){var w=Math.round(BW*scale),hh=Math.round(BH*scale),c=document.createElement("canvas");c.width=w;c.height=hh;var x=c.getContext("2d");x.drawImage(img,0,0,w,hh);try{cb(c.toDataURL("image/png"));}catch(e){cb(null);}};img.onerror=function(){cb(null);};try{img.src="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));}catch(e){cb(null);}}
-function openBlason(nom){nom=_famName(nom);var mem=_famMembers(nom),cnt=mem.length,real=REAL_ARMS[nom];
+/* Image officielle importee par la famille (dessin des archives, photo du document) — prime sur le dessin. */
+function _blasonImg(nom){nom=_famName(nom);var m=(DB&&DB.meta&&DB.meta.blasonImg)||{};return m[nom]||null;}
+function anyBlasonSVG(nom,members){var im=_blasonImg(nom);if(im)return '<img class="blimg" src="'+im+'" alt="Armoiries '+esc(_famName(nom))+'">';return REAL_ARMS[_famName(nom)]?blasonSVG(nom,members):designedBlason(nom,members);}
+function _blasonReal(nom){return !!REAL_ARMS[_famName(nom)]||!!_blasonImg(nom);}
+/* Import du dessin officiel : rogne automatiquement les bandes unies (captures d\u2019\u00e9cran iPhone), fond blanc, max 1400px. */
+function importBlasonImg(file){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){try{
+  var w=im.naturalWidth,hh=im.naturalHeight,c0=document.createElement("canvas");c0.width=w;c0.height=hh;var x0=c0.getContext("2d");x0.fillStyle="#ffffff";x0.fillRect(0,0,w,hh);x0.drawImage(im,0,0);
+  var box={l:0,t:0,r:w-1,b:hh-1};try{var d=x0.getImageData(0,0,w,hh).data;function px(i,j){var k=(j*w+i)*4;return [d[k],d[k+1],d[k+2]];}var bg=px(0,0);
+    function same(c){return Math.abs(c[0]-bg[0])<20&&Math.abs(c[1]-bg[1])<20&&Math.abs(c[2]-bg[2])<20;}
+    function rowU(j){for(var i=0;i<w;i+=2)if(!same(px(i,j)))return false;return true;}
+    function colU(i){for(var j=0;j<hh;j+=2)if(!same(px(i,j)))return false;return true;}
+    while(box.t<box.b&&rowU(box.t))box.t++;while(box.b>box.t&&rowU(box.b))box.b--;
+    while(box.l<box.r&&colU(box.l))box.l++;while(box.r>box.l&&colU(box.r))box.r--;
+    if(box.r-box.l<40||box.b-box.t<40){box={l:0,t:0,r:w-1,b:hh-1};}}catch(e){}
+  var cw=box.r-box.l+1,ch=box.b-box.t+1,s=Math.min(1,1400/Math.max(cw,ch));var cv=document.createElement("canvas");cv.width=Math.round(cw*s);cv.height=Math.round(ch*s);
+  var x=cv.getContext("2d");x.fillStyle="#ffffff";x.fillRect(0,0,cv.width,cv.height);x.drawImage(c0,box.l,box.t,cw,ch,0,0,cv.width,cv.height);
+  var png=cv.toDataURL("image/png");res(png.length>900000?cv.toDataURL("image/jpeg",0.92):png);}catch(err){rej(err);}};im.onerror=rej;im.src=r.result;};r.onerror=rej;r.readAsDataURL(file);});}
+async function setBlasonImg(nom,dataUrl){nom=_famName(nom);DB.meta=DB.meta||{};DB.meta.blasonImg=DB.meta.blasonImg||{};if(dataUrl)DB.meta.blasonImg[nom]=dataUrl;else delete DB.meta.blasonImg[nom];await persist();}
+function _blasonFamilies(){var m={};for(var id in DB.persons){var p=DB.persons[id];if(!p||!_isFamilyNom(p.nom))continue;var k=_famName(p.nom);m[k]=(m[k]||0)+1;}return Object.keys(m).map(function(k){return {nom:k,n:m[k],members:_famMembers(k),real:!!REAL_ARMS[k]||!!_blasonImg(k)};}).sort(function(a,b){return (b.real?1:0)-(a.real?1:0)||b.n-a.n||a.nom.localeCompare(b.nom);});}
+function _blasonPNG(nom,members,scale,cb){var _im=_blasonImg(nom);if(_im){cb(_im);return;}var real=!!REAL_ARMS[_famName(nom)],BW=real?420:700,BH=real?566:900,svg=anyBlasonSVG(nom,members),img=new Image();img.onload=function(){var w=Math.round(BW*scale),hh=Math.round(BH*scale),c=document.createElement("canvas");c.width=w;c.height=hh;var x=c.getContext("2d");x.drawImage(img,0,0,w,hh);try{cb(c.toDataURL("image/png"));}catch(e){cb(null);}};img.onerror=function(){cb(null);};try{img.src="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));}catch(e){cb(null);}}
+function openBlason(nom){nom=_famName(nom);var mem=_famMembers(nom),cnt=mem.length,real=REAL_ARMS[nom],myimg=_blasonImg(nom);
   var html='<div class="sheet blsheet"><button class="bkbtn" data-close>✕</button><div class="grab"></div>'
    +'<h2 style="text-align:center;margin:6px 0 2px">Armoiries '+esc(nom)+'</h2>'
-   +'<div class="mut" style="text-align:center;font-size:13px;margin-bottom:8px">'+cnt+' membre'+(cnt>1?"s":"")+' · '+(real?"Blason officiel — reproduit à l\'identique":"Blason créé — armorial de famille")+'</div>'
+   +'<div class="mut" style="text-align:center;font-size:13px;margin-bottom:8px">'+cnt+' membre'+(cnt>1?"s":"")+' · '+(myimg?"🖼 Dessin officiel de la famille (ton image)":(real?"Blason officiel — reproduit à l\'identique":"Blason créé — armorial de famille"))+'</div>'
    +'<div class="blbig">'+anyBlasonSVG(nom,mem)+'</div>'
-   +(real?'<div class="sec" style="font-size:12.5px"><b>Blason officiel :</b> '+esc(real.label)+'.<br><span class="mut">Source : '+esc(real.source)+'. '+(real.official?'✅ Armoiries CONFIRMÉES par écrit pour cette famille (réponse officielle des archives à la demande de Kevin).':'⚠ Armoiries liées au NOM (même patronyme) — le lien avec cette lignée précise reste à prouver généalogiquement.')+'</span></div>':'<div class="sec" style="font-size:12.5px"><b>Blason créé</b> — armorial de famille au <b>style monégasque</b> (bordure fuselée de gueules et d\'argent, fusée d\'or à l\'initiale, étoile en chef, rameaux d\'olivier). Autour de l\'écu, <b>les initiales de chaque membre</b>.<br><span class="mut">Ce n\'est pas un blason historique attesté : aucun blason officiel connu pour ce nom à ce jour.</span></div>')
+   +(myimg?'<div class="sec" style="font-size:12.5px"><b>🖼 Dessin officiel</b> — c\'est <b>ton image</b> (celle transmise par les archives), affichée telle quelle partout dans l\'arbre à la place du dessin recréé.'+(real?'<br><span class="mut">Blasonnement : '+esc(real.label)+'.<br>Source : '+esc(real.source)+'.</span>':'')+'</div>':'')
+   +(myimg?'':real?'<div class="sec" style="font-size:12.5px"><b>Blason officiel :</b> '+esc(real.label)+'.<br><span class="mut">Source : '+esc(real.source)+'. '+(real.official?'✅ Armoiries CONFIRMÉES par écrit pour cette famille (réponse officielle des archives à la demande de Kevin).':'⚠ Armoiries liées au NOM (même patronyme) — le lien avec cette lignée précise reste à prouver généalogiquement.')+'</span></div>':'<div class="sec" style="font-size:12.5px"><b>Blason créé</b> — armorial de famille au <b>style monégasque</b> (bordure fuselée de gueules et d\'argent, fusée d\'or à l\'initiale, étoile en chef, rameaux d\'olivier). Autour de l\'écu, <b>les initiales de chaque membre</b>.<br><span class="mut">Ce n\'est pas un blason historique attesté : aucun blason officiel connu pour ce nom à ce jour.</span></div>')
    +'<div class="mut" style="text-align:center;font-size:12.5px;margin:10px 6px 4px">📲 Sur iPhone : appuie longuement sur l\'image ci-dessous → « Enregistrer dans Photos ».</div>'
    +'<div class="blbig" id="blPng"><div class="mut" style="font-size:13px">Préparation de l\'image…</div></div>'
    +'<a class="btn gold" id="blDl" style="width:100%;margin-top:8px" download="Blason-'+esc(nom.replace(/[^A-Z]/g,""))+'.png">⤓ Enregistrer le blason</a>'
+   +'<button class="btn" id="blUp" style="width:100%;margin-top:8px">📷 '+(myimg?'Remplacer par une autre image':'Utiliser MON image officielle (Photos / fichier)')+'</button>'
+   +'<input type="file" id="blFile" accept="image/*" hidden>'
+   +(myimg?'<button class="btn ghost" id="blRm" style="width:100%;margin-top:6px">↩ Revenir au dessin recréé</button>':'')
+   +'<div class="mut" style="font-size:12px;text-align:center;margin-top:6px">Ton image est rognée automatiquement (bandes noires des captures d\'écran), enregistrée et partagée à toute la famille.</div>'
    +'<button class="btn ghost" data-close style="width:100%;margin-top:8px">Fermer</button></div>';
   showOverlay(html);
+  var up=document.getElementById("blUp"),fi=document.getElementById("blFile"),rm=document.getElementById("blRm");
+  if(up&&fi){up.onclick=function(){fi.click();};fi.onchange=async function(e){var f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;toast("Traitement de l'image…");try{var d=await importBlasonImg(f);await setBlasonImg(nom,d);toast("🖼 Ton image officielle est en place");closeOverlay();render();setTimeout(function(){openBlason(nom);},60);}catch(err){toast("Image illisible — réessaie avec une photo ou une capture");}};}
+  if(rm){rm.onclick=async function(){await setBlasonImg(nom,null);toast("↩ Dessin recréé rétabli");closeOverlay();render();setTimeout(function(){openBlason(nom);},60);};}
   _blasonPNG(nom,mem,2.6,function(url){var box=document.getElementById("blPng"),a=document.getElementById("blDl");if(!box)return;if(url){box.innerHTML='<img src="'+url+'" alt="Armoiries '+esc(nom)+'" style="width:74%;max-width:270px;border-radius:12px">';if(a)a.href=url;}else{box.innerHTML='<div class="mut" style="font-size:13px">Image indisponible — le blason ci-dessus reste net à l\'écran.</div>';if(a)a.style.display="none";}});
 }
 function renderBlasons(){var w=$("#wrap");var fams=_blasonFamilies(),reals=fams.filter(function(f){return f.real;}),others=fams.filter(function(f){return !f.real;});
