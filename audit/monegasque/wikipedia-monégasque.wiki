@@ -1,0 +1,422 @@
+<!-- Source : https://fr.wikipedia.org/wiki/Mon%C3%A9gasque — CC BY-SA -->
+{{Autre4|la langue monégasque|les habitants de Monaco|Monégasque (gentilé)}}
+{{Infobox Langue
+ | nom                  = monégasque
+ | nomnatif             = munegascu
+ | pays                 = [[Monaco]]
+ | région               =
+ | iso3                 = lij
+ | iso3-note            = <ref>code générique</ref>
+ | ietf                 = lij-MC
+ | locuteurs            = environ {{formatnum:8000}} <small>(2014)</small><ref>Selon le [https://www.ethnologue.com/country/MC/languages site ''Ethnologue''], dans ''[[ethnologue.com]]''</ref>
+ | couleurfamille       = mediumseagreen
+ | famille              = {{Hiérarchie|ligure|monégasque}}
+ | langueofficielle     =
+ | officielle           =
+ | académie             = Académie des langues dialectales
+ | languefille          =
+ | typelangueconstruite =
+|nomlocuteurs=|typologie=
+|échantillon=|carte=Monaco-carte.jpg|légende carte=|taille carte=|nocat=}}
+Le '''monégasque''' ([[Endonymie|endonyme]] : ''munegascu'' {{API|/mune'gaʃku/}}) est le [[dialecte]] de la [[ligure|langue ligure]] parlé à [[Monaco]]. Il est peu pratiqué de nos jours malgré sa présence aux programmes scolaires dès le premier et le second degré. Il s'agit d'une langue [[Langue vernaculaire|vernaculaire]] qui fut importée en [[Provence]] par la [[république de Gênes]] lors de la prise du [[Monaco-Ville|Rocher]] en {{date|juin 1191}}, assez proche de l'[[intémélien]], mais différente du [[mentonasque]] voisin. Le problème de sa survie se pose dans un pays de {{nombre|39000|habitants}} où cohabitent 138 nationalités différentes et où les locuteurs monégasques sont minoritaires.
+
+== Phonologie ==
+Le monégasque appartient à la branche occidentale des parlers ligures comme l'[[intémélien]] auquel il est étroitement lié. S'il partage certains traits phonétique typiques du [[Génois (langue)|génois]] comme le passage de -l- à -r- ([[rhotacisme]]), la [[palatalisation]] de -bl-, -pl- et -fl- en -gi-, -ci- et -sci- et la conservation des voyelles atones et finales, il se rapproche plutôt des dialectes « occidentaux extrêmes » (situés de [[Vintimille]] à [[Taggia]] sur la côte) car, à leur image, il délabialise -qu- et -gu-, ne pratique pas la [[vélarisation]] de -n- ([ŋ]) et méconnaît le son [ɛ]. Le monégasque se rapproche des parlers des hameaux entourant Vintimille (leur langue diffère de celle de la ville) par la non-substitution de [z] à [di], [d͡ʒe] et [d͡ʒi]. Les traits spécifiques du dialecte de Monaco sont le passage de [e] à [i] (''sëra'' « soir » contre ''séia'' en génois) et [i] à [y] en position initiale (''ünte'' contre ''inte'' en ligure commun).
+
+== Norme orthographique ==
+Les premières traces écrites du monégasque apparaissent entre 1721 et 1729 dans la correspondance du [[Antoine (prince de Monaco)|prince Antoine]] avec sa fille [[Louise-Hippolyte (princesse de Monaco)|Louise-Hippolyte]], ainsi que dans quelques actes notariés, mais la langue demeure avant tout orale. À partir de 1860, la population du Rocher passe de {{nombre|1200|habitants}} en 1860 à {{nb|22000}} en 1880 ; le monégasque se retrouve menacé par l’afflux massif de travailleurs étrangers et par le développement d’un [[pidgin]] mélangeant le [[provençal]], le [[piémontais]], le [[Corse (langue)|corse]] et le [[ligure]]. À cette époque, le monégasque est banni de l'école et les parents encouragent leurs enfants à parler français<ref>{{Ouvrage|auteur=Raymond Arveiller|titre=Étude sur le parler de Monaco|sous-titre=thèse complémentaire pour le doctorat ès Lettres|éditeur=Comité des traditions monégasques|date=1967|extrait=C’est ainsi que les indigènes furent "comme submergés par l’énorme afflux d’étrangers". Devenus minorité dans leur propre pays, ils préférèrent parler français aux nouveaux venus plutôt que d’entendre ce qui leur paraissait une caricature de leur langage. Ils parlèrent également français à leurs enfants c’était la langue la plus utile.}}</ref>. En 1927, [[Louis Notari]] entreprend la codification écrite de la langue en s’inspirant de l’écriture du [[français]] et de l’[[italien]]. La première grammaire et le premier dictionnaire monégasque paraissent en 1960 et 1963. La norme orthographique moderne a procédé a quelques ajustement, mais reste proche du système imaginé par Louis Notari qui se voulait le plus [[Transparence orthographique|transparent]] possible<ref>{{Ouvrage|auteur=Louis Notari|titre=A Legenda de Santa Devota|sous-titre=Légende Rimée en Monégasque avec la traduction littérale française et quelques notes sur des traditions monégasques|éditeur=Comité des Traditions Locales de la Principauté de Monaco|lieu=Monte-Carlo|date=1927|extrait=Trouver le moyen le plus simple possible pour noter leur parler et ensuite essayer d’écrire comme nous parlions avec nos vieux, comme nous parlons encore entre nous.}}</ref> tout en tenant compte de l'[[étymologie]] des mots. Ainsi, en monégasque, il faut écrire ''qatru'' et non ''chatru'' car le mot provient du [[latin]] ''quattŭor'' ; ''çento'' et non ''sento'' pour les mêmes raisons (''centum''). L'alphabet monégasque comprend dix-sept consonnes et neuf voyelles, plus la lettre « k » à l'initiale de certains mots étrangers (kaki̍ par exemple). Le « j » et le « h » ne se trouvent jamais au début d'un mot. En monégasque, chaque voyelle se prononce séparément.
+
+=== Voyelles ===
+
+{| class="wikitable" align="center"
+|+
+! Lettre || Transcription phonétique
+|-
+| align="center" | '''A, a''' || align="center" | [[Voyelle ouverte antérieure non arrondie|{{APIb|/a/}}]]
+|-
+| align="center" | '''E, e''' || align="center" | [[Voyelle mi-fermée antérieure non arrondie|{{APIb|/e/}}]]
+|-
+| align="center" | '''Ë, ë''' || align="center" | [[Voyelle fermée antérieure non arrondie|{{APIb|/iː/}}]] ou [[Voyelle mi-fermée antérieure non arrondie|{{APIb|/e/}}]] très fermé<ref>{{Ouvrage|auteur=Raymond Arveiller|titre=Étude sur le parler de Monaco|sous-titre=thèse complémentaire pour le doctorat ès Lettres|éditeur=Comité des traditions monégasques|date=1967|extrait=Voyelle d’aperture variable selon les sujets, intermédiaire entre /i/ et /e/, presque toujours confondue avec /e/ dans la prononciation des gens des Moulins, plus ou moins proche de /i/ dans la prononciation des gens du Rocher.}}</ref>
+|-
+| align="center" | '''I, i''' || align="center" | [[Voyelle fermée antérieure non arrondie|{{APIb|/i/}}]]
+|-
+| align="center" | '''O, o''' || align="center" | [[Voyelle mi-fermée postérieure arrondie|{{APIb|/o/}}]]<ref>{{Ouvrage|auteur=Louis Frolla|titre=Grammaire monégasque|date=1960|extrait= -o- est toujours fermé, comme o français de rose}}</ref>
+|-
+| align="center" | '''Œ, œ''' || align="center" | [[Voyelle mi-fermée antérieure non arrondie|{{APIb|/e/}}]] ou [[Voyelle mi-fermée antérieure arrondie|{{APIb|/ø/}}]] selon les quartiers
+|-
+| align="center" | '''U, u''' || align="center" | [[Voyelle fermée postérieure arrondie|{{APIb|/u/}}]]
+|-
+| align="center" | '''Ü, ü''' || align="center" | [[Voyelle fermée antérieure arrondie|{{APIb|/y/}}]]
+|-
+| align="center" |'''Y''', '''y'''|| align="center" | [[Consonne spirante palatale voisée|/j/]]<ref>{{Ouvrage|auteur=Raymond Arveiller|titre=Étude sur le parler de Monaco|sous-titre=thèse complémentaire pour le doctorat ès Lettres|éditeur=Comité des traditions monégasques|date=1967|extrait=-y- (de même valeur qu’en français) est préféré par la plupart à -gl-, peu adapté au monégasque, qui ne connaît pas de -l- mouillé /ʎ/.}}</ref>
+|}
+
+Le graphème -ë- n'est pas utilisé par tous les auteurs monégasques, certains le remplacent à tort par -i-<ref>{{Lien web|langue=fr|url=http://www.ald-monaco.org/langues-monegasque/ecrire-en-monegasque-l-orthographe-9|titre=Écrire en monégasque|sous-titre=l'orthographe|auteur=Dominique Salvo-Cellario|année=2021-05-25|citation=On sait que Louis Notari qui, pourtant faisait la différence à l’orale, a souvent transcrit le i long et le i bref, par la seule voyelle -i-. Ses successeurs, qui étaient déjà dans un bain linguistique francophone, ont eu, eux, beaucoup plus de mal à faire la différence auditive entre ces deux voyelles par interférence avec le français qui ne possède qu’un seul -i-. Les vieux enregistrements montrent bien que la différence existe mais les locuteurs du parler populaire prononcent cette voyelle /e/. Ainsi, nous avons deux groupes de locuteurs dont l’un, réalise la voyelle en /i/ et l’autre, en /e/. Afin que, tous puissent retrouver leur système, il faut maintenir ce graphème -ë- que chacun prononcera selon son propre code oral.}}</ref>. On le rencontre dans des mots comme ''lëtra'' (lettre), ''mëra'' (pomme) et ''mënu'' (moins), dans ceux dont la terminaison combine -e- et -ta- comme ''bavëta'' (bavette), -tu-, -te- (''mëte'', « mettre »), et dans certains mots finissant par -essa- (''principëssa'' « princesse », ''belëssa'' « beauté ») ou -mentu- (''argümëntu'' « argument »)<ref>{{Ouvrage|auteur1=Louis Barral|auteur2=Suzanne Simone|titre=Dictionnaire français-monégasque|page=14|extrait=On a négligé le -ë- (légère tendance au /i/), préciosité propre à la gentry du Rocher du fait qu’il règne fort peu d’accord entre les auteurs. D’ailleurs le plus souvent, chaque auteur manque de fermeté dans la graphie adoptée. Dans ces conditions, mieux vaut glisser sur une nuance peut-être touchante mais dont les approches restent fluctuantes et ésotériques. Croire qu’une langue, d’où qu’elle soit, présente trace d’ombre et de rigueur répond au sentiment quasiment universel mais n’en reste pas moins entièrement controuvé.}}</ref>.
+
+Le graphème -œ-, qui peut se prononcer [e] ou [ø] selon les quartiers, ne fait pas consensus chez tous les auteurs<ref>{{Ouvrage|auteur1=Louis Barral|auteur2=Suzanne Simone|titre=Dictionnaire français-monégasque|page=14|extrait=L'œ, que nous avons adopté avec réticence {{incise|pour satisfaire à la routine}}, veut introduire une notion étymologique qui, fût-elle bonne à connaître, encombre inutilement l'écriture.}}</ref>{{,}}<ref>{{Ouvrage|auteur=Raymond Arveiller|titre=Étude sur le parler de Monaco|sous-titre=thèse complémentaire pour le doctorat ès Lettres|éditeur=Comité des traditions monégasques|date=1967|extrait=L’accord sur cette graphie est à peu près fait entre les auteurs; certains cependant ajoutent des lettres étymologiques, à tort selon nous.}}</ref>Quelle que soit sa prononciation {{incise|Louis Notari l’indique lui-même}}, il faut l’écrire afin de rendre lisible l’étymologie car il provient du ''o'' long latin (par exemple {{Langue|la|texte=noctĕm}} qui devient en monégasque ''nœte'' [nete] ou [nøte]).
+
+Le graphème -y- a pour équivalents français -ill-, -il- et -y-. Louis Notari transcrivait improprement le [[phonème]] [[Yod (lettre)|yod]] en utilisant le [[graphème]] italien -gli- qui, dans cette langue, vaut [ʎ]<ref>{{Ouvrage|auteur=Louis Notari|titre=A Legenda de Santa Devota|sous-titre=Légende Rimée en Monégasque avec la traduction littérale française et quelques notes sur des traditions monégasques|éditeur=Comité des Traditions Locales de la Principauté de Monaco|lieu=Monte-Carlo|date=1927|extrait=-y-  a le son de  l  mouillé qui se réduit à celui de yod ou i consonne […] mais il doit être considéré comme une semi-voyelle, car il n’empêche pas la synérèse des deux syllabes qu’il devrait normalement séparer.}} </ref>{{,}}<ref>{{Lien web|langue=fr|url=http://www.ald-monaco.org/langues-monegasque/ecrire-en-monegasque-l-orthographe-9|titre=Écrire en monégasque|sous-titre=l'orthographe|auteur=Dominique Salvo-Cellario|année=2021-05-25|citation=On peut regretter que Louis Notari ait d’abord transcrit le phonème yod de ''famiya'' [fam’iya] (famille) en ''famiglia'' […] Il faut dire, à sa décharge, qu’à cette époque, certaines régions françaises maintenaient encore le l palatal de « papillon » et le yod de « payons » et que dans certains noms patronymiques monégasques, on retrouve cette fameuse écriture ''gli'' : Battaglia, Aureglia, Fenoglio, qui, pourtant étaient prononcés [bat’aya], [auR’eya], [fen’oyo]}}</ref>.
+
+Pour retranscrire les [[Voyelle nasale|voyelles nasales]], Louis Notari s'est appuyé sur le système français en combinant la voyelle avec -n- ; en monégasque, contrairement au français, on retrouve une correspondance entre la voyelle orale et la voyelle nasale : -an- [ã], -en- [ẽ], -ën- [ĩː] ou [ẽ] très fermé, -in- [ĩ], -on- [õ], -œn- [ẽ] ou [œ̃], -un- [ũ] et -ün- [ỹ].
+
+=== Consonnes ===
+{| class="wikitable" align="center"
+|+
+! Lettre || Transcription phonétique
+|-
+| align="center" | '''B, b''' || align="center" | [[Consonne occlusive bilabiale voisée|{{APIb|/b/}}]]
+|-
+| align="center" | '''C, c''' || align="center" | [[Consonne occlusive vélaire sourde|{{APIb|/k/}}]] et [[Consonne affriquée palato-alvéolaire sourde|{{APIb|/t͡ʃ/}}]]
+|-
+| align="center" | '''Ç, ç''' || align="center" | [[Consonne fricative alvéolaire sourde|{{APIb|/s/}}]]<ref>{{Ouvrage |auteur1=Louis Barral|auteur2=Suzanne Simone|titre=Dictionnaire français-monégasque|page=15|extrait=Le c, pour prendre le son français devant e et i, doit s’agrémenter d’une cédille.}}</ref>
+|-
+| align="center" | '''D, d''' || align="center" | [[Consonne occlusive alvéolaire voisée|{{APIb|/d/}}]]
+|-
+| align="center" | '''F, f''' || align="center" | [[Consonne fricative labio-dentale sourde|{{APIb|/f/}}]]
+|-
+| align="center" | '''G, g''' || align="center" | [[Consonne occlusive vélaire voisée|{{APIb|/g/}}]] et [[Consonne affriquée palato-alvéolaire voisée|{{APIb|/d͡ʒ/}}]]
+|-
+| align="center" | '''J, j''' || align="center" | [[Consonne fricative palato-alvéolaire voisée|{{APIb|/ʒ/}}]]
+|-
+| align="center" | '''L, l''' || align="center" | [[Consonne spirante latérale alvéolaire voisée|{{APIb|/l/}}]]
+|-
+| align="center" | '''M, m''' || align="center" | [[Consonne nasale bilabiale voisée|{{APIb|/m/}}]]
+|-
+| align="center" | '''N, n''' || align="center" | [[Consonne nasale alvéolaire voisée|{{APIb|/n/}}]]
+|-
+| align="center" | '''P, p''' || align="center" | [[Consonne occlusive bilabiale sourde|{{APIb|/p/}}]]
+|-
+| align="center" | '''Q, q''' || align="center" | [[Consonne occlusive vélaire sourde|{{APIb|/k/}}]]
+|-
+| align="center" | '''R, r''' || align="center" | [[Consonne battue alvéolaire voisée|/ɾ/]] et [[Consonne roulée uvulaire voisée|/ʀ/]]<ref>{{Ouvrage |auteur1=Louis Barral|auteur2=Suzanne Simone|titre=Dictionnaire français-monégasque|page=17|extrait=l'accord entre auteurs n'est pas réalisé (les uns ronronnent, les autres non).}}</ref> ou [[Consonne fricative uvulaire voisée|/ʁ/]]
+|-
+| align="center" |'''Ř, ř<ref>{{Ouvrage|auteur=Louis Frolla|titre=Grammaire monégasque|date=1960|extrait=r se prononce comme en français. Mais le r intervocalique, surmonté d'un accent circonflexe renversé, a un son très doux et très particulier qui se rapproche du l.}}</ref>''' ou '''R̂,''' '''r̂'''|| align="center" |[[Consonne battue alvéolaire voisée|/ɾ/]]
+|-
+| align="center" | '''S, s''' || align="center" | [[Consonne fricative alvéolaire sourde|{{APIb|/s/}}]], [[Consonne fricative alvéolaire voisée|{{APIb|/z/}}]] et [[Consonne fricative palato-alvéolaire sourde|/ʃ/]]<ref>{{Ouvrage |auteur1=Louis Barral|auteur2=Suzanne Simone|titre=Dictionnaire français-monégasque|page=18|extrait=L's suivi d'une consonne doit se prononcer à l'auvergnate (se chuinter) disent les gens de qualité. Cette épaisse nuance, que le vulgaire ignore, ne s'orthographie pas.}}</ref>{{,}}<ref>{{Ouvrage|auteur=Louis Frolla|titre=Grammaire monégasque|date=1960|extrait= s est légèrement chuintant (ch français) devant une consonne.}}</ref>
+|-
+| align="center" | '''T, t''' || align="center" | [[Consonne occlusive alvéolaire sourde|{{APIb|/t/}}]]
+|-
+| align="center" | '''V, v''' || align="center" | [[Consonne fricative labio-dentale voisée|{{APIb|/v/}}]]
+|-
+| align="center" | '''Z, z''' || align="center" | [[Consonne fricative alvéolaire voisée|{{APIb|/z/}}]]
+|}
+
+H ne se trouve qu'après C et G, et K, W et X n’existent que dans les mots d’origine étrangère.
+
+Pour noter les consonnes [[Consonne affriquée|affriquées]] et [[Consonne vélaire|vélaires]], Louis Notari s'est appuyé sur le système italien : le son [k] s'écrit ''c'' devant a, o, u, ü et ''ch'' devant e, i, œ ; [g] est retranscrit par ''g'' devant a, o, u, ü et ''gh'' devant e, i, œ ; [t͡ʃ] est noté ''ci'' devant a, o, u, ü, œ et ''c'' devant e et i ; [d͡ʒ] s'écrit ''gi'' devant a, o, u, ü, œ et ''g'' devant e et i ; [ʃ] retranscrit ''sci'' devant a, o, u, ü, œ et ''sc'' devant e et i et [ʃt͡ʃ] se note ''ssci'' devant a, o, u, ü, œ et ''ssc'' devant e et i.
+
+Le graphème -r̂- qui existait du temps de Raymond Arveiller n'est plus employé par les auteurs contemporains qui préfèrent doubler le « r » pour retranscrire un phonème uvulaire'''<ref>{{Ouvrage|auteur1=Louis Barral|auteur2=Suzanne Simone|titre=Dictionnaire français-monégasque|page=16|extrait=Dans l'écriture on indique usuellement le son du r intervocalique monégasque en le surmontant d'un signe (chapeau chinois sur la pointe). Comme ce mode de faire exige un caractère typographique singulier et que les mots à r intervocalique abondent, nous avons préféré l'ignorer et marquer la différence de prononciation en redoublant l'r quand le français ou l'italien y convie.}}</ref>'''.
+
+==== Consonnes géminées ====
+Le monégasque, au contraire d'autres [[Langues romanes|langues latines]], ne conserve pas les doubles consonnes étymologiques car le système de Louis Notari est pensé pour ne pas créer de décalage entre l'écrit et l'oral. Néanmoins, on retrouve deux consonnes géminées : ''rr'' et ''ss.'' Le recours au double « s » permet de distinguer les sons [s] et [z], ainsi « cassa » (louche) se prononce avec le son [s] et « casa » (maison) avec le son [z]. Quant au double « r », il permet de distinguer le [ʀ] [[Consonne uvulaire|uvulaire]] et le [r] [[Consonne alvéolaire|alvéolaire]]. Certains mots échappent à cette règle et s'écrivent avec un seul -r- qui doit être prononcé [ʀ], il s'agit de : ''aridu'' (aride), ''aroma'' (arôme), ''bancaruta'' (banqueroute), ''baraca'' (baraque), ''bari̍'' (baril), ''barumetru'' (baromètre), ''barun'' (baron), ''barocu'' (baroque), ''beterava'' (betterave), ''birichin'' (bribe), ''barucin'' (cabriolet), ''carabina'' (carabine), ''caracula̍'' (caracoler), ''garafa'' (carafe), ''carambola'' (carambole), ''çitara'' (cithare), ''derangia̍'' (déranger), ''derisiun'' (dérision), ''derivà'' (dériver), ''derugia̍'' (déroger), ''erüdiçiun'' (érudition), ''erüçiun'' (éruption), ''fanfara''(fanfare), ''fanfarun'' (fanfaron), ''füretu'' (furet), ''eroe'' (héros), ''parudia'' (parodie), ''parussimu'' (paroxysme), ''petarada'' (pétarade), ''poru'' (pore), ''scarola'' (scarole) et ''toru'' (taureau). L'exception s'applique aussi pour ''caricatüra'' (caricature) mais uniquement sur le premier -r-.
+
+=== Diphtongues ===
+Les principales [[Diphtongue|diphtongues]] monégasques sont :
+{| class="wikitable"
+|+
+!Diphtongue
+!Prononciation
+!Exemple d'utilisation
+|-
+|ai
+|[aj]
+|aiga (eau)
+|-
+|au
+|[aw]
+|auriva (olive)
+|-
+|ei
+|[ej]
+|pei (pieds)
+|-
+|œi
+|[ej] ou [øj]
+|pignœi (pignons de pomme de pin)
+|-
+|eu
+|[ew]
+|buřeu/bur̂eu/bureu (champignon)
+|-
+|ia
+|[ja]
+|piatu (plat)
+|-
+|ie
+|[je]
+|ientrà (entrer)
+|-
+|oi
+|[oj]
+|soi (siens)
+|-
+|ou
+|[ow]
+|sou (sou)
+|-
+|ui
+|[ui]
+|nui (nous)
+|-
+|üu
+|[yu]
+|cugiüu (maquereau)
+|}
+
+== Accent tonique ==
+En monégasque, l'accent tonique régulier tombe sur l'antépénultième voyelle. Pour indiquer un accent tonique irrégulier au regard des règles classiques de prononciation de la langue, on place une barre verticale au-dessus de la voyelle. Ce signe diacritique peut être observé sur chacune des voyelles.
+
+Par exemple :
+* {{langue|lij-MC|scia̍}} : madame ;
+* {{langue|lij-MC|tambe̍n}} : aussi ;
+* {{langue|lij-MC|merçi̍}} : merci ;
+* {{langue|lij-MC|po̍}} : peut ;
+* {{langue|lij-MC|bœ̍}} : bœuf ;
+* {{langue|lij-MC|Mu̍negu}} : Monaco ;
+* {{langue|lij-MC|ciü̍}} : plus.
+
+Ce diacritique peut également être utilisé en combinaison avec d'autres diacritiques notamment avec le tréma.
+
+À cause des contraintes [[Typographie|typographiques]], la barre verticale, absente des claviers d'ordinateur, est remplacée par un [[accent grave]] {{graphie|◌̀}} sur [[internet]]. En son temps, [[Louis Notari]] notait déjà l'accent tonique irrégulier ainsi, mais cette solution posait problème : par influence des langues voisines, les Monégasques lisaient [ɛ] au lieu de [e].
+
+== Grammaire ==
+
+=== Conjugaison ===
+Il existe sept [[Mode (grammaire)|modes]] en monégasque : l'[[Indicatif (grammaire)|indicatif]], le [[conditionnel]], l'[[Impératif (grammaire)|impératif]], le [[subjonctif]], l'[[infinitif]], le [[participe]] et le [[gérondif]]. Le monégasque ne possède qu'un seul temps pour exprimer à la fois le [[Passé simple en français|passé simple]], le [[Passé composé en français|passé composé]] et le [[Passé antérieur en français|passé antérieur]] ; il s'agit d'un [[temps composé]] formé via la forme simple de l'auxiliaire ''avoir'' pour les verbes actifs, et via ''être'' suivi de leur participe passé pour les verbes passifs. Les verbes pronominaux se conjuguent avec l'[[Verbe auxiliaire|auxiliaire]] être. Le [[Présent (grammaire)|présent]] de l'indicatif n'indique pas l’aspect [[Temps de narration|narratif]] ou historique, il n’exprime que le présent ponctuel et réel<ref>{{Lien web |titre=Académie des Langues Dialectales |url=http://www.ald-monaco.org/langues-monegasque/elements-de-grammaire-monegasque-11 |site=www.ald-monaco.org |consulté le=2022-05-03}}</ref>.
+
+== Prononciations comparées ==
+Le tableau ci-dessous compare les prononciations des dialectes génois, intémélien et monégasque avec, en regard, les traductions italienne et française.
+{| class="wikitable"
+|+
+![[Génois (langue)|Génois]]
+(graphie de l'Académie de Brénno)
+![[Vintimille|Ventimille]]
+(intémélien)
+!Monégasque
+(graphie monégasque)
+![[Italien]]
+![[Français]]
+|-
+|'''ciù, ciûe''' [t͡ʃy]
+|[t͡ʃy]
+|'''ciü''' [t͡ʃy]
+|'''più''' [pju]
+|'''plus''' [ply] ou [plys]
+|-
+|'''giànco''' [d͡ʒaŋku]
+|[d͡ʒaŋku]
+|'''giancu''' [d͡ʒãku]
+|'''bianco''' [bjaŋko]
+|'''blanc''' [blɑ̃]
+|-
+|'''sciàmma''' [ʃama]
+|[ʃama]
+|'''sciama''' [ʃama]
+|'''fiamma''' [fjamma]
+|'''flamme''' [flɑm] ou
+[flam]
+|-
+|'''conìggio''' [kunid͡ʒu]
+|[kuniʎu]
+|'''lapin''' [lapĩ]
+|'''coniglio''' [koniʎʎo]
+|'''lapin''' [lapɛ̃]
+|-
+|'''famìggia''' [famid͡ʒa]
+|[famiʎa]
+|'''famiya''' [famija]
+|'''famiglia''' [famiʎʎa]
+|'''famille''' [fa.mij]
+|-
+|'''spêgio''' [spe:d͡ʒu]
+|[speʎu]
+|'''speyu''' [speju]
+|'''specchio''' [spɛkkjo]
+|'''miroir''' [mi.ʁwaʁ] ou [mi.ʁwɑːʁ]
+|-
+|'''töa, tòua''' [tɔ:a]
+|[tɔwɹa]
+|'''tora''' ou '''tor̂a''' ou '''tořa''' [toɾa]
+|'''tavolo''' [tavolo]
+|'''table''' [tɑbl], [tabl] ou [tablə]
+|-
+|'''bronzìn''' [bruŋziŋ]
+|[bruŋziŋ]
+|'''rubinetu''' [ʁubinetu] ou [ʀubinetu]
+|'''rubinetto''' [rubinetto]
+|'''robinet''' [ʁɔbinɛ] ou [ʁɔbine]
+|-
+|'''scösâ''' [skɔ:sa:]
+|[skawsa]
+|'''faudi̍''' [faudi]
+|'''grembiule''' [grembjule]
+|'''tablier''' [tablije]
+|-
+|'''mandìllo''' [maŋdilu]
+|[maŋdriʎu]
+|'''mandiyu''' [mãdiju]
+|'''fazzoletto''' [fattsoletto]
+|'''mouchoir''' [muʃwaʁ]
+|-
+|'''ziàrdoa, zoàrdia''' [zja:rdwa]
+|[zgavawduɹa]
+|'''repetin''' [ʁepetĩ] ou [ʀepetĩ]
+|'''trottola''' [trɔttola]
+|'''toupie''' [tupi]
+|-
+|'''çetrón''' [setruŋ]
+|[purtegalu]
+|'''çitrün''' [sitʁỹ] ou [sitʀỹ], '''purtügalu''' [puʁtygalu] ou [puʀtygalu]
+|'''arancia''' [arant͡ʃa]
+|'''orange''' [ɔʁɑ̃ʒ]
+|-
+|'''bancâ''' [baŋka:]
+|[baŋkaɹa]
+|'''menüsie̍''' [menysie]
+|'''falegname''' [faleɲɲame]
+|'''menuisier''' [mənɥizje]
+|-
+|'''miâgia''' [mja:d͡ʒa]
+|[myɹaʎa]
+|'''müru''' ou '''mür̂u''' [muɾy], '''barri''' [baʁi] ou [baʀi]
+|'''muro''' [muro]
+|'''mur''' [myʁ]
+|-
+|'''fænn-a''' [fɛŋa]
+|[faɹina]
+|'''farina''' ou '''far̂ina''' [faɾina]
+|'''farina''' [farina]
+|'''farine''' [faʁin] ou [faʁinə]
+|-
+|'''lùnn-a''' [lyŋa]
+|[lyna]
+|'''lüna''' [lyna]
+|'''luna''' [luna]
+|'''lune''' [lyn] ou [lynə]
+|-
+|'''béive, béie''' [bejve]
+|[beve]
+|'''büve''' [byve]
+|'''bere''' [bere]
+|'''boire''' [bwaʁ] ou [bwaʁə]
+|-
+|'''méize''' [mejze]
+|[meze]
+|'''mese''' [meze]
+|'''mese''' [meze]
+|'''mois''' [mwa]
+|-
+|'''crescentìn''' [kreʃeŋtiŋ]
+|[saŋd͡ʒytu]
+|'''sangiütu''' [sãd͡ʒytu]
+|'''singhiozzo''' [sinɡjott͡so]
+|'''hoquet''' [<sup>(h aspiré)</sup>ɔ.kɛ] ou [<sup>(h aspiré)</sup>ɔ.ke]
+|}
+
+== Usage ==
+[[Fichier:Ruelle Chanoine Georges Franzi (Monaco) - panneau.jpg|thumb|right|[[Signalisation bilingue|Plaque de rue bilingue]] monégasque-français]]
+
+À Monaco, {{quand|17 % de la population de la principauté parlerait encore le monégasque }} (essentiellement des personnes âgées). La langue était considéré en voie d’extinction dans les années 1970, mais son introduction dans les écoles semble lui avoir donné un second souffle. En effet, l'apprentissage de la langue monégasque est désormais obligatoire depuis 1977 du CE2 au CM2 puis jusqu'à la {{5e}} au collège<ref name="introduction">{{Lien web |titre= Statut de la langue monégasque dans l’enseignement scolaire et universitaire |url= http://www.ald-monaco.org/langues-monegasque/statut-de-la-langue-monegasque-dans-l-enseignement-scolaire-et-universitaire-18 |date= 2017 |site= Académie des langues dialectales (Monaco) |consulté le=31 août 2017}}</ref>. À partir de la {{4e}} jusqu'en terminale où elle peut être présentée en option au [[baccalauréat français|baccalauréat]], au choix du lycéen de continuer ou non. Des concours écrits et oraux officiels sont organisés dans le cadre des cours, et une cérémonie de remise des prix est organisée le {{date|23 juin}} dans la cour de la mairie de Monaco en présence du Prince Souverain, des autorités civiles et religieuses, ainsi que des mécènes<ref name="concours">{{Lien web|titre=Le Concours de Langue Monégasque|url= https://www.mairie.mc/poles/patrimoine-et-traditions/patrimoine-traditions/le-concours-de-langue-monegasque|date= 2010|site= Mairie de Monaco}}</ref>. Des cours de langue et de culture monégasque pour adultes sont donnés, depuis 1993, au sein de l'[[Académie des langues dialectales]] durant l'année scolaire.
+
+La seule langue officielle de la principauté de [[Monaco]] étant le [[français]], il y a peu d’activités visant à diffuser le monégasque : peu de publications paraissent en monégasque, et aucune émission de radio ou de télévision régulière ne l’utilise, même sur [[Radio Monaco]]. Seul le [[Comité national des traditions monégasques]] publie chaque année un « Calendari » (calendrier), dans lequel il y a de nombreux poèmes et hommages en monégasque (traduits).
+
+Néanmoins, il existe plusieurs ouvrages consacrés à cette langue : des dictionnaires français-monégasque et monégasque-français, une grammaire, un mémoire de doctorat<ref>{{Ouvrage|auteur=Zilliox-Fontana|titre=Le Dialecte monégasque|sous-titre=Mémoire de D.E.S|lieu=Faculté d’ Aix-en-Provence|année=1943}} (inédite).</ref> et une thèse en Sorbonne sur « le parler de Monaco ». En 2024, sous l'égide de l'Académie des langues dialectales, sont parus une anthologie de la littérature et l'écrit en monégasque ainsi qu'une étude étymologique-comparative portant sur la faune marine.
+
+== Examen ==
+Depuis 1981, le Comité national des traditions monégasques, la direction de l’Éducation nationale de la jeunesse et des Sports, et la [[Commune de Monaco|mairie de Monaco]] organisent le Concours de langue, culture et histoire monégasques<ref>{{Lien web |titre=La Gazette de Monaco |url=https://lagazettedemonaco.com/actualites/societe/le-concours-de-langue-monegasque-debutera-prochainement |site=lagazettedemonaco.com |consulté le=2021-05-16}}</ref>.
+
+== Auteurs écrivant en monégasque ==
+* [[Louis Barral]], préhistorien, écrivain et lexicographe, auteur d'un dictionnaire franco-monégasque.
+* [[Robert Boisson]], président du Comité national des traditions monégasques et membre fondateur de l'Académie des langues dialectales (Monaco)
+* Louis Canis.
+* Paulette Cherici-Porello, écrivaine, première femme présidente du Comité national des traditions monégasques et de l’Académie des langues dialectales.
+* [[Étienne Clerissi]].
+* Michel Coppo.
+* Marc « Mar » Curti.
+* [[Georges Franzi]] (en {{Langue avec nom|lij-mc|Giorgi Franzi}}), chanoine et séminariste, premier enseignant de monégasque, membre du Comité national des traditions monégasques, premier professeur du monégasque de la Principauté et auteur des premiers scolaires en monégasque<ref>[https://www.traditions-monaco.com/sonotheque/le-chanoine-georges-franzi Le chanoine Georges Franzi]</ref>.
+* Françoise Gamerdinger.
+* Mireille Grazi.
+* [[Louis Frolla]], ecclésiastique, historien, poète et écrivain monégasque, auteur d'un dictionnaire franco-monégasque.
+* Auguste Lanteri, auteur d'un manuscrit sur les outils de l’artisanat.
+* Éliane Mollo, universitaire, co-traductrice des albums de [[Les Aventures de Tintin|Tintin]] en monégasque.
+* [[Louis Notari]], codificateur de la langue et père de la littérature monégasque. Il a écrit les paroles de l'''[[Hymne monégasque]]''.
+* Louis Principale.
+* [[Dominique Salvo-Cellario]], linguiste, professeur de monégasque, membre de la Commission pour la langue monégasque et du Comité national des traditions monégasques, co-traductrice des albums de Tintin en monégasque.
+* Lazare Sauvaigo, professeur d'histoire.
+* [[Suzanne Simone]], préhistorienne et lexicographe, autrice d'un dictionnaire franco-monégasque.
+* Jules Soccal, auteur du lexique spécialisé le ''Vocabulaire monégasque de la marine et de la mer'' (1971).
+* César Solamito, auteur du manuscrit ''Noms monégasques des poissons, mollusques et crustacés de la mer Méditerranée.''
+* René Stefanelli.
+
+== Références ==
+{{Références}}
+
+== Voir aussi ==
+=== Bibliographie ===
+* {{Ouvrage|auteur=Raymond Arveiller|lien auteur=Raymond Arveiller|titre=Étude sur le parler de Monaco, en français et ligure génois|sous-titre=thèse complémentaire pour le doctorat ès Lettres|lieu=Monaco|éditeur=Comité national des monégasques|année=1967 |lire en ligne=http://www.zeneize.net/ziardua/arveiller/arveiller.html}} {{plume}}
+* {{Ouvrage|auteur1=[[Louis Barral]]|auteur2=[[Suzanne Simone]]|titre=Dictionnaire français-monégasque|lieu=Monaco|éditeur=Mairie de Monaco|année=1983|pages totales=420|oclc=799092110}} {{plume}}
+* {{it}} Stefano Lusito, « L’insegnamento scolastico del monegasco dagli esordi al panorama attuale: presenza nei programmi di istruzione, metodologie pedagogiche, strumenti didattici e aspetti linguistici », ''Bollettino dell’Atlante Linguistico Italiano'' {{ISSN|1122-1836}}, {{numéro}}46/III, 2022, {{p.|181-213}}. {{plume}}
+* {{it}} Stefano Lusito, « La presenza attuale del monegasco nel paesaggio linguistico e nello spazio pubblico del Principato di Monaco », ''Intemelion. Cultura e territorio'' {{ISSN|2280-8426}}, {{numéro}}29, 2023, {{p.|5-48}}. {{plume}}
+* Stefano Lusito, ''Anthologie de la littérature et de l'usage écrit du monégasque'', Monaco, Éditions EGC / Académie des langues dialectales, 2024, 240 p. {{plume}}
+* Stefano Lusito, ''Le lexique de la faune marine en langue monégasque : étude étymologique et de comparaison avec les équivalents lexicaux des parlers voisins'', Monaco, Éditions EGC / Académie des langues dialectales, 2024, 140 p.
+* {{it}} Stefano Lusito, «Il monegasco e i dialetti liguri costieri dell’area intemelia: alcuni dati campionari per una definizione dei rispettivi rapporti di divergenza», ''Linguistik online'' (2025), 113/1, pp. 23-64. {{plume}}
+* {{lien web
+ | nom1 = Éliane Mollo | nom2 = Dominique Salvo-Cellario
+ | titre = Éléments de grammaire monégasque
+ | site = Académie des langues dialectales, Principauté de Monaco
+ | url = http://www.ald-monaco.org/langues-monegasque/elements-de-grammaire-monegasque-11
+ | consulté le = 25 avril 2021}} {{plume}}
+* {{Ouvrage|auteur=Claude Passet|titre=Bibliographie de la langue monégasque, 1927-2018|lieu=Monaco|éditeur=Académie des Langues Dialectales - Editions EGC|année=2019|pages totales=52|isbn=978-2-911469-62-6}} {{plume}}
+* {{lien web
+ | nom = Claude Passet
+ | titre = Histoire linguistique de Monaco
+ | sous-titre = Les langues parlées à Monaco de 1215 à nos jours, à propos de quelques idées reçues
+ | site = Académie des langues dialectales, Principauté de Monaco
+ | url = http://www.ald-monaco.org/langues-monegasque/histoire-linguistique-de-la-princpaute-5#_ftn1
+ | consulté le = 28 avril 2021}} {{plume}}
+* {{lien web
+ | nom = Claude Passet
+ | titre = L’écrit en monégasque, de 1927 à nos jours
+ | site = Académie des langues dialectales, Principauté de Monaco
+ | url = http://www.ald-monaco.org/langues-monegasque/l-ecrit-en-monegasque-de-1927-a-nos-jours-19
+ | consulté le = 25 avril 2021}} {{plume}}
+* {{lien web
+ | prénom = Dominique | nom = Salvo-Cellario
+ | titre = Écrire en monégasque : l’orthographe
+ | site = Académie des langues dialectales, Principauté de Monaco
+ | url = http://www.ald-monaco.org/langues-monegasque/ecrire-en-monegasque-l-orthographe-9
+ | consulté le = 23 novembre 2015}} {{plume}}
+* {{lien web
+ | nom = [[Fiorenzo Toso]] 
+ | titre = L’aire linguistique ligure, le génois et sa diffusion dans l’espace méditerranéen
+ | site = Académie des langues dialectales, Principauté de Monaco
+ | url = http://www.ald-monaco.org/uploads/pages/Langues_Dialectales_de_l_Aire_Latine/L_aire_linguistique_ligure_le_genois_et_sa_diffusion.pdf
+ | consulté le = 27 avril 2021}} {{plume}}
+* {{lien web
+ | nom = Fiorenzo Toso 
+ | titre = La langue monégasque, son origine et sa typologie
+ | site = Académie des langues dialectales, Principauté de Monaco
+ | url = http://www.ald-monaco.org/langues-monegasque/la-langue-monegasque-son-origine-et-sa-typologie-6
+ | consulté le = 25 avril 2021}} {{plume}}
+{{légende plume}}
+
+=== Articles connexes ===
+* [[linguistique]]
+** [[liste de langues]]
+*** [[langues par famille]]
+**** [[langues indo-européennes]]
+***** [[langues romanes]]
+****** [[langues italo-romanes]]
+******* groupe [[italien septentrional]]
+******** [[parlers gallo-italiques]]
+********* [[ligure]]
+
+=== Liens externes ===
+* [http://www.axl.cefan.ulaval.ca/europe/monaco.htm Monaco - Université Laval Québec] {{plume}}
+* [https://www.traditions-monaco.com/langue-monaco-monegasque-dictionnaire-poeme-textes-traduction Le Monégasque Comité national des traditions monégasques]
+
+{{Palette|Parlers ligures}}
+{{Portail|langues|linguistique|Ligurie|Monaco}}
+
+[[Catégorie:Monégasque| ]]
+[[Catégorie:Inventaire de langues]]
