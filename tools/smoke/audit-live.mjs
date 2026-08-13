@@ -71,6 +71,13 @@ const SURFACES = [
       if (r.cartes < 1) return { ok:false, note:'AUCUNE carte rendue — arbre vide ('+r.ver+', style '+r.style+')' };
       return { ok:true, note: r.cartes+' cartes · style '+r.style+' · '+r.ver };
     } },
+  /* Belles adresses ajoutées le 2026-08-13 (Kevin « pourquoi les adresses ne sont pas
+     pareilles ») : elles doivent RÉELLEMENT répondre, pas seulement exister au routeur. */
+  { url: 'https://worldmonitor.' + ROOT + '/', name: 'World Monitor (belle adresse)', selKey: 'body' },
+  { url: 'https://osint.' + ROOT + '/', name: 'OSINT (belle adresse)', selKey: 'body' },
+  { url: 'https://ia.' + ROOT + '/', name: 'Outils IA (belle adresse)', selKey: 'body' },
+  { url: 'https://outils.' + ROOT + '/', name: 'Mes outils (belle adresse)', selKey: 'body' },
+  { url: 'https://shops.' + ROOT + '/', name: 'Portail boutiques (belle adresse)', selKey: 'body' },
   { url: 'https://lingua.' + ROOT + '/', name: 'KDMC Lingua', selKey: '.brand', deep: async (page) => {
       // App d'apprentissage : écran comptes (anonyme) → créer un compte → vérifier
       // 6 langues + arbre de leçons rendus + onglets. Un écran vide ou <6 langues échoue.

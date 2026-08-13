@@ -62,3 +62,44 @@
 ---
 *Ce fichier est la source de vérité des adresses KDMC. À tenir à jour à chaque
 changement (règle « DOCS TEMPS RÉEL TOUJOURS À JOUR »).*
+
+---
+
+## 🔧 Mise à jour 2026-08-13 — « pourquoi les adresses ne sont pas pareilles ? » (Kevin)
+
+**Ce qui n'allait pas (mesuré sur le portail en ligne, 32 cartes) : 6 adresses fausses.**
+
+| Carte | Ce qui était affiché | Où le clic menait VRAIMENT |
+|---|---|---|
+| Portail boutiques | `kd-mc.com → shops` | ❌ `9r4rxssx64-creator.github.io/CMCteams/shops/` |
+| Tech Hub | `kd-mc.com → tech-hub` | ❌ github.io |
+| EcoCraft | `kd-mc.com → ecocraft` | ❌ github.io |
+| Digital Vault | `kd-mc.com → digital-vault` | ❌ github.io |
+| Pawsome | `kd-mc.com → pawsome` | ❌ github.io |
+| CMCteams light | `cmcteams-light.kd-mc.com` | ❌ `departs.kd-mc.com` |
+
+Deux problèmes réels, pas cosmétiques : l'adresse affichée **mentait**, et cinq clics
+**sortaient du domaine** (adresse technique exposée, session du domaine perdue).
+
+**Correctif — retour à la règle de ce document : UNE belle adresse par projet.**
+
+5 belles adresses ajoutées (les anciens chemins restent valides, rien ne casse) :
+
+| Projet | Belle adresse | Sert |
+|---|---|---|
+| World Monitor | https://worldmonitor.kd-mc.com | `kdmc-home/worldmonitor` |
+| OSINT | https://osint.kd-mc.com | `kdmc-home/osint` |
+| Outils IA | https://ia.kd-mc.com | `kdmc-home/ia` |
+| Mes outils gratuits | https://outils.kd-mc.com | `kdmc-home/outils` |
+| Portail boutiques | https://shops.kd-mc.com | `shops/` (ne vivait QUE sur github.io) |
+
+Les 4 boutiques en construction deviennent `shops.kd-mc.com/tech-hub/`, `/ecocraft/`,
+`/digital-vault/`, `/pawsome/` — des pages **du** portail boutiques, comme « Messages »
+est une page de CMCteams. Elles prendront leur propre belle adresse une fois construites
+(comme `chez-lolo` et `la-detente`).
+
+**Garde-fou** : `tests/portail-adresses.test.mjs` (câblé dans `test:ci`, 110 vérifications)
+interdit désormais qu'une carte sorte du domaine, exige que **l'adresse affichée SOIT la
+destination**, et vérifie que chaque belle adresse citée existe vraiment dans le routeur
+ET dans `wrangler.toml` (sinon : ni DNS ni certificat = page morte). Prouvé qu'il rougit.
+Les 5 nouvelles adresses sont aussi ouvertes pour de vrai par `verif-reelle.yml`.
