@@ -34,81 +34,81 @@
       { nom: 'Oxford English Dictionary', url: 'https://www.oed.com/', quoi: 'le dictionnaire historique de référence', etat: 'ok' },
       { nom: 'Cambridge Dictionary', url: 'https://dictionary.cambridge.org/', quoi: 'dictionnaire avec prononciation, gratuit', etat: 'ok' },
       { nom: 'Merriam-Webster', url: 'https://www.merriam-webster.com/', quoi: 'la référence de l\'anglais américain', etat: 'robot' },
-      { nom: 'Collins Dictionary', url: 'https://www.collinsdictionary.com/', quoi: 'dictionnaire anglais gratuit avec exemples', etat: '?' },
-      { nom: 'Longman Dictionary', url: 'https://www.ldoceonline.com/', quoi: 'dictionnaire pour apprenants, avec prononciation', etat: '?' }
+      { nom: 'Collins Dictionary', url: 'https://www.collinsdictionary.com/', quoi: 'dictionnaire anglais gratuit avec exemples', etat: 'robot' },
+      { nom: 'Longman Dictionary', url: 'https://www.ldoceonline.com/', quoi: 'dictionnaire pour apprenants, avec prononciation', etat: 'ok' }
     ],
     it: [
       { nom: 'Accademia della Crusca', url: 'https://accademiadellacrusca.it/', quoi: 'la plus ancienne académie de langue au monde (1583)', etat: 'ok' },
       { nom: 'Treccani', url: 'https://www.treccani.it/vocabolario/', quoi: 'le vocabulaire italien de référence', etat: 'ok' },
-      { nom: 'Dizionari Corriere della Sera', url: 'https://dizionari.corriere.it/', quoi: 'dictionnaires italiens gratuits', etat: '?' },
-      { nom: 'Garzanti Linguistica', url: 'https://www.garzantilinguistica.it/', quoi: 'dictionnaire italien de référence', etat: '?' }
+      { nom: 'Dizionari Corriere della Sera', url: 'https://dizionari.corriere.it/', quoi: 'dictionnaires italiens gratuits', etat: 'ok' },
+      { nom: 'Garzanti Linguistica', url: 'https://www.garzantilinguistica.it/', quoi: 'dictionnaire italien de référence', etat: 'ok' }
     ],
     es: [
       { nom: 'Real Academia Española', url: 'https://www.rae.es/', quoi: 'l\'académie qui fait la norme de l\'espagnol', etat: 'ok' },
       { nom: 'Diccionario de la lengua española', url: 'https://dle.rae.es/', quoi: 'le dictionnaire officiel, gratuit', etat: 'ok' },
-      { nom: 'Instituto Cervantes', url: 'https://www.cervantes.es/', quoi: 'l\'institut officiel de la langue espagnole', etat: '?' },
-      { nom: 'Fundéu', url: 'https://www.fundeu.es/', quoi: 'les conseils de bon usage, au jour le jour', etat: '?' }
+      { nom: 'Instituto Cervantes', url: 'https://www.cervantes.es/', quoi: 'l\'institut officiel de la langue espagnole', etat: 'ok' },
+      { nom: 'Fundéu', url: 'https://www.fundeu.es/', quoi: 'les conseils de bon usage, au jour le jour', etat: 'ok' }
     ],
     de: [
       { nom: 'Duden', url: 'https://www.duden.de/', quoi: 'la référence de l\'orthographe allemande', etat: 'ok' },
       { nom: 'Leibniz-Institut für Deutsche Sprache', url: 'https://www.ids-mannheim.de/', quoi: 'l\'institut de recherche sur l\'allemand', etat: 'ok' },
-      { nom: 'Goethe-Institut', url: 'https://www.goethe.de/', quoi: 'l\'institut culturel et linguistique allemand', etat: '?' },
-      { nom: 'DWDS', url: 'https://www.dwds.de/', quoi: 'le dictionnaire numérique de l\'allemand', etat: '?' }
+      { nom: 'Goethe-Institut', url: 'https://www.goethe.de/', quoi: 'l\'institut culturel et linguistique allemand', etat: 'ok' },
+      { nom: 'DWDS', url: 'https://www.dwds.de/', quoi: 'le dictionnaire numérique de l\'allemand', etat: 'ok' }
     ],
     pt: [
       { nom: 'Priberam', url: 'https://dicionario.priberam.org/', quoi: 'dictionnaire du portugais européen, gratuit', etat: 'ok' },
       { nom: 'Instituto Camões', url: 'https://www.instituto-camoes.pt/', quoi: 'l\'institut officiel de la langue portugaise', etat: 'ok' },
-      { nom: 'Academia Brasileira de Letras', url: 'https://www.academia.org.br/', quoi: 'l\'académie brésilienne des lettres', etat: '?' },
-      { nom: 'Dicionário Aulete', url: 'https://www.aulete.com.br/', quoi: 'dictionnaire du portugais brésilien, gratuit', etat: '?' }
+      { nom: 'Academia Brasileira de Letras', url: 'https://www.academia.org.br/', quoi: 'l\'académie brésilienne des lettres', etat: 'ok' },
+      { nom: 'Dicionário Aulete', url: 'https://www.aulete.com.br/', quoi: 'dictionnaire du portugais brésilien, gratuit', etat: 'ok' }
     ],
     nl: [
       { nom: 'Nederlandse Taalunie', url: 'https://taalunie.org/', quoi: 'l\'union qui fixe la norme du néerlandais', etat: 'ok' },
       { nom: 'Woordenlijst (het Groene Boekje)', url: 'https://woordenlijst.org/', quoi: 'la liste orthographique officielle', etat: 'ok' },
-      { nom: 'Van Dale', url: 'https://www.vandale.nl/', quoi: 'le grand dictionnaire néerlandais', etat: '?' },
-      { nom: 'Etymologiebank', url: 'https://etymologiebank.nl/', quoi: 'd\'où viennent les mots néerlandais', etat: '?' }
+      { nom: 'Van Dale', url: 'https://www.vandale.nl/', quoi: 'le grand dictionnaire néerlandais', etat: 'ok' },
+      { nom: 'Etymologiebank', url: 'https://etymologiebank.nl/', quoi: 'd\'où viennent les mots néerlandais', etat: 'ok' }
     ],
     pl: [
       { nom: 'Rada Języka Polskiego', url: 'https://rjp.pan.pl/', quoi: 'le conseil de la langue polonaise', etat: 'ok' },
       { nom: 'Słownik języka polskiego PWN', url: 'https://sjp.pwn.pl/', quoi: 'le dictionnaire de référence, gratuit', etat: 'ok' },
-      { nom: 'Instytut Języka Polskiego PAN', url: 'https://ijp.pan.pl/', quoi: 'l\'institut de la langue polonaise', etat: '?' },
-      { nom: 'Wielki słownik języka polskiego', url: 'https://wsjp.pl/', quoi: 'le grand dictionnaire polonais, gratuit', etat: '?' }
+      { nom: 'Instytut Języka Polskiego PAN', url: 'https://ijp.pan.pl/', quoi: 'l\'institut de la langue polonaise', etat: 'ok' },
+      { nom: 'Wielki słownik języka polskiego', url: 'https://wsjp.pl/', quoi: 'le grand dictionnaire polonais, gratuit', etat: 'ok' }
     ],
     ru: [
       { nom: 'Gramota.ru', url: 'http://gramota.ru/', quoi: 'le portail de référence du russe', etat: 'robot' },
       { nom: 'Институт русского языка им. В. В. Виноградова', url: 'https://www.ruslang.ru/', quoi: 'l\'institut de la langue russe', etat: 'ok' },
-      { nom: 'Национальный корпус русского языка', url: 'https://ruscorpora.ru/', quoi: 'le corpus national : la langue telle qu\'elle s\'écrit', etat: '?' }
+      { nom: 'Национальный корпус русского языка', url: 'https://ruscorpora.ru/', quoi: 'le corpus national : la langue telle qu\'elle s\'écrit', etat: 'ok' }
     ],
     uk: [
       { nom: 'Інститут української мови НАН України', url: 'https://iul-nasu.org.ua/', quoi: 'l\'institut de la langue ukrainienne', etat: 'ok' },
-      { nom: 'Словник української мови', url: 'https://sum.in.ua/', quoi: 'le dictionnaire de la langue ukrainienne, gratuit', etat: '?' },
-      { nom: 'Slovnyk.ua', url: 'https://slovnyk.ua/', quoi: 'dictionnaire ukrainien en ligne', etat: '?' }
+      { nom: 'Словник української мови', url: 'https://sum.in.ua/', quoi: 'le dictionnaire de la langue ukrainienne, gratuit', etat: 'mort' },
+      { nom: 'Slovnyk.ua', url: 'https://slovnyk.ua/', quoi: 'dictionnaire ukrainien en ligne', etat: 'ok' }
     ],
     cs: [
       { nom: 'Ústav pro jazyk český', url: 'https://ujc.cas.cz/', quoi: 'l\'institut de la langue tchèque', etat: 'ok' },
       { nom: 'Internetová jazyková příručka', url: 'https://prirucka.ujc.cas.cz/', quoi: 'le guide officiel en ligne, gratuit', etat: 'ok' },
-      { nom: 'Slovník spisovného jazyka českého', url: 'https://ssjc.ujc.cas.cz/', quoi: 'le dictionnaire de référence, gratuit', etat: '?' }
+      { nom: 'Slovník spisovného jazyka českého', url: 'https://ssjc.ujc.cas.cz/', quoi: 'le dictionnaire de référence, gratuit', etat: 'ok' }
     ],
     zh: [
       { nom: '教育部重編國語辭典', url: 'https://dict.revised.moe.edu.tw/', quoi: 'le dictionnaire officiel du ministère de l\'Éducation', etat: 'ok' },
       { nom: 'MDBG', url: 'https://www.mdbg.net/chinese/dictionary', quoi: 'dictionnaire chinois-anglais avec tracé des caractères', etat: 'ok' },
-      { nom: 'Zdic', url: 'https://www.zdic.net/', quoi: 'dictionnaire de caractères chinois, gratuit', etat: '?' }
+      { nom: 'Zdic', url: 'https://www.zdic.net/', quoi: 'dictionnaire de caractères chinois, gratuit', etat: 'ok' }
     ],
     ja: [
       { nom: '文化庁 — 国語施策', url: 'https://www.bunka.go.jp/kokugo_nihongo/', quoi: 'l\'agence culturelle qui fixe la norme du japonais', etat: 'robot' },
       { nom: 'Jisho', url: 'https://jisho.org/', quoi: 'dictionnaire japonais avec kanji, gratuit', etat: 'ok' },
-      { nom: 'Weblio', url: 'https://www.weblio.jp/', quoi: 'dictionnaire japonais en ligne', etat: '?' },
-      { nom: 'Kotobank', url: 'https://kotobank.jp/', quoi: 'encyclopédies et dictionnaires japonais réunis', etat: '?' }
+      { nom: 'Weblio', url: 'https://www.weblio.jp/', quoi: 'dictionnaire japonais en ligne', etat: 'ok' },
+      { nom: 'Kotobank', url: 'https://kotobank.jp/', quoi: 'encyclopédies et dictionnaires japonais réunis', etat: 'ok' }
     ],
     ko: [
       { nom: '국립국어원 (Institut national de la langue coréenne)', url: 'https://www.korean.go.kr/', quoi: 'l\'institut officiel du coréen', etat: 'robot' },
       { nom: '표준국어대사전', url: 'https://stdict.korean.go.kr/', quoi: 'le grand dictionnaire officiel, gratuit', etat: 'ok' },
-      { nom: '우리말샘', url: 'https://opendict.korean.go.kr/', quoi: 'le dictionnaire ouvert de l\'Institut national', etat: '?' },
-      { nom: 'Naver 사전', url: 'https://dict.naver.com/', quoi: 'dictionnaire coréen très utilisé', etat: '?' }
+      { nom: '우리말샘', url: 'https://opendict.korean.go.kr/', quoi: 'le dictionnaire ouvert de l\'Institut national', etat: 'ok' },
+      { nom: 'Naver 사전', url: 'https://dict.naver.com/', quoi: 'dictionnaire coréen très utilisé', etat: 'ok' }
     ],
     ar: [
       { nom: 'Almaany', url: 'https://www.almaany.com/', quoi: 'dictionnaire arabe en ligne, gratuit', etat: 'robot' },
-      { nom: 'Académie de langue arabe du Caire', url: 'http://www.arabicacademy.org.eg/', quoi: 'la plus ancienne académie de langue arabe', etat: '?' },
-      { nom: 'Wiktionnaire — arabe', url: 'https://fr.wiktionary.org/wiki/Cat%C3%A9gorie:arabe', quoi: 'les mots libres, avec leur racine', etat: '?' }
+      { nom: 'Académie de langue arabe du Caire', url: 'http://www.arabicacademy.org.eg/', quoi: 'la plus ancienne académie de langue arabe', etat: 'mort' },
+      { nom: 'Wiktionnaire — arabe', url: 'https://fr.wiktionary.org/wiki/Cat%C3%A9gorie:arabe', quoi: 'les mots libres, avec leur racine', etat: 'ok' }
     ]
   };
 
