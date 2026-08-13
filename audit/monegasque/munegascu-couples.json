@@ -1,0 +1,22 @@
+{
+  "site": "munegascu.free.fr",
+  "racine": "http://munegascu.free.fr/index_uk.htm",
+  "parcouru_le": "2026-08-13T11:43:11.944Z",
+  "pages_visitees": 2,
+  "pages": [
+    {
+      "url": "http://munegascu.free.fr/index_uk.htm",
+      "octets": 652,
+      "couples": 0
+    },
+    {
+      "url": "http://munegascu.free.fr/index.htm",
+      "octets": 697,
+      "couples": 0
+    }
+  ],
+  "couples_bruts": 0,
+  "couples_uniques": 0,
+  "note": "Couples de mots extraits (faits) + adresse de la page d'origine. Les pages complètes ne sont PAS republiées : elles restent en pièce jointe de l'exécution. Le site et son auteur sont cités dans l'application.",
+  "couples": []
+}
