@@ -31,6 +31,15 @@ jobs:
         run: |
           node tools/lingua/collect-monegasque.mjs --out audit/monegasque | tee /tmp/collecte.log
 
+      - name: "Récupère le dossier monégasque de munegascu.free.fr (site cité, pages non republiées)"
+        shell: bash -eo pipefail {0}
+        run: |
+          node tools/lingua/collect-munegascu-site.mjs --out /tmp/munegascu-pages --max 400 | tee /tmp/site.log || true
+          # seuls les COUPLES DE MOTS (des faits) + leur source entrent dans le dépôt ;
+          # les pages complètes restent en pièce jointe de l'exécution.
+          mkdir -p audit/monegasque
+          if [ -f /tmp/munegascu-pages/COUPLES.json ]; then cp /tmp/munegascu-pages/COUPLES.json audit/monegasque/munegascu-couples.json; fi
+
       - name: "Dépose la moisson sur une branche (pour la relire et bâtir le cours dessus)"
         shell: bash -eo pipefail {0}
         run: |
@@ -50,5 +59,7 @@ jobs:
         if: always()
         with:
           name: monegasque-sources
-          path: audit/monegasque
+          path: |
+            audit/monegasque
+            /tmp/munegascu-pages
           if-no-files-found: warn

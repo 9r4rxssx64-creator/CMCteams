@@ -49,6 +49,7 @@ jobs:
       - name: Vérifier les prix
         id: verif
         working-directory: clayscore
+        shell: bash -eo pipefail {0}   # sans pipefail, un echec ressort VERT
         run: |
           set -o pipefail
           # Sur un push, `inputs` est vide : on retombe sur les valeurs par défaut.
