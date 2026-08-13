@@ -257,7 +257,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v3.3";
+var APP_VER="v3.4";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; /* empreinte du code famille — v9.885 : le code en clair était écrit ici en commentaire (audit 2026-08-09) */
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -537,16 +537,18 @@ function _memIni(p){return (((p&&p.prenom)||"").trim().charAt(0)+(((p&&p.nom)||"
 function _famMembers(nom){nom=_famName(nom);var arr=[];for(var id in DB.persons){var p=DB.persons[id];if(!p||!_isFamilyNom(p.nom)||_famName(p.nom)!==nom)continue;arr.push({ini:_memIni(p),name:full(p),y:(yr(p.naissance&&p.naissance.date)||9999)});}arr.sort(function(a,b){return (a.y-b.y)||a.name.localeCompare(b.name);});return arr;}
 /* Vrais blasons attestés : champ (émail) + meubles fidèles au blasonnement. GOLD = url() du dégradé or de l'écu. */
 var REAL_ARMS={
-  "DESARZENS":{field:MC.gold,official:true,label:"Desarzens (originaire de Sarzens, canton de Vaud, Suisse) — d\u2019or au chevron d\u2019azur accompagn\u00e9 en chef de deux \u00e9toiles de gueules et en pointe d\u2019une t\u00eate d\u2019\u00e9pervier arrach\u00e9e du m\u00eame (1929)",source:"Archives cantonales vaudoises \u2014 r\u00e9ponse officielle \u00e9crite \u00e0 Kevin, ao\u00fbt 2026 (r\u00e9f. 26_DEM_276)",
-    charges:function(CX,GOLD){var s='<rect width="420" height="566" fill="'+GOLD+'"/>';
-      /* chevron d\u2019azur */
-      s+='<path d="M120,342 L'+CX+',212 L300,342" fill="none" stroke="#163d70" stroke-width="50"/>';
-      s+='<path d="M120,342 L'+CX+',212 L300,342" fill="none" stroke="'+MC.azur+'" stroke-width="42"/>';
-      /* deux \u00e9toiles de gueules en chef */
-      s+=_star(CX-64,204,25,MC.red)+_star(CX+64,204,25,MC.red);
-      /* t\u00eate d\u2019\u00e9pervier arrach\u00e9e de gueules, en pointe (profil \u00e0 dextre, bec crochu, cou d\u00e9chiquet\u00e9) */
-      s+='<path d="M206,318 C 186,321 172,332 168,346 L 157,350 C 152,359 160,365 170,362 C 172,371 180,377 188,375 C 191,386 193,396 191,405 L 199,398 L 206,409 L 214,399 L 222,409 L 230,398 L 238,406 C 244,392 249,374 247,356 C 245,336 230,315 206,318 Z" fill="'+MC.red+'" stroke="'+MC.redD+'" stroke-width="3" stroke-linejoin="round"/>';
-      s+='<circle cx="200" cy="342" r="6.5" fill="'+GOLD+'"/><circle cx="199" cy="342" r="3" fill="'+MC.sable+'"/>';
+  "DESARZENS":{field:"#F5D021",official:true,label:"Desarzens (originaire de Sarzens, canton de Vaud, Suisse) \u2014 d\u2019or au chevron d\u2019azur accompagn\u00e9 en chef de deux \u00e9toiles de gueules et en pointe d\u2019une t\u00eate d\u2019\u00e9pervier arrach\u00e9e du m\u00eame (1929)",source:"Archives cantonales vaudoises \u2014 r\u00e9ponse officielle \u00e9crite \u00e0 Kevin + dessin joint, ao\u00fbt 2026 (r\u00e9f. 26_DEM_276)",
+    charges:function(CX,GOLD){var SB=MC.sable,AZ="#2E93E5",RD="#E51D25",s="";
+      /* chevron d\u2019azur, large, lisere noir \u2014 fidele au dessin officiel */
+      s+='<path d="M112,402 L'+CX+',224 L308,402" fill="none" stroke="'+SB+'" stroke-width="54"/>';
+      s+='<path d="M112,402 L'+CX+',224 L308,402" fill="none" stroke="'+AZ+'" stroke-width="42"/>';
+      /* deux etoiles de gueules aux coins du chef, lisere noir */
+      function et(cx,cy,r){var p=[];for(var k=0;k<10;k++){var a=-Math.PI/2+k*Math.PI/5,rr=k%2?r*0.38:r;p.push((cx+Math.cos(a)*rr).toFixed(1)+","+(cy+Math.sin(a)*rr).toFixed(1));}return '<polygon points="'+p.join(" ")+'" fill="'+RD+'" stroke="'+SB+'" stroke-width="3.5" stroke-linejoin="miter"/>';}
+      s+=et(154,202,33)+et(266,202,33);
+      /* tete d\u2019epervier arrachee de gueules, en pointe sous le chevron \u2014 profil a dextre, bec crochu, cou dechiquete a senestre */
+      s+='<path d="M214,312 C 192,314 176,324 170,340 L 157,344 C 147,351 150,363 162,364 L 171,362 C 169,371 176,378 185,376 C 191,388 194,402 194,414 C 197,423 208,427 217,422 L 231,416 L 226,404 L 238,406 L 232,392 L 244,393 L 236,378 L 247,377 L 240,362 C 246,342 236,315 214,312 Z" fill="'+RD+'" stroke="'+SB+'" stroke-width="4" stroke-linejoin="round"/>';
+      s+='<path d="M154,354 L 173,359" fill="none" stroke="'+SB+'" stroke-width="3"/>';
+      s+='<ellipse cx="204" cy="336" rx="9" ry="6.5" fill="#ffffff" stroke="'+SB+'" stroke-width="2.5" transform="rotate(-12 204 336)"/><circle cx="207" cy="337" r="3.2" fill="'+SB+'"/>';
       return s;}},
   "CIAIS":{field:MC.azur,label:"Caïs de Pierlas (Nice) — d'azur à une étoile d'or, un cœur de gueules et un croissant d'argent, rangés en pal",source:"fr.wikipedia.org/wiki/Famille_Caïs",
     charges:function(CX,GOLD){return _star(CX,208,23,GOLD)+_heart(CX,270,22,MC.red)+'<circle cx="'+CX+'" cy="334" r="24" fill="'+MC.arg+'"/><circle cx="'+(CX+11)+'" cy="328" r="21" fill="'+MC.azur+'"/>';}},
