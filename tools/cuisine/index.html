@@ -1,4 +1,4 @@
-<title>Coçina de Múnegu — Répertoire de la Riviera</title>
+<title>A Cüjina de Mùnegu — Répertoire de la Riviera</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
 :root{
@@ -77,6 +77,8 @@ a{color:var(--gold)}
 .home-hd h1{font-size:clamp(22px,6vw,30px);color:#F5EDD8}
 .home-hd .sub{font-style:italic;color:#C6B489;margin-top:8px;font-size:15px}
 .home-hd .stat{font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.08em;color:#8AA0AC;margin-top:14px;text-transform:uppercase}
+.dom-badge{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-family:system-ui,sans-serif;font-size:12px;font-weight:600;padding:6px 13px;border-radius:30px;background:rgba(203,161,76,.14);color:var(--gold-bright);border:1px solid rgba(203,161,76,.4)}
+.dom-badge.off{color:#8AA0AC;background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);font-weight:500}
 
 .searchbar{position:relative;margin:18px 16px 6px}
 .searchbar input{width:100%;padding:15px 16px 15px 46px;border-radius:14px;border:1px solid var(--line);
@@ -296,9 +298,9 @@ a{color:var(--gold)}
       <path d="M50 54 l7 7 -7 7 -7 -7 z" opacity=".65"/>
     </g>
   </svg>
-  <div class="cover-k">Archivi culinari · Múnegu · Riviera</div>
-  <h1>Coçina<br>de Múnegu</h1>
-  <div class="sub">Le Grand Répertoire culinaire de Monaco &amp; de la Riviera — en français &amp; en munegascu</div>
+  <div class="cover-k">Archivi culinari · Mùnegu · Riviera</div>
+  <h1>A Cüjina<br>de Mùnegu</h1>
+  <div class="sub">« La cuisine de Monaco » — Le Grand Répertoire culinaire de Monaco &amp; de la Riviera, en français &amp; en munegascu</div>
   <div class="cover-line">◆</div>
   <button class="enter" onclick="openBook()">Ouvrir le livre</button>
   <div class="cover-foot" id="coverFoot">Chargement…</div>
@@ -454,9 +456,10 @@ function topbar(title,backFn){
 function renderHome(){
   var h='<div class="home-hd view">'+
     '<svg class="crest" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6 L86 20 V52 C86 74 70 88 50 96 C30 88 14 74 14 52 V20 Z" fill="none" stroke="#CBA14C" stroke-width="2.5"/><g fill="#CBA14C"><path d="M50 30 l7 7 -7 7 -7 -7 z"/><path d="M38 42 l7 7 -7 7 -7 -7 z" opacity=".8"/><path d="M62 42 l7 7 -7 7 -7 -7 z" opacity=".8"/><path d="M50 54 l7 7 -7 7 -7 -7 z" opacity=".65"/></g></svg>'+
-    '<h1>Coçina de Múnegu</h1>'+
-    '<div class="sub">Le Grand Répertoire de la Riviera — en français &amp; en munegascu</div>'+
-    '<div class="stat">'+R.length+' recettes · '+TOMES.length+' tomes · Belle Époque → aujourd\'hui</div></div>';
+    '<h1>A Cüjina de Mùnegu</h1>'+
+    '<div class="sub">« La cuisine de Monaco » · Le Grand Répertoire de la Riviera</div>'+
+    '<div class="stat">'+R.length+' recettes · '+TOMES.length+' tomes · Belle Époque → aujourd\'hui</div>'+
+    '<div>'+domBadge()+'</div></div>';
   h+='<div class="searchbar"><span class="mag">🔍</span><input class="ui" placeholder="Chercher un plat, un ingrédient…" onfocus="go(\'search\')" readonly></div>';
   // origines (distinction claire monégasque / autres)
   var nMon=R.filter(function(r){return r.origine&&r.origine.key==='monaco';}).length;
@@ -757,6 +760,9 @@ function renderSources(){
   });
   h+='<div class="rule"><i>◆ ◆ ◆</i></div>';
   h+='<p style="text-align:center;font-style:italic;color:var(--ink-soft);padding:0 0 6px">Livre numérique composé à partir des archives familiales et des grands ouvrages de la gastronomie de la Riviera.</p>';
+  h+='<div class="info-src" style="margin:14px 0"><span class="i-l">🇲🇨 Le nom du livre en monégasque</span>'+
+     '<b>A Cüjina de Mùnegu</b> = « la cuisine de Monaco » en <b>munegascu</b>. Le mot monégasque pour « cuisine » est <b>cüjina</b> (avec ü et j) — attesté par le Comité National des Traditions Monégasques (« d\'a cüjina ») et le livre de référence <i>A cüjina munegasca</i> (J. &amp; D. Lorenzi). Monaco = <b>Mùnegu</b>, nom officiel de l\'État.'+
+     '<span class="i-s">Sources : <a href="http://www.traditions-monaco.com/wp-content/uploads/2018/01/Chronique%20U%20Barbagiu%C3%A0n-39.pdf" target="_blank" rel="noopener">traditions-monaco.com</a> · <a href="https://nicea-bmvr.nice.fr/PATRIMOINE/doc/SYRACUSE/4803342/cujina-munegasca-l-art-traditionnel-et-folklorique-du-bien-manger-de-monaco-jean-et-daniele-lorenzi" target="_blank" rel="noopener">Cujina munegasca (Lorenzi)</a></span></div>';
   h+='<div class="info-src" style="margin:14px 0"><span class="i-l">🇲🇨 Comment on distingue les origines</span>'+
      '<b>🇲🇨 Cuisine monégasque</b> = les recettes du manuscrit de Monaco (tomes 1 à 10). À l\'intérieur, un repère de style : <b>🏡 terroir</b> (plats populaires du Rocher) ou <b>👑 palaces</b> (grande cuisine des grands hôtels de Monte-Carlo, d\'inspiration française internationale). '+
      '<b>🇮🇹 Ligurie</b> = les recettes de la région italienne voisine (tome 11), ajoutées pour compléter, clairement séparées. Le style est un repère indicatif basé sur le nom du plat ; l\'origine (Monaco / Ligurie) est factuelle.</div>';
@@ -820,8 +826,38 @@ function render(){
 var _go=go;
 go=function(v,o){ if(v==='recipe'){ if(!o)o={}; if(o._portions===undefined)o._portions=null; } _go(v,o); };
 
+/* ---------- Connexion sécurisée par le domaine kd-mc.com (SSO central, tout pareil) ----------
+   On demande au domaine « qui es-tu ? » via /__sso/whoami (comme les boutiques, Départs,
+   Créa Studio). Reconnaissance AUTO : si le domaine renvoie un nom (Face ID prouvé), on
+   salue la personne. FAIL-OPEN total : hors du domaine (github.io) ou SSO injoignable →
+   le livre reste ouvert à tous, rien n'est cassé, rien n'est bloqué. */
+var KDMC_USER=null;
+(function(){ try{var m=(location.hash||'').match(/[#&]kdmc_sso=([^&]+)/);
+  if(m){try{localStorage.setItem('kdmc_sso_token',decodeURIComponent(m[1]));}catch(e){}
+        try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}}catch(e){} })();
+function firstName(n){return String(n||'').trim().split(/\s+/)[0]||'';}
+function domBadge(){
+  if(KDMC_USER&&KDMC_USER.name){
+    return '<span class="dom-badge">🔒 Connecté par kd-mc.com — Bonjour '+esc(firstName(KDMC_USER.name))+(KDMC_USER.admin&&KDMC_USER.verified?' · admin ✓':'')+'</span>';
+  }
+  return '<span class="dom-badge off">🔒 Connexion sécurisée · kd-mc.com</span>';
+}
+function kdmcWhoami(){
+  (async function(){
+    try{
+      var tok=''; try{tok=localStorage.getItem('kdmc_sso_token')||'';}catch(e){}
+      var hdr={}; if(tok)hdr.Authorization='Bearer '+tok;
+      var rs=await fetch('/__sso/whoami',{credentials:'include',cache:'no-store',headers:hdr});
+      var j=(rs&&rs.ok)?await rs.json():null;
+      if(j&&j.ok&&j.name){ KDMC_USER={name:j.name,admin:j.admin===true,verified:j.verified===true};
+        if(STATE.view==='home')renderHome(); renderTabs(); }
+    }catch(e){/* SSO injoignable → fail-open, livre ouvert à tous */}
+  })();
+}
+
 /* ---------- cover ---------- */
 function openBook(){var c=el('cover');c.classList.add('gone');setTimeout(function(){c.style.display='none';},700);render();}
 el('coverFoot').textContent=R.length+' recettes · '+TOMES.length+' tomes';
 render(); // build behind cover
+kdmcWhoami(); // connexion sécurisée par le domaine (fail-open)
 </script>
