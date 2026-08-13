@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.121.2";
+var APP_VER="v2.122.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -582,18 +582,62 @@ function _isCloudVoice(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===
 /* Résout un id de voix vers sa vraie voix cloud + réglages (profils comme « antonin »). */
 function voiceReal(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===id) return VOICES[i]; } return null; }
 var _ttsAudio=null,_ttsReq=0;
+/* 🔊 UNE SEULE balise son pour toute l'app (Kevin 2026-08-13 : « la voix est bien mais après
+   3 questions elle baisse seule »).
+   MESURÉ AVANT : 7 balises <audio> créées en 6 questions, AUCUNE libérée. Deux conséquences sur
+   iPhone : (1) Safari plafonne le nombre de sons chargés en même temps, (2) surtout, une balise
+   TOUTE NEUVE n'est pas « débloquée » par un appui du doigt — iOS refuse alors de la jouer, et
+   l'app bascule sur la voix du téléphone, plus sourde. D'où la voix qui « baisse » toute seule.
+   APRÈS : une balise unique, débloquée une fois pour toutes au premier appui, dont on change
+   seulement l'adresse. C'est déjà ce que fait la voix de Bee (« toujours le même <audio> »).
+   Elle n'est JAMAIS branchée au moteur audio : y brancher une balise détourne le son et, si le
+   moteur s'endort, le son tombe (leçon iPhone déjà vécue). L'atelier prononciation, lui, garde
+   sa propre balise puisqu'il a besoin d'analyser le son pour animer la bouche. */
+var _ttsEl=null, _ttsRaison="";
+/* L'atelier prononciation a besoin d'ANALYSER le son (bouche qui articule) : il lui faut donc
+   sa propre balise, branchable au moteur audio, sans jamais y faire passer le son du reste de
+   l'app. Réutilisée elle aussi — sinon chaque écoute laissait une balise de plus derrière elle. */
+var _pronEl=null;
+function _pronJoue(url,rate){ if(!_pronEl){ try{ _pronEl=new Audio(); _pronEl.crossOrigin="anonymous"; _pronEl.preload="auto"; }catch(_){ return null; } }
+  var a=_pronEl; try{ a.pause(); }catch(_){}
+  try{ a.onerror=null; a.onended=null; a.volume=1; a.currentTime=0; }catch(_){}
+  try{ if(rate&&rate!==1){ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=rate; }
+       else { a.preservesPitch=true; a.webkitPreservesPitch=true; a.playbackRate=1; } }catch(_){}
+  a.src=url; try{ a.load(); }catch(_){}
+  _ttsAudio=a; return a; }
+function _ttsBalise(){ if(!_ttsEl){ try{ _ttsEl=new Audio(); _ttsEl.preload="auto"; }catch(_){ return null; } } return _ttsEl; }
+/* Prépare la balise partagée : on remet TOUS les réglages à neuf (une balise réutilisée garde
+   sinon la vitesse ou le mode d'une phrase précédente), puis on pose la nouvelle adresse. */
+function _ttsJoue(url,rate){ var a=_ttsBalise(); if(!a) return null;
+  try{ a.pause(); }catch(_){}
+  try{ a.onerror=null; a.onended=null; }catch(_){}
+  try{ a.volume=1; a.muted=false; a.currentTime=0; }catch(_){}
+  try{ if(rate&&rate!==1){ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=rate; }
+       else { a.preservesPitch=true; a.webkitPreservesPitch=true; a.playbackRate=1; } }catch(_){}
+  a.src=url; try{ a.load(); }catch(_){}
+  _ttsAudio=a; return a; }
+/* Rendre la ressource au téléphone : mettre en pause ne suffit pas, il faut vider l'adresse. */
+function _ttsLibere(){ try{ if(_ttsEl){ _ttsEl.pause(); _ttsEl.removeAttribute("src"); _ttsEl.load(); } }catch(_){} }
 /* Kevin 2026-08-08 « elle s'arrête avant la fin » — repli voix du téléphone :
    Chrome/Android et Safari iOS coupent silencieusement toute phrase parlée après ~15 s.
    Correctif documenté : pendant qu'on parle, un pause()+resume() régulier relance le
    moteur sans coupure audible. On l'arrête à la fin (onend/onerror) ou dès qu'on ne
    parle plus. Toutes les lectures locales passent par _wsSpeak → jamais tronquées. */
-var _wsKA=null;
-function _wsStopKA(){ if(_wsKA){ try{ clearInterval(_wsKA); }catch(_){} _wsKA=null; } }
+var _wsKA=null,_wsKAFin=null;
+function _wsStopKA(){ if(_wsKA){ try{ clearInterval(_wsKA); }catch(_){} _wsKA=null; }
+  if(_wsKAFin){ try{ clearTimeout(_wsKAFin); }catch(_){} _wsKAFin=null; } }
 function _wsSpeak(u){ if(!u)return; try{ speechSynthesis.cancel(); }catch(_){}  _wsStopKA();
   var done=function(){ _wsStopKA(); };
   u.onend=done; u.onerror=done;
   try{ speechSynthesis.speak(u);
     _wsKA=setInterval(function(){ try{ if(speechSynthesis.speaking){ speechSynthesis.pause(); speechSynthesis.resume(); } else done(); }catch(_){ done(); } },9000);
+    /* GARDE-FOU BORNÉ (Kevin 2026-08-13, « la voix baisse toute seule ») : sur iPhone, le signal
+       de fin de la voix du téléphone n'arrive PAS toujours. Le garde-fou tournait alors sans fin,
+       à réveiller la synthèse toutes les 9 s — or une synthèse restée active FAIT BAISSER le son
+       de tout le reste sur iOS. On lui donne désormais une fin certaine : la durée du texte,
+       largement majorée, et jamais plus d'une minute. */
+    var _lg=String(u.text||"").length;
+    _wsKAFin=setTimeout(done, Math.min(60000, 4000 + _lg*110));
   }catch(e){ done(); } }
 /* La belle voix (en ligne) peut tomber : réseau, worker, quota. Avant, on basculait sur la voix
    du téléphone EN SILENCE — Kevin entendait un robot sans savoir pourquoi. On le dit maintenant,
@@ -605,13 +649,20 @@ var _ttsEchecs=0, _ttsPrevenu=false;
 function _ttsChrono(a,req,repli){ var t=setTimeout(function(){
     if(req!==_ttsReq)return; if(a&&a.currentTime>0&&!a.paused)return;   // ça joue déjà : on ne touche à rien
     try{ if(a){a.onerror=null;a.pause();} }catch(_){}
-    _voixCloudKO(); repli();
+    _voixCloudKO("lent"); repli();
   },2500);
   try{ a.addEventListener("playing",function(){ clearTimeout(t); _ttsEchecs=0; }); }catch(_){}
   return t; }
-function _voixCloudKO(){ _ttsEchecs++;
+/* On dit POURQUOI, pas seulement QUE ça a basculé (règle « toujours détailler les erreurs ») :
+   le téléphone qui refuse de jouer le son, un réseau qui traîne et une erreur de lecture ne se
+   corrigent pas de la même façon. Sans la raison, on cherche à l'aveugle. */
+function _voixCloudKO(raison){ _ttsEchecs++; if(raison) _ttsRaison=raison;
   if(_ttsEchecs>=2 && !_ttsPrevenu){ _ttsPrevenu=true;
-    toast("🔈 La voix naturelle ne répond pas — je passe sur la voix du téléphone (moins jolie). Vérifie ta connexion, ou choisis une autre voix dans Profil → Voix."); } }
+    var pourquoi = _ttsRaison==="refus" ? "ton iPhone a refusé de jouer le son tout seul"
+                 : _ttsRaison==="lent"  ? "la connexion est trop lente"
+                 : _ttsRaison==="media" ? "le son n'a pas pu être lu"
+                 : "elle ne répond pas";
+    toast("🔈 La belle voix : "+pourquoi+" — je passe sur la voix du téléphone (moins jolie). Touche l'écran puis réessaie, ou choisis une autre voix dans Profil → Voix."); } }
 /* 🇲🇨 Le monégasque : AUCUN moteur de synthèse au monde ne le parle. Louis Notari ayant bâti
    son écriture sur le français, on écrit la prononciation « à la française » (mc-voix.js) et
    on la fait dire par une voix française — l'élève lit la VRAIE orthographe à l'écran.
@@ -623,16 +674,15 @@ function texteADire(text){
 function speak(text){ if(!S.sound||!text)return; text=texteADire(text); var vid=S.voice||"nova"; var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
   if(_isCloudVoice(vid)){
-    try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
-      var vr=voiceReal(vid)||{};
+    try{ var vr=voiceReal(vid)||{};
       /* Le MOT À APPRENDRE se dit NET : aucune accélération, aucun trafic de hauteur.
          Les effets « mignons » (vitesse 1,24 · pitch 1,7) rendaient le modèle robotique et
          méconnaissable — or c'est LA référence sur laquelle Kevin calque sa prononciation.
          Les effets restent pour les phrases de Bee, jamais pour le vocabulaire. */
-      var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
-      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeak(text); } };   // ne parle que si c'est TOUJOURS la dernière demande
+      var a=_ttsJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+"&t="+encodeURIComponent(text)); if(!a){ _webSpeak(text); return; }
+      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO("media"); _webSpeak(text); } };   // ne parle que si c'est TOUJOURS la dernière demande
       _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeak(text); });
-      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeak(text); } });
+      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO("refus"); _webSpeak(text); } });
       return;
     }catch(e){ if(myReq===_ttsReq)_webSpeak(text); return; }
   }
@@ -1261,8 +1311,8 @@ function pronSay(text,slow){ if(!S.sound||!text)return; var lang=COURSES[S.cours
   var bee=document.querySelector(".pron-bee"), mouth=bee&&bee.querySelector(".disc-mouth");
   if(_isCloudVoice(v)){ try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
     var vr=voiceReal(v)||{};
-    var a=new Audio(); a.crossOrigin="anonymous"; a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+(slow?"&s=0.6":(vr.gen?"&s="+vr.gen:""))+"&t="+encodeURIComponent(text); _ttsAudio=a;
-    if(vr.rate&&!slow){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vr.rate; }catch(_){} }
+    var a=_pronJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+(slow?"&s=0.6":(vr.gen?"&s="+vr.gen:""))+"&t="+encodeURIComponent(text), (vr.rate&&!slow)?vr.rate:1);
+    if(!a){ _pronWeb(text,lang,slow,mouth,bee); return; }
     a.addEventListener("playing",function(){ if(myReq!==_ttsReq)return; if(bee)bee.classList.add("talk");
       if(mouth){ _pronLip=beeLipSync(a,mouth); if(!_pronLip)mouth.classList.add("talking"); } },{once:true});
     a.onended=function(){ if(bee)bee.classList.remove("talk"); if(mouth)mouth.classList.remove("talking"); _pronLipStop(); };
@@ -1287,7 +1337,7 @@ function speakSyllables(text){ if(!S.sound||!text)return;
   var my=++_ttsReq, i=0;
   function playOne(seg,done){
     try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){ } }
-      var a=new Audio(); a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+"&s=0.55&t="+encodeURIComponent(seg); _ttsAudio=a; try{a.volume=1;}catch(_){ }
+      var a=_pronJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+"&s=0.55&t="+encodeURIComponent(seg)); if(!a){ done(); return; }
       var fell=false, fb=function(){ if(fell)return; fell=true; try{ var u=new SpeechSynthesisUtterance(seg); u.lang=lang; u.rate=0.5; u.onend=done; u.onerror=done; speechSynthesis.speak(u); }catch(_){ done(); } };
       a.onended=done; a.onerror=fb; var p=a.play(); if(p&&p.catch)p.catch(fb);
     }catch(e){ done(); } }
@@ -1952,9 +2002,9 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
           sub.textContent+=(wi?" ":"")+words[wi++]; sub.scrollTop=sub.scrollHeight; }, step); } }
     if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop, dur+400); }
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
-  if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
-    var a=new Audio(); a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text); _ttsAudio=a; try{a.volume=1;}catch(_){}
-    if(vcfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vcfg.rate; }catch(_){} }
+  if(_isCloudVoice(vid)&&S.sound){ try{
+    var a=_ttsJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text), vcfg.rate);
+    if(!a){ _webSpeakLang(text,lang,true,vcfg); startVisuals(estDur,null); return; }
     var started=false, fell=false;
     var fallback=function(){ if(fell||started||myReq!==_ttsReq)return; fell=true;
       _webSpeakLang(text,lang,true,vcfg); startVisuals(estDur,null); };
@@ -2167,7 +2217,7 @@ function storyAnswer(oi){ if(!ST||ST.phase!=="quiz")return; var st=STORIES[ST.id
       save(); checkQuests(); checkAchv(); render();
       setTimeout(function(){ speakLang(ST.good>=st.quiz.length?"Bravo, tout juste ! Tu es formidable !":"Bravo, l'histoire est finie !","fr-FR",BEE_VOICE,true); },350); }
   }, 900); }
-function storyQuit(){ ST=null; try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} go("stories"); }
+function storyQuit(){ ST=null; try{ _ttsLibere(); if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} go("stories"); }
 function vStories(){ var d=el("div","screen"); var c=COURSES[S.course];
   if(!c){ d.innerHTML='<h2 class="ttl">📖 Histoires</h2><p class="sub2">Choisis d\'abord une langue 🌍.</p>'; return d; }
   d.innerHTML='<h2 class="ttl">📖 Histoires de la ruche</h2><p class="sub2">'+esc(MNAME())+' te raconte une histoire en '+esc(c.nom.toLowerCase())+' — écoute, lis, réponds. Chaque histoire ouvre la suivante.</p>';
@@ -2359,12 +2409,11 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
   var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();
   if(_isCloudVoice(vid)){ try{
-    if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
-    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a; try{a.volume=1;}catch(_){}
-    if(cfg&&cfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=cfg.rate; }catch(_){} }
-    a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeakLang(text,lang,fem,cfg); } };
+    var a=_ttsJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text), cfg&&cfg.rate);
+    if(!a){ _webSpeakLang(text,lang,fem,cfg); return; }
+    a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO("media"); _webSpeakLang(text,lang,fem,cfg); } };
     _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeakLang(text,lang,fem,cfg); });
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeakLang(text,lang,fem,cfg); } }); return; }catch(e){} }
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO("refus"); _webSpeakLang(text,lang,fem,cfg); } }); return; }catch(e){} }
   _webSpeakLang(text,lang,fem,cfg); }
 function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang;
   u.rate=cfg?cfg.wsRate:(fem?.95:.9);
@@ -2671,7 +2720,11 @@ function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._b
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
   if(L.i>=L.ex.length){ finishLesson(); return; } if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; } render();
 }
-function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); return; } var base=L.exam?25:(L.review?10:15),bonus=L.wrong===0?5:0,combo=Math.max(0,L.comboMax-2); var xp=base+bonus+combo;
+function finishLesson(){ var L=LESSON;
+  /* Fin de leçon : on REND la ressource son au téléphone (mettre en pause ne suffit pas — il
+     faut vider l'adresse). Sans ça, la balise reste chargée entre deux leçons. */
+  try{ _ttsLibere(); }catch(_){}
+ if(L.placement){ finishPlacement(L); return; } var base=L.exam?25:(L.review?10:15),bonus=L.wrong===0?5:0,combo=Math.max(0,L.comboMax-2); var xp=base+bonus+combo;
   /* VÉRITÉ : les gemmes AFFICHÉES = les gemmes réellement créditées (examen = 8/5, leçon = 3/1) */
   var gems=(L.exam?(L.wrong===0?8:5):(L.wrong===0?3:1));
   S.xp+=xp; S.dailyXP+=xp; histAdd(xp); S.gems+=gems;
