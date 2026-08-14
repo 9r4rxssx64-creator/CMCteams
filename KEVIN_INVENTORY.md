@@ -1804,3 +1804,23 @@ Tout est cliquable vers l'endroit où ça se vérifie.
 | `tools/lingua/verify-histoires.mjs` | La garde : rien sans source, planchers de contenu, sections vraiment affichées, + `--liens` qui vérifie les 153 sources, + `--semantic` le juge indépendant | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-histoires.mjs) |
 | `tools/lingua/verify-sources.mjs` | Ouvre chaque adresse officielle et écrit son état (répond / refuse les robots / morte) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-sources.mjs) |
 | `.github/workflows/lingua-sources.yml` | L'ouvrage qui teste tout ça pour de vrai (1×/semaine + à la demande) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/lingua-sources.yml) |
+
+## 🍎 App Store — outils installés le 2026-08-13 (Claude Code + Apex)
+
+Source : Kevin (vidéo Algomax, capture TikTok) — « intègre toi et Apex, qu'il s'en serve et toi aussi ».
+
+| Fichier | À quoi ça sert | Lien |
+|---|---|---|
+| Skill (moi) | Publier une app sur l'App Store / TestFlight, **et ce qui manque vraiment** | [appstore/SKILL.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/appstore/SKILL.md) |
+| Skill (Apex) | Même chose, version courte pour Apex | [apex-appstore.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/apex-appstore.md) |
+| Sources vendorisées | Le CLI `asc` + ses skills d'agent (texte seulement) | [sources.json](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sources.json) |
+
+**Ce qu'il te reste à faire, toi (et personne d'autre ne peut le faire)** :
+1. Un compte **Apple Developer** — 99 €/an, ta carte.
+2. Une **clé API App Store Connect** (une seule fois, dans ton compte connecté) → je la range en secret GitHub, jamais dans le dépôt.
+
+**Honnêtement** : on publie des **apps**, pas un domaine. Une PWA ne se soumet pas telle
+quelle — il faut l'emballer en app native (je le fais en CI sur un Mac GitHub). Et Apple
+refuse les coquilles vides autour d'un site : les candidates crédibles sont **CMCteams**,
+**Apex Chat** et **Lingua**, qui ont un vrai contenu propre.
+
