@@ -69,10 +69,13 @@ const CATEGORIES = [
 /* Plusieurs façons de nommer la même chose : on ratisse large, puis on filtre sévèrement.
    Chercher peu, c'est trouver peu — et croire ensuite que « ça n'existe pas ». */
 const RECHERCHES = [
-  'langue des signes française OR "French Sign Language" OR LSF',
-  'LSF lettre OR LSF alphabet OR dactylologie',
-  'LSF chiffre OR "sign language" chiffres français',
-  '"alphabet dactylologique" OR "alphabet manuel" français',
+  /* Ciblé, pas large. Une recherche trop large sur Commons ramène des journaux néerlandais
+     et le Federal Register : 2300 fichiers de bruit qui n'apportent rien et masquent ce
+     qu'on cherche vraiment dans le rapport. */
+  'LL-Q33302',                       // toutes les vidéos Lingua Libre en LSF
+  'LSF Lettre OR LSF Chiffre',       // l'alphabet et, s'ils existent, les chiffres
+  'LSF Vocab OR LSF Exo',            // les séries de vocabulaire
+  'dactylologie langue des signes française',
 ];
 
 async function membres(cat, type) {
@@ -240,6 +243,13 @@ async function infos(titres) {
       f.types.add((m.mime || '?').split('/')[0]); f.lic.add(m.licence || '(sans licence lisible)');
     }
     const tri = [...familles.entries()].sort((a, b) => b[1].n - a[1].n);
+    /* La question décisive : la série « LSF … » va-t-elle plus loin que A-Z ? Les accents,
+       les chiffres ? On les liste TOUS, un par un, au lieu de se fier au classement par
+       nombre — une lettre accentuée n'existe qu'en un exemplaire et tomberait sous le
+       radar d'un top 40. C'est exactement comme ça qu'on croit qu'il n'y a que 26 lettres. */
+    const serieLSF = [...meta.keys()].map(nu).filter((t) => /^LSF\s/i.test(t)).sort();
+    console.log('\n🔠 TOUS les fichiers « LSF … » (' + serieLSF.length + ') :');
+    serieLSF.forEach((t) => console.log('     ' + t));
     console.log('\n📛 Comment les fichiers sont nommés (' + tri.length + ' familles) :\n');
     tri.slice(0, 40).forEach(([cle, f]) => {
       console.log('· « ' + cle + ' » ×' + f.n + '  [' + [...f.types].join(',') + ']  licence: ' + [...f.lic].slice(0, 2).join(' | '));
