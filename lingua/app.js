@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.123.1";
+var APP_VER="v2.124.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -488,7 +488,13 @@ function makeBank(p,pool){ var toks=p.t.split(" "),ex=sample(allWords(S.course),
   return {kind:"bank",w:{fr:p.fr,t:p.t},prompt:p.fr,answer:p.t,tokens:toks,bank:shuffle(toks.concat(ex))}; }
 /* Exercice de SAISIE (écrire la réponse) — bien plus exigeant que le choix multiple.
    dir : "toT" écris dans la langue · "toFr" écris en français · "listen" écoute puis écris. */
-function makeType(w,dir){ if(estSigne(w)) dir="toFr"; var toT=dir!=="toFr", answer=toT?w.t:w.fr;
+/* Certains signes portent une étiquette qui n'est pas un mot qu'on tape : « donner, rendre »,
+   « ma, mes », « ami·e », « au bord de… », « conseiller (n.) ». Un signe peut valoir plusieurs
+   mots français, et la source l'écrit ainsi — je ne réécris pas la source. Mais demander de
+   RECOPIER ça au clavier serait une punition, pas un exercice : on propose alors un choix. */
+function signeAEcrire(w){ return estSigne(w) && !/[,·…()\/]/.test(String(w.fr||"")); }
+function makeType(w,dir){ if(estSigne(w)&&!signeAEcrire(w)) return makeMC(w,allWords(S.course),"mc_fr");
+  if(estSigne(w)) dir="toFr"; var toT=dir!=="toFr", answer=toT?w.t:w.fr;
   return {kind:"type",w:w,dir:dir,prompt:dir==="listen"?"":(toT?w.fr:w.t),answer:answer,audio:dir==="listen"}; }
 /* Exercice de PRONONCIATION (parler au micro) — reconnaissance vocale, indulgent. */
 function makeSpeak(w){ /* on ne demande pas de PRONONCER un signe : il se fait avec les mains */
@@ -2300,9 +2306,34 @@ function vLsfAbc(){ var d=el("div","screen");
     var lt=el("b","abc-l"); lt.textContent=k; c.appendChild(lt);
     g.appendChild(c); });
   d.appendChild(g);
+
+  /* S'ENTRAÎNER : les vidéos d'exercice qui existent librement. « F et T » travaille deux
+     lettres qu'on confond tout le temps ; « chiffres abc » mélange lettres et chiffres. */
+  var X=(typeof LSF_EXOS!=="undefined")?LSF_EXOS:[];
+  if(X.length){ var t2=el("h3","hist-h3"); t2.textContent="S'entraîner"; d.appendChild(t2);
+    var wrap=el("div","lsf-liste");
+    X.forEach(function(x){ var c=el("div","lsf-carte");
+      var vd=el("video","signe-v"); vd.src=x.u; vd.muted=true; vd.loop=true; vd.playsInline=true;
+      vd.setAttribute("playsinline",""); vd.setAttribute("controls","");  vd.setAttribute("preload","none");
+      vd.onerror=function(){ vd.remove(); var k=el("div","abc-ko"); k.textContent="vidéo indisponible"; c.insertBefore(k,c.firstChild); };
+      c.appendChild(vd);
+      var t=el("b","lsf-mot"); t.textContent=(/chiffre/i.test(x.q)?"Lettres et chiffres mélangés":"Deux lettres qu'on confond : "+x.q); c.appendChild(t);
+      c.insertAdjacentHTML("beforeend",'<div class="signe-credit">'+(x.a?esc(x.a)+' · ':'')+esc(x.l||"")
+        +' · <a href="'+esc(x.p)+'" target="_blank" rel="noopener noreferrer">source</a></div>');
+      wrap.appendChild(c); });
+    d.appendChild(wrap); }
+
   var n=el("p","sub2 hist-note");
   n.textContent="Photos issues de Wikimedia Commons, sous licence libre. Touche une lettre pour ouvrir sa page d'origine, avec l'auteur et la licence.";
   d.appendChild(n);
+  /* Honnêteté : l'alphabet français ne s'arrête pas à 26 lettres, et les chiffres se font
+     aussi avec la main. Aucune image libre ne les montre aujourd'hui sur Wikimedia Commons —
+     je ne vais pas les dessiner de tête. On le dit, et on cherche à nouveau chaque mois. */
+  var n2=el("p","sub2 hist-note");
+  n2.innerHTML="Il manque ici les lettres accentuées (é, è, ç…) et les chiffres : <b>aucune image libre ne les montre</b> sur Wikimedia Commons à ce jour, et je préfère ne rien afficher plutôt qu'un geste inventé. La recherche est relancée chaque mois — dès qu'ils existent, ils apparaissent ici. En attendant : "
+    +'<a href="https://www.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">Elix</a> ou '
+    +'<a href="https://www.fnsf.org/" target="_blank" rel="noopener noreferrer">la Fédération Nationale des Sourds de France</a>.';
+  d.appendChild(n2);
   var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
   return d;
 }

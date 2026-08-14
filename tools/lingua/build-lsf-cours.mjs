@@ -35,6 +35,7 @@ const CURRICULUM = ctx.CURRICULUM;
 
 const signes = src.signes || {};
 const alphabet = src.alphabet || {};
+const exercices = src.exercices || [];
 
 /* Une fiche allégée : l'app n'a pas besoin du titre du fichier ni du type. */
 function fiche(s) {
@@ -94,6 +95,9 @@ if (reste.length >= 3) {
 }
 
 /* ---------- L'alphabet dactylologique ---------- */
+/* Les deux vidéos d'entraînement à l'alphabet : « F et T » (deux lettres qu'on confond
+   facilement) et « chiffres abc ». Elles vont à côté de l'alphabet, pas dans le dictionnaire. */
+const EXOS = exercices.map((e) => ({ q: e.quoi, u: e.url, p: e.page, l: e.licence, a: e.auteur || '' }));
 const ALPHA = {};
 Object.keys(alphabet).sort().forEach((k) => { const a = alphabet[k]; ALPHA[k] = { u: a.url, p: a.page, l: a.licence, a: a.auteur || '' }; });
 
@@ -117,6 +121,7 @@ const out = `/* 🤟 LA LANGUE DES SIGNES FRANÇAISE (LSF) — cours engendré, 
    Engendré le ${src.recolte_le} — ${Object.keys(LSF).length} signes, ${nMots} en leçon, ${nLecons} leçons, ${unites.length} unités, ${Object.keys(ALPHA).length} lettres. */
 var LSF_SIGNES = ${JSON.stringify(LSF)};
 var LSF_ALPHABET = ${JSON.stringify(ALPHA)};
+var LSF_EXOS = ${JSON.stringify(EXOS)};
 var CURRICULUM_LSF = ${JSON.stringify(unites)};
 var LMETA_LSF = { lsf:{ nom:"Langue des signes (LSF)", drapeau:"🤟", tts:"", endonyme:"LSF" } };
 /* On branche le cours comme les autres langues. Deux marqueurs le distinguent :
@@ -133,6 +138,6 @@ if (typeof COURSES !== "undefined") {
 fs.writeFileSync(L('data-lsf.js'), out, 'utf8');
 console.log('🤟 data-lsf.js écrit — ' + Object.keys(LSF).length + ' signes récoltés, '
   + nMots + ' en leçon, ' + nLecons + ' leçons, ' + unites.length + ' unités, '
-  + Object.keys(ALPHA).length + ' lettres d\'alphabet.');
+  + Object.keys(ALPHA).length + ' lettres d\'alphabet, ' + EXOS.length + ' vidéo(s) d\'entraînement.');
 console.log('   unités : ' + unites.map((u) => u.t + ' (' + u.L.length + ')').join(' · '));
 console.log('   hors leçon (dictionnaire seulement) : ' + (Object.keys(LSF).length - nMots));

@@ -81,7 +81,9 @@ const gardes = [
   ['la reconnaissance d\'un signe existe', /function estSigne\(/],
   ['on sait reconnaître un cours en signes', /function coursSignes\(/],
   ['le choix multiple force « quel est ce signe ? »', /function makeMC\([^)]*\)\{\s*if\(estSigne\(w\)\) mode="mc_fr";/],
-  ['la saisie force « écris le mot français »', /function makeType\([^)]*\)\{\s*if\(estSigne\(w\)\) dir="toFr";/],
+  ['la saisie force « écris le mot français »', /function makeType\([^)]*\)\{[^}]*if\(estSigne\(w\)\) dir="toFr";/],
+  ['on ne fait pas recopier une étiquette ponctuée (« donner, rendre »)', /function signeAEcrire\(w\)\{/],
+  ['et cette règle est appliquée', /if\(estSigne\(w\)&&!signeAEcrire\(w\)\) return makeMC\(/],
   ['le jeu de paires est remplacé (il montrerait deux fois le même mot)', /if\(ws\.some\(estSigne\)\) return makeMC\(/],
   ['on ne demande pas de PRONONCER un signe', /function makeSpeak\(w\)\{[^}]*if\(estSigne\(w\)\) return makeType\(w,"toFr"\)/s],
   ['la question affiche une vidéo', /function signeHTML\(w\)\{/],
@@ -124,6 +126,12 @@ if (!/origin!==self\.location\.origin/.test(sw)) ko('le service worker intercept
 ['.q-signe', '.signe-v', '.abc-grid', '.lsf-carte'].forEach((c) => {
   if (!html.includes(c + '{')) ko('style manquant : ' + c);
 });
+
+/* L'alphabet : ce qu'on promet doit être tenu, et ce qu'on récolte doit être montré. */
+if (/var LSF_EXOS = \[\{/.test(dataLsf) && !/LSF_EXOS/.test(app))
+  ko('les vidéos d\'entraînement à l\'alphabet sont récoltées mais jamais affichées');
+if (!/aucune image libre ne les montre/.test(app))
+  ko('la page de l\'alphabet ne dit plus que les accents et les chiffres manquent — l\'élève croirait que 26 lettres, c\'est tout');
 
 /* Les variantes ne servent à rien si elles ne sont pas montrées (Déclaration ≠ Déploiement). */
 if (nbVariantes && !/signeVariantesHTML\(/.test(app))

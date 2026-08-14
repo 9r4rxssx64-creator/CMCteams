@@ -373,7 +373,7 @@ async function infos(titres) {
   console.log('   licences : ' + Object.entries(parLicence).map(([k, v]) => k + ' (' + v + ')').join(' · '));
   /* Ce qui reste dehors, NOMMÉ. C'est la seule façon de voir qu'une famille entière manque. */
   if (perdus.length) {
-    console.log('\n⚠️  ' + perdus.length + ' fichier(s) d\'une famille CONNUE n\'ont pas été pris — chacun est un signe qui existe :');
+    console.log('\n⚠️  ' + perdus.length + ' fichier(s) d\'une famille CONNUE n\'ont pas été pris — à vérifier un par un (essai de tournage ? autre sens de « LSF » ? vrai signe manquant ?) :');
     perdus.sort().forEach((x) => console.log('     ' + x));
   } else console.log('\n✅ Aucun fichier d\'une famille connue n\'a été laissé de côté.');
   const dehors = Object.entries(familleEcartee).sort((a, b) => b[1] - a[1]).slice(0, 12);
