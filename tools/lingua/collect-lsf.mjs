@@ -101,9 +101,12 @@ function motDuTitre(titre) {
   let mot = null, signeur = null;
   const m = t.match(LL);
   if (m) {
-    /* « <signeur>-<mot> » : le mot est après le DERNIER tiret. Les noms de signeurs peuvent
-       contenir des tirets (Yug-MRV), les mots contiennent des espaces (« adresse email »). */
-    const reste = m[1]; const coupe = reste.lastIndexOf('-');
+    /* « <signeur>-<mot> » : on coupe au PREMIER tiret.
+       Couper au dernier semblait plus sûr — c'était faux, et dangereusement : les mots
+       français à trait d'union se faisaient amputer. « pique-nique » devenait « nique »,
+       « après-midi » devenait « midi », « week-end » devenait « end ». Douze mots faux
+       auraient été enseignés avec la vidéo d'un autre signe. */
+    const reste = m[1]; const coupe = reste.indexOf('-');
     if (coupe < 1) return null;
     signeur = reste.slice(0, coupe).trim(); mot = reste.slice(coupe + 1).trim();
   } else {
@@ -138,13 +141,20 @@ async function infos(titres) {
     Object.values(j.query.pages || {}).forEach((p) => {
       const ii = p.imageinfo && p.imageinfo[0]; if (!ii) return;
       const em = ii.extmetadata || {};
+      /* L'API colle des paramètres de suivi (?utm_source=…) au bout des adresses. On les
+         enlève : ce qu'on garde doit être l'adresse propre du fichier, rien d'autre. */
+      const propre = (u) => (u ? String(u).split('?')[0] : null);
       out.set(p.title, {
-        url: ii.url,
-        vignette: ii.thumburl || null,
+        url: propre(ii.url),
+        vignette: propre(ii.thumburl),
         page: ii.descriptionurl,
         mime: ii.mime || '',
         licence: (em.LicenseShortName && em.LicenseShortName.value) || '',
-        auteur: ((em.Artist && em.Artist.value) || '').replace(/<[^>]*>/g, '').trim().slice(0, 120),
+        /* Les licences CC BY exigent de citer l'auteur. Quand Commons ne le donne pas dans
+           ses métadonnées, on prendra le nom du signeur inscrit dans le nom du fichier, et
+           on renvoie de toute façon vers la page d'origine, qui porte le crédit complet. */
+        auteur: ((em.Artist && em.Artist.value) || (em.Credit && em.Credit.value) || '')
+          .replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120),
       });
     });
   }
@@ -232,7 +242,7 @@ async function infos(titres) {
     if (!r) { ecartesTitre++; continue; }
     const fiche = { mot: r.mot, type, signeur: r.signeur || null, url: m.url,
       vignette: vignettes[r.mot] || m.vignette || null, page: m.page,
-      licence: m.licence, auteur: m.auteur, titre };
+      licence: m.licence, auteur: m.auteur || r.signeur || '', titre };
     const dejaLa = signes[r.mot];
     if (!dejaLa) { signes[r.mot] = fiche; continue; }
     /* Un même mot signé par plusieurs personnes, c'est une richesse : on garde la vidéo en
