@@ -1791,6 +1791,26 @@ Tu donnes tes vidéos brutes, l'app te rend la vidéo montée. Un seul bouton.
 | `services/kdmc-crea-ai/worker.js` | Nouvelle porte `/transcribe` : la parole devient du texte (IA gratuite Cloudflare). Seul un petit extrait sonore part, jamais la vidéo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
 | `tests/verify-crea-montage-auto.mjs` | Preuve (29 vérifs) : 2 vraies vidéos fabriquées puis montées, blancs coupés mesurés, seuil qui s'adapte au volume, hésitations retirées, couleurs corrigées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-montage-auto.mjs) |
 
+### Lingua v2.123 — 🤟 la vraie langue des signes française (2026-08-13)
+
+Un 16ᵉ cours. **545 signes**, chacun étant une **vraie vidéo** d'une vraie personne qui signe,
+publiée sous licence libre sur Wikimedia Commons (l'essentiel vient de Lingua Libre, où des
+gens signent bénévolement). **Rien n'est inventé** : je ne connais pas la LSF, donc un signe
+que j'aurais imaginé serait faux — et une personne sourde le verrait tout de suite.
+
+Ce que tu trouves dedans : les leçons (mêmes thèmes que les autres langues), **l'alphabet
+dactylologique A-Z** pour épeler un prénom, et un **dictionnaire cherchable** des 545 signes
+avec un second signeur quand il existe. Aucun son : une langue des signes se regarde.
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/lingua/collect-lsf.mjs` | Va chercher les signes sur Wikimedia Commons — licences libres uniquement, auteur et source gardés | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/collect-lsf.mjs) |
+| `tools/lingua/build-lsf-cours.mjs` | Construit le cours à partir des signes récoltés | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/build-lsf-cours.mjs) |
+| `lingua/lsf-sources.json` | La récolte brute : 545 signes + 26 lettres, avec licence et page d'origine | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/lsf-sources.json) |
+| `lingua/data-lsf.js` | Le cours engendré (ne pas éditer à la main) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/data-lsf.js) |
+| `tools/lingua/verify-lsf.mjs` | La garde : aucun signe inventé, aucune question qui donne sa réponse, aucun son | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-lsf.mjs) |
+| `.github/workflows/lingua-lsf.yml` | Va rechercher de nouveaux signes, à la demande et 1×/mois | [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/lingua-lsf.yml) |
+
 ### Lingua v2.121 — le dossier de chaque langue (2026-08-13)
 
 Tu ouvres 📜 sur l'accueil et tu as, pour la langue que tu apprends : son histoire, quatre
