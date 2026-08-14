@@ -824,6 +824,8 @@
         <div class="toolrow" id="magicStyles"></div>
         <div class="textedit"><input id="magicCustom" placeholder="Ou décris ce que tu veux (ex: en pilote de F1…)" maxlength="140"></div>
         <div style="padding:2px 14px"><button class="bigbtn ghost" onclick="Magic.custom()">🪄 Créer ma transformation</button></div>
+        <div style="padding:2px 14px"><button class="bigbtn ghost" onclick="Magic.pasMoi()">🙅 Ce n'est pas moi — refaire avec ma photo</button></div>
+        <div class="hint">Pour que ça te ressemble : une photo <b>de face</b>, <b>visage bien visible</b> et <b>bien éclairé</b>. De profil, de loin ou dans le noir, l'IA invente.</div>
       </div>
 
       <div id="magicDuo" class="hidden">
@@ -1078,7 +1080,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.16.0';
+var APP_VER='v9.18.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -5628,12 +5630,20 @@ var Magic=(function(){
       toast('Photo prête — choisis un style ✨',1500);
     };im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);}
   /* --- 1) Transformations 1-clic (Gemini image, gratuit) --- */
-  var _lastWho='',_lastRecreated=false;
-  function apply(preset,label,custom){
+  var _lastWho='',_lastRecreated=false,_essai=0,_dernier=null;
+  /* Consigne de ressemblance : envoyée au serveur pour qu'il garde TON visage.
+     Si le serveur ne connaît pas ces champs il les ignore — aucun risque. */
+  var GARDE_VISAGE='Garde exactement le même visage, les mêmes traits et la même '
+    +'personne que sur la photo fournie. Ne remplace pas la personne.';
+  function apply(preset,label,custom,_retry){
     if(!photoData){toast('Choisis une photo d\'abord');return;}
-    if(busy){toast('Un traitement est déjà en cours…');return;}
-    busy=true;aiShow('L\'IA transforme ta photo… ✨');hint('');
+    if(busy&&!_retry){toast('Un traitement est déjà en cours…');return;}
+    _dernier={preset:preset,label:label,custom:custom};
+    if(!_retry)_essai=0;
+    busy=true;aiShow(_retry?'Je refais avec TA photo… 🙅':'L\'IA transforme ta photo… ✨');hint('');
     var body=custom?{image:photoData,custom:custom}:{image:photoData,preset:preset};
+    body.keep_face=true; body.identity='preserve';     /* ignoré si inconnu du serveur */
+    if(_retry)body.custom=(custom||'')+' '+GARDE_VISAGE;
     var to=setTimeout(function(){},1);
     fetch(AI_URL+'/magic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       .then(function(r){var ct=r.headers.get('content-type')||'';
@@ -5642,23 +5652,88 @@ var Magic=(function(){
         _lastRecreated=(r.headers.get('x-crea-fallback')==='recreated');
         return r.blob();})
       .then(function(b){clearTimeout(to);busy=false;aiHide();Credit.ok();
+        /* ⚠️ « recreated » = le serveur n'a PAS retouché ta photo, il a fabriqué
+           une image à partir de rien → ce n'est PAS toi dessus. On refait une
+           fois tout seul, et si ça recommence on le DIT au lieu d'annoncer
+           « transformation prête » (Kevin 2026-08-12 : « ce n'est pas moi »). */
+        if(_lastRecreated&&_essai<1){
+          _essai++; apply(preset,label,custom,true); return;
+        }
         if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
         img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
-        hint('✅ '+(label||'Transformation')
-          +(_lastRecreated?' — attention : ta photo n\'a pas pu être retouchée, l\'IA de secours a recréé une image à partir de zéro.'
-                          :(_lastWho?' ('+_lastWho+')':''))
-          +' Tu peux enregistrer ou essayer un autre style.');
+        if(_lastRecreated){
+          hint('🙅 Ce n\'est PAS toi sur cette image : l\'IA n\'a pas réussi à retoucher ta photo, '
+              +'elle en a inventé une. Refais l\'essai, ou prends une photo de face bien éclairée.');
+          openExport('🙅 Ce n\'est pas toi','L\'IA n\'a pas pu partir de ta photo : elle a inventé une image. '
+            +'Je ne te la présente pas comme ta transformation.',[
+            {label:'🔁 Refaire avec ma photo',fn:function(){closeSheet();_essai=0;apply(preset,label,custom,true);}},
+            {label:'📷 Utiliser une autre photo',ghost:true,fn:function(){closeSheet();$('fileMagicPhoto').click();}},
+            {label:'💾 La garder quand même',ghost:true,fn:function(){
+              shareOrSave(b,'image-ia.png','Image IA (pas ma photo)');closeSheet();}},
+            {label:'Fermer',ghost:true,fn:closeSheet}
+          ]);
+          toast('🙅 Ce n\'est pas toi — l\'IA a inventé une image',4200);
+          return;
+        }
+        hint('✅ '+(label||'Transformation')+(_lastWho?' ('+_lastWho+')':'')
+          +' — si ce n\'est pas toi, touche « 🙅 Ce n\'est pas moi ».');
         openExport((label||'Transformation')+' prête ✨','Enregistre, repars de ce résultat, ou essaie un autre style.',[
           {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'magie-ia.png','Ma création IA');closeSheet();}},
+          {label:'🙅 Ce n\'est pas moi — refaire',ghost:true,fn:function(){closeSheet();pasMoi();}},
           {label:'♻️ Continuer depuis ce résultat',ghost:true,fn:function(){photoData=null;var i2=new Image();i2.onload=function(){
               var c=document.createElement('canvas');c.width=i2.naturalWidth;c.height=i2.naturalHeight;c.getContext('2d').drawImage(i2,0,0);
               photoData=c.toDataURL('image/jpeg',0.9);toast('On repart de cette image ✨',1400);};i2.src=outUrl;closeSheet();}}
         ]);
       })
       .catch(function(e){clearTimeout(to);busy=false;aiHide();
+        /* Le serveur a REFUSÉ d'inventer quelqu'un d'autre (notre demande) :
+           on l'explique et on laisse Kevin décider. */
+        if(/face_edit_failed/.test(String(e&&e.message))){
+          hint('🙅 L\'IA n\'a pas pu partir de ta photo pour ce style. Réessaie, change de photo, '
+              +'ou demande une image inventée (ce ne sera pas toi).');
+          openExport('🙅 Impossible de partir de ta photo',
+            'Je préfère ne rien inventer plutôt que de te rendre quelqu\'un d\'autre.',[
+            {label:'🔁 Réessayer',fn:function(){closeSheet();_essai=0;apply(preset,label,custom,true);}},
+            {label:'📷 Utiliser une autre photo',ghost:true,fn:function(){closeSheet();$('fileMagicPhoto').click();}},
+            {label:'🎨 Créer une image inventée quand même',ghost:true,fn:function(){closeSheet();applyInvente(preset,label,custom);}},
+            {label:'Fermer',ghost:true,fn:closeSheet}
+          ]);
+          toast('L\'IA n\'a pas pu partir de ta photo',3600);return;
+        }
         /* 100 % IA : sans crédit il n'existe AUCUNE version correcte → on attend. */
         if(aiFail(e,{quoi:'cette transformation',hint:hint,relancer:function(){apply(preset,label,custom);}}))return;
         var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* Kevin a demandé explicitement une image inventée : on l'autorise côté
+     serveur (allow_recreate) — et on le lui redira sur le résultat. */
+  function applyInvente(preset,label,custom){
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    busy=true;aiShow('🎨 L\'IA invente une image…');
+    var body=custom?{image:photoData,custom:custom}:{image:photoData,preset:preset};
+    body.allow_recreate=true;
+    fetch(AI_URL+'/magic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){var ct=r.headers.get('content-type')||'';
+        if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||('http_'+r.status));},function(){throw new Error('http_'+r.status);});
+        return r.blob();})
+      .then(function(b){busy=false;aiHide();
+        if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
+        img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
+        hint('🎨 Image inventée par l\'IA — ce n\'est pas toi dessus (tu l\'as demandée).');
+        openExport('Image inventée 🎨','Ce n\'est pas ta photo transformée : l\'IA a créé une image de zéro.',[
+          {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'image-ia.png','Image IA');closeSheet();}},
+          {label:'Fermer',ghost:true,fn:closeSheet}
+        ]);})
+      .catch(function(e){busy=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* « Ce n'est pas moi » : Kevin doit pouvoir le dire en 1 tap, même quand le
+     serveur n'a rien signalé — on refait le MÊME style en insistant pour que
+     ton visage soit conservé. */
+  function pasMoi(){
+    if(!_dernier){toast('Fais d\'abord une transformation ✨',2600);return;}
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    _essai=0;
+    toast('🙅 Je refais en gardant TON visage…',2400);
+    apply(_dernier.preset,_dernier.label,_dernier.custom,true);
   }
   /* --- 1bis) 👥 À DEUX : réunir deux photos dans une même scène (Hype AI) --- */
   function duo(){
@@ -5669,13 +5744,26 @@ var Magic=(function(){
     fetch(AI_URL+'/duo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,image2:photo2,preset:duoStyle})})
       .then(function(r){var ct=r.headers.get('content-type')||'';
         if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||('http_'+r.status));},function(){throw new Error('http_'+r.status);});
+        _lastRecreated=(r.headers.get('x-crea-fallback')==='recreated');
         return r.blob();})
-      .then(function(b){busy=false;$('magicDuoBtn').disabled=false;aiHide();
+      .then(function(b){busy=false;$('magicDuoBtn').disabled=false;aiHide();Credit.ok();
         if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
         img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
+        /* même règle qu'au-dessus : une image inventée n'est pas « votre photo » */
+        if(_lastRecreated){
+          hint('🙅 Ce ne sont PAS vos visages : l\'IA n\'a pas pu partir de vos photos, elle en a inventé une.');
+          openExport('🙅 Ce n\'est pas vous','L\'IA a inventé une image au lieu de partir de vos deux photos.',[
+            {label:'🔁 Réessayer',fn:function(){closeSheet();duo();}},
+            {label:'📷 Changer une photo',ghost:true,fn:function(){closeSheet();$('fileMagicPhoto2').click();}},
+            {label:'💾 La garder quand même',ghost:true,fn:function(){shareOrSave(b,'image-ia.png','Image IA');closeSheet();}},
+            {label:'Fermer',ghost:true,fn:closeSheet}
+          ]);
+          toast('🙅 Ce n\'est pas vous — l\'IA a inventé une image',4200);return;
+        }
         hint('✅ Photo à deux prête.');
         openExport('Vous êtes réunis 👥','La photo est prête — tu peux l\'enregistrer.',[
-          {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'a-deux.png','Notre photo');closeSheet();}}
+          {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'a-deux.png','Notre photo');closeSheet();}},
+          {label:'🔁 Ce n\'est pas nous — refaire',ghost:true,fn:function(){closeSheet();duo();}}
         ]);})
       .catch(function(e){busy=false;$('magicDuoBtn').disabled=false;aiHide();
         if(aiFail(e,{quoi:'la photo à deux',hint:hint,relancer:duo}))return;
@@ -6035,7 +6123,7 @@ var Magic=(function(){
       im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);},
     _song:function(f){songFile=f;$('magicSingHint').textContent='🎵 Son choisi : '+(f.name||'audio').slice(0,40)+' — touche « Faire chanter ma photo ».';toast('Musique prête 🎵',1400);},
     custom:function(){var v=$('magicCustom').value.trim();if(!v){toast('Décris ce que tu veux');return;}apply(null,v,v);},
-    sing:sing,song:song,playInstru:playInstru,duo:duo,record:record,studio:studio,
+    sing:sing,song:song,playInstru:playInstru,duo:duo,record:record,studio:studio,pasMoi:pasMoi,
     _songBlob:function(){return songBlob;},   /* lecture seule — sert aux tests automatiques */
     saveSong:function(){if(!songBlob){toast('Produis d\'abord le morceau');return;}
       shareOrSave(songBlob,((lastLyrics&&lastLyrics.title)||'ma-chanson').replace(/[^\w -]/g,'').slice(0,40)+'.wav','Mon morceau');},
