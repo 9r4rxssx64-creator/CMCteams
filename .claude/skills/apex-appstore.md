@@ -36,3 +36,13 @@ Skills vendorisés → prérequis vérifiés → build en CI sur `macos-latest` 
 d'abord** → App Store après validation de Kevin → rapport avec l'état RÉEL lu via `asc`.
 
 Version longue : `.claude/skills/appstore/SKILL.md`.
+
+## La chaîne existe déjà (2026-08-13)
+
+`mobile/apps.json` (3 apps figées) · `mobile/build-ios.mjs` (prépare le contenu, **vérifie
+les chemins absolus**) · `.github/workflows/ios-testflight.yml` (bouton, `macos-latest`) ·
+`tests/mobile-ios-config.test.mjs` (35 vérifs, dans `test:ci`).
+
+**Pièges connus** : (1) une app qui charge `/CMCteams/…` en absolu perd ces fichiers dans
+l'app native → `dupliquerSous` + contrôle au build ; (2) un `include` trop large embarquait
+**61 Mo** au lieu de 4,3. **L'identifiant Apple est figé** — le changer perd testeurs et avis.

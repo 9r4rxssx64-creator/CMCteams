@@ -2650,3 +2650,25 @@ dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
 → Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
 toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
 **Claude doit me le rappeler.**
+
+## 🍎 iPhone / App Store — 2 actions, une seule fois (2026-08-13)
+
+**Tout le reste est construit et vérifié.** Il ne manque que ce que je ne peux pas faire :
+
+1. **Compte Apple Developer** — 99 €/an → https://developer.apple.com/programs/enroll/
+   *(ta carte bancaire ; aucune automatisation possible)*
+2. **Clé d'accès API** → https://appstoreconnect.apple.com/access/integrations/api
+   → me donner **Issuer ID** + **Key ID** + le fichier **.p8**
+   ⚠️ le `.p8` ne se télécharge **qu'une seule fois**.
+
+Je les range en secrets GitHub (`ASC_ISSUER_ID`, `ASC_KEY_ID`, `ASC_PRIVATE_KEY`) :
+jamais dans le code, jamais affichés, effacés du runner après usage.
+
+**Ensuite, sans rien te demander** : je construis sur un Mac prêté par GitHub et j'envoie
+sur **TestFlight** → l'app s'installe sur ton iPhone comme une vraie app, sans attendre la
+validation d'Apple.
+
+**Honnête** : l'App Store *public* n'est pas garanti — Apple refuse les apps qui ne sont
+qu'un site emballé (règle 4.2). Nos 3 apps ont un vrai contenu propre, donc une chance
+réelle, mais la décision lui appartient.
+
