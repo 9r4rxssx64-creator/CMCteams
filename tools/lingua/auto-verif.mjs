@@ -33,6 +33,7 @@ const SCRIPTS = [
   { nom: 'La voix du monégasque dit juste (cas documentés)', cmd: ['tools/lingua/verify-mc-voix.mjs'] },
   { nom: 'La voix ne se dégrade plus question après question', cmd: ['tools/lingua/verify-voix.mjs', 'lingua'] },
   { nom: 'Histoire & anecdotes : toutes sourcées et bien branchées', cmd: ['tools/lingua/verify-histoires.mjs', 'lingua'] },
+  { nom: 'Langue des signes : aucun signe inventé, aucune question qui donne sa réponse', cmd: ['tools/lingua/verify-lsf.mjs', 'lingua'] },
   { nom: 'Aucune image demandée dans le vide (0 requête 404)', cmd: ['tools/lingua/verify-assets.mjs', 'lingua'] },
   { nom: 'Sources officielles : bien formées et branchées', cmd: ['tools/lingua/verify-sources.mjs', 'lingua'] },
   { nom: 'Moteur de voix du serveur', cmd: ['services/kdmc-router/voix-tts.test.mjs'] },
