@@ -142,13 +142,33 @@ function motDuTitre(titre) {
     if (!v) return null;
     mot = v[1].trim();
   }
-  /* Rejets : essais techniques de tournage, numéros, tout ce qui n'est pas un mot français. */
+  /* Rejets : essais techniques de tournage. */
   if (/\b(cam|px|spots?|sunny|light|no sun|test|essai)\b/i.test(mot)) return null;
-  if (/\d/.test(mot)) return null;
-  mot = mot.replace(/\s*\((r[ée]cit|discipline)\)\s*$/i, ' ($1)').trim();
-  if (!/^[A-Za-zÀ-ÿ' ()-]{2,40}$/.test(mot)) return null;
-  if (/^(video|file|image|photo|sign|signe|vocab|exo)$/i.test(mot)) return null;
-  return { mot: mot.toLowerCase(), signeur };
+
+  /* « (?) » : la personne qui a enregistré n'était PAS sûre du mot. On n'enseigne pas un
+     signe dont l'auteur lui-même doute. */
+  if (/\(\s*\?\s*\)/.test(mot)) return null;
+
+  /* « Histoire (2) », « journal (2) » : une DEUXIÈME prise du même mot, pas un mot nouveau.
+     On retient le mot de base et on garde la vidéo comme variante — voir le même signe deux
+     fois, c'est utile. Avant, le chiffre suffisait à faire jeter le fichier. */
+  let prise = 0;
+  const mp = mot.match(/^(.+?)\s*\((\d+)\)$/);
+  if (mp) { mot = mp[1].trim(); prise = Number(mp[2]); }
+  if (/\d/.test(mot)) return null;   // un chiffre AILLEURS reste un nom technique
+
+  /* Le jeu de caractères était trop étroit et jetait de vrais signes, dont les plus utiles :
+       · les mots-questions      « Où ? » « Pourquoi ? » « Quand ? » « Qui ? » « Quoi ? »
+       · l'écriture inclusive     « Ami·e » « Seul·e » « Préféré·e »
+       · un signe pour plusieurs mots  « Donner, rendre » « Ma, mes » « Son, sa, ses, leurs »
+       · nom ou verbe             « conseiller (n.) » « conseiller (v.) »
+       · les débuts de phrase     « Au bord de… » « … ou … »
+     Vingt-quatre signes bien réels disparaissaient dans un compteur. */
+  if (!/^[A-Za-zÀ-ÿ0-9'’ ()·,.…?!\/-]{2,60}$/.test(mot)) return null;
+  mot = mot.replace(/\s*[?!]+\s*$/, '').trim();   // le « ? » est de la ponctuation, pas le mot
+  if (mot.length < 2) return null;
+  if (/^(video|file|image|photo|sign|signe|vocab|exo|thumb)$/i.test(mot)) return null;
+  return { mot: mot.toLowerCase(), signeur, prise };
 }
 
 /* La lettre de l'alphabet dactylologique. Une seule série existe et elle est nette :
@@ -267,6 +287,10 @@ async function infos(titres) {
     if (v && m.licence && LIBRES.test(m.licence.trim())) vignettes[v[1].trim().toLowerCase()] = m.url;
   }
 
+  /* Les vidéos d'ENTRAÎNEMENT de la série LSF : « F et T » (deux lettres qu'on confond)
+     et « chiffres abc » (lettres et chiffres mélangés). Ce ne sont pas des signes de mots :
+     elles ont leur place à côté de l'alphabet, pas dans le dictionnaire. */
+  const exercices = [];
   const signes = {}; const alphabet = {}; const familleEcartee = {}; let ecartesLicence = 0, ecartesTitre = 0;
   /* Distinction qui change tout : un fichier rejeté HORS des familles connues est du bruit
      (un cargo « FSL Hamburg », une fête du logiciel libre au Portugal). Un fichier rejeté
@@ -283,6 +307,13 @@ async function infos(titres) {
     const type = /^video\//.test(m.mime) || /ogg/i.test(m.mime) ? 'video'
       : /^image\//.test(m.mime) ? 'image' : null;
     if (!type) { perdu(titre, 'type de fichier « ' + (m.mime || '?') + ' »'); continue; }
+
+    const exo = nu(titre).match(/^LSF Exo\s+(.+)$/i);
+    if (exo && type === 'video') {
+      exercices.push({ quoi: exo[1].trim(), url: m.url, page: m.page, licence: m.licence, auteur: m.auteur });
+      continue;
+    }
+    if (/^LSF (ExoThumb|VocabThumb)\s/i.test(nu(titre))) continue;   // vignettes : déjà utilisées comme image d'attente
 
     const lettre = lettreDuTitre(titre);
     if (lettre) {
@@ -304,6 +335,11 @@ async function infos(titres) {
       vignette: vignettes[r.mot] || m.vignette || null, page: m.page,
       licence: m.licence, auteur: m.auteur || r.signeur || '', titre };
     const dejaLa = signes[r.mot];
+    /* Une deuxième prise n'est jamais l'entrée principale : elle complète celle qui existe. */
+    if (dejaLa && r.prise) {
+      if ((dejaLa.variantes || []).length < 3) dejaLa.variantes = (dejaLa.variantes || []).concat([fiche]);
+      continue;
+    }
     if (!dejaLa) { signes[r.mot] = fiche; continue; }
     /* Un même mot signé par plusieurs personnes, c'est une richesse : on garde la vidéo en
        premier (un signe est un mouvement) et on range les autres comme variantes — voir
@@ -322,11 +358,11 @@ async function infos(titres) {
     d_ou: 'Wikimedia Commons, licences libres uniquement (CC0 / CC BY / CC BY-SA / domaine public)',
     regle: 'Aucun signe inventé : chaque entrée porte son fichier d\'origine, son auteur et sa licence.',
     categories: parCat,
-    alphabet, signes,
+    alphabet, signes, exercices,
   };
   const tous = Object.values(signes);
   console.log('\n📊 Résultat : ' + Object.keys(alphabet).length + ' lettre(s) d\'alphabet · '
-    + tous.length + ' signe(s) attesté(s)');
+    + tous.length + ' signe(s) attesté(s) · ' + exercices.length + ' vidéo(s) d\'entraînement');
   console.log('   dont ' + tous.filter((s) => s.type === 'video').length + ' en vidéo · '
     + tous.filter((s) => (s.variantes || []).length).length + ' avec un second signeur');
   console.log('   écartés : ' + ecartesLicence + ' (licence non libre) · ' + ecartesTitre + ' (nom de fichier hors des familles connues — on ne devine pas)');
