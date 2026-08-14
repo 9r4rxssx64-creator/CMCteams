@@ -1,11 +1,11 @@
 {
   "_doc": "SOURCE UNIQUE des apps iPhone (App Store / TestFlight) — Kevin 2026-08-13 « Go tout ». Chaque entrée décrit COMMENT emballer une app web du domaine en vraie app iOS. Le contenu web est EMBARQUÉ (webDir), pas chargé depuis internet : l'app marche hors-ligne et n'est pas une coquille vide (Apple règle 4.2). Modifié ici = modifié partout : le build (mobile/build-ios.mjs) et le garde-fou (tests/mobile-ios-config.test.mjs) lisent CE fichier.",
-  "_bundleId": "Format inverse du domaine kd-mc.com. À NE PLUS JAMAIS CHANGER une fois une app publiée : l'identifiant est la clé de l'app côté Apple, le modifier crée une app DIFFÉRENTE et fait perdre les testeurs, les avis et les achats.",
+  "_bundleId": "Format inverse du domaine, SANS TIRET : Capacitor et Apple exigent la forme « paquet Java » (lettres, chiffres, points ; aucun tiret). Le premier essai com.kd-mc.* a été REFUSÉ au build : « Invalid App ID … Must be in Java package form with no dashes » (run 31762220281, 2026-08-14). À NE PLUS JAMAIS CHANGER une fois une app publiée : l'identifiant est la clé de l'app chez Apple, le modifier crée une app DIFFÉRENTE et fait perdre testeurs, avis et achats. Aucune n'est publiée à ce jour, donc ce changement-ci est sans conséquence — c'est le dernier qui le soit.",
   "apps": [
     {
       "id": "cmcteams",
       "name": "CMCteams",
-      "bundleId": "com.kd-mc.cmcteams",
+      "bundleId": "com.kdmc.cmcteams",
       "webDir": ".",
       "include": [
         "index.html",
@@ -26,7 +26,7 @@
     {
       "id": "apex-chat",
       "name": "Apex Chat",
-      "bundleId": "com.kd-mc.apexchat",
+      "bundleId": "com.kdmc.apexchat",
       "webDir": "messaging-app",
       "include": [
         "index.html",
@@ -43,7 +43,7 @@
     {
       "id": "lingua",
       "name": "KDMC Lingua",
-      "bundleId": "com.kd-mc.lingua",
+      "bundleId": "com.kdmc.lingua",
       "webDir": "lingua",
       "include": [
         "index.html",

@@ -15,7 +15,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fichiersRetenus } from '../mobile/build-ios.mjs';
+import { fichiersRetenus, identifiantValide } from '../mobile/build-ios.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CFG = JSON.parse(readFileSync(join(ROOT, 'mobile/apps.json'), 'utf8'));
@@ -26,16 +26,21 @@ const fails = [];
 const ok = (c, m) => (c ? pass++ : fails.push(m));
 
 /* ── 1. Identifiants figés — ne JAMAIS changer après publication ─────────────── */
+/* SANS TIRET : Capacitor et Apple exigent la forme « paquet Java ». Le 1er essai
+   com.kd-mc.* a été refusé au build (run 31762220281) — corrigé AVANT toute publication,
+   donc sans conséquence. Après publication, changer un identifiant crée une app
+   DIFFÉRENTE chez Apple : testeurs, avis et achats perdus. D'où le gel ici. */
 const ATTENDUS = {
-  cmcteams: 'com.kd-mc.cmcteams',
-  'apex-chat': 'com.kd-mc.apexchat',
-  lingua: 'com.kd-mc.lingua',
+  cmcteams: 'com.kdmc.cmcteams',
+  'apex-chat': 'com.kdmc.apexchat',
+  lingua: 'com.kdmc.lingua',
 };
 ok(CFG.apps.length === 3, `3 apps déclarées (vu ${CFG.apps.length})`);
 for (const a of CFG.apps) {
   ok(ATTENDUS[a.id] === a.bundleId,
     `${a.id} : identifiant Apple attendu ${ATTENDUS[a.id]}, trouvé ${a.bundleId} — le changer perd testeurs/avis/achats`);
-  ok(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(a.bundleId), `${a.id} : identifiant Apple mal formé`);
+  ok(identifiantValide(a.bundleId), `${a.id} : identifiant Apple mal formé (forme paquet Java, aucun tiret)`);
+  ok(!a.bundleId.includes('-'), `${a.id} : un TIRET dans l'identifiant — Capacitor refuse le build`);
   ok(!!a.name && !!a.site && !!a.categorieApple, `${a.id} : nom / site / catégorie renseignés`);
   /* Apple refuse les coquilles vides (règle 4.2) : on exige une justification ÉCRITE. */
   ok((a.pourquoiPasUneCoquille || '').length > 80,
