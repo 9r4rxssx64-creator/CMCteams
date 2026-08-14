@@ -81,32 +81,50 @@ async function fichiersDe(cat, profondeur = 1) {
   return fichiers;
 }
 
-/* Le mot français que le fichier illustre. On n'extrait QUE si c'est net : un titre ambigu
-   est écarté (on ne devine pas un signe). */
-function motDuTitre(titre) {
-  let t = titre.replace(/^File:/, '').replace(/\.(webm|ogv|mp4|gif|jpe?g|png|svg)$/i, '');
-  t = t.replace(/[_]+/g, ' ').trim();
-  const essais = [
-    /^LSF\s*[-–—:]\s*(.+)$/i,                        // « LSF - bonjour »
-    /^(.+?)\s+en\s+LSF$/i,                            // « bonjour en LSF »
-    /^(.+?)\s*[-–—]\s*langue des signes fran[cç]aise$/i,
-    /^Langue des signes fran[cç]aise\s*[-–—:]\s*(.+)$/i,
-    /^French Sign Language\s*[-–—:]\s*(.+)$/i,
-    /^(.+?)\s*\(LSF\)$/i,
-  ];
-  for (const re of essais) { const m = t.match(re); if (m) t = m[1].trim(); }
-  t = t.replace(/^\d+\s*[-–—.]\s*/, '').replace(/\s*\(.*\)$/, '').trim();
-  /* un mot ou une expression courte, en lettres — sinon on ne sait pas ce que c'est */
-  if (!/^[A-Za-zÀ-ÿ' -]{2,40}$/.test(t)) return null;
-  if (/^(video|file|image|photo|sign|signe|test)$/i.test(t)) return null;
-  return t.toLowerCase();
+function nu(titre) {
+  return titre.replace(/^File:/, '').replace(/_/g, ' ')
+    .replace(/\.(webm|ogv|ogg|mp4|gif|jpe?g|png|svg)$/i, '').trim();
 }
 
-/* La lettre de l'alphabet dactylologique, quand le fichier en illustre une. */
+/* Le mot français que le fichier illustre.
+   ATTENTION — ces règles ne sont PAS écrites de mémoire : elles viennent du passage
+   `--titres`, qui a montré comment les fichiers s'appellent réellement sur Commons.
+   Deux familles seulement, et rien d'autre. Un nom hors famille est ÉCARTÉ : on ne devine
+   jamais quel signe montre une vidéo, sinon on finit par enseigner un geste faux.
+
+     · « LL-Q33302 (fsl)-Laura Jauvert-Banane »   → Lingua Libre : signeur, puis le mot
+     · « LSF Vocab configuration »                → série de vocabulaire LSF
+*/
+const LL = /^LL-Q33302 \(fsl\)-(.+)$/i;          // Q33302 = la LSF sur Wikidata, fsl = son code
+function motDuTitre(titre) {
+  const t = nu(titre);
+  let mot = null, signeur = null;
+  const m = t.match(LL);
+  if (m) {
+    /* « <signeur>-<mot> » : le mot est après le DERNIER tiret. Les noms de signeurs peuvent
+       contenir des tirets (Yug-MRV), les mots contiennent des espaces (« adresse email »). */
+    const reste = m[1]; const coupe = reste.lastIndexOf('-');
+    if (coupe < 1) return null;
+    signeur = reste.slice(0, coupe).trim(); mot = reste.slice(coupe + 1).trim();
+  } else {
+    const v = t.match(/^LSF Vocab\s+(.+)$/i);
+    if (!v) return null;
+    mot = v[1].trim();
+  }
+  /* Rejets : essais techniques de tournage, numéros, tout ce qui n'est pas un mot français. */
+  if (/\b(cam|px|spots?|sunny|light|no sun|test|essai)\b/i.test(mot)) return null;
+  if (/\d/.test(mot)) return null;
+  mot = mot.replace(/\s*\((r[ée]cit|discipline)\)\s*$/i, ' ($1)').trim();
+  if (!/^[A-Za-zÀ-ÿ' ()-]{2,40}$/.test(mot)) return null;
+  if (/^(video|file|image|photo|sign|signe|vocab|exo)$/i.test(mot)) return null;
+  return { mot: mot.toLowerCase(), signeur };
+}
+
+/* La lettre de l'alphabet dactylologique. Une seule série existe et elle est nette :
+   « LSF LettreA.jpg » … « LSF LettreZ.jpg ». On n'accepte QUE celle-là — une gravure
+   ancienne ou une main isolée ne dit pas de façon sûre quelle lettre elle montre. */
 function lettreDuTitre(titre) {
-  const t = titre.replace(/^File:/, '').replace(/_/g, ' ');
-  const m = t.match(/(?:lettre|letter|alphabet|dactylolog\w*)[^A-Za-z]{0,6}([A-Za-z])\b/i)
-        || t.match(/\bLSF\s+([A-Za-z])\b/i);
+  const m = nu(titre).match(/^LSF Lettre\s?([A-Za-z])$/i);
   return m ? m[1].toUpperCase() : null;
 }
 
@@ -186,22 +204,46 @@ async function infos(titres) {
     return;
   }
 
+  /* Les vignettes de la série « LSF VocabThumb <mot> » servent d'image d'attente à la vidéo
+     du même mot : on les met de côté d'abord, puis on les rattache. */
+  const vignettes = {};
+  for (const [titre, m] of meta) {
+    const v = nu(titre).match(/^LSF VocabThumb\s+(.+)$/i);
+    if (v && m.licence && LIBRES.test(m.licence.trim())) vignettes[v[1].trim().toLowerCase()] = m.url;
+  }
+
   const signes = {}; const alphabet = {}; let ecartesLicence = 0, ecartesTitre = 0;
   for (const [titre, m] of meta) {
     if (!m.licence || !LIBRES.test(m.licence.trim())) { ecartesLicence++; continue; }
-    const lettre = lettreDuTitre(titre);
-    const type = /^video\//.test(m.mime) ? 'video' : /^image\//.test(m.mime) ? 'image' : null;
+    /* Les .ogv de Commons sont annoncés « application/ogg » : sans cette ligne, 30 vidéos
+       de vocabulaire étaient jetées en silence alors qu'elles sont parfaitement valables. */
+    const type = /^video\//.test(m.mime) || /ogg/i.test(m.mime) ? 'video'
+      : /^image\//.test(m.mime) ? 'image' : null;
     if (!type) continue;
-    if (lettre && /alphabet|dactylolog|fingerspell|lettre|letter/i.test(titre)) {
-      if (!alphabet[lettre] || (type === 'image' && alphabet[lettre].type === 'video'))
+
+    const lettre = lettreDuTitre(titre);
+    if (lettre) {
+      if (!alphabet[lettre])
         alphabet[lettre] = { lettre, type, url: m.url, vignette: m.vignette, page: m.page, licence: m.licence, auteur: m.auteur, titre };
       continue;
     }
-    const mot = motDuTitre(titre);
-    if (!mot) { ecartesTitre++; continue; }
-    /* une seule entrée par mot : on préfère la vidéo (un signe est un mouvement) */
-    if (!signes[mot] || (type === 'video' && signes[mot].type === 'image'))
-      signes[mot] = { mot, type, url: m.url, vignette: m.vignette, page: m.page, licence: m.licence, auteur: m.auteur, titre };
+
+    const r = motDuTitre(titre);
+    if (!r) { ecartesTitre++; continue; }
+    const fiche = { mot: r.mot, type, signeur: r.signeur || null, url: m.url,
+      vignette: vignettes[r.mot] || m.vignette || null, page: m.page,
+      licence: m.licence, auteur: m.auteur, titre };
+    const dejaLa = signes[r.mot];
+    if (!dejaLa) { signes[r.mot] = fiche; continue; }
+    /* Un même mot signé par plusieurs personnes, c'est une richesse : on garde la vidéo en
+       premier (un signe est un mouvement) et on range les autres comme variantes — voir
+       un deuxième signeur, c'est comprendre ce qui compte vraiment dans le geste. */
+    if (type === 'video' && dejaLa.type === 'image') {
+      fiche.variantes = (dejaLa.variantes || []).concat([dejaLa]).slice(0, 2);
+      delete dejaLa.variantes; signes[r.mot] = fiche;
+    } else if ((dejaLa.variantes || []).length < 2 && fiche.signeur !== dejaLa.signeur) {
+      dejaLa.variantes = (dejaLa.variantes || []).concat([fiche]);
+    }
   }
 
   const res = {
@@ -212,10 +254,18 @@ async function infos(titres) {
     categories: parCat,
     alphabet, signes,
   };
+  const tous = Object.values(signes);
   console.log('\n📊 Résultat : ' + Object.keys(alphabet).length + ' lettre(s) d\'alphabet · '
-    + Object.keys(signes).length + ' signe(s) attesté(s)');
-  console.log('   écartés : ' + ecartesLicence + ' (licence non libre) · ' + ecartesTitre + ' (titre trop ambigu pour savoir quel mot c\'est)');
-  const exemples = Object.keys(signes).slice(0, 12);
+    + tous.length + ' signe(s) attesté(s)');
+  console.log('   dont ' + tous.filter((s) => s.type === 'video').length + ' en vidéo · '
+    + tous.filter((s) => (s.variantes || []).length).length + ' avec un second signeur');
+  console.log('   écartés : ' + ecartesLicence + ' (licence non libre) · ' + ecartesTitre + ' (nom de fichier hors des familles connues — on ne devine pas)');
+  const parSigneur = {}; tous.forEach((s) => { const k = s.signeur || '(série LSF Vocab)'; parSigneur[k] = (parSigneur[k] || 0) + 1; });
+  console.log('   signeurs : ' + Object.entries(parSigneur).sort((a, b) => b[1] - a[1])
+    .slice(0, 8).map(([k, v]) => k + ' (' + v + ')').join(' · '));
+  const parLicence = {}; tous.forEach((s) => { parLicence[s.licence] = (parLicence[s.licence] || 0) + 1; });
+  console.log('   licences : ' + Object.entries(parLicence).map(([k, v]) => k + ' (' + v + ')').join(' · '));
+  const exemples = Object.keys(signes).sort().slice(0, 20);
   if (exemples.length) console.log('   exemples : ' + exemples.join(', '));
   if (Object.keys(alphabet).length) console.log('   lettres  : ' + Object.keys(alphabet).sort().join(' '));
 
