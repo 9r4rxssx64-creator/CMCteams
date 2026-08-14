@@ -62,7 +62,7 @@ const t4 = sansF.length === 0;
 console.log((t4 ? '✅' : '❌') + ' 4. FONCTION écrite ET visible en 390px pour les 9 ' + (sansF.length ? '— sans: ' + sansF.map(x => x.nom) : ''));
 const t5 = (r.liens.find(l => l.nom === 'FilePursuit') || {}).warn.includes('⚠');
 console.log((t5 ? '✅' : '❌') + ' 5. avertissement légal sur FilePursuit');
-const t6 = r.compteur.includes('129 outils') && r.nbCats === 19;
+const t6 = r.compteur.includes('134 outils') && r.nbCats === 20;
 console.log((t6 ? '✅' : '❌') + ' 6. compteur exact : « ' + r.compteur + ' » / ' + r.nbCats + ' catégories');
 
 // recherche par FONCTION (pas par nom)
@@ -81,10 +81,32 @@ console.log((t8 ? '✅' : '❌') + ' 8. « codec » (mot présent UNIQUEMENT dan
 const t9 = errors.length === 0;
 console.log((t9 ? '✅' : '❌') + ' 9. 0 erreur JS ' + (errors.join(' | ') || ''));
 
+/* v2.6 — catégorie « Numéro de téléphone » : défensive, fonction visible, garde-fou légal. */
+await page.fill('#q', '');
+await page.waitForTimeout(300);
+const tel = await page.evaluate(() => {
+  const cats = [...document.querySelectorAll('.cat h3')].map(h => h.textContent.trim());
+  const idx = cats.findIndex(c => c.includes('Numéro de téléphone'));
+  const bloc = document.querySelectorAll('.cat')[idx];
+  if (!bloc) return { ok: false, liens: [] };
+  return { ok: true, liens: [...bloc.querySelectorAll('a.tool')].map(a => ({
+    nom: a.querySelector('.t').textContent.replace('↗', '').trim(),
+    href: a.getAttribute('href'),
+    fonction: a.querySelector('.d') ? a.querySelector('.d').textContent.trim() : '',
+    visible: a.querySelector('.d') ? getComputedStyle(a.querySelector('.d')).display !== 'none' : false,
+    warn: a.querySelector('.no') ? a.querySelector('.no').textContent.trim() : '',
+  })) };
+});
+const t10 = tel.ok && tel.liens.length === 5
+  && tel.liens.every(l => /^https:\/\//.test(l.href) && l.fonction && l.visible);
+console.log((t10 ? '✅' : '❌') + ' 10. catégorie 📞 : 5 liens, fonction visible en 390px (' + tel.liens.length + ')');
+const t11 = tel.liens.some(l => /RGPD|interdit/i.test(l.warn));
+console.log((t11 ? '✅' : '❌') + ' 11. garde-fou légal présent (enquêter sur un particulier = interdit)');
+
 console.log('\n--- Ce que Kevin verra ---');
-r.liens.forEach(l => console.log('  ' + l.nom + '\n     → ' + l.fonction));
+r.liens.concat(tel.liens).forEach(l => console.log('  ' + l.nom + '\n     → ' + l.fonction));
 
 await browser.close(); srv.close();
-const ok = t1 && t2 && t3 && t4 && t5 && t6 && t7 && t8 && t9;
+const ok = t1 && t2 && t3 && t4 && t5 && t6 && t7 && t8 && t9 && t10 && t11;
 console.log(ok ? '\n✅ TOUT PROUVÉ' : '\n❌ ÉCHEC');
 process.exit(ok ? 0 : 1);

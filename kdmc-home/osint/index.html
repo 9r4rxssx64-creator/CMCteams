@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>OSINT — Centre d'investigation live — KDMC</title>
-<meta name="description" content="Centre OSINT live : carte des vols & séismes en direct, météo/webcams, compteurs temps réel, et boîte à outils d'investigation curée (129 outils).">
+<meta name="description" content="Centre OSINT live : carte des vols & séismes en direct, météo/webcams, compteurs temps réel, et boîte à outils d'investigation curée (134 outils).">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--bg:#070a12;--card:#0e1524;--card2:#0b1220;--line:#1e2a44;--dim:#8aa0c6;--txt:#e7eefc;--gold:#e8b830;--blue:#5aa9ff;--warn:#ff9a5a;--live:#43e08a;--red:#ff5a4d}
@@ -62,7 +62,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
     <a class="back" href="/worldmonitor/">🌍 World Monitor</a>
     <a class="back" href="/">← Accueil</a>
   </div>
-  <p class="sub">Centre d'investigation en sources ouvertes — <b>données live</b> (vols, séismes, cyber, ISS), carte temps réel, météo/webcams, et boîte à outils curée (129 outils).</p>
+  <p class="sub">Centre d'investigation en sources ouvertes — <b>données live</b> (vols, séismes, cyber, ISS), carte temps réel, météo/webcams, et boîte à outils curée (134 outils).</p>
 
   <!-- EN DIRECT -->
   <section class="card">
@@ -96,7 +96,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
 
   <!-- BOITE A OUTILS -->
   <section class="card" style="border:0;background:transparent">
-    <h2 style="border:0;padding:4px 2px 8px">🧰 Boîte à outils — <span style="color:var(--dim);font-weight:400">129 outils · 19 catégories (OSINT4ALL)</span></h2>
+    <h2 style="border:0;padding:4px 2px 8px">🧰 Boîte à outils — <span style="color:var(--dim);font-weight:400">134 outils · 20 catégories (OSINT4ALL)</span></h2>
     <input class="search" id="q" type="search" inputmode="search" placeholder="🔍 Filtrer un outil ou une catégorie…" autocomplete="off" autocapitalize="off" spellcheck="false">
     <p class="count" id="count"></p>
     <div class="note">⚖️ <b>Usage responsable.</b> Vérification d'information, sécurité, recherche publique. Respecte la vie privée et la loi. Les outils <span style="color:var(--warn)">en orange</span> (faciale, fuites) : cadre légitime et légal uniquement.</div>
@@ -104,7 +104,7 @@ a.tool .no{font-size:11px;color:var(--warn);margin-top:4px;line-height:1.35}
     <div class="empty" id="empty" style="display:none">Aucun outil ne correspond.</div>
   </section>
 </div>
-<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.5</span>
+<span class="ver" id="ver" title="Forcer la mise à jour">OSINT v2.6</span>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -250,6 +250,14 @@ var CATS=[
  {i:"🔓",n:"Fuites & compromissions",t:[
    {n:"Have I Been Pwned",u:"https://haveibeenpwned.com/"},{n:"DeHashed",u:"https://dehashed.com/",no:"Base de fuites — usage légitime uniquement."},
    {n:"Intelligence X",u:"https://intelx.io/"},{n:"DDoSecrets",u:"https://ddosecrets.com/",no:"Documents sensibles — attention légale."}]},
+ /* 📞 v2.6 — vérifier un numéro qui T'APPELLE (arnaque ?) ou TON propre numéro (fuite ?).
+    Défensif : ces liens servent à se protéger, pas à identifier quelqu'un. */
+ {i:"📞",n:"Numéro de téléphone",t:[
+   {n:"Signal-Arnaques",u:"https://www.signal-arnaques.com/",d:"Un numéro t'appelle : d'autres gens l'ont-ils signalé comme arnaque ? (France)"},
+   {n:"33700 (spam SMS)",u:"https://www.33700.fr/",d:"Signaler un SMS ou appel indésirable aux opérateurs français."},
+   {n:"Numverify",u:"https://numverify.com/",d:"Vérifier qu'un numéro existe vraiment : pays, opérateur, fixe ou mobile."},
+   {n:"Hudson Rock — outils gratuits",u:"https://www.hudsonrock.com/free-tools",d:"TON numéro ou TON e-mail est-il apparu dans un vol de mot de passe ?"},
+   {n:"PhoneInfoga (doc)",u:"https://sundowndev.github.io/phoneinfoga/",d:"Documentation de l'outil d'analyse de numéros — pour comprendre la méthode.",no:"⚠️ Enquêter sur le numéro d'un particulier sans motif légitime est interdit (RGPD)."}]},
  {i:"📰",n:"Vérification d'actualité",live:1,t:[
    {n:"Wayback Machine",u:"https://web.archive.org/"},{n:"archive.today",u:"https://archive.ph/"},
    {n:"Hoaxy (propagation)",u:"https://hoaxy.osome.iu.edu/"},{n:"Snopes",u:"https://www.snopes.com/"},
@@ -345,6 +353,6 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 /* MAJ auto force (leçon #102) : badge cliquable = échappatoire garantie */
 $("ver").onclick=function(){if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});if(window.caches&&caches.keys)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n);});});location.replace(location.pathname+"?_force_upd_"+Date.now());};
 </script>
-<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.4" data-color="#c9a227" defer></script>
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="osint" data-version="v2.6" data-color="#c9a227" defer></script>
 </body>
 </html>

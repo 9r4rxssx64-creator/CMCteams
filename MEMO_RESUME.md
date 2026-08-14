@@ -1,5 +1,27 @@
 # MEMO_RESUME — état de session
 
+## 14 août 2026 — OSINT v2.6 : vérifier un numéro de téléphone (défensif)
+
+Kevin envoie 2 captures Facebook (Laravel « Log Viewer » · « SearchPhone » OSINT téléphone).
+
+- **Log Viewer** → **non applicable** : c'est un paquet **Laravel/PHP**, le domaine est en
+  JS + Workers Cloudflare. Rien installé (aurait été du code mort). L'équivalent utile
+  existe déjà : le journal de `admin.kd-mc.com`.
+- **SearchPhone** → l'outil lui-même **non installé** (script Python d'enquête sur des
+  numéros de particuliers = risque RGPD). En revanche ses **sources publiques
+  légitimes** sont ajoutées en liens 1-clic, cadrées **défensif** : *« ce numéro qui
+  m'appelle est-il une arnaque ? »* / *« mon propre numéro a-t-il fuité ? »*.
+- **OSINT v2.6** : nouvelle catégorie **📞 Numéro de téléphone** (5 liens, chacun avec sa
+  fonction écrite et **visible en 390px**) : Signal-Arnaques · 33700 · Numverify ·
+  Hudson Rock · PhoneInfoga (doc, avec **garde-fou RGPD**). Compteur **mesuré** : 134 outils
+  · 20 catégories (jamais estimé).
+- **Preuve** : `npm run test:osint-links` → **11/11 ✅**, et l'assertion « garde-fou légal »
+  est **discriminante** (retiré le warning → ❌ 11 ; remis → ✅).
+- ⚠️ **Limite honnête** : le sandbox n'a pas d'accès internet → les 5 URL n'ont **pas** été
+  pinguées ici (ce sont des références connues). Le 1ᵉʳ clic de Kevin fera foi.
+
+---
+
 ## 9-12 août 2026 — Admin universel du domaine · 15 apps iPhone · localisation · OSINT
 
 ### Livré et sur `main`
