@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.123.0";
+var APP_VER="v2.123.1";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -2384,7 +2384,10 @@ function vHistoire(){ var d=el("div","screen"); var c=COURSES[S.course], h=histL
      étrangère soudain familière. Pas de bouton « écouter » ici — le mot est parfois dans la
      langue étrangère, et le faire lire par une voix française dirait faux. */
   var mts=(h.mots||[]);
-  if(mts.length){ var t3=el("h3","hist-h3"); t3.textContent="Des mots qui ont voyagé"; d.appendChild(t3);
+  /* Le titre de cette rubrique s'adapte : « des mots qui ont voyagé » n'a pas de sens pour
+     la langue des signes, qui n'a pas prêté de mots au français — ce qu'on y montre, ce sont
+     les mots qu'on croise en l'apprenant. Chaque langue peut donc donner le sien. */
+  if(mts.length){ var t3=el("h3","hist-h3"); t3.textContent=h.motsTitre||"Des mots qui ont voyagé"; d.appendChild(t3);
     var wrap=el("div","hist-mots");
     mts.forEach(function(w){ var card=el("div","hist-mot");
       var mm=el("b","hm-m"); mm.textContent=w.m; card.appendChild(mm);
