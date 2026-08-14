@@ -65,3 +65,28 @@ contenu propre). Un simple lanceur de liens serait refusé.
   un domaine — et seulement avec un compte développeur payant.
 - Lancer une soumission sans l'accord explicite de Kevin.
 - Vendoriser ou exécuter un binaire tiers non vérifié.
+
+## La chaîne est CONSTRUITE (2026-08-13, « Go tout »)
+
+| Pièce | Fichier | État |
+|---|---|---|
+| Source unique des apps | `mobile/apps.json` | 3 apps : CMCteams, Apex Chat, Lingua |
+| Préparation du contenu | `mobile/build-ios.mjs` | ✅ mesuré : 4,3 / 0,8 / 11,4 Mo |
+| Build + TestFlight | `.github/workflows/ios-testflight.yml` | bouton uniquement, `macos-latest` |
+| Garde-fou | `tests/mobile-ios-config.test.mjs` | 35 vérifications, dans `test:ci` |
+
+**Deux pièges déjà attrapés — ne pas les réintroduire :**
+
+1. **Chemins absolus.** CMCteams charge `/CMCteams/tools/…` (chemin du site GitHub Pages).
+   Dans l'app native la racine est `/` → ces fichiers **tomberaient dans le vide, en silence**.
+   D'où `dupliquerSous` + un contrôle au build qui ÉCHOUE si une référence absolue manque.
+   Prouvé : retirer un fichier de la config → `Error … morceau mort`, code retour 1.
+2. **Poids.** Le premier `include` de CMCteams embarquait `tools/**` : **61 Mo** d'apps
+   étrangères. Resserré à ce que l'app charge vraiment → **4,3 Mo**. Toujours vérifier le
+   poids annoncé par le build.
+
+**L'identifiant Apple (`bundleId`) est FIGÉ par le test.** Le changer après publication crée
+une app DIFFÉRENTE chez Apple : testeurs, avis et achats perdus. Prouvé rougissant.
+
+**Ordre à respecter** : construire (sans clé, ça compile déjà) → TestFlight → App Store
+seulement après accord explicite de Kevin.
