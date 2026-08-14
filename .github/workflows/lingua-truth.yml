@@ -52,6 +52,11 @@ jobs:
       # balise son réutilisée, libérée en fin de leçon, garde-fou borné, raisons expliquées.
       - name: "La voix ne se dégrade plus question après question"
         run: node tools/lingua/verify-voix.mjs lingua
+      # 🤟 Langue des signes : chaque signe est une VRAIE vidéo sous licence libre, la
+      # question ne donne jamais sa réponse (la « traduction » d'un mot y est le mot lui-même),
+      # et rien ne se prononce — c'est ce qu'on promet à l'élève, donc ça doit être vrai.
+      - name: "Langue des signes : aucun signe inventé, aucun son"
+        run: node tools/lingua/verify-lsf.mjs lingua
       # 📜 Histoire & anecdotes : chaque fait porte sa source, et la rubrique est VRAIMENT
       # branchée dans l'app (une anecdote fausse — ou invisible — ne doit pas passer).
       - name: "Histoire & anecdotes : sourcées et branchées"
