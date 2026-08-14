@@ -69,10 +69,13 @@ const CATEGORIES = [
 /* Plusieurs façons de nommer la même chose : on ratisse large, puis on filtre sévèrement.
    Chercher peu, c'est trouver peu — et croire ensuite que « ça n'existe pas ». */
 const RECHERCHES = [
-  'langue des signes française OR "French Sign Language" OR LSF',
-  'LSF lettre OR LSF alphabet OR dactylologie',
-  'LSF chiffre OR "sign language" chiffres français',
-  '"alphabet dactylologique" OR "alphabet manuel" français',
+  /* Ciblé, pas large. Une recherche trop large sur Commons ramène des journaux néerlandais
+     et le Federal Register : 2300 fichiers de bruit qui n'apportent rien et masquent ce
+     qu'on cherche vraiment dans le rapport. */
+  'LL-Q33302',                       // toutes les vidéos Lingua Libre en LSF
+  'LSF Lettre OR LSF Chiffre',       // l'alphabet et, s'ils existent, les chiffres
+  'LSF Vocab OR LSF Exo',            // les séries de vocabulaire
+  'dactylologie langue des signes française',
 ];
 
 async function membres(cat, type) {
@@ -240,6 +243,13 @@ async function infos(titres) {
       f.types.add((m.mime || '?').split('/')[0]); f.lic.add(m.licence || '(sans licence lisible)');
     }
     const tri = [...familles.entries()].sort((a, b) => b[1].n - a[1].n);
+    /* La question décisive : la série « LSF … » va-t-elle plus loin que A-Z ? Les accents,
+       les chiffres ? On les liste TOUS, un par un, au lieu de se fier au classement par
+       nombre — une lettre accentuée n'existe qu'en un exemplaire et tomberait sous le
+       radar d'un top 40. C'est exactement comme ça qu'on croit qu'il n'y a que 26 lettres. */
+    const serieLSF = [...meta.keys()].map(nu).filter((t) => /^LSF\s/i.test(t)).sort();
+    console.log('\n🔠 TOUS les fichiers « LSF … » (' + serieLSF.length + ') :');
+    serieLSF.forEach((t) => console.log('     ' + t));
     console.log('\n📛 Comment les fichiers sont nommés (' + tri.length + ' familles) :\n');
     tri.slice(0, 40).forEach(([cle, f]) => {
       console.log('· « ' + cle + ' » ×' + f.n + '  [' + [...f.types].join(',') + ']  licence: ' + [...f.lic].slice(0, 2).join(' | '));
@@ -258,13 +268,21 @@ async function infos(titres) {
   }
 
   const signes = {}; const alphabet = {}; const familleEcartee = {}; let ecartesLicence = 0, ecartesTitre = 0;
+  /* Distinction qui change tout : un fichier rejeté HORS des familles connues est du bruit
+     (un cargo « FSL Hamburg », une fête du logiciel libre au Portugal). Un fichier rejeté
+     DANS une famille connue est une VRAIE PERTE — un signe qui existe et qu'on n'a pas pris.
+     On les nomme un par un avec la raison : sans ça, 18 vidéos de signes disparaissaient
+     dans un compteur global, invisibles. */
+  const CONNUE = /^(LL-Q33302|LSF )/i;
+  const perdus = [];
+  const perdu = (titre, pourquoi) => { if (CONNUE.test(nu(titre))) perdus.push(nu(titre) + '  ← ' + pourquoi); };
   for (const [titre, m] of meta) {
-    if (!m.licence || !LIBRES.test(m.licence.trim())) { ecartesLicence++; continue; }
+    if (!m.licence || !LIBRES.test(m.licence.trim())) { ecartesLicence++; perdu(titre, 'licence « ' + (m.licence || 'absente') + ' »'); continue; }
     /* Les .ogv de Commons sont annoncés « application/ogg » : sans cette ligne, 30 vidéos
        de vocabulaire étaient jetées en silence alors qu'elles sont parfaitement valables. */
     const type = /^video\//.test(m.mime) || /ogg/i.test(m.mime) ? 'video'
       : /^image\//.test(m.mime) ? 'image' : null;
-    if (!type) continue;
+    if (!type) { perdu(titre, 'type de fichier « ' + (m.mime || '?') + ' »'); continue; }
 
     const lettre = lettreDuTitre(titre);
     if (lettre) {
@@ -280,6 +298,7 @@ async function infos(titres) {
          (les chiffres, les accents…) passe à la trappe. Un rejet muet cache un manque. */
       const cle = nu(titre).split(/\s+/).slice(0, 2).join(' ').toLowerCase();
       familleEcartee[cle] = (familleEcartee[cle] || 0) + 1;
+      perdu(titre, 'nom illisible pour en tirer un mot sûr');
       continue; }
     const fiche = { mot: r.mot, type, signeur: r.signeur || null, url: m.url,
       vignette: vignettes[r.mot] || m.vignette || null, page: m.page,
@@ -317,6 +336,10 @@ async function infos(titres) {
   const parLicence = {}; tous.forEach((s) => { parLicence[s.licence] = (parLicence[s.licence] || 0) + 1; });
   console.log('   licences : ' + Object.entries(parLicence).map(([k, v]) => k + ' (' + v + ')').join(' · '));
   /* Ce qui reste dehors, NOMMÉ. C'est la seule façon de voir qu'une famille entière manque. */
+  if (perdus.length) {
+    console.log('\n⚠️  ' + perdus.length + ' fichier(s) d\'une famille CONNUE n\'ont pas été pris — chacun est un signe qui existe :');
+    perdus.sort().forEach((x) => console.log('     ' + x));
+  } else console.log('\n✅ Aucun fichier d\'une famille connue n\'a été laissé de côté.');
   const dehors = Object.entries(familleEcartee).sort((a, b) => b[1] - a[1]).slice(0, 12);
   if (dehors.length) console.log('   restés dehors (par famille de nom) : ' + dehors.map(([k, v]) => '« ' + k + ' » ×' + v).join(' · '));
   const exemples = Object.keys(signes).sort().slice(0, 20);

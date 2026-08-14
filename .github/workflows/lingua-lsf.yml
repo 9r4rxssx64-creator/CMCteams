@@ -74,6 +74,6 @@ jobs:
             echo "## 🤟 Récolte LSF"
             echo ""
             echo '```'
-            tail -140 /tmp/lsf.log || echo "(pas de log)"
+            tail -200 /tmp/lsf.log || echo "(pas de log)"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
