@@ -56,6 +56,23 @@ const CATEGORIES = [
   'Category:French Sign Language signs',
   'Category:Langue des signes française',
   'Category:LSF',
+  /* L'alphabet ne s'arrête pas à 26 lettres : il y a les accents et les chiffres.
+     On demande aussi les catégories qui pourraient les contenir — une catégorie vide
+     n'est pas un échec, c'est une information qu'on affiche. */
+  'Category:French manual alphabet',
+  'Category:Manual alphabets',
+  'Category:Numbers in French Sign Language',
+  'Category:Numerals in sign languages',
+  'Category:Dactylologie',
+];
+
+/* Plusieurs façons de nommer la même chose : on ratisse large, puis on filtre sévèrement.
+   Chercher peu, c'est trouver peu — et croire ensuite que « ça n'existe pas ». */
+const RECHERCHES = [
+  'langue des signes française OR "French Sign Language" OR LSF',
+  'LSF lettre OR LSF alphabet OR dactylologie',
+  'LSF chiffre OR "sign language" chiffres français',
+  '"alphabet dactylologique" OR "alphabet manuel" français',
 ];
 
 async function membres(cat, type) {
@@ -70,13 +87,21 @@ async function membres(cat, type) {
   return out;
 }
 
-/* On descend d'un niveau dans les sous-catégories : les signes sont souvent rangés par lettre
-   ou par thème. On ne descend pas plus loin (risque de partir dans tout Commons). */
-async function fichiersDe(cat, profondeur = 1) {
+/* On descend dans les sous-catégories : les signes y sont rangés par lettre, par thème ou
+   par contributeur. DEUX niveaux, pas un — au premier passage, une coupe à un seul niveau
+   et un plafond de 60 sous-catégories pouvaient laisser des fichiers dehors sans rien dire.
+   Un ensemble « presque complet » sans le savoir est pire qu'un ensemble petit assumé.
+   Le garde-fou contre la dérive dans tout Commons, ce n'est pas la profondeur : c'est le
+   registre des catégories déjà visitées (les catégories forment des boucles) + le filtre
+   sévère sur les noms de fichiers, en aval. */
+const CAT_VUES = new Set();
+async function fichiersDe(cat, profondeur = 2) {
+  if (CAT_VUES.has(cat)) return [];
+  CAT_VUES.add(cat);
   let fichiers = await membres(cat, 'file');
   if (profondeur > 0) {
     const sous = await membres(cat, 'subcat');
-    for (const sc of sous.slice(0, 60)) fichiers = fichiers.concat(await fichiersDe(sc, profondeur - 1));
+    for (const sc of sous) fichiers = fichiers.concat(await fichiersDe(sc, profondeur - 1));
   }
   return fichiers;
 }
@@ -180,12 +205,22 @@ async function infos(titres) {
     console.log((f.length ? '✅ ' : '·  ') + cat + ' → ' + f.length + ' fichier(s)');
     f.forEach((t) => vus.add(t));
   }
-  /* Une recherche en plus : certains fichiers ne sont dans aucune de ces catégories. */
-  const rech = await api({ action: 'query', list: 'search', srnamespace: '6',
-    srsearch: 'langue des signes française OR "French Sign Language" OR LSF', srlimit: '200' });
-  const nRech = rech && rech.query ? (rech.query.search || []).length : 0;
-  console.log('🔎 recherche libre → ' + nRech + ' fichier(s)');
-  if (rech && rech.query) (rech.query.search || []).forEach((s) => vus.add(s.title));
+  /* Des recherches en plus : beaucoup de fichiers ne sont rangés dans aucune catégorie.
+     On PAGINE (la première fois, on s'arrêtait aux 200 premiers résultats et on ne le
+     savait même pas — un plafond silencieux fait croire qu'on a tout vu). */
+  for (const q of RECHERCHES) {
+    let trouves = 0, offset = 0;
+    for (let page = 0; page < 6; page++) {
+      const r = await api({ action: 'query', list: 'search', srnamespace: '6',
+        srsearch: q, srlimit: '500', sroffset: String(offset) });
+      const lot = (r && r.query && r.query.search) || [];
+      lot.forEach((s) => vus.add(s.title));
+      trouves += lot.length;
+      if (!r || !r.continue || !r.continue.sroffset) break;
+      offset = r.continue.sroffset;
+    }
+    console.log('🔎 « ' + q.slice(0, 48) + (q.length > 48 ? '…' : '') + ' » → ' + trouves + ' fichier(s)');
+  }
 
   console.log('\n' + vus.size + ' fichier(s) distincts à examiner…');
   const meta = await infos([...vus]);
@@ -222,7 +257,7 @@ async function infos(titres) {
     if (v && m.licence && LIBRES.test(m.licence.trim())) vignettes[v[1].trim().toLowerCase()] = m.url;
   }
 
-  const signes = {}; const alphabet = {}; let ecartesLicence = 0, ecartesTitre = 0;
+  const signes = {}; const alphabet = {}; const familleEcartee = {}; let ecartesLicence = 0, ecartesTitre = 0;
   for (const [titre, m] of meta) {
     if (!m.licence || !LIBRES.test(m.licence.trim())) { ecartesLicence++; continue; }
     /* Les .ogv de Commons sont annoncés « application/ogg » : sans cette ligne, 30 vidéos
@@ -239,7 +274,13 @@ async function infos(titres) {
     }
 
     const r = motDuTitre(titre);
-    if (!r) { ecartesTitre++; continue; }
+    if (!r) { ecartesTitre++;
+      /* On ne se contente pas de compter ce qu'on jette : on note SOUS QUEL NOM, pour
+         pouvoir dire ce qui reste dehors — et voir tout de suite si une famille entière
+         (les chiffres, les accents…) passe à la trappe. Un rejet muet cache un manque. */
+      const cle = nu(titre).split(/\s+/).slice(0, 2).join(' ').toLowerCase();
+      familleEcartee[cle] = (familleEcartee[cle] || 0) + 1;
+      continue; }
     const fiche = { mot: r.mot, type, signeur: r.signeur || null, url: m.url,
       vignette: vignettes[r.mot] || m.vignette || null, page: m.page,
       licence: m.licence, auteur: m.auteur || r.signeur || '', titre };
@@ -275,6 +316,9 @@ async function infos(titres) {
     .slice(0, 8).map(([k, v]) => k + ' (' + v + ')').join(' · '));
   const parLicence = {}; tous.forEach((s) => { parLicence[s.licence] = (parLicence[s.licence] || 0) + 1; });
   console.log('   licences : ' + Object.entries(parLicence).map(([k, v]) => k + ' (' + v + ')').join(' · '));
+  /* Ce qui reste dehors, NOMMÉ. C'est la seule façon de voir qu'une famille entière manque. */
+  const dehors = Object.entries(familleEcartee).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  if (dehors.length) console.log('   restés dehors (par famille de nom) : ' + dehors.map(([k, v]) => '« ' + k + ' » ×' + v).join(' · '));
   const exemples = Object.keys(signes).sort().slice(0, 20);
   if (exemples.length) console.log('   exemples : ' + exemples.join(', '));
   if (Object.keys(alphabet).length) console.log('   lettres  : ' + Object.keys(alphabet).sort().join(' '));
