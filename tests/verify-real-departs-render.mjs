@@ -28,7 +28,11 @@ const server = http.createServer((req, res) => {
   } catch { res.writeHead(404); res.end('404'); }
 });
 
-const SEQS = { 1: [1], 2: [1, 2], 3: [1, 3, 2], 4: [1, 4, 2, 3], 5: [1, 4, 2, 3, 5], 6: [1, 6, 4, 2, 3, 5], 7: [1, 6, 4, 2, 7, 3, 5] };
+// Table SEQ COMPLÈTE — miroir exact de `SEQS` dans index.html (2-13). Avant elle s'arrêtait
+// à 7 → les grandes équipes CMC (8-13 pers) étaient SILENCIEUSEMENT SAUTÉES par seqNof (Kevin
+// 2026-07-10 « l'algo respecté pour CHAQUE personne de CHAQUE équipe »). Étendue = elles sont
+// enfin vérifiées.
+const SEQS = { 1: [1], 2: [1, 2], 3: [1, 3, 2], 4: [1, 4, 2, 3], 5: [1, 4, 2, 3, 5], 6: [1, 6, 4, 2, 3, 5], 7: [1, 6, 4, 2, 7, 3, 5], 8: [1, 6, 4, 2, 7, 3, 8, 5], 9: [1, 6, 4, 9, 2, 7, 3, 8, 5], 10: [1, 6, 4, 9, 2, 7, 3, 8, 5, 10], 11: [1, 6, 4, 9, 2, 11, 7, 3, 8, 5, 10], 12: [1, 6, 4, 9, 2, 11, 7, 3, 12, 8, 5, 10], 13: [1, 6, 4, 9, 2, 11, 7, 3, 13, 8, 5, 10, 12] };
 
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const PORT = server.address().port;
@@ -98,34 +102,23 @@ for (const bd of boards) {
     for (const s of Object.keys(SEQS).map(Number).sort((a, b) => a - b)) if (ds.every(x => SEQS[s].includes(x))) return s;
     return null;
   };
-  // VÉRIF RÈGLE KEVIN (v9.865) : la fenêtre GLISSE de +1 à CHAQUE CYCLE de repos ET de +1 par jour
-  // DANS le cycle. Cycles = ceux de L'ÉQUIPE (trous dans workDays). Le glissement +1 n'est garanti
-  // que si le GROUPE présent est identique les 2 jours (sinon un congé change N + les rangs).
-  const teamCycleStart = new Set();
-  for (let i = 0; i < workDays.length; i++) { if (i === 0 || workDays[i] - workDays[i - 1] > 1) teamCycleStart.add(workDays[i]); }
-  const starts = [...teamCycleStart].sort((a, b) => a - b);
+  // VÉRIF RÈGLE KEVIN (v9.868, « la suite doit être respectée, pas 2× le même numéro rapproché ») :
+  // rotation CONTINUE. Entre deux JOURS DE TRAVAIL CONSÉCUTIFS DE L'ÉQUIPE (= entrées consécutives
+  // de workDays, même à travers un repos), à effectif présent IDENTIQUE, l'index dans la suite SEQ_N
+  // avance d'EXACTEMENT +1 pour CHAQUE présent → chacun parcourt 1-4-2-3-5 DANS L'ORDRE, jamais 2×
+  // le même numéro avant d'avoir fini la suite. DISCRIMINANT : l'ancien glissement par-cycle
+  // (rot=cycle+position, v9.865) remet l'index à zéro au repos → casse le +1 → échouerait ici.
   const presentSet = d => active.filter(p => p.cells[d].dep != null).map(p => p.name).sort().join('|');
-  for (const p of active) {
-    // (a) jours d'ÉQUIPE calendairement adjacents, MÊME groupe présent → index SEQ +1
-    for (let i = 1; i < workDays.length; i++) {
-      const d0 = workDays[i - 1], d1 = workDays[i];
-      if (d1 - d0 !== 1) continue;
+  for (let i = 1; i < workDays.length; i++) {
+    const d0 = workDays[i - 1], d1 = workDays[i];   // 2 jours de travail d'équipe consécutifs (wi, wi+1)
+    if (presentSet(d0) !== presentSet(d1)) continue; // effectif change (congé) → recompaction légitime
+    const s = seqNof(d0); if (s == null || seqNof(d1) !== s) continue;
+    const SEQ = SEQS[s];
+    for (const p of active) {
       if (p.cells[d0].dep == null || p.cells[d1].dep == null) continue;
-      if (presentSet(d0) !== presentSet(d1)) continue;
-      const s = seqNof(d0); if (s == null || seqNof(d1) !== s) continue;
-      const SEQ = SEQS[s]; const ia = SEQ.indexOf(p.cells[d0].dep), ib = SEQ.indexOf(p.cells[d1].dep);
+      const ia = SEQ.indexOf(p.cells[d0].dep), ib = SEQ.indexOf(p.cells[d1].dep);
       if (ia < 0 || ib < 0) continue; totalChecks++;
-      if (ib !== (ia + 1) % s) fails.push(`${bd.label} | ${p.name} : DANS cycle j${d0 + 1}=${p.cells[d0].dep} → j${d1 + 1}=${p.cells[d1].dep} (jour ≠ +1)`);
-    }
-    // (b) 1er jour de 2 cycles d'équipe consécutifs, MÊME groupe présent → index SEQ +1
-    for (let ci = 1; ci < starts.length; ci++) {
-      const d0 = starts[ci - 1], d1 = starts[ci];
-      if (p.cells[d0].dep == null || p.cells[d1].dep == null) continue;
-      if (presentSet(d0) !== presentSet(d1)) continue;
-      const s = seqNof(d0); if (s == null || seqNof(d1) !== s) continue;
-      const SEQ = SEQS[s]; const ia = SEQ.indexOf(p.cells[d0].dep), ib = SEQ.indexOf(p.cells[d1].dep);
-      if (ia < 0 || ib < 0) continue; totalChecks++;
-      if (ib !== (ia + 1) % s) fails.push(`${bd.label} | ${p.name} : ENTRE cycles j${d0 + 1}=${p.cells[d0].dep} → j${d1 + 1}=${p.cells[d1].dep} (début de cycle ≠ +1)`);
+      if (ib !== (ia + 1) % s) fails.push(`${bd.label} | ${p.name} : j${d0 + 1}=${p.cells[d0].dep} → j${d1 + 1}=${p.cells[d1].dep} (suite ≠ +1, idx ${ia}→${ib})`);
     }
   }
 }

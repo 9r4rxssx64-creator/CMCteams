@@ -86,9 +86,27 @@ jobs:
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # Clés que Kevin POSSÈDE DÉJÀ mais qui ne servaient pas ici (noms
+          # EXACTS, dont la typo PERPLEXITI — cf. règle « noms de secrets »).
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          PERPLEXITI_API_KEY: ${{ secrets.PERPLEXITI_API_KEY }}
+          OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+          # Nouveaux paliers gratuits : absents aujourd'hui → simplement ignorés,
+          # il suffira d'ajouter le secret pour qu'ils entrent en service.
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          SAMBANOVA_API_KEY: ${{ secrets.SAMBANOVA_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SCALEWAY_API_KEY: ${{ secrets.SCALEWAY_API_KEY }}
+          NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+          GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
         run: |
           set +e
-          for N in GROQ_API_KEY MISTRAL_API_KEY COHERE_API_KEY DEEPSEEK_API_KEY OPENROUTER_API_KEY; do
+          for N in GROQ_API_KEY MISTRAL_API_KEY COHERE_API_KEY DEEPSEEK_API_KEY OPENROUTER_API_KEY \
+                   XAI_API_KEY PERPLEXITI_API_KEY OPEN_AI_API_KEY \
+                   CEREBRAS_API_KEY NVIDIA_API_KEY SAMBANOVA_API_KEY HF_TOKEN \
+                   SCALEWAY_API_KEY NEBIUS_API_KEY GLM_API_KEY DASHSCOPE_API_KEY; do
             V="${!N}"
             if [ -n "$V" ]; then
               printf '%s' "$V" | wrangler secret put "$N" 2>&1 | tail -1 \
@@ -186,6 +204,22 @@ jobs:
             image/*) echo "  ✅ IMAGE reçue → fond IA gratuit fonctionne";;
             *) echo "  ❌ pas une image :"; head -c 400 /tmp/bg.bin | tr -d '\0'; echo;;
           esac
+          # Kevin 2026-08-12 : « les figurines… ce n'est pas moi ». Ce test dit
+          # si /magic ÉDITE vraiment la photo envoyée, ou s'il en invente une.
+          echo "----- /magic (figurine — DOIT partir de la photo envoyée) -----"
+          curl -sS -m 200 -X POST "$BASE/magic" -H 'content-type: application/json' \
+            -d "{\"image\":\"$PNG\",\"preset\":\"figurine\",\"keep_face\":true}" \
+            -o /tmp/mg.bin -D /tmp/mg.hdr \
+            -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
+          grep -i "^x-crea-" /tmp/mg.hdr 2>/dev/null || true
+          if grep -qi '^x-crea-fallback: *recreated' /tmp/mg.hdr 2>/dev/null; then
+            echo "::error::/magic a INVENTÉ une image au lieu d'éditer la photo (ce ne serait PAS Kevin)"
+          elif [ "$(file -b --mime-type /tmp/mg.bin 2>/dev/null | cut -d/ -f1)" = "image" ]; then
+            echo "  ✅ la photo a bien été ÉDITÉE (l'identité est gardée) — $(grep -i '^x-crea-provider' /tmp/mg.hdr | tr -d '\r')"
+          else
+            echo "  ⚠️ pas d'image : le serveur a REFUSÉ d'inventer quelqu'un d'autre. Motif :"
+            head -c 400 /tmp/mg.bin | tr -d '\0'; echo
+          fi
           echo "----- /frames (photo → poses de danse, GRATUIT) -----"
           curl -sS -m 220 -X POST "$BASE/frames" -H 'content-type: application/json' \
             -d "{\"image\":\"$PNG\",\"n\":2}" -o /tmp/fr.json \

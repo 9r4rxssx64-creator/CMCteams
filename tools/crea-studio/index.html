@@ -238,6 +238,50 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   /* ---------- MODAL / SHEET ---------- */
+  /* ---------- 💳 BANDEAU « IA en pause » + écran de recharge ---------- */
+  /* dans le flux (body = flex column) → aucun chevauchement, aucun calcul */
+  #creditBar{flex:0 0 auto;z-index:31;display:none;gap:8px;align-items:center;
+    padding:9px 12px;font-size:13px;font-weight:700;color:#2a1c00;cursor:pointer;
+    background:linear-gradient(135deg,#f0c14b,#e8a020);box-shadow:0 3px 14px rgba(0,0,0,.35);
+    border:0;width:100%;text-align:left;min-height:44px}
+  #creditBar.on{display:flex;animation:fadeIn .3s ease}
+  #creditBar .cb-txt{flex:1;line-height:1.3}
+  #creditBar .cb-go{background:rgba(0,0,0,.22);color:#fff;border-radius:999px;padding:7px 12px;
+    font-weight:800;font-size:12.5px;white-space:nowrap}
+  /* 🎙️ Micro : gros bouton + niveau de voix en direct (on voit qu'on est entendu) */
+  .mic-zone{display:flex;flex-direction:column;align-items:center;gap:12px;margin:6px 0 10px}
+  .mic-rec{width:88px;height:88px;border-radius:50%;cursor:pointer;flex:0 0 auto;
+    background:radial-gradient(circle at 50% 38%,#ff6b6b,#c62828);
+    box-shadow:0 6px 22px rgba(198,40,40,.45),inset 0 -3px 10px rgba(0,0,0,.28);
+    border:3px solid rgba(255,255,255,.22);transition:transform .15s ease}
+  .mic-rec:active{transform:scale(.94)}
+  .mic-rec.on{background:radial-gradient(circle at 50% 38%,#ffd166,#e8a020);
+    box-shadow:0 0 0 8px rgba(232,160,32,.18),0 6px 22px rgba(232,160,32,.4);
+    animation:micPulse 1.4s ease-in-out infinite}
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 8px rgba(232,160,32,.18)}50%{box-shadow:0 0 0 15px rgba(232,160,32,.06)}}
+  .mic-niveau{width:100%;max-width:280px;height:12px;border-radius:999px;overflow:hidden;
+    background:rgba(255,255,255,.10)}
+  .mic-niveau i{display:block;height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,#4caf50,#ffd166,#ff6b6b)}
+  .mic-temps{font-variant-numeric:tabular-nums;font-weight:800;font-size:19px;color:var(--txt,#fff)}
+  /* 👤 Mes mini-moi : galerie de personnages gardés, 1 tap = rechargé */
+  .mini-persos{display:flex;gap:10px;overflow-x:auto;padding:8px 14px 4px;-webkit-overflow-scrolling:touch}
+  .mini-persos::-webkit-scrollbar{display:none}
+  .mini-perso{position:relative;flex:0 0 auto}
+  .mini-perso .mp-go{display:flex;flex-direction:column;align-items:center;gap:4px;
+    width:72px;min-height:88px;padding:4px;border-radius:14px;background:rgba(255,255,255,.06);
+    border:1px solid var(--line,rgba(255,255,255,.12));cursor:pointer}
+  .mini-perso .mp-go img{width:60px;height:60px;object-fit:cover;border-radius:11px}
+  .mini-perso .mp-go span{font-size:10.5px;max-width:68px;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;color:var(--txt,#fff)}
+  .mini-perso .mp-del{position:absolute;top:-4px;right:-4px;width:30px;height:30px;border-radius:50%;
+    background:rgba(20,20,26,.94);border:1px solid var(--line,rgba(255,255,255,.16));font-size:13px;cursor:pointer}
+  .rc-amounts{display:flex;gap:8px;justify-content:center;margin:2px 0 14px;flex-wrap:wrap}
+  .rc-amounts button{flex:1 1 auto;min-width:88px;min-height:52px;border-radius:14px;cursor:pointer;
+    background:var(--bg3,#1b1f26);color:var(--fg,#fff);border:2px solid rgba(255,255,255,.14);
+    font-size:16px;font-weight:800;padding:8px 10px}
+  .rc-amounts button.on{border-color:#e8b84b;background:rgba(232,184,75,.16);color:#f2d68a}
+  .rc-note{color:var(--muted);font-size:12.5px;line-height:1.5;margin:10px 0 0;text-align:center}
   .sheet{position:fixed;inset:0;z-index:90;display:none;align-items:flex-end;justify-content:center}
   .sheet.open{display:flex}
   .sheet .bg{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
@@ -297,6 +341,13 @@
   <button class="tbtn" id="btnNew" title="Nouveau / importer">＋ Ouvrir</button>
   <button class="tbtn gold" id="btnExport" title="Exporter / partager">⤓ Exporter</button>
 </div>
+<!-- 💳 Bandeau permanent quand l'IA est en pause (crédit épuisé) : visible
+     partout, 1 tap → écran de recharge. N'importe qui peut participer. -->
+<button id="creditBar" onclick="Recharge.ouvrir()">
+  <span>⏳</span>
+  <span class="cb-txt" id="creditBarTxt">IA en pause — plus de crédit</span>
+  <span class="cb-go">💳 Recharger</span>
+</button>
 
 <!-- STAGE -->
 <div id="stage">
@@ -773,6 +824,8 @@
         <div class="toolrow" id="magicStyles"></div>
         <div class="textedit"><input id="magicCustom" placeholder="Ou décris ce que tu veux (ex: en pilote de F1…)" maxlength="140"></div>
         <div style="padding:2px 14px"><button class="bigbtn ghost" onclick="Magic.custom()">🪄 Créer ma transformation</button></div>
+        <div style="padding:2px 14px"><button class="bigbtn ghost" onclick="Magic.pasMoi()">🙅 Ce n'est pas moi — refaire avec ma photo</button></div>
+        <div class="hint">Pour que ça te ressemble : une photo <b>de face</b>, <b>visage bien visible</b> et <b>bien éclairé</b>. De profil, de loin ou dans le noir, l'IA invente.</div>
       </div>
 
       <div id="magicDuo" class="hidden">
@@ -821,6 +874,94 @@
     </div>
   </section>
 
+  <!-- ============ 🧑‍🎤 MINI-MOI — ta version numérique qui parle ============ -->
+  <section class="studio" id="s-mini">
+    <div class="canvas-wrap" id="miniWrap">
+      <div class="empty" id="miniEmpty">
+        <div class="big">🧑‍🎤</div>
+        <h2>Mini-moi</h2>
+        <p>Ta version numérique qui <b>parle</b>. Mets une photo de ton visage, écris (ou dis) ce qu'il doit raconter — l'app fabrique une petite vidéo où <b>toi</b> tu parles. Comme l'avatar IA de CapCut, mais dans ton téléphone.</p>
+        <button class="bigbtn" onclick="Mini.pick()">📂 Choisir une photo</button>
+        <button class="bigbtn ghost" onclick="Mini.camera()">📷 Me prendre en photo</button>
+      </div>
+      <img class="viewer hidden" id="miniPhoto" alt="">
+      <video class="viewer hidden" id="miniVideo" playsinline webkit-playsinline controls loop></video>
+    </div>
+    <div class="panel hidden" id="miniPanel">
+      <div class="hint" id="miniMouthHint">👄 Touche la bouche sur la photo si elle est mal repérée.</div>
+      <div class="mini-persos hidden" id="miniPersos"></div>
+      <div class="textedit"><textarea id="miniScript" rows="2" style="width:100%;box-sizing:border-box" placeholder="Ce que ton mini-moi va dire… (ex : Salut, c'est Kevin !)" maxlength="600"></textarea></div>
+      <div class="hint" id="miniDuree"></div>
+      <div class="toolrow" style="justify-content:center">
+        <button class="chip" id="miniApBtn" onclick="Mini.apercu()"><span class="ic">👁</span>Aperçu</button>
+        <button class="chip" id="miniDictBtn" onclick="Mini.dicter()"><span class="ic">🎙️</span>Dicter</button>
+        <button class="chip" onclick="Mini.garder()"><span class="ic">👤</span>Garder ce mini-moi</button>
+      </div>
+      <div class="hint">😀 L'expression du visage :</div>
+      <div class="toolrow" id="miniExpr" style="justify-content:center">
+        <button class="chip on" data-expr="neutre"><span class="ic">😐</span>Neutre</button>
+        <button class="chip" data-expr="sourire"><span class="ic">🙂</span>Sourire</button>
+        <button class="chip" data-expr="serieux"><span class="ic">🧐</span>Sérieux</button>
+        <button class="chip" data-expr="surpris"><span class="ic">😮</span>Surpris</button>
+      </div>
+      <div class="hint">💬 Dialogue : une ligne = une réplique, ça alterne tout seul entre les 2.</div>
+      <div class="toolrow" id="miniDlgRow" style="justify-content:center">
+        <button class="chip" id="miniDlgA" onclick="Mini.choisirDlg('A')"><span class="ic">👤</span>Personnage 1</button>
+        <button class="chip" id="miniDlgB" onclick="Mini.choisirDlg('B')"><span class="ic">👥</span>Personnage 2</button>
+        <button class="chip" onclick="Mini.dialogue()"><span class="ic">💬</span>Faire le dialogue</button>
+      </div>
+      <div class="hint">🌆 Le décor derrière toi :</div>
+      <div class="toolrow" id="miniDecor" style="justify-content:center">
+        <button class="chip on" data-dec="none"><span class="ic">🚫</span>Ma photo</button>
+        <button class="chip" data-dec="blur"><span class="ic">🫧</span>Flou portrait</button>
+        <button class="chip" data-dec="grad"><span class="ic">🎬</span>Studio</button>
+        <button class="chip" data-dec="img"><span class="ic">🖼️</span>Mon image</button>
+      </div>
+      <div class="hint">🎙️ La voix :</div>
+      <div class="toolrow" id="miniVoiceRow" style="justify-content:center">
+        <button class="chip on" data-voice="tts"><span class="ic">🔊</span>Voix IA</button>
+        <button class="chip" data-voice="rec"><span class="ic">🎙️</span>Ma voix</button>
+        <button class="chip" data-voice="file"><span class="ic">📂</span>Un fichier</button>
+      </div>
+      <div id="miniVoiceRec" class="hidden" style="padding:0 14px">
+        <button class="bigbtn ghost" id="miniRecBtn" onclick="Mini.record()">🎙️ Enregistrer ma voix (30 s max)</button>
+      </div>
+      <div class="hint">📱 Format :</div>
+      <div class="toolrow" id="miniRatios" style="justify-content:center">
+        <button class="chip on" data-ratio="9:16"><span class="ic">📱</span>Story 9:16</button>
+        <button class="chip" data-ratio="1:1"><span class="ic">⬛</span>Carré</button>
+        <button class="chip" data-ratio="16:9"><span class="ic">🖥️</span>Paysage</button>
+      </div>
+      <div class="toolrow" id="miniSubs" style="justify-content:center">
+        <button class="chip on" data-subs="1"><span class="ic">💬</span>Sous-titres</button>
+        <button class="chip" data-subs="0"><span class="ic">🚫</span>Sans</button>
+      </div>
+      <div class="hint">🎚️ Le ton de la voix :</div>
+      <div class="toolrow" id="miniTon" style="justify-content:center">
+        <button class="chip" data-ton="grave"><span class="ic">🐻</span>Grave</button>
+        <button class="chip on" data-ton="normale"><span class="ic">🙂</span>Normale</button>
+        <button class="chip" data-ton="aigue"><span class="ic">🐿️</span>Aiguë</button>
+      </div>
+      <div class="hint">🎬 Ambiance de l'image :</div>
+      <div class="toolrow" id="miniAmb" style="justify-content:center">
+        <button class="chip" data-amb="none"><span class="ic">🚫</span>Aucune</button>
+        <button class="chip on" data-amb="studio"><span class="ic">🎯</span>Studio</button>
+        <button class="chip" data-amb="doux"><span class="ic">🌸</span>Doux</button>
+        <button class="chip" data-amb="cine"><span class="ic">🎞️</span>Ciné</button>
+      </div>
+      <div class="toolrow" id="miniClin" style="justify-content:center">
+        <button class="chip on" data-clin="1"><span class="ic">😉</span>Cligne des yeux</button>
+        <button class="chip" data-clin="0"><span class="ic">👁️</span>Yeux fixes</button>
+      </div>
+      <div class="toolrow" id="miniQual" style="justify-content:center">
+        <button class="chip" data-q="fast"><span class="ic">⚡</span>Rapide (hors-ligne)</button>
+        <button class="chip on" data-q="ai"><span class="ic">💎</span>Bouche IA</button>
+      </div>
+      <div style="padding:2px 14px"><button class="bigbtn" id="miniGoBtn" onclick="Mini.generate()">🪄 Fabriquer mon mini-moi</button></div>
+      <div class="hint" id="miniHint">La « Voix IA » a besoin d'internet. Sans réseau : choisis « Ma voix » ou « Un fichier ». Ça marche toujours.</div>
+    </div>
+  </section>
+
 </div>
 
 <!-- BOTTOM NAV -->
@@ -830,6 +971,7 @@
   <button data-go="video"><span class="ic">🎬</span>Vidéo</button>
   <button data-go="anim"><span class="ic">✏️</span>Cartoon</button>
   <button data-go="aivid"><span class="ic">🕺</span>Danse IA</button>
+  <button data-go="mini"><span class="ic">🧑‍🎤</span>Mini-moi</button>
   <button data-go="magic"><span class="ic">✨</span>Magie</button>
   <button data-go="fam"><span class="ic">👨‍👩‍👧</span>Famille</button>
   <button data-go="mine"><span class="ic">🗂</span>Mes créas</button>
@@ -868,6 +1010,43 @@
   </div>
 </div>
 
+<!-- 🎙️ MICRO — un seul micro pour toute l'app : on VOIT sa voix pendant qu'on
+     parle, on se réécoute, on refait. Fini « j'ai parlé mais ça a capté ? » -->
+<div class="sheet" id="microSheet">
+  <div class="bg" onclick="Micro.fermer()"></div>
+  <div class="body">
+    <div class="grip"></div>
+    <h3 id="micTitre">🎙️ Ta voix</h3>
+    <p id="micDesc">Touche le gros bouton, parle, puis touche-le encore pour arrêter.</p>
+    <div class="mic-zone">
+      <button id="micBtn" class="mic-rec" aria-label="Enregistrer"></button>
+      <div class="mic-niveau"><i id="micBar"></i></div>
+      <div class="mic-temps" id="micTemps">0:00</div>
+    </div>
+    <p class="rc-note" id="micEtat">Prêt.</p>
+    <div id="micBtns"></div>
+  </div>
+</div>
+
+<!-- 💳 ÉCRAN DE RECHARGE — ouvert à tout le monde, pas seulement à l'admin -->
+<div class="sheet" id="rechargeSheet">
+  <div class="bg" onclick="Recharge.fermer()"></div>
+  <div class="body">
+    <div class="grip"></div>
+    <h3>💳 Recharger l'IA</h3>
+    <p id="rcDesc">L'IA coûte quelques centimes à chaque création. Quand la cagnotte est vide,
+      elle se met en pause — <b>n'importe qui peut la recharger</b>, en 30 secondes, sans créer de compte.</p>
+    <div class="rc-amounts" id="rcAmounts">
+      <button data-eur="5" class="on">5 €</button>
+      <button data-eur="10">10 €</button>
+      <button data-eur="20">20 €</button>
+      <button data-eur="50">50 €</button>
+    </div>
+    <div id="rcBtns"></div>
+    <p class="rc-note" id="rcNote"></p>
+  </div>
+</div>
+
 <!-- hidden inputs -->
 <input type="file" id="fileCamAny" class="hidden"
   accept="image/*,image/heic,image/heif,.heic,.heif,video/*,.mov,.mp4,.m4v,.webm,audio/*,.m4a,.aac,.mp3,.wav,.ogg,.caf"
@@ -890,6 +1069,10 @@
 <input type="file" id="fileMagicSong" accept="audio/*,.m4a,.caf,.aac" class="hidden">
 <input type="file" id="fileMagicPhoto2" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
 <input type="file" id="fileDanceRef" accept="video/*" class="hidden">
+<input type="file" id="fileMiniPhoto" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
+<input type="file" id="fileMiniPhotoCam" accept="image/*,image/heic,image/heif" capture="user" class="hidden">
+<input type="file" id="fileMiniAudio" accept="audio/*,.m4a,.caf,.aac,.mp3,.wav,.ogg" class="hidden">
+<input type="file" id="fileMiniDecor" accept="image/*,image/heic,image/heif,.heic,.heif" class="hidden">
 
 <script>
 /* ============================================================
@@ -897,7 +1080,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.9.1';
+var APP_VER='v9.18.0';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -1494,12 +1677,205 @@ function aiWho(provider){
   if(/replicate/i.test(p))return 'IA payante';
   return '';
 }
-function aiErrMsg(e){var m=String((e&&e.message)||e||'');
-  if(/402/.test(m))   return {t:'Crédit IA épuisé — recharge le compte Replicate (quelques €) pour réactiver l\'IA. En attendant : version rapide appliquée.',ms:5200};
-  if(/429/.test(m))   return {t:'IA très demandée à l\'instant — réessaie dans 1 min. Version rapide appliquée.',ms:3600};
-  if(/not_configured|503/.test(m)) return {t:'IA pas encore active (serveur en cours). Version rapide appliquée.',ms:3200};
-  if(/abort|timeout/i.test(m))     return {t:'L\'IA a mis trop de temps — réessaie. Version rapide appliquée.',ms:3200};
-  return {t:'IA indisponible — version rapide appliquée.',ms:2400};
+/* `suite` = ce qui se passe VRAIMENT après l'échec. Vide par défaut : on ne
+   promet plus « version rapide appliquée » quand rien n'est appliqué (mentir
+   sur ce qui a été fait est pire que l'échec lui-même). */
+function aiErrMsg(e,suite){var m=String((e&&e.message)||e||'');suite=suite||'';
+  if(/402/.test(m))   return {t:'Crédit IA épuisé — recharge le compte (quelques €) pour réactiver l\'IA.'+suite,ms:5200};
+  if(/429/.test(m))   return {t:'IA très demandée à l\'instant — réessaie dans 1 min.'+suite,ms:3600};
+  if(/not_configured|503/.test(m)) return {t:'IA pas encore active (serveur en cours).'+suite,ms:3200};
+  if(/abort|timeout/i.test(m))     return {t:'L\'IA a mis trop de temps — réessaie.'+suite,ms:3200};
+  return {t:'IA indisponible.'+suite,ms:2400};
+}
+
+/* ============================================================
+   💳 RECHARGE — n'importe qui peut remettre du crédit (Kevin 2026-08-12)
+   L'IA payante marche avec une cagnotte. Quand elle est vide, TOUT LE MONDE
+   (famille, amis, clients) doit pouvoir la remplir en 1 tap — pas seulement
+   l'admin. Le paiement arrive à Kevin, qui recharge l'IA : c'est écrit noir
+   sur blanc, on ne laisse croire à personne que le paiement recharge tout seul.
+   Revtag @kdmc = valeur réelle du dépôt. PayPal n'a AUCUNE valeur connue :
+   il n'apparaît que si Kevin le renseigne (jamais un lien inventé).
+   ============================================================ */
+var Recharge=(function(){
+  var REVTAG='kdmc';
+  var CLE_PP='crea_paypal_me';
+  var eur=5;
+  function paypalUser(){try{return (localStorage.getItem(CLE_PP)||'').replace(/^@|\/+$/g,'').trim();}catch(e){return '';}}
+  function lienRevolut(m){return 'https://revolut.me/'+REVTAG+(m?('/'+m+'eur'):'');}
+  function lienPaypal(m){var u=paypalUser();return u?('https://paypal.me/'+u+(m?('/'+m+'EUR'):'')):'';}
+  function admin(){try{return !!(window.Users&&Users.isAdmin&&Users.isAdmin());}catch(e){return false;}}
+  function ouvrirUrl(u){ if(!u)return; try{window.open(u,'_blank','noopener');}catch(e){location.href=u;} }
+
+  function btn(label,ghost,fn){var b=document.createElement('button');
+    b.className='bigbtn'+(ghost?' ghost':'');b.textContent=label;b.onclick=fn;return b;}
+
+  function peindre(){
+    var c=$('rcBtns');if(!c)return;c.innerHTML='';
+    /* 1) Payer — le vrai « 1 clic » : montant déjà choisi dans le lien. */
+    c.appendChild(btn('💎 Payer '+eur+' € avec Revolut',false,function(){
+      ouvrirUrl(lienRevolut(eur));apresPaiement();}));
+    var pp=lienPaypal(eur);
+    if(pp)c.appendChild(btn('🅿️ Payer '+eur+' € avec PayPal',true,function(){ouvrirUrl(pp);apresPaiement();}));
+    else if(admin())c.appendChild(btn('➕ Ajouter mon PayPal (une fois)',true,function(){
+      var u=prompt('Ton nom PayPal.me (juste le nom, sans le lien) :','');
+      if(u&&u.trim()){try{localStorage.setItem(CLE_PP,u.trim());}catch(e){}toast('✅ PayPal ajouté',2000);peindre();}}));
+    /* 2) Faire payer quelqu'un d'autre — le lien part par SMS/WhatsApp. */
+    c.appendChild(btn('📤 Demander à quelqu\'un de payer',true,partager));
+    /* 3) Vérifier que c'est reparti. */
+    c.appendChild(btn('🔄 Vérifier si l\'IA est repartie',true,function(){fermer();Credit.verifier();}));
+    /* 4) Admin seulement : mettre l'argent sur le compte de l'IA. */
+    if(admin())c.appendChild(btn('🔧 Recharger le compte IA (admin)',true,function(){
+      ouvrirUrl('https://replicate.com/account/billing');}));
+    c.appendChild(btn('Fermer',true,fermer));
+    var n=$('rcNote');
+    if(n)n.textContent=admin()
+      ? 'Toi (admin) : après le paiement, mets le montant sur le compte de l\'IA avec le bouton 🔧 — c\'est ce qui la redémarre.'
+      : 'Ton paiement arrive à Kevin, qui remet aussitôt le crédit sur l\'IA. Tu n\'as pas de compte à créer.';
+  }
+  function apresPaiement(){
+    /* On ne PRÉTEND pas que c'est payé : on propose de prévenir + de vérifier. */
+    setTimeout(function(){
+      openExport('Merci 🙏','Dès que le crédit est remis, tes créations en attente repartent toutes seules.',[
+        {label:'✅ J\'ai payé — prévenir',fn:function(){closeSheet();prevenir();}},
+        {label:'🔄 Vérifier maintenant',ghost:true,fn:function(){closeSheet();Credit.verifier();}},
+        {label:'Fermer',ghost:true,fn:closeSheet}
+      ]);
+    },900);
+  }
+  function txtPartage(){
+    return 'L\'IA de Créa Studio est en pause (cagnotte vide). Tu peux la recharger en 1 clic ('+eur+' €) : '+lienRevolut(eur);
+  }
+  function partager(){
+    var t=txtPartage();
+    if(navigator.share){navigator.share({title:'Recharger l\'IA',text:t}).catch(function(){});return;}
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){toast('📋 Lien copié — colle-le dans un message',3000);},
+      function(){ouvrirUrl(lienRevolut(eur));});return;}
+    ouvrirUrl(lienRevolut(eur));
+  }
+  function prevenir(){
+    var qui='';try{var c=window.Users&&Users.current&&Users.current();qui=(c&&c.name)?(' ('+c.name+')'):'';}catch(e){}
+    var t='J\'ai payé '+eur+' € pour recharger l\'IA de Créa Studio'+qui+'. Tu peux remettre le crédit 🙏';
+    if(navigator.share){navigator.share({title:'Recharge IA payée',text:t}).catch(function(){});return;}
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){toast('📋 Message copié — envoie-le à Kevin',3200);});return;}
+    toast('Préviens Kevin : '+t,4000);
+  }
+  function ouvrir(){
+    var row=$('rcAmounts');
+    if(row)row.querySelectorAll('[data-eur]').forEach(function(b){
+      b.classList.toggle('on',+b.dataset.eur===eur);
+      b.onclick=function(){eur=+b.dataset.eur;
+        row.querySelectorAll('[data-eur]').forEach(function(x){x.classList.remove('on');});
+        b.classList.add('on');peindre();};});
+    peindre();
+    $('rechargeSheet').classList.add('open');
+  }
+  function fermer(){$('rechargeSheet').classList.remove('open');}
+  return {ouvrir:ouvrir,fermer:fermer,partager:partager,lien:function(){return lienRevolut(eur);}};
+})();
+
+/* ============================================================
+   💳 CRÉDIT IA — « plutôt rien qu'un résultat raté »
+   Règle Kevin (2026-08-12) : quand l'IA payante n'a plus de crédit et
+   que la version sans IA serait MÉDIOCRE (détourage, cartoon, améliorer),
+   on ne rend PAS le résultat moche en douce : on le DIT et on ATTEND.
+   La création est mise en attente et repart TOUTE SEULE dès que le
+   crédit revient — Kevin n'a rien à surveiller.
+   ============================================================ */
+var Credit=(function(){
+  var CLE='crea_credit_ko';
+  var file=[];                      /* créations en attente : [{quoi,section,relancer}] */
+  var dernier=0;                    /* dernier essai auto (anti-boucle) */
+  /* Vrai « plus de crédit » — à ne pas confondre avec une surcharge (429)
+     ou une coupure réseau, qui elles se réessaient toutes seules. */
+  function estEpuise(e){var m=String((e&&e.message)||e||'');
+    return /\b402\b|insufficient|payment_required|billing|no_credit|out_of_credit|quota_exceeded/i.test(m);}
+  function ko(){return !!parseInt(localStorage.getItem(CLE)||'0',10);}
+  function noter(){try{localStorage.setItem(CLE,String(Date.now()));}catch(e){}bandeau();}
+  function ok(){ if(!ko())return;
+    try{localStorage.removeItem(CLE);}catch(e){}
+    var n=file.length; file=[]; bandeau();
+    toast('✅ Le crédit IA est revenu'+(n?' — relance de '+n+' création'+(n>1?'s':''):'')+' 🎉',3400); }
+
+  /* Bandeau doré permanent : où qu'il soit dans l'app, on sait que l'IA est en
+     pause et on recharge en 1 tap. Idempotent (ne clignote pas). */
+  function bandeau(){
+    var b=$('creditBar'),t=$('creditBarTxt'); if(!b)return;
+    var on=ko(), veut=on?'on':'off';
+    if(b.dataset.etat!==veut){b.classList.toggle('on',on);b.dataset.etat=veut;}
+    if(!on)return;
+    var msg=file.length
+      ? ('IA en pause — '+file.length+' création'+(file.length>1?'s':'')+' en attente')
+      : 'IA en pause — plus de crédit';
+    if(t&&t.textContent!==msg)t.textContent=msg;
+  }
+
+  function bloquer(o){
+    o=o||{};
+    /* file d'attente : plusieurs créations peuvent attendre, sans doublon */
+    if(o.relancer){
+      var q=o.quoi||'ta création';
+      if(!file.some(function(x){return x.quoi===q;}))
+        file.push({quoi:q,section:(typeof CUR!=='undefined'?CUR:null),relancer:o.relancer});
+      if(file.length>5)file.shift();
+    }
+    bandeau();
+    var btns=[];
+    if(o.relancer)btns.push({label:'🔄 Réessayer maintenant',fn:function(){closeSheet();o.relancer();}});
+    btns.push({label:'💳 Recharger l\'IA (n\'importe qui peut le faire)',fn:function(){closeSheet();Recharge.ouvrir();}});
+    if(o.quandMeme)btns.push({label:'⚡ Le faire quand même (moins beau)',ghost:true,fn:function(){
+      closeSheet();retirer(o.quoi);toast('Version rapide appliquée — qualité réduite',2800);o.quandMeme();}});
+    btns.push({label:'📤 Demander à quelqu\'un de recharger',ghost:true,fn:function(){closeSheet();Recharge.partager();}});
+    btns.push({label:'Fermer',ghost:true,fn:function(){closeSheet();}});
+    openExport('⏳ Crédit IA épuisé',
+      'Sans l\'IA, '+(o.quoi||'ce résultat')+' serait nettement moins beau. Je préfère attendre que de te rendre quelque chose de raté. '
+      +'Ta création est gardée en attente et repart toute seule dès que le crédit revient.',
+      btns);
+  }
+  function retirer(quoi){file=file.filter(function(x){return x.quoi!==quoi;});bandeau();}
+
+  /* Vérification à la demande (bouton) : la seule façon de savoir si le crédit
+     est revenu est de retenter pour de vrai. S'il n'y a rien en attente, on
+     vérifie au moins que le serveur IA répond — et on le dit honnêtement. */
+  function verifier(){
+    if(file.length){toast('⏳ Je réessaie ta création…',2200);dernier=Date.now();
+      try{file[0].relancer();}catch(e){}return;}
+    toast('⏳ Vérification…',1500);
+    fetch(AI_URL+'/',{method:'GET'}).then(function(r){
+      toast(r.ok?'✅ Le serveur IA répond. Relance ta création pour confirmer le crédit.'
+                :'⚠️ Serveur IA joignable mais en erreur — réessaie dans un moment.',4000);
+    }).catch(function(){toast('⚠️ Serveur IA injoignable — vérifie ta connexion.',3600);});
+  }
+  /* Reprise automatique : au retour sur l'app (ou toutes les 5 min), on retente
+     UNE fois — c'est le seul moyen de savoir si le crédit est revenu. Jamais
+     plus d'un essai par 2 min, et jamais si Kevin est parti sur un autre écran
+     (sinon un résultat surgirait là où il ne l'attend pas). */
+  function reprendre(){
+    bandeau();
+    if(!file.length)return;
+    if(document.visibilityState!=='visible')return;
+    var a=file[0];
+    if(typeof CUR!=='undefined'&&a.section&&CUR!==a.section)return;
+    if(Date.now()-dernier<120000)return;
+    dernier=Date.now();
+    toast('⏳ Je regarde si le crédit IA est revenu…',2000);
+    try{a.relancer();}catch(e){}
+  }
+  try{document.addEventListener('visibilitychange',reprendre);}catch(e){}
+  try{setInterval(reprendre,300000);}catch(e){}
+  return {estEpuise:estEpuise,ko:ko,noter:noter,ok:ok,bloquer:bloquer,verifier:verifier,
+          bandeau:bandeau,retirer:retirer,file:function(){return file.length;},
+          enAttente:function(){return !!file.length;},annuler:function(){file=[];bandeau();}};
+})();
+/* Échec IA sans repli acceptable : si c'est le crédit, on attend au lieu de
+   rendre n'importe quoi. Renvoie true si le cas a été pris en charge. */
+function aiFail(e,o){
+  o=o||{};
+  if(!Credit.estEpuise(e))return false;
+  Credit.noter();
+  Credit.bloquer({quoi:o.quoi,relancer:o.relancer,quandMeme:o.quandMeme});
+  if(o.hint)try{o.hint('⏳ Crédit IA épuisé — je relance tout seul dès qu\'il revient.');}catch(_){}
+  return true;
 }
 
 /* ============ 📂 IMPORT MULTIFORMAT + TAILLE ============
@@ -2304,6 +2680,7 @@ $('btnNew').onclick=function(){
   else if(CUR==='video')Vid.pick();
   else if(CUR==='anim')Anim.start();
   else if(CUR==='aivid')AiVid.pick();
+  else if(CUR==='mini')Mini.pick();
   else if(CUR==='magic')Magic.pick();
 };
 $('btnExport').onclick=function(){
@@ -2311,6 +2688,7 @@ $('btnExport').onclick=function(){
   else if(CUR==='video')Vid.export();
   else if(CUR==='anim')Anim.export();
   else if(CUR==='aivid')AiVid.export();
+  else if(CUR==='mini')Mini.export();
   else if(CUR==='magic')Magic.export();
 };
 
@@ -2975,14 +3353,28 @@ var Photo=(function(){
     var ck=$('selOnly');if(ck)ck.onchange=function(){selOnly=ck.checked;render();};
   }
 
-  function aiRun(kind,okMsg,fallback){
+  function aiRun(kind,okMsg,fallback,opts){
     if(!loaded){toast('Ouvre une photo d\'abord');return;}
+    opts=opts||{};
+    var relancer=function(){aiRun(kind,okMsg,fallback,opts);};
+    /* Crédit déjà connu épuisé + repli médiocre : on prévient AVANT, sans
+       faire perdre 60 s d'attente pour un résultat qu'on refuserait. */
+    if(opts.mediocre&&Credit.ko()){
+      Credit.bloquer({quoi:opts.quoi||okMsg,relancer:relancer,quandMeme:fallback});return;
+    }
     var lng=Math.max(srcCanvas.width,srcCanvas.height),ds=Math.min(1024/lng,1);
     var tmp=document.createElement('canvas');tmp.width=Math.max(1,Math.round(srcCanvas.width*ds));tmp.height=Math.max(1,Math.round(srcCanvas.height*ds));
     tmp.getContext('2d').drawImage(srcCanvas,0,0,tmp.width,tmp.height);
     var dataUrl=tmp.toDataURL('image/jpeg',0.9);
     aiShow('IA en cours… 🤖');
-    function fb(e){aiHide();var m=aiErrMsg(e);toast(m.t,m.ms);if(fallback)fallback();}
+    function fb(e){
+      aiHide();
+      /* ❌ Jamais de repli MÉDIOCRE en douce quand c'est le crédit : on le dit
+         et la création attend le retour du crédit (elle repart toute seule). */
+      if(opts.mediocre&&aiFail(e,{quoi:opts.quoi||okMsg,relancer:relancer,quandMeme:fallback}))return;
+      var m=aiErrMsg(e,fallback?' Version rapide appliquée.':'');
+      toast(m.t,m.ms);if(fallback)fallback();
+    }
     var ctrl,to=setTimeout(function(){if(ctrl)try{ctrl.abort();}catch(e){}},65000);
     try{ctrl=new AbortController();}catch(e){}
     fetch(AI_URL+'/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl}),signal:ctrl?ctrl.signal:undefined})
@@ -2991,7 +3383,7 @@ var Photo=(function(){
         srcCanvas.width=img.naturalWidth||img.width;srcCanvas.height=img.naturalHeight||img.height;
         sctx.clearRect(0,0,srcCanvas.width,srcCanvas.height);sctx.drawImage(img,0,0);
         snapshotOriginal();adj=defaultAdjust();curPreset='orig';fx='none';fitView();buildSliders();buildFilters();buildTrend();render();
-        aiHide();toast(okMsg+' ✅',1800);URL.revokeObjectURL(img.src);
+        aiHide();Credit.ok();toast(okMsg+' ✅',1800);URL.revokeObjectURL(img.src);
       };img.onerror=function(){clearTimeout(to);fb();};img.src=URL.createObjectURL(blob);})
       .catch(function(e){clearTimeout(to);fb(e);});
   }
@@ -3135,9 +3527,13 @@ var Photo=(function(){
         buildSliders();buildFilters();render();toast('Cartoon appliqué 🖍️',1400);
       },40);
     },
-    aiCutout:function(){aiRun('cutout','Sujet détouré (IA)',function(){autoBg();});},
-    aiCartoon:function(){aiRun('cartoon','Cartoon IA',function(){cartoonize(srcCanvas,sctx,cartoonP);adj=defaultAdjust();buildSliders();buildFilters();render();});},
-    aiEnhance:function(){aiRun('enhance','Image améliorée (IA)',function(){adj.sharpen=Math.max(adj.sharpen||0,45);buildSliders();render();});},
+    /* Ces 3 fonctions ont un repli local NETTEMENT moins bon que l'IA
+       (gomme couleur aux bords sales / posterize / simple netteté) →
+       marquées « mediocre » : en cas de crédit épuisé on attend au lieu
+       de rendre un résultat raté (Kevin 2026-08-12). */
+    aiCutout:function(){aiRun('cutout','Sujet détouré (IA)',function(){autoBg();},{mediocre:true,quoi:'le détourage'});},
+    aiCartoon:function(){aiRun('cartoon','Cartoon IA',function(){cartoonize(srcCanvas,sctx,cartoonP);adj=defaultAdjust();buildSliders();buildFilters();render();},{mediocre:true,quoi:'le cartoon'});},
+    aiEnhance:function(){aiRun('enhance','Image améliorée (IA)',function(){adj.sharpen=Math.max(adj.sharpen||0,45);buildSliders();render();},{mediocre:true,quoi:'l\'amélioration'});},
     bgImage:function(){$('fileBg').click();},
     _loadBg:function(file){var im=new Image();im.onload=function(){setBgImage(im);URL.revokeObjectURL(im.src);};im.src=URL.createObjectURL(file);},
     aiBg:function(){
@@ -3146,8 +3542,11 @@ var Photo=(function(){
       aiShow('Création du fond IA… 🌆');
       fetch(AI_URL+'/bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p,ratio:(srcCanvas.width>=srcCanvas.height?'16:9':'9:16')})})
         .then(function(r){var ct=r.headers.get('content-type')||'';if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||'http');});return r.blob();})
-        .then(function(b){var im=new Image();im.onload=function(){aiHide();setBgImage(im);toast('Fond IA appliqué 🌆',1600);URL.revokeObjectURL(im.src);};im.onerror=function(){aiHide();toast('Fond illisible');};im.src=URL.createObjectURL(b);})
-        .catch(function(e){aiHide();var m=aiErrMsg(e);toast(m.t,m.ms);});
+        .then(function(b){var im=new Image();im.onload=function(){aiHide();Credit.ok();setBgImage(im);toast('Fond IA appliqué 🌆',1600);URL.revokeObjectURL(im.src);};im.onerror=function(){aiHide();toast('Fond illisible');};im.src=URL.createObjectURL(b);})
+        /* fond IA : aucune version « sans IA » n'existe → on attend le crédit */
+        .catch(function(e){aiHide();
+          if(aiFail(e,{quoi:'le fond IA',relancer:function(){Photo.aiBg();}}))return;
+          var m=aiErrMsg(e);toast(m.t,m.ms);});
     },
     addText:function(){
       var v=$('photoTextInput').value.trim();if(!v){toast('Écris un texte');return;}
@@ -4363,7 +4762,12 @@ var Auto=(function(){
       var r=await fetch(AI_URL+'/transcribe',{method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({audio:b64(wav16(all,sr)),lang:'fr'})});
       var j=await r.json().catch(function(){return {};});
-      if(!r.ok)return {mots:[],raison:'IA sous-titres : '+(j.detail||j.error||('HTTP '+r.status))};
+      if(!r.ok){
+        /* Repli ACCEPTABLE (le montage reste bon, juste sans sous-titres) : on
+           ne bloque pas le rendu — on allume juste le bandeau de recharge. */
+        var d=j.detail||j.error||('HTTP '+r.status);
+        if(Credit.estEpuise(new Error(String(d)+' '+r.status)))Credit.noter();
+        return {mots:[],raison:'IA sous-titres : '+d};}
       var mots=(j.words||[]).filter(function(w){return w&&w.m;});
       return {mots:mots,raison:mots.length?'':'IA sous-titres : rien compris'};
     }catch(e){return {mots:[],raison:'IA sous-titres injoignable ('+(e&&e.message||e)+')'};}
@@ -5010,7 +5414,12 @@ var AiVid=(function(){
     var msg=String(e&&e.message||e);
     if(/gemini_no_key|not_configured|503/.test(msg)){hint('⚠️ IA vidéo pas encore active (serveur en cours de déploiement). Réessaie dans quelques minutes.');toast('IA vidéo bientôt prête',2600);}
     else if(/quota|RESOURCE_EXHAUSTED|429|rate/i.test(msg)){hint('⚠️ L\'IA gratuite a atteint sa limite du moment — réessaie dans 1 à 2 min (elle se recharge toute seule).');toast('IA occupée, réessaie dans 1 min',3000);}
-    else if(/credit|payment|402|insufficient|billing/i.test(msg)){hint('⚠️ Le moteur avancé (payant) n\'a plus de crédit — mais la version gratuite doit marcher : réessaie.');toast('Réessaie (version gratuite)',3000);}
+    /* Ici les DEUX voies ont échoué (gratuite ET payante) — ne plus prétendre
+       que « la version gratuite doit marcher » : on propose la recharge et on
+       garde la création en attente (elle repart toute seule). */
+    else if(/credit|payment|402|insufficient|billing/i.test(msg)){
+      if(aiFail(new Error('402 '+msg),{quoi:'ta vidéo de danse',hint:hint,relancer:generate}))return;
+      hint('⚠️ Plus de crédit sur le moteur vidéo — recharge pour réactiver.');toast('Crédit IA épuisé',3000);}
     else if(/SAFETY|blocked|no_image/i.test(msg)){hint('⚠️ L\'IA a refusé cette photo (règles de sécurité). Essaie une autre photo, de préférence une personne entière bien visible.');toast('Photo refusée par l\'IA — essaie-en une autre',3200);}
     else{hint('❌ Génération impossible pour l\'instant — réessaie.');toast('Génération impossible, réessaie',2600);}
   }
@@ -5221,12 +5630,20 @@ var Magic=(function(){
       toast('Photo prête — choisis un style ✨',1500);
     };im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);}
   /* --- 1) Transformations 1-clic (Gemini image, gratuit) --- */
-  var _lastWho='',_lastRecreated=false;
-  function apply(preset,label,custom){
+  var _lastWho='',_lastRecreated=false,_essai=0,_dernier=null;
+  /* Consigne de ressemblance : envoyée au serveur pour qu'il garde TON visage.
+     Si le serveur ne connaît pas ces champs il les ignore — aucun risque. */
+  var GARDE_VISAGE='Garde exactement le même visage, les mêmes traits et la même '
+    +'personne que sur la photo fournie. Ne remplace pas la personne.';
+  function apply(preset,label,custom,_retry){
     if(!photoData){toast('Choisis une photo d\'abord');return;}
-    if(busy){toast('Un traitement est déjà en cours…');return;}
-    busy=true;aiShow('L\'IA transforme ta photo… ✨');hint('');
+    if(busy&&!_retry){toast('Un traitement est déjà en cours…');return;}
+    _dernier={preset:preset,label:label,custom:custom};
+    if(!_retry)_essai=0;
+    busy=true;aiShow(_retry?'Je refais avec TA photo… 🙅':'L\'IA transforme ta photo… ✨');hint('');
     var body=custom?{image:photoData,custom:custom}:{image:photoData,preset:preset};
+    body.keep_face=true; body.identity='preserve';     /* ignoré si inconnu du serveur */
+    if(_retry)body.custom=(custom||'')+' '+GARDE_VISAGE;
     var to=setTimeout(function(){},1);
     fetch(AI_URL+'/magic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       .then(function(r){var ct=r.headers.get('content-type')||'';
@@ -5234,21 +5651,89 @@ var Magic=(function(){
         _lastWho=aiWho(r.headers.get('x-crea-provider'));
         _lastRecreated=(r.headers.get('x-crea-fallback')==='recreated');
         return r.blob();})
-      .then(function(b){clearTimeout(to);busy=false;aiHide();
+      .then(function(b){clearTimeout(to);busy=false;aiHide();Credit.ok();
+        /* ⚠️ « recreated » = le serveur n'a PAS retouché ta photo, il a fabriqué
+           une image à partir de rien → ce n'est PAS toi dessus. On refait une
+           fois tout seul, et si ça recommence on le DIT au lieu d'annoncer
+           « transformation prête » (Kevin 2026-08-12 : « ce n'est pas moi »). */
+        if(_lastRecreated&&_essai<1){
+          _essai++; apply(preset,label,custom,true); return;
+        }
         if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
         img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
-        hint('✅ '+(label||'Transformation')
-          +(_lastRecreated?' — attention : ta photo n\'a pas pu être retouchée, l\'IA de secours a recréé une image à partir de zéro.'
-                          :(_lastWho?' ('+_lastWho+')':''))
-          +' Tu peux enregistrer ou essayer un autre style.');
+        if(_lastRecreated){
+          hint('🙅 Ce n\'est PAS toi sur cette image : l\'IA n\'a pas réussi à retoucher ta photo, '
+              +'elle en a inventé une. Refais l\'essai, ou prends une photo de face bien éclairée.');
+          openExport('🙅 Ce n\'est pas toi','L\'IA n\'a pas pu partir de ta photo : elle a inventé une image. '
+            +'Je ne te la présente pas comme ta transformation.',[
+            {label:'🔁 Refaire avec ma photo',fn:function(){closeSheet();_essai=0;apply(preset,label,custom,true);}},
+            {label:'📷 Utiliser une autre photo',ghost:true,fn:function(){closeSheet();$('fileMagicPhoto').click();}},
+            {label:'💾 La garder quand même',ghost:true,fn:function(){
+              shareOrSave(b,'image-ia.png','Image IA (pas ma photo)');closeSheet();}},
+            {label:'Fermer',ghost:true,fn:closeSheet}
+          ]);
+          toast('🙅 Ce n\'est pas toi — l\'IA a inventé une image',4200);
+          return;
+        }
+        hint('✅ '+(label||'Transformation')+(_lastWho?' ('+_lastWho+')':'')
+          +' — si ce n\'est pas toi, touche « 🙅 Ce n\'est pas moi ».');
         openExport((label||'Transformation')+' prête ✨','Enregistre, repars de ce résultat, ou essaie un autre style.',[
           {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'magie-ia.png','Ma création IA');closeSheet();}},
+          {label:'🙅 Ce n\'est pas moi — refaire',ghost:true,fn:function(){closeSheet();pasMoi();}},
           {label:'♻️ Continuer depuis ce résultat',ghost:true,fn:function(){photoData=null;var i2=new Image();i2.onload=function(){
               var c=document.createElement('canvas');c.width=i2.naturalWidth;c.height=i2.naturalHeight;c.getContext('2d').drawImage(i2,0,0);
               photoData=c.toDataURL('image/jpeg',0.9);toast('On repart de cette image ✨',1400);};i2.src=outUrl;closeSheet();}}
         ]);
       })
-      .catch(function(e){clearTimeout(to);busy=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+      .catch(function(e){clearTimeout(to);busy=false;aiHide();
+        /* Le serveur a REFUSÉ d'inventer quelqu'un d'autre (notre demande) :
+           on l'explique et on laisse Kevin décider. */
+        if(/face_edit_failed/.test(String(e&&e.message))){
+          hint('🙅 L\'IA n\'a pas pu partir de ta photo pour ce style. Réessaie, change de photo, '
+              +'ou demande une image inventée (ce ne sera pas toi).');
+          openExport('🙅 Impossible de partir de ta photo',
+            'Je préfère ne rien inventer plutôt que de te rendre quelqu\'un d\'autre.',[
+            {label:'🔁 Réessayer',fn:function(){closeSheet();_essai=0;apply(preset,label,custom,true);}},
+            {label:'📷 Utiliser une autre photo',ghost:true,fn:function(){closeSheet();$('fileMagicPhoto').click();}},
+            {label:'🎨 Créer une image inventée quand même',ghost:true,fn:function(){closeSheet();applyInvente(preset,label,custom);}},
+            {label:'Fermer',ghost:true,fn:closeSheet}
+          ]);
+          toast('L\'IA n\'a pas pu partir de ta photo',3600);return;
+        }
+        /* 100 % IA : sans crédit il n'existe AUCUNE version correcte → on attend. */
+        if(aiFail(e,{quoi:'cette transformation',hint:hint,relancer:function(){apply(preset,label,custom);}}))return;
+        var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* Kevin a demandé explicitement une image inventée : on l'autorise côté
+     serveur (allow_recreate) — et on le lui redira sur le résultat. */
+  function applyInvente(preset,label,custom){
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    busy=true;aiShow('🎨 L\'IA invente une image…');
+    var body=custom?{image:photoData,custom:custom}:{image:photoData,preset:preset};
+    body.allow_recreate=true;
+    fetch(AI_URL+'/magic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){var ct=r.headers.get('content-type')||'';
+        if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||('http_'+r.status));},function(){throw new Error('http_'+r.status);});
+        return r.blob();})
+      .then(function(b){busy=false;aiHide();
+        if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
+        img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
+        hint('🎨 Image inventée par l\'IA — ce n\'est pas toi dessus (tu l\'as demandée).');
+        openExport('Image inventée 🎨','Ce n\'est pas ta photo transformée : l\'IA a créé une image de zéro.',[
+          {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'image-ia.png','Image IA');closeSheet();}},
+          {label:'Fermer',ghost:true,fn:closeSheet}
+        ]);})
+      .catch(function(e){busy=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* « Ce n'est pas moi » : Kevin doit pouvoir le dire en 1 tap, même quand le
+     serveur n'a rien signalé — on refait le MÊME style en insistant pour que
+     ton visage soit conservé. */
+  function pasMoi(){
+    if(!_dernier){toast('Fais d\'abord une transformation ✨',2600);return;}
+    if(busy){toast('Un traitement est déjà en cours…');return;}
+    _essai=0;
+    toast('🙅 Je refais en gardant TON visage…',2400);
+    apply(_dernier.preset,_dernier.label,_dernier.custom,true);
   }
   /* --- 1bis) 👥 À DEUX : réunir deux photos dans une même scène (Hype AI) --- */
   function duo(){
@@ -5259,43 +5744,45 @@ var Magic=(function(){
     fetch(AI_URL+'/duo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,image2:photo2,preset:duoStyle})})
       .then(function(r){var ct=r.headers.get('content-type')||'';
         if(!r.ok||ct.indexOf('image')<0)return r.json().then(function(j){throw new Error(j&&j.error||('http_'+r.status));},function(){throw new Error('http_'+r.status);});
+        _lastRecreated=(r.headers.get('x-crea-fallback')==='recreated');
         return r.blob();})
-      .then(function(b){busy=false;$('magicDuoBtn').disabled=false;aiHide();
+      .then(function(b){busy=false;$('magicDuoBtn').disabled=false;aiHide();Credit.ok();
         if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(b);
         img.src=outUrl;img.classList.remove('hidden');vid.classList.add('hidden');
+        /* même règle qu'au-dessus : une image inventée n'est pas « votre photo » */
+        if(_lastRecreated){
+          hint('🙅 Ce ne sont PAS vos visages : l\'IA n\'a pas pu partir de vos photos, elle en a inventé une.');
+          openExport('🙅 Ce n\'est pas vous','L\'IA a inventé une image au lieu de partir de vos deux photos.',[
+            {label:'🔁 Réessayer',fn:function(){closeSheet();duo();}},
+            {label:'📷 Changer une photo',ghost:true,fn:function(){closeSheet();$('fileMagicPhoto2').click();}},
+            {label:'💾 La garder quand même',ghost:true,fn:function(){shareOrSave(b,'image-ia.png','Image IA');closeSheet();}},
+            {label:'Fermer',ghost:true,fn:closeSheet}
+          ]);
+          toast('🙅 Ce n\'est pas vous — l\'IA a inventé une image',4200);return;
+        }
         hint('✅ Photo à deux prête.');
         openExport('Vous êtes réunis 👥','La photo est prête — tu peux l\'enregistrer.',[
-          {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'a-deux.png','Notre photo');closeSheet();}}
+          {label:'📤 Enregistrer / Partager',fn:function(){shareOrSave(b,'a-deux.png','Notre photo');closeSheet();}},
+          {label:'🔁 Ce n\'est pas nous — refaire',ghost:true,fn:function(){closeSheet();duo();}}
         ]);})
-      .catch(function(e){busy=false;$('magicDuoBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+      .catch(function(e){busy=false;$('magicDuoBtn').disabled=false;aiHide();
+        if(aiFail(e,{quoi:'la photo à deux',hint:hint,relancer:duo}))return;
+        var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* --- 1ter) 🎙 Enregistrer sa voix DANS l'app (Shoom, mode « Ma voix ») --- */
-  var recorder=null,recTimer=null;
+  /* Même micro que partout ailleurs : niveau en direct, réécoute, refaire. */
   function record(){
-    if(recorder){stopRec();return;}
-    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Micro indisponible sur cet appareil');return;}
-    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-      var mime='';['audio/mp4','audio/webm;codecs=opus','audio/webm'].forEach(function(t){
-        if(!mime&&window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))mime=t;});
-      try{recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);}
-      catch(e){toast('Enregistrement indisponible');return;}
-      var chunks=[];recorder.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
-      recorder.onstop=function(){
-        try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
-        clearTimeout(recTimer);recorder=null;$('magicRecBtn').textContent='🎙 Enregistrer ma voix (30 s)';
-        var b=new Blob(chunks,{type:mime||'audio/webm'});
-        if(!b.size){toast('Rien n\'a été enregistré');return;}
-        songFile=new File([b],'ma-voix.'+((mime.indexOf('mp4')>=0)?'m4a':'webm'),{type:b.type});
-        $('magicSingHint').textContent='🎤 Ta voix est prête — va sur « Je chante » pour animer ta photo.';
-        hint('✅ Voix enregistrée ('+Math.round(b.size/1024)+' Ko). Onglet « Je chante » pour la mettre sur ta photo.');
+    Micro.ouvrir({titre:'🎤 Chante ou lis ton texte',max:45,
+      desc:'Touche le gros bouton et chante (ou lis tes paroles). Tu pourras te réécouter avant de valider.',
+      onOk:function(b){
+        var ext=((b.type||'').indexOf('mp4')>=0)?'m4a':'webm';
+        songFile=new File([b],'ma-voix.'+ext,{type:b.type});
+        var sh=$('magicSingHint');
+        if(sh)sh.textContent='🎤 Ta voix est prête — va sur « Je chante » pour animer ta photo.';
+        hint('✅ Voix prête ('+Math.round(b.size/1024)+' Ko). Onglet « Je chante » pour la mettre sur ta photo.');
         toast('Voix enregistrée 🎙',2200);
-      };
-      recorder.start();$('magicRecBtn').textContent='⏹ Arrêter l\'enregistrement';
-      toast('Ça enregistre — lis ton texte 🎙',2000);
-      recTimer=setTimeout(stopRec,30000);           /* 30 s comme Shoom */
-    }).catch(function(){toast('Micro refusé — autorise le micro dans Réglages');});
+      }});
   }
-  function stopRec(){try{if(recorder&&recorder.state!=='inactive')recorder.stop();}catch(e){}}
   /* --- 2) « Je chante » : lip-sync RÉEL (bouche selon le volume du son) --- */
   function sing(){
     if(!photoData){toast('Choisis une photo d\'abord');return;}
@@ -5315,7 +5802,9 @@ var Magic=(function(){
           {label:'📤 Enregistrer / Partager',fn:function(){var ext=(blob.type.indexOf('webm')>=0)?'webm':'mp4';shareOrSave(blob,'je-chante.'+ext,'Je chante !');closeSheet();}},
           {label:'🔁 Refaire',ghost:true,fn:function(){closeSheet();sing();}}
         ]);})
-      .catch(function(e){busy=false;$('magicSingBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+      .catch(function(e){busy=false;$('magicSingBtn').disabled=false;aiHide();
+        if(aiFail(e,{quoi:'ta photo qui chante',hint:hint,relancer:sing}))return;
+        var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* Monte la vidéo chantée : la bouche suit le VOLUME réel de l'audio. */
   function buildSingVideo(urls,audioFile){
@@ -5389,7 +5878,9 @@ var Magic=(function(){
           ? '✅ « '+j.title+' » — lis ce texte à voix haute en touchant 🎙 (30 s), puis « Je chante » anime ta photo.'
           : '✅ « '+j.title+' » — touche ▶️ pour l\'instru, chante par-dessus, puis enregistre ta voix et fais chanter ta photo 🎤');
         toast(songMode==='voix'?'Texte prêt à lire 🎙':'Chanson écrite 🎼',1800);})
-      .catch(function(e){busy=false;$('magicSongBtn').disabled=false;aiHide();var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+      .catch(function(e){busy=false;$('magicSongBtn').disabled=false;aiHide();
+        if(aiFail(e,{quoi:'les paroles de ta chanson',hint:hint,relancer:song}))return;
+        var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   /* Instru générée dans le téléphone (WebAudio) — tempo/gamme selon le style. */
   var playing=false;
@@ -5498,6 +5989,7 @@ var Magic=(function(){
         +(secours.length?' (IA de secours utilisée pour : '+secours.join(', ')+')':''));
       toast('Morceau produit 🎹',2400);
     }).catch(function(e){busy=false;$('magicStudioBtn').disabled=false;aiHide();
+      if(aiFail(e,{quoi:'ton morceau',hint:studioHint,relancer:studio}))return;
       var m=aiErrMsg(e);studioHint('⚠️ '+m.t);toast(m.t,m.ms);});
   }
   function studioHint(t){var e=$('magicStudioHint');if(e)e.textContent=t||'';}
@@ -5631,7 +6123,7 @@ var Magic=(function(){
       im.onerror=function(){toast('Image illisible');};im.src=URL.createObjectURL(file);},
     _song:function(f){songFile=f;$('magicSingHint').textContent='🎵 Son choisi : '+(f.name||'audio').slice(0,40)+' — touche « Faire chanter ma photo ».';toast('Musique prête 🎵',1400);},
     custom:function(){var v=$('magicCustom').value.trim();if(!v){toast('Décris ce que tu veux');return;}apply(null,v,v);},
-    sing:sing,song:song,playInstru:playInstru,duo:duo,record:record,studio:studio,
+    sing:sing,song:song,playInstru:playInstru,duo:duo,record:record,studio:studio,pasMoi:pasMoi,
     _songBlob:function(){return songBlob;},   /* lecture seule — sert aux tests automatiques */
     saveSong:function(){if(!songBlob){toast('Produis d\'abord le morceau');return;}
       shareOrSave(songBlob,((lastLyrics&&lastLyrics.title)||'ma-chanson').replace(/[^\w -]/g,'').slice(0,40)+'.wav','Mon morceau');},
@@ -5648,8 +6140,933 @@ $('fileMagicPhoto2').onchange=function(e){if(e.target.files[0])Magic._load2(e.ta
 $('fileDanceRef').onchange=function(e){if(e.target.files[0])AiVid._ref(e.target.files[0]);e.target.value='';};
 $('fileBg').onchange=function(e){if(e.target.files[0])Photo._loadBg(e.target.files[0]);e.target.value='';};
 
+/* ============================================================
+   🧑‍🎤 MINI-MOI — avatar parlant (équivalent « AI Avatar » CapCut)
+   Photo + texte (voix IA) OU ta voix → petite vidéo où TU parles.
+   La bouche suit le volume réel du son. 100% dans le téléphone ;
+   « Bouche IA » ajoute des poses réalistes via le worker, avec
+   repli automatique hors-ligne (l'app marche toujours).
+   ============================================================ */
+/* ============================================================
+   🎙️ MICRO — un seul micro pour toute l'app.
+   Avant : on appuyait, on parlait, et on découvrait APRÈS coup que le micro
+   n'avait rien capté. Maintenant on VOIT sa voix pendant qu'on parle, on se
+   réécoute, on refait si besoin — et l'app prévient quand elle ne t'entend
+   presque pas. Le micro est TOUJOURS relâché en sortant (jamais allumé en fond).
+   ============================================================ */
+var Micro=(function(){
+  var flux=null, rec=null, chunks=[], actx=null, an=null, raf=0;
+  var t0=0, blob=null, url=null, pic=0, o={}, aud=null, mesures=0;
+
+  function $m(id){return document.getElementById(id);}
+  function etat(t){var e=$m('micEtat'); if(e&&e.textContent!==t)e.textContent=t;}
+  function temps(s){var e=$m('micTemps'),v=Math.floor(s/60)+':'+('0'+Math.floor(s%60)).slice(-2);
+    if(e&&e.textContent!==v)e.textContent=v;}          /* idempotent : pas de clignotement */
+  function barre(p){var b=$m('micBar'); if(b)b.style.width=Math.round(Math.max(0,Math.min(100,p)))+'%';}
+
+  function relacher(){
+    if(raf)cancelAnimationFrame(raf); raf=0;
+    try{if(flux)flux.getTracks().forEach(function(t){t.stop();});}catch(e){}
+    flux=null;
+    try{if(actx)actx.close();}catch(e){}
+    actx=null;an=null;
+  }
+  function peindre(){
+    var c=$m('micBtns'); if(!c)return; c.innerHTML='';
+    function b(l,g,f){var x=document.createElement('button');
+      x.className='bigbtn'+(g?' ghost':'');x.textContent=l;x.onclick=f;c.appendChild(x);}
+    if(blob){
+      b('✅ Utiliser cette voix',false,function(){var v=blob;fermer();if(o.onOk)o.onOk(v);});
+      b(aud&&!aud.paused?'⏸ Pause':'▶️ Réécouter',true,reecouter);
+      b('🔁 Refaire',true,function(){blob=null;pic=0;barre(0);temps(0);etat('Prêt.');peindre();});
+    }
+    b('Fermer',true,fermer);
+  }
+  function reecouter(){
+    if(!blob)return;
+    if(aud&&!aud.paused){aud.pause();peindre();return;}
+    try{if(url)URL.revokeObjectURL(url);}catch(e){}
+    url=URL.createObjectURL(blob);
+    aud=new Audio(url); aud.onended=function(){peindre();};
+    aud.play().catch(function(){toast('Lecture impossible');});
+    peindre();
+  }
+  function demarrer(){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+      etat('Ce téléphone ne donne pas accès au micro.');toast('Micro indisponible',3000);return;}
+    navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}})
+    .then(function(s){
+      flux=s; chunks=[]; pic=0; blob=null;
+      var mime=['audio/mp4','audio/webm;codecs=opus','audio/webm'].filter(function(m){
+        try{return MediaRecorder.isTypeSupported(m);}catch(e){return false;}})[0]||'';
+      try{rec=new MediaRecorder(s,mime?{mimeType:mime}:undefined);}
+      catch(e){relacher();etat('Enregistrement impossible sur ce téléphone.');return;}
+      rec.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
+      rec.onstop=function(){
+        var b=new Blob(chunks,{type:mime||'audio/webm'});
+        relacher(); rec=null;
+        $m('micBtn').classList.remove('on');
+        barre(0);
+        if(!b.size){etat('❌ Rien n\'a été enregistré — réessaie.');peindre();return;}
+        blob=b;
+        var sec=Math.max(0,(Date.now()-t0)/1000);
+        /* On n'accuse le micro QUE si la mesure a vraiment tourné : sinon on
+           dirait « on ne t'entend pas » alors que le son est peut-être bon. */
+        if(mesures>10&&pic<0.02) etat('⚠️ On ne t\'entend presque pas ('+sec.toFixed(1)+' s). Rapproche-toi et refais — ou réécoute pour vérifier.');
+        else etat('✅ Enregistré : '+sec.toFixed(1)+' s — réécoute pour vérifier.');
+        peindre();
+      };
+      /* ⚠️ t0 AVANT la boucle : sinon le minuteur affiche l'heure Unix. */
+      t0=Date.now(); mesures=0;
+      /* niveau en direct : la barre bouge = le micro capte vraiment */
+      try{
+        var AC=window.AudioContext||window.webkitAudioContext;
+        actx=new AC();
+        /* iPhone : le son démarre « en pause » tant qu'on ne le réveille pas —
+           sans ça la barre resterait à 0 et on accuserait le micro à tort. */
+        if(actx.state==='suspended'){try{actx.resume();}catch(e){}}
+        an=actx.createAnalyser(); an.fftSize=512;
+        actx.createMediaStreamSource(s).connect(an);
+        var data=new Uint8Array(an.frequencyBinCount);
+        (function boucle(){
+          if(!an)return;
+          an.getByteTimeDomainData(data);
+          var sum=0;for(var i=0;i<data.length;i++){var v=(data[i]-128)/128;sum+=v*v;}
+          var rms=Math.sqrt(sum/data.length);
+          if(rms>pic)pic=rms;
+          mesures++;
+          barre(rms*260);
+          var s2=(Date.now()-t0)/1000; temps(s2);
+          if(o.max&&s2>=o.max){arreter();return;}
+          raf=requestAnimationFrame(boucle);
+        })();
+      }catch(e){}
+      rec.start();
+      $m('micBtn').classList.add('on');
+      etat('🔴 Ça enregistre — parle ! (touche le bouton pour arrêter)');
+      peindre();
+    }).catch(function(){
+      etat('Micro refusé. Autorise le micro pour cette page, puis réessaie.');
+      toast('Micro refusé — autorise-le dans les réglages',4000);});
+  }
+  function arreter(){ if(rec){try{rec.stop();}catch(e){}} }
+  function ouvrir(opts){
+    o=opts||{}; blob=null; pic=0; aud=null;
+    var t=$m('micTitre'); if(t)t.textContent=o.titre||'🎙️ Ta voix';
+    var d=$m('micDesc'); if(d)d.textContent=o.desc
+      ||('Touche le gros bouton, parle, puis touche-le encore pour arrêter'
+         +(o.max?(' (max '+o.max+' s)'):'')+'.');
+    barre(0); temps(0); etat('Prêt.'); peindre();
+    $m('micBtn').classList.remove('on');
+    $m('micBtn').onclick=function(){ if(rec)arreter(); else demarrer(); };
+    $m('microSheet').classList.add('open');
+  }
+  function fermer(){
+    if(rec){try{rec.stop();}catch(e){}}
+    try{if(aud)aud.pause();}catch(e){}
+    relacher();
+    try{if(url)URL.revokeObjectURL(url);}catch(e){} url=null;
+    $m('microSheet').classList.remove('open');
+  }
+  return {ouvrir:ouvrir,fermer:fermer,arreter:arreter};
+})();
+
+var Mini=(function(){
+  var img=$('miniPhoto'),vid=$('miniVideo');
+  var photoImg=null, face=null, mouth={x:0.5,y:0.68};
+  var voiceMode='tts', voiceBlob=null, ratio='9:16', subs=true, quality='ai';
+  var busy=false, outUrl=null, outBlob=null;   /* l'enregistrement vit dans Micro */
+  var visemes=null, clin=true, ambiance='studio', ton='normale';
+  var decor='none', cutoutImg=null, decorImg=null, cutoutEnCours=false, expr='neutre';
+  var TONS={grave:0.88,normale:1,aigue:1.13};
+  var CLE_PERSOS='crea_mini_persos';
+
+  function hint(t){var el=$('miniHint');if(el)el.textContent=t;}
+  function setOn(b,sel){b.parentNode.querySelectorAll(sel).forEach(function(x){x.classList.remove('on');});b.classList.add('on');}
+  function pick(){ $('fileMiniPhoto').click(); }
+  function camera(){ $('fileMiniPhotoCam').click(); }
+
+  function _load(file){
+    var im=new Image();
+    im.onload=function(){
+      var MAX=1024,sc=Math.min(MAX/im.width,MAX/im.height,1);
+      var c=document.createElement('canvas');
+      c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      var out=new Image();
+      out.onload=function(){
+        photoImg=out; outUrl=null; outBlob=null;
+        /* nouvelle photo = l'ancienne découpe ne vaut plus rien (sinon on
+           collerait le visage de la photo précédente sur le décor) */
+        cutoutImg=null; decor='none'; apercuStop(); syncBoutons();
+        img.src=out.src; img.classList.remove('hidden');
+        vid.classList.add('hidden'); vid.removeAttribute('src');
+        $('miniEmpty').classList.add('hidden'); $('miniPanel').classList.remove('hidden');
+        detectFace();
+        toast('Photo prête — écris ton texte ✍️',1600);
+      };
+      out.src=c.toDataURL('image/jpeg',0.92);
+      try{URL.revokeObjectURL(im.src);}catch(e){}
+    };
+    im.onerror=function(){toast('Image illisible');};
+    im.src=URL.createObjectURL(file);
+  }
+
+  /* Repère le visage → place la bouche automatiquement (retouche possible au doigt). */
+  function detectFace(){
+    face=null;
+    var w=photoImg.naturalWidth||photoImg.width, h=photoImg.naturalHeight||photoImg.height;
+    function apply(box){
+      if(box&&box.w>0&&box.h>0){
+        face={fx:box.x/w,fy:box.y/h,fw:box.w/w,fh:box.h/h};
+        mouth={x:face.fx+face.fw/2, y:face.fy+face.fh*0.72};
+      }else{ face=null; mouth={x:0.5,y:0.66}; }
+    }
+    try{
+      if(window.Face&&Face.natifDispo&&Face.natifDispo()){
+        Face.detectNatif(photoImg).then(function(b){ apply(b||colorFace(w,h)); });
+      }else{ apply(colorFace(w,h)); }
+    }catch(e){ apply(null); }
+  }
+  function colorFace(w,h){
+    try{var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(photoImg,0,0);
+      return (window.Face&&Face.detect)?Face.detect(c,w,h):null;}catch(e){return null;}
+  }
+  /* Toucher la photo = repositionner la bouche (mapping « contain »). */
+  function placeMouth(e){
+    if(!photoImg||img.classList.contains('hidden'))return;
+    var r=img.getBoundingClientRect(), nw=photoImg.naturalWidth,nh=photoImg.naturalHeight;
+    var s=Math.min(r.width/nw,r.height/nh), dw=nw*s,dh=nh*s, ox=(r.width-dw)/2, oy=(r.height-dh)/2;
+    var px=(e.clientX-r.left-ox)/dw, py=(e.clientY-r.top-oy)/dh;
+    if(px<0||py<0||px>1||py>1)return;
+    mouth={x:px,y:py}; toast('Bouche placée 👄',900);
+  }
+
+  /* --- voix --- */
+  /* Le micro est le composant commun : niveau en direct + réécoute + refaire. */
+  function record(){
+    Micro.ouvrir({titre:'🎙️ La voix de ton mini-moi',max:60,
+      desc:'Touche le gros bouton et dis ton texte. Tu pourras te réécouter avant de valider.',
+      onOk:function(b){
+        voiceBlob=b; voiceMode='rec';
+        var row=$('miniVoiceRow');
+        if(row)row.querySelectorAll('[data-voice]').forEach(function(x){
+          x.classList.toggle('on',x.dataset.voice==='rec');});
+        $('miniVoiceRec').classList.remove('hidden');
+        $('miniRecBtn').textContent='🎙️ Réenregistrer ma voix';
+        hint('✅ Voix prête ('+Math.round(b.size/1024)+' Ko). Touche « Fabriquer ».');
+      }});
+  }
+  function getAudio(){
+    if(voiceMode==='rec'||voiceMode==='file'){
+      if(!voiceBlob)return Promise.reject(new Error(voiceMode==='rec'?'Enregistre d\'abord ta voix 🎙️':'Choisis d\'abord un fichier audio 📂'));
+      return Promise.resolve(voiceBlob);
+    }
+    var txt=($('miniScript').value||'').trim();
+    if(!txt)return Promise.reject(new Error('Écris ce que ton mini-moi doit dire ✍️'));
+    aiShow('🔊 L\'IA fabrique ta voix…');
+    return fetch(AI_URL+'/voice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:txt,lang:'fr'})})
+      .then(function(r){ if(!r.ok)return r.json().then(function(j){throw new Error((j&&j.error)||'voice_http');}); return r.blob(); });
+  }
+
+  /* « Bouche IA » : poses de bouche réalistes via le worker (repli = animation locale). */
+  /* Renvoie les poses IA, null = on repliera sur la bouche « rapide », ou
+     rejette avec 'CREDIT' si c'est le crédit (on attend au lieu de dégrader). */
+  function maybeFrames(){
+    if(quality!=='ai'||!photoImg)return Promise.resolve(null);
+    return fetch(AI_URL+'/frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoImg.src,mode:'sing',n:3})})
+      .then(function(r){ if(!r.ok)return r.json().then(function(j){throw new Error((j&&j.error)||('http_'+r.status));},function(){throw new Error('http_'+r.status);}); return r.json(); })
+      .then(function(j){ if(!j||!j.frames||j.frames.length<2)throw new Error('frames_failed');
+        return Promise.all(j.frames.map(loadImg)).then(function(a){a=a.filter(Boolean);
+          if(a.length<2)throw new Error('frames_unreadable'); Credit.ok(); return a;}); })
+      .catch(function(e){
+        if(Credit.estEpuise(e)){var x=new Error('CREDIT');x.cause=e;throw x;}
+        /* panne passagère : la bouche « rapide » reste bonne — mais on le DIT. */
+        hint('ℹ️ Bouche IA indisponible — version rapide utilisée (le résultat reste bon).');
+        return null; });
+  }
+  function loadImg(u){return new Promise(function(res){var im=new Image();im.crossOrigin='anonymous';im.onload=function(){res(im);};im.onerror=function(){res(null);};im.src=u;});}
+
+  /* ---------- 🌆 VRAI DÉCOR : on te découpe de ta photo (détourage) et on met
+     ce que tu veux derrière. Sans découpe, il n'y a PAS de décor possible —
+     on le dit au lieu de bricoler un faux fond. Le résultat est redimensionné
+     aux dimensions EXACTES de la photo → tous les repères (bouche, yeux,
+     cadrage) restent valables, rien à recalculer. ---------------------- */
+  function srcImg(){
+    if(acteur&&acteur.el)return acteur.el;                 /* dialogue : celui qui parle */
+    return (decor!=='none'&&cutoutImg)?cutoutImg:photoImg; }
+  function detourer(){
+    if(cutoutImg)return Promise.resolve(cutoutImg);
+    if(!photoImg)return Promise.reject(new Error('pas de photo'));
+    if(cutoutEnCours)return Promise.reject(new Error('déjà en cours'));
+    cutoutEnCours=true; aiShow('✂️ Je te découpe de ta photo…');
+    var c=document.createElement('canvas');
+    c.width=photoImg.naturalWidth;c.height=photoImg.naturalHeight;
+    c.getContext('2d').drawImage(photoImg,0,0);
+    return fetch(AI_URL+'/cutout',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:c.toDataURL('image/jpeg',0.9)})})
+      .then(function(r){var ct=r.headers.get('content-type')||'';
+        if(!r.ok||ct.indexOf('image')<0)return r.json().then(
+          function(j){throw new Error((j&&j.error)||('http_'+r.status));},
+          function(){throw new Error('http_'+r.status);});
+        return r.blob();})
+      .then(function(b){return new Promise(function(res,rej){
+        var im=new Image();
+        im.onload=function(){
+          /* remise aux dimensions d'origine : les repères restent bons */
+          var k=document.createElement('canvas');
+          k.width=photoImg.naturalWidth;k.height=photoImg.naturalHeight;
+          k.getContext('2d').drawImage(im,0,0,k.width,k.height);
+          var out=new Image();
+          out.onload=function(){cutoutImg=out;cutoutEnCours=false;aiHide();Credit.ok();res(out);};
+          out.onerror=function(){cutoutEnCours=false;aiHide();rej(new Error('découpe illisible'));};
+          out.src=k.toDataURL('image/png');
+          try{URL.revokeObjectURL(im.src);}catch(e){}
+        };
+        im.onerror=function(){cutoutEnCours=false;aiHide();rej(new Error('découpe illisible'));};
+        im.src=URL.createObjectURL(b);});})
+      .catch(function(e){cutoutEnCours=false;aiHide();throw e;});
+  }
+  function choisirDecor(d){
+    if(d==='none'){decor='none';hint('Décor retiré — ta photo d\'origine.');return;}
+    detourer().then(function(){
+      decor=d;
+      hint(d==='blur'?'✅ Décor flou (effet portrait) — fabrique ta vidéo.'
+          :d==='grad'?'✅ Décor studio — fabrique ta vidéo.'
+          :'✅ Décor : ton image — fabrique ta vidéo.');
+      toast('🌆 Décor prêt',1800);
+    }).catch(function(e){
+      /* pas de découpe = pas de décor. On remet le bouton sur « Aucun » pour
+         ne pas laisser croire qu'un décor est actif. */
+      decor='none'; syncBoutons();
+      if(aiFail(e,{quoi:'le décor derrière toi',hint:hint,relancer:function(){choisirDecor(d);}}))return;
+      var m=aiErrMsg(e);hint('⚠️ Découpe impossible : '+m.t+' — ta photo reste telle quelle.');
+      toast('Décor impossible sans la découpe',3200);
+    });
+  }
+  function dessinerDecor(cx,W,H,cr){
+    if(decor==='none'||!cutoutImg)return;
+    if(decor==='blur'){
+      cx.save();
+      try{cx.filter='blur(22px)';}catch(e){}
+      var m=Math.max(W,H)*0.06;                        /* déborde : pas de bord net */
+      cx.drawImage(photoImg,cr.dx-m,cr.dy-m,cr.dw+m*2,cr.dh+m*2);
+      cx.restore();
+      cx.fillStyle='rgba(0,0,0,.16)';cx.fillRect(0,0,W,H);
+    }else if(decor==='grad'){
+      var g=cx.createLinearGradient(0,0,W,H);
+      g.addColorStop(0,'#1d2a44');g.addColorStop(0.55,'#243a5e');g.addColorStop(1,'#0f1522');
+      cx.fillStyle=g;cx.fillRect(0,0,W,H);
+      var h=cx.createRadialGradient(W/2,H*0.36,10,W/2,H*0.36,Math.max(W,H)*0.55);
+      h.addColorStop(0,'rgba(232,184,75,.22)');h.addColorStop(1,'rgba(232,184,75,0)');
+      cx.fillStyle=h;cx.fillRect(0,0,W,H);
+    }else if(decor==='img'&&decorImg){
+      var dr=coverRect(decorImg.naturalWidth,decorImg.naturalHeight,W,H);
+      cx.drawImage(decorImg,dr.dx,dr.dy,dr.dw,dr.dh);
+    }
+  }
+  function targetSize(){ if(ratio==='1:1')return {W:900,H:900}; if(ratio==='16:9')return {W:1280,H:720}; return {W:720,H:1280}; }
+  function coverRect(iw,ih,W,H){var s=Math.max(W/iw,H/ih);var dw=iw*s,dh=ih*s;return {dx:(W-dw)/2,dy:(H-dh)/2,dw:dw,dh:dh};}
+
+  function generate(){
+    if(busy)return;
+    if(!photoImg){toast('Choisis une photo d\'abord');return;}
+    apercuStop();                       /* un seul dessin à la fois */
+    busy=true; $('miniGoBtn').disabled=true;
+    var AC=window.AudioContext||window.webkitAudioContext;
+    var actx=null; try{actx=new AC();}catch(e){}
+    if(actx&&actx.state==='suspended'){try{actx.resume();}catch(e){}}
+    /* La bouche formera les sons de CE texte (si Kevin en a écrit un). */
+    visemes=visemesDuTexte($('miniScript').value||'');
+    getAudio().then(function(audioBlob){
+      aiShow('🎬 Je fabrique ton mini-moi…');
+      return maybeFrames().then(function(frames){ return renderTalking(actx,frames,audioBlob); });
+    }).then(function(blob){
+      busy=false;$('miniGoBtn').disabled=false;aiHide();
+      if(outUrl)URL.revokeObjectURL(outUrl); outBlob=blob; outUrl=URL.createObjectURL(blob);
+      img.classList.add('hidden'); vid.src=outUrl; vid.classList.remove('hidden'); vid.play().catch(function(){});
+      try{Mine.save(blob,'Mini-moi','video');}catch(e){}
+      hint('✅ Ton mini-moi est prêt ! Enregistre-le.');
+      openExport('Ton mini-moi 🧑‍🎤','Ta version numérique qui parle.',[
+        {label:'📤 Enregistrer / Partager',fn:function(){var ext=((blob.type||'').indexOf('webm')>=0)?'webm':'mp4';shareOrSave(blob,'mini-moi.'+ext,'Mon mini-moi');closeSheet();}},
+        {label:'🔁 Refaire',ghost:true,fn:function(){closeSheet();generate();}}
+      ]);
+    }).catch(function(e){ busy=false;$('miniGoBtn').disabled=false;aiHide();try{if(actx)actx.close();}catch(_){}
+      /* Kevin a choisi « 💎 Bouche IA » : si c'est le crédit, on ne bascule pas
+         en douce en qualité réduite — on demande, et on relance tout seul après. */
+      if(String(e&&e.message)==='CREDIT'&&aiFail(e.cause||e,{quoi:'la bouche de ton mini-moi',hint:hint,
+        relancer:generate,quandMeme:function(){quality='fast';
+          var b=document.querySelector('#miniQual [data-q="fast"]'); if(b)setOn(b,'[data-q]');
+          generate();}}))return;
+      /* Voix IA sans crédit : pas de son = pas de vidéo. On attend le crédit,
+         mais on rappelle qu'enregistrer sa propre voix marche tout de suite. */
+      if(aiFail(e,{quoi:'la voix de ton mini-moi',hint:hint,relancer:generate}))
+        {hint('⏳ Crédit IA épuisé — ou choisis « 🎙️ Ma voix », ça marche sans crédit.');return;}
+      var m=aiErrMsg(e); hint('⚠️ '+m.t); toast(m.t,m.ms||3200); });
+  }
+
+  /* Monte la vidéo : la bouche suit le VOLUME réel de la voix. */
+  function renderTalking(actx,frames,audioBlob,segs){
+    return new Promise(function(resolve,reject){
+      if(!actx){reject(new Error('Son indisponible sur ce téléphone'));return;}
+      var sz=targetSize(),W=sz.W,H=sz.H;
+      var cv=document.createElement('canvas');cv.width=W;cv.height=H;var cx=cv.getContext('2d');
+      var aud=new Audio(); aud.src=URL.createObjectURL(audioBlob); aud.crossOrigin='anonymous';
+      aud.onerror=function(){reject(new Error('Voix illisible'));};
+      var words=subs?(($('miniScript').value||'').trim().split(/\s+/).filter(Boolean)):[];
+      /* Ton de la voix : on change la vitesse de lecture SANS correction de
+         hauteur → grave ou aiguë. La durée suit (sinon la vidéo se coupe). */
+      var rate=TONS[ton]||1;
+      try{aud.playbackRate=rate;aud.preservesPitch=false;
+        aud.mozPreservesPitch=false;aud.webkitPreservesPitch=false;}catch(e){}
+      aud.onloadedmetadata=function(){
+        var DUR=Math.min((aud.duration||6)/rate,60);   /* 60 s max (annoncé sous le texte) */
+        var src,an,dest;
+        try{ src=actx.createMediaElementSource(aud); an=actx.createAnalyser(); an.fftSize=512;
+             dest=actx.createMediaStreamDestination(); src.connect(an); an.connect(dest);
+        }catch(e){reject(new Error('Routage audio impossible'));return;}
+        var data=new Uint8Array(an.frequencyBinCount);
+        var stream=cv.captureStream(30);
+        try{dest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});}catch(e){}
+        var mime=pickVideoMime(),rec;
+        try{rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:6000000}:undefined);}
+        catch(e){reject(new Error('Enregistreur vidéo indisponible'));return;}
+        var chunks=[];rec.ondataavailable=function(e){if(e.data.size)chunks.push(e.data);};
+        rec.onstop=function(){try{actx.close();}catch(e){}try{aud.pause();}catch(e){}
+          var b=new Blob(chunks,{type:mime||'video/webm'}); b.size?resolve(b):reject(new Error('Vidéo vide'));};
+        /* en dialogue il n'y a pas forcément de « photo courante » : on part
+           du premier acteur pour ne jamais lire un objet nul. */
+        var base=(segs&&segs.length&&dlgA&&dlgA.el)?dlgA.el:photoImg;
+        var iw=base.naturalWidth,ih=base.naturalHeight, cr=coverRect(iw,ih,W,H);
+        var t0=performance.now(),ended=false;
+        function finish(){if(ended)return;ended=true;try{rec.stop();}catch(e){}}
+        function draw(){
+          if(ended)return;
+          var el=(performance.now()-t0)/1000;
+          if(el>=DUR||aud.ended){finish();return;}
+          an.getByteTimeDomainData(data);
+          var sum=0;for(var i=0;i<data.length;i++){var v=(data[i]-128)/128;sum+=v*v;}
+          var rms=Math.sqrt(sum/data.length);
+          cx.fillStyle='#0a0a0f';cx.fillRect(0,0,W,H);
+          /* « vivant » : zoom lent + respiration + micro-balancement, PLUS un
+             hochement de tête qui suit la voix (on bouge quand on parle). */
+          var z=1.0+0.03*(el/DUR), bob=Math.sin(el*2.2)*(H*0.004), tilt=Math.sin(el*1.15)*0.005;
+          var nod=Math.sin(el*5.1)*rms*(H*0.012);        /* acquiescement sur la parole */
+          cx.save();cx.translate(W/2,H/2);cx.rotate(tilt);cx.scale(z,z);cx.translate(-W/2,-H/2+bob+nod);
+          if(frames){
+            var lvl=Math.min(frames.length-1,Math.floor(rms*frames.length*4.4));
+            var fm=frames[lvl]||frames[0], fr=coverRect(fm.naturalWidth||iw,fm.naturalHeight||ih,W,H);
+            cx.drawImage(fm,fr.dx,fr.dy,fr.dw,fr.dh);
+          }else{
+            /* dialogue : on montre celui qui parle à cet instant */
+            var sv=null,st0=null,st1=null;
+            if(segs&&segs.length){
+              var s=null;
+              for(var q=0;q<segs.length;q++){ if(el>=segs[q].t0-0.001){s=segs[q];} }
+              s=s||segs[0];
+              acteur=(s.qui==='A')?dlgA:dlgB;
+              sv=s.visemes; st0=s.t0; st1=s.t1;
+              var ai=srcImg();
+              iw=ai.naturalWidth||iw; ih=ai.naturalHeight||ih;
+              cr=coverRect(iw,ih,W,H);
+            }
+            dessinerDecor(cx,W,H,cr);                  /* ce qu'il y a derrière toi */
+            cx.drawImage(srcImg(),cr.dx,cr.dy,cr.dw,cr.dh);
+            drawFace(cx,cr,iw,ih,rms,el,DUR,sv,st0,st1);
+          }
+          cx.restore();
+          drawAmbiance(cx,W,H,el,DUR);
+          if(words.length)drawCaption(cx,W,H,words,el,DUR);
+          requestAnimationFrame(draw);
+        }
+        aud.play().then(function(){rec.start(200);requestAnimationFrame(draw);})
+          .catch(function(){rec.start(200);requestAnimationFrame(draw);
+            setTimeout(finish,DUR*1000+400);});
+      };
+    });
+  }
+
+  /* ---------- VISÈMES : la bouche FORME les sons, elle ne fait pas
+     qu'ouvrir/fermer. C'est ce qui sépare « une mâchoire qui bouge » de
+     « quelqu'un qui parle ». Le texte donne la FORME (rond, étiré, fermé),
+     le volume réel donne l'AMPLITUDE — donc ça reste calé sur la voix. ---- */
+  var VIS={
+    A:{w:0.62,h:1.00},   /* a, â — grand ouvert */
+    E:{w:0.92,h:0.52},   /* e, é, è — étiré */
+    I:{w:1.00,h:0.30},   /* i, y — étiré fin */
+    O:{w:0.48,h:0.82},   /* o, ô — rond */
+    U:{w:0.34,h:0.44},   /* ou, u — petit rond */
+    M:{w:0.66,h:0.06},   /* m, b, p — fermé */
+    F:{w:0.72,h:0.20},   /* f, v — lèvre mordue */
+    C:{w:0.78,h:0.34}    /* consonnes — entrouvert */
+  };
+  /* Suite de visèmes déduite du texte (approximation FR, sans dictionnaire). */
+  function visemesDuTexte(txt){
+    var s=String(txt||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    var out=[];
+    for(var i=0;i<s.length;i++){
+      var c=s[i],n=s[i+1];
+      if(c===' '||c==='\n'){out.push('M');continue;}          /* pause = bouche fermée */
+      if(!/[a-z]/.test(c))continue;
+      if(c==='o'&&n==='u'){out.push('U');i++;continue;}        /* « ou » */
+      if((c==='a'||c==='e')&&n==='u'){out.push('O');i++;continue;} /* « au », « eu » */
+      if(c==='a')out.push('A');
+      else if(c==='e')out.push('E');
+      else if(c==='i'||c==='y')out.push('I');
+      else if(c==='o')out.push('O');
+      else if(c==='u')out.push('U');
+      else if('mbp'.indexOf(c)>=0)out.push('M');
+      else if('fv'.indexOf(c)>=0)out.push('F');
+      else out.push('C');
+    }
+    return out.length?out:null;
+  }
+  /* ---------- 😀 EXPRESSIONS : ce sont les COMMISSURES qui font l'expression.
+     courbe > 0 = coins relevés (sourire), < 0 = coins tombants (sérieux). ---- */
+  var EXPR={
+    neutre: {courbe: 0.00, mw:1.00, open:1.00, yeux:1.00},
+    sourire:{courbe: 0.55, mw:1.12, open:0.92, yeux:0.94},  /* coins hauts, yeux un peu plissés */
+    serieux:{courbe:-0.28, mw:0.94, open:0.80, yeux:1.00},
+    surpris:{courbe: 0.05, mw:0.72, open:1.45, yeux:1.14}   /* bouche ronde, yeux ouverts */
+  };
+  /* Bouche = 2 lèvres (courbes de Bézier). Fermée, elle devient une fine
+     ligne courbée → le sourire se voit même bouche close. */
+  function tracerBouche(cx,mcx,mcy,mw,open,courbe){
+    var hw=Math.max(2,mw/2), lev=courbe*mw*0.17;
+    cx.beginPath();
+    cx.moveTo(mcx-hw, mcy-lev);
+    cx.quadraticCurveTo(mcx, mcy-open*0.95-lev*0.25, mcx+hw, mcy-lev);
+    cx.quadraticCurveTo(mcx, mcy+open*1.00-lev*0.25, mcx-hw, mcy-lev);
+    cx.closePath();
+  }
+
+  /* Animation du visage : bouche (visème + volume) + clignement + hochement.
+     Tout est local — ça marche sans internet et sans crédit IA. */
+  function drawFace(cx,cr,iw,ih,rms,el,DUR,segVis,segT0,segT1){
+    /* en dialogue, le visage animé est celui de l'acteur qui parle */
+    var F=acteur?acteur.face:face, M=acteur?acteur.mouth:mouth;
+    var fw=(F?F.fw:0.42), fx=(F?F.fx:0.29), fy=(F?F.fy:0.18), fh=(F?F.fh:0.62);
+    var chinFy=(F?(fy+fh):(M.y+0.14));
+    var mcx=cr.dx+M.x*cr.dw, mcy=cr.dy+M.y*cr.dh;
+    var faceWc=fw*cr.dw, baseW=Math.max(10,faceWc*0.50), baseH=Math.max(4,faceWc*0.11);
+
+    /* forme voulue par le texte, amplitude donnée par la voix réelle.
+       En dialogue on prend les sons de la réplique en cours (segVis) et on
+       les répartit sur SA durée à elle, pas sur toute la vidéo. */
+    var v=VIS.C, liste=segVis||visemes;
+    var t0=(segT0==null?0:segT0), t1=(segT1==null?DUR:segT1);
+    if(liste&&liste.length){
+      var p=(el-t0)/Math.max(0.05,(t1-t0));
+      var idx=Math.min(liste.length-1,Math.max(0,Math.floor(p*liste.length)));
+      v=VIS[liste[idx]]||VIS.C;
+    }
+    var amp=Math.min(1,rms*3.6);
+    if(!liste)v={w:0.66+amp*0.10,h:Math.max(0.05,amp)};        /* pas de texte → volume seul */
+    var mw=baseW*v.w, open=Math.max(0.5,baseH*v.h*(0.35+amp*1.5));
+
+    /* mâchoire : on redescend la vraie peau du bas du visage (garde la texture) */
+    var sy=mouth.y*ih, sh=Math.max(1,(chinFy-mouth.y)*ih);
+    var dsy=mcy, dsh=(cr.dy+chinFy*cr.dh)-mcy;
+    /* srcImg() et pas photoImg : avec un décor, on redécoupe dans le SUJET
+       découpé — sinon l'ancien fond réapparaîtrait par-dessus le nouveau. */
+    if(sh>0&&dsh>0){ try{cx.drawImage(srcImg(),fx*iw,sy,fw*iw,sh,
+      cr.dx+fx*cr.dw,dsy+open*0.30, fw*cr.dw,dsh+open*0.62);}catch(e){} }
+    /* bouche dessinée avec de VRAIES commissures : c'est leur inclinaison qui
+       fait le sourire ou l'air sérieux, pas un simple ovale plus ou moins gros. */
+    var E=EXPR[expr]||EXPR.neutre;
+    mw*=E.mw; open*=E.open;
+    cx.save();
+    tracerBouche(cx,mcx,mcy+open*0.14,mw,open,E.courbe);
+    cx.fillStyle='rgba(46,14,16,.9)';cx.fill();
+    if(open>baseH*0.55){cx.beginPath();cx.ellipse(mcx,mcy-open*0.06,mw*0.40,Math.max(1,open*0.26),0,0,Math.PI*2);
+      cx.fillStyle='rgba(240,236,230,.55)';cx.fill();}
+    cx.restore();
+
+    /* clignement : on copie une bande de FRONT et on la descend sur les yeux —
+       vraie couleur de peau, aucun risque de tache mal teintée. */
+    if(face){
+      var eyY=fy+fh*0.34, eyH=fh*0.11;                   /* bande des yeux */
+      var frY=fy+fh*0.16;                                /* bande de front (peau nette) */
+      /* surpris = yeux plus ouverts / sourire = un peu plissés : on remonte ou
+         on descend légèrement la paupière (bande de front recopiée). */
+      if(E.yeux!==1){
+        var dy=(1-E.yeux)*eyH*0.9;                       /* >0 : paupière descend */
+        try{cx.drawImage(srcImg(), fx*iw, frY*ih, fw*iw, eyH*ih*Math.abs(1-E.yeux)*2.2,
+          cr.dx+fx*cr.dw, cr.dy+(eyY+dy)*cr.dh, fw*cr.dw, eyH*cr.dh*Math.abs(1-E.yeux)*2.2);}catch(e){}
+      }
+      if(clin){
+        var cyc=el%4.6;                                  /* un clignement ~toutes les 4,6 s */
+        if(cyc<0.14){
+          var k=1-Math.abs(cyc-0.07)/0.07;               /* 0 → 1 → 0 (ferme puis rouvre) */
+          try{cx.drawImage(srcImg(), fx*iw, frY*ih, fw*iw, eyH*ih,
+            cr.dx+fx*cr.dw, cr.dy+(eyY+eyH*(1-k)*0.9)*cr.dh, fw*cr.dw, eyH*cr.dh*k);}catch(e){}
+        }
+      }
+    }
+  }
+
+  /* Ambiance : on ne PROMET pas de changer le décor (impossible sans détourage) —
+     on soigne l'image comme un vrai plan : vignette studio, bords doux, ciné. */
+  function drawAmbiance(cx,W,H,el,DUR){
+    if(ambiance==='none')return;
+    cx.save();
+    if(ambiance==='studio'||ambiance==='cine'){
+      var g=cx.createRadialGradient(W/2,H*0.42,Math.min(W,H)*0.28,W/2,H*0.5,Math.max(W,H)*0.72);
+      g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.62)');
+      cx.fillStyle=g;cx.fillRect(0,0,W,H);
+    }
+    if(ambiance==='cine'){
+      cx.fillStyle='rgba(255,150,60,.10)';cx.fillRect(0,0,W,H*0.5);
+      cx.fillStyle='rgba(40,120,180,.12)';cx.fillRect(0,H*0.5,W,H*0.5);
+      var bar=Math.round(H*0.055);cx.fillStyle='#000';
+      cx.fillRect(0,0,W,bar);cx.fillRect(0,H-bar,W,bar);
+    }
+    if(ambiance==='doux'){
+      cx.globalCompositeOperation='source-over';
+      var v=cx.createRadialGradient(W/2,H*0.45,Math.min(W,H)*0.34,W/2,H*0.5,Math.max(W,H)*0.62);
+      v.addColorStop(0,'rgba(255,255,255,0)');v.addColorStop(1,'rgba(255,244,224,.30)');
+      cx.fillStyle=v;cx.fillRect(0,0,W,H);
+    }
+    /* fondu d'entrée/sortie — une vidéo qui démarre net « saute » */
+    var fd=Math.min(0.45,DUR*0.12);
+    var a=(el<fd)?(1-el/fd):((el>DUR-fd)?(1-(DUR-el)/fd):0);
+    if(a>0){cx.fillStyle='rgba(0,0,0,'+Math.max(0,Math.min(1,a))+')';cx.fillRect(0,0,W,H);}
+    cx.restore();
+  }
+
+  /* Sous-titres karaoké répartis sur la durée (le mot dit passe en or). */
+  function drawCaption(cx,W,H,words,el,DUR){
+    var per=DUR/words.length, idx=Math.min(words.length-1,Math.floor(el/per));
+    var start=Math.max(0,idx-2), chunk=words.slice(start,start+5), cur=idx-start;
+    var fs=Math.round(W*0.058); cx.save();
+    cx.font='700 '+fs+'px system-ui,-apple-system,Arial'; cx.textBaseline='middle';
+    var gap=fs*0.32, total=0, wds=chunk.map(function(w){var ww=cx.measureText(w).width;total+=ww+gap;return {w:w,ww:ww};});
+    total-=gap; var x=(W-total)/2, y=H*0.86;
+    cx.lineWidth=Math.max(3,W*0.011); cx.lineJoin='round'; cx.strokeStyle='rgba(0,0,0,.9)';
+    for(var i=0;i<wds.length;i++){ cx.fillStyle=(i===cur)?'#e8b84b':'#fff';
+      cx.strokeText(wds[i].w,x,y); cx.fillText(wds[i].w,x,y); x+=wds[i].ww+gap; }
+    cx.restore();
+  }
+
+  /* ---------- 👤 MES MINI-MOI : le personnage est gardé (photo + bouche
+     repérée + réglages) → on le rappelle en 1 tap au lieu de tout refaire.
+     Photo réduite à 512 px pour tenir dans le téléphone (6 persos max). ---- */
+  function persos(){try{return JSON.parse(localStorage.getItem(CLE_PERSOS)||'[]');}catch(e){return [];}}
+  function ecrirePersos(l){try{localStorage.setItem(CLE_PERSOS,JSON.stringify(l));return true;}
+    catch(e){toast('Mémoire pleine — efface un mini-moi pour en garder un autre',3600);return false;}}
+  function miniature(){
+    var MAX=512,w=photoImg.naturalWidth,h=photoImg.naturalHeight,s=Math.min(MAX/w,MAX/h,1);
+    var c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+    c.getContext('2d').drawImage(photoImg,0,0,c.width,c.height);
+    return c.toDataURL('image/jpeg',0.8);
+  }
+  function garder(){
+    if(!photoImg){toast('Choisis d\'abord une photo');return;}
+    var nom=prompt('Nom de ce mini-moi (ex : Moi, Kevin sérieux…) :','Moi');
+    if(!nom||!nom.trim())return;
+    var l=persos().filter(function(p){return p.nom!==nom.trim();});
+    l.unshift({nom:nom.trim(),img:miniature(),mouth:{x:mouth.x,y:mouth.y},face:face,
+      ton:ton,ambiance:ambiance,ratio:ratio,clin:clin});
+    if(l.length>6)l=l.slice(0,6);
+    if(ecrirePersos(l)){toast('👤 « '+nom.trim()+' » enregistré',2400);peindrePersos();}
+  }
+  function charger(p){
+    var im=new Image();
+    im.onload=function(){
+      photoImg=im;outUrl=null;outBlob=null;
+      img.src=p.img;img.classList.remove('hidden');
+      vid.classList.add('hidden');vid.removeAttribute('src');
+      $('miniEmpty').classList.add('hidden');$('miniPanel').classList.remove('hidden');
+      mouth=p.mouth||{x:.5,y:.66}; face=p.face||null;
+      ton=p.ton||'normale'; ambiance=p.ambiance||'studio';
+      ratio=p.ratio||'9:16'; clin=(p.clin!==false);
+      /* la découpe n'est pas gardée (trop lourde) → on repart sans décor
+         plutôt que d'afficher un décor actif qui n'existe pas */
+      cutoutImg=null; decor='none'; apercuStop();
+      syncBoutons();
+      toast('👤 « '+p.nom+' » chargé — écris ton texte',2200);
+    };
+    im.onerror=function(){toast('Mini-moi illisible');};
+    im.src=p.img;
+  }
+  function supprimer(nom){
+    if(!confirm('Supprimer le mini-moi « '+nom+' » ?'))return;
+    ecrirePersos(persos().filter(function(p){return p.nom!==nom;}));peindrePersos();
+  }
+  function peindrePersos(){
+    var c=$('miniPersos');if(!c)return;
+    var l=persos();
+    c.innerHTML='';
+    if(!l.length){c.classList.add('hidden');return;}
+    c.classList.remove('hidden');
+    l.forEach(function(p){
+      var w=document.createElement('div');w.className='mini-perso';
+      var b=document.createElement('button');b.className='mp-go';
+      b.innerHTML='<img src="'+p.img+'" alt=""><span>'+esc(p.nom)+'</span>';
+      b.onclick=function(){charger(p);};
+      var d=document.createElement('button');d.className='mp-del';d.textContent='🗑';
+      d.title='Supprimer';d.onclick=function(e){e.stopPropagation();supprimer(p.nom);};
+      w.appendChild(b);w.appendChild(d);c.appendChild(w);
+    });
+  }
+  /* Remet les boutons d'accord avec l'état (après chargement d'un perso). */
+  function syncBoutons(){
+    [['miniRatios','data-ratio',ratio],['miniQual','data-q',quality],
+     ['miniTon','data-ton',ton],['miniAmb','data-amb',ambiance],
+     ['miniDecor','data-dec',decor]].forEach(function(a){
+      var row=$(a[0]);if(!row)return;
+      row.querySelectorAll('['+a[1]+']').forEach(function(b){
+        b.classList.toggle('on',b.getAttribute(a[1])===String(a[2]));});
+    });
+    var cb=$('miniClin');if(cb)cb.querySelectorAll('[data-clin]').forEach(function(b){
+      b.classList.toggle('on',(b.dataset.clin==='1')===clin);});
+  }
+  /* ============================================================
+     💬 DIALOGUE À DEUX — deux mini-moi qui se répondent.
+     Une LIGNE = une réplique, ça alterne tout seul entre les deux
+     personnages : rien de spécial à taper. Chaque réplique est dite par
+     la voix IA (ton propre à chaque personnage), les voix sont collées
+     bout à bout, et à l'image c'est celui qui parle qu'on voit.
+     ============================================================ */
+  var dlgA=null, dlgB=null, acteur=null;
+  function repliques(txt){
+    var l=String(txt||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+    return l.map(function(t,i){return {texte:t,qui:(i%2)?'B':'A'};});
+  }
+  /* WAV mono 16 bits — format lu partout (iOS compris). */
+  function versWav(f32,sr){
+    var n=f32.length, b=new ArrayBuffer(44+n*2), d=new DataView(b);
+    var w=function(o,s){for(var i=0;i<s.length;i++)d.setUint8(o+i,s.charCodeAt(i));};
+    w(0,'RIFF');d.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');
+    d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);
+    d.setUint32(24,sr,true);d.setUint32(28,sr*2,true);d.setUint16(32,2,true);d.setUint16(34,16,true);
+    w(36,'data');d.setUint32(40,n*2,true);
+    for(var i=0;i<n;i++){var v=Math.max(-1,Math.min(1,f32[i]));d.setInt16(44+i*2,v*32767,true);}
+    return new Blob([b],{type:'audio/wav'});
+  }
+  function voixDe(texte){
+    return fetch(AI_URL+'/voice',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:texte,lang:'fr'})})
+      .then(function(r){ if(!r.ok)return r.json().then(
+        function(j){throw new Error((j&&j.error)||'voice_http');},
+        function(){throw new Error('voice_http_'+r.status);}); return r.arrayBuffer(); });
+  }
+  /* Génère chaque réplique, colle tout, et note QUI parle QUAND. */
+  function fabriquerDialogue(reps,actx){
+    var SR=22050, morceaux=[], segs=[], t=0;
+    var suite=Promise.resolve();
+    reps.forEach(function(r,i){
+      suite=suite.then(function(){
+        aiShow('🗣️ Voix '+(i+1)+'/'+reps.length+'…');
+        return voixDe(r.texte).then(function(ab){return actx.decodeAudioData(ab);})
+          .then(function(buf){
+            /* mono + rééchantillonnage simple vers SR */
+            var src=buf.getChannelData(0), ratio=buf.sampleRate/SR;
+            var n=Math.max(1,Math.floor(src.length/ratio)), out=new Float32Array(n);
+            for(var k=0;k<n;k++)out[k]=src[Math.floor(k*ratio)]||0;
+            /* ton du personnage : plus lent = plus grave, plus vite = plus aigu */
+            var perso=(r.qui==='A')?dlgA:dlgB;
+            var rate=TONS[(perso&&perso.ton)||'normale']||1;
+            var m=Math.max(1,Math.floor(n/rate)), ton=new Float32Array(m);
+            for(var j=0;j<m;j++)ton[j]=out[Math.floor(j*rate)]||0;
+            var dur=m/SR, blanc=new Float32Array(Math.floor(SR*0.22)); /* respiration */
+            morceaux.push(ton,blanc);
+            segs.push({t0:t,t1:t+dur,qui:r.qui,visemes:visemesDuTexte(r.texte),texte:r.texte});
+            t+=dur+blanc.length/SR;
+          });
+      });
+    });
+    return suite.then(function(){
+      var total=morceaux.reduce(function(a,b){return a+b.length;},0);
+      var all=new Float32Array(total),o=0;
+      morceaux.forEach(function(p){all.set(p,o);o+=p.length;});
+      return {blob:versWav(all,SR),segs:segs};
+    });
+  }
+  function lancerDialogue(){
+    if(busy)return;
+    var reps=repliques($('miniScript').value||'');
+    if(reps.length<2){toast('Écris au moins 2 lignes : une par réplique 💬',3600);return;}
+    if(!dlgA||!dlgB){toast('Choisis les 2 personnages du dialogue 👥',3400);return;}
+    apercuStop();
+    busy=true;$('miniGoBtn').disabled=true;
+    var AC=window.AudioContext||window.webkitAudioContext,actx=null;
+    try{actx=new AC();}catch(e){}
+    if(actx&&actx.state==='suspended'){try{actx.resume();}catch(e){}}
+    if(!actx){busy=false;$('miniGoBtn').disabled=false;toast('Son indisponible sur ce téléphone');return;}
+    /* la découpe appartient à la photo courante, pas aux personnages du
+       dialogue → on n'applique aucun décor ici (plutôt que le mauvais). */
+    var decorAvant=decor; decor='none';
+    Promise.all([chargerActeur(dlgA),chargerActeur(dlgB)]).then(function(){
+      return fabriquerDialogue(reps,actx);
+    }).then(function(o){
+      Credit.ok();
+      aiShow('🎬 Montage du dialogue…');
+      var ac2=new AC();
+      return renderTalking(ac2,null,o.blob,o.segs);
+    }).then(function(blob){
+      busy=false;$('miniGoBtn').disabled=false;aiHide();acteur=null;
+      if(outUrl)URL.revokeObjectURL(outUrl); outBlob=blob; outUrl=URL.createObjectURL(blob);
+      img.classList.add('hidden');vid.src=outUrl;vid.classList.remove('hidden');vid.play().catch(function(){});
+      try{Mine.save(blob,'Dialogue mini-moi','video');}catch(e){}
+      hint('✅ Ton dialogue est prêt !');
+      openExport('Votre dialogue 💬','Deux mini-moi qui se répondent.',[
+        {label:'📤 Enregistrer / Partager',fn:function(){var x=((blob.type||'').indexOf('webm')>=0)?'webm':'mp4';
+          shareOrSave(blob,'dialogue.'+x,'Notre dialogue');closeSheet();}},
+        {label:'🔁 Refaire',ghost:true,fn:function(){closeSheet();lancerDialogue();}}
+      ]);
+    }).catch(function(e){
+      busy=false;$('miniGoBtn').disabled=false;aiHide();acteur=null;decor=decorAvant;syncBoutons();
+      if(aiFail(e,{quoi:'les voix du dialogue',hint:hint,relancer:lancerDialogue}))return;
+      var m=aiErrMsg(e);hint('⚠️ '+m.t);toast(m.t,m.ms);});
+  }
+  /* Charge l'image d'un personnage une seule fois (elle sert à chaque frame). */
+  function chargerActeur(p){
+    return new Promise(function(res,rej){
+      if(!p){rej(new Error('personnage manquant'));return;}
+      if(p.el){res(p);return;}
+      var im=new Image();
+      im.onload=function(){p.el=im;res(p);};
+      im.onerror=function(){rej(new Error('photo de « '+p.nom+' » illisible'));};
+      im.src=p.img;
+    });
+  }
+
+  /* ---------- 👁 APERÇU EN DIRECT : voir tout de suite si la bouche est bien
+     placée, si le clignement va, si le décor rend bien — au lieu d'attendre
+     un rendu complet pour découvrir que c'est à refaire. Aucun son, aucun
+     enregistrement : juste l'animation. ---------------------------------- */
+  var apCv=null, apRaf=0, apT0=0;
+  function apercuStop(){
+    if(apRaf)cancelAnimationFrame(apRaf); apRaf=0;
+    if(apCv&&apCv.parentNode)apCv.parentNode.removeChild(apCv); apCv=null;
+    var b=$('miniApBtn'); if(b)b.innerHTML='<span class="ic">👁</span>Aperçu';
+    img.classList.remove('hidden');
+  }
+  function apercu(){
+    if(apRaf){apercuStop();return;}
+    if(!photoImg){toast('Choisis d\'abord une photo');return;}
+    visemes=visemesDuTexte($('miniScript').value||'');
+    apCv=document.createElement('canvas');
+    apCv.className='viewer'; apCv.style.objectFit='contain';
+    var sz=targetSize(); apCv.width=sz.W; apCv.height=sz.H;
+    img.classList.add('hidden');
+    $('miniWrap').appendChild(apCv);
+    var cx=apCv.getContext('2d');
+    var iw=photoImg.naturalWidth, ih=photoImg.naturalHeight;
+    var cr=coverRect(iw,ih,sz.W,sz.H);
+    var DUR=6; apT0=performance.now();
+    var b=$('miniApBtn'); if(b)b.innerHTML='<span class="ic">⏹</span>Stop';
+    function boucle(){
+      var el=(performance.now()-apT0)/1000;
+      if(el>=DUR){apT0=performance.now();el=0;}          /* tourne en boucle */
+      /* volume simulé : une voix qui parle (syllabes + silences) */
+      var rms=Math.max(0,(0.30+0.26*Math.sin(el*11))*(0.55+0.45*Math.sin(el*2.3)));
+      cx.fillStyle='#0a0a0f';cx.fillRect(0,0,sz.W,sz.H);
+      var z=1.0+0.03*(el/DUR), bob=Math.sin(el*2.2)*(sz.H*0.004);
+      var tilt=Math.sin(el*1.15)*0.005, nod=Math.sin(el*5.1)*rms*(sz.H*0.012);
+      cx.save();cx.translate(sz.W/2,sz.H/2);cx.rotate(tilt);cx.scale(z,z);
+      cx.translate(-sz.W/2,-sz.H/2+bob+nod);
+      dessinerDecor(cx,sz.W,sz.H,cr);
+      cx.drawImage(srcImg(),cr.dx,cr.dy,cr.dw,cr.dh);
+      drawFace(cx,cr,iw,ih,rms,el,DUR);
+      cx.restore();
+      drawAmbiance(cx,sz.W,sz.H,el,DUR);
+      apRaf=requestAnimationFrame(boucle);
+    }
+    /* Toucher l'aperçu le stoppe et remontre la photo : c'est là qu'on replace
+       la bouche (sur l'aperçu le zoom bouge, un clic y serait imprécis). */
+    apCv.style.cursor='pointer';
+    apCv.addEventListener('click',function(){apercuStop();toast('Touche la bouche sur la photo 👄',2400);});
+    boucle();
+    toast('👁 Aperçu en direct — touche-le pour l\'arrêter',2600);
+  }
+
+  /* 🎙️ Dictée du texte — écrire sur iPhone est long. */
+  function dicter(){
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){toast('La dictée n\'est pas dispo sur ce navigateur — utilise le micro du clavier iPhone 🎙️',4200);return;}
+    var r=new SR();r.lang='fr-FR';r.interimResults=false;r.maxAlternatives=1;
+    var b=$('miniDictBtn');if(b)b.textContent='🔴 J\'écoute…';
+    r.onresult=function(e){
+      var t=(e.results[0]&&e.results[0][0]&&e.results[0][0].transcript)||'';
+      var ta=$('miniScript');ta.value=(ta.value?ta.value+' ':'')+t;
+      toast('✅ Texte écrit',1800);};
+    r.onerror=function(ev){toast('Dictée : '+String(ev&&ev.error||'échec'),3000);};
+    r.onend=function(){if(b)b.textContent='🎙️ Dicter';};
+    try{r.start();}catch(e){toast('Dictée indisponible');if(b)b.textContent='🎙️ Dicter';}
+  }
+
+  function init(){
+    $('miniVoiceRow').querySelectorAll('[data-voice]').forEach(function(b){b.onclick=function(){
+      voiceMode=b.dataset.voice; setOn(b,'[data-voice]');
+      var rec=$('miniVoiceRec');
+      if(voiceMode==='rec'){rec.classList.remove('hidden');}
+      else if(voiceMode==='file'){rec.classList.add('hidden');$('fileMiniAudio').click();}
+      else{rec.classList.add('hidden');}
+    };});
+    $('miniRatios').querySelectorAll('[data-ratio]').forEach(function(b){b.onclick=function(){ratio=b.dataset.ratio;setOn(b,'[data-ratio]');};});
+    $('miniSubs').querySelectorAll('[data-subs]').forEach(function(b){b.onclick=function(){subs=(b.dataset.subs==='1');setOn(b,'[data-subs]');};});
+    $('miniQual').querySelectorAll('[data-q]').forEach(function(b){b.onclick=function(){quality=b.dataset.q;setOn(b,'[data-q]');};});
+    $('miniTon').querySelectorAll('[data-ton]').forEach(function(b){b.onclick=function(){ton=b.dataset.ton;setOn(b,'[data-ton]');};});
+    $('miniAmb').querySelectorAll('[data-amb]').forEach(function(b){b.onclick=function(){ambiance=b.dataset.amb;setOn(b,'[data-amb]');};});
+    $('miniClin').querySelectorAll('[data-clin]').forEach(function(b){b.onclick=function(){clin=(b.dataset.clin==='1');setOn(b,'[data-clin]');};});
+    $('miniExpr').querySelectorAll('[data-expr]').forEach(function(b){b.onclick=function(){expr=b.dataset.expr;setOn(b,'[data-expr]');};});
+    $('miniDecor').querySelectorAll('[data-dec]').forEach(function(b){b.onclick=function(){
+      setOn(b,'[data-dec]');
+      if(b.dataset.dec==='img'&&!decorImg){$('fileMiniDecor').click();return;}
+      choisirDecor(b.dataset.dec);};});
+    img.style.cursor='crosshair'; img.addEventListener('click',placeMouth);
+    /* Estimation de durée en direct : Kevin voit tout de suite si son texte
+       tient dans la vidéo (≈ 13 caractères/seconde en français parlé). */
+    var ta=$('miniScript');
+    if(ta)ta.addEventListener('input',majDuree);
+    peindrePersos();majDuree();
+  }
+  function majDuree(){
+    var el=$('miniDuree');if(!el)return;
+    var n=(($('miniScript')||{}).value||'').trim().length;
+    if(!n){if(el.textContent!=='')el.textContent='';return;}
+    var s=Math.max(1,Math.round(n/13));
+    var t='⏱️ ≈ '+s+' s'+(s>60?' — trop long, la vidéo s\'arrête à 60 s ✂️':'');
+    if(el.textContent!==t)el.textContent=t;      /* idempotent : pas de clignotement */
+  }
+
+  return {pick:pick,camera:camera,record:record,generate:generate,init:init,_load:_load,
+    garder:garder,dicter:dicter,persos:persos,apercu:apercu,dialogue:lancerDialogue,
+    /* Choisir qui joue le personnage 1 / 2 du dialogue. */
+    choisirDlg:function(qui){
+      var l=persos();
+      if(!l.length){toast('Garde d\'abord tes mini-moi (bouton « 👤 Garder ce mini-moi ») 👥',4200);return;}
+      var btns=l.map(function(p){return {label:'👤 '+p.nom,fn:function(){
+        var copie={nom:p.nom,img:p.img,mouth:p.mouth,face:p.face,ton:p.ton};
+        if(qui==='A')dlgA=copie; else dlgB=copie;
+        var b=$('miniDlg'+qui); if(b)b.innerHTML='<span class="ic">✅</span>'+esc(p.nom);
+        closeSheet();toast('Personnage '+(qui==='A'?'1':'2')+' : '+p.nom,2000);}};});
+      btns.push({label:'Fermer',ghost:true,fn:closeSheet});
+      openExport('Personnage '+(qui==='A'?'1':'2'),'Qui joue ce rôle dans le dialogue ?',btns);
+    },
+    _decorImg:function(file){
+      var im=new Image();
+      im.onload=function(){decorImg=im;choisirDecor('img');};
+      im.onerror=function(){toast('Image de décor illisible');decor='none';syncBoutons();};
+      im.src=URL.createObjectURL(file);},
+    _audio:function(file){ voiceBlob=file; voiceMode='file';
+      var el=$('miniVoiceRow'); if(el){el.querySelectorAll('[data-voice]').forEach(function(x){x.classList.toggle('on',x.dataset.voice==='file');});}
+      hint('✅ Fichier audio prêt ('+Math.round((file.size||0)/1024)+' Ko). Touche « Fabriquer ».'); },
+    export:function(){ if(!outBlob){toast('Fabrique d\'abord ton mini-moi');return;}
+      var ext=((outBlob.type||'').indexOf('webm')>=0)?'webm':'mp4'; shareOrSave(outBlob,'mini-moi.'+ext,'Mon mini-moi'); } };
+})();
+$('fileMiniPhoto').onchange=function(e){if(e.target.files[0]){go('mini');Mini._load(e.target.files[0]);}e.target.value='';};
+$('fileMiniPhotoCam').onchange=function(e){if(e.target.files[0]){go('mini');Mini._load(e.target.files[0]);}e.target.value='';};
+$('fileMiniAudio').onchange=function(e){if(e.target.files[0]){Mini._audio&&Mini._audio(e.target.files[0]);}e.target.value='';};
+$('fileMiniDecor').onchange=function(e){if(e.target.files[0])Mini._decorImg(e.target.files[0]);e.target.value='';};
+
 /* init all */
-Photo.init();Vid.init();Auto.init();Anim.init();AiVid.init();Magic.init();
+Photo.init();Vid.init();Auto.init();Anim.init();AiVid.init();Magic.init();Mini.init();
+/* Au démarrage : si l'IA était en pause, on le montre tout de suite (sinon
+   Kevin relance une création pour rien et attend sans comprendre). */
+try{Credit.bandeau();}catch(e){}
 
 /* handle resize */
 window.addEventListener('resize',function(){

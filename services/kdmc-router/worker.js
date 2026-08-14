@@ -33,6 +33,19 @@ const ROUTES = {
   'arbre.kd-mc.com': '/CMCteams/arbre', // Arbre généalogique familial — protégé par code famille (Kevin 2026-08-03)
   'lingua.kd-mc.com': '/CMCteams/lingua', // KDMC Lingua — app d'apprentissage de langues (Kevin 2026-08-04)
   'studio.kd-mc.com': '/CMCteams/tools/crea-studio', // Créa Studio — montage vidéo + retouche photo (niveau Photoshop/GIMP) + dessin animé, 100% client-side (Kevin 2026-08-04)
+  'cuisine.kd-mc.com': '/CMCteams/tools/cuisine', // Le Grand Répertoire de la Riviera — livre de cuisine numérique (Monaco/Riviera + Ligurie), 113+ recettes illustrées (Kevin 2026-08-13)
+  'cocina.kd-mc.com': '/CMCteams/tools/cuisine',  // alias — même livre (Kevin 2026-08-13)
+  'cujina.kd-mc.com': '/CMCteams/tools/cuisine',
+  // Belles adresses des apps qui n'en avaient pas — Kevin 2026-08-13 « pourquoi les adresses
+  // ne sont pas pareilles ». Règle KDMC_ADRESSES.md : UNE belle adresse par projet. Les
+  // anciens chemins (kd-mc.com/worldmonitor…) restent valides : rien ne casse, on ajoute.
+  'worldmonitor.kd-mc.com': '/CMCteams/kdmc-home/worldmonitor',
+  'osint.kd-mc.com': '/CMCteams/kdmc-home/osint',
+  'ia.kd-mc.com': '/CMCteams/kdmc-home/ia',
+  'outils.kd-mc.com': '/CMCteams/kdmc-home/outils',
+  // Portail boutiques : vivait SEULEMENT sur github.io (le portail y renvoyait en dur,
+  // hors du domaine, en affichant « kd-mc.com → shops » — une adresse fausse).
+  'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
 
 // Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,
@@ -103,6 +116,33 @@ export default {
     }
 
     let p = url.pathname;
+
+    // Livre de cuisine « A Cüjina de Mùnegu » aussi accessible en CHEMIN du domaine
+    // principal (Kevin 2026-08-13, « je dois pouvoir l'ouvrir même en 4G »). kd-mc.com
+    // est déjà résolu par tous les réseaux/opérateurs → 0 attente de propagation DNS,
+    // contrairement à un sous-domaine tout neuf (cujina/cocina). Chemins : /cujina,
+    // /cuisine, /livre. Redirection vers le / final pour que les images relatives marchent.
+    if ((host === 'kd-mc.com' || host === 'www.kd-mc.com')) {
+      if (/^\/(cujina|cuisine|livre)$/.test(p)) return Response.redirect('https://' + host + p + '/', 301);
+      const cm = p.match(/^\/(cujina|cuisine|livre)(\/.*)?$/);
+      if (cm) {
+        const rest = cm[2] || '/';
+        const upstreamUrl2 = UPSTREAM + '/CMCteams/tools/cuisine' + rest + url.search;
+        const rh2 = new Headers(request.headers); rh2.delete('host');
+        const res2 = await fetch(new Request(upstreamUrl2, {
+          method: request.method, headers: rh2,
+          body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+          redirect: 'manual',
+        }));
+        const oh2 = new Headers(res2.headers);
+        oh2.set('x-kdmc-router', host + ' (cuisine-path)');
+        if (!oh2.has('x-content-type-options')) oh2.set('x-content-type-options', 'nosniff');
+        if (!oh2.has('x-frame-options')) oh2.set('x-frame-options', 'SAMEORIGIN');
+        if (!oh2.has('strict-transport-security')) oh2.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
+        return new Response(res2.body, { status: res2.status, statusText: res2.statusText, headers: oh2 });
+      }
+    }
+
     let upstreamPath;
     if (p === '/' || p === '') upstreamPath = base + '/';
     else if (p.startsWith(PAGES_PREFIX + '/')) upstreamPath = p;
@@ -261,30 +301,87 @@ async function handleLingua(request, url, env) {
          1000 couvre tout le contenu de l'app ; tts-1 accepte jusqu'à 4096, et l'URL GET
          reste largement sous les limites Workers/CDN. */
       const text = (url.searchParams.get('t') || '').slice(0, 1000);
+      /* Kevin 2026-08-11 « la voix est trop robot » : les 6 voix historiques marchent sur les
+         DEUX moteurs ; les 5 voix « HD » (coral, sage, ash, ballad, verse) n'existent QUE sur
+         gpt-4o-mini-tts → REPLI obligatoire vers leur cousine tts-1, sinon OpenAI répond 400. */
       const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+      const VOIX_HD = { coral: 'nova', sage: 'shimmer', ash: 'onyx', ballad: 'fable', verse: 'echo' };
       let voice = (url.searchParams.get('v') || 'nova').toLowerCase();
-      if (VOICES.indexOf(voice) < 0) voice = 'nova';
+      const isAntonin = voice === 'antonin'; // 🎙️ vraie voix CLONÉE d'Antonin (Kevin a validé à l'oreille)
+      if (!isAntonin && VOICES.indexOf(voice) < 0 && !VOIX_HD[voice]) voice = 'nova';
       // Vitesse de GÉNÉRATION (0.25–2) : permet la voix « fillette » — générée lente puis
       // accélérée côté client (pitch monte, tempo net redevient normal). Clampée + cachée à part.
       let speed = parseFloat(url.searchParams.get('s') || '1');
       if (!(speed >= 0.25 && speed <= 2)) speed = 1;
       speed = Math.round(speed * 100) / 100;
       if (!text.trim()) return JL({ ok: false, reason: 'no_text' }, 400);
-      const hbuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(voice + ':' + speed + ':' + text));
-      const hash = Array.prototype.map.call(new Uint8Array(hbuf), (b) => ('0' + b.toString(16)).slice(-2)).join('');
-      const ckey = 'ltts:' + hash;
       const audioHdr = Object.assign({ 'content-type': 'audio/mpeg', 'cache-control': 'public, max-age=31536000' }, cors);
+      const hashOf = async (s) => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+        return Array.prototype.map.call(new Uint8Array(b), (x) => ('0' + x.toString(16)).slice(-2)).join(''); };
+      /* 🎙️ ANTONIN — voix clonée via Replicate (minimax/speech-02-hd, voice_id du clone).
+         Cache KV : 1 phrase = 1 génération à vie. FAIL-OPEN : si clé absente / Replicate KO,
+         on retombe sur onyx (voix d'homme proche) SANS jamais cacher le repli sous la clé
+         Antonin (sinon une panne passagère collerait la mauvaise voix pour toujours). */
+      if (isAntonin) {
+        const aSpeed = Math.max(0.5, speed); // MiniMax accepte 0.5–2 (OpenAI descend à 0.25)
+        const akey = 'ltts:' + (await hashOf('antonin:' + aSpeed + ':' + text));
+        const acached = await env.ACCOUNTS.get(akey, 'arrayBuffer');
+        if (acached) return new Response(acached, { status: 200, headers: audioHdr });
+        if (env.AX_REPLICATE_KEY) {
+          try {
+            const rp = await fetch('https://api.replicate.com/v1/models/minimax/speech-02-hd/predictions', {
+              method: 'POST',
+              headers: { 'authorization': 'Bearer ' + env.AX_REPLICATE_KEY, 'content-type': 'application/json', 'prefer': 'wait' },
+              body: JSON.stringify({ input: { text: text, voice_id: env.ANTONIN_VOICE_ID || 'R8_QFPX9IXV', speed: aSpeed } }),
+            });
+            const j = await rp.json().catch(() => null);
+            const out = j && (typeof j.output === 'string' ? j.output : (Array.isArray(j.output) ? j.output[0] : null));
+            if (rp.ok && j && j.status === 'succeeded' && out) {
+              const af = await fetch(out);
+              if (af.ok) {
+                const abuf = await af.arrayBuffer();
+                try { await env.ACCOUNTS.put(akey, abuf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* best-effort */ }
+                return new Response(abuf, { status: 200, headers: audioHdr });
+              }
+            }
+          } catch (_) { /* fail-open → onyx ci-dessous */ }
+        }
+        voice = 'onyx'; // repli honnête : voix d'homme OpenAI, cachée sous SA clé onyx (jamais sous Antonin)
+      }
+      /* 🗣️ MOTEUR DE VOIX — Kevin 2026-08-11 : « la voix est trop robot, dur de comprendre ».
+         Cause mesurée : on synthétisait avec « tts-1 », le plus ancien moteur OpenAI. On passe
+         à gpt-4o-mini-tts, nettement plus humain, PLUS une consigne de jeu (« instructions »)
+         qui n'existe que sur ce moteur : ton chaleureux de prof, articulation nette.
+         GARDE-FOU : la vitesse (bouton 🐢 Lent, syllabes) n'est fiable que sur tts-1 → dès que
+         la vitesse n'est pas normale, on RESTE sur tts-1. Le 🐢 continue donc de marcher.
+         REPLI : si le nouveau moteur refuse (modèle/voix/quota), on refait avec tts-1 → jamais
+         de silence. La CLÉ DE CACHE contient le moteur : sans ça, tous les mots déjà entendus
+         resteraient servis dans leur ancienne version robotique — Kevin n'entendrait AUCUN
+         changement (c'est le piège classique du cache). */
+      const HD_MODELE = 'gpt-4o-mini-tts';
+      const HD_CONSIGNE = "Voix humaine et chaleureuse de professeur de langue : articulation nette, rythme posé et naturel, ton bienveillant, jamais robotique. Prononce le texte dans sa propre langue, avec l'accent d'un locuteur natif.";
+      const hd = speed === 1;                       // vitesse normale → nouveau moteur
+      const modele = hd ? HD_MODELE : 'tts-1';
+      const voixPour = (m) => (m === 'tts-1' && VOIX_HD[voice]) ? VOIX_HD[voice] : voice;
+      const cle = async (m) => 'ltts:' + (await hashOf(m + ':' + voixPour(m) + ':' + speed + ':' + text));
+      const ckey = await cle(modele);
       const cached = await env.ACCOUNTS.get(ckey, 'arrayBuffer');
       if (cached) return new Response(cached, { status: 200, headers: audioHdr });
       if (!env.OPEN_AI_API_KEY) return JL({ ok: false, reason: 'tts_absent' }); // fail-open (200) → repli navigateur
-      const rr = await fetch('https://api.openai.com/v1/audio/speech', {
-        method: 'POST',
-        headers: { 'authorization': 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
-        body: JSON.stringify({ model: 'tts-1', voice: voice, input: text, response_format: 'mp3', speed: speed }),
-      });
+      const synth = async (m) => {
+        const corps = { model: m, voice: voixPour(m), input: text, response_format: 'mp3' };
+        if (m === HD_MODELE) corps.instructions = HD_CONSIGNE; else corps.speed = speed;
+        return fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST',
+          headers: { 'authorization': 'Bearer ' + env.OPEN_AI_API_KEY, 'content-type': 'application/json' },
+          body: JSON.stringify(corps),
+        });
+      };
+      let mUse = modele, rr = await synth(mUse);
+      if (!rr.ok && mUse === HD_MODELE) { mUse = 'tts-1'; rr = await synth(mUse); } // repli honnête, jamais de silence
       if (!rr.ok) return JL({ ok: false, reason: 'tts_err', status: rr.status }); // fail-open (200)
       const buf = await rr.arrayBuffer();
-      try { await env.ACCOUNTS.put(ckey, buf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* cache best-effort */ }
+      try { await env.ACCOUNTS.put(await cle(mUse), buf, { expirationTtl: 60 * 60 * 24 * 400 }); } catch (_) { /* cache best-effort */ }
       return new Response(buf, { status: 200, headers: audioHdr });
     }
     // Mode « APPEL EN DIRECT » (voix-à-voix temps réel) : on frappe un JETON ÉPHÉMÈRE OpenAI Realtime
@@ -337,6 +434,19 @@ async function handleLingua(request, url, env) {
         + "Progression : introduis peu à peu du vocabulaire et des structures un cran au-dessus de son niveau pour le tirer vers le haut, sans le noyer. Objectif : l'amener au BILINGUE, pas à pas. "
         + (weak.length ? ('Points à retravailler en priorité avec lui : ' + weak.join(', ') + '. ') : '')
         + (scenario ? ("JEU DE RÔLE : joue la scène suivante avec l'apprenant et RESTE DANS TON PERSONNAGE du début à la fin : " + scenario + ". C'est TOI qui joues l'autre rôle de la scène (pas le professeur), en " + langName + " selon le dosage indiqué. Ouvre la scène toi-même par une première réplique courte et naturelle. Les corrections restent douces et en une phrase, glissées sans casser la scène. ") : '')
+        /* Kevin 2026-08-11 : « le coach n'est pas au point, il donne les réponses, demande de
+           remplir un mot dans un texte mais on peut pas écrire dessus ». Trois règles dures :
+           une seule question à la fois, JAMAIS la réponse avant l'essai, et le format ___ que
+           l'application transforme en vraie case à remplir. */
+        + "EXERCICES — RÈGLES ABSOLUES : (1) UNE SEULE question ou phrase à la fois, jamais une liste de 2, 3 ou 4 exercices d'un coup ; "
+        + "(2) ne DONNE JAMAIS la réponse dans le message où tu poses la question — tu attends la réponse de l'apprenant, même s'il se trompe ou s'il ne répond pas ; ne mets ni la solution, ni un exemple qui la contient, ni un indice qui la révèle ; "
+        + "(3) pour un mot à compléter, écris la phrase avec exactement trois tirets bas ___ à l'endroit du mot manquant (l'application les transforme en case à remplir) ; un seul ___ par phrase, et jamais de ___ dans une phrase d'exemple déjà corrigée ; "
+        /* Vu EN VRAI le 2026-08-11 sur le domaine : le coach proposait « J'ai ___ mon sac à dos »
+           à quelqu'un qui apprend l'anglais. Un trou dans une phrase FRANÇAISE n'enseigne rien
+           de la langue étudiée. La phrase de l'exercice est TOUJOURS dans la langue apprise. */
+        + "(3 bis) la phrase de l'exercice est TOUJOURS écrite en " + langName + " — jamais en français : un trou dans une phrase française n'apprend rien de " + langName + ". Seule ta consigne autour peut être en français ; "
+        + "(3 ter) va droit au but : quand l'apprenant demande un exercice, donne-le tout de suite, sans enchaîner d'abord plusieurs questions de politesse ; "
+        + "(4) quand il a répondu : dis d'abord si c'est juste, donne la forme correcte, explique en UNE phrase, puis propose la phrase SUIVANTE avec un nouveau ___. "
         + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
       const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
       if (!chat.some((m) => m.role === 'user')) chat.push({ role: 'user', content: 'Bonjour !' });

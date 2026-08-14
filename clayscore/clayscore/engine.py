@@ -41,6 +41,30 @@ class Analysis:
     reasons: List[str] = field(default_factory=list)
     truth: Optional[str] = None   # vérité terrain (simulation only, pour audit)
 
+    @classmethod
+    def depuis_verdict(cls, plateau_id: int, nom_clip: str, result,
+                       truth: Optional[str] = None) -> "Analysis":
+        """Traduit un verdict du moteur de vision en fiche de plateau.
+
+        Cette traduction existait en DEUX exemplaires identiques — un pour les
+        plateaux simulés, un pour les plateaux réels (pylint les avait
+        repérés). Deux copies d'une même règle, c'est une copie qu'on oubliera
+        de mettre à jour le jour où la fiche changera : le mode simulation et
+        le mode réel se mettraient alors à ne plus dire la même chose, sans
+        que rien ne plante. Une seule version, ici.
+        """
+        return cls(
+            plateau_id=plateau_id,
+            clip_url=f"/clips/{nom_clip}.mp4",
+            auto_verdict=result.verdict,
+            best_guess=result.best_guess,
+            confidence=round(result.confidence, 3),
+            ambiguous=(result.verdict == "ambigu"),
+            gunshot=result.evidence.gunshot_frame is not None,
+            reasons=result.reasons,
+            truth=truth,
+        )
+
 
 class SimulationSource:
     """Génère des plateaux synthétiques à la demande (mode simulation)."""
@@ -75,20 +99,19 @@ class SimulationSource:
             width=320, height=240, duration_s=2.5, seed=self._seed,
         )
         paths = synth.generate(params, str(self.clips_dir / name))
+        # Le ralenti est lu dans un <video> par la tablette : il doit être en
+        # H.264 (OpenCV écrit du FMP4, illisible en navigateur/iOS).
+        try:
+            from .replay import ensure_web_playable
+            ensure_web_playable(paths["video"])
+        except Exception:  # noqa: BLE001 - ne jamais bloquer une partie
+            pass
         data, sr = read_wav_mono(paths["audio"])
         result = decide_verdict(
             FileVideoSource(paths["video"]), data, sr, v_cfg=v_cfg)
-        return Analysis(
-            plateau_id=self._id,
-            clip_url=f"/clips/{name}.mp4",
-            auto_verdict=result.verdict,
-            best_guess=result.best_guess,
-            confidence=round(result.confidence, 3),
-            ambiguous=(result.verdict == "ambigu"),
-            gunshot=result.evidence.gunshot_frame is not None,
-            reasons=result.reasons,
-            truth=synth.VERDICT_BY_SCENARIO[scenario],
-        )
+        return Analysis.depuis_verdict(
+            self._id, name, result,
+            truth=synth.VERDICT_BY_SCENARIO[scenario])
 
 
 class MatchEngine:
@@ -104,6 +127,9 @@ class MatchEngine:
         self.partie: Optional[Partie] = None
         self.pending: Optional[Analysis] = None
         self.auto_mode = False   # si True : valide seul les verdicts sûrs
+        # Vrai pendant l'analyse d'un plateau (faite hors verrou) : empêche
+        # deux analyses simultanées si deux tablettes appuient en même temps.
+        self._analysing = False
         # Reprise d'état après crash (watchdog) : on journalise chaque verdict.
         self.state_path = state_path
         self._cfg: Optional[Dict] = None
@@ -114,14 +140,20 @@ class MatchEngine:
     # --- cycle de vie du match --------------------------------------- #
     def new_game(self, discipline: str, shooters: List[str],
                  serie: int = 25, cartouches: Optional[int] = None,
-                 auto_mode: bool = False) -> Dict:
+                 auto_mode: bool = False,
+                 machines: Optional[List[str]] = None,
+                 mode: str = "entrainement") -> Dict:
         with self._lock:
-            self.partie = Partie(discipline, shooters, serie, cartouches)
+            self.partie = Partie(discipline, shooters, serie, cartouches,
+                                 machines=machines, mode=mode)
             self.pending = None
-            self.auto_mode = bool(auto_mode)
+            # MODE CONCOURS : chaque plateau doit être arbitré -> la validation
+            # automatique est désactivée d'office (traçabilité officielle).
+            self.auto_mode = bool(auto_mode) and mode != "concours"
             self._cfg = {"discipline": discipline, "shooters": shooters,
                          "serie": serie, "cartouches": cartouches,
-                         "auto_mode": bool(auto_mode)}
+                         "auto_mode": self.auto_mode,
+                         "machines": machines, "mode": mode}
             self._log = []
             self._persist()
             return self._state_locked()
@@ -132,14 +164,38 @@ class MatchEngine:
         return self.partie
 
     def throw(self) -> Dict:
-        """Analyse le prochain plateau (sans valider si arbitrage requis)."""
+        """Analyse le prochain plateau (sans valider si arbitrage requis).
+
+        L'analyse dure ~1 s (bien plus avec les vraies caméras). Elle est donc
+        faite **hors du verrou** : sinon toute autre tablette, l'écran TV et le
+        rafraîchissement des scores restent figés pendant tout ce temps
+        (mesuré : 13x plus lent avant correction).
+
+        Un seul plateau peut être analysé à la fois : si deux tablettes
+        appuient en même temps, la seconde reçoit une erreur claire plutôt que
+        de lancer une deuxième analyse en parallèle.
+        """
         with self._lock:
             p = self._require()
             if p.finished:
                 raise RuntimeError("La partie est terminée.")
-            analysis = self.sim.next_plateau()
-            if analysis is None:
-                raise RuntimeError("Plus de plateaux disponibles dans le flux.")
+            if self._analysing:
+                raise RuntimeError("Un plateau est déjà en cours d'analyse.")
+            self._analysing = True
+
+        try:
+            analysis = self.sim.next_plateau()      # <- hors verrou (lent)
+        finally:
+            with self._lock:
+                self._analysing = False
+
+        if analysis is None:
+            raise RuntimeError("Plus de plateaux disponibles dans le flux.")
+
+        with self._lock:
+            # La partie a pu se terminer pendant l'analyse (autre tablette).
+            if self.partie is None or self.partie.finished:
+                raise RuntimeError("La partie est terminée.")
             self.pending = analysis
             committed = None
             # Auto-validation seulement si activée ET verdict sûr (non ambigu).
@@ -154,7 +210,7 @@ class MatchEngine:
     def commit(self, verdict: Optional[str] = None, cartridge: int = 1) -> Dict:
         """Valide un verdict (celui de l'humain, ou l'auto si `verdict` None)."""
         with self._lock:
-            p = self._require()
+            self._require()
             if self.pending is None and verdict is None:
                 raise RuntimeError("Aucun plateau à valider.")
             pending = self.pending
@@ -216,7 +272,9 @@ class MatchEngine:
             return False
         with self._lock:
             self.partie = Partie(cfg["discipline"], cfg["shooters"],
-                                 cfg["serie"], cfg["cartouches"])
+                                 cfg["serie"], cfg["cartouches"],
+                                 machines=cfg.get("machines"),
+                                 mode=cfg.get("mode", "entrainement"))
             self.auto_mode = bool(cfg.get("auto_mode"))
             self._cfg = cfg
             self._log = []

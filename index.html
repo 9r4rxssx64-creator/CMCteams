@@ -1411,6 +1411,15 @@ var CODES={
   "CFL"   :{l:"F\u00eate incluse cong\u00e9", bg:"#d4d4d4",c:"#202020",b:"#a8a8a8",cdp:false},
   "CRH"   :{l:"RH inclus cong\u00e9", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
   "CDH"   :{l:"RH cong\u00e9 pay\u00e9", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
+  // v9.891 (Kevin 2026-08-11 \u00ab El Missouri est de mariage \u00bb) \u2014 CLM = CONG\u00c9 MARIAGE (Convention
+  // SBM art.18 : 4 jours), PAS un arr\u00eat maladie. Observ\u00e9 dans le PDF d'ao\u00fbt (EL MISSOURI O,
+  // BJ \u00c9q.10, jours 21-24 = exactement les 4 jours de l'article 18).
+  // POURQUOI L'AJOUTER ICI : un code ABSENT de ce dictionnaire est SUPPRIM\u00c9 des plannings au
+  // d\u00e9marrage (nettoyage \u00ab code invalide \u00bb, ~l.9520) \u2014 c'est exactement ce qui avait effac\u00e9
+  // 10 jours de DEPL \u00e0 FOREST M (v9.751). CLM \u00e9tait dans le m\u00eame cas : non reconnu = \u00e0 risque.
+  // Bonus : le code cesse d'\u00eatre opaque, Kevin et l'employ\u00e9 lisent \u00ab Cong\u00e9 mariage \u00bb.
+  // Il reste une ABSENCE pour la rotation des d\u00e9parts (pr\u00e9sent dans DEP_ABS) \u2192 pas de num\u00e9ro.
+  "CLM"   :{l:"Cong\u00e9 mariage", bg:"#f8c0d0",c:"#2a0410",b:"#dca0b0",cdp:false},
   "15/19" :{l:"15h\u201319h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   "14/20" :{l:"14h\u201320h", bg:"#c4e8a8",c:"#3a6a18",b:"#9cc878",cdp:false},
   // ── PIT BOSS / SUPERVISEUR — codes spécifiques cadres (v9.121) ─────────
@@ -5812,7 +5821,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.886";
+var APP_VER="v9.891";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -17824,6 +17833,27 @@ function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.v
 })();
 
 // ── Calcul position de départ pour un chef un jour donné ──
+// ROTATION DES DÉPARTS — « cette personne est-elle à la table ce jour-là ? »
+// VOLONTAIREMENT SÉPARÉ du isWork() global (76 usages : heures, couleurs, compteurs, « qui
+// travaille aujourd'hui »). Toucher isWork() global changerait les heures et les couleurs —
+// hors sujet et risqué. Ici on ne change QUE les numéros de départ.
+// MIROIR EXACT de DEP_ABS dans tools/departs/index.html (page light) — la garde
+// test:departs-abs-parity échoue si les deux listes divergent.
+// RÈGLE MÉTIER TRANCHÉE PAR KEVIN — « celui qui est RATTACHÉ à l'équipe garde sa place dans la
+// rotation ; seuls les vrais congés/arrêts la libèrent » :
+//  · PRT (« Prêt », mis à disposition d'un autre service) = TRAVAIL, GARDE son numéro
+//    (décision Kevin 2026-07-10, leçon #140).
+//  · DEPL / DEP (déplacement) et SS = TRAVAIL, GARDENT leur numéro — décision Kevin
+//    2026-08-10 (« B »), même logique que PRT. Ils sont donc VOLONTAIREMENT ABSENTS de
+//    cette liste. La page light les comptait en absence → elle a été alignée sur l'app.
+//  · CLM (congé mariage — Convention SBM art.18, 4 jours) = ABSENCE, PAS de numéro — v9.889, BUG RÉEL MESURÉ sur août :
+//    EL MISSOURI O (BJ Éq.10) était en CLM les jours 21-24 et recevait quand même les numéros
+//    1,4,2,3 → ses 4 collègues avaient de FAUX numéros ces 4 jours (20 cellules). CLM est déjà
+//    classé absence partout ailleurs dans l'app (_CMC_ABS_LIEU l.1454, ABS l.24630) ; seule la
+//    rotation l'ignorait. 4 jours consécutifs (≥4) → la règle v9.857 le sort du roster et les
+//    présents se recompactent, comme Kevin l'a demandé (« revoir en congé/vacances »).
+var DEP_ABS=["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","CLM"];
+function isWorkDep(c){return !!c && DEP_ABS.indexOf(c)<0;}
 function calcDepPos(empName,tid,day){
   var CI=gCI(A.year,A.month);
   var chefNames=CHEFS_T[tid]||[];
@@ -17860,7 +17890,7 @@ function calcDepPos(empName,tid,day){
   // Fix bug : PASSERON en CP plein mois décalait les positions (ordre 1→6→4→2→3→5
   // affichait seulement 2,3,4,5,6 au lieu de 1→5 propre)
   chefEmps=chefEmps.filter(function(e){
-    return da.some(function(d){return isWork((pl[e.id]||{})[d]||'');});
+    return da.some(function(d){return isWorkDep((pl[e.id]||{})[d]||'');});
   });
   if(!chefEmps.length) return null;
   // v9.834 (Kevin 2026-06-29 « vérifie les numéros des départs, l'algorithme ») — PORT
@@ -17878,18 +17908,17 @@ function calcDepPos(empName,tid,day){
   var baseOf={}; chefEmps.forEach(function(e,ai){ baseOf[e.name]=(CI[e.name]!==undefined?CI[e.name]:ai); });
   var workDays=[];
   for(var _wd=1;_wd<=days;_wd++){
-    for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWork((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
+    for(var _ci2=0;_ci2<chefEmps.length;_ci2++){ if(isWorkDep((pl[chefEmps[_ci2].id]||{})[_wd]||'')){ workDays.push(_wd); break; } }
   }
   var wi=workDays.indexOf(day); if(wi<0) return null;
-  // v9.865 (Kevin 2026-07-09 « corrige dans light les départs correctement » — la fenêtre
-  // GLISSE de +1 à chaque CYCLE de repos : ta ligne 6-4-2-3 → 4-2-3-5 → 2-3-5-1). rot NE
-  // continue PAS en continu : rot = index_de_cycle + position_dans_le_cycle. Un trou dans
-  // workDays (repos d'équipe) = nouveau cycle. Le jour 1 reste 1-6-4-2-3-5. Identique à compute().
-  var _rotByDay={}, _cyc=0, _kd=0, _prevWD=null;
-  for(var _iw=0;_iw<workDays.length;_iw++){ var _wd2=workDays[_iw];
-    if(_prevWD!==null){ if(_wd2-_prevWD>1){ _cyc++; _kd=0; } else { _kd++; } }
-    _rotByDay[_wd2]=_cyc+_kd; _prevWD=_wd2;
-  }
+  // v9.868 (Kevin 2026-07-10 « certaines personnes ont le même départ plusieurs fois dans le mois,
+  // la suite n'est pas respectée ») — RETOUR à la rotation CONTINUE rot=wi (+1 par jour travaillé
+  // de l'équipe, SANS remise à zéro au repos). Chaque chef parcourt la suite DANS L'ORDRE
+  // (1-4-2-3-5 puis 1-4-2-3-5…) → jamais 2× le même numéro avant d'avoir fini la suite.
+  // Le v9.865 remettait rot à zéro à chaque cycle de repos → comme les cycles sont plus courts
+  // que la taille d'équipe, un même numéro revenait au bout de 1-2 jours (4-2 puis 4-2).
+  // Mauvaise interprétation de « ma ligne glisse » : la fenêtre glisse de +1 PAR JOUR (continu),
+  // pas par cycle. Identique à compute() (page light).
   // v9.857 (Kevin 2026-07-04 « quand une personne manque 1,2,3 jours ne pas revoir l'algo,
   // laisser le numéro mort ; revoir seulement quand départ en vacances/congé »).
   // ROSTER STABLE : la rotation se calcule sur le ROSTER (chefs actifs MOINS ceux en congé
@@ -17900,17 +17929,17 @@ function calcDepPos(empName,tid,day){
   // (= « revoir »). Sur un jour où tout le monde est présent, effRoster == présents → numéros
   // IDENTIQUES à avant (zéro régression sur les jours pleins ; ne touche QUE les jours d'absence
   // courte). Rotation rot=wi (+1 par jour travaillé) conservée. Même logique dans compute (page).
-  function _absRun(id,D){ if(isWork((pl[id]||{})[D]||''))return 0; var L=1,dd;
-    for(dd=D-1;dd>=1&&!isWork((pl[id]||{})[dd]||'');dd--)L++;
-    for(dd=D+1;dd<=days&&!isWork((pl[id]||{})[dd]||'');dd++)L++; return L; }
+  function _absRun(id,D){ if(isWorkDep((pl[id]||{})[D]||''))return 0; var L=1,dd;
+    for(dd=D-1;dd>=1&&!isWorkDep((pl[id]||{})[dd]||'');dd--)L++;
+    for(dd=D+1;dd<=days&&!isWorkDep((pl[id]||{})[dd]||'');dd++)L++; return L; }
   var effRoster=chefEmps.filter(function(e){var r=_absRun(e.id,day);return r===0||r<4;})
                         .sort(function(a,b){return baseOf[a.name]-baseOf[b.name];});
   var N=effRoster.length; if(!N) return null;
   var meEmp=effRoster.filter(function(e){return e.name===empName;})[0];
   if(!meEmp) return null;                                 // en congé long OU hors équipe
-  if(!isWork((pl[meEmp.id]||{})[day]||'')) return null;   // absence courte → numéro MORT (rien affiché)
+  if(!isWorkDep((pl[meEmp.id]||{})[day]||'')) return null;   // absence courte → numéro MORT (rien affiché)
   var j=effRoster.indexOf(meEmp);
-  var SEQd=getSeqForSize(N), rot=_rotByDay[day];
+  var SEQd=getSeqForSize(N), rot=wi;
   return SEQd[(((rot+j)%N)+N)%N];
 }
 
@@ -20655,11 +20684,13 @@ function simStart(speedX){
   SIM_STATE.log=[];
   // Assure live state
   getLiveState();
+  _simSyncTimer();                      // v9.889 \u2014 d\u00e9marre le tick 1s SEULEMENT ici
   toast("\ud83c\udfae Simulation d\u00e9marr\u00e9e \u00b7 x"+SIM_STATE.speedX);
   dc();
 }
 function simStop(){
   SIM_STATE.active=false;
+  _simSyncTimer();                      // v9.889 \u2014 arr\u00eate le tick 1s (plus de r\u00e9veil batterie)
   toast("\u23f9 Simulation arr\u00eat\u00e9e");
   dc();
 }
@@ -20676,7 +20707,16 @@ function simTick(){
   // Forcément re-render sur la page sim
   if(A.view==="sim")dcDebounced&&dcDebounced();
 }
-setInterval(simTick,1000); // tick 1s réel
+// v9.889 (ultra-review perf 2026-08-10) — AVANT : `setInterval(simTick,1000)` inconditionnel
+// au chargement → le téléphone était réveillé CHAQUE SECONDE, 24h/24, juste pour tester un
+// drapeau `SIM_STATE.active` qui est faux 99,9% du temps (batterie iPhone). Le tick ne sert
+// QUE pendant une simulation → on démarre/arrête la minuterie avec la simulation.
+// SIM_STATE.active démarre à false et n'est jamais restauré au boot → aucune reprise à gérer.
+var _simInt=null;
+function _simSyncTimer(){
+  if(SIM_STATE.active&&!_simInt){ _simInt=setInterval(simTick,1000); }        // tick 1s réel
+  else if(!SIM_STATE.active&&_simInt){ clearInterval(_simInt); _simInt=null; }
+}
 function simGetVirtualDate(){return SIM_STATE.active?new Date(SIM_STATE.virtualNow):new Date();}
 // Pit choisit manuellement un emp du pool → assigne à une table donnée
 function pitManualAssign(uid,tid){
@@ -30799,7 +30839,26 @@ function chatPickDm(){_chatDmPick=!_chatDmPick;_chatDmQ="";dc();setTimeout(funct
 var _dmSearchTimer;function chatDmSearch(q){var el=document.getElementById("chatDmQIn");var pos=el?el.selectionStart:-1;clearTimeout(_dmSearchTimer);_dmSearchTimer=setTimeout(function(){_chatDmQ=q;dc();requestAnimationFrame(function(){var i2=document.getElementById("chatDmQIn");if(i2){i2.focus();try{i2.setSelectionRange(pos,pos);}catch(e){}}});},150);}
 // Helper universel : met à jour A[key], re-render, replace le focus dans l'input
 /** Update A[key] from input value, then dc() + restore focus on input id. @param {string} key. @param {string} val. @param {string} id Input id. @returns {void} */
-function searchInput(key,val,id){A[key]=val;dc();requestAnimationFrame(function(){var i=document.getElementById(id);if(i){var p=val.length;i.focus();try{i.setSelectionRange(p,p);}catch(e){}}});}
+// v9.889 (ultra-review perf 2026-08-10) — AVANT : `dc()` (reconstruction COMPLÈTE de l'app :
+// barre + contenu + navigation) était relancé à CHAQUE CARACTÈRE tapé, sur ~20 champs de
+// recherche → frappe saccadée sur iPhone. MAINTENANT : temporisation 150 ms (même schéma que
+// chatDmSearch, déjà éprouvé) → 1 seul rendu quand Kevin arrête de taper. A[key] est mis à jour
+// TOUT DE SUITE (aucun retard sur la donnée), et le curseur est replacé à sa position réelle
+// (selectionStart) au lieu d'être forcé en fin de champ.
+var _searchTimers={};
+function searchInput(key,val,id){
+  A[key]=val;                                       // donnée à jour immédiatement
+  var el=document.getElementById(id);
+  var pos=el&&el.selectionStart!=null?el.selectionStart:val.length;
+  clearTimeout(_searchTimers[key]);
+  _searchTimers[key]=setTimeout(function(){
+    dc();
+    requestAnimationFrame(function(){
+      var i=document.getElementById(id);
+      if(i){i.focus();try{i.setSelectionRange(pos,pos);}catch(e){}}
+    });
+  },150);
+}
 function chatSetReply(ts){var m=A.chatMsgs.find(function(x){return x.ts===ts;});if(!m||m.del)return;_chatRep={ts:m.ts,name:m.name,text:m.text||""};
   // DM : activer automatiquement la réponse privée vers l'autre partie
   if(m.to&&A.user){var otherId=m.uid===A.user.id?m.to:m.uid;var otherName=m.uid===A.user.id?(m.toName||m.name):m.name;if(otherId&&otherName&&otherId!==A.user.id)_chatDm={id:otherId,name:otherName};}

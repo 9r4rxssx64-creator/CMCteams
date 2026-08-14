@@ -15,14 +15,18 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import (Depends, FastAPI, Header, HTTPException, WebSocket,
+                     WebSocketDisconnect)
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from .. import maintenance, network, officiel, pods, power
 from ..engine import MatchEngine
 from ..game.disciplines import list_disciplines
 from ..storage import Storage
+
+VERSION = "0.10.0"
 
 # Chemins projet.
 _PKG_ROOT = Path(__file__).resolve().parent.parent.parent  # clayscore/
@@ -38,6 +42,8 @@ class NewGame(BaseModel):
     serie: int = 25
     cartouches: Optional[int] = None
     auto_mode: bool = False
+    machines: Optional[List[str]] = None   # multi-lanceurs (ex. ["Trap 1","Trap 2"])
+    mode: str = "entrainement"             # entrainement | concours
 
 
 class Verdict(BaseModel):
@@ -76,12 +82,22 @@ class WSManager:
 
 def create_app(clips_dir: Optional[str] = None,
                db_path: Optional[str] = None,
-               state_path: Optional[str] = None) -> FastAPI:
-    app = FastAPI(title="ClayScore", version="0.7.0")
+               state_path: Optional[str] = None,
+               net: Optional[network.NetworkConfig] = None) -> FastAPI:
+    app = FastAPI(title="ClayScore", version=VERSION)
     clips = Path(clips_dir) if clips_dir else CLIPS_DIR
     clips.mkdir(parents=True, exist_ok=True)
     statep = state_path or str(_PKG_ROOT / "data" / "match_state.json")
 
+    app.state.net = net or network.NetworkConfig()
+    # Traçabilité officielle : journal chaîné, écrit à chaque événement.
+    app.state.journal = officiel.OfficialJournal(
+        Path(statep).parent / "journal_officiel.jsonl")
+    # Postes de vue et alimentation : renseignés par la configuration ou par
+    # les pods eux-mêmes ; l'app en dérive le GO/NO-GO de compétition.
+    app.state.fleet = pods.PodFleet()
+    app.state.battery = power.Battery()
+    app.state.sources = ["secteur"]
     app.state.engine = MatchEngine(clips_dir=str(clips), state_path=statep)
     # Reprise après crash / redémarrage (watchdog systemd) : rejoue le match.
     try:
@@ -94,8 +110,33 @@ def create_app(clips_dir: Optional[str] = None,
     def engine() -> MatchEngine:
         return app.state.engine
 
+    def _place_libre_mo() -> float:
+        """Place réellement libre sur le disque (pas une estimation)."""
+        import shutil as _sh
+        try:
+            return _sh.disk_usage(str(clips)).free / (1024 * 1024)
+        except OSError:
+            return 0.0
+
     async def push_state():
         await app.state.ws.broadcast({"type": "state", "state": engine().state()})
+
+    # --- code d'accès (écritures) ---------------------------------------- #
+    # Indispensable dès que le hub est branché sur le réseau d'un club :
+    # sans lui, n'importe qui sur ce réseau pourrait changer les scores.
+    # Les lectures (affichage, mode TV) restent libres.
+    def guard(x_clayscore_pin: Optional[str] = Header(default=None)) -> None:
+        cfg: network.NetworkConfig = app.state.net
+        if not network.require_pin(cfg, network.resolve_mode(cfg)):
+            return
+        if x_clayscore_pin != cfg.access_pin:
+            raise HTTPException(401, "Code d'accès ClayScore requis.")
+
+    # Travaux lourds (analyse d'un plateau, habillage vidéo, écriture base) :
+    # exécutés dans un fil séparé. Sans ça, ils bloquent TOUT le serveur —
+    # mesuré : une 2e tablette attendait 13× plus longtemps pendant l'analyse.
+    async def offload(fn, *a, **kw):
+        return await asyncio.to_thread(fn, *a, **kw)
 
     # --- API ------------------------------------------------------------- #
     @app.get("/api/disciplines")
@@ -107,13 +148,17 @@ def create_app(clips_dir: Optional[str] = None,
             for d in list_disciplines()
         ]
 
-    @app.post("/api/game/new")
+    @app.post("/api/game/new", dependencies=[Depends(guard)])
     async def game_new(req: NewGame):
         try:
-            st = engine().new_game(req.discipline, req.shooters,
-                                   req.serie, req.cartouches, req.auto_mode)
+            st = await offload(engine().new_game, req.discipline, req.shooters,
+                               req.serie, req.cartouches, req.auto_mode,
+                               machines=req.machines, mode=req.mode)
         except (ValueError, RuntimeError) as e:
             raise HTTPException(400, str(e))
+        app.state.journal.append("partie_ouverte", {
+            "discipline": req.discipline, "tireurs": req.shooters,
+            "serie": req.serie, "mode": req.mode})
         await push_state()
         return st
 
@@ -121,30 +166,44 @@ def create_app(clips_dir: Optional[str] = None,
     def game_state():
         return engine().state()
 
-    @app.post("/api/game/throw")
+    @app.post("/api/game/throw", dependencies=[Depends(guard)])
     async def game_throw():
         try:
-            res = engine().throw()
+            res = await offload(engine().throw)
         except RuntimeError as e:
             raise HTTPException(400, str(e))
+        # Entretien : le disque ne doit jamais se remplir en pleine compétition.
+        # Le clip en cours d'arbitrage est protégé de la purge.
+        pend = engine().pending
+        keep = {Path(pend.clip_url).name} if pend and pend.clip_url else set()
+        await offload(maintenance.cleanup_clips, str(clips), keep=keep)
         await push_state()
         return res
 
-    @app.post("/api/game/verdict")
+    @app.post("/api/game/verdict", dependencies=[Depends(guard)])
     async def game_verdict(req: Verdict):
+        pend = engine().pending
+        auto = pend.auto_verdict if pend else None
         try:
-            res = engine().commit(req.verdict, req.cartridge)
+            res = await offload(engine().commit, req.verdict, req.cartridge)
         except (ValueError, RuntimeError) as e:
             raise HTTPException(400, str(e))
+        # Trace officielle : on distingue un verdict accepté d'une correction
+        # humaine — c'est exactement ce qu'un jury veut pouvoir relire.
+        corrige = req.verdict is not None and req.verdict != auto
+        app.state.journal.append(
+            "verdict_corrige" if corrige else "verdict_valide",
+            {"verdict": req.verdict or auto, "auto": auto,
+             "cartouche": req.cartridge})
         await push_state()
         return res
 
-    @app.post("/api/game/finish")
+    @app.post("/api/game/finish", dependencies=[Depends(guard)])
     async def game_finish():
         eng = engine()
         if eng.partie is None:
             raise HTTPException(400, "Aucune partie à enregistrer.")
-        pid = app.state.storage.save_partie(eng.partie)
+        pid = await offload(app.state.storage.save_partie, eng.partie)
         return {"saved_id": pid, "scorecard": eng.partie.scorecard()}
 
     @app.get("/api/game/csv", response_class=PlainTextResponse)
@@ -156,7 +215,7 @@ def create_app(clips_dir: Optional[str] = None,
 
     @app.get("/api/history")
     def history(limit: int = 50):
-        return app.state.storage.list_parties(limit)
+        return app.state.storage.list_parties(max(1, min(int(limit), 500)))
 
     @app.get("/api/history/{party_id}")
     def history_one(party_id: int):
@@ -165,7 +224,7 @@ def create_app(clips_dir: Optional[str] = None,
             raise HTTPException(404, "Partie introuvable.")
         return rec
 
-    @app.post("/api/game/overlay")
+    @app.post("/api/game/overlay", dependencies=[Depends(guard)])
     async def game_overlay():
         """Exporte le ralenti HABILLÉ (trajectoire + badge) du plateau courant.
 
@@ -183,11 +242,149 @@ def create_app(clips_dir: Optional[str] = None,
         out_name = src.stem + "_overlay.mp4"
         verdict = eng.pending.best_guess
         try:
-            render_overlay_from_file(str(src), str(clips / out_name), verdict,
-                                     slowmo=4.0)
+            await offload(render_overlay_from_file, str(src),
+                          str(clips / out_name), verdict, slowmo=4.0)
         except Exception as e:  # noqa: BLE001
             raise HTTPException(500, f"Habillage impossible : {e}")
         return {"clip_url": f"/clips/{out_name}", "verdict": verdict}
+
+    # --- compétition officielle ------------------------------------------ #
+    def _conso() -> float:
+        n_pods = max(1, len(app.state.fleet.pods)) if app.state.fleet.pods else 3
+        return power.consommation({"hub": 1, "camera": n_pods, "switch_poe": 1,
+                                   "routeur": 1, "ssd": 1, "micro": 1})
+
+    @app.get("/api/officiel/journal")
+    def journal_verifie():
+        """Le journal a-t-il été modifié ? Réponse vérifiable par un jury."""
+        j: officiel.OfficialJournal = app.state.journal
+        return {"verification": j.verify(), "entrees": len(j.entries)}
+
+    @app.get("/api/officiel/controle")
+    def controle_avant_epreuve(duree_h: float = 8.0):
+        """GO / NO-GO : un seul point rouge et on ne démarre pas l'épreuve."""
+        cfg: network.NetworkConfig = app.state.net
+        net_st = network.status(cfg)
+        eng = engine()
+        fleet: pods.PodFleet = app.state.fleet
+        pw = power.status(sources_presentes=app.state.sources,
+                          batterie=app.state.battery, conso_w=_conso(),
+                          duree_epreuve_h=duree_h)
+        st = eng.state()
+        _qual = _qualite_derniere_image()
+        rapport = officiel.pre_competition_check(
+            mode="concours" if st.get("official") else "entrainement",
+            pin_actif=net_st.pin_required,
+            cameras_isolees=net_st.cameras_isolated,
+            pods_ok=fleet.en_ligne or 0,
+            pods_total=len(fleet.pods),
+            alimentation_ok=not pw.sur_batterie or pw.charge_pct > 0,
+            autonomie_h=pw.autonomie_h,
+            disque_libre_mo=_place_libre_mo(),
+            journal_ok=app.state.journal.verify()["ok"],
+            horloge_synchro=all(p.derive_horloge_ms <= 20
+                                for p in fleet.pods) if fleet.pods else True,
+            duree_epreuve_h=duree_h,
+            # None tant qu'aucune image réelle n'a été analysée : on ne coche
+            # pas un contrôle qu'on n'a pas fait.
+            couleur_ok=(_qual or {}).get("couleur_ok"))
+        return {**rapport.to_dict(), "alimentation": pw.to_dict(),
+                "postes": fleet.to_dict()}
+
+    @app.get("/api/officiel/fiche")
+    def fiche_scellee():
+        """Fiche finale scellée : le moindre chiffre changé invalide le sceau."""
+        eng = engine()
+        if eng.partie is None:
+            raise HTTPException(400, "Aucune partie en cours.")
+        j: officiel.OfficialJournal = app.state.journal
+        v = j.verify()
+        return officiel.seal_scorecard(
+            eng.partie.scorecard(),
+            {"discipline": eng.partie.discipline.key,
+             "serie": eng.partie.serie, "mode": getattr(eng.partie, "mode", ""),
+             "version": VERSION},
+            v.get("sceau", officiel.GENESIS))
+
+    @app.get("/api/alimentation")
+    def alimentation():
+        pw = power.status(sources_presentes=app.state.sources,
+                          batterie=app.state.battery, conso_w=_conso())
+        return pw.to_dict()
+
+    @app.get("/api/postes")
+    def postes():
+        return app.state.fleet.to_dict()
+
+    def _qualite_derniere_image():
+        """Qualité mesurée sur la dernière vraie image, ou None si aucune.
+
+        Partagé par l'écran de réglage ET le GO/NO-GO : le contrôle avant
+        épreuve doit s'appuyer sur une image RÉELLE, pas sur une hypothèse.
+        """
+        from ..vision.detector import qualite_image
+        pend = engine().pending
+        if pend is None or not pend.clip_url:
+            return None
+        src = clips / Path(pend.clip_url).name
+        if not src.exists():
+            return None
+        import cv2 as _cv2
+        cap = _cv2.VideoCapture(str(src))
+        ok, img = cap.read()
+        cap.release()
+        if not ok:
+            return None
+        return qualite_image(img)
+
+    @app.get("/api/image/qualite")
+    def image_qualite():
+        """L'image des caméras est-elle exploitable ? Sinon, quoi régler ?
+
+        Mesuré : la précision chute si l'image est trop sombre, trop claire,
+        trop bruitée — ou SANS COULEUR (27/27 -> 9/27). Ces défauts se
+        corrigent au réglage ou au choix de la caméra. Autant les voir AVANT
+        l'épreuve.
+        """
+        q = _qualite_derniere_image()
+        if q is None:
+            return {"ok": None,
+                    "detail": "Lance un plateau : la qualité s'évalue sur une "
+                              "vraie image de la caméra."}
+        return q
+
+    # --- réseau, version, santé ------------------------------------------ #
+    @app.get("/api/network")
+    def net_status():
+        """Où en est le réseau, et quelle adresse taper sur la tablette.
+
+        Affiché dans l'appli : Kevin voit d'un coup d'œil s'il est en WiFi
+        autonome ou branché au club, si les caméras sont bien isolées, et
+        ce qui cloche le cas échéant.
+        """
+        cfg: network.NetworkConfig = app.state.net
+        st = network.status(cfg)
+        return {**st.to_dict(),
+                "hotspot_ssid": cfg.hotspot_ssid,
+                "problemes": network.check_install(cfg, st)}
+
+    @app.get("/api/version")
+    def version():
+        """Sert la mise à jour automatique des tablettes (PWA)."""
+        return {"version": VERSION}
+
+    @app.get("/api/health")
+    def health():
+        """Contrôle rapide : partie en cours, place disque, réseau."""
+        cfg: network.NetworkConfig = app.state.net
+        eng = engine()
+        return {
+            "ok": True,
+            "version": VERSION,
+            "partie_active": eng.partie is not None,
+            "disque": maintenance.disk_report(str(clips)),
+            "reseau": network.status(cfg).to_dict(),
+        }
 
     # --- ralentis (mp4) -------------------------------------------------- #
     @app.get("/clips/{name}")

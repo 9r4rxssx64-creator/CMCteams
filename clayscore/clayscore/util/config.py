@@ -41,6 +41,35 @@ DEFAULTS: Dict[str, Any] = {
         "serie": 25,
         "cartouches": 2,
     },
+    # Réseau du hub : autonome (WiFi propre) ou branché au réseau d'un club.
+    # "auto" = rejoint un réseau existant s'il y en a un, sinon crée le sien.
+    "network": {
+        "mode": "auto",                       # auto | autonome | reseau
+        "hotspot_ssid": "ClayScore",
+        "hotspot_password": "",
+        "hostname": "clayscore",              # -> http://clayscore.local:8000
+        "port": 8000,
+        "uplink_iface": "wlan0",              # patte vers le réseau du club
+        "camera_iface": "eth0",               # patte vers le switch PoE (isolée)
+        "camera_subnet": "192.168.10.0/24",
+        "access_pin": "",                     # code exigé pour toute écriture
+        "require_pin_on_shared": True,
+    },
+    # Entretien automatique : le disque ne doit jamais se remplir.
+    "maintenance": {
+        "clips_max_files": 600,
+        "clips_max_mb": 5000,
+    },
+    # Alimentation : la batterie est toujours en ligne, rechargée par la
+    # source disponible -> changer de source ne coupe jamais le système.
+    "alimentation": {
+        "sources": ["secteur"],       # secteur | lanceur
+        "batterie_ah": 30,
+        "batterie_v": 12,
+        "duree_epreuve_h": 8,
+    },
+    # Postes de vue. Vide = simulation (aucun matériel déclaré).
+    "postes": [],
 }
 
 

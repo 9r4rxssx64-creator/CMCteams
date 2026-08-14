@@ -1,6 +1,9 @@
 """Tests du jalon 1 : détection/comptage des lancements (précision ≥ 99 %)."""
 from __future__ import annotations
 
+import cv2
+import numpy as np
+
 from clayscore.sources.video_file import FileVideoSource
 from clayscore.vision.detector import (
     DetectorConfig,
@@ -71,3 +74,44 @@ def test_launch_accuracy_bench():
     result = bench.bench_launches(seeds=(200, 201, 202))
     assert result.accuracy >= 0.99, result.summary() + " | " + \
         "; ".join(result.failures)
+
+
+# --- caméra COULEUR obligatoire (mesuré : mono = 9/27 au lieu de 27/27) --- #
+def test_image_monochrome_est_bloquante():
+    from clayscore.vision.detector import qualite_image
+    # Image grise réaliste (bruit + dégradé), répliquée en 3 canaux : c'est
+    # exactement ce que renvoie une caméra monochrome.
+    rng = np.random.default_rng(7)
+    gris = np.clip(np.linspace(60, 190, 320).astype(np.uint8)[None, :]
+                   .repeat(240, 0).astype(np.int16)
+                   + rng.integers(-4, 5, (240, 320)), 0, 255).astype(np.uint8)
+    mono = cv2.cvtColor(gris, cv2.COLOR_GRAY2BGR)
+
+    q = qualite_image(mono)
+    assert q["couleur_ok"] is False
+    assert q["saturation"] == 0.0
+    bloquants = [p for p in q["problemes"] if p["niveau"] == "bloquant"]
+    assert bloquants, "une caméra monochrome doit BLOQUER, pas passer en silence"
+    assert "couleur" in bloquants[0]["quoi"].lower()
+    assert "COULEUR" in bloquants[0]["solution"]
+
+
+def test_image_couleur_passe_le_controle_couleur():
+    from clayscore.vision.detector import qualite_image
+    img = np.zeros((240, 320, 3), np.uint8)
+    img[:] = (40, 110, 200)                      # BGR : un orange franc
+    q = qualite_image(img)
+    assert q["couleur_ok"] is True
+    assert q["saturation"] > 5.0
+    assert not [p for p in q["problemes"]
+                if p["niveau"] == "bloquant" and "couleur" in p["quoi"].lower()]
+
+
+def test_scene_terne_mais_en_couleur_n_est_pas_prise_pour_du_monochrome():
+    # Garde-fou anti faux positif : une journée grise reste de la couleur.
+    # Mesuré : le pire cas couleur du banc (contre-jour) sature à ~18,9,
+    # le seuil est à 5 — il reste de la marge.
+    from clayscore.vision.detector import qualite_image
+    img = np.zeros((240, 320, 3), np.uint8)
+    img[:] = (120, 128, 134)                     # gris légèrement chaud
+    assert qualite_image(img)["couleur_ok"] is True

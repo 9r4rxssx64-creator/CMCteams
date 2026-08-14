@@ -72,10 +72,27 @@ DISCIPLINES = {
 }
 
 
+# Noms italiens (FITAV) des mêmes disciplines. Kevin tire à Vintimille : la
+# tablette doit accepter le mot écrit sur la pancarte du stand.
+# ⚠️ On n'aliase QUE ce qui existe vraiment : « elica » (ZZ) n'est pas
+# implémentée, donc elle n'est volontairement pas listée ici — mieux vaut une
+# erreur claire qu'un score calculé avec les mauvaises règles.
+ALIASES = {
+    "fossa_universale": "fosse_universelle",
+    "fossa_olimpica": "fosse_olympique",
+    "trap": "fosse_olympique",
+    "percorso_di_caccia": "parcours",
+    "percorso_caccia": "parcours",
+    "compak_sporting": "compak",
+}
+
+
 def get_discipline(key: str) -> Discipline:
+    key = ALIASES.get(key, key)
     if key not in DISCIPLINES:
         raise ValueError(
-            f"Discipline inconnue : {key!r} (dispo : {sorted(DISCIPLINES)})")
+            f"Discipline inconnue : {key!r} "
+            f"(dispo : {sorted(DISCIPLINES)} ; alias : {sorted(ALIASES)})")
     return DISCIPLINES[key]
 
 

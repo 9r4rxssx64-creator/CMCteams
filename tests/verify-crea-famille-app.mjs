@@ -40,11 +40,34 @@ function fauxKV() {
 }
 let ENV = { FAMILLE: fauxKV(), FAMILLE_SECRET: 'secret-test-app-0123456789' };
 let coupe = false;
+
+// SSO du domaine simulé (règle « ADMIN UNIVERSEL DU DOMAINE », leçons #99/#166) : l'admin
+// famille vient du SSO central (kd-mc.com/__sso/whoami : admin ET session vérifiée Face ID),
+// JAMAIS du nom. Le worker interroge whoami côté serveur (ici, ce process Node) → on le simule :
+// seul le porteur du jeton SSO de Kevin est admin. Kevin le transmet via Authorization: Bearer.
+const vraiFetch = globalThis.fetch;
+globalThis.fetch = async (url, opt) => {
+  if (String(url).includes('/__sso/whoami')) {
+    const hh = (opt && opt.headers) || {};
+    const auth = hh.Authorization || hh.authorization || '';
+    if (auth === 'Bearer jeton-sso-kevin-test')
+      return new Response(JSON.stringify({ ok: true, uid: 'kdmc_admin', name: 'Kevin Desarzens', verified: true, admin: true }), { status: 200, headers: { 'content-type': 'application/json' } });
+    return new Response(JSON.stringify({ ok: false }), { status: 401 });
+  }
+  return vraiFetch(url, opt);
+};
 const srvApi = http.createServer(async (q, s) => {
   const chunks = []; for await (const c of q) chunks.push(c);
   const body = Buffer.concat(chunks);
   const req = new Request('http://x' + q.url, {
-    method: q.method, headers: { 'content-type': 'application/json', origin: 'http://127.0.0.1:' + PORT_APP },
+    method: q.method,
+    headers: {
+      'content-type': 'application/json', origin: 'http://127.0.0.1:' + PORT_APP,
+      // On transmet le pass SSO du domaine (Authorization: Bearer) que le client envoie :
+      // sinon le worker ne peut pas interroger le SSO central et personne n'est jamais admin.
+      ...(q.headers.authorization ? { Authorization: q.headers.authorization } : {}),
+      ...(q.headers.cookie ? { cookie: q.headers.cookie } : {}),
+    },
     body: (q.method === 'GET' || q.method === 'HEAD') ? undefined : body,
   });
   if (coupe) { s.writeHead(503, { 'access-control-allow-origin': '*' }); return s.end('{"error":"service_coupe"}'); }
@@ -149,6 +172,9 @@ await creer(C.page, 'Chez les cousins');
 await C.page.click('#famShare'); await C.page.waitForTimeout(900);
 
 const K = await telephone('Kevin Desarzens', '200807');
+// Le téléphone de Kevin porte le pass SSO du domaine (session vérifiée Face ID ailleurs) :
+// c'est CE jeton — pas son nom — qui le rend admin famille (règle « ADMIN UNIVERSEL »).
+await K.page.evaluate(() => localStorage.setItem('crea_sso_token', 'jeton-sso-kevin-test'));
 await rejoindre(K.page, 'Desarzens', 'noel2026');
 await K.page.waitForTimeout(700);
 const adminVisible = await K.page.evaluate(() => !document.getElementById('famAdminRow').classList.contains('hidden'));

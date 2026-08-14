@@ -13,7 +13,7 @@ pour être robuste aux durées/vitesses variables.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
 import numpy as np
 
@@ -71,10 +71,14 @@ class CorridorCalibrator:
         reference = resampled.mean(axis=0)
         # Écart-type par point (norme sur les dimensions).
         dev = np.linalg.norm(resampled - reference, axis=2)  # (S, n)
-        envelope = dev.std(axis=0) + dev.mean(axis=0) * 0.0  # base = std inter-essais
+        # Largeur du couloir = dispersion entre les essais, point par point.
+        # (Il y avait ici « + dev.mean(axis=0) * 0.0 » : un terme multiplié par
+        # zéro, donc rigoureusement sans effet, qui donnait juste à lire que la
+        # moyenne comptait pour quelque chose. Elle ne comptait pas.)
+        envelope = dev.std(axis=0)
         # Plancher d'enveloppe pour éviter des tolérances nulles (bruit).
         scale = np.linalg.norm(reference.max(axis=0) - reference.min(axis=0))
-        floor = max(self.min_envelope_frac * scale, 1e-3)
+        floor = max(float(self.min_envelope_frac * scale), 1e-3)
         envelope = np.maximum(envelope, floor)
         return Corridor(reference=reference, envelope=envelope,
                         n_samples=len(tracks), dims=reference.shape[1])

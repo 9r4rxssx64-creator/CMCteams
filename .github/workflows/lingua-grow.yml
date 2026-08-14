@@ -29,6 +29,7 @@ jobs:
 
       - name: "Génère + juge une nouvelle histoire (sûr : rejet silencieux si douteux)"
         id: grow
+        shell: bash -eo pipefail {0}   # sans pipefail, un `node … | tee` échoué ressort VERT (garde workflows-pipefail)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}

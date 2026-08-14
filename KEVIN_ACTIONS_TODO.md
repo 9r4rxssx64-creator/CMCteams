@@ -1,3 +1,126 @@
+# 🖱️ TES ACTIONS EN ATTENTE — le plus urgent en premier
+
+---
+
+## 🟢 Aucune clé à révoquer — vérifié, pas supposé *(12/08/2026)*
+
+Tu m'as dit « protège mon domaine entièrement ». J'ai fait passer un outil qui
+ne signale **que les clés encore vivantes** (il les teste vraiment auprès du
+service, il ne se contente pas de « ça ressemble à une clé »).
+
+**Premier résultat : « 7 clés actives ».** Je ne te l'ai pas annoncé tel quel,
+parce qu'une alerte non vérifiée ne vaut rien. J'ai demandé les repères exacts,
+puis relu les 7 lignes une par une.
+
+**Les 7 « clés » sont mes propres noms de fonctions de test.** Par exemple
+`test_le_gain_ne_depend_pas_de_la_machine` — exactement 40 caractères,
+commençant par `test`. Le service qui les « validait » accepte n'importe quelle
+chaîne commençant par `test_` dans son bac à sable : son « vérifié » ne veut
+rien dire.
+
+➡️ **Rien à révoquer. Tu n'as rien à faire.**
+
+Et pour que ça ne se reproduise pas : l'outil relit désormais la ligne réelle et
+écarte lui-même ce qui est un nom de fonction. Sans ça, un rapport qui crie
+« 7 clés ! » à tort finit par être ignoré — et le jour où il y aura une **vraie**
+clé, elle serait noyée dans le bruit.
+
+---
+
+## 💳 1. Abonnement GitHub Pro — 4 $/mois *(ajouté 12/08/2026, à ta demande)*
+
+**▶️ [Prendre GitHub Pro](https://github.com/settings/billing/plans)** — puis « Upgrade to Pro ».
+
+### Pourquoi ça vaut le coup
+Ton dépôt `CMCteams` est **public**. Ce n'est pas ClayScore le plus gênant dedans,
+c'est le reste :
+
+- la structure de planning de **258 employés du casino** ;
+- toute la configuration d'**Apex** ;
+- les **28 documents** du dossier ClayScore (prix, marges, fournisseurs, stratégie).
+
+4 $/mois pour fermer tout ça. Et **kd-mc.com continue de marcher** : avec Pro,
+GitHub Pages publie depuis un dépôt privé, et le **site** reste public — c'est
+seulement le **code source** qui devient privé.
+
+### ⚠️ À vérifier avant de payer
+Je te donne cette règle « Pages depuis un dépôt privé » de mémoire, **pas d'une
+page que j'ai pu ouvrir** (mon accès réseau est bloqué). Vérifie-le sur la page
+de tarifs avant de sortir les 4 $. Je ne veux pas que tu payes sur ma parole.
+
+### ✅ Le verrou qui bloquait la bascule est levé *(12/08/2026)*
+Apex allait chercher ses documents de mémoire sur GitHub **sans jeton**, depuis
+**10 endroits** différents. Sur un dépôt privé, ces adresses répondent **404** —
+et le code **encaisse l'erreur sans rien dire** : Apex n'aurait pas planté, il
+aurait **arrêté de relire tes 8 documents, en silence**. La pire des pannes :
+celle qu'on ne voit pas.
+
+C'est réglé. Les 10 lectures passent maintenant par **une seule porte**, et un
+test bloque automatiquement quiconque en rouvrirait une autre ailleurs.
+
+Il reste **une commande à lancer, côté moi** : déployer le petit relais qui
+gardera le jeton côté serveur (`deploy-apex-depot-relais.yml`). Il vérifie tout
+seul qu'il lit bien `CLAUDE.md`, puis **écrit lui-même son adresse dans le
+code** — tu n'as aucun lien à recopier nulle part.
+
+### L'ordre à suivre
+| | Quoi | Qui | Coût |
+|---|---|---|---|
+| 1 | ClayScore dans son dépôt privé | **moi** (en cours) | 0 € |
+| 2 | Router les lectures Apex par une porte unique | **moi** ✅ fait | 0 € |
+| 2b | Déployer le relais (1 commande, côté moi) | **moi** | 0 € |
+| 3 | Prendre Pro **puis** passer `CMCteams` en privé | **toi** (1 clic) + moi | 4 $/mois |
+
+> 💡 Ce que ni l'abonnement ni le déplacement ne changent : **ce qui est déjà
+> public l'est**. L'historique git le garde, quelqu'un a pu cloner. Réécrire
+> l'historique d'un dépôt à 3 500 pull requests est risqué — je ne le ferai que
+> si tu me le demandes explicitement.
+
+---
+
+## 🔑 2. Jeton GitHub `APEX_GITHUB_PAT` *(ajouté 12/08/2026, à ta demande)*
+
+**Pourquoi** : aujourd'hui, dès qu'une automatisation doit **créer un dépôt**,
+**pousser ailleurs que dans CMCteams** ou **gérer un secret**, elle s'arrête net.
+C'est exactement ce qui vient d'arriver au déplacement de ClayScore : le
+workflow s'est arrêté sur *« Le secret APEX_GITHUB_PAT est absent »*, et il a
+fallu que tu crées le dépôt à la main. Avec ce jeton, ce type de blocage
+disparaît — je fais tout, tu ne cliques plus.
+
+### Étape 1 — créer le jeton (30 secondes)
+**▶️ [Créer le jeton](https://github.com/settings/tokens/new?scopes=repo,workflow&description=APEX_GITHUB_PAT)**
+— le nom et les droits sont **déjà cochés** (`repo` + `workflow`).
+
+Il ne te reste qu'à :
+1. Choisir une **expiration** (⚠️ prends **90 jours**, pas « No expiration » —
+   voir plus bas) ;
+2. **Generate token** ;
+3. **Copier** le jeton (`ghp_…`) — GitHub ne te le remontrera **jamais**.
+
+### Étape 2 — le coller dans les secrets (20 secondes)
+**▶️ [Ajouter le secret](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)**
+
+- **Name** : `APEX_GITHUB_PAT` *(exactement ça — une faute et rien ne marche)*
+- **Secret** : le jeton copié
+- **Add secret**
+
+C'est fini. Je n'ai jamais besoin de le voir : les workflows le lisent tout seuls.
+
+### ⚠️ Ce que je te dois en honnêteté
+Ce jeton est **une clé passe-partout sur tout ton compte GitHub** — il peut
+lire, écrire et créer partout. C'est puissant, et c'est aussi pour ça que je ne
+t'ai **pas** demandé de le faire pour ClayScore : un clic suffisait.
+
+Donc :
+- **mets une expiration à 90 jours** (GitHub te préviendra, tu le referas en
+  30 secondes) ;
+- **ne le colle nulle part ailleurs** que dans la page de secrets ci-dessus ;
+- si tu doutes un jour, **[révoque-le d'un clic](https://github.com/settings/tokens)** —
+  ça ne casse que les automatisations, jamais tes données.
+
+**Ce n'est pas urgent.** Fais-le quand tu veux arrêter de cliquer pour moi.
+
+---
 
 ## 🗺️ SESSION 2026-08-09 — Ce qui t'attend (dans l'ordre)
 
@@ -2613,3 +2736,25 @@ dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
 → Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
 toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
 **Claude doit me le rappeler.**
+
+## 🍎 iPhone / App Store — 2 actions, une seule fois (2026-08-13)
+
+**Tout le reste est construit et vérifié.** Il ne manque que ce que je ne peux pas faire :
+
+1. **Compte Apple Developer** — 99 €/an → https://developer.apple.com/programs/enroll/
+   *(ta carte bancaire ; aucune automatisation possible)*
+2. **Clé d'accès API** → https://appstoreconnect.apple.com/access/integrations/api
+   → me donner **Issuer ID** + **Key ID** + le fichier **.p8**
+   ⚠️ le `.p8` ne se télécharge **qu'une seule fois**.
+
+Je les range en secrets GitHub (`ASC_ISSUER_ID`, `ASC_KEY_ID`, `ASC_PRIVATE_KEY`) :
+jamais dans le code, jamais affichés, effacés du runner après usage.
+
+**Ensuite, sans rien te demander** : je construis sur un Mac prêté par GitHub et j'envoie
+sur **TestFlight** → l'app s'installe sur ton iPhone comme une vraie app, sans attendre la
+validation d'Apple.
+
+**Honnête** : l'App Store *public* n'est pas garanti — Apple refuse les apps qui ne sont
+qu'un site emballé (règle 4.2). Nos 3 apps ont un vrai contenu propre, donc une chance
+réelle, mais la décision lui appartient.
+

@@ -19,7 +19,7 @@
 
 **Le produit** : ClayScore, système de comptage automatique pour toutes les
 disciplines du ball-trap (FU, FO, DTL, parcours de chasse, compak). 3 pods
-caméra industriels (global shutter, monochrome + couleur, infrarouge 850 nm),
+caméra industriels (global shutter, **tous en couleur**, infrarouge 850 nm),
 un hub IA NVIDIA Jetson, réseau WiFi local autonome sans Internet, pilotage sur
 tablette. Verdicts automatiques ~98-99 %, cas ambigus arbitrés sur ralenti d'un
 tap. Gestion complète de partie : 1-6 tireurs, multi-lanceurs, rotation
@@ -43,7 +43,7 @@ Monaco Boost, MonacoTech).
 
 ## 1. Stratégie « le max dès le début, à moindre coût »
 
-Tu pars directement sur la **configuration complète v3** (3 pods, mono +
+Tu pars directement sur la **configuration complète v3** (3 pods couleur,
 couleur, IR, filtres, réseau autonome) — rien n'est retiré. Les économies
 viennent de la méthode d'achat, pas du contenu :
 

@@ -77,7 +77,7 @@
 <div class="wrap">
   <div class="topbar">
     <h1>🎯 ClayScore</h1>
-    <span class="pill"><span id="wsdot" class="status"></span><span id="wslbl">hors ligne</span> · v0.5</span>
+    <span class="pill"><span id="wsdot" class="status"></span><span id="wslbl">hors ligne</span> · v0.10</span>
   </div>
 
   <!-- ============ CONFIG ============ -->
@@ -96,6 +96,13 @@
           <select id="f-cart"><option value="">Auto</option>
             <option>1</option><option>2</option></select></div>
       </div>
+      <label for="f-machines">Lanceurs actifs (séparés par une virgule)</label>
+      <input id="f-machines" placeholder="Laisser vide = un lanceur par poste">
+      <label for="f-mode">Mode</label>
+      <select id="f-mode">
+        <option value="entrainement">🎯 Entraînement</option>
+        <option value="concours">🏆 Concours (chaque plateau arbitré)</option>
+      </select>
       <label style="display:flex;gap:10px;align-items:center;margin-top:12px">
         <input type="checkbox" id="f-auto" style="width:auto">
         Valider seul les verdicts sûrs (mode auto)</label>
@@ -171,6 +178,46 @@
       <div id="tv-board"></div>
     </div>
   </section>
+
+  <!-- ============ SYSTÈME / COMPÉTITION ============ -->
+  <section id="view-net" class="hidden">
+    <div class="card">
+      <h2>🏆 Prêt pour l'épreuve ?</h2>
+      <div id="go-verdict" class="big"></div>
+      <div id="go-items"></div>
+      <button id="go-refresh" style="margin-top:10px">🔄 Recontrôler</button>
+    </div>
+    <div class="card">
+      <h2>Alimentation</h2>
+      <div id="pwr"></div>
+    </div>
+    <div class="card">
+      <h2>Postes de vue</h2>
+      <div id="pods"></div>
+    </div>
+    <div class="card">
+      <h2>Qualité d'image</h2>
+      <div id="imgq" class="muted">Lance un plateau pour évaluer.</div>
+    </div>
+    <div class="card">
+      <h2>Preuve officielle</h2>
+      <div id="journal"></div>
+      <button id="seal-btn" style="margin-top:10px">🔏 Sceller la fiche</button>
+      <div id="seal-out" class="muted" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>Réseau du boîtier</h2>
+      <div id="net-mode" class="big"></div>
+      <p id="net-detail" class="muted"></p>
+      <div id="net-urls"></div>
+      <div id="net-checks"></div>
+    </div>
+    <div class="card">
+      <h2>État du système</h2>
+      <div id="net-health" class="muted"></div>
+      <button id="net-refresh" style="margin-top:10px">🔄 Revérifier</button>
+    </div>
+  </section>
 </div>
 
 <nav class="foot">
@@ -178,6 +225,7 @@
   <button data-nav="game">🎯 En cours</button>
   <button data-nav="history">📜 Historique</button>
   <button data-nav="tv">📺 TV</button>
+  <button data-nav="net">🏆 Système</button>
 </nav>
 <div id="toast"></div>
 

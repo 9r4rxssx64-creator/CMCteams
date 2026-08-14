@@ -42,6 +42,53 @@ Comme **Viggle / Kling / Hailuo** : tu mets **une photo**, l'app génère une **
 - Génération asynchrone (≈ 1 à 3 min), aperçu auto, **Enregistrer / Partager** / **Regénérer**.
 - 100 % serveur (ta clé Replicate), modèles image→vidéo `minimax/video-01-live` & `video-01`.
 
+### 🎙️ Le micro — tu **vois** ta voix pendant que tu parles
+Un seul micro pour toute l'app (Mini-moi *et* Magie IA « chanter »). Avant, tu appuyais, tu parlais… et tu découvrais **après** que rien n'avait été capté.
+- **Gros bouton rond** (88 px) : touche pour démarrer, touche pour arrêter.
+- **Barre de niveau en direct** : elle bouge = **le micro t'entend vraiment**.
+- **Minuteur** + arrêt automatique (60 s pour ton mini-moi, 45 s pour chanter).
+- **▶️ Réécouter** avant de valider · **🔁 Refaire** · **✅ Utiliser cette voix**.
+- L'app **prévient** quand elle ne t'entend presque pas, au lieu de te laisser fabriquer une vidéo muette.
+- Le micro est **toujours relâché** en sortant — il ne reste jamais allumé en fond.
+
+### 💳 Recharger l'IA — **n'importe qui peut le faire, en 1 tap**
+Quand la cagnotte IA est vide, l'app ne bloque pas ta famille : **tout le monde peut la recharger**, sans créer de compte.
+- **Bandeau doré permanent** en haut : *« ⏳ IA en pause — 2 créations en attente »* → **1 tap** ouvre l'écran de recharge, depuis n'importe quel écran.
+- **Montant en 1 tap** : 5 € · 10 € · 20 € · 50 € → le bouton **💎 Payer 20 € avec Revolut** ouvre directement le paiement **avec le montant déjà rempli** (`revolut.me/kdmc/20eur`).
+- **📤 Demander à quelqu'un de payer** : envoie le lien par SMS/WhatsApp — la personne paie sans avoir l'app.
+- **✅ J'ai payé — prévenir** : message prêt à envoyer à Kevin.
+- **🔄 Vérifier si l'IA est repartie** : relance ta création en attente pour de vrai.
+- **Honnête** : il est écrit noir sur blanc que *« ton paiement arrive à Kevin, qui remet le crédit »* — on ne laisse croire à personne que le paiement recharge la machine tout seul. L'admin, lui, voit en plus le bouton **🔧 Recharger le compte IA**.
+- **PayPal** n'apparaît **que** si Kevin l'a renseigné (bouton *« Ajouter mon PayPal »*) — aucun lien inventé.
+
+### 💳 Crédit IA épuisé → on attend, on ne rend jamais un résultat raté
+**Règle (Kevin, 12 août 2026) :** quand l'IA payante n'a plus de crédit et que la version sans IA serait **nettement moins belle**, l'app **ne te rend pas le résultat moche en douce**. Elle te le **dit** et **attend le crédit**.
+- Concerné (repli vraiment médiocre) : **🤖 Détourage IA** (sinon bords sales), **🤖 Cartoon IA** (sinon simple posterisation), **✨ Améliorer** (sinon juste un coup de netteté), **✨ Magie IA / photo à deux** (aucune version sans IA), **💎 Bouche IA** du Mini-moi.
+- Ce que tu vois : *« ⏳ Crédit IA épuisé »* + **🔄 Réessayer maintenant** · **⚡ Le faire quand même (moins beau)** *(le choix reste à toi)* · **🔗 Recharger le compte (quelques €)**.
+- **Ça repart tout seul :** la création reste en attente ; dès que tu rouvres l'app (ou toutes les 5 min), elle réessaie **une** fois. Quand le crédit revient : *« ✅ Le crédit IA est revenu »* et c'est fait.
+- **Si ce n'est PAS le crédit** (réseau, serveur occupé), rien ne change : la version rapide s'applique comme avant — **l'app marche toujours**.
+- **Fini les messages qui mentent :** l'app ne dit plus « version rapide appliquée » quand elle n'a rien appliqué.
+
+### 🧑‍🎤 Mini-moi — ta version numérique qui parle *(comme l'AI Avatar de CapCut)*
+Reverse-engineering de la fonction **AI Avatar / avatar parlant** de CapCut, refaite pour tourner **dans ton téléphone** :
+- Tu mets **une photo de ton visage** (ou tu te prends en photo).
+- Tu **écris** ce qu'il doit dire → **Voix IA** le lit, **ou** tu **enregistres ta propre voix**, **ou** tu importes un fichier audio.
+- L'app fabrique une **petite vidéo où toi tu parles** : la **bouche suit le volume réel de la voix**, avec un léger « vivant » (respiration, micro-balancement, zoom lent).
+- **👄 La bouche FORME les sons, elle ne fait pas qu'ouvrir/fermer** : à partir de ton texte, l'app déduit les sons (a, é, i, o, ou, m/b/p, f/v…) et donne à la bouche la bonne forme — large et étirée sur un « i », ronde et petite sur un « o », fermée sur un « m ». Le volume réel de la voix règle l'ouverture. *Mesuré : bouche 2,09× plus large sur « iiii » que sur « oooo ».*
+- **😉 Vivant** : cligne des yeux tout seul (~toutes les 4,5 s, en recopiant ta vraie peau du front — jamais une tache peinte), hoche la tête quand tu parles, respire, léger zoom.
+- **💬 Dialogue à deux** : choisis **2 de tes mini-moi**, écris **une ligne = une réplique** (ça alterne tout seul, rien de spécial à taper) → la vidéo montre **celui qui parle**, chacun avec son ton de voix. *Mesuré : le visage bascule à 1,27 s pour une bascule attendue à 1,22 s — synchronisé avec la voix.*
+- **😀 Expressions** : 😐 Neutre · 🙂 Sourire · 🧐 Sérieux · 😮 Surpris. Ce sont les **commissures** qui font l'expression (bouche dessinée en deux lèvres courbes), plus l'ouverture des paupières. *Mesuré sur la vidéo : coins de bouche relevés en sourire, tombants en sérieux, neutre entre les deux.*
+- **👤 Mes mini-moi** : garde ton personnage (photo + bouche repérée + réglages) et rappelle-le en **1 tap** la fois d'après — plus besoin de tout refaire. Jusqu'à 6, ~6 Ko chacun.
+- **🎚️ Ton de la voix** : Grave 🐻 / Normale / Aiguë 🐿️.
+- **🌆 Vrai décor derrière toi** : l'app te **découpe** de ta photo (détourage) et met ce que tu veux derrière — **🫧 Flou portrait** (effet iPhone), **🎬 Studio** (dégradé), **🖼️ ton image**. *Mesuré : l'ancien fond disparaît à 0 %, le nouveau décor occupe 55 % de l'image.* Sans découpe possible (hors-ligne / crédit vide), le bouton **revient tout seul sur « Ma photo »** — on ne laisse jamais croire qu'un décor est actif alors qu'il ne l'est pas.
+- **👁 Aperçu en direct** : la bouche bouge **tout de suite** à l'écran (bouche, clignement, décor, ambiance) — plus besoin d'attendre un rendu complet pour découvrir que c'est à refaire. Touche l'aperçu pour l'arrêter.
+- **⏱️ Durée annoncée pendant que tu écris** : *« ≈ 10 s »*, et un avertissement clair si ton texte dépasse la limite de **60 s**.
+- **🎬 Ambiance** : Aucune / Studio (vignette) / Doux / Ciné (bandes noires + teal-orange), avec fondu d'entrée-sortie. *(L'ambiance habille l'image ; le décor, lui, change ce qu'il y a derrière toi — ce sont deux réglages différents.)*
+- **🎙️ Dicter** au lieu d'écrire (si le navigateur le permet — sinon l'app te renvoie vers le micro du clavier iPhone).
+- **Formats** Story 9:16 / Carré / Paysage · **Sous-titres karaoké** (le mot dit passe en or) · **repérage auto du visage** (touche la bouche pour la replacer).
+- **⚡ Rapide** = 100 % hors-ligne (aucune clé, aucun réseau). **💎 Bouche IA** = poses de bouche plus réalistes via le worker, avec **repli automatique** sur le mode hors-ligne — **l'app marche toujours**.
+- Chaque mini-moi est **enregistré tout seul** dans « Mes créas » + **Enregistrer / Partager**.
+
 ### 🤖 IA (qualité pro) — nouveau
 Branchée sur un **worker serveur sécurisé** (ta clé Replicate reste côté serveur, jamais exposée). Repli automatique sur la version hors-ligne si l'IA n'est pas joignable — **l'app marche toujours**.
 - **🤖 Détourage IA** — isole automatiquement le sujet (personne / objet), fond transparent parfait (bien mieux que la gomme couleur).

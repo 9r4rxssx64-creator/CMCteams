@@ -1,6 +1,7 @@
 """Tests de l'export ralenti habillé (verdict + trajectoire incrustés)."""
 from __future__ import annotations
 
+import cv2
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
@@ -47,6 +48,29 @@ def test_overlay_all_verdicts(tmp_path):
 def test_overlay_empty_raises(tmp_path):
     with pytest.raises(ValueError):
         render_overlay_clip([], str(tmp_path / "x.mp4"), 30.0, "casse")
+
+
+def test_overlay_is_web_playable(tmp_path):
+    """Le ralenti doit être en H.264 : sinon illisible en navigateur / sur iPhone."""
+    from clayscore.replay import _find_ffmpeg
+
+    paths = _clip(tmp_path, "casse")
+    out = str(tmp_path / "web.mp4")
+    render_overlay_from_file(paths["video"], out, "casse", slowmo=4.0)
+    cap = cv2.VideoCapture(out)
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+    codec = "".join(chr((fourcc >> 8 * i) & 0xFF) for i in range(4))
+    cap.release()
+    if _find_ffmpeg():
+        assert codec.lower() == "h264", f"codec {codec!r} illisible en navigateur"
+    else:  # sans ffmpeg : repli assumé (lisible VLC/QuickTime), pas un échec
+        pytest.skip("ffmpeg absent : repli FMP4 assumé")
+
+
+def test_ensure_web_playable_is_safe_on_missing_file(tmp_path):
+    from clayscore.replay import ensure_web_playable
+    # Ne doit jamais lever, même sur un fichier absent.
+    assert ensure_web_playable(str(tmp_path / "absent.mp4")) is False
 
 
 def test_server_overlay_endpoint(tmp_path):

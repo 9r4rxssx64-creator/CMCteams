@@ -21,6 +21,56 @@ from .vision.detector import DetectorConfig, MotionDetector
 
 _FONT = cv2.FONT_HERSHEY_SIMPLEX
 
+
+def _find_ffmpeg() -> Optional[str]:
+    """Chemin d'un ffmpeg utilisable (paquet imageio-ffmpeg, ou système)."""
+    try:  # binaire portable fourni par imageio-ffmpeg (recommandé)
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:  # noqa: BLE001
+        pass
+    import shutil
+    return shutil.which("ffmpeg")
+
+
+def ensure_web_playable(path: str) -> bool:
+    """Convertit un mp4 en H.264 pour qu'il se lise PARTOUT.
+
+    OpenCV écrit du MPEG-4 Part 2 (FMP4), que les navigateurs et iOS ne lisent
+    pas. On transcode donc en H.264 baseline + yuv420p + faststart : lisible
+    dans l'appli tablette, sur iPhone, sur PC/Mac, sans rien installer.
+
+    Ne lève jamais : si ffmpeg est absent, le fichier d'origine est conservé
+    tel quel (lisible avec VLC/QuickTime) et la fonction renvoie False.
+    """
+    ff = _find_ffmpeg()
+    if not ff:
+        return False
+    src = Path(path)
+    if not src.exists():
+        return False
+    tmp = src.with_name(src.stem + "_h264.mp4")
+    import subprocess
+    try:
+        res = subprocess.run(
+            [ff, "-y", "-loglevel", "error", "-i", str(src),
+             "-c:v", "libx264", "-profile:v", "baseline", "-level", "3.0",
+             "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-crf", "20",
+             str(tmp)],
+            capture_output=True, timeout=120)
+        if res.returncode == 0 and tmp.exists() and tmp.stat().st_size > 0:
+            tmp.replace(src)
+            return True
+        if tmp.exists():
+            tmp.unlink()
+    except Exception:  # noqa: BLE001 - ne jamais bloquer le jeu pour un transcodage
+        if tmp.exists():
+            try:
+                tmp.unlink()
+            except Exception:  # noqa: BLE001
+                pass
+    return False
+
 # Couleurs BGR + libellés + pictogramme. Le texte accenté est rendu via Pillow
 # quand disponible ; sinon repli ASCII (cv2 ne gère pas les accents).
 _STYLE = {
@@ -150,7 +200,8 @@ def render_overlay_clip(
     reveal = reveal_frame if reveal_frame is not None else int(len(images) * 0.6)
 
     out_fps = max(1.0, fps / max(slowmo, 1e-6))
-    writer = cv2.VideoWriter(str(out_path), cv2.VideoWriter_fourcc(*"mp4v"),
+    writer = cv2.VideoWriter(str(out_path), cv2.VideoWriter_fourcc(  # type: ignore[attr-defined]  # absent des stubs cv2, présent à l'exécution
+            *"mp4v"),
                              out_fps, (W, H))
     if not writer.isOpened():
         raise RuntimeError(f"VideoWriter impossible pour {out_path}")
@@ -176,6 +227,8 @@ def render_overlay_clip(
             writer.write(frame)
     finally:
         writer.release()
+    # Rend le clip lisible partout (navigateur, iPhone) si ffmpeg est présent.
+    ensure_web_playable(str(out_path))
     return str(out_path)
 
 

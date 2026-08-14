@@ -6,7 +6,6 @@ import pytest
 
 from clayscore.calibration.corridor import CorridorCalibrator
 from clayscore.vision.multicam import (
-    Camera,
     Detection2D,
     MultiCameraFusion,
     associate,

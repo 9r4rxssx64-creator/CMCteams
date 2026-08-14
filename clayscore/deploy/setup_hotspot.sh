@@ -10,6 +10,13 @@ set -euo pipefail
 IFACE="${IFACE:-wlan0}"
 HUB_IP="192.168.50.1/24"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Nom du réseau et mot de passe : surchargeables sans éditer hostapd.conf
+# (utilisé par network.sh, qui les lit depuis config.yaml).
+SSID="${SSID:-}"
+PASSPHRASE="${PASSPHRASE:-}"
+if [ -n "$PASSPHRASE" ] && [ "${#PASSPHRASE}" -lt 8 ]; then
+  echo "ERREUR : le mot de passe WiFi doit faire 8 caractères minimum." >&2; exit 2
+fi
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "Ce script doit être lancé avec sudo." >&2; exit 1
@@ -25,6 +32,9 @@ ip link set "$IFACE" up || true
 # 2. hostapd + dnsmasq (configs versionnées).
 install -m 0644 "$HERE/hostapd.conf" /etc/hostapd/hostapd.conf
 sed -i "s/^interface=.*/interface=$IFACE/" /etc/hostapd/hostapd.conf
+[ -n "$SSID" ] && sed -i "s/^ssid=.*/ssid=$SSID/" /etc/hostapd/hostapd.conf
+[ -n "$PASSPHRASE" ] && \
+  sed -i "s/^wpa_passphrase=.*/wpa_passphrase=$PASSPHRASE/" /etc/hostapd/hostapd.conf
 echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' > /etc/default/hostapd
 
 install -m 0644 "$HERE/dnsmasq.conf" /etc/dnsmasq.d/clayscore.conf

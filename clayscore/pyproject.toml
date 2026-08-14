@@ -25,6 +25,17 @@ audio = ["sounddevice>=0.4"]
 ml = ["ultralytics>=8.1"]
 # Développement / tests
 dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+# Relecteurs EXTÉRIEURS (aucun n'est une IA : ce sont des analyseurs
+# déterministes). Ils jugent le code sans nous — c'est tout l'intérêt.
+#   mypy      : les types mentent-ils ?      (a trouvé 8 annotations fausses)
+#   bandit    : failles de sécurité Python   (a trouvé 1 `shell=True` en HAUTE)
+#   pip-audit : failles connues des dépendances
+#   vulture   : code mort
+#   radon     : complexité et maintenabilité
+audit = [
+    "mypy>=1.8", "types-PyYAML", "types-Markdown",
+    "bandit>=1.7", "pip-audit>=2.7", "vulture>=2.11", "radon>=6.0",
+]
 
 [tool.setuptools.packages.find]
 include = ["clayscore*"]

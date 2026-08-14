@@ -134,3 +134,35 @@ def test_pwa_served(client):
     assert client.get("/app.js").status_code == 200
     assert client.get("/manifest.webmanifest").status_code == 200
     assert client.get("/sw.js").status_code == 200
+
+
+def test_multi_lanceurs_via_api(client):
+    r = client.post("/api/game/new", json={
+        "shooters": ["A"], "serie": 4, "machines": ["Trap 1", "Trap 2"]})
+    st = r.json()
+    assert st["machines"] == ["Trap 1", "Trap 2"]
+    assert st["current_machine"] == "Trap 1"
+
+
+def test_mode_concours_desactive_lauto_validation(client):
+    # Même si auto_mode est demandé, le mode concours l'interdit :
+    # chaque plateau doit être arbitré (traçabilité officielle).
+    st = client.post("/api/game/new", json={
+        "shooters": ["A"], "serie": 3,
+        "auto_mode": True, "mode": "concours"}).json()
+    assert st["official"] is True
+    assert st["auto_mode"] is False
+    r = client.post("/api/game/throw").json()
+    assert r["committed"] is None          # rien n'a été validé tout seul
+    assert r["state"]["pending"] is not None
+
+
+def test_mode_entrainement_autorise_lauto(client):
+    st = client.post("/api/game/new", json={
+        "shooters": ["A"], "serie": 3, "auto_mode": True}).json()
+    assert st["auto_mode"] is True and st["official"] is False
+
+
+def test_mode_invalide_rejete(client):
+    r = client.post("/api/game/new", json={"shooters": ["A"], "mode": "apero"})
+    assert r.status_code == 400

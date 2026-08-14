@@ -1,5 +1,5 @@
 /* ClayScore — Service Worker (coque hors ligne). */
-const CACHE = "clayscore-v0.5";
+const CACHE = "clayscore-v0.10.0";   /* suit la version serveur (/api/version) */
 const SHELL = ["/", "/index.html", "/app.js", "/manifest.webmanifest", "/favicon.svg"];
 
 self.addEventListener("install", (e) => {

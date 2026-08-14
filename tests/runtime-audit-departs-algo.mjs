@@ -26,7 +26,7 @@ try {
   await page.goto('file://' + resolve(root, 'index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => typeof window.handleFileImport === 'function' && window.A && Array.isArray(A.employees), { timeout: 20000 });
   await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); A.year = 2026; A.month = 7; A.overrides = A.overrides || {}; delete A.overrides['2026-7']; sv('import'); });
-  const b64 = readFileSync(resolve(root, 'tests/fixtures/aout-2026-v1.pdf')).toString('base64');
+  const b64 = readFileSync(resolve(root, 'tests/fixtures/aout-2026-v2.pdf')).toString('base64');
   await page.evaluate(async ({ b64 }) => {
     const bin = atob(b64); const arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     const file = new File([arr], 'aout.pdf', { type: 'application/pdf' });
@@ -44,30 +44,29 @@ try {
     // Algo PAGE (compute v1.26) — ROSTER STABLE : absence 1-3j = numéro mort (le chef reste
     // dans le roster, N + rangs inchangés → autres inchangés) ; congé ≥4j = retiré → recompacte.
     // Réplique exacte de calcDepPos (app). off=0.
-    function absRun(e,D){ if(isWork((pl[e.id]||{})[D]||''))return 0; let L=1,dd;
-      for(dd=D-1;dd>=1&&!isWork((pl[e.id]||{})[dd]||'');dd--)L++;
-      for(dd=D+1;dd<=days&&!isWork((pl[e.id]||{})[dd]||'');dd++)L++; return L; }
+    function absRun(e,D){ if(isWorkDep((pl[e.id]||{})[D]||''))return 0; let L=1,dd;
+      for(dd=D-1;dd>=1&&!isWorkDep((pl[e.id]||{})[dd]||'');dd--)L++;
+      for(dd=D+1;dd<=days&&!isWorkDep((pl[e.id]||{})[dd]||'');dd++)L++; return L; }
     function pageDeps(chefEmps) {
-      const active = chefEmps.filter(e => { for(let d=1;d<=days;d++) if(isWork((pl[e.id]||{})[d]||'')) return true; return false; });
-      const wd = []; for(let d=1;d<=days;d++){ for(const e of active){ if(isWork((pl[e.id]||{})[d]||'')){ wd.push(d); break; } } }
+      const active = chefEmps.filter(e => { for(let d=1;d<=days;d++) if(isWorkDep((pl[e.id]||{})[d]||'')) return true; return false; });
+      const wd = []; for(let d=1;d<=days;d++){ for(const e of active){ if(isWorkDep((pl[e.id]||{})[d]||'')){ wd.push(d); break; } } }
       const baseOf = {}; active.forEach((e,ai)=>baseOf[e.name]=ai);
       const deps = {}; active.forEach(e=>deps[e.name]={});
-      // v9.865 — rot glisse de +1 à chaque CYCLE de repos (bloc contigu de workDays) + par jour dans le cycle.
-      const rotByDay = {}; let _c = 0, _k = 0, _pv = null;
-      for (const _wd of wd) { if (_pv !== null) { if (_wd - _pv > 1) { _c++; _k = 0; } else { _k++; } } rotByDay[_wd] = _c + _k; _pv = _wd; }
+      // v9.868 — rotation CONTINUE : rot = index du jour dans les jours de travail d'équipe (wi),
+      // +1 par jour travaillé SANS remise à zéro au repos (la suite se parcourt dans l'ordre).
       for(let d=1;d<=days;d++){ const wi=wd.indexOf(d); if(wi<0) continue;
         const eff = active.filter(e=>{const r=absRun(e,d);return r===0||r<4;}).sort((a,b)=>baseOf[a.name]-baseOf[b.name]);
-        const N=eff.length; if(!N) continue; const SEQd=sq(N), rot=rotByDay[d];
-        eff.forEach((e,j)=>{ if(isWork((pl[e.id]||{})[d]||'')) deps[e.name][d]=SEQd[(((rot+j)%N)+N)%N]; }); }
+        const N=eff.length; if(!N) continue; const SEQd=sq(N), rot=wi;
+        eff.forEach((e,j)=>{ if(isWorkDep((pl[e.id]||{})[d]||'')) deps[e.name][d]=SEQd[(((rot+j)%N)+N)%N]; }); }
       return deps;
     }
     let teamsChecked = 0, nullWorks = 0, phantom = 0, mismatch = 0, totalCells = 0, withNumber = 0;
     Object.keys(CHEFS_T).forEach(tid => {
       const names = CHEFS_T[tid] || []; if (!names.length) return;
-      const chefEmps = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWork((pl[e.id]||{})[i+1]||'')));
+      const chefEmps = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWorkDep((pl[e.id]||{})[i+1]||'')));
       if (chefEmps.length < 2) return; teamsChecked++;
       const pg = pageDeps(chefEmps);
-      chefEmps.forEach(e => { for (let d=1;d<=days;d++){ const c=(pl[e.id]||{})[d]||''; if(!isWork(c)) continue; totalCells++;
+      chefEmps.forEach(e => { for (let d=1;d<=days;d++){ const c=(pl[e.id]||{})[d]||''; if(!isWorkDep(c)) continue; totalCells++;
         A.year=2026; A.month=7; const ap = calcDepPos(e.name, tid, d); const pgv = pg[e.name] && pg[e.name][d];
         // v9.857 : le max valide est la TAILLE DU ROSTER (chefs actifs), pas les présents du jour
         // — un présent peut porter le n° le plus haut avec un « numéro mort » ailleurs (absence courte).
@@ -102,21 +101,19 @@ try {
     let teamsBig = 0, badNear = 0, checked = 0;
     Object.keys(CHEFS_T).forEach(tid => {
       const names = CHEFS_T[tid] || []; if (names.length < 5) return; // équipes ≥5 chefs (là où le bug était visible)
-      const active = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWork((pl[e.id]||{})[i+1]||'')));
+      const active = names.map(n => A.employees.find(e => e.name === n)).filter(e => e && isEmpActive(e, 2026, 7) && [...Array(days)].some((_,i)=>isWorkDep((pl[e.id]||{})[i+1]||'')));
       if (active.length < 5) return;
       const full = active.length; teamsBig++;
-      // jours de travail de l'équipe (union) + rot GLISSANT (v9.865) = index_cycle + position_cycle
-      const wd = []; for (let d = 1; d <= days; d++) { if (active.some(e => isWork((pl[e.id]||{})[d]||''))) wd.push(d); }
-      const rotByDay = {}; let _c = 0, _k = 0, _pv = null;
-      for (const _wd of wd) { if (_pv !== null) { if (_wd - _pv > 1) { _c++; _k = 0; } else { _k++; } } rotByDay[_wd] = _c + _k; _pv = _wd; }
+      // jours de travail de l'équipe (union) + rot CONTINU (v9.868) = index du jour (wi)
+      const wd = []; for (let d = 1; d <= days; d++) { if (active.some(e => isWorkDep((pl[e.id]||{})[d]||''))) wd.push(d); }
       // jours à roster complet (tous présents) + leur rot + vecteur de départ (ordre des chefs)
       const stable = [];
       for (let d = 1; d <= days; d++) {
-        if (!active.every(e => isWork((pl[e.id]||{})[d]||''))) continue;
+        if (!active.every(e => isWorkDep((pl[e.id]||{})[d]||''))) continue;
         const vec = active.map(e => { A.year=2026; A.month=7; return calcDepPos(e.name, tid, d); });
-        stable.push({ d, rot: rotByDay[d], vec: JSON.stringify(vec) });
+        stable.push({ d, rot: wd.indexOf(d), vec: JSON.stringify(vec) });
       }
-      // PROPRIÉTÉ du GLISSEMENT (v9.865) : l'ordre de l'équipe ne dépend QUE de rot (mod full).
+      // PROPRIÉTÉ : l'ordre de l'équipe ne dépend QUE de rot (mod full).
       // 2 jours à roster complet ont le MÊME vecteur SSI leurs rot sont congrus mod full.
       // → violation si (même vecteur mais rot NON congrus) OU (rot congrus mais vecteurs différents).
       for (let a = 0; a < stable.length; a++) for (let b = a + 1; b < stable.length; b++) {
@@ -130,7 +127,7 @@ try {
   });
   console.log('  glissement : ' + rot.teamsBig + ' équipes ≥5 chefs, ' + rot.checked + ' vérifiées');
   ok(rot.checked >= 3, 'assez d’équipes ≥5 chefs pour tester la rotation (' + rot.checked + ' ≥ 3)');
-  ok(rot.badNear === 0, 'GLISSEMENT cohérent (' + rot.badNear + ' incohérences) — ordre équipe = fonction de rot (mod N), glisse de +1 par cycle');
+  ok(rot.badNear === 0, 'GLISSEMENT cohérent (' + rot.badNear + ' incohérences) — ordre équipe = fonction de rot (mod N), rotation continue +1 par jour');
 
   // v9.845 — DÉTERMINISME CROSS-SPECTATEUR (Kevin « les autres n'ont pas les mêmes départs
   // sur leurs app »). On calcule TOUS les numéros de départ successivement en tant que
