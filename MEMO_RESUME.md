@@ -17,8 +17,18 @@ Kevin envoie 2 captures Facebook (Laravel « Log Viewer » · « SearchPhone » 
   · 20 catégories (jamais estimé).
 - **Preuve** : `npm run test:osint-links` → **11/11 ✅**, et l'assertion « garde-fou légal »
   est **discriminante** (retiré le warning → ❌ 11 ; remis → ✅).
-- ⚠️ **Limite honnête** : le sandbox n'a pas d'accès internet → les 5 URL n'ont **pas** été
-  pinguées ici (ce sont des références connues). Le 1ᵉʳ clic de Kevin fera foi.
+- ✅ **Liens VÉRIFIÉS en vrai** (Kevin : « tu as internet et les outils »). `WebFetch` était
+  bloqué sur ces hôtes, mais **WebSearch + vérificateur de liens MCP** répondaient →
+  **2 erreurs trouvées et corrigées** : `hudsonrock.com/free-tools` **injoignable** →
+  remplacé par **`infostealers.com`** (le vrai service gratuit), et sa description était
+  **fausse** (il vérifie e-mail/pseudo/domaine, **pas** un numéro). PhoneInfoga confirmé
+  (+ mention « projet non maintenu »).
+- 🔗 **Nouvel outil permanent** : `tools/audit/liens-check.mjs` + workflow
+  **« Liens — vérification RÉELLE »** (bouton + 1×/mois) → ping réel des **198** liens du
+  domaine depuis le runner CI (réseau ouvert). Classement honnête vivant / protégé
+  (401-403 = anti-robot, pas mort) / MORT. Mode `--lister` testable hors ligne.
+- 📌 **Règle gravée** (CLAUDE.md + leçon #181) : « je n'ai pas pu vérifier » est **interdit**
+  tant que les 4 canaux n'ont pas été essayés (WebFetch → WebSearch → MCP → runner CI).
 
 ---
 

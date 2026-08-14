@@ -1,7 +1,26 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-08-12** (Admin universel du domaine · 15 apps iPhone · localisation World Monitor · OSINT v2.5)
+> Dernière mise à jour : **2026-08-14** (OSINT v2.6 téléphone · vérificateur de liens RÉEL)
+
+## 🔗 Vérificateur de liens RÉEL — session 2026-08-14
+
+Kevin : « *Tu as internet et les outils qu'il te faut. Arrête de me dire que tu ne peux pas.* »
+→ Les liens du domaine sont désormais **pingués pour de vrai** depuis un runner GitHub (réseau ouvert).
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/audit/liens-check.mjs` | Ping RÉEL des 198 liens (OSINT + World Monitor). Classement honnête **vivant / protégé (401-403 = anti-robot) / MORT**. `--lister` = test hors ligne. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/liens-check.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/audit/liens-check.mjs) |
+| `.github/workflows/liens-check.yml` | Lance la vérification (**bouton** + 1×/mois), rapport téléchargeable | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/liens-check.yml) · [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/liens-check.yml) |
+
+## 🔎 OSINT v2.6 — vérifier un numéro de téléphone (session 2026-08-14)
+
+5 liens **défensifs** (arnaque au téléphone / fuite de mes données), chacun avec sa fonction écrite :
+Signal-Arnaques · 33700 · Numverify · **InfoStealers** · PhoneInfoga (doc + avertissement RGPD).
+**2 corrections trouvées en vérifiant en vrai** : lien Hudson Rock injoignable → `infostealers.com`, et sa description était fausse.
+
+👉 **[Ouvrir OSINT](https://kd-mc.com/osint/)** · [code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/osint/index.html)
+
 
 ## 🍎 Apps iPhone — 15 apps du domaine → TestFlight, sans Mac (session 2026-08-12)
 
