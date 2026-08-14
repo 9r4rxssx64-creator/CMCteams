@@ -48,14 +48,17 @@ jobs:
       - name: "Publier la récolte"
         if: ${{ !inputs.rapport_seul && !inputs.voir_les_noms }}
         run: |
-          if git diff --quiet -- lingua/lsf-sources.json; then
-            echo "Aucun signe nouveau : rien à publier."; exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           BR="claude/lsf-recolte-${{ github.run_id }}"
           git checkout -b "$BR"
+          # « git add » AVANT de comparer : un fichier qui n'existait pas encore n'apparaît pas
+          # dans un « git diff » ordinaire — on aurait annoncé « rien à publier » alors que la
+          # récolte était bien là, et personne n'aurait vu passer le manque.
           git add lingua/lsf-sources.json
+          if git diff --cached --quiet -- lingua/lsf-sources.json; then
+            echo "Aucun signe nouveau : rien à publier."; exit 0
+          fi
           git commit -m "Lingua : récolte LSF (signes réels, sources libres citées) [skip ci]"
           git push -u origin "$BR"
           echo "Branche poussée : $BR"
