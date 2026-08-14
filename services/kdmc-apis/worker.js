@@ -230,7 +230,16 @@ async function handleReputation(request, env, origin) {
 // ---------- KEYED : providers avec clé serveur (constructeurs PURS = testables) ----------
 // buildAiRequest : convertit {messages, model} vers le format de CHAQUE provider.
 // Chaîne de failover par défaut : gemini → groq → openrouter → mistral → cohere.
-export const AI_CHAIN = ['gemini', 'groq', 'openrouter', 'mistral', 'cohere', 'deepseek', 'together', 'xai'];
+// Kevin 2026-08-12 : « beaucoup d'autres IA gratuites, partout dans les apps,
+// en secours ». Les nouveaux paliers gratuits sont ajoutés APRÈS les moteurs
+// déjà éprouvés — l'ordre existant ne bouge pas (aucune régression), et une
+// clé absente = moteur simplement sauté (voir handleAi : skipped 'no_key').
+// Mêmes adresses et mêmes modèles que le worker Créa Studio, pour n'avoir
+// qu'UNE seule vérité (un test de parité le vérifie).
+export const AI_CHAIN = [
+  'gemini', 'groq', 'openrouter', 'mistral', 'cohere', 'deepseek', 'together', 'xai',
+  'perplexity', 'cerebras', 'nvidia', 'sambanova', 'huggingface', 'scaleway', 'nebius', 'glm', 'qwen',
+];
 
 export const AI_DEFAULT_MODEL = {
   gemini: 'gemini-2.0-flash',
@@ -241,6 +250,15 @@ export const AI_DEFAULT_MODEL = {
   deepseek: 'deepseek-chat',
   together: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
   xai: 'grok-2-latest',
+  perplexity: 'sonar',
+  cerebras: 'llama-3.3-70b',
+  nvidia: 'meta/llama-3.3-70b-instruct',
+  sambanova: 'Meta-Llama-3.3-70B-Instruct',
+  huggingface: 'meta-llama/Llama-3.3-70B-Instruct',
+  scaleway: 'llama-3.3-70b-instruct',
+  nebius: 'meta-llama/Llama-3.3-70B-Instruct',
+  glm: 'glm-4-flash',
+  qwen: 'qwen-turbo',
 };
 
 // Providers OpenAI-compatibles (même shape /chat/completions).
@@ -251,6 +269,15 @@ const OPENAI_COMPAT = {
   deepseek: 'https://api.deepseek.com/chat/completions',
   together: 'https://api.together.xyz/v1/chat/completions',
   xai: 'https://api.x.ai/v1/chat/completions',
+  perplexity: 'https://api.perplexity.ai/chat/completions',
+  cerebras: 'https://api.cerebras.ai/v1/chat/completions',
+  nvidia: 'https://integrate.api.nvidia.com/v1/chat/completions',
+  sambanova: 'https://api.sambanova.ai/v1/chat/completions',
+  huggingface: 'https://router.huggingface.co/v1/chat/completions',
+  scaleway: 'https://api.scaleway.ai/v1/chat/completions',
+  nebius: 'https://api.studio.nebius.com/v1/chat/completions',
+  glm: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+  qwen: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
 };
 
 export function buildAiRequest(provider, key, opts) {
@@ -366,6 +393,17 @@ export function secretName(provider) {
     deepseek: 'DEEPSEEK_API_KEY',
     together: 'TOGETHER_API_KEY',
     xai: 'XAI_API_KEY',
+    // Paliers gratuits ajoutés 2026-08-12. Noms de secrets EXACTS : Kevin a des
+    // variantes (PERPLEXITI sans Y, OPEN_AI avec underscore) — leçon vécue.
+    perplexity: 'PERPLEXITI_API_KEY',
+    cerebras: 'CEREBRAS_API_KEY',
+    nvidia: 'NVIDIA_API_KEY',
+    sambanova: 'SAMBANOVA_API_KEY',
+    huggingface: 'HF_TOKEN',
+    scaleway: 'SCALEWAY_API_KEY',
+    nebius: 'NEBIUS_API_KEY',
+    glm: 'GLM_API_KEY',
+    qwen: 'DASHSCOPE_API_KEY',
     tavily: 'TAVILY_API_KEY',
     brave: 'BRAVE_API_KEY',
     pexels: 'PEXELS_API_KEY',
@@ -458,7 +496,9 @@ async function relay(url, headers, origin, tag) {
 // Liste des clés présentes (health, sans révéler les valeurs).
 function keyStatus(env) {
   const out = {};
-  for (const prov of ['gemini', 'groq', 'openrouter', 'mistral', 'cohere', 'deepseek', 'together', 'xai', 'tavily', 'brave', 'pexels', 'finnhub', 'printify', 'resend', 'google']) {
+  // La liste vient de AI_CHAIN pour ne jamais oublier un moteur ajouté (une
+  // liste recopiée à la main finit toujours par diverger).
+  for (const prov of AI_CHAIN.concat(['tavily', 'brave', 'pexels', 'finnhub', 'printify', 'resend', 'google'])) {
     out[prov] = !!env[secretName(prov)];
   }
   return out;

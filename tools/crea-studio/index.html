@@ -1080,7 +1080,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.18.0';
+var APP_VER='v9.18.1';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -5310,7 +5310,7 @@ var AiVid=(function(){
     fetch(AI_URL+'/frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,prompt:prompt,n:5})})
       .then(function(r){return r.json();})
       .then(function(j){
-        if(!j||!j.frames||j.frames.length<2)throw new Error((j&&j.error)||'frames_failed');
+        if(!j||!j.frames||j.frames.length<2)throw new Error((j&&(j.message||j.error))||'frames_failed');
         hint('🎬 Montage de la vidéo… ('+j.frames.length+' poses)');
         return buildDanceVideo(j.frames).then(function(blob){
           if(freeBlobUrl)URL.revokeObjectURL(freeBlobUrl);
@@ -5436,7 +5436,7 @@ var AiVid=(function(){
       return fetch(AI_URL+'/pose',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({image:photoData,poses:poses})}).then(function(r){return r.json();});
     }).then(function(j){
-      if(!j||!j.frames||j.frames.length<2)throw new Error((j&&j.error)||'pose_failed');
+      if(!j||!j.frames||j.frames.length<2)throw new Error((j&&(j.message||j.error))||'pose_failed');
       hint('🎬 Montage de ta vidéo… ('+j.frames.length+' poses)');
       return buildDanceVideo(j.frames);
     }).then(function(blob){
@@ -5791,7 +5791,7 @@ var Magic=(function(){
     busy=true;$('magicSingBtn').disabled=true;aiShow('L\'IA prépare ta bouche qui chante… 🎤');
     fetch(AI_URL+'/frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoData,mode:'sing',n:3})})
       .then(function(r){return r.json();})
-      .then(function(j){if(!j||!j.frames||j.frames.length<2)throw new Error((j&&j.error)||'frames_failed');
+      .then(function(j){if(!j||!j.frames||j.frames.length<2)throw new Error((j&&(j.message||j.error))||'frames_failed');
         aiShow('Montage de la vidéo… 🎬');
         return buildSingVideo(j.frames,songFile);})
       .then(function(blob){busy=false;$('magicSingBtn').disabled=false;aiHide();
@@ -6376,7 +6376,7 @@ var Mini=(function(){
     if(quality!=='ai'||!photoImg)return Promise.resolve(null);
     return fetch(AI_URL+'/frames',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:photoImg.src,mode:'sing',n:3})})
       .then(function(r){ if(!r.ok)return r.json().then(function(j){throw new Error((j&&j.error)||('http_'+r.status));},function(){throw new Error('http_'+r.status);}); return r.json(); })
-      .then(function(j){ if(!j||!j.frames||j.frames.length<2)throw new Error('frames_failed');
+      .then(function(j){ if(!j||!j.frames||j.frames.length<2)throw new Error((j&&(j.message||j.error))||'frames_failed');
         return Promise.all(j.frames.map(loadImg)).then(function(a){a=a.filter(Boolean);
           if(a.length<2)throw new Error('frames_unreadable'); Credit.ok(); return a;}); })
       .catch(function(e){
