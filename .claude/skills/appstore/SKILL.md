@@ -85,6 +85,11 @@ contenu propre). Un simple lanceur de liens serait refusé.
    étrangères. Resserré à ce que l'app charge vraiment → **4,3 Mo**. Toujours vérifier le
    poids annoncé par le build.
 
+**Identifiant Apple : AUCUN TIRET.** `com.kd-mc.*` a été REFUSÉ au build (« Must be in Java
+package form with no dashes », run 31762220281) → `com.kdmc.cmcteams` / `com.kdmc.apexchat` /
+`com.kdmc.lingua`. Validé désormais **en local, gratuitement, en 1 seconde** (`identifiantValide()`)
+au lieu de 46 s sur un runner macOS facturé 10×.
+
 **L'identifiant Apple (`bundleId`) est FIGÉ par le test.** Le changer après publication crée
 une app DIFFÉRENTE chez Apple : testeurs, avis et achats perdus. Prouvé rougissant.
 

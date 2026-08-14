@@ -64,7 +64,18 @@ export function fichiersRetenus(base, motifs) {
   return out.sort();
 }
 
+/* Forme « paquet Java » exigée par Capacitor ET par Apple : lettres/chiffres/points,
+   AUCUN tiret. Vérifié ICI (1 seconde, gratuit) plutôt que 46 s plus tard sur un runner
+   macOS facturé 10× — le 1er essai est mort là-dessus (com.kd-mc.* refusé, run 31762220281). */
+export function identifiantValide(id) {
+  return typeof id === 'string' && /^[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*)+$/.test(id);
+}
+
 function preparer(app) {
+  if (!identifiantValide(app.bundleId))
+    throw new Error(`${app.id} : identifiant Apple « ${app.bundleId} » invalide — forme paquet Java exigée `
+      + `(lettres/chiffres/points, AUCUN tiret, chaque partie commence par une lettre). `
+      + `Capacitor le refuse : « Must be in Java package form with no dashes ».`);
   const src = resolve(RACINE, app.webDir);
   if (!existsSync(join(src, 'index.html'))) throw new Error(`${app.id} : index.html introuvable dans ${app.webDir}`);
 

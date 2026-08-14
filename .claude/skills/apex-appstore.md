@@ -45,4 +45,4 @@ les chemins absolus**) · `.github/workflows/ios-testflight.yml` (bouton, `macos
 
 **Pièges connus** : (1) une app qui charge `/CMCteams/…` en absolu perd ces fichiers dans
 l'app native → `dupliquerSous` + contrôle au build ; (2) un `include` trop large embarquait
-**61 Mo** au lieu de 4,3. **L'identifiant Apple est figé** — le changer perd testeurs et avis.
+**61 Mo** au lieu de 4,3. **Identifiant SANS TIRET** (forme paquet Java) — `com.kd-mc.*` refusé par Capacitor. **L'identifiant Apple est figé** — le changer perd testeurs et avis.
