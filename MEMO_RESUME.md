@@ -1,5 +1,89 @@
 # MEMO_RESUME — état de session
 
+## 14 août 2026 — OSINT v2.6 : vérifier un numéro de téléphone (défensif)
+
+Kevin envoie 2 captures Facebook (Laravel « Log Viewer » · « SearchPhone » OSINT téléphone).
+
+- **Log Viewer** → **non applicable** : c'est un paquet **Laravel/PHP**, le domaine est en
+  JS + Workers Cloudflare. Rien installé (aurait été du code mort). L'équivalent utile
+  existe déjà : le journal de `admin.kd-mc.com`.
+- **SearchPhone** → l'outil lui-même **non installé** (script Python d'enquête sur des
+  numéros de particuliers = risque RGPD). En revanche ses **sources publiques
+  légitimes** sont ajoutées en liens 1-clic, cadrées **défensif** : *« ce numéro qui
+  m'appelle est-il une arnaque ? »* / *« mon propre numéro a-t-il fuité ? »*.
+- **OSINT v2.6** : nouvelle catégorie **📞 Numéro de téléphone** (5 liens, chacun avec sa
+  fonction écrite et **visible en 390px**) : Signal-Arnaques · 33700 · Numverify ·
+  Hudson Rock · PhoneInfoga (doc, avec **garde-fou RGPD**). Compteur **mesuré** : 134 outils
+  · 20 catégories (jamais estimé).
+- **Preuve** : `npm run test:osint-links` → **11/11 ✅**, et l'assertion « garde-fou légal »
+  est **discriminante** (retiré le warning → ❌ 11 ; remis → ✅).
+- ✅ **Liens VÉRIFIÉS en vrai** (Kevin : « tu as internet et les outils »). `WebFetch` était
+  bloqué sur ces hôtes, mais **WebSearch + vérificateur de liens MCP** répondaient →
+  **2 erreurs trouvées et corrigées** : `hudsonrock.com/free-tools` **injoignable** →
+  remplacé par **`infostealers.com`** (le vrai service gratuit), et sa description était
+  **fausse** (il vérifie e-mail/pseudo/domaine, **pas** un numéro). PhoneInfoga confirmé
+  (+ mention « projet non maintenu »).
+- 🔗 **Nouvel outil permanent** : `tools/audit/liens-check.mjs` + workflow
+  **« Liens — vérification RÉELLE »** (bouton + 1×/mois) → ping réel des **198** liens du
+  domaine depuis le runner CI (réseau ouvert). Classement honnête vivant / protégé
+  (401-403 = anti-robot, pas mort) / MORT. Mode `--lister` testable hors ligne.
+- 📌 **Règle gravée** (CLAUDE.md + leçon #181) : « je n'ai pas pu vérifier » est **interdit**
+  tant que les 4 canaux n'ont pas été essayés (WebFetch → WebSearch → MCP → runner CI).
+
+---
+
+## 9-12 août 2026 — Admin universel du domaine · 15 apps iPhone · localisation · OSINT
+
+### Livré et sur `main`
+1. **ADMIN UNIVERSEL DU DOMAINE (SSO central)** — Kevin est reconnu admin **partout**
+   sans code par app. Le worker `kdmc-crea-famille` demande `kd-mc.com/__sso/whoami`
+   (`estAdminSSO`) et exige `admin && verified` (Face ID prouvé, JAMAIS le nom seul,
+   leçon #99/#166) ; le client `tools/crea-studio` transmet enfin le pass
+   (`Authorization: Bearer kdmc_sso_token`) — sans ça le chemin admin du worker était du
+   **code mort**. Idem `shops/_shared/kdmc-shop-admin.js` (4 boutiques) et `tools/departs`
+   (`_depSsoAutoAdmin`). **Fail-open partout** : SSO muet → PIN local en repli, 0 régression.
+   Règle gravée dans CLAUDE.md. Le secret `CREA_FAMILLE_ADMIN_CODE` devient **facultatif**
+   (repli) → un clic de moins pour Kevin. Garde `test:p0-secu` étendue (17 vérifs).
+2. **PIPELINE iOS — 15 apps du domaine → TestFlight, sans Mac** (`ios-apps-testflight.yml`) :
+   Capacitor emballe chaque app web en vraie appli iPhone sur un **Mac cloud GitHub**,
+   signature **automatique par clé App Store Connect API** (aucun `.p12` à fuiter).
+   Registre `tools/ios/apps.json` (ajouter une app = 1 entrée, 0 secret). Sécurité par app :
+   ATS HTTPS strict partout + `WKAppBoundDomains` (navigation verrouillée au domaine) pour
+   les apps autonomes, relâché pour les boutiques (paiement externe). Icône propre par app
+   (`make-icon.py`, alpha aplati — exigence App Store) + numéro de build unique (sinon
+   TestFlight refuse). **15/15 apps PROUVÉES `ARCHIVE SUCCEEDED`** en dry-run.
+   **Bloqué UNIQUEMENT** par le secret `.p8` : Apple refuse le téléchargement de la clé sur
+   un compte neuf (bug de leur côté, message rouge « réessayer ultérieurement »).
+3. **World Monitor v2.42 — localisation** : puce 📍 Ma position (suivi live `watchPosition`,
+   point + cercle de précision) sur la **carte**, le **globe animé** ET le **globe 3D**.
+   Recentrage au 1er fix seulement, updaters idempotents, permission refusée → message clair
+   + coupe (pas de harcèlement). **Vie privée exacte** : le fix GPS pleine précision ne quitte
+   jamais l'appareil (prouvé 0 fuite réseau) ; dit honnêtement que les couches live chargent
+   la zone AFFICHÉE, comme un déplacement de carte. Test `test:wm-pos` (8/8).
+4. **OSINT v2.5** — catégorie 📺 « Flux TV, radio & fichiers publics » : 9 liens 1-clic avec
+   **leur fonction affichée sous chacun** (nouveau champ `d` + CSS ; avant, seul le nom était
+   visible sur iPhone) et **recherche par fonction**. 129 outils / 19 catégories (compté).
+   **Refusé et écrit dans le code** : vavoo.to, megathread r/Piracy, annuaires de streaming
+   illégal (rediffusion de contenus payants). Test `test:osint-links` (9/9).
+
+### Décisions Kevin de la session
+- **Projet « KDMC Live » (télé/radio) : ANNULÉ** (« Action 2 annule, rien ») — rien codé.
+- **Stockage R2 `kdmc-deces-insee` : GARDÉ** (Kevin 2026-08-12 « Garde ») — **rien supprimé**.
+  Kevin avait d'abord dit « efface » ; je me suis **arrêté avant de détruire** car 3 scripts le
+  lisent encore (`tools/arbre/find-deces.py`, `actes-register.py`, `enrich-insee-local.py`) =
+  l'automatisation « Arbre — retrouver un décès précis » qu'on avait conservée. Mon info
+  précédente était **incomplète** (j'avais vérifié `arbre/index.html`, pas les scripts) → j'ai
+  corrigé et rendu le choix à Kevin, qui a tranché : on garde. La « source 2 » (numéro d'acte +
+  code commune) continue donc de fonctionner. Leçon #141.
+
+### Pièges rencontrés (à ne pas refaire)
+- **Apostrophes dans `node -e '…'`** : même dans un commentaire JS, elles ferment la chaîne
+  bash → « syntax error near unexpected token `)` ». A cassé 4 builds iOS d'un coup.
+- **Icône + numéro de build** : sans eux TestFlight refuse l'envoi — à poser AVANT le 1er essai.
+- **Voyant vert ≠ preuve** : un run « success » de 24 s était en fait un arrêt fail-closed sur
+  secret manquant. Toujours lire le log (`ARCHIVE SUCCEEDED`), pas la pastille.
+
+
 ## Soir du 7 août 2026 — Lingua jeux de rôle 🎭 + Bee vivante dans Créa Studio 🐝
 
 ### Livré et sur `main` (session Lingua/Bee)

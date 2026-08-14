@@ -122,6 +122,92 @@ Donc :
 
 ---
 
+## 🗺️ SESSION 2026-08-09 — Ce qui t'attend (dans l'ordre)
+
+| # | Ce qui reste | Qui | État |
+|---|---|---|---|
+| 1 | **Récupérer la clé Apple `.p8`** (le téléchargement plante côté Apple) | toi | 🔴 **bloque tout le reste iPhone** |
+| 2 | ~~Projet « KDMC Live » (télé/radio)~~ | — | ❌ **ANNULÉ** par Kevin (2026-08-09). Rien à faire, rien codé. |
+| 3 | Envoyer tes **15 apps sur TestFlight** | moi | ⏳ dès que le point 1 est fait (5 min) |
+| 4 | ~~Stockage `kdmc-deces-insee`~~ | — | ✅ **GARDÉ** (Kevin 2026-08-12 « Garde ») — rien supprimé, la recherche d'actes marche. |
+
+---
+
+### 🔴 1. Ta clé Apple `.p8` — la seule chose qui bloque
+
+Tout le reste est **prêt et prouvé** : tes 15 apps se fabriquent en vraies applis iPhone (testé
+sur des Mac dans le cloud), signature, sécurité, icônes. Il ne manque que **ce fichier**.
+
+Le téléchargement échoue chez Apple (« Une erreur s'est produite ») — ce n'est **pas toi**.
+
+#### 🆘 Avant de re-essayer : 2 choses à vérifier (2 min)
+
+> Le message d'Apple ne dit pas la cause. Voici les 2 pistes **les plus probables** (pas une certitude) :
+
+- **① Un contrat Apple non signé bloque les clés** — c'est le cas le plus fréquent sur un compte
+  tout neuf.
+  👉 **[Ouvrir « Accords, taxes et opérations bancaires »](https://appstoreconnect.apple.com/business)**
+  → si une ligne est **« En attente »** ou **« À accepter »** → **accepte-la**, puis refais la clé.
+- **② Prendre une clé d'ÉQUIPE** (section **Clés d'équipe** / *Team Keys*), pas « individuelle »,
+  avec l'accès **Admin**. ✅ *Oui, c'est bien une clé équipe qu'il faut — tu avais raison de demander.*
+
+Et si ça bloque encore :
+- appui **long** sur *Télécharger* → « **Télécharger le fichier lié** » ;
+- ou **Chrome** sur iPhone ; ou coupe le **Relais privé iCloud** (Réglages → ton nom → iCloud) ;
+- ou **depuis un ordinateur** — le plus fiable, 30 secondes ;
+- ou **attends 24-48 h** : sur une adhésion toute neuve, Apple met parfois ce délai à activer l'API.
+
+💡 Chaque essai raté laisse une clé morte : **supprime-les** (bouton *Révoquer*), sinon on risque de
+coller le mauvais numéro de clé.
+
+#### Puis, quand le fichier est enfin sur ton iPhone :
+
+1. **[🔑 Ouvrir mes clés App Store Connect](https://appstoreconnect.apple.com/access/integrations/api)**
+   → **+** → nom au choix → accès **Admin** → **Generate** → **Télécharger tout de suite**
+   💡 *Le plus fiable : depuis un **ordinateur** (30 s) plutôt que l'iPhone. Ou essaie **Chrome** sur iPhone, ou en **Wi-Fi** au lieu de la 4G.*
+2. **[📋 Copier le fichier en 1 clic](https://9r4rxssx64-creator.github.io/CMCteams/tools/ios/p8.html)** *(100 % privé — rien n'est envoyé sur internet)*
+3. **[🔐 Coller dans mes secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions)** — **2 secrets** :
+   - `APPSTORE_API_KEY_BASE64` = le contenu du fichier
+   - `APPSTORE_API_KEY_ID` = le **Key ID de la clé que tu viens de télécharger** ⚠️ *(le piège : toujours celui de la dernière)*
+4. Tu me dis **« p8 ok »** → **j'envoie les 15 apps sur ton iPhone.**
+
+> ✅ Déjà en place, rien à refaire : `APPLE_TEAM_ID` (`Y45767LAGC`) et `APPSTORE_API_ISSUER_ID`.
+
+---
+
+### ❌ 2. Projet « KDMC Live » — ANNULÉ
+
+Kevin : « **Action 2 annule, rien.** » (2026-08-09) → **abandonné, rien n'a été codé, rien à faire.**
+Aucune trace dans le domaine. Les 9 liens outils (VLC, iptv-org, yt-dlp…) restent simplement
+rangés dans **OSINT** avec leur fonction écrite — c'est tout ce qui a été livré sur ce sujet.
+
+---
+
+### ✅ 4. Stockage `kdmc-deces-insee` — GARDÉ (décision Kevin, 2026-08-12)
+
+Kevin : « **Garde** » → **rien n'a été supprimé, rien à faire.**
+
+Bonne décision : ce stockage est **encore lu par 3 scripts** (`tools/arbre/find-deces.py`,
+`actes-register.py`, `enrich-insee-local.py`), c'est-à-dire l'automatisation
+**« Arbre — retrouver un décès précis »**. Elle continue de donner le **numéro d'acte de
+décès** et le **code de la commune** (la « source 2 » complète), en plus de la recherche
+par nom/date.
+
+*Rappel de ce qui s'est passé : je t'avais annoncé ce stockage comme inutile — c'était une
+info **incomplète** de ma part (j'avais vérifié la page de l'arbre, pas les scripts). Je me
+suis arrêté avant d'effacer et je t'ai rendu le choix. Leçon gravée (#141) : une recherche de
+dépendance couvre page **+ scripts + automatisations**, jamais la page seule.*
+
+---
+
+### ✅ Fait pendant ce temps (rien à faire pour toi)
+
+- **Connexion admin universelle** : tu es reconnu admin **partout** sur ton domaine, sans code par app (déployé + vérifié en ligne).
+- **15 apps prêtes pour l'iPhone**, chacune sécurisée (HTTPS strict, navigation verrouillée au domaine, icône propre) — toutes testées sur Mac cloud.
+- **World Monitor v2.42** : ta **localisation** en direct (point bleu + précision) sur la **carte**, le **globe** et le **globe 3D**. Ton GPS ne quitte jamais l'iPhone (prouvé : 0 fuite réseau).
+
+---
+
 ## 🗺️ SESSION 2026-08-06 — Feuille de route (ce qui reste, dans l'ordre)
 
 **Rien ne t'attend côté action** — sauf une décision (point 4). Le reste, je le finis moi.
