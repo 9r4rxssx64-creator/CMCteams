@@ -427,6 +427,18 @@ const MODELS = {
   cartoon: { owner: 'catacolabs', name: 'cartoonify', input: (img) => ({ image: img }) },
   enhance: { owner: 'nightmareai', name: 'real-esrgan', input: (img) => ({ image: img, scale: 2, face_enhance: true }) }
 };
+/* Moteurs d'ÉDITION guidée par instruction : ils partent de TA photo et gardent
+   ton visage (contrairement à un moteur texte→image qui invente quelqu'un).
+   Essayés dans l'ordre ; un modèle indisponible échoue proprement et on passe
+   au suivant. */
+const MAGIC_EDIT = [
+  { owner: 'black-forest-labs', name: 'flux-kontext-pro',
+    input: (img, p) => ({ input_image: img, prompt: p, output_format: 'png' }) },
+  { owner: 'black-forest-labs', name: 'flux-kontext-dev',
+    input: (img, p) => ({ input_image: img, prompt: p, output_format: 'png' }) },
+  { owner: 'timothybrooks', name: 'instruct-pix2pix',
+    input: (img, p) => ({ image: img, prompt: p, num_outputs: 1 }) }
+];
 const DEF_MOTION = 'the subject is dancing, funny energetic happy dance, lively motion';
 const I2V = {
   standard: { owner: 'minimax', name: 'video-01-live', input: (img, p) => ({ first_frame_image: img, prompt: p || DEF_MOTION }) },
@@ -678,18 +690,43 @@ export default {
       const custom = (body && typeof body.custom === 'string') ? body.custom.slice(0, 300) : '';
       const prompt = MAGIC[preset] || (custom ? ('Edit this photo: ' + custom + '.' + KEEP_FACE) : '');
       if (!prompt) return json({ error: 'unknown_preset' }, h, 400);
+      /* Kevin 2026-08-12 : « les figurines… ce n'est pas moi ». Cause : quand
+         Gemini (le seul moteur qui ÉDITE la photo) échouait, on tombait sur un
+         moteur qui RECRÉE à partir du texte → une autre personne. On essaie
+         maintenant un vrai moteur d'ÉDITION en secours, et si le client a
+         demandé de garder le visage (keep_face) on REFUSE de rendre une image
+         inventée : mieux vaut une erreur claire qu'un faux « toi ». */
+      const keepFace = !!(body && (body.keep_face || body.identity === 'preserve'));
       const errs = [];
-      /* Gemini sait ÉDITER la photo (garde le visage) → toujours en premier. */
+      /* 1) Gemini : édite la photo, garde le visage. */
       try {
         const g = await geminiImage(env, prompt, image);
         return imgResponse(g.mime, g.b64, Object.assign({ 'x-crea-provider': g.provider }, h));
-      } catch (e) { errs.push(String((e && e.message) || e)); }
-      /* Secours GRATUIT réel (Workers AI) : il ne peut pas repartir de la photo,
-         il recrée la scène décrite — moins fidèle, mais mieux que « rien ». */
+      } catch (e) { errs.push('gemini:' + String((e && e.message) || e)); }
+      /* 2) Replicate, ÉDITION guidée par l'instruction (l'identité est gardée).
+            Si un modèle n'existe plus, latestVersion() échoue proprement et on
+            passe au suivant — aucun risque de casse. */
+      const rtok = env.REPLICATE_API_TOKEN;
+      if (rtok) {
+        for (const m of MAGIC_EDIT) {
+          try {
+            return await runImageModel(m, m.input(image, prompt), rtok,
+              Object.assign({ 'x-crea-provider': 'replicate-edit:' + m.name }, h));
+          } catch (e3) { errs.push(m.name + ':' + String((e3 && e3.message) || e3)); }
+        }
+      } else errs.push('replicate_no_key');
+      /* 3) Dernier recours : recréer SANS la photo. Ce n'est plus « toi » →
+            on ne le fait QUE si le client l'accepte, et on dit pourquoi. */
+      if (keepFace && !(body && body.allow_recreate)) {
+        return json({ error: 'face_edit_failed', detail: errs.join(' | '),
+          message: "L'IA n'a pas pu partir de ta photo (l'édition a échoué). "
+            + "Je préfère ne rien inventer plutôt que de te rendre quelqu'un d'autre." }, h, 502);
+      }
       try {
         const c = await cfImage(env, prompt.replace(/Keep the SAME person[^.]*\./g, '') + ' Portrait, cinematic, detailed.');
-        return imgResponse(c.mime, c.b64, Object.assign({ 'x-crea-provider': c.provider, 'x-crea-fallback': 'recreated' }, h));
-      } catch (e2) { errs.push(String((e2 && e2.message) || e2)); }
+        return imgResponse(c.mime, c.b64, Object.assign({ 'x-crea-provider': c.provider,
+          'x-crea-fallback': 'recreated', 'x-crea-why': errs.join(' | ').slice(0, 180) }, h));
+      } catch (e2) { errs.push('cf:' + String((e2 && e2.message) || e2)); }
       return json({ error: errs.join(' | ') }, h, 502);
     }
 
