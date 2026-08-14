@@ -45,8 +45,12 @@ jobs:
         shell: bash -eo pipefail {0}   # sans pipefail, un `node … | tee` échoué ressortirait VERT
         run: |
           node tools/lingua/collect-lsf.mjs ${{ inputs.voir_les_noms && '--titres' || '' }} ${{ inputs.rapport_seul && '--rapport' || '' }} | tee /tmp/lsf.log
+      # Le rapport est écrit DANS le dépôt, pas seulement dans le journal de l'ouvrage :
+      # relire un journal d'ouvrage depuis l'agent est lent et peu fiable, alors qu'un
+      # fichier versionné se lit d'un `git fetch`. Et il garde une trace de ce qui a été
+      # regardé à chaque passage — utile pour voir ce qui apparaît sur Commons avec le temps.
       - name: "Publier la récolte"
-        if: ${{ !inputs.rapport_seul && !inputs.voir_les_noms }}
+        if: ${{ !inputs.rapport_seul }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -55,8 +59,9 @@ jobs:
           # « git add » AVANT de comparer : un fichier qui n'existait pas encore n'apparaît pas
           # dans un « git diff » ordinaire — on aurait annoncé « rien à publier » alors que la
           # récolte était bien là, et personne n'aurait vu passer le manque.
-          git add lingua/lsf-sources.json
-          if git diff --cached --quiet -- lingua/lsf-sources.json; then
+          mkdir -p audit && cp /tmp/lsf.log audit/lsf-recolte.log
+          git add lingua/lsf-sources.json audit/lsf-recolte.log
+          if git diff --cached --quiet; then
             echo "Aucun signe nouveau : rien à publier."; exit 0
           fi
           git commit -m "Lingua : récolte LSF (signes réels, sources libres citées) [skip ci]"
