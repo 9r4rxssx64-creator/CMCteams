@@ -424,6 +424,37 @@
         { m: 'algèbre', d: "de al-jabr, « la remise en place » : le titre d'un traité d'al-Khwârizmî.", src: 'Algèbre' }
       ] },
 
+    lsf: { nom: 'Langue des signes (LSF)', src: 'Langue des signes française',
+      motsTitre: 'Les mots qu\'on croise en LSF',
+      histoire: "La langue des signes française n'a pas été inventée par un entendant : elle existait déjà dans les communautés de sourds de Paris quand l'abbé de l'Épée, vers 1760, ouvre la première école gratuite pour enfants sourds et choisit de l'apprendre plutôt que de l'interdire. En 1816, un professeur sourd, Laurent Clerc, l'emporte aux États-Unis : la langue des signes américaine en garde la trace aujourd'hui encore. Le congrès de Milan, en 1880, lui préfère la parole et l'écarte des écoles ; il faudra attendre 1991 pour que l'enseignement bilingue redevienne un droit en France, et 2005 pour qu'elle soit reconnue comme une langue à part entière. Ce n'est pas du français avec les mains : elle a sa grammaire, qui se déploie dans l'espace et sur le visage.",
+      chiffres: [
+        { k: 'Première école gratuite', v: 'à Paris, vers 1760', src: 'Charles-Michel de L\'Épée' },
+        { k: 'Écartée de l\'école', v: 'après le congrès de Milan, en 1880', src: 'Langue des signes française' },
+        { k: 'Enseignement bilingue', v: 'à nouveau un droit en 1991', src: 'Langue des signes française' },
+        { k: 'Langue à part entière', v: 'reconnue par la loi en 2005', src: 'Langue des signes française' },
+        { k: 'Alphabet dans la main', v: '26 configurations, une par lettre', src: 'Dactylologie' },
+        { k: 'Ce n\'est pas du français signé', v: 'une grammaire propre, dans l\'espace', src: 'Langue des signes française' }
+      ],
+      faits: [
+        { t: "L'abbé de l'Épée n'a pas inventé cette langue : il l'a apprise auprès des sourds de Paris, puis en a fait la base de son enseignement.", src: 'Charles-Michel de L\'Épée' },
+        { t: "En 1816, le professeur sourd Laurent Clerc part enseigner aux États-Unis : la langue des signes américaine descend en partie de la française.", src: 'Laurent Clerc' },
+        { t: "C'est pour cela que la langue des signes américaine ressemble plus à la française qu'à la britannique, alors que l'anglais est la langue parlée des deux pays.", src: 'Langue des signes américaine' },
+        { t: "En 1880, le congrès de Milan recommande l'usage exclusif de la parole dans l'éducation des sourds : les signes sont écartés des écoles pour près d'un siècle.", src: 'Langue des signes française' },
+        { t: "En 1991, la loi rétablit la liberté de choisir une éducation bilingue, en langue des signes et en français.", src: 'Langue des signes française' },
+        { t: "La loi du 11 février 2005 reconnaît la langue des signes française comme une langue à part entière.", src: 'Langue des signes française' },
+        { t: "Le visage fait partie de la grammaire : lever ou froncer les sourcils transforme une phrase en question. Ce n'est pas de l'émotion, c'est de la syntaxe.", src: 'Langue des signes française' },
+        { t: "L'alphabet dans la main ne sert pas à tout épeler : il dépanne pour les noms propres et les mots qui n'ont pas encore de signe.", src: 'Dactylologie' },
+        { t: "On ne choisit pas son prénom signé : ce sont les personnes sourdes qui vous en donnent un, souvent à partir d'un détail qui vous caractérise.", src: 'Langue des signes française' },
+        { t: "Il n'existe pas une langue des signes universelle : chaque pays a la sienne, née de sa propre communauté.", src: 'Langue des signes' }
+      ],
+      mots: [
+        { m: 'dactylologie', d: "l'alphabet dans la main : une forme de main par lettre, pour épeler un nom propre.", src: 'Dactylologie' },
+        { m: 'prénom signé', d: "le signe qui vous désigne. Ce sont les personnes sourdes qui vous le donnent — on ne se le choisit pas.", src: 'Langue des signes française' },
+        { m: 'configuration', d: "la forme que prend la main. Avec l'emplacement, le mouvement et l'orientation, c'est ce qui fait un signe.", src: 'Langue des signes française' },
+        { m: 'iconicité', d: "quand le signe garde la trace de ce qu'il désigne. Très présente en LSF — mais un signe n'est pas un mime.", src: 'Langue des signes française' },
+        { m: 'Sourd, avec un grand S', d: "la majuscule dit l'appartenance à une culture et à une langue, pas le niveau d'audition.", src: 'Culture sourde' },
+        { m: 'LPC', d: "un code de la main qui accompagne le français parlé. Ce n'est pas la LSF : c'est un autre outil, pour un autre usage.", src: 'Langue française parlée complétée' }
+      ] },
     mc: { nom: 'Monégasque', src: 'Monégasque',
       histoire: "Le monégasque (munegascu) est un parler ligure, cousin du génois, propre au Rocher de Monaco. Louis Notari en fixe l'écriture en 1927, en s'inspirant du français et de l'italien, avec le premier livre écrit dans la langue : A Legenda de Santa Devota. Menacé de disparition dans les années 1970 — les Monégasques sont minoritaires dans leur propre pays —, il reprend souffle grâce à son entrée obligatoire à l'école en 1977, du CE2 au collège. Il n'est pas la langue officielle de la principauté, qui reste le français, mais on le lit sur toutes les plaques de rue, et un concours officiel le célèbre chaque année depuis 1981.",
       chiffres: [
