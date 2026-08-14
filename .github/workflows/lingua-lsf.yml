@@ -34,8 +34,11 @@ jobs:
   recolter:
     runs-on: ubuntu-latest
     steps:
+      # On prend le code de la branche demandée (main pour le rendez-vous mensuel). Forcer
+      # « main » ici ferait tourner l'ANCIEN récolteur alors qu'on vient d'en corriger un :
+      # on croirait tester sa correction sans jamais l'exécuter.
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 1 }
+        with: { fetch-depth: 1 }
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - name: "Aller chercher les signes réels (licences libres uniquement)"
