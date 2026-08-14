@@ -16,6 +16,10 @@ on:
         description: "Seulement dire ce qui existe, sans rien écrire"
         type: boolean
         default: false
+      voir_les_noms:
+        description: "Montrer comment les fichiers sont nommés (pour régler la lecture des titres)"
+        type: boolean
+        default: false
   schedule:
     - cron: '0 4 3 * *'   # le 3 de chaque mois, 04:00 UTC
 
@@ -30,16 +34,19 @@ jobs:
   recolter:
     runs-on: ubuntu-latest
     steps:
+      # On prend le code de la branche demandée (main pour le rendez-vous mensuel). Forcer
+      # « main » ici ferait tourner l'ANCIEN récolteur alors qu'on vient d'en corriger un :
+      # on croirait tester sa correction sans jamais l'exécuter.
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 1 }
+        with: { fetch-depth: 1 }
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - name: "Aller chercher les signes réels (licences libres uniquement)"
         shell: bash -eo pipefail {0}   # sans pipefail, un `node … | tee` échoué ressortirait VERT
         run: |
-          node tools/lingua/collect-lsf.mjs ${{ inputs.rapport_seul && '--rapport' || '' }} | tee /tmp/lsf.log
+          node tools/lingua/collect-lsf.mjs ${{ inputs.voir_les_noms && '--titres' || '' }} ${{ inputs.rapport_seul && '--rapport' || '' }} | tee /tmp/lsf.log
       - name: "Publier la récolte"
-        if: ${{ !inputs.rapport_seul }}
+        if: ${{ !inputs.rapport_seul && !inputs.voir_les_noms }}
         run: |
           if git diff --quiet -- lingua/lsf-sources.json; then
             echo "Aucun signe nouveau : rien à publier."; exit 0
@@ -59,6 +66,6 @@ jobs:
             echo "## 🤟 Récolte LSF"
             echo ""
             echo '```'
-            tail -40 /tmp/lsf.log || echo "(pas de log)"
+            tail -140 /tmp/lsf.log || echo "(pas de log)"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
