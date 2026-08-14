@@ -186,6 +186,22 @@ jobs:
             image/*) echo "  ✅ IMAGE reçue → fond IA gratuit fonctionne";;
             *) echo "  ❌ pas une image :"; head -c 400 /tmp/bg.bin | tr -d '\0'; echo;;
           esac
+          # Kevin 2026-08-12 : « les figurines… ce n'est pas moi ». Ce test dit
+          # si /magic ÉDITE vraiment la photo envoyée, ou s'il en invente une.
+          echo "----- /magic (figurine — DOIT partir de la photo envoyée) -----"
+          curl -sS -m 200 -X POST "$BASE/magic" -H 'content-type: application/json' \
+            -d "{\"image\":\"$PNG\",\"preset\":\"figurine\",\"keep_face\":true}" \
+            -o /tmp/mg.bin -D /tmp/mg.hdr \
+            -w "HTTP %{http_code} | type=%{content_type} | size=%{size_download}\n"
+          grep -i "^x-crea-" /tmp/mg.hdr 2>/dev/null || true
+          if grep -qi '^x-crea-fallback: *recreated' /tmp/mg.hdr 2>/dev/null; then
+            echo "::error::/magic a INVENTÉ une image au lieu d'éditer la photo (ce ne serait PAS Kevin)"
+          elif [ "$(file -b --mime-type /tmp/mg.bin 2>/dev/null | cut -d/ -f1)" = "image" ]; then
+            echo "  ✅ la photo a bien été ÉDITÉE (l'identité est gardée) — $(grep -i '^x-crea-provider' /tmp/mg.hdr | tr -d '\r')"
+          else
+            echo "  ⚠️ pas d'image : le serveur a REFUSÉ d'inventer quelqu'un d'autre. Motif :"
+            head -c 400 /tmp/mg.bin | tr -d '\0'; echo
+          fi
           echo "----- /frames (photo → poses de danse, GRATUIT) -----"
           curl -sS -m 220 -X POST "$BASE/frames" -H 'content-type: application/json' \
             -d "{\"image\":\"$PNG\",\"n\":2}" -o /tmp/fr.json \
