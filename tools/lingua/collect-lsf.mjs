@@ -15,6 +15,7 @@
    POURQUOI EN CI : depuis l'agent, internet est fermé (403). Ce script tourne donc dans
    l'ouvrage GitHub (réseau ouvert), qui écrit le résultat dans le dépôt.
 
+     node tools/lingua/collect-lsf.mjs --titres    → montre comment les fichiers sont NOMMÉS
      node tools/lingua/collect-lsf.mjs --rapport   → dit seulement ce qui EXISTE (n'écrit rien)
      node tools/lingua/collect-lsf.mjs             → écrit lingua/lsf-sources.json
 */
@@ -24,6 +25,7 @@ import path from 'path';
 const RACINE = path.resolve(new URL('../../', import.meta.url).pathname);
 const SORTIE = path.join(RACINE, 'lingua', 'lsf-sources.json');
 const RAPPORT_SEUL = process.argv.includes('--rapport');
+const TITRES = process.argv.includes('--titres');
 const API = 'https://commons.wikimedia.org/w/api.php';
 const UA = 'KDMC-Lingua/1.0 (https://lingua.kd-mc.com ; apprentissage des langues)';
 
@@ -159,6 +161,30 @@ async function infos(titres) {
 
   console.log('\n' + vus.size + ' fichier(s) distincts à examiner…');
   const meta = await infos([...vus]);
+
+  /* Mode « comment c'est nommé » : avant d'écrire la moindre règle de lecture des titres,
+     on REGARDE comment les fichiers s'appellent vraiment. Écrire des règles de mémoire, c'est
+     exactement comme ça qu'on invente un signe. On groupe par début de nom, on montre le type
+     de fichier et la licence : de quoi décider sur du réel, pas sur une supposition. */
+  if (TITRES) {
+    const familles = new Map();
+    for (const [titre, m] of meta) {
+      const nu = titre.replace(/^File:/, '').replace(/_/g, ' ');
+      const cle = nu.split(/\s+/).slice(0, 2).join(' ').toLowerCase();
+      if (!familles.has(cle)) familles.set(cle, { n: 0, ex: [], types: new Set(), lic: new Set() });
+      const f = familles.get(cle);
+      f.n++; if (f.ex.length < 3) f.ex.push(nu);
+      f.types.add((m.mime || '?').split('/')[0]); f.lic.add(m.licence || '(sans licence lisible)');
+    }
+    const tri = [...familles.entries()].sort((a, b) => b[1].n - a[1].n);
+    console.log('\n📛 Comment les fichiers sont nommés (' + tri.length + ' familles) :\n');
+    tri.slice(0, 40).forEach(([cle, f]) => {
+      console.log('· « ' + cle + ' » ×' + f.n + '  [' + [...f.types].join(',') + ']  licence: ' + [...f.lic].slice(0, 2).join(' | '));
+      f.ex.forEach((e) => console.log('     ' + e));
+    });
+    console.log('\n(mode titres : rien n\'a été écrit)');
+    return;
+  }
 
   const signes = {}; const alphabet = {}; let ecartesLicence = 0, ecartesTitre = 0;
   for (const [titre, m] of meta) {

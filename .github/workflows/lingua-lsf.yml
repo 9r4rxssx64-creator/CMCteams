@@ -16,6 +16,10 @@ on:
         description: "Seulement dire ce qui existe, sans rien écrire"
         type: boolean
         default: false
+      voir_les_noms:
+        description: "Montrer comment les fichiers sont nommés (pour régler la lecture des titres)"
+        type: boolean
+        default: false
   schedule:
     - cron: '0 4 3 * *'   # le 3 de chaque mois, 04:00 UTC
 
@@ -37,9 +41,9 @@ jobs:
       - name: "Aller chercher les signes réels (licences libres uniquement)"
         shell: bash -eo pipefail {0}   # sans pipefail, un `node … | tee` échoué ressortirait VERT
         run: |
-          node tools/lingua/collect-lsf.mjs ${{ inputs.rapport_seul && '--rapport' || '' }} | tee /tmp/lsf.log
+          node tools/lingua/collect-lsf.mjs ${{ inputs.voir_les_noms && '--titres' || '' }} ${{ inputs.rapport_seul && '--rapport' || '' }} | tee /tmp/lsf.log
       - name: "Publier la récolte"
-        if: ${{ !inputs.rapport_seul }}
+        if: ${{ !inputs.rapport_seul && !inputs.voir_les_noms }}
         run: |
           if git diff --quiet -- lingua/lsf-sources.json; then
             echo "Aucun signe nouveau : rien à publier."; exit 0
@@ -59,6 +63,6 @@ jobs:
             echo "## 🤟 Récolte LSF"
             echo ""
             echo '```'
-            tail -40 /tmp/lsf.log || echo "(pas de log)"
+            tail -140 /tmp/lsf.log || echo "(pas de log)"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
