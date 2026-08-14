@@ -31,6 +31,20 @@ chk(ids[ids.length - 1] === 'openai',
   '4. le PAYANT (openai) est en tout dernier — on n\'y arrive qu\'après tous les gratuits');
 chk(ids.length >= 17, `1. ${ids.length} moteurs texte au total (avant : 7)`);
 
+/* --- 1bis. modèles d'IMAGE Gemini : la panne du 2026-08-14 ---------------
+   Les 2 seuls noms configurés étaient morts (404 « not found for API version
+   v1beta ») → figurines, cartoon ET poses de danse tombaient ensemble. On
+   exige donc plusieurs candidats ET la génération actuelle en tête. */
+const gm = src.slice(src.indexOf('const GEM_MODELS'), src.indexOf('function parseDataUrl'));
+const modeles = [...gm.matchAll(/'(gemini-[^']+)'/g)].map((m) => m[1]);
+chk(modeles.length >= 4, `1bis. ${modeles.length} modèles image candidats (avant la panne : 2)`);
+chk(/^gemini-3/.test(modeles[0]),
+  '1bis. la génération ACTUELLE est essayée en premier (' + modeles[0] + ')');
+chk(modeles.some((m) => /^gemini-2\./.test(m)),
+  '1bis. les anciens restent en repli (une régression Google ne casse pas tout)');
+chk(src.includes('gemErrs'),
+  '1bis. l\'erreur de CHAQUE modèle est remontée — c\'est son absence qui a masqué la panne');
+
 /* --- 2 & 3. secours réel : les 6 premiers tombent, un nouveau répond --- */
 let appeles = [];
 global.fetch = async (u, o) => {
