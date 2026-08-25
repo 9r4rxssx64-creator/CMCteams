@@ -1221,6 +1221,21 @@ Grouper les liens sous des en-têtes en gras + emoji pour scan instantané :
 
 Pas de liste plate de 15 liens en vrac.
 
+### 4-bis. JAMAIS un lien d'action UNIQUEMENT dans une page publiée (Artifact) — Kevin 2026-08-14
+
+Une page publiée tourne dans un **cadre isolé** qui **bloque les liens externes** : un clic sur
+`target="_blank"` **ne fait RIEN**, sans erreur, sans onglet, sans message. Constaté en vrai
+(« les liens dans ton doc ne fonctionnent pas ») : les URL étaient justes, c'est le contenant
+qui les neutralise, **en silence**.
+
+- ✅ Les liens d'action de Kevin vont **dans le message du chat**, en markdown — seul endroit fiable.
+- ✅ La page publiée sert à **structurer** (ordre des étapes, valeurs à saisir), pas à porter les liens.
+- ✅ Tout ce qu'une page publiée doit transmettre (adresse, identifiant, valeur) doit être
+  **COPIABLE d'un appui** — le presse-papier fonctionne là où la navigation est bloquée.
+- ❌ Ne jamais faire dépendre une action de Kevin d'un lien situé dans un Artifact.
+
+Cf. LESSONS #197.
+
 ### 5. Test mental obligatoire avant CHAQUE réponse contenant des liens
 
 > *"Si Kevin tape sur son iPhone et clique mes liens dans l'ordre, est-ce que
