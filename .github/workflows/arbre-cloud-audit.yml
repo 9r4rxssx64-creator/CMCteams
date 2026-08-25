@@ -1,0 +1,39 @@
+name: Arbre — audit + correction du cloud familial
+# Lance tools/arbre/cloud-audit.mjs sur le runner (réseau OUVERT — l'agent Claude
+# ne peut pas atteindre Firebase, egress bloqué). Lit la VRAIE base partagée que
+# voient les téléphones (auth anonyme identique à l'app), vérifie chaque personne
+# et chaque lien contre le seed officiel, supprime les fiches-fantômes (jamais
+# les fiches enrichies) et ré-aligne les liens sur le document familial.
+# Dispatch manuel + 1×/mois (anti-spam : cron mensuel).
+on:
+  workflow_dispatch:
+    inputs:
+      fix:
+        description: "1 = corrige le cloud (défaut) · 0 = lecture seule"
+        required: false
+        default: "1"
+  schedule:
+    - cron: "0 4 5 * *" # le 5 de chaque mois à 04:00 UTC (après la recherche INSEE de 03:00)
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Audit + correction du cloud
+        env:
+          FIX: ${{ github.event.inputs.fix || '1' }}
+        run: node tools/arbre/cloud-audit.mjs
+      - name: Commit rapport
+        run: |
+          git config user.name "arbre-bot"
+          git config user.email "noreply@anthropic.com"
+          git add arbre/research
+          git commit -m "Arbre: audit cloud familial (verification reelle + correction) [skip ci]" || { echo "aucun changement"; exit 0; }
+          git push

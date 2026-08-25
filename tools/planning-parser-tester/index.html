@@ -1,0 +1,1208 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Anti-cache : force le navigateur à fetch les scripts à chaque visite.
+     Critique pour Safari iOS PWA qui peut servir un cache de 30+ jours. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<!-- ANTI-CACHE LAYER 1 — redirect immédiat si l'URL n'a pas de query unique.
+     Force Safari iOS à re-fetch l'HTML au moins une fois par jour (timestamp
+     basé sur la date courante, pas Date.now() pour éviter une boucle infinie
+     mais quand même invalider quotidiennement le cache HTML).
+     Exécuté en TOUT premier — avant tout autre script — pour minimiser le
+     temps d'affichage de la page potentiellement obsolète. -->
+<script>
+  (function () {
+    try {
+      // Bypass si on est déjà dans une redirection (évite boucle)
+      if (location.search && location.search.indexOf("_h=") >= 0) return;
+      // Timestamp jour pour avoir un reload quotidien forcé (pas plus)
+      var todayKey = new Date().toISOString().slice(0, 10);
+      var newUrl = location.pathname + "?_h=" + todayKey + location.hash;
+      location.replace(newUrl);
+    } catch (_) { /* fallback : laisse charger normalement */ }
+  })();
+</script>
+<title>🧪 Planning Parser Tester (T1)</title>
+<style>
+  :root {
+    --bg: #0b1409;
+    --bg-card: rgba(14, 28, 18, .65);
+    --gold: #e8b830;
+    --gold-soft: rgba(232, 184, 48, .15);
+    --text: #f1efe6;
+    --text-dim: #a9a89c;
+    --warn: #f7b955;
+    --err: #ea5455;
+    --ok: #6fbf73;
+    --border: rgba(232, 184, 48, .32);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+  body { padding: 16px; padding-bottom: env(safe-area-inset-bottom, 16px); max-width: 920px; margin: 0 auto; min-height: 100vh; }
+  h1 { font-size: 22px; margin: 0 0 6px; font-weight: 600; color: var(--gold); }
+  .sub { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5; }
+  .rule { background: rgba(234, 84, 85, .12); border-left: 3px solid var(--err); padding: 10px 12px; border-radius: 6px; margin-bottom: 18px; font-size: 13px; line-height: 1.5; }
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; color: var(--gold); }
+  #drop {
+    border: 2px dashed var(--border); border-radius: 14px; padding: 28px; text-align: center;
+    cursor: pointer; transition: background .15s, border-color .15s; min-height: 120px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #drop.over { background: var(--gold-soft); border-color: var(--gold); }
+  #drop .big { font-size: 36px; margin-bottom: 8px; }
+  #drop .hint { color: var(--text-dim); font-size: 13px; line-height: 1.5; }
+  #pick { display: none; }
+  .btn-pick {
+    display: inline-block; margin-top: 10px; padding: 10px 16px; background: var(--gold); color: #1a1407;
+    border: none; border-radius: 999px; cursor: pointer; font-weight: 600; font-size: 14px;
+    min-height: 44px; min-width: 44px;
+  }
+  .btn-pick:hover { filter: brightness(1.08); }
+  textarea#paste-text {
+    width: 100%; min-height: 90px; background: rgba(255, 255, 255, .04); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: ui-monospace, "SF Mono", monospace; font-size: 12px;
+  }
+  pre#result {
+    background: rgba(0, 0, 0, .35); padding: 12px; border-radius: 8px; overflow: auto;
+    font-family: ui-monospace, "SF Mono", monospace; font-size: 12px; line-height: 1.45;
+    white-space: pre-wrap; word-break: break-word; max-height: 60vh;
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-right: 6px; background: var(--gold-soft); color: var(--gold); border: 1px solid var(--border); }
+  .badge.ok   { background: rgba(111, 191, 115, .15); color: var(--ok);   border-color: rgba(111, 191, 115, .4); }
+  .badge.warn { background: rgba(247, 185, 85, .15); color: var(--warn); border-color: rgba(247, 185, 85, .4); }
+  .badge.err  { background: rgba(234, 84, 85, .15);  color: var(--err);  border-color: rgba(234, 84, 85, .4); }
+  .small { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+  .legend { font-size: 11px; color: var(--text-dim); margin-top: 8px; line-height: 1.6; }
+  .row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .btn-sec { background: transparent; border: 1px solid var(--border); color: var(--gold); padding: 8px 14px; border-radius: 999px; cursor: pointer; font-size: 13px; min-height: 36px; }
+  .btn-sec:hover { background: var(--gold-soft); }
+  .alert-box { padding: 10px 12px; border-radius: 8px; margin-top: 10px; font-size: 13px; line-height: 1.45; }
+  .alert-warn { background: rgba(247, 185, 85, .12); border-left: 3px solid var(--warn); }
+  .alert-err  { background: rgba(234, 84, 85, .12);  border-left: 3px solid var(--err); }
+  .alert-info { background: rgba(111, 191, 115, .12); border-left: 3px solid var(--ok); }
+  .stack-passes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .pass-box { background: rgba(255, 255, 255, .04); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; }
+  .pass-box .name { font-weight: 600; color: var(--gold); margin-bottom: 4px; }
+  .pass-box .status { color: var(--text-dim); font-size: 11px; }
+  .pass-box.todo { opacity: .55; }
+  @media (max-width: 480px) {
+    .stack-passes { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+  <h1 style="margin:0;">🧪 Planning Parser Tester (T1)</h1>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <code id="app-version-badge" style="font-size:10px;color:var(--text-dim);background:rgba(255,255,255,.05);padding:3px 6px;border-radius:4px;">v?</code>
+    <button id="btn-hard-refresh" type="button" title="Vide le cache et recharge la dernière version"
+      style="background:transparent;border:1px solid var(--border);color:var(--gold);padding:4px 10px;border-radius:999px;cursor:pointer;font-size:11px;min-height:28px;">
+      🔄 Forcer MAJ
+    </button>
+  </div>
+</div>
+<div class="sub">
+  Sandbox isolé pour valider le pipeline d'import des plannings SBM <strong>avant</strong> intégration dans CMCteams.<br>
+  Fichier : <code>tools/planning-parser-tester/index.html</code> · ne modifie ni <code>index.html</code> racine ni <code>A.overrides</code>.
+</div>
+
+<div class="rule">
+  🛑 <strong>Règle absolue inviolable</strong> (Kevin, répétée 3×) :<br>
+  Reproduction à l'identique uniquement. <strong>JAMAIS</strong> d'auto-correction, <strong>JAMAIS</strong> de fallback historique, <strong>JAMAIS</strong> d'auto-remplissage.<br>
+  Si une lecture est ambiguë → <code>needs_review</code>, Kevin tranche manuellement.
+</div>
+
+<!-- ============ ZONE 0 : Configuration Proxy IA ============ -->
+<div class="card" id="proxy-card">
+  <h2>0. Proxy Vision IA (clés via secrets GitHub)</h2>
+  <div class="small" style="margin-bottom:10px;">
+    Le frontend n'a <strong>jamais</strong> de clé API en clair. Le Worker Cloudflare <code>cmc-parser-proxy</code>
+    lit les secrets GitHub (ANTHROPIC, OPEN_AI, MISTRAL, GEMINI) et relay les appels Vision IA.
+    Sans proxy, seule la passe A (PDF.js) tourne.
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <input id="proxy-url" type="url" placeholder="https://cmc-parser-proxy.<subdomain>.workers.dev"
+           style="flex:1;min-width:260px;padding:8px 10px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <input id="proxy-token" type="password" placeholder="X-Auth-Token (PUSH_ADMIN_TOKEN)"
+           style="flex:1;min-width:200px;padding:8px 10px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <button class="btn-sec" id="btn-proxy-save" type="button">💾 Enregistrer</button>
+    <button class="btn-sec" id="btn-proxy-test" type="button">🩺 Tester /healthz</button>
+    <button class="btn-sec" id="btn-proxy-clear" type="button">🗑 Effacer</button>
+  </div>
+  <div class="small" id="proxy-status" style="margin-top:8px;"></div>
+  <div class="legend">
+    Stockage <strong>sessionStorage uniquement</strong> (auto-purgé à la fermeture). Jamais persisté Firebase / localStorage / cookies.
+  </div>
+</div>
+
+<!-- ============ ZONE 0bis : Capture auto → Claude (chiffré) ============ -->
+<div class="card" id="capture-card">
+  <h2>0bis. 🔒 Envoi auto à Claude (chiffré)</h2>
+  <div class="small" style="margin-bottom:10px;">
+    Chaque planning importé est <strong>chiffré (AES-GCM-256)</strong> sur ton appareil, puis déposé
+    dans la branche <code>planning-captures</code> du dépôt. Claude le récupère et le déchiffre avec
+    <strong>ta phrase secrète</strong>. Les noms des employés ne sont <strong>jamais</strong> lisibles
+    publiquement — seul du contenu chiffré quitte ton iPhone.
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <input id="cap-pat" type="password" autocomplete="off" placeholder="Jeton GitHub (fine-grained · Contents: Read/Write)"
+           style="flex:1;min-width:260px;padding:8px 10px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <input id="cap-pass" type="password" autocomplete="off" placeholder="Phrase secrète (chiffrement)"
+           style="flex:1;min-width:200px;padding:8px 10px;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+      <input type="checkbox" id="cap-enabled" style="width:18px;height:18px;"> Auto-envoi
+    </label>
+    <button class="btn-sec" id="btn-cap-save" type="button">💾 Enregistrer</button>
+    <button class="btn-sec" id="btn-cap-test" type="button">🧪 Test envoi</button>
+    <button class="btn-sec" id="btn-cap-clear" type="button">🗑 Effacer</button>
+  </div>
+  <div class="small" id="cap-status" style="margin-top:8px;"></div>
+  <div class="legend">
+    Jeton + phrase stockés en <strong>localStorage</strong> sur ton appareil uniquement (jamais envoyés ailleurs).
+    Le dépôt public ne contient que du <strong>chiffré illisible</strong>.
+  </div>
+</div>
+
+<!-- ============ ZONE 1 : Input ============ -->
+<div class="card">
+  <h2>1. Choisir un document</h2>
+
+  <div id="drop" tabindex="0" role="button" aria-label="Zone drag and drop">
+    <div class="big">📄</div>
+    <div><strong>Glisse-dépose</strong> un PDF, une photo (HEIC/JPG/PNG), un ZIP ou colle (<kbd>Cmd+V</kbd>) ici.</div>
+    <div class="hint">Accepte aussi clic pour ouvrir le sélecteur fichier.</div>
+    <button class="btn-pick" id="btn-pick-trigger" type="button">📁 Choisir fichier</button>
+    <input id="pick" type="file" accept="application/pdf,image/*,application/zip" multiple>
+  </div>
+
+  <details style="margin-top: 12px;">
+    <summary style="cursor: pointer; color: var(--text-dim); font-size: 13px;">📋 …ou colle directement le texte brut du planning (fallback)</summary>
+    <textarea id="paste-text" placeholder="Colle ici le texte sélectionné depuis ton viewer PDF…"></textarea>
+    <div class="row-btns"><button class="btn-sec" id="btn-paste-go" type="button">▶ Analyser ce texte</button></div>
+  </details>
+</div>
+
+<!-- ============ ZONE 2 : Passes (visualisation pipeline) ============ -->
+<div class="card" id="passes-card" style="display:none;">
+  <h2>2. Pipeline de lecture (6 passes parallèles)</h2>
+  <div class="stack-passes">
+    <div class="pass-box" id="pass-A"><div class="name">A · PDF.js (texte natif)</div><div class="status">…</div></div>
+    <div class="pass-box todo" id="pass-B"><div class="name">B · Claude Vision</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-C"><div class="name">C · GPT-4o Vision</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-D"><div class="name">D · Mistral (Pixtral)</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-E"><div class="name">E · Gemini 2.5 Pro</div><div class="status">⏳ en attente — proxy + document requis</div></div>
+    <div class="pass-box todo" id="pass-F"><div class="name">F · Tesseract.js (fallback)</div><div class="status">🚧 non implémentée — fallback hors-ligne futur</div></div>
+    <div class="pass-box todo" id="pass-G"><div class="name">G · Parser texte natif</div><div class="status">⏳ en attente — document requis</div></div>
+  </div>
+  <div class="legend">
+    A &amp; G tournent toujours (PDF.js seul, hors-ligne). B–E nécessitent le proxy Vision configuré (Section 0). F (Tesseract) est gardée pour un futur mode hors-ligne pur. Vote unanime cellule par cellule (<code>lib/cell-voting.js</code>) → cellules certaines vs <code>needs_review</code>.
+  </div>
+</div>
+
+<!-- ============ ZONE 3 : Résultat ============ -->
+<div class="card" id="result-card" style="display:none;">
+  <h2>3. Résultat de l'analyse</h2>
+  <div id="result-summary"></div>
+  <div id="emp-grid"></div>
+  <div id="validation-zone"></div>
+  <div id="result-alerts"></div>
+  <details style="margin-top: 12px;">
+    <summary style="cursor: pointer; color: var(--text-dim); font-size: 13px;">📦 JSON brut complet (pour debug / export)</summary>
+    <pre id="result"></pre>
+  </details>
+  <div class="row-btns">
+    <button class="btn-sec" id="btn-validate" type="button" style="border-color:var(--ok);color:var(--ok);">✅ Valider l'import (conforme au PDF)</button>
+    <button class="btn-sec" id="btn-export-validated" type="button">📤 Exporter le résultat validé</button>
+    <button class="btn-sec" id="btn-export" type="button">💾 Exporter JSON brut</button>
+    <button class="btn-sec" id="btn-export-raw" type="button" title="Texte brut extrait du PDF — pour que Claude corrige le parser sur ton vrai import">📝 Exporter texte brut PDF</button>
+    <button class="btn-sec" id="btn-reset" type="button">↩ Recommencer</button>
+  </div>
+</div>
+
+<!-- ============ Dépendances CDN ============
+     pdf.js est chargé à la demande par PlanningParserPipeline.ensurePdfJsReady()
+     (cf. parser-multi-ocr.js) — script lazy, idempotent, configure workerSrc auto,
+     évite la race condition « lib pas encore prête quand on appelle getDocument ».
+============================================================================= -->
+
+<!-- ANTI-CACHE LAYER 2 — enregistre le Service Worker network-first. -->
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js?_=" + Date.now())
+      .catch(function (e) { console.warn("[ppt] SW register failed:", e); });
+  }
+</script>
+
+<!-- Cache-bust agressif via query-string. Bump APP_BUILD à chaque commit qui
+     touche ces scripts pour forcer le re-fetch (anti-cache Safari iOS / SW). -->
+<script>window.__APP_BUILD__ = "v0.9.9-capture-auto-chiffree-" + Date.now();</script>
+<script>
+  (function injectScripts() {
+    var v = window.__APP_BUILD__;
+    var srcs = [
+      "./helpers-reuse.js",
+      "./lib/vision-passes.js",
+      "./lib/cell-voting.js",
+      "./lib/text-parser.js",
+      "./lib/encadres-parser.js",
+      "./lib/team-detector.js",
+      "./lib/validate-post-import.js",
+      "./lib/homonyms-guard.js",
+      "./lib/code-colors.js",
+      "./parser-multi-ocr.js"
+    ];
+    for (var i = 0; i < srcs.length; i++) {
+      document.write('<script src="' + srcs[i] + '?_=' + encodeURIComponent(v) + '"><\/script>');
+    }
+  })();
+</script>
+
+<!-- ============ Bootstrap UI ============ -->
+<script>
+(function () {
+  "use strict";
+
+  const H = window.PlanningParserHelpers;
+  const PIPE = window.PlanningParserPipeline;
+  const VP = window.VisionPasses;
+
+  // Affiche la version réelle des modules chargés + bouton hard-refresh
+  (function () {
+    var badge = document.getElementById("app-version-badge");
+    if (badge) {
+      // Affiche LES DEUX versions (parser + vision) pour diagnostic clair en
+      // cas de cache iOS partiel (l'HTML peut être ancien mais les modules JS
+      // frais — chacun a son numéro indépendant).
+      var pipeV = (PIPE && PIPE.VERSION) || "?";
+      var visV = (VP && VP.VERSION) || "?";
+      // Format compact : extrait la partie v0.X.Y de chaque
+      var pipeShort = (pipeV.match(/v\d+\.\d+\.\d+/) || [pipeV])[0];
+      var visShort = (visV.match(/v\d+\.\d+\.\d+/) || [visV])[0];
+      badge.textContent = "pipe " + pipeShort + " · vision " + visShort;
+      badge.title = "Pipeline : " + pipeV + "\nVision : " + visV + "\nBuild HTML : " + (window.__APP_BUILD__ || "?");
+    }
+    var btn = document.getElementById("btn-hard-refresh");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        // Vide caches Service Worker + Cache Storage + recharge sans cache
+        Promise.all([
+          (typeof caches !== "undefined" && caches.keys) ? caches.keys().then(function (ks) {
+            return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+          }) : Promise.resolve(),
+          (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) ?
+            navigator.serviceWorker.getRegistrations().then(function (rs) {
+              return Promise.all(rs.map(function (r) { return r.unregister(); }));
+            }) : Promise.resolve()
+        ]).finally(function () {
+          window.location.replace(window.location.pathname + "?_v=" + Date.now());
+        });
+      });
+    }
+  })();
+
+  /* ===== Proxy config UI ===== */
+  const proxyUrl = document.getElementById("proxy-url");
+  const proxyToken = document.getElementById("proxy-token");
+  const proxyStatus = document.getElementById("proxy-status");
+  const btnProxySave = document.getElementById("btn-proxy-save");
+  const btnProxyTest = document.getElementById("btn-proxy-test");
+  const btnProxyClear = document.getElementById("btn-proxy-clear");
+
+  function refreshProxyStatus(extra) {
+    const cfg = VP && VP.getProxyConfig();
+    if (cfg) {
+      const srcLabel = cfg.source === "auto_config" ? "🤖 auto-configuré"
+        : cfg.source === "session_token" ? "🔑 token manuel"
+        : "🔧 URL manuelle";
+      proxyStatus.innerHTML = `🟢 Proxy actif (${srcLabel}) : <code>${H.esc(cfg.url)}</code>${extra ? " · " + extra : ""}`;
+      proxyUrl.value = cfg.url;
+      if (cfg.token) proxyToken.value = "•".repeat(Math.min(16, cfg.token.length));
+    } else {
+      proxyStatus.innerHTML = `⚪ Aucun proxy — passes Vision désactivées (passe A PDF.js seule)${extra ? " · " + extra : ""}`;
+    }
+  }
+
+  // Auto-chargement de proxy-config.json (zéro saisie Kevin)
+  async function autoLoadProxy() {
+    if (!VP) return;
+    proxyStatus.innerHTML = "⏳ Chargement automatique de la config proxy…";
+    const res = await VP.loadAutoConfig();
+    if (res.ok) {
+      // Vérifie immédiatement /healthz pour valider que le worker répond
+      const h = await VP.proxyHealthz();
+      if (h.ok) {
+        const provs = (h.data && h.data.providers_available || []).join(", ");
+        refreshProxyStatus(`/healthz ✓ providers: ${provs || "aucun"}`);
+      } else {
+        const e = h.error || {};
+        proxyStatus.innerHTML = `🟡 Config chargée mais /healthz a échoué — <strong>${H.esc(e.message || "")}</strong><br><span class="small">${H.esc(e.detail || "")}${e.hint ? "<br>💡 " + H.esc(e.hint) : ""}</span>`;
+      }
+    } else {
+      const e = res.error || {};
+      proxyStatus.innerHTML = `⚠ Auto-config indisponible — <strong>${H.esc(e.message || "")}</strong><br><span class="small">${H.esc(e.detail || "")}${e.hint ? "<br>💡 " + H.esc(e.hint) : ""}</span><br><span class="small">Tu peux configurer URL + token manuellement ci-dessous (fallback).</span>`;
+    }
+  }
+  if (VP) {
+    btnProxySave.addEventListener("click", () => {
+      const u = (proxyUrl.value || "").trim();
+      const t = (proxyToken.value || "").trim();
+      if (!u || !t) { alert("URL et token requis."); return; }
+      if (/^•+$/.test(t)) { alert("Re-saisis le token (masqué actuellement)."); return; }
+      VP.setProxyConfig(u, t);
+      refreshProxyStatus("enregistré ✓");
+    });
+    btnProxyTest.addEventListener("click", async () => {
+      proxyStatus.textContent = "⏳ Test en cours…";
+      const h = await VP.proxyHealthz();
+      if (h.ok) {
+        const provs = (h.data && h.data.providers_available || []).join(", ");
+        refreshProxyStatus(`/healthz ✓ providers: ${provs || "aucun"}`);
+      } else {
+        // Erreur structurée : affiche message + cause exacte + hint
+        const e = h.error || {};
+        const lines = [`❌ <strong>${H.esc(e.message || "Test /healthz échoué")}</strong>`];
+        if (e.detail && e.detail !== e.message) lines.push(`<span class="small">Cause : ${H.esc(String(e.detail))}</span>`);
+        const meta = [];
+        if (e.code) meta.push("code: " + e.code);
+        if (e.step) meta.push("étape: " + e.step);
+        if (e.http_status) meta.push("HTTP " + e.http_status);
+        if (meta.length) lines.push(`<span class="small" style="color:var(--text-dim);">${H.esc(meta.join(" · "))}</span>`);
+        if (e.hint) lines.push(`<span class="small">💡 ${H.esc(e.hint)}</span>`);
+        proxyStatus.innerHTML = lines.join("<br>");
+      }
+    });
+    btnProxyClear.addEventListener("click", () => {
+      VP.clearProxyConfig();
+      proxyUrl.value = ""; proxyToken.value = "";
+      refreshProxyStatus("effacé");
+    });
+    // 🤖 Auto-chargement au boot (Kevin n'a rien à faire)
+    autoLoadProxy();
+  } else {
+    proxyStatus.textContent = "❌ Module VisionPasses non chargé.";
+  }
+
+  /* ============================================================
+   * 🔒 Capture auto chiffrée → Claude (branche planning-captures)
+   * Chiffre {pdf, rawText, result} en AES-GCM-256 / PBKDF2 200k puis dépose
+   * via l'API GitHub Contents. Le dépôt public ne contient que du chiffré.
+   * Claude déchiffre avec captures/decrypt.js + la phrase secrète.
+   * ============================================================ */
+  const CAPTURE = (function () {
+    const REPO = "9r4rxssx64-creator/CMCteams";
+    const BRANCH = "planning-captures";
+    const DIR = "tools/planning-parser-tester/captures";
+    const LS_PAT = "cmc_cap_pat", LS_PASS = "cmc_cap_pass", LS_EN = "cmc_cap_enabled";
+    const tenc = new TextEncoder();
+
+    function ab2b64(input) {
+      const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+      let bin = ""; const CH = 0x8000;
+      for (let i = 0; i < bytes.length; i += CH) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+      }
+      return btoa(bin);
+    }
+    const utf8b64 = (str) => ab2b64(tenc.encode(str));
+
+    async function deriveKey(passphrase, salt) {
+      const base = await crypto.subtle.importKey("raw", tenc.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt, iterations: 200000, hash: "SHA-256" },
+        base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+      );
+    }
+    async function encryptEnvelope(plainObj, passphrase, meta) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(passphrase, salt);
+      const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, tenc.encode(JSON.stringify(plainObj)));
+      return { v: 1, alg: "PBKDF2-200000-SHA256/AES-GCM-256",
+        salt: ab2b64(salt), iv: ab2b64(iv), ct: ab2b64(ct), ts: Date.now(), meta: meta || {} };
+    }
+
+    function cfg() {
+      return { pat: localStorage.getItem(LS_PAT) || "", pass: localStorage.getItem(LS_PASS) || "",
+               enabled: localStorage.getItem(LS_EN) === "1" };
+    }
+    const safeName = (s) => String(s || "planning").normalize("NFD").replace(/[^\w.-]+/g, "_").slice(0, 60);
+
+    async function send(result, opts) {
+      opts = opts || {};
+      const c = cfg();
+      if (!c.pat || !c.pass) {
+        return { ok: false, error: { message: "Jeton GitHub ou phrase secrète manquant.", hint: "Renseigne les 2 champs puis 💾 Enregistrer." } };
+      }
+      let pdf_base64 = null;
+      try { if (result && result.capture && result.capture.bytes) pdf_base64 = ab2b64(result.capture.bytes); } catch (_) {}
+      const passA = (result.passes || []).find(p => p.passe === "A");
+      const rawText = passA ? (passA.textRaw || "") : "";
+      const slim = JSON.parse(JSON.stringify(result, (k, v) => (k === "bytes" ? undefined : v)));
+      const plain = {
+        filename: (result.capture && result.capture.name) || opts.filename || "planning",
+        mime: (result.capture && result.capture.mime) || "",
+        ts: Date.now(), pdf_base64, rawText, result: slim
+      };
+      const my = result.month_year_detected || {};
+      const passG = (result.passes || []).find(p => p.passe === "G" && p.ok);
+      const meta = {
+        filename: plain.filename, mime: plain.mime,
+        month: (my.month != null ? my.month : null), year: (my.year != null ? my.year : null),
+        sizeBytes: (result.capture && result.capture.sizeBytes) || (pdf_base64 ? Math.round(pdf_base64.length * 0.75) : 0),
+        employees_count: passG && passG.employees ? passG.employees.length : null,
+        build: (window.__APP_BUILD__ || "").slice(0, 48)
+      };
+      let envelope;
+      try { envelope = await encryptEnvelope(plain, c.pass, meta); }
+      catch (e) { return { ok: false, error: { message: "Chiffrement échoué.", detail: (e && e.message) || String(e), step: "crypto:encrypt" } }; }
+      const fname = `${envelope.ts}__${safeName(plain.filename)}.enc.json`;
+      const path = `${DIR}/${fname}`;
+      const url = `https://api.github.com/repos/${REPO}/contents/${path}`;
+      const body = { message: `capture chiffrée ${fname}`, content: utf8b64(JSON.stringify(envelope, null, 2)), branch: BRANCH };
+      let r, txt = "", data = null;
+      try {
+        r = await fetch(url, { method: "PUT", headers: {
+          "Authorization": "Bearer " + c.pat, "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json"
+        }, body: JSON.stringify(body) });
+        txt = await r.text();
+        try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = { _raw: txt.slice(0, 300) }; }
+      } catch (e) {
+        return { ok: false, error: { message: "Réseau : envoi GitHub impossible.", detail: (e && e.message) || String(e), step: "github:fetch" } };
+      }
+      if (r.ok) return { ok: true, path, branch: BRANCH };
+      return { ok: false, error: {
+        message: "GitHub a refusé le dépôt.",
+        detail: (data && data.message) || txt.slice(0, 300),
+        http_status: r.status, step: "github:contents_put",
+        hint: (r.status === 401 || r.status === 403)
+          ? "Jeton invalide ou sans permission Contents: Read/Write sur le dépôt."
+          : (r.status === 404 ? "Branche planning-captures introuvable ou jeton sans accès au dépôt." : null)
+      } };
+    }
+
+    return { cfg, send,
+      saveCfg: (pat, pass, en) => { localStorage.setItem(LS_PAT, pat); localStorage.setItem(LS_PASS, pass); localStorage.setItem(LS_EN, en ? "1" : "0"); },
+      clearCfg: () => { localStorage.removeItem(LS_PAT); localStorage.removeItem(LS_PASS); localStorage.removeItem(LS_EN); } };
+  })();
+
+  /* --- Wiring UI capture --- */
+  (function () {
+    const pat = document.getElementById("cap-pat");
+    const pass = document.getElementById("cap-pass");
+    const en = document.getElementById("cap-enabled");
+    const status = document.getElementById("cap-status");
+    if (!pat || !pass || !en || !status) return;
+    const setStatus = (html) => { status.innerHTML = html; };
+    function renderSendResult(res) {
+      if (res.ok) {
+        setStatus(`✅ Capture chiffrée envoyée à Claude · <code>${H.esc(res.path)}</code> (branche ${H.esc(res.branch)})`);
+      } else {
+        const e = res.error || {};
+        const lines = [`❌ <strong>${H.esc(e.message || "Envoi échoué")}</strong>`];
+        if (e.detail && e.detail !== e.message) lines.push(`<span class="small">Cause : ${H.esc(String(e.detail))}</span>`);
+        const meta = [];
+        if (e.http_status) meta.push("HTTP " + e.http_status);
+        if (e.step) meta.push("étape: " + e.step);
+        if (meta.length) lines.push(`<span class="small" style="color:var(--text-dim);">${H.esc(meta.join(" · "))}</span>`);
+        if (e.hint) lines.push(`<span class="small">💡 ${H.esc(e.hint)}</span>`);
+        setStatus(lines.join("<br>"));
+      }
+    }
+    window.__renderCaptureStatus = renderSendResult;
+    const c = CAPTURE.cfg();
+    if (c.pat) pat.value = "••••••••";
+    if (c.pass) pass.value = "••••••••";
+    en.checked = c.enabled;
+    if (c.pat && c.pass) setStatus(`🟢 Configuré · auto-envoi ${c.enabled ? "ON" : "OFF"}`);
+    document.getElementById("btn-cap-save").addEventListener("click", () => {
+      const cur = CAPTURE.cfg();
+      const pv = /^•+$/.test(pat.value) ? cur.pat : pat.value.trim();
+      const sv = /^•+$/.test(pass.value) ? cur.pass : pass.value.trim();
+      if (!pv || !sv) { setStatus("⚠ Jeton + phrase requis."); return; }
+      CAPTURE.saveCfg(pv, sv, en.checked);
+      pat.value = "••••••••"; pass.value = "••••••••";
+      setStatus(`🟢 Enregistré ✓ · auto-envoi ${en.checked ? "ON" : "OFF"}`);
+    });
+    document.getElementById("btn-cap-clear").addEventListener("click", () => {
+      CAPTURE.clearCfg(); pat.value = ""; pass.value = ""; en.checked = false; setStatus("🗑 Effacé.");
+    });
+    document.getElementById("btn-cap-test").addEventListener("click", async () => {
+      setStatus("⏳ Test d'envoi (capture témoin chiffrée)…");
+      const probe = { capture: { name: "TEST-CAPTURE.txt", mime: "text/plain", sizeBytes: 11, bytes: new TextEncoder().encode("test-claude") },
+                      passes: [{ passe: "A", textRaw: "TEST CAPTURE — essai de chiffrement." }], month_year_detected: {} };
+      renderSendResult(await CAPTURE.send(probe, { filename: "TEST-CAPTURE" }));
+    });
+  })();
+
+  const drop = document.getElementById("drop");
+  const pick = document.getElementById("pick");
+  const btnPickTrigger = document.getElementById("btn-pick-trigger");
+  const pasteText = document.getElementById("paste-text");
+  const btnPasteGo = document.getElementById("btn-paste-go");
+  const passesCard = document.getElementById("passes-card");
+  const passA = document.getElementById("pass-A");
+  const resultCard = document.getElementById("result-card");
+  const resultEl = document.getElementById("result");
+  const resultSummary = document.getElementById("result-summary");
+  const resultAlerts = document.getElementById("result-alerts");
+  const btnExport = document.getElementById("btn-export");
+  const btnReset = document.getElementById("btn-reset");
+
+  let lastResult = null;
+
+  /* --- Drag & Drop --- */
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    drop.classList.remove("over");
+    const f = e.dataTransfer.files[0];
+    if (f) await analyze(f);
+  });
+  drop.addEventListener("click", (e) => {
+    if (e.target.closest("button")) return; // évite double-trigger via btn
+    pick.click();
+  });
+  drop.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick.click(); }
+  });
+
+  /* --- Sélecteur fichier --- */
+  btnPickTrigger.addEventListener("click", (e) => { e.stopPropagation(); pick.click(); });
+  pick.addEventListener("change", async () => {
+    const f = pick.files[0];
+    if (f) await analyze(f);
+  });
+
+  /* --- Paste clipboard (Cmd+V partout dans la page) --- */
+  window.addEventListener("paste", async (e) => {
+    // Vérifie qu'on n'est pas dans le textarea fallback
+    if (document.activeElement === pasteText) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.kind === "file") {
+        e.preventDefault();
+        await analyze(it.getAsFile());
+        return;
+      }
+    }
+    // Fallback texte
+    const txt = e.clipboardData.getData("text/plain");
+    if (txt && txt.length > 100) {
+      e.preventDefault();
+      await analyze(txt, "clipboard-paste.txt");
+    }
+  });
+
+  /* --- Paste texte explicite --- */
+  btnPasteGo.addEventListener("click", async () => {
+    const t = pasteText.value.trim();
+    if (!t) return alert("Colle d'abord du texte.");
+    await analyze(t, "paste-text.txt");
+  });
+
+  /* --- Analyse --- */
+  async function analyze(input, filename) {
+    try {
+      // Reset l'état de validation pour ce nouveau document
+      _validationChoices = {};
+      _validationSigned = false;
+      passesCard.style.display = "";
+      resultCard.style.display = "none";
+      passA.querySelector(".status").textContent = "⏳ Analyse en cours…";
+      passA.classList.remove("todo");
+
+      const result = await PIPE.runPipeline(
+        input,
+        filename || (input && input.name) || "unknown",
+        {}
+      );
+
+      lastResult = result;
+
+      // 🔒 Auto-envoi chiffré à Claude (non bloquant) si activé
+      try {
+        const _capc = CAPTURE.cfg();
+        if (_capc.enabled && _capc.pat && _capc.pass) {
+          const _cs = document.getElementById("cap-status");
+          if (_cs) _cs.innerHTML = "⏳ Envoi chiffré à Claude…";
+          CAPTURE.send(result, { filename: filename || (result.capture && result.capture.name) })
+            .then((res) => { if (window.__renderCaptureStatus) window.__renderCaptureStatus(res); });
+        }
+      } catch (_) {}
+
+      // Update statuts des 6 passes — affichage clair des erreurs structurées
+      function fmtPasseError(err) {
+        if (!err) return "Erreur inconnue.";
+        if (typeof err === "string") return err.slice(0, 200);
+        const parts = [];
+        if (err.message) parts.push(err.message);
+        if (err.detail && err.detail !== err.message) parts.push("Cause : " + String(err.detail).slice(0, 200));
+        if (err.step) parts.push("Étape : " + err.step);
+        if (err.code) parts.push("Code : " + err.code);
+        if (err.hint) parts.push("💡 " + err.hint);
+        return parts.join(" — ");
+      }
+      function updatePassBox(id, passe) {
+        const box = document.getElementById("pass-" + id);
+        if (!box) return;
+        const st = box.querySelector(".status");
+        if (!passe) {
+          st.textContent = "⏭ non exécutée (proxy non configuré ou format)";
+          box.classList.add("todo");
+          return;
+        }
+        box.classList.remove("todo");
+        if (passe.ok === false) {
+          const msg = fmtPasseError(passe.error);
+          st.innerHTML = `❌ <strong>${H.esc((passe.error && passe.error.message) || "Erreur")}</strong> <span class="small">· ${passe.latency_ms || 0} ms</span><br><span class="small">${H.esc(msg)}</span>`;
+          box.title = msg; // tooltip plein détail au hover
+        } else if (id === "A") {
+          const dur = (result.durations_ms && result.durations_ms.passe_A) || passe.latency_ms || 0;
+          const pages = (passe.pages && passe.pages.length) || 0;
+          st.textContent = `✓ ${passe.tool || "pdf.js"} · ${dur} ms · ${pages} pages · ${passe.itemsTotal || 0} items`;
+        } else {
+          const empN = (passe.employees || []).length;
+          st.textContent = `✓ ${passe.tool} · ${passe.latency_ms || 0} ms · ${empN} employés lus`;
+        }
+      }
+      // Chaque mise à jour isolée : un échec d'affichage d'une passe ne doit
+      // jamais empêcher les autres de s'afficher (ni laisser A bloquée « en cours »).
+      ["A", "B", "C", "D", "E", "G"].forEach(function (pid) {
+        try {
+          updatePassBox(pid, result.passes.find(p => p.passe === pid));
+        } catch (e) {
+          const box = document.getElementById("pass-" + pid);
+          if (box) { const s = box.querySelector(".status"); if (s) s.textContent = "⚠ affichage indisponible"; }
+        }
+      });
+
+      // Affiche résultat
+      resultCard.style.display = "";
+      renderSummary(result);
+      renderAlerts(result);
+      resultEl.textContent = JSON.stringify(result, (k, v) => {
+        // Tronque les blobs binaires et le textRaw long pour lisibilité
+        if (k === "bytes" && v) return `[Uint8Array ${v.byteLength || v.length || "?"} bytes]`;
+        if (k === "textRaw" && typeof v === "string" && v.length > 4000)
+          return v.slice(0, 4000) + `\n…[tronqué: ${v.length} chars total]`;
+        if (k === "items" && Array.isArray(v) && v.length > 50)
+          return `[${v.length} items, tronqué]`;
+        return v;
+      }, 2);
+
+    } catch (e) {
+      passA.querySelector(".status").textContent = "❌ Erreur";
+      resultCard.style.display = "";
+      resultEl.textContent = "Erreur : " + (e.message || e) + "\n\nStack:\n" + (e.stack || "—");
+    }
+  }
+
+  function renderSummary(r) {
+    const lines = [];
+    lines.push(`<div><span class="badge">📄</span> <strong>${H.esc(r.capture?.name || "—")}</strong> · ${r.capture?.mime || "?"} · ${r.capture?.sizeBytes || 0} octets</div>`);
+    lines.push(`<div style="margin-top:6px;"><span class="badge">🔢</span> Hash : <code>${(r.hash || "").slice(0, 16)}…</code></div>`);
+
+    const ty = r.type_detected;
+    if (ty) {
+      const conf = ty.confidence || 0;
+      const cls = conf >= 0.95 ? "ok" : conf >= 0.8 ? "warn" : "err";
+      lines.push(`<div style="margin-top:6px;"><span class="badge ${cls}">📋 Type</span> ${H.esc(ty.label)} · confiance ${conf}</div>`);
+    }
+    const v = r.version_detected;
+    if (v) {
+      lines.push(`<div style="margin-top:6px;"><span class="badge">🔢 Version</span> V${v.version} · source: ${v.source}${v.note ? ` (${H.esc(v.note)})` : ""}</div>`);
+    }
+    const my = r.month_year_detected;
+    if (my) {
+      const cls = my.key ? "ok" : "warn";
+      lines.push(`<div style="margin-top:6px;"><span class="badge ${cls}">📅 Mois</span> ${H.esc(my.monthName || "—")} ${my.year || "—"} (key=${my.key || "—"})</div>`);
+    }
+    const inv = r.inventory;
+    if (inv) {
+      lines.push(`<div style="margin-top:6px;"><span class="badge">👥 Noms</span> ${inv.names_total} détectés</div>`);
+      if (inv.sections_detected?.length) {
+        lines.push(`<div style="margin-top:6px;"><span class="badge">📊 Sections</span> ${
+          inv.sections_detected.map(s => H.esc(s.label) + " ×" + s.count).join(", ")
+        }</div>`);
+      }
+      lines.push(`<div style="margin-top:6px;"><span class="badge">📐 Cellules attendues</span> ~${inv.cells_expected} <span class="small">(approximation Phase 0)</span></div>`);
+    }
+    lines.push(`<div style="margin-top:6px;"><span class="badge">⏱</span> ${r.meta?.total_duration_ms || 0} ms total</div>`);
+
+    // Vote 4/4 si disponible
+    if (r.vote_stats) {
+      const s = r.vote_stats;
+      const cls = (s.needs_review === 0 && s.certain > 0) ? "ok" : (s.needs_review > 0 ? "warn" : "err");
+      lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span class="badge ${cls}">🗳 Vote</span> ${s.certain} certain · ${s.needs_review} needs_review · ${s.missing_reads} lectures manquantes (sur ${s.total_cells} cellules)</div>`);
+    }
+
+    // Familles / rôles cadres (Phase 3.H-bis)
+    if (r.families && r.families.distribution) {
+      const d = r.families.distribution;
+      const lbl = r.families.cadre ? "🎯 Rôles cadres" : "🗂 Familles";
+      lines.push(`<div style="margin-top:6px;"><span class="badge">${lbl}</span> ${Object.entries(d).map(([f, c]) => H.esc(f) + " ×" + c).join(" · ")}</div>`);
+    }
+
+    // Équipes + miroirs détectés (Phase 3.I) AVEC composition (membres par famille)
+    if (r.teams && r.teams.teams) {
+      const t = r.teams;
+      lines.push(`<div style="margin-top:6px;"><span class="badge">👥 Équipes</span> ${t.teams.length} équipe(s) · ${t.mirrors.length} miroir(s)${t.source ? ` <span class="small">(source ${H.esc(t.source)})</span>` : ""}</div>`);
+      const mirMap = {};
+      (t.mirrors || []).forEach(m => { mirMap[m.teamId] = m.mirrorTeamId; mirMap[m.mirrorTeamId] = m.teamId; });
+      const byFam = {};
+      t.teams.forEach(tm => { (byFam[tm.family || "?"] = byFam[tm.family || "?"] || []).push(tm); });
+      Object.keys(byFam).sort().forEach(fam => {
+        lines.push(`<div class="small" style="margin-top:4px;margin-left:4px;color:var(--gold);font-weight:600;">${H.esc(fam)} — ${byFam[fam].length} équipe(s)</div>`);
+        byFam[fam].forEach(tm => {
+          const mlink = mirMap[tm.id] ? ` <span style="color:var(--gold);">🔗 miroir ${H.esc(mirMap[tm.id])}</span>` : "";
+          const mem = (tm.members || []).map(x => H.esc(x.fullName)).join(", ");
+          lines.push(`<div class="small" style="margin-left:10px;">${H.esc(tm.id)} <span style="opacity:.7;">[${H.esc(tm.firstWorkCodeNorm || "?")}] repos[${(tm.rhDays || []).join(",")}] ×${(tm.members || []).length}</span>${mlink}<br><span style="margin-left:14px;opacity:.85;">${mem}</span></div>`);
+        });
+      });
+    }
+
+    // Encadrés statuts (Phase 3.H)
+    if (r.encadres && r.encadres.boxes && r.encadres.boxes.length) {
+      lines.push(`<div style="margin-top:6px;"><span class="badge">📦 Encadrés</span> ${
+        r.encadres.boxes.map(b => H.esc(b.code) + " ×" + (b.names_found || 0) + " (j" + b.from + "-" + b.to + ")").join(", ")
+      }</div>`);
+    }
+
+    // Homonymes (Phase 3.K)
+    if (r.homonyms_audit) {
+      const h = r.homonyms_audit;
+      if (h.known_homonyms_found > 0 || (h.merging_risks && h.merging_risks.length)) {
+        const cls = (h.merging_risks && h.merging_risks.length) ? "warn" : "ok";
+        lines.push(`<div style="margin-top:6px;"><span class="badge ${cls}">👯 Homonymes</span> ${h.known_homonyms_found || 0} connus séparés · ${(h.merging_risks || []).length} risque(s) doublon</div>`);
+      }
+    }
+
+    // Validations Convention SBM (Phase 3.L)
+    if (r.validations && r.validations.stats) {
+      const s = r.validations.stats.by_severity || {};
+      const cls = s.critical > 0 ? "err" : (s.warn > 0 ? "warn" : "ok");
+      lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span class="badge ${cls}">⚖ Convention</span> ${r.validations.stats.findings_total} finding(s) · ${s.critical || 0} critical · ${s.warn || 0} warn · ${s.info || 0} info</div>`);
+      (r.validations.findings || []).slice(0, 8).forEach(f => {
+        const ic = f.severity === "critical" ? "🔴" : f.severity === "warn" ? "🟠" : "🔵";
+        lines.push(`<div class="small" style="margin-left:8px;">${ic} ${H.esc(f.msg)}${f.article ? ` <span style="opacity:.6;">(Art. ${H.esc(f.article)})</span>` : ""}</div>`);
+      });
+      if ((r.validations.findings || []).length > 8) {
+        lines.push(`<div class="small" style="margin-left:8px;opacity:.6;">… +${r.validations.findings.length - 8} autres (voir JSON brut)</div>`);
+      }
+    }
+
+    // ⚠ EMPLOYÉS SANS HORAIRE (les oublis) — section bien visible (Kevin
+    // « aucun oubli »). Liste les noms détectés mais sans aucune cellule.
+    const passGsum = (r.passes || []).find(p => p.passe === "G" && p.ok);
+    if (passGsum && Array.isArray(passGsum.employees)) {
+      const allEmpty = passGsum.employees.filter(e => !e.days || Object.keys(e.days).length === 0);
+      // roster_only = présent au roster mais sans grille journalière dans le PDF
+      // (bloc rotation 2D) → à vérifier, PAS un bug parser.
+      const rosterOnly = allEmpty.filter(e => e.roster_only);
+      const sansHoraire = allEmpty.filter(e => !e.roster_only);
+      const partiels = passGsum.employees.filter(e => e.days && Object.keys(e.days).length > 0 && Object.keys(e.days).length < 10);
+      // Employés rattachés à un encadré statut (double info roster+encadré) → à vérifier
+      const inferes = passGsum.employees.filter(e => e.needs_review_box);
+      if (inferes.length > 0) {
+        lines.push(`<div class="alert-box alert-warn" style="margin-top:12px;"><strong>🔎 ${inferes.length} employé(s) rattachés à leur encadré statut (à vérifier)</strong><br><span class="small">${inferes.map(e => H.esc(e.name) + " → " + H.esc(e.needs_review_box)).join(" · ")}</span><br><span class="small" style="opacity:.75;">Sans grille journalière, mais listés dans un encadré statut (CP/M/AF/EDC) → code étendu sur leur période (« double info » roster + encadré). <strong>Vérifie le code</strong> (surtout si 2 encadrés M/CP côte à côte : l'affectation est inférée du texte 2D aplati).</span></div>`);
+      }
+      if (rosterOnly.length > 0) {
+        lines.push(`<div class="alert-box alert-warn" style="margin-top:12px;"><strong>ℹ️ ${rosterOnly.length} employé(s) au roster SANS grille journalière dans le PDF</strong><br><span class="small">${rosterOnly.map(e => H.esc(e.name)).join(" · ")}</span><br><span class="small" style="opacity:.75;">Présents dans les blocs de rotation (page 1) mais le PDF ne contient pas leur ligne de codes jour-par-jour (grille 2D aplatie). <strong>Pas un bug</strong> — à vérifier/assigner manuellement. Leur planning n'est PAS inventé (reproduction à l'identique).</span></div>`);
+      }
+      if (sansHoraire.length > 0) {
+        // Diagnostic : extrait du texte brut du PDF autour de chaque nom sans
+        // horaire → montre POURQUOI les codes ne sont pas extraits (fragmentation).
+        const passA = (r.passes || []).find(p => p.passe === "A");
+        const raw = (passA && passA.textRaw) || "";
+        const rawNorm = raw.replace(/\s+/g, " ");
+        function ctxFor(name) {
+          if (!rawNorm) return "";
+          // cherche le nom de famille (1er mot ≥3 lettres) dans le texte brut
+          const surname = (name.split(/\s+/).find(t => t.length >= 3) || name).toUpperCase();
+          const idx = rawNorm.toUpperCase().indexOf(surname);
+          if (idx < 0) return "(nom introuvable dans le texte brut)";
+          return rawNorm.slice(Math.max(0, idx - 10), idx + 120);
+        }
+        let diag = sansHoraire.map(e =>
+          `${H.esc(e.name)}  →  ${H.esc(ctxFor(e.name))}`
+        ).join("\n");
+        lines.push(`<div class="alert-box alert-err" style="margin-top:12px;"><strong>⚠ ${sansHoraire.length} employé(s) SANS horaire (oubli potentiel)</strong><br><span class="small">${sansHoraire.map(e => H.esc(e.name)).join(" · ")}</span><br><div style="margin-top:8px;font-size:11px;color:var(--gold);">🔬 Texte brut PDF autour de chaque nom (copie-colle ce bloc à Claude) :</div><textarea readonly style="width:100%;min-height:180px;margin-top:4px;font-family:ui-monospace,monospace;font-size:10px;background:rgba(0,0,0,.35);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;" onclick="this.select()">${H.esc(diag)}</textarea></div>`);
+      }
+      if (partiels.length > 0) {
+        lines.push(`<div class="alert-box alert-warn" style="margin-top:8px;"><strong>🟠 ${partiels.length} employé(s) avec PEU de cellules (&lt;10)</strong><br><span class="small">${partiels.map(e => H.esc(e.name) + " (" + Object.keys(e.days).length + ")").join(" · ")}</span></div>`);
+      }
+      if (sansHoraire.length === 0 && partiels.length === 0 && rosterOnly.length === 0) {
+        lines.push(`<div class="alert-box alert-info" style="margin-top:8px;">✅ Tous les ${passGsum.employees.length} employés détectés ont des horaires (aucun oubli).</div>`);
+      } else if (sansHoraire.length === 0) {
+        lines.push(`<div class="alert-box alert-info" style="margin-top:8px;">✅ Aucun oubli parser : tous les employés avec grille journalière dans le PDF sont lus. Les ${rosterOnly.length} ci-dessus sont au roster sans grille (à vérifier).</div>`);
+      }
+    }
+
+    resultSummary.innerHTML = lines.join("");
+    renderEmployeeGrid(r);
+  }
+
+  /* --- Comparateur visuel cellule par cellule (P3) --- */
+  function renderEmployeeGrid(r) {
+    const gridEl = document.getElementById("emp-grid");
+    if (!gridEl) return;
+    // Source = passe G (text-parser) prioritaire
+    const passG = (r.passes || []).find(p => p.passe === "G" && p.ok);
+    const emps = (passG && passG.employees) || [];
+    if (!emps.length) { gridEl.innerHTML = ""; return; }
+
+    const colors = r.colors_per_emp || {};
+    const lieux = r.lieux_per_emp || {};
+    const maxDay = 31;
+
+    let html = '<details open style="margin-top:14px;"><summary style="cursor:pointer;color:var(--gold);font-size:14px;font-weight:600;">🔍 Comparateur visuel — ' + emps.length + ' employés (cellule par cellule)</summary>';
+    html += '<div style="overflow-x:auto;margin-top:10px;"><table style="border-collapse:collapse;font-size:10px;white-space:nowrap;">';
+    // Header jours
+    html += '<tr><th style="position:sticky;left:0;background:#0b1409;z-index:2;padding:3px 6px;text-align:left;border:1px solid var(--border);">Employé</th>';
+    for (let d = 1; d <= maxDay; d++) html += '<th style="padding:2px 3px;border:1px solid var(--border);min-width:22px;text-align:center;color:var(--text-dim);">' + d + '</th>';
+    html += '</tr>';
+    // Lignes employés
+    emps.forEach(emp => {
+      const name = emp.name || emp.fullName;
+      const empColors = colors[name] || {};
+      const empLieux = (lieux[name] && lieux[name].days) || {};
+      html += '<tr><td style="position:sticky;left:0;background:#0b1409;z-index:1;padding:3px 6px;border:1px solid var(--border);font-weight:600;">' + H.esc(name);
+      if (emp.brtpeck) html += ' <span style="opacity:.55;font-size:9px;">' + H.esc(emp.brtpeck) + '</span>';
+      html += '</td>';
+      for (let d = 1; d <= maxDay; d++) {
+        const code = (emp.days || {})[String(d)] || "";
+        const col = empColors[String(d)] || {};
+        const lieu = empLieux[String(d)] || "";
+        const lc = (window.CodeColors && window.CodeColors.getLieuColor) ? window.CodeColors.getLieuColor(lieu) : null;
+        const style = (col.bg ? 'background:' + col.bg + ';' : '') + (col.fg ? 'color:' + col.fg + ';' : '') + (lc ? 'border-bottom:3px solid ' + lc.c + ';' : '');
+        const title = code ? H.esc(code + (lieu ? " · " + lieu : "") + (col.label ? " · " + col.label : "")) : "";
+        html += '<td style="padding:2px 3px;border:1px solid rgba(255,255,255,.08);text-align:center;' + style + '" title="' + title + '">' + H.esc(code) + '</td>';
+      }
+      html += '</tr>';
+    });
+    html += '</table></div>';
+    html += '<div class="legend" style="margin-top:6px;">Survole une cellule pour voir code + lieu + dénomination Convention. Fond = couleur horaire/statut · liseré bas = lieu. Couleurs = projection (la cellule reste le code source exact).</div>';
+
+    // Légende des LIEUX présents (couleur du liseré) — Kevin « couleurs des lieux »
+    const CCl = window.CodeColors;
+    if (CCl && CCl.getLieuColor) {
+      const lieuxPresents = {};
+      Object.keys(lieux).forEach(nm => {
+        const dd = (lieux[nm] && lieux[nm].days) || {};
+        Object.values(dd).forEach(l => { if (l && !lieuxPresents[l]) { const c = CCl.getLieuColor(l); if (c) lieuxPresents[l] = c; } });
+      });
+      const ll = Object.keys(lieuxPresents);
+      if (ll.length) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;align-items:center;">';
+        html += '<span class="small" style="color:var(--gold);">📍 Lieux :</span>';
+        ll.forEach(l => {
+          const c = lieuxPresents[l];
+          html += '<span class="small" style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:4px;background:' + c.c + ';border-radius:2px;"></span>' + H.esc(l) + ' <span style="opacity:.6;">(' + H.esc(c.label) + ')</span></span>';
+        });
+        html += '</div>';
+      }
+    }
+
+    // Légende des codes PRÉSENTS dans cet import + dénomination Convention
+    // (Kevin « aide-toi de la Convention pour la dénomination des jours »).
+    const CC = window.CodeColors;
+    if (CC && CC.getCellColor) {
+      const distinct = {};
+      emps.forEach(emp => {
+        Object.values(emp.days || {}).forEach(code => {
+          if (code && !distinct[code]) distinct[code] = CC.getCellColor(code);
+        });
+      });
+      const codesSorted = Object.keys(distinct).sort();
+      if (codesSorted.length) {
+        html += '<details style="margin-top:8px;"><summary style="cursor:pointer;color:var(--gold);font-size:13px;">📖 Dénomination Convention des ' + codesSorted.length + ' codes présents</summary>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">';
+        codesSorted.forEach(code => {
+          const c = distinct[code];
+          const st = (c.bg ? 'background:' + c.bg + ';' : '') + (c.fg ? 'color:' + c.fg + ';' : '');
+          html += '<div style="display:flex;align-items:center;gap:5px;font-size:11px;padding:2px 4px;">' +
+            '<code style="padding:2px 5px;border-radius:3px;' + st + '">' + H.esc(code) + '</code>' +
+            '<span style="color:var(--text-dim);">' + H.esc(c.label || "?") + '</span></div>';
+        });
+        html += '</div></details>';
+      }
+    }
+    html += '</details>';
+    gridEl.innerHTML = html;
+    renderValidation(r);
+  }
+
+  /* --- Workflow de validation cellule par cellule (P4) --- */
+  // _validationChoices[name][day] = token tranché par Kevin (pour les needs_review).
+  let _validationChoices = {};
+  let _validationSigned = false;
+
+  function renderValidation(r) {
+    const zone = document.getElementById("validation-zone");
+    if (!zone) return;
+    const nr = r.cells_needs_review || {};
+    const names = Object.keys(nr);
+    let html = "";
+
+    if (names.length > 0) {
+      // Cas vote Vision : cellules divergentes à trancher manuellement.
+      let totalNr = 0;
+      names.forEach(n => { totalNr += Object.keys(nr[n]).length; });
+      html += '<div class="alert-box alert-warn" style="margin-top:14px;">';
+      html += '<strong>🟡 ' + totalNr + ' cellule(s) à vérifier (needs_review)</strong> — les lectures divergent, tu tranches :';
+      html += '</div>';
+      html += '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:11px;width:100%;">';
+      names.forEach(n => {
+        Object.keys(nr[n]).forEach(day => {
+          const cell = nr[n][day];
+          const reads = (cell.reads || []).filter(x => x.value !== undefined && x.value !== null);
+          const options = Array.from(new Set(reads.map(x => String(x.value))));
+          const cid = H.esc(n) + "||" + day;
+          html += '<tr style="border-bottom:1px solid rgba(255,255,255,.08);">';
+          html += '<td style="padding:4px 8px;font-weight:600;">' + H.esc(n) + '</td>';
+          html += '<td style="padding:4px 8px;color:var(--text-dim);">jour ' + H.esc(day) + '</td>';
+          html += '<td style="padding:4px 8px;">';
+          options.forEach(opt => {
+            const sel = (_validationChoices[n] && _validationChoices[n][day] === opt) ? ' style="background:var(--ok);color:#04210a;font-weight:700;"' : '';
+            html += '<button class="btn-sec ppt-choice"' + sel + ' data-cid="' + H.esc(cid) + '" data-val="' + H.esc(opt) + '" style="margin:2px;padding:3px 8px;min-height:28px;">' + H.esc(opt) + '</button>';
+          });
+          // Option "vide" explicite
+          const selEmpty = (_validationChoices[n] && _validationChoices[n][day] === "") ? ' style="background:var(--err);color:#fff;font-weight:700;"' : '';
+          html += '<button class="btn-sec ppt-choice"' + selEmpty + ' data-cid="' + H.esc(cid) + '" data-val="" style="margin:2px;padding:3px 8px;min-height:28px;opacity:.8;">∅ vide</button>';
+          html += '</td></tr>';
+        });
+      });
+      html += '</table></div>';
+    } else {
+      // Cas passe G seule (PDF natif) : pas de vote, validation globale.
+      html += '<div class="alert-box alert-info" style="margin-top:14px;">';
+      html += '✅ Aucune divergence à trancher (lecture déterministe). Vérifie le comparateur visuel ci-dessus puis clique « Valider l\'import » si tout est conforme au PDF.';
+      html += '</div>';
+    }
+
+    // Bandeau de statut de validation
+    const certain = (r.vote_stats && r.vote_stats.certain) || 0;
+    const tranchees = countTranchees();
+    const restantes = names.length > 0 ? (totalNeedsReview(r) - tranchees) : 0;
+    html += '<div id="validation-status" class="small" style="margin-top:8px;">';
+    if (_validationSigned) {
+      html += '🟢 <strong>Import validé par Kevin</strong> — prêt à exporter.';
+    } else if (names.length > 0) {
+      html += '🟡 ' + tranchees + ' tranchée(s) · ' + restantes + ' restante(s) à trancher avant validation.';
+    } else {
+      html += '⚪ En attente de validation manuelle.';
+    }
+    html += '</div>';
+
+    zone.innerHTML = html;
+
+    // Handlers boutons de choix
+    Array.prototype.forEach.call(zone.querySelectorAll(".ppt-choice"), btn => {
+      btn.addEventListener("click", () => {
+        const cid = btn.getAttribute("data-cid");
+        const val = btn.getAttribute("data-val");
+        const sep = cid.lastIndexOf("||");
+        const name = cid.slice(0, sep);
+        const day = cid.slice(sep + 2);
+        if (!_validationChoices[name]) _validationChoices[name] = {};
+        _validationChoices[name][day] = val;
+        _validationSigned = false;
+        renderValidation(r); // re-render pour MAJ surbrillance + compteur
+      });
+    });
+  }
+
+  function totalNeedsReview(r) {
+    const nr = r.cells_needs_review || {};
+    let t = 0;
+    Object.keys(nr).forEach(n => { t += Object.keys(nr[n]).length; });
+    return t;
+  }
+  function countTranchees() {
+    let c = 0;
+    Object.keys(_validationChoices).forEach(n => { c += Object.keys(_validationChoices[n]).length; });
+    return c;
+  }
+
+  /* Construit le résultat VALIDÉ propre (pas le dump brut) :
+   * cellules finales = cellules certaines (passe G ou vote) + tranchages Kevin. */
+  function buildValidatedExport(r) {
+    // Source des cellules : passe G (PDF natif) prioritaire, sinon cells_certain (vote).
+    const passG = (r.passes || []).find(p => p.passe === "G" && p.ok);
+    const employees = {};
+    if (passG && passG.employees) {
+      passG.employees.forEach(e => {
+        const name = e.name || e.fullName;
+        employees[name] = {
+          name,
+          brtpeck: e.brtpeck || null,
+          teamNumber: (e.teamNumber !== undefined ? e.teamNumber : null),
+          days: Object.assign({}, e.days || {})
+        };
+      });
+    } else if (r.cells_certain) {
+      Object.keys(r.cells_certain).forEach(name => {
+        employees[name] = { name, days: {} };
+        Object.keys(r.cells_certain[name]).forEach(d => {
+          employees[name].days[d] = r.cells_certain[name][d];
+        });
+      });
+    }
+    // Applique les tranchages Kevin (needs_review résolus)
+    Object.keys(_validationChoices).forEach(name => {
+      if (!employees[name]) employees[name] = { name, days: {} };
+      Object.keys(_validationChoices[name]).forEach(day => {
+        const v = _validationChoices[name][day];
+        if (v === "") delete employees[name].days[day];
+        else employees[name].days[day] = v;
+      });
+    });
+
+    return {
+      _meta: {
+        tool: "planning-parser-tester",
+        pipe_version: (PIPE && PIPE.VERSION) || "?",
+        validated_by: "kevin",
+        validated_at: new Date().toISOString(),
+        signed: _validationSigned,
+        source_file: r.capture && r.capture.name,
+        hash: r.hash
+      },
+      month_year: r.month_year_detected || null,
+      version: r.version_detected || null,
+      type: r.type_detected || null,
+      employees: Object.values(employees),
+      teams: r.teams || null,
+      mirrors: (r.teams && r.teams.mirrors) || [],
+      encadres: (r.encadres && r.encadres.boxes) || [],
+      lieux_per_emp: r.lieux_per_emp || {},
+      validations_convention: r.validations || null,
+      homonyms_audit: r.homonyms_audit || null,
+      manual_choices: _validationChoices,
+      stats: {
+        employees_total: Object.keys(employees).length,
+        cells_tranchees: countTranchees(),
+        needs_review_remaining: r.cells_needs_review ? (totalNeedsReview(r) - countTranchees()) : 0
+      }
+    };
+  }
+
+  function renderAlerts(r) {
+    const parts = [];
+    if (r.alerts?.length) {
+      r.alerts.forEach(a => {
+        const cls = a.severity === "warn" ? "alert-warn" : a.severity === "err" ? "alert-err" : "alert-info";
+        parts.push(`<div class="alert-box ${cls}">⚠ ${H.esc(a.msg)}</div>`);
+      });
+    }
+    if (r.errors?.length) {
+      r.errors.forEach(e => {
+        const lines = [];
+        lines.push(`<div><strong>❌ ${H.esc(e.message || "Erreur")}</strong></div>`);
+        if (e.detail && e.detail !== e.message) {
+          lines.push(`<div class="small" style="margin-top:4px;"><strong>Cause :</strong> ${H.esc(String(e.detail))}</div>`);
+        }
+        const meta = [];
+        if (e.code) meta.push("code: " + e.code);
+        if (e.step) meta.push("étape: " + e.step);
+        if (e.phase) meta.push("phase: " + e.phase);
+        if (e.http_status) meta.push("HTTP " + e.http_status);
+        if (meta.length) lines.push(`<div class="small" style="margin-top:4px;color:var(--text-dim);">${H.esc(meta.join(" · "))}</div>`);
+        if (e.hint) lines.push(`<div class="small" style="margin-top:4px;">💡 ${H.esc(e.hint)}</div>`);
+        if (e.where) lines.push(`<details style="margin-top:4px;"><summary class="small" style="cursor:pointer;">Stack technique</summary><pre class="small" style="white-space:pre-wrap;margin:4px 0 0 0;">${H.esc(e.where)}</pre></details>`);
+        parts.push(`<div class="alert-box alert-err">${lines.join("")}</div>`);
+      });
+    }
+    if (!parts.length) parts.push(`<div class="alert-box alert-info">✅ Aucune alerte ni erreur sur ce passage.</div>`);
+    resultAlerts.innerHTML = parts.join("");
+  }
+
+  /* --- Export JSON brut --- */
+  btnExport.addEventListener("click", () => {
+    if (!lastResult) return;
+    downloadJson(lastResult, `parse-brut-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`);
+  });
+
+  /* --- Valider l'import --- */
+  const btnValidate = document.getElementById("btn-validate");
+  const btnExportValidated = document.getElementById("btn-export-validated");
+  if (btnValidate) {
+    btnValidate.addEventListener("click", () => {
+      if (!lastResult) return;
+      const remaining = lastResult.cells_needs_review
+        ? (totalNeedsReview(lastResult) - countTranchees()) : 0;
+      if (remaining > 0) {
+        alert("⚠ Il reste " + remaining + " cellule(s) à trancher avant de valider.\nChoisis une valeur pour chacune dans la zone « cellules à vérifier ».");
+        return;
+      }
+      _validationSigned = true;
+      renderValidation(lastResult);
+      alert("✅ Import validé. Tu peux maintenant cliquer « Exporter le résultat validé ».");
+    });
+  }
+  if (btnExportValidated) {
+    btnExportValidated.addEventListener("click", () => {
+      if (!lastResult) return;
+      const validated = buildValidatedExport(lastResult);
+      const tag = validated._meta.signed ? "valide" : "brouillon";
+      downloadJson(validated, `parse-${tag}-${(lastResult.hash || "result").slice(0, 8)}-${Date.now()}.json`);
+    });
+  }
+
+  /* --- Export texte brut du PDF (capture import réel pour analyse Claude) --- */
+  const btnExportRaw = document.getElementById("btn-export-raw");
+  if (btnExportRaw) {
+    btnExportRaw.addEventListener("click", () => {
+      if (!lastResult) return;
+      const passA = (lastResult.passes || []).find(p => p.passe === "A");
+      const raw = (passA && passA.textRaw) || "";
+      if (!raw) { alert("Pas de texte brut (le PDF n'a peut-être pas de texte natif extractible)."); return; }
+      const blob = new Blob([raw], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `textraw-${(lastResult.capture && lastResult.capture.name || "pdf").replace(/[^a-z0-9]/gi, "_")}-${Date.now()}.txt`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  }
+
+  function downloadJson(obj, filename) {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  /* --- Reset --- */
+  btnReset.addEventListener("click", () => {
+    lastResult = null;
+    _validationChoices = {};
+    _validationSigned = false;
+    passesCard.style.display = "none";
+    resultCard.style.display = "none";
+    pick.value = "";
+    pasteText.value = "";
+  });
+
+})();
+</script>
+
+<script src="/CMCteams/tools/shared/version-badge-pwa.js" data-project="parser-tester" data-version="v1.0" data-color="#c9a227" defer></script>
+</body>
+</html>

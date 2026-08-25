@@ -1,0 +1,20 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "MAIFFRET",
+  "birthDate": "23/10/1911"
+ },
+ "response": {
+  "total": 0,
+  "maxScoreES": null,
+  "size": 20,
+  "page": 1,
+  "delay": 17,
+  "persons": []
+ }
+}

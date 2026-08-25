@@ -1,0 +1,1169 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "SAUVAIGO",
+  "birthDepartment": "06",
+  "deathDate": "2010-2026"
+ },
+ "response": {
+  "total": 17,
+  "maxScoreES": 18.678368,
+  "size": 100,
+  "page": 1,
+  "delay": 100,
+  "persons": [
+   {
+    "score": 0,
+    "source": "2011",
+    "sourceLine": 2715,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "xfKCksbtlWhd",
+    "name": {
+     "first": [
+      "Therese"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19290818",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20101229",
+     "certificateId": "47",
+     "age": 81,
+     "location": {
+      "city": "Peille",
+      "code": "06091",
+      "codePostal": [
+       "06440"
+      ],
+      "codeHistory": "06091",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8071992,
+      "longitude": 7.406432
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2014",
+    "sourceLine": 410822,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "uuRaqxMgqpwN",
+    "name": {
+     "first": [
+      "Gerard",
+      "Pierre",
+      "Jacques"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19610412",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20140926",
+     "certificateId": "367",
+     "age": 53,
+     "location": {
+      "city": "Contamine-sur-Arve",
+      "code": "74087",
+      "codePostal": [
+       "74130"
+      ],
+      "codeHistory": "74087",
+      "departmentCode": "74",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 46.1357057,
+      "longitude": 6.3399468
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2015",
+    "sourceLine": 2327,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "z6x1uXO6uMq8",
+    "name": {
+     "first": [
+      "Pauline",
+      "Villienne"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19210605",
+     "location": {
+      "city": "Cagnes-sur-Mer",
+      "code": "06027",
+      "codePostal": [
+       "06800"
+      ],
+      "codeHistory": "06027",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6695124,
+      "longitude": 7.1541175
+     }
+    },
+    "death": {
+     "date": "20150112",
+     "certificateId": "1",
+     "age": 93,
+     "location": {
+      "city": "Levens",
+      "code": "06075",
+      "codePostal": [
+       "06670"
+      ],
+      "codeHistory": "06075",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.8438866,
+      "longitude": 7.2405629
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2010",
+    "sourceLine": 369384,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "SeON9IMUpfZL",
+    "name": {
+     "first": [
+      "Francine",
+      "Josephine"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19230702",
+     "location": {
+      "city": "Cagnes-sur-Mer",
+      "code": "06027",
+      "codePostal": [
+       "06800"
+      ],
+      "codeHistory": "06027",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6695124,
+      "longitude": 7.1541175
+     }
+    },
+    "death": {
+     "date": "20100916",
+     "certificateId": "875",
+     "age": 87,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2010",
+    "sourceLine": 329057,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "DEjgCk5mmfrU",
+    "name": {
+     "first": [
+      "Germaine",
+      "Louise"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19170713",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20100729",
+     "certificateId": "2814",
+     "age": 93,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 387658,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "LbWvooMEpKsV",
+    "name": {
+     "first": [
+      "Rosette",
+      "Francine",
+      "Edmonde"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19290730",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20180816",
+     "certificateId": "1029",
+     "age": 89,
+     "location": {
+      "city": "Béziers",
+      "code": "34032",
+      "codePostal": [
+       "34500"
+      ],
+      "codeHistory": "34032",
+      "departmentCode": "34",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.3565441,
+      "longitude": 3.2315669
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2020",
+    "sourceLine": 549910,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "tPsDDkH7byg_",
+    "name": {
+     "first": [
+      "Dominique",
+      "Christine",
+      "Annie",
+      "Leone"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19511203",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20201118",
+     "certificateId": "667",
+     "age": 68,
+     "location": {
+      "city": "Cagnes-sur-Mer",
+      "code": "06027",
+      "codePostal": [
+       "06800"
+      ],
+      "codeHistory": "06027",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6695124,
+      "longitude": 7.1541175
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 65616,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "Se_2G_v6wyXm",
+    "name": {
+     "first": [
+      "Maria",
+      "Louisette"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19320807",
+     "location": {
+      "city": "Cagnes-sur-Mer",
+      "code": "06027",
+      "codePostal": [
+       "06800"
+      ],
+      "codeHistory": "06027",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6695124,
+      "longitude": 7.1541175
+     }
+    },
+    "death": {
+     "date": "20180131",
+     "certificateId": "74",
+     "age": 85,
+     "location": {
+      "city": "Mougins",
+      "code": "06085",
+      "codePostal": [
+       "06250"
+      ],
+      "codeHistory": "06085",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5904206,
+      "longitude": 6.9990622
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2020",
+    "sourceLine": 391269,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "kNuRt2hG0cFK",
+    "name": {
+     "first": [
+      "Renee",
+      "Louise",
+      "Anna"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19340406",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20200812",
+     "certificateId": "17",
+     "age": 86,
+     "location": {
+      "city": "Entrevaux",
+      "code": "04076",
+      "codePostal": [
+       "04320"
+      ],
+      "codeHistory": "04076",
+      "departmentCode": "04",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.9539451,
+      "longitude": 6.8205695
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2018",
+    "sourceLine": 524561,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "2N8x84e5_EAB",
+    "name": {
+     "first": [
+      "Francoise",
+      "Louise",
+      "Jacqueline"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19511006",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20181115",
+     "certificateId": "742",
+     "age": 67,
+     "location": {
+      "city": "Salon-de-Provence",
+      "code": "13103",
+      "codePostal": [
+       "13300"
+      ],
+      "codeHistory": "13103",
+      "departmentCode": "13",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.641814,
+      "longitude": 5.0985874
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2025-m09",
+    "sourceLine": 2235,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "OrNTV8isNSw5",
+    "name": {
+     "first": [
+      "Mireille"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19450327",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20250829",
+     "certificateId": "3357",
+     "age": 80,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2026-m05",
+    "sourceLine": 1359,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.02,
+     "score": 0,
+     "es": 0.09
+    },
+    "id": "z0idWoQuov-9",
+    "name": {
+     "first": [
+      "Julie",
+      "Josephine"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19300713",
+     "location": {
+      "city": "Cagnes-sur-Mer",
+      "code": "06027",
+      "codePostal": [
+       "06800"
+      ],
+      "codeHistory": "06027",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6695124,
+      "longitude": 7.1541175
+     }
+    },
+    "death": {
+     "date": "20260518",
+     "certificateId": "629",
+     "age": 95,
+     "location": {
+      "city": "Antibes",
+      "code": "06004",
+      "codePostal": [
+       "06600",
+       "06160"
+      ],
+      "codeHistory": "06004",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.5723846,
+      "longitude": 7.1192195
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2022",
+    "sourceLine": 245416,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "Cp1T4bZJynMc",
+    "name": {
+     "first": [
+      "Alain",
+      "Jean",
+      "Louis"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19390208",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20220503",
+     "certificateId": "2040",
+     "age": 83,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2023",
+    "sourceLine": 580149,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "siuxb_18fLam",
+    "name": {
+     "first": [
+      "Paul",
+      "Bernard",
+      "Pierre"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19321203",
+     "location": {
+      "city": "Cagnes-sur-Mer",
+      "code": "06027",
+      "codePostal": [
+       "06800"
+      ],
+      "codeHistory": "06027",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6695124,
+      "longitude": 7.1541175
+     }
+    },
+    "death": {
+     "date": "20231109",
+     "certificateId": "1983",
+     "age": 90,
+     "location": {
+      "city": "Avignon",
+      "code": "84007",
+      "codePostal": [
+       "84140",
+       "84000"
+      ],
+      "codeHistory": "84007",
+      "departmentCode": "84",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.9414223,
+      "longitude": 4.8468934
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2023",
+    "sourceLine": 591694,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "8qWLsmWeUiEP",
+    "name": {
+     "first": [
+      "Jean",
+      "Marie"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19300712",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20231220",
+     "certificateId": "5020",
+     "age": 93,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2024",
+    "sourceLine": 181238,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "H5Z9gQzpOeP2",
+    "name": {
+     "first": [
+      "Josyane"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19441120",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20240408",
+     "certificateId": "183",
+     "age": 79,
+     "location": {
+      "city": "Saint-Laurent-du-Var",
+      "code": "06123",
+      "codePostal": [
+       "06700"
+      ],
+      "codeHistory": "06123",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6780224,
+      "longitude": 7.1791754
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2025-m03",
+    "sourceLine": 2389,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "department": 1,
+      "score": 1
+     },
+     "deathDate": 0.88,
+     "score": 0.34,
+     "es": 0.09,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 16
+    },
+    "id": "kAxSO1BasQOe",
+    "name": {
+     "first": [
+      "Franck",
+      "Francis",
+      "Edmond",
+      "Henri"
+     ],
+     "last": "Sauvaigo"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19661126",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20250317",
+     "certificateId": "1254",
+     "age": 58,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   }
+  ]
+ }
+}

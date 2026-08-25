@@ -1,0 +1,686 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "DENTAU"
+ },
+ "response": {
+  "total": 10,
+  "maxScoreES": 15.132675,
+  "size": 50,
+  "page": 1,
+  "delay": 23,
+  "persons": [
+   {
+    "score": 0,
+    "source": "1973",
+    "sourceLine": 15671,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "az06oPi5Ko3L",
+    "name": {
+     "first": [
+      "Honore"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "18960318",
+     "location": {
+      "city": "Saint-Laurent-du-Var",
+      "code": "06123",
+      "codePostal": [
+       "06700"
+      ],
+      "codeHistory": "06123",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6780224,
+      "longitude": 7.1791754
+     }
+    },
+    "death": {
+     "date": "19730914",
+     "certificateId": "4183",
+     "age": 77,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1977",
+    "sourceLine": 16210,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "9jMz-jzGJ4V2",
+    "name": {
+     "first": [
+      "Honore"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19000922",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19770724",
+     "certificateId": "3238",
+     "age": 76,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1978",
+    "sourceLine": 17714,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "gcr3vN43im3x",
+    "name": {
+     "first": [
+      "Francois",
+      "Andre"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19220107",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19781219",
+     "certificateId": "5690",
+     "age": 56,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "1985",
+    "sourceLine": 18502,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "S3ayWpCnjGYB",
+    "name": {
+     "first": [
+      "Andre",
+      "Charles"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19010703",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "19851103",
+     "certificateId": "5194",
+     "age": 84,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2004",
+    "sourceLine": 349087,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "d_VqwQjFOqak",
+    "name": {
+     "first": [
+      "Joseph"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19071013",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20040806",
+     "certificateId": "51",
+     "age": 96,
+     "location": {
+      "city": "Tourrette-Levens",
+      "code": "06147",
+      "codePostal": [
+       "06690"
+      ],
+      "codeHistory": "06147",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7876885,
+      "longitude": 7.2734687
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2002",
+    "sourceLine": 185330,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "dpzGlPupSd2a",
+    "name": {
+     "first": [
+      "Anne",
+      "Honorine"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19140107",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20020411",
+     "certificateId": "1788",
+     "age": 88,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2005",
+    "sourceLine": 227123,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "H23CQKuCida4",
+    "name": {
+     "first": [
+      "Marie",
+      "Veronique"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19060430",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20050328",
+     "certificateId": "9",
+     "age": 98,
+     "location": {
+      "city": "Drap",
+      "code": "06054",
+      "codePostal": [
+       "06340"
+      ],
+      "codeHistory": "06054",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7582665,
+      "longitude": 7.3400921
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 160757,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "M3n5QLHfYFSG",
+    "name": {
+     "first": [
+      "Jeannine"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19350103",
+     "location": {
+      "city": [
+       "Villefranche-Sur-Mer",
+       "Villefranche"
+      ],
+      "code": "06159",
+      "codePostal": [
+       "06230"
+      ],
+      "codeHistory": "06159",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7062163,
+      "longitude": 7.31776
+     }
+    },
+    "death": {
+     "date": "20160405",
+     "certificateId": "1499",
+     "age": 81,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2014",
+    "sourceLine": 246487,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "rqh7MISnEbHa",
+    "name": {
+     "first": [
+      "Marie",
+      "Therese",
+      "Eliane"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19290928",
+     "location": {
+      "city": "Saint-Laurent-du-Var",
+      "code": "06123",
+      "codePostal": [
+       "06700"
+      ],
+      "codeHistory": "06123",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.6780224,
+      "longitude": 7.1791754
+     }
+    },
+    "death": {
+     "date": "20140604",
+     "certificateId": "2238",
+     "age": 84,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2016",
+    "sourceLine": 213836,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "score": 0.75
+     },
+     "score": 0.36,
+     "es": 0.08,
+     "multiMatchPenalty": 0.5,
+     "multiMatch": 10
+    },
+    "id": "GItyD416YCbe",
+    "name": {
+     "first": [
+      "Josette",
+      "Francine",
+      "Marie"
+     ],
+     "last": "Dentau"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19410709",
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    },
+    "death": {
+     "date": "20160509",
+     "certificateId": "1958",
+     "age": 74,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   }
+  ]
+ }
+}

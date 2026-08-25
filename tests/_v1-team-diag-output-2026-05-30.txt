@@ -1,0 +1,400 @@
+=== CMCteams DETECTION ÉQUIPES DIAG v9.773 ===
+Date: 2026-05-30T22:19:08.266Z
+Mois: Juin 2026 (key=2026-5)
+
+=== RÉSULTAT ALGO ===
+{
+  "ok": false,
+  "reason": "no_groups",
+  "skipReasons": {
+    "cadres": 0,
+    "explicit": 293,
+    "low_cells": 1,
+    "low_rh": 0,
+    "no_cycle": 0
+  }
+}
+
+=== GROUPES PAR SIGNATURE (cycle:offset:firstWork) ===
+18:3:19/4 (1 emps): ESPAGNOL P
+1:0:22/6 (1 emps): BASTIANELLI A
+24:4:16/22 (1 emps): VOUKASSOVITCH H
+24:4:16/3 (2 emps): PAZZAGLIA A, LANGELLOTTI D
+24:5:19/4 (2 emps): ELENA A, DI LUCA L
+6:0:20/5 (20 emps): FRASCA A, ELIODORI J, TERRAGNO S, COSTAGLIOLI J, ELIODORI V, BEARD B, CLAVE C, ADELHEIM P, ENZA B, BONETTI P, PEREIRA MACENA F, ELENA C, BOIRON B, MIANI N, FAIVRE R, SONDOORKHAN N, SIRIO S, MASSEGLIA J, MORTINI M, AHMED A
+6:0:22/6 (25 emps): CASSINI A, MERLINO T, PODGORNY B, GARINO J, BELTRANDI N, GIORSETTI S, ARCURI F, FIA S, ESPAGNOL A, CATALA T, VERDA N, BERNARD J, MORET A, BOTTA V, TOMA O, POUGET C, GENDREAU V, SOSSO G, COSTE W, MIRANDA T, CATALA P, FRAPPIER R, VIGNA M, DUPONT A, MICHELIS A
+6:1:14/19 (41 emps): GIACOBBI J, MUCCILLI D, IMBERT E, NOVARETTI B, ROSSI D, BOURDIER C, ANTOGNELLI D, DERI W, SEGGIARO G, LANTERI MINET P, PASSERON G, DESSI P, BRASSEUR F, RUZIC M, PETIT T, MAGAGNIN J, MATTONE F, MERLINO B, ADROIT N, PAGLIAI D, BLANCHI H, LEVESY A, NOBBIO G, SORGI GM, MANFREDI H, JOUGLAIN I, COSSO N, BRASSEUR FR, CELLARIO T, SCHWIETZER M, TANNA K, KOVACS V, VOILLEQUIN R, BORGIA L, COURTIN F, NICASTRO M, COTTALORDA D, CMC  CMC, FERRARI G, DEGL INNOCENTI V, MERENDA V
+6:1:15/19 (1 emps): ACCOMASSO F
+6:1:20/5 (2 emps): PORASSO C, BESSI N
+6:2:16/22 (18 emps): SERRA N, LE DUC F, CHOISIT J, DEVERINI F, NUNEZ S, GALLIS J, HORGNE C, FARRUGIA VALERI S, MALGHERINI T, SANTINI K, BARILARO H, TESTA G, COTTON J, SOURMAILLE C, DJORDJEVIC G, BINI G, CASTEL N, SUBTIL C
+6:2:16/3 (18 emps): SBARATTO S, CIOCO S, AUBERT P, HAREL H, CARDONA P, SOLIMEIS F, BATTAGLIA D, AUDIBERT C, GSTALDER F, REYNIER M, BAILET JF, CHOQUARD N, MARQUET N, SANTINI M, MADRID JJ, TULEU C, SCALZO M, BONNEFOND M
+6:3:16/22 (1 emps): CAISSON JC
+6:3:19/4 (44 emps): BASILE F, MARCHI T, MILLET T, BARONE E, SIRIO J, GANCIA G, VERZELLO O, KARUANA T, DARDANNE K, COCCHI H, RINALDI S, PARIZIA K, MARCHISIO M, GARCIA N, DAGIONI M, MILLO W, RICORDO B, FABRE SOCCAL Y, LARINI H, GARINO Y, ALDRIGHETTI JP, DANIEL S, CABALLERO PA, DELLA PINA M, LAVAGNA Y, LAVAGNA E, COSLOVICH V, CATTALANO C, BLANZIERI K, SYNAVE S, SEGALEN L, CANE J, SINITO A, DALMASSO N, CASTALDI V, GIOVANNETTI R, BARILARO A, TOMATIS P, LANDAU B, GALLIS F, SEGGIARO J, ORRADO F, ROBIN M, CAPRA C
+6:4:15/19 (1 emps): GENDREAU C
+6:4:16/22 (1 emps): LANTERI E
+6:4:16/3 (1 emps): LAVAGNA J
+6:4:19/4 (2 emps): BESSO N, CAISSON K
+6:4:20/5 (18 emps): DESSI F, DEGIOVANNI R, ABBAS N, SOLFERINO F, ROSSI J, VECCHIERINI L, DELMAS G, FAUTRIER M, DEJANOVIC D, MARIANI M, MALENFANT PJ, GUERRE S, BAUBRIT R, CAMBI O, ONNIS S, BLANCHY F, BERTOLOTTO F, TOULET F
+6:4:22/6 (20 emps): MOUFLARD L, CARPINELLI K, AGLIARDI M, MAIARELLI M, LANTERI T, BONO V, CHATTAHY N, GARRO S, VATRICAN T, NIGIONI J, MARIOTTINI J, CASTELLINI K, NIGIONI A, RONCALLI A, BORGIA T, PANIZZI S, MOREL F, EHRET G, CREMA F, ADELLI M
+6:5:16/3 (1 emps): CERETTI R
+6:5:19/4 (1 emps): MARTIRE M
+6:5:20/5 (19 emps): RIGOLI JL, CONNEN R, BERNARDI JE, MACCARIO S, COZZI H, MAGARA M, BOYER G, NIGIONI C, SALVANHAC G, FURST P, BANTI H, BERNARDI J, GAZZA S, DE REGIBUS L, MORANA A, MORTER L, CAMILLERI P, DELAUNAY L, GILETTA B
+6:5:22/6 (21 emps): CRETOT L, BENNEJEAN I, GARCIA A, SIMONETTI N, PASTOR P, BASILE G, FOREST M, GIAUNA S, REVOLLON L, SESTINI F, DEHAENE J, DUPORT R, AGACCIO S, CAPIOMONT K, INZIRILLO R, DELLA PINA L, CUCCHI H, CASELLA A, PALMARO M, GIACOLETTO S, MBOREHA N
+
+=== GROUPES PAR (FAMILLE:cycle:offset:firstWork) — vraie clé d'équipe (v9.773) ===
+bj:6:0:20/5 (4 emps): CLAVE C, ENZA B, BONETTI P, PEREIRA MACENA F
+bj:6:0:22/6 (7 emps): BELTRANDI N, ARCURI F, FIA S, SOSSO G, COSTE W, MIRANDA T, CATALA P
+bj:6:1:14/19 (11 emps): PASSERON G, DESSI P, BRASSEUR F, PETIT T, MAGAGNIN J, MATTONE F, MERLINO B, PAGLIAI D, COURTIN F, NICASTRO M, COTTALORDA D
+bj:6:2:16/22 (3 emps): GALLIS J, FARRUGIA VALERI S, MALGHERINI T
+bj:6:2:16/3 (3 emps): CIOCO S, BATTAGLIA D, AUDIBERT C
+bj:6:3:16/22 (1 emps): CAISSON JC
+bj:6:3:19/4 (12 emps): SIRIO J, VERZELLO O, MILLO W, RICORDO B, FABRE SOCCAL Y, LARINI H, DANIEL S, TOMATIS P, LANDAU B, GALLIS F, ROBIN M, CAPRA C
+bj:6:4:16/3 (1 emps): LAVAGNA J
+bj:6:4:20/5 (3 emps): DESSI F, FAUTRIER M, DEJANOVIC D
+bj:6:4:22/6 (3 emps): AGLIARDI M, NIGIONI J, MARIOTTINI J
+bj:6:5:20/5 (3 emps): COZZI H, MAGARA M, FURST P
+bj:6:5:22/6 (5 emps): PASTOR P, BASILE G, FOREST M, REVOLLON L, PALMARO M
+cmc:18:3:19/4 (1 emps): ESPAGNOL P
+cmc:1:0:22/6 (1 emps): BASTIANELLI A
+cmc:24:4:16/22 (1 emps): VOUKASSOVITCH H
+cmc:24:4:16/3 (2 emps): PAZZAGLIA A, LANGELLOTTI D
+cmc:24:5:19/4 (2 emps): ELENA A, DI LUCA L
+cmc:6:0:20/5 (11 emps): FRASCA A, ADELHEIM P, ELENA C, BOIRON B, MIANI N, FAIVRE R, SONDOORKHAN N, SIRIO S, MASSEGLIA J, MORTINI M, AHMED A
+cmc:6:0:22/6 (10 emps): ESPAGNOL A, CATALA T, VERDA N, BERNARD J, MORET A, BOTTA V, TOMA O, POUGET C, GENDREAU V, MICHELIS A
+cmc:6:1:14/19 (18 emps): GIACOBBI J, BLANCHI H, LEVESY A, NOBBIO G, SORGI GM, MANFREDI H, JOUGLAIN I, COSSO N, BRASSEUR FR, CELLARIO T, SCHWIETZER M, TANNA K, KOVACS V, VOILLEQUIN R, BORGIA L, FERRARI G, DEGL INNOCENTI V, MERENDA V
+cmc:6:1:15/19 (1 emps): ACCOMASSO F
+cmc:6:2:16/22 (9 emps): SERRA N, SANTINI K, BARILARO H, TESTA G, COTTON J, SOURMAILLE C, DJORDJEVIC G, BINI G, SUBTIL C
+cmc:6:2:16/3 (10 emps): GSTALDER F, REYNIER M, BAILET JF, CHOQUARD N, MARQUET N, SANTINI M, MADRID JJ, TULEU C, SCALZO M, BONNEFOND M
+cmc:6:3:19/4 (18 emps): KARUANA T, DARDANNE K, COCCHI H, CABALLERO PA, DELLA PINA M, LAVAGNA Y, LAVAGNA E, COSLOVICH V, CATTALANO C, BLANZIERI K, SYNAVE S, SEGALEN L, CANE J, SINITO A, DALMASSO N, CASTALDI V, GIOVANNETTI R, BARILARO A
+cmc:6:4:15/19 (1 emps): GENDREAU C
+cmc:6:4:19/4 (2 emps): BESSO N, CAISSON K
+cmc:6:4:20/5 (9 emps): DEGIOVANNI R, ABBAS N, GUERRE S, BAUBRIT R, CAMBI O, ONNIS S, BLANCHY F, BERTOLOTTO F, TOULET F
+cmc:6:4:22/6 (9 emps): MAIARELLI M, LANTERI T, CASTELLINI K, NIGIONI A, RONCALLI A, BORGIA T, PANIZZI S, CREMA F, ADELLI M
+cmc:6:5:19/4 (1 emps): MARTIRE M
+cmc:6:5:20/5 (9 emps): BANTI H, BERNARDI J, GAZZA S, DE REGIBUS L, MORANA A, MORTER L, CAMILLERI P, DELAUNAY L, GILETTA B
+cmc:6:5:22/6 (11 emps): SESTINI F, DEHAENE J, DUPORT R, AGACCIO S, CAPIOMONT K, INZIRILLO R, DELLA PINA L, CUCCHI H, CASELLA A, GIACOLETTO S, MBOREHA N
+roulettes:6:0:20/5 (5 emps): ELIODORI J, TERRAGNO S, COSTAGLIOLI J, ELIODORI V, BEARD B
+roulettes:6:0:22/6 (8 emps): CASSINI A, MERLINO T, PODGORNY B, GARINO J, GIORSETTI S, FRAPPIER R, VIGNA M, DUPONT A
+roulettes:6:1:14/19 (12 emps): MUCCILLI D, IMBERT E, NOVARETTI B, ROSSI D, BOURDIER C, ANTOGNELLI D, DERI W, SEGGIARO G, LANTERI MINET P, RUZIC M, ADROIT N, CMC  CMC
+roulettes:6:1:20/5 (2 emps): PORASSO C, BESSI N
+roulettes:6:2:16/22 (6 emps): LE DUC F, CHOISIT J, DEVERINI F, NUNEZ S, HORGNE C, CASTEL N
+roulettes:6:2:16/3 (5 emps): SBARATTO S, AUBERT P, HAREL H, CARDONA P, SOLIMEIS F
+roulettes:6:3:19/4 (14 emps): BASILE F, MARCHI T, MILLET T, BARONE E, GANCIA G, RINALDI S, PARIZIA K, MARCHISIO M, GARCIA N, DAGIONI M, GARINO Y, ALDRIGHETTI JP, SEGGIARO J, ORRADO F
+roulettes:6:4:16/22 (1 emps): LANTERI E
+roulettes:6:4:20/5 (6 emps): SOLFERINO F, ROSSI J, VECCHIERINI L, DELMAS G, MARIANI M, MALENFANT PJ
+roulettes:6:4:22/6 (8 emps): MOUFLARD L, CARPINELLI K, BONO V, CHATTAHY N, GARRO S, VATRICAN T, MOREL F, EHRET G
+roulettes:6:5:16/3 (1 emps): CERETTI R
+roulettes:6:5:20/5 (7 emps): RIGOLI JL, CONNEN R, BERNARDI JE, MACCARIO S, BOYER G, NIGIONI C, SALVANHAC G
+roulettes:6:5:22/6 (5 emps): CRETOT L, BENNEJEAN I, GARCIA A, SIMONETTI N, GIAUNA S
+
+=== MÉMOIRE CROSS-MOIS (emps avec teamHistory pour d'autres mois — Kevin « encore une memoir mai/juin ») ===
+Total emps avec teamHistory d'autres mois : 0
+  (aucun — pas de mémoire mai/juin)
+
+=== EMPS SKIPPED (pas dans algo) ===
+VOUKASSOVITCH H              → cycle invalide (24)
+PAZZAGLIA A                  → cycle invalide (24)
+MONTESANO M                  → <2 RH days (1)
+MALGHERINI J                 → <2 RH days (1)
+BASTIANELLI A                → cycle invalide (1)
+QUISSET Y                    → <2 RH days (1)
+ELENA A                      → cycle invalide (24)
+LANGELLOTTI D                → cycle invalide (24)
+ESPAGNOL P                   → cycle invalide (18)
+EL MISSOURI M                → <2 RH days (1)
+BATTAGLIA DE                 → <2 RH days (1)
+MATTERA M                    → <2 RH days (1)
+CHINTEMI J                   → <2 RH days (1)
+DI LUCA L                    → cycle invalide (24)
+LEMONNIER PH                 → <10 cells écrites (0)
+
+=== RÉCAP FINAL (v9.752) ===
+Emps avec équipe attribuée : 279
+Emps SANS équipe (vraiment) : 0
+
+Note : 'NON ÉCRIT' ci-dessous = pas attribué par rest-pattern seul. Ces emps peuvent
+avoir une équipe via PDF column ou fallback (visible au-dessus dans le détail).
+
+=== DÉTAIL PAR EMP (signature + teamHistory final) ===
+Format : NOM  fam=X  cell=N  RH=[...]  R=[...]  cycle  offset  firstWork  sig  → teamHistory[mois]=X
+Note v9.773 : RH primaire, R fallback si aucun RH. Pour SBM standard RH+R adjacents (samedi+dimanche), seul RH est compté pour calc cycle.
+
+BASILE F                     fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4       sig=6:3:19/4 → teamHistory[2026-5]=r2
+MARCHI T                     fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4       sig=6:3:19/4 → teamHistory[2026-5]=r2
+MILLET T                     fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4       sig=6:3:19/4 → teamHistory[2026-5]=r2
+BARONE E                     fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4""     sig=6:3:19/4 → teamHistory[2026-5]=r8
+MOUFLARD L                   fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6'      sig=6:4:22/6 → teamHistory[2026-5]=r7
+CARPINELLI K                 fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6'      sig=6:4:22/6 → teamHistory[2026-5]=r7
+SBARATTO S                   fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3       sig=6:2:16/3 → teamHistory[2026-5]=r9
+SIRIO J                      fam=bj        cell=30 RH=[4,10,16,22]                   R=[11,17,23]                     cycle=6 offset=3 firstWork=19/4c      sig=6:3:19/4 → teamHistory[2026-5]=2
+GANCIA G                     fam=roulettes cell=30 RH=[4,10]                         R=[11]                           cycle=6 offset=3 firstWork=19/4c      sig=6:3:19/4 → teamHistory[2026-5]=2
+DESSI F                      fam=bj        cell=30 RH=[5,11]                         R=[12]                           cycle=6 offset=4 firstWork=20/5*      sig=6:4:20/5 → teamHistory[2026-5]=1
+VERZELLO O                   fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+CAMPI PH                     fam=bj        cell=30 RH=[17,23,29]                     R=[18,24,30]                     cycle=6 offset=4 firstWork=?          sig=null → teamHistory[2026-5]=7
+AGLIARDI M                   fam=bj        cell=30 RH=[5,11]                         R=[12]                           cycle=6 offset=4 firstWork=22/6c      sig=6:4:22/6 → teamHistory[2026-5]=7
+LANTERI E                    fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[6,12,18,24,30]                cycle=6 offset=4 firstWork=16/22c     sig=6:4:16/22 → teamHistory[2026-5]=r3
+CIOCO S                      fam=bj        cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3*      sig=6:2:16/3 → teamHistory[2026-5]=9
+SERRA N                      fam=cmc       cell=30 RH=[3,9]                          R=[4,10]                         cycle=6 offset=2 firstWork=16/22      sig=6:2:16/22 → teamHistory[2026-5]=c1
+DEGIOVANNI R                 fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5*      sig=6:4:20/5 → teamHistory[2026-5]=c2
+KARUANA T                    fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"      sig=6:3:19/4 → teamHistory[2026-5]=c3
+ABBAS N                      fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5*      sig=6:4:20/5 → teamHistory[2026-5]=c2
+DARDANNE K                   fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4""     sig=6:3:19/4 → teamHistory[2026-5]=c4
+COCCHI H                     fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"'     sig=6:3:19/4 → teamHistory[2026-5]=c4
+MAIARELLI M                  fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6"'     sig=6:4:22/6 → teamHistory[2026-5]=c5
+LANTERI T                    fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6"'     sig=6:4:22/6 → teamHistory[2026-5]=c5
+GIACOBBI J                   fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"'    sig=6:1:14/19 → teamHistory[2026-5]=c6
+FRASCA A                     fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5*      sig=6:0:20/5 → teamHistory[2026-5]=c7
+SOLFERINO F                  fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5       sig=6:4:20/5 → teamHistory[2026-5]=r1
+ROSSI J                      fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5       sig=6:4:20/5 → teamHistory[2026-5]=r1
+VECCHIERINI L                fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5       sig=6:4:20/5 → teamHistory[2026-5]=r1
+DELMAS G                     fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5       sig=6:4:20/5 → teamHistory[2026-5]=r1
+RINALDI S                    fam=roulettes cell=30 RH=[4,10]                         R=[11]                           cycle=6 offset=3 firstWork=19/4       sig=6:3:19/4 → teamHistory[2026-5]=r2
+RAMOS R                      fam=roulettes cell=30 RH=[16,22,28]                     R=[17,23,29]                     cycle=6 offset=3 firstWork=?          sig=null → teamHistory[2026-5]=r2
+PARIZIA K                    fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4       sig=6:3:19/4 → teamHistory[2026-5]=r2
+LE DUC F                     fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22      sig=6:2:16/22 → teamHistory[2026-5]=r3
+CHOISIT J                    fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22      sig=6:2:16/22 → teamHistory[2026-5]=r3
+DEVERINI F                   fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22      sig=6:2:16/22 → teamHistory[2026-5]=r3
+NUNEZ S                      fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22      sig=6:2:16/22 → teamHistory[2026-5]=r3
+MUCCILLI D                   fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19      sig=6:1:14/19 → teamHistory[2026-5]=r4
+IMBERT E                     fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19      sig=6:1:14/19 → teamHistory[2026-5]=r4
+NOVARETTI B                  fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19      sig=6:1:14/19 → teamHistory[2026-5]=r4
+ROSSI D                      fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[9,15,21,27]                   cycle=6 offset=1 firstWork=14/19      sig=6:1:14/19 → teamHistory[2026-5]=r4
+CASSINI A                    fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=r5
+MERLINO T                    fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=r5
+PODGORNY B                   fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=r5
+ELIODORI J                   fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=20/5""     sig=6:0:20/5 → teamHistory[2026-5]=r5
+GARINO J                     fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=r5
+CRETOT L                     fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6'      sig=6:5:22/6 → teamHistory[2026-5]=r6
+BENNEJEAN I                  fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6'      sig=6:5:22/6 → teamHistory[2026-5]=r6
+GARCIA A                     fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6'      sig=6:5:22/6 → teamHistory[2026-5]=r6
+SIMONETTI N                  fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6'      sig=6:5:22/6 → teamHistory[2026-5]=r6
+BONO V                       fam=roulettes cell=30 RH=[5,11]                         R=[12]                           cycle=6 offset=4 firstWork=22/6'      sig=6:4:22/6 → teamHistory[2026-5]=r7
+CHATTAHY N                   fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6'      sig=6:4:22/6 → teamHistory[2026-5]=r7
+GARRO S                      fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6'      sig=6:4:22/6 → teamHistory[2026-5]=r7
+MARCHISIO M                  fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4""     sig=6:3:19/4 → teamHistory[2026-5]=r8
+GARCIA N                     fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4""     sig=6:3:19/4 → teamHistory[2026-5]=r8
+DAGIONI M                    fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4""     sig=6:3:19/4 → teamHistory[2026-5]=r8
+AUBERT P                     fam=roulettes cell=30 RH=[3,9,15]                       R=[10]                           cycle=6 offset=2 firstWork=16/3       sig=6:2:16/3 → teamHistory[2026-5]=r9
+SABINE O                     fam=roulettes cell=30 RH=[21,27]                        R=[16,22,28]                     cycle=6 offset=2 firstWork=?          sig=null → teamHistory[2026-5]=r9
+HAREL H                      fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3       sig=6:2:16/3 → teamHistory[2026-5]=r9
+CARDONA P                    fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3       sig=6:2:16/3 → teamHistory[2026-5]=r9
+BOURDIER C                   fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'     sig=6:1:14/19 → teamHistory[2026-5]=r10
+ANTOGNELLI D                 fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'     sig=6:1:14/19 → teamHistory[2026-5]=r10
+DERI W                       fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'     sig=6:1:14/19 → teamHistory[2026-5]=r10
+SEGGIARO G                   fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'     sig=6:1:14/19 → teamHistory[2026-5]=r10
+LANTERI MINET P              fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'     sig=6:1:14/19 → teamHistory[2026-5]=r10
+TERRAGNO S                   fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5       sig=6:0:20/5 → teamHistory[2026-5]=r11
+COSTAGLIOLI J                fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5       sig=6:0:20/5 → teamHistory[2026-5]=r11
+ELIODORI V                   fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5       sig=6:0:20/5 → teamHistory[2026-5]=r11
+BEARD B                      fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5       sig=6:0:20/5 → teamHistory[2026-5]=r11
+RIGOLI JL                    fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5       sig=6:5:20/5 → teamHistory[2026-5]=r12
+CONNEN R                     fam=roulettes cell=30 RH=[6,12,18,24]                   R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5       sig=6:5:20/5 → teamHistory[2026-5]=r12
+BERNARDI JE                  fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5       sig=6:5:20/5 → teamHistory[2026-5]=r12
+MACCARIO S                   fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5       sig=6:5:20/5 → teamHistory[2026-5]=r12
+FAUTRIER M                   fam=bj        cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5c      sig=6:4:20/5 → teamHistory[2026-5]=1
+DEJANOVIC D                  fam=bj        cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5c      sig=6:4:20/5 → teamHistory[2026-5]=1
+MARIANI M                    fam=roulettes cell=30 RH=[5,11]                         R=[12]                           cycle=6 offset=4 firstWork=20/5c      sig=6:4:20/5 → teamHistory[2026-5]=1
+MALENFANT PJ                 fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5*      sig=6:4:20/5 → teamHistory[2026-5]=1
+DESARZENS K                  fam=bj        cell=30 RH=[17,23,29]                     R=[18,24,30]                     cycle=6 offset=4 firstWork=?          sig=null → teamHistory[2026-5]=1
+MILLO W                      fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4c      sig=6:3:19/4 → teamHistory[2026-5]=2
+RICORDO B                    fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4c      sig=6:3:19/4 → teamHistory[2026-5]=2
+FABRE SOCCAL Y               fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4c      sig=6:3:19/4 → teamHistory[2026-5]=2
+FILIPPI F                    fam=bj        cell=30 RH=[15,21,27]                     R=[16,22,28]                     cycle=6 offset=2 firstWork=?          sig=null → teamHistory[2026-5]=2
+ESPAGNOL S                   fam=bj        cell=30 RH=[21,27]                        R=[16,22,28]                     cycle=6 offset=2 firstWork=?          sig=null → teamHistory[2026-5]=3
+GALLIS J                     fam=bj        cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22c     sig=6:2:16/22 → teamHistory[2026-5]=3
+HORGNE C                     fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22c     sig=6:2:16/22 → teamHistory[2026-5]=3
+FARRUGIA VALERI S            fam=bj        cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22c     sig=6:2:16/22 → teamHistory[2026-5]=3
+MALGHERINI T                 fam=bj        cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22c     sig=6:2:16/22 → teamHistory[2026-5]=3
+PASSERON G                   fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19c     sig=6:1:14/19 → teamHistory[2026-5]=4
+DESSI P                      fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19c     sig=6:1:14/19 → teamHistory[2026-5]=4
+BRASSEUR F                   fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19c     sig=6:1:14/19 → teamHistory[2026-5]=4
+RUZIC M                      fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19c     sig=6:1:14/19 → teamHistory[2026-5]=4
+PETIT T                      fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19c     sig=6:1:14/19 → teamHistory[2026-5]=4
+BELTRANDI N                  fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6c      sig=6:0:22/6 → teamHistory[2026-5]=5
+GIORSETTI S                  fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6c      sig=6:0:22/6 → teamHistory[2026-5]=5
+ARCURI F                     fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6c      sig=6:0:22/6 → teamHistory[2026-5]=5
+FIA S                        fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6c      sig=6:0:22/6 → teamHistory[2026-5]=5
+PASTOR P                     fam=bj        cell=30 RH=[6,12]                         R=[1,13]                         cycle=6 offset=5 firstWork=22/6c      sig=6:5:22/6 → teamHistory[2026-5]=4
+BASILE G                     fam=bj        cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6c      sig=6:5:22/6 → teamHistory[2026-5]=6
+FOREST M                     fam=bj        cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6c      sig=6:5:22/6 → teamHistory[2026-5]=6
+GIAUNA S                     fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6c      sig=6:5:22/6 → teamHistory[2026-5]=6
+COZZI H                      fam=bj        cell=30 RH=[6,12,18,24,30]                R=[1,7,13,19,25]                 cycle=6 offset=5 firstWork=20/5*      sig=6:5:20/5 → teamHistory[2026-5]=6
+REVOLLON L                   fam=bj        cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6c      sig=6:5:22/6 → teamHistory[2026-5]=6
+VATRICAN T                   fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6c      sig=6:4:22/6 → teamHistory[2026-5]=7
+LAVAGNA J                    fam=bj        cell=30 RH=[17,23,29]                     R=[18,24,30]                     cycle=6 offset=4 firstWork=16/3c      sig=6:4:16/3 → teamHistory[2026-5]=7
+NIGIONI J                    fam=bj        cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6c      sig=6:4:22/6 → teamHistory[2026-5]=7
+MARIOTTINI J                 fam=bj        cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6c      sig=6:4:22/6 → teamHistory[2026-5]=7
+LARINI H                     fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+GARINO Y                     fam=roulettes cell=30 RH=[4,10,16,28]                   R=[11,17,29]                     cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=8
+ALDRIGHETTI JP               fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+DANIEL S                     fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+CAISSON JC                   fam=bj        cell=30 RH=[4,10,16,22,28]                R=[5,11,17,23,29]                cycle=6 offset=3 firstWork=16/22c     sig=6:3:16/22 → teamHistory[2026-5]=3
+SOLIMEIS F                   fam=roulettes cell=30 RH=[3,9,15,21]                    R=[10,16,22]                     cycle=6 offset=2 firstWork=16/3c      sig=6:2:16/3 → teamHistory[2026-5]=9
+BATTAGLIA D                  fam=bj        cell=30 RH=[3,9,21,27]                    R=[10,22,28]                     cycle=6 offset=2 firstWork=16/3c      sig=6:2:16/3 → teamHistory[2026-5]=9
+AUDIBERT C                   fam=bj        cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3*      sig=6:2:16/3 → teamHistory[2026-5]=9
+GRAUSS A                     fam=bj        cell=30 RH=[15,21,27]                     R=[16,22,28]                     cycle=6 offset=2 firstWork=?          sig=null → teamHistory[2026-5]=9
+MAGAGNIN J                   fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+MATTONE F                    fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+MERLINO B                    fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+ADROIT N                     fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+EL MISSOURI O                fam=bj        cell=30 RH=[20,26]                        R=[21,27]                        cycle=6 offset=1 firstWork=?          sig=null → teamHistory[2026-5]=10
+PAGLIAI D                    fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+CLAVE C                      fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5c      sig=6:0:20/5 → teamHistory[2026-5]=11
+ADELHEIM P                   fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5c      sig=6:0:20/5 → teamHistory[2026-5]=11
+ENZA B                       fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5c      sig=6:0:20/5 → teamHistory[2026-5]=11
+BONETTI P                    fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5c      sig=6:0:20/5 → teamHistory[2026-5]=11
+PEREIRA MACENA F             fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5*      sig=6:0:20/5 → teamHistory[2026-5]=11
+MAGARA M                     fam=bj        cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5c      sig=6:5:20/5 → teamHistory[2026-5]=12
+BOYER G                      fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5c      sig=6:5:20/5 → teamHistory[2026-5]=12
+NIGIONI C                    fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5c      sig=6:5:20/5 → teamHistory[2026-5]=12
+SALVANHAC G                  fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5c      sig=6:5:20/5 → teamHistory[2026-5]=12
+FURST P                      fam=bj        cell=30 RH=[6,12]                         R=[1,13]                         cycle=6 offset=5 firstWork=20/5*      sig=6:5:20/5 → teamHistory[2026-5]=10
+GUERRE S                     fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5       sig=6:4:20/5 → teamHistory[2026-5]=c2
+BAUBRIT R                    fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5       sig=6:4:20/5 → teamHistory[2026-5]=c2
+CAMBI O                      fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[6,12,18,24,30]                cycle=6 offset=4 firstWork=20/5"      sig=6:4:20/5 → teamHistory[2026-5]=c2
+ONNIS S                      fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5"      sig=6:4:20/5 → teamHistory[2026-5]=c2
+BLANCHY F                    fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5"      sig=6:4:20/5 → teamHistory[2026-5]=c2
+BERTOLOTTO F                 fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5"      sig=6:4:20/5 → teamHistory[2026-5]=c2
+TOULET F                     fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=20/5*      sig=6:4:20/5 → teamHistory[2026-5]=c2
+CABALLERO PA                 fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4       sig=6:3:19/4 → teamHistory[2026-5]=c3
+DELLA PINA M                 fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"      sig=6:3:19/4 → teamHistory[2026-5]=c3
+LAVAGNA Y                    fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"      sig=6:3:19/4 → teamHistory[2026-5]=c3
+LAVAGNA E                    fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"      sig=6:3:19/4 → teamHistory[2026-5]=c3
+COSLOVICH V                  fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"      sig=6:3:19/4 → teamHistory[2026-5]=c3
+CATTALANO C                  fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"      sig=6:3:19/4 → teamHistory[2026-5]=c3
+BLANZIERI K                  fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[5,11,17,23,29]                cycle=6 offset=3 firstWork=19/4"'     sig=6:3:19/4 → teamHistory[2026-5]=c4
+SANTINI K                    fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22      sig=6:2:16/22 → teamHistory[2026-5]=c1
+BARILARO H                   fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22      sig=6:2:16/22 → teamHistory[2026-5]=c1
+TESTA G                      fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22"     sig=6:2:16/22 → teamHistory[2026-5]=c1
+DE RYCKE K                   fam=cmc       cell=30 RH=[15,21,27]                     R=[16,22,28]                     cycle=6 offset=2 firstWork=?          sig=null → teamHistory[2026-5]=c1
+COTTON J                     fam=cmc       cell=30 RH=[3,9]                          R=[4,10]                         cycle=6 offset=2 firstWork=16/22"     sig=6:2:16/22 → teamHistory[2026-5]=c1
+SOURMAILLE C                 fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22"     sig=6:2:16/22 → teamHistory[2026-5]=c1
+MATTONI C                    fam=cmc       cell=30 RH=[21,27]                        R=[16,22,28]                     cycle=6 offset=2 firstWork=?          sig=null → teamHistory[2026-5]=c1
+DJORDJEVIC G                 fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22"     sig=6:2:16/22 → teamHistory[2026-5]=c1
+BINI G                       fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22"     sig=6:2:16/22 → teamHistory[2026-5]=c1
+BLANCHI H                    fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19      sig=6:1:14/19 → teamHistory[2026-5]=c8
+LEVESY A                     fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19      sig=6:1:14/19 → teamHistory[2026-5]=c8
+NOBBIO G                     fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"     sig=6:1:14/19 → teamHistory[2026-5]=c8
+SORGI GM                     fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"     sig=6:1:14/19 → teamHistory[2026-5]=c8
+MANFREDI H                   fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"     sig=6:1:14/19 → teamHistory[2026-5]=c8
+JOUGLAIN I                   fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"     sig=6:1:14/19 → teamHistory[2026-5]=c8
+COSSO N                      fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"     sig=6:1:14/19 → teamHistory[2026-5]=c8
+BRASSEUR FR                  fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"     sig=6:1:14/19 → teamHistory[2026-5]=c8
+ESPAGNOL A                   fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=c9
+CRESCI C                     fam=cmc       cell=30 RH=[19,25]                        R=[20,26]                        cycle=6 offset=0 firstWork=?          sig=null → teamHistory[2026-5]=c9
+CATALA T                     fam=cmc       cell=30 RH=[1,7,13]                       R=[2,14]                         cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=c9
+VERDA N                      fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6"'     sig=6:0:22/6 → teamHistory[2026-5]=c9
+BERNARD J                    fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6"'     sig=6:0:22/6 → teamHistory[2026-5]=c9
+MORET A                      fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6"'     sig=6:0:22/6 → teamHistory[2026-5]=c9
+BOTTA V                      fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6"'     sig=6:0:22/6 → teamHistory[2026-5]=c9
+TOMA O                       fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6"'     sig=6:0:22/6 → teamHistory[2026-5]=c9
+POUGET C                     fam=cmc       cell=30 RH=[1,7,13,25]                    R=[2,14,26]                      cycle=6 offset=0 firstWork=22/6"'     sig=6:0:22/6 → teamHistory[2026-5]=c9
+GENDREAU V                   fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6"'     sig=6:0:22/6 → teamHistory[2026-5]=c9
+SESTINI F                    fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6'      sig=6:5:22/6 → teamHistory[2026-5]=c10
+DEHAENE J                    fam=cmc       cell=30 RH=[6,12]                         R=[1,13]                         cycle=6 offset=5 firstWork=22/6'      sig=6:5:22/6 → teamHistory[2026-5]=c10
+MORRA A                      fam=cmc       cell=30 RH=[18,24,30]                     R=[19,25]                        cycle=6 offset=5 firstWork=?          sig=null → teamHistory[2026-5]=c10
+DUPORT R                     fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+AGACCIO S                    fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+CAPIOMONT K                  fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+INZIRILLO R                  fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+DELLA PINA L                 fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+CUCCHI H                     fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+CASELLA A                    fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+CASTELLINI K                 fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6'      sig=6:4:22/6 → teamHistory[2026-5]=c5
+LUBIN O                      fam=cmc       cell=30 RH=[17,23,29]                     R=[18,24,30]                     cycle=6 offset=4 firstWork=?          sig=null → teamHistory[2026-5]=c5
+NIGIONI A                    fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6"'     sig=6:4:22/6 → teamHistory[2026-5]=c5
+RONCALLI A                   fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6"'     sig=6:4:22/6 → teamHistory[2026-5]=c5
+BORGIA T                     fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6"'     sig=6:4:22/6 → teamHistory[2026-5]=c5
+PANIZZI S                    fam=cmc       cell=30 RH=[5,11]                         R=[12]                           cycle=6 offset=4 firstWork=22/6"'     sig=6:4:22/6 → teamHistory[2026-5]=c5
+SYNAVE S                     fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4""     sig=6:3:19/4 → teamHistory[2026-5]=c4
+SEGALEN L                    fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"'     sig=6:3:19/4 → teamHistory[2026-5]=c4
+CANE J                       fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"'     sig=6:3:19/4 → teamHistory[2026-5]=c4
+SINITO A                     fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"'     sig=6:3:19/4 → teamHistory[2026-5]=c4
+DALMASSO N                   fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"'     sig=6:3:19/4 → teamHistory[2026-5]=c4
+CASTALDI V                   fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"'     sig=6:3:19/4 → teamHistory[2026-5]=c4
+GIOVANNETTI R                fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"'     sig=6:3:19/4 → teamHistory[2026-5]=c4
+GSTALDER F                   fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3       sig=6:2:16/3 → teamHistory[2026-5]=c11
+REYNIER M                    fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3       sig=6:2:16/3 → teamHistory[2026-5]=c11
+BAILET JF                    fam=cmc       cell=30 RH=[3,9,15]                       R=[10]                           cycle=6 offset=2 firstWork=16/3"'     sig=6:2:16/3 → teamHistory[2026-5]=c11
+CHOQUARD N                   fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3"'     sig=6:2:16/3 → teamHistory[2026-5]=c11
+MARTINI M                    fam=cmc       cell=30 RH=[21,27]                        R=[16,22,28]                     cycle=6 offset=2 firstWork=?          sig=null → teamHistory[2026-5]=c11
+MARQUET N                    fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3"'     sig=6:2:16/3 → teamHistory[2026-5]=c11
+SANTINI M                    fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3*      sig=6:2:16/3 → teamHistory[2026-5]=c11
+MADRID JJ                    fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3*      sig=6:2:16/3 → teamHistory[2026-5]=c11
+TULEU C                      fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3*      sig=6:2:16/3 → teamHistory[2026-5]=c11
+SCALZO M                     fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3"'     sig=6:2:16/3 → teamHistory[2026-5]=c11
+BONNEFOND M                  fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[10,16,22,28]                  cycle=6 offset=2 firstWork=16/3"'     sig=6:2:16/3 → teamHistory[2026-5]=c11
+CELLARIO T                   fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'     sig=6:1:14/19 → teamHistory[2026-5]=c6
+MUCCILLI A                   fam=cmc       cell=30 RH=[20,26]                        R=[21,27]                        cycle=6 offset=1 firstWork=?          sig=null → teamHistory[2026-5]=c6
+SCHWIETZER M                 fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"'    sig=6:1:14/19 → teamHistory[2026-5]=c6
+TANNA K                      fam=cmc       cell=30 RH=[2,8,14]                       R=[3,9,15]                       cycle=6 offset=1 firstWork=14/19"'    sig=6:1:14/19 → teamHistory[2026-5]=c6
+CARPINELLI D                 fam=cmc       cell=30 RH=[20,26]                        R=[21,27]                        cycle=6 offset=1 firstWork=?          sig=null → teamHistory[2026-5]=c6
+KOVACS V                     fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"'    sig=6:1:14/19 → teamHistory[2026-5]=c6
+VOILLEQUIN R                 fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"'    sig=6:1:14/19 → teamHistory[2026-5]=c6
+BORGIA L                     fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"'    sig=6:1:14/19 → teamHistory[2026-5]=c6
+ELENA C                      fam=cmc       cell=30 RH=[19,25]                        R=[20,26]                        cycle=6 offset=0 firstWork=20/5       sig=6:0:20/5 → teamHistory[2026-5]=c7
+BOIRON B                     fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5       sig=6:0:20/5 → teamHistory[2026-5]=c7
+MIANI N                      fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5       sig=6:0:20/5 → teamHistory[2026-5]=c7
+FAIVRE R                     fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5"      sig=6:0:20/5 → teamHistory[2026-5]=c7
+SONDOORKHAN N                fam=cmc       cell=30 RH=[1,7,13,19]                    R=[2,8,14,20]                    cycle=6 offset=0 firstWork=20/5"      sig=6:0:20/5 → teamHistory[2026-5]=c7
+SIRIO S                      fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5"      sig=6:0:20/5 → teamHistory[2026-5]=c7
+MASSEGLIA J                  fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5*      sig=6:0:20/5 → teamHistory[2026-5]=c7
+MORTINI M                    fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5*      sig=6:0:20/5 → teamHistory[2026-5]=c7
+AHMED A                      fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=20/5"      sig=6:0:20/5 → teamHistory[2026-5]=c7
+BANTI H                      fam=cmc       cell=30 RH=[6,12]                         R=[1,13]                         cycle=6 offset=5 firstWork=20/5       sig=6:5:20/5 → teamHistory[2026-5]=c12
+BERNARDI J                   fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5       sig=6:5:20/5 → teamHistory[2026-5]=c12
+GAZZA S                      fam=cmc       cell=30 RH=[6,12,18,30]                   R=[1,13,19]                      cycle=6 offset=5 firstWork=20/5       sig=6:5:20/5 → teamHistory[2026-5]=c12
+DE REGIBUS L                 fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5"      sig=6:5:20/5 → teamHistory[2026-5]=c12
+MARTIRE M                    fam=cmc       cell=30 RH=[18,24,30]                     R=[19,25]                        cycle=6 offset=5 firstWork=19/4"      sig=6:5:19/4 → teamHistory[2026-5]=c12
+MORANA A                     fam=cmc       cell=30 RH=[6,12]                         R=[1,13]                         cycle=6 offset=5 firstWork=20/5*      sig=6:5:20/5 → teamHistory[2026-5]=c12
+MORTER L                     fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5*      sig=6:5:20/5 → teamHistory[2026-5]=c12
+CAMILLERI P                  fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5*      sig=6:5:20/5 → teamHistory[2026-5]=c12
+DELAUNAY L                   fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5"      sig=6:5:20/5 → teamHistory[2026-5]=c12
+GENDREAU C                   fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[6,12,18,24,30]                cycle=6 offset=4 firstWork=15/19      sig=6:4:15/19 → teamHistory[2026-5]=amenage
+ACCOMASSO F                  fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=15/19      sig=6:1:15/19 → teamHistory[2026-5]=amenage
+GAZAGNE F                    fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=?          sig=null → teamHistory[2026-5]=formation
+GATTI B                      fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=?          sig=null → teamHistory[2026-5]=conges
+BONO F                       fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=?          sig=null → teamHistory[2026-5]=formation
+SOSSO G                      fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6c      sig=6:0:22/6 → teamHistory[2026-5]=5
+COSTE W                      fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6c      sig=6:0:22/6 → teamHistory[2026-5]=5
+MIRANDA T                    fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6c      sig=6:0:22/6 → teamHistory[2026-5]=5
+CATALA P                     fam=bj        cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6c      sig=6:0:22/6 → teamHistory[2026-5]=5
+PALMARO M                    fam=bj        cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6c      sig=6:5:22/6 → teamHistory[2026-5]=6
+PUGNETTI S                   fam=bj        cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=?          sig=null → teamHistory[2026-5]=conges
+COURTIN F                    fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+NICASTRO M                   fam=bj        cell=25 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+COTTALORDA D                 fam=bj        cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+CMC  CMC                     fam=roulettes cell=25 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19'c    sig=6:1:14/19 → teamHistory[2026-5]=10
+PORTA A                      fam=bj        cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=?          sig=null → teamHistory[2026-5]=formation
+ANDRE C                      fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=?          sig=null → teamHistory[2026-5]=conges
+PICCIONE F                   fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=?          sig=null → teamHistory[2026-5]=conges
+FRAPPIER R                   fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=r5
+VIGNA M                      fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=r5
+DUPONT A                     fam=roulettes cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6'      sig=6:0:22/6 → teamHistory[2026-5]=r5
+CERETTI R                    fam=roulettes cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=16/3       sig=6:5:16/3 → teamHistory[2026-5]=conges
+MOREL F                      fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6'      sig=6:4:22/6 → teamHistory[2026-5]=r7
+EHRET G                      fam=roulettes cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6'      sig=6:4:22/6 → teamHistory[2026-5]=r7
+PORASSO C                    fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=20/5       sig=6:1:20/5 → teamHistory[2026-5]=conges
+BESSI N                      fam=roulettes cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=20/5       sig=6:1:20/5 → teamHistory[2026-5]=maladie
+CASTEL N                     fam=roulettes cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22c     sig=6:2:16/22 → teamHistory[2026-5]=3
+BARILARO A                   fam=cmc       cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4"      sig=6:3:19/4 → teamHistory[2026-5]=c3
+SUBTIL C                     fam=cmc       cell=30 RH=[3,9,15,21,27]                 R=[4,10,16,22,28]                cycle=6 offset=2 firstWork=16/22"     sig=6:2:16/22 → teamHistory[2026-5]=c1
+FERRARI G                    fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"     sig=6:1:14/19 → teamHistory[2026-5]=c8
+MICHELIS A                   fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,14,20,26]                   cycle=6 offset=0 firstWork=22/6"'     sig=6:0:22/6 → teamHistory[2026-5]=c9
+GIACOLETTO S                 fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+MBOREHA N                    fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=22/6"'     sig=6:5:22/6 → teamHistory[2026-5]=c10
+CREMA F                      fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6"'     sig=6:4:22/6 → teamHistory[2026-5]=c5
+ADELLI M                     fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=22/6"'     sig=6:4:22/6 → teamHistory[2026-5]=c5
+DEGL INNOCENTI V             fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"'    sig=6:1:14/19 → teamHistory[2026-5]=c6
+MERENDA V                    fam=cmc       cell=30 RH=[2,8,14,20,26]                 R=[3,9,15,21,27]                 cycle=6 offset=1 firstWork=14/19"'    sig=6:1:14/19 → teamHistory[2026-5]=c6
+GILETTA B                    fam=cmc       cell=30 RH=[6,12,18,24,30]                R=[1,13,19,25]                   cycle=6 offset=5 firstWork=20/5*      sig=6:5:20/5 → teamHistory[2026-5]=c12
+BESSO N                      fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=19/4"      sig=6:4:19/4 → teamHistory[2026-5]=c2
+CAISSON K                    fam=cmc       cell=30 RH=[5,11,17,23,29]                R=[12,18,24,30]                  cycle=6 offset=4 firstWork=19/4"      sig=6:4:19/4 → teamHistory[2026-5]=c2
+TOMATIS P                    fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+LANDAU B                     fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+GALLIS F                     fam=bj        cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+ORENGO N                     fam=cmc       cell=30 RH=[1,7,13,19,25]                 R=[2,8,14,20,26]                 cycle=6 offset=0 firstWork=?          sig=null → teamHistory[2026-5]=conges
+SEGGIARO J                   fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+ORRADO F                     fam=roulettes cell=30 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+ROBIN M                      fam=bj        cell=25 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3
+CAPRA C                      fam=bj        cell=25 RH=[4,10,16,22,28]                R=[11,17,23,29]                  cycle=6 offset=3 firstWork=19/4'c     sig=6:3:19/4 → teamHistory[2026-5]=3

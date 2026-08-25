@@ -1,0 +1,102 @@
+<form action="/s/3/base-de-registres-a-partir-de-1900/?" method="POST" name="form1" class="formulaires_recherche_et_annotations">
+                        <input type="hidden" name="action" value="">
+                        <input type="hidden" name="todo" value="">
+                        <input type="hidden" name="ref_fonds" value="3">
+                        <input type="hidden" name="autre_champ" value="">
+                                                    <fieldset>
+
+                                                                        <div class="champ_formulaire">
+                                                    <label>Type d'acte</label>
+                                                    <span class="formulaire_a_cocher formulaire_a_cocher_trois">                                                    <span class="post_label">
+                        <span class="case_et_intitule"><input type="checkbox" name="form_rech_type_acte_1" id="id_form_rech_type_acte_1" value="1"><label class="label_second" for="id_form_rech_type_acte_1">Naissance</label></span><span class="case_et_intitule"><input type="checkbox" name="form_rech_type_acte_3" id="id_form_rech_type_acte_3" value="1"><label class="label_second" for="id_form_rech_type_acte_3">Mariage</label></span><span class="case_et_intitule"><input type="checkbox" name="form_rech_type_acte_4" id="id_form_rech_type_acte_4" value="1"><label class="label_second" for="id_form_rech_type_acte_4">Décès</label></span>                        </span>
+                                                    </span>                                                </div>
+                                                <div class="cartouche_formulaire">                                                                                                <div class="champ_formulaire">
+                                                    <label for="form_rech_9">Numéro d'acte</label>
+                                                                                                                                                                <input name="form_rech_9" id="form_rech_9" type="text" value="">
+                                                                                                                                                                                                                    </div>
+
+                                                                                                </div><div class="cartouche_formulaire">                                                <div id="myAutoComplete12" class="yui-ac">                                                <div class="champ_formulaire">
+                                                    <label for="form_rech_12">Nom</label>
+                                                                                                                                                                <input name="form_rech_12" id="form_rech_12" type="text" value="" class="yui-ac-input" autocomplete="off"><span class="fiche_detail"><a class="fiframe" href="/arkotheque/arkotheque_liste_aide.php?arko=YTo2OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDUiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO3M6MTU6ImZvcm11bGFpcmVfYXV0byI7czo0OiJyZWYyIjtpOjM7czo0OiJyZWYzIjtzOjI6IjEyIjtzOjE4OiJsZXR0cmVfcGFyX2RlZmF1bHQiO3M6MToiQSI7fQ==" title="Liste"><span>Liste</span></a>
+                                                            </span>
+                                                                                                                                                                                                                    </div>
+
+                                                                                                    <div id="myContainer12" class="yui-ac-container"><div class="yui-ac-content" style="display: none;"><div class="yui-ac-hd" style="display: none;"></div><div class="yui-ac-bd"><ul><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li></ul></div><div class="yui-ac-ft" style="display: none;"></div></div></div>
+
+                                                    <script type="text/javascript">
+                                                        $(document).ready(function () {
+                                                            YAHOO.example.BasicRemote = function () {
+                                                                var oDS = new YAHOO.util.XHRDataSource("/arkotheque/arko_auto_complete.php");
+                                                                oDS.scriptQueryParam = "ref0=3&ref1=arko&ref2=3&ref3=form_rech_12&ref4=&trunc=0&ref5";
+                                                                oDS.responseType = YAHOO.util.XHRDataSource.TYPE_TEXT;
+                                                                oDS.responseSchema = {
+                                                                    recordDelim: "\n",
+                                                                    fieldDelim: "\t"
+                                                                };
+                                                                oDS.maxCacheEntries = 10;
+                                                                var oAC = new YAHOO.widget.AutoComplete("form_rech_12", "myContainer12", oDS);
+                                                                oAC.minQueryLength = 3;
+                                                                oAC.maxResultsDisplayed = 15;
+                                                                oAC.alwaysShowContainer = false;
+                                                                return {
+                                                                    oDS: oDS,
+                                                                    oAC: oAC
+                                                                };
+                                                            }();
+                                                        });
+                                                    </script>
+                                                    </div>
+                                                                                                    </div><div class="cartouche_formulaire">                                                <div id="myAutoComplete13" class="yui-ac">                                                <div class="champ_formulaire">
+                                                    <label for="form_rech_13">Prénom</label>
+                                                                                                                                                                <input name="form_rech_13" id="form_rech_13" type="text" value="" class="yui-ac-input" autocomplete="off"><span class="fiche_detail"><a class="fiframe" href="/arkotheque/arkotheque_liste_aide.php?arko=YTo2OntzOjQ6ImRhdGUiO3M6MTA6IjIwMjYtMDgtMDUiO3M6MTA6InR5cGVfZm9uZHMiO3M6MTE6ImFya29fc2VyaWVsIjtzOjQ6InJlZjEiO3M6MTU6ImZvcm11bGFpcmVfYXV0byI7czo0OiJyZWYyIjtpOjM7czo0OiJyZWYzIjtzOjI6IjEzIjtzOjE4OiJsZXR0cmVfcGFyX2RlZmF1bHQiO3M6MToiQSI7fQ==" title="Liste"><span>Liste</span></a>
+                                                            </span>
+                                                                                                                                                                                                                    </div>
+
+                                                                                                    <div id="myContainer13" class="yui-ac-container"><div class="yui-ac-content" style="display: none;"><div class="yui-ac-hd" style="display: none;"></div><div class="yui-ac-bd"><ul><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li><li style="display: none;"></li></ul></div><div class="yui-ac-ft" style="display: none;"></div></div></div>
+
+                                                    <script type="text/javascript">
+                                                        $(document).ready(function () {
+                                                            YAHOO.example.BasicRemote = function () {
+                                                                var oDS = new YAHOO.util.XHRDataSource("/arkotheque/arko_auto_complete.php");
+                                                                oDS.scriptQueryParam = "ref0=3&ref1=arko&ref2=3&ref3=form_rech_13&ref4=&trunc=0&ref5";
+                                                                oDS.responseType = YAHOO.util.XHRDataSource.TYPE_TEXT;
+                                                                oDS.responseSchema = {
+                                                                    recordDelim: "\n",
+                                                                    fieldDelim: "\t"
+                                                                };
+                                                                oDS.maxCacheEntries = 10;
+                                                                var oAC = new YAHOO.widget.AutoComplete("form_rech_13", "myContainer13", oDS);
+                                                                oAC.minQueryLength = 3;
+                                                                oAC.maxResultsDisplayed = 15;
+                                                                oAC.alwaysShowContainer = false;
+                                                                return {
+                                                                    oDS: oDS,
+                                                                    oAC: oAC
+                                                                };
+                                                            }();
+                                                        });
+                                                    </script>
+                                                    </div>
+                                                                                                    </div>                    <div class="champ_formulaire">
+                    <label for="form_rech_13">Date ou Période de l'évènement</label>
+                                        <span class="texte_intervalle" style="visibility: hidden;">De&nbsp;</span><input class="trescourt" type="text" id="id_r_date_22_jj_debut" value="" placeholder="jour" name="r_date_22_jj_debut"><input class="trescourt" type="text" value="" placeholder="mois" name="r_date_22_mm_debut"><input class="trescourt" type="text" value="" placeholder="année" name="r_date_22_yyyy_debut"><span class="texte_intervalle" style="visibility: hidden;">à </span><div id="id_r_date_22" class="intervalle_fin_conteneur" style="display: none;"><input class="trescourt" type="text" value="" placeholder="jour" name="r_date_22_jj_fin"><input class="trescourt" type="text" value="" placeholder="mois" name="r_date_22_mm_fin"><input class="trescourt" type="text" value="" placeholder="année" name="r_date_22_yyyy_fin"></div><a href="Javascript:;" id="date_id_r_date_22" class="btn_intervalle options_cache"><span>Intervalle</span></a><script type="text/javascript">
+                                $(function(){
+                                    $(".texte_intervalle").css("visibility","hidden");
+                                    $(".intervalle_fin_conteneur").css("display","inline").hide();
+                                    $("#date_id_r_date_22").on("click",function(){
+                                        if($(this).hasClass("options_cache")) {
+                                            $("#id_r_date_22").fadeIn();
+                                            $(".texte_intervalle",$(this).parents(".champ_formulaire")).css("visibility","visible");
+                                        }
+                                        else {
+                                            $("#id_r_date_22").fadeOut();
+                                            $(".texte_intervalle",$(this).parents(".champ_formulaire")).css("visibility","hidden");
+                                        }
+                                        $(this).toggleClass("options_cache");
+                                    });});</script>                                                                                                 </div>
+                                                    <div class="bouton"><a href="javascript:Valider('rechercher','');" class="rechercher" title="Rechercher"><span>Rechercher</span></a>
+                        </div>
+                                </fieldset>
+
+                        
+                                                                    </form>

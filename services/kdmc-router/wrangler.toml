@@ -1,0 +1,65 @@
+name = "kdmc-router"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+# ⚠️ TOML SCOPING : `routes` DOIT rester AVANT tout [[table]]/[table] (ici [[kv_namespaces]]
+# et [vars]). Sinon TOML rattache `routes` à la dernière table ouverte (« Unexpected fields
+# found in kv_namespaces[0] field: routes ») et wrangler IGNORE tout le tableau → AUCUN
+# custom_domain provisionné → les sous-domaines (departs, cmcteams-light, dashboard,
+# sourcing, coffre, bot) renvoient « serveur introuvable » (DNS absent). Bug vécu 2026-07-03.
+# Chaque custom_domain auto-provisionne le DNS + le certificat SSL sur la zone kd-mc.com
+# (déjà dans le compte Cloudflare de Kevin). Aucune manip DNS manuelle.
+routes = [
+  { pattern = "kd-mc.com", custom_domain = true },
+  { pattern = "www.kd-mc.com", custom_domain = true },
+  { pattern = "cmcteams.kd-mc.com", custom_domain = true },
+  { pattern = "apex-ai.kd-mc.com", custom_domain = true },
+  { pattern = "apex-chat.kd-mc.com", custom_domain = true },
+  { pattern = "la-detente.kd-mc.com", custom_domain = true },
+  { pattern = "chez-lolo.kd-mc.com", custom_domain = true },
+  { pattern = "dashboard.kd-mc.com", custom_domain = true },
+  { pattern = "sourcing.kd-mc.com", custom_domain = true },
+  { pattern = "coffre.kd-mc.com", custom_domain = true },
+  { pattern = "departs.kd-mc.com", custom_domain = true },
+  { pattern = "cmcteams-light.kd-mc.com", custom_domain = true },
+  { pattern = "bot.kd-mc.com", custom_domain = true },
+  { pattern = "beatbot.kd-mc.com", custom_domain = true },
+  { pattern = "autorisations.kd-mc.com", custom_domain = true },
+  { pattern = "arbre.kd-mc.com", custom_domain = true },
+  { pattern = "lingua.kd-mc.com", custom_domain = true },
+  { pattern = "studio.kd-mc.com", custom_domain = true },
+  { pattern = "worldmonitor.kd-mc.com", custom_domain = true },
+  { pattern = "osint.kd-mc.com", custom_domain = true },
+  { pattern = "ia.kd-mc.com", custom_domain = true },
+  { pattern = "outils.kd-mc.com", custom_domain = true },
+  { pattern = "shops.kd-mc.com", custom_domain = true },
+  { pattern = "cuisine.kd-mc.com", custom_domain = true },
+  { pattern = "cocina.kd-mc.com", custom_domain = true },
+  { pattern = "cujina.kd-mc.com", custom_domain = true },
+]
+
+# Registre fiches clients — KV à id FIGÉ (provisionné le 2026-06-09) pour un déploiement
+# FIABLE. Le provisioning dynamique cassait `wrangler deploy` quand le namespace existait
+# déjà : `kv:namespace create` → "already exists", le fallback re-parsait un MAUVAIS id,
+# l'ajoutait au toml → "KV namespace not found [10041]" → worker PAS déployé (gate admin
+# + token jamais en ligne). Id figé = plus jamais ce souci.
+[[kv_namespaces]]
+binding = "ACCOUNTS"
+id = "8cfa33a28ac045adb7b7a9556ca8a073"
+
+# Alerte push « nouvel appareil » → worker de push existant (sous-domaine = le COMPTE
+# 9r4rxssx64, jamais un nom deviné — leçon #85). URL publique ici ; le JETON est un
+# secret (KDMC_PUSH_TOKEN, posé par le workflow depuis PUSH_ADMIN_TOKEN). Sans jeton,
+# l'alerte no-op (le journal admin reste la trace) — fail-open total.
+[vars]
+KDMC_PUSH_URL = "https://apex-push-worker.9r4rxssx64.workers.dev"
+
+# Sentinelle « robot en surface » (PoolPilot) : cron RETIRÉ 2026-08-03.
+# CAUSE : le compte Cloudflare a atteint la limite Free de 5 cron triggers/compte
+# (API /schedules → code 10072). Ce cron faisait ÉCHOUER `wrangler deploy` (masqué par
+# `| tee`) → tout nouveau sous-domaine custom_domain (ex. arbre.kd-mc.com) n'était PLUS
+# provisionné (DNS introuvable). Le handler scheduled() reste dans worker.js ; à ré-armer
+# via un GitHub Actions cron dédié si besoin (ou passage Workers Paid). No-op sans clés Tuya.
+[triggers]
+crons = []

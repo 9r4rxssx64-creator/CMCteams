@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>CMCteams light — Départs &amp; équipes</title>
+<style>
+:root{--gold:#c9a227;--gold2:#ffd700;--bg:#0a1a0c;--bg2:#0e2410;--card:#13301a;--ink:#eaf5ea;--mut:#9bb89b;--ease:cubic-bezier(.4,0,.2,1);
+ --c-work:#1d3a55;--c-rh:#7a5cc0;--c-r:#a98fe0;--c-cp:#d98aa8;--c-m:#d98a4a;--c-conv:#d8342e;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;max-width:100vw;overflow-x:hidden;background:var(--bg);color:var(--ink);
+ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 70px) env(safe-area-inset-left)}
+header{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,#0e2410,#0a1a0c);
+ border-bottom:1px solid rgba(201,162,39,.3);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.3px;color:var(--gold2)}
+.sub{font-size:12px;color:var(--mut);margin:0}
+.spacer{flex:1}
+button{font-family:inherit;cursor:pointer}
+select{font-family:inherit;background:#0a1a0c;color:var(--gold2);border:1px solid rgba(201,162,39,.4);
+ border-radius:9px;padding:8px 10px;font-size:13px;font-weight:700;min-height:40px}
+.btn{background:rgba(201,162,39,.12);color:var(--gold2);border:1px solid rgba(201,162,39,.4);
+ border-radius:9px;padding:8px 12px;font-size:13px;font-weight:700;min-height:40px}
+.btn:active{transform:translateY(1px)}
+.btn.prim{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border:none}
+.wrap{padding:12px 8px 4px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid rgba(201,162,39,.18);border-radius:12px;background:var(--card)}
+table{border-collapse:separate;border-spacing:0;font-size:12px;min-width:max-content}
+th,td{padding:5px 4px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,.05)}
+thead th{position:sticky;top:0;background:#0b1d0e;color:var(--gold2);font-size:11px;z-index:5;padding:7px 4px}
+thead th.wknd{color:#ffb37a}
+.cNom{position:sticky;left:0;background:#0f2613;text-align:left;z-index:8;min-width:118px;font-weight:700;
+ box-shadow:2px 0 6px rgba(0,0,0,.4)}
+thead .cNom{z-index:12}
+.cNR{background:#10240f;min-width:46px;border-left:2px solid rgba(201,162,39,.35)}
+.cCq{background:#10240f;min-width:46px}
+.today{box-shadow:inset 0 0 0 2px var(--gold2)}
+thead th.today{background:#3a3410;color:#fff}
+.cell{font-size:10px;line-height:1.15;padding:3px 2px;min-width:42px}
+.dep{display:inline-block;font-weight:900;font-size:12px;color:#ffe23a;background:rgba(0,0,0,.62);border-radius:5px;padding:0 5px;margin-top:2px}
+.w{background:var(--c-work)} .conv{background:var(--c-conv);color:#ffe23a}
+.rh{background:var(--c-rh)} .r{background:var(--c-r);color:#221} .cp{background:var(--c-cp);color:#221} .m{background:var(--c-m);color:#221}
+.off .dep{display:none}
+.mark{font-size:13px;color:var(--gold2);font-weight:700;min-height:28px}
+body.admin .mark{cursor:pointer}
+body.canmark .mark{cursor:pointer}
+.ed{display:none}
+body.admin .ed{display:inline;cursor:pointer;opacity:.55;margin-left:4px;font-size:12px}
+body.canmark .ed{display:inline;cursor:pointer;opacity:.55;margin-left:4px;font-size:12px}
+/* v1.17 — désignation des chefs d'équipe (admin) : noms cliquables + badge chef */
+body.chefdesign .cNom{cursor:pointer;outline:1px dashed rgba(255,215,0,.5);border-radius:5px}
+body.chefdesign .cNom:active{background:rgba(255,215,0,.15)}
+.cNom.ischef{color:var(--gold2);font-weight:800}
+.chefbar{display:none;margin:6px 14px 0;padding:8px 12px;border-radius:10px;background:rgba(255,215,0,.10);border:1px solid rgba(255,215,0,.35);color:var(--gold2);font-size:13px;font-weight:700}
+body.chefme .chefbar{display:block}
+.tot td{background:#0b1d0e;font-weight:800;color:var(--gold2);border-top:2px solid rgba(201,162,39,.35)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;font-size:11px;color:var(--mut)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.note{padding:10px 14px;font-size:11px;color:var(--mut);line-height:1.5}
+.posp{margin:8px;padding:12px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.25);border-radius:12px}
+.posp-t{font-size:13px;color:var(--gold2);font-weight:700;margin-bottom:10px}
+.posp-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.posp-nm{flex:1;font-size:13px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.posp-btns{display:flex;gap:5px;flex-wrap:wrap}
+.posp-b{width:38px;height:38px;border-radius:8px;border:2px solid #2a3a2c;background:#13241a;color:#7a8a7c;font-size:16px;font-weight:900}
+.posp-b.sel{border-color:var(--gold2);background:rgba(201,162,39,.18);color:var(--gold2)}
+.rest{padding:6px 14px;font-size:11px;color:var(--mut)}
+.rest b{color:var(--gold2)}
+.warn{color:#ffb37a;font-weight:700}
+.adminbar{display:none;gap:8px;flex-wrap:wrap;padding:8px 12px;background:rgba(201,162,39,.06);border-bottom:1px solid rgba(201,162,39,.15)}
+body.admin .adminbar{display:flex}
+.mv{display:none}
+body.admin .mv{display:inline-block;background:none;border:none;color:var(--gold2);font-size:13px;padding:0 3px}
+body.admin td.cell{cursor:pointer}
+body.admin td.cell:hover{outline:1px solid var(--gold2)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:100;display:none;
+ align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.box{background:var(--card);border:1px solid rgba(201,162,39,.4);border-radius:16px;padding:22px;max-width:340px;width:100%}
+.box h2{margin:0 0 6px;font-size:17px;color:var(--gold2)}
+.box p{margin:0 0 14px;font-size:13px;color:var(--mut)}
+.box input{width:100%;padding:12px;font-size:18px;text-align:center;letter-spacing:6px;border-radius:10px;
+ border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);margin-bottom:12px}
+.row{display:flex;gap:8px}
+.badge{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:50;
+ background:rgba(10,26,12,.9);color:var(--gold);border:1px solid rgba(201,162,39,.35);border-radius:20px;
+ padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:#13301a;color:var(--gold2);
+ border:1px solid var(--gold);border-radius:10px;padding:10px 16px;font-size:13px;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+tr.me td{box-shadow:inset 0 0 0 2px var(--gold)}
+/* v1.12.1 — fond OPAQUE sur la colonne nom (sinon les cases du jour défilent
+   dessous à travers le fond transparent → nom illisible, cf. capture Kevin). */
+tr.me .cNom{background:#2c280c;color:var(--gold2);font-weight:800;z-index:9}
+.mebanner{margin:8px 0 4px;padding:8px 12px;border:1px solid rgba(201,162,39,.35);border-radius:10px;
+ background:rgba(10,26,12,.55);font-size:13px;color:var(--gold2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mebanner b{color:#fff}
+.mebanner .jump{margin-left:auto;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;
+ border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:13px}
+#meSel{max-width:150px}
+</style>
+<script>/* lz-string 1.5.0 MIT (inliné: CSP self+unsafe-inline, hors-ligne) — décompresse cmc_ov/cmc_e de l app */
+var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToBase64:function(r){if(null==r)return"";var n=i._compress(r,6,function(r){return o.charAt(r)});switch(n.length%4){default:case 0:return n;case 1:return n+"===";case 2:return n+"==";case 3:return n+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(n){return t(o,r.charAt(n))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:i._decompress(r.length,16384,function(o){return r.charCodeAt(o)-32})},compressToUint8Array:function(r){for(var o=i.compress(r),n=new Uint8Array(2*o.length),e=0,t=o.length;e<t;e++){var s=o.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null==o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;e<t;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return n.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(o){return t(n,r.charAt(o))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,s={},u={},a="",p="",c="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<r.length;i+=1)if(a=r.charAt(i),Object.prototype.hasOwnProperty.call(s,a)||(s[a]=f++,u[a]=!0),p=c+a,Object.prototype.hasOwnProperty.call(s,p))c=p;else{if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++),s[p]=f++,c=String(a)}if(""!==c){if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==o-1){d.push(n(m));break}v++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:i._decompress(r.length,32768,function(o){return r.charCodeAt(o)})},_decompress:function(o,n,e){var t,i,s,u,a,p,c,l=[],f=4,h=4,d=3,m="",v=[],g={val:e(0),position:n,index:1};for(t=0;t<3;t+=1)l[t]=t;for(s=0,a=Math.pow(2,2),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 2:return""}for(l[3]=c,i=c,v.push(c);;){if(g.index>o)return"";for(s=0,a=Math.pow(2,d),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(c=s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 2:return v.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])m=l[c];else{if(c!==h)return null;m=i+i.charAt(0)}v.push(m),l[h++]=i+m.charAt(0),i=m,0==--f&&(f=Math.pow(2,d),d++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module?module.exports=LZString:"undefined"!=typeof angular&&null!=angular&&angular.module("LZString",[]).factory("LZString",function(){return LZString});
+</script>
+</head>
+<body>
+<!-- v1.20 (Kevin 2026-07-01 « J'ai partagé la PWA CMCteams light. Les personnes se connectent
+     sans rien valider. Rien n'est demandé. Cgu, fiche, rien ») — GATE 1ère connexion : nom +
+     prénom (règle LOGIN TOUJOURS PRÉNOM + NOM) + acceptation CGU. Ensuite reconnu auto. -->
+<div id="depGate" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#0a140c,#060d08);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top) + 24px) 18px calc(env(safe-area-inset-bottom) + 24px)">
+  <div style="max-width:420px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:26px;font-weight:900;color:var(--gold2);letter-spacing:.5px">CMCteams light</div>
+      <div style="font-size:14px;color:#9ec2a4;margin-top:6px">Ordres de départ — accès réservé au personnel</div>
+    </div>
+    <div style="background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.25);border-radius:14px;padding:18px 16px">
+      <div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:12px">👋 Première connexion — identifie-toi</div>
+      <label style="display:block;font-size:13px;color:#a8c4ac;margin:0 0 4px">Prénom</label>
+      <input id="gatePrenom" autocomplete="given-name" placeholder="Ton prénom" style="width:100%;box-sizing:border-box;min-height:46px;padding:10px 12px;margin-bottom:12px;border-radius:10px;border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);font-size:16px">
+      <label style="display:block;font-size:13px;color:#a8c4ac;margin:0 0 4px">Nom</label>
+      <input id="gateNom" autocomplete="family-name" placeholder="Ton nom de famille" style="width:100%;box-sizing:border-box;min-height:46px;padding:10px 12px;margin-bottom:14px;border-radius:10px;border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);font-size:16px">
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#c8e0cc;line-height:1.5;cursor:pointer;margin-bottom:6px">
+        <input type="checkbox" id="gateCgu" style="width:20px;height:20px;margin-top:1px;flex-shrink:0;accent-color:#c9a227">
+        <span>J'accepte les conditions : outil <b>interne SBM</b> (planning). Mes nom et prénom servent à ouvrir mon équipe et à savoir qui consulte. <b>Aucune donnée n'est partagée à l'extérieur.</b></span>
+      </label>
+      <div id="gateErr" style="font-size:13px;color:#e0a0a0;min-height:18px;margin:4px 0 8px"></div>
+      <button onclick="_depSubmitGate()" style="width:100%;min-height:52px;font-size:17px;font-weight:800;background:linear-gradient(135deg,#c9a227,#a8821f);border:none;color:#0a0f0c;border-radius:12px;cursor:pointer">Accéder aux départs</button>
+    </div>
+    <div style="text-align:center;font-size:11px;color:#5a7060;margin-top:14px">🔒 Tu ne seras plus redemandé sur cet appareil.</div>
+  </div>
+</div>
+<header>
+  <div>
+    <h1>CMCteams light</h1>
+    <p class="sub" id="hSub"></p>
+  </div>
+  <span class="spacer"></span>
+  <select id="meSel" onchange="setMe(this.value)" title="Connexion — ton nom ou matricule SBM (U…)"></select>
+  <select id="moSel" onchange="setMonth(this.value)" title="Choisir le mois"></select>
+  <input id="teamSearch" placeholder="🔎 équipe / nom" oninput="fillSel()" autocomplete="off" title="Chercher une autre équipe ou une personne"
+   style="min-width:110px;max-width:150px;min-height:40px;padding:8px 10px;border-radius:9px;border:1px solid rgba(201,162,39,.4);background:#0a1a0c;color:var(--ink);font-size:13px">
+  <select id="boardSel" onchange="switchBoard(this.value)" title="Équipe du mois"></select>
+  <button class="btn" id="mirBtn" style="display:none" onclick="goMirror()" title="Basculer vers l'équipe miroir (mêmes repos, horaires décalés)">🔁 Équipe miroir</button>
+  <button class="btn" id="lockBtn" onclick="toggleAdmin()">🔒 Admin</button>
+</header>
+
+<div class="adminbar">
+  <button class="btn" onclick="togglePositions()">⚙️ Positions de départ</button>
+  <button class="btn" id="anchorBtn" onclick="toggleAnchor()">📍 Placer Départ 1</button>
+  <button class="btn" onclick="resetAnchor()">↩︎ Rotation normale</button>
+  <button class="btn" onclick="resetCounters()">↺ Vider NR/5e</button>
+  <button class="btn" id="chefBtn" onclick="toggleChefDesign()">⭐ Chefs d'équipe</button>
+  <button class="btn" onclick="resetAll()">⚠️ Réinit. ce mois</button>
+  <span class="sub" id="adminHint" style="align-self:center">Touche une case = corriger le code · NR/5e : tap = ✗, ✎ = écrire</span>
+</div>
+
+<div class="wrap">
+  <div class="chefbar">⭐ Tu es <b>chef d'équipe</b> : tu peux écrire dans <b>NR</b> (non-retour) et <b>5e</b> sur ton équipe. Touche la case (✗) ou le crayon ✎.</div>
+  <div class="mebanner" id="meBanner" style="display:none"></div>
+  <div class="scroll"><table id="grid"></table></div>
+  <div id="posPanel"></div>
+  <div class="rest" id="restCheck"></div>
+  <div class="legend">
+    <span><i class="dot" style="background:#fbfaf3;border:1px solid #b8c0b0"></i>cmc</span>
+    <span><i class="dot" style="background:#d8342e"></i>Convention</span>
+    <span><i class="dot" style="background:#ffc488"></i>Café de Paris</span>
+    <span><i class="dot" style="background:var(--c-rh)"></i>RH</span>
+    <span><i class="dot" style="background:var(--c-r)"></i>R</span>
+    <span><i class="dot" style="background:#f8c0d0"></i>CP</span>
+    <span><i class="dot" style="background:#f0a0a0"></i>M/abs</span>
+    <span><b style="color:var(--gold2)">↑N</b> = ordre de départ</span>
+    <span><b>NR</b> = non-retour · <b>5e</b> = cinquième</span>
+  </div>
+  <div class="rest" id="appDiag" style="cursor:pointer" onclick="showAppDiag()" title="Toucher pour le détail"></div>
+</div>
+
+<div class="modal" id="pinModal">
+  <div class="box">
+    <h2>🔒 Accès admin</h2>
+    <p>Code à 6 chiffres pour modifier (les collègues restent en lecture seule).</p>
+    <input id="pinIn" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
+    <div class="row">
+      <button class="btn" style="flex:1" onclick="closePin()">Annuler</button>
+      <button class="btn prim" style="flex:1" onclick="checkPin()">Déverrouiller</button>
+    </div>
+  </div>
+</div>
+
+<div class="badge" id="ver" onclick="forceRefresh()">v1.32</div>
+<div class="toast" id="toast"></div>
+
+<script src="boards-gen.js"></script>
+<script>
+"use strict";
+var APP_VER="v1.36";
+var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
+var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
+ 8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
+ 11:[1,6,4,9,2,11,7,3,8,5,10],12:[1,6,4,9,2,11,7,3,12,8,5,10],13:[1,6,4,9,2,11,7,3,13,8,5,10,12]};
+function seqForSize(n){return SEQS[n]||(function(){var a=[];for(var i=1;i<=n;i++)a.push(i);return a;})();}
+// ROTATION DES DÉPARTS — liste des codes qui ne sont PAS « à la table » ce jour-là.
+// MIROIR EXACT de DEP_ABS/isWorkDep dans l'app (index.html) — la garde test:departs-abs-parity
+// échoue si les deux listes divergent (une divergence = numéros différents app vs page).
+// RÈGLE MÉTIER TRANCHÉE PAR KEVIN — « celui qui est RATTACHÉ à l'équipe garde sa place dans la
+// rotation ; seuls les vrais congés/arrêts la libèrent » :
+//  · PRT (« Prêt », mis à disposition d'un autre service) = TRAVAIL, GARDE son numéro
+//    (décision Kevin 2026-07-10, leçon #140).
+//  · DEPL / DEP (déplacement) et SS = TRAVAIL, GARDENT leur numéro — décision Kevin
+//    2026-08-10 (« B »), même logique que PRT. Cette page les comptait en ABSENCE alors que
+//    l'app les comptait en TRAVAIL → divergence de numéros ; c'est l'APP qui avait raison,
+//    cette page est alignée dessus (v1.36). Ils sont donc VOLONTAIREMENT ABSENTS d'ici.
+//  · CLM (congé mariage — Convention SBM art.18, 4 jours) = ABSENCE, PAS de numéro (v1.35) — bug réel mesuré sur août :
+//    EL MISSOURI O (BJ Éq.10) en CLM les jours 21-24 recevait quand même les numéros 1,4,2,3
+//    et faussait ceux de ses 4 collègues (20 cellules).
+var DEP_ABS=["RH","R","CP","M","AF","RRT","PAT","MT","AT","FL","ABS","ABI","CSS","CLM"];
+function isWork(c){return !!c && DEP_ABS.indexOf(c)<0;}
+function cellClass(c){
+  if(!c) return "off";
+  if(c==="RH") return "rh"; if(c==="R") return "r";
+  if(c==="CP") return "cp"; if(["M","AF","RRT","PAT","MT","AT","ABS","ABI","DEPL","DEP","SS"].indexOf(c)>=0) return "m";
+  return "w"; // v1.14.0 (lesson #115) : apostrophe ≠ convention (PDF blanc) ; conv = méta pixel via _mk
+}
+// Couleurs IDENTIQUES à l'import CMCteams (table CODES) — par horaire + absences
+var CODE_COLORS={
+  "22/6":{bg:"#fccfe0",fg:"#3a0818"}, "19/4":{bg:"#fff4a0",fg:"#1a1004"}, "16/3":{bg:"#ffb070",fg:"#2a1004"},
+  "14/19":{bg:"#c4e8a8",fg:"#0a2004"}, "20/5":{bg:"#b8d4f0",fg:"#041838"}, "16/22":{bg:"#d4c4ec",fg:"#1a0840"},
+  "12h30/19":{bg:"#c4e8a8",fg:"#0a2004"}, "15/19":{bg:"#c4e8a8",fg:"#0a2004"}, "15/20":{bg:"#fff4a0",fg:"#1a1004"},
+  "19/6":{bg:"#fff4a0",fg:"#1a1004"}, "14/20":{bg:"#d4c4ec",fg:"#1a0840"},
+  "RH":{bg:"#c8a8e0",fg:"#0c0430"}, "R":{bg:"#d8c8f0",fg:"#2a1850"}, "CP":{bg:"#f8c0d0",fg:"#2a0410"},
+  "AF":{bg:"#a8e0a8",fg:"#031805"}, "M":{bg:"#ffe840",fg:"#1a1004"}, "RRT":{bg:"#ffd850",fg:"#1a1004"},
+  "MAL":{bg:"#ffe840",fg:"#1a1004"}, "MT":{bg:"#ffe840",fg:"#1a1004"}, "AT":{bg:"#ffe840",fg:"#1a1004"},
+  "PAT":{bg:"#ffd850",fg:"#1a1004"}, "DEPL":{bg:"#d0d0d0",fg:"#202020"}, "DEP":{bg:"#d0d0d0",fg:"#202020"},
+  "SS":{bg:"#e0e0e0",fg:"#202020"}, "FL":{bg:"#ffd850",fg:"#1a1004"}, "ABS":{bg:"#e0e0e0",fg:"#202020"}, "ABI":{bg:"#e0e0e0",fg:"#202020"}
+};
+var CONV_COLOR={bg:"#d8342e",fg:"#ffe23a"}; // Convention (' ou ") = fond rouge / écriture jaune (PDF SBM)
+// v1.13 (Kevin 2026-06-29 « Reproduis les couleurs à l'identique. Comme l'import ») :
+// couleur d'une cellule = son STATUT (comme le PDF SBM / l'app CMCteams), PAS une couleur
+// par horaire. Le PDF laisse les cellules de TRAVAIL en BLANC et ne colore que : congé
+// (rose), RH (violet), R (lavande), Convention ' ou " (rouge), CDP * (orange), formation
+// AF (vert), maladie M (rouge clair), RRT (jaune). Aligné sur cmcCodeStatusBg de l'app.
+function codeStyle(c){
+  if(!c) return null;
+  // v1.14.0 (lesson #115) — le suffixe ' / " N'EST PAS un signal de couleur : le PDF
+  // montre les codes apostrophe des CROUPIERS en BLANC. La convention (fond rouge) vient
+  // UNIQUEMENT de la méta pixel (ST.meta[nm][d]==="conv", posée par les boards). On ne
+  // colore donc plus en rouge sur le suffixe ici (le rendu applique CONV_COLOR via _mk).
+  if(/\*/.test(c)||/CDP/i.test(c)) return {bg:"#ffc488",fg:"#5a2808"};    // CDP → orange
+  var base=String(c).replace(/[c*:]+$/,"").replace(/['"]/g,"").toUpperCase();
+  if(base==="CP"||base==="CRH"||base==="CDP"||base==="CDH"||base==="CPS"||base==="CPM") return {bg:"#f8c0d0",fg:"#2a0410"}; // congé → rose
+  if(base==="RH") return {bg:"#c8a8e0",fg:"#0c0430"};                      // repos hebdo → violet
+  if(base==="R")  return {bg:"#d8c8f0",fg:"#2a1850"};                      // repos → lavande
+  if(base==="AF") return {bg:"#a8e0a8",fg:"#031805"};                      // formation → vert
+  if(base==="M"||base==="MAL") return {bg:"#f0a0a0",fg:"#3a0808"};         // maladie → rouge clair
+  if(base==="RRT"||base==="PRT"||base==="RTP"||base==="RTR") return {bg:"#ffd850",fg:"#1a1004"}; // RRT/PRT → jaune
+  if(base==="DEPL"||base==="DEP"||base==="DELPT") return {bg:"#e0d2bc",fg:"#3a2810"};      // déplacement → beige
+  // v9.837 — DELTTRA = cellule bleu clair du PDF (reproduit à l'identique, comme l'app)
+  if(base==="DELTTRA") return {bg:"#bcd8e8",fg:"#0c3a55"};                 // DELTTRA → bleu clair
+  if(base==="AT"||base==="MT"||base==="PAT"||base==="ABI"||base==="ABS"||base==="ABP"||base==="SS"||base==="CSS"||base==="CL"||base==="CEO"||base==="CSC"||base==="EDC"||base==="CFL") return {bg:"#dcdcdc",fg:"#202020"}; // autres absences → gris
+  return {bg:"#fbfaf3",fg:"#1a2a1a"};                                      // TRAVAIL → blanc (PDF)
+}
+function isRest(c){return c==="RH"||c==="R";} // pour la détection d'équipe (jours de repos)
+
+// rythme de roulement (chef plein-mois) + générateur de planning par personne
+function mkPerson(rhy,days,opts){ // opts:{from,to,marks}
+  var o={};
+  for(var d=1;d<=days;d++){
+    var c=rhy[d]||"";
+    if(opts.from && d<opts.from) c="CP";
+    if(opts.to && d>opts.to) c="CP";
+    if(opts.marks && opts.marks[d]!==undefined) c=opts.marks[d];
+    o[d]=c;
+  }
+  return o;
+}
+var RHY_JUN={1:"20/5c",2:"19/4c",3:"16/22c",4:"14/19c",5:"RH",6:"19/4'c",7:"22/6c",8:"20/5c",9:"16/3c",10:"14/19'c",
+ 11:"RH",12:"R",13:"20/5c",14:"19/4c",15:"16/22c",16:"14/19c",17:"RH",18:"R",19:"22/6c",20:"19/4'c",21:"16/3c",
+ 22:"14/19'c",23:"RH",24:"R",25:"20/5c",26:"19/4c",27:"16/22c",28:"14/19c",29:"RH",30:"R"};
+var RHY_JUL={1:"22/6c",2:"19/4'c",3:"16/3c",4:"14/19c",5:"RH",6:"R",7:"20/5c",8:"19/4c",9:"16/22c",10:"14/19c",
+ 11:"RH",12:"R",13:"22/6c",14:"19/4'c",15:"16/3c",16:"14/19'c",17:"RH",18:"R",19:"20/5c",20:"19/4c",21:"16/22c",
+ 22:"14/19c",23:"RH",24:"R",25:"22/6c",26:"19/4'c",27:"16/3c",28:"14/19'c",29:"RH",30:"R",31:"20/5c"};
+
+// ── ÉQUIPES (1 par mois pour l'instant : Chefs BJ) — corrigeables en admin ──
+var BOARDS={
+ "2026-06-bjC":{label:"Juin 2026 — Chefs BJ (4)",month:"Juin 2026",year:2026,monthIdx:5,days:30,key:"cmc_dep_2026_06_bjC4",
+   anchor:{name:"DESARZENS K",day:20},
+   people:[
+     {name:"FAUTRIER M",   codes:mkPerson(RHY_JUN,30,{marks:{1:"M"}})},
+     {name:"DEJANOVIC D",  codes:mkPerson(RHY_JUN,30,{})},
+     {name:"MALENFANT PJ", codes:mkPerson(RHY_JUN,30,{marks:{1:"20/5*",9:"16/3*",21:"16/3*",25:"20/5*",30:"22/6c"}})},
+     {name:"DESARZENS K",  codes:mkPerson(RHY_JUN,30,{from:16})}
+   ]},
+};
+var JUL_TEAMS=[{"label": "Juillet 2026 — BJ Éq.1", "id": "2026-07-bj1", "people": [{"name": "MARIOTTINI J", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "RRT", "14": "19/4'c", "15": "16/3c", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "PUGNETTI S", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "14/19'c", "17": "RH", "18": "R", "19": "20/5c", "20": "19/4c", "21": "16/22c", "22": "14/19c", "23": "RH", "24": "R", "25": "22/6c", "26": "19/4'c", "27": "16/3c", "28": "14/19'c", "29": "RH", "30": "R", "31": "20/5c"}}, {"name": "DEJANOVIC D", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "14/19'c", "17": "RH", "18": "R", "19": "20/5c", "20": "19/4c", "21": "16/22c", "22": "14/19c", "23": "RH", "24": "R", "25": "22/6c", "26": "19/4'c", "27": "16/3c", "28": "14/19'c", "29": "RH", "30": "R", "31": "20/5c"}}, {"name": "MALENFANT PJ", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "14/19'c", "17": "RH", "18": "R", "19": "20/5c", "20": "19/4c", "21": "16/22c", "22": "14/19c", "23": "RH", "24": "R", "25": "22/6c", "26": "19/4'c", "27": "16/3c", "28": "14/19'c", "29": "RH", "30": "R", "31": "20/5c"}}, {"name": "DESARZENS K", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "DESSI F", "codes": {"1": "22/6c", "2": "19/4'c", "3": "16/3c", "4": "14/19'c", "5": "RH", "6": "R", "7": "20/5c", "8": "19/4c", "9": "16/22c", "10": "14/19c", "11": "RH", "12": "R", "13": "22/6c", "14": "19/4'c", "15": "16/3c", "16": "14/19'c", "17": "RH", "18": "R", "19": "20/5c", "20": "19/4c", "21": "16/22c", "22": "14/19c", "23": "RH", "24": "R", "25": "22/6c", "26": "19/4'c", "27": "16/3c", "28": "14/19'c", "29": "RH", "30": "R", "31": "20/5c"}}]}, {"label": "Juillet 2026 — BJ Éq.2", "id": "2026-07-bj2", "people": [{"name": "PASSERON G", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "19/4c", "18": "16/22c", "19": "14/19c", "20": "RH", "21": "R", "22": "22/6c", "23": "19/4'c", "24": "16/3c", "25": "14/19'c", "26": "RH", "27": "R", "28": "20/5c", "29": "19/4c", "30": "16/22c", "31": "14/19c"}}, {"name": "DESSI P", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "BRASSEUR F", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "19/4c", "18": "16/22c", "19": "14/19c", "20": "RH", "21": "R", "22": "22/6c", "23": "19/4'c", "24": "16/3c", "25": "14/19'c", "26": "RH", "27": "R", "28": "20/5c", "29": "19/4c", "30": "16/22c", "31": "14/19c"}}, {"name": "RUZIC M", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "19/4c", "18": "16/22c", "19": "14/19c", "20": "RH", "21": "R", "22": "22/6c", "23": "19/4'c", "24": "16/3c", "25": "14/19'c", "26": "RH", "27": "R", "28": "20/5c", "29": "19/4c", "30": "16/22c", "31": "14/19c"}}, {"name": "PETIT T", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "19/4c", "18": "16/22c", "19": "14/19c", "20": "RH", "21": "R", "22": "22/6c", "23": "19/4'c", "24": "16/3c", "25": "14/19'c", "26": "RH", "27": "R", "28": "20/5c", "29": "19/4c", "30": "16/22c", "31": "14/19c"}}, {"name": "MERLINO T", "codes": {"1": "14/19'c", "2": "RH", "3": "R", "4": "20/5c", "5": "19/4c", "6": "16/22c", "7": "14/19c", "8": "RH", "9": "R", "10": "22/6c", "11": "19/4'c", "12": "16/3c", "13": "14/19'c", "14": "RH", "15": "R", "16": "20/5c", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}]}, {"label": "Juillet 2026 — BJ Éq.3", "id": "2026-07-bj3", "people": [{"name": "GARINO Y", "codes": {"1": "19/4'c", "2": "16/3c", "3": "14/19'c", "4": "RH", "5": "R", "6": "20/5c", "7": "19/4c", "8": "16/22c", "9": "14/19c", "10": "RH", "11": "R", "12": "22/6c", "13": "19/4'c", "14": "16/3c", "15": "14/19'c", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "20/5c", "31": "19/4c"}}, {"name": "EHRET G", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "20/5c", "31": "19/4c"}}, {"name": "MILLO W", "codes": {"1": "19/4'c", "2": "16/3c", "3": "14/19'c", "4": "RH", "5": "R", "6": "20/5c", "7": "19/4c", "8": "16/22c", "9": "14/19c", "10": "RH", "11": "R", "12": "RRT", "13": "19/4'c", "14": "16/3c", "15": "14/19'c", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "RRT", "31": "RRT"}}, {"name": "RICORDO B", "codes": {"1": "19/4'c", "2": "16/3c", "3": "14/19'c", "4": "RH", "5": "R", "6": "20/5c", "7": "19/4c", "8": "16/22c", "9": "14/19c", "10": "RH", "11": "R", "12": "22/6c", "13": "19/4'c", "14": "16/3c", "15": "14/19'c", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "20/5c"}}, {"name": "GANCIA G", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "RH", "17": "R", "18": "20/5c", "19": "19/4c", "20": "16/22c", "21": "14/19c", "22": "RH", "23": "R", "24": "22/6c", "25": "19/4'c", "26": "16/3c", "27": "14/19'c", "28": "RH", "29": "R", "30": "20/5c"}}]}, {"label": "Juillet 2026 — BJ Éq.4", "id": "2026-07-bj4", "people": [{"name": "GATTI B", "codes": {"1": "16/3c", "2": "14/19'c", "3": "RH", "4": "R", "5": "20/5c", "6": "19/4c", "7": "16/22c", "8": "14/19c", "9": "RH", "10": "R", "11": "22/6c", "12": "19/4'c", "13": "16/3c", "14": "14/19'c", "15": "RH", "16": "R", "17": "20/5c", "18": "19/4c", "19": "16/22c", "20": "14/19c", "21": "RH", "22": "R", "23": "22/6c", "24": "19/4'c", "25": "16/3c", "26": "14/19'c", "27": "RH", "28": "R", "29": "20/5c", "30": "19/4c"}}, {"name": "GRAUSS A", "codes": {"1": "16/3c", "2": "14/19'c", "3": "RH", "4": "R", "5": "20/5c", "6": "19/4c", "7": "16/22c", "8": "14/19c", "9": "RH", "10": "R", "11": "22/6c", "12": "19/4'c", "13": "16/3c", "14": "14/19'c", "15": "RH", "16": "R", "17": "20/5c", "18": "19/4c", "19": "16/22c", "20": "14/19c", "21": "RH", "22": "R", "23": "22/6c", "24": "19/4'c", "25": "16/3c", "26": "14/19'c", "27": "RH", "28": "R", "29": "20/5c", "30": "19/4c", "31": "16/22c"}}, {"name": "ESPAGNOL S", "codes": {"1": "16/3c", "2": "14/19'c", "3": "RH", "4": "R", "5": "20/5c", "6": "19/4c", "7": "16/22c", "8": "14/19c", "9": "RH", "10": "R", "11": "22/6c", "12": "19/4'c", "13": "16/3c", "14": "14/19'c", "15": "RH", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "GALLIS J", "codes": {"1": "16/3c", "2": "14/19'c", "3": "RH", "4": "R", "5": "20/5c", "6": "19/4c", "7": "16/22c", "8": "14/19c", "9": "RH", "10": "R", "11": "22/6c", "12": "19/4'c", "13": "16/3c", "14": "14/19'c", "15": "RH", "16": "R", "17": "20/5c", "18": "19/4c", "19": "16/22c", "20": "14/19c", "21": "RH", "22": "R", "23": "22/6c", "24": "19/4'c", "25": "16/3c", "26": "14/19'c", "27": "RH", "28": "R", "29": "20/5c", "30": "19/4c", "31": "16/22c"}}]}, {"label": "Juillet 2026 — BJ Éq.5", "id": "2026-07-bj5", "people": [{"name": "BENNEJEAN I", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "19/4c", "17": "16/22c", "18": "14/19c", "19": "RH", "20": "R", "21": "22/6c", "22": "19/4'c", "23": "16/3c", "24": "14/19'c", "25": "RH", "26": "R", "27": "20/5c", "28": "19/4c", "29": "16/22c", "30": "14/19c", "31": "RH"}}, {"name": "BELTRANDI N", "codes": {"1": "RH", "2": "R", "3": "20/5c", "4": "19/4c", "5": "16/22c", "6": "14/19c", "7": "RH", "8": "R", "9": "22/6c", "10": "19/4'c", "11": "16/3c", "12": "14/19'c", "13": "RH", "14": "R", "15": "20/5c", "16": "19/4c", "17": "16/22c", "18": "14/19c", "19": "RH", "20": "R", "21": "22/6c", "22": "19/4'c", "23": "16/3c", "24": "14/19'c", "25": "RH", "26": "R", "27": "20/5c", "28": "19/4c", "29": "16/22c", "30": "14/19c", "31": "RH"}}, {"name": "DUPONT A", "codes": {"1": "RH", "2": "R", "3": "20/5c", "4": "19/4c", "5": "16/22c", "6": "14/19c", "7": "RH", "8": "R", "9": "22/6c", "10": "19/4'c", "11": "16/3c", "12": "14/19'c", "13": "RH", "14": "R", "15": "20/5c", "16": "19/4c", "17": "16/22c", "18": "14/19c", "19": "RH", "20": "R", "21": "22/6c", "22": "19/4'c", "23": "16/3c", "24": "14/19'c", "25": "RH", "26": "R", "27": "20/5c", "28": "19/4c", "29": "16/22c", "30": "14/19c", "31": "RH"}}, {"name": "CAMPI PH", "codes": {"1": "RH", "2": "R", "3": "20/5c", "4": "19/4c", "5": "16/22c", "6": "14/19c", "7": "RH", "8": "R", "9": "22/6c", "10": "19/4'c", "11": "16/3c", "12": "14/19'c", "13": "RH", "14": "R", "15": "20/5c", "16": "19/4c", "17": "16/22c", "18": "14/19c", "19": "RH", "20": "R", "21": "22/6c", "22": "19/4'c", "23": "16/3c", "24": "14/19'c", "25": "RH", "26": "R", "27": "20/5c", "28": "19/4c", "29": "16/22c", "30": "14/19c", "31": "RH"}}]}];
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.1 (20/5)", "id": "2026-07-roul1", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul1", "people": [{"name": "BONO V", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}, {"name": "VATRICAN T", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}, {"name": "GAZAGNE F", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}, {"name": "CARPINELLI K", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}, {"name": "MOUFLARD L", "codes": {"1": "20/5", "2": "19/4", "3": "16/22", "4": "14/19", "5": "RH", "6": "R", "7": "22/6'", "8": "19/4\"", "9": "16/3", "10": "14/19'", "11": "RH", "12": "R", "13": "20/5", "14": "19/4", "15": "16/22", "16": "14/19", "17": "RH", "18": "R", "19": "22/6'", "20": "19/4\"", "21": "16/3", "22": "14/19'", "23": "RH", "24": "R", "25": "20/5", "26": "19/4", "27": "16/22", "28": "14/19", "29": "RH", "30": "R", "31": "22/6'"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.2 (19/4)", "id": "2026-07-roul2", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul2", "people": [{"name": "BARONE E", "codes": {"1": "19/4", "2": "16/22", "3": "14/19", "4": "RH", "5": "R", "6": "22/6'", "7": "19/4\"", "8": "16/3", "9": "14/19'", "10": "RH", "11": "R", "12": "20/5", "13": "19/4", "14": "16/22", "15": "14/19", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}, {"name": "RINALDI S", "codes": {"1": "19/4", "2": "16/22", "3": "14/19", "4": "RH", "5": "R", "6": "22/6'", "7": "19/4\"", "8": "16/3", "9": "14/19'", "10": "RH", "11": "R", "12": "20/5", "13": "19/4", "14": "16/22", "15": "14/19", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}, {"name": "GARCIA N", "codes": {"1": "19/4", "2": "16/22", "3": "14/19", "4": "RH", "5": "R", "6": "22/6'", "7": "19/4\"", "8": "16/3", "9": "14/19'", "10": "RH", "11": "R", "12": "20/5", "13": "19/4", "14": "16/22", "15": "14/19", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}, {"name": "ANDRE C", "codes": {"1": "19/4", "2": "16/22", "3": "14/19", "4": "RH", "5": "R", "6": "22/6'", "7": "19/4\"", "8": "16/3", "9": "14/19'", "10": "RH", "11": "R", "12": "20/5", "13": "19/4", "14": "16/22", "15": "14/19", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}, {"name": "MILLET T", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "RH", "17": "R", "18": "22/6'", "19": "19/4\"", "20": "16/3", "21": "14/19'", "22": "RH", "23": "R", "24": "20/5", "25": "19/4", "26": "16/22", "27": "14/19", "28": "RH", "29": "R", "30": "22/6'", "31": "19/4\""}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.3 (16/22)", "id": "2026-07-roul3", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul3", "people": [{"name": "SABINE O", "codes": {"1": "16/22", "2": "14/19", "3": "RH", "4": "R", "5": "22/6'", "6": "19/4\"", "7": "16/3", "8": "14/19'", "9": "RH", "10": "R", "11": "20/5", "12": "19/4", "13": "16/22", "14": "14/19", "15": "RH", "16": "R", "17": "22/6'", "18": "19/4\"", "19": "16/3", "20": "14/19'", "21": "RH", "22": "R", "23": "20/5", "24": "19/4", "25": "16/22", "26": "14/19", "27": "RH", "28": "R", "29": "22/6'", "30": "19/4\"", "31": "16/3"}}, {"name": "HAREL H", "codes": {"1": "16/22", "2": "14/19", "3": "RH", "4": "R", "5": "22/6'", "6": "19/4\"", "7": "16/3", "8": "14/19'", "9": "RH", "10": "R", "11": "20/5", "12": "19/4", "13": "16/22", "14": "14/19", "15": "RH", "16": "R", "17": "22/6'", "18": "19/4\"", "19": "16/3", "20": "14/19'", "21": "RH", "22": "R", "23": "20/5", "24": "19/4", "25": "16/22", "26": "14/19", "27": "RH", "28": "R", "29": "22/6'", "30": "19/4\"", "31": "16/3"}}, {"name": "SBARATTO S", "codes": {"1": "16/22", "2": "14/19", "3": "RH", "4": "R", "5": "22/6'", "6": "19/4\"", "7": "16/3", "8": "14/19'", "9": "RH", "10": "R", "11": "20/5", "12": "19/4", "13": "16/22", "14": "14/19", "15": "RH", "16": "R", "17": "22/6'", "18": "19/4\"", "19": "16/3", "20": "14/19'", "21": "RH", "22": "R", "23": "20/5", "24": "19/4", "25": "16/22", "26": "14/19", "27": "RH", "28": "R", "29": "22/6'", "30": "19/4\"", "31": "16/3"}}, {"name": "CARDONA P", "codes": {"1": "16/22", "2": "14/19", "3": "RH", "4": "R", "5": "22/6'", "6": "19/4\"", "7": "16/3", "8": "14/19'", "9": "RH", "10": "R", "11": "20/5", "12": "19/4", "13": "16/22", "14": "14/19", "15": "RH", "16": "R", "17": "22/6'", "18": "19/4\"", "19": "16/3", "20": "14/19'", "21": "RH", "22": "R", "23": "20/5", "24": "19/4", "25": "16/22", "26": "14/19", "27": "RH", "28": "R", "29": "22/6'", "30": "19/4\"", "31": "16/3"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.4 (14/19)", "id": "2026-07-roul4", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul4", "people": [{"name": "BOURDIER C", "codes": {"1": "14/19", "2": "RH", "3": "R", "4": "22/6'", "5": "19/4\"", "6": "16/3", "7": "14/19'", "8": "RH", "9": "R", "10": "20/5", "11": "19/4", "12": "16/22", "13": "14/19", "14": "RH", "15": "R", "16": "22/6'", "17": "19/4\"", "18": "16/3", "19": "14/19'", "20": "RH", "21": "R", "22": "20/5", "23": "19/4", "24": "16/22", "25": "14/19", "26": "RH", "27": "R", "28": "22/6'", "29": "19/4\"", "30": "16/3", "31": "14/19'"}}, {"name": "ANTOGNELLI D", "codes": {"1": "14/19", "2": "RH", "3": "R", "4": "22/6'", "5": "19/4\"", "6": "16/3", "7": "14/19'", "8": "RH", "9": "R", "10": "20/5", "11": "19/4", "12": "16/22", "13": "14/19", "14": "RH", "15": "R", "16": "22/6'", "17": "19/4\"", "18": "16/3", "19": "14/19'", "20": "RH", "21": "R", "22": "20/5", "23": "19/4", "24": "16/22", "25": "14/19", "26": "RH", "27": "R", "28": "22/6'", "29": "19/4\"", "30": "16/3", "31": "14/19'"}}, {"name": "DERI W", "codes": {"1": "14/19", "2": "RH", "3": "R", "4": "22/6'", "5": "19/4\"", "6": "16/3", "7": "14/19'", "8": "RH", "9": "R", "10": "20/5", "11": "19/4", "12": "16/22", "13": "14/19", "14": "RH", "15": "R", "16": "22/6'", "17": "19/4\"", "18": "16/3", "19": "14/19'", "20": "RH", "21": "R", "22": "20/5", "23": "19/4", "24": "16/22", "25": "14/19", "26": "RH", "27": "R", "28": "22/6'", "29": "19/4\"", "30": "16/3", "31": "14/19'"}}, {"name": "SEGGIARO G", "codes": {"1": "14/19", "2": "RH", "3": "R", "4": "22/6'", "5": "19/4\"", "6": "16/3", "7": "14/19'", "8": "RH", "9": "R", "10": "20/5", "11": "19/4", "12": "16/22", "13": "14/19", "14": "RH", "15": "R", "16": "22/6'", "17": "19/4\"", "18": "16/3", "19": "14/19'", "20": "RH", "21": "R", "22": "20/5", "23": "19/4", "24": "16/22", "25": "14/19", "26": "RH", "27": "R", "28": "22/6'", "29": "19/4\"", "30": "16/3", "31": "14/19'"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.5 (RH)", "id": "2026-07-roul5", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul5", "people": [{"name": "AUBERT P", "codes": {"1": "RH", "2": "R", "3": "22/6'", "4": "19/4\"", "5": "16/3", "6": "14/19'", "7": "RH", "8": "R", "9": "20/5", "10": "19/4", "11": "16/22", "12": "14/19", "13": "RH", "14": "R", "15": "22/6'", "16": "19/4\"", "17": "16/3", "18": "14/19'", "19": "RH", "20": "R", "21": "20/5", "22": "19/4", "23": "16/22", "24": "14/19", "25": "RH", "26": "R", "27": "22/6'", "28": "19/4\"", "29": "16/3", "30": "14/19'", "31": "RH"}}, {"name": "CERETTI R", "codes": {"1": "RH", "2": "R", "3": "22/6'", "4": "19/4\"", "5": "16/3", "6": "14/19'", "7": "RH", "8": "R", "9": "20/5", "10": "19/4", "11": "16/22", "12": "14/19", "13": "RH", "14": "R", "15": "22/6'", "16": "19/4\"", "17": "16/3", "18": "14/19'", "19": "RH", "20": "R", "21": "20/5", "22": "19/4", "23": "16/22", "24": "14/19", "25": "RH", "26": "R", "27": "22/6'", "28": "19/4\"", "29": "16/3", "30": "14/19'", "31": "RH"}}, {"name": "ELIODORI V", "codes": {"1": "RH", "2": "R", "3": "22/6'", "4": "19/4\"", "5": "16/3", "6": "14/19'", "7": "RH", "8": "R", "9": "20/5", "10": "19/4", "11": "16/22", "12": "14/19", "13": "RH", "14": "R", "15": "22/6'", "16": "19/4\"", "17": "16/3", "18": "14/19'", "19": "RH", "20": "R", "21": "20/5", "22": "19/4", "23": "16/22", "24": "14/19", "25": "RH", "26": "R", "27": "22/6'", "28": "19/4\"", "29": "16/3", "30": "14/19'", "31": "RH"}}, {"name": "BEARD B", "codes": {"1": "RH", "2": "R", "3": "22/6'", "4": "19/4\"", "5": "16/3", "6": "14/19'", "7": "RH", "8": "R", "9": "20/5", "10": "19/4", "11": "16/22", "12": "14/19", "13": "RH", "14": "R", "15": "22/6'", "16": "19/4\"", "17": "16/3", "18": "14/19'", "19": "RH", "20": "R", "21": "20/5", "22": "19/4", "23": "16/22", "24": "14/19", "25": "RH", "26": "R", "27": "22/6'", "28": "19/4\"", "29": "16/3", "30": "14/19'", "31": "RH"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.6 (R)", "id": "2026-07-roul6", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul6", "people": [{"name": "RIGOLI JL", "codes": {"1": "R", "2": "22/6'", "3": "19/4\"", "4": "16/3", "5": "14/19'", "6": "RH", "7": "R", "8": "20/5", "9": "19/4", "10": "16/22", "11": "14/19", "12": "RH", "13": "R", "14": "22/6'", "15": "19/4\"", "16": "16/3", "17": "14/19'", "18": "RH", "19": "R", "20": "20/5", "21": "19/4", "22": "16/22", "23": "14/19", "24": "RH", "25": "R", "26": "22/6'", "27": "19/4\"", "28": "16/3", "29": "14/19'", "30": "RH", "31": "R"}}, {"name": "CONNEN R", "codes": {"1": "R", "2": "22/6'", "3": "19/4\"", "4": "16/3", "5": "14/19'", "6": "RH", "7": "R", "8": "20/5", "9": "19/4", "10": "16/22", "11": "14/19", "12": "RH", "13": "R", "14": "22/6'", "15": "19/4\"", "16": "16/3", "17": "14/19'", "18": "RH", "19": "R", "20": "20/5", "21": "19/4", "22": "16/22", "23": "14/19", "24": "RH", "25": "R", "26": "22/6'", "27": "19/4\"", "28": "16/3", "29": "14/19'", "30": "RH", "31": "R"}}, {"name": "BERNARDI JE", "codes": {"1": "R", "2": "22/6'", "3": "19/4\"", "4": "16/3", "5": "14/19'", "6": "RH", "7": "R", "8": "20/5", "9": "19/4", "10": "16/22", "11": "14/19", "12": "RH", "13": "R", "14": "22/6'", "15": "19/4\"", "16": "16/3", "17": "14/19'", "18": "RH", "19": "R", "20": "20/5", "21": "19/4", "22": "16/22", "23": "14/19", "24": "RH", "25": "R", "26": "22/6'", "27": "19/4\"", "28": "16/3", "29": "14/19'", "30": "RH", "31": "R"}}, {"name": "MACCARIO S", "codes": {"1": "R", "2": "22/6'", "3": "19/4\"", "4": "16/3", "5": "14/19'", "6": "RH", "7": "R", "8": "20/5", "9": "19/4", "10": "16/22", "11": "14/19", "12": "RH", "13": "R", "14": "22/6'", "15": "19/4\"", "16": "16/3", "17": "14/19'", "18": "RH", "19": "R", "20": "20/5", "21": "19/4", "22": "16/22", "23": "14/19", "24": "RH", "25": "R", "26": "22/6'", "27": "19/4\"", "28": "16/3", "29": "14/19'", "30": "RH", "31": "R"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.1m (22/6') miroir", "id": "2026-07-roul1m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul1m", "people": [{"name": "SOLFERINO F", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "ROSSI J", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "14/19'", "17": "RH", "18": "R", "19": "20/5", "20": "19/4", "21": "16/22", "22": "14/19", "23": "RH", "24": "R", "25": "22/6'", "26": "19/4\"", "27": "16/3", "28": "14/19'", "29": "RH", "30": "R", "31": "20/5"}}, {"name": "SOLIMEIS F", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "14/19'", "17": "RH", "18": "R", "19": "20/5", "20": "19/4", "21": "16/22", "22": "14/19", "23": "RH", "24": "R", "25": "22/6'", "26": "19/4\"", "27": "16/3", "28": "14/19'", "29": "RH", "30": "R", "31": "20/5"}}, {"name": "VECCHIERINI L", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "14/19'", "17": "RH", "18": "R", "19": "20/5", "20": "19/4", "21": "16/22", "22": "14/19", "23": "RH", "24": "R", "25": "22/6'", "26": "19/4\"", "27": "16/3", "28": "14/19'", "29": "RH", "30": "R", "31": "20/5"}}, {"name": "DELMAS G", "codes": {"1": "22/6'", "2": "19/4\"", "3": "16/3", "4": "14/19'", "5": "RH", "6": "R", "7": "20/5", "8": "19/4", "9": "16/22", "10": "14/19", "11": "RH", "12": "R", "13": "22/6'", "14": "19/4\"", "15": "16/3", "16": "14/19'", "17": "RH", "18": "R", "19": "20/5", "20": "19/4", "21": "16/22", "22": "14/19", "23": "RH", "24": "R", "25": "22/6'", "26": "19/4\"", "27": "16/3", "28": "14/19'", "29": "RH", "30": "R", "31": "20/5"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.2m (19/4\") miroir", "id": "2026-07-roul2m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul2m", "people": [{"name": "BASILE F", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}, {"name": "RAMOS R", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}, {"name": "PARIZIA K", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}, {"name": "MARCHI T", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}, {"name": "DAGIONI M", "codes": {"1": "19/4\"", "2": "16/3", "3": "14/19'", "4": "RH", "5": "R", "6": "20/5", "7": "19/4", "8": "16/22", "9": "14/19", "10": "RH", "11": "R", "12": "22/6'", "13": "19/4\"", "14": "16/3", "15": "14/19'", "16": "RH", "17": "R", "18": "20/5", "19": "19/4", "20": "16/22", "21": "14/19", "22": "RH", "23": "R", "24": "22/6'", "25": "19/4\"", "26": "16/3", "27": "14/19'", "28": "RH", "29": "R", "30": "20/5", "31": "19/4"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.3m (16/3) miroir", "id": "2026-07-roul3m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul3m", "people": [{"name": "LE DUC F", "codes": {"1": "16/3", "2": "14/19'", "3": "RH", "4": "R", "5": "20/5", "6": "19/4", "7": "16/22", "8": "14/19", "9": "RH", "10": "R", "11": "22/6'", "12": "19/4\"", "13": "16/3", "14": "14/19'", "15": "RH", "16": "R", "17": "20/5", "18": "19/4", "19": "16/22", "20": "14/19", "21": "RH", "22": "R", "23": "22/6'", "24": "19/4\"", "25": "16/3", "26": "14/19'", "27": "RH", "28": "R", "29": "20/5", "30": "19/4", "31": "16/22"}}, {"name": "CHOISIT J", "codes": {"1": "16/3", "2": "14/19'", "3": "RH", "4": "R", "5": "20/5", "6": "19/4", "7": "16/22", "8": "14/19", "9": "RH", "10": "R", "11": "22/6'", "12": "19/4\"", "13": "16/3", "14": "14/19'", "15": "RH", "16": "R", "17": "20/5", "18": "19/4", "19": "16/22", "20": "14/19", "21": "RH", "22": "R", "23": "22/6'", "24": "19/4\"", "25": "16/3", "26": "14/19'", "27": "RH", "28": "R", "29": "20/5", "30": "19/4", "31": "16/22"}}, {"name": "DEVERINI F", "codes": {"1": "16/3", "2": "14/19'", "3": "RH", "4": "R", "5": "20/5", "6": "19/4", "7": "16/22", "8": "14/19", "9": "RH", "10": "R", "11": "22/6'", "12": "19/4\"", "13": "16/3", "14": "14/19'", "15": "RH", "16": "R", "17": "20/5", "18": "19/4", "19": "16/22", "20": "14/19", "21": "RH", "22": "R", "23": "22/6'", "24": "19/4\"", "25": "16/3", "26": "14/19'", "27": "RH", "28": "R", "29": "20/5", "30": "19/4", "31": "16/22"}}, {"name": "NUNEZ S", "codes": {"1": "16/3", "2": "14/19'", "3": "RH", "4": "R", "5": "20/5", "6": "19/4", "7": "16/22", "8": "14/19", "9": "RH", "10": "R", "11": "22/6'", "12": "19/4\"", "13": "16/3", "14": "14/19'", "15": "RH", "16": "R", "17": "20/5", "18": "19/4", "19": "16/22", "20": "14/19", "21": "RH", "22": "R", "23": "22/6'", "24": "19/4\"", "25": "16/3", "26": "14/19'", "27": "RH", "28": "R", "29": "20/5", "30": "19/4", "31": "16/22"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.4m (14/19') miroir", "id": "2026-07-roul4m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul4m", "people": [{"name": "FILIPPI F", "codes": {"1": "14/19'", "2": "RH", "3": "R", "4": "20/5", "5": "19/4", "6": "16/22", "7": "14/19", "8": "RH", "9": "R", "10": "22/6'", "11": "19/4\"", "12": "16/3", "13": "14/19'", "14": "RH", "15": "R", "16": "20/5", "17": "19/4", "18": "16/22", "19": "14/19", "20": "RH", "21": "R", "22": "22/6'", "23": "19/4\"", "24": "16/3", "25": "14/19'", "26": "RH", "27": "R", "28": "20/5", "29": "19/4", "30": "16/22", "31": "14/19"}}, {"name": "IMBERT E", "codes": {"1": "14/19'", "2": "RH", "3": "R", "4": "20/5", "5": "19/4", "6": "16/22", "7": "14/19", "8": "RH", "9": "R", "10": "22/6'", "11": "19/4\"", "12": "16/3", "13": "14/19'", "14": "RH", "15": "R", "16": "20/5", "17": "19/4", "18": "16/22", "19": "14/19", "20": "RH", "21": "R", "22": "22/6'", "23": "19/4\"", "24": "16/3", "25": "14/19'", "26": "RH", "27": "R", "28": "20/5", "29": "19/4", "30": "16/22", "31": "14/19"}}, {"name": "COSTE W", "codes": {"1": "14/19'", "2": "RH", "3": "R", "4": "20/5", "5": "19/4", "6": "16/22", "7": "14/19", "8": "RH", "9": "R", "10": "22/6'", "11": "19/4\"", "12": "16/3", "13": "14/19'", "14": "RH", "15": "R", "16": "20/5", "17": "19/4", "18": "16/22", "19": "14/19", "20": "RH", "21": "R", "22": "22/6'", "23": "19/4\"", "24": "16/3", "25": "14/19'", "26": "RH", "27": "R", "28": "20/5", "29": "19/4", "30": "16/22", "31": "14/19"}}, {"name": "PICCIONE F", "codes": {"1": "14/19'", "2": "RH", "3": "R", "4": "20/5", "5": "19/4", "6": "16/22", "7": "14/19", "8": "RH", "9": "R", "10": "22/6'", "11": "19/4\"", "12": "16/3", "13": "14/19'", "14": "RH", "15": "R", "16": "20/5", "17": "19/4", "18": "16/22", "19": "14/19", "20": "RH", "21": "R", "22": "22/6'", "23": "19/4\"", "24": "16/3", "25": "14/19'", "26": "RH", "27": "R", "28": "20/5", "29": "19/4", "30": "16/22", "31": "14/19"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.5m (RH) miroir", "id": "2026-07-roul5m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul5m", "people": [{"name": "CASSINI A", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "19/4", "17": "16/22", "18": "14/19", "19": "RH", "20": "R", "21": "22/6'", "22": "19/4\"", "23": "16/3", "24": "14/19'", "25": "RH", "26": "R", "27": "20/5", "28": "19/4", "29": "16/22", "30": "14/19", "31": "RH"}}, {"name": "ARCURI F", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "19/4", "17": "16/22", "18": "14/19", "19": "RH", "20": "R", "21": "22/6'", "22": "19/4\"", "23": "16/3", "24": "14/19'", "25": "RH", "26": "R", "27": "20/5", "28": "19/4", "29": "16/22", "30": "14/19", "31": "RH"}}, {"name": "BESSI N", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "19/4", "17": "16/22", "18": "14/19", "19": "RH", "20": "R", "21": "22/6'", "22": "19/4\"", "23": "16/3", "24": "14/19'", "25": "RH", "26": "R", "27": "20/5", "28": "19/4", "29": "16/22", "30": "14/19", "31": "RH"}}, {"name": "ELIODORI J", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "19/4", "17": "16/22", "18": "14/19", "19": "RH", "20": "R", "21": "22/6'", "22": "19/4\"", "23": "16/3", "24": "14/19'", "25": "RH", "26": "R", "27": "20/5", "28": "19/4", "29": "16/22", "30": "14/19", "31": "RH"}}, {"name": "GARINO J", "codes": {"1": "RH", "2": "R", "3": "20/5", "4": "19/4", "5": "16/22", "6": "14/19", "7": "RH", "8": "R", "9": "22/6'", "10": "19/4\"", "11": "16/3", "12": "14/19'", "13": "RH", "14": "R", "15": "20/5", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+(function(){var t={"label": "Juillet 2026 — Roul. Éq.6m (R) miroir", "id": "2026-07-roul6m", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_roul6m", "people": [{"name": "CRETOT L", "codes": {"1": "R", "2": "20/5", "3": "19/4", "4": "16/22", "5": "14/19", "6": "RH", "7": "R", "8": "22/6'", "9": "19/4\"", "10": "16/3", "11": "14/19'", "12": "RH", "13": "R", "14": "20/5", "15": "19/4", "16": "16/22", "17": "14/19", "18": "RH", "19": "R", "20": "22/6'", "21": "19/4\"", "22": "16/3", "23": "14/19'", "24": "RH", "25": "R", "26": "20/5", "27": "19/4", "28": "16/22", "29": "14/19", "30": "RH", "31": "R"}}, {"name": "PASTOR P", "codes": {"1": "R", "2": "20/5", "3": "19/4", "4": "16/22", "5": "14/19", "6": "RH", "7": "R", "8": "22/6'", "9": "19/4\"", "10": "16/3", "11": "14/19'", "12": "RH", "13": "R", "14": "20/5", "15": "19/4", "16": "16/22", "17": "14/19", "18": "RH", "19": "R", "20": "22/6'", "21": "19/4\"", "22": "16/3", "23": "14/19'", "24": "RH", "25": "R", "26": "20/5", "27": "19/4", "28": "16/22", "29": "14/19", "30": "RH", "31": "R"}}, {"name": "GARCIA A", "codes": {"1": "R", "2": "20/5", "3": "19/4", "4": "16/22", "5": "14/19", "6": "RH", "7": "R", "8": "22/6'", "9": "19/4\"", "10": "16/3", "11": "14/19'", "12": "RH", "13": "R", "14": "20/5", "15": "19/4", "16": "16/22", "17": "14/19", "18": "RH", "19": "R", "20": "22/6'", "21": "19/4\"", "22": "16/3", "23": "14/19'", "24": "RH", "25": "R", "26": "20/5", "27": "19/4", "28": "16/22", "29": "14/19", "30": "RH", "31": "R"}}, {"name": "SIMONETTI N", "codes": {"1": "R", "2": "20/5", "3": "19/4", "4": "16/22", "5": "14/19", "6": "RH", "7": "R", "8": "22/6'", "9": "19/4\"", "10": "16/3", "11": "14/19'", "12": "RH", "13": "R", "14": "20/5", "15": "19/4", "16": "16/22", "17": "14/19", "18": "RH", "19": "R", "20": "22/6'", "21": "19/4\"", "22": "16/3", "23": "14/19'", "24": "RH", "25": "R", "26": "20/5", "27": "19/4", "28": "16/22", "29": "14/19", "30": "RH", "31": "R"}}]};BOARDS[t.id]={label:t.label,month:t.month,year:t.year,monthIdx:t.monthIdx,days:t.days,key:t.key,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||'';return{name:p.name,codes:c};})};})();
+var ABS_BOARD={"label": "Juillet 2026 — Absences (M/CP)", "id": "2026-07-abs", "kind": "abs", "month": "Juillet 2026", "year": 2026, "monthIdx": 6, "days": 31, "key": "cmc_dep_2026_07_abs", "people": [{"name": "SANGIORGIO G", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "LORENZI Y", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "SANNA O", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "GALLIS F", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "BESSI N", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "ARDISSON S", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "ORRADO F", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "MIRANDA T", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "CATALA P", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "RICHARDIN T", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": "M"}}, {"name": "ROBIN M", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": ""}}, {"name": "CAPRA C", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": ""}}, {"name": "LEMONNIER PH", "codes": {"1": "M", "2": "M", "3": "M", "4": "M", "5": "M", "6": "M", "7": "M", "8": "M", "9": "M", "10": "M", "11": "M", "12": "M", "13": "M", "14": "M", "15": "M", "16": "M", "17": "M", "18": "M", "19": "M", "20": "M", "21": "M", "22": "M", "23": "M", "24": "M", "25": "M", "26": "M", "27": "M", "28": "M", "29": "M", "30": "M", "31": ""}}, {"name": "MUCCILLI D", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "TERRAGNO S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "COSTAGLIOLI J", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "MARCHISIO M", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "NIGIONI C", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "PODGORNY B", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SIRIO J", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "GARRO S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "GIAUNA S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "PORASSO C", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SEGGIARO J", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "ROSSI D", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "LANTERI MINET P", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "GUERRE S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SESTINI F", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SYNAVE S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "FAUTRIER M", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "MAGARA M", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "FABRE SOCCAL Y", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SCHWIETZER M", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "BERNARD J", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "CAMBI O", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "SIRIO S", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "RONCALLI A", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "LAVAGNA Y", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "LAVAGNA E", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "MORET A", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "BASTIANELLI A", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "CAMILLERI P", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}, {"name": "CATTALANO C", "codes": {"1": "CP", "2": "CP", "3": "CP", "4": "CP", "5": "CP", "6": "CP", "7": "CP", "8": "CP", "9": "CP", "10": "CP", "11": "CP", "12": "CP", "13": "CP", "14": "CP", "15": "CP", "16": "CP", "17": "CP", "18": "CP", "19": "CP", "20": "CP", "21": "CP", "22": "CP", "23": "CP", "24": "CP", "25": "CP", "26": "CP", "27": "CP", "28": "CP", "29": "CP", "30": "CP", "31": "CP"}}]};
+BOARDS[ABS_BOARD.id]={label:ABS_BOARD.label,kind:"abs",month:ABS_BOARD.month,year:ABS_BOARD.year,monthIdx:ABS_BOARD.monthIdx,days:ABS_BOARD.days,key:ABS_BOARD.key,people:ABS_BOARD.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||"";return {name:p.name,codes:c};})};
+JUL_TEAMS.forEach(function(t){ BOARDS[t.id]={label:t.label,month:"Juillet 2026",year:2026,monthIdx:6,days:31,key:"cmc_dep_"+t.id,people:t.people.map(function(p){var c={};for(var d=1;d<=31;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";return {name:p.name,codes:c};})}; });
+// ── CMC depuis l'app principale CMCteams (MÊME origine localStorage → données du parser géométrique validé, lessons #66-77) ──
+function _appDecomp(v){ if(typeof v!=="string")return v; if(v.indexOf("__LZ__")===0){ try{ return (window.LZString&&LZString.decompressFromUTF16)?(LZString.decompressFromUTF16(v.slice(6))||""):""; }catch(e){ return ""; } } return v; }
+function _appRead(k){ try{ var v=localStorage.getItem(k); if(!v)return null; v=_appDecomp(v); if(!v)return null; return JSON.parse(v); }catch(e){ return null; } }
+function _appFam(e,key){ try{ if(e.familyHistory&&e.familyHistory[key]) return e.familyHistory[key]; }catch(_e){} return (e.family==="baccara"?"cmc":e.family)||"bj"; } // = familyForMonth() de l'app
+function _appTeam(e,key){ try{ if(e.teamHistory&&e.teamHistory[key]) return e.teamHistory[key]; }catch(_e){} return "?"; } // = teamForMonth() de l'app
+function buildAppCmcBoards(){
+  var key="2026-6"; // juillet 2026 (mois 0-indexé comme l'app)
+  var emps=_appRead("cmc_e"), ov=_appRead("cmc_ov");
+  var diag={ov:!!ov,cmc_e:!!emps,hasKey:!!(ov&&ov[key]),counts:{},added:0};
+  window._appBoardDiag=diag;
+  if(!emps||!ov||!ov[key]) return 0;
+  var row=ov[key], teams={}, added=0;
+  // v1.11.3 (Kevin « il manque les employés cartes ») : construit TOUTES les familles
+  // depuis l'import réel de l'app (cartes CMC + roulettes + aménagé), pas seulement cmc.
+  var famLabel={cmc:"CMC (cartes)",amenage:"CMC aménagé",roulettes:"Roulettes",bj:"BJ"};
+  emps.forEach(function(e){ if(!e||!e.id||!e.name)return; var fam=_appFam(e,key);
+    if(fam==="baccara")fam="cmc";
+    if(fam!=="cmc"&&fam!=="amenage"&&fam!=="roulettes")return; var tid=_appTeam(e,key); if(!tid||tid==="?")return;
+    var cells=row[e.id]; if(!cells||!Object.keys(cells).length)return;
+    diag.counts[fam]=(diag.counts[fam]||0)+1;
+    var g=fam+"::"+tid; (teams[g]=teams[g]||[]).push({name:e.name,cells:cells}); });
+  Object.keys(teams).sort().forEach(function(g){ var ppl=teams[g]; if(!ppl.length)return;
+    var parts=g.split("::"), fam=parts[0], tid=parts[1], id="appcmc-"+fam+"-"+tid;
+    BOARDS[id]={ label:"Juillet 2026 — "+(famLabel[fam]||fam)+" "+tid, month:"Juillet 2026", year:2026, monthIdx:6, days:31, key:"cmc_dep_"+id,
+      people:ppl.map(function(p){ var c={}; for(var d=1;d<=31;d++) c[d]=(p.cells[String(d)]||p.cells[d]||""); return {name:p.name,codes:c}; }) };
+    added++; });
+  diag.added=added;
+  return added;
+}
+var _appCmcCount=buildAppCmcBoards();
+// v1.12 (Kevin « mets à jour avec les nouveaux plannings ») — fusionne les boards
+// GÉNÉRÉS depuis les VRAIS PDF (Août V1 + Juillet V2, parser géométrique validé,
+// lessons #66-77 / #104-114). Rend la page AUTONOME : elle marche SANS ouvrir
+// l'app (fini le « Données introuvables ») et couvre tous les mois fournis.
+// Remplace les boards hardcodés des mois régénérés (évite doublons ancien/nouveau).
+var DEP_MIRROR={}, DEP_GEN_MONTHS=[], CURMO=null;
+// ===================== SYNCHRO APP ⇄ PAGE (v1.14) =====================
+// Kevin 2026-06-29 « les deux côtés s'actualisent auto, aussi entre appareils ».
+// La page lit le planning LIVE de l'app (cmc_e/cmc_ov/cmc_ov_meta/cmc_team_mirror)
+// en local (MÊME origine localStorage) ET via Firebase (cross-device, SSE), et
+// reconstruit les boards À L'IDENTIQUE de tools/departs/_gen-boards.mjs. Les boards
+// COMMITTÉS (DEPARTS_GEN) servent de repli hors-ligne / mois sans données live.
+// App→page = lecture live ; page→app = écriture de cellule dans cmc_ov (Firebase+LS).
+var MOIS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+var _ABS_TEAMS={conges:'Congés',maladie:'Maladie',formation:'Formation',deplacement:'Déplacement'};
+var _FAM_LABEL={bj:'BJ',roulettes:'Roul.',cmc:'CMC',amenage:'CMC aménagé',baccara:'CMC'};
+var _ABS_CODES={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1};
+function _diM(y,mi){return new Date(y,mi+1,0).getDate();}
+function _pad2(n){n=String(n);return n.length<2?('0'+n):n;}
+function _fw(cells,days){for(var d=1;d<=days;d++){var c=cells[d]||cells[String(d)];if(!c)continue;var u=String(c).toUpperCase();if(_ABS_CODES[u])continue;return String(c).replace(/[c'"*:]+$/gi,'');}return '';}
+// Reconstruit les boards (forme DEPARTS_GEN) depuis l'état app — IDENTIQUE _gen-boards.mjs.
+function buildBoardsFromState(emps,ov,metaAll,mirrorByKey){
+  var out={},mir={},months={};
+  if(!emps||!ov)return {boards:out,mirror:mir,months:[]};
+  var byId={};emps.forEach(function(e){if(e&&e.id)byId[e.id]=e;});
+  Object.keys(ov).forEach(function(key){
+    var pm=key.split('-');if(pm.length!==2)return;var year=+pm[0],mi=+pm[1];if(isNaN(year)||isNaN(mi))return;
+    var days=_diM(year,mi),row=ov[key]||{},metaK=(metaAll&&metaAll[key])||{},teams={},mm=_pad2(mi+1);
+    Object.keys(row).forEach(function(id){
+      var e=byId[id];if(!e||!e.name)return;var cells=row[id];if(!cells||!Object.keys(cells).length)return;
+      var tid=(e.teamHistory&&e.teamHistory[key]);if(!tid)return;
+      var fam=(e.familyHistory&&e.familyHistory[key])||e.family||'bj';if(fam==='baccara')fam='cmc';
+      var codes={},conv={},modh={};
+      for(var d=1;d<=days;d++){var c=cells[d]||cells[String(d)]||'';if(c)codes[d]=c;
+        var md=(metaK[id]&&(metaK[id][d]||metaK[id][String(d)]))||null;if(md){if(md.bg==='CONV')conv[d]=1;if(md.fg==='red')modh[d]=1;}}
+      (teams[tid]=teams[tid]||{fam:fam,people:[]}).people.push({name:e.name,id:e.id,codes:codes,conv:conv,modh:modh,fw:_fw(cells,days)});
+    });
+    if(!Object.keys(teams).length)return;
+    months[key]={year:year,monthIdx:mi,label:MOIS_FR[mi]+' '+year};
+    Object.keys(teams).forEach(function(tid){
+      var t=teams[tid],isAbs=!!_ABS_TEAMS[tid],id=year+'-'+mm+'-'+tid,label;
+      if(isAbs)label=MOIS_FR[mi]+' '+year+' — '+_ABS_TEAMS[tid];
+      else{var fl=_FAM_LABEL[t.fam]||t.fam,num=/^\d/.test(tid)?('Éq.'+tid):('Éq.'+tid.replace(/^[a-z]/,''));
+        var cnt={};t.people.forEach(function(p){if(p.fw)cnt[p.fw]=(cnt[p.fw]||0)+1;});
+        var hw=t.people.map(function(p){return p.fw;}).filter(Boolean).sort(function(a,b){return (cnt[b]||0)-(cnt[a]||0);})[0]||'';
+        label=MOIS_FR[mi]+' '+year+' — '+fl+' '+num+(hw?(' ('+hw+')'):'');}
+      var b={label:label,month:MOIS_FR[mi]+' '+year,year:year,monthIdx:mi,days:days,fam:t.fam,
+        people:t.people.map(function(p){var pe={name:p.name,id:p.id,codes:p.codes};if(Object.keys(p.conv).length)pe.conv=p.conv;if(Object.keys(p.modh).length)pe.modh=p.modh;return pe;})};
+      if(isAbs)b.kind='abs';out[id]=b;
+    });
+    var mp=(mirrorByKey&&mirrorByKey[key])||{};
+    Object.keys(mp).forEach(function(a){mir[year+'-'+mm+'-'+a]=year+'-'+mm+'-'+mp[a];});
+  });
+  return {boards:out,mirror:mir,months:Object.keys(months).map(function(k){return months[k];})};
+}
+// Pose les boards globaux : committés (repli) + overlay des mois LIVE (live gagne).
+window._depLiveMonths={};
+function applyBoards(live){
+  var BB={},MIR={},MO={};
+  var G=window.DEPARTS_GEN;
+  if(G&&G.boards){Object.keys(G.boards).forEach(function(id){BB[id]=G.boards[id];});if(G.mirror)Object.keys(G.mirror).forEach(function(a){MIR[a]=G.mirror[a];});(G.months||[]).forEach(function(m){MO[m.year+'-'+m.monthIdx]=m;});}
+  window._depLiveMonths={};
+  if(live&&live.boards&&Object.keys(live.boards).length){
+    (live.months||[]).forEach(function(m){window._depLiveMonths[m.year+'-'+m.monthIdx]=1;MO[m.year+'-'+m.monthIdx]=m;});
+    Object.keys(BB).forEach(function(id){var b=BB[id];if(window._depLiveMonths[b.year+'-'+b.monthIdx])delete BB[id];});
+    // v1.21 — les MIROIRS committés d'un mois LIVE sont périmés → les retirer AVANT
+    // d'appliquer les miroirs live (sinon un miroir committé stale — ex après régénération
+    // des boards — survit et son reverse écrase le miroir live). Live seul fait autorité
+    // pour un mois live (cohérent lesson #117 : live gagne).
+    Object.keys(MIR).forEach(function(a){var pa=String(a).split('-');if(pa.length>=3){var mk=(+pa[0])+'-'+((+pa[1])-1);if(window._depLiveMonths[mk])delete MIR[a];}});
+    Object.keys(live.boards).forEach(function(id){BB[id]=live.boards[id];});
+    Object.keys(live.mirror||{}).forEach(function(a){MIR[a]=live.mirror[a];});
+  }
+  Object.keys(BOARDS).forEach(function(id){delete BOARDS[id];});
+  Object.keys(BB).forEach(function(id){var b=BB[id],dy=b.days||31;
+    BOARDS[id]={label:b.label,month:b.month,year:b.year,monthIdx:b.monthIdx,days:dy,fam:b.fam||"",kind:b.kind||undefined,key:"cmc_dep_"+id,
+      people:(b.people||[]).map(function(p){var c={};for(var d=1;d<=dy;d++)c[d]=p.codes[String(d)]||p.codes[d]||"";var r={name:p.name,id:p.id||null,codes:c};if(p.conv)r.conv=p.conv;if(p.modh)r.modh=p.modh;return r;})};
+  });
+  DEP_MIRROR={};Object.keys(MIR).forEach(function(a){DEP_MIRROR[a]=MIR[a];DEP_MIRROR[MIR[a]]=a;});
+  DEP_GEN_MONTHS=Object.keys(MO).map(function(k){return MO[k];}).sort(function(a,b){return (b.year*12+b.monthIdx)-(a.year*12+a.monthIdx);});
+}
+// Lit l'état app depuis le localStorage PARTAGÉ (même origine = données du device).
+function _liveFromLS(){
+  var emps=_appRead("cmc_e"),ov=_appRead("cmc_ov"),meta=_appRead("cmc_ov_meta");
+  if(!emps||!ov)return null;
+  var mir={};try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf("cmc_team_mirror_")===0){var key=k.slice("cmc_team_mirror_".length);var v=_appRead(k);if(v)mir[key]=v;}}}catch(_){}
+  var r=buildBoardsFromState(emps,ov,meta,mir);
+  return (r&&r.months&&r.months.length)?r:null;
+}
+// Build initial : committés + overlay live local (instantané, même device).
+applyBoards(_liveFromLS());
+// v1.12.1 — équipe de la personne connectée POUR LE MOIS affiché (CURMO) :
+// « tjs mon équipe et miroir », mois par mois. Renvoie l'id du board ou null.
+function teamForMeInMonth(){ if(!ME||!CURMO)return null; var ks=Object.keys(BOARDS);
+  for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue; if((b.year+"-"+b.monthIdx)!==CURMO)continue;
+    if((b.people||[]).some(function(p){return p.name===ME;}))return ks[i]; } return null; }
+function fillMoSel(){ var s=document.getElementById("moSel"); if(!s)return; s.innerHTML="";
+  var ms=DEP_GEN_MONTHS.slice();
+  if(!ms.length){ var seen={}; Object.keys(BOARDS).forEach(function(k){var b=BOARDS[k];var mk=b.year+"-"+b.monthIdx;if(!seen[mk]){seen[mk]=1;ms.push({year:b.year,monthIdx:b.monthIdx,label:b.month});}}); }
+  ms.sort(function(a,b){return (b.year*12+b.monthIdx)-(a.year*12+a.monthIdx);});
+  ms.forEach(function(m){ var o=document.createElement("option"); o.value=m.year+"-"+m.monthIdx; o.textContent=(m.label||(m.year+"-"+(m.monthIdx+1))); if(o.value===CURMO)o.selected=true; s.appendChild(o); });
+}
+function setMonth(mk){ CURMO=mk;
+  var target=teamForMeInMonth(); // priorité : MON équipe ce mois
+  if(!target){ var w=Object.keys(BOARDS).filter(function(k){return (BOARDS[k].year+"-"+BOARDS[k].monthIdx)===mk&&BOARDS[k].kind!=="abs";});
+    target=w[0]||Object.keys(BOARDS).filter(function(k){return (BOARDS[k].year+"-"+BOARDS[k].monthIdx)===mk;})[0]; }
+  if(target){ BID=target; try{localStorage.setItem("cmc_dep_board",BID);}catch(e){} }
+  fillSel(); load(); render(); }
+var BID=null, B=null;
+function defaultBoard(){ var k=Object.keys(BOARDS);
+  // 1) board non-abs du mois GÉNÉRÉ le plus récent (Août > Juillet) — données à jour
+  if(DEP_GEN_MONTHS&&DEP_GEN_MONTHS.length){
+    var ms=DEP_GEN_MONTHS.slice().sort(function(a,b){return (b.year*12+b.monthIdx)-(a.year*12+a.monthIdx);});
+    for(var i=0;i<ms.length;i++){ var hit=k.filter(function(id){var b=BOARDS[id];return b.year===ms[i].year&&b.monthIdx===ms[i].monthIdx&&b.kind!=="abs";}); if(hit[0])return hit[0]; }
+  }
+  // 2) sinon mois courant
+  var now=new Date(); var cur=k.filter(function(id){var b=BOARDS[id];return b.year===now.getFullYear()&&b.monthIdx===now.getMonth()&&b.kind!=="abs";});
+  return cur[0]||k[0]; }
+
+var ST=null;
+function load(){
+  B=BOARDS[BID];
+  var saved=null; try{saved=JSON.parse(localStorage.getItem(B.key)||"null");}catch(e){}
+  ST={ order:(saved&&saved.order)||B.people.map(function(p){return p.name;}), codes:{}, meta:{}, ids:{}, nr:(saved&&saved.nr)||{}, cq:(saved&&saved.cq)||{}, off:(saved&&saved.off)||0, ci:(saved&&saved.ci)||{} };
+  B.people.forEach(function(p){ ST.codes[p.name]=Object.assign({},p.codes); if(p.id)ST.ids[p.name]=p.id; // v1.14 page→app : matricule pour écrire dans cmc_ov
+    // v1.14.0 — couleurs PDF à l'identique : conv = fond rouge, modh = écriture rouge
+    if(p.conv||p.modh){ ST.meta[p.name]={}; for(var _d=1;_d<=31;_d++){ if(p.conv&&p.conv[_d])ST.meta[p.name][_d]="conv"; else if(p.modh&&p.modh[_d])ST.meta[p.name][_d]="modh"; } }
+  });
+  if(saved&&saved.codes){ Object.keys(saved.codes).forEach(function(n){ if(ST.codes[n]) Object.assign(ST.codes[n],saved.codes[n]); }); }
+  ST.order=ST.order.filter(function(n){return ST.codes[n];});
+  B.people.forEach(function(p){ if(ST.order.indexOf(p.name)<0) ST.order.push(p.name); });
+  // ancrage par défaut (ex: DESARZENS = Départ 1 le 20) si l'utilisateur n'a pas déjà calé la rotation
+  if(B.anchor && !(saved&&saved.off!==undefined)){ try{var _o=anchorOff(B.anchor.name,B.anchor.day); if(_o!==null) ST.off=_o;}catch(e){} }
+}
+function save(){ try{localStorage.setItem(B.key,JSON.stringify(ST));}catch(e){}
+  // v1.19 (Kevin 2026-07-01 « les autres n'ont pas les mêmes départs sur leurs app » —
+  // CMCteams light) : l'ancrage (off), la base de départ (ci) et les marques NR/5e (nr/cq)
+  // étaient des préférences LOCALES → chaque appareil calculait une rotation différente.
+  // On les synchronise cross-appareil (clé dédiée cmc_dep_cfg, ne touche JAMAIS cmc_ov).
+  try{ if(window._depSyncCfg&&B&&B.key)window._depSyncCfg(B.key,ST); }catch(_){}
+}
+
+// départ : taille = nb de personnes (conservée même en congé). W = jours où ≥1 membre travaille.
+function compute(){
+  var days=B.days;
+  // IDENTIQUE à calcDepPos (CMCteams) : chefs ACTIFS uniquement (>=1 jour travaillé, full-CP exclus),
+  // refEmp = 1er chef actif, wi = index du jour dans SES jours de travail, base = index dans les chefs actifs.
+  var active=ST.order.filter(function(nm){ for(var d=1;d<=days;d++){ if(isWork(ST.codes[nm][d])) return true; } return false; });
+  var sl=active.length, SEQ=seqForSize(sl);
+  // v1.11.1 (Kevin 2026-06-22 « il manque les départs à partir du 16 ») :
+  // jours de travail de l'ÉQUIPE = UNION des jours travaillés par TOUT chef actif.
+  // AVANT : workDays indexés sur le SEUL 1er chef actif → s'il part en CP à la
+  // mi-mois (ex MARIOTTINI J en CP du 16 au 31), wi=-1 pour TOUS dès le 16 →
+  // plus AUCUN ordre de départ affiché alors que les autres chefs travaillent.
+  // La rotation avance sur chaque jour où L'ÉQUIPE a un service.
+  var workDays=[];
+  for(var d=1;d<=days;d++){
+    for(var _ai=0;_ai<active.length;_ai++){ if(isWork(ST.codes[active[_ai]][d])){ workDays.push(d); break; } }
+  }
+  var deps={}; ST.order.forEach(function(nm){ deps[nm]={}; });
+  var off=ST.off||0;
+  // index de base (rotation) par chef : CI perso (CMCteams) sinon position dans active.
+  var baseOf={}; active.forEach(function(nm,ai){ baseOf[nm]=(ST.ci&&ST.ci[nm]!==undefined)?ST.ci[nm]:ai; });
+  // v1.11.1 (Kevin 2026-06-22 « passer à 4 pour l'algo ») : l'ordre de départ est
+  // calculé PAR JOUR sur les chefs réellement PRÉSENTS, et la TAILLE de séquence
+  // suit ce nombre (6 en 1ʳᵉ quinzaine, 4 en 2ᵉ quand 2 chefs sont en CP) → fini
+  // les numéros fantômes/trous. La rotation (wi) avance sur chaque jour de service
+  // de l'équipe (workDays = union). Jours 1-12 inchangés ; le jour où le 1er chef
+  // est absent (RRT/CP) reçoit désormais ses départs au lieu de rester vide.
+  // v1.26 (Kevin 2026-07-04 « absence 1,2,3 jours → ne pas revoir l'algo, laisser le numéro
+  // mort ; revoir seulement quand vacances/congé »). ROSTER STABLE : rotation sur le roster
+  // (chefs actifs MOINS congé LONG ≥4j consécutifs), pas sur les seuls présents. Absence courte
+  // (1-3j) → le chef RESTE dans le roster (N et rangs inchangés) → numéro « mort » ce jour-là,
+  // les autres GARDENT leur numéro. Congé ≥4j → retiré du roster → recompacte. Jour plein →
+  // effRoster == présents → IDENTIQUE à avant. Identique à calcDepPos (app).
+  function _absRun(nm,D){ if(isWork(ST.codes[nm][D]))return 0; var L=1,dd;
+    for(dd=D-1;dd>=1&&!isWork(ST.codes[nm][dd]);dd--)L++;
+    for(dd=D+1;dd<=days&&!isWork(ST.codes[nm][dd]);dd++)L++; return L; }
+  // v1.33 (Kevin 2026-07-10 « certaines personnes ont le même départ plusieurs fois dans le mois,
+  // la suite n'est pas respectée ») — RETOUR à la rotation CONTINUE rot=wi (+1 par jour travaillé
+  // de l'équipe, SANS remise à zéro au repos). Chaque chef parcourt la suite DANS L'ORDRE
+  // (1-4-2-3-5 puis 1-4-2-3-5…) → jamais 2× le même numéro avant d'avoir fini la suite.
+  // Le v1.28 remettait rot à zéro à chaque cycle de repos (rot=index_cycle+position) → comme les
+  // cycles sont plus courts que la taille d'équipe, un même numéro revenait au bout de 1-2 jours
+  // (ex 4-2 puis 4-2). C'était une MAUVAISE interprétation de « ma ligne glisse » : la fenêtre
+  // glisse bien de +1, mais PAR JOUR (continu), pas par cycle. Identique à calcDepPos (app).
+  for(var d=1;d<=days;d++){
+    var wi=workDays.indexOf(d); if(wi<0) continue;
+    var eff=active.filter(function(nm){ var r=_absRun(nm,d); return r===0||r<4; })
+                  .sort(function(a,b){ return baseOf[a]-baseOf[b]; });
+    var N=eff.length; if(!N) continue;
+    var SEQd=seqForSize(N), rot=wi+off;
+    eff.forEach(function(nm,j){ if(isWork(ST.codes[nm][d])) deps[nm][d]=SEQd[(((rot+j)%N)+N)%N]; });
+  }
+  return {deps:deps,workDays:workDays,SEQ:SEQ,n:sl,active:active};
+}
+// vérif jours de repos identiques (signature d'équipe) — repère les captures imprécises / un miroir
+function restSig(nm){ var s=[]; for(var d=1;d<=B.days;d++){ if(isRest(ST.codes[nm][d])) s.push(d); } return s.join(","); }
+
+function render(){
+  // v1.17 — droits d'édition NR/5e : admin OU chef d'équipe (sur son board) → classe body
+  try{ document.body.classList.toggle("canmark", canEditMark());
+       document.body.classList.toggle("chefme", isChefMe() && !isAdmin()); }catch(_){}
+  // v1.29 — bouton « 🔁 Équipe miroir » d'en-tête : visible dès que l'équipe affichée a un miroir
+  // (indépendant de ME). Kevin « le bouton équipe miroir a disparu ».
+  try{ var _mb=document.getElementById("mirBtn"); if(_mb){ var _mm=mirrorBoardId(BID);
+    if(_mm&&BOARDS[_mm]){ _mb.style.display=""; _mb.title="Basculer vers "+(BOARDS[_mm].label||"l'équipe miroir"); }
+    else { _mb.style.display="none"; } } }catch(_){}
+  var days=B.days, R=compute();
+  var dow=["dim","lun","mar","mer","jeu","ven","sam"];
+  var now=new Date(); var todayD=(now.getFullYear()===B.year&&now.getMonth()===B.monthIdx)?now.getDate():0;
+  var html="<thead><tr><th class='cNom'>"+(B.kind==="abs"?"Personne":"Chef")+"</th>";
+  for(var d=1;d<=days;d++){ var wd=new Date(B.year,B.monthIdx,d).getDay();
+    html+="<th class='"+((wd===0||wd===6)?"wknd":"")+(d===todayD?" today":"")+"'>"+dow[wd]+"<br>"+d+"</th>"; }
+  html+="<th class='cNR'>NR</th><th class='cCq'>5e</th></tr></thead><tbody>";
+  ST.order.forEach(function(nm,idx){
+    var nr=ST.nr[nm]||"", cq=ST.cq[nm]||"";
+    html+="<tr"+(nm===ME?" class='me'":"")+"><td class='cNom"+(isChef(nm)?" ischef":"")+"' data-act='name' data-nm=\""+esc(nm)+"\">"+(isChef(nm)?"⭐ ":"")+esc(nm)+"</td>";
+    for(var d=1;d<=days;d++){ var c=ST.codes[nm][d]||"", dep=R.deps[nm][d], stl=codeStyle(c);
+      // v1.14.0 — reproduction identique des couleurs PDF : fond rouge (convention,
+      // jour de R travaillé) ou écriture rouge / fond clair (horaire modifié).
+      var _mk=(ST.meta&&ST.meta[nm]&&ST.meta[nm][d])||"";
+      if(_mk==="conv")stl=CONV_COLOR;
+      else if(_mk==="modh")stl={bg:"#fbfaf3",fg:"#cc0000"}; // fond blanc + écriture rouge (≠ convention)
+      html+="<td class='cell"+(dep?"":" off")+(d===todayD?" today":"")+"'"
+        +(stl?(" style='background:"+stl.bg+";color:"+stl.fg+"'"):"")
+        +" data-act='cell' data-nm=\""+esc(nm)+"\" data-d='"+d+"'>"+esc(c||"·")+(dep?"<span class='dep'>"+dep+"</span>":"")+"</td>"; }
+    html+="<td class='cNR mark' data-act='crossnr' data-nm=\""+esc(nm)+"\">"+esc(nr)
+      +"<span class='ed' data-act='editnr' data-nm=\""+esc(nm)+"\">✎</span></td>";
+    html+="<td class='cCq mark' data-act='crosscq' data-nm=\""+esc(nm)+"\">"+esc(cq)
+      +"<span class='ed' data-act='editcq' data-nm=\""+esc(nm)+"\">✎</span></td></tr>";
+  });
+  var cx=function(o){var t=0;ST.order.forEach(function(nm){t+=((o[nm]||"").match(/✗/g)||[]).length;});return t;};
+  html+="<tr class='tot'><td class='cNom'>TOTAL ✗</td>";
+  for(var d2=1;d2<=days;d2++) html+="<td"+(d2===todayD?" class='today'":"")+"></td>";
+  html+="<td class='cNR'>"+cx(ST.nr)+"</td><td class='cCq'>"+cx(ST.cq)+"</td></tr></tbody>";
+  document.getElementById("grid").innerHTML=html;
+  if(todayD){ var sc=document.querySelector(".scroll"), th=document.querySelector("#grid thead th.today");
+    if(sc&&th) sc.scrollLeft=Math.max(0, th.offsetLeft - sc.clientWidth/2 + th.offsetWidth/2); }
+  var _pp=document.getElementById("posPanel"); if(_pp) _pp.innerHTML=(isAdmin()&&window._posOpen)?positionsPanelHTML(R):"";
+  document.getElementById("hSub").textContent=B.kind==="abs"
+    ? B.month+" · "+ST.order.length+" absents (M/CP/FORMATION)"
+    : B.month+" · "+ST.order.length+" chefs · séquence "+R.SEQ.join("·");
+  // contrôle jours de repos : comparer chaque chef à l'ancre SUR LA PÉRIODE COMMUNE
+  // (un chef en CP une partie du mois a moins de RH/R — normal, on ne compare que les jours planifiés des deux)
+  var sched=function(nm,d){ var c=ST.codes[nm][d]||""; return c!=="" && ["CP","M","AF","ABS","ABI","FL","DEPL","DEP","SS"].indexOf(c)<0; };
+  var cntSched=function(nm){ var t=0; for(var d=1;d<=B.days;d++) if(sched(nm,d)) t++; return t; };
+  var anchor=ST.order.slice().sort(function(a,b){return cntSched(b)-cntSched(a);})[0];
+  var bad=[];
+  ST.order.forEach(function(nm){ if(nm===anchor)return; var miss=0;
+    for(var d=1;d<=B.days;d++){ if(sched(nm,d)&&sched(anchor,d) && isRest(ST.codes[nm][d])!==isRest(ST.codes[anchor][d])) miss++; }
+    if(miss>=2) bad.push(nm+" ("+miss+"j)"); });
+  // v1.15 (Kevin 2026-07-01 « efface les infos avec le trait vert ✅, seulement pour admin ») :
+  // le ✅ « équipe validée » n'est utile qu'à l'admin → masqué en lecture seule ; les ⚠️
+  // (vrais problèmes à vérifier) et le 🛌 (absents) restent toujours visibles.
+  document.getElementById("restCheck").innerHTML = B.kind==="abs"
+    ? "🛌 Absents tout le mois (M/CP/FORMATION) — pas d'ordre de départ. Chacun a bien son planning."
+    : (bad.length===0
+      ? (isAdmin() ? "<b>✅ Jours de repos cohérents</b> sur la période commune ("+ST.order.length+" chefs) — équipe validée." : "")
+      : "<span class='warn'>⚠️ Repos différents</span> pour : "+bad.join(", ")+" → vérifier (lecture imprécise ou équipe miroir).");
+  // bannière "Ma vue" : équipe + miroir de la personne choisie
+  var mb=document.getElementById("meBanner");
+  if(mb){
+    if(!ME){ mb.style.display="none"; mb.innerHTML=""; }
+    else {
+      var inHere=ST.order.indexOf(ME)>=0, myBid=teamForMeInMonth(), mir=mirrorBoardId(BID);
+      var h2="👤 <b>"+esc(ME)+"</b>";
+      if(inHere){ h2+=" · ton équipe : <b>"+esc(B.label)+"</b>";
+        if(mir) h2+=" <button class='jump' onclick=\"switchBoard('"+mir+"')\">Équipe miroir →</button>"; }
+      else if(myBid){ h2+=" · ton équipe : <b>"+esc(BOARDS[myBid].label)+"</b> <button class='jump' onclick=\"switchBoard('"+myBid+"')\">Aller à mon équipe →</button>"; }
+      else { h2+=" · <i>pas d'équipe ce mois</i>"; }
+      mb.innerHTML=h2; mb.style.display="flex";
+    }
+  }
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+
+// Sécurité (audit XSS) : les actions de la grille / du panneau de positions passent
+// par la DÉLÉGATION d'événements (attributs data-act/data-nm, nom lu via getAttribute
+// → JAMAIS exécuté comme code), au lieu de onclick="fn('...')" où un nom contenant '
+// pouvait injecter du JS (esc() échappe le HTML mais le parseur décode &#39; AVANT
+// l'exécution JS → esc est insuffisant pour du JS-dans-attribut). Attaché UNE fois :
+// #grid / #posPanel persistent, seul leur innerHTML change à chaque render().
+function _depWireDelegation(){
+  var grid=document.getElementById("grid");
+  if(grid && !grid._wired){ grid._wired=true;
+    grid.addEventListener("click",function(e){
+      var el=e.target.closest("[data-act]"); if(!el||!grid.contains(el))return;
+      var nm=el.getAttribute("data-nm")||"", act=el.getAttribute("data-act");
+      if(act==="name") nameClick(nm);
+      else if(act==="cell") editCell(nm, parseInt(el.getAttribute("data-d"),10));
+      else if(act==="crossnr") addCross("nr", nm);
+      else if(act==="crosscq") addCross("cq", nm);
+      else if(act==="editnr") editMark("nr", nm);
+      else if(act==="editcq") editMark("cq", nm);
+    });
+  }
+  var pp=document.getElementById("posPanel");
+  if(pp && !pp._wired){ pp._wired=true;
+    pp.addEventListener("click",function(e){
+      var el=e.target.closest("[data-act='setpos']"); if(!el||!pp.contains(el))return;
+      setPos(el.getAttribute("data-nm")||"", parseInt(el.getAttribute("data-p"),10));
+    });
+  }
+}
+
+function isAdmin(){return document.body.classList.contains("admin");}
+function guard(){ if(!isAdmin()){toast("Lecture seule — déverrouille en admin");return false;} return true; }
+// v1.17 (Kevin 2026-07-01) — CHEFS D'ÉQUIPE : l'admin les désigne en cliquant sur un nom.
+// Un chef peut modifier UNIQUEMENT « non retour » (nr) et « 5ème » (cq) sur le board de SON
+// équipe (là où il est présent). Rien d'autre. Liste persistée + synchronisée cross-appareil.
+function _chefsGet(){ try{ return JSON.parse(localStorage.getItem("cmc_dep_chefs")||"[]")||[]; }catch(_){ return []; } }
+function _chefsSet(a){ try{ localStorage.setItem("cmc_dep_chefs",JSON.stringify(a)); }catch(_){}
+  try{ if(window._depSyncChefs)window._depSyncChefs(a); }catch(_){} }
+function isChef(nm){ return !!nm && _chefsGet().indexOf(nm)>=0; }
+function isChefMe(){ return !!ME && isChef(ME) && !!(ST&&ST.order&&ST.order.indexOf(ME)>=0); }
+function canEditMark(){ return isAdmin() || isChefMe(); } // qui peut toucher NR / 5e
+function guardMark(){ if(!canEditMark()){ toast("Réservé à l'admin ou au chef d'équipe"); return false; } return true; }
+function toggleChef(nm){ if(!isAdmin())return; var a=_chefsGet(); var i=a.indexOf(nm);
+  if(i>=0)a.splice(i,1); else a.push(nm); _chefsSet(a); render();
+  toast(i>=0?(nm+" n'est plus chef"):(nm+" ⭐ chef d'équipe (peut écrire NR + 5e)")); }
+function nameClick(nm){ if(window._chefDesignMode && isAdmin()) toggleChef(nm); }
+function toggleChefDesign(){ if(!guard())return; window._chefDesignMode=!window._chefDesignMode;
+  document.body.classList.toggle("chefdesign", !!window._chefDesignMode);
+  toast(window._chefDesignMode?"⭐ Touche un NOM pour le désigner/retirer chef d'équipe":"Désignation terminée"); }
+function move(idx,dir){ if(!guard())return; var j=idx+dir; if(j<0||j>=ST.order.length)return;
+  var a=ST.order,t=a[idx];a[idx]=a[j];a[j]=t; save(); render(); }
+function addCross(f,nm){ if(!guardMark())return; ST[f][nm]=(ST[f][nm]||"")+"✗"; save(); render(); toast(nm+" "+(f==="nr"?"non-retour":"5e")+" +✗"); }
+function editMark(f,nm){ if(!guardMark())return; var v=prompt((f==="nr"?"Non-retour":"5ème")+" — "+nm+"\n(✗ ou texte ; vide pour effacer)",ST[f][nm]||"");
+  if(v===null)return; ST[f][nm]=v.trim(); save(); render(); }
+function editCell(nm,d){ if(!guard())return;
+  if(window._anchorMode){ setAnchor(nm,d); return; }
+  var v=prompt("Code "+nm+" — jour "+d+"\n(ex 20/5c, 16/3*, RH, R, CP, M ; vide = rien)",ST.codes[nm][d]||"");
+  if(v===null)return; ST.codes[nm][d]=v.trim(); save(); render();
+  // v1.14 page→app : remonte la cellule dans le planning de l'app (Firebase, cross-device)
+  try{ if(window._depSyncCell&&ST.ids&&ST.ids[nm]&&B)window._depSyncCell(ST.ids[nm],B.year+"-"+B.monthIdx,d,v.trim()); }catch(_){} }
+function toggleAnchor(){ if(!guard())return; window._anchorMode=!window._anchorMode;
+  document.getElementById("anchorBtn").style.background=window._anchorMode?"linear-gradient(135deg,var(--gold),var(--gold2))":"";
+  document.getElementById("anchorBtn").style.color=window._anchorMode?"#000":"";
+  document.getElementById("adminHint").innerHTML=window._anchorMode
+    ? "<b style='color:var(--gold2)'>📍 Mode Départ 1 : touche la case de la personne (jour) qui doit être DÉPART 1 → toute la rotation se cale.</b>"
+    : "Touche une case = corriger le code · NR/5e : tap = ✗, ✎ = écrire";
+  toast(window._anchorMode?"📍 Touche la case = Départ 1":"Mode normal"); }
+function anchorOff(nm,d){ // offset pour que nm = Départ 1 le jour d (null si impossible)
+  var R=compute(); var ai=R.active.indexOf(nm); if(ai<0) return null;
+  var wi=R.workDays.indexOf(d); if(wi<0 || !isWork(ST.codes[nm][d])) return null;
+  var base=(ST.ci&&ST.ci[nm]!==undefined)?ST.ci[nm]:ai, sl=R.n;
+  return ((-((wi%4)+Math.floor(wi/4)+base))%sl+sl)%sl; }
+function setAnchor(nm,d){ var o=anchorOff(nm,d);
+  if(o===null){ toast("Choisis un JOUR TRAVAILLÉ d'une personne présente"); return; }
+  ST.off=o; save();
+  window._anchorMode=false; document.getElementById("anchorBtn").style.background=""; document.getElementById("anchorBtn").style.color="";
+  document.getElementById("adminHint").textContent="Touche une case = corriger le code · NR/5e : tap = ✗, ✎ = écrire";
+  render(); toast("✅ "+nm+" = Départ 1 le "+d+" — rotation calée"); }
+function resetAnchor(){ if(!guard())return; ST.off=0; save(); render(); toast("Rotation remise par défaut"); }
+function togglePositions(){ if(!guard())return; window._posOpen=!window._posOpen; render(); toast(window._posOpen?"Positions : touche un n° pour échanger":"Fermé"); }
+function panelDay(R){ var now=new Date(); var td=(now.getFullYear()===B.year&&now.getMonth()===B.monthIdx)?now.getDate():0;
+  if(td && R.workDays.indexOf(td)>=0) return td;
+  return R.workDays.length?R.workDays[R.workDays.length-1]:1; }
+function setPos(nm,p){ if(!guard())return; var R=compute(); var day=panelDay(R);
+  if(!ST.ci) ST.ci={}; R.active.forEach(function(n,ai){ if(ST.ci[n]===undefined) ST.ci[n]=ai; });
+  var other=null; R.active.forEach(function(n){ if(n!==nm && R.deps[n][day]===p) other=n; });
+  if(other){ var t=ST.ci[nm]; ST.ci[nm]=ST.ci[other]; ST.ci[other]=t; save(); render(); toast(nm+" ⇄ "+other+" (départ "+p+")"); }
+  else { toast("Départ "+p+" non occupé ce jour (trou)"); } }
+function replaceLine(){ if(!guard())return; var R=compute();
+  var entr=prompt("Remplaçant (qui ENTRE et reprend la ligne de départ) — nom exact :",""); if(entr===null)return; entr=entr.trim();
+  if(ST.order.indexOf(entr)<0){ toast("Nom introuvable dans cette équipe"); return; }
+  var leav=prompt("Personne REMPLACÉE (dont il reprend la ligne) — nom exact :",""); if(leav===null)return; leav=leav.trim();
+  if(ST.order.indexOf(leav)<0){ toast("Nom remplacé introuvable"); return; }
+  if(entr===leav){ toast("Choisis deux personnes différentes"); return; }
+  if(!ST.ci) ST.ci={}; R.active.forEach(function(n,ai){ if(ST.ci[n]===undefined) ST.ci[n]=ai; });
+  var base=(ST.ci[leav]!==undefined)?ST.ci[leav]:ST.order.indexOf(leav);
+  ST.ci[entr]=base; save(); render(); toast(entr+" reprend la ligne de départ de "+leav); }
+function positionsPanelHTML(R){
+  var day=panelDay(R), sl=R.n;
+  var h="<div class='posp'><div class='posp-t'>⚙️ Ordre de départ du "+day+" — touche un n° pour ÉCHANGER deux personnes (les lignes ne bougent pas) · <button class='posp-b' style='width:auto;padding:2px 9px' onclick=\"replaceLine()\">♻︎ Remplacement</button></div>";
+  R.active.forEach(function(nm){ var cur=R.deps[nm][day];
+    h+="<div class='posp-row'><span class='posp-nm'>"+esc(nm)+(cur?"":" <span style='color:#888'>(absent)</span>")+"</span><span class='posp-btns'>";
+    for(var p=1;p<=sl;p++){ h+="<button class='posp-b"+(cur===p?" sel":"")+"' data-act='setpos' data-nm=\""+esc(nm)+"\" data-p='"+p+"'>"+p+"</button>"; }
+    h+="</span></div>"; });
+  return h+"</div>"; }
+function resetCounters(){ if(!guard())return; if(!confirm("Vider NR et 5e ?"))return; ST.nr={};ST.cq={};save();render();toast("Vidé"); }
+function resetAll(){ if(!guard())return; if(!confirm("Réinitialiser ce mois (codes, ordre, NR/5e) ?"))return;
+  try{localStorage.removeItem(B.key);}catch(e){} load(); render(); toast("Réinitialisé"); }
+
+function switchBoard(id){ if(!BOARDS[id])return; BID=id; CURMO=BOARDS[id].year+"-"+BOARDS[id].monthIdx;
+  try{localStorage.setItem("cmc_dep_board",id);}catch(e){}
+  try{if(window._depPullCfg)setTimeout(window._depPullCfg,50);}catch(_){} // v1.19 pull rotation partagée du nouveau board
+  var mo=document.getElementById("moSel"); if(mo)mo.value=CURMO;
+  fillSel(); load(); render(); }
+// v1.29 (Kevin 2026-07-09 « le bouton équipe miroir a disparu ») — bascule vers le miroir
+// de l'équipe AFFICHÉE, indépendant de la reconnaissance ME (le bouton d'en-tête #mirBtn
+// est visible dès qu'un miroir existe pour le board courant).
+function goMirror(){ var m=mirrorBoardId(BID); if(m&&BOARDS[m])switchBoard(m); }
+// v1.12.1 — liste des équipes SCOPÉE au mois choisi (CURMO), groupée par famille,
+// + recherche : si on tape qqch, on cherche dans TOUS les mois (autres équipes/personnes).
+function _famOf(k){ var b=BOARDS[k]; if(!b)return "bj"; if(b.kind==="abs")return "abs"; if(b.fam)return b.fam==="baccara"?"cmc":b.fam;
+  if(/-r\d+$/.test(k))return "roulettes"; if(/-c\d+$/.test(k)||/-amenage/.test(k))return "cmc"; return "bj"; }
+function fillSel(){ var s=document.getElementById("boardSel"); if(!s)return; s.innerHTML="";
+  var q=((document.getElementById("teamSearch")||{}).value||"").trim().toLowerCase();
+  function matchQ(k){ if(!q)return true; var b=BOARDS[k]; if(String(b.label).toLowerCase().indexOf(q)>=0)return true;
+    return (b.people||[]).some(function(p){return String(p.name).toLowerCase().indexOf(q)>=0||(p.id&&String(p.id).toLowerCase().indexOf(q)>=0);}); }
+  function inScope(k){ if(q)return true; var b=BOARDS[k]; return (b.year+"-"+b.monthIdx)===CURMO; } // recherche = tous mois
+  var groups=[["♣ Chefs Black Jack","bj"],["🎡 Roulettes","roulettes"],["🃏 CMC (cartes)","cmc"],["🏖 Absences","abs"]];
+  var used={};
+  groups.forEach(function(g){ var keys=Object.keys(BOARDS).filter(function(k){return !used[k]&&inScope(k)&&matchQ(k)&&_famOf(k)===g[1];}); if(!keys.length)return;
+    var og=document.createElement("optgroup"); og.label=g[0]+(q?"":"");
+    keys.forEach(function(k){ used[k]=1; var o=document.createElement("option"); o.value=k; o.textContent=BOARDS[k].label; if(k===BID)o.selected=true; og.appendChild(o); });
+    s.appendChild(og); });
+  Object.keys(BOARDS).filter(function(k){return !used[k]&&inScope(k)&&matchQ(k);}).forEach(function(k){ var o=document.createElement("option"); o.value=k; o.textContent=BOARDS[k].label; if(k===BID)o.selected=true; s.appendChild(o); });
+  if(!s.options.length){ var o0=document.createElement("option"); o0.value=""; o0.textContent=q?"(aucun résultat)":"(aucune équipe ce mois)"; s.appendChild(o0); }
+}
+// ── Ma vue (vue par personne) ──
+function allNames(){ var set={},out=[]; Object.keys(BOARDS).forEach(function(k){ var b=BOARDS[k]; if(b.kind==="abs")return;
+  (b.people||[]).forEach(function(p){ if(!set[p.name]){ set[p.name]=1; out.push(p.name); } }); }); out.sort(); return out; }
+function boardForName(nm){ var ks=Object.keys(BOARDS); for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
+  if((b.people||[]).some(function(p){return p.name===nm;})) return ks[i]; } return null; }
+function mirrorBoardId(id){ if(!id)return null;
+  if(DEP_MIRROR[id]&&BOARDS[DEP_MIRROR[id]])return DEP_MIRROR[id]; // miroir explicite (données générées)
+  if(/m$/.test(id)){ var base=id.replace(/m$/,""); return BOARDS[base]?base:null; } var m=id+"m"; return BOARDS[m]?m:null; }
+// v1.12 — résout une personne par matricule SBM (U…) → {bid, name}
+function personById(uid){ if(!uid)return null; var U=String(uid).toUpperCase(); var ks=Object.keys(BOARDS);
+  for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
+    var p=(b.people||[]).find(function(x){return x.id&&String(x.id).toUpperCase()===U;}); if(p)return {bid:ks[i],name:p.name}; } return null; }
+function fillMeSel(){ var s=document.getElementById("meSel"); if(!s)return; s.innerHTML="";
+  var o0=document.createElement("option"); o0.value=""; o0.textContent="👤 Ma vue…"; s.appendChild(o0);
+  allNames().forEach(function(n){ var o=document.createElement("option"); o.value=n; o.textContent=n; if(n===ME)o.selected=true; s.appendChild(o); }); }
+function setMe(val){ var nm=val;
+  // v1.12 — accepte aussi un matricule SBM (U…) : connexion par identifiant employé
+  if(/^u\w*\d/i.test(val||"")){ var hit=personById(val); if(hit){ nm=hit.name; } }
+  ME=nm; try{localStorage.setItem("cmc_dep_me",nm);}catch(e){}
+  // « ma vue » → MON équipe POUR LE MOIS affiché (pas le 1er board trouvé tous mois)
+  if(nm){ var bid=teamForMeInMonth()||boardForName(nm); if(bid&&bid!==BID){ switchBoard(bid); return; } } render(); }
+
+function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; render(); paintAppDiag(); toast("Verrouillé — lecture seule"); }
+  else { document.getElementById("pinModal").classList.add("on"); setTimeout(function(){var e=document.getElementById("pinIn");if(e){e.value="";e.focus();}},60); } }
+function closePin(){ document.getElementById("pinModal").classList.remove("on"); }
+async function sha256(s){ var b=new TextEncoder().encode(s); var h=await crypto.subtle.digest("SHA-256",b);
+  return Array.from(new Uint8Array(h)).map(function(x){return x.toString(16).padStart(2,"0");}).join(""); }
+async function checkPin(){ var h=await sha256((document.getElementById("pinIn").value||"").trim());
+  if(h===PIN_SHA256){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); paintAppDiag(); toast("Mode admin activé"); }
+  else toast("Code incorrect"); }
+document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&document.getElementById("pinModal").classList.contains("on"))checkPin(); });
+// ADMIN UNIVERSEL DU DOMAINE — Kevin reconnu partout sans code. On demande à
+// kd-mc.com « qui es-tu ? » : si c'est Kevin, prouvé par Face ID (verified), on
+// passe en admin tout seul. Le code PIN reste un SECOURS si le domaine ne répond
+// pas (hors ligne, autre origine) → aucune régression : on ne casse rien.
+async function _depSsoAutoAdmin(){ try{
+  if(isAdmin())return;
+  var m=(location.hash||"").match(/[#&]kdmc_sso=([^&]+)/);
+  if(m){ try{localStorage.setItem("kdmc_sso_token",decodeURIComponent(m[1]));}catch(_){}
+         try{history.replaceState(null,"",location.pathname+location.search);}catch(_){} }
+  var tok=""; try{tok=localStorage.getItem("kdmc_sso_token")||"";}catch(_){}
+  var hdr={}; if(tok)hdr.Authorization="Bearer "+tok;
+  var r=await fetch("/__sso/whoami",{credentials:"include",cache:"no-store",headers:hdr});
+  var j=r&&r.ok?await r.json():null;
+  if(j&&j.ok&&j.verified===true&&j.admin===true){
+    document.body.classList.add("admin");
+    var b=document.getElementById("lockBtn"); if(b)b.textContent="🔓 Quitter admin";
+    try{render();paintAppDiag();}catch(_){}
+  }
+}catch(_){/* SSO injoignable → PIN, rien de cassé */} }
+function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(window._tt); window._tt=setTimeout(function(){t.classList.remove("on");},2200); }
+function _appDiagText(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
+  if(window.DEPARTS_GEN&&window.DEPARTS_GEN.months&&window.DEPARTS_GEN.months.length){
+    var _ms=window.DEPARTS_GEN.months.map(function(m){return m.label;}).join(" + ");
+    var _nb=Object.keys(window.DEPARTS_GEN.boards||{}).length;
+    return "✅ Plannings à jour : "+_ms+" — "+_nb+" équipes intégrées (pas besoin d'ouvrir l'app).";
+  }
+  if(!d.cmc_e&&!d.ov) return "📥 Données de l'app introuvables — ouvre d'abord l'app CMCteams (même iPhone) puis reviens ici.";
+  if(!d.hasKey) return "📥 Aucun planning juillet 2026 dans l'app — importe le PDF de juillet dans CMCteams, puis recharge.";
+  var fam=["roulettes","cmc","amenage"].filter(function(f){return c[f];}).map(function(f){return ({roulettes:"Roulettes",cmc:"Cartes CMC",amenage:"CMC aménagé"}[f])+" "+c[f];});
+  return fam.length ? ("📥 Importé de l'app : "+fam.join(" · ")+" → "+(d.added||0)+" équipe(s).")
+                    : "📥 App lue mais aucun employé carte/roulette trouvé pour juillet (vérifie l'import dans CMCteams).";
+}
+function showAppDiag(){ var d=window._appBoardDiag||{}; var c=d.counts||{};
+  toast(_appDiagText()+" | app:"+(d.cmc_e?"oui":"non")+" planning:"+(d.hasKey?"oui":"non")+" R:"+(c.roulettes||0)+" C:"+(c.cmc||0)+" A:"+(c.amenage||0)); }
+function paintAppDiag(){ var el=document.getElementById("appDiag"); if(!el)return;
+  var d=window._appBoardDiag||{};
+  var hasGen=!!(window.DEPARTS_GEN&&window.DEPARTS_GEN.months&&window.DEPARTS_GEN.months.length);
+  var warn=hasGen?false:(!d.cmc_e||!d.hasKey||!(d.added>0));
+  // v1.15 : bandeau vert ✅ « Plannings à jour » masqué en lecture seule (info admin) ;
+  // les ⚠️ (importer le PDF) restent toujours affichés.
+  if(!warn && !isAdmin()){ el.style.display="none"; el.innerHTML=""; return; }
+  el.style.display="";
+  el.innerHTML=(warn?"<span class='warn'>":"<b style='color:var(--gold2)'>")+_appDiagText()+(warn?"</span>":"</b>"); }
+function forceRefresh(){ var go=function(){location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());};
+  if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));})
+    .then(function(){return ('caches' in window)?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0;}).then(go).catch(go); } else go(); }
+
+document.getElementById("ver").textContent=APP_VER;
+// v1.19 (Kevin 2026-07-01 « Vérifie aussi la Maj auto force partout ») — MAJ AUTO FORCÉE :
+// la page n'a pas de Service Worker, mais le cache navigateur peut servir une vieille version.
+// On sonde un marqueur léger (version.txt) au boot + toutes les 60 s + au retour premier plan ;
+// si la version distante diffère de APP_VER → force-refresh auto (unregister SW + clear caches +
+// reload cache-busté). Throttle 15 s. Le badge reste cliquable pour un force manuel (repli).
+(function(){
+  function _chkUpd(){
+    try{
+      fetch("version.txt?_v="+Date.now(),{cache:"reload"}).then(function(r){return r.ok?r.text():null;}).then(function(t){
+        if(!t)return; t=String(t).trim();
+        if(!/^v[\d.]+$/.test(t))return;
+        if(t===APP_VER)return;
+        if(window._depUpdTs&&Date.now()-window._depUpdTs<15000)return; window._depUpdTs=Date.now();
+        try{if(typeof toast==="function")toast("🔄 Mise à jour "+t+" en cours…");}catch(_){}
+        setTimeout(function(){ try{ if(typeof forceRefresh==="function"){forceRefresh();return;} }catch(_){}
+          location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now()); },700);
+      }).catch(function(){});
+    }catch(_){}
+  }
+  try{ setInterval(_chkUpd,60000);
+    document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible")_chkUpd(); });
+    window.addEventListener("focus",_chkUpd);
+    setTimeout(_chkUpd,4000);
+  }catch(_){}
+})();
+var ME=(function(){try{return localStorage.getItem("cmc_dep_me")||"";}catch(e){return "";}})();
+// v1.12 — lien profond ?me=U11804 (matricule SBM) ou ?me=DESARZENS+K (nom) →
+// ouvre directement sur l'équipe de l'employé (connexion par identifiant).
+var _MEBID=null;
+try{ var _mq=new URLSearchParams(location.search).get("me");
+  if(_mq){ if(/^u\w*\d/i.test(_mq)){ var _h=personById(_mq); if(_h){ ME=_h.name; _MEBID=_h.bid; } } else { ME=_mq; _MEBID=boardForName(_mq); }
+    try{localStorage.setItem("cmc_dep_me",ME);}catch(_){} }
+}catch(_){}
+BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
+  try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
+CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
+// v1.35 (ultra-review 2026-08-10) — FILET DE SÉCURITÉ. AVANT : si boards-gen.js ne chargeait pas
+// (404, réseau coupé, fichier corrompu), DEPARTS_GEN était absent → applyBoards vidait BOARDS →
+// defaultBoard() renvoyait undefined → load() plantait sur B.people → l'exception remontait ICI,
+// NON attrapée, et TOUT le script s'arrêtait : écran BLANC, même l'écran de connexion et le chat
+// ne s'affichaient plus. MAINTENANT : on attrape, on explique en clair, et on laisse la suite du
+// script vivre (connexion + chat + bouton Rafraîchir restent utilisables).
+try{
+  _depWireDelegation();
+  fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
+}catch(_e){
+  try{
+    var _kb=Object.keys(BOARDS||{}).length;
+    document.body.insertAdjacentHTML("afterbegin",
+      '<div style="margin:12px;padding:14px;border-radius:12px;background:#3a1c1c;'+
+      'border:1px solid #a33;color:#ffd9d9;font-size:14px;line-height:1.5">'+
+      '<b>⚠️ Les plannings n\'ont pas pu être chargés.</b><br>'+
+      'Vérifie ta connexion, puis touche <b>Rafraîchir</b>. '+
+      'Si ça persiste, ferme et rouvre l\'application.<br>'+
+      '<button onclick="try{forceRefresh()}catch(e){location.reload(true)}" '+
+      'style="margin-top:10px;min-height:44px;padding:0 18px;border-radius:10px;border:0;'+
+      'background:#c9a227;color:#191919;font-weight:700;font-size:15px">🔄 Rafraîchir</button>'+
+      '<div style="margin-top:8px;opacity:.65;font-size:12px">détail : '+
+      String((_e&&_e.message)||_e).replace(/</g,"&lt;").slice(0,120)+' · '+_kb+' planning(s) en mémoire</div>'+
+      '</div>');
+  }catch(_){}
+}
+_depSsoAutoAdmin();
+if(_appCmcCount>0){ setTimeout(function(){ toast("✅ CMC importé depuis l'app : "+_appCmcCount+" équipes"); },800); }
+// v1.20 — GATE 1ère connexion : si pas d'identité stockée sur cet appareil, on demande
+// nom + prénom (règle LOGIN TOUJOURS PRÉNOM + NOM) + CGU AVANT de laisser voir les départs.
+// Ensuite reconnu auto (localStorage). Fail-open : jamais de lockout (repli si erreur).
+function _depHasIdentity(){ try{ var v=JSON.parse(localStorage.getItem("cmc_dep_identity")||"null"); return !!(v&&v.cgu&&v.nom&&v.prenom); }catch(_){ return false; } }
+function _depShowGate(){ try{
+    var g=document.getElementById("depGate"); if(!g)return;
+    // pré-remplir depuis ?me= / ME si dispo (nom SBM « NOM I ») — confort, la CGU reste requise
+    try{ var toks=String(ME||"").trim().split(/\s+/); if(toks.length>=1&&toks[0]){ var np=document.getElementById("gateNom"); if(np&&!np.value)np.value=toks[0]; } }catch(_){}
+    g.style.display="block";
+    setTimeout(function(){ try{ var p=document.getElementById("gatePrenom"); if(p)p.focus(); }catch(_){} },200);
+  }catch(_){}
+}
+function _depSubmitGate(){
+  try{
+    var prenom=((document.getElementById("gatePrenom")||{}).value||"").trim();
+    var nom=((document.getElementById("gateNom")||{}).value||"").trim();
+    var cgu=!!(document.getElementById("gateCgu")||{}).checked;
+    var err=document.getElementById("gateErr");
+    if(prenom.length<2||nom.length<2){ if(err)err.textContent="Indique ton prénom ET ton nom (au moins 2 lettres chacun)."; return; }
+    if(!cgu){ if(err)err.textContent="Coche la case pour accepter les conditions."; return; }
+    var ident={prenom:prenom,nom:nom,cgu:true,ts:Date.now()};
+    try{ localStorage.setItem("cmc_dep_identity",JSON.stringify(ident)); }catch(_){}
+    // ME au format SBM « NOM I » pour ouvrir son équipe si elle existe
+    try{ var meName=(nom+" "+prenom.charAt(0)).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,""); ME=meName; localStorage.setItem("cmc_dep_me",meName);
+      var bid=boardForName(meName); if(bid&&BOARDS[bid]){ BID=bid; CURMO=BOARDS[bid].year+"-"+BOARDS[bid].monthIdx; } }catch(_){}
+    // Fiche/accès → Firebase (best-effort) : l'admin voit QUI consulte (comme cmc_userlog)
+    try{ if(typeof window._depLogAccess==="function")window._depLogAccess(ident); }catch(_){}
+    var g=document.getElementById("depGate"); if(g)g.style.display="none";
+    try{ fillMeSel(); fillMoSel(); load(); render(); paintAppDiag(); }catch(_){}
+    try{ if(window._depChatSync)window._depChatSync(); if(window._depPullReplies_boot)window._depPullReplies_boot(); }catch(_){}
+    try{ if(typeof toast==="function")toast("Bienvenue "+prenom+" 👋"); }catch(_){}
+  }catch(e){ // fail-open : en cas d'erreur, ne bloque personne
+    try{ var g2=document.getElementById("depGate"); if(g2)g2.style.display="none"; }catch(_){}
+  }
+}
+if(!_depHasIdentity()){ _depShowGate(); }
+// ===== Firebase LIVE (cross-device) — App→Page : lit le planning de l'app et
+// reconstruit les boards en direct, sur N'IMPORTE QUEL appareil (pas seulement
+// celui où l'app a tourné). Repli sur les boards committés si Firebase KO/offline.
+(function(){
+  var FBURL="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
+  var FBPATH="/cmcteams";
+  var FBKEY_DEFAULT="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs";
+  function _fbKey(){ try{ return (localStorage.getItem("cmc_fb_apikey")||FBKEY_DEFAULT||"").trim(); }catch(_){ return FBKEY_DEFAULT; } }
+  var _fbTok=null,_fbTimer=null,_es=null;
+  function _qs(){ return _fbTok?("?auth="+encodeURIComponent(_fbTok)):""; }
+  function _fbAuth(cb){ var key=_fbKey(); if(!key){_fbTok=null;if(cb)cb();return;}
+    fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+encodeURIComponent(key),
+      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({returnSecureToken:true})})
+      .then(function(r){return r.json();})
+      .then(function(d){ if(d&&d.idToken){ _fbTok=d.idToken; var ms=(parseInt(d.expiresIn||"3600",10)*1000)-120000;
+          if(_fbTimer)clearTimeout(_fbTimer); _fbTimer=setTimeout(function(){_fbAuth(function(){_fbSSE();});},Math.max(60000,ms)); } else _fbTok=null; if(cb)cb(); })
+      .catch(function(){ _fbTok=null; if(cb)cb(); }); } // fail-open : sans token on tente quand même (règles ouvertes)
+  function _fbGet(k,cb){ fetch(FBURL+FBPATH+"/"+encodeURIComponent(k)+".json"+_qs())
+      .then(function(r){return r.ok?r.json():null;}).then(function(j){cb(j);}).catch(function(){cb(null);}); }
+  var _depRefreshT=null;
+  function _depRefresh(){ if(_depRefreshT)clearTimeout(_depRefreshT);
+    _depRefreshT=setTimeout(function(){ try{
+      if(!BID||!BOARDS[BID]){ BID=defaultBoard(); }
+      if(BID&&BOARDS[BID])CURMO=BOARDS[BID].year+"-"+BOARDS[BID].monthIdx;
+      fillSel(); fillMeSel(); fillMoSel(); load(); render(); paintAppDiag();
+    }catch(e){ try{console.warn("[depRefresh]",e&&e.message);}catch(_){} } },120); }
+  function _applyLive(emps,ov,meta,mir){ try{ var live=buildBoardsFromState(emps,ov,meta||{},mir||{});
+    if(live&&live.months&&live.months.length){ applyBoards(live); _depRefresh(); } }catch(e){ try{console.warn("[applyLive]",e&&e.message);}catch(_){} } }
+  var _pulling=false;
+  function _fbPull(){ if(_pulling)return; _pulling=true;
+    _fbGet("cmc_e",function(emps){ _fbGet("cmc_ov",function(ov){
+      if(!emps||!ov){ _pulling=false; return; }
+      window._fbLastOv=ov; // cache du planning COMPLET (anti-clobber pour page→app)
+      _fbGet("cmc_ov_meta",function(meta){
+        var keys=Object.keys(ov), mir={}, pend=keys.length;
+        if(!pend){ _applyLive(emps,ov,meta,mir); _pulling=false; return; }
+        keys.forEach(function(key){ _fbGet("cmc_team_mirror_"+key,function(mm){ if(mm)mir[key]=mm;
+          if(--pend<=0){ _applyLive(emps,ov,meta,mir); _pulling=false; } }); });
+      });
+    }); }); }
+  function _fbSSE(){ try{ if(_es){_es.close();_es=null;} }catch(_){}
+    try{ _es=new EventSource(FBURL+FBPATH+"/cmc_ov.json"+_qs()); var _t=null;
+      var bump=function(){ if(_t)clearTimeout(_t); _t=setTimeout(_fbPull,800); };
+      _es.addEventListener("put",bump); _es.addEventListener("patch",bump);
+    }catch(e){ try{console.warn("[fbSSE]",e&&e.message);}catch(_){} } }
+  // ===== Page→App : une cellule corrigée sur la page remonte dans le planning de l'app.
+  // SÉCURITÉ (lesson #65/#109) : on re-lit le cmc_ov COMPLET et on n'écrit QUE si le mois
+  // édité existe déjà → JAMAIS de PUT partiel qui écraserait le planning de l'app. Seules
+  // les CELLULES (codes) remontent ; l'ordre/NR/5e restent des préférences locales page.
+  window._depSyncCell=function(empId,key,day,code){
+    if(!empId||!key)return;
+    var apply=function(ov){
+      if(!ov||typeof ov!=="object"||!ov[key]){ if(typeof toast==="function")toast("✏️ Modif locale (ce mois n'est pas chargé depuis l'app)"); return; }
+      if(!ov[key][empId])ov[key][empId]={};
+      if(code==="")delete ov[key][empId][day]; else ov[key][empId][day]=code;
+      // Firebase : PUT de l'OBJET ENTIER (SSE app : path="/cmc_ov" → fbApplyData OK, cross-device)
+      fetch(FBURL+FBPATH+"/cmc_ov.json"+_qs(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(ov)})
+        .then(function(r){ if(r.ok)window._fbLastOv=ov; if(typeof toast==="function")toast(r.ok?"✅ Synchronisé avec l'app (tous appareils)":"⚠ Sync app échouée (réseau)"); })
+        .catch(function(){ if(typeof toast==="function")toast("⚠ Hors-ligne : modif gardée en local"); });
+      // Même appareil : maj du localStorage partagé au format app (__LZ__ compressé si gros)
+      try{ var s=JSON.stringify(ov); localStorage.setItem("cmc_ov",(s.length>1024&&window.LZString&&LZString.compressToUTF16)?("__LZ__"+LZString.compressToUTF16(s)):s); }catch(_){}
+    };
+    // re-lit le cmc_ov FRAIS (anti-perte d'une modif concurrente) ; repli sur le dernier complet connu.
+    _fbGet("cmc_ov",function(ov){ apply(ov||window._fbLastOv||_appRead("cmc_ov")); });
+  };
+  // v1.17 — CHEFS D'ÉQUIPE : liste synchronisée cross-appareil (clé DÉDIÉE cmc_dep_chefs,
+  // ne touche JAMAIS cmc_ov/le planning). L'admin désigne → PUT ; le chef pull au boot →
+  // son appareil le reconnaît (droit d'écrire NR/5e sur son équipe).
+  // v1.20 — FICHE/ACCÈS : à la 1ère connexion, enregistre QUI consulte (nom+prénom+appareil)
+  // dans un node dédié cmc_dep_access/<clé> (best-effort, ne bloque jamais). L'admin peut
+  // ainsi savoir qui a accédé au lien partagé. Ne touche jamais cmc_ov/le planning.
+  window._depLogAccess=function(ident){
+    try{
+      if(!ident||!ident.nom)return;
+      var raw=((ident.nom||"")+"_"+(ident.prenom||"")).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+      var k=raw.replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60)||("USER_"+String(ident.ts||0));
+      var rec={nom:ident.nom,prenom:ident.prenom,cgu:true,ts:ident.ts||0,ua:(navigator.userAgent||"").slice(0,180),last:ident.ts||0};
+      fetch(FBURL+FBPATH+"/cmc_dep_access/"+encodeURIComponent(k)+".json"+_qs(),
+        {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)}).then(function(){}).catch(function(){});
+    }catch(_){}
+  };
+  window._depSyncChefs=function(list){
+    try{ fetch(FBURL+FBPATH+"/cmc_dep_chefs.json"+_qs(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(list||[])})
+      .then(function(r){ if(typeof toast==="function"&&r.ok)toast("⭐ Chefs synchronisés (tous appareils)"); }).catch(function(){}); }catch(_){}
+  };
+  function _fbPullChefs(){ _fbGet("cmc_dep_chefs",function(ch){ if(Array.isArray(ch)){
+    try{ localStorage.setItem("cmc_dep_chefs",JSON.stringify(ch)); }catch(_){}
+    try{ if(typeof render==="function")render(); }catch(_){}
+  }}); }
+  // v1.19 — ROTATION PARTAGÉE (Kevin « ils n'ont pas les mêmes départs que moi ; doit se
+  // mettre à jour partout si je modifie »). L'ancrage/base/NR/5e décidés par l'admin ou le
+  // chef sur SA page doivent apparaître IDENTIQUES sur toutes les CMCteams light. Node dédié
+  // cmc_dep_cfg = { <B.key>: {off,ci,nr,cq,ts} } (par board, ne touche jamais cmc_ov).
+  var _cfgT=null,_applyingCfg=false;
+  window._depSyncCfg=function(bkey,st){
+    if(_applyingCfg||!bkey||!st)return; // pas d'écho pendant l'application d'un pull
+    var subset={off:st.off||0,ci:st.ci||{},nr:st.nr||{},cq:st.cq||{},ts:Date.now()};
+    if(_cfgT)clearTimeout(_cfgT);
+    _cfgT=setTimeout(function(){ // debounce : 1 seul PUT même sur une rafale d'édits
+      fetch(FBURL+FBPATH+"/cmc_dep_cfg/"+encodeURIComponent(bkey)+".json"+_qs(),
+        {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(subset)})
+        .then(function(){}).catch(function(){}); // silencieux (l'action a déjà son toast)
+    },500);
+  };
+  function _fbPullCfg(){ if(!B||!B.key)return; var bkey=B.key;
+    _fbGet("cmc_dep_cfg",function(all){
+      if(!all||typeof all!=="object")return; var cfg=all[bkey]; if(!cfg||typeof cfg!=="object")return;
+      if(!ST||B.key!==bkey)return; // board a changé entre-temps
+      _applyingCfg=true;
+      try{
+        if(cfg.off!==undefined)ST.off=cfg.off;
+        if(cfg.ci&&typeof cfg.ci==="object")ST.ci=cfg.ci;
+        if(cfg.nr&&typeof cfg.nr==="object")ST.nr=cfg.nr;
+        if(cfg.cq&&typeof cfg.cq==="object")ST.cq=cfg.cq;
+        try{ localStorage.setItem(B.key,JSON.stringify(ST)); }catch(_){} // persist sans re-push
+        try{ if(typeof render==="function")render(); }catch(_){}
+      } finally { _applyingCfg=false; }
+    });
+  }
+  window._depPullCfg=_fbPullCfg; // exposé pour goBoard/pickBoard après changement de board
+  function _fbSSECfg(){ try{ if(window._esCfg){window._esCfg.close();window._esCfg=null;} }catch(_){}
+    try{ window._esCfg=new EventSource(FBURL+FBPATH+"/cmc_dep_cfg.json"+_qs()); var _t2=null;
+      var bump2=function(){ if(_t2)clearTimeout(_t2); _t2=setTimeout(_fbPullCfg,600); };
+      window._esCfg.addEventListener("put",bump2); window._esCfg.addEventListener("patch",bump2);
+    }catch(e){ try{console.warn("[fbSSECfg]",e&&e.message);}catch(_){} } }
+  // ===== v1.23 (Kevin 2026-07-03 « donne accès au chat apex une fois connecté, pour me
+  // joindre si besoin ») — CHAT « Joindre Kevin » depuis CMCteams light. L'employé CONNECTÉ
+  // (gate franchi) écrit → Kevin reçoit dans son inbox CMCteams (cmc_kevin_inbox) ET dans le
+  // pont Apex (ax_cmc_kevin_inbox, que son chat Apex lit). Kevin répond depuis l'app →
+  // cmc_dep_reply[<clé user>] → l'employé voit la réponse ici (2 voies). Nodes DÉDIÉS, ne
+  // touchent JAMAIS cmc_ov/le planning. Anti-clobber : GET frais → unshift → PUT (arrays).
+  function _depUserKey(){ try{ var v=JSON.parse(localStorage.getItem("cmc_dep_identity")||"null"); if(!v||!v.nom)return "";
+    var raw=((v.nom||"")+"_"+(v.prenom||"")).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    return raw.replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60); }catch(_){ return ""; } }
+  function _depLocalChat(){ try{ return JSON.parse(localStorage.getItem("cmc_dep_chat")||"[]")||[]; }catch(_){ return []; } }
+  function _depSaveChat(a){ try{ // garde les 100 derniers ; l'image (base64) seulement sur les 6 derniers (anti-bloat localStorage)
+    var arr=a.slice(-100); var n=arr.length; arr=arr.map(function(m,i){ if(m&&m.img&&(n-i)>6){ var c=Object.assign({},m); delete c.img; c.imgStripped=true; return c; } return m; });
+    localStorage.setItem("cmc_dep_chat",JSON.stringify(arr)); }catch(_){} }
+  window._depGetChat=_depLocalChat;
+  /* v1.32 — seule une vraie adresse d'image entre dans un src (jamais du texte arbitraire).
+     Sur window : le panneau de chat (IIFE suivante) s'en sert aussi. */
+  window._okImgUrl=function(u){ u=String(u||""); return u.indexOf("data:image/")===0||u.indexOf("https://")===0||u.indexOf("blob:")===0; };
+  // v1.24 — pièce jointe photo : stockée dans un node DÉDIÉ cmc_dep_img/<id> (chargée à la
+  // demande côté app), JAMAIS dans les tableaux inbox (qui restent légers). Le message porte
+  // seulement hasImg+imgId. La bulle locale garde la data URL pour l'affichage immédiat.
+  window._depSendKevin=function(text,img,cb){
+    text=String(text||"").trim(); if(!text&&!img){ if(cb)cb(false); return; } if(text.length>2000)text=text.slice(0,2000);
+    var ident={}; try{ ident=JSON.parse(localStorage.getItem("cmc_dep_identity")||"{}")||{}; }catch(_){}
+    var dkey=_depUserKey();
+    var name=((ident.prenom||"")+" "+(ident.nom||"")).trim()||"Employé";
+    var board=(typeof B!=="undefined"&&B&&B.label)?B.label:((typeof ME!=="undefined"&&ME)||"");
+    var msg={id:"kd_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),from:dkey||"dep",name:name,
+      team:board,text:text||(img?"📷 Photo":""),ts:Date.now(),app:"cmcteams-light",status:"new",dkey:dkey};
+    if(img){ msg.hasImg=true; msg.imgId=msg.id;
+      fetch(FBURL+FBPATH+"/cmc_dep_img/"+encodeURIComponent(msg.id)+".json"+_qs(),
+        {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(img)}).catch(function(){}); }
+    // 1) inbox admin CMCteams + pont Apex : GET frais → unshift → PUT (anti-clobber ; sans base64)
+    function pushArr(k,cap){ _fbGet(k,function(cur){ var a=Array.isArray(cur)?cur:[]; a.unshift(msg); if(a.length>cap)a=a.slice(0,cap);
+      fetch(FBURL+FBPATH+"/"+k+".json"+_qs(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(a)}).catch(function(){}); }); }
+    pushArr("cmc_kevin_inbox",300); pushArr("ax_cmc_kevin_inbox",200);
+    // 2) filet append-only (jamais clobbé) : un node par message (sans base64)
+    fetch(FBURL+FBPATH+"/cmc_dep_msgs/"+encodeURIComponent(msg.id)+".json"+_qs(),
+      {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(msg)}).catch(function(){});
+    // 3) push « même app fermée » : le routeur relaie vers le worker de push (jeton gardé
+    //    SERVEUR). Best-effort, anti-spam côté routeur. Sans réseau/hors kd-mc.com → no-op.
+    try{ fetch("/__notify-kevin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:name,text:msg.text})}).catch(function(){}); }catch(_){}
+    // 4) conversation locale (ce que l'employé voit)
+    var chat=_depLocalChat(); chat.push({who:"me",text:msg.text,ts:msg.ts,id:msg.id,img:img||null}); _depSaveChat(chat);
+    if(cb)cb(true);
+  };
+  window._depReadTs=0;
+  window._depPullReplies=function(){ var dkey=_depUserKey(); if(!dkey)return;
+    // accusé de lecture : Kevin a lu jusqu'à ce ts → « ✓ Lu » sur mes messages plus anciens
+    _fbGet("cmc_dep_read",function(rd){ var t=(rd&&typeof rd==="object")?parseInt(rd[dkey]||0,10):0; if(t&&t!==window._depReadTs){ window._depReadTs=t; try{ if(window._depRenderChat)window._depRenderChat(); }catch(_){} } });
+    _fbGet("cmc_dep_reply",function(all){ var rep=(all&&typeof all==="object")?all[dkey]:null; if(!Array.isArray(rep)||!rep.length)return;
+      var chat=_depLocalChat(),seen={},added=0; chat.forEach(function(m){ if(m.rid)seen[m.rid]=1; });
+      rep.forEach(function(r){ if(!r||!r.text)return; var rid=r.id||("r_"+r.ts); if(seen[rid])return;
+        chat.push({who:"kevin",text:String(r.text),ts:r.ts||Date.now(),rid:rid}); added++; });
+      if(added){ chat.sort(function(a,b){return (a.ts||0)-(b.ts||0);}); _depSaveChat(chat);
+        try{ if(window._depRenderChat)window._depRenderChat(); }catch(_){}
+        try{ if(typeof toast==="function")toast("💬 Réponse de Kevin"); }catch(_){}
+        try{ var btn=document.getElementById("depChatBtn"); if(btn&&(!window._depChatOpen))btn.classList.add("has-unread"); }catch(_){}
+        // notif navigateur (si autorisée + panneau fermé) — la dernière réponse
+        try{ if(!window._depChatOpen&&("Notification"in window)&&Notification.permission==="granted"){
+          var last=null; for(var i=chat.length-1;i>=0;i--){ if(chat[i].who==="kevin"){ last=chat[i]; break; } }
+          if(last)new Notification("💬 Réponse de Kevin",{body:String(last.text||"").slice(0,120),tag:"cmc-dep-reply"}); } }catch(_){} }
+    }); };
+  function _depSSEReplies(){ try{ if(window._esRep){window._esRep.close();window._esRep=null;} }catch(_){}
+    try{ window._esRep=new EventSource(FBURL+FBPATH+"/cmc_dep_reply.json"+_qs()); var _tr=null;
+      var b=function(){ if(_tr)clearTimeout(_tr); _tr=setTimeout(window._depPullReplies,600); };
+      window._esRep.addEventListener("put",b); window._esRep.addEventListener("patch",b); }catch(_){}
+  }
+  window._depPullReplies_boot=function(){ try{ _depPullReplies(); _depSSEReplies(); }catch(_){} };
+  // Boot : auth best-effort → pull initial → SSE live.
+  _fbAuth(function(){ _fbPull(); _fbPullChefs(); _fbPullCfg(); _fbSSE(); _fbSSECfg(); window._depPullReplies_boot(); });
+  // Même appareil : un autre onglet (l'app) écrit le localStorage partagé → rebuild local.
+  window.addEventListener("storage",function(e){ if(!e||!e.key)return;
+    if(e.key==="cmc_ov"||e.key==="cmc_e"||e.key==="cmc_ov_meta"||e.key.indexOf("cmc_team_mirror_")===0){
+      try{ var live=_liveFromLS(); if(live){ applyBoards(live); _depRefresh(); } }catch(_){} } });
+  // Retour premier plan → re-pull Firebase (cross-device).
+  document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){_fbPull();_fbPullChefs();_fbPullCfg();} });
+  window.addEventListener("focus",function(){ _fbPull();_fbPullChefs();_fbPullCfg(); });
+})();
+
+// ===== v1.23 — WIDGET « Joindre Kevin » (chat). Visible UNIQUEMENT une fois connecté
+// (gate franchi). Bouton flottant → panneau de conversation (2 voies). Autonome, n'affecte
+// jamais le planning. Envoi via window._depSendKevin ; réponses via window._depPullReplies.
+(function(){
+  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function relt(ts){ try{ var d=Date.now()-ts; if(d<60000)return"à l'instant"; if(d<3600000)return Math.floor(d/60000)+" min"; if(d<86400000)return Math.floor(d/3600000)+" h"; return Math.floor(d/86400000)+" j"; }catch(_){ return""; } }
+  var st=document.createElement("style");
+  st.textContent=""
+    +"#depChatBtn{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:9998;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,#c9a227,#8a6d10);color:#1a1408;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,.45);cursor:pointer;display:none;align-items:center;justify-content:center}"
+    +"#depChatBtn.has-unread::after{content:'';position:absolute;top:8px;right:8px;width:12px;height:12px;border-radius:50%;background:#e5484d;border:2px solid #1a1408}"
+    +"#depChatPanel{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 80px);z-index:9999;width:min(360px,calc(100vw - 28px));max-height:min(70vh,560px);display:none;flex-direction:column;background:#12180f;border:1px solid #2c3a24;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.55);overflow:hidden}"
+    +"#depChatPanel .hd{display:flex;align-items:center;gap:8px;padding:12px 14px;background:linear-gradient(135deg,#1c2814,#141d0e);border-bottom:1px solid #2c3a24}"
+    +"#depChatPanel .hd b{color:#e8d48a;font-size:15px}#depChatPanel .hd .sub{color:#8ab888;font-size:11px}"
+    +"#depChatPanel .hd .x{margin-left:auto;background:none;border:none;color:#9fb89f;font-size:20px;cursor:pointer;line-height:1}"
+    +"#depChatMsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}"
+    +"#depChatMsgs .b{max-width:82%;padding:8px 11px;border-radius:14px;font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word}"
+    +"#depChatMsgs .me{align-self:flex-end;background:#3a2e08;color:#ffe9a8;border:1px solid #7a5f12;border-bottom-right-radius:4px}"
+    +"#depChatMsgs .kv{align-self:flex-start;background:#1f2f19;color:#eaf3e2;border:1px solid #33452a;border-bottom-left-radius:4px}"
+    +"#depChatMsgs .t{font-size:10px;margin-top:3px;opacity:.7}"
+    +"#depChatMsgs .me .t{color:#e8cf86}#depChatMsgs .kv .t{color:#a8c8a0}"
+    +"#depChatMsgs .empty{color:#8ab888;text-align:center;font-size:13px;margin:auto;padding:16px}"
+    +"#depChatBar{display:flex;gap:8px;padding:10px;border-top:1px solid #2c3a24;background:#0f140c}"
+    +"#depChatIn{flex:1;resize:none;border-radius:10px;border:1px solid #33452a;background:#0b0f08;color:#eef;padding:9px 11px;font-size:15px;font-family:inherit;max-height:90px}"
+    +"#depChatSend{border:none;border-radius:10px;background:linear-gradient(135deg,#4aa078,#2f7d55);color:#fff;font-size:14px;font-weight:700;padding:0 14px;cursor:pointer}";
+  document.head.appendChild(st);
+  var btn=document.createElement("button"); btn.id="depChatBtn"; btn.type="button"; btn.title="Joindre Kevin"; btn.textContent="💬";
+  var panel=document.createElement("div"); panel.id="depChatPanel";
+  panel.innerHTML=""
+    +"<div class='hd'><div><b>💬 Joindre Kevin</b><div class='sub'>question, souci, absence…</div></div><button class='x' type='button' aria-label='Fermer'>✕</button></div>"
+    +"<div id='depChatMsgs'></div>"
+    +"<div id='depChatPending' style='display:none;padding:6px 10px;border-top:1px solid #2c3a24;align-items:center;gap:8px'></div>"
+    +"<div id='depChatBar'>"
+    +"<input type='file' id='depChatFile' accept='image/*' style='display:none'>"
+    +"<button id='depChatPhoto' type='button' title='Joindre une photo' style='border:1px solid #33452a;border-radius:10px;background:#0b0f08;color:#c9a227;font-size:18px;width:44px;min-height:44px;cursor:pointer'>📎</button>"
+    +"<textarea id='depChatIn' rows='1' placeholder='Écris ton message…' maxlength='2000'></textarea>"
+    +"<button id='depChatSend' type='button'>Envoyer</button></div>";
+  document.body.appendChild(btn); document.body.appendChild(panel);
+  window._depChatOpen=false;
+  window._depRenderChat=function(){
+    var box=document.getElementById("depChatMsgs"); if(!box)return;
+    var chat=(window._depGetChat?window._depGetChat():[])||[];
+    if(!chat.length){ box.innerHTML="<div class='empty'>Écris à Kevin — il reçoit ton message sur son téléphone (chat Apex) et te répond ici.</div>"; return; }
+    box.innerHTML=chat.map(function(m){
+      /* v1.32 — vu en vérif réelle (run 31235630065) : GET /%22+m.img+%22 → le flux HTML servi
+         peut arriver CORROMPU (CDN/réseau) et le navigateur re-parse alors le SOURCE JS comme du
+         HTML : chaque balise image écrite en clair dans le source devient un vrai tag → requête
+         vers le texte littéral → 404. Blindage : (a) plus AUCUNE balise image lisible dans le
+         source (nom de tag scindé « i »+« mg »), (b) l'URL est VALIDÉE avant d'entrer dans src
+         (data:image/, https://, blob: uniquement). */
+      var img=(m.img&&window._okImgUrl&&window._okImgUrl(m.img))?("<i"+"mg src='"+m.img+"' alt='photo' style='max-width:100%;border-radius:8px;margin:2px 0;display:block' onclick='window.open(this.src)'>"):((m.imgStripped||m.img)?"<div style=\"font-size:12px;opacity:.7\">📷 photo envoyée</div>":"");
+      var lu=(m.who==="me"&&window._depReadTs&&m.ts<=window._depReadTs)?" · <span style='color:#7fd0a0'>✓ Lu</span>":"";
+      return "<div class='b "+(m.who==="me"?"me":"kv")+"'>"+img+(m.text?esc(m.text):"")+"<div class='t'>"+(m.who==="me"?"toi":"Kevin")+" · "+relt(m.ts)+lu+"</div></div>"; }).join("");
+    box.scrollTop=box.scrollHeight;
+  };
+  function openPanel(){ window._depChatOpen=true; panel.style.display="flex"; btn.classList.remove("has-unread");
+    try{ if(window._depPullReplies)window._depPullReplies(); }catch(_){}
+    window._depRenderChat(); setTimeout(function(){ try{ document.getElementById("depChatIn").focus(); }catch(_){} },150); }
+  function closePanel(){ window._depChatOpen=false; panel.style.display="none"; }
+  btn.addEventListener("click",function(){ window._depChatOpen?closePanel():openPanel(); });
+  panel.querySelector(".x").addEventListener("click",closePanel);
+  window._depPendingImg=null;
+  function renderPending(){ var p=document.getElementById("depChatPending"); if(!p)return;
+    if(window._depPendingImg&&window._okImgUrl&&window._okImgUrl(window._depPendingImg)){ p.style.display="flex"; p.innerHTML="<i"+"mg src='"+window._depPendingImg+"' style='height:44px;border-radius:6px'><span style='color:#8ab888;font-size:12px'>Photo jointe</span><button type='button' id='depPendX' style='margin-left:auto;background:none;border:none;color:#e5776c;font-size:16px;cursor:pointer'>✕ retirer</button>";
+      var x=document.getElementById("depPendX"); if(x)x.onclick=function(){ window._depPendingImg=null; renderPending(); }; }
+    else { p.style.display="none"; p.innerHTML=""; } }
+  function doSend(){ var ta=document.getElementById("depChatIn"); if(!ta)return; var t=ta.value.trim(); var img=window._depPendingImg;
+    if(!t&&!img){ return; }
+    if(!window._depSendKevin){ try{ if(typeof toast==="function")toast("⚠ Chat indisponible"); }catch(_){} return; }
+    // notif employé : demande l'autorisation une fois (pour recevoir les réponses de Kevin)
+    try{ if(("Notification"in window)&&Notification.permission==="default"&&!localStorage.getItem("cmc_dep_notif_asked")){ localStorage.setItem("cmc_dep_notif_asked","1"); Notification.requestPermission().catch(function(){}); } }catch(_){}
+    window._depSendKevin(t,img,function(ok){ if(ok){ ta.value=""; ta.style.height="auto"; window._depPendingImg=null; renderPending(); window._depRenderChat();
+      try{ if(typeof toast==="function")toast("✅ Envoyé à Kevin"); }catch(_){} } });
+  }
+  document.getElementById("depChatSend").addEventListener("click",doSend);
+  // 📎 photo : sélection → downscale (canvas, max 1200px, JPEG) → pièce jointe en attente
+  document.getElementById("depChatPhoto").addEventListener("click",function(){ var f=document.getElementById("depChatFile"); if(f)f.click(); });
+  document.getElementById("depChatFile").addEventListener("change",function(e){
+    var file=e.target.files&&e.target.files[0]; e.target.value=""; if(!file||!/^image\//.test(file.type)){ return; }
+    var rd=new FileReader(); rd.onload=function(){ var im=new Image(); im.onload=function(){
+      try{ var mx=1200,w=im.width,h=im.height; if(w>mx||h>mx){ if(w>=h){ h=Math.round(h*mx/w); w=mx; } else { w=Math.round(w*mx/h); h=mx; } }
+        var cv=document.createElement("canvas"); cv.width=w; cv.height=h; cv.getContext("2d").drawImage(im,0,0,w,h);
+        var q=0.7,url=cv.toDataURL("image/jpeg",q); while(url.length>360000&&q>0.35){ q-=0.12; url=cv.toDataURL("image/jpeg",q); }
+        window._depPendingImg=url; renderPending();
+        try{ if(typeof toast==="function")toast("📷 Photo prête — ajoute un mot puis Envoyer"); }catch(_){}
+      }catch(_){ try{ if(typeof toast==="function")toast("⚠ Photo illisible"); }catch(_){} } };
+      im.onerror=function(){ try{ if(typeof toast==="function")toast("⚠ Photo illisible"); }catch(_){} }; im.src=rd.result; };
+    rd.readAsDataURL(file);
+  });
+  var inp=document.getElementById("depChatIn");
+  inp.addEventListener("input",function(){ this.style.height="auto"; this.style.height=Math.min(90,this.scrollHeight)+"px"; });
+  inp.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); doSend(); } });
+  // visibilité : uniquement une fois connecté (gate franchi)
+  window._depChatSync=function(){ try{ btn.style.display=(typeof _depHasIdentity==="function"&&_depHasIdentity())?"flex":"none"; if(!_depHasIdentity())closePanel(); }catch(_){} };
+  window._depChatSync();
+  document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){ window._depChatSync(); try{ if(window._depPullReplies)window._depPullReplies(); }catch(_){} } });
+})();
+</script>
+</body>
+</html>
