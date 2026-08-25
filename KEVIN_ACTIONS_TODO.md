@@ -2,6 +2,72 @@
 
 ---
 
+## 🔴 GitHub a bloqué ton compte — le domaine est éteint *(24/08/2026, 23h40)*
+
+**Ce qui s'est passé.** GitHub Support a restreint le compte
+`9r4rxssx64-creator`, motif : *« des dépôts qui utilisent Actions uniquement
+pour interagir avec des sites tiers, ou pour du calcul général »*. Ils ont
+d'abord répondu qu'ils ne lèveraient pas la restriction.
+
+**Conséquence immédiate, mesurée :** `kd-mc.com` répond **404**. Ce n'est pas
+Cloudflare : le routeur (`services/kdmc-router/worker.js`) va chercher les pages
+sur `https://9r4rxssx64-creator.github.io` (constante `UPSTREAM`, ligne 14), et
+GitHub a éteint ces pages en bloquant le compte. **Toutes les apps du domaine
+sont tombées d'un coup** — CMCteams, Apex, boutiques, Lingua, arbre.
+
+**Le vrai défaut d'architecture, à retenir :** un seul point de rupture. Le code,
+la construction (Actions), *et* l'hébergement des pages étaient tous chez le même
+fournisseur. Quand ce fournisseur ferme la porte, il n'y a pas de porte de
+service. Cloudflare n'a pas sauvé le domaine parce qu'il ne fait que *relayer*
+vers GitHub.
+
+**Les chiffres qui ont déclenché l'alarme (comptés, pas supposés) :**
+
+| Mesure | Valeur |
+|---|---|
+| Workflows | **176** |
+| Avec horloge (cron) | **54** |
+| Qui visitent des sites web | **98** |
+| **Lancements automatiques / jour** | **~88** |
+
+Les plus incriminants au regard du motif cité : `social-publish.yml`,
+`social-scheduler.yml`, `social-auto-trigger.yml`, `social-long-video.yml`
+(publication sur des réseaux sociaux), `crypto-bot-verify.yml`,
+`aitmpl-fetch-picks.yml`. Ceux-là touchent **des services tiers**, ce qui est
+exactement ce que les conditions d'utilisation interdisent.
+
+**Part de responsabilité honnête :** ces robots, c'est moi qui les ai écrits, un
+par un, chacun pour une bonne raison sur le moment. Je n'ai jamais additionné le
+total. 88 démarrages de machine par jour, tous les jours, ne ressemblent plus à
+« je teste mon code ».
+
+### Fait
+
+- ✅ Sauvegarde complète du code remise à Kevin (4 535 fichiers, 21 Mo) — le code
+  ne dépend plus de GitHub pour exister.
+- ✅ Secours **CMCteams** prêt à déposer sur Cloudflare Pages (1 Mo, 16 fichiers,
+  autonome : `index.html` + duplication sous `CMCteams/` pour que les chemins
+  absolus résolvent). Construit avec `node mobile/build-ios.mjs cmcteams`.
+- ✅ Courrier d'appel envoyé à GitHub Support par Kevin (reconnaissance du
+  problème + chiffres + engagement de remise en ordre).
+
+### Décidé par Kevin — ne rien modifier pour l'instant
+
+Le ménage (supprimer les 6 robots « services tiers », couper l'horloge des 50
+autres → **88/jour ➜ 0/jour**) est **préparé mais NON appliqué**. Kevin préfère
+attendre la réponse de GitHub avant de toucher au dépôt. À relancer dès qu'ils
+répondent.
+
+### À faire quand l'accès revient
+
+1. Appliquer le ménage ci-dessus (accord de Kevin requis).
+2. Pousser le travail en attente (règle des liens : `CLAUDE.md` §4-bis + leçon).
+3. **Sortir le domaine du point de rupture unique** : héberger les pages
+   ailleurs que sur GitHub Pages (Cloudflare Pages en dépôt direct), et ne
+   garder GitHub que pour le code.
+
+---
+
 ## 🟢 Aucune clé à révoquer — vérifié, pas supposé *(12/08/2026)*
 
 Tu m'as dit « protège mon domaine entièrement ». J'ai fait passer un outil qui
