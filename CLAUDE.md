@@ -1233,6 +1233,12 @@ qui les neutralise, **en silence**.
 - ✅ Tout ce qu'une page publiée doit transmettre (adresse, identifiant, valeur) doit être
   **COPIABLE d'un appui** — le presse-papier fonctionne là où la navigation est bloquée.
 - ❌ Ne jamais faire dépendre une action de Kevin d'un lien situé dans un Artifact.
+- ❌ **Ne jamais donner un lien `claude.ai` comme étape** (page publiée, réglages, connecteurs) :
+  tapé depuis l'app iPhone il s'ouvre dans **Safari, où Kevin n'est pas connecté** → « Page not
+  found ». L'app et Safari ne partagent PAS la session. Il n'a donc jamais pu ouvrir AUCUNE de
+  mes pages publiées. Seuls les liens **externes** (gitlab.com, dash.cloudflare.com, github.com)
+  fonctionnent chez lui. Symptôme à reconnaître : « ça me renvoie sur une page Claude » = canal
+  cassé, pas lien mort. Cf. LESSONS #197 et #199.
 
 Cf. LESSONS #197.
 
