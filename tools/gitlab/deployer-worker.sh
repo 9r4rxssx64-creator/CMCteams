@@ -9,7 +9,7 @@ echo "== $NOM =="
 if grep -qE "durable_objects|vectorize" "$DIR/wrangler.toml"; then
   echo "   SKIP : ce worker utilise Durable Objects/Vectorize -> migration dediee plus tard"; exit 0
 fi
-TOML=/tmp/${NOM}.toml
+TOML="$DIR/.wrangler-nouveau.toml"   # DANS le dossier : wrangler resout main= par rapport a la config
 KVLISTE=$(node tools/gitlab/preparer-toml.mjs "$DIR" "$TOML")
 # R2 : les seaux sont references par NOM -> les creer s'ils manquent
 grep -oE 'bucket_name\s*=\s*"[^"]+"' "$DIR/wrangler.toml" | cut -d'"' -f2 | sort -u | while read -r B; do
@@ -28,5 +28,6 @@ if [ -n "$KVLISTE" ]; then
     echo "   KV $BINDING -> $ID (neuf, vide — les donnees restent dans l'ancien compte)"
   done <<< "$KVLISTE"
 fi
-( cd "$DIR" && npx --yes wrangler@3 deploy --config "$TOML" )
+( cd "$DIR" && npx --yes wrangler@3 deploy --config .wrangler-nouveau.toml )
+rm -f "$TOML"
 echo "   OK $NOM vivant -> https://${NOM}.desarzens-kevin.workers.dev"
