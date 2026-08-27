@@ -1,3 +1,45 @@
+# ⚡ ÉTAT COURANT — 27/08/2026 16h20 (à lire EN PREMIER)
+
+## Le grand incident et la reconstruction (24→27/08/2026)
+
+**24/08** : GitHub bloque le compte `9r4rxssx64-creator` (motif : Actions utilisé pour
+services tiers / calcul général — 176 workflows, ~88 lancements auto/jour, mesurés).
+GitHub Pages s'éteint → **kd-mc.com entier tombe** (le routeur ne faisait que relayer).
+Appel envoyé à GitHub Support par Kevin — réponse en attente.
+
+**25-27/08 — reconstruction, OPÉRATIONNELLE** :
+- **Code** → GitLab, projet **`kdmc-group/Kdmc-project` (id 85753352)**, branche main.
+  Identique au dernier état local (arbre vérifié). Compte GitLab `desarzens.kevin`.
+- **Machine** : `.gitlab-ci.yml` + `tools/gitlab/{verifier,publier,etat}.sh`.
+  À chaque poussée : vérifie la clé Cloudflare → publie TOUT le site sur
+  **`kdmc-site.pages.dev`** (racine ET sous `/CMCteams/` pour les chemins absolus).
+  Horloge GitLab 1×/jour (06h Monaco) : sonde d'état. Sobriété volontaire (leçon 88/j).
+- **Cloudflare** : NOUVEAU compte de travail = **Desarzens.kevin@gmail.com**
+  (id `ffaca6f306a953f82834db0970f300f0`). Clé API au coffre GitLab (masquée).
+  L'ANCIEN compte (login GitHub → verrouillé) détient **kd-mc.com (Cloudflare
+  Registrar)** + les 17 workers + KV/R2. Ses workers TOURNENT ENCORE.
+- **Jetons** (créés par Kevin, 30j, révocables) : GitLab api + write_repository,
+  Cloudflare Pages/Workers/Routes/DNS edit. Valeurs : coffre GitLab uniquement.
+
+## Sonde du 27/08/2026 16h16 (mesurée par la machine, job etat-du-domaine)
+- Nouveau site : **6/6 VIVANT (200)** — racine, lingua, arbre, departs, apex-v13, messaging.
+- Anciens workers : **10/10 répondent** (200/401/405, ou 404 racine = vivant sans route /).
+  → la plupart des fonctions des apps marchent depuis les adresses provisoires.
+- kd-mc.com : 404 (routeur vivant, amont github.io mort) — captif de l'ancien compte.
+
+## LA seule action Kevin en attente
+**« Forgot password » Cloudflare** avec l'adresse Apple masquée → rentrer dans
+l'ancien compte SANS GitHub → je rebranche le routeur (UPSTREAM → kdmc-site.pages.dev)
+→ toutes les adresses d'avant reviennent en ~1h. Sinon : dossier support Cloudflare.
+
+## Reste à faire (moi)
+1. Rebrancher le routeur dès l'accès ancien compte (ou réponse GitHub positive).
+2. Redéploiement sélectif des workers chez Desarzens-Kevin (avec liste des clés à re-poser).
+3. Ré-créer les automatismes vitaux en Cron Cloudflare (sobres).
+4. GitHub : si débloqué → ménage des 176 workflows (88/j → <5/j), accord Kevin acquis pour préparation.
+
+---
+
 # MEMO_RESUME — état de session
 
 ## Soir du 7 août 2026 — Lingua jeux de rôle 🎭 + Bee vivante dans Créa Studio 🐝

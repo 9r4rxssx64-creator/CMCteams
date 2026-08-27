@@ -103,3 +103,22 @@ interdit désormais qu'une carte sorte du domaine, exige que **l'adresse affich�
 destination**, et vérifie que chaque belle adresse citée existe vraiment dans le routeur
 ET dans `wrangler.toml` (sinon : ni DNS ni certificat = page morte). Prouvé qu'il rougit.
 Les 5 nouvelles adresses sont aussi ouvertes pour de vrai par `verif-reelle.yml`.
+
+## ⚠️ ADRESSES PROVISOIRES (blocage GitHub du 24/08/2026 — domaine captif)
+
+Tant que `kd-mc.com` est prisonnier de l'ancien compte Cloudflare, les apps vivent ici
+(toutes sondées VIVANTES le 27/08) :
+
+| App | Adresse provisoire |
+|---|---|
+| CMCteams | https://kdmc-site.pages.dev/ (secours : https://kdmc0.pages.dev) |
+| Départs | https://kdmc-site.pages.dev/tools/departs/ |
+| Lingua | https://kdmc-site.pages.dev/lingua/ |
+| Arbre | https://kdmc-site.pages.dev/arbre/ |
+| Apex v13 | https://kdmc-site.pages.dev/apex-ai-v13/ |
+| Apex Chat | https://kdmc-site.pages.dev/messaging-app/ |
+| Portail | https://kdmc-site.pages.dev/kdmc-home/ |
+
+Les chemins `/CMCteams/...` (préfixe github.io) fonctionnent AUSSI sur kdmc-site.pages.dev
+→ le routeur, une fois rebranché, retrouvera des chemins identiques. La règle « une belle
+adresse par projet » se rétablit dès le retour du domaine.

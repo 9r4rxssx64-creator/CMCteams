@@ -1,3 +1,9 @@
+> ⚠️ **27/08/2026 — les liens `github.com/...` de ce fichier sont MORTS tant que le blocage
+> GitHub dure.** Le code vit sur GitLab : remplace `https://github.com/9r4rxssx64-creator/cmcteams/blob/main/`
+> par `https://gitlab.com/kdmc-group/Kdmc-project/-/blob/main/` pour n'importe quel fichier.
+> Nouveaux fichiers de la reconstruction : `.gitlab-ci.yml`, `tools/gitlab/verifier.sh`,
+> `tools/gitlab/publier.sh`, `tools/gitlab/etat.sh` (machine GitLab→Cloudflare).
+
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.

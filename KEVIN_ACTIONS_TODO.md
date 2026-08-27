@@ -2,6 +2,26 @@
 
 ---
 
+## 🎯 TA SEULE ACTION EN ATTENTE — rouvrir l'ancien compte Cloudflare *(1 min)*
+
+`dash.cloudflare.com/login` → **« Forgot your password? »** → adresse Apple masquée
+(`…@privaterelay.appleid.com`, visible dans Réglages iPhone → ton nom → Connexion avec
+Apple → GitHub) → mail reçu → nouveau mot de passe → **tu rentres sans GitHub**.
+Si ça marche → toutes les adresses `xxx.kd-mc.com` reviennent en ~1h (je rebranche le
+routeur). Si aucun mail → je monte le dossier support Cloudflare (tu es le propriétaire
+payant du domaine).
+
+---
+
+## 🟢 SONDE DU 27/08 16h16 — mesurée par la machine, pas supposée
+
+- Nouveau site `kdmc-site.pages.dev` : **6/6 pages VIVANTES (200)**.
+- **Les 10 anciens workers répondent TOUS** (le compte est verrouillé, pas éteint)
+  → la plupart des fonctions marchent déjà depuis les adresses provisoires.
+- `kd-mc.com` : 404 — captif de l'ancien compte, cf. action ci-dessus.
+
+---
+
 ## 🟢 LE DOMAINE REVIT SANS GITHUB — chaîne GitLab → Cloudflare opérationnelle *(27/08/2026, 15h41)*
 
 Preuves lues dans les journaux d'exécution (jamais supposées) :

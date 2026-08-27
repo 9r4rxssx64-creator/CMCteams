@@ -1,6 +1,31 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26 (Apex v13.4.277 / CMC v9.741).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26
+
+## 🚨 INFRA ACTIVE DEPUIS LE 27/08/2026 — LIRE AVANT TOUT (blocage GitHub)
+
+**GitHub a bloqué le compte le 24/08/2026** (appel en cours). Depuis :
+- **Source de vérité du code = GitLab** : projet `kdmc-group/Kdmc-project` (**id 85753352**),
+  branche `main`, compte `desarzens.kevin`. Les remotes/MCP GitHub renvoient 403 tant que
+  le blocage dure — ne pas perdre de temps dessus, travailler via l'API GitLab
+  (jeton dans le coffre CI ; côté session : `/root/.gitlab_api_token` si présent).
+- **Publication auto** : `.gitlab-ci.yml` + `tools/gitlab/*.sh` → chaque commit sur main
+  publie TOUT le site sur **`kdmc-site.pages.dev`** (Cloudflare Pages, compte
+  **Desarzens.kevin@gmail.com**, id `ffaca6f306a953f82834db0970f300f0`). Contenu à la
+  racine ET sous `/CMCteams/` (chemins absolus). Sonde d'état 1×/jour.
+- **TOUT nouveau .gitlab-ci.yml passe par `POST /ci/lint` AVANT commit** (un `:` dans une
+  ligne de script casse le YAML — leçon #200). Commandes dans des `.sh`, jamais inline.
+- **kd-mc.com est CAPTIF de l'ancien compte Cloudflare** (login GitHub verrouillé ;
+  Cloudflare Registrar). Ses 17 workers TOURNENT ENCORE (10/10 sondés vivants) — ne pas
+  déployer de doublons sans secrets/données. Retour du domaine = accès ancien compte
+  (« Forgot password » Cloudflare, ou déblocage GitHub, ou support Cloudflare).
+- **Anti-régression de l'incident** : plus jamais code+build+hébergement chez UN
+  fournisseur ; horloges sobres (~1/jour, jamais 88/jour) ; JAMAIS d'automatisation de
+  services tiers depuis une CI (leçons #198/#200).
+
+---
+
+ (Apex v13.4.277 / CMC v9.741).
 
 ---
 
