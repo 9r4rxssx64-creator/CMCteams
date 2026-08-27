@@ -6,7 +6,7 @@ workflow:
     - if: '$CLOUDFLARE_API_TOKEN'
     - when: never
 
-stages: [verifier, publier]
+stages: [verifier, publier, etat]
 
 verifier-cloudflare:
   stage: verifier
@@ -23,3 +23,17 @@ publier-site:
   needs: [verifier-cloudflare]
   script:
     - 'bash tools/gitlab/publier.sh'
+
+# Sonde quotidienne (et sur demande) : qui est vivant, qui est mort — chiffres reels.
+etat-du-domaine:
+  stage: etat
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "api"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - when: never
+  script:
+    - 'sh tools/gitlab/etat.sh'
