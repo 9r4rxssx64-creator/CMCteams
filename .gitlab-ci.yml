@@ -1,0 +1,50 @@
+# ────────────────────────────────────────────────────────────────────────────
+# Publication du domaine kd-mc.com depuis GitLab vers Cloudflare
+# (compte Desarzens-Kevin — reconstruction après le blocage GitHub du 24/08/2026)
+#
+# La machine ne démarre QUE si la clé Cloudflare est au coffre du projet
+# (Settings → CI/CD → Variables : CLOUDFLARE_API_TOKEN, masquée).
+# Leçon #176 : jamais de tube (|) dont l'échec passerait au vert.
+# ────────────────────────────────────────────────────────────────────────────
+workflow:
+  rules:
+    - if: '$CLOUDFLARE_API_TOKEN'
+      when: always
+    - when: never
+
+stages: [verifier, publier]
+
+# ── 1. Vérifier la clé + découvrir le compte (preuve, pas supposition) ──────
+verifier-cloudflare:
+  stage: verifier
+  image: badouralix/curl-jq
+  script:
+    - echo "── La clé est-elle vivante ?"
+    - curl -sf -H "Authorization Bearer masqué" -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" https://api.cloudflare.com/client/v4/user/tokens/verify > /tmp/v.json
+    - jq -e '.success == true' /tmp/v.json > /dev/null
+    - echo "✅ clé VALIDE — état $(jq -r '.result.status' /tmp/v.json)"
+    - echo "── À quelle maison appartient-elle ?"
+    - curl -sf -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" "https://api.cloudflare.com/client/v4/accounts?per_page=10" > /tmp/a.json
+    - jq -r '.result[] | "  compte → \(.name)  (id \(.id))"' /tmp/a.json
+    - ACCOUNT_ID=$(jq -r '.result[0].id' /tmp/a.json)
+    - test -n "$ACCOUNT_ID" && test "$ACCOUNT_ID" != "null"
+    - echo "CLOUDFLARE_ACCOUNT_ID=$ACCOUNT_ID" > compte.env
+  artifacts:
+    reports: { dotenv: compte.env }
+
+# ── 2. Publier TOUT le site (les pages que github.io servait) ───────────────
+publier-site:
+  stage: publier
+  image: node:20
+  needs: [verifier-cloudflare]
+  script:
+    - echo "── Préparer le contenu (25 Mo max par fichier chez Cloudflare Pages)"
+    - mkdir -p /tmp/_site
+    - tar cf - --exclude=.git --exclude='.gitlab-ci.yml' --exclude='*.patch' . | tar xf - -C /tmp/_site
+    - find /tmp/_site -type f -size +24M -print -delete
+    - echo "fichiers à publier :" && find /tmp/_site -type f | wc -l
+    - echo "── Créer le projet Pages (sans échec s'il existe déjà)"
+    - npx --yes wrangler@3 pages project create kdmc-site --production-branch=main 2>/dev/null || echo "(projet kdmc-site déjà présent)"
+    - echo "── Publier"
+    - npx --yes wrangler@3 pages deploy /tmp/_site --project-name=kdmc-site --branch=main --commit-dirty=true
+    - echo "✅ Site publié — adresse kdmc-site.pages.dev (et alias du déploiement ci-dessus)"
