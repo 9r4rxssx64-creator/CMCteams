@@ -2,6 +2,26 @@
 
 ---
 
+## 🟢 LE DOMAINE REVIT SANS GITHUB — chaîne GitLab → Cloudflare opérationnelle *(27/08/2026, 15h41)*
+
+Preuves lues dans les journaux d'exécution (jamais supposées) :
+- Clé Cloudflare **VALIDE, active** — compte **Desarzens.kevin@gmail.com** (id ffaca6f3…), le bon.
+- **11 154 fichiers publiés** sur **kdmc-site.pages.dev** (contenu à la racine ET sous /CMCteams/
+  pour les chemins absolus — Pages a dédupliqué : 2ᵉ copie envoyée en 1 s).
+- Machine : `.gitlab-ci.yml` + `tools/gitlab/verifier.sh` + `publier.sh` (projet GitLab 85753352,
+  kdmc-group/Kdmc-project). Clé au coffre GitLab, masquée. Chaque poussée republie tout.
+
+Panne des 2 essais de midi élucidée : un `:` dans une ligne de script YAML (« Authorization: Bearer »)
+→ GitLab lisait un dictionnaire. Remède : commandes dans de vrais scripts, recette validée par
+`ci/lint` AVANT commit.
+
+### Reste à faire
+1. Kevin teste les adresses (liste envoyée dans le chat) et signale ce qui boite.
+2. Workers → redéploiement sur le compte Desarzens-Kevin (il faudra re-poser leurs secrets).
+3. Ancien compte Cloudflare : « Forgot password » avec l'adresse Apple masquée → récupérer kd-mc.com.
+4. Réponse GitHub (appel envoyé le 24/08).
+---
+
 ## 🔴 GitHub a bloqué ton compte — le domaine est éteint *(24/08/2026, 23h40)*
 
 **Ce qui s'est passé.** GitHub Support a restreint le compte
