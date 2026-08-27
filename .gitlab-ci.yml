@@ -37,3 +37,14 @@ etat-du-domaine:
     - when: never
   script:
     - 'sh tools/gitlab/etat.sh'
+
+# Renaissance des workers sur le nouveau compte — a la demande, jamais automatique.
+renaitre-workers:
+  stage: publier
+  image: node:20
+  needs: [verifier-cloudflare]
+  rules:
+    - if: '$DEPLOYER_WORKERS'
+    - when: never
+  script:
+    - 'for W in $DEPLOYER_WORKERS; do bash tools/gitlab/deployer-worker.sh services/$W; done'
