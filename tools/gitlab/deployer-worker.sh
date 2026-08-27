@@ -13,7 +13,9 @@ TOML="$DIR/.wrangler-nouveau.toml"   # DANS le dossier : wrangler resout main= p
 KVLISTE=$(node tools/gitlab/preparer-toml.mjs "$DIR" "$TOML")
 # R2 : les seaux sont references par NOM -> les creer s'ils manquent
 grep -oE 'bucket_name\s*=\s*"[^"]+"' "$DIR/wrangler.toml" | cut -d'"' -f2 | sort -u | while read -r B; do
-  npx --yes wrangler@3 r2 bucket create "$B" 2>/dev/null && echo "   seau R2 cree: $B" || echo "   seau R2 deja la: $B"
+  SORTIE=$(npx --yes wrangler@3 r2 bucket create "$B" 2>&1) && echo "   seau R2 cree: $B" || {
+    echo "$SORTIE" | grep -qi "already exists" && echo "   seau R2 deja la: $B" || { echo "   ECHEC creation seau $B :"; echo "$SORTIE" | tail -5; exit 1; }
+  }
 done
 # KV : creer et injecter les nouveaux ids
 if [ -n "$KVLISTE" ]; then
