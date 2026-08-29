@@ -27,6 +27,16 @@ Appel envoyé à GitHub Support par Kevin — réponse en attente.
   → la plupart des fonctions des apps marchent depuis les adresses provisoires.
 - kd-mc.com : 404 (routeur vivant, amont github.io mort) — captif de l'ancien compte.
 
+## Renaissance des workers (29/08 21h20) — MACHINE PROUVÉE
+- ✅ **kdmc-crea-famille** et **kdmc-mail** RENÉS chez Desarzens-Kevin (pipeline 2802316478,
+  tiroirs KV créés/retrouvés, adresses `*.desarzens-kevin.workers.dev`). Tiroirs NEUFS ET
+  VIDES — les données restent dans l'ancien compte.
+- ⏸ **coffre-r2** : attend le clic Kevin « Activer R2 » (code 10042, dashboard seulement).
+- 🔜 Vague 2 (apis/balances/crea-ai/live/monaco/outlook/access) : machine prête, il faudra
+  re-poser leurs clés API (coffre Apex de Kevin) dans le coffre GitLab.
+- Outils : `renaitre-workers` (variable DEPLOYER_WORKERS) · `regarder-cloudflare` (REGARDER)
+  · `sonder-url` (SONDER_URL) — mes yeux et mes mains, prouvés.
+
 ## LA seule action Kevin en attente
 **« Forgot password » Cloudflare** avec l'adresse Apple masquée → rentrer dans
 l'ancien compte SANS GitHub → je rebranche le routeur (UPSTREAM → kdmc-site.pages.dev)
