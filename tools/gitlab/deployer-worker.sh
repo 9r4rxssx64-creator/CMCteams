@@ -21,9 +21,9 @@ done
 if [ -n "$KVLISTE" ]; then
   while IFS=$'\t' read -r BINDING ANCIEN; do
     SORTIE=$(npx --yes wrangler@3 kv:namespace create "$BINDING" 2>&1 || true)
-    ID=$(echo "$SORTIE" | grep -oE 'id = "[a-f0-9]{32}"' | head -1 | cut -d'"' -f2)
+    ID=$(echo "$SORTIE" | grep -oE 'id = "[a-f0-9]{32}"' | head -1 | cut -d'"' -f2 || true)
     if [ -z "$ID" ]; then # existe peut-etre deja -> le retrouver
-      ID=$(npx --yes wrangler@3 kv:namespace list | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const j=JSON.parse(d);const m=j.find(n=>n.title.endsWith('$BINDING'));console.log(m?m.id:'')})")
+      ID=$( (npx --yes wrangler@3 kv:namespace list 2>/dev/null || true) | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const j=JSON.parse(d);const m=j.find(n=>n.title.endsWith('$BINDING'));console.log(m?m.id:'')}catch(e){console.log('')}})" || true)
     fi
     [ -n "$ID" ] || { echo "   ECHEC creation KV $BINDING"; exit 1; }
     sed -i "s/@@${BINDING}@@/${ID}/" "$TOML"
