@@ -48,3 +48,27 @@ renaitre-workers:
     - when: never
   script:
     - 'for W in $DEPLOYER_WORKERS; do bash tools/gitlab/deployer-worker.sh services/$W; done'
+
+# Mes yeux : inventaire Cloudflare a la demande (lecture seule).
+regarder-cloudflare:
+  stage: etat
+  image: alpine:3.20
+  needs: [verifier-cloudflare]
+  allow_failure: true
+  rules:
+    - if: '$REGARDER'
+    - when: never
+  script:
+    - 'sh tools/gitlab/regarder.sh'
+
+# Mes yeux : lire n'importe quelle page web depuis la machine.
+sonder-url:
+  stage: etat
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$SONDER_URL'
+    - when: never
+  script:
+    - 'sh tools/gitlab/sonder-url.sh'
