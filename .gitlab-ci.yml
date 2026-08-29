@@ -47,7 +47,7 @@ renaitre-workers:
     - if: '$DEPLOYER_WORKERS'
     - when: never
   script:
-    - 'for W in $DEPLOYER_WORKERS; do bash tools/gitlab/deployer-worker.sh services/$W; done'
+    - 'for W in $DEPLOYER_WORKERS; do bash -x tools/gitlab/deployer-worker.sh services/$W; done'
 
 # Mes yeux : inventaire Cloudflare a la demande (lecture seule).
 regarder-cloudflare:
