@@ -138,3 +138,26 @@ la réponse complète point par point (appareil = iPhone, navigateur = Safari iO
 - Ne pas promettre l'App Store tant que le `.p8` n'est pas récupéré ET la chaîne build testée.
 - Ne pas faire coller le `.p8` dans le chat (secret → GitLab directement).
 - Ne pas changer le `bundleId` figé (com.kdmc.cmcteams / apexchat / lingua).
+
+---
+
+## 📦 COLIS d'une session-sœur (cmcteams-78) — récupéré le 31/08
+
+Une AUTRE session Claude (`cmcteams-78`), bloquée sur GitHub comme la mienne, a encapsulé
+son travail dans un Artifact (git bundle base64). Kevin l'a transmis.
+
+- **Vérifié** : sha256 du bundle = `42db2fb9a1ac50ebd44a5dba4162da8a90d7181744d36fe9b00ee2a2ee6c9957`
+  (identique à l'attendu) · `git bundle verify` OK · tête `90831ce2`.
+- **8 commits** (base = origin/main GitHub `7b2d8b6b2`, présent en local) :
+  septembre 2026 intégré (app+Départs) · horaires+lieux vérifiés 22 557 cellules · MATTERA M
+  + MOREL F retrouvés + garde PDF→seed · **son propre secours GitLab + pipeline GitLab→Cloudflare**
+  · outil gitlab-onboard · app blindée contre fichier de données cassé (écran kdmc0.pages.dev).
+- **Action faite** : branche poussée sur GitLab `claude/cmcteams-clicking-issue-rmli6m` (PAS main) → préservée.
+
+### ⚠️ À RÉCONCILIER plus tard (quand GitHub rouvre)
+DEUX reconstructions parallèles ont fait des choses proches :
+- CETTE session : branche `claude/domain-one-click-links-s43ilc` (= main GitLab), workers renés.
+- Session-sœur : branche `claude/cmcteams-clicking-issue-rmli6m` (basée sur l'ancien main GitHub).
+Les deux ont un secours GitLab + pipeline Cloudflare → NE PAS empiler à l'aveugle. À la réouverture
+GitHub : comparer les deux, garder le meilleur de chaque (les 8 commits de planning de la sœur sont
+du contenu métier unique à conserver ; les scripts d'infra peuvent se recouper).
