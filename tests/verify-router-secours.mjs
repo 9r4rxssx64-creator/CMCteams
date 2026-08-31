@@ -137,6 +137,26 @@ r = await appel('kd-mc.com', '/', {});
 chk(amontVu.some((u) => u.startsWith('https://9r4rxssx64-creator.github.io/CMCteams/kdmc-home/')),
   'H-bis. sans réglage, on garde exactement le comportement d\'avant');
 
+
+/* I) SAISIE HUMAINE — Kevin remplit ces champs à la main sur un iPhone, dans un
+      tableau de bord qui n'accepte pas toujours un champ vide. Un espace, une
+      barre oblique en trop : ça ne doit RIEN casser. J'ai failli lui dire que
+      c'était géré sans l'avoir vérifié — ça l'est maintenant, et c'est prouvé. */
+for (const [base, prefixe, cas] of [
+  ['https://kdmc-5tr.pages.dev', ' ', 'un espace au lieu du vide'],
+  ['https://kdmc-5tr.pages.dev/', '', 'une barre oblique à la fin de l\'adresse'],
+  ['  https://kdmc-5tr.pages.dev  ', '   ', 'des espaces autour des deux'],
+  ['https://kdmc-5tr.pages.dev', '/kd-mc-sites/', 'un préfixe avec barre finale'],
+]) {
+  amont({ code: 200 });
+  await appel('kd-mc.com', '/', { UPSTREAM_BASE: base, UPSTREAM_PREFIX: prefixe });
+  const attendu = prefixe.trim().replace(/\/+$/, '') + '/kdmc-home/';
+  chk(amontVu.some((u) => u === 'https://kdmc-5tr.pages.dev' + attendu),
+    'I. ' + cas + ' → adresse correcte (' + (amontVu[0] || '—').slice(0, 52) + ')');
+  chk(!amontVu.some((u) => /\s|\/\//.test(u.replace('https://', ''))),
+    'I. ' + cas + ' → ni espace ni double barre dans l\'adresse');
+}
+
 R.ok.forEach((m) => console.log('  OK ' + m));
 R.ko.forEach((m) => console.log('  FAIL ' + m));
 console.log(`=== ${R.ok.length} OK / ${R.ko.length} FAIL ===`);

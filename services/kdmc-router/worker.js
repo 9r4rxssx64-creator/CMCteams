@@ -69,7 +69,7 @@ export default {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
     /* Source des pages : réglable sans redéploiement (cf. commentaire en tête). */
-    const UPSTREAM = (env && env.UPSTREAM_BASE) || UPSTREAM_DEFAUT;
+    const UPSTREAM = ((env && env.UPSTREAM_BASE) || UPSTREAM_DEFAUT).trim().replace(/\/+$/, '');
     /* ⚠️ Deux usages DIFFÉRENTS du préfixe, à ne pas confondre :
        - à l'ENTRÉE, les pages contiennent des liens en /CMCteams/… (c'est ainsi
          que GitHub Pages les a construites) → on reconnaît toujours
@@ -78,7 +78,14 @@ export default {
          alors ce préfixe par UPSTREAM_PREFIX (souvent vide).
        Utiliser une seule variable pour les deux ferait correspondre TOUTES les
        adresses dès que le préfixe est vide (p.startsWith('/') = toujours vrai). */
-    const PREFIX_SORTIE = (env && typeof env.UPSTREAM_PREFIX === 'string') ? env.UPSTREAM_PREFIX : PAGES_PREFIX_DEFAUT;
+    /* .trim() : un tableau de bord n'accepte pas toujours un champ vide, et
+       Kevin pourrait y mettre un espace. Sans nettoyage, le préfixe deviendrait
+       « » et toutes les adresses seraient cassées. Une barre oblique finale est
+       retirée aussi (« /kd-mc-sites/ » → « /kd-mc-sites »), sinon on obtient des
+       doubles barres. */
+    const PREFIX_SORTIE = (env && typeof env.UPSTREAM_PREFIX === 'string')
+      ? env.UPSTREAM_PREFIX.trim().replace(/\/+$/, '')
+      : PAGES_PREFIX_DEFAUT;
 
     // Recherche décès INSEE (proxy same-origin, public read-only) — pour l'arbre.
     if (url.pathname === '/__deces') return handleDeces(request, url);
