@@ -48,16 +48,17 @@ et une quinzaine d'autres. Dans le mauvais, seulement 4 ou 5.
 
 **`kd-mc-sites.zip`** — 7 Mo, 469 fichiers, **13 applications**.
 
-1. **Créer un projet Pages** → onglet **« Upload assets »** (pas « Connect to Git ») → glisser le dossier **enveloppé dans `CMCteams/`**
-2. **Changer UNE ligne dans le routeur** (compte `9r4rxssx64`) → *Modifier le code* → ligne **14** :
+1. **Créer un projet Pages** → onglet **« Upload assets »** (pas « Connect to Git ») → glisser le dossier des applications
+2. **Changer UNE ligne dans le routeur** (compte `9r4rxssx64`) → *Modifier le code* → ligne **111** :
 
 ```js
-const UPSTREAM = 'https://9r4rxssx64-creator.github.io';   // ← avant
-const UPSTREAM = 'https://kdmc0.pages.dev';                 // ← après
+    const upstreamUrl = UPSTREAM + upstreamPath + url.search;   // ← avant
+    const upstreamUrl = 'https://kdmc0.pages.dev' + upstreamPath.replace('/CMCteams', '') + url.search;   // ← après
 ```
 
 → *Deploy*. C'est tout. Prouvé par `tests/verify-bascule-une-ligne.mjs`
-(23 contrôles, 8 sous-domaines rendus depuis le VRAI code déployé).
+(44 contrôles, 8 sous-domaines rendus depuis le VRAI code déployé, dans les
+deux rangements possibles du paquet).
 
 **Le défaut** : à chaque modification, il faut refaire le paquet et le renvoyer.
 Ce n'est pas « tout auto ».
@@ -84,31 +85,33 @@ généalogique, Chez Lolo et La Détente reviennent aussi. Et plus jamais de ZIP
 
 ---
 
-## ⚠️ Le piège du préfixe — déjà réglé, ne rien toucher
+## ⚠️ Le piège du préfixe — et comment Kevin l'a révélé
 
 GitHub servait les pages sous `/CMCteams/…` (le nom du dépôt) et le routeur
-**en ligne** demande toujours ce préfixe. Deux façons de s'accorder :
+**en ligne** demande toujours ce préfixe (il est en dur dans la table `ROUTES`).
+J'avais donc enveloppé le paquet dans un dossier `CMCteams/` pour n'avoir qu'à
+changer l'adresse.
 
-* changer le routeur pour qu'il retire le préfixe → **2 lignes à modifier**
-* **enveloppper le paquet dans un dossier `CMCteams/`** → **0 ligne** ✅ *(choisi)*
+**Sauf que Cloudflare Pages APLATIT le dossier déposé** : ses fichiers
+atterrissent à la **racine** du projet, le nom du dossier disparaît.
 
-C'est pour ça que le dossier envoyé contient `CMCteams/` à la racine. Il ne
-reste donc **qu'une seule ligne** à changer : l'adresse.
+C'est Kevin qui l'a prouvé en une phrase : *« ouvert kdmc0.pages.dev, CMCteams
+toujours »*. Impossible avec l'enveloppe — la racine n'aurait aucun `index.html`
+et Cloudflare aurait renvoyé sa page 404. Donc : fichiers à la racine.
 
-### « J'ouvre et j'atterris sur CMCteams » — c'est NORMAL
+D'où la correction retenue : **une seule ligne**, la 111, qui change l'adresse
+**et** retire le préfixe.
 
-Mesuré sur le paquet exact, fichier par fichier :
-
-| Adresse ouverte | Ce qui s'affiche |
+| Adresse ouverte | Ce qui s'affiche (paquet à la racine) |
 |---|---|
-| `kdmc0.pages.dev/` | *rien (404)* — le routeur ne demande jamais cette adresse |
-| `kdmc0.pages.dev/CMCteams/` | **CMCteams** — Planning Casino de Monaco ✅ normal |
-| `kdmc0.pages.dev/CMCteams/kdmc-home/index.html` | **KDMC APEX — Mon univers** |
-| `…/CMCteams/tools/departs/index.html` | **CMCteams light — Départs** |
-| `…/CMCteams/coffre-fort/index.html` | **🔐 Coffre-fort perso** |
+| `kdmc0.pages.dev/` | **CMCteams** — Planning Casino de Monaco ✅ normal |
+| `kdmc0.pages.dev/kdmc-home/index.html` | **KDMC APEX — Mon univers** |
+| `kdmc0.pages.dev/tools/departs/index.html` | **CMCteams light — Départs** |
+| `kdmc0.pages.dev/coffre-fort/index.html` | **🔐 Coffre-fort perso** |
 
-`/CMCteams/` **est** l'application CMCteams (c'est ce que sert
-`cmcteams.kd-mc.com`). Rien d'anormal.
+> Leçon : un rangement supposé n'est pas un rangement vérifié. Le test
+> `verify-bascule-une-ligne.mjs` couvre désormais **les deux** rangements et
+> prouve que la correction de l'un ne marche PAS sur l'autre.
 
 ---
 
