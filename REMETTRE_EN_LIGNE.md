@@ -48,16 +48,18 @@ et une quinzaine d'autres. Dans le mauvais, seulement 4 ou 5.
 
 **`kd-mc-sites.zip`** — 7 Mo, 469 fichiers, **13 applications**.
 
-1. **▶️ [Créer un projet Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/pages)** → onglet **« Upload assets »** (pas « Connect to Git ») → nom `kdmc` → glisser le ZIP
-2. Vérifier `https://kdmc.pages.dev/kdmc-home/index.html`
-3. **▶️ [Réglages du routeur](https://dash.cloudflare.com/?to=/:account/workers/services/view/kdmc-router/production/settings)** → *Variables* → ajouter :
+1. **Créer un projet Pages** → onglet **« Upload assets »** (pas « Connect to Git ») → glisser le dossier **enveloppé dans `CMCteams/`**
+2. **Changer UNE ligne dans le routeur** (compte `9r4rxssx64`) → *Modifier le code* → ligne **14** :
 
-| Nom | Valeur |
-|---|---|
-| `UPSTREAM_BASE` | `https://kdmc.pages.dev` |
-| `UPSTREAM_PREFIX` | *(vide)* |
+```js
+const UPSTREAM = 'https://9r4rxssx64-creator.github.io';   // ← avant
+const UPSTREAM = 'https://kdmc0.pages.dev';                 // ← après
+```
 
-**Le défaut** : à chaque modification, il faut refaire un ZIP et le renvoyer.
+→ *Deploy*. C'est tout. Prouvé par `tests/verify-bascule-une-ligne.mjs`
+(23 contrôles, 8 sous-domaines rendus depuis le VRAI code déployé).
+
+**Le défaut** : à chaque modification, il faut refaire le paquet et le renvoyer.
 Ce n'est pas « tout auto ».
 
 ### 🅱️ Permanent et automatique *(≈ 10 min une fois, puis plus jamais)*
@@ -75,18 +77,38 @@ je pousse sur GitLab  →  Cloudflare construit et publie tout seul  →  kd-mc.
 3. **▶️ [Créer un projet Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/pages)** → **« Connect to Git »** → GitLab → `CMCteams`, avec :
    - Build command : `node services/kdmc-router/prepare-secours.mjs --pages`
    - Output directory : `services/kdmc-router/pages-upload`
-4. Les mêmes 2 variables du routeur qu'en 🅰️
+4. La même ligne 14 du routeur qu'en 🅰️
 
 **Ce que ça apporte en plus** : **16 applications** au lieu de 13 — l'arbre
 généalogique, Chez Lolo et La Détente reviennent aussi. Et plus jamais de ZIP.
 
 ---
 
-## ⚠️ Le seul piège, dans les deux cas
+## ⚠️ Le piège du préfixe — déjà réglé, ne rien toucher
 
-`UPSTREAM_PREFIX` doit rester **vide**. GitHub servait tes pages sous
-`/CMCteams/…` (le nom du dépôt), Cloudflare les sert à la racine. C'est cette
-variable vide qui retire le préfixe. Oubliée → **404 partout**.
+GitHub servait les pages sous `/CMCteams/…` (le nom du dépôt) et le routeur
+**en ligne** demande toujours ce préfixe. Deux façons de s'accorder :
+
+* changer le routeur pour qu'il retire le préfixe → **2 lignes à modifier**
+* **enveloppper le paquet dans un dossier `CMCteams/`** → **0 ligne** ✅ *(choisi)*
+
+C'est pour ça que le dossier envoyé contient `CMCteams/` à la racine. Il ne
+reste donc **qu'une seule ligne** à changer : l'adresse.
+
+### « J'ouvre et j'atterris sur CMCteams » — c'est NORMAL
+
+Mesuré sur le paquet exact, fichier par fichier :
+
+| Adresse ouverte | Ce qui s'affiche |
+|---|---|
+| `kdmc0.pages.dev/` | *rien (404)* — le routeur ne demande jamais cette adresse |
+| `kdmc0.pages.dev/CMCteams/` | **CMCteams** — Planning Casino de Monaco ✅ normal |
+| `kdmc0.pages.dev/CMCteams/kdmc-home/index.html` | **KDMC APEX — Mon univers** |
+| `…/CMCteams/tools/departs/index.html` | **CMCteams light — Départs** |
+| `…/CMCteams/coffre-fort/index.html` | **🔐 Coffre-fort perso** |
+
+`/CMCteams/` **est** l'application CMCteams (c'est ce que sert
+`cmcteams.kd-mc.com`). Rien d'anormal.
 
 ---
 
