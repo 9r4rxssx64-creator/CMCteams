@@ -21,11 +21,27 @@ const R = { ok: [], ko: [] };
 const chk = (c, m) => (c ? R.ok : R.ko).push(m);
 const PIX = 'data:image/jpeg;base64,' + Buffer.from('FAKE-PHOTO-KEVIN').toString('base64');
 
-function fakeAI() {                       /* Cloudflare Workers AI : texte→image */
-  /* >100 caractères : c'est le seuil que le worker exige pour considérer
-     qu'une image a vraiment été rendue (sinon il passe au modèle suivant). */
-  const img = Buffer.from('INVENTED-IMAGE-'.repeat(40)).toString('base64');
-  return { run: async () => ({ image: img }) };
+/* Cloudflare Workers AI sait faire DEUX choses très différentes, et les
+   confondre était le cœur du bug « ce n'est pas moi » :
+     - img2img  : il PART de ta photo   → c'est toi (ressemblance approximative)
+     - texte→image : il INVENTE quelqu'un → ce n'est pas toi
+   La fausse IA doit donc les distinguer, sinon le test ne prouve rien. */
+function fakeAI({ img2imgOk = true, texteImageOk = true } = {}) {
+  /* >100 caractères : seuil que le worker exige pour considérer qu'une image a
+     vraiment été rendue (sinon il passe au modèle suivant). */
+  const edite = Buffer.from('EDITED-FROM-PHOTO-'.repeat(40)).toString('base64');
+  const invente = Buffer.from('INVENTED-IMAGE-'.repeat(40)).toString('base64');
+  return {
+    run: async (model, input) => {
+      if (/img2img/.test(String(model))) {
+        if (!img2imgOk) throw new Error('img2img indisponible');
+        if (!input || !(input.image_b64 || input.image)) throw new Error('pas de photo en entrée');
+        return { image: edite };
+      }
+      if (!texteImageOk) throw new Error('texte→image indisponible');
+      return { image: invente };
+    },
+  };
 }
 /* Remplace fetch : Gemini en panne, Replicate joue le moteur d'édition. */
 function mockFetch({ geminiOk = false, replicateOk = false } = {}) {
@@ -52,14 +68,27 @@ const call = (env, body) => worker.fetch(
   new Request('https://w/magic', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
   env);
 
-/* A) rien pour éditer + keep_face → REFUS, pas d'image inventée */
+/* A) PLUS RIEN pour éditer (même pas Cloudflare) + keep_face → REFUS */
 mockFetch({});
-let r = await call({ GEMINI_API_KEY: 'k', AI: fakeAI() }, { image: PIX, preset: 'figurine', keep_face: true });
+let r = await call({ GEMINI_API_KEY: 'k', AI: fakeAI({ img2imgOk: false }) }, { image: PIX, preset: 'figurine', keep_face: true });
 let j = await r.clone().json().catch(() => null);
-chk(r.status === 502, 'A. édition impossible + keep_face → refus (502), reçu ' + r.status);
+chk(r.status === 502, 'A. plus AUCUN moteur d\'édition + keep_face → refus (502), reçu ' + r.status);
 chk(j && j.error === 'face_edit_failed', 'A. la raison est nommée : face_edit_failed');
 chk(!/image/.test(r.headers.get('content-type') || ''), 'A. AUCUNE image inventée n\'est renvoyée');
 chk(j && /gemini/.test(j.detail || ''), 'A. le détail dit POURQUOI (gemini…)');
+
+/* A-bis) LE GAIN DU JOUR : Google à sec, Replicate absent… et pourtant ça
+   marche, GRATUITEMENT, parce que Cloudflare img2img part de la photo. */
+mockFetch({});
+r = await call({ GEMINI_API_KEY: 'k', AI: fakeAI() }, { image: PIX, preset: 'figurine', keep_face: true });
+chk(r.status === 200, 'A-bis. Google à sec + zéro clé payante → ça marche quand même (' + r.status + ')');
+chk(/cloudflare:img2img/.test(r.headers.get('x-crea-provider') || ''),
+  'A-bis. et c\'est le moteur GRATUIT sans clé qui a servi (' + r.headers.get('x-crea-provider') + ')');
+chk(r.headers.get('x-crea-quality') === 'approx',
+  'A-bis. la ressemblance approximative est ANNONCÉE, pas cachée');
+chk(r.headers.get('x-crea-fallback') !== 'recreated', 'A-bis. rien n\'a été inventé : on est parti de la photo');
+chk(Buffer.from(await r.clone().arrayBuffer()).toString().includes('EDITED-FROM-PHOTO'),
+  'A-bis. l\'image rendue vient bien de la photo envoyée (pas d\'invention)');
 
 /* B) un moteur d'ÉDITION disponible → il prend le relais, on garde le visage */
 mockFetch({ replicateOk: true });
@@ -70,17 +99,19 @@ chk(/replicate-edit/.test(r.headers.get('x-crea-provider') || ''),
   'B. c\'est bien un moteur d\'ÉDITION qui a servi (' + r.headers.get('x-crea-provider') + ')');
 chk(r.headers.get('x-crea-fallback') !== 'recreated', 'B. rien n\'a été inventé');
 
-/* C) Kevin accepte explicitement une image inventée */
+/* C) Kevin accepte explicitement une image inventée. Il faut que même
+      Cloudflare img2img soit KO, sinon on n'a AUCUNE raison d'inventer. */
 mockFetch({});
-r = await call({ GEMINI_API_KEY: 'k', AI: fakeAI() },
+r = await call({ GEMINI_API_KEY: 'k', AI: fakeAI({ img2imgOk: false }) },
   { image: PIX, preset: 'figurine', keep_face: true, allow_recreate: true });
 chk(r.status === 200, 'C. image inventée autorisée → 200, reçu ' + r.status);
 chk(r.headers.get('x-crea-fallback') === 'recreated', 'C. elle est MARQUÉE comme inventée');
 chk(/gemini/.test(r.headers.get('x-crea-why') || ''), 'C. et la raison est dite (x-crea-why)');
 
-/* D) ancien client (pas de keep_face) → comportement d'avant, aucune régression */
+/* D) ancien client (pas de keep_face), et plus rien pour éditer → l'ancien
+      comportement (recréer en le disant) est conservé, aucune régression */
 mockFetch({});
-r = await call({ GEMINI_API_KEY: 'k', AI: fakeAI() }, { image: PIX, preset: 'figurine' });
+r = await call({ GEMINI_API_KEY: 'k', AI: fakeAI({ img2imgOk: false }) }, { image: PIX, preset: 'figurine' });
 chk(r.status === 200 && r.headers.get('x-crea-fallback') === 'recreated',
   'D. ancien client : comportement d\'avant conservé (pas de régression)');
 
@@ -89,6 +120,8 @@ mockFetch({ geminiOk: true });
 r = await call({ GEMINI_API_KEY: 'k', AI: fakeAI() }, { image: PIX, preset: 'figurine', keep_face: true });
 chk(r.status === 200 && !r.headers.get('x-crea-fallback'),
   'E. Gemini disponible → ta photo est éditée, aucun secours');
+chk(!r.headers.get('x-crea-quality'),
+  'E. DISCRIMINANT : le moteur approximatif n\'est PAS utilisé quand le bon marche');
 
 R.ok.forEach((m) => console.log('  OK ' + m));
 R.ko.forEach((m) => console.log('  FAIL ' + m));

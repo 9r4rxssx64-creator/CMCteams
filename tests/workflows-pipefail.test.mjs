@@ -26,7 +26,12 @@ const DIR = join(ROOT, '.github/workflows');
 
 /* Dette existante figée au 2026-08-07, APRÈS avoir sécurisé les 15 déploiements.
    Ce nombre ne doit que DESCENDRE. */
-const BASELINE_TOLERES = 35;
+/* Plafond ABAISSÉ 35 → 32 le 2026-08-14 : les 4 scanners de security-suite
+   (gitleaks, OSV, Trivy, Semgrep) avaient leur code de sortie avalé par
+   `tee` → un scan qui PLANTAIT ressortait « aucune faille ». Ils ont tous
+   `continue-on-error`, donc les protéger ne change rien au déroulement.
+   On fige le gain : la dette ne doit plus jamais remonter. */
+const BASELINE_TOLERES = 32;
 
 let pass = 0;
 const fails = [];

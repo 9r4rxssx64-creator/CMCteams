@@ -257,6 +257,110 @@ async function cfImage(env, prompt) {
   }
   throw new Error('cf_' + errs.join(' ; ').slice(0, 240));
 }
+
+/* ---------------------------------------------------------------------------
+   ÉDITER LA PHOTO GRATUITEMENT — les deux moteurs qui manquaient.
+   Le 14/08/2026, le crédit image Google est tombé à zéro et il ne restait QUE
+   Replicate (payant à l'image) pour partir de la vraie photo de Kevin. Deux
+   moteurs gratuits existent, ils n'étaient simplement pas branchés :
+     1. FLUX.1-Kontext-dev chez Hugging Face — le MÊME modèle que le payant,
+        gratuit (licence non commerciale, l'usage de Kevin l'est) → garde
+        vraiment le visage. Il suffit de la clé HF_TOKEN.
+     2. Cloudflare img2img — déjà disponible via le binding env.AI, ZÉRO clé.
+        Il part bien de la photo, mais c'est du Stable Diffusion 1.5 : la
+        ressemblance est APPROXIMATIVE. On ne le fait donc passer qu'en dernier
+        et on le DIT (en-tête x-crea-quality), jamais en douce.
+   --------------------------------------------------------------------------- */
+const HF_EDIT_MODELS = ['black-forest-labs/FLUX.1-Kontext-dev'];
+async function hfEditImage(env, prompt, imgDataUrl) {
+  const tok = env.HF_TOKEN;
+  if (!tok) throw new Error('hf_no_key');
+  const p = parseDataUrl(imgDataUrl);
+  if (!p) throw new Error('hf_bad_image');
+  const errs = [];
+  for (const model of HF_EDIT_MODELS) {
+    try {
+      const r = await fetch('https://router.huggingface.co/hf-inference/models/' + model, {
+        method: 'POST',
+        headers: { authorization: 'Bearer ' + tok, 'content-type': 'application/json' },
+        body: JSON.stringify({ inputs: p.b64, parameters: { prompt: String(prompt).slice(0, 1200) } }),
+      });
+      if (!r.ok) { errs.push(model.split('/').pop() + ':' + r.status + '_' + (await r.text()).slice(0, 70)); continue; }
+      const ct = r.headers.get('content-type') || '';
+      const u = new Uint8Array(await r.arrayBuffer());
+      if (u.length < 1000) { errs.push(model.split('/').pop() + ':trop_petit_' + u.length); continue; }
+      let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+      return { mime: /jpeg|jpg/.test(ct) ? 'image/jpeg' : 'image/png', b64: btoa(s), provider: 'huggingface:' + model.split('/').pop() };
+    } catch (e) { errs.push(model.split('/').pop() + ':' + String((e && e.message) || e).slice(0, 60)); }
+  }
+  throw new Error('hf_' + errs.join(' ; ').slice(0, 200));
+}
+
+/* Cloudflare img2img : GRATUIT, aucune clé. « strength » bas = on reste proche
+   de la photo d'origine (0 = photo inchangée, 1 = l'IA repart de zéro). */
+const CF_EDIT_TRIES = [
+  { model: '@cf/runwayml/stable-diffusion-v1-5-img2img', input: (b64, p, st) => ({ prompt: p, image_b64: b64, strength: st, num_steps: 20 }) },
+  /* Certaines versions du binding attendent l'image en tableau d'octets et non
+     en base64 — on essaie les DEUX formes plutôt que de parier sur une seule
+     (même méthode que pour la voix : melotts a 3 formes selon les jours). */
+  { model: '@cf/runwayml/stable-diffusion-v1-5-img2img', input: (b64, p, st, bytes) => ({ prompt: p, image: bytes, strength: st, num_steps: 20 }) },
+];
+async function cfEditImage(env, prompt, imgDataUrl, strength) {
+  if (!env.AI) throw new Error('cf_no_binding');
+  const p = parseDataUrl(imgDataUrl);
+  if (!p) throw new Error('cf_bad_image');
+  const bytes = Array.from(b64ToBytes(p.b64));
+  const st = typeof strength === 'number' ? strength : 0.55;
+  const errs = [];
+  for (const t of CF_EDIT_TRIES) {
+    try {
+      const r = await env.AI.run(t.model, t.input(p.b64, String(prompt).slice(0, 1500), st, bytes));
+      if (r && typeof r.image === 'string' && r.image.length > 100) {
+        return { mime: 'image/jpeg', b64: r.image, provider: 'cloudflare:img2img', approx: true };
+      }
+      if (r instanceof ReadableStream) {
+        const u = new Uint8Array(await new Response(r).arrayBuffer());
+        if (u.length > 1000) {
+          let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+          return { mime: 'image/png', b64: btoa(s), provider: 'cloudflare:img2img', approx: true };
+        }
+      }
+      errs.push('vide');
+    } catch (e) { errs.push(String((e && e.message) || e).slice(0, 70)); }
+  }
+  throw new Error('cfedit_' + errs.join(' ; ').slice(0, 200));
+}
+
+/* UNE seule chaîne d'édition, utilisée partout (figurines, cartoon, poses).
+   Ordre : ce qui te ressemble VRAIMENT d'abord, gratuit avant payant à
+   ressemblance égale, et l'approximatif en tout dernier — signalé. */
+async function editKeepFace(env, prompt, image, opts) {
+  const errs = [];
+  const sansPayant = !!(opts && opts.sansPayant);
+  /* sansGemini : l'appelant vient DÉJÀ de constater qu'il est en panne (poses
+     de danse). Le rappeler coûterait 6 appels réseau par image pour rien, et
+     c'est exactement ce qui fait sauter le budget Cloudflare. */
+  if (opts && opts.sansGemini) errs.push('gemini:deja_teste_ko');
+  else {
+    try { return await geminiImage(env, prompt, image); } catch (e) { errs.push('gemini:' + String((e && e.message) || e)); }
+  }
+  try { return await hfEditImage(env, prompt, image); } catch (e) { errs.push('hf:' + String((e && e.message) || e)); }
+  const rtok = env.REPLICATE_API_TOKEN;
+  if (rtok && !sansPayant) {
+    try {
+      const ed = await firstUsableEditor(rtok);
+      const d = await editToDataUrl(ed.model, ed.version, image, prompt, rtok, (opts && opts.maxMs) || 58000);
+      const m = /^data:([^;]+);base64,(.*)$/.exec(d);
+      if (m) return { mime: m[1], b64: m[2], provider: 'replicate-edit:' + ed.model.name };
+      errs.push('replicate:sortie_illisible');
+    } catch (e) { errs.push('replicate:' + String((e && e.message) || e)); }
+  } else if (!rtok) errs.push('replicate_no_key');
+  try { return await cfEditImage(env, prompt, image, opts && opts.strength); } catch (e) { errs.push('cfedit:' + String((e && e.message) || e)); }
+  const err = new Error(errs.join(' | '));
+  err.essais = errs;
+  throw err;
+}
+
 /* Plusieurs modèles candidats, essayés dans l'ordre. Un seul modèle figé =
    une dépréciation (vécu : llama-3.1-8b retiré le 2026-05-30) casse la feature
    du jour au lendemain, en silence. */
@@ -814,24 +918,21 @@ export default {
          demandé de garder le visage (keep_face) on REFUSE de rendre une image
          inventée : mieux vaut une erreur claire qu'un faux « toi ». */
       const keepFace = !!(body && (body.keep_face || body.identity === 'preserve'));
-      const errs = [];
-      /* 1) Gemini : édite la photo, garde le visage. */
+      let errs = [];
+      /* Toute la chaîne d'ÉDITION d'un coup : Gemini → Hugging Face (gratuit) →
+         Replicate (payant) → Cloudflare img2img (gratuit, sans clé). Tous
+         partent de TA photo — aucun n'invente quelqu'un. */
       try {
-        const g = await geminiImage(env, prompt, image);
-        return imgResponse(g.mime, g.b64, Object.assign({ 'x-crea-provider': g.provider }, h));
-      } catch (e) { errs.push('gemini:' + String((e && e.message) || e)); }
-      /* 2) Replicate, ÉDITION guidée par l'instruction (l'identité est gardée).
-            Si un modèle n'existe plus, latestVersion() échoue proprement et on
-            passe au suivant — aucun risque de casse. */
-      const rtok = env.REPLICATE_API_TOKEN;
-      if (rtok) {
-        for (const m of MAGIC_EDIT) {
-          try {
-            return await runImageModel(m, m.input(image, prompt), rtok,
-              Object.assign({ 'x-crea-provider': 'replicate-edit:' + m.name }, h));
-          } catch (e3) { errs.push(m.name + ':' + String((e3 && e3.message) || e3)); }
+        const g = await editKeepFace(env, prompt, image);
+        const en = Object.assign({ 'x-crea-provider': g.provider }, h);
+        /* Cloudflare img2img part bien de la photo mais la ressemblance est
+           approximative : on le DIT au lieu de le faire passer pour parfait. */
+        if (g.approx) {
+          en['x-crea-quality'] = 'approx';
+          en['x-crea-why'] = 'moteurs fidèles indisponibles';
         }
-      } else errs.push('replicate_no_key');
+        return imgResponse(g.mime, g.b64, en);
+      } catch (e) { errs = (e && e.essais) || [String((e && e.message) || e)]; }
       /* 3) Dernier recours : recréer SANS la photo. Ce n'est plus « toi » →
             on ne le fait QUE si le client l'accepte, et on dit pourquoi. */
       if (keepFace && !(body && body.allow_recreate)) {
@@ -967,6 +1068,7 @@ export default {
       const frames = [];
       const errs = [];
       let provider = 'gemini';
+      let geminiKo = !freeAI;
       /* 1) Gemini (gratuit). On SONDE d'abord UNE pose : s'il est en panne
             (crédits à zéro, modèle retiré…), lancer les 5 poses ferait
             5 × 6 modèles = 30 appels réseau pour rien, et il ne resterait plus
@@ -980,21 +1082,22 @@ export default {
             if (r.status === 'fulfilled') frames.push('data:' + r.value.mime + ';base64,' + r.value.b64);
             else errs.push(String((r.reason && r.reason.message) || r.reason));
           });
-        } catch (e) { errs.push(String((e && e.message) || e)); }
+        } catch (e) { errs.push(String((e && e.message) || e)); geminiKo = true; }
       } else errs.push('gemini_no_key');
-      /* 2) Secours : un vrai moteur d'ÉDITION (part de TA photo, garde ton
-            visage). On ne fait que les 2 poses nécessaires pour animer, avec
-            une attente écourtée — c'est ce qui tient dans le budget Cloudflare. */
-      if (frames.length < 2 && env.REPLICATE_API_TOKEN) {
+      /* 2) Secours : les autres moteurs qui partent de TA photo (Hugging Face
+            gratuit, Replicate, Cloudflare gratuit). On ne fait que les 2 poses
+            nécessaires pour animer, avec une attente écourtée — c'est ce qui
+            tient dans le budget de sous-requêtes Cloudflare. */
+      if (frames.length < 2) {
         try {
-          const ed = await firstUsableEditor(env.REPLICATE_API_TOKEN);
           const need = poses.slice(0, 2);
-          const outs = await Promise.all(need.map((p) => editToDataUrl(ed.model, ed.version, image, texte(p), env.REPLICATE_API_TOKEN, 34000)));
+          const outs = await Promise.all(need.map((p) => editKeepFace(env, texte(p), image, { maxMs: 34000, sansGemini: geminiKo })));
           frames.length = 0;
-          outs.forEach((d) => frames.push(d));
-          provider = 'replicate-edit:' + ed.model.name;
+          outs.forEach((o) => frames.push('data:' + o.mime + ';base64,' + o.b64));
+          provider = outs[0].provider;
+          if (outs.some((o) => o.approx)) provider += ' (ressemblance approximative)';
         } catch (e) { errs.push('edit:' + String((e && e.message) || e)); }
-      } else if (frames.length < 2) errs.push('replicate_no_key');
+      }
       if (frames.length < 2) {
         return json({ error: (errs[0] || 'frames_failed'), detail: errs.join(' | ').slice(0, 300), got: frames.length,
           message: "Je n'ai pas pu fabriquer les poses à partir de ta photo. "

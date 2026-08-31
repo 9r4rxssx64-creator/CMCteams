@@ -121,7 +121,8 @@
     "test:crea-secours": "node tests/verify-crea-ai-secours.mjs",
     "test:crea-identity": "node tests/verify-crea-magic-identity.mjs",
     "test:crea-frames": "node tests/verify-crea-frames-secours.mjs",
-    "test:apis-paliers": "node tests/verify-apis-paliers-gratuits.mjs"
+    "test:apis-paliers": "node tests/verify-apis-paliers-gratuits.mjs",
+    "verifie:ia-gratuites": "node tools/ia-gratuites/verifie.mjs"
   },
   "repository": {
     "type": "git",
