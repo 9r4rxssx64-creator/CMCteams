@@ -86,3 +86,55 @@ Le worker tourne ; seule la fonction concernée attend sa clé.
 6. Répondre à **Apple / Flora** (dossier 20000136822150) : décrire le bug API réel
    (en attente de Kevin : "ça se passe où et quoi").
 7. Suivre la **réintégration GitHub** (dossier envoyé).
+
+---
+
+## 🍎 APP STORE — le fichier `.p8` bloqué au téléchargement (à reprendre plus tard)
+
+**Statut : EN PAUSE, pas urgent.** L'App Store ne concerne AUCUNE brique de la
+reconstruction en cours. À reprendre à tête reposée, de préférence sur un ordinateur.
+
+### Le problème (mots de Kevin)
+« À chaque nouvelle clé je n'arrive pas à télécharger le dossier. Ça bloque **rouge**. »
+→ Donc ce n'est PAS la règle "téléchargeable une seule fois" : même une clé NEUVE échoue.
+C'est un vrai problème de téléchargement `.p8` (très probablement iPhone Safari qui gère
+mal ce type de fichier), et c'est le bug ouvert chez **Apple / Flora (dossier 20000136822150)**.
+
+### Ce qu'on sait déjà (ne pas redemander)
+- Kevin a un compte Apple Developer. IDs connus : Use ID `8cb3c77c-64e8-4383-b849-ca8327f75200`,
+  Key ID `2PW4U56J7C` (ancienne clé, `.p8` perdu), Team ID `Y45767LAGC`.
+- Le `.p8` sert UNIQUEMENT à publier sur l'App Store / TestFlight. Tâche 5, parquée.
+- Une clé `.p8` ne se télécharge qu'UNE fois, juste après création. Perdue = créer une neuve.
+
+### Pas à pas pour reprendre (ordre de fiabilité)
+
+**A. Sur un ORDINATEUR (le plus fiable — recommandé)**
+1. appstoreconnect.apple.com → Users and Access → Integrations → **App Store Connect API**.
+2. Bouton **+** → nom `gitlab-deploy`, accès **App Manager** → **Generate**.
+3. **Télécharger le `.p8` immédiatement** (seule chance). Sur ordi, ça descend direct.
+4. Le `.p8` NE PASSE JAMAIS par le chat. Kevin le dépose lui-même dans le coffre GitLab :
+   Settings → CI/CD → Variables → `ASC_PRIVATE_KEY` (type File ou variable), + `ASC_KEY_ID`
+   (le nouveau Key ID) + `ASC_ISSUER_ID` (visible en haut de la page API, format UUID).
+5. Me dire "c'est dans GitLab" → je branche `.github`→ pardon, la CI iOS (macos) via GitLab
+   ou le workflow ios-testflight (à adapter GitLab). Chaîne de build déjà écrite (mobile/).
+
+**B. Si Kevin insiste sur iPhone (capricieux)**
+1. Safari → onglets (2 carrés bas droite) → **Privée** → refaire création + téléchargement
+   (un bloqueur de contenu empêche souvent le `.p8`).
+2. Réglages → Safari → désactiver **Bloquer les fenêtres surgissantes**.
+3. Vérifier **app Fichiers → Téléchargements** : le rouge peut s'afficher MAIS le fichier
+   être quand même arrivé.
+4. Si toujours rouge → **capture d'écran du message rouge** = la clé du diagnostic ET la
+   réponse à Flora. Sans elle, on devine.
+
+### Réponse à Apple / Flora (dossier 20000136822150) — EN ATTENTE
+Flora (Assistance développement) demande : étapes de repro, date/heure + fuseau, captures
+"4 coins", navigateur + version, appareil + OS, étapes déjà tentées, dernier OS.
+→ **Bloqué sur : le texte exact du message rouge (capture).** Dès que Kevin l'envoie, rédiger
+la réponse complète point par point (appareil = iPhone, navigateur = Safari iOS + version,
+étapes tentées = privée / pop-ups / Fichiers). Ne RIEN inventer sans la capture.
+
+### Ce qu'on NE fait pas
+- Ne pas promettre l'App Store tant que le `.p8` n'est pas récupéré ET la chaîne build testée.
+- Ne pas faire coller le `.p8` dans le chat (secret → GitLab directement).
+- Ne pas changer le `bundleId` figé (com.kdmc.cmcteams / apexchat / lingua).
