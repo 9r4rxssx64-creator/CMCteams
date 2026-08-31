@@ -1,0 +1,18 @@
+# 📜 Actes de décès officiels — liens directs par personne
+
+✅ seed_mt_maiffret → https://deces.matchid.io/id/50UZUgMMtNwH (Marie Therese Maiffret)
+✅ seed_leonie → https://deces.matchid.io/id/_Wu2WjLd77ex (Leonie Rosa Desiree Maiffret)
+❌ seed_marg_rose : introuvable/date non vérifiée (HTTP 422) — 0 candidat(s)
+✅ seed_lucette_vdb → https://deces.matchid.io/id/rO5QX3w6sFnW (Lucette Therese Van Den Bosch)
+✅ seed_alex_vdb → https://deces.matchid.io/id/1X2L5T-fjruX (Alexandre Robert Victor Van Den Bosch)
+✅ seed_francois_mc → https://deces.matchid.io/id/lmAX_0gFBqZe (Francois Joseph Philippe Maiffret)
+✅ seed_myriam_mc → https://deces.matchid.io/id/x4kL8TBj4RML (Myriam Augusta Olga Maiffret)
+✅ seed_jap_maiffret → https://deces.matchid.io/id/BPQPjNWdUD-q (Jean Antoine Pierre Maiffret)
+✅ seed_victorj_maiffret → https://deces.matchid.io/id/3CQSYx2qCq7V (Victor Jules Maiffret)
+❌ seed_alex1906_maiffret : introuvable/date non vérifiée (HTTP 422) — 0 candidat(s)
+✅ seed_claude_desarzens → https://deces.matchid.io/id/NFlPwJbkB0SI (Claude Alain De Sarzens)
+✅ seed_jmv_sauvaigo → https://deces.matchid.io/id/TRUO05b-SzgQ (Jean Marius Victor Sauvaigo)
+✅ seed_marie_joe → https://deces.matchid.io/id/-Gi6moX8QES8 (Marie Jose Sauvaigo)
+✅ seed_michel_maiffret → https://deces.matchid.io/id/8K3SODdfjBZm (Michel Jean-Marie Maiffret)
+✅ seed_leon_maiffret → https://deces.matchid.io/id/2ts_aJpuJzWm (Leon Blaise Theresius Maiffret)
+✅ seed_josette_maiffret → https://deces.matchid.io/id/e6vSw47xZ_FH (Josette Cesarine Henriette Maiffret)

@@ -1,0 +1,41 @@
+name: Audit LIVE (vraies pages kd-mc.com dans un navigateur)
+
+# Le maillon « exécution réelle » de « fais ton audit ».
+# Charge CHAQUE surface kd-mc.com dans un vrai Chromium (le runner GitHub a le
+# réseau ouvert — le sandbox Claude Code, lui, est bloqué par le proxy 403).
+# Attrape la classe de bug que la lecture du code NE PEUT PAS voir : requête
+# réseau bloquée / CORS / 4xx-5xx vers un host projet, exception JS, page vide.
+# (Le blocage CORS de la commande Printify aurait été capté ici — leçon #131.)
+#
+# Déclenché à la main (« fais ton audit ») + 1×/semaine (anti-spam mails).
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '30 4 * * 1'  # lundi 04h30 UTC — 1×/semaine
+
+concurrency:
+  group: audit-live
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Install Playwright Chromium
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm i -D playwright@^1.48.0
+          npx playwright install --with-deps chromium
+      - name: Balayage LIVE de toutes les surfaces
+        run: node tools/smoke/audit-live.mjs "https://kd-mc.com"
+      - name: Captures d'écran + rapport (toujours, même en échec)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-live-${{ github.run_id }}
+          path: audit-live-shots/
+          retention-days: 30

@@ -1,0 +1,178 @@
+[
+ {
+  "id": "seed_philippe_mc",
+  "nom": "Philippe Laurent Jérôme MAIFFRET",
+  "type": "naissance",
+  "lieu": "Nice",
+  "an": 1850,
+  "dept": "06"
+ },
+ {
+  "id": "seed_leonie",
+  "nom": "Léonie Rosa Désirée MAIFFRET",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1895,
+  "dept": "06"
+ },
+ {
+  "id": "seed_alex1906_maiffret",
+  "nom": "Alexandre MAIFFRET",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1906,
+  "dept": "06"
+ },
+ {
+  "id": "seed_marg_rose",
+  "nom": "Marguerite-Rose MAIFFRET",
+  "type": "naissance",
+  "lieu": "Nice",
+  "an": 1907,
+  "dept": "06"
+ },
+ {
+  "id": "seed_leon_maiffret",
+  "nom": "Léon MAIFFRET",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1910,
+  "dept": "06"
+ },
+ {
+  "id": "seed_jmv_sauvaigo",
+  "nom": "Jean Marius Victor SAUVAIGO",
+  "type": "naissance",
+  "lieu": "Nice",
+  "an": 1912,
+  "dept": "06"
+ },
+ {
+  "id": "seed_mt_maiffret",
+  "nom": "Marie-Thérèse MAIFFRET",
+  "type": "naissance",
+  "lieu": "Nice",
+  "an": 1914,
+  "dept": "06"
+ },
+ {
+  "id": "seed_victorj_maiffret",
+  "nom": "Victor Jules MAIFFRET",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1914,
+  "dept": "06"
+ },
+ {
+  "id": "seed_lucette_vdb",
+  "nom": "Lucette Thérèse VAN DEN BOSCH",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1920,
+  "dept": "06"
+ },
+ {
+  "id": "seed_alex_vdb",
+  "nom": "Alexandre Robert Victor VAN DEN BOSCH",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1921,
+  "dept": "06"
+ },
+ {
+  "id": "seed_josette_maiffret",
+  "nom": "Josette MAIFFRET",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1922,
+  "dept": "06"
+ },
+ {
+  "id": "seed_jap_maiffret",
+  "nom": "Jean Antoine Pierre MAIFFRET",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1925,
+  "dept": "06"
+ },
+ {
+  "id": "seed_jacqueline",
+  "nom": "Jacqueline MAIFFRET",
+  "type": "naissance",
+  "lieu": "Beaulieu-sur-Mer",
+  "an": 1926,
+  "dept": "06"
+ },
+ {
+  "id": "seed_julie_mc",
+  "nom": "Julie Joséphine Marie MAIFFRET",
+  "type": "naissance",
+  "lieu": "Monaco",
+  "an": 1880,
+  "dept": "MC"
+ },
+ {
+  "id": "seed_emmanuel_mc",
+  "nom": "Emmanuel François MAIFFRET",
+  "type": "naissance",
+  "lieu": "Monaco",
+  "an": 1884,
+  "dept": "MC"
+ },
+ {
+  "id": "seed_francoislouis_mc",
+  "nom": "François Louis MAIFFRET",
+  "type": "naissance",
+  "lieu": "Monaco",
+  "an": 1887,
+  "dept": "MC"
+ },
+ {
+  "id": "seed_philippe_mc",
+  "nom": "Philippe Laurent Jérôme MAIFFRET",
+  "type": "décès",
+  "lieu": "Monaco (bd des Moulins n°18)",
+  "an": 1905,
+  "dept": "MC"
+ },
+ {
+  "id": "seed_pauline_mc",
+  "nom": "Pauline Élisabeth MAIFFRET",
+  "type": "naissance",
+  "lieu": "Monaco (Villa Beausoleil, bd de France)",
+  "an": 1905,
+  "dept": "MC"
+ },
+ {
+  "id": "seed_pauline_mc",
+  "nom": "Pauline Élisabeth MAIFFRET",
+  "type": "décès",
+  "lieu": "Monaco",
+  "an": 1907,
+  "dept": "MC"
+ },
+ {
+  "id": "seed_paula_mc",
+  "nom": "Paula Françoise MAIFFRET",
+  "type": "naissance",
+  "lieu": "Monaco (Villa Nathalie, chemin des Œillets)",
+  "an": 1910,
+  "dept": "MC"
+ },
+ {
+  "id": "seed_francois_mc",
+  "nom": "François Joseph Philippe MAIFFRET",
+  "type": "naissance",
+  "lieu": "Monaco",
+  "an": 1912,
+  "dept": "MC"
+ },
+ {
+  "id": "seed_francoislouis_mc",
+  "nom": "François Louis MAIFFRET",
+  "type": "décès",
+  "lieu": "Monaco",
+  "an": 1912,
+  "dept": "MC"
+ }
+]

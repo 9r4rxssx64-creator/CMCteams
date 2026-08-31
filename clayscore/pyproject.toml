@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clayscore"
+version = "0.8.0"
+description = "Comptage automatique de points pour le ball-trap (tir aux plateaux)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary — tous droits réservés" }
+authors = [{ name = "Kevin DESARZENS" }]
+dependencies = [
+    "numpy>=1.24",
+    "opencv-python-headless>=4.8",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Serveur + PWA (jalon 5)
+server = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "websockets>=12.0"]
+# Audio micro réel (jalon 7)
+audio = ["sounddevice>=0.4"]
+# IA v2 (jalon 8)
+ml = ["ultralytics>=8.1"]
+# Développement / tests
+dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+# Relecteurs EXTÉRIEURS (aucun n'est une IA : ce sont des analyseurs
+# déterministes). Ils jugent le code sans nous — c'est tout l'intérêt.
+#   mypy      : les types mentent-ils ?      (a trouvé 8 annotations fausses)
+#   bandit    : failles de sécurité Python   (a trouvé 1 `shell=True` en HAUTE)
+#   pip-audit : failles connues des dépendances
+#   vulture   : code mort
+#   radon     : complexité et maintenabilité
+audit = [
+    "mypy>=1.8", "types-PyYAML", "types-Markdown",
+    "bandit>=1.7", "pip-audit>=2.7", "vulture>=2.11", "radon>=6.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["clayscore*"]
+
+[tool.pytest.ini_options]
+# Permet `import clayscore...` et `import tools...` depuis la racine du projet.
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

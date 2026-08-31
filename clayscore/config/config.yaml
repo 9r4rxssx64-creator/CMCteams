@@ -1,0 +1,134 @@
+# Configuration ClayScore.
+#
+# C'est le SEUL endroit qui décide réel vs simulation. Le reste du code ne
+# connaît que les interfaces de sources. Passer au matériel = changer `type`.
+
+source:
+  video:
+    # type: file    -> rejoue un fichier (mode simulation)
+    # type: webcam  -> webcam USB (repli de dev)
+    # type: aravis  -> caméra GigE Vision Hikrobot (matériel réel)
+    type: file
+    path: data/samples/casse_ciel.mp4
+    loop: false
+    # Paramètres webcam (si type: webcam)
+    # index: 0
+    # width: 1280
+    # height: 720
+    # fps: 30
+    # Paramètres aravis (si type: aravis)
+    # camera_id: null          # null = première caméra détectée
+    # width: 1440
+    # height: 1080
+    # fps: 50
+    # pixel_format: RGB8   # COULEUR OBLIGATOIRE (Mono = 9/27 au lieu de 27/27).
+    #                       Sinon BayerRG8/BG8/GR8/GB8. Un format Mono est refusé.
+
+  audio:
+    # type: file -> rejoue un .wav (simulation) | type: mic -> micro USB réel
+    type: file
+    path: data/samples/casse_ciel.wav
+    chunk_size: 1024
+    # Paramètres micro (si type: mic)
+    # device: null
+    # sample_rate: 44100
+
+# Détecteur (jalon 8) : classique (MOG2) par défaut, ou IA YOLO si un modèle
+# entraîné est présent. Repli automatique sur le classique si absent.
+detector:
+  type: classic          # classic | yolo
+  weights: models/clayscore-yolo.pt   # .pt (PyTorch) ou .engine (TensorRT/Jetson)
+  conf: 0.25
+
+# Fenêtre d'analyse du verdict après le coup de feu.
+verdict:
+  window_ms: 800
+  confidence_threshold: 0.6   # sous ce seuil -> AMBIGU (arbitrage humain)
+
+# Détection des coups de feu (jalon 2).
+audio_detection:
+  min_gap_s: 0.15
+  double_window_s: 1.5        # 2 coups < 1.5 s = doublé / 2e cartouche
+
+# Partie (jalon 4).
+game:
+  discipline: fosse_universelle
+  serie: 25
+  cartouches: 2
+
+# --------------------------------------------------------------------------
+# RÉSEAU DU HUB — autonome, ou branché sur le réseau d'un club.
+#
+#   mode: auto      -> rejoint le réseau existant s'il y en a un,
+#                      sinon crée son propre WiFi. (marche partout)
+#   mode: autonome  -> le hub crée TOUJOURS son WiFi (stand isolé).
+#   mode: reseau    -> le hub rejoint TOUJOURS le réseau du club.
+#
+# Dans tous les cas, les caméras restent sur LEUR réseau (camera_iface),
+# jamais sur celui du club : trafic vidéo isolé, et une panne du réseau du
+# club n'arrête pas l'analyse des plateaux.
+#
+# Appliquer sur le hub :  sudo ./deploy/network.sh --mode <mode>
+# --------------------------------------------------------------------------
+network:
+  mode: auto
+  hotspot_ssid: ClayScore
+  hotspot_password: ""        # 8 caractères min (vide = WiFi ouvert, déconseillé)
+  hostname: clayscore         # -> http://clayscore.local:8000 (pas d'IP à taper)
+  port: 8000
+  uplink_iface: wlan0         # patte vers le réseau du club
+  camera_iface: eth0          # patte vers le switch PoE (caméras, isolée)
+  camera_subnet: 192.168.10.0/24
+  # Code exigé pour TOUTE écriture (nouvelle partie, verdict, enregistrement).
+  # OBLIGATOIRE en concours et dès que le hub est sur un réseau partagé :
+  # sans lui, n'importe qui sur le réseau du club peut modifier les scores.
+  access_pin: ""
+  require_pin_on_shared: true
+
+# Entretien automatique : le disque ne doit jamais se remplir (une panne
+# "disque plein" tomberait forcément en pleine compétition).
+maintenance:
+  clips_max_files: 600
+  clips_max_mb: 5000
+
+# --------------------------------------------------------------------------
+# ALIMENTATION — batterie, secteur, ou dérivation sur un lanceur.
+# La batterie est TOUJOURS en ligne et se recharge depuis la source
+# disponible : changer de source (ou la perdre) ne coupe jamais le système.
+# ⚠️ Dérivation lanceur : convertisseur ISOLÉ + fusible dédié obligatoires.
+# --------------------------------------------------------------------------
+alimentation:
+  sources: [secteur]          # secteur | lanceur  (liste de ce qui est branché)
+  batterie_ah: 30
+  batterie_v: 12
+  duree_epreuve_h: 8          # sert au GO/NO-GO avant une épreuve
+
+# --------------------------------------------------------------------------
+# POSTES DE VUE — filaires, ou sans fil pour couvrir de grandes surfaces.
+#
+# flux : brut      -> caméra nue (809 Mbit/s : CÂBLE OBLIGATOIRE)
+#        compresse -> encodeur H.264 au pod (~12 Mbit/s)
+#        edge      -> le pod DÉCIDE sur place (~0,2 Mbit/s : sans fil, >1 km)
+#
+# Le mode "edge" est ce qui permet parcours de chasse, compak éloigné et
+# plusieurs terrains. Le système REFUSE une configuration impossible.
+# --------------------------------------------------------------------------
+postes:
+  - id: POD-A
+    role: stereo_a           # stereo_a | stereo_b | lateral | secours
+    liaison: ethernet        # ethernet | wifi_local | wifi_maille | wifi_directionnel | lte
+    distance_m: 30
+    flux: brut
+    alimentation: poe
+  - id: POD-B
+    role: stereo_b
+    liaison: ethernet
+    distance_m: 30
+    flux: brut
+    alimentation: poe
+  - id: POD-C
+    role: lateral
+    liaison: ethernet
+    distance_m: 40
+    flux: brut
+    alimentation: poe

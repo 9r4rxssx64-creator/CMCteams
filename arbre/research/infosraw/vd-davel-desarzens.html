@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Verifying your browser...</title>
+		<script>
+			// Set cookie for 28800 seconds (8 hours)
+			document.cookie = "js_verified=1; path=/; max-age=28800";
+			// Get the "redirect" parameter from the URL
+			let redirectTo = new URLSearchParams(window.location.search).get("redirect") || "/";
+			// Enforce relative redirects
+			redirectTo = redirectTo.startsWith("/") ? redirectTo : "/" + redirectTo;
+			// Redirect after 1 second
+			setTimeout(() => window.location.href = redirectTo, 1000);
+		</script>
+	</head>
+	<body>
+		<p>Checking your browser…</p>
+		<noscript>
+			<p>Please enable JavaScript to continue.</p>
+		</noscript>
+	</body>
+</html>

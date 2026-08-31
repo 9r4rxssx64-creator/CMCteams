@@ -1,0 +1,152 @@
+name: Strix — pentest IA autonome (sécurité)
+
+# Kevin 2026-07-07 (« Install aussi ce qu'il y a sur la photo ») : Strix
+# (github.com/usestrix/strix, Apache-2.0) = hackers IA autonomes qui trouvent ET
+# valident (PoC) les failles d'une app, sans faux positifs. Aligné règle
+# « SÉCURITÉ MAXIMALE ». S'installe où le réseau + Docker sont dispo : le runner CI.
+#
+# ⚠️ COÛT : Strix lance des agents IA qui bouclent (beaucoup d'appels LLM) →
+# workflow_dispatch UNIQUEMENT (à la demande), JAMAIS on:push/cron (règle anti-spam
+# + maîtrise du budget). Timeout borné. Le modèle + la cible sont des inputs.
+#
+# Déclencheurs :
+#  - workflow_dispatch : Kevin ou moi (Claude Code via MCP)
+#  - repository_dispatch [strix-scan] : Apex (même canal qu'apex-execute / agent-reach)
+#
+# Résultat : rapport en artifact + résumé Firebase /apex/ax_strix_last (Apex lit).
+#
+# Sécurité : permissions contents:read ; la clé LLM (secret) n'est montée QUE sur
+# le step de scan ; les secrets Firebase QUE sur le step de push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Cible : chemin repo (ex "kdmc-home/worldmonitor") ou URL (ex https://kd-mc.com/worldmonitor/)'
+        required: true
+        default: 'kdmc-home/worldmonitor'
+      model:
+        description: 'Modèle LLM (format litellm, ex openai/gpt-5.4)'
+        required: false
+        default: 'openai/gpt-5.4'
+      exec_id:
+        description: 'ID exécution (callback Apex, optionnel)'
+        required: false
+        default: ''
+  repository_dispatch:
+    types: [strix-scan]
+
+concurrency:
+  group: strix-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Parse payload
+        id: p
+        env:
+          RD_TARGET: ${{ github.event.client_payload.target }}
+          RD_MODEL: ${{ github.event.client_payload.model }}
+          RD_EXEC: ${{ github.event.client_payload.exec_id }}
+          WD_TARGET: ${{ inputs.target }}
+          WD_MODEL: ${{ inputs.model }}
+          WD_EXEC: ${{ inputs.exec_id }}
+        run: |
+          TARGET="${WD_TARGET:-$RD_TARGET}"; MODEL="${WD_MODEL:-${RD_MODEL:-openai/gpt-5.4}}"; EXEC="${WD_EXEC:-$RD_EXEC}"
+          [ -n "$TARGET" ] || { echo "cible vide"; exit 1; }
+          TARGET=$(printf '%s' "$TARGET" | tr -d '\r\n' | head -c 400)
+          # Sécurité : refuse de scanner une cible hors périmètre Kevin (anti-abus / anti-scan d'un tiers)
+          case "$TARGET" in
+            http*://kd-mc.com*|http*://*.kd-mc.com*|http*://9r4rxssx64-creator.github.io*) : ;;
+            http*://*) echo "::error::URL hors périmètre kd-mc.com refusée : $TARGET"; exit 1 ;;
+            *) : ;; # chemin repo local : OK
+          esac
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "model=$MODEL"   >> "$GITHUB_OUTPUT"
+          echo "exec=${EXEC:-run_${{ github.run_id }}}" >> "$GITHUB_OUTPUT"
+
+      - name: Installer Strix
+        run: |
+          python3 -m pip install --quiet strix-agent
+          strix --help >/dev/null 2>&1 && echo "✅ strix installé" || echo "⚠️ strix --help KO (vérifié au scan)"
+
+      - name: Scan Strix (non-interactif)
+        id: scan
+        env:
+          STRIX_LLM: ${{ steps.p.outputs.model }}
+          LLM_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITI_API_KEY }}
+          TARGET: ${{ steps.p.outputs.target }}
+        run: |
+          set +e
+          if [ -z "$LLM_API_KEY" ]; then
+            echo "::error::OPEN_AI_API_KEY absent — Strix a besoin d'une clé LLM. Ajoute le secret puis relance."
+            echo "no_key=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          mkdir -p /tmp/strix-out
+          echo "🔒 Strix scan : cible=$TARGET modèle=$STRIX_LLM"
+          # -n = non-interactif (CI). Sortie capturée ; rc non-zéro ne casse pas le job (rapport quand même).
+          timeout 26m strix -n --target "$TARGET" 2>&1 | tee /tmp/strix-out/strix.log
+          RC=${PIPESTATUS[0]}
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          # récupère les rapports éventuels générés par Strix (dossier agent_runs / *.md / *.json)
+          find . -type d -name "agent_runs" -exec cp -r {} /tmp/strix-out/ \; 2>/dev/null || true
+          find . -maxdepth 3 -name "strix*.md" -o -maxdepth 3 -name "strix*.json" 2>/dev/null | while read f; do cp "$f" /tmp/strix-out/ 2>/dev/null || true; done
+          {
+            echo "## 🔒 Strix — pentest IA"
+            echo "Cible \`$TARGET\` · modèle \`$STRIX_LLM\` · rc=$RC"
+            echo '```'
+            tail -c 4000 /tmp/strix-out/strix.log
+            echo; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Rapport en artifact
+        if: steps.scan.outputs.no_key != '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: strix-report-${{ github.run_id }}
+          path: /tmp/strix-out/
+          retention-days: 14
+
+      - name: Résumé → Firebase (Apex lit ax_strix_last)
+        if: always()
+        env:
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          TARGET: ${{ steps.p.outputs.target }}
+          EXEC: ${{ steps.p.outputs.exec }}
+          RC: ${{ steps.scan.outputs.rc }}
+          NOKEY: ${{ steps.scan.outputs.no_key }}
+        run: |
+          # gauth.cjs peut être absent du checkout complet ? non, checkout complet ici.
+          FB_URL="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app"
+          TOKEN=$(node tools/firebase/gauth.cjs 2>/dev/null); QS=""
+          [ -n "$TOKEN" ] && QS="?access_token=${TOKEN}"
+          python3 - <<'PYEOF'
+          import json, os, time
+          log = ''
+          try: log = open('/tmp/strix-out/strix.log', errors='replace').read()[-6000:]
+          except Exception: pass
+          body = {
+            'exec_id': os.environ['EXEC'], 'target': os.environ['TARGET'],
+            'no_key': os.environ.get('NOKEY') == '1', 'rc': os.environ.get('RC', ''),
+            'ts': int(time.time()*1000), 'run_id': os.environ.get('GITHUB_RUN_ID',''),
+            'excerpt': log,
+          }
+          open('/tmp/strix_fb.json','w').write(json.dumps(body, ensure_ascii=False))
+          PYEOF
+          HTTP=$(curl -sS -o /tmp/r.txt -w "%{http_code}" -X PUT "${FB_URL}/apex/ax_strix_last.json${QS}" \
+            -H "Content-Type: application/json" --data-binary @/tmp/strix_fb.json || echo 000)
+          echo "Firebase PUT ax_strix_last → HTTP $HTTP $(head -c 150 /tmp/r.txt)"

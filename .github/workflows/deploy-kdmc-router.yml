@@ -1,0 +1,286 @@
+name: KDMC — Déploie le routeur de domaine kd-mc.com (autonome)
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # un deploiement ne doit jamais etre coupe en plein vol
+
+
+# Déploie le worker "kdmc-router" (reverse-proxy belles adresses + SSO + admin).
+# Provisionne le KV ACCOUNTS (registre fiches clients) et injecte le secret SSO.
+# 100% auto. Les routes custom_domain auto-provisionnent DNS + SSL sur kd-mc.com.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'services/kdmc-router/**'
+      - '.github/workflows/deploy-kdmc-router.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 1 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      # Garde BLOQUANTE : on ne déploie pas un routeur dont la voix ou le repli sont cassés.
+      # Ces deux tests tournent hors ligne (fetch simulé) → rapides, sans clé, sans réseau.
+      - name: Tests du worker (voix Lingua + voix clonée d'Antonin)
+        working-directory: services/kdmc-router
+        shell: bash -eo pipefail {0}
+        run: |
+          node voix-tts.test.mjs
+          node antonin-tts.test.mjs
+          node ../../tools/lingua/verify-coach.mjs
+
+      - name: Install wrangler
+        run: npm i -g wrangler@3
+
+      # KV ACCOUNTS : binding FIGÉ dans wrangler.toml (id du namespace existant).
+      # Plus de provisioning dynamique (il cassait le déploiement quand le namespace
+      # existait déjà — cf. wrangler.toml). Déploiement fiable.
+
+      - name: Déploiement du routeur (+ custom domains kd-mc.com)
+        id: deploy
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
+        run: |
+          set -e
+          echo "Deploy kdmc-router…"
+          wrangler deploy 2>&1 | tee deploy.log
+          echo "----"
+          echo "Si une route custom_domain échoue avec un message de permission,"
+          echo "le token CLOUDFLARE_API_TOKEN doit inclure Zone:DNS:Edit +"
+          echo "Workers Routes:Edit sur la zone kd-mc.com."
+
+      - name: SSO — injecte le secret de signature (auto, fail-open si absent)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SSO_SECRET: ${{ secrets.KDMC_SSO_SECRET != '' && secrets.KDMC_SSO_SECRET || secrets.JWT_SECRET }}
+        run: |
+          if [ -n "${SSO_SECRET:-}" ]; then
+            printf '%s' "$SSO_SECRET" | wrangler secret put KDMC_SSO_SECRET 2>&1 | tail -3 \
+              || echo "::warning::secret SSO non posé (SSO fail-open → les apps gardent leur login normal)"
+          else
+            echo "::warning::Ni KDMC_SSO_SECRET ni JWT_SECRET → SSO désactivé (fail-open)."
+          fi
+
+      - name: Admin domaine — injecte le hash du PIN admin (ferme le trou nom auto-asserté)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADMIN_PIN_SHA256: ${{ secrets.APEX_ADMIN_PIN_SHA256 != '' && secrets.APEX_ADMIN_PIN_SHA256 || secrets.APEX_ADMIN_PIN_SHA }}
+        run: |
+          if [ -n "${ADMIN_PIN_SHA256:-}" ]; then
+            printf '%s' "$ADMIN_PIN_SHA256" | wrangler secret put KDMC_ADMIN_PIN_SHA256 2>&1 | tail -3 \
+              || echo "::warning::hash PIN admin non posé (/__admin reste sur contrôle par nom — rollout)"
+          else
+            echo "::warning::APEX_ADMIN_PIN_SHA256 absent → /__admin garde l'ancien contrôle par nom (fail-open)."
+          fi
+
+      - name: Firebase — secrets pour le lockdown shops (custom-token role:admin, fail-safe si absents)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FB_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          FB_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FB_WEB_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY }}
+        run: |
+          if [ -n "${FB_PRIVATE_KEY:-}" ]; then
+            printf '%s' "$FB_PRIVATE_KEY" | wrangler secret put FIREBASE_PRIVATE_KEY 2>&1 | tail -2 \
+              || echo "::warning::FIREBASE_PRIVATE_KEY non posé (mint shops fail-safe → écriture anon inchangée)"
+          else
+            echo "::warning::FIREBASE_PRIVATE_KEY absent → /__admin/fbtoken renverra fb_not_configured (fail-open)."
+          fi
+          if [ -n "${FB_CLIENT_EMAIL:-}" ]; then
+            printf '%s' "$FB_CLIENT_EMAIL" | wrangler secret put FIREBASE_CLIENT_EMAIL 2>&1 | tail -2 || true
+          fi
+          if [ -n "${FB_WEB_API_KEY:-}" ]; then
+            printf '%s' "$FB_WEB_API_KEY" | wrangler secret put FIREBASE_WEB_API_KEY 2>&1 | tail -2 || true
+          fi
+
+      - name: Alerte push « nouvel appareil » — jeton (fail-open si absent)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Le worker de push accepte son ADMIN_TOKEN (= PUSH_ADMIN_TOKEN). Repli : AX_PUSH_ADMIN_TOKEN.
+          PUSH_TOKEN: ${{ secrets.PUSH_ADMIN_TOKEN != '' && secrets.PUSH_ADMIN_TOKEN || secrets.AX_PUSH_ADMIN_TOKEN }}
+        run: |
+          if [ -n "${PUSH_TOKEN:-}" ]; then
+            printf '%s' "$PUSH_TOKEN" | wrangler secret put KDMC_PUSH_TOKEN 2>&1 | tail -2 \
+              || echo "::warning::KDMC_PUSH_TOKEN non posé (alerte nouvel appareil no-op → le journal admin reste la trace)"
+          else
+            echo "::warning::PUSH_ADMIN_TOKEN absent → alerte nouvel appareil désactivée (fail-open ; journal admin OK)."
+          fi
+
+      - name: Crypto-bot — jeton Railway pour le tableau de bord bot.kd-mc.com (fail-open si absent)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RW_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -n "${RW_TOKEN:-}" ]; then
+            printf '%s' "$RW_TOKEN" | wrangler secret put RAILWAY_TOKEN 2>&1 | tail -2 \
+              || echo "::warning::RAILWAY_TOKEN non posé (/__bot renverra railway_token_absent — cause exacte visible)"
+          else
+            echo "::warning::RAILWAY_TOKEN absent → tableau de bord bot en railway_token_absent (fail-open)."
+          fi
+
+      - name: OpenAI — clé pour la voix naturelle KDMC Lingua (/__lingua/tts, fail-open si absente)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OPENAI_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+        run: |
+          if [ -n "${OPENAI_KEY:-}" ]; then
+            printf '%s' "$OPENAI_KEY" | wrangler secret put OPEN_AI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::OPEN_AI_API_KEY non posée (voix Lingua en repli navigateur)"
+          else
+            echo "::warning::OPEN_AI_API_KEY absente → voix Lingua en repli navigateur (Web Speech)."
+          fi
+
+      - name: Replicate — clé pour la voix clonée d'Antonin (/__lingua/tts?v=antonin, fail-open si absente)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
+        run: |
+          if [ -n "${REPLICATE_KEY:-}" ]; then
+            printf '%s' "$REPLICATE_KEY" | wrangler secret put AX_REPLICATE_KEY 2>&1 | tail -2 \
+              || echo "::warning::AX_REPLICATE_KEY non posée (voix Antonin en repli onyx)"
+          else
+            echo "::warning::AX_REPLICATE_KEY absente → voix Antonin en repli onyx (fail-open)."
+          fi
+
+      - name: Groq + Mistral + Gemini — clés pour le Coach IA KDMC Lingua (/__lingua/ai, fail-open si absentes)
+        working-directory: services/kdmc-router
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GROQ_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GEMINI_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -n "${GROQ_KEY:-}" ]; then
+            printf '%s' "$GROQ_KEY" | wrangler secret put GROQ_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GROQ_API_KEY non posée (Coach IA en repli Mistral/Gemini/hors-ligne)"
+          else
+            echo "::warning::GROQ_API_KEY absente → Coach IA tentera Mistral puis Gemini."
+          fi
+          if [ -n "${MISTRAL_KEY:-}" ]; then
+            printf '%s' "$MISTRAL_KEY" | wrangler secret put MISTRAL_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::MISTRAL_API_KEY non posée (repli Mistral indisponible)"
+          else
+            echo "::warning::MISTRAL_API_KEY absente → pas de repli Mistral pour le Coach IA."
+          fi
+          if [ -n "${GEMINI_KEY:-}" ]; then
+            printf '%s' "$GEMINI_KEY" | wrangler secret put GEMINI_API_KEY 2>&1 | tail -2 \
+              || echo "::warning::GEMINI_API_KEY non posée (dernier repli Coach IA indisponible)"
+          else
+            echo "::warning::GEMINI_API_KEY absente → pas de dernier repli Gemini pour le Coach IA."
+          fi
+
+      - name: Health check des belles adresses
+        run: |
+          for H in kd-mc.com www.kd-mc.com cmcteams.kd-mc.com apex-ai.kd-mc.com \
+                   apex-chat.kd-mc.com la-detente.kd-mc.com chez-lolo.kd-mc.com \
+                   dashboard.kd-mc.com sourcing.kd-mc.com coffre.kd-mc.com bot.kd-mc.com \
+                   departs.kd-mc.com cmcteams-light.kd-mc.com \
+                   autorisations.kd-mc.com arbre.kd-mc.com lingua.kd-mc.com \
+                   studio.kd-mc.com cuisine.kd-mc.com cocina.kd-mc.com cujina.kd-mc.com; do
+            echo "== https://$H =="
+            curl -fsS -o /dev/null -w "  status=%{http_code}\n" "https://$H/" \
+              || echo "  (pas encore 200 — le certificat custom domain peut mettre 1-2 min)"
+          done
+          echo "== CONTENU studio.kd-mc.com (l'app se charge-t-elle vraiment ?) =="
+          curl -fsS -m 20 -L "https://studio.kd-mc.com/" 2>/dev/null | grep -o "Créa Studio" | head -1 \
+            && echo "  ✅ l'app Créa Studio est bien servie sur le domaine" \
+            || echo "  ::warning:: studio.kd-mc.com ne renvoie pas encore l'app (cert/DNS en cours, ou routage à vérifier)"
+          echo "== CONTENU cuisine.kd-mc.com (le livre se charge-t-il ?) =="
+          curl -fsS -m 20 -L "https://cuisine.kd-mc.com/" 2>/dev/null | grep -o "Répertoire de la Riviera" | head -1 \
+            && echo "  ✅ le livre de cuisine est bien servi sur le domaine" \
+            || echo "  ::warning:: cuisine.kd-mc.com ne renvoie pas encore le livre (cert/DNS en cours, ou Pages tools/cuisine à vérifier)"
+          echo "== CONTENU cujina.kd-mc.com / cocina.kd-mc.com (adresse au nom « A Cüjina de Mùnegu ») =="
+          curl -fsS -m 20 -L "https://cujina.kd-mc.com/" 2>/dev/null | grep -o "Cüjina de Mùnegu" | head -1 \
+            && echo "  ✅ le livre est bien servi sur cujina.kd-mc.com" \
+            || echo "  ::warning:: cujina.kd-mc.com pas encore servi (cert/DNS custom domain en cours — 1-2 min pour un nouveau sous-domaine)"
+          curl -fsS -m 20 -L "https://cocina.kd-mc.com/" 2>/dev/null | grep -o "Cüjina de Mùnegu" | head -1 \
+            && echo "  ✅ alias cocina.kd-mc.com OK" \
+            || echo "  ::warning:: cocina.kd-mc.com pas encore servi (cert/DNS en cours)"
+          echo "== CHEMIN kd-mc.com/cujina (marche sur tout réseau/4G, 0 DNS nouveau) =="
+          curl -fsS -m 20 -L "https://kd-mc.com/cujina/" 2>/dev/null | grep -o "Cüjina de Mùnegu" | head -1 \
+            && echo "  ✅ le livre est servi sur kd-mc.com/cujina" \
+            || echo "  ::warning:: kd-mc.com/cujina pas encore servi (worker en cours de déploiement)"
+          echo "== VOIX KDMC Lingua (/__lingua/tts) — vraie voix naturelle OU repli navigateur ? =="
+          CT=$(curl -fsS -m 25 -o /dev/null -w "%{content_type}" "https://lingua.kd-mc.com/__lingua/tts?v=nova&t=bonjour" 2>/dev/null || echo "erreur")
+          echo "  content-type=$CT"
+          case "$CT" in
+            audio/*) echo "  ✅ VOIX NATURELLE OpenAI ACTIVE côté serveur (un vrai audio est servi)";;
+            *) echo "  ::warning:: /__lingua/tts NE renvoie PAS d'audio (=$CT) → l'app retombe sur la voix du navigateur (robotique). Cause probable : OPEN_AI_API_KEY absente/invalide/quota. Vérifier le secret GitHub OPEN_AI_API_KEY.";;
+          esac
+          echo "== VOIX D'ANTONIN (/__lingua/tts?v=antonin) — clone Replicate OU repli onyx ? =="
+          CTA=$(curl -fsS -m 60 -o /dev/null -w "%{content_type}" "https://lingua.kd-mc.com/__lingua/tts?v=antonin&t=Adiou%20c%27est%20Antonin" 2>/dev/null || echo "erreur")
+          echo "  content-type=$CTA"
+          case "$CTA" in
+            audio/*) echo "  ✅ la voix d'Antonin répond en audio (clone Replicate ou repli onyx — les deux servent un mp3)";;
+            *) echo "  ::warning:: v=antonin ne renvoie pas d'audio (=$CTA) — vérifier AX_REPLICATE_KEY et OPEN_AI_API_KEY.";;
+          esac
+
+      - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
+        # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,
+        # peut dépasser 1 min). La preuve du CODE = tests unitaires (sso/admin) + harnais
+        # Chromium. On ne rougit donc PAS un déploiement réussi pour un délai de propagation.
+        continue-on-error: true
+        run: |
+          set +e
+          BASE=https://kd-mc.com
+          APP=https://apex-chat.kd-mc.com
+          echo "1) issue (uid de test) — retry jusqu'à ~3 min (propagation bord Cloudflare)"
+          TOKEN=""; RESP=""
+          for i in $(seq 1 36); do
+            RESP=$(curl -fsS -X POST "$BASE/__sso/issue" -H 'content-type: application/json' \
+                   -d '{"uid":"ci_smoke","name":"CI Smoke","cgu":true}' || true)
+            TOKEN=$(printf '%s' "$RESP" | grep -oE '"token":"[^"]+"' | sed 's/.*:"//;s/"//')
+            if [ -n "$TOKEN" ]; then echo "   ✅ token reçu (tentative $i)"; break; fi
+            [ $((i % 6)) -eq 0 ] && echo "   …tentative $i : pas encore propagé"
+            sleep 5
+          done
+          if [ -z "$TOKEN" ]; then echo "::warning::issue sans token après ~3 min (propagation lente). Code prouvé par les tests. $RESP"; else
+            echo "2) whoami via Bearer (SANS cookie) — canal cross-PWA"
+            WHO=$(curl -fsS "$APP/__sso/whoami" -H "Authorization: Bearer $TOKEN")
+            echo "   $WHO"
+            printf '%s' "$WHO" | grep -q '"ok":true'        || echo "::warning::whoami Bearer pas encore OK (propagation)"
+            printf '%s' "$WHO" | grep -q '"uid":"ci_smoke"' || echo "::warning::identité Bearer pas encore OK"
+            BAD=$(curl -fsS "$APP/__sso/whoami" -H "Authorization: Bearer pas.un.vrai")
+            printf '%s' "$BAD" | grep -q '"ok":false'       || echo "::warning::forge pas rejetée (à vérifier)"
+          fi
+          echo "3) SÉCU admin : /__admin/accounts SANS preuve → doit être 403 + reason need_admin_code (PROUVE que le hash PIN est déployé)"
+          AC=$(curl -s -o /tmp/adm.json -w "%{http_code}" "$BASE/__admin/accounts")
+          BODY=$(cat /tmp/adm.json 2>/dev/null)
+          echo "   http=$AC body=$BODY"
+          if [ "$AC" = "403" ] && printf '%s' "$BODY" | grep -q 'need_admin_code'; then \
+            echo "   ✅ /__admin verrouillé PAR LE PIN (need_admin_code) — hash déployé, fiches inaccessibles"; \
+          elif [ "$AC" = "403" ]; then \
+            echo "::warning::/__admin = 403 mais reason ≠ need_admin_code → hash PIN PAS déployé (gate fail-closed = admin_only). Vérifier APEX_ADMIN_PIN_SHA256."; \
+          else echo "::warning::/__admin a répondu $AC (gate peut-être pas encore propagé)"; fi
+          echo "✅ Smoke terminé (best-effort, non bloquant)."

@@ -1,0 +1,210 @@
+{
+ "request": {
+  "sort": [
+   {
+    "score": "desc"
+   }
+  ],
+  "fuzzy": "false",
+  "lastName": "VAN DEN BOSCH",
+  "birthCity": "Beaulieu-sur-Mer"
+ },
+ "response": {
+  "total": 3,
+  "maxScoreES": 26.4244,
+  "size": 50,
+  "page": 1,
+  "delay": 5,
+  "persons": [
+   {
+    "score": 0.54,
+    "source": "2010",
+    "sourceLine": 543432,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.54,
+     "es": 0.13,
+     "multiMatchPenalty": 0.86,
+     "multiMatch": 2
+    },
+    "id": "rO5QX3w6sFnW",
+    "name": {
+     "first": [
+      "Lucette",
+      "Therese"
+     ],
+     "last": "Van Den Bosch"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19200212",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "20101216",
+     "certificateId": "18",
+     "age": 90,
+     "location": {
+      "city": "Ramatuelle",
+      "code": "83101",
+      "codePostal": [
+       "83350"
+      ],
+      "codeHistory": "83101",
+      "departmentCode": "83",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.2017957,
+      "longitude": 6.6497107
+     }
+    }
+   },
+   {
+    "score": 0.54,
+    "source": "2022",
+    "sourceLine": 505482,
+    "scores": {
+     "name": {
+      "score": 0.5,
+      "first": 0.5,
+      "last": 1
+     },
+     "birthLocation": {
+      "city": 1,
+      "score": 1
+     },
+     "score": 0.54,
+     "es": 0.13,
+     "multiMatchPenalty": 0.86,
+     "multiMatch": 2
+    },
+    "id": "1X2L5T-fjruX",
+    "name": {
+     "first": [
+      "Alexandre",
+      "Robert",
+      "Victor"
+     ],
+     "last": "Van Den Bosch"
+    },
+    "sex": "M",
+    "birth": {
+     "date": "19210725",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "20221013",
+     "certificateId": "36",
+     "age": 101,
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    }
+   },
+   {
+    "score": 0,
+    "source": "2009",
+    "sourceLine": 349054,
+    "scores": {
+     "name": {
+      "score": 0.33,
+      "first": 0.5,
+      "last": 0.23,
+      "fuzz": 0.2
+     },
+     "score": 0,
+     "es": 0.08
+    },
+    "id": "zlxJ8LrfcRzW",
+    "name": {
+     "first": [
+      "Rolande",
+      "Gabrielle",
+      "Alice"
+     ],
+     "last": "Van Gucht"
+    },
+    "sex": "F",
+    "birth": {
+     "date": "19210309",
+     "location": {
+      "city": "Beaulieu-sur-Mer",
+      "code": "06011",
+      "codePostal": [
+       "06310"
+      ],
+      "codeHistory": "06011",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7082007,
+      "longitude": 7.3333434
+     }
+    },
+    "death": {
+     "date": "20090807",
+     "certificateId": "3102",
+     "age": 88,
+     "location": {
+      "city": "Nice",
+      "code": "06088",
+      "codePostal": [
+       "06300",
+       "06200",
+       "06100",
+       "06000"
+      ],
+      "codeHistory": "06088",
+      "departmentCode": "06",
+      "country": "France",
+      "countryCode": "FRA",
+      "latitude": 43.7105459,
+      "longitude": 7.2681887
+     }
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,42 @@
+name: apex-ai-ts type check + tests
+# Une seule execution a la fois par branche : un nouveau commit remplace
+# l'ancien au lieu de s'empiler dans la file d'attente GitHub.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+on:
+  push:
+    branches: [main, claude/**]
+    paths:
+      - "apex-ai-ts/**"
+      - ".github/workflows/apex-ai-ts.yml"
+  pull_request:
+    paths:
+      - "apex-ai-ts/**"
+
+jobs:
+  type-check:
+    runs-on: ubuntu-latest
+    name: TypeScript strict + Vitest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "apex-ai-ts/package.json"
+
+      - name: Install deps
+        working-directory: apex-ai-ts
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript strict check
+        working-directory: apex-ai-ts
+        run: npm run type-check
+
+      - name: Vitest run
+        working-directory: apex-ai-ts
+        run: npm test

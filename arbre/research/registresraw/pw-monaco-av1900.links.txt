@@ -1,0 +1,34 @@
+http://www.mairie.mc || Mairie de Monaco
+http://www.jardin-exotique.mc || Jardin Exotique
+http://www.espaceleoferre.mc || Espace Léo Ferré
+http://www.mediatheque.mc || Médiathèque
+http://www.academierainier3.mc || Académie Rainier III
+http://www.pavillonbosio.com || Pavillon Bosio
+http://www.mairie.mc || Mairie de Monaco
+https://archives.mairie.mc/ || Archives de la mairie de MonacoRegistres d'état civil anciens
+https://archives.mairie.mc/arkotheque/espace_personnel || Espace personnel
+/r/4/base-des-registres-anterieurs-a-1900/ || Base des registres antérieurs à 1900
+/a/2/recherches-anterieures-a-1900/ || Recherches antérieures à 1900
+/a/5/rechercher-par-acte-indexe/ || Rechercher par acte indexé
+/r/5/base-de-registres-a-partir-de-1900/ || Base de registres à partir de 1900
+/a/3/recherches-a-partir-de-1900/ || Recherches à partir de 1900
+/r/60/conditions-generales-d-utilisation-du-site-https-archives-mairie-mc/ || Conditions générales d'utilisation du site https://archives.mairie.mc
+/a/120/mentions-legales/ || Mentions légales
+https://archives.mairie.mc/ || Accueil
+https://archives.mairie.mc/r/4/base-des-registres-anterieurs-a-1900/ || Base des registres antérieurs à 1900
+https://archives.mairie.mc/r/4/base-des-registres-anterieurs-a-1900/ || Base des registres antérieurs à 1900
+/a/2/recherches-anterieures-a-1900/ || Recherches antérieures à 1900
+/a/5/rechercher-par-acte-indexe/ || Rechercher par acte indexé
+https://archives.mairie.mc/article.php?laref=5&titre=rechercher-par-acte-indexe || Rechercher dans les actes indexés
+https://archives.mairie.mc/article.php?laref=9&titre=faq || Foire aux Questions
+javascript:Valider('rechercher',''); || Rechercher
+https://archives.mairie.mc/arkotheque/espace_personnel/ || Espace personnel
+https://archives.mairie.mc/ || Accueil du site
+https://www.mairie.mc/contact/6 || Contact
+https://archives.mairie.mc/r/60/ || Conditions d'utilisation
+https://archives.mairie.mc/a/120/ || Mentions légales
+https://archives.mairie.mc/a/121/ || Cookies
+https://archives.mairie.mc/a/9/ || FAQ
+https://archives.mairie.mc/a/10/ || Crédits
+https://www.facebook.com/MairieMonaco || Suivez nous sur Facebook
+https://twitter.com/MairieMonaco || Suivez nous sur X

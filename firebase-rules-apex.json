@@ -1,0 +1,268 @@
+{
+  "_comment": "Firebase Realtime Database Security Rules — projet cmcteams-c16ab (Apex + CMCteams + Shops)",
+  "_database": "cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app",
+  "_phase": "4.2 (2026-07-04) : /apex + /coffre_vault exigent auth != null (comme /cmcteams depuis 2026-06-12). Prérequis livrés : repli anonyme Apex v13 (firebase-auth-bridge) + coffre-fort anon auth + push-worker/handoff/backup en service account. Le .write de /apex passe au niveau $key pour que les .write:false des clés secrètes (ax_pin, ax_user…) soient réellement effectifs (un .write parent ne peut pas être révoqué plus bas en RTDB). Regex $key élargie : apex_v13_* + vault_backup + users (chemins réellement écrits par l'app).",
+  "_note_arbre": "/arbre = arbre généalogique familial (arbre.kd-mc.com). Données sous /arbre/<codehash>/... — le code famille (MAIFFRET) fait office de secret partagé (seuls ceux qui le connaissent trouvent le chemin). auth != null R/W = tout client authentifié anonymement (Identity Toolkit signUp) → partage temps réel famille. Note hors 'rules' (Firebase rejette un _comment DANS un nœud de règle : 'Expected {').",
+  "_published_by": "Kevin DESARZENS",
+  "_published_at": "2026-07-04",
+  "_rollback": "deploy-cmcteams-rules.yml input apex_state=open (remet /apex + /coffre_vault en lecture/écriture libres) ; rules_state=open pour rouvrir /cmcteams. Le reste est inchangé.",
+  "_instructions": [
+    "1. Console Firebase > project cmcteams-c16ab > Realtime Database > Rules",
+    "2. Copier-coller l'objet 'rules' ci-dessous",
+    "3. Cliquer Publier",
+    "",
+    "PHASE 4 DURCIE = active actuellement",
+    "  - Bloque l'écriture des secrets (PINs admin, clés API)",
+    "  - Bloque la pollution avec clés arbitraires (validation $key regex)",
+    "  - Garde lecture libre (compatibilité app sans Firebase Auth)",
+    "",
+    "PHASE 5 STRICTE = à publier APRÈS déploiement apex-auth-worker (cf. _phase5_after_worker)",
+    "  - Exige auth.uid sur tous les paths per-user",
+    "  - Émission de custom tokens par apex-auth-worker (services/apex-auth-worker/)",
+    "  - Workflow auto-deploy : .github/workflows/deploy-apex-auth-worker.yml"
+  ],
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "arbre": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "cmcteams": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$key": {
+        ".validate": "$key.matches(/^(cmc_|ax_cmc_)[a-z0-9_\\-]+$/)"
+      },
+      "cmc_admin_pin": {
+        ".write": false
+      },
+      "cmc_ia_key": {
+        ".write": false
+      },
+      "cmc_motd": {
+        ".validate": "newData.hasChildren(['text','ts','author']) || newData.val() === null"
+      },
+      "cmc_e": {
+        ".validate": "newData.isString() == false"
+      },
+      "cmc_ov": {
+        ".validate": "newData.isString() == false"
+      },
+      "cmc_pw": {
+        ".validate": "newData.isString() == false",
+        "$uid": {
+          "clear": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "apex": {
+      ".read": "auth != null",
+      "$key": {
+        ".write": "auth != null",
+        ".validate": "$key.matches(/^(ax_[a-z0-9_\\-]+|apex_v13_[a-z0-9_\\-]+|vault_backup|users)$/)"
+      },
+      "ax_admin_pass": {
+        ".write": false
+      },
+      "ax_admin_pin": {
+        ".write": false
+      },
+      "ax_pin": {
+        ".write": false
+      },
+      "ax_user": {
+        ".write": false
+      },
+      "ax_uid": {
+        ".write": false
+      }
+    },
+    "coffre_vault": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$uid": {
+        ".validate": "$uid.matches(/^u_[a-z0-9]+$/)",
+        "salt": {
+          ".validate": "newData.isString() && newData.val().length < 64"
+        },
+        "verify": {
+          ".validate": "newData.isString() && newData.val().length < 4096"
+        },
+        "meta": {
+          ".validate": "newData.isString() && newData.val().length < 5242880"
+        },
+        "chunks": {
+          "$id": {
+            ".validate": "$id.matches(/^it_[a-z0-9_\\-]+$/) && (newData.val() === null || (newData.isString() && newData.val().length < 1048576))"
+          }
+        }
+      }
+    },
+    "shops_admin_v1": {
+      "orders": {
+        ".read": true,
+        "$shop": {
+          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome|la-detente)$/)",
+          "$orderId": {
+            ".write": "!data.exists() && newData.hasChildren(['orderId','shop','total','ts'])",
+            ".validate": "$orderId.length <= 40 && newData.child('total').isNumber() && newData.child('total').val() >= 0 && newData.child('total').val() < 100000 && newData.child('shop').isString() && newData.child('shop').val().length <= 40 && (!newData.hasChild('items_summary') || newData.child('items_summary').val().length <= 400)"
+          }
+        }
+      },
+      "products": {
+        ".read": true,
+        "$shop": {
+          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome|la-detente)$/)",
+          "$id": {
+            ".write": "newData.hasChildren(['id']) || !newData.exists()",
+            ".validate": "$id.length <= 80 && (!newData.exists() || (newData.child('id').isString() && (!newData.hasChild('title') || newData.child('title').val().length <= 200) && (!newData.hasChild('image') || newData.child('image').val().length <= 600)))"
+          }
+        }
+      },
+      "logos": {
+        ".read": true,
+        "$shop": {
+          ".validate": "$shop.matches(/^(tech-hub|chez-lolo|ecocraft|digital-vault|pawsome|la-detente)$/)",
+          "$id": {
+            ".write": true,
+            ".validate": "$id.length <= 80 && (!newData.exists() || (!newData.hasChild('url') || newData.child('url').val().length <= 600))"
+          }
+        }
+      },
+      "access": {
+        ".read": false,
+        ".write": false
+      },
+      "ld_wiped_v1": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.isBoolean() || newData.val()===null"
+      }
+    },
+    "shops_sourcing_v1": {
+      "selection": {
+        ".read": true,
+        "$id": {
+          ".write": "newData.hasChildren(['id','supplier']) || !newData.exists()",
+          ".validate": "$id.length <= 120 && (!newData.exists() || (newData.child('supplier').val().length <= 60 && (!newData.hasChild('title') || newData.child('title').val().length <= 200) && (!newData.hasChild('image') || newData.child('image').val().length <= 600) && (!newData.hasChild('url') || newData.child('url').val().length <= 600)))"
+        }
+      }
+    },
+    "ld_detente": {
+      ".read": true,
+      "push_sub": {
+        ".read": true,
+        ".write": true,
+        ".validate": "!newData.exists() || newData.isString()==false || newData.val().length<8000"
+      }
+    }
+  },
+  "_phase5_after_worker": {
+    "_comment": "À publier quand apex-auth-worker est déployé ET que tous les clients Apex émettent des custom tokens. Garde les rules CMCteams et shops_admin_v1 actuelles, durcit uniquement /apex avec auth.uid per-user.",
+    "rules_phase5_apex_only": {
+      "apex": {
+        "$key": {
+          ".validate": "$key.matches(/^ax_[a-z0-9_\\-]+$/)"
+        },
+        "ax_admin_pass": {
+          ".write": false,
+          ".read": "auth != null && auth.token.role === 'admin'"
+        },
+        "ax_admin_pin": {
+          ".write": false,
+          ".read": false
+        },
+        "ax_pin": {
+          ".write": false,
+          ".read": false
+        },
+        "ax_user": {
+          ".write": false,
+          ".read": false
+        },
+        "ax_uid": {
+          ".write": false,
+          ".read": false
+        },
+        "ax_voice_print_$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": false
+        },
+        "ax_pin_$uid": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+          ".write": false
+        },
+        "ax_user_chat_$uid": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "ax_user_locations_$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "ax_health_reports_$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "ax_msgs_$conv": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "ax_settings_$uid": {
+          ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'admin')",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "ax_auth_log": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_audit": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_security_log": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_breach_log": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_telemetry_in": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_claude_todo": {
+          ".read": "auth != null && auth.token.role === 'admin'",
+          ".write": "auth != null"
+        },
+        "ax_lessons_learned_struct": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.role === 'admin'"
+        },
+        "$other": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.role === 'admin'"
+        }
+      }
+    }
+  },
+  "_phase_shops_rolelock": {
+    "_comment": "Lockdown shops par RÔLE. Activé via deploy-cmcteams-rules.yml input shops_lock=on (ou SHOPS_LOCK=on). Le script applique ces .write aux écritures admin (products/logos/selection) → seuls Kevin/Lolo (id_token role:admin minté par kdmc-router /__admin/fbtoken derrière le GRANT admin) peuvent écrire. Les commandes clients (orders) et les LECTURES restent inchangées. À activer SEULEMENT après que le router est redéployé avec les secrets FB et qu une écriture admin a été testée (sinon écritures admin bloquées — pas les clients).",
+    "writes": {
+      "shops_admin_v1/products/$shop/$id": "auth != null && auth.token.role === 'admin' && (newData.hasChildren(['id']) || !newData.exists())",
+      "shops_admin_v1/logos/$shop/$id": "auth != null && auth.token.role === 'admin'",
+      "shops_sourcing_v1/selection/$id": "auth != null && auth.token.role === 'admin' && (newData.hasChildren(['id','supplier']) || !newData.exists())"
+    },
+    "orders_read_comment": "Verrou LECTURE des commandes clients (fuite : orders/.read=true = n'importe qui lit les commandes). Activé via input orders_read=on → seul le dashboard admin (id_token role:admin) peut lire. L'ÉCRITURE des commandes (checkout client) reste anonyme (jamais verrouillée). À activer SEULEMENT après que le dashboard v2.0.4+ lit avec ?auth= (canary iPhone Kevin validé). off = rollback (lecture publique).",
+    "orders_read": "auth != null && auth.token.role === 'admin'"
+  },
+  "_phase_cmc_adminlock": {
+    "_comment": "Verrou ÉCRITURE config admin /cmcteams (cmc_admin_cfg, cmc_motd) par RÔLE. Activé via deploy-cmcteams-rules.yml input cmc_admin_lock=on. Suit le patron /apex : le .write PARENT de /cmcteams descend au niveau $key (sinon, en RTDB, un .write parent ne se révoque pas plus bas). Les enfants .validate-only (cmc_e/cmc_ov/cmc_pw) reçoivent .write=auth!=null (inchangé pour tous). cmc_admin_cfg + cmc_motd → .write=role:admin (seul l'appareil admin avec un token role:admin, minté par apex-auth-worker /login-cmc, peut écrire). Les employés (token anonyme) continuent d'écrire cmc_ov/cmc_chat/etc. (auth!=null) mais NE peuvent plus écraser la config admin / le message du jour. LECTURE inchangée (auth!=null). À activer SEULEMENT après canary iPhone Kevin (rôle admin armé + écriture MOTD confirmée + sync employé confirmée). off = rollback (write parent auth!=null).",
+    "role_admin": "auth != null && auth.token.role === 'admin'",
+    "any_auth": "auth != null"
+  }
+}

@@ -1,0 +1,356 @@
+This XML file does not appear to have any style information associated with it. The document tree is shown below.
+
+<srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<srw:version>1.2</srw:version>
+<srw:echoedSearchRetrieveRequest>
+<srw:query>(gallica any "Emmanuel Maiffret")</srw:query>
+<srw:version>1.2</srw:version>
+</srw:echoedSearchRetrieveRequest>
+<srw:numberOfRecords>71080</srw:numberOfRecords>
+<srw:extraResponseData><numberOfRecordsDecollapser>1670252</numberOfRecordsDecollapser></srw:extraResponseData>
+<srw:records>
+<srw:record>
+<srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<oai_dc:dc>
+<dc:creator>Nadar (1820-1910). Dessinateur</dc:creator>
+<dc:date>185.</dc:date>
+<dc:format>1 dess. au fusain rehaussé de gouache, sur papier brun ; 22,6 x 14,9 cm</dc:format>
+<dc:format>image/jpeg</dc:format>
+<dc:format>Nombre total de vues : 2</dc:format>
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b8540217c</dc:identifier>
+<dc:language>fre</dc:language>
+<dc:relation>Notice de recueil : http://catalogue.bnf.fr/ark:/12148/cb40355238g</dc:relation>
+<dc:relation>Appartient à : [Recueil. Caricatures de Nadar]</dc:relation>
+<dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb425889867</dc:relation>
+<dc:rights>domaine public</dc:rights>
+<dc:rights>public domain</dc:rights>
+<dc:source>Bibliothèque nationale de France, département Estampes et photographie, RESERVE BOITE ECU-NA-88</dc:source>
+<dc:subject>Emmanuel, Charles (1810-18..?) -- Caricatures et dessins humoristiques</dc:subject>
+<dc:subject>Caricatures et dessins humoristiques -- 19e siècle</dc:subject>
+<dc:title>Ch. Emmanuel : [caricature, tête de profil, à gauche] : [dessin] / [Nadar]</dc:title>
+<dc:type>image fixe</dc:type>
+<dc:type>image</dc:type>
+<dc:type>still image</dc:type>
+<dc:type>dessin</dc:type>
+<dc:type>drawing</dc:type>
+</oai_dc:dc>
+</srw:recordData>
+<srw:recordIdentifier>ark</srw:recordIdentifier>
+<srw:recordPosition>0</srw:recordPosition>
+<srw:extraRecordData>
+<epubFile/>
+<highres>https://gallica.bnf.fr/ark:/12148/btv1b8540217c.highres</highres>
+<infoSupModifiable/>
+<link>https://gallica.bnf.fr/ark:/12148/btv1b8540217c</link>
+<lowres>https://gallica.bnf.fr/ark:/12148/btv1b8540217c.lowres</lowres>
+<medres>https://gallica.bnf.fr/ark:/12148/btv1b8540217c.medres</medres>
+<nqamoyen>0.0</nqamoyen>
+<provenance>Gallica</provenance>
+<thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b8540217c.thumbnail</thumbnail>
+<typedoc>images</typedoc>
+<uri>btv1b8540217c</uri>
+</srw:extraRecordData>
+</srw:record>
+<srw:record>
+<srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<oai_dc:dc>
+<dc:coverage>.. mai 1924</dc:coverage>
+<dc:creator>Agence Rol. Agence photographique (commanditaire)</dc:creator>
+<dc:date>1924</dc:date>
+<dc:description>Référence bibliographique : Rol, 92197</dc:description>
+<dc:description>Appartient à l’ensemble documentaire : Pho20Rol</dc:description>
+<dc:description>Image de presse</dc:description>
+<dc:format>1 photogr. nég. sur verre ; 18 x 13 cm (sup.)</dc:format>
+<dc:format>image/jpeg</dc:format>
+<dc:format>Nombre total de vues : 1</dc:format>
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b53130548j</dc:identifier>
+<dc:language>fre</dc:language>
+<dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb45079351h</dc:relation>
+<dc:rights>domaine public</dc:rights>
+<dc:rights>public domain</dc:rights>
+<dc:source>Bibliothèque nationale de France, département Estampes et photographie, EI-13 (1110)</dc:source>
+<dc:subject>Reicher, Emanuel (1849-1924) -- Portraits</dc:subject>
+<dc:subject>Portraits -- 1914-1945</dc:subject>
+<dc:title>Emmanuel [i.e. Emanuel] Reicher, artiste : [photographie de presse] / [Agence Rol]</dc:title>
+<dc:type>image fixe</dc:type>
+<dc:type>image</dc:type>
+<dc:type>still image</dc:type>
+<dc:type>photographie</dc:type>
+<dc:type>photograph</dc:type>
+</oai_dc:dc>
+</srw:recordData>
+<srw:recordIdentifier>ark</srw:recordIdentifier>
+<srw:recordPosition>1</srw:recordPosition>
+<srw:extraRecordData>
+<epubFile/>
+<highres>https://gallica.bnf.fr/ark:/12148/btv1b53130548j.highres</highres>
+<infoSupModifiable/>
+<link>https://gallica.bnf.fr/ark:/12148/btv1b53130548j</link>
+<lowres>https://gallica.bnf.fr/ark:/12148/btv1b53130548j.lowres</lowres>
+<medres>https://gallica.bnf.fr/ark:/12148/btv1b53130548j.medres</medres>
+<nqamoyen>0.0</nqamoyen>
+<provenance>Gallica</provenance>
+<thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b53130548j.thumbnail</thumbnail>
+<typedoc>images</typedoc>
+<uri>btv1b53130548j</uri>
+</srw:extraRecordData>
+</srw:record>
+<srw:record>
+<srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<oai_dc:dc>
+<dc:creator>Eyma, Xavier (1816-1876). Auteur du texte</dc:creator>
+<dc:date>1841</dc:date>
+<dc:description>Contient une table des matières</dc:description>
+<dc:description>Avec mode texte</dc:description>
+<dc:format>In-8° , XXV-265 p.</dc:format>
+<dc:format>Nombre total de vues : 304</dc:format>
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k5618752b</dc:identifier>
+<dc:language>fre</dc:language>
+<dc:language>français</dc:language>
+<dc:publisher>Rozier (Paris)</dc:publisher>
+<dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb30411995h</dc:relation>
+<dc:rights>domaine public</dc:rights>
+<dc:rights>public domain</dc:rights>
+<dc:source>Bibliothèque nationale de France, département Littérature et art, Y2-33480</dc:source>
+<dc:title>Emmanuel, par L.-Xavier Eyma. [Fragmens (poésies).]</dc:title>
+<dc:type>text</dc:type>
+<dc:type>monographie imprimée</dc:type>
+<dc:type>monographie imprimée</dc:type>
+</oai_dc:dc>
+</srw:recordData>
+<srw:recordIdentifier>ark</srw:recordIdentifier>
+<srw:recordPosition>2</srw:recordPosition>
+<srw:extraRecordData>
+<epubFile/>
+<highres>https://gallica.bnf.fr/ark:/12148/bpt6k5618752b.highres</highres>
+<infoSupModifiable/>
+<link>https://gallica.bnf.fr/ark:/12148/bpt6k5618752b</link>
+<lowres>https://gallica.bnf.fr/ark:/12148/bpt6k5618752b.lowres</lowres>
+<medres>https://gallica.bnf.fr/ark:/12148/bpt6k5618752b.medres</medres>
+<nqamoyen>95.76</nqamoyen>
+<provenance>Gallica</provenance>
+<thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5618752b.thumbnail</thumbnail>
+<typedoc>monographies</typedoc>
+<uri>bpt6k5618752b</uri>
+</srw:extraRecordData>
+</srw:record>
+<srw:record>
+<srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<oai_dc:dc>
+<dc:creator>Méry, Léopold (18..-19.. ; romancier). Auteur du texte</dc:creator>
+<dc:date>1854</dc:date>
+<dc:description>Contient une table des matières</dc:description>
+<dc:description>Avec mode texte</dc:description>
+<dc:format>1 vol. (236 p.) : pl. ; in-12</dc:format>
+<dc:format>Nombre total de vues : 252</dc:format>
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k6213228n</dc:identifier>
+<dc:language>fre</dc:language>
+<dc:language>français</dc:language>
+<dc:publisher>A. Mame et Cie (Tours)</dc:publisher>
+<dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb426743481</dc:relation>
+<dc:rights>domaine public</dc:rights>
+<dc:rights>public domain</dc:rights>
+<dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, 8-OY-98 (B)</dc:source>
+<dc:title>Emmanuel, ou La domination portugaise dans les Indes Orientales au XVIe siècle (4e édition) / par Léopold Méry</dc:title>
+<dc:type>text</dc:type>
+<dc:type>monographie imprimée</dc:type>
+<dc:type>monographie imprimée</dc:type>
+</oai_dc:dc>
+</srw:recordData>
+<srw:recordIdentifier>ark</srw:recordIdentifier>
+<srw:recordPosition>3</srw:recordPosition>
+<srw:extraRecordData>
+<epubFile/>
+<highres>https://gallica.bnf.fr/ark:/12148/bpt6k6213228n.highres</highres>
+<infoSupModifiable/>
+<link>https://gallica.bnf.fr/ark:/12148/bpt6k6213228n</link>
+<lowres>https://gallica.bnf.fr/ark:/12148/bpt6k6213228n.lowres</lowres>
+<medres>https://gallica.bnf.fr/ark:/12148/bpt6k6213228n.medres</medres>
+<nqamoyen>99.99</nqamoyen>
+<provenance>Gallica</provenance>
+<thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k6213228n.thumbnail</thumbnail>
+<typedoc>monographies</typedoc>
+<uri>bpt6k6213228n</uri>
+</srw:extraRecordData>
+</srw:record>
+<srw:record>
+<srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<oai_dc:dc>
+<dc:creator>Wallon, Jean (1821-1882). Auteur du texte</dc:creator>
+<dc:date>1877</dc:date>
+<dc:description>Contient une table des matières</dc:description>
+<dc:description>Avec mode texte</dc:description>
+<dc:format>1 vol. (274 p.) ; in-12</dc:format>
+<dc:format>Nombre total de vues : 288</dc:format>
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k5469672z</dc:identifier>
+<dc:language>fre</dc:language>
+<dc:language>français</dc:language>
+<dc:publisher>G. Charpentier (Paris)</dc:publisher>
+<dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb316191006</dc:relation>
+<dc:rights>domaine public</dc:rights>
+<dc:rights>public domain</dc:rights>
+<dc:source>Bibliothèque nationale de France, département Philosophie, histoire, sciences de l'homme, 8-R-790</dc:source>
+<dc:title>Emmanuel, ou La discipline de l'esprit : discours philosophique / par Jean Wallon</dc:title>
+<dc:type>text</dc:type>
+<dc:type>monographie imprimée</dc:type>
+<dc:type>monographie imprimée</dc:type>
+</oai_dc:dc>
+</srw:recordData>
+<srw:recordIdentifier>ark</srw:recordIdentifier>
+<srw:recordPosition>4</srw:recordPosition>
+<srw:extraRecordData>
+<epubFile/>
+<highres>https://gallica.bnf.fr/ark:/12148/bpt6k5469672z.highres</highres>
+<infoSupModifiable/>
+<link>https://gallica.bnf.fr/ark:/12148/bpt6k5469672z</link>
+<lowres>https://gallica.bnf.fr/ark:/12148/bpt6k5469672z.lowres</lowres>
+<medres>https://gallica.bnf.fr/ark:/12148/bpt6k5469672z.medres</medres>
+<nqamoyen>97.53</nqamoyen>
+<provenance>Gallica</provenance>
+<thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5469672z.thumbnail</thumbnail>
+<typedoc>monographies</typedoc>
+<uri>bpt6k5469672z</uri>
+</srw:extraRecordData>
+</srw:record>
+<srw:record>
+<srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<oai_dc:dc>
+<dc:contributor>Janvier, Ambroise. Auteur ou responsable intellectuel</dc:contributor>
+<dc:contributor>Ballot, M.. Auteur ou responsable intellectuel</dc:contributor>
+<dc:contributor>Bastia, J.. Auteur ou responsable intellectuel</dc:contributor>
+<dc:creator>Malet, Fernand (18..-1929). Compositeur</dc:creator>
+<dc:date>1925</dc:date>
+<dc:description>Musique de scène -- +* 1901......- 2000......+:XXe siècle:</dc:description>
+<dc:format>application/pdf</dc:format>
+<dc:format>Nombre total de vues : 3</dc:format>
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k390521c</dc:identifier>
+<dc:identifier>NUMM-390521</dc:identifier>
+<dc:publisher>Marcel Labbé, éditeur (Paris)</dc:publisher>
+<dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb431280592</dc:relation>
+<dc:rights>domaine public</dc:rights>
+<dc:rights>public domain</dc:rights>
+<dc:source>Bibliothèque nationale de France, département Musique, FOL-VM7-19580</dc:source>
+<dc:title>Emmanuel, chanson chantée dans "les Amants légitimes", comédie musicale, de MM A. Janvier, M. Ballot et J. Bastia. Chant et piano</dc:title>
+<dc:type>Genre musical : chanson </dc:type>
+</oai_dc:dc>
+</srw:recordData>
+<srw:recordIdentifier>ark</srw:recordIdentifier>
+<srw:recordPosition>5</srw:recordPosition>
+<srw:extraRecordData>
+<epubFile/>
+<highres>https://gallica.bnf.fr/ark:/12148/bpt6k390521c.highres</highres>
+<infoSupModifiable/>
+<link>https://gallica.bnf.fr/ark:/12148/bpt6k390521c</link>
+<lowres>https://gallica.bnf.fr/ark:/12148/bpt6k390521c.lowres</lowres>
+<medres>https://gallica.bnf.fr/ark:/12148/bpt6k390521c.medres</medres>
+<nqamoyen>0.0</nqamoyen>
+<provenance>Gallica</provenance>
+<thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k390521c.thumbnail</thumbnail>
+<typedoc>partitions</typedoc>
+<uri>bpt6k390521c</uri>
+</srw:extraRecordData>
+</srw:record>
+<srw:record>
+<srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<oai_dc:dc>
+<dc:creator>Ducros, Octave (1818-1883). Auteur du texte</dc:creator>
+<dc:date>1858</dc:date>
+<dc:description>Contient une table des matières</dc:description>
+<dc:description>Avec mode texte</dc:description>
+<dc:format>In-32, 216 p.</dc:format>
+<dc:format>Nombre total de vues : 224</dc:format>
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k5846098m</dc:identifier>
+<dc:identifier>NUMM-5846098</dc:identifier>
+<dc:language>fre</dc:language>
+<dc:publisher>Julien, Lanier, Cosnard et Cie (Paris)</dc:publisher>
+<dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb30367002h</dc:relation>
+<dc:rights>domaine public</dc:rights>
+<dc:rights>public domain</dc:rights>
+<dc:source>Bibliothèque nationale de France, département Littérature et art, YE-20695</dc:source>
+<dc:title>Emmanuel, poésies au Saint Sacrement, par Octave Ducros,...</dc:title>
+<dc:type>text</dc:type>
+<dc:type>monographie imprimée</dc:type>
+<dc:type>printed monograph</dc:type>
+</oai_dc:dc>
+</srw:recordData>
+<srw:recordIdentifier>ark</srw:recordIdentifier>
+<srw:recordPosition>6</srw:recordPosition>
+<srw:extraRecordData>
+<epubFile/>
+<highres>https://gallica.bnf.fr/ark:/12148/bpt6k5846098m.highres</highres>
+<infoSupModifiable/>
+<link>https://gallica.bnf.fr/ark:/12148/bpt6k5846098m</link>
+<lowres>https://gallica.bnf.fr/ark:/12148/bpt6k5846098m.lowres</lowres>
+<medres>https://gallica.bnf.fr/ark:/12148/bpt6k5846098m.medres</medres>
+<nqamoyen>92.58</nqamoyen>
+<provenance>Gallica</provenance>
+<thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5846098m.thumbnail</thumbnail>
+<typedoc>monographies</typedoc>
+<uri>bpt6k5846098m</uri>
+</srw:extraRecordData>
+</srw:record>
+<srw:record>
+<srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+<srw:recordPacking>xml</srw:recordPacking>
+<srw:recordData>
+<oai_dc:dc>
+<dc:coverage>13 mai 1923</dc:coverage>
+<dc:creator>Agence Rol. Agence photographique (commanditaire)</dc:creator>
+<dc:date>1923</dc:date>
+<dc:description>Référence bibliographique : Rol, 83191</dc:description>
+<dc:description>Appartient à l’ensemble documentaire : Pho20Rol</dc:description>
+<dc:description>Appartient à l’ensemble documentaire : IledeFr1</dc:description>
+<dc:description>Image de presse</dc:description>
+<dc:format>1 photogr. nég. sur verre ; 18 x 13 cm (sup.)</dc:format>
+<dc:format>image/jpeg</dc:format>
+<dc:format>Nombre total de vues : 1</dc:format>
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b53105661d</dc:identifier>
+<dc:language>fre</dc:language>
+<dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb44368520q</dc:relation>
+<dc:rights>domaine public</dc:rights>
+<dc:rights>public domain</dc:rights>
+<dc:source>Bibliothèque nationale de France, département Estampes et photographie, EI-13 (1008)</dc:source>
+<dc:subject>Degland, Emmanuel (1900-1969) -- Portraits</dc:subject>
+<dc:subject>Saint-Mandé (Val-de-Marne, France)</dc:subject>
+<dc:subject>Portraits -- 1914-1945</dc:subject>
+<dc:title>14-5-23, [i.e. 13-5-23, stade de la] Porte Dorée, [Emmanuel] Degland [des White Harriers] gagnant du javelot : [photographie de presse] / [Agence Rol]</dc:title>
+<dc:type>image fixe</dc:type>
+<dc:type>image</dc:type>
+<dc:type>still image</dc:type>
+<dc:type>photographie</dc:type>
+<dc:type>photograph</dc:type>
+</oai_dc:dc>
+</srw:recordData>
+<srw:recordIdentifier>ark</srw:recordIdentifier>
+<srw:recordPosition>7</srw:recordPosition>
+<srw:extraRecordData>
+<epubFile/>
+<highres>https://gallica.bnf.fr/ark:/12148/btv1b53105661d.highres</highres>
+<infoSupModifiable/>
+<link>https://gallica.bnf.fr/ark:/12148/btv1b53105661d</link>
+<lowres>https://gallica.bnf.fr/ark:/12148/btv1b53105661d.lowres</lowres>
+<medres>https://gallica.bnf.fr/ark:/12148/btv1b53105661d.medres</medres>
+<nqamoyen>0.0</nqamoyen>
+<provenance>Gallica</provenance>
+<thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b53105661d.thumbnail</thumbnail>
+<typedoc>images</typedoc>
+<uri>btv1b53105661d</uri>
+</srw:extraRecordData>
+</srw:record>
+</srw:records>
+<srw:nextRecordPosition>9</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

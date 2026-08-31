@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<!-- v13.3.70 -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>CMC ↔ Apex Bridge Patch (v13.3.70)</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:900px;margin:20px auto;padding:0 16px;background:#0d1117;color:#c9d1d9;line-height:1.5}
+  h1{color:#f0c14b}
+  h2{color:#58a6ff;border-bottom:1px solid #30363d;padding-bottom:6px;margin-top:32px}
+  pre{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:12px;overflow-x:auto;font-size:13px}
+  code{background:#161b22;padding:2px 6px;border-radius:3px;font-size:13px}
+  .warn{background:#2d2410;border-left:4px solid #f0c14b;padding:10px;border-radius:4px;margin:12px 0}
+  .ok{background:#0d2615;border-left:4px solid #3fb950;padding:10px;border-radius:4px;margin:12px 0}
+  ol li{margin-bottom:8px}
+</style>
+</head>
+<body>
+<h1>📥 Patch CMCteams ← Apex bridge (v13.3.70)</h1>
+<p>Ce patch ajoute un listener Firebase SSE sur <code>ax_cmc_planning_pending</code> pour recevoir
+les imports planning poussés par Apex chat (cf. <code>apex-ai/v13/services/cmc-planning-bridge.ts</code>).</p>
+
+<div class="warn">
+  <strong>⚠ Règle CLAUDE.md « JAMAIS RÉGRESSER »</strong> — CMCteams <code>index.html</code>
+  est un monolithe de 2,6 MB. Ce patch est livré <strong>séparément</strong> pour qu'un humain
+  puisse l'intégrer manuellement après vérification, plutôt que de risquer de casser le code
+  existant. Tester <code>node --check</code> avant chaque commit.
+</div>
+
+<h2>1. Variable globale + helpers (ajouter après les <code>FB_*</code> existants)</h2>
+<pre><code>// ===== APEX BRIDGE v13.3.70 — Listener planning pending =====
+var APEX_BRIDGE_KEY = "ax_cmc_planning_pending";
+var _apexBridgeSeen = JSON.parse(localStorage.getItem("cmc_apex_bridge_seen") || "{}");
+
+function _apexBridgePersistSeen(){
+  try{ localStorage.setItem("cmc_apex_bridge_seen", JSON.stringify(_apexBridgeSeen)); }catch(_){}
+}
+
+function _apexBridgeIsAdmin(){
+  return A &amp;&amp; A.user &amp;&amp; A.user.id === AID; // Kevin only (DESARZENS K = U11804)
+}
+
+function _apexBridgeShowToast(plan){
+  if(!_apexBridgeIsAdmin()) return;
+  if(_apexBridgeSeen[plan.id]) return;
+  _apexBridgeSeen[plan.id] = Date.now();
+  _apexBridgePersistSeen();
+  // Toast doré 1-clic — utilise le pattern toast existant CMCteams
+  var div = document.createElement("div");
+  div.className = "ax-bridge-toast";
+  div.style.cssText = "position:fixed;top:20px;right:20px;z-index:99999;background:#2d2410;border:2px solid #f0c14b;color:#f0c14b;padding:14px 18px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-size:14px;max-width:340px;animation:axBridgeSlide 0.3s ease;cursor:default";
+  var safeSrc = (plan.source||"chat").replace(/[^a-z]/gi,"");
+  div.innerHTML = "&lt;div style='font-weight:600;margin-bottom:8px'&gt;📥 Apex a envoyé un planning&lt;/div&gt;"
+    + "&lt;div style='font-size:12px;opacity:0.85;margin-bottom:10px'&gt;"+(plan.original_size||0)+" caractères · source "+esc(safeSrc)+"&lt;/div&gt;"
+    + "&lt;div style='display:flex;gap:8px'&gt;"
+    +   "&lt;button onclick='_apexBridgeImport(\""+esc(plan.id)+"\")' style='flex:1;background:#f0c14b;color:#0d1117;border:none;padding:8px 12px;border-radius:5px;font-weight:600;cursor:pointer'&gt;Importer&lt;/button&gt;"
+    +   "&lt;button onclick='this.parentElement.parentElement.remove()' style='background:transparent;color:#c9d1d9;border:1px solid #30363d;padding:8px 12px;border-radius:5px;cursor:pointer'&gt;Plus tard&lt;/button&gt;"
+    + "&lt;/div&gt;";
+  document.body.appendChild(div);
+  // Auto-dismiss 30s
+  setTimeout(function(){ if(div.parentNode) div.remove(); }, 30000);
+}
+
+function _apexBridgeImport(planId){
+  var raw = localStorage.getItem(APEX_BRIDGE_KEY+"/"+planId);
+  if(!raw){
+    if(typeof toast === "function") toast("⚠ Planning Apex introuvable (peut-être déjà traité)", "warn");
+    return;
+  }
+  try{
+    var plan = JSON.parse(raw);
+    sv("import"); // Navigue vers la vue Import
+    setTimeout(function(){
+      var ta = document.querySelector("#importPdfTextarea, textarea[name=importText], textarea.import-textarea");
+      if(ta){
+        ta.value = plan.raw_text || "";
+        ta.scrollIntoView({behavior:"smooth", block:"center"});
+        ta.focus();
+        if(typeof toast === "function") toast("✅ Planning Apex injecté — clique Importer", "success");
+      } else {
+        if(typeof toast === "function") toast("⚠ Vue Import non trouvée — copie-colle manuellement", "warn");
+      }
+    }, 500);
+  }catch(e){
+    if(typeof toast === "function") toast("⚠ Parse error : "+e.message.slice(0,80), "warn");
+  }
+}
+
+// Hook dans fbApplyData (déjà appelé par le SSE listener Firebase existant)
+function _apexBridgeOnFbData(path, data){
+  if(!path || path.indexOf(APEX_BRIDGE_KEY) !== 0) return;
+  if(!data) return;
+  // path = "ax_cmc_planning_pending/pln_xxx"
+  var planId = path.replace(APEX_BRIDGE_KEY+"/", "");
+  if(!planId || _apexBridgeSeen[planId]) return;
+  // Cache local pour _apexBridgeImport()
+  try{ localStorage.setItem(APEX_BRIDGE_KEY+"/"+planId, JSON.stringify(data)); }catch(_){}
+  // Si admin connecté → toast doré
+  if(_apexBridgeIsAdmin() &amp;&amp; data.processed === false){
+    _apexBridgeShowToast(data);
+  }
+}
+
+// Cleanup hebdo des plannings vus > 7j
+setInterval(function(){
+  var now = Date.now();
+  var TTL = 7*24*60*60*1000;
+  var changed = false;
+  for(var id in _apexBridgeSeen){
+    if(now - _apexBridgeSeen[id] &gt; TTL){
+      delete _apexBridgeSeen[id];
+      try{ localStorage.removeItem(APEX_BRIDGE_KEY+"/"+id); }catch(_){}
+      changed = true;
+    }
+  }
+  if(changed) _apexBridgePersistSeen();
+}, 60*60*1000);
+</code></pre>
+
+<h2>2. Wire dans <code>fbApplyData</code> (existant)</h2>
+<p>Trouver la fonction <code>fbApplyData(path, data)</code> et ajouter à la <strong>fin</strong>
+(après tous les <code>else if</code> existants) :</p>
+<pre><code>// APEX BRIDGE v13.3.70
+if(path &amp;&amp; path.indexOf(APEX_BRIDGE_KEY) === 0) _apexBridgeOnFbData(path, data);</code></pre>
+
+<h2>3. Wire dans <code>fbStartListening</code> ou équivalent (subscribe path)</h2>
+<p>Si la SSE listener Firebase actuelle filtre par préfixe (FB_FIX whitelist), ajouter :</p>
+<pre><code>// APEX BRIDGE v13.3.70 — accepte le path dédié hors FB_FIX
+// Soit étendre FB_FIX_PREFIXES si présent, soit ajouter un EventSource séparé sur ax_cmc_planning_pending</code></pre>
+
+<h2>4. CSS animation (ajouter une fois dans le bloc style)</h2>
+<pre><code>@keyframes axBridgeSlide { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }</code></pre>
+
+<h2>5. Validation post-patch obligatoire</h2>
+<ol>
+  <li>Extraire JS du HTML : <code>python3 -c "import re; html=open('index.html').read(); blocks=re.findall(r'&lt;script&gt;(.*?)&lt;/script&gt;', html, re.DOTALL); open('/tmp/cmc.js','w').write(''.join(blocks))"</code></li>
+  <li>Syntax check : <code>node --check /tmp/cmc.js</code></li>
+  <li>Test mental : Kevin colle un planning dans Apex chat → Apex push Firebase →
+      CMCteams ouvert sur autre device → toast doré doit apparaître → clic
+      Importer → vue Import + textarea pré-rempli</li>
+  <li>Bumper APP_VER + CACHE_VERSION sw.js (cf. erreur connue #39)</li>
+</ol>
+
+<div class="ok">
+  <strong>✅ Source de vérité Apex côté</strong> :
+  <code>apex-ai/v13/services/cmc-planning-bridge.ts</code> (déjà déployé v13.3.19).
+  Ce patch CMCteams ferme la boucle bidirectionnelle Apex ↔ CMC.
+</div>
+
+<h2>Notes architecture</h2>
+<ul>
+  <li>Le path Firebase <code>ax_cmc_planning_pending/&lt;id&gt;</code> est <em>hors</em> <code>apex/*</code>
+      pour éviter la dépendance à la whitelist FB_FIX d'Apex.</li>
+  <li>Cap raw_text 50 KB (sécurité Firebase) déjà géré côté Apex.</li>
+  <li>Cleanup hebdo automatique des plannings vus &gt; 7j.</li>
+  <li>Toast n'apparaît que si <code>A.user.id === AID</code> (Kevin admin only).</li>
+  <li>Anti-double-trigger via <code>_apexBridgeSeen</code> persistant localStorage.</li>
+</ul>
+
+<!-- Kevin v9.615 ABSOLUE : badge version + auto-MAJ shared helper -->
+<script src="/CMCteams/tools/shared/version-badge-pwa.js"
+        data-project="cmc-apex-bridge-patch"
+        data-version="v13.3.70"
+        data-color="#c9a227"
+        defer></script>
+</body>
+</html>

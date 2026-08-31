@@ -1,0 +1,17 @@
+{
+  "v": 1,
+  "alg": "PBKDF2-200000-SHA256/AES-GCM-256",
+  "salt": "/C2rxx+W74W7wxDwufVbfA==",
+  "iv": "8mN+PFA/2XK4H3Ic",
+  "ct": "G4N33zs/VOqnMnXVLI3y3+s91r79lW/QI4U9q/y0VXdqn7EH/XppuV1gkeVyZFVjuE+T43DyRY8daplEBb3rLf3glzb2bsBsSfBpp3OI5ARLhArn6hpRiiZsfVygd+pXvn+tuGdPESByGlt3sXU90fAj+A0QZ+5aVdJ3XCUXgX781tteHOwzh+BDqMt2mMGH6o1j7lwuRRhB7rpAkPSv3TANQ+75EzdJ4bdi4e3M2s3QVh4vsuivb2YsFSQjITDH58b+EdelCnymsDi8ZsGWBIevjXgn691sNGCXSLZNEDn3l0Ce3ibN8T8MPO45n5/nDAEenJ8LGfdLMtxMxtMd5LXK/dHGxz+mqbJoKWuNY8v/BE+x1+BJ2+W5BeHMvnrp4akFT7eaDcv6Yd6D1gX1BMU1G52H7uh+U5lBEIkuvALebq2TUErAf0zJ+VyqF6XznCU1xG3osDJhEobvfiMvhjPt",
+  "ts": 1779981648373,
+  "meta": {
+    "filename": "TEST-CAPTURE.txt",
+    "mime": "text/plain",
+    "month": null,
+    "year": null,
+    "sizeBytes": 11,
+    "employees_count": null,
+    "build": "v0.9.9-capture-auto-chiffree-1779981569171"
+  }
+}

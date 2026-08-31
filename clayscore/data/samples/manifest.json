@@ -1,0 +1,17 @@
+{
+  "casse_ciel": {
+    "video": "data/samples/casse_ciel.mp4",
+    "audio": "data/samples/casse_ciel.wav",
+    "annotation": "data/samples/casse_ciel.json"
+  },
+  "manque_foret": {
+    "video": "data/samples/manque_foret.mp4",
+    "audio": "data/samples/manque_foret.wav",
+    "annotation": "data/samples/manque_foret.json"
+  },
+  "nobird_contrejour": {
+    "video": "data/samples/nobird_contrejour.mp4",
+    "audio": "data/samples/nobird_contrejour.wav",
+    "annotation": "data/samples/nobird_contrejour.json"
+  }
+}

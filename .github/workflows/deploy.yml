@@ -1,0 +1,108 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    # Ne déclencher que sur ce qui change VRAIMENT le site publié.
+    # Vécu 2026-08-04 : chaque push main lançait un déploiement complet ; avec des
+    # merges toutes les ~1 min et une attente de machine de plusieurs minutes, chaque
+    # déploiement en attente était remplacé par le suivant → AUCUN n'arrivait à
+    # démarrer, donc plus rien n'était publié (page figée sur une vieille version).
+    # Ces chemins ne font pas partie du site → inutile de republier pour eux.
+    paths-ignore:
+      - '.github/**'
+      - 'services/**'
+      - 'tests/**'
+      - 'tools/memory/**'
+      - 'audit/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  # NE PAS annuler un déploiement en cours (recommandation GitHub Pages).
+  # Vécu 2026-08-04 : avec cancel-in-progress:true, une série de merges rapprochés
+  # annulait CHAQUE déploiement avant publication (5 runs "cancelled" d'affilée)
+  # → plus rien n'était publié sur kd-mc.com et les nouveautés restaient invisibles.
+  # En file d'attente, chaque run publie et le dernier gagne. Ne pas remettre true.
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment2.outputs.page_url || steps.deployment3.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # --- Minification JS (best-effort, jamais bloquante) ---
+      # Minifie le JS de index.html SUR LA COPIE DU RUNNER (la source git reste
+      # lisible). Filet anti-régression : si la minification OU le smoke-test de
+      # rendu échoue, on garde l'index.html original non-minifié → la prod ne
+      # peut PAS casser. Gain mesuré : ~25% sur-le-fil (gzip 846->634 Ko).
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install build deps
+        run: npm ci || npm install --no-audit --no-fund
+        continue-on-error: true
+      - name: Install Chromium (smoke-test)
+        run: npx playwright install --with-deps chromium
+        continue-on-error: true
+      - name: Minify JS + smoke-test (fallback si echec)
+        run: |
+          set +e
+          node tools/build/minify-html.cjs index.html /tmp/index.min.html \
+            && node tools/build/smoke-test.cjs /tmp/index.min.html index.html \
+            && cp /tmp/index.min.html index.html \
+            && echo "OK index.html minifie deploye" \
+            || echo "Fallback : source non-minifiee deployee (minify/smoke KO)"
+          exit 0
+
+      # Alléger l'artefact : node_modules (générés par npm install ci-dessus, PAS dans git,
+      # ~240 Mo / ~50k fichiers) ne doivent jamais être publiés — c'est ce qui fait échouer
+      # la synchro Pages ("Deployment failed, try again later"). Contenu servi inchangé.
+      - name: Alléger l'artefact (retire node_modules générés)
+        run: find . -name node_modules -type d -prune -exec rm -rf {} + 2>/dev/null || true
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+        with:
+          enablement: true
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: '.'
+      # Déploiement Pages avec RETRY : la synchro Pages renvoie parfois une erreur
+      # PASSAGÈRE (« Deployment failed, try again later » pendant syncing_files) qui
+      # laissait la prod SILENCIEUSEMENT sur l'ancienne version (cf. v1.0.18). On
+      # réessaie jusqu'à 3 fois avec un court back-off ; seul l'échec des 3 tentatives
+      # fait échouer le job (= vrai problème, pas un hoquet passager).
+      - name: Deploy to GitHub Pages (tentative 1)
+        id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Back-off avant retry
+        if: steps.deployment.outcome == 'failure'
+        run: echo "Pages a échoué (passager ?) — nouvelle tentative dans 20 s"; sleep 20
+      - name: Deploy to GitHub Pages (tentative 2)
+        id: deployment2
+        if: steps.deployment.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Back-off avant tentative finale
+        if: steps.deployment.outcome == 'failure' && steps.deployment2.outcome == 'failure'
+        run: echo "2e échec — dernière tentative dans 30 s"; sleep 30
+      - name: Deploy to GitHub Pages (tentative 3, bloquante)
+        id: deployment3
+        if: steps.deployment.outcome == 'failure' && steps.deployment2.outcome == 'failure'
+        uses: actions/deploy-pages@v5

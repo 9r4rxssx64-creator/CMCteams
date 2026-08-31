@@ -1,0 +1,14 @@
+name = "kdmc-rag"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+# account_id injecté par le workflow via CLOUDFLARE_ACCOUNT_ID (jamais commité).
+# SANS Durable Object (leçons #132/#133). Embeddings via Workers AI (binding AI, aucune
+# clé externe) + stockage vecteurs via Vectorize (binding VEC).
+# Secret : APEX_ADMIN_PIN_SHA256 (auth mémoire perso) posé par le workflow via `wrangler secret put`.
+
+[ai]
+binding = "AI"
+
+[[vectorize]]
+binding = "VEC"
+index_name = "apex-memory"
