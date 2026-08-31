@@ -16,8 +16,12 @@ name: Apex Autonomous Watcher
 #   - Reste un MONITOR pas un EXECUTOR (l'app fait le boulot quand elle revient online)
 
 on:
-  schedule:
-    - cron: '0 */6 * * *'  # v13.4.184 Kevin "mails saturent boite" : 6h (was 5min)
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
   workflow_dispatch:
 
 permissions:

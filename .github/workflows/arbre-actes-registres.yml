@@ -5,8 +5,12 @@ name: Arbre — récupération auto des actes (registres numérisés)
 # un rapport + le brut des réponses (itération). Dispatch manuel + 1×/mois.
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: "0 5 5 * *" # le 5 de chaque mois à 05:00 UTC (après INSEE 03:00 et cloud 04:00)
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 permissions:
   contents: write
 jobs:

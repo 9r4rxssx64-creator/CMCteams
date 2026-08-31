@@ -1,7 +1,11 @@
 name: Firebase Nightly Backup
 on:
-  schedule:
-    - cron: '0 3 * * *'  # Every day at 03:00 UTC
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
   workflow_dispatch:       # Manual trigger too
 
 # actions:write requis par l'étape cleanup (deleteWorkflowRun) — sans lui, 403

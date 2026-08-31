@@ -4,8 +4,12 @@ name: CDN dependencies watch
 # Liste les versions latest dispos et alerte si on est >2 versions de retard.
 
 on:
-  schedule:
-    - cron: '0 6 * * *'
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
   workflow_dispatch:
 
 permissions:

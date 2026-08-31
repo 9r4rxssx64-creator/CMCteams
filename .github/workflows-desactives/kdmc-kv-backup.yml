@@ -18,8 +18,12 @@ name: KDMC — Sauvegarde du registre clients (KV ACCOUNTS)
 #
 # Anti-spam mails (règle CLAUDE.md) : 1 cron/jour, commits [skip ci].
 on:
-  schedule:
-    - cron: '30 3 * * *' # 03:30 UTC, 1×/jour
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
   workflow_dispatch: {}
 
 permissions:

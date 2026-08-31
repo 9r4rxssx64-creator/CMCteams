@@ -22,12 +22,12 @@ on:
       - 'services/kdmc-crea-ai/worker.js'
       - 'services/kdmc-apis/worker.js'
       - 'tools/ia-gratuites/**'
-  schedule:
-    # 1×/semaine, lundi 4h05 UTC. Les paliers gratuits changent souvent : ça
-    # nous prévient AVANT que Kevin tombe dessus. Cadence volontairement basse
-    # (règle anti-spam mails : jamais plus de 4 exécutions/jour).
-    - cron: '5 4 * * 1'
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 permissions:
   contents: write
 
