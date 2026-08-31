@@ -72,3 +72,15 @@ sonder-url:
     - when: never
   script:
     - 'sh tools/gitlab/sonder-url.sh'
+
+# Tableau de bord des branches — "que se passe-t-il partout ?" (à la demande).
+tableau-branches:
+  stage: etat
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$BRANCHES'
+    - when: never
+  script:
+    - 'sh tools/gitlab/branches.sh'
