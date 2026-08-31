@@ -154,29 +154,8 @@ jobs:
           path: /tmp/sec/
           retention-days: 30
 
-      - name: Résumé → Firebase (Apex lit ax_security_last)
-        if: always()
-        env:
-          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-          RD_EXEC: ${{ github.event.client_payload.exec_id }}
-          WD_EXEC: ${{ inputs.exec_id }}
-        run: |
-          FB_URL="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app"
-          TOKEN=$(node tools/firebase/gauth.cjs 2>/dev/null); QS=""
-          [ -n "$TOKEN" ] && QS="?access_token=${TOKEN}"
-          python3 - <<'PYEOF'
-          import json, os, time
-          try: s = json.load(open('/tmp/sec/summary.json'))
-          except Exception: s = {'total': None, 'by_tool': {}}
-          body = {
-            'exec_id': os.environ.get('WD_EXEC') or os.environ.get('RD_EXEC') or ('run_'+os.environ.get('GITHUB_RUN_ID','')),
-            'total': s.get('total'), 'by_tool': s.get('by_tool', {}),
-            'ts': int(time.time()*1000), 'run_id': os.environ.get('GITHUB_RUN_ID',''),
-            'tools': ['gitleaks','trufflehog','osv-scanner','trivy','semgrep','zizmor'],
-          }
-          open('/tmp/sec_fb.json','w').write(json.dumps(body, ensure_ascii=False))
-          PYEOF
-          HTTP=$(curl -sS -o /tmp/r.txt -w "%{http_code}" -X PUT "${FB_URL}/apex/ax_security_last.json${QS}" \
-            -H "Content-Type: application/json" --data-binary @/tmp/sec_fb.json || echo 000)
-          echo "Firebase PUT ax_security_last → HTTP $HTTP $(head -c 150 /tmp/r.txt)"
+      # ⛔ Étape « Résumé → Firebase » RETIRÉE le 15/08/2026 : c'était la SEULE
+      #    partie de ce workflow qui parlait à un service tiers, et c'est ce que
+      #    GitHub reproche. Les 8 analyses ci-dessus portent sur CE dépôt —
+      #    analyser son propre code est l'usage prévu d'Actions. Le rapport
+      #    reste disponible en artifact et dans le résumé de l'exécution.

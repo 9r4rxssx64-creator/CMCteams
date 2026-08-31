@@ -73,9 +73,15 @@ const REGISTRE = [
     'wf:ai-review-independent.yml', 'wf:security-suite.yml']],
   [/TOUJOURS TESTER END-TO-END|VÉRIFIER END-TO-END/i, ['wf:verif-reelle.yml', 'wf:audit-live.yml']],
   [/VÉRIFIER AVANT D'ENVOYER/i, ['wf:verif-reelle.yml']],
-  [/AUTO-TEST \+ AUTO-FIX/i, ['file:apex-ai/v13/services/admin/auto-test-runner.ts', 'wf:claude-todo-watcher.yml']],
+  /* claude-todo-watcher.yml RETIRÉ le 15/08/2026 : son travail consistait à
+     interroger Firebase en boucle et à lui répondre — exactement ce que GitHub
+     a sanctionné (« Actions used solely to interact with 3rd party websites »).
+     On ne le remplace PAS par une fausse référence : ces règles retombent dans
+     la dette réelle, visible et comptée. Leur vraie place est un Cloudflare
+     Worker avec son propre déclencheur — c'est noté dans KEVIN_ACTIONS_TODO. */
+  [/AUTO-TEST \+ AUTO-FIX/i, ['file:apex-ai/v13/services/admin/auto-test-runner.ts']],
   [/WARNING = CORRECTION AUTO/i, ['file:apex-ai/v13/services/admin/auto-test-runner.ts']],
-  [/PIPELINE SELF-HEALING|PIPELINE AUTONOMIE/i, ['wf:claude-todo-watcher.yml', 'wf:apex-audit-escalate.yml']],
+  [/PIPELINE SELF-HEALING|PIPELINE AUTONOMIE/i, ['wf:apex-audit-escalate.yml']],
   [/RIEN PERDRE/i, ['npm:test:pw-noclear']],
   [/SKILLS APEX 2026/i, ['file:apex-ai/v13/tests/unit/skills-dispatch.test.ts']],
   [/APEX N'OUBLIE JAMAIS PERSONNE/i, ['file:apex-ai/v13/tests/unit/rules-injection-watch.test.ts']],

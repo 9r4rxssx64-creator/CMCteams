@@ -29,10 +29,16 @@ const CAPTURES = 'audit/captures-paquet';
 const R = { ok: [], ko: [] };
 const chk = (c, m) => (c ? R.ok : R.ko).push(m);
 
+/* Le test FABRIQUE le paquet s'il n'existe pas. Sans ça il ne tournerait
+   jamais tout seul dans le portail de contrôle — et un test qui ne tourne pas
+   ne protège de rien. C'est précisément l'erreur qui a laissé passer le paquet
+   cassé du 15/08 : tools/shared manquait, et rien d'automatique ne le voyait. */
 if (!existsSync(RACINE)) {
-  console.error(`❌ ${RACINE} est absent. Lance d'abord :`);
-  console.error('   node services/kdmc-router/prepare-secours.mjs --pages');
-  process.exit(1);
+  console.log('Le paquet n\'existe pas encore — je le fabrique.');
+  const { execFileSync } = await import('node:child_process');
+  execFileSync(process.execPath,
+    ['services/kdmc-router/prepare-secours.mjs', '--pages', '--leger'],
+    { stdio: 'inherit' });
 }
 
 /* Les applications, telles que le routeur les sert (table ROUTES, préfixe retiré). */
