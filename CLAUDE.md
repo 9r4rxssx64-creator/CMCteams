@@ -9763,7 +9763,6 @@ S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses to
 | Économie de jetons | `rtk-ai/rtk` | commande bavarde. Gain réel mesuré ~3,7 %, pas 60-90 % → ne pas survendre |
 | Entreprise | `codejunkie99/meridian-company-os` | piloter humains + agents dans une console (inspiration admin kd-mc.com) |
 | LLM gratuit | `free-llm-api-resources` | forfait épuisé → repli **en fin** de chaîne (Anthropic reste l'IA principale) |
-| App Store | `rorkai/App-Store-Connect-CLI` + `rorkai/app-store-connect-cli-skills` | publier une app sur l'App Store/TestFlight (CLI `asc`). **Prérequis à annoncer AVANT de promettre** : compte Apple Developer 99 €/an + clé `.p8` (Kevin seul), et une PWA doit être **emballée en natif** (Apple refuse les coquilles vides, règle 4.2). Détail : `.claude/skills/appstore/SKILL.md` |
 
 - Contenu vendorisé : `vendor/agent-toolkit/<id>/` + `MANIFEST.json` (SHA + licence). Mise à jour : workflow `agent-toolkit-sync.yml` (bouton + cron mensuel).
 - Mode d'emploi détaillé : `.claude/skills/agent-toolkit/SKILL.md`. Côté Apex : catalogue plugins, tag `agent-toolkit`.

@@ -25,4 +25,3 @@ google-api.json
 # Python cache
 __pycache__/
 *.pyc
-mobile/build/

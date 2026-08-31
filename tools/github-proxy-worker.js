@@ -23,75 +23,31 @@
 
 const ALLOWED_REPO = "9r4rxssx64-creator/CMCteams";
 
-/* Les seules pages autorisées à lire le dépôt par ce relais. */
-const ORIGINES_AUTORISEES = [
-  "https://kd-mc.com",
-  "https://www.kd-mc.com",
-  "https://9r4rxssx64-creator.github.io",
-];
-
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
-    const liste = (env.ALLOWED_ORIGIN || "").trim()
-      ? env.ALLOWED_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean)
-      : ORIGINES_AUTORISEES;
-    const autorisee = liste.includes(origin);
-    const pourEnTetes = autorisee ? origin : liste[0];
+    const allowedOrigin = env.ALLOWED_ORIGIN || "https://9r4rxssx64-creator.github.io";
 
     // CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
-        headers: corsHeaders(pourEnTetes)
+        headers: corsHeaders(allowedOrigin)
       });
     }
 
-    /* ⚠️ FERMÉ PAR DÉFAUT — corrigé le 2026-08-12.
-     *
-     * L'ancienne version disait : « si une origine est présente ET qu'elle
-     * n'est pas la bonne, refuse ». Autrement dit, une requête SANS origine
-     * passait. Or un navigateur envoie toujours une origine ; ce qui n'en
-     * envoie pas, c'est un outil en ligne de commande ou un serveur.
-     *
-     * Tant que le dépôt est public, ça ne changeait rien. Mais ce relais
-     * existe précisément pour le jour où il sera PRIVÉ : la porte grande
-     * ouverte aurait alors laissé n'importe qui connaissant l'adresse lire
-     * un dépôt fermé, avec le jeton de Kevin. On refuse donc par défaut, et
-     * on n'autorise que ce qui est explicitement listé.
-     */
-    if (!autorisee) {
-      return new Response("Origine non autorisée", {
+    // Vérifier origine
+    if (origin && origin !== allowedOrigin) {
+      return new Response("Origin not allowed", {
         status: 403,
-        headers: corsHeaders(pourEnTetes)
+        headers: corsHeaders(allowedOrigin)
       });
     }
-    const allowedOrigin = pourEnTetes;
 
     const url = new URL(request.url);
     const action = url.searchParams.get("action") || "read";
     const path = url.searchParams.get("path") || "";
     const branch = url.searchParams.get("branch") || "main";
-
-    /* ⚠️ ÉCHAPPEMENT DU DÉPÔT — corrigé le 2026-08-12.
-     *
-     * `path` et `branch` sont recollés dans l'adresse GitHub. Sans contrôle,
-     * un chemin contenant « .. » sort du dépôt whitelisté :
-     *     path=../../autre-depot/main/secret.txt
-     * devient, une fois l'adresse simplifiée, une lecture d'un AUTRE dépôt.
-     *
-     * Et le jeton porté par ce relais donne accès à TOUS les dépôts de
-     * Kevin, pas seulement CMCteams. La liste blanche d'un seul dépôt ne
-     * protégeait donc rien. On n'accepte que des chemins simples.
-     */
-    const cheminOk = /^[A-Za-z0-9._\-/]*$/.test(path) && !path.split("/").includes("..");
-    const brancheOk = /^[A-Za-z0-9._\-/]+$/.test(branch) && !branch.split("/").includes("..");
-    if (!cheminOk || !brancheOk) {
-      return new Response("Chemin ou branche refusé", {
-        status: 400,
-        headers: corsHeaders(allowedOrigin)
-      });
-    }
 
     // Whitelist : uniquement le repo Kevin
     let githubUrl;

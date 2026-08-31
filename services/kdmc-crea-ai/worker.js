@@ -169,11 +169,14 @@ function dancePrompt(pose, extra) {
    photo, tout tombait d'un coup : figurines, cartoon ET poses de danse.
    Plusieurs noms candidats = une dépréciation ne casse plus la fonction. */
 const GEM_MODELS = [
+  /* Génération actuelle (3.x) — les noms 2.x ci-dessous étaient TOUS périmés,
+     c'est ce qui tuait figurines / cartoon / poses de danse. */
+  'gemini-3.1-flash-image-preview',
+  'gemini-3-pro-image-preview',
   'gemini-2.5-flash-image',
   'gemini-2.5-flash-image-preview',
   'gemini-2.0-flash-preview-image-generation',
   'gemini-2.0-flash-exp-image-generation',
-  'gemini-exp-1206',
 ];
 
 function parseDataUrl(u) {

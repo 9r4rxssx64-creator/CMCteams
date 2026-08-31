@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.124.0";
+var APP_VER="v2.117.0";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -463,43 +463,22 @@ function buildLesson(ui,li,rev){ var c=COURSES[S.course],pool=allWords(S.course)
   ex=shuffle(ex);
   return complèteJusqua(ex,words,pool,tier,LECON_BASE,rev?null:ui,rev?null:li).slice(0,LECON_BASE);
 }
-/* 🤟 LANGUE DES SIGNES — la garde centrale.
-   Un signe est une VIDÉO, pas un texte. Pour ce cours, la traduction (w.t) vaut le mot
-   français lui-même : demander « traduis banane » aurait donc pour réponse « banane ».
-   Le seul sens qui a du sens est donc : on montre le signe, on demande le mot français.
-   Cette garde est posée DANS les fabriques d'exercices, pas chez ceux qui les appellent :
-   ainsi un futur exercice ajouté ailleurs sera juste d'office, sans qu'on y pense.
-   Elle coupe aussi l'écoute : cette langue ne se parle pas, elle se regarde. */
-function estSigne(w){ return !!(w && w.signe && w.signe.u); }
-function coursSignes(){ var c=COURSES[S.course]; return !!(c && c.signes); }
-
-function makeMC(w,pool,mode){ if(estSigne(w)) mode="mc_fr"; var asT=mode!=="mc_fr",correct=asT?w.t:w.fr;
+function makeMC(w,pool,mode){ var asT=mode!=="mc_fr",correct=asT?w.t:w.fr;
   /* distracteurs : chaînes DISTINCTES de la réponse et entre elles (anti-collision de traductions) */
   var seen={}; seen[norm(correct)]=1; var d=[];
   shuffle(pool).forEach(function(x){ if(d.length>=3)return; var s=asT?x.t:x.fr; if(!seen[norm(s)]){ seen[norm(s)]=1; d.push(s); } });
   return {kind:"mc",mode:mode,w:w,prompt:mode==="mc_fr"?w.t:w.fr,answer:correct,opts:shuffle([correct].concat(d)),audio:mode==="listen"}; }
 function makeMatch(ws){ /* garde des paires à cible UNIQUE (évite 2 tuiles identiques) */
-  /* Pas de jeu de paires sur des signes : les deux colonnes afficheraient le même mot
-     français, la réponse serait donnée. On rend une reconnaissance de signe à la place. */
-  if(ws.some(estSigne)) return makeMC(ws[0],allWords(S.course),"mc_fr");
   var seen={},uniq=[]; ws.forEach(function(w){ if(!seen[norm(w.t)]){ seen[norm(w.t)]=1; uniq.push(w); } });
   return {kind:"match",w:uniq[0],pairs:uniq.map(function(w){return{fr:w.fr,t:w.t,w:w};})}; }
 function makeBank(p,pool){ var toks=p.t.split(" "),ex=sample(allWords(S.course),3).map(function(x){return x.t.split(" ")[0];});
   return {kind:"bank",w:{fr:p.fr,t:p.t},prompt:p.fr,answer:p.t,tokens:toks,bank:shuffle(toks.concat(ex))}; }
 /* Exercice de SAISIE (écrire la réponse) — bien plus exigeant que le choix multiple.
    dir : "toT" écris dans la langue · "toFr" écris en français · "listen" écoute puis écris. */
-/* Certains signes portent une étiquette qui n'est pas un mot qu'on tape : « donner, rendre »,
-   « ma, mes », « ami·e », « au bord de… », « conseiller (n.) ». Un signe peut valoir plusieurs
-   mots français, et la source l'écrit ainsi — je ne réécris pas la source. Mais demander de
-   RECOPIER ça au clavier serait une punition, pas un exercice : on propose alors un choix. */
-function signeAEcrire(w){ return estSigne(w) && !/[,·…()\/]/.test(String(w.fr||"")); }
-function makeType(w,dir){ if(estSigne(w)&&!signeAEcrire(w)) return makeMC(w,allWords(S.course),"mc_fr");
-  if(estSigne(w)) dir="toFr"; var toT=dir!=="toFr", answer=toT?w.t:w.fr;
+function makeType(w,dir){ var toT=dir!=="toFr", answer=toT?w.t:w.fr;
   return {kind:"type",w:w,dir:dir,prompt:dir==="listen"?"":(toT?w.fr:w.t),answer:answer,audio:dir==="listen"}; }
 /* Exercice de PRONONCIATION (parler au micro) — reconnaissance vocale, indulgent. */
-function makeSpeak(w){ /* on ne demande pas de PRONONCER un signe : il se fait avec les mains */
-  if(estSigne(w)) return makeType(w,"toFr");
-  return {kind:"speak",w:w,prompt:w.t,answer:w.t}; }
+function makeSpeak(w){ return {kind:"speak",w:w,prompt:w.t,answer:w.t}; }
 
 /* ============ 🏃 LES VERBES — entraînement dédié (Kevin 2026-08-11 :
    « ajoute des exercices sur les verbes, écrit, parlé, etc, va plus loin »)
@@ -603,62 +582,18 @@ function _isCloudVoice(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===
 /* Résout un id de voix vers sa vraie voix cloud + réglages (profils comme « antonin »). */
 function voiceReal(id){ for(var i=0;i<VOICES.length;i++){ if(VOICES[i].id===id) return VOICES[i]; } return null; }
 var _ttsAudio=null,_ttsReq=0;
-/* 🔊 UNE SEULE balise son pour toute l'app (Kevin 2026-08-13 : « la voix est bien mais après
-   3 questions elle baisse seule »).
-   MESURÉ AVANT : 7 balises <audio> créées en 6 questions, AUCUNE libérée. Deux conséquences sur
-   iPhone : (1) Safari plafonne le nombre de sons chargés en même temps, (2) surtout, une balise
-   TOUTE NEUVE n'est pas « débloquée » par un appui du doigt — iOS refuse alors de la jouer, et
-   l'app bascule sur la voix du téléphone, plus sourde. D'où la voix qui « baisse » toute seule.
-   APRÈS : une balise unique, débloquée une fois pour toutes au premier appui, dont on change
-   seulement l'adresse. C'est déjà ce que fait la voix de Bee (« toujours le même <audio> »).
-   Elle n'est JAMAIS branchée au moteur audio : y brancher une balise détourne le son et, si le
-   moteur s'endort, le son tombe (leçon iPhone déjà vécue). L'atelier prononciation, lui, garde
-   sa propre balise puisqu'il a besoin d'analyser le son pour animer la bouche. */
-var _ttsEl=null, _ttsRaison="";
-/* L'atelier prononciation a besoin d'ANALYSER le son (bouche qui articule) : il lui faut donc
-   sa propre balise, branchable au moteur audio, sans jamais y faire passer le son du reste de
-   l'app. Réutilisée elle aussi — sinon chaque écoute laissait une balise de plus derrière elle. */
-var _pronEl=null;
-function _pronJoue(url,rate){ if(!_pronEl){ try{ _pronEl=new Audio(); _pronEl.crossOrigin="anonymous"; _pronEl.preload="auto"; }catch(_){ return null; } }
-  var a=_pronEl; try{ a.pause(); }catch(_){}
-  try{ a.onerror=null; a.onended=null; a.volume=1; a.currentTime=0; }catch(_){}
-  try{ if(rate&&rate!==1){ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=rate; }
-       else { a.preservesPitch=true; a.webkitPreservesPitch=true; a.playbackRate=1; } }catch(_){}
-  a.src=url; try{ a.load(); }catch(_){}
-  _ttsAudio=a; return a; }
-function _ttsBalise(){ if(!_ttsEl){ try{ _ttsEl=new Audio(); _ttsEl.preload="auto"; }catch(_){ return null; } } return _ttsEl; }
-/* Prépare la balise partagée : on remet TOUS les réglages à neuf (une balise réutilisée garde
-   sinon la vitesse ou le mode d'une phrase précédente), puis on pose la nouvelle adresse. */
-function _ttsJoue(url,rate){ var a=_ttsBalise(); if(!a) return null;
-  try{ a.pause(); }catch(_){}
-  try{ a.onerror=null; a.onended=null; }catch(_){}
-  try{ a.volume=1; a.muted=false; a.currentTime=0; }catch(_){}
-  try{ if(rate&&rate!==1){ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=rate; }
-       else { a.preservesPitch=true; a.webkitPreservesPitch=true; a.playbackRate=1; } }catch(_){}
-  a.src=url; try{ a.load(); }catch(_){}
-  _ttsAudio=a; return a; }
-/* Rendre la ressource au téléphone : mettre en pause ne suffit pas, il faut vider l'adresse. */
-function _ttsLibere(){ try{ if(_ttsEl){ _ttsEl.pause(); _ttsEl.removeAttribute("src"); _ttsEl.load(); } }catch(_){} }
 /* Kevin 2026-08-08 « elle s'arrête avant la fin » — repli voix du téléphone :
    Chrome/Android et Safari iOS coupent silencieusement toute phrase parlée après ~15 s.
    Correctif documenté : pendant qu'on parle, un pause()+resume() régulier relance le
    moteur sans coupure audible. On l'arrête à la fin (onend/onerror) ou dès qu'on ne
    parle plus. Toutes les lectures locales passent par _wsSpeak → jamais tronquées. */
-var _wsKA=null,_wsKAFin=null;
-function _wsStopKA(){ if(_wsKA){ try{ clearInterval(_wsKA); }catch(_){} _wsKA=null; }
-  if(_wsKAFin){ try{ clearTimeout(_wsKAFin); }catch(_){} _wsKAFin=null; } }
+var _wsKA=null;
+function _wsStopKA(){ if(_wsKA){ try{ clearInterval(_wsKA); }catch(_){} _wsKA=null; } }
 function _wsSpeak(u){ if(!u)return; try{ speechSynthesis.cancel(); }catch(_){}  _wsStopKA();
   var done=function(){ _wsStopKA(); };
   u.onend=done; u.onerror=done;
   try{ speechSynthesis.speak(u);
     _wsKA=setInterval(function(){ try{ if(speechSynthesis.speaking){ speechSynthesis.pause(); speechSynthesis.resume(); } else done(); }catch(_){ done(); } },9000);
-    /* GARDE-FOU BORNÉ (Kevin 2026-08-13, « la voix baisse toute seule ») : sur iPhone, le signal
-       de fin de la voix du téléphone n'arrive PAS toujours. Le garde-fou tournait alors sans fin,
-       à réveiller la synthèse toutes les 9 s — or une synthèse restée active FAIT BAISSER le son
-       de tout le reste sur iOS. On lui donne désormais une fin certaine : la durée du texte,
-       largement majorée, et jamais plus d'une minute. */
-    var _lg=String(u.text||"").length;
-    _wsKAFin=setTimeout(done, Math.min(60000, 4000 + _lg*110));
   }catch(e){ done(); } }
 /* La belle voix (en ligne) peut tomber : réseau, worker, quota. Avant, on basculait sur la voix
    du téléphone EN SILENCE — Kevin entendait un robot sans savoir pourquoi. On le dit maintenant,
@@ -670,40 +605,26 @@ var _ttsEchecs=0, _ttsPrevenu=false;
 function _ttsChrono(a,req,repli){ var t=setTimeout(function(){
     if(req!==_ttsReq)return; if(a&&a.currentTime>0&&!a.paused)return;   // ça joue déjà : on ne touche à rien
     try{ if(a){a.onerror=null;a.pause();} }catch(_){}
-    _voixCloudKO("lent"); repli();
+    _voixCloudKO(); repli();
   },2500);
   try{ a.addEventListener("playing",function(){ clearTimeout(t); _ttsEchecs=0; }); }catch(_){}
   return t; }
-/* On dit POURQUOI, pas seulement QUE ça a basculé (règle « toujours détailler les erreurs ») :
-   le téléphone qui refuse de jouer le son, un réseau qui traîne et une erreur de lecture ne se
-   corrigent pas de la même façon. Sans la raison, on cherche à l'aveugle. */
-function _voixCloudKO(raison){ _ttsEchecs++; if(raison) _ttsRaison=raison;
+function _voixCloudKO(){ _ttsEchecs++;
   if(_ttsEchecs>=2 && !_ttsPrevenu){ _ttsPrevenu=true;
-    var pourquoi = _ttsRaison==="refus" ? "ton iPhone a refusé de jouer le son tout seul"
-                 : _ttsRaison==="lent"  ? "la connexion est trop lente"
-                 : _ttsRaison==="media" ? "le son n'a pas pu être lu"
-                 : "elle ne répond pas";
-    toast("🔈 La belle voix : "+pourquoi+" — je passe sur la voix du téléphone (moins jolie). Touche l'écran puis réessaie, ou choisis une autre voix dans Profil → Voix."); } }
-/* 🇲🇨 Le monégasque : AUCUN moteur de synthèse au monde ne le parle. Louis Notari ayant bâti
-   son écriture sur le français, on écrit la prononciation « à la française » (mc-voix.js) et
-   on la fait dire par une voix française — l'élève lit la VRAIE orthographe à l'écran.
-   C'est une approximation, et l'app le dit : jamais faire croire à une voix monégasque. */
-function texteADire(text){
-  try{ if(S.course==="mc" && typeof mcVoix==="function"){ var v=mcVoix(text); if(v) return v; } }catch(_){}
-  return text;
-}
-function speak(text){ if(!S.sound||!text)return; text=texteADire(text); var vid=S.voice||"nova"; var myReq=++_ttsReq;
+    toast("🔈 La voix naturelle ne répond pas — je passe sur la voix du téléphone (moins jolie). Vérifie ta connexion, ou choisis une autre voix dans Profil → Voix."); } }
+function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
   if(_isCloudVoice(vid)){
-    try{ var vr=voiceReal(vid)||{};
+    try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
+      var vr=voiceReal(vid)||{};
       /* Le MOT À APPRENDRE se dit NET : aucune accélération, aucun trafic de hauteur.
          Les effets « mignons » (vitesse 1,24 · pitch 1,7) rendaient le modèle robotique et
          méconnaissable — or c'est LA référence sur laquelle Kevin calque sa prononciation.
          Les effets restent pour les phrases de Bee, jamais pour le vocabulaire. */
-      var a=_ttsJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+"&t="+encodeURIComponent(text)); if(!a){ _webSpeak(text); return; }
-      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO("media"); _webSpeak(text); } };   // ne parle que si c'est TOUJOURS la dernière demande
+      var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
+      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeak(text); } };   // ne parle que si c'est TOUJOURS la dernière demande
       _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeak(text); });
-      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO("refus"); _webSpeak(text); } });
+      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeak(text); } });
       return;
     }catch(e){ if(myReq===_ttsReq)_webSpeak(text); return; }
   }
@@ -726,13 +647,7 @@ function _webSpeak(text){ if(!S.sound||!text)return; try{ var u=new SpeechSynthe
   } }catch(e){} }
 /* Parle le mot de l'exercice COURANT uniquement (anti-décalage : si on a déjà avancé,
    un son différé de la question précédente NE sort PAS sur la nouvelle question). */
-function _lsSpeak(text,qi,delay){
-  /* Cours en signes : rien n'est lu, jamais. Avant la réponse une voix la donnerait ;
-     après, elle contredirait ce qu'on affiche à l'élève (« une langue des signes se
-     regarde »). La garde est ICI, au seul passage obligé, plutôt que chez chaque appelant :
-     un exercice ajouté demain sera muet d'office, sans qu'on ait à y penser. */
-  if(coursSignes()) return;
-  setTimeout(function(){ if(LESSON&&LESSON.i===qi&&S.sound)speak(text); }, delay||0); }
+function _lsSpeak(text,qi,delay){ setTimeout(function(){ if(LESSON&&LESSON.i===qi&&S.sound)speak(text); }, delay||0); }
 var AC=null;
 /* Contexte audio partagé (récompenses + sons de leçon). Respecte le réglage « son » :
    si Kevin coupe le son, AUCUN bruit ne sort, même pour une récompense. */
@@ -763,9 +678,6 @@ function render(){
   else if(VIEW==="translate") app.appendChild(vTranslate());
   else if(VIEW==="league") app.appendChild(vLeague());
   else if(VIEW==="stories") app.appendChild(vStories());
-  else if(VIEW==="histoire") app.appendChild(vHistoire());
-  else if(VIEW==="lsfabc") app.appendChild(vLsfAbc());
-  else if(VIEW==="lsfdico") app.appendChild(vLsfDico());
   else if(VIEW==="story") app.appendChild(vStoryPlay());
   else if(VIEW==="stats") app.appendChild(vStats());
   else if(VIEW==="verbs") app.appendChild(vVerbs());
@@ -922,25 +834,6 @@ function vHome(){ var w=el("div","screen tree");
   var goal=el("div","goal-card");
   goal.innerHTML='<div class="goal-top"><b>🎯 Objectif du jour</b><span>'+S.dailyXP+' / '+S.goal+' XP</span></div><div class="bar"><div class="bar-fill" style="width:'+gp+'%"></div></div>'+(gp>=100?'<div class="goal-done">✅ Objectif atteint !</div>':'');
   w.appendChild(goal);
-  // 🇲🇨 Monégasque : dire franchement ce que ce cours est, et ce qu'il n'est pas.
-  if(S.course==="mc"){ var mcn=el("div","mc-note");
-    mcn.innerHTML='<b>🇲🇨 Munegascu — la langue du Rocher</b>'
-      +'<span>Chaque mot de ce cours vient d\'une source publique (Wiktionnaire, licence CC BY-SA, et le lexique de munegascu.free.fr) : rien n\'est inventé. Les mots qui manquent, c\'est qu\'aucune source libre ne les donne — on préfère le dire.</span>'
-      +'<span>🔊 <b>Aucune voix de synthèse ne parle monégasque.</b> On écrit la prononciation à la française et une voix française la lit : c\'est proche, mais ce n\'est pas un locuteur du Rocher.</span>';
-    w.appendChild(mcn); }
-  // 🤟 Langue des signes : dire ce que ce cours est, et surtout ce qu'il n'est pas.
-  if(coursSignes()){ var lsn=el("div","mc-note lsf-note");
-    lsn.innerHTML='<b>🤟 La LSF est une langue à part entière</b>'
-      +'<span>Elle a sa <b>grammaire</b>, qui se déploie dans l\'espace et sur le visage. Ce n\'est pas du français avec les mains, et ce cours n\'apprend que du <b>vocabulaire</b> : il ne remplace pas un cours avec une personne sourde ou un formateur.</span>'
-      +'<span>🎥 Chaque signe est une <b>vraie vidéo</b>, signée par une vraie personne, publiée sous licence libre sur Wikimedia Commons. Rien n\'est inventé : si un mot n\'a pas de vidéo, il n\'est pas dans le cours.</span>'
-      +'<span>🔇 <b>Rien ne se prononce ici</b>, pas même la mascotte : une langue des signes se regarde.</span>';
-    w.appendChild(lsn);
-    var abc=el("button","stories-card");
-    abc.innerHTML='<span class="st-ic">🔤</span><span class="st-tx"><b>L\'alphabet dactylologique</b><i>les 26 lettres dans la main, pour épeler un prénom</i></span><span class="st-badge">'+(typeof LSF_ALPHABET!=="undefined"?Object.keys(LSF_ALPHABET).length:0)+'</span>';
-    abc.onclick=function(){ go("lsfabc"); }; w.appendChild(abc);
-    var dico=el("button","stories-card");
-    dico.innerHTML='<span class="st-ic">📖</span><span class="st-tx"><b>Le dictionnaire des signes</b><i>cherche un mot, regarde son signe</i></span><span class="st-badge">'+(typeof LSF_SIGNES!=="undefined"?Object.keys(LSF_SIGNES).length:0)+'</span>';
-    dico.onclick=function(){ go("lsfdico"); }; w.appendChild(dico); }
   // 📖 Histoires de la ruche — Bee raconte, tu comprends, tu gagnes
   if(typeof STORIES!=="undefined"&&STORIES.length&&STORIES[0].lignes[0].t[S.course]){ var sd=storiesDoneCount(); /* histoires cachées si pas encore traduites dans cette langue */
     var stc=el("button","stories-card");
@@ -964,12 +857,6 @@ function vHome(){ var w=el("div","screen tree");
   var prc=el("button","stories-card pron-link");
   prc.innerHTML='<span class="st-ic">🎤</span><span class="st-tx"><b>Atelier prononciation</b><i>écoute, répète, corrige ton élocution '+(_srOk()?'(micro)':'(écoute & répète)')+'</i></span><span class="st-badge">🗣️</span>';
   prc.onclick=function(){ pronStart(); }; w.appendChild(prc);
-  // 📜 Histoire & anecdotes — d'où vient la langue qu'on apprend (une anecdote change chaque jour)
-  var hL=histLangue(S.course);
-  if(hL){ var anec=anecdoteDuJour();
-    var hc=el("button","stories-card hist-link");
-    hc.innerHTML='<span class="st-ic">📜</span><span class="st-tx"><b>Histoire &amp; anecdotes</b><i>'+esc(anec?anec.t:('d\'où vient '+(COURSES[S.course].nom||'').toLowerCase()))+'</i></span><span class="st-badge">'+((hL.faits||[]).length)+'</span>';
-    hc.onclick=function(){ go("histoire"); }; w.appendChild(hc); }
   // 📊 Statistiques — activité, records, calendrier
   var stq=el("button","stories-card stats-link");
   stq.innerHTML='<span class="st-ic">📊</span><span class="st-tx"><b>Mes statistiques</b><i>calendrier d\'activité, records, langues</i></span><span class="st-badge">🔥 '+S.streak+'</span>';
@@ -1246,17 +1133,8 @@ function _lev(a,b){ a=a||"";b=b||""; var m=a.length,n=b.length; if(!m)return n; 
   var d=[]; for(var i=0;i<=m;i++)d[i]=[i]; for(var j=0;j<=n;j++)d[0][j]=j;
   for(i=1;i<=m;i++)for(j=1;j<=n;j++){ var c=a[i-1]===b[j-1]?0:1; d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+c); }
   return d[m][n]; }
-function pronScore(target,heard){ var b=norm(heard); if(!b)return 0;
-  /* 🇲🇨 En monégasque, le micro du téléphone entend du FRANÇAIS (il n'existe pas de
-     reconnaissance monégasque). Comparer « u gatu » à ce qu'il écrit (« ou gatou ») donnerait
-     0 à un élève qui prononce JUSTE. On compare donc aussi à la transcription à la française :
-     on garde la meilleure des deux — sinon on punirait une bonne prononciation. */
-  var cibles=[String(target)];
-  try{ if(S.course==="mc" && typeof mcVoix==="function"){ var v=mcVoix(target); if(v)cibles.push(v); } }catch(_){}
-  var best=0;
-  cibles.forEach(function(t){ var a=norm(t); var mx=Math.max(a.length,b.length)||1;
-    best=Math.max(best, Math.max(0,Math.round(100*(1-_lev(a,b)/mx)))); });
-  return best; }
+function pronScore(target,heard){ var a=norm(target),b=norm(heard); if(!b)return 0;
+  var mx=Math.max(a.length,b.length)||1; return Math.max(0,Math.round(100*(1-_lev(a,b)/mx))); }
 /* Reconnaissance plus juste : le micro renvoie plusieurs hypothèses (alternatives) ; on garde
    CELLE qui colle le mieux à la cible. Inclusion exacte = quasi-parfait (le mot est bien dedans,
    même noyé dans une phrase). Retourne {heard, score} sur la meilleure hypothèse. */
@@ -1353,8 +1231,8 @@ function pronSay(text,slow){ if(!S.sound||!text)return; var lang=COURSES[S.cours
   var bee=document.querySelector(".pron-bee"), mouth=bee&&bee.querySelector(".disc-mouth");
   if(_isCloudVoice(v)){ try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
     var vr=voiceReal(v)||{};
-    var a=_pronJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+(slow?"&s=0.6":(vr.gen?"&s="+vr.gen:""))+"&t="+encodeURIComponent(text), (vr.rate&&!slow)?vr.rate:1);
-    if(!a){ _pronWeb(text,lang,slow,mouth,bee); return; }
+    var a=new Audio(); a.crossOrigin="anonymous"; a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+(slow?"&s=0.6":(vr.gen?"&s="+vr.gen:""))+"&t="+encodeURIComponent(text); _ttsAudio=a;
+    if(vr.rate&&!slow){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vr.rate; }catch(_){} }
     a.addEventListener("playing",function(){ if(myReq!==_ttsReq)return; if(bee)bee.classList.add("talk");
       if(mouth){ _pronLip=beeLipSync(a,mouth); if(!_pronLip)mouth.classList.add("talking"); } },{once:true});
     a.onended=function(){ if(bee)bee.classList.remove("talk"); if(mouth)mouth.classList.remove("talking"); _pronLipStop(); };
@@ -1379,7 +1257,7 @@ function speakSyllables(text){ if(!S.sound||!text)return;
   var my=++_ttsReq, i=0;
   function playOne(seg,done){
     try{ if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){ } }
-      var a=_pronJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+"&s=0.55&t="+encodeURIComponent(seg)); if(!a){ done(); return; }
+      var a=new Audio(); a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||v)+"&s=0.55&t="+encodeURIComponent(seg); _ttsAudio=a; try{a.volume=1;}catch(_){ }
       var fell=false, fb=function(){ if(fell)return; fell=true; try{ var u=new SpeechSynthesisUtterance(seg); u.lang=lang; u.rate=0.5; u.onend=done; u.onerror=done; speechSynthesis.speak(u); }catch(_){ done(); } };
       a.onended=done; a.onerror=fb; var p=a.play(); if(p&&p.catch)p.catch(fb);
     }catch(e){ done(); } }
@@ -1637,19 +1515,12 @@ function beeBubble(text,ms){ try{ var old=document.querySelector(".bee-bubble");
    Tout est enveloppé dans .rig-look, qui porte l'orientation vers ton doigt : le conteneur
    .bee-rig garde ses propres animations (flotte, danse, saute) — deux transform sur le même
    élément s'écrasent l'une l'autre, d'où les deux niveaux. */
-/* Les morceaux animés RÉELLEMENT dessinés, par mascotte.
-   Avant, on demandait les mêmes couches pour tout le monde (ailes + bras) et un `onerror`
-   effaçait celles qui n'existaient pas : rien ne se voyait, mais le téléphone téléchargeait
-   dans le vide. MESURÉ sur lingua.kd-mc.com le 2026-08-13 : 3 requêtes 404
-   `/bee/v2/rig/arm.webp` à chaque affichage (et Bourrico, qui est un âne, réclamait des
-   AILES). On ne demande donc que ce qui existe. Dessiner une nouvelle couche = l'ajouter ici
-   ET poser le fichier ; la garde tools/lingua/verify-assets.mjs vérifie les deux. */
-var RIG_PIECES={ "bee":["wing-l","wing-r"], "bee/v2":["wing-l","wing-r"], "donkey":[] };
-function beeRigHTML(withMouth){ var M=MASC(); var pieces=RIG_PIECES[M]||[];
-  var CLS={ "wing-l":"rig-wl", "wing-r":"rig-wr", "arm":"rig-arm" };
+function beeRigHTML(withMouth){ var M=MASC();
   return '<div class="rig-look">'+
     '<img class="rig-base" src="'+M+'/rig/base.webp" alt="'+MNAME()+'">'+
-    pieces.map(function(p){ return '<img class="rig-piece '+(CLS[p]||("rig-"+p))+'" src="'+M+'/rig/'+p+'.webp" alt="" onerror="this.remove()">'; }).join('')+
+    '<img class="rig-piece rig-wl" src="'+M+'/rig/wing-l.webp" alt="" onerror="this.remove()">'+
+    '<img class="rig-piece rig-wr" src="'+M+'/rig/wing-r.webp" alt="" onerror="this.remove()">'+
+    '<img class="rig-piece rig-arm" src="'+M+'/rig/arm.webp" alt="" onerror="this.remove()">'+
     '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>'+
     (withMouth===false?'':'<div class="disc-mouth"></div>')+
     '<div class="rig-zzz">z</div>'+
@@ -1741,10 +1612,7 @@ function beeLifeStart(rig){
     var ks=["fly","walk","dance"]; beeMove(rig, ks[Math.floor(Math.random()*ks.length)], 2200+Math.random()*1400);
     setTimeout(idle, 11000+Math.random()*9000); })(); }
 /* Bee PREND LA PAROLE : bulle + VOIX (sans les emojis dans l'audio) */
-/* La mascotte écrit TOUJOURS, et parle SAUF en langue des signes : dans un cours qui
-   s'apprend avec les yeux, une voix qui commente est au mieux inutile, au pire exclut la
-   personne à qui cette langue appartient. Sa bulle de texte, elle, reste. */
-function beeSay(text,ms){ beeBubble(text,ms||7000); if(coursSignes()) return;
+function beeSay(text,ms){ beeBubble(text,ms||7000);
   speakLang(String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}·]/gu," "),"fr-FR",BEE_VOICE,true); }
 /* Bee INTERAGIT vraiment : elle propose, tu acceptes d'un tap, elle LANCE l'action */
 function beeAsk(text,yes,fn,ms){ try{ var old=document.querySelector(".bee-bubble"); if(old)old.remove();
@@ -1754,7 +1622,7 @@ function beeAsk(text,yes,fn,ms){ try{ var old=document.querySelector(".bee-bubbl
   act.appendChild(y); b.appendChild(act);
   b.onclick=function(){ b.remove(); };
   document.body.appendChild(b);
-  if(!coursSignes()) speakLang(String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}·]/gu," "),"fr-FR",BEE_VOICE,true);
+  speakLang(String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}·]/gu," "),"fr-FR",BEE_VOICE,true);
   setTimeout(function(){ try{ b.classList.add("bye"); setTimeout(function(){b.remove();},400); }catch(_){} }, ms||14000); }catch(_){} }
 function beeCompanion(){ var w=el("div","bee-companion");
   var rig=el("div","bee-live bee-rig"); rig.setAttribute("data-mascot",mascotCfg().id); rig.setAttribute("data-art",MART()); rig.innerHTML=beeRigHTML(); w.appendChild(rig);
@@ -2047,9 +1915,9 @@ function discSpeak(text,lang){ /* parle + anime la bouche + sous-titres SYNCHRON
           sub.textContent+=(wi?" ":"")+words[wi++]; sub.scrollTop=sub.scrollHeight; }, step); } }
     if(DISC.timer)clearTimeout(DISC.timer); DISC.timer=setTimeout(stop, dur+400); }
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){}
-  if(_isCloudVoice(vid)&&S.sound){ try{
-    var a=_ttsJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text), vcfg.rate);
-    if(!a){ _webSpeakLang(text,lang,true,vcfg); startVisuals(estDur,null); return; }
+  if(_isCloudVoice(vid)&&S.sound){ try{ if(_ttsAudio){try{_ttsAudio.pause();}catch(_){} }
+    var a=new Audio(); a.src=SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(vcfg.gen?"&s="+vcfg.gen:"")+"&t="+encodeURIComponent(text); _ttsAudio=a; try{a.volume=1;}catch(_){}
+    if(vcfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=vcfg.rate; }catch(_){} }
     var started=false, fell=false;
     var fallback=function(){ if(fell||started||myReq!==_ttsReq)return; fell=true;
       _webSpeakLang(text,lang,true,vcfg); startVisuals(estDur,null); };
@@ -2262,7 +2130,7 @@ function storyAnswer(oi){ if(!ST||ST.phase!=="quiz")return; var st=STORIES[ST.id
       save(); checkQuests(); checkAchv(); render();
       setTimeout(function(){ speakLang(ST.good>=st.quiz.length?"Bravo, tout juste ! Tu es formidable !":"Bravo, l'histoire est finie !","fr-FR",BEE_VOICE,true); },350); }
   }, 900); }
-function storyQuit(){ ST=null; try{ _ttsLibere(); if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} go("stories"); }
+function storyQuit(){ ST=null; try{ if(_ttsAudio)_ttsAudio.pause(); if(window.speechSynthesis)speechSynthesis.cancel(); }catch(_){} go("stories"); }
 function vStories(){ var d=el("div","screen"); var c=COURSES[S.course];
   if(!c){ d.innerHTML='<h2 class="ttl">📖 Histoires</h2><p class="sub2">Choisis d\'abord une langue 🌍.</p>'; return d; }
   d.innerHTML='<h2 class="ttl">📖 Histoires de la ruche</h2><p class="sub2">'+esc(MNAME())+' te raconte une histoire en '+esc(c.nom.toLowerCase())+' — écoute, lis, réponds. Chaque histoire ouvre la suivante.</p>';
@@ -2275,179 +2143,6 @@ function vStories(){ var d=el("div","screen"); var c=COURSES[S.course];
   var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
   return d;
 }
-/* ---------- 📜 L'histoire et les anecdotes de la langue (Kevin 2026-08-13) ----------
-   Apprendre une langue, c'est aussi savoir d'où elle vient. Chaque fait affiché ici porte
-   sa SOURCE, cliquable : Kevin (ou n'importe qui) peut vérifier lui-même en un tap. Rien
-   n'est écrit « de mémoire » — un juge indépendant repasse tout (verify-histoires.mjs). */
-function histLangue(code){ try{ return (typeof LANG_HISTOIRE!=="undefined" && LANG_HISTOIRE[code])||null; }catch(_){ return null; } }
-function anecdoteDuJour(){ var h=histLangue(S.course); if(!h||!h.faits||!h.faits.length)return null;
-  return h.faits[dayHash(today()+"anec"+S.course)%h.faits.length]; }
-function wikiLien(titre){ return "https://fr.wikipedia.org/wiki/"+encodeURIComponent(String(titre||"").replace(/ /g,"_")); }
-/* Où se vérifie cet élément : l'adresse exacte quand elle existe (`url`), sinon l'article
-   Wikipédia annoncé. Sert aux mots monégasques, dont la preuve est sur le site du lexique. */
-function lienSrc(x){ return (x&&x.url)?x.url:wikiLien(x&&x.src); }
-/* ============ 🤟 L'ALPHABET DACTYLOLOGIQUE ============
-   Les 26 lettres dans la main. On s'en sert pour épeler un prénom, un nom de rue, un mot
-   qui n'a pas encore de signe — pas pour épeler toute une phrase.
-   Chaque photo vient de Wikimedia Commons sous licence libre, et le dit. */
-function vLsfAbc(){ var d=el("div","screen");
-  d.innerHTML='<h2 class="ttl">🔤 L\'alphabet dactylologique</h2>'
-    +'<p class="sub2">Les 26 lettres qui se font avec la main. On les utilise pour épeler un prénom, un nom de lieu, ou un mot qui n\'a pas de signe — pas pour épeler des phrases entières.</p>';
-  var A=(typeof LSF_ALPHABET!=="undefined")?LSF_ALPHABET:{};
-  var ks=Object.keys(A).sort();
-  if(!ks.length){ var v=el("p","sub2"); v.textContent="L'alphabet n'a pas encore été récolté."; d.appendChild(v); }
-  var g=el("div","abc-grid");
-  ks.forEach(function(k){ var a=A[k];
-    var c=el("a","abc-c"); c.href=a.p; c.target="_blank"; c.rel="noopener noreferrer";
-    c.setAttribute("aria-label","Lettre "+k+" en langue des signes — voir la source");
-    var im=el("img","abc-img"); im.src=a.u; im.alt="La lettre "+k+" en dactylologie"; im.loading="lazy";
-    im.onerror=function(){ im.remove(); var p=el("div","abc-ko"); p.textContent="image indisponible"; c.appendChild(p); };
-    c.appendChild(im);
-    var lt=el("b","abc-l"); lt.textContent=k; c.appendChild(lt);
-    g.appendChild(c); });
-  d.appendChild(g);
-
-  /* S'ENTRAÎNER : les vidéos d'exercice qui existent librement. « F et T » travaille deux
-     lettres qu'on confond tout le temps ; « chiffres abc » mélange lettres et chiffres. */
-  var X=(typeof LSF_EXOS!=="undefined")?LSF_EXOS:[];
-  if(X.length){ var t2=el("h3","hist-h3"); t2.textContent="S'entraîner"; d.appendChild(t2);
-    var wrap=el("div","lsf-liste");
-    X.forEach(function(x){ var c=el("div","lsf-carte");
-      var vd=el("video","signe-v"); vd.src=x.u; vd.muted=true; vd.loop=true; vd.playsInline=true;
-      vd.setAttribute("playsinline",""); vd.setAttribute("controls","");  vd.setAttribute("preload","none");
-      vd.onerror=function(){ vd.remove(); var k=el("div","abc-ko"); k.textContent="vidéo indisponible"; c.insertBefore(k,c.firstChild); };
-      c.appendChild(vd);
-      var t=el("b","lsf-mot"); t.textContent=(/chiffre/i.test(x.q)?"Lettres et chiffres mélangés":"Deux lettres qu'on confond : "+x.q); c.appendChild(t);
-      c.insertAdjacentHTML("beforeend",'<div class="signe-credit">'+(x.a?esc(x.a)+' · ':'')+esc(x.l||"")
-        +' · <a href="'+esc(x.p)+'" target="_blank" rel="noopener noreferrer">source</a></div>');
-      wrap.appendChild(c); });
-    d.appendChild(wrap); }
-
-  var n=el("p","sub2 hist-note");
-  n.textContent="Photos issues de Wikimedia Commons, sous licence libre. Touche une lettre pour ouvrir sa page d'origine, avec l'auteur et la licence.";
-  d.appendChild(n);
-  /* Honnêteté : l'alphabet français ne s'arrête pas à 26 lettres, et les chiffres se font
-     aussi avec la main. Aucune image libre ne les montre aujourd'hui sur Wikimedia Commons —
-     je ne vais pas les dessiner de tête. On le dit, et on cherche à nouveau chaque mois. */
-  var n2=el("p","sub2 hist-note");
-  n2.innerHTML="Il manque ici les lettres accentuées (é, è, ç…) et les chiffres : <b>aucune image libre ne les montre</b> sur Wikimedia Commons à ce jour, et je préfère ne rien afficher plutôt qu'un geste inventé. La recherche est relancée chaque mois — dès qu'ils existent, ils apparaissent ici. En attendant : "
-    +'<a href="https://www.elix-lsf.fr/" target="_blank" rel="noopener noreferrer">Elix</a> ou '
-    +'<a href="https://www.fnsf.org/" target="_blank" rel="noopener noreferrer">la Fédération Nationale des Sourds de France</a>.';
-  d.appendChild(n2);
-  var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
-  return d;
-}
-
-/* ============ 🤟 LE DICTIONNAIRE DES SIGNES ============
-   Tous les signes récoltés, cherchables. On affiche le mot EXACTEMENT comme il est écrit à la
-   source — y compris ses quelques coquilles : les corriger sans savoir ce que montre la vidéo
-   serait inventer. Les leçons, elles, ne prennent que des mots du vocabulaire français de
-   Lingua, ce qui les écarte toutes seules. */
-var _lsfQ="";
-function vLsfDico(){ var d=el("div","screen");
-  var S_=(typeof LSF_SIGNES!=="undefined")?LSF_SIGNES:{};
-  var mots=Object.keys(S_).sort(function(a,b){ return a.localeCompare(b,"fr"); });
-  d.innerHTML='<h2 class="ttl">📖 Le dictionnaire des signes</h2>'
-    +'<p class="sub2">'+mots.length+' signes, chacun filmé par une vraie personne. Touche un mot pour revoir son signe ; touche « source » pour l\'auteur et la licence.</p>';
-  var ch=el("input","lsf-search"); ch.type="search"; ch.placeholder="Cherche un mot…"; ch.value=_lsfQ;
-  ch.setAttribute("autocapitalize","none"); ch.setAttribute("autocorrect","off");
-  d.appendChild(ch);
-  var liste=el("div","lsf-liste"); d.appendChild(liste);
-  function dessine(){
-    var q=norm(_lsfQ.trim());
-    var vus=mots.filter(function(m){ return !q||norm(m).indexOf(q)>=0; }).slice(0,60);
-    liste.innerHTML="";
-    if(!vus.length){ var v=el("p","sub2"); v.textContent="Aucun signe pour « "+_lsfQ+" ». Ce n'est pas qu'il n'existe pas : c'est qu'aucune vidéo libre ne le montre encore."; liste.appendChild(v); return; }
-    vus.forEach(function(m){ var s=S_[m];
-      var c=el("div","lsf-carte");
-      var vd=el("video","signe-v"); vd.src=s.u; vd.muted=true; vd.loop=true; vd.playsInline=true;
-      vd.setAttribute("playsinline",""); vd.setAttribute("preload","none"); if(s.v)vd.poster=s.v;
-      vd.onclick=function(){ try{ vd.currentTime=0; vd.play(); }catch(_){} };
-      vd.onerror=function(){ vd.remove(); var k=el("div","abc-ko"); k.textContent="vidéo indisponible"; c.insertBefore(k,c.firstChild); };
-      c.appendChild(vd);
-      var t=el("b","lsf-mot"); t.textContent=m; c.appendChild(t);
-      c.insertAdjacentHTML("beforeend",signeCreditHTML({signe:s}));
-      c.insertAdjacentHTML("beforeend",signeVariantesHTML(s));
-      c.querySelectorAll(".signe-v.mini").forEach(function(mv){ mv.onclick=function(){ try{ mv.currentTime=0; mv.play(); }catch(_){} }; });
-      liste.appendChild(c); });
-    if(mots.filter(function(m){ return !q||norm(m).indexOf(q)>=0; }).length>60){
-      var p=el("p","sub2"); p.textContent="Seuls les 60 premiers sont affichés — affine ta recherche."; liste.appendChild(p); }
-  }
-  var tmr=null;
-  ch.oninput=function(){ _lsfQ=ch.value; clearTimeout(tmr); tmr=setTimeout(dessine,150); };
-  dessine();
-  var n=el("p","sub2 hist-note");
-  n.textContent="Les mots sont écrits comme à la source : quelques-uns portent une coquille, et je ne la corrige pas — je ne peux pas savoir quel signe montre exactement la vidéo. Pour un vrai dictionnaire, va voir Elix ou la Fédération Nationale des Sourds de France.";
-  d.appendChild(n);
-  var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
-  return d;
-}
-
-function vHistoire(){ var d=el("div","screen"); var c=COURSES[S.course], h=histLangue(S.course);
-  var nom=(c&&c.nom)||(h&&h.nom)||"cette langue";
-  d.innerHTML='<h2 class="ttl">📜 '+esc(nom)+' — histoire, chiffres &amp; mots</h2>';
-  if(!h){ d.innerHTML+='<p class="sub2">L\'histoire de cette langue n\'est pas encore écrite. Elle arrive.</p>';
-    var b0=el("button","btn-ghost"); b0.textContent="← Retour"; b0.onclick=function(){ go("home"); }; d.appendChild(b0); return d; }
-  var intro=el("div","hist-card");
-  var p=el("p","hist-txt"); p.textContent=h.histoire; intro.appendChild(p);
-  var ligne=el("div","hist-tools");
-  var ec=el("button","hist-say"); ec.textContent="🔊 Écouter"; ec.setAttribute("aria-label","Écouter l'histoire de la langue");
-  ec.onclick=function(){ speakLang(h.histoire,"fr-FR"); }; ligne.appendChild(ec);
-  var srcA=el("a","hist-src"); srcA.href=wikiLien(h.src||h.nom); srcA.target="_blank"; srcA.rel="noopener noreferrer";
-  srcA.textContent="🔎 Source : "+(h.src||h.nom); ligne.appendChild(srcA);
-  intro.appendChild(ligne); d.appendChild(intro);
-  /* Les repères qu'on retient d'un coup d'œil (alphabet, cas, tons, pays…). Chaque pastille
-     est cliquable vers la page où le chiffre se vérifie : un chiffre se vérifie comme un fait. */
-  var chs=(h.chiffres||[]);
-  if(chs.length){ var g=el("div","hist-chiffres");
-    chs.forEach(function(x){ var b=el("a","hc"); b.href=lienSrc(x); b.target="_blank"; b.rel="noopener noreferrer";
-      var vv=el("b","hc-v"); vv.textContent=x.v; b.appendChild(vv);
-      var kk=el("i","hc-k"); kk.textContent=x.k; b.appendChild(kk);
-      g.appendChild(b); });
-    d.appendChild(g); }
-  var t=el("h3","hist-h3"); t.textContent="Le sais-tu ?"; d.appendChild(t);
-  (h.faits||[]).forEach(function(f){ var card=el("div","hist-fait");
-    var tx=el("div","hf-t"); tx.textContent=f.t; card.appendChild(tx);
-    var a=el("a","hf-src"); a.href=lienSrc(f); a.target="_blank"; a.rel="noopener noreferrer";
-    a.textContent="🔎 "+f.src; card.appendChild(a);
-    d.appendChild(card); });
-  /* Les mots qui ont voyagé entre cette langue et le français : c'est ce qui rend une langue
-     étrangère soudain familière. Pas de bouton « écouter » ici — le mot est parfois dans la
-     langue étrangère, et le faire lire par une voix française dirait faux. */
-  var mts=(h.mots||[]);
-  /* Le titre de cette rubrique s'adapte : « des mots qui ont voyagé » n'a pas de sens pour
-     la langue des signes, qui n'a pas prêté de mots au français — ce qu'on y montre, ce sont
-     les mots qu'on croise en l'apprenant. Chaque langue peut donc donner le sien. */
-  if(mts.length){ var t3=el("h3","hist-h3"); t3.textContent=h.motsTitre||"Des mots qui ont voyagé"; d.appendChild(t3);
-    var wrap=el("div","hist-mots");
-    mts.forEach(function(w){ var card=el("div","hist-mot");
-      var mm=el("b","hm-m"); mm.textContent=w.m; card.appendChild(mm);
-      var dd=el("div","hm-d"); dd.textContent=w.d; card.appendChild(dd);
-      var sa=el("a","hf-src"); sa.href=lienSrc(w); sa.target="_blank"; sa.rel="noopener noreferrer";
-      sa.textContent="🔎 "+w.src; card.appendChild(sa);
-      wrap.appendChild(card); });
-    d.appendChild(wrap); }
-  var note=el("p","sub2 hist-note");
-  note.textContent="Chaque fait renvoie à l'article où il se vérifie (Wikipédia, licence CC BY-SA). Si une source dit autre chose, c'est la source qui a raison : dis-le-moi et je corrige.";
-  d.appendChild(note);
-  /* 📚 Les maisons qui font autorité sur cette langue. On n'affiche QUE les adresses
-     réellement ouvertes par la vérification (« ok » ou « le site refuse les robots ») —
-     jamais un lien mort ni un lien jamais testé. */
-  var srcs=srcLangue(S.course);
-  if(srcs.length){
-    var t2=el("h3","hist-h3"); t2.textContent="Pour aller plus loin"; d.appendChild(t2);
-    srcs.forEach(function(s){ var a=el("a","src-lien"); a.href=s.url; a.target="_blank"; a.rel="noopener noreferrer";
-      a.innerHTML='<b>'+esc(s.nom)+'</b><i>'+esc(s.quoi)+'</i>'; d.appendChild(a); });
-    var n2=el("p","sub2 hist-note"); n2.textContent="Ces adresses ont été ouvertes une par une pour vérifier qu'elles répondent. On renvoie vers ces maisons, on ne recopie pas leurs dictionnaires.";
-    d.appendChild(n2);
-  }
-  var back=el("button","btn-ghost"); back.textContent="← Retour"; back.onclick=function(){ go("home"); }; d.appendChild(back);
-  return d;
-}
-/* Les sources d'une langue, filtrées : « ok » = la page répond, « robot » = le site refuse les
-   visiteurs automatiques mais l'adresse est bonne (un humain passe). Tout le reste est caché. */
-function srcLangue(code){ try{ if(typeof LANG_SOURCES==="undefined")return [];
-    return (LANG_SOURCES[code]||[]).filter(function(s){ return s.etat==="ok"||s.etat==="robot"; }); }catch(_){ return []; } }
 function vStoryPlay(){ var d=el("div","screen story"); if(!ST){ go("stories"); return d; }
   var st=STORIES[ST.idx], c=COURSES[S.course];
   var head=el("div","story-head"); head.innerHTML='<span class="sh-ic">'+st.ic+'</span><b>'+esc(st.titre)+'</b>';
@@ -2554,11 +2249,12 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
   var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();
   if(_isCloudVoice(vid)){ try{
-    var a=_ttsJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text), cfg&&cfg.rate);
-    if(!a){ _webSpeakLang(text,lang,fem,cfg); return; }
-    a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO("media"); _webSpeakLang(text,lang,fem,cfg); } };
+    if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
+    var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a; try{a.volume=1;}catch(_){}
+    if(cfg&&cfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=cfg.rate; }catch(_){} }
+    a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeakLang(text,lang,fem,cfg); } };
     _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeakLang(text,lang,fem,cfg); });
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO("refus"); _webSpeakLang(text,lang,fem,cfg); } }); return; }catch(e){} }
+    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeakLang(text,lang,fem,cfg); } }); return; }catch(e){} }
   _webSpeakLang(text,lang,fem,cfg); }
 function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang;
   u.rate=cfg?cfg.wsRate:(fem?.95:.9);
@@ -2578,8 +2274,7 @@ function startLesson(ui,li,rev){ if(!UNLIMITED && S.hearts<=0){ outOfHearts(); r
   /* Bee annonce la leçon à voix haute — SAUF si le 1er exercice joue déjà son mot
      automatiquement (les deux partaient au même instant et se coupaient l'un l'autre) */
   try{ var first=LESSON.ex&&LESSON.ex[0];
-    /* En langue des signes, « Écoute bien » n'a aucun sens et la leçon est annoncée muette. */
-    if(!coursSignes() && !(first&&first.audio)){ var intro=rev?"C'est parti pour la révision !":"C'est parti ! Écoute bien.";
+    if(!(first&&first.audio)){ var intro=rev?"C'est parti pour la révision !":"C'est parti ! Écoute bien.";
       setTimeout(function(){ speakLang(intro,"fr-FR",BEE_VOICE,true); },250); } }catch(_){} }
 function unitAllWords(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.forEach(function(l){ o=o.concat(l.words); }); return o; }
 function unitAllPhrases(ui){ var c=COURSES[S.course],o=[]; c.units[ui].lessons.forEach(function(l){ o=o.concat(l.phrases||[]); }); return o; }
@@ -2687,12 +2382,8 @@ function lessonTitre(L){ try{
     return c.units[L.ui].lessons[L.li].titre+" · "+c.units[L.ui].titre;
   return "Leçon"; }catch(_){ return "Leçon"; } }
 function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.round(L.i/L.ex.length*100);
-  /* Sur un cours en signes, on ne réchauffe aucune voix : rien ne sera lu (et le mot cible
-     est la réponse — le préparer pour la voix serait du gâchis, et un risque de la donner). */
-  if(!coursSignes()){
-    if(ex&&ex.w&&ex.w.t) ttsPrefetch(ex.w.t); /* mot courant réchauffé → lecture instantanée */
-    if(L.ex[L.i+1]&&L.ex[L.i+1].w&&L.ex[L.i+1].w.t) ttsPrefetch(L.ex[L.i+1].w.t); /* et le suivant → 0 décalage à l'enchaînement */
-  }
+  if(ex&&ex.w&&ex.w.t) ttsPrefetch(ex.w.t); /* mot courant réchauffé → lecture instantanée */
+  if(L.ex[L.i+1]&&L.ex[L.i+1].w&&L.ex[L.i+1].w.t) ttsPrefetch(L.ex[L.i+1].w.t); /* et le suivant → 0 décalage à l'enchaînement */
   var top=el("div","lesson-top"); top.innerHTML='<button class="quit" id="quitB">✕</button><div class="bar big"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+(L.combo>=2?'<div class="combo">🔥 x'+L.combo+'</div>':'')+'<div class="lh">❤️ '+(UNLIMITED?'∞':S.hearts)+'</div>';
   top.querySelector("#quitB").onclick=function(){ if(confirm("Quitter la leçon ? La progression de CETTE leçon sera perdue.")){ LESSON=null; VIEW="home"; render(); } }; d.appendChild(top);
   /* Le TITRE de ce que tu es en train de faire + où tu en es. Avant, l'écran de leçon
@@ -2730,54 +2421,15 @@ function vLesson(){ var d=el("div","lesson"),L=LESSON,ex=L.ex[L.i],pct=Math.roun
   var main=el("button","btn-main check"); main.id="mainBtn"; main.textContent=L.answered?"Continuer":"Vérifier"; main.disabled=!L.answered&&!L._can; main.onclick=function(){ L.answered?nextEx():checkEx(ex); }; foot.appendChild(main);
   d.appendChild(foot); return d;
 }
-/* 🤟 LA QUESTION QUAND C'EST UN SIGNE — une vidéo, pas un mot.
-   Elle tourne en boucle et sans son : un signe se regarde plusieurs fois pour être compris,
-   et cette langue n'a pas de son. Si la vidéo ne charge pas (réseau coupé), on le DIT
-   clairement au lieu de laisser un carré noir, et on laisse quand même répondre. */
-function signeHTML(w){ var s=w.signe;
-  return '<div class="q-signe">'
-    +'<video class="signe-v" playsinline webkit-playsinline muted loop autoplay preload="auto"'
-      +(s.v?' poster="'+esc(s.v)+'"':'')+' src="'+esc(s.u)+'"></video>'
-    +'<div class="signe-ko" hidden>📶 La vidéo du signe n\'a pas pu être chargée. Vérifie ta connexion — le signe existe, c\'est l\'image qui manque.</div>'
-    +'<button class="signe-again" type="button">↻ Revoir le signe</button>'
-    +'</div>'; }
-function brancheSigne(root){ try{
-  var v=root.querySelector(".signe-v"), ko=root.querySelector(".signe-ko"), b=root.querySelector(".signe-again");
-  if(!v) return;
-  v.onerror=function(){ v.hidden=true; if(ko)ko.hidden=false; };
-  if(b) b.onclick=function(){ try{ v.currentTime=0; v.play(); }catch(_){} };
-  try{ var p=v.play(); if(p&&p.catch) p.catch(function(){}); }catch(_){}
-}catch(_){} }
-/* Le crédit du signe : la licence l'exige, et c'est la moindre des choses envers la personne
-   qui a signé. Montré APRÈS la réponse pendant une leçon (l'adresse contient le mot), et
-   toujours visible dans le dictionnaire. */
-/* Un même mot signé par une AUTRE personne. C'est précieux : en voyant deux signeurs,
-   on comprend ce qui compte vraiment dans le geste et ce qui n'est que la manière de chacun.
-   Montré dans le dictionnaire (pas pendant l'exercice, pour ne pas noyer la question). */
-function signeVariantesHTML(s){ var a=(s&&s.autres)||[]; if(!a.length) return "";
-  return '<div class="lsf-autres"><i>Un autre signeur :</i>'
-    +a.map(function(v){ return '<video class="signe-v mini" src="'+esc(v.u)+'" muted loop playsinline preload="none"></video>'
-      +'<div class="signe-credit">'+(v.a?'✋ '+esc(v.a)+' · ':'')+esc(v.l||"")
-      +' · <a href="'+esc(v.p)+'" target="_blank" rel="noopener noreferrer">source</a></div>'; }).join("")
-    +'</div>'; }
-function signeCreditHTML(w){ var s=w&&w.signe; if(!s) return "";
-  var qui=s.a||s.s||"";
-  return '<div class="signe-credit">'+(qui?'✋ signé par '+esc(qui)+' · ':'')+esc(s.l||"")
-    +' · <a href="'+esc(s.p)+'" target="_blank" rel="noopener noreferrer">voir la source</a></div>'; }
-
-function exMC(ex){ var w=el("div","ex"); var signe=estSigne(ex.w);
-  var q=signe?signeHTML(ex.w)
-    :(ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour écouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>');
-  var titre=signe?"Quel est ce signe ?":(ex.audio?"Que dis-je ?":(ex.mode==="mc_fr"?"Traduis en français":"Traduis ce mot"));
+function exMC(ex){ var w=el("div","ex");
+  var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour écouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
+  var titre=ex.audio?"Que dis-je ?":(ex.mode==="mc_fr"?"Traduis en français":"Traduis ce mot");
   w.innerHTML='<div class="ex-h">'+exFaceHTML()+'<div class="bubble">'+titre+'</div></div>'+q;
-  if(signe&&LESSON.answered) w.insertAdjacentHTML("beforeend",signeCreditHTML(ex.w));
   /* entraîne l'oreille : on LIT le mot cible affiché (mode audio, ou « traduis en français » où
-     le mot dans la langue est montré). On ne lit pas la réponse cachée (ça la donnerait).
-     Sur un signe on ne lit RIEN : le mot cible EST la réponse, la voix la donnerait. */
-  if(!LESSON.answered && !signe && (ex.audio || ex.mode==="mc_fr")) _lsSpeak(ex.w.t,LESSON.i,260);
+     le mot dans la langue est montré). On ne lit pas la réponse cachée (ça la donnerait). */
+  if(!LESSON.answered && (ex.audio || ex.mode==="mc_fr")) _lsSpeak(ex.w.t,LESSON.i,260);
   var opts=el("div","opts"); ex.opts.forEach(function(o){ var b=el("button","opt"); b.textContent=o; b.onclick=function(){ if(LESSON.answered)return; opts.querySelectorAll(".opt").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); LESSON._pick=o; LESSON._can=true; syncMain(); }; opts.appendChild(b); }); w.appendChild(opts);
-  setTimeout(function(){ if(signe){ brancheSigne(w); return; }
-    var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },0);
+  setTimeout(function(){ var sb=document.getElementById("sayBtn"); if(sb)sb.onclick=function(){speak(ex.w.t);}; var ab=document.getElementById("audioBtn"); if(ab)ab.onclick=function(){speak(ex.w.t);}; },0);
   return w;
 }
 function exMatch(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+exFaceHTML()+'<div class="bubble">Associe les paires</div></div>';
@@ -2800,15 +2452,12 @@ function exBank(ex){ var w=el("div","ex"); w.innerHTML='<div class="ex-h">'+exFa
   ex.bank.forEach(function(tok){ var b=el("button","tok"); b.textContent=tok; b.onclick=function(){ if(b.classList.contains("used"))return; LESSON._chosen.push(tok); refresh(); }; bank.appendChild(b); });
   w.appendChild(ans); w.appendChild(bank); refresh(); return w;
 }
-function exType(ex){ var w=el("div","ex"); var signe=estSigne(ex.w);
-  var titre=signe?"Regarde le signe et écris le mot":(ex.audio?"Écoute et écris ce que tu entends":(ex.dir==="toFr"?"Écris en français":"Écris la traduction"));
-  var q=signe?signeHTML(ex.w)
-    :(ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour réécouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>');
+function exType(ex){ var w=el("div","ex");
+  var titre=ex.audio?"Écoute et écris ce que tu entends":(ex.dir==="toFr"?"Écris en français":"Écris la traduction");
+  var q=ex.audio?'<div class="q-audio" id="audioBtn">🔊<span>Touche pour réécouter</span></div>':'<div class="q-word">'+esc(ex.prompt)+' <button class="say" id="sayBtn">🔊</button></div>';
   w.innerHTML='<div class="ex-h">'+exFaceHTML()+'<div class="bubble">'+titre+'</div></div>'+q;
-  if(signe&&LESSON.answered) w.insertAdjacentHTML("beforeend",signeCreditHTML(ex.w));
-  if(signe) setTimeout(function(){ brancheSigne(w); },0);
   /* on lit le mot cible montré (écoute, ou « écris en français » où le mot dans la langue est affiché) */
-  if(!LESSON.answered && !signe && (ex.audio || ex.dir==="toFr")) _lsSpeak(ex.w.t,LESSON.i,260);
+  if(!LESSON.answered && (ex.audio || ex.dir==="toFr")) _lsSpeak(ex.w.t,LESSON.i,260);
   var inp=el("input","type-input"); inp.type="text"; inp.setAttribute("autocapitalize","none"); inp.setAttribute("autocomplete","off"); inp.setAttribute("autocorrect","off"); inp.spellcheck=false; inp.placeholder="Écris ta réponse…";
   if(LESSON.answered){ /* après validation : on GARDE ce que tu as écrit à l'écran (coloré) + le clavier ne repop pas → la correction reste visible */
     inp.value=LESSON._typeVal||""; inp.readOnly=true; inp.classList.add(LESSON.ok?"tgood":"tbad"); }
@@ -2912,11 +2561,7 @@ function nextEx(){ var L=LESSON; L._pick=null;L._can=false;L._matchOk=false;L._b
   if(!L.ok && !L.placement){ L.ex.push(L.ex[L.i]); } L.answered=false; L.ok=null; L.i++;
   if(L.i>=L.ex.length){ finishLesson(); return; } if(!UNLIMITED && S.hearts<=0){ outOfHearts(); return; } render();
 }
-function finishLesson(){ var L=LESSON;
-  /* Fin de leçon : on REND la ressource son au téléphone (mettre en pause ne suffit pas — il
-     faut vider l'adresse). Sans ça, la balise reste chargée entre deux leçons. */
-  try{ _ttsLibere(); }catch(_){}
- if(L.placement){ finishPlacement(L); return; } var base=L.exam?25:(L.review?10:15),bonus=L.wrong===0?5:0,combo=Math.max(0,L.comboMax-2); var xp=base+bonus+combo;
+function finishLesson(){ var L=LESSON; if(L.placement){ finishPlacement(L); return; } var base=L.exam?25:(L.review?10:15),bonus=L.wrong===0?5:0,combo=Math.max(0,L.comboMax-2); var xp=base+bonus+combo;
   /* VÉRITÉ : les gemmes AFFICHÉES = les gemmes réellement créditées (examen = 8/5, leçon = 3/1) */
   var gems=(L.exam?(L.wrong===0?8:5):(L.wrong===0?3:1));
   S.xp+=xp; S.dailyXP+=xp; histAdd(xp); S.gems+=gems;

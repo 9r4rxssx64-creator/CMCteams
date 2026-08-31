@@ -39,8 +39,6 @@ const PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['rtk-token-saver', 'rtk'],
   ['meridian-company-os', 'meridian-company-os'],
   ['free-llm-api-resources', 'free-llm-api-resources'],
-  ['app-store-connect-cli', 'app-store-connect-cli'],
-  ['app-store-connect-cli-skills', 'app-store-connect-cli-skills'],
 ];
 
 describe('Boîte à outils agents — parité Apex / Claude Code', () => {
@@ -86,7 +84,6 @@ describe('Boîte à outils agents — parité Apex / Claude Code', () => {
       ['agent-toolkit', 'apex-agent-toolkit.md'],
       ['domain-journal', 'apex-domain-journal.md'],
       ['verif-reelle', 'apex-verif-reelle.md'],
-      ['appstore', 'apex-appstore.md'],
     ] as const) {
       expect(existsSync(resolve(root, '.claude/skills', dir, 'SKILL.md')), dir).toBe(true);
       expect(existsSync(resolve(root, '.claude/skills', flat)), flat).toBe(true);

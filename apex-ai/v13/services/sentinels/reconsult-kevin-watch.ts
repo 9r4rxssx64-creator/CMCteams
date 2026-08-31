@@ -18,8 +18,8 @@
  */
 
 import { logger } from '../../core/logger.js';
-import { lireFichier as lireFichierDepot } from '../integrations/depot-github.js';
 
+const REPO_RAW_URL = 'https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/main/';
 const DOC_FILES: readonly string[] = [
   'CLAUDE.md',
   'NOTES_USER.md',
@@ -92,9 +92,20 @@ class ReconsultKevinWatch {
    * Fetch doc unique avec timeout.
    */
   private async fetchDoc(doc: string): Promise<string | null> {
-    /* Passe par la porte unique du dépôt : quand CMCteams deviendra privé,
-       c'est là-bas qu'on bascule sur le relais, pas ici. */
-    return lireFichierDepot(doc, { timeoutMs: FETCH_TIMEOUT_MS });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(REPO_RAW_URL + doc, {
+        method: 'GET',
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      return await res.text();
+    } catch {
+      clearTimeout(timer);
+      return null;
+    }
   }
 
   /**

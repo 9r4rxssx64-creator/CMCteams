@@ -28,8 +28,6 @@ la licence et la date. Mise à jour : workflow **`agent-toolkit-sync.yml`** (bou
 | 💰 Économie de jetons | [rtk-ai/rtk](https://github.com/rtk-ai/rtk) | une commande crache 500 lignes inutiles dans mon contexte. `rtk <cmd>` compresse la sortie. Voir « honnêteté » plus bas. |
 | 🏢 Entreprise | [codejunkie99/meridian-company-os](https://github.com/codejunkie99/meridian-company-os) | on parle de piloter **humains + agents** dans une même console (cockpit, kanban, objectifs, gouvernance, audit). Inspiration directe pour l'admin de kd-mc.com. |
 | 🆓 LLM gratuit | [free-llm-api-resources](https://github.com/jeis4wpi/free-llm-api-resources) | un forfait IA est épuisé, ou je cherche un repli gratuit. Liste tenue à jour : modèles, quotas, limites. |
-| 🍎 App Store | [App-Store-Connect-CLI](https://github.com/rorkai/App-Store-Connect-CLI) | publier sur l'App Store / TestFlight. CLI `asc` : JSON d'abord, aucune question interactive → pilotable par un agent. |
-| 🍎 App Store (skills) | [app-store-connect-cli-skills](https://github.com/rorkai/app-store-connect-cli-skills) | **avant** d'écrire une séquence de publication : les enchaînements y sont déjà décrits. Détail : `.claude/skills/appstore/SKILL.md`. |
 
 ## Réflexes concrets
 
