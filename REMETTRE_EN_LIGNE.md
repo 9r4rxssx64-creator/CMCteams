@@ -1,107 +1,103 @@
-# 🚀 Remettre kd-mc.com en ligne — sans GitHub, sans GitLab, sans jeton
+# 🚀 Remettre kd-mc.com en ligne
 
-> Tu as eu le bon réflexe : **tout peut passer par Cloudflare.** C'est plus
-> simple, plus généreux, et ça ne demande aucun compte supplémentaire.
-
----
-
-## Pourquoi Cloudflare suffit
-
-| | GitHub Pages *(mort)* | GitLab | **Cloudflare Pages** |
-|---|---|---|---|
-| Trafic | 100 Go/mois | — | **illimité** |
-| Fichiers par site | — | — | 20 000 *(on en a 846)* |
-| Minutes de calcul | 10 mises en ligne/h | 400 min/mois | **0 nécessaire** |
-| Compte à créer | — | oui | **aucun, tu l'as déjà** |
-| Jeton à me confier | — | oui | **aucun** |
-
-Le seul manque de Cloudflare : il n'héberge pas de **dépôt de code** (l'historique
-des versions). Mais ça, ce n'est pas urgent — tes sites, si.
+> **Inventaire d'abord**, comme demandé. Voilà ce qu'on a réellement, mesuré —
+> pas supposé — avant toute recommandation.
 
 ---
 
-## Ce que tu as reçu
+## Ce que j'ai vérifié
 
-**`kd-mc-sites.zip`** — 11 Mo, 846 fichiers. Il contient les 13 applications que
-servent tes sous-domaines. Vérifié : les 13 pages d'accueil sont bien dedans.
+| Cible | Depuis mon environnement |
+|---|---|
+| Cloudflare (API, tes Workers, kd-mc.com) | ❌ `000` — bloqué |
+| Ton Firebase | ❌ `000` — bloqué |
+| GitHub | ❌ `403` — compte suspendu |
+| GitLab | ✅ `301` — joignable |
 
-Les fichiers sont **à la racine du ZIP** (pas de dossier `CMCteams/` autour) —
-c'est important pour l'étape 3.
+Identifiants Cloudflare : **aucun**, ni dans le dépôt, ni dans l'environnement,
+ni de session `wrangler`. **Je ne peux donc rien déployer moi-même.** C'est
+mesuré, pas une excuse.
+
+Ce que tu as déjà : **17 Workers Cloudflare** configurés, un compte actif, ton
+domaine et ses 20 sous-domaines. Il ne manque que la source des pages.
 
 ---
 
-## Étape 1 — Créer le site *(≈ 2 min, dans Safari)*
+## Deux chemins — le second est le tien
 
-**▶️ [Créer un projet Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/pages)**
+### 🅰️ Dépannage : le ZIP *(3 clics, 5 minutes)*
 
-- Choisir l'onglet **« Upload assets »** (envoi direct) — surtout **pas**
-  « Connect to Git », on n'en a pas besoin
-- Nom du projet : `kdmc`
-- Glisser le fichier **`kd-mc-sites.zip`**
+**`kd-mc-sites.zip`** — 7 Mo, 469 fichiers, **13 applications**.
 
-Cloudflare décompresse tout seul. À la fin il te donne une adresse du type
-**`https://kdmc.pages.dev`** — note-la, elle sert à l'étape suivante.
-
-## Étape 2 — Vérifier *(10 secondes)*
-
-Ouvre `https://kdmc.pages.dev/kdmc-home/index.html`
-
-Tu dois voir ta page d'accueil. Si oui, le plus dur est fait.
-
-## Étape 3 — Rebrancher le domaine *(≈ 1 min, 2 réglages)*
-
-Ton routeur sait déjà changer de source **sans nouvelle mise en ligne**.
-
-**▶️ [Réglages du routeur](https://dash.cloudflare.com/?to=/:account/workers/services/view/kdmc-router/production/settings)**
-→ *Settings* → *Variables and Secrets* → **Add variable** :
+1. **▶️ [Créer un projet Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/pages)** → onglet **« Upload assets »** (pas « Connect to Git ») → nom `kdmc` → glisser le ZIP
+2. Vérifier `https://kdmc.pages.dev/kdmc-home/index.html`
+3. **▶️ [Réglages du routeur](https://dash.cloudflare.com/?to=/:account/workers/services/view/kdmc-router/production/settings)** → *Variables* → ajouter :
 
 | Nom | Valeur |
 |---|---|
-| `UPSTREAM_BASE` | `https://kdmc.pages.dev` *(l'adresse de l'étape 1)* |
-| `UPSTREAM_PREFIX` | *(laisser complètement vide)* |
+| `UPSTREAM_BASE` | `https://kdmc.pages.dev` |
+| `UPSTREAM_PREFIX` | *(vide)* |
 
-**Save and deploy.** Attends 30 secondes, puis ouvre **kd-mc.com**.
+**Le défaut** : à chaque modification, il faut refaire un ZIP et le renvoyer.
+Ce n'est pas « tout auto ».
 
-> **Pourquoi la deuxième variable doit rester vide** : GitHub servait tes pages
-> sous `/CMCteams/…` (le nom du dépôt). Cloudflare Pages les sert à la racine.
-> La variable vide dit au routeur de retirer ce préfixe. Si tu l'oublies, tu
-> auras des 404 partout — c'est le seul piège de la manœuvre.
+### 🅱️ Permanent et automatique *(≈ 10 min une fois, puis plus jamais)*
+
+Cloudflare Pages se branche sur **GitLab** et **redéploie tout seul à chaque
+push** ([doc](https://developers.cloudflare.com/pages/get-started/git-integration/)).
+
+```
+je pousse sur GitLab  →  Cloudflare construit et publie tout seul  →  kd-mc.com à jour
+```
+
+1. **▶️ [Créer un projet GitLab vide](https://gitlab.com/projects/new#blank_project)** — nom `CMCteams`, **privé**, sans README
+2. **▶️ [Créer un jeton](https://gitlab.com/-/user_settings/personal_access_tokens)** — portée **`write_repository` seule**, expiration **demain** → me le coller
+   *(je pousse les 395 commits, puis tu le supprimes)*
+3. **▶️ [Créer un projet Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/pages)** → **« Connect to Git »** → GitLab → `CMCteams`, avec :
+   - Build command : `node services/kdmc-router/prepare-secours.mjs --pages`
+   - Output directory : `services/kdmc-router/pages-upload`
+4. Les mêmes 2 variables du routeur qu'en 🅰️
+
+**Ce que ça apporte en plus** : **16 applications** au lieu de 13 — l'arbre
+généalogique, Chez Lolo et La Détente reviennent aussi. Et plus jamais de ZIP.
 
 ---
 
-## Ce qui revient, et ce qui attend
+## ⚠️ Le seul piège, dans les deux cas
 
-**Revient tout de suite (13 applications) :** l'accueil kd-mc.com · CMCteams ·
-Apex AI · Apex Chat · le coffre · **Départs / CMCteams light** · Créa Studio ·
-le tableau de bord crypto · PoolPilot · Autorisations · Lingua · Dashboard ·
-Sourcing.
+`UPSTREAM_PREFIX` doit rester **vide**. GitHub servait tes pages sous
+`/CMCteams/…` (le nom du dépôt), Cloudflare les sert à la racine. C'est cette
+variable vide qui retire le préfixe. Oubliée → **404 partout**.
 
-**Attend un second envoi (trop lourd pour un premier ZIP) :** l'arbre
-généalogique (160 Mo de photos), Chez Lolo (62 Mo) et La Détente (14 Mo). Dis-moi
-quand tu veux, je prépare un deuxième paquet — même manipulation, ça vient
-s'ajouter.
+---
 
-## Et si quelque chose cloche
+## Ce que j'ai nettoyé au passage
 
-- **404 partout** → `UPSTREAM_PREFIX` n'est pas vide, ou contient un espace
-- **Une seule app en 404** → elle est dans le lot « attend un second envoi »
-- **Le site s'affiche mais sans les images** → normal pour les apps lourdes,
-  elles arrivent au second envoi
+En vérifiant le paquet avant de te le donner, j'ai trouvé qu'on publiait des
+choses qui n'ont rien à faire en ligne — et qui étaient **déjà** publiques sur
+l'ancien site :
 
-## Pour la suite : le code
+| | Avant | Maintenant |
+|---|---|---|
+| Cartes de code source *(exposent tout le source)* | 289 | **0** |
+| Fichiers de test | 77 | **0** |
+| Code serveur (Workers) | 9 | **0** |
+| Notes internes *(dont la liste de tes secrets)* | 1 | **0** |
 
-Tes sites seront en ligne, mais l'**historique de ton code** (395 versions) n'est
-nulle part de public. Deux options, sans urgence :
+Aucune page ne les chargeait — vérifié, 0 référence. Et j'ai contrôlé qu'aucune
+**vraie** clé ne traîne dans le paquet : les correspondances trouvées étaient
+des exemples (`ghp_xxx`, `sk-ant-api03-XXXX`) et les motifs de détection du
+coffre-fort. **0 clé réelle, 0 bloc de clé privée.**
 
-1. **GitLab** — tout est prêt de mon côté, voir `MIGRATION_GITLAB.md`
-2. **Attendre GitHub** — si la seconde demande aboutit
+Total : 1 747 → 1 370 fichiers, et les 16 applications toujours complètes.
 
-En attendant, l'historique complet est dans le fichier `.patch` que je t'ai
-envoyé : rien n'est perdu.
+---
 
-## Ce que je ne peux pas faire
+## Ce que je ne peux pas faire, et pourquoi
 
-Mon environnement n'atteint pas Cloudflare (`CONNECT 403`, mesuré) — je ne peux
-donc ni créer le projet ni cliquer à ta place. J'ai fait tout le reste :
-préparer le paquet, le vérifier fichier par fichier, et rendre la bascule
-réalisable en deux réglages depuis ton iPhone.
+Créer le projet Pages, glisser le ZIP, poser les variables : mon environnement
+n'atteint pas Cloudflare (`CONNECT 403`, mesuré plus haut). Ce sont les seuls
+gestes qui restent de ton côté.
+
+Tout le reste est fait et vérifié : le paquet, son contenu fichier par fichier,
+son innocuité, et la bascule du routeur (35 contrôles sur le vrai code).

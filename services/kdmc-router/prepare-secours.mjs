@@ -61,11 +61,22 @@ const MEDIAS = [
    les fichiers de l'app, surtout pas les 500 Mo de coulisses. */
 const RACINE_FICHIERS = ['index.html', 'sw.js', 'manifest.webmanifest', 'manifest.json', 'favicon.ico', 'robots.txt'];
 
-const IGNORER = new Set(['node_modules', '.git', 'coverage', '.DS_Store']);
+/* Dossiers jamais recopiés. « tests » et « workers » s'ajoutent au ménage
+   habituel : mesuré le 15/08/2026 sur l'ancien site, on publiait 77 fichiers de
+   test, 289 cartes de code source (elles exposent TOUT le source) et 9 fichiers
+   de code SERVEUR. Aucune page ne les charge — vérifié, 0 référence. Refaire le
+   paquet est l'occasion de ne plus les mettre en ligne. */
+const IGNORER = new Set(['node_modules', '.git', 'coverage', '.DS_Store', 'tests', '__tests__', 'workers']);
 function filtre(src) {
   const base = src.split('/').pop();
   if (IGNORER.has(base)) return false;
   if (/\.(mp4|mov|avi|zip|patch)$/i.test(base)) return false;   // trop lourd, inutile au dépannage
+  if (/\.map$/i.test(base)) return false;                       // carte de code source = tout le source exposé
+  if (/\.(test|spec)\.[jt]sx?$/i.test(base)) return false;
+  /* Notes internes : SECRETS_TODO.md listait l'architecture des secrets de
+     Kevin (les noms, pas les valeurs) — inutile de la laisser en ligne. */
+  if (/^(SECRETS|CLAUDE|NOTES_|MEMO|KEVIN_).*\.md$/i.test(base)) return false;
+  if (/TODO.*\.md$/i.test(base)) return false;
   try { if (statSync(src).size > 24 * 1024 * 1024) return false; } catch (_) { /* rien */ }
   return true;
 }
