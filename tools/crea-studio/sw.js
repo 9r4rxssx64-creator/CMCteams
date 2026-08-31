@@ -1,5 +1,5 @@
 /* Créa Studio — Service Worker (offline-first) */
-var CACHE_VERSION = 'crea-studio-v9.18.0';
+var CACHE_VERSION = 'crea-studio-v9.18.1';
 var ASSETS = [
   './',
   './index.html',
