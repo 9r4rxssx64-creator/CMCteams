@@ -32,4 +32,18 @@ if [ -n "$KVLISTE" ]; then
 fi
 ( cd "$DIR" && npx --yes wrangler@3 deploy --config .wrangler-nouveau.toml )
 rm -f "$TOML"
+# Poser les cles secretes du worker (carte tools/gitlab/secrets-map.txt).
+# Une cle absente du coffre GitLab n'est PAS une erreur : on le dit, c'est tout.
+LIGNE=$(grep -E "^${NOM} " tools/gitlab/secrets-map.txt || true)
+if [ -n "$LIGNE" ]; then
+  for S in ${LIGNE#"$NOM" }; do
+    V=$(printenv "$S" || true)
+    if [ -n "$V" ]; then
+      printf '%s' "$V" | npx --yes wrangler@3 secret put "$S" --name "$NOM" > /dev/null \
+        && echo "   cle $S posee sur $NOM" || { echo "   ECHEC pose de $S sur $NOM"; exit 1; }
+    else
+      echo "   cle $S ABSENTE du coffre GitLab (worker deploye, fonction en attente de cle)"
+    fi
+  done
+fi
 echo "   OK $NOM vivant -> https://${NOM}.desarzens-kevin.workers.dev"
