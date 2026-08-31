@@ -30,3 +30,4 @@ __pycache__/
 services/kdmc-router/public/
 services/kdmc-router/pages-upload/
 audit/captures-paquet/
+services/kdmc-router/app-*/

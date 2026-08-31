@@ -33,7 +33,17 @@ const LEGER = process.argv.includes('--leger');
    Le routeur retire ce préfixe quand UPSTREAM_PREFIX est vide — les deux
    doivent donc s'accorder, sinon on obtient des 404 partout. */
 const POUR_PAGES = process.argv.includes('--pages');
-const SORTIE = POUR_PAGES ? join(ICI, 'pages-upload') : join(ICI, 'public', 'CMCteams');
+/* --app <chemin> : un paquet pour UNE SEULE application, servie à la racine.
+   Plan de rechange si l'éditeur de code du routeur est indisponible (il a 3
+   fichiers, certains éditeurs ne gèrent que les Workers à fichier unique) :
+   on crée alors un projet Pages par sous-domaine et on y rattache le domaine
+   directement — le routeur est contourné pour cette app.
+   Limite honnête : on perd ce que le routeur apporte (session unique, verrous
+   admin, /__deces…). À réserver aux applications qui n'en dépendent pas. */
+const iApp = process.argv.indexOf('--app');
+const UNE_APP = iApp >= 0 ? process.argv[iApp + 1] : null;
+const SORTIE = UNE_APP ? join(ICI, 'app-' + UNE_APP.replace(/\//g, '-'))
+  : (POUR_PAGES ? join(ICI, 'pages-upload') : join(ICI, 'public', 'CMCteams'));
 
 /* Exactement la table ROUTES du worker. Toute entrée ajoutée là-bas doit
    l'être ici — un test de parité le vérifie (rien ne doit rester sans secours). */
@@ -86,6 +96,10 @@ function filtre(src) {
   /* Notes internes : SECRETS_TODO.md listait l'architecture des secrets de
      Kevin (les noms, pas les valeurs) — inutile de la laisser en ligne. */
   if (/^(SECRETS|CLAUDE|NOTES_|MEMO|KEVIN_).*\.md$/i.test(base)) return false;
+  /* Scripts internes de fabrication (_gen-boards.mjs, _crosscheck.mjs…) :
+     aucune page ne les charge — vérifié, 0 référence — et ils n'ont rien à
+     faire sur un site public. */
+  if (/^_.*\.(mjs|js|cjs)$/i.test(base)) return false;
   if (/TODO.*\.md$/i.test(base)) return false;
   try { if (statSync(src).size > 24 * 1024 * 1024) return false; } catch (_) { /* rien */ }
   return true;
@@ -108,13 +122,20 @@ rmSync(SORTIE, { recursive: true, force: true });
 mkdirSync(SORTIE, { recursive: true });
 
 /* Les partagés sont TOUJOURS inclus, même en mode léger : sans eux, rien ne marche. */
-const liste = (LEGER ? APPS : APPS.concat(MEDIAS)).concat(PARTAGES);
+let liste = (LEGER ? APPS : APPS.concat(MEDIAS)).concat(PARTAGES);
+if (UNE_APP) {
+  /* L'app demandée + les briques communes : sans tools/shared, 83 pages sont
+     cassées (mesuré le 15/08). On ne refait pas cette erreur. */
+  liste = [{ chemin: UNE_APP, quoi: 'application demandée', racine: true }].concat(PARTAGES);
+}
 let totalFichiers = 0, totalOctets = 0;
 const absents = [];
 for (const a of liste) {
   const src = join(RACINE, a.chemin);
   if (!existsSync(src)) { absents.push(a.chemin); continue; }
-  const dst = join(SORTIE, a.chemin);
+  /* racine:true → l'app est servie À LA RACINE du projet Pages, pas dans son
+     sous-dossier (c'est ce qu'attend un domaine rattaché directement). */
+  const dst = a.racine ? SORTIE : join(SORTIE, a.chemin);
   mkdirSync(dirname(dst), { recursive: true });
   cpSync(src, dst, { recursive: true, filter: filtre });
   const { n, o } = compte(dst);
