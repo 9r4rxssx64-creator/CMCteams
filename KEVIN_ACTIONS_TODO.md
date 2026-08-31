@@ -1,5 +1,21 @@
 # 🖱️ TES ACTIONS EN ATTENTE — le plus urgent en premier
 
+## 🥇 Demande de réintégration GitHub (2 min, si pas déjà envoyée)
+support.github.com/requests → Reinstatement request → `9r4rxssx64-creator` → coller la
+lettre (dans le chat du 30/08). Peut TOUT rouvrir, y compris l'ancien Cloudflare.
+
+## 🥈 Rouvrir l'ancien compte Cloudflare (échelle A→E — LA clé de kd-mc.com)
+A. login Cloudflare → « Continuer avec Apple » · B. Réglages iPhone → Connexion avec
+Apple → Cloudflare → adresse masquée → reset · C. dash.cloudflare.com/forgot-email
+avec `kd-mc.com` · D. chercher « cloudflare » dans Mail/Gmail (reçu du 6 juin) → reset
+avec l'adresse du reçu (+ regarder Indésirables) · E. sinon → dossier support (je rédige).
+
+## 🥉 Adresse provisoire à l'équipe (30 s)
+`kdmc-site.pages.dev` — CMCteams complet, données intactes, re-login une fois.
+
+## 4. Plus tard : recopier les clés API (vague 2 des workers, ~20 min, pas urgent)
+## 5. En pause : Apple Developer 99 €/an + clé .p8 (chaîne App Store prête)
+
 ---
 
 ## 🎯 TA SEULE ACTION EN ATTENTE — rouvrir l'ancien compte Cloudflare *(1 min)*

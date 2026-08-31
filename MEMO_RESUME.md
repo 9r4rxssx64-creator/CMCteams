@@ -31,7 +31,8 @@ Appel envoyé à GitHub Support par Kevin — réponse en attente.
 - ✅ **kdmc-crea-famille** et **kdmc-mail** RENÉS chez Desarzens-Kevin (pipeline 2802316478,
   tiroirs KV créés/retrouvés, adresses `*.desarzens-kevin.workers.dev`). Tiroirs NEUFS ET
   VIDES — les données restent dans l'ancien compte.
-- ⏸ **coffre-r2** : attend le clic Kevin « Activer R2 » (code 10042, dashboard seulement).
+- ✅ **coffre-r2** RENÉ (30/08 13h45) : Kevin a activé R2 (0 €/mois, 10 Go offerts) → seau
+  `coffre-vault` créé + worker déployé (pipeline 2805312820). **VAGUE 1 : 3/3.**
 - 🔜 Vague 2 (apis/balances/crea-ai/live/monaco/outlook/access) : machine prête, il faudra
   re-poser leurs clés API (coffre Apex de Kevin) dans le coffre GitLab.
 - Outils : `renaitre-workers` (variable DEPLOYER_WORKERS) · `regarder-cloudflare` (REGARDER)
