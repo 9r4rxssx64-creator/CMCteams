@@ -45,7 +45,12 @@ application my team uses daily.
 Thank you very much.
 Kevin Desarzens
 ```
-## 5. En pause : Apple Developer 99 €/an + clé .p8 (chaîne App Store prête)
+## 6. Répondre à Apple (dossier 20000136822150, Flora / Assistance dev)
+Bug technique avec une API Apple. Flora demande : étapes de repro, date/heure+fuseau,
+captures 4 coins, navigateurs+versions, appareils+OS, étapes déjà tentées, dernier OS.
+EN ATTENTE de Kevin : décrire "ça se passe OÙ et QUOI" → je rédige la réponse complète.
+
+## 7. En pause : Apple Developer 99 €/an + clé .p8 (chaîne App Store prête)
 
 ---
 
