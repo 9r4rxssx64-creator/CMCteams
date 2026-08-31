@@ -25,3 +25,6 @@ google-api.json
 # Python cache
 __pycache__/
 *.pyc
+
+# Copie de secours du domaine : fabriquée par prepare-secours.mjs, jamais commitée
+services/kdmc-router/public/

@@ -117,7 +117,36 @@ export default {
       body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
       redirect: 'manual',
     });
-    let res = await fetch(upstreamReq);
+    let res;
+    try {
+      res = await fetch(upstreamReq);
+    } catch (e) {
+      res = new Response('upstream injoignable', { status: 502 });
+    }
+    /* ---- BOUÉE DE SECOURS (Kevin 2026-08-14) --------------------------------
+       Le compte GitHub a été suspendu → GitHub Pages s'est éteint et les 20
+       sous-domaines renvoyaient 404 (« 404 » constaté par Kevin sur iPhone).
+       Si une COPIE des pages a été embarquée dans le Worker (binding ASSETS,
+       cf. prepare-secours.mjs), on la sert au lieu de la page morte.
+       Ce repli ne se déclenche QUE sur échec de l'amont : dès que GitHub
+       revient, le comportement est identique à avant, sans rien remettre. */
+    if (env && env.ASSETS && (res.status === 404 || res.status === 403 || res.status >= 500)) {
+      try {
+        const local = new Request(new URL(upstreamPath, url.origin).toString(), { method: 'GET', headers: request.headers });
+        let secours = await env.ASSETS.fetch(local);
+        /* Un dossier sans fichier exact → on tente son index.html (le
+           comportement de GitHub Pages, qu'on doit reproduire fidèlement). */
+        if (!secours.ok && !/\.[a-z0-9]{2,5}$/i.test(upstreamPath)) {
+          const avecIndex = upstreamPath.replace(/\/?$/, '/') + 'index.html';
+          secours = await env.ASSETS.fetch(new Request(new URL(avecIndex, url.origin).toString(), { method: 'GET', headers: request.headers }));
+        }
+        if (secours.ok) {
+          const hs = new Headers(secours.headers);
+          hs.set('x-kdmc-secours', 'assets');   /* honnêteté : on DIT que c'est la copie */
+          res = new Response(secours.body, { status: 200, headers: hs });
+        }
+      } catch (e) { /* le secours ne doit JAMAIS aggraver : on garde la réponse d'origine */ }
+    }
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
       if (loc) {
