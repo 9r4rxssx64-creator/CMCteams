@@ -84,3 +84,15 @@ tableau-branches:
     - when: never
   script:
     - 'sh tools/gitlab/branches.sh'
+
+# Sonde toutes les surfaces du domaine sur le site déployé (à la demande).
+etat-site:
+  stage: etat
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$ETAT_SITE'
+    - when: never
+  script:
+    - 'sh tools/gitlab/etat-site.sh'
