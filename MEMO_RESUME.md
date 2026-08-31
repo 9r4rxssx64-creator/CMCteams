@@ -33,6 +33,12 @@ Appel envoyé à GitHub Support par Kevin — réponse en attente.
   VIDES — les données restent dans l'ancien compte.
 - ✅ **coffre-r2** RENÉ (30/08 13h45) : Kevin a activé R2 (0 €/mois, 10 Go offerts) → seau
   `coffre-vault` créé + worker déployé (pipeline 2805312820). **VAGUE 1 : 3/3.**
+- ✅ VAGUE 1.5 (30/08 14h05) : **kdmc-outlook** + **kdmc-monaco** renés AVEC leurs clés posées
+  automatiquement (pipeline 2805326577). Clés absorbées sans Kevin : hash PIN calculé,
+  MONACO_ENC_KEY générée neuve, FIREBASE_PROJECT_ID public — masquées au coffre GitLab.
+  Le déployeur pose désormais les clés seul (tools/gitlab/secrets-map.txt). **Total : 5 renés.**
+  Restent : 12 clés tierces (coffre Apex de Kevin) pour apis/balances/crea-ai/live ;
+  Firebase service account pour access ; migration dédiée pour backend/rag/router.
 - 🔜 Vague 2 (apis/balances/crea-ai/live/monaco/outlook/access) : machine prête, il faudra
   re-poser leurs clés API (coffre Apex de Kevin) dans le coffre GitLab.
 - Outils : `renaitre-workers` (variable DEPLOYER_WORKERS) · `regarder-cloudflare` (REGARDER)

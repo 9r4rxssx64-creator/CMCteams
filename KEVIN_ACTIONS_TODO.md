@@ -13,7 +13,38 @@ avec l'adresse du reçu (+ regarder Indésirables) · E. sinon → dossier suppo
 ## 🥉 Adresse provisoire à l'équipe (30 s)
 `kdmc-site.pages.dev` — CMCteams complet, données intactes, re-login une fois.
 
-## 4. Plus tard : recopier les clés API (vague 2 des workers, ~20 min, pas urgent)
+## 4. Plus tard : coller ici les 12 clés tierces (vague 2, ~10 min, pas urgent)
+Depuis ton coffre Apex, en UN message dans le chat — je pose tout, chaque worker renaît :
+BRAVE_API_KEY · TAVILY_API_KEY · GOOGLE_API_KEY · FINNHUB_API_KEY · PEXELS_API_KEY ·
+PRINTIFY_API_KEY · DEEPSEEK_API_KEY · OPENROUTER_API_KEY · GEMINI_API_KEY ·
+REPLICATE_API_TOKEN · TOGETHER_API_KEY · FIRMS_MAP_KEY
+
+## 4-bis. Échelle E toute prête — dossier support Cloudflare (si A→D échouent)
+Formulaire : https://dash.cloudflare.com/login → « Assistance » / support.cloudflare.com →
+catégorie compte / connexion impossible. Texte à coller (complète les 4 chiffres) :
+
+```
+Hello,
+
+I am locked out of my Cloudflare account, which holds my paid domain kd-mc.com
+(purchased via Cloudflare Registrar on June 6, 2026).
+
+The account was created with a third-party login (GitHub). That GitHub account
+has been suspended by GitHub, so the login no longer works, and I cannot receive
+or identify the account email to reset a password.
+
+I can prove ownership of the account and domain:
+- I am the registrant and payer of kd-mc.com (Cloudflare Registrar, June 6, 2026)
+- Payment card on file ending in ____ (last 4 digits)
+- I can provide any billing details or identity documents you need
+
+Could you please help me regain access to this account, or attach a working
+email address to it? The domain and the workers in this account serve an
+application my team uses daily.
+
+Thank you very much.
+Kevin Desarzens
+```
 ## 5. En pause : Apple Developer 99 €/an + clé .p8 (chaîne App Store prête)
 
 ---
