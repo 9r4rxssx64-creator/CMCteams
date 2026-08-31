@@ -27,8 +27,13 @@ import { fileURLToPath } from 'node:url';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const RACINE = resolve(ICI, '../..');
-const SORTIE = join(ICI, 'public', 'CMCteams');
 const LEGER = process.argv.includes('--leger');
+/* --pages : sortie destinée à Cloudflare Pages, qui sert à la RACINE.
+   GitHub Pages ajoutait le préfixe /CMCteams (le nom du dépôt) ; Pages non.
+   Le routeur retire ce préfixe quand UPSTREAM_PREFIX est vide — les deux
+   doivent donc s'accorder, sinon on obtient des 404 partout. */
+const POUR_PAGES = process.argv.includes('--pages');
+const SORTIE = POUR_PAGES ? join(ICI, 'pages-upload') : join(ICI, 'public', 'CMCteams');
 
 /* Exactement la table ROUTES du worker. Toute entrée ajoutée là-bas doit
    l'être ici — un test de parité le vérifie (rien ne doit rester sans secours). */
@@ -78,7 +83,7 @@ function compte(dir) {
   return { n, o };
 }
 
-rmSync(join(ICI, 'public'), { recursive: true, force: true });
+rmSync(SORTIE, { recursive: true, force: true });
 mkdirSync(SORTIE, { recursive: true });
 
 const liste = LEGER ? APPS : APPS.concat(MEDIAS);
@@ -110,5 +115,12 @@ if (totalFichiers > 20000) {
   console.error('\n❌ trop de fichiers pour Cloudflare — relance avec --leger');
   process.exit(1);
 }
-console.log('\n✅ Prêt. Pour remettre kd-mc.com en ligne :');
-console.log('     cd services/kdmc-router && npx wrangler login && npx wrangler deploy\n');
+if (POUR_PAGES) {
+  console.log('\n✅ Prêt pour Cloudflare Pages (envoi direct, sans aucun dépôt de code).');
+  console.log('   Dossier : ' + SORTIE);
+  console.log('   Les fichiers sont à la RACINE (pas de préfixe /CMCteams) :');
+  console.log('   il faudra donc laisser UPSTREAM_PREFIX VIDE dans le routeur.\n');
+} else {
+  console.log('\n✅ Prêt. Pour remettre kd-mc.com en ligne :');
+  console.log('     cd services/kdmc-router && npx wrangler login && npx wrangler deploy\n');
+}

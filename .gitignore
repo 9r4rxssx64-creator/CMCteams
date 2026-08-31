@@ -28,3 +28,4 @@ __pycache__/
 
 # Copie de secours du domaine : fabriquée par prepare-secours.mjs, jamais commitée
 services/kdmc-router/public/
+services/kdmc-router/pages-upload/
