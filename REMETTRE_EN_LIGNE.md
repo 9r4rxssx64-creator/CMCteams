@@ -23,6 +23,25 @@ domaine et ses 20 sous-domaines. Il ne manque que la source des pages.
 
 ---
 
+## ⚠️ AVANT TOUT : vérifie que tu es dans le BON compte Cloudflare
+
+Kevin a **deux comptes Cloudflare**, et c'est ce qui a fait perdre du temps le
+16/08 : le projet Pages a été créé dans l'un, alors que le routeur vit dans
+l'autre.
+
+**Le bon compte est celui dont le sous-domaine est `9r4rxssx64.workers.dev`**
+(visible en bas de la page *Workers & Pages*, section « Détails du compte »).
+Jamais `desarzens-kevin.workers.dev` — celui-là ne contient que 4 vieux Workers.
+
+Signe qui ne trompe pas : dans le bon compte, la liste contient **`kdmc-router`**
+et une quinzaine d'autres. Dans le mauvais, seulement 4 ou 5.
+
+> À savoir : un projet **Pages** peut vivre dans n'importe lequel des deux —
+> son adresse `*.pages.dev` est publique, le routeur la joint par Internet.
+> Seul le **routeur** doit être cherché dans le bon compte.
+
+---
+
 ## Deux chemins — le second est le tien
 
 ### 🅰️ Dépannage : le ZIP *(3 clics, 5 minutes)*
