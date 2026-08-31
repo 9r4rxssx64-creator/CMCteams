@@ -27,6 +27,24 @@ Appel envoyé à GitHub Support par Kevin — réponse en attente.
   → la plupart des fonctions des apps marchent depuis les adresses provisoires.
 - kd-mc.com : 404 (routeur vivant, amont github.io mort) — captif de l'ancien compte.
 
+## Clés & workers (30/08 fin de journée) — 9 WORKERS RENÉS, ~35 clés au coffre
+Kevin a collé son inventaire de clés. Tri fait, ~35 variables au coffre GitLab (masquées
+quand le charset le permet). Corrigé : FIREBASE_PROJECT_ID = cmcteams-c16ab (pas kdmc-clients).
+- ✅ VAGUE 2 (pipeline 2805430062) : **kdmc-crea-ai** (4 clés), **kdmc-apis**, **kdmc-balances**,
+  **kdmc-live** renés. Total renés : coffre-r2, crea-famille, mail, outlook, monaco, crea-ai,
+  apis, balances, live = **9 workers**.
+- Fonctions encore en attente d'une clé ABSENTE de l'envoi : BRAVE_API_KEY (kdmc-apis),
+  PRINTIFY_API_KEY (bloquée au coffre, à ajouter à la main), OPENROUTER_API_KEY (kdmc-balances),
+  FIRMS_MAP_KEY (kdmc-live). Le worker tourne, seule cette fonction attend.
+- YouTube (API/CLIENT_ID/SECRET/REFRESH) rangés pour usage futur — AUCUN worker actuel ne les
+  utilise (features sociales parquées).
+- 🚨 À RÉVOQUER par Kevin (exposées dans le chat) : **BINANCE (argent) EN PRIORITÉ**, clé privée
+  Firebase (compromise+tronquée→régénérer service account), Cloudflare global key cfk_, 2 GitHub PAT,
+  mot de passe KdmcSentry2026!SBM. Jamais stockés au coffre.
+- 3 refusées par le garde-fou (à ajouter main, GitLab UI) : PRINTIFY_API_KEY, JWT_SECRET, AGENT_SECRET.
+- Restent workers à migration dédiée : apex-v13-backend, kdmc-rag, kdmc-router (Durable Objects/
+  Vectorize) + kdmc-access/apex-auth-worker (attendent le NOUVEAU service account Firebase).
+
 ## Renaissance des workers (29/08 21h20) — MACHINE PROUVÉE
 - ✅ **kdmc-crea-famille** et **kdmc-mail** RENÉS chez Desarzens-Kevin (pipeline 2802316478,
   tiroirs KV créés/retrouvés, adresses `*.desarzens-kevin.workers.dev`). Tiroirs NEUFS ET
