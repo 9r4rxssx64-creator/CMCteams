@@ -51,6 +51,16 @@ const APPS = [
   { chemin: 'shops/dashboard', quoi: 'dashboard' },
   { chemin: 'shops/sourcing', quoi: 'sourcing' },
 ];
+/* ⚠️ DOSSIERS PARTAGÉS — oubliés au premier jet, et c'était grave.
+   Mesuré le 15/08/2026 en ouvrant vraiment les pages dans un navigateur :
+   tools/shared est appelé par 83 pages (badge de version, données de planning,
+   authentification Firebase) et shops/_shared par 10. Sans eux, presque toutes
+   les applications se chargent mais sont cassées à l'usage.
+   Le test verify-paquet-pages.mjs vérifie désormais qu'aucun fichier ne manque. */
+const PARTAGES = [
+  { chemin: 'tools/shared', quoi: 'briques communes — 83 pages en dépendent' },
+  { chemin: 'shops/_shared', quoi: 'briques communes des boutiques — 10 pages' },
+];
 /* Lourds en photos : on peut les remettre dans un second temps. */
 const MEDIAS = [
   { chemin: 'arbre', quoi: 'arbre généalogique' },
@@ -97,7 +107,8 @@ function compte(dir) {
 rmSync(SORTIE, { recursive: true, force: true });
 mkdirSync(SORTIE, { recursive: true });
 
-const liste = LEGER ? APPS : APPS.concat(MEDIAS);
+/* Les partagés sont TOUJOURS inclus, même en mode léger : sans eux, rien ne marche. */
+const liste = (LEGER ? APPS : APPS.concat(MEDIAS)).concat(PARTAGES);
 let totalFichiers = 0, totalOctets = 0;
 const absents = [];
 for (const a of liste) {
