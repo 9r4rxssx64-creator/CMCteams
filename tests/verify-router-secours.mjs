@@ -108,6 +108,35 @@ chk(/run_worker_first\s*=\s*true/.test(toml),
   'G-bis. run_worker_first=true : le code passe AVANT les fichiers, sinon les verrous admin sautaient');
 chk(/binding\s*=\s*"ASSETS"/.test(toml), 'G-bis. le binding ASSETS est déclaré');
 
+
+/* H) BASCULE D'HÉBERGEUR — le compte GitHub peut disparaître pour de bon.
+      On doit pouvoir changer la source des pages depuis le tableau de bord
+      Cloudflare (une variable), sans toucher au code ni redéployer. */
+amont({ code: 200 });
+r = await appel('kd-mc.com', '/', { UPSTREAM_BASE: 'https://kdmc.pages.dev', UPSTREAM_PREFIX: '' });
+chk(amontVu.some((u) => u.startsWith('https://kdmc.pages.dev/')),
+  'H. la source des pages est bien changée par la variable (' + (amontVu[0] || '—').slice(0, 46) + ')');
+chk(!amontVu.some((u) => /github\.io/.test(u)),
+  'H. et on ne va PLUS chercher chez GitHub du tout');
+chk(amontVu.some((u) => u.includes('/kdmc-home/')),
+  'H. le bon dossier est toujours servi pour kd-mc.com');
+chk(!amontVu.some((u) => u.includes('/CMCteams/')),
+  'H. le préfixe /CMCteams est retiré quand l\'hébergeur sert à la racine');
+
+/* H-ter) le PIÈGE : les pages contiennent des liens en /CMCteams/… ; ils
+      doivent continuer à marcher après la bascule, sans tout casser. */
+amont({ code: 200 });
+r = await appel('cmcteams.kd-mc.com', '/CMCteams/tools/departs/index.html',
+  { UPSTREAM_BASE: 'https://kdmc.pages.dev', UPSTREAM_PREFIX: '' });
+chk(amontVu.some((u) => u === 'https://kdmc.pages.dev/tools/departs/index.html'),
+  'H-ter. un lien interne /CMCteams/… est bien traduit (' + (amontVu[0] || '—').slice(0, 50) + ')');
+
+/* H-bis) DISCRIMINANT : sans variable, RIEN ne change (aucune régression). */
+amont({ code: 200 });
+r = await appel('kd-mc.com', '/', {});
+chk(amontVu.some((u) => u.startsWith('https://9r4rxssx64-creator.github.io/CMCteams/kdmc-home/')),
+  'H-bis. sans réglage, on garde exactement le comportement d\'avant');
+
 R.ok.forEach((m) => console.log('  OK ' + m));
 R.ko.forEach((m) => console.log('  FAIL ' + m));
 console.log(`=== ${R.ok.length} OK / ${R.ko.length} FAIL ===`);

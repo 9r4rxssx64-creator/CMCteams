@@ -11,8 +11,17 @@
 import { makeChallenge, parseRegistration, verifyAssertion, b64uEnc, b64uDec } from './webauthn.js';
 import { mintShopsAdminIdToken } from './fb-token.js';
 
-const UPSTREAM = 'https://9r4rxssx64-creator.github.io';
-const PAGES_PREFIX = '/CMCteams';
+/* D'où viennent les pages. Historiquement GitHub Pages — mais le compte GitHub
+   a été suspendu le 15/08/2026 et le support a refusé de lever la restriction,
+   donc cette source peut disparaître pour de bon.
+   Ces deux valeurs sont désormais RÉGLABLES depuis le tableau de bord
+   Cloudflare (Variables du Worker), sans toucher au code ni redéployer :
+     UPSTREAM_BASE   = https://mon-projet.pages.dev   (ex. Cloudflare Pages)
+     UPSTREAM_PREFIX = ''                             (Pages sert à la racine)
+   Basculer d'hébergeur devient un réglage à changer sur iPhone, pas une mise
+   en ligne. Sans ces variables, le comportement d'avant est conservé. */
+const UPSTREAM_DEFAUT = 'https://9r4rxssx64-creator.github.io';
+const PAGES_PREFIX_DEFAUT = '/CMCteams';
 
 const ROUTES = {
   'kd-mc.com': '/CMCteams/kdmc-home',
@@ -59,6 +68,17 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
+    /* Source des pages : réglable sans redéploiement (cf. commentaire en tête). */
+    const UPSTREAM = (env && env.UPSTREAM_BASE) || UPSTREAM_DEFAUT;
+    /* ⚠️ Deux usages DIFFÉRENTS du préfixe, à ne pas confondre :
+       - à l'ENTRÉE, les pages contiennent des liens en /CMCteams/… (c'est ainsi
+         que GitHub Pages les a construites) → on reconnaît toujours
+         PAGES_PREFIX_DEFAUT, quoi qu'il arrive ;
+       - à la SORTIE, le nouvel hébergeur peut servir à la racine → on remplace
+         alors ce préfixe par UPSTREAM_PREFIX (souvent vide).
+       Utiliser une seule variable pour les deux ferait correspondre TOUTES les
+       adresses dès que le préfixe est vide (p.startsWith('/') = toujours vrai). */
+    const PREFIX_SORTIE = (env && typeof env.UPSTREAM_PREFIX === 'string') ? env.UPSTREAM_PREFIX : PAGES_PREFIX_DEFAUT;
 
     // Recherche décès INSEE (proxy same-origin, public read-only) — pour l'arbre.
     if (url.pathname === '/__deces') return handleDeces(request, url);
@@ -105,8 +125,13 @@ export default {
     let p = url.pathname;
     let upstreamPath;
     if (p === '/' || p === '') upstreamPath = base + '/';
-    else if (p.startsWith(PAGES_PREFIX + '/')) upstreamPath = p;
+    else if (p.startsWith(PAGES_PREFIX_DEFAUT + '/')) upstreamPath = p;
     else upstreamPath = base + p;
+    /* Bascule d'hébergeur : on retire le préfixe /CMCteams si la nouvelle
+       source sert à la racine (Cloudflare Pages, par exemple). */
+    if (PREFIX_SORTIE !== PAGES_PREFIX_DEFAUT && upstreamPath.startsWith(PAGES_PREFIX_DEFAUT + '/')) {
+      upstreamPath = PREFIX_SORTIE + upstreamPath.slice(PAGES_PREFIX_DEFAUT.length);
+    }
 
     const upstreamUrl = UPSTREAM + upstreamPath + url.search;
     const reqHeaders = new Headers(request.headers);

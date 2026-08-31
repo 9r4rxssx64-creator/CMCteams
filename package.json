@@ -125,7 +125,8 @@
     "verifie:ia-gratuites": "node tools/ia-gratuites/verifie.mjs",
     "secours:prepare": "node services/kdmc-router/prepare-secours.mjs",
     "test:router-secours": "node tests/verify-router-secours.mjs",
-    "test:actions-conformes": "node tests/verify-actions-conformes.mjs"
+    "test:actions-conformes": "node tests/verify-actions-conformes.mjs",
+    "migrer:gitlab": "bash tools/migration-gitlab/migrer.sh"
   },
   "repository": {
     "type": "git",

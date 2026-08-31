@@ -1,0 +1,76 @@
+# =============================================================================
+# Intégration continue GitLab — VOLONTAIREMENT MINIMALE.
+# -----------------------------------------------------------------------------
+# Deux raisons de ne surtout pas rejouer ici les 126 workflows de GitHub :
+#
+#  1. Le compte GitHub a été suspendu le 15/08/2026 précisément pour cet usage :
+#     « repositories that use GitHub Actions solely to interact with 3rd party
+#     websites […] or for general computing purposes ». GitLab a des règles
+#     équivalentes. On ne refait pas la même erreur ailleurs.
+#
+#  2. Le palier gratuit GitLab donne 400 minutes de calcul PAR MOIS. Les ~97
+#     exécutions quotidiennes d'avant les auraient épuisées en moins de 2 jours.
+#
+# Ce qui tourne ici : les tests, au push, et rien d'autre.
+# Ce qui NE tourne PAS ici :
+#   - la publication des sites  → Cloudflare Pages construit de son côté
+#                                 (0 minute GitLab consommée)
+#   - la mise en ligne des Workers → à la demande, jamais automatique
+#   - tout ce qui appelle des services tiers en boucle → n'a rien à faire
+#     dans un dépôt de code. Sa place est un Cloudflare Worker.
+#
+# ⚠️ NE JAMAIS ajouter de « schedule » ici. Un test (verify-actions-conformes)
+#    échoue si une exécution programmée réapparaît.
+# =============================================================================
+
+stages:
+  - tests
+
+default:
+  image: node:20
+  interruptible: true          # un nouveau push annule l'ancien : minutes économisées
+
+variables:
+  GIT_DEPTH: "20"              # historique court : clone plus rapide, moins de minutes
+
+# Ne tourne QUE sur un vrai push ou une demande de fusion. Jamais à heure fixe.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "web"        # bouton « Lancer » = volontaire
+    - when: never
+
+tests:
+  stage: tests
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths: [node_modules/]
+  script:
+    - npm ci --no-audit --no-fund
+    - npm run test:ci
+  rules:
+    - changes:
+        - "**/*.js"
+        - "**/*.mjs"
+        - "**/*.html"
+        - "**/*.json"
+        - "tests/**/*"
+      when: on_success
+    - when: manual                # rien à voir dans le code → on ne brûle rien
+      allow_failure: true
+
+# Garde-fou spécifique : la règle qui a coûté le compte GitHub doit tenir ici
+# aussi. Court, donc quasi gratuit en minutes.
+conformite:
+  stage: tests
+  script:
+    - node tests/verify-actions-conformes.mjs
+    - |
+      if grep -rqE '^\s*(schedule|- cron)\s*:' .gitlab-ci.yml; then
+        echo "❌ Une exécution programmée a été ajoutée. C'est exactement ce qui a fait"
+        echo "   suspendre le compte GitHub. Ce qui doit tourner en boucle appartient"
+        echo "   à un Cloudflare Worker, pas à un dépôt de code."
+        exit 1
+      fi
+      echo "✅ Aucune exécution programmée."
