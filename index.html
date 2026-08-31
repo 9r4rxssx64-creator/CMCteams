@@ -1244,16 +1244,9 @@ html[data-theme="light"] #topbar{
 <div id="fab-menu" role="menu" aria-label="Menu actions rapides"></div>
 <!-- v9.699 Kevin "Enlève la version en dorée qui reste sur toutes les vu. MAJ force auto marche, version écrite à la connexion." -->
 <!-- Badge cmc-version-badge supprimé (était redondant avec version login). -->
-<!-- v9.824 — SEED planning partagé (généré depuis les vrais PDF, même source que la page
-     Départs). Chargé AVANT l'app ; appliqué en affichage pour les mois sans données live
-     (jamais d'écrasement, aucun push Firebase). Permet d'intégrer un nouveau mois sans
-     que l'admin importe. Absent/404 → l'app fonctionne normalement (no-op). -->
-<script src="/CMCteams/tools/shared/planning-seed.js" onerror="window.__cmcSeedLoadErr=1"></script>
-<!-- v9.860 (Kevin 2026-07-08) : boards VALIDÉS (= source de la page Départs light).
-     Les DÉPARTS de l'app doivent utiliser les VRAIES équipes du mois (ex équipe de
-     Kevin = 6 chefs), pas la liste figée DEF_CHEFS_T (4 chefs). _cmcSyncChefsTFromBoards
-     reconstruit CHEFS_T + teamHistory + miroir depuis ces boards → app == light. -->
-<script src="/CMCteams/tools/departs/boards-gen.js" onerror="window.__cmcBoardsLoadErr=1"></script>
+<!-- v9.895 — error boundary installé AVANT tout script externe : une SyntaxError
+     dans planning-seed.js / boards-gen.js (fichier tronqué, HTML servi à la place du JS —
+     vécu kdmc0.pages.dev 2026-08-31) est attrapée, marquée, et l'app CONTINUE. -->
 <script>
 // v9.45 \u2014 Error boundary global renforc\u00e9 + unhandledrejection
 (function(){
@@ -1282,6 +1275,21 @@ html[data-theme="light"] #topbar{
     // 1. "[object ErrorEvent]" : iOS Safari fire onerror avec ErrorEvent au lieu de string \u2192 useless
     if(msgStr==="[object ErrorEvent]"||msgStr==="[object Event]"||!msgStr||msgStr==="null"||msgStr==="undefined"){
       try{console.warn("[window.onerror ignored \u2014 no useful msg]",src,line);}catch(_){}
+      return true;
+    }
+    // 1bis. v9.895 — donnees OPTIONNELLES : un planning-seed.js / boards-gen.js CASSE
+    // (fichier tronque, deploiement partiel, HTML renvoye a la place du JS — vecu
+    // kdmc0.pages.dev 2026-08-31 : « SyntaxError ligne 1 col 358 » plein ecran, app morte)
+    // ne doit JAMAIS tuer l'app. On pose le meme drapeau que le onerror du <script>
+    // (les fallbacks existants prennent le relais : app vit sur Firebase/donnees locales).
+    if(/planning-seed\.js/i.test(String(src||""))){
+      window.__cmcSeedLoadErr=1;
+      try{console.warn("[seed casse — ignore, l'app continue]",msgStr.slice(0,100));}catch(_){}
+      return true;
+    }
+    if(/boards-gen\.js/i.test(String(src||""))){
+      window.__cmcBoardsLoadErr=1;
+      try{console.warn("[boards casses — ignores, l'app continue]",msgStr.slice(0,100));}catch(_){}
       return true;
     }
     // 2. Erreurs benignes connues (CDN externes, sentry, manifest, sw)
@@ -1330,7 +1338,18 @@ html[data-theme="light"] #topbar{
     ev.preventDefault();
   });
 })();
-</script><script>
+</script>
+<!-- v9.824 — SEED planning partagé (généré depuis les vrais PDF, même source que la page
+     Départs). Chargé AVANT l'app ; appliqué en affichage pour les mois sans données live
+     (jamais d'écrasement, aucun push Firebase). Permet d'intégrer un nouveau mois sans
+     que l'admin importe. Absent/404 → l'app fonctionne normalement (no-op). -->
+<script src="/CMCteams/tools/shared/planning-seed.js" onerror="window.__cmcSeedLoadErr=1"></script>
+<!-- v9.860 (Kevin 2026-07-08) : boards VALIDÉS (= source de la page Départs light).
+     Les DÉPARTS de l'app doivent utiliser les VRAIES équipes du mois (ex équipe de
+     Kevin = 6 chefs), pas la liste figée DEF_CHEFS_T (4 chefs). _cmcSyncChefsTFromBoards
+     reconstruit CHEFS_T + teamHistory + miroir depuis ces boards → app == light. -->
+<script src="/CMCteams/tools/departs/boards-gen.js" onerror="window.__cmcBoardsLoadErr=1"></script>
+<script>
 if(!Object.values)Object.values=function(o){return Object.keys(o).map(function(k){return o[k];});};
 if(!Object.entries)Object.entries=function(o){return Object.keys(o).map(function(k){return[k,o[k]];});};
 
@@ -1479,7 +1498,10 @@ function getCodeLieu(code,emp){
   // Repos / absence → pas de lieu
   if(!_cmcCodeIsWork(code))return null;
   // Nomenclature couleurs : marque CDP (suffixe * ou flag cdp, orange PDF) = Café de Paris
-  if((CODES[code]&&CODES[code].cdp)||/\*$/.test(String(code)))return "Café de Paris (CDP)";
+  // v9.893 — l'étoile marque le Café de Paris OÙ QU'ELLE SOIT dans le code (la page Départs
+  // teste déjà /\*/ ; l'app testait /\*$/ → un code comme "16/3*'" aurait été CMC ici et
+  // ORANGE là-bas. 0 cas dans les vraies données — piège latent fermé, aligné sur la page.
+  if((CODES[code]&&CODES[code].cdp)||/\*/.test(String(code)))return "Café de Paris (CDP)";
   // Défaut : Casino de Monte-Carlo (la majorité des employés y travaillent ;
   // « en général seuls les horaires Café de Paris changent » — Kevin)
   return "CMC";
@@ -5821,7 +5843,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.891";
+var APP_VER="v9.895";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -42657,9 +42679,15 @@ function doImport(){
     })();
     // Detecter format planning : code poste col 0 (ex BRTP+E. ou BRTP+E. BRTC.), nom col 1, du/au col 2/3
     var nameIdx=0,codesStart=1;
+    // v9.894 \u2014 le test \u00ab chiffres du/au \u00bb tol\u00e8re les marqueurs visuels {{CP}}/{{CONV}}\u2026
+    // Cas r\u00e9el : MOREL F (ao\u00fbt 2026, section CP) \u2014 du/au arrivaient en `16{{CP}}`/`31{{CP}}`
+    // \u2192 Format A \u00e9chouait \u2192 la PERSONNE ENTI\u00c8RE \u00e9tait perdue (0 fiche, 0 cellule).
+    // Les marqueurs sont purement visuels (pos\u00e9s par l'extraction, retir\u00e9s par le
+    // parseur de codes) : les retirer pour le TEST ne change rien aux valeurs lues.
+    var _dTok=function(t){return /^\*?\d{1,2}$/.test(String(t||"").replace(/\{\{[A-Z]+\}\}/g,"").trim());};
     if((!p0raw||p0raw.trim().split(/\s+/).every(function(t){return _isRoleCode(t);}))&&
        parts[1]&&/ /.test(parts[1].trim())&&/^[A-Z\u2605\u2606\u2b50*]/.test(parts[1].trim())&&
-       parts[2]&&/^\*?\d{1,2}$/.test(parts[2].trim())){
+       parts[2]&&_dTok(parts[2])){
       nameIdx=1; codesStart=4; // sauter post, nom, du, au
     }
     // v9.751 (Kevin 2026-05-26 audit fid\u00e9lit\u00e9 : ANTOGNELLI D, DELMAS G, BARONE E,
@@ -42695,6 +42723,25 @@ function doImport(){
                           _explicitTeamN;
       var _explicitTeamObj=A.teams.find(function(t){return t.id===_explicitTeamId;});
       if(_explicitTeamObj)_contextTeam=_explicitTeamObj.id;
+    }
+    // v9.894 (Kevin 2026-08-31 \u00ab Int\u00e8gre septembre et v\u00e9rifie r\u00e9ellement pour chacun \u00bb) :
+    // FORMAT A-sans-du/au : `POST<TAB>NOM<TAB>code<TAB>code\u2026` \u2014 l'extraction g\u00e9om\u00e9trique
+    // peut isoler les colonnes du/au sur une ligne orpheline (\u00ab 1<TAB>30 \u00bb seule, y d\u00e9cal\u00e9
+    // d'~1px). Cas r\u00e9el : MATTERA M, septembre 2026 \u2014 sa ligne arrivait sans `1 30`, aucun
+    // format ne matchait, la PERSONNE ENTI\u00c8RE \u00e9tait perdue (0 fiche, 0 cellule \u2014 violation
+    // de la r\u00e8gle absolue \u00ab tout le monde a un planning \u00bb). v8.54 : du/au = m\u00e9tadonn\u00e9es
+    // visuelles, fromDay est TOUJOURS 1 \u2192 on peut parser sans elles. Garde stricte :
+    // parts[2] ET parts[3] sont des CODES planning (horaire NN/NN ou code lettres, jamais
+    // un chiffre seul) et la ligne a l'ampleur d'une ligne de grille (\u226520 colonnes).
+    // Risque de r\u00e9gression = 0 par construction : sans cette branche, une telle ligne
+    // donnait nameIdx=0 \u2192 rawName=".BRTP" \u2192 nom invalide \u2192 ligne ENTI\u00c8REMENT jet\u00e9e.
+    else if((!p0raw||p0raw.trim().split(/\s+/).every(function(t){return _isRoleCode(t);}))&&
+            parts[1]&&/ /.test(parts[1].trim())&&/^[A-Z\u2605\u2606\u2b50*]/.test(parts[1].trim())&&
+            parts.length>=20&&
+            (function(){var _dc=/^(?:\d{1,2}\/\d{1,2}|[A-Z]{1,4})(?:[*'"c:\u2019\u2018\u201c\u201d.]|\{\{[A-Z]+\}\})*$/;
+              var _t2=String(parts[2]||"").trim(),_t3=String(parts[3]||"").trim();
+              return _dc.test(_t2)&&_dc.test(_t3)&&!/^\d{1,2}$/.test(_t2)&&!/^\d{1,2}$/.test(_t3);})()){
+      nameIdx=1; codesStart=2; // sauter post, nom \u2014 les codes commencent direct (jour 1)
     }
     // v8.54 : fromDay TOUJOURS 1 — les colonnes FROM/TO du PDF ("27 30", "1 15"…) sont
     // des métadonnées visuelles. Le copier-coller inclut TOUJOURS les 30 colonnes-jours
@@ -42854,7 +42901,32 @@ function doImport(){
       // Garde-fou _cmcIsValidEmpName (regex "SURNAME + INITIALE", pas de chiffre/slash)
       // → rejette les fragments PDF.js. Les 5 niveaux de matching (exact→normalisé→
       // surname→prénom A.reg→bigram 0.85) ont déjà échoué AVANT ici → vrai absent.
-      if(typeof _cmcIsValidEmpName==="function"&&_cmcIsValidEmpName(name)){
+      // v9.894 — SECOURS marqueurs visuels : « MOREL F{{CP}} » échoue la validation à
+      // cause du marqueur. On retente avec le nom NETTOYÉ, UNIQUEMENT si personne en
+      // base ne porte déjà ce nom (sinon on garde le comportement historique : ligne
+      // sautée ici, l'employé connu est rempli par la passe géométrique — zéro
+      // régression ; un strip GLOBAL du nom a été essayé et REJETÉ : il re-clusterisait
+      // ~100 équipes et modifiait 26 cellules d'employés existants, mesuré 2026-08-31).
+      var _nameOk=typeof _cmcIsValidEmpName==="function"&&_cmcIsValidEmpName(name);
+      if(!_nameOk&&/\{\{[A-Z]+\}\}/.test(name)){
+        // GARDE anti-effectif : ne secourir que si la ligne porte de VRAIS codes
+        // journaliers (≥10) — une ligne d'effectif (POST NOM du au POST NOM…) n'en a
+        // aucun. Sans cette garde, MOREL F était créé depuis la ligne d'effectif L37
+        // (contexte roulettes) → équipe r11 au lieu de 10 (mesuré, régression rejetée).
+        var _dayCodeCount=0;
+        try{
+          var _dcRe=/^(?:\d{1,2}\/\d{1,2}|RH|R|CP|M|AF|FL|RRT|PRT|DEPL|DEP|SS|PAT|MT|AT|CLM|EDC)(?:[*'"c:\u2019\u2018\u201c\u201d.]|\{\{[A-Z]+\}\})*$/i;
+          for(var _dci=codesStart;_dci<Math.min(parts.length,codesStart+40);_dci++){
+            if(_dcRe.test(String(parts[_dci]||"").trim()))_dayCodeCount++;
+          }
+        }catch(_){}
+        var _nClean=name.replace(/\{\{[A-Z]+\}\}/g,"").trim();
+        if(_dayCodeCount>=10&&_nClean&&_cmcIsValidEmpName(_nClean)&&
+           !A.employees.some(function(e){return e&&e.name===_nClean;})){
+          name=_nClean;_nameOk=true;
+        }
+      }
+      if(_nameOk){
         var _newId="U_TMP_"+Date.now().toString(36).toUpperCase().slice(-5)+A.employees.length;
         emp={id:_newId,name:name,team:_contextTeam||"1",post:"",chef:!!isRouletteChef,
              family:(isRouletteChef?"roulettes":importFamily)||"bj",cdpShifts:[],active:true};

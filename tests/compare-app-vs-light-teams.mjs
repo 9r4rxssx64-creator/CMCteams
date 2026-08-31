@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const MONTHS = [{ y: 2026, m: 6, pre: '2026-07-' }, { y: 2026, m: 7, pre: '2026-08-' }];
+const MONTHS = [{ y: 2026, m: 6, pre: '2026-07-' }, { y: 2026, m: 7, pre: '2026-08-' }, { y: 2026, m: 8, pre: '2026-09-' }];
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent((req.url || '/').split('?')[0]);

@@ -16,6 +16,7 @@ const PDFJS = readFileSync(resolve(root, 'node_modules/pdfjs-dist/build/pdf.min.
 const PDFW = readFileSync(resolve(root, 'node_modules/pdfjs-dist/build/pdf.worker.min.js'));
 
 const TARGETS = [
+  { pdf: 'tests/fixtures/septembre-2026-v2.pdf', year: 2026, monthIdx: 8 },
   { pdf: 'tests/fixtures/aout-2026-v2.pdf', year: 2026, monthIdx: 7 },
   { pdf: 'tests/fixtures/juillet-2026-v2.pdf', year: 2026, monthIdx: 6 },
 ];
