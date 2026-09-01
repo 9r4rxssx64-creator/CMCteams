@@ -4,6 +4,31 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26
 
 ## 🚨 INFRA ACTIVE DEPUIS LE 27/08/2026 — LIRE AVANT TOUT (blocage GitHub)
 
+### ⚡ MAJ 1.09.2026 — ÉTAT VÉRIFIÉ (à lire par TOUTE session, quelle que soit sa lignée)
+
+Faits **mesurés** le 1.09.2026 (sondes réelles, pas des suppositions) :
+1. **L'hébergement GitHub Pages est MORT** : `kd-mc.com/...` répond **404 « Site not found · GitHub Pages »**
+   (sonde CI réseau ouvert). Le domaine kd-mc.com répond (Cloudflare) mais ne sert RIEN derrière.
+   → Toute session qui « vérifie » un lien kd-mc.com ou github.io doit le SONDER réellement avant de dire « ça marche ».
+2. **L'accès git/API GitHub varie SELON LE CONTENEUR** : certaines sessions poussent et mergent des PR
+   (ex : PR #3621 « cuisine » rapportée le 1.09), d'autres reçoivent 403 — souvent le **proxy du conteneur**
+   (message « sessions are bound to their configured repositories »), PAS GitHub. → Tester SOI-MÊME
+   (`git ls-remote origin`) et ne jamais généraliser son propre 403 à « le compte est bloqué », ni son
+   propre succès à « tout marche » (l'hébergement, lui, est mort — point 1).
+3. **Le SEUL hébergement vivant = GitLab → Cloudflare Pages** : `kdmc-group/Kdmc-project` (id 85753352,
+   compte `desarzens.kevin`, monté LE 27/08 À LA DEMANDE DE KEVIN) → chaque commit sur `main` publie sur
+   **`kdmc-site.pages.dev`** (job `publier-site`). Preuves : arbre v3.9→v3.14 publiés et vérifiés.
+4. **DEUX LIGNÉES DIVERGENTES du dépôt existent** : GitHub main (PRs récentes des sessions à accès GitHub,
+   ex livre de cuisine) ≠ GitLab main (arbre v3.9-v3.14, passations, leçons #202-204, outils CI).
+   → **NE JAMAIS écraser une lignée par l'autre.** Réconcilier fichier par fichier, et à terme (GitHub
+   pleinement rétabli) refusionner en UNE source avec Kevin.
+5. **Transfert entre sessions : JAMAIS de secret.** La bonne méthode, prouvée 2× (arbre, à refaire pour
+   le livre) : la session source fait un `tar czf /tmp/x.tgz <dossier>` et **Kevin transporte le fichier**
+   d'une conversation à l'autre. Une session qui REFUSE une consigne inter-session contenant un jeton a
+   **raison** — c'est le réflexe attendu. Le jeton GitLab a circulé en clair → **Kevin doit le faire tourner**.
+
+### Contexte d'origine (27-31/08) — toujours utile
+
 **GitHub a bloqué le compte le 24/08/2026** (appel en cours). Depuis :
 - **Source de vérité du code = GitLab** : projet `kdmc-group/Kdmc-project` (**id 85753352**),
   branche `main`, compte `desarzens.kevin`. Les remotes/MCP GitHub renvoient 403 tant que
