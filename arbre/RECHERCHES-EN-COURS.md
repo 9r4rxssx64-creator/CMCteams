@@ -1,3 +1,5 @@
+> ⚠️ **MISE À JOUR 1.09.2026 : lire D'ABORD `arbre/PASSATION-ARBRE.md`** (état v3.13, voie de publication GitLab, décisions famille tranchées par Kevin — Marielle MAGNANI / fratrie BEAUMELLE / David BAUMANN). Le plan ci-dessous reste valable pour les pistes d'archives, mais la branche « HOSMANN/BAUWMANN » décrite plus bas a été **corrigée** depuis.
+
 # 🔎 Plan de recherche de l'arbre — état au 13.08.2026
 
 > Établi après audit des **118 fiches** (0 lien cassé, 0 incohérence de date).

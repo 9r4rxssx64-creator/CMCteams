@@ -2143,3 +2143,16 @@ déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomencla
   form_rech_9 = NUMÉRO d'acte, piège) ; AD06 bloqué aux IP datacenter (mur TSPD) — passe depuis l'iPhone de
   Kevin ; INSEE matchid = 14 actes de décès exacts intégrés aux fiches.
 - Les actes récents sont protégés (loi) : la clé pour remonter côté Desarzens = acte de naissance de Gérard (1944).
+
+## 🌳 FAMILLE — branche Marielle / Beaumelle TRANCHÉE PAR KEVIN (1.09.2026, arbre v3.13)
+
+Décisions FERMES de Kevin (ne plus jamais réintroduire les anciennes lectures) :
+- **Marielle MAGNANI** (nom de JEUNE FILLE) = fille de **Monique MAIFFRET × Jean Auguste Désiré MAGNANI**
+  (l'ancienne lecture « HOSMANN » du manuscrit = erreur de déchiffrage, corrigée).
+- Marielle **divorcée 2×** : de **David BAUMANN** et de **M. LADJ**. Ses filles : **Léa** (LADJ) + **Noémie**.
+- **David BAUMANN** = ex-mari de Marielle, père de **Nadine** — il n'est **PAS** le frère de Jean-Marie/Marie-France.
+- Fratrie **BEAUMELLE** (pas « Bauwmann ») : **Jean-Marie BEAUMELLE × Odile PINSON → Nicolas + Léa** ; **Marie-France BEAUMELLE**.
+- Toujours valable : Nicolas = fils de Jean-Marie (pas de Marielle) ; Jean-Marie marié à Odile.
+- OUVERT (à demander) : vraie maman des BEAUMELLE (Rosa Germaine †enfant 1929 = contradiction), mère de Nadine,
+  père/nom de Noémie, prénom de M. LADJ, Marie-France sœur ou épouse.
+- Détail complet + voie de publication : **arbre/PASSATION-ARBRE.md**.

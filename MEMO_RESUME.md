@@ -4070,3 +4070,14 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
 - Restent isolés (0 invention) : Myriam (acte 1935 verrouillé), Claude DE SARZENS, Jean-Marius
   SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
   DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.
+
+## Session 31.08–1.09.2026 (crise GitHub → GitLab) — arbre v3.9→v3.13 EN LIGNE
+
+- GitHub 403 (compte bloqué) → publication réelle par **GitLab kdmc-group/Kdmc-project main → CI publier-site →
+  kdmc-site.pages.dev** (prouvée 5×, v3.9 à v3.13, jobs success vérifiés). Détail : arbre/PASSATION-ARBRE.md.
+- Arbre : famille Marielle tranchée par Kevin (MAGNANI/BAUMANN/BEAUMELLE — cf. NOTES_USER.md), Noémie ajoutée,
+  119 fiches, 0 lien cassé, trio versions synchronisé (v3.13 / SEED 62 / cache arbre-v3.13).
+- Recherches vérifiées intégrées (v3.10) : acte INSEE Victor Sauvaigo relu, doc TV RMC, sens BRICCO,
+  honnêteté Brancalasso=Tursi. Outil CI `genealogie` (NAMES=…) pour lire le fichier INSEE malgré le blocage réseau agent.
+- Kevin ouvrira une NOUVELLE conversation dédiée à l'arbre → elle doit lire arbre/PASSATION-ARBRE.md en premier.
+- Actions Kevin restantes : faire tourner le jeton GitLab (a circulé en clair) ; rétablissement GitHub (débloque kd-mc.com).
