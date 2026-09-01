@@ -62,4 +62,13 @@ node -e "const h=require('fs').readFileSync('arbre/index.html','utf8');const ids
 - v3.12 : David BAUMANN = ex-mari (fiches fusionnées, détaché de la fratrie) ; contradiction Germaine 1929 signalée.
 - v3.13 : Jean Auguste Désiré MAGNANI confirmé (prénoms + nom) — publié, `publier-site = success`.
 
+## 7. OÙ SONT LES RAPPORTS COMPLETS (rien n'est perdu)
+
+- `arbre/research/VICTOR-SAUVAIGO-CITATIONS-2026-09-01.md` — rapport complet citations/parutions Victor (toutes les URLs).
+- `arbre/research/BRICCO-LEO-BRANCALASSO-2026-09-01.md` — rapport complet lignée italienne + sens des noms.
+- `arbre/research/INSEE-DECES-21-NOMS-2026-09-01.md` — extraction INSEE brute des 21 noms de la famille.
+- `arbre/RECHERCHES-EN-COURS.md` — plan de recherche par ancêtre (session Sarzance, toujours valable pour les archives).
+- `KEVIN_ACTIONS_TODO.md` (racine) — les actions qui n'appartiennent qu'à Kevin (acte n°4103, jeton GitLab, GitHub).
+- `LESSONS.md` #202-203 — les leçons de cette session (généalogie = Kevin/actes uniquement ; infra = preuve empirique).
+
 *(Le plan de recherche détaillé par ancêtre reste dans `arbre/RECHERCHES-EN-COURS.md` — toujours valable pour les pistes d'archives.)*

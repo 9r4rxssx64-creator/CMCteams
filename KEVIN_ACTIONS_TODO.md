@@ -2830,3 +2830,15 @@ validation d'Apple.
 qu'un site emballé (règle 4.2). Nos 3 apps ont un vrai contenu propre, donc une chance
 réelle, mais la décision lui appartient.
 
+
+## ⏳ Actions Kevin en attente — mises à jour 1.09.2026
+
+1. **▶️ Acte de décès de Victor SAUVAIGO** (le plus rentable pour l'arbre : donne ses PARENTS) —
+   2 min, gratuit : [Demander la copie intégrale](https://www.service-public.fr/particuliers/vosdroits/F1444)
+   → Nice, décès du 9.09.1999, acte n°4103, « Jean Marius Victor SAUVAIGO ».
+2. **🔑 Faire tourner le jeton GitLab** (il a circulé en clair dans des messages) :
+   [gitlab.com → Access Tokens](https://gitlab.com/-/user_settings/personal_access_tokens) → révoquer l'ancien,
+   en créer un nouveau (api, read/write repo) → me le coller UNE fois, je reconfigure tout.
+3. **🏦 Révoquer les clés Binance** (session précédente — toujours en attente).
+4. **🐙 Rétablissement GitHub** (appel en cours) — c'est LA clé qui débloque aussi kd-mc.com
+   (compte Cloudflare 9r4 verrouillé derrière « Continuer avec GitHub »).
