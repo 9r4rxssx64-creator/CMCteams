@@ -2842,3 +2842,7 @@ réelle, mais la décision lui appartient.
 3. **🏦 Révoquer les clés Binance** (session précédente — toujours en attente).
 4. **🐙 Rétablissement GitHub** (appel en cours) — c'est LA clé qui débloque aussi kd-mc.com
    (compte Cloudflare 9r4 verrouillé derrière « Continuer avec GitHub »).
+
+5. **🔌 Autoriser le connecteur GitHub de claude.ai** (réglages claude.ai → Connecteurs → GitHub) —
+   me redonne l'accès GitHub : j'écris ETAT-INFRA.md côté GitHub, je lis les PR des autres sessions,
+   et je peux réconcilier les 2 lignées du dépôt. (La session « cuisine » est coincée des 2 côtés — ne plus l'utiliser comme relais.)
