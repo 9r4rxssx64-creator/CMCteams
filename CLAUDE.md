@@ -6,6 +6,8 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26
 
 ### ⚡ MAJ 1.09.2026 — ÉTAT VÉRIFIÉ (à lire par TOUTE session, quelle que soit sa lignée)
 
+> 📄 Version courte autonome de cet état : **`ETAT-INFRA.md`** à la racine (présent dans les DEUX lignées + publié sur kdmc-site.pages.dev/ETAT-INFRA.md).
+
 Faits **mesurés** le 1.09.2026 (sondes réelles, pas des suppositions) :
 1. **L'hébergement GitHub Pages est MORT** : `kd-mc.com/...` répond **404 « Site not found · GitHub Pages »**
    (sonde CI réseau ouvert). Le domaine kd-mc.com répond (Cloudflare) mais ne sert RIEN derrière.
