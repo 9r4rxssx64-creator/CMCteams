@@ -262,7 +262,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v3.13";
+var APP_VER="v3.14";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; /* empreinte du code famille — v9.885 : le code en clair était écrit ici en commentaire (audit 2026-08-09) */
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -300,7 +300,7 @@ function _fail(){_cloudOK=false;setPill();return false;}
 async function cloudPushAll(){var t=await anonAuth();if(!t)return _fail();try{var r=await fetch(cloudBase()+".json?auth="+t,{method:"PUT",body:JSON.stringify({persons:DB.persons,meta:DB.meta})});if(!r.ok)throw 0;_cloudOK=true;setPill();return true;}catch(e){return _fail();}}
 async function cloudPull(silent){var t=await anonAuth();if(!t)return _fail();try{var r=await fetch(cloudBase()+".json?auth="+t);if(!r.ok)throw 0;var rem=await r.json();_cloudOK=true;setPill();if(!rem||!rem.persons){if(Object.keys(DB.persons).length)await cloudPushAll();return;}var changed=false;for(var id in rem.persons){var rp=rem.persons[id];if(!rp)continue;var lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;changed=true;}}
   // deletions: remote tombstone
-  if(changed){var sh=purgeSeedShadows();if(sh.length)cloudPushAll().catch(function(){});}
+  if(changed){var sh=purgeSeedShadows();var ob=purgeObsoleteSeeds();if(sh.length||ob.length)cloudPushAll().catch(function(){});}
   if(changed){await idbSet("tree",DB);try{localStorage.setItem("arbre_v2_text",JSON.stringify(textOnly(DB)));}catch(e){}if(!silent)toast("🔄 Mis à jour depuis la famille");if(!$(".ov"))render();}
 }catch(e){return _fail();}}
 async function persist(id){await saveLocal();setPill("sav");setTimeout(setPill,1100);if(id)cloudPush(id);else cloudPushAll();}
@@ -309,7 +309,7 @@ async function persist(id){await saveLocal();setPill("sav");setTimeout(setPill,1
 function P(id){return DB.persons[id]||null;}
 function full(p){if(!p)return "?";return ((p.prenom||"")+" "+(p.nom||"")).trim()||"(sans nom)";}
 function yr(d){if(!d)return "";var m=String(d).match(/\d{4}/);return m?m[0]:"";}
-function lifespan(p){var a=yr(p.naissance&&p.naissance.date),b=yr(p.deces&&p.deces.date);if(p.vivant)return a?a+" · vivant":"vivant";if(!a&&!b)return "";return (a||"?")+(b?"–"+b:"");}
+function lifespan(p){var a=yr(p.naissance&&p.naissance.date),b=yr(p.deces&&p.deces.date);if(p.vivant)return a||"";/* règle Kevin 1.09.2026 : jamais afficher « vivant » — seulement la date de naissance si en vie */if(!a&&!b)return "";return (a||"?")+(b?"–"+b:"");}
 function childrenOf(id){var r=[];for(var k in DB.persons){var p=DB.persons[k];if(p.pere===id||p.mere===id)r.push(k);}return r;}
 var DIVORCED=[["seed_stephan_bruno","seed_sabrina"],["seed_emile","seed_mariefrance"],["seed_gerard","seed_marienoel"]];
 function isDivorced(a,b){return DIVORCED.some(function(d){return (d[0]===a&&d[1]===b)||(d[0]===b&&d[1]===a);});}
@@ -318,7 +318,7 @@ function isSeparated(a,b){return SEPARATED.some(function(d){return (d[0]===a&&d[
 function spouseNames(p){return (p.conjoints||[]).map(function(id){return full(P(id));}).filter(Boolean);}
 function initials(p){return ((p.prenom||"?")[0]||"?").toUpperCase();}
 function avatarHTML(p,sz){var cls=p.sexe==="F"?"F":p.sexe==="M"?"M":"";var ph=(p.photos&&p.photos[0]);var st=sz?'style="width:'+sz+'px;height:'+sz+'px;font-size:'+(sz*0.42|0)+'px"':"";return '<div class="av '+cls+'" '+st+'>'+(ph?'<img src="'+ph+'" alt="">':esc(initials(p)))+'</div>';}
-function personCardHTML(id){var p=P(id);if(!p)return "";var ls=lifespan(p);if(p.vivant&&ls==="vivant")ls="";var sub=[ls,(p.naissance&&p.naissance.lieu)||""].filter(Boolean).join(" · ");var cc=(p.comments||[]).length;var b=p.vivant?'<span class="badge alive">vivant</span>':'';return '<div class="pc" data-open="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+b+'</div><div class="sub">'+esc(sub)+(cc?' · 💬 '+cc:"")+'</div></div><span class="mut">›</span></div>';}
+function personCardHTML(id){var p=P(id);if(!p)return "";var ls=lifespan(p);var sub=[ls,(p.naissance&&p.naissance.lieu)||""].filter(Boolean).join(" · ");var cc=(p.comments||[]).length;var b='';/* badge « vivant » retiré (règle Kevin 1.09.2026) */return '<div class="pc" data-open="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+b+'</div><div class="sub">'+esc(sub)+(cc?' · 💬 '+cc:"")+'</div></div><span class="mut">›</span></div>';}
 
 /* ---------- graphical tree ---------- */
 var VIEWST={tx:40,ty:40,sc:1};
@@ -797,7 +797,7 @@ function renderBlasons(){var w=$("#wrap");var fams=_blasonFamilies(),reals=fams.
   w.querySelectorAll("[data-bl]").forEach(function(b){b.onclick=function(){openBlason(b.dataset.bl);};});
 }
 var _RENDERSTYLE="card";
-function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||(p.vivant?"vivant":"");
+function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||"";/* plus de mention « vivant » (règle Kevin 1.09.2026) */
   var blood=(window._LSET&&_LSET[n.id]&&!n.root);var bc=branchOf(p).c;
   if(_RENDERSTYLE==="med"){
     return '<div class="tmed'+(n.root?" root":"")+(blood?" blood":"")+'" style="left:'+n.x+'px;top:'+n.y+'px" data-open="'+n.id+'">'
@@ -1030,7 +1030,7 @@ function decesSearch(){
 function renderSearch(){var w=$("#wrap");var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});var withA=0,tot=0;
   var body=ids.map(function(id){var p=P(id);if(!inListFam(p))return "";tot++;var n=acteCount(p);if(n)withA++;
     var st=n?'<span class="okb">📜 '+n+' acte'+(n>1?"s":"")+' officiel'+(n>1?"s":"")+' ✓</span>':'<span class="mut">à rechercher</span>';
-    return '<div class="pc" data-search="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+'</div><div class="sub">'+esc(lifespan(p)||(p.vivant?"vivant":""))+' · '+st+'</div></div><span>🔎</span></div>';}).join("");
+    return '<div class="pc" data-search="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+'</div><div class="sub">'+esc(lifespan(p)||"")+' · '+st+'</div></div><span>🔎</span></div>';}).join("");
   var searchUI='<div class="sec"><h3>🔎 Rechercher un décès (fichier INSEE, 1970 → aujourd\'hui)</h3>'
     +'<p class="mut" style="font-size:13px;margin:0 0 8px">Tape un nom, vois le décès officiel, et demande l\'acte (naissance / mariage / décès) en 1 clic.</p>'
     +'<div class="row2"><input id="decesNom" placeholder="Nom (ex : MAIFFRET)" autocomplete="off" autocapitalize="characters"><input id="decesPre" placeholder="Prénom (optionnel)" autocomplete="off"></div>'
@@ -1183,7 +1183,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var caro='<div class="caro" id="caroBox">'+(photos.length?photos.map(function(src,i){return '<div class="slide'+(i===0?" on":"")+'"><img src="'+src+'" alt=""></div>';}).join("")+'<button class="nav l" data-caro="-1"></button><button class="nav r" data-caro="1"></button>'+(photos.length>8?'<div class="carocnt" id="caroCnt">1 / '+photos.length+'</div>':'<div class="dots">'+photos.map(function(_,i){return '<i class="'+(i===0?"on":"")+'"></i>';}).join("")+'</div>'):'<div class="ph-empty">Aucune photo — touche ✏️ Modifier pour en ajouter (tous formats, sans limite).</div>')+'</div>';
   function irow(ic,lab,val){return val?'<div class="irow"><span class="ic">'+ic+'</span><div style="min-width:0"><div class="lab">'+lab+'</div><div class="val">'+esc(val)+'</div></div></div>':"";}
   var nb=(p.naissance&&p.naissance.date)||"",nl=(p.naissance&&p.naissance.lieu)||"",db=(p.deces&&p.deces.date)||"",dl=(p.deces&&p.deces.lieu)||"";
-  var info=irow("🎂","Naissance",[nb,nl?"à "+nl:""].filter(Boolean).join(" "))+(p.vivant?'<div class="irow"><span class="ic">🟢</span><div><div class="lab">Statut</div><div class="val gold">Vivant</div></div></div>':irow("🕊️","Décès",[db,dl?"à "+dl:""].filter(Boolean).join(" ")));
+  var info=irow("🎂","Naissance",[nb,nl?"à "+nl:""].filter(Boolean).join(" "))+(p.vivant?'':irow("🕊️","Décès",[db,dl?"à "+dl:""].filter(Boolean).join(" ")));/* ligne « Statut : Vivant » retirée (règle Kevin 1.09.2026) */
   var relItems=[];if(p.pere&&P(p.pere))relItems.push([p.pere,"père"]);if(p.mere&&P(p.mere))relItems.push([p.mere,"mère"]);(p.conjoints||[]).forEach(function(c){if(P(c))relItems.push([c,isDivorced(id,c)?"ex-conjoint (divorcés)":isSeparated(id,c)?"ex-conjoint (séparés)":"conjoint"]);});childrenOf(id).forEach(function(c){relItems.push([c,"enfant"]);});
   var relHtml=relItems.map(function(it){var q=P(it[0]);return '<button class="relchip" data-open="'+it[0]+'">'+avatarHTML(q)+'<span>'+esc(full(q))+' <small>'+it[1]+'</small></span></button>';}).join("");
   var sources=(p.sources||[]).map(function(s){return '<a class="srcbtn" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label||"acte")+' ↗</a>';}).join(" ")
@@ -1191,7 +1191,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var comments=(p.comments||[]).slice().sort(function(a,b){return a.ts-b.ts;}).map(function(c){return '<div class="cmt"><div class="h"><span>'+esc(c.by||"famille")+' · '+relTime(c.ts)+'</span><button class="x" data-delc="'+c.id+'">✕</button></div><div style="white-space:pre-wrap">'+esc(c.text)+'</div></div>';}).join("");
   var canBack=_pStack.length>0;
   var back='<button class="bkbtn" id="pBack" aria-label="'+(canBack?"Retour":"Fermer")+'">'+(canBack?"‹":"✕")+'</button>';
-  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div>'+(_isFamilyNom(p.nom)?'<button class="blemb" data-bl="'+esc(_famName(p.nom))+'" title="'+(_blasonReal(p.nom)?"Blason officiel ":"Blason créé ")+esc(_famName(p.nom))+'">'+anyBlasonSVG(p.nom,_famMembers(p.nom))+'</button>':'')+'</div>'+caro+
+  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||"")+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div>'+(_isFamilyNom(p.nom)?'<button class="blemb" data-bl="'+esc(_famName(p.nom))+'" title="'+(_blasonReal(p.nom)?"Blason officiel ":"Blason créé ")+esc(_famName(p.nom))+'">'+anyBlasonSVG(p.nom,_famMembers(p.nom))+'</button>':'')+'</div>'+caro+
     '<div class="sec">'+info+(relHtml?'<div style="padding-top:12px"><div style="color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Famille</div><div class="chips">'+relHtml+'</div></div>':"")+(p.notes?'<div style="padding:12px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+'</div>'+
     (function(){var acts=(p.actes||[]);return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3>'+(acts.length?'<div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'">'+(a.by?'<b class="actedel" data-rmacte="'+i+'" title="Supprimer">×</b>':'')+'<img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun acte pour l\'instant.</p>')+'<button class="btn sm" id="addActe">➕ Ajouter un acte (photo / scan)</button><input type="file" id="acteIn" accept="image/*" hidden></div>';})()+
     (function(){var docs=(p.docs||[]);function ico(ty,nm){nm=(nm||"").toLowerCase();if(/pdf/.test(ty)||/\.pdf$/.test(nm))return "📕";if(/image/.test(ty))return "🖼";if(/\.(doc|docx|odt|rtf)$/.test(nm))return "📘";if(/\.(xls|xlsx|csv|numbers)$/.test(nm))return "📗";if(/\.(zip|rar|7z)$/.test(nm))return "🗂";if(/audio|\.(mp3|m4a|wav)$/.test(ty+nm))return "🎙";if(/video|\.(mp4|mov)$/.test(ty+nm))return "🎞";return "📄";}
@@ -1417,7 +1417,7 @@ var SRC={
   gDesarzens:{label:"Geneanet · nom DESARZENS",url:"https://www.geneanet.org/nom-de-famille/DESARZENS"},
   sarzens:{label:"Sarzens (Vaud) — berceau du nom",url:"https://fr.wikipedia.org/wiki/Sarzens"}
 };
-var SEED_VERSION=62;
+var SEED_VERSION=63;
 var SRCMAN={label:"\ud83d\udcc4 Arbre g\u00e9n\u00e9alogique manuscrit de la famille (photo transmise par Kevin, 13.08.2026)",url:""};
 function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now();o.conjoints=o.conjoints||[];o.photos=o.photos||[];o.sources=o.sources||[];o.comments=o.comments||[];s[o.id]=o;return o.id;}
   /* — Lignée directe (donnée par Kevin, fiable) — */
@@ -1488,7 +1488,7 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_virgili",prenom:"Madeleine-Caroline",nom:"VIRGILI",sexe:"F",conjoints:["seed_victorj_maiffret"],notes:"📜 DOCUMENT FAMILIAL : épouse de Victor MAIFFRET (1914–1982). Mère de Jean-Yves-François.",sources:[SRC.ad06]});
   add({id:"seed_jyf_maiffret",prenom:"Jean-Yves-François",nom:"MAIFFRET",sexe:"M",pere:"seed_victorj_maiffret",mere:"seed_virgili",vivant:true,naissance:{date:"1.12.1943"},notes:"📜 DOCUMENT FAMILIAL : fils de Victor MAIFFRET et Madeleine-Caroline VIRGILI. Né le 1.12.1943 (jour à confirmer sur le manuscrit).",sources:[SRC.ad06]});
   add({id:"seed_monique_maiffret",prenom:"Monique",nom:"MAIFFRET",sexe:"F",mere:"seed_josette_maiffret",conjoints:["seed_jean_hosmann"],vivant:false,naissance:{date:"16.08.1955"},deces:{},notes:"🔑 NOM D'ÉPOUSE CONFIRMÉ PAR KEVIN (1.09.2026) : Monique a épousé JEAN AUGUSTE DÉSIRÉ MAGNANI (prénoms et nom confirmés par Kevin) ; leur fille est MARIELLE MAGNANI — nom de jeune fille confirmé. Le dessin avait été lu « HOSMANN » : mauvaise lecture. ➜ Son avis de décès est donc à chercher sous « Monique MAGNANI » (née MAIFFRET), et non sous Maiffret. 📜 DOCUMENT FAMILIAL : fille de Josette (1922). Née le 16.08.1955. Annotation voisine « Murielle 27/3/63 » — possible sœur, à confirmer. ✝️ DÉCÉDÉE (annoncé par Kevin, 7.08.2026) — date et lieu à compléter. 🔎 Recherches 7.08.2026 : AUCUN acte « Monique MAIFFRET » au fichier INSEE des décès (2023→2026, ni même depuis 1970 — décès trop récent, le fichier a 1-2 mois de délai) ; aucun avis publié trouvé à ce jour (dansnoscoeurs, libramemoria, avis-de-deces.net, pfg…). ⚠️ L'avis « Monique MAIFFRET, 86 ans, Nice, †12.11.2017 » (Libramemoria/Nice-Matin) est une HOMONYME née ~1931 — ce n'est PAS elle. Piste : si mariée, l'avis peut être publié sous son nom d'épouse (« née Maiffret »). 👧 Une fille : Marielle (annoncé par Kevin, 7.08.2026).",sources:[SRC.beaulieu1]});
-  add({id:"seed_marielle",prenom:"Marielle",nom:"MAGNANI",sexe:"F",vivant:true,mere:"seed_monique_maiffret",pere:"seed_jean_hosmann",conjoints:["seed_david_bauwmann","seed_ladj_pere"],notes:"✅ CONFIRMÉ PAR KEVIN (1.09.2026) : Marielle MAGNANI — MAGNANI est son NOM DE JEUNE FILLE. Fille de Monique MAIFFRET et de Jean Auguste Désiré MAGNANI (confirmé par Kevin ; le dessin avait été lu « Hosmann » : mauvaise lecture). DIVORCÉE de David BAUMANN et DIVORCÉE de M. LADJ. Maman de LÉA et de NOÉMIE. Dates à compléter.",sources:[SRCMAN]});
+  add({id:"seed_marielle",prenom:"Marielle",nom:"MAGNANI",sexe:"F",vivant:true,mere:"seed_monique_maiffret",pere:"seed_jean_hosmann",conjoints:["seed_david_bauwmann","seed_ladj_pere"],notes:"✅ CONFIRMÉ PAR KEVIN (1.09.2026) : Marielle MAGNANI — MAGNANI est son NOM DE JEUNE FILLE. Fille de Monique MAIFFRET et de Jean Auguste Désiré MAGNANI (confirmé par Kevin ; le dessin avait été lu « Hosmann » : mauvaise lecture). DIVORCÉE de David BAUMANN et DIVORCÉE de M. LADJ. Maman de NOÉMIE (avec David BAUMANN) et de LÉA (avec M. LADJ). Dates à compléter.",sources:[SRCMAN]});
   /* ===== ARBRE MANUSCRIT DE LA FAMILLE (photo Kevin, 13.08.2026, corrigé 1.09.2026) — ascendance BRICCO/LEO et descendance MAGNANI/BEAUMELLE/BAUMANN/LADJ ===== */
   add({id:"seed_judith_bricco",prenom:"Judith",nom:"BRICCO",sexe:"F",pere:"seed_attilio_bricco",conjoints:["seed_marius1890"],notes:"✅ ARBRE MANUSCRIT (13.08.2026) : épouse de Marius MAIFFRET (1890-1968) — ARRIÈRE-GRAND-MÈRE de Kevin par sa mère. Mère d'Alexandre, Marie-Thérèse (grand-mère de Kevin), Hélène-Julia, Josette et Rosa Germaine. Fille d'Attilio BRICCO, sœur d'Eleonore BRICCO. Nom BRICCO = Piémont / Ligurie, comme beaucoup de familles niçoises et monégasques. Dates à rechercher (état civil de Nice / Monaco).",sources:[SRCMAN]});
   add({id:"seed_attilio_bricco",prenom:"Attilio",nom:"BRICCO",sexe:"M",mere:"seed_francesca_leo",notes:"✅ ARBRE MANUSCRIT (13.08.2026) : père de Judith BRICCO (épouse de Marius MAIFFRET) et d'Eleonore BRICCO — arrière-arrière-grand-père de Kevin. Fils de Francesca LEO. Prénom italien ATTILIO (gentilice romain Atilius), courant en Italie du Nord. ✅ SENS DU NOM BRICCO (recherche 1.09.2026) : en piémontais « bric / bricco » = colline, sommet, hauteur — micro-toponyme très répandu dans le Monferrato et les Langhe (Asti, Cuneo, Turin). La famille vient bien du Piémont. Dates à rechercher.",sources:[SRCMAN,{label:"🇮🇹 Sens de « bricco » (piémontais : colline / sommet)",url:"https://www.tenutacarretta.it/en/2016/06/03/origin-word-bricco-bric-wine-piedmont/"}]});
@@ -1498,11 +1498,11 @@ function buildSeed(){var s={};function add(o){o.id=o.id||uid();o.updatedAt=now()
   add({id:"seed_helene_julia",prenom:"Hélène-Julia",nom:"MAIFFRET",sexe:"F",pere:"seed_marius1890",mere:"seed_judith_bricco",notes:"✅ ARBRE MANUSCRIT (13.08.2026) : fille de Marius MAIFFRET et de Judith BRICCO — sœur de Marie-Thérèse (grand-mère de Kevin), d'Alexandre, de Josette et de Rosa Germaine. Dates à compléter.",sources:[SRCMAN]});
   add({id:"seed_jean_hosmann",prenom:"Jean Auguste Désiré",nom:"MAGNANI",sexe:"M",conjoints:["seed_monique_maiffret"],notes:"✅ CONFIRMÉ PAR KEVIN (1.09.2026) : JEAN AUGUSTE DÉSIRÉ MAGNANI — époux de Monique MAIFFRET, père de Marielle MAGNANI (les trois prénoms ET le nom sont confirmés par Kevin). Le dessin avait été lu « HOSMANN » — mauvaise lecture, corrigée. Dates à rechercher.",sources:[SRCMAN]});
   add({id:"seed_ladj_pere",prenom:"",nom:"LADJ",sexe:"M",conjoints:["seed_marielle"],notes:"✅ KEVIN (1.09.2026) : ex-mari de Marielle MAGNANI (divorcés), père de Léa LADJ. ⚠️ Son prénom est écrit petit sur le dessin et se lit mal (« Sonia » ? « Sami » ? « Samir » ?) — à confirmer auprès de la famille.",sources:[SRCMAN]});
-  add({id:"seed_lea_ladj",prenom:"Léa",nom:"LADJ",sexe:"F",vivant:true,mere:"seed_marielle",pere:"seed_ladj_pere",notes:"✅ ARBRE MANUSCRIT + KEVIN (1.09.2026) : fille de Marielle MAGNANI et de M. LADJ — petite-fille de Monique MAIFFRET. Sœur de Noémie.",sources:[SRCMAN]});
-  add({id:"seed_noemie",prenom:"Noémie",nom:"",sexe:"F",vivant:true,mere:"seed_marielle",notes:"✅ KEVIN (1.09.2026) : fille de Marielle MAGNANI, sœur de Léa. ⚠️ Père (M. BAUMANN ou M. LADJ ?) et nom de famille à préciser.",sources:[SRCMAN]});
+  add({id:"seed_lea_ladj",prenom:"Léa",nom:"LADJ",sexe:"F",vivant:true,mere:"seed_marielle",pere:"seed_ladj_pere",notes:"✅ ARBRE MANUSCRIT + KEVIN (1.09.2026) : fille de Marielle MAGNANI et de M. LADJ — petite-fille de Monique MAIFFRET. Sœur de Noémie (même maman ; le papa de Noémie est David BAUMANN).",sources:[SRCMAN]});
+  add({id:"seed_noemie",prenom:"Noémie",nom:"BAUMANN",sexe:"F",vivant:true,mere:"seed_marielle",pere:"seed_david_bauwmann",notes:"✅ KEVIN (1.09.2026) : fille de Marielle MAGNANI et de David BAUMANN. Sœur de Léa LADJ (même maman).",sources:[SRCMAN]});
   add({id:"seed_jeanmarie_bauwmann",prenom:"Jean-Marie",nom:"BEAUMELLE",sexe:"M",mere:"seed_germaine",conjoints:["seed_odile_pinson"],notes:"✅ NOM CORRIGÉ PAR KEVIN (1.09.2026) : Jean-Marie BEAUMELLE (et non « Bauwmann »). Fils de Rosa Germaine MAIFFRET, marié à Odile PINSON ; leurs enfants : Nicolas et Léa. Frère de Marie-France. (David BAUMANN, un temps rattaché à cette fratrie sur le dessin, n'en fait PAS partie — corrigé par Kevin le 1.09.2026.)",sources:[SRCMAN]});
   add({id:"seed_odile_pinson",prenom:"Odile",nom:"PINSON",sexe:"F",conjoints:["seed_jeanmarie_bauwmann"],notes:"✅ ARBRE MANUSCRIT (13.08.2026) : épouse de Jean-Marie BEAUMELLE, mère de Nicolas et de Léa.",sources:[SRCMAN]});
-  add({id:"seed_david_bauwmann",prenom:"David",nom:"BAUMANN",sexe:"M",conjoints:["seed_marielle"],notes:"✅ CORRIGÉ PAR KEVIN (1.09.2026) : David BAUMANN — EX-MARI de Marielle MAGNANI (divorcés). Il n'est PAS le frère de Jean-Marie et Marie-France BEAUMELLE (le dessin l'avait mal rattaché à cette fratrie). Père de Nadine (la maman de Nadine reste à préciser).",sources:[SRCMAN]});
+  add({id:"seed_david_bauwmann",prenom:"David",nom:"BAUMANN",sexe:"M",conjoints:["seed_marielle"],notes:"✅ CORRIGÉ PAR KEVIN (1.09.2026) : David BAUMANN — EX-MARI de Marielle MAGNANI (divorcés). Il n'est PAS le frère de Jean-Marie et Marie-France BEAUMELLE (le dessin l'avait mal rattaché à cette fratrie). Avec Marielle : leur fille NOÉMIE. Également père de Nadine (la maman de Nadine reste à préciser).",sources:[SRCMAN]});
   add({id:"seed_marie_france_b",prenom:"Marie-France",nom:"BEAUMELLE",sexe:"F",mere:"seed_germaine",notes:"✅ NOM PRÉCISÉ PAR KEVIN (1.09.2026) : Marie-France BEAUMELLE, de la fratrie de Jean-Marie BEAUMELLE. ⚠️ Le trait du dessin peut aussi en faire l'épouse de Jean-Marie plutôt que sa sœur — à confirmer. ⚠️ HOMONYME : une autre Marie-France existe côté Desarzens (compagne d'Émile, maman de Yann) — a priori deux personnes différentes.",sources:[SRCMAN]});
   add({id:"seed_nicolas_bauwmann",prenom:"Nicolas",nom:"BEAUMELLE",sexe:"M",vivant:true,pere:"seed_jeanmarie_bauwmann",mere:"seed_odile_pinson",notes:"✅ KEVIN (1.09.2026) : fils de Jean-Marie BEAUMELLE et d'Odile PINSON.",sources:[SRCMAN]});
   add({id:"seed_lea_bauwmann",prenom:"Léa",nom:"BEAUMELLE",sexe:"F",vivant:true,pere:"seed_jeanmarie_bauwmann",mere:"seed_odile_pinson",notes:"✅ KEVIN (1.09.2026) : fille de Jean-Marie BEAUMELLE et d'Odile PINSON. ⚠️ Ne pas confondre avec Léa LADJ (fille de Marielle MAGNANI) — deux Léa distinctes.",sources:[SRCMAN]});
@@ -1613,8 +1613,25 @@ function purgeSeedShadows(){
     if(ch)q.updatedAt=now();}
   rm.forEach(function(x){delete DB.persons[x];});
   return rm;}
+/* Fantômes semés par l'ancienne v3.7 (mauvaise lecture « Magnani/Bauman ») : restés dans les
+   téléphones et le nuage car mergeSeed n'efface jamais. On les retire PARTOUT en re-pointant
+   vers les bonnes fiches (mêmes personnes) et en récupérant photos/commentaires éventuels. */
+var SEED_OBSOLETE={seed_david_bauman:"seed_david_bauwmann",seed_jean_marie:"seed_jeanmarie_bauwmann",seed_nicolas:"seed_nicolas_bauwmann",seed_noemie_bauman:"seed_noemie",seed_lea_magnani:"seed_lea_ladj"};
+function purgeObsoleteSeeds(){var rm=[];
+  for(var oid in SEED_OBSOLETE){var p=DB.persons[oid];if(!p)continue;var t=DB.persons[SEED_OBSOLETE[oid]];
+    if(t){if(p.photos&&p.photos.length)t.photos=(t.photos||[]).concat(p.photos);if(p.comments&&p.comments.length)t.comments=(t.comments||[]).concat(p.comments);}
+    delete DB.persons[oid];rm.push(oid);}
+  if(!rm.length)return rm;
+  /* On SUPPRIME les références vers les fantômes (on ne re-pointe PAS : re-pointer un conjoint
+     recréerait un faux mariage — les vrais liens sont déjà définis dans les fiches officielles). */
+  for(var id in DB.persons){var q=DB.persons[id],ch=false;
+    if(q.pere&&SEED_OBSOLETE[q.pere]){delete q.pere;ch=true;}
+    if(q.mere&&SEED_OBSOLETE[q.mere]){delete q.mere;ch=true;}
+    if(q.conjoints&&q.conjoints.length){var nc=q.conjoints.filter(function(c,i,a){return c&&!SEED_OBSOLETE[c]&&c!==id&&a.indexOf(c)===i;});if(nc.join(",")!==q.conjoints.join(",")){q.conjoints=nc;ch=true;}}
+    if(ch)q.updatedAt=now();}
+  return rm;}
 async function startApp(){$("#gate").classList.add("hidden");$("#app").classList.remove("hidden");ME=localStorage.getItem("arbre_me")||"";var had=await loadLocal();var seedChanged=false;if(!had||!Object.keys(DB.persons).length){seed();await saveLocal();seedChanged=true;}else if(!DB.meta||DB.meta.seedVersion!==SEED_VERSION){mergeSeed();await saveLocal();seedChanged=true;}
-  var dups=dedupePersons();var legacy=purgeLegacy();var shadows=purgeSeedShadows();if(legacy.length||shadows.length)seedChanged=true;
+  var dups=dedupePersons();var legacy=purgeLegacy();var shadows=purgeSeedShadows();var obsolete=purgeObsoleteSeeds();if(legacy.length||shadows.length||obsolete.length)seedChanged=true;
   render();setPill();                 /* AFFICHE L'ARBRE TOUT DE SUITE — jamais bloqué par le réseau */
   if(seedChanged||dups.length){saveLocal();cloudPushAll().catch(function(){});if(dups.length)toast("🧹 "+dups.length+" doublon(s) nettoyé(s)");}
   cloudPull(false);}
