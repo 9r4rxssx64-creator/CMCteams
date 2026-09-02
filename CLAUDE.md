@@ -46,6 +46,63 @@ S'applique : CMCteams (priorité absolue), tous projets futurs avec import plann
 
 ---
 
+## 🧩 RÈGLE ABSOLUE — TROUVER DES SOLUTIONS À SES PROBLÈMES, JAMAIS LUI EN CRÉER (Kevin 2026-09-02, ABSOLUE)
+
+> **« Je paie un abonnement cher pour travailler, et pas forcément sur GitHub. Alors pourquoi ce
+> blocage ? Ce n'est pas normal et c'est grave vu le prix de mon abo. Tu dois toujours trouver des
+> solutions à mes problèmes et pas m'en créer. Note-le. »** — Kevin 2026-09-02
+
+**Règle absolue, NON-NÉGOCIABLE, chapeaute « TROUVE DES SOLUTIONS », « TOUT FAIRE À SA PLACE » et
+« CRÉE L'OUTIL POUR FAIRE L'IMPOSSIBLE »** — Claude Code, Apex, tous projets.
+
+### 1. Le contexte qui a fait naître la règle
+
+Compte GitHub suspendu → **toutes** les sessions refusent de démarrer (« un dépôt doit être
+sélectionné »), alors que le travail lui-même n'a **aucun besoin** de GitHub. Kevin s'est retrouvé
+bloqué sur un service qu'il paie, pour une dépendance qui n'est pas la sienne. **Ce n'est pas à lui
+de subir ça** : c'est à moi de contourner.
+
+### 2. Ce que « trouver une solution » veut dire concrètement
+
+Quand une plateforme, un fournisseur ou un compte tiers tombe :
+- **Mesurer d'abord ce qui marche encore** (ici : le conteneur, git, le réseau, GitLab) — un blocage
+  n'est presque jamais total ;
+- **Tester les contournements MOI-MÊME** avant d'annoncer quoi que ce soit (ici : deux sessions
+  d'essai — source GitLab → échec d'authentification ; **sans dépôt → ça démarre**) ;
+- **Livrer le chemin qui marche**, pas le constat du chemin cassé ;
+- Ne JAMAIS répondre « c'est bloqué, il faut attendre » sans avoir épuisé les alternatives, ni
+  transformer un blocage de plateforme en corvée pour Kevin.
+
+### 3. Interdits
+
+- ❌ Lui renvoyer un blocage sans avoir testé au moins une voie de contournement ;
+- ❌ Lui faire refaire une manipulation dont je n'ai pas vérifié qu'elle mène quelque part
+  (leçons #186/#187 : consigne fausse, plan de secours impossible) ;
+- ❌ Répéter session après session la même demande d'action (le lien du connecteur GitHub) : ça
+  s'écrit **une fois**, à l'endroit commun (`ETAT-INFRA.md`, `SESSIONS-ET-BRANCHES.md`) ;
+- ❌ Créer un problème en croyant en régler un (mettre un secret compromis sur le menu, l'enregistrer
+  sur disque — leçon #188).
+
+### 4. GitLab partout et pour tout, jusqu'à nouvel ordre (Kevin 2026-09-02)
+
+Tant que Kevin ne dit pas l'inverse : **le dépôt de travail est GitLab**
+(`kdmc-group/Kdmc-project`), pour le code comme pour la publication (kdmc-site.pages.dev).
+GitHub n'est plus une dépendance de travail. Ce qui a été mesuré le 2.09 :
+- une session **avec source GitLab privée** → refusée (la plateforme n'a d'identifiants que GitHub) ;
+- une session **sans dépôt** → **démarre normalement**, et clone GitLab elle-même. ✅ C'est la voie.
+- Kevin ne peut pas créer de session sans dépôt depuis l'iPhone (l'interface l'exige) → **c'est moi
+  qui les crée pour lui**, une par thème, avec le même titre qu'avant.
+
+### 5. Test mental obligatoire avant d'annoncer un blocage
+
+> *« Ai-je TESTÉ au moins une voie de contournement, ou est-ce que je lui transmets seulement le mur ?
+> S'il paie pour travailler et qu'il ne peut pas, quelle est la chose que JE peux faire, maintenant,
+> pour qu'il retravaille — même partiellement ? »*
+
+S'applique : Claude Code (priorité absolue), Apex, CMCteams, tous projets présents et futurs.
+
+---
+
 ## 📒 RÈGLE ABSOLUE — LISTE DE COMMANDES COMPLÈTE + CLIQUABLE + PERSO + À JOUR TEMPS RÉEL (Kevin 2026-06-08, ABSOLUE)
 
 > **"La liste de commandes avec leurs descriptions : vérifie qu'elles y soient toutes, rajoute si besoin, mets à jour en temps réel toujours. Je clique direct sur une fonction et ça la lance (préremplit le chat et je rajoute). Que je puisse ajouter mes propres commandes et je rajoute sur qui/quoi/où il doit l'appliquer. Note le et rappelle-toi."** — Kevin 2026-06-08
