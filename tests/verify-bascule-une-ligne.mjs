@@ -34,7 +34,7 @@ import { existsSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { tmpdir } from 'node:os';
 
-const REF = 'origin/claude/capcut-mini-versions-66tfum';   /* = ce qui est en ligne */
+const REF = 'github/claude/capcut-mini-versions-66tfum';   /* = ce qui est en ligne */
 const R = { ok: [], ko: [] };
 const chk = (c, m) => (c ? R.ok : R.ko).push(m);
 

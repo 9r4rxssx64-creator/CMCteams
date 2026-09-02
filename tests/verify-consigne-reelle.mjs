@@ -21,7 +21,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 
 const DOC = 'REMETTRE_EN_LIGNE.md';
-const REF = 'origin/claude/capcut-mini-versions-66tfum';   /* = ce qui tourne en ligne */
+const REF = 'github/claude/capcut-mini-versions-66tfum';   /* = ce qui tourne en ligne */
 const R = { ok: [], ko: [] };
 const chk = (c, m) => (c ? R.ok : R.ko).push(m);
 
