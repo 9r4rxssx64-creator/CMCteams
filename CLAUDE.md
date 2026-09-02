@@ -46,6 +46,47 @@ S'applique : CMCteams (priorité absolue), tous projets futurs avec import plann
 
 ---
 
+## 🔗 RÈGLE ABSOLUE — CMCteams **ET** LIGHT, TOUJOURS LES DEUX (Kevin 2026-09-02, ABSOLUE)
+
+> **« Fais CMCteams et light aussi, toujours. Note-le. »** — Kevin 2026-09-02
+
+**Règle absolue, NON-NÉGOCIABLE.** Elle est née d'une faute prise en flagrant délit : je venais
+d'importer **septembre 2026** dans la page Départs (`tools/departs/boards-gen.js`) et **pas** dans
+l'app principale (`tools/shared/planning-seed.js`). La light affichait septembre, CMCteams
+s'arrêtait en août. **Deux surfaces, une seule vérité — elles bougent ENSEMBLE.**
+
+### 1. Toute donnée de planning se pose des DEUX côtés, dans le MÊME commit
+
+| Surface | Ce qui la nourrit | Générateur |
+|---|---|---|
+| **CMCteams** (`index.html`) | `tools/shared/planning-seed.js` | `node tools/shared/_gen-seed.mjs` |
+| **Light / Départs** (`tools/departs/`) | `tools/departs/boards-gen.js` | `node tools/departs/_gen-boards.mjs` |
+
+Les deux générateurs portent **la même liste de PDF**. Ajouter un mois = l'ajouter **aux deux
+listes** et relancer **les deux** commandes.
+
+### 2. Vaut au-delà du planning
+
+Même exigence pour toute correction fonctionnelle qui existe des deux côtés (règle des départs,
+codes d'absence, verrous admin, affichage des miroirs) : corriger une seule surface crée une
+divergence silencieuse — c'est exactement la leçon #142 (les deux surfaces se trompaient pareil,
+un test d'égalité seul ne l'aurait jamais vu).
+
+### 3. Garde automatique
+
+`npm run test:parite-cmcteams-light` (câblé dans `test:ci`) compare la liste de PDF des deux
+générateurs, les mois réellement produits, et l'effectif de chaque mois des deux côtés.
+**Prouvé discriminant** : retirer septembre d'un seul générateur → FAIL immédiat.
+
+### 4. Test mental obligatoire
+
+> *« Ce que je viens de changer existe-t-il aussi dans l'autre surface ? Si oui, l'ai-je fait là-bas
+> AUSSI, dans le même commit ? »*
+
+S'applique : CMCteams (priorité absolue), tous projets ayant une app et une version allégée.
+
+---
+
 ## 🧩 RÈGLE ABSOLUE — TROUVER DES SOLUTIONS À SES PROBLÈMES, JAMAIS LUI EN CRÉER (Kevin 2026-09-02, ABSOLUE)
 
 > **« Je paie un abonnement cher pour travailler, et pas forcément sur GitHub. Alors pourquoi ce
