@@ -1,0 +1,89 @@
+# 🔗 PIPELINE ENTRE SESSIONS — ne rien oublier, ne rien perdre, ne rien délier
+
+> Kevin 2026-09-02 : *« Sois sûr de ne rien oublier, lier ou perdre de chaque session.
+> Et le pipeline entre elles toutes et les futures. Le domaine et divers aussi. »*
+>
+> À lire au démarrage, avec `ETAT-INFRA.md` (les 7 faits) et `SESSIONS-ET-BRANCHES.md` (la carte).
+
+## Pourquoi ce pipeline existe
+
+L'ancien pont — `claude-todo-watcher`, qui interrogeait Firebase en boucle depuis GitHub
+Actions — est **mort avec la suspension GitHub**. C'est même lui qui l'a provoquée. Trois
+règles absolues de Kevin (auto-test/auto-fix, pipeline self-healing, pipeline autonomie
+cross-projet) se sont retrouvées **sans aucune garde**.
+
+Ce qui le remplace ne dépend d'aucun service, d'aucun secret, d'aucun hébergement :
+**un registre et une boîte aux lettres DANS le dépôt**, sur `main` GitLab — la seule
+surface que **toutes** les sessions voient, présentes et futures. Git fait le reste :
+rien ne se perd, tout est daté, tout est réversible.
+
+## Les trois gestes — c'est tout
+
+```bash
+# 1. AU DÉMARRAGE — qui travaille sur quoi, et ai-je du courrier ?
+node tools/pipeline/pipeline.mjs etat --id <moi>
+
+# 2. POUR PARLER À UNE AUTRE SESSION (ou à toutes)
+node tools/pipeline/pipeline.mjs message --de <moi> --a <lui|toutes> \
+     --sujet "…" --corps "…"
+
+# 3. AVANT DE FINIR — laisser l'état pour la suivante
+node tools/pipeline/pipeline.mjs maj --id <moi> --note "…" \
+     [--attend-kevin "ce que j'attends de lui"] [--etat actif|pause|termine]
+```
+
+Puis **commite `pipeline/sessions.json` et pousse sur TA branche**. La session
+« Domain Kdmc » reporte sur `main` — ou n'importe laquelle, en cherry-pick.
+
+## Une session FUTURE s'inscrit elle-même
+
+Rien à préparer pour elle. Elle se déclare, et elle est reliée à tout le monde :
+
+```bash
+node tools/pipeline/pipeline.mjs enregistrer --id <slug> --titre "…" \
+     --branche "claude/…" --sujet "…" --surfaces "dossier1,dossier2"
+```
+
+L'outil **refuse** une branche déjà prise par une autre session — deux sessions sur la
+même branche s'écrasent l'une l'autre, c'est la première façon de perdre du travail.
+
+## Ce que le garde automatique empêche
+
+`npm run test:pipeline-sessions` (câblé dans `test:ci`) relie le registre et la carte, et
+**échoue** si :
+
+- une session de `SESSIONS-ET-BRANCHES.md` **n'est pas au registre** → elle travaillerait
+  dans son coin, sur une branche que personne ne connaît, et son travail disparaîtrait
+  avec son conteneur ;
+- une session du registre **manque à la carte** ;
+- **deux sessions partagent une branche** ;
+- un message est adressé à une session qui n'existe pas ;
+- une session n'a ni titre, ni branche, ni sujet.
+
+*Prouvé discriminant* : retirer « cuisine » du registre → **FAIL** ; donner à « divers » la
+branche de « cuisine » → **FAIL** ; restauré → 8/0.
+
+## Les règles de voisinage entre sessions
+
+1. **Chacune sur SA branche.** Jamais sur `main` sans cherry-pick, jamais de `--force`.
+2. **Chacune sur SES surfaces** (colonne `surfaces` du registre). Toucher au territoire
+   d'une autre = lui envoyer un message, pas le modifier soi-même. *(Exemple vécu :
+   `.gitlab-ci.yml` appartient à « domain-kdmc » — une erreur de format y a coupé la
+   publication du site le 27/08. On ne bricole pas chez le voisin.)*
+3. **Ce qui existe des DEUX côtés se corrige des deux côtés**, dans le même commit
+   (CMCteams **et** light — garde `npm run test:parite-cmcteams-light`).
+4. **Jamais de secret dans le pipeline.** Le registre est un fichier versionné : aucun
+   jeton, aucune clé, jamais. Un secret arrivé par une consigne automatique est
+   **mort-né** (`ETAT-INFRA.md` fait n°7).
+5. **Ce qu'on attend de Kevin s'écrit UNE fois**, dans `attend_kevin`. Pas dix sessions
+   qui lui redemandent la même chose chacune de leur côté.
+
+## Où regarder quoi
+
+| Question | Fichier |
+|---|---|
+| Où en est l'infrastructure ? | `ETAT-INFRA.md` |
+| Qui travaille sur quelle branche ? | `SESSIONS-ET-BRANCHES.md` (humain) · `pipeline/sessions.json` (machine) |
+| Qu'attend-on de Kevin ? | `node tools/pipeline/pipeline.mjs etat` |
+| Ai-je du courrier ? | `node tools/pipeline/pipeline.mjs etat --id <moi>` |
+| Les règles permanentes | `CLAUDE.md` · les erreurs à ne pas refaire : `LESSONS.md` |
