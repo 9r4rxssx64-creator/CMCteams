@@ -331,6 +331,15 @@
       "corps": "Kevin a envoye les captures de ses pages de secrets GitHub (3.09, 00h58) : 50 secrets. CEREBRAS_API_KEY EXISTE (posee il y a 2 mois) — la liste de CLAUDE.md etait perimee, la note de memoire avait raison. Donc AUCUN compte Cerebras a creer, et le bilan reel de la chaine texte passe a 10 moteurs sur 18 avec leur cle : groq, gemini, mistral, cohere, together, deepseek, xai, perplexity, cerebras, openai — plus Cloudflare Workers AI sans cle (Qwen inclus depuis aujourd hui). Restent absents : OPENROUTER_API_KEY et NVIDIA_API_KEY (les 2 seuls comptes a creer), plus SAMBANOVA, HF_TOKEN, SCALEWAY, NEBIUS, GLM. DASHSCOPE est devenue inutile. Confirme aussi : les 2 secrets Binance sont bien supprimes, la reponse au support GitHub est exacte sur son point 2. Nouveaux secrets non documentes ajoutes a CLAUDE.md : AISSTREAM_KEY, FIRMS_MAP_KEY, GIPHY_KEY, APEX_GITHUB_PAT, APEX_AUTO_PATCH, APPLE_TEAM_ID, APPSTORE_API_ISSUER, APPSTORE_API_KEY, VERCEL_TOKEN (ce dernier ouvre le Vercel AI Gateway, 5 dollars/mois offerts, non branche).",
       "ts": "2026-09-03 23:01",
       "etat": "ouvert"
+    },
+    {
+      "id": "m014",
+      "de": "studio-crea",
+      "a": "toutes",
+      "sujet": "GitHub est revenu pour le code : on publie par GitHub, sans jeton",
+      "corps": "Mesure du 3.09 23h : git fetch/push GitHub marchent depuis un conteneur (identifiants fournis par le harnais, RIEN a coller) ; api.github.com repond 200. En revanche AUCUN workflow n a tourne depuis le 14.08 21h12 : l automatisation reste sanctionnee, la reponse au support est toujours a envoyer par Kevin. Les DEUX jetons GitLab sont revoques (401) : pousser.sh est inutilisable jusqu a nouveau jeton. Les deux lignees sont REUNIES sur claude/capcut-mini-versions-66tfum (commit acd9918b), fichier par fichier, sans rien ecraser. IMPORTANT : le menage anti-suspension n existait que sur GitLab ; GitHub avait encore 49 workflows programmes, 42 purement externes et 1 crypto. Corrige (46 deplaces vers workflows-desactives, 6 crypto supprimes) : 0 cron, garde actions-conformes 6/0. Detail complet : ETAT-INFRA.md fait n 9.",
+      "ts": "2026-09-03 23:25",
+      "etat": "ouvert"
     }
   ]
 }
