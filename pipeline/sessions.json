@@ -15,7 +15,7 @@
       "maj": "2026-09-03",
       "attend_kevin": "envoyer la reponse a GitHub Support (Wick) — secrets deja supprimes le 2.09",
       "attend_session": null,
-      "note": "GitHub: 0 cron actif sur 168 workflows, 6 workflows crypto supprimes, 2 secrets Binance supprimes par Kevin. Reponse redigee: audit/github-reponse-support.md"
+      "note": "Push GitLab fiabilise : origin = GitLab (github renomme github-suspendu), script tools/pipeline/pousser.sh (jeton jamais persiste, repere local remis a jour apres push accepte). Fin des fausses alertes 'commit non pousse'."
     },
     "cmcteams": {
       "titre": "CMCteams",
@@ -240,6 +240,15 @@
       "sujet": "GitHub : les 3 conditions du support sont remplies, reponse envoyee",
       "corps": "Ne remettez JAMAIS de cron dans un workflow GitHub — c'est ce qui a suspendu le compte. Verif: node tools/github/triage-workflows.mjs. Tout ce qui est periodique va sur GitLab CI ou un Worker Cloudflare. Les 6 workflows crypto sont supprimes, les secrets Binance aussi.",
       "ts": "2026-09-03 10:09",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m004",
+      "de": "studio-crea",
+      "a": "toutes",
+      "sujet": "Pousser sur GitLab : renommer origin, sinon on te reclame un push deja fait",
+      "corps": "GitHub est suspendu : si origin pointe encore sur GitHub, le controle de fin de tour compare a un depot fige et reclame en boucle un push DEJA fait. Une fois par session : git remote rename origin github-suspendu puis git remote rename gitlab origin. Ensuite pousse avec GITLAB_TOKEN=glpat-... ./tools/pipeline/pousser.sh (jeton jamais ecrit sur le disque, sortie masquee, repere local remis a jour seulement si le push est accepte). Detail : PIPELINE-SESSIONS.md.",
+      "ts": "2026-09-03 10:15",
       "etat": "ouvert"
     }
   ]

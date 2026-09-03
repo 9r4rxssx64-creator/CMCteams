@@ -63,6 +63,30 @@ même branche s'écrasent l'une l'autre, c'est la première façon de perdre du 
 *Prouvé discriminant* : retirer « cuisine » du registre → **FAIL** ; donner à « divers » la
 branche de « cuisine » → **FAIL** ; restauré → 8/0.
 
+## Pousser sur GitLab sans se faire réclamer un push déjà fait
+
+GitHub est suspendu : **`origin` doit désigner GitLab**, pas GitHub. Sinon le contrôle de
+fin de tour compare ton travail à un dépôt figé et réclame en boucle un push **déjà fait**.
+Une fois par session, dans ton conteneur :
+
+```bash
+git remote rename origin github-suspendu   # garde l'adresse GitHub, libère le nom
+git remote rename gitlab origin            # origin = là où on publie vraiment
+```
+
+Ensuite, pousse **toujours** avec le script — jamais avec un `git remote add` contenant le
+jeton (un jeton ne s'enregistre pas sur le disque, `ETAT-INFRA.md` fait n°7) :
+
+```bash
+GITLAB_TOKEN=glpat-… ./tools/pipeline/pousser.sh          # ta branche
+GITLAB_TOKEN=glpat-… ./tools/pipeline/pousser.sh main     # vers main
+```
+
+Il écrit le jeton dans l'URL **au moment du push seulement**, masque toute sortie, et
+remet à jour le repère local `origin/<ta branche>` **après** un push accepté — c'est ce
+repère que lit le contrôle de fin de tour. Si le push échoue, le repère n'est pas touché :
+il reste honnête.
+
 ## Les règles de voisinage entre sessions
 
 1. **Chacune sur SA branche.** Jamais sur `main` sans cherry-pick, jamais de `--force`.
