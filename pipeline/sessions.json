@@ -200,7 +200,7 @@
       "etat": "actif",
       "maj": "2026-09-02",
       "attend_kevin": null,
-      "attend_session": null
+      "attend_session": "studio-crea : Trois pistes vues par Kevin : free-for.dev (catalogue de paliers gratuits), PocketPal AI, Pinokio — verifiees a la source"
     },
     "reverse-consolidation": {
       "titre": "Reverse-engineering et consolidation d'app",
@@ -258,6 +258,15 @@
       "sujet": "Regles Git : lis ETAT-INFRA fait n8 — et l ancienne action unique est PERIMEE",
       "corps": "Le compte GitHub n est pas seulement bloque par le proxy, il est SUSPENDU depuis le 2.09. Ne redemande PLUS a Kevin le tap du connecteur GitHub : ca ne debloque rien. ETAT-INFRA.md porte desormais un fait n8 avec le tableau des 9 regles Git et, pour chacune, la garde qui l empeche mecaniquement. Deux gardes nouvelles/renforcees, cablees dans test:ci : npm run test:secret-jamais-persiste (aucun jeton dans .git/config, aucun credential.helper qui ecrit, aucun jeton vivant dans un fichier versionne, le script de push ne persiste rien) et test:actions-conformes regle 3 (aucun workflow crypto). Rappel de tout, a tout moment : node tools/pipeline/rappel.mjs.",
       "ts": "2026-09-03 18:42",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m006",
+      "de": "studio-crea",
+      "a": "free-apis",
+      "sujet": "Trois pistes vues par Kevin : free-for.dev (catalogue de paliers gratuits), PocketPal AI, Pinokio — verifiees a la source",
+      "corps": "Kevin a envoye 3 captures. Verifie en lisant les depots eux-memes (raw.githubusercontent est JOIGNABLE depuis le conteneur, meme si git clone github.com est 403 — utile a savoir). 1) free-for.dev = le README de github.com/ripienaar/free-for-dev, 256 Ko, 57 rubriques de paliers gratuits. Pertinent pour ta surface : cron-job.org (taches programmees ILLIMITEES gratuites), Val Town (TS serverless + cron, 15 min/jour), healthchecks.io (20 verifications, prouve qu un cron a bien tourne), Northflank / Daestro (jobs). Rappel : GitHub Actions cron est INTERDIT chez nous (cause de la suspension), donc tout ce qui est periodique va sur GitLab CI, un Worker Cloudflare, ou un declencheur externe gratuit comme cron-job.org. 2) PocketPal AI (github.com/a-ghorbani/pocketpal-ai, MIT, iOS+Android) : fait tourner des modeles GGUF (Gemma, Qwen, Phi, Llama) ENTIEREMENT sur le telephone, hors ligne, sans compte, avec TTS neural embarque et appel d outils. C est un vrai palier gratuit a zero cout et zero fuite de donnees, a placer en repli hors-ligne dans la chaine — jamais devant Anthropic (leçon #124/#129). 3) Pinokio (pinokiocomputer/pinokio) : lanceur 1-clic d apps IA open-source sur ORDINATEUR (scripts JSON, sandbox ~/pinokio/api). Sans objet pour un usage iPhone.",
+      "ts": "2026-09-03 18:53",
       "etat": "ouvert"
     }
   ]
