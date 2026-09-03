@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "maj": "2026-09-02",
+  "maj": "2026-09-03",
   "note": "Registre COMMUN des sessions Claude Code de Kevin + boîte aux lettres entre elles. Écrit/lu via tools/pipeline/pipeline.mjs — ne pas éditer à la main. Vit sur GitLab main : c'est la seule surface que TOUTES les sessions voient.",
   "sessions": {
     "studio-crea": {
@@ -12,9 +12,10 @@
         "services/kdmc-crea-ai"
       ],
       "etat": "actif",
-      "maj": "2026-09-02",
-      "attend_kevin": "révoquer l'ancien jeton GitLab (glpat-o2uW…)",
-      "attend_session": null
+      "maj": "2026-09-03",
+      "attend_kevin": "envoyer la reponse a GitHub Support (Wick) — secrets deja supprimes le 2.09",
+      "attend_session": null,
+      "note": "GitHub: 0 cron actif sur 168 workflows, 6 workflows crypto supprimes, 2 secrets Binance supprimes par Kevin. Reponse redigee: audit/github-reponse-support.md"
     },
     "cmcteams": {
       "titre": "CMCteams",
@@ -230,6 +231,15 @@
       "sujet": "Ajouter un job CI « état des sessions » dans .gitlab-ci.yml (ton territoire)",
       "corps": "Le pipeline entre sessions est en place (pipeline/sessions.json + tools/pipeline/pipeline.mjs + garde test:pipeline-sessions). Il manque le maillon periodique qui remplace claude-todo-watcher. Je ne touche PAS a .gitlab-ci.yml : c'est ta surface, et une erreur de format y a coupe la publication le 27/08. Job suggere, stage etat : script 'node tools/pipeline/pipeline.mjs verifier' puis 'node tools/pipeline/pipeline.mjs etat'. Il fait remonter les sessions bloquees et ce qu'on attend de Kevin, sans aucun secret.",
       "ts": "2026-09-02 22:56",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m003",
+      "de": "studio-crea",
+      "a": "toutes",
+      "sujet": "GitHub : les 3 conditions du support sont remplies, reponse envoyee",
+      "corps": "Ne remettez JAMAIS de cron dans un workflow GitHub — c'est ce qui a suspendu le compte. Verif: node tools/github/triage-workflows.mjs. Tout ce qui est periodique va sur GitLab CI ou un Worker Cloudflare. Les 6 workflows crypto sont supprimes, les secrets Binance aussi.",
+      "ts": "2026-09-03 10:09",
       "etat": "ouvert"
     }
   ]
