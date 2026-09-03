@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.117.0";
+var APP_VER="v2.117.1";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -210,8 +210,16 @@ function enterWithCredentials(name,avatar,code,createIfMissing){
       var cloud=(j&&j.ok)?j.data:null;
       if(cloud){ var id=createAccount(cloud.name||name, cloud.avatar||avatar, String(code)); _applySnapshot(id,cloud); switchAccount(id); return {ok:true,restored:true}; }
       if(createIfMissing){ var id2=createAccount(name,avatar,String(code)); switchAccount(id2); cloudSaveNow(); return {ok:true,created:true}; }
-      return {ok:false,none:true};
-    }).catch(function(){ if(createIfMissing){ var id3=createAccount(name,avatar,String(code)); switchAccount(id3); return {ok:true,created:true,offline:true}; } return {ok:false,error:true}; }); }
+      return {ok:false,none:true};                       /* le cloud a RÉPONDU : il n'y a vraiment rien */
+    }).catch(function(e){ if(createIfMissing){ var id3=createAccount(name,avatar,String(code)); switchAccount(id3); return {ok:true,created:true,offline:true}; }
+      /* Le cloud n'a PAS répondu (serveur injoignable, hors ligne, domaine
+         indisponible). Ce n'est PAS « aucune sauvegarde » : dire l'un pour
+         l'autre fait croire à l'utilisateur qu'il a perdu sa progression.
+         Kevin, 3.09.2026 : « j'ai pourtant un compte ». */
+      return {ok:false,injoignable:true,cause:String((e&&e.message)||e).slice(0,80)}; }); }
+/* Les prénoms déjà présents SUR CET APPAREIL — pour aider quand on s'est
+   trompé de prénom (le compte est enregistré sous « Kevin », pas « Kevin D. »). */
+function localNames(){ return accounts().map(function(a){ return a.name||""; }).filter(Boolean); }
 
 /* ============ Cœurs / jours / série ============ */
 function regenHearts(){ if(S.hearts>=HEART_MAX){S.heartTs=Date.now();return;}
@@ -759,7 +767,20 @@ function openLogin(){
   ok.onclick=function(){ var n=(m.body.querySelector("#lgName").value||"").trim(); var c=(m.body.querySelector("#lgCode").value||"").trim();
     if(!n||c.length<4){ toast("Entre ton prénom et ton code 🔑"); return; }
     ok.disabled=true; ok.textContent="…";
-    enterWithCredentials(n,"🦊",c,false).then(function(res){ if(res&&res.ok){ m.close(); VIEW="home"; render(); toast("👋 Bienvenue "+esc(n)+" !"); } else { ok.disabled=false; ok.textContent="Retrouver mon compte"; toast("Aucune sauvegarde pour ce prénom + code 🤔"); } }); };
+    enterWithCredentials(n,"🦊",c,false).then(function(res){
+      if(res&&res.ok){ m.close(); VIEW="home"; render(); toast("👋 Bienvenue "+esc(n)+" !"); return; }
+      ok.disabled=false; ok.textContent="Retrouver mon compte";
+      /* On dit la VÉRITÉ selon le cas — jamais « aucune sauvegarde » quand on
+         n'a simplement pas pu joindre le serveur. */
+      if(res&&res.injoignable){
+        toast("☁️ Le serveur de sauvegarde ne répond pas — ta progression n'est pas perdue, réessaie plus tard.");
+        return;
+      }
+      var noms=localNames();
+      toast(noms.length
+        ? "Aucune sauvegarde pour « "+esc(n)+" » + ce code. Sur cet appareil : "+esc(noms.join(", "))+" — c'est peut-être l'un de ceux-là 🤔"
+        : "Aucune sauvegarde pour ce prénom + code 🤔");
+    }); };
   m.body.appendChild(ok);
   setTimeout(function(){ var i=m.body.querySelector("#lgName"); if(i)i.focus(); },100);
 }
