@@ -2,7 +2,7 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.117.1";
+var APP_VER="v2.117.2";
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -36,6 +36,12 @@ function loadS(){
   S.streak=lg("streak",0); S.lastDay=lg("lastDay",null); S.freeze=lg("freeze",0);
   S.dailyXP=lg("dailyXP",0); S.dailyDay=lg("dailyDay",today()); S.goal=lg("goal",30);
   S.prog=lg("prog",{}); S.srs=lg("srs",{});
+  /* Garde : la progression du cours COURANT doit exister. Elle n'était créée qu'au
+     moment où l'on choisit le cours dans la liste (un seul endroit) — donc un compte
+     restauré depuis le cloud avec un `course` mais sans son `prog` faisait planter
+     l'accueil (« Cannot read properties of undefined »), écran blanc, plus rien.
+     Mesuré le 3.09.2026 en chargeant la vraie page avec un compte incomplet. */
+  if(S.course && !S.prog[S.course]) S.prog[S.course]={};
   S.sound=lg("sound",true); S.voice=lg("voice","nova"); S.voixChoisie=lg("voixChoisie",false);
   /* Kevin 2026-08-11 « change de voix plus humain ». « nova » n'a jamais été un choix :
      c'était le réglage d'usine. On bascule donc UNE FOIS vers une voix du nouveau moteur.
@@ -610,16 +616,31 @@ var _ttsEchecs=0, _ttsPrevenu=false;
 /* CHRONOMÈTRE (mesuré le 2026-08-11) : quand le réseau ne REFUSE pas mais TRAÎNE, la balise
    audio ne déclenche ni « joue » ni « erreur » — l'app restait donc SILENCIEUSE, sans repli et
    sans message. Au-delà de 2,5 s sans un seul son, on bascule sur la voix du téléphone. */
+/* UN SEUL repli par demande. Mesuré le 3.09.2026 en vrai navigateur : quand la
+   voix en ligne échoue, `a.onerror` ET `a.play().catch` partent TOUS LES DEUX
+   (1 ms d'écart), et le chronomètre relance encore 2,5 s plus tard. Le mot
+   était donc prononcé DEUX fois d'affilée puis UNE TROISIÈME — à l'oreille :
+   un début haché (chaque prise de parole annule la précédente) suivi d'une
+   répétition. Ce garde ne laisse passer que le premier. */
+function _repliUnique(req,fn){ var fait=false,chrono=null;
+  var r=function(){ if(fait||req!==_ttsReq)return; fait=true;
+    if(chrono){ try{ clearTimeout(chrono); }catch(_){} }
+    _voixCloudKO(); fn(); };
+  r.chrono=function(c){ chrono=c; return c; };
+  return r; }
 function _ttsChrono(a,req,repli){ var t=setTimeout(function(){
     if(req!==_ttsReq)return; if(a&&a.currentTime>0&&!a.paused)return;   // ça joue déjà : on ne touche à rien
     try{ if(a){a.onerror=null;a.pause();} }catch(_){}
-    _voixCloudKO(); repli();
+    repli();                       /* le comptage d'échec est fait par _repliUnique */
   },2500);
   try{ a.addEventListener("playing",function(){ clearTimeout(t); _ttsEchecs=0; }); }catch(_){}
   return t; }
 function _voixCloudKO(){ _ttsEchecs++;
   if(_ttsEchecs>=2 && !_ttsPrevenu){ _ttsPrevenu=true;
-    toast("🔈 La voix naturelle ne répond pas — je passe sur la voix du téléphone (moins jolie). Vérifie ta connexion, ou choisis une autre voix dans Profil → Voix."); } }
+    /* « choisis une autre voix » était un mauvais conseil : les 12 belles voix
+       passent TOUTES par le même serveur — en changer n'y change rien. Une
+       seule marche sans réseau, on la nomme. */
+    toast("🔈 La belle voix ne répond pas — je passe sur celle du téléphone. Les 12 belles voix passent par le même serveur : si ça dure, choisis « Voix du téléphone (hors-ligne) » dans Profil → Voix."); } }
 function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
   if(_isCloudVoice(vid)){
@@ -630,9 +651,10 @@ function speak(text){ if(!S.sound||!text)return; var vid=S.voice||"nova"; var my
          méconnaissable — or c'est LA référence sur laquelle Kevin calque sa prononciation.
          Les effets restent pour les phrases de Bee, jamais pour le vocabulaire. */
       var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+"&t="+encodeURIComponent(text)); _ttsAudio=a;
-      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeak(text); } };   // ne parle que si c'est TOUJOURS la dernière demande
-      _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeak(text); });
-      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeak(text); } });
+      var repli=_repliUnique(myReq,function(){ _webSpeak(text); });   // ne parle que si c'est TOUJOURS la dernière demande, et UNE seule fois
+      a.onerror=repli;
+      repli.chrono(_ttsChrono(a,myReq,repli));
+      var p=a.play(); if(p&&p.catch) p.catch(repli);
       return;
     }catch(e){ if(myReq===_ttsReq)_webSpeak(text); return; }
   }
@@ -1257,8 +1279,9 @@ function pronSay(text,slow){ if(!S.sound||!text)return; var lang=COURSES[S.cours
     a.addEventListener("playing",function(){ if(myReq!==_ttsReq)return; if(bee)bee.classList.add("talk");
       if(mouth){ _pronLip=beeLipSync(a,mouth); if(!_pronLip)mouth.classList.add("talking"); } },{once:true});
     a.onended=function(){ if(bee)bee.classList.remove("talk"); if(mouth)mouth.classList.remove("talking"); _pronLipStop(); };
-    a.onerror=function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow,mouth,bee); };
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq)_pronWeb(text,lang,slow,mouth,bee); }); return;
+    var repli=_repliUnique(myReq,function(){ _pronWeb(text,lang,slow,mouth,bee); });
+    a.onerror=repli;
+    var p=a.play(); if(p&&p.catch)p.catch(repli); return;
   }catch(e){} }
   _pronWeb(text,lang,slow,mouth,bee); }
 function _pronWeb(text,lang,slow,mouth,bee){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=slow?0.55:0.9; u.volume=1;
@@ -2273,9 +2296,10 @@ function speakLang(text,lang,vid,fem){ if(!S.sound||!text)return; vid=vid||S.voi
     if(_ttsAudio){ try{_ttsAudio.pause();}catch(_){} _ttsAudio=null; }
     var a=new Audio(SYNC_BASE+"/tts?v="+encodeURIComponent(vid)+(cfg&&cfg.gen?"&s="+cfg.gen:"")+"&t="+encodeURIComponent(text)); _ttsAudio=a; try{a.volume=1;}catch(_){}
     if(cfg&&cfg.rate!==1){ try{ a.preservesPitch=false; a.webkitPreservesPitch=false; a.playbackRate=cfg.rate; }catch(_){} }
-    a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeakLang(text,lang,fem,cfg); } };
-    _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeakLang(text,lang,fem,cfg); });
-    var p=a.play(); if(p&&p.catch)p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO(); _webSpeakLang(text,lang,fem,cfg); } }); return; }catch(e){} }
+    var repli=_repliUnique(myReq,function(){ _webSpeakLang(text,lang,fem,cfg); });
+    a.onerror=repli;
+    repli.chrono(_ttsChrono(a,myReq,repli));
+    var p=a.play(); if(p&&p.catch)p.catch(repli); return; }catch(e){} }
   _webSpeakLang(text,lang,fem,cfg); }
 function _webSpeakLang(text,lang,fem,cfg){ if(!S.sound||!text)return; try{ var u=new SpeechSynthesisUtterance(text); u.lang=lang;
   u.rate=cfg?cfg.wsRate:(fem?.95:.9);

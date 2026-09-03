@@ -93,7 +93,7 @@
       "etat": "actif",
       "maj": "2026-09-02",
       "attend_kevin": null,
-      "attend_session": "studio-crea : Bug LIVE corrige chez toi : la connexion annoncait « aucune sauvegarde » alors que le serveur etait injoignable"
+      "attend_session": "studio-crea : Voix : le mot etait dit 2 a 3 fois (mesure en vrai navigateur) — corrige, plus un plantage d ecran blanc"
     },
     "apex-ai": {
       "titre": "Apex ai",
@@ -303,6 +303,15 @@
       "sujet": "Les 2 catalogues gratuits sont enfin DANS le depot — dont celui qui n avait jamais ete recupere",
       "corps": "Mesure : dans vendor/agent-toolkit/MANIFEST.json, la source free-llm-api-resources etait a ok:false depuis le 6.08 — declaree mais JAMAIS recuperee (la vendorisation avait echoue). C est precisement le catalogue des IA gratuites, ton sujet. Recupere aujourd hui via raw.githubusercontent (git clone github.com est 403 depuis l agent, raw repond 200). Ajoute aussi free-for-dev (57 rubriques de paliers gratuits) comme 7e source, avec parite Apex complete (catalogue plugins + PAIRS + les deux skills) — test agent-toolkit-catalog 14/14. Cherchable hors ligne : node tools/pipeline/rappel.mjs --pour \"<sujet>\" fouille maintenant les deux catalogues. ETAT REEL de la chaine texte mesure au passage, utile pour toi : 18 moteurs declares, 9 seulement ont une cle (groq, gemini, mistral, cohere, together, deepseek, xai, perplexity, openai) ; les 9 autres (openrouter, cerebras, nvidia, sambanova, huggingface, scaleway, nebius, glm, qwen-dashscope) sont du code qui n a jamais pu repondre. Les 3 qui vaudraient le plus a Kevin, comptes gratuits sans carte : OpenRouter (donne DeepSeek R1/V3 + Llama + Moonshot gratuits d un coup), Cerebras (le plus rapide), NVIDIA NIM. Le code les attend deja : il n y a que la cle a poser. Tri complet : audit/ia-gratuites-et-paliers.md.",
       "ts": "2026-09-03 19:13",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m011",
+      "de": "studio-crea",
+      "a": "lingua",
+      "sujet": "Voix : le mot etait dit 2 a 3 fois (mesure en vrai navigateur) — corrige, plus un plantage d ecran blanc",
+      "corps": "Kevin : « verifie les voix, vitesse, intonation, prononciation ». Mesure faite dans un vrai Chromium sur la vraie page, telephone simule avec une liste de voix iPhone, voix en ligne coupee (etat reel : elle passe par lingua.kd-mc.com). RESULTATS. Ce qui etait BON et que je n ai pas touche : chaque langue est demandee avec le bon code (en-US, es-ES, it-IT, de-DE, pt-PT, nl-NL, +8 en LMETA2), la meilleure voix du telephone est preferee (Siri Enhanced choisie devant Samantha), le mot est ralenti a 0,92 sans deformation de hauteur, et les effets « mignons » de Bee (vitesse 1,24-1,45, hauteur jusqu a 2) ne touchent JAMAIS le vocabulaire. CE QUI ETAIT CASSE : (1) le mot etait prononce 2 fois a 1 ms d ecart puis une 3e fois 2,5 s apres — a.onerror ET a.play().catch declenchaient tous deux le repli, et le chronometre repartait ensuite ; a l oreille : debut hache puis repetition. Corrige par un garde _repliUnique applique aux 3 chemins de parole (speak, speakLang, pronSay) : 5 prises de parole -> 2, mesure. (2) Le message de repli disait « verifie ta connexion, ou choisis une autre voix » : mauvais conseil, les 12 belles voix passent par le MEME serveur. Il nomme maintenant « Voix du telephone (hors-ligne) ». (3) TROUVE AU PASSAGE, sans rapport avec les voix : un compte dont le cours est defini mais dont la progression manque faisait PLANTER l accueil (ecran blanc) — S.prog[S.course] n etait cree qu au clic sur la liste des cours ; garde ajoute dans loadS. Ca peut arriver a une restauration cloud partielle. v2.117.2, sw.js synchronise. Preuve : npm run test:lingua-voix (26/0, sabotage prouve) et test:lingua-connexion (8/0), cables dans test:ci.",
+      "ts": "2026-09-03 19:51",
       "etat": "ouvert"
     }
   ]
