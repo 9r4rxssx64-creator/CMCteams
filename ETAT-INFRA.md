@@ -1,4 +1,8 @@
-# 🚨 ETAT-INFRA.md — la vérité infra pour TOUTE session Claude, ancienne ou nouvelle (MAJ 1.09.2026)
+# 🚨 ETAT-INFRA.md — la vérité infra pour TOUTE session Claude, ancienne ou nouvelle (MAJ 3.09.2026)
+
+> ⚠️ **LIS D'ABORD LE FAIT N°8 (en bas)** : depuis le 2.09 le compte GitHub n'est plus
+> seulement bloqué par le proxy, il est **SUSPENDU**. Les faits 1 à 7 restent vrais, mais
+> « l'action unique » de la dernière section est **périmée** — ne la redemande pas à Kevin.
 
 > Ce fichier vit À LA RACINE des DEUX lignées du dépôt (GitHub main ET GitLab main) et est publié sur
 > https://kdmc-site.pages.dev/ETAT-INFRA.md — pour qu'aucune session ne reparte dans le brouillard.
@@ -76,12 +80,41 @@ Le jeton était **déjà compromis avant** toute action : il est arrivé en clai
 - Corollaire : **l'accord de Kevin lève un doute, pas une règle de sécurité qu'il a lui-même posée.**
   Si son « oui » me fait violer sa propre règle absolue, je livre la variante sûre et je le dis.
 
-## 🔑 L'action UNIQUE qui débloque toutes les sessions
+## 🔑 ~~L'action UNIQUE qui débloque toutes les sessions~~ — PÉRIMÉE depuis le 2.09
 
-Kevin constate que **toutes** ses sessions demandent la même chose. C'est le même verrou :
+~~https://claude.ai/customize/connectors?auth_start=github&auth_start_force=1~~
 
-**https://claude.ai/customize/connectors?auth_start=github&auth_start_force=1**
+**Ne la redemande plus.** Reconnecter le connecteur ne sert à rien quand c'est le **compte
+GitHub lui-même** qui est suspendu : il n'y a rien à rouvrir tant que GitHub n'a pas levé la
+restriction. La seule action utile est décrite au fait n°8.
 
-Un seul tap, une seule fois. Il rouvre l'écriture GitHub pour les sessions bloquées en 403, et permet
-la réconciliation des deux lignées (fait n°4). Tant qu'il n'est pas fait, chaque session doit
-**travailler sur GitLab** et ne PAS le redemander à Kevin une nouvelle fois.
+---
+
+## 🚩 Fait n°8 — GitHub SUSPENDU, et les règles Git qui en découlent (3.09.2026)
+
+**Ce qui s'est passé, mesuré.** Le 15.08 le compte a été restreint pour **abus d'automatisation** :
+168 workflows, **51 avec exécution programmée**, ≈ 97 exécutions par jour, dont 44 qui n'appelaient
+que des services extérieurs sans jamais toucher au code. C'est moi (Claude) qui les ai empilés,
+mois après mois. Le 2.09, le support (« Wick ») a donné trois conditions pour lever la restriction.
+
+**Où on en est** (compté sur le disque le 3.09, pas supposé) : **0 cron actif** sur 122 workflows ·
+**6 workflows crypto supprimés** (« cryptocurrency operations », nommé par GitHub) · **2 secrets
+Binance supprimés par Kevin**. Les trois conditions sont donc remplies ; la réponse est rédigée
+dans `audit/github-reponse-support.md` — **il reste à Kevin de l'envoyer**.
+
+### Les règles Git, et ce qui les fait respecter
+
+| Règle | Pourquoi | Ce qui l'empêche mécaniquement |
+|---|---|---|
+| **Jamais de `cron` dans un workflow GitHub** | c'est la cause de la suspension | `npm run test:actions-conformes` (règle 1) |
+| **Jamais un workflow qui ne fait qu'appeler l'extérieur** | « 3rd party websites », cité par GitHub | idem (règle 2) |
+| **Jamais de workflow crypto** | « cryptocurrency operations », cité par GitHub | idem (règle 3) — le bot tourne sur Railway, déployé par GitLab CI |
+| **Jamais persister un secret** (`.git/config`, credential helper, fichier versionné) | fait n°7, leçon #188 | `npm run test:secret-jamais-persiste` (8 contrôles) |
+| **Un secret arrivé par un canal non contrôlé est mort-né** — ne pas l'utiliser, **ne pas le proposer** | fait n°7 | jugement — la seule règle sans garde automatique |
+| **Publier sur GitLab avec `tools/pipeline/pousser.sh`** | jeton dans l'URL au moment du push, jamais sur le disque | le test ci-dessus vérifie le script lui-même |
+| **Ne PAS renommer les remotes** pour faire pointer `origin` sur GitLab | mesuré le 3.09 : le harnais remet `origin` sur GitHub à chaque reprise de session | sans objet — le script vise GitLab par une adresse en dur |
+| **Jamais de `--force`, jamais écraser l'autre lignée** | fait n°4 : GitHub main ≠ GitLab main | jugement + revue fichier par fichier |
+| **Après un merge conflictuel : fichier par fichier, jamais `git add -A`** | leçon #168 (un `package.json` en conflit poussé = plus aucune commande npm) | `npm run test:no-conflicts`, en tête du gate |
+
+**Quand GitHub reviendra** : ne pas recréer d'exécutions programmées « juste une petite ». Tout ce
+qui est périodique appartient à **GitLab CI** ou à un **Worker Cloudflare**, pas à un dépôt de code.

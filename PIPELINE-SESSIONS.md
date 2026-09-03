@@ -65,17 +65,16 @@ branche de « cuisine » → **FAIL** ; restauré → 8/0.
 
 ## Pousser sur GitLab sans se faire réclamer un push déjà fait
 
-GitHub est suspendu : **`origin` doit désigner GitLab**, pas GitHub. Sinon le contrôle de
-fin de tour compare ton travail à un dépôt figé et réclame en boucle un push **déjà fait**.
-Une fois par session, dans ton conteneur :
+GitHub est suspendu, mais `origin` continue de le désigner : le contrôle de fin de tour
+compare alors ton travail à un dépôt **figé** et réclame en boucle un push **déjà fait**.
 
-```bash
-git remote rename origin github-suspendu   # garde l'adresse GitHub, libère le nom
-git remote rename gitlab origin            # origin = là où on publie vraiment
-```
+⚠️ **Renommer les remotes ne sert à rien** — mesuré le 3.09 : le harnais remet `origin` sur
+GitHub à chaque reprise de session (`.git/config` réécrit). N'essaie pas, ça ne tient pas.
 
-Ensuite, pousse **toujours** avec le script — jamais avec un `git remote add` contenant le
-jeton (un jeton ne s'enregistre pas sur le disque, `ETAT-INFRA.md` fait n°7) :
+Ce qui tient, c'est **le script** : il vise GitLab par une adresse écrite en dur (il se moque
+de ce que dit `origin`) et remet à jour le repère local `origin/<ta branche>` — le seul
+chose que lit le contrôle de fin de tour. Jamais de `git remote add` contenant le jeton
+(un jeton ne s'enregistre pas sur le disque, `ETAT-INFRA.md` fait n°7) :
 
 ```bash
 GITLAB_TOKEN=glpat-… ./tools/pipeline/pousser.sh          # ta branche
@@ -83,9 +82,24 @@ GITLAB_TOKEN=glpat-… ./tools/pipeline/pousser.sh main     # vers main
 ```
 
 Il écrit le jeton dans l'URL **au moment du push seulement**, masque toute sortie, et
-remet à jour le repère local `origin/<ta branche>` **après** un push accepté — c'est ce
-repère que lit le contrôle de fin de tour. Si le push échoue, le repère n'est pas touché :
-il reste honnête.
+remet à jour le repère local `origin/<ta branche>` **après** un push accepté. Si le push
+échoue, le repère n'est pas touché : il reste honnête.
+
+## Se rappeler tout, sans tout relire
+
+138 règles, 174 leçons, 93 skills, 129 scripts, 4 hooks, 17 sessions : personne ne relit
+ça à chaque fois — c'est comme ça qu'on refait une erreur déjà écrite.
+
+```bash
+node tools/pipeline/rappel.mjs                  # le rappel (compact)
+node tools/pipeline/rappel.mjs --pour "departs" # tout ce que j'ai déjà écrit sur un sujet
+node tools/pipeline/rappel.mjs --tout           # toutes les règles et leçons
+```
+
+Ce qui est **actionnable** (ce que Kevin attend, le courrier des autres sessions, l'état
+git) est montré **en entier à chaque fois**. Ce qui est **énorme** (règles, leçons) tourne :
+quelques lignes différentes à chaque rappel, si bien que tout finit par repasser sans
+coûter un roman. Chaque chiffre est compté sur le disque à l'instant, jamais recopié.
 
 ## Les règles de voisinage entre sessions
 
