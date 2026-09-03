@@ -170,7 +170,18 @@ Corrigé dans le même commit : **46 workflows déplacés** vers `.github/workfl
 
 ### Comment on publie maintenant
 
+**Les deux chemins marchent** (mesuré le 3.09 à 23h30) :
+
 ```bash
-git push origin HEAD:refs/heads/<ta-branche>     # GitHub, sans aucun jeton
+git push origin HEAD:refs/heads/<ta-branche>          # GitHub — AUCUN jeton à fournir
+GITLAB_TOKEN=… ./tools/pipeline/pousser.sh            # GitLab — publie le site
 ```
-`tools/pipeline/pousser.sh` (GitLab) ne sert plus tant que Kevin n'a pas créé un jeton neuf.
+
+Kevin a créé le 3.09 un jeton GitLab neuf **`Claude-publication`** : portée **`write_repository`
++ `read_api` uniquement** (plus jamais `api`, la portée qui rendait l'ancien dangereux), valable
+**jusqu'au 3.09.2027**. Il n'est enregistré **nulle part** (garde `test:secret-jamais-persiste`) :
+chaque session le redemande une fois à Kevin, qui le garde dans ses notes.
+
+**Attention en publiant sur GitLab** : les deux lignées n'ont pas d'ancêtre commun visible.
+Ne JAMAIS forcer un `push` de la lignée GitHub vers GitLab (ni l'inverse) — on y publie
+en **avance rapide** (les commits de la lignée GitLab) ou par **cherry-pick**, jamais en écrasant.
