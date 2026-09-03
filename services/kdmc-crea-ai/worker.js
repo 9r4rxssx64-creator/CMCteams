@@ -364,12 +364,31 @@ async function editKeepFace(env, prompt, image, opts) {
 /* Plusieurs modèles candidats, essayés dans l'ordre. Un seul modèle figé =
    une dépréciation (vécu : llama-3.1-8b retiré le 2026-05-30) casse la feature
    du jour au lendemain, en silence. */
+/* Qwen GRATUIT — Kevin 2026-09-03 « intègre l'IA Qwen gratuite ».
+   Le Qwen déjà déclaré dans TEXT_PROVIDERS exige une clé DASHSCOPE (compte
+   Alibaba que Kevin n'a pas) : il n'a donc JAMAIS pu répondre. Ici, Qwen passe
+   par Workers AI — le binding `env.AI` est déjà actif sur son compte pour
+   l'image et la voix : ZÉRO clé, ZÉRO nouveau compte, palier gratuit quotidien.
+   Liste de CANDIDATS, pas de promesses : un identifiant inconnu lève une erreur
+   attrapée et on passe au suivant ; /health et la réponse disent lequel a
+   RÉELLEMENT répondu (`cloudflare:@cf/qwen/…`). C'est la seule façon honnête
+   de choisir sans pouvoir interroger le catalogue Cloudflare depuis ici. */
+const CF_QWEN_MODELS = [
+  '@cf/qwen/qwen2.5-coder-32b-instruct',
+  '@cf/qwen/qwq-32b',
+  '@cf/qwen/qwen1.5-14b-chat-awq',
+  '@cf/qwen/qwen1.5-7b-chat-awq',
+  '@cf/qwen/qwen1.5-1.8b-chat',
+];
 const CF_TXT_MODELS = [
   '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   '@cf/meta/llama-4-scout-17b-16e-instruct',
   '@cf/mistralai/mistral-small-3.1-24b-instruct',
   '@cf/google/gemma-3-12b-it',
   '@cf/meta/llama-3.1-8b-instruct-fast',
+  /* ajoutés APRÈS les moteurs éprouvés : on n'enlève aucun passe-droit à ce
+     qui marchait déjà (règle « nouveaux moteurs en fin de chaîne ») */
+  ...CF_QWEN_MODELS,
 ];
 const CF_TTS_TRIES = [
   { model: '@cf/myshell-ai/melotts', input: (t, l) => ({ prompt: t, lang: l || 'fr' }) },
@@ -414,7 +433,9 @@ async function pollinationsImage(prompt, ratio) {
   let s = ''; for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
   return { mime: 'image/jpeg', b64: btoa(s), provider: 'pollinations(sans clé)' };
 }
-async function cfText(env, prompt, wantJson) {
+/* `famille` (optionnel) restreint l'essai à une famille de modèles, ex 'qwen'.
+   Retourne { text, model } : on sait TOUJOURS qui a répondu, pas juste « cloudflare ». */
+async function cfText(env, prompt, wantJson, famille) {
   if (!env.AI) throw new Error('cf_no_binding');
   const input = {
     messages: [
@@ -426,11 +447,15 @@ async function cfText(env, prompt, wantJson) {
     max_tokens: wantJson ? 900 : 700,
   };
   const errs = [];
-  for (const model of CF_TXT_MODELS) {
+  const liste = famille
+    ? CF_TXT_MODELS.filter((m) => m.indexOf('/' + famille + '/') >= 0)
+    : CF_TXT_MODELS;
+  if (!liste.length) throw new Error('cf_aucun_modele_' + famille);
+  for (const model of liste) {
     try {
       const r = await env.AI.run(model, input);
       const t = String((r && (r.response || (r.result && r.result.response) || r.text)) || '').trim();
-      if (t) return t;
+      if (t) return { text: t, model };
       errs.push(model.split('/').pop() + ':vide');
     } catch (e) { errs.push(model.split('/').pop() + ':' + String((e && e.message) || e).slice(0, 60)); }
   }
@@ -526,14 +551,23 @@ function anyEngine(env) {
 function enginesAvailable(env) {
   const out = TEXT_PROVIDERS.filter((p) => !!env[p.key]).map((p) => p.id);
   if (env.GOOGLE_API_KEY && out.indexOf('gemini') < 0) out.push('gemini');
-  if (env.AI) out.push('cloudflare');
+  if (env.AI) { out.push('cloudflare'); out.push('qwen-cloudflare(sans clé)'); }
   if (env.HF_TOKEN || env.HUGGINGFACE_API_KEY) { if (out.indexOf('huggingface') < 0) out.push('huggingface'); }
   out.push('pollinations(sans clé)');       /* toujours là : aucune clé requise */
   if (env.REPLICATE_API_TOKEN) out.push('replicate(payant)');
   return out;
 }
-async function anyText(env, prompt, wantJson) {
+async function anyText(env, prompt, wantJson, prefer) {
   const errs = [];
+  /* Kevin peut demander explicitement un moteur gratuit sans clé (ex 'qwen') :
+     on l'essaie EN PREMIER, et s'il ne répond pas on retombe sur la chaîne
+     normale — demander Qwen ne doit jamais pouvoir casser une génération. */
+  if (prefer && env.AI) {
+    try {
+      const c = await cfText(env, prompt, wantJson, String(prefer).toLowerCase());
+      if (c && c.text) return { text: c.text, provider: 'cloudflare:' + c.model, tried: errs };
+    } catch (e) { errs.push(prefer + '_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
+  }
   for (const p of TEXT_PROVIDERS) {
     const key = env[p.key] || (p.id === 'gemini' ? env.GOOGLE_API_KEY : null);
     if (!key) continue;
@@ -544,8 +578,10 @@ async function anyText(env, prompt, wantJson) {
       if (t) return { text: t, provider: p.id, tried: errs };
     } catch (e) { errs.push(p.id + '_' + String((e && e.message) || e).slice(0, 70)); }
   }
-  try { return { text: await cfText(env, prompt, wantJson), provider: 'cloudflare', tried: errs }; }
-  catch (e) { errs.push('cloudflare_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
+  try {
+    const c = await cfText(env, prompt, wantJson);
+    return { text: c.text, provider: 'cloudflare:' + c.model, tried: errs };
+  } catch (e) { errs.push('cloudflare_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
   throw new Error(errs.length ? errs.join(' | ') : 'aucune_ia_configuree');
 }
 
@@ -902,6 +938,12 @@ export default {
     let body = null;
     try { body = await req.json(); } catch (_) { return json({ error: 'bad_json' }, h, 400); }
     const image = body && body.image;
+    /* Moteur texte demandé explicitement (ex { moteur:'qwen' }) : essayé en
+       premier, jamais imposé — s'il ne répond pas, la chaîne normale prend le
+       relais. Liste blanche : on ne laisse pas le client piloter un nom libre. */
+    const MOTEURS_AU_CHOIX = ['qwen'];
+    const moteur = (body && typeof body.moteur === 'string'
+      && MOTEURS_AU_CHOIX.includes(body.moteur.toLowerCase())) ? body.moteur.toLowerCase() : null;
     const badImage = (v) => (!v || typeof v !== 'string' || v.length > 12 * 1024 * 1024);
 
     // --- ✨ MAGIE : transformation 1-clic de la photo (figurine, anime, scène…) ---
@@ -1025,7 +1067,7 @@ export default {
       };
       /* TOUTES les IA gratuites sont essayées : une panne ou un quota ne coupe plus la musique. */
       try {
-        const r = await anyText(env, ask, true);
+        const r = await anyText(env, ask, true, moteur);
         const score = parseScore(r.text);
         if (score) return json({ score, style, provider: r.provider, fallback: (r.tried || [])[0] || '' }, h);
         return json({ error: 'bad_score_' + r.provider + '_' + String(r.text).slice(0, 90) }, h, 502);
@@ -1050,7 +1092,7 @@ export default {
           : ('Écris une chanson originale en FRANÇAIS, style ' + style + ', sur : ' + theme
              + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes accrocheuses et répétables>\nCOUPLET 2:\n<4 lignes>\nRefrain court, rimes simples, facile à chanter. Pas d\'explications.'));
       try {
-        const r = await anyText(env, ask, false);
+        const r = await anyText(env, ask, false, moteur);
         const t = /TITRE\s*:\s*(.+)/i.exec(r.text);
         return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: r.text, style, mode,
           provider: r.provider, fallback: (r.tried || [])[0] || '' }, h);
