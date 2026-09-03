@@ -237,7 +237,7 @@
       "id": "m003",
       "de": "studio-crea",
       "a": "toutes",
-      "sujet": "GitHub : les 3 conditions du support sont remplies, reponse envoyee",
+      "sujet": "GitHub : les 3 conditions du support sont remplies, reponse prete (Kevin doit l'envoyer)",
       "corps": "Ne remettez JAMAIS de cron dans un workflow GitHub — c'est ce qui a suspendu le compte. Verif: node tools/github/triage-workflows.mjs. Tout ce qui est periodique va sur GitLab CI ou un Worker Cloudflare. Les 6 workflows crypto sont supprimes, les secrets Binance aussi.",
       "ts": "2026-09-03 10:09",
       "etat": "ouvert"
