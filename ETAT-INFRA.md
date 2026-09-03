@@ -30,7 +30,7 @@
    `tar czf /tmp/x.tgz <dossier>` → **Kevin transporte le fichier** d'une conversation à l'autre.
    Une session qui refuse une consigne inter-session contenant un jeton a **RAISON** — c'est le
    réflexe attendu, on ne la contourne pas, on passe par l'archive.
-6. **Sécurité en cours** : le jeton GitLab a circulé en clair → Kevin doit le faire tourner ;
+6. **Sécurité** : ✅ **RÉGLÉ le 3.09.2026** — le jeton GitLab qui avait circulé en clair (« Claude-total », portée `api` COMPLÈTE) a été **révoqué par Kevin**, vérifié mort. Le jeton de travail (« Claude », lire+écrire le code seulement) reste actif ;
    le compte Cloudflare « 9r4 » (qui tient kd-mc.com) reste verrouillé derrière le login GitHub →
    le rétablissement complet de GitHub est LA clé qui rouvre tout.
 
@@ -67,7 +67,9 @@ autre session ne le refasse :
 **Exposition réelle mesurée** (à dire ainsi : ni minimisée, ni dramatisée) : jeton dans **0 fichier
 versionné**, **0 commit**, **rien de publié** — les `glpat-` du dépôt sont les **motifs de détection**
 du coffre (`glpat-[A-Za-z0-9_-]`), pas un secret. Retiré de `.git/config` dès le signalement.
-Le jeton était **déjà compromis avant** toute action : il est arrivé en clair. Il reste à faire tourner.
+Le jeton était **déjà compromis avant** toute action : il est arrivé en clair.
+**Révoqué le 3.09.2026 à 22h33** par Kevin — vérifié mort dans la foulée (il ne répond plus),
+pendant que le jeton de travail, à portée minimale, continue de publier. Point de sécurité **fermé**.
 
 ### Les deux règles qui en découlent — pour TOUTE session
 
