@@ -125,3 +125,52 @@ dont le `package.json` est celui du site), les mêmes gardes s'appellent directe
 
 **Quand GitHub reviendra** : ne pas recréer d'exécutions programmées « juste une petite ». Tout ce
 qui est périodique appartient à **GitLab CI** ou à un **Worker Cloudflare**, pas à un dépôt de code.
+
+---
+
+## 🚩 Fait n°9 — GitHub est REVENU pour le code, et les deux lignées sont RÉUNIES (3.09.2026, 23h)
+
+**Mesuré ce soir depuis un conteneur de session, pas supposé** :
+
+| Ce qui a été testé | Résultat |
+|---|---|
+| `git fetch` / `git push` vers GitHub | ✅ **marche** (le harnais fournit les identifiants, **aucun jeton à coller**) |
+| `api.github.com` | ✅ **200** (c'était 403 le 1.09 — le proxy s'est rouvert) |
+| Dernière exécution d'un workflow GitHub | ⛔ **14.08.2026 21h12**, plus rien depuis |
+| Les deux jetons GitLab | ⛔ **révoqués tous les deux** (401) — GitLab n'est plus publiable d'ici |
+
+**Conclusion, sans extrapoler** : l'accès au **code** est rouvert ; l'**automatisation**
+reste sanctionnée. La réponse au support (`audit/github-reponse-support.md`) reste
+**à envoyer par Kevin** — c'est elle qui rouvre les workflows, Pages, et le compte
+Cloudflare qui tient `kd-mc.com`.
+
+### Ce qui a été fait dans la foulée — la réunion des deux lignées
+
+Le fait n°4 (« DEUX lignées divergent, ne jamais écraser l'autre ») est **résolu** sur la
+branche `claude/capcut-mini-versions-66tfum` : commit **`acd9918b`**. Méthode, pour qu'elle
+serve de modèle : **aucun `git merge` à l'aveugle**. Chaque fichier a été **classé** avant
+d'être repris (version de base ⇄ version GitHub ⇄ version GitLab) :
+
+- *GitHub était en retard* → on reprend la version GitLab (docs, `package.json` vérifié
+  **script par script** comme sur-ensemble strict, `services/kdmc-router`, 33 fichiers absents) ;
+- *les deux avaient travaillé* → **fusion à trois points** (`services/kdmc-crea-ai/worker.js` :
+  figurines + édition de secours **et** Qwen gratuit, 0 conflit, tests 12/0 et 14/0) ;
+- *fichier intact chez eux* → repris sans risque.
+
+### 🔴 Ce que personne n'avait vu : GitHub n'était PAS conforme
+
+Le ménage anti-suspension (0 cron, workflows crypto retirés) n'existait **que sur GitLab**.
+Sur GitHub — la seule lignée que GitHub peut vérifier — il restait **49 workflows programmés,
+42 purement externes et 1 crypto**. Envoyer la réponse au support dans cet état, c'était
+affirmer une chose **contredite par le dépôt lui-même**.
+
+Corrigé dans le même commit : **46 workflows déplacés** vers `.github/workflows-desactives/`
+(avec `POURQUOI.md`), **6 workflows crypto supprimés**. Mesure après : **122 workflows actifs,
+0 cron**, garde `test:actions-conformes` **6/0**.
+
+### Comment on publie maintenant
+
+```bash
+git push origin HEAD:refs/heads/<ta-branche>     # GitHub, sans aucun jeton
+```
+`tools/pipeline/pousser.sh` (GitLab) ne sert plus tant que Kevin n'a pas créé un jeton neuf.
