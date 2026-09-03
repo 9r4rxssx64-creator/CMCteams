@@ -15,7 +15,7 @@
       "maj": "2026-09-03",
       "attend_kevin": "envoyer la reponse a GitHub Support (Wick) — secrets deja supprimes le 2.09",
       "attend_session": null,
-      "note": "Regles Git relues et converties en gardes : test:secret-jamais-persiste (nouveau, 8 controles, 2 sabotages prouves) + regle 3 anti-crypto dans test:actions-conformes. ETAT-INFRA fait n8 (GitHub suspendu, action periemee corrigee, tableau des 9 regles Git). Rappel permanent tools/pipeline/rappel.mjs cable au demarrage de session."
+      "note": "Jeton GitLab compromis « Claude-total » (portee api complete) REVOQUE par Kevin le 3.09 a 22h33 — verifie mort. Le jeton « Claude » (read+write repository) reste actif et sert a publier."
     },
     "cmcteams": {
       "titre": "CMCteams",
