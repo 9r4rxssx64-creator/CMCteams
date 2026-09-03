@@ -200,7 +200,7 @@
       "etat": "actif",
       "maj": "2026-09-02",
       "attend_kevin": null,
-      "attend_session": "studio-crea : Fiche « IA a activer plus tard » ecrite — 3 secrets, noms exacts, rien a coder"
+      "attend_session": "studio-crea : Secrets VUS en vrai : Cerebras existe deja, il ne reste que 2 comptes a creer"
     },
     "reverse-consolidation": {
       "titre": "Reverse-engineering et consolidation d'app",
@@ -321,6 +321,15 @@
       "sujet": "Fiche « IA a activer plus tard » ecrite — 3 secrets, noms exacts, rien a coder",
       "corps": "Kevin : « note les IA pour plus tard ». Fiche dans audit/ia-gratuites-et-paliers.md, section A FAIRE PLUS TARD : OPENROUTER_API_KEY, CEREBRAS_API_KEY, NVIDIA_API_KEY — noms exacts, ou creer le compte, ou poser le secret. Verifie ligne par ligne : le deploiement reprend les 18 cles lues par le code (boucle for N + wrangler secret put), aucune cle orpheline, donc poser le secret SUFFIT. PIEGE NOTE : avant de faire creer un compte, verifier que la cle n existe pas deja — la liste des 40 secrets de CLAUDE.md ne contient pas CEREBRAS_API_KEY mais une note de memoire dit le contraire ; je ne peux pas trancher depuis l agent. Et DASHSCOPE_API_KEY est devenue inutile : Qwen passe par Cloudflare sans cle.",
       "ts": "2026-09-03 21:52",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m013",
+      "de": "studio-crea",
+      "a": "free-apis",
+      "sujet": "Secrets VUS en vrai : Cerebras existe deja, il ne reste que 2 comptes a creer",
+      "corps": "Kevin a envoye les captures de ses pages de secrets GitHub (3.09, 00h58) : 50 secrets. CEREBRAS_API_KEY EXISTE (posee il y a 2 mois) — la liste de CLAUDE.md etait perimee, la note de memoire avait raison. Donc AUCUN compte Cerebras a creer, et le bilan reel de la chaine texte passe a 10 moteurs sur 18 avec leur cle : groq, gemini, mistral, cohere, together, deepseek, xai, perplexity, cerebras, openai — plus Cloudflare Workers AI sans cle (Qwen inclus depuis aujourd hui). Restent absents : OPENROUTER_API_KEY et NVIDIA_API_KEY (les 2 seuls comptes a creer), plus SAMBANOVA, HF_TOKEN, SCALEWAY, NEBIUS, GLM. DASHSCOPE est devenue inutile. Confirme aussi : les 2 secrets Binance sont bien supprimes, la reponse au support GitHub est exacte sur son point 2. Nouveaux secrets non documentes ajoutes a CLAUDE.md : AISSTREAM_KEY, FIRMS_MAP_KEY, GIPHY_KEY, APEX_GITHUB_PAT, APEX_AUTO_PATCH, APPLE_TEAM_ID, APPSTORE_API_ISSUER, APPSTORE_API_KEY, VERCEL_TOKEN (ce dernier ouvre le Vercel AI Gateway, 5 dollars/mois offerts, non branche).",
+      "ts": "2026-09-03 23:01",
       "etat": "ouvert"
     }
   ]

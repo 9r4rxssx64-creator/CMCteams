@@ -16,26 +16,28 @@
 > Noté le 3.09.2026 à la demande de Kevin (« note les IA pour plus tard »).
 > Tout est prêt côté code : **il n'y a QUE la clé à poser**, rien à développer.
 
-### Avant de créer quoi que ce soit : vérifier ce qui existe déjà
+### ✅ Vérifié le 3.09 sur tes vraies pages de secrets (captures de Kevin, 00h58)
 
-⚠️ **Deux sources se contredisent** et je ne peux pas trancher d'ici (je n'ai pas accès à
-la liste des secrets GitHub) :
-- la liste des 40 secrets de `CLAUDE.md` (vérifiée par Kevin le 8.06) **ne contient pas**
-  `CEREBRAS_API_KEY` ;
-- une note de mémoire dit *« Cerebras : clé déjà en secrets et poussée au proxy »*.
+**50 secrets présents.** La contradiction que j'avais signalée est tranchée :
 
-→ **Premier geste, avant tout compte** : ouvrir
-[la page des secrets](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions)
-et regarder si le nom y est déjà. Créer un compte pour une clé qu'on a déjà, c'est du
-travail pour rien.
+- **`CEREBRAS_API_KEY` EXISTE déjà** (posée il y a 2 mois). La liste de `CLAUDE.md`
+  était périmée, la note de mémoire avait raison. → **Aucun compte Cerebras à créer.**
+  Elle entrera en service toute seule au prochain déploiement.
+- **`BINANCE_*` : bien supprimées.** La réponse au support GitHub est donc exacte sur
+  son point 2 — vérifié, pas supposé.
 
-### Les trois qui rapportent le plus (comptes gratuits, sans carte)
+**Bilan réel : 10 moteurs de texte sur 18 ont leur clé** — groq, gemini, mistral, cohere,
+together, deepseek, xai, perplexity, **cerebras**, openai (payant, en dernier).
+
+### Il ne reste que DEUX comptes à créer
 
 | Nom du secret — **exact, à la lettre** | Où créer le compte | Ce que ça apporte |
 |---|---|---|
 | `OPENROUTER_API_KEY` | [openrouter.ai](https://openrouter.ai/models?q=free) | DeepSeek R1 + V3, Llama, Moonshot — plusieurs gros modèles avec UNE clé |
-| `CEREBRAS_API_KEY` | [cloud.cerebras.ai](https://cloud.cerebras.ai/) | le plus rapide de tous |
 | `NVIDIA_API_KEY` | [build.nvidia.com](https://build.nvidia.com/explore/discover) | beaucoup de modèles, palier large |
+
+*(Piste bonus, sans nouveau compte : tu as déjà `VERCEL_TOKEN` — le Vercel AI Gateway
+offre 5 $/mois. Non branché aujourd'hui, à évaluer.)*
 
 **Où les poser** : GitHub → dépôt → Settings → Secrets and variables → **Actions** →
 *New repository secret*. Le nom doit être **exact** : une faute et la clé ne sert à rien,
@@ -64,9 +66,9 @@ par Cloudflare sans aucune clé depuis le 3.09).
 
 ## 1. Les IA gratuites — l'état RÉEL de tes moteurs
 
-Ton worker déclare **18 moteurs de texte**. Mesuré ligne par ligne : **9 ont une clé,
-9 n'en ont pas** — ces neuf-là sont écrits dans le code mais **n'ont jamais pu répondre
-une seule fois**. C'est le piège « déclaré ≠ branché ».
+Ton worker déclare **18 moteurs de texte**. Confronté à tes vraies pages de secrets
+(3.09, 00h58) : **10 ont leur clé, 8 n'en ont pas** — ces huit-là sont écrits dans le code
+mais **n'ont jamais pu répondre une seule fois**. C'est le piège « déclaré ≠ branché ».
 
 ### ✅ Ce qui marche vraiment aujourd'hui
 
@@ -78,6 +80,7 @@ une seule fois**. C'est le piège « déclaré ≠ branché ».
 | **Mistral** | bon en français | palier Experiment |
 | **Cohere** | solide en résumé/classement | limité mais réel |
 | **Together** | Llama 3.3 70B gratuit | modèle `…-Free` |
+| **Cerebras** | le plus **rapide** de tous — clé posée il y a 2 mois, jamais mise en service | généreux |
 | **DeepSeek** · **xAI** · **Perplexity** | payants, en renfort | — |
 | *OpenAI* | **filet payant, en tout dernier** | — |
 
@@ -85,17 +88,15 @@ Depuis aujourd'hui, **Qwen s'ajoute à cette liste sans aucune clé**, par Cloud
 
 ### 💤 Ce qui dort dans ton code (déclaré, sans clé)
 
-`openrouter` · `cerebras` · `nvidia` · `sambanova` · `huggingface` · `scaleway` ·
-`nebius` · `glm` · `qwen (Alibaba)`
+`openrouter` · `nvidia` · `sambanova` · `huggingface` · `scaleway` · `nebius` · `glm` ·
+`qwen (Alibaba)` — **plus `cerebras`, qui a sa clé et n'attend que le déploiement.**
 
 Ce ne sont **pas des bugs** : le code les ignore proprement. Mais tant qu'ils n'ont pas
-de clé, ils ne servent à rien. **Trois d'entre eux valent vraiment le clic** (compte
-gratuit, sans carte bancaire) :
+de clé, ils ne servent à rien. **Deux valent vraiment le clic** (compte gratuit, sans carte) :
 
 | À réveiller | Pourquoi celui-là | Où |
 |---|---|---|
 | **OpenRouter** ⭐ | donne accès **gratuitement** à DeepSeek R1, DeepSeek V3, Llama, Moonshot — plusieurs gros modèles d'un coup, avec une seule clé | [openrouter.ai](https://openrouter.ai/models?q=free) |
-| **Cerebras** | le plus **rapide** de tous (plus que Groq) sur Llama 70B | [cloud.cerebras.ai](https://cloud.cerebras.ai/) |
 | **NVIDIA NIM** | beaucoup de modèles, palier gratuit large | [build.nvidia.com](https://build.nvidia.com/explore/discover) |
 
 Le code les attend déjà : tu poses la clé, ils entrent dans la chaîne. Rien à coder.
@@ -103,7 +104,8 @@ Le code les attend déjà : tu poses la clé, ils entrent dans la chaîne. Rien 
 ### 🚫 Gratuits mais **inaccessibles pour toi en ce moment**
 
 - **GitHub Models** — gratuit, mais exige un compte GitHub… suspendu. À revoir après.
-- **Vercel AI Gateway** — 5 $/mois offerts, exige un compte Vercel.
+- **Vercel AI Gateway** — 5 $/mois offerts. Tu as **déjà** `VERCEL_TOKEN` en secret : c'est
+  donc une piste réelle, simplement pas encore branchée dans la chaîne. 🟡 à évaluer.
 - **Gonka Broker** — 1 M de jetons gratuits/mois, compatible OpenAI. Jamais testé : 🔴 à essayer.
 
 ---

@@ -1139,6 +1139,22 @@ YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN.
 **E-commerce / Shops** :
 **PRINTIFY_API_KEY** (print-on-demand, projet Chez Lolo, ajouté 2026-06).
 
+**MISE À JOUR 3.09.2026 — liste VUE sur les vraies pages GitHub (captures Kevin, 00h58) :
+50 secrets.** Dix n'étaient pas documentés ici et l'un d'eux change une décision :
+
+- **`CEREBRAS_API_KEY`** ⚠️ **EXISTE** (posée il y a 2 mois) — je l'ai crue absente et j'allais
+  faire créer un compte pour rien. Vérifier la page AVANT de faire créer un compte à Kevin.
+- `AISSTREAM_KEY` · `FIRMS_MAP_KEY` · `GIPHY_KEY` (données live : AIS, feux, GIF)
+- `APEX_GITHUB_PAT` · `APEX_AUTO_PATCH` (Apex)
+- `APPLE_TEAM_ID` · `APPSTORE_API_ISSUER` · `APPSTORE_API_KEY` (App Store)
+- `VERCEL_TOKEN` (déploiement Vercel — ouvre aussi le Vercel AI Gateway, 5 $/mois offerts)
+
+**Confirmé supprimés** : `BINANCE_TESTNET_API_KEY` et `BINANCE_TESTNET_API_SECRET` (crypto,
+retirés le 2.09 pour la levée de la suspension GitHub).
+**Toujours ABSENTS** (moteurs déclarés dans le code mais sans clé) : `OPENROUTER_API_KEY`,
+`NVIDIA_API_KEY`, `SAMBANOVA_API_KEY`, `HF_TOKEN`, `SCALEWAY_API_KEY`, `NEBIUS_API_KEY`,
+`GLM_API_KEY`, `DASHSCOPE_API_KEY` (ce dernier devenu inutile : Qwen passe par Cloudflare).
+
 **Recommandation** : utiliser `grep -oE 'secrets\.[A-Z_]+' .github/workflows/*.yml | sort -u`
 pour avoir la liste exhaustive consommée par les workflows.
 
