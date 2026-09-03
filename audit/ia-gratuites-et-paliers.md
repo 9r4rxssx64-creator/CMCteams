@@ -11,6 +11,57 @@
 
 ---
 
+## ⏭ À FAIRE PLUS TARD — la fiche, pour ne rien chercher le jour venu
+
+> Noté le 3.09.2026 à la demande de Kevin (« note les IA pour plus tard »).
+> Tout est prêt côté code : **il n'y a QUE la clé à poser**, rien à développer.
+
+### Avant de créer quoi que ce soit : vérifier ce qui existe déjà
+
+⚠️ **Deux sources se contredisent** et je ne peux pas trancher d'ici (je n'ai pas accès à
+la liste des secrets GitHub) :
+- la liste des 40 secrets de `CLAUDE.md` (vérifiée par Kevin le 8.06) **ne contient pas**
+  `CEREBRAS_API_KEY` ;
+- une note de mémoire dit *« Cerebras : clé déjà en secrets et poussée au proxy »*.
+
+→ **Premier geste, avant tout compte** : ouvrir
+[la page des secrets](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions)
+et regarder si le nom y est déjà. Créer un compte pour une clé qu'on a déjà, c'est du
+travail pour rien.
+
+### Les trois qui rapportent le plus (comptes gratuits, sans carte)
+
+| Nom du secret — **exact, à la lettre** | Où créer le compte | Ce que ça apporte |
+|---|---|---|
+| `OPENROUTER_API_KEY` | [openrouter.ai](https://openrouter.ai/models?q=free) | DeepSeek R1 + V3, Llama, Moonshot — plusieurs gros modèles avec UNE clé |
+| `CEREBRAS_API_KEY` | [cloud.cerebras.ai](https://cloud.cerebras.ai/) | le plus rapide de tous |
+| `NVIDIA_API_KEY` | [build.nvidia.com](https://build.nvidia.com/explore/discover) | beaucoup de modèles, palier large |
+
+**Où les poser** : GitHub → dépôt → Settings → Secrets and variables → **Actions** →
+*New repository secret*. Le nom doit être **exact** : une faute et la clé ne sert à rien,
+sans aucun message d'erreur.
+
+### Ce qui se passe ensuite — automatiquement
+
+Vérifié le 3.09, ligne par ligne : le déploiement du worker reprend **les 18 clés** que lit
+le code (une boucle `for N in …` + `wrangler secret put`). **Aucune clé orpheline.** Donc :
+poser le secret suffit, la clé arrive dans l'IA au déploiement suivant, que **je** lance.
+
+### Ce qui bloque aujourd'hui
+
+Le déploiement passe par GitHub Actions (suspendu) et le worker vit sur le compte
+Cloudflare verrouillé. **Les secrets peuvent être posés dès maintenant** (Kevin a encore
+accès à cette page — il y a supprimé les clés Binance le 2.09), ils dormiront jusqu'à la
+réouverture. Rien d'autre à faire.
+
+### Six autres moteurs attendent aussi leur clé (même mécanisme)
+
+`SAMBANOVA_API_KEY` · `HF_TOKEN` · `SCALEWAY_API_KEY` · `NEBIUS_API_KEY` ·
+`GLM_API_KEY` · `DASHSCOPE_API_KEY` (Qwen d'Alibaba — **inutile désormais**, Qwen passe
+par Cloudflare sans aucune clé depuis le 3.09).
+
+---
+
 ## 1. Les IA gratuites — l'état RÉEL de tes moteurs
 
 Ton worker déclare **18 moteurs de texte**. Mesuré ligne par ligne : **9 ont une clé,
