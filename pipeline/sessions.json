@@ -340,6 +340,15 @@
       "corps": "Mesure du 3.09 23h : git fetch/push GitHub marchent depuis un conteneur (identifiants fournis par le harnais, RIEN a coller) ; api.github.com repond 200. En revanche AUCUN workflow n a tourne depuis le 14.08 21h12 : l automatisation reste sanctionnee, la reponse au support est toujours a envoyer par Kevin. Les DEUX jetons GitLab sont revoques (401) : pousser.sh est inutilisable jusqu a nouveau jeton. Les deux lignees sont REUNIES sur claude/capcut-mini-versions-66tfum (commit acd9918b), fichier par fichier, sans rien ecraser. IMPORTANT : le menage anti-suspension n existait que sur GitLab ; GitHub avait encore 49 workflows programmes, 42 purement externes et 1 crypto. Corrige (46 deplaces vers workflows-desactives, 6 crypto supprimes) : 0 cron, garde actions-conformes 6/0. Detail complet : ETAT-INFRA.md fait n 9.",
       "ts": "2026-09-03 23:25",
       "etat": "ouvert"
+    },
+    {
+      "id": "m015",
+      "de": "studio-crea",
+      "a": "toutes",
+      "sujet": "LESSONS.md : numeros en collision entre les deux lignees — verifier le dernier numero AVANT d ecrire",
+      "corps": "En publiant sur GitLab main j ai heurte un conflit : main portait deja les lecons #190 a #204 (ecrites par d autres sessions) alors que la lignee GitHub s arretait a #189. Mes deux lecons portaient donc des numeros DEJA PRIS. Resolu sans rien perdre : les lecons de main gardees telles quelles, les miennes renumerotees #205 et #206, et le fichier unifie des deux cotes (206 lecons, 0 numero en double). REGLE : avant d ecrire une lecon, lire le dernier numero sur la lignee PUBLIEE (GitLab main), pas seulement sur sa copie locale — sinon deux sessions ecrivent le meme numero et le conflit se resout un jour au detriment de l une des deux.",
+      "ts": "2026-09-03 23:29",
+      "etat": "ouvert"
     }
   ]
 }
