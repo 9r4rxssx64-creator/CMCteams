@@ -116,5 +116,10 @@ dans `audit/github-reponse-support.md` — **il reste à Kevin de l'envoyer**.
 | **Jamais de `--force`, jamais écraser l'autre lignée** | fait n°4 : GitHub main ≠ GitLab main | jugement + revue fichier par fichier |
 | **Après un merge conflictuel : fichier par fichier, jamais `git add -A`** | leçon #168 (un `package.json` en conflit poussé = plus aucune commande npm) | `npm run test:no-conflicts`, en tête du gate |
 
+Les `npm run …` valent dans la lignée de l'application. Depuis n'importe où (y compris `main`,
+dont le `package.json` est celui du site), les mêmes gardes s'appellent directement :
+`node tests/verify-actions-conformes.mjs` · `node tests/verify-secret-jamais-persiste.mjs` ·
+`node tests/no-conflict-markers.test.mjs`.
+
 **Quand GitHub reviendra** : ne pas recréer d'exécutions programmées « juste une petite ». Tout ce
 qui est périodique appartient à **GitLab CI** ou à un **Worker Cloudflare**, pas à un dépôt de code.
