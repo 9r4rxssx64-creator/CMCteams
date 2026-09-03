@@ -7,11 +7,12 @@ name: Compact stale claude/* branches
 # Jamais main, master, develop, production, ni branches avec commits inédits.
 
 on:
-  schedule:
-    # Quotidien 04:00 UTC = 06:00 Paris été / 05:00 hiver
-    - cron: '0 4 * * *'
-    # Hebdo dimanche 04:00 UTC pour scan stale > 30j
-    - cron: '0 4 * * 0'
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
   workflow_dispatch:
     inputs:
       dry_run:

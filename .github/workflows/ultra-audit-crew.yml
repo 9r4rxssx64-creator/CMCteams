@@ -11,9 +11,12 @@ name: Ultra Audit Crew (5 expert agents in parallel)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 3 * * 1'  # Lundi 03:00 UTC
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 permissions:
   contents: read
   issues: write

@@ -13,9 +13,12 @@ on:
         description: "Nombre d'histoires à traduire ce passage"
         default: "3"
         required: false
-  schedule:
-    - cron: '0 4 * * 2'   # mardi 04:00 UTC (anti-spam : 1×/semaine, décalé du grow du lundi)
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 concurrency:
   group: lingua-stories-langs
   cancel-in-progress: false

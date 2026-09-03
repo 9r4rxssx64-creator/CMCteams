@@ -2,6 +2,51 @@
 
 ---
 
+## 🔴 URGENT (2.09.2026) — GitLab partout, GitHub suspendu
+
+**Ta décision** : *« On passe par GitLab partout et pour tout jusqu'à nouvel ordre. »* ✅ appliquée.
+
+### ▶️ 1. Faire tourner le jeton GitLab — 2 min
+Il a circulé **en clair** dans une consigne automatique. Rien n'a été publié
+(vérifié : 0 fichier versionné, 0 commit), mais il est à considérer comme grillé.
+**GitLab → Préférences → Jetons d'accès → `glpat-o2uW…` → Révoquer**, puis
+tu m'en donnes un neuf (portée `write_repository` seule, expiration courte)
+quand j'en aurai besoin.
+
+### ▶️ 2. Rien d'autre pour l'instant sur les sessions
+Tu ne peux pas créer de session depuis l'iPhone (l'interface exige un dépôt, et
+GitHub refuse). **Mesuré le 2.09** : une session **sans dépôt** démarre très bien.
+Tu ne peux pas en créer une comme ça toi-même — **dis-moi le thème, je te la crée**.
+
+*(Le connecteur GitHub `claude.ai/customize/connectors?auth_start=github&auth_start_force=1`
+reste le geste qui rétablirait tout d'un coup — mais tant que le compte est suspendu,
+il ne servira à rien. Inutile de le retenter avant que GitHub réponde.)*
+
+### ℹ️ 3. Planning — j'attends ton PDF
+Septembre 2026 **n'est pas importé** (les données s'arrêtent au 28/06 : juillet + août).
+Colle-moi le planning de septembre — et celui d'août si tu l'as, il réparera ses
+5 équipes sans miroir et placera MOREL F au bon endroit.
+
+---
+
+---
+
+## 🔧 0. Un pont à déplacer — *(pour moi, pas pour toi ; noté pour ne pas l'oublier)*
+
+Le pont qui faisait remonter les problèmes d'Apex jusqu'à moi
+(`claude-todo-watcher`) tournait sur GitHub Actions. Il interrogeait Firebase en
+boucle — c'est précisément ce que GitHub a sanctionné. Je l'ai retiré.
+
+**Conséquence honnête** : 3 de tes règles absolues (auto-test/auto-fix, pipeline
+self-healing, pipeline autonomie cross-projet) n'ont plus de garde automatique.
+Elles reposent sur ma mémoire en attendant.
+
+**Le vrai correctif** : ce pont doit vivre dans un Cloudflare Worker avec son
+propre déclencheur horaire — là c'est légitime, et ça ne dépend plus de GitHub.
+Je le code quand tu veux, **tu n'as rien à faire**.
+
+---
+
 ## 🔴 1. Ton crédit image Google est à ZÉRO — c'est ÇA qui cassait les figurines *(mesuré le 14/08/2026)*
 
 **▶️ [Voir ton crédit Google AI Studio](https://aistudio.google.com/app/apikey)**

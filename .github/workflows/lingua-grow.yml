@@ -8,9 +8,12 @@ name: Lingua — enrichit les histoires automatiquement (au fur et à mesure)
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: '0 4 * * 1'   # lundi 04:00 UTC (anti-spam : 1×/semaine)
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 concurrency:
   group: lingua-grow
   cancel-in-progress: false

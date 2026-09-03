@@ -99,6 +99,9 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const targets = [
+    // Le mois COURANT en premier : c'est celui que Kevin ouvre. (Septembre ajouté
+    // le 2026-09-02 depuis le PDF qu'il a fourni — SEPTEMBRE_2026_V2.pdf.)
+    { pdf: 'tests/fixtures/septembre-2026-v2.pdf', year: 2026, monthIdx: 8 },
     { pdf: 'tests/fixtures/aout-2026-v2.pdf', year: 2026, monthIdx: 7 },
     { pdf: 'tests/fixtures/juillet-2026-v2.pdf', year: 2026, monthIdx: 6 },
   ];

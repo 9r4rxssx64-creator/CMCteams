@@ -39,6 +39,7 @@ const PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['rtk-token-saver', 'rtk'],
   ['meridian-company-os', 'meridian-company-os'],
   ['free-llm-api-resources', 'free-llm-api-resources'],
+  ['free-for-dev', 'free-for-dev'],
 ];
 
 describe('Boîte à outils agents — parité Apex / Claude Code', () => {

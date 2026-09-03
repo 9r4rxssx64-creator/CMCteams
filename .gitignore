@@ -25,3 +25,12 @@ google-api.json
 # Python cache
 __pycache__/
 *.pyc
+
+# Copie de secours du domaine : fabriquée par prepare-secours.mjs, jamais commitée
+services/kdmc-router/public/
+services/kdmc-router/pages-upload/
+audit/captures-paquet/
+services/kdmc-router/app-*/
+
+# curseur de rotation du rappel (etat local a chaque session, pas a partager)
+pipeline/rappel-etat.json

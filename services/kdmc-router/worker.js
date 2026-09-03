@@ -11,8 +11,17 @@
 import { makeChallenge, parseRegistration, verifyAssertion, b64uEnc, b64uDec } from './webauthn.js';
 import { mintShopsAdminIdToken } from './fb-token.js';
 
-const UPSTREAM = 'https://9r4rxssx64-creator.github.io';
-const PAGES_PREFIX = '/CMCteams';
+/* D'où viennent les pages. Historiquement GitHub Pages — mais le compte GitHub
+   a été suspendu le 15/08/2026 et le support a refusé de lever la restriction,
+   donc cette source peut disparaître pour de bon.
+   Ces deux valeurs sont désormais RÉGLABLES depuis le tableau de bord
+   Cloudflare (Variables du Worker), sans toucher au code ni redéployer :
+     UPSTREAM_BASE   = https://mon-projet.pages.dev   (ex. Cloudflare Pages)
+     UPSTREAM_PREFIX = ''                             (Pages sert à la racine)
+   Basculer d'hébergeur devient un réglage à changer sur iPhone, pas une mise
+   en ligne. Sans ces variables, le comportement d'avant est conservé. */
+const UPSTREAM_DEFAUT = 'https://9r4rxssx64-creator.github.io';
+const PAGES_PREFIX_DEFAUT = '/CMCteams';
 
 const ROUTES = {
   'kd-mc.com': '/CMCteams/kdmc-home',
@@ -59,6 +68,24 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
+    /* Source des pages : réglable sans redéploiement (cf. commentaire en tête). */
+    const UPSTREAM = ((env && env.UPSTREAM_BASE) || UPSTREAM_DEFAUT).trim().replace(/\/+$/, '');
+    /* ⚠️ Deux usages DIFFÉRENTS du préfixe, à ne pas confondre :
+       - à l'ENTRÉE, les pages contiennent des liens en /CMCteams/… (c'est ainsi
+         que GitHub Pages les a construites) → on reconnaît toujours
+         PAGES_PREFIX_DEFAUT, quoi qu'il arrive ;
+       - à la SORTIE, le nouvel hébergeur peut servir à la racine → on remplace
+         alors ce préfixe par UPSTREAM_PREFIX (souvent vide).
+       Utiliser une seule variable pour les deux ferait correspondre TOUTES les
+       adresses dès que le préfixe est vide (p.startsWith('/') = toujours vrai). */
+    /* .trim() : un tableau de bord n'accepte pas toujours un champ vide, et
+       Kevin pourrait y mettre un espace. Sans nettoyage, le préfixe deviendrait
+       « » et toutes les adresses seraient cassées. Une barre oblique finale est
+       retirée aussi (« /kd-mc-sites/ » → « /kd-mc-sites »), sinon on obtient des
+       doubles barres. */
+    const PREFIX_SORTIE = (env && typeof env.UPSTREAM_PREFIX === 'string')
+      ? env.UPSTREAM_PREFIX.trim().replace(/\/+$/, '')
+      : PAGES_PREFIX_DEFAUT;
 
     // Recherche décès INSEE (proxy same-origin, public read-only) — pour l'arbre.
     if (url.pathname === '/__deces') return handleDeces(request, url);
@@ -105,8 +132,13 @@ export default {
     let p = url.pathname;
     let upstreamPath;
     if (p === '/' || p === '') upstreamPath = base + '/';
-    else if (p.startsWith(PAGES_PREFIX + '/')) upstreamPath = p;
+    else if (p.startsWith(PAGES_PREFIX_DEFAUT + '/')) upstreamPath = p;
     else upstreamPath = base + p;
+    /* Bascule d'hébergeur : on retire le préfixe /CMCteams si la nouvelle
+       source sert à la racine (Cloudflare Pages, par exemple). */
+    if (PREFIX_SORTIE !== PAGES_PREFIX_DEFAUT && upstreamPath.startsWith(PAGES_PREFIX_DEFAUT + '/')) {
+      upstreamPath = PREFIX_SORTIE + upstreamPath.slice(PAGES_PREFIX_DEFAUT.length);
+    }
 
     const upstreamUrl = UPSTREAM + upstreamPath + url.search;
     const reqHeaders = new Headers(request.headers);
@@ -117,7 +149,36 @@ export default {
       body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
       redirect: 'manual',
     });
-    let res = await fetch(upstreamReq);
+    let res;
+    try {
+      res = await fetch(upstreamReq);
+    } catch (e) {
+      res = new Response('upstream injoignable', { status: 502 });
+    }
+    /* ---- BOUÉE DE SECOURS (Kevin 2026-08-14) --------------------------------
+       Le compte GitHub a été suspendu → GitHub Pages s'est éteint et les 20
+       sous-domaines renvoyaient 404 (« 404 » constaté par Kevin sur iPhone).
+       Si une COPIE des pages a été embarquée dans le Worker (binding ASSETS,
+       cf. prepare-secours.mjs), on la sert au lieu de la page morte.
+       Ce repli ne se déclenche QUE sur échec de l'amont : dès que GitHub
+       revient, le comportement est identique à avant, sans rien remettre. */
+    if (env && env.ASSETS && (res.status === 404 || res.status === 403 || res.status >= 500)) {
+      try {
+        const local = new Request(new URL(upstreamPath, url.origin).toString(), { method: 'GET', headers: request.headers });
+        let secours = await env.ASSETS.fetch(local);
+        /* Un dossier sans fichier exact → on tente son index.html (le
+           comportement de GitHub Pages, qu'on doit reproduire fidèlement). */
+        if (!secours.ok && !/\.[a-z0-9]{2,5}$/i.test(upstreamPath)) {
+          const avecIndex = upstreamPath.replace(/\/?$/, '/') + 'index.html';
+          secours = await env.ASSETS.fetch(new Request(new URL(avecIndex, url.origin).toString(), { method: 'GET', headers: request.headers }));
+        }
+        if (secours.ok) {
+          const hs = new Headers(secours.headers);
+          hs.set('x-kdmc-secours', 'assets');   /* honnêteté : on DIT que c'est la copie */
+          res = new Response(secours.body, { status: 200, headers: hs });
+        }
+      } catch (e) { /* le secours ne doit JAMAIS aggraver : on garde la réponse d'origine */ }
+    }
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
       if (loc) {

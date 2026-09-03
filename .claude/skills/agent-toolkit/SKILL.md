@@ -4,7 +4,7 @@ description: >
   Boîte à outils agents — les 6 dépôts du tableau « Une Notion = Un Projet » (Kevin 2026-08-06) :
   skills d'ingénieur (anthropics/skills), mémoire d'agent (gbrain), 67 systèmes de design
   (awesome-design-skills), économie de jetons (rtk), OS d'entreprise humains+agents
-  (meridian-company-os), IA gratuites par API (free-llm-api-resources). À ouvrir dès qu'on écrit
+  (meridian-company-os), IA gratuites par API (free-llm-api-resources), paliers gratuits de services (free-for-dev). À ouvrir dès qu'on écrit
   un SKILL.md, qu'on choisit une direction visuelle, qu'on veut réduire le coût en jetons,
   qu'un forfait IA est épuisé, ou qu'on parle mémoire d'agent / pilotage d'équipe d'agents.
 ---
@@ -28,6 +28,7 @@ la licence et la date. Mise à jour : workflow **`agent-toolkit-sync.yml`** (bou
 | 💰 Économie de jetons | [rtk-ai/rtk](https://github.com/rtk-ai/rtk) | une commande crache 500 lignes inutiles dans mon contexte. `rtk <cmd>` compresse la sortie. Voir « honnêteté » plus bas. |
 | 🏢 Entreprise | [codejunkie99/meridian-company-os](https://github.com/codejunkie99/meridian-company-os) | on parle de piloter **humains + agents** dans une même console (cockpit, kanban, objectifs, gouvernance, audit). Inspiration directe pour l'admin de kd-mc.com. |
 | 🆓 LLM gratuit | [free-llm-api-resources](https://github.com/jeis4wpi/free-llm-api-resources) | un forfait IA est épuisé, ou je cherche un repli gratuit. Liste tenue à jour : modèles, quotas, limites. |
+| 💸 Paliers gratuits | [free-for-dev](https://github.com/ripienaar/free-for-dev) | il faut remplacer un service payant ou tombé : tâches programmées, CI, hébergement, base de données, mail, médias (57 rubriques) |
 
 ## Réflexes concrets
 

@@ -36,6 +36,24 @@ routes = [
 # déjà : `kv:namespace create` → "already exists", le fallback re-parsait un MAUVAIS id,
 # l'ajoutait au toml → "KV namespace not found [10041]" → worker PAS déployé (gate admin
 # + token jamais en ligne). Id figé = plus jamais ce souci.
+# BOUÉE DE SECOURS (Kevin 2026-08-14) : une copie des pages embarquée dans le
+# Worker, servie UNIQUEMENT si GitHub Pages ne répond pas (compte suspendu le
+# 14/08 → 404 sur les 20 sous-domaines). Dès que GitHub revient, le Worker
+# redevient un simple proxy — rien à défaire.
+# Le dossier public/ est fabriqué par : node prepare-secours.mjs
+#
+# ⚠️ run_worker_first = true est OBLIGATOIRE, ce n'est pas un détail :
+# par défaut Cloudflare sert un fichier statique AVANT d'exécuter le code. Or
+# le routeur accepte les chemins /CMCteams/… (PAGES_PREFIX) → sans ce réglage,
+# autorisations.kd-mc.com/CMCteams/tools/approvals/index.html aurait servi la
+# page ADMIN sans passer par le verrou Face ID/PIN. Avec true, le code tourne
+# toujours en premier et ne sert la copie que via env.ASSETS.fetch(), APRÈS
+# les contrôles d'accès.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
 [[kv_namespaces]]
 binding = "ACCOUNTS"
 id = "8cfa33a28ac045adb7b7a9556ca8a073"
