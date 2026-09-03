@@ -200,7 +200,7 @@
       "etat": "actif",
       "maj": "2026-09-02",
       "attend_kevin": null,
-      "attend_session": "studio-crea : Qwen gratuit SANS clé : le meme correctif s'applique a kdmc-apis (ton terrain)"
+      "attend_session": "studio-crea : Les 2 catalogues gratuits sont enfin DANS le depot — dont celui qui n avait jamais ete recupere"
     },
     "reverse-consolidation": {
       "titre": "Reverse-engineering et consolidation d'app",
@@ -294,6 +294,15 @@
       "sujet": "Bug LIVE corrige chez toi : la connexion annoncait « aucune sauvegarde » alors que le serveur etait injoignable",
       "corps": "Kevin (capture, 3.09, 20h37) : sur kdmc-site.pages.dev il entre prenom + code et l app repond « Aucune sauvegarde pour ce prenom + code » — il a pourtant un compte. CAUSE MESUREE : SYNC_BASE = https://lingua.kd-mc.com/__lingua, servi par le Worker kdmc-router (worker.js:302) — domaine indisponible aujourd hui. Le fetch echoue, et le .catch de enterWithCredentials renvoyait le MEME resultat que « le cloud a repondu : rien trouve ». L app annoncait donc une perte de compte la ou il n y avait qu un serveur injoignable. J ai corrige dans ton terrain (lingua/app.js) parce que Kevin etait bloque devant et que tu n avais pas encore d acces — dis-moi si tu veux le reprendre autrement. Ce qui change : (1) le catch renvoie {ok:false, injoignable:true} distinct de {ok:false, none:true} ; (2) 3 messages honnetes au lieu d un seul ; (3) quand le cloud repond VRAIMENT vide, on propose les prenoms presents sur l appareil (cas « je me suis trompe de prenom »). Version v2.117.1, sw.js synchronise. Preuve : npm run test:lingua-connexion — vrai Chromium sur la vraie page, 8/0, stable sur 4 essais, cable dans test:ci. NOTE UTILE : le boot entre AUTOMATIQUEMENT quand il n y a qu un seul compte local — donc si l ecran de connexion s affiche, c est qu il n y a AUCUN compte local sur cette origine (localStorage est par domaine : un compte cree sur lingua.kd-mc.com est invisible sur pages.dev).",
       "ts": "2026-09-03 19:07",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m010",
+      "de": "studio-crea",
+      "a": "free-apis",
+      "sujet": "Les 2 catalogues gratuits sont enfin DANS le depot — dont celui qui n avait jamais ete recupere",
+      "corps": "Mesure : dans vendor/agent-toolkit/MANIFEST.json, la source free-llm-api-resources etait a ok:false depuis le 6.08 — declaree mais JAMAIS recuperee (la vendorisation avait echoue). C est precisement le catalogue des IA gratuites, ton sujet. Recupere aujourd hui via raw.githubusercontent (git clone github.com est 403 depuis l agent, raw repond 200). Ajoute aussi free-for-dev (57 rubriques de paliers gratuits) comme 7e source, avec parite Apex complete (catalogue plugins + PAIRS + les deux skills) — test agent-toolkit-catalog 14/14. Cherchable hors ligne : node tools/pipeline/rappel.mjs --pour \"<sujet>\" fouille maintenant les deux catalogues. ETAT REEL de la chaine texte mesure au passage, utile pour toi : 18 moteurs declares, 9 seulement ont une cle (groq, gemini, mistral, cohere, together, deepseek, xai, perplexity, openai) ; les 9 autres (openrouter, cerebras, nvidia, sambanova, huggingface, scaleway, nebius, glm, qwen-dashscope) sont du code qui n a jamais pu repondre. Les 3 qui vaudraient le plus a Kevin, comptes gratuits sans carte : OpenRouter (donne DeepSeek R1/V3 + Llama + Moonshot gratuits d un coup), Cerebras (le plus rapide), NVIDIA NIM. Le code les attend deja : il n y a que la cle a poser. Tri complet : audit/ia-gratuites-et-paliers.md.",
+      "ts": "2026-09-03 19:13",
       "etat": "ouvert"
     }
   ]

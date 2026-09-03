@@ -108,7 +108,26 @@ if (SUJET) {
   if (r.length) { console.log(`  RÈGLES (${r.length})`); r.slice(0, 8).forEach((x) => console.log(`    · ${x}`)); }
   if (l.length) { console.log(`\n  LEÇONS (${l.length})`); l.slice(0, 8).forEach((x) => console.log(`    · #${x.n} ${x.t}`)); }
   if (s.length) { console.log(`\n  SCRIPTS (${s.length})`); console.log(`    ${s.slice(0, 12).map((x) => 'npm run ' + x).join('\n    ')}`); }
-  if (!r.length && !l.length && !s.length) console.log('  (rien — sujet neuf, ou autre mot-clé à essayer)');
+  /* Les catalogues vendorisés (paliers gratuits, IA gratuites) : on cherche
+     dedans hors ligne, et on ne montre que les lignes qui parlent du sujet. */
+  const CATALOGUES = [
+    ['services gratuits (free-for.dev)', 'vendor/agent-toolkit/free-for-dev/README.md'],
+    ['IA gratuites', 'vendor/agent-toolkit/free-llm-api-resources/README.md'],
+  ];
+  for (const [titre, f] of CATALOGUES) {
+    const txt = lire(f);
+    if (!txt) continue;
+    const lignes = txt.split('\n')
+      .filter((x) => plat(x).includes(q) && /^\s*[*|#]/.test(x) && x.length > 40)
+      .map((x) => x.replace(/^\s*[*|]\s*/, '').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 → $2').slice(0, 150));
+    if (lignes.length) {
+      console.log(`\n  ${titre.toUpperCase()} (${lignes.length})`);
+      lignes.slice(0, 6).forEach((x) => console.log(`    · ${x}`));
+      if (lignes.length > 6) console.log(`    … +${lignes.length - 6} — grep -i "${SUJET}" ${f}`);
+    }
+  }
+
+  if (!r.length && !l.length && !s.length) console.log('\n  (aucune règle, leçon ni script — vois les catalogues ci-dessus)');
   console.log(`\n  Voir aussi : node tools/memory/mem.cjs search "${SUJET}" --k 5\n`);
   process.exit(0);
 }

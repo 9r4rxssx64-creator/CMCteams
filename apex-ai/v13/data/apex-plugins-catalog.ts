@@ -3252,6 +3252,21 @@ export const APEX_PLUGINS_CATALOG: readonly ApexPluginManifest[] = [
     tags: ['agent-toolkit', 'llm', 'gratuit', 'failover'],
   },
   {
+    id: 'free-for-dev',
+    name: 'Free For Dev (paliers gratuits)',
+    source: 'community',
+    url: 'https://github.com/ripienaar/free-for-dev',
+    description:
+      "Catalogue de 57 rubriques de services gratuits pour developpeurs : taches programmees, CI, hebergement, bases de donnees, mail, medias, surveillance. Sert de reserve quand un service payant tombe ou qu'un acces est perdu — on y cherche un equivalent gratuit avant de proposer une depense a Kevin.",
+    category: 'ai-ml',
+    pwa_compatible: true,
+    oauth_required: false,
+    status: 'installed',
+    install_method: 'native-fetch',
+    estimated_value: 'high',
+    tags: ['agent-toolkit', 'gratuit', 'infra', 'failover'],
+  },
+  {
     id: 'aitmpl-agents',
     name: 'Agents AITMPL (13 sélectionnés)',
     source: 'community',
