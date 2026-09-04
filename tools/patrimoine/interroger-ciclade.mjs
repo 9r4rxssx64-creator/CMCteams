@@ -33,7 +33,14 @@
  *          → publié en artefact GitLab (privé au projet), jamais dans le dépôt.
  * ========================================================================== */
 
-import { chromium } from 'playwright';
+/* Playwright est DÉJÀ dans l'image du runner : rien à installer. On le résout
+   en CommonJS (createRequire) et non par un import ESM, parce que seul le
+   premier honore NODE_PATH — c'est ce qui permet d'attraper le paquet installé
+   globalement dans l'image. Un « npm ci » ici échouait (le dépôt n'a pas de
+   package-lock.json) et le repli « npm i » cassait sur l'arbre de dépendances. */
+import { createRequire } from 'node:module';
+const exiger = createRequire(import.meta.url);
+const { chromium } = exiger('playwright');
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { personnesACherchers, RACINE } from './lire-arbre.mjs';
