@@ -28,50 +28,17 @@
  * Lancer :  node tools/patrimoine/chercher.mjs
  * ========================================================================== */
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { lireArbre, RACINE, anneeDe } from './lire-arbre.mjs';
 const SORTIE = join(RACINE, 'patrimoine');
 const AUJOURD_HUI = new Date();
 
-/* --- 1. lire l'arbre réel ------------------------------------------------- */
-
-function lireArbre() {
-  const src = readFileSync(join(RACINE, 'arbre', 'index.html'), 'utf8');
-  const bloc = (marqueur) => {
-    const i = src.indexOf(marqueur);
-    if (i < 0) return '';
-    let d = 0;
-    for (let k = src.indexOf('{', i); k < src.length; k++) {
-      if (src[k] === '{') d++;
-      else if (src[k] === '}' && --d === 0) return src.slice(i, k + 1) + ';';
-    }
-    return '';
-  };
-  const srcObj = bloc('var SRC=') || bloc('const SRC=');
-  const i = src.indexOf('function buildSeed()');
-  if (i < 0) throw new Error("l'arbre a changé de forme : buildSeed introuvable");
-  let d = 0, fin = -1;
-  for (let k = i; k < src.length; k++) {
-    if (src[k] === '{') d++;
-    else if (src[k] === '}' && --d === 0) { fin = k + 1; break; }
-  }
-  const code = `${srcObj}\n${src.slice(i, fin)}\nreturn buildSeed();`;
-  // eslint-disable-next-line no-new-func
-  return new Function('uid', 'now', code)(
-    () => 'x' + Math.random().toString(36).slice(2, 9),
-    () => Date.now(),
-  );
-}
+/* La lecture de l'arbre vit dans lire-arbre.mjs : une seule copie, sinon les
+   deux divergent le jour où l'arbre change de forme. */
 
 /* --- 2. dates : l'arbre les écrit « 12.07.1912 », parfois avec une réserve -- */
 
-function anneeDe(txt) {
-  const m = String(txt || '').match(/\b(1[89]\d{2}|20\d{2})\b/);
-  return m ? +m[1] : null;
-}
 function dateNette(txt) {
   const m = String(txt || '').match(/\b(\d{1,2})[./](\d{1,2})[./](\d{4})\b/);
   return m ? `${m[1].padStart(2, '0')}/${m[2].padStart(2, '0')}/${m[3]}` : null;

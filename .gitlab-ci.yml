@@ -25,6 +25,7 @@
 
 stages:
   - tests
+  - recherches
 
 default:
   image: node:20
@@ -74,3 +75,42 @@ conformite:
         exit 1
       fi
       echo "✅ Aucune exécution programmée."
+
+# =============================================================================
+# CICLADE — les recherches d'argent non réclamé, faites ICI et pas par Kevin.
+# -----------------------------------------------------------------------------
+# Pourquoi ce job existe : le conteneur de l'agent Claude n'a PAS accès à
+# ciclade.caissedesdepots.fr (pare-feu). Le runner, lui, l'a. C'est donc lui qui
+# ouvre un vrai navigateur et fait les 14 recherches, une par une.
+#
+# Ce qu'il ne fait pas : toucher l'argent. La restitution exige un compte, une
+# pièce d'identité et la preuve des droits — ça restera toujours Kevin.
+#
+# Il ne part JAMAIS tout seul : ni « schedule » (interdit, cause de la
+# suspension GitHub), ni au fil des pushs. Il faut le lancer à la main.
+# =============================================================================
+ciclade:
+  stage: recherches
+  image: mcr.microsoft.com/playwright:v1.50.0-noble
+  # Il part quand JE pousse le fichier-signal « patrimoine-demande.txt », et
+  # seulement là. Ce n'est pas une tâche programmée (celles-là sont interdites,
+  # c'est ce qui a fait suspendre GitHub) : c'est un push volontaire, comme un
+  # bouton — sauf que le bouton, c'est moi qui l'appuie, pas Kevin.
+  rules:
+    - changes: ["patrimoine-demande.txt"]
+      when: on_success
+    - when: manual                # au cas où Kevin veuille le relancer lui-même
+  needs: []                       # ne dépend pas des tests : une recherche n'attend
+                                  # pas qu'un test sans rapport soit vert
+  allow_failure: true             # une recherche qui échoue ne casse pas le reste
+  timeout: 25m
+  variables:
+    MODE: ""                      # « --reco » = observer sans rien interroger
+  script:
+    - npm ci --no-audit --no-fund --ignore-scripts || npm i playwright
+    - node tools/patrimoine/interroger-ciclade.mjs $MODE
+  artifacts:
+    when: always
+    expire_in: 7 days             # données personnelles : on ne les garde pas
+    paths:
+      - patrimoine-resultats/
