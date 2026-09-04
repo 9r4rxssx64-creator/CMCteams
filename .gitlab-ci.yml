@@ -77,7 +77,12 @@ conformite:
       echo "✅ Aucune exécution programmée."
 
 # =============================================================================
-# CICLADE — les recherches d'argent non réclamé, faites ICI et pas par Kevin.
+# RECHERCHES PATRIMOINE — ce qui est PERMIS d'automatiser, et rien de plus.
+#
+# ⛔ Ciclade a été RETIRÉ de ce job le 4.09.2026 : la capture d'écran du vrai
+#    formulaire montre un CAPTCHA et, écrit dessous, « conformément aux CGU du
+#    site (art 1er), toute utilisation non humaine de ce site est interdite ».
+#    Ce n'est pas une limite technique, c'est une règle. On la respecte.
 # -----------------------------------------------------------------------------
 # Pourquoi ce job existe : le conteneur de l'agent Claude n'a PAS accès à
 # ciclade.caissedesdepots.fr (pare-feu). Le runner, lui, l'a. C'est donc lui qui
@@ -89,7 +94,7 @@ conformite:
 # Il ne part JAMAIS tout seul : ni « schedule » (interdit, cause de la
 # suspension GitHub), ni au fil des pushs. Il faut le lancer à la main.
 # =============================================================================
-ciclade:
+recherches-patrimoine:
   stage: recherches
   image: mcr.microsoft.com/playwright:v1.50.0-noble
   # Il part quand JE pousse le fichier-signal « patrimoine-demande.txt », et
@@ -115,7 +120,6 @@ ciclade:
     - export NODE_PATH=/tmp/pw/node_modules
     - node -e 'require(process.env.NODE_PATH + "/playwright"); console.log("playwright OK")'
     - mkdir -p patrimoine-resultats
-    - node tools/patrimoine/interroger-ciclade.mjs $MODE
     - node tools/patrimoine/deces-insee.mjs
     # Ce qui est réellement PUBLIC sur le site : mesuré, pas supposé.
     - node tools/audit/exposition-publique.mjs
