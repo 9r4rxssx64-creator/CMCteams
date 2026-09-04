@@ -51,11 +51,19 @@ chk(avecCron.length === 0,
 
 /* --- Règle 2 : rien qui ne fasse QUE appeler l'extérieur ------------------ */
 const HOTE = /https?:\/\/(?!(?:api\.)?github\.com|raw\.githubusercontent|objects\.githubusercontent|uploads\.github)[a-z0-9.-]+/gi;
-const CONSTRUIT = /npm (run|ci|test)|actions\/setup-node|wrangler deploy|npm install|actions\/deploy-pages|pytest|cargo /;
+/* Marqueurs d'un VRAI déploiement du code de Kevin (usage prévu d'Actions),
+   par opposition au robot qui ne fait que sonner un site tiers — le motif
+   nommé par GitHub. « wrangler@3 deploy » (version épinglée) était compté à
+   tort comme un appel externe pur le 4.09 : la version entre le nom et la
+   commande empêchait la reconnaissance. `git push` compte aussi : un
+   pingeur externe ne réécrit jamais le dépôt. */
+const CONSTRUIT = /npm (run|ci|test)|actions\/setup-node|wrangler(@[\w.]+)? (deploy|secret|pages)|npm install|actions\/deploy-pages|pytest|cargo |git push/;
 /* Exceptions ASSUMÉES : elles déploient réellement le code de Kevin, ce qui est
    l'usage prévu d'Actions. Toute nouvelle exception doit être justifiée ici.
    (crypto-bot-deploy.yml en faisait partie — supprimé le 2.09, voir règle 3.) */
-const TOLERES = new Set(['clayscore-extract-private.yml']);
+/* clayscore-extract-private.yml a été déplacé dans workflows-desactives le
+   4.09 (il portait un cron) — l'exception n'a plus d'objet. */
+const TOLERES = new Set();
 const purs = [];
 for (const f of fichiers) {
   if (TOLERES.has(f)) continue;
