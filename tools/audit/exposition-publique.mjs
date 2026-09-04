@@ -58,6 +58,14 @@ mkdirSync(SORTIE, { recursive: true });
 const lignes = [];
 console.log(`Site sondé : ${SITE}\n`);
 
+/* PIÈGE À ÉVITER : le site renvoie la PAGE D'ACCUEIL (HTTP 200) pour tout
+   chemin inconnu, au lieu d'un 404. Au premier passage, ça m'a fait annoncer
+   deux « fuites » qui n'existaient pas — les deux pesaient exactement la taille
+   de l'accueil. On récupère donc l'accueil une fois, et tout ce qui lui est
+   identique est compté ABSENT. Mieux vaut vérifier que crier au loup. */
+let accueil = '';
+try { accueil = await (await fetch(SITE + '/')).text(); } catch { /* ignoré */ }
+
 for (const c of CHEMINS) {
   let statut = 0, taille = 0, trouves = [];
   try {
@@ -66,9 +74,12 @@ for (const c of CHEMINS) {
     if (r.ok) {
       const t = await r.text();
       taille = t.length;
+      if (accueil && t === accueil) { statut = 404; taille = 0; trouves = ['(page d\'accueil renvoyée — le fichier n\'existe pas)']; }
+      else {
       for (const m of MARQUEURS) {
         const n = (t.match(m.re) || []).length;
         if (n > 0) trouves.push(`${m.nom} ×${n}`);
+      }
       }
     }
   } catch (e) {
