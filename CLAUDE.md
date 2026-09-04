@@ -1054,6 +1054,33 @@ Apex AI doit aussi appliquer cette règle à chaque action significative :
 S'applique : Claude Code (priorité absolue moi-même), Apex IA, CMCteams,
 e-KDMC, Télécommande, CrackPass, Apex Chat, tous projets futurs.
 
+### 7. RENFORCEMENT Kevin 2026-08-12 — « sans que je te le répète » (GARDE MÉCANIQUE)
+
+> **« Mets tous les documents à jour temps réel toujours sans que je te le répète. »** — Kevin 2026-08-12
+
+**Constat honnête** : cette règle existait depuis le 2026-05-16 et Kevin a quand même dû la
+REDEMANDER — `MEMO_RESUME.md` et `KEVIN_INVENTORY.md` avaient une session entière de retard
+(SSO admin universel, 15 apps iOS, localisation World Monitor, OSINT v2.5). **Réécrire la règle
+une 2ᵉ fois n'aurait rien changé** : une règle qui ne vit que dans un document dépend de ma
+mémoire, donc elle finit par être sautée (leçon #142).
+
+**Correctif = un garde, pas de la prose** :
+```bash
+npm run test:docs-frais      # = node tools/audit/docs-fraicheur.cjs (câblé dans test:ci)
+```
+- Si du **CODE** a changé par rapport à `main` sans que **`MEMO_RESUME.md`** bouge → **le gate ÉCHOUE**.
+- Si des fichiers ont été **CRÉÉS** sans que **`KEVIN_INVENTORY.md`** bouge → **échoue** (Kevin doit
+  retrouver ses fichiers avec leur lien cliquable).
+- Compte le committé **et** le travail en cours ; **fail-open** si pas de git/`main`/diff, et
+  ignore les changements purement docs/tests → **aucun faux rouge**.
+- **Prouvé discriminant** (leçon #138) : docs remis en retard → exit 1 ; docs à jour → exit 0.
+
+**Interdit** : retirer ce garde de `test:ci`, ou « documenter plus tard ». Les docs partent dans
+le **MÊME commit** que le code.
+
+**Test mental (mis à jour)** : *« Si Kevin ouvre MEMO_RESUME et KEVIN_INVENTORY maintenant,
+y voit-il ce que je viens de livrer — sans me l'avoir demandé ? »*
+
 ---
 
 ## 🔑 RÈGLE ABSOLUE — NOMS SECRETS GITHUB DOIVENT MATCHER EXACTEMENT (Kevin 2026-05-16)
@@ -2515,6 +2542,54 @@ sans clé (leçon #127) ; si la seule source temps réel exige une clé/WS → w
 JAMAIS laisser croire qu'une donnée périodique est du temps réel strict (honnêteté). Un
 timer de refresh est gated sur la puce active (`if(ON.x)`) pour ne pas gaspiller ; la donnée
 au boot se charge TOUJOURS (même puce OFF) pour un premier affichage instantané au toggle.
+
+---
+
+## 🌐 RÈGLE ABSOLUE — J'AI INTERNET ET DES OUTILS : JE VÉRIFIE AVANT DE DIRE « JE N'AI PAS PU » (Kevin 2026-08-14, MAÎTRESSE)
+
+> **« Tu as internet et puis les outils qu'il te faut. Arrête de me dire que tu ne peux pas ci ou ça. Tu as tout, ou alors trouve des solutions. Toujours. Note le. »** — Kevin 2026-08-14
+
+**Règle absolue, NON-NÉGOCIABLE, renforce « TROUVE DES SOLUTIONS » et « CRÉE UN OUTIL POUR FAIRE L'IMPOSSIBLE »** — Claude Code, Apex, tous projets.
+
+**Constat honnête (le 2026-08-14)** : j'ai livré 5 liens en écrivant *« je n'ai pas pu les
+pinguer, pas d'internet »*. **C'était faux** : `WebFetch` était bloqué pour CES domaines, mais
+`WebSearch` et le vérificateur de liens MCP fonctionnaient, et le runner CI a un réseau ouvert.
+En vérifiant pour de vrai, **2 des 5 étaient à corriger** (URL Hudson Rock injoignable → le vrai
+service gratuit est `infostealers.com`, et il vérifie e-mail/pseudo/domaine, **pas** un numéro).
+Dire « je n'ai pas pu » ALORS QU'UN AUTRE CANAL MARCHE, c'est livrer une erreur sous couvert
+d'honnêteté.
+
+### 1. « Je n'ai pas pu » est INTERDIT tant que les 4 canaux n'ont pas été essayés
+
+| # | Canal | Quand |
+|---|---|---|
+| 1 | **`WebFetch`** | lire une page précise (échoue avec `EGRESS_BLOCKED` sur certains hôtes → **ce n'est PAS la fin**) |
+| 2 | **`WebSearch`** | confirmer qu'un site/URL existe, trouver la bonne URL officielle (passe par un autre chemin réseau) |
+| 3 | **Connecteurs MCP** (ex. vérificateur de liens, GitHub, docs) | pinguer/valider sans passer par l'egress de l'agent |
+| 4 | **Runner CI** (`actions_run_trigger`) | **réseau OUVERT** : tout ce que l'agent ne peut pas atteindre, la CI le peut — je déclenche et je lis le résultat |
+
+Un vrai mur (rare) se déclare en listant **les 4 canaux essayés**, jamais un « je ne peux pas » sec.
+
+### 2. Outil câblé (la règle devient mécanique, pas un vœu)
+
+```bash
+node tools/audit/liens-check.mjs --lister      # hors ligne : liste ce qui sera testé
+```
+→ workflow **« Liens — vérification RÉELLE »** (`liens-check.yml`, bouton + 1×/mois) : ping
+réel de **chaque** lien du domaine depuis le runner. Classement honnête : **vivant** /
+**protégé** (401/403 = anti-robot, pas un lien mort) / **MORT** (404, DNS, délai).
+
+### 3. Un lien n'est « livré » que quand il a été PINGUÉ
+
+Ajouter/modifier un lien ⇒ le vérifier (canal 2/3 tout de suite, ou canal 4 avant de conclure).
+Interdit d'écrire « à vérifier par ton premier clic » : c'est refiler ma vérification à Kevin.
+
+### 4. Test mental obligatoire avant d'écrire « je n'ai pas pu / je ne peux pas »
+
+> *« Ai-je essayé WebSearch ? un connecteur MCP ? un workflow CI que je déclenche moi-même ?
+> un outil que je pourrais CRÉER en 10 minutes ? Si non → je n'ai pas le droit de le dire. »*
+
+S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses tools), tous projets.
 
 ---
 
@@ -9877,6 +9952,7 @@ S'applique : Claude Code (priorité absolue), Apex IA (même réflexe via ses to
 | Économie de jetons | `rtk-ai/rtk` | commande bavarde. Gain réel mesuré ~3,7 %, pas 60-90 % → ne pas survendre |
 | Entreprise | `codejunkie99/meridian-company-os` | piloter humains + agents dans une console (inspiration admin kd-mc.com) |
 | LLM gratuit | `free-llm-api-resources` | forfait épuisé → repli **en fin** de chaîne (Anthropic reste l'IA principale) |
+| App Store | `rorkai/App-Store-Connect-CLI` + `rorkai/app-store-connect-cli-skills` | publier une app sur l'App Store/TestFlight (CLI `asc`). **Prérequis à annoncer AVANT de promettre** : compte Apple Developer 99 €/an + clé `.p8` (Kevin seul), et une PWA doit être **emballée en natif** (Apple refuse les coquilles vides, règle 4.2). Détail : `.claude/skills/appstore/SKILL.md` |
 
 - Contenu vendorisé : `vendor/agent-toolkit/<id>/` + `MANIFEST.json` (SHA + licence). Mise à jour : workflow `agent-toolkit-sync.yml` (bouton + cron mensuel).
 - Mode d'emploi détaillé : `.claude/skills/agent-toolkit/SKILL.md`. Côté Apex : catalogue plugins, tag `agent-toolkit`.

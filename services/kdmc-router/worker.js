@@ -42,6 +42,19 @@ const ROUTES = {
   'arbre.kd-mc.com': '/CMCteams/arbre', // Arbre généalogique familial — protégé par code famille (Kevin 2026-08-03)
   'lingua.kd-mc.com': '/CMCteams/lingua', // KDMC Lingua — app d'apprentissage de langues (Kevin 2026-08-04)
   'studio.kd-mc.com': '/CMCteams/tools/crea-studio', // Créa Studio — montage vidéo + retouche photo (niveau Photoshop/GIMP) + dessin animé, 100% client-side (Kevin 2026-08-04)
+  'cuisine.kd-mc.com': '/CMCteams/tools/cuisine', // Le Grand Répertoire de la Riviera — livre de cuisine numérique (Monaco/Riviera + Ligurie), 113+ recettes illustrées (Kevin 2026-08-13)
+  'cocina.kd-mc.com': '/CMCteams/tools/cuisine',  // alias — même livre (Kevin 2026-08-13)
+  'cujina.kd-mc.com': '/CMCteams/tools/cuisine',
+  // Belles adresses des apps qui n'en avaient pas — Kevin 2026-08-13 « pourquoi les adresses
+  // ne sont pas pareilles ». Règle KDMC_ADRESSES.md : UNE belle adresse par projet. Les
+  // anciens chemins (kd-mc.com/worldmonitor…) restent valides : rien ne casse, on ajoute.
+  'worldmonitor.kd-mc.com': '/CMCteams/kdmc-home/worldmonitor',
+  'osint.kd-mc.com': '/CMCteams/kdmc-home/osint',
+  'ia.kd-mc.com': '/CMCteams/kdmc-home/ia',
+  'outils.kd-mc.com': '/CMCteams/kdmc-home/outils',
+  // Portail boutiques : vivait SEULEMENT sur github.io (le portail y renvoyait en dur,
+  // hors du domaine, en affichant « kd-mc.com → shops » — une adresse fausse).
+  'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
 
 // Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,
@@ -130,6 +143,33 @@ export default {
     }
 
     let p = url.pathname;
+
+    // Livre de cuisine « A Cüjina de Mùnegu » aussi accessible en CHEMIN du domaine
+    // principal (Kevin 2026-08-13, « je dois pouvoir l'ouvrir même en 4G »). kd-mc.com
+    // est déjà résolu par tous les réseaux/opérateurs → 0 attente de propagation DNS,
+    // contrairement à un sous-domaine tout neuf (cujina/cocina). Chemins : /cujina,
+    // /cuisine, /livre. Redirection vers le / final pour que les images relatives marchent.
+    if ((host === 'kd-mc.com' || host === 'www.kd-mc.com')) {
+      if (/^\/(cujina|cuisine|livre)$/.test(p)) return Response.redirect('https://' + host + p + '/', 301);
+      const cm = p.match(/^\/(cujina|cuisine|livre)(\/.*)?$/);
+      if (cm) {
+        const rest = cm[2] || '/';
+        const upstreamUrl2 = UPSTREAM + '/CMCteams/tools/cuisine' + rest + url.search;
+        const rh2 = new Headers(request.headers); rh2.delete('host');
+        const res2 = await fetch(new Request(upstreamUrl2, {
+          method: request.method, headers: rh2,
+          body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+          redirect: 'manual',
+        }));
+        const oh2 = new Headers(res2.headers);
+        oh2.set('x-kdmc-router', host + ' (cuisine-path)');
+        if (!oh2.has('x-content-type-options')) oh2.set('x-content-type-options', 'nosniff');
+        if (!oh2.has('x-frame-options')) oh2.set('x-frame-options', 'SAMEORIGIN');
+        if (!oh2.has('strict-transport-security')) oh2.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
+        return new Response(res2.body, { status: res2.status, statusText: res2.statusText, headers: oh2 });
+      }
+    }
+
     let upstreamPath;
     if (p === '/' || p === '') upstreamPath = base + '/';
     else if (p.startsWith(PAGES_PREFIX_DEFAUT + '/')) upstreamPath = p;

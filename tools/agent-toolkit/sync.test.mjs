@@ -14,9 +14,13 @@ import { globToRe, matches, isText, selectFiles } from './sync.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CFG = JSON.parse(fs.readFileSync(path.join(HERE, 'sources.json'), 'utf8'));
 
-test('les 6 dépôts du tableau sont tous déclarés', () => {
+test('les dépôts déclarés sont exactement ceux attendus', () => {
   const ids = CFG.sources.map((s) => s.id).sort();
+  /* 6 du tableau « Une Notion = Un Projet » (Kevin 2026-08-06)
+     + 2 App Store ajoutés le 2026-08-13 (Kevin, vidéo Algomax) : le CLI `asc` et ses
+       SKILLS d'agent — ce sont eux qui décrivent les enchaînements de publication. */
   assert.deepEqual(ids, [
+    'app-store-connect-cli', 'app-store-connect-cli-skills',
     'awesome-design-skills', 'free-llm-api-resources', 'gbrain',
     'meridian-company-os', 'rtk', 'skills',
   ]);

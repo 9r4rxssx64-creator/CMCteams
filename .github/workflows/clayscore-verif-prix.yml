@@ -44,6 +44,15 @@ on:
 permissions:
   contents: read
 
+
+# Garde anti-empilement (test:ci-no-stampede) : sans elle, chaque commit ajoutait une
+# exécution à la file au lieu de remplacer la précédente — c'est ce qui avait bloqué
+# 399 exécutions le 6 août 2026. Le groupe inclut l'événement pour qu'un commit
+# n'annule jamais une vérification lancée à la main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
 jobs:
   verifier:
     runs-on: ubuntu-latest
@@ -58,6 +67,7 @@ jobs:
       - name: Vérifier les prix
         id: verif
         working-directory: clayscore
+        shell: bash -eo pipefail {0}   # sans pipefail, un echec ressort VERT
         run: |
           set -o pipefail
           # Sur un push, `inputs` est vide : on retombe sur les valeurs par défaut.

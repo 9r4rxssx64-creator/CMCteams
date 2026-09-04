@@ -21,6 +21,8 @@ Contenu vendorisé dans **`vendor/agent-toolkit/<id>/`** du dépôt (texte seule
 | Entreprise | `codejunkie99/meridian-company-os` | piloter humains + agents dans une console (inspiration admin kd-mc.com) |
 | LLM gratuit | `jeis4wpi/free-llm-api-resources` | forfait épuisé → repli **en FIN** de chaîne |
 | Paliers gratuits | `ripienaar/free-for-dev` | remplacer un service payant ou tombé (tâches programmées, CI, hébergement, base, mail) — 57 rubriques |
+| App Store | `rorkai/App-Store-Connect-CLI` | publier/TestFlight : le CLI `asc` (JSON, sans question interactive) |
+| App Store (skills) | `rorkai/app-store-connect-cli-skills` | **les enchaînements** de publication — à lire AVANT d'inventer une séquence |
 
 ## Agents AITMPL (13 sélectionnés — équité avec Claude Code)
 

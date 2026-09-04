@@ -26,6 +26,31 @@ en **vraies applis iPhone**, signées et envoyées sur **TestFlight**, **sans Ma
 
 C'est **tout**. Aucun Mac, aucun certificat, aucune ligne de code.
 
+### 🆘 Si le téléchargement du `.p8` échoue (« Une erreur s'est produite »)
+
+Vu chez Kevin en août 2026, sur compte tout neuf. À essayer **dans cet ordre** (du plus
+fréquent au moins fréquent). ⚠️ Ce sont des pistes **probables**, pas une certitude : le
+message d'Apple est générique et ne dit pas la cause.
+
+1. **Un contrat Apple en attente bloque les clés** (cause n°1 sur les comptes récents).
+   App Store Connect → **Accords, taxes et opérations bancaires** → si une ligne est
+   « En attente / À accepter », **accepter**, puis re-créer la clé.
+2. **Type de clé** : prendre une clé **d'équipe** (onglet *Intégrations → App Store Connect API*,
+   section **Clés d'équipe**), pas une clé « individuelle ». Rôle **Admin** (ou App Manager).
+3. **Le navigateur iPhone bloque le fichier** : appui **long** sur *Télécharger* →
+   « Télécharger le fichier lié ». Sinon **Chrome** sur iPhone. Sinon couper temporairement
+   **Relais privé iCloud** (Réglages → Apple ID → iCloud) et les bloqueurs de contenu.
+4. **Depuis un ordinateur** — le plus fiable, 30 s.
+5. **Attendre** : sur une adhésion toute neuve, l'API met parfois **24-48 h** à s'activer.
+
+> Le fichier n'est téléchargeable **qu'une seule fois**. Chaque tentative ratée laisse une clé
+> inutilisable : **révoque-les** pour ne pas confondre les *Key ID* (le piège : c'est le Key ID
+> de la clé **réellement téléchargée** qu'il faut coller dans le secret).
+
+**Pas de contournement possible** : la signature automatique en CI exige cette clé. L'alternative
+(certificat `.p12` + profil) demande un Mac, des téléchargements en plus, et un secret bien plus
+dangereux s'il fuite — donc non.
+
 > Ces 4 secrets sont **déjà** ceux utilisés par le build iOS d'Apex — donc si tu les as posés pour Apex, il n'y a **rien de plus à faire**.
 
 ## Ce que JE fais, tout seul, jusqu'au bout

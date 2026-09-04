@@ -128,6 +128,32 @@ pas** : passe au suivant du tableau, ou dis-le-moi et je corrige. Aucune de ces
 ---
 
 ## 💳 3. Abonnement GitHub Pro — 4 $/mois *(ajouté 12/08/2026, à ta demande)*
+## 🟢 Aucune clé à révoquer — vérifié, pas supposé *(12/08/2026)*
+
+Tu m'as dit « protège mon domaine entièrement ». J'ai fait passer un outil qui
+ne signale **que les clés encore vivantes** (il les teste vraiment auprès du
+service, il ne se contente pas de « ça ressemble à une clé »).
+
+**Premier résultat : « 7 clés actives ».** Je ne te l'ai pas annoncé tel quel,
+parce qu'une alerte non vérifiée ne vaut rien. J'ai demandé les repères exacts,
+puis relu les 7 lignes une par une.
+
+**Les 7 « clés » sont mes propres noms de fonctions de test.** Par exemple
+`test_le_gain_ne_depend_pas_de_la_machine` — exactement 40 caractères,
+commençant par `test`. Le service qui les « validait » accepte n'importe quelle
+chaîne commençant par `test_` dans son bac à sable : son « vérifié » ne veut
+rien dire.
+
+➡️ **Rien à révoquer. Tu n'as rien à faire.**
+
+Et pour que ça ne se reproduise pas : l'outil relit désormais la ligne réelle et
+écarte lui-même ce qui est un nom de fonction. Sans ça, un rapport qui crie
+« 7 clés ! » à tort finit par être ignoré — et le jour où il y aura une **vraie**
+clé, elle serait noyée dans le bruit.
+
+---
+
+## 💳 1. Abonnement GitHub Pro — 4 $/mois *(ajouté 12/08/2026, à ta demande)*
 
 **▶️ [Prendre GitHub Pro](https://github.com/settings/billing/plans)** — puis « Upgrade to Pro ».
 
@@ -148,32 +174,163 @@ Je te donne cette règle « Pages depuis un dépôt privé » de mémoire, **pas
 page que j'ai pu ouvrir** (mon accès réseau est bloqué). Vérifie-le sur la page
 de tarifs avant de sortir les 4 $. Je ne veux pas que tu payes sur ma parole.
 
-### 🔴 NE BASCULE PAS le dépôt en privé tout de suite — ça casserait Apex
-Apex va chercher ses documents de mémoire sur
-`raw.githubusercontent.com/.../CMCteams/main/...` **sans jeton**. Sur un dépôt
-privé, cette adresse répond **404**. Et le code **encaisse l'erreur sans rien
-dire** : Apex ne planterait pas, il **arrêterait juste de relire tes 8 documents,
-en silence**.
+### ✅ Le verrou qui bloquait la bascule est levé *(12/08/2026)*
+Apex allait chercher ses documents de mémoire sur GitHub **sans jeton**, depuis
+**10 endroits** différents. Sur un dépôt privé, ces adresses répondent **404** —
+et le code **encaisse l'erreur sans rien dire** : Apex n'aurait pas planté, il
+aurait **arrêté de relire tes 8 documents, en silence**. La pire des pannes :
+celle qu'on ne voit pas.
 
-Ce n'est pas à un endroit, mais à **6 au moins** : `memory.syncDocs`,
-`CLAUDE_HANDOFF.json`, `KEVIN_ACTIONS_TODO.md`, la parité Claude Code, la
-sentinelle `reconsult-kevin-watch`, le service sentinelles.
+C'est réglé. Les 10 lectures passent maintenant par **une seule porte**, et un
+test bloque automatiquement quiconque en rouvrirait une autre ailleurs.
 
-**Le correctif est à moi, pas à toi** : router ces 6 appels par ton
-`tools/github-proxy-worker.js`, qui existe déjà. Dis-moi quand tu veux, je le
-fais — c'est le prérequis de la bascule.
+Il reste **une commande à lancer, côté moi** : déployer le petit relais qui
+gardera le jeton côté serveur (`deploy-apex-depot-relais.yml`). Il vérifie tout
+seul qu'il lit bien `CLAUDE.md`, puis **écrit lui-même son adresse dans le
+code** — tu n'as aucun lien à recopier nulle part.
 
 ### L'ordre à suivre
 | | Quoi | Qui | Coût |
 |---|---|---|---|
 | 1 | ClayScore dans son dépôt privé | **moi** (en cours) | 0 € |
-| 2 | Router les 6 appels Apex par le worker | **moi** | 0 € |
+| 2 | Router les lectures Apex par une porte unique | **moi** ✅ fait | 0 € |
+| 2b | Déployer le relais (1 commande, côté moi) | **moi** | 0 € |
 | 3 | Prendre Pro **puis** passer `CMCteams` en privé | **toi** (1 clic) + moi | 4 $/mois |
 
 > 💡 Ce que ni l'abonnement ni le déplacement ne changent : **ce qui est déjà
 > public l'est**. L'historique git le garde, quelqu'un a pu cloner. Réécrire
 > l'historique d'un dépôt à 3 500 pull requests est risqué — je ne le ferai que
 > si tu me le demandes explicitement.
+
+---
+
+## 🔑 2. Jeton GitHub `APEX_GITHUB_PAT` *(ajouté 12/08/2026, à ta demande)*
+
+**Pourquoi** : aujourd'hui, dès qu'une automatisation doit **créer un dépôt**,
+**pousser ailleurs que dans CMCteams** ou **gérer un secret**, elle s'arrête net.
+C'est exactement ce qui vient d'arriver au déplacement de ClayScore : le
+workflow s'est arrêté sur *« Le secret APEX_GITHUB_PAT est absent »*, et il a
+fallu que tu crées le dépôt à la main. Avec ce jeton, ce type de blocage
+disparaît — je fais tout, tu ne cliques plus.
+
+### Étape 1 — créer le jeton (30 secondes)
+**▶️ [Créer le jeton](https://github.com/settings/tokens/new?scopes=repo,workflow&description=APEX_GITHUB_PAT)**
+— le nom et les droits sont **déjà cochés** (`repo` + `workflow`).
+
+Il ne te reste qu'à :
+1. Choisir une **expiration** (⚠️ prends **90 jours**, pas « No expiration » —
+   voir plus bas) ;
+2. **Generate token** ;
+3. **Copier** le jeton (`ghp_…`) — GitHub ne te le remontrera **jamais**.
+
+### Étape 2 — le coller dans les secrets (20 secondes)
+**▶️ [Ajouter le secret](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)**
+
+- **Name** : `APEX_GITHUB_PAT` *(exactement ça — une faute et rien ne marche)*
+- **Secret** : le jeton copié
+- **Add secret**
+
+C'est fini. Je n'ai jamais besoin de le voir : les workflows le lisent tout seuls.
+
+### ⚠️ Ce que je te dois en honnêteté
+Ce jeton est **une clé passe-partout sur tout ton compte GitHub** — il peut
+lire, écrire et créer partout. C'est puissant, et c'est aussi pour ça que je ne
+t'ai **pas** demandé de le faire pour ClayScore : un clic suffisait.
+
+Donc :
+- **mets une expiration à 90 jours** (GitHub te préviendra, tu le referas en
+  30 secondes) ;
+- **ne le colle nulle part ailleurs** que dans la page de secrets ci-dessus ;
+- si tu doutes un jour, **[révoque-le d'un clic](https://github.com/settings/tokens)** —
+  ça ne casse que les automatisations, jamais tes données.
+
+**Ce n'est pas urgent.** Fais-le quand tu veux arrêter de cliquer pour moi.
+
+---
+
+## 🗺️ SESSION 2026-08-09 — Ce qui t'attend (dans l'ordre)
+
+| # | Ce qui reste | Qui | État |
+|---|---|---|---|
+| 1 | **Récupérer la clé Apple `.p8`** (le téléchargement plante côté Apple) | toi | 🔴 **bloque tout le reste iPhone** |
+| 2 | ~~Projet « KDMC Live » (télé/radio)~~ | — | ❌ **ANNULÉ** par Kevin (2026-08-09). Rien à faire, rien codé. |
+| 3 | Envoyer tes **15 apps sur TestFlight** | moi | ⏳ dès que le point 1 est fait (5 min) |
+| 4 | ~~Stockage `kdmc-deces-insee`~~ | — | ✅ **GARDÉ** (Kevin 2026-08-12 « Garde ») — rien supprimé, la recherche d'actes marche. |
+
+---
+
+### 🔴 1. Ta clé Apple `.p8` — la seule chose qui bloque
+
+Tout le reste est **prêt et prouvé** : tes 15 apps se fabriquent en vraies applis iPhone (testé
+sur des Mac dans le cloud), signature, sécurité, icônes. Il ne manque que **ce fichier**.
+
+Le téléchargement échoue chez Apple (« Une erreur s'est produite ») — ce n'est **pas toi**.
+
+#### 🆘 Avant de re-essayer : 2 choses à vérifier (2 min)
+
+> Le message d'Apple ne dit pas la cause. Voici les 2 pistes **les plus probables** (pas une certitude) :
+
+- **① Un contrat Apple non signé bloque les clés** — c'est le cas le plus fréquent sur un compte
+  tout neuf.
+  👉 **[Ouvrir « Accords, taxes et opérations bancaires »](https://appstoreconnect.apple.com/business)**
+  → si une ligne est **« En attente »** ou **« À accepter »** → **accepte-la**, puis refais la clé.
+- **② Prendre une clé d'ÉQUIPE** (section **Clés d'équipe** / *Team Keys*), pas « individuelle »,
+  avec l'accès **Admin**. ✅ *Oui, c'est bien une clé équipe qu'il faut — tu avais raison de demander.*
+
+Et si ça bloque encore :
+- appui **long** sur *Télécharger* → « **Télécharger le fichier lié** » ;
+- ou **Chrome** sur iPhone ; ou coupe le **Relais privé iCloud** (Réglages → ton nom → iCloud) ;
+- ou **depuis un ordinateur** — le plus fiable, 30 secondes ;
+- ou **attends 24-48 h** : sur une adhésion toute neuve, Apple met parfois ce délai à activer l'API.
+
+💡 Chaque essai raté laisse une clé morte : **supprime-les** (bouton *Révoquer*), sinon on risque de
+coller le mauvais numéro de clé.
+
+#### Puis, quand le fichier est enfin sur ton iPhone :
+
+1. **[🔑 Ouvrir mes clés App Store Connect](https://appstoreconnect.apple.com/access/integrations/api)**
+   → **+** → nom au choix → accès **Admin** → **Generate** → **Télécharger tout de suite**
+   💡 *Le plus fiable : depuis un **ordinateur** (30 s) plutôt que l'iPhone. Ou essaie **Chrome** sur iPhone, ou en **Wi-Fi** au lieu de la 4G.*
+2. **[📋 Copier le fichier en 1 clic](https://9r4rxssx64-creator.github.io/CMCteams/tools/ios/p8.html)** *(100 % privé — rien n'est envoyé sur internet)*
+3. **[🔐 Coller dans mes secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions)** — **2 secrets** :
+   - `APPSTORE_API_KEY_BASE64` = le contenu du fichier
+   - `APPSTORE_API_KEY_ID` = le **Key ID de la clé que tu viens de télécharger** ⚠️ *(le piège : toujours celui de la dernière)*
+4. Tu me dis **« p8 ok »** → **j'envoie les 15 apps sur ton iPhone.**
+
+> ✅ Déjà en place, rien à refaire : `APPLE_TEAM_ID` (`Y45767LAGC`) et `APPSTORE_API_ISSUER_ID`.
+
+---
+
+### ❌ 2. Projet « KDMC Live » — ANNULÉ
+
+Kevin : « **Action 2 annule, rien.** » (2026-08-09) → **abandonné, rien n'a été codé, rien à faire.**
+Aucune trace dans le domaine. Les 9 liens outils (VLC, iptv-org, yt-dlp…) restent simplement
+rangés dans **OSINT** avec leur fonction écrite — c'est tout ce qui a été livré sur ce sujet.
+
+---
+
+### ✅ 4. Stockage `kdmc-deces-insee` — GARDÉ (décision Kevin, 2026-08-12)
+
+Kevin : « **Garde** » → **rien n'a été supprimé, rien à faire.**
+
+Bonne décision : ce stockage est **encore lu par 3 scripts** (`tools/arbre/find-deces.py`,
+`actes-register.py`, `enrich-insee-local.py`), c'est-à-dire l'automatisation
+**« Arbre — retrouver un décès précis »**. Elle continue de donner le **numéro d'acte de
+décès** et le **code de la commune** (la « source 2 » complète), en plus de la recherche
+par nom/date.
+
+*Rappel de ce qui s'est passé : je t'avais annoncé ce stockage comme inutile — c'était une
+info **incomplète** de ma part (j'avais vérifié la page de l'arbre, pas les scripts). Je me
+suis arrêté avant d'effacer et je t'ai rendu le choix. Leçon gravée (#141) : une recherche de
+dépendance couvre page **+ scripts + automatisations**, jamais la page seule.*
+
+---
+
+### ✅ Fait pendant ce temps (rien à faire pour toi)
+
+- **Connexion admin universelle** : tu es reconnu admin **partout** sur ton domaine, sans code par app (déployé + vérifié en ligne).
+- **15 apps prêtes pour l'iPhone**, chacune sécurisée (HTTPS strict, navigation verrouillée au domaine, icône propre) — toutes testées sur Mac cloud.
+- **World Monitor v2.42** : ta **localisation** en direct (point bleu + précision) sur la **carte**, le **globe** et le **globe 3D**. Ton GPS ne quitte jamais l'iPhone (prouvé : 0 fuite réseau).
 
 ---
 
@@ -2705,3 +2862,25 @@ dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
 → Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
 toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
 **Claude doit me le rappeler.**
+
+## 🍎 iPhone / App Store — 2 actions, une seule fois (2026-08-13)
+
+**Tout le reste est construit et vérifié.** Il ne manque que ce que je ne peux pas faire :
+
+1. **Compte Apple Developer** — 99 €/an → https://developer.apple.com/programs/enroll/
+   *(ta carte bancaire ; aucune automatisation possible)*
+2. **Clé d'accès API** → https://appstoreconnect.apple.com/access/integrations/api
+   → me donner **Issuer ID** + **Key ID** + le fichier **.p8**
+   ⚠️ le `.p8` ne se télécharge **qu'une seule fois**.
+
+Je les range en secrets GitHub (`ASC_ISSUER_ID`, `ASC_KEY_ID`, `ASC_PRIVATE_KEY`) :
+jamais dans le code, jamais affichés, effacés du runner après usage.
+
+**Ensuite, sans rien te demander** : je construis sur un Mac prêté par GitHub et j'envoie
+sur **TestFlight** → l'app s'installe sur ton iPhone comme une vraie app, sans attendre la
+validation d'Apple.
+
+**Honnête** : l'App Store *public* n'est pas garanti — Apple refuse les apps qui ne sont
+qu'un site emballé (règle 4.2). Nos 3 apps ont un vrai contenu propre, donc une chance
+réelle, mais la décision lui appartient.
+

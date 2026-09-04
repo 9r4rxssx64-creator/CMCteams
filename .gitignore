@@ -41,3 +41,4 @@ pipeline/rappel-etat.json
 
 # resultats des recherches Ciclade : donnees personnelles, artefact CI seulement
 /patrimoine-resultats/
+mobile/build/

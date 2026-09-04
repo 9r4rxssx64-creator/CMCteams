@@ -124,6 +124,45 @@
         "node_modules/**",
         ".github/**"
       ]
+    },
+    {
+      "id": "app-store-connect-cli",
+      "notion": "App Store",
+      "repo": "https://github.com/rorkai/App-Store-Connect-CLI",
+      "licence": "MIT (voir LICENSE vendorisée)",
+      "include": [
+        "README.md",
+        "LICENSE*",
+        "docs/**/*.md",
+        "**/*.md"
+      ],
+      "exclude": [
+        "node_modules/**",
+        ".github/**",
+        "vendor/**",
+        "internal/**",
+        "cmd/**",
+        "testdata/**"
+      ],
+      "usage": "CLI `asc` (Go, MIT, 5.8k★) pour l'API App Store Connect : TestFlight, builds, soumissions, signature, captures, abonnements, analytics. JSON d'abord, aucune question interactive → pilotable par un agent. On vendorise SA DOCUMENTATION ; le binaire s'installe sur la machine qui exécute (runner macOS ou Mac de Kevin).",
+      "_note_binaire": "Volontairement PAS de binaire vendorisé (même règle que rtk) : un exécutable tiers dans le dépôt = surface d'attaque + poids inutile."
+    },
+    {
+      "id": "app-store-connect-cli-skills",
+      "notion": "App Store (skills agent)",
+      "repo": "https://github.com/rorkai/app-store-connect-cli-skills",
+      "licence": "MIT (voir LICENSE vendorisée)",
+      "include": [
+        "README.md",
+        "LICENSE*",
+        "**/SKILL.md",
+        "**/*.md"
+      ],
+      "exclude": [
+        "node_modules/**",
+        ".github/**"
+      ],
+      "usage": "Skills d'agent officiels du CLI `asc` (MIT, 963★, tags agent-skills/ai-skills) : publier, gérer TestFlight, préparer les fiches App Store. C'est la source la plus utile pour MOI et pour Apex — elle décrit les ENCHAÎNEMENTS, pas juste les commandes."
     }
   ]
 }

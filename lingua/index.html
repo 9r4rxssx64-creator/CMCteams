@@ -722,6 +722,64 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .lang-row .lr-fl{font-size:20px}
 .lang-row .lr-n i{font-style:normal;font-size:11px;color:var(--gold)}
 .lang-row .lr-s{margin-left:auto;font-size:12.5px;color:#9fb2c2;font-weight:800}
+/* ===== 🇲🇨 Note d'honnêteté du cours de monégasque (v2.119) ===== */
+/* 🤟 Langue des signes : la question est une VIDÉO. Elle doit être grande (on lit un geste,
+   pas un mot), tenir sur un iPhone en portrait, et ne jamais déborder. */
+.q-signe{margin:10px 0 6px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.signe-v{width:100%;max-width:320px;aspect-ratio:1/1;object-fit:cover;border-radius:18px;background:#0e1420;border:2px solid #2a3550;display:block}
+.signe-again{min-height:44px;padding:9px 16px;border-radius:999px;border:1px solid #3a4763;background:#1b2436;color:#cfe0ff;font-size:14px;font-weight:700}
+.signe-ko{max-width:320px;padding:12px 14px;border-radius:14px;background:#2a1b1b;border:1px solid #e2504a;color:#ffd0cd;font-size:13px;line-height:1.5;text-align:center}
+.signe-credit{margin-top:8px;font-size:11.5px;color:#8fa0bd;text-align:center;line-height:1.5}
+.signe-credit a{color:#9ec5ff}
+.lsf-note{background:linear-gradient(135deg,#1b2436,#1d2733);border-color:#4d7cff}
+.lsf-note b{color:#cfe0ff}
+.lsf-note span{color:#c3d0e6}
+.abc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;margin:14px 0}
+.abc-c{position:relative;display:block;border-radius:14px;overflow:hidden;background:#141c2b;border:1px solid #2a3550;min-height:92px}
+.abc-img{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+.abc-l{position:absolute;left:6px;bottom:5px;font-size:19px;font-weight:800;color:#fff;text-shadow:0 1px 4px #000,0 0 10px #000}
+.abc-ko{padding:26px 8px;font-size:11px;color:#8fa0bd;text-align:center}
+.lsf-search{width:100%;min-height:46px;padding:11px 14px;border-radius:14px;border:1px solid #2a3550;background:#141c2b;color:#e8eefc;font-size:15px;margin:10px 0}
+.lsf-liste{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.lsf-carte{background:#141c2b;border:1px solid #2a3550;border-radius:16px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.lsf-carte .signe-v{max-width:100%;border-width:1px}
+.lsf-autres{width:100%;margin-top:6px;padding-top:8px;border-top:1px dashed #2a3550;display:flex;flex-direction:column;align-items:center;gap:4px}
+.lsf-autres i{font-size:11px;color:#8fa0bd;font-style:normal}
+.signe-v.mini{max-width:110px;border-radius:12px}
+.lsf-mot{font-size:14.5px;color:#e8eefc;text-align:center;line-height:1.35}
+.mc-note{background:linear-gradient(135deg,#2a1b1b,#1d2733);border:1px solid #e2504a;border-radius:16px;padding:13px 14px;margin-bottom:16px;display:flex;flex-direction:column;gap:6px}
+.mc-note b{font-size:14.5px;color:#ffd0cd}
+.mc-note span{font-size:12px;line-height:1.5;color:#d9c2c0}
+/* ===== 📜 Histoire & anecdotes de la langue (v2.118) =====
+   L'anecdote du jour s'affiche en entier sur la carte d'accueil (2 lignes max) : on ne
+   coupe pas une phrase au milieu, sinon elle ne veut plus rien dire. */
+.stories-card.hist-link{background:linear-gradient(135deg,#2a2033,#1d2733);border-color:#c9a7ff;align-items:flex-start}
+.stories-card.hist-link .st-badge{background:#c9a7ff;color:#2a1a3d}
+.stories-card.hist-link .st-tx i{color:#c9b0ea;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hist-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.hist-txt{font-size:14.5px;line-height:1.55;margin:0 0 10px}
+.hist-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hist-say{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-weight:800;font-size:13.5px;cursor:pointer}
+.hist-src,.hf-src{display:inline-flex;align-items:center;min-height:44px;font-size:12px;color:#9fb2c2;text-decoration:none;border-bottom:1px dotted #9fb2c2}
+.hist-h3{font-size:15px;margin:18px 0 8px;color:var(--gold)}
+.hist-fait{background:var(--card);border:1px solid var(--line);border-left:3px solid #c9a7ff;border-radius:12px;padding:12px 13px;margin-bottom:10px}
+.hist-fait .hf-t{font-size:14px;line-height:1.5}
+.hist-note{margin-top:14px;font-size:11.5px;line-height:1.5}
+/* Les repères qu'on retient d'un coup d'œil. Deux colonnes à 390px, la pastille entière est
+   cliquable (44px de haut mini, règle iPhone) vers la page où le chiffre se vérifie. */
+.hist-chiffres{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.hist-chiffres .hc{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:64px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;text-decoration:none}
+.hist-chiffres .hc-v{font-size:14px;line-height:1.3;color:var(--gold)}
+.hist-chiffres .hc-k{font-size:11.5px;line-height:1.35;color:#9fb2c2;font-style:normal}
+/* Les mots qui ont voyagé : une carte par mot, le mot en gros, l'histoire dessous. */
+.hist-mots{display:flex;flex-direction:column;gap:10px}
+.hist-mot{background:var(--card);border:1px solid var(--line);border-left:3px solid #7fd1b9;border-radius:12px;padding:12px 13px}
+.hist-mot .hm-m{display:block;font-size:16px;color:#7fd1b9;margin-bottom:4px}
+.hist-mot .hm-d{font-size:13.5px;line-height:1.5;margin-bottom:2px}
+/* 📚 Les maisons de référence de la langue — un lien = une touche confortable (≥44px) */
+.src-lien{display:flex;flex-direction:column;gap:2px;min-height:56px;justify-content:center;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;padding:10px 13px;margin-bottom:9px;text-decoration:none;color:#fff}
+.src-lien b{font-size:14px}
+.src-lien i{font-style:normal;font-size:11.5px;color:#9fb2c2;line-height:1.4}
 /* ===== 🎤 Atelier prononciation (v2.36) ===== */
 .stories-card.pron-link{background:linear-gradient(135deg,#2b1020,#1d2733);border-color:#ff7ab8}
 .stories-card.pron-link .st-badge{background:#ff7ab8;color:#3a0f24}
@@ -771,6 +829,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <body>
 <div id="app"></div>
 <script src="data.js"></script>
+<script src="histoires-langues.js"></script>
+<script src="mc-voix.js"></script>
+<script src="sources-langues.js"></script>
+<script src="data-mc.js"></script>
+<script src="data-lsf.js"></script>
 <script>
 /* Icône iOS = la mascotte Bee 🐝 (création originale KDMC) */
 (function(){try{

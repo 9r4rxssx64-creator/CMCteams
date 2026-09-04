@@ -1,7 +1,60 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-08-09** (Passe « full améliorations » intégrée à « fais ton audit » — axe 9)
+> Dernière mise à jour : **2026-08-14** (OSINT v2.6 téléphone · vérificateur de liens RÉEL)
+
+## 🔗 Vérificateur de liens RÉEL — session 2026-08-14
+
+Kevin : « *Tu as internet et les outils qu'il te faut. Arrête de me dire que tu ne peux pas.* »
+→ Les liens du domaine sont désormais **pingués pour de vrai** depuis un runner GitHub (réseau ouvert).
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/audit/liens-check.mjs` | Ping RÉEL des 198 liens (OSINT + World Monitor). Classement honnête **vivant / protégé (401-403 = anti-robot) / MORT**. `--lister` = test hors ligne. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/liens-check.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/audit/liens-check.mjs) |
+| `.github/workflows/liens-check.yml` | Lance la vérification (**bouton** + 1×/mois), rapport téléchargeable | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/liens-check.yml) · [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/liens-check.yml) |
+
+## 🔎 OSINT v2.6 — vérifier un numéro de téléphone (session 2026-08-14)
+
+5 liens **défensifs** (arnaque au téléphone / fuite de mes données), chacun avec sa fonction écrite :
+Signal-Arnaques · 33700 · Numverify · **InfoStealers** · PhoneInfoga (doc + avertissement RGPD).
+**2 corrections trouvées en vérifiant en vrai** : lien Hudson Rock injoignable → `infostealers.com`, et sa description était fausse.
+
+👉 **[Ouvrir OSINT](https://kd-mc.com/osint/)** · [code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/osint/index.html)
+
+
+## 🍎 Apps iPhone — 15 apps du domaine → TestFlight, sans Mac (session 2026-08-12)
+
+**▶️ Action immédiate (toi) :** [🔑 Créer ma clé Apple](https://appstoreconnect.apple.com/access/integrations/api) → [📋 La copier en 1 clic](https://9r4rxssx64-creator.github.io/CMCteams/tools/ios/p8.html) → [🔐 La coller en secret](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions)
+
+**▶️ Lancer une app :** Actions → « iOS — Apps du domaine → TestFlight » → `app: crea-studio` · `dry_run` (test) ou `testflight` (envoi)
+
+**🔧 Fichiers :**
+- [`.github/workflows/ios-apps-testflight.yml`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/ios-apps-testflight.yml) — fabrique + signe + envoie (Mac cloud, clé API révocable)
+- [`tools/ios/apps.json`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ios/apps.json) — **registre des 15 apps** (ajouter une app = 1 entrée, 0 secret)
+- [`tools/ios/README.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ios/README.md) — mode d'emploi + les 4 secrets + limites honnêtes
+- [`tools/ios/p8.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ios/p8.html) — outil 1-clic pour copier la clé `.p8` (100 % local)
+- [`tools/ios/make-icon.py`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ios/make-icon.py) — icône d'app 1024 opaque, couleur par app
+
+## 🌐 Admin universel du domaine (SSO central) — session 2026-08-12
+
+Reconnu admin **partout** sans code par app ; admin exige `verified` (Face ID), jamais le nom seul.
+
+- [`services/kdmc-crea-famille/worker.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-famille/worker.js) — `estAdminSSO()` interroge `/__sso/whoami`
+- [`tools/crea-studio/index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) — le client transmet le pass (`Authorization: Bearer`)
+- [`shops/_shared/kdmc-shop-admin.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/_shared/kdmc-shop-admin.js) — `ssoAutoAdmin()` (4 boutiques)
+- [`tools/departs/index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/departs/index.html) — `_depSsoAutoAdmin()`
+- [`tests/p0-secrets-crea-famille.test.mjs`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/p0-secrets-crea-famille.test.mjs) — garde 17 vérifs (`npm run test:p0-secu`)
+
+## 🌍 World Monitor v2.42 — ma localisation (session 2026-08-12)
+
+- [`kdmc-home/worldmonitor/index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/worldmonitor/index.html) — puce 📍 sur carte + globe + globe 3D ; GPS jamais transmis
+- [`tools/audit/wm-position-test.mjs`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/wm-position-test.mjs) — preuve navigateur réel 8/8 (`npm run test:wm-pos`)
+
+## 🔎 OSINT v2.5 — 9 liens 1-clic avec leur fonction (session 2026-08-12)
+
+- [`kdmc-home/osint/index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/osint/index.html) — catégorie 📺 « Flux TV, radio & fichiers publics », fonction affichée sous chaque lien, recherche par fonction (129 outils / 19 catégories)
+- [`tools/audit/osint-links-test.mjs`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/osint-links-test.mjs) — preuve navigateur réel 9/9 (`npm run test:osint-links`)
+
 
 ## 🚀 Passe AMÉLIORATIONS TOTALES (axe 9 de l'audit) — session 2026-08-09 (mergé sur main)
 
@@ -1790,3 +1843,57 @@ Tu donnes tes vidéos brutes, l'app te rend la vidéo montée. Un seul bouton.
 | `tools/crea-studio/index.html` | Module `Auto` : écoute le son pour enlever les blancs, regarde l'image pour jeter le noir/flou, corrige les couleurs, zoom lent + fondus, sous-titres, musique, compte rendu chiffré | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
 | `services/kdmc-crea-ai/worker.js` | Nouvelle porte `/transcribe` : la parole devient du texte (IA gratuite Cloudflare). Seul un petit extrait sonore part, jamais la vidéo | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
 | `tests/verify-crea-montage-auto.mjs` | Preuve (29 vérifs) : 2 vraies vidéos fabriquées puis montées, blancs coupés mesurés, seuil qui s'adapte au volume, hésitations retirées, couleurs corrigées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-montage-auto.mjs) |
+
+### Lingua v2.123 — 🤟 la vraie langue des signes française (2026-08-13)
+
+Un 16ᵉ cours. **545 signes**, chacun étant une **vraie vidéo** d'une vraie personne qui signe,
+publiée sous licence libre sur Wikimedia Commons (l'essentiel vient de Lingua Libre, où des
+gens signent bénévolement). **Rien n'est inventé** : je ne connais pas la LSF, donc un signe
+que j'aurais imaginé serait faux — et une personne sourde le verrait tout de suite.
+
+Ce que tu trouves dedans : les leçons (mêmes thèmes que les autres langues), **l'alphabet
+dactylologique A-Z** pour épeler un prénom, et un **dictionnaire cherchable** des 545 signes
+avec un second signeur quand il existe. Aucun son : une langue des signes se regarde.
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `tools/lingua/collect-lsf.mjs` | Va chercher les signes sur Wikimedia Commons — licences libres uniquement, auteur et source gardés | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/collect-lsf.mjs) |
+| `tools/lingua/build-lsf-cours.mjs` | Construit le cours à partir des signes récoltés | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/build-lsf-cours.mjs) |
+| `lingua/lsf-sources.json` | La récolte brute : 545 signes + 26 lettres, avec licence et page d'origine | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/lsf-sources.json) |
+| `lingua/data-lsf.js` | Le cours engendré (ne pas éditer à la main) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/data-lsf.js) |
+| `tools/lingua/verify-lsf.mjs` | La garde : aucun signe inventé, aucune question qui donne sa réponse, aucun son | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-lsf.mjs) |
+| `.github/workflows/lingua-lsf.yml` | Va rechercher de nouveaux signes, à la demande et 1×/mois | [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/lingua-lsf.yml) |
+
+### Lingua v2.121 — le dossier de chaque langue (2026-08-13)
+
+Tu ouvres 📜 sur l'accueil et tu as, pour la langue que tu apprends : son histoire, quatre
+chiffres à retenir, dix anecdotes, et les mots passés entre cette langue et le français.
+Tout est cliquable vers l'endroit où ça se vérifie.
+
+| Fichier | À quoi ça sert | Voir |
+|---|---|---|
+| `lingua/histoires-langues.js` | Le contenu : 15 langues × (histoire + 4 chiffres + 10 anecdotes + 6 mots), chacun avec sa source | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/histoires-langues.js) |
+| `lingua/sources-langues.js` | Les 55 maisons de référence (académies, dictionnaires) — toutes ouvertes en vrai avant d'être affichées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/sources-langues.js) |
+| `tools/lingua/verify-histoires.mjs` | La garde : rien sans source, planchers de contenu, sections vraiment affichées, + `--liens` qui vérifie les 153 sources, + `--semantic` le juge indépendant | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-histoires.mjs) |
+| `tools/lingua/verify-sources.mjs` | Ouvre chaque adresse officielle et écrit son état (répond / refuse les robots / morte) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-sources.mjs) |
+| `.github/workflows/lingua-sources.yml` | L'ouvrage qui teste tout ça pour de vrai (1×/semaine + à la demande) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/lingua-sources.yml) |
+
+## 🍎 App Store — outils installés le 2026-08-13 (Claude Code + Apex)
+
+Source : Kevin (vidéo Algomax, capture TikTok) — « intègre toi et Apex, qu'il s'en serve et toi aussi ».
+
+| Fichier | À quoi ça sert | Lien |
+|---|---|---|
+| Skill (moi) | Publier une app sur l'App Store / TestFlight, **et ce qui manque vraiment** | [appstore/SKILL.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/appstore/SKILL.md) |
+| Skill (Apex) | Même chose, version courte pour Apex | [apex-appstore.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.claude/skills/apex-appstore.md) |
+| Sources vendorisées | Le CLI `asc` + ses skills d'agent (texte seulement) | [sources.json](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/agent-toolkit/sources.json) |
+
+**Ce qu'il te reste à faire, toi (et personne d'autre ne peut le faire)** :
+1. Un compte **Apple Developer** — 99 €/an, ta carte.
+2. Une **clé API App Store Connect** (une seule fois, dans ton compte connecté) → je la range en secret GitHub, jamais dans le dépôt.
+
+**Honnêtement** : on publie des **apps**, pas un domaine. Une PWA ne se soumet pas telle
+quelle — il faut l'emballer en app native (je le fais en CI sur un Mac GitHub). Et Apple
+refuse les coquilles vides autour d'un site : les candidates crédibles sont **CMCteams**,
+**Apex Chat** et **Lingua**, qui ont un vrai contenu propre.
+

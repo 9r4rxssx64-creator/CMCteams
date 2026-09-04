@@ -71,6 +71,13 @@ const SURFACES = [
       if (r.cartes < 1) return { ok:false, note:'AUCUNE carte rendue — arbre vide ('+r.ver+', style '+r.style+')' };
       return { ok:true, note: r.cartes+' cartes · style '+r.style+' · '+r.ver };
     } },
+  /* Belles adresses ajoutées le 2026-08-13 (Kevin « pourquoi les adresses ne sont pas
+     pareilles ») : elles doivent RÉELLEMENT répondre, pas seulement exister au routeur. */
+  { url: 'https://worldmonitor.' + ROOT + '/', name: 'World Monitor (belle adresse)', selKey: 'body' },
+  { url: 'https://osint.' + ROOT + '/', name: 'OSINT (belle adresse)', selKey: 'body' },
+  { url: 'https://ia.' + ROOT + '/', name: 'Outils IA (belle adresse)', selKey: 'body' },
+  { url: 'https://outils.' + ROOT + '/', name: 'Mes outils (belle adresse)', selKey: 'body' },
+  { url: 'https://shops.' + ROOT + '/', name: 'Portail boutiques (belle adresse)', selKey: 'body' },
   { url: 'https://lingua.' + ROOT + '/', name: 'KDMC Lingua', selKey: '.brand', deep: async (page) => {
       // App d'apprentissage : écran comptes (anonyme) → créer un compte → vérifier
       // 6 langues + arbre de leçons rendus + onglets. Un écran vide ou <6 langues échoue.
@@ -85,6 +92,10 @@ const SURFACES = [
         await page.fill('#acName', 'Audit'); await tap('.modal .btn-main'); await page.waitForTimeout(700);
         const langs = await page.$$eval('.course-card', els => els.length).catch(() => 0);
         if (langs < 6) return { ok:false, note:'langues attendues ≥6, vues ' + langs };
+        // 🇲🇨 v2.119 : le monégasque doit être RÉELLEMENT proposé sur le vrai domaine
+        // (pas seulement dans le dépôt) — sinon le déploiement n'est pas passé.
+        const mcDispo = await page.$$eval('.course-card', els => els.some(e => /Monégasque/i.test(e.textContent))).catch(() => false);
+        if (!mcDispo) return { ok:false, note:'🇲🇨 monégasque absent de la liste des langues (déploiement non propagé ?)' };
         await tap('.course-card'); await page.waitForTimeout(700);
         const units = await page.$$eval('.unit', els => els.length).catch(() => 0);
         const tabs = await page.$$eval('.tab', els => els.length).catch(() => 0);
@@ -113,6 +124,29 @@ const SURFACES = [
           const mth = await page.$('.pron-bee .disc-mouth');  // bouche animée (lip-sync)
           pron = !!w && au >= 2 && !!bee && !!mth; }
         if (!pron) return { ok:false, note:'atelier prononciation 🎤 absent (mot/audio/Bee/bouche)' };
+        // Revenir À COUP SÛR sur l'accueil. L'atelier prononciation s'affiche en PLEIN ÉCRAN :
+        // il n'a ni « ← Retour » ni barre d'onglets, seulement sa croix ✕ (.bz-quit). En tapant
+        // au hasard sur .btn-ghost, la sonde restait DANS l'atelier et concluait « 0 anecdote »
+        // — un défaut de la sonde présenté comme un défaut de l'app (mesuré le 2026-08-13).
+        const rentrer = async () => { for (let i = 0; i < 4; i++) {
+          if (await page.$('.tabbar')) return true;
+          if (!(await tap('.bz-quit'))) await tap('.btn-ghost');
+          await page.waitForTimeout(400); }
+          return !!(await page.$('.tabbar')); };
+        if (!(await rentrer())) return { ok:false, note:'impossible de revenir à l\'accueil après l\'atelier prononciation' };
+        // 📜 v2.118 puis v2.121 « Enrichit +++ » : le dossier de la langue doit s'ouvrir, et
+        // chaque élément publié (anecdote, chiffre repère, mot voyageur) doit porter une source
+        // cliquable. Un élément sans source = une affirmation invérifiable.
+        let faits = 0, srcs = 0, chiffres = 0, motsV = 0;
+        if (await tap('.stories-card.hist-link')) { await page.waitForTimeout(500);
+          faits = await page.$$eval('.hist-fait', els => els.length).catch(() => 0);
+          chiffres = await page.$$eval('.hist-chiffres .hc', els => els.filter(a => /^https?:/.test(a.href)).length).catch(() => 0);
+          motsV = await page.$$eval('.hist-mot', els => els.length).catch(() => 0);
+          srcs = await page.$$eval('.hf-src', els => els.filter(a => /^https?:/.test(a.href)).length).catch(() => 0); }
+        // une source par anecdote ET une par mot (les chiffres sont eux-mêmes des liens)
+        if (faits < 8 || motsV < 4 || chiffres < 3 || srcs < faits + motsV)
+          return { ok:false, note:'📜 dossier de la langue : ' + faits + ' anecdotes, ' + chiffres + ' chiffres, ' + motsV + ' mots, ' + srcs + ' sources cliquables (il en faut une par anecdote et par mot)' };
+        await rentrer();
         // 🔊 v2.40 : les 6 voix HD doivent être CLAIRES (audio réel non vide) et DIFFÉRENTES (octets distincts).
         // Sondage du VRAI worker (même origine). Repli fail-open (pas de clé) = toléré, pas un bug de page.
         let voix = '';
@@ -133,7 +167,23 @@ const SURFACES = [
           else if (real.length >= 5 && distinct >= 5) voix = ' · 6 voix HD réelles distinctes ✅ (' + distinct + ' signatures)';
           else return { ok:false, note:'voix HD non distinctes/claires : ' + real.length + ' audio, ' + distinct + ' distinctes' };
         } catch (_) { voix = ' · sonde voix indispo (toléré)'; }
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤' + voix + ' · vies ' + hearts };
+        // 🇲🇨 v2.119 : entrer VRAIMENT dans le cours de monégasque et vérifier qu'il a des
+        // leçons + l'encadré d'honnêteté (« aucune voix ne parle monégasque »).
+        let mc = '';
+        try {
+          await page.$eval('#tbFlag', (el) => el.click()); await page.waitForTimeout(500);
+          const ok = await page.$$eval('.course-card', (els) => {
+            const c = els.find((e) => /Monégasque/i.test(e.textContent)); if (!c) return false; c.click(); return true; });
+          if (ok) { await page.waitForTimeout(800);
+            const u = await page.$$eval('.unit', els => els.length).catch(() => 0);
+            const note = !!(await page.$('.mc-note'));
+            mc = ' · 🇲🇨 monégasque ' + u + ' unités' + (note ? ' + note honnête' : ' SANS note');
+            if (u < 5 || !note) return { ok:false, note:'🇲🇨 cours monégasque incomplet : ' + u + ' unités, note honnête ' + note };
+          }
+        } catch (e) { mc = ' · 🇲🇨 sonde monégasque indispo'; }
+        // la version RÉELLEMENT servie (preuve que le déploiement est passé, pas le dépôt)
+        const ver = await page.evaluate(() => { const b = document.querySelector('.ver, .version, [data-ver]'); return b ? b.textContent.trim() : (window.APP_VER || ''); }).catch(() => '');
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes + ' + chiffres + ' chiffres + ' + motsV + ' mots, tous sourcés 📜' + mc + voix + ' · vies ' + hearts + (ver ? ' · version servie ' + ver : '') };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
@@ -148,6 +198,13 @@ const SURFACES = [
     } },
   { url: BASE + '/worldmonitor/', name: 'World Monitor', selKey: '.leaflet-container' },
   { url: BASE + '/osint/', name: 'OSINT', selKey: '.leaflet-container' },
+  // Livre de cuisine « A Cüjina de Mùnegu » — 3 adresses (Kevin 2026-08-13). Le contenu
+  // porte le nom monégasque : on vérifie qu'il se charge vraiment sur chaque sous-domaine.
+  { url: 'https://cujina.' + ROOT + '/', name: 'A Cüjina de Mùnegu (cujina)', selKey: '#cover' },
+  { url: 'https://cocina.' + ROOT + '/', name: 'A Cüjina de Mùnegu (cocina)', selKey: '#cover' },
+  { url: 'https://cuisine.' + ROOT + '/', name: 'A Cüjina de Mùnegu (cuisine)', selKey: '#cover' },
+  // Chemin sur le domaine principal (marche sur tout réseau/4G, 0 DNS nouveau) :
+  { url: BASE + '/cujina/', name: 'A Cüjina de Mùnegu (chemin kd-mc.com/cujina)', selKey: '#cover' },
 ];
 
 /* « Vérifier en réel EN TANT QUE Kevin » (Kevin 2026-08-06). OPT-IN : sans KDMC_AS_KEVIN=1

@@ -40,11 +40,15 @@ for (const f of readdirSync(DIR).filter((n) => /\.ya?ml$/.test(n))) {
     /* Exiger la DIRECTIVE `shell:`, pas le mot « pipefail » : sinon un simple commentaire
        contenant le mot suffirait à faire passer le test (défaut trouvé en le sabotant). */
     const protege = /^\s*shell:.*pipefail/m.test(step);
-    const estDeploiement = /^\s*wrangler deploy\b.*\|\s*tee\b/m.test(step);
+    /* TROU BOUCHÉ le 2026-08-13 : la règle dure ne voyait QUE `wrangler deploy` en début de
+       ligne. Or `npx --yes wrangler@3 deploy … | tee` passait à travers et n'était que
+       « toléré » — donc un DÉPLOIEMENT RATÉ serait ressorti VERT (exactement ce que ce test
+       existe pour empêcher). Trouvé en vrai dans deploy-apex-depot-relais.yml. */
+    const estDeploiement = /^\s*(?:npx\s+(?:--yes\s+)?)?wrangler(?:@[\w.]+)?\s+deploy\b.*\|\s*tee\b/m.test(step);
 
     if (protege) { pass++; continue; }
     if (estDeploiement) {
-      const l = (step.match(/^\s*wrangler deploy\b.*$/m) || [''])[0].trim().slice(0, 70);
+      const l = (step.match(/^\s*(?:npx\s+(?:--yes\s+)?)?wrangler(?:@[\w.]+)?\s+deploy\b.*$/m) || [''])[0].trim().slice(0, 70);
       fails.push(`${f} — DÉPLOIEMENT « ${l} » sans pipefail : un échec ressortirait VERT`);
     } else {
       toleres.push(f);
