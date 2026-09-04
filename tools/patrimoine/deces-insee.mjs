@@ -27,7 +27,7 @@ import { lireArbre, RACINE, anneeDe } from './lire-arbre.mjs';
 
 const SORTIE = join(RACINE, 'patrimoine-resultats');
 const API = 'https://deces.matchid.io/deces/api/v1/search';
-const PAUSE_MS = 1500;
+const PAUSE_MS = 4000;   // mesuré : au-delà de ~6 requêtes rapides, l'API refuse
 const CETTE_ANNEE = new Date().getFullYear();
 
 const arg = (n, d = null) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : d; };
@@ -52,12 +52,25 @@ const dejaConnu = (nom, prenom, annee) =>
 
 /* --- interrogation --------------------------------------------------------- */
 
-async function chercherNom(nom) {
+/* Mesuré au 1er passage : les 6 premiers noms passent, les 17 suivants
+   renvoient tous 422 — ce n'est pas la forme des noms, c'est une limite de
+   débit qui se déclenche. On réessaie donc, en attendant de plus en plus
+   longtemps, et on garde le message d'erreur RÉEL au lieu du seul code. */
+async function chercherNom(nom, essai = 0) {
   const url = `${API}?lastName=${encodeURIComponent(nom)}&size=200`;
   const r = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  if (!r.ok) {
+    const corps = await r.text().catch(() => '');
+    if ((r.status === 422 || r.status === 429 || r.status >= 500) && essai < 4) {
+      await new Promise((x) => setTimeout(x, 5000 * (essai + 1)));
+      return chercherNom(nom, essai + 1);
+    }
+    throw new Error(`HTTP ${r.status}${corps ? ' — ' + corps.replace(/\s+/g, ' ').slice(0, 120) : ''}`);
+  }
   const j = await r.json();
   const hits = (j?.response?.persons) || j?.persons || [];
+  const sansAccent = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z]/g, '');
+  const lisible = (d) => { const t = String(d || ''); return /^\d{8}$/.test(t) ? `${t.slice(6, 8)}/${t.slice(4, 6)}/${t.slice(0, 4)}` : t; };
   return hits.map((h) => {
     const d = h.death || {};
     const n = h.name || {};
@@ -65,15 +78,19 @@ async function chercherNom(nom) {
     return {
       nom: (Array.isArray(n.last) ? n.last[0] : n.last) || nom,
       prenom: (Array.isArray(n.first) ? n.first.join(' ') : n.first) || '',
-      naissance: h.birth?.date || '',
+      naissance: lisible(h.birth?.date),
       lieuNaissance: h.birth?.location?.city || '',
-      deces: d.date || '',
+      deces: lisible(d.date),
       lieuDeces: d.location?.city || '',
       age: h.age || null,
       annee,
       ans: annee ? CETTE_ANNEE - annee : null,
     };
-  });
+  })
+  /* L'API fait du rapprochement approximatif : chercher DESARZENS remonte
+     « Decorzens ». Un homonyme approché n'est pas un parent — on ne garde que
+     le nom EXACT (accents et tirets ignorés). */
+  .filter((h) => sansAccent(h.nom) === sansAccent(nom));
 }
 
 /* Certains noms de l'arbre sont très répandus (BRUNO, GOMEZ, MATHIEU…) : les
