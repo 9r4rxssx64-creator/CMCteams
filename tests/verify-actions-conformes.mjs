@@ -64,10 +64,18 @@ const CONSTRUIT = /npm (run|ci|test)|actions\/setup-node|wrangler(@[\w.]+)? (dep
 /* clayscore-extract-private.yml a été déplacé dans workflows-desactives le
    4.09 (il portait un cron) — l'exception n'a plus d'objet. */
 const TOLERES = new Set();
+/* La règle ne vise que ce qui peut PARTIR TOUT SEUL. GitHub reprochait un
+   VOLUME d'exécutions automatiques (~97/jour) ; un workflow qu'on ne peut
+   lancer qu'à la main ne produit aucun volume — il tourne quand un humain
+   appuie. Mesuré le 4.09 : sans cette distinction, la règle rangeait à tort
+   la sauvegarde Firebase (données de Kevin, manuelle depuis le 15/08) et
+   cassait la garde cross-app-preservation qui la déclare critique. */
+const AUTOMATIQUE = /^\s{2}(schedule|push|pull_request|repository_dispatch|workflow_run):/m;
 const purs = [];
 for (const f of fichiers) {
   if (TOLERES.has(f)) continue;
   const s = readFileSync(join(DOSSIER, f), 'utf8');
+  if (!AUTOMATIQUE.test(s)) continue;          // manuel seulement → hors sujet
   const hotes = [...s.matchAll(HOTE)].map((m) => m[0]);
   if (hotes.length && !CONSTRUIT.test(s)) purs.push(f);
 }
@@ -75,6 +83,28 @@ chk(purs.length === 0,
   purs.length === 0
     ? 'Règle 2 : aucun workflow qui n\'appelle QUE des services tiers'
     : `Règle 2 VIOLÉE : ${purs.length} workflow(s) n'appellent que l'extérieur → ${purs.join(', ')}`);
+
+/* --- Règle 4 : ne jamais RANGER un workflow déclaré CRITIQUE -------------- */
+/* Née d'une vraie faute, le 4.09.2026. En mettant le dépôt en conformité,
+   j'ai déplacé vers workflows-desactives/ deux workflows qui n'avaient PAS de
+   cron et que la garde cross-app-preservation déclare critiques :
+   handoff-sync.yml (les passations Apex ⇄ Claude Code) et firebase-backup.yml
+   (la sauvegarde des données de Kevin). La CI a échoué et la capacité était
+   perdue en silence jusque-là. On lit la liste DANS cross-app-preservation.yml
+   plutôt que de la recopier : une liste recopiée finit toujours par diverger. */
+const GARDE = join(DOSSIER, 'cross-app-preservation.yml');
+let critiques = [];
+try {
+  const g = readFileSync(GARDE, 'utf8');
+  const bloc = g.match(/REQUIRED_WORKFLOWS=\(([\s\S]*?)\)/);
+  if (bloc) critiques = [...bloc[1].matchAll(/\.github\/workflows\/([\w.-]+\.ya?ml)/g)].map((m) => m[1]);
+} catch { /* la garde a pu être renommée : on le dira plutôt que de rester muet */ }
+chk(critiques.length > 0, `4. la liste des workflows critiques est lisible (${critiques.length} trouvés)`);
+const ranges = critiques.filter((f) => !fichiers.includes(f));
+chk(ranges.length === 0,
+  ranges.length === 0
+    ? `4. aucun workflow critique n'a été rangé ou supprimé (${critiques.length} vérifiés)`
+    : `4. VIOLÉE : ${ranges.length} workflow(s) CRITIQUES absents des workflows actifs → ${ranges.join(', ')}`);
 
 /* --- Règle 3 : aucune opération crypto ----------------------------------- */
 /* Ajoutée le 3.09.2026. Le support GitHub (message « Wick », 2.09) nomme
