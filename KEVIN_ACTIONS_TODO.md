@@ -2,6 +2,132 @@
 
 ---
 
+## 🔴 URGENT (2.09.2026) — GitLab partout, GitHub suspendu
+
+**Ta décision** : *« On passe par GitLab partout et pour tout jusqu'à nouvel ordre. »* ✅ appliquée.
+
+### ▶️ 1. Faire tourner le jeton GitLab — 2 min
+Il a circulé **en clair** dans une consigne automatique. Rien n'a été publié
+(vérifié : 0 fichier versionné, 0 commit), mais il est à considérer comme grillé.
+**GitLab → Préférences → Jetons d'accès → `glpat-o2uW…` → Révoquer**, puis
+tu m'en donnes un neuf (portée `write_repository` seule, expiration courte)
+quand j'en aurai besoin.
+
+### ▶️ 2. Rien d'autre pour l'instant sur les sessions
+Tu ne peux pas créer de session depuis l'iPhone (l'interface exige un dépôt, et
+GitHub refuse). **Mesuré le 2.09** : une session **sans dépôt** démarre très bien.
+Tu ne peux pas en créer une comme ça toi-même — **dis-moi le thème, je te la crée**.
+
+*(Le connecteur GitHub `claude.ai/customize/connectors?auth_start=github&auth_start_force=1`
+reste le geste qui rétablirait tout d'un coup — mais tant que le compte est suspendu,
+il ne servira à rien. Inutile de le retenter avant que GitHub réponde.)*
+
+### ℹ️ 3. Planning — j'attends ton PDF
+Septembre 2026 **n'est pas importé** (les données s'arrêtent au 28/06 : juillet + août).
+Colle-moi le planning de septembre — et celui d'août si tu l'as, il réparera ses
+5 équipes sans miroir et placera MOREL F au bon endroit.
+
+---
+
+---
+
+## 🔧 0. Un pont à déplacer — *(pour moi, pas pour toi ; noté pour ne pas l'oublier)*
+
+Le pont qui faisait remonter les problèmes d'Apex jusqu'à moi
+(`claude-todo-watcher`) tournait sur GitHub Actions. Il interrogeait Firebase en
+boucle — c'est précisément ce que GitHub a sanctionné. Je l'ai retiré.
+
+**Conséquence honnête** : 3 de tes règles absolues (auto-test/auto-fix, pipeline
+self-healing, pipeline autonomie cross-projet) n'ont plus de garde automatique.
+Elles reposent sur ma mémoire en attendant.
+
+**Le vrai correctif** : ce pont doit vivre dans un Cloudflare Worker avec son
+propre déclencheur horaire — là c'est légitime, et ça ne dépend plus de GitHub.
+Je le code quand tu veux, **tu n'as rien à faire**.
+
+---
+
+## 🔴 1. Ton crédit image Google est à ZÉRO — c'est ÇA qui cassait les figurines *(mesuré le 14/08/2026)*
+
+**▶️ [Voir ton crédit Google AI Studio](https://aistudio.google.com/app/apikey)**
+
+### Ce que la machine a répondu, mot pour mot
+Le test automatique lancé sur le vrai serveur a eu **la même réponse sur les 4 modèles** :
+
+```
+gemini-3.1-flash-image-preview : 429 Your prepayment credits are depleted
+gemini-3-pro-image-preview     : 429 …depleted
+gemini-2.5-flash-image         : 429 …depleted
+```
+
+« depleted » = **épuisé**. Ce n'était donc pas un bug de code : le moteur qui
+retouche ta photo n'avait plus de quoi travailler, et il rendait n'importe quoi.
+
+### Ce que j'ai déjà réparé de mon côté (tu n'as rien à faire)
+- Les **figurines / transformations** passent maintenant par un **deuxième
+  moteur** qui part vraiment de ta photo. Prouvé en vrai le 14/08 :
+  `✅ la photo a bien été ÉDITÉE (l'identité est gardée)`.
+- Les **poses de danse** avaient le même trou, elles ont maintenant le même
+  secours (fait aujourd'hui).
+- Si plus rien ne marche, l'app **te le dit** au lieu de te rendre quelqu'un
+  d'autre.
+
+### Ce que ça te coûte en attendant
+Le moteur de secours, c'est **Replicate** — celui-là est **payant à l'image**
+(ta clé `AX_REPLICATE_KEY`). Tant que Google est à sec, chaque figurine passe
+par là. Remettre du crédit Google = revenir au **gratuit** et plus rapide.
+
+### ⚠️ Ce que je ne peux PAS te dire
+Je **n'ai pas pu ouvrir** la page Google (mon accès Internet est bloqué depuis
+ici). Je ne connais donc **ni le prix**, **ni s'il existe un palier gratuit**
+qui couvre l'édition d'image. Regarde sur la page avant de payer quoi que ce
+soit — je ne veux pas que tu sortes la carte sur ma parole.
+
+---
+
+## 🆓 2. Les IA gratuites à brancher — 2 min chacune, **aucune carte bancaire** *(ajouté 14/08/2026)*
+
+J'ai branché **9 nouveaux moteurs gratuits** dans les apps (Créa Studio + le
+serveur commun `apis.kd-mc.com`). Ils sont **déjà dans le code et testés** :
+il ne manque que la clé. **Un moteur sans clé est simplement ignoré** — rien
+n'est cassé tant que tu ne fais rien, tu ajoutes ce que tu veux, quand tu veux.
+
+### Comment on ajoute une clé (le même geste à chaque fois)
+1. Tu ouvres le site, tu crées un compte, tu copies la clé.
+2. **▶️ [Coller la clé ici](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)** — tu mets le **Nom** exact du tableau, tu colles dans **Secret**, tu valides.
+3. C'est tout. Le prochain déploiement la pose tout seul.
+
+> ⚠️ Le **Nom** doit être écrit **exactement** comme dans la colonne « Nom à
+> mettre » (majuscules comprises). Une lettre de travers = la clé ne sert à rien.
+
+### Les clés, dans l'ordre de ce que ça t'apporte
+
+| | Site (1 clic) | Nom à mettre | Ce que ça t'apporte |
+|---|---|---|---|
+| 1 | **▶️ [Hugging Face](https://huggingface.co/settings/tokens)** | `HF_TOKEN` | Du **texte** ET des **images de fond** gratuites en plus |
+| 2 | **▶️ [Cerebras](https://cloud.cerebras.ai/)** | `CEREBRAS_API_KEY` | Le plus **rapide** de tous pour écrire (paroles, textes) |
+| 3 | **▶️ [Nvidia](https://build.nvidia.com/)** | `NVIDIA_API_KEY` | Gros quota gratuit, très stable |
+| 4 | **▶️ [SambaNova](https://cloud.sambanova.ai/)** | `SAMBANOVA_API_KEY` | Rapide, palier gratuit généreux |
+| 5 | **▶️ [Nebius](https://studio.nebius.com/)** | `NEBIUS_API_KEY` | Crédit offert à l'inscription |
+| 6 | **▶️ [Scaleway](https://console.scaleway.com/)** | `SCALEWAY_API_KEY` | Serveurs en **France** (données en Europe) |
+| 7 | **▶️ [Z.ai / GLM](https://open.bigmodel.cn/)** | `GLM_API_KEY` | Modèle gratuit sans limite stricte |
+| 8 | **▶️ [Qwen / Alibaba](https://modelstudio.console.alibabacloud.com/)** | `DASHSCOPE_API_KEY` | Un million de jetons offerts |
+
+### ✅ Rien à faire pour celles-là
+`XAI_API_KEY`, `PERPLEXITI_API_KEY` et `OPEN_AI_API_KEY` : **tu les as déjà**.
+Elles ne servaient nulle part ici — je viens de les brancher, elles marchent
+maintenant sans que tu bouges le petit doigt.
+
+### ⚠️ La même honnêteté que plus haut
+Je **n'ai pas pu ouvrir ces 8 pages** (accès Internet bloqué depuis ici). Les
+adresses viennent de ce que je connais, et **les paliers gratuits changent
+souvent**. Si un lien tombe à côté ou si le gratuit a disparu, **ne t'embête
+pas** : passe au suivant du tableau, ou dis-le-moi et je corrige. Aucune de ces
+8 clés n'est indispensable — chacune ajoute juste une roue de secours.
+
+---
+
+## 💳 3. Abonnement GitHub Pro — 4 $/mois *(ajouté 12/08/2026, à ta demande)*
 ## 🟢 Aucune clé à révoquer — vérifié, pas supposé *(12/08/2026)*
 
 Tu m'as dit « protège mon domaine entièrement ». J'ai fait passer un outil qui

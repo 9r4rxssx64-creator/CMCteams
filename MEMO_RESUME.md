@@ -1,5 +1,33 @@
 # MEMO_RESUME — état de session
 
+## 2 septembre 2026 — GitLab partout, sessions débloquées, miroirs vérifiés
+
+**Décision Kevin** : GitHub suspendu → **GitLab pour tout, jusqu'à nouvel ordre**.
+Nouvelle règle absolue dans CLAUDE.md : *trouver des solutions à ses problèmes,
+jamais lui en créer* (il paie pour travailler, pas pour subir une panne tierce).
+
+### Mesuré, pas supposé
+- Session avec **source GitLab privée** → refusée (la plateforme n'a d'identifiants
+  que GitHub). Session **sans dépôt** → **démarre** (git 2.43.0). ✅ voie retenue.
+- 18 commits publiés sur GitLab, branche `claude/capcut-mini-versions-66tfum`
+  (+ copie `studio-crea-capcut`). `main` GitLab jamais écrasée.
+- `ETAT-INFRA.md` fait n°7 + `SESSIONS-ET-BRANCHES.md` (carte des 17 sessions et
+  de leur branche) écrits sur `main` GitLab — lus par toutes les sessions.
+
+### Miroirs de la light — vérifiés en vrai
+70 correspondances, réciprocité parfaite, règle SBM **35/35**, 0 doublon sur
+273/291 personnes, 30 cellules vides sur 17 484. **9 équipes sans miroir** :
+NON réparées volontairement — la déduction par jours de repos ne retrouve le vrai
+miroir que **6 fois sur 35 (17 %)**, calibré avant d'agir (leçon #189).
+Seule réparation sûre : **réimporter le mois**. Outil : `tools/departs/_verif-miroirs.mjs`.
+
+### Erreurs du jour, consignées
+#186 consigne fausse (ligne 14 au lieu de 111) + affirmation non mesurée sur un
+e-mail · #187 plan de secours impossible (le domaine était dans le compte perdu) ·
+#188 **secret compromis proposé puis persisté** — retiré, rien publié.
+
+---
+
 ## 14 août 2026 — OSINT v2.6 : vérifier un numéro de téléphone (défensif)
 
 Kevin envoie 2 captures Facebook (Laravel « Log Viewer » · « SearchPhone » OSINT téléphone).

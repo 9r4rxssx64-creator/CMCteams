@@ -1,5 +1,5 @@
 {
-  "_note": "Les 6 dépôts du tableau « Une Notion = Un Projet » (Kevin 2026-08-06, capture IMG_3293). On ne récupère QUE du texte (md/json/txt) : pas de binaire, pas de node_modules, pas de code applicatif lourd. Chaque source garde sa LICENCE. · 2026-08-13 (Kevin, TikTok Algomax) : +2 sources App Store — le CLI `asc` (docs) et ses SKILLS d'agent. Le binaire Go n'est PAS vendorisé (règle : texte uniquement, jamais de binaire tiers).",
+  "_note": "Les 6 dépôts du tableau « Une Notion = Un Projet » (Kevin 2026-08-06, capture IMG_3293). On ne récupère QUE du texte (md/json/txt) : pas de binaire, pas de node_modules, pas de code applicatif lourd. Chaque source garde sa LICENCE.",
   "maxFileBytes": 262144,
   "maxRepoBytes": 4194304,
   "sources": [
@@ -107,6 +107,21 @@
       "exclude": [
         "node_modules/**",
         "src/**",
+        ".github/**"
+      ]
+    },
+    {
+      "id": "free-for-dev",
+      "notion": "Paliers gratuits",
+      "repo": "https://github.com/ripienaar/free-for-dev",
+      "licence": "aucun fichier de licence à la racine du dépôt — contenu propriété de ses auteurs, on n'en republie rien",
+      "usage": "Catalogue de 57 rubriques de services gratuits pour développeurs (tâches programmées, CI, hébergement, bases, mail, médias…). Sert de réserve quand il faut remplacer un service payant ou tombé — cherché hors ligne par tools/pipeline/rappel.mjs --pour.",
+      "include": [
+        "README.md",
+        "LICENSE*"
+      ],
+      "exclude": [
+        "node_modules/**",
         ".github/**"
       ]
     },

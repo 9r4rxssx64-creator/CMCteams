@@ -4,8 +4,12 @@ name: Auto-backup quotidien Firebase
 # Stocke le résultat dans Firebase + notifie via Telegram
 
 on:
-  schedule:
-    - cron: '0 3 * * *'  # 3h UTC = 4h Monaco l'hiver, 5h l'été
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
   workflow_dispatch:      # déclenchable manuellement
 
 jobs:

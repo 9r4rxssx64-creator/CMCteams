@@ -1,0 +1,130 @@
+# =============================================================================
+# Intégration continue GitLab — VOLONTAIREMENT MINIMALE.
+# -----------------------------------------------------------------------------
+# Deux raisons de ne surtout pas rejouer ici les 126 workflows de GitHub :
+#
+#  1. Le compte GitHub a été suspendu le 15/08/2026 précisément pour cet usage :
+#     « repositories that use GitHub Actions solely to interact with 3rd party
+#     websites […] or for general computing purposes ». GitLab a des règles
+#     équivalentes. On ne refait pas la même erreur ailleurs.
+#
+#  2. Le palier gratuit GitLab donne 400 minutes de calcul PAR MOIS. Les ~97
+#     exécutions quotidiennes d'avant les auraient épuisées en moins de 2 jours.
+#
+# Ce qui tourne ici : les tests, au push, et rien d'autre.
+# Ce qui NE tourne PAS ici :
+#   - la publication des sites  → Cloudflare Pages construit de son côté
+#                                 (0 minute GitLab consommée)
+#   - la mise en ligne des Workers → à la demande, jamais automatique
+#   - tout ce qui appelle des services tiers en boucle → n'a rien à faire
+#     dans un dépôt de code. Sa place est un Cloudflare Worker.
+#
+# ⚠️ NE JAMAIS ajouter de « schedule » ici. Un test (verify-actions-conformes)
+#    échoue si une exécution programmée réapparaît.
+# =============================================================================
+
+stages:
+  - tests
+  - recherches
+
+default:
+  image: node:20
+  interruptible: true          # un nouveau push annule l'ancien : minutes économisées
+
+variables:
+  GIT_DEPTH: "20"              # historique court : clone plus rapide, moins de minutes
+
+# Ne tourne QUE sur un vrai push ou une demande de fusion. Jamais à heure fixe.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "web"        # bouton « Lancer » = volontaire
+    - when: never
+
+tests:
+  stage: tests
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths: [node_modules/]
+  script:
+    - npm ci --no-audit --no-fund
+    - npm run test:ci
+  rules:
+    - changes:
+        - "**/*.js"
+        - "**/*.mjs"
+        - "**/*.html"
+        - "**/*.json"
+        - "tests/**/*"
+      when: on_success
+    - when: manual                # rien à voir dans le code → on ne brûle rien
+      allow_failure: true
+
+# Garde-fou spécifique : la règle qui a coûté le compte GitHub doit tenir ici
+# aussi. Court, donc quasi gratuit en minutes.
+conformite:
+  stage: tests
+  script:
+    - node tests/verify-actions-conformes.mjs
+    - |
+      if grep -rqE '^\s*(schedule|- cron)\s*:' .gitlab-ci.yml; then
+        echo "❌ Une exécution programmée a été ajoutée. C'est exactement ce qui a fait"
+        echo "   suspendre le compte GitHub. Ce qui doit tourner en boucle appartient"
+        echo "   à un Cloudflare Worker, pas à un dépôt de code."
+        exit 1
+      fi
+      echo "✅ Aucune exécution programmée."
+
+# =============================================================================
+# RECHERCHES PATRIMOINE — ce qui est PERMIS d'automatiser, et rien de plus.
+#
+# ⛔ Ciclade a été RETIRÉ de ce job le 4.09.2026 : la capture d'écran du vrai
+#    formulaire montre un CAPTCHA et, écrit dessous, « conformément aux CGU du
+#    site (art 1er), toute utilisation non humaine de ce site est interdite ».
+#    Ce n'est pas une limite technique, c'est une règle. On la respecte.
+# -----------------------------------------------------------------------------
+# Pourquoi ce job existe : le conteneur de l'agent Claude n'a PAS accès à
+# ciclade.caissedesdepots.fr (pare-feu). Le runner, lui, l'a. C'est donc lui qui
+# ouvre un vrai navigateur et fait les 14 recherches, une par une.
+#
+# Ce qu'il ne fait pas : toucher l'argent. La restitution exige un compte, une
+# pièce d'identité et la preuve des droits — ça restera toujours Kevin.
+#
+# Il ne part JAMAIS tout seul : ni « schedule » (interdit, cause de la
+# suspension GitHub), ni au fil des pushs. Il faut le lancer à la main.
+# =============================================================================
+recherches-patrimoine:
+  stage: recherches
+  image: mcr.microsoft.com/playwright:v1.50.0-noble
+  # Il part quand JE pousse le fichier-signal « patrimoine-demande.txt », et
+  # seulement là. Ce n'est pas une tâche programmée (celles-là sont interdites,
+  # c'est ce qui a fait suspendre GitHub) : c'est un push volontaire, comme un
+  # bouton — sauf que le bouton, c'est moi qui l'appuie, pas Kevin.
+  rules:
+    - changes: ["patrimoine-demande.txt"]
+      when: on_success
+    - when: manual                # au cas où Kevin veuille le relancer lui-même
+  needs: []                       # ne dépend pas des tests : une recherche n'attend
+                                  # pas qu'un test sans rapport soit vert
+  allow_failure: true             # une recherche qui échoue ne casse pas le reste
+  timeout: 25m
+  variables:
+    MODE: "--max 3"               # le formulaire est connu : on valide sur 3 cas
+  script:
+    # Les NAVIGATEURS sont dans l'image ; le paquet npm, non (le « npm root -g »
+    # de l'image ne contient que corepack/npm/yarn — mesuré). On l'installe donc
+    # dans /tmp, À L'ÉCART du dépôt : installer à la racine du projet fait lire son
+    # package.json complet à npm, et c'est ce qui cassait (« edgesOut »).
+    - mkdir -p /tmp/pw && (cd /tmp/pw && npm init -y >/dev/null && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm i --no-audit --no-fund playwright@1.50.0)
+    - export NODE_PATH=/tmp/pw/node_modules
+    - node -e 'require(process.env.NODE_PATH + "/playwright"); console.log("playwright OK")'
+    - mkdir -p patrimoine-resultats
+    - node tools/patrimoine/deces-insee.mjs
+    # Ce qui est réellement PUBLIC sur le site : mesuré, pas supposé.
+    - node tools/audit/exposition-publique.mjs
+  artifacts:
+    when: always
+    expire_in: 7 days             # données personnelles : on ne les garde pas
+    paths:
+      - patrimoine-resultats/

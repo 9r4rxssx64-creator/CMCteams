@@ -65,12 +65,33 @@
     },
     {
       "id": "free-llm-api-resources",
-      "notion": "LLM gratuit",
-      "repo": "https://github.com/cheahjs/free-llm-api-resources",
-      "usage": "Liste tenue à jour des IA utilisables gratuitement par API (quotas, modèles, limites). Sert de filet de secours quand un forfait est épuisé.",
-      "licence": "voir LICENSE vendorisée",
-      "ok": false,
-      "error": "Command failed: git clone --depth 1 --quiet https://github.com/cheahjs/free-llm-api-resources.git /tmp/atk-free-llm-api-resources-hGDvKY\nfatal: could not read Username for 'https://github.com': No such device or address\n"
+      "notion": "IA gratuites",
+      "repo": "https://github.com/jeis4wpi/free-llm-api-resources",
+      "usage": "Catalogue des IA gratuites par API (26 fournisseurs, paliers réels). La source déclarée depuis le 6.08 mais JAMAIS récupérée : sa vendorisation avait échoué (ok:false).",
+      "licence": "aucun fichier de licence à la racine — voir le dépôt",
+      "ok": true,
+      "error": "Command failed: git clone --depth 1 --quiet https://github.com/cheahjs/free-llm-api-resources.git /tmp/atk-free-llm-api-resources-hGDvKY\nfatal: could not read Username for 'https://github.com': No such device or address\n",
+      "sha": null,
+      "sha_note": "récupéré par raw.githubusercontent (l'API GitHub est inaccessible depuis l'agent : pas de SHA mesurable)",
+      "files": 1,
+      "bytes": 13935,
+      "skipped": 0,
+      "recupere_le": "2026-09-03"
+    },
+    {
+      "id": "free-for-dev",
+      "notion": "Paliers gratuits",
+      "repo": "https://github.com/ripienaar/free-for-dev",
+      "usage": "Catalogue de 57 rubriques de services gratuits pour développeurs.",
+      "licence": "aucun fichier de licence à la racine — voir le dépôt",
+      "sha": null,
+      "sha_note": "récupéré par raw.githubusercontent (l'API GitHub est inaccessible depuis l'agent : pas de SHA mesurable)",
+      "files": 1,
+      "bytes": 256795,
+      "skipped": 0,
+      "ok": true,
+      "recupere_le": "2026-09-03"
     }
-  ]
+  ],
+  "generated_at_note": "free-llm-api-resources et free-for-dev récupérés à la main le 3.09.2026 (git clone github.com est bloqué depuis l'agent ; raw.githubusercontent répond)"
 }

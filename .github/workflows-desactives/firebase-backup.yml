@@ -1,0 +1,79 @@
+name: Firebase Nightly Backup
+on:
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
+  workflow_dispatch:       # Manual trigger too
+
+# actions:write requis par l'étape cleanup (deleteWorkflowRun) — sans lui, 403
+# « Resource not accessible by integration » = le run échouait CHAQUE nuit depuis
+# des semaines alors que le backup lui-même réussissait.
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Backup Firebase RTDB
+        env:
+          FB_URL: https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app
+          # Règles durcies auth != null (/cmcteams depuis 2026-06-12, /apex + /coffre_vault
+          # 2026-07-04) → lecture par service account, sinon on backupe des erreurs 401.
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: |
+          mkdir -p backups
+          DATE=$(date +%Y-%m-%d)
+          TOKEN=$(node tools/firebase/gauth.cjs)
+          QS=""
+          if [ -n "$TOKEN" ]; then QS="?access_token=${TOKEN}"; echo "Auth service account OK"; else echo "::warning::pas de token — lecture non authentifiée (401 attendu sur paths durcis)"; fi
+          echo "Backing up CMCteams namespace..."
+          curl -s "${FB_URL}/cmcteams.json${QS}" -o "backups/cmcteams-${DATE}.json" || true
+          echo "Backing up Apex namespace..."
+          curl -s "${FB_URL}/apex.json${QS}" -o "backups/apex-${DATE}.json" || true
+          echo "Backing up Coffre namespace..."
+          curl -s "${FB_URL}/coffre_vault.json${QS}" -o "backups/coffre-${DATE}.json" || true
+          echo "Sizes:"
+          ls -lh backups/
+          # Un backup qui contient une erreur d'auth n'est PAS un backup — échouer fort
+          # (cause exacte visible) au lieu d'archiver silencieusement du 401.
+          for f in backups/*.json; do
+            if grep -q '"error"\s*:\s*"Permission denied"' "$f"; then
+              echo "::error::${f} contient 'Permission denied' — backup invalide (auth manquante)"
+              exit 1
+            fi
+          done
+
+      - name: Upload backup artifact (30 days retention)
+        uses: actions/upload-artifact@v7
+        with:
+          name: firebase-backup-${{ github.run_number }}
+          path: backups/
+          retention-days: 30
+
+      - name: Cleanup old workflow runs (keep last 30)
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'firebase-backup.yml',
+              per_page: 100
+            });
+            const old = runs.data.workflow_runs.slice(30);
+            for (const run of old) {
+              await github.rest.actions.deleteWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: run.id
+              });
+            }

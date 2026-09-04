@@ -7,9 +7,12 @@ name: Pages smoke (World Monitor + OSINT live)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 */12 * * *' # 2×/jour (anti-spam mails : cap respecté)
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 concurrency:
   group: pages-smoke
   cancel-in-progress: true

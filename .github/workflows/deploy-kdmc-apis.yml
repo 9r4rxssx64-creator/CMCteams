@@ -61,6 +61,18 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          # Paliers gratuits ajoutés 2026-08-12 (secours « partout dans les apps »).
+          # Un secret absent est simplement sauté plus bas (fail-open) : rien à
+          # faire tant que Kevin n'a pas créé la clé.
+          PERPLEXITI_API_KEY: ${{ secrets.PERPLEXITI_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          SAMBANOVA_API_KEY: ${{ secrets.SAMBANOVA_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SCALEWAY_API_KEY: ${{ secrets.SCALEWAY_API_KEY }}
+          NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+          GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
@@ -81,6 +93,8 @@ jobs:
           }
           for s in GEMINI_API_KEY GROQ_API_KEY OPENROUTER_API_KEY MISTRAL_API_KEY \
                    COHERE_API_KEY DEEPSEEK_API_KEY TOGETHER_API_KEY XAI_API_KEY \
+                   PERPLEXITI_API_KEY CEREBRAS_API_KEY NVIDIA_API_KEY SAMBANOVA_API_KEY \
+                   HF_TOKEN SCALEWAY_API_KEY NEBIUS_API_KEY GLM_API_KEY DASHSCOPE_API_KEY \
                    TAVILY_API_KEY BRAVE_API_KEY PEXELS_API_KEY FINNHUB_API_KEY \
                    PRINTIFY_API_KEY RESEND_API_KEY GOOGLE_API_KEY; do
             put "$s"

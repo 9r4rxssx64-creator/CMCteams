@@ -10,9 +10,12 @@ name: Audit LIVE (vraies pages kd-mc.com dans un navigateur)
 # Déclenché à la main (« fais ton audit ») + 1×/semaine (anti-spam mails).
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: '30 4 * * 1'  # lundi 04h30 UTC — 1×/semaine
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 concurrency:
   group: audit-live
   cancel-in-progress: true

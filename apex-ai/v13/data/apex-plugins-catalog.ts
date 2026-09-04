@@ -3252,6 +3252,13 @@ export const APEX_PLUGINS_CATALOG: readonly ApexPluginManifest[] = [
     tags: ['agent-toolkit', 'llm', 'gratuit', 'failover'],
   },
   {
+    id: 'free-for-dev',
+    name: 'Free For Dev (paliers gratuits)',
+    source: 'community',
+    url: 'https://github.com/ripienaar/free-for-dev',
+    description:
+      "Catalogue de 57 rubriques de services gratuits pour developpeurs : taches programmees, CI, hebergement, bases de donnees, mail, medias, surveillance. Sert de reserve quand un service payant tombe ou qu'un acces est perdu — on y cherche un equivalent gratuit avant de proposer une depense a Kevin.",
+    category: 'ai-ml',
     id: 'app-store-connect-cli',
     name: 'App Store Connect CLI (asc)',
     source: 'community',
@@ -3279,6 +3286,7 @@ export const APEX_PLUGINS_CATALOG: readonly ApexPluginManifest[] = [
     status: 'installed',
     install_method: 'native-fetch',
     estimated_value: 'high',
+    tags: ['agent-toolkit', 'gratuit', 'infra', 'failover'],
     tags: ['agent-toolkit', 'app-store', 'skills', 'ios'],
   },
   {
