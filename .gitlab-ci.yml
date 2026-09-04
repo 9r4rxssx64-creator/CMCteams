@@ -100,6 +100,8 @@ ciclade:
     - changes: ["patrimoine-demande.txt"]
       when: on_success
     - when: manual                # au cas où Kevin veuille le relancer lui-même
+  needs: []                       # ne dépend pas des tests : une recherche n'attend
+                                  # pas qu'un test sans rapport soit vert
   allow_failure: true             # une recherche qui échoue ne casse pas le reste
   timeout: 25m
   variables:
