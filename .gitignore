@@ -34,3 +34,7 @@ services/kdmc-router/app-*/
 
 # curseur de rotation du rappel (etat local a chaque session, pas a partager)
 pipeline/rappel-etat.json
+
+# dossiers patrimoine : donnees personnelles de la famille, JAMAIS publiees
+# (le depot entier est servi publiquement par Cloudflare Pages)
+patrimoine/
