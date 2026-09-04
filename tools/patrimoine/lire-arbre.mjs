@@ -63,6 +63,7 @@ export function personnesACherchers({ vivants = false } = {}) {
       const anMort = anneeDe(mort);
       return {
         nom: (p.nom || '').trim(),
+        sexe: p.sexe || '',   // le formulaire Ciclade demande la civilité
         prenom: (p.prenom || '').trim(),
         naissance: dateNette(p.naissance?.date),
         deces: dateNette(mort),

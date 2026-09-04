@@ -49,6 +49,9 @@ const SORTIE = join(RACINE, 'patrimoine-resultats');
 const RECO = process.argv.includes('--reco');
 const MAX = (() => { const i = process.argv.indexOf('--max'); return i > 0 ? +process.argv[i + 1] : 0; })();
 const URL_CICLADE = 'https://ciclade.caissedesdepots.fr/';
+/* Adresse RÉELLE du formulaire, relevée par la passe de reconnaissance du
+   4.09 : c'est une application à étapes, pas la page d'accueil. */
+const URL_FORMULAIRE = 'https://ciclade.caissedesdepots.fr/monespace/#/je-lance-ma-recherche';
 const PAUSE_MS = 6000;
 
 mkdirSync(SORTIE, { recursive: true });
@@ -84,15 +87,10 @@ async function decrirePage(page, nom) {
    menu « Lancer ma recherche ». On y va d'abord, sinon on remplit le mauvais
    formulaire — c'est ce qui s'est passé au premier essai. */
 async function ouvrirFormulaire(page) {
-  await page.goto(URL_CICLADE, { waitUntil: 'domcontentloaded', timeout: 45000 });
+  await page.goto(URL_FORMULAIRE, { waitUntil: 'domcontentloaded', timeout: 45000 });
   const cookies = page.getByRole('button', { name: /tout accepter|j'accepte|accepter/i }).first();
   if (await cookies.count().catch(() => 0)) await cookies.click().catch(() => {});
-  const lien = page.getByRole('link', { name: /lancer ma recherche/i }).first();
-  if (await lien.count().catch(() => 0)) {
-    await lien.click().catch(() => {});
-    await page.waitForLoadState('domcontentloaded', { timeout: 30000 }).catch(() => {});
-    await page.waitForTimeout(1500);
-  }
+  await page.waitForSelector('#nom', { timeout: 30000 }).catch(() => {});
   return page.url();
 }
 
@@ -101,26 +99,40 @@ async function chercherUne(page, p, i) {
   const res = { personne: etiquette, naissance: p.naissance.fr, deces: p.deces?.fr || null, statut: 'inconnu', texte: '' };
   try {
     await ouvrirFormulaire(page);
-    /* on cherche le formulaire par le TEXTE des champs : les identifiants
-       techniques changent au gré des refontes, pas les mots « Nom », « Prénom ». */
-    const remplir = async (motifs, valeur) => {
-      for (const m of motifs) {
-        const c = page.getByLabel(m, { exact: false }).first();
-        if (await c.count().catch(() => 0)) { await c.fill(valeur); return true; }
-        const ph = page.getByPlaceholder(m, { exact: false }).first();
-        if (await ph.count().catch(() => 0)) { await ph.fill(valeur); return true; }
-      }
-      return false;
+    /* Identifiants relevés sur la vraie page (passe de reconnaissance) :
+       nom · prenom · autrePrenom1-3 · dateNaissance · recherche.estDecede-oui/non
+       · recherche.civiliteListe-m/mme. On vise ces identifiants plutôt que des
+       libellés, parce qu'ils sont sans ambiguïté ; le repli par libellé reste
+       en dessous si la page est refondue. */
+    const par = (sel) => page.locator(sel).first();
+    const poser = async (sel, valeur) => {
+      const c = par(sel);
+      if (!(await c.count().catch(() => 0))) return false;
+      await c.fill(valeur).catch(() => {});
+      return true;
     };
-    const okNom = await remplir([/nom de naissance/i, /^nom/i], p.nom);
-    const okPrenom = await remplir([/pr[ée]nom/i], p.prenom);
-    const okDate = await remplir([/date de naissance/i, /naissance/i], p.naissance.fr);
+    /* la personne est-elle décédée ? le formulaire le demande en premier */
+    const oui = par('[id="recherche.estDecede-oui"]');
+    const non = par('[id="recherche.estDecede-non"]');
+    const bouton_dec = p.decede ? oui : non;
+    if (await bouton_dec.count().catch(() => 0)) await bouton_dec.check({ force: true }).catch(() => {});
+    /* civilité, quand l'arbre la connaît */
+    if (p.sexe === 'F' || p.sexe === 'M') {
+      const civ = par(p.sexe === 'F' ? '[id="recherche.civiliteListe-mme"]' : '[id="recherche.civiliteListe-m"]');
+      if (await civ.count().catch(() => 0)) await civ.check({ force: true }).catch(() => {});
+    }
+    const prenoms = p.prenom.split(/\s+/);
+    const okNom = await poser('#nom', p.nom);
+    const okPrenom = await poser('#prenom', prenoms[0]);
+    if (prenoms[1]) await poser('#autrePrenom1', prenoms[1]);
+    if (prenoms[2]) await poser('#autrePrenom2', prenoms[2]);
+    const okDate = await poser('#dateNaissance', p.naissance.fr);
     if (!okNom || !okPrenom || !okDate) {
       res.statut = 'formulaire-non-reconnu';
       await decrirePage(page, `echec-${i}`);
       return res;
     }
-    const bouton = page.getByRole('button', { name: /rechercher|lancer|valider/i }).first();
+    const bouton = page.getByRole('button', { name: /rechercher|lancer ma recherche|valider|suivant|étape suivante/i }).first();
     if (await bouton.count().catch(() => 0)) await bouton.click();
     else await page.keyboard.press('Enter');
     await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
