@@ -107,7 +107,12 @@ ciclade:
   variables:
     MODE: ""                      # « --reco » = observer sans rien interroger
   script:
-    - npm ci --no-audit --no-fund --ignore-scripts || npm i playwright
+    # L'image Playwright contient déjà le paquet ET les navigateurs : on ne
+    # lance AUCUN npm install (le dépôt n'a pas de package-lock.json, « npm ci »
+    # échoue, et « npm i » casse sur l'arbre de dépendances complet).
+    - export NODE_PATH=$(npm root -g)
+    - echo "paquets globaux :" && ls $NODE_PATH | head -20
+    - mkdir -p patrimoine-resultats
     - node tools/patrimoine/interroger-ciclade.mjs $MODE
   artifacts:
     when: always
