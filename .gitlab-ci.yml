@@ -105,7 +105,7 @@ ciclade:
   allow_failure: true             # une recherche qui échoue ne casse pas le reste
   timeout: 25m
   variables:
-    MODE: "--max 2"               # on apprend le formulaire sur 2 cas avant les 14
+    MODE: "--max 3"               # le formulaire est connu : on valide sur 3 cas
   script:
     # Les NAVIGATEURS sont dans l'image ; le paquet npm, non (le « npm root -g »
     # de l'image ne contient que corepack/npm/yarn — mesuré). On l'installe donc
@@ -117,6 +117,8 @@ ciclade:
     - mkdir -p patrimoine-resultats
     - node tools/patrimoine/interroger-ciclade.mjs $MODE
     - node tools/patrimoine/deces-insee.mjs
+    # Ce qui est réellement PUBLIC sur le site : mesuré, pas supposé.
+    - node tools/audit/exposition-publique.mjs
   artifacts:
     when: always
     expire_in: 7 days             # données personnelles : on ne les garde pas
