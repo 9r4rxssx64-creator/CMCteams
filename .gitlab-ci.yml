@@ -105,7 +105,7 @@ ciclade:
   allow_failure: true             # une recherche qui échoue ne casse pas le reste
   timeout: 25m
   variables:
-    MODE: ""                      # « --reco » = observer sans rien interroger
+    MODE: "--max 2"               # on apprend le formulaire sur 2 cas avant les 14
   script:
     # Les NAVIGATEURS sont dans l'image ; le paquet npm, non (le « npm root -g »
     # de l'image ne contient que corepack/npm/yarn — mesuré). On l'installe donc

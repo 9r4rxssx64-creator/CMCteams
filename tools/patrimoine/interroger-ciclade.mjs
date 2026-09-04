@@ -79,11 +79,28 @@ async function decrirePage(page, nom) {
 
 /* --- une recherche ---------------------------------------------------------*/
 
+/* La page d'accueil ne contient QUE le moteur de recherche du site (mesuré :
+   2 champs, « Rechercher dans le site »). Le vrai formulaire est derrière le
+   menu « Lancer ma recherche ». On y va d'abord, sinon on remplit le mauvais
+   formulaire — c'est ce qui s'est passé au premier essai. */
+async function ouvrirFormulaire(page) {
+  await page.goto(URL_CICLADE, { waitUntil: 'domcontentloaded', timeout: 45000 });
+  const cookies = page.getByRole('button', { name: /tout accepter|j'accepte|accepter/i }).first();
+  if (await cookies.count().catch(() => 0)) await cookies.click().catch(() => {});
+  const lien = page.getByRole('link', { name: /lancer ma recherche/i }).first();
+  if (await lien.count().catch(() => 0)) {
+    await lien.click().catch(() => {});
+    await page.waitForLoadState('domcontentloaded', { timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(1500);
+  }
+  return page.url();
+}
+
 async function chercherUne(page, p, i) {
   const etiquette = `${p.prenom} ${p.nom}`;
   const res = { personne: etiquette, naissance: p.naissance.fr, deces: p.deces?.fr || null, statut: 'inconnu', texte: '' };
   try {
-    await page.goto(URL_CICLADE, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await ouvrirFormulaire(page);
     /* on cherche le formulaire par le TEXTE des champs : les identifiants
        techniques changent au gré des refontes, pas les mots « Nom », « Prénom ». */
     const remplir = async (motifs, valeur) => {
@@ -134,10 +151,20 @@ try {
   await page.goto(URL_CICLADE, { waitUntil: 'domcontentloaded', timeout: 60000 });
   const accueil = await decrirePage(page, '00-accueil');
   writeFileSync(join(SORTIE, '00-accueil.json'), JSON.stringify(accueil, null, 2));
-  dire(`Page atteinte : « ${accueil.titre} »`);
-  dire(`  champs visibles : ${accueil.champs.length} · boutons : ${accueil.boutons.slice(0, 8).join(' | ')}`);
+  dire(`Accueil : « ${accueil.titre} » — ${accueil.champs.length} champ(s)`);
 
-  if (accueil.captcha) {
+  /* on ouvre le VRAI formulaire et on le décrit AVANT d'essayer quoi que ce
+     soit : au premier essai j'ai rempli le moteur de recherche du site. */
+  const urlForm = await ouvrirFormulaire(page);
+  const form = await decrirePage(page, '01-formulaire');
+  writeFileSync(join(SORTIE, '01-formulaire.json'), JSON.stringify({ url: urlForm, ...form }, null, 2));
+  dire(`Formulaire : ${urlForm}`);
+  dire(`  titre : « ${form.titre} » · ${form.champs.length} champ(s)`);
+  form.champs.slice(0, 12).forEach((c) => dire(`    · ${c.type} name=${c.name} id=${c.id} label=${c.label} aria=${c.aria} ph=${c.placeholder}`));
+  dire(`  boutons : ${form.boutons.slice(0, 12).join(' | ')}`);
+  dire(`  extrait : ${form.texte.replace(/\s+/g, ' ').slice(0, 400)}`);
+
+  if (accueil.captcha || form.captcha) {
     dire('⛔ Une protection anti-robot est présente sur la page.');
     dire('   On S\'ARRÊTE : on ne contourne pas une protection. Les recherches restent à faire à la main.');
   } else if (RECO) {
