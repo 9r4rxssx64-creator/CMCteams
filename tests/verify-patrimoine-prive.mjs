@@ -26,9 +26,15 @@ const git = (...a) => {
 };
 
 /* --- 1. le dossier de sortie est ignoré ------------------------------------ */
+/* La règle doit être ANCRÉE à la racine (« /patrimoine/ »). Écrite sans la
+   barre de tête, elle attrape TOUT dossier nommé patrimoine où qu'il soit —
+   y compris tools/patrimoine/, ce qui a fait disparaître l'outil lui-même du
+   dépôt le 4.09. Une exclusion trop large cache autre chose que sa cible. */
 const ignore = readFileSync('.gitignore', 'utf8');
-chk(/^patrimoine\/?$/m.test(ignore),
-  '1. « patrimoine/ » est bien listé dans .gitignore');
+chk(/^\/patrimoine\/?$/m.test(ignore),
+  '1. « /patrimoine/ » est listé dans .gitignore, ancré à la racine');
+chk(!/^patrimoine\/?$/m.test(ignore),
+  '1. et PAS en version large, qui masquerait aussi tools/patrimoine/');
 
 /* --- 2. et rien de ce dossier n'est déjà suivi ----------------------------- */
 const suivis = git('ls-files', 'patrimoine').split('\n').filter(Boolean);

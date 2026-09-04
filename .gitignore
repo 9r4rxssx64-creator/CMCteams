@@ -37,4 +37,4 @@ pipeline/rappel-etat.json
 
 # dossiers patrimoine : donnees personnelles de la famille, JAMAIS publiees
 # (le depot entier est servi publiquement par Cloudflare Pages)
-patrimoine/
+/patrimoine/
