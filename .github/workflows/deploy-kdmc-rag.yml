@@ -1,6 +1,12 @@
 # Déploie kdmc-rag — mémoire intelligente (RAG) d'Apex : Workers AI (embeddings) + Vectorize.
 # Secrets requis : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, APEX_ADMIN_PIN_SHA256 (déjà là).
-# Dispatch manuel uniquement (pattern kdmc-live/kdmc-ais — leçons #130/#132).
+#
+# DÉCLENCHEMENT : bouton (workflow_dispatch) + AUTO à chaque push qui touche le worker,
+# sur main ET sur claude/** (schéma deploy-apex-chat.yml v1.1.125). Audit du 05/09 :
+# la route /health existait dans la source depuis des semaines mais le worker en ligne
+# datait du 08/07 — personne n'avait appuyé sur le bouton (dispatch seul = déploiement
+# fantôme, leçon #211). La fusion robot dans main (GITHUB_TOKEN) ne déclenche pas les
+# workflows `push`, d'où claude/**. Zéro cron, zéro volume automatique.
 #
 # ⚠️ Vectorize doit être disponible sur le compte (comme les Durable Objects ont été
 # refusés — leçon #132). Si `wrangler deploy` échoue sur le binding VEC, le smoke le dira
@@ -9,6 +15,17 @@ name: Deploy KDMC RAG (mémoire Apex)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'services/kdmc-rag/**'
+      - '.github/workflows/deploy-kdmc-rag.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read

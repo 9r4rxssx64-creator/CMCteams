@@ -13,11 +13,31 @@
 # Secrets requis : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
 # Optionnel : PUSH_ADMIN_TOKEN (notifications iPhone). Sans lui → fail-open.
 #
-# Dispatch manuel uniquement — pattern kdmc-live / kdmc-ais (leçon #130).
+# DÉCLENCHEMENT : bouton (workflow_dispatch) + AUTO à chaque push qui touche le
+# worker — sur main ET sur claude/** (même schéma que deploy-apex-chat.yml v1.1.125).
+# Pourquoi claude/** : la fusion dans main est faite par le robot avec GITHUB_TOKEN,
+# et GitHub ne déclenche PAS les workflows `push` pour ces commits-là ; sans
+# claude/**, ce déploiement resterait à attendre un clic pour toujours (règle
+# « jamais demander un clic », leçon #211). Un push = un déploiement, zéro cron :
+# ce n'est pas du volume automatique, c'est l'usage prévu d'Actions (règle 2 de
+# verify-actions-conformes). Le worker est fail-open : déployer sans jeton push
+# est sûr (il surveille, il n'alerte pas).
 name: Deploy KDMC Uptime (surveillance domaine)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'services/kdmc-uptime/**'
+      - 'tests/uptime-couverture.test.mjs'
+      - '.github/workflows/deploy-kdmc-uptime.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # un déploiement ne se coupe jamais en plein vol
 
 permissions:
   contents: read

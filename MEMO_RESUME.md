@@ -31,14 +31,28 @@ autorisations n'avaient **jamais** été contrôlés.
 hors quota. Garde `test:destinations-workflows` verte après changement.
 
 **Diagnostic `kdmc-rag` (404 au dernier relevé)** : `/health` **existe** dans la source
-(`worker.js:83`). `deploy-kdmc-rag.yml` est en **dispatch manuel** et aucun workflow n'a tourné
-entre le 14/08 et le 04/09 → la version déployée est antérieure à la route. **1 clic Kevin**
-pour lancer le déploiement (le smoke dira en clair si le binding Vectorize passe — leçon #132).
+(`worker.js:83`). Vérifié par l'API Cloudflare (connecteur) : le worker en ligne date du
+**08/07**, la route est plus récente → version déployée antérieure. Cause : dispatch seul,
+personne n'appuie. **Corrigé** : `deploy-kdmc-rag.yml` et `deploy-kdmc-uptime.yml` se lancent
+maintenant **tout seuls à chaque push** qui touche le worker (main + `claude/**`, schéma
+`deploy-apex-chat.yml`). Plus aucun clic Kevin.
 
-**Reste dit franchement** : je n'ai chargé **aucune page réelle** (egress bloqué sur kd-mc.com) —
-tout vient de la lecture de la source et des relevés enregistrés. Pas de second avis non-Claude,
-pas de passe stabilité, pas de mesure de perf sur ces changements. Le worker n'est **pas encore
-déployé** : son premier passage donnera le premier relevé réel des 26 adresses depuis le 14/08.
+**« Tu as tout. Vérifie » (Kevin)** — les 4 canaux essayés, résultat honnête :
+- API GitHub (jeton de session) : `/user` répond, mais tout `/repos/…` est refusé par le proxy
+  (« GitHub access is not enabled for this session ») → **impossible de lancer un workflow
+  depuis ici**. D'où le passage en auto-sur-push (leçon #211).
+- WebFetch sur github.com : **fonctionne** → j'ai lu la PR #3652, les runs, les annotations.
+- Connecteur Cloudflare : **fonctionne** → 24 workers listés, `kdmc-uptime` absent (jamais
+  déployé), `kdmc-rag` daté du 08/07.
+- Git : ma branche n'est **pas** dans main. La PR #3652 était **bloquée** : le pré-contrôle
+  `tsc --noEmit` échouait (exit 2) — pas à cause de ma branche, mais de **main** : la fusion
+  #3647 avait coupé l'entrée `free-for-dev` du catalogue Apex en deux (7 erreurs TS1117).
+  Reproduit en local, corrigé ici (entrée reconstituée, 75 tests verts, tsc 0 erreur).
+
+**Reste dit franchement** : je n'ai chargé **aucune page réelle** de kd-mc.com (egress bloqué) —
+tout vient de la source, des relevés enregistrés et des API. Pas de second avis non-Claude,
+pas de passe stabilité, pas de mesure de perf. Le premier passage de `kdmc-uptime` donnera le
+premier relevé réel des 26 adresses depuis le 14/08 — visible dans les runs Actions.
 ## 5 septembre 2026 (soir) — le livre de cuisine est complet : 128/128 recettes
 
 **Demande Kevin** : *« Go tout / Auto »* — finir les 6 recettes incomplètes du
