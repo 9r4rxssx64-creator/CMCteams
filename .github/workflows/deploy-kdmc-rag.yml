@@ -79,9 +79,20 @@ jobs:
         shell: bash -eo pipefail {0}
         run: |
           set -e
+          # Journal wrangler recopié dans le RÉSUMÉ du run (lisible sans connexion).
+          # Le 05/09 le déploiement a échoué en 26 s sans qu'on puisse lire pourquoi.
+          set +e
           wrangler deploy 2>&1 | tee /tmp/deploy.log
+          RC=${PIPESTATUS[0]}
+          set -e
+          if [ "$RC" != "0" ]; then
+            { echo "## ❌ \`wrangler deploy\` a échoué (code $RC)"; echo; echo '```'; tail -80 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::wrangler deploy a échoué (code $RC) — journal dans le résumé du run"
+            exit "$RC"
+          fi
           grep -Eo 'https://[a-z0-9.-]+workers.dev' /tmp/deploy.log | head -1 > /tmp/url.txt || true
           echo "URL déployée : $(cat /tmp/url.txt 2>/dev/null)"
+          { echo "## ✅ \`wrangler deploy\` OK"; echo; echo '```'; tail -40 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Smoke /health (preuve — leçon #95)
         run: |

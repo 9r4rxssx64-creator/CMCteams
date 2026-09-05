@@ -84,9 +84,22 @@ jobs:
         shell: bash -eo pipefail {0}
         run: |
           set -e
+          # Le journal de wrangler est recopié dans le RÉSUMÉ du run : c'est la
+          # seule partie lisible sans être connecté (les logs bruts ne le sont pas).
+          # Règle « toujours détailler les erreurs » : un échec doit dire POURQUOI.
+          set +e
           wrangler deploy 2>&1 | tee /tmp/deploy.log
-          grep -Eo 'https://[a-z0-9.-]+workers.dev' /tmp/deploy.log | head -1 > /tmp/url.txt
+          RC=${PIPESTATUS[0]}
+          set -e
+          if [ "$RC" != "0" ]; then
+            { echo "## ❌ \`wrangler deploy\` a échoué (code $RC)"; echo; echo '```'; tail -80 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::wrangler deploy a échoué (code $RC) — journal dans le résumé du run"
+            exit "$RC"
+          fi
+          # Pas d'URL dans la sortie ≠ échec : on retombe sur l'adresse connue.
+          grep -Eo 'https://[a-z0-9.-]+workers.dev' /tmp/deploy.log | head -1 > /tmp/url.txt || true
           echo "URL déployée : $(cat /tmp/url.txt)"
+          { echo "## ✅ \`wrangler deploy\` OK"; echo; echo '```'; tail -40 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Pousser KDMC_PUSH_TOKEN (notifications iPhone — best-effort)
         env:
