@@ -319,8 +319,8 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
 15. 👤 **la-detente** : combien de gilets, et broderie logo seul ou logo + prénoms ?
 16. 👤 **meta** : compte développeur Apple (99 $/an) — oui ou non ?
-17. 👤 **m003** : la réponse au support GitHub est prête (3 conditions remplies) — c'est Kevin qui
-    l'envoie.
+17. ✅ **PÉRIMÉ** — m003 (réponse au support GitHub) : GitHub a levé la restriction le 4.09 à
+    16h34 UTC (ETAT-INFRA fait n°10). Ne plus le redemander à Kevin.
 
 ### ℹ️ Rien à faire, mais à savoir
 - Le miroir `kdmc-site.pages.dev` est **propre** (20/20 sondes en 404, job GitLab `16324368313`),
