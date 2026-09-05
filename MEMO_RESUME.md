@@ -1,5 +1,37 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (17h20) — « Où en est l'audit ? » : ultra-review indépendante appliquée, livrables écrits
+
+**Kevin** : *« Où en est le "fais ton audit" ? Lance un ultra-review indépendant maximal. Vérifie et
+mets tout à jour, connecteurs, secrets, api. »*
+
+**Verdict honnête du relecteur « complétude »** : l'audit du domaine était **à la lecture** (8 axes
+sur 11 non exécutés, aucun livrable `audit/`). Corrigé dans l'heure : `audit/2026-09-05/00→06`,
+`audit-live.yml` rendu **déclenchable par push** (+ bot/beatbot/autorisations, écarts en
+annotations) et lancé, `audit:improvements` (0 hausse, 6 améliorations chiffrées) et
+`audit:stability` (0 FAIL) exécutés. Clics/a11y : pas de playwright ici → CI.
+
+**Trois relecteurs (sécurité, SRE, complétude) — tout le sûr est appliqué (4c4a469)** : 2 P0
+(réveil worker→worker = 1042 → Service Binding ; notifications qui n'ont jamais pu partir →
+`/send-all`), `/run` protégé par clé dérivée + 1/5 min, état en KV partagé (le Cache API est par
+datacenter), plus de prod déployée depuis `claude/**`, wrangler épinglé sans scripts, jeton
+Cloudflare limité aux étapes wrangler, id de compte masqué, `grep||true` sous pipefail, garde de
+couverture durcie (2 sabotages). Leçon #213 et fait n°16 **corrigés** (le `claude/**` était une
+mauvaise idée pour un déploiement).
+
+**Runs lus** : uptime **vert** (26/32 OK — les 6 workers « en panne », cause au prochain smoke) ;
+RAG : `code 10000` = **le jeton Cloudflare n'a pas le droit Vectorize** → 1 clic Kevin
+(KEVIN_ACTIONS_TODO). Sonar C = 2 findings, corrigés. Semgrep : illisible d'ici.
+
+**Connecteurs mesurés** : Cloudflare ✅, Railway ✅ (2 projets), Sentry ✅ (org kdmc), Supabase 0,
+Netlify 0, GitHub ❌ absent. **Secrets** : 101 noms consommés par les workflows, **47 absents de la
+liste documentée**, dont **3 jeux de noms différents pour App Store Connect** → `06-SECRETS-CONNECTEURS.md`.
+
+**Reste** : lire `audit-live` (annotations) et le prochain passage de la sonde via Outlook
+(`modified_on`) ; Vectorize (Kevin) ; 6 workers « en panne » à qualifier ; Semgrep à lire.
+
+---
+
 ## 5 septembre 2026 (16h45) — PR fusionnée, deux déploiements rouges ENFIN lisibles, et le pipeline des branches
 
 **Kevin** : *« Attention d'autres branches travaillent sur le domaine. Fais le pipeline de toutes tes
