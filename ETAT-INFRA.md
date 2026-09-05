@@ -316,6 +316,40 @@ C'est écrit à côté du job, pas seulement ici.
 > → est-ce périodique ? Alors Cloudflare Worker. Sinon → GitLab CI, et j'ai compté ce que
 > ça coûte sur les 400 minutes du mois. »*
 
+### ⚠️ Trouvé en chemin, et pas encore réglé : le miroir publie un arbre PÉRIMÉ
+
+En unifiant la recette CI, la garde a tourné sur la branche `main` de **GitLab** et a
+nommé **54 workflows avec cron et 6 workflows crypto**. Elle a raison sur les faits : le
+contenu de `main` côté GitLab est resté l'**instantané d'avant la suspension** (31/08).
+La remise en conformité du 4.09 a eu lieu sur le `main` de **GitHub** uniquement.
+
+Conséquences honnêtes :
+- ces 54 crons sont **inertes** — GitHub n'exécute que les workflows de SON dépôt, et
+  celui-ci est à 0 cron (vérifié à chaque envoi par la garde) ;
+- mais le filet de secours `kdmc-site.pages.dev` publie donc une version **datée**, et
+  restaurer GitHub depuis GitLab restaurerait l'état non conforme.
+
+La garde ne tourne plus sur cette branche (un rouge permanent finit par ne plus être lu),
+et c'est écrit à côté de la règle. **✅ FAIT le 5.09** : le contenu du `main` GitLab a été
+remis au niveau de celui de GitHub (arbre conforme, 0 cron, 0 crypto), en préservant les
+9 fichiers qui n'existent que là-bas. Le miroir ne publie donc plus un instantané d'avant
+la suspension, et restaurer GitHub depuis GitLab ne réintroduirait plus l'état non conforme.
+
+### Une seule recette CI, désormais
+
+Les deux branches portaient **deux fichiers `.gitlab-ci.yml` différents** : fusionner une
+branche de travail dans `main` aurait supprimé la publication, en silence (le piège de la
+leçon #142). Il n'y en a plus qu'un. Vérifié en le lançant des deux côtés :
+
+| branche | ce qui tourne | minutes |
+|---|---|---|
+| branche de travail | `conformite` seule (23 s) | 0,4 |
+| `main`, bouton non touché | rien (`skipped` / `manual`) | **0** |
+| `main`, bouton touché | `verifier-cloudflare` 23 s + `publier-site` 82 s | 1,8 |
+
+La publication de secours est passée en `needs: []` : elle **ne dépend plus des tests** —
+le jour où on en a besoin, c'est justement que quelque chose ne va pas.
+
 ---
 
 ## 🚨 Fait n°12 — LE DÉPÔT EST PUBLIC, et il publiait les documents de travail (5.09.2026)
