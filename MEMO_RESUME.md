@@ -4681,9 +4681,17 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
   SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
   DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.
 
+## 2026-09-05 — Apex Chat : fermeture porte admin P0 (v1.1.284)
+- **Faille P0** : bypass « numéro Kevin + 000000 » → JWT admin sans preuve.
+- **v1.1.282** numéro retiré de la page publique (déployé) · **v1.1.283** garde serveur `ADMIN_BYPASS_REQUIRE_MFA` (OFF) · **v1.1.284 garde ACTIVÉE ("true")** après vérif D1 (`kdmc_kevin-desarzens` is_admin=1, source kdmc-sso).
+- **Porte admin principale** = SSO Face ID `kd-mc.com` via `/api/auth/sso-from-kdmc` (indépendant du drapeau). **Repli anti-lock-out** = `X-Apex-Admin-Token` (jamais dans la page).
+- **Rollback** = `messaging-app/workers/wrangler.toml` → `ADMIN_BYPASS_REQUIRE_MFA="false"` + redéploiement (SSO inchangé dans les deux états).
+- **Annulé** : piste « clé admin par app » (empreinte D1) = per-app secret, contraire aux règles (le code admin ne se vérifie jamais côté client).
+- **Coordination domaine** : scan des branches `claude/*` actives → aucune ne modifie la logique admin/SSO (family-tree touche le router mais côté arbre uniquement). Apex Chat admin dépend maintenant de la santé du SSO → ne pas casser `/__sso/whoami` ni la garde `ADMIN_UIDS && verified`.
+
 ## 2026-09-05 — Apex Chat : correctif P1/P0 admin client-side (v1.1.285)
 
-Audit Apex Chat — fermeture du dernier vecteur admin **côté page**. La porte serveur
+Suite directe : fermeture du dernier vecteur admin **côté page**. La porte serveur
 était fermée (v1.1.284, `ADMIN_BYPASS_REQUIRE_MFA="true"`) mais `index.html` fabriquait
 une session admin locale en tapant « Kevin Desarzens » — y compris **quand le serveur
 refusait** (jeton `'local-admin-'`, is_admin:true), ce qui annulait la fermeture.
