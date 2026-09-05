@@ -66,6 +66,11 @@ tests:
 # aussi. Court, donc quasi gratuit en minutes.
 conformite:
   stage: tests
+  # Image ALPINE et pas node:20 : ce job ne lit que des fichiers. Mesuré le 5.09,
+  # il coûtait 45 s dont l'essentiel en téléchargement d'une image de 400 Mo —
+  # 28 minutes en quatre jours, devenues le premier poste du quota une fois la
+  # publication du miroir passée à la demande. L'image alpine fait ~50 Mo.
+  image: node:20-alpine
   script:
     - node tests/verify-actions-conformes.mjs
     - |
