@@ -1,5 +1,61 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (soir) — la surveillance du domaine était éteinte depuis 22 jours
+
+**Demande Kevin** : *« Fais ton audit du domaine, chaque app, pages, tout ce que nous avons créé »*
+puis *« Enchaîne 1-2-3 en parallèle. Pipeline toutes tes branches. »*
+
+**Trouvé par l'audit** (mesuré sur le dépôt, pas supposé) : le routeur déclare **26 sous-domaines**,
+tous cohérents (26/26 cibles existantes, 0 orphelin) — mais **plus rien ne les surveillait depuis le
+14/08 18h52**, soit 22 jours. Les 7 workflows de contrôle avaient été rangés le 15/08 pour retirer
+les crons, et **personne ne les avait remis ailleurs**. Pire : même avant, la sonde ne couvrait que
+**13 des 26** adresses — l'arbre (111 pages), les boutiques (22 pages), cuisine, lingua, studio,
+autorisations n'avaient **jamais** été contrôlés.
+
+**Fait — 3 chantiers** :
+1. **`services/kdmc-uptime`** — worker Cloudflare, cron horaire, **26 sous-domaines + 6 workers**.
+   Zéro binding (DO → error 1042 sur ce compte ; KV à id placeholder cassent `wrangler deploy`) :
+   l'état vit dans le Cache API. Alerte iPhone via `apex-push-worker`, **fail-open** sans jeton.
+   401/403 sur une page admin = verrou qui marche, pas une panne (sinon alerte permanente ignorée).
+2. **Garde `tests/uptime-couverture.test.mjs`** (câblée `test:ci`) — la liste surveillée doit être
+   le miroir de `ROUTES`. **Prouvée discriminante** : retirer `arbre` → échec immédiat. C'est la
+   leçon #142 : deux listes qui décrivent la même réalité divergent toujours sans garde.
+3. **27 adresses canoniques** basculées de `github.io` vers kd-mc.com dans 11 pages servies
+   (`canonical`, `og:url`, `twitter:url`, JSON-LD) — on déclarait à Google que la version de
+   référence était GitHub. Remappées via la table du routeur, pas à la main : `shops/la-detente`
+   → `shops.kd-mc.com/la-detente/` (**pas** `la-detente.kd-mc.com`, qui est une AUTRE app).
+
+**Destination corrigée** : `uptime-monitor.yml` et `workers-health-check.yml` passent de
+`gitlab` à `worker` dans `DESTINATIONS.json`. Raison chiffrée : une sonde horaire sur GitLab =
+**~360 min/mois sur les 400** (175 déjà prises en 4 jours) → impossible ; le cron Cloudflare est
+hors quota. Garde `test:destinations-workflows` verte après changement.
+
+**Diagnostic `kdmc-rag` (404 au dernier relevé)** : `/health` **existe** dans la source
+(`worker.js:83`). Vérifié par l'API Cloudflare (connecteur) : le worker en ligne date du
+**08/07**, la route est plus récente → version déployée antérieure. Cause : dispatch seul,
+personne n'appuie. **Corrigé** : `deploy-kdmc-rag.yml` et `deploy-kdmc-uptime.yml` se lancent
+maintenant **tout seuls à chaque push** qui touche le worker (main + `claude/**`, schéma
+`deploy-apex-chat.yml`). Plus aucun clic Kevin.
+
+**« Tu as tout. Vérifie » (Kevin)** — les 4 canaux essayés, résultat honnête :
+- API GitHub (jeton de session) : `/user` répond, mais tout `/repos/…` est refusé par le proxy
+  (« GitHub access is not enabled for this session ») → **impossible de lancer un workflow
+  depuis ici**. D'où le passage en auto-sur-push (leçon #214).
+- WebFetch sur github.com : **fonctionne** → j'ai lu la PR #3652, les runs, les annotations.
+- Connecteur Cloudflare : **fonctionne** → 24 workers listés, `kdmc-uptime` absent (jamais
+  déployé), `kdmc-rag` daté du 08/07.
+- Git : ma branche n'est **pas** dans main. La PR #3652 était **bloquée** : le pré-contrôle
+  `tsc --noEmit` échouait (exit 2) — pas à cause de ma branche, mais de **main** : la fusion
+  #3647 avait coupé l'entrée `free-for-dev` du catalogue Apex en deux (7 erreurs TS1117).
+  Reproduit en local, corrigé ici (entrée reconstituée, 75 tests verts, tsc 0 erreur).
+
+**Reste dit franchement** : je n'ai chargé **aucune page réelle** de kd-mc.com (egress bloqué) —
+tout vient de la source, des relevés enregistrés et des API. Pas de second avis non-Claude,
+pas de passe stabilité, pas de mesure de perf. Le premier passage de `kdmc-uptime` donnera le
+premier relevé réel des 26 adresses depuis le 14/08 — visible dans les runs Actions.
+
+---
+
 ## 5 septembre 2026 — « Miroir aussi pour chaque » : la page ouvrait sur la MAUVAISE ÉQUIPE (corrigé v1.39)
 
 **Retour Kevin** : « Miroir aussi pour chaque ». Le bon mois ne suffisait pas.
@@ -177,7 +233,7 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    échouait **depuis le 13/08** (dossier `public/` exigé par `[assets]` jamais fabriqué) → aucun
    secret poussé au routeur pendant 3 semaines ; corrigé (PR #3661), run vert, secret
    `KDMC_ADMIN_PIN_SHA256` posé, 26 sous-domaines en 200. Sonde live ajoutée (PR #3663) + garde
-   `test:wrangler-assets` (dans `test:ci`). Détail : ETAT-INFRA fait n°15 (suite), leçon #213.
+   `test:wrangler-assets` (dans `test:ci`). Détail : ETAT-INFRA fait n°15 (suite), leçon #214.
    **Reste à Kevin** : se connecter UNE fois avec le nouveau code sur departs.kd-mc.com (moi je
    prouve le refus d'un mauvais code, pas l'acceptation du bon — je ne le connais pas, c'est voulu).
 2b. 👤 **RAG (mémoire Apex)** : le secret y est, mais son déploiement échoue car le jeton

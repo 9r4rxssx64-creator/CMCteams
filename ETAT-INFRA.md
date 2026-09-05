@@ -601,7 +601,7 @@ côté Cloudflare quand la mémoire RAG servira. **Prévention** : `npm run test
 (dans `test:ci`, prouvé discriminant) — tout worker avec `[assets]` non versionné doit avoir une
 étape qui le fabrique avant `wrangler deploy` ; et `live-verify-departs` sonde désormais
 `POST /__admin/login` avec un code bidon (attendu `code_invalide`, jamais
-`admin_pin_not_configured`). Leçon #213.
+`admin_pin_not_configured`). Leçon #214.
 
 **Où vit le code, réellement** : UN secret GitHub, `APEX_ADMIN_PIN_SHA256`, poussé par les
 workflows vers **6 workers** (routeur `KDMC_ADMIN_PIN_SHA256`, admin.kd-mc.com, monaco, outlook,
