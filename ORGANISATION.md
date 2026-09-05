@@ -79,9 +79,10 @@ tests, lint, CodeQL, gitleaks, Lighthouse, déploiement des Workers du projet,
 publication GitHub Pages (`kd-mc.com`), fusion automatique des branches `claude/*`.
 → *tout est « production, test, déploiement, publication » de ce dépôt.* ✅
 
-**Sur GitLab** (`kdmc-group/Kdmc-project`) : les tests au push, la publication du miroir
-`kdmc-site.pages.dev`, et **tout ce qui appelle l'extérieur** — lecture des règlements,
-fichier des décès de l'INSEE, audit de ce qui est public, vérification des liens.
+**Sur GitLab** (`kdmc-group/Kdmc-project`) : les tests au push, et **tout ce qui appelle
+l'extérieur** — lecture des règlements, fichier des décès de l'INSEE, audit de ce qui est
+public, vérification des liens, et « qui sert vraiment le site ». La publication du miroir
+`kdmc-site.pages.dev` y vit toujours, mais **à la demande** (voir §6).
 
 **Sur Cloudflare** : les Workers (routeur, IA créa, apis, SSO…) et **c'est là que doivent
 aller les 6 tâches programmées** encore en attente d'un nouveau foyer.
@@ -128,6 +129,55 @@ Et le réflexe qui a manqué en août : **une automatisation qu'on ajoute « jus
 n'est jamais seule** — c'est leur accumulation qui a fait fermer le compte.
 
 ---
+
+## 6. Ce qui a été corrigé le 5.09 — l'erreur d'août, en train de se rejouer sur GitLab
+
+`npm run minutes-gitlab` a donné le premier chiffre honnête : **175 minutes sur 400
+consommées en 4 jours (44 %)**. À ce rythme, GitLab était **à sec le 9 septembre**. Le
+premier poste n'était pas les tests, c'était la **publication du miroir** :
+
+| poste | envois | minutes | part |
+|---|---|---|---|
+| `publier-site` (miroir Cloudflare) | 44 | **72,5** | 41 % |
+| `conformite` (la garde) | 36 | 27,1 | 15 % |
+| `tests` | 36 | 24,0 | 14 % |
+| `verifier-cloudflare` (clé) | 44 | 21,7 | 12 % |
+
+### On a mesuré avant de couper
+
+Couper la publication n'est sans risque **que si le site vivant ne vient pas de là**. Le
+conteneur de l'agent n'atteint ni `kd-mc.com`, ni `github.io`, ni `pages.dev` (HTTP 000).
+C'est donc la machine GitLab qui a regardé — job **`qui-sert`**, réutilisable :
+
+```
+x-kdmc-router: kd-mc.com                          ← le routeur Cloudflare répond
+x-github-request-id / x-github-edge-region: iad   ← mais le contenu vient de GITHUB PAGES
+via: 1.1 varnish · x-served-by: cache-pdk…
+```
+
+**Le site vivant vient de GitHub**, revenu en service le 4.09. Le miroir est un filet de
+secours, plus la source.
+
+### Le changement, et sa preuve
+
+`publier-site` et `verifier-cloudflare` sont passés **à la demande** : modifier
+**`publier-demande.txt`**, ou la variable `PUBLIER`, ou le bouton « Lancer ».
+
+Deux envois consécutifs sur la même branche, à quelques minutes d'écart :
+
+| envoi | fichier-bouton touché ? | ce qui a tourné | minutes |
+|---|---|---|---|
+| `23b3b14a` | **oui** | `verifier-cloudflare` 23 s + `publier-site` 63 s | 1,4 |
+| `37bd1a23` | non | *tout `skipped` / `manual`* | **0** |
+
+C'est la preuve discriminante : la règle distingue bien les deux cas. Économie attendue :
+**~94 min/mois, 23 % du quota rendus**. Une dernière publication a eu lieu au moment du
+changement, donc le filet de secours est à jour.
+
+**Retour en arrière si GitHub retombait** : remettre `- when: on_success` en première
+règle de `publier-site`. C'est écrit à côté du job dans `.gitlab-ci.yml`, pas seulement
+ici — un mode d'emploi qui ne vit que dans un document finit par ne pas être lu.
+
 
 *Sources lues le 5.09.2026 depuis le runner GitLab, texte intégral conservé dans
 `audit/reglement/` : conditions produit GitHub, usage acceptable GitHub, limites d'Actions,
