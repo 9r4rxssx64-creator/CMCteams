@@ -32,10 +32,29 @@ Vrai navigateur, serveur simulé : **8 OK / 0 FAIL**. **Discriminant prouvé** :
 correctif retiré → **3 FAIL**, et le test reproduit mot pour mot le message que
 Kevin a vu. Restauré → 8/8.
 
-### Reste ouvert (dit honnêtement)
-Le domaine `lingua.kd-mc.com` est **toujours** injoignable : l'application ne
-ment plus, mais la synchronisation en ligne ne remarchera qu'une fois le routeur
-de nouveau joignable. Ce point n'est pas réparé ici.
+### Deuxième mensonge du même type, trouvé et corrigé (même jour)
+Le routeur renvoie `{ok:false, reason:'kv_absent'}` **en 200** quand son stockage
+est indisponible (repli volontaire). Le client repliait ça sur « aucune
+sauvegarde » : le serveur ne peut pas lire, et on annonce à l'utilisateur qu'il
+n'a pas de compte. Corrigé, et le cas est désormais couvert par le test.
+**10 OK / 0 FAIL.**
+
+### ⚠️ Correction d'une supposition (mesurée, pas devinée)
+Le commentaire du test — et ma première version de ce mémo — affirmaient que
+`lingua.kd-mc.com` était « indisponible ». **Jamais vérifié.** Mesuré le 5.09 :
+- le DNS **résout** (`lingua.kd-mc.com` → même IP que `kd-mc.com`) ;
+- la route `custom_domain` est bien déclarée dans `services/kdmc-router/wrangler.toml` ;
+- le CORS de `/__lingua/*` est ouvert à **toutes** les origines (donc venir de
+  `pages.dev` n'est pas le problème).
+
+Je ne peux pas atteindre le domaine depuis cette session (politique réseau), mais
+c'est **ma** limite — pas une panne prouvée. Le commentaire du test a été corrigé.
+
+### Piste rouverte pour le compte de Kevin
+La clé du compte en ligne est `sha256(norm(prénom) + ":" + code)` (`lingua/app.js`,
+`cloudKeyFor`). La casse et les accents sont normalisés, **mais pas les mots** :
+`kevin` et `kevin desarzens` produisent **deux clés différentes**. Sa sauvegarde
+peut donc exister sous un autre libellé. À tester : le prénom seul + le code.
 
 ---
 

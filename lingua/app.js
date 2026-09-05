@@ -207,6 +207,10 @@ function enterWithCredentials(name,avatar,code,createIfMissing){
   if(existing){ switchAccount(existing); if(createIfMissing) cloudSaveNow(); return Promise.resolve({ok:true,local:true}); }
   return cloudKeyFor(name,code).then(function(k){ return fetch(SYNC_BASE+"/load?k="+encodeURIComponent(k)); })
     .then(function(r){ return r&&r.json(); }).then(function(j){
+      /* Le serveur a répondu, mais SON stockage est indisponible (KV absent) : ce n'est
+         PAS « tu n'as pas de compte ». L'annoncer comme une absence est le même mensonge
+         que le serveur muet — on le traite pareil (côté injoignable). */
+      if(j && j.ok===false && j.reason==="kv_absent" && !createIfMissing) return {ok:false,injoignable:true};
       var cloud=(j&&j.ok)?j.data:null;
       if(cloud){ var id=createAccount(cloud.name||name, cloud.avatar||avatar, String(code)); _applySnapshot(id,cloud); switchAccount(id); return {ok:true,restored:true}; }
       if(createIfMissing){ var id2=createAccount(name,avatar,String(code)); switchAccount(id2); cloudSaveNow(); return {ok:true,created:true}; }

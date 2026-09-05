@@ -4,20 +4,28 @@
  * kdmc-site.pages.dev et l'app répond « Aucune sauvegarde pour ce prénom +
  * code 🤔 ». Sa phrase : « j'ai pourtant un compte ».
  *
- * CAUSE MESURÉE : la progression en ligne est servie par `/__lingua/load`, une
- * route du Worker **kdmc-router** (services/kdmc-router/worker.js:302), joignable
- * uniquement via `lingua.kd-mc.com` — le domaine actuellement indisponible. Le
- * `fetch` échoue donc, et le `.catch` renvoyait le MÊME résultat que « le cloud
- * a répondu : rien trouvé ». L'app annonçait une perte de compte là où il n'y
- * avait qu'un serveur injoignable. C'est un mensonge d'interface, et c'est
- * précisément ce que la règle « toujours détailler les erreurs » interdit.
+ * CAUSE MESURÉE : la progression en ligne est servie par `/__lingua/load`, route
+ * du Worker **kdmc-router** (services/kdmc-router/worker.js), sur
+ * `lingua.kd-mc.com`. Quand cet appel échoue, le `.catch` renvoyait le MÊME
+ * résultat que « le cloud a répondu : rien trouvé ». L'app annonçait donc une
+ * perte de compte là où il n'y avait qu'un serveur injoignable. Mensonge
+ * d'interface — exactement ce que la règle « toujours détailler les erreurs »
+ * interdit.
+ *
+ * ⚠️ PRÉCISION 5.09 (mesurée, l'ancienne version de ce commentaire était fausse) :
+ * `lingua.kd-mc.com` RÉSOUT bien en DNS (même IP que kd-mc.com) et le CORS de
+ * `/__lingua/*` est ouvert à toutes les origines. « Domaine indisponible » n'a
+ * jamais été vérifié — c'était une supposition. La cause du message reste le
+ * repli fautif ci-dessus, quelle que soit la raison de l'échec de l'appel.
  *
  * Ce test charge la VRAIE page dans un vrai navigateur (aucun réseau : le
- * serveur de sauvegarde est simulé) et prouve les trois cas :
- *   1. serveur injoignable  → « ne répond pas … n'est pas perdue »
- *   2. serveur OK mais vide → « aucune sauvegarde », et les prénoms présents
+ * serveur de sauvegarde est simulé) et prouve les quatre cas :
+ *   1. serveur injoignable   → « ne répond pas … n'est pas perdue »
+ *   2. serveur OK mais vide  → « aucune sauvegarde », et les prénoms présents
  *      sur l'appareil sont proposés (cas « je me suis trompé de prénom »)
- *   3. sauvegarde trouvée   → on entre, sans message d'erreur
+ *   3. stockage serveur absent (`{ok:false,reason:'kv_absent'}`, fail-open 200)
+ *      → surtout PAS « aucune sauvegarde » : le compte n'est pas en cause
+ *   4. sauvegarde trouvée    → on entre, sans message d'erreur
  *
  * Lancer : node tests/verify-lingua-connexion-honnete.mjs
  */
@@ -49,6 +57,9 @@ async function essai({ cloud, comptesLocaux }) {
       if (url.includes('__lingua')) {
         if (cl === 'injoignable') throw new TypeError('Failed to fetch');
         if (cl === 'vide') return new Response(JSON.stringify({ ok: false }), { status: 200, headers: { 'content-type': 'application/json' } });
+        /* Le serveur RÉPOND, mais son stockage (KV) est absent — worker.js:340 renvoie
+           {ok:false,reason:'kv_absent'} en 200 (fail-open). Ce n'est PAS une absence de compte. */
+        if (cl === 'kv') return new Response(JSON.stringify({ ok: false, reason: 'kv_absent' }), { status: 200, headers: { 'content-type': 'application/json' } });
         return new Response(JSON.stringify({ ok: true, data: { v: 2, name: 'Kevin', avatar: '🐝', syncTs: 1, data: {} } }),
           { status: 200, headers: { 'content-type': 'application/json' } });
       }
@@ -104,10 +115,19 @@ chk(/Aucune sauvegarde/i.test(r.messages), '2. serveur OK et vide → là, « au
 chk(/Kevin/.test(r.messages),
   `2. et on propose les prénoms présents sur l'appareil (« ${r.messages.slice(-70)} »)`);
 
-/* --- 3. sauvegarde trouvée → on entre ------------------------------------- */
+/* --- 3. serveur OK mais SON stockage est absent → surtout pas « aucune sauvegarde » ---
+   (placé AVANT le cas « trouvée » : celui-ci crée un compte local, et la règle « reconnu
+   auto » ferait alors entrer directement sans jamais afficher l'écran de connexion.) */
+r = await essai({ cloud: 'kv' });
+chk(!/Aucune sauvegarde/i.test(r.messages),
+  '3. stockage serveur absent → on n\'annonce PAS une perte de compte');
+chk(/pas perdue/i.test(r.messages),
+  `3. et on rassure sur la progression (« ${r.messages.slice(0, 90)}… »)`);
+
+/* --- 4. sauvegarde trouvée → on entre ------------------------------------- */
 r = await essai({ cloud: 'trouve' });
 chk(r.entre && !/Aucune sauvegarde|ne répond pas/i.test(r.messages),
-  '3. sauvegarde trouvée → on entre, sans message d\'erreur');
+  '4. sauvegarde trouvée → on entre, sans message d\'erreur');
 
 await nav.close();
 R.ko.forEach((m) => console.log('  FAIL ' + m));
