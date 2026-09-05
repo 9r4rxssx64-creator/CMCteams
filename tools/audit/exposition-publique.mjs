@@ -45,10 +45,18 @@ const SITE = (arg('--site', 'https://kdmc-site.pages.dev')).replace(/\/$/, '');
  * domaine), pas un `rm`. Les compter comme des échecs mettrait un rouge
  * PERMANENT que plus personne ne regarderait. */
 const CHEMINS = [
-  { p: '/arbre/index.html', quoi: 'arbre familial (noms, dates de naissance, enfants)', grave: 3 },
+  /* — Le site lui-même. `u:` = adresse ABSOLUE, parce que le domaine range ses
+       apps par SOUS-DOMAINE (arbre.kd-mc.com) alors que le miroir les met à la
+       racine. Sondé le 5.09 sur kd-mc.com : /arbre/index.html y répond 404 — pas
+       parce que l'arbre serait privé, mais parce qu'il est ailleurs. Un rapport
+       qui laisse croire l'inverse est pire que pas de rapport. — */
+  { u: 'https://arbre.kd-mc.com/', quoi: 'arbre familial (noms, dates de naissance, enfants)', grave: 3 },
+  { p: '/arbre/index.html', quoi: 'arbre familial (copie à la racine, sur le miroir)', grave: 3 },
   { p: '/tools/shared/planning-seed.js', quoi: 'plannings : ~280 employés nommés', grave: 3 },
+  { p: '/CMCteams/tools/shared/planning-seed.js', quoi: 'plannings (chemin /CMCteams/)', grave: 3 },
   { p: '/tools/departs/boards-gen.js', quoi: 'ordres de départ par employé', grave: 3 },
-  { p: '/index.html', quoi: 'application CMCteams (effectif complet)', grave: 3 },
+  { p: '/CMCteams/index.html', quoi: 'application CMCteams (effectif complet)', grave: 3 },
+  { p: '/index.html', quoi: 'application CMCteams (à la racine, sur le miroir)', grave: 3 },
 
   /* — Les documents de travail : doivent TOUS être absents — */
   { p: '/NOTES_USER.md', quoi: 'notes métier (employés du casino, règles internes)', grave: 3, docTravail: true },
@@ -127,7 +135,7 @@ if (!accueil) {
 for (const c of CHEMINS) {
   let statut = 0, taille = 0, trouves = [];
   try {
-    const r = await fetch(bust(SITE + c.p), { redirect: 'follow', ...SANS_CACHE });
+    const r = await fetch(bust(c.u || (SITE + c.p)), { redirect: 'follow', ...SANS_CACHE });
     statut = r.status;
     if (r.ok) {
       const t = await r.text();
@@ -147,9 +155,9 @@ for (const c of CHEMINS) {
   const publique = statut >= 200 && statut < 300;
   const alerte = c.docTravail
     ? (publique ? '🚨 FUITE' : '✅ retiré')
-    : (publique && c.grave >= 3 ? '🔶 le site' : publique ? 'ℹ️ public' : '— absent');
+    : (publique && c.grave >= 3 ? '🔶 le site' : publique ? 'ℹ️ public' : '— pas ici');
   lignes.push({ ...c, statut, taille, trouves, publique, alerte });
-  console.log(`${alerte.padEnd(10)} HTTP ${String(statut).padEnd(4)} ${String(taille).padStart(8)} o  ${c.p}`);
+  console.log(`${alerte.padEnd(10)} HTTP ${String(statut).padEnd(4)} ${String(taille).padStart(8)} o  ${c.u || c.p}`);
   if (trouves.length) console.log(`             ↳ ${trouves.join(' · ')}`);
 }
 
@@ -160,7 +168,7 @@ md += `Sondé le ${new Date().toLocaleString('fr-FR')}. **${fuites.length} docum
 md += ` · ${structurel.length} page(s) du site portant des noms (correctif architectural, pas un retrait).\n\n`;
 md += `| État | Chemin | Ce que c'est | HTTP | Taille | Données personnelles détectées |\n|---|---|---|---|---|---|\n`;
 for (const l of lignes) {
-  md += `| ${l.alerte} | \`${l.p}\` | ${l.quoi} | ${l.statut} | ${l.taille || '—'} | ${l.trouves.join(', ') || '—'} |\n`;
+  md += `| ${l.alerte} | \`${l.u || l.p}\` | ${l.quoi} | ${l.statut} | ${l.taille || '—'} | ${l.trouves.join(', ') || '—'} |\n`;
 }
 md += `\n*Les données elles-mêmes ne sont jamais recopiées ici : seulement le nombre\n`;
 md += `d'occurrences. Un rapport n'a pas à republier ce qu'il dénonce.*\n`;
@@ -188,6 +196,14 @@ if (structurel.length) {
   console.log(`🔶 ${structurel.length} page(s) du SITE portent des noms — c'est le site lui-même`);
   console.log('   (l\'app CMCteams, ses plannings, l\'arbre). On ne les retire pas : leur');
   console.log('   correctif est de servir la donnée derrière la connexion du domaine.');
+}
+const pasIci = lignes.filter((l) => !l.docTravail && !l.publique);
+if (pasIci.length) {
+  console.log('');
+  console.log(`ℹ️  ${pasIci.length} adresse(s) du site n'existent pas ICI — et ça ne veut PAS dire`);
+  console.log('   « pas public » : le domaine range ses apps par sous-domaine, le miroir les');
+  console.log('   met à la racine. Une même app est donc absente d\'un côté et présente de');
+  console.log('   l\'autre. Ne rien conclure d\'un « pas ici ».');
 }
 console.log(`\nDétail : patrimoine-resultats/exposition-publique.md`);
 /* Sortie en erreur UNIQUEMENT sur les documents de travail. Faire échouer sur
