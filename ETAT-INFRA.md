@@ -465,6 +465,23 @@ domaine : sans empreinte publiée, personne n'entre. Gardes : `npm run test:arbr
 (21 contrôles, famille **synthétique**). **Ce qui a été public une fois le reste** (historique
 Git) : Kevin doit **publier une fois** depuis son iPhone puis **changer le code famille**.
 
+### Suite (5.09 nuit) — amorce D1 : le domaine sert l'arbre v3.14 sans publication préalable
+
+L'arbre v3.7→v3.14 (8 versions, 119 personnes, seedVersion 63) ne vivait que sur GitLab (`kdmc-group/Kdmc-project`,
+main). Récupéré avec le jeton de Kevin (lecture seule, jamais écrit sur disque), le **code** est porté dans v3.17 et
+les **données** sont déposées dans une base **Cloudflare D1** dédiée, `kdmc-arbre`
+(id `a10e750d-de49-47b5-b1d8-0e937eccbec8`, table `kv(k, v, saved_at)` : `codehash` = empreinte 64-hex du code
+famille actuel, `seed` = les 119 fiches en JSON, 96 443 caractères, `json_valid`). Le routeur lit **KV d'abord, D1 en
+repli** (`arbreD1` / `arbreCodehash` / `arbreSeedOut`, champ `source:'kv'|'d1'` dans `/__arbre/status`, fail-open si
+la liaison manque) ; liaison `[[d1_databases]] binding = "ARBRE_DB"` dans `services/kdmc-router/wrangler.toml`.
+Conséquence : **dès le déploiement du routeur, un nouvel appareil reçoit l'arbre complet en tapant le code** — plus
+d'étape « Publier » obligatoire ; Kevin peut toujours publier depuis Outils (le KV prend alors le dessus). Les
+appareils existants (seedVersion 56) se mettent à niveau seuls au démarrage (`refreshFromDomain`, 1 GET, photos
+locales gardées, fantômes purgés). Intégrité du dépôt D1 prouvée par **somme de contrôle par morceau** (8 × 12 055
+caractères, 8/8 identiques au fichier source ; 6 morceaux corrigés avant assemblage). Tests : `arbre.test.mjs`
+42/42 (mock D1, précédence KV, D1 en panne), navigateur `verify-domaine.mjs` 23/23. Reste pour Kevin : **changer le
+code famille** (l'ancienne empreinte est dans l'historique public).
+
 ---
 
 ## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
