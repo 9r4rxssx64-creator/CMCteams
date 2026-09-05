@@ -174,6 +174,14 @@ C'est la preuve discriminante : la règle distingue bien les deux cas. Économie
 **~94 min/mois, 23 % du quota rendus**. Une dernière publication a eu lieu au moment du
 changement, donc le filet de secours est à jour.
 
+### Le poste suivant, une fois le premier traité
+
+La publication écartée, le premier consommateur devenait **la garde elle-même**
+(`conformite`, 28,3 min en 4 jours). Elle ne fait que lire des fichiers, mais tirait
+l'image `node:20` complète (~400 Mo) à chaque envoi. Passée sur `node:20-alpine` (~50 Mo) :
+**45 s → 23 s, mesuré sur le pipeline suivant**. On ne supprime pas une garde pour
+économiser — on la rend légère.
+
 **Retour en arrière si GitHub retombait** : remettre `- when: on_success` en première
 règle de `publier-site`. C'est écrit à côté du job dans `.gitlab-ci.yml`, pas seulement
 ici — un mode d'emploi qui ne vit que dans un document finit par ne pas être lu.
