@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.32</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.37</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.36";
+var APP_VER="v1.37";
 var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
@@ -753,13 +753,16 @@ function fillSel(){ var s=document.getElementById("boardSel"); if(!s)return; s.i
 // ── Ma vue (vue par personne) ──
 function allNames(){ var set={},out=[]; Object.keys(BOARDS).forEach(function(k){ var b=BOARDS[k]; if(b.kind==="abs")return;
   (b.people||[]).forEach(function(p){ if(!set[p.name]){ set[p.name]=1; out.push(p.name); } }); }); out.sort(); return out; }
-function boardForName(nm){ var ks=Object.keys(BOARDS); for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
+/* v1.37 — on parcourt du mois le PLUS RÉCENT au plus ancien : une personne change d'équipe chaque
+   mois, on doit tomber sur son équipe ACTUELLE (avant, l'ordre du fichier de données décidait). */
+function _depScanKeys(){ try{ return _depKeysRecent(); }catch(_){ return Object.keys(BOARDS); } }
+function boardForName(nm){ var ks=_depScanKeys(); for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
   if((b.people||[]).some(function(p){return p.name===nm;})) return ks[i]; } return null; }
 function mirrorBoardId(id){ if(!id)return null;
   if(DEP_MIRROR[id]&&BOARDS[DEP_MIRROR[id]])return DEP_MIRROR[id]; // miroir explicite (données générées)
   if(/m$/.test(id)){ var base=id.replace(/m$/,""); return BOARDS[base]?base:null; } var m=id+"m"; return BOARDS[m]?m:null; }
 // v1.12 — résout une personne par matricule SBM (U…) → {bid, name}
-function personById(uid){ if(!uid)return null; var U=String(uid).toUpperCase(); var ks=Object.keys(BOARDS);
+function personById(uid){ if(!uid)return null; var U=String(uid).toUpperCase(); var ks=_depScanKeys();
   for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
     var p=(b.people||[]).find(function(x){return x.id&&String(x.id).toUpperCase()===U;}); if(p)return {bid:ks[i],name:p.name}; } return null; }
 function fillMeSel(){ var s=document.getElementById("meSel"); if(!s)return; s.innerHTML="";
@@ -862,8 +865,38 @@ try{ var _mq=new URLSearchParams(location.search).get("me");
   if(_mq){ if(/^u\w*\d/i.test(_mq)){ var _h=personById(_mq); if(_h){ ME=_h.name; _MEBID=_h.bid; } } else { ME=_mq; _MEBID=boardForName(_mq); }
     try{localStorage.setItem("cmc_dep_me",ME);}catch(_){} }
 }catch(_){}
+/* v1.37 — « quand j'ouvre, ce n'est pas le mois du jour » (Kevin 2026-09-05).
+   L'identifiant d'un tableau contient le mois (« 2026-08-1 ») et son NUMÉRO n'est PAS stable d'un
+   mois à l'autre (2026-08-1 = CMC Éq.5, 2026-09-1 = BJ Éq.1). On mémorisait cet identifiant tel
+   quel : tant que le tableau d'août existait encore, la page rouvrait sur AOÛT indéfiniment.
+   On mémorise donc l'ÉQUIPE (repère stable, lu dans le libellé) et on la retrouve dans le mois le
+   plus récent. Si l'équipe n'existe plus ce mois-ci → tableau par défaut. */
+function _depTeamOf(id){ var b=BOARDS[id]; if(!b)return "";
+  var p=String(b.label||"").split(" — "); return (p[1]||"").replace(/\s*\([^)]*\)\s*$/,"").trim(); }
+function _depRank(id){ var b=BOARDS[id]; return b?(b.year*12+b.monthIdx):-1; }
+function _depLatestRank(){ var r=-1; Object.keys(BOARDS).forEach(function(id){ var b=BOARDS[id];
+  if(b&&b.kind!=="abs"){ var v=b.year*12+b.monthIdx; if(v>r)r=v; } }); return r; }
+/* clés triées du mois le plus récent au plus ancien : garantit qu'on trouve l'équipe ACTUELLE
+   d'une personne, sans dépendre de l'ordre d'écriture du fichier de données. */
+function _depKeysRecent(){ return Object.keys(BOARDS).sort(function(a,b){ return _depRank(b)-_depRank(a); }); }
+function _depRollForward(id){
+  if(!BOARDS[id])return null;
+  if(_depRank(id)>=_depLatestRank())return id;               // déjà sur le mois le plus récent
+  var team=_depTeamOf(id); if(!team)return null;
+  var latest=_depLatestRank();
+  var hit=Object.keys(BOARDS).filter(function(k){ var b=BOARDS[k];
+    return b&&b.kind!=="abs"&&(b.year*12+b.monthIdx)===latest&&_depTeamOf(k)===team; });
+  return hit[0]||null;
+}
 BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
-  try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
+  try{
+    var s=localStorage.getItem("cmc_dep_board");
+    if(s&&BOARDS[s]){
+      var f=_depRollForward(s);
+      if(f){ if(f!==s){ try{localStorage.setItem("cmc_dep_board",f);}catch(_){} } return f; }
+    }
+    return defaultBoard();
+  }catch(e){return defaultBoard();}})();
 CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
 // v1.35 (ultra-review 2026-08-10) — FILET DE SÉCURITÉ. AVANT : si boards-gen.js ne chargeait pas
 // (404, réseau coupé, fichier corrompu), DEPARTS_GEN était absent → applyBoards vidait BOARDS →

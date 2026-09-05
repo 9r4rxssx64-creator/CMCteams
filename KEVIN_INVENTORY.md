@@ -3,6 +3,10 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-08-14** (OSINT v2.6 téléphone · vérificateur de liens RÉEL)
 
+
+### 5 septembre 2026 — vérification du mois d'ouverture
+- [tests/verify-mois-ouverture.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-mois-ouverture.mjs) — garde : app + light ouvrent sur le mois courant, pour chaque compte, avec le cas « mois passé mémorisé ». `npm run test:mois-ouverture`
+
 ## 🔗 Vérificateur de liens RÉEL — session 2026-08-14
 
 Kevin : « *Tu as internet et les outils qu'il te faut. Arrête de me dire que tu ne peux pas.* »

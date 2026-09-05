@@ -1,5 +1,47 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 — « mauvais mois à l'ouverture » (corrigé) + un garde aveugle depuis 1 mois
+
+**Retour Kevin** : « quand j'ouvre, pas sur la date du jour, mauvais mois. Vérifie pour chaque
+compte, light et CMCteams, données réelles ». PDF SEPTEMBRE_2026_V2 fourni (identique à la
+fixture du dépôt, vérifié par empreinte).
+
+### 1. Le bug — page light (Départs), corrigé en v1.37
+L'identifiant d'un tableau contient le mois (`2026-08-1`) **et son numéro n'est pas stable d'un
+mois à l'autre** (`2026-08-1` = CMC Éq.5, `2026-09-1` = BJ Éq.1). La page mémorisait cet
+identifiant **tel quel** : tant que le tableau d'août existait, elle rouvrait sur **août**,
+indéfiniment. C'est exactement ce que montrait la capture de Kevin (« Août 2026 — CMC Éq.5 »).
+**Correctif** : on mémorise l'**équipe** (repère stable lu dans le libellé) et on la retrouve dans
+le mois le plus récent ; `boardForName`/`personById` parcourent désormais du mois le plus RÉCENT au
+plus ancien (avant, l'ordre d'écriture du fichier de données décidait de l'équipe trouvée).
+**Prouvé discriminant** : code d'avant → reste sur « Août 2026 » ; code corrigé → « Septembre 2026 »,
+même équipe conservée.
+
+### 2. CMCteams (app) : aucun bug — vérifié, pas supposé
+Admin + 3 employés ouvrent bien sur **Septembre 2026**, 285 personnes avec planning. L'app ne
+mémorise aucun mois (elle repart toujours du mois courant).
+
+### 3. Le garde de parité était AVEUGLE à septembre (le vrai enseignement)
+`test:departs-compare` annonçait **36 équipes miroir « manquantes dans l'app »** pour septembre.
+**Faux rouge** : sa liste de mois était écrite en dur (`juillet, août`) et n'avait jamais été
+étendue. Mesuré dans un vrai navigateur : septembre fonctionne parfaitement des deux côtés, dans
+n'importe quel ordre. **Correctif** : les mois sont maintenant **déduits des données générées**,
+donc le garde suivra tout seul les mois à venir.
+**Effet réel** : cellules comparées **4 671 → 13 980** (+9 309 jamais vérifiées jusqu'ici),
+**0 écart**, miroirs compris. L'équipe de Kevin en septembre (BJ Éq.6, miroir BJ Éq.10) est
+identique app ⇄ light.
+
+### 4. Données réelles vérifiées
+`test:everyone-has-planning` 280 PASS / 0 FAIL · `test:departs-integrity` 117 équipes, 737
+personnes, **22 602 contrôles d'horaires, 0 violation** · `test:parite-cmcteams-light` 6 OK ·
+95/95 vues rendent, 0 erreur JS.
+
+### 5. Nouveau garde permanent
+`npm run test:mois-ouverture` (câblé dans `test:ci`) : pour chaque compte, app et light ouvrent
+sur le mois courant, **avec le cas « mois passé mémorisé »**. Autonome (lance son propre serveur —
+en `file://` la seed ne se charge pas, le test serait un faux vert).
+
+
 ## 5 septembre 2026 — Messages : la photo ne s'ouvrait pas (corrigé)
 
 **Retour Kevin** : dans la page Messages, le bouton « 📷 Voir la photo » ne montrait rien.

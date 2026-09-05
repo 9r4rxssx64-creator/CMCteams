@@ -11,7 +11,27 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..'); // repo root
-const MONTHS = [{ y: 2026, m: 6, pre: '2026-07-' }, { y: 2026, m: 7, pre: '2026-08-' }];
+// Les mois sont DÉDUITS des données générées, jamais écrits à la main.
+// Vécu 2026-09-05 : cette liste était figée sur juillet+août ; quand septembre est arrivé, le côté
+// app n'était pas parcouru pour ce mois → les 36 équipes miroir de septembre étaient annoncées
+// « manquantes dans l'app » alors qu'elles fonctionnaient parfaitement. Un garde qui ne suit pas
+// les nouveaux mois crie au faux bug ET devient aveugle aux vrais (leçon #142, faux vert/faux rouge).
+const MONTHS = (() => {
+  const src = fs.readFileSync(join(ROOT, 'tools/departs/boards-gen.js'), 'utf8');
+  const w = {}; new Function('window', src)(w);
+  const boards = (w.DEPARTS_GEN && w.DEPARTS_GEN.boards) || {};
+  const vus = new Map();
+  Object.keys(boards).forEach((id) => {
+    const b = boards[id];
+    if (!b || typeof b.year !== 'number' || typeof b.monthIdx !== 'number') return;
+    const cle = b.year + '-' + b.monthIdx;
+    if (!vus.has(cle)) vus.set(cle, { y: b.year, m: b.monthIdx, pre: b.year + '-' + String(b.monthIdx + 1).padStart(2, '0') + '-' });
+  });
+  const out = [...vus.values()].sort((a, b) => (a.y * 12 + a.m) - (b.y * 12 + b.m));
+  if (!out.length) throw new Error('aucun mois trouvé dans boards-gen.js — données absentes ?');
+  console.log('Mois couverts (déduits des données) : ' + out.map((x) => x.pre).join(' '));
+  return out;
+})();
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 // Serveur statique : /CMCteams/<x> et /<x> → <repo>/<x> (les scripts sont en chemin ABSOLU /CMCteams/… lesson #102)
 const server = http.createServer((req, res) => {
