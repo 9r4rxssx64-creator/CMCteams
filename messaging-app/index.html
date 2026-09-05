@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.281",
+  "softwareVersion": "v1.1.282",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,7 +458,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.281';
+const __APEX_CHAT_VERSION__ = 'v1.1.282';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.281</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.282</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -7189,10 +7189,13 @@ K._handleAuthPhone = async function(){
   if(name.length < 4) return toast('Nom complet trop court (min 4 caractères)', 'err');
 
   // === BYPASS ADMIN KEVIN CÔTÉ CLIENT (immédiat, pas de fetch) ===
+  // v1.1.282 SÉCU : le numéro admin n'est PLUS écrit en clair ici (il était
+  // servi à chaque visiteur → secret public = faille P0). Reconnaissance par
+  // NOM uniquement (prénom+nom, déjà exigés ci-dessus). Le serveur reste seul
+  // juge via son secret KEVIN_PHONE_E164 (env Worker, jamais dans la page).
   const cleanPhone = phone.replace(/\s/g,'');
-  const isKevinByPhone = cleanPhone === '+33672280277';
   const isKevinByName = isKevinAdmin(name);
-  if(isKevinByPhone || isKevinByName){
+  if(isKevinByName){
     K.authData = { phone: cleanPhone, name, _admin_bypass: true, otp: '000000' };
     toast('👑 Admin Kevin reconnu — connexion directe', 'ok', 2000);
     K.authStep = 'pseudo';
@@ -7427,7 +7430,7 @@ K._handleAuthPseudo = async function(){
 
   // Fallback : créer compte local si worker KO
   if(!workerOk){
-    const isKevin = isKevinAdmin(K.authData.name) || K.authData.phone === '+33672280277';
+    const isKevin = isKevinAdmin(K.authData.name); // v1.1.282 : numéro admin retiré de la page (secret serveur uniquement)
     const localUser = {
       id: isKevin ? 'kdmc_admin' : ('local_' + Date.now().toString(36)),
       pseudo,
@@ -13225,7 +13228,7 @@ function renderAdminInviteBook(app){
     <div class="card">
       <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">
         Formats acceptés (1 par ligne) :<br>
-        <code>+33672280277</code><br>
+        <code>+33612345678</code><br>
         <code>Marie +33612345678</code><br>
         <code>Pierre, 0698765432</code><br>
         <code>06 12 34 56 78</code><br>
