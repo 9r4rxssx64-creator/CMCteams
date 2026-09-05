@@ -18,8 +18,15 @@ dépôt-public-sain, no-pin-leak). Pipeline `2822740843` : les 4 jobs de veille 
 `tools/gitlab/secrets-map.txt`, `AGENTS.md`, `archives/PLAINTE_ANTHROPIC.md`. Ce sont exactement
 ceux que les nouvelles exclusions (`*.md`, `memo`, `tools/gitlab`) retirent.
 
-**APRÈS** : `publier-site` en cours → l'audit sera relancé (variable `EXPOSITION=1`) et son
-résultat écrit ici. Tant que cette ligne n'est pas remplacée par un chiffre, ce n'est pas prouvé.
+**APRÈS** (`publier-site` ✅ 96 fichiers envoyés, puis audit relancé par commit-signal
+`5e78a0d42`, job `16324368313` ✅) : **20/20 sondes en 404 — « Aucun document de travail publié sur
+kdmc-site.pages.dev »**. Les 4 restants sont partis. Reste, dit tel quel par l'audit : 5 pages du
+site portent des noms (l'app, ses plannings, l'arbre) — c'est le site lui-même, correctif = données
+derrière la connexion du domaine, pas une exclusion.
+
+*Limite du jeton : lecture API + écriture dépôt seulement — impossible de relancer un job ou de
+créer un pipeline par l'API (`insufficient_scope`). Le fichier-signal `exposition-demande.txt`
+fait le même travail sans droit supplémentaire : c'est la voie à retenir.*
 
 **Kevin** : révoquer le jeton `glpat-wD6Q…` (un clic, KEVIN_ACTIONS_TODO). Le code admin reste à
 changer (section 🚨 D'ABORD).

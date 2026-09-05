@@ -40,7 +40,8 @@ pipeline), il n'est écrit **nulle part** (vérifié : 0 trace dans `.git/config
 Ce que ça a permis : le dépôt GitLab est maintenant **au même niveau que GitHub** (mêmes
 exclusions de publication pour le miroir, mêmes 4 vérifications de veille disponibles
 là-bas en bouton), et **tes documents privés qui n'existent que sur GitLab y sont restés**.
-Le résultat du nouvel audit du miroir est dans `MEMO_RESUME.md`.
+Le miroir `kdmc-site.pages.dev` a été republié et re-vérifié : **plus aucun document de travail
+dessus** (20 adresses sondées, 20 absentes). Détail dans `MEMO_RESUME.md`.
 
 ---
 
