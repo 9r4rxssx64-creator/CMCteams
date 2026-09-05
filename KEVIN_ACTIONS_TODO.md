@@ -1,5 +1,13 @@
 # 🖱️ TES ACTIONS EN ATTENTE — le plus urgent en premier
 
+> **5.09.2026 12:50 — « Note toutes les tâches pour plus tard »** : la liste COMPLÈTE (les tiennes,
+> les miennes, celles des autres sessions) est en tête de `MEMO_RESUME.md`, section
+> « 📌 À REPRENDRE PLUS TARD ». Ici : seulement ce qui dépend de toi.
+>
+> Tes 4 gestes, dans l'ordre : ① changer le code admin (ci-dessous) · ② révoquer le jeton GitLab
+> `glpat-wD6Q…` · ③ dire aux autres sessions : accès Cloudflare « 9r4 », nombre de gilets +
+> broderie, compte développeur Apple oui/non · ④ envoyer la réponse prête au support GitHub (m003).
+
 ---
 
 ## 🚨 D'ABORD (5.09.2026) — change ton code admin : il est public
