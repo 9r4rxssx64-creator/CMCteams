@@ -1,5 +1,44 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 — Lingua : « j'ai pourtant un compte » réparé pour de vrai
+
+**Kevin, capture à l'appui** : prénom + code sur `kdmc-site.pages.dev` → « Aucune
+sauvegarde pour ce prénom + code 🤔 ». Sa phrase : *« j'ai pourtant un compte »*.
+Il avait raison : le compte existait, l'application mentait.
+
+### Cause mesurée (lue dans le code, pas supposée)
+`enterWithCredentials` (`lingua/app.js`) renvoyait **le même résultat** dans deux
+situations opposées : (a) le serveur a répondu « rien trouvé », (b) le serveur
+**n'a pas répondu du tout**. La progression en ligne passe par `/__lingua/load`
+(worker **kdmc-router**), joignable **uniquement** via `lingua.kd-mc.com` — domaine
+indisponible. Donc `fetch` échouait, le `.catch` retombait dans le cas « rien
+trouvé », et l'écran annonçait une perte de compte là où il n'y avait qu'un
+serveur injoignable. **Mensonge d'interface** — exactement ce qu'interdit la règle
+« toujours détailler les erreurs, cause exacte ».
+
+### Le test existait depuis le 3.09 — le correctif, non
+`tests/verify-lingua-connexion-honnete.mjs` documentait déjà le diagnostic, mais
+`app.js` n'avait **jamais** été corrigé : ni `injoignable:true`, ni `localNames`.
+Le test n'avait donc jamais pu passer. Écrire le test ne répare rien.
+
+### Corrigé
+Trois cas désormais **distincts** : serveur injoignable → *« ne répond pas — ta
+progression n'est pas perdue »* · serveur OK mais vide → *« aucune sauvegarde »*
++ les prénoms réellement présents sur l'appareil (cas « je me suis trompé de
+prénom ») · sauvegarde trouvée → on entre.
+
+### Preuve
+Vrai navigateur, serveur simulé : **8 OK / 0 FAIL**. **Discriminant prouvé** :
+correctif retiré → **3 FAIL**, et le test reproduit mot pour mot le message que
+Kevin a vu. Restauré → 8/8.
+
+### Reste ouvert (dit honnêtement)
+Le domaine `lingua.kd-mc.com` est **toujours** injoignable : l'application ne
+ment plus, mais la synchronisation en ligne ne remarchera qu'une fois le routeur
+de nouveau joignable. Ce point n'est pas réparé ici.
+
+---
+
 ## 2 septembre 2026 — GitLab partout, sessions débloquées, miroirs vérifiés
 
 **Décision Kevin** : GitHub suspendu → **GitLab pour tout, jusqu'à nouvel ordre**.

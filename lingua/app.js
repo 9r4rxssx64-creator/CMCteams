@@ -211,7 +211,12 @@ function enterWithCredentials(name,avatar,code,createIfMissing){
       if(cloud){ var id=createAccount(cloud.name||name, cloud.avatar||avatar, String(code)); _applySnapshot(id,cloud); switchAccount(id); return {ok:true,restored:true}; }
       if(createIfMissing){ var id2=createAccount(name,avatar,String(code)); switchAccount(id2); cloudSaveNow(); return {ok:true,created:true}; }
       return {ok:false,none:true};
-    }).catch(function(){ if(createIfMissing){ var id3=createAccount(name,avatar,String(code)); switchAccount(id3); return {ok:true,created:true,offline:true}; } return {ok:false,error:true}; }); }
+    }).catch(function(){ if(createIfMissing){ var id3=createAccount(name,avatar,String(code)); switchAccount(id3); return {ok:true,created:true,offline:true}; }
+      /* Le serveur n'a PAS répondu. C'est très différent de « il a répondu : rien trouvé ».
+         Confondre les deux fait croire à une perte de compte (Kevin, 3.09 : « j'ai pourtant un compte »). */
+      return {ok:false,injoignable:true}; }); }
+/* Prénoms des comptes présents SUR CET APPAREIL — pour le cas « je me suis trompé de prénom ». */
+function localNames(){ var out=[],seen={}; accounts().forEach(function(a){ var n=(a&&a.name||"").trim(); if(n&&!seen[norm(n)]){ seen[norm(n)]=1; out.push(n); } }); return out; }
 
 /* ============ Cœurs / jours / série ============ */
 function regenHearts(){ if(S.hearts>=HEART_MAX){S.heartTs=Date.now();return;}
@@ -847,7 +852,15 @@ function openLogin(){
   ok.onclick=function(){ var n=(m.body.querySelector("#lgName").value||"").trim(); var c=(m.body.querySelector("#lgCode").value||"").trim();
     if(!n||c.length<4){ toast("Entre ton prénom et ton code 🔑"); return; }
     ok.disabled=true; ok.textContent="…";
-    enterWithCredentials(n,"🦊",c,false).then(function(res){ if(res&&res.ok){ m.close(); VIEW="home"; render(); toast("👋 Bienvenue "+esc(n)+" !"); } else { ok.disabled=false; ok.textContent="Retrouver mon compte"; toast("Aucune sauvegarde pour ce prénom + code 🤔"); } }); };
+    enterWithCredentials(n,"🦊",c,false).then(function(res){
+      if(res&&res.ok){ m.close(); VIEW="home"; render(); toast("👋 Bienvenue "+esc(n)+" !"); return; }
+      ok.disabled=false; ok.textContent="Retrouver mon compte";
+      /* On dit la VÉRITÉ sur ce qui s'est passé — jamais « compte introuvable » quand on n'a
+         simplement pas pu joindre le serveur (porte de vérité : rien de faux ne s'affiche). */
+      if(res&&res.injoignable){ toast("📡 Le serveur de sauvegarde ne répond pas — ta progression n'est pas perdue, réessaie dans un moment."); return; }
+      var noms=localNames();
+      toast("Aucune sauvegarde pour ce prénom + code 🤔"+(noms.length?" — sur ce téléphone : "+esc(noms.join(", ")):""));
+    }); };
   m.body.appendChild(ok);
   setTimeout(function(){ var i=m.body.querySelector("#lgName"); if(i)i.focus(); },100);
 }
