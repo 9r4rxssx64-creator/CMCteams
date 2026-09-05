@@ -77,6 +77,112 @@ async function handleDeces(request, url) {
   }
 }
 
+/* ===== ARBRE GÉNÉALOGIQUE — les DONNÉES sortent du fichier public (fait n°12, 5.09.2026) =====
+   Avant : arbre/index.html (dépôt PUBLIC) embarquait ~100 personnes (noms, dates de
+   naissance) ET l'empreinte du code famille comparée dans le navigateur → n'importe qui
+   lisant le fichier avait les données, et l'empreinte donnait le chemin Firebase.
+   Maintenant : le code se vérifie ICI (empreinte en KV, jamais dans le dépôt), et les
+   données de départ (« seed ») ne sont servies qu'à qui prouve le code. Même origine
+   (arbre.kd-mc.com/__arbre/…) → 0 CORS, iPhone OK. Préfixe KV `arbre:` (isolé).
+   - POST /__arbre/unlock {hash}      → {ok, seed} · essais limités par IP (rlFail), journalisés
+   - GET  /__arbre/seed  (x-arbre-code: hash) → {ok, seed, savedAt}
+   - PUT  /__arbre/seed  {codehash?, persons, meta}  → ADMIN (grant /__admin/login) : publie
+   - POST /__arbre/code  {old, new}   → rotation du code famille (preuve = ancien hash, ou admin)
+   - GET  /__arbre/status             → {code:bool, seed:bool, count, savedAt} — aucun secret
+   FAIL-OPEN côté app : l'app garde son contrôle local (empreinte mémorisée sur l'appareil)
+   si le domaine est muet. FAIL-CLOSED ici : sans empreinte publiée → « code_non_publie ». */
+const ARBRE_HEX64 = /^[a-f0-9]{64}$/;
+function hexEq(a, b) {
+  a = String(a || '').toLowerCase(); b = String(b || '').toLowerCase();
+  if (!ARBRE_HEX64.test(a) || !ARBRE_HEX64.test(b)) return false;
+  let d = 0; for (let i = 0; i < 64; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+async function arbreSeedOut(env) {
+  let seed = null, meta = null;
+  try { const raw = await env.ACCOUNTS.get('arbre:seed'); if (raw) seed = JSON.parse(raw); } catch { seed = null; }
+  try { meta = JSON.parse((await env.ACCOUNTS.get('arbre:meta')) || 'null'); } catch { meta = null; }
+  return { seed, savedAt: meta && meta.savedAt || 0, count: meta && meta.count || 0 };
+}
+async function handleArbre(request, url, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
+  const path = url.pathname;
+  if (!env || !env.ACCOUNTS) return J({ ok: false, reason: 'kv_absent' });
+  const stored = await env.ACCOUNTS.get('arbre:codehash');
+
+  if (path === '/__arbre/status' && request.method === 'GET') {
+    const m = await arbreSeedOut(env);
+    return J({ ok: true, code: !!stored, seed: !!m.seed, count: m.count, savedAt: m.savedAt });
+  }
+
+  /* Publication (admin seulement) : l'app envoie SES données (texte, sans photos) + l'empreinte
+     du code qu'elle connaît. C'est le seul chemin d'écriture des données. */
+  if (path === '/__arbre/seed' && request.method === 'PUT') {
+    const me = await adminSession(request, env);
+    if (!me) return J({ ok: false, reason: (env.KDMC_ADMIN_PIN_SHA256 ? 'need_admin_code' : 'admin_only') }, null, 403);
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    const persons = b && b.persons && typeof b.persons === 'object' ? b.persons : null;
+    const count = persons ? Object.keys(persons).length : 0;
+    if (!count) return J({ ok: false, reason: 'persons_vides' });
+    const s = JSON.stringify({ persons, meta: b.meta && typeof b.meta === 'object' ? b.meta : {} });
+    if (s.length > 5 * 1024 * 1024) return J({ ok: false, reason: 'trop_gros' });
+    if (b.codehash != null && String(b.codehash) !== '') {
+      const ch = String(b.codehash).toLowerCase();
+      if (!ARBRE_HEX64.test(ch)) return J({ ok: false, reason: 'codehash_invalide' });
+      await env.ACCOUNTS.put('arbre:codehash', ch);
+    } else if (!stored) return J({ ok: false, reason: 'codehash_requis' });
+    const savedAt = Date.now();
+    await env.ACCOUNTS.put('arbre:seed', s);
+    await env.ACCOUNTS.put('arbre:meta', JSON.stringify({ savedAt, count, size: s.length }));
+    await audLog(env, { ev: 'arbre_seed_publish', count, size: s.length });
+    return J({ ok: true, savedAt, count });
+  }
+
+  if (path === '/__arbre/unlock' && request.method === 'POST') {
+    const ipHash = await sha256Hex((request.headers.get('CF-Connecting-IP') || '') + '|arbre-ul');
+    const wait = await rlBlocked(env, ipHash);
+    if (wait) return J({ ok: false, reason: 'rate_limited', wait });
+    let b = {}; try { b = await request.json(); } catch { /* ignore */ }
+    const hash = String(b.hash || '').trim().toLowerCase();
+    if (!ARBRE_HEX64.test(hash)) return J({ ok: false, reason: 'hash_requis' });
+    if (!stored) return J({ ok: false, reason: 'code_non_publie' });
+    if (!hexEq(hash, stored)) { await rlFail(env, ipHash); await audLog(env, { ev: 'arbre_unlock_fail', ip: ipHash.slice(0, 12) }); return J({ ok: false, reason: 'code_invalide' }); }
+    await rlReset(env, ipHash);
+    await audLog(env, { ev: 'arbre_unlock_ok', ip: ipHash.slice(0, 12) });
+    const m = await arbreSeedOut(env);
+    return J({ ok: true, seed: m.seed, savedAt: m.savedAt });
+  }
+
+  if (path === '/__arbre/seed' && request.method === 'GET') {
+    const hash = String(request.headers.get('x-arbre-code') || '').trim().toLowerCase();
+    if (!stored) return J({ ok: false, reason: 'code_non_publie' });
+    if (!hexEq(hash, stored)) return J({ ok: false, reason: 'code_invalide' }, null, 403);
+    const m = await arbreSeedOut(env);
+    return J({ ok: true, seed: m.seed, savedAt: m.savedAt });
+  }
+
+  /* Rotation du code famille : prouver l'ANCIEN (ou être admin). Le nouveau n'est jamais
+     transmis en clair — seulement son empreinte, calculée sur l'appareil. */
+  if (path === '/__arbre/code' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { return J({ ok: false, reason: 'bad_json' }); }
+    const nu = String(b.new || '').trim().toLowerCase();
+    if (!ARBRE_HEX64.test(nu)) return J({ ok: false, reason: 'hash_requis' });
+    const me = await adminSession(request, env);
+    const old = String(b.old || '').trim().toLowerCase();
+    if (!me) {
+      if (!stored) return J({ ok: false, reason: 'code_non_publie' });
+      const ipHash = await sha256Hex((request.headers.get('CF-Connecting-IP') || '') + '|arbre-ul');
+      const wait = await rlBlocked(env, ipHash);
+      if (wait) return J({ ok: false, reason: 'rate_limited', wait });
+      if (!hexEq(old, stored)) { await rlFail(env, ipHash); return J({ ok: false, reason: 'code_invalide' }); }
+    }
+    await env.ACCOUNTS.put('arbre:codehash', nu);
+    await audLog(env, { ev: 'arbre_code_rotate', by: me ? 'admin' : 'famille' });
+    return J({ ok: true });
+  }
+  return J({ ok: false, reason: 'not_found' }, null, 404);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -102,6 +208,8 @@ export default {
 
     // Recherche décès INSEE (proxy same-origin, public read-only) — pour l'arbre.
     if (url.pathname === '/__deces') return handleDeces(request, url);
+    // Arbre : code famille vérifié ici + données servies à qui le prouve (fait n°12).
+    if (url.pathname.startsWith('/__arbre/')) return handleArbre(request, url, env);
 
     // SSO transverse (session unique + CGU). Même origine par sous-domaine.
     if (url.pathname.startsWith('/__sso/')) return handleSso(request, url, env);

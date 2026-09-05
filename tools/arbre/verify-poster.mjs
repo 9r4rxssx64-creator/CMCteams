@@ -7,17 +7,19 @@
      · la mosaïque A4 compte le bon nombre de feuilles ;
      · rendu PDF réel (Playwright page.pdf, taille CSS de la page respectée) → octets > 0 ;
      · capture d'écran de la feuille « Poster » en viewport iPhone.
-   Usage : node tools/arbre/verify-poster.mjs [--out /tmp/arbre-poster]
+   Usage : node tools/arbre/verify-poster.mjs [--out /tmp/arbre-poster] [--donnees export-prive.json]
    Sortie 1 si une vérification échoue. Réseau : aucun appel extérieur (tout est bloqué). */
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fixture } from './fixture-famille.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ARBRE = path.join(ROOT, 'arbre');
 const OUT = (() => { const i = process.argv.indexOf('--out'); return i > 0 ? process.argv[i + 1] : (process.env.POSTER_OUT || '/tmp/arbre-poster'); })();
 fs.mkdirSync(OUT, { recursive: true });
+const DONNEES = (() => { const i = process.argv.indexOf('--donnees'); if (i > 0) { const d = JSON.parse(fs.readFileSync(path.resolve(process.argv[i + 1]), 'utf8')); return { persons: d.persons || d, meta: d.meta || { updatedAt: Date.now() } }; } return fixture(); })();
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.png': 'image/png', '.txt': 'text/plain' };
 function serve() {
@@ -57,8 +59,11 @@ const pw = await loadPlaywright();
 const browser = await pw.chromium.launch({ headless: true, executablePath: chromePath() });
 try {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'fr-FR' });
-  await ctx.route('**/*', (route) => (route.request().url().startsWith(base) ? route.continue() : route.abort()));
-  await ctx.addInitScript(() => { localStorage.setItem('arbre_trust', '1'); });
+  /* sw.js bloqué : sans service worker, aucune rechargement « controllerchange » ne coupe une vérification */
+  await ctx.route('**/*', (route) => (route.request().url().startsWith(base) && !/\/sw\.js(\?|$)/.test(route.request().url()) ? route.continue() : route.abort()));
+  /* v3.16 : le fichier ne contient plus personne → on charge une famille SYNTHÉTIQUE (0 donnée réelle),
+     ou un export privé de l'app (--donnees mon-export.json, jamais commité). */
+  await ctx.addInitScript((a) => { localStorage.setItem('arbre_trust', '1'); localStorage.setItem('arbre_codehash', a.h); localStorage.setItem('arbre_v2_text', a.db); }, { h: 'f'.repeat(64), db: JSON.stringify(DONNEES) });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e && e.message || e)));

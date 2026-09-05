@@ -3,6 +3,19 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-05** (poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
 
+## 🔐 L'arbre sans données dans le fichier public — session 2026-09-05 soir (arbre v3.16, branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.16) | **Plus aucune personne ni empreinte dans le fichier.** Le code se vérifie sur le domaine ; **Outils → 📤 Publier l'arbre sur le domaine (admin)** envoie l'arbre (texte, sans photos) une fois ; **Changer le code** prévient le domaine et efface l'ancien chemin cloud. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `services/kdmc-router/worker.js` (bloc `handleArbre`) | Le domaine : `/__arbre/unlock` (code vérifié, essais limités), `/__arbre/seed` (données à qui prouve le code ; publication admin), `/__arbre/code` (changement), `/__arbre/status`. | [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/worker.js) · [Déploiement](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-router.yml) |
+| `services/kdmc-router/arbre.test.mjs` | Test du routeur (34 contrôles), **bloquant** avant chaque déploiement. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/arbre.test.mjs) |
+| `tests/arbre-prive.test.mjs` | **La garde** (`npm run test:arbre-prive`, dans `test:ci`) : 0 personne, 0 empreinte dans le fichier, contrôle sur le domaine câblé, publication admin, règles Firebase par empreinte. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-prive.test.mjs) |
+| `tools/arbre/verify-domaine.mjs` | **Vérification en vrai navigateur** (Chromium) avec un domaine simulé : nouvel appareil, réouverture, publication, hors ligne, rien de publié, changement de code — 21 contrôles. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-domaine.mjs) |
+| `tools/arbre/fixture-famille.mjs` | Famille **inventée** (81 personnes, 0 vrai prénom) pour les vérifications — plus jamais de vraies données dans un outil. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/fixture-famille.mjs) |
+| `tools/arbre/lire-donnees.mjs` | **Chargeur commun** des outils locaux (patrimoine, recherches, audit cloud) : lit un **export privé** de l'app (`patrimoine/arbre.json`, ignoré par git, ou `ARBRE_EXPORT=…`) — jamais le fichier public. Sans export : famille inventée, signalée. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/lire-donnees.mjs) |
+| `firebase-rules-apex.json` + `tools/firebase/rules-deploy-request.json` | `/arbre` n'est plus lisible en entier : lecture par empreinte seulement (marqueur bumpé → publication automatique). | [Règles](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/firebase-rules-apex.json) |
+
 ## 🖼 Poster grand format de l'arbre — session 2026-09-05 (arbre v3.15, branche `claude/sarzance-family-tree-3jxi7i`)
 
 | Fichier | À quoi ça sert | Liens |

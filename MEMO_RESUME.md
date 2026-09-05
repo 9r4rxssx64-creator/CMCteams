@@ -1,5 +1,39 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (nuit, session arbre) — Arbre v3.16 : les données et l'empreinte sont SORTIES du fichier public (fait n°12, « Go tout »)
+
+**Demande Kevin** : *« Go tout »* (feu vert sur le chantier annoncé : 318 noms et 257 dates de naissance
+dans `arbre/index.html`, dépôt public, code vérifié après chargement).
+
+**Fait** — branche `claude/sarzance-family-tree-3jxi7i` (resynchronisée sur `main` après la fusion de #3649) :
+- **Routeur** (`services/kdmc-router/worker.js`, bloc isolé `handleArbre`, 0 ligne existante touchée) :
+  `POST /__arbre/unlock` (empreinte en KV `arbre:codehash`, essais limités par IP, journal), `GET/PUT
+  /__arbre/seed` (données texte ; **PUT réservé admin**, même grant que `/__admin/login`), `POST
+  /__arbre/code` (rotation, preuve = ancien), `GET /__arbre/status`. Test `arbre.test.mjs` **34/34**, bloquant
+  dans `deploy-kdmc-router.yml` ; `admin.test.mjs` toujours 41/41. Message **m024** à domain-kdmc (territoire).
+- **App v3.16** (348 → **283 Ko**) : `buildSeed` (65 Ko de personnes) et `DEFAULT_CODEHASH` **supprimés**. La
+  porte interroge le domaine d'abord ; **repli local** si le domaine est muet (appareil qui a déjà l'empreinte) ;
+  message clair si rien n'est publié. **Outils → 🔐 Domaine** : état publié + **📤 Publier** (code admin
+  demandé, envoyé, jamais gardé). **Changer le code** prévient le domaine et **efface l'ancien chemin cloud**.
+- **Firebase** : `/arbre` n'a plus de `.read` au parent (un jeton anonyme pouvait **lister toutes les
+  empreintes**) → lecture/écriture par enfant 64-hex ; marqueur `rules-deploy-request.json` bumpé (auto-apply).
+- **Vérifié en VRAI navigateur** : `tools/arbre/verify-domaine.mjs` **21/21** (domaine simulé, famille
+  **synthétique** de 81 personnes : nouvel appareil, réouverture sans réseau, publication admin, hors ligne,
+  rien de publié, changement de code, 0 erreur JS) ; `verify-poster.mjs` rejoué avec la fixture → **tout vert**
+  (PDF A1 + mosaïques rendus). Garde `npm run test:arbre-prive` (dans `test:ci`) **31/31**.
+- **Outils locaux** qui exécutaient `buildSeed()` (patrimoine `chercher`, `actes-verif`, `cloud-audit`, `research-*`) →
+  chargeur commun `tools/arbre/lire-donnees.mjs` : export privé `patrimoine/arbre.json` (ignoré par git) ou
+  `ARBRE_EXPORT`, sinon famille inventée signalée (la garde `test:patrimoine-prive` reste verte : 8/8).
+- Leçon **#212** (empreinte-chemin = secret ; `.read` parent = listing). ETAT-INFRA fait n°12 complété.
+
+**Kevin (KEVIN_ACTIONS_TODO)** : 1) Outils → **Publier** une fois depuis l'iPhone ; 2) **changer le code
+famille** (l'ancienne empreinte a été publique). Ses appareils marchent déjà sans rien faire.
+
+**Toujours en attente** : v3.7→v3.14 (jeton GitLab lecture, « Peut-être ») ; PR à ouvrir pour cette branche
+(l'API GitHub est bloquée depuis cette session — m023 à studio-crea, ou le lien compare pour Kevin).
+
+---
+
 ## 5 septembre 2026 (soir, session arbre) — Arbre v3.15 : poster grand format (A4 → bannière 2 m) + l'arbre v3.7→v3.14 introuvable côté GitHub
 
 **Demande Kevin** : *« Je veux pouvoir imprimer l'arbre en grand, gros format, va plus loin. »*

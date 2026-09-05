@@ -1,18 +1,34 @@
 /* Lecture de l'arbre familial — source unique pour tous les outils patrimoine.
  * ===========================================================================
- * L'arbre vit dans arbre/index.html sous forme d'une fonction buildSeed().
- * On l'exécute telle quelle plutôt que d'en recopier une version : une copie
- * dans le code diverge toujours, et ici elle contiendrait en plus des données
- * personnelles dans un dépôt public (garde test:patrimoine-prive).
+ * Depuis la v3.16 l'arbre n'est plus dans arbre/index.html (dépôt public) : on lit un export
+ * privé (patrimoine/arbre.json, ignoré par git) via tools/arbre/lire-donnees.mjs. Jamais de copie
+ * des données dans le code (garde test:patrimoine-prive).
  */
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 export const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+/* v3.16 (fait n°12) : arbre/index.html ne contient plus personne. On lit un export privé de l'app
+   (patrimoine/arbre.json, ignoré par git, ou ARBRE_EXPORT=…) ; sans export, la famille INVENTÉE de
+   fixture-famille.mjs, signalée par `sourceArbre().synthetique` — les gardes tournent, personne n'est cherché pour de vrai. */
+let _src = null;
+export function sourceArbre() { return _src; }
 export function lireArbre() {
-  const src = readFileSync(join(RACINE, 'arbre', 'index.html'), 'utf8');
+  if (!_src) {
+    const r = spawnSync(process.execPath, ['--input-type=module', '-e',
+      "import { lireDonnees } from " + JSON.stringify(pathToFileURL(join(RACINE, 'tools', 'arbre', 'lire-donnees.mjs')).href) + "; const d = await lireDonnees({ synthetiqueOk: true }); process.stdout.write(JSON.stringify(d));"],
+      { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    if (r.status !== 0) throw new Error((r.stderr || '').trim().split('\n').pop() || 'lecture des données impossible');
+    _src = JSON.parse(r.stdout);
+  }
+  return _src.persons;
+}
+/* Ancien lecteur (buildSeed dans le fichier) — gardé pour un export « index.html » d'avant v3.16 passé en ARBRE_EXPORT_HTML. */
+export function lireArbreDepuisHtml(fichier) {
+  const src = readFileSync(fichier, 'utf8');
   const bloc = (marqueur) => {
     const i = src.indexOf(marqueur);
     if (i < 0) return '';
