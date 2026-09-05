@@ -757,6 +757,21 @@ export async function handleVerifyOtp(request, env) {
     // Kevin. Sans ça, avec ALLOW_TEST_OTP off + Cas 1 sauté, un inconnu tomberait
     // ici et se ferait passer pour kdmc_admin.
     if (kevinSecret && phoneNorm === kevinSecret) {
+    // v1.1.283 — FERMETURE PORTE ADMIN (audit 05/09, faille P0).
+    // Le numéro seul ne suffit PLUS à devenir admin dès que Kevin allume le
+    // drapeau ADMIN_BYPASS_REQUIRE_MFA : il faut EN PLUS le jeton secret
+    // X-Apex-Admin-Token (== APEX_CHAT_ADMIN_TOKEN), qui n'est JAMAIS dans la
+    // page (secret du Worker). Défaut : drapeau absent/'false' → comportement
+    // inchangé → AUCUN risque de verrouillage. Kevin allume une fois que son
+    // app envoie bien le jeton (vérifié pendant que le drapeau est encore off).
+    if (env.ADMIN_BYPASS_REQUIRE_MFA === 'true') {
+      const provided = (request.headers.get('X-Apex-Admin-Token') || '').trim();
+      const expected = (env.APEX_CHAT_ADMIN_TOKEN || '').trim();
+      if (!expected || provided !== expected) {
+        return err('Preuve admin requise (Face ID / clé admin)', 401, 'admin_mfa_required',
+          { hint: 'Connexion admin sécurisée : ton app doit envoyer X-Apex-Admin-Token. Débloque via Face ID.' });
+      }
+    }
     if (!env.KEVIN_PHONE_E164) {
       return err('Bypass admin indisponible', 503, 'kevin_phone_unset',
         'Secret KEVIN_PHONE_E164 absent du Worker — config GitHub/Cloudflare requise');
