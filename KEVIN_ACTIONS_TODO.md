@@ -4,9 +4,10 @@
 > les miennes, celles des autres sessions) est en tête de `MEMO_RESUME.md`, section
 > « 📌 À REPRENDRE PLUS TARD ». Ici : seulement ce qui dépend de toi.
 >
-> Tes 4 gestes, dans l'ordre : ① changer le code admin (ci-dessous) · ② révoquer le jeton GitLab
-> `glpat-wD6Q…` · ③ dire aux autres sessions : accès Cloudflare « 9r4 », nombre de gilets +
-> broderie, compte développeur Apple oui/non · ④ envoyer la réponse prête au support GitHub (m003).
+> Tes gestes, dans l'ordre : ① ~~changer le code admin~~ ✅ fait 16h18 → **vérifie-le une fois sur
+> departs.kd-mc.com** (ci-dessous) · ② révoquer le jeton GitLab `glpat-wD6Q…` · ③ dire aux autres
+> sessions : accès Cloudflare « 9r4 », nombre de gilets + broderie, compte développeur Apple oui/non
+> · ④ envoyer la réponse prête au support GitHub (m003).
 
 ---
 
@@ -30,25 +31,27 @@ Cloudflare à ta place.
 
 ---
 
+## ✅ FAIT (5.09.2026, 16h35) — ton nouveau code admin est en place sur le domaine
+
 ## 🚨 D'ABORD (5.09.2026) — change ton code admin : il est public
 
-Ton code admin (celui à 6 chiffres) était écrit **en clair dans 68 fichiers** de ton dépôt
-GitHub — qui est **public** — et son empreinte était dans la page Départs. Tout ça est
-retiré, et plus aucune page ne garde le code ; mais **ce qui a été public une fois le reste**
-(l'historique Git le garde). Le seul vrai correctif : **un nouveau code**. Je ne peux pas le
-faire à ta place : le nouveau code ne doit passer **ni par moi, ni par un message, ni par un
-journal public**.
 
-### ▶️ 3 gestes, 2 minutes
-1. **Choisis** un nouveau code — **8 chiffres**, pas 6 (dix fois plus long à forcer par mille).
-2. Ouvre **[kd-mc.com/CMCteams/tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/)**,
-   tape le code, **« Copier l'empreinte »**. Le calcul se fait sur ton iPhone, rien n'est envoyé.
-3. Ouvre **[le secret APEX_ADMIN_PIN_SHA256](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)**
-   → **Update** → colle l'empreinte → **Save**.
+Tu as changé le code (« fait » à 16h18). J'ai relancé les 6 déploiements : **le routeur
+kd-mc.com, admin.kd-mc.com, Monaco, Outlook et le proxy Apex ont le nouveau secret**. En route,
+j'ai trouvé que le déploiement du routeur **échouait depuis le 13 août** sans que personne ne le
+voie — sans ce correctif, l'ancien code (public) serait resté valable sur ton domaine. C'est
+corrigé, prouvé (déploiement vert, 26 adresses répondent, un mauvais code est refusé), et un
+garde empêche que ça revienne.
 
-Puis écris-moi juste **« fait »** : je relance les 6 déploiements (routeur, admin.kd-mc.com,
-Monaco, Outlook, RAG, proxy Apex) — c'est le même secret pour tous, et les pages **Départs** et
-**Messages** suivent le routeur toutes seules.
+### ▶️ 1 geste, 20 secondes — vérifie toi-même
+Ouvre **[departs.kd-mc.com](https://departs.kd-mc.com)** → 🔒 → tape ton **nouveau** code →
+« Mode admin activé ». Moi je prouve qu'un mauvais code est refusé ; **toi seul** peux prouver
+que le bon est accepté (je ne le connais pas, c'est voulu). Si ça refuse : dis-moi « refusé ».
+
+### 🔸 Un jour, quand la mémoire RAG d'Apex servira (pas urgent)
+Le déploiement du worker RAG échoue parce que ton jeton Cloudflare n'a pas la permission
+**Vectorize**. Cloudflare → Profil → **Jetons d'API** → le jeton utilisé par GitHub → Modifier →
+ajouter **Vectorize : Edit**. Ensuite je relance le déploiement.
 
 ### 🌳 Puis l'arbre (5.09 soir) — 2 gestes, 1 minute, dès que la branche est en ligne
 L'arbre (arbre.kd-mc.com) ne contient **plus aucune personne** dans son fichier public (v3.16) :

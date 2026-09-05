@@ -56,7 +56,7 @@ annotations non — c'est la règle écrite au fait n°16) :
 `cmcteams-departs`. Ma session inscrite `domaine-audit`. Deux branches Lingua font le même travail
 (m030). Messages déposés : m026 (toutes : les 4 canaux + 5 crons), m027 (apex-chat : 1 cron `*/5`
 rendrait 3 places), m028 (domain-kdmc : uptime en ligne, monaco-sync mort, rag), m029
-(cmcteams-departs), m030 (lingua). `ETAT-INFRA.md` fait n°16, leçon #214, SESSIONS-ET-BRANCHES
+(cmcteams-departs), m030 (lingua). `ETAT-INFRA.md` fait n°16, leçon #215, SESSIONS-ET-BRANCHES
 « état réel au 5.09 ».
 
 **Reste dit franchement** : le passage uptime toutes les 2 h dépend d'Outlook, à vérifier au prochain
@@ -294,14 +294,19 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 > en attente.
 
 ### 🚨 P0 — sécurité
-1. 👤 **Changer le code admin** (il a été public) : empreinte via
-   [tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/) → secret GitHub
-   [`APEX_ADMIN_PIN_SHA256`](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)
-   → me dire « fait ». *(KEVIN_ACTIONS_TODO, tout en haut)*
-2. 🤖 **Dès le « fait »** : lancer par l'API (`actions_run_trigger`) les 6 déploiements qui lisent
-   ce secret — `deploy-kdmc-router`, `deploy-kdmc-access`, `deploy-kdmc-monaco`,
-   `deploy-kdmc-outlook`, `deploy-kdmc-rag`, `sync-apex-secrets-to-cf-worker` — puis prouver en
-   vrai (`live-verify-departs`, `audit-live`) que l'ancien code est refusé et le nouveau accepté.
+1. ✅ **FAIT 5.09 16h18** — Kevin a changé le code admin (« fait »).
+2. ✅ **FAIT 5.09 16h35** — les 6 déploiements relancés. **Découverte en route** : celui du routeur
+   échouait **depuis le 13/08** (dossier `public/` exigé par `[assets]` jamais fabriqué) → aucun
+   secret poussé au routeur pendant 3 semaines ; corrigé (PR #3661), run vert, secret
+   `KDMC_ADMIN_PIN_SHA256` posé, 26 sous-domaines en 200. Sonde live ajoutée (PR #3663) + garde
+   `test:wrangler-assets` (dans `test:ci`). Détail : ETAT-INFRA fait n°15 (suite), leçon #215.
+   **Reste à Kevin** : se connecter UNE fois avec le nouveau code sur departs.kd-mc.com (moi je
+   prouve le refus d'un mauvais code, pas l'acceptation du bon — je ne le connais pas, c'est voulu).
+2b. 👤 **RAG (mémoire Apex)** : le secret y est, mais son déploiement échoue car le jeton
+   Cloudflare `CLOUDFLARE_API_TOKEN` n'a pas la permission **Vectorize** (index `apex-memory`
+   introuvable → `Authentication error 10000`). À ajouter dans Cloudflare → Profil → Jetons d'API
+   → modifier le jeton → permission « Vectorize : Edit » — **quand la mémoire RAG servira**, pas
+   urgent. Ensuite je relance `deploy-kdmc-rag`.
 3. 👤 **Révoquer le jeton GitLab `glpat-wD6Q…`** (utilisé une fois, jamais écrit) :
    [Jetons d'accès GitLab](https://gitlab.com/-/user_settings/personal_access_tokens).
 4. 👤 Dans les apps qui ont **leur propre** code (quand tu y passes) : CMCteams
