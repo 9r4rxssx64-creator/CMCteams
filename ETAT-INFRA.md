@@ -1,8 +1,14 @@
-# 🚨 ETAT-INFRA.md — la vérité infra pour TOUTE session Claude, ancienne ou nouvelle (MAJ 3.09.2026)
+# 🚨 ETAT-INFRA.md — la vérité infra pour TOUTE session Claude, ancienne ou nouvelle (MAJ 4.09.2026)
 
-> ⚠️ **LIS D'ABORD LE FAIT N°8 (en bas)** : depuis le 2.09 le compte GitHub n'est plus
-> seulement bloqué par le proxy, il est **SUSPENDU**. Les faits 1 à 7 restent vrais, mais
-> « l'action unique » de la dernière section est **périmée** — ne la redemande pas à Kevin.
+> ✅ **LIS D'ABORD LE FAIT N°10 (tout en bas)** : le 4.09 à 16h34 UTC, **GitHub a LEVÉ la
+> restriction**. Le compte n'est plus suspendu, les Actions tournent, la publication du
+> site est relancée. Les faits **1, 2 et 8 sont donc PÉRIMÉS sur ce point** — ne redis
+> plus à Kevin que GitHub est fermé, et ne lui redemande plus d'envoyer la réponse au
+> support : c'est fait, et ça a marché.
+>
+> ⚠️ **Mais la règle « zéro exécution programmée sur GitHub » reste ABSOLUE** — le compte
+> a rouvert dans l'état qui l'avait fait fermer (55 crons encore armés sur `main`),
+> corrigé dans l'heure. Détail et chiffres au fait n°10.
 
 > Ce fichier vit À LA RACINE des DEUX lignées du dépôt (GitHub main ET GitLab main) et est publié sur
 > https://kdmc-site.pages.dev/ETAT-INFRA.md — pour qu'aucune session ne reparte dans le brouillard.
@@ -185,3 +191,50 @@ chaque session le redemande une fois à Kevin, qui le garde dans ses notes.
 **Attention en publiant sur GitLab** : les deux lignées n'ont pas d'ancêtre commun visible.
 Ne JAMAIS forcer un `push` de la lignée GitHub vers GitLab (ni l'inverse) — on y publie
 en **avance rapide** (les commits de la lignée GitLab) ou par **cherry-pick**, jamais en écrasant.
+
+---
+
+## ✅ Fait n°10 — GITHUB EST ROUVERT (4.09.2026, 16h34 UTC) — et ce que ça a failli coûter
+
+**Le message.** GitHub Support (« Wick ») à Kevin : *« We've cleared the restrictions
+from your account, so you have full access to GitHub again. »* La suspension du 15.08
+est levée. Les faits 1, 2 et 8 sont **périmés sur ce point** : l'accès, les Actions et
+Pages reviennent.
+
+### ⚠️ Le piège que ça ouvrait — mesuré tout de suite, pas supposé
+
+Quelques minutes après la levée, `main` portait **encore 55 workflows à exécution
+programmée et 6 workflows crypto**. C'est l'état EXACT qui a causé la suspension : le
+ménage du 3.09 n'existait que sur une branche. **Restrictions levées = ces crons
+allaient repartir** (~97 exécutions/jour avant), et la deuxième suspension aurait pu
+être définitive.
+
+Corrigé dans l'heure, par le circuit normal (PR #3631, jamais de push direct sur main) :
+
+| | avant | après |
+|---|---|---|
+| workflows à exécution programmée | **55** | **0** |
+| workflows crypto | **6** | **0** |
+| workflows actifs | 181 | 131 |
+| mis de côté dans `workflows-desactives/` (réversible) | — | 46 |
+
+Les 5 derniers crons (`clayscore-extract-private`, `liens-check`, `lingua-auto-verif`,
+`lingua-lsf`, `lingua-sources`) ont été **déplacés, pas supprimés**. Leur place est
+**GitLab CI** ou un **Worker Cloudflare** — pas un dépôt de code. Les sessions
+concernées sont prévenues (messages du pipeline) et peuvent les remettre ailleurs.
+
+**Vérifié dans la foulée** : les Actions tournent de nouveau (premiers lancements
+depuis le 14.08 à 21h12), la publication du site a été relancée.
+
+### La règle qui ne change pas — au contraire
+
+**Ne JAMAIS recréer d'exécution programmée sur GitHub**, « juste une petite » incluse.
+La garde `test:actions-conformes` échoue si un `schedule:` réapparaît (prouvée
+discriminante : un cron remis → 2 échecs). Tout ce qui est périodique appartient à
+**GitLab CI** ou à un **Worker Cloudflare**.
+
+### Leçon à retenir de ce jour
+
+Une bonne nouvelle peut être le moment le plus dangereux : le compte rouvre **dans
+l'état qui l'avait fait fermer**. Avant de se réjouir, on mesure ce qui va repartir
+tout seul.
