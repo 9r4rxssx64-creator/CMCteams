@@ -6,7 +6,8 @@
  * a une assurance vie, un compte, des biens, etc. »
  *
  * CE QUE CET OUTIL FAIT (tout, sauf le clic final)
- *   1. lit l'arbre familial réel (arbre/index.html) — 102 personnes ;
+ *   1. lit l'arbre familial réel (export privé de l'app dans patrimoine/arbre.json,
+ *      ignoré par git — le fichier public n'en contient plus depuis la v3.16) ;
  *   2. classe qui vaut la peine d'être cherché, et dans quel ordre ;
  *   3. écrit, pour chaque personne, les champs EXACTS à saisir sur Ciclade ;
  *   4. écrit une LETTRE AGIRA prête à envoyer (assurance vie d'un défunt) ;
@@ -30,7 +31,7 @@
 
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { lireArbre, RACINE, anneeDe } from './lire-arbre.mjs';
+import { lireArbre, sourceArbre, RACINE, anneeDe } from './lire-arbre.mjs';
 const SORTIE = join(RACINE, 'patrimoine');
 const AUJOURD_HUI = new Date();
 
@@ -335,7 +336,7 @@ md += `jamais publié.*\n`;
 
 writeFileSync(join(SORTIE, '00-A-FAIRE.md'), md, 'utf8');
 
-console.log(`arbre lu           : ${gens.length} personnes`);
+console.log(`arbre lu           : ${gens.length} personnes` + (sourceArbre() && sourceArbre().synthetique ? '  ⚠️ FAMILLE INVENTÉE (aucun export privé dans patrimoine/arbre.json) — résultats d\'essai' : ''));
 console.log(`décès datés        : ${defunts.length}`);
 console.log(`à chercher (≤30 a) : ${chercheables.length}`);
 console.log(`écartés (>30 ans)  : ${tropAnciens.length}`);

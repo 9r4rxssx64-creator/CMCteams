@@ -3,7 +3,7 @@
 //   1. CMCteams (app complète) ouvre sur le mois courant — pour CHAQUE compte (admin + employés)
 //   2. la page light ouvre sur le mois courant (session neuve)
 //   3. la page light, avec un tableau d'un mois PASSÉ mémorisé (le cas de Kevin), revient sur le
-//      mois courant EN GARDANT LA MÊME ÉQUIPE  ← c'est le bug corrigé en v1.37
+//      mois courant EN GARDANT LA MÊME ÉQUIPE  ← c'est le bug corrigé en v1.37 (livré en v1.38)
 //   4. le mois affiché contient de vraies données (personnes, horaires, lieux)
 //
 // Autonome : lance son propre serveur statique qui imite l'hébergement réel — les scripts de la

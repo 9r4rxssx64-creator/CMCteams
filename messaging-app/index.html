@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.281",
+  "softwareVersion": "v1.1.283",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,7 +458,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.281';
+const __APEX_CHAT_VERSION__ = 'v1.1.283';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.281</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.283</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -7189,10 +7189,13 @@ K._handleAuthPhone = async function(){
   if(name.length < 4) return toast('Nom complet trop court (min 4 caractères)', 'err');
 
   // === BYPASS ADMIN KEVIN CÔTÉ CLIENT (immédiat, pas de fetch) ===
+  // v1.1.282 SÉCU : le numéro admin n'est PLUS écrit en clair ici (il était
+  // servi à chaque visiteur → secret public = faille P0). Reconnaissance par
+  // NOM uniquement (prénom+nom, déjà exigés ci-dessus). Le serveur reste seul
+  // juge via son secret KEVIN_PHONE_E164 (env Worker, jamais dans la page).
   const cleanPhone = phone.replace(/\s/g,'');
-  const isKevinByPhone = cleanPhone === '+33672280277';
   const isKevinByName = isKevinAdmin(name);
-  if(isKevinByPhone || isKevinByName){
+  if(isKevinByName){
     K.authData = { phone: cleanPhone, name, _admin_bypass: true, otp: '000000' };
     toast('👑 Admin Kevin reconnu — connexion directe', 'ok', 2000);
     K.authStep = 'pseudo';
@@ -7339,9 +7342,16 @@ K._handleAuthPseudo = async function(){
       const tid = setTimeout(() => ctrl.abort(), 12000);
       let r;
       try {
+        // v1.1.283 — connexion admin sécurisée : si une clé admin est stockée
+        // localement, on la déverrouille par Face ID (si enrôlé) et on l'envoie
+        // dans X-Apex-Admin-Token. Le serveur l'exige quand ADMIN_BYPASS_REQUIRE_MFA
+        // est allumé. Sans clé stockée → en-tête absent (comportement actuel).
+        const authHeaders = { 'Content-Type': 'application/json' };
+        const adminKey = await K._adminKeyUnlock();
+        if(adminKey) authHeaders['X-Apex-Admin-Token'] = adminKey;
         r = await fetch(API_BASE + '/api/auth/verify-otp', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify({ phone: K.authData.phone, name: K.authData.name, pseudo, otp: '000000' }),
           signal: ctrl.signal,
         });
@@ -7427,7 +7437,7 @@ K._handleAuthPseudo = async function(){
 
   // Fallback : créer compte local si worker KO
   if(!workerOk){
-    const isKevin = isKevinAdmin(K.authData.name) || K.authData.phone === '+33672280277';
+    const isKevin = isKevinAdmin(K.authData.name); // v1.1.282 : numéro admin retiré de la page (secret serveur uniquement)
     const localUser = {
       id: isKevin ? 'kdmc_admin' : ('local_' + Date.now().toString(36)),
       pseudo,
@@ -12294,6 +12304,9 @@ function renderSettings(app){
       ${K.user?.is_admin ? `<div class="card-row" onclick="K._healDmServer()">
         <span>🩹</span><span style="flex:1">Réparer un DM (l'autre ne reçoit rien)</span><span>›</span>
       </div>` : ''}
+      ${K.user?.is_admin ? `<div class="card-row" onclick="K._openAdminKeySetup()">
+        <span>🔐</span><span style="flex:1">Sécurité admin : clé + Face ID ${K._adminKeyPresent&&K._adminKeyPresent()?'<span class="tag" style="background:var(--ax-ok,#1a6a45);color:#fff;border-radius:8px;padding:1px 6px;font-size:.7em">clé enregistrée</span>':''}</span><span>›</span>
+      </div>` : ''}
       <div class="card-row" onclick="K._healConversations()">
         <span>🔧</span><span style="flex:1">Réparer mes conversations (sync serveur)</span><span>›</span>
       </div>
@@ -13225,7 +13238,7 @@ function renderAdminInviteBook(app){
     <div class="card">
       <p style="color:var(--ax-text-3);font-size:.78em;margin:0 0 8px">
         Formats acceptés (1 par ligne) :<br>
-        <code>+33672280277</code><br>
+        <code>+33612345678</code><br>
         <code>Marie +33612345678</code><br>
         <code>Pierre, 0698765432</code><br>
         <code>06 12 34 56 78</code><br>
@@ -14510,6 +14523,91 @@ K._removeBiometric = function(){
   if(!K.user) return;
   try{ localStorage.removeItem('user_biometric_' + K.user.id); }catch(_){}
   toast('🆔 Face ID désactivé', 'ok', 2000);
+};
+
+// v1.1.283 — CLÉ ADMIN (ferme la porte serveur, faille P0 audit 05/09).
+// Kevin colle UNE fois sa clé admin (= secret Worker APEX_CHAT_ADMIN_TOKEN).
+// Elle est stockée localement sur SON appareil, jamais dans la page publique,
+// et son USAGE à la connexion est déverrouillé par Face ID (si enrôlé).
+// Quand le drapeau serveur ADMIN_BYPASS_REQUIRE_MFA est allumé, cette clé
+// devient obligatoire pour l'accès admin → le numéro seul ne suffit plus.
+K._adminKeySet = function(key){
+  const v = String(key || '').trim();
+  if(!v){ toast('Clé vide', 'err'); return false; }
+  try{ localStorage.setItem('ax_chat_admin_key', v); }catch(_){ return false; }
+  toast('🔐 Clé admin enregistrée sur cet appareil (déverrouillée par Face ID)', 'ok', 4000);
+  return true;
+};
+K._adminKeyPresent = function(){
+  try{ return !!localStorage.getItem('ax_chat_admin_key'); }catch(_){ return false; }
+};
+K._adminKeyClear = function(){
+  try{ localStorage.removeItem('ax_chat_admin_key'); }catch(_){}
+  toast('🔐 Clé admin retirée de cet appareil', 'ok', 2500);
+};
+// Retourne la clé admin pour l'envoyer au serveur — après déverrouillage Face ID
+// si la biométrie est enrôlée. Renvoie null si pas de clé (→ en-tête non envoyé,
+// comportement inchangé, aucun blocage).
+K._adminKeyUnlock = async function(){
+  let key = null;
+  try{ key = localStorage.getItem('ax_chat_admin_key'); }catch(_){ key = null; }
+  if(!key) return null;
+  try{
+    if(K._biometricEnrolled && K._biometricEnrolled()){
+      const ok = await K._biometricVerify();
+      if(!ok){ toast('🆔 Face ID requis pour la connexion admin', 'warn', 5000); return null; }
+    }
+  }catch(_e){ _safeCatch('admin-key-unlock', _e); }
+  return key;
+};
+
+// v1.1.283 — assistant admin (Kevin) : activer Face ID + coller la clé admin.
+// Modale simple iPhone (pas de prompt() natif). Aucune action serveur ici :
+// tout reste local à l'appareil de Kevin.
+K._openAdminKeySetup = function(){
+  if(!K.user?.is_admin){ toast('Réservé admin', 'err'); return; }
+  const enrolled = K._biometricEnrolled && K._biometricEnrolled();
+  const hasKey = K._adminKeyPresent && K._adminKeyPresent();
+  const html = `
+    <div style="padding:18px;max-width:460px">
+      <h3 style="margin:0 0 6px;color:var(--ax-gold)">🔐 Sécurité admin</h3>
+      <p style="color:var(--ax-text-3);font-size:.86em;margin:0 0 14px">
+        Ferme la porte admin : le numéro seul ne suffira plus. Il faudra ta clé
+        admin, déverrouillée par Face ID sur cet appareil.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn" onclick="K._adminSetupFaceId()" style="text-align:left">
+          ${enrolled ? '✅' : '①'} Activer Face ID sur cet appareil
+        </button>
+        <label style="font-size:.82em;color:var(--ax-text-3)">② Colle ta clé admin (secret du Worker APEX_CHAT_ADMIN_TOKEN)</label>
+        <input id="admin-key-input" class="input" type="password" autocomplete="off"
+          placeholder="${hasKey ? '•••••• (déjà enregistrée — recolle pour changer)' : 'colle ta clé admin ici'}">
+        <button class="btn btn-block" onclick="K._adminSetupSaveKey()">③ Enregistrer la clé (Face ID)</button>
+        ${hasKey ? '<button class="btn" onclick="K._adminKeyClear();K._closeModal&&K._closeModal();" style="background:transparent;color:var(--ax-err)">Retirer la clé de cet appareil</button>' : ''}
+      </div>
+      <p style="color:var(--ax-text-3);font-size:.78em;margin:14px 0 0">
+        ⚠️ Tant que tu n'as pas confirmé que la connexion admin marche AVEC la clé,
+        ne demande pas de fermer la porte côté serveur (sinon risque de blocage).
+      </p>
+      <button class="btn" onclick="K._closeModal&&K._closeModal()" style="margin-top:12px;background:transparent">Fermer</button>
+    </div>`;
+  if(typeof K._showModal === 'function') K._showModal(html);
+  else if(typeof K.modal === 'function') K.modal(html);
+  else { const d=document.createElement('div'); d.style.cssText='position:fixed;inset:0;z-index:99999;background:var(--ax-bg,#111);overflow:auto'; d.innerHTML=html+'<button class="btn" onclick="this.parentNode.remove()" style="margin:18px">OK</button>'; document.body.appendChild(d); K._closeModal=function(){d.remove();}; }
+};
+K._adminSetupFaceId = async function(){
+  try{
+    if(!(await K._biometricSupported())){ toast('Biométrie non supportée sur cet appareil', 'warn', 5000); return; }
+    await K._biometricRegister();
+    toast('🆔 Face ID activé ✅', 'ok', 2500);
+    if(K.view==='settings') K.sv('settings');
+  }catch(e){ toast('Face ID : ' + ((e&&e.message)||'échec'), 'err', 6000); }
+};
+K._adminSetupSaveKey = function(){
+  const el = document.getElementById('admin-key-input');
+  const v = el ? el.value.trim() : '';
+  if(!v){ toast('Colle ta clé admin avant', 'err'); return; }
+  if(K._adminKeySet(v)){ if(el) el.value=''; if(K._closeModal) K._closeModal(); }
 };
 
 K._hashPin = async function(pin){

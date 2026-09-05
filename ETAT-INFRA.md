@@ -315,3 +315,290 @@ C'est écrit à côté du job, pas seulement ici.
 > *« Est-ce que ça produit, teste, déploie ou publie CE dépôt ? Si oui → GitHub. Si non
 > → est-ce périodique ? Alors Cloudflare Worker. Sinon → GitLab CI, et j'ai compté ce que
 > ça coûte sur les 400 minutes du mois. »*
+
+### ⚠️ Trouvé en chemin, et pas encore réglé : le miroir publie un arbre PÉRIMÉ
+
+En unifiant la recette CI, la garde a tourné sur la branche `main` de **GitLab** et a
+nommé **54 workflows avec cron et 6 workflows crypto**. Elle a raison sur les faits : le
+contenu de `main` côté GitLab est resté l'**instantané d'avant la suspension** (31/08).
+La remise en conformité du 4.09 a eu lieu sur le `main` de **GitHub** uniquement.
+
+Conséquences honnêtes :
+- ces 54 crons sont **inertes** — GitHub n'exécute que les workflows de SON dépôt, et
+  celui-ci est à 0 cron (vérifié à chaque envoi par la garde) ;
+- mais le filet de secours `kdmc-site.pages.dev` publie donc une version **datée**, et
+  restaurer GitHub depuis GitLab restaurerait l'état non conforme.
+
+La garde ne tourne plus sur cette branche (un rouge permanent finit par ne plus être lu),
+et c'est écrit à côté de la règle. **✅ FAIT le 5.09** : le contenu du `main` GitLab a été
+remis au niveau de celui de GitHub (arbre conforme, 0 cron, 0 crypto), en préservant les
+9 fichiers qui n'existent que là-bas. Le miroir ne publie donc plus un instantané d'avant
+la suspension, et restaurer GitHub depuis GitLab ne réintroduirait plus l'état non conforme.
+
+### Une seule recette CI, désormais
+
+Les deux branches portaient **deux fichiers `.gitlab-ci.yml` différents** : fusionner une
+branche de travail dans `main` aurait supprimé la publication, en silence (le piège de la
+leçon #142). Il n'y en a plus qu'un. Vérifié en le lançant des deux côtés :
+
+| branche | ce qui tourne | minutes |
+|---|---|---|
+| branche de travail | `conformite` seule (23 s) | 0,4 |
+| `main`, bouton non touché | rien (`skipped` / `manual`) | **0** |
+| `main`, bouton touché | `verifier-cloudflare` 23 s + `publier-site` 82 s | 1,8 |
+
+La publication de secours est passée en `needs: []` : elle **ne dépend plus des tests** —
+le jour où on en a besoin, c'est justement que quelque chose ne va pas.
+
+---
+
+## 🚨 Fait n°12 — LE DÉPÔT EST PUBLIC, et il publiait les documents de travail (5.09.2026)
+
+En rangeant GitHub/GitLab, une chose plus grave que les minutes est apparue. Le dépôt
+`9r4rxssx64-creator/CMCteams` est **public**, et les deux publications servent « tout ce
+qu'il y a dedans ». Mesuré sur le vrai site, pas supposé :
+
+| adresse | ce qu'elle exposait |
+|---|---|
+| `/NOTES_USER.md` | 19 noms de famille, 4 dates de naissance, 10 adresses e-mail |
+| `/CLAUDE.md` | 42 noms |
+| `/KEVIN_ACTIONS_TODO.md` | 10 noms, 8 dates de naissance |
+
+**Aucune page du site ne charge ces fichiers** (vérifié : les renvois de l'app arbre
+pointent vers github.com). Ce sont des documents de travail.
+
+En creusant, la liste de 11 noms s'est révélée trop étroite : le site publiait aussi
+`AGENTS.md`, `APEX_HANDOFF.md`, tout `archives/` (courriers personnels, business plan),
+les `NOTES_USER.md` des sous-projets, et un mémo PDF « secrets GitHub » du coffre-fort
+(formulaire **vierge**, aucune valeur dedans — vérifié).
+
+### La règle retenue : aucun Markdown sur le site
+
+**Mesuré** : aucune page ne charge un `.md` depuis le site ; les seuls renvois sont des
+adresses **absolues** vers `github.com` (c'est ainsi qu'Apex relit ses documents) et aucun
+service worker n'en met en cache. Donc **672 Markdown** sortent de la publication, et la
+règle se maintient toute seule — un document ajouté demain est exclu sans y penser.
+
+**Exception assumée** : `CLAUDE_ACTIVITY.json` reste publié, la vue « activité Claude » de
+l'app le charge depuis le site. Le retirer aurait cassé un écran : c'est la mesure qui a
+évité la régression.
+
+### Ce qui les retire — des deux côtés, dans le même geste
+
+- **kd-mc.com / GitHub Pages** : étape « Retirer les documents de travail » dans
+  `.github/workflows/deploy.yml`. Elle agit sur la **copie du runner** ; le dépôt, lui,
+  n'est pas touché.
+- **miroir Cloudflare** : les `--exclude` de `tools/gitlab/publier.sh`. Première baisse
+  lue dans le journal du job : **11 228 → 11 102 fichiers**, avant l'élargissement.
+  ⚠️ La version élargie n'atteindra le miroir qu'à la prochaine remise à niveau de GitLab
+  depuis GitHub (le jeton GitLab n'est pas disponible dans cette session) : d'ici là,
+  `kdmc-site.pages.dev` publie encore les Markdown que kd-mc.com ne publie plus.
+
+### Le piège du cache — à ne plus jamais oublier
+
+Après ce retrait, le site répondait **toujours 200** sur les mêmes adresses. Ce n'était
+pas un correctif raté : c'était le **cache de bordure** de Cloudflare. `tools/audit/
+exposition-publique.mjs` casse maintenant le cache à chaque appel (`no-store` +
+paramètre unique) et **sort en erreur** quand un document de travail répond. Un contrôle
+qui se fait berner par un cache ment dans les deux sens.
+
+Il tourne **après chaque publication** de kd-mc.com (dernière étape de `deploy.yml`,
+3 essais le temps que Pages propage). Aucune exécution programmée : ça part avec la
+publication.
+
+**Deuxième piège** : lancé depuis le conteneur de l'agent (pare-feu → `403` partout), il
+répondait « aucun document de travail publié » — un ✅ alors que rien n'avait été mesuré.
+Il exige maintenant que la page d'accueil réponde avant de conclure, sinon **« MESURE
+IMPOSSIBLE »** + erreur. Les deux propriétés (anti-cache, refus de conclure) sont tenues
+par la garde `test:documents-travail`, prouvée discriminante par sabotage.
+
+### La garde permanente
+
+`npm run test:documents-travail` (dans `test:ci`) vérifie que les **trois** listes disent
+la même chose : le retrait de `deploy.yml`, les `--exclude` du miroir, et ce que l'audit
+sonde. Un simple test d'égalité entre deux surfaces ne verrait rien si les deux oubliaient
+le même fichier (leçon #142). Prouvée discriminante par sabotage.
+
+### Ce qui reste ouvert — dit franchement
+
+1. **`/arbre/index.html`** contient encore, **à l'intérieur du fichier**, 318 noms de
+   famille, 257 dates de naissance complètes et 12 numéros de téléphone ; le code d'accès
+   n'est vérifié qu'**après** le chargement. On ne peut pas le retirer : c'est l'app.
+   Correctif = sortir les données du fichier et les servir derrière la connexion du
+   domaine (SSO). **Chantier à part, en attente du feu vert de Kevin.**
+2. Le **dépôt et son historique** restent publics : le retrait protège le **site**, pas
+   `github.com`. Nettoyer l'historique se décide avec Kevin (réécriture = tous les liens
+   de commit changent).
+
+### Les scripts GitLab vivent désormais dans le dépôt GitHub
+
+`tools/gitlab/*.sh` (publier, vérifier, déployer un Worker, état du domaine, généalogie…)
+n'existaient **que** sur GitLab. À la prochaine remise à niveau de GitLab depuis GitHub,
+ils auraient disparu — il avait déjà fallu les repêcher à la main une fois. Ils sont
+maintenant dans GitHub **à l'identique** (copie octet pour octet, aucune divergence à
+réconcilier), et `.gitlab-ci.yml` des deux côtés est **la même recette**.
+`secrets-map.txt` ne contient que des **noms** de secrets, aucune valeur.
+
+### Suite (5.09 soir) — l'arbre généalogique : les DONNÉES sont sorties du fichier public
+
+`arbre/index.html` (servi tel quel, dépôt public) embarquait **~100 personnes** (noms, dates et
+lieux de naissance, notes de famille) **et l'empreinte du code famille**, comparée dans le
+navigateur. Cette empreinte est aussi le nom du chemin Firebase `/arbre/<empreinte>` — et la
+règle `/arbre .read = auth != null` laissait un jeton anonyme **lister tout `/arbre`**. Donc :
+lire le fichier = avoir les données, sans code. Corrigé en **v3.16** (branche
+`claude/sarzance-family-tree-3jxi7i`) :
+
+| Avant | Maintenant |
+|---|---|
+| ~65 Ko de personnes dans le HTML | **0 personne** dans le fichier (348 → 283 Ko) |
+| empreinte du code dans le HTML, comparée localement | le code se vérifie sur le domaine : `POST /__arbre/unlock` (routeur, empreinte en KV `arbre:codehash`, essais limités par IP, journal) |
+| nouvel appareil = données du fichier | nouvel appareil = données envoyées **par le domaine** à qui prouve le code (`arbre:seed`, texte sans photos) |
+| — | publication **admin seulement** (`PUT /__arbre/seed`, même grant que `/__admin/login`) depuis **Outils → 📤 Publier** |
+| changement de code = local | `POST /__arbre/code` (preuve = ancien) + l'**ancien chemin cloud est effacé** |
+| Firebase `/arbre` lisible en entier | lecture/écriture **par enfant 64-hex seulement** (marqueur `rules-deploy-request.json` bumpé → auto-apply) |
+
+**Fail-open** : un appareil qui a déjà l'arbre et l'empreinte en mémoire continue de marcher
+hors ligne ou sur un hébergement sans routeur (contrôle local en repli). **Fail-closed** côté
+domaine : sans empreinte publiée, personne n'entre. Gardes : `npm run test:arbre-prive`
+(dans `test:ci`), `services/kdmc-router/arbre.test.mjs` (34 contrôles, bloquant dans
+`deploy-kdmc-router.yml`) ; vérification en vrai navigateur `tools/arbre/verify-domaine.mjs`
+(21 contrôles, famille **synthétique**). **Ce qui a été public une fois le reste** (historique
+Git) : Kevin doit **publier une fois** depuis son iPhone puis **changer le code famille**.
+
+---
+
+## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
+
+> Kevin : *« Rapatrie tout sur GitHub intelligemment en respectant les règles, et sur GitLab
+> ce qui ne va pas sur GitHub. Va plus loin. Sers-toi des deux. »*
+
+Les 49 automatisations rangées le 15/08 l'avaient été **sans dire où elles devaient aller
+ensuite**. C'est pour ça qu'elles y sont restées des mois : plus personne ne savait
+lesquelles étaient légitimes. On finit toujours par tout remettre au hasard, ou par ne rien
+remettre.
+
+### La règle, en une question
+
+> **Est-ce que ça produit, teste, déploie ou publie CE dépôt ?**
+> Oui → **GitHub**, mais **à la main uniquement** (jamais de cron).
+> Non + périodique → **Cloudflare Worker**. Non + appelle l'extérieur → **GitLab CI**.
+> Interdit par les conditions (crypto) → **nulle part**.
+
+### Le résultat, mesuré
+
+| Destination | Combien | Exemples |
+|---|---|---|
+| **GitHub** (rapatriées) | **14** | smoke post-déploiement, vérifs Lingua/Décès en direct, MAJ forcée d'Apex Chat, pentest Strix, audit SEO, déploiement Vercel |
+| **GitLab CI** | 24 | liens réels, sources des langues, génération d'images, sauvegardes KV |
+| **Cloudflare Worker** | 5 | alertes World Monitor, agent 24/7, sentinelles |
+| **nulle part** | 6 | crypto (nommé mot pour mot dans les conditions GitHub) |
+
+`.github/workflows` : **134 → 143**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
+
+**Le bouton, c'est moi qui l'appuie** : une automatisation rapatriée est manuelle, donc zéro
+volume automatique — et je la lance via l'API, Kevin ne clique rien.
+
+### La garde qui empêche de reperdre
+
+`npm run test:destinations-workflows` (dans `test:ci`) : rien de rangé sans destination
+écrite, rien de marqué « github » qui n'y soit pas, rien de marqué autrement qui y soit,
+aucun cron sur un rapatrié, un bouton « Lancer » sur chacun, tout le crypto marqué
+« jamais ». Prouvée par 4 sabotages.
+
+### Côté GitLab — ce qui marche déjà, et ce qui attend une clé
+
+Stage `veille` ajouté (tout à la demande, **0 minute au repos**) : **liens réels**,
+**dépendances CDN**, **sources Lingua**, **récolte LSF** — les quatre **sans aucune clé
+nouvelle**.
+
+> ✅ **En service depuis le 5.09 (14h)** : GitLab `main` a été remis au niveau de GitHub
+> (commit `042e709ee`, pipeline `2822740843`). Les 4 jobs de veille y apparaissent en
+> **bouton « manual »** (`lingua-lsf`, `lingua-sources`, `cdn-dependances`, `liens-reels`),
+> 0 minute tant qu'on ne les lance pas. Recette de remise à niveau : superposer l'arbre
+> GitHub sur GitLab `main` en **conservant les fichiers privés qui n'existent que là-bas**
+> (`ETAT_RECONSTRUCTION.md`, `arbre/PASSATION-ARBRE.md`, `arbre/RECHERCHES-EN-COURS.md`,
+> `arbre/research/*.md`) et en **retirant** les copies rangées de workflows redevenus actifs
+> sur GitHub (13 le 5.09). Jeton utilisé **une fois**, jamais écrit — à révoquer.
+
+*La veille CDN est passée de **3 adresses écrites à la main** à **78 lues dans le code** :
+75 bibliothèques n'étaient surveillées par personne.*
+
+**Clés à ajouter aux variables du projet GitLab** pour que les autres puissent tourner
+(à faire quand on en aura besoin, pas avant) :
+
+| Clé | Ce qu'elle débloque |
+|---|---|
+| `AX_REPLICATE_KEY` | cartoons, logos, mascotte vidéo, clonage de voix |
+| `OPEN_AI_API_KEY` | mascottes Lingua (images IA) |
+| `PEXELS_API_KEY` | photos libres de droit pour l'arbre |
+| `PRINTIFY_API_KEY` | photos produits de la boutique |
+| `APEX_ADMIN_PIN_SHA256` | « qui se connecte », synchro Monaco Telecom |
+| `PUSH_ADMIN_TOKEN` | santé des Workers |
+| `FINNHUB_API_KEY` + `RAILWAY_TOKEN` | santé des API externes |
+| `CLOUDFLARE_ACCOUNT_ID`, `KDMC_SSO_SECRET`, `JWT_SECRET` | sauvegardes KV chiffrées |
+
+---
+
+## 🌍 Fait n°14 — PUBLIC MAIS SÉCURISÉ : ce qui a été trouvé et corrigé (5.09.2026)
+
+> Kevin : *« Public mais sécurisé normalement. »*
+
+Public = **le code se lit**. Public ≠ **ouvert à tout**. Mesuré, puis corrigé :
+
+| Trouvé | Pourquoi c'était grave | Corrigé |
+|---|---|---|
+| `qodo-ai/pr-agent@main` | une action tierce sur branche **mouvante**, avec la clé OpenAI de Kevin dans l'environnement : un compte compromis chez eux et la clé partait | épinglée `@v0.44.0` |
+| revue IA déclenchable par **n'importe qui** | un inconnu commentait une PR → revue IA **payée** avec la clé de Kevin, et minutes du compte consommées | contrôle `author_association` (OWNER/MEMBER/COLLABORATOR) |
+| `pull_request_target` | aurait exécuté le code d'un inconnu avec nos secrets | **0 trouvé** ✅ |
+| vraie clé dans les fichiers suivis | publiée pour toujours | **0** — les 16 chaînes trouvées sont fausses, **sauf la clé Firebase Web, publique par conception** |
+
+**Garde** : `npm run test:depot-public-sain` (dans `test:ci`), 4 règles, **prouvée
+discriminante par 4 sabotages**. `SECURITY.md` ajouté à la racine (où signaler, ce qui est
+public exprès, ce qui intéresse vraiment).
+
+**Non couvert, et dit franchement** : l'**historique** (11 316 commits) relève de
+gitleaks/TruffleHog (`security-suite.yml`, lancé le 5.09) ; les **réglages GitHub**
+(protection de branche, droits par défaut du jeton) vivent côté serveur, pas dans le dépôt.
+
+## 🔑 Fait n°15 — LE CODE ADMIN ÉTAIT PUBLIC (5.09.2026)
+
+Trouvé en triant les résultats de `security-suite.yml` (188 signalements gitleaks) : la page
+Départs embarquait **l'empreinte SHA-256 du code admin** (`PIN_SHA256="cbb0…"`) et la
+comparait dans le navigateur. L'empreinte d'un code à **6 chiffres** se casse en une seconde
+(un million d'essais) — la publier revenait à publier le code. Puis, en cherchant plus large :
+le code **en clair** dans **68 fichiers suivis** du dépôt — qui est **public** — dont
+`CLAUDE.md`, `NOTES_USER.md`, `KEVIN_INVENTORY.md` (« code … » à côté du lien admin), le README
+de la messagerie, la doc des boutiques, et même la mémoire compacte relue à chaque session.
+Le garde `test:no-pin-leak` existait, mais il ne cherchait que le code **en clair** dans les
+dossiers **servis** : ni l'empreinte, ni la doc.
+
+**Le vrai correctif n'est pas dans le code : le code doit être CHANGÉ** (cf.
+`KEVIN_ACTIONS_TODO.md`, tout en haut). Ce que j'ai fait pour que ça n'arrive plus :
+
+| Fait | Preuve |
+|---|---|
+| Pages **Départs v1.37** et **Messages v1.4** : plus aucune empreinte. Le code part à `POST /__admin/login` (routeur kd-mc.com : secret Cloudflare, essais limités, journalisés) et la page **obéit au verdict**. Le champ accepte le code **ou** l'empreinte 64-hex (même règle que Finances, leçon #95). | `test:departs-pin` 9/9 · `test:apex-messages` 16/16 · `test:parite-cmcteams-light` 6/6 · `test:departs-compare` 0 écart |
+| Le code en clair **retiré de 14 documents** (remplacé par « ‹code admin› ») et de la mémoire compacte. | `test:no-pin-leak` : 0 fuite (951 fichiers) |
+| Garde renforcé : cherche aussi **l'empreinte** (64-hex = sha256 d'un code interdit), toute variable `PIN…SHA… = "64-hex"` **quel que soit le code** (structurel), et les **.md** de la racine et des dossiers de doc. Les copies de build du routeur (gitignorées) sont ignorées : on juge les sources. | `npm run test:no-pin-leak` (dans `test:ci`) |
+| 14 scripts e2e qui **tapent** le code sur une vraie surface lisent `KDMC_ADMIN_CODE` (repli : l'ancien code de test, sans valeur après rotation). | `node --check` × 14 |
+| Page **`tools/empreinte/`** : calcule l'empreinte du nouveau code **sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub. | 0 requête réseau (CSP `connect-src 'none'`) |
+
+**Où vit le code, réellement** : UN secret GitHub, `APEX_ADMIN_PIN_SHA256`, poussé par les
+workflows vers **6 workers** (routeur `KDMC_ADMIN_PIN_SHA256`, admin.kd-mc.com, monaco, outlook,
+rag, proxy Apex). Les pages Départs / Messages suivent désormais le routeur → **changer le
+secret = tout change**, plus rien à redéployer côté pages. Restent **à part** (leur propre code,
+dans l'app) : CMCteams (`Réglages → Sécurité`) et les boutiques (`Paramètres → PIN admin`).
+
+**Ce que ce fait ne règle PAS, et il faut le dire** : les écritures Firebase de la page
+Départs passent par un jeton **anonyme** (`accounts:signUp`) et les règles `/cmcteams` acceptent
+`auth != null` → le « mode admin » de la page light reste **cosmétique** côté données : toute
+personne avec un jeton anonyme peut écrire (limite déjà documentée dans CLAUDE.md :
+« durcissement fort = custom-tokens par rôle (v10) »). La grande app a déjà `cmcFbRoleAuth`
+(jeton **rôle** via `/login-cmc`) ; la page light devrait l'adopter — territoire CMCteams,
+message laissé (`pipeline/sessions.json`, m021).
+
+**Autres résultats du tri** : TruffleHog **0 secret vivant** sur 153 candidats · gitleaks 188
+= fausses clés de test, alphabet base64, la clé Firebase Web (publique par conception), et mon
+propre fichier d'allowlist · zizmor `dangerous-triggers: 2` = deux `workflow_run` légitimes
+(`cleanup-stale-branches`, `poolpilot-tuya-diag`) déclenchés par nos propres workflows, pas par
+un inconnu · aucun `${{ github.event.* }}` interpolé dans un `run:` (0 injection de modèle).

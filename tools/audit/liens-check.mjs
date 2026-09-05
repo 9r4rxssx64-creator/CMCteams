@@ -5,7 +5,9 @@
    POURQUOI CE FICHIER EXISTE : j'ai livré des liens en disant « je n'ai pas pu les
    vérifier ». C'était une capitulation : le sandbox bloque la sortie réseau, mais le
    runner GitHub, LUI, a internet. Ce script ping donc VRAIMENT chaque lien, et il est
-   lancé par `.github/workflows/liens-check.yml` (bouton + 1×/mois).
+   lancé par le job GitLab `liens-reels` (stage veille, à la demande).
+   Il a quitté GitHub le 5.09 : son travail consiste à pinguer des centaines de
+   sites TIERS, ce que les conditions GitHub Actions excluent explicitement.
    Résultat : plus jamais un lien mort livré sans le savoir.
 
    Usage :

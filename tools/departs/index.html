@@ -179,8 +179,8 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <div class="modal" id="pinModal">
   <div class="box">
     <h2>🔒 Accès admin</h2>
-    <p>Code à 6 chiffres pour modifier (les collègues restent en lecture seule).</p>
-    <input id="pinIn" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
+    <p>Code admin pour modifier (les collègues restent en lecture seule). Vérifié par kd-mc.com, jamais gardé dans la page.</p>
+    <input id="pinIn" type="password" inputmode="numeric" maxlength="64" placeholder="••••••" autocomplete="off">
     <div class="row">
       <button class="btn" style="flex:1" onclick="closePin()">Annuler</button>
       <button class="btn prim" style="flex:1" onclick="checkPin()">Déverrouiller</button>
@@ -188,14 +188,19 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.37</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.38</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.37";
-var PIN_SHA256="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
+var APP_VER="v1.38";
+// v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
+// l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
+// revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
+// fait côté domaine : POST /__admin/login (routeur kd-mc.com, secret Cloudflare, limité en
+// essais, journalisé). Changer le code = changer UN secret serveur, plus jamais cette page.
+var ADMIN_LOGIN_URL=/^https?:$/.test(location.protocol)?"/__admin/login":"https://kd-mc.com/__admin/login";
 var SEQS={2:[1,2],3:[1,3,2],4:[1,4,2,3],5:[1,4,2,3,5],6:[1,6,4,2,3,5],7:[1,6,4,2,7,3,5],
  8:[1,6,4,2,7,3,8,5],9:[1,6,4,9,2,7,3,8,5],10:[1,6,4,9,2,7,3,8,5,10],
  11:[1,6,4,9,2,11,7,3,8,5,10],12:[1,6,4,9,2,11,7,3,12,8,5,10],13:[1,6,4,9,2,11,7,3,13,8,5,10,12]};
@@ -778,11 +783,22 @@ function setMe(val){ var nm=val;
 function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; render(); paintAppDiag(); toast("Verrouillé — lecture seule"); }
   else { document.getElementById("pinModal").classList.add("on"); setTimeout(function(){var e=document.getElementById("pinIn");if(e){e.value="";e.focus();}},60); } }
 function closePin(){ document.getElementById("pinModal").classList.remove("on"); }
-async function sha256(s){ var b=new TextEncoder().encode(s); var h=await crypto.subtle.digest("SHA-256",b);
-  return Array.from(new Uint8Array(h)).map(function(x){return x.toString(16).padStart(2,"0");}).join(""); }
-async function checkPin(){ var h=await sha256((document.getElementById("pinIn").value||"").trim());
-  if(h===PIN_SHA256){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); paintAppDiag(); toast("Mode admin activé"); }
-  else toast("Code incorrect"); }
+function _adminOn(){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); paintAppDiag(); toast("Mode admin activé"); }
+async function checkPin(){ var code=(document.getElementById("pinIn").value||"").trim();
+  if(!code){ toast("Entre ton code"); return; }
+  // Le code part au domaine, jamais comparé ici. Un code à 6 chiffres OU l'empreinte 64-hex
+  // (même règle que Finances, leçon #95) — le routeur accepte les deux.
+  var body=/^[0-9a-f]{64}$/i.test(code)?{hash:code.toLowerCase()}:{code:code};
+  var j=null;
+  try{ var r=await fetch(ADMIN_LOGIN_URL,{method:"POST",credentials:"include",cache:"no-store",
+        headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    j=r&&r.ok?await r.json().catch(function(){return null;}):null;
+  }catch(_){ j=null; }
+  if(j&&j.ok){ _adminOn(); return; }
+  if(!j){ toast("Vérification impossible ici — ouvre departs.kd-mc.com"); return; }
+  if(j.reason==="rate_limited"){ toast("Trop d'essais — réessaie dans "+(j.wait||60)+" s"); return; }
+  if(j.reason==="admin_pin_not_configured"){ toast("Code admin non configuré côté serveur"); return; }
+  toast("Code incorrect"); }
 document.addEventListener("keydown",function(e){ if(e.key==="Enter"&&document.getElementById("pinModal").classList.contains("on"))checkPin(); });
 // ADMIN UNIVERSEL DU DOMAINE — Kevin reconnu partout sans code. On demande à
 // kd-mc.com « qui es-tu ? » : si c'est Kevin, prouvé par Face ID (verified), on

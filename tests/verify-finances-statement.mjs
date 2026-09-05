@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIME = { '.html':'text/html', '.js':'application/javascript', '.json':'application/json', '.css':'text/css' };
@@ -94,7 +95,7 @@ try {
   await page.fill('#g-pass', '123456'); await page.fill('#g-pass2', '123456'); await page.click('#g-go');
   await page.waitForSelector('#tabs', { timeout: 5000 });
   await page.waitForSelector('#ai-pin', { timeout: 3000 });
-  for (let i=0;i<6;i++){ try{ if(await page.locator('#ai-pin').count()){ await page.fill('#ai-pin','200807'); await page.click('#ai-on'); } await page.waitForSelector('#ai-off',{timeout:3000}); break; }catch(_){ await page.waitForTimeout(300);} }
+  for (let i=0;i<6;i++){ try{ if(await page.locator('#ai-pin').count()){ await page.fill('#ai-pin',ADMIN_CODE); await page.click('#ai-on'); } await page.waitForSelector('#ai-off',{timeout:3000}); break; }catch(_){ await page.waitForTimeout(300);} }
   await page.evaluate(() => { try { localStorage.setItem('kdmc_admin_grant', 'g1.g2.g3'); } catch(e){} });
 
   await gotoTab('Ajouter');

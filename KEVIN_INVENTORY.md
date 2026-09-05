@@ -1,7 +1,87 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-08-14** (OSINT v2.6 téléphone · vérificateur de liens RÉEL)
+> Dernière mise à jour : **2026-09-05** (poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+
+## 🔐 L'arbre sans données dans le fichier public — session 2026-09-05 soir (arbre v3.16, branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.16) | **Plus aucune personne ni empreinte dans le fichier.** Le code se vérifie sur le domaine ; **Outils → 📤 Publier l'arbre sur le domaine (admin)** envoie l'arbre (texte, sans photos) une fois ; **Changer le code** prévient le domaine et efface l'ancien chemin cloud. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `services/kdmc-router/worker.js` (bloc `handleArbre`) | Le domaine : `/__arbre/unlock` (code vérifié, essais limités), `/__arbre/seed` (données à qui prouve le code ; publication admin), `/__arbre/code` (changement), `/__arbre/status`. | [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/worker.js) · [Déploiement](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-router.yml) |
+| `services/kdmc-router/arbre.test.mjs` | Test du routeur (34 contrôles), **bloquant** avant chaque déploiement. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/arbre.test.mjs) |
+| `tests/arbre-prive.test.mjs` | **La garde** (`npm run test:arbre-prive`, dans `test:ci`) : 0 personne, 0 empreinte dans le fichier, contrôle sur le domaine câblé, publication admin, règles Firebase par empreinte. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-prive.test.mjs) |
+| `tools/arbre/verify-domaine.mjs` | **Vérification en vrai navigateur** (Chromium) avec un domaine simulé : nouvel appareil, réouverture, publication, hors ligne, rien de publié, changement de code — 21 contrôles. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-domaine.mjs) |
+| `tools/arbre/fixture-famille.mjs` | Famille **inventée** (81 personnes, 0 vrai prénom) pour les vérifications — plus jamais de vraies données dans un outil. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/fixture-famille.mjs) |
+| `tools/arbre/lire-donnees.mjs` | **Chargeur commun** des outils locaux (patrimoine, recherches, audit cloud) : lit un **export privé** de l'app (`patrimoine/arbre.json`, ignoré par git, ou `ARBRE_EXPORT=…`) — jamais le fichier public. Sans export : famille inventée, signalée. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/lire-donnees.mjs) |
+| `firebase-rules-apex.json` + `tools/firebase/rules-deploy-request.json` | `/arbre` n'est plus lisible en entier : lecture par empreinte seulement (marqueur bumpé → publication automatique). | [Règles](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/firebase-rules-apex.json) |
+
+## 🖼 Poster grand format de l'arbre — session 2026-09-05 (arbre v3.15, branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (bloc « POSTER GRAND FORMAT ») | Dans l'arbre : **Outils → 🖼 Poster grand format**, ou le bouton **🖨** de la vue Arbre. Un dessin vectoriel de toute la famille → **PDF** (A4 → A0, B0, **bannières 1 m / 1,5 m / 2 m**), **mosaïque A4** à découper-coller (plan de montage numéroté), **fichier SVG** pour un imprimeur, **image HD**. Indicateur de lisibilité (taille réelle des prénoms en mm) | [ouvrir l'arbre](https://arbre.kd-mc.com) · [code](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `tests/arbre-poster.test.mjs` | **La garde** (`npm run test:arbre-poster`, dans `test:ci`) : fonctions définies ET câblées, version app = cache hors-ligne, 9 formats, mosaïque, XSS. Prouvée par 3 sabotages | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-poster.test.mjs) |
+| `tools/arbre/verify-poster.mjs` | **Vérification en vrai navigateur** (Chromium) : construit le poster pour chaque famille × style × papier, compte les personnes, rend les PDF (poster + mosaïque), capture la feuille iPhone. `node tools/arbre/verify-poster.mjs` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-poster.mjs) |
+
+## 🍽 Livre de cuisine complété — session 2026-09-05 (soir)
+
+Les 6 dernières recettes incomplètes sur 128 ont été écrites. **128/128 complètes.**
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/cuisine/gen-pdf.sh` | **Nouveau** — regénère `livre.pdf` (A4, Chromium). `--help`, `--dry-run`, `--out`, contrôle du format et du nombre de pages avant d'écrire | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/gen-pdf.sh) |
+| `tools/cuisine/livre.pdf` | Le livre imprimable — **243 → 252 pages**, A4 | [ouvrir](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/livre.pdf) |
+| `tools/cuisine/index.html` | Le livre à lire — 6 recettes complétées + notes de provenance (`method_note`) | [ouvrir](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/) |
+| `tools/cuisine/imprimer.html` | La version imprimable — 6 blocs ajoutés, 7 lignes décimales réparées, format A4 figé | [ouvrir](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/imprimer.html) |
+| `tools/cuisine/recipes.json` | L'index des recettes — 4 descriptions ajoutées | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/recipes.json) |
+
+## 🔀 Où va chaque automatisation — session 2026-09-05
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.github/workflows-desactives/DESTINATIONS.json` | **La réponse pour les 49** : GitHub / GitLab / Worker / nulle part, avec la raison de chacune | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows-desactives/DESTINATIONS.json) |
+| `tests/verify-destinations-workflows.mjs` | La garde : rien de rangé sans destination, aucun cron sur un rapatrié, un bouton « Lancer » sur chacun | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-destinations-workflows.mjs) |
+| `tools/gitlab/cdn-check.sh` | Les bibliothèques CDN répondent-elles encore ? **Lit les 78 adresses dans le code** (l'ancienne en surveillait 3) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/cdn-check.sh) |
+| `.gitlab-ci.yml` (stage `veille`) | Les 4 jobs GitLab qui marchent sans clé nouvelle | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitlab-ci.yml) |
+
+## 🌍 Dépôt public, mais sécurisé — session 2026-09-05
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `SECURITY.md` | Où signaler une faille, **ce qui est public exprès** (la clé Firebase Web), ce qui nous intéresse vraiment | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/SECURITY.md) |
+| `tests/verify-depot-public-sain.mjs` | La garde : pas de `pull_request_target`, pas d'action tierce sur `@main`, pas de clé payante déclenchable par un inconnu, cliquet sur les chaînes en forme de secret | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-depot-public-sain.mjs) |
+| `tools/empreinte/index.html` | **Calcule l'empreinte d'un nouveau code admin sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub `APEX_ADMIN_PIN_SHA256` | [ouvrir](https://kd-mc.com/CMCteams/tools/empreinte/) · [code](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/empreinte/index.html) |
+| `tests/runtime-audit-departs-pin.mjs` | Verrou admin de la page Départs : plus d'empreinte dans la page, le code **part au domaine** (`/__admin/login`) et la page obéit au verdict (9 contrôles) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/runtime-audit-departs-pin.mjs) |
+| `tests/no-admin-pin-leak.test.mjs` | Garde renforcé : code en clair **et** empreinte **et** forme `PIN…SHA… = "64-hex"`, dans le code servi **et** les `.md` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-admin-pin-leak.test.mjs) |
+| `.github/workflows/ai-review-independent.yml` | La revue IA indépendante — **épinglée** et **réservée au propriétaire** depuis le 5.09 | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/ai-review-independent.yml) |
+| `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
+
+## 🚨 Le site ne publie plus tes documents de travail — session 2026-09-05
+
+Le dépôt est **public** et les deux publications servaient « tout ce qu'il y a dedans ».
+Mesuré sur le vrai site : `/NOTES_USER.md` = 19 noms de famille, 4 dates de naissance,
+10 e-mails. Retiré des **deux** côtés, et **vérifié après chaque publication**.
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/audit/exposition-publique.mjs` | Sonde le VRAI site : quels documents répondent encore ? **Casse le cache** (sinon on lit un souvenir) et **sort en erreur** sur une fuite. N'affiche jamais les données trouvées, seulement le compte. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/exposition-publique.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/audit/exposition-publique.mjs) |
+| `tests/verify-documents-travail-parite.mjs` | **La garde** : les 3 listes (retrait GitHub Pages · exclusions du miroir · chemins sondés) doivent dire la même chose. `npm run test:documents-travail` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-documents-travail-parite.mjs) |
+| `.github/workflows/deploy.yml` | Retire les documents AVANT publication, puis **revérifie le site en vrai** après | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/deploy.yml) · [▶️ runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy.yml) |
+| `tools/gitlab/publier.sh` | Publie le miroir Cloudflare **sans** les documents de travail (11 228 → 11 102 fichiers) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/publier.sh) |
+
+## 🗺 Qui fait quoi entre GitHub, GitLab et Cloudflare — session 2026-09-05
+
+Les **deux règlements ont été lus** (pas de mémoire) avant de ranger quoi que ce soit.
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `ORGANISATION.md` | **À lire en premier** : les règles des deux plateformes citées mot pour mot, qui héberge quoi, et le test mental avant d'ajouter une automatisation | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/ORGANISATION.md) |
+| `tools/audit/minutes-gitlab.mjs` | Combien de minutes GitLab consommées sur les 400 du mois, par poste. `npm run minutes-gitlab` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/minutes-gitlab.mjs) |
+| `tools/audit/reglement-plateformes.mjs` | Relit les 8 pages officielles de règles depuis un runner (l'agent ne peut pas y accéder) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/reglement-plateformes.mjs) |
+| `tools/gitlab/qui-sert.sh` | Répond en vrai : **qui sert kd-mc.com aujourd'hui**, GitHub Pages ou le miroir ? (à relancer avant de couper une publication) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/qui-sert.sh) |
+| `tools/gitlab/*.sh` (11 scripts) | Publier, vérifier la clé Cloudflare, déployer un Worker, état du domaine, généalogie… **N'existaient que sur GitLab**, maintenant à l'abri ici aussi | [dossier](https://github.com/9r4rxssx64-creator/CMCteams/tree/main/tools/gitlab) |
+| `.gitlab-ci.yml` | La recette GitLab — **identique des deux côtés** désormais. 0 tâche programmée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitlab-ci.yml) |
 
 
 ### 5 septembre 2026 — vérification du mois d'ouverture
@@ -1811,7 +1891,7 @@ Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · 
 | services/kdmc-access/page.js | La page « Qui se connecte » (admin.kd-mc.com) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page.js) |
 | services/kdmc-access/page-logic.test.mjs | 4 tests : robots exclus, deux comptes du même nom additionnés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page-logic.test.mjs) |
 
-Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Déploiements : [routeur](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) · [page admin](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-access.yml)
+Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code ‹code admin›) · Déploiements : [routeur](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) · [page admin](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-access.yml)
 
 ### Créa Studio v9.3.0 — masques + famille (2026-08-06)
 

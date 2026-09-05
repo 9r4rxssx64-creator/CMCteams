@@ -11,27 +11,24 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..'); // repo root
-// Les mois sont DÉDUITS des données générées, jamais écrits à la main.
-// Vécu 2026-09-05 : cette liste était figée sur juillet+août ; quand septembre est arrivé, le côté
-// app n'était pas parcouru pour ce mois → les 36 équipes miroir de septembre étaient annoncées
-// « manquantes dans l'app » alors qu'elles fonctionnaient parfaitement. Un garde qui ne suit pas
-// les nouveaux mois crie au faux bug ET devient aveugle aux vrais (leçon #142, faux vert/faux rouge).
+/* Les mois sont DÉDUITS des boards réellement présents côté light, jamais écrits
+   à la main. La liste figée « juillet + août » a produit un FAUX ROUGE dès que
+   septembre est arrivé dans boards-gen.js : les 36 miroirs de septembre du côté
+   light étaient comparés à un côté app qu'on n'avait jamais interrogé pour ce
+   mois-là (« app=∅ »). Un contrôle qui n'interroge pas ne prouve rien — et ici
+   il accusait à tort. Même piège que la table SEQ tronquée (leçon #140). */
 const MONTHS = (() => {
   const src = fs.readFileSync(join(ROOT, 'tools/departs/boards-gen.js'), 'utf8');
-  const w = {}; new Function('window', src)(w);
-  const boards = (w.DEPARTS_GEN && w.DEPARTS_GEN.boards) || {};
-  const vus = new Map();
-  Object.keys(boards).forEach((id) => {
-    const b = boards[id];
-    if (!b || typeof b.year !== 'number' || typeof b.monthIdx !== 'number') return;
-    const cle = b.year + '-' + b.monthIdx;
-    if (!vus.has(cle)) vus.set(cle, { y: b.year, m: b.monthIdx, pre: b.year + '-' + String(b.monthIdx + 1).padStart(2, '0') + '-' });
+  const vus = new Set();
+  for (const m of src.matchAll(/"(\d{4})-(\d{2})-[^"]+"\s*:/g)) vus.add(m[1] + '-' + m[2]);
+  const mois = [...vus].sort().map((k) => {
+    const [y, mm] = k.split('-');
+    return { y: +y, m: +mm - 1, pre: k + '-' };   // A.month est 0-indexé
   });
-  const out = [...vus.values()].sort((a, b) => (a.y * 12 + a.m) - (b.y * 12 + b.m));
-  if (!out.length) throw new Error('aucun mois trouvé dans boards-gen.js — données absentes ?');
-  console.log('Mois couverts (déduits des données) : ' + out.map((x) => x.pre).join(' '));
-  return out;
+  if (!mois.length) throw new Error('aucun board trouvé dans boards-gen.js — la déduction des mois a échoué');
+  return mois;
 })();
+console.log('Mois comparés (déduits des boards light) : ' + MONTHS.map((m) => m.pre).join(' · '));
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 // Serveur statique : /CMCteams/<x> et /<x> → <repo>/<x> (les scripts sont en chemin ABSOLU /CMCteams/… lesson #102)
 const server = http.createServer((req, res) => {
