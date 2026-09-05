@@ -4680,3 +4680,23 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
 - Restent isolés (0 invention) : Myriam (acte 1935 verrouillé), Claude DE SARZENS, Jean-Marius
   SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
   DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.
+
+## 2026-09-05 — Apex Chat : correctif P1/P0 admin client-side (v1.1.285)
+
+Audit Apex Chat — fermeture du dernier vecteur admin **côté page**. La porte serveur
+était fermée (v1.1.284, `ADMIN_BYPASS_REQUIRE_MFA="true"`) mais `index.html` fabriquait
+une session admin locale en tapant « Kevin Desarzens » — y compris **quand le serveur
+refusait** (jeton `'local-admin-'`, is_admin:true), ce qui annulait la fermeture.
+
+**Corrigé (v1.1.285, index.html + sw.js)** : l'admin vient UNIQUEMENT de `user.is_admin`
+renvoyé par le Worker (+ JWT gate côté serveur). Supprimés : repli hors-ligne admin,
+`K.user.is_admin=true` par le nom (login + restauration), et la fabrication de jeton
+`'local-admin-'` sur refus serveur (→ session simple utilisateur, pas de lock-out).
+Anti-lock-out reste serveur (`X-Apex-Admin-Token`). Admin de Kevin = SSO Face ID
+(`/api/auth/sso-from-kdmc`, D1 kdmc_kevin-desarzens is_admin=1) — inchangé.
+
+Garde câblée : `tests/unit/no-client-side-admin-by-name.test.js` (discriminante, 4 motifs).
+Validé : 1086/1086 tests verts, JS syntax OK. Leçon #216. Findings P1 → ✅ CORRIGÉ.
+
+Reste audit Apex Chat : P2a (jeton WS dans l'URL, api-worker.js:148), P2b (CORS `*`
+workers/lib/cors.js), mensonges doc (README post-quantum, package.json version).

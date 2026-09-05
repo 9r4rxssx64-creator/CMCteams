@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.283",
+  "softwareVersion": "v1.1.285",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,7 +458,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.283';
+const __APEX_CHAT_VERSION__ = 'v1.1.285';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.283</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.285</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -1144,9 +1144,10 @@ K.login = async function(user, token){
   }catch(_){}
   // Préchauffe les credentials TURN en arrière-plan → le 1er appel se connecte vite (v1.1.229)
   try{ if(K._ensureIceServers) K._ensureIceServers(); }catch(_){}
-  // Si Kevin admin reconnu
-  if(isKevinAdmin(user.real_name || user.pseudo)){
-    K.user.is_admin = true;
+  // v1.1.285 SÉCU (audit P1) : l'admin vient UNIQUEMENT du serveur (is_admin
+  // renvoyé par le worker après vérif SSO/JWT + is_admin en base), JAMAIS du nom
+  // côté client. On affiche l'onglet Admin seulement si le serveur l'a accordé.
+  if(K.user && K.user.is_admin === true){
     $('#bnav-admin').classList.remove('h');
   }
   K.view = 'chats';
@@ -7371,20 +7372,36 @@ K._handleAuthPseudo = async function(){
     }catch(e){
       diag = (e && e.name === 'AbortError') ? 'timeout 12s' : ((e && e.message) || 'network');
     }
-    const adminUser = {
-      id: (realUser && realUser.id) || 'kdmc_admin',
-      pseudo: (realUser && realUser.pseudo) || pseudo,
-      real_name: K.authData.name,
-      phone: K.authData.phone,
-      is_admin: true,
-      created_at: Date.now()
-    };
     if(realToken){
+      // Le serveur a ACCEPTÉ (jeton émis) → sa décision fait foi. is_admin vient
+      // du serveur (audit P1, v1.1.285), jamais forcé côté client.
+      const adminUser = {
+        id: (realUser && realUser.id) || 'kdmc_admin',
+        pseudo: (realUser && realUser.pseudo) || pseudo,
+        real_name: K.authData.name,
+        phone: K.authData.phone,
+        is_admin: !!(realUser && realUser.is_admin),
+        created_at: Date.now()
+      };
       K.login(adminUser, realToken);
-      toast('👑 Kevin admin — connecté au serveur ✅', 'ok', 2500);
+      toast(adminUser.is_admin ? '👑 Kevin admin — connecté au serveur ✅' : 'Connecté ✅', 'ok', 2500);
     } else {
-      K.login(adminUser, 'local-admin-' + Date.now());
-      toast('⚠️ Serveur refuse login : ' + diag, 'warn', 8000);
+      // v1.1.285 SÉCU (audit P0/P1) : le serveur a REFUSÉ le login admin (le
+      // numéro + 000000 ne suffit plus, ADMIN_BYPASS_REQUIRE_MFA="true"). On ne
+      // fabrique JAMAIS une session admin locale par le nom — l'admin s'obtient
+      // UNIQUEMENT via le SSO central kd-mc.com (Face ID prouvé). On ouvre une
+      // session SIMPLE utilisateur (aucun is_admin) pour ne pas bloquer l'accès ;
+      // l'admin se ré-attache tout seul dès que le SSO/serveur le confirme.
+      const plainUser = {
+        id: (realUser && realUser.id) || ('local_' + Date.now().toString(36)),
+        pseudo: (realUser && realUser.pseudo) || pseudo,
+        real_name: K.authData.name,
+        phone: K.authData.phone,
+        is_admin: false,
+        created_at: Date.now()
+      };
+      K.login(plainUser, 'local-' + Date.now());
+      toast('⚠️ Admin refusé par le serveur (' + diag + '). Connexion simple — utilise Face ID (kd-mc.com) pour l\'admin.', 'warn', 9000);
     }
     return;
   }
@@ -7437,17 +7454,22 @@ K._handleAuthPseudo = async function(){
 
   // Fallback : créer compte local si worker KO
   if(!workerOk){
-    const isKevin = isKevinAdmin(K.authData.name); // v1.1.282 : numéro admin retiré de la page (secret serveur uniquement)
+    // v1.1.285 SÉCU (audit P1) : une session hors-ligne ne peut JAMAIS accorder
+    // l'admin (ni id kdmc_admin, ni is_admin). L'admin est décidé UNIQUEMENT côté
+    // serveur (SSO/JWT, is_admin en base) — jamais par le nom côté client (règle
+    // CLAUDE.md « admin décidé uniquement côté serveur »). Hors-ligne = simple
+    // utilisateur ; l'admin se ré-attache automatiquement dès que le worker/SSO
+    // est joignable (aucun lock-out : Kevin reste dans l'app).
     const localUser = {
-      id: isKevin ? 'kdmc_admin' : ('local_' + Date.now().toString(36)),
+      id: 'local_' + Date.now().toString(36),
       pseudo,
       real_name: K.authData.name,
       phone: K.authData.phone,
-      is_admin: isKevin,
+      is_admin: false,
       created_at: Date.now()
     };
     K.login(localUser, 'local-token-' + Date.now());
-    toast(isKevin ? '👑 Admin Kevin (local)' : 'Compte créé (local)', isKevin ? 'ok' : 'warn', 2500);
+    toast('Compte créé (hors-ligne)', 'warn', 2500);
   }
 };
 
@@ -15918,8 +15940,12 @@ async function _boot(){
   if(user && (token || user.phone)){
     K.user = user; K.token = token || null;
     try{ K._accessLog && K._accessLog('connexion'); }catch(_){}
-    if(isKevinAdmin(user.real_name || user.pseudo)){
-      K.user.is_admin = true;
+    // v1.1.285 SÉCU (audit P1) : on restaure l'onglet Admin uniquement si la
+    // session serveur restaurée porte déjà is_admin=true (décidé par le serveur
+    // lors d'un login SSO/JWT antérieur). Plus de dérivation par le nom côté
+    // client. Si le serveur n'avait pas accordé l'admin, il se ré-attache via le
+    // SSO kd-mc.com (Face ID) juste en dessous.
+    if(K.user && K.user.is_admin === true){
       $('#bnav-admin').classList.remove('h');
     }
     // v1.1.219 (Kevin « elle devrait être reconnue ») — session locale (pas de
