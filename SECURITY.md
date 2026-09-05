@@ -45,5 +45,7 @@ projet personnel, pas une entreprise.
 | `npm run test:documents-travail` | que le site publié serve des documents de travail (noms, dates de naissance) | à chaque `test:ci` |
 | `npm run test:secret-jamais-persiste` | qu'un jeton finisse écrit sur le disque ou dans `.git/config` | à chaque `test:ci` |
 | `npm run test:actions-conformes` | qu'une automatisation reparte toute seule à heure fixe | à chaque `test:ci` |
+| `npm run test:no-pin-leak` | qu'un code admin apparaisse en clair **ou en empreinte** dans une page servie ou un document | à chaque `test:ci` |
+| `npm run test:departs-pin` | qu'une page compare un code admin elle-même au lieu de le faire vérifier par le domaine | à chaque `test:ci` |
 | `security-suite.yml` | secrets dans l'historique (gitleaks, TruffleHog), dépendances (OSV, Trivy), injections (Semgrep) | à la demande |
 | audit d'exposition | ce qu'un inconnu peut réellement lire sur le site | **après chaque publication** de kd-mc.com |

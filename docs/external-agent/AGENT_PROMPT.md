@@ -204,7 +204,7 @@ Cache local 6h. Refresh si plus vieux.
 
 - **Telegram bot** : `@Kdmc_kevind_2026_bot` (token dans Firebase `ax_telegram_token`)
 - **Email primaire** : kevind@monaco.mc
-- **Compte admin Apex** : kdmc_admin (PIN 200807, mais ne JAMAIS lire le PIN)
+- **Compte admin Apex** : kdmc_admin (PIN ‹code admin›, mais ne JAMAIS lire le PIN)
 
 ## EN RÉSUMÉ
 

@@ -529,3 +529,46 @@ public exprès, ce qui intéresse vraiment).
 **Non couvert, et dit franchement** : l'**historique** (11 316 commits) relève de
 gitleaks/TruffleHog (`security-suite.yml`, lancé le 5.09) ; les **réglages GitHub**
 (protection de branche, droits par défaut du jeton) vivent côté serveur, pas dans le dépôt.
+
+## 🔑 Fait n°15 — LE CODE ADMIN ÉTAIT PUBLIC (5.09.2026)
+
+Trouvé en triant les résultats de `security-suite.yml` (188 signalements gitleaks) : la page
+Départs embarquait **l'empreinte SHA-256 du code admin** (`PIN_SHA256="cbb0…"`) et la
+comparait dans le navigateur. L'empreinte d'un code à **6 chiffres** se casse en une seconde
+(un million d'essais) — la publier revenait à publier le code. Puis, en cherchant plus large :
+le code **en clair** dans **68 fichiers suivis** du dépôt — qui est **public** — dont
+`CLAUDE.md`, `NOTES_USER.md`, `KEVIN_INVENTORY.md` (« code … » à côté du lien admin), le README
+de la messagerie, la doc des boutiques, et même la mémoire compacte relue à chaque session.
+Le garde `test:no-pin-leak` existait, mais il ne cherchait que le code **en clair** dans les
+dossiers **servis** : ni l'empreinte, ni la doc.
+
+**Le vrai correctif n'est pas dans le code : le code doit être CHANGÉ** (cf.
+`KEVIN_ACTIONS_TODO.md`, tout en haut). Ce que j'ai fait pour que ça n'arrive plus :
+
+| Fait | Preuve |
+|---|---|
+| Pages **Départs v1.37** et **Messages v1.4** : plus aucune empreinte. Le code part à `POST /__admin/login` (routeur kd-mc.com : secret Cloudflare, essais limités, journalisés) et la page **obéit au verdict**. Le champ accepte le code **ou** l'empreinte 64-hex (même règle que Finances, leçon #95). | `test:departs-pin` 9/9 · `test:apex-messages` 16/16 · `test:parite-cmcteams-light` 6/6 · `test:departs-compare` 0 écart |
+| Le code en clair **retiré de 14 documents** (remplacé par « ‹code admin› ») et de la mémoire compacte. | `test:no-pin-leak` : 0 fuite (951 fichiers) |
+| Garde renforcé : cherche aussi **l'empreinte** (64-hex = sha256 d'un code interdit), toute variable `PIN…SHA… = "64-hex"` **quel que soit le code** (structurel), et les **.md** de la racine et des dossiers de doc. Les copies de build du routeur (gitignorées) sont ignorées : on juge les sources. | `npm run test:no-pin-leak` (dans `test:ci`) |
+| 14 scripts e2e qui **tapent** le code sur une vraie surface lisent `KDMC_ADMIN_CODE` (repli : l'ancien code de test, sans valeur après rotation). | `node --check` × 14 |
+| Page **`tools/empreinte/`** : calcule l'empreinte du nouveau code **sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub. | 0 requête réseau (CSP `connect-src 'none'`) |
+
+**Où vit le code, réellement** : UN secret GitHub, `APEX_ADMIN_PIN_SHA256`, poussé par les
+workflows vers **6 workers** (routeur `KDMC_ADMIN_PIN_SHA256`, admin.kd-mc.com, monaco, outlook,
+rag, proxy Apex). Les pages Départs / Messages suivent désormais le routeur → **changer le
+secret = tout change**, plus rien à redéployer côté pages. Restent **à part** (leur propre code,
+dans l'app) : CMCteams (`Réglages → Sécurité`) et les boutiques (`Paramètres → PIN admin`).
+
+**Ce que ce fait ne règle PAS, et il faut le dire** : les écritures Firebase de la page
+Départs passent par un jeton **anonyme** (`accounts:signUp`) et les règles `/cmcteams` acceptent
+`auth != null` → le « mode admin » de la page light reste **cosmétique** côté données : toute
+personne avec un jeton anonyme peut écrire (limite déjà documentée dans CLAUDE.md :
+« durcissement fort = custom-tokens par rôle (v10) »). La grande app a déjà `cmcFbRoleAuth`
+(jeton **rôle** via `/login-cmc`) ; la page light devrait l'adopter — territoire CMCteams,
+message laissé (`pipeline/sessions.json`, m021).
+
+**Autres résultats du tri** : TruffleHog **0 secret vivant** sur 153 candidats · gitleaks 188
+= fausses clés de test, alphabet base64, la clé Firebase Web (publique par conception), et mon
+propre fichier d'allowlist · zizmor `dangerous-triggers: 2` = deux `workflow_run` légitimes
+(`cleanup-stale-branches`, `poolpilot-tuya-diag`) déclenchés par nos propres workflows, pas par
+un inconnu · aucun `${{ github.event.* }}` interpolé dans un `run:` (0 injection de modèle).

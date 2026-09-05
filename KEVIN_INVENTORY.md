@@ -18,6 +18,9 @@
 |---|---|---|
 | `SECURITY.md` | Où signaler une faille, **ce qui est public exprès** (la clé Firebase Web), ce qui nous intéresse vraiment | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/SECURITY.md) |
 | `tests/verify-depot-public-sain.mjs` | La garde : pas de `pull_request_target`, pas d'action tierce sur `@main`, pas de clé payante déclenchable par un inconnu, cliquet sur les chaînes en forme de secret | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-depot-public-sain.mjs) |
+| `tools/empreinte/index.html` | **Calcule l'empreinte d'un nouveau code admin sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub `APEX_ADMIN_PIN_SHA256` | [ouvrir](https://kd-mc.com/CMCteams/tools/empreinte/) · [code](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/empreinte/index.html) |
+| `tests/runtime-audit-departs-pin.mjs` | Verrou admin de la page Départs : plus d'empreinte dans la page, le code **part au domaine** (`/__admin/login`) et la page obéit au verdict (9 contrôles) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/runtime-audit-departs-pin.mjs) |
+| `tests/no-admin-pin-leak.test.mjs` | Garde renforcé : code en clair **et** empreinte **et** forme `PIN…SHA… = "64-hex"`, dans le code servi **et** les `.md` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-admin-pin-leak.test.mjs) |
 | `.github/workflows/ai-review-independent.yml` | La revue IA indépendante — **épinglée** et **réservée au propriétaire** depuis le 5.09 | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/ai-review-independent.yml) |
 | `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
 
@@ -1851,7 +1854,7 @@ Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · 
 | services/kdmc-access/page.js | La page « Qui se connecte » (admin.kd-mc.com) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page.js) |
 | services/kdmc-access/page-logic.test.mjs | 4 tests : robots exclus, deux comptes du même nom additionnés | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-access/page-logic.test.mjs) |
 
-Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code 200807) · Déploiements : [routeur](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) · [page admin](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-access.yml)
+Page live : **[admin.kd-mc.com](https://admin.kd-mc.com/)** (code ‹code admin›) · Déploiements : [routeur](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) · [page admin](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-access.yml)
 
 ### Créa Studio v9.3.0 — masques + famille (2026-08-06)
 
