@@ -29,21 +29,50 @@ const SORTIE = join(RACINE, 'patrimoine-resultats');
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : d; };
 const SITE = (arg('--site', 'https://kdmc-site.pages.dev')).replace(/\/$/, '');
 
-/* Les chemins à sonder, du plus sensible au moins sensible. */
+/* Les chemins à sonder, du plus sensible au moins sensible.
+ *
+ * `docTravail: true` = un document de TRAVAIL, que les deux publications sont
+ * censées retirer (l'étape « Retirer les documents de travail » de
+ * .github/workflows/deploy.yml côté GitHub Pages, les `--exclude` de
+ * tools/gitlab/publier.sh côté miroir Cloudflare). Aucune page du site ne les
+ * charge — vérifié. S'il en reste UN de public, c'est une vraie fuite et ce
+ * script sort en ERREUR (code 1).
+ *
+ * Les entrées SANS ce drapeau sont le site lui-même (l'app CMCteams, ses
+ * plannings, l'arbre). Elles sont « graves » parce qu'elles contiennent
+ * réellement des noms, mais on ne peut pas les retirer sans supprimer le site :
+ * leur correctif est architectural (servir la donnée derrière la connexion du
+ * domaine), pas un `rm`. Les compter comme des échecs mettrait un rouge
+ * PERMANENT que plus personne ne regarderait. */
 const CHEMINS = [
   { p: '/arbre/index.html', quoi: 'arbre familial (noms, dates de naissance, enfants)', grave: 3 },
-  { p: '/arbre/research/actes.json', quoi: 'index des actes d\'état civil de la famille', grave: 3 },
-  { p: '/NOTES_USER.md', quoi: 'notes métier (employés du casino, règles internes)', grave: 3 },
   { p: '/tools/shared/planning-seed.js', quoi: 'plannings : ~280 employés nommés', grave: 3 },
   { p: '/tools/departs/boards-gen.js', quoi: 'ordres de départ par employé', grave: 3 },
   { p: '/index.html', quoi: 'application CMCteams (effectif complet)', grave: 3 },
-  { p: '/KEVIN_ACTIONS_TODO.md', quoi: 'actions en attente (comptes, fournisseurs)', grave: 2 },
-  { p: '/pipeline/sessions.json', quoi: 'registre des sessions de travail', grave: 1 },
-  { p: '/audit/github-reponse-support.md', quoi: 'échange avec le support GitHub', grave: 2 },
-  { p: '/ETAT-INFRA.md', quoi: 'état de l\'infra (publication VOULUE)', grave: 0 },
-  { p: '/CLAUDE.md', quoi: 'règles de travail', grave: 1 },
-  { p: '/patrimoine/00-A-FAIRE.md', quoi: 'dossier patrimoine (doit être ABSENT)', grave: 3, doitEtreAbsent: true },
-  { p: '/patrimoine-resultats/rapport.md', quoi: 'résultats des recherches (doit être ABSENT)', grave: 3, doitEtreAbsent: true },
+
+  /* — Les documents de travail : doivent TOUS être absents — */
+  { p: '/NOTES_USER.md', quoi: 'notes métier (employés du casino, règles internes)', grave: 3, docTravail: true },
+  { p: '/arbre/research/actes.json', quoi: 'index des actes d\'état civil de la famille', grave: 3, docTravail: true },
+  { p: '/KEVIN_ACTIONS_TODO.md', quoi: 'actions en attente (comptes, fournisseurs)', grave: 2, docTravail: true },
+  { p: '/KEVIN_INVENTORY.md', quoi: 'inventaire des fichiers créés', grave: 1, docTravail: true },
+  { p: '/MEMO_RESUME.md', quoi: 'mémo de session', grave: 1, docTravail: true },
+  { p: '/CLAUDE.md', quoi: 'règles de travail', grave: 1, docTravail: true },
+  { p: '/LESSONS.md', quoi: 'leçons apprises', grave: 1, docTravail: true },
+  { p: '/ETAT-INFRA.md', quoi: 'état de l\'infra (comptes, dépôts, jetons cités)', grave: 2, docTravail: true },
+  { p: '/SESSIONS-ET-BRANCHES.md', quoi: 'carte des sessions de travail', grave: 1, docTravail: true },
+  { p: '/CLAUDE_HANDOFF.json', quoi: 'passation entre sessions', grave: 1, docTravail: true },
+  { p: '/pipeline/sessions.json', quoi: 'registre des sessions de travail', grave: 1, docTravail: true },
+  { p: '/audit/github-reponse-support.md', quoi: 'échange avec le support GitHub', grave: 2, docTravail: true },
+  { p: '/arbre/research/RECHERCHES.md', quoi: 'notes de recherche généalogique', grave: 2, docTravail: true },
+  { p: '/patrimoine/00-A-FAIRE.md', quoi: 'dossier patrimoine', grave: 3, docTravail: true },
+  { p: '/patrimoine-resultats/rapport.md', quoi: 'résultats des recherches', grave: 3, docTravail: true },
+  { p: '/coffre-fort/memo/01-secrets-github.pdf', quoi: 'mémo perso « secrets GitHub » (formulaire vierge, mais rien à faire en ligne)', grave: 2, docTravail: true },
+  /* Quelques documents pris au hasard dans le lot : si la règle « aucun Markdown
+     publié » se cassait, ce sont eux qui le diraient, pas seulement les fichiers
+     que quelqu'un a pensé à lister un jour. */
+  { p: '/AGENTS.md', quoi: 'consignes de travail (contrôle de la règle « aucun .md publié »)', grave: 1, docTravail: true },
+  { p: '/archives/PLAINTE_ANTHROPIC.md', quoi: 'courrier personnel archivé', grave: 2, docTravail: true },
+  { p: '/_PROJECTS_KDMC/e-KDMC/NOTES_USER.md', quoi: 'notes métier d\'un sous-projet', grave: 2, docTravail: true },
 ];
 
 /* Marqueurs de données personnelles — on compte, on n'affiche jamais. */
@@ -72,7 +101,27 @@ let accueil = '';
    servait une ancienne version propre. On casse donc le cache à chaque appel. */
 const SANS_CACHE = { cache: 'no-store', headers: { 'cache-control': 'no-cache', pragma: 'no-cache' } };
 const bust = (u) => u + (u.includes('?') ? '&' : '?') + '_nocache=' + Date.now();
-try { accueil = await (await fetch(bust(SITE + '/'), SANS_CACHE)).text(); } catch { /* ignoré */ }
+
+/* AVANT TOUT : est-ce qu'on ATTEINT le site ? Sans ce contrôle, un réseau
+   coupé donne « tout est absent » — donc un ✅ franc et massif alors qu'on n'a
+   RIEN mesuré. Vécu le 5.09 depuis le conteneur de l'agent : le pare-feu
+   répondait 403 à chaque adresse et l'audit annonçait fièrement « aucun
+   document de travail publié ». Un contrôle qui ment est pire que pas de
+   contrôle. On exige donc que la page d'accueil réponde vraiment. */
+let statutAccueil = 0;
+try {
+  const r0 = await fetch(bust(SITE + '/'), SANS_CACHE);
+  statutAccueil = r0.status;
+  if (r0.ok) accueil = await r0.text();
+} catch (e) { statutAccueil = -1; accueil = ''; }
+if (!accueil) {
+  console.log(`❌ MESURE IMPOSSIBLE : ${SITE}/ ne répond pas (HTTP ${statutAccueil}).`);
+  console.log('   Je ne peux donc RIEN affirmer sur ce qui est publié — et surtout pas');
+  console.log('   « tout va bien ». Depuis le conteneur de l\'agent, le pare-feu bloque');
+  console.log('   ces adresses : cet audit doit tourner sur un runner (GitHub Actions');
+  console.log('   après la publication, ou le job GitLab), pas ici.');
+  process.exit(2);
+}
 
 for (const c of CHEMINS) {
   let statut = 0, taille = 0, trouves = [];
@@ -95,18 +144,19 @@ for (const c of CHEMINS) {
     trouves = [String(e.message).slice(0, 60)];
   }
   const publique = statut >= 200 && statut < 300;
-  const alerte = c.doitEtreAbsent ? (publique ? '🚨 FUITE' : '✅ absent')
-    : (publique && c.grave >= 3 ? '🚨 EXPOSÉ'
-      : publique && c.grave === 2 ? '⚠️ exposé'
-        : publique ? 'ℹ️ public' : '— absent');
+  const alerte = c.docTravail
+    ? (publique ? '🚨 FUITE' : '✅ retiré')
+    : (publique && c.grave >= 3 ? '🔶 le site' : publique ? 'ℹ️ public' : '— absent');
   lignes.push({ ...c, statut, taille, trouves, publique, alerte });
   console.log(`${alerte.padEnd(10)} HTTP ${String(statut).padEnd(4)} ${String(taille).padStart(8)} o  ${c.p}`);
   if (trouves.length) console.log(`             ↳ ${trouves.join(' · ')}`);
 }
 
-const graves = lignes.filter((l) => l.alerte.startsWith('🚨'));
+const fuites = lignes.filter((l) => l.docTravail && l.publique);
+const structurel = lignes.filter((l) => !l.docTravail && l.publique && l.grave >= 3);
 let md = `# Ce qui est réellement public sur ${SITE}\n\n`;
-md += `Sondé le ${new Date().toLocaleString('fr-FR')}. **${graves.length} exposition(s) grave(s).**\n\n`;
+md += `Sondé le ${new Date().toLocaleString('fr-FR')}. **${fuites.length} document(s) de travail encore publié(s)**`;
+md += ` · ${structurel.length} page(s) du site portant des noms (correctif architectural, pas un retrait).\n\n`;
 md += `| État | Chemin | Ce que c'est | HTTP | Taille | Données personnelles détectées |\n|---|---|---|---|---|---|\n`;
 for (const l of lignes) {
   md += `| ${l.alerte} | \`${l.p}\` | ${l.quoi} | ${l.statut} | ${l.taille || '—'} | ${l.trouves.join(', ') || '—'} |\n`;
@@ -116,4 +166,30 @@ md += `d'occurrences. Un rapport n'a pas à republier ce qu'il dénonce.*\n`;
 writeFileSync(join(SORTIE, 'exposition-publique.md'), md);
 writeFileSync(join(SORTIE, 'exposition-publique.json'), JSON.stringify({ site: SITE, quand: new Date().toISOString(), lignes }, null, 2));
 
-console.log(`\n${graves.length} exposition(s) grave(s) — détail dans patrimoine-resultats/exposition-publique.md`);
+console.log('');
+if (fuites.length) {
+  console.log(`🚨 ${fuites.length} document(s) de TRAVAIL encore publié(s) sur ${SITE} :`);
+  for (const f of fuites) console.log(`   ${f.p}  (${f.quoi})`);
+  console.log('');
+  console.log('Ce sont des documents qu\'aucune page du site ne charge. Les deux');
+  console.log('publications sont censées les retirer :');
+  console.log('  · GitHub Pages  → étape « Retirer les documents de travail » de');
+  console.log('                     .github/workflows/deploy.yml');
+  console.log('  · miroir Cloudflare → les --exclude de tools/gitlab/publier.sh');
+  console.log('Si l\'un des deux vient de changer, il peut aussi s\'agir du CACHE de');
+  console.log('bordure : ce script casse déjà le cache à chaque appel, donc une');
+  console.log('réponse 200 ici est un vrai fichier, pas un souvenir.');
+} else {
+  console.log(`✅ Aucun document de travail publié sur ${SITE}.`);
+}
+if (structurel.length) {
+  console.log('');
+  console.log(`🔶 ${structurel.length} page(s) du SITE portent des noms — c'est le site lui-même`);
+  console.log('   (l\'app CMCteams, ses plannings, l\'arbre). On ne les retire pas : leur');
+  console.log('   correctif est de servir la donnée derrière la connexion du domaine.');
+}
+console.log(`\nDétail : patrimoine-resultats/exposition-publique.md`);
+/* Sortie en erreur UNIQUEMENT sur les documents de travail. Faire échouer sur
+   les pages du site mettrait un rouge permanent — et un rouge permanent, plus
+   personne ne le regarde. */
+if (fuites.length) process.exitCode = 1;

@@ -1,7 +1,33 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-08-14** (OSINT v2.6 téléphone · vérificateur de liens RÉEL)
+> Dernière mise à jour : **2026-09-05** (rangement GitHub/GitLab · documents de travail retirés du site)
+
+## 🚨 Le site ne publie plus tes documents de travail — session 2026-09-05
+
+Le dépôt est **public** et les deux publications servaient « tout ce qu'il y a dedans ».
+Mesuré sur le vrai site : `/NOTES_USER.md` = 19 noms de famille, 4 dates de naissance,
+10 e-mails. Retiré des **deux** côtés, et **vérifié après chaque publication**.
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/audit/exposition-publique.mjs` | Sonde le VRAI site : quels documents répondent encore ? **Casse le cache** (sinon on lit un souvenir) et **sort en erreur** sur une fuite. N'affiche jamais les données trouvées, seulement le compte. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/exposition-publique.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/audit/exposition-publique.mjs) |
+| `tests/verify-documents-travail-parite.mjs` | **La garde** : les 3 listes (retrait GitHub Pages · exclusions du miroir · chemins sondés) doivent dire la même chose. `npm run test:documents-travail` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-documents-travail-parite.mjs) |
+| `.github/workflows/deploy.yml` | Retire les documents AVANT publication, puis **revérifie le site en vrai** après | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/deploy.yml) · [▶️ runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy.yml) |
+| `tools/gitlab/publier.sh` | Publie le miroir Cloudflare **sans** les documents de travail (11 228 → 11 102 fichiers) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/publier.sh) |
+
+## 🗺 Qui fait quoi entre GitHub, GitLab et Cloudflare — session 2026-09-05
+
+Les **deux règlements ont été lus** (pas de mémoire) avant de ranger quoi que ce soit.
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `ORGANISATION.md` | **À lire en premier** : les règles des deux plateformes citées mot pour mot, qui héberge quoi, et le test mental avant d'ajouter une automatisation | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/ORGANISATION.md) |
+| `tools/audit/minutes-gitlab.mjs` | Combien de minutes GitLab consommées sur les 400 du mois, par poste. `npm run minutes-gitlab` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/minutes-gitlab.mjs) |
+| `tools/audit/reglement-plateformes.mjs` | Relit les 8 pages officielles de règles depuis un runner (l'agent ne peut pas y accéder) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/reglement-plateformes.mjs) |
+| `tools/gitlab/qui-sert.sh` | Répond en vrai : **qui sert kd-mc.com aujourd'hui**, GitHub Pages ou le miroir ? (à relancer avant de couper une publication) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/qui-sert.sh) |
+| `tools/gitlab/*.sh` (11 scripts) | Publier, vérifier la clé Cloudflare, déployer un Worker, état du domaine, généalogie… **N'existaient que sur GitLab**, maintenant à l'abri ici aussi | [dossier](https://github.com/9r4rxssx64-creator/CMCteams/tree/main/tools/gitlab) |
+| `.gitlab-ci.yml` | La recette GitLab — **identique des deux côtés** désormais. 0 tâche programmée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitlab-ci.yml) |
 
 ## 🔗 Vérificateur de liens RÉEL — session 2026-08-14
 

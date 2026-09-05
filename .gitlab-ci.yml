@@ -302,3 +302,20 @@ qui-sert:
       allow_failure: true
   script:
     - 'sh tools/gitlab/qui-sert.sh'
+
+# Après CHAQUE publication du miroir : vérifier ce qu'un inconnu peut réellement
+# lire. Léger (fetch seulement, image alpine ~50 Mo) et enchaîné sur la
+# publication, pour qu'on ne redécouvre jamais une fuite des semaines plus tard.
+exposition-publique:
+  stage: etat
+  image: node:20-alpine
+  needs: []                     # doit pouvoir mesurer SEUL, sans republier
+  allow_failure: true
+  rules:
+    - changes: ["publier-demande.txt", "exposition-demande.txt"]
+      when: on_success
+    - if: '$EXPOSITION'
+    - when: manual
+      allow_failure: true
+  script:
+    - 'node tools/audit/exposition-publique.mjs'

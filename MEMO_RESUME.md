@@ -1,5 +1,62 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 — GitHub/GitLab rangés, et une fuite de documents fermée
+
+**Demande Kevin** : *« Organise tout intelligemment pour que tout refonctionne comme
+avant. Entre GitHub et GitLab, vérifie leur règlement pour ne plus faire d'erreur. »*
+Puis, quand j'ai voulu remettre à plus tard : *« Tu as tout pour sinon trouve des
+solutions. »*
+
+### Les deux règlements, LUS (pas de mémoire) — `ORGANISATION.md`
+- **GitHub** interdit toute activité *« unrelated to the production, testing, deployment,
+  or publication of the software project associated with the repository »*. Ce n'est pas
+  une question de fréquence, c'est la **nature** de l'activité.
+- **GitLab** ne l'interdit pas, mais donne **400 minutes par mois**. Tout compte.
+- D'où le partage : GitHub = ce dépôt · GitLab = l'extérieur et le périodique ·
+  Cloudflare Workers = les services permanents.
+
+### GitLab était en train de rejouer l'erreur d'août
+`npm run minutes-gitlab` : **175 min sur 400 en 4 jours** → à sec le 9 septembre. Premier
+poste : la publication du miroir (**41 %**). Avant de couper, j'ai **mesuré qui sert
+vraiment kd-mc.com** (job `qui-sert`) : en-têtes `x-github-request-id` → **le site vient
+de GitHub Pages**, le miroir n'est qu'un filet. Publication passée **à la demande** :
+preuve par deux envois (fichier-bouton touché = 1,4 min · non touché = **0**).
+La garde `conformite` allégée (`node:20` → `node:20-alpine`) : **45 s → 23 s**.
+
+### La vraie trouvaille : le dépôt est PUBLIC et publiait mes documents de travail
+Mesuré sur le vrai site : `/NOTES_USER.md` (19 noms, 4 dates de naissance, 10 e-mails),
+`/CLAUDE.md` (42 noms), `/KEVIN_ACTIONS_TODO.md` (10 noms, 8 dates de naissance).
+Aucune page ne les charge. Retirés **des deux côtés** dans le même geste (étape de
+`deploy.yml` pour kd-mc.com, `--exclude` de `publier.sh` pour le miroir :
+**11 228 → 11 102 fichiers**).
+
+**Le piège** : après le retrait, le site répondait **toujours 200** — c'était le **cache
+de bordure**, pas un correctif raté. L'audit casse maintenant le cache et **sort en
+erreur** sur une fuite ; il tourne **après chaque publication** de kd-mc.com.
+
+**Garde permanente** : `npm run test:documents-travail` (dans `test:ci`) — les trois
+listes (retrait GitHub, exclusions du miroir, chemins sondés) doivent dire la même chose.
+Prouvée discriminante par 3 sabotages. *Pourquoi une garde et pas juste un correctif :
+deux surfaces qui se trompent pareil restent vertes à un test d'égalité (leçon #142).*
+
+### Rangé aussi
+- `tools/gitlab/*.sh` (11 scripts) n'existaient **que** sur GitLab → copiés à l'identique
+  dans GitHub, et `.gitlab-ci.yml` est la **même recette** des deux côtés. Plus rien à
+  repêcher à la main au prochain alignement.
+- GitLab `main` remise au niveau de GitHub `main` (130 workflows, **0 cron, 0 crypto**),
+  en préservant les 9 fichiers qui n'existent que là-bas.
+
+### Ce qui reste ouvert, dit franchement
+1. **`/arbre/index.html`** porte 318 noms, 257 dates de naissance et 12 téléphones **dans
+   le fichier** ; le code d'accès n'est vérifié qu'après chargement. Correctif =
+   architectural (servir la donnée derrière le SSO du domaine). **Attend ton go.**
+2. Le **dépôt et son historique** restent publics : le retrait protège le **site**, pas
+   `github.com`.
+
+---
+
+---
+
 ## 5 septembre 2026 — Messages : la photo ne s'ouvrait pas (corrigé)
 
 **Retour Kevin** : dans la page Messages, le bouton « 📷 Voir la photo » ne montrait rien.

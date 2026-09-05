@@ -91,6 +91,13 @@ const REGISTRE = [
   [/BOÎTE À OUTILS AGENTS|6 DÉPÔTS DE RÉFÉRENCE/i, ['file:apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts']],
   [/TAILLE|MONOLITH/i, ['npm:test:file-size-guard']],
   [/DÉTAILLER LES ERREURS/i, ['npm:test:bg-url']],
+  /* Ajoutés le 5.09 : ces trois règles avaient DÉJÀ leur garde, il manquait
+     seulement leur entrée ici — donc l'outil les comptait comme « dette » à
+     tort. Une mesure fausse est pire que pas de mesure : on la corrige, on ne
+     re-fige pas le compteur pour faire taire le rouge. */
+  [/CMCteams .{0,4}ET.{0,4} LIGHT|TOUJOURS LES DEUX/i, ['npm:test:parite-cmcteams-light']],
+  [/TEST EN LIVE EN PERMANENCE|TOUJOURS TESTER END-TO-END/i, ['wf:verif-reelle.yml', 'wf:audit-live.yml']],
+  [/AUDIT EXTÉRIEUR INDÉPENDANT|SECOND AVIS INDÉPENDANT/i, ['wf:ai-review-independent.yml']],
 ];
 
 /* ─── 2-bis. Règles COMPORTEMENTALES : elles portent sur MA façon de travailler (ton, autonomie,
